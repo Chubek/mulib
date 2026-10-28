@@ -3,7 +3,7 @@
  * @brief Dynamically growing NUL-terminated text builder.
  * @defgroup mulib_strbuf MuLIB strbuf
  * @{
- * @details Successful append always maintains a trailing NUL. For empty newly initialized builders data is NULL until the first append. Appending from within the same buffer may be unsafe if growth reallocates it.
+ * @details Successful append always maintains a trailing NUL. For empty newly initialized builders data is NULL until the first append. Appending a range from the same builder is supported, including when growth reallocates it.
  * @par Integration
  * In exactly one translation unit define MULIB_IMPL_STRBUF before including this file.
  * Other translation units may include it without the implementation switch.
@@ -53,7 +53,37 @@ void mulib_strbuf_free(mulib_strbuf_t*s);
 extern "C" {
 #endif
 void mulib_strbuf_init(mulib_strbuf_t*s){if(s)memset(s,0,sizeof(*s));}
-int mulib_strbuf_append_n(mulib_strbuf_t*s,const char*t,size_t n){if(!s||(!t&&n)||n>SIZE_MAX-s->length-1)return 0;size_t need=s->length+n+1;if(need>s->capacity){size_t cap=s->capacity?s->capacity:32;while(cap<need){if(cap>SIZE_MAX/2){cap=need;break;}cap*=2;}char*p=realloc(s->data,cap);if(!p)return 0;s->data=p;s->capacity=cap;}if(n)memmove(s->data+s->length,t,n);s->length+=n;s->data[s->length]='\0';return 1;}
+int mulib_strbuf_append_n(mulib_strbuf_t *s, const char *text, size_t n) {
+    size_t offset = 0, need;
+    int internal = 0;
+    if (!s || (!text && n) || s->length == SIZE_MAX || n > SIZE_MAX - s->length - 1) return 0;
+    if (s->data && text) {
+        uintptr_t base = (uintptr_t)s->data, source = (uintptr_t)text;
+        if (source >= base && source - base <= s->length) {
+            offset = (size_t)(source - base);
+            if (n > s->length - offset + 1) return 0;
+            internal = 1;
+        }
+    }
+    need = s->length + n + 1;
+    if (need > s->capacity) {
+        size_t cap = s->capacity ? s->capacity : 32;
+        char *next;
+        while (cap < need) {
+            if (cap > SIZE_MAX / 2) { cap = need; break; }
+            cap *= 2;
+        }
+        next = realloc(s->data, cap);
+        if (!next) return 0;
+        s->data = next;
+        s->capacity = cap;
+    }
+    if (internal) text = s->data + offset;
+    if (n) memmove(s->data + s->length, text, n);
+    s->length += n;
+    s->data[s->length] = '\0';
+    return 1;
+}
 int mulib_strbuf_append(mulib_strbuf_t*s,const char*t){return t?mulib_strbuf_append_n(s,t,strlen(t)):0;}
 int mulib_strbuf_putc(mulib_strbuf_t*s,char c){return mulib_strbuf_append_n(s,&c,1);}
 void mulib_strbuf_free(mulib_strbuf_t*s){if(s){free(s->data);memset(s,0,sizeof(*s));}}

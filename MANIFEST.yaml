@@ -7,7 +7,7 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 67
+module_count: 114
 modules:
 - name: vec
   header: include/mulib-vec.h
@@ -478,6 +478,335 @@ modules:
   purpose: Roman numeral formatting and a simple validity-checked parser.
   dependencies: []
   status: implemented
+- name: alloc
+  header: include/mulib-alloc.h
+  manual: manual/mulib-alloc.md
+  macro: MULIB_IMPL_ALLOC
+  purpose: Per-instance allocators with checked allocation and array resizing.
+  dependencies: [port]
+  status: implemented
+- name: mempool
+  header: include/mulib-mempool.h
+  manual: manual/mulib-mempool.md
+  macro: MULIB_IMPL_MEMPOOL
+  purpose: Aligned fixed-size object pools with validated slot release.
+  dependencies: [alloc]
+  status: implemented
+- name: strpool
+  header: include/mulib-strpool.h
+  manual: manual/mulib-strpool.md
+  macro: MULIB_IMPL_STRPOOL
+  purpose: Binary-safe hashed string interning with stable owned storage.
+  dependencies: [alloc, hash]
+  status: implemented
+- name: pybind
+  header: include/mulib-pybind.h
+  manual: manual/mulib-pybind.md
+  macro: MULIB_IMPL_PYBIND
+  purpose: Self-contained Python ctypes binding-source generation for C functions.
+  dependencies: [strbuf]
+  status: implemented
+- name: rubybind
+  header: include/mulib-rubybind.h
+  manual: manual/mulib-rubybind.md
+  macro: MULIB_IMPL_RUBYBIND
+  purpose: Self-contained Ruby Fiddle binding-source generation for C functions.
+  dependencies: [pybind]
+  status: implemented
+- name: parsec
+  header: include/mulib-parsec.h
+  manual: manual/mulib-parsec.md
+  macro: MULIB_IMPL_PARSEC
+  purpose: Composable parser combinators with backtracking and diagnostics.
+  dependencies: []
+  status: implemented
+- name: template
+  header: include/mulib-template.h
+  manual: manual/mulib-template.md
+  macro: MULIB_IMPL_TEMPLATE
+  purpose: JSON-context template rendering with escaped interpolation and control flow.
+  dependencies: [json, strbuf, utf8]
+  status: implemented
+- name: kvdb
+  header: include/mulib-kvdb.h
+  manual: manual/mulib-kvdb.md
+  macro: MULIB_IMPL_KVDB
+  purpose: Persistent binary-safe key-value storage with integrity validation.
+  dependencies: [buffer, varint, crc32, endian]
+  status: implemented
+- name: port
+  header: include/mulib-port.h
+  manual: manual/mulib-port.md
+  macro: MULIB_IMPL_PORT
+  purpose: Platform identification and checked size arithmetic.
+  dependencies: []
+  status: implemented
+- name: atn
+  header: include/mulib-atn.h
+  manual: manual/mulib-atn.md
+  macro: MULIB_IMPL_ATN
+  purpose: Epsilon and token-range transition networks and matching.
+  dependencies: [vec, bitset]
+  status: implemented
+- name: glr
+  header: include/mulib-glr.h
+  manual: manual/mulib-glr.md
+  macro: MULIB_IMPL_GLR
+  purpose: Generalized context-free parsing with shared stacks and parse forests.
+  dependencies: [atn, gss, sppf]
+  status: implemented
+- name: sppf
+  header: include/mulib-sppf.h
+  manual: manual/mulib-sppf.md
+  macro: MULIB_IMPL_SPPF
+  purpose: Shared packed parse forests preserving alternative derivations.
+  dependencies: [vec]
+  status: implemented
+- name: gss
+  header: include/mulib-gss.h
+  manual: manual/mulib-gss.md
+  macro: MULIB_IMPL_GSS
+  purpose: Graph-structured stacks with shared nodes and predecessor edges.
+  dependencies: [vec]
+  status: implemented
+- name: archive
+  header: include/mulib-archive.h
+  manual: manual/mulib-archive.md
+  macro: MULIB_IMPL_ARCHIVE
+  purpose: Bounds-checked USTAR archive reading and writing.
+  dependencies: [buffer]
+  status: implemented
+- name: mmfile
+  header: include/mulib-mmfile.h
+  manual: manual/mulib-mmfile.md
+  macro: MULIB_IMPL_MMFILE
+  purpose: Native memory-mapped file ownership and synchronization.
+  dependencies: []
+  status: implemented
+- name: memtkx
+  header: include/mulib-memtkx.h
+  manual: manual/mulib-memtkx.md
+  macro: MULIB_IMPL_MEMTKX
+  purpose: Tracking allocators with statistics, live-byte limits, and checkpoints.
+  dependencies: [alloc]
+  status: implemented
+- name: minish
+  header: include/mulib-minish.h
+  manual: manual/mulib-minish.md
+  macro: MULIB_IMPL_MINISH
+  purpose: Focused shell tokenization, expansion, builtins, and command dispatch.
+  dependencies: [map, vec, strbuf]
+  status: implemented
+- name: txtdiff
+  header: include/mulib-txtdiff.h
+  manual: manual/mulib-txtdiff.md
+  macro: MULIB_IMPL_TXTDIFF
+  purpose: Line-oriented text edit scripts and checked patch application.
+  dependencies: [vec, buffer]
+  status: implemented
+- name: mmdiff
+  header: include/mulib-mmdiff.h
+  manual: manual/mulib-mmdiff.md
+  macro: MULIB_IMPL_MMDIFF
+  purpose: Binary memory copy-insert differences and checked patch application.
+  dependencies: [vec, buffer]
+  status: implemented
+- name: xml
+  header: include/mulib-xml.h
+  manual: manual/mulib-xml.md
+  macro: MULIB_IMPL_XML
+  purpose: Owned XML document trees, parsing, escaping, and serialization.
+  dependencies: [strbuf, utf8]
+  status: implemented
+- name: xpath
+  header: include/mulib-xpath.h
+  manual: manual/mulib-xpath.md
+  macro: MULIB_IMPL_XPATH
+  purpose: Focused path and predicate queries over the MuLIB XML tree.
+  dependencies: [xml]
+  status: implemented
+- name: terminfo
+  header: include/mulib-terminfo.h
+  manual: manual/mulib-terminfo.md
+  macro: MULIB_IMPL_TERMINFO
+  purpose: Terminal capability loading and parameter expansion.
+  dependencies: [strbuf]
+  status: implemented
+- name: termkey
+  header: include/mulib-termkey.h
+  manual: manual/mulib-termkey.md
+  macro: MULIB_IMPL_TERMKEY
+  purpose: Incremental UTF-8 and terminal escape-sequence key decoding.
+  dependencies: [utf8]
+  status: implemented
+- name: vterm
+  header: include/mulib-vterm.h
+  manual: manual/mulib-vterm.md
+  macro: MULIB_IMPL_VTERM
+  purpose: Focused virtual-terminal screen, cursor, and rendition emulation.
+  dependencies: [grid, utf8]
+  status: implemented
+- name: tui
+  header: include/mulib-tui.h
+  manual: manual/mulib-tui.md
+  macro: MULIB_IMPL_TUI
+  purpose: Terminal UI rendering built on shared screen and input abstractions.
+  dependencies: [vterm, termkey, terminfo]
+  status: implemented
+- name: dynload
+  header: include/mulib-dynload.h
+  manual: manual/mulib-dynload.md
+  macro: MULIB_IMPL_DYNLOAD
+  purpose: Native dynamic library and symbol lifetime management.
+  dependencies: []
+  status: implemented
+- name: yaml
+  header: include/mulib-yaml.h
+  manual: manual/mulib-yaml.md
+  macro: MULIB_IMPL_YAML
+  purpose: Focused YAML configuration parsing and emission using the JSON value model.
+  dependencies: [json, strbuf, utf8]
+  status: implemented
+- name: json
+  header: include/mulib-json.h
+  manual: manual/mulib-json.md
+  macro: MULIB_IMPL_JSON
+  purpose: Owned JSON values with parser-combinator-based parsing and serialization.
+  dependencies: [parsec, strbuf, utf8]
+  status: implemented
+- name: toml
+  header: include/mulib-toml.h
+  manual: manual/mulib-toml.md
+  macro: MULIB_IMPL_TOML
+  purpose: Focused TOML configuration parsing and emission using the JSON value model.
+  dependencies: [json, strbuf, utf8]
+  status: implemented
+- name: rpc
+  header: include/mulib-rpc.h
+  manual: manual/mulib-rpc.md
+  macro: MULIB_IMPL_RPC
+  purpose: Transport-independent JSON-RPC 2.0 dispatch and response construction.
+  dependencies: [json]
+  status: implemented
+- name: dbus
+  header: include/mulib-dbus.h
+  manual: manual/mulib-dbus.md
+  macro: MULIB_IMPL_DBUS
+  purpose: Focused endian-aware DBus binary wire encoding and validation.
+  dependencies: [endian, buffer, strbuf, utf8]
+  status: implemented
+- name: minivm
+  header: include/mulib-minivm.h
+  manual: manual/mulib-minivm.md
+  macro: MULIB_IMPL_MINIVM
+  purpose: Checked stack bytecode execution with bounded resources and faults.
+  dependencies: []
+  status: implemented
+- name: drm
+  header: include/mulib-drm.h
+  manual: manual/mulib-drm.md
+  macro: MULIB_IMPL_DRM
+  purpose: Linux Direct Rendering Manager capability and dumb-buffer helpers.
+  dependencies: []
+  status: implemented
+- name: elf
+  header: include/mulib-elf.h
+  manual: manual/mulib-elf.md
+  macro: MULIB_IMPL_ELF
+  purpose: Bounds-checked endian-aware ELF32 and ELF64 binary inspection.
+  dependencies: [endian]
+  status: implemented
+- name: http
+  header: include/mulib-http.h
+  manual: manual/mulib-http.md
+  macro: MULIB_IMPL_HTTP
+  purpose: Length-aware HTTP/1.1 message parsing and serialization.
+  dependencies: [uri, buffer]
+  status: implemented
+- name: uri
+  header: include/mulib-uri.h
+  manual: manual/mulib-uri.md
+  macro: MULIB_IMPL_URI
+  purpose: URI component parsing, composition, and relative-reference resolution.
+  dependencies: [strbuf]
+  status: implemented
+- name: markdown
+  header: include/mulib-markdown.h
+  manual: manual/mulib-markdown.md
+  macro: MULIB_IMPL_MARKDOWN
+  purpose: Focused Markdown rendering through shared HTML-building utilities.
+  dependencies: [html]
+  status: implemented
+- name: avl
+  header: include/mulib-avl.h
+  manual: manual/mulib-avl.md
+  macro: MULIB_IMPL_AVL
+  purpose: Height-balanced AVL ordered maps with insertion and deletion.
+  dependencies: []
+  status: implemented
+- name: b+tree
+  header: include/mulib-b+tree.h
+  manual: manual/mulib-b+tree.md
+  macro: MULIB_IMPL_BPTREE
+  purpose: B+ tree ordered storage with linked leaves and range traversal.
+  dependencies: []
+  status: implemented
+- name: hattrie
+  header: include/mulib-hattrie.h
+  manual: manual/mulib-hattrie.md
+  macro: MULIB_IMPL_HATTRIE
+  purpose: Hash-bucket trie string indexing and prefix enumeration.
+  dependencies: [hash]
+  status: implemented
+- name: peg
+  header: include/mulib-peg.h
+  manual: manual/mulib-peg.md
+  macro: MULIB_IMPL_PEG
+  purpose: Parsing expression grammar compilation and matching.
+  dependencies: [parsec, strbuf]
+  status: implemented
+- name: regex
+  header: include/mulib-regex.h
+  manual: manual/mulib-regex.md
+  macro: MULIB_IMPL_REGEX
+  purpose: Self-contained regular-expression compilation and matching.
+  dependencies: []
+  status: implemented
+- name: graphviz
+  header: include/mulib-graphviz.h
+  manual: manual/mulib-graphviz.md
+  macro: MULIB_IMPL_GRAPHVIZ
+  purpose: Quoted DOT graph rendering from shared graph data.
+  dependencies: [graph, strbuf, utf8]
+  status: implemented
+- name: vector
+  header: include/mulib-vector.h
+  manual: manual/mulib-vector.md
+  macro: MULIB_IMPL_VECTOR
+  purpose: Arbitrary-dimensional numerical vector algebra over mulib-vec.
+  dependencies: [vec]
+  status: implemented
+- name: svg
+  header: include/mulib-svg.h
+  manual: manual/mulib-svg.md
+  macro: MULIB_IMPL_SVG
+  purpose: Escaped SVG shape and document construction using shared markup.
+  dependencies: [xml]
+  status: implemented
+- name: html
+  header: include/mulib-html.h
+  manual: manual/mulib-html.md
+  macro: MULIB_IMPL_HTML
+  purpose: Escaped HTML construction using the shared document model.
+  dependencies: [xml]
+  status: implemented
+- name: css
+  header: include/mulib-css.h
+  manual: manual/mulib-css.md
+  macro: MULIB_IMPL_CSS
+  purpose: Focused CSS parsing and selector matching over markup trees.
+  dependencies: [xml]
+  status: implemented
 project_files:
 - file: MANIFEST.yaml
   purpose: Complete inventory of modules, manuals, examples, and supporting files.
@@ -634,8 +963,128 @@ project_files:
 - file: tests/functional.c
   purpose: Runtime tests for parsing, containers, arithmetic, serializers, and utilities.
 - file: tests/implementation.c
-  purpose: One implementation translation unit defining all 67 module switches.
+  purpose: One implementation translation unit defining all 114 module switches.
 - file: tests/smoke.c
   purpose: Core API smoke tests with assertions.
 - file: tools/check.py
-  purpose: Standalone module example compilation and execution verifier.
+  purpose: Inventory, isolated-header, example, composition, and focused-test verifier.
+- file: manual/modules.md
+  purpose: Module index, dependency ownership, scope, and composition guide.
+- file: tests/composition.c
+  purpose: Cross-module composition through a separate implementation translation unit.
+- file: examples/dogfood.c
+  purpose: Parser-backed JSON feeding numerical vector algebra.
+- file: examples/modules/alloc.c
+  purpose: Compilable isolated usage example for the alloc module.
+- file: examples/modules/mempool.c
+  purpose: Compilable isolated usage example for the mempool module.
+- file: examples/modules/strpool.c
+  purpose: Compilable isolated usage example for the strpool module.
+- file: examples/modules/pybind.c
+  purpose: Compilable isolated usage example for the pybind module.
+- file: examples/modules/rubybind.c
+  purpose: Compilable isolated usage example for the rubybind module.
+- file: examples/modules/parsec.c
+  purpose: Compilable isolated usage example for the parsec module.
+- file: examples/modules/template.c
+  purpose: Compilable isolated usage example for the template module.
+- file: examples/modules/kvdb.c
+  purpose: Compilable isolated usage example for the kvdb module.
+- file: examples/modules/port.c
+  purpose: Compilable isolated usage example for the port module.
+- file: examples/modules/atn.c
+  purpose: Compilable isolated usage example for the atn module.
+- file: examples/modules/glr.c
+  purpose: Compilable isolated usage example for the glr module.
+- file: examples/modules/sppf.c
+  purpose: Compilable isolated usage example for the sppf module.
+- file: examples/modules/gss.c
+  purpose: Compilable isolated usage example for the gss module.
+- file: examples/modules/archive.c
+  purpose: Compilable isolated usage example for the archive module.
+- file: examples/modules/mmfile.c
+  purpose: Compilable isolated usage example for the mmfile module.
+- file: examples/modules/memtkx.c
+  purpose: Compilable isolated usage example for the memtkx module.
+- file: examples/modules/minish.c
+  purpose: Compilable isolated usage example for the minish module.
+- file: examples/modules/txtdiff.c
+  purpose: Compilable isolated usage example for the txtdiff module.
+- file: examples/modules/mmdiff.c
+  purpose: Compilable isolated usage example for the mmdiff module.
+- file: examples/modules/xml.c
+  purpose: Compilable isolated usage example for the xml module.
+- file: examples/modules/xpath.c
+  purpose: Compilable isolated usage example for the xpath module.
+- file: examples/modules/terminfo.c
+  purpose: Compilable isolated usage example for the terminfo module.
+- file: examples/modules/termkey.c
+  purpose: Compilable isolated usage example for the termkey module.
+- file: examples/modules/vterm.c
+  purpose: Compilable isolated usage example for the vterm module.
+- file: examples/modules/tui.c
+  purpose: Compilable isolated usage example for the tui module.
+- file: examples/modules/dynload.c
+  purpose: Compilable isolated usage example for the dynload module.
+- file: examples/modules/yaml.c
+  purpose: Compilable isolated usage example for the yaml module.
+- file: examples/modules/json.c
+  purpose: Compilable isolated usage example for the json module.
+- file: examples/modules/toml.c
+  purpose: Compilable isolated usage example for the toml module.
+- file: examples/modules/rpc.c
+  purpose: Compilable isolated usage example for the rpc module.
+- file: examples/modules/dbus.c
+  purpose: Compilable isolated usage example for the dbus module.
+- file: examples/modules/minivm.c
+  purpose: Compilable isolated usage example for the minivm module.
+- file: examples/modules/drm.c
+  purpose: Compilable isolated usage example for the drm module.
+- file: examples/modules/elf.c
+  purpose: Compilable isolated usage example for the elf module.
+- file: examples/modules/http.c
+  purpose: Compilable isolated usage example for the http module.
+- file: examples/modules/uri.c
+  purpose: Compilable isolated usage example for the uri module.
+- file: examples/modules/markdown.c
+  purpose: Compilable isolated usage example for the markdown module.
+- file: examples/modules/avl.c
+  purpose: Compilable isolated usage example for the avl module.
+- file: examples/modules/b+tree.c
+  purpose: Compilable isolated usage example for the b+tree module.
+- file: examples/modules/hattrie.c
+  purpose: Compilable isolated usage example for the hattrie module.
+- file: examples/modules/peg.c
+  purpose: Compilable isolated usage example for the peg module.
+- file: examples/modules/regex.c
+  purpose: Compilable isolated usage example for the regex module.
+- file: examples/modules/graphviz.c
+  purpose: Compilable isolated usage example for the graphviz module.
+- file: examples/modules/vector.c
+  purpose: Compilable isolated usage example for the vector module.
+- file: examples/modules/svg.c
+  purpose: Compilable isolated usage example for the svg module.
+- file: examples/modules/html.c
+  purpose: Compilable isolated usage example for the html module.
+- file: examples/modules/css.c
+  purpose: Compilable isolated usage example for the css module.
+- file: tests/test_config.c
+  purpose: Focused runtime and malformed-input tests for new modules.
+- file: tests/test_foundations.c
+  purpose: Focused runtime and malformed-input tests for new modules.
+- file: tests/test_grammar.c
+  purpose: Focused runtime and malformed-input tests for new modules.
+- file: tests/test_indexes.c
+  purpose: Focused runtime and malformed-input tests for new modules.
+- file: tests/test_markup.c
+  purpose: Focused runtime and malformed-input tests for new modules.
+- file: tests/test_parsers.c
+  purpose: Focused runtime and malformed-input tests for new modules.
+- file: tests/test_protocols.c
+  purpose: Focused runtime and malformed-input tests for new modules.
+- file: tests/test_runtime.c
+  purpose: Focused runtime and malformed-input tests for new modules.
+- file: tests/test_storage.c
+  purpose: Focused runtime and malformed-input tests for new modules.
+- file: tests/test_terminal.c
+  purpose: Focused runtime and malformed-input tests for new modules.

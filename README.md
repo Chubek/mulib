@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **67 implemented modules**.
+A C11 modular single-header utility library with **114 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -44,9 +44,35 @@ Run tests: `cmake -S . -B build && cmake --build build && ctest --test-dir build
 
 For multi-translation-unit use, define each implementation macro in exactly one `.c` file and include normal declarations everywhere else. Do not define implementation macros in globally distributed compiler flags. Headers should compile standalone. C++ clients should compile at least the implementation TU as C11 unless they specifically test C++ compatibility.
 
+Modules reuse each other. Define the implementation switches for **all transitive
+dependencies** before including any of their headers; dependency switches are
+never enabled implicitly. Each manual and standalone example lists the required
+switches. For example, the JSON parser uses MuLIB parser combinators, UTF-8
+validation, and string builders:
+
+```c
+#define MULIB_IMPL_PARSEC
+#define MULIB_IMPL_STRBUF
+#define MULIB_IMPL_UTF8
+#define MULIB_IMPL_JSON
+#include <mulib-json.h>
+```
+
+YAML, TOML, templates, and JSON-RPC share the JSON value model instead of
+maintaining competing trees. Other composition paths include allocation
+tracking with memory pools, shared grammar/forest/stack machinery, and markup
+builders and queries over a shared document model. See [the module guide](manual/modules.md).
+
 ## Scope and limitations
 
-The term *header-only* here means no prebuilt or separately shipped `.c` files; implementations live in headers behind feature switches. These modules are lightweight building blocks, not complete substitutes for a production Tcl distribution, POSIX manuals toolchain, JSON Schema validator, full Unicode database or cryptographic engine. `mulib-microtcl.h` `loadall()` registers **all MuLIB MicroTcl built-ins**, not external Tcl packages. Documented support and actual APIs determine feature completeness. All names and responsibilities are enumerated in `MANIFEST.yaml`; every header has a dedicated manual in `manual/` and embedded Doxygen text.
+The term *header-only* here means no prebuilt or separately shipped `.c` files; implementations live in headers behind feature switches. These modules implement focused, documented APIs, not every feature implied by a format's name. In particular, configuration, markup, terminal, protocol, and grammar modules document their supported syntax and limits; they are not claims of full YAML, TOML, XPath, HTML5, CSS, CommonMark, VT, or DBus conformance. Unsupported features must not be mistaken for supported conversions. These modules are not complete substitutes for a production Tcl distribution, POSIX manuals toolchain, JSON Schema validator, full Unicode database or cryptographic engine. `mulib-microtcl.h` `loadall()` registers **all MuLIB MicroTcl built-ins**, not external Tcl packages. Documented support and actual APIs determine feature completeness. All names and responsibilities are enumerated in `MANIFEST.yaml`; every header has a dedicated manual in `manual/` and embedded Doxygen text.
+
+There are no third-party library dependencies. Platform modules use operating-system
+APIs and document platform restrictions; dynamic loading may need `-ldl`, and
+numerical modules may need `-lm`. DRM refers to Linux Direct Rendering Manager.
+Python and Ruby modules **generate ctypes/Fiddle binding source** rather than
+embedding or linking an interpreter. Using their generated source naturally
+requires the target language runtime and the described C shared library.
 
 ## Licensing
 
@@ -54,10 +80,19 @@ MuLIB's new source is MIT-licensed, with no code copied from the supplied CTL an
 
 ## Extensive examples and test coverage
 
-Each of the 67 module manuals includes a concrete, independently compilable C example.
-Those examples are also provided as `examples/modules/*.c` files. Run
-`python3 tools/check.py` to compile all 67 with `-Wall -Wextra -Werror` and run them.
+Every module has a dedicated manual in `manual/` and an independently compilable
+C example in `examples/modules/`. Run
+`python3 tools/check.py` to compile all examples and focused tests with
+`-O2 -Wall -Wextra -Wpedantic -Werror`, check headers independently, and test combined implementations
+and declaration-only C/C++ inclusion. Use `CC=clang CXX=clang++` for Clang or
+add `--sanitizers` for ASan/UBSan.
 Optionally use `cmake -S . -B build -DMULIB_BUILD_MODULE_EXAMPLES=ON` to build and run them
 under CTest. `tests/functional.c` covers multi-module usage and representative edge cases;
 `tests/all_headers.c` checks that all implementations can coexist in a single C translation unit;
 `tests/declarations.c` checks declaration-only inclusion.
+Focused `tests/test_*.c` suites cover the new libraries. CMake also supports
+`-DMULIB_SANITIZERS=ON`; test working directories are isolated for parallel CTest runs.
+`tests/composition.c` verifies JSON → YAML → TOML → template composition and
+tracked allocation/container/vector usage through a separate implementation
+translation unit. `examples/dogfood.c` demonstrates parser-backed JSON feeding
+vector algebra.

@@ -4,7 +4,7 @@
 
 ## Purpose and design
 
-Dynamically growing NUL-terminated text builder. Successful append always maintains a trailing NUL. For empty newly initialized builders data is NULL until the first append. Appending from within the same buffer may be unsafe if growth reallocates it.
+Dynamically growing NUL-terminated text builder. Successful append always maintains a trailing NUL. For empty newly initialized builders data is NULL until the first append. Appending a range from the same builder is supported even when growth reallocates it; the source range must fit within the existing bytes, including the trailing NUL.
 
 This component is intended to be selected independently from MuLIB's other headers. It does not force clients to link a binary runtime. It follows explicit lifecycle management and uses public `mulib_` names to avoid common clashes with the C standard library and other toolkits. The implementation is intentionally small enough to audit. Prefer using this module in code where its documented representation, algorithmic behavior, and error contract match the workload rather than treating it as an automatic replacement for a large specialized dependency.
 
@@ -39,7 +39,7 @@ The declarations are stable C entry points, with `extern "C"` linkage when compi
 
 ## Ownership, errors, and lifetime
 
-Successful append always maintains a trailing NUL. For empty newly initialized builders data is NULL until the first append. Appending from within the same buffer may be unsafe if growth reallocates it. Values returned through output parameters are only guaranteed after a successful call. For functions returning an integer success code, **1** means success and **0** means failure unless a more specific result is documented by the API. Do not infer a `errno` value from an API that does not explicitly promise one. For heap-allocated state, pair creation or initialization with its corresponding destroy or free operation. Never reuse internal buffer pointers after an operation that can grow or release storage.
+Successful append always maintains a trailing NUL. For empty newly initialized builders data is NULL until the first append. Appending from within the same builder is supported even across growth. Values returned through output parameters are only guaranteed after a successful call. For functions returning an integer success code, **1** means success and **0** means failure unless a more specific result is documented by the API. Do not infer a `errno` value from an API that does not explicitly promise one. For heap-allocated state, pair creation or initialization with its corresponding destroy or free operation. Never reuse internal buffer pointers after an operation that can grow or release storage.
 
 ## Behavior, constraints, and interoperability
 

@@ -3,7 +3,7 @@
  * @brief Dynamically growing binary byte buffer.
  * @defgroup mulib_buffer MuLIB buffer
  * @{
- * @details Unlike strbuf, buffer permits zero bytes and does not append a string terminator.
+ * @details Unlike strbuf, buffer permits zero bytes and does not append a string terminator. Appending a range from the same buffer is supported, including when growth reallocates it.
  * @par Integration
  * In exactly one translation unit define MULIB_IMPL_BUFFER before including this file.
  * Other translation units may include it without the implementation switch.
@@ -51,8 +51,43 @@ void mulib_buffer_free(mulib_buffer_t*b);
 extern "C" {
 #endif
 void mulib_buffer_init(mulib_buffer_t*b){if(b)memset(b,0,sizeof(*b));}
-int mulib_buffer_append(mulib_buffer_t*b,const void*p,size_t n){if(!b||(!p&&n)||n>SIZE_MAX-b->length)return 0;size_t want=b->length+n;if(want>b->capacity){size_t cap=b->capacity?b->capacity:64;while(cap<want){if(cap>SIZE_MAX/2){cap=want;break;}cap*=2;}void*q=realloc(b->data,cap);if(!q)return 0;b->data=q;b->capacity=cap;}if(n)memmove(b->data+b->length,p,n);b->length=want;return 1;}
-int mulib_buffer_remove(mulib_buffer_t*b,size_t off,size_t n){if(!b||off>b->length||n>b->length-off)return 0;memmove(b->data+off,b->data+off+n,b->length-off-n);b->length-=n;return 1;}
+int mulib_buffer_append(mulib_buffer_t *b, const void *p, size_t n) {
+    size_t offset = 0, want;
+    int internal = 0;
+    if (!b || (!p && n) || n > SIZE_MAX - b->length) return 0;
+    if (b->data && p) {
+        uintptr_t base = (uintptr_t)b->data, source = (uintptr_t)p;
+        if (source >= base && source - base <= b->length) {
+            offset = (size_t)(source - base);
+            if (n > b->length - offset) return 0;
+            internal = 1;
+        }
+    }
+    want = b->length + n;
+    if (want > b->capacity) {
+        size_t cap = b->capacity ? b->capacity : 64;
+        void *next;
+        while (cap < want) {
+            if (cap > SIZE_MAX / 2) { cap = want; break; }
+            cap *= 2;
+        }
+        next = realloc(b->data, cap);
+        if (!next) return 0;
+        b->data = next;
+        b->capacity = cap;
+    }
+    if (internal) p = b->data + offset;
+    if (n) memmove(b->data + b->length, p, n);
+    b->length = want;
+    return 1;
+}
+int mulib_buffer_remove(mulib_buffer_t *b, size_t off, size_t n) {
+    if (!b || off > b->length || n > b->length - off) return 0;
+    if (!n) return 1;
+    memmove(b->data + off, b->data + off + n, b->length - off - n);
+    b->length -= n;
+    return 1;
+}
 void mulib_buffer_free(mulib_buffer_t*b){if(b){free(b->data);memset(b,0,sizeof(*b));}}
 #ifdef __cplusplus
 }
