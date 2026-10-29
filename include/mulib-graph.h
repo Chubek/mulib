@@ -50,8 +50,8 @@ void mulib_graph_free(mulib_graph_t*g);
 #ifdef __cplusplus
 extern "C" {
 #endif
-int mulib_graph_init(mulib_graph_t*g,size_t n){if(!g||(n&&n>SIZE_MAX/n))return 0;g->n=n;g->edges=calloc((n?n*n:1),1);return g->edges!=NULL;}
-int mulib_graph_edge(mulib_graph_t*g,size_t a,size_t b,int on){if(!g||a>=g->n||b>=g->n)return 0;g->edges[a*g->n+b]=(unsigned char)!!on;return 1;}
+int mulib_graph_init(mulib_graph_t*g,size_t n){if(!g||(n&&n>SIZE_MAX/n))return 0;unsigned char*p=calloc(n?n*n:1,1);if(!p)return 0;g->n=n;g->edges=p;return 1;}
+int mulib_graph_edge(mulib_graph_t*g,size_t a,size_t b,int on){if(!g||!g->edges||a>=g->n||b>=g->n)return 0;g->edges[a*g->n+b]=(unsigned char)!!on;return 1;}
 int mulib_graph_bfs(const mulib_graph_t*g,size_t start,size_t*out,size_t cap){if(!g||start>=g->n||!out||cap<g->n||g->n>SIZE_MAX/sizeof(size_t))return -1;unsigned char*seen=calloc(g->n,1);size_t*q=malloc(g->n*sizeof(size_t));if(!seen||!q){free(q);free(seen);return -1;}size_t head=0,tail=0;q[tail++]=start;seen[start]=1;while(head<tail){size_t u=q[head++];out[head-1]=u;for(size_t v=0;v<g->n;v++)if(g->edges[u*g->n+v]&&!seen[v]){seen[v]=1;q[tail++]=v;}}free(q);free(seen);return tail>INT_MAX?-1:(int)tail;}
 void mulib_graph_free(mulib_graph_t*g){if(g){free(g->edges);memset(g,0,sizeof(*g));}}
 #ifdef __cplusplus

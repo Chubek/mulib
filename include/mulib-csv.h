@@ -44,7 +44,56 @@ int mulib_csv_parse(const char*source,mulib_csv_row_callback callback,void*user)
 #ifdef __cplusplus
 extern "C" {
 #endif
-int mulib_csv_parse(const char*s,mulib_csv_row_callback cb,void*user){if(!s||!cb)return 0;size_t cap=8,n=0;char**fields=malloc(cap*sizeof(char*));if(!fields)return 0;int ok=1;while(*s){n=0;int done=0;while(!done){size_t bc=64,len=0;char*b=malloc(bc);if(!b){ok=0;goto end;}int quoted=*s=='"';if(quoted)s++;int closed=!quoted;while(*s){if(quoted){if(*s=='"'){if(s[1]=='"')s++;else{closed=1;s++;break;}}}else if(*s==','||*s=='\n'||*s=='\r')break;if(len+1>=bc){size_t nc=bc*2;char*p=realloc(b,nc);if(!p){free(b);ok=0;goto end;}b=p;bc=nc;}b[len++]=*s++;}if(!closed){free(b);ok=0;goto end;}b[len]=0;if(n==cap){size_t nc=cap*2;char**p=realloc(fields,nc*sizeof(char*));if(!p){free(b);ok=0;goto end;}fields=p;cap=nc;}fields[n++]=b;if(*s==','){s++;continue;}if(*s=='\r')s++;if(*s=='\n')s++;done=1;}if(!cb(user,(const char*const*)fields,n)){ok=0;goto end;}for(size_t i=0;i<n;i++)free(fields[i]);n=0;}end:for(size_t i=0;i<n;i++)free(fields[i]);free(fields);return ok;}
+int mulib_csv_parse(const char *s, mulib_csv_row_callback cb, void *user) {
+    size_t cap = 8, n = 0; char **fields; int ok = 0;
+    if (!s || !cb) return 0;
+    fields = (char **)malloc(cap*sizeof(*fields)); if (!fields) return 0;
+    while (*s) {
+        int done = 0;
+        while (!done) {
+            size_t capacity = 64, length = 0; char *b = (char *)malloc(capacity);
+            int quoted = *s == '"', closed = !quoted;
+            if (!b) goto end;
+            if (quoted) ++s;
+            while (*s) {
+                if (quoted && *s == '"') {
+                    if (s[1] == '"') ++s;
+                    else { ++s; closed = 1; break; }
+                } else if (!quoted) {
+                    if (*s == ',' || *s == '\r' || *s == '\n') break;
+                    if (*s == '"') { free(b); goto end; }
+                }
+                if (length == capacity-1) {
+                    size_t next_capacity; char *next;
+                    if (capacity > SIZE_MAX/2) { free(b); goto end; }
+                    next_capacity = capacity*2; next = (char *)realloc(b,next_capacity);
+                    if (!next) { free(b); goto end; } b = next; capacity = next_capacity;
+                }
+                b[length++] = *s++;
+            }
+            if (!closed || (*s && *s != ',' && *s != '\r' && *s != '\n')) { free(b); goto end; }
+            b[length] = 0;
+            if (n == cap) {
+                char **next;
+                if (cap > SIZE_MAX/2/sizeof(*fields)) { free(b); goto end; }
+                next = (char **)realloc(fields,cap*2*sizeof(*fields));
+                if (!next) { free(b); goto end; } fields = next; cap *= 2;
+            }
+            fields[n++] = b;
+            if (*s == ',') { ++s; continue; }
+            if (*s == '\r') ++s;
+            if (*s == '\n') ++s;
+            done = 1;
+        }
+        if (!cb(user,(const char *const *)fields,n)) goto end;
+        for (size_t i = 0; i < n; ++i) free(fields[i]);
+        n = 0;
+    }
+    ok = 1;
+end:
+    for (size_t i = 0; i < n; ++i) free(fields[i]);
+    free(fields); return ok;
+}
 #ifdef __cplusplus
 }
 #endif

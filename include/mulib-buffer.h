@@ -54,12 +54,12 @@ void mulib_buffer_init(mulib_buffer_t*b){if(b)memset(b,0,sizeof(*b));}
 int mulib_buffer_append(mulib_buffer_t *b, const void *p, size_t n) {
     size_t offset = 0, want;
     int internal = 0;
-    if (!b || (!p && n) || n > SIZE_MAX - b->length) return 0;
+    if (!b || (!p && n) || b->length > b->capacity || (!b->data && b->capacity) || n > SIZE_MAX - b->length) return 0;
     if (b->data && p) {
         uintptr_t base = (uintptr_t)b->data, source = (uintptr_t)p;
-        if (source >= base && source - base <= b->length) {
+        if (source >= base && source - base <= b->capacity) {
             offset = (size_t)(source - base);
-            if (n > b->length - offset) return 0;
+            if (offset > b->length || n > b->length - offset) return 0;
             internal = 1;
         }
     }

@@ -52,9 +52,9 @@ void mulib_bitset_free(mulib_bitset_t*b);
 #ifdef __cplusplus
 extern "C" {
 #endif
-int mulib_bitset_init(mulib_bitset_t*b,size_t n){if(!b||n>SIZE_MAX-7)return 0;b->bits=n;b->bytes=calloc((n+7)/8? (n+7)/8:1,1);return b->bytes!=NULL;}
-int mulib_bitset_test(const mulib_bitset_t*b,size_t i){return b&&i<b->bits?(b->bytes[i/8]>>(i%8))&1:0;}
-int mulib_bitset_set(mulib_bitset_t*b,size_t i,int v){if(!b||i>=b->bits)return 0;unsigned char mask=(unsigned char)(1u<<(i%8));if(v)b->bytes[i/8]|=mask;else b->bytes[i/8]&=(unsigned char)~mask;return 1;}
+int mulib_bitset_init(mulib_bitset_t*b,size_t n){if(!b||n>SIZE_MAX-7)return 0;unsigned char*p=calloc(n?(n+7)/8:1,1);if(!p)return 0;b->bits=n;b->bytes=p;return 1;}
+int mulib_bitset_test(const mulib_bitset_t*b,size_t i){return b&&b->bytes&&i<b->bits?(b->bytes[i/8]>>(i%8))&1:0;}
+int mulib_bitset_set(mulib_bitset_t*b,size_t i,int v){if(!b||!b->bytes||i>=b->bits)return 0;unsigned char mask=(unsigned char)(1u<<(i%8));if(v)b->bytes[i/8]|=mask;else b->bytes[i/8]&=(unsigned char)~mask;return 1;}
 size_t mulib_bitset_count(const mulib_bitset_t*b){if(!b||!b->bytes)return 0;size_t cnt=0;for(size_t i=0;i<(b->bits+7)/8;i++){unsigned char x=b->bytes[i];while(x){cnt++;x&=(unsigned char)(x-1);}}return cnt;}
 void mulib_bitset_free(mulib_bitset_t*b){if(b){free(b->bytes);b->bytes=NULL;b->bits=0;}}
 #ifdef __cplusplus

@@ -34,3 +34,9 @@ Add success, malformed-input, empty-input, boundary, ownership, allocation-failu
 also compiles headers independently with their transitive implementation
 dependencies and validates the manifest/manual/example inventory. CMake's
 `MULIB_SANITIZERS` option and the checker's `--sanitizers` flag enable ASan/UBSan.
+
+For shared storage or parser changes, also run `tests/test_hardening.c` (moving
+allocation/failure injection) and `tests/test_hostile_inputs.c`. The optional
+Clang `MULIB_BUILD_FUZZER` target enables bounded mutation fuzzing; see
+`manual/hardening.md` for commands and verification limits. Do not replace
+documented focused APIs with claims of full standards or security compliance.

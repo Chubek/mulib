@@ -56,12 +56,13 @@ void mulib_strbuf_init(mulib_strbuf_t*s){if(s)memset(s,0,sizeof(*s));}
 int mulib_strbuf_append_n(mulib_strbuf_t *s, const char *text, size_t n) {
     size_t offset = 0, need;
     int internal = 0;
-    if (!s || (!text && n) || s->length == SIZE_MAX || n > SIZE_MAX - s->length - 1) return 0;
+    if (!s || (!text && n) || s->length == SIZE_MAX || s->length > s->capacity ||
+        (!s->data && s->capacity) || (s->data && s->length >= s->capacity) || n > SIZE_MAX - s->length - 1) return 0;
     if (s->data && text) {
         uintptr_t base = (uintptr_t)s->data, source = (uintptr_t)text;
-        if (source >= base && source - base <= s->length) {
+        if (source >= base && source - base <= s->capacity) {
             offset = (size_t)(source - base);
-            if (n > s->length - offset + 1) return 0;
+            if (offset > s->length || n > s->length - offset + 1) return 0;
             internal = 1;
         }
     }

@@ -38,6 +38,13 @@ The declarations are stable C entry points, with `extern "C"` linkage when compi
 
 Implements `MAJOR.MINOR.PATCH` only. Prerelease tags and build metadata from the complete SemVer 2.0 specification are not supported. Values returned through output parameters are only guaranteed after a successful call. For functions returning an integer success code, **1** means success and **0** means failure unless a more specific result is documented by the API. Do not infer a `errno` value from an API that does not explicitly promise one. For heap-allocated state, pair creation or initialization with its corresponding destroy or free operation. Never reuse internal buffer pointers after an operation that can grow or release storage.
 
+## Strict triplet grammar
+
+Each component is decimal 0..UINT_MAX, without a sign or leading zeroes (except
+the single digit `0`). No surrounding/internal whitespace is accepted. Overflow,
+suffixes and trailing data return zero with output unchanged. The parser does
+not rely on scanf integer conversion and therefore does not wrap oversized input.
+
 ## Behavior, constraints, and interoperability
 
 Operations are designed around bounded input, explicit lengths where relevant, and ordinary C ownership. They do not perform locking and do not provide a global allocator override. File, terminal and parser functions are intended as lightweight building blocks; inputs that require complete standard compliance, hostile-input hardening or advanced Unicode processing may need a dedicated mature library. Confirm prerequisites and endianness for binary serialization; never serialize the memory layout of MuLIB structures directly.

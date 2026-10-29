@@ -50,7 +50,7 @@ void mulib_dsu_free(mulib_dsu_t*d);
 #ifdef __cplusplus
 extern "C" {
 #endif
-int mulib_dsu_init(mulib_dsu_t*d,size_t n){if(!d||n>SIZE_MAX/sizeof(size_t))return 0;memset(d,0,sizeof(*d));d->parent=malloc((n?n:1)*sizeof(size_t));d->rank=calloc(n?n:1,1);if(!d->parent||!d->rank){mulib_dsu_free(d);return 0;}d->count=n;for(size_t i=0;i<n;i++)d->parent[i]=i;return 1;}
+int mulib_dsu_init(mulib_dsu_t*d,size_t n){if(!d||n>SIZE_MAX/sizeof(size_t))return 0;size_t*parent=malloc((n?n:1)*sizeof(size_t));unsigned char*rank=calloc(n?n:1,1);if(!parent||!rank){free(parent);free(rank);return 0;}for(size_t i=0;i<n;i++)parent[i]=i;d->parent=parent;d->rank=rank;d->count=n;return 1;}
 size_t mulib_dsu_find(mulib_dsu_t*d,size_t i){if(!d||i>=d->count)return SIZE_MAX;size_t x=i;while(d->parent[x]!=x)x=d->parent[x];while(i!=x){size_t p=d->parent[i];d->parent[i]=x;i=p;}return x;}
 int mulib_dsu_union(mulib_dsu_t*d,size_t a,size_t b){a=mulib_dsu_find(d,a);b=mulib_dsu_find(d,b);if(a==SIZE_MAX||b==SIZE_MAX)return 0;if(a==b)return 1;if(d->rank[a]<d->rank[b]){size_t t=a;a=b;b=t;}d->parent[b]=a;if(d->rank[a]==d->rank[b])d->rank[a]++;return 1;}
 void mulib_dsu_free(mulib_dsu_t*d){if(d){free(d->parent);free(d->rank);memset(d,0,sizeof(*d));}}

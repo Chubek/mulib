@@ -2,12 +2,13 @@
  * @file mulib-uri.h
  * @brief RFC 3986 ASCII URI references, composition, and relative resolution.
  * Parsing borrows the input, preserves escapes/case, and never decodes delimiters.
- * Define MULIB_IMPL_URI once; also implement the mulib-strbuf dependency.
+ * Define MULIB_IMPL_URI, STRBUF, INET6, INET4 and PARSEC once.
  */
 #ifndef MULIB_URI_H
 #define MULIB_URI_H
 #include <stddef.h>
 #include "mulib-strbuf.h"
+#include "mulib-inte6.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,75 +44,40 @@ static int mulib_uri_alpha_(unsigned char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 static int mulib_uri_digit_(unsigned char c) { return c >= '0' && c <= '9'; }
-static int mulib_uri_hex_(unsigned char c) {
-    return mulib_uri_digit_(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-}
 static int mulib_uri_unreserved_(unsigned char c) {
     return mulib_uri_alpha_(c) || mulib_uri_digit_(c) || c == '-' || c == '.' || c == '_' || c == '~';
 }
 static int mulib_uri_sub_(unsigned char c) {
     return c != 0 && strchr("!$&'()*+,;=", c) != NULL;
 }
-static int mulib_uri_component_(const char *s, size_t n, const char *extra) {
-    size_t i;
-    for (i = 0; i < n; ++i) {
-        unsigned char c = (unsigned char)s[i];
-        if (c == '%') {
-            if (n - i < 3 || !mulib_uri_hex_((unsigned char)s[i+1]) || !mulib_uri_hex_((unsigned char)s[i+2])) return 0;
-            i += 2;
-        } else if (!mulib_uri_unreserved_(c) && !mulib_uri_sub_(c) && !(c && strchr(extra, c))) return 0;
-    }
-    return 1;
+static int mulib_uri_plain_(unsigned char c, void *extra) {
+    return mulib_uri_unreserved_(c) || mulib_uri_sub_(c) || (c && strchr((const char *)extra,c));
 }
-static int mulib_uri_ipv4_(const char *s, size_t n) {
-    size_t i = 0; unsigned parts = 0;
-    while (i < n) {
-        size_t start = i; unsigned v = 0;
-        while (i < n && mulib_uri_digit_((unsigned char)s[i])) {
-            if (i - start == 3) return 0;
-            v = v * 10 + (unsigned)(s[i++] - '0');
-        }
-        if (i == start || v > 255 || (i - start > 1 && s[start] == '0')) return 0;
-        ++parts;
-        if (i == n) break;
-        if (s[i++] != '.' || i == n) return 0;
-    }
-    return parts == 4;
+static int mulib_uri_run_(const mulib_parsec_parser_t *p, const char *s, size_t n) {
+    mulib_parsec_options_t limits = { 32, 0, 1 }; mulib_parsec_result_t r; int ok;
+    limits.max_steps = n > (SIZE_MAX-128)/16 ? SIZE_MAX : n*16+128;
+    ok = mulib_parsec_run(p,s,n,&limits,&r); mulib_parsec_result_free(&r); return ok == 1;
+}
+static int mulib_uri_component_(const char *s, size_t n, const char *extra) {
+    mulib_parsec_parser_t hexes[3], hex, pct[2], escaped, alternatives[2], byte, parts[2], grammar;
+    hexes[0] = mulib_parsec_range('0','9'); hexes[1] = mulib_parsec_range('a','f'); hexes[2] = mulib_parsec_range('A','F');
+    hex = mulib_parsec_choice(hexes,3); pct[0] = mulib_parsec_byte('%'); pct[1] = mulib_parsec_repeat(&hex,2,2);
+    escaped = mulib_parsec_sequence(pct,2); alternatives[0] = escaped;
+    alternatives[1] = mulib_parsec_satisfy(mulib_uri_plain_,(void *)extra,"URI component byte"); byte = mulib_parsec_choice(alternatives,2);
+    parts[0] = mulib_parsec_repeat(&byte,0,SIZE_MAX); parts[1] = mulib_parsec_end(); grammar = mulib_parsec_sequence(parts,2);
+    return mulib_uri_run_(&grammar,s,n);
 }
 static int mulib_uri_literal_(const char *s, size_t n) {
-    size_t i = 0; unsigned groups = 0; int compressed = 0;
+    mulib_inet6_t ipv6;
     if (n && (s[0] == 'v' || s[0] == 'V')) {
-        i = 1;
-        while (i < n && mulib_uri_hex_((unsigned char)s[i])) ++i;
-        if (i == 1 || i == n || s[i++] != '.' || i == n) return 0;
-        /* IPvFuture does not permit percent escapes. */
-        for (; i < n; ++i) if (!mulib_uri_unreserved_((unsigned char)s[i]) && !mulib_uri_sub_((unsigned char)s[i]) && s[i] != ':') return 0;
-        return 1;
+        mulib_parsec_parser_t hexes[3], hex, plain, parts[5], grammar;
+        hexes[0] = mulib_parsec_range('0','9'); hexes[1] = mulib_parsec_range('a','f'); hexes[2] = mulib_parsec_range('A','F');
+        hex = mulib_parsec_choice(hexes,3); plain = mulib_parsec_satisfy(mulib_uri_plain_,(void *)":","IPvFuture byte");
+        parts[0] = mulib_parsec_byte((unsigned char)s[0]); parts[1] = mulib_parsec_repeat(&hex,1,SIZE_MAX);
+        parts[2] = mulib_parsec_byte('.'); parts[3] = mulib_parsec_repeat(&plain,1,SIZE_MAX); parts[4] = mulib_parsec_end();
+        grammar = mulib_parsec_sequence(parts,5); return mulib_uri_run_(&grammar,s,n);
     }
-    if (n < 2) return 0;
-    if (s[0] == ':') {
-        if (s[1] != ':') return 0;
-        compressed = 1; i = 2;
-    }
-    while (i < n) {
-        size_t start = i;
-        while (i < n && s[i] != ':') ++i;
-        if (memchr(s + start, '.', i - start)) {
-            if (i != n || !mulib_uri_ipv4_(s + start, i - start)) return 0;
-            groups += 2; break;
-        }
-        if (i == start || i - start > 4) return 0;
-        for (size_t j = start; j < i; ++j) if (!mulib_uri_hex_((unsigned char)s[j])) return 0;
-        if (++groups > 8) return 0;
-        if (i < n) {
-            ++i;
-            if (i < n && s[i] == ':') {
-                if (compressed) return 0;
-                compressed = 1; ++i;
-            } else if (i == n) return 0;
-        }
-    }
-    return compressed ? groups < 8 : groups == 8;
+    return mulib_inet6_parse(s,n,&ipv6);
 }
 static mulib_uri_slice_t mulib_uri_slice_(const char *s, size_t n) {
     mulib_uri_slice_t v; v.data = s; v.length = n; return v;

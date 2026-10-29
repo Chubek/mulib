@@ -170,7 +170,8 @@ static void mulib_archive_store_octal_(unsigned char *p, size_t n, uint64_t valu
 static int mulib_archive_write_(mulib_archive_writer_t *w, const char *path, const void *data,
                                 size_t size, uint32_t mode, uint64_t mtime, int directory) {
     unsigned char h[512] = {0}, pad[512] = {0};
-    size_t len, split = 0, i, old, padding, total;
+    size_t len, split = 0, i, old, padding, total, source_offset = 0;
+    int internal = 0;
     unsigned sum = 0;
     if (!w || !path || (!data && size)) return MULIB_ARCHIVE_EINVAL;
     if (w->finished) return MULIB_ARCHIVE_ESTATE;
@@ -197,7 +198,15 @@ static int mulib_archive_write_(mulib_archive_writer_t *w, const char *path, con
     total = 512 + size + padding;
     if (w->bytes.length > SIZE_MAX - total) return MULIB_ARCHIVE_EOVERFLOW;
     old = w->bytes.length;
-    if (!mulib_buffer_append(&w->bytes, h, 512) || !mulib_buffer_append(&w->bytes, data, size) ||
+    if (data && w->bytes.data && (uintptr_t)data >= (uintptr_t)w->bytes.data &&
+        (uintptr_t)data-(uintptr_t)w->bytes.data <= w->bytes.capacity) {
+        source_offset = (size_t)((uintptr_t)data-(uintptr_t)w->bytes.data);
+        if (source_offset > old || size > old-source_offset) return MULIB_ARCHIVE_EINVAL;
+        internal = 1;
+    }
+    if (!mulib_buffer_append(&w->bytes, h, 512)) return MULIB_ARCHIVE_ENOMEM;
+    if (internal) data = w->bytes.data+source_offset;
+    if (!mulib_buffer_append(&w->bytes, data, size) ||
         !mulib_buffer_append(&w->bytes, pad, padding)) {
         w->bytes.length = old; return MULIB_ARCHIVE_ENOMEM;
     }

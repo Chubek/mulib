@@ -50,9 +50,9 @@ void mulib_bitmap_free(mulib_bitmap_t*b);
 #ifdef __cplusplus
 extern "C" {
 #endif
-int mulib_bitmap_init(mulib_bitmap_t*b,size_t w,size_t h){if(!b||(w&&h>SIZE_MAX/w)||w*h>SIZE_MAX-7)return 0;b->pixels=calloc((w*h+7)/8?(w*h+7)/8:1,1);if(!b->pixels)return 0;b->width=w;b->height=h;return 1;}
-int mulib_bitmap_get(const mulib_bitmap_t*b,size_t x,size_t y){if(!b||x>=b->width||y>=b->height)return 0;size_t i=y*b->width+x;return (b->pixels[i/8]>>(i%8))&1;}
-int mulib_bitmap_put(mulib_bitmap_t*b,size_t x,size_t y,int on){if(!b||x>=b->width||y>=b->height)return 0;size_t i=y*b->width+x;unsigned char mask=(unsigned char)(1u<<(i%8));if(on)b->pixels[i/8]|=mask;else b->pixels[i/8]&=(unsigned char)~mask;return 1;}
+int mulib_bitmap_init(mulib_bitmap_t*b,size_t w,size_t h){if(!b||(w&&h>SIZE_MAX/w)||w*h>SIZE_MAX-7)return 0;unsigned char*p=calloc(w&&h?(w*h+7)/8:1,1);if(!p)return 0;b->pixels=p;b->width=w;b->height=h;return 1;}
+int mulib_bitmap_get(const mulib_bitmap_t*b,size_t x,size_t y){if(!b||!b->pixels||x>=b->width||y>=b->height)return 0;size_t i=y*b->width+x;return (b->pixels[i/8]>>(i%8))&1;}
+int mulib_bitmap_put(mulib_bitmap_t*b,size_t x,size_t y,int on){if(!b||!b->pixels||x>=b->width||y>=b->height)return 0;size_t i=y*b->width+x;unsigned char mask=(unsigned char)(1u<<(i%8));if(on)b->pixels[i/8]|=mask;else b->pixels[i/8]&=(unsigned char)~mask;return 1;}
 void mulib_bitmap_free(mulib_bitmap_t*b){if(b){free(b->pixels);memset(b,0,sizeof(*b));}}
 #ifdef __cplusplus
 }

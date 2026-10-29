@@ -338,7 +338,7 @@ static mulib_peg_node_ *mulib_peg_primary_(mulib_peg_reader_ *r) {
         if (r->pos == r->length || !any) { mulib_peg_fail_(r, r->pos, "unterminated or empty byte class"); return NULL; }
         ++r->pos;
         if (negate) { size_t k; for (k = 0; k < sizeof bits; ++k) bits[k] = (unsigned char)~bits[k]; }
-        n->text = (char *)malloc(sizeof bits);
+        n->text = (char *)malloc(32);
         if (!n->text) { mulib_peg_fail_(r, r->pos, "out of memory"); return NULL; }
         memcpy(n->text, bits, sizeof bits); n->parser = mulib_parsec_set((const unsigned char *)n->text); return n;
     }

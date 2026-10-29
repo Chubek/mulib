@@ -7,7 +7,7 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 120
+module_count: 132
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -765,14 +765,14 @@ modules:
   manual: manual/mulib-http.md
   macro: MULIB_IMPL_HTTP
   purpose: Length-aware HTTP/1.1 message parsing and serialization.
-  dependencies: [uri, buffer]
+  dependencies: [uri, buffer, parsec]
   status: implemented
 - name: uri
   header: include/mulib-uri.h
   manual: manual/mulib-uri.md
   macro: MULIB_IMPL_URI
   purpose: URI component parsing, composition, and relative-reference resolution.
-  dependencies: [strbuf]
+  dependencies: [strbuf, inte6]
   status: implemented
 - name: markdown
   header: include/mulib-markdown.h
@@ -850,6 +850,90 @@ modules:
   macro: MULIB_IMPL_CSS
   purpose: Focused CSS parsing and selector matching over markup trees.
   dependencies: [xml]
+  status: implemented
+- name: inet4
+  header: include/mulib-inet4.h
+  manual: manual/mulib-inet4.md
+  macro: MULIB_IMPL_INET4
+  purpose: Strict parser-backed IPv4 literals and prefix operations.
+  dependencies: [parsec]
+  status: implemented
+- name: inte6
+  header: include/mulib-inte6.h
+  manual: manual/mulib-inte6.md
+  macro: MULIB_IMPL_INET6
+  purpose: IPv6 literals, canonical hexadecimal formatting and prefixes.
+  dependencies: [inet4]
+  status: implemented
+- name: input
+  header: include/mulib-input.h
+  manual: manual/mulib-input.md
+  macro: MULIB_IMPL_INPUT
+  purpose: Shared input events and nonblocking Linux evdev reading.
+  dependencies: []
+  status: implemented
+- name: keyremap
+  header: include/mulib-keyremap.h
+  manual: manual/mulib-keyremap.md
+  macro: MULIB_IMPL_KEYREMAP
+  purpose: Stateful key remapping with balanced many-to-one releases.
+  dependencies: [input]
+  status: implemented
+- name: kvm
+  header: include/mulib-kvm.h
+  manual: manual/mulib-kvm.md
+  macro: MULIB_IMPL_KVM
+  purpose: Linux KVM device, VM, memory-slot and vCPU lifetime helpers.
+  dependencies: []
+  status: implemented
+- name: marionette
+  header: include/mulib-marionette.h
+  manual: manual/mulib-marionette.md
+  macro: MULIB_IMPL_MARIONETTE
+  purpose: Caller-clocked bounded input recording and callback playback.
+  dependencies: [input, vec]
+  status: implemented
+- name: termutils
+  header: include/mulib-termutils.h
+  manual: manual/mulib-termutils.md
+  macro: MULIB_IMPL_TERMUTILS
+  purpose: POSIX raw-terminal restoration, sizing and complete writes.
+  dependencies: []
+  status: implemented
+- name: udev
+  header: include/mulib-udev.h
+  manual: manual/mulib-udev.md
+  macro: MULIB_IMPL_UDEV
+  purpose: Parser-backed kernel uevent views and Linux netlink monitoring.
+  dependencies: [parsec]
+  status: implemented
+- name: vdev
+  header: include/mulib-vdev.h
+  manual: manual/mulib-vdev.md
+  macro: MULIB_IMPL_VDEV
+  purpose: Linux uinput keyboard and relative-pointer creation and emission.
+  dependencies: [input]
+  status: implemented
+- name: wayland
+  header: include/mulib-wayland.h
+  manual: manual/mulib-wayland.md
+  macro: MULIB_IMPL_WAYLAND
+  purpose: Wayland frame codec and runtime-loaded client connections.
+  dependencies: [dynload]
+  status: implemented
+- name: wlroots
+  header: include/mulib-wlroots.h
+  manual: manual/mulib-wlroots.md
+  macro: MULIB_IMPL_WLROOTS
+  purpose: Wlroots-style output geometry, transforms and owned logical layouts.
+  dependencies: [vec]
+  status: implemented
+- name: xlib
+  header: include/mulib-xlib.h
+  manual: manual/mulib-xlib.md
+  macro: MULIB_IMPL_XLIB
+  purpose: Runtime-loaded Xlib display and simple-window operations.
+  dependencies: [dynload]
   status: implemented
 project_files:
 - file: MANIFEST.yaml
@@ -1007,7 +1091,7 @@ project_files:
 - file: tests/functional.c
   purpose: Runtime tests for parsing, containers, arithmetic, serializers, and utilities.
 - file: tests/implementation.c
-  purpose: One implementation translation unit defining all 114 module switches.
+  purpose: One implementation translation unit defining all module switches.
 - file: tests/smoke.c
   purpose: Core API smoke tests with assertions.
 - file: tools/check.py
@@ -1132,3 +1216,41 @@ project_files:
   purpose: Focused runtime and malformed-input tests for new modules.
 - file: tests/test_terminal.c
   purpose: Focused runtime and malformed-input tests for new modules.
+- file: tests/test_network.c
+  purpose: IP literal syntax, canonicalization, prefix and native differential tests.
+- file: tests/test_devices.c
+  purpose: Input remapping, playback, uevents, desktop frames, geometry and native failure tests.
+- file: tests/test_desktop_adapters.c
+  purpose: Deterministic Wayland and Xlib loader, call-forwarding and failure-cleanup tests.
+- file: tests/test_hardening.c
+  purpose: Moving-allocation, failure-injection, ownership, parsing and numeric-boundary regressions.
+- file: tests/test_hostile_inputs.c
+  purpose: Deterministic truncated and pseudorandom hostile-input tests across parser families.
+- file: tests/fuzz_headers.c
+  purpose: Bounded all-header libFuzzer target and reusable hostile-input harness.
+- file: manual/hardening.md
+  purpose: Header-wide verification coverage, strengthened contracts and reproducible fuzzing workflow.
+- file: examples/modules/inet4.c
+  purpose: Strict IPv4 parsing and network-prefix example.
+- file: examples/modules/inte6.c
+  purpose: IPv6 parsing and canonical formatting example.
+- file: examples/modules/input.c
+  purpose: Shared input events and explicit device lifetime example.
+- file: examples/modules/keyremap.c
+  purpose: Stateful key-code remapping example.
+- file: examples/modules/kvm.c
+  purpose: Hardware-free KVM handle lifetime example.
+- file: examples/modules/marionette.c
+  purpose: Caller-clocked input playback example.
+- file: examples/modules/termutils.c
+  purpose: Nonintrusive terminal-state lifetime example.
+- file: examples/modules/udev.c
+  purpose: Borrowed kernel uevent decoding example.
+- file: examples/modules/vdev.c
+  purpose: Opt-in virtual-input device lifetime example.
+- file: examples/modules/wayland.c
+  purpose: Runtime-independent Wayland frame roundtrip example.
+- file: examples/modules/wlroots.c
+  purpose: Portable logical output layout and transform example.
+- file: examples/modules/xlib.c
+  purpose: Optional runtime-loaded Xlib simple-window example.

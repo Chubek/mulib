@@ -9,6 +9,7 @@ option(MULIB_BUILD_TESTS "Build MuLIB tests" ON)
 option(MULIB_BUILD_MODULE_EXAMPLES "Build standalone example for each module" OFF)
 option(MULIB_STRICT_WARNINGS "Treat warnings in MuLIB tests/examples as errors" ON)
 option(MULIB_SANITIZERS "Run MuLIB tests/examples with address and UB sanitizers" OFF)
+option(MULIB_BUILD_FUZZER "Build the Clang libFuzzer hostile-input target" OFF)
 
 # Flags belong to our executables, not to downstream users of the INTERFACE target.
 function(mulib_test_executable target)
@@ -75,6 +76,17 @@ if(MULIB_BUILD_TESTS)
     mulib_test_executable(mulib_test_runtime_posix)
     mulib_register_test(mulib_test_runtime_posix)
   endif()
+endif()
+
+if(MULIB_BUILD_FUZZER)
+  if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
+    message(FATAL_ERROR "MULIB_BUILD_FUZZER requires Clang with libFuzzer support")
+  endif()
+  add_executable(mulib_fuzz_headers tests/fuzz_headers.c)
+  mulib_test_executable(mulib_fuzz_headers)
+  target_compile_options(mulib_fuzz_headers PRIVATE -fsanitize=fuzzer,address,undefined
+    -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  target_link_options(mulib_fuzz_headers PRIVATE -fsanitize=fuzzer,address,undefined)
 endif()
 
 if(MULIB_BUILD_MODULE_EXAMPLES)

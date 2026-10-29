@@ -1,7 +1,7 @@
 /**
  * @file mulib-http.h
  * @brief Bounded, length-aware HTTP/1.1 parsing and serialization (no sockets).
- * Define MULIB_IMPL_HTTP once, plus URI, STRBUF and BUFFER implementations.
+ * Define MULIB_IMPL_HTTP once, plus URI, STRBUF, BUFFER and PARSEC implementations.
  * See the manual for the deliberately strict framing policy.
  */
 #ifndef MULIB_HTTP_H
@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include "mulib-uri.h"
 #include "mulib-buffer.h"
+#include "mulib-parsec.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -77,24 +78,93 @@ static int mulib_http_equal_n_(const char *a, size_t n, const char *b, size_t m)
     return 1;
 }
 static int mulib_http_equal_(const char *a, const char *b) { return a && b && mulib_http_equal_n_(a, strlen(a), b, strlen(b)); }
+static int mulib_http_token_byte_(unsigned char c, void *user) {
+    (void)user;
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+        (c && strchr("!#$%&'*+-.^_`|~", c));
+}
+static int mulib_http_value_byte_(unsigned char c, void *user) {
+    (void)user; return c == '\t' || (c >= 32 && c != 127);
+}
+static mulib_http_result mulib_http_run_(const mulib_parsec_parser_t *p, const char *s, size_t n, mulib_parsec_result_t *r) {
+    mulib_parsec_options_t limits = { 32, 0, 4 }; int rc;
+    limits.max_steps = n > (SIZE_MAX-128)/8 ? SIZE_MAX : n*8+128;
+    rc = mulib_parsec_run(p,s,n,&limits,r);
+    if (rc == 1) return MULIB_HTTP_OK;
+    if (r->error.code == MULIB_PARSEC_MEMORY) return MULIB_HTTP_NOMEM;
+    return r->error.code == MULIB_PARSEC_LIMIT ? MULIB_HTTP_LIMIT : MULIB_HTTP_INVALID;
+}
+static int mulib_http_match_(mulib_parsec_parser_t byte, size_t min, const char *s, size_t n) {
+    mulib_parsec_parser_t parts[2], grammar; mulib_parsec_result_t r; int ok;
+    parts[0] = mulib_parsec_repeat(&byte,min,SIZE_MAX); parts[1] = mulib_parsec_end();
+    grammar = mulib_parsec_sequence(parts,2); ok = mulib_http_run_(&grammar,s,n,&r) == MULIB_HTTP_OK;
+    mulib_parsec_result_free(&r); return ok;
+}
 static int mulib_http_token_(const char *s, size_t n) {
-    if (!n) return 0;
-    for (size_t i = 0; i < n; ++i) {
-        unsigned char c = (unsigned char)s[i];
-        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
-            (c && strchr("!#$%&'*+-.^_`|~", c)))) return 0;
-    }
-    return 1;
+    return mulib_http_match_(mulib_parsec_satisfy(mulib_http_token_byte_,NULL,"HTTP token"),1,s,n);
 }
 static int mulib_http_value_(const char *s, size_t n) {
-    for (size_t i = 0; i < n; ++i) if (((unsigned char)s[i] < 32 && s[i] != '\t') || (unsigned char)s[i] == 127) return 0;
-    return 1;
+    return mulib_http_match_(mulib_parsec_satisfy(mulib_http_value_byte_,NULL,"HTTP field value"),0,s,n);
+}
+static int mulib_http_hex_(const char *s, size_t n) {
+    mulib_parsec_parser_t ranges[3], hex;
+    ranges[0] = mulib_parsec_range('0','9'); ranges[1] = mulib_parsec_range('a','f'); ranges[2] = mulib_parsec_range('A','F');
+    hex = mulib_parsec_choice(ranges,3); return mulib_http_match_(hex,1,s,n);
 }
 static char *mulib_http_copy_(const char *s, size_t n) {
     char *p;
     if (n == SIZE_MAX || !(p = (char *)malloc(n+1))) return NULL;
     if (n) memcpy(p, s, n);
     p[n] = 0; return p;
+}
+/* Syntax and capture boundaries are owned by the shared combinator engine;
+ * framing, numeric overflow and authority policy remain HTTP semantics. */
+static mulib_http_result mulib_http_start_(const char *s, size_t n, mulib_http_message_t *m) {
+    mulib_parsec_parser_t token_byte = mulib_parsec_satisfy(mulib_http_token_byte_,NULL,"method");
+    mulib_parsec_parser_t value_byte = mulib_parsec_satisfy(mulib_http_value_byte_,NULL,"reason");
+    mulib_parsec_parser_t visible = mulib_parsec_range(33,126), digit = mulib_parsec_range('0','9');
+    mulib_parsec_parser_t token = mulib_parsec_repeat(&token_byte,1,SIZE_MAX), target = mulib_parsec_repeat(&visible,1,SIZE_MAX);
+    mulib_parsec_parser_t reason = mulib_parsec_repeat(&value_byte,0,SIZE_MAX), parts[7], grammar;
+    mulib_parsec_result_t result; mulib_http_result rc;
+    if (m->is_response) {
+        parts[0] = mulib_parsec_literal("HTTP/1.1 ",9); parts[1] = mulib_parsec_range('1','5');
+        parts[2] = mulib_parsec_repeat(&digit,2,2); parts[3] = mulib_parsec_byte(' ');
+        parts[4] = mulib_parsec_capture(&reason,0); parts[5] = mulib_parsec_end();
+        grammar = mulib_parsec_sequence(parts,6);
+    } else {
+        parts[0] = mulib_parsec_capture(&token,0); parts[1] = mulib_parsec_byte(' ');
+        parts[2] = mulib_parsec_capture(&target,1); parts[3] = mulib_parsec_literal(" HTTP/1.1",9); parts[4] = mulib_parsec_end();
+        grammar = mulib_parsec_sequence(parts,5);
+    }
+    rc = mulib_http_run_(&grammar,s,n,&result);
+    if (rc == MULIB_HTTP_OK) {
+        mulib_parsec_capture_t c = result.captures[0];
+        if (m->is_response) {
+            m->status = (unsigned)(s[9]-'0')*100 + (unsigned)(s[10]-'0')*10 + (unsigned)(s[11]-'0');
+            m->reason = mulib_http_copy_(s+c.offset,c.length); if (!m->reason) rc = MULIB_HTTP_NOMEM;
+        } else {
+            m->method = mulib_http_copy_(s+c.offset,c.length); c = result.captures[1];
+            m->target = mulib_http_copy_(s+c.offset,c.length); if (!m->method || !m->target) rc = MULIB_HTTP_NOMEM;
+        }
+    }
+    mulib_parsec_result_free(&result); return rc;
+}
+static mulib_http_result mulib_http_field_(const char *s, size_t n, mulib_http_header_t *out) {
+    mulib_parsec_parser_t token_byte = mulib_parsec_satisfy(mulib_http_token_byte_,NULL,"header name");
+    mulib_parsec_parser_t value_byte = mulib_parsec_satisfy(mulib_http_value_byte_,NULL,"header value");
+    mulib_parsec_parser_t name = mulib_parsec_repeat(&token_byte,1,SIZE_MAX), value = mulib_parsec_repeat(&value_byte,0,SIZE_MAX);
+    mulib_parsec_parser_t parts[4], grammar; mulib_parsec_result_t result; mulib_http_result rc;
+    parts[0] = mulib_parsec_capture(&name,0); parts[1] = mulib_parsec_byte(':');
+    parts[2] = mulib_parsec_capture(&value,1); parts[3] = mulib_parsec_end(); grammar = mulib_parsec_sequence(parts,4);
+    rc = mulib_http_run_(&grammar,s,n,&result);
+    if (rc == MULIB_HTTP_OK) {
+        mulib_parsec_capture_t a = result.captures[0], b = result.captures[1]; size_t begin = b.offset, end = begin+b.length;
+        while (begin < end && (s[begin] == ' ' || s[begin] == '\t')) ++begin;
+        while (end > begin && (s[end-1] == ' ' || s[end-1] == '\t')) --end;
+        out->name = mulib_http_copy_(s+a.offset,a.length); out->value = mulib_http_copy_(s+begin,end-begin);
+        if (!out->name || !out->value) { free(out->name); free(out->value); rc = MULIB_HTTP_NOMEM; }
+    }
+    mulib_parsec_result_free(&result); return rc;
 }
 static mulib_http_options_t mulib_http_options_(const mulib_http_options_t *o) {
     mulib_http_options_t v = { 32768, 100, 16u * 1024u * 1024u, 0 };
@@ -130,10 +200,10 @@ static mulib_http_result mulib_http_line_(const char *s, size_t n, size_t start,
 }
 static int mulib_http_decimal_(const char *s, size_t *out) {
     size_t v = 0;
-    if (!s || !*s) return 0;
+    if (!s || !mulib_http_match_(mulib_parsec_range('0','9'),1,s,strlen(s))) return 0;
     for (; *s; ++s) {
         unsigned d = (unsigned char)*s - (unsigned)'0';
-        if (d > 9 || v > (SIZE_MAX-d)/10) return 0;
+        if (v > (SIZE_MAX-d)/10) return 0;
         v = v*10 + d;
     }
     *out = v; return 1;
@@ -202,32 +272,14 @@ mulib_http_result mulib_http_parse(const void *bytes, size_t n, int response,
     if ((!s && n) || !out || (response != 0 && response != 1) || (o.flags & ~7u)) return MULIB_HTTP_INVALID;
     memset(&m, 0, sizeof(m)); mulib_buffer_init(&body); m.is_response = response;
     r = mulib_http_line_(s, n, 0, o.max_header_bytes, &end); if (r != MULIB_HTTP_OK) goto fail;
-    if (response) {
-        if (end < 13 || memcmp(s, "HTTP/1.1 ", 9) || s[9] < '1' || s[9] > '5' || s[10] < '0' || s[10] > '9' || s[11] < '0' || s[11] > '9' || s[12] != ' ' || !mulib_http_value_(s+13, end-13)) { r = MULIB_HTTP_INVALID; goto fail; }
-        m.status = (unsigned)(s[9]-'0')*100 + (unsigned)(s[10]-'0')*10 + (unsigned)(s[11]-'0');
-        m.reason = mulib_http_copy_(s+13, end-13); if (!m.reason) { r = MULIB_HTTP_NOMEM; goto fail; }
-    } else {
-        size_t a = 0, b;
-        while (a < end && s[a] != ' ') ++a;
-        b = a < end ? a + 1 : end;
-        while (b < end && s[b] != ' ') ++b;
-        if (!mulib_http_token_(s, a) || a == end || b == a+1 || end-b != 9 || memcmp(s+b, " HTTP/1.1", 9)) { r = MULIB_HTTP_INVALID; goto fail; }
-        m.method = mulib_http_copy_(s, a); m.target = mulib_http_copy_(s+a+1, b-a-1);
-        if (!m.method || !m.target) { r = MULIB_HTTP_NOMEM; goto fail; }
-    }
+    r = mulib_http_start_(s,end,&m); if (r != MULIB_HTTP_OK) goto fail;
     pos = end+2;
     for (;;) {
-        size_t colon, a, b; mulib_http_header_t h, *next;
+        mulib_http_header_t h, *next;
         r = mulib_http_line_(s, n, pos, o.max_header_bytes, &end); if (r != MULIB_HTTP_OK) goto fail;
         if (end == pos) { pos = end+2; break; }
         if (m.header_count >= o.max_headers || m.header_count >= SIZE_MAX/sizeof(*next)) { r = MULIB_HTTP_LIMIT; goto fail; }
-        for (colon = pos; colon < end && s[colon] != ':'; ++colon) {}
-        if (colon == end || !mulib_http_token_(s+pos, colon-pos) || !mulib_http_value_(s+colon+1, end-colon-1)) { r = MULIB_HTTP_INVALID; goto fail; }
-        a = colon+1; b = end;
-        while (a < b && (s[a] == ' ' || s[a] == '\t')) ++a;
-        while (b > a && (s[b-1] == ' ' || s[b-1] == '\t')) --b;
-        h.name = mulib_http_copy_(s+pos, colon-pos); h.value = mulib_http_copy_(s+a, b-a);
-        if (!h.name || !h.value) { free(h.name); free(h.value); r = MULIB_HTTP_NOMEM; goto fail; }
+        r = mulib_http_field_(s+pos,end-pos,&h); if (r != MULIB_HTTP_OK) goto fail;
         next = (mulib_http_header_t *)realloc(m.headers, (m.header_count+1)*sizeof(*next));
         if (!next) { free(h.name); free(h.value); r = MULIB_HTTP_NOMEM; goto fail; }
         m.headers = next; m.headers[m.header_count++] = h;
@@ -250,13 +302,12 @@ mulib_http_result mulib_http_parse(const void *bytes, size_t n, int response,
         for (;;) {
             size_t chunk = 0, line_limit = pos > SIZE_MAX-128 ? SIZE_MAX : pos+128;
             r = mulib_http_line_(s, n, pos, line_limit, &end); if (r != MULIB_HTTP_OK) goto fail;
-            if (end == pos) { r = MULIB_HTTP_INVALID; goto fail; }
+            if (!mulib_http_hex_(s+pos,end-pos)) { r = MULIB_HTTP_INVALID; goto fail; }
             for (size_t i = pos; i < end; ++i) {
                 unsigned char c = (unsigned char)s[i]; unsigned d;
                 if (c >= '0' && c <= '9') d = c-'0';
                 else if (c >= 'a' && c <= 'f') d = c-'a'+10;
-                else if (c >= 'A' && c <= 'F') d = c-'A'+10;
-                else { r = MULIB_HTTP_INVALID; goto fail; }
+                else d = c-'A'+10;
                 if (chunk > (SIZE_MAX-d)/16) { r = MULIB_HTTP_LIMIT; goto fail; }
                 chunk = chunk*16+d;
             }

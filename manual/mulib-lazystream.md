@@ -1,5 +1,9 @@
 # mulib-lazystream
 
+Pipelines are limited to 256 stages including their source, bounding the recursive
+`next` call chain. Constructing stage 257 returns NULL and leaves upstream ownership
+with the caller. Destruction remains iterative and does not pull source values.
+
 Define `MULIB_IMPL_LAZYSTREAM` in one translation unit. No module dependencies.
 
 Streams are single-pass, pull-driven pipelines of borrowed `void *` values;

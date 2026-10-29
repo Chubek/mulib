@@ -35,7 +35,12 @@ The declarations are stable C entry points, with `extern "C"` linkage when compi
 
 ## Ownership, errors, and lifetime
 
-Encoder requires a destination buffer including one final NUL. Decoder accepts padded standard alphabet only (not URL-safe alphabet or whitespace); errors do not guarantee that the output buffer was left untouched. Values returned through output parameters are only guaranteed after a successful call. For functions returning an integer success code, **1** means success and **0** means failure unless a more specific result is documented by the API. Do not infer a `errno` value from an API that does not explicitly promise one. For heap-allocated state, pair creation or initialization with its corresponding destroy or free operation. Never reuse internal buffer pointers after an operation that can grow or release storage.
+Encoder requires a destination buffer including one final NUL. Decoder accepts
+padded standard alphabet only (not URL-safe alphabet or whitespace), including
+canonical zero padding bits. It validates all input and output capacity before
+writing, so failure leaves output and optional `written` unchanged. Exact in-place
+decoding is supported; other overlap is not promised. NULL source/output is valid
+at length zero. Decoder returns 1 on success, 0 on failure; no errno contract.
 
 ## Behavior, constraints, and interoperability
 

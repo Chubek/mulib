@@ -5,8 +5,12 @@ section 5.2. It is not a network client or an IRI/IDNA implementation.
 
 ## Integration and ownership
 
-Define `MULIB_IMPL_URI` and `MULIB_IMPL_STRBUF` in exactly one C11 translation
-unit before including the header. No external libraries are needed.
+Define `MULIB_IMPL_URI`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_PARSEC`,
+`MULIB_IMPL_INET4` and `MULIB_IMPL_INET6` in exactly one C11 translation
+unit before including the header. No external libraries are needed. Component
+characters, percent escapes and IPvFuture syntax use MuLIB parser combinators;
+IPv6/embedded IPv4 literals reuse the shared address modules. Parser failures
+(including resource/allocation failure) return zero with the output unchanged.
 
 `mulib_uri_t` contains borrowed `(data,length)` slices. Keep the original bytes
 alive and unchanged. Slices are **not** NUL-terminated. Presence flags distinguish

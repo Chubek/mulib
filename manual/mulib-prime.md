@@ -4,7 +4,11 @@
 
 ## Purpose and design
 
-Primality testing and next-prime search for 64-bit integers. Deterministic trial division is appropriate for small to medium inputs but may be prohibitively slow near 64-bit limits. This module is not a cryptographic prime generator.
+Primality testing and next-prime search for 64-bit integers. Deterministic
+Miller-Rabin covers the full uint64_t range with bases 2, 325, 9375, 28178,
+450775, 9780504 and 1795265022. Modular multiplication uses checked add/double
+arithmetic without compiler-specific 128-bit types. No cryptographic or
+constant-time guarantees are provided.
 
 This component is intended to be selected independently from MuLIB's other headers. It does not force clients to link a binary runtime. It follows explicit lifecycle management and uses public `mulib_` names to avoid common clashes with the C standard library and other toolkits. The implementation is intentionally small enough to audit. Prefer using this module in code where its documented representation, algorithmic behavior, and error contract match the workload rather than treating it as an automatic replacement for a large specialized dependency.
 
@@ -35,7 +39,10 @@ The declarations are stable C entry points, with `extern "C"` linkage when compi
 
 ## Ownership, errors, and lifetime
 
-Deterministic trial division is appropriate for small to medium inputs but may be prohibitively slow near 64-bit limits. This module is not a cryptographic prime generator. Values returned through output parameters are only guaranteed after a successful call. For functions returning an integer success code, **1** means success and **0** means failure unless a more specific result is documented by the API. Do not infer a `errno` value from an API that does not explicitly promise one. For heap-allocated state, pair creation or initialization with its corresponding destroy or free operation. Never reuse internal buffer pointers after an operation that can grow or release storage.
+Primality returns 1 for a prime, 0 otherwise, with bounded work per candidate.
+`mulib_prime_next(n)` returns the smallest prime >= n (2 when n <= 2), or zero
+if no representable prime remains. Neither operation allocates memory or promises
+errno. See [hardening coverage](hardening.md) for extreme uint64_t regressions.
 
 ## Behavior, constraints, and interoperability
 

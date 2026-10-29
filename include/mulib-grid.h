@@ -48,8 +48,8 @@ void mulib_grid_free(mulib_grid_t*g);
 #ifdef __cplusplus
 extern "C" {
 #endif
-int mulib_grid_init(mulib_grid_t*g,size_t w,size_t h,size_t s){if(!g||!s||(w&&h>SIZE_MAX/w)||w*h>SIZE_MAX/s)return 0;g->data=calloc((w?w*h:1),s);if(!g->data)return 0;g->width=w;g->height=h;g->stride=s;return 1;}
-void *mulib_grid_at(mulib_grid_t*g,size_t x,size_t y){return g&&x<g->width&&y<g->height?g->data+(y*g->width+x)*g->stride:NULL;}
+int mulib_grid_init(mulib_grid_t*g,size_t w,size_t h,size_t s){if(!g||!s||(w&&h>SIZE_MAX/w)||w*h>SIZE_MAX/s)return 0;unsigned char*p=calloc(w&&h?w*h:1,s);if(!p)return 0;g->data=p;g->width=w;g->height=h;g->stride=s;return 1;}
+void *mulib_grid_at(mulib_grid_t*g,size_t x,size_t y){return g&&g->data&&x<g->width&&y<g->height?g->data+(y*g->width+x)*g->stride:NULL;}
 void mulib_grid_free(mulib_grid_t*g){if(g){free(g->data);memset(g,0,sizeof(*g));}}
 #ifdef __cplusplus
 }

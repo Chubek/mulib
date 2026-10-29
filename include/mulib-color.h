@@ -49,7 +49,7 @@ mulib_color_rgb_t mulib_color_from_hsv(mulib_color_hsv_t hsv);
 extern "C" {
 #endif
 mulib_color_hsv_t mulib_color_to_hsv(mulib_color_rgb_t c){double max=fmax(c.r,fmax(c.g,c.b)),min=fmin(c.r,fmin(c.g,c.b)),d=max-min;mulib_color_hsv_t h={0,max?d/max:0,max};if(d>0){if(max==c.r)h.h=fmod((c.g-c.b)/d,6);else if(max==c.g)h.h=(c.b-c.r)/d+2;else h.h=(c.r-c.g)/d+4;h.h*=60;if(h.h<0)h.h+=360;}return h;}
-mulib_color_rgb_t mulib_color_from_hsv(mulib_color_hsv_t h){double chroma=h.v*h.s,x=chroma*(1-fabs(fmod(h.h/60,2)-1)),m=h.v-chroma;double r=0,g=0,b=0;double angle=fmod(h.h+360,360);if(angle<60){r=chroma;g=x;}else if(angle<120){r=x;g=chroma;}else if(angle<180){g=chroma;b=x;}else if(angle<240){g=x;b=chroma;}else if(angle<300){r=x;b=chroma;}else{r=chroma;b=x;}return (mulib_color_rgb_t){r+m,g+m,b+m};}
+mulib_color_rgb_t mulib_color_from_hsv(mulib_color_hsv_t h){double angle=fmod(h.h,360);if(angle<0)angle+=360;double chroma=h.v*h.s,x=chroma*(1-fabs(fmod(angle/60,2)-1)),m=h.v-chroma;double r=0,g=0,b=0;if(angle<60){r=chroma;g=x;}else if(angle<120){r=x;g=chroma;}else if(angle<180){g=chroma;b=x;}else if(angle<240){g=x;b=chroma;}else if(angle<300){r=x;b=chroma;}else{r=chroma;b=x;}return (mulib_color_rgb_t){r+m,g+m,b+m};}
 #ifdef __cplusplus
 }
 #endif

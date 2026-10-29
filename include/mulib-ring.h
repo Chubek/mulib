@@ -50,9 +50,9 @@ void mulib_ring_free(mulib_ring_t*r);
 #ifdef __cplusplus
 extern "C" {
 #endif
-int mulib_ring_init(mulib_ring_t*r,size_t n,size_t s){if(!r||!n||!s||n>SIZE_MAX/s)return 0;memset(r,0,sizeof(*r));r->data=malloc(n*s);if(!r->data)return 0;r->capacity=n;r->stride=s;return 1;}
-int mulib_ring_write(mulib_ring_t*r,const void*x){if(!r||!x||r->length==r->capacity)return 0;memcpy(r->data+((r->head+r->length)%r->capacity)*r->stride,x,r->stride);r->length++;return 1;}
-int mulib_ring_read(mulib_ring_t*r,void*out){if(!r||!r->length)return 0;if(out)memcpy(out,r->data+r->head*r->stride,r->stride);r->head=(r->head+1)%r->capacity;r->length--;return 1;}
+int mulib_ring_init(mulib_ring_t*r,size_t n,size_t s){if(!r||!n||!s||n>SIZE_MAX/s)return 0;unsigned char*p=malloc(n*s);if(!p)return 0;memset(r,0,sizeof(*r));r->data=p;r->capacity=n;r->stride=s;return 1;}
+int mulib_ring_write(mulib_ring_t*r,const void*x){if(!r||!x||!r->data||!r->stride||r->length>=r->capacity||r->head>=r->capacity)return 0;size_t i=r->length>=r->capacity-r->head?r->length-(r->capacity-r->head):r->head+r->length;memmove(r->data+i*r->stride,x,r->stride);r->length++;return 1;}
+int mulib_ring_read(mulib_ring_t*r,void*out){if(!r||!r->length)return 0;if(out)memmove(out,r->data+r->head*r->stride,r->stride);r->head=r->head==r->capacity-1?0:r->head+1;r->length--;return 1;}
 void mulib_ring_free(mulib_ring_t*r){if(r){free(r->data);memset(r,0,sizeof(*r));}}
 #ifdef __cplusplus
 }

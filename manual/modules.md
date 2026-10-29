@@ -1,6 +1,6 @@
 # MuLIB module and composition guide
 
-MuLIB has 120 single-header C11 modules. Every module has a corresponding
+MuLIB has 132 single-header C11 modules. Every module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -16,8 +16,11 @@ consult each manual's exact supported syntax, errors, and limits.
 | Structured data | [json](mulib-json.md), [yaml](mulib-yaml.md), [toml](mulib-toml.md), [template](mulib-template.md), [xml](mulib-xml.md), [xpath](mulib-xpath.md) |
 | Documents and graphics | [html](mulib-html.md), [css](mulib-css.md), [markdown](mulib-markdown.md), [svg](mulib-svg.md), [graphviz](mulib-graphviz.md), [vector algebra](mulib-vector.md) |
 | Storage and native formats | [archive](mulib-archive.md), [mmfile](mulib-mmfile.md), [kvdb](mulib-kvdb.md), [elf](mulib-elf.md), [dynload](mulib-dynload.md), [drm](mulib-drm.md) |
-| Terminals | [terminfo](mulib-terminfo.md), [termkey](mulib-termkey.md), [vterm](mulib-vterm.md), [tui](mulib-tui.md) |
+| Terminals | [terminfo](mulib-terminfo.md), [termkey](mulib-termkey.md), [termutils](mulib-termutils.md), [vterm](mulib-vterm.md), [tui](mulib-tui.md) |
 | Protocols | [uri](mulib-uri.md), [http](mulib-http.md), [rpc](mulib-rpc.md), [dbus](mulib-dbus.md) |
+| IP addresses | [IPv4](mulib-inet4.md), [IPv6 (inte6)](mulib-inte6.md) |
+| Input and devices | [input](mulib-input.md), [keyremap](mulib-keyremap.md), [marionette](mulib-marionette.md), [udev](mulib-udev.md), [vdev](mulib-vdev.md), [kvm](mulib-kvm.md) |
+| Desktop integration | [wayland](mulib-wayland.md), [wlroots geometry](mulib-wlroots.md), [xlib](mulib-xlib.md) |
 | Runtime utilities | [minivm](mulib-minivm.md), [minish](mulib-minish.md), [Python bindings generator](mulib-pybind.md), [Ruby bindings generator](mulib-rubybind.md) |
 | Indexes and differences | [avl](mulib-avl.md), [b+tree](mulib-b+tree.md), [hattrie](mulib-hattrie.md), [txtdiff](mulib-txtdiff.md), [mmdiff](mulib-mmdiff.md) |
 
@@ -50,14 +53,18 @@ pool measures its real allocations. The tracker must outlive those objects.
 
 ## Validation
 
+See [header hardening](hardening.md) for failure-atomic constructors/decoders,
+alias-safe growth, allocation-failure sweeps and optional mutation fuzzing.
+
 `python3 tools/check.py` validates inventory, runs examples and focused tests,
 compiles headers in isolation with their transitive dependencies, and checks
 all implementations together. Declaration-only C++17 inclusion is checked when
 a C++ compiler is available. Tests of wire encoders and OS failure paths are
 not a claim of interoperability with every service or hardware device.
 
-The C implementation is the supported implementation target. OS modules use
-native APIs, not external convenience libraries. Build and runtime platform
+The C implementation is the supported implementation target. Linux device modules
+use native APIs. Wayland/Xlib client helpers optionally load their native runtimes;
+their pure utilities do not require those libraries. Build and runtime platform
 restrictions are documented per module, and hardware is not required for the
 normal test suite.
 

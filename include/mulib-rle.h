@@ -31,7 +31,7 @@ extern "C" {
 
 /** @brief mulib rle encode; see manual/mulib-rle.md for contracts and examples. */
 size_t mulib_rle_encode(const unsigned char*in,size_t n,unsigned char*out,size_t cap);
-/** @brief mulib rle decode; see manual/mulib-rle.md for contracts and examples. */
+/** @brief Decode disjoint buffers, leaving output/written unchanged on malformed data or insufficient capacity. */
 int mulib_rle_decode(const unsigned char*in,size_t n,unsigned char*out,size_t cap,size_t*written);
 
 #ifdef __cplusplus
@@ -44,8 +44,8 @@ int mulib_rle_decode(const unsigned char*in,size_t n,unsigned char*out,size_t ca
 #ifdef __cplusplus
 extern "C" {
 #endif
-size_t mulib_rle_encode(const unsigned char*s,size_t n,unsigned char*out,size_t cap){if((!s&&n)||!out)return 0;size_t j=0;for(size_t i=0;i<n;){size_t run=1;while(i+run<n&&run<255&&s[i+run]==s[i])run++;if(j>cap||cap-j<2)return 0;out[j++]=(unsigned char)run;out[j++]=s[i];i+=run;}return j;}
-int mulib_rle_decode(const unsigned char*s,size_t n,unsigned char*out,size_t cap,size_t*written){if((!s&&n)||(!out&&n)||n%2)return 0;size_t j=0;for(size_t i=0;i<n;i+=2){size_t run=s[i];if(!run||j>cap||run>cap-j)return 0;memset(out+j,s[i+1],run);j+=run;}if(written)*written=j;return 1;}
+size_t mulib_rle_encode(const unsigned char*s,size_t n,unsigned char*out,size_t cap){if((!s&&n)||!out)return 0;size_t j=0;for(size_t i=0;i<n;){size_t run=1;while(run<n-i&&run<255&&s[i+run]==s[i])run++;if(j>cap||cap-j<2)return 0;out[j++]=(unsigned char)run;out[j++]=s[i];i+=run;}return j;}
+int mulib_rle_decode(const unsigned char*s,size_t n,unsigned char*out,size_t cap,size_t*written){if((!s&&n)||(!out&&n)||n%2)return 0;size_t size=0,j=0;for(size_t i=0;i<n;i+=2){size_t run=s[i];if(!run||run>cap-size)return 0;size+=run;}for(size_t i=0;i<n;i+=2){size_t run=s[i];memset(out+j,s[i+1],run);j+=run;}if(written)*written=size;return 1;}
 #ifdef __cplusplus
 }
 #endif

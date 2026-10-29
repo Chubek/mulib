@@ -31,7 +31,7 @@ extern "C" {
 
 /** @brief Histogram accumulation over a fixed numeric range. */
 typedef struct mulib_histogram { size_t *bins; size_t count; double low,high; } mulib_histogram_t;
-/** @brief mulib histogram init; see manual/mulib-histogram.md for contracts and examples. */
+/** @brief Allocate bins over finite low < high; failure leaves the destination unchanged. */
 int mulib_histogram_init(mulib_histogram_t*h,size_t bins,double low,double high);
 /** @brief mulib histogram add; see manual/mulib-histogram.md for contracts and examples. */
 int mulib_histogram_add(mulib_histogram_t*h,double value);
@@ -48,8 +48,17 @@ void mulib_histogram_free(mulib_histogram_t*h);
 #ifdef __cplusplus
 extern "C" {
 #endif
-int mulib_histogram_init(mulib_histogram_t*h,size_t n,double lo,double hi){if(!h||!n||!(lo<hi)||n>SIZE_MAX/sizeof(size_t))return 0;h->bins=calloc(n,sizeof(size_t));if(!h->bins)return 0;h->count=n;h->low=lo;h->high=hi;return 1;}
-int mulib_histogram_add(mulib_histogram_t*h,double x){if(!h||!h->bins||!isfinite(x)||x<h->low||x>h->high)return 0;size_t i=x==h->high?h->count-1:(size_t)((x-h->low)/(h->high-h->low)*h->count);if(i>=h->count)i=h->count-1;if(h->bins[i]==SIZE_MAX)return 0;h->bins[i]++;return 1;}
+int mulib_histogram_init(mulib_histogram_t*h,size_t n,double lo,double hi){if(!h||!n||!isfinite(lo)||!isfinite(hi)||!(lo<hi)||n>SIZE_MAX/sizeof(size_t))return 0;size_t*p=calloc(n,sizeof(size_t));if(!p)return 0;h->bins=p;h->count=n;h->low=lo;h->high=hi;return 1;}
+int mulib_histogram_add(mulib_histogram_t *h, double x) {
+    double span, fraction, position; size_t i;
+    if (!h || !h->bins || !h->count || !isfinite(x) || x < h->low || x > h->high) return 0;
+    span = h->high-h->low;
+    fraction = isfinite(span) ? (x-h->low)/span : (x/2-h->low/2)/(h->high/2-h->low/2);
+    position = fraction*(double)h->count;
+    i = position >= (double)h->count ? h->count-1 : (size_t)position;
+    if (h->bins[i] == SIZE_MAX) return 0;
+    ++h->bins[i]; return 1;
+}
 void mulib_histogram_free(mulib_histogram_t*h){if(h){free(h->bins);memset(h,0,sizeof(*h));}}
 #ifdef __cplusplus
 }

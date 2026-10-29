@@ -39,6 +39,13 @@ The declarations are stable C entry points, with `extern "C"` linkage when compi
 
 Values outside [low, high] are rejected, and the high endpoint belongs to the final bin. Widths are uniform in floating-point units. Values returned through output parameters are only guaranteed after a successful call. For functions returning an integer success code, **1** means success and **0** means failure unless a more specific result is documented by the API. Do not infer a `errno` value from an API that does not explicitly promise one. For heap-allocated state, pair creation or initialization with its corresponding destroy or free operation. Never reuse internal buffer pointers after an operation that can grow or release storage.
 
+## Finite endpoints and failure state
+
+Initialization requires finite low < high and nonzero bins; failures leave the
+destination unchanged. Bin calculation handles finite spans whose subtraction
+would overflow double. Nonfinite samples are rejected. The high endpoint belongs
+to the last bin, and a SIZE_MAX-saturated counter is not incremented.
+
 ## Behavior, constraints, and interoperability
 
 Operations are designed around bounded input, explicit lengths where relevant, and ordinary C ownership. They do not perform locking and do not provide a global allocator override. File, terminal and parser functions are intended as lightweight building blocks; inputs that require complete standard compliance, hostile-input hardening or advanced Unicode processing may need a dedicated mature library. Confirm prerequisites and endianness for binary serialization; never serialize the memory layout of MuLIB structures directly.

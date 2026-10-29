@@ -48,7 +48,7 @@ void mulib_movingavg_free(mulib_movingavg_t*m);
 #ifdef __cplusplus
 extern "C" {
 #endif
-int mulib_movingavg_init(mulib_movingavg_t*m,size_t n){if(!m||!n||n>SIZE_MAX/sizeof(double))return 0;memset(m,0,sizeof(*m));m->values=calloc(n,sizeof(double));if(!m->values)return 0;m->capacity=n;return 1;}
+int mulib_movingavg_init(mulib_movingavg_t*m,size_t n){if(!m||!n||n>SIZE_MAX/sizeof(double))return 0;double*p=calloc(n,sizeof(double));if(!p)return 0;memset(m,0,sizeof(*m));m->values=p;m->capacity=n;return 1;}
 double mulib_movingavg_push(mulib_movingavg_t*m,double x){if(!m||!m->values)return NAN;if(m->length==m->capacity)m->sum-=m->values[m->position];else m->length++;m->values[m->position]=x;m->sum+=x;m->position=(m->position+1)%m->capacity;return m->sum/m->length;}
 void mulib_movingavg_free(mulib_movingavg_t*m){if(m){free(m->values);memset(m,0,sizeof(*m));}}
 #ifdef __cplusplus

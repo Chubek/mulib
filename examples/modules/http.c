@@ -2,6 +2,9 @@
 #define MULIB_IMPL_BUFFER
 #define MULIB_IMPL_URI
 #define MULIB_IMPL_HTTP
+#define MULIB_IMPL_PARSEC
+#define MULIB_IMPL_INET4
+#define MULIB_IMPL_INET6
 #include "mulib-http.h"
 #include <assert.h>
 #include <stdlib.h>

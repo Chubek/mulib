@@ -8,9 +8,12 @@ decompression, chunk extensions and trailers are outside this focused API.
 ## Integration
 
 Implementation switches: `MULIB_IMPL_HTTP`, `MULIB_IMPL_URI`,
-`MULIB_IMPL_STRBUF`, `MULIB_IMPL_BUFFER`. Define all before including the header
+`MULIB_IMPL_STRBUF`, `MULIB_IMPL_BUFFER`, `MULIB_IMPL_PARSEC`,
+`MULIB_IMPL_INET4`, `MULIB_IMPL_INET6`. Define all before including the header
 in exactly one C11 translation unit. No external dependencies.
-HTTP target and Host checks dogfood the URI parser.
+Start-line, header token/value, decimal and hexadecimal syntax use MuLIB parser combinators
+with captures; HTTP framing/overflow/security policy remains in this module.
+Target and Host checks reuse the URI parser, which shares IP-literal parsers.
 
 ## Parsing
 

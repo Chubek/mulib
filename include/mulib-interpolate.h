@@ -44,8 +44,8 @@ double mulib_interpolate_clamped(double a,double b,double t);
 #ifdef __cplusplus
 extern "C" {
 #endif
-double mulib_interpolate_linear(double a,double b,double t){return a+(b-a)*t;}
-double mulib_interpolate_clamped(double a,double b,double t){return a+(b-a)*(t<0?0:t>1?1:t);}
+double mulib_interpolate_linear(double a,double b,double t){if(t==0)return a;if(t==1)return b;if((a<=0&&b>=0)||(a>=0&&b<=0))return (1-t)*a+t*b;return a+(b-a)*t;}
+double mulib_interpolate_clamped(double a,double b,double t){return mulib_interpolate_linear(a,b,t<0?0:t>1?1:t);}
 #ifdef __cplusplus
 }
 #endif

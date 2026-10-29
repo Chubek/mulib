@@ -67,12 +67,67 @@ static void mulib_microtcl_words_free_(char**words,size_t n){for(size_t i=0;i<n;
 static int mulib_microtcl_exec_(mulib_microtcl_t*t,char**w,size_t n){if(!n)return 1;if(!strcmp(w[0],"set")&&n==3){if(!mulib_microtcl_set_(t,w[1],w[2]))return 0;return mulib_microtcl_result_(t,w[2]);}if(!strcmp(w[0],"set")&&n==2){const char*s=mulib_microtcl_get(t,w[1]);return s?mulib_microtcl_result_(t,s):0;}
 if(!strcmp(w[0],"unset")&&n==2){mulib_microtcl_var_t**p=&t->vars;while(*p&&strcmp((*p)->name,w[1]))p=&(*p)->next;if(*p){mulib_microtcl_var_t*v=*p;*p=v->next;free(v->name);free(v->value);free(v);}return mulib_microtcl_result_(t,"");}
 if(!strcmp(w[0],"append")&&n==3){const char*old=mulib_microtcl_get(t,w[1]);size_t a=old?strlen(old):0,b=strlen(w[2]);if(b>SIZE_MAX-a-1)return 0;char*s=malloc(a+b+1);if(!s)return 0;if(a)memcpy(s,old,a);memcpy(s+a,w[2],b+1);int ok=mulib_microtcl_set_(t,w[1],s)&&mulib_microtcl_result_(t,s);free(s);return ok;}
-if(!strcmp(w[0],"incr")&&(n==2||n==3)){const char*old=mulib_microtcl_get(t,w[1]);char*end=NULL;errno=0;long x=old?strtol(old,&end,10):0;if((old&&(!end||*end))||errno==ERANGE)return 0;errno=0;long inc=n==3?strtol(w[2],&end,10):1;if((n==3&&(!end||*end))||errno==ERANGE)return 0;if((inc>0&&x>LONG_MAX-inc)||(inc<0&&x<LONG_MIN-inc))return 0;char b[64];snprintf(b,sizeof(b),"%ld",x+inc);return mulib_microtcl_set_(t,w[1],b)&&mulib_microtcl_result_(t,b);}
+if(!strcmp(w[0],"incr")&&(n==2||n==3)){const char*old=mulib_microtcl_get(t,w[1]);char*end=NULL;errno=0;long x=old?strtol(old,&end,10):0;if((old&&(!end||end==old||*end))||errno==ERANGE)return 0;errno=0;long inc=n==3?strtol(w[2],&end,10):1;if((n==3&&(!end||end==w[2]||*end))||errno==ERANGE)return 0;if((inc>0&&x>LONG_MAX-inc)||(inc<0&&x<LONG_MIN-inc))return 0;char b[64];snprintf(b,sizeof(b),"%ld",x+inc);return mulib_microtcl_set_(t,w[1],b)&&mulib_microtcl_result_(t,b);}
 if(!strcmp(w[0],"expr")&&n==4){char*a=NULL,*b=NULL;errno=0;double x=strtod(w[1],&a),y=strtod(w[3],&b);if(errno||!*w[1]||!*w[3]||*a||*b||strlen(w[2])!=1)return 0;double z;switch(*w[2]){case '+':z=x+y;break;case '-':z=x-y;break;case '*':z=x*y;break;case '/':if(y==0)return 0;z=x/y;break;default:return 0;}char res[128];snprintf(res,sizeof(res),"%.17g",z);return mulib_microtcl_result_(t,res);}
 if(!strcmp(w[0],"puts")&&n==2){puts(w[1]);return mulib_microtcl_result_(t,w[1]);}
 return 0;}
-int mulib_microtcl_eval(mulib_microtcl_t*t,const char*script){if(!t||!script)return 0;const char*p=script;while(*p){char*words[64];size_t n=0;while(*p&&*p!='\n'&&*p!=';'){while(*p==' '||*p=='\t'||*p=='\r')p++;if(!*p||*p=='\n'||*p==';')break;if(n>=64){t->errors++;return 0;}char quote=0;if(*p=='"'||*p=='{')quote=*p++;size_t max=strlen(p)+1;char*buf=malloc(max);if(!buf){mulib_microtcl_words_free_(words,n);return 0;}size_t len=0;int closed=quote?0:1;while(*p){if(quote){if(*p==(quote=='{'?'}':'"')){p++;closed=1;break;}}else if(isspace((unsigned char)*p)||*p==';')break;char c=*p++;if(c=='\\'&&*p){c=*p++;if(c=='n')c='\n';else if(c=='t')c='\t';}if(c=='$'&&quote!='{'){const char*start=p;while(isalnum((unsigned char)*p)||*p=='_')p++;if(p>start){size_t sz=(size_t)(p-start);char name[128];if(sz>=sizeof(name)){free(buf);mulib_microtcl_words_free_(words,n);return 0;}memcpy(name,start,sz);name[sz]=0;const char*v=mulib_microtcl_get(t,name);if(!v){free(buf);mulib_microtcl_words_free_(words,n);return 0;}size_t vn=strlen(v);if(len+vn>=max){char*q=realloc(buf,len+vn+strlen(p)+2);if(!q){free(buf);mulib_microtcl_words_free_(words,n);return 0;}buf=q;max=len+vn+strlen(p)+2;}memcpy(buf+len,v,vn);len+=vn;continue;}}buf[len++]=c;}if(!closed){free(buf);mulib_microtcl_words_free_(words,n);t->errors++;return 0;}buf[len]=0;words[n++]=buf;}
-int ok=mulib_microtcl_exec_(t,words,n);mulib_microtcl_words_free_(words,n);if(!ok){t->errors++;return 0;}if(*p=='\n'||*p==';')p++;}return 1;}
+int mulib_microtcl_eval(mulib_microtcl_t *t, const char *script) {
+    const char *p = script; char *words[64], *buf = NULL; size_t count = 0;
+    if (!t || !script) return 0;
+    while (*p) {
+        count = 0;
+        while (*p && *p != '\n' && *p != ';') {
+            char quote = 0; size_t capacity, length = 0; int closed;
+            while (*p != '\n' && isspace((unsigned char)*p)) ++p;
+            if (!*p || *p == '\n' || *p == ';') break;
+            if (count == 64) goto fail;
+            if (*p == '"' || *p == '{') quote = *p++;
+            capacity = strlen(p)+1; buf = (char *)malloc(capacity); if (!buf) goto fail;
+            closed = !quote;
+            while (*p) {
+                char c; int escaped = 0;
+                if (quote) {
+                    if (*p == (quote == '{' ? '}' : '"')) { ++p; closed = 1; break; }
+                } else if (isspace((unsigned char)*p) || *p == ';') break;
+                c = *p++;
+                if (c == '\\' && *p) { escaped = 1; c = *p++; if (c == 'n') c = '\n'; else if (c == 't') c = '\t'; }
+                if (c == '$' && quote != '{' && !escaped) {
+                    const char *begin = p;
+                    while (isalnum((unsigned char)*p) || *p == '_') ++p;
+                    if (p > begin) {
+                        char name[128]; size_t size = (size_t)(p-begin), value_size, remaining; const char *value;
+                        if (size >= sizeof(name)) goto fail;
+                        memcpy(name,begin,size); name[size] = 0; value = mulib_microtcl_get(t,name);
+                        if (!value) goto fail;
+                        value_size = strlen(value); remaining = strlen(p);
+                        if (value_size > SIZE_MAX-length-1) goto fail;
+                        {
+                            size_t need = length+value_size+1;
+                            if (remaining > SIZE_MAX-need) goto fail;
+                            need += remaining;
+                            if (need > capacity) {
+                                char *next = (char *)realloc(buf,need); if (!next) goto fail;
+                                buf = next; capacity = need;
+                            }
+                        }
+                        memcpy(buf+length,value,value_size); length += value_size; continue;
+                    }
+                }
+                buf[length++] = c;
+            }
+            if (!closed || (quote && *p && !isspace((unsigned char)*p) && *p != ';')) goto fail;
+            buf[length] = 0; words[count++] = buf; buf = NULL;
+        }
+        if (!mulib_microtcl_exec_(t,words,count)) goto fail;
+        mulib_microtcl_words_free_(words,count);
+        if (*p == '\n' || *p == ';') ++p;
+    }
+    return 1;
+fail:
+    free(buf); mulib_microtcl_words_free_(words,count);
+    if (t->errors < INT_MAX) ++t->errors;
+    return 0;
+}
 #ifdef __cplusplus
 }
 #endif

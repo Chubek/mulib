@@ -4,6 +4,7 @@
  * Adapters take ownership of upstream ONLY on successful construction. Contexts
  * and yielded values are borrowed; a source may supply a context destructor.
  * NULL is a valid element. Streams are not thread safe, cloneable or memoized.
+ * Pipelines are limited to 256 stages, including the source, to bound call depth.
  */
 #ifndef MULIB_LAZYSTREAM_H
 #define MULIB_LAZYSTREAM_H
@@ -49,11 +50,13 @@ struct mulib_lazystream {
     mulib_lazy_map_fn map;
     mulib_lazy_predicate_fn predicate;
     void *const *array;
-    size_t count, index;
+    size_t count, index, depth;
 };
 static mulib_lazystream_t *mulib_lazy_new_(int kind, mulib_lazystream_t *upstream) {
-    mulib_lazystream_t *s = (mulib_lazystream_t *)calloc(1, sizeof *s);
-    if (s) { s->kind = kind; s->upstream = upstream; }
+    mulib_lazystream_t *s;
+    if (upstream && upstream->depth >= 256) return NULL;
+    s = (mulib_lazystream_t *)calloc(1, sizeof *s);
+    if (s) { s->kind = kind; s->upstream = upstream; s->depth = upstream ? upstream->depth+1 : 1; }
     return s;
 }
 mulib_lazystream_t *mulib_lazystream_source(mulib_lazy_next_fn f, void *u, mulib_lazy_destroy_fn d) {

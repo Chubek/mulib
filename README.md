@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **120 implemented modules**.
+A C11 modular single-header utility library with **132 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -74,7 +74,10 @@ provide on-demand map/filter/take/drop/fold pipelines.
 
 The term *header-only* here means no prebuilt or separately shipped `.c` files; implementations live in headers behind feature switches. These modules implement focused, documented APIs, not every feature implied by a format's name. In particular, configuration, markup, terminal, protocol, and grammar modules document their supported syntax and limits; they are not claims of full YAML, TOML, XPath, HTML5, CSS, CommonMark, VT, or DBus conformance. Unsupported features must not be mistaken for supported conversions. These modules are not complete substitutes for a production Tcl distribution, POSIX manuals toolchain, JSON Schema validator, full Unicode database or cryptographic engine. `mulib-microtcl.h` `loadall()` registers **all MuLIB MicroTcl built-ins**, not external Tcl packages. Documented support and actual APIs determine feature completeness. All names and responsibilities are enumerated in `MANIFEST.yaml`; every header has a dedicated manual in `manual/` and embedded Doxygen text.
 
-There are no third-party library dependencies. Platform modules use operating-system
+There are no mandatory third-party library dependencies. Wayland/Xlib connection
+helpers optionally load their native client runtimes; wlroots helpers provide
+portable geometry/layout operations, not a compositor ABI binding.
+Platform modules use operating-system
 APIs and document platform restrictions; dynamic loading may need `-ldl`, and
 numerical modules may need `-lm`. DRM refers to Linux Direct Rendering Manager.
 Python and Ruby modules **generate ctypes/Fiddle binding source** rather than
@@ -103,3 +106,7 @@ Focused `tests/test_*.c` suites cover the new libraries. CMake also supports
 tracked allocation/container/vector usage through a separate implementation
 translation unit. `examples/dogfood.c` demonstrates parser-backed JSON feeding
 vector algebra.
+
+See [header hardening](manual/hardening.md) for failure-injection tests,
+deterministic hostile-input coverage, optional libFuzzer builds and strengthened
+ownership/validation contracts. These checks are not a security certification.

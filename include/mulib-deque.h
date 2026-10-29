@@ -33,9 +33,9 @@ extern "C" {
 typedef struct mulib_deque { unsigned char *data; size_t head,length,capacity,stride; } mulib_deque_t;
 /** @brief mulib deque init; see manual/mulib-deque.md for contracts and examples. */
 void mulib_deque_init(mulib_deque_t*d,size_t stride);
-/** @brief mulib deque push front; see manual/mulib-deque.md for contracts and examples. */
+/** @brief Copy to the front; sources may be existing aligned live slots, even across growth. */
 int mulib_deque_push_front(mulib_deque_t*d,const void*x);
-/** @brief mulib deque push back; see manual/mulib-deque.md for contracts and examples. */
+/** @brief Copy to the back; sources may be existing aligned live slots, even across growth. */
 int mulib_deque_push_back(mulib_deque_t*d,const void*x);
 /** @brief mulib deque pop front; see manual/mulib-deque.md for contracts and examples. */
 int mulib_deque_pop_front(mulib_deque_t*d,void*out);
@@ -55,11 +55,34 @@ void mulib_deque_free(mulib_deque_t*d);
 extern "C" {
 #endif
 void mulib_deque_init(mulib_deque_t*d,size_t s){if(d){memset(d,0,sizeof(*d));d->stride=s;}}
-static int mulib_deque_grow_(mulib_deque_t*d){if(d->length<d->capacity)return 1;size_t n=d->capacity?d->capacity*2:8;if(!d->stride||n<d->capacity||n>SIZE_MAX/d->stride)return 0;unsigned char*p=malloc(n*d->stride);if(!p)return 0;for(size_t i=0;i<d->length;i++)memcpy(p+i*d->stride,d->data+((d->head+i)%d->capacity)*d->stride,d->stride);free(d->data);d->data=p;d->head=0;d->capacity=n;return 1;}
-int mulib_deque_push_back(mulib_deque_t*d,const void*x){if(!d||!x||!mulib_deque_grow_(d))return 0;memcpy(d->data+((d->head+d->length)%d->capacity)*d->stride,x,d->stride);d->length++;return 1;}
-int mulib_deque_push_front(mulib_deque_t*d,const void*x){if(!d||!x||!mulib_deque_grow_(d))return 0;d->head=(d->head+d->capacity-1)%d->capacity;memcpy(d->data+d->head*d->stride,x,d->stride);d->length++;return 1;}
-int mulib_deque_pop_front(mulib_deque_t*d,void*out){if(!d||!d->length)return 0;if(out)memcpy(out,d->data+d->head*d->stride,d->stride);d->head=(d->head+1)%d->capacity;d->length--;return 1;}
-int mulib_deque_pop_back(mulib_deque_t*d,void*out){if(!d||!d->length)return 0;d->length--;if(out)memcpy(out,d->data+((d->head+d->length)%d->capacity)*d->stride,d->stride);return 1;}
+static size_t mulib_deque_index_(const mulib_deque_t *d, size_t i) {
+    return i >= d->capacity-d->head ? i-(d->capacity-d->head) : d->head+i;
+}
+static int mulib_deque_grow_(mulib_deque_t *d, const void **source) {
+    size_t logical = 0, n; int internal = 0; unsigned char *p;
+    if (!d->stride || d->length == SIZE_MAX || d->length > d->capacity || d->capacity > SIZE_MAX/d->stride ||
+        (d->capacity && (!d->data || d->head >= d->capacity))) return 0;
+    if (d->data && (uintptr_t)*source >= (uintptr_t)d->data && (uintptr_t)*source-(uintptr_t)d->data <= d->capacity*d->stride) {
+        size_t offset = (size_t)((uintptr_t)*source-(uintptr_t)d->data), physical;
+        if (offset % d->stride || offset/d->stride >= d->capacity) return 0;
+        physical = offset/d->stride; logical = physical >= d->head ? physical-d->head : d->capacity-d->head+physical;
+        if (logical >= d->length) return 0;
+        internal = 1;
+    }
+    if (d->length < d->capacity) return 1;
+    n = d->capacity && d->capacity <= SIZE_MAX/2 ? d->capacity*2 : d->capacity ? d->length+1 : 8;
+    if (n > SIZE_MAX/d->stride) n = d->length+1;
+    if (n > SIZE_MAX/d->stride) return 0;
+    p = (unsigned char *)malloc(n*d->stride); if (!p) return 0;
+    for (size_t i = 0; i < d->length; ++i) memcpy(p+i*d->stride,d->data+mulib_deque_index_(d,i)*d->stride,d->stride);
+    free(d->data); d->data = p; d->head = 0; d->capacity = n;
+    if (internal) *source = p+logical*d->stride;
+    return 1;
+}
+int mulib_deque_push_back(mulib_deque_t*d,const void*x){if(!d||!x||!mulib_deque_grow_(d,&x))return 0;memmove(d->data+mulib_deque_index_(d,d->length)*d->stride,x,d->stride);d->length++;return 1;}
+int mulib_deque_push_front(mulib_deque_t*d,const void*x){if(!d||!x||!mulib_deque_grow_(d,&x))return 0;d->head=d->head?d->head-1:d->capacity-1;memmove(d->data+d->head*d->stride,x,d->stride);d->length++;return 1;}
+int mulib_deque_pop_front(mulib_deque_t*d,void*out){if(!d||!d->length)return 0;if(out)memmove(out,d->data+d->head*d->stride,d->stride);d->head=d->head==d->capacity-1?0:d->head+1;d->length--;return 1;}
+int mulib_deque_pop_back(mulib_deque_t*d,void*out){if(!d||!d->length)return 0;d->length--;if(out)memmove(out,d->data+mulib_deque_index_(d,d->length)*d->stride,d->stride);return 1;}
 void mulib_deque_free(mulib_deque_t*d){if(d){free(d->data);memset(d,0,sizeof(*d));}}
 #ifdef __cplusplus
 }

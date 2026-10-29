@@ -31,7 +31,7 @@ extern "C" {
 
 /** @brief mulib hex encode; see manual/mulib-hex.md for contracts and examples. */
 size_t mulib_hex_encode(const void*data,size_t n,char*out,size_t cap);
-/** @brief mulib hex decode; see manual/mulib-hex.md for contracts and examples. */
+/** @brief Decode even-length hex, leaving output unchanged on error; exact in-place is safe. */
 int mulib_hex_decode(const char*source,size_t n,unsigned char*out,size_t cap);
 
 #ifdef __cplusplus
@@ -46,7 +46,7 @@ extern "C" {
 #endif
 size_t mulib_hex_encode(const void*p,size_t n,char*out,size_t cap){static const char x[]="0123456789abcdef";if((!p&&n)||n>(SIZE_MAX-1)/2||!out||cap<2*n+1)return 0;const unsigned char*b=p;for(size_t i=0;i<n;i++){out[i*2]=x[b[i]>>4];out[i*2+1]=x[b[i]&15];}out[n*2]=0;return n*2;}
 static int mulib_hex_value_(char c){if(c>='0'&&c<='9')return c-'0';if(c>='a'&&c<='f')return c-'a'+10;if(c>='A'&&c<='F')return c-'A'+10;return -1;}
-int mulib_hex_decode(const char*s,size_t n,unsigned char*out,size_t cap){if(!s||n%2||n/2>cap||(!out&&n))return 0;for(size_t i=0;i<n/2;i++){int a=mulib_hex_value_(s[i*2]),b=mulib_hex_value_(s[i*2+1]);if(a<0||b<0)return 0;out[i]=(unsigned char)((a<<4)|b);}return 1;}
+int mulib_hex_decode(const char*s,size_t n,unsigned char*out,size_t cap){if((!s&&n)||n%2||n/2>cap||(!out&&n))return 0;for(size_t i=0;i<n;i++)if(mulib_hex_value_(s[i])<0)return 0;for(size_t i=0;i<n/2;i++){int a=mulib_hex_value_(s[i*2]),b=mulib_hex_value_(s[i*2+1]);out[i]=(unsigned char)((a<<4)|b);}return 1;}
 #ifdef __cplusplus
 }
 #endif
