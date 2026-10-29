@@ -7,6 +7,7 @@
 #define MULIB_PARSEC_H
 #include <stddef.h>
 #include <stdint.h>
+#include "mulib-ast.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -96,6 +97,40 @@ int mulib_parsec_run(const mulib_parsec_parser_t *parser, const char *source, si
                     const mulib_parsec_options_t *options, mulib_parsec_result_t *result);
 /** @brief Release captures and clear a result. NULL is harmless. */
 void mulib_parsec_result_free(mulib_parsec_result_t *result);
+/** @brief Owned scannerless grammar API. Define MULIB_IMPL_PARSER in addition
+ * to PARSEC, PEG, STRBUF, GLOB and AST in one translation unit. This opt-in
+ * keeps the original combinator implementation dependency-free.
+ */
+typedef struct mulib_parser mulib_parser_t;
+typedef enum mulib_parser_error_code {
+    MULIB_PARSER_OK, MULIB_PARSER_IO, MULIB_PARSER_SYNTAX,
+    MULIB_PARSER_MATCH, MULIB_PARSER_MEMORY, MULIB_PARSER_ACTION, MULIB_PARSER_INVALID
+} mulib_parser_error_code_t;
+typedef struct mulib_parser_error {
+    mulib_parser_error_code_t code;
+    size_t offset, line, column;
+    const char *message; /* Static message; valid after grammar destruction. */
+} mulib_parser_error_t;
+/** Glob-classify *.peg and *.ebnf paths, then read files or compile inline rules.
+ * Assignments identify inline rules; extensions/path separators identify paths.
+ * Existing extensionless files are also accepted. Missing paths do not fall
+ * back to grammar text. NULL on IO, syntax, recursion or allocation errors.
+ */
+mulib_parser_t *mulib_parser_from_peg(const char *file_or_grammar);
+mulib_parser_t *mulib_parser_from_ebnf(const char *file_or_grammar);
+mulib_parser_t *mulib_parser_from_peg_ex(const char *file_or_grammar, mulib_parser_error_t *error);
+mulib_parser_t *mulib_parser_from_ebnf_ex(const char *file_or_grammar, mulib_parser_error_t *error);
+void mulib_parser_destroy(mulib_parser_t *parser);
+/** Entire-input parse; NULL start selects the first production. Copies source
+ * into an owned AST, then invokes actions in postorder. The walker outlives the
+ * grammar and source. Actions match production names or explicit -> aliases.
+ */
+mulib_ast_walker_t *mulib_parser_parse(const mulib_parser_t *parser, const char *start,
+    const char *source, size_t length, const mulib_ast_walk_t *actions, size_t action_count,
+    const mulib_parsec_options_t *options, mulib_parser_error_t *error);
+/** Load a source file, parse the first production, and return an owned walker. */
+mulib_ast_walker_t *mulib_parser_parse_to_walker(const mulib_parser_t *parser,
+    const char *filename, mulib_parser_error_t *error);
 #ifdef __cplusplus
 }
 #endif
@@ -333,3 +368,139 @@ void mulib_parsec_result_free(mulib_parsec_result_t *r) {
 }
 #endif
 #endif /* implementation */
+
+#if defined(MULIB_IMPL_PARSER) && !defined(MULIB_PARSER_IMPLEMENTED) && \
+    (!defined(MULIB_PEG_H) || defined(MULIB_PEG_IMPLEMENTED))
+#define MULIB_PARSER_IMPLEMENTED
+#include "mulib-peg.h"
+#include "mulib-glob.h"
+#include "mulib-strbuf.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+struct mulib_parser { mulib_peg_t *grammar; };
+static void mulib_parser_error_(mulib_parser_error_t *e, mulib_parser_error_code_t code, const char *message) {
+    if (e) { memset(e, 0, sizeof *e); e->code = code; e->message = message;
+        if (code) e->line = e->column = 1; }
+}
+static char *mulib_parser_read_(const char *path, size_t *length, mulib_parser_error_t *e) {
+    FILE *f;
+    struct stat info;
+    mulib_strbuf_t b;
+    char chunk[4096];
+    size_t n;
+    if (!path || stat(path, &info) || !S_ISREG(info.st_mode) || !(f = fopen(path, "rb"))) {
+        mulib_parser_error_(e, MULIB_PARSER_IO, "source file does not exist, is not regular, or cannot be opened"); return NULL;
+    }
+    mulib_strbuf_init(&b);
+    while ((n = fread(chunk, 1, sizeof chunk, f)) != 0) {
+        if (!mulib_strbuf_append_n(&b, chunk, n)) {
+            fclose(f); mulib_strbuf_free(&b);
+            mulib_parser_error_(e, MULIB_PARSER_MEMORY, "out of memory"); return NULL;
+        }
+    }
+    { int bad = ferror(f); if (fclose(f)) bad = 1;
+        if (bad) { mulib_strbuf_free(&b); mulib_parser_error_(e, MULIB_PARSER_IO, "file read failed"); return NULL; } }
+    if (!mulib_strbuf_append_n(&b, "", 0)) {
+        mulib_strbuf_free(&b); mulib_parser_error_(e, MULIB_PARSER_MEMORY, "out of memory"); return NULL;
+    }
+    *length = b.length; return b.data;
+}
+static mulib_parser_t *mulib_parser_load_(const char *input, int ebnf, mulib_parser_error_t *e) {
+    char *owned = NULL;
+    size_t length;
+    mulib_parser_t *p;
+    mulib_peg_t *g;
+    mulib_peg_error_t pe;
+    struct stat info;
+    int path;
+    mulib_parser_error_(e, MULIB_PARSER_OK, NULL);
+    if (!input) { mulib_parser_error_(e, MULIB_PARSER_INVALID, "null grammar"); return NULL; }
+    path = mulib_glob_match("*.peg", input) || mulib_glob_match("*.ebnf", input) ||
+        mulib_glob_match("*.*", input) || mulib_glob_match("*/*", input) || mulib_glob_match("*\\*", input);
+    /* An assignment identifies inline text even if its last literal resembles
+     * a filename. Glob matching is classification, not filesystem expansion. */
+    if (strstr(input, "<-") || strchr(input, '=')) path = 0;
+    else if (!path) path = stat(input, &info) == 0;
+    length = strlen(input);
+    if (path) { owned = mulib_parser_read_(input, &length, e); if (!owned) return NULL; input = owned; }
+    g = ebnf ? mulib_peg_compile_ebnf(input, length, &pe) : mulib_peg_compile(input, length, &pe);
+    free(owned);
+    if (!g) {
+        mulib_parser_error_(e, pe.message && strstr(pe.message, "memory") ? MULIB_PARSER_MEMORY : MULIB_PARSER_SYNTAX, pe.message);
+        if (e) { e->offset = pe.offset; e->line = pe.line; e->column = pe.column; }
+        return NULL;
+    }
+    p = (mulib_parser_t *)malloc(sizeof *p);
+    if (!p) { mulib_peg_destroy(g); mulib_parser_error_(e, MULIB_PARSER_MEMORY, "out of memory"); return NULL; }
+    p->grammar = g; return p;
+}
+mulib_parser_t *mulib_parser_from_peg(const char *s) { return mulib_parser_load_(s, 0, NULL); }
+mulib_parser_t *mulib_parser_from_ebnf(const char *s) { return mulib_parser_load_(s, 1, NULL); }
+mulib_parser_t *mulib_parser_from_peg_ex(const char *s, mulib_parser_error_t *e) { return mulib_parser_load_(s, 0, e); }
+mulib_parser_t *mulib_parser_from_ebnf_ex(const char *s, mulib_parser_error_t *e) { return mulib_parser_load_(s, 1, e); }
+void mulib_parser_destroy(mulib_parser_t *p) { if (p) { mulib_peg_destroy(p->grammar); free(p); } }
+mulib_ast_walker_t *mulib_parser_parse(const mulib_parser_t *p, const char *start, const char *s, size_t len,
+    const mulib_ast_walk_t *actions, size_t count, const mulib_parsec_options_t *options, mulib_parser_error_t *e) {
+    mulib_parsec_result_t r;
+    mulib_ast_t **nodes;
+    mulib_ast_walker_t *w;
+    size_t i, j;
+    int status;
+    mulib_parser_error_(e, MULIB_PARSER_OK, NULL);
+    if (!p || (!s && len) || (!actions && count)) {
+        mulib_parser_error_(e, MULIB_PARSER_INVALID, "invalid parse arguments"); return NULL;
+    }
+    status = mulib_peg_run(p->grammar, start, s, len, 1, options, &r);
+    if (status != 1) {
+        mulib_parser_error_(e, r.error.code == MULIB_PARSEC_MEMORY ? MULIB_PARSER_MEMORY :
+            status == 0 ? MULIB_PARSER_MATCH : MULIB_PARSER_INVALID,
+            r.error.code == MULIB_PARSEC_MEMORY ? "out of memory" :
+            status == 0 ? "input does not match grammar" : "parser resource limit or invalid arguments");
+        if (e) { e->offset = r.error.offset; e->line = r.error.line; e->column = r.error.column; }
+        mulib_parsec_result_free(&r); return NULL;
+    }
+    w = (mulib_ast_walker_t *)calloc(1, sizeof *w);
+    nodes = r.count <= SIZE_MAX / sizeof *nodes ? (mulib_ast_t **)calloc(r.count, sizeof *nodes) : NULL;
+    if (!w || !nodes) { free(w); free(nodes); mulib_parsec_result_free(&r);
+        mulib_parser_error_(e, MULIB_PARSER_MEMORY, "out of memory"); return NULL; }
+    for (i = 0; i < r.count; ++i) {
+        mulib_parsec_capture_t *c = &r.captures[i];
+        nodes[i] = mulib_ast_create(mulib_peg_rule_name(p->grammar, c->tag), s ? s + c->offset : "", c->length);
+        if (!nodes[i]) goto memory;
+        nodes[i]->offset = c->offset;
+        if (!mulib_ast_set_action(nodes[i], mulib_peg_rule_action(p->grammar, c->tag))) goto memory;
+        /* Descendants are postorder. Unattached roots in this interval are
+         * exactly the immediate children, already in source order. */
+        for (j = c->first; j < i; ++j) if (!nodes[j]->parent)
+            if (!mulib_ast_append(nodes[i], nodes[j])) goto memory;
+    }
+    w->root = nodes[r.count - 1];
+    free(nodes); mulib_parsec_result_free(&r);
+    if (count && mulib_ast_walker_walk(w, actions, count) != 1) {
+        mulib_ast_walker_destroy(w); mulib_parser_error_(e, MULIB_PARSER_ACTION, "semantic action stopped traversal"); return NULL;
+    }
+    return w;
+memory:
+    /* Destroy disjoint roots only. Descendants may have lower array indices. */
+    for (i = 0; i < r.count; ++i) if (nodes[i] && nodes[i]->parent) nodes[i] = NULL;
+    for (i = 0; i < r.count; ++i) mulib_ast_destroy(nodes[i]);
+    free(nodes); free(w); mulib_parsec_result_free(&r);
+    mulib_parser_error_(e, MULIB_PARSER_MEMORY, "AST allocation or depth limit"); return NULL;
+}
+mulib_ast_walker_t *mulib_parser_parse_to_walker(const mulib_parser_t *p, const char *path, mulib_parser_error_t *e) {
+    size_t length;
+    char *s = mulib_parser_read_(path, &length, e);
+    mulib_ast_walker_t *w;
+    if (!s) return NULL;
+    w = mulib_parser_parse(p, NULL, s, length, NULL, 0, NULL, e);
+    free(s); return w;
+}
+#ifdef __cplusplus
+}
+#endif
+#endif

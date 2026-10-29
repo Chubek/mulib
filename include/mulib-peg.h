@@ -20,12 +20,19 @@ typedef struct mulib_peg_error {
  * forward references and # comments. Rejects left recursion and nullable loops.
  */
 mulib_peg_t *mulib_peg_compile(const char *source, size_t length, mulib_peg_error_t *error);
+/** EBNF dialect: =, |, comma concatenation, [optional], {repeat}; uppercase
+ * rules are lexemes, with explicit whitespace and no implicit tokenization.
+ * Both dialects accept -> action before a rule's semicolon and @(...) lexical
+ * S-expressions. EBNF also accepts ? (...) ? special sequences.
+ */
+mulib_peg_t *mulib_peg_compile_ebnf(const char *source, size_t length, mulib_peg_error_t *error);
 /** @brief Destroy a compiled grammar. NULL is harmless. */
 void mulib_peg_destroy(mulib_peg_t *grammar);
 /** @brief Return the number of named rules. */
 size_t mulib_peg_rule_count(const mulib_peg_t *grammar);
 /** @brief Borrow a rule name; its zero-based index is its parsec capture tag. */
 const char *mulib_peg_rule_name(const mulib_peg_t *grammar, size_t index);
+const char *mulib_peg_rule_action(const mulib_peg_t *grammar, size_t index);
 /** @brief Match using parsec: 1 match, 0 mismatch, -1 resource/argument error.
  * NULL start selects the first rule. entire requires end of input. Captures
  * include every matched rule in postorder; free result with parsec_result_free.
@@ -66,7 +73,7 @@ struct mulib_peg_node_ {
     int nullable;
 };
 typedef struct mulib_peg_rule_ {
-    char *name;
+    char *name, *action;
     const mulib_parsec_parser_t *entry;
     mulib_peg_node_ *body;
     unsigned mark;
@@ -81,7 +88,7 @@ typedef struct mulib_peg_reader_ {
     size_t length, pos, depth;
     mulib_peg_t *grammar;
     mulib_peg_error_t *error;
-    int failed;
+    int failed, ebnf;
 } mulib_peg_reader_;
 static void mulib_peg_fail_(mulib_peg_reader_ *r, size_t at, const char *message) {
     size_t i;
@@ -98,6 +105,13 @@ static void mulib_peg_space_(mulib_peg_reader_ *r) {
         unsigned char c = (unsigned char)r->source[r->pos];
         if (c == ' ' || c == '\t' || c == '\r' || c == '\n') ++r->pos;
         else if (c == '#') { while (r->pos < r->length && r->source[r->pos] != '\n') ++r->pos; }
+        else if (r->ebnf && c == '(' && r->pos + 1 < r->length && r->source[r->pos + 1] == '*') {
+            size_t start = r->pos;
+            r->pos += 2;
+            while (r->pos + 1 < r->length && !(r->source[r->pos] == '*' && r->source[r->pos + 1] == ')')) ++r->pos;
+            if (r->pos + 1 >= r->length) { mulib_peg_fail_(r, start, "unterminated EBNF comment"); r->pos = r->length; return; }
+            r->pos += 2;
+        }
         else break;
     }
 }
@@ -187,12 +201,107 @@ static int mulib_peg_char_(mulib_peg_reader_ *r, unsigned char *out) {
     *out = c; return 1;
 }
 static mulib_peg_node_ *mulib_peg_expression_(mulib_peg_reader_ *r);
+static mulib_peg_node_ *mulib_peg_primary_(mulib_peg_reader_ *r);
+/* Deliberately small scannerless lexical language, compiled to combinators. */
+static mulib_peg_node_ *mulib_peg_lex_(mulib_peg_reader_ *r) {
+    char *op = NULL;
+    mulib_peg_node_ **items = NULL, *n = NULL;
+    size_t count = 0, capacity = 0;
+    mulib_parsec_kind kind;
+    mulib_peg_space_(r);
+    if (r->depth >= (size_t)MULIB_PEG_MAX_DEPTH) { mulib_peg_fail_(r, r->pos, "lexical nesting limit"); return NULL; }
+    if (r->pos == r->length || r->source[r->pos] != '(') {
+        ++r->depth; n = mulib_peg_primary_(r); --r->depth; return n;
+    }
+    ++r->pos; ++r->depth;
+    op = mulib_peg_name_(r);
+    if (!op) goto done;
+    for (;;) {
+        mulib_peg_node_ **p;
+        mulib_peg_space_(r);
+        if (r->pos == r->length) { mulib_peg_fail_(r, r->pos, "unterminated lexical form"); goto done; }
+        if (r->source[r->pos] == ')') { ++r->pos; break; }
+        n = mulib_peg_lex_(r);
+        if (!n) goto done;
+        if (count == capacity) {
+            size_t cap = capacity ? capacity * 2 : 4;
+            if (cap < capacity || cap > SIZE_MAX / sizeof *p) { mulib_peg_fail_(r, r->pos, "lexical allocation overflow"); goto done; }
+            p = (mulib_peg_node_ **)realloc(items, cap * sizeof *p);
+            if (!p) { mulib_peg_fail_(r, r->pos, "out of memory"); goto done; }
+            items = p; capacity = cap;
+        }
+        items[count++] = n;
+    }
+    n = NULL;
+    if (!strcmp(op, "seq") || !strcmp(op, "or")) {
+        kind = !strcmp(op, "seq") ? MULIB_PARSEC_SEQUENCE : MULIB_PARSEC_CHOICE;
+        n = mulib_peg_compose_(r, kind, items, count);
+    } else if ((!strcmp(op, "any") || !strcmp(op, "eof")) && !count) {
+        n = mulib_peg_node_new_(r);
+        if (n) n->parser = !strcmp(op, "any") ? mulib_parsec_any() : mulib_parsec_end();
+    } else if (!strcmp(op, "range") && count == 2 &&
+               items[0]->parser.kind == MULIB_PARSEC_LITERAL && items[0]->parser.as.text.length == 1 &&
+               items[1]->parser.kind == MULIB_PARSEC_LITERAL && items[1]->parser.as.text.length == 1 &&
+               items[0]->parser.as.text.bytes[0] <= items[1]->parser.as.text.bytes[0]) {
+        n = mulib_peg_node_new_(r);
+        if (n) n->parser = mulib_parsec_range(items[0]->parser.as.text.bytes[0], items[1]->parser.as.text.bytes[0]);
+    } else if (count == 1) {
+        if (!strcmp(op, "lit") && items[0]->parser.kind == MULIB_PARSEC_LITERAL) n = items[0];
+        else if (!strcmp(op, "set") && items[0]->parser.kind == MULIB_PARSEC_LITERAL) {
+            size_t i;
+            n = mulib_peg_node_new_(r);
+            if (n) {
+                n->text = (char *)calloc(32, 1);
+                if (!n->text) { mulib_peg_fail_(r, r->pos, "out of memory"); n = NULL; }
+                else {
+                    for (i = 0; i < items[0]->parser.as.text.length; ++i) {
+                        unsigned char byte = items[0]->parser.as.text.bytes[i];
+                        ((unsigned char *)n->text)[byte >> 3] |= (unsigned char)(1u << (byte & 7));
+                    }
+                    n->parser = mulib_parsec_set((const unsigned char *)n->text);
+                }
+            }
+        }
+        else if (!strcmp(op, "star") || !strcmp(op, "plus") || !strcmp(op, "opt")) {
+            n = mulib_peg_compose_(r, MULIB_PARSEC_REPEAT, items, 1);
+            if (n) { n->parser.as.unary.min = !strcmp(op, "plus") ? 1 : 0;
+                n->parser.as.unary.max = !strcmp(op, "opt") ? 1 : SIZE_MAX; }
+        } else if (!strcmp(op, "not") || !strcmp(op, "and"))
+            n = mulib_peg_compose_(r, !strcmp(op, "not") ? MULIB_PARSEC_NOT : MULIB_PARSEC_AND, items, 1);
+    }
+    if (!n && !r->failed) mulib_peg_fail_(r, r->pos, "unknown lexical operator or invalid operands");
+done:
+    free(op); free(items); --r->depth;
+    return r->failed ? NULL : n;
+}
 static mulib_peg_node_ *mulib_peg_primary_(mulib_peg_reader_ *r) {
     unsigned char c;
     mulib_peg_node_ *n;
     mulib_peg_space_(r);
     if (r->pos == r->length) { mulib_peg_fail_(r, r->pos, "expected expression"); return NULL; }
     c = (unsigned char)r->source[r->pos];
+    if (c == '@' || (r->ebnf && c == '?')) {
+        int special = c == '?';
+        ++r->pos; n = mulib_peg_lex_(r); mulib_peg_space_(r);
+        if (special) {
+            if (r->pos == r->length || r->source[r->pos] != '?') {
+                mulib_peg_fail_(r, r->pos, "expected closing special-sequence ?"); return NULL;
+            }
+            ++r->pos;
+        }
+        return n;
+    }
+    if (r->ebnf && (c == '[' || c == '{')) {
+        char close = c == '[' ? ']' : '}';
+        ++r->pos; n = mulib_peg_expression_(r); mulib_peg_space_(r);
+        if (!n) return NULL;
+        if (r->pos == r->length || r->source[r->pos] != close) {
+            mulib_peg_fail_(r, r->pos, "expected EBNF closing delimiter"); return NULL;
+        }
+        ++r->pos; n = mulib_peg_compose_(r, MULIB_PARSEC_REPEAT, &n, 1);
+        if (n && c == '[') n->parser.as.unary.max = 1;
+        return n;
+    }
     if (c == '(') {
         ++r->pos; n = mulib_peg_expression_(r); mulib_peg_space_(r);
         if (!n) return NULL;
@@ -286,7 +395,16 @@ static mulib_peg_node_ *mulib_peg_sequence_(mulib_peg_reader_ *r) {
         char c;
         mulib_peg_space_(r);
         if (r->pos == r->length) break;
-        c = r->source[r->pos]; if (c == '/' || c == ')' || c == ';') break;
+        c = r->source[r->pos];
+        if (c == '/' || c == ')' || c == ';' ||
+            (c == '-' && r->pos + 1 < r->length && r->source[r->pos + 1] == '>') ||
+            (r->ebnf && (c == '|' || c == ']' || c == '}'))) break;
+        if (r->ebnf && c == ',') {
+            if (!count) { mulib_peg_fail_(r, r->pos, "unexpected comma"); free(items); return NULL; }
+            ++r->pos; n = mulib_peg_prefix_(r);
+            if (!n || !mulib_peg_push_(r, &items, &count, &capacity, n)) { free(items); return NULL; }
+            continue;
+        }
         n = mulib_peg_prefix_(r);
         if (!n || !mulib_peg_push_(r, &items, &count, &capacity, n)) { free(items); return NULL; }
     }
@@ -300,7 +418,7 @@ static mulib_peg_node_ *mulib_peg_expression_(mulib_peg_reader_ *r) {
         n = mulib_peg_sequence_(r);
         if (!n || !mulib_peg_push_(r, &items, &count, &capacity, n)) { free(items); return NULL; }
         mulib_peg_space_(r);
-        if (r->pos == r->length || r->source[r->pos] != '/') break;
+        if (r->pos == r->length || (r->source[r->pos] != '/' && (!r->ebnf || r->source[r->pos] != '|'))) break;
         ++r->pos;
     } while (!r->failed);
     n = count == 1 ? items[0] : mulib_peg_compose_(r, MULIB_PARSEC_CHOICE, items, count);
@@ -313,13 +431,14 @@ void mulib_peg_destroy(mulib_peg_t *g) {
         mulib_peg_node_ *n = g->nodes; g->nodes = n->next;
         free(n->children); free(n->parts); free(n->text); free(n);
     }
-    for (i = 0; i < g->count; ++i) free(g->rules[i].name);
+    for (i = 0; i < g->count; ++i) { free(g->rules[i].name); free(g->rules[i].action); }
     free(g->rules); free(g);
 }
 static int mulib_peg_nullable_(const mulib_peg_t *g, const mulib_peg_node_ *n) {
     size_t i;
     switch (n->parser.kind) {
     case MULIB_PARSEC_LITERAL: return n->parser.as.text.length == 0;
+    case MULIB_PARSEC_END: return 1;
     case MULIB_PARSEC_AND: case MULIB_PARSEC_NOT: return 1;
     case MULIB_PARSEC_REPEAT: return !n->parser.as.unary.min || n->children[0]->nullable;
     case MULIB_PARSEC_REF: return g->rules[n->reference].body->nullable;
@@ -360,52 +479,66 @@ static int mulib_peg_visit_rule_(mulib_peg_reader_ *r, size_t index, size_t dept
     if (!mulib_peg_visit_node_(r, rule->body, depth + 1)) return 0;
     rule->mark = 2; return 1;
 }
-mulib_peg_t *mulib_peg_compile(const char *source, size_t length, mulib_peg_error_t *error) {
+static mulib_peg_t *mulib_peg_compile_(const char *source, size_t length, mulib_peg_error_t *error, int ebnf) {
     mulib_peg_reader_ r;
     mulib_peg_t *g;
     mulib_peg_node_ *n;
     size_t i;
     int changed;
     if (error) memset(error, 0, sizeof *error);
-    memset(&r, 0, sizeof r); r.source = source; r.length = length; r.error = error;
+    memset(&r, 0, sizeof r); r.source = source; r.length = length; r.error = error; r.ebnf = ebnf;
     if ((!source && length) || length == SIZE_MAX) { mulib_peg_fail_(&r, 0, "invalid grammar input"); return NULL; }
     g = (mulib_peg_t *)calloc(1, sizeof *g);
     if (!g) { mulib_peg_fail_(&r, 0, "out of memory"); return NULL; }
     r.grammar = g;
     for (;;) {
-        char *name;
+        char *name, *action = NULL;
         mulib_peg_node_ *body, *capture;
         mulib_peg_space_(&r); if (r.pos == length) break;
         name = mulib_peg_name_(&r); if (!name) goto fail;
         for (i = 0; i < g->count; ++i) if (!strcmp(name, g->rules[i].name)) break;
         if (i < g->count) { free(name); mulib_peg_fail_(&r, r.pos, "duplicate rule name"); goto fail; }
         mulib_peg_space_(&r);
-        if (length - r.pos < 2 || source[r.pos] != '<' || source[r.pos + 1] != '-') {
-            free(name); mulib_peg_fail_(&r, r.pos, "expected <-"); goto fail;
+        if (ebnf) {
+            if (r.pos == length || source[r.pos] != '=') {
+                free(name); mulib_peg_fail_(&r, r.pos, "expected ="); goto fail;
+            }
+            ++r.pos;
+        } else {
+            if (length - r.pos < 2 || source[r.pos] != '<' || source[r.pos + 1] != '-') {
+                free(name); mulib_peg_fail_(&r, r.pos, "expected <-"); goto fail;
+            }
+            r.pos += 2;
         }
-        r.pos += 2; body = mulib_peg_expression_(&r);
+        body = mulib_peg_expression_(&r);
         if (!body) { free(name); goto fail; }
         mulib_peg_space_(&r);
-        if (r.pos == length || source[r.pos] != ';') { free(name); mulib_peg_fail_(&r, r.pos, "expected rule-ending semicolon"); goto fail; }
+        if (length - r.pos >= 2 && source[r.pos] == '-' && source[r.pos + 1] == '>') {
+            r.pos += 2; action = mulib_peg_name_(&r);
+            if (!action) { free(name); goto fail; }
+            mulib_peg_space_(&r);
+        }
+        if (r.pos == length || source[r.pos] != ';') { free(name); free(action); mulib_peg_fail_(&r, r.pos, "expected rule-ending semicolon"); goto fail; }
         ++r.pos;
         if (g->count == g->capacity) {
             size_t cap = g->capacity ? g->capacity : 8;
             mulib_peg_rule_ *rules;
             if (g->capacity) {
-                if (cap > SIZE_MAX / 2) { free(name); mulib_peg_fail_(&r, r.pos, "rule allocation overflow"); goto fail; }
+                if (cap > SIZE_MAX / 2) { free(name); free(action); mulib_peg_fail_(&r, r.pos, "rule allocation overflow"); goto fail; }
                 cap *= 2;
             }
-            if (cap > SIZE_MAX / sizeof *rules) { free(name); mulib_peg_fail_(&r, r.pos, "rule allocation overflow"); goto fail; }
+            if (cap > SIZE_MAX / sizeof *rules) { free(name); free(action); mulib_peg_fail_(&r, r.pos, "rule allocation overflow"); goto fail; }
             rules = (mulib_peg_rule_ *)realloc(g->rules, cap * sizeof *rules);
-            if (!rules) { free(name); mulib_peg_fail_(&r, r.pos, "out of memory"); goto fail; }
+            if (!rules) { free(name); free(action); mulib_peg_fail_(&r, r.pos, "out of memory"); goto fail; }
             g->rules = rules; g->capacity = cap;
         }
         capture = mulib_peg_compose_(&r, MULIB_PARSEC_REPEAT, &body, 1);
-        if (!capture) { free(name); goto fail; }
+        if (!capture) { free(name); free(action); goto fail; }
         capture->parser = mulib_parsec_capture(capture->parts, g->count);
-        g->rules[g->count].name = name; g->rules[g->count].body = body;
+        g->rules[g->count].name = name; g->rules[g->count].action = action; g->rules[g->count].body = body;
         g->rules[g->count].entry = &capture->parser; g->rules[g->count].mark = 0; ++g->count;
     }
+    if (r.failed) goto fail;
     if (!g->count) { mulib_peg_fail_(&r, 0, "grammar has no rules"); goto fail; }
     /* Resolve only after the rule array stops moving. Every composite child is
      * itself a stable parsec reference, so forward-reference patches propagate. */
@@ -428,7 +561,10 @@ fail:
     mulib_peg_destroy(g); return NULL;
 }
 size_t mulib_peg_rule_count(const mulib_peg_t *g) { return g ? g->count : 0; }
+mulib_peg_t *mulib_peg_compile(const char *s, size_t n, mulib_peg_error_t *e) { return mulib_peg_compile_(s, n, e, 0); }
+mulib_peg_t *mulib_peg_compile_ebnf(const char *s, size_t n, mulib_peg_error_t *e) { return mulib_peg_compile_(s, n, e, 1); }
 const char *mulib_peg_rule_name(const mulib_peg_t *g, size_t i) { return g && i < g->count ? g->rules[i].name : NULL; }
+const char *mulib_peg_rule_action(const mulib_peg_t *g, size_t i) { return g && i < g->count ? g->rules[i].action : NULL; }
 int mulib_peg_run(const mulib_peg_t *g, const char *start, const char *source, size_t length,
                   int entire, const mulib_parsec_options_t *options, mulib_parsec_result_t *result) {
     size_t i = 0;
@@ -448,3 +584,8 @@ int mulib_peg_run(const mulib_peg_t *g, const char *start, const char *source, s
 }
 #endif
 #endif /* implementation */
+
+/* Complete the optional owned loader when this header was included first. */
+#if defined(MULIB_IMPL_PARSER) && defined(MULIB_PEG_IMPLEMENTED) && !defined(MULIB_PARSER_IMPLEMENTED)
+#include "mulib-parsec.h"
+#endif

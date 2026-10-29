@@ -113,6 +113,13 @@
 #define MULIB_IMPL_XML
 #define MULIB_IMPL_XPATH
 #define MULIB_IMPL_YAML
+#define MULIB_IMPL_AST
+#define MULIB_IMPL_PARSER
+#define MULIB_IMPL_CONFUSE
+#define MULIB_IMPL_EVTSTREAM
+#define MULIB_IMPL_LISTENER
+#define MULIB_IMPL_VISITOR
+#define MULIB_IMPL_LAZYSTREAM
 #include "mulib-vec.h"
 #include "mulib-stack.h"
 #include "mulib-queue.h"
@@ -227,3 +234,9 @@
 #include "mulib-xml.h"
 #include "mulib-xpath.h"
 #include "mulib-yaml.h"
+#include "mulib-ast.h"
+#include "mulib-confuse.h"
+#include "mulib-evtstream.h"
+#include "mulib-listener.h"
+#include "mulib-visitor.h"
+#include "mulib-lazystream.h"

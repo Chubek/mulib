@@ -1,5 +1,11 @@
 # mulib-peg
 
+The compiler also supports EBNF through `mulib_peg_compile_ebnf`, lexical
+S-expression forms and `-> action_name` annotations. The optional owned loaders,
+AST construction and action dispatch are described in
+[mulib-parsec](mulib-parsec.md#owned-grammar-loading). `mulib_peg_run` remains a
+capture-only recognizer and does not itself execute actions.
+
 A byte-oriented parsing-expression grammar compiler and matcher, using the real
 `mulib-parsec` evaluator. Compiled productions are composed from parsec literal,
 set, sequence, ordered-choice, repetition, lookahead, reference and capture

@@ -113,4 +113,10 @@
 #include "mulib-xml.h"
 #include "mulib-xpath.h"
 #include "mulib-yaml.h"
+#include "mulib-ast.h"
+#include "mulib-confuse.h"
+#include "mulib-evtstream.h"
+#include "mulib-listener.h"
+#include "mulib-visitor.h"
+#include "mulib-lazystream.h"
 int main(void) { return 0; }

@@ -7,8 +7,51 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 114
+module_count: 120
 modules:
+- name: ast
+  header: include/mulib-ast.h
+  manual: manual/mulib-ast.md
+  macro: MULIB_IMPL_AST
+  purpose: Owned production trees with S-expression, JSON and YAML serialization.
+  dependencies: [strbuf]
+  status: implemented
+- name: confuse
+  header: include/mulib-confuse.h
+  manual: manual/mulib-confuse.md
+  macro: MULIB_IMPL_CONFUSE
+  purpose: PEG-backed libconfuse-style configuration trees.
+  dependencies: [parsec]
+  extra_macros: [MULIB_IMPL_PARSER]
+  status: implemented
+- name: evtstream
+  header: include/mulib-evtstream.h
+  manual: manual/mulib-evtstream.md
+  macro: MULIB_IMPL_EVTSTREAM
+  purpose: Allocation-free pull streams of balanced AST enter and leave events.
+  dependencies: [ast]
+  status: implemented
+- name: listener
+  header: include/mulib-listener.h
+  manual: manual/mulib-listener.md
+  macro: MULIB_IMPL_LISTENER
+  purpose: Production-specific AST enter and leave callbacks.
+  dependencies: [evtstream]
+  status: implemented
+- name: visitor
+  header: include/mulib-visitor.h
+  manual: manual/mulib-visitor.md
+  macro: MULIB_IMPL_VISITOR
+  purpose: Controllable preorder traversal of ASTs.
+  dependencies: [ast]
+  status: implemented
+- name: lazystream
+  header: include/mulib-lazystream.h
+  manual: manual/mulib-lazystream.md
+  macro: MULIB_IMPL_LAZYSTREAM
+  purpose: Lazy single-pass functional streams of borrowed values.
+  dependencies: []
+  status: implemented
 - name: vec
   header: include/mulib-vec.h
   manual: manual/mulib-vec.md
@@ -518,7 +561,8 @@ modules:
   manual: manual/mulib-parsec.md
   macro: MULIB_IMPL_PARSEC
   purpose: Composable parser combinators with backtracking and diagnostics.
-  dependencies: []
+  dependencies: [ast, peg, glob, strbuf]
+  extra_macros: [MULIB_IMPL_PARSER]
   status: implemented
 - name: template
   header: include/mulib-template.h

@@ -118,3 +118,73 @@ The checked-in example additionally checks a mismatch:
 cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinclude examples/modules/parsec.c -o ./parsec
 ./parsec
 ```
+
+## Owned grammar loading
+
+In addition to `MULIB_IMPL_PARSEC`, define `MULIB_IMPL_PARSER`,
+`MULIB_IMPL_PEG`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_GLOB`, `MULIB_IMPL_AST` before
+the first include. The optional PARSER switch enables the higher-level loader
+without adding link dependencies to existing combinator-only applications.
+
+`mulib_parser_from_peg(input)` and `mulib_parser_from_ebnf(input)` return owned
+`mulib_parser_t *` objects. `_ex(input,&error)` variants provide diagnostics.
+Grammar inputs containing `<-` or `=` are inline text. Glob first recognizes
+`*.peg`/`*.ebnf`, other extensions and path separators as filenames; existing
+extensionless files are also recognized. Remaining inputs are grammar text.
+Paths must identify readable regular files. There is no wildcard expansion or
+fallback to grammar text for missing paths. The loader uses the platform's
+`stat`/`S_ISREG` file interface.
+Syntax, undefined names, duplicates, left recursion and nullable loops are
+checked before a parser is returned. Destroy it with `mulib_parser_destroy`.
+
+PEG syntax is documented in [mulib-peg](mulib-peg.md). EBNF uses `name = expr;`,
+`|` ordered alternatives, optional comma concatenation, parentheses, `[optional]`
+and `{zero or more}`. It also permits PEG postfix operators and lookahead.
+EBNF uppercase rule names conventionally denote lexemes, but **there is no
+scanner**: lower/uppercase rules both match exactly the described bytes. There
+is no automatic whitespace skipping in either dialect. EBNF `(* comments *)`
+and both dialects' `# comments` are supported. This is a PEG-based EBNF dialect,
+not ambiguous CFG recognition or every ISO EBNF feature.
+
+Both dialects support small lexical S-expressions with `@(form)`; EBNF also
+supports special sequences `? (form) ?`:
+
+```text
+start = WORD, { ' ', WORD }, [ '!' ] -> done;
+WORD = ? (plus (or (range 'a' 'z') (range 'A' 'Z'))) ?;
+```
+
+Forms are `seq`, `or` (arbitrary arity); `star`, `plus`, `opt`, `and`, `not`
+(one expression); `lit` (one quoted literal); `set` (one literal of allowed bytes);
+`range` (two ascending one-byte
+literals); `any`, `eof` (zero operands). Atoms can be literals or rule names;
+PEG forms can also contain bracket byte classes. EBNF brackets remain optional
+groups, so use range/or for byte classes. No embedded code or arbitrary Lisp
+evaluation is performed. All forms compile to the existing combinators.
+
+`-> action_name` before the semicolon annotates a production. Tables bind action
+names or production names to C functions. Actions are deferred until complete
+successful recognition and AST construction; no callbacks run on failed parses
+or speculative matches. They run in postorder, receiving each node's matched
+bytes and descendants. An action returning zero stops traversal; already-run
+user side effects cannot be rolled back.
+
+```c
+mulib_parser_t *p = mulib_parser_from_peg("foo.peg");
+mulib_ast_walk_t actions[] = {{"myprod", action_1, user_context}};
+mulib_ast_walker_t *w = mulib_parser_parse_to_walker(p, "my.lang", &error);
+if (w) {
+    mulib_ast_walker_walk(w, actions, 1);
+    mulib_ast_walker_destroy(w);
+}
+mulib_parser_destroy(p);
+```
+
+`mulib_parser_parse(p,start,bytes,length,actions,count,options,&error)` parses
+explicit input bytes, requires the whole input, constructs an owned walker and
+optionally executes a table immediately. NULL start selects the first rule.
+`parse_to_walker` instead loads a source file and returns a walker without
+dispatching actions. Both return NULL on failure. Structured diagnostics carry
+code, zero-based offset, one-based line/column and static messages. Error
+pointers may be NULL. Walkers and their copied text outlive both parser and
+source. AST depth is bounded to 256; parsec evaluator limits still apply.

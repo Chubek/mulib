@@ -43,7 +43,7 @@ def main():
         links += ['-ldl']
     headers = sorted((root / 'include').glob('mulib-*.h'))
     texts = {p.name: p.read_text() for p in headers}
-    switches, dependencies, failures = {}, {}, []
+    switches, dependencies, extra_switches, failures = {}, {}, {}, []
     manifest = (root / 'MANIFEST.yaml').read_text()
     entries = {}
     for block in re.split(r'^- name: ', manifest.split('project_files:')[0], flags=re.M)[1:]:
@@ -79,6 +79,8 @@ def main():
             failures.append((name, 'missing manifest entry'))
         else:
             block = entries[name]
+            extras = re.search(r'^  extra_macros: \[([^\]]*)\]$', block, re.M)
+            extra_switches[name] = re.findall(r'MULIB_IMPL_[A-Z0-9_]+', extras.group(1)) if extras else []
             macro = re.search(r'^  macro: (MULIB_IMPL_[A-Z0-9_]+)$', block, re.M)
             if not macro or macro.group(1) != switches[name]:
                 failures.append((name, 'manifest implementation switch mismatch'))
@@ -186,8 +188,12 @@ def main():
                 if have_cxx:
                     cases.append(dict(label='isolated C++ declarations: ' + name,
                                       source_text=declaration, language='c++'))
-                defines = ''.join('#define ' + switches[d] + '\n'
-                                  for d in sorted(closure(name)) if d in switches)
+                enabled = set()
+                for dependency in closure(name):
+                    if dependency in switches:
+                        enabled.add(switches[dependency])
+                        enabled.update(extra_switches.get(dependency, []))
+                defines = ''.join('#define ' + switch + '\n' for switch in sorted(enabled))
                 cases.append(dict(label='isolated implementation: ' + name,
                                   source_text=defines + declaration))
             counts['isolated headers'] = (check_many(cases), len(cases))

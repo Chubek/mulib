@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **114 implemented modules**.
+A C11 modular single-header utility library with **120 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -62,6 +62,13 @@ YAML, TOML, templates, and JSON-RPC share the JSON value model instead of
 maintaining competing trees. Other composition paths include allocation
 tracking with memory pools, shared grammar/forest/stack machinery, and markup
 builders and queries over a shared document model. See [the module guide](manual/modules.md).
+
+Scannerless [PEG/EBNF loaders](manual/mulib-parsec.md#owned-grammar-loading)
+build combinator parsers with named semantic actions and owned
+[ASTs](manual/mulib-ast.md). Trees support S-expression, JSON and YAML output,
+visitors, listeners and pull events. [Confuse](manual/mulib-confuse.md) adds
+libconfuse-style configuration; [lazy streams](manual/mulib-lazystream.md)
+provide on-demand map/filter/take/drop/fold pipelines.
 
 ## Scope and limitations
 
