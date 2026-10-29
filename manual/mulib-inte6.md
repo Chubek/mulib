@@ -1,35 +1,66 @@
-# mulib-inte6 (IPv6)
+# mulib-inte6
 
-The requested filename is **inte6**; the public symbols use `mulib_inet6_*`
-and the implementation switch is **`MULIB_IMPL_INET6`**.
+Backward-compatible historical spelling of [`mulib-inet6`](mulib-inet6.md).
+The implementation now lives in `mulib-inet6.h`, while old source including
+`mulib-inte6.h` and defining `MULIB_IMPL_INET6` continues to work unchanged.
 
-## Integration and supported syntax
+## Old and new integration
 
-Define `MULIB_IMPL_PARSEC`, `MULIB_IMPL_INET4`, `MULIB_IMPL_INET6` before including
-`mulib-inte6.h` in one C11 translation unit. No native networking library needed.
-Hex groups are recognized with MuLIB combinators; embedded decimal addresses
-reuse `mulib-inet4`. Addresses occupy sixteen copyable network-order bytes.
+For existing canonical symbols, retain the original setup:
 
-`parse(text,length,&address)` accepts exactly eight hex groups of 1..4 digits,
-or fewer groups with exactly one `::` replacing at least one zero group. A final
-strict dotted IPv4 address occupies two groups. Maximum input is 45 bytes.
-Rejects brackets, zones, URI percent escapes, IPvFuture, ports, whitespace,
-embedded NUL, multiple compressions and incorrect group counts.
+```c
+#define MULIB_IMPL_PARSEC
+#define MULIB_IMPL_INET4
+#define MULIB_IMPL_INET6
+#include "mulib-inte6.h"
+```
 
-## Formatting and prefixes
+The forwarding include also supports including declarations first, defining
+`MULIB_IMPL_INET6` later, then including `mulib-inte6.h` again in the same
+translation unit. Canonical and historical headers may be included together;
+their implementation guards prevent duplicate definitions.
 
-`format(&address,out,capacity)` emits lowercase hexadecimal, removes leading
-zeroes and compresses the longest zero run of length >=2 (first run wins ties).
-IPv4-mapped addresses are also emitted as hex; there is no dotted-output mode.
-40 bytes always suffice, including the NUL terminator.
+For the additional typo-spelled forwarding functions, also explicitly define
+`MULIB_IMPL_INTE6` once. It is a unique implementation switch: it emits only
+`mulib_inte6_*` wrappers and never defines `MULIB_IMPL_INET6` or any dependency.
+The canonical implementation and dependencies must be linked separately or
+enabled explicitly in the same translation unit. C++ callers receive C linkage.
 
-`network` and `contains` mirror IPv4, accepting prefixes 0..128. Operations
-return 1 on success/membership, otherwise 0. Parsing/formatting/network outputs
-remain unchanged on failure, including allocation failure inside IPv4 captures.
-No output allocation or retained source pointers. Network output may alias input.
+## Public facade
+
+`mulib_inte6_t` is exactly the `mulib_inet6_t` value type: sixteen owned bytes in
+network order. Four actual public functions forward without extra state:
+
+* `mulib_inte6_parse(text,length,&address)` -> `mulib_inet6_parse`.
+* `mulib_inte6_format(&address,out,capacity)` -> `mulib_inet6_format`.
+* `mulib_inte6_network(&address,prefix,&out)` -> `mulib_inet6_network`.
+* `mulib_inte6_contains(&network,prefix,&address)` -> `mulib_inet6_contains`.
+
+They can be used as function pointers and mixed with canonical functions. There
+is no separate algorithm, allocator, cache, destructor or native network library.
+No third-party package is required.
+
+## Supported syntax and limits
+
+Literal input is 2..45 explicit bytes: eight groups of one to four hex digits,
+or one `::` replacing at least one zero group. A final strict dotted IPv4 suffix
+occupies two groups. Brackets, scopes, ports, whitespace, embedded NUL,
+multiple compressions and incorrect group counts are rejected. The parser uses
+MuLIB combinators; the IPv4 dependency may allocate temporary captures, released
+before return. The facade retains no input or output pointers.
+
+Formatting uses lowercase hexadecimal and the longest zero run of length >=2,
+with the first run winning ties. Mapped IPv4 is formatted as hexadecimal too.
+Forty output bytes suffice including NUL. Prefix operations accept 0..128;
+network output may alias its input. Other source/output storage is disjoint.
+Parse/format/network return 1 on success and 0 on invalid input, insufficient
+capacity or underlying parser failure; output is unchanged on failure.
+Membership returns 0 for invalid arguments as well as a nonmember.
 
 ## Example and tests
 
-`cc -std=c11 -Iinclude examples/modules/inte6.c -o inte6`.
-`tests/test_network.c` checks canonicalization, malformed forms, every prefix,
-and 2,000 roundtrips compared against native `inet_pton` on POSIX.
+`cc -std=c11 -Iinclude examples/modules/inte6.c -o inte6` builds a runnable
+example exercising both spellings. `tests/test_dns_stack.c` tests the actual
+forwarding functions; existing network/protocol suites continue using the
+historical header with `MULIB_IMPL_INET6`. New applications should prefer the
+canonical filename and API documented in `manual/mulib-inet6.md`.

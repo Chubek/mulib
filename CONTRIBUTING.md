@@ -5,6 +5,12 @@ Every new module must have a single self-contained `include/mulib-<name>.h`, a p
 for the file and functions, one detailed `manual/mulib-<name>.md`, and a runnable
 `examples/modules/<name>.c` example. Register it in `MANIFEST.yaml`.
 
+The manifest's `module_count` includes reserved filenames;
+`implemented_module_count` counts working modules. A `status: reserved` entry is
+only for an empty/comment-only future header, must not be a dependency, and must
+not be described as an implemented API. Implementing it requires the same
+manual, example, switch, and test wiring as any other module.
+
 Implementation switches must be defined in exactly one source translation unit. All public
 objects use explicit ownership rules and `mulib_` symbol prefixes. Avoid globals that
 cause symbol collisions, document failures and allocation limits, use `size_t` for

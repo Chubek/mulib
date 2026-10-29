@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **132 implemented modules**.
+A C11 modular single-header utility library with **193 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -83,6 +83,26 @@ numerical modules may need `-lm`. DRM refers to Linux Direct Rendering Manager.
 Python and Ruby modules **generate ctypes/Fiddle binding source** rather than
 embedding or linking an interpreter. Using their generated source naturally
 requires the target language runtime and the described C shared library.
+
+The networking extensions share DNS and HTTP models and expose bounded,
+transport-independent client/server cores. Applications supply transport and
+authentication policy; these modules do not implicitly add TLS or turn protocol
+state machines into production-ready Internet services. Task pools and parallel
+helpers use native threads; link with `-pthread` on POSIX systems (the CMake
+`mulib` target propagates the thread dependency).
+
+Compiler utilities cover checked MIR execution, rewriting, selection, scheduling,
+emission, relocation and a focused native JIT. Architecture metadata comes from
+the repository's [`dsymspec/`](dsymspec/) directory, not an external architecture
+database. Consult individual manuals for supported instruction encodings and
+platforms. A checked-in metadata snapshot keeps builds dependency-free;
+`python3 tools/check_snapshot.py` verifies its source/schema hashes. Full
+regeneration uses the optional developer-only PyYAML and jsonschema packages.
+`mulib-inet6.h` is the canonical IPv6 header; `mulib-inte6.h` remains
+compatible. The existing spellings `impaclient` and `dnsnmeserver` are retained.
+
+Four unrelated reserved headers (`mop`, `mune`, `wask`, `wmfunc`) remain unimplemented
+and are explicitly marked `reserved` in the manifest, not counted above.
 
 ## Licensing
 

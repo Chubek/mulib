@@ -1,6 +1,6 @@
 # MuLIB module and composition guide
 
-MuLIB has 132 single-header C11 modules. Every module has a corresponding
+MuLIB has 193 implemented single-header C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -18,11 +18,27 @@ consult each manual's exact supported syntax, errors, and limits.
 | Storage and native formats | [archive](mulib-archive.md), [mmfile](mulib-mmfile.md), [kvdb](mulib-kvdb.md), [elf](mulib-elf.md), [dynload](mulib-dynload.md), [drm](mulib-drm.md) |
 | Terminals | [terminfo](mulib-terminfo.md), [termkey](mulib-termkey.md), [termutils](mulib-termutils.md), [vterm](mulib-vterm.md), [tui](mulib-tui.md) |
 | Protocols | [uri](mulib-uri.md), [http](mulib-http.md), [rpc](mulib-rpc.md), [dbus](mulib-dbus.md) |
-| IP addresses | [IPv4](mulib-inet4.md), [IPv6 (inte6)](mulib-inte6.md) |
+| IP addresses | [IPv4](mulib-inet4.md), [IPv6](mulib-inet6.md), [historical inte6 header](mulib-inte6.md), [address lookup](mulib-getaddr.md) |
 | Input and devices | [input](mulib-input.md), [keyremap](mulib-keyremap.md), [marionette](mulib-marionette.md), [udev](mulib-udev.md), [vdev](mulib-vdev.md), [kvm](mulib-kvm.md) |
 | Desktop integration | [wayland](mulib-wayland.md), [wlroots geometry](mulib-wlroots.md), [xlib](mulib-xlib.md) |
 | Runtime utilities | [minivm](mulib-minivm.md), [minish](mulib-minish.md), [Python bindings generator](mulib-pybind.md), [Ruby bindings generator](mulib-rubybind.md) |
 | Indexes and differences | [avl](mulib-avl.md), [b+tree](mulib-b+tree.md), [hattrie](mulib-hattrie.md), [txtdiff](mulib-txtdiff.md), [mmdiff](mulib-mmdiff.md) |
+| DNS | [wire format](mulib-dns.md), [client](mulib-dnsclient.md), [cache](mulib-dnscache.md), [resolver](mulib-dnsresolver.md), [nameserver](mulib-nameserver.md), [historical dnsnmeserver facade](mulib-dnsnmeserver.md) |
+| HTTP applications | [webclient](mulib-webclient.md), [webframework](mulib-webframework.md), [fileserver](mulib-fileserver.md), [reverse proxy](mulib-revproxy.md), [minicurl](mulib-minicurl.md), [miniwget](mulib-miniwget.md), [minincat](mulib-minincat.md) |
+| Mail and file transfer | [FTP client](mulib-ftpclient.md), [FTP server](mulib-ftpserver.md), [SMTP client](mulib-smtpclient.md), [SMTP server](mulib-smtpserver.md), [IMAP server](mulib-imapserver.md), [IMAP client (impaclient)](mulib-impaclient.md) |
+| Events and native OS | [asyncio](mulib-asyncio.md), [epoll](mulib-epoll.md), [select](mulib-select.md), [eventfd](mulib-eventfd.md), [timerfd](mulib-timerfd.md), [perf](mulib-perf.md), [signal](mulib-signal.md), [syscall](mulib-syscall.md), [fswatch](mulib-fswatch.md) |
+| Tasks and services | [taskpool](mulib-taskpool.md), [taskdag](mulib-taskdag.md), [parallel](mulib-parallel.md), [pipeline](mulib-pipeline.md), [process](mulib-process.md), [cron](mulib-cron.md), [initsys](mulib-initsys.md) |
+| Filesystem abstractions | [VFS](mulib-vfs.md), [FUSE adapter](mulib-fuse.md), [procfs](mulib-procfs.md), [sysfs](mulib-sysfs.md), [pathdb](mulib-pathdb.md) |
+| Compiler transformations | [MIR](mulib-mir.md), [C machine](mulib-cmachine.md), [VM weaving](mulib-vmweave.md), [C weaving](mulib-ccweave.md), [tree selection](mulib-muburg.md), [instruction scheduling](mulib-isched.md), [egraph](mulib-egraph.md), [rewrite](mulib-rewrite.md) |
+| Machine code | [dsymspec](mulib-dsymspec.md), [assembler](mulib-assembler.md), [emitter](mulib-emitter.md), [linker](mulib-linker.md), [JIT](mulib-jit.md), [dynamic calls](mulib-dyncall.md) |
+| Embedded languages and tools | [MicroJS](mulib-microjs.md), [Datalog](mulib-datalog.md), [Perl POD](mulib-perlpod.md), [microaudio](mulib-microaudio.md), [browser tools](mulib-browsertools.md) |
+
+`mop`, `mune`, `wask`, and `wmfunc` are reserved headers, not implemented APIs. The
+manifest distinguishes the complete header inventory from the implemented count;
+the checker permits only comment-only reserved files and rejects dependencies on
+them. Native modules document platform restrictions. Protocol modules are
+focused building blocks, not a claim of complete standards conformance, TLS,
+authentication, or safe public deployment.
 
 ## Dependency ownership
 
@@ -73,3 +89,9 @@ model across JSON parsing, YAML emission/parsing, TOML emission/parsing, and
 template rendering, alongside tracked memory pools, interned strings, and
 numerical vectors. This checks real cross-module reuse rather than merely
 including unrelated headers in one file.
+
+`tests/extensions.c` exercises an in-memory VFS through a fileserver, router and
+HTTP wire exchange, downloads binary data with `miniwget`, and evaluates a
+downloaded expression with MicroJS. Its implementations live in a separate
+translation unit. Transport is an explicit local callback; this test demonstrates
+composition without claiming socket, TLS or remote-service interoperability.

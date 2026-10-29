@@ -14,6 +14,18 @@ module's standalone example is built and run. Existing focused suites exercise
 containers, indexes, allocators, parser/grammar/AST machinery, markup, configuration,
 protocols, storage, runtimes, terminals, network addresses and desktop/device adapters.
 
+Combined checks also reverse header order and enable implementations after an
+initial declaration-only pass. The complete inventory includes four explicitly
+reserved, comment-only headers; these have no API or implementation and cannot
+be dependencies of working modules.
+
+Extension suites cover DNS/cache resolution, HTTP application composition,
+FTP/SMTP/IMAP sessions, native event descriptors, task/process scheduling,
+virtual filesystems, compiler transformations, native code generation, and
+embedded language/audio/browser utilities. Native tests use local resources,
+not public network services; documented platform or permission restrictions
+remain distinct from tested functionality.
+
 Supplementary checks added here:
 
 - `tests/test_hardening.c` uses a tracked allocator whose reallocations **always
@@ -28,10 +40,20 @@ Supplementary checks added here:
   parsing, binary frame/signature readers, encoding and formatting utilities.
   Individual inputs are capped at 1,024 bytes. This is a smoke-test resource bound,
   not a restriction imposed on the public library APIs.
+  Extension coverage includes DNS names/messages, MicroJS, WAV, POD, cron, lexical
+  VFS/file-server paths, architecture JSON and FTP/SMTP/IMAP command sessions.
+  Valid DNS/WAV seeds and every truncated prefix accompany the text seeds.
 - `clang --analyze -std=c11 -Iinclude tests/all_headers.c` analyzes the combined
   implementation translation unit. A clean result only covers enabled checkers.
 
 ## Strengthened contracts
+
+Additional refinement regressions cover DNS query/reply buffer overlap, pending
+partial SMTP replies, exact-capacity FTP commands, taskpool callback reentry,
+process-child ownership, bounded filesystem scans, malformed instruction-selection
+tables, contradictory architecture metadata, overlapping PCM subviews, and
+MicroJS decimals with compensating exponents and subnormal results. These focused
+checks do not expand the documented protocol or instruction-set subsets.
 
 Public function signatures and implementation-switch ownership remain unchanged.
 The most important behavior changes are intentional stricter validation:
@@ -104,7 +126,5 @@ still require separate environment/hardware testing. Mutable public structures
 must be initialized, valid and externally synchronized; no C API can validate
 arbitrary dangling pointers or caller-forged allocation capacities.
 
-The tracked, pre-existing empty `examples/calculator.c` currently makes the full
-checker fail its top-level example category. It is unrelated to header hardening
-and is left untouched; module examples, focused tests and header checks report
-their results independently. CMake does not register that empty example.
+`examples/calculator.c` is a runnable MicroJS integration example, registered
+alongside `quickstart` and `dogfood` when module examples are enabled.

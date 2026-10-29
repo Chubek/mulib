@@ -7,7 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 132
+module_count: 197
+implemented_module_count: 193
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -861,9 +862,9 @@ modules:
 - name: inte6
   header: include/mulib-inte6.h
   manual: manual/mulib-inte6.md
-  macro: MULIB_IMPL_INET6
-  purpose: IPv6 literals, canonical hexadecimal formatting and prefixes.
-  dependencies: [inet4]
+  macro: MULIB_IMPL_INTE6
+  purpose: Historical-spelling compatibility header for canonical IPv6 APIs.
+  dependencies: [inet6]
   status: implemented
 - name: input
   header: include/mulib-input.h
@@ -935,6 +936,449 @@ modules:
   purpose: Runtime-loaded Xlib display and simple-window operations.
   dependencies: [dynload]
   status: implemented
+- name: assembler
+  header: include/mulib-assembler.h
+  manual: manual/mulib-assembler.md
+  macro: MULIB_IMPL_ASSEMBLER
+  purpose: Metadata-backed focused instruction encoding with explicit unsupported diagnostics.
+  dependencies: [dsymspec, emitter, linker]
+  status: implemented
+- name: asyncio
+  header: include/mulib-asyncio.h
+  manual: manual/mulib-asyncio.md
+  macro: MULIB_IMPL_ASYNCIO
+  purpose: Bounded readiness-driven callback event loop.
+  dependencies: [select]
+  status: implemented
+- name: browsertools
+  header: include/mulib-browsertools.h
+  manual: manual/mulib-browsertools.md
+  macro: MULIB_IMPL_BROWSERTOOLS
+  purpose: Browser protocol requests and response correlation over caller-owned transport.
+  dependencies: [http, json, utf8]
+  status: implemented
+- name: ccweave
+  header: include/mulib-ccweave.h
+  manual: manual/mulib-ccweave.md
+  macro: MULIB_IMPL_CCWEAVE
+  purpose: Checked MIR to C source generation.
+  dependencies: [mir, strbuf]
+  status: implemented
+- name: cmachine
+  header: include/mulib-cmachine.h
+  manual: manual/mulib-cmachine.md
+  macro: MULIB_IMPL_CMACHINE
+  purpose: Checked execution of the shared machine intermediate representation.
+  dependencies: [minivm, mir]
+  status: implemented
+- name: cron
+  header: include/mulib-cron.h
+  manual: manual/mulib-cron.md
+  macro: MULIB_IMPL_CRON
+  purpose: Bounded five-field cron schedules and calendar matching.
+  dependencies: []
+  status: implemented
+- name: datalog
+  header: include/mulib-datalog.h
+  manual: manual/mulib-datalog.md
+  macro: MULIB_IMPL_DATALOG
+  purpose: Bounded positive Datalog facts, rules, fixed-point evaluation and queries.
+  dependencies: []
+  status: implemented
+- name: dns
+  header: include/mulib-dns.h
+  manual: manual/mulib-dns.md
+  macro: MULIB_IMPL_DNS
+  purpose: Bounds-checked DNS wire names, questions and resource records.
+  dependencies: []
+  status: implemented
+- name: dnscache
+  header: include/mulib-dnscache.h
+  manual: manual/mulib-dnscache.md
+  macro: MULIB_IMPL_DNSCACHE
+  purpose: Bounded DNS response cache with caller-supplied time and TTL expiry.
+  dependencies: [dns]
+  status: implemented
+- name: dnsclient
+  header: include/mulib-dnsclient.h
+  manual: manual/mulib-dnsclient.md
+  macro: MULIB_IMPL_DNSCLIENT
+  purpose: DNS query construction and matched reply validation.
+  dependencies: [dns]
+  status: implemented
+- name: dnsnmeserver
+  header: include/mulib-dnsnmeserver.h
+  manual: manual/mulib-dnsnmeserver.md
+  macro: MULIB_IMPL_DNSNMESERVER
+  purpose: Historical-spelling facade for the authoritative nameserver.
+  dependencies: [nameserver]
+  status: implemented
+- name: dnsresolver
+  header: include/mulib-dnsresolver.h
+  manual: manual/mulib-dnsresolver.md
+  macro: MULIB_IMPL_DNSRESOLVER
+  purpose: Cache-backed DNS resolution through a bounded exchange callback.
+  dependencies: [dnscache, dnsclient]
+  status: implemented
+- name: dsymspec
+  header: include/mulib-dsymspec.h
+  manual: manual/mulib-dsymspec.md
+  macro: MULIB_IMPL_DSYMSPEC
+  purpose: Assembler-facing architecture metadata from the supplied dsymspec database.
+  dependencies: [json]
+  status: implemented
+- name: dyncall
+  header: include/mulib-dyncall.h
+  manual: manual/mulib-dyncall.md
+  macro: MULIB_IMPL_DYNCALL
+  purpose: Explicitly typed bounded dynamic invocation without incompatible ABI casts.
+  dependencies: []
+  status: implemented
+- name: egraph
+  header: include/mulib-egraph.h
+  manual: manual/mulib-egraph.md
+  macro: MULIB_IMPL_EGRAPH
+  purpose: Bounded congruence classes, hash-consing, union and costed extraction.
+  dependencies: []
+  status: implemented
+- name: emitter
+  header: include/mulib-emitter.h
+  manual: manual/mulib-emitter.md
+  macro: MULIB_IMPL_EMITTER
+  purpose: Checked binary instruction emission and endian-aware patching.
+  dependencies: []
+  status: implemented
+- name: epoll
+  header: include/mulib-epoll.h
+  manual: manual/mulib-epoll.md
+  macro: MULIB_IMPL_EPOLL
+  purpose: Owned Linux epoll registration and bounded readiness waits.
+  dependencies: []
+  status: implemented
+- name: eventfd
+  header: include/mulib-eventfd.h
+  manual: manual/mulib-eventfd.md
+  macro: MULIB_IMPL_EVENTFD
+  purpose: Linux eventfd counters with explicit descriptor ownership.
+  dependencies: []
+  status: implemented
+- name: fileserver
+  header: include/mulib-fileserver.h
+  manual: manual/mulib-fileserver.md
+  macro: MULIB_IMPL_FILESERVER
+  purpose: Bounded static-file HTTP responses with explicit path confinement policy.
+  dependencies: [webframework]
+  status: implemented
+- name: fswatch
+  header: include/mulib-fswatch.h
+  manual: manual/mulib-fswatch.md
+  macro: MULIB_IMPL_FSWATCH
+  purpose: Linux filesystem watching and bounds-checked inotify event decoding.
+  dependencies: []
+  status: implemented
+- name: ftpclient
+  header: include/mulib-ftpclient.h
+  manual: manual/mulib-ftpclient.md
+  macro: MULIB_IMPL_FTPCLIENT
+  purpose: Bounded FTP client commands, replies and session transitions.
+  dependencies: []
+  status: implemented
+- name: ftpserver
+  header: include/mulib-ftpserver.h
+  manual: manual/mulib-ftpserver.md
+  macro: MULIB_IMPL_FTPSERVER
+  purpose: Callback-backed focused FTP server session state machine.
+  dependencies: []
+  status: implemented
+- name: fuse
+  header: include/mulib-fuse.h
+  manual: manual/mulib-fuse.md
+  macro: MULIB_IMPL_FUSE
+  purpose: Userspace filesystem request dispatch over the shared VFS model.
+  dependencies: [vfs]
+  status: implemented
+- name: getaddr
+  header: include/mulib-getaddr.h
+  manual: manual/mulib-getaddr.md
+  macro: MULIB_IMPL_GETADDR
+  purpose: Bounded literal and native hostname address lookup.
+  dependencies: [inet6]
+  status: implemented
+- name: imapserver
+  header: include/mulib-imapserver.h
+  manual: manual/mulib-imapserver.md
+  macro: MULIB_IMPL_IMAPSERVER
+  purpose: Focused tagged IMAP server commands and mailbox session state.
+  dependencies: []
+  status: implemented
+- name: impaclient
+  header: include/mulib-impaclient.h
+  manual: manual/mulib-impaclient.md
+  macro: MULIB_IMPL_IMPACLIENT
+  purpose: Historical-spelling IMAP client with tagged response matching.
+  dependencies: [imapserver]
+  status: implemented
+- name: inet6
+  header: include/mulib-inet6.h
+  manual: manual/mulib-inet6.md
+  macro: MULIB_IMPL_INET6
+  purpose: Canonical IPv6 literals, formatting and network-prefix operations.
+  dependencies: [inet4]
+  status: implemented
+- name: initsys
+  header: include/mulib-initsys.h
+  manual: manual/mulib-initsys.md
+  macro: MULIB_IMPL_INITSYS
+  purpose: Dependency-ordered service startup and reverse-order shutdown.
+  dependencies: [process, taskdag]
+  status: implemented
+- name: isched
+  header: include/mulib-isched.h
+  manual: manual/mulib-isched.md
+  macro: MULIB_IMPL_ISCHED
+  purpose: Dependency-aware latency scheduling with cycle diagnostics.
+  dependencies: []
+  status: implemented
+- name: jit
+  header: include/mulib-jit.h
+  manual: manual/mulib-jit.md
+  macro: MULIB_IMPL_JIT
+  purpose: Native write-then-execute memory lifecycle for trusted generated code.
+  dependencies: [dyncall]
+  status: implemented
+- name: linker
+  header: include/mulib-linker.h
+  manual: manual/mulib-linker.md
+  macro: MULIB_IMPL_LINKER
+  purpose: Checked symbol resolution and bounded relocations over emitted bytes.
+  dependencies: [emitter]
+  status: implemented
+- name: microaudio
+  header: include/mulib-microaudio.h
+  manual: manual/mulib-microaudio.md
+  macro: MULIB_IMPL_MICROAUDIO
+  purpose: Portable bounded PCM and WAV audio utilities.
+  dependencies: []
+  status: implemented
+- name: microjs
+  header: include/mulib-microjs.h
+  manual: manual/mulib-microjs.md
+  macro: MULIB_IMPL_MICROJS
+  purpose: Resource-bounded JavaScript-like expression and variable interpreter.
+  dependencies: []
+  status: implemented
+- name: minicurl
+  header: include/mulib-minicurl.h
+  manual: manual/mulib-minicurl.md
+  macro: MULIB_IMPL_MINICURL
+  purpose: Focused HTTP request convenience layer over webclient.
+  dependencies: [webclient]
+  status: implemented
+- name: minincat
+  header: include/mulib-minincat.h
+  manual: manual/mulib-minincat.md
+  macro: MULIB_IMPL_MININCAT
+  purpose: Bounded binary stream relay through explicit I/O callbacks.
+  dependencies: []
+  status: implemented
+- name: miniwget
+  header: include/mulib-miniwget.h
+  manual: manual/mulib-miniwget.md
+  macro: MULIB_IMPL_MINIWGET
+  purpose: Bounded HTTP downloads through webclient into caller-owned memory.
+  dependencies: [webclient]
+  status: implemented
+- name: mir
+  header: include/mulib-mir.h
+  manual: manual/mulib-mir.md
+  macro: MULIB_IMPL_MIR
+  purpose: Shared validated machine intermediate representation.
+  dependencies: []
+  status: implemented
+- name: muburg
+  header: include/mulib-muburg.h
+  manual: manual/mulib-muburg.md
+  macro: MULIB_IMPL_MUBURG
+  purpose: Costed bottom-up tree-pattern instruction selection.
+  dependencies: []
+  status: implemented
+- name: nameserver
+  header: include/mulib-nameserver.h
+  manual: manual/mulib-nameserver.md
+  macro: MULIB_IMPL_NAMESERVER
+  purpose: Bounded authoritative DNS answers from caller-supplied records.
+  dependencies: [dnsclient]
+  status: implemented
+- name: parallel
+  header: include/mulib-parallel.h
+  manual: manual/mulib-parallel.md
+  macro: MULIB_IMPL_PARALLEL
+  purpose: Bounded parallel work distribution over the shared task pool.
+  dependencies: [taskpool]
+  status: implemented
+- name: pathdb
+  header: include/mulib-pathdb.h
+  manual: manual/mulib-pathdb.md
+  macro: MULIB_IMPL_PATHDB
+  purpose: Owned path index with bounded prefix lookup.
+  dependencies: [vfs]
+  status: implemented
+- name: perf
+  header: include/mulib-perf.h
+  manual: manual/mulib-perf.md
+  macro: MULIB_IMPL_PERF
+  purpose: Native performance measurement and elapsed-time helpers.
+  dependencies: []
+  status: implemented
+- name: perlpod
+  header: include/mulib-perlpod.h
+  manual: manual/mulib-perlpod.md
+  macro: MULIB_IMPL_PERLPOD
+  purpose: Focused Perl POD parsing and rendering with explicit unsupported syntax.
+  dependencies: [strbuf, utf8]
+  status: implemented
+- name: pipeline
+  header: include/mulib-pipeline.h
+  manual: manual/mulib-pipeline.md
+  macro: MULIB_IMPL_PIPELINE
+  purpose: Bounded callback processing stages with explicit failure and ownership rules.
+  dependencies: [parallel]
+  status: implemented
+- name: process
+  header: include/mulib-process.h
+  manual: manual/mulib-process.md
+  macro: MULIB_IMPL_PROCESS
+  purpose: Native argv-based process creation, waiting and descriptor plumbing.
+  dependencies: []
+  status: implemented
+- name: procfs
+  header: include/mulib-procfs.h
+  manual: manual/mulib-procfs.md
+  macro: MULIB_IMPL_PROCFS
+  purpose: Bounded Linux process-information parsing and lookup.
+  dependencies: [vfs]
+  status: implemented
+- name: revproxy
+  header: include/mulib-revproxy.h
+  manual: manual/mulib-revproxy.md
+  macro: MULIB_IMPL_REVPROXY
+  purpose: HTTP forwarding with hop-by-hop header filtering over webclient.
+  dependencies: [webclient]
+  status: implemented
+- name: rewrite
+  header: include/mulib-rewrite.h
+  manual: manual/mulib-rewrite.md
+  macro: MULIB_IMPL_REWRITE
+  purpose: Resource-bounded equality rewrite saturation over egraphs.
+  dependencies: [egraph]
+  status: implemented
+- name: select
+  header: include/mulib-select.h
+  manual: manual/mulib-select.md
+  macro: MULIB_IMPL_SELECT
+  purpose: Bounds-checked native descriptor readiness selection.
+  dependencies: []
+  status: implemented
+- name: signal
+  header: include/mulib-signal.h
+  manual: manual/mulib-signal.md
+  macro: MULIB_IMPL_SIGNAL
+  purpose: Explicit native signal-handler installation and restoration.
+  dependencies: []
+  status: implemented
+- name: smtpclient
+  header: include/mulib-smtpclient.h
+  manual: manual/mulib-smtpclient.md
+  macro: MULIB_IMPL_SMTPCLIENT
+  purpose: Bounded SMTP envelope commands and DATA encoding.
+  dependencies: [smtpserver]
+  status: implemented
+- name: smtpserver
+  header: include/mulib-smtpserver.h
+  manual: manual/mulib-smtpserver.md
+  macro: MULIB_IMPL_SMTPSERVER
+  purpose: Callback-backed SMTP envelope and dot-stuffed DATA sessions.
+  dependencies: []
+  status: implemented
+- name: syscall
+  header: include/mulib-syscall.h
+  manual: manual/mulib-syscall.md
+  macro: MULIB_IMPL_SYSCALL
+  purpose: Focused native operations with checked arguments and explicit errors.
+  dependencies: []
+  status: implemented
+- name: sysfs
+  header: include/mulib-sysfs.h
+  manual: manual/mulib-sysfs.md
+  macro: MULIB_IMPL_SYSFS
+  purpose: Bounded sysfs-style attribute access and typed conversion.
+  dependencies: [vfs]
+  status: implemented
+- name: taskdag
+  header: include/mulib-taskdag.h
+  manual: manual/mulib-taskdag.md
+  macro: MULIB_IMPL_TASKDAG
+  purpose: Dependency graph execution with cycle detection and task failure propagation.
+  dependencies: [taskpool]
+  status: implemented
+- name: taskpool
+  header: include/mulib-taskpool.h
+  manual: manual/mulib-taskpool.md
+  macro: MULIB_IMPL_TASKPOOL
+  purpose: Bounded native worker pool with explicit queue and shutdown semantics.
+  dependencies: []
+  status: implemented
+- name: timerfd
+  header: include/mulib-timerfd.h
+  manual: manual/mulib-timerfd.md
+  macro: MULIB_IMPL_TIMERFD
+  purpose: Linux timer descriptors with bounded expiration reads.
+  dependencies: []
+  status: implemented
+- name: vfs
+  header: include/mulib-vfs.h
+  manual: manual/mulib-vfs.md
+  macro: MULIB_IMPL_VFS
+  purpose: Normalized virtual filesystem mounts and backend dispatch.
+  dependencies: []
+  status: implemented
+- name: vmweave
+  header: include/mulib-vmweave.h
+  manual: manual/mulib-vmweave.md
+  macro: MULIB_IMPL_VMWEAVE
+  purpose: Validated MIR lowering to the checked MuLIB VM.
+  dependencies: [mir]
+  status: implemented
+- name: webclient
+  header: include/mulib-webclient.h
+  manual: manual/mulib-webclient.md
+  macro: MULIB_IMPL_WEBCLIENT
+  purpose: Bounded HTTP exchange over application-supplied transport callbacks.
+  dependencies: [http]
+  status: implemented
+- name: webframework
+  header: include/mulib-webframework.h
+  manual: manual/mulib-webframework.md
+  macro: MULIB_IMPL_WEBFRAMEWORK
+  purpose: Bounded HTTP route registration and dispatch on shared messages.
+  dependencies: [http]
+  status: implemented
+- name: mop
+  header: include/mulib-mop.h
+  purpose: Reserved filename; no implemented API.
+  status: reserved
+- name: wask
+  header: include/mulib-wask.h
+  purpose: Reserved filename; no implemented API.
+  status: reserved
+- name: wmfunc
+  header: include/mulib-wmfunc.h
+  purpose: Reserved filename; no implemented API.
+  status: reserved
+- name: mune
+  header: include/mulib-mune.h
+  purpose: Reserved Lua implementation filename; no implemented API.
+  status: reserved
 project_files:
 - file: MANIFEST.yaml
   purpose: Complete inventory of modules, manuals, examples, and supporting files.
@@ -1096,12 +1540,22 @@ project_files:
   purpose: Core API smoke tests with assertions.
 - file: tools/check.py
   purpose: Inventory, isolated-header, example, composition, and focused-test verifier.
+- file: tools/check_snapshot.py
+  purpose: Dependency-free provenance and inventory verification for generated architecture metadata.
+- file: tools/dsymspec_generate.py
+  purpose: Developer-only schema-validated conversion of supplied YAML to embedded architecture metadata.
+- file: include/mulib-dsymspec-data.inc
+  purpose: Generated architecture metadata snapshot with source and schema hashes.
 - file: manual/modules.md
   purpose: Module index, dependency ownership, scope, and composition guide.
 - file: tests/composition.c
   purpose: Cross-module composition through a separate implementation translation unit.
+- file: tests/extensions.c
+  purpose: Separate-TU VFS to fileserver, router, HTTP client, download and interpreter composition.
 - file: examples/dogfood.c
   purpose: Parser-backed JSON feeding numerical vector algebra.
+- file: examples/calculator.c
+  purpose: Runnable bounded MicroJS numeric calculator and diagnostic example.
 - file: examples/modules/alloc.c
   purpose: Compilable isolated usage example for the alloc module.
 - file: examples/modules/mempool.c
@@ -1254,3 +1708,145 @@ project_files:
   purpose: Portable logical output layout and transform example.
 - file: examples/modules/xlib.c
   purpose: Optional runtime-loaded Xlib simple-window example.
+- file: examples/modules/assembler.c
+  purpose: Metadata-backed instruction encoding example.
+- file: examples/modules/asyncio.c
+  purpose: Readiness callback event-loop example.
+- file: examples/modules/browsertools.c
+  purpose: Browser protocol request and response-correlation example.
+- file: examples/modules/ccweave.c
+  purpose: Shared MIR to C source example.
+- file: examples/modules/cmachine.c
+  purpose: Checked MIR execution example.
+- file: examples/modules/cron.c
+  purpose: Cron schedule parsing and calendar-match example.
+- file: examples/modules/datalog.c
+  purpose: Positive Datalog rule evaluation example.
+- file: examples/modules/dns.c
+  purpose: DNS wire-format example.
+- file: examples/modules/dnscache.c
+  purpose: DNS TTL cache example.
+- file: examples/modules/dnsclient.c
+  purpose: DNS client query and reply-validation example.
+- file: examples/modules/dnsnmeserver.c
+  purpose: Historical-spelling nameserver facade example.
+- file: examples/modules/dnsresolver.c
+  purpose: Cache-backed DNS exchange example.
+- file: examples/modules/dsymspec.c
+  purpose: Supplied architecture metadata query example.
+- file: examples/modules/dyncall.c
+  purpose: Explicitly typed dynamic-call example.
+- file: examples/modules/egraph.c
+  purpose: Congruence-class and expression-extraction example.
+- file: examples/modules/emitter.c
+  purpose: Checked binary emission and patching example.
+- file: examples/modules/epoll.c
+  purpose: Native epoll readiness example.
+- file: examples/modules/eventfd.c
+  purpose: Native event counter example.
+- file: examples/modules/fileserver.c
+  purpose: Bounded static-file response example.
+- file: examples/modules/fswatch.c
+  purpose: Filesystem-watch event example.
+- file: examples/modules/ftpclient.c
+  purpose: Focused FTP client session example.
+- file: examples/modules/ftpserver.c
+  purpose: Callback-backed FTP server example.
+- file: examples/modules/fuse.c
+  purpose: Userspace filesystem dispatch example.
+- file: examples/modules/getaddr.c
+  purpose: Native and literal address-lookup example.
+- file: examples/modules/imapserver.c
+  purpose: Tagged IMAP server session example.
+- file: examples/modules/impaclient.c
+  purpose: Historical-spelling IMAP client example.
+- file: examples/modules/inet6.c
+  purpose: Canonical IPv6 header example.
+- file: examples/modules/initsys.c
+  purpose: Dependency-ordered service lifecycle example.
+- file: examples/modules/isched.c
+  purpose: Latency-aware instruction scheduling example.
+- file: examples/modules/jit.c
+  purpose: Trusted native code write-then-execute example.
+- file: examples/modules/linker.c
+  purpose: Symbol resolution and relocation example.
+- file: examples/modules/microaudio.c
+  purpose: PCM and WAV audio example.
+- file: examples/modules/microjs.c
+  purpose: Bounded JavaScript-like evaluation example.
+- file: examples/modules/minicurl.c
+  purpose: HTTP convenience request example.
+- file: examples/modules/minincat.c
+  purpose: Binary stream-relay example.
+- file: examples/modules/miniwget.c
+  purpose: Bounded HTTP download example.
+- file: examples/modules/mir.c
+  purpose: Validated machine IR construction example.
+- file: examples/modules/muburg.c
+  purpose: Costed tree instruction-selection example.
+- file: examples/modules/nameserver.c
+  purpose: Authoritative DNS answer example.
+- file: examples/modules/parallel.c
+  purpose: Task-pool parallel work example.
+- file: examples/modules/pathdb.c
+  purpose: Owned path-index lookup example.
+- file: examples/modules/perf.c
+  purpose: Performance measurement example.
+- file: examples/modules/perlpod.c
+  purpose: POD document parsing and rendering example.
+- file: examples/modules/pipeline.c
+  purpose: Bounded processing-stage composition example.
+- file: examples/modules/process.c
+  purpose: Native argv-based process lifecycle example.
+- file: examples/modules/procfs.c
+  purpose: Process-information parsing example.
+- file: examples/modules/revproxy.c
+  purpose: HTTP reverse-proxy filtering example.
+- file: examples/modules/rewrite.c
+  purpose: Resource-bounded equality rewriting example.
+- file: examples/modules/select.c
+  purpose: Native readiness selection example.
+- file: examples/modules/signal.c
+  purpose: Signal-handler lifetime example.
+- file: examples/modules/smtpclient.c
+  purpose: SMTP envelope and DATA encoding example.
+- file: examples/modules/smtpserver.c
+  purpose: Callback-backed SMTP session example.
+- file: examples/modules/syscall.c
+  purpose: Checked native operation example.
+- file: examples/modules/sysfs.c
+  purpose: Bounded filesystem attribute example.
+- file: examples/modules/taskdag.c
+  purpose: Dependency-aware task execution example.
+- file: examples/modules/taskpool.c
+  purpose: Native worker-pool lifecycle example.
+- file: examples/modules/timerfd.c
+  purpose: Native timer descriptor example.
+- file: examples/modules/vfs.c
+  purpose: Virtual mount and in-memory storage example.
+- file: examples/modules/vmweave.c
+  purpose: Machine-IR transformation example.
+- file: examples/modules/webclient.c
+  purpose: Transport-backed HTTP client example.
+- file: examples/modules/webframework.c
+  purpose: HTTP routing and response construction example.
+- file: tests/test_dns_stack.c
+  purpose: DNS wire, query, cache, resolver, nameserver and IPv6 regressions.
+- file: tests/test_web_stack.c
+  purpose: HTTP applications, forwarding, download and file-path regressions.
+- file: tests/test_mail_ftp.c
+  purpose: FTP, SMTP and IMAP client-server and malformed-session regressions.
+- file: tests/test_os_events.c
+  purpose: Local readiness, descriptors, timers, signals and filesystem events.
+- file: tests/test_tasks_process.c
+  purpose: Threaded tasks, dependencies, stages, processes and service lifecycle.
+- file: tests/test_virtual_files.c
+  purpose: VFS dispatch, filesystem attributes and owned path-index regressions.
+- file: tests/test_compiler_ir.c
+  purpose: MIR execution, selection, scheduling and equality rewriting regressions.
+- file: tests/test_codegen.c
+  purpose: Supplied architecture metadata, encodings, relocation and native code regressions.
+- file: tests/test_language_tools.c
+  purpose: Interpreter, Datalog, POD, PCM and browser protocol regressions.
+- file: tests/test_language_refinement.c
+  purpose: Locale-independent decimal normalization, compensating exponents and numeric boundary regressions.

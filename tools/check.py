@@ -35,6 +35,8 @@ def main():
     have_cxx = bool(cxx and shutil.which(cxx[0]))
     flags = ['-O2', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-UNDEBUG',
              '-I' + str(root / 'include')]
+    if os.name == 'posix':
+        flags += ['-pthread']
     if args.sanitizers:
         flags += ['-g', '-fsanitize=address,undefined', '-fno-sanitize-recover=all',
                   '-fno-omit-frame-pointer']
@@ -44,6 +46,13 @@ def main():
     headers = sorted((root / 'include').glob('mulib-*.h'))
     texts = {p.name: p.read_text() for p in headers}
     switches, dependencies, extra_switches, failures = {}, {}, {}, []
+    reserved = set()
+    snapshot = subprocess.run([sys.executable, str(root / 'tools/check_snapshot.py')],
+                              capture_output=True, text=True)
+    if snapshot.returncode:
+        failures.append(('dsymspec snapshot', snapshot.stderr or snapshot.stdout))
+    else:
+        print(snapshot.stdout.strip())
     manifest = (root / 'MANIFEST.yaml').read_text()
     entries = {}
     for block in re.split(r'^- name: ', manifest.split('project_files:')[0], flags=re.M)[1:]:
@@ -64,9 +73,20 @@ def main():
         name, text = header.name, texts[header.name]
         match = re.search(r'^#\s*if(?:def\s+|\s+defined\s*\(\s*)'
                           r'(MULIB_IMPL_[A-Z0-9_]+)', text, re.M)
+        block = entries.get(name, '')
+        if re.search(r'^  status: reserved$', block, re.M):
+            # Explicitly inventoried future modules are not implemented APIs.
+            # They must remain empty/comment-only, and cannot be dependencies.
+            remaining = re.sub(r'/\*.*?\*/|//[^\n]*', '', text, flags=re.S).strip()
+            if remaining:
+                failures.append((name, 'reserved header contains code; implement and register it'))
+            reserved.add(name)
+            continue
         if not match:
             failures.append((name, 'missing implementation switch or empty header'))
             continue
+        if not re.search(r'^  status: implemented$', block, re.M):
+            failures.append((name, 'implemented header must have status: implemented'))
         switches[name] = match.group(1)
         dependencies[name] = re.findall(r'^\s*#\s*include\s*["<]'
                                         r'(mulib-[^">]+\.h)[">]', text, re.M)
@@ -93,17 +113,26 @@ def main():
             if dependency not in texts:
                 failures.append((name, 'unknown MuLIB dependency ' + dependency))
 
+    for name, deps in dependencies.items():
+        for dependency in deps:
+            if dependency in reserved:
+                failures.append((name, 'depends on reserved header ' + dependency))
+    implemented_count = re.search(r'^implemented_module_count: (\d+)$', manifest, re.M)
+    if not implemented_count or int(implemented_count.group(1)) != len(switches):
+        failures.append(('MANIFEST.yaml', 'implemented_module_count does not match implemented headers'))
+
     if len(set(switches.values())) != len(switches):
         failures.append(('headers', 'implementation switch shared by multiple modules'))
     implementation = (root / 'tests/implementation.c').read_text()
     declarations = (root / 'tests/declarations.c').read_text()
-    for name, switch in switches.items():
-        if '#define ' + switch + '\n' not in implementation:
-            failures.append(('tests/implementation.c', 'missing switch ' + switch))
+    for name in texts:
         for path, text in [('tests/implementation.c', implementation),
                            ('tests/declarations.c', declarations)]:
             if '#include "' + name + '"' not in text:
                 failures.append((path, 'missing header ' + name))
+    for name, switch in switches.items():
+        if '#define ' + switch + '\n' not in implementation:
+            failures.append(('tests/implementation.c', 'missing switch ' + switch))
 
     def closure(name, seen=None):
         seen = set() if seen is None else seen
@@ -166,10 +195,21 @@ def main():
             ('smoke', [root / 'tests/smoke.c']),
             ('functional', [root / 'tests/implementation.c', root / 'tests/functional.c']),
             ('composition', [root / 'tests/implementation.c', root / 'tests/composition.c']),
+            ('extensions', [root / 'tests/implementation.c', root / 'tests/extensions.c']),
             ('all implementations', [root / 'tests/all_headers.c']),
             ('C declarations', [root / 'tests/declarations.c']),
         ]
         cases = [dict(label=label, sources=paths) for label, paths in integration]
+        all_switches = set(switches.values())
+        for values in extra_switches.values():
+            all_switches.update(values)
+        defines = ''.join('#define ' + switch + '\n' for switch in sorted(all_switches))
+        includes = ''.join('#include "' + header.name + '"\n' for header in reversed(headers))
+        main_source = 'int main(void) { return 0; }\n'
+        cases.append(dict(label='reverse-order implementations',
+                          source_text=defines + includes + main_source))
+        cases.append(dict(label='implementations after declarations',
+                          source_text=includes + defines + includes + main_source))
         if os.name == 'posix':
             cases.append(dict(label='POSIX shell', sources=[root / 'tests/test_runtime.c'],
                               extra_flags=['-DMULIB_MINISH_ENABLE_POSIX']))
@@ -188,6 +228,8 @@ def main():
                 if have_cxx:
                     cases.append(dict(label='isolated C++ declarations: ' + name,
                                       source_text=declaration, language='c++'))
+                if name in reserved:
+                    continue
                 enabled = set()
                 for dependency in closure(name):
                     if dependency in switches:
@@ -199,6 +241,7 @@ def main():
             counts['isolated headers'] = (check_many(cases), len(cases))
     for category, (passed, total) in counts.items():
         print(f'MuLIB {category}: {passed}/{total} passed')
+    print(f'MuLIB inventory: {len(switches)} implemented, {len(reserved)} reserved headers')
     for name, reason in sorted(failures):
         print(f'FAILED {name}:\n{reason}', file=sys.stderr)
     return bool(failures)
