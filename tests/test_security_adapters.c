@@ -16,7 +16,7 @@
 #endif
 typedef struct fake_tls
 {
-  int auth, closed, again, oversized;
+  int auth, closed, again, oversized, stalled;
 } fake_tls;
 static int
 handshake (void *ctx, int *verified)
@@ -34,6 +34,8 @@ static int
 read_tls (void *ctx, void *out, size_t n, size_t *count)
 {
   fake_tls *b = (fake_tls *)ctx;
+  if (b->stalled)
+    return 0;
   if (b->oversized)
     {
       *count = n + 1;
@@ -49,7 +51,8 @@ read_tls (void *ctx, void *out, size_t n, size_t *count)
 static int
 write_tls (void *ctx, const void *out, size_t n, size_t *count)
 {
-  (void)ctx;
+  if (((fake_tls *)ctx)->stalled)
+    return 0;
   (void)out;
   *count = n;
   return 0;
@@ -91,6 +94,19 @@ main (void)
   assert (mulib_tsl_read (&tls, data, 8, &count) == MULIB_TSL_EBACKEND
           && !count);
   mulib_tsl_close (&tls);
+  fake.oversized = 0;
+  fake.stalled = 1;
+  for (int write = 0; write < 2; ++write)
+    {
+      assert (mulib_tsl_init (&tls, &ops, &fake));
+      assert (!mulib_tsl_handshake (&tls));
+      assert ((write ? mulib_tsl_write (&tls, "x", 1, &count)
+                     : mulib_tsl_read (&tls, data, 1, &count))
+                  == MULIB_TSL_EBACKEND
+              && !count);
+      assert (mulib_tsl_handshake (&tls) == MULIB_TSL_EAUTH);
+      mulib_tsl_close (&tls);
+    }
   assert (mulib_ebpf_validate (code, 3, NULL));
   assert (!mulib_ebpf_run (code, 3, 3, &value) && value == 42);
   assert (mulib_ebpf_run (code, 3, 2, &value) == -2 && value == 42);

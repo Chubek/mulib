@@ -1,6 +1,6 @@
 # MuLIB module and composition guide
 
-MuLIB has 259 implemented single-header C11 modules. Every implemented module has a corresponding
+MuLIB has 291 implemented single-header C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -42,6 +42,25 @@ authentication, or safe public deployment.
 
 See [extension layers](extension-layers.md) for database storage, binary objects,
 TeX/layout and container lifecycle composition and their explicit limits.
+
+## VCS, network and IPC extensions
+
+| Area | Modules and implemented profiles |
+| --- | --- |
+| Git and versioned content | [git](mulib-git.md): SHA-1 identities/pkt-lines; [vcsrepo](mulib-vcsrepo.md): bounded object store/refs; [vcspack](mulib-vcspack.md): PACK v2 stored-zlib profile; [vcdiff](mulib-vcdiff.md): RFC 3284 default-table decoding; [vcscommit](mulib-vcscommit.md) and [vcscomitt](mulib-vcscomitt.md): commit builders |
+| Byte and packet transport | [xtks](mulib-xtks.md): checked stream callbacks; [packetstream](mulib-packetstream.md): incremental framing; [tunnel](mulib-tunnel.md): duplex relay; [datagram](mulib-datagram.md): native UDP; [abstun](mulib-abstun.md): packet callbacks; [tuntap](mulib-tuntap.md): Linux devices |
+| Protocol composition | [https](mulib-https.md): HTTP over verified TLS backend; [socks5](mulib-socks5.md): method/address codecs; [v2rayproto](mulib-v2rayproto.md): VLESS v0 request headers; [sshclient](mulib-sshclient.md): identification/pre-key packets; [sshserver](mulib-sshserver.md): userauth payloads/policy |
+| Crypto backend integration | [obs4](mulib-obs4.md): authenticated obfs4 lifecycle; [shadowsocks](mulib-shadowsocks.md): SIP004 AEAD chunk framing; [openvpn](mulib-openvpn.md): data envelopes/authenticated replay window |
+| Peer formats | [ipfs](mulib-ipfs.md): CIDv1 and block verification; [bittorrent](mulib-bittorrent.md): v1 peer-wire messages; [p2pproto](mulib-p2pproto.md): multistream-select records |
+| Packet policy | [packetfiter](mulib-packetfiter.md): IP metadata; [packetrules](mulib-packetrules.md): prefix/protocol/port rules; [packetvm](mulib-packetvm.md): bounded filter interpreter |
+| Native OS and IPC | [netdevice](mulib-netdevice.md): interfaces; [filectl](mulib-filectl.md): flags/locks; [shm](mulib-shm.md): System V shared memory; [mqueue](mulib-mqueue.md): System V queues; [schedutils](mulib-schedutils.md): scheduler/deadline helpers |
+| Remote filesystem | [netfs](mulib-netfs.md): serialized FUSE requests with a remote VFS backend and blocking stream adapters |
+
+The existing filenames `vcscomitt`, `packetfiter`, and `obs4` are retained.
+`xtks` means X transport toolkit. Netfs mounts into MuLIB's VFS; the existing
+FUSE abstraction provides request dispatch rather than a host-kernel mount.
+Transport and cryptographic backends remain explicit, with no mandatory
+third-party library dependencies.
 
 ## Dependency ownership
 

@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 260
-implemented_module_count: 259
+module_count: 292
+implemented_module_count: 291
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -1830,6 +1830,230 @@ modules:
   purpose: Reserved future module; no implemented API.
   dependencies: []
   status: reserved
+- name: abstun
+  header: include/mulib-abstun.h
+  manual: manual/mulib-abstun.md
+  macro: MULIB_IMPL_ABSTUN
+  purpose: "Abstract packet tunnel with checked MTU and packet-atomic callbacks."
+  dependencies: []
+  status: implemented
+- name: bittorrent
+  header: include/mulib-bittorrent.h
+  manual: manual/mulib-bittorrent.md
+  macro: MULIB_IMPL_BITTORRENT
+  purpose: "BitTorrent v1 peer handshake, bounded peer-wire messages and piece"
+  dependencies: [endian, git]
+  status: implemented
+- name: datagram
+  header: include/mulib-datagram.h
+  manual: manual/mulib-datagram.md
+  macro: MULIB_IMPL_DATAGRAM
+  purpose: "IPv4/IPv6 UDP sockets with explicit truncation and address metadata."
+  dependencies: [filectl]
+  status: implemented
+- name: filectl
+  header: include/mulib-filectl.h
+  manual: manual/mulib-filectl.md
+  macro: MULIB_IMPL_FILECTL
+  purpose: "POSIX descriptor flags and advisory whole-file record locks."
+  dependencies: []
+  status: implemented
+- name: git
+  header: include/mulib-git.h
+  manual: manual/mulib-git.md
+  macro: MULIB_IMPL_GIT
+  purpose: "Git SHA-1 object identities and pkt-line framing."
+  dependencies: []
+  status: implemented
+- name: https
+  header: include/mulib-https.h
+  manual: manual/mulib-https.md
+  macro: MULIB_IMPL_HTTPS
+  purpose: "HTTPS transactions composing HTTP webclient with verified TLS."
+  dependencies: [tsl, webclient]
+  status: implemented
+- name: ipfs
+  header: include/mulib-ipfs.h
+  manual: manual/mulib-ipfs.md
+  macro: MULIB_IMPL_IPFS
+  purpose: "IPFS CIDv1 raw/dag-pb SHA-256 identifiers and verified block"
+  dependencies: [varint]
+  status: implemented
+- name: mqueue
+  header: include/mulib-mqueue.h
+  manual: manual/mulib-mqueue.md
+  macro: MULIB_IMPL_MQUEUE
+  purpose: "System V typed, nonblocking interprocess message queues."
+  dependencies: []
+  status: implemented
+- name: netdevice
+  header: include/mulib-netdevice.h
+  manual: manual/mulib-netdevice.md
+  macro: MULIB_IMPL_NETDEVICE
+  purpose: "POSIX network-interface enumeration and address snapshots."
+  dependencies: []
+  status: implemented
+- name: netfs
+  header: include/mulib-netfs.h
+  manual: manual/mulib-netfs.md
+  macro: MULIB_IMPL_NETFS
+  purpose: "Network filesystem: bounded wire RPC to mulib-fuse and remote VFS"
+  dependencies: [endian, fuse, xtks]
+  status: implemented
+- name: obs4
+  header: include/mulib-obs4.h
+  manual: manual/mulib-obs4.md
+  macro: MULIB_IMPL_OBS4
+  purpose: "Authenticated obfs4 backend lifecycle and X transport adaptation."
+  dependencies: [xtks]
+  status: implemented
+- name: openvpn
+  header: include/mulib-openvpn.h
+  manual: manual/mulib-openvpn.md
+  macro: MULIB_IMPL_OPENVPN
+  purpose: "OpenVPN data-channel v1/v2 envelopes and authenticated replay window."
+  dependencies: []
+  status: implemented
+- name: p2pproto
+  header: include/mulib-p2pproto.h
+  manual: manual/mulib-p2pproto.md
+  macro: MULIB_IMPL_P2PPROTO
+  purpose: "libp2p multistream-select length-delimited protocol negotiation"
+  dependencies: [varint]
+  status: implemented
+- name: packetfiter
+  header: include/mulib-packetfiter.h
+  manual: manual/mulib-packetfiter.md
+  macro: MULIB_IMPL_PACKETFITER
+  purpose: "Bounds-checked IP packet metadata for filtering (historical"
+  dependencies: []
+  status: implemented
+- name: packetrules
+  header: include/mulib-packetrules.h
+  manual: manual/mulib-packetrules.md
+  macro: MULIB_IMPL_PACKETRULES
+  purpose: "Ordered IP-prefix, protocol and port-range packet rules."
+  dependencies: [packetfiter]
+  status: implemented
+- name: packetstream
+  header: include/mulib-packetstream.h
+  manual: manual/mulib-packetstream.md
+  macro: MULIB_IMPL_PACKETSTREAM
+  purpose: "Incremental bounded four-byte big-endian length framing."
+  dependencies: [endian]
+  status: implemented
+- name: packetvm
+  header: include/mulib-packetvm.h
+  manual: manual/mulib-packetvm.md
+  macro: MULIB_IMPL_PACKETVM
+  purpose: "Bounded, forward-only packet-filter bytecode interpreter."
+  dependencies: []
+  status: implemented
+- name: schedutils
+  header: include/mulib-schedutils.h
+  manual: manual/mulib-schedutils.md
+  macro: MULIB_IMPL_SCHEDUTILS
+  purpose: "Scheduler inspection, cooperative yield and checked periodic"
+  dependencies: []
+  status: implemented
+- name: shadowsocks
+  header: include/mulib-shadowsocks.h
+  manual: manual/mulib-shadowsocks.md
+  macro: MULIB_IMPL_SHADOWSOCKS
+  purpose: "SIP004 Shadowsocks AEAD TCP chunk framing with explicit crypto"
+  dependencies: []
+  status: implemented
+- name: shm
+  header: include/mulib-shm.h
+  manual: manual/mulib-shm.md
+  macro: MULIB_IMPL_SHM
+  purpose: "System V shared-memory creation, attachment and explicit removal."
+  dependencies: []
+  status: implemented
+- name: socks5
+  header: include/mulib-socks5.h
+  manual: manual/mulib-socks5.md
+  macro: MULIB_IMPL_SOCKS5
+  purpose: "RFC 1928 method negotiation, address and CONNECT/BIND/UDP codecs."
+  dependencies: []
+  status: implemented
+- name: sshclient
+  header: include/mulib-sshclient.h
+  manual: manual/mulib-sshclient.md
+  macro: MULIB_IMPL_SSHCLIENT
+  purpose: "SSH-2 identification and pre-key-exchange binary packet codecs."
+  dependencies: [endian]
+  status: implemented
+- name: sshserver
+  header: include/mulib-sshserver.h
+  manual: manual/mulib-sshserver.md
+  macro: MULIB_IMPL_SSHSERVER
+  purpose: "SSH-2 password user-authentication payload parsing and attempt"
+  dependencies: [endian]
+  status: implemented
+- name: tunnel
+  header: include/mulib-tunnel.h
+  manual: manual/mulib-tunnel.md
+  macro: MULIB_IMPL_TUNNEL
+  purpose: "Backpressure-preserving, bounded duplex stream relay."
+  dependencies: [xtks]
+  status: implemented
+- name: tuntap
+  header: include/mulib-tuntap.h
+  manual: manual/mulib-tuntap.md
+  macro: MULIB_IMPL_TUNTAP
+  purpose: "Linux TUN/TAP descriptors with no packet-information prefix."
+  dependencies: [abstun, filectl]
+  status: implemented
+- name: v2rayproto
+  header: include/mulib-v2rayproto.h
+  manual: manual/mulib-v2rayproto.md
+  macro: MULIB_IMPL_V2RAYPROTO
+  purpose: "VLESS version-zero request headers without addons or multiplexing."
+  dependencies: [socks5]
+  status: implemented
+- name: vcdiff
+  header: include/mulib-vcdiff.h
+  manual: manual/mulib-vcdiff.md
+  macro: MULIB_IMPL_VCDIFF
+  purpose: "RFC 3284 default-table VCDIFF decoding and prefix-delta encoding."
+  dependencies: []
+  status: implemented
+- name: vcscomitt
+  header: include/mulib-vcscomitt.h
+  manual: manual/mulib-vcscomitt.md
+  macro: MULIB_IMPL_VCSCOMITT
+  purpose: "Compatibility spelling for the canonical vcscommit API."
+  dependencies: [vcscommit]
+  status: implemented
+- name: vcscommit
+  header: include/mulib-vcscommit.h
+  manual: manual/mulib-vcscommit.md
+  macro: MULIB_IMPL_VCSCOMMIT
+  purpose: "Canonical Git commit construction and repository insertion."
+  dependencies: [strbuf, vcsrepo]
+  status: implemented
+- name: vcspack
+  header: include/mulib-vcspack.h
+  manual: manual/mulib-vcspack.md
+  macro: MULIB_IMPL_VCSPACK
+  purpose: "Git PACK v2 encoding and bounded stored-DEFLATE pack decoding."
+  dependencies: [adler32, endian, git]
+  status: implemented
+- name: vcsrepo
+  header: include/mulib-vcsrepo.h
+  manual: manual/mulib-vcsrepo.md
+  macro: MULIB_IMPL_VCSREPO
+  purpose: "Bounded owned Git-object repository and compare-and-swap references."
+  dependencies: [git]
+  status: implemented
+- name: xtks
+  header: include/mulib-xtks.h
+  manual: manual/mulib-xtks.md
+  macro: MULIB_IMPL_XTKS
+  purpose: "X transport toolkit: checked borrowed streams and resumable exact"
+  dependencies: []
+  status: implemented
 project_files:
 - file: MANIFEST.yaml
   purpose: Complete inventory of modules, manuals, examples, and supporting files.
@@ -2489,3 +2713,79 @@ project_files:
   purpose: "Additive header inventory and combined-test synchronization."
 - file: manual/extension-layers.md
   purpose: "Shared storage, binary, document and container contracts and limits."
+- file: examples/modules/abstun.c
+  purpose: "Standalone checked usage example for abstun."
+- file: examples/modules/bittorrent.c
+  purpose: "Standalone checked usage example for bittorrent."
+- file: examples/modules/datagram.c
+  purpose: "Standalone checked usage example for datagram."
+- file: examples/modules/filectl.c
+  purpose: "Standalone checked usage example for filectl."
+- file: examples/modules/git.c
+  purpose: "Standalone checked usage example for git."
+- file: examples/modules/https.c
+  purpose: "Standalone checked usage example for https."
+- file: examples/modules/ipfs.c
+  purpose: "Standalone checked usage example for ipfs."
+- file: examples/modules/mqueue.c
+  purpose: "Standalone checked usage example for mqueue."
+- file: examples/modules/netdevice.c
+  purpose: "Standalone checked usage example for netdevice."
+- file: examples/modules/netfs.c
+  purpose: "Standalone checked usage example for netfs."
+- file: examples/modules/obs4.c
+  purpose: "Standalone checked usage example for obs4."
+- file: examples/modules/openvpn.c
+  purpose: "Standalone checked usage example for openvpn."
+- file: examples/modules/p2pproto.c
+  purpose: "Standalone checked usage example for p2pproto."
+- file: examples/modules/packetfiter.c
+  purpose: "Standalone checked usage example for packetfiter."
+- file: examples/modules/packetrules.c
+  purpose: "Standalone checked usage example for packetrules."
+- file: examples/modules/packetstream.c
+  purpose: "Standalone checked usage example for packetstream."
+- file: examples/modules/packetvm.c
+  purpose: "Standalone checked usage example for packetvm."
+- file: examples/modules/schedutils.c
+  purpose: "Standalone checked usage example for schedutils."
+- file: examples/modules/shadowsocks.c
+  purpose: "Standalone checked usage example for shadowsocks."
+- file: examples/modules/shm.c
+  purpose: "Standalone checked usage example for shm."
+- file: examples/modules/socks5.c
+  purpose: "Standalone checked usage example for socks5."
+- file: examples/modules/sshclient.c
+  purpose: "Standalone checked usage example for sshclient."
+- file: examples/modules/sshserver.c
+  purpose: "Standalone checked usage example for sshserver."
+- file: examples/modules/tunnel.c
+  purpose: "Standalone checked usage example for tunnel."
+- file: examples/modules/tuntap.c
+  purpose: "Standalone checked usage example for tuntap."
+- file: examples/modules/v2rayproto.c
+  purpose: "Standalone checked usage example for v2rayproto."
+- file: examples/modules/vcdiff.c
+  purpose: "Standalone checked usage example for vcdiff."
+- file: examples/modules/vcscomitt.c
+  purpose: "Standalone checked usage example for vcscomitt."
+- file: examples/modules/vcscommit.c
+  purpose: "Standalone checked usage example for vcscommit."
+- file: examples/modules/vcspack.c
+  purpose: "Standalone checked usage example for vcspack."
+- file: examples/modules/vcsrepo.c
+  purpose: "Standalone checked usage example for vcsrepo."
+- file: examples/modules/xtks.c
+  purpose: "Standalone checked usage example for xtks."
+- file: tests/test_ipc_extensions.c
+  purpose: "Focused regression suite for test_ipc_extensions."
+- file: tests/test_netfs.c
+  purpose: "Focused regression suite for test_netfs."
+- file: tests/test_protocol_extensions.c
+  purpose: "Focused regression suite for test_protocol_extensions."
+- file: tests/test_transport_extensions.c
+  purpose: "Focused regression suite for test_transport_extensions."
+- file: tests/test_vcs_formats.c
+  purpose: "Focused regression suite for test_vcs_formats."
+- file: tests/test_vcs_netfs_alloc.c
+  purpose: "Focused regression suite for test_vcs_netfs_alloc."

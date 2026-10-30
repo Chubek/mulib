@@ -15,9 +15,9 @@ containers, indexes, allocators, parser/grammar/AST machinery, markup, configura
 protocols, storage, runtimes, terminals, network addresses and desktop/device adapters.
 
 Combined checks also reverse header order and enable implementations after an
-initial declaration-only pass. The complete inventory includes four explicitly
-reserved, comment-only headers; these have no API or implementation and cannot
-be dependencies of working modules.
+initial declaration-only pass. The complete inventory includes one explicitly
+reserved, comment-only header; it has no API or implementation and cannot
+be a dependency of working modules.
 
 Extension suites cover DNS/cache resolution, HTTP application composition,
 FTP/SMTP/IMAP sessions, native event descriptors, task/process scheduling,
@@ -42,11 +42,22 @@ Supplementary checks added here:
   not a restriction imposed on the public library APIs.
   Extension coverage includes DNS names/messages, MicroJS, WAV, POD, cron, lexical
   VFS/file-server paths, architecture JSON and FTP/SMTP/IMAP command sessions.
-  Valid DNS/WAV seeds and every truncated prefix accompany the text seeds.
+  Binary extension coverage includes SOCKS5, VLESS, SSH identification/packets/
+  authentication, BitTorrent, CID, multistream-select, IP metadata, incremental
+  packet framing, VCDIFF and Git PACK. VCDIFF encoding is roundtripped on each
+  input. Mutated PACK records are also re-signed to reach inner zlib validation.
+  Valid binary seeds and every truncated prefix accompany the text seeds.
 - `clang --analyze -std=c11 -Iinclude tests/all_headers.c` analyzes the combined
   implementation translation unit. A clean result only covers enabled checkers.
 
 ## Strengthened contracts
+
+Transport regressions exercise recursive TLS/obfs4 handshake and I/O calls,
+deferred close during each callback, close reentry, empty I/O and zero-progress
+backend failures. Netfs validates required outputs before remote side effects.
+Packet parsing rejects contradictory/misaligned/oversized IPv4 fragments and
+explicitly rejects the HIP, Shim6 and experimental IPv6 extension headers.
+These changes preserve public function signatures and structure layouts.
 
 Additional refinement regressions cover DNS query/reply buffer overlap, pending
 partial SMTP replies, exact-capacity FTP commands, taskpool callback reentry,

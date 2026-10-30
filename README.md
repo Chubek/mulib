@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **259 implemented modules**.
+A C11 modular single-header utility library with **291 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -90,6 +90,13 @@ authentication policy; these modules do not implicitly add TLS or turn protocol
 state machines into production-ready Internet services. Task pools and parallel
 helpers use native threads; link with `-pthread` on POSIX systems (the CMake
 `mulib` target propagates the thread dependency).
+
+The [VCS and network extensions](manual/modules.md#vcs-network-and-ipc-extensions)
+add Git object/pack formats, VCDIFF, packet codecs and policy, native IPC, and
+composable transports. [Netfs](manual/mulib-netfs.md) carries the existing
+FUSE adapter's operations over a network stream and exposes a remote MuLIB VFS
+mount. Protocol manuals specify the supported profiles and required crypto
+backends; the SSH helpers are identification/packet/authentication codecs.
 
 Compiler utilities cover checked MIR execution, rewriting, selection, scheduling,
 emission, relocation and a focused native JIT. Architecture metadata comes from

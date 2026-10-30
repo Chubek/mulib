@@ -15,6 +15,13 @@ static int mulib_fuzz_ini_(void *user, const char *section, const char *key, con
 static int mulib_fuzz_send_(void *user, const void *bytes, size_t length) {
     (void)user; assert(bytes || !length); return 1;
 }
+static int mulib_fuzz_packet_(void *user, const void *bytes, size_t length) {
+    (void)user; assert(bytes || !length); assert(length <= 1024); return 0;
+}
+static int mulib_fuzz_object_(void *user, const mulib_vcspack_object_t *object) {
+    (void)user; assert(object->type >= 1 && object->type <= 4);
+    assert(object->length <= 1024); return 0;
+}
 int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size) {
     char *text; unsigned char decoded[1024]; size_t used; uint64_t integer;
     mulib_json_t *json; mulib_xml_node_t *xml; mulib_sexpr_t *sexpr;
@@ -37,6 +44,46 @@ int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size) {
     (void)mulib_rle_decode(data,size,decoded,sizeof(decoded),&used);
     (void)mulib_varint_decode(data,size,&integer,&used);
     (void)mulib_utf8_validate(data,size);
+    { mulib_socks5_address_t address; mulib_v2rayproto_request_t request;
+      mulib_sshserver_auth_t auth; const unsigned char *payload; size_t length;
+      unsigned code; char software[256];
+      (void)mulib_socks5_address_decode(data,size,&address,&used);
+      (void)mulib_socks5_decode(data,size,0,&code,&address,&used);
+      (void)mulib_socks5_decode(data,size,1,&code,&address,&used);
+      (void)mulib_v2rayproto_decode(data,size,&request,&used);
+      (void)mulib_sshclient_identify(data,size,software,sizeof software,&used);
+      (void)mulib_sshclient_packet_decode(data,size,&payload,&length,&used);
+      (void)mulib_sshserver_auth_parse(data,size,&auth); }
+    { mulib_bittorrent_handshake_t handshake; mulib_bittorrent_message_t message;
+      mulib_ipfs_cid_t cid; mulib_packetfiter_view_t packet; char token[1024];
+      (void)mulib_bittorrent_handshake_decode(data,size,&handshake);
+      (void)mulib_bittorrent_decode(data,size,&message,&used);
+      (void)mulib_ipfs_cid_decode(data,size,&cid);
+      (void)mulib_ipfs_cid_parse(text,size,&cid);
+      (void)mulib_p2pproto_decode(data,size,token,sizeof token,&used);
+      (void)mulib_packetfiter_parse(data,size,&packet); }
+    { mulib_packetstream_t stream; size_t split = size / 2;
+      assert(mulib_packetstream_init(&stream,decoded,sizeof decoded));
+      int rc = mulib_packetstream_feed(&stream,data,split,&used,mulib_fuzz_packet_,NULL);
+      assert(used <= split);
+      if (!rc) {
+          (void)mulib_packetstream_feed(&stream,data ? data+split : NULL,size-split,&used,mulib_fuzz_packet_,NULL);
+          assert(used <= size-split);
+      } }
+    { unsigned char delta[1152]; size_t length;
+      (void)mulib_vcdiff_decode("source",6,data,size,decoded,sizeof decoded,&used);
+      assert(mulib_vcdiff_encode("source",6,data,size,delta,sizeof delta,&length));
+      assert(mulib_vcdiff_decode("source",6,delta,length,decoded,sizeof decoded,&used) == 1);
+      assert(used == size && (!size || !memcmp(data,decoded,size)));
+      (void)mulib_vcspack_decode(data,size,decoded,sizeof decoded,mulib_fuzz_object_,NULL);
+      /* Re-sign mutated PACK contents so fuzzing can reach inner zlib checks. */
+      if (size >= 32 && !memcmp(data,"PACK",4)) {
+          mulib_git_oid_t id;
+          memcpy(delta,data,size);
+          assert(mulib_git_sha1(delta,size-20,&id));
+          memcpy(delta+size-20,id.bytes,20);
+          (void)mulib_vcspack_decode(delta,size,decoded,sizeof decoded,mulib_fuzz_object_,NULL);
+      } }
     { mulib_semver_t version; mulib_uuid_t id; mulib_uri_t uri; mulib_inet4_t v4; mulib_inet6_t v6;
       (void)mulib_semver_parse(text,&version); (void)mulib_uuid_parse(text,&id);
       (void)mulib_uri_parse(text,size,&uri); (void)mulib_inet4_parse(text,size,&v4); (void)mulib_inet6_parse(text,size,&v6); }
@@ -125,7 +172,8 @@ int main(void) {
         "=pod\n=head1 Title\n\nB<bold I<nested>>\n\n=cut\n", "*/15 1-5 * * 0,7",
         "USER guest\r\nPASS password\r\nTYPE I\r\nQUIT\r\n",
         "EHLO example\r\nMAIL FROM:<>\r\nRCPT TO:<a@b>\r\nDATA\r\n..x\r\n.\r\n",
-        "a1 CAPABILITY\r\na2 LOGIN \"guest\" \"password\"\r\na3 LOGOUT\r\n"
+        "a1 CAPABILITY\r\na2 LOGIN \"guest\" \"password\"\r\na3 LOGOUT\r\n",
+        "SSH-2.0-client\r\n", "\x13/multistream/1.0.0\n"
     };
     static const unsigned char dns[] = {0x12,0x34,1,0,0,1,0,0,0,0,0,0,1,'a',0,0,1,0,1};
     static const unsigned char wav[] = {
@@ -140,6 +188,18 @@ int main(void) {
     }
     for (size_t cut = 0; cut <= sizeof(dns); ++cut) LLVMFuzzerTestOneInput(dns,cut);
     for (size_t cut = 0; cut <= sizeof(wav); ++cut) LLVMFuzzerTestOneInput(wav,cut);
+    { static const unsigned char seeds[][44] = {
+          { 0x45,0,0,28,0,0,0,0,64,17,0,0,192,0,2,1,192,0,2,2,0,1,0,53,0,8,0,0 },
+          { 0xd6,0xc3,0xc4,0,0,0,8,2,0,2,1,0,'o','k',3 },
+          { 5,1,0,1,127,0,0,1,0,80 },
+          { 0,0,0,12,10,1,0,0,0,0,0,0,0,0,0,0 },
+          { 1,0x55,0x12,32 },
+          { 'P','A','C','K',0,0,0,2,0,0,0,1,0x30,0x78,1,1,0,0,255,255,0,0,0,1 }
+      };
+      const size_t lengths[] = { 28,15,10,16,36,44 };
+      for (size_t i = 0; i < sizeof lengths / sizeof *lengths; ++i)
+          for (size_t cut = 0; cut <= lengths[i]; ++cut)
+              LLVMFuzzerTestOneInput(seeds[i],cut); }
     for (unsigned i = 0; i < 2000; ++i) {
         size_t n = i % sizeof(bytes);
         for (size_t j = 0; j < n; ++j) { random = random*UINT32_C(1664525)+UINT32_C(1013904223); bytes[j] = (unsigned char)(random>>24); }

@@ -22,8 +22,11 @@ extern "C"
   /** @brief Borrowed callbacks/context, must outlive adapter. Handshake
    * returns OK only after hostname/chain verification, with verified=1. AGAIN
    * is resumable. I/O returns OK/AGAIN/EOF or negative; count may never exceed
-   * capacity. close releases backend session exactly once (it may not reenter
-   * adapter). */
+   * capacity. Nonempty OK I/O must make progress; other statuses require zero
+   * count. Zero-length I/O does not invoke the backend. Recursive operations
+   * are rejected; close during a callback is deferred until it returns.
+   * Callbacks must not mutate/reinitialize the adapter or free its storage.
+   * close releases the backend session exactly once. */
   typedef struct mulib_tsl_ops
   {
     int (*handshake) (void *, int *verified);
@@ -59,6 +62,17 @@ extern "C"
 #if defined(MULIB_IMPL_TSL) && !defined(MULIB_TSL_IMPLEMENTED)
 #define MULIB_TSL_IMPLEMENTED
 #include <string.h>
+/* States: 0 inactive, 1 handshake, 2 ready, 3 failed, 4 in callback,
+ * 5 deferred close, 6 closing. Keep backend lifetime through callback return. */
+static int
+mulib_tsl_return_ (mulib_tsl_t *s, int state)
+{
+  int closing = s->state == 5;
+  s->state = state;
+  if (closing)
+    mulib_tsl_close (s);
+  return !closing;
+}
 int
 mulib_tsl_init (mulib_tsl_t *s, const mulib_tsl_ops_t *ops, void *ctx)
 {
@@ -74,13 +88,16 @@ int
 mulib_tsl_handshake (mulib_tsl_t *s)
 {
   int rc, verified = 0;
-  if (!s || !s->state)
+  if (!s || !s->state || s->state >= 4)
     return -1;
   if (s->state == 2)
     return 0;
   if (s->state != 1)
     return -2;
+  s->state = 4;
   rc = s->ops.handshake (s->context, &verified);
+  if (!mulib_tsl_return_ (s, 1))
+    return MULIB_TSL_EINVAL;
   if (rc == MULIB_TSL_AGAIN)
     return rc;
   if (rc != 0 || verified != 1)
@@ -100,8 +117,13 @@ mulib_tsl_read (mulib_tsl_t *s, void *p, size_t n, size_t *count)
     *count = 0;
   if (!s || s->state != 2 || !count || (!p && n))
     return -1;
+  if (!n)
+    return MULIB_TSL_OK;
+  s->state = 4;
   rc = s->ops.read (s->context, p, n, &got);
-  if (got > n || rc > 2 || (rc != 0 && got))
+  if (!mulib_tsl_return_ (s, 2))
+    return MULIB_TSL_EINVAL;
+  if (got > n || rc > 2 || (rc != 0 && got) || (!rc && !got))
     {
       s->state = 3;
       return -3;
@@ -124,8 +146,13 @@ mulib_tsl_write (mulib_tsl_t *s, const void *p, size_t n, size_t *count)
     *count = 0;
   if (!s || s->state != 2 || !count || (!p && n))
     return -1;
+  if (!n)
+    return MULIB_TSL_OK;
+  s->state = 4;
   rc = s->ops.write (s->context, p, n, &got);
-  if (got > n || rc > 1 || (rc != 0 && got))
+  if (!mulib_tsl_return_ (s, 2))
+    return MULIB_TSL_EINVAL;
+  if (got > n || rc > 1 || (rc != 0 && got) || (!rc && !got))
     {
       s->state = 3;
       return -3;
@@ -142,8 +169,11 @@ mulib_tsl_write (mulib_tsl_t *s, const void *p, size_t n, size_t *count)
 void
 mulib_tsl_close (mulib_tsl_t *s)
 {
-  if (s && s->state)
+  if (s && s->state == 4)
+    s->state = 5;
+  else if (s && s->state > 0 && s->state < 4)
     {
+      s->state = 6;
       s->ops.close (s->context);
       memset (s, 0, sizeof (*s));
     }
