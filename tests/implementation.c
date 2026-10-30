@@ -1,3 +1,8 @@
+#define MULIB_IMPL_OIX
+#define MULIB_IMPL_MOP
+#define MULIB_IMPL_MUNE
+#define MULIB_IMPL_WASK
+#define MULIB_IMPL_WMFUNC
 /* All implementation switches precede every include, including dependencies. */
 #define MULIB_IMPL_VEC
 #define MULIB_IMPL_STACK
@@ -390,3 +395,5 @@
 #include "mulib-webclient.h"
 #include "mulib-webframework.h"
 #include "mulib-wmfunc.h"
+
+#include "mulib-oix.h"

@@ -25,16 +25,32 @@ def verify(root):
         raise ValueError('snapshot architecture count does not match dsymspec/')
     for array in arrays:
         chunks = []
+        # A formatter may split one C array element into adjacent literals.
+        # Decode each literal, but preserve/check commas and the NULL sentinel.
+        pending = []
+        terminated = False
         for line in array.splitlines():
             text = line.strip()
-            if text == 'NULL':
+            if not text:
                 continue
-            if not text.endswith(','):
-                raise ValueError('invalid snapshot string array')
-            chunk = json.loads(text[:-1])
+            if text == 'NULL':
+                if pending or terminated:
+                    raise ValueError('invalid snapshot sentinel')
+                terminated = True
+                continue
+            if terminated:
+                raise ValueError('data after snapshot sentinel')
+            complete = text.endswith(',')
+            literal = text[:-1] if complete else text
+            chunk = json.loads(literal)
             if not isinstance(chunk, str):
                 raise ValueError('invalid snapshot chunk')
-            chunks.append(chunk)
+            pending.append(chunk)
+            if complete:
+                chunks.append(''.join(pending))
+                pending = []
+        if pending or not terminated:
+            raise ValueError('unterminated snapshot array')
         document = json.loads(''.join(chunks))
         provenance = document['_mulib_codegen']
         source = provenance['source']

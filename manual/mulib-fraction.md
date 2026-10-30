@@ -49,3 +49,10 @@ The examples folder demonstrates the overall build pattern, and the test suite e
 ## Implementation guidance
 
 The source implementation is appended in the header below the public interface guard. It is included only if `MULIB_IMPL_FRACTION` is defined before inclusion. This arrangement allows separate declaration-only compilation and a single translation unit that emits the definitions. API additions should include an unambiguous ownership rule, Doxygen documentation, a regression test, and an updated entry in the root `MANIFEST.yaml`. See the suite's `docs/`-style manuals in `manual/` for sibling modules and `README.md` for integration into existing projects.
+
+Normalization reduces unsigned magnitudes before checking signed ranges, including
+INT64_MIN denominators when reduction makes the result representable. Addition
+reduces common denominator factors before multiplication and accepts INT64_MIN
+numerators when intermediate arithmetic fits. Unrepresentable intermediate
+products or sums are conservatively rejected even if later reduction could fit;
+outputs remain unchanged on failure.

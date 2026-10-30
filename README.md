@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **193 implemented modules**.
+A C11 modular single-header utility library with **198 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -101,8 +101,11 @@ regeneration uses the optional developer-only PyYAML and jsonschema packages.
 `mulib-inet6.h` is the canonical IPv6 header; `mulib-inte6.h` remains
 compatible. The existing spellings `impaclient` and `dnsnmeserver` are retained.
 
-Four unrelated reserved headers (`mop`, `mune`, `wask`, `wmfunc`) remain unimplemented
-and are explicitly marked `reserved` in the manifest, not counted above.
+All headers have implementations. The [dependency strata](manual/strata.md) index
+records every direct dependency and integration layer. New focused modules include
+a bounded i32 WebAssembly runtime (`wask`), a numeric Lua subset (`mune`), inherited
+method dispatch (`mop`), and backend-neutral window actions (`wmfunc`). Their manuals
+state the supported profiles; these names do not imply full standards coverage.
 
 ## Licensing
 
@@ -130,3 +133,8 @@ vector algebra.
 See [header hardening](manual/hardening.md) for failure-injection tests,
 deterministic hostile-input coverage, optional libFuzzer builds and strengthened
 ownership/validation contracts. These checks are not a security certification.
+
+[OIX](manual/mulib-oix.md) compiles C, JSON, YAML, TOML, or Confuse configuration
+into a tiny standalone x86 OS image, with cooperative tasks, console I/O, and
+embedded read-only files. Its optional Linux x86 KVM runner needs no guest Linux,
+BIOS, or external runtime library. See [the compiler/runner example](examples/modules/oix.c).

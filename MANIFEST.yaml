@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 197
-implemented_module_count: 193
+module_count: 198
+implemented_module_count: 198
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -1365,20 +1365,39 @@ modules:
   status: implemented
 - name: mop
   header: include/mulib-mop.h
-  purpose: Reserved filename; no implemented API.
-  status: reserved
+  manual: manual/mulib-mop.md
+  macro: MULIB_IMPL_MOP
+  purpose: Borrowed class reflection and inherited method dispatch.
+  dependencies: []
+  status: implemented
 - name: wask
   header: include/mulib-wask.h
-  purpose: Reserved filename; no implemented API.
-  status: reserved
+  manual: manual/mulib-wask.md
+  macro: MULIB_IMPL_WASK
+  purpose: Validated bounded i32 WebAssembly module interpreter.
+  dependencies: [dsymspec, utf8]
+  status: implemented
 - name: wmfunc
   header: include/mulib-wmfunc.h
-  purpose: Reserved filename; no implemented API.
-  status: reserved
+  manual: manual/mulib-wmfunc.md
+  macro: MULIB_IMPL_WMFUNC
+  purpose: Portable window placement and transactional backend dispatch.
+  dependencies: [wlroots]
+  status: implemented
 - name: mune
   header: include/mulib-mune.h
-  purpose: Reserved Lua implementation filename; no implemented API.
-  status: reserved
+  manual: manual/mulib-mune.md
+  macro: MULIB_IMPL_MUNE
+  purpose: Bounded transactional numeric Lua subset interpreter.
+  dependencies: []
+  status: implemented
+- name: oix
+  header: include/mulib-oix.h
+  manual: manual/mulib-oix.md
+  macro: MULIB_IMPL_OIX
+  purpose: Tiny standalone x86 OS image compiler and KVM runner with cooperative tasks.
+  dependencies: [emitter, crc32, kvm, json, yaml, toml, confuse, base64]
+  status: implemented
 project_files:
 - file: MANIFEST.yaml
   purpose: Complete inventory of modules, manuals, examples, and supporting files.
@@ -1850,3 +1869,37 @@ project_files:
   purpose: Interpreter, Datalog, POD, PCM and browser protocol regressions.
 - file: tests/test_language_refinement.c
   purpose: Locale-independent decimal normalization, compensating exponents and numeric boundary regressions.
+- file: manual/mulib-mop.md
+  purpose: Contracts and supported profile for mop.
+- file: examples/modules/mop.c
+  purpose: Runnable isolated mop example.
+- file: manual/mulib-mune.md
+  purpose: Contracts and supported profile for mune.
+- file: examples/modules/mune.c
+  purpose: Runnable isolated mune example.
+- file: manual/mulib-wask.md
+  purpose: Contracts and supported profile for wask.
+- file: examples/modules/wask.c
+  purpose: Runnable isolated wask example.
+- file: manual/mulib-wmfunc.md
+  purpose: Contracts and supported profile for wmfunc.
+- file: examples/modules/wmfunc.c
+  purpose: Runnable isolated wmfunc example.
+- file: manual/strata.md
+  purpose: Generated integration strata for the complete header inventory.
+- file: tools/stratify.py
+  purpose: Dependency strata generation, compatibility groups and freshness verification.
+- file: tests/test_wask.c
+  purpose: WebAssembly execution, validation, fuel, traps, truncation and mutation regressions.
+- file: tests/test_new_modules.c
+  purpose: Numeric Lua transactions, method dispatch, window actions and rational boundaries.
+- file: tests/test_tools.py
+  purpose: Adjacent C literal snapshot and dependency group regressions.
+- file: manual/mulib-oix.md
+  purpose: OIX configuration, native kernel, image ABI, and KVM lifecycle contracts.
+- file: examples/modules/oix.c
+  purpose: Standalone OIX image compiler and optional KVM launch tool.
+- file: tests/test_oix.c
+  purpose: OIX kernel execution, formats, canonical validation, device and allocation tests.
+- file: tests/oix_cpu.h
+  purpose: Independent test-only interpreter for the emitted 16-bit x86 instruction subset.

@@ -79,47 +79,57 @@ extern "C"
   int
   mulib_fraction_make (int64_t n, int64_t d, mulib_fraction_t *out)
   {
-    if (!out || !d || d == INT64_MIN)
+    uint64_t un, ud, g;
+    int negative;
+    int64_t numerator;
+    if (!out || !d)
       return 0;
-    if (d < 0)
-      {
-        if (n == INT64_MIN)
-          return 0;
-        n = -n;
-        d = -d;
-      }
-    uint64_t g = mulib_fraction_gcd_ (mulib_fraction_abs_ (n), (uint64_t)d);
-    if (g)
-      {
-        n /= (int64_t)g;
-        d /= (int64_t)g;
-      }
-    *out = (mulib_fraction_t){ n, d };
+    un = mulib_fraction_abs_ (n);
+    ud = mulib_fraction_abs_ (d);
+    negative = (n < 0) != (d < 0);
+    g = mulib_fraction_gcd_ (un, ud);
+    un /= g;
+    ud /= g;
+    if (ud > INT64_MAX || un > (uint64_t)INT64_MAX + (negative ? 1u : 0u))
+      return 0;
+    if (!negative)
+      numerator = (int64_t)un;
+    else if (un == (uint64_t)INT64_MAX + 1u)
+      numerator = INT64_MIN;
+    else
+      numerator = -(int64_t)un;
+    *out = (mulib_fraction_t){ numerator, (int64_t)ud };
+    return 1;
+  }
+  static int
+  mulib_fraction_scale_ (int64_t n, int64_t scale, int64_t *out)
+  {
+    if ((n > 0 && n > INT64_MAX / scale) || (n < 0 && n < INT64_MIN / scale))
+      return 0;
+    *out = n * scale;
     return 1;
   }
   int
   mulib_fraction_add (mulib_fraction_t a, mulib_fraction_t b,
                       mulib_fraction_t *out)
   {
+    int64_t x, y, left, right, d;
+    uint64_t g;
     if (!out || a.den <= 0 || b.den <= 0)
-      return 0; /* Checked conservative bound avoids UB without requiring
-                   compiler extensions. */
-    if (a.den > INT64_MAX / b.den)
       return 0;
-    int64_t d = a.den * b.den;
-    if (a.num == INT64_MIN || b.num == INT64_MIN)
+    g = mulib_fraction_gcd_ ((uint64_t)a.den, (uint64_t)b.den);
+    left = b.den / (int64_t)g;
+    right = a.den / (int64_t)g;
+    /* Reduce common denominator factors before checked multiplication. */
+    if (a.den > INT64_MAX / left || !mulib_fraction_scale_ (a.num, left, &x)
+        || !mulib_fraction_scale_ (b.num, right, &y))
       return 0;
-    if (a.num
-        && (uint64_t)b.den > (uint64_t)INT64_MAX / mulib_fraction_abs_ (a.num))
-      return 0;
-    if (b.num
-        && (uint64_t)a.den > (uint64_t)INT64_MAX / mulib_fraction_abs_ (b.num))
-      return 0;
-    int64_t x = a.num * b.den, y = b.num * a.den;
+    d = a.den * left;
     if ((y > 0 && x > INT64_MAX - y) || (y < 0 && x < INT64_MIN - y))
       return 0;
     return mulib_fraction_make (x + y, d, out);
   }
+
 #ifdef __cplusplus
 }
 #endif

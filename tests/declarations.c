@@ -196,4 +196,5 @@
 #include "mulib-webclient.h"
 #include "mulib-webframework.h"
 #include "mulib-wmfunc.h"
+#include "mulib-oix.h"
 int main(void) { return 0; }

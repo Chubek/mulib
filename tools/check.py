@@ -53,6 +53,16 @@ def main():
         failures.append(('dsymspec snapshot', snapshot.stderr or snapshot.stdout))
     else:
         print(snapshot.stdout.strip())
+    strata = subprocess.run([sys.executable, str(root / 'tools/stratify.py'), '--check'],
+                            capture_output=True, text=True)
+    if strata.returncode:
+        failures.append(('dependency strata', strata.stderr or strata.stdout))
+    else:
+        print(strata.stdout.strip())
+    tool_tests = subprocess.run([sys.executable, str(root / 'tests/test_tools.py')],
+                                capture_output=True, text=True)
+    if tool_tests.returncode:
+        failures.append(('tool regressions', tool_tests.stderr or tool_tests.stdout))
     manifest = (root / 'MANIFEST.yaml').read_text()
     entries = {}
     for block in re.split(r'^- name: ', manifest.split('project_files:')[0], flags=re.M)[1:]:

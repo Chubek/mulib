@@ -49,6 +49,10 @@ if(MULIB_BUILD_TESTS)
     add_test(NAME mulib_dsymspec_snapshot
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_snapshot.py)
     set_tests_properties(mulib_dsymspec_snapshot PROPERTIES TIMEOUT 60)
+    add_test(NAME mulib_tool_regressions
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_tools.py)
+    add_test(NAME mulib_dependency_strata
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/stratify.py --check)
   endif()
   add_executable(mulib_smoke tests/smoke.c)
   mulib_test_executable(mulib_smoke)
