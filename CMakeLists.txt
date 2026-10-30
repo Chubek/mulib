@@ -58,16 +58,18 @@ if(MULIB_BUILD_TESTS)
   mulib_test_executable(mulib_smoke)
   mulib_register_test(mulib_smoke)
 
-  # In the functional executable, the implementation resides in ONE source TU.
-  add_executable(mulib_functional tests/implementation.c tests/functional.c)
+  # Compile the shared implementation TU once, while retaining separate clients.
+  add_library(mulib_test_implementation OBJECT tests/implementation.c)
+  mulib_test_executable(mulib_test_implementation)
+  add_executable(mulib_functional $<TARGET_OBJECTS:mulib_test_implementation> tests/functional.c)
   mulib_test_executable(mulib_functional)
   mulib_register_test(mulib_functional)
 
-  add_executable(mulib_composition tests/implementation.c tests/composition.c)
+  add_executable(mulib_composition $<TARGET_OBJECTS:mulib_test_implementation> tests/composition.c)
   mulib_test_executable(mulib_composition)
   mulib_register_test(mulib_composition)
 
-  add_executable(mulib_extensions tests/implementation.c tests/extensions.c)
+  add_executable(mulib_extensions $<TARGET_OBJECTS:mulib_test_implementation> tests/extensions.c)
   mulib_test_executable(mulib_extensions)
   mulib_register_test(mulib_extensions)
 

@@ -41,6 +41,13 @@ also compiles headers independently with their transitive implementation
 dependencies and validates the manifest/manual/example inventory. CMake's
 `MULIB_SANITIZERS` option and the checker's `--sanitizers` flag enable ASan/UBSan.
 
+After adding headers, `python3 tools/sync_inventory.py` registers new modules and
+updates combined-test inclusion without replacing existing manifest descriptions.
+It also promotes implemented reservations and refreshes dependency/switch fields;
+invalid input is rejected before writing inventory files.
+Then regenerate dependency documentation with `python3 tools/stratify.py`.
+Neither command implements APIs or replaces handwritten examples/manuals.
+
 For shared storage or parser changes, also run `tests/test_hardening.c` (moving
 allocation/failure injection) and `tests/test_hostile_inputs.c`. The optional
 Clang `MULIB_BUILD_FUZZER` target enables bounded mutation fuzzing; see

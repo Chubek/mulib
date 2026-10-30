@@ -1,6 +1,6 @@
 # MuLIB module and composition guide
 
-MuLIB has 193 implemented single-header C11 modules. Every implemented module has a corresponding
+MuLIB has 259 implemented single-header C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -33,12 +33,15 @@ consult each manual's exact supported syntax, errors, and limits.
 | Machine code | [dsymspec](mulib-dsymspec.md), [assembler](mulib-assembler.md), [emitter](mulib-emitter.md), [linker](mulib-linker.md), [JIT](mulib-jit.md), [dynamic calls](mulib-dyncall.md) |
 | Embedded languages and tools | [MicroJS](mulib-microjs.md), [Datalog](mulib-datalog.md), [Perl POD](mulib-perlpod.md), [microaudio](mulib-microaudio.md), [browser tools](mulib-browsertools.md) |
 
-`mop`, `mune`, `wask`, and `wmfunc` are reserved headers, not implemented APIs. The
+`yantlr` is a comment-only reserved header, not an implemented API. The
 manifest distinguishes the complete header inventory from the implemented count;
 the checker permits only comment-only reserved files and rejects dependencies on
 them. Native modules document platform restrictions. Protocol modules are
 focused building blocks, not a claim of complete standards conformance, TLS,
 authentication, or safe public deployment.
+
+See [extension layers](extension-layers.md) for database storage, binary objects,
+TeX/layout and container lifecycle composition and their explicit limits.
 
 ## Dependency ownership
 

@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **198 implemented modules**.
+A C11 modular single-header utility library with **259 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -101,11 +101,17 @@ regeneration uses the optional developer-only PyYAML and jsonschema packages.
 `mulib-inet6.h` is the canonical IPv6 header; `mulib-inte6.h` remains
 compatible. The existing spellings `impaclient` and `dnsnmeserver` are retained.
 
-All headers have implementations. The [dependency strata](manual/strata.md) index
+All API headers have implementations; `mulib-yantlr.h` is a comment-only reservation.
+The [dependency strata](manual/strata.md) index
 records every direct dependency and integration layer. New focused modules include
 a bounded i32 WebAssembly runtime (`wask`), a numeric Lua subset (`mune`), inherited
 method dispatch (`mop`), and backend-neutral window actions (`wmfunc`). Their manuals
 state the supported profiles; these names do not imply full standards coverage.
+
+The [storage, binary, document and container extensions](manual/extension-layers.md)
+share existing byte buffers, parsers, ELF views and VFS models. Container modules
+provide explicit-backend lifecycle and transport cores, not a privileged isolation
+runtime. `tsl` requires an authenticated TLS backend; it supplies no cryptography.
 
 ## Licensing
 

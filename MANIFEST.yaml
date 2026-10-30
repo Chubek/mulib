@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 198
-implemented_module_count: 198
+module_count: 260
+implemented_module_count: 259
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -1398,6 +1398,438 @@ modules:
   purpose: Tiny standalone x86 OS image compiler and KVM runner with cooperative tasks.
   dependencies: [emitter, crc32, kvm, json, yaml, toml, confuse, base64]
   status: implemented
+- name: binfile
+  header: include/mulib-binfile.h
+  manual: manual/mulib-binfile.md
+  macro: MULIB_IMPL_BINFILE
+  purpose: "Borrowed binary file spans and format identification, without I/O."
+  dependencies: []
+  status: implemented
+- name: binfilebuilder
+  header: include/mulib-binfilebuilder.h
+  manual: manual/mulib-binfilebuilder.md
+  macro: MULIB_IMPL_BINFILEBUILDER
+  purpose: "Transactional fixed-schema record encoding into shared byte buffers."
+  dependencies: [binfileschema, buffer, bycutils]
+  status: implemented
+- name: binfilereader
+  header: include/mulib-binfilereader.h
+  manual: manual/mulib-binfilereader.md
+  macro: MULIB_IMPL_BINFILEREADER
+  purpose: "Bounds-checked cursor over borrowed binary bytes."
+  dependencies: [binfile, bycutils]
+  status: implemented
+- name: binfileschema
+  header: include/mulib-binfileschema.h
+  manual: manual/mulib-binfileschema.md
+  macro: MULIB_IMPL_BINFILESCHEMA
+  purpose: "Fixed-record schemas for named 1..8 byte little-endian integer fields."
+  dependencies: [bycutils]
+  status: implemented
+- name: binfilewriter
+  header: include/mulib-binfilewriter.h
+  manual: manual/mulib-binfilewriter.md
+  macro: MULIB_IMPL_BINFILEWRITER
+  purpose: "Binary integer and zero-padding writer over MuLIB buffers."
+  dependencies: [buffer, bycutils]
+  status: implemented
+- name: blockcache
+  header: include/mulib-blockcache.h
+  manual: manual/mulib-blockcache.md
+  macro: MULIB_IMPL_BLOCKCACHE
+  purpose: "Bounded, owning LRU cache for binary blocks keyed by uint64_t."
+  dependencies: []
+  status: implemented
+- name: blockidx
+  header: include/mulib-blockidx.h
+  manual: manual/mulib-blockidx.md
+  macro: MULIB_IMPL_BLOCKIDX
+  purpose: "Sparse sorted binary fence keys to 64-bit block offsets."
+  dependencies: [bycutils, memtable]
+  status: implemented
+- name: bycutils
+  header: include/mulib-bycutils.h
+  manual: manual/mulib-bycutils.md
+  macro: MULIB_IMPL_BYCUTILS
+  purpose: "Checked byte-code arithmetic and unaligned little-endian integers."
+  dependencies: []
+  status: implemented
+- name: container2daemonproto
+  header: include/mulib-container2daemonproto.h
+  manual: manual/mulib-container2daemonproto.md
+  macro: MULIB_IMPL_CONTAINER2DAEMONPROTO
+  purpose: "Bounded versioned CRC framing for caller-transported container messages."
+  dependencies: [buffer, bycutils, crc32]
+  status: implemented
+- name: containerinjector
+  header: include/mulib-containerinjector.h
+  manual: manual/mulib-containerinjector.md
+  macro: MULIB_IMPL_CONTAINERINJECTOR
+  purpose: "Bounded file insertion into the memory rootfs, not process-code injection."
+  dependencies: [rootfs]
+  status: implemented
+- name: containerserverd
+  header: include/mulib-containerserverd.h
+  manual: manual/mulib-containerserverd.md
+  macro: MULIB_IMPL_CONTAINERSERVERD
+  purpose: "Single-container request dispatcher; no listener, threads or implicit daemon."
+  dependencies: [container2daemonproto, ocicontainermetadata, ocicontainerruntime]
+  status: implemented
+- name: containerstub
+  header: include/mulib-containerstub.h
+  manual: manual/mulib-containerstub.md
+  macro: MULIB_IMPL_CONTAINERSTUB
+  purpose: "Client-side lifecycle-request encoder, with caller-supplied transport."
+  dependencies: [container2daemonproto, ocicontainer]
+  status: implemented
+- name: cowb+tree
+  header: include/mulib-cowb+tree.h
+  manual: manual/mulib-cowb+tree.md
+  macro: MULIB_IMPL_COWBPTREE
+  purpose: "Reference-counted B+ tree snapshots with whole-tree copy on first write."
+  dependencies: [b+tree]
+  status: implemented
+- name: dbindex
+  header: include/mulib-dbindex.h
+  manual: manual/mulib-dbindex.md
+  macro: MULIB_IMPL_DBINDEX
+  purpose: "Binary database key to row-ID index, sharing the memtable model."
+  dependencies: [bycutils, memtable]
+  status: implemented
+- name: dbquery
+  header: include/mulib-dbquery.h
+  manual: manual/mulib-dbquery.md
+  macro: MULIB_IMPL_DBQUERY
+  purpose: "Ordered half-open binary key scans over live memtable records."
+  dependencies: [memtable]
+  status: implemented
+- name: dbsummary
+  header: include/mulib-dbsummary.h
+  manual: manual/mulib-dbsummary.md
+  macro: MULIB_IMPL_DBSUMMARY
+  purpose: "Checked record/byte/sequence statistics for shared database tables."
+  dependencies: [memtable]
+  status: implemented
+- name: dbtransaction
+  header: include/mulib-dbtransaction.h
+  manual: manual/mulib-dbtransaction.md
+  macro: MULIB_IMPL_DBTRANSACTION
+  purpose: "Optimistic single-table snapshot transactions, no implicit disk commit."
+  dependencies: [memtable]
+  status: implemented
+- name: ebpf
+  header: include/mulib-ebpf.h
+  manual: manual/mulib-ebpf.md
+  macro: MULIB_IMPL_EBPF
+  purpose: "Bounded register-only eBPF instruction subset interpreter, not kernel BPF."
+  dependencies: []
+  status: implemented
+- name: elfutils
+  header: include/mulib-elfutils.h
+  manual: manual/mulib-elfutils.md
+  macro: MULIB_IMPL_ELFUTILS
+  purpose: "Named ELF section/symbol lookup over the checked ELF reader."
+  dependencies: [elf]
+  status: implemented
+- name: flatbuffers
+  header: include/mulib-flatbuffers.h
+  manual: manual/mulib-flatbuffers.md
+  macro: MULIB_IMPL_FLATBUFFERS
+  purpose: "Bounds-checked FlatBuffers table/scalar/string views, not a schema compiler."
+  dependencies: [binfile, bycutils]
+  status: implemented
+- name: heaptable
+  header: include/mulib-heaptable.h
+  manual: manual/mulib-heaptable.md
+  macro: MULIB_IMPL_HEAPTABLE
+  purpose: "Append-ID binary row storage over the shared memtable."
+  dependencies: [memtable]
+  status: implemented
+- name: imgtrackerd
+  header: include/mulib-imgtrackerd.h
+  manual: manual/mulib-imgtrackerd.md
+  macro: MULIB_IMPL_IMGTRACKERD
+  purpose: "In-memory reference counts for OCI sha256 image digests, not a daemon."
+  dependencies: [bycutils, memtable, ociimage]
+  status: implemented
+- name: index
+  header: include/mulib-index.h
+  manual: manual/mulib-index.md
+  macro: MULIB_IMPL_INDEX
+  purpose: "Unique ordered integer-to-row-ID secondary index using the B+ tree."
+  dependencies: [b+tree]
+  status: implemented
+- name: initproc
+  header: include/mulib-initproc.h
+  manual: manual/mulib-initproc.md
+  macro: MULIB_IMPL_INITPROC
+  purpose: "POSIX child-reaping primitive for caller-owned init/supervisor loops."
+  dependencies: []
+  status: implemented
+- name: invindex
+  header: include/mulib-invindex.h
+  manual: manual/mulib-invindex.md
+  macro: MULIB_IMPL_INVINDEX
+  purpose: "Binary term to sorted unique uint64 posting lists over memtable storage."
+  dependencies: [buffer, bycutils, memtable]
+  status: implemented
+- name: kvmcontainer
+  header: include/mulib-kvmcontainer.h
+  manual: manual/mulib-kvmcontainer.md
+  macro: MULIB_IMPL_KVMCONTAINER
+  purpose: "Owning Linux KVM device/VM/single-vCPU bundle, not a guest OS runtime."
+  dependencies: [kvm]
+  status: implemented
+- name: latex
+  header: include/mulib-latex.h
+  manual: manual/mulib-latex.md
+  macro: MULIB_IMPL_LATEX
+  purpose: "Escaped LaTeX article generation with an explicit document lifecycle."
+  dependencies: [tex]
+  status: implemented
+- name: layout
+  header: include/mulib-layout.h
+  manual: manual/mulib-layout.md
+  macro: MULIB_IMPL_LAYOUT
+  purpose: "Finite weighted row/column rectangle layout, backend-neutral."
+  dependencies: []
+  status: implemented
+- name: layoutml
+  header: include/mulib-layoutml.h
+  manual: manual/mulib-layoutml.md
+  macro: MULIB_IMPL_LAYOUTML
+  purpose: "Strict XML layout profile: flat weighted items in a row/column."
+  dependencies: [layout, xml]
+  status: implemented
+- name: lsmtree
+  header: include/mulib-lsmtree.h
+  manual: manual/mulib-lsmtree.md
+  macro: MULIB_IMPL_LSMTREE
+  purpose: "Memory-backed LSM runs with WAL-before-publication and atomic compaction."
+  dependencies: [sstfile, wal]
+  status: implemented
+- name: memtable
+  header: include/mulib-memtable.h
+  manual: manual/mulib-memtable.md
+  macro: MULIB_IMPL_MEMTABLE
+  purpose: "Owned sorted binary records with sequence numbers and tombstones."
+  dependencies: []
+  status: implemented
+- name: objfile
+  header: include/mulib-objfile.h
+  manual: manual/mulib-objfile.md
+  macro: MULIB_IMPL_OBJFILE
+  purpose: "Borrowed ELF relocatable-object model; other object formats rejected."
+  dependencies: [binfile, elfutils]
+  status: implemented
+- name: objfilebuilder
+  header: include/mulib-objfilebuilder.h
+  manual: manual/mulib-objfilebuilder.md
+  macro: MULIB_IMPL_OBJFILEBUILDER
+  purpose: "Owned section builder for the focused ELF64 object writer."
+  dependencies: [objfilewriter]
+  status: implemented
+- name: objfileinjector
+  header: include/mulib-objfileinjector.h
+  manual: manual/mulib-objfileinjector.md
+  macro: MULIB_IMPL_OBJFILEINJECTOR
+  purpose: "In-place, size-preserving replacement of file-backed ELF sections."
+  dependencies: [elfutils]
+  status: implemented
+- name: objfileleader
+  header: include/mulib-objfileleader.h
+  manual: manual/mulib-objfileleader.md
+  macro: MULIB_IMPL_OBJFILELEADER
+  purpose: "ELF PT_LOAD copy/zero-fill helper (historical filename: leader)."
+  dependencies: [elf]
+  status: implemented
+- name: objfilelibsearch
+  header: include/mulib-objfilelibsearch.h
+  manual: manual/mulib-objfilelibsearch.md
+  macro: MULIB_IMPL_OBJFILELIBSEARCH
+  purpose: "Checked short-name Unix ar lookup over borrowed bytes."
+  dependencies: [binfile]
+  status: implemented
+- name: objfilepacker
+  header: include/mulib-objfilepacker.h
+  manual: manual/mulib-objfilepacker.md
+  macro: MULIB_IMPL_OBJFILEPACKER
+  purpose: "Deterministic short-name Unix ar member writer (no symbol index)."
+  dependencies: [buffer]
+  status: implemented
+- name: objfileposindep
+  header: include/mulib-objfileposindep.h
+  manual: manual/mulib-objfileposindep.md
+  macro: MULIB_IMPL_OBJFILEPOSINDEP
+  purpose: "Overflow-checked PC-relative signed 32-bit displacement arithmetic."
+  dependencies: []
+  status: implemented
+- name: objfilereloc
+  header: include/mulib-objfilereloc.h
+  manual: manual/mulib-objfilereloc.md
+  macro: MULIB_IMPL_OBJFILERELOC
+  purpose: "Checked little-endian ABS32/ABS64/PC32 relocation of byte spans."
+  dependencies: [bycutils, objfileposindep]
+  status: implemented
+- name: objfilestub
+  header: include/mulib-objfilestub.h
+  manual: manual/mulib-objfilestub.md
+  macro: MULIB_IMPL_OBJFILESTUB
+  purpose: "Emit an x86-64 absolute indirect-jump thunk as data, never execute it."
+  dependencies: [buffer, bycutils]
+  status: implemented
+- name: objfilesymloc
+  header: include/mulib-objfilesymloc.h
+  manual: manual/mulib-objfilesymloc.md
+  macro: MULIB_IMPL_OBJFILESYMLOC
+  purpose: "Resolve a defined ELF symbol's file-backed bytes, not its runtime address."
+  dependencies: [binfile, elfutils]
+  status: implemented
+- name: objfilewriter
+  header: include/mulib-objfilewriter.h
+  manual: manual/mulib-objfilewriter.md
+  macro: MULIB_IMPL_OBJFILEWRITER
+  purpose: "Deterministic ELF64 little-endian ET_REL writer for PROGBITS sections."
+  dependencies: [binfilewriter, buffer, bycutils]
+  status: implemented
+- name: ocicontainer
+  header: include/mulib-ocicontainer.h
+  manual: manual/mulib-ocicontainer.md
+  macro: MULIB_IMPL_OCICONTAINER
+  purpose: "OCI-style container identity/lifecycle core, not an isolation engine."
+  dependencies: []
+  status: implemented
+- name: ocicontaineripc
+  header: include/mulib-ocicontaineripc.h
+  manual: manual/mulib-ocicontaineripc.md
+  macro: MULIB_IMPL_OCICONTAINERIPC
+  purpose: "Binary IPC channel messages using the shared container frame protocol."
+  dependencies: [container2daemonproto]
+  status: implemented
+- name: ocicontainermetadata
+  header: include/mulib-ocicontainermetadata.h
+  manual: manual/mulib-ocicontainermetadata.md
+  macro: MULIB_IMPL_OCICONTAINERMETADATA
+  purpose: "OCI-style state JSON projection from the lifecycle model."
+  dependencies: [json, ocicontainer]
+  status: implemented
+- name: ocicontainernetwork
+  header: include/mulib-ocicontainernetwork.h
+  manual: manual/mulib-ocicontainernetwork.md
+  macro: MULIB_IMPL_OCICONTAINERNETWORK
+  purpose: "Validated IPv4 container address/prefix/gateway plans, no network changes."
+  dependencies: [inet4]
+  status: implemented
+- name: ocicontainernetwrork
+  header: include/mulib-ocicontainernetwrork.h
+  manual: manual/mulib-ocicontainernetwrork.md
+  macro: MULIB_IMPL_OCICONTAINERNETWRORK
+  purpose: "Compatibility spelling of the container network-plan module."
+  dependencies: [ocicontainernetwork]
+  status: implemented
+- name: ocicontainerruntime
+  header: include/mulib-ocicontainerruntime.h
+  manual: manual/mulib-ocicontainerruntime.md
+  macro: MULIB_IMPL_OCICONTAINERRUNTIME
+  purpose: "Explicit-backend container lifecycle driver, not a bundled OCI runtime."
+  dependencies: [ocicontainer]
+  status: implemented
+- name: ocicontainervfs
+  header: include/mulib-ocicontainervfs.h
+  manual: manual/mulib-ocicontainervfs.md
+  macro: MULIB_IMPL_OCICONTAINERVFS
+  purpose: "Mount a memory rootfs into a VFS with explicit read-only policy."
+  dependencies: [rootfs]
+  status: implemented
+- name: ocicontainervolume
+  header: include/mulib-ocicontainervolume.h
+  manual: manual/mulib-ocicontainervolume.md
+  macro: MULIB_IMPL_OCICONTAINERVOLUME
+  purpose: "Validated declarative bind-volume specifications; no host mount calls."
+  dependencies: [vfs]
+  status: implemented
+- name: ociimage
+  header: include/mulib-ociimage.h
+  manual: manual/mulib-ociimage.md
+  macro: MULIB_IMPL_OCIIMAGE
+  purpose: "OCI image-manifest v1 JSON descriptor validation, not blob transport."
+  dependencies: [json]
+  status: implemented
+- name: ociimagebuilder
+  header: include/mulib-ociimagebuilder.h
+  manual: manual/mulib-ociimagebuilder.md
+  macro: MULIB_IMPL_OCIIMAGEBUILDER
+  purpose: "Owned OCI manifest construction from externally hashed descriptors."
+  dependencies: [ociimage]
+  status: implemented
+- name: rootfs
+  header: include/mulib-rootfs.h
+  manual: manual/mulib-rootfs.md
+  macro: MULIB_IMPL_ROOTFS
+  purpose: "Bounded memory root filesystem imported from the supported USTAR profile."
+  dependencies: [archive, vfs]
+  status: implemented
+- name: rootfsbuilder
+  header: include/mulib-rootfsbuilder.h
+  manual: manual/mulib-rootfsbuilder.md
+  macro: MULIB_IMPL_ROOTFSBUILDER
+  purpose: "Deterministic USTAR export from the bounded memory root filesystem."
+  dependencies: [archive, buffer, rootfs]
+  status: implemented
+- name: socket
+  header: include/mulib-socket.h
+  manual: manual/mulib-socket.md
+  macro: MULIB_IMPL_SOCKET
+  purpose: "POSIX connected stream descriptor ownership and bounded I/O primitives."
+  dependencies: []
+  status: implemented
+- name: spatialtree
+  header: include/mulib-spatialtree.h
+  manual: manual/mulib-spatialtree.md
+  macro: MULIB_IMPL_SPATIALTREE
+  purpose: "Owned static balanced 2D k-d tree for inclusive rectangle searches."
+  dependencies: []
+  status: implemented
+- name: sql
+  header: include/mulib-sql.h
+  manual: manual/mulib-sql.md
+  macro: MULIB_IMPL_SQL
+  purpose: "Focused SQL key/value statements over a shared memtable, not general SQL."
+  dependencies: [buffer, memtable, strbuf]
+  status: implemented
+- name: sstfile
+  header: include/mulib-sstfile.h
+  manual: manual/mulib-sstfile.md
+  macro: MULIB_IMPL_SSTFILE
+  purpose: "Immutable sorted-table byte snapshots, preserving tombstones/sequences."
+  dependencies: [buffer, bycutils, crc32, memtable, wal]
+  status: implemented
+- name: tex
+  header: include/mulib-tex.h
+  manual: manual/mulib-tex.md
+  macro: MULIB_IMPL_TEX
+  purpose: "TeX text escaping and a bounded lexical scanner, not a TeX engine."
+  dependencies: [strbuf, utf8]
+  status: implemented
+- name: tsl
+  header: include/mulib-tsl.h
+  manual: manual/mulib-tsl.md
+  macro: MULIB_IMPL_TSL
+  purpose: "Transport-security lifecycle adapter for an application-supplied TLS backend."
+  dependencies: []
+  status: implemented
+- name: wal
+  header: include/mulib-wal.h
+  manual: manual/mulib-wal.md
+  macro: MULIB_IMPL_WAL
+  purpose: "CRC-framed, sequence-checked write-ahead-log byte codec, not disk I/O."
+  dependencies: [buffer, bycutils, crc32]
+  status: implemented
+- name: yantlr
+  header: include/mulib-yantlr.h
+  purpose: Reserved future module; no implemented API.
+  dependencies: []
+  status: reserved
 project_files:
 - file: MANIFEST.yaml
   purpose: Complete inventory of modules, manuals, examples, and supporting files.
@@ -1903,3 +2335,157 @@ project_files:
   purpose: OIX kernel execution, formats, canonical validation, device and allocation tests.
 - file: tests/oix_cpu.h
   purpose: Independent test-only interpreter for the emitted 16-bit x86 instruction subset.
+- file: examples/modules/ast.c
+  purpose: "Standalone checked usage example for ast."
+- file: examples/modules/binfile.c
+  purpose: "Standalone checked usage example for binfile."
+- file: examples/modules/binfilebuilder.c
+  purpose: "Standalone checked usage example for binfilebuilder."
+- file: examples/modules/binfilereader.c
+  purpose: "Standalone checked usage example for binfilereader."
+- file: examples/modules/binfileschema.c
+  purpose: "Standalone checked usage example for binfileschema."
+- file: examples/modules/binfilewriter.c
+  purpose: "Standalone checked usage example for binfilewriter."
+- file: examples/modules/blockcache.c
+  purpose: "Standalone checked usage example for blockcache."
+- file: examples/modules/blockidx.c
+  purpose: "Standalone checked usage example for blockidx."
+- file: examples/modules/bycutils.c
+  purpose: "Standalone checked usage example for bycutils."
+- file: examples/modules/confuse.c
+  purpose: "Standalone checked usage example for confuse."
+- file: examples/modules/container2daemonproto.c
+  purpose: "Standalone checked usage example for container2daemonproto."
+- file: examples/modules/containerinjector.c
+  purpose: "Standalone checked usage example for containerinjector."
+- file: examples/modules/containerserverd.c
+  purpose: "Standalone checked usage example for containerserverd."
+- file: examples/modules/containerstub.c
+  purpose: "Standalone checked usage example for containerstub."
+- file: examples/modules/cowb+tree.c
+  purpose: "Standalone checked usage example for cowb+tree."
+- file: examples/modules/dbindex.c
+  purpose: "Standalone checked usage example for dbindex."
+- file: examples/modules/dbquery.c
+  purpose: "Standalone checked usage example for dbquery."
+- file: examples/modules/dbsummary.c
+  purpose: "Standalone checked usage example for dbsummary."
+- file: examples/modules/dbtransaction.c
+  purpose: "Standalone checked usage example for dbtransaction."
+- file: examples/modules/ebpf.c
+  purpose: "Standalone checked usage example for ebpf."
+- file: examples/modules/elfutils.c
+  purpose: "Standalone checked usage example for elfutils."
+- file: examples/modules/evtstream.c
+  purpose: "Standalone checked usage example for evtstream."
+- file: examples/modules/flatbuffers.c
+  purpose: "Standalone checked usage example for flatbuffers."
+- file: examples/modules/heaptable.c
+  purpose: "Standalone checked usage example for heaptable."
+- file: examples/modules/imgtrackerd.c
+  purpose: "Standalone checked usage example for imgtrackerd."
+- file: examples/modules/index.c
+  purpose: "Standalone checked usage example for index."
+- file: examples/modules/initproc.c
+  purpose: "Standalone checked usage example for initproc."
+- file: examples/modules/invindex.c
+  purpose: "Standalone checked usage example for invindex."
+- file: examples/modules/kvmcontainer.c
+  purpose: "Standalone checked usage example for kvmcontainer."
+- file: examples/modules/latex.c
+  purpose: "Standalone checked usage example for latex."
+- file: examples/modules/layout.c
+  purpose: "Standalone checked usage example for layout."
+- file: examples/modules/layoutml.c
+  purpose: "Standalone checked usage example for layoutml."
+- file: examples/modules/lazystream.c
+  purpose: "Standalone checked usage example for lazystream."
+- file: examples/modules/listener.c
+  purpose: "Standalone checked usage example for listener."
+- file: examples/modules/lsmtree.c
+  purpose: "Standalone checked usage example for lsmtree."
+- file: examples/modules/memtable.c
+  purpose: "Standalone checked usage example for memtable."
+- file: examples/modules/objfile.c
+  purpose: "Standalone checked usage example for objfile."
+- file: examples/modules/objfilebuilder.c
+  purpose: "Standalone checked usage example for objfilebuilder."
+- file: examples/modules/objfileinjector.c
+  purpose: "Standalone checked usage example for objfileinjector."
+- file: examples/modules/objfileleader.c
+  purpose: "Standalone checked usage example for objfileleader."
+- file: examples/modules/objfilelibsearch.c
+  purpose: "Standalone checked usage example for objfilelibsearch."
+- file: examples/modules/objfilepacker.c
+  purpose: "Standalone checked usage example for objfilepacker."
+- file: examples/modules/objfileposindep.c
+  purpose: "Standalone checked usage example for objfileposindep."
+- file: examples/modules/objfilereloc.c
+  purpose: "Standalone checked usage example for objfilereloc."
+- file: examples/modules/objfilestub.c
+  purpose: "Standalone checked usage example for objfilestub."
+- file: examples/modules/objfilesymloc.c
+  purpose: "Standalone checked usage example for objfilesymloc."
+- file: examples/modules/objfilewriter.c
+  purpose: "Standalone checked usage example for objfilewriter."
+- file: examples/modules/ocicontainer.c
+  purpose: "Standalone checked usage example for ocicontainer."
+- file: examples/modules/ocicontaineripc.c
+  purpose: "Standalone checked usage example for ocicontaineripc."
+- file: examples/modules/ocicontainermetadata.c
+  purpose: "Standalone checked usage example for ocicontainermetadata."
+- file: examples/modules/ocicontainernetwork.c
+  purpose: "Standalone checked usage example for ocicontainernetwork."
+- file: examples/modules/ocicontainernetwrork.c
+  purpose: "Standalone checked usage example for ocicontainernetwrork."
+- file: examples/modules/ocicontainerruntime.c
+  purpose: "Standalone checked usage example for ocicontainerruntime."
+- file: examples/modules/ocicontainervfs.c
+  purpose: "Standalone checked usage example for ocicontainervfs."
+- file: examples/modules/ocicontainervolume.c
+  purpose: "Standalone checked usage example for ocicontainervolume."
+- file: examples/modules/ociimage.c
+  purpose: "Standalone checked usage example for ociimage."
+- file: examples/modules/ociimagebuilder.c
+  purpose: "Standalone checked usage example for ociimagebuilder."
+- file: examples/modules/rootfs.c
+  purpose: "Standalone checked usage example for rootfs."
+- file: examples/modules/rootfsbuilder.c
+  purpose: "Standalone checked usage example for rootfsbuilder."
+- file: examples/modules/socket.c
+  purpose: "Standalone checked usage example for socket."
+- file: examples/modules/spatialtree.c
+  purpose: "Standalone checked usage example for spatialtree."
+- file: examples/modules/sql.c
+  purpose: "Standalone checked usage example for sql."
+- file: examples/modules/sstfile.c
+  purpose: "Standalone checked usage example for sstfile."
+- file: examples/modules/tex.c
+  purpose: "Standalone checked usage example for tex."
+- file: examples/modules/tsl.c
+  purpose: "Standalone checked usage example for tsl."
+- file: examples/modules/visitor.c
+  purpose: "Standalone checked usage example for visitor."
+- file: examples/modules/wal.c
+  purpose: "Standalone checked usage example for wal."
+- file: tests/test_ast_parser.c
+  purpose: "Focused regression suite for test_ast_parser."
+- file: tests/test_binary_layers.c
+  purpose: "Focused regression suite for test_binary_layers."
+- file: tests/test_container_layers.c
+  purpose: "Focused regression suite for test_container_layers."
+- file: tests/test_database_failures.c
+  purpose: "Focused regression suite for test_database_failures."
+- file: tests/test_database_layers.c
+  purpose: "Focused regression suite for test_database_layers."
+- file: tests/test_document_layout.c
+  purpose: "Focused regression suite for test_document_layout."
+- file: tests/test_layer_hostile_inputs.c
+  purpose: "Focused regression suite for test_layer_hostile_inputs."
+- file: tests/test_security_adapters.c
+  purpose: "Focused regression suite for test_security_adapters."
+- file: tools/sync_inventory.py
+  purpose: "Additive header inventory and combined-test synchronization."
+- file: manual/extension-layers.md
+  purpose: "Shared storage, binary, document and container contracts and limits."

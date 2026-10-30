@@ -21,9 +21,60 @@ def module(name):
 
 snapshot = module('check_snapshot')
 strata = module('stratify')
+inventory = module('sync_inventory')
 
 
 class Tools(unittest.TestCase):
+    def test_inventory_sync(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'include').mkdir()
+            (root / 'tests').mkdir()
+            (root / 'MANIFEST.yaml').write_text(
+                'module_count: 0\nimplemented_module_count: 0\nmodules:\nproject_files:\n')
+            (root / 'tests/implementation.c').write_text('/* existing client */\n')
+            (root / 'tests/declarations.c').write_text('int main(void) { return 0; }\n')
+            (root / 'include/mulib-a.h').write_text(
+                '/** @brief Sample API. */\n#if defined(MULIB_IMPL_A)\n#endif\n')
+            (root / 'include/mulib-future.h').write_text('/* reserved user notes */\n')
+            inventory.sync(root)
+            before = {p: p.read_text() for p in (root / 'MANIFEST.yaml',
+                      root / 'tests/implementation.c', root / 'tests/declarations.c')}
+            self.assertIn('module_count: 2', before[root / 'MANIFEST.yaml'])
+            self.assertIn('implemented_module_count: 1', before[root / 'MANIFEST.yaml'])
+            self.assertIn('status: reserved', before[root / 'MANIFEST.yaml'])
+            self.assertIn('#define MULIB_IMPL_A', before[root / 'tests/implementation.c'])
+            inventory.sync(root)
+            self.assertEqual(before, {p: p.read_text() for p in before})
+            (root / 'include/mulib-a.h').write_text('/* API accidentally erased */\n')
+            with self.assertRaisesRegex(ValueError, 'lost its API'):
+                inventory.sync(root)
+            self.assertEqual(before, {p: p.read_text() for p in before})
+            (root / 'include/mulib-a.h').write_text(
+                '/** @brief Sample API. */\n#if defined(MULIB_IMPL_A)\n#endif\n')
+            # Promote a reserved module and refresh dependencies, preserving
+            # maintainer prose and custom implementation switches.
+            path = root / 'MANIFEST.yaml'
+            path.write_text(path.read_text().replace(
+                '  purpose: "Sample API."',
+                '  purpose: "Maintainer description"\n  extra_macros: [MULIB_IMPL_EXTRA]'))
+            (root / 'include/mulib-future.h').write_text(
+                '#include "mulib-a.h"\n#if defined(MULIB_IMPL_FUTURE)\n#endif\n')
+            inventory.sync(root)
+            self.assertNotIn('status: reserved', path.read_text())
+            self.assertIn('dependencies: [a]', path.read_text())
+            self.assertIn('Maintainer description', path.read_text())
+            self.assertIn('extra_macros: [MULIB_IMPL_EXTRA]', path.read_text())
+            self.assertIn('#define MULIB_IMPL_FUTURE',
+                          (root / 'tests/implementation.c').read_text())
+            # An invalid client file must not leave the manifest half-updated.
+            (root / 'include/mulib-b.h').write_text('/* future */\n')
+            (root / 'tests/declarations.c').write_text('/* no main */\n')
+            before = {p: p.read_text() for p in before}
+            with self.assertRaisesRegex(ValueError, 'insertion point'):
+                inventory.sync(root)
+            self.assertEqual(before, {p: p.read_text() for p in before})
+
     def test_snapshot(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
