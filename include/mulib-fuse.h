@@ -40,6 +40,14 @@ extern "C"
     mulib_vfs *vfs;
     int read_only;
   } mulib_fuse;
+  /** @brief Optional bounded session. Counters saturate; no request is retained. */
+  typedef struct mulib_fuse_session
+  {
+    mulib_fuse adapter;
+    size_t max_transfer;
+    uint64_t requests, errors, read_bytes, written_bytes;
+    int closed, busy;
+  } mulib_fuse_session;
   /** @brief Initialize an adapter borrowing vfs; no allocation or mounting
    * occurs. */
   mulib_vfs_result mulib_fuse_init (mulib_fuse *adapter, mulib_vfs *vfs,
@@ -55,7 +63,17 @@ extern "C"
                                         const mulib_fuse_request *request,
                                         void *output, size_t output_capacity,
                                         mulib_vfs_visit visit, void *user,
-                                        mulib_fuse_response *response);
+                                         mulib_fuse_response *response);
+  /** @brief Initialize a session over a borrowed router; transfer quota may be zero. */
+  mulib_vfs_result mulib_fuse_session_init (mulib_fuse_session *session,
+                                            mulib_vfs *vfs, int read_only,
+                                            size_t max_transfer);
+  /** @brief Dispatch with transfer limits, statistics and callback reentry rejection. */
+  mulib_vfs_result mulib_fuse_session_dispatch (mulib_fuse_session *session,
+      const mulib_fuse_request *request, void *output, size_t capacity,
+      mulib_vfs_visit visit, void *user, mulib_fuse_response *response);
+  /** @brief Close an idle session. Idempotent; subsequent requests are canceled. */
+  mulib_vfs_result mulib_fuse_session_close (mulib_fuse_session *session);
 #ifdef __cplusplus
 }
 #endif
@@ -63,6 +81,7 @@ extern "C"
 
 #if defined(MULIB_IMPL_FUSE) && !defined(MULIB_FUSE_IMPLEMENTED)
 #define MULIB_FUSE_IMPLEMENTED
+#include "include-mulib-container-core.h"
 #include <string.h>
 #ifdef __cplusplus
 extern "C"
@@ -143,6 +162,55 @@ extern "C"
       }
     response->result = r;
     return r;
+  }
+  mulib_vfs_result
+  mulib_fuse_session_init (mulib_fuse_session *s, mulib_vfs *vfs, int ro,
+                           size_t limit)
+  {
+    mulib_fuse_session next;
+    mulib_vfs_result rc;
+    if (!s) return MULIB_VFS_EINVAL;
+    memset (&next, 0, sizeof (next));
+    rc = mulib_fuse_init (&next.adapter, vfs, ro);
+    if (rc) return rc;
+    next.max_transfer = limit; *s = next;
+    return MULIB_VFS_OK;
+  }
+  mulib_vfs_result
+  mulib_fuse_session_dispatch (mulib_fuse_session *s,
+      const mulib_fuse_request *q, void *out, size_t cap,
+      mulib_vfs_visit visit, void *user, mulib_fuse_response *r)
+  {
+    mulib_vfs_result rc;
+    if (!r) return MULIB_VFS_EINVAL;
+    memset (r, 0, sizeof (*r)); r->id = q ? q->id : 0;
+    r->result = MULIB_VFS_EINVAL;
+    if (!s || !q) return r->result;
+    if (s->closed || s->busy) return r->result = MULIB_VFS_ECANCELED;
+    s->requests = mulib_ct_counter_add (s->requests, 1);
+    if ((q->opcode == MULIB_FUSE_READ || q->opcode == MULIB_FUSE_WRITE)
+        && q->length > s->max_transfer)
+      rc = r->result = MULIB_VFS_ELIMIT;
+    else
+      {
+        s->busy = 1;
+        rc = mulib_fuse_dispatch (&s->adapter, q, out, cap, visit, user, r);
+        s->busy = 0;
+      }
+    if (rc) s->errors = mulib_ct_counter_add (s->errors, 1);
+    if (q->opcode == MULIB_FUSE_READ)
+      s->read_bytes = mulib_ct_counter_add (s->read_bytes, r->transferred);
+    if (q->opcode == MULIB_FUSE_WRITE)
+      s->written_bytes = mulib_ct_counter_add (s->written_bytes, r->transferred);
+    return rc;
+  }
+  mulib_vfs_result
+  mulib_fuse_session_close (mulib_fuse_session *s)
+  {
+    if (!s) return MULIB_VFS_EINVAL;
+    if (s->busy) return MULIB_VFS_ECANCELED;
+    s->closed = 1;
+    return MULIB_VFS_OK;
   }
 #ifdef __cplusplus
 }

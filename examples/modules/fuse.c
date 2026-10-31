@@ -6,6 +6,7 @@
 int main(void) {
     mulib_vfs vfs; mulib_vfs_mem mem; mulib_vfs_ops ops = mulib_vfs_mem_ops();
     mulib_fuse adapter; mulib_fuse_response response;
+    mulib_fuse_session session;
     mulib_fuse_request request = {42, MULIB_FUSE_READ, "/note", 0, 5, NULL};
     char bytes[5];
     assert(mulib_vfs_init(&vfs, 1) == MULIB_VFS_OK);
@@ -18,6 +19,11 @@ int main(void) {
     assert(response.id == 42 && response.transferred == 5 && !memcmp(bytes, "hello", 5));
     request.opcode = MULIB_FUSE_WRITE; request.data = "world";
     assert(mulib_fuse_dispatch(&adapter, &request, NULL, 0, NULL, NULL, &response) == MULIB_VFS_EROFS);
+    assert(mulib_fuse_session_init(&session, &vfs, 0, 4) == MULIB_VFS_OK);
+    request.opcode = MULIB_FUSE_READ;
+    assert(mulib_fuse_session_dispatch(&session, &request, bytes, sizeof(bytes), NULL, NULL, &response) == MULIB_VFS_ELIMIT);
+    assert(session.requests == 1 && session.errors == 1);
+    assert(mulib_fuse_session_close(&session) == MULIB_VFS_OK);
     mulib_vfs_free(&vfs); mulib_vfs_mem_free(&mem);
     return 0;
 }

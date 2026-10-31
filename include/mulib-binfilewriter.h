@@ -35,22 +35,23 @@ mulib_binfilewriter_align (mulib_buffer_t *b, size_t a)
 {
   size_t n;
   unsigned char *p;
-  int ok;
-  if (!b || !mulib_bycutils_align (b->length, a, &n))
+  if (!b || !mulib_buffer_append (b, NULL, 0)
+      || !mulib_bycutils_align (b->length, a, &n))
     return 0;
-  n -= b->length;
-  if (!n)
-    return 1;
-  p = (unsigned char *)calloc (n, 1);
-  if (!p)
-    return 0;
-  ok = mulib_buffer_append (b, p, n);
-  free (p);
-  return ok;
+  if (n > b->capacity)
+    {
+      p = (unsigned char *)realloc (b->data, n);
+      if (!p) return 0;
+      b->data = p; b->capacity = n;
+    }
+  if (n > b->length) memset (b->data + b->length, 0, n - b->length);
+  b->length = n;
+  return 1;
 }
 int
 mulib_binfilewriter_patch (mulib_buffer_t *b, size_t o, unsigned w, uint64_t v)
 {
-  return b && mulib_bycutils_store (b->data, b->length, o, w, v);
+  return b && b->length <= b->capacity && (!b->capacity || b->data)
+         && mulib_bycutils_store (b->data, b->length, o, w, v);
 }
 #endif

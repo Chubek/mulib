@@ -37,7 +37,7 @@ static int writer(void *user, const char *bytes, size_t n)
 static mulib_mune_status_t native_sum(mulib_mune_state_t *s, const mulib_mune_value_t *args,
                                     size_t count, mulib_mune_result_t *out, void *user)
 {
-    mulib_mune_value_t v = {MULIB_MUNE_INTEGER,{0}};
+    mulib_mune_value_t v = {MULIB_MUNE_INTEGER,{.integer=0}};
     size_t k;
     (void)s; (void)user;
     for(k=0;k<count;++k) {
@@ -46,11 +46,37 @@ static mulib_mune_status_t native_sum(mulib_mune_state_t *s, const mulib_mune_va
     }
     return mulib_mune_result_push(out,v)?MULIB_MUNE_OK:MULIB_MUNE_MEMORY;
 }
+static mulib_mune_status_t native_roundtrip(mulib_mune_state_t *s, const mulib_mune_value_t *args,
+                                          size_t count, mulib_mune_result_t *out, void *user)
+{
+    mulib_mune_result_t *r=NULL;
+    mulib_mune_status_t status;
+    size_t k;
+    (void)user;
+    if(!count) return MULIB_MUNE_INVALID;
+    mulib_mune_collect(s);
+    status=mulib_mune_call(s,args[0],args+1,count-1,&r,NULL);
+    mulib_mune_collect(s);
+    for(k=0;status==MULIB_MUNE_OK && k<mulib_mune_result_count(r);++k)
+        if(!mulib_mune_result_push(out,mulib_mune_result_get(r,k))) status=MULIB_MUNE_MEMORY;
+    mulib_mune_result_destroy(r);
+    return status;
+}
 
 int main(int argc, char **argv)
 {
     mulib_mune_state_t *s = mulib_mune_state_create(NULL);
     assert(s);
+    if (argc == 3 && !strcmp(argv[1], "--bundle")) {
+        mulib_mune_error_t e;
+        mulib_mune_chunk_t *chunk=mulib_mune_parse_file(argv[2],NULL,&e);
+        mulib_mune_status_t status;
+        mulib_mune_bundle_module_t item;
+        if(!chunk) { fprintf(stderr,"%zu: %s\n",e.offset,e.message); mulib_mune_state_destroy(s); return 1; }
+        item.name="test_bundle"; item.source=mulib_mune_chunk_ast(chunk)->text; item.length=mulib_mune_chunk_ast(chunk)->length;
+        status=mulib_mune_bundle_write(&item,1,writer,stdout,&e);
+        mulib_mune_chunk_destroy(chunk);mulib_mune_state_destroy(s);return status?1:0;
+    }
     if (argc == 3 && !strcmp(argv[1], "--emit")) {
         mulib_mune_error_t e;
         mulib_mune_chunk_t *chunk=mulib_mune_parse_file(argv[2],NULL,&e);
@@ -95,8 +121,11 @@ int main(int argc, char **argv)
     execute(s, "assert(('ab'):gsub('','.')=='.a.b.'); assert(('abc'):gsub('(.)','%1%0')=='aabbcc'); assert((' x foo!'):match('%f[%a]foo%f[%A]')=='foo'); assert(('aXXbYYb'):match('a.-b')=='aXXb'); assert(('123'):match('()(%d+)')==1)");
     execute(s, "local t={}; t.self=t; for i=1,200 do t[i]={i} end; local before=collectgarbage('count'); t=nil; collectgarbage(); assert(collectgarbage('count')<before)");
     execute(s, "local weak=setmetatable({}, {__mode='kv'}); do local k,v={},{}; weak[k]=v end; collectgarbage(); assert(next(weak)==nil); local x=0; do local t=setmetatable({}, {__gc=function() x=x+1 end}) end; collectgarbage(); assert(x==1); collectgarbage(); assert(x==1)");
+    execute(s, "collectgarbage('stop'); collectgarbage('incremental',200,100,8); local weak=setmetatable({}, {__mode='v'}); local saved={}; do local x={}; weak[1]=x end; local finished=false; for i=1,2000 do saved[i]={i}; if collectgarbage('step',0) then finished=true; break end end; assert(finished and weak[1]==nil and not collectgarbage('isrunning')); for i,v in ipairs(saved) do assert(v[1]==i) end; collectgarbage('restart'); collectgarbage('incremental',200,100,13)");
+    execute(s, "local old={}; collectgarbage('generational',20,100); collectgarbage(); local weak=setmetatable({}, {__mode='k'}); for i=1,80 do local k={i}; old.value={k}; weak[k]=old.value; collectgarbage('step',32); assert(old.value[1][1]==i and weak[k]==old.value) end; old.value=nil; collectgarbage(); assert(next(weak)==nil); assert(collectgarbage('incremental',200,100,13)=='generational'); assert(collectgarbage('setpause',200)==200 and collectgarbage('setstepmul',100)==100)");
     execute(s, "local text=utf8.char(65,0x20ac,0x1f600); assert(utf8.len(text)==3 and #text==8); assert(utf8.codepoint(text,2)==0x20ac and utf8.offset(text,-1)==5); local n=0; for pos,c in utf8.codes(text) do n=n+1 end; assert(n==3); assert(utf8.len('\\xff')==nil)");
     execute(s, "local f=assert(io.tmpfile()); assert(io.type(f)=='file'); assert(f:write('10 20\\nhello\\n')); assert(f:seek('set',0)==0); local a,b=f:read('n','n'); assert(a==10 and b==20); assert(f:read('l')==''); assert(f:read('l')=='hello'); assert(f:read('l')==nil); assert(f:close()); assert(io.type(f)=='closed file')");
+    execute(s, "local f; do local x<close> =assert(io.tmpfile()); f=x; assert(getmetatable(x).__name=='FILE*' and type(getmetatable(x).__gc)=='function'); assert(not pcall(x.read,x,nil)); x:close(); assert(tostring(x)=='file (closed)') end; assert(not pcall(f.lines,f) and not pcall(f.close,f,nil)); do local x<close> =io.stdout end; assert(io.type(io.stdout)=='file')");
     execute(s, "assert(os.date('!%Y-%m-%d',0)=='1970-01-01'); local d=os.date('!*t',0); assert(d.year==1970 and d.month==1 and d.day==1); assert(os.difftime(20,10)==10); assert(type(os.clock())=='number')");
     execute(s, "package.loaded.test_lazy=nil; local n=0; package.preload.test_lazy=function(name,data) assert(name=='test_lazy' and data==':preload:'); n=n+1; return {value=42} end; local a,d=require('test_lazy'); assert(a.value==42 and d==':preload:'); assert(require('test_lazy')==a and n==1)");
     execute(s, "local co=coroutine.create(function(x) local y=coroutine.yield(x+1); return y*2 end); assert(coroutine.status(co)=='suspended'); local ok,v=coroutine.resume(co,20); assert(ok and v==21); collectgarbage(); ok,v=coroutine.resume(co,21); assert(ok and v==42 and coroutine.status(co)=='dead'); assert(not coroutine.resume(co))");
@@ -108,7 +137,10 @@ int main(int argc, char **argv)
     execute(s, "assert(string.packsize('Xx')==0 and string.packsize('!3b')==1); assert(not pcall(string.packsize,'X i4')); assert(not pcall(string.unpack,'i9',string.pack('I8',-1)..'\\0')); local f=assert(load('return '..string.format('%q',math.mininteger))); assert(f()==math.mininteger and math.type(f())=='integer')");
     execute(s, "local f=assert(io.tmpfile()); f:write('123abc'); f:seek('set'); assert(f:read('n')==123 and f:read('a')=='abc'); f:seek('set'); f:write('1e+X'); f:seek('set'); assert(f:read('n')==nil and f:read(1)=='X'); f:close()");
     execute(s, "local f=function(a,b,...) return a+b,... end; local image=string.dump(f); local g=assert(load(image,nil,'b')); assert(g(20,22)==42); assert(not load(image,nil,'t')); local i=0; local h=assert(load(function() i=i+1; return ({'return ','40+2'})[i] end)); assert(h()==42)");
+    execute(s, "local i=0; local f=assert(load(function() i=i+1; return ({'return ',42})[i] end)); assert(f()==42); assert(utf8.len(123)==3 and string.format(123)=='123'); assert(not pcall(string.sub,'abc')); assert(not pcall(rawget,{})); assert(not pcall(getmetatable)); assert(not pcall(ipairs)); assert(not pcall(math.type)); assert(not pcall(pcall))");
+    execute(s, "assert(not pcall(debug.getmetatable)); assert(not pcall(debug.setmetatable,1)); assert(debug.getmetatable(nil)==nil); local ok,f,e=pcall(load,42); assert(ok and f==nil and type(e)=='string'); assert(not pcall(load,{}))");
     execute(s, "local x=41; local function f(a) return x+a end; local name,value=debug.getupvalue(f,1); assert(name=='x' and value==41); assert(debug.setupvalue(f,1,40)=='x' and f(2)==42); local g=(function() local y=1; return function() return y end end)(); debug.upvaluejoin(g,1,f,1); assert(g()==40 and debug.upvalueid(g,1)==debug.upvalueid(f,1)); local info=debug.getinfo(f,'uS'); assert(info.nups==1 and info.nparams==1 and info.what=='Lua')");
+    execute(s, "local weak=setmetatable({}, {__mode='v'}); local id; do local x={}; weak[1]=x; local function f() return x end; id=debug.upvalueid(f,1) end; collectgarbage(); assert(weak[1]==nil); local w=setmetatable({id},{__mode='v'}); id=nil; collectgarbage(); assert(type(w[1])=='userdata'); local mt=debug.getmetatable(w[1]); debug.setmetatable(w[1],{__index={answer=42}}); assert(w[1].answer==42); local f=io.tmpfile(); assert(f.answer==nil); f:close(); debug.setmetatable(w[1],mt)");
     execute(s, "local events=0; debug.sethook(function(event) events=events+1 end,'cr',10); local f=function(x) return x+1 end; assert(f(41)==42); debug.sethook(); assert(events>0); assert(type(debug.traceback())=='string'); assert(debug.getmetatable('x')==getmetatable('x'))");
     execute(s, "local log={}; local ok,e=xpcall(function() local x<close> =setmetatable({}, {__close=function(x,e) assert(e==11); log[#log+1]='c' end}); error(10) end,function(e) assert(e==10); log[#log+1]='h'; return 11 end); assert(not ok and e==11 and table.concat(log)=='hc')");
     execute(s, "local log={}; local a,b={},{}; setmetatable(b,{__gc=function() log[#log+1]='b' end}); setmetatable(a,{__gc=function() log[#log+1]='a' end}); a,b=nil,nil; collectgarbage(); assert(table.concat(log)=='ab')");
@@ -119,13 +151,24 @@ int main(int argc, char **argv)
     execute(s, "local n=0; local p=setmetatable({}, {__index=function(_,k) return k end,__len=function() n=n+1; return 3 end}); table.move(p,1,2,2); assert(table.unpack(p,1,1)==1 and n==0); assert(not pcall(math.fmod,1,nil)); assert(not pcall(string.format,'%+s','x')); assert(not pcall(tostring)); assert(not pcall(tonumber)); assert(not pcall(rawequal)); assert(collectgarbage('collect')==0)");
     execute(s, "local f=assert(load('local function f()\\n error(\"boom\")\\nend\\nreturn f', '=location'))(); local ok,e=pcall(f); assert(not ok and e=='location:2: boom'); local g=assert(load('return function() error(\"plain\",0) end', '=ignored'))(); ok,e=pcall(g); assert(not ok and e=='plain'); assert(debug.getinfo(f,'S').source=='=location')");
     {
-        const char module[]="return {answer=42}";
-        mulib_mune_bundle_module_t item={"test_bundle",module,sizeof(module)-1};
+        const char module[]="return {answer=require('test_dep').value+2}";
+        const char dependency[]="return {value=40}";
+        mulib_mune_bundle_module_t items[]={{"test_bundle",module,sizeof(module)-1},{"test_dep",dependency,sizeof(dependency)-1}};
         mulib_mune_error_t e;
-        FILE *f=fopen("test_bundle.luac","wb"); assert(f);
-        assert(mulib_mune_bundle_write(&item,1,writer,f,&e)==MULIB_MUNE_OK);
+        unsigned char *bytes;
+        long size;
+        FILE *f=fopen("test_bundle.luac","w+b"); assert(f);
+        assert(mulib_mune_bundle_write(items,2,writer,f,&e)==MULIB_MUNE_OK);
+        size=ftell(f); assert(size>0); rewind(f); bytes=(unsigned char *)malloc((size_t)size); assert(bytes);
+        assert(fread(bytes,1,(size_t)size,f)==(size_t)size && !memcmp(bytes,"MUNEBC\0\2",8));
+        assert(mulib_mune_load_bundle(s,bytes,(size_t)size-1,&e)==MULIB_MUNE_INVALID);
+        bytes[size-1]^=1;
+        assert(mulib_mune_load_bundle(s,bytes,(size_t)size,&e)==MULIB_MUNE_INVALID);
+        bytes[size-1]^=1;
+        assert(mulib_mune_load_bundle(s,bytes,(size_t)size,&e)==MULIB_MUNE_OK);
+        free(bytes);
         assert(fclose(f)==0);
-        execute(s,"package.loaded.test_bundle=nil; local m=require('test_bundle'); assert(m.answer==42)");
+        execute(s,"package.loaded.test_bundle=nil; package.loaded.test_dep=nil; package.preload.test_bundle=nil; local m=require('test_bundle'); assert(m.answer==42)");
         assert(remove("test_bundle.luac")==0);
     }
     execute(s, "saved=(function() local x=42; return function() return x end end)()");
@@ -143,7 +186,9 @@ int main(int argc, char **argv)
         assert(mulib_mune_get_global(s,"native_sum",&fn)==MULIB_MUNE_OK);
         args[0].as.integer=20; args[1].as.integer=22;
         assert(mulib_mune_call(s,fn,args,2,&r,&e)==MULIB_MUNE_OK);
-        assert(mulib_mune_result_get(r,0).as.integer==42); mulib_mune_result_destroy(r);
+        assert(mulib_mune_result_get(r,0).type==MULIB_MUNE_INTEGER && mulib_mune_result_get(r,0).as.integer==42); mulib_mune_result_destroy(r);
+        assert(mulib_mune_bind(s,"native_roundtrip",native_roundtrip,NULL)==MULIB_MUNE_OK);
+        execute(s,"local co=coroutine.create(function() return native_roundtrip(function(x) collectgarbage(); coroutine.yield(x); return {answer=x.a} end,{a=42}) end); local ok,x=coroutine.resume(co); assert(ok and x.a==42); collectgarbage(); ok,x=coroutine.resume(co); assert(ok and x.answer==42)");
         assert(mulib_mune_make_userdata(s,16,&object,&data)==MULIB_MUNE_OK);
         assert(mulib_mune_value_userdata(object,&bytes)==data && bytes==16 && ((unsigned char *)data)[15]==0);
         assert(mulib_mune_result_push(roots,object));

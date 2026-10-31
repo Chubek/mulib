@@ -1,0 +1,33 @@
+/* Optional native-adapter dependencies for examples and focused tests. */
+#ifndef MULIB_EXAMPLE_CONTAINER_NATIVE_COMMON_H
+#define MULIB_EXAMPLE_CONTAINER_NATIVE_COMMON_H
+#define MULIB_IMPL_CONTAINER_JITBOOST
+#define MULIB_IMPL_JIT
+#define MULIB_IMPL_DYNCALL
+#define MULIB_IMPL_VMWEAVE
+#define MULIB_IMPL_MIR
+#define MULIB_IMPL_EGRAPH
+#define MULIB_IMPL_REWRITE
+#define MULIB_IMPL_CONTAINER_KVMBOOST
+#define MULIB_IMPL_KVMCONTAINER
+#define MULIB_IMPL_KVM
+#define MULIB_IMPL_CONTAINER_OIXBOOST
+#define MULIB_IMPL_OIX
+#define MULIB_IMPL_BASE64
+#define MULIB_IMPL_CONFUSE
+#define MULIB_IMPL_EMITTER
+#define MULIB_IMPL_JSON
+#define MULIB_IMPL_TOML
+#define MULIB_IMPL_YAML
+#define MULIB_IMPL_PARSEC
+#define MULIB_IMPL_PARSER
+#define MULIB_IMPL_PEG
+#define MULIB_IMPL_AST
+#define MULIB_IMPL_STRBUF
+#define MULIB_IMPL_UTF8
+#define MULIB_IMPL_GLOB
+#include "container-stack-common.h"
+#include "mulib-container-jitboost.h"
+#include "mulib-container-kvmboost.h"
+#include "mulib-container-oixboost.h"
+#endif

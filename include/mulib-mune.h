@@ -179,7 +179,8 @@ extern "C"
     size_t length;
   } mulib_mune_bundle_module_t;
   /** Write a portable Mune module bundle, conventionally named .luac. It is an
-   * independent versioned container of checked Lua sources, not PUC Lua bytecode.
+   * independent versioned container of checked Lua source and compiled MIR.
+   * The loader verifies images against source/helper bindings before execution.
    * Loading installs lazy module loaders in package.preload. */
   mulib_mune_status_t mulib_mune_bundle_write (const mulib_mune_bundle_module_t *modules,
       size_t count, mulib_mir_write_fn writer, void *user, mulib_mune_error_t *error);
@@ -1405,7 +1406,7 @@ extern "C"
     mulib_mune_state_t *owner;
     mulib_mune_object_t *next, *gray, *metatable, *finalize_next;
     size_t bytes;
-    unsigned kind, marked, finalizable, finalized, userdata_tag;
+    unsigned kind, marked, finalizable, finalized, userdata_tag, age;
     union
     {
       size_t length;
@@ -1429,7 +1430,7 @@ extern "C"
         int close;
       } environment;
       struct { FILE *stream; int owned, closed; } file;
-      struct { size_t length; mulib_mune_object_t *values, *identity; } userdata;
+      struct { size_t length; mulib_mune_object_t *values; uintptr_t identity; } userdata;
       mulib_mune_coroutine_ *thread;
     } as;
   };
@@ -1484,10 +1485,13 @@ extern "C"
     mulib_mune_value_t error_value;
     mulib_mune_value_t input, output;
     size_t bytes, threshold, steps, depth, location;
+    mulib_mune_object_t **gc_sweep;
+    size_t gc_major_bytes;
     uint64_t random_state;
     mulib_mune_status_t status;
     char message[512];
     int running, collecting, gc_stopped, has_error, warnings, gc_pause, gc_stepmul, gc_generation;
+    int gc_stepsize, gc_minor, gc_major, gc_minor_cycles, gc_minor_cycle;
     mulib_mune_mode_t mode;
     const mulib_mune_aot_entry_t *aot;
     size_t aot_count;
@@ -1587,7 +1591,7 @@ extern "C"
     o = (mulib_mune_object_t *)mulib_mune_rt_memory_ (s, NULL, 0, sizeof (*o) + extra);
     if (!o) return NULL;
     memset (o, 0, sizeof (*o)); o->owner = s; o->kind = kind; o->bytes = sizeof (*o) + extra;
-    o->marked = s->collecting != 0;
+    o->marked = s->collecting != 0 || s->gc_sweep != NULL;
     o->next = s->objects; s->objects = o; return o;
   }
   static int
@@ -1658,6 +1662,13 @@ extern "C"
     mulib_mune_result_t *r = mulib_mune_rt_results_ (s);
     if (r && !mulib_mune_result_push (r, v)) { mulib_mune_result_destroy (r); r = NULL; }
     return r;
+  }
+  static int
+  mulib_mune_rt_pin_ (mulib_mune_state_t *s, mulib_mune_value_t v)
+  {
+    if (!s->frame) return mulib_mune_rt_error_ (s, MULIB_MUNE_INVALID, "missing native call frame");
+    if (!s->frame->varargs) s->frame->varargs = mulib_mune_rt_results_ (s);
+    return s->frame->varargs && mulib_mune_result_push (s->frame->varargs, v);
   }
   static int
   mulib_mune_rt_append_ (mulib_mune_result_t *to, const mulib_mune_result_t *from, size_t start)
@@ -1885,7 +1896,7 @@ extern "C"
   static int
   mulib_mune_rt_alive_ (mulib_mune_value_t v)
   {
-    return v.type <= MULIB_MUNE_STRING || v.as.object->marked;
+    return v.type <= MULIB_MUNE_STRING || (v.type == MULIB_MUNE_USERDATA && v.as.object->userdata_tag == 3) || v.as.object->marked;
   }
   static unsigned
   mulib_mune_rt_weak_ (mulib_mune_object_t *o)
@@ -1913,18 +1924,20 @@ extern "C"
                   mulib_mune_entry_ *e = &o->as.table.entries[k];
                   if (e->used == 1)
                     {
-                      if (!(weak & 1) || e->key.type == MULIB_MUNE_STRING) mulib_mune_rt_mark_value_ (e->key, gray);
-                      if ((!(weak & 2) && (!(weak & 1) || mulib_mune_rt_alive_ (e->key))) || e->value.type == MULIB_MUNE_STRING)
+                      if (!(weak & 1) || mulib_mune_rt_alive_ (e->key)) mulib_mune_rt_mark_value_ (e->key, gray);
+                      if ((!(weak & 2) && (!(weak & 1) || mulib_mune_rt_alive_ (e->key))) || mulib_mune_rt_alive_ (e->value))
                         mulib_mune_rt_mark_value_ (e->value, gray);
                     }
-                  else if (e->used == 2 && e->key.type == MULIB_MUNE_STRING) mulib_mune_rt_mark_value_ (e->key, gray);
+                  else if (e->used == 2 && (e->key.type == MULIB_MUNE_STRING
+                      || (e->key.type == MULIB_MUNE_USERDATA && e->key.as.object->userdata_tag == 3)))
+                    mulib_mune_rt_mark_value_ (e->key, gray);
                 }
             if (o->kind == MULIB_MUNE_FUNCTION)
               { mulib_mune_rt_mark_object_ (o->as.function.environment, gray); for (k = 0; k < 3; ++k) mulib_mune_rt_mark_value_ (o->as.function.context[k], gray); }
             if (o->kind == MULIB_MUNE_ENVIRONMENT_)
               { mulib_mune_rt_mark_object_ (o->as.environment.parent, gray); mulib_mune_rt_mark_object_ (o->as.environment.cell, gray); mulib_mune_rt_mark_value_ (o->as.environment.value, gray); }
-            if (o->kind == MULIB_MUNE_USERDATA && o->userdata_tag != 1)
-              { mulib_mune_rt_mark_object_ (o->as.userdata.values, gray); mulib_mune_rt_mark_object_ (o->as.userdata.identity, gray); }
+            if (o->kind == MULIB_MUNE_USERDATA && o->userdata_tag == 2)
+              mulib_mune_rt_mark_object_ (o->as.userdata.values, gray);
             if (o->kind == MULIB_MUNE_THREAD && o->as.thread)
               {
                 mulib_mune_frame_ *f;
@@ -1964,15 +1977,26 @@ extern "C"
               { e->used = 2; e->key = e->value = mulib_mune_rt_nil_ (); --o->as.table.count; ++o->as.table.tombs; }
           }
   }
-  size_t
-  mulib_mune_collect (mulib_mune_state_t *s)
+  static size_t
+  mulib_mune_rt_gc_scale_ (size_t bytes, unsigned percent)
+  {
+    size_t whole = bytes / 100, fraction = bytes % 100 * (uint64_t)percent / 100;
+    return percent && whole > (SIZE_MAX - fraction) / percent ? SIZE_MAX : whole * percent + fraction;
+  }
+  static void
+  mulib_mune_rt_gc_start_ (mulib_mune_state_t *s, int minor)
   {
     mulib_mune_object_t *gray = NULL, **link, *o;
     mulib_mune_result_t *r;
     mulib_mune_frame_ *f;
     size_t k;
-    if (!s || s->collecting) return s ? s->bytes : 0;
-    s->collecting = 1;
+    s->collecting = 1; s->gc_minor_cycle = minor;
+    for (o = s->objects; o; o = o->next) o->marked = 0;
+    /* Minor collections conservatively rescan old objects, so old-to-young
+     * mutations need no write barrier. Full cycles reclaim old unreachable
+     * graphs. Marking, weak references and finalization form one atomic phase. */
+    if (minor) for (o = s->objects; o; o = o->next)
+      if (o->age >= 2) mulib_mune_rt_mark_object_ (o, &gray);
     mulib_mune_rt_mark_object_ (s->globals, &gray); mulib_mune_rt_mark_object_ (s->environment, &gray);
     mulib_mune_rt_mark_object_ (s->main_thread, &gray); mulib_mune_rt_mark_object_ (s->current_thread, &gray);
     mulib_mune_rt_mark_object_ (s->file_metatable, &gray); mulib_mune_rt_mark_object_ (s->registry, &gray);
@@ -2003,18 +2027,63 @@ extern "C"
             o->as.table.entries[k].key = mulib_mune_rt_nil_ ();
     for (link = &s->finalizers; *link;)
       { if (!(*link)->marked) *link = (*link)->finalize_next; else link = &(*link)->finalize_next; }
-    for (link = &s->objects; *link;)
+    s->gc_sweep = &s->objects; s->collecting = 0;
+  }
+  static int
+  mulib_mune_rt_gc_sweep_ (mulib_mune_state_t *s, size_t budget)
+  {
+    s->collecting = 1;
+    while (s->gc_sweep && *s->gc_sweep && budget)
       {
-        o = *link;
-        if (!o->marked) { *link = o->next; mulib_mune_rt_free_object_ (s, o); }
-        else { o->marked = 0; link = &o->next; }
+        mulib_mune_object_t *o = *s->gc_sweep;
+        size_t work = o->bytes;
+        if (o->kind == MULIB_MUNE_TABLE) work += o->as.table.capacity * sizeof (*o->as.table.entries);
+        budget = work >= budget ? 0 : budget - work;
+        if (!o->marked) { *s->gc_sweep = o->next; mulib_mune_rt_free_object_ (s, o); }
+        else
+          {
+            if (!s->gc_minor_cycle) o->age = 2;
+            else if (o->age < 2) ++o->age;
+            s->gc_sweep = &o->next;
+          }
       }
-    s->threshold = s->bytes / 100 > SIZE_MAX / (unsigned)(s->gc_pause ? s->gc_pause : 1) ? SIZE_MAX
-        : (s->bytes / 100) * (unsigned)s->gc_pause;
+    s->collecting = 0;
+    if (s->gc_sweep && *s->gc_sweep) return 0;
+    s->gc_sweep = NULL;
+    if (s->gc_minor_cycle) ++s->gc_minor_cycles;
+    else { s->gc_major_bytes = s->bytes; s->gc_minor_cycles = 0; }
+    s->threshold = mulib_mune_rt_gc_scale_ (s->bytes, s->gc_generation ? 100u + (unsigned)s->gc_minor : (unsigned)s->gc_pause);
     if (s->threshold < 65536) s->threshold = 65536;
     if (s->threshold > s->limits.memory_bytes / 2) s->threshold = s->limits.memory_bytes / 2;
     if (s->gc_stopped) s->threshold = SIZE_MAX;
-    s->collecting = 0; return s->bytes;
+    return 1;
+  }
+  static int
+  mulib_mune_rt_gc_step_ (mulib_mune_state_t *s, size_t budget)
+  {
+    if (s->collecting) return 0;
+    if (!s->gc_sweep)
+      mulib_mune_rt_gc_start_ (s, s->gc_generation && s->gc_major_bytes && s->gc_minor_cycles < 20
+          && s->bytes <= mulib_mune_rt_gc_scale_ (s->gc_major_bytes, 100u + (unsigned)s->gc_major));
+    return mulib_mune_rt_gc_sweep_ (s, budget ? budget : 1);
+  }
+  static void
+  mulib_mune_rt_gc_auto_ (mulib_mune_state_t *s)
+  {
+    size_t budget;
+    if (s->collecting || s->gc_stopped || (!s->gc_sweep && s->bytes <= s->threshold)) return;
+    budget = s->gc_stepsize >= (int)(sizeof (size_t) * CHAR_BIT) ? SIZE_MAX : (size_t)1 << s->gc_stepsize;
+    budget = mulib_mune_rt_gc_scale_ (budget, (unsigned)s->gc_stepmul);
+    (void)mulib_mune_rt_gc_step_ (s, budget);
+  }
+  size_t
+  mulib_mune_collect (mulib_mune_state_t *s)
+  {
+    if (!s || s->collecting) return s ? s->bytes : 0;
+    if (s->gc_sweep) (void)mulib_mune_rt_gc_sweep_ (s, SIZE_MAX);
+    mulib_mune_rt_gc_start_ (s, 0);
+    (void)mulib_mune_rt_gc_sweep_ (s, SIZE_MAX);
+    return s->bytes;
   }
   static const char *
   mulib_mune_rt_typename_ (mulib_mune_value_t v)
@@ -2078,7 +2147,8 @@ extern "C"
   mulib_mune_rt_meta_ (mulib_mune_state_t *s, mulib_mune_value_t v, const char *name)
   {
     mulib_mune_object_t *t = v.type >= MULIB_MUNE_STRING ? v.as.object->metatable : NULL;
-    if (!t) t = s->type_metatables[v.type == MULIB_MUNE_INTEGER ? MULIB_MUNE_NUMBER : v.type];
+    if (!t && v.type != MULIB_MUNE_TABLE && (v.type != MULIB_MUNE_USERDATA || v.as.object->userdata_tag == 3))
+      t = s->type_metatables[v.type == MULIB_MUNE_INTEGER ? MULIB_MUNE_NUMBER : v.type];
     return mulib_mune_rt_field_ (t, name, strlen (name));
   }
   static mulib_mune_result_t *
@@ -3076,7 +3146,7 @@ extern "C"
     if (s->mode != MULIB_MUNE_TREE) { mulib_mune_rt_compiled_block_ (s, n, retain, control); return; }
     while (c && !s->status)
       {
-        if (s->bytes > s->threshold) (void)mulib_mune_collect (s);
+        mulib_mune_rt_gc_auto_ (s);
         mulib_mune_rt_statement_ (s, c, control);
         if (s->status) { mulib_mune_rt_handle_error_ (s); break; }
         if (control->kind == MULIB_MUNE_GOTO_)
@@ -3114,7 +3184,7 @@ extern "C"
     if (!s->limits.call_depth) s->limits.call_depth = 200;
     if (!s->limits.results) s->limits.results = 100000;
     s->threshold = 65536;
-    s->gc_pause = 200; s->gc_stepmul = 100;
+    s->gc_pause = 200; s->gc_stepmul = 100; s->gc_stepsize = 13; s->gc_minor = 20; s->gc_major = 100;
     s->globals = mulib_mune_rt_allocate_ (s, MULIB_MUNE_TABLE, 0);
     s->environment = mulib_mune_rt_environment_ (s, NULL, "_ENV", 4, mulib_mune_rt_object_ (s->globals), 0, 0);
     s->main_thread = s->current_thread = mulib_mune_rt_thread_create_ (s, mulib_mune_rt_nil_ (), 1);
@@ -3291,6 +3361,7 @@ extern "C"
   {
     mulib_mune_value_t a = mulib_mune_rt_arg_ (args, n, 0), b = mulib_mune_rt_arg_ (args, n, 1), v;
     double x, y = 0;
+    if (!n && (!strcmp (op, "type") || !strcmp (op, "tointeger"))) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "value expected");
     if (!strcmp (op, "type"))
       return mulib_mune_result_push (out, a.type == MULIB_MUNE_INTEGER ? mulib_mune_rt_string_ (s, "integer", 7)
           : a.type == MULIB_MUNE_NUMBER ? mulib_mune_rt_string_ (s, "float", 5) : mulib_mune_rt_nil_ ());
@@ -3301,7 +3372,7 @@ extern "C"
     if (!strcmp (op, "randomseed"))
       {
         int64_t i = (int64_t)time (NULL), j = 0;
-        if ((n && !mulib_mune_rt_need_int_ (s, a, &i, 1)) || (n > 1 && !mulib_mune_rt_need_int_ (s, b, &j, 2))) return 0;
+        if ((a.type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, a, &i, 1)) || (b.type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, b, &j, 2))) return 0;
         s->random_state = (uint64_t)i ^ ((uint64_t)j * UINT64_C (0x9e3779b97f4a7c15));
         return mulib_mune_result_push (out, mulib_mune_rt_integer_ (i)) && mulib_mune_result_push (out, mulib_mune_rt_integer_ (j));
       }
@@ -3565,6 +3636,7 @@ extern "C"
     else if (!strcmp (op, "rawequal")) { if (n < 2) mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "two values expected"); else (void)mulib_mune_result_push (out, mulib_mune_rt_boolean_ (mulib_mune_rt_equal_ (a, b))); }
     else if (!strcmp (op, "rawget") || !strcmp (op, "rawset"))
       {
+        if (n < 2) return (mulib_mune_status_t)(mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "key expected"), s->status);
         if (mulib_mune_rt_need_ (s, a, MULIB_MUNE_TABLE, 1))
           {
             if (!strcmp (op, "rawget")) (void)mulib_mune_result_push (out, mulib_mune_rt_rawget_ (a.as.object, b));
@@ -3583,12 +3655,15 @@ extern "C"
     else if (!strcmp (op, "getmetatable"))
       {
         mulib_mune_object_t *meta = a.type >= MULIB_MUNE_STRING ? a.as.object->metatable : NULL;
-        if (!meta) meta = s->type_metatables[a.type == MULIB_MUNE_INTEGER ? MULIB_MUNE_NUMBER : a.type];
+        if (!n) return (mulib_mune_status_t)(mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "value expected"), s->status);
+        if (!meta && a.type != MULIB_MUNE_TABLE && (a.type != MULIB_MUNE_USERDATA || a.as.object->userdata_tag == 3))
+          meta = s->type_metatables[a.type == MULIB_MUNE_INTEGER ? MULIB_MUNE_NUMBER : a.type];
         v = mulib_mune_rt_field_ (meta, "__metatable", 11);
         (void)mulib_mune_result_push (out, v.type == MULIB_MUNE_NIL ? mulib_mune_rt_object_ (meta) : v);
       }
     else if (!strcmp (op, "setmetatable"))
       {
+        if (n < 2) return (mulib_mune_status_t)(mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "metatable expected"), s->status);
         if (!mulib_mune_rt_need_ (s, a, MULIB_MUNE_TABLE, 1) || (b.type != MULIB_MUNE_NIL && !mulib_mune_rt_need_ (s, b, MULIB_MUNE_TABLE, 2))) return s->status;
         if (mulib_mune_rt_field_ (a.as.object->metatable, "__metatable", 11).type != MULIB_MUNE_NIL) mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "cannot change a protected metatable");
         else
@@ -3609,7 +3684,9 @@ extern "C"
       }
     else if (!strcmp (op, "ipairs"))
       {
-        mulib_mune_object_t *f = mulib_mune_rt_allocate_ (s, MULIB_MUNE_FUNCTION, 0);
+        mulib_mune_object_t *f;
+        if (!n) return (mulib_mune_status_t)(mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "value expected"), s->status);
+        f = mulib_mune_rt_allocate_ (s, MULIB_MUNE_FUNCTION, 0);
         if (f) { f->as.function.native = mulib_mune_rt_builtin_; f->as.function.user = (void *)"ipairs.iterator";
           (void)mulib_mune_result_push (out, mulib_mune_rt_object_ (f)); (void)mulib_mune_result_push (out, a); (void)mulib_mune_result_push (out, mulib_mune_rt_integer_ (0)); }
       }
@@ -3626,7 +3703,9 @@ extern "C"
       {
         size_t start = !strcmp (op, "xpcall") ? 2 : 1;
         mulib_mune_protected_ protect;
-        mulib_mune_result_t *callargs = mulib_mune_rt_results_ (s), *r;
+        mulib_mune_result_t *callargs, *r;
+        if (!n) return (mulib_mune_status_t)(mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "function expected"), s->status);
+        callargs = mulib_mune_rt_results_ (s);
         if (!callargs) return s->status;
         if (start == 2 && !mulib_mune_rt_need_ (s, b, MULIB_MUNE_FUNCTION, 2)) { mulib_mune_result_destroy (callargs); return s->status; }
         protect.previous = s->protected_call; protect.handler = start == 2 ? b : mulib_mune_rt_nil_ (); protect.handled = 0; s->protected_call = &protect;
@@ -3673,11 +3752,20 @@ extern "C"
         const char *what = a.type == MULIB_MUNE_NIL ? "collect" : mulib_mune_value_string (a, NULL);
         if (!what) mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "collection option expected");
         else if (!strcmp (what, "count")) (void)mulib_mune_result_push (out, mulib_mune_rt_number_ ((double)s->bytes / 1024));
-        else if (!strcmp (what, "isrunning")) (void)mulib_mune_result_push (out, mulib_mune_rt_boolean_ (s->threshold != SIZE_MAX));
+        else if (!strcmp (what, "isrunning")) (void)mulib_mune_result_push (out, mulib_mune_rt_boolean_ (!s->gc_stopped));
         else if (!strcmp (what, "stop")) { s->gc_stopped = 1; s->threshold = SIZE_MAX; (void)mulib_mune_result_push (out, mulib_mune_rt_integer_ (0)); }
         else if (!strcmp (what, "restart")) { s->gc_stopped = 0; s->threshold = s->bytes; (void)mulib_mune_result_push (out, mulib_mune_rt_integer_ (0)); }
-        else if (!strcmp (what, "collect") || !strcmp (what, "step"))
-          { (void)mulib_mune_collect (s); (void)mulib_mune_result_push (out, !strcmp (what, "step") ? mulib_mune_rt_boolean_ (1) : mulib_mune_rt_integer_ (0)); }
+        else if (!strcmp (what, "collect"))
+          { (void)mulib_mune_collect (s); (void)mulib_mune_result_push (out, mulib_mune_rt_integer_ (0)); }
+        else if (!strcmp (what, "step"))
+          {
+            int64_t amount = 0; size_t budget;
+            if (b.type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, b, &amount, 2)) return s->status;
+            if (amount < 0) return (mulib_mune_status_t)(mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "negative collection step"), s->status);
+            budget = (uint64_t)amount > SIZE_MAX / 1024 ? SIZE_MAX : amount ? (size_t)amount * 1024 : 1024;
+            budget = mulib_mune_rt_gc_scale_ (budget, (unsigned)s->gc_stepmul);
+            (void)mulib_mune_result_push (out, mulib_mune_rt_boolean_ (mulib_mune_rt_gc_step_ (s, budget)));
+          }
         else if (!strcmp (what, "setpause") || !strcmp (what, "setstepmul"))
           {
             int64_t value; int *field = !strcmp (what, "setpause") ? &s->gc_pause : &s->gc_stepmul;
@@ -3686,8 +3774,24 @@ extern "C"
           }
         else if (!strcmp (what, "incremental") || !strcmp (what, "generational"))
           {
+            int parameters[3] = { 0, 0, 0 }, generational = !strcmp (what, "generational");
+            for (k = 1; k < n && k <= (generational ? 2u : 3u); ++k)
+              {
+                int64_t value = 0;
+                if (args[k].type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, args[k], &value, k + 1)) return s->status;
+                if (value < 0 || value > INT_MAX || (!generational && k == 3 && value > 63))
+                  return (mulib_mune_status_t)(mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid collector parameter"), s->status);
+                parameters[k - 1] = (int)value;
+              }
             (void)mulib_mune_result_push (out, mulib_mune_rt_string_ (s, s->gc_generation ? "generational" : "incremental", s->gc_generation ? 12 : 11));
-            s->gc_generation = !strcmp (what, "generational");
+            if (s->collecting) return s->status;
+            if (s->gc_sweep) (void)mulib_mune_rt_gc_sweep_ (s, SIZE_MAX);
+            s->gc_generation = generational;
+            if (generational)
+              { if (parameters[0]) s->gc_minor = parameters[0]; if (parameters[1]) s->gc_major = parameters[1]; }
+            else
+              { if (parameters[0]) s->gc_pause = parameters[0]; if (parameters[1]) s->gc_stepmul = parameters[1]; if (parameters[2]) s->gc_stepsize = parameters[2]; }
+            if (!s->gc_stopped) s->threshold = s->bytes;
           }
         else mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "unknown collection option");
       }
@@ -3827,10 +3931,10 @@ extern "C"
     return mulib_mune_rt_bytes_ (s, out, "\"", 1);
   }
   static int
-  mulib_mune_rt_format_ (mulib_mune_state_t *s, const mulib_mune_value_t *args, size_t n, mulib_mune_bytes_ *out)
+  mulib_mune_rt_format_ (mulib_mune_state_t *s, mulib_mune_value_t format, const mulib_mune_value_t *args, size_t n, mulib_mune_bytes_ *out)
   {
-    const char *fmt = (const char *)(args[0].as.object + 1);
-    size_t length = args[0].as.object->as.length, at = 0, argument = 1;
+    const char *fmt = (const char *)(format.as.object + 1);
+    size_t length = format.as.object->as.length, at = 0, argument = 1;
     while (at < length)
       {
         char spec[32], buffer[1024], code;
@@ -4238,6 +4342,7 @@ extern "C"
     if (!strcmp (op, "byte") || !strcmp (op, "sub"))
       {
         begin = 1;
+        if (!strcmp (op, "sub") && (n < 2 || args[1].type == MULIB_MUNE_NIL)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "substring position expected");
         if (n > 1 && args[1].type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, args[1], &begin, 2)) return 0;
         end = !strcmp (op, "byte") ? begin : -1;
         if (n > 2 && args[2].type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, args[2], &end, 3)) return 0;
@@ -4261,8 +4366,8 @@ extern "C"
       }
     else if (!strcmp (op, "format"))
       {
-        if (args[0].type != MULIB_MUNE_STRING) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "format string expected");
-        (void)mulib_mune_rt_format_ (s, args, n, &bytes);
+        if (!mulib_mune_result_push (out, a)) return 0;
+        (void)mulib_mune_rt_format_ (s, a, args, n, &bytes); out->count = 0;
       }
     else
       {
@@ -4720,7 +4825,7 @@ extern "C"
     n = d->plan->expression[host].node;
     if (d->plan->expression[host].operation != MULIB_MUNE_B_LABEL_)
       {
-        if (s->bytes > s->threshold) (void)mulib_mune_collect (s);
+        mulib_mune_rt_gc_auto_ (s);
         if (!mulib_mune_rt_tick_ (s, n)) return MULIB_MIR_HOST_ERROR;
         switch (d->plan->expression[host].operation)
           {
@@ -4973,6 +5078,7 @@ extern "C"
   {
     mulib_mune_value_t name = mulib_mune_rt_arg_ (args, n, 0), package = mulib_mune_rt_field_ (s->globals, "package", 7), table, loader, path;
     if (!mulib_mune_rt_text_ (s, name, 0, &name) || !mulib_mune_rt_need_ (s, package, MULIB_MUNE_TABLE, 1)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "module name and package table required");
+    if (!mulib_mune_rt_pin_ (s, name) || !mulib_mune_rt_pin_ (s, package)) return 0;
     if (!strcmp (op, "package.loadlib"))
       {
         const char *file = mulib_mune_rt_cstring_ (s, name, 1), *symbol = mulib_mune_rt_cstring_ (s, mulib_mune_rt_arg_ (args, n, 1), 2);
@@ -5041,6 +5147,7 @@ extern "C"
         mulib_mune_value_t loaded = mulib_mune_rt_field_ (package.as.object, "loaded", 6), searchers = mulib_mune_rt_field_ (package.as.object, "searchers", 9);
         int64_t index;
         if (!mulib_mune_rt_need_ (s, loaded, MULIB_MUNE_TABLE, 1) || !mulib_mune_rt_need_ (s, searchers, MULIB_MUNE_TABLE, 1)) return 0;
+        if (!mulib_mune_rt_pin_ (s, loaded) || !mulib_mune_rt_pin_ (s, searchers)) return 0;
         loader = mulib_mune_rt_rawget_ (loaded.as.object, name);
         if (mulib_mune_rt_truth_ (loader)) return mulib_mune_result_push (out, loader);
         for (index = 1; index < 10000; ++index)
@@ -5299,7 +5406,7 @@ extern "C"
         if (!s->status) (void)mulib_mune_result_push (out, mulib_mune_rt_string_ (s, bytes.data, bytes.length));
         (void)mulib_mune_rt_memory_ (s, bytes.data, bytes.capacity, 0); return !s->status;
       }
-    if (!mulib_mune_rt_need_ (s, a, MULIB_MUNE_STRING, 1)) return 0;
+    if (!mulib_mune_rt_text_ (s, a, 0, &a)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "string expected");
     text = (const unsigned char *)mulib_mune_value_string (a, &length); end = (int64_t)length;
     if (!strcmp (op, "codes"))
       {
@@ -5359,7 +5466,11 @@ extern "C"
   mulib_mune_rt_cstring_ (mulib_mune_state_t *s, mulib_mune_value_t v, size_t i)
   {
     const char *text;
-    if (!mulib_mune_rt_need_ (s, v, MULIB_MUNE_STRING, i)) return NULL;
+    if (v.type != MULIB_MUNE_STRING)
+      {
+        if (!mulib_mune_rt_text_ (s, v, 0, &v)) { (void)mulib_mune_rt_need_ (s, v, MULIB_MUNE_STRING, i); return NULL; }
+        if (s->frame && !mulib_mune_rt_pin_ (s, v)) return NULL;
+      }
     text = (const char *)(v.as.object + 1);
     if (memchr (text, 0, v.as.object->as.length)) { mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "zero byte in C string argument"); return NULL; }
     return text;
@@ -5468,6 +5579,23 @@ extern "C"
         int64_t code = 0;
         if (a.type == MULIB_MUNE_BOOLEAN) code = a.as.boolean ? EXIT_SUCCESS : EXIT_FAILURE;
         else if (a.type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, a, &code, 1)) return 0;
+        if (mulib_mune_rt_truth_ (b))
+          {
+            mulib_mune_frame_ *f = s->current_thread == s->main_thread ? s->frame : s->main_thread->as.thread->frame;
+            mulib_mune_object_t *o;
+            mulib_mune_protected_ protect;
+            protect.previous = NULL; protect.handler = mulib_mune_rt_nil_ (); protect.handled = 0;
+            s->collecting = 1; s->protected_call = &protect;
+            for (; f; f = f->previous)
+              {
+                s->frame = f; s->status = MULIB_MUNE_OK; s->has_error = 0; s->error_value = mulib_mune_rt_nil_ ();
+                mulib_mune_rt_close_ (s, f->function.type == MULIB_MUNE_FUNCTION ? f->function.as.object->as.function.environment : NULL);
+              }
+            s->frame = NULL; s->status = MULIB_MUNE_OK; mulib_mune_rt_finalizers_ (s, 1);
+            for (o = s->objects; o; o = o->next)
+              if (o->kind == MULIB_MUNE_USERDATA && o->userdata_tag == 1 && o->as.file.stream && o->as.file.owned)
+                (void)mulib_mune_rt_file_close_ (o);
+          }
         exit ((int)code);
       }
     if (!strcmp (op, "setlocale"))
@@ -5529,7 +5657,8 @@ extern "C"
           }
         return mulib_mune_rt_nil_ ();
       }
-    o->userdata_tag = 1; o->as.file.stream = stream; o->as.file.owned = owned; o->metatable = s->file_metatable; return mulib_mune_rt_object_ (o);
+    o->userdata_tag = 1; o->as.file.stream = stream; o->as.file.owned = owned; o->metatable = s->file_metatable;
+    mulib_mune_rt_finalize_register_ (s, o); return mulib_mune_rt_object_ (o);
   }
   static int
   mulib_mune_rt_io_init_ (mulib_mune_state_t *s)
@@ -5540,7 +5669,11 @@ extern "C"
     mulib_mune_value_t io = mulib_mune_rt_field_ (s->globals, "io", 2); size_t k;
     if (!meta) return 0;
     s->file_metatable = meta;
-    if (!mulib_mune_rt_setfield_ (s, meta, "__index", 7, mulib_mune_rt_object_ (meta)) || !mulib_mune_rt_install_ (s, meta, "__close", "file.close")) return 0;
+    if (!mulib_mune_rt_setfield_ (s, meta, "__index", 7, mulib_mune_rt_object_ (meta))
+        || !mulib_mune_rt_setfield_ (s, meta, "__name", 6, mulib_mune_rt_string_ (s, "FILE*", 5))
+        || !mulib_mune_rt_install_ (s, meta, "__close", "file.finalize")
+        || !mulib_mune_rt_install_ (s, meta, "__gc", "file.finalize")
+        || !mulib_mune_rt_install_ (s, meta, "__tostring", "file.tostring")) return 0;
     for (k = 0; k < 7; ++k) if (!mulib_mune_rt_install_ (s, meta, methods[k], operations[k])) return 0;
     s->input = mulib_mune_rt_file_ (s, stdin, 0); s->output = mulib_mune_rt_file_ (s, stdout, 0);
     return !s->status && mulib_mune_rt_setfield_ (s, io.as.object, "stdin", 5, s->input)
@@ -5654,7 +5787,7 @@ extern "C"
       {
         int input = !strcmp (op, "input");
         if (a.type == MULIB_MUNE_NIL) file = input ? s->input : s->output;
-        else if (a.type == MULIB_MUNE_STRING)
+        else if (a.type == MULIB_MUNE_STRING || a.type == MULIB_MUNE_INTEGER || a.type == MULIB_MUNE_NUMBER)
           {
             const char *path = mulib_mune_rt_cstring_ (s, a, 1); if (!path) return 0;
             stream = fopen (path, input ? "r" : "w"); if (!stream) return mulib_mune_rt_error_ (s, MULIB_MUNE_IO, "%s", strerror (errno));
@@ -5672,12 +5805,14 @@ extern "C"
         mulib_mune_object_t *closure, *formats;
         int owned = 0;
         if (method) file = a;
-        else if (a.type == MULIB_MUNE_STRING)
+        else if (a.type != MULIB_MUNE_NIL)
           { const char *path = mulib_mune_rt_cstring_ (s, a, 1); if (!path) return 0; stream = fopen (path, "r"); if (!stream) return mulib_mune_rt_error_ (s, MULIB_MUNE_IO, "%s", strerror (errno)); file = mulib_mune_rt_file_ (s, stream, 1); owned = 1; }
         else file = s->input;
         if (!mulib_mune_rt_need_ (s, file, MULIB_MUNE_USERDATA, 1)) return 0;
+        if (file.as.object->userdata_tag != 1 || !file.as.object->as.file.stream) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "open file expected");
         closure = mulib_mune_rt_allocate_ (s, MULIB_MUNE_FUNCTION, 0); formats = mulib_mune_rt_allocate_ (s, MULIB_MUNE_TABLE, 0);
         if (!closure || !formats) return 0;
+        if (n <= 1 && !mulib_mune_rt_rawset_ (s, formats, mulib_mune_rt_integer_ (1), mulib_mune_rt_string_ (s, "l", 1))) return 0;
         for (k = 1; k < n; ++k) if (!mulib_mune_rt_rawset_ (s, formats, mulib_mune_rt_integer_ ((int64_t)k), args[k])) return 0;
         closure->as.function.native = mulib_mune_rt_builtin_; closure->as.function.user = (void *)"io.iterator";
         closure->as.function.context[0] = file; closure->as.function.context[1] = mulib_mune_rt_object_ (formats); closure->as.function.context[2] = mulib_mune_rt_boolean_ (owned);
@@ -5691,9 +5826,17 @@ extern "C"
     if (!mulib_mune_rt_need_ (s, file, MULIB_MUNE_USERDATA, 1)) return 0;
     if (file.as.object->userdata_tag != 1) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "file expected");
     stream = file.as.object->as.file.stream;
+    if (!strcmp (op, "finalize"))
+      { if (stream && file.as.object->as.file.owned) (void)mulib_mune_rt_file_close_ (file.as.object); return 1; }
+    if (!strcmp (op, "tostring"))
+      {
+        char text[80]; int length;
+        if (!stream) return mulib_mune_result_push (out, mulib_mune_rt_string_ (s, "file (closed)", 13));
+        length = snprintf (text, sizeof (text), "file (%p)", (void *)stream);
+        return length >= 0 && (size_t)length < sizeof (text) && mulib_mune_result_push (out, mulib_mune_rt_string_ (s, text, (size_t)length));
+      }
     if (!stream || file.as.object->as.file.closed)
       {
-        if (!strcmp (op, "close") && method && n > 1) return 1;
         return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "attempt to use a closed file");
       }
     if (!strcmp (op, "close"))
@@ -5715,7 +5858,7 @@ extern "C"
       {
         const char *whence = n > 1 && args[1].type != MULIB_MUNE_NIL ? mulib_mune_rt_cstring_ (s, args[1], 2) : "cur";
         int64_t offset = 0; int origin; long position;
-        if (!whence || (n > 2 && !mulib_mune_rt_need_int_ (s, args[2], &offset, 3))) return 0;
+        if (!whence || (n > 2 && args[2].type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, args[2], &offset, 3))) return 0;
         origin = !strcmp (whence, "set") ? SEEK_SET : !strcmp (whence, "cur") ? SEEK_CUR : !strcmp (whence, "end") ? SEEK_END : -1;
         if (origin == -1 || offset < LONG_MIN || offset > LONG_MAX) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid seek arguments");
         if (fseek (stream, (long)offset, origin) || (position = ftell (stream)) < 0) return mulib_mune_rt_file_result_ (s, out, 0, errno);
@@ -5724,7 +5867,7 @@ extern "C"
     if (!strcmp (op, "setvbuf"))
       {
         const char *mode = mulib_mune_rt_cstring_ (s, mulib_mune_rt_arg_ (args, n, 1), 2); int how; int64_t size = BUFSIZ;
-        if (!mode || (n > 2 && !mulib_mune_rt_need_int_ (s, args[2], &size, 3))) return 0;
+        if (!mode || (n > 2 && args[2].type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, args[2], &size, 3))) return 0;
         how = !strcmp (mode, "no") ? _IONBF : !strcmp (mode, "full") ? _IOFBF : !strcmp (mode, "line") ? _IOLBF : -1;
         if (how == -1 || size < 0 || (uint64_t)size > s->limits.memory_bytes) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid buffering arguments");
         return mulib_mune_rt_file_result_ (s, out, setvbuf (stream, NULL, how, (size_t)size) == 0, errno);
@@ -5746,6 +5889,8 @@ extern "C"
         for (k = 0; k < formats; ++k)
           {
             mulib_mune_value_t format = !strcmp (op, "iterator") ? mulib_mune_rt_rawget_ (closure->as.function.context[1].as.object, mulib_mune_rt_integer_ ((int64_t)k + 1)) : mulib_mune_rt_arg_ (args, n, start + k);
+            if (!strcmp (op, "read") && n <= start) format = mulib_mune_rt_string_ (s, "l", 1);
+            if (format.type == MULIB_MUNE_NIL) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "read format expected");
             if (!mulib_mune_rt_read_ (s, stream, format, out)) return 0;
             if (mulib_mune_result_get (out, out->count - 1).type == MULIB_MUNE_NIL) break;
           }
@@ -6046,7 +6191,7 @@ extern "C"
     uint16_t endian = 1;
     int unpack = !strcmp (op, "unpack"), sizeonly = !strcmp (op, "packsize"), native_little = *(unsigned char *)&endian;
     memset (&f, 0, sizeof (f)); f.text = mulib_mune_rt_cstring_ (s, format, 1); if (!f.text) return 0;
-    f.length = format.as.object->as.length; f.alignment = 1; f.little = native_little;
+    f.length = strlen (f.text); f.alignment = 1; f.little = native_little;
     if (unpack)
       {
         int64_t position = 1;
@@ -6251,7 +6396,7 @@ extern "C"
               }
             part = mulib_mune_result_get (r, 0);
             if (part.type == MULIB_MUNE_NIL || (part.type == MULIB_MUNE_STRING && !part.as.object->as.length)) { mulib_mune_result_destroy (r); break; }
-            if (part.type != MULIB_MUNE_STRING)
+            if (!mulib_mune_rt_text_ (s, part, 0, &part))
               { mulib_mune_result_destroy (r); error.code = MULIB_MUNE_RUNTIME; error.message = "reader must return a string"; goto failed; }
             (void)mulib_mune_rt_bytes_ (s, &bytes, (const char *)(part.as.object + 1), part.as.object->as.length);
             mulib_mune_result_destroy (r); if (s->status) goto done;
@@ -6259,7 +6404,11 @@ extern "C"
         source = bytes.data; length = bytes.length;
       }
     else
-      { if (!mulib_mune_rt_need_ (s, a, MULIB_MUNE_STRING, 1)) goto done; source = mulib_mune_value_string (a, &length); }
+      {
+        if (!mulib_mune_rt_text_ (s, a, 0, &a))
+          { mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "string or reader function expected"); goto done; }
+        source = mulib_mune_value_string (a, &length);
+      }
     if (length && (unsigned char)source[0] == 27)
       {
         if (!strchr (mode, 'b')) { error.code = MULIB_MUNE_SYNTAX; error.message = "binary chunk prohibited by mode"; goto failed; }
@@ -6469,12 +6618,15 @@ extern "C"
       }
     if (!strcmp (op, "getmetatable"))
       {
+        if (!n) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "value expected");
         mulib_mune_object_t *meta = a.type >= MULIB_MUNE_STRING ? a.as.object->metatable : NULL;
-        if (!meta) meta = s->type_metatables[a.type == MULIB_MUNE_INTEGER ? MULIB_MUNE_NUMBER : a.type];
+        if (!meta && a.type != MULIB_MUNE_TABLE && (a.type != MULIB_MUNE_USERDATA || a.as.object->userdata_tag == 3))
+          meta = s->type_metatables[a.type == MULIB_MUNE_INTEGER ? MULIB_MUNE_NUMBER : a.type];
         return mulib_mune_result_push (out, mulib_mune_rt_object_ (meta));
       }
     if (!strcmp (op, "setmetatable"))
       {
+        if (n < 2) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "metatable expected");
         if (mulib_mune_set_metatable (s, a, b) != MULIB_MUNE_OK) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "metatable must be nil or a table");
         return mulib_mune_result_push (out, a);
       }
@@ -6513,7 +6665,7 @@ extern "C"
         if (!strcmp (op, "upvalueid"))
           {
             mulib_mune_object_t *id = mulib_mune_rt_allocate_ (s, MULIB_MUNE_USERDATA, 0); if (!id) return 0;
-            id->userdata_tag = 3; id->as.userdata.identity = cell; return mulib_mune_result_push (out, mulib_mune_rt_object_ (id));
+            id->userdata_tag = 3; id->as.userdata.identity = (uintptr_t)cell; return mulib_mune_result_push (out, mulib_mune_rt_object_ (id));
           }
         if (!strcmp (op, "setupvalue")) cell->as.environment.value = c;
         if (!mulib_mune_result_push (out, mulib_mune_rt_string_ (s, (const char *)(e + 1), e->as.environment.length))) return 0;

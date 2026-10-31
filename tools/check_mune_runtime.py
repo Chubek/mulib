@@ -9,6 +9,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -24,7 +25,7 @@ def run(command, cwd):
 def corpus():
     test = (ROOT / 'tests/test_mune_runtime.c').read_text()
     cases = [ast.literal_eval(s) for s in re.findall(r'execute\(s,\s*("(?:\\.|[^"\\])*")\)', test)
-             if 'test_bundle' not in s and 'host_data' not in s]
+             if 'test_bundle' not in s and 'host_data' not in s and 'native_roundtrip' not in s]
     return '\n'.join('do ' + case + ' end' for case in cases), len(cases)
 
 
@@ -59,6 +60,20 @@ def differential():
         "string.format('%+s','x')", "string.format('%03s','x')", "string.format('%.1c',65)",
         "string.format('%#d',1)", "string.format('%+u',1)", "string.format('%100d',1)",
         "math.fmod(1,nil)", "tostring()", "tonumber()", "rawequal()",
+        "debug.getmetatable()", "debug.getmetatable(nil)",
+        "debug.setmetatable(1)", "debug.getuservalue()", "debug.getuservalue(nil)",
+        "rawset({},'key')", "rawget({},nil)", "getmetatable(nil)",
+        "string.find('abc','',4)", "string.find('abc','',5)",
+        "string.match('abc','',4)", "string.match('abc','',5)",
+        "string.rep('abc',0,{})", "string.rep('abc',-1,{})",
+        "utf8.codepoint('abc',4)", "utf8.codepoint('abc',1,0)",
+        "utf8.offset('abc',0,0)", "utf8.offset('abc',-1,1)",
+        "utf8.len('abc',4)", "utf8.len('abc',5)",
+        "string.packsize('!0i4')", "string.packsize('!16i8')",
+        "string.pack('c0','')", "string.pack('s1',42)",
+        "string.unpack('c0','',1)", "string.unpack('c0','',2)",
+        "table.remove({},0)", "table.remove({},1)", "table.remove({},2)",
+        "(pcall(load,42))",
     ]
     preamble = '''local function value(v)
       if type(v)=='number' then
@@ -99,6 +114,10 @@ def main():
             if run([runtime, mode, str(source)], work).returncode != 77:
                 modes.append(mode)
         generated = work / 'generated.c'
+        module = work / 'module.lua'
+        module.write_text('return {answer=42}')
+        with (work / 'test_bundle.luac').open('wb') as bundle:
+            subprocess.run([runtime, '--bundle', str(module)], cwd=work, stdout=bundle, check=True, timeout=60)
         # Exercise generated branches, closures, calls, construction, arithmetic,
         # short circuiting, multiple results, goto and coroutine suspension.
         source.write_text(text + '\n' + '''local n=0; ::again:: n=n+1; if n<4 then goto again end
@@ -109,12 +128,15 @@ def main():
           local a=false; assert((a and error('bad') or 42)==42)
           local x={}; function x:m(a) return a+2 end; assert(x:m(40)==42)
           local g=assert(load('return 42')); assert(g()==42)
+          assert(require('test_bundle').answer==42)
           print('Mune AOT passed')''')
         generated.write_text(run([runtime, '--emit', str(source)], work).stdout)
         binary = work / 'aot'
         flags = ['-std=c11', '-O1', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I' + str(ROOT / 'include')]
         if os.name == 'posix':
             flags += ['-pthread']
+        if sys.platform.startswith(('linux', 'freebsd')):
+            flags += ['-rdynamic']
         if args.sanitizers:
             flags += ['-g', '-fsanitize=address,undefined', '-fno-sanitize-recover=all', '-fno-omit-frame-pointer']
         links = [] if os.name == 'nt' else ['-lm', '-ldl']
@@ -125,13 +147,19 @@ def main():
             plugin.write_text('''#include "mulib-mune.h"
 mulib_mune_status_t muneopen_probe(mulib_mune_state_t *s,const mulib_mune_value_t *a,
  size_t n,mulib_mune_result_t *r,void *u) {
- (void)s;(void)r;(void)u;
- return n==2 && a[0].type==MULIB_MUNE_STRING && a[1].type==MULIB_MUNE_STRING ? MULIB_MUNE_OK : MULIB_MUNE_INVALID;
+ mulib_mune_value_t table,key,value={MULIB_MUNE_INTEGER,{.integer=42}};
+ (void)u;
+ if(n!=2 || a[0].type!=MULIB_MUNE_STRING || a[1].type!=MULIB_MUNE_STRING) return MULIB_MUNE_INVALID;
+ if(mulib_mune_make_table(s,&table)!=MULIB_MUNE_OK || !mulib_mune_result_push(r,table)
+    || mulib_mune_make_string(s,"answer",6,&key)!=MULIB_MUNE_OK
+    || mulib_mune_raw_set(s,table,key,value)!=MULIB_MUNE_OK) return MULIB_MUNE_MEMORY;
+ mulib_mune_collect(s); return MULIB_MUNE_OK;
 }\n''')
-            run(shlex.split(args.compiler) + ['-std=c11', '-shared', '-fPIC', '-I' + str(ROOT / 'include'),
-                                             str(plugin), '-o', str(work / 'probe.so')], work)
+            run(shlex.split(args.compiler) + (['-undefined', 'dynamic_lookup'] if sys.platform == 'darwin' else [])
+                + ['-std=c11', '-shared', '-fPIC', '-I' + str(ROOT / 'include'),
+                                              str(plugin), '-o', str(work / 'probe.so')], work)
             (work / 'filemodule.lua').write_text('local name,path=...; assert(name=="filemodule"); return {value=42}')
-            source.write_text('''local p,path=require('probe'); assert(p==true and path=='./probe.so')
+            source.write_text('''local p,path=require('probe'); assert(p.answer==42 and path=='./probe.so')
               assert(type(package.loadlib('./probe.so','muneopen_probe'))=='function')
               local f,message,where=package.loadlib('./probe.so','missing'); assert(f==nil and type(message)=='string' and where=='init')
               assert(require('filemodule').value==42)
@@ -139,6 +167,17 @@ mulib_mune_status_t muneopen_probe(mulib_mune_state_t *s,const mulib_mune_value_
               local ok,how,code=pipe:close(); assert(ok and how=='exit' and code==0)''')
             for mode in modes:
                 run([runtime, mode, str(source)], work)
+        source.write_text('''local t=setmetatable({}, {__gc=function() print('finalized') end})
+          local x<close> =setmetatable({}, {__close=function() print('closed') end})
+          local co=coroutine.create(function()
+            local y<close> =setmetatable({}, {__close=function() error('unexpected coroutine cleanup') end})
+            os.exit(0,true)
+          end)
+          coroutine.resume(co); error('exit returned')''')
+        if args.lua:
+            assert run([args.lua, str(source)], work).stdout == 'closed\nfinalized\n'
+        for mode in modes:
+            assert run([runtime, mode, str(source)], work).stdout == 'closed\nfinalized\n'
         checked = 0
         if args.lua:
             text, expressions = differential()

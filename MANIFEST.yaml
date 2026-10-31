@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 292
-implemented_module_count: 291
+module_count: 310
+implemented_module_count: 307
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2054,7 +2054,296 @@ modules:
   purpose: "X transport toolkit: checked borrowed streams and resumable exact"
   dependencies: []
   status: implemented
+- name: container
+  header: include/mulib-container.h
+  manual: manual/mulib-container.md
+  macro: MULIB_IMPL_CONTAINER
+  purpose: Owned process specifications and generation-tracked container lifecycle.
+  dependencies: []
+  status: implemented
+- name: imgbuilder
+  header: include/mulib-imgbuilder.h
+  manual: manual/mulib-imgbuilder.md
+  macro: MULIB_IMPL_IMGBUILDER
+  purpose: Deterministic transactional rootfs image construction.
+  dependencies: [imgbuildspec, rootfsbuilder]
+  status: implemented
+- name: containerboost
+  header: include/mulib-containerboost.h
+  manual: manual/mulib-containerboost.md
+  macro: MULIB_IMPL_CONTAINERBOOST
+  purpose: Explicit execution backend registration and capability selection.
+  dependencies: [container-runtime, imgformat]
+  status: implemented
+- name: container-kvmboost
+  header: include/mulib-container-kvmboost.h
+  manual: manual/mulib-container-kvmboost.md
+  macro: MULIB_IMPL_CONTAINER_KVMBOOST
+  purpose: Owning KVM execution adapter with guest and device callbacks.
+  dependencies: [containerboost, kvmcontainer]
+  status: implemented
+- name: container-oixboost
+  header: include/mulib-container-oixboost.h
+  manual: manual/mulib-container-oixboost.md
+  macro: MULIB_IMPL_CONTAINER_OIXBOOST
+  purpose: Rootfs-to-OIX compilation and native guest execution adapter.
+  dependencies: [containerboost, oix]
+  status: implemented
+- name: container-qvmboost
+  header: include/mulib-container-qvmboost.h
+  manual: manual/mulib-container-qvmboost.md
+  macro: MULIB_IMPL_CONTAINER_QVMBOOST
+  purpose: Resumable portable quota-VM execution backend.
+  dependencies: [containerboost]
+  status: implemented
+- name: container-ipc
+  header: include/mulib-container-ipc.h
+  manual: manual/mulib-container-ipc.md
+  macro: MULIB_IMPL_CONTAINER_IPC
+  purpose: Checksummed bounded IPC framing and incremental stream assembly.
+  dependencies: [crc32]
+  status: implemented
+- name: container-network
+  header: include/mulib-container-network.h
+  manual: manual/mulib-container-network.md
+  macro: MULIB_IMPL_CONTAINER_NETWORK
+  purpose: IPv4/IPv6 routing and packet policy over virtual endpoints.
+  dependencies: [container-netdev, packetrules]
+  status: implemented
+- name: container-vfs
+  header: include/mulib-container-vfs.h
+  manual: manual/mulib-container-vfs.md
+  macro: MULIB_IMPL_CONTAINER_VFS
+  purpose: Per-container routing, read-only bindings and root checkpoints.
+  dependencies: [rootfs]
+  status: implemented
+- name: image2container
+  header: include/mulib-image2container.h
+  manual: manual/mulib-image2container.md
+  macro: MULIB_IMPL_IMAGE2CONTAINER
+  purpose: Atomic image materialization into owned container and rootfs records.
+  dependencies: [imgformat, rootfs]
+  status: implemented
+- name: containerd
+  header: include/mulib-containerd.h
+  manual: manual/mulib-containerd.md
+  macro: MULIB_IMPL_CONTAINERD
+  purpose: Embeddable daemon composing runtime pools, cache, exports and logs.
+  dependencies: [containterpool, containerd-cache, containerd-mount, container-log, conainerd-ipc]
+  status: implemented
+- name: container-runtime
+  header: include/mulib-container-runtime.h
+  manual: manual/mulib-container-runtime.md
+  macro: MULIB_IMPL_CONTAINER_RUNTIME
+  purpose: Backend-driven lifecycle execution and cooperative budgeted polling.
+  dependencies: [container, rootfs]
+  status: implemented
+- name: container-jitboost
+  header: include/mulib-container-jitboost.h
+  manual: manual/mulib-container-jitboost.md
+  macro: MULIB_IMPL_CONTAINER_JITBOOST
+  purpose: Native MIR execution with instruction quotas and host-call suspension.
+  dependencies: [containerboost, jit]
+  status: implemented
+- name: container-netdev
+  header: include/mulib-container-netdev.h
+  manual: manual/mulib-container-netdev.md
+  macro: MULIB_IMPL_CONTAINER_NETDEV
+  purpose: Bounded virtual packet queues, transport callbacks and link metrics.
+  dependencies: []
+  status: implemented
+- name: container-log
+  header: include/mulib-container-log.h
+  manual: manual/mulib-container-log.md
+  macro: MULIB_IMPL_CONTAINER_LOG
+  purpose: Bounded binary log ring with sequence cursors and loss accounting.
+  dependencies: []
+  status: implemented
+- name: container-packelf
+  header: include/mulib-container-packelf.h
+  manual: manual/mulib-container-packelf.md
+  macro: MULIB_IMPL_CONTAINER_PACKELF
+  purpose: ELF64 image objects and byte-preserving ELF image overlays.
+  dependencies: [imgformat, elf]
+  status: implemented
+- name: container-packzstd
+  header: include/mulib-container-packzstd.h
+  manual: manual/mulib-container-packzstd.md
+  macro: MULIB_IMPL_CONTAINER_PACKZSTD
+  purpose: Standard Zstandard raw/RLE image packaging and explicit codec integration.
+  dependencies: [imgformat]
+  status: implemented
+- name: container-stub
+  header: include/mulib-container-stub.h
+  manual: manual/mulib-container-stub.md
+  macro: MULIB_IMPL_CONTAINER_STUB
+  purpose: Nonblocking lifecycle client with partial I/O and reply correlation.
+  dependencies: [conainerd-ipc]
+  status: implemented
+- name: imgbuildspec
+  header: include/mulib-imgbuildspec.h
+  manual: manual/mulib-imgbuildspec.md
+  macro: MULIB_IMPL_IMGBUILDSPEC
+  purpose: Owned image recipes combining process configuration and filesystem steps.
+  dependencies: [imgformat, rootfs-buildspec]
+  status: implemented
+- name: containterpool
+  header: include/mulib-containterpool.h
+  manual: manual/mulib-containterpool.md
+  macro: MULIB_IMPL_CONTAINTERPOOL
+  purpose: Stable owned container slots, generation handles and fair polling.
+  dependencies: [image2container, containerboost]
+  status: implemented
+- name: containerd-ctrlbridge
+  header: include/mulib-containerd-ctrlbridge.h
+  manual: manual/mulib-containerd-ctrlbridge.md
+  macro: MULIB_IMPL_CONTAINERD_CTRLBRIDGE
+  purpose: Authorized incremental control connection with backpressure and replay handling.
+  dependencies: [containerd, containerd-accessstub]
+  status: implemented
+- name: conainerd-ipc
+  header: include/mulib-conainerd-ipc.h
+  manual: manual/mulib-conainerd-ipc.md
+  macro: MULIB_IMPL_CONAINERD_IPC
+  purpose: Canonical daemon lifecycle command and status wire records.
+  dependencies: [container-ipc, container]
+  status: implemented
+- name: containerd-cache
+  header: include/mulib-containerd-cache.h
+  manual: manual/mulib-containerd-cache.md
+  macro: MULIB_IMPL_CONTAINERD_CACHE
+  purpose: Validated image cache with atomic LRU eviction, expiry and pinned leases.
+  dependencies: [imgformat]
+  status: implemented
+- name: rootfs-buildspec
+  header: include/mulib-rootfs-buildspec.h
+  manual: manual/mulib-rootfs-buildspec.md
+  macro: MULIB_IMPL_ROOTFS_BUILDSPEC
+  purpose: Owned filesystem recipes with transactional application and quotas.
+  dependencies: [rootfs]
+  status: implemented
+- name: imgformat
+  header: include/mulib-imgformat.h
+  manual: manual/mulib-imgformat.md
+  macro: MULIB_IMPL_IMGFORMAT
+  purpose: Versioned checksummed image envelopes and process-spec wire codecs.
+  dependencies: [container, crc32]
+  status: implemented
+- name: containerd-accessstub
+  header: include/mulib-containerd-accessstub.h
+  manual: manual/mulib-containerd-accessstub.md
+  macro: MULIB_IMPL_CONTAINERD_ACCESSSTUB
+  purpose: Ordered authenticated-principal command authorization.
+  dependencies: [conainerd-ipc]
+  status: implemented
+- name: containerd-mount
+  header: include/mulib-containerd-mount.h
+  manual: manual/mulib-containerd-mount.md
+  macro: MULIB_IMPL_CONTAINERD_MOUNT
+  purpose: Stable VFS exports with generation leases and bounded FUSE sessions.
+  dependencies: [container-vfs, fuse]
+  status: implemented
+- name: amd64
+  header: include/mulib-amd64.h
+  purpose: Reserved future module; no implemented API.
+  dependencies: []
+  status: reserved
+- name: virtio
+  header: include/mulib-virtio.h
+  purpose: Reserved future module; no implemented API.
+  dependencies: []
+  status: reserved
 project_files:
+- file: tests/test_container_wire.c
+  purpose: Container wire truncation, mutation, streaming and roundtrip regressions with optional libFuzzer entry point.
+- file: tests/test_binary_alloc.c
+  purpose: Binary writer and record-builder allocation bounds and failure-atomicity regressions.
+- file: include/include-mulib-container-core.h
+  purpose: Inline checked storage, result codes and wire primitives for containers.
+- file: manual/include-mulib-container-core.md
+  purpose: Container dependency ownership, allocation and wire helper manual.
+- file: include/include-mulib-qvm.h
+  purpose: Portable resumable register VM dependency with bounded code and RAM.
+- file: manual/include-mulib-qvm.md
+  purpose: Quota VM instruction, lifetime and fault contracts.
+- file: include/include-mulib-zstd.h
+  purpose: Standard Zstandard single-segment raw and RLE codec dependency.
+- file: manual/include-mulib-zstd.md
+  purpose: Supported Zstandard grammar, quotas and ownership manual.
+- file: manual/container-stack.md
+  purpose: Container stack integration, dependency switches and execution contracts.
+- file: examples/container-stack-common.h
+  purpose: Explicit portable container implementation switches and example fixtures.
+- file: examples/container-native-common.h
+  purpose: Explicit native adapter implementation switches for runnable examples.
+- file: tests/test_container_stack.c
+  purpose: End-to-end image, IPC, cache, routing, mount and lifecycle regressions.
+- file: tests/test_container_alloc.c
+  purpose: Allocation-failure preservation and ownership checks for container operations.
+- file: tests/test_container_backends.c
+  purpose: Native JIT execution, OIX compilation and KVM failure-path tests.
+- file: tools/check_container_stack.py
+  purpose: Focused strict builds, sanitizer tests, manuals and codec interoperability.
+- file: examples/modules/container.c
+  purpose: Owned specification and lifecycle example.
+- file: examples/modules/imgbuilder.c
+  purpose: Deterministic image build and report example.
+- file: examples/modules/containerboost.c
+  purpose: Execution backend registry and selection example.
+- file: examples/modules/container-kvmboost.c
+  purpose: Actual KVM device availability probe example.
+- file: examples/modules/container-oixboost.c
+  purpose: Rootfs-to-OIX native guest compilation example.
+- file: examples/modules/container-qvmboost.c
+  purpose: Portable quota backend lifecycle example.
+- file: examples/modules/container-ipc.c
+  purpose: Fragmented binary IPC frame assembly example.
+- file: examples/modules/container-network.c
+  purpose: Virtual IPv4 route registration and lookup example.
+- file: examples/modules/container-vfs.c
+  purpose: Read-only root filesystem routing example.
+- file: examples/modules/image2container.c
+  purpose: Image import and independent root clone example.
+- file: examples/modules/containerd.c
+  purpose: Complete image-to-daemon-to-exit example.
+- file: examples/modules/container-runtime.c
+  purpose: Prepared backend start, budgeted polling and close example.
+- file: examples/modules/container-jitboost.c
+  purpose: Real native MIR lifecycle execution example.
+- file: examples/modules/container-netdev.c
+  purpose: In-memory whole-packet peer transport example.
+- file: examples/modules/container-log.c
+  purpose: Binary record append and cursor filtering example.
+- file: examples/modules/container-packelf.c
+  purpose: ELF image section packaging and extraction example.
+- file: examples/modules/container-packzstd.c
+  purpose: Standard Zstandard image roundtrip and fixture writer.
+- file: examples/modules/container-stub.c
+  purpose: Client and authorized server bridge transport composition example.
+- file: examples/modules/imgbuildspec.c
+  purpose: Owned image recipe construction and cloning example.
+- file: examples/modules/containterpool.c
+  purpose: Stable container handle and borrowed entry lifecycle example.
+- file: examples/modules/containerd-ctrlbridge.c
+  purpose: Authorized wire request and correlated error reply example.
+- file: examples/modules/conainerd-ipc.c
+  purpose: Canonical daemon command encoding and parsing example.
+- file: examples/modules/containerd-cache.c
+  purpose: Cache pinning, expiry and sweep example.
+- file: examples/modules/rootfs-buildspec.c
+  purpose: Transactional rootfs file and copy recipe example.
+- file: examples/modules/imgformat.c
+  purpose: Image envelope and process configuration inspection example.
+- file: examples/modules/containerd-accessstub.c
+  purpose: Subject-specific command authorization example.
+- file: examples/modules/containerd-mount.c
+  purpose: Export pinning and busy unmount example.
+- file: examples/modules/container-core.c
+  purpose: Standalone inline dependency storage and alias-preserving replacement example.
+- file: examples/modules/qvm-core.c
+  purpose: Standalone resumable quota VM dependency example.
+- file: examples/modules/zstd-raw.c
+  purpose: Standalone standard RLE frame dependency roundtrip example.
 - file: tools/check_mune_runtime.py
   purpose: Lua runtime, generated C, native module and optional Lua 5.4 reference checks.
 - file: tools/check_mune_frontend.py

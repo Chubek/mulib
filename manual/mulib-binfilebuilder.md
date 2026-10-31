@@ -5,6 +5,10 @@ initialized buffer. Values are uint64 in schema-field order; count must match,
 all fields required and each value must fit its width. Returns 1 success,
 0 invalid/range/allocation, without partial output. Schema/values are borrowed
 only during call. Result bytes belong to the buffer; no file I/O.
+The buffer invariant, total-length overflow and every field's value range are
+checked before allocating record storage. Invalid values therefore cannot trigger
+an allocation proportional to record size. Values may refer to the destination's
+existing bytes because encoding completes in temporary storage before appending.
 
 Switches: `MULIB_IMPL_BINFILEBUILDER`, `MULIB_IMPL_BINFILESCHEMA`,
 `MULIB_IMPL_BYCUTILS`, `MULIB_IMPL_BUFFER`.

@@ -3,6 +3,19 @@
 #undef main
 #include <stdio.h>
 
+static int count_bytes(void *user,const char *bytes,size_t count)
+{
+    size_t *size=(size_t *)user;
+    (void)bytes; *size+=count; return 1;
+}
+struct image { unsigned char bytes[16384]; size_t size; };
+static int store_bytes(void *user,const char *bytes,size_t count)
+{
+    struct image *image=(struct image *)user;
+    assert(count<=sizeof(image->bytes)-image->size);
+    memcpy(image->bytes+image->size,bytes,count); image->size+=count; return 1;
+}
+
 int main(void)
 {
     size_t k, allocations, baseline;
@@ -66,12 +79,38 @@ int main(void)
                 calls=0; fail_at=k;
                 status=mulib_mune_run(s,chunk,&r,&error);
                 /* Optional optimizer allocations may safely retain the original IR. */
-                assert(status==MULIB_MUNE_OK || status==MULIB_MUNE_MEMORY || status==MULIB_MUNE_RUNTIME);
+                assert(status==MULIB_MUNE_OK || status==MULIB_MUNE_MEMORY);
                 if(status==MULIB_MUNE_OK) assert(mulib_mune_result_get(r,0).as.integer==5);
                 else assert(!r);
                 fail_at=0; mulib_mune_result_destroy(r); mulib_mune_state_destroy(s); mulib_mune_chunk_destroy(chunk);
                 assert(!live);
             }
+        }
+    }
+    {
+        const char source[]="return 40+2";
+        mulib_mune_bundle_module_t module={"answer",source,sizeof(source)-1};
+        size_t size=0;
+        struct image image={{0},0};
+        fail_at=0; calls=0;
+        assert(mulib_mune_bundle_write(&module,1,count_bytes,&size,&error)==MULIB_MUNE_OK);
+        allocations=calls; assert(!live && size>100);
+        for(k=1;k<=allocations;++k) {
+            size=0; calls=0; fail_at=k;
+            assert(mulib_mune_bundle_write(&module,1,count_bytes,&size,&error)==MULIB_MUNE_MEMORY);
+            assert(!live && !size);
+        }
+        fail_at=0;
+        assert(mulib_mune_bundle_write(&module,1,store_bytes,&image,&error)==MULIB_MUNE_OK);
+        s=mulib_mune_state_create(NULL); assert(s); calls=0;
+        assert(mulib_mune_load_bundle(s,image.bytes,image.size,&error)==MULIB_MUNE_OK);
+        allocations=calls; mulib_mune_state_destroy(s); assert(!live);
+        for(k=1;k<=allocations;++k) {
+            mulib_mune_status_t status;
+            fail_at=0; s=mulib_mune_state_create(NULL); assert(s); calls=0; fail_at=k;
+            status=mulib_mune_load_bundle(s,image.bytes,image.size,&error);
+            assert(status==MULIB_MUNE_OK || status==MULIB_MUNE_MEMORY);
+            fail_at=0; mulib_mune_state_destroy(s); assert(!live);
         }
     }
     puts("Mune runtime allocation failures passed");

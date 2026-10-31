@@ -30,8 +30,12 @@ mulib_binfilebuilder_record (mulib_buffer_t *b, const mulib_binfileschema_t *s,
   unsigned char *p;
   size_t i;
   int ok = 1;
-  if (!b || (!v && n) || !mulib_binfileschema_validate (s) || n != s->count)
+  if (!b || (!v && n) || !mulib_buffer_append (b, NULL, 0)
+      || !mulib_binfileschema_validate (s) || n != s->count
+      || s->record_size > SIZE_MAX - b->length)
     return 0;
+  for (i = 0; i < n; ++i)
+    if (s->fields[i].width < 8 && (v[i] >> (8 * s->fields[i].width))) return 0;
   p = (unsigned char *)calloc (s->record_size, 1);
   if (!p)
     return 0;

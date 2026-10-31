@@ -116,10 +116,20 @@ System facilities use the host C/OS APIs. Native module entry points use the
 Mune callback ABI described below. Debug frame descriptions, temporary-local
 visibility, instruction-hook counts, trace wording and collector scheduling
 reflect this implementation rather than a particular upstream VM's internals.
+`load` accepts source strings, numbers coerced to source text, or reader functions;
+invalid source returns nil plus a diagnostic. `debug.getmetatable` requires one
+argument (which may be nil), and `debug.setmetatable` requires the explicit second
+argument, including nil when clearing a metatable.
 
 The collector is tracing mark/sweep with weak keys/values, ephemeron convergence,
-resurrection and `__gc`. It runs at statement boundaries or on explicit request.
-Collector modes/tuning are API-level scheduling settings for this collector.
+resurrection and `__gc`. Incremental cycles perform an atomic tracing/finalizer
+phase followed by budgeted sweeping at statement boundaries. Pause, step
+multiplier and step-size settings control cycle thresholds and sweep work;
+`collectgarbage('step', kilobytes)` advances a cycle even while automatic GC is
+stopped. Generational cycles promote survivors, conservatively rescan old
+objects for young references, and reclaim young objects between full cycles.
+Minor/major multipliers control growth thresholds; a full cycle also runs after
+20 minor cycles. Explicit `collectgarbage('collect')` always performs a full cycle.
 Abandoned coroutines release their suspended native stacks without executing
 `<close>` callbacks; explicit `coroutine.close` performs lexical cleanup.
 
@@ -156,21 +166,35 @@ and `muneopen_<module>` symbols with dots replaced by underscores. A native
 entry has the `mulib_mune_native_fn` signature and returns its module value in
 the supplied result builder. `package.loadlib` accepts an explicit symbol.
 Loaded shared libraries remain open until state destruction.
+Native modules can call the public Mune C API exported by their host. Link
+Linux/FreeBSD hosts with `-rdynamic` (or use a shared Mune implementation) so
+those symbols are visible to the native loader. CMake's runtime test target
+enables executable exports for the native-module integration checks.
 
 Describe modules with `mulib_mune_bundle_module_t { name, source, length }`,
 then call `mulib_mune_bundle_write(modules, count, writer, user, &error)`.
-All sources are syntax/semantically checked before the first output byte;
+All sources are syntax/semantically checked and compiled through MIR/VMWeave
+before the first output byte;
 names must be nonempty and unique. The writer can target a `.luac` file.
 `mulib_mune_load_bundle` and `mulib_mune_load_bundle_file` install lazy
 `package.preload` functions. Alternatively, `require` discovers a bundle via
 `package.path` and selects the named module from it. A bundle may contain many
 interdependent modules. Successful module results are cached in `package.loaded`.
 
-The portable bundle is a versioned **Mune source container**: 8-byte
-`MUNEBC\0\1` magic, little-endian u32 module count, then u32 name length,
-u64 source length, name bytes and checked source bytes for each module. Sources
-are checked again on load and lowered for the chosen execution mode. Truncation,
-duplicates, embedded-NUL names and trailing data are rejected. Registration
+The portable bundle is a versioned **Mune compiled container**: 8-byte
+`MUNEBC\0\2` magic, little-endian u32 module count, then u32 name length,
+u64 source length, name bytes, source bytes and a u64 image count per module.
+Each image contains its source offset (u64), production-name length (u8) and
+bytes, register/instruction/host counts (u64), register types (u8), and instructions:
+opcode (u8), destination/a/b/target (u64 each), integer immediate (u64).
+The all-ones u64 encodes MIR's absent register/target sentinel. Host bindings and
+signatures are derived from the checked AST; no addresses are serialized.
+Images contain VMWeave's optimized typed MIR. The loader rechecks source and
+regenerates canonical helper bindings/code to verify the supplied images,
+then decodes them into executable plans. This deliberately retains validation
+work at load time. The older version-1 checked-source format is also readable.
+Truncation, altered code/bindings, duplicates, embedded-NUL names and trailing
+data are rejected. Registration
 starts after validation; allocation failure while updating `package.preload`
 can leave earlier registrations in place. This format and `string.dump`'s
 versioned function-image format are independent of PUC Lua bytecode.
@@ -178,11 +202,16 @@ versioned function-image format are independent of PUC Lua bytecode.
 ## Verification
 
 `tests/test_mune_runtime.c` runs language/library assertions in tree, VM and
-native-JIT modes and checks C callbacks, userdata, roots and bundles.
+native-JIT modes and checks C callbacks across coroutine suspension, userdata,
+roots and compiled multi-module bundles.
 `tests/test_mune_runtime_alloc.c` injects failures throughout state creation,
-tree execution and VM/JIT compilation/execution. `tools/check_mune_runtime.py`
-also compiles/runs generated C and, when `lua5.4` is installed, compares the
-shared assertion corpus and deterministic generated numeric/library cases.
+tree execution, VM/JIT compilation/execution, and bundle writing/loading.
+`tools/check_mune_runtime.py` also compiles/runs the full assertion corpus as
+generated C, loads native/file/bundle modules, checks pipe I/O and process-exit
+cleanup, and compares the shared corpus and deterministic generated
+numeric/library cases against `lua5.4` when available.
+The differential corpus includes missing arguments, numeric source loading,
+empty-pattern boundary positions, UTF-8 ranges and binary-pack boundary cases.
 These are regression/reference checks, not a claim that every Lua program or
 all upstream implementation-specific behavior has been exhaustively tested.
 

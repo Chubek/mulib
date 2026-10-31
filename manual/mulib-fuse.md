@@ -72,3 +72,23 @@ the routed backend may fail with `ENOMEM`.
 `tests/test_virtual_files.c` covers GETATTR/READ/WRITE/READDIR with VFS memory,
 read-only policy, short output capacity, cancellation counts, invalid requests,
 unknown opcodes, and traversal rejection.
+
+## Bounded sessions
+
+`mulib_fuse_session_init(session,vfs,read_only,max_transfer)` wraps the existing
+adapter with a per-request transfer quota, saturating counters and lifecycle.
+The VFS remains borrowed. No session allocation or kernel mount occurs. The
+inline `include-mulib-container-core.h` dependency supplies saturating counters;
+it requires no additional implementation switch.
+
+`session_dispatch` retains the existing response contract and rejects READ/WRITE
+lengths above max_transfer before backend execution. Zero permits only zero-byte
+transfers. GETATTR/READDIR are unaffected by the byte quota. requests counts
+accepted dispatch attempts, errors counts their nonzero results, and read_bytes/
+written_bytes accumulate reported transfer counts, all saturating at UINT64_MAX.
+
+Callbacks cannot recursively dispatch or close the same session; such requests
+return ECANCELED. `session_close` marks an idle session closed and is idempotent;
+later dispatch is canceled. It does not release the borrowed VFS. Applications
+still serialize access across threads and avoid changing mounts during callbacks.
+The daemon mount module provides generation-tagged leases around these sessions.
