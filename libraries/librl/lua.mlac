@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "language": "Lua",
+  "items": [
+    {
+      "text": "and",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "break",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "do",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "else",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "elseif",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "end",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "false",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "for",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "function",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "goto",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "if",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "in",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "local",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "nil",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "not",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "or",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "repeat",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "return",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "then",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "true",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "until",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "while",
+      "description": "Lua keyword"
+    },
+    {
+      "text": "assert",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "collectgarbage",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "error",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "ipairs",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "pairs",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "next",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "pcall",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "print",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "require",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "select",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "setmetatable",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "getmetatable",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "tonumber",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "tostring",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "type",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "xpcall",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "math.floor",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "math.random",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "string.format",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "string.find",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "string.gsub",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "table.insert",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "table.concat",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "table.sort",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "utf8.len",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "coroutine.create",
+      "description": "Lua builtin"
+    },
+    {
+      "text": "coroutine.resume",
+      "description": "Lua builtin"
+    },
+    {
+      "text": ":lua-example",
+      "description": "Insert Lua starter"
+    },
+    {
+      "text": ":lua-doc",
+      "description": "Application documentation action for Lua"
+    }
+  ]
+}

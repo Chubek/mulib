@@ -1,6 +1,6 @@
 # MuLIB module and composition guide
 
-MuLIB has 291 implemented single-header C11 modules. Every implemented module has a corresponding
+MuLIB has 310 implemented single-header C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -16,7 +16,7 @@ consult each manual's exact supported syntax, errors, and limits.
 | Structured data | [json](mulib-json.md), [yaml](mulib-yaml.md), [toml](mulib-toml.md), [template](mulib-template.md), [xml](mulib-xml.md), [xpath](mulib-xpath.md) |
 | Documents and graphics | [html](mulib-html.md), [css](mulib-css.md), [markdown](mulib-markdown.md), [svg](mulib-svg.md), [graphviz](mulib-graphviz.md), [vector algebra](mulib-vector.md) |
 | Storage and native formats | [archive](mulib-archive.md), [mmfile](mulib-mmfile.md), [kvdb](mulib-kvdb.md), [elf](mulib-elf.md), [dynload](mulib-dynload.md), [drm](mulib-drm.md) |
-| Terminals | [terminfo](mulib-terminfo.md), [termkey](mulib-termkey.md), [termutils](mulib-termutils.md), [vterm](mulib-vterm.md), [tui](mulib-tui.md) |
+| Terminals | [terminfo](mulib-terminfo.md), [termkey](mulib-termkey.md), [termutils](mulib-termutils.md), [vterm](mulib-vterm.md), [tui](mulib-tui.md), [readline](mulib-readline.md) |
 | Protocols | [uri](mulib-uri.md), [http](mulib-http.md), [rpc](mulib-rpc.md), [dbus](mulib-dbus.md) |
 | IP addresses | [IPv4](mulib-inet4.md), [IPv6](mulib-inet6.md), [historical inte6 header](mulib-inte6.md), [address lookup](mulib-getaddr.md) |
 | Input and devices | [input](mulib-input.md), [keyremap](mulib-keyremap.md), [marionette](mulib-marionette.md), [udev](mulib-udev.md), [vdev](mulib-vdev.md), [kvm](mulib-kvm.md) |
@@ -32,6 +32,7 @@ consult each manual's exact supported syntax, errors, and limits.
 | Compiler transformations | [MIR](mulib-mir.md), [C machine](mulib-cmachine.md), [VM weaving](mulib-vmweave.md), [C weaving](mulib-ccweave.md), [tree selection](mulib-muburg.md), [instruction scheduling](mulib-isched.md), [egraph](mulib-egraph.md), [rewrite](mulib-rewrite.md) |
 | Machine code | [dsymspec](mulib-dsymspec.md), [assembler](mulib-assembler.md), [emitter](mulib-emitter.md), [linker](mulib-linker.md), [JIT](mulib-jit.md), [dynamic calls](mulib-dyncall.md) |
 | Embedded languages and tools | [MicroJS](mulib-microjs.md), [Datalog](mulib-datalog.md), [Perl POD](mulib-perlpod.md), [microaudio](mulib-microaudio.md), [browser tools](mulib-browsertools.md) |
+| Browser automation | [Prowse protocols](mulib-prowse-protocol.md), [Prowse control and lprowse Lua DSL](mulib-prowse-control.md), [15-language editor profiles](../libraries/librl/README.md) |
 
 `yantlr` is a comment-only reserved header, not an implemented API. The
 manifest distinguishes the complete header inventory from the implemented count;

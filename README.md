@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **307 implemented modules**.
+A C11 modular single-header utility library with **310 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -132,6 +132,22 @@ packaging round-trip images without mandatory external libraries. Every module
 and new `include-mulib-*` dependency has its own manual and runnable example.
 Run `python3 tools/check_container_stack.py` for focused strict compilation,
 functional tests and codec interoperability; add `--sanitizers` for ASan/UBSan.
+
+## Browser automation and Readline
+
+[Prowse](manual/mulib-prowse-control.md) connects browser automation to Mune's Lua
+runtime through `require('lprowse')`, with CSS extraction, interaction, screenshots,
+waits, retries and bounded crawlers. Its [protocol layer](manual/mulib-prowse-protocol.md)
+supports Chrome CDP, W3C WebDriver for Firefox/Chrome/WebKit, and Firefox Marionette.
+[MuLIB Readline](manual/mulib-readline.md) supplies UTF-8 editing, highlighting,
+completion and directives for the REPL; [`libraries/librl`](libraries/librl/README.md)
+contains `.mlsyn`, `.mlac` and `.mldir` profiles for 15 languages.
+
+```sh
+cc -std=c11 -Iinclude examples/modules/prowse-control.c -pthread -lm -ldl -o prowse
+./prowse --repl
+python3 tools/check_prowse.py
+```
 
 ## Licensing
 

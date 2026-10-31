@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "language": "JSON",
+  "items": [
+    {
+      "text": "true",
+      "description": "JSON keyword"
+    },
+    {
+      "text": "false",
+      "description": "JSON keyword"
+    },
+    {
+      "text": "null",
+      "description": "JSON keyword"
+    },
+    {
+      "text": ":json-example",
+      "description": "Insert JSON starter"
+    },
+    {
+      "text": ":json-doc",
+      "description": "Application documentation action for JSON"
+    }
+  ]
+}

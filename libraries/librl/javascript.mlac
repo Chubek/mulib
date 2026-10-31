@@ -1,0 +1,302 @@
+{
+  "version": 1,
+  "language": "JavaScript",
+  "items": [
+    {
+      "text": "async",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "await",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "break",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "case",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "catch",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "class",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "const",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "continue",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "debugger",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "default",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "delete",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "do",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "else",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "export",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "extends",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "false",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "finally",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "for",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "from",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "function",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "if",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "import",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "in",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "instanceof",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "let",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "new",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "null",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "of",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "return",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "static",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "super",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "switch",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "this",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "throw",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "true",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "try",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "typeof",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "undefined",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "var",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "void",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "while",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "with",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "yield",
+      "description": "JavaScript keyword"
+    },
+    {
+      "text": "Array",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "BigInt",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "Boolean",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "Date",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "Error",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "Function",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "Map",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "Number",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "Object",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "Promise",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "RegExp",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "Set",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "String",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "Symbol",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "WeakMap",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "WeakSet",
+      "description": "JavaScript type"
+    },
+    {
+      "text": "console.log",
+      "description": "JavaScript builtin"
+    },
+    {
+      "text": "JSON.parse",
+      "description": "JavaScript builtin"
+    },
+    {
+      "text": "JSON.stringify",
+      "description": "JavaScript builtin"
+    },
+    {
+      "text": "Math.max",
+      "description": "JavaScript builtin"
+    },
+    {
+      "text": "Math.min",
+      "description": "JavaScript builtin"
+    },
+    {
+      "text": "Math.random",
+      "description": "JavaScript builtin"
+    },
+    {
+      "text": "Object.keys",
+      "description": "JavaScript builtin"
+    },
+    {
+      "text": "Object.entries",
+      "description": "JavaScript builtin"
+    },
+    {
+      "text": "Array.from",
+      "description": "JavaScript builtin"
+    },
+    {
+      "text": "document.querySelector",
+      "description": "JavaScript builtin"
+    },
+    {
+      "text": "fetch",
+      "description": "JavaScript builtin"
+    },
+    {
+      "text": "setTimeout",
+      "description": "JavaScript builtin"
+    },
+    {
+      "text": "clearTimeout",
+      "description": "JavaScript builtin"
+    },
+    {
+      "text": ":javascript-example",
+      "description": "Insert JavaScript starter"
+    },
+    {
+      "text": ":javascript-doc",
+      "description": "Application documentation action for JavaScript"
+    }
+  ]
+}

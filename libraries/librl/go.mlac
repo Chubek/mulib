@@ -1,0 +1,306 @@
+{
+  "version": 1,
+  "language": "Go",
+  "items": [
+    {
+      "text": "break",
+      "description": "Go keyword"
+    },
+    {
+      "text": "case",
+      "description": "Go keyword"
+    },
+    {
+      "text": "chan",
+      "description": "Go keyword"
+    },
+    {
+      "text": "const",
+      "description": "Go keyword"
+    },
+    {
+      "text": "continue",
+      "description": "Go keyword"
+    },
+    {
+      "text": "default",
+      "description": "Go keyword"
+    },
+    {
+      "text": "defer",
+      "description": "Go keyword"
+    },
+    {
+      "text": "else",
+      "description": "Go keyword"
+    },
+    {
+      "text": "fallthrough",
+      "description": "Go keyword"
+    },
+    {
+      "text": "for",
+      "description": "Go keyword"
+    },
+    {
+      "text": "func",
+      "description": "Go keyword"
+    },
+    {
+      "text": "go",
+      "description": "Go keyword"
+    },
+    {
+      "text": "goto",
+      "description": "Go keyword"
+    },
+    {
+      "text": "if",
+      "description": "Go keyword"
+    },
+    {
+      "text": "import",
+      "description": "Go keyword"
+    },
+    {
+      "text": "interface",
+      "description": "Go keyword"
+    },
+    {
+      "text": "map",
+      "description": "Go keyword"
+    },
+    {
+      "text": "package",
+      "description": "Go keyword"
+    },
+    {
+      "text": "range",
+      "description": "Go keyword"
+    },
+    {
+      "text": "return",
+      "description": "Go keyword"
+    },
+    {
+      "text": "select",
+      "description": "Go keyword"
+    },
+    {
+      "text": "struct",
+      "description": "Go keyword"
+    },
+    {
+      "text": "switch",
+      "description": "Go keyword"
+    },
+    {
+      "text": "type",
+      "description": "Go keyword"
+    },
+    {
+      "text": "var",
+      "description": "Go keyword"
+    },
+    {
+      "text": "true",
+      "description": "Go keyword"
+    },
+    {
+      "text": "false",
+      "description": "Go keyword"
+    },
+    {
+      "text": "nil",
+      "description": "Go keyword"
+    },
+    {
+      "text": "iota",
+      "description": "Go keyword"
+    },
+    {
+      "text": "any",
+      "description": "Go type"
+    },
+    {
+      "text": "bool",
+      "description": "Go type"
+    },
+    {
+      "text": "byte",
+      "description": "Go type"
+    },
+    {
+      "text": "comparable",
+      "description": "Go type"
+    },
+    {
+      "text": "complex64",
+      "description": "Go type"
+    },
+    {
+      "text": "complex128",
+      "description": "Go type"
+    },
+    {
+      "text": "error",
+      "description": "Go type"
+    },
+    {
+      "text": "float32",
+      "description": "Go type"
+    },
+    {
+      "text": "float64",
+      "description": "Go type"
+    },
+    {
+      "text": "int",
+      "description": "Go type"
+    },
+    {
+      "text": "int8",
+      "description": "Go type"
+    },
+    {
+      "text": "int16",
+      "description": "Go type"
+    },
+    {
+      "text": "int32",
+      "description": "Go type"
+    },
+    {
+      "text": "int64",
+      "description": "Go type"
+    },
+    {
+      "text": "rune",
+      "description": "Go type"
+    },
+    {
+      "text": "string",
+      "description": "Go type"
+    },
+    {
+      "text": "uint",
+      "description": "Go type"
+    },
+    {
+      "text": "uint8",
+      "description": "Go type"
+    },
+    {
+      "text": "uint16",
+      "description": "Go type"
+    },
+    {
+      "text": "uint32",
+      "description": "Go type"
+    },
+    {
+      "text": "uint64",
+      "description": "Go type"
+    },
+    {
+      "text": "uintptr",
+      "description": "Go type"
+    },
+    {
+      "text": "append",
+      "description": "Go builtin"
+    },
+    {
+      "text": "cap",
+      "description": "Go builtin"
+    },
+    {
+      "text": "clear",
+      "description": "Go builtin"
+    },
+    {
+      "text": "close",
+      "description": "Go builtin"
+    },
+    {
+      "text": "complex",
+      "description": "Go builtin"
+    },
+    {
+      "text": "copy",
+      "description": "Go builtin"
+    },
+    {
+      "text": "delete",
+      "description": "Go builtin"
+    },
+    {
+      "text": "imag",
+      "description": "Go builtin"
+    },
+    {
+      "text": "len",
+      "description": "Go builtin"
+    },
+    {
+      "text": "make",
+      "description": "Go builtin"
+    },
+    {
+      "text": "max",
+      "description": "Go builtin"
+    },
+    {
+      "text": "min",
+      "description": "Go builtin"
+    },
+    {
+      "text": "new",
+      "description": "Go builtin"
+    },
+    {
+      "text": "panic",
+      "description": "Go builtin"
+    },
+    {
+      "text": "print",
+      "description": "Go builtin"
+    },
+    {
+      "text": "println",
+      "description": "Go builtin"
+    },
+    {
+      "text": "real",
+      "description": "Go builtin"
+    },
+    {
+      "text": "recover",
+      "description": "Go builtin"
+    },
+    {
+      "text": "fmt.Println",
+      "description": "Go builtin"
+    },
+    {
+      "text": "fmt.Printf",
+      "description": "Go builtin"
+    },
+    {
+      "text": "json.Marshal",
+      "description": "Go builtin"
+    },
+    {
+      "text": "json.Unmarshal",
+      "description": "Go builtin"
+    },
+    {
+      "text": ":go-example",
+      "description": "Insert Go starter"
+    },
+    {
+      "text": ":go-doc",
+      "description": "Application documentation action for Go"
+    }
+  ]
+}

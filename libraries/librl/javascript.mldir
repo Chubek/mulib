@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "JavaScript",
+  "directives": [
+    {
+      "name": "javascript-example",
+      "expansion": "async function main() { $* }",
+      "help": "Insert a JavaScript starter; $* is argument text"
+    },
+    {
+      "name": "javascript-doc",
+      "action": "documentation:javascript",
+      "help": "Ask the host for JavaScript documentation"
+    }
+  ]
+}

@@ -1,0 +1,358 @@
+{
+  "version": 1,
+  "language": "C++",
+  "items": [
+    {
+      "text": "alignas",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "alignof",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "asm",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "auto",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "break",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "case",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "catch",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "class",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "concept",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "const",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "constexpr",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "consteval",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "constinit",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "continue",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "co_await",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "co_return",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "co_yield",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "decltype",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "default",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "delete",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "do",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "else",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "enum",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "explicit",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "export",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "extern",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "for",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "friend",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "goto",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "if",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "inline",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "mutable",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "namespace",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "new",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "noexcept",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "operator",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "private",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "protected",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "public",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "register",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "requires",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "return",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "sizeof",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "static",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "static_assert",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "struct",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "switch",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "template",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "this",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "thread_local",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "throw",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "try",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "typedef",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "typeid",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "typename",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "union",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "using",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "virtual",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "volatile",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "while",
+      "description": "C++ keyword"
+    },
+    {
+      "text": "bool",
+      "description": "C++ type"
+    },
+    {
+      "text": "char",
+      "description": "C++ type"
+    },
+    {
+      "text": "char8_t",
+      "description": "C++ type"
+    },
+    {
+      "text": "char16_t",
+      "description": "C++ type"
+    },
+    {
+      "text": "char32_t",
+      "description": "C++ type"
+    },
+    {
+      "text": "double",
+      "description": "C++ type"
+    },
+    {
+      "text": "float",
+      "description": "C++ type"
+    },
+    {
+      "text": "int",
+      "description": "C++ type"
+    },
+    {
+      "text": "long",
+      "description": "C++ type"
+    },
+    {
+      "text": "short",
+      "description": "C++ type"
+    },
+    {
+      "text": "signed",
+      "description": "C++ type"
+    },
+    {
+      "text": "unsigned",
+      "description": "C++ type"
+    },
+    {
+      "text": "void",
+      "description": "C++ type"
+    },
+    {
+      "text": "std::string",
+      "description": "C++ type"
+    },
+    {
+      "text": "std::vector",
+      "description": "C++ type"
+    },
+    {
+      "text": "std::span",
+      "description": "C++ type"
+    },
+    {
+      "text": "std::cout",
+      "description": "C++ builtin"
+    },
+    {
+      "text": "std::cin",
+      "description": "C++ builtin"
+    },
+    {
+      "text": "std::move",
+      "description": "C++ builtin"
+    },
+    {
+      "text": "std::forward",
+      "description": "C++ builtin"
+    },
+    {
+      "text": "std::make_unique",
+      "description": "C++ builtin"
+    },
+    {
+      "text": "std::make_shared",
+      "description": "C++ builtin"
+    },
+    {
+      "text": "std::sort",
+      "description": "C++ builtin"
+    },
+    {
+      "text": "std::find",
+      "description": "C++ builtin"
+    },
+    {
+      "text": "std::begin",
+      "description": "C++ builtin"
+    },
+    {
+      "text": "std::end",
+      "description": "C++ builtin"
+    },
+    {
+      "text": ":cpp-example",
+      "description": "Insert C++ starter"
+    },
+    {
+      "text": ":cpp-doc",
+      "description": "Application documentation action for C++"
+    }
+  ]
+}

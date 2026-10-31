@@ -1,0 +1,265 @@
+{
+  "version": 1,
+  "language": "C",
+  "rules": [
+    {
+      "kind": "span",
+      "style": "comment",
+      "start": "/*",
+      "end": "*/"
+    },
+    {
+      "kind": "line",
+      "style": "comment",
+      "start": "//"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "\"",
+      "end": "\"",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "'",
+      "end": "'",
+      "escape": "\\"
+    },
+    {
+      "kind": "number",
+      "style": "number"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "auto"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "break"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "case"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "const"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "continue"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "default"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "do"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "else"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "enum"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "extern"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "for"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "goto"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "if"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "inline"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "register"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "restrict"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "return"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "sizeof"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "static"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "struct"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "switch"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "typedef"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "union"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "volatile"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "while"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "_Alignas"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "_Alignof"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "_Atomic"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "_Bool"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "_Generic"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "_Noreturn"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "_Static_assert"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "_Thread_local"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "char"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "double"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "float"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "int"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "long"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "short"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "signed"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "unsigned"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "void"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "size_t"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "uint32_t"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "uint64_t"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "FILE"
+    }
+  ]
+}

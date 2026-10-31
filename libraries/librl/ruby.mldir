@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "Ruby",
+  "directives": [
+    {
+      "name": "ruby-example",
+      "expansion": "def main; $*; end; main",
+      "help": "Insert a Ruby starter; $* is argument text"
+    },
+    {
+      "name": "ruby-doc",
+      "action": "documentation:ruby",
+      "help": "Ask the host for Ruby documentation"
+    }
+  ]
+}

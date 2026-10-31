@@ -1,0 +1,308 @@
+{
+  "version": 1,
+  "language": "Python",
+  "rules": [
+    {
+      "kind": "line",
+      "style": "comment",
+      "start": "#"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "\"\"\"",
+      "end": "\"\"\"",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "'''",
+      "end": "'''",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "\"",
+      "end": "\"",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "'",
+      "end": "'",
+      "escape": "\\"
+    },
+    {
+      "kind": "number",
+      "style": "number"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "and"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "as"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "assert"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "async"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "await"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "break"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "class"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "continue"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "def"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "del"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "elif"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "else"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "except"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "finally"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "for"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "from"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "global"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "if"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "import"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "in"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "is"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "lambda"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "nonlocal"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "not"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "or"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "pass"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "raise"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "return"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "try"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "while"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "with"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "yield"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "match"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "case"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "True"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "False"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "None"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "bool"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "bytes"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "bytearray"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "complex"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "dict"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "float"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "frozenset"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "int"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "list"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "memoryview"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "object"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "range"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "set"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "str"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "tuple"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "type"
+    }
+  ]
+}

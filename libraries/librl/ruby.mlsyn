@@ -1,0 +1,286 @@
+{
+  "version": 1,
+  "language": "Ruby",
+  "rules": [
+    {
+      "kind": "line",
+      "style": "comment",
+      "start": "#"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "\"",
+      "end": "\"",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "'",
+      "end": "'",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "`",
+      "end": "`",
+      "escape": "\\"
+    },
+    {
+      "kind": "number",
+      "style": "number"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "BEGIN"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "END"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "alias"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "and"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "begin"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "break"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "case"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "class"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "def"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "defined?"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "do"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "else"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "elsif"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "end"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "ensure"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "false"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "for"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "if"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "in"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "module"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "next"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "nil"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "not"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "or"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "redo"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "rescue"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "retry"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "return"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "self"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "super"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "then"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "true"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "undef"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "unless"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "until"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "when"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "while"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "yield"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Array"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Class"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Exception"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Float"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Hash"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Integer"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Module"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Object"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Range"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Regexp"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "String"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Symbol"
+    }
+  ]
+}

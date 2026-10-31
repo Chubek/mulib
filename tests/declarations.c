@@ -323,4 +323,7 @@
 #include "include-mulib-container-core.h"
 #include "include-mulib-qvm.h"
 #include "include-mulib-zstd.h"
+#include "mulib-readline.h"
+#include "mulib-prowse-protocol.h"
+#include "mulib-prowse-control.h"
 int main(void) { return 0; }

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "Bash",
+  "directives": [
+    {
+      "name": "bash-example",
+      "expansion": "main() { $*; }; main \"$@\"",
+      "help": "Insert a Bash starter; $* is argument text"
+    },
+    {
+      "name": "bash-doc",
+      "action": "documentation:bash",
+      "help": "Ask the host for Bash documentation"
+    }
+  ]
+}

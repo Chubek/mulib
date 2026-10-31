@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "PHP",
+  "directives": [
+    {
+      "name": "php-example",
+      "expansion": "function main() { $* } main();",
+      "help": "Insert a PHP starter; $* is argument text"
+    },
+    {
+      "name": "php-doc",
+      "action": "documentation:php",
+      "help": "Ask the host for PHP documentation"
+    }
+  ]
+}

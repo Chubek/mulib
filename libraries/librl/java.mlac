@@ -1,0 +1,354 @@
+{
+  "version": 1,
+  "language": "Java",
+  "items": [
+    {
+      "text": "abstract",
+      "description": "Java keyword"
+    },
+    {
+      "text": "assert",
+      "description": "Java keyword"
+    },
+    {
+      "text": "break",
+      "description": "Java keyword"
+    },
+    {
+      "text": "case",
+      "description": "Java keyword"
+    },
+    {
+      "text": "catch",
+      "description": "Java keyword"
+    },
+    {
+      "text": "class",
+      "description": "Java keyword"
+    },
+    {
+      "text": "const",
+      "description": "Java keyword"
+    },
+    {
+      "text": "continue",
+      "description": "Java keyword"
+    },
+    {
+      "text": "default",
+      "description": "Java keyword"
+    },
+    {
+      "text": "do",
+      "description": "Java keyword"
+    },
+    {
+      "text": "else",
+      "description": "Java keyword"
+    },
+    {
+      "text": "enum",
+      "description": "Java keyword"
+    },
+    {
+      "text": "exports",
+      "description": "Java keyword"
+    },
+    {
+      "text": "extends",
+      "description": "Java keyword"
+    },
+    {
+      "text": "final",
+      "description": "Java keyword"
+    },
+    {
+      "text": "finally",
+      "description": "Java keyword"
+    },
+    {
+      "text": "for",
+      "description": "Java keyword"
+    },
+    {
+      "text": "if",
+      "description": "Java keyword"
+    },
+    {
+      "text": "implements",
+      "description": "Java keyword"
+    },
+    {
+      "text": "import",
+      "description": "Java keyword"
+    },
+    {
+      "text": "instanceof",
+      "description": "Java keyword"
+    },
+    {
+      "text": "interface",
+      "description": "Java keyword"
+    },
+    {
+      "text": "module",
+      "description": "Java keyword"
+    },
+    {
+      "text": "native",
+      "description": "Java keyword"
+    },
+    {
+      "text": "new",
+      "description": "Java keyword"
+    },
+    {
+      "text": "non-sealed",
+      "description": "Java keyword"
+    },
+    {
+      "text": "open",
+      "description": "Java keyword"
+    },
+    {
+      "text": "opens",
+      "description": "Java keyword"
+    },
+    {
+      "text": "package",
+      "description": "Java keyword"
+    },
+    {
+      "text": "permits",
+      "description": "Java keyword"
+    },
+    {
+      "text": "private",
+      "description": "Java keyword"
+    },
+    {
+      "text": "protected",
+      "description": "Java keyword"
+    },
+    {
+      "text": "provides",
+      "description": "Java keyword"
+    },
+    {
+      "text": "public",
+      "description": "Java keyword"
+    },
+    {
+      "text": "record",
+      "description": "Java keyword"
+    },
+    {
+      "text": "requires",
+      "description": "Java keyword"
+    },
+    {
+      "text": "return",
+      "description": "Java keyword"
+    },
+    {
+      "text": "sealed",
+      "description": "Java keyword"
+    },
+    {
+      "text": "static",
+      "description": "Java keyword"
+    },
+    {
+      "text": "strictfp",
+      "description": "Java keyword"
+    },
+    {
+      "text": "super",
+      "description": "Java keyword"
+    },
+    {
+      "text": "switch",
+      "description": "Java keyword"
+    },
+    {
+      "text": "synchronized",
+      "description": "Java keyword"
+    },
+    {
+      "text": "this",
+      "description": "Java keyword"
+    },
+    {
+      "text": "throw",
+      "description": "Java keyword"
+    },
+    {
+      "text": "throws",
+      "description": "Java keyword"
+    },
+    {
+      "text": "to",
+      "description": "Java keyword"
+    },
+    {
+      "text": "transient",
+      "description": "Java keyword"
+    },
+    {
+      "text": "transitive",
+      "description": "Java keyword"
+    },
+    {
+      "text": "try",
+      "description": "Java keyword"
+    },
+    {
+      "text": "uses",
+      "description": "Java keyword"
+    },
+    {
+      "text": "var",
+      "description": "Java keyword"
+    },
+    {
+      "text": "volatile",
+      "description": "Java keyword"
+    },
+    {
+      "text": "while",
+      "description": "Java keyword"
+    },
+    {
+      "text": "with",
+      "description": "Java keyword"
+    },
+    {
+      "text": "yield",
+      "description": "Java keyword"
+    },
+    {
+      "text": "true",
+      "description": "Java keyword"
+    },
+    {
+      "text": "false",
+      "description": "Java keyword"
+    },
+    {
+      "text": "null",
+      "description": "Java keyword"
+    },
+    {
+      "text": "boolean",
+      "description": "Java type"
+    },
+    {
+      "text": "byte",
+      "description": "Java type"
+    },
+    {
+      "text": "char",
+      "description": "Java type"
+    },
+    {
+      "text": "double",
+      "description": "Java type"
+    },
+    {
+      "text": "float",
+      "description": "Java type"
+    },
+    {
+      "text": "int",
+      "description": "Java type"
+    },
+    {
+      "text": "long",
+      "description": "Java type"
+    },
+    {
+      "text": "short",
+      "description": "Java type"
+    },
+    {
+      "text": "void",
+      "description": "Java type"
+    },
+    {
+      "text": "String",
+      "description": "Java type"
+    },
+    {
+      "text": "Object",
+      "description": "Java type"
+    },
+    {
+      "text": "Integer",
+      "description": "Java type"
+    },
+    {
+      "text": "List",
+      "description": "Java type"
+    },
+    {
+      "text": "Map",
+      "description": "Java type"
+    },
+    {
+      "text": "Set",
+      "description": "Java type"
+    },
+    {
+      "text": "Optional",
+      "description": "Java type"
+    },
+    {
+      "text": "Stream",
+      "description": "Java type"
+    },
+    {
+      "text": "System.out.println",
+      "description": "Java builtin"
+    },
+    {
+      "text": "System.err.println",
+      "description": "Java builtin"
+    },
+    {
+      "text": "String.format",
+      "description": "Java builtin"
+    },
+    {
+      "text": "Integer.parseInt",
+      "description": "Java builtin"
+    },
+    {
+      "text": "Arrays.sort",
+      "description": "Java builtin"
+    },
+    {
+      "text": "Collections.sort",
+      "description": "Java builtin"
+    },
+    {
+      "text": "List.of",
+      "description": "Java builtin"
+    },
+    {
+      "text": "Map.of",
+      "description": "Java builtin"
+    },
+    {
+      "text": "Optional.of",
+      "description": "Java builtin"
+    },
+    {
+      "text": ":java-example",
+      "description": "Insert Java starter"
+    },
+    {
+      "text": ":java-doc",
+      "description": "Application documentation action for Java"
+    }
+  ]
+}

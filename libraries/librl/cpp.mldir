@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "C++",
+  "directives": [
+    {
+      "name": "cpp-example",
+      "expansion": "int main() { $* return 0; }",
+      "help": "Insert a C++ starter; $* is argument text"
+    },
+    {
+      "name": "cpp-doc",
+      "action": "documentation:cpp",
+      "help": "Ask the host for C++ documentation"
+    }
+  ]
+}

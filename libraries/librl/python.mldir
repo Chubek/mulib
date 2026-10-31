@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "Python",
+  "directives": [
+    {
+      "name": "python-example",
+      "expansion": "def main(): $*",
+      "help": "Insert a Python starter; $* is argument text"
+    },
+    {
+      "name": "python-doc",
+      "action": "documentation:python",
+      "help": "Ask the host for Python documentation"
+    }
+  ]
+}

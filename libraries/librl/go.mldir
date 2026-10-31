@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "Go",
+  "directives": [
+    {
+      "name": "go-example",
+      "expansion": "func main() { $* }",
+      "help": "Insert a Go starter; $* is argument text"
+    },
+    {
+      "name": "go-doc",
+      "action": "documentation:go",
+      "help": "Ask the host for Go documentation"
+    }
+  ]
+}

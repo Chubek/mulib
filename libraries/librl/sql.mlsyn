@@ -1,0 +1,845 @@
+{
+  "version": 1,
+  "language": "SQL",
+  "rules": [
+    {
+      "kind": "span",
+      "style": "comment",
+      "start": "/*",
+      "end": "*/"
+    },
+    {
+      "kind": "line",
+      "style": "comment",
+      "start": "--"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "\"",
+      "end": "\"",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "'",
+      "end": "'",
+      "escape": "\\"
+    },
+    {
+      "kind": "number",
+      "style": "number"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "SELECT"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "select"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "FROM"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "from"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "WHERE"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "where"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "INSERT"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "insert"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "INTO"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "into"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "VALUES"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "values"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "UPDATE"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "update"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "SET"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "set"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "DELETE"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "delete"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "CREATE"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "create"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "ALTER"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "alter"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "DROP"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "drop"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "TABLE"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "table"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "VIEW"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "view"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "INDEX"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "index"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "DATABASE"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "database"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "JOIN"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "join"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "INNER"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "inner"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "LEFT"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "left"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "RIGHT"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "right"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "FULL"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "full"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "OUTER"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "outer"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "CROSS"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "cross"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "ON"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "on"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "GROUP"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "group"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "BY"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "by"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "HAVING"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "having"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "ORDER"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "order"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "ASC"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "asc"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "DESC"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "desc"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "LIMIT"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "limit"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "OFFSET"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "offset"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "DISTINCT"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "distinct"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "AS"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "as"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "UNION"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "union"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "ALL"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "all"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "AND"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "and"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "OR"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "or"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "NOT"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "not"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "NULL"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "null"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "IS"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "is"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "IN"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "in"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "EXISTS"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "exists"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "BETWEEN"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "between"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "LIKE"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "like"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "CASE"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "case"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "WHEN"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "when"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "THEN"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "then"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "ELSE"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "else"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "END"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "end"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "BEGIN"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "begin"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "COMMIT"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "commit"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "ROLLBACK"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "rollback"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "PRIMARY"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "primary"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "KEY"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "key"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "FOREIGN"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "foreign"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "REFERENCES"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "references"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "UNIQUE"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "unique"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "CHECK"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "check"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "DEFAULT"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "default"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "WITH"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "with"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "RECURSIVE"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "recursive"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "RETURNING"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "returning"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "OVER"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "over"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "PARTITION"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "partition"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "INTEGER"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "integer"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "BIGINT"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "bigint"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "SMALLINT"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "smallint"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "DECIMAL"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "decimal"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "NUMERIC"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "numeric"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "REAL"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "real"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "DOUBLE"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "double"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "FLOAT"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "float"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "BOOLEAN"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "boolean"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "CHAR"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "char"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "VARCHAR"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "varchar"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "TEXT"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "text"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "DATE"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "date"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "TIME"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "time"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "TIMESTAMP"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "timestamp"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "BLOB"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "blob"
+    }
+  ]
+}

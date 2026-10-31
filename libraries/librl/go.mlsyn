@@ -1,0 +1,297 @@
+{
+  "version": 1,
+  "language": "Go",
+  "rules": [
+    {
+      "kind": "span",
+      "style": "comment",
+      "start": "/*",
+      "end": "*/"
+    },
+    {
+      "kind": "line",
+      "style": "comment",
+      "start": "//"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "\"",
+      "end": "\"",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "'",
+      "end": "'",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "`",
+      "end": "`",
+      "escape": "\\"
+    },
+    {
+      "kind": "number",
+      "style": "number"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "break"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "case"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "chan"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "const"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "continue"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "default"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "defer"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "else"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "fallthrough"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "for"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "func"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "go"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "goto"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "if"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "import"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "interface"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "map"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "package"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "range"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "return"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "select"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "struct"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "switch"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "type"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "var"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "true"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "false"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "nil"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "iota"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "any"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "bool"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "byte"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "comparable"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "complex64"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "complex128"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "error"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "float32"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "float64"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "int"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "int8"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "int16"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "int32"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "int64"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "rune"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "string"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "uint"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "uint8"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "uint16"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "uint32"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "uint64"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "uintptr"
+    }
+  ]
+}

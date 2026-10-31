@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 310
-implemented_module_count: 307
+module_count: 313
+implemented_module_count: 310
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2253,7 +2253,158 @@ modules:
   purpose: Reserved future module; no implemented API.
   dependencies: []
   status: reserved
+- name: readline
+  header: include/mulib-readline.h
+  manual: manual/mulib-readline.md
+  macro: MULIB_IMPL_READLINE
+  purpose: UTF-8 line editing, syntax highlighting, completion, history and declarative profiles.
+  dependencies: [json, strbuf, termkey, termutils]
+  status: implemented
+- name: prowse-protocol
+  header: include/mulib-prowse-protocol.h
+  manual: manual/mulib-prowse-protocol.md
+  macro: MULIB_IMPL_PROWSE_PROTOCOL
+  purpose: CDP WebSocket, W3C WebDriver HTTP and Firefox Marionette browser clients.
+  dependencies: [base64, git, http, json, socket, utf8]
+  status: implemented
+- name: prowse-control
+  header: include/mulib-prowse-control.h
+  manual: manual/mulib-prowse-control.md
+  macro: MULIB_IMPL_PROWSE_CONTROL
+  purpose: Browser automation, scraping, lprowse Lua DSL and a highlighted interactive REPL.
+  dependencies: [mune, prowse-protocol, readline, strbuf]
+  status: implemented
 project_files:
+- file: include/include-mulib-lprowse.h
+  purpose: Embedded original lprowse Lua source; generated from libraries/lprowse/lprowse.lua.
+- file: manual/include-mulib-lprowse.md
+  purpose: Embedded lprowse regeneration and native-host integration contracts.
+- file: examples/prowse-common.h
+  purpose: Explicit implementation switch closure for Prowse examples and focused tests.
+- file: examples/modules/prowse-control.c
+  purpose: Runnable browser automation CLI and lprowse REPL.
+- file: examples/modules/prowse-protocol.c
+  purpose: WebDriver status and Chrome target discovery example.
+- file: examples/modules/readline.c
+  purpose: Offline editor demonstration and optional profile-driven interactive input.
+- file: tests/test_prowse.c
+  purpose: Browser framing, request correlation, control operations and Lua workflow regressions.
+- file: tests/test_prowse_alloc.c
+  purpose: Per-allocation failure sweeps through profile loading and browser evaluation.
+- file: tests/test_readline.c
+  purpose: UTF-8 editor, highlighting, completion, directives, history and bundled-profile regressions.
+- file: tools/check_prowse.py
+  purpose: Focused strict compilation, examples, protocols, REPL and optional live browser checks.
+- file: tools/check_prowse_io.py
+  purpose: Native loopback HTTP/WebSocket and pipe/PTY REPL integration tests.
+- file: tools/check_prowse_live.py
+  purpose: Optional isolated-profile headless Firefox automation smoke test.
+- file: tools/embed_lprowse.py
+  purpose: Reproducible lprowse Lua-to-C embedding and freshness verification.
+- file: tools/generate_librl.py
+  purpose: Reproducible generation of syntax, completion and directive profiles for 15 languages.
+- file: libraries/lprowse/README.md
+  purpose: Lua browser automation library entry point and examples.
+- file: libraries/lprowse/lprowse.lua
+  purpose: Browser automation, JSON bridging, scraping, retries and bounded crawling DSL.
+- file: libraries/lprowse/examples/scrape.lua
+  purpose: Field-based page scraping example.
+- file: libraries/lprowse/examples/crawl.lua
+  purpose: Bounded breadth-first crawl with streaming visit callback.
+- file: libraries/lprowse/examples/local-smoke.lua
+  purpose: Local data-URL live-browser interaction and extraction checks.
+- file: libraries/librl/README.md
+  purpose: Bundled Readline language-profile inventory and usage.
+- file: libraries/librl/c.mlsyn
+  purpose: C lexical highlighting profile.
+- file: libraries/librl/c.mlac
+  purpose: C completion profile.
+- file: libraries/librl/c.mldir
+  purpose: C directive profile.
+- file: libraries/librl/cpp.mlsyn
+  purpose: C++ lexical highlighting profile.
+- file: libraries/librl/cpp.mlac
+  purpose: C++ completion profile.
+- file: libraries/librl/cpp.mldir
+  purpose: C++ directive profile.
+- file: libraries/librl/python.mlsyn
+  purpose: Python lexical highlighting profile.
+- file: libraries/librl/python.mlac
+  purpose: Python completion profile.
+- file: libraries/librl/python.mldir
+  purpose: Python directive profile.
+- file: libraries/librl/javascript.mlsyn
+  purpose: JavaScript lexical highlighting profile.
+- file: libraries/librl/javascript.mlac
+  purpose: JavaScript completion profile.
+- file: libraries/librl/javascript.mldir
+  purpose: JavaScript directive profile.
+- file: libraries/librl/typescript.mlsyn
+  purpose: TypeScript lexical highlighting profile.
+- file: libraries/librl/typescript.mlac
+  purpose: TypeScript completion profile.
+- file: libraries/librl/typescript.mldir
+  purpose: TypeScript directive profile.
+- file: libraries/librl/lua.mlsyn
+  purpose: Lua lexical highlighting profile.
+- file: libraries/librl/lua.mlac
+  purpose: Lua completion profile.
+- file: libraries/librl/lua.mldir
+  purpose: Lua directive profile.
+- file: libraries/librl/rust.mlsyn
+  purpose: Rust lexical highlighting profile.
+- file: libraries/librl/rust.mlac
+  purpose: Rust completion profile.
+- file: libraries/librl/rust.mldir
+  purpose: Rust directive profile.
+- file: libraries/librl/go.mlsyn
+  purpose: Go lexical highlighting profile.
+- file: libraries/librl/go.mlac
+  purpose: Go completion profile.
+- file: libraries/librl/go.mldir
+  purpose: Go directive profile.
+- file: libraries/librl/java.mlsyn
+  purpose: Java lexical highlighting profile.
+- file: libraries/librl/java.mlac
+  purpose: Java completion profile.
+- file: libraries/librl/java.mldir
+  purpose: Java directive profile.
+- file: libraries/librl/csharp.mlsyn
+  purpose: C# lexical highlighting profile.
+- file: libraries/librl/csharp.mlac
+  purpose: C# completion profile.
+- file: libraries/librl/csharp.mldir
+  purpose: C# directive profile.
+- file: libraries/librl/ruby.mlsyn
+  purpose: Ruby lexical highlighting profile.
+- file: libraries/librl/ruby.mlac
+  purpose: Ruby completion profile.
+- file: libraries/librl/ruby.mldir
+  purpose: Ruby directive profile.
+- file: libraries/librl/php.mlsyn
+  purpose: PHP lexical highlighting profile.
+- file: libraries/librl/php.mlac
+  purpose: PHP completion profile.
+- file: libraries/librl/php.mldir
+  purpose: PHP directive profile.
+- file: libraries/librl/bash.mlsyn
+  purpose: Bash lexical highlighting profile.
+- file: libraries/librl/bash.mlac
+  purpose: Bash completion profile.
+- file: libraries/librl/bash.mldir
+  purpose: Bash directive profile.
+- file: libraries/librl/sql.mlsyn
+  purpose: SQL lexical highlighting profile.
+- file: libraries/librl/sql.mlac
+  purpose: SQL completion profile.
+- file: libraries/librl/sql.mldir
+  purpose: SQL directive profile.
+- file: libraries/librl/json.mlsyn
+  purpose: JSON lexical highlighting profile.
+- file: libraries/librl/json.mlac
+  purpose: JSON completion profile.
+- file: libraries/librl/json.mldir
+  purpose: JSON directive profile.
 - file: tests/test_container_wire.c
   purpose: Container wire truncation, mutation, streaming and roundtrip regressions with optional libFuzzer entry point.
 - file: tests/test_binary_alloc.c

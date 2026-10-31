@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "language": "Bash",
+  "rules": [
+    {
+      "kind": "line",
+      "style": "comment",
+      "start": "#"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "\"",
+      "end": "\"",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "'",
+      "end": "'",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "`",
+      "end": "`",
+      "escape": "\\"
+    },
+    {
+      "kind": "number",
+      "style": "number"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "if"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "then"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "else"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "elif"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "fi"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "case"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "esac"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "for"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "select"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "while"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "until"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "do"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "done"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "in"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "function"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "time"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "coproc"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "[["
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "]]"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "!"
+    }
+  ]
+}

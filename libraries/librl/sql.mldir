@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "SQL",
+  "directives": [
+    {
+      "name": "sql-example",
+      "expansion": "SELECT $* FROM table_name;",
+      "help": "Insert a SQL starter; $* is argument text"
+    },
+    {
+      "name": "sql-doc",
+      "action": "documentation:sql",
+      "help": "Ask the host for SQL documentation"
+    }
+  ]
+}

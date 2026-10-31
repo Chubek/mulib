@@ -1,0 +1,402 @@
+{
+  "version": 1,
+  "language": "PHP",
+  "items": [
+    {
+      "text": "abstract",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "and",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "array",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "as",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "break",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "callable",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "case",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "catch",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "class",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "clone",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "const",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "continue",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "declare",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "default",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "die",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "do",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "echo",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "else",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "elseif",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "empty",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "enddeclare",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "endfor",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "endforeach",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "endif",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "endswitch",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "endwhile",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "enum",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "eval",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "exit",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "extends",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "final",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "finally",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "fn",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "for",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "foreach",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "function",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "global",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "goto",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "if",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "implements",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "include",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "include_once",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "instanceof",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "insteadof",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "interface",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "isset",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "list",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "match",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "namespace",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "new",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "null",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "or",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "print",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "private",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "protected",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "public",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "readonly",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "require",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "require_once",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "return",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "static",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "switch",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "throw",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "trait",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "try",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "unset",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "use",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "var",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "while",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "xor",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "yield",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "true",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "false",
+      "description": "PHP keyword"
+    },
+    {
+      "text": "bool",
+      "description": "PHP type"
+    },
+    {
+      "text": "float",
+      "description": "PHP type"
+    },
+    {
+      "text": "int",
+      "description": "PHP type"
+    },
+    {
+      "text": "iterable",
+      "description": "PHP type"
+    },
+    {
+      "text": "mixed",
+      "description": "PHP type"
+    },
+    {
+      "text": "never",
+      "description": "PHP type"
+    },
+    {
+      "text": "object",
+      "description": "PHP type"
+    },
+    {
+      "text": "string",
+      "description": "PHP type"
+    },
+    {
+      "text": "void",
+      "description": "PHP type"
+    },
+    {
+      "text": "count",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "strlen",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "substr",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "strpos",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "str_replace",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "array_map",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "array_filter",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "array_reduce",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "json_encode",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "json_decode",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "file_get_contents",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "fopen",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "fclose",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "printf",
+      "description": "PHP builtin"
+    },
+    {
+      "text": "sprintf",
+      "description": "PHP builtin"
+    },
+    {
+      "text": ":php-example",
+      "description": "Insert PHP starter"
+    },
+    {
+      "text": ":php-doc",
+      "description": "Application documentation action for PHP"
+    }
+  ]
+}

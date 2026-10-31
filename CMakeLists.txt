@@ -53,6 +53,10 @@ if(MULIB_BUILD_TESTS)
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_tools.py)
     add_test(NAME mulib_dependency_strata
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/stratify.py --check)
+    add_test(NAME mulib_lprowse_embedded
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed_lprowse.py --check)
+    add_test(NAME mulib_readline_profiles_generated
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_librl.py --check)
   endif()
   add_executable(mulib_smoke tests/smoke.c)
   mulib_test_executable(mulib_smoke)
@@ -91,6 +95,14 @@ if(MULIB_BUILD_TESTS)
     endif()
     mulib_register_test("mulib_${test_name}")
   endforeach()
+  add_test(NAME mulib_readline_profiles
+    COMMAND mulib_test_readline ${CMAKE_CURRENT_SOURCE_DIR}/libraries/librl)
+  if(Python3_Interpreter_FOUND AND UNIX)
+    add_test(NAME mulib_prowse_native_io
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_prowse_io.py
+        --protocol $<TARGET_FILE:mulib_test_prowse> --repl $<TARGET_FILE:mulib_test_prowse>)
+    set_tests_properties(mulib_prowse_native_io PROPERTIES TIMEOUT 90)
+  endif()
   if(Python3_Interpreter_FOUND AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     set(mune_options)
     if(MULIB_SANITIZERS)

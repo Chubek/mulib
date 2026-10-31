@@ -1,0 +1,390 @@
+{
+  "version": 1,
+  "language": "TypeScript",
+  "items": [
+    {
+      "text": "abstract",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "any",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "as",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "asserts",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "async",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "await",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "break",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "case",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "catch",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "class",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "const",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "constructor",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "continue",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "declare",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "default",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "delete",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "do",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "else",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "enum",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "export",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "extends",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "false",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "finally",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "for",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "from",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "function",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "if",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "implements",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "import",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "in",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "infer",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "instanceof",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "interface",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "is",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "keyof",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "let",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "namespace",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "never",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "new",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "null",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "of",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "override",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "private",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "protected",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "public",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "readonly",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "require",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "return",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "satisfies",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "static",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "super",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "switch",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "this",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "throw",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "true",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "try",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "type",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "typeof",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "undefined",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "unique",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "unknown",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "var",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "void",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "while",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "yield",
+      "description": "TypeScript keyword"
+    },
+    {
+      "text": "Array",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "BigInt",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Boolean",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Date",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Error",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Function",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Map",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Number",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Object",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Promise",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Record",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Partial",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Pick",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Omit",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Readonly",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "Set",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "String",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "boolean",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "number",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "string",
+      "description": "TypeScript type"
+    },
+    {
+      "text": "console.log",
+      "description": "TypeScript builtin"
+    },
+    {
+      "text": "JSON.parse",
+      "description": "TypeScript builtin"
+    },
+    {
+      "text": "JSON.stringify",
+      "description": "TypeScript builtin"
+    },
+    {
+      "text": "Object.keys",
+      "description": "TypeScript builtin"
+    },
+    {
+      "text": "Object.entries",
+      "description": "TypeScript builtin"
+    },
+    {
+      "text": "Array.from",
+      "description": "TypeScript builtin"
+    },
+    {
+      "text": "document.querySelector",
+      "description": "TypeScript builtin"
+    },
+    {
+      "text": "fetch",
+      "description": "TypeScript builtin"
+    },
+    {
+      "text": "setTimeout",
+      "description": "TypeScript builtin"
+    },
+    {
+      "text": ":typescript-example",
+      "description": "Insert TypeScript starter"
+    },
+    {
+      "text": ":typescript-doc",
+      "description": "Application documentation action for TypeScript"
+    }
+  ]
+}

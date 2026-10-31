@@ -1,0 +1,282 @@
+{
+  "version": 1,
+  "language": "Ruby",
+  "items": [
+    {
+      "text": "BEGIN",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "END",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "alias",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "and",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "begin",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "break",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "case",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "class",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "def",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "defined?",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "do",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "else",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "elsif",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "end",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "ensure",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "false",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "for",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "if",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "in",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "module",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "next",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "nil",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "not",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "or",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "redo",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "rescue",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "retry",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "return",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "self",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "super",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "then",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "true",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "undef",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "unless",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "until",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "when",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "while",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "yield",
+      "description": "Ruby keyword"
+    },
+    {
+      "text": "Array",
+      "description": "Ruby type"
+    },
+    {
+      "text": "Class",
+      "description": "Ruby type"
+    },
+    {
+      "text": "Exception",
+      "description": "Ruby type"
+    },
+    {
+      "text": "Float",
+      "description": "Ruby type"
+    },
+    {
+      "text": "Hash",
+      "description": "Ruby type"
+    },
+    {
+      "text": "Integer",
+      "description": "Ruby type"
+    },
+    {
+      "text": "Module",
+      "description": "Ruby type"
+    },
+    {
+      "text": "Object",
+      "description": "Ruby type"
+    },
+    {
+      "text": "Range",
+      "description": "Ruby type"
+    },
+    {
+      "text": "Regexp",
+      "description": "Ruby type"
+    },
+    {
+      "text": "String",
+      "description": "Ruby type"
+    },
+    {
+      "text": "Symbol",
+      "description": "Ruby type"
+    },
+    {
+      "text": "puts",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "print",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "p",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "require",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "require_relative",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "raise",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "attr_reader",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "attr_writer",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "attr_accessor",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "lambda",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "proc",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "loop",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "rand",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "sleep",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "File.read",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "JSON.parse",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": "JSON.generate",
+      "description": "Ruby builtin"
+    },
+    {
+      "text": ":ruby-example",
+      "description": "Insert Ruby starter"
+    },
+    {
+      "text": ":ruby-doc",
+      "description": "Application documentation action for Ruby"
+    }
+  ]
+}

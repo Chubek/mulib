@@ -1,0 +1,406 @@
+{
+  "version": 1,
+  "language": "C#",
+  "items": [
+    {
+      "text": "abstract",
+      "description": "C# keyword"
+    },
+    {
+      "text": "as",
+      "description": "C# keyword"
+    },
+    {
+      "text": "async",
+      "description": "C# keyword"
+    },
+    {
+      "text": "await",
+      "description": "C# keyword"
+    },
+    {
+      "text": "base",
+      "description": "C# keyword"
+    },
+    {
+      "text": "break",
+      "description": "C# keyword"
+    },
+    {
+      "text": "case",
+      "description": "C# keyword"
+    },
+    {
+      "text": "catch",
+      "description": "C# keyword"
+    },
+    {
+      "text": "checked",
+      "description": "C# keyword"
+    },
+    {
+      "text": "class",
+      "description": "C# keyword"
+    },
+    {
+      "text": "const",
+      "description": "C# keyword"
+    },
+    {
+      "text": "continue",
+      "description": "C# keyword"
+    },
+    {
+      "text": "default",
+      "description": "C# keyword"
+    },
+    {
+      "text": "delegate",
+      "description": "C# keyword"
+    },
+    {
+      "text": "do",
+      "description": "C# keyword"
+    },
+    {
+      "text": "else",
+      "description": "C# keyword"
+    },
+    {
+      "text": "enum",
+      "description": "C# keyword"
+    },
+    {
+      "text": "event",
+      "description": "C# keyword"
+    },
+    {
+      "text": "explicit",
+      "description": "C# keyword"
+    },
+    {
+      "text": "extern",
+      "description": "C# keyword"
+    },
+    {
+      "text": "false",
+      "description": "C# keyword"
+    },
+    {
+      "text": "finally",
+      "description": "C# keyword"
+    },
+    {
+      "text": "fixed",
+      "description": "C# keyword"
+    },
+    {
+      "text": "for",
+      "description": "C# keyword"
+    },
+    {
+      "text": "foreach",
+      "description": "C# keyword"
+    },
+    {
+      "text": "goto",
+      "description": "C# keyword"
+    },
+    {
+      "text": "if",
+      "description": "C# keyword"
+    },
+    {
+      "text": "implicit",
+      "description": "C# keyword"
+    },
+    {
+      "text": "in",
+      "description": "C# keyword"
+    },
+    {
+      "text": "interface",
+      "description": "C# keyword"
+    },
+    {
+      "text": "internal",
+      "description": "C# keyword"
+    },
+    {
+      "text": "is",
+      "description": "C# keyword"
+    },
+    {
+      "text": "lock",
+      "description": "C# keyword"
+    },
+    {
+      "text": "namespace",
+      "description": "C# keyword"
+    },
+    {
+      "text": "new",
+      "description": "C# keyword"
+    },
+    {
+      "text": "null",
+      "description": "C# keyword"
+    },
+    {
+      "text": "operator",
+      "description": "C# keyword"
+    },
+    {
+      "text": "out",
+      "description": "C# keyword"
+    },
+    {
+      "text": "override",
+      "description": "C# keyword"
+    },
+    {
+      "text": "params",
+      "description": "C# keyword"
+    },
+    {
+      "text": "partial",
+      "description": "C# keyword"
+    },
+    {
+      "text": "private",
+      "description": "C# keyword"
+    },
+    {
+      "text": "protected",
+      "description": "C# keyword"
+    },
+    {
+      "text": "public",
+      "description": "C# keyword"
+    },
+    {
+      "text": "readonly",
+      "description": "C# keyword"
+    },
+    {
+      "text": "record",
+      "description": "C# keyword"
+    },
+    {
+      "text": "ref",
+      "description": "C# keyword"
+    },
+    {
+      "text": "required",
+      "description": "C# keyword"
+    },
+    {
+      "text": "return",
+      "description": "C# keyword"
+    },
+    {
+      "text": "sealed",
+      "description": "C# keyword"
+    },
+    {
+      "text": "sizeof",
+      "description": "C# keyword"
+    },
+    {
+      "text": "stackalloc",
+      "description": "C# keyword"
+    },
+    {
+      "text": "static",
+      "description": "C# keyword"
+    },
+    {
+      "text": "struct",
+      "description": "C# keyword"
+    },
+    {
+      "text": "switch",
+      "description": "C# keyword"
+    },
+    {
+      "text": "this",
+      "description": "C# keyword"
+    },
+    {
+      "text": "throw",
+      "description": "C# keyword"
+    },
+    {
+      "text": "true",
+      "description": "C# keyword"
+    },
+    {
+      "text": "try",
+      "description": "C# keyword"
+    },
+    {
+      "text": "typeof",
+      "description": "C# keyword"
+    },
+    {
+      "text": "unchecked",
+      "description": "C# keyword"
+    },
+    {
+      "text": "unsafe",
+      "description": "C# keyword"
+    },
+    {
+      "text": "using",
+      "description": "C# keyword"
+    },
+    {
+      "text": "var",
+      "description": "C# keyword"
+    },
+    {
+      "text": "virtual",
+      "description": "C# keyword"
+    },
+    {
+      "text": "volatile",
+      "description": "C# keyword"
+    },
+    {
+      "text": "while",
+      "description": "C# keyword"
+    },
+    {
+      "text": "yield",
+      "description": "C# keyword"
+    },
+    {
+      "text": "bool",
+      "description": "C# type"
+    },
+    {
+      "text": "byte",
+      "description": "C# type"
+    },
+    {
+      "text": "char",
+      "description": "C# type"
+    },
+    {
+      "text": "decimal",
+      "description": "C# type"
+    },
+    {
+      "text": "double",
+      "description": "C# type"
+    },
+    {
+      "text": "dynamic",
+      "description": "C# type"
+    },
+    {
+      "text": "float",
+      "description": "C# type"
+    },
+    {
+      "text": "int",
+      "description": "C# type"
+    },
+    {
+      "text": "long",
+      "description": "C# type"
+    },
+    {
+      "text": "object",
+      "description": "C# type"
+    },
+    {
+      "text": "sbyte",
+      "description": "C# type"
+    },
+    {
+      "text": "short",
+      "description": "C# type"
+    },
+    {
+      "text": "string",
+      "description": "C# type"
+    },
+    {
+      "text": "uint",
+      "description": "C# type"
+    },
+    {
+      "text": "ulong",
+      "description": "C# type"
+    },
+    {
+      "text": "ushort",
+      "description": "C# type"
+    },
+    {
+      "text": "void",
+      "description": "C# type"
+    },
+    {
+      "text": "Task",
+      "description": "C# type"
+    },
+    {
+      "text": "List",
+      "description": "C# type"
+    },
+    {
+      "text": "Dictionary",
+      "description": "C# type"
+    },
+    {
+      "text": "IEnumerable",
+      "description": "C# type"
+    },
+    {
+      "text": "Console.WriteLine",
+      "description": "C# builtin"
+    },
+    {
+      "text": "Console.ReadLine",
+      "description": "C# builtin"
+    },
+    {
+      "text": "string.Format",
+      "description": "C# builtin"
+    },
+    {
+      "text": "int.Parse",
+      "description": "C# builtin"
+    },
+    {
+      "text": "Math.Max",
+      "description": "C# builtin"
+    },
+    {
+      "text": "Math.Min",
+      "description": "C# builtin"
+    },
+    {
+      "text": "Enumerable.Range",
+      "description": "C# builtin"
+    },
+    {
+      "text": "File.ReadAllText",
+      "description": "C# builtin"
+    },
+    {
+      "text": "JsonSerializer.Serialize",
+      "description": "C# builtin"
+    },
+    {
+      "text": ":csharp-example",
+      "description": "Insert C# starter"
+    },
+    {
+      "text": ":csharp-doc",
+      "description": "Application documentation action for C#"
+    }
+  ]
+}

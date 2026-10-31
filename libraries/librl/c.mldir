@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "C",
+  "directives": [
+    {
+      "name": "c-example",
+      "expansion": "int main(void) { $* return 0; }",
+      "help": "Insert a C starter; $* is argument text"
+    },
+    {
+      "name": "c-doc",
+      "action": "documentation:c",
+      "help": "Ask the host for C documentation"
+    }
+  ]
+}

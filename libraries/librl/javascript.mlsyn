@@ -1,0 +1,337 @@
+{
+  "version": 1,
+  "language": "JavaScript",
+  "rules": [
+    {
+      "kind": "span",
+      "style": "comment",
+      "start": "/*",
+      "end": "*/"
+    },
+    {
+      "kind": "line",
+      "style": "comment",
+      "start": "//"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "\"",
+      "end": "\"",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "'",
+      "end": "'",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "`",
+      "end": "`",
+      "escape": "\\"
+    },
+    {
+      "kind": "number",
+      "style": "number"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "async"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "await"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "break"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "case"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "catch"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "class"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "const"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "continue"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "debugger"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "default"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "delete"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "do"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "else"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "export"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "extends"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "false"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "finally"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "for"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "from"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "function"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "if"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "import"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "in"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "instanceof"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "let"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "new"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "null"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "of"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "return"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "static"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "super"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "switch"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "this"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "throw"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "true"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "try"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "typeof"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "undefined"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "var"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "void"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "while"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "with"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "yield"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Array"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "BigInt"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Boolean"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Date"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Error"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Function"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Map"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Number"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Object"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Promise"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "RegExp"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Set"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "String"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Symbol"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "WeakMap"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "WeakSet"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "language": "JSON",
+  "rules": [
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "\"",
+      "end": "\"",
+      "escape": "\\"
+    },
+    {
+      "kind": "number",
+      "style": "number"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "true"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "false"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "null"
+    }
+  ]
+}

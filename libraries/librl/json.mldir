@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "JSON",
+  "directives": [
+    {
+      "name": "json-example",
+      "expansion": "{\"value\": $*}",
+      "help": "Insert a JSON starter; $* is argument text"
+    },
+    {
+      "name": "json-doc",
+      "action": "documentation:json",
+      "help": "Ask the host for JSON documentation"
+    }
+  ]
+}

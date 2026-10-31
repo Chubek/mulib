@@ -1,0 +1,310 @@
+{
+  "version": 1,
+  "language": "Bash",
+  "items": [
+    {
+      "text": "if",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "then",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "else",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "elif",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "fi",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "case",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "esac",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "for",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "select",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "while",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "until",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "do",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "done",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "in",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "function",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "time",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "coproc",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "[[",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "]]",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "!",
+      "description": "Bash keyword"
+    },
+    {
+      "text": "alias",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "bg",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "bind",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "break",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "builtin",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "cd",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "command",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "compgen",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "complete",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "continue",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "declare",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "dirs",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "disown",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "echo",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "enable",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "eval",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "exec",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "exit",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "export",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "false",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "fc",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "fg",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "getopts",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "hash",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "help",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "history",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "jobs",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "kill",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "let",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "local",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "logout",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "mapfile",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "popd",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "printf",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "pushd",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "pwd",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "read",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "readonly",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "return",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "set",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "shift",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "shopt",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "source",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "test",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "times",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "trap",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "true",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "type",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "typeset",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "ulimit",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "umask",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "unalias",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "unset",
+      "description": "Bash builtin"
+    },
+    {
+      "text": "wait",
+      "description": "Bash builtin"
+    },
+    {
+      "text": ":bash-example",
+      "description": "Insert Bash starter"
+    },
+    {
+      "text": ":bash-doc",
+      "description": "Application documentation action for Bash"
+    }
+  ]
+}

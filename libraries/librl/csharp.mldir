@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "C#",
+  "directives": [
+    {
+      "name": "csharp-example",
+      "expansion": "static void Main(string[] args) { $* }",
+      "help": "Insert a C# starter; $* is argument text"
+    },
+    {
+      "name": "csharp-doc",
+      "action": "documentation:csharp",
+      "help": "Ask the host for C# documentation"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "Rust",
+  "directives": [
+    {
+      "name": "rust-example",
+      "expansion": "fn main() { $* }",
+      "help": "Insert a Rust starter; $* is argument text"
+    },
+    {
+      "name": "rust-doc",
+      "action": "documentation:rust",
+      "help": "Ask the host for Rust documentation"
+    }
+  ]
+}

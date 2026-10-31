@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "Java",
+  "directives": [
+    {
+      "name": "java-example",
+      "expansion": "public static void main(String[] args) { $* }",
+      "help": "Insert a Java starter; $* is argument text"
+    },
+    {
+      "name": "java-doc",
+      "action": "documentation:java",
+      "help": "Ask the host for Java documentation"
+    }
+  ]
+}

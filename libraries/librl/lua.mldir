@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "Lua",
+  "directives": [
+    {
+      "name": "lua-example",
+      "expansion": "local function main() $* end; main()",
+      "help": "Insert a Lua starter; $* is argument text"
+    },
+    {
+      "name": "lua-doc",
+      "action": "documentation:lua",
+      "help": "Ask the host for Lua documentation"
+    }
+  ]
+}

@@ -1,0 +1,322 @@
+{
+  "version": 1,
+  "language": "Python",
+  "items": [
+    {
+      "text": "and",
+      "description": "Python keyword"
+    },
+    {
+      "text": "as",
+      "description": "Python keyword"
+    },
+    {
+      "text": "assert",
+      "description": "Python keyword"
+    },
+    {
+      "text": "async",
+      "description": "Python keyword"
+    },
+    {
+      "text": "await",
+      "description": "Python keyword"
+    },
+    {
+      "text": "break",
+      "description": "Python keyword"
+    },
+    {
+      "text": "class",
+      "description": "Python keyword"
+    },
+    {
+      "text": "continue",
+      "description": "Python keyword"
+    },
+    {
+      "text": "def",
+      "description": "Python keyword"
+    },
+    {
+      "text": "del",
+      "description": "Python keyword"
+    },
+    {
+      "text": "elif",
+      "description": "Python keyword"
+    },
+    {
+      "text": "else",
+      "description": "Python keyword"
+    },
+    {
+      "text": "except",
+      "description": "Python keyword"
+    },
+    {
+      "text": "finally",
+      "description": "Python keyword"
+    },
+    {
+      "text": "for",
+      "description": "Python keyword"
+    },
+    {
+      "text": "from",
+      "description": "Python keyword"
+    },
+    {
+      "text": "global",
+      "description": "Python keyword"
+    },
+    {
+      "text": "if",
+      "description": "Python keyword"
+    },
+    {
+      "text": "import",
+      "description": "Python keyword"
+    },
+    {
+      "text": "in",
+      "description": "Python keyword"
+    },
+    {
+      "text": "is",
+      "description": "Python keyword"
+    },
+    {
+      "text": "lambda",
+      "description": "Python keyword"
+    },
+    {
+      "text": "nonlocal",
+      "description": "Python keyword"
+    },
+    {
+      "text": "not",
+      "description": "Python keyword"
+    },
+    {
+      "text": "or",
+      "description": "Python keyword"
+    },
+    {
+      "text": "pass",
+      "description": "Python keyword"
+    },
+    {
+      "text": "raise",
+      "description": "Python keyword"
+    },
+    {
+      "text": "return",
+      "description": "Python keyword"
+    },
+    {
+      "text": "try",
+      "description": "Python keyword"
+    },
+    {
+      "text": "while",
+      "description": "Python keyword"
+    },
+    {
+      "text": "with",
+      "description": "Python keyword"
+    },
+    {
+      "text": "yield",
+      "description": "Python keyword"
+    },
+    {
+      "text": "match",
+      "description": "Python keyword"
+    },
+    {
+      "text": "case",
+      "description": "Python keyword"
+    },
+    {
+      "text": "True",
+      "description": "Python keyword"
+    },
+    {
+      "text": "False",
+      "description": "Python keyword"
+    },
+    {
+      "text": "None",
+      "description": "Python keyword"
+    },
+    {
+      "text": "bool",
+      "description": "Python type"
+    },
+    {
+      "text": "bytes",
+      "description": "Python type"
+    },
+    {
+      "text": "bytearray",
+      "description": "Python type"
+    },
+    {
+      "text": "complex",
+      "description": "Python type"
+    },
+    {
+      "text": "dict",
+      "description": "Python type"
+    },
+    {
+      "text": "float",
+      "description": "Python type"
+    },
+    {
+      "text": "frozenset",
+      "description": "Python type"
+    },
+    {
+      "text": "int",
+      "description": "Python type"
+    },
+    {
+      "text": "list",
+      "description": "Python type"
+    },
+    {
+      "text": "memoryview",
+      "description": "Python type"
+    },
+    {
+      "text": "object",
+      "description": "Python type"
+    },
+    {
+      "text": "range",
+      "description": "Python type"
+    },
+    {
+      "text": "set",
+      "description": "Python type"
+    },
+    {
+      "text": "str",
+      "description": "Python type"
+    },
+    {
+      "text": "tuple",
+      "description": "Python type"
+    },
+    {
+      "text": "type",
+      "description": "Python type"
+    },
+    {
+      "text": "abs",
+      "description": "Python builtin"
+    },
+    {
+      "text": "all",
+      "description": "Python builtin"
+    },
+    {
+      "text": "any",
+      "description": "Python builtin"
+    },
+    {
+      "text": "enumerate",
+      "description": "Python builtin"
+    },
+    {
+      "text": "filter",
+      "description": "Python builtin"
+    },
+    {
+      "text": "format",
+      "description": "Python builtin"
+    },
+    {
+      "text": "getattr",
+      "description": "Python builtin"
+    },
+    {
+      "text": "hasattr",
+      "description": "Python builtin"
+    },
+    {
+      "text": "isinstance",
+      "description": "Python builtin"
+    },
+    {
+      "text": "issubclass",
+      "description": "Python builtin"
+    },
+    {
+      "text": "iter",
+      "description": "Python builtin"
+    },
+    {
+      "text": "len",
+      "description": "Python builtin"
+    },
+    {
+      "text": "map",
+      "description": "Python builtin"
+    },
+    {
+      "text": "max",
+      "description": "Python builtin"
+    },
+    {
+      "text": "min",
+      "description": "Python builtin"
+    },
+    {
+      "text": "next",
+      "description": "Python builtin"
+    },
+    {
+      "text": "open",
+      "description": "Python builtin"
+    },
+    {
+      "text": "print",
+      "description": "Python builtin"
+    },
+    {
+      "text": "repr",
+      "description": "Python builtin"
+    },
+    {
+      "text": "reversed",
+      "description": "Python builtin"
+    },
+    {
+      "text": "sorted",
+      "description": "Python builtin"
+    },
+    {
+      "text": "sum",
+      "description": "Python builtin"
+    },
+    {
+      "text": "super",
+      "description": "Python builtin"
+    },
+    {
+      "text": "zip",
+      "description": "Python builtin"
+    },
+    {
+      "text": ":python-example",
+      "description": "Insert Python starter"
+    },
+    {
+      "text": ":python-doc",
+      "description": "Application documentation action for Python"
+    }
+  ]
+}

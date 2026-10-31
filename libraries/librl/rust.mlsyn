@@ -1,0 +1,350 @@
+{
+  "version": 1,
+  "language": "Rust",
+  "rules": [
+    {
+      "kind": "span",
+      "style": "comment",
+      "start": "/*",
+      "end": "*/"
+    },
+    {
+      "kind": "line",
+      "style": "comment",
+      "start": "//"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "\"",
+      "end": "\"",
+      "escape": "\\"
+    },
+    {
+      "kind": "span",
+      "style": "string",
+      "start": "'",
+      "end": "'",
+      "escape": "\\"
+    },
+    {
+      "kind": "number",
+      "style": "number"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "as"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "async"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "await"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "break"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "const"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "continue"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "crate"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "dyn"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "else"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "enum"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "extern"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "false"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "fn"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "for"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "if"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "impl"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "in"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "let"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "loop"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "match"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "mod"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "move"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "mut"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "pub"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "ref"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "return"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "self"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "Self"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "static"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "struct"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "super"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "trait"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "true"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "type"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "unsafe"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "use"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "where"
+    },
+    {
+      "kind": "word",
+      "style": "keyword",
+      "start": "while"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "bool"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "char"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "str"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "i8"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "i16"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "i32"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "i64"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "i128"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "isize"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "u8"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "u16"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "u32"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "u64"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "u128"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "usize"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "f32"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "f64"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "String"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Vec"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Option"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Result"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Box"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Arc"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "Rc"
+    },
+    {
+      "kind": "word",
+      "style": "type",
+      "start": "HashMap"
+    }
+  ]
+}

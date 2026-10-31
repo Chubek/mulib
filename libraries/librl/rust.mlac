@@ -1,0 +1,314 @@
+{
+  "version": 1,
+  "language": "Rust",
+  "items": [
+    {
+      "text": "as",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "async",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "await",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "break",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "const",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "continue",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "crate",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "dyn",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "else",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "enum",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "extern",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "false",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "fn",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "for",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "if",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "impl",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "in",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "let",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "loop",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "match",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "mod",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "move",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "mut",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "pub",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "ref",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "return",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "self",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "Self",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "static",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "struct",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "super",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "trait",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "true",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "type",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "unsafe",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "use",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "where",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "while",
+      "description": "Rust keyword"
+    },
+    {
+      "text": "bool",
+      "description": "Rust type"
+    },
+    {
+      "text": "char",
+      "description": "Rust type"
+    },
+    {
+      "text": "str",
+      "description": "Rust type"
+    },
+    {
+      "text": "i8",
+      "description": "Rust type"
+    },
+    {
+      "text": "i16",
+      "description": "Rust type"
+    },
+    {
+      "text": "i32",
+      "description": "Rust type"
+    },
+    {
+      "text": "i64",
+      "description": "Rust type"
+    },
+    {
+      "text": "i128",
+      "description": "Rust type"
+    },
+    {
+      "text": "isize",
+      "description": "Rust type"
+    },
+    {
+      "text": "u8",
+      "description": "Rust type"
+    },
+    {
+      "text": "u16",
+      "description": "Rust type"
+    },
+    {
+      "text": "u32",
+      "description": "Rust type"
+    },
+    {
+      "text": "u64",
+      "description": "Rust type"
+    },
+    {
+      "text": "u128",
+      "description": "Rust type"
+    },
+    {
+      "text": "usize",
+      "description": "Rust type"
+    },
+    {
+      "text": "f32",
+      "description": "Rust type"
+    },
+    {
+      "text": "f64",
+      "description": "Rust type"
+    },
+    {
+      "text": "String",
+      "description": "Rust type"
+    },
+    {
+      "text": "Vec",
+      "description": "Rust type"
+    },
+    {
+      "text": "Option",
+      "description": "Rust type"
+    },
+    {
+      "text": "Result",
+      "description": "Rust type"
+    },
+    {
+      "text": "Box",
+      "description": "Rust type"
+    },
+    {
+      "text": "Arc",
+      "description": "Rust type"
+    },
+    {
+      "text": "Rc",
+      "description": "Rust type"
+    },
+    {
+      "text": "HashMap",
+      "description": "Rust type"
+    },
+    {
+      "text": "println!",
+      "description": "Rust builtin"
+    },
+    {
+      "text": "eprintln!",
+      "description": "Rust builtin"
+    },
+    {
+      "text": "format!",
+      "description": "Rust builtin"
+    },
+    {
+      "text": "vec!",
+      "description": "Rust builtin"
+    },
+    {
+      "text": "assert!",
+      "description": "Rust builtin"
+    },
+    {
+      "text": "assert_eq!",
+      "description": "Rust builtin"
+    },
+    {
+      "text": "Some",
+      "description": "Rust builtin"
+    },
+    {
+      "text": "None",
+      "description": "Rust builtin"
+    },
+    {
+      "text": "Ok",
+      "description": "Rust builtin"
+    },
+    {
+      "text": "Err",
+      "description": "Rust builtin"
+    },
+    {
+      "text": "std::fs::read_to_string",
+      "description": "Rust builtin"
+    },
+    {
+      "text": "std::io::stdin",
+      "description": "Rust builtin"
+    },
+    {
+      "text": ":rust-example",
+      "description": "Insert Rust starter"
+    },
+    {
+      "text": ":rust-doc",
+      "description": "Application documentation action for Rust"
+    }
+  ]
+}

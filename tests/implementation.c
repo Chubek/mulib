@@ -1,3 +1,6 @@
+#define MULIB_IMPL_READLINE
+#define MULIB_IMPL_PROWSE_PROTOCOL
+#define MULIB_IMPL_PROWSE_CONTROL
 #define MULIB_IMPL_CONTAINER
 #define MULIB_IMPL_IMGBUILDER
 #define MULIB_IMPL_CONTAINERBOOST
@@ -643,3 +646,6 @@
 #include "include-mulib-container-core.h"
 #include "include-mulib-qvm.h"
 #include "include-mulib-zstd.h"
+#include "mulib-readline.h"
+#include "mulib-prowse-protocol.h"
+#include "mulib-prowse-control.h"

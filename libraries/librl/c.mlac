@@ -1,0 +1,262 @@
+{
+  "version": 1,
+  "language": "C",
+  "items": [
+    {
+      "text": "auto",
+      "description": "C keyword"
+    },
+    {
+      "text": "break",
+      "description": "C keyword"
+    },
+    {
+      "text": "case",
+      "description": "C keyword"
+    },
+    {
+      "text": "const",
+      "description": "C keyword"
+    },
+    {
+      "text": "continue",
+      "description": "C keyword"
+    },
+    {
+      "text": "default",
+      "description": "C keyword"
+    },
+    {
+      "text": "do",
+      "description": "C keyword"
+    },
+    {
+      "text": "else",
+      "description": "C keyword"
+    },
+    {
+      "text": "enum",
+      "description": "C keyword"
+    },
+    {
+      "text": "extern",
+      "description": "C keyword"
+    },
+    {
+      "text": "for",
+      "description": "C keyword"
+    },
+    {
+      "text": "goto",
+      "description": "C keyword"
+    },
+    {
+      "text": "if",
+      "description": "C keyword"
+    },
+    {
+      "text": "inline",
+      "description": "C keyword"
+    },
+    {
+      "text": "register",
+      "description": "C keyword"
+    },
+    {
+      "text": "restrict",
+      "description": "C keyword"
+    },
+    {
+      "text": "return",
+      "description": "C keyword"
+    },
+    {
+      "text": "sizeof",
+      "description": "C keyword"
+    },
+    {
+      "text": "static",
+      "description": "C keyword"
+    },
+    {
+      "text": "struct",
+      "description": "C keyword"
+    },
+    {
+      "text": "switch",
+      "description": "C keyword"
+    },
+    {
+      "text": "typedef",
+      "description": "C keyword"
+    },
+    {
+      "text": "union",
+      "description": "C keyword"
+    },
+    {
+      "text": "volatile",
+      "description": "C keyword"
+    },
+    {
+      "text": "while",
+      "description": "C keyword"
+    },
+    {
+      "text": "_Alignas",
+      "description": "C keyword"
+    },
+    {
+      "text": "_Alignof",
+      "description": "C keyword"
+    },
+    {
+      "text": "_Atomic",
+      "description": "C keyword"
+    },
+    {
+      "text": "_Bool",
+      "description": "C keyword"
+    },
+    {
+      "text": "_Generic",
+      "description": "C keyword"
+    },
+    {
+      "text": "_Noreturn",
+      "description": "C keyword"
+    },
+    {
+      "text": "_Static_assert",
+      "description": "C keyword"
+    },
+    {
+      "text": "_Thread_local",
+      "description": "C keyword"
+    },
+    {
+      "text": "char",
+      "description": "C type"
+    },
+    {
+      "text": "double",
+      "description": "C type"
+    },
+    {
+      "text": "float",
+      "description": "C type"
+    },
+    {
+      "text": "int",
+      "description": "C type"
+    },
+    {
+      "text": "long",
+      "description": "C type"
+    },
+    {
+      "text": "short",
+      "description": "C type"
+    },
+    {
+      "text": "signed",
+      "description": "C type"
+    },
+    {
+      "text": "unsigned",
+      "description": "C type"
+    },
+    {
+      "text": "void",
+      "description": "C type"
+    },
+    {
+      "text": "size_t",
+      "description": "C type"
+    },
+    {
+      "text": "uint32_t",
+      "description": "C type"
+    },
+    {
+      "text": "uint64_t",
+      "description": "C type"
+    },
+    {
+      "text": "FILE",
+      "description": "C type"
+    },
+    {
+      "text": "printf",
+      "description": "C builtin"
+    },
+    {
+      "text": "snprintf",
+      "description": "C builtin"
+    },
+    {
+      "text": "fprintf",
+      "description": "C builtin"
+    },
+    {
+      "text": "malloc",
+      "description": "C builtin"
+    },
+    {
+      "text": "calloc",
+      "description": "C builtin"
+    },
+    {
+      "text": "realloc",
+      "description": "C builtin"
+    },
+    {
+      "text": "free",
+      "description": "C builtin"
+    },
+    {
+      "text": "memcpy",
+      "description": "C builtin"
+    },
+    {
+      "text": "memmove",
+      "description": "C builtin"
+    },
+    {
+      "text": "memset",
+      "description": "C builtin"
+    },
+    {
+      "text": "strcmp",
+      "description": "C builtin"
+    },
+    {
+      "text": "strlen",
+      "description": "C builtin"
+    },
+    {
+      "text": "fopen",
+      "description": "C builtin"
+    },
+    {
+      "text": "fclose",
+      "description": "C builtin"
+    },
+    {
+      "text": "fread",
+      "description": "C builtin"
+    },
+    {
+      "text": "fwrite",
+      "description": "C builtin"
+    },
+    {
+      "text": ":c-example",
+      "description": "Insert C starter"
+    },
+    {
+      "text": ":c-doc",
+      "description": "Application documentation action for C"
+    }
+  ]
+}

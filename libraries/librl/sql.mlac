@@ -1,0 +1,414 @@
+{
+  "version": 1,
+  "language": "SQL",
+  "items": [
+    {
+      "text": "SELECT",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "FROM",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "WHERE",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "INSERT",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "INTO",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "VALUES",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "UPDATE",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "SET",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "DELETE",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "CREATE",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "ALTER",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "DROP",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "TABLE",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "VIEW",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "INDEX",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "DATABASE",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "JOIN",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "INNER",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "LEFT",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "RIGHT",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "FULL",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "OUTER",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "CROSS",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "ON",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "GROUP",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "BY",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "HAVING",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "ORDER",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "ASC",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "DESC",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "LIMIT",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "OFFSET",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "DISTINCT",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "AS",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "UNION",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "ALL",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "AND",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "OR",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "NOT",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "NULL",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "IS",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "IN",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "EXISTS",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "BETWEEN",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "LIKE",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "CASE",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "WHEN",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "THEN",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "ELSE",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "END",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "BEGIN",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "COMMIT",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "ROLLBACK",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "PRIMARY",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "KEY",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "FOREIGN",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "REFERENCES",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "UNIQUE",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "CHECK",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "DEFAULT",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "WITH",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "RECURSIVE",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "RETURNING",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "OVER",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "PARTITION",
+      "description": "SQL keyword"
+    },
+    {
+      "text": "INTEGER",
+      "description": "SQL type"
+    },
+    {
+      "text": "BIGINT",
+      "description": "SQL type"
+    },
+    {
+      "text": "SMALLINT",
+      "description": "SQL type"
+    },
+    {
+      "text": "DECIMAL",
+      "description": "SQL type"
+    },
+    {
+      "text": "NUMERIC",
+      "description": "SQL type"
+    },
+    {
+      "text": "REAL",
+      "description": "SQL type"
+    },
+    {
+      "text": "DOUBLE",
+      "description": "SQL type"
+    },
+    {
+      "text": "FLOAT",
+      "description": "SQL type"
+    },
+    {
+      "text": "BOOLEAN",
+      "description": "SQL type"
+    },
+    {
+      "text": "CHAR",
+      "description": "SQL type"
+    },
+    {
+      "text": "VARCHAR",
+      "description": "SQL type"
+    },
+    {
+      "text": "TEXT",
+      "description": "SQL type"
+    },
+    {
+      "text": "DATE",
+      "description": "SQL type"
+    },
+    {
+      "text": "TIME",
+      "description": "SQL type"
+    },
+    {
+      "text": "TIMESTAMP",
+      "description": "SQL type"
+    },
+    {
+      "text": "BLOB",
+      "description": "SQL type"
+    },
+    {
+      "text": "COUNT",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "SUM",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "AVG",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "MIN",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "MAX",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "COALESCE",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "NULLIF",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "CAST",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "CONCAT",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "LOWER",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "UPPER",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "TRIM",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "SUBSTRING",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "ROUND",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "LENGTH",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "CURRENT_DATE",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "CURRENT_TIMESTAMP",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "ROW_NUMBER",
+      "description": "SQL builtin"
+    },
+    {
+      "text": "RANK",
+      "description": "SQL builtin"
+    },
+    {
+      "text": ":sql-example",
+      "description": "Insert SQL starter"
+    },
+    {
+      "text": ":sql-doc",
+      "description": "Application documentation action for SQL"
+    }
+  ]
+}

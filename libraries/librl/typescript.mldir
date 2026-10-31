@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "TypeScript",
+  "directives": [
+    {
+      "name": "typescript-example",
+      "expansion": "async function main(): Promise<void> { $* }",
+      "help": "Insert a TypeScript starter; $* is argument text"
+    },
+    {
+      "name": "typescript-doc",
+      "action": "documentation:typescript",
+      "help": "Ask the host for TypeScript documentation"
+    }
+  ]
+}
