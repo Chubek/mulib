@@ -188,3 +188,5 @@ dispatching actions. Both return NULL on failure. Structured diagnostics carry
 code, zero-based offset, one-based line/column and static messages. Error
 pointers may be NULL. Walkers and their copied text outlive both parser and
 source. AST depth is bounded to 256; parsec evaluator limits still apply.
+Parser work/depth/capture exhaustion and AST depth exhaustion report
+`MULIB_PARSER_LIMIT`, separately from `MULIB_PARSER_MEMORY` allocation failures.

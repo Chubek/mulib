@@ -88,6 +88,34 @@ if(MULIB_BUILD_TESTS)
     mulib_test_executable("mulib_${test_name}")
     mulib_register_test("mulib_${test_name}")
   endforeach()
+  if(Python3_Interpreter_FOUND AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    set(mune_options)
+    if(MULIB_SANITIZERS)
+      list(APPEND mune_options --sanitizers)
+    endif()
+    add_test(NAME mulib_mune_runtime_backends
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_mune_runtime.py
+        --runtime $<TARGET_FILE:mulib_test_mune_runtime> --compiler ${CMAKE_C_COMPILER} ${mune_options})
+    set_tests_properties(mulib_mune_runtime_backends PROPERTIES TIMEOUT 300)
+    foreach(emitter mulib_test_compiler_ir mulib_test_mir_flow)
+      set(aot_options)
+      if(MULIB_SANITIZERS)
+        list(APPEND aot_options --sanitizers)
+      endif()
+      add_test(NAME "${emitter}_aot"
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_mir_aot.py
+          --emitter $<TARGET_FILE:${emitter}> --compiler ${CMAKE_C_COMPILER}
+          --include ${CMAKE_CURRENT_SOURCE_DIR}/include ${aot_options})
+      set_tests_properties("${emitter}_aot" PROPERTIES TIMEOUT 180)
+    endforeach()
+  endif()
+  find_program(MULIB_LUA54_EXECUTABLE NAMES lua5.4 lua54)
+  if(Python3_Interpreter_FOUND AND MULIB_LUA54_EXECUTABLE)
+    add_test(NAME mulib_mune_frontend_reference
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_mune_frontend.py
+        --frontend $<TARGET_FILE:mulib_test_mune_frontend> --lua ${MULIB_LUA54_EXECUTABLE})
+    set_tests_properties(mulib_mune_frontend_reference PROPERTIES TIMEOUT 180)
+  endif()
   if(UNIX)
     add_executable(mulib_test_runtime_posix tests/test_runtime.c)
     target_compile_definitions(mulib_test_runtime_posix PRIVATE MULIB_MINISH_ENABLE_POSIX)

@@ -7,6 +7,10 @@
 #define MULIB_IMPL_STRBUF
 #define MULIB_IMPL_UTF8
 #define MULIB_IMPL_JIT
+#define MULIB_IMPL_MIR
+#define MULIB_IMPL_VMWEAVE
+#define MULIB_IMPL_EGRAPH
+#define MULIB_IMPL_REWRITE
 #define MULIB_IMPL_DYNCALL
 #include "mulib-assembler.h"
 #include "mulib-jit.h"

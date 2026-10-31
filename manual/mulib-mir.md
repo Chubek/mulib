@@ -1,12 +1,13 @@
 # mulib-mir
 
-Typed record IR shared by `cmachine`, `vmweave`, and `ccweave`. This is a focused
-straight-line SSA language, **not** a control-flow IR, parser, ABI, or object format.
+Typed record IR shared by the compiler backends. The original SSA interface is
+joined by a typed register/control-flow dialect for VM, AOT and native execution.
 
 ## Integration and ownership
 
 Include `mulib-mir.h`. Define `MULIB_IMPL_MIR` in exactly one translation unit.
-There are no implementation dependencies. Declarations have C linkage in C++.
+There are no MuLIB implementation dependencies. Link the platform math library
+for floating remainder (`-lm` where required). Declarations have C linkage in C++.
 
 `mulib_mir_program_t` borrows immutable `code[count]`. Value IDs are record
 indices, not pointers. Its lifetime must cover validation and any transformation.
@@ -21,7 +22,7 @@ capacity/pointer fields. Free zeroes the object and accepts NULL. Appending does
 not validate; a partially built program is not yet executable. Capacity zero is
 valid, but cannot accept an append. All allocations use the C allocator.
 
-## Exact language
+## Original SSA language
 
 Every record has `opcode`, declared result `type`, operands `a`, `b`, and signed
 `immediate`. Unused operands must equal `MULIB_MIR_NONE` (`SIZE_MAX`). Only CONST
@@ -93,9 +94,113 @@ operands/types and preserve fault ordering; they are not silently typed MIR.
 asserts rejection of a self reference:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/mir.c -o /tmp/mir
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/mir.c -lm -o /tmp/mir
 /tmp/mir
 ```
 
 `tests/test_compiler_ir.c` exercises malformed types/references/opcodes, empty
 input, capacities, arithmetic boundaries, and intermodule execution equivalence.
+
+## Register/control-flow language
+
+`mulib_mir_flow_program_t` borrows immutable instructions, a type for every
+register, a function signature, and host-call signatures. Register types are
+`I64`, canonical `BOOL`, C `double` (`F64`), or opaque unsigned 64-bit `WORD`.
+The dialect uses mutable registers; values can cross loops and joins. Every
+register starts at its type's zero value. Frontends must implement their own
+language's lexical scopes, definite assignment, object lifetimes, and dynamic
+type rules. A WORD can hold an index into a frontend-managed object table.
+
+Each instruction has `opcode`, `destination`, `a`, `b`, `target`, `immediate`.
+Unused indices are `MULIB_MIR_NONE`, and unused `immediate.word` is zero.
+
+| `MULIB_MIR_FLOW_` opcode | Meaning |
+|---|---|
+| CONST | Copy typed immediate to destination |
+| PARAM | Copy parameter indexed by a to destination |
+| COPY | Copy a to same-typed destination |
+| ADD SUB MUL DIV MOD NEG | I64 checked arithmetic, or F64 arithmetic; NEG uses only a |
+| EQ LT LE | Same-typed comparisons producing BOOL; BOOL supports EQ only |
+| NOT | BOOL logical negation |
+| WRAP_ADD WRAP_SUB WRAP_MUL | I64 or WORD modulo-2^64 arithmetic |
+| AND OR XOR SHL SHR | I64 or WORD bit operations; shifts are logical, and counts outside 0–63 produce zero |
+| I64_F64 | Convert I64 to F64, with host double rounding |
+| F64_I64 | Truncate toward zero; NaN, infinity, and values outside [-2^63,2^63) fault |
+| JUMP | Unconditional absolute target |
+| BRANCH | Jump to target if Boolean a is true, otherwise fall through |
+| CALL | Call host target with contiguous registers [a,a+b), writing one typed result |
+| RETURN | Return a, whose type must equal the function signature's result |
+
+I64 division/remainder retain the original C truncating and overflow-faulting
+semantics. F64 operations preserve the host's floating semantics, including
+infinities, NaNs and signed zero; MOD uses `fmod`. WORD comparisons are unsigned.
+Wrapping operations never evaluate overflowing signed C arithmetic. A negative
+I64 shift count is outside 0–63 and produces zero; a Lua frontend must reverse
+the shift direction itself to implement Lua's different rule.
+
+`mulib_mir_flow_validate` validates every record, including unreachable records,
+operand and result types, host arities/types, parameter references, and branch
+targets. The final record must be JUMP or RETURN; multiple RETURNs and backward
+edges are valid. Loops need not terminate. `limit` bounds each descriptor array,
+function parameter count, and aggregate host parameter count. Zero is a real
+limit. Allocation-size overflow is checked. Diagnostics identify a record for
+instruction errors; for descriptor/type-array errors the index belongs to that
+array. This validator has no allocation or execution side effects.
+
+### Execution frames and suspension
+
+Zero-initialize a `mulib_mir_frame_t`, then call `mulib_mir_frame_init` with a
+validated program, arguments, callback and user pointer. Initialization also
+validates the program, copies arguments, and allocates zeroed register storage.
+Boolean arguments are checked before execution. The program must remain alive
+and immutable until `mulib_mir_frame_free`; frames must not be copied. Free is
+NULL-safe and resets the frame. A frame cannot be freed/reentered from its host
+callback. Other frames can execute recursively or share immutable programs.
+
+`mulib_mir_frame_step` consumes one unit of `remaining` and increments `steps`.
+Faults count as instructions, but budget exhaustion does not. It returns:
+
+- OK after a normal instruction;
+- FINISHED after RETURN, with `frame.result` and the RETURN's `pc` retained;
+- STEP_LIMIT before executing when `remaining == 0`;
+- SUSPENDED if a host callback asks to suspend;
+- an arithmetic fault, HOST_ERROR, or a resource error otherwise.
+
+Faults preserve the destination and `pc`. Previously executed instructions and
+host side effects persist. Repeated calls on finished, faulted or suspended
+frames return the existing status. STEP_LIMIT is resumable after replenishing
+the budget. Lifetime instruction-counter overflow returns RESOURCE_LIMIT.
+
+A callback receives a borrowed argument slice, must not modify the frame or
+program, and returns OK with a typed result, SUSPENDED, or a failure (reported
+as HOST_ERROR). Invalid Boolean callback results are HOST_ERROR. On suspension,
+call `mulib_mir_frame_resume(frame,result)` to complete that exact CALL without
+repeating its side effects. Invalid Boolean resume values leave the frame
+suspended. The caller supplies error handling/unwinding for its language.
+
+### AOT output
+
+`mulib_mir_flow_emit_c` writes C11 to a callback. The symbol must have a nonempty
+`mulib_generated_` suffix and contain at most 127 ASCII identifier bytes. Floating
+immediates require IEEE binary64 on the generator and generated target, with
+matching integer/floating byte order; they are emitted as object bits to retain
+signed zero and NaN payloads independently of the locale. A failed writer produces
+IO_ERROR and can leave partial output; invalid IR is rejected before writing.
+
+For symbol `mulib_generated_example`, output defines:
+
+```c
+const mulib_mir_flow_program_t *mulib_generated_example_program(void);
+mulib_mir_status_t mulib_generated_example(mulib_mir_frame_t *frame);
+```
+
+Initialize a frame from the generated program getter, set `frame.remaining`,
+then call the generated function. Program identity is checked. Output contains
+owned static descriptors, direct C labels/branches, and shared MIR operation
+helper calls; compile and link it with one MIR implementation. This baseline
+AOT does not require a runtime source compiler or the VM dispatch loop.
+Suspension and budget exhaustion can resume at any generated instruction.
+
+`tests/test_mir_flow.c` checks VM/native equivalence, loops, ownership, suspended
+host calls, checked/wrapping arithmetic, floating boundaries and malformed IR.
+Its `--emit` mode writes an AOT regression translation unit for compilation.

@@ -98,7 +98,8 @@ FUSE adapter's operations over a network stream and exposes a remote MuLIB VFS
 mount. Protocol manuals specify the supported profiles and required crypto
 backends; the SSH helpers are identification/packet/authentication codecs.
 
-Compiler utilities cover checked MIR execution, rewriting, selection, scheduling,
+Compiler utilities cover typed control-flow MIR, a resumable register VM,
+helper-based native JIT and C AOT, rewriting, selection, scheduling,
 emission, relocation and a focused native JIT. Architecture metadata comes from
 the repository's [`dsymspec/`](dsymspec/) directory, not an external architecture
 database. Consult individual manuals for supported instruction encodings and
@@ -111,7 +112,8 @@ compatible. The existing spellings `impaclient` and `dnsnmeserver` are retained.
 All API headers have implementations; `mulib-yantlr.h` is a comment-only reservation.
 The [dependency strata](manual/strata.md) index
 records every direct dependency and integration layer. New focused modules include
-a bounded i32 WebAssembly runtime (`wask`), a numeric Lua subset (`mune`), inherited
+a bounded i32 WebAssembly runtime (`wask`), an independent Lua runtime with
+tree, VM, JIT and C-AOT execution and module bundles (`mune`), inherited
 method dispatch (`mop`), and backend-neutral window actions (`wmfunc`). Their manuals
 state the supported profiles; these names do not imply full standards coverage.
 

@@ -1,4 +1,8 @@
 #define MULIB_IMPL_JIT
+#define MULIB_IMPL_MIR
+#define MULIB_IMPL_VMWEAVE
+#define MULIB_IMPL_EGRAPH
+#define MULIB_IMPL_REWRITE
 #define MULIB_IMPL_DYNCALL
 #include "mulib-jit.h"
 #include <assert.h>

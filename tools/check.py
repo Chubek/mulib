@@ -183,8 +183,27 @@ def main():
                                               text=True, timeout=60)
                         if test.returncode:
                             failures.append((label, test.stderr or test.stdout or
-                                             'exit status ' + str(test.returncode)))
+                                              'exit status ' + str(test.returncode)))
                             return False
+                        if sources and len(sources) == 1 and sources[0].name in (
+                                'test_mir_flow.c', 'test_compiler_ir.c'):
+                            aot = subprocess.run(
+                                [sys.executable, str(root / 'tools/check_mir_aot.py'),
+                                 '--emitter', str(binary), '--compiler', shlex.join(compiler)]
+                                + (['--sanitizers'] if args.sanitizers else []),
+                                cwd=work, capture_output=True, text=True, timeout=180)
+                            if aot.returncode:
+                                failures.append((label + ' AOT', aot.stderr or aot.stdout))
+                                return False
+                        if sources and len(sources) == 1 and sources[0].name == 'test_mune_runtime.c':
+                            runtime = subprocess.run(
+                                [sys.executable, str(root / 'tools/check_mune_runtime.py'),
+                                 '--runtime', str(binary), '--compiler', shlex.join(compiler)]
+                                + (['--sanitizers'] if args.sanitizers else []),
+                                cwd=work, capture_output=True, text=True, timeout=300)
+                            if runtime.returncode:
+                                failures.append((label + ' backends/reference', runtime.stderr or runtime.stdout))
+                                return False
                 except (OSError, subprocess.TimeoutExpired) as error:
                     failures.append((label, str(error)))
                     return False

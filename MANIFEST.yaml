@@ -1143,8 +1143,8 @@ modules:
   header: include/mulib-jit.h
   manual: manual/mulib-jit.md
   macro: MULIB_IMPL_JIT
-  purpose: Native write-then-execute memory lifecycle for trusted generated code.
-  dependencies: [dyncall]
+  purpose: Native write-then-execute memory and a baseline MIR control-flow compiler.
+  dependencies: [dyncall, vmweave]
   status: implemented
 - name: linker
   header: include/mulib-linker.h
@@ -1346,8 +1346,8 @@ modules:
   header: include/mulib-vmweave.h
   manual: manual/mulib-vmweave.md
   macro: MULIB_IMPL_VMWEAVE
-  purpose: Validated MIR lowering to the checked MuLIB VM.
-  dependencies: [mir]
+  purpose: Fault-preserving MIR optimization and resumable typed register VM execution.
+  dependencies: [mir, rewrite]
   status: implemented
 - name: webclient
   header: include/mulib-webclient.h
@@ -1388,8 +1388,8 @@ modules:
   header: include/mulib-mune.h
   manual: manual/mulib-mune.md
   macro: MULIB_IMPL_MUNE
-  purpose: Bounded transactional numeric Lua subset interpreter.
-  dependencies: []
+  purpose: Independent Lua runtime, parser-backed AST, tree/VM/JIT/C-AOT execution and module bundles.
+  dependencies: [dynload, jit, parsec]
   status: implemented
 - name: oix
   header: include/mulib-oix.h
@@ -2055,6 +2055,12 @@ modules:
   dependencies: []
   status: implemented
 project_files:
+- file: tools/check_mune_runtime.py
+  purpose: Lua runtime, generated C, native module and optional Lua 5.4 reference checks.
+- file: tools/check_mune_frontend.py
+  purpose: Differential frontend validation against an optional installed Lua 5.4.
+- file: tools/check_mir_aot.py
+  purpose: Compile and execute emitted MIR C in the checker and CTest.
 - file: MANIFEST.yaml
   purpose: Complete inventory of modules, manuals, examples, and supporting files.
 - file: CMakeLists.txt
@@ -2789,3 +2795,15 @@ project_files:
   purpose: "Focused regression suite for test_vcs_formats."
 - file: tests/test_vcs_netfs_alloc.c
   purpose: "Focused regression suite for test_vcs_netfs_alloc."
+- file: tests/test_mir_flow.c
+  purpose: "Focused regression suite for test_mir_flow."
+- file: tests/test_mir_flow_alloc.c
+  purpose: "Focused regression suite for test_mir_flow_alloc."
+- file: tests/test_mune_frontend.c
+  purpose: "Focused regression suite for test_mune_frontend."
+- file: tests/test_mune_frontend_alloc.c
+  purpose: "Focused regression suite for test_mune_frontend_alloc."
+- file: tests/test_mune_runtime.c
+  purpose: "Focused regression suite for test_mune_runtime."
+- file: tests/test_mune_runtime_alloc.c
+  purpose: "Focused regression suite for test_mune_runtime_alloc."

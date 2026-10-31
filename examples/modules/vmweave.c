@@ -2,6 +2,8 @@
 #define MULIB_IMPL_MINIVM
 #define MULIB_IMPL_CMACHINE
 #define MULIB_IMPL_VMWEAVE
+#define MULIB_IMPL_EGRAPH
+#define MULIB_IMPL_REWRITE
 #include "mulib-vmweave.h"
 #include "mulib-cmachine.h"
 #include <assert.h>

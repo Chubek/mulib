@@ -15,8 +15,10 @@ MULIB_IMPL_ASSEMBLER MULIB_IMPL_DSYMSPEC MULIB_IMPL_EMITTER MULIB_IMPL_LINKER
 MULIB_IMPL_JSON MULIB_IMPL_PARSEC MULIB_IMPL_STRBUF MULIB_IMPL_UTF8
 ```
 
-The optional native execution example additionally defines `MULIB_IMPL_JIT`
-and `MULIB_IMPL_DYNCALL`. No switch is silently enabled. Declarations support
+The optional native execution example additionally defines `MULIB_IMPL_JIT`,
+`MULIB_IMPL_DYNCALL`, `MULIB_IMPL_MIR`, `MULIB_IMPL_VMWEAVE`,
+`MULIB_IMPL_EGRAPH`, and `MULIB_IMPL_REWRITE`. No switch is
+silently enabled. Declarations support
 C++17. Assembly is host-independent and requires no executable memory or OS
 API; the separate JIT has its own host restrictions.
 

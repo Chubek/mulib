@@ -171,7 +171,8 @@ extern "C"
     MULIB_PARSER_MATCH,
     MULIB_PARSER_MEMORY,
     MULIB_PARSER_ACTION,
-    MULIB_PARSER_INVALID
+    MULIB_PARSER_INVALID,
+    MULIB_PARSER_LIMIT
   } mulib_parser_error_code_t;
   typedef struct mulib_parser_error
   {
@@ -852,6 +853,7 @@ extern "C"
     mulib_ast_walker_t *w;
     size_t i, j;
     int status;
+    int depth_limit = 0;
     mulib_parser_error_ (e, MULIB_PARSER_OK, NULL);
     if (!p || (!s && len) || (!actions && count))
       {
@@ -865,9 +867,11 @@ extern "C"
         mulib_parser_error_ (
             e,
             r.error.code == MULIB_PARSEC_MEMORY ? MULIB_PARSER_MEMORY
+            : r.error.code == MULIB_PARSEC_LIMIT ? MULIB_PARSER_LIMIT
             : status == 0                       ? MULIB_PARSER_MATCH
                                                 : MULIB_PARSER_INVALID,
             r.error.code == MULIB_PARSEC_MEMORY ? "out of memory"
+            : r.error.code == MULIB_PARSEC_LIMIT ? "parser resource limit"
             : status == 0 ? "input does not match grammar"
                           : "parser resource limit or invalid arguments");
         if (e)
@@ -907,7 +911,7 @@ extern "C"
         for (j = c->first; j < i; ++j)
           if (!nodes[j]->parent)
             if (!mulib_ast_append (nodes[i], nodes[j]))
-              goto memory;
+              { depth_limit = 1; goto memory; }
       }
     w->root = nodes[r.count - 1];
     free (nodes);
@@ -931,8 +935,8 @@ extern "C"
     free (nodes);
     free (w);
     mulib_parsec_result_free (&r);
-    mulib_parser_error_ (e, MULIB_PARSER_MEMORY,
-                         "AST allocation or depth limit");
+    mulib_parser_error_ (e, depth_limit ? MULIB_PARSER_LIMIT : MULIB_PARSER_MEMORY,
+                         depth_limit ? "AST depth limit" : "AST allocation failed");
     return NULL;
   }
   mulib_ast_walker_t *

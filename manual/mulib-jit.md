@@ -1,12 +1,14 @@
 # mulib-jit
 
 Owning native code memory with a one-way **RW, non-executable → RX,
-non-writable** transition. This is not a VM, compiler, instruction validator,
-sandbox, signal recovery facility, or general FFI.
+non-writable** transition, plus a baseline compiler for typed MIR control-flow
+programs.
 
 ## Integration and platform boundary
 
-Define `MULIB_IMPL_JIT` and `MULIB_IMPL_DYNCALL` explicitly in one C11 TU.
+Define `MULIB_IMPL_JIT`, `MULIB_IMPL_DYNCALL`, `MULIB_IMPL_VMWEAVE`, and
+`MULIB_IMPL_MIR`, `MULIB_IMPL_EGRAPH`, and `MULIB_IMPL_REWRITE` explicitly in one
+C11 TU. Link `-lm` where required.
 Declarations support C++17. No feature-test macro is introduced, so including
 the implementation after other system headers does not depend on late
 `_GNU_SOURCE`/`_POSIX_C_SOURCE` changes.
@@ -69,7 +71,7 @@ unchanged on validation failure. Zero-length writes do not extend code size.
 
 ```sh
 cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
-  examples/modules/jit.c -o /tmp/opencode/mulib-jit
+   examples/modules/jit.c -lm -o /tmp/opencode/mulib-jit
 /tmp/opencode/mulib-jit
 ```
 
@@ -78,3 +80,32 @@ checks host support first. `examples/modules/assembler.c` demonstrates the
 complete metadata → emitter → relocation → RX → typed native-call path.
 `tests/test_codegen.c` executes that path on supported hosts and checks invalid
 lifecycle operations and range errors. It does not execute hostile code.
+
+## MIR native compiler
+
+`mulib_jit_flow_compile(program,limit,optimize,&jit,diagnostic)` validates and
+deep-copies a register/control-flow MIR program through VMWeave, optionally
+applying its local constant folding, and generates an owned native function.
+Initialize `jit` to NULL. Invalid MIR returns `MULIB_JIT_EMIR` with the MIR
+diagnostic; unsupported hosts return ENOTSUP. There is no interpreted fallback.
+
+The compiler generates AMD64 SysV code with an entry/resumption jump table and
+direct native jumps for MIR edges. Each instruction calls the shared MIR
+operation helper, preserving exactly the VM's type, fault, host-call and budget
+semantics. This is a baseline helper-based compiler, not an optimizing scalar
+machine-code backend. It emits ENDBR64 at indirect entry points, preserves r12,
+maintains ABI stack alignment, bounds its image/relocations to signed 32-bit
+reach, and seals code before publishing the owner.
+
+Borrow the copied program with `mulib_jit_flow_program`, initialize a MIR frame
+from that exact program, then run `mulib_jit_flow_run(jit,&frame,budget)`.
+Different program images are rejected. FINISHED, SUSPENDED, STEP_LIMIT and
+faults match VMWeave. Host callback suspension returns through native frames;
+resume by completing the pending CALL with `mulib_mir_frame_resume`, then run
+again. No native stack frame is retained across suspension.
+
+Free execution frames before `mulib_jit_flow_destroy`. Destruction returns an
+OS error and retains ownership if unmapping fails. The compiler and native
+execution are supported on the same Linux AMD64 LP64 platform as the raw memory
+API. `tests/test_mir_flow.c` compares VM/native results, fault locations,
+instruction counts, resumption, and side effects.
