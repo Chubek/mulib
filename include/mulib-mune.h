@@ -5023,7 +5023,7 @@ extern "C"
         {
           FILE *file = fopen (mulib_mune_value_string (path, NULL), "rb"); unsigned char magic[8]; size_t got = 0;
           if (file) { got = fread (magic, 1, sizeof (magic), file); (void)fclose (file); }
-          if (got == 8 && !memcmp (magic, "MUNEBC\0\1", 8))
+          if (got == 8 && !memcmp (magic, "MUNEBC\0", 7) && (magic[7] == 1 || magic[7] == 2))
             {
               if (mulib_mune_load_bundle_file (s, mulib_mune_value_string (path, NULL), &error) != MULIB_MUNE_OK) return 0;
               table = mulib_mune_rt_field_ (package.as.object, "preload", 7); loader = mulib_mune_rt_rawget_ (table.as.object, name);
@@ -5072,29 +5072,74 @@ extern "C"
   {
     char bytes[8]; size_t k; for (k = 0; k < n; ++k) bytes[k] = (char)(value >> (8 * k)); return writer (user, bytes, n);
   }
+  static mulib_mune_status_t
+  mulib_mune_bundle_prepare_ (mulib_mune_chunk_t *chunk)
+  {
+    mulib_mune_plan_ *p;
+    if (!mulib_mune_prepare_blocks_ (chunk, chunk->walker->root)) return MULIB_MUNE_MEMORY;
+    for (p = chunk->plans; p; p = p->next)
+      {
+        mulib_mir_status_t status = mulib_vmweave_compile (&p->source, 1000000, 1, &p->vm, NULL);
+        if (status != MULIB_MIR_OK) return status == MULIB_MIR_NO_MEMORY ? MULIB_MUNE_MEMORY : MULIB_MUNE_LIMIT;
+      }
+    return MULIB_MUNE_OK;
+  }
+  static int
+  mulib_mune_bundle_image_ (const mulib_mune_plan_ *p, mulib_mir_write_fn writer, void *user)
+  {
+    const mulib_mir_flow_program_t *image = mulib_vmweave_program_view (p->vm);
+    size_t k, length = strlen (p->block->production);
+    if (!mulib_mune_bundle_uint_ (writer, user, p->block->offset, 8)
+        || !mulib_mune_bundle_uint_ (writer, user, length, 1) || !writer (user, p->block->production, length)
+        || !mulib_mune_bundle_uint_ (writer, user, image->register_count, 8)
+        || !mulib_mune_bundle_uint_ (writer, user, image->count, 8)
+        || !mulib_mune_bundle_uint_ (writer, user, image->host_count, 8)) return 0;
+    for (k = 0; k < image->register_count; ++k)
+      if (!mulib_mune_bundle_uint_ (writer, user, image->register_types[k], 1)) return 0;
+    for (k = 0; k < image->count; ++k)
+      {
+        const mulib_mir_flow_instruction_t *i = image->code + k;
+        if (!mulib_mune_bundle_uint_ (writer, user, i->opcode, 1)
+            || !mulib_mune_bundle_uint_ (writer, user, i->destination == MULIB_MIR_NONE ? UINT64_MAX : (uint64_t)i->destination, 8)
+            || !mulib_mune_bundle_uint_ (writer, user, i->a == MULIB_MIR_NONE ? UINT64_MAX : (uint64_t)i->a, 8)
+            || !mulib_mune_bundle_uint_ (writer, user, i->b == MULIB_MIR_NONE ? UINT64_MAX : (uint64_t)i->b, 8)
+            || !mulib_mune_bundle_uint_ (writer, user, i->target == MULIB_MIR_NONE ? UINT64_MAX : (uint64_t)i->target, 8)
+            || !mulib_mune_bundle_uint_ (writer, user, (uint64_t)i->immediate.integer, 8)) return 0;
+      }
+    return 1;
+  }
   mulib_mune_status_t
   mulib_mune_bundle_write (const mulib_mune_bundle_module_t *modules, size_t count, mulib_mir_write_fn writer, void *user, mulib_mune_error_t *error)
   {
     size_t k, j; mulib_mune_error_t e = { MULIB_MUNE_OK, 0, "ok" };
-    if ((!modules && count) || !writer || count > UINT32_MAX) { e.code = MULIB_MUNE_INVALID; goto done; }
+    mulib_mune_chunk_t **chunks = NULL;
+    if ((!modules && count) || !writer || count > UINT32_MAX || count > SIZE_MAX / sizeof (*chunks)) { e.code = MULIB_MUNE_INVALID; goto done; }
+    if (count) { chunks = (mulib_mune_chunk_t **)calloc (count, sizeof (*chunks)); if (!chunks) { e.code = MULIB_MUNE_MEMORY; goto done; } }
     for (k = 0; k < count; ++k)
       {
-        mulib_mune_chunk_t *chunk;
         if (!modules[k].name || !*modules[k].name || strlen (modules[k].name) > UINT32_MAX) { e.code = MULIB_MUNE_INVALID; goto done; }
         for (j = 0; j < k; ++j) if (!strcmp (modules[j].name, modules[k].name)) { e.code = MULIB_MUNE_INVALID; goto done; }
-        chunk = mulib_mune_parse (modules[k].source, modules[k].length, NULL, &e); if (!chunk) goto done;
-        mulib_mune_chunk_destroy (chunk);
+        chunks[k] = mulib_mune_parse (modules[k].source, modules[k].length, NULL, &e); if (!chunks[k]) goto done;
+        e.code = mulib_mune_bundle_prepare_ (chunks[k]); if (e.code) goto done;
       }
-    if (!writer (user, "MUNEBC\0\1", 8) || !mulib_mune_bundle_uint_ (writer, user, count, 4)) { e.code = MULIB_MUNE_IO; goto done; }
+    if (!writer (user, "MUNEBC\0\2", 8) || !mulib_mune_bundle_uint_ (writer, user, count, 4)) { e.code = MULIB_MUNE_IO; goto done; }
     for (k = 0; k < count; ++k)
       {
-        size_t length = strlen (modules[k].name);
+        size_t length = strlen (modules[k].name), plans = 0;
+        mulib_mune_plan_ *p;
+        for (p = chunks[k]->plans; p; p = p->next) ++plans;
         if (!mulib_mune_bundle_uint_ (writer, user, length, 4) || !mulib_mune_bundle_uint_ (writer, user, modules[k].length, 8)
-            || !writer (user, modules[k].name, length) || !writer (user, modules[k].source, modules[k].length)) { e.code = MULIB_MUNE_IO; goto done; }
+            || !writer (user, modules[k].name, length) || !writer (user, modules[k].source, modules[k].length)
+            || !mulib_mune_bundle_uint_ (writer, user, plans, 8)) { e.code = MULIB_MUNE_IO; goto done; }
+        for (p = chunks[k]->plans; p; p = p->next)
+          if (!mulib_mune_bundle_image_ (p, writer, user)) { e.code = MULIB_MUNE_IO; goto done; }
       }
   done:
+    if (chunks) { for (k = 0; k < count; ++k) mulib_mune_chunk_destroy (chunks[k]); free (chunks); }
     if (e.code == MULIB_MUNE_INVALID) e.message = "invalid module bundle description";
     if (e.code == MULIB_MUNE_IO) e.message = "bundle writer failed";
+    if (e.code == MULIB_MUNE_MEMORY) e.message = "bundle compiler allocation failed";
+    if (e.code == MULIB_MUNE_LIMIT) e.message = "bundle compilation limit";
     if (error) *error = e;
     return e.code;
   }
@@ -5103,6 +5148,50 @@ extern "C"
   {
     uint64_t v = 0; size_t k; for (k = 0; k < n; ++k) v |= (uint64_t)bytes[k] << (k * 8); return v;
   }
+  typedef struct mulib_mune_bundle_verify_
+  {
+    const unsigned char *bytes;
+    size_t length, at;
+  } mulib_mune_bundle_verify_;
+  static int
+  mulib_mune_bundle_compare_ (void *user, const char *bytes, size_t length)
+  {
+    mulib_mune_bundle_verify_ *v = (mulib_mune_bundle_verify_ *)user;
+    if (length > v->length - v->at || memcmp (v->bytes + v->at, bytes, length)) return 0;
+    v->at += length; return 1;
+  }
+  static mulib_mune_status_t
+  mulib_mune_bundle_readimages_ (mulib_mune_chunk_t *chunk, const unsigned char *bytes, size_t length, size_t *offset)
+  {
+    mulib_mune_bundle_verify_ verify;
+    mulib_mune_plan_ *p;
+    mulib_mune_status_t status = mulib_mune_bundle_prepare_ (chunk);
+    size_t plans = 0;
+    if (status) return status;
+    for (p = chunk->plans; p; p = p->next) ++plans;
+    verify.bytes = bytes; verify.length = length; verify.at = *offset;
+    if (!mulib_mune_bundle_uint_ (mulib_mune_bundle_compare_, &verify, plans, 8)) return MULIB_MUNE_INVALID;
+    for (p = chunk->plans; p; p = p->next)
+      {
+        size_t at = verify.at + 33 + strlen (p->block->production) + p->source.register_count, k;
+        /* Verify canonical typed code against the checked source/helper map.
+         * Bytecode cannot select an unchecked AST node or forge a host slot.
+         * Only verified counts are used for decoding or allocation. */
+        if (!mulib_mune_bundle_image_ (p, mulib_mune_bundle_compare_, &verify)) return MULIB_MUNE_INVALID;
+        for (k = 0; k < p->source.count; ++k)
+          {
+            mulib_mir_flow_instruction_t *i = p->code + k;
+            i->opcode = (mulib_mir_flow_opcode_t)bytes[at++];
+            i->destination = (size_t)mulib_mune_bundle_readuint_ (bytes + at, 8); at += 8;
+            i->a = (size_t)mulib_mune_bundle_readuint_ (bytes + at, 8); at += 8;
+            i->b = (size_t)mulib_mune_bundle_readuint_ (bytes + at, 8); at += 8;
+            i->target = (size_t)mulib_mune_bundle_readuint_ (bytes + at, 8); at += 8;
+            i->immediate.integer = mulib_mune_rt_signed_ (mulib_mune_bundle_readuint_ (bytes + at, 8)); at += 8;
+          }
+        mulib_vmweave_program_destroy (p->vm); p->vm = NULL;
+      }
+    *offset = verify.at; return MULIB_MUNE_OK;
+  }
   mulib_mune_status_t
   mulib_mune_load_bundle (mulib_mune_state_t *s, const void *data, size_t length, mulib_mune_error_t *error)
   {
@@ -5110,7 +5199,7 @@ extern "C"
     size_t at = 12, k, count;
     mulib_mune_result_t *roots = NULL;
     mulib_mune_value_t package, preload;
-    if (!s || !bytes || length < 12 || memcmp (bytes, "MUNEBC\0\1", 8))
+    if (!s || !bytes || length < 12 || memcmp (bytes, "MUNEBC\0", 7) || (bytes[7] != 1 && bytes[7] != 2))
       { if (error) { error->code = MULIB_MUNE_INVALID; error->offset = 0; error->message = "invalid bundle header"; } return MULIB_MUNE_INVALID; }
     if (!s->running) s->status = MULIB_MUNE_OK;
     count = (size_t)mulib_mune_bundle_readuint_ (bytes + 8, 4);
@@ -5130,6 +5219,12 @@ extern "C"
         chunk = mulib_mune_parse ((const char *)bytes + at, (size_t)source_length, NULL, &e);
         if (!chunk) { mulib_mune_rt_error_ (s, e.code, "%s", e.message); goto done; }
         at += (size_t)source_length;
+        if (bytes[7] == 2)
+          {
+            mulib_mune_status_t status = mulib_mune_bundle_readimages_ (chunk, bytes, length, &at);
+            if (status)
+              { mulib_mune_chunk_destroy (chunk); mulib_mune_rt_error_ (s, status, "invalid or unavailable compiled bundle image"); goto done; }
+          }
         fn = mulib_mune_rt_loaded_ (s, chunk, mulib_mune_rt_object_ (s->globals));
         if (s->status || !mulib_mune_result_push (roots, name) || !mulib_mune_result_push (roots, fn)) goto done;
       }
