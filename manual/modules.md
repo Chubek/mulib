@@ -1,6 +1,6 @@
 # MuLIB module and composition guide
 
-MuLIB has 319 implemented single-header C11 modules. Every implemented module has a corresponding
+MuLIB has 335 implemented single-header C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -32,6 +32,7 @@ consult each manual's exact supported syntax, errors, and limits.
 | Tasks and services | [taskpool](mulib-taskpool.md), [taskdag](mulib-taskdag.md), [parallel](mulib-parallel.md), [pipeline](mulib-pipeline.md), [process](mulib-process.md), [cron](mulib-cron.md), [initsys](mulib-initsys.md) |
 | Filesystem abstractions | [VFS](mulib-vfs.md), [FUSE adapter](mulib-fuse.md), [procfs](mulib-procfs.md), [sysfs](mulib-sysfs.md), [pathdb](mulib-pathdb.md) |
 | Compiler transformations | [MIR](mulib-mir.md), [C machine](mulib-cmachine.md), [VM weaving](mulib-vmweave.md), [C weaving](mulib-ccweave.md), [tree selection](mulib-muburg.md), [instruction scheduling](mulib-isched.md), [egraph](mulib-egraph.md), [rewrite](mulib-rewrite.md) |
+| Native compiler pipeline | [MicroCC](mulib-microcc.md), [Sea of Nodes](mulib-clickir.md), [A-normal form](mulib-anfir.md), [gated memory SSA](mulib-gssair.md), [dependency IR](mulib-depir.md), [superblocks](mulib-superblocks.md), [machine targets](mulib-machine.md), [low-level optimization](mulib-lowopt.md) |
 | Machine code | [dsymspec](mulib-dsymspec.md), [assembler](mulib-assembler.md), [emitter](mulib-emitter.md), [linker](mulib-linker.md), [JIT](mulib-jit.md), [dynamic calls](mulib-dyncall.md) |
 | Embedded languages and tools | [MicroJS](mulib-microjs.md), [Datalog](mulib-datalog.md), [Perl POD](mulib-perlpod.md), [microaudio](mulib-microaudio.md), [browser tools](mulib-browsertools.md) |
 | Browser automation | [Prowse protocols](mulib-prowse-protocol.md), [Prowse control and lprowse Lua DSL](mulib-prowse-control.md), [15-language editor profiles](../library/librl/README.md) |

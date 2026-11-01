@@ -1,5 +1,5 @@
 /** @file mulib-mir.h
- * @brief Typed SSA and register/control-flow compiler records and bounded
+ * @brief Typed SSA, runtime register IR and lower-level native machine IR with bounded
  * ownership. Define MULIB_IMPL_MIR in one translation unit. No implementation
  * dependencies.
  */
@@ -69,7 +69,8 @@ extern "C"
     MULIB_MIR_HOST_ERROR,
     MULIB_MIR_SUSPENDED,
     MULIB_MIR_FINISHED,
-    MULIB_MIR_IO_ERROR
+     MULIB_MIR_IO_ERROR,
+     MULIB_MIR_UNSUPPORTED
   } mulib_mir_status_t;
   typedef struct mulib_mir_diagnostic
   {
@@ -235,8 +236,93 @@ extern "C"
   typedef int (*mulib_mir_write_fn) (void *user, const char *bytes,
                                     size_t length);
   mulib_mir_status_t mulib_mir_flow_emit_c (
-      const mulib_mir_flow_program_t *program, const char *symbol, size_t limit,
-      mulib_mir_write_fn writer, void *user, mulib_mir_diagnostic_t *diagnostic);
+       const mulib_mir_flow_program_t *program, const char *symbol, size_t limit,
+       mulib_mir_write_fn writer, void *user, mulib_mir_diagnostic_t *diagnostic);
+
+  /** Native machine IR: untyped 64-bit virtual registers, explicit blocks,
+   * memory and direct calls. Integer arithmetic wraps; shifts mask the count
+   * to six bits. SLT/SAR are signed, ULT/SHR unsigned. Registers start at zero.
+   * This dialect deliberately has no SSA, phi, implicit fallthrough or host
+   * runtime. The earlier checked SSA/VM dialects retain their semantics. */
+  typedef enum mulib_mir_native_opcode
+  {
+    MULIB_MIR_NATIVE_NOP, MULIB_MIR_NATIVE_CONST, MULIB_MIR_NATIVE_PARAM,
+    MULIB_MIR_NATIVE_COPY, MULIB_MIR_NATIVE_ADD, MULIB_MIR_NATIVE_SUB,
+    MULIB_MIR_NATIVE_MUL, MULIB_MIR_NATIVE_AND, MULIB_MIR_NATIVE_OR,
+    MULIB_MIR_NATIVE_XOR, MULIB_MIR_NATIVE_SHL, MULIB_MIR_NATIVE_SHR,
+    MULIB_MIR_NATIVE_SAR, MULIB_MIR_NATIVE_EQ, MULIB_MIR_NATIVE_SLT,
+    MULIB_MIR_NATIVE_ULT, MULIB_MIR_NATIVE_LOAD, MULIB_MIR_NATIVE_STORE,
+    MULIB_MIR_NATIVE_CALL, MULIB_MIR_NATIVE_JUMP, MULIB_MIR_NATIVE_BRANCH,
+    MULIB_MIR_NATIVE_RETURN, MULIB_MIR_NATIVE_OPCODE_COUNT
+  } mulib_mir_native_opcode_t;
+  /** Unused indices are NONE, unused immediate is zero. CALL uses a,b as a
+   * slice of program.arguments and target as symbol index. PARAM uses a as
+   * parameter index. BRANCH uses a as condition, target/b as true/false blocks.
+   * LOAD/STORE access a native 64-bit word at address a; STORE's value is b. */
+  typedef struct mulib_mir_native_instruction
+  {
+    mulib_mir_native_opcode_t opcode;
+    size_t destination, a, b, target;
+    uint64_t immediate;
+  } mulib_mir_native_instruction_t;
+  typedef struct mulib_mir_native_block { size_t first, count; }
+    mulib_mir_native_block_t;
+  /** Borrowed immutable arrays. Blocks partition code, and end in exactly one
+   * explicit terminator. Block zero is the entry. Symbols are ASCII C names. */
+  typedef struct mulib_mir_native_program
+  {
+    const mulib_mir_native_instruction_t *code;
+    size_t count;
+    const mulib_mir_native_block_t *blocks;
+    size_t block_count, register_count, parameter_count;
+    const size_t *arguments;
+    size_t argument_count;
+    const char *const *symbols;
+    size_t symbol_count;
+  } mulib_mir_native_program_t;
+  /** Owned structural arrays and symbol strings. Zero initialize; do not copy
+   * live owners. Counts are fixed by init; fill arrays before validation. */
+  typedef struct mulib_mir_native_buffer
+  {
+    mulib_mir_native_instruction_t *code;
+    mulib_mir_native_block_t *blocks;
+    size_t *arguments;
+    char **symbols;
+    size_t count, block_count, register_count, parameter_count;
+    size_t argument_count, symbol_count;
+  } mulib_mir_native_buffer_t;
+  /** Allocate zeroed storage transactionally; limit bounds each array. */
+  mulib_mir_status_t mulib_mir_native_init (
+      mulib_mir_native_buffer_t *out, size_t records, size_t blocks,
+      size_t registers, size_t parameters, size_t arguments, size_t symbols,
+      size_t limit);
+  /** Copy/replace one symbol, checking its spelling and length (1..127). */
+  mulib_mir_status_t mulib_mir_native_symbol (
+      mulib_mir_native_buffer_t *buffer, size_t index, const char *name);
+  /** Borrow an immutable view, invalidated by free or editing the buffer. */
+  mulib_mir_native_program_t mulib_mir_native_view (
+      const mulib_mir_native_buffer_t *buffer);
+  /** Validate all blocks, operands and symbols, including unreachable code. */
+  mulib_mir_status_t mulib_mir_native_validate (
+      const mulib_mir_native_program_t *program, size_t limit,
+      mulib_mir_diagnostic_t *diagnostic);
+  /** Validate and deep-copy, preserving an empty destination on failure. */
+  mulib_mir_status_t mulib_mir_native_clone (
+      const mulib_mir_native_program_t *program, size_t limit,
+      mulib_mir_native_buffer_t *out, mulib_mir_diagnostic_t *diagnostic);
+  /** Free all owned storage and zero the owner; NULL is harmless. */
+  void mulib_mir_native_free (mulib_mir_native_buffer_t *buffer);
+  /** Data operand count (CALL arguments are a separate slice), or -1. */
+  int mulib_mir_native_arity (int opcode);
+  /** Whether an opcode writes a virtual register. */
+  int mulib_mir_native_defines (int opcode);
+  /** Whether an opcode may access memory (LOAD, STORE, CALL). */
+  int mulib_mir_native_effect (int opcode);
+  /** Construct a canonical empty instruction with all indices NONE. */
+  mulib_mir_native_instruction_t mulib_mir_native_instruction (
+      mulib_mir_native_opcode_t opcode);
+  /** Test assembly-safe ASCII identifier spelling, bounded to 127 bytes. */
+  int mulib_mir_native_name (const char *name);
 #ifdef __cplusplus
 }
 #endif
@@ -536,6 +622,8 @@ extern "C"
         return "execution finished";
       case MULIB_MIR_IO_ERROR:
         return "output callback failed";
+      case MULIB_MIR_UNSUPPORTED:
+        return "unsupported target operation or instruction cover";
       default:
         return "unknown MIR status";
       }
@@ -546,6 +634,218 @@ extern "C"
   {
     if (d) { d->status = s; d->record = record; }
     return s;
+  }
+  int
+  mulib_mir_native_name (const char *s)
+  {
+    size_t k;
+    if (!s || !((*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z')
+                || *s == '_')) return 0;
+    for (k = 1; k <= 127; ++k)
+      {
+        unsigned char c = (unsigned char)s[k];
+        if (!c) return 1;
+        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+              || (c >= '0' && c <= '9') || c == '_')) return 0;
+      }
+    return 0;
+  }
+  int
+  mulib_mir_native_arity (int op)
+  {
+    if (op < 0 || op >= MULIB_MIR_NATIVE_OPCODE_COUNT) return -1;
+    if ((op >= MULIB_MIR_NATIVE_ADD && op <= MULIB_MIR_NATIVE_ULT)
+        || op == MULIB_MIR_NATIVE_STORE) return 2;
+    if (op == MULIB_MIR_NATIVE_COPY || op == MULIB_MIR_NATIVE_LOAD
+        || op == MULIB_MIR_NATIVE_BRANCH || op == MULIB_MIR_NATIVE_RETURN)
+      return 1;
+    return 0;
+  }
+  int
+  mulib_mir_native_defines (int op)
+  {
+    return (op >= MULIB_MIR_NATIVE_CONST && op <= MULIB_MIR_NATIVE_LOAD)
+           || op == MULIB_MIR_NATIVE_CALL;
+  }
+  int
+  mulib_mir_native_effect (int op)
+  {
+    return op == MULIB_MIR_NATIVE_LOAD || op == MULIB_MIR_NATIVE_STORE
+           || op == MULIB_MIR_NATIVE_CALL;
+  }
+  mulib_mir_native_instruction_t
+  mulib_mir_native_instruction (mulib_mir_native_opcode_t op)
+  {
+    mulib_mir_native_instruction_t i;
+    i.opcode = op;
+    i.destination = i.a = i.b = i.target = MULIB_MIR_NONE;
+    i.immediate = 0;
+    return i;
+  }
+  void
+  mulib_mir_native_free (mulib_mir_native_buffer_t *b)
+  {
+    size_t k;
+    if (!b) return;
+    if (b->symbols)
+      for (k = 0; k < b->symbol_count; ++k) free (b->symbols[k]);
+    free (b->code); free (b->blocks); free (b->arguments); free (b->symbols);
+    memset (b, 0, sizeof (*b));
+  }
+  mulib_mir_status_t
+  mulib_mir_native_init (mulib_mir_native_buffer_t *out, size_t n, size_t nb,
+                         size_t nr, size_t np, size_t na, size_t ns,
+                         size_t limit)
+  {
+    mulib_mir_native_buffer_t b;
+    if (!out || out->code || out->blocks || out->arguments || out->symbols
+        || out->count || out->block_count || out->register_count
+        || out->parameter_count || out->argument_count || out->symbol_count)
+      return MULIB_MIR_INVALID;
+    if (n > limit || nb > limit || nr > limit || np > limit || na > limit
+        || ns > limit || n > SIZE_MAX / sizeof (*b.code)
+        || nb > SIZE_MAX / sizeof (*b.blocks)
+        || nr > SIZE_MAX / sizeof (uint64_t)
+        || np > SIZE_MAX / sizeof (uint64_t)
+        || na > SIZE_MAX / sizeof (*b.arguments)
+        || ns > SIZE_MAX / sizeof (*b.symbols)) return MULIB_MIR_RESOURCE_LIMIT;
+    memset (&b, 0, sizeof (b));
+    b.count = n; b.block_count = nb; b.register_count = nr;
+    b.parameter_count = np; b.argument_count = na; b.symbol_count = ns;
+    if (n) b.code = (mulib_mir_native_instruction_t *)calloc (n, sizeof (*b.code));
+    if (nb) b.blocks = (mulib_mir_native_block_t *)calloc (nb, sizeof (*b.blocks));
+    if (na) b.arguments = (size_t *)calloc (na, sizeof (*b.arguments));
+    if (ns) b.symbols = (char **)calloc (ns, sizeof (*b.symbols));
+    if ((n && !b.code) || (nb && !b.blocks) || (na && !b.arguments)
+        || (ns && !b.symbols))
+      { mulib_mir_native_free (&b); return MULIB_MIR_NO_MEMORY; }
+    *out = b;
+    return MULIB_MIR_OK;
+  }
+  mulib_mir_status_t
+  mulib_mir_native_symbol (mulib_mir_native_buffer_t *b, size_t k, const char *s)
+  {
+    char *copy;
+    size_t n;
+    if (!b || k >= b->symbol_count || !b->symbols || !mulib_mir_native_name (s))
+      return MULIB_MIR_INVALID;
+    n = strlen (s) + 1;
+    copy = (char *)malloc (n);
+    if (!copy) return MULIB_MIR_NO_MEMORY;
+    memcpy (copy, s, n); free (b->symbols[k]); b->symbols[k] = copy;
+    return MULIB_MIR_OK;
+  }
+  mulib_mir_native_program_t
+  mulib_mir_native_view (const mulib_mir_native_buffer_t *b)
+  {
+    mulib_mir_native_program_t p;
+    memset (&p, 0, sizeof (p));
+    if (b)
+      {
+        p.code = b->code; p.count = b->count; p.blocks = b->blocks;
+        p.block_count = b->block_count; p.register_count = b->register_count;
+        p.parameter_count = b->parameter_count; p.arguments = b->arguments;
+        p.argument_count = b->argument_count;
+        p.symbols = (const char *const *)b->symbols; p.symbol_count = b->symbol_count;
+      }
+    return p;
+  }
+  mulib_mir_status_t
+  mulib_mir_native_validate (const mulib_mir_native_program_t *p, size_t limit,
+                             mulib_mir_diagnostic_t *d)
+  {
+    size_t k = 0, b, end = 0;
+    mulib_mir_status_t s = MULIB_MIR_INVALID;
+    if (!p || !p->code || !p->count || !p->blocks || !p->block_count
+        || (p->argument_count && !p->arguments)
+        || (p->symbol_count && !p->symbols)) goto done;
+    s = MULIB_MIR_RESOURCE_LIMIT;
+    if (p->count > limit || p->block_count > limit || p->register_count > limit
+        || p->parameter_count > limit || p->argument_count > limit
+        || p->symbol_count > limit || p->count > SIZE_MAX / sizeof (*p->code)
+        || p->block_count > SIZE_MAX / sizeof (*p->blocks)
+        || p->argument_count > SIZE_MAX / sizeof (*p->arguments)
+        || p->symbol_count > SIZE_MAX / sizeof (*p->symbols)
+        || p->register_count > SIZE_MAX / sizeof (uint64_t)
+        || p->parameter_count > SIZE_MAX / sizeof (uint64_t)) goto done;
+    s = MULIB_MIR_BAD_REFERENCE;
+    for (k = 0; k < p->argument_count; ++k)
+      if (p->arguments[k] >= p->register_count) goto done;
+    s = MULIB_MIR_INVALID;
+    for (k = 0; k < p->symbol_count; ++k)
+      if (!mulib_mir_native_name (p->symbols[k])) goto done;
+    for (b = 0; b < p->block_count; ++b)
+      {
+        const mulib_mir_native_block_t *bb = &p->blocks[b];
+        k = bb->first;
+        s = MULIB_MIR_BAD_REFERENCE;
+        if (bb->first != end || !bb->count || bb->count > p->count - end) goto done;
+        end += bb->count;
+        for (; k < end; ++k)
+          {
+            const mulib_mir_native_instruction_t *i = &p->code[k];
+            int arity = mulib_mir_native_arity (i->opcode);
+            int term = i->opcode >= MULIB_MIR_NATIVE_JUMP;
+            s = MULIB_MIR_BAD_OPCODE;
+            if (arity < 0) goto done;
+            s = MULIB_MIR_BAD_RETURN;
+            if (term != (k == end - 1)) goto done;
+            s = MULIB_MIR_BAD_REFERENCE;
+            if (mulib_mir_native_defines (i->opcode)
+                ? i->destination >= p->register_count
+                : i->destination != MULIB_MIR_NONE) goto done;
+            if (i->opcode == MULIB_MIR_NATIVE_CALL)
+              {
+                if (i->a > p->argument_count || i->b > p->argument_count - i->a
+                    || i->target >= p->symbol_count) goto done;
+              }
+            else
+              {
+                if (i->opcode == MULIB_MIR_NATIVE_PARAM)
+                  { if (i->a >= p->parameter_count) goto done; }
+                else if (arity ? i->a >= p->register_count : i->a != MULIB_MIR_NONE)
+                  goto done;
+                if (i->opcode == MULIB_MIR_NATIVE_BRANCH)
+                  { if (i->b >= p->block_count) goto done; }
+                else if (arity == 2 ? i->b >= p->register_count : i->b != MULIB_MIR_NONE)
+                  goto done;
+                if (i->opcode == MULIB_MIR_NATIVE_JUMP || i->opcode == MULIB_MIR_NATIVE_BRANCH)
+                  { if (i->target >= p->block_count) goto done; }
+                else if (i->target != MULIB_MIR_NONE) goto done;
+              }
+            s = MULIB_MIR_INVALID;
+            if (i->opcode != MULIB_MIR_NATIVE_CONST && i->immediate) goto done;
+          }
+      }
+    s = end == p->count ? MULIB_MIR_OK : MULIB_MIR_BAD_REFERENCE;
+  done:
+    return mulib_mir_flow_error_ (d, s, k);
+  }
+  mulib_mir_status_t
+  mulib_mir_native_clone (const mulib_mir_native_program_t *p, size_t limit,
+                          mulib_mir_native_buffer_t *out, mulib_mir_diagnostic_t *d)
+  {
+    mulib_mir_native_buffer_t b;
+    mulib_mir_status_t s;
+    size_t k;
+    memset (&b, 0, sizeof (b));
+    s = mulib_mir_native_validate (p, limit, d);
+    if (s != MULIB_MIR_OK) return s;
+    if (!out || out->code || out->blocks || out->arguments || out->symbols
+        || out->count || out->block_count || out->register_count
+        || out->parameter_count || out->argument_count || out->symbol_count)
+      return mulib_mir_flow_error_ (d, MULIB_MIR_INVALID, 0);
+    s = mulib_mir_native_init (&b, p->count, p->block_count, p->register_count,
+        p->parameter_count, p->argument_count, p->symbol_count, limit);
+    if (s != MULIB_MIR_OK) return mulib_mir_flow_error_ (d, s, 0);
+    memcpy (b.code, p->code, p->count * sizeof (*b.code));
+    memcpy (b.blocks, p->blocks, p->block_count * sizeof (*b.blocks));
+    if (p->argument_count) memcpy (b.arguments, p->arguments, p->argument_count * sizeof (*b.arguments));
+    for (k = 0; k < p->symbol_count; ++k)
+      if ((s = mulib_mir_native_symbol (&b, k, p->symbols[k])) != MULIB_MIR_OK) break;
+    if (s == MULIB_MIR_OK) { *out = b; memset (&b, 0, sizeof (b)); }
+    mulib_mir_native_free (&b);
+    return mulib_mir_flow_error_ (d, s, k);
   }
   static int
   mulib_mir_flow_type_ (mulib_mir_type_t t)

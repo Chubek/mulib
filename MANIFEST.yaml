@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 329
-implemented_module_count: 327
+module_count: 337
+implemented_module_count: 335
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2388,7 +2388,87 @@ modules:
   purpose: Native Linux x86 KVM execution adapter and guest-call port binding.
   dependencies: [kvm, vmm]
   status: implemented
+- name: anfir
+  header: include/mulib-anfir.h
+  manual: manual/mulib-anfir.md
+  macro: MULIB_IMPL_ANFIR
+  purpose: A-normal let bindings with literal atoms and native MIR lowering.
+  dependencies: [gssair]
+  status: implemented
+- name: clickir
+  header: include/mulib-clickir.h
+  manual: manual/mulib-clickir.md
+  macro: MULIB_IMPL_CLICKIR
+  purpose: Block-pinned Sea of Nodes with explicit data and memory dependencies.
+  dependencies: [gssair]
+  status: implemented
+- name: depir
+  header: include/mulib-depir.h
+  manual: manual/mulib-depir.md
+  macro: MULIB_IMPL_DEPIR
+  purpose: Entity and dependence graph deriving executable compiler IRs.
+  dependencies: [anfir, clickir, superblocks]
+  status: implemented
+- name: gssair
+  header: include/mulib-gssair.h
+  manual: manual/mulib-gssair.md
+  macro: MULIB_IMPL_GSSAIR
+  purpose: Gated memory-aware SSA with dominance checks and parallel-copy lowering.
+  dependencies: [mir]
+  status: implemented
+- name: lowopt
+  header: include/mulib-lowopt.h
+  manual: manual/mulib-lowopt.md
+  macro: MULIB_IMPL_LOWOPT
+  purpose: Native MIR constant folding, local simplification and conservative dead writes.
+  dependencies: [mir]
+  status: implemented
+- name: machine
+  header: include/mulib-machine.h
+  manual: manual/mulib-machine.md
+  macro: MULIB_IMPL_MACHINE
+  purpose: Retargetable instruction grammars and ELF x86-64 and RV64IM assembly emission.
+  dependencies: [mir, muburg]
+  status: implemented
+- name: microcc
+  header: include/mulib-microcc.h
+  manual: manual/mulib-microcc.md
+  macro: MULIB_IMPL_MICROCC
+  purpose: High-level IR to native MIR, optimization, selection, scheduling and assembly pipeline.
+  dependencies: [depir, isched, lowopt, machine, strbuf]
+  status: implemented
+- name: superblocks
+  header: include/mulib-superblocks.h
+  manual: manual/mulib-superblocks.md
+  macro: MULIB_IMPL_SUPERBLOCKS
+  purpose: Single-entry SSA traces with explicit side exits and native MIR lowering.
+  dependencies: [gssair]
+  status: implemented
 project_files:
+- file: examples/modules/anfir.c
+  purpose: Standalone A-normal literal-atom lowering example.
+- file: examples/modules/clickir.c
+  purpose: Standalone unordered Sea of Nodes lowering example.
+- file: examples/modules/depir.c
+  purpose: Standalone dependency IR derivation example.
+- file: examples/modules/gssair.c
+  purpose: Standalone typed gated SSA lowering example.
+- file: examples/modules/lowopt.c
+  purpose: Standalone native MIR optimization example.
+- file: examples/modules/machine.c
+  purpose: Standalone retargetable instruction-selection example.
+- file: examples/modules/microcc.c
+  purpose: Standalone ANF to x86-64 or RV64IM assembly compiler example.
+- file: examples/modules/superblocks.c
+  purpose: Standalone single-entry trace construction example.
+- file: tests/test_microcc.c
+  purpose: MicroCC IR, selection, lowering, scheduling and emission regressions.
+- file: tests/test_microcc_alloc.c
+  purpose: Exhaustive MicroCC pipeline and IR allocation-failure injection.
+- file: tests/microcc_native_driver.c
+  purpose: Independent native arithmetic, memory, PHI and ABI execution checks.
+- file: tools/check_microcc_native.py
+  purpose: Assemble and execute MicroCC x86-64 output and cross-assemble RV64IM.
 - file: examples/modules/vmm-memory.c
   purpose: Transactional cross-region RAM copy example.
 - file: examples/modules/vmm.c

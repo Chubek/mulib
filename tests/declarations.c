@@ -342,4 +342,12 @@
 #include "mulib-shaderx.h"
 #include "mulib-simdmath.h"
 #include "mulib-vectgfx.h"
+#include "mulib-anfir.h"
+#include "mulib-clickir.h"
+#include "mulib-depir.h"
+#include "mulib-gssair.h"
+#include "mulib-lowopt.h"
+#include "mulib-machine.h"
+#include "mulib-microcc.h"
+#include "mulib-superblocks.h"
 int main(void) { return 0; }

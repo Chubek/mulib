@@ -1,3 +1,11 @@
+#define MULIB_IMPL_ANFIR
+#define MULIB_IMPL_CLICKIR
+#define MULIB_IMPL_DEPIR
+#define MULIB_IMPL_GSSAIR
+#define MULIB_IMPL_LOWOPT
+#define MULIB_IMPL_MACHINE
+#define MULIB_IMPL_MICROCC
+#define MULIB_IMPL_SUPERBLOCKS
 #define MULIB_IMPL_VMMDEV
 #define MULIB_IMPL_VIRTIO
 #define MULIB_IMPL_VIRTIO_OS
@@ -682,3 +690,11 @@
 #include "mulib-shaderx.h"
 #include "mulib-simdmath.h"
 #include "mulib-vectgfx.h"
+#include "mulib-anfir.h"
+#include "mulib-clickir.h"
+#include "mulib-depir.h"
+#include "mulib-gssair.h"
+#include "mulib-lowopt.h"
+#include "mulib-machine.h"
+#include "mulib-microcc.h"
+#include "mulib-superblocks.h"

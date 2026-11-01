@@ -1,7 +1,8 @@
 # mulib-mir
 
 Typed record IR shared by the compiler backends. The original SSA interface is
-joined by a typed register/control-flow dialect for VM, AOT and native execution.
+joined by a typed register/control-flow dialect for VM/AOT execution and an
+explicit lower-level native machine dialect for MicroCC.
 
 ## Integration and ownership
 
@@ -204,3 +205,65 @@ Suspension and budget exhaustion can resume at any generated instruction.
 `tests/test_mir_flow.c` checks VM/native equivalence, loops, ownership, suspended
 host calls, checked/wrapping arithmetic, floating boundaries and malformed IR.
 Its `--emit` mode writes an AOT regression translation unit for compilation.
+
+## Native machine dialect
+
+`mulib_mir_native_program_t` is the lower-level IR used by
+[MicroCC](mulib-microcc.md). It contains untyped 64-bit virtual registers,
+contiguous basic blocks, explicit terminators, raw memory operations and direct
+ABI calls. There are no SSA/PHI nodes, runtime frames, host callbacks or implicit
+fallthrough. The earlier two dialects retain their documented semantics.
+
+Every register initially contains zero. ADD/SUB/MUL wrap modulo 2^64. Bitwise
+AND/OR/XOR preserve word bits; SHL/SHR/SAR mask counts to six bits. SHR is logical,
+SAR sign-extends; SLT compares signed bits and ULT unsigned bits. EQ/SLT/ULT return
+0 or 1; BRANCH tests nonzero. No division, floating-point, checked arithmetic,
+conversion, atomics or indirect calls are currently defined. Native addresses
+are supplied as word bits; LOAD/STORE access an aligned native eight-byte word.
+The caller provides valid memory and an external function with the declared ABI.
+
+Each instruction has `opcode,destination,a,b,target,immediate`. Unused indices
+must be NONE and unused immediate zero:
+
+| `MULIB_MIR_NATIVE_` operation | Fields |
+|---|---|
+| NOP | all indices NONE |
+| CONST | destination, immediate bits |
+| PARAM | destination, a = argument index |
+| COPY | destination, a = source register |
+| ADD SUB MUL AND OR XOR SHL SHR SAR EQ SLT ULT | destination, a/b = registers |
+| LOAD | destination, a = address register |
+| STORE | a = address register, b = value register |
+| CALL | destination, a/b = start/count in program.arguments, target = symbol index |
+| JUMP | target = block ID |
+| BRANCH | a = condition register, target/b = true/false block IDs |
+| RETURN | a = result register |
+
+`mulib_mir_native_instruction(op)` constructs an instruction with canonical
+unused fields. `native_arity` counts scalar register operands (not CALL slices or
+PARAM metadata); `native_defines` and `native_effect` classify register writes
+and LOAD/STORE/CALL effects. `native_name` checks ASCII identifiers up to 127 bytes.
+
+Blocks partition the code array without gaps or overlap, starting at zero.
+Each has nonzero count and exactly one final JUMP/BRANCH/RETURN; no terminators
+are allowed in its body. The entry is block 0. Backedges, multiple returns and
+unreachable blocks are valid at this low level. All records and symbol strings
+are validated even when unreachable. Symbols are plain ASCII identifiers; CALL
+arguments are register-ID slices, allowing arbitrary register assignments and
+argument counts. The low-level IR is untyped; frontends supply type/arity checks
+such as GSSA's function signatures.
+
+`mulib_mir_native_buffer_t` owns code, blocks, argument IDs and copied symbol
+strings. Zero-initialize it, call `native_init` with exact counts and a limit,
+fill arrays and symbols (`native_symbol` copies/replaces a name), then borrow
+`native_view` and validate it. `init` allocates zeroed storage, not a finished
+valid program: unused instruction fields still need canonical NONE values.
+`native_clone` validates and deep-copies; `native_free` frees everything, accepts
+NULL and resets the owner. Do not copy a live owner. Initialization, clone and
+symbol replacement preserve their destination on failure.
+
+`native_validate` is allocation-free, checks every operand/target, symbol and
+block, and bounds each array with `limit`. Zero is a real limit. Allocation-size
+overflow returns RESOURCE_LIMIT. Empty programs are INVALID. Diagnostic indices
+name the relevant instruction, block boundary or descriptor array. Native MIR
+does not require high-level input graphs to stay alive after lowering.

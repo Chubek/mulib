@@ -206,6 +206,15 @@ def main():
                             if runtime.returncode:
                                 failures.append((label + ' backends/reference', runtime.stderr or runtime.stdout))
                                 return False
+                        if sources and len(sources) == 1 and sources[0].name == 'test_microcc.c':
+                            native = subprocess.run(
+                                [sys.executable, str(root / 'tools/check_microcc_native.py'),
+                                 '--emitter', str(binary), '--compiler', shlex.join(compiler)]
+                                + (['--sanitizers'] if args.sanitizers else []),
+                                cwd=work, capture_output=True, text=True, timeout=180)
+                            if native.returncode:
+                                failures.append((label + ' native assembly', native.stderr or native.stdout))
+                                return False
                 except (OSError, subprocess.TimeoutExpired) as error:
                     failures.append((label, str(error)))
                     return False

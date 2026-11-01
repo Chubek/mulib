@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **323 implemented modules**.
+A C11 modular single-header utility library with **335 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -106,6 +106,12 @@ database. Consult individual manuals for supported instruction encodings and
 platforms. A checked-in metadata snapshot keeps builds dependency-free;
 `python3 tools/check_snapshot.py` verifies its source/schema hashes. Full
 regeneration uses the optional developer-only PyYAML and jsonschema packages.
+[MicroCC](manual/mulib-microcc.md) adds a complete high-IR-to-assembly pipeline:
+Sea of Nodes, ANF, gated/memory SSA, dependency graphs and superblocks lower to
+native MIR, with local optimization, costed selection and dependence-safe
+scheduling. Built-in targets emit ELF x86-64 SysV and RV64IM assembly, including
+PHI destruction, spill slots and fixed-arity ABI calls. See its
+[runnable example](examples/modules/microcc.c) and supported native profile.
 `mulib-inet6.h` is the canonical IPv6 header; `mulib-inte6.h` remains
 compatible. The existing spellings `impaclient` and `dnsnmeserver` are retained.
 
