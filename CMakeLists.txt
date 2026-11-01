@@ -95,6 +95,14 @@ if(MULIB_BUILD_TESTS)
     endif()
     mulib_register_test("mulib_${test_name}")
   endforeach()
+  find_program(MULIB_GLSLANG_VALIDATOR NAMES glslangValidator)
+  if(Python3_Interpreter_FOUND AND MULIB_GLSLANG_VALIDATOR)
+    add_test(NAME mulib_shaderx_backends
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_graphics_shaders.py
+        --emitter $<TARGET_FILE:mulib_test_graphics_languages>
+        --validator ${MULIB_GLSLANG_VALIDATOR})
+    set_tests_properties(mulib_shaderx_backends PROPERTIES TIMEOUT 180)
+  endif()
   add_test(NAME mulib_readline_profiles
     COMMAND mulib_test_readline ${CMAKE_CURRENT_SOURCE_DIR}/libraries/librl)
   if(Python3_Interpreter_FOUND AND UNIX)

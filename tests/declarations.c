@@ -326,4 +326,13 @@
 #include "mulib-readline.h"
 #include "mulib-prowse-protocol.h"
 #include "mulib-prowse-control.h"
+#include "mulib-cgeom.h"
+#include "mulib-collision.h"
+#include "mulib-glx.h"
+#include "mulib-immgtk.h"
+#include "mulib-linalg.h"
+#include "mulib-raytracing.h"
+#include "mulib-shaderx.h"
+#include "mulib-simdmath.h"
+#include "mulib-vectgfx.h"
 int main(void) { return 0; }

@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **310 implemented modules**.
+A C11 modular single-header utility library with **319 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -121,6 +121,25 @@ The [storage, binary, document and container extensions](manual/extension-layers
 share existing byte buffers, parsers, ELF views and VFS models. Container modules
 provide explicit-backend lifecycle and transport cores, not a privileged isolation
 runtime. `tsl` requires an authenticated TLS backend; it supplies no cryptography.
+
+## Graphics and geometry
+
+The graphics stack combines [linalg](manual/mulib-linalg.md),
+[SIMD math](manual/mulib-simdmath.md), [computational geometry](manual/mulib-cgeom.md)
+and [collision queries](manual/mulib-collision.md) with
+[GLX software surfaces](manual/mulib-glx.md) backed by memory or DRM dumb buffers.
+[VectGFX](manual/mulib-vectgfx.md) draws paths, curves and splines;
+[raytracing](manual/mulib-raytracing.md) renders lit, shadowed and reflective scenes.
+[ShaderX](manual/mulib-shaderx.md) offers a typed API and Parsec-backed language
+emitting GLSL/HLSL, while [ImmGTK](manual/mulib-immgtk.md) runs immediate-mode
+widgets written in Mune. Each module has a standalone example and documented
+ownership, numerical conventions and supported language profile.
+
+Run `python3 tools/check_graphics.py` for independent strict graphics checks,
+or `CC=clang CXX=clang++ python3 tools/check_graphics.py --sanitizers` for
+ASan/UBSan. These include allocation failures, deterministic parser mutations,
+scalar/SIMD numerical regressions, C++ declarations and optional GLSL/HLSL
+validation with `glslangValidator`.
 
 ## Container stack
 

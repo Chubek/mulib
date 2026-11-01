@@ -1,6 +1,6 @@
 # MuLIB module and composition guide
 
-MuLIB has 310 implemented single-header C11 modules. Every implemented module has a corresponding
+MuLIB has 319 implemented single-header C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -15,6 +15,8 @@ consult each manual's exact supported syntax, errors, and limits.
 | Configuration | [confuse](mulib-confuse.md), [ini](mulib-ini.md), [toml](mulib-toml.md) |
 | Structured data | [json](mulib-json.md), [yaml](mulib-yaml.md), [toml](mulib-toml.md), [template](mulib-template.md), [xml](mulib-xml.md), [xpath](mulib-xpath.md) |
 | Documents and graphics | [html](mulib-html.md), [css](mulib-css.md), [markdown](mulib-markdown.md), [svg](mulib-svg.md), [graphviz](mulib-graphviz.md), [vector algebra](mulib-vector.md) |
+| Graphics math and geometry | [linalg](mulib-linalg.md), [simdmath](mulib-simdmath.md), [cgeom](mulib-cgeom.md), [collision](mulib-collision.md) |
+| Rendering and GUI | [GLX](mulib-glx.md), [ShaderX](mulib-shaderx.md), [VectGFX](mulib-vectgfx.md), [raytracing](mulib-raytracing.md), [ImmGTK](mulib-immgtk.md) |
 | Storage and native formats | [archive](mulib-archive.md), [mmfile](mulib-mmfile.md), [kvdb](mulib-kvdb.md), [elf](mulib-elf.md), [dynload](mulib-dynload.md), [drm](mulib-drm.md) |
 | Terminals | [terminfo](mulib-terminfo.md), [termkey](mulib-termkey.md), [termutils](mulib-termutils.md), [vterm](mulib-vterm.md), [tui](mulib-tui.md), [readline](mulib-readline.md) |
 | Protocols | [uri](mulib-uri.md), [http](mulib-http.md), [rpc](mulib-rpc.md), [dbus](mulib-dbus.md) |

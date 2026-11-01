@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 313
-implemented_module_count: 310
+module_count: 322
+implemented_module_count: 319
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2274,7 +2274,106 @@ modules:
   purpose: Browser automation, scraping, lprowse Lua DSL and a highlighted interactive REPL.
   dependencies: [mune, prowse-protocol, readline, strbuf]
   status: implemented
+- name: cgeom
+  header: include/mulib-cgeom.h
+  manual: manual/mulib-cgeom.md
+  macro: MULIB_IMPL_CGEOM
+  purpose: Computational geometry, convex hulls and SIMD point distances.
+  dependencies: [linalg, simdmath]
+  status: implemented
+- name: collision
+  header: include/mulib-collision.h
+  manual: manual/mulib-collision.md
+  macro: MULIB_IMPL_COLLISION
+  purpose: Primitive overlap contacts, convex SAT and ray intersection queries.
+  dependencies: [cgeom]
+  status: implemented
+- name: glx
+  header: include/mulib-glx.h
+  manual: manual/mulib-glx.md
+  macro: MULIB_IMPL_GLX
+  purpose: Software graphics surfaces backed by memory or MuLIB DRM dumb buffers.
+  dependencies: [drm, linalg]
+  status: implemented
+- name: immgtk
+  header: include/mulib-immgtk.h
+  manual: manual/mulib-immgtk.md
+  macro: MULIB_IMPL_IMMGTK
+  purpose: Immediate-mode GUI with Mune-written widgets and GLX drawing primitives.
+  dependencies: [glx, mune]
+  status: implemented
+- name: linalg
+  header: include/mulib-linalg.h
+  manual: manual/mulib-linalg.md
+  macro: MULIB_IMPL_LINALG
+  purpose: Float vectors, column-major transforms and quaternions for graphics.
+  dependencies: []
+  status: implemented
+- name: raytracing
+  header: include/mulib-raytracing.h
+  manual: manual/mulib-raytracing.md
+  macro: MULIB_IMPL_RAYTRACING
+  purpose: CPU ray renderer with shadows, diffuse light and reflections.
+  dependencies: [collision, glx]
+  status: implemented
+- name: shaderx
+  header: include/mulib-shaderx.h
+  manual: manual/mulib-shaderx.md
+  macro: MULIB_IMPL_SHADERX
+  purpose: Typed shader expression graphs and a Parsec-backed GLSL/HLSL compiler.
+  dependencies: [parsec, strbuf]
+  status: implemented
+- name: simdmath
+  header: include/mulib-simdmath.h
+  manual: manual/mulib-simdmath.md
+  macro: MULIB_IMPL_SIMDMATH
+  purpose: Four-lane SIMD arithmetic and batched graphics transforms.
+  dependencies: [linalg]
+  status: implemented
+- name: vectgfx
+  header: include/mulib-vectgfx.h
+  manual: manual/mulib-vectgfx.md
+  macro: MULIB_IMPL_VECTGFX
+  purpose: Vector paths, Bezier and Catmull-Rom curves, elliptical arcs and path language.
+  dependencies: [glx, parsec, vec]
+  status: implemented
 project_files:
+- file: tools/check_graphics.py
+  purpose: Independent strict graphics-stack validation with optional sanitizers.
+- file: tests/test_graphics_hostile.c
+  purpose: Deterministic mutation coverage for graphics languages and rendering cleanup.
+- file: tools/check_graphics_shaders.py
+  purpose: Optional external compilation of ShaderX GLSL and HLSL vertex/fragment output.
+- file: examples/modules/cgeom.c
+  purpose: Standalone convex hull and polygon queries.
+- file: examples/modules/collision.c
+  purpose: Standalone ray and sphere intersection example.
+- file: examples/modules/glx.c
+  purpose: Offscreen interpolated triangle rendering.
+- file: examples/modules/immgtk.c
+  purpose: Headless Mune widget press and release example.
+- file: examples/modules/linalg.c
+  purpose: View and projection transformation with inverse roundtrip.
+- file: examples/modules/raytracing.c
+  purpose: Lit reflective sphere rendered to a PPM image.
+- file: examples/modules/shaderx.c
+  purpose: Compile a ShaderX program to GLSL.
+- file: examples/modules/simdmath.c
+  purpose: SIMD backend selection and in-place array transformation.
+- file: examples/modules/vectgfx.c
+  purpose: Parse and rasterize a filled and stroked Bezier path.
+- file: tests/test_graphics_alloc.c
+  purpose: Moving allocation and failure-atomic graphics operations.
+- file: tests/test_graphics_languages.c
+  purpose: Shader graph typing, parser errors, emission and compiler-validation fixtures.
+- file: tests/test_graphics_math.c
+  purpose: Numerical transforms, hulls, SIMD and collision regression tests.
+- file: tests/test_graphics_render.c
+  purpose: Surface blending, vector drawing, depth and ray shading regression tests.
+- file: tests/test_immgtk.c
+  purpose: Mune widgets, capture, focus and frame lifecycle tests.
+- file: tests/test_simdmath_scalar.c
+  purpose: Numerical graphics tests using the forced scalar SIMD fallback.
 - file: include/include-mulib-lprowse.h
   purpose: Embedded original lprowse Lua source; generated from libraries/lprowse/lprowse.lua.
 - file: manual/include-mulib-lprowse.md

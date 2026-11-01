@@ -1,3 +1,12 @@
+#define MULIB_IMPL_CGEOM
+#define MULIB_IMPL_COLLISION
+#define MULIB_IMPL_GLX
+#define MULIB_IMPL_IMMGTK
+#define MULIB_IMPL_LINALG
+#define MULIB_IMPL_RAYTRACING
+#define MULIB_IMPL_SHADERX
+#define MULIB_IMPL_SIMDMATH
+#define MULIB_IMPL_VECTGFX
 #define MULIB_IMPL_READLINE
 #define MULIB_IMPL_PROWSE_PROTOCOL
 #define MULIB_IMPL_PROWSE_CONTROL
@@ -649,3 +658,12 @@
 #include "mulib-readline.h"
 #include "mulib-prowse-protocol.h"
 #include "mulib-prowse-control.h"
+#include "mulib-cgeom.h"
+#include "mulib-collision.h"
+#include "mulib-glx.h"
+#include "mulib-immgtk.h"
+#include "mulib-linalg.h"
+#include "mulib-raytracing.h"
+#include "mulib-shaderx.h"
+#include "mulib-simdmath.h"
+#include "mulib-vectgfx.h"
