@@ -1,3 +1,7 @@
+#define MULIB_IMPL_VMMDEV
+#define MULIB_IMPL_VIRTIO
+#define MULIB_IMPL_VIRTIO_OS
+#define MULIB_IMPL_VIRTIO_GUEST
 #define MULIB_IMPL_CGEOM
 #define MULIB_IMPL_COLLISION
 #define MULIB_IMPL_GLX
@@ -328,6 +332,10 @@
 #define MULIB_IMPL_TIMERFD
 #define MULIB_IMPL_VFS
 #define MULIB_IMPL_VMWEAVE
+#define MULIB_IMPL_VMM_MEMORY
+#define MULIB_IMPL_VMM
+#define MULIB_IMPL_VMM_HOST
+#define MULIB_IMPL_VMM_KVM
 #define MULIB_IMPL_WEBCLIENT
 #define MULIB_IMPL_WEBFRAMEWORK
 #include "mulib-vec.h"
@@ -652,6 +660,13 @@
 #include "mulib-containerd-mount.h"
 #include "mulib-amd64.h"
 #include "mulib-virtio.h"
+#include "mulib-vmmdev.h"
+#include "mulib-virtio-os.h"
+#include "mulib-virtio-guest.h"
+#include "mulib-vmm-memory.h"
+#include "mulib-vmm.h"
+#include "mulib-vmm-host.h"
+#include "mulib-vmm-kvm.h"
 #include "include-mulib-container-core.h"
 #include "include-mulib-qvm.h"
 #include "include-mulib-zstd.h"

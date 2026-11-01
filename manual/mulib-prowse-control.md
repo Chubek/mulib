@@ -4,7 +4,7 @@
 [Mune Lua](mulib-mune.md), and [MuLIB Readline](mulib-readline.md). It provides C
 automation functions, a persistent Lua environment with `require('lprowse')`, and
 a syntax-highlighted, completing REPL. Source for the Lua library is in
-[`libraries/lprowse/lprowse.lua`](../libraries/lprowse/lprowse.lua).
+[`library/lprowse/lprowse.lua`](../library/lprowse/lprowse.lua).
 
 ## Build and quick start
 
@@ -33,8 +33,8 @@ Driver/browser availability and setup follow those projects' platform requiremen
 Firefox can also be started with `--marionette` and connected directly:
 
 ```sh
-./prowse marionette marionette://127.0.0.1:2828 libraries/lprowse/examples/local-smoke.lua
-./prowse webdriver http://127.0.0.1:4444 libraries/lprowse/examples/scrape.lua
+./prowse marionette marionette://127.0.0.1:2828 library/lprowse/examples/local-smoke.lua
+./prowse webdriver http://127.0.0.1:4444 library/lprowse/examples/scrape.lua
 ```
 
 The CLI form with protocol/endpoint starts an empty-capabilities session, executes

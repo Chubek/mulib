@@ -46,7 +46,7 @@ def main():
                     except OSError:
                         time.sleep(0.1)
                 result = subprocess.run([str(args.runner.resolve()), 'marionette',
-                    f'marionette://127.0.0.1:{port}', str(ROOT / 'libraries/lprowse/examples/local-smoke.lua')],
+                    f'marionette://127.0.0.1:{port}', str(ROOT / 'library/lprowse/examples/local-smoke.lua')],
                     capture_output=True, text=True, timeout=60)
                 print(result.stdout, end='')
                 if result.returncode:

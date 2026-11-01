@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **319 implemented modules**.
+A C11 modular single-header utility library with **323 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -109,7 +109,7 @@ regeneration uses the optional developer-only PyYAML and jsonschema packages.
 `mulib-inet6.h` is the canonical IPv6 header; `mulib-inte6.h` remains
 compatible. The existing spellings `impaclient` and `dnsnmeserver` are retained.
 
-`mulib-yantlr.h`, `mulib-amd64.h` and `mulib-virtio.h` are reserved filenames.
+`mulib-yantlr.h` and `mulib-amd64.h` are reserved filenames.
 The [dependency strata](manual/strata.md) index
 records every direct dependency and integration layer. New focused modules include
 a bounded i32 WebAssembly runtime (`wask`), an independent Lua runtime with
@@ -159,7 +159,7 @@ runtime through `require('lprowse')`, with CSS extraction, interaction, screensh
 waits, retries and bounded crawlers. Its [protocol layer](manual/mulib-prowse-protocol.md)
 supports Chrome CDP, W3C WebDriver for Firefox/Chrome/WebKit, and Firefox Marionette.
 [MuLIB Readline](manual/mulib-readline.md) supplies UTF-8 editing, highlighting,
-completion and directives for the REPL; [`libraries/librl`](libraries/librl/README.md)
+completion and directives for the REPL; [`library/librl`](library/librl/README.md)
 contains `.mlsyn`, `.mlac` and `.mldir` profiles for 15 languages.
 
 ```sh
@@ -167,6 +167,20 @@ cc -std=c11 -Iinclude examples/modules/prowse-control.c -pthread -lm -ldl -o pro
 ./prowse --repl
 python3 tools/check_prowse.py
 ```
+
+## VMM device protocol and Virtio
+
+[`MULIB_VMMPROTO.md`](MULIB_VMMPROTO.md) defines the implemented device boundary
+for the type-2 MuLIB VMM. [`virtio-os`](library/virtio-os) is the backend;
+[`virtio-guest`](library/virtio-guest) is the frontend. `include/virtio.h` exposes
+the shared contract, backed by `mulib-vmmdev.h` message/DMA primitives.
+The explicit support matrix covers all 48 requested IDs: 21 bounded,
+service-assisted profiles and 27 unimplemented IDs requiring pinned specifications.
+`mulib-vmm.h` adds lifecycle, guest-call dispatch and per-device DMA isolation;
+`mulib-vmm-memory.h` validates RAM access, `mulib-vmm-host.h` provides RAM block
+storage and system entropy, and `mulib-vmm-kvm.h` runs native Linux/x86 guests.
+See [`manual/mulib-vmm.md`](manual/mulib-vmm.md) for integration. Run
+`python3 tools/check_virtio.py --sanitizers` for focused verification.
 
 ## Licensing
 

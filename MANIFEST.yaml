@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 322
-implemented_module_count: 319
+module_count: 329
+implemented_module_count: 327
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2250,9 +2250,11 @@ modules:
   status: reserved
 - name: virtio
   header: include/mulib-virtio.h
-  purpose: Reserved future module; no implemented API.
-  dependencies: []
-  status: reserved
+  manual: manual/mulib-virtio.md
+  macro: MULIB_IMPL_VIRTIO
+  purpose: Virtio device registry, wire constants and MuLIB VMM host-service contracts.
+  dependencies: [vmmdev]
+  status: implemented
 - name: readline
   header: include/mulib-readline.h
   manual: manual/mulib-readline.md
@@ -2337,7 +2339,100 @@ modules:
   purpose: Vector paths, Bezier and Catmull-Rom curves, elliptical arcs and path language.
   dependencies: [glx, parsec, vec]
   status: implemented
+- name: vmmdev
+  header: include/mulib-vmmdev.h
+  manual: manual/mulib-vmmdev.md
+  macro: MULIB_IMPL_VMMDEV
+  purpose: Bounded little-endian VMM device messages and guest-memory access.
+  dependencies: [endian]
+  status: implemented
+- name: virtio-os
+  header: include/mulib-virtio-os.h
+  manual: manual/mulib-virtio-os.md
+  macro: MULIB_IMPL_VIRTIO_OS
+  purpose: Service-assisted Virtio device backends over the MuLIB VMM protocol.
+  dependencies: [virtio]
+  status: implemented
+- name: virtio-guest
+  header: include/mulib-virtio-guest.h
+  manual: manual/mulib-virtio-guest.md
+  macro: MULIB_IMPL_VIRTIO_GUEST
+  purpose: MuLIB VMM Virtio frontend negotiation, configuration and queue operations.
+  dependencies: [virtio]
+  status: implemented
+- name: vmm-memory
+  header: include/mulib-vmm-memory.h
+  manual: manual/mulib-vmm-memory.md
+  macro: MULIB_IMPL_VMM_MEMORY
+  purpose: Transactional guest RAM copies and per-device DMA view validation.
+  dependencies: [vmmdev]
+  status: implemented
+- name: vmm
+  header: include/mulib-vmm.h
+  manual: manual/mulib-vmm.md
+  macro: MULIB_IMPL_VMM
+  purpose: Serialized VMM lifecycle, discovery, device isolation and guest-call dispatch.
+  dependencies: [virtio-os, vmm-memory]
+  status: implemented
+- name: vmm-host
+  header: include/mulib-vmm-host.h
+  manual: manual/mulib-vmm-host.md
+  macro: MULIB_IMPL_VMM_HOST
+  purpose: Volatile RAM block storage and Linux system entropy host providers.
+  dependencies: [virtio]
+  status: implemented
+- name: vmm-kvm
+  header: include/mulib-vmm-kvm.h
+  manual: manual/mulib-vmm-kvm.md
+  macro: MULIB_IMPL_VMM_KVM
+  purpose: Native Linux x86 KVM execution adapter and guest-call port binding.
+  dependencies: [kvm, vmm]
+  status: implemented
 project_files:
+- file: examples/modules/vmm-memory.c
+  purpose: Transactional cross-region RAM copy example.
+- file: examples/modules/vmm.c
+  purpose: End-to-end isolated VMM block I/O example.
+- file: examples/modules/vmm-host.c
+  purpose: RAM block host service example.
+- file: examples/modules/vmm-kvm.c
+  purpose: Native bare-metal x86 guest execution example.
+- file: tests/test_vmm.c
+  purpose: VMM memory isolation, lifecycle, guest calls and host service regression tests.
+- file: tests/test_vmm_kvm.c
+  purpose: Native KVM guest negotiation, block I/O and pending-exit reset regression tests.
+- file: MULIB_VMMPROTO.md
+  purpose: Normative MuLIB VMM device protocol and explicit device support matrix.
+- file: include/virtio.h
+  purpose: Public forwarding entry point for the Virtio contract.
+- file: library/virtio-os/virtio-os.h
+  purpose: Backend library entry point.
+- file: library/virtio-os/virtio-os.c
+  purpose: Optional compiled Virtio backend.
+- file: library/virtio-os/protocol.c
+  purpose: Shared compiled VMM device protocol and Virtio contract implementation.
+- file: library/virtio-os/README.md
+  purpose: Backend integration instructions.
+- file: library/virtio-guest/virtio-guest.h
+  purpose: Frontend library entry point.
+- file: library/virtio-guest/virtio-guest.c
+  purpose: Optional compiled Virtio frontend.
+- file: library/virtio-guest/README.md
+  purpose: Frontend integration instructions.
+- file: examples/modules/vmmdev.c
+  purpose: Checked VMM message codec example.
+- file: examples/modules/virtio.c
+  purpose: Checked device registry and support enumeration example.
+- file: examples/modules/virtio-os.c
+  purpose: Checked backend construction and discovery example.
+- file: examples/modules/virtio-guest.c
+  purpose: End-to-end frontend/backend block I/O example.
+- file: tests/test_vmmdev.c
+  purpose: VMM envelope, guest-memory and malformed descriptor regression tests.
+- file: tests/test_virtio.c
+  purpose: Lifecycle, negotiation and all implemented Virtio profile regression tests.
+- file: tools/check_virtio.py
+  purpose: Independent strict Virtio compilation, linking, examples and optional sanitizer checks.
 - file: tools/check_graphics.py
   purpose: Independent strict graphics-stack validation with optional sanitizers.
 - file: tests/test_graphics_hostile.c
@@ -2375,7 +2470,7 @@ project_files:
 - file: tests/test_simdmath_scalar.c
   purpose: Numerical graphics tests using the forced scalar SIMD fallback.
 - file: include/include-mulib-lprowse.h
-  purpose: Embedded original lprowse Lua source; generated from libraries/lprowse/lprowse.lua.
+  purpose: Embedded original lprowse Lua source; generated from library/lprowse/lprowse.lua.
 - file: manual/include-mulib-lprowse.md
   purpose: Embedded lprowse regeneration and native-host integration contracts.
 - file: examples/prowse-common.h
@@ -2402,107 +2497,107 @@ project_files:
   purpose: Reproducible lprowse Lua-to-C embedding and freshness verification.
 - file: tools/generate_librl.py
   purpose: Reproducible generation of syntax, completion and directive profiles for 15 languages.
-- file: libraries/lprowse/README.md
+- file: library/lprowse/README.md
   purpose: Lua browser automation library entry point and examples.
-- file: libraries/lprowse/lprowse.lua
+- file: library/lprowse/lprowse.lua
   purpose: Browser automation, JSON bridging, scraping, retries and bounded crawling DSL.
-- file: libraries/lprowse/examples/scrape.lua
+- file: library/lprowse/examples/scrape.lua
   purpose: Field-based page scraping example.
-- file: libraries/lprowse/examples/crawl.lua
+- file: library/lprowse/examples/crawl.lua
   purpose: Bounded breadth-first crawl with streaming visit callback.
-- file: libraries/lprowse/examples/local-smoke.lua
+- file: library/lprowse/examples/local-smoke.lua
   purpose: Local data-URL live-browser interaction and extraction checks.
-- file: libraries/librl/README.md
+- file: library/librl/README.md
   purpose: Bundled Readline language-profile inventory and usage.
-- file: libraries/librl/c.mlsyn
+- file: library/librl/c.mlsyn
   purpose: C lexical highlighting profile.
-- file: libraries/librl/c.mlac
+- file: library/librl/c.mlac
   purpose: C completion profile.
-- file: libraries/librl/c.mldir
+- file: library/librl/c.mldir
   purpose: C directive profile.
-- file: libraries/librl/cpp.mlsyn
+- file: library/librl/cpp.mlsyn
   purpose: C++ lexical highlighting profile.
-- file: libraries/librl/cpp.mlac
+- file: library/librl/cpp.mlac
   purpose: C++ completion profile.
-- file: libraries/librl/cpp.mldir
+- file: library/librl/cpp.mldir
   purpose: C++ directive profile.
-- file: libraries/librl/python.mlsyn
+- file: library/librl/python.mlsyn
   purpose: Python lexical highlighting profile.
-- file: libraries/librl/python.mlac
+- file: library/librl/python.mlac
   purpose: Python completion profile.
-- file: libraries/librl/python.mldir
+- file: library/librl/python.mldir
   purpose: Python directive profile.
-- file: libraries/librl/javascript.mlsyn
+- file: library/librl/javascript.mlsyn
   purpose: JavaScript lexical highlighting profile.
-- file: libraries/librl/javascript.mlac
+- file: library/librl/javascript.mlac
   purpose: JavaScript completion profile.
-- file: libraries/librl/javascript.mldir
+- file: library/librl/javascript.mldir
   purpose: JavaScript directive profile.
-- file: libraries/librl/typescript.mlsyn
+- file: library/librl/typescript.mlsyn
   purpose: TypeScript lexical highlighting profile.
-- file: libraries/librl/typescript.mlac
+- file: library/librl/typescript.mlac
   purpose: TypeScript completion profile.
-- file: libraries/librl/typescript.mldir
+- file: library/librl/typescript.mldir
   purpose: TypeScript directive profile.
-- file: libraries/librl/lua.mlsyn
+- file: library/librl/lua.mlsyn
   purpose: Lua lexical highlighting profile.
-- file: libraries/librl/lua.mlac
+- file: library/librl/lua.mlac
   purpose: Lua completion profile.
-- file: libraries/librl/lua.mldir
+- file: library/librl/lua.mldir
   purpose: Lua directive profile.
-- file: libraries/librl/rust.mlsyn
+- file: library/librl/rust.mlsyn
   purpose: Rust lexical highlighting profile.
-- file: libraries/librl/rust.mlac
+- file: library/librl/rust.mlac
   purpose: Rust completion profile.
-- file: libraries/librl/rust.mldir
+- file: library/librl/rust.mldir
   purpose: Rust directive profile.
-- file: libraries/librl/go.mlsyn
+- file: library/librl/go.mlsyn
   purpose: Go lexical highlighting profile.
-- file: libraries/librl/go.mlac
+- file: library/librl/go.mlac
   purpose: Go completion profile.
-- file: libraries/librl/go.mldir
+- file: library/librl/go.mldir
   purpose: Go directive profile.
-- file: libraries/librl/java.mlsyn
+- file: library/librl/java.mlsyn
   purpose: Java lexical highlighting profile.
-- file: libraries/librl/java.mlac
+- file: library/librl/java.mlac
   purpose: Java completion profile.
-- file: libraries/librl/java.mldir
+- file: library/librl/java.mldir
   purpose: Java directive profile.
-- file: libraries/librl/csharp.mlsyn
+- file: library/librl/csharp.mlsyn
   purpose: C# lexical highlighting profile.
-- file: libraries/librl/csharp.mlac
+- file: library/librl/csharp.mlac
   purpose: C# completion profile.
-- file: libraries/librl/csharp.mldir
+- file: library/librl/csharp.mldir
   purpose: C# directive profile.
-- file: libraries/librl/ruby.mlsyn
+- file: library/librl/ruby.mlsyn
   purpose: Ruby lexical highlighting profile.
-- file: libraries/librl/ruby.mlac
+- file: library/librl/ruby.mlac
   purpose: Ruby completion profile.
-- file: libraries/librl/ruby.mldir
+- file: library/librl/ruby.mldir
   purpose: Ruby directive profile.
-- file: libraries/librl/php.mlsyn
+- file: library/librl/php.mlsyn
   purpose: PHP lexical highlighting profile.
-- file: libraries/librl/php.mlac
+- file: library/librl/php.mlac
   purpose: PHP completion profile.
-- file: libraries/librl/php.mldir
+- file: library/librl/php.mldir
   purpose: PHP directive profile.
-- file: libraries/librl/bash.mlsyn
+- file: library/librl/bash.mlsyn
   purpose: Bash lexical highlighting profile.
-- file: libraries/librl/bash.mlac
+- file: library/librl/bash.mlac
   purpose: Bash completion profile.
-- file: libraries/librl/bash.mldir
+- file: library/librl/bash.mldir
   purpose: Bash directive profile.
-- file: libraries/librl/sql.mlsyn
+- file: library/librl/sql.mlsyn
   purpose: SQL lexical highlighting profile.
-- file: libraries/librl/sql.mlac
+- file: library/librl/sql.mlac
   purpose: SQL completion profile.
-- file: libraries/librl/sql.mldir
+- file: library/librl/sql.mldir
   purpose: SQL directive profile.
-- file: libraries/librl/json.mlsyn
+- file: library/librl/json.mlsyn
   purpose: JSON lexical highlighting profile.
-- file: libraries/librl/json.mlac
+- file: library/librl/json.mlac
   purpose: JSON completion profile.
-- file: libraries/librl/json.mldir
+- file: library/librl/json.mldir
   purpose: JSON directive profile.
 - file: tests/test_container_wire.c
   purpose: Container wire truncation, mutation, streaming and roundtrip regressions with optional libFuzzer entry point.

@@ -12,9 +12,9 @@ Ruby, PHP, Bash, SQL, JSON**. Filename stems are lowercase; C++ is `cpp`, C# is
 
 ```c
 mulib_readline_t *editor = mulib_readline_create(NULL);
-int rc = mulib_readline_load(editor, "libraries/librl/lua.mlsyn", NULL);
-if (!rc) rc = mulib_readline_load(editor, "libraries/librl/lua.mlac", NULL);
-if (!rc) rc = mulib_readline_load(editor, "libraries/librl/lua.mldir", NULL);
+int rc = mulib_readline_load(editor, "library/librl/lua.mlsyn", NULL);
+if (!rc) rc = mulib_readline_load(editor, "library/librl/lua.mlac", NULL);
+if (!rc) rc = mulib_readline_load(editor, "library/librl/lua.mldir", NULL);
 /* Use editor; dispatch actions/expanded text in your application. */
 mulib_readline_destroy(editor);
 ```

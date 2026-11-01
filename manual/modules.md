@@ -34,7 +34,7 @@ consult each manual's exact supported syntax, errors, and limits.
 | Compiler transformations | [MIR](mulib-mir.md), [C machine](mulib-cmachine.md), [VM weaving](mulib-vmweave.md), [C weaving](mulib-ccweave.md), [tree selection](mulib-muburg.md), [instruction scheduling](mulib-isched.md), [egraph](mulib-egraph.md), [rewrite](mulib-rewrite.md) |
 | Machine code | [dsymspec](mulib-dsymspec.md), [assembler](mulib-assembler.md), [emitter](mulib-emitter.md), [linker](mulib-linker.md), [JIT](mulib-jit.md), [dynamic calls](mulib-dyncall.md) |
 | Embedded languages and tools | [MicroJS](mulib-microjs.md), [Datalog](mulib-datalog.md), [Perl POD](mulib-perlpod.md), [microaudio](mulib-microaudio.md), [browser tools](mulib-browsertools.md) |
-| Browser automation | [Prowse protocols](mulib-prowse-protocol.md), [Prowse control and lprowse Lua DSL](mulib-prowse-control.md), [15-language editor profiles](../libraries/librl/README.md) |
+| Browser automation | [Prowse protocols](mulib-prowse-protocol.md), [Prowse control and lprowse Lua DSL](mulib-prowse-control.md), [15-language editor profiles](../library/librl/README.md) |
 
 `yantlr` is a comment-only reserved header, not an implemented API. The
 manifest distinguishes the complete header inventory from the implemented count;

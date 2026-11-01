@@ -2,7 +2,7 @@
 
 `include/include-mulib-lprowse.h` is internal, generated C string data used by
 `MULIB_IMPL_PROWSE_CONTROL`. Its source of truth is
-[`libraries/lprowse/lprowse.lua`](../libraries/lprowse/lprowse.lua). It exports no
+[`library/lprowse/lprowse.lua`](../library/lprowse/lprowse.lua). It exports no
 public API and requires no implementation switch. The static string array has
 translation-unit-local linkage; split lines avoid compiler string-literal limits.
 The controller concatenates it, evaluates it in Mune, and roots the returned module

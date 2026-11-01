@@ -16,7 +16,7 @@ The runnable example explicitly enables that complete closure:
 ```sh
 cc -std=c11 -Iinclude examples/modules/readline.c -lm -o readline
 ./readline
-./readline libraries/librl/lua.mlsyn
+./readline library/librl/lua.mlsyn
 ```
 
 `create(limits)` returns an owned editor; `destroy` releases it. Inputs to rule,
@@ -141,7 +141,7 @@ Profile data is copied into the editor and may be released after loading.
 
 ## Bundled language library
 
-[`libraries/librl`](../libraries/librl/README.md) ships **45 files for 15 languages**:
+[`library/librl`](../library/librl/README.md) ships **45 files for 15 languages**:
 C (`c`), C++ (`cpp`), Python, JavaScript, TypeScript, Lua, Rust, Go, Java,
 C# (`csharp`), Ruby, PHP, Bash, SQL, JSON. Each has a `.mlsyn`, `.mlac`, `.mldir`.
 Profiles include common keywords, types/builtins, string/comment rules, a starter

@@ -1,7 +1,7 @@
 /** @file mulib-prowse-control.h
  * @brief Browser automation, scraping, lprowse Lua DSL and highlighted interactive REPL.
  * Define MULIB_IMPL_PROWSE_CONTROL plus PROWSE_PROTOCOL, MUNE, READLINE and all
- * transitive switches. The embedded Lua library also ships in libraries/lprowse. */
+ * transitive switches. The embedded Lua library also ships in library/lprowse. */
 #ifndef MULIB_PROWSE_CONTROL_H
 #define MULIB_PROWSE_CONTROL_H
 #include "mulib-prowse-protocol.h"

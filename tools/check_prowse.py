@@ -84,7 +84,7 @@ def main():
         for name in ('readline', 'prowse', 'prowse_alloc'):
             binary = build('test-' + name, source=ROOT / 'tests' / ('test_' + name + '.c'))
             binaries['test-' + name] = binary
-            run(binary, [str(ROOT / 'libraries/librl')] if name == 'readline' else [])
+            run(binary, [str(ROOT / 'library/librl')] if name == 'readline' else [])
         subprocess.run([os.sys.executable, str(ROOT / 'tools/check_prowse_io.py'),
                         '--protocol', str(binaries['test-prowse']), '--repl', str(binaries['prowse-control'])], check=True, timeout=90)
         count += 1

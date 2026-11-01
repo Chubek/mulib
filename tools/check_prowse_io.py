@@ -90,7 +90,7 @@ def network(runner):
 
 def repl(runner):
     source = ':begin\nfunction twice(x)\nreturn x*2\nend\n:end\n=twice(21)\n' \
-             f':profile {ROOT}/libraries/librl/lua.mldir\n:lua-example print("PROFILE_OK")\n' \
+             f':profile {ROOT}/library/librl/lua.mldir\n:lua-example print("PROFILE_OK")\n' \
              '=browser.json(browser.array())\n:quit\n'
     result = subprocess.run([str(runner), '--repl'], input=source, text=True, capture_output=True, timeout=20, check=True)
     assert '42\n' in result.stdout and '[]\n' in result.stdout and 'PROFILE_OK\n' in result.stdout, result.stdout

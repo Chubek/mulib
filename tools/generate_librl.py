@@ -88,7 +88,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
-    directory = ROOT / 'libraries/librl'
+    directory = ROOT / 'library/librl'
     if not args.check:
         directory.mkdir(parents=True, exist_ok=True)
     for name, text in profiles():
