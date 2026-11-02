@@ -24,6 +24,7 @@ defined. The declaration-only header is usable from C11 or C++17.
 ```c
 mulib_dynload_t library = MULIB_DYNLOAD_INIT;
 int mulib_dynload_open(mulib_dynload_t *, const char *path, char *error, size_t capacity);
+int mulib_dynload_open_pinned(mulib_dynload_t *, const char *path, char *error, size_t capacity);
 int mulib_dynload_symbol(const mulib_dynload_t *, const char *name, void **symbol,
                         char *error, size_t capacity);
 int mulib_dynload_close(mulib_dynload_t *, char *error, size_t capacity);
@@ -34,6 +35,15 @@ opens the current process. POSIX owns that loader reference; Windows borrows the
 main-module reference and does not pass it to `FreeLibrary`. Named Windows
 modules are owned normally. Open fails with `ESTATE` if already open. Failure
 leaves the handle unchanged.
+
+`open_pinned` requires a named path and additionally pins the native module until
+process exit using POSIX `RTLD_NODELETE` or Windows `GetModuleHandleEx` with PIN.
+Unsupported platforms return `ENOTSUP`. This is useful for runtime libraries with
+process-wide caches, singletons or callbacks that cannot be safely unloaded by
+one client. Pinning is permanent and affects all references to the same module;
+it is not a per-context isolation boundary. `close` still releases the owned
+loader reference and resets the handle. Runtime global data remains mapped and
+reusable across repeated open/close cycles. No MuLIB global cache is allocated.
 
 Symbol lookup writes a borrowed native address on success only. POSIX's `dlerror`
 protocol distinguishes a successful NULL-valued symbol from a failed lookup, so

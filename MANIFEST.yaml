@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 352
-implemented_module_count: 350
+module_count: 363
+implemented_module_count: 361
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2549,7 +2549,126 @@ modules:
   purpose: Pitch-aware CPU framebuffer pattern fill and readback.
   dependencies: []
   status: implemented
+- name: vgabuffer
+  header: include/mulib-vgabuffer.h
+  manual: manual/mulib-vgabuffer.md
+  macro: MULIB_IMPL_VGABUFFER
+  purpose: Allocation-free VGA text cells, clipped drawing, windows and consoles.
+  dependencies: []
+  status: implemented
+- name: bidi
+  header: include/mulib-bidi.h
+  manual: manual/mulib-bidi.md
+  macro: MULIB_IMPL_BIDI
+  purpose: Unicode bidirectional paragraph resolution and visual runs through runtime ICU.
+  dependencies: [uniproc]
+  status: implemented
+- name: distfield
+  header: include/mulib-distfield.h
+  manual: manual/mulib-distfield.md
+  macro: MULIB_IMPL_DISTFIELD
+  purpose: Linear-time Euclidean signed distance fields from alpha masks.
+  dependencies: []
+  status: implemented
+- name: fontdraw
+  header: include/mulib-fontdraw.h
+  manual: manual/mulib-fontdraw.md
+  macro: MULIB_IMPL_FONTDRAW
+  purpose: Runtime FreeType font loading, outline extraction and glyph rasterization.
+  dependencies: [dynload]
+  status: implemented
+- name: fontshape
+  header: include/mulib-fontshape.h
+  manual: manual/mulib-fontshape.md
+  macro: MULIB_IMPL_FONTSHAPE
+  purpose: Runtime HarfBuzz OpenType shaping, clusters, features and variations.
+  dependencies: [dynload, utf8]
+  status: implemented
+- name: pglayout
+  header: include/mulib-pglayout.h
+  manual: manual/mulib-pglayout.md
+  macro: MULIB_IMPL_PGLAYOUT
+  purpose: Owned page objects, styled block flow, Unicode wrapping and JSON/YAML persistence.
+  dependencies: [bidi, fontshape, json, stylesheet, unibreak, yaml]
+  status: implemented
+- name: stylesheet
+  header: include/mulib-stylesheet.h
+  manual: manual/mulib-stylesheet.md
+  macro: MULIB_IMPL_STYLESHEET
+  purpose: Typed layout styles with inheritance, selector specificity and importance cascading.
+  dependencies: [css]
+  status: implemented
+- name: sysfonts
+  header: include/mulib-sysfonts.h
+  manual: manual/mulib-sysfonts.md
+  macro: MULIB_IMPL_SYSFONTS
+  purpose: Runtime Fontconfig system font enumeration, matching and private application fonts.
+  dependencies: [dynload]
+  status: implemented
+- name: unibreak
+  header: include/mulib-unibreak.h
+  manual: manual/mulib-unibreak.md
+  macro: MULIB_IMPL_UNIBREAK
+  purpose: Unicode line, grapheme, word and sentence boundaries through runtime ICU.
+  dependencies: [uniproc]
+  status: implemented
+- name: uniname
+  header: include/mulib-uniname.h
+  manual: manual/mulib-uniname.md
+  macro: MULIB_IMPL_UNINAME
+  purpose: Unicode character names and reverse lookup through the ICU database.
+  dependencies: [uniproc]
+  status: implemented
+- name: uniproc
+  header: include/mulib-uniproc.h
+  manual: manual/mulib-uniproc.md
+  macro: MULIB_IMPL_UNIPROC
+  purpose: Strict UTF conversion, Unicode normalization, casing and scalar properties.
+  dependencies: [dynload, utf8]
+  status: implemented
 project_files:
+- file: tools/check_text.py
+  purpose: Strict Unicode/font/layout checks and optional native ABI comparisons.
+- file: manual/text-hardening.md
+  purpose: Text stack hardening evidence, reproducible checks and remaining verification limits.
+- file: tests/native/text_backends.c
+  purpose: Direct FreeType, HarfBuzz and ICU ABI and result comparisons.
+- file: tests/test_unicode_text.c
+  purpose: Unicode normalization, casing, names, boundaries and bidi regression tests.
+- file: tests/test_font_stack.c
+  purpose: System fonts, shaping, outlines and rasterization regression tests.
+- file: tests/test_distfield.c
+  purpose: Independent Euclidean distance field reference tests.
+- file: tests/test_pglayout.c
+  purpose: Stylesheet cascade, layout, wrapping and JSON/YAML round trips.
+- file: tests/test_text_allocations.c
+  purpose: Allocation-failure injection for Unicode, fonts, distance fields and layout.
+- file: tests/test_text_edgecases.c
+  purpose: Hostile native metadata, scalar round trips, numerical edges, schema mutations and depth limits.
+- file: examples/modules/bidi.c
+  purpose: Standalone bidi example.
+- file: examples/modules/distfield.c
+  purpose: Standalone distance field example.
+- file: examples/modules/fontdraw.c
+  purpose: Standalone glyph rasterization example.
+- file: examples/modules/fontshape.c
+  purpose: Standalone OpenType shaping example.
+- file: examples/modules/pglayout.c
+  purpose: Standalone layout and YAML persistence example.
+- file: examples/modules/stylesheet.c
+  purpose: Standalone typed cascade example.
+- file: examples/modules/sysfonts.c
+  purpose: Standalone system font matching example.
+- file: examples/modules/unibreak.c
+  purpose: Standalone Unicode boundary example.
+- file: examples/modules/uniname.c
+  purpose: Standalone Unicode name round trip.
+- file: examples/modules/uniproc.c
+  purpose: Standalone Unicode case-fold example.
+- file: examples/modules/vgabuffer.c
+  purpose: RAM-backed VGA dashboard with subwindows, scrolling and buffer presentation.
+- file: tests/test_vgabuffer.c
+  purpose: VGA bounds, overlap, scrolling, stream chunking and cursor I/O regressions.
 - file: tests/test_osdev_loaders.c
   purpose: Native EFI ABI, ELF loading, March tests, descriptor and hardware parser regressions.
 - file: tools/check_osdev.py

@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **350 implemented modules**.
+A C11 modular single-header utility library with **361 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -153,6 +153,25 @@ or `CC=clang CXX=clang++ python3 tools/check_graphics.py --sanitizers` for
 ASan/UBSan. These include allocation failures, deterministic parser mutations,
 scalar/SIMD numerical regressions, C++ declarations and optional GLSL/HLSL
 validation with `glslangValidator`.
+
+## Unicode, fonts and page layout
+
+[Uniproc](manual/mulib-uniproc.md), [Uniname](manual/mulib-uniname.md),
+[Bidi](manual/mulib-bidi.md) and [Unibreak](manual/mulib-unibreak.md) provide
+strict UTF conversion and runtime ICU normalization, casing, names, directional
+runs and text boundaries. [Sysfonts](manual/mulib-sysfonts.md) uses Fontconfig
+for discovery; [Fontshape](manual/mulib-fontshape.md) and
+[Fontdraw](manual/mulib-fontdraw.md) use HarfBuzz and FreeType for OpenType
+shaping, glyph outlines and rasterization. Native libraries are loaded on demand;
+development headers and link-time dependencies are unnecessary. Missing runtimes
+produce explicit failures.
+
+[Distfield](manual/mulib-distfield.md) generates Euclidean glyph-mask SDFs.
+[Stylesheet](manual/mulib-stylesheet.md) implements a typed CSS cascade, and
+[Pglayout](manual/mulib-pglayout.md) adds owned page/text/image/path objects,
+block flow, Unicode wrapping and JSON/YAML source-model persistence. Manuals
+specify the supported layout/style profiles and native extension APIs.
+Run `python3 tools/check_text.py --require-backends`, or add `--sanitizers`.
 
 ## Artifacts, build graphs and watch daemons
 

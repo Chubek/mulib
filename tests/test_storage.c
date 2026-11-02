@@ -173,6 +173,31 @@ static void test_dynload(void) {
     mulib_dynload_t d = MULIB_DYNLOAD_INIT;
     char error[128], tiny[1] = { 'x' };
     void *p = &d;
+    assert(mulib_dynload_open_pinned(NULL, "unused", error, sizeof(error)) == MULIB_DYNLOAD_EINVAL);
+    assert(mulib_dynload_open_pinned(&d, NULL, error, sizeof(error)) == MULIB_DYNLOAD_EINVAL);
+#if defined(_WIN32) || defined(RTLD_NODELETE)
+    assert(mulib_dynload_open_pinned(&d, "mulib-no-such-library-743918", error, sizeof(error)) == MULIB_DYNLOAD_EIO);
+    assert(!d.handle && error[0]);
+#else
+    assert(mulib_dynload_open_pinned(&d, "unused", error, sizeof(error)) == MULIB_DYNLOAD_ENOTSUP);
+#endif
+#if defined(_WIN32) || (defined(__linux__) && defined(RTLD_NODELETE))
+    {
+#ifdef _WIN32
+        const char *path = "kernel32.dll", *symbol = "GetCurrentProcessId";
+#else
+        const char *path = "libc.so.6", *symbol = "malloc";
+#endif
+        void *first;
+        assert(!mulib_dynload_open_pinned(&d, path, error, sizeof(error)) && !error[0]);
+        assert(mulib_dynload_open_pinned(&d, path, NULL, 0) == MULIB_DYNLOAD_ESTATE);
+        assert(!mulib_dynload_symbol(&d, symbol, &first, NULL, 0) && first);
+        assert(!mulib_dynload_close(&d, NULL, 0) && !d.handle);
+        assert(!mulib_dynload_open_pinned(&d, path, NULL, 0));
+        assert(!mulib_dynload_symbol(&d, symbol, &p, NULL, 0) && p == first);
+        assert(!mulib_dynload_close(&d, NULL, 0));
+    }
+#endif
 #if defined(__unix__) || defined(__APPLE__) || defined(_WIN32)
     assert(mulib_dynload_open(&d, "mulib-no-such-library-743918", error, sizeof(error)) == MULIB_DYNLOAD_EIO);
     assert(error[0] && !d.handle);

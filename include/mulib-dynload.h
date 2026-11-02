@@ -32,8 +32,16 @@ extern "C"
    * Failure leaves output unchanged; path resolution is the native loader's
    * policy.
    */
-  int mulib_dynload_open (mulib_dynload_t *library, const char *path,
-                          char *error, size_t capacity);
+   int mulib_dynload_open (mulib_dynload_t *library, const char *path,
+                           char *error, size_t capacity);
+  /** @brief Open a named runtime and pin its module until process exit.
+   * For runtimes with process-global caches or callbacks that cannot safely be
+   * unloaded. Close still releases this handle's reference. Pinning is permanent
+   * and shared by all users of the module. Requires a non-NULL path and native
+   * RTLD_NODELETE or Windows module pinning; otherwise returns ENOTSUP.
+   * Other contracts match open; no MuLIB global handle cache is maintained. */
+  int mulib_dynload_open_pinned (mulib_dynload_t *library, const char *path,
+                                 char *error, size_t capacity);
   /** @brief Look up a symbol, permitting a successful NULL-valued symbol on
    * POSIX. Output is unchanged on failure. It is borrowed until the library
    * closes. Function-pointer conversion follows the host ABI, not an ISO C
@@ -131,6 +139,56 @@ extern "C"
   (void)path;
   mulib_dynload_message_ (error, cap, "dynamic loading unsupported");
   return MULIB_DYNLOAD_ENOTSUP;
+#endif
+  }
+  int
+  mulib_dynload_open_pinned (mulib_dynload_t *d, const char *path,
+                             char *error, size_t cap)
+  {
+    mulib_dynload_message_ (error, cap, "");
+    if (!d || !path)
+      {
+        mulib_dynload_message_ (error, cap, "invalid pinned library request");
+        return MULIB_DYNLOAD_EINVAL;
+      }
+    if (d->handle)
+      {
+        mulib_dynload_message_ (error, cap, "library already open");
+        return MULIB_DYNLOAD_ESTATE;
+      }
+#if defined(_WIN32)
+    {
+      mulib_dynload_t next = MULIB_DYNLOAD_INIT;
+      HMODULE pinned;
+      int result = mulib_dynload_open (&next, path, error, cap);
+      if (result) return result;
+      if (!GetModuleHandleExA (GET_MODULE_HANDLE_EX_FLAG_PIN |
+                              GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+                              (LPCSTR)next.handle, &pinned))
+        {
+          mulib_dynload_winerror_ (error, cap);
+          (void)mulib_dynload_close (&next, NULL, 0);
+          return MULIB_DYNLOAD_EIO;
+        }
+      *d = next;
+      return MULIB_DYNLOAD_OK;
+    }
+#elif (defined(__unix__) || defined(__APPLE__)) && defined(RTLD_NODELETE)
+    {
+      void *h = dlopen (path, RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE);
+      if (!h)
+        {
+          const char *message = dlerror ();
+          mulib_dynload_message_ (error, cap, message ? message : "dlopen failed");
+          return MULIB_DYNLOAD_EIO;
+        }
+      d->handle = h;
+      d->owned = 1;
+      return MULIB_DYNLOAD_OK;
+    }
+#else
+    mulib_dynload_message_ (error, cap, "module pinning unsupported");
+    return MULIB_DYNLOAD_ENOTSUP;
 #endif
   }
   int

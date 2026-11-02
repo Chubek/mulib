@@ -1,6 +1,6 @@
 # MuLIB module and composition guide
 
-MuLIB has 335 implemented single-header C11 modules. Every implemented module has a corresponding
+MuLIB has 361 implemented single-header C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -18,7 +18,7 @@ consult each manual's exact supported syntax, errors, and limits.
 | Graphics math and geometry | [linalg](mulib-linalg.md), [simdmath](mulib-simdmath.md), [cgeom](mulib-cgeom.md), [collision](mulib-collision.md) |
 | Rendering and GUI | [GLX](mulib-glx.md), [ShaderX](mulib-shaderx.md), [VectGFX](mulib-vectgfx.md), [raytracing](mulib-raytracing.md), [ImmGTK](mulib-immgtk.md) |
 | Storage and native formats | [archive](mulib-archive.md), [mmfile](mulib-mmfile.md), [kvdb](mulib-kvdb.md), [elf](mulib-elf.md), [dynload](mulib-dynload.md), [drm](mulib-drm.md) |
-| Terminals | [terminfo](mulib-terminfo.md), [termkey](mulib-termkey.md), [termutils](mulib-termutils.md), [vterm](mulib-vterm.md), [tui](mulib-tui.md), [readline](mulib-readline.md) |
+| Terminals | [terminfo](mulib-terminfo.md), [termkey](mulib-termkey.md), [termutils](mulib-termutils.md), [vterm](mulib-vterm.md), [tui](mulib-tui.md), [readline](mulib-readline.md), [VGA text buffer](mulib-vgabuffer.md) |
 | Protocols | [uri](mulib-uri.md), [http](mulib-http.md), [rpc](mulib-rpc.md), [dbus](mulib-dbus.md) |
 | IP addresses | [IPv4](mulib-inet4.md), [IPv6](mulib-inet6.md), [historical inte6 header](mulib-inte6.md), [address lookup](mulib-getaddr.md) |
 | Input and devices | [input](mulib-input.md), [keyremap](mulib-keyremap.md), [marionette](mulib-marionette.md), [udev](mulib-udev.md), [vdev](mulib-vdev.md), [kvm](mulib-kvm.md) |
@@ -122,3 +122,30 @@ HTTP wire exchange, downloads binary data with `miniwget`, and evaluates a
 downloaded expression with MicroJS. Its implementations live in a separate
 translation unit. Transport is an explicit local callback; this test demonstrates
 composition without claiming socket, TLS or remote-service interoperability.
+## Unicode, fonts and page layout
+
+| Module | Responsibility | Direct dependencies |
+| --- | --- | --- |
+| [sysfonts](mulib-sysfonts.md) | Fontconfig discovery, matching and private application fonts | dynload |
+| [uniproc](mulib-uniproc.md) | UTF conversion and ICU normalization, casing, properties | dynload, utf8 |
+| [uniname](mulib-uniname.md) | Unicode names and reverse lookup | uniproc |
+| [bidi](mulib-bidi.md) | Unicode paragraph levels and visual directional runs | uniproc |
+| [unibreak](mulib-unibreak.md) | Line, grapheme, word and sentence boundaries | uniproc |
+| [fontshape](mulib-fontshape.md) | HarfBuzz shaping, features and variable-font axes | dynload, utf8 |
+| [fontdraw](mulib-fontdraw.md) | FreeType glyph bitmaps and scalable outlines | dynload |
+| [distfield](mulib-distfield.md) | Linear-time Euclidean alpha-mask distance fields | none |
+| [stylesheet](mulib-stylesheet.md) | Typed styles, inheritance and specificity cascade | css |
+| [pglayout](mulib-pglayout.md) | Page objects, block flow, wrapping and JSON/YAML persistence | bidi, fontshape, json, stylesheet, unibreak, yaml |
+
+ICU, Fontconfig, HarfBuzz and FreeType are optional runtime backends, with no
+mandatory build-time dependencies. Their APIs report unavailability rather than
+substituting approximate algorithms. Distfield and stylesheet are native MuLIB
+implementations; page objects and serialization also work without native backends.
+Font/native-runtime capabilities and the focused page/style grammar are documented
+separately in each manual. Applications own implementation-switch placement.
+
+`python3 tools/check_text.py --require-backends` runs strict focused tests,
+standalone examples, C++ declarations and optional native ABI comparisons.
+Add `--sanitizers` for ASan/UBSan; `CC=clang CXX=clang++` selects Clang.
+See [text-stack hardening](text-hardening.md) for the regression matrix,
+resource limits and remaining verification boundaries.
