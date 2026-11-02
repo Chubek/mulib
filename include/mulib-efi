@@ -1,0 +1,4 @@
+/** @file mulib-efi
+ * @brief Compatibility include for the extensionless requested EFI filename.
+ */
+#include "mulib-efi.h"

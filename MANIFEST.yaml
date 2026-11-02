@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 341
-implemented_module_count: 339
+module_count: 352
+implemented_module_count: 350
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2472,7 +2472,114 @@ modules:
   purpose: C/C++ preprocessing, entry-independent include graphs and MuLIB-linked native extensions.
   dependencies: [arena, dsu, elf, endian, linker, strbuf, utf8]
   status: implemented
+- name: efi
+  header: include/mulib-efi.h
+  manual: manual/mulib-efi.md
+  macro: MULIB_IMPL_EFI
+  purpose: BIOS thunk and EFI boot-service adapters with bounded map-key retries.
+  dependencies: []
+  status: implemented
+- name: bootmgr
+  header: include/mulib-bootmgr.h
+  manual: manual/mulib-bootmgr.md
+  macro: MULIB_IMPL_BOOTMGR
+  purpose: Bounded boot entry selection and explicit-backend launch with fallback.
+  dependencies: []
+  status: implemented
+- name: hwinfo
+  header: include/mulib-hwinfo.h
+  manual: manual/mulib-hwinfo.md
+  macro: MULIB_IMPL_HWINFO
+  purpose: Native or injectable x86 CPUID inventory.
+  dependencies: []
+  status: implemented
+- name: memtest
+  header: include/mulib-memtest.h
+  manual: manual/mulib-memtest.md
+  macro: MULIB_IMPL_MEMTEST
+  purpose: Destructive volatile RAM pattern tests on caller-owned regions.
+  dependencies: []
+  status: implemented
+- name: gputest
+  header: include/mulib-gputest.h
+  manual: manual/mulib-gputest.md
+  macro: MULIB_IMPL_GPUTEST
+  purpose: Bounded driver-backed GPU stress orchestration and thermal checks.
+  dependencies: []
+  status: implemented
+- name: descritors
+  header: include/mulib-descritors.h
+  manual: manual/mulib-descritors.md
+  macro: MULIB_IMPL_DESCRITORS
+  purpose: x86-64 GDT, IDT, TSS and descriptor pointer encoders.
+  dependencies: []
+  status: implemented
+- name: io
+  header: include/mulib-io.h
+  manual: manual/mulib-io.md
+  macro: MULIB_IMPL_IO
+  purpose: Explicit opt-in privileged x86 port I/O and table loads.
+  dependencies: []
+  status: implemented
+- name: paging
+  header: include/mulib-paging.h
+  manual: manual/mulib-paging.md
+  macro: MULIB_IMPL_PAGING
+  purpose: Canonical x86-64 addresses, table indices and 4 KiB PTE construction.
+  dependencies: []
+  status: implemented
+- name: pci
+  header: include/mulib-pci.h
+  manual: manual/mulib-pci.md
+  macro: MULIB_IMPL_PCI
+  purpose: Backend-neutral conventional PCI discovery and ECAM offsets.
+  dependencies: []
+  status: implemented
+- name: acpi
+  header: include/mulib-acpi.h
+  manual: manual/mulib-acpi.md
+  macro: MULIB_IMPL_ACPI
+  purpose: Bounded ACPI RSDP and SDT validation and root address iteration.
+  dependencies: []
+  status: implemented
+- name: framebuffer
+  header: include/mulib-framebuffer.h
+  manual: manual/mulib-framebuffer.md
+  macro: MULIB_IMPL_FRAMEBUFFER
+  purpose: Pitch-aware CPU framebuffer pattern fill and readback.
+  dependencies: []
+  status: implemented
 project_files:
+- file: tests/test_osdev_loaders.c
+  purpose: Native EFI ABI, ELF loading, March tests, descriptor and hardware parser regressions.
+- file: tools/check_osdev.py
+  purpose: Strict freestanding compilation and hosted OSDev regression checks.
+- file: tests/test_osdev.c
+  purpose: Hosted OSDev bounds, failure handling and hardware adapter regression tests.
+- file: include/mulib-efi
+  purpose: Extensionless compatibility include for mulib-efi.h.
+- file: examples/modules/efi.c
+  purpose: EFI memory descriptor decoding example.
+- file: examples/modules/bootmgr.c
+  purpose: Boot entry selection example.
+- file: examples/modules/hwinfo.c
+  purpose: Native CPUID inventory example.
+- file: examples/modules/memtest.c
+  purpose: Destructive test of a disposable RAM array.
+- file: examples/modules/gputest.c
+  purpose: GPU test orchestration example with a mock driver.
+- file: examples/modules/descritors.c
+  purpose: Descriptor encoding example without privileged execution.
+- file: examples/modules/io.c
+  purpose: Safe default I/O opt-out example.
+- file: examples/modules/paging.c
+  purpose: Page entry construction example.
+- file: examples/modules/pci.c
+  purpose: PCI ECAM offset example.
+- file: examples/modules/acpi.c
+  purpose: ACPI table checksum validation example.
+- file: examples/modules/framebuffer.c
+  purpose: Checkerboard rendering and verification example.
 - file: examples/modules/metapp.c
   purpose: Standalone C/C++ preprocessor with include paths, definitions and linked plugins.
 - file: examples/plugins/metapp-count.c

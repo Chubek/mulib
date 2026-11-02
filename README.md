@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **339 implemented modules**.
+A C11 modular single-header utility library with **350 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -204,6 +204,30 @@ service-assisted profiles and 27 unimplemented IDs requiring pinned specificatio
 storage and system entropy, and `mulib-vmm-kvm.h` runs native Linux/x86 guests.
 See [`manual/mulib-vmm.md`](manual/mulib-vmm.md) for integration. Run
 `python3 tools/check_virtio.py --sanitizers` for focused verification.
+
+## Bare-metal OS development
+
+The allocation-free OSDev headers cover [BIOS/EFI adapters](manual/mulib-efi.md),
+[boot selection and backend handoff](manual/mulib-bootmgr.md),
+[CPU inventory](manual/mulib-hwinfo.md), destructive [RAM tests](manual/mulib-memtest.md),
+[GPU-driver stress orchestration](manual/mulib-gputest.md), and
+[x86-64 descriptors](manual/mulib-descritors.md). Supporting headers provide
+[port I/O](manual/mulib-io.md), [paging](manual/mulib-paging.md),
+[PCI discovery](manual/mulib-pci.md), [ACPI validation](manual/mulib-acpi.md), and
+[framebuffer patterns](manual/mulib-framebuffer.md). Each has a standalone example.
+Privileged instructions are disabled unless explicitly enabled. Firmware mode
+transitions, native EFI ABI adaptation and GPU drivers are application-provided;
+these modules are building blocks, not complete bootable utilities.
+
+Native EFI ABI bindings and static x86-64 ELF segment loading are implemented.
+The stress modules include March C− RAM sweeps and a GLSL compute kernel with
+CPU-reference verification. Hardware helpers include TSS initialization, page
+table walking, PCI capability traversal, MADT iteration and CPUID cache geometry.
+
+Run `python3 tools/check_osdev.py` (optionally `--sanitizers`) for strict
+freestanding compilation, C++ linkage, examples and hosted regressions, or run
+the focused hosted regression suite through CTest (`mulib_test_osdev`).
+Never run destructive tests on memory containing live data.
 
 ## Licensing
 
