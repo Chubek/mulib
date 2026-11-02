@@ -121,6 +121,13 @@ if(MULIB_BUILD_TESTS)
     mulib_register_test("mulib_${test_name}")
   endforeach()
   find_program(MULIB_GLSLANG_VALIDATOR NAMES glslangValidator)
+  find_program(MULIB_SYSTEMD_ANALYZE NAMES systemd-analyze)
+  if(Python3_Interpreter_FOUND AND MULIB_SYSTEMD_ANALYZE)
+    add_test(NAME mulib_daemon_systemd
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_daemon.py
+        --emitter $<TARGET_FILE:mulib_test_daemon_fswatch> --validator ${MULIB_SYSTEMD_ANALYZE})
+    set_tests_properties(mulib_daemon_systemd PROPERTIES TIMEOUT 60)
+  endif()
   set_tests_properties(mulib_test_vmm_kvm PROPERTIES SKIP_REGULAR_EXPRESSION "SKIP: KVM")
   if(Python3_Interpreter_FOUND AND MULIB_GLSLANG_VALIDATOR)
     add_test(NAME mulib_shaderx_backends
@@ -138,6 +145,10 @@ if(MULIB_BUILD_TESTS)
     set_tests_properties(mulib_prowse_native_io PROPERTIES TIMEOUT 90)
   endif()
   if(Python3_Interpreter_FOUND AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    add_test(NAME mulib_metapp_reference
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_metapp.py
+        --preprocessor $<TARGET_FILE:mulib_test_metapp> --compiler ${CMAKE_C_COMPILER})
+    set_tests_properties(mulib_metapp_reference PROPERTIES TIMEOUT 180)
     set(microcc_options)
     if(MULIB_SANITIZERS)
       list(APPEND microcc_options --sanitizers)

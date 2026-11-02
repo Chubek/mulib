@@ -215,6 +215,14 @@ def main():
                             if native.returncode:
                                 failures.append((label + ' native assembly', native.stderr or native.stdout))
                                 return False
+                        if sources and len(sources) == 1 and sources[0].name == 'test_metapp.c':
+                            metapp = subprocess.run(
+                                [sys.executable, str(root / 'tools/check_metapp.py'),
+                                 '--preprocessor', str(binary), '--compiler', shlex.join(compiler)],
+                                cwd=work, capture_output=True, text=True, timeout=180)
+                            if metapp.returncode:
+                                failures.append((label + ' preprocessor/plugins', metapp.stderr or metapp.stdout))
+                                return False
                 except (OSError, subprocess.TimeoutExpired) as error:
                     failures.append((label, str(error)))
                     return False

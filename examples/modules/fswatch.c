@@ -3,6 +3,23 @@
 #include <stdio.h>
 #define MULIB_IMPL_FSWATCH
 #define MULIB_IMPL_SELECT
+#define MULIB_IMPL_VFS
+#define MULIB_IMPL_DAEMON
+#define MULIB_IMPL_PROCESS
+#define MULIB_IMPL_MUNE
+#define MULIB_IMPL_DYNLOAD
+#define MULIB_IMPL_MIR
+#define MULIB_IMPL_VMWEAVE
+#define MULIB_IMPL_EGRAPH
+#define MULIB_IMPL_REWRITE
+#define MULIB_IMPL_DYNCALL
+#define MULIB_IMPL_JIT
+#define MULIB_IMPL_PARSEC
+#define MULIB_IMPL_PARSER
+#define MULIB_IMPL_PEG
+#define MULIB_IMPL_AST
+#define MULIB_IMPL_STRBUF
+#define MULIB_IMPL_GLOB
 #include "mulib-fswatch.h"
 #include "mulib-select.h"
 #if defined(__linux__)
@@ -10,7 +27,30 @@
 #include <unistd.h>
 #include <fcntl.h>
 #endif
+static int changed(void *user, const char *handler, const mulib_fswatch_change_t *event) {
+    int *count = (int *)user;
+    assert(!strcmp(handler, "rebuild") && !strcmp(event->path, "hello.c"));
+    ++*count;
+    return 0;
+}
 int main(void) {
+    {
+        const char source[] = "watch \"/src\" recursive { on create|modify \"*.c\" -> rebuild; }";
+        mulib_fswatch_program_t *program = mulib_fswatch_parse(source, sizeof(source)-1, NULL);
+        mulib_fswatch_runtime_t *runtime;
+        mulib_vfs vfs;
+        mulib_vfs_mem mem;
+        mulib_vfs_ops ops = mulib_vfs_mem_ops();
+        int count = 0;
+        assert(program && !mulib_vfs_init(&vfs, 1) && !mulib_vfs_mem_init(&mem, 8, 1024));
+        assert(!mulib_vfs_mount(&vfs, "/src", &ops, &mem));
+        runtime = mulib_fswatch_runtime_create(program, mulib_fswatch_vfs_scan, &vfs, 32);
+        assert(runtime && !mulib_fswatch_poll(runtime, changed, &count));
+        assert(!mulib_vfs_mem_put(&mem, "/hello.c", "int main(void) {}", 17));
+        assert(!mulib_fswatch_poll(runtime, changed, &count) && count == 1);
+        mulib_fswatch_runtime_destroy(runtime); mulib_fswatch_program_destroy(program);
+        mulib_vfs_free(&vfs); mulib_vfs_mem_free(&mem);
+    }
 #if defined(__linux__)
     int fd = mulib_fswatch_create(), watch, file, made = 0;
     unsigned attempt;

@@ -350,4 +350,8 @@
 #include "mulib-machine.h"
 #include "mulib-microcc.h"
 #include "mulib-superblocks.h"
+#include "mulib-artifact.h"
+#include "mulib-buildgraph.h"
+#include "mulib-daemon.h"
+#include "mulib-metapp.h"
 int main(void) { return 0; }

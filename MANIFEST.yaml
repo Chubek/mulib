@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 337
-implemented_module_count: 335
+module_count: 341
+implemented_module_count: 339
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -1073,8 +1073,8 @@ modules:
   header: include/mulib-fswatch.h
   manual: manual/mulib-fswatch.md
   macro: MULIB_IMPL_FSWATCH
-  purpose: Linux filesystem watching and bounds-checked inotify event decoding.
-  dependencies: []
+  purpose: Native events, filesystem-neutral watch DSL, snapshot diffing and daemon execution.
+  dependencies: [daemon, glob, select, vfs]
   status: implemented
 - name: ftpclient
   header: include/mulib-ftpclient.h
@@ -2444,7 +2444,63 @@ modules:
   purpose: Single-entry SSA traces with explicit side exits and native MIR lowering.
   dependencies: [gssair]
   status: implemented
+- name: artifact
+  header: include/mulib-artifact.h
+  manual: manual/mulib-artifact.md
+  macro: MULIB_IMPL_ARTIFACT
+  purpose: Immutable reference-counted byte values, references and application objects.
+  dependencies: []
+  status: implemented
+- name: buildgraph
+  header: include/mulib-buildgraph.h
+  manual: manual/mulib-buildgraph.md
+  macro: MULIB_IMPL_BUILDGRAPH
+  purpose: Declared-input/output artifact and opaque Action DAG with execution and translation walkers.
+  dependencies: [artifact]
+  status: implemented
+- name: daemon
+  header: include/mulib-daemon.h
+  manual: manual/mulib-daemon.md
+  macro: MULIB_IMPL_DAEMON
+  purpose: Owned daemon specifications, Mune configuration and profiles, POSIX launch and lifecycle.
+  dependencies: [mune, process, strbuf]
+  status: implemented
+- name: metapp
+  header: include/mulib-metapp.h
+  manual: manual/mulib-metapp.md
+  macro: MULIB_IMPL_METAPP
+  purpose: C/C++ preprocessing, entry-independent include graphs and MuLIB-linked native extensions.
+  dependencies: [arena, dsu, elf, endian, linker, strbuf, utf8]
+  status: implemented
 project_files:
+- file: examples/modules/metapp.c
+  purpose: Standalone C/C++ preprocessor with include paths, definitions and linked plugins.
+- file: examples/plugins/metapp-count.c
+  purpose: Freestanding ELF plugin extending directives, pragmas and identifier expansion.
+- file: tests/test_metapp.c
+  purpose: Preprocessing semantics, diagnostics, ownership, limits and allocation failures.
+- file: tools/check_metapp.py
+  purpose: GCC/Clang token comparisons, connected dependency graphs, ELF plugin execution and malformed-object checks.
+- file: examples/modules/artifact.c
+  purpose: Standalone checked artifact ownership example.
+- file: examples/modules/buildgraph.c
+  purpose: Standalone execution and translation walker example.
+- file: examples/modules/daemon.c
+  purpose: Mune configuration and daemon profile compilation example.
+- file: tests/test_buildgraph.c
+  purpose: Artifact ownership, build DAG validation, walkers and transactional outputs.
+- file: tests/test_daemon_fswatch.c
+  purpose: Watch DSL, native and VFS scans, Mune profiles and daemon lifecycle tests.
+- file: library/ldaemon/service.lua
+  purpose: Table-based Mune daemon configuration helper.
+- file: library/ldaemon/fswatch.lua
+  purpose: Foreground filesystem watcher service configuration helper.
+- file: library/ldaemon/systemd.lua
+  purpose: Mune profile compiling daemon specifications into systemd units.
+- file: library/ldaemon/README.md
+  purpose: Daemon helper and profile integration instructions.
+- file: tools/check_daemon.py
+  purpose: Native systemd parser verification of the Mune-generated service profile.
 - file: examples/modules/anfir.c
   purpose: Standalone A-normal literal-atom lowering example.
 - file: examples/modules/clickir.c

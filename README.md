@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **335 implemented modules**.
+A C11 modular single-header utility library with **339 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -112,6 +112,13 @@ native MIR, with local optimization, costed selection and dependence-safe
 scheduling. Built-in targets emit ELF x86-64 SysV and RV64IM assembly, including
 PHI destruction, spill slots and fixed-arity ABI calls. See its
 [runnable example](examples/modules/microcc.c) and supported native profile.
+[MetaPP](manual/mulib-metapp.md) adds token-based C/C++ preprocessing, macro
+rescanning, variadics, conditional expressions, configurable includes, and plugins
+for directives, pragmas and identifier expansion. Native ELF plugins are relocated
+through MuLIB's linker; see the [CLI example](examples/modules/metapp.c) and
+[plugin example](examples/plugins/metapp-count.c).
+Its dependency index returns the same connected include graph from any member
+file, including reverse dependencies, with deterministic Graphviz DOT output.
 `mulib-inet6.h` is the canonical IPv6 header; `mulib-inte6.h` remains
 compatible. The existing spellings `impaclient` and `dnsnmeserver` are retained.
 
@@ -146,6 +153,16 @@ or `CC=clang CXX=clang++ python3 tools/check_graphics.py --sanitizers` for
 ASan/UBSan. These include allocation failures, deterministic parser mutations,
 scalar/SIMD numerical regressions, C++ declarations and optional GLSL/HLSL
 validation with `glslangValidator`.
+
+## Artifacts, build graphs and watch daemons
+
+[Artifacts](manual/mulib-artifact.md) provide immutable byte values, external
+references and application objects reusable across builds and agent workflows.
+[Buildgraph](manual/mulib-buildgraph.md) adds declared-input/output DAGs with opaque
+Actions, deterministic execution and translation walkers, and transactional output
+publication. [FSWatch](manual/mulib-fswatch.md) adds a small watch DSL, native/VFS
+snapshot backends and [daemon](manual/mulib-daemon.md) execution. Mune configuration
+helpers and the systemd compilation profile live in [`library/ldaemon`](library/ldaemon).
 
 ## Container stack
 

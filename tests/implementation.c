@@ -1,3 +1,7 @@
+#define MULIB_IMPL_METAPP
+#define MULIB_IMPL_ARTIFACT
+#define MULIB_IMPL_BUILDGRAPH
+#define MULIB_IMPL_DAEMON
 #define MULIB_IMPL_ANFIR
 #define MULIB_IMPL_CLICKIR
 #define MULIB_IMPL_DEPIR
@@ -698,3 +702,7 @@
 #include "mulib-machine.h"
 #include "mulib-microcc.h"
 #include "mulib-superblocks.h"
+#include "mulib-artifact.h"
+#include "mulib-buildgraph.h"
+#include "mulib-daemon.h"
+#include "mulib-metapp.h"
