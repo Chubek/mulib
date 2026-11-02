@@ -421,4 +421,6 @@
 #include "mulib-unibreak.h"
 #include "mulib-uniname.h"
 #include "mulib-uniproc.h"
+#include "mulib-fst.h"
+#include "mulib-machinebuild.h"
 int main(void) { return 0; }

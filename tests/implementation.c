@@ -1,3 +1,5 @@
+#define MULIB_IMPL_FST
+#define MULIB_IMPL_MACHINEBUILD
 #define MULIB_IMPL_AMD64
 #define MULIB_IMPL_ROW_RDBMS
 #define MULIB_IMPL_COLUMN_RDBMS
@@ -841,3 +843,5 @@
 #include "mulib-unibreak.h"
 #include "mulib-uniname.h"
 #include "mulib-uniproc.h"
+#include "mulib-fst.h"
+#include "mulib-machinebuild.h"

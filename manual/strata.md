@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 419 headers, 446 direct dependency edges.
+Inventory: 421 headers, 449 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -179,7 +179,7 @@ Compatibility group: `parsec`, `peg`.
 | [xtks](mulib-xtks.md) | none |
 | [yantlr](mulib-yantlr.md) | none |
 
-## Stratum 1 (108 modules)
+## Stratum 1 (109 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -214,6 +214,7 @@ Compatibility group: `parsec`, `peg`.
 | [flatbuffers](mulib-flatbuffers.md) | `binfile`, `bycutils` |
 | [fontdraw](mulib-fontdraw.md) | `dynload` |
 | [fontshape](mulib-fontshape.md) | `dynload`, `utf8` |
+| [fst](mulib-fst.md) | `vec` |
 | [fuse](mulib-fuse.md) | `vfs` |
 | [glx](mulib-glx.md) | `drm`, `linalg` |
 | [graphdb](mulib-graphdb.md) | `memtable` |
@@ -292,7 +293,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (50 modules)
+## Stratum 2 (51 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -317,6 +318,7 @@ Compatibility group: `parsec`, `peg`.
 | [initsys](mulib-initsys.md) | `process`, `taskdag` |
 | [latex](mulib-latex.md) | `tex` |
 | [layoutml](mulib-layoutml.md) | `layout`, `xml` |
+| [machinebuild](mulib-machinebuild.md) | `fst`, `strbuf` |
 | [mempool](mulib-mempool.md) | `alloc` |
 | [memtkx](mulib-memtkx.md) | `alloc` |
 | [metapp](mulib-metapp.md) | `arena`, `dsu`, `elf`, `endian`, `linker`, `strbuf`, `utf8` |

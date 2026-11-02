@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **418 implemented modules**.
+A C11 modular single-header utility library with **420 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -71,6 +71,11 @@ libconfuse-style configuration; [lazy streams](manual/mulib-lazystream.md)
 provide on-demand map/filter/take/drop/fold pipelines.
 
 ## Scope and limitations
+
+[FST](manual/mulib-fst.md) provides deterministic range transducers with optional
+symbol emissions. [Machinebuild](manual/mulib-machinebuild.md) parses a small
+automaton DSL and generates standalone JavaScript factories with step/reset/run
+APIs; it is separate from the compiler-target `mulib-machine.h` module.
 
 The term *header-only* here means no prebuilt or separately shipped `.c` files; implementations live in headers behind feature switches. These modules implement focused, documented APIs, not every feature implied by a format's name. In particular, configuration, markup, terminal, protocol, and grammar modules document their supported syntax and limits; they are not claims of full YAML, TOML, XPath, HTML5, CSS, CommonMark, VT, or DBus conformance. Unsupported features must not be mistaken for supported conversions. These modules are not complete substitutes for a production Tcl distribution, POSIX manuals toolchain, JSON Schema validator, full Unicode database or cryptographic engine. `mulib-microtcl.h` `loadall()` registers **all MuLIB MicroTcl built-ins**, not external Tcl packages. Documented support and actual APIs determine feature completeness. All names and responsibilities are enumerated in `MANIFEST.yaml`; every header has a dedicated manual in `manual/` and embedded Doxygen text.
 

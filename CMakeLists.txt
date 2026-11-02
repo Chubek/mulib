@@ -124,6 +124,13 @@ if(MULIB_BUILD_TESTS)
     endif()
     mulib_register_test("mulib_${test_name}")
   endforeach()
+  find_program(MULIB_NODE_EXECUTABLE NAMES node nodejs)
+  if(MULIB_NODE_EXECUTABLE)
+    add_test(NAME mulib_machinebuild_js
+      COMMAND ${MULIB_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_machinebuild.js
+        $<TARGET_FILE:mulib_test_fst_machinebuild>)
+    set_tests_properties(mulib_machinebuild_js PROPERTIES TIMEOUT 60)
+  endif()
   find_program(MULIB_GLSLANG_VALIDATOR NAMES glslangValidator)
   find_program(MULIB_SYSTEMD_ANALYZE NAMES systemd-analyze)
   if(Python3_Interpreter_FOUND AND MULIB_SYSTEMD_ANALYZE)

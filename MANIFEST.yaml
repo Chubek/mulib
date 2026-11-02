@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 419
-implemented_module_count: 418
+module_count: 421
+implemented_module_count: 420
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2943,6 +2943,20 @@ modules:
   purpose: Strict UTF conversion, Unicode normalization, casing and scalar properties.
   dependencies: [dynload, utf8]
   status: implemented
+- name: fst
+  header: include/mulib-fst.h
+  manual: manual/mulib-fst.md
+  macro: MULIB_IMPL_FST
+  purpose: "Deterministic range finite-state transducers over uint32_t symbols."
+  dependencies: [vec]
+  status: implemented
+- name: machinebuild
+  header: include/mulib-machinebuild.h
+  manual: manual/mulib-machinebuild.md
+  macro: MULIB_IMPL_MACHINEBUILD
+  purpose: "Parse a bounded automaton DSL and generate standalone JavaScript."
+  dependencies: [fst, strbuf]
+  status: implemented
 project_files:
 - file: manual/storage-server.md
   purpose: Storage codecs, native builders, server policy profiles and dependency contracts.
@@ -4226,3 +4240,11 @@ project_files:
   purpose: "Focused regression suite for test_mune_runtime_alloc."
 - file: tests/test_text_shaping.c
   purpose: "Focused regression suite for test_text_shaping."
+- file: examples/modules/fst.c
+  purpose: "Standalone checked usage example for fst."
+- file: examples/modules/machinebuild.c
+  purpose: "Standalone checked usage example for machinebuild."
+- file: tests/test_fst_machinebuild.c
+  purpose: "Focused regression suite for test_fst_machinebuild."
+- file: tests/test_machinebuild.js
+  purpose: Execute generated JavaScript and compare transductions with the C runtime.
