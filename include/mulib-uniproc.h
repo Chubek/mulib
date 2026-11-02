@@ -51,6 +51,11 @@ char *mulib_uniproc_case_map(mulib_uniproc_t *context, mulib_uniproc_case_t mode
 int mulib_uniproc_properties(mulib_uniproc_t *context, uint32_t scalar,
                             int *category, unsigned *combining, uint32_t *lower,
                             uint32_t *upper);
+/** @brief Query ISO 15924 script tag (four ASCII letters plus NUL) and Unicode
+ * Default_Ignorable_Code_Point status. Either output may be NULL. 0/-1;
+ * unchanged on failure. Common=Zyyy, Inherited=Zinh. Uses ICU Script property. */
+int mulib_uniproc_script(mulib_uniproc_t *context, uint32_t scalar,
+                         char script[5], int *default_ignorable);
 #ifdef __cplusplus
 }
 #endif
@@ -239,6 +244,27 @@ fail:
     return -1;
 }
 #undef MULIB_UNIPROC_LOAD_
+int mulib_uniproc_script(mulib_uniproc_t *c, uint32_t cp, char out[5], int *ignorable) {
+    int32_t (*get_script)(int32_t, int32_t *);
+    const char *(*name)(int32_t);
+    int8_t (*property)(int32_t, int32_t);
+    const char *tag;
+    int32_t error = 0, script;
+    void *address;
+    if (!c || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff)) return -1;
+#define MULIB_UNIPROC_SCRIPT_LOAD_(fn, symbol) do { \
+    if (sizeof(fn) != sizeof address || mulib_uniproc_symbol(c, symbol, &address)) return -1; \
+    memcpy(&(fn), &address, sizeof(fn)); } while (0)
+    MULIB_UNIPROC_SCRIPT_LOAD_(get_script, "uscript_getScript");
+    MULIB_UNIPROC_SCRIPT_LOAD_(name, "uscript_getShortName");
+    MULIB_UNIPROC_SCRIPT_LOAD_(property, "u_hasBinaryProperty");
+#undef MULIB_UNIPROC_SCRIPT_LOAD_
+    script = get_script((int32_t)cp, &error);
+    if (error > 0 || !(tag = name(script)) || strlen(tag) != 4) return -1;
+    if (out) memcpy(out, tag, 5);
+    if (ignorable) *ignorable = property((int32_t)cp, 5) != 0; /* UCHAR_DEFAULT_IGNORABLE_CODE_POINT */
+    return 0;
+}
 #ifdef __cplusplus
 }
 #endif

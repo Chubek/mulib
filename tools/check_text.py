@@ -42,7 +42,7 @@ def main():
             subprocess.run([str(binary)], check=True, cwd=work, env=env, timeout=120)
             print('PASS', source.relative_to(ROOT), flush=True)
 
-        for name in ('unicode_text', 'font_stack', 'distfield', 'pglayout', 'text_allocations', 'text_edgecases'):
+        for name in ('unicode_text', 'font_stack', 'distfield', 'pglayout', 'text_allocations', 'text_edgecases', 'text_shaping'):
             check(ROOT / 'tests' / f'test_{name}.c')
         for name in MODULES:
             check(ROOT / 'examples/modules' / f'{name}.c')

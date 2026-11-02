@@ -44,6 +44,10 @@ int mulib_fontshape_shape(mulib_fontshape_t *font, const char *text, size_t leng
 void mulib_fontshape_run_destroy(mulib_fontshape_run_t *run);
 /** @brief Borrow hb_font_t for advanced native APIs, valid until close. */
 void *mulib_fontshape_native(mulib_fontshape_t *font);
+/** @brief Test Unicode nominal-glyph coverage, returning 1/0 or -1 for an
+ * invalid scalar/font. Variation selectors and shaping substitutions are not
+ * tested by nominal coverage; callers should test complete shaped clusters. */
+int mulib_fontshape_covers(mulib_fontshape_t *font, uint32_t scalar);
 #ifdef __cplusplus
 }
 #endif
@@ -76,6 +80,7 @@ struct mulib_fontshape {
     void (*font_destroy)(void *);
     void (*font_funcs)(void *);
     void (*scale)(void *, int, int);
+    int (*nominal)(void *, uint32_t, uint32_t *);
     void *(*buffer_create)(void);
     void (*buffer_destroy)(void *);
     int (*buffer_ok)(void *);
@@ -127,6 +132,7 @@ mulib_fontshape_t *mulib_fontshape_open(const char *path, unsigned index, int sc
     MULIB_FONTSHAPE_LOAD_(font_destroy, "hb_font_destroy");
     MULIB_FONTSHAPE_LOAD_(font_funcs, "hb_ot_font_set_funcs");
     MULIB_FONTSHAPE_LOAD_(scale, "hb_font_set_scale");
+    MULIB_FONTSHAPE_LOAD_(nominal, "hb_font_get_nominal_glyph");
     MULIB_FONTSHAPE_LOAD_(buffer_create, "hb_buffer_create");
     MULIB_FONTSHAPE_LOAD_(buffer_destroy, "hb_buffer_destroy");
     MULIB_FONTSHAPE_LOAD_(buffer_ok, "hb_buffer_allocation_successful");
@@ -159,6 +165,11 @@ fail:
     mulib_fontshape_close(f); return NULL;
 }
 void *mulib_fontshape_native(mulib_fontshape_t *f) { return f ? f->font : NULL; }
+int mulib_fontshape_covers(mulib_fontshape_t *f, uint32_t cp) {
+    uint32_t glyph;
+    if (!f || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff)) return -1;
+    return f->nominal(f->font, cp, &glyph) && glyph ? 1 : 0;
+}
 void mulib_fontshape_run_destroy(mulib_fontshape_run_t *r) {
     if (r) { free(r->glyphs); memset(r, 0, sizeof *r); }
 }

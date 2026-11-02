@@ -168,6 +168,31 @@ int main(void) {
             }
             assert(k == count); free(boundaries); ubrk_close(it);
         }
+        {
+            mulib_bidi_paragraph_t *paragraph = mulib_bidi_paragraph_open(u, text, sizeof text-1, -1);
+            size_t begin, end;
+            assert(paragraph);
+            for (begin = 0; begin < units; ++begin) for (end = begin+1; end <= units; ++end) {
+                UBiDi *native_line = ubidi_open();
+                mulib_bidi_result_t line = {0};
+                int32_t runs, k;
+                error = U_ZERO_ERROR;
+                ubidi_setLine(bidi, (int32_t)begin, (int32_t)end, native_line, &error);
+                assert(U_SUCCESS(error));
+                runs = ubidi_countRuns(native_line, &error); assert(U_SUCCESS(error));
+                assert(!mulib_bidi_paragraph_line(paragraph, map[begin], map[end]-map[begin], &line));
+                assert(line.count == (size_t)runs && line.paragraph_level == ubidi_getParaLevel(bidi));
+                for (k = 0; k < runs; ++k) {
+                    int32_t start, length;
+                    (void)ubidi_getVisualRun(native_line, k, &start, &length);
+                    assert(line.runs[k].start == map[begin+(size_t)start]);
+                    assert(line.runs[k].length == map[begin+(size_t)start+(size_t)length]-map[begin+(size_t)start]);
+                    assert(line.runs[k].level == ubidi_getLevelAt(native_line, start));
+                }
+                mulib_bidi_destroy(&line); ubidi_close(native_line);
+            }
+            mulib_bidi_paragraph_close(paragraph);
+        }
         ubidi_close(bidi); mulib_bidi_destroy(&result); free(utf16); free(map); mulib_uniproc_close(u);
     }
     hb_font_destroy(font); hb_face_destroy(hb_face); hb_blob_destroy(blob);

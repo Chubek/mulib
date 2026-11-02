@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 363
-implemented_module_count: 361
+module_count: 419
+implemented_module_count: 418
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2245,9 +2245,326 @@ modules:
   status: implemented
 - name: amd64
   header: include/mulib-amd64.h
-  purpose: Reserved future module; no implemented API.
+  manual: manual/mulib-amd64.md
+  macro: MULIB_IMPL_AMD64
+  purpose: Owned AMD64 metadata assembler convenience context.
+  dependencies: [assembler]
+  status: implemented
+- name: row-rdbms
+  header: include/mulib-row-rdbms.h
+  manual: manual/mulib-row-rdbms.md
+  macro: MULIB_IMPL_ROW_RDBMS
+  purpose: Schema-checked in-memory row table over documentdb.
+  dependencies: [documentdb, dbschema]
+  status: implemented
+- name: column-rdbms
+  header: include/mulib-column-rdbms.h
+  manual: manual/mulib-column-rdbms.md
+  macro: MULIB_IMPL_COLUMN_RDBMS
+  purpose: Dense finite-double column table with atomic row append.
   dependencies: []
-  status: reserved
+  status: implemented
+- name: graphdb
+  header: include/mulib-graphdb.h
+  manual: manual/mulib-graphdb.md
+  macro: MULIB_IMPL_GRAPHDB
+  purpose: Directed labelled triples with sequence ordering and tombstones.
+  dependencies: [memtable]
+  status: implemented
+- name: objectdb
+  header: include/mulib-objectdb.h
+  manual: manual/mulib-objectdb.md
+  macro: MULIB_IMPL_OBJECTDB
+  purpose: Type-tagged opaque object blobs over memtable.
+  dependencies: [memtable]
+  status: implemented
+- name: embeddingsdb
+  header: include/mulib-embeddingsdb.h
+  manual: manual/mulib-embeddingsdb.md
+  macro: MULIB_IMPL_EMBEDDINGSDB
+  purpose: Exact Euclidean nearest-neighbor search over owned vectors.
+  dependencies: []
+  status: implemented
+- name: documentdb
+  header: include/mulib-documentdb.h
+  manual: manual/mulib-documentdb.md
+  macro: MULIB_IMPL_DOCUMENTDB
+  purpose: Binary-keyed JSON document records over memtable.
+  dependencies: [json, memtable]
+  status: implemented
+- name: dbserializer
+  header: include/mulib-dbserializer.h
+  manual: manual/mulib-dbserializer.md
+  macro: MULIB_IMPL_DBSERIALIZER
+  purpose: Explicit JSON BSON MessagePack and CBOR value serialization.
+  dependencies: [bson, cbor, messagepack]
+  status: implemented
+- name: bson
+  header: include/mulib-bson.h
+  manual: manual/mulib-bson.md
+  macro: MULIB_IMPL_BSON
+  purpose: Bounded BSON JSON-profile document codec.
+  dependencies: [buffer, json]
+  status: implemented
+- name: messagepack
+  header: include/mulib-messagepack.h
+  manual: manual/mulib-messagepack.md
+  macro: MULIB_IMPL_MESSAGEPACK
+  purpose: Bounded MessagePack JSON-profile codec.
+  dependencies: [json, buffer]
+  status: implemented
+- name: protobuf
+  header: include/mulib-protobuf.h
+  manual: manual/mulib-protobuf.md
+  macro: MULIB_IMPL_PROTOBUF
+  purpose: Schema-free Protobuf varint fixed64 bytes and fixed32 wire fields.
+  dependencies: [varint, buffer]
+  status: implemented
+- name: dbschema
+  header: include/mulib-dbschema.h
+  manual: manual/mulib-dbschema.md
+  macro: MULIB_IMPL_DBSCHEMA
+  purpose: Borrowed flat record schemas over shared JSON values.
+  dependencies: [json]
+  status: implemented
+- name: webidl
+  header: include/mulib-webidl.h
+  manual: manual/mulib-webidl.md
+  macro: MULIB_IMPL_WEBIDL
+  purpose: Flat schema to WebIDL dictionary source generation.
+  dependencies: [dbschema, buffer]
+  status: implemented
+- name: muidl
+  header: include/mulib-muidl.h
+  manual: manual/mulib-muidl.md
+  macro: MULIB_IMPL_MUIDL
+  purpose: MuIDL flat-record schema source generation.
+  dependencies: [dbschema, buffer]
+  status: implemented
+- name: wit
+  header: include/mulib-wit.h
+  manual: manual/mulib-wit.md
+  macro: MULIB_IMPL_WIT
+  purpose: Flat primitive schemas to WIT record source generation.
+  dependencies: [dbschema, buffer]
+  status: implemented
+- name: cbor
+  header: include/mulib-cbor.h
+  manual: manual/mulib-cbor.md
+  macro: MULIB_IMPL_CBOR
+  purpose: Bounded RFC 8949 JSON-profile CBOR codec.
+  dependencies: [buffer, json]
+  status: implemented
+- name: dbdesializer
+  header: include/mulib-dbdesializer.h
+  manual: manual/mulib-dbdesializer.md
+  macro: MULIB_IMPL_DBDESIALIZER
+  purpose: Exact owned JSON BSON MessagePack and CBOR value decoding.
+  dependencies: [dbserializer]
+  status: implemented
+- name: mulib
+  header: include/mulib-mulib.h
+  manual: manual/mulib-mulib.md
+  macro: MULIB_IMPL_MULIB
+  purpose: Small core umbrella and library version.
+  dependencies: [buffer, strbuf]
+  status: implemented
+- name: elfbuilder
+  header: include/mulib-elfbuilder.h
+  manual: manual/mulib-elfbuilder.md
+  macro: MULIB_IMPL_ELFBUILDER
+  purpose: Owned ELF64 relocatable section builder reusing objfilebuilder.
+  dependencies: [objfilebuilder]
+  status: implemented
+- name: machobuidler
+  header: include/mulib-machobuidler.h
+  manual: manual/mulib-machobuidler.md
+  macro: MULIB_IMPL_MACHOBUIDLER
+  purpose: Deterministic x86-64 Mach-O object text-section writer.
+  dependencies: [buffer, bycutils]
+  status: implemented
+- name: pebuilder
+  header: include/mulib-pebuilder.h
+  manual: manual/mulib-pebuilder.md
+  macro: MULIB_IMPL_PEBUILDER
+  purpose: Minimal fixed-base AMD64 PE32+ console image writer.
+  dependencies: [binfilewriter, bycutils]
+  status: implemented
+- name: coffbuilder
+  header: include/mulib-coffbuilder.h
+  manual: manual/mulib-coffbuilder.md
+  macro: MULIB_IMPL_COFFBUILDER
+  purpose: Deterministic AMD64 COFF object text-section writer.
+  dependencies: [buffer, bycutils]
+  status: implemented
+- name: evtloop
+  header: include/mulib-evtloop.h
+  manual: manual/mulib-evtloop.md
+  macro: MULIB_IMPL_EVTLOOP
+  purpose: Cooperative caller-clocked one-shot task and timer queue.
+  dependencies: []
+  status: implemented
+- name: vhpst
+  header: include/mulib-vhpst.h
+  manual: manual/mulib-vhpst.md
+  macro: MULIB_IMPL_VHPST
+  purpose: Exact DNS virtual-host selection over a borrowed table.
+  dependencies: [seurity]
+  status: implemented
+- name: rpiter. static_file
+  header: include/mulib-rpiter. static_file.h
+  manual: manual/mulib-rpiter. static_file.md
+  macro: MULIB_IMPL_STATIC_FILE
+  purpose: Strict VFS static-file response helper.
+  dependencies: [vfs, mime, http_response]
+  status: implemented
+- name: rewrite_url
+  header: include/mulib-rewrite_url.h
+  manual: manual/mulib-rewrite_url.md
+  macro: MULIB_IMPL_REWRITE_URL
+  purpose: Component-prefix origin-path rewrite preserving a raw query.
+  dependencies: [seurity]
+  status: implemented
+- name: compression
+  header: include/mulib-compression.h
+  manual: manual/mulib-compression.md
+  macro: MULIB_IMPL_COMPRESSION
+  purpose: Explicit bounded identity and RLE buffer transforms.
+  dependencies: [buffer, rle]
+  status: implemented
+- name: upstream
+  header: include/mulib-upstream.h
+  manual: manual/mulib-upstream.md
+  macro: MULIB_IMPL_UPSTREAM
+  purpose: Borrowed upstream endpoints with bounded in-flight accounting.
+  dependencies: []
+  status: implemented
+- name: load_balancer
+  header: include/mulib-load_balancer.h
+  manual: manual/mulib-load_balancer.md
+  macro: MULIB_IMPL_LOAD_BALANCER
+  purpose: Round-robin and least-connections upstream selection.
+  dependencies: [upstream]
+  status: implemented
+- name: health_checker
+  header: include/mulib-health_checker.h
+  manual: manual/mulib-health_checker.md
+  macro: MULIB_IMPL_HEALTH_CHECKER
+  purpose: Consecutive-result upstream health hysteresis.
+  dependencies: [upstream]
+  status: implemented
+- name: rate_limit
+  header: include/mulib-rate_limit.h
+  manual: manual/mulib-rate_limit.md
+  macro: MULIB_IMPL_RATE_LIMIT
+  purpose: Caller-clocked finite-double token bucket.
+  dependencies: []
+  status: implemented
+- name: waf
+  header: include/mulib-waf.h
+  manual: manual/mulib-waf.md
+  macro: MULIB_IMPL_WAF
+  purpose: Fail-closed request size method and origin-path policy.
+  dependencies: [http, seurity]
+  status: implemented
+- name: acl
+  header: include/mulib-acl.h
+  manual: manual/mulib-acl.md
+  macro: MULIB_IMPL_ACL
+  purpose: First-match IPv4 CIDR access control.
+  dependencies: []
+  status: implemented
+- name: auth
+  header: include/mulib-auth.h
+  manual: manual/mulib-auth.md
+  macro: MULIB_IMPL_AUTH
+  purpose: Bounded HTTP Basic decoding and Bearer extraction.
+  dependencies: [base64, seurity]
+  status: implemented
+- name: seurity
+  header: include/mulib-seurity.h
+  manual: manual/mulib-seurity.md
+  macro: MULIB_IMPL_SEURITY
+  purpose: Security-oriented byte comparison tokens and strict paths.
+  dependencies: []
+  status: implemented
+- name: oauth2
+  header: include/mulib-oauth2.h
+  manual: manual/mulib-oauth2.md
+  macro: MULIB_IMPL_OAUTH2
+  purpose: OAuth2 callback state comparison and explicit bearer verifier adapter.
+  dependencies: [auth]
+  status: implemented
+- name: metrics
+  header: include/mulib-metrics.h
+  manual: manual/mulib-metrics.md
+  macro: MULIB_IMPL_METRICS
+  purpose: Saturating HTTP counters and caller-supplied latency totals.
+  dependencies: []
+  status: implemented
+- name: httpserver_config
+  header: include/mulib-httpserver_config.h
+  manual: manual/mulib-httpserver_config.md
+  macro: MULIB_IMPL_HTTPSERVER_CONFIG
+  purpose: Transport-independent HTTP server resource configuration.
+  dependencies: [http]
+  status: implemented
+- name: http_request
+  header: include/mulib-http_request.h
+  manual: manual/mulib-http_request.md
+  macro: MULIB_IMPL_HTTP_REQUEST
+  purpose: Owned request construction through shared HTTP validation.
+  dependencies: [http]
+  status: implemented
+- name: http_response
+  header: include/mulib-http_response.h
+  manual: manual/mulib-http_response.md
+  macro: MULIB_IMPL_HTTP_RESPONSE
+  purpose: Owned response construction through webframework.
+  dependencies: [webframework]
+  status: implemented
+- name: mime
+  header: include/mulib-mime.h
+  manual: manual/mulib-mime.md
+  macro: MULIB_IMPL_MIME
+  purpose: Case-insensitive filename-extension MIME lookup without sniffing.
+  dependencies: [seurity]
+  status: implemented
+- name: web_conntection
+  header: include/mulib-web_conntection.h
+  manual: manual/mulib-web_conntection.md
+  macro: MULIB_IMPL_WEB_CONNECTION
+  purpose: Bounded incremental HTTP/1 receive buffering.
+  dependencies: [http1]
+  status: implemented
+- name: http1
+  header: include/mulib-http1.h
+  manual: manual/mulib-http1.md
+  macro: MULIB_IMPL_HTTP1
+  purpose: Explicit HTTP/1.1 entry point reusing shared strict framing.
+  dependencies: [http]
+  status: implemented
+- name: http2
+  header: include/mulib-http2.h
+  manual: manual/mulib-http2.md
+  macro: MULIB_IMPL_HTTP2
+  purpose: Bounded HTTP/2 frame envelopes with basic per-type validation.
+  dependencies: [buffer]
+  status: implemented
+- name: http3
+  header: include/mulib-http3.h
+  manual: manual/mulib-http3.md
+  macro: MULIB_IMPL_HTTP3
+  purpose: Bounded HTTP/3 frame type and length envelopes.
+  dependencies: [quic]
+  status: implemented
+- name: quic
+  header: include/mulib-quic.h
+  manual: manual/mulib-quic.md
+  macro: MULIB_IMPL_QUIC
+  purpose: RFC 9000 variable integers and length-bearing STREAM frames.
+  dependencies: [buffer]
+  status: implemented
 - name: virtio
   header: include/mulib-virtio.h
   manual: manual/mulib-virtio.md
@@ -2627,8 +2944,112 @@ modules:
   dependencies: [dynload, utf8]
   status: implemented
 project_files:
+- file: manual/storage-server.md
+  purpose: Storage codecs, native builders, server policy profiles and dependency contracts.
+- file: tools/check_storage_server.py
+  purpose: Isolated dependency closures, strict builds, examples and interoperability checks.
+- file: tests/test_storage_server.c
+  purpose: Storage, codec, protocol, policy, native-builder and mutation regressions.
+- file: tests/test_storage_server_alloc.c
+  purpose: Allocation-failure atomicity and cleanup regressions.
+- file: examples/modules/amd64.c
+  purpose: Owned metadata assembler example.
+- file: examples/modules/row-rdbms.c
+  purpose: Schema-checked row storage example.
+- file: examples/modules/column-rdbms.c
+  purpose: Dense column storage example.
+- file: examples/modules/graphdb.c
+  purpose: Directed labelled triple example.
+- file: examples/modules/objectdb.c
+  purpose: Type-tagged opaque object example.
+- file: examples/modules/embeddingsdb.c
+  purpose: Exact nearest-neighbor example.
+- file: examples/modules/documentdb.c
+  purpose: Owned JSON document storage example.
+- file: examples/modules/dbserializer.c
+  purpose: Explicit value codec dispatch example.
+- file: examples/modules/bson.c
+  purpose: BSON document round-trip example.
+- file: examples/modules/messagepack.c
+  purpose: MessagePack value round-trip example.
+- file: examples/modules/protobuf.c
+  purpose: Protobuf wire-field example.
+- file: examples/modules/dbschema.c
+  purpose: Flat record schema validation example.
+- file: examples/modules/webidl.c
+  purpose: WebIDL dictionary generation example.
+- file: examples/modules/muidl.c
+  purpose: MuIDL record generation example.
+- file: examples/modules/wit.c
+  purpose: WIT record generation example.
+- file: examples/modules/cbor.c
+  purpose: CBOR value round-trip example.
+- file: examples/modules/dbdesializer.c
+  purpose: Explicit value decoding example.
+- file: examples/modules/mulib.c
+  purpose: Core umbrella and version example.
+- file: examples/modules/elfbuilder.c
+  purpose: Owned ELF section-builder example.
+- file: examples/modules/machobuidler.c
+  purpose: Mach-O text object example.
+- file: examples/modules/pebuilder.c
+  purpose: PE32+ text image example.
+- file: examples/modules/coffbuilder.c
+  purpose: COFF text object example.
+- file: examples/modules/evtloop.c
+  purpose: Caller-clocked task queue example.
+- file: examples/modules/vhpst.c
+  purpose: Exact virtual-host selection example.
+- file: examples/modules/rpiter. static_file.c
+  purpose: Bounded VFS static-file response example.
+- file: examples/modules/rewrite_url.c
+  purpose: Component-prefix URL rewrite example.
+- file: examples/modules/compression.c
+  purpose: Bounded explicit RLE transform example.
+- file: examples/modules/upstream.c
+  purpose: Upstream acquisition accounting example.
+- file: examples/modules/load_balancer.c
+  purpose: Round-robin and least-active selection example.
+- file: examples/modules/health_checker.c
+  purpose: Consecutive-result health hysteresis example.
+- file: examples/modules/rate_limit.c
+  purpose: Caller-clocked token-bucket example.
+- file: examples/modules/waf.c
+  purpose: Parsed-request policy example.
+- file: examples/modules/acl.c
+  purpose: First-match IPv4 CIDR example.
+- file: examples/modules/auth.c
+  purpose: Basic decoding and Bearer extraction example.
+- file: examples/modules/seurity.c
+  purpose: Strict path and byte comparison example.
+- file: examples/modules/oauth2.c
+  purpose: Fail-closed OAuth verifier adapter example.
+- file: examples/modules/metrics.c
+  purpose: HTTP counters and latency example.
+- file: examples/modules/httpserver_config.c
+  purpose: Explicit resource-limit configuration example.
+- file: examples/modules/http_request.c
+  purpose: Owned validated HTTP request example.
+- file: examples/modules/http_response.c
+  purpose: Owned validated HTTP response example.
+- file: examples/modules/mime.c
+  purpose: MIME filename-extension example.
+- file: examples/modules/web_conntection.c
+  purpose: Incremental bounded HTTP buffering example.
+- file: examples/modules/http1.c
+  purpose: Strict HTTP/1.1 parsing example.
+- file: examples/modules/http2.c
+  purpose: Bounded HTTP/2 frame-envelope example.
+- file: examples/modules/http3.c
+  purpose: Bounded HTTP/3 frame-envelope example.
+- file: examples/modules/quic.c
+  purpose: QUIC variable integer example.
 - file: tools/check_text.py
   purpose: Strict Unicode/font/layout checks and optional native ABI comparisons.
+- file: tools/check_unicode_conformance.py
+  purpose: Opt-in official Unicode corpus validation, explicit downloads and native bidi comparisons.
+- file: tests/native/unicode_conformance.c
+  purpose: Strict normalization, grapheme and bidi-character corpus runner with optional native parity checks.
 - file: manual/text-hardening.md
   purpose: Text stack hardening evidence, reproducible checks and remaining verification limits.
 - file: tests/native/text_backends.c
@@ -3803,3 +4224,5 @@ project_files:
   purpose: "Focused regression suite for test_mune_runtime."
 - file: tests/test_mune_runtime_alloc.c
   purpose: "Focused regression suite for test_mune_runtime_alloc."
+- file: tests/test_text_shaping.c
+  purpose: "Focused regression suite for test_text_shaping."

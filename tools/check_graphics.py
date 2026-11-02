@@ -55,7 +55,9 @@ def main():
             binary = case / 'run'
             subprocess.run(cc + ['-std=c11'] + flags + [str(source), '-lm', '-ldl', '-o', str(binary)],
                            check=True, capture_output=True, text=True, timeout=180)
-            subprocess.run([str(binary)], cwd=case, check=True, capture_output=True, text=True, timeout=60)
+            arguments = [str(ROOT / 'library')] if source.stem in ('immgtk', 'test_immgtk') else []
+            subprocess.run([str(binary)] + arguments, cwd=case, check=True,
+                           capture_output=True, text=True, timeout=60)
             return binary
 
         with ThreadPoolExecutor(max_workers=4) as pool:

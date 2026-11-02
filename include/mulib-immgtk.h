@@ -1,9 +1,10 @@
 /**
  * @file mulib-immgtk.h
- * @brief Immediate-mode GUI with Mune-written widgets and GLX drawing
- * primitives. Define MULIB_IMPL_IMMGTK and the transitive MUNE/GLX switches in
- * the manual. A context owns its Lua state. Surface, font callback and
- * callback data are borrowed.
+ * @brief Widget-free immediate-mode GUI host: Mune bindings for GLX drawing,
+ * pointer input and interaction. Load application/widget modules explicitly;
+ * the optional 30-widget library lives in library/immgtk, not in this header.
+ * Define MULIB_IMPL_IMMGTK and the transitive MUNE/GLX switches in the manual.
+ * A context owns its Lua state. Surface, text callback and data are borrowed.
  */
 #ifndef MULIB_IMMGTK_H
 #define MULIB_IMMGTK_H
@@ -26,9 +27,9 @@ extern "C"
   typedef int (*mulib_immgtk_text_fn) (mulib_glx_t *surface, float x, float y,
                                        const char *text, size_t length,
                                        uint32_t color, void *user);
-  /** @brief Create a Mune state, bind primitives and load Lua widget
-   * definitions. A text renderer is required; NULL on error with a static
-   * diagnostic.
+  /** @brief Create a Mune state and bind primitives only. No widget definitions,
+   * filesystem access or implicit module loading. A text renderer is required;
+   * NULL on error with a static diagnostic.
    */
   mulib_immgtk_t *mulib_immgtk_create (mulib_immgtk_text_fn text, void *user,
                                        mulib_mune_error_t *error);
@@ -214,55 +215,12 @@ extern "C"
       return MULIB_MUNE_MEMORY;
     return MULIB_MUNE_OK;
   }
-  /* Widgets intentionally live in Mune, using only drawing/input host
-   * primitives. */
-  static const char mulib_immgtk_widgets_[]
-      = "ui = { normal=0xff343b48, hover=0xff46556a, active=0xff2465a8,\n"
-        "       text=0xffeeeeee, background=0xff202630, accent=0xff56b4e9 }\n"
-        "function ui.layout(x,y,w,row,gap)\n"
-        "  ui.lx=x; ui.ly=y; ui.lw=w; ui.lr=row or 24; ui.lg=gap or 4\n"
-        "end\n"
-        "function ui.next()\n"
-        "  assert(ui.lx, 'call ui.layout first')\n"
-        "  local y=ui.ly; ui.ly=y+ui.lr+ui.lg; return ui.lx,y,ui.lw,ui.lr\n"
-        "end\n"
-        "function ui.panel(x,y,w,h) imm_rect(x,y,w,h,ui.background) end\n"
-        "function ui.label(text,x,y) imm_text(text,x,y,ui.text) end\n"
-        "function ui.button(id,text,x,y,w,h)\n"
-        "  if x==nil then x,y,w,h=ui.next() end\n"
-        "  local hot,held,clicked=imm_interact(id,x,y,w,h)\n"
-        "  imm_rect(x,y,w,h,held and ui.active or (hot and ui.hover or "
-        "ui.normal))\n"
-        "  imm_text(text,x+4,y+4,ui.text); return clicked\n"
-        "end\n"
-        "function ui.checkbox(id,text,value,x,y,w,h)\n"
-        "  if x==nil then x,y,w,h=ui.next() end\n"
-        "  assert(w>=h and h>=12, 'checkbox dimensions')\n"
-        "  local hot,held,clicked=imm_interact(id,x,y,w,h)\n"
-        "  if clicked then value=not value end\n"
-        "  imm_rect(x,y,h,h,held and ui.active or (hot and ui.hover or "
-        "ui.normal))\n"
-        "  if value then imm_rect(x+4,y+4,h-8,h-8,ui.accent) end\n"
-        "  imm_text(text,x+h+4,y+4,ui.text); return value,clicked\n"
-        "end\n"
-        "function ui.slider(id,value,lo,hi,x,y,w,h)\n"
-        "  if x==nil then x,y,w,h=ui.next() end\n"
-        "  assert(hi>lo and w>=8 and h>=8, 'slider range or dimensions')\n"
-        "  local hot,held=imm_interact(id,x,y,w,h); local old=value\n"
-        "  if held then local mx=imm_pointer(); value=lo+(mx-x)/w*(hi-lo) "
-        "end\n"
-        "  if value<lo then value=lo elseif value>hi then value=hi end\n"
-        "  imm_rect(x,y,w,h,hot and ui.hover or ui.normal)\n"
-        "  imm_rect(x,y,w*(value-lo)/(hi-lo),h,ui.accent)\n"
-        "  return value,value~=old\n"
-        "end\n";
   mulib_immgtk_t *
   mulib_immgtk_create (mulib_immgtk_text_fn text, void *user,
                        mulib_mune_error_t *error)
   {
     mulib_immgtk_t *g = NULL;
     mulib_mune_error_t e = { MULIB_MUNE_OK, 0, NULL };
-    mulib_mune_status_t rc;
     if (!text)
       {
         e.code = MULIB_MUNE_INVALID;
@@ -287,13 +245,6 @@ extern "C"
                             g)
                != MULIB_MUNE_OK)
       goto memory;
-    rc = mulib_immgtk_run (g, mulib_immgtk_widgets_,
-                           sizeof (mulib_immgtk_widgets_) - 1, &e);
-    if (rc != MULIB_MUNE_OK)
-      {
-        e.message = "widget library initialization failed";
-        goto fail;
-      }
     if (error)
       *error = e;
     return g;

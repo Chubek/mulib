@@ -56,6 +56,11 @@ requires zero length. Empty input succeeds with no glyphs. Byte lengths are
 limited to `INT_MAX`; counts and allocation products are checked. Return 0/-1,
 with output unchanged on failure. Inputs/options are borrowed during the call.
 
+`covers` tests nominal glyph coverage for one Unicode scalar (1/0, -1 invalid),
+without claiming that a nominal glyph proves support for an entire shaped
+sequence. `mulib-pglayout` adds script/grapheme itemization and ordered font-set
+fallback on top of this single-run primitive.
+
 `native` borrows the `hb_font_t` for advanced HarfBuzz APIs, custom functions,
 metrics and other native functionality; use matching development headers in
 application code and never destroy the borrowed object. The wrapper does not

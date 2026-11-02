@@ -22,22 +22,27 @@ int main(void) {
     mulib_sysfonts_t *fonts = mulib_sysfonts_open(NULL);
     mulib_uniproc_t *unicode = mulib_uniproc_open(NULL, 0);
     mulib_sysfonts_font_t match = {0};
-    mulib_pglayout_font_t context = {unicode, NULL, NULL, "en"};
+    mulib_fontshape_t *font = NULL;
     char *yaml;
     assert(page && text && !mulib_pglayout_content(text, "A styled page with Unicode line breaking."));
     assert(!mulib_pglayout_append(page, text));
     if (fonts && unicode && !mulib_sysfonts_match(fonts, "sans", &match)) {
-        context.font = mulib_fontshape_open(match.path, (unsigned)match.index, 16*64, NULL);
-        if (context.font) {
+        font = mulib_fontshape_open(match.path, (unsigned)match.index, 16*64, NULL);
+        if (font) {
             mulib_pglayout_box_t box;
-            assert(!mulib_pglayout_compute(page, NULL, unicode, 160, mulib_pglayout_font_measure, &context));
+            mulib_pglayout_fontset_t set = {unicode, &font, 1, "en", -1};
+            assert(!mulib_pglayout_compute_shaped(page, NULL, &set, 16, 160));
             assert(!mulib_pglayout_geometry(page, &box, NULL));
             printf("Page: %.1f x %.1f pixels\n", box.width, box.height);
+            {
+                const mulib_pglayout_shaped_line_t *line = mulib_pglayout_shaped_line(text, 0);
+                assert(line); printf("First line: %zu shaped runs\n", line->count);
+            }
         }
     }
     yaml = mulib_pglayout_serialize(page, 1); assert(yaml); puts(yaml);
     copy = mulib_pglayout_deserialize(yaml, strlen(yaml), 1); assert(copy);
     free(yaml); mulib_pglayout_destroy(copy); mulib_pglayout_destroy(page);
-    mulib_fontshape_close(context.font); mulib_sysfonts_font_destroy(&match);
+    mulib_fontshape_close(font); mulib_sysfonts_font_destroy(&match);
     mulib_sysfonts_close(fonts); mulib_uniproc_close(unicode); return 0;
 }

@@ -40,6 +40,41 @@ typedef struct mulib_pglayout_font {
     mulib_fontshape_t *font;
     const char *script, *language;
 } mulib_pglayout_font_t;
+/** @brief Ordered borrowed fonts, all scaled in 26.6 pixels. unicode and fonts
+ * must remain alive through shaping (and rendering cached glyphs). base uses
+ * bidi's 0/1/-1/-2 convention. NULL language means und. No implicit font I/O. */
+typedef struct mulib_pglayout_fontset {
+    mulib_uniproc_t *unicode;
+    mulib_fontshape_t *const *fonts;
+    size_t count;
+    const char *language;
+    int base;
+} mulib_pglayout_fontset_t;
+/** @brief One visual run: paragraph-absolute source bytes, font-set index,
+ * resolved bidi level/script, and owned glyphs with paragraph-absolute clusters. */
+typedef struct mulib_pglayout_shaped_run {
+    size_t start, length, font_index;
+    unsigned level;
+    char script[5];
+    mulib_fontshape_run_t glyphs;
+} mulib_pglayout_shaped_run_t;
+typedef struct mulib_pglayout_shaped_line {
+    mulib_pglayout_shaped_run_t *runs;
+    size_t count;
+    unsigned paragraph_level;
+    double advance;
+} mulib_pglayout_shaped_line_t;
+/** @brief Shape a scalar/grapheme-aligned line range in the context of the whole
+ * paragraph. Itemizes bidi, script and whole-grapheme font fallback, and shapes
+ * each item. The first font covering all non-control/non-ignorable scalars of a
+ * grapheme wins. Missing coverage/glyphs fail rather than silently using .notdef.
+ * Common/Inherited clusters adopt adjacent strong script (previous preferred).
+ * Fonts must match the intended size. 0/-1; output must be empty, transactional. */
+int mulib_pglayout_shape_line(const mulib_pglayout_fontset_t *fonts,
+                              const char *paragraph, size_t paragraph_length,
+                              size_t start, size_t length, mulib_pglayout_shaped_line_t *line);
+/** @brief Free shaped runs/glyph arrays and zero the result. */
+void mulib_pglayout_shaped_line_destroy(mulib_pglayout_shaped_line_t *line);
 /** @brief Bidi-aware HarfBuzz measurement adapter (style is not used). */
 int mulib_pglayout_font_measure(void *context, const char *text, size_t length,
                                const mulib_stylesheet_style_t *style, double *advance);
@@ -84,6 +119,17 @@ mulib_pglayout_item_t *mulib_pglayout_child(const mulib_pglayout_item_t *item, s
 int mulib_pglayout_compute(mulib_pglayout_item_t *root, const mulib_stylesheet_t *sheet,
                            mulib_uniproc_t *unicode, double width,
                            mulib_pglayout_measure_fn measure, void *context);
+/** @brief Compute using paragraph-aware script/fallback shaping and retain owned
+ * glyph runs for each final text line. Fonts are borrowed and fixed-size: every
+ * visible text style must match font_size (pixels). All fonts must be scaled to
+ * font_size*64 by the caller. Use custom compute for application font selection.
+ * Same transactional/resource rules as compute; missing coverage fails. */
+int mulib_pglayout_compute_shaped(mulib_pglayout_item_t *root, const mulib_stylesheet_t *sheet,
+                                  const mulib_pglayout_fontset_t *fonts, double font_size, double width);
+/** @brief Borrow cached shaping for a computed text line, or NULL when absent.
+ * Clusters/start offsets refer to that text leaf. Invalidated by any mutation or
+ * successful recompute; fonts from the supplied font set are not retained. */
+const mulib_pglayout_shaped_line_t *mulib_pglayout_shaped_line(const mulib_pglayout_item_t *item, size_t line);
 /** @brief Copy computed box/style; 0/-1 (fails after any tree mutation). */
 int mulib_pglayout_geometry(const mulib_pglayout_item_t *item, mulib_pglayout_box_t *box,
                             mulib_stylesheet_style_t *style);
@@ -125,6 +171,7 @@ struct mulib_pglayout_item {
     mulib_stylesheet_style_t style;
     mulib_pglayout_line_t *lines;
     size_t line_count;
+    mulib_pglayout_shaped_line_t *shaped;
 };
 static const char *const mulib_pglayout_names_[] = {"layout", "textblock", "text", "image", "path"};
 static void mulib_pglayout_invalidate_(mulib_pglayout_item_t *p) {
@@ -151,7 +198,8 @@ void mulib_pglayout_destroy(mulib_pglayout_item_t *p) {
     size_t i;
     if (!p || p->parent) return;
     for (i = 0; i < p->count; ++i) { p->children[i]->parent = NULL; mulib_pglayout_destroy(p->children[i]); }
-    mulib_xml_destroy(p->node); free(p->children); free(p->content); free(p->points); free(p->lines); free(p);
+    for (i = 0; i < p->line_count; ++i) if (p->shaped) mulib_pglayout_shaped_line_destroy(&p->shaped[i]);
+    mulib_xml_destroy(p->node); free(p->children); free(p->content); free(p->points); free(p->lines); free(p->shaped); free(p);
 }
 static size_t mulib_pglayout_depth_(const mulib_pglayout_item_t *p) {
     size_t i, depth = 1;
@@ -230,6 +278,144 @@ const mulib_pglayout_line_t *mulib_pglayout_lines(const mulib_pglayout_item_t *p
     if (n) *n = mulib_pglayout_valid_(p) ? p->line_count : 0;
     return mulib_pglayout_valid_(p) ? p->lines : NULL;
 }
+const mulib_pglayout_shaped_line_t *mulib_pglayout_shaped_line(const mulib_pglayout_item_t *p, size_t i) {
+    return mulib_pglayout_valid_(p) && p->shaped && i < p->line_count ? &p->shaped[i] : NULL;
+}
+void mulib_pglayout_shaped_line_destroy(mulib_pglayout_shaped_line_t *line) {
+    size_t i;
+    if (!line) return;
+    for (i = 0; i < line->count; ++i) mulib_fontshape_run_destroy(&line->runs[i].glyphs);
+    free(line->runs); memset(line, 0, sizeof *line);
+}
+typedef struct mulib_pglayout_cluster_ {
+    size_t start, end, font;
+    char script[5];
+} mulib_pglayout_cluster_;
+static int mulib_pglayout_fontset_valid_(const mulib_pglayout_fontset_t *f) {
+    size_t i;
+    if (!f || !f->unicode || !f->fonts || !f->count || f->count > SIZE_MAX / sizeof *f->fonts ||
+        f->base < -2 || f->base > 1) return 0;
+    for (i = 0; i < f->count; ++i) if (!f->fonts[i]) return 0;
+    return 1;
+}
+static int mulib_pglayout_shape_(const mulib_pglayout_fontset_t *fonts, const char *s, size_t bytes,
+                                mulib_bidi_paragraph_t *paragraph, size_t start, size_t length,
+                                mulib_pglayout_shaped_line_t *out,
+                                const mulib_unibreak_boundary_t *prepared, size_t prepared_count) {
+    mulib_pglayout_shaped_line_t line = {0};
+    mulib_bidi_result_t bidi = {0};
+    mulib_unibreak_boundary_t *owned_boundaries = NULL;
+    const mulib_unibreak_boundary_t *boundaries = prepared;
+    mulib_pglayout_cluster_ *clusters = NULL;
+    size_t count = prepared_count, n = 0, i, j, k, ri, capacity = 0;
+    int result = -1;
+    if (!out || out->runs || out->count || start > bytes || length > bytes-start ||
+        mulib_bidi_paragraph_line(paragraph, start, length, &bidi)) return -1;
+    line.paragraph_level = bidi.paragraph_level;
+    if (!length) { *out = line; mulib_bidi_destroy(&bidi); return 0; }
+    /* Whole-text boundaries retain preceding context (RI pairs/emoji sequences). */
+    if (!boundaries) {
+        if (mulib_unibreak_find(fonts->unicode, MULIB_UNIBREAK_GRAPHEME, NULL, s, bytes, &owned_boundaries, &count)) goto done;
+        boundaries = owned_boundaries;
+    }
+    for (i = 0; i < count && boundaries[i].offset < start; ++i) {}
+    if (i == count || boundaries[i].offset != start) goto done;
+    for (j = i; j < count && boundaries[j].offset < start+length; ++j) {}
+    if (j == count || boundaries[j].offset != start+length) goto done;
+    n = j-i;
+    if (n > SIZE_MAX / sizeof *clusters || n > SIZE_MAX / sizeof *line.runs) goto done;
+    clusters = (mulib_pglayout_cluster_ *)calloc(n, sizeof *clusters);
+    line.runs = (mulib_pglayout_shaped_run_t *)calloc(n, sizeof *line.runs);
+    if (!clusters || !line.runs) goto done;
+    capacity = n;
+    for (k = 0; k < n; ++k) {
+        size_t at = boundaries[i+k].offset, end = boundaries[i+k+1].offset, used;
+        uint32_t cp;
+        char script[5] = "Zyyy";
+        clusters[k].start = at; clusters[k].end = end;
+        while (at < end) {
+            char tag[5];
+            if (!mulib_utf8_decode((const unsigned char *)s+at, end-at, &cp, &used) ||
+                mulib_uniproc_script(fonts->unicode, cp, tag, NULL)) goto done;
+            if (strcmp(tag, "Zyyy") && strcmp(tag, "Zinh")) memcpy(script, tag, 5);
+            at += used;
+        }
+        memcpy(clusters[k].script, script, 5);
+        for (j = 0; j < fonts->count; ++j) {
+            int covers = 1;
+            at = clusters[k].start;
+            while (at < end) {
+                int category, ignorable;
+                if (!mulib_utf8_decode((const unsigned char *)s+at, end-at, &cp, &used) ||
+                    mulib_uniproc_properties(fonts->unicode, cp, &category, NULL, NULL, NULL) ||
+                    mulib_uniproc_script(fonts->unicode, cp, NULL, &ignorable)) goto done;
+                if (!ignorable && !(category >= 13 && category <= 16) &&
+                    mulib_fontshape_covers(fonts->fonts[j], cp) != 1) { covers = 0; break; }
+                at += used;
+            }
+            if (covers) break;
+        }
+        if (j == fonts->count) goto done;
+        clusters[k].font = j;
+    }
+    /* Resolve neutral/inherited clusters without mixing strong-script items. */
+    for (k = 0; k < n; ++k) if (!strcmp(clusters[k].script, "Zyyy") || !strcmp(clusters[k].script, "Zinh")) {
+        if (k && strcmp(clusters[k-1].script, "Zyyy")) memcpy(clusters[k].script, clusters[k-1].script, 5);
+        else for (j = k+1; j < n; ++j) if (strcmp(clusters[j].script, "Zyyy") && strcmp(clusters[j].script, "Zinh")) {
+            memcpy(clusters[k].script, clusters[j].script, 5); break;
+        }
+    }
+    for (ri = 0; ri < bidi.count; ++ri) {
+        size_t first = line.count, begin = bidi.runs[ri].start, end = begin+bidi.runs[ri].length;
+        for (k = 0; k < n && clusters[k].end <= begin; ++k) {}
+        /* Directional boundaries must never force a split inside a grapheme. */
+        if (k == n || clusters[k].start != begin) goto done;
+        while (k < n && clusters[k].start < end) {
+            mulib_pglayout_shaped_run_t *run;
+            mulib_fontshape_options_t options = {0};
+            size_t next = k+1;
+            while (next < n && clusters[next].start < end && clusters[next].font == clusters[k].font &&
+                   !strcmp(clusters[next].script, clusters[k].script)) ++next;
+            if (clusters[next-1].end > end || line.count == capacity) goto done;
+            run = &line.runs[line.count++];
+            run->start = clusters[k].start; run->length = clusters[next-1].end-run->start;
+            run->font_index = clusters[k].font; run->level = bidi.runs[ri].level;
+            memcpy(run->script, clusters[k].script, 5);
+            options.direction = run->level & 1 ? "rtl" : "ltr";
+            options.script = run->script; options.language = fonts->language;
+            if (mulib_fontshape_shape(fonts->fonts[run->font_index], s+run->start, run->length, &options, &run->glyphs)) goto done;
+            for (j = 0; j < run->glyphs.count; ++j) {
+                if (!run->glyphs.glyphs[j].glyph) goto done;
+                run->glyphs.glyphs[j].cluster += (uint32_t)run->start;
+                line.advance += run->glyphs.glyphs[j].x_advance/64.0;
+            }
+            k = next;
+        }
+        if (k && clusters[k-1].end != end) goto done;
+        if (bidi.runs[ri].level & 1) {
+            size_t left = first, right = line.count;
+            while (left < right && left < --right) {
+                mulib_pglayout_shaped_run_t tmp = line.runs[left];
+                line.runs[left++] = line.runs[right]; line.runs[right] = tmp;
+            }
+        }
+    }
+    if (!isfinite(line.advance) || line.advance < 0) goto done;
+    *out = line; memset(&line, 0, sizeof line); result = 0;
+done:
+    mulib_pglayout_shaped_line_destroy(&line); mulib_bidi_destroy(&bidi);
+    free(owned_boundaries); free(clusters); return result;
+}
+int mulib_pglayout_shape_line(const mulib_pglayout_fontset_t *fonts, const char *s, size_t bytes,
+                              size_t start, size_t length, mulib_pglayout_shaped_line_t *out) {
+    mulib_bidi_paragraph_t *paragraph;
+    int result;
+    if (!mulib_pglayout_fontset_valid_(fonts) || !out || out->runs || out->count) return -1;
+    paragraph = mulib_bidi_paragraph_open(fonts->unicode, s, bytes, fonts->base);
+    if (!paragraph) return -1;
+    result = mulib_pglayout_shape_(fonts, s, bytes, paragraph, start, length, out, NULL, 0);
+    mulib_bidi_paragraph_close(paragraph); return result;
+}
 int mulib_pglayout_font_measure(void *context, const char *s, size_t n, const mulib_stylesheet_style_t *style, double *advance) {
     mulib_pglayout_font_t *f = (mulib_pglayout_font_t *)context;
     mulib_bidi_result_t bidi = {0};
@@ -256,7 +442,27 @@ typedef struct mulib_pglayout_work_ {
     mulib_stylesheet_style_t style;
     mulib_pglayout_line_t *lines;
     size_t count;
+    mulib_pglayout_shaped_line_t *shaped;
 } mulib_pglayout_work_;
+typedef struct mulib_pglayout_shaper_ {
+    const mulib_pglayout_fontset_t *fonts;
+    const char *text;
+    size_t length;
+    mulib_bidi_paragraph_t *paragraph;
+    const mulib_unibreak_boundary_t *boundaries;
+    size_t count;
+} mulib_pglayout_shaper_;
+static int mulib_pglayout_shaper_measure_(void *context, const char *text, size_t length,
+                                         const mulib_stylesheet_style_t *style, double *advance) {
+    mulib_pglayout_shaper_ *s = (mulib_pglayout_shaper_ *)context;
+    mulib_pglayout_shaped_line_t line = {0};
+    int result;
+    (void)style;
+    result = mulib_pglayout_shape_(s->fonts, s->text, s->length, s->paragraph,
+                                  (size_t)(text-s->text), length, &line, s->boundaries, s->count);
+    if (!result) *advance = line.advance;
+    mulib_pglayout_shaped_line_destroy(&line); return result;
+}
 static size_t mulib_pglayout_trim_(const char *s, size_t start, size_t end) {
     if (end > start && s[end-1] == '\n') { --end; if (end > start && s[end-1] == '\r') --end; }
     else if (end > start && (s[end-1] == '\r' || s[end-1] == '\v' || s[end-1] == '\f')) --end;
@@ -276,14 +482,22 @@ static int mulib_pglayout_measure_(mulib_pglayout_measure_fn fn, void *ctx, cons
     return 0;
 }
 static int mulib_pglayout_wrap_(mulib_pglayout_work_ *w, mulib_uniproc_t *u, double width,
-                               mulib_pglayout_measure_fn fn, void *ctx, size_t *measurements) {
+                               mulib_pglayout_measure_fn fn, void *ctx, size_t *measurements,
+                               const mulib_pglayout_fontset_t *fonts) {
     const char *s = w->item->content;
     size_t n = strlen(s), nb = 0, ng = 0, start = 0, bi = 1, gi = 1, i;
     mulib_unibreak_boundary_t *breaks = NULL, *graphemes = NULL;
     double line_height = w->style.font_size * w->style.line_height;
     int status = -1;
+    mulib_pglayout_shaper_ shaper = {fonts, s, n, NULL, NULL, 0};
+    if (fonts) {
+        shaper.paragraph = mulib_bidi_paragraph_open(fonts->unicode, s, n, fonts->base);
+        if (!shaper.paragraph) goto done;
+        fn = mulib_pglayout_shaper_measure_; ctx = &shaper;
+    }
     if (n && (mulib_unibreak_find(u, MULIB_UNIBREAK_LINE, NULL, s, n, &breaks, &nb) ||
               mulib_unibreak_find(u, MULIB_UNIBREAK_GRAPHEME, NULL, s, n, &graphemes, &ng))) goto done;
+    shaper.boundaries = graphemes; shaper.count = ng;
     if (ng > SIZE_MAX / sizeof *w->lines - 1) goto done;
     w->lines = (mulib_pglayout_line_t *)calloc(ng + 1, sizeof *w->lines);
     if (!w->lines) goto done;
@@ -331,8 +545,18 @@ static int mulib_pglayout_wrap_(mulib_pglayout_work_ *w, mulib_uniproc_t *u, dou
         }
     } while (start < n);
     w->box.height = w->count * line_height + 2*w->style.padding;
+    if (fonts) {
+        size_t j;
+        if (w->count > SIZE_MAX / sizeof *w->shaped) goto done;
+        w->shaped = (mulib_pglayout_shaped_line_t *)calloc(w->count, sizeof *w->shaped);
+        if (!w->shaped) goto done;
+        for (j = 0; j < w->count; ++j)
+            if (mulib_pglayout_shape_(fonts, s, n, shaper.paragraph, w->lines[j].start,
+                                      w->lines[j].length, &w->shaped[j], graphemes, ng)) goto done;
+    }
     status = 0;
 done:
+    mulib_bidi_paragraph_close(shaper.paragraph);
     free(breaks); free(graphemes); return status;
 }
 static int mulib_pglayout_total_(const mulib_pglayout_item_t *p, size_t *total) {
@@ -344,7 +568,8 @@ static int mulib_pglayout_total_(const mulib_pglayout_item_t *p, size_t *total) 
 static int mulib_pglayout_flow_(mulib_pglayout_item_t *p, mulib_pglayout_work_ *work, size_t *used,
                                const mulib_stylesheet_t *sheet, const mulib_stylesheet_style_t *parent,
                                mulib_uniproc_t *u, double x, double y, double available, int hidden,
-                               mulib_pglayout_measure_fn fn, void *ctx, double *extent, size_t *measurements) {
+                               mulib_pglayout_measure_fn fn, void *ctx, double *extent, size_t *measurements,
+                               const mulib_pglayout_fontset_t *fonts, double font_size) {
     mulib_pglayout_work_ *w = &work[(*used)++];
     size_t i;
     double width, height = 0;
@@ -356,7 +581,8 @@ static int mulib_pglayout_flow_(mulib_pglayout_item_t *p, mulib_pglayout_work_ *
     w->box.x = x + w->style.margin; w->box.y = y + w->style.margin;
     w->box.width = width + 2*w->style.padding;
     if (p->kind == MULIB_PGLAYOUT_TEXT && !hidden) {
-        if (mulib_pglayout_wrap_(w, u, width, fn, ctx, measurements)) return -1;
+        if ((fonts && w->style.font_size != font_size) ||
+            mulib_pglayout_wrap_(w, u, width, fn, ctx, measurements, fonts)) return -1;
         height = w->box.height - 2*w->style.padding;
     } else if (p->kind >= MULIB_PGLAYOUT_IMAGE) {
         height = p->height;
@@ -372,7 +598,7 @@ static int mulib_pglayout_flow_(mulib_pglayout_item_t *p, mulib_pglayout_work_ *
         double child_height;
         if (mulib_pglayout_flow_(p->children[i], work, used, sheet, &w->style, u,
                                 w->box.x+w->style.padding, w->box.y+w->style.padding+height,
-                                width, hidden, fn, ctx, &child_height, measurements)) return -1;
+                                width, hidden, fn, ctx, &child_height, measurements, fonts, font_size)) return -1;
         height += child_height;
     }
     if (w->style.height >= 0) height = w->style.height;
@@ -381,8 +607,9 @@ static int mulib_pglayout_flow_(mulib_pglayout_item_t *p, mulib_pglayout_work_ *
     else *extent = w->box.height + 2*w->style.margin;
     return isfinite(*extent) && isfinite(w->box.x) && isfinite(w->box.y) && isfinite(w->box.width) ? 0 : -1;
 }
-int mulib_pglayout_compute(mulib_pglayout_item_t *root, const mulib_stylesheet_t *sheet, mulib_uniproc_t *u,
-                           double width, mulib_pglayout_measure_fn fn, void *ctx) {
+static int mulib_pglayout_compute_(mulib_pglayout_item_t *root, const mulib_stylesheet_t *sheet, mulib_uniproc_t *u,
+                                  double width, mulib_pglayout_measure_fn fn, void *ctx,
+                                  const mulib_pglayout_fontset_t *fonts, double font_size) {
     mulib_pglayout_work_ *work;
     size_t count = 0, used = 0, i, measurements = 0;
     double extent;
@@ -391,16 +618,32 @@ int mulib_pglayout_compute(mulib_pglayout_item_t *root, const mulib_stylesheet_t
         mulib_pglayout_total_(root, &count) || count > SIZE_MAX / sizeof *work) return -1;
     work = (mulib_pglayout_work_ *)calloc(count, sizeof *work);
     if (!work) return -1;
-    status = mulib_pglayout_flow_(root, work, &used, sheet, NULL, u, 0, 0, width, 0, fn, ctx, &extent, &measurements);
+    status = mulib_pglayout_flow_(root, work, &used, sheet, NULL, u, 0, 0, width, 0, fn, ctx, &extent, &measurements, fonts, font_size);
     if (!status) for (i = 0; i < count; ++i) {
         mulib_pglayout_item_t *p = work[i].item;
+        size_t j;
+        for (j = 0; j < p->line_count; ++j) if (p->shaped) mulib_pglayout_shaped_line_destroy(&p->shaped[j]);
+        free(p->shaped); p->shaped = work[i].shaped; work[i].shaped = NULL;
         free(p->lines); p->lines = work[i].lines; work[i].lines = NULL; p->line_count = work[i].count;
         p->box = work[i].box; p->style = work[i].style;
     }
-    for (i = 0; i < count; ++i) free(work[i].lines);
+    for (i = 0; i < count; ++i) {
+        size_t j;
+        for (j = 0; j < work[i].count; ++j) if (work[i].shaped) mulib_pglayout_shaped_line_destroy(&work[i].shaped[j]);
+        free(work[i].shaped); free(work[i].lines);
+    }
     free(work);
     if (!status) root->valid = 1;
     return status;
+}
+int mulib_pglayout_compute(mulib_pglayout_item_t *root, const mulib_stylesheet_t *sheet, mulib_uniproc_t *u,
+                           double width, mulib_pglayout_measure_fn fn, void *ctx) {
+    return mulib_pglayout_compute_(root, sheet, u, width, fn, ctx, NULL, 0);
+}
+int mulib_pglayout_compute_shaped(mulib_pglayout_item_t *root, const mulib_stylesheet_t *sheet,
+                                  const mulib_pglayout_fontset_t *fonts, double size, double width) {
+    if (!mulib_pglayout_fontset_valid_(fonts) || !isfinite(size) || size <= 0 || size > 1e6) return -1;
+    return mulib_pglayout_compute_(root, sheet, fonts->unicode, width, NULL, NULL, fonts, size);
 }
 static int mulib_pglayout_set_(mulib_json_t *o, const char *key, mulib_json_t *v) {
     if (!v) return -1;

@@ -181,7 +181,9 @@ def main():
                         failures.append((label, build.stderr or build.stdout))
                         return False
                     if execute:
-                        test = subprocess.run([str(binary)], cwd=work, capture_output=True,
+                        arguments = ([str(root / 'library')] if sources and len(sources) == 1
+                                     and sources[0].name in ('immgtk.c', 'test_immgtk.c') else [])
+                        test = subprocess.run([str(binary)] + arguments, cwd=work, capture_output=True,
                                               text=True, timeout=60)
                         if test.returncode:
                             failures.append((label, test.stderr or test.stdout or

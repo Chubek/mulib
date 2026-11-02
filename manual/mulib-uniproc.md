@@ -42,6 +42,10 @@ Native module pinning support is required; there is no MuLIB global handle cache
 * `symbol` exposes version-correct ICU symbol lookup for extension modules.
   A successful address is borrowed until context close, with the host loader's
   function-pointer representation requirements.
+* `script` returns the four-letter Unicode Script tag and optional
+  Default_Ignorable_Code_Point status. Common and Inherited return `Zyyy` and
+  `Zinh`; outputs are unchanged on failure. Font-set shaping uses this to avoid
+  treating controls/variation selectors as ordinary nominal-glyph coverage.
 
 All returned buffers use `free`. Lengths exclude terminators and embedded NULs
 are preserved. NULL input is accepted only for zero length. Conversion functions

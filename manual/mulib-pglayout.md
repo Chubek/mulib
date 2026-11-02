@@ -61,6 +61,49 @@ font, using bidi visual runs; the application must select the font scale to matc
 the style. It assumes one script per directional run, guesses otherwise, and
 does not supply script/fallback itemization or paragraph-preserving line bidi.
 
+### Paragraph-aware font-set shaping
+
+`mulib_pglayout_fontset_t` borrows an ordered array of HarfBuzz fonts, an ICU
+context, language, and base direction (0/1/-1/-2 as in bidi). All fonts must be
+scaled to the same intended size in 26.6 pixels. No system font lookup or file
+I/O occurs implicitly; use sysfonts to choose/load faces explicitly.
+
+`shape_line(fonts, paragraph, bytes, start, length, &line)` resolves the complete
+paragraph, extracts the requested line with ICU's paragraph-aware L1/L2 rules,
+and itemizes directional runs into script/font items at extended grapheme
+boundaries. A grapheme uses the first font covering all its non-control,
+non-default-ignorable scalars. Common/Inherited graphemes take an adjacent strong
+script (preceding preferred). Adjacent equal-script/equal-font items are combined
+for contextual shaping; items within RTL runs are emitted in visual order.
+Missing coverage or a shaped missing glyph fails explicitly. Source ranges must
+be scalar/grapheme aligned and cannot cross paragraph separators.
+
+The result owns visual runs and glyph arrays. Each run has font-set index,
+resolved script and level, paragraph-absolute source range and glyph clusters,
+plus positioned glyphs and total pixel advance. Use `shaped_line_destroy` to
+free it. Font objects are borrowed, never owned or cached by the result.
+This is Unicode Script-property itemization with adjacent neutral resolution,
+not a full Script_Extensions/paired-script tailoring engine. Sequence support
+and color rendering still depend on native fonts/backends; ordered fallback
+does not implement language-specific font preference or synthesize glyphs.
+
+`compute_shaped(root, sheet, fonts, font_size, width)` applies the same shaping
+path to wrapping and retains owned final-line glyph runs. Every visible text
+style must match `font_size`; callers must configure the fonts at `font_size*64`.
+The current explicit font-set path is fixed-size; applications requiring several
+sizes can supply custom measurement or separate styled groups. No size mismatch
+is silently ignored. `shaped_line(item, index)` borrows the cached final result,
+with offsets relative to that leaf's text. Mutation invalidates these accessors;
+a successful ordinary compute clears shaping caches. Failed compute preserves
+old boxes, line pointers and glyph caches. Keep fonts alive through rendering.
+
+For drawing, iterate cached visual runs left-to-right, select the corresponding
+fontdraw face/size, render each glyph id, apply x/y offsets, bearings and advances,
+and composite the returned bitmap. There is no implicit baseline/font ascent
+policy, image loading, GPU atlas allocation or raster compositor in pglayout.
+
+### Wrapping and geometry
+
 Unicode line boundaries are considered greedily until the first overflowing
 candidate or mandatory break. With nonmonotonic custom measurement, a later
 candidate might fit but is not searched beyond that first overflow. Overlong segments
@@ -75,8 +118,9 @@ This is an explicit block-flow profile, not complete Pango/browser layout.
 Each line records its original UTF-8 byte start/length and top-left pixel box.
 Line height is font-size times the style multiplier, not queried font ascent.
 Alignment moves the line within the content width. Draw with an application
-baseline policy and font metrics. The module stores source slices/geometry, not
-a permanently owned glyph cache or image/path renderer.
+baseline policy and font metrics. Ordinary compute stores source slices/geometry;
+compute_shaped additionally owns final glyph arrays until recompute/destruction,
+not a raster atlas or image/path renderer.
 
 Layout uses scratch results and commits only after complete success; failure
 preserves prior geometry. Any source mutation invalidates geometry for the entire

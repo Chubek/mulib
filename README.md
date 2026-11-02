@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **361 implemented modules**.
+A C11 modular single-header utility library with **418 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -122,7 +122,7 @@ file, including reverse dependencies, with deterministic Graphviz DOT output.
 `mulib-inet6.h` is the canonical IPv6 header; `mulib-inte6.h` remains
 compatible. The existing spellings `impaclient` and `dnsnmeserver` are retained.
 
-`mulib-yantlr.h` and `mulib-amd64.h` are reserved filenames.
+`mulib-yantlr.h` is a reserved filename.
 The [dependency strata](manual/strata.md) index
 records every direct dependency and integration layer. New focused modules include
 a bounded i32 WebAssembly runtime (`wask`), an independent Lua runtime with
@@ -134,6 +134,13 @@ The [storage, binary, document and container extensions](manual/extension-layers
 share existing byte buffers, parsers, ELF views and VFS models. Container modules
 provide explicit-backend lifecycle and transport cores, not a privileged isolation
 runtime. `tsl` requires an authenticated TLS backend; it supplies no cryptography.
+
+The [storage and server extensions](manual/storage-server.md) add JSON-profile
+BSON/CBOR/MessagePack, Protobuf wire fields, schema-checked in-memory stores,
+IDL source generators, native binary builders and composable HTTP policies.
+HTTP/2, HTTP/3 and QUIC modules are bounded frame codecs, not complete network
+stacks. Run `python3 tools/check_storage_server.py` for isolated dependency,
+functional and interoperability checks; add `--sanitizers` for ASan/UBSan.
 
 ## Graphics and geometry
 
@@ -169,9 +176,18 @@ produce explicit failures.
 [Distfield](manual/mulib-distfield.md) generates Euclidean glyph-mask SDFs.
 [Stylesheet](manual/mulib-stylesheet.md) implements a typed CSS cascade, and
 [Pglayout](manual/mulib-pglayout.md) adds owned page/text/image/path objects,
-block flow, Unicode wrapping and JSON/YAML source-model persistence. Manuals
+block flow, Unicode wrapping and JSON/YAML source-model persistence. Its font-set
+path preserves paragraph bidi context across wrapped lines, itemizes scripts,
+selects whole-grapheme font fallback and caches drawable glyph runs. Manuals
 specify the supported layout/style profiles and native extension APIs.
 Run `python3 tools/check_text.py --require-backends`, or add `--sanitizers`.
+Official Unicode corpus checks and backend limitations are described in
+[text-stack verification](manual/text-hardening.md).
+
+Public OCI/imgtracker compatibility headers forward to their preserved
+implementations in `.deprecated/`, since existing public adapters still use
+those APIs. When copying that compatibility group, retain the sibling
+`.deprecated/` directory as well as `include/`; no archived source was removed.
 
 ## Artifacts, build graphs and watch daemons
 

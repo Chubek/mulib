@@ -33,7 +33,7 @@ label (mulib_glx_t *surface, float x, float y, const char *text, size_t n,
   return fwrite (text, 1, n, stdout) == n && putchar ('\n') != EOF;
 }
 int
-main (void)
+main (int argc, char **argv)
 {
   const char *script = "ui.panel(0,0,160,100); ui.layout(8,8,144,24); if "
                        "ui.button(1,'Hello') then clicks=(clicks or 0)+1 end";
@@ -42,6 +42,20 @@ main (void)
   mulib_immgtk_input_t input = { 16, 16, 1, 0 };
   mulib_mune_value_t clicks;
   assert (gui && surface);
+  /* Pass the installed library directory, or run from the repository root.
+   * Store the path as data rather than interpolating it into Lua source. */
+  {
+    const char *library = argc > 1 ? argv[1] : "library";
+    mulib_mune_state_t *state = mulib_immgtk_state (gui);
+    mulib_mune_value_t path;
+    const char *load = "package.path=immgtk_library..'/?.lua;'.."
+                       "immgtk_library..'/?/init.lua'; ui=require('immgtk')";
+    assert (mulib_mune_make_string (state, library, strlen (library), &path)
+            == MULIB_MUNE_OK);
+    assert (mulib_mune_set_global (state, "immgtk_library", path)
+            == MULIB_MUNE_OK);
+    assert (mulib_immgtk_run (gui, load, strlen (load), NULL) == MULIB_MUNE_OK);
+  }
   for (int frame = 0; frame < 2; ++frame)
     {
       input.down = !frame;

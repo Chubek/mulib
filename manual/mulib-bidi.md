@@ -36,12 +36,26 @@ closed after the call; the runs are independent copies.
 
 Lengths are limited to `INT32_MAX` input bytes and allocation arithmetic is
 checked. Empty input returns zero runs and the resolved default paragraph level.
-The API is paragraph-oriented. Full paragraph-to-multiple-line reordering and
-UAX #9 L1/L2 line extraction need an application-level paragraph/line pipeline;
-resolving independent wrapped substrings can change their base direction.
+For wrapped paragraphs use `mulib_bidi_paragraph_open`, then
+`mulib_bidi_paragraph_line(start, length, &result)` for each scalar-aligned byte
+range. The paragraph owns copied UTF-16 text and byte mappings and retains native
+resolution state; the Unicode context must outlive it. Line extraction applies
+ICU's L1/L2 handling without losing enclosing embeddings, isolates or paragraph
+direction. Returned runs have **paragraph-absolute** byte offsets. Zero-length
+ranges succeed with no runs; a line cannot span paragraph separators. For text
+containing several paragraphs, ranges within each use that paragraph's base.
+Close with `mulib_bidi_paragraph_close`. Failures leave output unchanged.
+
+`mulib_pglayout_compute_shaped` uses this pipeline and retains shaped glyphs for
+final lines. The older standalone `font_measure` adapter still resolves isolated
+substrings and is retained for simple/custom integrations.
 
 ## Verification
 
 `tests/test_unicode_text.c` checks mixed Hebrew/Latin runs, numeric levels in an
 RTL paragraph, byte offsets, empty input and malformed UTF-8. Optional native
-ICU comparisons run through `python3 tools/check_text.py`.
+ICU comparisons run through `python3 tools/check_text.py`, including line
+extraction for every subrange of an isolate/bracket sample.
+See [text hardening](text-hardening.md) for official corpus results and the
+installed ICU backend's known normative deviations; native parity is not a
+promise of zero failures against every UAX #9 case.

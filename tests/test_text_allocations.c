@@ -212,6 +212,41 @@ int main(void) {
                     mulib_fontshape_run_destroy(&run); assert(live == baseline);
                 }
                 assert(success);
+                {
+                    mulib_uniproc_t *unicode;
+                    mulib_pglayout_fontset_t set;
+                    mulib_fontshape_t *font_array[] = {shape};
+                    remaining = SIZE_MAX; unicode = mulib_uniproc_open(NULL, 0);
+                    if (unicode) {
+                        set.unicode = unicode; set.fonts = font_array; set.count = 1; set.language = "und"; set.base = -1;
+                        baseline = live;
+                        for (limit = 0, success = 0; limit < 300 && !success; ++limit) {
+                            mulib_pglayout_shaped_line_t line = {0};
+                            remaining = limit;
+                            success = !mulib_pglayout_shape_line(&set, "office hello", 12, 0, 12, &line);
+                            if (!success) assert(!line.runs && !line.count);
+                            mulib_pglayout_shaped_line_destroy(&line); assert(live == baseline);
+                        }
+                        assert(success);
+                        remaining = SIZE_MAX;
+                        {
+                            mulib_pglayout_item_t *text = mulib_pglayout_new(MULIB_PGLAYOUT_TEXT);
+                            const mulib_pglayout_shaped_line_t *saved;
+                            assert(text && !mulib_pglayout_content(text, "office hello world"));
+                            assert(!mulib_pglayout_compute_shaped(text, NULL, &set, 16, 80));
+                            saved = mulib_pglayout_shaped_line(text, 0); assert(saved);
+                            baseline = live;
+                            for (limit = 0, success = 0; limit < 500 && !success; ++limit) {
+                                remaining = limit;
+                                success = !mulib_pglayout_compute_shaped(text, NULL, &set, 16, 120);
+                                if (!success) assert(live == baseline && mulib_pglayout_shaped_line(text, 0) == saved);
+                            }
+                            assert(success); mulib_pglayout_destroy(text);
+                        }
+                        mulib_uniproc_close(unicode);
+                    } else assert(!getenv("MULIB_TEXT_REQUIRE_BACKENDS"));
+                    baseline = live;
+                }
             } else assert(!getenv("MULIB_TEXT_REQUIRE_BACKENDS"));
             if (draw) {
                 for (limit = 0, success = 0; limit < 10 && !success; ++limit) {
