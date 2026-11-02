@@ -1,0 +1,7 @@
+language "YANTLR" v0.1.0
+{
+   authors =
+   {
+	"Chubak Bidpaa <aurito@riseuo,net>"
+   }
+{
