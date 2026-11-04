@@ -1,0 +1,838 @@
+// YBASIC language-generator design, revision 1.
+// Uses the YANTLR intermediary/set/application/qualified-service surface.
+// STANDARD LIBRARY STATUS: Services[Diag] and Services[IO] are attested in the
+// owner's sample. The other service paths below are proposed interface bindings,
+// pending the actual YANTLR standard-library API. They are not verified exports.
+// Constructor records follow the proposed profile used by Lua.y1.
+// Rule strings are declarative input to the named service, never shell commands.
+// This is a generator specification. No YANTLR evaluator or YBASIC runtime was
+// supplied; structural validation does not establish that this file can execute.
+intermediary "YBASIC";
+
+set DiagnosticsFilter \l -> l.code `geq` Services[Diag]::Levels::Warning!Numeric;
+
+set StandardLibrary Services[Language]::Dependencies!{
+  "status": "Proposed adapter contract; resolve against the actual YANTLR standard library before generation.",
+  "services": {
+    "Services[Diag]": "Diagnostic severity, source spans, related locations, text and SARIF sinks. Known namespace; detailed sink API unresolved.",
+    "Services[IO]": "Source and artifact streams. Known namespace; exact buffered-file API unresolved.",
+    "Services[Lex]": "Byte scanner, longest-match rules, lexical modes, token positions",
+    "Services[Parse]": "Predictive grammar compiler, precedence folds, recovery",
+    "Services[AST]": "Typed spanned nodes and exhaustive visitors",
+    "Services[Semantic]": "Scope maps, symbols, type constraints, flow checking",
+    "Services[IR]": "CFG construction, SSA promotion, dominators, verification",
+    "Services[Analysis]": "Revision-keyed dataflow analyses, worklists, invalidation",
+    "Services[Rewrite]": "Pattern matching, guarded rewrites and fuel",
+    "Services[Native]": "C11 lowering and native toolchain adapter",
+    "Services[Module]": "Canonical module resolution, interface hashes, import graph",
+    "Services[FFI]": "C declaration import and checked wrapper generation",
+    "Services[Build]": "Typed dependency graph, process argv, atomic artifacts",
+    "Services[Test]": "Compile, run, capture stdout/stderr/status and compare expectations"
+  },
+  "generation": "All service paths and signatures must resolve first. An unresolved service is E_Y1_SERVICE, never an omitted stage.",
+  "separation": "YANTLR services run during generation and compilation. YBASIC standard-library procedures become linked native code described by Runtime.",
+  "configuration": "Explicit compiler, sysroot, source roots, library roots, output directory and optimization level. No ambient shell expansion."
+};
+
+set Language Services[Language]::Define!{
+  "name": "YBASIC",
+  "version": "1.0-design",
+  "extension": ".yb",
+  "execution": "ahead-of-time native executable or native static library",
+  "dialect": "New structured BASIC dialect defined by this file.",
+  "target": "Initial profile: x86_64-linux-gnu; 8-bit bytes, 64-bit pointers, int64_t and IEC 60559 binary64. Probe the configured compiler and reject incompatible profiles.",
+  "features": [
+    "case-insensitive identifiers and keywords",
+    "explicit declarations and static types",
+    "INTEGER, REAL, BOOLEAN, STRING",
+    "one-dimensional numeric and boolean arrays",
+    "FUNCTION and SUB with recursion",
+    "IF, ELSEIF, ELSE, WHILE, FOR, EXIT and CONTINUE",
+    "AND/OR short circuit",
+    "IMPORT, EXPORT and separately compiled modules",
+    "C imports through generated wrappers"
+  ],
+  "ownership": "Immutable reference-counted strings; fixed-size local arrays with mutable elements; no reference cycles.",
+  "observable": "Printed bytes, read order, native calls, module initialization order, return values, traps and their first source location. Allocation failure is observable.",
+  "entry": "Exactly one PROGRAM unit in executable mode. Modules contain declarations and procedure definitions only."
+};
+
+set Tokens Services[Lex]::Define!{
+  "input": "UTF-8 source. ASCII syntax and identifiers; non-ASCII is accepted within strings and comments only.",
+  "span": "Stable source ID plus zero-based half-open UTF-8 byte range; diagnostics derive line/column from the original source.",
+  "normalize": "Recognize CRLF and LF as one NEWLINE; normalize identifiers to ASCII uppercase. Preserve literal bytes.",
+  "rules": [
+    [
+      "SPACE",
+      "[ \\t\\f]+",
+      "skip"
+    ],
+    [
+      "COMMENT",
+      "apostrophe through end of line, outside STRING",
+      "skip but preserve NEWLINE"
+    ],
+    [
+      "IDENT",
+      "[A-Za-z_][A-Za-z_0-9]*",
+      "keyword classify after longest match"
+    ],
+    [
+      "REAL",
+      "([0-9]+\\.[0-9]+|[0-9]+)([Ee][+-]?[0-9]+) or [0-9]+\\.[0-9]+",
+      "decimal binary64, round ties to even; reject nonfinite literal"
+    ],
+    [
+      "INT",
+      "[0-9]+",
+      "arbitrary precision token magnitude, range check during typing"
+    ],
+    [
+      "STRING",
+      "double-quoted; doubled double quote inserts one quote",
+      "no raw newline or backslash escapes; UTF-8 byte payload"
+    ],
+    [
+      "OP",
+      "<> <= >= + - * / \\ = < > ( ) [ ] , . :",
+      "longest spelling first"
+    ],
+    [
+      "NEWLINE",
+      "CRLF or LF",
+      "retain"
+    ],
+    [
+      "EOF",
+      "end of source",
+      "synthesize one NEWLINE before EOF if last token is not NEWLINE"
+    ]
+  ],
+  "priority": "REAL before INT only on equal starting position; otherwise longest match. A numeral followed immediately by identifier bytes is E_BAD_NUMBER.",
+  "keywords": "PROGRAM END MODULE IMPORT AS EXPORT CONST DIM INTEGER REAL BOOLEAN STRING TRUE FALSE LET PRINT CALL RETURN IF THEN ELSEIF ELSE WHILE WEND FOR TO STEP NEXT EXIT CONTINUE FUNCTION SUB AND OR NOT MOD CFUNCTION CSUB FROM CIMPORT",
+  "errors": [
+    "unterminated string",
+    "invalid UTF-8",
+    "unknown source byte"
+  ],
+  "limits": {
+    "identifier_bytes": 255,
+    "decoded_string_bytes": 16777216,
+    "tokens_per_file": 10000000
+  }
+};
+
+set Syntax Services[Parse]::Define!{
+  "tokens": "Tokens",
+  "entry": "unit",
+  "formalism": "Predictive recursive descent. Expression levels use the explicit precedence rules below.",
+  "notation": "Quoted words denote case-folded keyword tokens; IDENT, INT, REAL and STRING denote token kinds. ?/*/+ quantify the preceding item; parentheses group. Empty alternatives are explicit. nl is one or more NEWLINE tokens.",
+  "rules": [
+    "unit := NEWLINE* (program | module) EOF",
+    "program := 'PROGRAM' IDENT nl import* declaration* block 'END' 'PROGRAM' nl",
+    "module := 'MODULE' IDENT nl import* declaration* 'END' 'MODULE' nl",
+    "import := 'IMPORT' STRING 'AS' IDENT nl | 'CIMPORT' STRING nl",
+    "declaration := constant | external | export? procedure",
+    "export := 'EXPORT'",
+    "constant := 'CONST' IDENT 'AS' scalar '=' expr nl",
+    "scalar := 'INTEGER' | 'REAL' | 'BOOLEAN' | 'STRING'",
+    "procedure := 'FUNCTION' IDENT '(' params? ')' 'AS' scalar nl block 'END' 'FUNCTION' nl | 'SUB' IDENT '(' params? ')' nl block 'END' 'SUB' nl",
+    "params := param (',' param)*",
+    "param := IDENT 'AS' scalar",
+    "external := 'CFUNCTION' IDENT '(' params? ')' 'AS' scalar 'FROM' STRING 'AS' STRING nl | 'CSUB' IDENT '(' params? ')' 'FROM' STRING 'AS' STRING nl",
+    "block := (NEWLINE | statement)*",
+    "statement := dim nl | assignment nl | print nl | call nl | return nl | transfer nl | if | while | for",
+    "dim := 'DIM' IDENT ('[' expr ']')? 'AS' scalar ('=' expr)?",
+    "assignment := 'LET'? target '=' expr",
+    "target := IDENT ('[' expr ']')?",
+    "print := 'PRINT' (expr (',' expr)*)?",
+    "call := 'CALL' qualified '(' args? ')'",
+    "return := 'RETURN' expr?",
+    "transfer := ('EXIT' | 'CONTINUE') ('FOR' | 'WHILE')",
+    "if := 'IF' expr 'THEN' nl block ('ELSEIF' expr 'THEN' nl block)* ('ELSE' nl block)? 'END' 'IF' nl",
+    "while := 'WHILE' expr nl block 'WEND' nl",
+    "for := 'FOR' IDENT '=' expr 'TO' expr ('STEP' expr)? nl block 'NEXT' IDENT? nl",
+    "args := expr (',' expr)*",
+    "qualified := IDENT ('.' IDENT)?",
+    "expr := disjunction",
+    "disjunction := conjunction ('OR' conjunction)*",
+    "conjunction := negation ('AND' negation)*",
+    "negation := 'NOT' negation | comparison",
+    "comparison := sum (('=' | '<>' | '<' | '<=' | '>' | '>=') sum)?",
+    "sum := product (('+' | '-') product)*",
+    "product := unary (('*' | '/' | '\\' | 'MOD') unary)*",
+    "unary := ('+' | '-') unary | primary",
+    "primary := conversion | INT | REAL | STRING | 'TRUE' | 'FALSE' | '(' expr ')' | qualified ('(' args? ')')? | IDENT '[' expr ']'",
+    "conversion := ('REAL' | 'INTEGER') '(' expr ')'",
+    "nl := NEWLINE+"
+  ],
+  "decision": "At statement start inspect keyword; otherwise parse target then require =. In a primary, after IDENT distinguish dot/call/index with lookahead; bare qualified names resolve only to constants or variables.",
+  "block_stop": "Before consuming a statement, stop on ELSEIF, ELSE, END, WEND, NEXT or EOF. The enclosing construct checks which terminator is legal.",
+  "precedence": "Highest: primary, unary +/-, */backslash/MOD, +/-, comparison, NOT, AND, OR. Binary arithmetic folds left. Chained comparisons are invalid.",
+  "recovery": "Report expected tokens and opening-construct span. Recover to NEWLINE or an enclosing terminator without consuming the terminator. Do not compile a recovered AST."
+};
+
+set Tree Services[AST]::Schema!{
+  "common": [
+    "NodeID",
+    "Span"
+  ],
+  "types": {
+    "Unit": "kind:Program|Module, name, imports[], declarations[], main:Block?",
+    "Import": "path, alias?; kind:language|c-header",
+    "Const": "name, Scalar, Expr",
+    "Procedure": "exported, kind:Function|Sub, name, params[], result:Scalar|Void, body",
+    "External": "kind:Function|Sub, name, params[], result, header, cSymbol",
+    "Param": "name, Scalar",
+    "Block": "statements[]",
+    "Stmt": "Dim(name,length?,type,init?) | Assign(Target,Expr) | Print(Expr[]) | CallStmt(QName,Expr[]) | Return(Expr?) | If([(Expr,Block)],else?) | While(Expr,Block) | For(name,start,limit,step?,Block,nextName?) | Exit(loopKind) | Continue(loopKind)",
+    "Target": "Variable(name) | Element(name,index)",
+    "Expr": "Int(magnitude) | Real(bits64) | String(bytes) | Bool(value) | Name(QName) | Index(name,index) | Call(QName,args[]) | Unary(op,Expr) | Binary(op,Expr,Expr) | Group(Expr)"
+  },
+  "construction": "Each named grammar construct creates the corresponding node; precedence folds create Binary nodes; literal tokens create literal nodes. Preserve Group for literal-range diagnostics.",
+  "exhaustiveness": "Semantic, lowering and diagnostic visitors must cover every variant."
+};
+
+set Names Services[Semantic]::Resolve!{
+  "tree": "Tree",
+  "builtins": "Runtime",
+  "modules": "Modules",
+  "passes": [
+    "Resolve imports and C declarations",
+    "Collect unit constants and all procedure signatures",
+    "Evaluate constants in dependency order",
+    "Resolve and type every procedure body and program body"
+  ],
+  "scope": "Unit scope holds constants, procedures, import aliases and builtins. Each procedure has parameter scope; main has a fresh scope. Every structured block has lexical local scope.",
+  "variables": "DIM is visible after its initializer. Duplicate names in the same scope are errors. Inner locals may shadow locals but may not shadow the active FOR variable. Implicit variable creation is an error.",
+  "procedures": "All procedure signatures in a unit are visible before checking bodies, allowing mutual recursion. Procedures cannot capture main locals. No nested procedure definitions.",
+  "constants": "Only pure literal arithmetic, boolean and comparison operations and constant references are allowed. Calls, indexing and string concatenation are not constant expressions. Cycles and evaluation traps are compile-time errors.",
+  "arrays": "DIM a[n] AS INTEGER/REAL/BOOLEAN allocates n elements after evaluating n exactly once; n>=0; length*sizeof(element) checked. No array initializer, array parameters, array return or whole-array assignment.",
+  "lookup": "Unqualified names search local scopes then unit then builtin. Qualified Alias.name resolves exported imported procedures only. C declarations define ordinary unit procedure symbols.",
+  "diagnostics": [
+    "E_DUPLICATE",
+    "E_UNKNOWN_NAME",
+    "E_CONST_CYCLE",
+    "E_PRIVATE_SYMBOL",
+    "E_ARRAY_TYPE",
+    "E_IMPORT"
+  ]
+};
+
+set Types Services[Semantic]::Types!{
+  "types": [
+    "INTEGER:i64",
+    "REAL:f64",
+    "BOOLEAN:bool",
+    "STRING:immutable bytes",
+    "Array(T):local owner",
+    "VOID"
+  ],
+  "rules": [
+    "INTEGER literals are signed i64. Unary minus directly applied through Groups to magnitude 9223372036854775808 is INT64_MIN; otherwise reject magnitudes beyond INT64_MAX.",
+    "Numeric + - *: equal types return that type; mixed INTEGER/REAL inserts integer-to-real. / converts both operands to REAL. Backslash and MOD require INTEGER.",
+    "String + String concatenates. No other arithmetic on strings. Unary +/- requires numeric. NOT, AND, OR require BOOLEAN.",
+    "Comparisons return BOOLEAN. Numeric pairs allow integer-to-real promotion. Strings compare unsigned bytes lexicographically. BOOLEAN supports only = and <>.",
+    "IF and WHILE require BOOLEAN; numeric truth conversion is forbidden.",
+    "Assignment, arguments and returns require exact type or INTEGER->REAL. No REAL->INTEGER implicit conversion. Scalar declarations without initializer use 0, +0.0, FALSE or empty string.",
+    "Index requires INTEGER and Array(T); result T. Indexed assignment evaluates index before RHS, checks bounds before evaluating RHS, then stores.",
+    "Calls require matching arity and parameter types. Each scalar parameter is passed by value. A STRING parameter borrows an immutable reference for the call.",
+    "CALL is legal only for a SUB/CSUB. An expression call must return a scalar. RETURN requires one compatible expression in FUNCTION and none in SUB or PROGRAM.",
+    "FOR variable is an existing mutable INTEGER local. Start/limit/step require INTEGER. Default step is 1. NEXT name, if present, must match the active variable case-insensitively."
+  ],
+  "evaluation": "Evaluate operands, call arguments and PRINT items left-to-right exactly once. AND/OR evaluate RHS conditionally. No reassociation of REAL operations.",
+  "integer": "Addition, subtraction, multiplication and negation trap on signed overflow. Division truncates toward zero. MOD = a - trunc(a/b)*b using mathematical integers. Zero divisor traps; INT64_MIN / -1 traps; INT64_MIN MOD -1 returns zero.",
+  "real": "Binary64 with round-to-nearest ties-even; NaNs and infinities from arithmetic allowed. Division by either signed zero traps before FP division. Preserve signed zero, NaNs and operation order. No fast-math or fused contraction.",
+  "string": "Byte length, embedded NUL allowed. Concatenation checks size overflow and allocation failure. STRING does not imply C NUL termination."
+};
+
+set Flow Services[Semantic]::Flow!{
+  "scope": "procedure CFG after structured lowering",
+  "algorithm": "Reachability worklist with explicit loop and return edges",
+  "return": "Every reachable FUNCTION exit must execute RETURN with a value. SUB and PROGRAM fallthrough return normally. Warn on unreachable statements.",
+  "exit": "EXIT/CONTINUE kind targets nearest enclosing loop of that kind. Missing target is E_LOOP_CONTEXT.",
+  "for": "Evaluate start, limit, step in that order once before assigning variable. A zero step traps. Test <= limit for positive step and >= limit for negative step. Variable is read-only in body and nested scopes; reusing it for another FOR is an error.",
+  "for_update": "At latch compute next = mathematical(current+step). If next lies outside the inclusive iteration bound, exit leaving variable at current. Only otherwise convert next to i64 and assign. This prevents an overflowing final increment at INT64_MAX or INT64_MIN.",
+  "continue": "CONTINUE FOR goes to latch; CONTINUE WHILE goes to condition. EXIT bypasses the latch. All crossed scopes run cleanups.",
+  "traps": "First failing check reports code and source span then terminates the process with status 1. No source-level handlers. Runtime traps release no per-scope resources because process termination reclaims memory; normal control transfers always clean up."
+};
+
+set Machine Services[IR]::Machine!{
+  "name": "YBAM",
+  "form": "Typed basic-block CFG with SSA temporaries, explicit local slots before promotion, memory/effect block parameters and source spans.",
+  "values": [
+    "i64",
+    "f64",
+    "bool",
+    "str",
+    "array(T)",
+    "effect"
+  ],
+  "ops": {
+    "const<T>(value) -> T": "Pure scalar constant; string literal is immortal.",
+    "alloc_local<T>() -> Slot(T)": "Entry storage, initially default initialized.",
+    "load(e,slot) -> (e2,T)": "Ordered mutable read.",
+    "store(e,slot,value) -> e2": "Ordered assignment; string ownership handled by Ownership.",
+    "iop.checked(e,op,a,b) -> (e2,i64)": "Checked +,-,*,neg,div,mod with Types behavior.",
+    "fop(e,op,a,b) -> (e2,f64)": "Ordered binary64 arithmetic; division checks zero.",
+    "i2f(i64) -> f64": "Pure conversion with declared rounding mode.",
+    "cmp<T>(op,a,b) -> bool": "Pure numeric/boolean comparison; string comparison reads immutable bytes.",
+    "concat(e,str,str) -> (e2,str)": "Owned immutable string or trap.",
+    "array.new<T>(e,n) -> (e2,array(T))": "Owned zero/default-initialized array or trap.",
+    "array.check(e,array,index) -> (e2,ElementRef)": "Bounds check; pointer remains valid for array owner lifetime.",
+    "element.load(e,ElementRef) -> (e2,T)": "Ordered read.",
+    "element.store(e,ElementRef,T) -> e2": "Ordered write.",
+    "call(e,symbol,args) -> (e2,result?)": "Direct call with declared signature and effects.",
+    "retain(e,str) -> e2": "Acquire owned reference; refcount overflow traps.",
+    "release(e,str) -> e2": "Release reference and free on zero; immortal literal is exempt.",
+    "array.free(e,array) -> e2": "Release local array exactly once.",
+    "trap(e,code,span)": "Terminal runtime failure.",
+    "br(target,args)": "Unconditional terminator.",
+    "condbr(bool,true(args),false(args))": "Conditional terminator; each branch receives its effect.",
+    "ret(e,result?)": "Terminal successful return."
+  },
+  "effect": "Operations with e preserve source order. A conditional branch transfers ownership of its effect only to the chosen successor. Block parameters merge effects on join. Pure ops may move only after legality checks.",
+  "verify": [
+    "one terminator per reachable block",
+    "successor argument types and arities agree",
+    "SSA definitions dominate uses, including edge operands",
+    "one effect chain per executed path",
+    "result and call signatures match",
+    "no use after owner cleanup",
+    "no raw unguarded checked arithmetic"
+  ]
+};
+
+set Lower Services[IR]::Lowering!{
+  "input": "typed Tree",
+  "output": "Machine",
+  "rules": [
+    "Create entry block, parameter values and storage for locals. Evaluate declaration initializers where encountered, then store. Constants become const.",
+    "Variable reads use load; assignment evaluates RHS then store. Indexed assignment emits index expression, array.check, RHS, element.store in that order.",
+    "Arithmetic emits the matching typed Machine op; comparisons emit cmp. Calls evaluate each argument into a temporary before the call.",
+    "AND lowers lhs then condbr(rhs,false). OR lowers lhs then condbr(true,rhs). Merge boolean and effect with block parameters.",
+    "IF creates ordered condition blocks and arm blocks, all reaching a join unless terminated. ELSEIF conditions run only after all previous conditions are false.",
+    "WHILE creates preheader, condition, body, latch and exit. Body normal completion and CONTINUE target condition after cleanup.",
+    "FOR creates captured start/limit/step values, zero-step check, init, condition, body, latch and exit. The latch uses a helper next_fits_bound(current,step,limit) which returns a next value only when in range; it never performs overflowing C arithmetic.",
+    "PRINT evaluates and emits each item in sequence with a separator before items after the first; newline after the last. An empty PRINT emits newline.",
+    "RETURN first evaluates result, preserves an owned STRING result when needed, branches through scope cleanups, then ret.",
+    "Fallthrough and EXIT/CONTINUE branch through all crossed lexical cleanups. Statements after a terminal transfer are unreachable and must not receive normal incoming edges."
+  ],
+  "ssa": "Use the standard-library IR promotion pass on non-address-taken scalar slots. Insert phi-equivalent block parameters at iterated dominance frontiers; rename by dominator-tree DFS. Keep local arrays addressable."
+};
+
+set Ownership Services[Analysis]::Ownership!{
+  "input": "Machine",
+  "domain": "Each str SSA value is borrowed, immortal or owned; each array is one local owner.",
+  "rules": [
+    "String literals are immortal. Loads and parameters borrow. Concat and STRING-returning calls produce owned values.",
+    "Each STRING local holds one owned reference or an immortal reference. On assignment, retain a borrowed RHS first, replace slot, release old value; consume an owned temporary directly. Self-assignment is safe.",
+    "Expression temporaries that own strings are released after their last source-expression use; borrowed call arguments remain alive until the call returns.",
+    "A STRING return transfers an owned value to the caller; a borrowed return is retained before cleaning up its owner. SUB returns no value.",
+    "Lexical exit releases string locals in reverse declaration order and frees arrays. Array elements cannot contain references in this version.",
+    "Block parameters carry uniform ownership. Insert edge retains/copies before joining unlike ownership paths; never release a value required on an outgoing edge."
+  ],
+  "algorithm": "Forward ownership flow plus backward liveness; reject conflicting owner states, double release and dangling borrows.",
+  "invalidation": "Recompute after CFG changes and before C emission. Ownership insertion runs once after scalar optimizations; optimizer does not reorder inserted retains or releases."
+};
+
+set Analyses Services[Analysis]::Bundle!{
+  "key": "artifact identity + revision + target semantics + analysis version",
+  "items": [
+    {
+      "name": "CFG",
+      "algorithm": "Enumerate successors/predecessors and reachable blocks from entry."
+    },
+    {
+      "name": "Dominators",
+      "requires": [
+        "CFG"
+      ],
+      "algorithm": "D(entry)={entry}; all other reachable D initially all blocks. Iterate D(b)={b} union intersection D(pred) to stability. Derive immediate dominators and frontiers."
+    },
+    {
+      "name": "SCCP",
+      "requires": [
+        "CFG"
+      ],
+      "algorithm": "Value lattice Bottom, Constant(c), Top; executable-edge worklist. Join unequal constants to Top. Evaluate only executable inputs, preserve binary64 bits, and model a certain trap as a terminal effect rather than a value."
+    },
+    {
+      "name": "Ranges",
+      "requires": [
+        "CFG"
+      ],
+      "algorithm": "i64 interval lattice with mathematical bounds and Top. Refine on comparisons; join intervals; widen loop headers after two strict expansions then one narrowing traversal. Track checks separately from wrapping arithmetic."
+    },
+    {
+      "name": "Liveness",
+      "requires": [
+        "CFG"
+      ],
+      "algorithm": "LiveOut(b)=union successor LiveIn mapped through edge arguments. LiveIn=Use union (LiveOut-Def); iterate backwards to stability."
+    },
+    {
+      "name": "Effects",
+      "requires": [
+        "CFG"
+      ],
+      "algorithm": "Summarize read, write, allocate, I/O, external and trap effects. Iterate call-graph SCCs to fixed point. Unknown or imported bodies are conservatively all effects."
+    },
+    {
+      "name": "Loops",
+      "requires": [
+        "CFG",
+        "Dominators"
+      ],
+      "algorithm": "Find backedges whose head dominates tail, form natural loops, identify preheaders and nesting."
+    }
+  ],
+  "invalidation": "CFG rewrites invalidate all. Instruction replacement invalidates SCCP/Ranges/Liveness/Effects; source annotations preserve CFG/Dominators/Loops. Preserve only explicitly listed facts."
+};
+
+set Optimize Services[Rewrite]::Pipeline!{
+  "on": "Machine",
+  "analyses": "Analyses",
+  "verification": "Machine verifier after each mutating pass",
+  "passes": [
+    {
+      "name": "SCCP",
+      "rule": "Substitute proven constants; replace constant branches; retain mandatory effects; remove unreachable blocks and corresponding block parameters."
+    },
+    {
+      "name": "CheckedFold",
+      "rule": "Fold integer operations only with representable mathematical result. A certain overflow/divide-zero emits trap at the original effect position. Preserve all earlier operand effects."
+    },
+    {
+      "name": "Identities",
+      "rule": "INTEGER x+0, x-0, x*1 simplify if checked operation cannot fail. Preserve effect chain by forwarding the consumed effect. No floating algebraic identities."
+    },
+    {
+      "name": "CheckElimination",
+      "rule": "Remove array.check only if interval proof establishes 0<=index<length and owner is live. Remove arithmetic checks only if full mathematical result range fits i64."
+    },
+    {
+      "name": "CSE",
+      "rule": "Dominator-scoped value numbering on pure nonallocating ops with identical types and operands. Never merge calls, allocation, retains, releases, I/O or trapping ops."
+    },
+    {
+      "name": "DCE",
+      "rule": "Remove unused pure instructions. Preserve checks and may-trap arithmetic even if value is unused; preserve calls unless independently proven effect-free and total."
+    },
+    {
+      "name": "CFGCleanup",
+      "rule": "Thread empty unconditional blocks, remove unused parameters, merge single-predecessor blocks when no cleanup boundary is crossed."
+    }
+  ],
+  "loop_policy": "No hoisting of checks, allocation or may-trap instructions. Keep loops in CFG for the native compiler; Ranges can discharge checks inside loops.",
+  "termination": "Run ordered passes for at most 8 rounds, stopping when canonical IR hash is unchanged. On fuel exhaustion keep the last verified IR. Local rewrites must decrease instruction count or constant-lattice uncertainty."
+};
+
+set Runtime Services[Language]::RuntimeLibrary!{
+  "abi": "yb_runtime.h / libyb_rt.a, ABI version 1",
+  "representation": {
+    "INTEGER": "int64_t",
+    "REAL": "double",
+    "BOOLEAN": "_Bool",
+    "STRING": "yb_str* opaque immutable object; byte data, uint64_t length, refcount or immortal marker",
+    "Array(T)": "local descriptor {T *data; int64_t length;}"
+  },
+  "procedures": [
+    [
+      "LEN(s AS STRING) AS INTEGER",
+      "byte count; pure; no retain"
+    ],
+    [
+      "STR(n AS INTEGER) AS STRING",
+      "owned decimal integer string; no padding"
+    ],
+    [
+      "VAL(s AS STRING) AS INTEGER",
+      "owned string not consumed; optional sign plus digits only, no whitespace; overflow or invalid input traps"
+    ],
+    [
+      "CHR(n AS INTEGER) AS STRING",
+      "one byte, n in 0..255, otherwise trap"
+    ],
+    [
+      "ASC(s AS STRING) AS INTEGER",
+      "unsigned first byte, empty traps"
+    ],
+    [
+      "MID(s AS STRING,start AS INTEGER,count AS INTEGER) AS STRING",
+      "zero-based byte slice, require 0<=start<=LEN and 0<=count<=LEN-start; returns owned string"
+    ],
+    [
+      "READLINE() AS STRING",
+      "read stdin through LF, remove preceding CR; empty string for immediate EOF; I/O failure traps; returns owned string"
+    ],
+    [
+      "ABS(n AS INTEGER) AS INTEGER",
+      "INT64_MIN traps"
+    ],
+    [
+      "REAL(n AS INTEGER) AS REAL",
+      "round ties-even conversion; parsed specially as a builtin keyword call"
+    ],
+    [
+      "INTEGER(x AS REAL) AS INTEGER",
+      "truncate toward zero; reject NaN, infinity or out-of-i64 result; parsed specially as builtin keyword call"
+    ]
+  ],
+  "print": "INTEGER base-ten with leading minus only; BOOLEAN TRUE/FALSE; STRING raw bytes; REAL C-locale %.17g under round-nearest mode. Separate items by one ASCII space and append LF. Errors trap; no format-string interpretation of user strings.",
+  "helpers": "Emit or link checked integer arithmetic, division, remainder, arrays, UTF-8-independent byte strings, I/O and trap helpers with exact Types semantics.",
+  "overflow": "Helpers use checked preconditions or unsigned magnitudes. Never execute overflowing signed C arithmetic. INT64_MIN negation and division overflow are checked first.",
+  "startup": "Create per-process runtime context, validate FP profile, initialize imports in dependency order, execute PROGRAM, clean locals, flush checked output, return status 0. Failure prints code + original span to stderr and exits 1.",
+  "threading": "Generated executable and runtime ABI v1 are single-threaded. Native callbacks into YBASIC are outside the v1 interface."
+};
+
+set Modules Services[Module]::Define!{
+  "syntax": "IMPORT \"math/geometry.yb\" AS Geo; calls use Geo.Area(...)",
+  "resolution": "Resolve relative to importing file then explicit source roots. Normalize canonical path; read each source once per build snapshot. Declared MODULE name is metadata, alias is local.",
+  "exports": "Only EXPORT FUNCTION and EXPORT SUB appear in generated interface. Constants are unit-private. Imported signatures include scalar types, ownership ABI and runtime version.",
+  "cycles": "Reject import cycles with complete dependency path before compiling bodies. Procedures in a single module can be mutually recursive.",
+  "initialization": "Modules have constants and procedures only. No mutable global state or user init block. Initialize literal pools once in stable dependency order; mark ready after successful initialization.",
+  "link": "Generate one native object and one interface record per module. Link each canonical module once; reject duplicate exported C names and incompatible runtime ABIs.",
+  "cache": "Hash source bytes, transitive interface hashes, semantic configuration, stdlib version, imported C AST fingerprint, target compiler identity, flags and runtime ABI. Publish object/interface together after success."
+};
+
+set CInterop Services[FFI]::C!{
+  "declarations": "CIMPORT \"header.h\" enables a header. CFUNCTION/CSUB FROM header AS symbol must name an enabled header and match its parsed declaration.",
+  "importer": "Use YANTLR standard-library C declaration importer with target sysroot and preprocessor configuration. Import declarations and types only; C headers never become raw grammar fragments.",
+  "types": {
+    "INTEGER": "exact int64_t",
+    "REAL": "double",
+    "BOOLEAN": "_Bool",
+    "STRING": "not permitted in direct CFUNCTION/CSUB ABI v1"
+  },
+  "support": "Fixed-arity C functions with scalar arguments and scalar/void result, external linkage and default C calling convention. Emit E_FFI_TYPE for variadics, pointers, structs, unions, callbacks, nonmatching integer widths or STRING.",
+  "extensions": "String and aggregate extensions expose a fixed scalar shim API or use a separately specified future ABI. No implicit char* conversion.",
+  "effects": "Every C call is an ordering barrier and may read/write external state. C extension must return normally without changing rounding mode or retaining references to generated stack storage.",
+  "header": "Emit ybasic_api.h including stdint.h and stdbool.h; add include guard and extern-C guards. Exported procedures use yb_<moduleHash>_<normalizedName> and scalar signatures; exported STRING parameters/results use opaque yb_str* and documented borrowed/owned lifetime.",
+  "embedding": "Library mode exports module_init plus named procedures and runtime create/destroy. Embedder initializes the runtime before calls. Scalar calls cannot propagate YBASIC traps as C exceptions; v1 trap terminates process.",
+  "example": {
+    "header": "int64_t twice(int64_t value);",
+    "source": "CIMPORT \"demo.h\"\nCFUNCTION Twice(x AS INTEGER) AS INTEGER FROM \"demo.h\" AS \"twice\"\n",
+    "use": "PRINT Twice(21)",
+    "expected": "42\\n"
+  }
+};
+
+set CBackend Services[Native]::C11!{
+  "input": "verified optimized Machine with Ownership inserted",
+  "output": "C11 translation unit and source-map table",
+  "strategy": "Emit a function per YBASIC procedure, one C label per CFG block and typed C temporary per SSA definition. Gotos implement edges. This target compiles to native machine code through NativeToolchain.",
+  "lowering": [
+    [
+      "const",
+      "typed exact literal; int64 constants via INT64_C, INT64_MIN via (-INT64_C(9223372036854775807)-1); doubles from exact bit patterns using memcpy; immortal string objects"
+    ],
+    [
+      "load/store",
+      "C temporaries/local lvalues; preserves explicit ownership operations"
+    ],
+    [
+      "iop.checked",
+      "yb_iadd/isub/imul/ineg/idiv/imod helper with source span"
+    ],
+    [
+      "fop",
+      "separate statement for each operation; division calls checked helper; prohibit FP contraction"
+    ],
+    [
+      "i2f",
+      "explicit (double) conversion after target FP validation"
+    ],
+    [
+      "cmp",
+      "typed C comparison or yb_str_cmp; preserve ordered/unordered floating behavior"
+    ],
+    [
+      "concat",
+      "yb_str_concat(ctx,a,b,span)"
+    ],
+    [
+      "array.new/check/load/store/free",
+      "runtime allocation and bounds helper; use resulting pointer only during owner lifetime"
+    ],
+    [
+      "call",
+      "callee(ctx,evaluated args) for generated procedures, runtime wrapper for builtins, typed C wrapper for externals"
+    ],
+    [
+      "retain/release",
+      "yb_str_retain/yb_str_release"
+    ],
+    [
+      "br/condbr",
+      "parallel copies to successor block parameters then goto; conditional selects exactly one edge"
+    ],
+    [
+      "ret",
+      "return captured result after cleanup; MAIN returns to runtime wrapper"
+    ],
+    [
+      "trap",
+      "yb_trap(ctx,code,span) marked _Noreturn"
+    ]
+  ],
+  "parallel_copy": "Evaluate all edge sources into typed scratch temporaries, then assign all destinations. Scratch references are aliases, not extra owners. Correct even for cycles.",
+  "sequence": "Generate each effect operation as a separate C full expression. Call arguments are already scalar temporaries. C expression evaluation order must never decide YBASIC side-effect order.",
+  "names": "Use generated numeric symbol IDs; quote includes and data through dedicated emitters. Never paste source identifiers into C tokens without mangling.",
+  "checks": "Verify every Machine opcode has one lowering; validate label targets, cleanup paths and declarations. Build error if runtime provider or toolchain is missing."
+};
+
+set NativeToolchain Services[Native]::Toolchain!{
+  "provider": "configured GCC C11 toolchain for initial target",
+  "reference": "https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html",
+  "invocation": "Process execution uses an executable path plus an argv vector. Source paths, sysroot and options are separate arguments.",
+  "compile_argv": [
+    "-std=c11",
+    "-O2",
+    "-fno-fast-math",
+    "-ffp-contract=off",
+    "-fno-strict-aliasing",
+    "-fPIC",
+    "-c",
+    "<generated.c>",
+    "-o",
+    "<temporary.o>"
+  ],
+  "debug_argv": [
+    "-g",
+    "-O0"
+  ],
+  "tasks": [
+    [
+      "low-level IR analysis",
+      "provider computes CFG, dependencies, aliasing, liveness and target constraints"
+    ],
+    [
+      "low-level IR optimization",
+      "provider simplifies lowered C operations under preserved overflow/FP/effect semantics"
+    ],
+    [
+      "instruction selection",
+      "provider maps scalar arithmetic, calls, branches and loads to configured target instructions"
+    ],
+    [
+      "instruction scheduling",
+      "provider handles scheduling and call dependencies using its target model"
+    ],
+    [
+      "register allocation",
+      "provider assigns physical registers, splits/spills intervals or interference regions and honors call-clobber constraints"
+    ],
+    [
+      "frame lowering",
+      "provider lays out spills, saved registers and ABI-aligned call frames"
+    ],
+    [
+      "assembly/object emission",
+      "provider assembles relocatable PIC object for the selected triple"
+    ]
+  ],
+  "note": "These are delegated compiler tasks, not extra YBASIC passes to run after object emission. Exact algorithms and enabled optimizations depend on compiler version and target.",
+  "link_argv": [
+    "<module-objects...>",
+    "<extension-objects...>",
+    "<libyb_rt.a>",
+    "-o",
+    "<temporary-executable>"
+  ],
+  "validate": "Probe compiler target, sizes and binary64 behavior. Match extension and runtime ABI, require successful compile/link, inspect object format and target before publication.",
+  "outputs": "Executable by default; object/archive in library mode; optional assembly and C retained only if requested.",
+  "failure": "Capture stdout/stderr and process status; map generated locations through span table. Keep diagnostics and discard incomplete artifacts. Publish by atomic rename only after full success."
+};
+
+set Build Services[Build]::Pipeline!{
+  "stages": [
+    [
+      "ResolveServices",
+      "StandardLibrary",
+      "resolved dependency set"
+    ],
+    [
+      "ReadSources",
+      "Services[IO], Modules",
+      "source snapshots"
+    ],
+    [
+      "Tokenize",
+      "Tokens",
+      "token streams"
+    ],
+    [
+      "Parse",
+      "Syntax, Tree",
+      "AST"
+    ],
+    [
+      "ResolveImports",
+      "Modules, CInterop",
+      "import interfaces"
+    ],
+    [
+      "ResolveNames",
+      "Names",
+      "bound AST"
+    ],
+    [
+      "TypeCheck",
+      "Types",
+      "typed AST"
+    ],
+    [
+      "LowerCFG",
+      "Lower, Machine",
+      "typed CFG"
+    ],
+    [
+      "CheckFlow",
+      "Flow",
+      "checked CFG"
+    ],
+    [
+      "PromoteSSA",
+      "Services[IR]",
+      "SSA CFG"
+    ],
+    [
+      "VerifySSA",
+      "Machine",
+      "verified CFG"
+    ],
+    [
+      "Analyze",
+      "Analyses",
+      "analysis facts"
+    ],
+    [
+      "Optimize",
+      "Optimize",
+      "optimized CFG"
+    ],
+    [
+      "InsertOwnership",
+      "Ownership",
+      "owned CFG"
+    ],
+    [
+      "VerifyOwnership",
+      "Ownership, Machine",
+      "verified owned CFG"
+    ],
+    [
+      "EmitC",
+      "CBackend",
+      "C11 source"
+    ],
+    [
+      "CompileNative",
+      "NativeToolchain",
+      "native objects"
+    ],
+    [
+      "Link",
+      "NativeToolchain, Runtime, CInterop",
+      "executable or library"
+    ],
+    [
+      "Publish",
+      "Services[IO]",
+      "final artifacts"
+    ]
+  ],
+  "failure": "Any frontend error prevents native compilation. Any missing dependency or runtime provider prevents generation. Warnings do not change semantics.",
+  "incremental": "Schedule import DAG topologically; independent module compilations may run concurrently. A cache hit requires matching input hashes and valid complete outputs.",
+  "language_driver": "ybasic input.yb -o output; --emit=obj for library objects; --check stops after flow verification; -O0 bypasses scalar optimization only; runtime checks remain enabled."
+};
+
+set Examples Services[Test]::Suite!{
+  "status": "Expected behaviors specified here; execution requires the unresolved YANTLR services and runtime provider.",
+  "program": "PROGRAM Demo\nFUNCTION Sum(n AS INTEGER) AS INTEGER\n  DIM total AS INTEGER = 0\n  DIM i AS INTEGER\n  FOR i = 1 TO n\n    total = total + i\n  NEXT i\n  RETURN total\nEND FUNCTION\nDIM values[3] AS INTEGER\nvalues[0] = Sum(10)\nDIM greeting AS STRING = \"Hello \" + \"YBASIC\"\nPRINT greeting, values[0]\nIF values[0] = 55 AND LEN(greeting) > 0 THEN\n  PRINT TRUE\nELSE\n  PRINT FALSE\nEND IF\nEND PROGRAM\n",
+  "program_stdout": "Hello YBASIC 55\nTRUE\n",
+  "positive": [
+    [
+      "PRINT 2 + 3 * 4",
+      "14\n"
+    ],
+    [
+      "PRINT -7 \\ 3, -7 MOD 3",
+      "-2 -1\n"
+    ],
+    [
+      "PRINT FALSE AND (1 \\ 0 = 0)",
+      "FALSE\n"
+    ],
+    [
+      "PRINT NOT 2 = 3",
+      "TRUE\n"
+    ],
+    [
+      "DIM s AS STRING = \"a\"\ns = s\nPRINT s",
+      "a\n"
+    ],
+    [
+      "DIM i AS INTEGER\nFOR i = 9223372036854775807 TO 9223372036854775807\nPRINT i\nNEXT i",
+      "9223372036854775807\n"
+    ],
+    [
+      "DIM i AS INTEGER\nFOR i = 3 TO 1 STEP -1\nPRINT i\nNEXT",
+      "3\n2\n1\n"
+    ],
+    [
+      "DIM i AS INTEGER\nFOR i = 2 TO 1\nPRINT 99\nNEXT\nPRINT i",
+      "2\n"
+    ],
+    [
+      "PRINT -9223372036854775808 MOD -1",
+      "0\n"
+    ]
+  ],
+  "negative": [
+    [
+      "DIM x AS INTEGER = 1.5",
+      "E_TYPE"
+    ],
+    [
+      "PRINT unknown",
+      "E_UNKNOWN_NAME"
+    ],
+    [
+      "DIM a[2] AS INTEGER\nPRINT a[2]",
+      "trap BOUNDS"
+    ],
+    [
+      "DIM a[0] AS REAL\nPRINT a[0]",
+      "trap BOUNDS"
+    ],
+    [
+      "PRINT 9223372036854775807 + 1",
+      "trap OVERFLOW at +"
+    ],
+    [
+      "DIM i AS INTEGER\nFOR i = 1 TO 3 STEP 0\nNEXT",
+      "trap ZERO_STEP"
+    ],
+    [
+      "FUNCTION F() AS INTEGER\nIF FALSE THEN\nRETURN 1\nEND IF\nEND FUNCTION",
+      "E_MISSING_RETURN"
+    ],
+    [
+      "CONTINUE WHILE",
+      "E_LOOP_CONTEXT"
+    ],
+    [
+      "PRINT 1 < 2 < 3",
+      "E_PARSE"
+    ],
+    [
+      "DIM i AS INTEGER\nFOR i = 1 TO 2\ni = 9\nNEXT",
+      "E_FOR_READONLY"
+    ]
+  ],
+  "wrapping": "Statement fragments are wrapped in PROGRAM Test / END PROGRAM; procedure fragments are inserted in the declaration region.",
+  "differential": "Compile each positive and runtime-negative fixture at -O0 and -O2. Compare exact stdout, status, trap code and source span. Use a reference YBAM evaluator when available. Diagnostic-negative fixtures must fail before C generation.",
+  "additional": "Check module cycles, duplicate aliases, exported STRING ownership, C signature mismatch, allocation failure, embedded NUL printing, output failure, recursion and cleanup through EXIT/CONTINUE/RETURN."
+};

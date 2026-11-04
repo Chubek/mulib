@@ -1,7 +1,176 @@
-language "YANTLR" v0.1.0
-{
-   authors =
-   {
-	"Chubak Bidpaa <aurito@riseuo,net>"
-   }
-{
+// Yantlr language-generator design specimen, revision 1.
+// Host syntax follows the Yantlr intermediary/set/qualified-constructor forms.
+// Gen[Language] constructors and their rule vocabulary are proposed here.
+// Records use JSON strings. Grammar, pattern and transfer strings are declarative
+// mini-languages owned by their enclosing constructor. Never execute them as shell.
+// Read from top to bottom; the final Build declaration wires the named components.
+intermediary "Lua";
+
+set Profile Gen[Language]::Profile!{
+  "name": "Lua54.Core",
+  "reference": "https://lua.org/manual/5.4/manual.html",
+  "configuration": "64-bit lua_Integer, binary64 lua_Number, ASCII identifiers, C locale",
+  "source": "Straight-line chunks with locals, assignment, calls, field reads, return and addition. All Lua 5.4 values can enter through the host.",
+  "limits": "One expression per assignment or return. Calls take exactly one result even in a tail position; bare return yields none. No yields across generated frames, debug-hook/stack introspection equivalence, source closures, varargs or lexical _ENV declarations. Modules loaded by the host may use full Lua.",
+  "targets": ["portable register bytecode", "x86_64-linux-gnu ELF PIC"],
+  "runtime": "Both targets run inside the same embedded Lua 5.4 state. Heap, tables, coercion, metamethods and C modules belong to that state."
+};
+
+set Lex Gen[Language]::Lexer!{
+  "input": "bytes", "span": "file and half-open byte range on each token",
+  "policy": "Longest token; classify complete identifiers through the reserved-word table.",
+  "skip": ["[ \\t\\r\\n\\f\\v]+", "--[^\\r\\n]*"],
+  "reject_before_skip": "At a comment opener followed by a Lua long-bracket opener, diagnose unsupported long comment.",
+  "ident": "[A-Za-z_][A-Za-z_0-9]*",
+  "reserved": "and break do else elseif end false for function goto if in local nil not or repeat return then true until while",
+  "integer": "[0-9]+ (base ten, 0..9223372036854775807); consume malformed numeral tails as a single diagnostic",
+  "string": "Single or double quote; collect bytes until matching quote. Decode backslash, either quote, n, r and t after an escape. Reject other escapes, raw newlines and EOF inside a string.",
+  "punctuation": ["+", "=", ".", ",", "(", ")", ";"],
+  "end": "EOF", "otherwise": "diagnose unexpected byte at span"
+};
+
+set Parse Gen[Language]::Parser!{
+  "entry": "chunk", "algorithm": "predictive with iterative postfix and left folds",
+  "notation": "Quoted literals denote tokens; ? * and + quantify their preceding term. => constructs a spanned node. Trailing return is structural.",
+  "rules": [
+    "chunk   := stmt* ret? EOF => Chunk(stmt*,ret?)",
+    "stmt    := ';' => Empty | 'local' ident ('=' expr)? => Local(ident,expr?) | prefix finish",
+    "finish  := '=' expr => Assign(prefix,expr) | empty => Discard(prefix)",
+    "ret     := 'return' expr? ';'? => Return(expr?)",
+    "expr    := atom ('+' atom)* => fold_left(Add)",
+    "atom    := integer => Int | string => Str | 'nil' => Nil | 'true' => True | 'false' => False | prefix",
+    "prefix  := (ident => Name | '(' expr ')' => Group) suffix* => fold_left(postfix)",
+    "suffix  := '.' ident => Field(base,ident) | '(' args? ')' => Call(base,args)",
+    "args    := expr (',' expr)* => List"
+  ],
+  "error": "Span the first unexpected token and report the expected set; stop before lowering."
+};
+
+set Bind Gen[Language]::Semantics!{
+  "input": "Chunk", "output": "BoundChunk", "initial": "empty local map plus host environment table",
+  "rules": [
+    "Local(n,e): reject n == _ENV in this profile. Bind initializer in the previous map; missing initializer is Nil. Allocate fresh binding ID, then shadow n.",
+    "Name(n): nearest binding => LocalRef(id); _ENV => Env; otherwise => Field(Env,n).",
+    "Assign(p,e): require bare Name as parsed; reject assignment to _ENV; resolve target in current map. A free name becomes SetField(Env,n,e).",
+    "Discard(p): require outermost Call. A bare name, field or grouped call is an invalid statement.",
+    "Return(Call(...)): reject unparenthesized final call (Lua would forward all results). Reject a bare Call in final argument position for the same reason. Group(Call(...)) explicitly requests one result.",
+    "Walk each argument list in source order. Type errors from dynamic arithmetic, indexing or invocation occur at execution."
+  ]
+};
+
+set AM Gen[Language]::Machine!{
+  "name": "LuaAM", "shape": "straight-line SSA; definition before use; exactly one terminal return",
+  "types": ["V: boxed Lua value", "E: linear effect token", "K: interned immutable byte string"],
+  "entry": "(env:V, e0:E)", "state": "frame of rooted values, constant pool, Lua state, source PC",
+  "ops": [
+    ["Lit(c) -> V", "nil, boolean, signed integer or pool string; strings rooted at module load"],
+    ["Get(E,V,K) -> E,V", "ordinary Lua field lookup, including __index"],
+    ["Set(E,V,K,V) -> E", "ordinary Lua assignment, including __newindex and GC barriers"],
+    ["Plus(E,V,V) -> E,V", "Lua addition with numeric conversion and __add fallback"],
+    ["IPlus(V,V) -> V", "integer operands proven on all incoming paths; add modulo 2^64 then interpret signed bits"],
+    ["Invoke(E,V,[V]) -> E,V", "call through Lua with one requested result; adjusts zero results to nil"],
+    ["Ret(E,[V])", "terminate with zero or one result"]
+  ],
+  "effects": "Get, Set, Plus and Invoke may throw or call user code. Each consumes the previous token; errors exit before the next op. Ret consumes the last token.",
+  "lower": [
+    "Bind literals to Lit; Group forwards its child's value. Env uses the entry value. A local maps to its most recent SSA definition.",
+    "Local and local Assign evaluate RHS, then update the binding-ID map. A global assignment emits Set after evaluating the RHS.",
+    "Field evaluates its base then emits Get. Add evaluates left then right then emits Plus. Call evaluates callee then arguments left-to-right then emits Invoke.",
+    "Discard drops the result and retains the effect. Empty emits nothing. Emit Ret on explicit return, or Ret(e,[]) on fallthrough."
+  ]
+};
+
+set Facts Gen[Language]::Analysis!{
+  "on": "LuaAM", "scope": "one function revision", "algorithm": "single forward pass in definition order",
+  "domain": "ExactInt(n) <= Integer <= Unknown; all other values are Unknown",
+  "transfer": ["Lit(int n) => ExactInt(n)", "IPlus(ExactInt(a),ExactInt(b)) => ExactInt(wrap64(a+b))", "other IPlus => Integer", "all remaining value results => Unknown"],
+  "uses": "Count all value and effect edges, including return edges. Recompute after changing instructions."
+};
+
+set Optimize Gen[Language]::Rewrite!{
+  "requires": ["Facts", "verified LuaAM"], "order": "ordered rules; revisit changed users until stable",
+  "rules": [
+    {"match":"(e1,r)=Plus(e0,a,b)", "when":"both facts <= Integer", "replace":"r=IPlus(a,b); substitute e0 for e1", "why":"raw integer addition cannot dispatch, allocate or throw"},
+    {"match":"r=IPlus(a,b)", "when":"both facts are exact", "replace":"r=Lit(wrap64(a+b))", "why":"same integer bits at overflow"},
+    {"match":"r=Lit(c) or r=IPlus(a,b)", "when":"uses(r)==0", "replace":"erase instruction"}
+  ],
+  "termination": "Lexicographically decreases (#Plus, #IPlus, total ops). Recompute stale facts and verify after rewriting.",
+  "location": "Replacement inherits the old source span. Keep spans on every dynamic helper call."
+};
+
+set Bytecode Gen[Language]::VM!{
+  "format": "Y1LB v1, little endian. Header: magic[4], u16 version, u16 frame slots, u32 pool count, u32 code bytes. Pool tags 0=nil, 1=false, 2=true, 3=i64, 4=u32 length+bytes. Slot 0 starts with env.",
+  "encoding": "u8 opcode; slots, counts and pool indexes are u16. Variadic operands are count followed by exactly that many slots. Reject oversized operands during emission.",
+  "select": [
+    ["Lit","0 K dst pool"],["Get","1 GET dst base keyPool"],["Set","2 SET base keyPool src"],
+    ["Plus","3 ADD dst a b"],["IPlus","4 IADD dst a b"],["Invoke","5 CALL dst fn count args..."],["Ret","6 RET count results..."]
+  ],
+  "layout": "Emit in SSA order, allocate one slot per V definition, intern keys as strings. Effect edges constrain order and occupy no slots.",
+  "verify": "Check magic/version, lengths, exact end of input, tags, frame bounds, key types, initialized reads, instruction boundaries, terminal RET and result count <=1. Propagate integer tags from K and IADD; reject IADD unless both operands are proven integers.",
+  "interpret": "Decode verified op, read all inputs, perform AM operation, store result, advance byte PC. CALL uses Lua's call machinery. RET copies results to the host stack. Never advance past a failed helper.",
+  "runtime_tasks": "Install constants before entry; keep frame values rooted on Lua stack; reserve temporary call space; restore stack on normal return or protected unwind. Retain byte-PC to source-span map for diagnostics."
+};
+
+set Native Gen[Language]::Native!{
+  "target": "x86_64-linux-gnu / System V AMD64", "result": "ELF relocatable object plus pool and span table",
+  "frame": "Generated body is called from a lua_CFunction wrapper. Keep L and the frame base available across calls. Roots live in indexed Lua stack slots; never cache stack element addresses across helper calls.",
+  "lir": ["imm64 def","add64 def,lhs,rhs","arg index,value","call symbol,uses,defs,clobbers","copy dst,src","ret resultCount"],
+  "select": [
+    ["Lit","call rt_const(L,dst,poolIndex)"],["Get","call rt_get(L,dst,base,key)"],["Set","call rt_set(L,base,key,src)"],
+    ["Plus","call rt_plus(L,dst,a,b)"],["IPlus","call rt_unbox_int for each proven integer; add64; call rt_box_int(L,dst,sum)"],
+    ["Invoke","call rt_call(L,dst,fn,argc,slotVector)"],["Ret","call rt_results(L,count,slotVector); ret count"]
+  ],
+  "helpers": "rt_get/set use lua_gettable/lua_settable; rt_plus uses lua_arith(L,LUA_OPADD); rt_call uses lua_call with one result. Box/unbox preserve signed integer bits. rt_results pushes requested slots atop the stack. Lower each helper invocation into arg/call/copy with the declared target ABI.",
+  "analyze": "Compute per-instruction register uses/defs, fixed argument and return registers, call clobbers, stack effects and live intervals.",
+  "rewrite": "Propagate constants into encodable immediates. Remove identity copies; remove dead pure arithmetic only if flags are also dead. Treat helpers as ordering barriers.",
+  "schedule": "Within each barrier-delimited region, choose ready operations on the longest remaining dependency path, tie by source ordinal. Include RAW, WAR, WAW, flags and memory dependencies.",
+  "allocate": "Linear scan GPR intervals; reserve rsp and frame registers; split or spill live-across-call intervals or assign preserved registers. Resolve parallel argument moves with a scratch slot for cycles.",
+  "emit": "Insert reloads, spills and callee-save prologue/epilogue; keep rsp 16-byte aligned before calls. Select ADD r64,r64 or sign-extended imm32 only when representable. Emit PIC data references and external helper relocations.",
+  "verify": "Check physical operand classes, call clobbers, aligned calls and restoration of callee-saved registers. Preserve source locations for helper errors."
+};
+
+set Libraries Gen[Language]::Runtime!{
+  "provider": "stock liblua 5.4 built with matching integer/number configuration",
+  "open": "luaL_openlibs(L) before executing a chunk",
+  "modules": ["_G", "package", "coroutine", "table", "io", "os", "string", "utf8", "math", "debug"],
+  "resolve": "Global require is the actual Lua function fetched from env. Its package.loaded cache and ordered package.searchers handle preload, Lua source, C modules and all-in-one C modules. Delegate package.path, package.cpath, loader arguments and loader errors to that implementation.",
+  "source_loader": "Ordinary .lua modules run in the host Lua engine. Register a generated module using package.preload[name] = generated_loader; require then uses its usual cache semantics.",
+  "roots": "Keep environment, pool strings and loaded module state alive via Lua registry references. Release references when generated module closures become unreachable."
+};
+
+set CInterface Gen[Language]::Interop!{
+  "headers": ["lua.h", "lauxlib.h", "lualib.h"],
+  "emit_header": "lua_y1.h: include lua.h; provide C++ extern-C guards; declare int luaopen_y1example(lua_State *L);",
+  "embedding": "Host creates L with luaL_newstate, checks allocation, opens libraries, pushes generated chunk as a C function, calls lua_pcall(L,0,LUA_MULTRET,0), consumes results or error object, then lua_close(L).",
+  "extensions": "Build shared modules against matching Lua headers and ABI. Export int luaopen_NAME(lua_State *L). Register functions with luaL_Reg and luaL_newlib. Return the number of module values on the Lua stack.",
+  "example_c": "#include <lua.h>\n#include <lauxlib.h>\nstatic int answer(lua_State *L) { lua_pushinteger(L, 42); return 1; }\nint luaopen_probe(lua_State *L) { static const luaL_Reg api[] = {{\"answer\",answer},{NULL,NULL}}; luaL_newlib(L,api); return 1; }",
+  "build_example_linux": "cc -fPIC -shared probe.c -o probe.so $(pkg-config --cflags --libs lua5.4)",
+  "load_example": "local p = require('probe'); return (p.answer())",
+  "stack_contract": "Check capacity with lua_checkstack before frame/temporary growth. Use absolute indices or stable frame offsets. Enter generated code inside a protected Lua call; native frames must not require C++ destruction on Lua errors."
+};
+
+set Build Gen[Language]::Pipeline!{
+  "common": ["Lex","Parse","Bind","AM.lower","verify AM","Facts","Optimize","verify AM"],
+  "vm": ["Bytecode.select","Bytecode.layout","Bytecode.verify","Bytecode.interpret"],
+  "native": ["Native.select","Native.analyze","Native.rewrite","Native.analyze","Native.schedule","recompute intervals","Native.allocate","Native.emit","Native.verify"],
+  "link": ["Libraries","CInterface"], "failure": "Stop at first failed stage; missing providers are generator errors."
+};
+
+set Examples Gen[Language]::Cases!{
+  "trace_source": "local x = 40; local y = x + 2; return y + delta",
+  "trace_am": ["a=Lit(40); b=Lit(2)","(e1,c)=Plus(e0,a,b)","(e2,d)=Get(e1,env,'delta')","(e3,r)=Plus(e2,c,d)","Ret(e3,[r])"],
+  "trace_optimized": ["c=Lit(42)","(e2,d)=Get(e0,env,'delta')","(e3,r)=Plus(e2,c,d)","Ret(e3,[r])"],
+  "trace_vm": ["K 1 #42","GET 2 0 #'delta'","ADD 3 1 2","RET 1 3"],
+  "cases": [
+    ["local x=4; local x=x+1; return x","integer 5"],
+    ["return 9223372036854775807+1","integer -9223372036854775808"],
+    ["return 40+2+delta","env.delta=8 => 50; an __add on delta sees (42,delta) exactly once"],
+    ["local ignored=t.absent; return 1","a throwing __index aborts before return despite unused result"],
+    ["return (f())","if f returns 4,5 then return exactly 4; if f returns nothing then return one nil"],
+    ["return","zero results"],
+    ["return f()","profile diagnostic at unparenthesized tail call"],
+    ["(x)=1","invalid assignment target"],
+    ["local p=require('probe'); return (p.answer())","with probe.so on package.cpath => integer 42"]
+  ],
+  "oracle": "For accepted cases compare stock Lua 5.4, Y1LB and native using identical fixtures; compare result counts/types, side-effect order and error payloads. Normalize engine-specific traceback formatting. Rejection cases are profile tests."
+};
