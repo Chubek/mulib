@@ -148,58 +148,12 @@ static int mulib_stylesheet_better_(mulib_stylesheet_rank_ a, mulib_stylesheet_r
 /* CSS parser validates syntax. Split groups outside attributes/quotes and count
  * specificity only for matching branches, including attributes as class rank. */
 static int mulib_stylesheet_selector_rank_(const mulib_xml_node_t *node, const char *selector, mulib_stylesheet_rank_ *out) {
-    const char *start = selector, *p = selector;
-    int bracket = 0, quote = 0, matched = 0;
-    mulib_stylesheet_rank_ best = {0};
-    for (;;) {
-        char c = *p;
-        if (quote) {
-            if (c == '\\' && p[1]) { p += 2; continue; }
-            if (c == quote) quote = 0;
-        } else if (c == '\'' || c == '"') quote = c;
-        else if (c == '[') ++bracket;
-        else if (c == ']') --bracket;
-        if ((!c || c == ',') && !quote && !bracket) {
-            size_t n = (size_t)(p - start), i;
-            char *branch = (char *)malloc(n + 1);
-            mulib_stylesheet_rank_ r = {0};
-            int match, type_start = 1;
-            if (!branch) return -1;
-            memcpy(branch, start, n); branch[n] = 0;
-            match = mulib_css_matches(node, branch);
-            if (match < 0) { free(branch); return -1; }
-            if (match) {
-                r.set = 1;
-                for (i = 0; i < n; ++i) {
-                    char x = branch[i];
-                    if (x == '[') {
-                        int q = 0;
-                        ++r.classes;
-                        for (++i; i < n; ++i) {
-                            x = branch[i];
-                            if (q) {
-                                if (x == '\\' && i + 1 < n) ++i;
-                                else if (x == q) q = 0;
-                            } else if (x == '\'' || x == '"') q = x;
-                            else if (x == ']') break;
-                        }
-                        type_start = 0;
-                    } else if (x == '#') { ++r.ids; type_start = 0; }
-                    else if (x == '.') { ++r.classes; type_start = 0; }
-                    else if (x == ' ' || x == '\t' || x == '\n' || x == '\r' || x == '>') type_start = 1;
-                    else { if (type_start && x != '*') ++r.types; type_start = 0; }
-                }
-                if (mulib_stylesheet_better_(r, best)) best = r;
-                matched = 1;
-            }
-            free(branch);
-            if (!c) break;
-            start = p + 1;
-        }
-        if (!c) return -1;
-        ++p;
-    }
-    *out = best; return matched;
+    mulib_css_specificity_t rank = {0};
+    mulib_stylesheet_rank_ result = {0};
+    int matched = mulib_css_specificity(node, selector, &rank);
+    if (matched < 0) return -1;
+    result.ids = rank.ids; result.classes = rank.classes; result.types = rank.types;
+    result.set = matched; *out = result; return matched;
 }
 void mulib_stylesheet_destroy(mulib_stylesheet_t *s) {
     if (s) { mulib_css_destroy(s->css); free(s); }

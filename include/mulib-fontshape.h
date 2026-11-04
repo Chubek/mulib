@@ -48,6 +48,20 @@ void *mulib_fontshape_native(mulib_fontshape_t *font);
  * invalid scalar/font. Variation selectors and shaping substitutions are not
  * tested by nominal coverage; callers should test complete shaped clusters. */
 int mulib_fontshape_covers(mulib_fontshape_t *font, uint32_t scalar);
+/** @brief Horizontal font metrics in the configured scale; descender is usually
+ * negative. 0/-1, output unchanged if the font has no horizontal metrics. */
+typedef struct mulib_fontshape_metrics { int32_t ascender, descender, line_gap; } mulib_fontshape_metrics_t;
+int mulib_fontshape_metrics(mulib_fontshape_t *font, mulib_fontshape_metrics_t *metrics);
+/** @brief Glyph ink extents, y up, in configured scale. 0/-1. */
+typedef struct mulib_fontshape_extents { int32_t x_bearing, y_bearing, width, height; } mulib_fontshape_extents_t;
+int mulib_fontshape_extents(mulib_fontshape_t *font, uint32_t glyph, mulib_fontshape_extents_t *extents);
+/** @brief Return the positive scale selected at open, or zero for NULL. */
+int mulib_fontshape_scale(const mulib_fontshape_t *font);
+/** @brief Copy OpenType GDEF ligature caret positions in configured scale.
+ * direction must be ltr/rtl/ttb/btt. Returns 0/-1, owned array (possibly NULL).
+ * A font without caret data succeeds with count zero; no synthetic positions. */
+int mulib_fontshape_carets(mulib_fontshape_t *font, uint32_t glyph, const char *direction,
+                           int32_t **positions, size_t *count);
 #ifdef __cplusplus
 }
 #endif
@@ -69,6 +83,10 @@ typedef struct mulib_fontshape_variation_ { uint32_t tag; float value; } mulib_f
 struct mulib_fontshape {
     mulib_dynload_t library;
     void *font;
+    int font_scale;
+    int (*metrics)(void *, void *);
+    int (*extents)(void *, uint32_t, void *);
+    unsigned (*carets)(void *, int, uint32_t, unsigned, unsigned *, int32_t *);
     void *(*blob_open)(const char *);
     void (*blob_destroy)(void *);
     unsigned (*face_count)(void *);
@@ -133,6 +151,9 @@ mulib_fontshape_t *mulib_fontshape_open(const char *path, unsigned index, int sc
     MULIB_FONTSHAPE_LOAD_(font_funcs, "hb_ot_font_set_funcs");
     MULIB_FONTSHAPE_LOAD_(scale, "hb_font_set_scale");
     MULIB_FONTSHAPE_LOAD_(nominal, "hb_font_get_nominal_glyph");
+    MULIB_FONTSHAPE_LOAD_(metrics, "hb_font_get_h_extents");
+    MULIB_FONTSHAPE_LOAD_(extents, "hb_font_get_glyph_extents");
+    MULIB_FONTSHAPE_LOAD_(carets, "hb_ot_layout_get_ligature_carets");
     MULIB_FONTSHAPE_LOAD_(buffer_create, "hb_buffer_create");
     MULIB_FONTSHAPE_LOAD_(buffer_destroy, "hb_buffer_destroy");
     MULIB_FONTSHAPE_LOAD_(buffer_ok, "hb_buffer_allocation_successful");
@@ -157,7 +178,7 @@ mulib_fontshape_t *mulib_fontshape_open(const char *path, unsigned index, int sc
     if (!face || !f->face_glyph_count(face)) goto fail;
     f->font = f->font_create(face);
     if (!f->font || f->font == f->font_empty()) goto fail;
-    f->font_funcs(f->font); f->scale(f->font, scale, scale);
+    f->font_funcs(f->font); f->scale(f->font, scale, scale); f->font_scale = scale;
     f->face_destroy(face); f->blob_destroy(blob); return f;
 fail:
     if (face) f->face_destroy(face);
@@ -165,6 +186,37 @@ fail:
     mulib_fontshape_close(f); return NULL;
 }
 void *mulib_fontshape_native(mulib_fontshape_t *f) { return f ? f->font : NULL; }
+int mulib_fontshape_scale(const mulib_fontshape_t *f) { return f ? f->font_scale : 0; }
+int mulib_fontshape_metrics(mulib_fontshape_t *f, mulib_fontshape_metrics_t *out) {
+    /* hb_font_extents_t includes nine reserved positions in its public ABI. */
+    int32_t m[12] = {0};
+    if (!f || !out || !f->metrics(f->font, m)) return -1;
+    out->ascender = m[0]; out->descender = m[1]; out->line_gap = m[2]; return 0;
+}
+int mulib_fontshape_extents(mulib_fontshape_t *f, uint32_t glyph, mulib_fontshape_extents_t *out) {
+    int32_t e[4];
+    if (!f || !out || !f->extents(f->font, glyph, e)) return -1;
+    out->x_bearing = e[0]; out->y_bearing = e[1]; out->width = e[2]; out->height = e[3]; return 0;
+}
+int mulib_fontshape_carets(mulib_fontshape_t *f, uint32_t glyph, const char *dir,
+                          int32_t **out, size_t *count) {
+    unsigned n = 0, capacity;
+    int direction;
+    int32_t *p = NULL;
+    if (!f || !dir || !out || !count ||
+        (strcmp(dir, "ltr") && strcmp(dir, "rtl") && strcmp(dir, "ttb") && strcmp(dir, "btt"))) return -1;
+    direction = f->direction_parse(dir, -1);
+    n = f->carets(f->font, direction, glyph, 0, &n, NULL);
+    if (n) {
+        size_t bytes = (size_t)n * sizeof *p;
+        if (bytes / sizeof *p != n || !(p = (int32_t *)malloc(bytes))) return -1;
+        capacity = n;
+        (void)f->carets(f->font, direction, glyph, 0, &capacity, p);
+        if (capacity > n) { free(p); return -1; }
+        n = capacity;
+    }
+    *out = p; *count = n; return 0;
+}
 int mulib_fontshape_covers(mulib_fontshape_t *f, uint32_t cp) {
     uint32_t glyph;
     if (!f || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff)) return -1;

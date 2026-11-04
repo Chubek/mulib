@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 475 headers, 510 direct dependency edges.
+Inventory: 477 headers, 516 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (176 modules)
+## Stratum 0 (175 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -103,7 +103,6 @@ Compatibility group: `parsec`, `peg`.
 | [jaccard_similarity](mulib-jaccard_similarity.md) | none |
 | [kmm](mulib-kmm.md) | none |
 | [kvm](mulib-kvm.md) | none |
-| [layout](mulib-layout.md) | none |
 | [lazystream](mulib-lazystream.md) | none |
 | [levenshtein](mulib-levenshtein.md) | none |
 | [lexographic_sort](mulib-lexographic_sort.md) | none |
@@ -350,7 +349,7 @@ Compatibility group: `parsec`, `peg`.
 | [ifft](mulib-ifft.md) | `fft` |
 | [initsys](mulib-initsys.md) | `process`, `taskdag` |
 | [latex](mulib-latex.md) | `tex` |
-| [layoutml](mulib-layoutml.md) | `layout`, `xml` |
+| [ligature](mulib-ligature.md) | `fontshape` |
 | [machinebuild](mulib-machinebuild.md) | `fst`, `strbuf` |
 | [machoutils](mulib-machoutils.md) | `macho` |
 | [mempool](mulib-mempool.md) | `alloc` |
@@ -495,7 +494,7 @@ Compatibility group: `parsec`, `peg`.
 | [webidl](mulib-webidl.md) | `buffer`, `dbschema` |
 | [wit](mulib-wit.md) | `buffer`, `dbschema` |
 
-## Stratum 6 (6 modules)
+## Stratum 6 (7 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -504,16 +503,18 @@ Compatibility group: `parsec`, `peg`.
 | [containerd](mulib-containerd.md) | `conainerd-ipc`, `container-log`, `containerd-cache`, `containerd-mount`, `containterpool` |
 | [dbdesializer](mulib-dbdesializer.md) | `dbserializer` |
 | [fswatch](mulib-fswatch.md) | `daemon`, `glob`, `select`, `vfs` |
+| [glyph](mulib-glyph.md) | `fontdraw`, `ligature`, `pglayout`, `sysfonts` |
 | [uri](mulib-uri.md) | `inte6`, `strbuf` |
 
-## Stratum 7 (2 modules)
+## Stratum 7 (3 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [containerd-ctrlbridge](mulib-containerd-ctrlbridge.md) | `containerd`, `containerd-accessstub` |
 | [http](mulib-http.md) | `buffer`, `parsec`, `uri` |
+| [layout](mulib-layout.md) | `glyph` |
 
-## Stratum 8 (8 modules)
+## Stratum 8 (9 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -521,6 +522,7 @@ Compatibility group: `parsec`, `peg`.
 | [http1](mulib-http1.md) | `http` |
 | [http_request](mulib-http_request.md) | `http` |
 | [httpserver_config](mulib-httpserver_config.md) | `http` |
+| [layoutml](mulib-layoutml.md) | `layout`, `xml` |
 | [prowse-protocol](mulib-prowse-protocol.md) | `base64`, `git`, `http`, `json`, `socket`, `utf8` |
 | [waf](mulib-waf.md) | `http`, `seurity` |
 | [webclient](mulib-webclient.md) | `http` |

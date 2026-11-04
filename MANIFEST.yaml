@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 475
-implemented_module_count: 475
+module_count: 477
+implemented_module_count: 477
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -842,14 +842,14 @@ modules:
   header: include/mulib-html.h
   manual: manual/mulib-html.md
   macro: MULIB_IMPL_HTML
-  purpose: Escaped HTML construction using the shared document model.
+  purpose: Bounded explicit-tag HTML parsing and escaped construction using the shared DOM.
   dependencies: [xml]
   status: implemented
 - name: css
   header: include/mulib-css.h
   manual: manual/mulib-css.md
   macro: MULIB_IMPL_CSS
-  purpose: Focused CSS parsing and selector matching over markup trees.
+  purpose: CSS declarations, selectors, author cascade and explicit length conversion.
   dependencies: [xml]
   status: implemented
 - name: inet4
@@ -1591,8 +1591,8 @@ modules:
   header: include/mulib-layout.h
   manual: manual/mulib-layout.md
   macro: MULIB_IMPL_LAYOUT
-  purpose: "Finite weighted row/column rectangle layout, backend-neutral."
-  dependencies: []
+  purpose: "Unicode paragraph layout, positioned glyphs and weighted rectangles."
+  dependencies: [glyph]
   status: implemented
 - name: layoutml
   header: include/mulib-layoutml.h
@@ -3337,6 +3337,20 @@ modules:
   purpose: "Explicit, terminfo-backed terminal attributes and indexed colors."
   dependencies: [terminfo]
   status: implemented
+- name: glyph
+  header: include/mulib-glyph.h
+  manual: manual/mulib-glyph.md
+  macro: MULIB_IMPL_GLYPH
+  purpose: "Paired shaping/raster fonts and renderer-neutral positioned glyphs."
+  dependencies: [fontdraw, ligature, pglayout, sysfonts]
+  status: implemented
+- name: ligature
+  header: include/mulib-ligature.h
+  manual: manual/mulib-ligature.md
+  macro: MULIB_IMPL_LIGATURE
+  purpose: "OpenType ligature controls and lossless UTF-8 cluster maps."
+  dependencies: [fontshape]
+  status: implemented
 project_files:
 - file: manual/storage-server.md
   purpose: Storage codecs, native builders, server policy profiles and dependency contracts.
@@ -4762,3 +4776,11 @@ project_files:
   purpose: Dependency-complete binary-format example and test fixture.
 - file: manual/binary-formats.md
   purpose: Binary reader, builder, packing, dump and styling profiles and contracts.
+- file: examples/modules/glyph.c
+  purpose: "Standalone checked usage example for glyph."
+- file: examples/modules/ligature.c
+  purpose: "Standalone checked usage example for ligature."
+- file: tests/test_html_css_pipeline.c
+  purpose: "Focused regression suite for test_html_css_pipeline."
+- file: tests/test_text_layout.c
+  purpose: "Focused regression suite for test_text_layout."

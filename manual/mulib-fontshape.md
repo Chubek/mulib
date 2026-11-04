@@ -76,3 +76,18 @@ ABI reference: <https://harfbuzz.github.io/>. Only independently expressed publi
 ABI declarations are included; no third-party implementation is vendored.
 Native glyph records are copied as ABI bytes, avoiding effective-type aliasing
 through locally redeclared structure pointers. See [text hardening](text-hardening.md).
+# Glyph metrics and ligature integration
+
+`mulib_fontshape_scale(font)` returns the scale configured at open (zero for
+NULL). `mulib_fontshape_metrics(font,&metrics)` queries horizontal ascender,
+descender and line gap; descender is normally negative. `mulib_fontshape_extents`
+queries a glyph's x/y bearing, width and height. These are integer font-scale
+units, y up, with 0/-1 transactional results. `mulib-layout` uses real font
+metrics for baselines rather than assuming fixed proportions of font size.
+
+`mulib_fontshape_carets(font,glyph,direction,&positions,&count)` queries GDEF
+ligature carets in ltr/rtl/ttb/btt direction. Positions are malloc-owned, signed
+font-scale units; absence of caret data succeeds with count zero. Free the array
+with `free`. Outputs are unchanged on failure. `mulib-ligature` adds explicit
+optional-feature controls and source cluster mapping; `mulib-glyph` pairs shaped
+IDs with the same font face for FreeType rendering.

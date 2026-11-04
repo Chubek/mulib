@@ -1,7 +1,6 @@
 /**
  * @file mulib-html.h
- * @brief Escaped HTML builder and serializer using the XML DOM (not an HTML
- * parser).
+ * @brief Bounded explicit-tag HTML parser, builder and serializer on the XML DOM.
  *
  * Lowercase ASCII tag/attribute names, HTML void elements, and doctype output
  * are supported. Raw-text elements are rejected to avoid misleading escaping.
@@ -35,6 +34,17 @@ extern "C"
    * cannot have children; script/style and other raw-text tags are rejected.
    * Initial LF in pre/textarea/listing is padded to survive HTML parsing. */
   char *mulib_html_serialize (const mulib_xml_node_t *node, size_t *length);
+  /** @brief Parse explicit-tag HTML into the shared owned DOM. ASCII names are
+   * lowercased; void tags, boolean/unquoted attributes, comments, HTML doctype,
+   * numeric entities and amp/lt/gt/quot/apos/nbsp are supported. No HTML5 error
+   * recovery, implicit end tags, raw text, foreign content or external I/O.
+   * fragment=1 returns a synthetic div container; otherwise requires html root.
+   * NULL on failure with byte diagnostic; maximum 16 MiB and depth 128. */
+  mulib_xml_node_t *mulib_html_parse(const char *source, size_t length, int fragment,
+                                     mulib_xml_error_t *error);
+  /** @brief Concatenate descendant text/CDATA, translating br to LF. No CSS
+   * whitespace collapse or hidden-element filtering. Owned UTF-8 or NULL. */
+  char *mulib_html_text(const mulib_xml_node_t *node, size_t *length);
 #ifdef __cplusplus
 }
 #endif
@@ -90,7 +100,10 @@ extern "C"
   mulib_html_add (mulib_xml_node_t *parent, const char *tag, const char *text)
   {
     mulib_xml_node_t *n, *t;
-    if (!mulib_html_name_internal (tag) || mulib_html_raw_internal (tag)
+    if (!parent || (mulib_xml_name(parent) &&
+        (mulib_html_void_internal(mulib_xml_name(parent)) || mulib_html_raw_internal(mulib_xml_name(parent)) ||
+         !strcmp(mulib_xml_name(parent), "title") || !strcmp(mulib_xml_name(parent), "textarea")))
+        || !mulib_html_name_internal (tag) || mulib_html_raw_internal (tag)
         || (text && mulib_html_void_internal (tag)))
       return NULL;
     n = mulib_xml_new (MULIB_XML_ELEMENT, tag);
@@ -194,6 +207,9 @@ extern "C"
             || mulib_html_raw_internal (name)
             || (mulib_html_void_internal (name) && mulib_xml_first (node)))
           return 0;
+        if (!strcmp(name, "title") || !strcmp(name, "textarea"))
+          for (c = mulib_xml_first(node); c; c = mulib_xml_next(c))
+            if (mulib_xml_type(c) != MULIB_XML_TEXT && mulib_xml_type(c) != MULIB_XML_CDATA) return 0;
         if (!mulib_strbuf_putc (out, '<') || !mulib_strbuf_append (out, name))
           return 0;
         for (i = 0; i < mulib_xml_attr_count (node); i++)
@@ -255,6 +271,196 @@ extern "C"
       }
     if (length)
       *length = out.length;
+    return out.data;
+  }
+  static int mulib_html_space_(char c) {
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f';
+  }
+  static char mulib_html_lower_(char c) { return c >= 'A' && c <= 'Z' ? (char)(c+32) : c; }
+  static char *mulib_html_copy_(const char *s, size_t n, int lower) {
+    size_t i; char *p = (char *)malloc(n+1);
+    if (p) { for (i = 0; i < n; ++i) p[i] = lower ? mulib_html_lower_(s[i]) : s[i]; p[n] = 0; }
+    return p;
+  }
+  static int mulib_html_equal_(const char *s, size_t n, const char *word) {
+    size_t i;
+    if (strlen(word) != n) return 0;
+    for (i = 0; i < n; ++i) if (mulib_html_lower_(s[i]) != word[i]) return 0;
+    return 1;
+  }
+  static char *mulib_html_decode_(const char *s, size_t n) {
+    mulib_strbuf_t b; size_t i = 0;
+    mulib_strbuf_init(&b);
+    while (i < n) {
+      if (s[i] == '&') {
+        size_t begin = ++i, j; uint32_t cp = 0; unsigned char bytes[4]; size_t used;
+        while (i < n && s[i] != ';' && i-begin < 32) ++i;
+        if (i == n || s[i] != ';') goto fail;
+        if (i > begin && s[begin] == '#') {
+          unsigned base = 10; j = begin+1;
+          if (j < i && (s[j] == 'x' || s[j] == 'X')) { base = 16; ++j; }
+          if (j == i) goto fail;
+          for (; j < i; ++j) {
+            unsigned d = s[j] >= '0' && s[j] <= '9' ? (unsigned)(s[j]-'0') :
+              s[j] >= 'a' && s[j] <= 'f' ? (unsigned)(s[j]-'a'+10) :
+              s[j] >= 'A' && s[j] <= 'F' ? (unsigned)(s[j]-'A'+10) : 16;
+            if (d >= base || cp > (0x10ffffu-d)/base) goto fail;
+            cp = cp*base+d;
+          }
+        } else {
+          static const char *const names[] = {"amp", "lt", "gt", "quot", "apos", "nbsp"};
+          static const uint32_t codes[] = {38, 60, 62, 34, 39, 160};
+          for (j = 0; j < 6; ++j) if (strlen(names[j]) == i-begin && !memcmp(s+begin, names[j], i-begin)) break;
+          if (j == 6) goto fail;
+          cp = codes[j];
+        }
+        used = mulib_utf8_encode(cp, bytes, sizeof bytes);
+        if (!used || !mulib_xml_valid_text((const char *)bytes, used) ||
+            !mulib_strbuf_append_n(&b, (const char *)bytes, used)) goto fail;
+        ++i;
+      } else if (s[i] == '\r') {
+        ++i; if (i < n && s[i] == '\n') ++i;
+        if (!mulib_strbuf_putc(&b, '\n')) goto fail;
+      } else if (!mulib_strbuf_putc(&b, s[i++])) goto fail;
+    }
+    if (!mulib_strbuf_append_n(&b, "", 0)) goto fail;
+    return b.data;
+  fail:
+    mulib_strbuf_free(&b); return NULL;
+  }
+  mulib_xml_node_t *mulib_html_parse(const char *s, size_t n, int fragment, mulib_xml_error_t *error) {
+    mulib_xml_node_t *root = NULL, *parent, *pending = NULL;
+    size_t p = 0, depth = 0, nodes = 0;
+    int doctype = 0, strip_lf = 0;
+    char *name = NULL, *key = NULL, *value = NULL;
+    const char *message = "invalid or unsupported HTML";
+    if (error) { error->offset = 0; error->message = NULL; }
+    if (n > 16u*1024u*1024u || (fragment != 0 && fragment != 1) || !mulib_xml_valid_text(s, n)) goto fail;
+    root = mulib_xml_new(fragment ? MULIB_XML_ELEMENT : MULIB_XML_DOCUMENT, fragment ? "div" : NULL);
+    if (!root) goto fail;
+    parent = root; depth = fragment ? 1 : 0;
+    while (p < n) {
+      size_t begin;
+      if (++nodes > 1000000) { message = "HTML node limit"; goto fail; }
+      if (s[p] != '<') {
+        begin = p; while (p < n && s[p] != '<') ++p;
+        value = mulib_html_decode_(s+begin, p-begin);
+        if (!value) { message = "invalid entity or allocation failure"; goto fail; }
+        if (strip_lf && value[0] == '\n') memmove(value, value+1, strlen(value));
+        strip_lf = 0;
+        if (!fragment && parent == root) {
+          size_t i;
+          for (i = 0; value[i]; ++i) if (!mulib_html_space_(value[i])) goto fail;
+          free(value); value = NULL; continue;
+        }
+        pending = mulib_xml_new(MULIB_XML_TEXT, value); free(value); value = NULL;
+        if (!pending || !mulib_xml_append(parent, pending)) goto fail;
+        pending = NULL; continue;
+      }
+      strip_lf = 0;
+      if (n-p >= 4 && !memcmp(s+p, "<!--", 4)) {
+        if (mulib_xml_name(parent) && (!strcmp(mulib_xml_name(parent), "title") ||
+            !strcmp(mulib_xml_name(parent), "textarea"))) goto fail;
+        p += 4; begin = p;
+        while (n-p >= 3 && memcmp(s+p, "-->", 3)) ++p;
+        if (n-p < 3) { message = "unterminated comment"; goto fail; }
+        value = mulib_html_copy_(s+begin, p-begin, 0); p += 3;
+        if (!value || *value == '>' || !strncmp(value, "->", 2) || strstr(value, "<!-") ||
+            (*value && value[strlen(value)-1] == '<')) goto fail;
+        pending = mulib_xml_new(MULIB_XML_COMMENT, value); free(value); value = NULL;
+        if (!pending || !mulib_xml_append(parent, pending)) goto fail;
+        pending = NULL; continue;
+      }
+      if (n-p >= 9 && mulib_html_equal_(s+p, 9, "<!doctype")) {
+        if (fragment || doctype || parent != root || mulib_xml_root(root)) goto fail;
+        p += 9;
+        if (p == n || !mulib_html_space_(s[p])) goto fail;
+        while (p < n && mulib_html_space_(s[p])) ++p;
+        begin = p; while (p < n && !mulib_html_space_(s[p]) && s[p] != '>') ++p;
+        if (!mulib_html_equal_(s+begin, p-begin, "html")) goto fail;
+        while (p < n && mulib_html_space_(s[p])) ++p;
+        if (p == n || s[p++] != '>') goto fail;
+        doctype = 1; continue;
+      }
+      ++p;
+      {
+        int closing = p < n && s[p] == '/', self = 0;
+        if (closing) ++p;
+        begin = p;
+        while (p < n && !mulib_html_space_(s[p]) && s[p] != '>' && s[p] != '/') ++p;
+        name = mulib_html_copy_(s+begin, p-begin, 1);
+        if (!name || !mulib_html_name_internal(name) || mulib_html_raw_internal(name) ||
+            !strcmp(name, "svg") || !strcmp(name, "math")) goto fail;
+        if (closing) {
+          while (p < n && mulib_html_space_(s[p])) ++p;
+          if (p == n || s[p++] != '>' || parent == root || strcmp(name, mulib_xml_name(parent))) goto fail;
+          parent = mulib_xml_parent(parent); --depth; free(name); name = NULL; continue;
+        }
+        if (mulib_xml_name(parent) && (!strcmp(mulib_xml_name(parent), "title") ||
+            !strcmp(mulib_xml_name(parent), "textarea"))) goto fail;
+        if (depth >= MULIB_XML_DEPTH_LIMIT) { message = "HTML depth limit"; goto fail; }
+        pending = mulib_xml_new(MULIB_XML_ELEMENT, name);
+        if (!pending) goto fail;
+        for (;;) {
+          size_t spaces = p, after_key;
+          while (p < n && mulib_html_space_(s[p])) ++p;
+          if (p == n) goto fail;
+          if (s[p] == '>') { ++p; break; }
+          if (s[p] == '/' && n-p >= 2 && s[p+1] == '>') { p += 2; self = 1; break; }
+          if (p == spaces) goto fail;
+          begin = p;
+          while (p < n && !mulib_html_space_(s[p]) && s[p] != '=' && s[p] != '>' && s[p] != '/') ++p;
+          key = mulib_html_copy_(s+begin, p-begin, 1);
+          if (!key || !mulib_html_name_internal(key) || mulib_xml_attr(pending, key)) goto fail;
+          after_key = p;
+          while (p < n && mulib_html_space_(s[p])) ++p;
+          if (p < n && s[p] == '=') {
+            char quote = 0;
+            ++p; while (p < n && mulib_html_space_(s[p])) ++p;
+            if (p < n && (s[p] == '\'' || s[p] == '"')) quote = s[p++];
+            begin = p;
+            while (p < n && (quote ? s[p] != quote : !mulib_html_space_(s[p]) && s[p] != '>')) {
+              if (s[p] == '<' || (!quote && (s[p] == '\'' || s[p] == '"' || s[p] == '`' || s[p] == '='))) goto fail;
+              ++p;
+            }
+            if (p == n || (!quote && p == begin)) goto fail;
+            value = mulib_html_decode_(s+begin, p-begin);
+            if (quote) ++p;
+          } else { p = after_key; value = mulib_html_copy_("", 0, 0); }
+          if (!value || !mulib_xml_set_attr(pending, key, value)) goto fail;
+          free(key); key = NULL; free(value); value = NULL;
+        }
+        if (self && !mulib_html_void_internal(name)) { message = "non-void self-closing tag"; goto fail; }
+        if (!mulib_xml_append(parent, pending)) goto fail;
+        if (!mulib_html_void_internal(name)) {
+          parent = pending; ++depth;
+          strip_lf = !strcmp(name, "pre") || !strcmp(name, "textarea") || !strcmp(name, "listing");
+        }
+        pending = NULL; free(name); name = NULL;
+      }
+    }
+    if (parent != root || (!fragment && (!mulib_xml_root(root) || strcmp(mulib_xml_name(mulib_xml_root(root)), "html")))) goto fail;
+    return root;
+  fail:
+    if (error) { error->offset = p; error->message = message; }
+    free(name); free(key); free(value); mulib_xml_destroy(pending); mulib_xml_destroy(root); return NULL;
+  }
+  static int mulib_html_text_(const mulib_xml_node_t *node, mulib_strbuf_t *out, size_t depth) {
+    const char *v = mulib_xml_value(node), *name = mulib_xml_name(node);
+    mulib_xml_node_t *c;
+    if (v && mulib_xml_type(node) != MULIB_XML_COMMENT) return mulib_strbuf_append(out, v);
+    if (depth > MULIB_XML_DEPTH_LIMIT) return 0;
+    if (name && !strcmp(name, "br")) return mulib_strbuf_putc(out, '\n');
+    for (c = mulib_xml_first(node); c; c = mulib_xml_next(c)) if (!mulib_html_text_(c, out, depth+1)) return 0;
+    return 1;
+  }
+  char *mulib_html_text(const mulib_xml_node_t *node, size_t *length) {
+    mulib_strbuf_t out; mulib_strbuf_init(&out);
+    if (length) *length = 0;
+    if (!node || !mulib_html_text_(node, &out, 0) || !mulib_strbuf_append_n(&out, "", 0)) {
+      mulib_strbuf_free(&out); return NULL;
+    }
+    if (length) *length = out.length;
     return out.data;
   }
 #ifdef __cplusplus

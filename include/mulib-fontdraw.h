@@ -62,6 +62,14 @@ int mulib_fontdraw_alpha(const mulib_fontdraw_bitmap_t *bitmap, unsigned char **
 /** @brief Borrow FT_Face for complete native APIs (variations, kerning, palettes,
  * transforms, font formats, etc.). Never release it; lifetime ends at close. */
 void *mulib_fontdraw_native(mulib_fontdraw_t *font);
+/** @brief Glyph metrics from FreeType without rasterizing. Default units are
+ * 26.6 pixels; NO_SCALE selects font units. Bearing y is up. 0/-1,
+ * transactional. This mutates the face's current glyph slot. */
+typedef struct mulib_fontdraw_metrics {
+    long width, height, bearing_x, bearing_y, advance_x, advance_y;
+} mulib_fontdraw_metrics_t;
+int mulib_fontdraw_metrics(mulib_fontdraw_t *font, unsigned glyph, int32_t load_flags,
+                           mulib_fontdraw_metrics_t *metrics);
 #ifdef __cplusplus
 }
 #endif
@@ -169,6 +177,19 @@ unsigned mulib_fontdraw_glyph(mulib_fontdraw_t *f, uint32_t cp) {
     if (!f || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff) ||
         f->select_charmap(f->face, UINT32_C(0x756e6963))) return 0;
     return f->char_index(f->face, cp);
+}
+int mulib_fontdraw_metrics(mulib_fontdraw_t *f, unsigned glyph, int32_t flags, mulib_fontdraw_metrics_t *out) {
+    mulib_fontdraw_face_prefix_ face;
+    mulib_fontdraw_slot_prefix_ slot;
+    mulib_fontdraw_metrics_t m;
+    if (!f || !out || f->load(f->face, glyph, flags & ~INT32_C(4))) return -1;
+    memcpy(&face, f->face, sizeof face);
+    if (!face.glyph) return -1;
+    memcpy(&slot, face.glyph, sizeof slot);
+    m.width = slot.metrics[0]; m.height = slot.metrics[1];
+    m.bearing_x = slot.metrics[2]; m.bearing_y = slot.metrics[3];
+    m.advance_x = slot.advance.x; m.advance_y = slot.advance.y;
+    *out = m; return 0;
 }
 void mulib_fontdraw_bitmap_destroy(mulib_fontdraw_bitmap_t *b) {
     if (b) { free(b->pixels); memset(b, 0, sizeof *b); }

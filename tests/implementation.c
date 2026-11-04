@@ -1,3 +1,5 @@
+#define MULIB_IMPL_GLYPH
+#define MULIB_IMPL_LIGATURE
 #define MULIB_IMPL_COFF_OBJDUMP
 #define MULIB_IMPL_COFF
 #define MULIB_IMPL_COFFUTILS
@@ -954,3 +956,5 @@
 #include "mulib-pe.h"
 #include "mulib-peutils.h"
 #include "mulib-termstyle.h"
+#include "mulib-glyph.h"
+#include "mulib-ligature.h"

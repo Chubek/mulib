@@ -2,7 +2,7 @@
  * @file mulib-css.h
  * @brief Owned CSS declarations/rules and a focused DOM selector matcher.
  *
- * Values are preserved, not interpreted. No at-rules, cascade, layout,
+ * Values are preserved, with author cascade and explicit length conversion. No at-rules, layout,
  * fetching or CSS escapes in selectors. Matching supports types, *, #id,
  * .class, [attr], [attr=value], descendant/child combinators and comma groups.
  * Define MULIB_IMPL_CSS plus XML, STRBUF and UTF8 switches. See the manual.
@@ -57,6 +57,33 @@ extern "C"
    * branches are validated. Maximum 64 compound selectors in an expression;
    * comparisons are case-sensitive. */
   int mulib_css_matches (const mulib_xml_node_t *node, const char *selector);
+  /** @brief Specificity tuple, compared lexicographically (never packed). */
+  typedef struct mulib_css_specificity { size_t ids, classes, types; } mulib_css_specificity_t;
+  /** @brief Highest specificity among matching comma branches. 1 match, 0 no
+   * match, -1 invalid/OOM. Output unchanged on no match/failure. */
+  int mulib_css_specificity(const mulib_xml_node_t *node, const char *selector,
+                            mulib_css_specificity_t *specificity);
+  /** @brief Resolve author declarations plus optional inline declarations.
+   * Importance, inline rank, matching-branch specificity, then source order.
+   * Returns owned winners (one per property), NULL on error. No inheritance,
+   * shorthand expansion or value interpretation; use stylesheet for typed styles.
+   * sheet/inline_style may be NULL. Node must be an element. */
+  mulib_css_style_t *mulib_css_cascade(const mulib_css_sheet_t *sheet, const mulib_xml_node_t *node,
+                                      const mulib_css_style_t *inline_style, mulib_xml_error_t *error);
+  /** @brief Serialize declarations to owned CSS, retaining order/importance.
+   * NULL on invalid argument/OOM. Free with free(). */
+  char *mulib_css_serialize_declarations(const mulib_css_style_t *style);
+  typedef enum mulib_css_unit { MULIB_CSS_PX, MULIB_CSS_PT, MULIB_CSS_EM, MULIB_CSS_REM,
+                                MULIB_CSS_PERCENT, MULIB_CSS_AUTO } mulib_css_unit_t;
+  typedef struct mulib_css_length { double value; mulib_css_unit_t unit; } mulib_css_length_t;
+  /** @brief Parse a finite signed decimal CSS length (px/pt/em/rem/%/auto).
+   * Unitless zero accepted; other unitless values, exponents, calc() rejected.
+   * Leading/trailing CSS whitespace allowed. 0/-1; transactional. */
+  int mulib_css_parse_length(const char *value, mulib_css_length_t *length);
+  /** @brief Resolve to pixels (pt=96/72 px); auto fails. Bases must be finite
+   * nonnegative. Negative lengths remain negative. 0/-1, transactional. */
+  int mulib_css_length_pixels(mulib_css_length_t length, double em, double rem,
+                              double percent_base, double *pixels);
 #ifdef __cplusplus
 }
 #endif
@@ -67,6 +94,7 @@ extern "C"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #ifdef __cplusplus
 extern "C"
 {
@@ -94,12 +122,21 @@ extern "C"
   static int
   mulib_css_space_internal (char c)
   {
-    return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f';
   }
   static char
   mulib_css_lower_internal (char c)
   {
     return c >= 'A' && c <= 'Z' ? (char)(c - 'A' + 'a') : c;
+  }
+  static int mulib_css_text_(const char *s, size_t n) {
+    size_t i = 0, start = 0;
+    if (!s && n) return 0;
+    for (; i < n; ++i) if (s[i] == '\f') {
+      if (!mulib_xml_valid_text(s+start, i-start)) return 0;
+      start = i+1;
+    }
+    return mulib_xml_valid_text(s ? s+start : NULL, n-start);
   }
   static int
   mulib_css_equal_internal (const char *a, const char *b)
@@ -245,7 +282,7 @@ extern "C"
                     begin = *p;
                     while (s[*p] && s[*p] != q)
                       {
-                        if (s[*p] == '\\' || s[*p] == '\n' || s[*p] == '\r')
+                        if (s[*p] == '\\' || s[*p] == '\n' || s[*p] == '\r' || s[*p] == '\f')
                           return 0;
                         (*p)++;
                       }
@@ -287,7 +324,7 @@ extern "C"
     const mulib_xml_node_t *a;
     unsigned char *rows, *previous, *current;
     int ignored, matched = 0;
-    if (!s || !mulib_xml_valid_text (s, strlen (s)))
+    if (!s || !mulib_css_text_ (s, strlen (s)))
       return -1;
     while (mulib_css_space_internal (s[p]))
       p++;
@@ -386,7 +423,7 @@ extern "C"
     char *r;
     size_t i = 0;
     char quote = 0;
-    if (!mulib_xml_valid_text (s, n))
+    if (!mulib_css_text_ (s, n))
       {
         mulib_css_error_internal (e, 0, "invalid UTF-8/CSS character");
         return NULL;
@@ -417,7 +454,7 @@ extern "C"
                 quote = 0;
                 i++;
               }
-            else if (r[i] == '\n' || r[i] == '\r')
+            else if (r[i] == '\n' || r[i] == '\r' || r[i] == '\f')
               {
                 free (r);
                 mulib_css_error_internal (e, i, "newline in string");
@@ -859,6 +896,171 @@ extern "C"
   mulib_css_declarations (const mulib_css_sheet_t *s, size_t i)
   {
     return s && i < s->count ? s->rules[i].style : NULL;
+  }
+  static int mulib_css_rank_compare_(mulib_css_specificity_t a, mulib_css_specificity_t b) {
+    if (a.ids != b.ids) return a.ids > b.ids ? 1 : -1;
+    if (a.classes != b.classes) return a.classes > b.classes ? 1 : -1;
+    return a.types == b.types ? 0 : a.types > b.types ? 1 : -1;
+  }
+  int mulib_css_specificity(const mulib_xml_node_t *node, const char *s, mulib_css_specificity_t *out) {
+    size_t start = 0, p = 0;
+    int quote = 0, bracket = 0, found = 0;
+    mulib_css_specificity_t best = {0};
+    if (!out || mulib_css_matches(NULL, s) < 0) return -1;
+    for (;;) {
+      char c = s[p];
+      if (quote) { if (c == quote) quote = 0; }
+      else if (c == '\'' || c == '"') quote = c;
+      else if (c == '[') bracket = 1;
+      else if (c == ']') bracket = 0;
+      if ((!c || c == ',') && !quote && !bracket) {
+        char *branch = mulib_css_copy_internal(s+start, p-start);
+        mulib_css_specificity_t rank = {0};
+        size_t i = 0; int match;
+        if (!branch) return -1;
+        match = mulib_css_matches(node, branch);
+        if (match < 0) { free(branch); return -1; }
+        if (match) {
+          int type = 1;
+          while (branch[i]) {
+            c = branch[i++];
+            if (mulib_css_space_internal(c) || c == '>') { type = 1; continue; }
+            if (c == '#') ++rank.ids;
+            else if (c == '.') ++rank.classes;
+            else if (c == '[') {
+              int q = 0; ++rank.classes;
+              while (branch[i]) {
+                char a = branch[i++];
+                if (q) { if (a == q) q = 0; }
+                else if (a == '\'' || a == '"') q = a;
+                else if (a == ']') break;
+              }
+            } else if (type && c != '*') ++rank.types;
+            type = 0;
+            if (c == '#' || c == '.' || mulib_css_identchar_internal(c, 1))
+              while (mulib_css_identchar_internal(branch[i], 0)) ++i;
+          }
+          if (!found || mulib_css_rank_compare_(rank, best) > 0) best = rank;
+          found = 1;
+        }
+        free(branch);
+        if (!s[p]) break;
+        start = p+1;
+      }
+      ++p;
+    }
+    if (found) *out = best;
+    return found;
+  }
+  typedef struct mulib_css_winner_ { mulib_css_specificity_t rank; int inline_style; } mulib_css_winner_;
+  mulib_css_style_t *mulib_css_cascade(const mulib_css_sheet_t *sheet, const mulib_xml_node_t *node,
+                                     const mulib_css_style_t *inline_style, mulib_xml_error_t *e) {
+    mulib_css_style_t *out = NULL;
+    mulib_css_winner_ *ranks = NULL;
+    size_t i, j, n = sheet ? sheet->count : 0;
+    if (e) { e->offset = 0; e->message = NULL; }
+    if (!node || mulib_xml_type(node) != MULIB_XML_ELEMENT) goto fail;
+    out = (mulib_css_style_t *)calloc(1, sizeof *out);
+    if (!out) goto fail;
+    for (i = 0; i <= n; ++i) {
+      const mulib_css_style_t *style = i == n ? inline_style : sheet->rules[i].style;
+      mulib_css_specificity_t rank = {0};
+      int match = i == n ? 1 : mulib_css_specificity(node, sheet->rules[i].selector, &rank);
+      if (match < 0) goto fail;
+      if (!match || !style) continue;
+      for (j = 0; j < style->count; ++j) {
+        size_t k;
+        mulib_css_decl_internal d = style->items[j];
+        for (k = 0; k < out->count; ++k) if (mulib_css_equal_internal(out->items[k].name, d.name)) break;
+        if (k < out->count) {
+          int better;
+          if (d.important != out->items[k].important) better = d.important > out->items[k].important;
+          else if ((i == n) != ranks[k].inline_style) better = i == n;
+          else better = mulib_css_rank_compare_(rank, ranks[k].rank) >= 0;
+          if (!better) continue;
+        } else {
+          mulib_css_decl_internal *items;
+          mulib_css_winner_ *grown;
+          if (k >= SIZE_MAX/sizeof *items || k >= SIZE_MAX/sizeof *grown) goto fail;
+          items = (mulib_css_decl_internal *)realloc(out->items, (k+1)*sizeof *items);
+          if (!items) goto fail;
+          out->items = items;
+          grown = (mulib_css_winner_ *)realloc(ranks, (k+1)*sizeof *grown);
+          if (!grown) goto fail;
+          ranks = grown; memset(&out->items[k], 0, sizeof out->items[k]); ++out->count;
+        }
+        {
+          char *name = mulib_css_copy_internal(d.name, strlen(d.name));
+          char *value = mulib_css_copy_internal(d.value, strlen(d.value));
+          if (!name || !value) { free(name); free(value); goto fail; }
+          free(out->items[k].name); free(out->items[k].value);
+          out->items[k].name = name; out->items[k].value = value; out->items[k].important = d.important;
+          ranks[k].rank = rank; ranks[k].inline_style = i == n;
+        }
+      }
+    }
+    free(ranks); return out;
+  fail:
+    free(ranks); mulib_css_style_destroy(out);
+    mulib_css_error_internal(e, 0, "invalid cascade input or allocation failure"); return NULL;
+  }
+  char *mulib_css_serialize_declarations(const mulib_css_style_t *s) {
+    mulib_strbuf_t b; size_t i;
+    if (!s) return NULL;
+    mulib_strbuf_init(&b);
+    for (i = 0; i < s->count; ++i)
+      if (!mulib_strbuf_append(&b, s->items[i].name) || !mulib_strbuf_putc(&b, ':') ||
+          !mulib_strbuf_append(&b, s->items[i].value) ||
+          (s->items[i].important && !mulib_strbuf_append(&b, " !important")) || !mulib_strbuf_putc(&b, ';')) goto fail;
+    if (!mulib_strbuf_append_n(&b, "", 0)) goto fail;
+    return b.data;
+  fail:
+    mulib_strbuf_free(&b); return NULL;
+  }
+  int mulib_css_parse_length(const char *s, mulib_css_length_t *out) {
+    mulib_css_length_t l = {0, MULIB_CSS_PX};
+    double sign = 1, fraction = 0.1;
+    const char *unit; size_t n; int digits = 0, signed_value = 0;
+    if (!s || !out) return -1;
+    while (mulib_css_space_internal(*s)) ++s;
+    if (*s == '+' || *s == '-') { signed_value = 1; if (*s == '-') sign = -1; ++s; }
+    while (*s >= '0' && *s <= '9') { digits = 1; l.value = l.value*10+(*s++-'0'); }
+    if (*s == '.') {
+      ++s;
+      if (*s < '0' || *s > '9') return -1;
+      while (*s >= '0' && *s <= '9') { digits = 1; l.value += (*s++-'0')*fraction; fraction *= 0.1; }
+    }
+    unit = s; while (*s && !mulib_css_space_internal(*s)) ++s; n = (size_t)(s-unit);
+    while (mulib_css_space_internal(*s)) ++s;
+    if (*s || !isfinite(l.value)) return -1;
+    if (!digits) {
+      if (signed_value || n != 4 || mulib_css_lower_internal(unit[0]) != 'a' ||
+          mulib_css_lower_internal(unit[1]) != 'u' || mulib_css_lower_internal(unit[2]) != 't' ||
+          mulib_css_lower_internal(unit[3]) != 'o') return -1;
+      l.unit = MULIB_CSS_AUTO;
+    } else if (!n) { if (l.value != 0) return -1; }
+    else if (n == 1 && unit[0] == '%') l.unit = MULIB_CSS_PERCENT;
+    else {
+      static const char *const units[] = {"px", "pt", "em", "rem"}; size_t i, j;
+      for (i = 0; i < 4; ++i) {
+        if (strlen(units[i]) != n) continue;
+        for (j = 0; j < n && mulib_css_lower_internal(unit[j]) == units[i][j]; ++j) {}
+        if (j == n) break;
+      }
+      if (i == 4) return -1;
+      l.unit = (mulib_css_unit_t)i;
+    }
+    l.value *= sign; *out = l; return 0;
+  }
+  int mulib_css_length_pixels(mulib_css_length_t l, double em, double rem, double base, double *out) {
+    double scale, value;
+    if (!out || !isfinite(l.value) || !isfinite(em) || em < 0 || !isfinite(rem) || rem < 0 ||
+        !isfinite(base) || base < 0 || l.unit < MULIB_CSS_PX || l.unit >= MULIB_CSS_AUTO) return -1;
+    scale = l.unit == MULIB_CSS_PX ? 1 : l.unit == MULIB_CSS_PT ? 96.0/72 :
+            l.unit == MULIB_CSS_EM ? em : l.unit == MULIB_CSS_REM ? rem : base/100;
+    value = l.value*scale;
+    if (!isfinite(value)) return -1;
+    *out = value; return 0;
   }
 #ifdef __cplusplus
 }

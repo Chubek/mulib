@@ -5,8 +5,9 @@
 ## Supported scope
 
 This module owns parsed declaration lists and ordinary stylesheet rules, and
-matches a focused selector language against the shared XML/HTML DOM. It is **not
-a CSS standards implementation, cascade engine, layout engine or sanitizer**.
+matches a focused selector language against the shared XML/HTML DOM. It provides
+an author cascade and explicit length conversion, without claiming full CSS
+standards coverage or a layout engine.
 It never follows `url(...)` or performs filesystem/network access.
 
 Declarations support semicolon separation, comments, quoted/escaped strings,
@@ -19,7 +20,8 @@ become spaces, preserving source offsets. Duplicate declarations are retained.
 
 Stylesheets support `selector { declarations }` rules, preserving rule order.
 At-rules (`@media`, `@import`, etc.), nested rules and bare statements are errors.
-Input must contain XML-valid UTF-8; embedded NUL and invalid controls fail.
+Input must contain XML-valid UTF-8 plus CSS form feed; embedded NUL and other
+invalid controls fail.
 
 Selectors support:
 
@@ -111,3 +113,40 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/css.c -o
 `tests/test_markup.c` exercises quoted delimiters/comments, duplicate/important
 precedence, exact custom-property case, ancestry matching, malformed inputs,
 randomized punctuation input and allocation-failure cleanup.
+# Author cascade, lengths and roundtripping
+
+`mulib_css_specificity(node,selector,&rank)` validates every selector branch and
+returns 1 for a match, 0 for none, -1 for invalid syntax/allocation. The output is
+the greatest `(ids, classes, types)` tuple among **matching** comma branches and
+is unchanged on failure/no match. Counts are compared lexicographically rather
+than packed into a small integer. The typed stylesheet module uses this API too.
+
+`mulib_css_cascade(sheet,node,inline_style,error)` returns owned winning
+declarations, one per property. Sheet and inline list may be NULL; node must be
+an element. Importance precedes inline rank, then matching specificity and source
+order; later equal-ranked declarations win. Important sheet rules beat ordinary
+inline declarations. Ordinary property names compare ASCII-insensitively;
+custom properties are case-sensitive. Pass an explicitly parsed style attribute
+as inline_style; this function does not implicitly read it. Values remain raw:
+inheritance, var() resolution and shorthand expansion are not performed. Use
+`mulib-stylesheet` for the supported typed/inherited layout properties.
+
+`mulib_css_serialize_declarations(style)` returns malloc-owned CSS, preserving
+declaration order, duplicates and importance. Empty lists produce an allocated
+empty string. Parsing the result reconstructs the declaration values.
+
+`mulib_css_parse_length(value,&length)` parses signed decimals with px, pt, em,
+rem or %, case-insensitively; unitless zero and unsigned `auto` are accepted.
+Whitespace may surround the value. Exponents, unitless nonzero values, calc()
+and unknown units fail. `mulib_css_length_pixels(length,em,rem,percent_base,&px)`
+converts with 96 CSS pixels per inch (12pt = 16px), caller-provided font/reference
+sizes and percentage basis. Auto has no numeric resolution. Bases must be finite
+and nonnegative; signed lengths remain signed. Both return 0/-1 and leave output
+unchanged on failure. Conversion is explicit, so a document renderer chooses its
+own context for relative lengths.
+
+CSS form feed is recognized as whitespace, including selector/class token
+boundaries; literal newlines/form feeds in quoted strings are rejected.
+`tests/test_html_css_pipeline.c` covers author precedence, nonmatching selector
+branches, custom-property casing, unit conversion, roundtrips and allocation
+failure cleanup.

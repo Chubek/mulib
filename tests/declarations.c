@@ -477,4 +477,6 @@
 #include "mulib-pe.h"
 #include "mulib-peutils.h"
 #include "mulib-termstyle.h"
+#include "mulib-glyph.h"
+#include "mulib-ligature.h"
 int main(void) { return 0; }

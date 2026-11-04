@@ -81,3 +81,16 @@ results against installed FreeType headers. The wrapper is not an independent
 FreeType replacement or an exposure of every API through MuLIB names.
 Reference: <https://freetype.org/freetype2/docs/reference/>. No native
 implementation code is copied or distributed.
+# Glyph metrics and paired shaping
+
+`mulib_fontdraw_metrics(font,glyph,load_flags,&metrics)` loads a glyph without
+rasterizing and returns width/height, horizontal bearings and x/y advances.
+Default units are 26.6 pixels with y up; FT_LOAD_NO_SCALE selects font units.
+FT_LOAD_RENDER is stripped. Returns 0/-1, output unchanged on failure; like
+render/outline, this mutates the native face's glyph slot and requires caller
+synchronization. Use shaping advances for laid-out text rather than replacing
+them with these per-glyph metrics.
+
+`mulib-glyph` opens paired HarfBuzz/FreeType contexts from one path/index/size,
+exposes borrowed handles and renders the IDs produced by shaping. Owned copied
+bitmaps/outlines remain valid after the paired font is closed.
