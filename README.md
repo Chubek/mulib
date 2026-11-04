@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **458 implemented modules**.
+A C11 modular single-header utility library with **459 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -164,6 +164,8 @@ The graphics stack combines [linalg](manual/mulib-linalg.md),
 [SIMD math](manual/mulib-simdmath.md), [computational geometry](manual/mulib-cgeom.md)
 and [collision queries](manual/mulib-collision.md) with
 [GLX software surfaces](manual/mulib-glx.md) backed by memory or DRM dumb buffers.
+[Geosolve](manual/mulib-geosolve.md) adds extensible double-precision 2D/3D
+constraint solving, rank/convergence diagnostics and analytic constructions.
 [VectGFX](manual/mulib-vectgfx.md) draws paths, curves and splines;
 [raytracing](manual/mulib-raytracing.md) renders lit, shadowed and reflective scenes.
 [ShaderX](manual/mulib-shaderx.md) offers a typed API and Parsec-backed language

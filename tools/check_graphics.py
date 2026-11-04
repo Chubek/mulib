@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Strict independent validation of the nine graphics modules and their dependencies."""
+"""Strict independent validation of the graphics/geometry modules and their dependencies."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import os
@@ -11,7 +11,7 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
-MODULES = 'cgeom collision glx immgtk linalg raytracing shaderx simdmath vectgfx'.split()
+MODULES = 'cgeom collision geosolve glx immgtk linalg raytracing shaderx simdmath vectgfx'.split()
 
 
 def main():
@@ -43,7 +43,8 @@ def main():
     defines = ''.join('#define ' + s + '\n' for s in sorted(switches))
     includes = ''.join('#include "' + h + '"\n' for h in sorted(headers, reverse=True))
     sources = sorted((ROOT / 'tests').glob('test_graphics_*.c'))
-    sources += [ROOT / 'tests/test_immgtk.c', ROOT / 'tests/test_simdmath_scalar.c']
+    sources += [ROOT / 'tests/test_immgtk.c', ROOT / 'tests/test_simdmath_scalar.c',
+                ROOT / 'tests/test_geosolve.c']
     sources += [ROOT / 'examples/modules' / (m + '.c') for m in MODULES]
     parent = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None
     with tempfile.TemporaryDirectory(prefix='mulib-graphics-', dir=parent) as directory:

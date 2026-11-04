@@ -15,7 +15,7 @@ consult each manual's exact supported syntax, errors, and limits.
 | Configuration | [confuse](mulib-confuse.md), [ini](mulib-ini.md), [toml](mulib-toml.md) |
 | Structured data | [json](mulib-json.md), [yaml](mulib-yaml.md), [toml](mulib-toml.md), [template](mulib-template.md), [xml](mulib-xml.md), [xpath](mulib-xpath.md) |
 | Documents and graphics | [html](mulib-html.md), [css](mulib-css.md), [markdown](mulib-markdown.md), [svg](mulib-svg.md), [graphviz](mulib-graphviz.md), [vector algebra](mulib-vector.md) |
-| Graphics math and geometry | [linalg](mulib-linalg.md), [simdmath](mulib-simdmath.md), [cgeom](mulib-cgeom.md), [collision](mulib-collision.md) |
+| Graphics math and geometry | [linalg](mulib-linalg.md), [simdmath](mulib-simdmath.md), [cgeom](mulib-cgeom.md), [collision](mulib-collision.md), [geosolve](mulib-geosolve.md) |
 | Rendering and GUI | [GLX](mulib-glx.md), [ShaderX](mulib-shaderx.md), [VectGFX](mulib-vectgfx.md), [raytracing](mulib-raytracing.md), [ImmGTK](mulib-immgtk.md) |
 | Storage and native formats | [archive](mulib-archive.md), [mmfile](mulib-mmfile.md), [kvdb](mulib-kvdb.md), [elf](mulib-elf.md), [dynload](mulib-dynload.md), [drm](mulib-drm.md) |
 | Terminals | [terminfo](mulib-terminfo.md), [termkey](mulib-termkey.md), [termutils](mulib-termutils.md), [vterm](mulib-vterm.md), [tui](mulib-tui.md), [readline](mulib-readline.md), [VGA text buffer](mulib-vgabuffer.md) |

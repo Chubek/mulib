@@ -460,4 +460,5 @@
 #include "mulib-otpath.h"
 #include "mulib-otpauth.h"
 #include "mulib-pwdauth.h"
+#include "mulib-geosolve.h"
 int main(void) { return 0; }

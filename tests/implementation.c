@@ -1,3 +1,4 @@
+#define MULIB_IMPL_GEOSOLVE
 #define MULIB_IMPL_YANTLR
 #define MULIB_IMPL_AUTHCRYPTO
 #define MULIB_IMPL_OAUTH
@@ -920,3 +921,4 @@
 #include "mulib-otpath.h"
 #include "mulib-otpauth.h"
 #include "mulib-pwdauth.h"
+#include "mulib-geosolve.h"

@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 458
-implemented_module_count: 458
+module_count: 459
+implemented_module_count: 459
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3218,6 +3218,13 @@ modules:
   purpose: "Salted PBKDF2-SHA-256 password records with bounded verification cost."
   dependencies: [authcrypto, seurity]
   status: implemented
+- name: geosolve
+  header: include/mulib-geosolve.h
+  manual: manual/mulib-geosolve.md
+  macro: MULIB_IMPL_GEOSOLVE
+  purpose: "Extensible 2D/3D geometric constraint solving and analytic constructions."
+  dependencies: [alloc, cgeom, geometry]
+  status: implemented
 project_files:
 - file: manual/storage-server.md
   purpose: Storage codecs, native builders, server policy profiles and dependency contracts.
@@ -4599,3 +4606,7 @@ project_files:
   purpose: "Focused regression suite for test_yantlr."
 - file: tests/test_yantlr_alloc.c
   purpose: "Focused regression suite for test_yantlr_alloc."
+- file: examples/modules/geosolve.c
+  purpose: "Standalone checked usage example for geosolve."
+- file: tests/test_geosolve.c
+  purpose: "Focused regression suite for test_geosolve."
