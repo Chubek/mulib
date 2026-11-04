@@ -1,3 +1,5 @@
+#define MULIB_IMPL_ARCHML
+#define MULIB_IMPL_EXEC
 #define MULIB_IMPL_XLL
 #define MULIB_IMPL_GLYPH
 #define MULIB_IMPL_LIGATURE
@@ -960,3 +962,5 @@
 #include "mulib-glyph.h"
 #include "mulib-ligature.h"
 #include "mulib-xll.h"
+#include "mulib-exec.h"
+#include "mulib-archml.h"

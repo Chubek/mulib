@@ -8,6 +8,13 @@
 extern "C"
 {
 #endif
+  /** Construct an independently owned response under default HTTP limits.
+   * status must be 100..599; 1xx/204/205/304 must not carry content. Content-Type
+   * is optional and validated against header injection. A nonempty body needs
+   * a non-NULL pointer and is copied byte-for-byte. Failure leaves out unchanged;
+   * successful output must be freed with message_free before reuse. The helper
+   * supplies a reason phrase and canonical framing, not request HEAD/CONNECT
+   * context; use the underlying HTTP message serializer for contextual replies. */
   mulib_http_result mulib_http_response_create (mulib_http_message_t *out,
                                                 unsigned status,
                                                 const char *content_type,

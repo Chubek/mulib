@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **475 implemented modules**.
+A C11 modular single-header utility library with **480 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -39,6 +39,24 @@ int main(int argc, char **argv) {
 
 Build: `cc -std=c11 -Iinclude examples/quickstart.c -lm -o quickstart`.
 Run tests: `cmake -S . -B build && cmake --build build && ctest --test-dir build --output-on-failure`.
+
+## Architecture descriptions
+
+[`mulib-archml.h`](manual/mulib-archml.md) provides validated architecture DSL
+documents, register aliases, structured P-code, feature dependencies, compiler
+metadata and instruction encoding/decoding. The
+[`library/archml`](library/archml/README.md) profiles cover AMD64, AArch64 and RV64
+with explicit concrete-form and extension coverage. PARSEC retains its existing
+API while adding bounded-work execution and an explicit parser stack.
+
+## Command execution and Git workflows
+
+[`mulib-exec.h`](manual/mulib-exec.md) provides fork/exec and POSIX spawn,
+concurrent pipelines, redirection, binary capture, deadlines and a Mune execution
+DSL. [`mulib-git.h`](manual/mulib-git.md) exposes arbitrary Git CLI operations
+through that API. The [`library/git`](library/git/) DSL catalogue supplies named
+command constructors and detailed runtime string docstrings, with generic dispatch
+for additional Git commands and extensions.
 
 ## Integration
 

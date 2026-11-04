@@ -73,13 +73,16 @@ message per `next`; pipelined bytes remain. EOF is permanent. Limits and parsing
 options are caller-configured. `httpserver_config` supplies explicit defaults,
 not listener creation or timeout enforcement.
 
-`http2` reads/writes nine-byte frame envelopes and basic per-type length/stream/
-padding constraints. HPACK, continuation sequencing, SETTINGS interpretation,
-flow control and connection state are application responsibilities. `http3`
-handles only variable-integer type/length envelopes, not QPACK or stream roles.
+`http2` reads/writes nine-byte frame envelopes with per-type length/stream/padding,
+priority dependency, promised-stream and SETTINGS value checks. HPACK,
+continuation sequencing, settings application and flow control remain connection
+responsibilities. `http3` validates varint envelopes, fixed identifier payloads,
+reserved types/settings and duplicate SETTINGS identifiers; it does not implement
+QPACK or stream roles. HTTP/3's temporary SETTINGS ID allocation can return -3.
 `quic` supplies RFC 9000 varints and length-bearing STREAM frames, not packets,
 TLS, authentication, loss recovery or congestion control. Unknown HTTP frame
-types are preserved. Protocol readers return 1 success, 0 truncated and negative
+types are preserved except explicitly forbidden HTTP/2 types in HTTP/3.
+Protocol readers return 1 success, 0 truncated and negative
 errors, leaving outputs unchanged otherwise. Frame data borrows input.
 No module here provides TLS or claims to be an Internet-ready server.
 

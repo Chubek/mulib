@@ -49,7 +49,11 @@ function(mulib_test_executable target)
 endfunction()
 
 function(mulib_register_test target)
-  if(target STREQUAL "mulib_test_immgtk" OR target STREQUAL "mulib_example_immgtk")
+  if(target STREQUAL "mulib_test_git_exec")
+    add_test(NAME ${target} COMMAND ${target} "${CMAKE_CURRENT_SOURCE_DIR}/library/git")
+  elseif(target STREQUAL "mulib_test_archml")
+    add_test(NAME ${target} COMMAND ${target} "${CMAKE_CURRENT_SOURCE_DIR}/library/archml")
+  elseif(target STREQUAL "mulib_test_immgtk" OR target STREQUAL "mulib_example_immgtk")
     add_test(NAME ${target} COMMAND ${target} "${CMAKE_CURRENT_SOURCE_DIR}/library")
   else()
     add_test(NAME ${target} COMMAND ${target})
@@ -86,6 +90,8 @@ if(MULIB_BUILD_TESTS)
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed_lprowse.py --check)
     add_test(NAME mulib_readline_profiles_generated
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_librl.py --check)
+    add_test(NAME mulib_archml_profiles_generated
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_archml.py --check)
   endif()
   add_executable(mulib_smoke tests/smoke.c)
   mulib_test_executable(mulib_smoke)
@@ -125,6 +131,13 @@ if(MULIB_BUILD_TESTS)
     mulib_register_test("mulib_${test_name}")
   endforeach()
   find_program(MULIB_NODE_EXECUTABLE NAMES node nodejs)
+  find_program(MULIB_LLVM_MC_EXECUTABLE NAMES llvm-mc)
+  if(Python3_Interpreter_FOUND AND MULIB_LLVM_MC_EXECUTABLE)
+    add_test(NAME mulib_archml_encoding_oracle
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_archml.py
+        --encoder $<TARGET_FILE:mulib_test_archml> --llvm-mc ${MULIB_LLVM_MC_EXECUTABLE})
+    set_tests_properties(mulib_archml_encoding_oracle PROPERTIES TIMEOUT 180)
+  endif()
   if(MULIB_NODE_EXECUTABLE)
     add_test(NAME mulib_machinebuild_js
       COMMAND ${MULIB_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_machinebuild.js

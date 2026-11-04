@@ -67,7 +67,8 @@ extern "C"
   /** @brief Parse one message. response is 0 for requests, 1 for responses.
    * On OK, out owns allocations and consumed identifies the exact frame
    * boundary. On failure/MORE, out is unchanged and consumed is zero. EOF
-   * makes truncation invalid.
+   * makes truncation invalid. out must not already own a message. consumed may
+   * be NULL. HEAD/CONNECT context flags are response-only and mutually exclusive.
    */
   mulib_http_result mulib_http_parse (const void *bytes, size_t length,
                                       int response,
@@ -149,42 +150,52 @@ extern "C"
                                                : MULIB_HTTP_INVALID;
   }
   static int
-  mulib_http_match_ (mulib_parsec_parser_t byte, size_t min, const char *s,
-                     size_t n)
-  {
-    mulib_parsec_parser_t parts[2], grammar;
-    mulib_parsec_result_t r;
-    int ok;
-    parts[0] = mulib_parsec_repeat (&byte, min, SIZE_MAX);
-    parts[1] = mulib_parsec_end ();
-    grammar = mulib_parsec_sequence (parts, 2);
-    ok = mulib_http_run_ (&grammar, s, n, &r) == MULIB_HTTP_OK;
-    mulib_parsec_result_free (&r);
-    return ok;
-  }
-  static int
   mulib_http_token_ (const char *s, size_t n)
   {
-    return mulib_http_match_ (
-        mulib_parsec_satisfy (mulib_http_token_byte_, NULL, "HTTP token"), 1,
-        s, n);
+    if (!n) return 0;
+    for (size_t i = 0; i < n; ++i)
+      if (!mulib_http_token_byte_ ((unsigned char)s[i], NULL)) return 0;
+    return 1;
   }
   static int
   mulib_http_value_ (const char *s, size_t n)
   {
-    return mulib_http_match_ (mulib_parsec_satisfy (mulib_http_value_byte_,
-                                                    NULL, "HTTP field value"),
-                              0, s, n);
+    for (size_t i = 0; i < n; ++i)
+      if (!mulib_http_value_byte_ ((unsigned char)s[i], NULL)) return 0;
+    return 1;
   }
   static int
   mulib_http_hex_ (const char *s, size_t n)
   {
-    mulib_parsec_parser_t ranges[3], hex;
-    ranges[0] = mulib_parsec_range ('0', '9');
-    ranges[1] = mulib_parsec_range ('a', 'f');
-    ranges[2] = mulib_parsec_range ('A', 'F');
-    hex = mulib_parsec_choice (ranges, 3);
-    return mulib_http_match_ (hex, 1, s, n);
+    if (!n) return 0;
+    for (size_t i = 0; i < n; ++i)
+      if (!((s[i] >= '0' && s[i] <= '9') || (s[i] >= 'a' && s[i] <= 'f')
+            || (s[i] >= 'A' && s[i] <= 'F'))) return 0;
+    return 1;
+  }
+  /* No allocations or work proportional to a caller string beyond its limit. */
+  static mulib_http_result
+  mulib_http_length_ (const char *s, size_t limit, size_t *n)
+  {
+    size_t k = 0;
+    if (!s) return MULIB_HTTP_INVALID;
+    while (k < limit && s[k]) ++k;
+    if (k == limit && s[k]) return MULIB_HTTP_LIMIT;
+    *n = k; return MULIB_HTTP_OK;
+  }
+  static int
+  mulib_http_budget_ (size_t *used, size_t n, size_t limit)
+  {
+    if (*used > limit || n > limit - *used) return 0;
+    *used += n; return 1;
+  }
+  static int
+  mulib_http_flags_ (int response, unsigned flags)
+  {
+    unsigned context = flags & (MULIB_HTTP_HEAD_RESPONSE | MULIB_HTTP_CONNECT_RESPONSE);
+    return !(flags & ~7u)
+           && context != (MULIB_HTTP_HEAD_RESPONSE | MULIB_HTTP_CONNECT_RESPONSE)
+           && (response || !context);
   }
   static char *
   mulib_http_copy_ (const char *s, size_t n)
@@ -335,7 +346,7 @@ extern "C"
   const char *
   mulib_http_header (const mulib_http_message_t *m, const char *name)
   {
-    if (!m || !name)
+    if (!m || !name || (!m->headers && m->header_count))
       return NULL;
     for (size_t i = 0; i < m->header_count; ++i)
       if (mulib_http_equal_ (m->headers[i].name, name))
@@ -369,14 +380,12 @@ extern "C"
   mulib_http_decimal_ (const char *s, size_t *out)
   {
     size_t v = 0;
-    if (!s
-        || !mulib_http_match_ (mulib_parsec_range ('0', '9'), 1, s,
-                               strlen (s)))
+    if (!s || !*s)
       return 0;
     for (; *s; ++s)
       {
         unsigned d = (unsigned char)*s - (unsigned)'0';
-        if (v > (SIZE_MAX - d) / 10)
+        if (d > 9 || v > (SIZE_MAX - d) / 10)
           return 0;
         v = v * 10 + d;
       }
@@ -528,7 +537,7 @@ extern "C"
     if (consumed)
       *consumed = 0;
     if ((!s && n) || !out || (response != 0 && response != 1)
-        || (o.flags & ~7u))
+         || !mulib_http_flags_ (response, o.flags))
       return MULIB_HTTP_INVALID;
     memset (&m, 0, sizeof (m));
     mulib_buffer_init (&body);
@@ -610,6 +619,11 @@ extern "C"
           }
       }
     m.chunked = te_count != 0;
+    if (response && m.status == 205 && cl_count && content_length)
+      {
+        r = MULIB_HTTP_INVALID;
+        goto fail;
+      }
     if (mulib_http_no_body_ (&m, o.flags))
       {
         if (te_count
@@ -669,6 +683,11 @@ extern "C"
                 pos += 2;
                 break;
               }
+            if (response && m.status == 205)
+              {
+                r = MULIB_HTTP_INVALID;
+                goto fail;
+              }
             if (chunk > o.max_body_bytes - body.length)
               {
                 r = MULIB_HTTP_LIMIT;
@@ -714,6 +733,11 @@ extern "C"
     else if (response)
       {
         m.close_delimited = 1;
+        if (m.status == 205 && n != pos)
+          {
+            r = MULIB_HTTP_INVALID;
+            goto fail;
+          }
         if (n - pos > o.max_body_bytes)
           {
             r = MULIB_HTTP_LIMIT;
@@ -754,42 +778,74 @@ extern "C"
     mulib_http_message_t check;
     mulib_http_result r = MULIB_HTTP_NOMEM;
     char number[64];
-    size_t used = 0;
-    int has_cl = 0, has_te = 0, no_body;
+    size_t used = 0, header_bytes = 0, a, z;
+    size_t has_cl = 0, has_te = 0;
+    int no_body;
     if (!m || !bytes || !length || (m->is_response != 0 && m->is_response != 1)
         || (!m->body && m->body_length) || (!m->headers && m->header_count)
-        || (o.flags & ~7u))
+        || !mulib_http_flags_ (m->is_response, o.flags))
       return MULIB_HTTP_INVALID;
     if (m->body_length > o.max_body_bytes || m->header_count > o.max_headers)
       return MULIB_HTTP_LIMIT;
-    /* Check caller-supplied fields before using them in a start line or
-     * header. In particular Host must be bounded before target/authority
-     * validation. */
+    /* Preflight the entire header block before allocating the wire buffer or
+     * invoking the URI parser. Individual and aggregate limits both matter. */
+    no_body = mulib_http_no_body_ (m, o.flags);
+    if ((no_body && (m->body_length || m->chunked))
+        || (m->is_response && m->status == 205 && m->body_length))
+      return MULIB_HTTP_INVALID;
+    if (m->is_response)
+      {
+        if (m->status < 100 || m->status > 599) return MULIB_HTTP_INVALID;
+        r = mulib_http_length_ (m->reason, o.max_header_bytes, &a);
+        if (r != MULIB_HTTP_OK) return r;
+        if (!mulib_http_value_ (m->reason, a)) return MULIB_HTTP_INVALID;
+        if (!mulib_http_budget_ (&header_bytes, 15, o.max_header_bytes)
+            || !mulib_http_budget_ (&header_bytes, a, o.max_header_bytes))
+          return MULIB_HTTP_LIMIT;
+      }
+    else
+      {
+        r = mulib_http_length_ (m->method, o.max_header_bytes, &a);
+        if (r != MULIB_HTTP_OK) return r;
+        r = mulib_http_length_ (m->target, o.max_header_bytes, &z);
+        if (r != MULIB_HTTP_OK) return r;
+        if (!mulib_http_token_ (m->method, a)) return MULIB_HTTP_INVALID;
+        if (!mulib_http_budget_ (&header_bytes, 12, o.max_header_bytes)
+            || !mulib_http_budget_ (&header_bytes, a, o.max_header_bytes)
+            || !mulib_http_budget_ (&header_bytes, z, o.max_header_bytes))
+          return MULIB_HTTP_LIMIT;
+      }
     for (size_t i = 0; i < m->header_count; ++i)
       {
         const char *name = m->headers[i].name, *value = m->headers[i].value;
-        if (!name || !value || !mulib_http_token_ (name, strlen (name))
-            || !mulib_http_value_ (value, strlen (value)))
+        r = mulib_http_length_ (name, o.max_header_bytes, &a);
+        if (r != MULIB_HTTP_OK) return r;
+        r = mulib_http_length_ (value, o.max_header_bytes, &z);
+        if (r != MULIB_HTTP_OK) return r;
+        if (!mulib_http_token_ (name, a) || !mulib_http_value_ (value, z))
           return MULIB_HTTP_INVALID;
-        if (strlen (name) > o.max_header_bytes
-            || strlen (value) > o.max_header_bytes)
+        if (!mulib_http_budget_ (&header_bytes, 4, o.max_header_bytes)
+            || !mulib_http_budget_ (&header_bytes, a, o.max_header_bytes)
+            || !mulib_http_budget_ (&header_bytes, z, o.max_header_bytes))
           return MULIB_HTTP_LIMIT;
+        if (mulib_http_equal_ (name, "Content-Length")) ++has_cl;
+        if (mulib_http_equal_ (name, "Transfer-Encoding")) ++has_te;
       }
+    if (has_cl > 1 || has_te > 1 || (has_te && !m->chunked) || (has_cl && m->chunked))
+      return MULIB_HTTP_INVALID;
+    if (!has_cl && !has_te && !no_body)
+      {
+        if (m->header_count == o.max_headers) return MULIB_HTTP_LIMIT;
+        if (m->chunked) a = sizeof ("Transfer-Encoding: chunked\r\n") - 1;
+        else a = (size_t)snprintf (number, sizeof (number), "Content-Length: %zu\r\n", m->body_length);
+        if (!mulib_http_budget_ (&header_bytes, a, o.max_header_bytes)) return MULIB_HTTP_LIMIT;
+      }
+    if (!mulib_http_budget_ (&header_bytes, 2, o.max_header_bytes)) return MULIB_HTTP_LIMIT;
+    r = MULIB_HTTP_NOMEM;
     mulib_strbuf_init (&b);
     memset (&check, 0, sizeof (check));
     if (m->is_response)
       {
-        if (m->status < 100 || m->status > 599 || !m->reason
-            || !mulib_http_value_ (m->reason, strlen (m->reason)))
-          {
-            r = MULIB_HTTP_INVALID;
-            goto fail;
-          }
-        if (strlen (m->reason) > o.max_header_bytes)
-          {
-            r = MULIB_HTTP_LIMIT;
-            goto fail;
-          }
         (void)snprintf (number, sizeof (number), "HTTP/1.1 %u ", m->status);
         if (!mulib_strbuf_append (&b, number)
             || !mulib_strbuf_append (&b, m->reason))
@@ -798,18 +854,6 @@ extern "C"
     else
       {
         int valid_target;
-        if (!m->method || !m->target
-            || !mulib_http_token_ (m->method, strlen (m->method)))
-          {
-            r = MULIB_HTTP_INVALID;
-            goto fail;
-          }
-        if (strlen (m->method) > o.max_header_bytes
-            || strlen (m->target) > o.max_header_bytes)
-          {
-            r = MULIB_HTTP_LIMIT;
-            goto fail;
-          }
         valid_target = mulib_http_target_ (m, mulib_http_header (m, "Host"));
         if (valid_target != 1)
           {
@@ -827,26 +871,10 @@ extern "C"
     for (size_t i = 0; i < m->header_count; ++i)
       {
         const char *name = m->headers[i].name, *value = m->headers[i].value;
-        if (mulib_http_equal_ (name, "Content-Length"))
-          has_cl = 1;
-        if (mulib_http_equal_ (name, "Transfer-Encoding"))
-          has_te = 1;
         if (!mulib_strbuf_append (&b, name) || !mulib_strbuf_append (&b, ": ")
             || !mulib_strbuf_append (&b, value)
             || !mulib_strbuf_append (&b, "\r\n"))
           goto fail;
-        if (b.length > o.max_header_bytes)
-          {
-            r = MULIB_HTTP_LIMIT;
-            goto fail;
-          }
-      }
-    no_body = mulib_http_no_body_ (m, o.flags);
-    if ((no_body && (m->body_length || m->chunked)) || (has_te && !m->chunked)
-        || (has_cl && m->chunked))
-      {
-        r = MULIB_HTTP_INVALID;
-        goto fail;
       }
     if (!has_cl && !has_te && !no_body)
       {

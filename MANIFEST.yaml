@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 478
-implemented_module_count: 478
+module_count: 480
+implemented_module_count: 480
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -1864,8 +1864,8 @@ modules:
   header: include/mulib-git.h
   manual: manual/mulib-git.md
   macro: MULIB_IMPL_GIT
-  purpose: "Git SHA-1 object identities and pkt-line framing."
-  dependencies: []
+  purpose: "Git command execution and documented Mune workflows, SHA-1 object identities and pkt-line framing."
+  dependencies: [exec]
   status: implemented
 - name: https
   header: include/mulib-https.h
@@ -2550,14 +2550,14 @@ modules:
   header: include/mulib-http2.h
   manual: manual/mulib-http2.md
   macro: MULIB_IMPL_HTTP2
-  purpose: Bounded HTTP/2 frame envelopes with basic per-type validation.
+  purpose: Bounded HTTP/2 frames with payload, priority and SETTINGS validation.
   dependencies: [buffer]
   status: implemented
 - name: http3
   header: include/mulib-http3.h
   manual: manual/mulib-http3.md
   macro: MULIB_IMPL_HTTP3
-  purpose: Bounded HTTP/3 frame type and length envelopes.
+  purpose: Bounded HTTP/3 frames with known-payload and SETTINGS validation.
   dependencies: [quic]
   status: implemented
 - name: quic
@@ -3358,7 +3358,41 @@ modules:
   purpose: "X Layout Language: owned text-layout programs, parser and direct C emitter."
   dependencies: [json, layout, strbuf]
   status: implemented
+- name: exec
+  header: include/mulib-exec.h
+  manual: manual/mulib-exec.md
+  macro: MULIB_IMPL_EXEC
+  purpose: "POSIX command execution, concurrent pipelines and a documented Mune DSL."
+  dependencies: [mune, perf, process]
+  status: implemented
+- name: archml
+  header: include/mulib-archml.h
+  manual: manual/mulib-archml.md
+  macro: MULIB_IMPL_ARCHML
+  purpose: "Validated architecture descriptions, P-code and bit-scattered encodings."
+  dependencies: [parsec]
+  status: implemented
 project_files:
+- file: library/archml/amd64.aml
+  purpose: AMD64 compiler profile with concrete encodings, P-code and backend metadata.
+- file: library/archml/arm64.aml
+  purpose: AArch64 compiler profile with concrete encodings, P-code and backend metadata.
+- file: library/archml/risv.aml
+  purpose: RV64 RISC-V compiler profile with concrete encodings, P-code and backend metadata.
+- file: library/archml/README.md
+  purpose: ArchML profile coverage and compiler integration contracts.
+- file: tools/generate_archml.py
+  purpose: Deterministic source tables and generator for the ArchML architecture profiles.
+- file: tools/check_archml.py
+  purpose: Independent LLVM MC oracle for ArchML instruction encoding fixtures.
+- file: examples/exec-common.h
+  purpose: Explicit execution and Mune implementation placement for examples and tests.
+- file: library/git/init.lua
+  purpose: Git execution DSL with 169 named command constructors and detailed runtime string docstrings.
+- file: library/git/workflows.lua
+  purpose: Documented reusable Git status and concurrent history-pipeline plans.
+- file: library/git/README.md
+  purpose: Git DSL loading, runtime docstrings and integration guide.
 - file: manual/storage-server.md
   purpose: Storage codecs, native builders, server policy profiles and dependency contracts.
 - file: tools/check_storage_server.py
@@ -4805,3 +4839,21 @@ project_files:
   purpose: "Unicode and embedded-NUL XLL source fixture."
 - file: tests/fixtures/xll_driver.c
   purpose: "Generated-code runtime and direct-layout parity checks."
+- file: examples/modules/exec.c
+  purpose: "Standalone checked usage example for exec."
+- file: tests/test_exec.c
+  purpose: "Focused regression suite for test_exec."
+- file: tests/test_git_exec.c
+  purpose: "Focused regression suite for test_git_exec."
+- file: tests/test_http_alloc.c
+  purpose: "Focused regression suite for test_http_alloc."
+- file: tests/test_http_hardening.c
+  purpose: "Focused regression suite for test_http_hardening."
+- file: examples/modules/archml.c
+  purpose: "Standalone checked usage example for archml."
+- file: tests/test_archml.c
+  purpose: "Focused regression suite for test_archml."
+- file: tests/test_archml_alloc.c
+  purpose: "Focused regression suite for test_archml_alloc."
+- file: tests/test_parsec_hardening.c
+  purpose: "Focused regression suite for test_parsec_hardening."

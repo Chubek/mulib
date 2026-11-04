@@ -91,6 +91,37 @@ int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size) {
       for (int response = 0; response < 2; ++response) {
           if (mulib_http_parse(data,size,response,&options,&message,&used) == MULIB_HTTP_OK) mulib_http_message_free(&message);
       } }
+    { mulib_archml_t *architecture = NULL;
+      mulib_archml_options_t limits = {4096,128,16,20000};
+      mulib_archml_error_t error;
+      int rc = mulib_archml_parse((const char *)data,size,&limits,&architecture,&error);
+      if (rc == MULIB_ARCHML_OK) {
+          assert(architecture && mulib_archml_name(architecture));
+          mulib_archml_destroy(architecture);
+      } else assert(!architecture && error.code == rc); }
+    { mulib_http2_frame_t frame, sentinel; mulib_buffer_t wire = {0};
+      memset(&sentinel,0xa5,sizeof sentinel); memcpy(&frame,&sentinel,sizeof frame); used = SIZE_MAX;
+      int rc = mulib_http2_frame_read(data,size,1024,&frame,&used);
+      if (rc == 1) {
+          mulib_http2_frame_t copy; size_t consumed;
+          assert(used <= size && mulib_http2_frame_write(&wire,&frame));
+          assert(mulib_http2_frame_read(wire.data,wire.length,1024,&copy,&consumed) == 1);
+          assert(consumed == wire.length && copy.type == frame.type && copy.flags == frame.flags
+                 && copy.stream == frame.stream && copy.length == frame.length);
+          assert(!copy.length || !memcmp(copy.data,frame.data,copy.length));
+      } else assert(used == SIZE_MAX && !memcmp(&frame,&sentinel,sizeof frame));
+      mulib_buffer_free(&wire); }
+    { mulib_http3_frame_t frame, sentinel; mulib_buffer_t wire = {0};
+      memset(&sentinel,0xa5,sizeof sentinel); memcpy(&frame,&sentinel,sizeof frame); used = SIZE_MAX;
+      int rc = mulib_http3_frame_read(data,size,1024,&frame,&used);
+      if (rc == 1) {
+          mulib_http3_frame_t copy; size_t consumed;
+          assert(used <= size && mulib_http3_frame_write(&wire,&frame));
+          assert(mulib_http3_frame_read(wire.data,wire.length,1024,&copy,&consumed) == 1);
+          assert(consumed == wire.length && copy.type == frame.type && copy.length == frame.length);
+          assert(!copy.length || !memcmp(copy.data,frame.data,copy.length));
+      } else assert(used == SIZE_MAX && !memcmp(&frame,&sentinel,sizeof frame));
+      mulib_buffer_free(&wire); }
     { mulib_dbus_limits_t limits = {4096,128,8}; mulib_dbus_message_t message = {0};
       if (mulib_dbus_decode(data,size,&limits,&message,&used) == MULIB_DBUS_OK) mulib_dbus_message_free(&message);
       (void)mulib_dbus_signature_valid(text,size); }

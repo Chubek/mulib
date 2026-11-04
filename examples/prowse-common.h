@@ -1,6 +1,7 @@
 /* Explicit implementation placement for the runnable Prowse examples/tests. */
 #ifndef MULIB_EXAMPLE_PROWSE_COMMON_H
 #define MULIB_EXAMPLE_PROWSE_COMMON_H
+#include "exec-common.h"
 #define MULIB_IMPL_AST
 #define MULIB_IMPL_BASE64
 #define MULIB_IMPL_BUFFER

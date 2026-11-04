@@ -1,4 +1,5 @@
 #define MULIB_IMPL_GIT
+#include "../exec-common.h"
 #define MULIB_IMPL_ENDIAN
 #define MULIB_IMPL_ADLER32
 #define MULIB_IMPL_VCSPACK

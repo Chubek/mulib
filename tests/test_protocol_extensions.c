@@ -10,6 +10,7 @@
 #define MULIB_IMPL_HTTPS
 #define MULIB_IMPL_ENDIAN
 #define MULIB_IMPL_GIT
+#include "../examples/exec-common.h"
 #define MULIB_IMPL_VARINT
 #define MULIB_IMPL_SOCKS5
 #define MULIB_IMPL_V2RAYPROTO

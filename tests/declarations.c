@@ -480,4 +480,6 @@
 #include "mulib-glyph.h"
 #include "mulib-ligature.h"
 #include "mulib-xll.h"
+#include "mulib-exec.h"
+#include "mulib-archml.h"
 int main(void) { return 0; }

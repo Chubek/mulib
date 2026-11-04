@@ -1,4 +1,5 @@
 #define MULIB_IMPL_GIT
+#include "../exec-common.h"
 #define MULIB_IMPL_STRBUF
 #define MULIB_IMPL_VCSREPO
 #define MULIB_IMPL_VCSCOMMIT

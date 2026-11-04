@@ -155,7 +155,16 @@ extern "C"
   int mulib_parsec_run (const mulib_parsec_parser_t *parser,
                         const char *source, size_t length,
                         const mulib_parsec_options_t *options,
-                        mulib_parsec_result_t *result);
+                         mulib_parsec_result_t *result);
+  /** As run, additionally bounds total parser entries plus literal byte
+   * comparisons. Zero selects 16000000 work units. This bounds long literals
+   * under backtracking, which max_steps alone does not. No native recursion is
+   * used by either entry point. Existing options and run semantics are retained.
+   */
+  int mulib_parsec_run_bounded (const mulib_parsec_parser_t *parser,
+                                const char *source, size_t length,
+                                const mulib_parsec_options_t *options,
+                                size_t max_work, mulib_parsec_result_t *result);
   /** @brief Release captures and clear a result. NULL is harmless. */
   void mulib_parsec_result_free (mulib_parsec_result_t *result);
   /** @brief Owned scannerless grammar API. Define MULIB_IMPL_PARSER in
@@ -340,7 +349,7 @@ extern "C"
   typedef struct mulib_parsec_state_
   {
     const unsigned char *source;
-    size_t length, pos, depth, steps, capacity;
+    size_t length, pos, depth, steps, capacity, work, max_work;
     mulib_parsec_options_t limits;
     mulib_parsec_result_t *result;
     int fatal, have_error;
@@ -360,21 +369,53 @@ extern "C"
       }
     return 0;
   }
+  typedef struct mulib_parsec_frame_
+  {
+    const mulib_parsec_parser_t *parser;
+    size_t begin, first, index, before;
+    mulib_parsec_error_t error;
+    int phase, had;
+  } mulib_parsec_frame_;
   static int
   mulib_parsec_exec_ (mulib_parsec_state_ *s, const mulib_parsec_parser_t *p)
   {
-    size_t begin = s->pos, first = s->result->count, i;
+    mulib_parsec_frame_ local[32], *stack = local, *f;
+    size_t count = 0, capacity = 32, begin, first, i;
     int ok = 0;
     const char *label;
+  enter:
+    begin = s->pos;
     if (!p)
-      return mulib_parsec_fail_ (s, begin, MULIB_PARSEC_INVALID,
-                                 "null parser");
-    if (s->steps >= s->limits.max_steps || s->depth >= s->limits.max_depth)
-      return mulib_parsec_fail_ (s, begin, MULIB_PARSEC_LIMIT,
-                                 "parser resource limit");
+      { mulib_parsec_fail_ (s, begin, MULIB_PARSEC_INVALID, "null parser"); goto fatal; }
+    if (s->steps >= s->limits.max_steps || count >= s->limits.max_depth
+        || s->work == s->max_work)
+      { mulib_parsec_fail_ (s, begin, MULIB_PARSEC_LIMIT, "parser resource limit"); goto fatal; }
+    if (count == capacity)
+      {
+        size_t cap;
+        mulib_parsec_frame_ *next;
+        if (capacity > SIZE_MAX / 2 / sizeof (*stack))
+          { mulib_parsec_fail_ (s, begin, MULIB_PARSEC_LIMIT, "parser stack overflow"); goto fatal; }
+        cap = capacity * 2;
+        if (cap > s->limits.max_depth) cap = s->limits.max_depth;
+        next = (mulib_parsec_frame_ *)malloc (cap * sizeof (*next));
+        if (!next)
+          { mulib_parsec_fail_ (s, begin, MULIB_PARSEC_MEMORY, "out of memory"); goto fatal; }
+        memcpy (next, stack, count * sizeof (*next));
+        if (stack != local) free (stack);
+        stack = next; capacity = cap;
+      }
     ++s->steps;
-    ++s->depth;
+    ++s->work;
+    f = &stack[count++];
+    memset (f, 0, sizeof (*f));
+    f->parser = p; f->begin = begin; f->first = s->result->count;
+  dispatch:
+    f = &stack[count - 1]; p = f->parser;
+    begin = f->begin; first = f->first;
     label = p->label ? p->label : "matching byte";
+    if (f->phase) goto resume;
+    ok = 0;
     switch (p->kind)
       {
       case MULIB_PARSEC_EMPTY:
@@ -427,6 +468,9 @@ extern "C"
           }
         for (i = 0; i < p->as.text.length; ++i)
           {
+            if (s->work == s->max_work)
+              { mulib_parsec_fail_ (s, begin + i, MULIB_PARSEC_LIMIT, "parser work limit"); goto fatal; }
+            ++s->work;
             if (i == s->length - begin
                 || s->source[begin + i] != p->as.text.bytes[i])
               break;
@@ -445,32 +489,16 @@ extern "C"
         break;
       case MULIB_PARSEC_SEQUENCE:
       case MULIB_PARSEC_CHOICE:
-        if (!p->as.list.items && p->as.list.count)
+        if ((!p->as.list.items && p->as.list.count)
+            || p->as.list.count > SIZE_MAX / sizeof (*p->as.list.items))
           {
             mulib_parsec_fail_ (s, begin, MULIB_PARSEC_INVALID,
                                 "null parser list");
             break;
           }
         ok = p->kind == MULIB_PARSEC_SEQUENCE;
-        for (i = 0; i < p->as.list.count; ++i)
-          {
-            int child = mulib_parsec_exec_ (s, &p->as.list.items[i]);
-            if (p->kind == MULIB_PARSEC_SEQUENCE)
-              {
-                if (!child)
-                  {
-                    ok = 0;
-                    break;
-                  }
-              }
-            else if (child)
-              {
-                ok = 1;
-                break;
-              }
-            if (s->fatal)
-              break;
-          }
+        if (p->as.list.count)
+          { f->phase = 1; p = p->as.list.items; goto enter; }
         break;
       case MULIB_PARSEC_REPEAT:
         if (!p->as.unary.item || p->as.unary.min > p->as.unary.max)
@@ -480,53 +508,78 @@ extern "C"
             break;
           }
         ok = 1;
-        for (i = 0; i < p->as.unary.max; ++i)
-          {
-            size_t before = s->pos;
-            if (!mulib_parsec_exec_ (s, p->as.unary.item))
-              {
-                if (s->fatal || i < p->as.unary.min)
-                  ok = 0;
-                break;
-              }
-            if (s->pos == before && p->as.unary.max > 1)
-              {
-                ok = mulib_parsec_fail_ (
-                    s, before, MULIB_PARSEC_NO_PROGRESS,
-                    "repeated parser accepted empty input");
-                break;
-              }
-          }
+        if (p->as.unary.max)
+          { f->phase = 1; f->before = s->pos; p = p->as.unary.item; goto enter; }
         break;
       case MULIB_PARSEC_AND:
       case MULIB_PARSEC_NOT:
-        {
-          mulib_parsec_error_t old = s->result->error;
-          int had = s->have_error;
-          ok = mulib_parsec_exec_ (s, p->as.unary.item);
+        f->error = s->result->error; f->had = s->have_error;
+        f->phase = 1; p = p->as.unary.item; goto enter;
+      case MULIB_PARSEC_CAPTURE:
+        f->phase = 1; p = p->as.unary.item; goto enter;
+      case MULIB_PARSEC_REF:
+        if (!p->as.reference || !*p->as.reference)
+          mulib_parsec_fail_ (s, begin, MULIB_PARSEC_INVALID,
+                              "unbound parser reference");
+        else
+          { f->phase = 1; p = *p->as.reference; goto enter; }
+        break;
+      case MULIB_PARSEC_PREDICATE:
+        if (!p->as.predicate.function)
+          {
+            mulib_parsec_fail_ (s, begin, MULIB_PARSEC_INVALID,
+                                "null predicate");
+            break;
+          }
+        if (begin < s->length
+            && p->as.predicate.function (s->source[begin], p->as.predicate.user))
+          { ++s->pos; ok = 1; }
+        break;
+      default:
+        mulib_parsec_fail_ (s, begin, MULIB_PARSEC_INVALID, "invalid parser kind");
+        break;
+      }
+    goto finish;
+  resume:
+    switch (p->kind)
+      {
+      case MULIB_PARSEC_SEQUENCE:
+      case MULIB_PARSEC_CHOICE:
+        if (s->fatal || (p->kind == MULIB_PARSEC_SEQUENCE ? !ok : ok)) break;
+        if (++f->index < p->as.list.count)
+          { p = &p->as.list.items[f->index]; goto enter; }
+        break;
+      case MULIB_PARSEC_REPEAT:
+        if (!ok) { ok = !s->fatal && f->index >= p->as.unary.min; break; }
+        if (s->pos == f->before && p->as.unary.max > 1)
+          { ok = mulib_parsec_fail_ (s, s->pos, MULIB_PARSEC_NO_PROGRESS,
+                                    "repeated parser accepted empty input"); break; }
+        if (++f->index < p->as.unary.max)
+          { f->before = s->pos; p = p->as.unary.item; goto enter; }
+        break;
+      case MULIB_PARSEC_AND:
+      case MULIB_PARSEC_NOT:
           s->pos = begin;
           s->result->count = first;
           if (!s->fatal)
             {
               if (p->kind == MULIB_PARSEC_NOT)
                 {
-                  s->result->error = old;
-                  s->have_error = had;
+                  s->result->error = f->error;
+                  s->have_error = f->had;
                   ok = !ok;
                   label = p->label ? p->label : "negative lookahead";
                 }
               else if (ok)
                 {
-                  s->result->error = old;
-                  s->have_error = had;
+                  s->result->error = f->error;
+                  s->have_error = f->had;
                 }
             }
           else
             ok = 0;
           break;
-        }
       case MULIB_PARSEC_CAPTURE:
-        ok = mulib_parsec_exec_ (s, p->as.unary.item);
         if (ok)
           {
             mulib_parsec_capture_t *c;
@@ -568,33 +621,10 @@ extern "C"
           }
         break;
       case MULIB_PARSEC_REF:
-        if (!p->as.reference || !*p->as.reference)
-          mulib_parsec_fail_ (s, begin, MULIB_PARSEC_INVALID,
-                              "unbound parser reference");
-        else
-          ok = mulib_parsec_exec_ (s, *p->as.reference);
-        break;
-      case MULIB_PARSEC_PREDICATE:
-        if (!p->as.predicate.function)
-          {
-            mulib_parsec_fail_ (s, begin, MULIB_PARSEC_INVALID,
-                                "null predicate");
-            break;
-          }
-        if (begin < s->length
-            && p->as.predicate.function (s->source[begin],
-                                         p->as.predicate.user))
-          {
-            ++s->pos;
-            ok = 1;
-          }
-        break;
       default:
-        mulib_parsec_fail_ (s, begin, MULIB_PARSEC_INVALID,
-                            "invalid parser kind");
         break;
       }
-    --s->depth;
+  finish:
     if (!ok)
       {
         if (!s->fatal)
@@ -606,12 +636,18 @@ extern "C"
         s->pos = begin;
         s->result->count = first;
       }
+    if (--count) goto dispatch;
+    if (stack != local) free (stack);
     return ok;
+  fatal:
+    s->pos = 0; s->result->count = 0;
+    if (stack != local) free (stack);
+    return 0;
   }
-  int
-  mulib_parsec_run (const mulib_parsec_parser_t *p, const char *source,
-                    size_t n, const mulib_parsec_options_t *options,
-                    mulib_parsec_result_t *r)
+  static int
+  mulib_parsec_run_ (const mulib_parsec_parser_t *p, const char *source,
+                     size_t n, const mulib_parsec_options_t *options,
+                     size_t work, mulib_parsec_result_t *r)
   {
     mulib_parsec_state_ s;
     size_t i;
@@ -623,6 +659,7 @@ extern "C"
     s.source = (const unsigned char *)source;
     s.length = n;
     s.result = r;
+    s.max_work = work;
     s.limits.max_depth
         = options && options->max_depth ? options->max_depth : 256;
     s.limits.max_steps
@@ -655,6 +692,15 @@ extern "C"
       }
     return s.fatal ? -1 : 0;
   }
+  int
+  mulib_parsec_run (const mulib_parsec_parser_t *p, const char *s, size_t n,
+                    const mulib_parsec_options_t *o, mulib_parsec_result_t *r)
+  { return mulib_parsec_run_ (p, s, n, o, SIZE_MAX, r); }
+  int
+  mulib_parsec_run_bounded (const mulib_parsec_parser_t *p, const char *s, size_t n,
+                            const mulib_parsec_options_t *o, size_t work,
+                            mulib_parsec_result_t *r)
+  { return mulib_parsec_run_ (p, s, n, o, work ? work : 16000000, r); }
   void
   mulib_parsec_result_free (mulib_parsec_result_t *r)
   {

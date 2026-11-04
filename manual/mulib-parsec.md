@@ -19,6 +19,21 @@ predicate more than once, and semantic side effects would not be rolled back.
 Independent runs do not modify parser descriptions; immutable grammars can be
 shared by threads.
 
+The engine uses an explicit stack with a small local initial buffer and checked
+heap growth. Deep grammars therefore obey `max_depth` without depending on the
+C call-stack size; raising that option does not cause native recursive overflow.
+Stack allocation failures are reported as MEMORY with no retained captures.
+Existing parser kinds, structs, constructors, options, result codes and
+`mulib_parsec_run` signature remain unchanged.
+
+`mulib_parsec_run_bounded(parser, source, length, options, max_work, result)` is an
+additive entry point. It also charges each parser entry and literal byte comparison
+against a total work budget (zero selects 16,000,000). This closes the gap where
+one very long literal consumed only one `max_steps` unit, especially under
+backtracking. Exhaustion is a fatal LIMIT and cannot be hidden by a later choice
+or negative lookahead. The original `run` retains its step/depth/capture policies;
+new consumers such as ArchML use bounded execution explicitly.
+
 `mulib_parsec_run` initializes its result, including on failure. Call
 `mulib_parsec_result_free` before reusing an already populated result. Do not
 pass an uninitialized result to `result_free`. The result owns only its capture

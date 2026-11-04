@@ -1,5 +1,5 @@
 /** @file mulib-http2.h
- * @brief HTTP/2 nine-byte frame envelopes with basic per-type validation.
+ * @brief HTTP/2 frame envelopes with payload and SETTINGS validation.
  * Define MULIB_IMPL_HTTP2 and BUFFER. No HPACK, flow control or connection
  * state machine. Payload borrows input. Unknown types/flags are preserved.
  * Parse 1 OK, 0 MORE, -1 invalid, -2 limit; failure unchanged. */
@@ -17,10 +17,17 @@ extern "C"
     const unsigned char *data;
     size_t length;
   } mulib_http2_frame_t;
-  int mulib_http2_frame_read (const void *data, size_t length,
+   /** Read one complete frame, retaining unknown types/flags. max_payload is
+    * an explicit limit (zero allows only empty payloads); no SETTINGS default
+    * is assumed. The reserved stream bit is ignored on input. On MORE/error,
+    * both out and consumed remain unchanged. Payload borrows input. */
+   int mulib_http2_frame_read (const void *data, size_t length,
                               size_t max_payload, mulib_http2_frame_t *out,
                               size_t *consumed);
-  int mulib_http2_frame_write (mulib_buffer_t *out,
+   /** Append one validated frame transactionally: 1 success, 0 invalid/OOM.
+    * out must be initialized; frame payload may alias its existing bytes.
+    * Stream identifiers must fit 31 bits. No peer/connection state is tracked. */
+   int mulib_http2_frame_write (mulib_buffer_t *out,
                                const mulib_http2_frame_t *frame);
 #ifdef __cplusplus
 }
@@ -28,10 +35,30 @@ extern "C"
 #endif
 #if defined(MULIB_IMPL_HTTP2) && !defined(MULIB_HTTP2_IMPLEMENTED)
 #define MULIB_HTTP2_IMPLEMENTED
+static uint32_t
+mulib_http2_u32_ (const unsigned char *p)
+{
+  return (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16
+         | (uint32_t)p[2] << 8 | p[3];
+}
+static int
+mulib_http2_settings_ (const unsigned char *p, size_t n)
+{
+  for (size_t i = 0; i < n; i += 6) {
+    unsigned id = (unsigned)p[i] << 8 | p[i + 1];
+    uint32_t value = mulib_http2_u32_ (p + i + 2);
+    if ((id == 2 || id == 8 || id == 9) && value > 1) return 0;
+    if (id == 4 && value > UINT32_C (0x7fffffff)) return 0;
+    if (id == 5 && (value < 16384 || value > 0xffffff)) return 0;
+  }
+  /* Repeated identifiers are legal in HTTP/2 and are applied in wire order.
+   * Unrecognized identifiers are ignored by peers, not rejected by the codec. */
+  return 1;
+}
 static int
 mulib_http2_valid_ (const mulib_http2_frame_t *f)
 {
-  size_t skip = 0;
+  size_t skip = 0, prefix = 0;
   if ((!f->data && f->length) || f->length > 0xffffff || f->stream > 0x7fffffff)
     return 0;
   switch (f->type)
@@ -46,18 +73,28 @@ mulib_http2_valid_ (const mulib_http2_frame_t *f)
           if (!f->length || f->data[0] >= f->length)
             return 0;
           skip = (size_t)f->data[0] + 1;
+          prefix = 1;
         }
       if (f->type == 1 && (f->flags & 32))
         skip += 5;
       if (f->type == 5)
         skip += 4;
-      return skip <= f->length;
+      if (skip > f->length) return 0;
+      if (f->type == 1 && (f->flags & 32)
+          && (mulib_http2_u32_ (f->data + prefix) & UINT32_C (0x7fffffff)) == f->stream)
+        return 0;
+      if (f->type == 5
+          && !(mulib_http2_u32_ (f->data + prefix) & UINT32_C (0x7fffffff)))
+        return 0;
+      return 1;
     case 2:
-      return f->stream && f->length == 5;
+      return f->stream && f->length == 5
+             && (mulib_http2_u32_ (f->data) & UINT32_C (0x7fffffff)) != f->stream;
     case 3:
       return f->stream && f->length == 4;
     case 4:
-      return !f->stream && ((f->flags & 1) ? !f->length : f->length % 6 == 0);
+      return !f->stream && ((f->flags & 1) ? !f->length
+               : f->length % 6 == 0 && mulib_http2_settings_ (f->data, f->length));
     case 6:
       return !f->stream && f->length == 8;
     case 7:

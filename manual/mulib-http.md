@@ -11,8 +11,9 @@ Implementation switches: `MULIB_IMPL_HTTP`, `MULIB_IMPL_URI`,
 `MULIB_IMPL_STRBUF`, `MULIB_IMPL_BUFFER`, `MULIB_IMPL_PARSEC`,
 `MULIB_IMPL_INET4`, `MULIB_IMPL_INET6`. Define all before including the header
 in exactly one C11 translation unit. No external dependencies.
-Start-line, header token/value, decimal and hexadecimal syntax use MuLIB parser combinators
-with captures; HTTP framing/overflow/security policy remains in this module.
+Start-line and header extraction use MuLIB parser combinators with captures.
+Already-extracted token/value and numeric validation use allocation-free byte
+scans; framing, overflow checks and resource policy remain in this module.
 Target and Host checks reuse the URI parser, which shares IP-literal parsers.
 
 ## Parsing
@@ -35,7 +36,8 @@ Target and Host checks reuse the URI parser, which shares IP-literal parsers.
   response headers even if Content-Length describes a representation.
   `MULIB_HTTP_CONNECT_RESPONSE` similarly ends a successful CONNECT response
   at its headers. Hand subsequent tunnel bytes to another protocol; they are
-  not HTTP bodies. Informational responses consume one frame independently.
+   not HTTP bodies. Informational responses consume one frame independently.
+   HEAD and CONNECT context flags are mutually exclusive and rejected on requests.
 
 Options with zero limits select 32768 total start-line/header bytes, 100 header
 fields, and 16 MiB decoded body. Limits apply before body allocation; chunk size
@@ -69,6 +71,11 @@ framing headers; HEAD/304 may carry Content-Length but no Transfer-Encoding.
 These are deliberately stricter than some interoperable HTTP implementations.
 HEAD/CONNECT context must be supplied correctly by the caller. Response body
 length is never inferred from the status reason or a Connection header.
+205 Reset Content responses cannot carry content: nonzero Content-Length,
+nonempty chunks and nonempty close-delimited bodies are invalid. Unlike 204,
+205 still uses normal message framing: Content-Length: 0, an empty chunked body,
+or an empty close-delimited response completed by EOF. The zero chunk is consumed
+before returning a chunked 205 frame boundary.
 
 ## Serialization
 
@@ -87,6 +94,21 @@ reparsed with the same limits and compared with the original start-line fields
 and body, rejecting request-line/header injection, length mismatch and accidental
 trailing-message output. On failure both output arguments remain unchanged.
 Header/body source pointers must remain valid until the call returns.
+Before any wire/authority allocation, serialization bounds every source string
+and preflights the **aggregate** start-line/header bytes, final CRLF and generated
+framing header. Generated framing also counts against max_headers. Bounds use
+checked subtraction rather than unchecked size sums. Over-limit output leaves
+both output arguments untouched without first allocating an oversized buffer.
+
+`mulib-http1.h` exposes matching parse and serialize entry points with identical
+contracts. The owned request builder accepts a single `Transfer-Encoding:
+chunked` header and encodes the supplied decoded body accordingly; unsupported
+codings, duplicate framing and CL/TE conflicts remain invalid.
+
+Regression suites: `tests/test_http_hardening.c` covers fragmentation, EOF,
+smuggling-shaped headers, exact limits, contextual responses and binary owned
+construction. `tests/test_http_alloc.c` fails each allocation in parsing,
+serialization and construction and verifies unchanged outputs and released memory.
 
 ## Runnable example
 

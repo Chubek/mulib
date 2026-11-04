@@ -1,10 +1,11 @@
 /** @file mulib-git.h
- * @brief Git SHA-1 object identities and pkt-line framing.
- * Define MULIB_IMPL_GIT once. SHA-1 is for legacy Git compatibility, not
- * authentication or collision-resistant security. No command execution.
+ * @brief Git command execution and Mune workflows, object identities and framing.
+ * Define MULIB_IMPL_GIT and EXEC's dependency switches once. SHA-1 is for
+ * legacy Git compatibility, not authentication or collision-resistant security.
  */
 #ifndef MULIB_GIT_H
 #define MULIB_GIT_H
+#include "mulib-exec.h"
 #include <stddef.h>
 #include <stdint.h>
 #ifdef __cplusplus
@@ -32,7 +33,27 @@ extern "C"
                             unsigned *kind, size_t *used);
   /** @brief Encode data or control pkt-line, 1 success/0 failure. */
   int mulib_git_pkt_encode (unsigned kind, const void *, size_t, void *,
-                            size_t, size_t *used);
+                             size_t, size_t *used);
+  /** @brief Execute arbitrary Git CLI arguments through EXEC, including global
+   * options, porcelain, plumbing, aliases and installed git-* extensions.
+   * argv excludes the executable; git_file defaults to "git". cwd may be NULL.
+   * Strings are literal argv entries. Options/results follow mulib_exec_run.
+   * No subcommand allowlist or version-specific option filtering is imposed.
+   */
+  int mulib_git_run (const char *git_file, const char *cwd,
+                     const char *const *argv, size_t argc,
+                     const mulib_exec_options_t *, mulib_exec_result_t *);
+  /** @brief Install exec and load library_directory/init.lua into a Mune state.
+   * Pass the path to library/git explicitly (no dependence on process cwd).
+   * Installs global git: command(name,args,options), raw(args,options), run,
+   * capture, help and named constructors for catalogued commands. All return
+   * inert EXEC plans except run/capture. git.docs contains multiline strings.
+   * Future/custom commands work through command/raw even without a catalogue
+   * entry. Files are evaluated with ordinary Mune host capabilities.
+   */
+  mulib_mune_status_t mulib_git_bind (mulib_mune_state_t *,
+                                     const char *library_directory,
+                                     mulib_mune_error_t *);
 #ifdef __cplusplus
 }
 #endif
@@ -41,6 +62,42 @@ extern "C"
 #define MULIB_GIT_IMPLEMENTED
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+int
+mulib_git_run (const char *file, const char *cwd, const char *const *args,
+               size_t count, const mulib_exec_options_t *options, mulib_exec_result_t *out)
+{
+  mulib_exec_command_t command;
+  const char **argv;
+  size_t i;
+  int rc;
+  if ((!args && count) || count >= 65536) return MULIB_EXEC_INVALID;
+  argv = (const char **)calloc (count + 1, sizeof (*argv));
+  if (!argv) return MULIB_EXEC_MEMORY;
+  argv[0] = file ? file : "git";
+  for (i = 0; i < count; ++i) argv[i + 1] = args[i];
+  mulib_exec_command_init (&command);
+  command.argv = argv; command.argc = count + 1; command.cwd = cwd;
+  rc = mulib_exec_run (&command, options, out);
+  free (argv); return rc;
+}
+mulib_mune_status_t
+mulib_git_bind (mulib_mune_state_t *state, const char *directory, mulib_mune_error_t *error)
+{
+  char *path;
+  size_t n;
+  mulib_mune_result_t *result = NULL;
+  mulib_mune_status_t rc;
+  if (!state || !directory) return MULIB_MUNE_INVALID;
+  n = strlen (directory);
+  if (n > SIZE_MAX - 10) return MULIB_MUNE_INVALID;
+  path = (char *)malloc (n + 10);
+  if (!path) return MULIB_MUNE_MEMORY;
+  memcpy (path, directory, n); memcpy (path + n, "/init.lua", 10);
+  rc = mulib_exec_bind (state, error);
+  if (!rc) rc = mulib_mune_run_file (state, path, &result, error);
+  mulib_mune_result_destroy (result); free (path); return rc;
+}
 typedef struct mulib_git_sha1_state_
 {
   uint32_t h[5];

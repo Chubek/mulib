@@ -1,5 +1,6 @@
 #define MULIB_IMPL_ENDIAN
 #define MULIB_IMPL_GIT
+#include "../exec-common.h"
 #define MULIB_IMPL_BITTORRENT
 #include "mulib-bittorrent.h"
 #include <assert.h>

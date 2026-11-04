@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 478 headers, 519 direct dependency edges.
+Inventory: 480 headers, 524 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (175 modules)
+## Stratum 0 (174 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -82,7 +82,6 @@ Compatibility group: `parsec`, `peg`.
 | [ftpclient](mulib-ftpclient.md) | none |
 | [ftpserver](mulib-ftpserver.md) | none |
 | [geometry](mulib-geometry.md) | none |
-| [git](mulib-git.md) | none |
 | [glob](mulib-glob.md) | none |
 | [gputest](mulib-gputest.md) | none |
 | [graph](mulib-graph.md) | none |
@@ -195,7 +194,7 @@ Compatibility group: `parsec`, `peg`.
 | [weighed_edit_distane](mulib-weighed_edit_distane.md) | none |
 | [xtks](mulib-xtks.md) | none |
 
-## Stratum 1 (120 modules)
+## Stratum 1 (117 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -210,7 +209,6 @@ Compatibility group: `parsec`, `peg`.
 | [binfilereader](mulib-binfilereader.md) | `binfile`, `bycutils` |
 | [binfileschema](mulib-binfileschema.md) | `bycutils` |
 | [binfilewriter](mulib-binfilewriter.md) | `buffer`, `bycutils` |
-| [bittorrent](mulib-bittorrent.md) | `endian`, `git` |
 | [bk-trees](mulib-bk-trees.md) | `levenshtein` |
 | [blockidx](mulib-blockidx.md) | `bycutils`, `memtable` |
 | [buildgraph](mulib-buildgraph.md) | `artifact` |
@@ -307,8 +305,6 @@ Compatibility group: `parsec`, `peg`.
 | [txtdiff](mulib-txtdiff.md) | `buffer`, `vec` |
 | [uniproc](mulib-uniproc.md) | `dynload`, `utf8` |
 | [v2rayproto](mulib-v2rayproto.md) | `socks5` |
-| [vcspack](mulib-vcspack.md) | `adler32`, `endian`, `git` |
-| [vcsrepo](mulib-vcsrepo.md) | `git` |
 | [vdev](mulib-vdev.md) | `input` |
 | [vector](mulib-vector.md) | `vec` |
 | [vhpst](mulib-vhpst.md) | `seurity` |
@@ -320,7 +316,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (61 modules)
+## Stratum 2 (60 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -378,7 +374,6 @@ Compatibility group: `parsec`, `peg`.
 | [tui](mulib-tui.md) | `terminfo`, `termkey`, `vterm` |
 | [unibreak](mulib-unibreak.md) | `uniproc` |
 | [uniname](mulib-uniname.md) | `uniproc` |
-| [vcscommit](mulib-vcscommit.md) | `strbuf`, `vcsrepo` |
 | [virtio](mulib-virtio.md) | `vmmdev` |
 | [visitor](mulib-visitor.md) | `ast` |
 | [vmm-memory](mulib-vmm-memory.md) | `vmmdev` |
@@ -390,6 +385,7 @@ Compatibility group: `parsec`, `peg`.
 
 | Module | Direct dependencies |
 | --- | --- |
+| [archml](mulib-archml.md) | `parsec` |
 | [collision](mulib-collision.md) | `cgeom` |
 | [confuse](mulib-confuse.md) | `parsec` |
 | [container-packpe](mulib-container-packpe.md) | `imgformat`, `pe` |
@@ -421,7 +417,6 @@ Compatibility group: `parsec`, `peg`.
 | [shaderx](mulib-shaderx.md) | `parsec`, `strbuf` |
 | [stylesheet](mulib-stylesheet.md) | `css` |
 | [udev](mulib-udev.md) | `parsec` |
-| [vcscomitt](mulib-vcscomitt.md) | `vcscommit` |
 | [vectgfx](mulib-vectgfx.md) | `glx`, `parsec`, `vec` |
 | [virtio-guest](mulib-virtio-guest.md) | `virtio` |
 | [virtio-os](mulib-virtio-os.md) | `virtio` |
@@ -464,7 +459,7 @@ Compatibility group: `parsec`, `peg`.
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (25 modules)
+## Stratum 5 (26 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -477,6 +472,7 @@ Compatibility group: `parsec`, `peg`.
 | [containterpool](mulib-containterpool.md) | `containerboost`, `image2container` |
 | [daemon](mulib-daemon.md) | `mune`, `process`, `strbuf` |
 | [dbserializer](mulib-dbserializer.md) | `bson`, `cbor`, `messagepack` |
+| [exec](mulib-exec.md) | `mune`, `perf`, `process` |
 | [getaddr](mulib-getaddr.md) | `inet6` |
 | [imgbuilder](mulib-imgbuilder.md) | `imgbuildspec`, `rootfsbuilder` |
 | [imgtrackerd](mulib-imgtrackerd.md) | `bycutils`, `memtable`, `ociimage` |
@@ -494,7 +490,7 @@ Compatibility group: `parsec`, `peg`.
 | [webidl](mulib-webidl.md) | `buffer`, `dbschema` |
 | [wit](mulib-wit.md) | `buffer`, `dbschema` |
 
-## Stratum 6 (7 modules)
+## Stratum 6 (8 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -503,18 +499,22 @@ Compatibility group: `parsec`, `peg`.
 | [containerd](mulib-containerd.md) | `conainerd-ipc`, `container-log`, `containerd-cache`, `containerd-mount`, `containterpool` |
 | [dbdesializer](mulib-dbdesializer.md) | `dbserializer` |
 | [fswatch](mulib-fswatch.md) | `daemon`, `glob`, `select`, `vfs` |
+| [git](mulib-git.md) | `exec` |
 | [glyph](mulib-glyph.md) | `fontdraw`, `ligature`, `pglayout`, `sysfonts` |
 | [uri](mulib-uri.md) | `inte6`, `strbuf` |
 
-## Stratum 7 (3 modules)
+## Stratum 7 (6 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
+| [bittorrent](mulib-bittorrent.md) | `endian`, `git` |
 | [containerd-ctrlbridge](mulib-containerd-ctrlbridge.md) | `containerd`, `containerd-accessstub` |
 | [http](mulib-http.md) | `buffer`, `parsec`, `uri` |
 | [layout](mulib-layout.md) | `glyph` |
+| [vcspack](mulib-vcspack.md) | `adler32`, `endian`, `git` |
+| [vcsrepo](mulib-vcsrepo.md) | `git` |
 
-## Stratum 8 (10 modules)
+## Stratum 8 (11 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -524,12 +524,13 @@ Compatibility group: `parsec`, `peg`.
 | [httpserver_config](mulib-httpserver_config.md) | `http` |
 | [layoutml](mulib-layoutml.md) | `layout`, `xml` |
 | [prowse-protocol](mulib-prowse-protocol.md) | `base64`, `git`, `http`, `json`, `socket`, `utf8` |
+| [vcscommit](mulib-vcscommit.md) | `strbuf`, `vcsrepo` |
 | [waf](mulib-waf.md) | `http`, `seurity` |
 | [webclient](mulib-webclient.md) | `http` |
 | [webframework](mulib-webframework.md) | `http` |
 | [xll](mulib-xll.md) | `json`, `layout`, `strbuf` |
 
-## Stratum 9 (8 modules)
+## Stratum 9 (9 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -540,6 +541,7 @@ Compatibility group: `parsec`, `peg`.
 | [miniwget](mulib-miniwget.md) | `webclient` |
 | [prowse-control](mulib-prowse-control.md) | `mune`, `prowse-protocol`, `readline`, `strbuf` |
 | [revproxy](mulib-revproxy.md) | `webclient` |
+| [vcscomitt](mulib-vcscomitt.md) | `vcscommit` |
 | [web_conntection](mulib-web_conntection.md) | `http1` |
 
 ## Stratum 10 (1 modules)

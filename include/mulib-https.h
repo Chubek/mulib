@@ -15,6 +15,8 @@ extern "C"
    * Backend must verify its host/chain and negotiate HTTP/1.1 (not HTTP/2).
    * On return, adapter owns close even on failure if state became nonzero.
    * This synchronous API requires blocking backend callbacks; AGAIN aborts.
+   * Backend EOF must mean authenticated TLS shutdown (close_notify); an abrupt
+   * socket EOF must be reported as a TLS error, especially for EOF-framed bodies.
    */
   typedef int (*mulib_https_connect_fn) (void *, const mulib_uri_t *,
                                          mulib_tsl_t *);
@@ -93,7 +95,11 @@ mulib_https_request (const char *url, const char *method,
   mulib_uri_t clear;
   char *routing;
   mulib_webclient_result r;
-  if (!url || !connect || !mulib_uri_parse (url, strlen (url), &ctx.endpoint)
+  unsigned port = 0;
+  if (!url || !method || !response || !connect || (!headers && count)
+      || (!body && length) || !strcmp (method, "CONNECT")
+      || (options && options->http.flags)
+      || !mulib_uri_parse (url, strlen (url), &ctx.endpoint)
       || ctx.endpoint.scheme.length != 5 || !ctx.endpoint.has_authority
       || !ctx.endpoint.host.length || ctx.endpoint.has_userinfo
       || ctx.endpoint.has_fragment)
@@ -106,7 +112,17 @@ mulib_https_request (const char *url, const char *method,
       if (c != (unsigned char)"https"[i])
         return MULIB_WEBCLIENT_INVALID;
     }
-  if (!ctx.endpoint.has_port)
+  if (ctx.endpoint.has_port)
+    {
+      if (!ctx.endpoint.port.length) return MULIB_WEBCLIENT_INVALID;
+      for (size_t i = 0; i < ctx.endpoint.port.length; ++i) {
+        unsigned d = (unsigned char)ctx.endpoint.port.data[i] - (unsigned)'0';
+        if (d > 9 || port > (65535u - d) / 10u) return MULIB_WEBCLIENT_INVALID;
+        port = port * 10u + d;
+      }
+      if (!port) return MULIB_WEBCLIENT_INVALID;
+    }
+  else
     {
       ctx.endpoint.has_port = 1;
       ctx.endpoint.port.data = "443";
@@ -117,7 +133,7 @@ mulib_https_request (const char *url, const char *method,
   clear.scheme.length = 4;
   routing = mulib_uri_compose (&clear);
   if (!routing)
-    return MULIB_WEBCLIENT_INVALID;
+    return MULIB_WEBCLIENT_NOMEM;
   ctx.connect = connect;
   ctx.user = user;
   r = mulib_webclient_request (routing, method, headers, count, body, length,

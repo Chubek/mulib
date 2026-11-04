@@ -53,6 +53,7 @@ test_free (void *p)
 #define realloc test_realloc
 #define free test_free
 #define MULIB_IMPL_GIT
+#include "../examples/exec-common.h"
 #define MULIB_IMPL_STRBUF
 #define MULIB_IMPL_VCSREPO
 #define MULIB_IMPL_VCSCOMMIT
@@ -197,10 +198,51 @@ netfs (void)
   mulib_vfs_free (&vfs);
   assert (!live);
 }
+static void
+execution (void)
+{
+#if !defined(MULIB_EXEC_NO_POSIX) && (defined(__unix__) || defined(__APPLE__))
+  const char *args[] = {"/bin/printf", "%s", "captured bytes"};
+  const char *cat[] = {"/bin/cat"};
+  const char *env[] = {"PATH=/bin:/usr/bin"};
+  mulib_exec_options_t options = {0};
+  mulib_exec_command_t commands[2];
+  size_t allocations;
+  int mode;
+  options.capture_stdout = options.capture_stderr = 1;
+  options.timeout_ms = 5000;
+  for (mode = MULIB_EXEC_FORK; mode <= MULIB_EXEC_SPAWN; ++mode) {
+    mulib_exec_result_t result = {0};
+    mulib_exec_command_init (commands);
+    mulib_exec_command_init (commands + 1);
+    commands[0].argv = args; commands[0].argc = 3;
+    commands[1].argv = cat; commands[1].argc = 1;
+    commands[0].env = commands[1].env = env;
+    commands[0].envc = commands[1].envc = 1;
+    commands[0].backend = commands[1].backend = (mulib_exec_backend_t)mode;
+    fail_on (SIZE_MAX);
+    assert (!mulib_exec_pipeline (commands,2,&options,&result));
+    assert (!result.code && !strcmp (result.out,"captured bytes"));
+    allocations = allocation_calls;
+    mulib_exec_result_destroy (&result);
+    assert (!live);
+    for (size_t i = 0; i < allocations; ++i) {
+      int raw;
+      fail_on (i);
+      assert (mulib_exec_pipeline (commands,2,&options,&result) == MULIB_EXEC_MEMORY);
+      mulib_exec_result_destroy (&result);
+      assert (!live);
+      assert (waitpid (-1,&raw,WNOHANG) == -1 && errno == ECHILD);
+    }
+  }
+  fail_on (SIZE_MAX);
+#endif
+}
 int
 main (void)
 {
   repository ();
   netfs ();
+  execution ();
   return 0;
 }
