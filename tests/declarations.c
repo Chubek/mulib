@@ -479,4 +479,5 @@
 #include "mulib-termstyle.h"
 #include "mulib-glyph.h"
 #include "mulib-ligature.h"
+#include "mulib-xll.h"
 int main(void) { return 0; }

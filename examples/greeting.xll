@@ -1,0 +1,22 @@
+xll 1 {
+  // Font selection is supplied by the embedding application.
+  layout greeting {
+    text "Hello سلام world";
+    font "Noto Sans" 18;
+    language "und";
+    width 400;
+    wrap word;
+    align start;
+    direction auto;
+    spacing 1.2;
+    origin 20 40;
+  }
+
+  layout footer {
+    text "X Layout Language → mulib-layout";
+    font "sans" 16;
+    width 400;
+    align center;
+    origin 20 100;
+  }
+}

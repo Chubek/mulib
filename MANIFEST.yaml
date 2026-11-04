@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 477
-implemented_module_count: 477
+module_count: 478
+implemented_module_count: 478
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3351,6 +3351,13 @@ modules:
   purpose: "OpenType ligature controls and lossless UTF-8 cluster maps."
   dependencies: [fontshape]
   status: implemented
+- name: xll
+  header: include/mulib-xll.h
+  manual: manual/mulib-xll.md
+  macro: MULIB_IMPL_XLL
+  purpose: "X Layout Language: owned text-layout programs, parser and direct C emitter."
+  dependencies: [json, layout, strbuf]
+  status: implemented
 project_files:
 - file: manual/storage-server.md
   purpose: Storage codecs, native builders, server policy profiles and dependency contracts.
@@ -4784,3 +4791,17 @@ project_files:
   purpose: "Focused regression suite for test_html_css_pipeline."
 - file: tests/test_text_layout.c
   purpose: "Focused regression suite for test_text_layout."
+- file: examples/modules/xll.c
+  purpose: "Standalone checked usage example for xll."
+- file: tests/test_xll.c
+  purpose: "Focused regression suite for test_xll."
+- file: examples/greeting.xll
+  purpose: "Example X Layout Language source for direct C translation."
+- file: tools/check_xll.py
+  purpose: "Compile emitted XLL programs and verify standalone linkage and native layout parity."
+- file: tests/fixtures/xll_implementation.h
+  purpose: "Dependency-complete implementation switches for XLL regression clients."
+- file: tests/fixtures/xll_source.h
+  purpose: "Unicode and embedded-NUL XLL source fixture."
+- file: tests/fixtures/xll_driver.c
+  purpose: "Generated-code runtime and direct-layout parity checks."

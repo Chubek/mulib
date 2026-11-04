@@ -156,6 +156,14 @@ if(MULIB_BUILD_TESTS)
     set_tests_properties(mulib_prowse_native_io PROPERTIES TIMEOUT 90)
   endif()
   if(Python3_Interpreter_FOUND AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    set(xll_options)
+    if(MULIB_SANITIZERS)
+      list(APPEND xll_options --sanitizers)
+    endif()
+    add_test(NAME mulib_xll_generated
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_xll.py
+        --emitter $<TARGET_FILE:mulib_test_xll> --compiler ${CMAKE_C_COMPILER} ${xll_options})
+    set_tests_properties(mulib_xll_generated PROPERTIES TIMEOUT 300)
     add_test(NAME mulib_metapp_reference
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_metapp.py
         --preprocessor $<TARGET_FILE:mulib_test_metapp> --compiler ${CMAKE_C_COMPILER})
