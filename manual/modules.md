@@ -1,6 +1,6 @@
 # MuLIB module and composition guide
 
-MuLIB has 458 implemented single-header C11 modules. Every implemented module has a corresponding
+MuLIB has 475 implemented single-header C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -18,6 +18,7 @@ consult each manual's exact supported syntax, errors, and limits.
 | Graphics math and geometry | [linalg](mulib-linalg.md), [simdmath](mulib-simdmath.md), [cgeom](mulib-cgeom.md), [collision](mulib-collision.md), [geosolve](mulib-geosolve.md) |
 | Rendering and GUI | [GLX](mulib-glx.md), [ShaderX](mulib-shaderx.md), [VectGFX](mulib-vectgfx.md), [raytracing](mulib-raytracing.md), [ImmGTK](mulib-immgtk.md) |
 | Storage and native formats | [archive](mulib-archive.md), [mmfile](mulib-mmfile.md), [kvdb](mulib-kvdb.md), [elf](mulib-elf.md), [dynload](mulib-dynload.md), [drm](mulib-drm.md) |
+| Binary inspection and packing | [ELF/COFF/PE/Mach-O stack](binary-formats.md), [shared objdump](mulib-objdump.md), [terminal styles](mulib-termstyle.md) |
 | Terminals | [terminfo](mulib-terminfo.md), [termkey](mulib-termkey.md), [termutils](mulib-termutils.md), [vterm](mulib-vterm.md), [tui](mulib-tui.md), [readline](mulib-readline.md), [VGA text buffer](mulib-vgabuffer.md) |
 | Protocols | [uri](mulib-uri.md), [http](mulib-http.md), [rpc](mulib-rpc.md), [dbus](mulib-dbus.md) |
 | IP addresses | [IPv4](mulib-inet4.md), [IPv6](mulib-inet6.md), [historical inte6 header](mulib-inte6.md), [address lookup](mulib-getaddr.md) |

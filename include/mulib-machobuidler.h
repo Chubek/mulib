@@ -2,7 +2,8 @@
  * @brief Deterministic x86-64 MH_OBJECT with one __TEXT,__text section.
  * Historical filename retained. Define MULIB_IMPL_MACHOBUIDLER, BYCUTILS and
  * BUFFER. No symbols/relocations/signatures; not a macOS executable.
- * Atomic append, 1 success/0 invalid, overflow or allocation failure. */
+ * Atomic append, 1 success/0 invalid, overflow or allocation failure.
+ * The correctly spelled machobuilder header/switch also enables this API. */
 #ifndef MULIB_MACHOBUIDLER_H
 #define MULIB_MACHOBUIDLER_H
 #include "mulib-buffer.h"
@@ -17,7 +18,8 @@ extern "C"
 }
 #endif
 #endif
-#if defined(MULIB_IMPL_MACHOBUIDLER) && !defined(MULIB_MACHOBUIDLER_IMPLEMENTED)
+#if defined(MULIB_IMPL_MACHOBUIDLER) || defined(MULIB_IMPL_MACHOBUILDER)
+#ifndef MULIB_MACHOBUIDLER_IMPLEMENTED
 #define MULIB_MACHOBUIDLER_IMPLEMENTED
 int
 mulib_machobuilder_text (mulib_buffer_t *out, const void *p, size_t n)
@@ -52,4 +54,5 @@ mulib_machobuilder_text (mulib_buffer_t *out, const void *p, size_t n)
   mulib_buffer_free (&b);
   return ok;
 }
+#endif
 #endif

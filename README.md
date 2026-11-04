@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **459 implemented modules**.
+A C11 modular single-header utility library with **475 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -150,6 +150,11 @@ The [storage, binary, document and container extensions](manual/extension-layers
 share existing byte buffers, parsers, ELF views and VFS models. Container modules
 provide explicit-backend lifecycle and transport cores, not a privileged isolation
 runtime. `tsl` requires an authenticated TLS backend; it supplies no cryptography.
+
+[Binary-format tools](manual/binary-formats.md) provide checked ELF, COFF, PE and
+thin Mach-O readers, builders, lookup, container-image packing and shared
+objdump-style metadata/hex rendering. Terminal styling is explicitly enabled
+through terminfo capabilities; these tools do not load or disassemble programs.
 
 The [storage and server extensions](manual/storage-server.md) add JSON-profile
 BSON/CBOR/MessagePack, Protobuf wire fields, schema-checked in-memory stores,

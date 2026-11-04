@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 459
-implemented_module_count: 459
+module_count: 475
+implemented_module_count: 475
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2390,14 +2390,14 @@ modules:
   manual: manual/mulib-pebuilder.md
   macro: MULIB_IMPL_PEBUILDER
   purpose: Minimal fixed-base AMD64 PE32+ console image writer.
-  dependencies: [binfilewriter, bycutils]
+  dependencies: [binfilewriter, bycutils, objfilebuilder]
   status: implemented
 - name: coffbuilder
   header: include/mulib-coffbuilder.h
   manual: manual/mulib-coffbuilder.md
   macro: MULIB_IMPL_COFFBUILDER
   purpose: Deterministic AMD64 COFF object text-section writer.
-  dependencies: [buffer, bycutils]
+  dependencies: [binfilewriter, buffer, bycutils, objfilebuilder]
   status: implemented
 - name: evtloop
   header: include/mulib-evtloop.h
@@ -3224,6 +3224,118 @@ modules:
   macro: MULIB_IMPL_GEOSOLVE
   purpose: "Extensible 2D/3D geometric constraint solving and analytic constructions."
   dependencies: [alloc, cgeom, geometry]
+  status: implemented
+- name: coff-objdump
+  header: include/mulib-coff-objdump.h
+  manual: manual/mulib-coff-objdump.md
+  macro: MULIB_IMPL_COFF_OBJDUMP
+  purpose: "COFF metadata, symbols and section hex dumps using shared objdump tools."
+  dependencies: [coff, objdump]
+  status: implemented
+- name: coff
+  header: include/mulib-coff.h
+  manual: manual/mulib-coff.md
+  macro: MULIB_IMPL_COFF
+  purpose: "Checked little-endian Microsoft COFF sections, symbols and names."
+  dependencies: [endian]
+  status: implemented
+- name: coffutils
+  header: include/mulib-coffutils.h
+  manual: manual/mulib-coffutils.md
+  macro: MULIB_IMPL_COFFUTILS
+  purpose: "Exact section and defined-primary-symbol lookup over checked COFF."
+  dependencies: [coff]
+  status: implemented
+- name: container-packcoff
+  header: include/mulib-container-packcoff.h
+  manual: manual/mulib-container-packcoff.md
+  macro: MULIB_IMPL_CONTAINER_PACKCOFF
+  purpose: "COFF image objects and checksummed non-destructive file overlays."
+  dependencies: [coff, imgformat]
+  status: implemented
+- name: container-packmacho
+  header: include/mulib-container-packmacho.h
+  manual: manual/mulib-container-packmacho.md
+  macro: MULIB_IMPL_CONTAINER_PACKMACHO
+  purpose: "Mach-O64 image objects and non-destructive unsigned Mach-O overlays."
+  dependencies: [imgformat, macho]
+  status: implemented
+- name: container-packpe
+  header: include/mulib-container-packpe.h
+  manual: manual/mulib-container-packpe.md
+  macro: MULIB_IMPL_CONTAINER_PACKPE
+  purpose: "PE32+ data-image packing and non-destructive unsigned PE overlays."
+  dependencies: [imgformat, pe]
+  status: implemented
+- name: elf-objdump
+  header: include/mulib-elf-objdump.h
+  manual: manual/mulib-elf-objdump.md
+  macro: MULIB_IMPL_ELF_OBJDUMP
+  purpose: "ELF32/64 program, section, symbol and hex dumps using shared objdump."
+  dependencies: [elf, objdump]
+  status: implemented
+- name: macho-objdump
+  header: include/mulib-macho-objdump.h
+  manual: manual/mulib-macho-objdump.md
+  macro: MULIB_IMPL_MACHO_OBJDUMP
+  purpose: "Thin Mach-O command, section, symbol and hex dumps using shared objdump."
+  dependencies: [macho, objdump]
+  status: implemented
+- name: macho
+  header: include/mulib-macho.h
+  manual: manual/mulib-macho.md
+  macro: MULIB_IMPL_MACHO
+  purpose: "Checked thin Mach-O 32/64-bit views in either byte order."
+  dependencies: [endian]
+  status: implemented
+- name: machobuilder
+  header: include/mulib-machobuilder.h
+  manual: manual/mulib-machobuilder.md
+  macro: MULIB_IMPL_MACHOBUILDER
+  purpose: "Owned multi-section little-endian Mach-O64 MH_OBJECT builder."
+  dependencies: [binfilewriter, bycutils, machobuidler, objfilebuilder]
+  status: implemented
+- name: machoutils
+  header: include/mulib-machoutils.h
+  manual: manual/mulib-machoutils.md
+  macro: MULIB_IMPL_MACHOUTILS
+  purpose: "Exact Mach-O section and defined non-debug symbol lookup."
+  dependencies: [macho]
+  status: implemented
+- name: objdump
+  header: include/mulib-objdump.h
+  manual: manual/mulib-objdump.md
+  macro: MULIB_IMPL_OBJDUMP
+  purpose: "Shared escaped object metadata and bounded binary hex dump rendering."
+  dependencies: [termstyle]
+  status: implemented
+- name: pe-objdump
+  header: include/mulib-pe-objdump.h
+  manual: manual/mulib-pe-objdump.md
+  macro: MULIB_IMPL_PE_OBJDUMP
+  purpose: "PE header, section, directory and COFF-symbol dumps over shared objdump."
+  dependencies: [coff-objdump, pe]
+  status: implemented
+- name: pe
+  header: include/mulib-pe.h
+  manual: manual/mulib-pe.md
+  macro: MULIB_IMPL_PE
+  purpose: "Checked PE32/PE32+ headers, sections, directories and RVA mapping."
+  dependencies: [coff]
+  status: implemented
+- name: peutils
+  header: include/mulib-peutils.h
+  manual: manual/mulib-peutils.md
+  macro: MULIB_IMPL_PEUTILS
+  purpose: "PE section and COFF debug-symbol lookup; not export resolution."
+  dependencies: [coffutils, pe]
+  status: implemented
+- name: termstyle
+  header: include/mulib-termstyle.h
+  manual: manual/mulib-termstyle.md
+  macro: MULIB_IMPL_TERMSTYLE
+  purpose: "Explicit, terminfo-backed terminal attributes and indexed colors."
+  dependencies: [terminfo]
   status: implemented
 project_files:
 - file: manual/storage-server.md
@@ -4610,3 +4722,43 @@ project_files:
   purpose: "Standalone checked usage example for geosolve."
 - file: tests/test_geosolve.c
   purpose: "Focused regression suite for test_geosolve."
+- file: examples/modules/coff-objdump.c
+  purpose: "Standalone checked usage example for coff-objdump."
+- file: examples/modules/coff.c
+  purpose: "Standalone checked usage example for coff."
+- file: examples/modules/coffutils.c
+  purpose: "Standalone checked usage example for coffutils."
+- file: examples/modules/container-packcoff.c
+  purpose: "Standalone checked usage example for container-packcoff."
+- file: examples/modules/container-packmacho.c
+  purpose: "Standalone checked usage example for container-packmacho."
+- file: examples/modules/container-packpe.c
+  purpose: "Standalone checked usage example for container-packpe."
+- file: examples/modules/elf-objdump.c
+  purpose: "Standalone checked usage example for elf-objdump."
+- file: examples/modules/macho-objdump.c
+  purpose: "Standalone checked usage example for macho-objdump."
+- file: examples/modules/macho.c
+  purpose: "Standalone checked usage example for macho."
+- file: examples/modules/machobuilder.c
+  purpose: "Standalone checked usage example for machobuilder."
+- file: examples/modules/machoutils.c
+  purpose: "Standalone checked usage example for machoutils."
+- file: examples/modules/objdump.c
+  purpose: "Standalone checked usage example for objdump."
+- file: examples/modules/pe-objdump.c
+  purpose: "Standalone checked usage example for pe-objdump."
+- file: examples/modules/pe.c
+  purpose: "Standalone checked usage example for pe."
+- file: examples/modules/peutils.c
+  purpose: "Standalone checked usage example for peutils."
+- file: examples/modules/termstyle.c
+  purpose: "Standalone checked usage example for termstyle."
+- file: tests/test_binary_formats.c
+  purpose: "Focused regression suite for test_binary_formats."
+- file: tests/test_binary_formats_alloc.c
+  purpose: "Focused regression suite for test_binary_formats_alloc."
+- file: examples/binary-formats-common.h
+  purpose: Dependency-complete binary-format example and test fixture.
+- file: manual/binary-formats.md
+  purpose: Binary reader, builder, packing, dump and styling profiles and contracts.

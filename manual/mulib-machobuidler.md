@@ -5,3 +5,7 @@ Historical filename/switch retained: `MULIB_IMPL_MACHOBUIDLER`; API is
 a deterministic x86-64 MH_OBJECT with one __TEXT,__text section, not an executable.
 No symbols/relocations/signing. [Example](../examples/modules/machobuidler.c),
 [contracts](storage-server.md#idl-and-native-output).
+
+The correctly spelled [mulib-machobuilder.h](mulib-machobuilder.md) adds owned
+multi-section objects and also enables this convenience API with its canonical
+switch. Both switches can coexist without duplicate definitions.
