@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **420 implemented modules**.
+A C11 modular single-header utility library with **452 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -102,6 +102,15 @@ composable transports. [Netfs](manual/mulib-netfs.md) carries the existing
 FUSE adapter's operations over a network stream and exposes a remote MuLIB VFS
 mount. Protocol manuals specify the supported profiles and required crypto
 backends; the SSH helpers are identification/packet/authentication codecs.
+
+Authentication helpers include [Basic/Bearer and API keys](manual/mulib-auth.md),
+[OAuth2 PKCE and token policy](manual/mulib-oauth2.md),
+[HOTP/TOTP with replay protection](manual/mulib-otpauth.md),
+[salted password records](manual/mulib-pwdauth.md), and
+[IPv4/IPv6 ACLs](manual/mulib-acl.md). `mulib-oauth.h` and `mulib-otpath.h`
+provide alternate entry points. Applications still supply authenticated TLS,
+cryptographic token verification, OS entropy, rate limits and durable synchronized
+replay storage. The dependency-free cryptographic implementation is **unaudited**.
 
 Compiler utilities cover typed control-flow MIR, a resumable register VM,
 helper-based native JIT and C AOT, rewriting, selection, scheduling,
@@ -268,6 +277,22 @@ Run `python3 tools/check_osdev.py` (optionally `--sanitizers`) for strict
 freestanding compilation, C++ linkage, examples and hosted regressions, or run
 the focused hosted regression suite through CTest (`mulib_test_osdev`).
 Never run destructive tests on memory containing live data.
+
+## Statistical and text algorithms
+
+The statistical/text modules add discrete Markov and hidden Markov models,
+Viterbi/state-beam decoding, Bayesian updating/ranking, regression, z-score
+anomalies, kernel mean matching, vector/set/string distances, radix-2 FFT/IFFT,
+byte tries, BK/VP metric trees, corpus/n-gram helpers, ASCII Soundex and literal
+orthographic rules. First-order term parsing and bounded rewriting share the
+existing AST model. Each header has its own manual and standalone example;
+the supplied historical filename spellings are preserved.
+
+Original deterministic fixtures live in [`library/statistical-text`](library/statistical-text).
+`tests/test_statistical_text.c` checks reference values, brute-force decoding,
+metric-tree queries, direct DFT comparisons, malformed inputs and allocation
+failures. These are focused algorithms, not Unicode linguistic processing or
+a general machine-learning framework.
 
 ## Licensing
 

@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 421
-implemented_module_count: 420
+module_count: 458
+implemented_module_count: 457
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2471,14 +2471,14 @@ modules:
   header: include/mulib-acl.h
   manual: manual/mulib-acl.md
   macro: MULIB_IMPL_ACL
-  purpose: First-match IPv4 CIDR access control.
-  dependencies: []
+  purpose: Validated first-match IPv4/IPv6 CIDR policy with strict parsers and match diagnostics.
+  dependencies: [inet6]
   status: implemented
 - name: auth
   header: include/mulib-auth.h
   manual: manual/mulib-auth.md
   macro: MULIB_IMPL_AUTH
-  purpose: Bounded HTTP Basic decoding and Bearer extraction.
+  purpose: Bounded Basic/Bearer parsing and verifier adapters with opaque API-key comparison.
   dependencies: [base64, seurity]
   status: implemented
 - name: seurity
@@ -2492,8 +2492,8 @@ modules:
   header: include/mulib-oauth2.h
   manual: manual/mulib-oauth2.md
   macro: MULIB_IMPL_OAUTH2
-  purpose: OAuth2 callback state comparison and explicit bearer verifier adapter.
-  dependencies: [auth]
+  purpose: OAuth2 bearer policy with claim and scope validation, one-use state and S256 PKCE.
+  dependencies: [auth, authcrypto]
   status: implemented
 - name: metrics
   header: include/mulib-metrics.h
@@ -2956,6 +2956,265 @@ modules:
   macro: MULIB_IMPL_MACHINEBUILD
   purpose: "Parse a bounded automaton DSL and generate standalone JavaScript."
   dependencies: [fst, strbuf]
+  status: implemented
+- name: anomaly-detection
+  header: include/mulib-anomaly-detection.h
+  manual: manual/mulib-anomaly-detection.md
+  macro: MULIB_IMPL_ANOMALY_DETECTION
+  purpose: "Univariate streaming z-score anomaly detection over Welford statistics."
+  dependencies: [stats]
+  status: implemented
+- name: automata-levenshtein
+  header: include/mulib-automata-levenshtein.h
+  manual: manual/mulib-automata-levenshtein.md
+  macro: MULIB_IMPL_AUTOMATA_LEVENSHTEIN
+  purpose: "Streaming Levenshtein recognizer using capped dynamic-programming states."
+  dependencies: []
+  status: implemented
+- name: bayesian_methods
+  header: include/mulib-bayesian_methods.h
+  manual: manual/mulib-bayesian_methods.md
+  macro: MULIB_IMPL_BAYESIAN_METHODS
+  purpose: "Stable finite-hypothesis Bayesian updating using log likelihoods."
+  dependencies: [probability]
+  status: implemented
+- name: baysian_ranking
+  header: include/mulib-baysian_ranking.h
+  manual: manual/mulib-baysian_ranking.md
+  macro: MULIB_IMPL_BAYSIAN_RANKING
+  purpose: "Beta-Bernoulli posterior-mean scores and deterministic ranking."
+  dependencies: []
+  status: implemented
+- name: beam_search
+  header: include/mulib-beam_search.h
+  manual: manual/mulib-beam_search.md
+  macro: MULIB_IMPL_BEAM_SEARCH
+  purpose: "State-pruned beam search over discrete HMM trellises."
+  dependencies: [viterbi_decoding]
+  status: implemented
+- name: bk-trees
+  header: include/mulib-bk-trees.h
+  manual: manual/mulib-bk-trees.md
+  macro: MULIB_IMPL_BK_TREES
+  purpose: "Owned BK tree for byte-string Levenshtein radius queries."
+  dependencies: [levenshtein]
+  status: implemented
+- name: conditional_probablity
+  header: include/mulib-conditional_probablity.h
+  manual: manual/mulib-conditional_probablity.md
+  macro: MULIB_IMPL_CONDITIONAL_PROBABLITY
+  purpose: "Conditional probability and Bayes' rule for scalar events."
+  dependencies: []
+  status: implemented
+- name: corpus
+  header: include/mulib-corpus.h
+  manual: manual/mulib-corpus.md
+  macro: MULIB_IMPL_CORPUS
+  purpose: "Owned token-frequency corpus backed by the MuLIB byte trie."
+  dependencies: [trie]
+  status: implemented
+- name: cosine_similarity
+  header: include/mulib-cosine_similarity.h
+  manual: manual/mulib-cosine_similarity.md
+  macro: MULIB_IMPL_COSINE_SIMILARITY
+  purpose: "Scale-safe cosine similarity of finite double vectors."
+  dependencies: []
+  status: implemented
+- name: edit_distance
+  header: include/mulib-edit_distance.h
+  manual: manual/mulib-edit_distance.md
+  macro: MULIB_IMPL_EDIT_DISTANCE
+  purpose: "Unit-cost byte edit distance for binary buffers and C strings."
+  dependencies: [levenshtein]
+  status: implemented
+- name: euclidean_distance
+  header: include/mulib-euclidean_distance.h
+  manual: manual/mulib-euclidean_distance.md
+  macro: MULIB_IMPL_EUCLIDEAN_DISTANCE
+  purpose: "Euclidean distance with hypot accumulation."
+  dependencies: []
+  status: implemented
+- name: fft
+  header: include/mulib-fft.h
+  manual: manual/mulib-fft.md
+  macro: MULIB_IMPL_FFT
+  purpose: "In-place radix-2 complex Fourier transforms."
+  dependencies: [complex]
+  status: implemented
+- name: hamming_distance
+  header: include/mulib-hamming_distance.h
+  manual: manual/mulib-hamming_distance.md
+  macro: MULIB_IMPL_HAMMING_DISTANCE
+  purpose: "Equal-length byte and bit Hamming distances."
+  dependencies: []
+  status: implemented
+- name: hidden_markov_chain
+  header: include/mulib-hidden_markov_chain.h
+  manual: manual/mulib-hidden_markov_chain.md
+  macro: MULIB_IMPL_HIDDEN_MARKOV_CHAIN
+  purpose: "Discrete-emission hidden Markov models with scaled forward inference."
+  dependencies: [markov_chain]
+  status: implemented
+- name: ifft
+  header: include/mulib-ifft.h
+  manual: manual/mulib-ifft.md
+  macro: MULIB_IMPL_IFFT
+  purpose: "Normalized inverse radix-2 Fourier transform."
+  dependencies: [fft]
+  status: implemented
+- name: jaccard_similarity
+  header: include/mulib-jaccard_similarity.h
+  manual: manual/mulib-jaccard_similarity.md
+  macro: MULIB_IMPL_JACCARD_SIMILARITY
+  purpose: "Jaccard similarity of uint64 sets, ignoring repeated elements."
+  dependencies: []
+  status: implemented
+- name: kmm
+  header: include/mulib-kmm.h
+  manual: manual/mulib-kmm.md
+  macro: MULIB_IMPL_KMM
+  purpose: "Kernel mean matching by projected gradient on a capped simplex."
+  dependencies: []
+  status: implemented
+- name: lexographic_sort
+  header: include/mulib-lexographic_sort.h
+  manual: manual/mulib-lexographic_sort.md
+  macro: MULIB_IMPL_LEXOGRAPHIC_SORT
+  purpose: "Locale-independent unsigned-byte lexicographic string sorting."
+  dependencies: []
+  status: implemented
+- name: liner_regression
+  header: include/mulib-liner_regression.h
+  manual: manual/mulib-liner_regression.md
+  macro: MULIB_IMPL_LINER_REGRESSION
+  purpose: "Ordinary least-squares regression of one predictor with an intercept."
+  dependencies: []
+  status: implemented
+- name: markov_chain
+  header: include/mulib-markov_chain.h
+  manual: manual/mulib-markov_chain.md
+  macro: MULIB_IMPL_MARKOV_CHAIN
+  purpose: "Dense finite-state Markov chains and smoothed transition estimation."
+  dependencies: [probability]
+  status: implemented
+- name: n-grams
+  header: include/mulib-n-grams.h
+  manual: manual/mulib-n-grams.md
+  macro: MULIB_IMPL_N_GRAMS
+  purpose: "Borrowed sliding byte n-gram enumeration."
+  dependencies: []
+  status: implemented
+- name: orthographic_rules
+  header: include/mulib-orthographic_rules.h
+  manual: manual/mulib-orthographic_rules.md
+  macro: MULIB_IMPL_ORTHOGRAPHIC_RULES
+  purpose: "Ordered literal prefix/suffix/whole-word orthographic rules."
+  dependencies: []
+  status: implemented
+- name: pearson_similarity
+  header: include/mulib-pearson_similarity.h
+  manual: manual/mulib-pearson_similarity.md
+  macro: MULIB_IMPL_PEARSON_SIMILARITY
+  purpose: "Pearson correlation using scaled centered coordinates."
+  dependencies: []
+  status: implemented
+- name: phonetic_utils
+  header: include/mulib-phonetic_utils.h
+  manual: manual/mulib-phonetic_utils.md
+  macro: MULIB_IMPL_PHONETIC_UTILS
+  purpose: "ASCII English Soundex phonetic keys."
+  dependencies: []
+  status: implemented
+- name: probability
+  header: include/mulib-probability.h
+  manual: manual/mulib-probability.md
+  macro: MULIB_IMPL_PROBABILITY
+  purpose: "Discrete probability validation, normalization, entropy and log sums."
+  dependencies: []
+  status: implemented
+- name: term_rewriting
+  header: include/mulib-term_rewriting.h
+  manual: manual/mulib-term_rewriting.md
+  macro: MULIB_IMPL_TERM_REWRITING
+  purpose: "Bounded ordered first-order term rewriting on shared MuLIB ASTs."
+  dependencies: [ast]
+  status: implemented
+- name: tree_parsing
+  header: include/mulib-tree_parsing.h
+  manual: manual/mulib-tree_parsing.md
+  macro: MULIB_IMPL_TREE_PARSING
+  purpose: "Bounded first-order term parsing into the shared MuLIB AST model."
+  dependencies: [ast]
+  status: implemented
+- name: trie
+  header: include/mulib-trie.h
+  manual: manual/mulib-trie.md
+  macro: MULIB_IMPL_TRIE
+  purpose: "Owned binary-key byte trie with sorted sibling edges and uint64 values."
+  dependencies: []
+  status: implemented
+- name: trie_traversal
+  header: include/mulib-trie_traversal.h
+  manual: manual/mulib-trie_traversal.md
+  macro: MULIB_IMPL_TRIE_TRAVERSAL
+  purpose: "Allocation-free lexicographic prefix traversal and longest-prefix lookup."
+  dependencies: [trie]
+  status: implemented
+- name: vangage_point_trees
+  header: include/mulib-vangage_point_trees.h
+  manual: manual/mulib-vangage_point_trees.md
+  macro: MULIB_IMPL_VANGAGE_POINT_TREES
+  purpose: "Balanced metric vantage-point trees over copied fixed-stride points."
+  dependencies: []
+  status: implemented
+- name: viterbi_decoding
+  header: include/mulib-viterbi_decoding.h
+  manual: manual/mulib-viterbi_decoding.md
+  macro: MULIB_IMPL_VITERBI_DECODING
+  purpose: "Log-space Viterbi decoding with deterministic state ties."
+  dependencies: [hidden_markov_chain]
+  status: implemented
+- name: weighed_edit_distane
+  header: include/mulib-weighed_edit_distane.h
+  manual: manual/mulib-weighed_edit_distane.md
+  macro: MULIB_IMPL_WEIGHED_EDIT_DISTANE
+  purpose: "Weighted byte edit distance with directional insertion/deletion costs."
+  dependencies: []
+  status: implemented
+- name: authcrypto
+  header: include/mulib-authcrypto.h
+  manual: manual/mulib-authcrypto.md
+  macro: MULIB_IMPL_AUTHCRYPTO
+  purpose: "SHA-1/SHA-256, HMAC and PBKDF2-SHA-256 authentication primitives."
+  dependencies: []
+  status: implemented
+- name: oauth
+  header: include/mulib-oauth.h
+  manual: manual/mulib-oauth.md
+  macro: MULIB_IMPL_OAUTH
+  purpose: "OAuth2 convenience facade; not an OAuth 1.0 implementation."
+  dependencies: [oauth2]
+  status: implemented
+- name: otpath
+  header: include/mulib-otpath.h
+  manual: manual/mulib-otpath.md
+  macro: MULIB_IMPL_OTPATH
+  purpose: "Alternate-spelling facade for HOTP/TOTP authentication."
+  dependencies: [otpauth]
+  status: implemented
+- name: otpauth
+  header: include/mulib-otpauth.h
+  manual: manual/mulib-otpauth.md
+  macro: MULIB_IMPL_OTPAUTH
+  purpose: "RFC 4226 HOTP and RFC 6238 TOTP with bounded, replay-aware verification."
+  dependencies: [authcrypto, seurity]
+  status: implemented
+- name: pwdauth
+  header: include/mulib-pwdauth.h
+  manual: manual/mulib-pwdauth.md
+  macro: MULIB_IMPL_PWDAUTH
+  purpose: "Salted PBKDF2-SHA-256 password records with bounded verification cost."
+  dependencies: [authcrypto, seurity]
   status: implemented
 project_files:
 - file: manual/storage-server.md
@@ -4248,3 +4507,87 @@ project_files:
   purpose: "Focused regression suite for test_fst_machinebuild."
 - file: tests/test_machinebuild.js
   purpose: Execute generated JavaScript and compare transductions with the C runtime.
+- file: examples/modules/anomaly-detection.c
+  purpose: "Standalone checked usage example for anomaly-detection."
+- file: examples/modules/automata-levenshtein.c
+  purpose: "Standalone checked usage example for automata-levenshtein."
+- file: examples/modules/bayesian_methods.c
+  purpose: "Standalone checked usage example for bayesian_methods."
+- file: examples/modules/baysian_ranking.c
+  purpose: "Standalone checked usage example for baysian_ranking."
+- file: examples/modules/beam_search.c
+  purpose: "Standalone checked usage example for beam_search."
+- file: examples/modules/bk-trees.c
+  purpose: "Standalone checked usage example for bk-trees."
+- file: examples/modules/conditional_probablity.c
+  purpose: "Standalone checked usage example for conditional_probablity."
+- file: examples/modules/corpus.c
+  purpose: "Standalone checked usage example for corpus."
+- file: examples/modules/cosine_similarity.c
+  purpose: "Standalone checked usage example for cosine_similarity."
+- file: examples/modules/edit_distance.c
+  purpose: "Standalone checked usage example for edit_distance."
+- file: examples/modules/euclidean_distance.c
+  purpose: "Standalone checked usage example for euclidean_distance."
+- file: examples/modules/fft.c
+  purpose: "Standalone checked usage example for fft."
+- file: examples/modules/hamming_distance.c
+  purpose: "Standalone checked usage example for hamming_distance."
+- file: examples/modules/hidden_markov_chain.c
+  purpose: "Standalone checked usage example for hidden_markov_chain."
+- file: examples/modules/ifft.c
+  purpose: "Standalone checked usage example for ifft."
+- file: examples/modules/jaccard_similarity.c
+  purpose: "Standalone checked usage example for jaccard_similarity."
+- file: examples/modules/kmm.c
+  purpose: "Standalone checked usage example for kmm."
+- file: examples/modules/lexographic_sort.c
+  purpose: "Standalone checked usage example for lexographic_sort."
+- file: examples/modules/liner_regression.c
+  purpose: "Standalone checked usage example for liner_regression."
+- file: examples/modules/markov_chain.c
+  purpose: "Standalone checked usage example for markov_chain."
+- file: examples/modules/n-grams.c
+  purpose: "Standalone checked usage example for n-grams."
+- file: examples/modules/orthographic_rules.c
+  purpose: "Standalone checked usage example for orthographic_rules."
+- file: examples/modules/pearson_similarity.c
+  purpose: "Standalone checked usage example for pearson_similarity."
+- file: examples/modules/phonetic_utils.c
+  purpose: "Standalone checked usage example for phonetic_utils."
+- file: examples/modules/probability.c
+  purpose: "Standalone checked usage example for probability."
+- file: examples/modules/term_rewriting.c
+  purpose: "Standalone checked usage example for term_rewriting."
+- file: examples/modules/tree_parsing.c
+  purpose: "Standalone checked usage example for tree_parsing."
+- file: examples/modules/trie.c
+  purpose: "Standalone checked usage example for trie."
+- file: examples/modules/trie_traversal.c
+  purpose: "Standalone checked usage example for trie_traversal."
+- file: examples/modules/vangage_point_trees.c
+  purpose: "Standalone checked usage example for vangage_point_trees."
+- file: examples/modules/viterbi_decoding.c
+  purpose: "Standalone checked usage example for viterbi_decoding."
+- file: examples/modules/weighed_edit_distane.c
+  purpose: "Standalone checked usage example for weighed_edit_distane."
+- file: tests/test_statistical_text.c
+  purpose: "Focused regression suite for test_statistical_text."
+- file: library/statistical-text/fixtures.h
+  purpose: "Original deterministic HMM, corpus and spelling fixtures."
+- file: library/statistical-text/README.md
+  purpose: "Fixture provenance and independent expected numerical results."
+- file: examples/modules/authcrypto.c
+  purpose: "Standalone checked usage example for authcrypto."
+- file: examples/modules/oauth.c
+  purpose: "Standalone checked usage example for oauth."
+- file: examples/modules/otpath.c
+  purpose: "Standalone checked usage example for otpath."
+- file: examples/modules/otpauth.c
+  purpose: "Standalone checked usage example for otpauth."
+- file: examples/modules/pwdauth.c
+  purpose: "Standalone checked usage example for pwdauth."
+- file: tests/test_authentication.c
+  purpose: "Focused regression suite for test_authentication."
+- file: tests/test_auth_alloc.c
+  purpose: "Focused regression suite for test_auth_alloc."

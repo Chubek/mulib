@@ -29,6 +29,10 @@ application but this policy matches the subject field. First matching rule wins.
 unauthenticated principals, then scans ordered rules or applies the configured
 fallback. Success is OK; denial EACCESS. matched is SIZE_MAX for fallback,
 unauthenticated or invalid input. allowed/denied counters saturate at UINT64_MAX.
+Only an authenticated flag of exactly 1 authorizes; negative/error flags deny.
+Every stored rule is revalidated before matching, including unreachable rules.
+Malformed policy structure, defaults, unterminated IDs or rules return EINVAL
+without authorizing or updating counters.
 
 Checks do not execute commands, alter container generations or acquire object
 leases. The control bridge invokes authorization before dispatch and correlates

@@ -52,6 +52,15 @@ int mulib_containerd_accessstub_check (mulib_containerd_accessstub *policy,
 #endif
 #if defined(MULIB_IMPL_CONTAINERD_ACCESSSTUB) && !defined(MULIB_CONTAINERD_ACCESSSTUB_IMPLEMENTED)
 #define MULIB_CONTAINERD_ACCESSSTUB_IMPLEMENTED
+static int
+mulib_containerd_access_rule_valid_ (const mulib_containerd_access_rule *rule)
+{
+  return rule && memchr (rule->container_id, 0, sizeof rule->container_id)
+      && (!rule->container_id[0] || mulib_ct_id_valid (rule->container_id))
+      && rule->operations && !(rule->operations & ~MULIB_CONTAINERD_ACCESS_ALL)
+      && (rule->allow == 0 || rule->allow == 1)
+      && (rule->any_subject == 0 || rule->any_subject == 1);
+}
 int mulib_containerd_accessstub_init (mulib_containerd_accessstub *p, size_t capacity, int allow)
 {
   if (!p || capacity > SIZE_MAX / sizeof (*p->rules) || (allow != 0 && allow != 1))
@@ -68,10 +77,8 @@ mulib_containerd_accessstub_add (mulib_containerd_accessstub *p,
                                 const mulib_containerd_access_rule *rule)
 {
   mulib_containerd_access_rule copy, *next;
-  if (!p || !rule || (rule->container_id[0] && !mulib_ct_id_valid (rule->container_id))
-      || !rule->operations || (rule->operations & ~MULIB_CONTAINERD_ACCESS_ALL)
-      || (rule->allow != 0 && rule->allow != 1)
-      || (rule->any_subject != 0 && rule->any_subject != 1)) return MULIB_CT_EINVAL;
+  if (!p || !mulib_containerd_access_rule_valid_ (rule)
+      || p->count > p->capacity || (!p->rules && p->count)) return MULIB_CT_EINVAL;
   if (p->count >= p->capacity) return MULIB_CT_ELIMIT;
   copy = *rule;
   next = (mulib_containerd_access_rule *)MULIB_CT_REALLOC (p->rules, (p->count + 1) * sizeof (*next));
@@ -94,10 +101,14 @@ mulib_containerd_accessstub_check (mulib_containerd_accessstub *p,
   size_t i;
   int allow;
   if (matched) *matched = SIZE_MAX;
-  if (!p || !principal || !c || !mulib_ct_id_valid (c->id)
+  if (!p || !principal || !c || !memchr (c->id, 0, sizeof c->id)
+      || !mulib_ct_id_valid (c->id) || p->count > p->capacity
+      || (!p->rules && p->count) || (p->default_allow != 0 && p->default_allow != 1)
       || c->opcode < 1 || c->opcode > MULIB_CONAINERD_STEP) return MULIB_CT_EINVAL;
-  allow = principal->authenticated ? p->default_allow : 0;
-  if (principal->authenticated)
+  for (i = 0; i < p->count; ++i)
+    if (!mulib_containerd_access_rule_valid_ (&p->rules[i])) return MULIB_CT_EINVAL;
+  allow = principal->authenticated == 1 ? p->default_allow : 0;
+  if (principal->authenticated == 1)
     for (i = 0; i < p->count; ++i)
       {
         const mulib_containerd_access_rule *r = p->rules + i;

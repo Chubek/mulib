@@ -56,7 +56,8 @@ nonzero, or return zero. It is not a partial socket-write callback: use an outpu
 queue. Pointers are borrowed for the call only. No callback may reenter a session
 or mutate its public state; sessions need external synchronization.
 
-`authorize(context,user,password)` is deny-by-default if NULL. A USER is consumed
+`authorize(context,user,password)` accepts only a return of exactly 1; NULL,
+zero, negative errors and other values deny. A USER is consumed
 by one PASS attempt. `command(context,verb,arg,result,capacity)` receives a
 canonical uppercase verb and borrows strings until return. NULL/zero return is a
 storage failure. Only PWD uses result: write a NUL-terminated path of at most 255

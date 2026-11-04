@@ -19,8 +19,8 @@ extern "C"
    * impaclient. */
   int mulib_imap_quote (const char *text, char *out, size_t capacity,
                         size_t *written);
-  /** Borrowed callbacks; send all bytes or fail; authorization and mailbox
-   * selection return nonzero to accept. select returns an EXISTS count. No
+  /** Borrowed callbacks; send all bytes or fail; authorization returns exactly
+   * 1 to accept, mailbox selection returns nonzero. select returns an EXISTS count. No
    * reentry. */
   typedef struct mulib_imapserver_io
   {
@@ -225,7 +225,7 @@ extern "C"
           return mulib_imapserver_tagged_ (s, tag,
                                            "BAD already authenticated");
         if (!s->io.authorize
-            || !s->io.authorize (s->context, args[2], args[3]))
+            || s->io.authorize (s->context, args[2], args[3]) != 1)
           return mulib_imapserver_tagged_ (s, tag, "NO authorization failed");
         s->authorized = 1;
         return mulib_imapserver_tagged_ (s, tag, "OK login");

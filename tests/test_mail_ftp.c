@@ -38,6 +38,10 @@ static int authorize(void *context, const char *user, const char *password) {
     fixture *f = (fixture *)context;
     return !f->deny && strcmp(user, "u\"\\") == 0 && strcmp(password, "p") == 0;
 }
+static int authorize_error(void *context, const char *user, const char *password) {
+    (void)context; (void)user; (void)password;
+    return -1;
+}
 static int ftp_command(void *context, const char *verb, const char *arg, char *result, size_t capacity) {
     fixture *f = (fixture *)context;
     (void)arg;
@@ -381,6 +385,21 @@ static void test_limits_failures(void) {
     assert(!mulib_impaclient_feed(&ic, "+ literal continuation\r\n", 24));
 }
 static void test_bounded_mutations(void) {
+    {
+        fixture f = {0}; char line[128];
+        mulib_ftpserver fs; mulib_imapserver is;
+        mulib_ftpserver_io fio = {send_bytes, authorize_error, ftp_command, ftp_read, ftp_write, ftp_close};
+        mulib_imapserver_io iio = {send_bytes, authorize_error, select_mailbox};
+        const char *login = "USER user\r\nPASS password\r\n";
+        assert(mulib_ftpserver_init(&fs, line, sizeof(line), &fio, &f));
+        assert(mulib_ftpserver_feed(&fs, login, strlen(login)));
+        assert(!fs.authorized && has(&f.output, "530 denied"));
+        f.output.n = 0;
+        login = "a LOGIN user password\r\n";
+        assert(mulib_imapserver_init(&is, line, sizeof(line), &iio, &f));
+        assert(mulib_imapserver_feed(&is, login, strlen(login)));
+        assert(!is.authorized && has(&f.output, "NO authorization failed"));
+    }
     static const char *const samples[] = {
         "USER x\r\nPASS y\r\nNOOP\r\n", "HELO h\r\nMAIL FROM:<>\r\nRCPT TO:<r>\r\nDATA\r\n..\r\n.\r\n",
         "a LOGIN \"u\\\"\\\\\" p\r\nb SELECT INBOX\r\nc NOOP\r\n"

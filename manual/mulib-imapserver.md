@@ -61,7 +61,8 @@ Commands after LOGOUT are not accepted: trailing bytes in the same feed fail.
 
 `send(ctx,bytes,n)` consumes/copies all bytes synchronously, returning nonzero,
 or fails with zero. No partial-write semantics: buffer real socket writes.
-`authorize(ctx,user,password)` and `select(ctx,mailbox,&exists)` return nonzero
+`authorize(ctx,user,password)` must return exactly 1 to accept; zero, negative
+errors and other values deny. `select(ctx,mailbox,&exists)` returns nonzero
 for acceptance; NULL denies. SELECT count is a `size_t` with no artificial count
 cap, formatted without overflow; zero is valid. The callbacks implement all
 credential/mailbox/storage policy. They may not mutate the session, retain

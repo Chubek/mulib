@@ -18,7 +18,7 @@ extern "C"
    * or return zero. command opens RETR/STOR resources; close releases them
    * exactly once. read returns 1 with *written <= capacity (zero means EOF).
    * No reentry. command PWD writes a NUL-terminated printable path without
-   * quotes. */
+    * quotes. authorize must return exactly 1 to accept; all other values deny. */
   typedef struct mulib_ftpserver_io
   {
     int (*send) (void *, const void *, size_t);
@@ -136,7 +136,7 @@ extern "C"
         if (!s->user[0])
           return mulib_ftpserver_send_ (s, "503 USER required\r\n");
         s->authorized
-            = s->io.authorize && s->io.authorize (s->context, s->user, arg);
+            = s->io.authorize && s->io.authorize (s->context, s->user, arg) == 1;
         s->user[0] = 0;
         return mulib_ftpserver_send_ (s, s->authorized ? "230 logged in\r\n"
                                                        : "530 denied\r\n");

@@ -91,8 +91,9 @@ Policy building blocks are single-threaded and explicit:
   performed probes. No active probe scheduling or networking is implied.
 - `rate_limit` uses caller-supplied finite, monotonic seconds. Denial may still
   update refill time/tokens; invalid/backward input changes nothing.
-- `acl` is first-match IPv4 CIDR policy, using numeric network-significance
-  addresses, not native `in_addr` memory order. Invalid rules deny everything.
+- `acl` is first-match IPv4/IPv6 CIDR policy, with strict parsers and matched-rule
+  diagnostics. IPv4 uses numeric network-significance addresses, not native
+  `in_addr` memory order. Invalid rules (even unreachable ones) deny everything.
 - `waf` is an exact method allowlist plus size and strict path checks on an
   already parsed HTTP request. It is **not** a SQL/XSS/body-signature scanner.
 - Historical `seurity` supplies HTTP token validation, ASCII equality,
@@ -101,12 +102,15 @@ Policy building blocks are single-threaded and explicit:
   Path checking decodes percent escapes once and rejects encoded separators,
   nested escapes, controls, backslashes and dot segments; it is a restrictive
   policy, not a universal URL canonicalizer.
-- `auth` decodes Basic and extracts Bearer credentials. Require authenticated
-  TLS externally. `oauth2` requires an explicit verifier; missing policy denies.
-  That verifier must validate signatures/introspection, issuer, audience,
-  expiration and scopes. State comparison does not generate, store or consume
-  nonces: the application must supply unpredictable, session-bound single-use
-  values. No JWT engine, OAuth server, token refresh or network client exists here.
+- `auth` supplies bounded Basic/Bearer parsing, explicit verifier callbacks and
+  opaque API-key comparison. Require authenticated TLS externally. `oauth2`
+  supplies S256 PKCE, exact scope matching, expiring one-use state and claim
+  policy checks. Its explicit verifier must authenticate tokens; missing policy
+  denies. Applications supply CSPRNG nonces/verifiers, trusted clocks and durable
+  synchronized replay storage. `otpauth` supplies HOTP/TOTP with replay-aware
+  verification; `pwdauth` supplies salted PBKDF2-SHA-256 records. `authcrypto` is
+  unaudited dependency-free cryptography, not a certified security provider.
+  No JWT engine, OAuth server, token refresh or network client exists here.
 - `vhpst` is interpreted as the requested virtual-host helper: exact ASCII
   DNS-name matching only, without ports, IP literals, wildcards or IDNA.
 - `rewrite_url` replaces a component prefix and preserves the raw query. It does
@@ -193,10 +197,10 @@ legacy `ocicontainerruntime` header.
 | health_checker | upstream |
 | rate_limit | none |
 | waf | http, seurity |
-| acl | none |
+| acl | inet6 |
 | auth | base64, seurity |
 | seurity | none |
-| oauth2 | auth |
+| oauth2 | auth, authcrypto |
 | metrics | none |
 | httpserver_config | http |
 | http_request | http |

@@ -1,4 +1,7 @@
 #define MULIB_IMPL_ACL
+#define MULIB_IMPL_INET6
+#define MULIB_IMPL_INET4
+#define MULIB_IMPL_PARSEC
 #include "mulib-acl.h"
 #include <assert.h>
 int
