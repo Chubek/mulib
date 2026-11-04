@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 480 headers, 524 direct dependency edges.
+Inventory: 488 headers, 536 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (174 modules)
+## Stratum 0 (175 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -192,9 +192,10 @@ Compatibility group: `parsec`, `peg`.
 | [vfs](mulib-vfs.md) | none |
 | [vgabuffer](mulib-vgabuffer.md) | none |
 | [weighed_edit_distane](mulib-weighed_edit_distane.md) | none |
+| [xsimd](mulib-xsimd.md) | none |
 | [xtks](mulib-xtks.md) | none |
 
-## Stratum 1 (117 modules)
+## Stratum 1 (118 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -204,6 +205,7 @@ Compatibility group: `parsec`, `peg`.
 | [ast](mulib-ast.md) | `strbuf` |
 | [asyncio](mulib-asyncio.md) | `select` |
 | [atn](mulib-atn.md) | `bitset`, `vec` |
+| [audio](mulib-audio.md) | `xsimd` |
 | [auth](mulib-auth.md) | `base64`, `seurity` |
 | [bayesian_methods](mulib-bayesian_methods.md) | `probability` |
 | [binfilereader](mulib-binfilereader.md) | `binfile`, `bycutils` |
@@ -316,7 +318,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (60 modules)
+## Stratum 2 (65 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -351,6 +353,11 @@ Compatibility group: `parsec`, `peg`.
 | [mempool](mulib-mempool.md) | `alloc` |
 | [memtkx](mulib-memtkx.md) | `alloc` |
 | [metapp](mulib-metapp.md) | `arena`, `dsu`, `elf`, `endian`, `linker`, `strbuf`, `utf8` |
+| [midi](mulib-midi.md) | `audio` |
+| [miniflac](mulib-miniflac.md) | `audio` |
+| [minimpeg](mulib-minimpeg.md) | `audio` |
+| [minivorbis](mulib-minivorbis.md) | `audio` |
+| [miniwav](mulib-miniwav.md) | `audio` |
 | [nameserver](mulib-nameserver.md) | `dnsclient` |
 | [netfs](mulib-netfs.md) | `endian`, `fuse`, `xtks` |
 | [oauth2](mulib-oauth2.md) | `auth`, `authcrypto` |
@@ -459,12 +466,13 @@ Compatibility group: `parsec`, `peg`.
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (26 modules)
+## Stratum 5 (27 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [acl](mulib-acl.md) | `inet6` |
 | [assembler](mulib-assembler.md) | `dsymspec`, `emitter`, `linker` |
+| [audrey](mulib-audrey.md) | `midi`, `miniflac`, `minimpeg`, `minivorbis`, `miniwav`, `mune` |
 | [container-jitboost](mulib-container-jitboost.md) | `containerboost`, `jit` |
 | [container-kvmboost](mulib-container-kvmboost.md) | `containerboost`, `kvmcontainer` |
 | [container-qvmboost](mulib-container-qvmboost.md) | `containerboost` |
@@ -548,4 +556,4 @@ Compatibility group: `parsec`, `peg`.
 
 | Module | Direct dependencies |
 | --- | --- |
-| [rpiter. static_file](mulib-rpiter. static_file.md) | `http_response`, `mime`, `vfs` |
+| [static_file](mulib-static_file.md) | `http_response`, `mime`, `vfs` |

@@ -131,6 +131,15 @@ if(MULIB_BUILD_TESTS)
     mulib_register_test("mulib_${test_name}")
   endforeach()
   find_program(MULIB_NODE_EXECUTABLE NAMES node nodejs)
+  find_program(MULIB_FFMPEG_EXECUTABLE NAMES ffmpeg)
+  find_program(MULIB_FLAC_EXECUTABLE NAMES flac)
+  if(Python3_Interpreter_FOUND AND MULIB_FFMPEG_EXECUTABLE AND MULIB_FLAC_EXECUTABLE)
+    add_test(NAME mulib_audio_interoperability
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_audio.py
+        --codec $<TARGET_FILE:mulib_test_audio_codecs>
+        --ffmpeg ${MULIB_FFMPEG_EXECUTABLE} --flac ${MULIB_FLAC_EXECUTABLE})
+    set_tests_properties(mulib_audio_interoperability PROPERTIES TIMEOUT 120)
+  endif()
   find_program(MULIB_LLVM_MC_EXECUTABLE NAMES llvm-mc)
   if(Python3_Interpreter_FOUND AND MULIB_LLVM_MC_EXECUTABLE)
     add_test(NAME mulib_archml_encoding_oracle

@@ -167,6 +167,43 @@ extern "C"
       mulib_mune_value_t key, mulib_mune_value_t value);
   mulib_mune_status_t mulib_mune_set_metatable (mulib_mune_state_t *, mulib_mune_value_t,
       mulib_mune_value_t metatable);
+  /** Scalar constructors; no state or allocation required. */
+  mulib_mune_value_t mulib_mune_nil (void);
+  mulib_mune_value_t mulib_mune_boolean (int value);
+  mulib_mune_value_t mulib_mune_integer (int64_t value);
+  mulib_mune_value_t mulib_mune_number (double value);
+  /** Create a native closure suitable for tables, methods and metamethods.
+   * user is borrowed and must outlive the closure. Root the returned value. */
+  mulib_mune_status_t mulib_mune_make_function (mulib_mune_state_t *,
+      mulib_mune_native_fn function, void *user, mulib_mune_value_t *value);
+  /** Metamethod-aware access. Inputs are rooted during callbacks; output is
+   * borrowed. Failure leaves output unchanged; Lua side effects persist. */
+  mulib_mune_status_t mulib_mune_get_index (mulib_mune_state_t *,
+      mulib_mune_value_t object, mulib_mune_value_t key, mulib_mune_value_t *value);
+  mulib_mune_status_t mulib_mune_set_index (mulib_mune_state_t *,
+      mulib_mune_value_t object, mulib_mune_value_t key, mulib_mune_value_t value);
+  /** String-key convenience access, honoring __index and __newindex. */
+  mulib_mune_status_t mulib_mune_get_field (mulib_mune_state_t *,
+      mulib_mune_value_t object, const char *name, mulib_mune_value_t *value);
+  mulib_mune_status_t mulib_mune_set_field (mulib_mune_state_t *,
+      mulib_mune_value_t object, const char *name, mulib_mune_value_t value);
+  /** Obtain the actual metatable (ignores Lua's __metatable protection). */
+  mulib_mune_status_t mulib_mune_get_metatable (mulib_mune_state_t *,
+      mulib_mune_value_t object, mulib_mune_value_t *value);
+  /** Raw table iteration: initialize *cursor=0. Returns 1 for an entry, 0 at
+   * end, -1 for invalid arguments. Do not mutate the table while iterating.
+   * Keys/values borrow the table; neither metamethods nor Lua code are called. */
+  int mulib_mune_table_next (mulib_mune_state_t *, mulib_mune_value_t table,
+      size_t *cursor, mulib_mune_value_t *key, mulib_mune_value_t *value);
+  /** Associate a GC-traced owner with a native closure (e.g. userdata backing
+   * its user pointer). Only native functions made by the C API are accepted. */
+  mulib_mune_status_t mulib_mune_function_owner (mulib_mune_state_t *,
+      mulib_mune_value_t function, mulib_mune_value_t owner);
+  /** Indexed userdata values, starting at 1; values are traced by the GC. */
+  mulib_mune_status_t mulib_mune_get_uservalue (mulib_mune_state_t *,
+      mulib_mune_value_t userdata, int64_t index, mulib_mune_value_t *value);
+  mulib_mune_status_t mulib_mune_set_uservalue (mulib_mune_state_t *,
+      mulib_mune_value_t userdata, int64_t index, mulib_mune_value_t value);
   /** State-owned, zero-initialized userdata with indexed Lua user values. */
   mulib_mune_status_t mulib_mune_make_userdata (mulib_mune_state_t *, size_t bytes,
       mulib_mune_value_t *value, void **data);
@@ -6528,6 +6565,74 @@ extern "C"
     o->as.userdata.values = mulib_mune_rt_allocate_ (s, MULIB_MUNE_TABLE, 0); if (!o->as.userdata.values) return s->status;
     *value = mulib_mune_rt_object_ (o); *data = o + 1; return MULIB_MUNE_OK;
   }
+  mulib_mune_value_t mulib_mune_nil (void) { return mulib_mune_rt_nil_ (); }
+  mulib_mune_value_t mulib_mune_boolean (int v)
+  { mulib_mune_value_t r = mulib_mune_rt_nil_ (); r.type = MULIB_MUNE_BOOLEAN; r.as.boolean = !!v; return r; }
+  mulib_mune_value_t mulib_mune_integer (int64_t v) { return mulib_mune_rt_integer_ (v); }
+  mulib_mune_value_t mulib_mune_number (double v)
+  { mulib_mune_value_t r = mulib_mune_rt_nil_ (); r.type = MULIB_MUNE_NUMBER; r.as.number = v; return r; }
+  mulib_mune_status_t
+  mulib_mune_make_function (mulib_mune_state_t *s, mulib_mune_native_fn fn, void *user, mulib_mune_value_t *out)
+  {
+    mulib_mune_object_t *o;
+    if (!s || !fn || !out) return MULIB_MUNE_INVALID;
+    if (!s->running) s->status = MULIB_MUNE_OK;
+    o = mulib_mune_rt_allocate_ (s, MULIB_MUNE_FUNCTION, 0);
+    if (!o) return s->status;
+    o->as.function.native = fn; o->as.function.user = user;
+    *out = mulib_mune_rt_object_ (o); return MULIB_MUNE_OK;
+  }
+  static mulib_mune_status_t
+  mulib_mune_access_ (mulib_mune_state_t *s, mulib_mune_value_t object,
+      mulib_mune_value_t key, mulib_mune_value_t value, mulib_mune_value_t *out)
+  {
+    mulib_mune_result_t *roots;
+    mulib_mune_value_t result = mulib_mune_rt_nil_ ();
+    int running, ok = 0;
+    if (!s || !mulib_mune_rt_valid_ (s, object) || !mulib_mune_rt_valid_ (s, key)
+        || !mulib_mune_rt_valid_ (s, value)) return MULIB_MUNE_INVALID;
+    running = s->running;
+    if (!running) { s->status = MULIB_MUNE_OK; s->has_error = 0; s->steps = 0; s->error_value = mulib_mune_rt_nil_ (); }
+    s->running = 1; roots = mulib_mune_rt_results_ (s);
+    if (roots && mulib_mune_result_push (roots, object) && mulib_mune_result_push (roots, key)
+        && mulib_mune_result_push (roots, value))
+      ok = out ? mulib_mune_rt_index_ (s, object, key, &result) : mulib_mune_rt_newindex_ (s, object, key, value);
+    mulib_mune_result_destroy (roots); s->running = running;
+    if (ok && !s->status && out) *out = result;
+    return s->status;
+  }
+  mulib_mune_status_t
+  mulib_mune_get_index (mulib_mune_state_t *s, mulib_mune_value_t o, mulib_mune_value_t k, mulib_mune_value_t *out)
+  { return out ? mulib_mune_access_ (s, o, k, mulib_mune_rt_nil_ (), out) : MULIB_MUNE_INVALID; }
+  mulib_mune_status_t
+  mulib_mune_set_index (mulib_mune_state_t *s, mulib_mune_value_t o, mulib_mune_value_t k, mulib_mune_value_t v)
+  { return mulib_mune_access_ (s, o, k, v, NULL); }
+  mulib_mune_status_t
+  mulib_mune_get_field (mulib_mune_state_t *s, mulib_mune_value_t o, const char *name, mulib_mune_value_t *out)
+  {
+    mulib_mune_value_t k; mulib_mune_status_t status;
+    if (!name || !out) return MULIB_MUNE_INVALID;
+    status = mulib_mune_make_string (s, name, strlen (name), &k);
+    return status ? status : mulib_mune_get_index (s, o, k, out);
+  }
+  mulib_mune_status_t
+  mulib_mune_set_field (mulib_mune_state_t *s, mulib_mune_value_t o, const char *name, mulib_mune_value_t v)
+  {
+    mulib_mune_value_t k; mulib_mune_status_t status;
+    if (!name) return MULIB_MUNE_INVALID;
+    status = mulib_mune_make_string (s, name, strlen (name), &k);
+    return status ? status : mulib_mune_set_index (s, o, k, v);
+  }
+  mulib_mune_status_t
+  mulib_mune_get_metatable (mulib_mune_state_t *s, mulib_mune_value_t v, mulib_mune_value_t *out)
+  {
+    mulib_mune_object_t *t;
+    if (!s || !out || !mulib_mune_rt_valid_ (s, v)) return MULIB_MUNE_INVALID;
+    t = v.type >= MULIB_MUNE_STRING ? v.as.object->metatable : NULL;
+    if (!t && v.type != MULIB_MUNE_TABLE && (v.type != MULIB_MUNE_USERDATA || v.as.object->userdata_tag == 3))
+      t = s->type_metatables[v.type == MULIB_MUNE_INTEGER ? MULIB_MUNE_NUMBER : v.type];
+    *out = t ? mulib_mune_rt_object_ (t) : mulib_mune_rt_nil_ (); return MULIB_MUNE_OK;
+  }
   void *
   mulib_mune_value_userdata (mulib_mune_value_t v, size_t *bytes)
   {
@@ -6535,6 +6640,43 @@ extern "C"
     if (v.type != MULIB_MUNE_USERDATA || !v.as.object || v.as.object->userdata_tag != 2) return NULL;
     if (bytes) *bytes = v.as.object->as.userdata.length;
     return v.as.object + 1;
+  }
+  int
+  mulib_mune_table_next (mulib_mune_state_t *s, mulib_mune_value_t t, size_t *cursor,
+      mulib_mune_value_t *key, mulib_mune_value_t *value)
+  {
+    size_t k;
+    if (!s || !cursor || !key || !value || t.type != MULIB_MUNE_TABLE || !mulib_mune_rt_valid_ (s, t)) return -1;
+    for (k = *cursor; k < t.as.object->as.table.capacity; ++k)
+      if (t.as.object->as.table.entries[k].used == 1)
+        {
+          *cursor = k + 1; *key = t.as.object->as.table.entries[k].key;
+          *value = t.as.object->as.table.entries[k].value; return 1;
+        }
+    *cursor = t.as.object->as.table.capacity; return 0;
+  }
+  mulib_mune_status_t
+  mulib_mune_function_owner (mulib_mune_state_t *s, mulib_mune_value_t f, mulib_mune_value_t owner)
+  {
+    if (!s || f.type != MULIB_MUNE_FUNCTION || !mulib_mune_rt_valid_ (s, f)
+        || !f.as.object->as.function.native || f.as.object->as.function.native == mulib_mune_rt_builtin_
+        || !mulib_mune_rt_valid_ (s, owner)) return MULIB_MUNE_INVALID;
+    f.as.object->as.function.context[0] = owner; return MULIB_MUNE_OK;
+  }
+  mulib_mune_status_t
+  mulib_mune_get_uservalue (mulib_mune_state_t *s, mulib_mune_value_t v, int64_t index, mulib_mune_value_t *out)
+  {
+    if (!s || !out || index < 1 || v.type != MULIB_MUNE_USERDATA || !mulib_mune_rt_valid_ (s, v)
+        || v.as.object->userdata_tag != 2) return MULIB_MUNE_INVALID;
+    *out = mulib_mune_rt_rawget_ (v.as.object->as.userdata.values, mulib_mune_rt_integer_ (index)); return MULIB_MUNE_OK;
+  }
+  mulib_mune_status_t
+  mulib_mune_set_uservalue (mulib_mune_state_t *s, mulib_mune_value_t v, int64_t index, mulib_mune_value_t value)
+  {
+    if (!s || index < 1 || v.type != MULIB_MUNE_USERDATA || !mulib_mune_rt_valid_ (s, v)
+        || v.as.object->userdata_tag != 2 || !mulib_mune_rt_valid_ (s, value)) return MULIB_MUNE_INVALID;
+    if (!s->running) s->status = MULIB_MUNE_OK;
+    return mulib_mune_rt_rawset_ (s, v.as.object->as.userdata.values, mulib_mune_rt_integer_ (index), value) ? MULIB_MUNE_OK : s->status;
   }
   static void
   mulib_mune_rt_handle_error_ (mulib_mune_state_t *s)

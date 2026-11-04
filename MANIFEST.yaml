@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 480
-implemented_module_count: 480
+module_count: 488
+implemented_module_count: 488
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3372,7 +3372,85 @@ modules:
   purpose: "Validated architecture descriptions, P-code and bit-scattered encodings."
   dependencies: [parsec]
   status: implemented
+- name: xsimd
+  header: include/mulib-xsimd.h
+  manual: manual/mulib-xsimd.md
+  macro: MULIB_IMPL_XSIMD
+  purpose: Runtime-selected scalar, SSE4.1, AVX2 and AArch64 NEON float kernels.
+  dependencies: []
+  status: implemented
+- name: audio
+  header: include/mulib-audio.h
+  manual: manual/mulib-audio.md
+  macro: MULIB_IMPL_AUDIO
+  purpose: Owned interleaved PCM, codec limits and binary file buffers.
+  dependencies: [xsimd]
+  status: implemented
+- name: miniwav
+  header: include/mulib-miniwav.h
+  manual: manual/mulib-miniwav.md
+  macro: MULIB_IMPL_MINIWAV
+  purpose: RIFF/WAVE PCM and IEEE float encoder/decoder.
+  dependencies: [audio]
+  status: implemented
+- name: miniflac
+  header: include/mulib-miniflac.h
+  manual: manual/mulib-miniflac.md
+  macro: MULIB_IMPL_MINIFLAC
+  purpose: Native FLAC predictor decoder and verbatim-subframe encoder.
+  dependencies: [audio]
+  status: implemented
+- name: minimpeg
+  header: include/mulib-minimpeg.h
+  manual: manual/mulib-minimpeg.md
+  macro: MULIB_IMPL_MINIMPEG
+  purpose: Original MPEG-1 Layer III encoder and restricted long-block MP3 decoder.
+  dependencies: [audio]
+  status: implemented
+- name: minivorbis
+  header: include/mulib-minivorbis.h
+  manual: manual/mulib-minivorbis.md
+  macro: MULIB_IMPL_MINIVORBIS
+  purpose: Original fixed-block Ogg/Vorbis encoder and matching-profile decoder.
+  dependencies: [audio]
+  status: implemented
+- name: midi
+  header: include/mulib-midi.h
+  manual: manual/mulib-midi.md
+  macro: MULIB_IMPL_MIDI
+  purpose: Owned MIDI events and Standard MIDI File type 0/1 IO.
+  dependencies: [audio]
+  status: implemented
+- name: audrey
+  header: include/mulib-audrey.h
+  manual: manual/mulib-audrey.md
+  macro: MULIB_IMPL_AUDREY
+  purpose: Offline editing, track mixing, native/Lua filters and Lua-to-MIDI scores.
+  dependencies: [midi, miniflac, minimpeg, minivorbis, miniwav, mune]
+  status: implemented
 project_files:
+- file: examples/modules/xsimd.c
+  purpose: Runtime SIMD kernel example.
+- file: examples/modules/audio.c
+  purpose: Shared audio ownership example.
+- file: examples/modules/miniwav.c
+  purpose: WAV encoding and decoding example.
+- file: examples/modules/miniflac.c
+  purpose: FLAC encoding and decoding example.
+- file: examples/modules/minimpeg.c
+  purpose: Restricted-profile MP3 encoding and decoding example.
+- file: examples/modules/minivorbis.c
+  purpose: Fixed-profile Ogg/Vorbis encoding and decoding example.
+- file: examples/modules/midi.c
+  purpose: MIDI file generation example.
+- file: examples/modules/audrey.c
+  purpose: Lua audio filtering and music sheet to MIDI example.
+- file: tests/test_audio_codecs.c
+  purpose: Audio codecs, MIDI, SIMD and malformed-input regression tests.
+- file: tests/test_audrey.c
+  purpose: Mune C bindings, audio editing, filters, timeline and score tests.
+- file: tools/check_audio.py
+  purpose: Optional independent FFmpeg and FLAC interoperability oracles.
 - file: library/archml/amd64.aml
   purpose: AMD64 compiler profile with concrete encodings, P-code and backend metadata.
 - file: library/archml/arm64.aml

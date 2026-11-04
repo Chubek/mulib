@@ -135,6 +135,47 @@ Abandoned coroutines release their suspended native stacks without executing
 
 ### C integration and ownership
 
+#### Constructing bindings from C
+
+`mulib_mune_nil/boolean/integer/number` construct scalars. `make_string`,
+`make_table`, `set_global`, `set_field` and `set_index` build ordinary Lua data
+without generating source strings. `get_field/get_index` honor `__index`, and
+their setter counterparts honor `__newindex`; raw table APIs bypass these.
+Metamethod-aware operations root their arguments while invoking Lua, apply the
+usual execution limits, and leave a C output unchanged on failure. Lua side
+effects are not rolled back. `get_metatable` returns the actual metatable,
+including one protected from Lua by `__metatable`.
+
+`make_function` creates a native function value for namespace tables, methods,
+properties, constructors, operator metamethods, `__call` or `__gc`. Set a
+usertype's `__index` to a method table or a native property callback; put its
+destructor in `__gc`, then attach the table to `make_userdata` objects. Native
+callbacks validate argument tags and marshal C values explicitly. This provides
+the Lua-side building blocks of sol2/kaguya-style bindings in C; C++ overload
+inference, templates and automatic class/property conversion are not available.
+Metamethod protection can be installed by setting `__metatable` in the table.
+
+```c
+mulib_mune_value_t settings;
+mulib_mune_make_table(state, &settings);
+mulib_mune_set_global(state, "settings", settings); /* root it */
+mulib_mune_set_field(state, settings, "gain", mulib_mune_number(0.5));
+/* Lua can now read or assign settings.gain. Check statuses in real code. */
+```
+
+`function_owner` attaches one GC-traced value to a native C function, useful
+when its borrowed `user` pointer points into state-owned userdata. It rejects
+Lua functions and runtime builtins. A caller-owned external pointer still needs
+an externally managed lifetime. `get_uservalue/set_uservalue` associate indexed
+Lua values with userdata, beginning at 1. `table_next` iterates raw entries with
+a `size_t` cursor initialized to zero: 1 means entry, 0 end, -1 invalid. Do not
+mutate the table while iterating. Keys and values are borrowed.
+
+For retained C handles, `result_create` plus `result_push` forms an explicit GC
+root; release with `result_destroy`. This also roots objects returned by indexing
+that are not themselves retained in a table. Mixing values from states is
+rejected. Bindings remain usable in tree, VM, JIT and AOT execution modes.
+
 `mulib_mune_bind` installs a native function. Its arguments and result builder
 are borrowed for the call; append return values with `mulib_mune_result_push`.
 Return a Mune status. `mulib_mune_call` invokes Lua/native functions from C,
