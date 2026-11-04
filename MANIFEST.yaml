@@ -8,7 +8,7 @@ inspiration:
 - klib (user-supplied)
 license: MIT
 module_count: 458
-implemented_module_count: 457
+implemented_module_count: 458
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -1827,9 +1827,11 @@ modules:
   status: implemented
 - name: yantlr
   header: include/mulib-yantlr.h
-  purpose: Reserved future module; no implemented API.
-  dependencies: []
-  status: reserved
+  purpose: "YANTLR host language, dependency linking and provider-driven generation."
+  dependencies: [arena, json, parsec, peg, strbuf, utf8]
+  status: implemented
+  manual: manual/mulib-yantlr.md
+  macro: MULIB_IMPL_YANTLR
 - name: abstun
   header: include/mulib-abstun.h
   manual: manual/mulib-abstun.md
@@ -4591,3 +4593,9 @@ project_files:
   purpose: "Focused regression suite for test_authentication."
 - file: tests/test_auth_alloc.c
   purpose: "Focused regression suite for test_auth_alloc."
+- file: examples/modules/yantlr.c
+  purpose: "Standalone checked usage example for yantlr."
+- file: tests/test_yantlr.c
+  purpose: "Focused regression suite for test_yantlr."
+- file: tests/test_yantlr_alloc.c
+  purpose: "Focused regression suite for test_yantlr_alloc."

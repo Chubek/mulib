@@ -1,6 +1,6 @@
 # MuLIB module and composition guide
 
-MuLIB has 418 implemented single-header C11 modules. Every implemented module has a corresponding
+MuLIB has 458 implemented single-header C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -38,10 +38,9 @@ consult each manual's exact supported syntax, errors, and limits.
 | Embedded languages and tools | [MicroJS](mulib-microjs.md), [Datalog](mulib-datalog.md), [Perl POD](mulib-perlpod.md), [microaudio](mulib-microaudio.md), [browser tools](mulib-browsertools.md) |
 | Browser automation | [Prowse protocols](mulib-prowse-protocol.md), [Prowse control and lprowse Lua DSL](mulib-prowse-control.md), [15-language editor profiles](../library/librl/README.md) |
 
-`yantlr` is a comment-only reserved header, not an implemented API. The
-manifest distinguishes the complete header inventory from the implemented count;
-the checker permits only comment-only reserved files and rejects dependencies on
-them. Native modules document platform restrictions. Protocol modules are
+The [YANTLR core](mulib-yantlr.md) implements the `.y1` host language, explicit
+provider linking and artifact generation, without standard-library services.
+Native modules document platform restrictions. Protocol modules are
 focused building blocks, not a claim of complete standards conformance, TLS,
 authentication, or safe public deployment.
 

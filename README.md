@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **452 implemented modules**.
+A C11 modular single-header utility library with **458 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -136,7 +136,9 @@ file, including reverse dependencies, with deterministic Graphviz DOT output.
 `mulib-inet6.h` is the canonical IPv6 header; `mulib-inte6.h` remains
 compatible. The existing spellings `impaclient` and `dnsnmeserver` are retained.
 
-`mulib-yantlr.h` is a reserved filename.
+[YANTLR core](manual/mulib-yantlr.md) parses `.y1` generator specifications,
+links explicit providers and evaluates them into staged artifacts; its standard
+library is not implemented.
 The [dependency strata](manual/strata.md) index
 records every direct dependency and integration layer. New focused modules include
 a bounded i32 WebAssembly runtime (`wask`), an independent Lua runtime with

@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 458 headers, 471 direct dependency edges.
+Inventory: 458 headers, 477 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (177 modules)
+## Stratum 0 (176 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -195,7 +195,6 @@ Compatibility group: `parsec`, `peg`.
 | [vgabuffer](mulib-vgabuffer.md) | none |
 | [weighed_edit_distane](mulib-weighed_edit_distane.md) | none |
 | [xtks](mulib-xtks.md) | none |
-| [yantlr](mulib-yantlr.md) | none |
 
 ## Stratum 1 (119 modules)
 
@@ -420,7 +419,7 @@ Compatibility group: `parsec`, `peg`.
 | [viterbi_decoding](mulib-viterbi_decoding.md) | `hidden_markov_chain` |
 | [vmm-host](mulib-vmm-host.md) | `virtio` |
 
-## Stratum 4 (24 modules)
+## Stratum 4 (25 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -448,6 +447,7 @@ Compatibility group: `parsec`, `peg`.
 | [toml](mulib-toml.md) | `json`, `strbuf`, `utf8` |
 | [vmm](mulib-vmm.md) | `virtio-os`, `vmm-memory` |
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
+| [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
 ## Stratum 5 (24 modules)
 
