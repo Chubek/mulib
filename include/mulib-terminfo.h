@@ -4,7 +4,7 @@
  *
  * Reads legacy and 32-bit-number compiled records, in either byte order. Named
  * lookup covers common standard capabilities; indexed lookup covers every core
- * entry. Extended ncurses tables, source parsing, database search, padding
+ * entry. Extended ncurses tables, source parsing, implicit database search, padding
  * delays and string-valued tparm arguments are not implemented. Padding
  * annotations are stripped on expansion without sleeping. The explicit ANSI
  * fallback is a capability profile, not a database reader. See
@@ -43,6 +43,13 @@ extern "C"
   /** @brief Load an explicit binary file (at most 1 MiB); no implicit path
    * search. */
   int mulib_terminfo_load_file (mulib_terminfo_t *info, const char *path);
+  /** @brief Deep-copy a record atomically (including ANSI/empty records). */
+  int mulib_terminfo_copy (mulib_terminfo_t *destination,
+                          const mulib_terminfo_t *source);
+  /** @brief Search one explicit database directory using first-character and
+   * hexadecimal layouts. Reject unsafe terminal names; no environment lookup. */
+  int mulib_terminfo_load_dir (mulib_terminfo_t *info, const char *directory,
+                              const char *terminal);
   /** @brief Replace a record with the allocation-free ANSI/256-color profile.
    */
   void mulib_terminfo_ansi (mulib_terminfo_t *info);
@@ -288,6 +295,15 @@ extern "C"
     v.num_offset = offset;
     if (v.num_count > (n - offset) / v.number_width)
       return 0;
+    for (i = 0; i < v.num_count; ++i)
+      {
+        uint32_t value = v.number_width == 4
+            ? mulib_terminfo_u32_ (p + offset + i * 4, v.big_endian)
+            : mulib_terminfo_u16_ (p + offset + i * 2, v.big_endian);
+        uint32_t max = v.number_width == 4 ? UINT32_MAX : 65535u;
+        if (value > max / 2 && value < max - 1)
+          return 0;
+      }
     offset += v.num_count * v.number_width;
     v.str_offset = offset;
     if (v.str_count > (n - offset) / 2u)
@@ -356,6 +372,39 @@ extern "C"
         mulib_terminfo_free (t);
         t->ansi = 1;
       }
+  }
+  int
+  mulib_terminfo_copy (mulib_terminfo_t *dst, const mulib_terminfo_t *src)
+  {
+    if (!dst || !src) return 0;
+    if (dst == src) return 1;
+    if (src->ansi) { mulib_terminfo_ansi (dst); return 1; }
+    if (src->data) return mulib_terminfo_load (dst, src->data, src->length);
+    mulib_terminfo_free (dst);
+    return 1;
+  }
+  int
+  mulib_terminfo_load_dir (mulib_terminfo_t *t, const char *dir, const char *name)
+  {
+    char path[4096];
+    size_t i;
+    int n;
+    if (!t || !dir || !*dir || !name || !*name) return 0;
+    for (i = 0; name[i]; ++i)
+      {
+        unsigned char c = (unsigned char)name[i];
+        if (i >= 255 || !((c >= 'a' && c <= 'z')
+            || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+            || c == '-' || c == '_' || c == '+' || c == '.')) return 0;
+      }
+    if (name[0] == '.') return 0;
+    n = snprintf (path, sizeof (path), "%s/%c/%s", dir, name[0], name);
+    if (n < 0 || (size_t)n >= sizeof (path)) return 0;
+    if (mulib_terminfo_load_file (t, path)) return 1;
+    n = snprintf (path, sizeof (path), "%s/%02x/%s", dir,
+                  (unsigned)(unsigned char)name[0], name);
+    return n >= 0 && (size_t)n < sizeof (path)
+        && mulib_terminfo_load_file (t, path);
   }
   const char *
   mulib_terminfo_names (const mulib_terminfo_t *t)
@@ -458,6 +507,10 @@ extern "C"
     const mulib_terminfo_name_ *v;
     if (t && t->ansi && name && !strcmp (name, "smxx"))
       return "\033[9m";
+    if (t && t->ansi && name && !strcmp (name, "BE"))
+      return "\033[?2004h";
+    if (t && t->ansi && name && !strcmp (name, "BD"))
+      return "\033[?2004l";
     v = mulib_terminfo_find_ (mulib_terminfo_strings_,
                               sizeof (mulib_terminfo_strings_)
                                   / sizeof (mulib_terminfo_strings_[0]),
@@ -485,6 +538,13 @@ extern "C"
     const unsigned char *p = (const unsigned char *)fmt;
     if (!fmt || !out)
       return 0;
+    /* Bound input as well as output/work, including scans inside directives. */
+    {
+      size_t length;
+      for (length = 0; length <= 65536u; ++length)
+        if (!fmt[length]) break;
+      if (length > 65536u) return 0;
+    }
     if (args)
       memcpy (params, args, sizeof (params));
     mulib_strbuf_init (&text);

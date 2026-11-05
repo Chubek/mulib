@@ -144,6 +144,7 @@
 #define MULIB_IMPL_SIMDMATH
 #define MULIB_IMPL_VECTGFX
 #define MULIB_IMPL_READLINE
+#define MULIB_IMPL_CURSES
 #define MULIB_IMPL_PROWSE_PROTOCOL
 #define MULIB_IMPL_PROWSE_CONTROL
 #define MULIB_IMPL_CONTAINER
@@ -864,6 +865,7 @@
 #include "include-mulib-qvm.h"
 #include "include-mulib-zstd.h"
 #include "mulib-readline.h"
+#include "mulib-curses.h"
 #include "mulib-prowse-protocol.h"
 #include "mulib-prowse-control.h"
 #include "mulib-cgeom.h"

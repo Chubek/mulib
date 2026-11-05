@@ -172,6 +172,10 @@ if(MULIB_BUILD_TESTS)
   add_test(NAME mulib_readline_profiles
     COMMAND mulib_test_readline ${CMAKE_CURRENT_SOURCE_DIR}/library/librl)
   if(Python3_Interpreter_FOUND AND UNIX)
+    add_test(NAME mulib_readline_native_io
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_readline_io.py
+        $<TARGET_FILE:mulib_test_readline>)
+    set_tests_properties(mulib_readline_native_io PROPERTIES TIMEOUT 60)
     add_test(NAME mulib_prowse_native_io
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_prowse_io.py
         --protocol $<TARGET_FILE:mulib_test_prowse> --repl $<TARGET_FILE:mulib_test_prowse>)

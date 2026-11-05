@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **480 implemented modules**.
+A C11 modular single-header utility library with **489 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax

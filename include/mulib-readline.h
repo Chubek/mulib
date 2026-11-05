@@ -1,12 +1,13 @@
 /** @file mulib-readline.h
  * @brief Bounded UTF-8 line editing, highlighting, completion and declarative directives.
- * Define MULIB_IMPL_READLINE plus JSON, TERMKEY, TERMUTILS and their dependencies.
+ * Define MULIB_IMPL_READLINE plus JSON, TERMINFO, TERMKEY, TERMUTILS and their dependencies.
  * Profiles are versioned JSON in .mlsyn/.mlac/.mldir files. See the manual. */
 #ifndef MULIB_READLINE_H
 #define MULIB_READLINE_H
 #include "mulib-json.h"
 #include "mulib-termkey.h"
 #include "mulib-termutils.h"
+#include "mulib-terminfo.h"
 #include <stddef.h>
 #ifdef __cplusplus
 extern "C" {
@@ -79,9 +80,13 @@ int mulib_readline_load (mulib_readline_t *, const char *path, size_t *error_lin
 /** @brief Copy a line into bounded history, evicting oldest entries; consecutive
  * duplicates and empty lines are ignored. */
 int mulib_readline_history_add (mulib_readline_t *, const char *line);
-/** @brief Render one horizontally clipped ANSI line into malloc-owned storage.
+/** @brief Render one horizontally clipped terminal line into malloc-owned storage.
  * Prompt must contain printable ASCII; columns >= 8. Controls never reach output. */
 int mulib_readline_render (mulib_readline_t *, const char *prompt, unsigned columns, char **output);
+/** @brief Copy terminal capabilities into an idle editor; NULL restores ANSI.
+ * Rendering needs cr/el and cuf (when cursor is nonzero). Unsupported color
+ * capabilities degrade to plain text. Failure leaves the selection unchanged. */
+int mulib_readline_terminal (mulib_readline_t *, const mulib_terminfo_t *);
 /** @brief Read one line from descriptors. POSIX TTYs use raw editing with restored
  * attributes on return; pipes use bounded plain lines. *line must be NULL.
  * The editor is externally serialized; this call does not dispatch directives. */
@@ -119,6 +124,7 @@ struct mulib_readline
   unsigned char paste_pending[4];
   size_t paste_length;
   int busy;
+  mulib_terminfo_t terminal;
 };
 static char *mulib_readline_copy_ (const char *p, size_t n)
 {
@@ -156,7 +162,15 @@ mulib_readline_t *mulib_readline_create (const mulib_readline_limits_t *l)
       || r->limits.config_entries > SIZE_MAX / sizeof (mulib_readline_item_)) { free (r); return NULL; }
   r->line = mulib_readline_copy_ ("", 0);
   if (!r->line) { free (r); return NULL; }
+  mulib_terminfo_ansi (&r->terminal);
   return r;
+}
+int mulib_readline_terminal (mulib_readline_t *r, const mulib_terminfo_t *t)
+{
+  if (!r) return MULIB_READLINE_INVALID;
+  if (r->busy) return MULIB_READLINE_BUSY;
+  if (!t) { mulib_terminfo_ansi (&r->terminal); return 0; }
+  return mulib_terminfo_copy (&r->terminal, t) ? 0 : MULIB_READLINE_MEMORY;
 }
 static void mulib_readline_trim_ (mulib_readline_t *r, size_t rules, size_t ac, size_t dirs)
 {
@@ -173,6 +187,7 @@ void mulib_readline_destroy (mulib_readline_t *r)
   if (!r || r->busy) return;
   mulib_readline_trim_ (r, 0, 0, 0);
   free (r->rules); free (r->completions); free (r->directives);
+  mulib_terminfo_free (&r->terminal);
   for (i = 0; i < r->history_count; ++i) free (r->history[i]);
   free (r->history); free (r->line); free (r->draft); free (r);
 }
@@ -609,16 +624,36 @@ static unsigned mulib_readline_width_ (uint32_t c)
       || (c >= 0xff01 && c <= 0xff60) || c >= 0x1f300)) ? 2 : 1;
 }
 typedef struct mulib_readline_render_
-{ mulib_strbuf_t bytes; const char *line; size_t first, last; int failed; } mulib_readline_render_;
+{ mulib_strbuf_t bytes; const char *line; size_t first, last; int failed;
+  const mulib_terminfo_t *terminal; } mulib_readline_render_;
+static int mulib_readline_cap_ (const mulib_terminfo_t *t, const char *name,
+                               int32_t value, mulib_strbuf_t *out, int optional)
+{
+  int32_t p[9] = { 0 };
+  p[0] = value;
+  if (optional && !mulib_terminfo_str (t, name)) return 1;
+  return mulib_terminfo_emit (t, name, p, out);
+}
 static int mulib_readline_render_span_ (void *user, size_t at, size_t n, mulib_readline_style_t style)
 {
-  static const char *const colors[] = { "\033[0m", "\033[35m", "\033[32m", "\033[90m", "\033[36m", "\033[34m", "\033[33m", "\033[95m" };
+  static const int colors[] = { 0, 5, 2, 8, 6, 4, 3, 13 };
   mulib_readline_render_ *v = (mulib_readline_render_ *)user;
   size_t end = at + n;
   if (at < v->first) at = v->first;
   if (end > v->last) end = v->last;
   if (at >= end) return 0;
-  if (!mulib_strbuf_append (&v->bytes, colors[style]) || !mulib_strbuf_append_n (&v->bytes, v->line + at, end - at)) return v->failed = MULIB_READLINE_MEMORY;
+  if (!mulib_readline_cap_ (v->terminal, "op", 0, &v->bytes, 1))
+    return v->failed = MULIB_READLINE_UNSUPPORTED;
+  if (style && mulib_terminfo_str (v->terminal, "op")
+      && mulib_terminfo_str (v->terminal, "setaf")
+      && mulib_terminfo_num (v->terminal, "colors") >= 8)
+    {
+      int color = colors[style];
+      if (color >= mulib_terminfo_num (v->terminal, "colors")) color %= 8;
+      if (!mulib_readline_cap_ (v->terminal, "setaf", color, &v->bytes, 0))
+        return v->failed = MULIB_READLINE_UNSUPPORTED;
+    }
+  if (!mulib_strbuf_append_n (&v->bytes, v->line + at, end - at)) return v->failed = MULIB_READLINE_MEMORY;
   return 0;
 }
 int mulib_readline_render (mulib_readline_t *r, const char *prompt, unsigned columns, char **output)
@@ -628,9 +663,8 @@ int mulib_readline_render (mulib_readline_t *r, const char *prompt, unsigned col
   size_t cursor_cols = 0;
   unsigned width = 0, available;
   uint32_t cp;
-  char move[48];
   int rc;
-  if (!r || !prompt || !output || columns < 8) return MULIB_READLINE_INVALID;
+  if (!r || !prompt || !output || columns < 8 || columns > INT32_MAX) return MULIB_READLINE_INVALID;
   plen = strlen (prompt); if (plen > columns - 4) return MULIB_READLINE_LIMIT;
   for (at = 0; at < plen; ++at) if ((unsigned char)prompt[at] < 32 || (unsigned char)prompt[at] > 126) return MULIB_READLINE_INVALID;
   available = columns - (unsigned)plen - 1;
@@ -647,14 +681,40 @@ int mulib_readline_render (mulib_readline_t *r, const char *prompt, unsigned col
       width += w; last += used;
     }
   memset (&v, 0, sizeof (v)); mulib_strbuf_init (&v.bytes); v.line = r->line; v.first = first; v.last = last;
-  rc = !mulib_strbuf_append (&v.bytes, "\r\033[2K") || !mulib_strbuf_append (&v.bytes, prompt) ? MULIB_READLINE_MEMORY : 0;
+  v.terminal = &r->terminal;
+  rc = !mulib_readline_cap_ (v.terminal, "sgr0", 0, &v.bytes, 1)
+      || !mulib_readline_cap_ (v.terminal, "op", 0, &v.bytes, 1)
+      || !mulib_readline_cap_ (v.terminal, "cr", 0, &v.bytes, 0)
+      || !mulib_readline_cap_ (v.terminal, "el", 0, &v.bytes, 0)
+      ? MULIB_READLINE_UNSUPPORTED : 0;
+  if (!rc && !mulib_strbuf_append (&v.bytes, prompt)) rc = MULIB_READLINE_MEMORY;
   if (!rc) rc = mulib_readline_highlight (r, r->line, r->length, mulib_readline_render_span_, &v);
-  if (plen + cursor_cols) (void)snprintf (move, sizeof (move), "\033[0m\r\033[%uC", (unsigned)(plen + cursor_cols));
-  else strcpy (move, "\033[0m\r");
-  if (!rc && !mulib_strbuf_append (&v.bytes, move)) rc = MULIB_READLINE_MEMORY;
+  if (!rc) rc = v.failed;
+  if (!rc && (!mulib_readline_cap_ (v.terminal, "op", 0, &v.bytes, 1)
+      || !mulib_readline_cap_ (v.terminal, "cr", 0, &v.bytes, 0)
+      || ((plen + cursor_cols) && !mulib_readline_cap_ (v.terminal, "cuf",
+          (int32_t)(plen + cursor_cols), &v.bytes, 0)))) rc = MULIB_READLINE_UNSUPPORTED;
   if (!rc) { *output = mulib_readline_copy_ (v.bytes.data, v.bytes.length); if (!*output) rc = MULIB_READLINE_MEMORY; }
   mulib_strbuf_free (&v.bytes); return rc;
 }
+#if defined(__unix__) || defined(__APPLE__)
+static int mulib_readline_modes_ (mulib_readline_t *r, int fd, int enter)
+{
+  mulib_strbuf_t s;
+  size_t written;
+  int ok;
+  mulib_strbuf_init (&s);
+  ok = mulib_readline_cap_ (&r->terminal, enter ? "smkx" : "rmkx", 0, &s, 1)
+      && mulib_readline_cap_ (&r->terminal, enter ? "BE" : "BD", 0, &s, 1);
+  if (!enter) ok = ok && mulib_readline_cap_ (&r->terminal, "sgr0", 0, &s, 1)
+      && mulib_readline_cap_ (&r->terminal, "op", 0, &s, 1)
+      && mulib_readline_cap_ (&r->terminal, "cr", 0, &s, 0)
+      && mulib_strbuf_append (&s, "\n");
+  if (ok) ok = !mulib_termutils_write (fd, s.data, s.length, &written);
+  mulib_strbuf_free (&s);
+  return ok;
+}
+#endif
 int mulib_readline_read (mulib_readline_t *r, int input, int output, const char *prompt, char **line)
 {
   if (!r || !line || *line || !prompt || input < 0 || output < 0) return MULIB_READLINE_INVALID;
@@ -668,7 +728,7 @@ int mulib_readline_read (mulib_readline_t *r, int input, int output, const char 
     r->history_at = r->history_count; free (r->draft); r->draft = NULL;
     mulib_termkey_init (&decoder);
     if (tty && mulib_termutils_raw_begin (&raw, input)) return MULIB_READLINE_IO;
-    if (tty) (void)mulib_termutils_write (output, "\033[?2004h", 8, &written);
+    if (tty && !mulib_readline_modes_ (r, output, 1)) rc = MULIB_READLINE_IO;
     while (!rc)
       {
         unsigned char c;
@@ -678,6 +738,7 @@ int mulib_readline_read (mulib_readline_t *r, int input, int output, const char 
             unsigned columns = 80, rows;
             char *rendered = NULL;
             (void)mulib_termutils_size (output, &columns, &rows);
+            if (!columns) columns = 80; /* PTYs may report an unset size. */
             rc = mulib_readline_render (r, prompt, columns, &rendered);
             if (!rc && mulib_termutils_write (output, rendered, strlen (rendered), &written)) rc = MULIB_READLINE_IO;
             free (rendered); if (rc) break;
@@ -703,7 +764,7 @@ int mulib_readline_read (mulib_readline_t *r, int input, int output, const char 
       }
     if (tty)
       {
-        (void)mulib_termutils_write (output, "\033[0m\033[?2004l\r\n", 14, &written);
+        if (!mulib_readline_modes_ (r, output, 0)) rc = MULIB_READLINE_IO;
         if (mulib_termutils_raw_end (&raw)) { free (raw.saved); rc = MULIB_READLINE_IO; }
       }
     if (!mulib_readline_clean_ (r->line, r->length))

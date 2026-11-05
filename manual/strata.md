@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 488 headers, 536 direct dependency edges.
+Inventory: 489 headers, 539 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -388,7 +388,7 @@ Compatibility group: `parsec`, `peg`.
 | [wmfunc](mulib-wmfunc.md) | `wlroots` |
 | [xpath](mulib-xpath.md) | `xml` |
 
-## Stratum 3 (37 modules)
+## Stratum 3 (38 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -401,6 +401,7 @@ Compatibility group: `parsec`, `peg`.
 | [container-vfs](mulib-container-vfs.md) | `rootfs` |
 | [containerd-accessstub](mulib-containerd-accessstub.md) | `conainerd-ipc` |
 | [containerinjector](mulib-containerinjector.md) | `rootfs` |
+| [curses](mulib-curses.md) | `termutils`, `tui` |
 | [depir](mulib-depir.md) | `anfir`, `clickir`, `superblocks` |
 | [dnsnmeserver](mulib-dnsnmeserver.md) | `nameserver` |
 | [geosolve](mulib-geosolve.md) | `alloc`, `cgeom`, `geometry` |
@@ -458,7 +459,7 @@ Compatibility group: `parsec`, `peg`.
 | [ociimage](mulib-ociimage.md) | `json` |
 | [pebuilder](mulib-pebuilder.md) | `binfilewriter`, `bycutils`, `objfilebuilder` |
 | [raytracing](mulib-raytracing.md) | `collision`, `glx` |
-| [readline](mulib-readline.md) | `json`, `strbuf`, `termkey`, `termutils` |
+| [readline](mulib-readline.md) | `json`, `strbuf`, `terminfo`, `termkey`, `termutils` |
 | [rpc](mulib-rpc.md) | `json` |
 | [template](mulib-template.md) | `json`, `strbuf`, `utf8` |
 | [toml](mulib-toml.md) | `json`, `strbuf`, `utf8` |

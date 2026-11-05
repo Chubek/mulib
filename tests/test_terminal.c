@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#if defined(__unix__) || defined(__APPLE__)
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 #define MULIB_IMPL_STRBUF
 #define MULIB_IMPL_UTF8
 #define MULIB_IMPL_GRID
@@ -76,6 +80,15 @@ static void test_terminal_terminfo(void) {
         n = terminal_fixture(fixture, wide, be);
         for (i = 0; i < n; ++i) assert(!mulib_terminfo_load(&info, fixture, i));
         assert(mulib_terminfo_load(&info, fixture, n));
+        {
+            mulib_terminfo_t copy;
+            mulib_terminfo_init(&copy);
+            assert(mulib_terminfo_copy(&copy, &info));
+            assert(copy.data != info.data && copy.length == info.length);
+            assert(!memcmp(copy.data, info.data, info.length));
+            assert(mulib_terminfo_copy(&copy, &copy));
+            mulib_terminfo_free(&copy);
+        }
         assert(!strcmp(mulib_terminfo_names(&info), "t|x"));
         assert(mulib_terminfo_bool(&info, "am") == 1);
         assert(mulib_terminfo_bool_at(&info, 0) == 0);
@@ -106,7 +119,34 @@ static void test_terminal_terminfo(void) {
         assert(!mulib_terminfo_load(&info, bad, n));
         assert(!strcmp(mulib_terminfo_names(&info), "t|x"));
     }
+    assert(!mulib_terminfo_load_dir(&info, ".", "../escape"));
+    assert(!mulib_terminfo_load_dir(&info, ".", "x/y"));
     n = terminal_fixture(fixture, 0, 0);
+#if defined(__unix__) || defined(__APPLE__)
+    {
+        char root[128], directory[160], path[192];
+        unsigned attempt;
+        int created = 0, layout;
+        for (attempt = 0; attempt < 100 && !created; ++attempt) {
+            snprintf(root, sizeof(root), "mulib-ti-%lu-%u", (unsigned long)clock(), attempt);
+            created = mkdir(root, 0700) == 0;
+        }
+        assert(created);
+        for (layout = 0; layout < 2; ++layout) {
+            FILE *file;
+            snprintf(directory, sizeof(directory), "%s/%s", root, layout ? "74" : "t");
+            assert(mkdir(directory, 0700) == 0);
+            snprintf(path, sizeof(path), "%s/test-term", directory);
+            file = fopen(path, "wbx"); assert(file);
+            assert(fwrite(fixture, 1, n, file) == n);
+            assert(!fclose(file));
+            assert(mulib_terminfo_load_dir(&info, root, "test-term"));
+            assert(!strcmp(mulib_terminfo_names(&info), "t|x"));
+            assert(!remove(path)); assert(!rmdir(directory));
+        }
+        assert(!rmdir(root));
+    }
+#endif
     {
         char path[128];
         unsigned attempt;
@@ -133,6 +173,8 @@ static void test_terminal_terminfo(void) {
     assert(mulib_terminfo_load(&info, bad, n));
     assert(mulib_terminfo_bool_at(&info, 0) == -1 && mulib_terminfo_bool_at(&info, 1) == -1);
     assert(mulib_terminfo_num_at(&info, 0) == -1 && mulib_terminfo_num_at(&info, 1) == -1);
+    terminal_store16(bad + info.num_offset, 65533, 0);
+    assert(!mulib_terminfo_load(&info, bad, n));
     memset(bad, 0, sizeof(bad));
     terminal_store16(bad, 0x011a, 0); terminal_store16(bad + 2, 3, 0);
     memcpy(bad + 12, "xx", 3);
@@ -155,6 +197,15 @@ static void test_terminal_terminfo(void) {
     terminal_expect_expansion("%?%p1%tA%?%p2%tB%eC%;%eD%;", p, "AC");
     mulib_strbuf_init(&out);
     assert(mulib_strbuf_append(&out, "unchanged"));
+    {
+        char *long_format = (char *)malloc(70001);
+        assert(long_format);
+        memset(long_format, '0', 70000);
+        memcpy(long_format, "%{", 2); long_format[70000] = 0;
+        assert(!mulib_terminfo_expand(long_format, NULL, &out));
+        assert(!strcmp(out.data, "unchanged"));
+        free(long_format);
+    }
     for (i = 0; i < sizeof(failures) / sizeof(failures[0]); ++i) {
         assert(!mulib_terminfo_expand(failures[i], p, &out));
         assert(!strcmp(out.data, "unchanged"));

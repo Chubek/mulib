@@ -9,7 +9,7 @@ terminal/pipe input. It can be embedded without terminal I/O by feeding
 
 Define `MULIB_IMPL_READLINE`, `MULIB_IMPL_JSON`, `MULIB_IMPL_PARSEC`,
 `MULIB_IMPL_STRBUF`, `MULIB_IMPL_UTF8`, `MULIB_IMPL_TERMKEY`, and
-`MULIB_IMPL_TERMUTILS` in one C11 TU. The optional parser-loader closure additionally
+`MULIB_IMPL_TERMINFO`, `MULIB_IMPL_TERMUTILS` in one C11 TU. The optional parser-loader closure additionally
 uses `MULIB_IMPL_PARSER`, `MULIB_IMPL_GLOB`, `MULIB_IMPL_PEG`, `MULIB_IMPL_AST`.
 The runnable example explicitly enables that complete closure:
 
@@ -46,20 +46,33 @@ paste is rejected. Nonediting events are ignored.
 oldest lines to satisfy entry/byte budgets. Moving back down from history restores
 the draft. History is in-memory; applications can persist entries separately.
 
-`render(editor,prompt,columns,&output)` returns an ANSI redraw with horizontal
+`render(editor,prompt,columns,&output)` returns a terminfo-driven redraw with horizontal
 clipping and cursor positioning. Prompts are printable ASCII, width must be at
 least 8, and space is reserved to avoid terminal wrapping. Unicode width is an
 approximation for combining marks/CJK/emoji; it is not a full Unicode grapheme or
 terminal-width database. Colors are fixed style mappings; hosts can render the
 `highlight` spans themselves for different themes/frontends.
 
+`terminal(editor,info)` copies an initialized terminfo record; NULL restores the
+default ANSI profile. The source may be freed immediately. Existing editor APIs
+are preserved; implementation TUs now also enable `MULIB_IMPL_TERMINFO`.
+Rendering requires `cr`, `el`, and `cuf` for nonzero cursor columns. Missing or
+unexpandable required capabilities return `UNSUPPORTED` without changing the
+output pointer. Rendition/color resets use optional `sgr0`/`op`. Highlight colors
+use `setaf` only when `op` and at least eight colors are available; otherwise
+text is monochrome. Eight-color terminals map bright colors to base colors.
+No `$TERM` lookup occurs; use terminfo's explicit file/directory loaders.
+
 `read(editor,input_fd,output_fd,prompt,&line)` edits POSIX TTYs in raw mode, enables
-bracketed paste and attempts to restore attributes on every return. Failed
+bracketed paste when the selected profile supplies `BE`/`BD`, selects keypad
+mode through optional `smkx`/`rmkx`, and attempts to restore attributes on every return. Failed
 restoration is reported as `IO`. It returns `LINE`, `EOF`, `INTERRUPT`, or a negative
 error. Pipes use bounded UTF-8 plain lines, accept LF/CRLF and produce no prompts
 or ANSI sequences. A final unterminated line is returned. Other controls are
 rejected. Terminal I/O is `UNSUPPORTED` on non-POSIX platforms; the editor,
 profiles, highlighting, rendering and completion APIs remain portable C11.
+Input retains termkey's VT/xterm decoding; arbitrary database-specific key
+sequences are not decoded. Mode/output write failures are reported as `IO`.
 
 ## Highlighting and completion
 

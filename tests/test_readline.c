@@ -1,4 +1,5 @@
 #define MULIB_IMPL_READLINE
+#define MULIB_IMPL_TERMINFO
 #define MULIB_IMPL_JSON
 #define MULIB_IMPL_PARSEC
 #define MULIB_IMPL_PARSER
@@ -41,6 +42,40 @@ int main (int argc, char **argv)
   const char *action = NULL, *args = NULL;
   char *expanded = NULL, *rendered = NULL;
   assert (r);
+  if (argc > 1 && !strcmp (argv[1], "--tty"))
+    {
+      char *line = NULL;
+      int result = mulib_readline_read (r, 0, 1, "ready> ", &line);
+      printf ("result:%d:%s\n", result, line ? line : "");
+      free (line); mulib_readline_destroy (r); return result < 0;
+    }
+  {
+    /* A deliberately non-ANSI, monochrome record proves all control output
+     * follows the selected capabilities, and selection owns a deep copy. */
+    unsigned char data[254] = { 0 };
+    mulib_terminfo_t terminal;
+    size_t i;
+    data[0] = 0x1a; data[1] = 1; data[2] = 2;
+    data[8] = 113; data[10] = 14; data[12] = 't';
+    for (i = 14; i < 240; ++i) data[i] = 255;
+    data[18] = 0; data[19] = 0; /* cr */
+    data[26] = 2; data[27] = 0; /* el */
+    data[238] = 4; data[239] = 0; /* cuf */
+    memcpy (data + 240, "R\0E\0M%p1%d\0", 11);
+    mulib_terminfo_init (&terminal);
+    assert (mulib_terminfo_load (&terminal, data, sizeof (data)));
+    assert (!mulib_readline_terminal (r, &terminal));
+    mulib_terminfo_free (&terminal);
+    assert (!mulib_readline_set (r, "abc", 3));
+    assert (!mulib_readline_render (r, "> ", 20, &rendered));
+    assert (!strcmp (rendered, "RE> abcRM5"));
+    free (rendered); rendered = NULL;
+    assert (!mulib_readline_terminal (r, &terminal));
+    assert (mulib_readline_render (r, "", 20, &rendered) == MULIB_READLINE_UNSUPPORTED);
+    assert (!rendered);
+    assert (!mulib_readline_terminal (r, NULL));
+    assert (!mulib_readline_set (r, "", 0));
+  }
   assert (!mulib_readline_rule (r, MULIB_READLINE_PREFIX, MULIB_READLINE_COMMENT, "--", NULL, 0));
   assert (!mulib_readline_rule (r, MULIB_READLINE_SPAN, MULIB_READLINE_STRING, "\"", "\"", '\\'));
   assert (!mulib_readline_rule (r, MULIB_READLINE_WORD, MULIB_READLINE_KEYWORD, "local", NULL, 0));
@@ -88,7 +123,7 @@ int main (int argc, char **argv)
     assert (!mulib_readline_complete (r, completions, &n, NULL) && !n);
   }
   assert (!mulib_readline_render (r, "> ", 12, &rendered));
-  assert (strstr (rendered, "\033[2K") && strstr (rendered, "rolled")); free (rendered);
+  assert (strstr (rendered, "\033[K") && strstr (rendered, "rolled")); free (rendered);
   mulib_readline_destroy (r);
   {
     mulib_readline_limits_t limits = { 3, 2, 8, 1, 16 };

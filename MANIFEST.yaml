@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 488
-implemented_module_count: 488
+module_count: 489
+implemented_module_count: 489
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2579,7 +2579,7 @@ modules:
   manual: manual/mulib-readline.md
   macro: MULIB_IMPL_READLINE
   purpose: UTF-8 line editing, syntax highlighting, completion, history and declarative profiles.
-  dependencies: [json, strbuf, termkey, termutils]
+  dependencies: [json, strbuf, terminfo, termkey, termutils]
   status: implemented
 - name: prowse-protocol
   header: include/mulib-prowse-protocol.h
@@ -3428,7 +3428,20 @@ modules:
   purpose: Offline editing, track mixing, native/Lua filters and Lua-to-MIDI scores.
   dependencies: [midi, miniflac, minimpeg, minivorbis, miniwav, mune]
   status: implemented
+- name: curses
+  header: include/mulib-curses.h
+  manual: manual/mulib-curses.md
+  macro: MULIB_IMPL_CURSES
+  purpose: Retained curses-style windows, staged composition and differential refresh.
+  dependencies: [tui, termutils]
+  status: implemented
 project_files:
+- file: tools/check_readline_io.py
+  purpose: PTY-based readline editing and raw-terminal restoration checks.
+- file: examples/modules/curses.c
+  purpose: Standalone curses window composition example.
+- file: tests/test_curses.c
+  purpose: Curses transactional drawing, roundtrip and recovery regressions.
 - file: examples/modules/xsimd.c
   purpose: Runtime SIMD kernel example.
 - file: examples/modules/audio.c
