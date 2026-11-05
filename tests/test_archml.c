@@ -155,7 +155,7 @@ static void all_forms (mulib_archml_t *a)
 }
 int main (int argc, char **argv)
 {
-  const char *names[] = {"amd64", "arm64", "risv"};
+  const char *names[] = {"amd64", "arm64", "riscv64", "ppc64", "mips", "avr32", "wasm"};
   char directory[4096], path[4096];
   /* Machine-readable encoder for the independent LLVM MC fixture check. */
   if (argc >= 4 && !strcmp(argv[1],"--encode")) {
@@ -178,16 +178,17 @@ int main (int argc, char **argv)
   }
   syntax ();
   ranges ();
-  for (size_t i = 0; i < 3; ++i) {
+  for (size_t i = 0; i < sizeof(names)/sizeof(*names); ++i) {
     mulib_archml_t *a = NULL;
     mulib_archml_error_t e;
     assert (snprintf(path,sizeof(path),"%s/%s.aml",directory,names[i]) < (int)sizeof(path));
     int rc = mulib_archml_load(path,NULL,&a,&e);
     if (rc != MULIB_ARCHML_OK) fprintf(stderr,"%s:%zu:%zu %s\n",path,e.line,e.column,e.message);
     assert (rc == MULIB_ARCHML_OK && !strcmp(mulib_archml_name(a),names[i]));
-    assert (mulib_archml_count(a,"instruction") >= 60 && mulib_archml_count(a,"register") > 100);
+    if (i < 3) assert (mulib_archml_count(a,"instruction") >= 60 && mulib_archml_count(a,"register") > 100);
+    else assert (mulib_archml_count(a,"instruction") >= 9);
     const char *kinds[] = {"regclass","instruction","mode","memory","atomic","exception","vector","predication","feature","legalize","selection","schedule","rewrite","layout","syntax","extension","smt","abi"};
-    for(size_t k=0;k<sizeof(kinds)/sizeof(*kinds);++k) assert (mulib_archml_count(a,kinds[k]));
+    if (i < 3) for(size_t k=0;k<sizeof(kinds)/sizeof(*kinds);++k) assert (mulib_archml_count(a,kinds[k]));
     all_forms(a);
     if (!i) {
       const uint64_t rr[] = {9,10}, mem[] = {9,12,(uint64_t)-16}, imm[] = {8,UINT64_C(0x1122334455667788)};
@@ -209,7 +210,7 @@ int main (int argc, char **argv)
       golden(a,"adrp",adr,2,"000000b0");
       assert (mulib_archml_register_overlap(a,"x0","w0") == 1);
       assert (mulib_archml_register_overlap(a,"sp","xzr") == 0);
-    } else {
+    } else if (i == 2) {
       const uint64_t rr[] = {10,11,12}, load[] = {10,2,(uint64_t)-8}, branch[] = {10,11,8}, jal[] = {1,16};
       golden(a,"add",rr,3,"3385c500");
       golden(a,"ld",load,3,"033581ff");
@@ -222,6 +223,66 @@ int main (int argc, char **argv)
       assert (used == 99 && output[0] == 0xa5);
       uint64_t reserved_rm[] = {10,11,12,5};
       assert(mulib_archml_encode(a,"fadd.d",reserved_rm,4,output,sizeof(output),&used)==MULIB_ARCHML_RANGE);
+    }
+    if (i == 3) {
+      const uint64_t rr[] = {3,4,5}, load[] = {3,0,(uint64_t)-8}, branch[] = {(uint64_t)-4};
+      golden(a,"add",rr,3,"7c642a14");
+      golden(a,"or",rr,3,"7c832b78");
+      golden(a,"ld",load,3,"e860fff8");
+      golden(a,"b",branch,1,"4bfffffc");
+      uint64_t unaligned[] = {3,4,3}; unsigned char out[32]; size_t used=99;
+      assert(mulib_archml_encode(a,"ld",unaligned,3,out,sizeof(out),&used)==MULIB_ARCHML_RANGE && used==99);
+    } else if (i == 4) {
+      const uint64_t rr[] = {2,4,5}, load[] = {2,29,(uint64_t)-8}, branch[] = {4,5,(uint64_t)-4};
+      golden(a,"addu",rr,3,"00851021");
+      golden(a,"lw",load,3,"8fa2fff8");
+      golden(a,"beq",branch,3,"1085ffff");
+      assert(mulib_archml_register_overlap(a,"zero","r0")==1);
+      assert(!strcmp(mulib_archml_child(mulib_archml_property(mulib_archml_find(a,"register","r0"),"write"),1)->text,"discard"));
+    } else if (i == 5) {
+      /* AVR32 SLEIGH patterns, not 8-bit AVR assembler fixtures. */
+      const uint64_t rr[] = {2,3}, imm[] = {12,(uint64_t)-1};
+      golden(a,"add",rr,2,"0602");
+      golden(a,"and",rr,2,"0662");
+      golden(a,"or",rr,2,"0642");
+      golden(a,"eor",rr,2,"0652");
+      golden(a,"mov-rr",rr,2,"0692");
+      golden(a,"com",rr,1,"5cd2");
+      golden(a,"mov-ri",imm,2,"3ffc");
+      golden(a,"nop",NULL,0,"d703");
+      golden(a,"breakpoint",NULL,0,"d673");
+      assert(mulib_archml_register_overlap(a,"sp","r13")==1);
+      uint64_t pc[] = {15,3}; unsigned char out[32]; size_t used=99;
+      assert(mulib_archml_encode(a,"add",pc,2,out,sizeof(out),&used)==MULIB_ARCHML_RANGE && used==99);
+    } else if (i == 6) {
+      const uint64_t minus64[] = {(uint64_t)-64}, plus63[] = {63}, too_large[] = {64};
+      golden(a,"i32.add",NULL,0,"6a");
+      golden(a,"i64.xor",NULL,0,"85");
+      golden(a,"i32.const-sleb7",minus64,1,"4140");
+      golden(a,"i64.const-sleb7",plus63,1,"423f");
+      /* Direct byte positions in Capstone's WASM opcode table. */
+      const char *stack_forms[] = {"clz","ctz","popcnt","add","sub","mul",
+        "and","or","xor","shl","shr_s","shr_u","rotl","rotr","eqz"};
+      const unsigned char opcodes[] = {0x67,0x68,0x69,0x6a,0x6b,0x6c,
+        0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x45};
+      for(size_t k=0;k<sizeof(opcodes);++k) {
+        char form[64], hex[8];
+        snprintf(form,sizeof(form),"i32.%s",stack_forms[k]);
+        snprintf(hex,sizeof(hex),"%02x",opcodes[k]);
+        golden(a,form,NULL,0,hex);
+        snprintf(form,sizeof(form),"i64.%s",stack_forms[k]);
+        snprintf(hex,sizeof(hex),"%02x",k==14 ? 0x50 : opcodes[k]+0x12);
+        golden(a,form,NULL,0,hex);
+      }
+      golden(a,"nop",NULL,0,"01");
+      golden(a,"unreachable",NULL,0,"00");
+      golden(a,"drop",NULL,0,"1a");
+      golden(a,"select",NULL,0,"1b");
+      assert(mulib_archml_count(a,"register")==0);
+      unsigned char out[32]; size_t used=99;
+      assert(mulib_archml_encode(a,"i32.const-sleb7",too_large,1,out,sizeof(out),&used)==MULIB_ARCHML_RANGE && used==99);
+      const unsigned char continuation[] = {0x41,0x80}; uint64_t v=99;
+      assert(mulib_archml_decode(a,"i32.const-sleb7",continuation,2,&v,1,&used)==MULIB_ARCHML_MISMATCH && v==99 && used==99);
     }
     mulib_archml_destroy(a);
   }

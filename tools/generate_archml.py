@@ -62,7 +62,7 @@ class Profile:
         if isinstance(base, int):
             base = base.to_bytes(4, 'little').hex()
         self.instructions.append(name)
-        mode = {'amd64': 'long64', 'arm64': 'el0', 'risv': 'user'}[self.name]
+        mode = {'amd64': 'long64', 'arm64': 'el0'}.get(self.name, 'user')
         uses, defs = [], []
         if self.name == 'amd64':
             if 'x86-condition' in code: uses.append('rflags')
@@ -84,8 +84,8 @@ class Profile:
                  prop('operands', '\n      ' + '\n      '.join(operands) if operands else ''),
                  prop('encoding', prop('base', q(base)) + ''.join(f' (field {o} {d} {w} {s})' for o, d, w, s in fields)),
                  prop('pcode', code), prop('assembly', q(asm)), prop('effects', effects),
-                 prop('modes', ref('mode', mode)), prop('implicit-use', refs('register', uses)),
-                 prop('implicit-def', refs('register', defs)),
+                  prop('modes', ref('mode', mode)), prop('implicit-use', extra.pop('implicit_use', refs('register', uses))),
+                  prop('implicit-def', extra.pop('implicit_def', refs('register', defs))),
                  prop('schedule', ref('schedule', schedule)), prop('constraints', q(constraints)),
                  *(prop(k.replace('_', '-'), v) for k, v in extra.items()))
 
@@ -594,9 +594,9 @@ def arm64():
     return p
 
 
-def risv():
-    p = Profile('risv')
-    common(p, ['base', 'm', 'a', 'f', 'd'], 'lp64d', 'riscv64-unknown-linux-gnu', 'RISC-V unprivileged ISA RV64I/M/A/F/D/C, vector specification1.0 and RISC-V ELF psABI. Filename risv.aml follows the requested spelling.')
+def riscv64():
+    p = Profile('riscv64')
+    common(p, ['base', 'm', 'a', 'f', 'd'], 'lp64d', 'riscv64-unknown-linux-gnu', 'RISC-V unprivileged ISA RV64I/M/A/F/D/C and ELF psABI. Local encoding cross-check: ArchTk/infobank/Capstone-Arch/RISCV/RISCVGenDisassemblerTables.inc and LLVM-Target/RISCV/RISCVInstrInfo.td. Vector state is metadata-only.')
     for name, desc, deps in [('base', 'RV64I, XLEN64, little-endian', []), ('m', 'Integer multiply/divide', ['base']),
                               ('a', 'LR/SC and AMO', ['base']), ('f', 'Single precision, FLEN>=32', ['base']),
                               ('d', 'Double precision, FLEN>=64', ['f']), ('c', 'Compressed16-bit forms; IALIGN16', ['base']),
@@ -741,7 +741,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
-    for build in [amd64, arm64, risv]:
+    from archml_extra import profiles
+    for build in [amd64, arm64, riscv64, *profiles()]:
         profile = build()
         path = ROOT / 'library' / 'archml' / (profile.name + '.aml')
         text = profile.render()

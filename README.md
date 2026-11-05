@@ -45,7 +45,8 @@ Run tests: `cmake -S . -B build && cmake --build build && ctest --test-dir build
 [`mulib-archml.h`](manual/mulib-archml.md) provides validated architecture DSL
 documents, register aliases, structured P-code, feature dependencies, compiler
 metadata and instruction encoding/decoding. The
-[`library/archml`](library/archml/README.md) profiles cover AMD64, AArch64 and RV64
+[`library/archml`](library/archml/README.md) profiles cover AMD64, AArch64, RV64,
+PowerPC64, MIPS32, AVR32A and WebAssembly MVP
 with explicit concrete-form and extension coverage. PARSEC retains its existing
 API while adding bounded-work execution and an explicit parser stack.
 

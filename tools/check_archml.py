@@ -73,32 +73,56 @@ def fixtures():
     for name, asm in [('nop', 'nop'), ('dmb-ish', 'dmb ish'), ('brk0', 'brk #0')]:
         add('arm64', name, [], asm)
     for name in ['add', 'sub', 'sll', 'slt', 'sltu', 'xor', 'srl', 'sra', 'or', 'and', 'mul', 'div', 'divu', 'rem', 'remu']:
-        add('risv', name, [10, 11, 12], name+' a0, a1, a2')
+        add('riscv64', name, [10, 11, 12], name+' a0, a1, a2')
         if name in ['add', 'sub', 'sll', 'srl', 'sra', 'mul', 'div', 'divu', 'rem', 'remu']:
-            add('risv', name+'w', [10, 11, 12], name+'w a0, a1, a2')
+            add('riscv64', name+'w', [10, 11, 12], name+'w a0, a1, a2')
     for name in ['addi', 'slti', 'sltiu', 'andi', 'ori', 'xori']:
-        add('risv', name, [10, 11, -123], name+' a0, a1, -123')
+        add('riscv64', name, [10, 11, -123], name+' a0, a1, -123')
     for name in ['slli', 'srli', 'srai']:
-        add('risv', name, [10, 11, 63], name+' a0, a1, 63')
+        add('riscv64', name, [10, 11, 63], name+' a0, a1, 63')
     for name in ['ld', 'lw', 'lh', 'lb', 'lwu', 'lhu', 'lbu']:
-        add('risv', name, [10, 2, -8], name+' a0, -8(sp)')
+        add('riscv64', name, [10, 2, -8], name+' a0, -8(sp)')
     for name in ['sd', 'sw', 'sh', 'sb']:
-        add('risv', name, [2, 10, -8], name+' a0, -8(sp)')
+        add('riscv64', name, [2, 10, -8], name+' a0, -8(sp)')
     for name in ['amoadd', 'amoswap', 'amoxor', 'amoor', 'amoand', 'amomin', 'amomax', 'amominu', 'amomaxu']:
         for suffix in ['w', 'd']:
-            add('risv', name+'.'+suffix, [10, 11, 12, 3], name+'.'+suffix+'.aqrl a0, a2, (a1)')
+            add('riscv64', name+'.'+suffix, [10, 11, 12, 3], name+'.'+suffix+'.aqrl a0, a2, (a1)')
     for width, suffix in [(32, 'w'), (64, 'd')]:
-        add('risv', 'lr'+str(width), [10, 11, 2], 'lr.'+suffix+'.aq a0, (a1)')
-        add('risv', 'sc'+str(width), [10, 11, 12, 1], 'sc.'+suffix+'.rl a0, a2, (a1)')
+        add('riscv64', 'lr'+str(width), [10, 11, 2], 'lr.'+suffix+'.aq a0, (a1)')
+        add('riscv64', 'sc'+str(width), [10, 11, 12, 1], 'sc.'+suffix+'.rl a0, a2, (a1)')
     for name in ['fadd.d', 'fsub.d', 'fmul.d', 'fdiv.d']:
-        add('risv', name, [10, 11, 12, 0], name+' fa0, fa1, fa2, rne')
-    add('risv', 'fld', [10, 2, -8], 'fld fa0, -8(sp)')
-    add('risv', 'fsd', [2, 10, -8], 'fsd fa0, -8(sp)')
-    add('risv', 'fsgnj.d', [10, 11, 12], 'fsgnj.d fa0, fa1, fa2')
-    add('risv', 'fmv.x.d', [10, 11], 'fmv.x.d a0, fa1')
-    add('risv', 'fmv.d.x', [10, 11], 'fmv.d.x fa0, a1')
+        add('riscv64', name, [10, 11, 12, 0], name+' fa0, fa1, fa2, rne')
+    add('riscv64', 'fld', [10, 2, -8], 'fld fa0, -8(sp)')
+    add('riscv64', 'fsd', [2, 10, -8], 'fsd fa0, -8(sp)')
+    add('riscv64', 'fsgnj.d', [10, 11, 12], 'fsgnj.d fa0, fa1, fa2')
+    add('riscv64', 'fmv.x.d', [10, 11], 'fmv.x.d a0, fa1')
+    add('riscv64', 'fmv.d.x', [10, 11], 'fmv.d.x fa0, a1')
     for name, asm in [('ecall', 'ecall'), ('ebreak', 'ebreak'), ('fence-rw-rw', 'fence rw,rw'), ('fence.i', 'fence.i')]:
-        add('risv', name, [], asm)
+        add('riscv64', name, [], asm)
+    for name in ['add', 'subf', 'mulld', 'and', 'or', 'xor']:
+        add('ppc64', name, [3, 4, 5], name+' 3, 4, 5')
+    for name in ['addi', 'addis', 'ori', 'oris', 'xori', 'xoris']:
+        add('ppc64', name, [3, 4, 1234], name+' 3, 4, 1234')
+    add('ppc64', 'addi', [3, 0, -123], 'addi 3, 0, -123')
+    for name in ['lbz', 'lhz', 'lwz', 'ld', 'stb', 'sth', 'stw', 'std']:
+        add('ppc64', name, [31, 0, -16], name+' 31, -16(0)')
+    for name in ['b', 'bl']:
+        add('ppc64', name, [16], name+' 16')
+    add('ppc64', 'nop', [], 'nop')
+    for name in ['addu', 'subu', 'and', 'or', 'xor', 'slt', 'sltu']:
+        add('mips', name, [2, 4, 5], name+' $2, $4, $5')
+    for name in ['sll', 'srl', 'sra']:
+        add('mips', name, [2, 5, 31], name+' $2, $5, 31')
+    for name in ['addiu', 'andi', 'ori', 'xori']:
+        add('mips', name, [2, 4, 1234], name+' $2, $4, 1234')
+    add('mips', 'lui', [2, 65535], 'lui $2, 65535')
+    for name in ['lb', 'lbu', 'lh', 'lhu', 'lw', 'sb', 'sh', 'sw']:
+        add('mips', name, [2, 29, -16], name+' $2, -16($29)')
+    for name in ['beq', 'bne']:
+        add('mips', name, [4, 5, -4], name+' $4, $5, -4')
+    add('mips', 'jr', [31], 'jr $31')
+    for form, assembly in [('nop', 'nop'), ('syscall0', 'syscall 0'), ('break0', 'break 0')]:
+        add('mips', form, [], assembly)
     return cases
 
 
@@ -109,9 +133,9 @@ def main():
     args = parser.parse_args()
     cases = fixtures()
     for arch, form, values, assembly in cases:
-        target = {'amd64': 'x86_64', 'arm64': 'aarch64', 'risv': 'riscv64'}[arch]
-        preamble = '.intel_syntax noprefix\n' if arch == 'amd64' else '.option norvc\n' if arch == 'risv' else ''
-        flags = ['-mattr=+m,+a,+f,+d,+zifencei'] if arch == 'risv' else []
+        target = {'amd64': 'x86_64', 'arm64': 'aarch64', 'riscv64': 'riscv64', 'ppc64': 'powerpc64', 'mips': 'mips'}[arch]
+        preamble = '.intel_syntax noprefix\n' if arch == 'amd64' else '.option norvc\n' if arch == 'riscv64' else '.set noreorder\n' if arch == 'mips' else ''
+        flags = ['-mattr=+m,+a,+f,+d,+zifencei'] if arch == 'riscv64' else ['-mcpu=mips32r2'] if arch == 'mips' else []
         assembled = subprocess.run([args.llvm_mc, '-triple='+target, '-show-encoding', *flags],
                                    input=preamble+assembly+'\n', text=True, capture_output=True, check=True)
         match = re.search(r'encoding: \[([^\]]+)\]', assembled.stdout)

@@ -23,7 +23,7 @@ and concurrent queries have no shared mutable state.
 
 mulib_archml_t *architecture = NULL;
 mulib_archml_error_t error;
-if (mulib_archml_load("library/archml/risv.aml", NULL,
+if (mulib_archml_load("library/archml/riscv64.aml", NULL,
                       &architecture, &error) == MULIB_ARCHML_OK) {
     uint64_t operands[] = {10, 11, 12}; /* ADD a0,a1,a2 */
     unsigned char bytes[4];
@@ -270,7 +270,7 @@ All views expire with the document. Do not mutate public node fields.
   high registers, SIB addressing, subword accesses, flags, FP and atomic order bits.
 * `tests/fuzz_headers.c`: bounded hostile-input loading and ownership checks.
 
-Edit `tools/generate_archml.py`, run it to regenerate the three checked-in AML
+Edit `tools/generate_archml.py` or `tools/archml_extra.py`, run the generator to regenerate the seven checked-in AML
 assets, then run `--check` to verify reproducibility. Generator tables are reviewed
 source data, not claims that complete ISA references have been mechanically
 imported. Add new concrete forms together with assembler fixtures and semantic

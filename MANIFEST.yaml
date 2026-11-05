@@ -3509,12 +3509,22 @@ project_files:
   purpose: AMD64 compiler profile with concrete encodings, P-code and backend metadata.
 - file: library/archml/arm64.aml
   purpose: AArch64 compiler profile with concrete encodings, P-code and backend metadata.
-- file: library/archml/risv.aml
+- file: library/archml/riscv64.aml
   purpose: RV64 RISC-V compiler profile with concrete encodings, P-code and backend metadata.
+- file: library/archml/ppc64.aml
+  purpose: Big-endian PowerPC64 selected integer encodings and P-code.
+- file: library/archml/mips.aml
+  purpose: Big-endian MIPS32 selected integer encodings with explicit delay-slot semantics.
+- file: library/archml/avr32.aml
+  purpose: AVR32A selected encodings and P-code from local SLEIGH descriptions, distinct from AVR8.
+- file: library/archml/wasm.aml
+  purpose: WebAssembly MVP selected stack operations and bounded single-byte LEB constants.
 - file: library/archml/README.md
   purpose: ArchML profile coverage and compiler integration contracts.
 - file: tools/generate_archml.py
   purpose: Deterministic source tables and generator for the ArchML architecture profiles.
+- file: tools/archml_extra.py
+  purpose: Source-traceable PowerPC64, MIPS32, AVR32A and WebAssembly profile tables.
 - file: tools/check_archml.py
   purpose: Independent LLVM MC oracle for ArchML instruction encoding fixtures.
 - file: examples/exec-common.h
