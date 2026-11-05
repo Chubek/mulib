@@ -3803,14 +3803,34 @@ project_files:
   purpose: AVR32A selected encodings and P-code from local SLEIGH descriptions, distinct from AVR8.
 - file: library/archml/wasm.aml
   purpose: WebAssembly MVP selected stack operations and bounded single-byte LEB constants.
+- file: library/archml/amdgpu.am
+  purpose: GCN gfx600 ordinary-SGPR SALU encodings, SCC effects and wave termination.
+- file: library/archml/arm.am
+  purpose: ARMv7 A32 little-endian AL-only integer, memory and PC-relative branch subset.
+- file: library/archml/nvptx.am
+  purpose: NVPTX64 typed virtual integer operations with PTX text templates, not SASS encodings.
+- file: library/archml/spirv.am
+  purpose: Selected SPIR-V word encodings and module-ID semantics without physical registers.
+- file: library/archml/xtensa.am
+  purpose: Little-endian Xtensa 24-bit integer and scaled-offset memory encodings.
+- file: library/archml/bpf.am
+  purpose: Little-endian eBPF ALU32/64, LDDW, memory, branches and EXIT encodings.
+- file: library/archml/directx.am
+  purpose: Selected DXIL i32 operation contracts and LLVM IR call templates, not native encodings.
+- file: library/archml/m68k.am
+  purpose: Big-endian 68000 register-direct integer encodings with short-write and CCR semantics.
+- file: library/archml/hexagon.am
+  purpose: Hexagon V60 scalar integer encodings in complete single-instruction packets.
 - file: library/archml/README.md
   purpose: ArchML profile coverage and compiler integration contracts.
 - file: tools/generate_archml.py
   purpose: Deterministic source tables and generator for the ArchML architecture profiles.
 - file: tools/archml_extra.py
   purpose: Source-traceable PowerPC64, MIPS32, AVR32A and WebAssembly profile tables.
+- file: tools/archml_targets.py
+  purpose: Source-traceable bounded profiles for nine additional LLVM targets, including non-binary PTX/DXIL operations.
 - file: tools/check_archml.py
-  purpose: Independent LLVM MC oracle for ArchML instruction encoding fixtures.
+  purpose: Independent LLVM MC and optional SPIRV-Tools oracles for ArchML instruction encoding fixtures.
 - file: examples/exec-common.h
   purpose: Explicit execution and Mune implementation placement for examples and tests.
 - file: library/git/init.lua

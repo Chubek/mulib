@@ -45,7 +45,9 @@ typedef struct mulib_archml_options {
 /** Parse the entire length-delimited source. Owns all returned text; source may
  * be released immediately. On failure *out is unchanged; free before reuse.
  * Rejects duplicate records/properties, unresolved refs, invalid encodings,
- * undeclared P-code operations, and invalid register views. Error is optional. */
+ * undeclared P-code operations, and invalid register views. Non-binary operation
+ * records have validated operands/P-code but are not accepted by encode/decode.
+ * Error is optional. */
 mulib_archml_result mulib_archml_parse (const char *, size_t,
     const mulib_archml_options_t *, mulib_archml_t **out, mulib_archml_error_t *);
 mulib_archml_result mulib_archml_load (const char *path,
@@ -330,21 +332,11 @@ static int mulib_archml_allowed_ (const mulib_archml_t *a, const mulib_archml_no
   }
   return 1;
 }
-static int mulib_archml_encoding_read_ (const mulib_archml_node_t *n, mulib_archml_encoding_ *e)
+/* Shared operand table for binary instructions and non-binary operations. */
+static int mulib_archml_operands_read_ (const mulib_archml_node_t *n, mulib_archml_encoding_ *e)
 {
-  const char *base;
-  uint64_t covered[MULIB_ARCHML_MAX_OPERANDS] = {0};
   memset (e, 0, sizeof (*e));
-  e->encoding = mulib_archml_property (n, "encoding");
-  base = mulib_archml_word_ (mulib_archml_property (e->encoding, "base"), 1);
-  if (!base || !*base || strlen (base) % 2 || strlen (base) / 2 > MULIB_ARCHML_MAX_BYTES
-      || !mulib_archml_property (n, "operands")) return 0;
-  e->length = strlen (base) / 2;
-  for (size_t i = 0; i < e->length; ++i) {
-    int hi = mulib_archml_hex_ ((unsigned char)base[2*i]), lo = mulib_archml_hex_ ((unsigned char)base[2*i+1]);
-    if (hi < 0 || lo < 0) return 0;
-    e->base[i] = (unsigned char)(hi * 16 + lo); e->mask[i] = 255;
-  }
+  if (!mulib_archml_property (n, "operands")) return 0;
   for (const mulib_archml_node_t *op = mulib_archml_child (mulib_archml_property (n, "operands"), 1); op; op = op->next) {
     size_t i = e->count;
     const char *sign = mulib_archml_word_ (mulib_archml_property (op, "signed"), 1);
@@ -357,6 +349,22 @@ static int mulib_archml_encoding_read_ (const mulib_archml_node_t *n, mulib_arch
     e->sign[i] = !strcmp (sign, "true"); e->operands[i] = op; ++e->count;
     /* All represented byte offsets must fit a 64-bit operand bit pattern. */
     if (e->scales[i] - 1 > (UINT64_MAX >> (unsigned)(e->bits[i] - 1)) / 2) return 0;
+  }
+  return 1;
+}
+static int mulib_archml_encoding_read_ (const mulib_archml_node_t *n, mulib_archml_encoding_ *e)
+{
+  const char *base;
+  uint64_t covered[MULIB_ARCHML_MAX_OPERANDS] = {0};
+  if (!mulib_archml_operands_read_ (n, e)) return 0;
+  e->encoding = mulib_archml_property (n, "encoding");
+  base = mulib_archml_word_ (mulib_archml_property (e->encoding, "base"), 1);
+  if (!base || !*base || strlen (base) % 2 || strlen (base) / 2 > MULIB_ARCHML_MAX_BYTES) return 0;
+  e->length = strlen (base) / 2;
+  for (size_t i = 0; i < e->length; ++i) {
+    int hi = mulib_archml_hex_ ((unsigned char)base[2*i]), lo = mulib_archml_hex_ ((unsigned char)base[2*i+1]);
+    if (hi < 0 || lo < 0) return 0;
+    e->base[i] = (unsigned char)(hi * 16 + lo); e->mask[i] = 255;
   }
   for (const mulib_archml_node_t *f = mulib_archml_child (e->encoding, 1); f; f = f->next) {
     uint64_t dst, bits, src;
@@ -457,7 +465,7 @@ static int mulib_archml_kind_ (const char *s)
   static const char *const kinds[] = {"target","storage","register","regclass","instruction",
     "feature","mode","memory","addressing","atomic","exception","vector","predication",
     "legalize","selection","schedule","resource","rewrite","layout","syntax","extension",
-    "smt","abi","relocation","pcode-op","microarch","type","coverage"};
+    "smt","abi","relocation","pcode-op","microarch","type","coverage","operation"};
   for (size_t i = 0; i < sizeof (kinds)/sizeof (*kinds); ++i) if (!strcmp (s, kinds[i])) return 1;
   return !strncmp (s, "x-", 2) && s[2];
 }
@@ -560,15 +568,24 @@ static mulib_archml_result mulib_archml_validate_ (mulib_archml_t *a, size_t wor
         if (!reg || !mulib_archml_is_ (mulib_archml_child (reg, 0), "register")
             || !mulib_archml_number_ (reg, "bits", &width) || width != bits) MULIB_ARCHML_BAD_ (p, "register class member width/kind mismatch");
       }
-    } else if (!strcmp (kind, "instruction")) {
+    } else if (!strcmp (kind, "instruction") || !strcmp (kind, "operation")) {
       mulib_archml_encoding_ enc;
+      int nonbinary = !strcmp (kind, "operation");
       p = mulib_archml_property (n, "pcode");
-      if (!mulib_archml_encoding_read_ (n, &enc)) MULIB_ARCHML_BAD_ (n, "invalid, overlapping or incomplete encoding");
+      if (nonbinary) {
+        const mulib_archml_node_t *emission = mulib_archml_property (n, "emission");
+        const char *format = mulib_archml_word_ (emission, 1);
+        if (mulib_archml_property (n, "encoding") || !format || mulib_archml_child (emission, 2)
+            || (strcmp (format, "text") && strcmp (format, "llvm-ir")))
+          MULIB_ARCHML_BAD_ (n, "operation needs text/llvm-ir emission and no binary encoding");
+        if (!mulib_archml_operands_read_ (n, &enc)) MULIB_ARCHML_BAD_ (n, "invalid operation operands");
+      } else if (!mulib_archml_encoding_read_ (n, &enc)) MULIB_ARCHML_BAD_ (n, "invalid, overlapping or incomplete encoding");
       for (size_t k = 0; k < enc.count; ++k) {
         const mulib_archml_node_t *op = enc.operands[k], *cls;
         const char *type = mulib_archml_word_ (mulib_archml_property (op, "kind"), 1);
         const char *access = mulib_archml_word_ (mulib_archml_property (op, "access"), 1);
-        if (!type || (strcmp (type, "register") && strcmp (type, "immediate")) || !access
+        if (!type || (strcmp (type, "register") && strcmp (type, "immediate")
+                     && !(nonbinary && !strcmp (type, "value"))) || !access
             || (strcmp (access, "read") && strcmp (access, "write") && strcmp (access, "read-write"))) MULIB_ARCHML_BAD_ (op, "invalid operand kind/access");
         for (const mulib_archml_node_t *x = mulib_archml_child (op, 1); x; x = x->next) {
           if (!mulib_archml_word_ (x, 0)) MULIB_ARCHML_BAD_ (x, "invalid operand property");
@@ -581,12 +598,15 @@ static mulib_archml_result mulib_archml_validate_ (mulib_archml_t *a, size_t wor
           cls = mulib_archml_ref_ (a, mulib_archml_child (mulib_archml_property (op, "class"), 1));
           if (!cls || !mulib_archml_is_ (mulib_archml_child (cls, 0), "regclass")
               || enc.scales[k] != 1 || enc.sign[k]) MULIB_ARCHML_BAD_ (op, "invalid register operand class/scale/sign");
+        } else if (!strcmp (type, "value")) {
+          if (mulib_archml_property (op, "class") || enc.scales[k] != 1 || enc.sign[k])
+            MULIB_ARCHML_BAD_ (op, "value operands have no physical class, scale or signed encoding");
         }
         for (const mulib_archml_node_t *x = mulib_archml_child (mulib_archml_property (op, "exclude"), 1); x; x = x->next)
           if (!mulib_archml_u64 (x, &bits)) MULIB_ARCHML_BAD_ (x, "invalid excluded operand value");
       }
       if (!p || !mulib_archml_child (p, 1) || mulib_archml_child (p, 1)->kind != MULIB_ARCHML_LIST
-          || mulib_archml_child (p, 2)) MULIB_ARCHML_BAD_ (n, "instruction needs one P-code expression");
+          || mulib_archml_child (p, 2)) MULIB_ARCHML_BAD_ (n, "instruction/operation needs one P-code expression");
       /* Captures are postorder: the expression occupies one contiguous interval.
        * Inspect lists without a native recursive traversal. */
       for (size_t j = p->subtree_first; j < (size_t)(p - a->nodes); ++j) {
@@ -608,7 +628,9 @@ static mulib_archml_result mulib_archml_validate_ (mulib_archml_t *a, size_t wor
           if (operand == enc.count) MULIB_ARCHML_BAD_ (expr, "unknown P-code operand");
           access = mulib_archml_word_ (mulib_archml_property (enc.operands[operand], "access"), 1);
           if (!strcmp (access, writing ? "read" : "write")) MULIB_ARCHML_BAD_ (expr, "P-code violates operand access");
-          if (writing && !mulib_archml_property (enc.operands[operand], "class")) MULIB_ARCHML_BAD_ (expr, "cannot write an immediate operand");
+          if (writing && !mulib_archml_property (enc.operands[operand], "class")
+              && !mulib_archml_is_ (mulib_archml_child (mulib_archml_property (enc.operands[operand], "kind"), 1), "value"))
+            MULIB_ARCHML_BAD_ (expr, "cannot write an immediate operand");
         }
         if (mulib_archml_is_ (mulib_archml_child (expr, 0), "reg") || mulib_archml_is_ (mulib_archml_child (expr, 0), "set-reg"))
           if (!mulib_archml_find (a, "register", mulib_archml_word_ (expr, 1))) MULIB_ARCHML_BAD_ (expr, "unknown implicit P-code register");

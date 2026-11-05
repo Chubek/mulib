@@ -109,7 +109,7 @@ should be checked rather than storing an unchecked symbolic name.
 |---|---|
 | `target`, `coverage` | Version, target width/endian/triple, default feature set and ABI, precise coverage contract and references |
 | `storage`, `register`, `regclass` | Physical storage, overlapping views, encoding/DWARF IDs, write policy, register classes, reserved registers, spill alignment, scalable groups |
-| `instruction`, `pcode-op` | Concrete encoding, operands, semantic expression, explicit/implicit uses/defs, modes/features, effects, assembly template and scheduling class |
+| `instruction`, `operation`, `pcode-op` | Concrete binary forms or non-binary text/IR operations, operands, semantic expression, explicit/implicit uses/defs, modes/features, effects, assembly template and scheduling class |
 | `mode`, `microarch` | Privilege, operand/address width, execution-state constraints, issue width, hazards and named tuning model |
 | `memory`, `addressing` | Memory model/endian/address width, alignment, access atomicity, address formulas and legal offset forms |
 | `atomic` | Acquire/release/seq-cst mappings, fences, RMW/LL-SC reservations, alignment and forward-progress conditions |
@@ -218,6 +218,40 @@ resolve symbols or select branch veneers. All outputs are transactional. Buffer
 capacity failure also leaves bytes untouched. Caller operand arrays and byte
 buffers must be valid and nonoverlapping.
 
+### Non-binary operations (PTX and DXIL)
+
+`operation` records describe forms that emit text or LLVM IR, not native bytes.
+They require `(emission text)` or `(emission llvm-ir)`, an `operands` property,
+and one validated `pcode` expression. An `encoding` property is forbidden.
+For example:
+
+```lisp
+(operation add.s32
+  (emission text)
+  (operands
+    (dst (kind value) (bits 32) (signed false) (scale 1) (access write))
+    (lhs (kind value) (bits 32) (signed false) (scale 1) (access read))
+    (rhs (kind value) (bits 32) (signed false) (scale 1) (access read)))
+  (pcode (write dst (bvadd 32 (read lhs) (read rhs))))
+  (assembly "add.s32 {dst}, {lhs}, {rhs};"))
+```
+
+This example assumes the usual `write`, `read`, and `bvadd` operator declarations.
+`value` operands are typed virtual values with widths 1..64, no physical class,
+unsigned encoding metadata and scale one; they are allowed only in `operation`
+records. Operations can also use ordinary immediate/register operand descriptors.
+The same operand uniqueness, references, access bindings, feature requirements
+and P-code operator/arity checks apply as for binary instructions. This is not
+full SSA/type or module validation. Immediate exclusions document consumer-side
+constraints; there is no non-binary emission/operand-validation API.
+
+Use the existing `find`, `at`, `count`, `property` and `enabled` APIs to inspect
+operations. The binary encoder/decoder only look up `instruction` records: a
+non-binary operation name returns `MULIB_ARCHML_INVALID`, preserving every output.
+All existing function signatures, public structures and version-1 binary forms
+are unchanged. No text assembler, PTX-to-SASS compiler or DXIL bitcode writer is
+implicitly added.
+
 ### P-code semantic contract
 
 `pcode` contains one S-expression. Every list operator must have a `pcode-op`
@@ -267,11 +301,15 @@ All views expire with the document. Do not mutate public node fields.
 * `tests/test_archml_alloc.c`: fails every parse/tree/index/feature and PARSEC
   stack/capture allocation, requiring clean outputs and zero retained allocations.
 * `tools/check_archml.py`: independent LLVM MC assembler comparisons, including
-  high registers, SIB addressing, subword accesses, flags, FP and atomic order bits.
+  high registers, SIB addressing, subword accesses, flags, FP, atomic order bits,
+  ARM A32, gfx600 SALU, eBPF and Hexagon packets. Optional `spirv-as` comparisons
+  check SPIR-V word order and ID serialization independently.
 * `tests/fuzz_headers.c`: bounded hostile-input loading and ownership checks.
 
-Edit `tools/generate_archml.py` or `tools/archml_extra.py`, run the generator to regenerate the seven checked-in AML
-assets, then run `--check` to verify reproducibility. Generator tables are reviewed
+Edit `tools/generate_archml.py`, `tools/archml_extra.py` or
+`tools/archml_targets.py`, run the generator to regenerate the sixteen checked-in
+`.aml`/`.am` assets, then run `--check` to verify reproducibility. File extensions
+are a deployment convention, not a parser restriction. Generator tables are reviewed
 source data, not claims that complete ISA references have been mechanically
 imported. Add new concrete forms together with assembler fixtures and semantic
 contracts. Extend runtime coverage records whenever a feature becomes selectable.

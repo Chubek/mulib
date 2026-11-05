@@ -29,6 +29,10 @@ int main (void)
 {
   const char source[] = "(archml 1 t (target t (bits 64) (endian little))"
     "(feature a) (feature b (requires (ref feature a)))"
+    "(pcode-op identity (arity 1 1) (semantics \"identity\"))"
+    "(operation virtual (requires (ref feature b)) (emission text)"
+    "(operands (src (kind value) (bits 32) (signed false) (scale 1) (access read)))"
+    "(pcode (identity 1)))"
     "(x-data deep (tree (a (b (c (d (e (f (g (h (i (j (k (l (m (n (o (p x)))))))))))))))))))";
   mulib_archml_error_t e;
   mulib_archml_t *a = NULL;

@@ -2,6 +2,8 @@
 
 Load these version-1 S-expression descriptions using `mulib_archml_load`.
 The canonical RV64 RISC-V filename is **`riscv64.aml`**.
+The nine additional LLVM-target profiles use the requested **`.am`** filenames;
+the loader does not depend on the filename extension.
 
 | File | Default compiler profile | Concrete forms |
 |---|---|---:|
@@ -12,6 +14,15 @@ The canonical RV64 RISC-V filename is **`riscv64.aml`**.
 | `mips.aml` | Big-endian pre-R6 MIPS32, selected integer forms and delayed branches | 29 |
 | `avr32.aml` | Big-endian AVR32A, selected 16-bit forms; **not AVR8** | 9 |
 | `wasm.aml` | WebAssembly MVP wasm32, selected stack operations and SLEB7 constants | 36 |
+| `amdgpu.am` | GCN gfx600 wave64, ordinary-SGPR SALU and wave termination | 8 |
+| `arm.am` | Little-endian ARMv7 A32, AL-only integer subset; not Thumb/AArch64 | 19 |
+| `nvptx.am` | NVPTX64 virtual scalar integer ISA, PTX text only | 0 (15 operations) |
+| `spirv.am` | Selected little-endian SPIR-V word sequences with nonzero IDs | 12 |
+| `xtensa.am` | Little-endian Xtensa 24-bit integer and memory forms | 20 |
+| `bpf.am` | Little-endian eBPF ALU32/64, LDDW, memory, short branches and EXIT | 57 |
+| `directx.am` | DXIL scalar i32 min/max and dispatch/group IDs, LLVM IR only | 0 (8 operations) |
+| `m68k.am` | Big-endian 68000 register-direct byte/word/long integer subset | 20 |
+| `hexagon.am` | Hexagon V60 scalar forms in single-instruction packets | 7 |
 
 The AMD64, AArch64 and RV64 compiler profiles include register storage/aliases, classes and allocation restrictions,
 concrete bit encodings, structured P-code, memory/atomic/exception semantics,
@@ -21,7 +32,7 @@ extension descriptions and SMT proof obligations. ABI and object-layout records
 provide additional compiler integration data. Microarchitecture costs are
 conservative generic estimates, not measured silicon timing guarantees.
 
-The four newer profiles are deliberately smaller encoding/P-code subsets, not
+The profiles beyond AMD64/AArch64/RV64 are deliberately smaller subsets, not
 full compiler-backend profiles. They make no ABI, tuning or exhaustive ISA claims.
 MIPS branches explicitly execute a delay slot, unlike RISC-V branches. PPC64 uses
 constant zero for an encoded r0 base in ADDI/ADDIS and supported memory forms,
@@ -30,6 +41,29 @@ excludes PC operands and preserves the specified status flags. WebAssembly has
 no invented physical registers: operations consume/produce typed stack values.
 Its `i32.const-sleb7`/`i64.const-sleb7` forms accept only -64..63; the current
 fixed-bit encoding schema cannot express general variable-length LEB128.
+
+The additional profiles preserve important target distinctions:
+
+* AMDGPU fixes **gfx600**, excludes special/inline/literal operand encodings, and
+  models SCC effects; SALU runs once per wave, not once per active lane.
+* ARM fixes A32 condition AL and S=0. PC register operands are excluded; B/BL
+  use PC+8 as their displacement base, and BL writes PC+4 to LR.
+* Xtensa excludes density/window rotation; its offsets are unsigned scaled bytes.
+* eBPF excludes writes to r10, zero-extends ALU32 results and encodes LDDW as two
+  slots. Branch displacements are **bytes**, relative to PC+8. Encoding is not
+  verifier approval; pointer provenance and branch-slot validity remain separate.
+* M68k short data-register writes preserve upper bits and model CCR/X effects.
+  Hexagon words fix packet-end parse bits; they cannot be repacked without a
+  packetizer and hazard checks.
+* SPIR-V operands are module IDs, not physical registers. The encoder checks
+  word templates and nonzero IDs, not types, capabilities, header bounds or CFGs.
+  `OpUnreachable` denotes undefined execution, not a guaranteed hardware trap.
+* NVPTX and DirectX use validated **`operation`** records with `value` operands
+  and P-code. They have no invented machine opcodes or finite physical register
+  banks. Query these records with `mulib_archml_find(doc, "operation", name)`;
+  `encode`/`decode` return `MULIB_ARCHML_INVALID` without changing outputs.
+  Consumers emit the PTX text/DXIL LLVM IR templates and supply valid module
+  context. A DXIL opcode is an IR call argument, not a byte instruction encoding.
 
 ## Local source provenance
 
@@ -43,16 +77,29 @@ to that directory); regeneration does not require the corpus:
 | MIPS32 | `Capstone-Arch/Mips/MipsGenDisassemblerTables.inc`; `LLVM-Target/Mips/MipsInstrInfo.td`, `MipsInstrFormats.td` |
 | AVR32A | `Ghidra-CPU/Atmel/data/languages/avr32a.slaspec` and its arithmetic, logic, data-transfer and system-control `.sinc` files |
 | WebAssembly | `Capstone-Arch/WASM/WASMDisassembler.c`; `Binaryen-WASM/wasm-stack.cpp`, `wasm-validator.cpp` |
+| AMDGPU | `LLVM-Target/AMDGPU/SOPInstructions.td`, `SIRegisterInfo.td` (gfx6 opcode tables and formats) |
+| ARM A32 | `LLVM-Target/ARM/ARMInstrInfo.td`, `ARMInstrFormats.td`, `ARMRegisterInfo.td` |
+| NVPTX | `LLVM-Target/NVPTX/NVPTXInstrInfo.td`, `NVPTXInstrFormats.td`, `NVPTXRegisterInfo.td` |
+| SPIR-V | `LLVM-Target/SPIRV/SPIRVInstrInfo.td`, `SPIRVInstrFormats.td`, `MCTargetDesc/SPIRVMCCodeEmitter.cpp` |
+| Xtensa | `LLVM-Target/Xtensa/XtensaInstrInfo.td`, `XtensaInstrFormats.td`, `XtensaRegisterInfo.td` |
+| eBPF | `LLVM-Target/BPF/BPFInstrFormats.td`, `BPFInstrInfo.td`, `BPFRegisterInfo.td`, `MCTargetDesc/BPFMCCodeEmitter.cpp` |
+| DirectX | `LLVM-Target/DirectX/DXIL.td`, `DXILOpBuilder.cpp`, `DXILWriter/DXILBitcodeWriter.cpp` |
+| M68k | `LLVM-Target/M68k/M68kInstrArithmetic.td`, `M68kInstrData.td`, `M68kInstrControl.td`, `M68kRegisterInfo.td` |
+| Hexagon | `LLVM-Target/Hexagon/HexagonDepInstrInfo.td`, `HexagonDepInstrFormats.td`, `HexagonInstrFormats.td`, `MCTargetDesc/HexagonBaseInfo.h` |
 
 AVR32 is absent from this Capstone snapshot; its profile uses the surrounding
 Ghidra corpus instead. Tables describe selected facts, not a wholesale conversion
-of third-party source. LLVM MC independently checks the supported PowerPC64 and
-MIPS forms; AVR32 and WebAssembly have source-derived byte fixtures instead.
+of third-party source. LLVM MC independently checks the supported PowerPC64,
+MIPS, ARM A32, gfx600 SALU, eBPF and Hexagon forms. SPIRV-Tools independently
+checks SPIR-V forms when `spirv-as` is installed. AVR32, WebAssembly, Xtensa and
+M68k have source-derived byte fixtures instead. The local LLVM MC build has no
+Xtensa/M68k targets or SPIR-V text parser.
 
 ## Coverage contract
 
 An `instruction` record is one encodable form, with bounded operands and a P-code
 expression. Unsupported addressing variants are not implied by the mnemonic.
+An `operation` record has no binary encoding and cannot be passed to the encoder.
 Encoder support is intentionally explicit: the files do **not** contain every
 instruction, privileged facility or extension of these very large architectures.
 For example, AVX/AVX512, SVE/SVE2 and RVV have feature/state descriptions but are
@@ -82,7 +129,8 @@ backend data foundation, not a claim of a complete production compiler target.
 The public schema and ownership contracts are in
 [`manual/mulib-archml.md`](../../manual/mulib-archml.md).
 The AML is generated deterministically from
-[`tools/generate_archml.py`](../../tools/generate_archml.py) and
-[`tools/archml_extra.py`](../../tools/archml_extra.py); use `--check` in CI.
+[`tools/generate_archml.py`](../../tools/generate_archml.py),
+[`tools/archml_extra.py`](../../tools/archml_extra.py) and
+[`tools/archml_targets.py`](../../tools/archml_targets.py); use `--check` in CI.
 Tests load these actual files, roundtrip every form, and compare representative
 forms with independent LLVM MC encodings.

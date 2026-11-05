@@ -10,19 +10,20 @@ def op(p, name, arity, semantics):
     p.add('pcode-op', name, prop('arity', f'{arity} {arity}'), prop('semantics', q(semantics)))
 
 
-def base(name, bits, endian, sources, scope):
+def base(name, bits, endian, sources, scope, *, alignment=None, semantics=None,
+         status='selected-concrete-forms'):
     p = Profile(name)
     p.add('target', name, prop('bits', bits), prop('endian', endian),
           prop('default-features', ref('feature', 'base')), prop('sources', q(sources)),
-          prop('semantics', q('Operands read pre-state. Effects commit after fault checks; normal fallthrough advances PC by encoded length. Widths are bits; offsets are bytes.')))
-    p.add('coverage', 'profile', prop('status', 'selected-concrete-forms'), prop('contract', q(scope)),
+          prop('semantics', q(semantics or 'Operands read pre-state. Effects commit after fault checks; normal fallthrough advances PC by encoded length. Widths are bits; offsets are bytes.')))
+    p.add('coverage', 'profile', prop('status', status), prop('contract', q(scope)),
           prop('non-goals', q('Not a complete ISA, ABI lowering implementation, scheduler or emulator. No calling convention, privileged state, relocation or extension coverage is implied.')))
     p.feature('base', scope)
     p.add('mode', 'user', prop('bits', bits), prop('scope', q(scope)))
     p.add('schedule', 'alu', prop('model', 'unspecified'), prop('rules', q('No measured latency or throughput claims.')))
     p.add('memory', 'normal', prop('endian', endian), prop('address-bits', bits),
           prop('rules', q('Only the explicitly encoded memory forms are supported; mapping, access checks and execution environment remain consumer responsibilities.')))
-    p.add('layout', 'code', prop('alignment', 1 if name == 'wasm' else 2 if name == 'avr32' else 4))
+    p.add('layout', 'code', prop('alignment', alignment if alignment is not None else 1 if name == 'wasm' else 2 if name == 'avr32' else 4))
     p.add('syntax', 'assembly', prop('rules', q('Assembly properties are descriptive templates, not a text assembler.')))
     for n, a, s in [
         ('read', 1, 'Read the named operand; zero-register reads are zero. Signed immediates extend to operation width.'),

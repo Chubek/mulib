@@ -104,6 +104,47 @@ static void ranges (void)
   bad(broken,MULIB_ARCHML_SCHEMA);
 }
 
+static void operations (void)
+{
+#define OP_TARGET "(archml 1 t (target t (bits 32) (endian little))"
+#define OP_VALUE "(v (kind value) (bits 32) (signed false) (scale 1) (access write))"
+#define OP_WRITE "(pcode-op write (arity 2 2) (semantics \"write virtual value\"))"
+#define OP_CONST "(pcode-op const (arity 2 2) (semantics \"bitvector constant\"))"
+#define OP_BODY "(pcode (write v (const 32 1)))"
+  const char source[] = OP_TARGET OP_WRITE OP_CONST "(feature base)"
+    "(operation x (requires (ref feature base)) (emission text) (operands " OP_VALUE ")" OP_BODY "))";
+  mulib_archml_t *a = NULL;
+  mulib_archml_error_t e;
+  const char *features[] = {"base"};
+  unsigned char out[32]; uint64_t v = 99; size_t length = 99;
+  assert(mulib_archml_parse(source,sizeof(source)-1,NULL,&a,&e)==MULIB_ARCHML_OK);
+  const mulib_archml_node_t *n = mulib_archml_find(a,"operation","x");
+  assert(n && !mulib_archml_find(a,"instruction","x"));
+  assert(mulib_archml_enabled(a,n,features,1)==1 && mulib_archml_enabled(a,n,NULL,0)==0);
+  memset(out,0xa5,sizeof(out));
+  assert(mulib_archml_encode(a,"x",&v,1,out,sizeof(out),&length)==MULIB_ARCHML_INVALID);
+  assert(length==99 && out[0]==0xa5);
+  assert(mulib_archml_decode(a,"x",out,sizeof(out),&v,1,&length)==MULIB_ARCHML_INVALID);
+  assert(length==99 && v==99);
+  mulib_archml_destroy(a);
+  bad(OP_TARGET OP_WRITE OP_CONST "(operation x (operands " OP_VALUE ")" OP_BODY "))",MULIB_ARCHML_SCHEMA);
+  bad(OP_TARGET OP_WRITE OP_CONST "(operation x (emission bytes) (operands " OP_VALUE ")" OP_BODY "))",MULIB_ARCHML_SCHEMA);
+  bad(OP_TARGET OP_WRITE OP_CONST "(operation x (emission text extra) (operands " OP_VALUE ")" OP_BODY "))",MULIB_ARCHML_SCHEMA);
+  bad(OP_TARGET OP_WRITE OP_CONST "(operation x (emission text) (encoding (base \"00\")) (operands " OP_VALUE ")" OP_BODY "))",MULIB_ARCHML_SCHEMA);
+  bad(OP_TARGET OP_WRITE OP_CONST "(operation x (emission text) (operands " OP_VALUE OP_VALUE ")" OP_BODY "))",MULIB_ARCHML_SCHEMA);
+  bad(OP_TARGET OP_WRITE OP_CONST "(operation x (emission text) (operands " OP_VALUE ") (pcode (write absent (const 32 1)))))",MULIB_ARCHML_SCHEMA);
+  bad(OP_TARGET OP_WRITE OP_CONST "(operation x (emission text) (operands (v (kind value) (bits 32) (signed false) (scale 2) (access write)))" OP_BODY "))",MULIB_ARCHML_SCHEMA);
+  bad(OP_TARGET OP_WRITE OP_CONST "(operation x (emission text) (operands (v (kind value) (bits 32) (signed true) (scale 1) (access write)))" OP_BODY "))",MULIB_ARCHML_SCHEMA);
+  bad(OP_TARGET OP_WRITE OP_CONST "(operation x (emission text) (operands (v (kind value) (bits 32) (signed false) (scale 1) (access read)))" OP_BODY "))",MULIB_ARCHML_SCHEMA);
+  bad(OP_TARGET OP_WRITE OP_CONST "(instruction x (encoding (base \"00000000\") (field v 0 32 0)) (operands " OP_VALUE ")" OP_BODY "))",MULIB_ARCHML_SCHEMA);
+  bad(OP_TARGET "(operation x (emission llvm-ir) (operands) (pcode (undeclared))))",MULIB_ARCHML_SCHEMA);
+#undef OP_TARGET
+#undef OP_VALUE
+#undef OP_WRITE
+#undef OP_CONST
+#undef OP_BODY
+}
+
 static void golden (mulib_archml_t *a, const char *name, const uint64_t *values, size_t count, const char *hex)
 {
   unsigned char out[32], expected[32];
@@ -155,7 +196,9 @@ static void all_forms (mulib_archml_t *a)
 }
 int main (int argc, char **argv)
 {
-  const char *names[] = {"amd64", "arm64", "riscv64", "ppc64", "mips", "avr32", "wasm"};
+  const char *names[] = {"amd64", "arm64", "riscv64", "ppc64", "mips", "avr32", "wasm",
+    "amdgpu", "arm", "nvptx", "spirv", "xtensa", "bpf", "directx", "m68k", "hexagon"};
+  const size_t concrete[] = {124,80,92,23,29,9,36,8,19,0,12,20,57,0,20,7};
   char directory[4096], path[4096];
   /* Machine-readable encoder for the independent LLVM MC fixture check. */
   if (argc >= 4 && !strcmp(argv[1],"--encode")) {
@@ -178,15 +221,16 @@ int main (int argc, char **argv)
   }
   syntax ();
   ranges ();
+  operations ();
   for (size_t i = 0; i < sizeof(names)/sizeof(*names); ++i) {
     mulib_archml_t *a = NULL;
     mulib_archml_error_t e;
-    assert (snprintf(path,sizeof(path),"%s/%s.aml",directory,names[i]) < (int)sizeof(path));
+    assert (snprintf(path,sizeof(path),"%s/%s.%s",directory,names[i],i<7 ? "aml" : "am") < (int)sizeof(path));
     int rc = mulib_archml_load(path,NULL,&a,&e);
     if (rc != MULIB_ARCHML_OK) fprintf(stderr,"%s:%zu:%zu %s\n",path,e.line,e.column,e.message);
     assert (rc == MULIB_ARCHML_OK && !strcmp(mulib_archml_name(a),names[i]));
     if (i < 3) assert (mulib_archml_count(a,"instruction") >= 60 && mulib_archml_count(a,"register") > 100);
-    else assert (mulib_archml_count(a,"instruction") >= 9);
+    assert (mulib_archml_count(a,"instruction") == concrete[i]);
     const char *kinds[] = {"regclass","instruction","mode","memory","atomic","exception","vector","predication","feature","legalize","selection","schedule","rewrite","layout","syntax","extension","smt","abi"};
     if (i < 3) for(size_t k=0;k<sizeof(kinds)/sizeof(*kinds);++k) assert (mulib_archml_count(a,kinds[k]));
     all_forms(a);
@@ -283,6 +327,98 @@ int main (int argc, char **argv)
       assert(mulib_archml_encode(a,"i32.const-sleb7",too_large,1,out,sizeof(out),&used)==MULIB_ARCHML_RANGE && used==99);
       const unsigned char continuation[] = {0x41,0x80}; uint64_t v=99;
       assert(mulib_archml_decode(a,"i32.const-sleb7",continuation,2,&v,1,&used)==MULIB_ARCHML_MISMATCH && v==99 && used==99);
+    }
+    if (i == 7) {
+      const uint64_t rr[] = {0,1,2}, move[] = {103,0};
+      golden(a,"s_add_u32",rr,3,"01020080");
+      golden(a,"s_sub_u32",rr,3,"01028080");
+      golden(a,"s_and_b32",rr,3,"01020087");
+      golden(a,"s_mov_b32",move,2,"0003e7be");
+      golden(a,"s_nop0",NULL,0,"000080bf");
+      golden(a,"s_endpgm",NULL,0,"000081bf");
+      unsigned char out[32]; size_t used=99; uint64_t literal[] = {0,255};
+      assert(mulib_archml_encode(a,"s_mov_b32",literal,2,out,sizeof(out),&used)==MULIB_ARCHML_RANGE && used==99);
+      const unsigned char hole[] = {104,3,128,190}; uint64_t decoded[2] = {99,99};
+      assert(mulib_archml_decode(a,"s_mov_b32",hole,4,decoded,2,&used)==MULIB_ARCHML_MISMATCH && decoded[0]==99);
+    } else if (i == 8) {
+      const uint64_t rr[] = {0,1,2}, load[] = {3,13,16}, branch[] = {(uint64_t)-8};
+      golden(a,"add-rr",rr,3,"020081e0");
+      golden(a,"ldr",load,3,"10309de5");
+      golden(a,"b",branch,1,"feffffea");
+      golden(a,"nop",NULL,0,"00f020e3");
+      assert(mulib_archml_register_overlap(a,"sp","r13")==1);
+      uint64_t pc[] = {15,1,2}; unsigned char out[32]; size_t used=99;
+      assert(mulib_archml_encode(a,"add-rr",pc,3,out,sizeof(out),&used)==MULIB_ARCHML_RANGE && used==99);
+    } else if (i == 9 || i == 13) {
+      assert(mulib_archml_count(a,"operation")== (i==9 ? 15 : 8));
+      assert(mulib_archml_count(a,"register")==0 && mulib_archml_count(a,"regclass")==0);
+      const char *features[] = {"base"};
+      for(size_t k=0;k<mulib_archml_count(a,"operation");++k) {
+        const mulib_archml_node_t *operation=mulib_archml_at(a,"operation",k);
+        const char *name=mulib_archml_child(operation,1)->text;
+        assert(mulib_archml_enabled(a,operation,features,1)==1);
+        assert(mulib_archml_property(operation,"pcode") && !mulib_archml_property(operation,"encoding"));
+        unsigned char out[32]; uint64_t decoded=99; size_t used=99;
+        memset(out,0xa5,sizeof(out));
+        assert(mulib_archml_encode(a,name,NULL,0,out,sizeof(out),&used)==MULIB_ARCHML_INVALID && used==99 && out[0]==0xa5);
+        assert(mulib_archml_decode(a,name,out,sizeof(out),&decoded,1,&used)==MULIB_ARCHML_INVALID && used==99 && decoded==99);
+      }
+      if(i==13) {
+        uint64_t opcode=0;
+        assert(mulib_archml_u64(mulib_archml_child(mulib_archml_property(mulib_archml_find(a,"operation","threadId.i32"),"dxil-opcode"),1),&opcode) && opcode==93);
+      }
+    } else if (i == 10) {
+      const uint64_t ids[] = {1,2,3,4};
+      golden(a,"OpIAdd",ids,4,"8000050001000000020000000300000004000000");
+      golden(a,"OpBitwiseAnd",ids,4,"c700050001000000020000000300000004000000");
+      golden(a,"OpReturn",NULL,0,"fd000100");
+      assert(mulib_archml_count(a,"register")==0);
+      uint64_t zero_id[] = {1,0,3,4}; unsigned char out[32]; size_t used=99;
+      assert(mulib_archml_encode(a,"OpIAdd",zero_id,4,out,sizeof(out),&used)==MULIB_ARCHML_RANGE && used==99);
+    } else if (i == 11) {
+      /* Xtensa architectural RRR/RRI8 source-derived byte fixtures. */
+      const uint64_t rr[] = {2,3,4}, imm[] = {2,3,(uint64_t)-1}, movi[] = {15,(uint64_t)-2048}, load[] = {2,3,1020};
+      golden(a,"add",rr,3,"402380");
+      golden(a,"sub",rr,3,"4023c0");
+      golden(a,"xor",rr,3,"402330");
+      golden(a,"addi",imm,3,"22c3ff");
+      golden(a,"movi",movi,2,"f2a800");
+      golden(a,"l32i",load,3,"2223ff");
+      assert(mulib_archml_register_overlap(a,"a1","sp")==1);
+      unsigned char out[32]; size_t used=99; uint64_t unaligned[] = {2,3,3};
+      assert(mulib_archml_encode(a,"l32i",unaligned,3,out,sizeof(out),&used)==MULIB_ARCHML_RANGE && used==99);
+    } else if (i == 12) {
+      const uint64_t rr[] = {1,2}, imm[] = {1,(uint64_t)-1}, lddw[] = {1,UINT64_C(0x1122334455667788)}, load[] = {3,10,(uint64_t)-8}, branch[] = {1,2,(uint64_t)-8};
+      golden(a,"add64-rr",rr,2,"0f21000000000000");
+      golden(a,"mov64-ri",imm,2,"b7010000ffffffff");
+      golden(a,"lddw",lddw,2,"18010000887766550000000044332211");
+      golden(a,"ldx64",load,3,"79a3f8ff00000000");
+      golden(a,"jeq-rr",branch,3,"1d21ffff00000000");
+      golden(a,"exit",NULL,0,"9500000000000000");
+      assert(mulib_archml_register_overlap(a,"r1","w1")==1);
+      uint64_t frame[] = {10,1}, shift[] = {1,64}; unsigned char out[32]; size_t used=99;
+      assert(mulib_archml_encode(a,"mov64-rr",frame,2,out,sizeof(out),&used)==MULIB_ARCHML_RANGE && used==99);
+      assert(mulib_archml_encode(a,"lsh64-ri",shift,2,out,sizeof(out),&used)==MULIB_ARCHML_RANGE && used==99);
+    } else if (i == 14) {
+      /* M68k TD register-direct opcode/mode fields; no local MC target. */
+      const uint64_t rr[] = {2,3};
+      golden(a,"add32",rr,2,"d483");
+      golden(a,"sub16",rr,2,"9443");
+      golden(a,"eor8",rr,2,"b702");
+      golden(a,"move32",rr,2,"2403");
+      golden(a,"nop",NULL,0,"4e71");
+      golden(a,"rts",NULL,0,"4e75");
+      assert(mulib_archml_register_overlap(a,"d2","d2w")==1);
+      assert(mulib_archml_register_overlap(a,"d2b","d3b")==0);
+      assert(mulib_archml_register_overlap(a,"sp","a7")==1);
+    } else if (i == 15) {
+      const uint64_t rr[] = {0,1,2};
+      golden(a,"add",rr,3,"00c201f3");
+      golden(a,"sub",rr,3,"00c221f3");
+      golden(a,"tfr",rr,2,"00c06170");
+      golden(a,"nop",NULL,0,"00c0007f");
+      const unsigned char not_packet_end[] = {0,0,0,0x7f}; size_t used=99;
+      assert(mulib_archml_decode(a,"nop",not_packet_end,4,NULL,0,&used)==MULIB_ARCHML_MISMATCH && used==99);
     }
     mulib_archml_destroy(a);
   }
