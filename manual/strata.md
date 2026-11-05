@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 524 headers, 618 direct dependency edges.
+Inventory: 527 headers, 625 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -408,7 +408,7 @@ Compatibility group: `parsec`, `peg`.
 | [xpath](mulib-xpath.md) | `xml` |
 | [xtbb](mulib-xtbb.md) | `parallel` |
 
-## Stratum 3 (46 modules)
+## Stratum 3 (47 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -426,6 +426,7 @@ Compatibility group: `parsec`, `peg`.
 | [curses](mulib-curses.md) | `termutils`, `tui` |
 | [depir](mulib-depir.md) | `anfir`, `clickir`, `superblocks` |
 | [dnsnmeserver](mulib-dnsnmeserver.md) | `nameserver` |
+| [evtlistener](mulib-evtlistener.md) | `evtstream` |
 | [geosolve](mulib-geosolve.md) | `alloc`, `cgeom`, `geometry` |
 | [hyphen](mulib-hyphen.md) | `cache`, `dfa`, `orhoconv` |
 | [image2container](mulib-image2container.md) | `imgformat`, `rootfs` |
@@ -459,7 +460,7 @@ Compatibility group: `parsec`, `peg`.
 | [viterbi_decoding](mulib-viterbi_decoding.md) | `hidden_markov_chain` |
 | [vmm-host](mulib-vmm-host.md) | `virtio` |
 
-## Stratum 4 (32 modules)
+## Stratum 4 (33 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -493,10 +494,11 @@ Compatibility group: `parsec`, `peg`.
 | [template](mulib-template.md) | `json`, `strbuf`, `utf8` |
 | [toml](mulib-toml.md) | `json`, `strbuf`, `utf8` |
 | [vmm](mulib-vmm.md) | `virtio-os`, `vmm-memory` |
+| [walker](mulib-walker.md) | `evtlistener` |
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (29 modules)
+## Stratum 5 (30 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -525,6 +527,7 @@ Compatibility group: `parsec`, `peg`.
 | [pe-objdump](mulib-pe-objdump.md) | `coff-objdump`, `pe` |
 | [pglayout](mulib-pglayout.md) | `bidi`, `fontshape`, `json`, `stylesheet`, `unibreak`, `yaml` |
 | [row-rdbms](mulib-row-rdbms.md) | `dbschema`, `documentdb` |
+| [vizigen](mulib-vizigen.md) | `asdl`, `binfilereader`, `binfilewriter`, `mmfile`, `walker` |
 | [vmm-kvm](mulib-vmm-kvm.md) | `kvm`, `vmm` |
 | [wask](mulib-wask.md) | `dsymspec`, `utf8` |
 | [webidl](mulib-webidl.md) | `buffer`, `dbschema`, `utf8` |

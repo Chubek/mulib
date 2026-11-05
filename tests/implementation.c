@@ -1,3 +1,6 @@
+#define MULIB_IMPL_EVTLISTENER
+#define MULIB_IMPL_VIZIGEN
+#define MULIB_IMPL_WALKER
 #define MULIB_IMPL_AES
 #define MULIB_IMPL_DISTRIBCLUSTER
 #define MULIB_IMPL_DISTRIBCOMP
@@ -1053,3 +1056,6 @@
 #include "mulib-mumq-server.h"
 #include "mulib-mumq-subscriber.h"
 #include "mulib-mumq.h"
+#include "mulib-vizigen.h"
+#include "mulib-walker.h"
+#include "mulib-evtlistener.h"

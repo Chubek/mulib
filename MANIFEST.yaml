@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 524
-implemented_module_count: 524
+module_count: 527
+implemented_module_count: 527
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3681,6 +3681,27 @@ modules:
   purpose: "Bounded nonblocking MuMQ v1 topic frames over owned stream sockets."
   dependencies: [aes, socket]
   status: implemented
+- name: vizigen
+  header: include/mulib-vizigen.h
+  manual: manual/mulib-vizigen.md
+  macro: MULIB_IMPL_VIZIGEN
+  purpose: "ASDL semantic-action bytecode for push listeners and visitor walkers."
+  dependencies: [asdl, binfilereader, binfilewriter, mmfile, walker]
+  status: implemented
+- name: walker
+  header: include/mulib-walker.h
+  manual: manual/mulib-walker.md
+  macro: MULIB_IMPL_WALKER
+  purpose: "Visitor walker sharing the parser event-listener interface."
+  dependencies: [evtlistener]
+  status: implemented
+- name: evtlistener
+  header: include/mulib-evtlistener.h
+  manual: manual/mulib-evtlistener.md
+  macro: MULIB_IMPL_EVTLISTENER
+  purpose: "Callback listeners for event streams and parser-produced events."
+  dependencies: [evtstream]
+  status: implemented
 project_files:
 - file: examples/distrib-common.h
   purpose: Explicit implementation placement for distributed computing examples.
@@ -5350,3 +5371,15 @@ project_files:
   purpose: "Focused regression suite for test_distribcomp."
 - file: tests/test_mumq.c
   purpose: "Focused regression suite for test_mumq."
+- file: examples/modules/vizigen.c
+  purpose: "Standalone checked usage example for vizigen."
+- file: examples/modules/walker.c
+  purpose: "Standalone checked usage example for walker."
+- file: tests/test_vizigen.c
+  purpose: "Focused regression suite for test_vizigen."
+- file: tests/test_vizigen_alloc.c
+  purpose: "Focused regression suite for test_vizigen_alloc."
+- file: examples/modules/evtlistener.c
+  purpose: "Standalone checked usage example for evtlistener."
+- file: tests/test_evtlistener.c
+  purpose: "Focused regression suite for test_evtlistener."

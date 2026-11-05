@@ -526,4 +526,7 @@
 #include "mulib-mumq-server.h"
 #include "mulib-mumq-subscriber.h"
 #include "mulib-mumq.h"
+#include "mulib-vizigen.h"
+#include "mulib-walker.h"
+#include "mulib-evtlistener.h"
 int main(void) { return 0; }

@@ -182,6 +182,11 @@ staged output and PEG/EBNF parsing, not the proposed compiler services.
 [Zephyr ASDL](manual/mulib-asdl.md) describes tree schemas through source text
 or macro/inline declarations and emits S-expressions, provider-free YANTLR
 schema records, and standalone C99 types with inline constructors.
+[Vizigen](manual/mulib-vizigen.md) adds named enter/leave semantic actions to
+the same schemas, compiling portable bytecode shared by parser-time event
+[listeners](manual/mulib-evtlistener.md) and the
+[AST walker](manual/mulib-walker.md). Bytecode supports
+MuLIB binary readers/writers and zero-copy memory-mapped loading.
 
 [Hyphenation](manual/mulib-hyphen.md) and [spellchecking](manual/mulib-spellcheck.md)
 combine configurable dictionaries, orthographic/morphology data, Liang patterns,
