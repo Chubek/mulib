@@ -1,3 +1,7 @@
+#define MULIB_IMPL_TASK
+#define MULIB_IMPL_POLYTASK
+#define MULIB_IMPL_BUILDVM
+#define MULIB_IMPL_XTBB
 #define MULIB_IMPL_ARCHML
 #define MULIB_IMPL_EXEC
 #define MULIB_IMPL_XLL
@@ -988,3 +992,7 @@
 #include "mulib-xll.h"
 #include "mulib-exec.h"
 #include "mulib-archml.h"
+#include "mulib-task.h"
+#include "mulib-polytask.h"
+#include "mulib-buildvm.h"
+#include "mulib-xtbb.h"

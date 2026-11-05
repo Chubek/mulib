@@ -162,4 +162,14 @@ static void invalid_graphs (void) {
   assert (!mulib_buildgraph_create (SIZE_MAX, SIZE_MAX));
   assert (mulib_buildgraph_validate (NULL) == MULIB_BUILDGRAPH_INVALID);
 }
-int main (void) { artifacts (); graphs (); invalid_graphs (); return 0; }
+static void archive_allocation (void) {
+  mulib_artifact_file_t f = {"file", "payload", 7, 0, 0644, MULIB_ARTIFACT_FILE};
+  mulib_artifact_t *a;
+  long i;
+  for (i = 0; i < 6; ++i) {
+    budget = i; a = mulib_artifact_pack ("bundle", &f, 1); assert (!a);
+  }
+  budget = -1; a = mulib_artifact_pack ("bundle", &f, 1); assert (a);
+  mulib_artifact_release (a);
+}
+int main (void) { artifacts (); graphs (); invalid_graphs (); archive_allocation (); return 0; }

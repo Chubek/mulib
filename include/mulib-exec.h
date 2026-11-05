@@ -90,7 +90,17 @@ int mulib_exec_pipeline (const mulib_exec_command_t *, size_t,
                           const mulib_exec_options_t *, mulib_exec_result_t *out);
 /** Convenience single-command fork/spawn/communicate/wait operation. */
 int mulib_exec_run (const mulib_exec_command_t *, const mulib_exec_options_t *,
-                     mulib_exec_result_t *);
+                      mulib_exec_result_t *);
+/** Execute an executable file directly (kernel shebang handling, no shell
+ * fallback). settings may supply argv/argc, cwd, environment and redirects;
+ * NULL settings supplies argv[0]=path. All strings are borrowed for the call. */
+int mulib_exec_run_file (const char *path, const mulib_exec_command_t *settings,
+                         const mulib_exec_options_t *, mulib_exec_result_t *);
+/** Explicit shell execution using /bin/sh -c text. settings supplies child
+ * environment, cwd and redirects; its file/argv are ignored. This executes
+ * trusted code, not a quoting/escaping API or an isolation boundary. */
+int mulib_exec_run_text (const char *text, const mulib_exec_command_t *settings,
+                         const mulib_exec_options_t *, mulib_exec_result_t *);
 /** Install global exec DSL into an existing Mune state. exec.command{argv=...,
  * doc=[[...]]}, exec.pipeline(...), exec.run(plan,options), exec.capture,
  * exec.check and exec.sequence are documented in the manual and exec.docs.
@@ -123,6 +133,7 @@ mulib_exec_result_destroy (mulib_exec_result_t *r)
     && (defined(__unix__) || defined(__APPLE__))
 #include <fcntl.h>
 #include <poll.h>
+#include <pthread.h>
 #include <signal.h>
 #include <spawn.h>
 #include <sys/types.h>
@@ -131,6 +142,11 @@ mulib_exec_result_destroy (mulib_exec_result_t *r)
 extern char **environ;
 extern int kill (pid_t, int);
 extern int fileno (FILE *);
+/* Serialize descriptor construction and launches made through EXEC. Portable
+ * pipe/fcntl and tmpfile/fcntl sequences are not atomically close-on-exec.
+ * Only the launch phase is locked; children run and drain concurrently. Other
+ * process-launch APIs still need application-level coordination on fallback OSes. */
+static pthread_mutex_t mulib_exec_launch_mutex_ = PTHREAD_MUTEX_INITIALIZER;
 static int
 mulib_exec_valid_ (const mulib_exec_command_t *c)
 {
@@ -186,8 +202,8 @@ mulib_exec_paths_ (const char *file, char **env)
 fail:
   mulib_exec_paths_free_ (v); return NULL;
 }
-int
-mulib_exec_start (const mulib_exec_command_t *c, mulib_process_t *out)
+static int
+mulib_exec_start_ (const mulib_exec_command_t *c, mulib_process_t *out)
 {
   char **argv = NULL, **env = NULL, **paths = NULL;
   const char *redirect[3];
@@ -301,6 +317,16 @@ done:
   return result;
 }
 int
+mulib_exec_start (const mulib_exec_command_t *c, mulib_process_t *out)
+{
+  int rc, saved;
+  rc = pthread_mutex_lock (&mulib_exec_launch_mutex_);
+  if (rc) { errno = rc; return MULIB_EXEC_SYSTEM; }
+  rc = mulib_exec_start_ (c, out); saved = errno;
+  (void)pthread_mutex_unlock (&mulib_exec_launch_mutex_); errno = saved;
+  return rc;
+}
+int
 mulib_exec_signal (mulib_process_t *p, int sig, mulib_process_status_t *st)
 {
   int rc;
@@ -336,7 +362,7 @@ mulib_exec_pipeline (const mulib_exec_command_t *commands, size_t count,
   const mulib_exec_options_t *o = options ? options : &defaults;
   mulib_process_t *children = NULL;
   int output[2] = {-1,-1}, errors[2] = {-1,-1}, link[2] = {-1,-1}, previous = -1;
-  int rc = 0, saved = 0, input_fd = -1;
+  int rc = 0, saved = 0, input_fd = -1, launch_locked = 0;
   FILE *input = NULL;
   size_t i, active, max = o->max_output ? o->max_output : 16 * 1024 * 1024;
   uint64_t begin = 0, now;
@@ -355,6 +381,9 @@ mulib_exec_pipeline (const mulib_exec_command_t *commands, size_t count,
   if (!children || !r->stages) { rc = MULIB_EXEC_MEMORY; goto done; }
   r->count = count;
   if (o->timeout_ms && mulib_perf_now (&begin)) { rc = MULIB_EXEC_SYSTEM; goto done; }
+  saved = pthread_mutex_lock (&mulib_exec_launch_mutex_);
+  if (saved) { errno = saved; rc = MULIB_EXEC_SYSTEM; goto done; }
+  launch_locked = 1;
   if (o->input) {
     input = tmpfile ();
     if (!input) { rc = MULIB_EXEC_SYSTEM; goto done; }
@@ -387,12 +416,13 @@ mulib_exec_pipeline (const mulib_exec_command_t *commands, size_t count,
     if (i + 1 < count) c.io.stdout_fd = link[1];
     else if (o->capture_stdout) c.io.stdout_fd = output[1];
     if (o->capture_stderr) c.io.stderr_fd = errors[1];
-    rc = mulib_exec_start (&c, children + i);
+    rc = mulib_exec_start_ (&c, children + i);
     if (rc) { r->failed_stage = i; goto done; }
     mulib_exec_close_ (&previous); mulib_exec_close_ (&link[1]);
     previous = link[0]; link[0] = -1;
   }
   mulib_exec_close_ (&output[1]); mulib_exec_close_ (&errors[1]);
+  (void)pthread_mutex_unlock (&mulib_exec_launch_mutex_); launch_locked = 0;
   /* Read at most one buffer per readiness notification, giving both streams
    * and timeout/reaping checks progress even under unbounded child output. */
   do {
@@ -428,6 +458,7 @@ done:
   mulib_exec_close_ (&output[0]); mulib_exec_close_ (&output[1]);
   mulib_exec_close_ (&errors[0]); mulib_exec_close_ (&errors[1]);
   if (input) fclose (input);
+  if (launch_locked) (void)pthread_mutex_unlock (&mulib_exec_launch_mutex_);
   if (children) {
     /* Signal every child first; no sequential waits on a still-running peer. */
     for (i = 0; i < count; ++i) if (children[i].pid) {
@@ -459,6 +490,30 @@ int mulib_exec_pipeline (const mulib_exec_command_t *c, size_t n,
 int
 mulib_exec_run (const mulib_exec_command_t *c, const mulib_exec_options_t *o, mulib_exec_result_t *r)
 { return mulib_exec_pipeline (c, 1, o, r); }
+int
+mulib_exec_run_file (const char *path, const mulib_exec_command_t *settings,
+                     const mulib_exec_options_t *o, mulib_exec_result_t *r)
+{
+  mulib_exec_command_t c;
+  const char *argv[1];
+  if (!path || !*path) return MULIB_EXEC_INVALID;
+  if (settings) c = *settings; else mulib_exec_command_init (&c);
+  argv[0] = path; c.file = path;
+  if (!c.argv && !c.argc) { c.argv = argv; c.argc = 1; }
+  return mulib_exec_run (&c, o, r);
+}
+int
+mulib_exec_run_text (const char *text, const mulib_exec_command_t *settings,
+                     const mulib_exec_options_t *o, mulib_exec_result_t *r)
+{
+  mulib_exec_command_t c;
+  const char *argv[3];
+  if (!text) return MULIB_EXEC_INVALID;
+  if (settings) c = *settings; else mulib_exec_command_init (&c);
+  argv[0] = "/bin/sh"; argv[1] = "-c"; argv[2] = text;
+  c.file = argv[0]; c.argv = argv; c.argc = 3;
+  return mulib_exec_run (&c, o, r);
+}
 
 /* Public Mune API only: arguments remain rooted during the native callback. */
 static mulib_mune_value_t

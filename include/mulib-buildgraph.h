@@ -16,6 +16,13 @@ struct Action;
 typedef struct mulib_buildgraph mulib_buildgraph_t;
 typedef struct mulib_buildgraph_run mulib_buildgraph_run_t;
 typedef struct mulib_buildgraph_step mulib_buildgraph_step_t;
+/** Registered task callback. Only declared artifact bindings are supplied. */
+typedef int (*mulib_buildgraph_task_fn) (void *, mulib_buildgraph_step_t *);
+/** Optional parallel dispatcher. Must invoke each index exactly once on success
+ * and join ALL callbacks before returning, including on error. Context is borrowed.
+ * mulib_polytask_schedule is directly compatible. NULL selects serial dispatch. */
+typedef int (*mulib_buildgraph_schedule_fn) (void *, size_t,
+                                            void (*)(size_t, void *), void *);
 typedef enum mulib_buildgraph_status {
   MULIB_BUILDGRAPH_OK = 0, MULIB_BUILDGRAPH_INVALID = -1,
   MULIB_BUILDGRAPH_MEMORY = -2, MULIB_BUILDGRAPH_FULL = -3,
@@ -23,17 +30,21 @@ typedef enum mulib_buildgraph_status {
   MULIB_BUILDGRAPH_MISSING = -6, MULIB_BUILDGRAPH_BUSY = -7
 } mulib_buildgraph_status_t;
 typedef enum mulib_buildgraph_kind {
-  MULIB_BUILDGRAPH_ARTIFACT, MULIB_BUILDGRAPH_ACTION
+  MULIB_BUILDGRAPH_ARTIFACT, MULIB_BUILDGRAPH_ACTION,
+  MULIB_BUILDGRAPH_TASK = MULIB_BUILDGRAPH_ACTION
 } mulib_buildgraph_kind_t;
 typedef enum mulib_buildgraph_state {
   MULIB_BUILDGRAPH_PENDING, MULIB_BUILDGRAPH_SUCCEEDED,
-  MULIB_BUILDGRAPH_ERRORED, MULIB_BUILDGRAPH_BLOCKED
+  MULIB_BUILDGRAPH_ERRORED, MULIB_BUILDGRAPH_BLOCKED,
+  MULIB_BUILDGRAPH_RUNNING
 } mulib_buildgraph_state_t;
 typedef struct mulib_buildgraph_node {
   const char *name;
   mulib_buildgraph_kind_t kind;
   const struct Action *action;
   const mulib_artifact_t *source; /**< NULL for generated artifacts. */
+  mulib_buildgraph_task_fn task;
+  void *context; /**< Borrowed registered-task context. */
 } mulib_buildgraph_node_t;
 typedef struct mulib_buildgraph_binding {
   size_t node;
@@ -60,6 +71,10 @@ int mulib_buildgraph_artifact (mulib_buildgraph_t *, const char *name,
 /** Borrow an opaque, non-NULL Action until graph destruction. */
 int mulib_buildgraph_action (mulib_buildgraph_t *, const char *name,
                             const struct Action *, size_t *out);
+/** Register a borrowed task callback/context. Tasks have the ACTION node kind;
+ * mulib_buildvm_task supplies a hermetic implementation of this interface. */
+int mulib_buildgraph_task (mulib_buildgraph_t *, const char *name,
+                           mulib_buildgraph_task_fn, void *context, size_t *out);
 /** Add artifact->action input or action->artifact output. Single producer,
  * no producer for a source, duplicate edges are idempotent. */
 int mulib_buildgraph_depend (mulib_buildgraph_t *, size_t before, size_t after);
@@ -78,6 +93,13 @@ int mulib_buildgraph_translate (mulib_buildgraph_t *, const size_t *targets,
  * on OK/FAILED, and owns all successful outputs independently of the graph. */
 int mulib_buildgraph_execute (mulib_buildgraph_t *, const size_t *targets,
     size_t count, mulib_buildgraph_execute_fn, void *user, mulib_buildgraph_run_t **out);
+/** Execute registered tasks in dependency waves, optionally using PolyTask's
+ * dispatcher. Opaque legacy Actions fail with INVALID; use execute for those.
+ * Output commit/rollback is per task. Independent branches continue on failure.
+ * Callbacks may run concurrently: contexts require appropriate synchronization.
+ * *out must be NULL; OK/FAILED returns an owned report. No native OS sandbox. */
+int mulib_buildgraph_build (mulib_buildgraph_t *, const size_t *targets, size_t count,
+    mulib_buildgraph_schedule_fn, void *scheduler, mulib_buildgraph_run_t **out);
 /** Borrow declared inputs/outputs for the callback only, in edge insertion order. */
 const mulib_buildgraph_binding_t *mulib_buildgraph_inputs (const mulib_buildgraph_step_t *, size_t *count);
 const mulib_buildgraph_binding_t *mulib_buildgraph_outputs (const mulib_buildgraph_step_t *, size_t *count);
@@ -182,6 +204,18 @@ int mulib_buildgraph_artifact (mulib_buildgraph_t *g, const char *n, mulib_artif
 { return mulib_buildgraph_add_ (g, n, NULL, a, id); }
 int mulib_buildgraph_action (mulib_buildgraph_t *g, const char *n, const struct Action *a, size_t *id)
 { return a ? mulib_buildgraph_add_ (g, n, a, NULL, id) : MULIB_BUILDGRAPH_INVALID; }
+int mulib_buildgraph_task (mulib_buildgraph_t *g, const char *n,
+                           mulib_buildgraph_task_fn fn, void *context, size_t *id)
+{
+  int rc;
+  if (!fn) return MULIB_BUILDGRAPH_INVALID;
+  rc = mulib_buildgraph_add_ (g, n, NULL, NULL, id);
+  if (!rc) {
+    g->nodes[*id].kind = MULIB_BUILDGRAPH_ACTION;
+    g->nodes[*id].task = fn; g->nodes[*id].context = context;
+  }
+  return rc;
+}
 int
 mulib_buildgraph_depend (mulib_buildgraph_t *g, size_t a, size_t b)
 {
@@ -348,7 +382,8 @@ mulib_buildgraph_execute (mulib_buildgraph_t *g, const size_t *targets, size_t n
       } else continue;
       b->node = node; b->name = g->nodes[node].name;
     }
-    record->code = fn (user, g->nodes[id].action, &s);
+    record->code = g->nodes[id].task ? g->nodes[id].task (g->nodes[id].context, &s)
+                                   : fn (user, g->nodes[id].action, &s);
     if (!record->code)
       for (e = 0; e < s.output_count; ++e)
         if (!s.outputs[e].artifact) { record->code = MULIB_BUILDGRAPH_MISSING; break; }
@@ -363,6 +398,116 @@ mulib_buildgraph_execute (mulib_buildgraph_t *g, const size_t *targets, size_t n
   g->walking = 0; free (order); free (selected); free (s.inputs); free (s.outputs);
   *out = r;
   return overall;
+}
+typedef struct mulib_buildgraph_job_ {
+  const mulib_buildgraph_node_t *node;
+  mulib_buildgraph_step_t step;
+  size_t id;
+  int code;
+} mulib_buildgraph_job_;
+static void mulib_buildgraph_call_ (size_t i, void *context)
+{
+  mulib_buildgraph_job_ *j = (mulib_buildgraph_job_ *)context + i;
+  j->code = j->node->task ? j->node->task (j->node->context, &j->step) : MULIB_BUILDGRAPH_INVALID;
+}
+int mulib_buildgraph_build (mulib_buildgraph_t *g, const size_t *targets, size_t n,
+    mulib_buildgraph_schedule_fn schedule, void *scheduler, mulib_buildgraph_run_t **out)
+{
+  size_t *order = NULL, i, e, remaining = 0;
+  unsigned char *selected = NULL;
+  mulib_buildgraph_run_t *r = NULL;
+  mulib_buildgraph_job_ *jobs = NULL;
+  mulib_buildgraph_binding_t *inputs = NULL, *outputs = NULL;
+  int rc, overall = 0;
+  if (!out || *out) return MULIB_BUILDGRAPH_INVALID;
+  rc = mulib_buildgraph_select_ (g, targets, n, &order, &selected);
+  if (rc) return rc;
+  if (g->count > SIZE_MAX / sizeof (*jobs) || g->edge_count > SIZE_MAX / sizeof (*inputs)) {
+    free (order); free (selected); return MULIB_BUILDGRAPH_MEMORY;
+  }
+  r = (mulib_buildgraph_run_t *)calloc (1, sizeof (*r));
+  jobs = (mulib_buildgraph_job_ *)calloc (g->count ? g->count : 1, sizeof (*jobs));
+  inputs = (mulib_buildgraph_binding_t *)calloc (g->edge_count ? g->edge_count : 1, sizeof (*inputs));
+  outputs = (mulib_buildgraph_binding_t *)calloc (g->edge_count ? g->edge_count : 1, sizeof (*outputs));
+  if (r) {
+    r->count = g->count;
+    r->records = (mulib_buildgraph_record_ *)calloc (g->count ? g->count : 1, sizeof (*r->records));
+  }
+  if (!r || !r->records || !jobs || !inputs || !outputs) {
+    mulib_buildgraph_run_destroy (r); free (jobs); free (inputs); free (outputs);
+    free (order); free (selected); return MULIB_BUILDGRAPH_MEMORY;
+  }
+  for (i = 0; i < g->count; ++i) if (selected[i]) ++remaining;
+  g->walking = 1;
+  while (remaining) {
+    size_t count = 0, ni = 0, no = 0;
+    for (i = 0; i < g->count; ++i) {
+      size_t id = order[i];
+      int ready = 1, blocked = 0;
+      mulib_buildgraph_record_ *record = r->records + id;
+      if (!selected[id] || record->state != MULIB_BUILDGRAPH_PENDING) continue;
+      for (e = 0; e < g->edge_count; ++e) if (g->edges[e].after == id) {
+        int state = r->records[g->edges[e].before].state;
+        if (state == MULIB_BUILDGRAPH_PENDING || state == MULIB_BUILDGRAPH_RUNNING) ready = 0;
+        else if (state != MULIB_BUILDGRAPH_SUCCEEDED) blocked = 1;
+      }
+      if (!ready) continue;
+      if (blocked) {
+        record->state = MULIB_BUILDGRAPH_BLOCKED; overall = MULIB_BUILDGRAPH_FAILED; --remaining;
+      } else if (g->nodes[id].kind == MULIB_BUILDGRAPH_ARTIFACT) {
+        if (g->nodes[id].source) record->value = mulib_artifact_retain ((mulib_artifact_t *)g->nodes[id].source);
+        record->state = record->value ? MULIB_BUILDGRAPH_SUCCEEDED : MULIB_BUILDGRAPH_ERRORED;
+        if (!record->value) { record->code = MULIB_BUILDGRAPH_MEMORY; overall = MULIB_BUILDGRAPH_FAILED; }
+        --remaining;
+      } else {
+        mulib_buildgraph_job_ *j = jobs + count++;
+        memset (j, 0, sizeof (*j)); j->id = id; j->node = g->nodes + id;
+        j->code = MULIB_BUILDGRAPH_FAILED;
+        j->step.inputs = inputs + ni; j->step.outputs = outputs + no;
+        for (e = 0; e < g->edge_count; ++e) {
+          size_t node;
+          mulib_buildgraph_binding_t *b;
+          if (g->edges[e].after == id) {
+            node = g->edges[e].before; b = inputs + ni++; ++j->step.input_count;
+            b->artifact = r->records[node].value;
+          } else if (g->edges[e].before == id) {
+            node = g->edges[e].after; b = outputs + no++; ++j->step.output_count; b->artifact = NULL;
+          } else continue;
+          b->node = node; b->name = g->nodes[node].name;
+        }
+        record->state = MULIB_BUILDGRAPH_RUNNING;
+      }
+    }
+    if (schedule) rc = schedule (scheduler, count, mulib_buildgraph_call_, jobs);
+    else { rc = 0; for (i = 0; i < count; ++i) mulib_buildgraph_call_ (i, jobs); }
+    if (rc) overall = MULIB_BUILDGRAPH_FAILED;
+    for (i = 0; i < count; ++i) {
+      mulib_buildgraph_job_ *j = jobs + i;
+      mulib_buildgraph_record_ *record = r->records + j->id;
+      if (!j->code) for (e = 0; e < j->step.output_count; ++e)
+        if (!j->step.outputs[e].artifact) { j->code = MULIB_BUILDGRAPH_MISSING; break; }
+      record->code = j->code;
+      record->state = j->code ? MULIB_BUILDGRAPH_ERRORED : MULIB_BUILDGRAPH_SUCCEEDED;
+      if (j->code) overall = MULIB_BUILDGRAPH_FAILED;
+      for (e = 0; e < j->step.output_count; ++e) {
+        mulib_artifact_t *a = (mulib_artifact_t *)j->step.outputs[e].artifact;
+        if (j->code) mulib_artifact_release (a);
+        else r->records[j->step.outputs[e].node].value = a;
+      }
+      --remaining;
+    }
+    /* A failed dispatcher is not retried: join contract guarantees no live
+     * callbacks; pending descendants/independent tasks become blocked. */
+    if (rc) {
+      for (i = 0; i < g->count; ++i) if (selected[i] && r->records[i].state == MULIB_BUILDGRAPH_PENDING) {
+        r->records[i].state = MULIB_BUILDGRAPH_BLOCKED; r->records[i].code = rc;
+      }
+      remaining = 0;
+    }
+  }
+  g->walking = 0;
+  free (jobs); free (inputs); free (outputs); free (order); free (selected);
+  *out = r; return overall;
 }
 int
 mulib_buildgraph_result (const mulib_buildgraph_run_t *r, size_t id, mulib_buildgraph_state_t *s, int *code)

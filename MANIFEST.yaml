@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 492
-implemented_module_count: 492
+module_count: 496
+implemented_module_count: 496
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3456,7 +3456,47 @@ modules:
   purpose: Independent SQLite-file SQL profile using parsec, not full SQLite compatibility.
   dependencies: [arena, parsec, peg, rng, sqlite-pager, strbuf, utf8]
   status: implemented
+- name: task
+  header: include/mulib-task.h
+  manual: manual/mulib-task.md
+  macro: MULIB_IMPL_TASK
+  purpose: Borrowed native task plans with explicit execution boundaries.
+  dependencies: [exec]
+  status: implemented
+- name: polytask
+  header: include/mulib-polytask.h
+  manual: manual/mulib-polytask.md
+  macro: MULIB_IMPL_POLYTASK
+  purpose: Bounded concurrent native tasks, JSON plans and scheduler adapter.
+  dependencies: [json, task, taskpool]
+  status: implemented
+- name: buildvm
+  header: include/mulib-buildvm.h
+  manual: manual/mulib-buildvm.md
+  macro: MULIB_IMPL_BUILDVM
+  purpose: Hermetic bounded artifact-register VM for build DAG tasks.
+  dependencies: [buildgraph, vcdiff]
+  status: implemented
+- name: xtbb
+  header: include/mulib-xtbb.h
+  manual: manual/mulib-xtbb.md
+  macro: MULIB_IMPL_XTBB
+  purpose: C11 task arenas, fork/join algorithms and deterministic reductions.
+  dependencies: [parallel]
+  status: implemented
 project_files:
+- file: examples/modules/task.c
+  purpose: Native task execution example.
+- file: examples/modules/polytask.c
+  purpose: Concurrent JSON task batch example.
+- file: examples/modules/buildvm.c
+  purpose: Hermetic artifact-producing BuildVM graph example.
+- file: examples/modules/xtbb.c
+  purpose: Arena-backed parallel reduction example.
+- file: examples/tasks-common.h
+  purpose: Explicit task example and test implementation placement.
+- file: tests/test_build_tasks.c
+  purpose: Task, archive, BuildVM, parallel graph and xtbb regression tests.
 - file: examples/modules/sqlite.c
   purpose: Independent SQLite-file SQL profile usage.
 - file: examples/modules/sqlite-format.c

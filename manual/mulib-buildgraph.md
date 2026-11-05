@@ -74,6 +74,35 @@ Each run starts afresh. There is no implicit cache, hidden host filesystem looku
 timestamp freshness policy, or persistent output directory. Backends can publish
 successful report artifacts to their own storage using the generic artifact view.
 
+## Registered tasks, BuildVM and PolyTask
+
+`mulib_buildgraph_task(graph, name, callback, context, &id)` registers a borrowed
+task callback/context rather than an opaque Action. Both have the ACTION/TASK
+node kind and obey the same edge rules. Registered callbacks also work with
+the existing serial execute walker; its legacy executor is bypassed for these
+nodes. Existing opaque Action APIs are unchanged.
+
+`mulib_buildgraph_build(graph, targets, count, schedule, scheduler, &report)`
+executes registered tasks in ready dependency waves. Pass NULL for serial dispatch,
+or `mulib_polytask_schedule` with a `mulib_polytask_t *` for parallel execution.
+The dispatcher must invoke each index once on success and join every started
+callback even on failure. A failed dispatcher is not retried: successful tasks
+commit, failed/unstarted tasks error, and remaining pending nodes become BLOCKED.
+The report still returns with BUILDGRAPH_FAILED. Opaque Actions passed to this
+walker error with INVALID; use `execute` for those instead.
+
+Only the controller changes graph/report state. Workers have private binding
+arrays and staged outputs; atomic artifact references safely share immutable
+sources. Contexts must themselves be thread-safe. Do not mutate, traverse,
+destroy or externally access the graph/report during a run.
+
+For enforced hermetic tasks use `mulib_buildvm_task`: its bytecode only reads
+declared BYTES inputs, transforms bytes and emits declared outputs. It cannot
+launch native commands. General C callbacks, including those calling TASK,
+remain trusted host code and are **not sandboxed**. See the BuildVM example
+and `tests/test_build_tasks.c` for serial/parallel builds. BuildGraph itself
+still depends only on ARTIFACT: the dispatcher is injectable.
+
 ## Translate walker
 
 `mulib_buildgraph_translate` takes the same target selection plus `node` and

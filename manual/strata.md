@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 492 headers, 550 direct dependency edges.
+Inventory: 496 headers, 557 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -319,13 +319,14 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (66 modules)
+## Stratum 2 (68 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [anfir](mulib-anfir.md) | `gssair` |
 | [bidi](mulib-bidi.md) | `uniproc` |
 | [binfilebuilder](mulib-binfilebuilder.md) | `binfileschema`, `buffer`, `bycutils` |
+| [buildvm](mulib-buildvm.md) | `buildgraph`, `vcdiff` |
 | [cgeom](mulib-cgeom.md) | `linalg`, `simdmath` |
 | [clickir](mulib-clickir.md) | `gssair` |
 | [coffutils](mulib-coffutils.md) | `coff` |
@@ -389,6 +390,7 @@ Compatibility group: `parsec`, `peg`.
 | [vmweave](mulib-vmweave.md) | `mir`, `rewrite` |
 | [wmfunc](mulib-wmfunc.md) | `wlroots` |
 | [xpath](mulib-xpath.md) | `xml` |
+| [xtbb](mulib-xtbb.md) | `parallel` |
 
 ## Stratum 3 (39 modules)
 
@@ -502,7 +504,7 @@ Compatibility group: `parsec`, `peg`.
 | [webidl](mulib-webidl.md) | `buffer`, `dbschema`, `utf8` |
 | [wit](mulib-wit.md) | `buffer`, `dbschema` |
 
-## Stratum 6 (8 modules)
+## Stratum 6 (9 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -513,9 +515,10 @@ Compatibility group: `parsec`, `peg`.
 | [fswatch](mulib-fswatch.md) | `daemon`, `glob`, `select`, `vfs` |
 | [git](mulib-git.md) | `exec` |
 | [glyph](mulib-glyph.md) | `fontdraw`, `ligature`, `pglayout`, `sysfonts` |
+| [task](mulib-task.md) | `exec` |
 | [uri](mulib-uri.md) | `inte6`, `strbuf` |
 
-## Stratum 7 (6 modules)
+## Stratum 7 (7 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -523,6 +526,7 @@ Compatibility group: `parsec`, `peg`.
 | [containerd-ctrlbridge](mulib-containerd-ctrlbridge.md) | `containerd`, `containerd-accessstub` |
 | [http](mulib-http.md) | `buffer`, `parsec`, `uri` |
 | [layout](mulib-layout.md) | `glyph` |
+| [polytask](mulib-polytask.md) | `json`, `task`, `taskpool` |
 | [vcspack](mulib-vcspack.md) | `adler32`, `endian`, `git` |
 | [vcsrepo](mulib-vcsrepo.md) | `git` |
 

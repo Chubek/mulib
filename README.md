@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **489 implemented modules**.
+A C11 modular single-header utility library with **496 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -60,6 +60,19 @@ command constructors and detailed runtime string docstrings, with generic dispat
 for additional Git commands and extensions.
 
 ## Integration
+
+### Task execution and hermetic build data
+
+[PolyTask](manual/mulib-polytask.md) executes concurrent native
+[task plans](manual/mulib-task.md), including executable shebang files and explicit
+shell strings, with an owned JSON batch format. [xtbb](manual/mulib-xtbb.md)
+adds C11 task arenas, fork/join, parallel for/map and deterministic reductions.
+[BuildGraph](manual/mulib-buildgraph.md) supports registered tasks and optional
+PolyTask dispatch; [BuildVM](manual/mulib-buildvm.md) supplies a finite hermetic
+artifact-only execution profile. [Artifacts](manual/mulib-artifact.md) include
+versioned binary file/diff archives with metadata and an offset table. Native
+commands and arbitrary callbacks are not sandboxed; only BuildVM's restricted
+byte operations enforce the in-memory hermetic profile.
 
 For multi-translation-unit use, define each implementation macro in exactly one `.c` file and include normal declarations everywhere else. Do not define implementation macros in globally distributed compiler flags. Headers should compile standalone. C++ clients should compile at least the implementation TU as C11 unless they specifically test C++ compatibility.
 

@@ -29,13 +29,48 @@ The descriptor cannot be mutated. An opaque object's internal mutability remains
 the application's responsibility; build inputs should be immutable snapshots.
 `retain` adds a reference, `release` removes one, and the final release frees
 the copied storage and invokes the object destructor exactly once. Reference
-counts are not atomic; synchronize shared access externally. `retain` returns
+counts are atomic; each thread must already own a reference before retaining or
+viewing. This does not synchronize mutable opaque objects. `retain` returns
 NULL on NULL or count overflow; `release(NULL)` is harmless.
 
 `create` returns NULL for invalid descriptors, byte lengths greater than
 `PTRDIFF_MAX`, or allocation failure. It has no partial ownership side effects.
 Zero-length bytes are valid, including a NULL data pointer. There is no automatic
 serialization of opaque objects, content equality, or URI canonicalization.
+
+## Binary files and archives
+
+`mulib_artifact_pack(id, files, count)` copies up to 65536
+`mulib_artifact_file_t` entries into a BYTES artifact of type `mulib.archive.v1`.
+Each entry has a canonical relative slash path (1..4095 bytes), binary contents,
+permission bits (0..0777), a uint64 Unix-seconds mtime, and FILE or DIFF kind.
+Duplicates, absolute/traversal paths, empty components, colons, backslashes and
+control bytes are rejected. DIFF payload encoding is application-defined; BuildVM
+produces VCDIFF bytes. No symlinks, directories, owners, xattrs or host I/O are
+implicitly represented. Supply metadata explicitly; zero timestamps make
+reproducible archives easy. A one-file archive uses the same API.
+
+Wire format (all integers unsigned little-endian uint64):
+
+* 24-byte header: 8 magic/version bytes `MUART\0\1\0`, entry count, total length.
+* `count` 48-byte TOC records: name offset, name length excluding NUL, payload
+  offset, payload length, mtime, flags (`mode | kind << 9`).
+* In TOC order, each NUL-terminated name followed immediately by its payload.
+
+Offsets are absolute from the first header byte. Empty entries/archives work.
+Canonical placement forbids overlaps, gaps, trailing bytes and hidden records;
+unknown flag bits are rejected. For a fixed entry order, contents and metadata,
+encoding is deterministic. There is no compression, checksum, authentication or
+implicit content hashing. Applications must authenticate untrusted storage.
+
+`unpack(id, data, length)` validates the entire buffer before copying it.
+`file_count` validates a BYTES artifact and writes its count; `file_at` returns a
+borrowed path/data view plus metadata. Both return 0 or -1 and leave outputs
+unchanged on error. Pack/unpack return NULL on invalid input or allocation failure.
+Validation checks names pairwise: use bounded archives and reject oversized input
+buffers before calling when applications need tighter resource limits.
+`tests/test_build_tasks.c` covers truncations, offsets, paths, metadata, empty
+archives and binary round trips.
 
 ## Example and verification
 

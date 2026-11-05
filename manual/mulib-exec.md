@@ -3,8 +3,33 @@
 `mulib-exec.h` provides POSIX fork/exec and `posix_spawn` execution, asynchronous
 child ownership, synchronous communication, concurrent pipelines, file
 redirection, binary capture, deadlines and an embedded Lua/Mune execution DSL.
-It never constructs a shell command string. To invoke a shell deliberately,
-pass an argument vector such as `{"sh", "-c", script}`.
+It never implicitly expands arguments through a shell. To invoke a shell
+deliberately, use `run_text` or an explicit `{"sh", "-c", script}` argv.
+
+## Task execution helpers
+
+`mulib_exec_run_file(path, settings, options, result)` executes a file directly,
+using the kernel's shebang support for executable scripts. No ENOEXEC shell
+fallback is attempted. Optional settings supply cwd, environment, redirects and
+arguments (including argv[0]); otherwise argv is just the path. Relative paths
+and PATH lookup follow the existing command rules.
+
+`mulib_exec_run_text(text, settings, options, result)` explicitly invokes
+`/bin/sh -c text`; settings' file/argv are ignored, other settings are retained.
+An empty string is a valid no-op shell program. This is intentional code
+execution, never an escaping API for untrusted text. Both helpers retain EXEC's
+binary capture, deadline, output limit and result-ownership behavior, and report
+UNSUPPORTED on non-POSIX backends. Defaults still inherit environment and stdio;
+the higher-level TASK initializer deliberately chooses stricter defaults instead.
+
+POSIX EXEC now links with `-pthread`. An internal launch mutex serializes EXEC's
+descriptor creation and child launches, including portable pipe/fcntl and
+temporary-input setup. Children execute, capture and wait concurrently after
+launch. This prevents one EXEC task from inheriting another's not-yet-CLOEXEC
+descriptors during construction. It does not coordinate unrelated process-launch
+APIs or application descriptor mutations. Blocking launch/open calls can delay
+other launches and deadline observation. Do not invoke EXEC from signal handlers
+or a post-fork child of a multithreaded application before exec.
 
 ## Build and implementation placement
 

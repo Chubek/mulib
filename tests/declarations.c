@@ -494,4 +494,8 @@
 #include "mulib-xll.h"
 #include "mulib-exec.h"
 #include "mulib-archml.h"
+#include "mulib-task.h"
+#include "mulib-polytask.h"
+#include "mulib-buildvm.h"
+#include "mulib-xtbb.h"
 int main(void) { return 0; }

@@ -15,5 +15,15 @@ int main (void) {
   assert (!memcmp (mulib_artifact_view (value)->data, bytes, sizeof (bytes)));
   mulib_artifact_release (value);
   mulib_artifact_release (value);
+  {
+    mulib_artifact_file_t file = {"data.bin", bytes, sizeof bytes, 0, 0644, MULIB_ARTIFACT_FILE};
+    mulib_artifact_file_t view;
+    size_t count;
+    value = mulib_artifact_pack ("archive:1", &file, 1);
+    assert (value && !mulib_artifact_file_count (value, &count) && count == 1);
+    assert (!mulib_artifact_file_at (value, 0, &view) && !strcmp (view.path, "data.bin"));
+    assert (view.mode == 0644 && !memcmp (view.data, bytes, sizeof bytes));
+    mulib_artifact_release (value);
+  }
   return 0;
 }
