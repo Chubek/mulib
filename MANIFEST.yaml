@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 489
-implemented_module_count: 489
+module_count: 492
+implemented_module_count: 492
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3435,7 +3435,44 @@ modules:
   purpose: Retained curses-style windows, staged composition and differential refresh.
   dependencies: [tui, termutils]
   status: implemented
+- name: sqlite-format
+  header: include/mulib-sqlite-format.h
+  manual: manual/mulib-sqlite-format.md
+  macro: MULIB_IMPL_SQLITE_FORMAT
+  purpose: Independent SQLite records, varints and bounded table B-tree images.
+  dependencies: [buffer, endian]
+  status: implemented
+- name: sqlite-pager
+  header: include/mulib-sqlite-pager.h
+  manual: manual/mulib-sqlite-pager.md
+  macro: MULIB_IMPL_SQLITE_PAGER
+  purpose: SQLite snapshots, POSIX lifetime locks and rollback-journal commits.
+  dependencies: [sqlite-format]
+  status: implemented
+- name: sqlite
+  header: include/mulib-sqlite.h
+  manual: manual/mulib-sqlite.md
+  macro: MULIB_IMPL_SQLITE
+  purpose: Independent SQLite-file SQL profile using parsec, not full SQLite compatibility.
+  dependencies: [arena, parsec, peg, rng, sqlite-pager, strbuf, utf8]
+  status: implemented
 project_files:
+- file: examples/modules/sqlite.c
+  purpose: Independent SQLite-file SQL profile usage.
+- file: examples/modules/sqlite-format.c
+  purpose: SQLite record and table B-tree codec usage.
+- file: examples/modules/sqlite-pager.c
+  purpose: SQLite snapshot pager usage.
+- file: tests/test_sqlite.c
+  purpose: Typed SQL, binding, constraint and transaction regressions.
+- file: tests/test_sqlite_alloc.c
+  purpose: SQLite connection, preparation and mutation allocation failure sweeps.
+- file: tests/test_sqlite_format.c
+  purpose: SQLite varint, record, overflow and page-size boundaries.
+- file: tests/test_sqlite_pager.c
+  purpose: SQLite pager I/O fault, recovery and native lock regressions.
+- file: tools/check_sqlite.py
+  purpose: Independent SQLite interoperability, recovery and lock oracle.
 - file: tests/test_webidl.c
   purpose: WebIDL compiler formats, grammar, ownership, limits and allocation-failure regressions.
 - file: tools/check_webidl.py

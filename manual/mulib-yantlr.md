@@ -1,12 +1,15 @@
 # YANTLR core
 
 `mulib-yantlr.h` implements the `.y1` **host language**, static linking,
-evaluation and provider-driven artifact generation. It does not implement the
-YANTLR standard library or interpret the declarative rule strings in the example
+evaluation and provider-driven artifact generation. The opt-in
+[standard library](../library/yantlr/README.md) supplies value utilities,
+diagnostics, staged output and PEG/EBNF parsing through an explicit registry.
+The core does not install it implicitly or interpret declarative rule strings in the example
 specifications. In particular, parsing `examples/Lua.y1` or `examples/YBASIC.y1`
 does not by itself produce a Lua or BASIC compiler. Their proposed `Gen[...]`
 and `Services[...]` exports must be supplied explicitly; missing exports are
-errors, not ignored stages. `library/yantlr` is unchanged.
+errors, not ignored stages. The standard library does not register those proposed
+compiler services.
 
 ## Integration
 

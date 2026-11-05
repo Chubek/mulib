@@ -1,0 +1,13 @@
+// Evaluate with the explicit standard-library registry; no files are written.
+intermediary "StandardLibraryDemo";
+set Numbers Services[Array]::Range!5;
+set Squares Services[Array]::Map (\n -> n `mul` n) Numbers;
+set Selected Services[Array]::Filter (\n -> n `geq` 4) Squares;
+set Total Services[Array]::Fold add 0 Selected;
+set Checked Services[Diag]::Assert (Total `eq` 29) "unexpected sum";
+set DiagnosticsFilter \l -> l.code `geq` Services[Diag]::Levels::Warning!Numeric;
+set Grammar Services[Parse]::PEG!"document <- word (' ' word)*; word <- [a-z]+;";
+set Parsed Services[Parse]::Run Grammar "hello world";
+set Accepted Services[Diag]::Assert Parsed.matched "input did not match";
+set Report Services[JSON]::Stringify!{"squares": Squares, "total": Total, "parse": Parsed};
+set Build Services[IO]::Emit "generated/report.json" Report;

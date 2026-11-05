@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 489 headers, 540 direct dependency edges.
+Inventory: 492 headers, 550 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -195,7 +195,7 @@ Compatibility group: `parsec`, `peg`.
 | [xsimd](mulib-xsimd.md) | none |
 | [xtks](mulib-xtks.md) | none |
 
-## Stratum 1 (118 modules)
+## Stratum 1 (119 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -293,6 +293,7 @@ Compatibility group: `parsec`, `peg`.
 | [smtpclient](mulib-smtpclient.md) | `smtpserver` |
 | [sppf](mulib-sppf.md) | `vec` |
 | [sql](mulib-sql.md) | `buffer`, `memtable`, `strbuf` |
+| [sqlite-format](mulib-sqlite-format.md) | `buffer`, `endian` |
 | [sshclient](mulib-sshclient.md) | `endian` |
 | [sshserver](mulib-sshserver.md) | `endian` |
 | [sysfonts](mulib-sysfonts.md) | `dynload` |
@@ -318,7 +319,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (65 modules)
+## Stratum 2 (66 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -371,6 +372,7 @@ Compatibility group: `parsec`, `peg`.
 | [pipeline](mulib-pipeline.md) | `parallel` |
 | [rootfs](mulib-rootfs.md) | `archive`, `vfs` |
 | [rubybind](mulib-rubybind.md) | `pybind` |
+| [sqlite-pager](mulib-sqlite-pager.md) | `sqlite-format` |
 | [sstfile](mulib-sstfile.md) | `buffer`, `bycutils`, `crc32`, `memtable`, `wal` |
 | [strpool](mulib-strpool.md) | `alloc`, `hash` |
 | [superblocks](mulib-superblocks.md) | `gssair` |
@@ -388,7 +390,7 @@ Compatibility group: `parsec`, `peg`.
 | [wmfunc](mulib-wmfunc.md) | `wlroots` |
 | [xpath](mulib-xpath.md) | `xml` |
 
-## Stratum 3 (38 modules)
+## Stratum 3 (39 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -423,6 +425,7 @@ Compatibility group: `parsec`, `peg`.
 | [rootfs-buildspec](mulib-rootfs-buildspec.md) | `rootfs` |
 | [rootfsbuilder](mulib-rootfsbuilder.md) | `archive`, `buffer`, `rootfs` |
 | [shaderx](mulib-shaderx.md) | `parsec`, `strbuf` |
+| [sqlite](mulib-sqlite.md) | `arena`, `parsec`, `peg`, `rng`, `sqlite-pager`, `strbuf`, `utf8` |
 | [stylesheet](mulib-stylesheet.md) | `css` |
 | [udev](mulib-udev.md) | `parsec` |
 | [vectgfx](mulib-vectgfx.md) | `glx`, `parsec`, `vec` |

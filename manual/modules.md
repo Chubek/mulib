@@ -18,6 +18,7 @@ consult each manual's exact supported syntax, errors, and limits.
 | Graphics math and geometry | [linalg](mulib-linalg.md), [simdmath](mulib-simdmath.md), [cgeom](mulib-cgeom.md), [collision](mulib-collision.md), [geosolve](mulib-geosolve.md) |
 | Rendering and GUI | [GLX](mulib-glx.md), [ShaderX](mulib-shaderx.md), [VectGFX](mulib-vectgfx.md), [raytracing](mulib-raytracing.md), [ImmGTK](mulib-immgtk.md) |
 | Storage and native formats | [archive](mulib-archive.md), [mmfile](mulib-mmfile.md), [kvdb](mulib-kvdb.md), [elf](mulib-elf.md), [dynload](mulib-dynload.md), [drm](mulib-drm.md) |
+| SQLite-file database | [SQL engine](mulib-sqlite.md), [record/B-tree format](mulib-sqlite-format.md), [snapshot pager](mulib-sqlite-pager.md); implemented profile, not full SQLite compatibility |
 | Binary inspection and packing | [ELF/COFF/PE/Mach-O stack](binary-formats.md), [shared objdump](mulib-objdump.md), [terminal styles](mulib-termstyle.md) |
 | Terminals | [terminfo](mulib-terminfo.md), [termkey](mulib-termkey.md), [termutils](mulib-termutils.md), [vterm](mulib-vterm.md), [tui](mulib-tui.md), [readline](mulib-readline.md), [VGA text buffer](mulib-vgabuffer.md) |
 | Protocols | [uri](mulib-uri.md), [http](mulib-http.md), [rpc](mulib-rpc.md), [dbus](mulib-dbus.md) |
@@ -40,7 +41,9 @@ consult each manual's exact supported syntax, errors, and limits.
 | Browser automation | [Prowse protocols](mulib-prowse-protocol.md), [Prowse control and lprowse Lua DSL](mulib-prowse-control.md), [15-language editor profiles](../library/librl/README.md) |
 
 The [YANTLR core](mulib-yantlr.md) implements the `.y1` host language, explicit
-provider linking and artifact generation, without standard-library services.
+provider linking and artifact generation. An opt-in
+[standard library](../library/yantlr/README.md) supplies value utilities,
+diagnostics, staged output and PEG/EBNF parsing through explicit bindings.
 Native modules document platform restrictions. Protocol modules are
 focused building blocks, not a claim of complete standards conformance, TLS,
 authentication, or safe public deployment.

@@ -155,8 +155,14 @@ file, including reverse dependencies, with deterministic Graphviz DOT output.
 compatible. The existing spellings `impaclient` and `dnsnmeserver` are retained.
 
 [YANTLR core](manual/mulib-yantlr.md) parses `.y1` generator specifications,
-links explicit providers and evaluates them into staged artifacts; its standard
-library is not implemented.
+links explicit providers and evaluates them into staged artifacts. Its opt-in
+[standard library](library/yantlr/README.md) adds value utilities, diagnostics,
+staged output and PEG/EBNF parsing, not the proposed compiler services.
+
+The independent [SQLite-file engine](manual/mulib-sqlite.md) uses parsec for SQL
+and separate native record/B-tree and journaled-pager headers. It reads and
+writes an explicitly documented SQL/storage profile, not yet full SQLite
+compatibility, and never links an external SQLite backend.
 The [dependency strata](manual/strata.md) index
 records every direct dependency and integration layer. New focused modules include
 a bounded i32 WebAssembly runtime (`wask`), an independent Lua runtime with

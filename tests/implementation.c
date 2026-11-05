@@ -263,6 +263,9 @@
 #define MULIB_IMPL_SOCKET
 #define MULIB_IMPL_SPATIALTREE
 #define MULIB_IMPL_SQL
+#define MULIB_IMPL_SQLITE
+#define MULIB_IMPL_SQLITE_FORMAT
+#define MULIB_IMPL_SQLITE_PAGER
 #define MULIB_IMPL_SSTFILE
 #define MULIB_IMPL_TEX
 #define MULIB_IMPL_TSL
@@ -743,6 +746,9 @@
 #include "mulib-socket.h"
 #include "mulib-spatialtree.h"
 #include "mulib-sql.h"
+#include "mulib-sqlite.h"
+#include "mulib-sqlite-format.h"
+#include "mulib-sqlite-pager.h"
 #include "mulib-sstfile.h"
 #include "mulib-tex.h"
 #include "mulib-tsl.h"
