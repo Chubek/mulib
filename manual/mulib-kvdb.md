@@ -18,7 +18,7 @@ with a shorter equal-prefix key first. There is exactly one value per key.
 Buffer, LEB128, CRC32, and endian operations reuse the corresponding MuLIB
 modules. The string-keyed `mulib-map` is intentionally not used: it cannot index
 embedded-NUL keys. Dependency implementation switches are never enabled
-implicitly. Public declarations need only `<stddef.h>` and C/C++ linkage.
+implicitly. Public declarations also expose the MuLIB binary buffer type.
 
 Reads and in-memory operations use ISO C11. Atomic persistent commits require
 POSIX Unix/Apple APIs; elsewhere commit explicitly returns `ENOTSUP`. OS headers
@@ -52,6 +52,15 @@ Output parameters change only on success. No internal locks: coordinate all
 access to a mutable object yourself.
 
 ## Commit and failure semantics
+
+Memory-only snapshots are available through `mulib_kvdb_create()`. Their
+`commit` returns EINVAL because no path is bound. `serialize` atomically appends
+the same portable on-disk format to a caller-owned `mulib_buffer_t`;
+`deserialize` validates a complete byte span and returns a new owned memory-only
+database, leaving output unchanged on failure. Neither retains caller bytes.
+`save(db, path)` explicitly writes any database to a path with the commit's
+atomic POSIX durability semantics, without changing the bound path or dirty
+flag. These APIs are used by cache and linguistic model persistence.
 
 A dirty commit serializes a complete new snapshot in memory, exclusively creates
 a mode-0600 temporary sibling named `PATH.mulib-PID-SEQUENCE`, writes all bytes,

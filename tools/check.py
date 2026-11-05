@@ -225,6 +225,22 @@ def main():
                             if metapp.returncode:
                                 failures.append((label + ' preprocessor/plugins', metapp.stderr or metapp.stdout))
                                 return False
+                        if sources and len(sources) == 1 and sources[0].name == 'test_asdl.c':
+                            generated = subprocess.run(
+                                [sys.executable, str(root / 'tools/check_asdl.py'),
+                                 '--emitter', str(binary), '--compiler', shlex.join(compiler)]
+                                + (['--sanitizers'] if args.sanitizers else []),
+                                cwd=work, capture_output=True, text=True, timeout=60)
+                            if generated.returncode:
+                                failures.append((label + ' generated C99', generated.stderr or generated.stdout))
+                                return False
+                        if sources and len(sources) == 1 and sources[0].name == 'test_cassowary_solver.c':
+                            reference = subprocess.run(
+                                [sys.executable, str(root / 'tools/check_cassowary.py'), '--solver', str(binary)],
+                                cwd=work, capture_output=True, text=True, timeout=60)
+                            if reference.returncode:
+                                failures.append((label + ' rational reference', reference.stderr or reference.stdout))
+                                return False
                         if sources and len(sources) == 1 and sources[0].name == 'test_xll.c':
                             generated = subprocess.run(
                                 [sys.executable, str(root / 'tools/check_xll.py'),

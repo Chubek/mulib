@@ -91,6 +91,20 @@ Storage is O(states + edges); execution scans the outgoing list per token and
 uses O(emitted symbols) result storage. Graph construction checks ranges
 against existing outgoing edges; bulk insertion can be quadratic.
 
+## Optional graph snapshots
+
+Before first inclusion additionally define `MULIB_IMPL_FST_SERIALIZE`,
+`MULIB_IMPL_BUFFER`, `MULIB_IMPL_ENDIAN` and `MULIB_IMPL_CRC32` to implement
+`mulib_fst_serialize`/`mulib_fst_deserialize`. Core execution still requires only
+VEC. Snapshots contain versioned little-endian state flags and range/output
+records with CRC32. Stable IDs are preserved, native links are rebuilt. The
+start state remains caller metadata. Append and decoded-output publication are
+transactional. Invalid ranges, overlap, state references, accepting/emits bits,
+trailing bytes or CRC fail. Decode also bounds overlap validation at 10000000
+comparisons. CRC detects corruption, not malicious modification. Use
+[DFA](mulib-dfa.md) for epsilon-NFA conversion and [cache](mulib-cache.md) for
+explicit indexed disk persistence.
+
 ## Verification
 
 `tests/test_fst_machinebuild.c` covers range boundaries, overlap rejection,

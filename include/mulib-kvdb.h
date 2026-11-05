@@ -7,6 +7,7 @@
  */
 #ifndef MULIB_KVDB_H
 #define MULIB_KVDB_H
+#include "mulib-buffer.h"
 #include <stddef.h>
 #ifdef __cplusplus
 extern "C"
@@ -37,6 +38,17 @@ extern "C"
    * contain NULs.
    */
   int mulib_kvdb_open (const char *path, int create, mulib_kvdb_t **database);
+  /** Create an empty memory-only snapshot. commit requires a bound path; save
+   * can write a memory-only database to an explicit path. */
+  mulib_kvdb_t *mulib_kvdb_create (void);
+  /** Atomic append of the portable CRC-protected snapshot format. */
+  int mulib_kvdb_serialize (const mulib_kvdb_t *, mulib_buffer_t *);
+  /** Decode a complete snapshot into a new memory-only database; out unchanged
+   * on error. No pointers into input are retained. */
+  int mulib_kvdb_deserialize (const void *, size_t, mulib_kvdb_t **);
+  /** Atomic POSIX save to an explicit path, without changing the bound path or
+   * dirty flag. Same durability/UNCERTAIN contract as commit. */
+  int mulib_kvdb_save (const mulib_kvdb_t *, const char *path);
   /** @brief Free the database, accepting NULL. No implicit commit. */
   void mulib_kvdb_close (mulib_kvdb_t *database);
   /** @brief Number of stored pairs; NULL has size zero. */
@@ -406,7 +418,6 @@ extern "C"
     *out = db;
     return MULIB_KVDB_OK;
   }
-#ifdef MULIB_KVDB_POSIX_
   static int
   mulib_kvdb_encode_ (const mulib_kvdb_t *db, mulib_buffer_t *bytes)
   {
@@ -435,6 +446,29 @@ extern "C"
     return mulib_buffer_append (bytes, crc, 4) ? MULIB_KVDB_OK
                                                : MULIB_KVDB_ENOMEM;
   }
+  mulib_kvdb_t *mulib_kvdb_create (void)
+  { return (mulib_kvdb_t *)calloc (1, sizeof (mulib_kvdb_t)); }
+  int mulib_kvdb_serialize (const mulib_kvdb_t *db, mulib_buffer_t *out)
+  {
+    mulib_buffer_t b = {0};
+    int rc;
+    if (!db || !out) return MULIB_KVDB_EINVAL;
+    rc = mulib_kvdb_encode_ (db, &b);
+    if (!rc && !mulib_buffer_append (out, b.data, b.length)) rc = MULIB_KVDB_ENOMEM;
+    mulib_buffer_free (&b); return rc;
+  }
+  int mulib_kvdb_deserialize (const void *p, size_t n, mulib_kvdb_t **out)
+  {
+    mulib_kvdb_t *db;
+    int rc;
+    if ((!p && n) || !out) return MULIB_KVDB_EINVAL;
+    db = mulib_kvdb_create ();
+    if (!db) return MULIB_KVDB_ENOMEM;
+    rc = mulib_kvdb_decode_ (db, (const unsigned char *)p, n);
+    if (rc) { mulib_kvdb_close (db); return rc; }
+    *out = db; return MULIB_KVDB_OK;
+  }
+#ifdef MULIB_KVDB_POSIX_
   static int
   mulib_kvdb_sync_ (int fd)
   {
@@ -550,10 +584,26 @@ extern "C"
     return rc;
   }
 #endif
+  int mulib_kvdb_save (const mulib_kvdb_t *db, const char *path)
+  {
+    if (!db || !path || !*path) return MULIB_KVDB_EINVAL;
+#ifdef MULIB_KVDB_POSIX_
+    {
+      mulib_kvdb_t copy = *db;
+      mulib_buffer_t bytes = {0};
+      int rc = mulib_kvdb_encode_ (db, &bytes);
+      copy.path = (char *)path; copy.dirty = 1;
+      if (!rc) rc = mulib_kvdb_replace_ (&copy, &bytes);
+      mulib_buffer_free (&bytes); return rc;
+    }
+#else
+    return MULIB_KVDB_ENOTSUP;
+#endif
+  }
   int
   mulib_kvdb_commit (mulib_kvdb_t *db)
   {
-    if (!db)
+    if (!db || !db->path)
       return MULIB_KVDB_EINVAL;
 #ifdef MULIB_KVDB_POSIX_
     {

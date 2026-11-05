@@ -45,6 +45,11 @@ extern "C"
   /** @brief mulib endian store be32; see manual/mulib-endian.md for contracts
    * and examples. */
   void mulib_endian_store_be32 (unsigned char *bytes, uint32_t value);
+  /** Unaligned 64-bit counterparts; NULL loads zero and stores do nothing. */
+  uint64_t mulib_endian_load_le64 (const unsigned char *bytes);
+  uint64_t mulib_endian_load_be64 (const unsigned char *bytes);
+  void mulib_endian_store_le64 (unsigned char *bytes, uint64_t value);
+  void mulib_endian_store_be64 (unsigned char *bytes, uint64_t value);
 
 #ifdef __cplusplus
 }
@@ -85,6 +90,14 @@ extern "C"
       for (unsigned i = 0; i < 4; i++)
         b[i] = (unsigned char)(v >> ((3 - i) * 8));
   }
+  uint64_t mulib_endian_load_le64 (const unsigned char *b)
+  { return b ? (uint64_t)mulib_endian_load_le32 (b) | (uint64_t)mulib_endian_load_le32 (b + 4) << 32 : 0; }
+  uint64_t mulib_endian_load_be64 (const unsigned char *b)
+  { return b ? (uint64_t)mulib_endian_load_be32 (b) << 32 | mulib_endian_load_be32 (b + 4) : 0; }
+  void mulib_endian_store_le64 (unsigned char *b, uint64_t v)
+  { if (b) { mulib_endian_store_le32 (b, (uint32_t)v); mulib_endian_store_le32 (b + 4, (uint32_t)(v >> 32)); } }
+  void mulib_endian_store_be64 (unsigned char *b, uint64_t v)
+  { if (b) { mulib_endian_store_be32 (b, (uint32_t)(v >> 32)); mulib_endian_store_be32 (b + 4, (uint32_t)v); } }
 #ifdef __cplusplus
 }
 #endif

@@ -206,6 +206,18 @@ if(MULIB_BUILD_TESTS)
     set_tests_properties(mulib_prowse_native_io PROPERTIES TIMEOUT 90)
   endif()
   if(Python3_Interpreter_FOUND AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    set(asdl_options)
+    if(MULIB_SANITIZERS)
+      list(APPEND asdl_options --sanitizers)
+    endif()
+    add_test(NAME mulib_asdl_generated
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_asdl.py
+        --emitter $<TARGET_FILE:mulib_test_asdl> --compiler ${CMAKE_C_COMPILER} ${asdl_options})
+    set_tests_properties(mulib_asdl_generated PROPERTIES TIMEOUT 60)
+    add_test(NAME mulib_cassowary_reference
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_cassowary.py
+        --solver $<TARGET_FILE:mulib_test_cassowary_solver>)
+    set_tests_properties(mulib_cassowary_reference PROPERTIES TIMEOUT 60)
     add_test(NAME mulib_webidl_generated
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_webidl.py
         --emitter $<TARGET_FILE:mulib_test_webidl> --compiler ${CMAKE_C_COMPILER})

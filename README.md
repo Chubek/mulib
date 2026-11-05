@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **506 implemented modules**.
+A C11 modular single-header utility library with **516 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -178,6 +178,18 @@ compatible. The existing spellings `impaclient` and `dnsnmeserver` are retained.
 links explicit providers and evaluates them into staged artifacts. Its opt-in
 [standard library](library/yantlr/README.md) adds value utilities, diagnostics,
 staged output and PEG/EBNF parsing, not the proposed compiler services.
+
+[Zephyr ASDL](manual/mulib-asdl.md) describes tree schemas through source text
+or macro/inline declarations and emits S-expressions, provider-free YANTLR
+schema records, and standalone C99 types with inline constructors.
+
+[Hyphenation](manual/mulib-hyphen.md) and [spellchecking](manual/mulib-spellcheck.md)
+combine configurable dictionaries, orthographic/morphology data, Liang patterns,
+finite-state machines and approximate matching. Portable [caches](manual/mulib-cache.md)
+offer selectable sorted/HAT-trie/trie indexes; [DFA conversion](manual/mulib-dfa.md)
+supports epsilon-NFAs. [Cassowary](manual/mulib-cassowary-solver.md) solves
+prioritized linear constraints, while [2D path geometry](manual/mulib-2dgeom.md)
+provides Bezier evaluation, splitting, curvature and a Parsec-backed path DSL.
 
 The independent [SQLite-file engine](manual/mulib-sqlite.md) uses parsec for SQL
 and separate native record/B-tree and journaled-pager headers. It reads and

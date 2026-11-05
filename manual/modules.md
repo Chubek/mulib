@@ -1,6 +1,6 @@
 # MuLIB module and composition guide
 
-MuLIB has 475 implemented single-header C11 modules. Every implemented module has a corresponding
+MuLIB has 516 implemented single-header C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -12,6 +12,10 @@ consult each manual's exact supported syntax, errors, and limits.
 | Memory and portability | [alloc](mulib-alloc.md), [mempool](mulib-mempool.md), [strpool](mulib-strpool.md), [memtkx](mulib-memtkx.md), [port](mulib-port.md) |
 | Parsing | [parsec](mulib-parsec.md), [peg](mulib-peg.md), [regex](mulib-regex.md), [atn](mulib-atn.md), [glr](mulib-glr.md), [sppf](mulib-sppf.md), [gss](mulib-gss.md) |
 | Trees and streams | [ast](mulib-ast.md), [visitor](mulib-visitor.md), [listener](mulib-listener.md), [evtstream](mulib-evtstream.md), [lazystream](mulib-lazystream.md) |
+| Tree schema compilation | [Zephyr ASDL](mulib-asdl.md): parsec parsing, macro/inline schemas, S-expressions, YANTLR and standalone C99 |
+| Linguistic algorithms | [hyphen](mulib-hyphen.md), [orhoconv](mulib-orhoconv.md), [spellcheck](mulib-spellcheck.md), [weighted-edit-distance](mulib-weighted-edit-distance.md), [bktree](mulib-bktree.md) |
+| Automata and persistence | [DFA/NFA conversion](mulib-dfa.md), [selectable disk-cache indexes](mulib-cache.md) |
+| Vector drawing computations | [2dgeom](mulib-2dgeom.md): Bezier paths and DSL; [Cassowary](mulib-cassowary-solver.md): prioritized linear constraints |
 | Configuration | [confuse](mulib-confuse.md), [ini](mulib-ini.md), [toml](mulib-toml.md) |
 | Structured data | [json](mulib-json.md), [yaml](mulib-yaml.md), [toml](mulib-toml.md), [template](mulib-template.md), [xml](mulib-xml.md), [xpath](mulib-xpath.md) |
 | Documents and graphics | [html](mulib-html.md), [css](mulib-css.md), [markdown](mulib-markdown.md), [svg](mulib-svg.md), [graphviz](mulib-graphviz.md), [vector algebra](mulib-vector.md) |

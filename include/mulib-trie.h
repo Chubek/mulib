@@ -28,12 +28,22 @@ int mulib_trie_get(const mulib_trie_t *trie, const void *key, size_t length, uin
 int mulib_trie_remove(mulib_trie_t *trie, const void *key, size_t length);
 /** Free iteratively and reset. NULL is harmless. */
 void mulib_trie_free(mulib_trie_t *trie);
+typedef int (*mulib_trie_match_fn)(const void *key, size_t length, uint64_t value,
+    size_t distance, void *user);
+/** DP-row traversal with subtree pruning, byte Levenshtein radius. Callback
+ * borrows key, nonzero continues; return count including stop, SIZE_MAX on
+ * invalid/OOM/work limit (callbacks may already have run). Query/key traversal
+ * depth <=4096; live DP storage <=64 MiB. max_work=0 means 10000000 cells/edges.
+ * Optional work is always initialized; callbacks must not mutate the trie. */
+size_t mulib_trie_approximate(const mulib_trie_t *, const void *, size_t, size_t radius,
+    size_t max_work, mulib_trie_match_fn, void *, size_t *work);
 #ifdef __cplusplus
 }
 #endif
 #endif
 #if defined(MULIB_IMPL_TRIE) && !defined(MULIB_TRIE_IMPLEMENTED)
 #define MULIB_TRIE_IMPLEMENTED
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #ifdef __cplusplus
@@ -113,6 +123,53 @@ int mulib_trie_set(mulib_trie_t *t, const void *key, size_t len, uint64_t value)
   }
   last->key = copy; last->length = len; last->value = value; last->terminal = 1;
   first->next = *slot; *slot = first; ++t->size; return 1;
+}
+size_t mulib_trie_approximate(const mulib_trie_t *t, const void *query, size_t m, size_t radius,
+    size_t limit, mulib_trie_match_fn visit, void *user, size_t *work) {
+  typedef struct frame { const mulib_trie_node_t *node, *next; size_t *row; } frame;
+  frame *stack = NULL;
+  const unsigned char *q = (const unsigned char *)query;
+  size_t used = 0, spent = 0, calls = 0, i, bytes, minimum;
+  size_t *row = NULL;
+  const mulib_trie_node_t *node;
+  if (work) *work = 0;
+  if (!t || (!q && m) || m > 4096 || !visit) { errno = EINVAL; return SIZE_MAX; }
+  if (!t->root) return 0;
+  if (!limit) limit = 10000000;
+  bytes = (m + 1) * sizeof(size_t);
+  stack = (frame *)calloc(4097, sizeof *stack); row = (size_t *)malloc(bytes);
+  if (!stack || !row) { errno = ENOMEM; goto fail; }
+  for (i = 0; i <= m; ++i) row[i] = i;
+  stack[0].node = t->root; stack[0].next = t->root->child; stack[0].row = row; row = NULL; used = 1;
+  if (t->root->terminal && m <= radius) {
+    ++calls; if (!visit(t->root->key, t->root->length, t->root->value, m, user)) goto done;
+  }
+  while (used) {
+    frame *parent = &stack[used - 1];
+    if (!parent->next) { free(parent->row); --used; continue; }
+    node = parent->next; parent->next = node->next;
+    if (m + 1 > limit - spent || used > 4096 || (used + 1) > 67108864u / bytes) { errno = EOVERFLOW; goto fail; }
+    spent += m + 1;
+    row = (size_t *)malloc(bytes); if (!row) { errno = ENOMEM; goto fail; }
+    row[0] = used; minimum = row[0];
+    for (i = 1; i <= m; ++i) {
+      size_t a = parent->row[i] + 1, b = row[i - 1] + 1;
+      size_t c = parent->row[i - 1] + (node->edge != q[i - 1]);
+      row[i] = a < b ? a : b; if (c < row[i]) row[i] = c;
+      if (row[i] < minimum) minimum = row[i];
+    }
+    if (node->terminal && row[m] <= radius) {
+      ++calls; if (!visit(node->key, node->length, node->value, row[m], user)) { free(row); row = NULL; goto done; }
+    }
+    if (minimum <= radius && node->child) {
+      stack[used].node = node; stack[used].next = node->child; stack[used].row = row; ++used; row = NULL;
+    } else { free(row); row = NULL; }
+  }
+done:
+  while (used) free(stack[--used].row);
+  free(stack); if (work) *work = spent; return calls;
+fail:
+  free(row); calls = SIZE_MAX; goto done;
 }
 int mulib_trie_remove(mulib_trie_t *t, const void *key, size_t len)
 {

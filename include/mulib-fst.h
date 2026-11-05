@@ -8,6 +8,7 @@
 #ifndef MULIB_FST_H
 #define MULIB_FST_H
 #include "mulib-vec.h"
+#include "mulib-buffer.h"
 #include <stddef.h>
 #include <stdint.h>
 #ifdef __cplusplus
@@ -70,6 +71,13 @@ int mulib_fst_transduce (const mulib_fst_t *fst, size_t start,
                          mulib_fst_result_t *out, size_t *work);
 /** Release result and zero it; NULL allowed. */
 void mulib_fst_result_free (mulib_fst_result_t *result);
+/** Portable LE/CRC graph snapshots. Start state is caller metadata.
+ * Atomic append and owned decode; out is unchanged on error. Additionally
+ * define MULIB_IMPL_FST_SERIALIZE and BUFFER, ENDIAN and CRC32 implementations
+ * before first inclusion for snapshot functions. Core FST dependencies unchanged. */
+int mulib_fst_serialize(const mulib_fst_t *, mulib_buffer_t *);
+int mulib_fst_deserialize(const void *, size_t, size_t max_states, size_t max_edges,
+    mulib_fst_t **out);
 #ifdef __cplusplus
 }
 #endif
@@ -77,6 +85,10 @@ void mulib_fst_result_free (mulib_fst_result_t *result);
 
 #if defined(MULIB_IMPL_FST) && !defined(MULIB_FST_IMPLEMENTED)
 #define MULIB_FST_IMPLEMENTED
+#ifdef MULIB_IMPL_FST_SERIALIZE
+#include "mulib-endian.h"
+#include "mulib-crc32.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #ifdef __cplusplus
@@ -222,6 +234,71 @@ done:
 }
 void mulib_fst_result_free (mulib_fst_result_t *r)
 { if (r) { free (r->output); memset (r, 0, sizeof (*r)); } }
+#ifdef MULIB_IMPL_FST_SERIALIZE
+int mulib_fst_serialize(const mulib_fst_t *f, mulib_buffer_t *out) {
+  mulib_buffer_t b = {0};
+  unsigned char header[16], record[24], crc[4];
+  size_t i;
+  int rc = MULIB_FST_NOMEM;
+  if (!f || !out || f->states.length > UINT32_MAX || f->edges.length > UINT32_MAX) return MULIB_FST_INVALID;
+  memcpy(header, "MuFST\1\0\0", 8);
+  mulib_endian_store_le32(header + 8, (uint32_t)f->states.length);
+  mulib_endian_store_le32(header + 12, (uint32_t)f->edges.length);
+  if (!mulib_buffer_append(&b, header, 16)) goto done;
+  for (i = 0; i < f->states.length; ++i) {
+    unsigned char a = (unsigned char)mulib_fst_state_(f, i)->accepting;
+    if (!mulib_buffer_append(&b, &a, 1)) goto done;
+  }
+  for (i = 0; i < f->edges.length; ++i) {
+    const mulib_fst_edge_t *e = mulib_fst_edge_(f, i);
+    mulib_endian_store_le32(record, (uint32_t)e->from); mulib_endian_store_le32(record + 4, (uint32_t)e->to);
+    mulib_endian_store_le32(record + 8, e->lower); mulib_endian_store_le32(record + 12, e->upper);
+    mulib_endian_store_le32(record + 16, e->output); mulib_endian_store_le32(record + 20, (uint32_t)e->emits);
+    if (!mulib_buffer_append(&b, record, 24)) goto done;
+  }
+  mulib_endian_store_le32(crc, mulib_crc32(b.data, b.length));
+  if (!mulib_buffer_append(&b, crc, 4) || !mulib_buffer_append(out, b.data, b.length)) goto done;
+  rc = MULIB_FST_OK;
+done:
+  mulib_buffer_free(&b); return rc;
+}
+int mulib_fst_deserialize(const void *data, size_t n, size_t ms, size_t me, mulib_fst_t **out) {
+  const unsigned char *p = (const unsigned char *)data;
+  mulib_fst_t *f;
+  uint32_t *degree;
+  size_t ns, ne, i, id, pos;
+  size_t inspections = 0;
+  int rc;
+  if (!out || (!p && n) || n < 20 || memcmp(p, "MuFST\1\0\0", 8)) return MULIB_FST_INVALID;
+  ns = mulib_endian_load_le32(p + 8); ne = mulib_endian_load_le32(p + 12);
+  if (ns > (ms ? ms : 65536) || ne > (me ? me : 262144)) return MULIB_FST_LIMIT;
+  if (ns > n - 20 || ne > (n - 20 - ns) / 24 || 20 + ns + ne * 24 != n ||
+      mulib_endian_load_le32(p + n - 4) != mulib_crc32(p, n - 4)) return MULIB_FST_INVALID;
+  f = mulib_fst_create(ms, me); if (!f) return MULIB_FST_NOMEM;
+  degree = (uint32_t *)calloc(ns ? ns : 1, sizeof *degree);
+  if (!degree) { mulib_fst_destroy(f); return MULIB_FST_NOMEM; }
+  for (i = 0; i < ns; ++i) {
+    if (p[16 + i] > 1) { rc = MULIB_FST_INVALID; goto fail; }
+    rc = mulib_fst_add_state(f, p[16 + i], &id); if (rc) goto fail;
+  }
+  pos = 16 + ns;
+  for (i = 0; i < ne; ++i, pos += 24) {
+    uint32_t emits = mulib_endian_load_le32(p + pos + 20);
+    uint32_t from = mulib_endian_load_le32(p + pos);
+    if (emits > 1) { rc = MULIB_FST_INVALID; goto fail; }
+    if (from >= ns) { rc = MULIB_FST_INVALID; goto fail; }
+    if (degree[from] > 10000000u - inspections) { rc = MULIB_FST_LIMIT; goto fail; }
+    inspections += degree[from]++;
+    rc = mulib_fst_add_range(f, mulib_endian_load_le32(p + pos), mulib_endian_load_le32(p + pos + 4),
+        mulib_endian_load_le32(p + pos + 8), mulib_endian_load_le32(p + pos + 12),
+        (int)emits, mulib_endian_load_le32(p + pos + 16), NULL);
+    if (rc) goto fail;
+  }
+  free(degree); *out = f; return MULIB_FST_OK;
+fail:
+  free(degree); mulib_fst_destroy(f); return rc;
+}
+#endif
 #ifdef __cplusplus
 }
 #endif

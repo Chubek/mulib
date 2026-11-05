@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 506 headers, 572 direct dependency edges.
+Inventory: 516 headers, 601 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (177 modules)
+## Stratum 0 (178 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -40,6 +40,7 @@ Compatibility group: `parsec`, `peg`.
 | [bounds](mulib-bounds.md) | none |
 | [buffer](mulib-buffer.md) | none |
 | [bycutils](mulib-bycutils.md) | none |
+| [cassowary-solver](mulib-cassowary-solver.md) | none |
 | [clamp](mulib-clamp.md) | none |
 | [color](mulib-color.md) | none |
 | [column-rdbms](mulib-column-rdbms.md) | none |
@@ -197,7 +198,7 @@ Compatibility group: `parsec`, `peg`.
 | [xthreads](mulib-xthreads.md) | none |
 | [xtks](mulib-xtks.md) | none |
 
-## Stratum 1 (121 modules)
+## Stratum 1 (122 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -239,7 +240,7 @@ Compatibility group: `parsec`, `peg`.
 | [flatbuffers](mulib-flatbuffers.md) | `binfile`, `bycutils` |
 | [fontdraw](mulib-fontdraw.md) | `dynload` |
 | [fontshape](mulib-fontshape.md) | `dynload`, `utf8` |
-| [fst](mulib-fst.md) | `vec` |
+| [fst](mulib-fst.md) | `buffer`, `crc32`, `endian`, `vec` |
 | [fuse](mulib-fuse.md) | `vfs` |
 | [glx](mulib-glx.md) | `drm`, `linalg` |
 | [graphdb](mulib-graphdb.md) | `memtable` |
@@ -319,18 +320,21 @@ Compatibility group: `parsec`, `peg`.
 | [vterm](mulib-vterm.md) | `grid`, `utf8` |
 | [wal](mulib-wal.md) | `buffer`, `bycutils`, `crc32` |
 | [wayland](mulib-wayland.md) | `dynload` |
+| [weighted-edit-distance](mulib-weighted-edit-distance.md) | `weighed_edit_distane` |
 | [wlroots](mulib-wlroots.md) | `vec` |
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (72 modules)
+## Stratum 2 (76 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [anfir](mulib-anfir.md) | `gssair` |
 | [bidi](mulib-bidi.md) | `uniproc` |
 | [binfilebuilder](mulib-binfilebuilder.md) | `binfileschema`, `buffer`, `bycutils` |
+| [bktree](mulib-bktree.md) | `bk-trees` |
 | [buildvm](mulib-buildvm.md) | `buildgraph`, `vcdiff` |
+| [cache](mulib-cache.md) | `hattrie`, `kvdb`, `trie` |
 | [cgeom](mulib-cgeom.md) | `linalg`, `simdmath` |
 | [channel](mulib-channel.md) | `fiber` |
 | [clickir](mulib-clickir.md) | `gssair` |
@@ -345,6 +349,7 @@ Compatibility group: `parsec`, `peg`.
 | [containerd-cache](mulib-containerd-cache.md) | `imgformat` |
 | [containerstub](mulib-containerstub.md) | `container2daemonproto`, `ocicontainer` |
 | [css](mulib-css.md) | `xml` |
+| [dfa](mulib-dfa.md) | `crc32`, `endian`, `fst` |
 | [dnsresolver](mulib-dnsresolver.md) | `dnscache`, `dnsclient` |
 | [elfutils](mulib-elfutils.md) | `elf` |
 | [evtstream](mulib-evtstream.md) | `ast` |
@@ -373,6 +378,7 @@ Compatibility group: `parsec`, `peg`.
 | [objfileleader](mulib-objfileleader.md) | `elf` |
 | [objfilewriter](mulib-objfilewriter.md) | `binfilewriter`, `buffer`, `bycutils` |
 | [ocicontaineripc](mulib-ocicontaineripc.md) | `container2daemonproto` |
+| [orhoconv](mulib-orhoconv.md) | `endian`, `kvdb`, `utf8` |
 | [otpath](mulib-otpath.md) | `otpauth` |
 | [parsec](mulib-parsec.md) | `ast`, `glob`, `peg`, `strbuf` |
 | [pe](mulib-pe.md) | `coff` |
@@ -400,11 +406,13 @@ Compatibility group: `parsec`, `peg`.
 | [xpath](mulib-xpath.md) | `xml` |
 | [xtbb](mulib-xtbb.md) | `parallel` |
 
-## Stratum 3 (39 modules)
+## Stratum 3 (43 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
+| [2dgeom](mulib-2dgeom.md) | `geometry`, `parsec`, `vec` |
 | [archml](mulib-archml.md) | `parsec` |
+| [asdl](mulib-asdl.md) | `arena`, `parsec`, `strbuf` |
 | [collision](mulib-collision.md) | `cgeom` |
 | [confuse](mulib-confuse.md) | `parsec` |
 | [container-packpe](mulib-container-packpe.md) | `imgformat`, `pe` |
@@ -417,6 +425,7 @@ Compatibility group: `parsec`, `peg`.
 | [depir](mulib-depir.md) | `anfir`, `clickir`, `superblocks` |
 | [dnsnmeserver](mulib-dnsnmeserver.md) | `nameserver` |
 | [geosolve](mulib-geosolve.md) | `alloc`, `cgeom`, `geometry` |
+| [hyphen](mulib-hyphen.md) | `cache`, `dfa`, `orhoconv` |
 | [image2container](mulib-image2container.md) | `imgformat`, `rootfs` |
 | [inet4](mulib-inet4.md) | `parsec` |
 | [jit](mulib-jit.md) | `dyncall`, `vmweave` |
@@ -435,6 +444,7 @@ Compatibility group: `parsec`, `peg`.
 | [rootfs-buildspec](mulib-rootfs-buildspec.md) | `rootfs` |
 | [rootfsbuilder](mulib-rootfsbuilder.md) | `archive`, `buffer`, `rootfs` |
 | [shaderx](mulib-shaderx.md) | `parsec`, `strbuf` |
+| [spellcheck](mulib-spellcheck.md) | `bktree`, `cache`, `endian`, `fst`, `utf8`, `weighted-edit-distance` |
 | [sqlite](mulib-sqlite.md) | `arena`, `parsec`, `peg`, `rng`, `sqlite-pager`, `strbuf`, `utf8` |
 | [stylesheet](mulib-stylesheet.md) | `css` |
 | [udev](mulib-udev.md) | `parsec` |

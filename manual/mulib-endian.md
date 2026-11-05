@@ -31,6 +31,10 @@ uint32_t mulib_endian_load_le32(const unsigned char *bytes);
 uint32_t mulib_endian_load_be32(const unsigned char *bytes);
 void mulib_endian_store_le32(unsigned char *bytes,uint32_t value);
 void mulib_endian_store_be32(unsigned char *bytes,uint32_t value);
+uint64_t mulib_endian_load_le64(const unsigned char *bytes);
+uint64_t mulib_endian_load_be64(const unsigned char *bytes);
+void mulib_endian_store_le64(unsigned char *bytes,uint64_t value);
+void mulib_endian_store_be64(unsigned char *bytes,uint64_t value);
 ```
 
 The declarations are stable C entry points, with `extern "C"` linkage when compiled as C++. Public data structures are intentionally visible and inspectable rather than hiding allocation behind an ABI. Treat any `data`, `items`, or linked pointers as borrowed views unless the specific function explicitly transfers ownership. No function is implicitly thread-safe for mutable shared objects.

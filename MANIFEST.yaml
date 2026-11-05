@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 506
-implemented_module_count: 506
+module_count: 516
+implemented_module_count: 516
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2942,8 +2942,9 @@ modules:
   header: include/mulib-fst.h
   manual: manual/mulib-fst.md
   macro: MULIB_IMPL_FST
+  extra_macros: [MULIB_IMPL_FST_SERIALIZE]
   purpose: "Deterministic range finite-state transducers over uint32_t symbols."
-  dependencies: [vec]
+  dependencies: [buffer, crc32, endian, vec]
   status: implemented
 - name: machinebuild
   header: include/mulib-machinebuild.h
@@ -3553,6 +3554,76 @@ modules:
   macro: MULIB_IMPL_SUPERINSTR
   purpose: "Exact straight-line assembly superinstructions emitted as GAS macros."
   dependencies: [mir, strbuf]
+  status: implemented
+- name: asdl
+  header: include/mulib-asdl.h
+  manual: manual/mulib-asdl.md
+  macro: MULIB_IMPL_ASDL
+  purpose: "Zephyr ASDL schemas, parsec parser and S-expression/YANTLR/C99 emitters."
+  dependencies: [arena, parsec, strbuf]
+  status: implemented
+- name: 2dgeom
+  header: include/mulib-2dgeom.h
+  manual: manual/mulib-2dgeom.md
+  macro: MULIB_IMPL_2DGEOM
+  purpose: "Double-precision Bezier/path geometry and parsec-backed vector path DSL."
+  dependencies: [geometry, parsec, vec]
+  status: implemented
+- name: bktree
+  header: include/mulib-bktree.h
+  manual: manual/mulib-bktree.md
+  macro: MULIB_IMPL_BKTREE
+  purpose: "Canonical BK-tree interface reusing MuLIB's metric-pruned byte BK tree."
+  dependencies: [bk-trees]
+  status: implemented
+- name: cache
+  header: include/mulib-cache.h
+  manual: manual/mulib-cache.md
+  macro: MULIB_IMPL_CACHE
+  purpose: "Explicit disk snapshots with selectable sorted KVDB, HAT-trie or trie indexes."
+  dependencies: [hattrie, kvdb, trie]
+  status: implemented
+- name: cassowary-solver
+  header: include/mulib-cassowary-solver.h
+  manual: manual/mulib-cassowary-solver.md
+  macro: MULIB_IMPL_CASSOWARY_SOLVER
+  purpose: "Cassowary slack/error tableau simplex for prioritized linear constraints."
+  dependencies: []
+  status: implemented
+- name: dfa
+  header: include/mulib-dfa.h
+  manual: manual/mulib-dfa.md
+  macro: MULIB_IMPL_DFA
+  purpose: "Range DFAs and bounded epsilon-NFA subset construction over uint32 symbols."
+  dependencies: [crc32, endian, fst]
+  status: implemented
+- name: hyphen
+  header: include/mulib-hyphen.h
+  manual: manual/mulib-hyphen.md
+  macro: MULIB_IMPL_HYPHEN
+  purpose: "Dictionary, orthographic, Liang, morphology, FST/DFA and syllable hyphenation."
+  dependencies: [cache, dfa, orhoconv]
+  status: implemented
+- name: orhoconv
+  header: include/mulib-orhoconv.h
+  manual: manual/mulib-orhoconv.md
+  macro: MULIB_IMPL_ORHOCONV
+  purpose: "Configurable UTF-8 orthographic boundary conventions backed by KVDB."
+  dependencies: [endian, kvdb, utf8]
+  status: implemented
+- name: spellcheck
+  header: include/mulib-spellcheck.h
+  manual: manual/mulib-spellcheck.md
+  macro: MULIB_IMPL_SPELLCHECK
+  purpose: "Configurable dictionary/affix/compound checking and five suggestion engines."
+  dependencies: [bktree, cache, endian, fst, utf8, weighted-edit-distance]
+  status: implemented
+- name: weighted-edit-distance
+  header: include/mulib-weighted-edit-distance.h
+  manual: manual/mulib-weighted-edit-distance.md
+  macro: MULIB_IMPL_WEIGHTED_EDIT_DISTANCE
+  purpose: "Weighted edit DP with per-symbol costs; canonical access to legacy byte DP."
+  dependencies: [weighed_edit_distane]
   status: implemented
 project_files:
 - file: examples/modules/xthreads.c
@@ -5147,3 +5218,41 @@ project_files:
   purpose: "Loadable ordered policy for all 75 implemented tree-rewrite optimizations."
 - file: library/optim/README.md
   purpose: "OptML policy grammar, rule families and semantic contracts."
+- file: examples/modules/asdl.c
+  purpose: "Standalone checked usage example for asdl."
+- file: tests/test_asdl.c
+  purpose: "Focused regression suite for test_asdl."
+- file: tests/test_asdl_alloc.c
+  purpose: "Focused regression suite for test_asdl_alloc."
+- file: tools/check_asdl.py
+  purpose: "ASDL backend schema agreement and standalone generated C99 runtime checks."
+- file: examples/modules/2dgeom.c
+  purpose: "Standalone checked usage example for 2dgeom."
+- file: examples/modules/bktree.c
+  purpose: "Standalone checked usage example for bktree."
+- file: examples/modules/cache.c
+  purpose: "Standalone checked usage example for cache."
+- file: examples/modules/cassowary-solver.c
+  purpose: "Standalone checked usage example for cassowary-solver."
+- file: examples/modules/dfa.c
+  purpose: "Standalone checked usage example for dfa."
+- file: examples/modules/hyphen.c
+  purpose: "Standalone checked usage example for hyphen."
+- file: examples/modules/orhoconv.c
+  purpose: "Standalone checked usage example for orhoconv."
+- file: examples/modules/spellcheck.c
+  purpose: "Standalone checked usage example for spellcheck."
+- file: examples/modules/weighted-edit-distance.c
+  purpose: "Standalone checked usage example for weighted-edit-distance."
+- file: tests/test_2dgeom.c
+  purpose: "Focused regression suite for test_2dgeom."
+- file: tests/test_cassowary_solver.c
+  purpose: "Focused regression suite for test_cassowary_solver."
+- file: tests/test_hyphen.c
+  purpose: "Focused regression suite for test_hyphen."
+- file: tests/test_language_graphics_alloc.c
+  purpose: "Focused regression suite for test_language_graphics_alloc."
+- file: tools/check_cassowary.py
+  purpose: "Independent exact-rational vertex reference for prioritized linear constraint solving."
+- file: tests/test_spellcheck.c
+  purpose: "Focused regression suite for test_spellcheck."
