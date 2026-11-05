@@ -1,0 +1,98 @@
+#include "MetaML.hpp"
+#include "metalib/cpp/Metalib.h"
+#include <fstream>
+#include <chrono>
+#include <stdexcept>
+
+static void require(bool b) { if (!b) throw std::runtime_error("MetaML regression"); }
+
+int main(int argc, char **argv)
+{
+  require(argc == 2);
+  for (auto source : {"$999999999999999999999999", "(#999999999999999999999999 + 1)"})
+    require(!metaml::lex(source).diagnostics.empty());
+  for (auto text : {"", "_", "1_", "1__2", "0x_1"})
+    require(!metaml::detail::parse_int(text));
+  for (auto text : {"", "_", "\v1", "1_", "1__2"})
+    require(!metaml::detail::parse_float(text));
+  require(metaml::detail::parse_int("1_000") == 1000);
+  require(metaml::detail::parse_float("1_000.5") == 1000.5);
+  for (auto source : {"1_", "1.0__2", "1__0"})
+    require(!metaml::lex(source).diagnostics.empty());
+  {
+    metaml::Session gc;
+    auto parsed = metaml::parse("fn identity x := if true then x + 0 else 1\n");
+    require(parsed.ok() && gc.run_program(parsed.program, metaml::RunMode::Quiet).ok());
+    require(parsed.program.items[0]->value->kids[0]->kind == metaml::EK::Var);
+    require(metaml::to_string(gc.eval("identity 42")) == "42");
+    require(gc.eval("fn outer x := fn y -> x + y").is_ok());
+    require(metaml::to_string(gc.eval("outer 20 22")) == "42");
+    require(gc.metagc_ir().dump().find("(captures \"x\")") != std::string::npos);
+    require(gc.eval("fn () -> 42").is_ok());
+    auto term = dsl::parse_sexpr("(rule \"?x\" ?x ())");
+    require(dsl::decode_sexpr(dsl::encode_sexpr(term)) == term);
+    require(metaml::to_string(gc.eval("SExpr.show (SExpr.decode (SExpr.encode (SExpr.read \"(a b)\")))")) == "\"(a b)\"");
+  }
+  metaml::Session s;
+  require(s.load_stdlib(argv[1]).is_ok());
+  require(s.eval("List.range (~9223372036854775808) 9223372036854775807").is_err());
+  require(s.eval("[Int.min_value .. Int.max_value]").is_err());
+  require(metaml::to_string(s.eval("[Int.max_value .. Int.max_value]")) == "[9223372036854775807]");
+  require(s.eval("String.repeat 9223372036854775807 \"\"").is_ok());
+  require(s.eval("String.repeat 9223372036854775807 \"xx\"").is_err());
+  s.register_primitive("Host.boom", [] (std::int64_t) -> std::int64_t {
+    throw std::runtime_error("host failure");
+  });
+  auto bad = s.eval("Host.boom 0");
+  require(bad.is_err() && bad.unwrap_err()[0].code == "M0409");
+  require(metaml::to_string(s.eval("1 + 2")) == "3");
+  s.register_primitive("Host.inc", [](std::int64_t n) { return n + 1; });
+  require(s.eval("saved := Host.inc").is_ok());
+  s.register_primitive("Host.inc", [](std::int64_t n) { return n + 2; });
+  require(metaml::to_string(s.eval("saved 1")) == "2");
+  require(metaml::to_string(s.eval("Host.inc 1")) == "3");
+  bool rejected = false;
+  try { s.install_primitive("Host.inc", "Int -> Int", 1, {}); }
+  catch (const std::invalid_argument &) { rejected = true; }
+  require(rejected && metaml::to_string(s.eval("Host.inc 1")) == "3");
+  // Run the extensions without the optional host bundle as well.
+  s.set_output([](std::string_view) {});
+  require(s.load_file((std::filesystem::path(argv[1]).parent_path()
+                       / "tests/integration/extensions.mml").string()).is_ok());
+  auto temporary = std::filesystem::is_directory("/tmp/opencode")
+      ? std::filesystem::path("/tmp/opencode") : std::filesystem::temp_directory_path();
+  const auto file = temporary / ("metaml-retry-cpp-" + std::to_string(
+      std::chrono::high_resolution_clock::now().time_since_epoch().count()) + ".mml");
+  { std::ofstream out(file); out << "val retry := missing_name\n"; }
+  const auto source = "import " + metaml::detail::quote_string(file.string());
+  require(s.eval(source).is_err());
+  { std::ofstream out(file); out << "val retry := 42\n"; }
+  require(s.eval(source).is_ok());
+  require(metaml::to_string(s.eval("retry")) == "42");
+  std::filesystem::remove(file);
+
+  // A failed prelude must not replace the active library search directory.
+  const auto broken = file.string() + ".stdlib";
+  std::filesystem::create_directories(std::filesystem::path(broken) / "prelude");
+  { std::ofstream out(std::filesystem::path(broken) / "prelude/mod.mml");
+    out << "val broken := missing_name\n"; }
+  const auto original = s.stdlib_dir();
+  require(s.load_stdlib(broken).is_err());
+  require(s.stdlib_dir() == original && s.stdlib_loaded());
+  std::filesystem::remove_all(broken);
+  require(metaml::to_string(s.eval("1 + 2")) == "3");
+
+  // Composing bundles must preserve opaque types, live handles and callbacks.
+  metalib::install_foundation(s);
+  require(!s.find_primitive("JSON.parse") && !s.find_primitive("IO.flush"));
+  s.allow_all_primitives();
+  require(s.eval("buffer := Buffer.create ()").is_ok());
+  auto *create = s.find_primitive("Buffer.create");
+  metalib::install_data(s);
+  metalib::install_all(s);
+  auto names = s.primitive_names();
+  metalib::install_all(s);
+  require(names == s.primitive_names() && create == s.find_primitive("Buffer.create"));
+  require(s.eval("Buffer.add \"kept\" buffer").is_ok());
+  require(metaml::to_string(s.eval("Buffer.contents buffer")) == "\"kept\"");
+}
