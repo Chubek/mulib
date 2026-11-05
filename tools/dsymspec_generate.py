@@ -85,9 +85,9 @@ def exact_integers(value):
 
 
 def documents():
-    schema_bytes = (ROOT / 'dsymspec/schema/dsymspec.schema.json').read_bytes()
+    schema_bytes = (ROOT / 'library' / 'dsymspec/schema/dsymspec.schema.json').read_bytes()
     validator = jsonschema.Draft202012Validator(json.loads(schema_bytes))
-    for path in sorted((ROOT / 'dsymspec').glob('*.dsymspec.yaml')):
+    for path in sorted((ROOT / 'library' / 'dsymspec').glob('*.dsymspec.yaml')):
         raw = path.read_bytes()
         doc = yaml.load(raw, Loader=UniqueLoader)
         validator.validate(doc)
