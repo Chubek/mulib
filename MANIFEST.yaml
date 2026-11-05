@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 496
-implemented_module_count: 496
+module_count: 501
+implemented_module_count: 501
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2413,13 +2413,6 @@ modules:
   purpose: Exact DNS virtual-host selection over a borrowed table.
   dependencies: [seurity]
   status: implemented
-- name: rpiter. static_file
-  header: include/mulib-rpiter. static_file.h
-  manual: manual/mulib-rpiter. static_file.md
-  macro: MULIB_IMPL_STATIC_FILE
-  purpose: Strict VFS static-file response helper.
-  dependencies: [vfs, mime, http_response]
-  status: implemented
 - name: rewrite_url
   header: include/mulib-rewrite_url.h
   manual: manual/mulib-rewrite_url.md
@@ -3484,7 +3477,61 @@ modules:
   purpose: C11 task arenas, fork/join algorithms and deterministic reductions.
   dependencies: [parallel]
   status: implemented
+- name: xthreads
+  header: include/mulib-xthreads.h
+  manual: manual/mulib-xthreads.md
+  macro: MULIB_IMPL_XTHREADS
+  purpose: Portable native threads, mutexes, conditions, once and thread-local keys.
+  dependencies: []
+  status: implemented
+- name: xatomics
+  header: include/mulib-xatomics.h
+  manual: manual/mulib-xatomics.md
+  macro: MULIB_IMPL_XATOMICS
+  purpose: Portable sequentially consistent integer and pointer atomics.
+  dependencies: []
+  status: implemented
+- name: fiber
+  header: include/mulib-fiber.h
+  manual: manual/mulib-fiber.md
+  macro: MULIB_IMPL_FIBER
+  purpose: Stackful cooperative fibers with parking, wakeups and timed sleep.
+  dependencies: [xthreads]
+  status: implemented
+- name: channel
+  header: include/mulib-channel.h
+  manual: manual/mulib-channel.md
+  macro: MULIB_IMPL_CHANNEL
+  purpose: CSP buffered/rendezvous channels, directional views and atomic select.
+  dependencies: [fiber]
+  status: implemented
+- name: concurrency-prim
+  header: include/mulib-concurrency-prim.h
+  manual: manual/mulib-concurrency-prim.md
+  macro: MULIB_IMPL_CONCURRENCY_PRIM
+  purpose: Fiber-aware mutexes, semaphores, wait groups, events and reader/writer locks.
+  dependencies: [fiber]
+  status: implemented
+- name: static_file
+  header: include/mulib-static_file.h
+  manual: manual/mulib-static_file.md
+  macro: MULIB_IMPL_STATIC_FILE
+  purpose: "Strict virtual-filesystem static-file response helper."
+  dependencies: [http_response, mime, vfs]
+  status: implemented
 project_files:
+- file: examples/modules/xthreads.c
+  purpose: Portable thread lifecycle example.
+- file: examples/modules/xatomics.c
+  purpose: Atomic counter and compare-exchange example.
+- file: examples/modules/fiber.c
+  purpose: Cooperative stackful fiber example.
+- file: examples/modules/channel.c
+  purpose: Directional channels and select example.
+- file: examples/modules/concurrency-prim.c
+  purpose: Fiber-aware mutex and wait group example.
+- file: tests/test_concurrency.c
+  purpose: Native/fiber CSP, atomics and synchronization regression suite.
 - file: examples/modules/task.c
   purpose: Native task execution example.
 - file: examples/modules/polytask.c
@@ -3631,8 +3678,6 @@ project_files:
   purpose: Caller-clocked task queue example.
 - file: examples/modules/vhpst.c
   purpose: Exact virtual-host selection example.
-- file: examples/modules/rpiter. static_file.c
-  purpose: Bounded VFS static-file response example.
 - file: examples/modules/rewrite_url.c
   purpose: Component-prefix URL rewrite example.
 - file: examples/modules/compression.c
@@ -5039,3 +5084,9 @@ project_files:
   purpose: "Focused regression suite for test_archml_alloc."
 - file: tests/test_parsec_hardening.c
   purpose: "Focused regression suite for test_parsec_hardening."
+- file: examples/modules/static_file.c
+  purpose: "Standalone checked usage example for static_file."
+- file: tests/test_yantlr_stdlib.c
+  purpose: "Focused regression suite for test_yantlr_stdlib."
+- file: tests/test_yantlr_stdlib_alloc.c
+  purpose: "Focused regression suite for test_yantlr_stdlib_alloc."

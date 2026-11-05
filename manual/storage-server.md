@@ -120,7 +120,7 @@ Policy building blocks are single-threaded and explicit:
   DNS-name matching only, without ports, IP literals, wildcards or IDNA.
 - `rewrite_url` replaces a component prefix and preserves the raw query. It does
   not generate redirect headers. `mime` uses extensions only, never sniffing.
-- Historical `rpiter. static_file` uses the existing lexical VFS, strict paths,
+- `static_file` uses the existing lexical VFS, strict paths,
   MIME lookup and owned responses. No native directory traversal, indexes,
   ranges or symlink security claims. A failed lookup returns INVALID; callers
   choose how to map VFS/HTTP errors to public responses.
@@ -162,8 +162,8 @@ headers; these focused checks intentionally do not erase those unrelated referen
 
 Implementation switches are `MULIB_IMPL_` plus the uppercase module name with
 hyphens changed to underscores, except `seurity` also accepts `SECURITY`,
-`web_conntection` uses `WEB_CONNECTION`, and `rpiter. static_file` uses
-`STATIC_FILE`. These direct edges include declaration dependencies; enable the
+and `web_conntection` uses `WEB_CONNECTION`.
+These direct edges include declaration dependencies; enable the
 full transitive closure as shown by the standalone examples. This table is
 separate from the global strata generator, which currently stops at the absent
 legacy `ocicontainerruntime` header.
@@ -194,7 +194,7 @@ legacy `ocicontainerruntime` header.
 | coffbuilder | buffer, bycutils |
 | evtloop | none |
 | vhpst | seurity |
-| rpiter. static_file | vfs, mime, http_response |
+| static_file | vfs, mime, http_response |
 | rewrite_url | seurity |
 | compression | buffer, rle |
 | upstream | none |

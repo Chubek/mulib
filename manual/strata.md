@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 496 headers, 557 direct dependency edges.
+Inventory: 501 headers, 560 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (175 modules)
+## Stratum 0 (177 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -192,10 +192,12 @@ Compatibility group: `parsec`, `peg`.
 | [vfs](mulib-vfs.md) | none |
 | [vgabuffer](mulib-vgabuffer.md) | none |
 | [weighed_edit_distane](mulib-weighed_edit_distane.md) | none |
+| [xatomics](mulib-xatomics.md) | none |
 | [xsimd](mulib-xsimd.md) | none |
+| [xthreads](mulib-xthreads.md) | none |
 | [xtks](mulib-xtks.md) | none |
 
-## Stratum 1 (119 modules)
+## Stratum 1 (120 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -233,6 +235,7 @@ Compatibility group: `parsec`, `peg`.
 | [edit_distance](mulib-edit_distance.md) | `levenshtein` |
 | [elf](mulib-elf.md) | `endian` |
 | [fft](mulib-fft.md) | `complex` |
+| [fiber](mulib-fiber.md) | `xthreads` |
 | [flatbuffers](mulib-flatbuffers.md) | `binfile`, `bycutils` |
 | [fontdraw](mulib-fontdraw.md) | `dynload` |
 | [fontshape](mulib-fontshape.md) | `dynload`, `utf8` |
@@ -319,7 +322,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (68 modules)
+## Stratum 2 (70 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -328,9 +331,11 @@ Compatibility group: `parsec`, `peg`.
 | [binfilebuilder](mulib-binfilebuilder.md) | `binfileschema`, `buffer`, `bycutils` |
 | [buildvm](mulib-buildvm.md) | `buildgraph`, `vcdiff` |
 | [cgeom](mulib-cgeom.md) | `linalg`, `simdmath` |
+| [channel](mulib-channel.md) | `fiber` |
 | [clickir](mulib-clickir.md) | `gssair` |
 | [coffutils](mulib-coffutils.md) | `coff` |
 | [conainerd-ipc](mulib-conainerd-ipc.md) | `container`, `container-ipc` |
+| [concurrency-prim](mulib-concurrency-prim.md) | `fiber` |
 | [container-network](mulib-container-network.md) | `container-netdev`, `packetrules` |
 | [container-packcoff](mulib-container-packcoff.md) | `coff`, `imgformat` |
 | [container-packelf](mulib-container-packelf.md) | `elf`, `imgformat` |

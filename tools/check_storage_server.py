@@ -21,7 +21,7 @@ dbserializer bson messagepack protobuf dbschema webidl muidl wit cbor dbdesializ
 mulib elfbuilder machobuidler pebuilder coffbuilder evtloop vhpst rewrite_url
 compression upstream load_balancer health_checker rate_limit waf acl auth seurity
 oauth2 metrics httpserver_config http_request http_response mime web_conntection
-http1 http2 http3 quic""".split() + ['rpiter. static_file']
+http1 http2 http3 quic static_file""".split()
 
 
 def main():

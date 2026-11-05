@@ -12,10 +12,10 @@
 #define MULIB_IMPL_STRBUF
 #define MULIB_IMPL_PARSEC
 #define MULIB_IMPL_BUFFER
-#include "mulib-rpiter. static_file.h"
+#include "mulib-static_file.h"
 #include <assert.h>
-int
-main (void)
+#include <string.h>
+int main (void)
 {
   mulib_vfs vfs;
   mulib_vfs_mem mem;
@@ -25,9 +25,8 @@ main (void)
   ops = mulib_vfs_mem_ops ();
   assert (!mulib_vfs_mount (&vfs, "/", &ops, &mem));
   assert (!mulib_vfs_mem_put (&mem, "/hello.txt", "hello", 5));
-  assert (mulib_static_file_reply (&vfs, "/hello.txt", 1000, &response)
-          == MULIB_HTTP_OK);
-  assert (response.body_length == 5);
+  assert (mulib_static_file_reply (&vfs, "/hello.txt", 5, &response) == MULIB_HTTP_OK);
+  assert (response.body_length == 5 && !memcmp (response.body, "hello", 5));
   mulib_http_message_free (&response);
   mulib_vfs_free (&vfs);
   mulib_vfs_mem_free (&mem);

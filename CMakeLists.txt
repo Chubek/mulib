@@ -294,8 +294,7 @@ if(MULIB_BUILD_MODULE_EXAMPLES)
   file(GLOB module_examples CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/examples/modules/*.c")
   foreach(source_file IN LISTS module_examples)
     get_filename_component(module_name "${source_file}" NAME_WLE)
-    # Preserve historical filenames, including "rpiter. static_file.c", while
-    # keeping the generated CMake target name valid.
+    # Keep generated CMake target names valid for all module filenames.
     string(REGEX REPLACE "[^A-Za-z0-9_.+-]" "_" module_target "${module_name}")
     add_executable("mulib_example_${module_target}" "${source_file}")
     mulib_test_executable("mulib_example_${module_target}")

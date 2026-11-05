@@ -351,11 +351,9 @@ At the first implemented milestone with a useful, complete public surface:
 5. Run the inventory checker, CMake/CTest, strict builds and sanitizers; report
    both targeted results and unrelated repository failures accurately.
 
-The preceding repository-wide checker run found an existing inventory mismatch:
-tests/examples still reference `mulib-rpiter. static_file.h`, whereas
-`include/mulib-static_file.h` exists without matching inventory/manual/example
-entries. That is unrelated to SQLite and must not be silently repaired as part
-of introducing the engine. It can block combined-build verification until fixed.
+The earlier static-file inventory mismatch has been resolved separately from
+SQLite: tests, examples, documentation and inventory now consistently use
+`include/mulib-static_file.h`.
 
 The implementation now adds `include/mulib-sqlite.h` and its two support
 headers. Their manuals describe actual functionality and outstanding gaps.

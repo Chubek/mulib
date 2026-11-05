@@ -347,7 +347,6 @@
 #include "mulib-coffbuilder.h"
 #include "mulib-evtloop.h"
 #include "mulib-vhpst.h"
-#include "mulib-rpiter. static_file.h"
 #include "mulib-rewrite_url.h"
 #include "mulib-compression.h"
 #include "mulib-load_balancer.h"
@@ -498,4 +497,10 @@
 #include "mulib-polytask.h"
 #include "mulib-buildvm.h"
 #include "mulib-xtbb.h"
+#include "mulib-xthreads.h"
+#include "mulib-xatomics.h"
+#include "mulib-fiber.h"
+#include "mulib-channel.h"
+#include "mulib-concurrency-prim.h"
+#include "mulib-static_file.h"
 int main(void) { return 0; }

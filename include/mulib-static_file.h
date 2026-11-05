@@ -1,4 +1,4 @@
-/** @file mulib-rpiter. static_file.h
+/** @file mulib-static_file.h
  * @brief Strict virtual-filesystem static-file response helper.
  * Define MULIB_IMPL_STATIC_FILE, VFS, MIME, SECURITY, HTTP_RESPONSE and their
  * dependencies. No native filesystem traversal, directory index or ranges. */
