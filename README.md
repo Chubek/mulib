@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **496 implemented modules**.
+A C11 modular single-header utility library with **506 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -147,7 +147,7 @@ replay storage. The dependency-free cryptographic implementation is **unaudited*
 Compiler utilities cover typed control-flow MIR, a resumable register VM,
 helper-based native JIT and C AOT, rewriting, selection, scheduling,
 emission, relocation and a focused native JIT. Architecture metadata comes from
-the repository's [`dsymspec/`](dsymspec/) directory, not an external architecture
+the repository's [`library/dsymspec/`](library/dsymspec/) directory, not an external architecture
 database. Consult individual manuals for supported instruction encodings and
 platforms. A checked-in metadata snapshot keeps builds dependency-free;
 `python3 tools/check_snapshot.py` verifies its source/schema hashes. Full
@@ -165,6 +165,12 @@ through MuLIB's linker; see the [CLI example](examples/modules/metapp.c) and
 [plugin example](examples/plugins/metapp-count.c).
 Its dependency index returns the same connected include graph from any member
 file, including reverse dependencies, with deterministic Graphviz DOT output.
+
+The [ISEL/OptML pipeline](manual/mulib-optml.md) adds memoized tree covering,
+[annotated LIR](manual/mulib-lir.md), ArchML resource-aware scheduling, 75 guarded
+[rewrite rules](library/optim/README.md), dead-write elimination and assembly
+superinstruction macros. It emits AMD64 SysV or RV64IM assembly to owned text or
+caller-provided sinks; see the [OptML example](examples/modules/optml.c).
 `mulib-inet6.h` is the canonical IPv6 header; `mulib-inte6.h` remains
 compatible. The existing spellings `impaclient` and `dnsnmeserver` are retained.
 

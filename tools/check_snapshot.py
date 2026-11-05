@@ -13,16 +13,17 @@ import sys
 
 def verify(root):
     snapshot = (root / 'include/mulib-dsymspec-data.inc').read_text()
-    schema = (root / 'dsymspec/schema/dsymspec.schema.json').read_bytes()
+    directory = root / 'library/dsymspec'
+    schema = (directory / 'schema/dsymspec.schema.json').read_bytes()
     schema_hash = hashlib.sha256(schema).hexdigest()
     expected = {'dsymspec/' + p.name: p for p in
-                (root / 'dsymspec').glob('*.dsymspec.yaml')}
+                directory.glob('*.dsymspec.yaml')}
     arrays = re.findall(
         r'^static const char \*const mulib_dsymspec_chunks_\d+_\[\] = \{\n(.*?)^\};',
         snapshot, re.M | re.S)
     seen = set()
     if not expected or len(arrays) != len(expected):
-        raise ValueError('snapshot architecture count does not match dsymspec/')
+        raise ValueError('snapshot architecture count does not match library/dsymspec/')
     for array in arrays:
         chunks = []
         # A formatter may split one C array element into adjacent literals.

@@ -1,3 +1,8 @@
+#define MULIB_IMPL_ISEL
+#define MULIB_IMPL_LIR
+#define MULIB_IMPL_OPTML
+#define MULIB_IMPL_PEEPHOLE
+#define MULIB_IMPL_SUPERINSTR
 #define MULIB_IMPL_XTHREADS
 #define MULIB_IMPL_XATOMICS
 #define MULIB_IMPL_FIBER
@@ -1006,3 +1011,8 @@
 #include "mulib-channel.h"
 #include "mulib-concurrency-prim.h"
 #include "mulib-static_file.h"
+#include "mulib-isel.h"
+#include "mulib-lir.h"
+#include "mulib-optml.h"
+#include "mulib-peephole.h"
+#include "mulib-superinstr.h"

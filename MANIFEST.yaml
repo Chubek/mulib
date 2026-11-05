@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 501
-implemented_module_count: 501
+module_count: 506
+implemented_module_count: 506
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3519,6 +3519,41 @@ modules:
   purpose: "Strict virtual-filesystem static-file response helper."
   dependencies: [http_response, mime, vfs]
   status: implemented
+- name: isel
+  header: include/mulib-isel.h
+  manual: manual/mulib-isel.md
+  macro: MULIB_IMPL_ISEL
+  purpose: "Demand-driven memoized tree covering and native MIR to annotated LIR."
+  dependencies: [archml, isched, lir, lowopt]
+  status: implemented
+- name: lir
+  header: include/mulib-lir.h
+  manual: manual/mulib-lir.md
+  macro: MULIB_IMPL_LIR
+  purpose: "Owned terse register LIR with selection, semantic and scheduling annotations."
+  dependencies: [lowopt, machine]
+  status: implemented
+- name: optml
+  header: include/mulib-optml.h
+  manual: manual/mulib-optml.md
+  macro: MULIB_IMPL_OPTML
+  purpose: "Annotation-driven LIR tree rewrites, reselection and assembly output."
+  dependencies: [isel, peephole, superinstr]
+  status: implemented
+- name: peephole
+  header: include/mulib-peephole.h
+  manual: manual/mulib-peephole.md
+  macro: MULIB_IMPL_PEEPHOLE
+  purpose: "Guarded shallow-tree rewriting for wrapping 64-bit register LIR."
+  dependencies: [lowopt]
+  status: implemented
+- name: superinstr
+  header: include/mulib-superinstr.h
+  manual: manual/mulib-superinstr.md
+  macro: MULIB_IMPL_SUPERINSTR
+  purpose: "Exact straight-line assembly superinstructions emitted as GAS macros."
+  dependencies: [mir, strbuf]
+  status: implemented
 project_files:
 - file: examples/modules/xthreads.c
   purpose: Portable thread lifecycle example.
@@ -5090,3 +5125,25 @@ project_files:
   purpose: "Focused regression suite for test_yantlr_stdlib."
 - file: tests/test_yantlr_stdlib_alloc.c
   purpose: "Focused regression suite for test_yantlr_stdlib_alloc."
+- file: examples/modules/isel.c
+  purpose: "Standalone checked usage example for isel."
+- file: examples/modules/lir.c
+  purpose: "Standalone checked usage example for lir."
+- file: examples/modules/optml.c
+  purpose: "Standalone checked usage example for optml."
+- file: examples/modules/peephole.c
+  purpose: "Standalone checked usage example for peephole."
+- file: examples/modules/superinstr.c
+  purpose: "Standalone checked usage example for superinstr."
+- file: tests/test_isel.c
+  purpose: "Focused regression suite for test_isel."
+- file: tests/test_isel_alloc.c
+  purpose: "Focused regression suite for test_isel_alloc."
+- file: tests/isel_native_driver.c
+  purpose: "Independent native arithmetic, memory, ABI and macro-expansion oracle for OptML."
+- file: tools/check_isel_native.py
+  purpose: "Execute OptML AMD64 output and cross-assemble RV64IM assembly."
+- file: library/optim/default.optml
+  purpose: "Loadable ordered policy for all 75 implemented tree-rewrite optimizations."
+- file: library/optim/README.md
+  purpose: "OptML policy grammar, rule families and semantic contracts."

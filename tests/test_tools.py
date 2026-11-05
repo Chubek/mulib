@@ -79,10 +79,10 @@ class Tools(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / 'include').mkdir()
-            (root / 'dsymspec/schema').mkdir(parents=True)
+            (root / 'library/dsymspec/schema').mkdir(parents=True)
             source, schema = b'schema: 1\n', b'{}\n'
-            (root / 'dsymspec/test.dsymspec.yaml').write_bytes(source)
-            (root / 'dsymspec/schema/dsymspec.schema.json').write_bytes(schema)
+            (root / 'library/dsymspec/test.dsymspec.yaml').write_bytes(source)
+            (root / 'library/dsymspec/schema/dsymspec.schema.json').write_bytes(schema)
             data = {'_mulib_codegen': {
                 'source': 'dsymspec/test.dsymspec.yaml',
                 'source_sha256': hashlib.sha256(source).hexdigest(),
@@ -105,7 +105,7 @@ class Tools(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         snapshot.verify(root)
             path.write_text(text)
-            (root / 'dsymspec/test.dsymspec.yaml').write_bytes(b'changed')
+            (root / 'library/dsymspec/test.dsymspec.yaml').write_bytes(b'changed')
             with self.assertRaisesRegex(ValueError, 'stale architecture'):
                 snapshot.verify(root)
 

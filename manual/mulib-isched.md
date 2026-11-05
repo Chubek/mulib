@@ -39,9 +39,8 @@ scheduler chooses the largest such priority; ties choose the smallest ID.
 One node can issue each cycle. Previously issued operations can overlap; a
 dependent operation waits for all predecessor completions. If no node is ready
 at the current issue cycle, the scheduler jumps directly to the earliest ready
-time rather than iterating through idle cycles. There are no functional-unit
-classes, reservation tables, issue bundles, memory-disambiguation rules, or
-target-specific hazards beyond supplied edges.
+time rather than iterating through idle cycles. The base API uses supplied edges;
+the resource-aware API below additionally constrains shared execution resources.
 
 To schedule MIR, construct edges for every value use and assign target latencies.
 Also add ordering edges for faults/effects that must retain order. Reordering
@@ -49,6 +48,23 @@ independent checked arithmetic without such edges can change which runtime
 fault occurs first. After scheduling, clients must remap SSA value IDs and emit
 in `order`, not sort by original ID. The scheduler does not mutate typed MIR or
 assert that arbitrary input instructions commute.
+
+### Shared resources and ArchML integration
+
+`mulib_isched_run_resources` accepts one `{mask, throughput}` record per node.
+Each of the 64 mask bits identifies a shared unit-capacity resource. Throughput
+is positive occupancy in cycles; zero masks use only the global issue slot.
+After choosing critical-path list order, this conservative policy delays issue
+until predecessor results and every required resource are available. It retains
+that order during stalls. `preserve_order=1` instead retains input order and
+requires all edges to point forward. Output and failures have the same ownership
+contract as the base scheduler. Overflow and completion-cycle limits include
+resource stalls. Larger physical capacities can be conservatively modeled as one.
+
+[`mulib-isel.h`](mulib-isel.md) translates `library/archml` schedule classes,
+latencies, throughput, resource references and barriers into this API, constructs
+LIR register/memory/call dependencies, and writes cycle annotations back to LIR.
+The scheduler itself retains its dependency-free integration contract.
 
 ## Limits and diagnostics
 

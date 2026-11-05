@@ -503,4 +503,9 @@
 #include "mulib-channel.h"
 #include "mulib-concurrency-prim.h"
 #include "mulib-static_file.h"
+#include "mulib-isel.h"
+#include "mulib-lir.h"
+#include "mulib-optml.h"
+#include "mulib-peephole.h"
+#include "mulib-superinstr.h"
 int main(void) { return 0; }

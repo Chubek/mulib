@@ -1,6 +1,6 @@
 /** @file mulib-isched.h
- * @brief Bounded single-issue latency-aware DAG list scheduling with cycle
- * diagnostics. Define MULIB_IMPL_ISCHED. No dependencies.
+ * @brief Bounded single-issue DAG scheduling with latency and shared resources.
+ * Define MULIB_IMPL_ISCHED. No dependencies.
  */
 #ifndef MULIB_ISCHED_H
 #define MULIB_ISCHED_H
@@ -42,6 +42,14 @@ extern "C"
     mulib_isched_status_t status;
     size_t node;
   } mulib_isched_diagnostic_t;
+  /** Optional issue-resource annotations, e.g. translated from ArchML. Each bit
+   * identifies a shared unit-capacity resource. throughput is its occupancy in
+   * cycles (positive). A zero mask uses only the single global issue slot. */
+  typedef struct mulib_isched_resources
+  {
+    uint64_t mask;
+    size_t throughput;
+  } mulib_isched_resources_t;
   /** Prioritize longest remaining dependency path; ties use lowest node ID.
    * Edges mean start[after] >= start[before]+latency[before]. One issue per
    * cycle; operations may overlap. Positive latencies required. Empty DAG is
@@ -52,7 +60,16 @@ extern "C"
                     const mulib_isched_edge_t *edges, size_t edge_count,
                     mulib_isched_limits_t limits,
                     mulib_isched_schedule_t *output,
-                    mulib_isched_diagnostic_t *diagnostic);
+                     mulib_isched_diagnostic_t *diagnostic);
+  /** Schedule the DAG, then delay issue as needed for shared resources. This
+   * conservative list policy retains critical-path order rather than searching
+   * for a different order during a resource stall. preserve_order selects input
+   * order instead; it requires all edges to point forward. Transactional output.
+   * Resource capacities greater than one can be conservatively modeled as one. */
+  mulib_isched_status_t mulib_isched_run_resources (
+      const mulib_isched_node_t *, const mulib_isched_resources_t *, size_t count,
+      const mulib_isched_edge_t *, size_t edge_count, int preserve_order,
+      mulib_isched_limits_t, mulib_isched_schedule_t *, mulib_isched_diagnostic_t *);
   /** Release arrays, zero schedule. */
   void mulib_isched_free (mulib_isched_schedule_t *schedule);
   /** Static status description. */
@@ -90,7 +107,7 @@ extern "C"
     mulib_isched_schedule_t r = { NULL, NULL, 0, 0 };
     mulib_isched_status_t s = MULIB_ISCHED_OK;
     size_t k = 0, j, pos, time = 0;
-    if (!out || out->order || out->start || out->count || (!nodes && n)
+    if (!out || out->order || out->start || out->count || out->makespan || (!nodes && n)
         || (!edges && m))
       {
         s = MULIB_ISCHED_INVALID;
@@ -260,6 +277,64 @@ extern "C"
       default:
         return "unknown scheduler status";
       }
+  }
+  mulib_isched_status_t mulib_isched_run_resources (
+      const mulib_isched_node_t *nodes, const mulib_isched_resources_t *resources,
+      size_t n, const mulib_isched_edge_t *edges, size_t m, int preserve_order,
+      mulib_isched_limits_t limits, mulib_isched_schedule_t *out,
+      mulib_isched_diagnostic_t *d)
+  {
+    mulib_isched_schedule_t r = { NULL, NULL, 0, 0 };
+    mulib_isched_status_t s = MULIB_ISCHED_INVALID;
+    size_t ready[64] = {0}, time = 0, k = 0;
+    if (!out || out->order || out->start || out->count || out->makespan
+        || (!nodes && n) || (!resources && n) || (!edges && m)) goto done;
+    if (n > limits.nodes || m > limits.edges
+        || n > SIZE_MAX / sizeof (*resources) || n > SIZE_MAX / sizeof (*nodes)
+        || m > SIZE_MAX / sizeof (*edges)) { s = MULIB_ISCHED_RESOURCE_LIMIT; goto done; }
+    for (k = 0; k < n; ++k) if (!resources[k].throughput || !nodes[k].latency) goto done;
+    if (preserve_order) {
+      for (k = 0; k < m; ++k)
+        if (edges[k].before >= edges[k].after || edges[k].after >= n) goto done;
+      if (n) {
+        r.order = (size_t *)malloc (n * sizeof (*r.order));
+        r.start = (size_t *)malloc (n * sizeof (*r.start));
+        if (!r.order || !r.start) { s = MULIB_ISCHED_NO_MEMORY; goto done; }
+      }
+      r.count = n;
+    } else {
+      s = mulib_isched_run (nodes, n, edges, m, limits, &r, d);
+      if (s != MULIB_ISCHED_OK) return s;
+    }
+    r.makespan = 0;
+    for (size_t j = 0; j < n; ++j) {
+      size_t end;
+      k = preserve_order ? j : r.order[j];
+      for (size_t e = 0; e < m; ++e) if (edges[e].after == k) {
+        size_t before = edges[e].before, finish = r.start[before] + nodes[before].latency;
+        if (finish > time) time = finish;
+      }
+      for (size_t q = 0; q < 64; ++q)
+        if ((resources[k].mask & (UINT64_C(1) << q)) && ready[q] > time) time = ready[q];
+      s = MULIB_ISCHED_OVERFLOW;
+      if (nodes[k].latency > SIZE_MAX - time
+          || (resources[k].mask && resources[k].throughput > SIZE_MAX - time)) goto done;
+      end = time + nodes[k].latency;
+      s = MULIB_ISCHED_RESOURCE_LIMIT; if (end > limits.cycles) goto done;
+      r.start[k] = time; r.order[j] = k;
+      for (size_t q = 0; q < 64; ++q)
+        if (resources[k].mask & (UINT64_C(1) << q)) ready[q] = time + resources[k].throughput;
+      if (end > r.makespan) r.makespan = end;
+      if (j + 1 < n) {
+        if (time == SIZE_MAX) { s = MULIB_ISCHED_OVERFLOW; goto done; }
+        ++time;
+      }
+    }
+    *out = r; memset (&r, 0, sizeof (r)); s = MULIB_ISCHED_OK;
+  done:
+    mulib_isched_free (&r);
+    if (d) { d->status = s; d->node = k; }
+    return s;
   }
 #ifdef __cplusplus
 }

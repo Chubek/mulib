@@ -30,7 +30,7 @@ static char *source_file(const char *name, size_t *length)
     long size;
     char *text;
     assert(prefix < 1024);
-    written = snprintf(path, sizeof(path), "%.*s/../dsymspec/%s", (int)prefix, directory, name);
+    written = snprintf(path, sizeof(path), "%.*s/../library/dsymspec/%s", (int)prefix, directory, name);
     assert(written > 0 && (size_t)written < sizeof(path));
     file = fopen(path, "rb"); assert(file);
     assert(fseek(file, 0, SEEK_END) == 0);
