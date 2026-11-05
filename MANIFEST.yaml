@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 516
-implemented_module_count: 516
+module_count: 524
+implemented_module_count: 524
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3625,7 +3625,77 @@ modules:
   purpose: "Weighted edit DP with per-symbol costs; canonical access to legacy byte DP."
   dependencies: [weighed_edit_distane]
   status: implemented
+- name: aes
+  header: include/mulib-aes.h
+  manual: manual/mulib-aes.md
+  macro: MULIB_IMPL_AES
+  purpose: "AES-256 block/CTR and encrypt-then-HMAC-SHA256 authenticated messages."
+  dependencies: [authcrypto]
+  status: implemented
+- name: distribcluster
+  header: include/mulib-distribcluster.h
+  manual: manual/mulib-distribcluster.md
+  macro: MULIB_IMPL_DISTRIBCLUSTER
+  purpose: "Allowlisted distributed container, OCI lifecycle and VMM worker actions."
+  dependencies: [container-runtime, distribcomp, ocicontainer, vmm]
+  status: implemented
+- name: distribcomp
+  header: include/mulib-distribcomp.h
+  manual: manual/mulib-distribcomp.md
+  macro: MULIB_IMPL_DISTRIBCOMP
+  purpose: "Lease-based MuMQ DAG orchestration, bounded workers and daemon control."
+  dependencies: [daemon, distribtask, mumq-publisher, mumq-subscriber]
+  status: implemented
+- name: distribtask
+  header: include/mulib-distribtask.h
+  manual: manual/mulib-distribtask.md
+  macro: MULIB_IMPL_DISTRIBTASK
+  purpose: "Owned DAG tasks compiled from Mune plus required JSON/YAML configuration."
+  dependencies: [mune, utf8, yaml]
+  status: implemented
+- name: mumq-publisher
+  header: include/mulib-mumq-publisher.h
+  manual: manual/mulib-mumq-publisher.md
+  macro: MULIB_IMPL_MUMQ_PUBLISHER
+  purpose: "MuMQ exact-topic publisher convenience API."
+  dependencies: [mumq]
+  status: implemented
+- name: mumq-server
+  header: include/mulib-mumq-server.h
+  manual: manual/mulib-mumq-server.md
+  macro: MULIB_IMPL_MUMQ_SERVER
+  purpose: "Bounded, backpressured in-memory MuMQ topic broker."
+  dependencies: [mumq]
+  status: implemented
+- name: mumq-subscriber
+  header: include/mulib-mumq-subscriber.h
+  manual: manual/mulib-mumq-subscriber.md
+  macro: MULIB_IMPL_MUMQ_SUBSCRIBER
+  purpose: "Acknowledged exact-topic MuMQ subscriptions."
+  dependencies: [mumq]
+  status: implemented
+- name: mumq
+  header: include/mulib-mumq.h
+  manual: manual/mulib-mumq.md
+  macro: MULIB_IMPL_MUMQ
+  purpose: "Bounded nonblocking MuMQ v1 topic frames over owned stream sockets."
+  dependencies: [aes, socket]
+  status: implemented
 project_files:
+- file: examples/distrib-common.h
+  purpose: Explicit implementation placement for distributed computing examples.
+- file: examples/mumq-common.h
+  purpose: Shared checked broker and topic client roundtrip example.
+- file: library/ldistrib/README.md
+  purpose: Distributed task profile usage and security boundaries.
+- file: library/ldistrib/cluster.lua
+  purpose: Mune container, OCI, VMM, daemon and replicated task helpers.
+- file: library/ldistrib/cluster.json
+  purpose: Required sample JSON cluster configuration.
+- file: library/ldistrib/cluster.yaml
+  purpose: Equivalent required YAML cluster configuration.
+- file: library/ldistrib/example.distribtask
+  purpose: Multi-node Mune task graph using cluster profile helpers.
 - file: examples/modules/xthreads.c
   purpose: Portable thread lifecycle example.
 - file: examples/modules/xatomics.c
@@ -5256,3 +5326,27 @@ project_files:
   purpose: "Independent exact-rational vertex reference for prioritized linear constraint solving."
 - file: tests/test_spellcheck.c
   purpose: "Focused regression suite for test_spellcheck."
+- file: examples/modules/aes.c
+  purpose: "Standalone checked usage example for aes."
+- file: examples/modules/distribcluster.c
+  purpose: "Standalone checked usage example for distribcluster."
+- file: examples/modules/distribcomp.c
+  purpose: "Standalone checked usage example for distribcomp."
+- file: examples/modules/distribtask.c
+  purpose: "Standalone checked usage example for distribtask."
+- file: examples/modules/mumq-publisher.c
+  purpose: "Standalone checked usage example for mumq-publisher."
+- file: examples/modules/mumq-server.c
+  purpose: "Standalone checked usage example for mumq-server."
+- file: examples/modules/mumq-subscriber.c
+  purpose: "Standalone checked usage example for mumq-subscriber."
+- file: examples/modules/mumq.c
+  purpose: "Standalone checked usage example for mumq."
+- file: tests/test_distrib_alloc.c
+  purpose: "Focused regression suite for test_distrib_alloc."
+- file: tests/test_distribcluster.c
+  purpose: "Focused regression suite for test_distribcluster."
+- file: tests/test_distribcomp.c
+  purpose: "Focused regression suite for test_distribcomp."
+- file: tests/test_mumq.c
+  purpose: "Focused regression suite for test_mumq."

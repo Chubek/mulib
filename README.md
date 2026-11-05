@@ -278,6 +278,23 @@ publication. [FSWatch](manual/mulib-fswatch.md) adds a small watch DSL, native/V
 snapshot backends and [daemon](manual/mulib-daemon.md) execution. Mune configuration
 helpers and the systemd compilation profile live in [`library/ldaemon`](library/ldaemon).
 
+## Distributed computing
+
+[Distribcomp](manual/mulib-distribcomp.md) orchestrates Mune task DAGs with a
+required JSON/YAML configuration, explicit node placement, leases, retries and
+daemon control. [MuMQ](manual/mulib-mumq.md) provides a bounded topic broker and
+nonblocking stream clients with optional internal AES-256/HMAC encryption;
+it is a versioned MuLIB protocol, not MQTT. [Cluster adapters](manual/mulib-distribcluster.md)
+connect approved container runtimes, OCI lifecycle records and VMM resources.
+Profiles and sample configurations live in [`library/ldistrib`](library/ldistrib).
+Actions are at-least-once; use trusted programs, idempotent backends and properly
+provisioned keys/ACLs. Run the local end-to-end example:
+
+```sh
+cc -std=c11 -Iinclude examples/modules/distribcomp.c -pthread -lm -ldl -o distribcomp
+./distribcomp
+```
+
 ## Container stack
 
 The [container stack](manual/container-stack.md) adds transactional rootfs/image

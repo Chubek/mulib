@@ -518,4 +518,12 @@
 #include "mulib-orhoconv.h"
 #include "mulib-spellcheck.h"
 #include "mulib-weighted-edit-distance.h"
+#include "mulib-aes.h"
+#include "mulib-distribcluster.h"
+#include "mulib-distribcomp.h"
+#include "mulib-distribtask.h"
+#include "mulib-mumq-publisher.h"
+#include "mulib-mumq-server.h"
+#include "mulib-mumq-subscriber.h"
+#include "mulib-mumq.h"
 int main(void) { return 0; }

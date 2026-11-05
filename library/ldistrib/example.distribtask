@@ -1,0 +1,5 @@
+-- Run after cluster.lua. Resource IDs must be bound on the selected workers.
+mune_task('prepare-a', 'worker-a', "return 'ready'")
+container_task('start-web', 'worker-a', 'start', 'web', 'prepare-a')
+oci_task('start-oci', 'worker-b', 'start', 'oci-app')
+vmm_task('start-vm', 'worker-b', 'start', 'guest', 'start-oci')

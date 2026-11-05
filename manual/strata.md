@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 516 headers, 601 direct dependency edges.
+Inventory: 524 headers, 618 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -198,10 +198,11 @@ Compatibility group: `parsec`, `peg`.
 | [xthreads](mulib-xthreads.md) | none |
 | [xtks](mulib-xtks.md) | none |
 
-## Stratum 1 (122 modules)
+## Stratum 1 (123 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
+| [aes](mulib-aes.md) | `authcrypto` |
 | [alloc](mulib-alloc.md) | `port` |
 | [anomaly-detection](mulib-anomaly-detection.md) | `stats` |
 | [archive](mulib-archive.md) | `buffer` |
@@ -325,7 +326,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (76 modules)
+## Stratum 2 (77 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -372,6 +373,7 @@ Compatibility group: `parsec`, `peg`.
 | [minimpeg](mulib-minimpeg.md) | `audio` |
 | [minivorbis](mulib-minivorbis.md) | `audio` |
 | [miniwav](mulib-miniwav.md) | `audio` |
+| [mumq](mulib-mumq.md) | `aes`, `socket` |
 | [nameserver](mulib-nameserver.md) | `dnsclient` |
 | [netfs](mulib-netfs.md) | `endian`, `fuse`, `xtks` |
 | [oauth2](mulib-oauth2.md) | `auth`, `authcrypto` |
@@ -406,7 +408,7 @@ Compatibility group: `parsec`, `peg`.
 | [xpath](mulib-xpath.md) | `xml` |
 | [xtbb](mulib-xtbb.md) | `parallel` |
 
-## Stratum 3 (43 modules)
+## Stratum 3 (46 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -433,6 +435,9 @@ Compatibility group: `parsec`, `peg`.
 | [listener](mulib-listener.md) | `evtstream` |
 | [lsmtree](mulib-lsmtree.md) | `sstfile`, `wal` |
 | [markdown](mulib-markdown.md) | `html` |
+| [mumq-publisher](mulib-mumq-publisher.md) | `mumq` |
+| [mumq-server](mulib-mumq-server.md) | `mumq` |
+| [mumq-subscriber](mulib-mumq-subscriber.md) | `mumq` |
 | [oauth](mulib-oauth.md) | `oauth2` |
 | [objdump](mulib-objdump.md) | `termstyle` |
 | [objfile](mulib-objfile.md) | `binfile`, `elfutils` |
@@ -491,7 +496,7 @@ Compatibility group: `parsec`, `peg`.
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (28 modules)
+## Stratum 5 (29 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -505,6 +510,7 @@ Compatibility group: `parsec`, `peg`.
 | [containterpool](mulib-containterpool.md) | `containerboost`, `image2container` |
 | [daemon](mulib-daemon.md) | `mune`, `process`, `strbuf` |
 | [dbserializer](mulib-dbserializer.md) | `bson`, `cbor`, `messagepack` |
+| [distribtask](mulib-distribtask.md) | `mune`, `utf8`, `yaml` |
 | [exec](mulib-exec.md) | `mune`, `perf`, `process` |
 | [getaddr](mulib-getaddr.md) | `inet6` |
 | [imgbuilder](mulib-imgbuilder.md) | `imgbuildspec`, `rootfsbuilder` |
@@ -524,7 +530,7 @@ Compatibility group: `parsec`, `peg`.
 | [webidl](mulib-webidl.md) | `buffer`, `dbschema`, `utf8` |
 | [wit](mulib-wit.md) | `buffer`, `dbschema` |
 
-## Stratum 6 (9 modules)
+## Stratum 6 (10 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -532,18 +538,20 @@ Compatibility group: `parsec`, `peg`.
 | [container-oixboost](mulib-container-oixboost.md) | `containerboost`, `oix` |
 | [containerd](mulib-containerd.md) | `conainerd-ipc`, `container-log`, `containerd-cache`, `containerd-mount`, `containterpool` |
 | [dbdesializer](mulib-dbdesializer.md) | `dbserializer` |
+| [distribcomp](mulib-distribcomp.md) | `daemon`, `distribtask`, `mumq-publisher`, `mumq-subscriber` |
 | [fswatch](mulib-fswatch.md) | `daemon`, `glob`, `select`, `vfs` |
 | [git](mulib-git.md) | `exec` |
 | [glyph](mulib-glyph.md) | `fontdraw`, `ligature`, `pglayout`, `sysfonts` |
 | [task](mulib-task.md) | `exec` |
 | [uri](mulib-uri.md) | `inte6`, `strbuf` |
 
-## Stratum 7 (7 modules)
+## Stratum 7 (8 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [bittorrent](mulib-bittorrent.md) | `endian`, `git` |
 | [containerd-ctrlbridge](mulib-containerd-ctrlbridge.md) | `containerd`, `containerd-accessstub` |
+| [distribcluster](mulib-distribcluster.md) | `container-runtime`, `distribcomp`, `ocicontainer`, `vmm` |
 | [http](mulib-http.md) | `buffer`, `parsec`, `uri` |
 | [layout](mulib-layout.md) | `glyph` |
 | [polytask](mulib-polytask.md) | `json`, `task`, `taskpool` |

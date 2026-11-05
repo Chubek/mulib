@@ -1,3 +1,11 @@
+#define MULIB_IMPL_AES
+#define MULIB_IMPL_DISTRIBCLUSTER
+#define MULIB_IMPL_DISTRIBCOMP
+#define MULIB_IMPL_DISTRIBTASK
+#define MULIB_IMPL_MUMQ_PUBLISHER
+#define MULIB_IMPL_MUMQ_SERVER
+#define MULIB_IMPL_MUMQ_SUBSCRIBER
+#define MULIB_IMPL_MUMQ
 #define MULIB_IMPL_2DGEOM
 #define MULIB_IMPL_BKTREE
 #define MULIB_IMPL_CACHE
@@ -1037,3 +1045,11 @@
 #include "mulib-orhoconv.h"
 #include "mulib-spellcheck.h"
 #include "mulib-weighted-edit-distance.h"
+#include "mulib-aes.h"
+#include "mulib-distribcluster.h"
+#include "mulib-distribcomp.h"
+#include "mulib-distribtask.h"
+#include "mulib-mumq-publisher.h"
+#include "mulib-mumq-server.h"
+#include "mulib-mumq-subscriber.h"
+#include "mulib-mumq.h"

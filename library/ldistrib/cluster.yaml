@@ -1,0 +1,6 @@
+cluster: example
+nodes:
+  - worker-a
+  - worker-b
+attempts: 3
+lease_ms: 30000

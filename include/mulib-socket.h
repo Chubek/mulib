@@ -1,6 +1,6 @@
 /** @file mulib-socket.h
  * @brief POSIX connected stream descriptor ownership and bounded I/O
- * primitives. Define MULIB_IMPL_SOCKET once. No DNS, listener or implicit
+ * primitives and numeric IPv4 TCP setup. Define MULIB_IMPL_SOCKET once. No DNS or implicit
  * security. */
 #ifndef MULIB_SOCKET_H
 #define MULIB_SOCKET_H
@@ -27,6 +27,15 @@ extern "C"
    * initialized invalid descriptors; 0 success. Outputs unchanged on failure.
    */
   int mulib_socket_pair (mulib_socket_t *a, mulib_socket_t *b);
+  /** @brief Blocking TCP connect to a numeric IPv4 address; output must be
+   * invalid. Close-on-exec, no DNS. Returns 0, EINVAL/EIO/ENOTSUP below. */
+  int mulib_socket_connect (mulib_socket_t *out, const char *address, unsigned port);
+  /** @brief Nonblocking numeric IPv4 listener. Port zero requests an ephemeral
+   * port, returned through bound_port. No implicit wildcard binding. */
+  int mulib_socket_listen (mulib_socket_t *out, const char *address, unsigned port,
+                          unsigned *bound_port);
+  /** @brief Accept a close-on-exec connected stream; AGAIN when no client. */
+  int mulib_socket_accept (mulib_socket_t *listener, mulib_socket_t *out);
   /** @brief Enable/disable O_NONBLOCK; 0 success. */
   int mulib_socket_nonblocking (mulib_socket_t *s, int enabled);
   /** @brief Send once (short writes allowed). EINTR retried, EAGAIN explicit.
@@ -52,9 +61,71 @@ extern "C"
 #if defined(__unix__) || defined(__APPLE__)
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #define MULIB_SOCKET_POSIX_ 1
 #endif
+int
+mulib_socket_connect (mulib_socket_t *out, const char *address, unsigned port)
+{
+  if (!out || out->fd != -1 || !address || !port || port > 65535) return -1;
+#ifdef MULIB_SOCKET_POSIX_
+  {
+    struct sockaddr_in a = {0};
+    int fd;
+    a.sin_family = AF_INET; a.sin_port = htons ((unsigned short)port);
+    if (inet_pton (AF_INET, address, &a.sin_addr) != 1) return -1;
+    fd = socket (AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) return -2;
+    if (fcntl (fd, F_SETFD, FD_CLOEXEC) < 0
+        || connect (fd, (struct sockaddr *)&a, sizeof a) < 0) { close (fd); return -2; }
+    out->fd = fd; return 0;
+  }
+#else
+  return -3;
+#endif
+}
+int
+mulib_socket_listen (mulib_socket_t *out, const char *address, unsigned port, unsigned *bound)
+{
+  if (!out || out->fd != -1 || !address || port > 65535 || !bound) return -1;
+#ifdef MULIB_SOCKET_POSIX_
+  {
+    struct sockaddr_in a = {0};
+    socklen_t n = sizeof a;
+    int fd, on = 1;
+    a.sin_family = AF_INET; a.sin_port = htons ((unsigned short)port);
+    if (inet_pton (AF_INET, address, &a.sin_addr) != 1) return -1;
+    fd = socket (AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) return -2;
+    if (fcntl (fd, F_SETFD, FD_CLOEXEC) < 0
+        || fcntl (fd, F_SETFL, O_NONBLOCK) < 0
+        || setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof on) < 0
+        || bind (fd, (struct sockaddr *)&a, sizeof a) < 0 || listen (fd, 32) < 0
+        || getsockname (fd, (struct sockaddr *)&a, &n) < 0) { close (fd); return -2; }
+    out->fd = fd; *bound = ntohs (a.sin_port); return 0;
+  }
+#else
+  return -3;
+#endif
+}
+int
+mulib_socket_accept (mulib_socket_t *listener, mulib_socket_t *out)
+{
+  if (!listener || listener->fd < 0 || !out || out->fd != -1 || listener == out) return -1;
+#ifdef MULIB_SOCKET_POSIX_
+  {
+    int fd;
+    do { fd = accept (listener->fd, NULL, NULL); } while (fd < 0 && errno == EINTR);
+    if (fd < 0) return errno == EAGAIN || errno == EWOULDBLOCK ? 1 : -2;
+    if (fcntl (fd, F_SETFD, FD_CLOEXEC) < 0) { close (fd); return -2; }
+    out->fd = fd; return 0;
+  }
+#else
+  return -3;
+#endif
+}
 int
 mulib_socket_pair (mulib_socket_t *a, mulib_socket_t *b)
 {
