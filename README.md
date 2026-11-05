@@ -273,8 +273,10 @@ python3 tools/check_prowse.py
 for the type-2 MuLIB VMM. [`virtio-os`](library/virtio-os) is the backend;
 [`virtio-guest`](library/virtio-guest) is the frontend. `include/virtio.h` exposes
 the shared contract, backed by `mulib-vmmdev.h` message/DMA primitives.
-The explicit support matrix covers all 48 requested IDs: 21 bounded,
-service-assisted profiles and 27 unimplemented IDs requiring pinned specifications.
+The explicit support matrix covers all 48 registered IDs: 26 bounded,
+service-assisted profiles and 22 unimplemented IDs requiring pinned specifications.
+Supported devices have separate `.c` implementations in both directories; generated
+single-header implementations remain available for compatibility.
 `mulib-vmm.h` adds lifecycle, guest-call dispatch and per-device DMA isolation;
 `mulib-vmm-memory.h` validates RAM access, `mulib-vmm-host.h` provides RAM block
 storage and system entropy, and `mulib-vmm-kvm.h` runs native Linux/x86 guests.

@@ -236,7 +236,7 @@ plug/unplug callbacks must actually perform the requested memory ownership chang
 
 **P** = implemented bounded frontend/backend profile, with the host services and
 feature limits below. **U** = registered ID, unimplemented; initialization returns
-`ENOTSUP`. No U entry has a dummy successful backend. All 48 requested IDs are
+`ENOTSUP`. No U entry has a dummy successful backend. All 48 registered IDs are
 represented; IDs 0, 14 and 15 remain invalid/unassigned here.
 
 | ID | Device | State | Implemented profile or outstanding specification |
@@ -255,7 +255,7 @@ represented; IDs 0, 14 and 15 remain invalid/unassigned here.
 | 12 | CAIF | U | Pin CAIF framing and device ABI |
 | 13 | memory balloon | U | Distinct historical ID; must not alias traditional balloon |
 | 16 | virtio-gpu | P | 2D resources, backing, transfer, scanout, flush, cursor and fences; renderer required |
-| 17 | RTC / historical clock | U | Choose RTC draft revision; historical clock is not an interchangeable ABI |
+| 17 | virtio-rtc | P | One monotonic nanosecond clock; CFG/CLOCK_CAP/CROSS_CAP/READ, no alarms or cross timestamps |
 | 18 | virtio-input | P | Event/status queues and selector/subselector configuration |
 | 19 | virtio-vsock | P | Stream packet/event transport; provider must implement sockets, replies and credit accounting |
 | 20 | virtio-crypto | P | AES-CBC session framing, 16/24/32-byte keys, 16 sessions; real cipher provider required |
@@ -271,31 +271,39 @@ represented; IDs 0, 14 and 15 remain invalid/unassigned here.
 | 30 | video encoder | U | Pin standalone video proposal; not interchangeable with ID 50 |
 | 31 | video decoder | U | Pin standalone video proposal; not interchangeable with ID 50 |
 | 32 | SCMI | P | Synchronous command channel; no P2A/fast channels/shared-memory statistics |
-| 33 | Nitro Secure Module | U | Pin NSM CBOR/attestation contract and provider requirements |
+| 33 | Nitro Secure Module | P | Bounded definite-length CBOR enum framing and response correlation; real security provider required |
 | 34 | I²C | P | Read/write/zero-length segments, encoded 7/10-bit addresses and FAIL_NEXT groups |
 | 35 | watchdog | U | Pin timeout, lifecycle and expiry semantics |
-| 36 | CAN | U | Pin CAN draft revision and supported bus/controller features |
+| 36 | CAN | P | Classic CAN, optional FD/RTR, TX/RX/control queues and bus-off; no late TX ACK |
 | 37 | DMA-BUF | U | Pin proposal and cross-device buffer ownership ABI; absent from current OASIS ID table |
 | 38 | parameter server | U | Pin schema and request/notification ABI |
 | 39 | audio policy | U | Pin policy protocol; not virtio-snd |
-| 40 | Bluetooth | U | Pin HCI/transport proposal and device features |
+| 40 | Bluetooth | P | Primary HCI controller packet transport; command/ACL/SCO/event/ISO, no vendor extensions |
 | 41 | GPIO | P | Direction/value operations; no line names or IRQ feature |
 | 42 | RDMA | U | Pin verbs, memory registration and queue ABI |
 | 43 | camera | U | Pin stream/control/buffer proposal |
 | 44 | ISM | U | Pin shared-memory transport and lifecycle ABI |
-| 45 | SPI | U | Pin SPI draft revision and transfer capabilities |
+| 45 | SPI | P | Configured capabilities, half/full duplex, word widths, mode/frequency/delay validation |
 | 46 | TEE | U | Pin trusted-service, session and shared-memory ABI |
 | 47 | CPU balloon | U | Pin CPU topology, ownership and hotplug proposal |
 | 48 | media | U | Pin media/V4L2 proposal and advertised command set |
 | 49 | USB | U | Pin controller/topology/transfer proposal |
 | 50 | combined video | U | Pin combined codec proposal and buffer/resource model |
 
-This is **21 implemented profiles and 27 unimplemented IDs**, not an assertion
+This is **26 implemented profiles and 22 unimplemented IDs**, not an assertion
 that every listed device or optional feature has been implemented. Several U
 entries have published drafts or existing implementations; “pin” means the exact
 ABI still needs to be selected for this project, not that documentation does not
 exist. Adding one requires a real parser/state machine, both-side tests and a
 matrix update; assigning an ID alone must never change support to P.
+
+Of the 41 IDs in the current device request, these 15 remain unimplemented:
+6 (I/O memory), 10 (WLAN MAC), 11 (remoteproc serial), 12 (CAIF), 13 (memory
+balloon), 21 (signal distribution), 22 (pstore), 29 (HWSIM), 30/31 (video
+encoder/decoder), 35 (watchdog), 37 (DMA-BUF), 38 (parameter server), 39 (audio
+policy), and 48 (media). The outstanding protocol choices are recorded above;
+this change does not silently assign them the console, balloon, sound, or video
+ABI of a different device ID.
 
 ## 7. References and compatibility policy
 
@@ -310,6 +318,16 @@ matrix update; assigning an ID alone must never change support to P.
   `drivers/rpmsg/virtio_rpmsg_bus.c`: static RPMsg framing.
 * Linux `include/uapi/linux/virtio_9p.h`, `virtio_ids.h`, and the 9P/FUSE/SCMI
   specifications define the external transports/protocols named above.
+* RTC uses the [OASIS RTC chapter](https://github.com/oasis-tcs/virtio-spec/blob/bb1dd2e1fe89b862f38f15873d835a698b196f89/device-types/rtc/description.tex),
+  with a deliberately minimal single-clock profile (not the historical clock ABI).
+* CAN, SPI and Bluetooth layouts use Linux UAPI at commit
+  [`05441d697f7f9a927264f4058cbbc6a03dfcac9d`](https://github.com/torvalds/linux/tree/05441d697f7f9a927264f4058cbbc6a03dfcac9d/include/uapi/linux):
+  `virtio_can.h`, `virtio_spi.h`, `virtio_bt.h`. Queue ordering is cross-checked
+  against the corresponding drivers. Configuration versions/features are limited
+  as described in the backend manual.
+* NSM uses the [AWS NSM API enum contract](https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/4bf743e17f9b4174cc16a4ed743086ca6e541405/src/api/mod.rs)
+  and Linux `nsm.h` request/response limits. References checked 2026-11-05;
+  the library is a transport/parser, not an attestation root of trust.
 
 Implementations are original MuLIB code; no third-party implementation source
 was vendored. Constants and layouts express protocol interoperability facts.
@@ -322,9 +340,10 @@ Future PCI/MMIO/ring adapters must negotiate their own supported transport featu
 ```
 python3 tools/check_virtio.py
 python3 tools/check_virtio.py --sanitizers
+python3 tools/amalgamate_virtio.py --check
 cmake -S . -B build
-cmake --build build --target mulib_virtio_os mulib_virtio_guest mulib_test_virtio mulib_test_vmmdev mulib_test_vmm mulib_test_vmm_kvm
-ctest --test-dir build -R 'mulib_test_(virtio|vmmdev|vmm|vmm_kvm)$' --output-on-failure
+cmake --build build --target mulib_virtio_devices_link mulib_test_virtio mulib_test_vmmdev mulib_test_vmm mulib_test_vmm_kvm
+ctest --test-dir build -R 'virtio|mulib_test_(vmmdev|vmm|vmm_kvm)$' --output-on-failure
 ```
 
 Tests exercise message golden bytes, malformed/truncated/overlapping DMA,

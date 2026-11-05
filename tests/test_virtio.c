@@ -1,8 +1,10 @@
+#ifndef MULIB_VIRTIO_TEST_COMPILED
 #define MULIB_IMPL_ENDIAN
 #define MULIB_IMPL_VMMDEV
 #define MULIB_IMPL_VIRTIO
 #define MULIB_IMPL_VIRTIO_OS
 #define MULIB_IMPL_VIRTIO_GUEST
+#endif
 #include "mulib-virtio-os.h"
 #include "mulib-virtio-guest.h"
 #include "virtio.h"
@@ -13,6 +15,8 @@ typedef struct fixture {
   unsigned char ram[8192], input[4096], output[4096], disk[4096], packet[512];
   size_t packet_size;
   unsigned calls, fail, again, direction, value;
+  unsigned short_reply;
+  uint64_t clock_ns;
   mulib_vmmdev_region_t region;
   mulib_virtio_os_device_t device;
   mulib_virtio_os_device_t *devices[1];
@@ -32,6 +36,10 @@ static int service(void *context, const mulib_virtio_service_request_t *r, size_
   case MULIB_VIRTIO_SERVICE_ENTROPY:
     memset(r->output, 0x5a, r->output_capacity); *used = r->output_capacity; break;
   case MULIB_VIRTIO_SERVICE_READ:
+    if (r->device_id == MULIB_VIRTIO_RTC) {
+      assert(r->output_capacity == 8);
+      mulib_vmmdev_store64(r->output, f->clock_ns); *used = f->short_reply ? 7 : 8; break;
+    }
     assert(r->address + r->output_capacity <= sizeof f->disk);
     memcpy(r->output, f->disk + r->address, r->output_capacity); *used = r->output_capacity; break;
   case MULIB_VIRTIO_SERVICE_WRITE:
@@ -57,6 +65,15 @@ static int service(void *context, const mulib_virtio_service_request_t *r, size_
     break;
   case MULIB_VIRTIO_SERVICE_I2C:
     if (r->flags & 2) { memset(r->output, 0x36, r->output_capacity); *used = r->output_capacity; }
+    break;
+  case MULIB_VIRTIO_SERVICE_CAN_CONTROL:
+    assert(r->flags == 0x201 || r->flags == 0x202); break;
+  case MULIB_VIRTIO_SERVICE_SPI:
+    assert(r->input_size >= 32 && r->address == r->input[0]);
+    for (size_t i = 0; i < r->output_capacity; ++i)
+      r->output[i] = (unsigned char)(r->input_size > 32 ? r->input[32 + i] ^ 0xa5 : 0x36);
+    *used = r->output_capacity;
+    if (f->short_reply && *used) --*used;
     break;
   case MULIB_VIRTIO_SERVICE_SCSI_COMMAND:
     assert(r->input_size >= 51 && r->flags == 96);
@@ -93,7 +110,14 @@ static int service(void *context, const mulib_virtio_service_request_t *r, size_
     if (r->flags == 0x106) assert(r->memory == &f->bus.memory);
     break;
   case MULIB_VIRTIO_SERVICE_REQUEST:
-    if (r->device_id == MULIB_VIRTIO_9P) {
+    if (r->device_id == MULIB_VIRTIO_NSM) {
+      /* CBOR {"GetRandom":{"random":h'36'}}; deterministic fixture, not entropy. */
+      static const unsigned char response[] = {
+        0xa1,0x69,'G','e','t','R','a','n','d','o','m',0xa1,0x66,'r','a','n','d','o','m',0x41,0x36
+      };
+      assert(r->output_capacity >= sizeof response);
+      memcpy(r->output, response, sizeof response); *used = f->short_reply ? sizeof response - 1 : sizeof response;
+    } else if (r->device_id == MULIB_VIRTIO_9P) {
       memcpy(r->output, r->input, 7); r->output[4] = (unsigned char)(r->input[4] + 1);
       mulib_endian_store_le32(r->output, 7); *used = 7;
     } else if (r->device_id == MULIB_VIRTIO_FS && r->output_capacity) {
@@ -460,6 +484,222 @@ static void gpu_vsock(void)
   req[0] = 6; n = 0;
   assert(mulib_virtio_guest_transact(&f.guest, 1, req, 44, NULL, &n) == MULIB_VMMDEV_EINVAL);
 }
+static void can_device(void)
+{
+  fixture_t f;
+  unsigned char config[2] = {0}, frame[80] = {1}, out[80];
+  size_t n;
+  unsigned calls;
+  init(&f, MULIB_VIRTIO_CAN, config, sizeof config, 7);
+  mulib_vmmdev_store16(frame + 2, 8); mulib_endian_store_le32(frame + 12, 0x123);
+  n = 1;
+  assert(!mulib_virtio_guest_can_request(&f.guest, 0, frame, 24, out, &n) && out[0] == 1);
+  assert(!f.packet_size);
+  assert(!mulib_virtio_guest_can_control(&f.guest, 1));
+  n = 1; assert(!mulib_virtio_guest_can_request(&f.guest, 0, frame, 24, out, &n) && !out[0]);
+  f.packet[1] = 1; n = sizeof out;
+  assert(!mulib_virtio_guest_can_request(&f.guest, 1, NULL, 0, out, &n) && n == 24);
+  calls = f.calls; frame[4] = 1; n = 1;
+  assert(mulib_virtio_guest_can_request(&f.guest, 0, frame, 24, out, &n) == MULIB_VMMDEV_EINVAL);
+  assert(f.calls == calls); frame[4] = 0;
+  mulib_endian_store_le32(frame + 12, 0x800); n = 1;
+  assert(mulib_virtio_guest_can_request(&f.guest, 0, frame, 24, out, &n) == MULIB_VMMDEV_EINVAL);
+  mulib_endian_store_le32(frame + 8, 0xc000); /* extended FD */
+  mulib_vmmdev_store16(frame + 2, 64); n = 1;
+  assert(!mulib_virtio_guest_can_request(&f.guest, 0, frame, 80, out, &n) && !out[0]);
+  mulib_endian_store_le32(frame + 8, 0xe000); n = 1; /* FD + RTR invalid */
+  assert(mulib_virtio_guest_can_request(&f.guest, 0, frame, 80, out, &n) == MULIB_VMMDEV_EINVAL);
+  assert(!mulib_virtio_os_can_busoff(&f.device, 1) && !f.device.can_started);
+  assert(!mulib_virtio_guest_config_read(&f.guest, 0, config, 2) && config[0] == 1);
+  n = sizeof out; assert(mulib_virtio_guest_can_request(&f.guest, 1, NULL, 0, out, &n) == MULIB_VMMDEV_AGAIN);
+  f.again = 1; assert(mulib_virtio_guest_can_control(&f.guest, 1) == MULIB_VMMDEV_AGAIN);
+  assert(!f.device.can_started); f.again = 0;
+  assert(!mulib_virtio_guest_can_control(&f.guest, 1) && f.device.can_started);
+  assert(!mulib_virtio_guest_can_control(&f.guest, 0) && !f.device.can_started);
+  assert(!mulib_virtio_guest_can_control(&f.guest, 1));
+  assert(!mulib_virtio_guest_reset(&f.guest) && !f.device.can_started);
+  config[0] = 0; init(&f, MULIB_VIRTIO_CAN, config, sizeof config, 1);
+  assert(!mulib_virtio_guest_can_control(&f.guest, 1));
+  mulib_endian_store_le32(frame + 8, 0x4000); n = 1;
+  assert(mulib_virtio_guest_can_request(&f.guest, 0, frame, 80, out, &n) == MULIB_VMMDEV_EINVAL);
+}
+
+static void bt_device(void)
+{
+  fixture_t f;
+  unsigned char config[5] = {0}, command[8] = {1,3,12,0}, out[32];
+  size_t n;
+  unsigned calls;
+  init(&f, MULIB_VIRTIO_BT, config, sizeof config, 0);
+  assert(!mulib_virtio_guest_send(&f.guest, command, 4) && f.packet_size == 4);
+  calls = f.calls; command[3] = 1;
+  assert(mulib_virtio_guest_send(&f.guest, command, 4) == MULIB_VMMDEV_EINVAL && f.calls == calls);
+  command[3] = 0; command[0] = 4;
+  assert(mulib_virtio_guest_send(&f.guest, command, 3) == MULIB_VMMDEV_EINVAL);
+  f.packet[0] = 4; f.packet[1] = 0x0e; f.packet[2] = 0; f.packet_size = 3;
+  n = sizeof out; assert(!mulib_virtio_guest_receive(&f.guest, out, &n) && n == 3 && out[0] == 4);
+  f.packet[0] = 4; f.packet[2] = 1; f.packet_size = 3;
+  n = sizeof out; memset(out, 0x77, sizeof out);
+  assert(mulib_virtio_guest_receive(&f.guest, out, &n) == MULIB_VMMDEV_EIO && out[0] == 0x77);
+  command[0] = 2; command[3] = 0; command[4] = 0;
+  assert(!mulib_virtio_guest_send(&f.guest, command, 5));
+  command[0] = 3; assert(!mulib_virtio_guest_send(&f.guest, command, 4));
+  command[0] = 5; assert(!mulib_virtio_guest_send(&f.guest, command, 5));
+  command[4] = 0x80;
+  assert(mulib_virtio_guest_send(&f.guest, command, 5) == MULIB_VMMDEV_EINVAL);
+  f.again = 1; n = sizeof out;
+  assert(mulib_virtio_guest_receive(&f.guest, out, &n) == MULIB_VMMDEV_AGAIN);
+}
+
+static void spi_device(void)
+{
+  fixture_t f;
+  unsigned char config[32] = {2,1,7,7}, header[32] = {1,8,1,1,1};
+  unsigned char tx[4] = {1,2,3,4}, rx[4];
+  unsigned calls;
+  mulib_endian_store_le32(config + 4, 0x80000080u); /* 8 or 32 bits per word */
+  mulib_endian_store_le32(config + 8, 127);
+  mulib_endian_store_le32(config + 12, 1000000);
+  mulib_endian_store_le32(header + 12, 500000);
+  init(&f, MULIB_VIRTIO_SPI, config, sizeof config, 0);
+  assert(!mulib_virtio_guest_spi_transfer(&f.guest, header, tx, 4, rx, 4) && rx[0] == (1 ^ 0xa5));
+  assert(!mulib_virtio_guest_spi_transfer(&f.guest, header, NULL, 0, rx, 4) && rx[0] == 0x36);
+  assert(!mulib_virtio_guest_spi_transfer(&f.guest, header, tx, 4, NULL, 0));
+  calls = f.calls; header[0] = 2;
+  assert(mulib_virtio_guest_spi_transfer(&f.guest, header, tx, 4, rx, 4) == MULIB_VMMDEV_EINVAL);
+  assert(f.calls == calls); header[0] = 1;
+  header[1] = 32;
+  assert(!mulib_virtio_guest_spi_transfer(&f.guest, header, tx, 4, rx, 4));
+  assert(mulib_virtio_guest_spi_transfer(&f.guest, header, tx, 3, rx, 3) == MULIB_VMMDEV_EINVAL);
+  header[1] = 8; header[5] = 1;
+  assert(mulib_virtio_guest_spi_transfer(&f.guest, header, tx, 4, rx, 4) == MULIB_VMMDEV_EINVAL);
+  header[5] = 0; header[16] = 1;
+  assert(mulib_virtio_guest_spi_transfer(&f.guest, header, tx, 4, rx, 4) == MULIB_VMMDEV_EINVAL);
+  header[16] = 0; f.fail = 1; memset(rx, 0x77, sizeof rx);
+  assert(mulib_virtio_guest_spi_transfer(&f.guest, header, tx, 4, rx, 4) == MULIB_VMMDEV_EIO && rx[0] == 0x77);
+  f.fail = 0; f.short_reply = 1;
+  assert(mulib_virtio_guest_spi_transfer(&f.guest, header, tx, 4, rx, 4) == MULIB_VMMDEV_EIO);
+  f.short_reply = 0; f.again = 1;
+  assert(mulib_virtio_guest_spi_transfer(&f.guest, header, tx, 4, rx, 4) == MULIB_VMMDEV_AGAIN);
+}
+
+static void rtc_device(void)
+{
+  fixture_t f;
+  unsigned char request[24] = {0}, response[32];
+  uint64_t ns = 123;
+  size_t n;
+  init(&f, MULIB_VIRTIO_RTC, NULL, 0, 0);
+  f.clock_ns = 1000000000;
+  assert(!mulib_virtio_guest_rtc_read(&f.guest, &ns) && ns == f.clock_ns);
+  --f.clock_ns;
+  assert(mulib_virtio_guest_rtc_read(&f.guest, &ns) == MULIB_VMMDEV_EIO && ns == 1000000000);
+  f.clock_ns += 2; f.short_reply = 1;
+  assert(mulib_virtio_guest_rtc_read(&f.guest, &ns) == MULIB_VMMDEV_EIO);
+  f.short_reply = 0; f.again = 1;
+  assert(mulib_virtio_guest_rtc_read(&f.guest, &ns) == MULIB_VMMDEV_AGAIN); f.again = 0;
+  mulib_vmmdev_store16(request, 0x1000); n = sizeof response;
+  assert(!mulib_virtio_guest_rtc_request(&f.guest, 0, request, 8, response, &n)
+         && n == 16 && response[8] == 1);
+  mulib_vmmdev_store16(request, 0x1001); n = sizeof response;
+  assert(!mulib_virtio_guest_rtc_request(&f.guest, 0, request, 16, response, &n)
+         && n == 16 && response[8] == 2);
+  mulib_vmmdev_store16(request, 0x1002); n = sizeof response;
+  assert(!mulib_virtio_guest_rtc_request(&f.guest, 0, request, 16, response, &n)
+         && n == 16 && !response[8]);
+  mulib_vmmdev_store16(request, 2); n = sizeof response;
+  assert(!mulib_virtio_guest_rtc_request(&f.guest, 0, request, 16, response, &n) && response[0] == 2);
+  mulib_vmmdev_store16(request, 0x1003); n = sizeof response;
+  assert(!mulib_virtio_guest_rtc_request(&f.guest, 0, request, 16, response, &n) && response[0] == 3);
+  mulib_vmmdev_store16(request, 1); request[8] = 1; n = sizeof response;
+  assert(!mulib_virtio_guest_rtc_request(&f.guest, 0, request, 16, response, &n) && response[0] == 3);
+  request[8] = 0; n = 1;
+  assert(!mulib_virtio_guest_rtc_request(&f.guest, 0, request, 16, response, &n) && response[0] == 4 && n == 1);
+  request[2] = 1; n = sizeof response;
+  assert(!mulib_virtio_guest_rtc_request(&f.guest, 0, request, 16, response, &n) && response[0] == 4);
+}
+
+static void request_entry_points(void)
+{
+  typedef int (*request_fn)(mulib_virtio_guest_t *, unsigned, const void *, size_t, void *, size_t *);
+  static const request_fn functions[] = {
+    mulib_virtio_guest_net_request, mulib_virtio_guest_blk_request,
+    mulib_virtio_guest_console_request, mulib_virtio_guest_rng_request,
+    mulib_virtio_guest_balloon_request, mulib_virtio_guest_rpmsg_request,
+    mulib_virtio_guest_scsi_request, mulib_virtio_guest_p9_request,
+    mulib_virtio_guest_gpu_request, mulib_virtio_guest_rtc_request,
+    mulib_virtio_guest_input_request, mulib_virtio_guest_vsock_request,
+    mulib_virtio_guest_crypto_request, mulib_virtio_guest_iommu_request,
+    mulib_virtio_guest_mem_request, mulib_virtio_guest_snd_request,
+    mulib_virtio_guest_fs_request, mulib_virtio_guest_pmem_request,
+    mulib_virtio_guest_rpmb_request, mulib_virtio_guest_scmi_request,
+    mulib_virtio_guest_i2c_request, mulib_virtio_guest_can_request,
+    mulib_virtio_guest_bt_request, mulib_virtio_guest_gpio_request,
+    mulib_virtio_guest_spi_request, mulib_virtio_guest_nsm_request
+  };
+  mulib_virtio_guest_t g = {0};
+  size_t n = 0;
+  for (size_t i = 0; i < sizeof functions / sizeof functions[0]; ++i) {
+    assert(functions[i](NULL, 0, NULL, 0, NULL, &n) == MULIB_VMMDEV_EINVAL);
+    assert(functions[i](&g, 0, NULL, 0, NULL, &n) == MULIB_VMMDEV_EINVAL);
+  }
+}
+
+static void nsm_device(void)
+{
+  fixture_t f;
+  unsigned char request[] = {0x69,'G','e','t','R','a','n','d','o','m'};
+  unsigned char response[128], bad[32];
+  size_t n;
+  unsigned calls;
+  init(&f, MULIB_VIRTIO_NSM, NULL, 0, 0);
+  n = sizeof response;
+  assert(!mulib_virtio_guest_nsm_request(&f.guest, 0, request, sizeof request, response, &n)
+         && n == 21 && response[20] == 0x36);
+  f.short_reply = 1; n = sizeof response; memset(response, 0x77, sizeof response);
+  assert(mulib_virtio_guest_nsm_request(&f.guest, 0, request, sizeof request, response, &n)
+         == MULIB_VMMDEV_EIO && response[0] == 0x77);
+  f.short_reply = 0; f.again = 1; n = sizeof response;
+  assert(mulib_virtio_guest_nsm_request(&f.guest, 0, request, sizeof request, response, &n) == MULIB_VMMDEV_AGAIN);
+  f.again = 0; calls = f.calls;
+  memcpy(bad, request, sizeof request); bad[sizeof request] = 0; n = sizeof response;
+  assert(mulib_virtio_guest_nsm_request(&f.guest, 0, bad, sizeof request + 1, response, &n) == MULIB_VMMDEV_EINVAL);
+  memset(bad, 0x81, sizeof bad); n = sizeof response;
+  assert(mulib_virtio_guest_nsm_request(&f.guest, 0, bad, sizeof bad, response, &n) == MULIB_VMMDEV_EINVAL);
+  bad[0] = 0x61; bad[1] = 0xff; n = sizeof response;
+  assert(mulib_virtio_guest_nsm_request(&f.guest, 0, bad, 2, response, &n) == MULIB_VMMDEV_EINVAL);
+  assert(f.calls == calls);
+  request[1] = 'X'; n = sizeof response;
+  assert(mulib_virtio_guest_nsm_request(&f.guest, 0, request, sizeof request, response, &n) == MULIB_VMMDEV_EIO);
+}
+
+static void new_configurations(void)
+{
+  unsigned char input[512], output[512], config[32] = {0};
+  mulib_virtio_os_options_t options = {0};
+  mulib_virtio_os_device_t device, previous;
+  options.instance = 1; options.input_scratch = input; options.output_scratch = output;
+  options.transfer_limit = 512; options.service = service; options.config = config;
+  memset(&device, 0xa5, sizeof device); memcpy(&previous, &device, sizeof device);
+  options.device_id = MULIB_VIRTIO_CAN; options.config_size = 2;
+  assert(mulib_virtio_os_init(&device, &options) == MULIB_VMMDEV_ENOTSUP);
+  options.features = 1; config[0] = 2;
+  assert(mulib_virtio_os_init(&device, &options) == MULIB_VMMDEV_EINVAL);
+  assert(!memcmp(&device, &previous, sizeof device));
+  options.device_id = MULIB_VIRTIO_BT; options.config_size = 5; options.features = 0;
+  assert(mulib_virtio_os_init(&device, &options) == MULIB_VMMDEV_EINVAL);
+  config[0] = 0; options.features = 8;
+  assert(mulib_virtio_os_init(&device, &options) == MULIB_VMMDEV_ENOTSUP);
+  assert(!memcmp(&device, &previous, sizeof device));
+  options.device_id = MULIB_VIRTIO_SPI; options.config_size = 32; options.features = 0;
+  assert(mulib_virtio_os_init(&device, &options) == MULIB_VMMDEV_EINVAL);
+  config[0] = 1; config[8] = 5; config[2] = 8;
+  assert(mulib_virtio_os_init(&device, &options) == MULIB_VMMDEV_EINVAL);
+  config[2] = 0; config[8] = 1;
+  assert(mulib_virtio_os_init(&device, &options) == MULIB_VMMDEV_EINVAL);
+  assert(!memcmp(&device, &previous, sizeof device));
+}
+
 int main(void)
 {
   assert(mulib_virtio_profile_count() == 48);
@@ -479,5 +719,7 @@ int main(void)
   assert(!mulib_virtio_profile_at(48));
   transport(); block(); streams(); devices(); memory_device();
   scsi_iommu_sound(); crypto_rpmb(); gpu_vsock();
+  can_device(); bt_device(); spi_device(); rtc_device(); nsm_device(); request_entry_points();
+  new_configurations();
   return 0;
 }

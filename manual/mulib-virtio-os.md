@@ -2,7 +2,7 @@
 
 This header implements the backend of the [MVMD contract](../MULIB_VMMPROTO.md).
 It contains lifecycle, feature negotiation, configuration, DMA validation and
-21 device-specific bounded profiles. Real host resources are supplied through
+26 device-specific bounded profiles. Real host resources are supplied through
 an explicit service callback. Unimplemented registry entries return ENOTSUP.
 
 ## Integration and lifecycle
@@ -64,6 +64,7 @@ Fields listed as `u16`, `u32`, `u64` are little-endian at the indicated offsets.
 | scsi | 36 | u32: queues=1 at 0, seg_max=1..62 at 4, max_sectors>0 at 8, cmd_per_lun>0 at 12, event size=16 at 16, sense=96 at 20, CDB=32 at 24; channel:u16=0 at 28, target:u16<=255 at 30, LUN:u32<=16383 at 32 |
 | 9p | 3..256 | tag length:u16 at 0 followed by exactly that many tag bytes; feature 0 required |
 | gpu | 16 | events and clear initially zero, scanout count:u32=1..16 at 8, capsets:u32=0 at 12 |
+| rtc | 0 | One monotonic nanosecond clock, ID 0; no cross timestamps or alarms |
 | input | 136 | Initially all zero; selector at 0, subselector at 1, size at 2, data at 8 |
 | vsock | 8 | guest CID:u64=3..0xfffffffe; implicit stream type, no optional features |
 | crypto | 56 | u32: ready=1 at 0, dataqueues=1 at 4, services=1 at 8, cipher mask=8 at 12, max key=32 at 36; max data bytes:u64 at 48, nonzero and <=limit-88; others zero |
@@ -74,8 +75,12 @@ Fields listed as `u16`, `u32`, `u64` are little-endian at the indicated offsets.
 | pmem | 16 | base:u64 at 0, nonzero size:u64 at 8, no address overflow |
 | rpmb | 3 | capacity in 128KiB units <=128, max write blocks, max read blocks; zero max means no additional device limit |
 | scmi | 0 | Synchronous command channel only |
+| nsm | 0 | NSM CBOR request/response transport; no optional features |
 | i2c | 0 | Feature 0 required (zero-length requests and explicit read direction) |
+| can | 2 | status:u16 initially zero; mandatory classic CAN feature 0, optional FD bit 1 and RTR bit 2; no late TX ACK |
+| bluetooth | 5 | All zero: primary controller, no vendor extensions; packed v1 config, no CONFIG_V2 |
 | gpio | 8 | line count:u16>0 at 0; names size=0; no IRQ feature |
+| spi | 32 | u8: chip-select count>0 at 0, cs_change support 0/1 at 1, TX/RX bus-width masks 0..7 at 2/3; u32: word-width mask at 4, supported mode functions at 8, maximum Hz at 12, maximum word/setup/hold/inactive delays at 16/20/24/28 |
 
 `request_memory(device, amount)` changes balloon target PFN count or virtio-mem
 requested byte size and increments config generation. It is a host API, not guest
@@ -124,6 +129,58 @@ For balloon reset the provider reconciles/restores outstanding balloon ownership
 * **PMEM**: FLUSH must make the configured memory range persistent before success.
 
 ### Stateful and external protocol services
+
+* **RTC**: The core implements CFG, CLOCK_CAP and CROSS_CAP locally, advertising
+  one monotonic clock without cross timestamps or alarms. READ calls service READ
+  with address=0, flags=1, output capacity=8. Return a little-endian u64 count of
+  nanoseconds from a monotonic epoch at or before reset. The core rejects backwards
+  readings within a live epoch. READ_CROSS returns RTC status 2; alarm commands
+  return status 3. Unknown commands return 2. Short requests/responses return 4
+  whenever a status byte fits. Reads are serialized, not buffered clock samples.
+* **CAN**: Queues 0/1/2 are TX/RX/control. SEND/RECEIVE transfer the complete
+  16-byte CAN header plus payload: type:u16 at 0, length:u16 at 2, four reserved
+  zero bytes at 4, flags:u32 at 8, identifier:u32 at 12. Constants are exposed as
+  `MULIB_VIRTIO_CAN_*`. The core validates message type, declared
+  length, identifier range, negotiated classic/FD/RTR features, and invalid FD+RTR
+  combinations. SEND consumes a whole frame; RECEIVE yields message type 0x101.
+  CAN_CONTROL receives START=0x201 or STOP=0x202 in flags and must finish the
+  controller operation before returning. TX/control produce one-byte status.
+  The controller starts stopped, including after reset. Bus-off is published using
+  `mulib_virtio_os_can_busoff(device, 1)` under the VM lock; START clears it after
+  provider success. No late TX acknowledgment feature is offered: a successful
+  SEND means the frame was accepted, not necessarily acknowledged on the bus.
+* **Bluetooth**: Queue 0 sends, queue 1 receives complete HCI packets including the
+  one-byte type. The core validates command/ACL/SCO/event/ISO lengths and direction
+  (commands TX only, events RX only). SEND/RECEIVE and RESET must operate a real
+  HCI controller or a faithful provider; the core does not emulate a Bluetooth
+  stack. No vendor/MSFT/AOSP/config-v2 features are advertised.
+* **SPI**: Queue 0 receives a 32-byte transfer header and optional TX bytes;
+  output is optional RX bytes followed by one result byte. SPI receives the whole
+  readable stream, chip-select in address, mode in flags, and RX-only output
+  capacity. Return exactly that many RX bytes. The core checks chip-select,
+  word widths, buffer alignment, duplex lengths, mode/bus-width capabilities,
+  frequency and delays. Invalid parameters complete with status 1 without calling
+  the provider; I/O failure or short RX completes with 2 and zeroed RX bytes.
+  The provider owns chip-select persistence between transfers and releases it on
+  RESET. No buffer pointers may escape the callback.
+  Header offsets: chip-select:u8 at 0, bits-per-word:u8 at 1, cs_change:u8 at 2,
+  TX/RX widths:u8 at 3/4, three reserved zero bytes at 5, mode:u32 at 8,
+  frequency:u32 at 12, word/setup/hold/inactive delays:u32 at 16/20/24/28.
+  Widths 0/1 select single-bit transfers, 2/4/8 select dual/quad/octal transfers.
+  Word storage is 1/2/4 bytes for widths <=8/<=16/<=32 bits. Modes are exposed as
+  `MULIB_VIRTIO_SPI_*`; all delays are nanoseconds.
+* **NSM**: REQUEST receives a complete CBOR request (1..4096 bytes) and returns
+  a complete CBOR response (1..12288 bytes, also bounded by transfer_limit).
+  The core accepts definite-length NSM enum envelopes, validates UTF-8 and CBOR
+  structure to depth 16, rejects trailing bytes, and correlates response variant
+  names (or accepts an Error variant). Tags, floats and indefinite-length values
+  are outside this bounded profile. The provider validates command fields and
+  implements PCR operations, irreversible locking, real entropy, identity,
+  certificates and signed attestation. The core does not generate dummy secrets,
+  PCR values or attestation documents. The provider must report protocol errors
+  as NSM Error responses, not successful placeholder operations. Transport RESET
+  must not undo PCR locks or replace the enclave's security identity; their
+  lifetime is managed by the security provider, separately from queue epochs.
 
 * **SCSI**: SCSI_COMMAND receives the complete command stream: LUN[8], tag:u64,
   task attribute/prio/CRN[3], configured CDB bytes, then optional data-out. `address`

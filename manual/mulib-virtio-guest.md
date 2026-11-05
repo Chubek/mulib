@@ -58,20 +58,38 @@ vsock, crypto, IOMMU, memory, sound, FUSE, 9P, RPMB, SCMI and balloon profiles.
 The [backend manual](mulib-virtio-os.md) describes the supported layouts and
 required host providers. Device-specific status remains in the output.
 
+Every supported profile also has a device-checked
+`mulib_virtio_guest_<name>_request(guest, queue, input, input_size, output, &capacity)`
+function in its own `.c` file. Names follow the registry (`p9` for 9P, `bt` for
+Bluetooth, `nsm` for Nitro Secure Module). These use the same wire layouts and
+ownership contract as `transact()`; they are not OS filesystem/socket APIs.
+
 Convenience operations decode native statuses and return `MULIB_VMMDEV_*`:
 
 * `entropy()` accepts short entropy reads and returns actual length.
 * `block()` supports type 0 read, 1 write, 4 flush and 8 get-ID. Read/write sizes
   are multiples of 512, sector is in 512-byte units, get-ID is exactly 20 bytes,
   and flush has zero size/sector. Errors leave the caller's read buffer unchanged.
-* `send()`/`receive()` support network, console, static RPMsg and input. Network
+* `send()`/`receive()` support network, console, static RPMsg, input and Bluetooth. Network
   callers provide raw Ethernet frame bytes; the helper adds/removes the modern
   12-byte Virtio header. RPMsg callers provide their full 16-byte framing header.
+  Bluetooth callers include the one-byte HCI packet type; the helpers select the
+  Bluetooth TX/RX queue order automatically.
 * `gpio()` gets/sets direction/value (types 2..5), validating returned values.
 * `i2c()` handles one segment and its status. Address is wire-encoded, flags bit 1
   means read, bit 0 chains failure to the next segment. Zero-length segments work.
   The caller preserves group ordering; a failed group must still be drained.
 * `pmem_flush()` sends FLUSH and checks its status.
+* `can_control(guest, start)` starts/stops the CAN controller. Frame requests use
+  `can_request()` on queues 0/1; the complete CAN header is included. Inspect the
+  one-byte TX result. Reset leaves the controller stopped.
+* `spi_transfer()` accepts a wire-encoded 32-byte header plus optional TX/RX
+  buffers, checks completion status, and leaves caller RX unchanged on error.
+* `rtc_read()` reads clock 0 as monotonic nanoseconds and preserves output on error.
+* `nsm_request()` transports CBOR and leaves NSM Error responses to the caller.
+  Maximum request/response lengths are 4096/12288 bytes. Full-sized copying
+  transactions need 16384 bytes of scratch and a transfer limit of at least 12288;
+  smaller requests/responses can use smaller buffers.
 
 Config read/write functions enforce bounds. Reads record the response's atomic
 snapshot generation. Writes are restricted by the backend to the profile's

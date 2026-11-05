@@ -78,9 +78,12 @@ def main():
                   '#define MULIB_IMPL_VMMDEV\n#define MULIB_IMPL_VIRTIO\n'
                   '#include "mulib-endian.h"\n#include "mulib-vmmdev.h"\n#include "virtio.h"\n'
                   'int main(void) { return mulib_virtio_profile_count() == 48 ? 0 : 1; }\n')
-            build(cc, ['library/virtio-os/protocol.c', 'library/virtio-os/virtio-os.c',
-                       'library/virtio-guest/virtio-guest.c', 'examples/modules/virtio-guest.c'],
+            sources = sorted(str(p.relative_to(ROOT)) for side in ('os', 'guest')
+                             for p in (ROOT / 'library' / ('virtio-' + side)).glob('*.c'))
+            build(cc, sources + ['examples/modules/virtio-guest.c'],
                   extra=['-DMULIB_VIRTIO_EXAMPLE_COMPILED'])
+            build(cc, sources + ['tests/test_virtio.c'],
+                  extra=['-DMULIB_VIRTIO_TEST_COMPILED'])
             print('Virtio C checks passed:', ' '.join(cc), flush=True)
         cxx_compilers = [shlex.split(os.environ['CXX'])] if os.environ.get('CXX') else [
             [cc] for cc in ('g++', 'clang++') if shutil.which(cc)]

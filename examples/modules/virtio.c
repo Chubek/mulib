@@ -14,7 +14,7 @@ int main(void)
            p->support == MULIB_VIRTIO_PROFILE ? "implemented profile" : "unsupported");
     supported += p->support == MULIB_VIRTIO_PROFILE;
   }
-  assert(supported == 21 && mulib_virtio_profile_count() == 48);
+  assert(supported == 26 && mulib_virtio_profile_count() == 48);
   assert(!mulib_virtio_profile(14));
   return 0;
 }

@@ -18,7 +18,7 @@ of support. Inspect `support`: only `MULIB_VIRTIO_PROFILE` may be instantiated.
 reserved for a pinned but unfinished implementation.
 
 The [full support matrix](../MULIB_VMMPROTO.md#6-device-support-matrix) describes
-21 working, service-assisted profiles and the 27 unimplemented IDs. Optional
+26 working, service-assisted profiles and the 22 unimplemented IDs. Optional
 feature masks are deliberately narrow. Metadata excludes the mandatory common
 VERSION_1 bit; `required_features` contains mandatory device-specific bits.
 9P has a variable mount-tag configuration and its metadata minimum is zero;

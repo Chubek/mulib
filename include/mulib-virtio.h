@@ -19,6 +19,22 @@ extern "C" {
 #define MULIB_VIRTIO_FAILED 128u
 #define MULIB_VIRTIO_CONFIG_MAX 256u
 #define MULIB_VIRTIO_TRANSFER_MAX (1024u * 1024u)
+/* CAN frame flags (u32 at wire offset 8); TX/RX frames have a 16-byte header. */
+#define MULIB_VIRTIO_CAN_EXTENDED UINT32_C(0x8000)
+#define MULIB_VIRTIO_CAN_FD UINT32_C(0x4000)
+#define MULIB_VIRTIO_CAN_RTR UINT32_C(0x2000)
+#define MULIB_VIRTIO_CAN_TX 0x0001u
+#define MULIB_VIRTIO_CAN_RX 0x0101u
+#define MULIB_VIRTIO_CAN_START 0x0201u
+#define MULIB_VIRTIO_CAN_STOP 0x0202u
+/* SPI transfer modes (u32 at offset 8 of the 32-byte wire header). */
+#define MULIB_VIRTIO_SPI_CPHA 1u
+#define MULIB_VIRTIO_SPI_CPOL 2u
+#define MULIB_VIRTIO_SPI_CS_HIGH 4u
+#define MULIB_VIRTIO_SPI_LSB_FIRST 8u
+#define MULIB_VIRTIO_SPI_LOOP 16u
+#define MULIB_VIRTIO_NSM_REQUEST_MAX 4096u
+#define MULIB_VIRTIO_NSM_RESPONSE_MAX 12288u
 enum mulib_virtio_id {
   MULIB_VIRTIO_NET = 1, MULIB_VIRTIO_BLK = 2, MULIB_VIRTIO_CONSOLE = 3,
   MULIB_VIRTIO_RNG = 4, MULIB_VIRTIO_BALLOON = 5, MULIB_VIRTIO_IOMEM = 6,
@@ -64,7 +80,8 @@ enum mulib_virtio_service_op {
   MULIB_VIRTIO_SERVICE_SCSI_COMMAND, MULIB_VIRTIO_SERVICE_SCSI_TMF,
   MULIB_VIRTIO_SERVICE_IOMMU, MULIB_VIRTIO_SERVICE_PCM_CONTROL,
   MULIB_VIRTIO_SERVICE_CIPHER, MULIB_VIRTIO_SERVICE_RPMB,
-  MULIB_VIRTIO_SERVICE_GPU
+   MULIB_VIRTIO_SERVICE_GPU,
+   MULIB_VIRTIO_SERVICE_CAN_CONTROL, MULIB_VIRTIO_SERVICE_SPI
 };
 /**
  * @brief Borrowed host-service call. address/flags interpretation is profile-specific.
@@ -120,7 +137,7 @@ static const mulib_virtio_profile_t mulib_virtio_profiles_[] = {
   {8,"scsi",1,3,36,0,0}, {9,"9p",1,1,0,1,1},
   {10,"mac80211-wlan",3,0,0,0,0}, {11,"rproc-serial",3,0,0,0,0},
   {12,"caif",3,0,0,0,0}, {13,"memory-balloon",3,0,0,0,0},
-  {16,"gpu",1,2,16,0,0}, {17,"rtc",3,0,0,0,0},
+  {16,"gpu",1,2,16,0,0}, {17,"rtc",1,1,0,0,0},
   {18,"input",1,2,136,0,0}, {19,"vsock",1,3,8,0,0},
   {20,"crypto",1,2,56,0,0}, {21,"signal-dist",3,0,0,0,0},
   {22,"pstore",3,0,0,0,0}, {23,"iommu",1,2,8,4,4},
@@ -128,13 +145,13 @@ static const mulib_virtio_profile_t mulib_virtio_profiles_[] = {
   {26,"fs",1,2,40,0,0}, {27,"pmem",1,1,16,0,0},
   {28,"rpmb",1,1,3,0,0}, {29,"hwsim",3,0,0,0,0},
   {30,"video-encoder",3,0,0,0,0}, {31,"video-decoder",3,0,0,0,0},
-  {32,"scmi",1,1,0,0,0}, {33,"nitro-secure-module",3,0,0,0,0},
+  {32,"scmi",1,1,0,0,0}, {33,"nitro-secure-module",1,1,0,0,0},
   {34,"i2c",1,1,0,1,1}, {35,"watchdog",3,0,0,0,0},
-  {36,"can",3,0,0,0,0}, {37,"dma-buf",3,0,0,0,0},
+  {36,"can",1,3,2,7,1}, {37,"dma-buf",3,0,0,0,0},
   {38,"parameter-server",3,0,0,0,0}, {39,"audio-policy",3,0,0,0,0},
-  {40,"bluetooth",3,0,0,0,0}, {41,"gpio",1,1,8,0,0},
+  {40,"bluetooth",1,2,5,0,0}, {41,"gpio",1,1,8,0,0},
   {42,"rdma",3,0,0,0,0}, {43,"camera",3,0,0,0,0},
-  {44,"ism",3,0,0,0,0}, {45,"spi",3,0,0,0,0},
+  {44,"ism",3,0,0,0,0}, {45,"spi",1,1,32,0,0},
   {46,"tee",3,0,0,0,0}, {47,"cpu-balloon",3,0,0,0,0},
   {48,"media",3,0,0,0,0}, {49,"usb",3,0,0,0,0},
   {50,"video",3,0,0,0,0}

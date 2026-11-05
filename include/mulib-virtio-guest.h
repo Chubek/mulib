@@ -61,6 +61,68 @@ int mulib_virtio_guest_i2c(mulib_virtio_guest_t *guest, uint16_t wire_address, u
                           void *bytes, size_t size);
 /** @brief Flush persistent memory. */
 int mulib_virtio_guest_pmem_flush(mulib_virtio_guest_t *guest);
+/** @brief Start/stop the CAN controller. Device reset leaves it stopped. */
+int mulib_virtio_guest_can_control(mulib_virtio_guest_t *guest, unsigned start);
+/** @brief Read the RTC profile's monotonic nanosecond clock (clock ID 0). */
+int mulib_virtio_guest_rtc_read(mulib_virtio_guest_t *guest, uint64_t *nanoseconds);
+/** @brief SPI transfer using a wire-encoded 32-byte header; optional TX and RX buffers. */
+int mulib_virtio_guest_spi_transfer(mulib_virtio_guest_t *guest, const unsigned char header[32],
+    const void *tx, size_t tx_size, void *rx, size_t rx_size);
+/** @brief Device-checked raw wire requests for CAN, Bluetooth, SPI and RTC. */
+int mulib_virtio_guest_can_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_bt_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_spi_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_rtc_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+/** @brief NSM CBOR request (<=4096 bytes), response (<=12288 bytes). No attestation emulation. */
+int mulib_virtio_guest_nsm_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+/** @brief Device-checked wire requests. Queue and wire data follow the device profile. */
+int mulib_virtio_guest_net_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_blk_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_console_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_rng_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_balloon_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_rpmsg_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_scsi_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_p9_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_gpu_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_input_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_vsock_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_crypto_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_iommu_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_mem_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_snd_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_fs_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_pmem_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_rpmb_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_scmi_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_i2c_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
+int mulib_virtio_guest_gpio_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity);
 #ifdef __cplusplus
 }
 #endif
@@ -71,6 +133,17 @@ int mulib_virtio_guest_pmem_flush(mulib_virtio_guest_t *guest);
 #ifdef __cplusplus
 extern "C" {
 #endif
+/* BEGIN GENERATED VIRTIO IMPLEMENTATION */
+/* Generated by tools/amalgamate_virtio.py from library/virtio-guest. */
+
+#define MULIB_VIRTIO_INTERNAL static
+
+MULIB_VIRTIO_INTERNAL int mulib_virtio_guest_workspace_(mulib_virtio_guest_t *g, size_t ni, size_t no);
+MULIB_VIRTIO_INTERNAL int mulib_virtio_guest_prepared_(mulib_virtio_guest_t *g, unsigned q, size_t ni, size_t no, size_t *used);
+
+/* virtio-guest.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
 static int mulib_virtio_guest_call_(mulib_virtio_guest_t *g, uint16_t op, uint64_t arg, uint32_t count,
                                    const void *payload, size_t n, unsigned char *reply,
                                    mulib_vmmdev_message_t *r)
@@ -208,14 +281,14 @@ int mulib_virtio_guest_submit(mulib_virtio_guest_t *g, unsigned q,
   if (r.count > no) return MULIB_VMMDEV_EIO;
   *used = r.count; return 0;
 }
-static int mulib_virtio_guest_workspace_(mulib_virtio_guest_t *g, size_t ni, size_t no)
+MULIB_VIRTIO_INTERNAL int mulib_virtio_guest_workspace_(mulib_virtio_guest_t *g, size_t ni, size_t no)
 {
   if (!g || !g->scratch) return MULIB_VMMDEV_EINVAL;
   if (ni > g->limit || no > g->limit || ni > g->scratch_size || no > g->scratch_size - ni)
     return MULIB_VMMDEV_ENOSPC;
   return 0;
 }
-static int mulib_virtio_guest_prepared_(mulib_virtio_guest_t *g, unsigned q, size_t ni, size_t no, size_t *used)
+MULIB_VIRTIO_INTERNAL int mulib_virtio_guest_prepared_(mulib_virtio_guest_t *g, unsigned q, size_t ni, size_t no, size_t *used)
 {
   mulib_vmmdev_span_t spans[2];
   unsigned count = 0;
@@ -239,11 +312,62 @@ int mulib_virtio_guest_transact(mulib_virtio_guest_t *g, unsigned q, const void 
   if (used) memcpy(out, g->scratch + ni, used);
   *capacity = used; return 0;
 }
-int mulib_virtio_guest_entropy(mulib_virtio_guest_t *g, void *out, size_t *n)
+static int mulib_virtio_guest_stream_(const mulib_virtio_guest_t *g)
 {
-  if (!g || g->device_id != MULIB_VIRTIO_RNG) return MULIB_VMMDEV_EINVAL;
-  return mulib_virtio_guest_transact(g, 0, NULL, 0, out, n);
+  return g && (g->device_id == MULIB_VIRTIO_NET || g->device_id == MULIB_VIRTIO_CONSOLE
+               || g->device_id == MULIB_VIRTIO_RPMSG || g->device_id == MULIB_VIRTIO_INPUT
+               || g->device_id == MULIB_VIRTIO_BT);
 }
+int mulib_virtio_guest_send(mulib_virtio_guest_t *g, const void *p, size_t n)
+{
+  size_t h, used;
+  int rc;
+  if (!mulib_virtio_guest_stream_(g) || !p || !n || n > MULIB_VIRTIO_TRANSFER_MAX - 12)
+    return MULIB_VMMDEV_EINVAL;
+  h = g->device_id == MULIB_VIRTIO_NET ? 12 : 0;
+  rc = mulib_virtio_guest_workspace_(g, n + h, 0); if (rc) return rc;
+  memset(g->scratch, 0, h); memcpy(g->scratch + h, p, n);
+  return mulib_virtio_guest_prepared_(g, g->device_id == MULIB_VIRTIO_BT ? 0 : 1, n + h, 0, &used);
+}
+int mulib_virtio_guest_receive(mulib_virtio_guest_t *g, void *p, size_t *capacity)
+{
+  size_t h, used;
+  int rc;
+  if (!mulib_virtio_guest_stream_(g) || !p || !capacity || *capacity > MULIB_VIRTIO_TRANSFER_MAX - 12)
+    return MULIB_VMMDEV_EINVAL;
+  h = g->device_id == MULIB_VIRTIO_NET ? 12 : 0;
+  rc = mulib_virtio_guest_prepared_(g, g->device_id == MULIB_VIRTIO_BT ? 1 : 0,
+                                   0, *capacity + h, &used); if (rc) return rc;
+  if (used < h) return MULIB_VMMDEV_EIO;
+  if (h) for (size_t i = 0; i < h; ++i) if (g->scratch[i]) return MULIB_VMMDEV_EIO;
+  memcpy(p, g->scratch + h, used - h); *capacity = used - h; return 0;
+}
+
+/* 9p.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_p9_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_9P) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* balloon.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_balloon_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_BALLOON) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* blk.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
 int mulib_virtio_guest_block(mulib_virtio_guest_t *g, uint32_t type, uint64_t sector, void *data, size_t n)
 {
   size_t ni, no, used;
@@ -264,34 +388,80 @@ int mulib_virtio_guest_block(mulib_virtio_guest_t *g, uint32_t type, uint64_t se
   if ((type == 0 || type == 8) && n) memcpy(data, g->scratch + ni, n);
   return 0;
 }
-static int mulib_virtio_guest_stream_(const mulib_virtio_guest_t *g)
+
+int mulib_virtio_guest_blk_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
 {
-  return g && (g->device_id == MULIB_VIRTIO_NET || g->device_id == MULIB_VIRTIO_CONSOLE
-               || g->device_id == MULIB_VIRTIO_RPMSG || g->device_id == MULIB_VIRTIO_INPUT);
+  if (!g || g->device_id != MULIB_VIRTIO_BLK) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
 }
-int mulib_virtio_guest_send(mulib_virtio_guest_t *g, const void *p, size_t n)
+
+/* bt.c */
+
+int mulib_virtio_guest_bt_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
 {
-  size_t h, used;
+  if (!g || g->device_id != MULIB_VIRTIO_BT) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* can.c */
+
+int mulib_virtio_guest_can_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_CAN) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+int mulib_virtio_guest_can_control(mulib_virtio_guest_t *g, unsigned start)
+{
+  unsigned char input[2], output;
+  size_t size = 1;
   int rc;
-  if (!mulib_virtio_guest_stream_(g) || !p || !n || n > MULIB_VIRTIO_TRANSFER_MAX - 12)
-    return MULIB_VMMDEV_EINVAL;
-  h = g->device_id == MULIB_VIRTIO_NET ? 12 : 0;
-  rc = mulib_virtio_guest_workspace_(g, n + h, 0); if (rc) return rc;
-  memset(g->scratch, 0, h); memcpy(g->scratch + h, p, n);
-  return mulib_virtio_guest_prepared_(g, 1, n + h, 0, &used);
+  if (start > 1) return MULIB_VMMDEV_EINVAL;
+  mulib_vmmdev_store16(input, (uint16_t)(start ? 0x201 : 0x202));
+  rc = mulib_virtio_guest_can_request(g, 2, input, 2, &output, &size);
+  if (rc) return rc;
+  return size == 1 && !output ? 0 : MULIB_VMMDEV_EIO;
 }
-int mulib_virtio_guest_receive(mulib_virtio_guest_t *g, void *p, size_t *capacity)
+
+/* console.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_console_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
 {
-  size_t h, used;
-  int rc;
-  if (!mulib_virtio_guest_stream_(g) || !p || !capacity || *capacity > MULIB_VIRTIO_TRANSFER_MAX - 12)
-    return MULIB_VMMDEV_EINVAL;
-  h = g->device_id == MULIB_VIRTIO_NET ? 12 : 0;
-  rc = mulib_virtio_guest_prepared_(g, 0, 0, *capacity + h, &used); if (rc) return rc;
-  if (used < h) return MULIB_VMMDEV_EIO;
-  if (h) for (size_t i = 0; i < h; ++i) if (g->scratch[i]) return MULIB_VMMDEV_EIO;
-  memcpy(p, g->scratch + h, used - h); *capacity = used - h; return 0;
+  if (!g || g->device_id != MULIB_VIRTIO_CONSOLE) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
 }
+
+/* crypto.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_crypto_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_CRYPTO) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* fs.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_fs_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_FS) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* gpio.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
 int mulib_virtio_guest_gpio(mulib_virtio_guest_t *g, uint16_t type, uint16_t line, uint32_t *value)
 {
   unsigned char request[8], response[2];
@@ -306,6 +476,28 @@ int mulib_virtio_guest_gpio(mulib_virtio_guest_t *g, uint16_t type, uint16_t lin
   if (type == 2 || type == 4) *value = response[1];
   return 0;
 }
+
+int mulib_virtio_guest_gpio_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_GPIO) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* gpu.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_gpu_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_GPU) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* i2c.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
 int mulib_virtio_guest_i2c(mulib_virtio_guest_t *g, uint16_t address, uint32_t flags, void *bytes, size_t n)
 {
   size_t ni, no, used;
@@ -323,6 +515,71 @@ int mulib_virtio_guest_i2c(mulib_virtio_guest_t *g, uint16_t address, uint32_t f
   if ((flags & 2) && n) memcpy(bytes, g->scratch + ni, n);
   return 0;
 }
+
+int mulib_virtio_guest_i2c_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_I2C) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* input.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_input_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_INPUT) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* iommu.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_iommu_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_IOMMU) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* mem.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_mem_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_MEM) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* net.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_net_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_NET) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* nsm.c */
+
+int mulib_virtio_guest_nsm_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_NSM || input_size > MULIB_VIRTIO_NSM_REQUEST_MAX || !capacity
+      || *capacity > MULIB_VIRTIO_NSM_RESPONSE_MAX) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* pmem.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
 int mulib_virtio_guest_pmem_flush(mulib_virtio_guest_t *g)
 {
   unsigned char req[4] = {0}, rep[4];
@@ -332,6 +589,149 @@ int mulib_virtio_guest_pmem_flush(mulib_virtio_guest_t *g)
   rc = mulib_virtio_guest_transact(g, 0, req, 4, rep, &n); if (rc) return rc;
   return n == 4 && !mulib_endian_load_le32(rep) ? 0 : MULIB_VMMDEV_EIO;
 }
+
+int mulib_virtio_guest_pmem_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_PMEM) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* rng.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+int mulib_virtio_guest_entropy(mulib_virtio_guest_t *g, void *out, size_t *n)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_RNG) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, 0, NULL, 0, out, n);
+}
+
+int mulib_virtio_guest_rng_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_RNG) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* rpmb.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_rpmb_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_RPMB) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* rpmsg.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_rpmsg_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_RPMSG) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* rtc.c */
+
+int mulib_virtio_guest_rtc_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_RTC) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+int mulib_virtio_guest_rtc_read(mulib_virtio_guest_t *g, uint64_t *nanoseconds)
+{
+  unsigned char input[16] = {1}, output[16];
+  size_t size = sizeof output;
+  int rc;
+  if (!nanoseconds) return MULIB_VMMDEV_EINVAL;
+  rc = mulib_virtio_guest_rtc_request(g, 0, input, sizeof input, output, &size);
+  if (rc) return rc;
+  if (size != 16 || output[0]) return MULIB_VMMDEV_EIO;
+  *nanoseconds = mulib_vmmdev_load64(output + 8); return 0;
+}
+
+/* scmi.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_scmi_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_SCMI) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* scsi.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_scsi_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_SCSI) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* snd.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_snd_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_SND) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+/* spi.c */
+
+int mulib_virtio_guest_spi_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_SPI) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+int mulib_virtio_guest_spi_transfer(mulib_virtio_guest_t *g, const unsigned char header[32],
+    const void *tx, size_t tx_size, void *rx, size_t rx_size)
+{
+  size_t ni, no, used;
+  unsigned status;
+  int rc;
+  if (!g || g->device_id != MULIB_VIRTIO_SPI || !header || (!tx && tx_size) || (!rx && rx_size)
+      || tx_size > MULIB_VIRTIO_TRANSFER_MAX - 32 || rx_size >= MULIB_VIRTIO_TRANSFER_MAX)
+    return MULIB_VMMDEV_EINVAL;
+  ni = 32 + tx_size; no = rx_size + 1;
+  rc = mulib_virtio_guest_workspace_(g, ni, no); if (rc) return rc;
+  memcpy(g->scratch, header, 32);
+  if (tx_size) memcpy(g->scratch + 32, tx, tx_size);
+  rc = mulib_virtio_guest_prepared_(g, 0, ni, no, &used); if (rc) return rc;
+  if (used != no) return MULIB_VMMDEV_EIO;
+  status = g->scratch[ni + rx_size];
+  if (status) return status == 1 ? MULIB_VMMDEV_EINVAL : MULIB_VMMDEV_EIO;
+  if (rx_size) memcpy(rx, g->scratch + ni, rx_size);
+  return 0;
+}
+
+/* vsock.c */
+/* Canonical implementation; regenerate single-header copies with tools/amalgamate_virtio.py. */
+
+
+int mulib_virtio_guest_vsock_request(mulib_virtio_guest_t *g, unsigned queue,
+    const void *input, size_t input_size, void *output, size_t *capacity)
+{
+  if (!g || g->device_id != MULIB_VIRTIO_VSOCK) return MULIB_VMMDEV_EINVAL;
+  return mulib_virtio_guest_transact(g, queue, input, input_size, output, capacity);
+}
+
+#undef MULIB_VIRTIO_INTERNAL
+/* END GENERATED VIRTIO IMPLEMENTATION */
 #ifdef __cplusplus
 }
 #endif
