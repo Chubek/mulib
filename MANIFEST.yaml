@@ -2333,8 +2333,8 @@ modules:
   header: include/mulib-webidl.h
   manual: manual/mulib-webidl.md
   macro: MULIB_IMPL_WEBIDL
-  purpose: Flat schema to WebIDL dictionary source generation.
-  dependencies: [dbschema, buffer]
+  purpose: WebIDL source compiler to S-expression CST/AST, CodeYAML and C99 declarations.
+  dependencies: [dbschema, buffer, utf8]
   status: implemented
 - name: muidl
   header: include/mulib-muidl.h
@@ -3436,6 +3436,10 @@ modules:
   dependencies: [tui, termutils]
   status: implemented
 project_files:
+- file: tests/test_webidl.c
+  purpose: WebIDL compiler formats, grammar, ownership, limits and allocation-failure regressions.
+- file: tools/check_webidl.py
+  purpose: Generated WebIDL C99 compilation, lossless CST and AST/CodeYAML agreement checks.
 - file: tools/check_readline_io.py
   purpose: PTY-based readline editing and raw-terminal restoration checks.
 - file: examples/modules/curses.c

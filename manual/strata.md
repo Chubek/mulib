@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 489 headers, 539 direct dependency edges.
+Inventory: 489 headers, 540 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -496,7 +496,7 @@ Compatibility group: `parsec`, `peg`.
 | [row-rdbms](mulib-row-rdbms.md) | `dbschema`, `documentdb` |
 | [vmm-kvm](mulib-vmm-kvm.md) | `kvm`, `vmm` |
 | [wask](mulib-wask.md) | `dsymspec`, `utf8` |
-| [webidl](mulib-webidl.md) | `buffer`, `dbschema` |
+| [webidl](mulib-webidl.md) | `buffer`, `dbschema`, `utf8` |
 | [wit](mulib-wit.md) | `buffer`, `dbschema` |
 
 ## Stratum 6 (8 modules)

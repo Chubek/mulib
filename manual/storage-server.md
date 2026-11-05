@@ -45,9 +45,11 @@ payloads and ZigZag helpers. Groups and generated message semantics are absent.
 
 ## IDL and native output
 
-`muidl`, `webidl` and `wit` generate source from `dbschema`; they do **not** parse
-IDL or generate bindings. MuIDL's small record grammar is defined in its header.
-WebIDL emits dictionaries, escaping identifiers with a leading underscore; it
+`muidl`, `webidl` and `wit` generate source from `dbschema`; these generators do
+**not** parse IDL or generate bindings. Separately, [WebIDL](mulib-webidl.md) also
+compiles source to S-expression CST/AST, CodeYAML and C99 declarations.
+MuIDL's small record grammar is defined in its header.
+WebIDL's schema generator emits dictionaries, escaping identifiers with a leading underscore; it
 maps arrays to `sequence<any>` and rejects null-only fields. WIT supports only
 bool/f64/string fields and lowercase underscore-separated names, translating
 underscores to hyphens and escaping names with `%`. Each absent/nullable
