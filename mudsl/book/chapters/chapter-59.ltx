@@ -1,0 +1,33 @@
+\chapter{The global host record}
+Every runtime creates an immutable global binding named \api{G}. Its members
+provide the minimal bridge needed by the language and its packages. A local
+scope may shadow the name, but ordinary package evaluation receives the
+runtime's original global record.
+
+\begin{description}
+\item[LoadLib(name)] Discover and evaluate a package; return a record or nil.
+\item[Native(name)] Retrieve a host-registered native value; unknown names throw.
+\item[GetStdout()] Return a callable sink accepting one string.
+\item[DieWith(value)] Throw an error containing the value's display text.
+\item[Assert(value)] Require a true value and return it.
+\item[Str(value)] Convert a value to display text.
+\item[Type(value)] Return the kind name.
+\item[Len(value)] Count string bytes, list elements, or record entries.
+\end{description}
+
+\begin{mullcode}
+val output <- G:GetStdout();
+output("direct sink\n");
+G:Assert(G:Len({a: 1, b: 2}) == 2);
+G:Assert(G:Str([1,2]) == "[1, 2]");
+\end{mullcode}
+
+The sink returned by \api{GetStdout} follows the runtime's current
+\api{stdoutSink} callback. Replacing that host callback therefore redirects
+existing stdout sink values as well as newly obtained ones. A script may
+instead install its own sink on the formatting library.
+
+Display conversion is intended for messages, not serialization. Strings are
+displayed without surrounding quotes, and functions display as
+\api{<function>}. Numbers use 17 significant digits to preserve binary64
+round trips. A durable data format should be provided by a separate codec.

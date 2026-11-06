@@ -1,6 +1,6 @@
 # Chapter 24: Primitive Parsers and Basic Combinators
 
-Chapter 23 introduced the combinator-parser core of DSLtk: the `ParsecInput` cursor, the `Parser<T>` wrapper, and the `ExpectedResult<T>` value type that carries either a parsed value or a `ParseError`. This chapter opens up the box of primitive parsers and combinators that ship in the `dsl` namespace and shows how they compose into recognisers for non-trivial grammars. The treatment is deliberately concrete. Every code fragment uses the real `dsl::` API and compiles against a C++20 toolchain with `DSLtk.hpp` included.
+Chapter 23 introduced the combinator-parser core of MuDSL: the `ParsecInput` cursor, the `Parser<T>` wrapper, and the `ExpectedResult<T>` value type that carries either a parsed value or a `ParseError`. This chapter opens up the box of primitive parsers and combinators that ship in the `dsl` namespace and shows how they compose into recognisers for non-trivial grammars. The treatment is deliberately concrete. Every code fragment uses the real `dsl::` API and compiles against a C++20 toolchain with `MuDSL.hpp` included.
 
 The combinators described here form the substrate on which the heavier machinery of Chapter 25 (diagnostics, semantic actions, `run_parser` plumbing) and Chapter 27 (the PEG definition grammar) is built. A reader who works through the worked examples will already be able to write small recursive-descent recognisers for identifiers, numbers, and `key=value` pairs before semantic actions are introduced. Where the chapter touches on the run pipeline or production handlers, it forward-references Chapter 25 rather than duplicating its material.
 
@@ -55,7 +55,7 @@ The `label` argument is the string reported in errors when the predicate fails. 
 
 ## Character Classes as Combinators
 
-DSLtk does not ship named `dsl::digit` or `dsl::letter` parsers. The intended idiom, demonstrated in `examples/05-parser-basics.cpp` and `examples/07-parser-optional-repeat-choice.cpp`, is to define them at the call site with `satisfy`. This keeps the primitive set small and the label string under the grammar author's control.
+MuDSL does not ship named `dsl::digit` or `dsl::letter` parsers. The intended idiom, demonstrated in `examples/05-parser-basics.cpp` and `examples/07-parser-optional-repeat-choice.cpp`, is to define them at the call site with `satisfy`. This keeps the primitive set small and the label string under the grammar author's control.
 
 ```cpp
 auto digit  = dsl::satisfy([](char c){ return c >= '0' && c <= '9'; }, "digit");
@@ -266,7 +266,7 @@ operator| (const Parser<T> &a, const Parser<T> &b)
 }
 ```
 
-Choice in DSLtk is ordered, not longest-match. The first operand that succeeds wins, regardless of how much input it consumes. This is the PEG semantic: a grammar `a | b` is read as "attempt `a`; if it fails, attempt `b`". A consequence is that the order of alternatives matters. Placing a more general alternative before a more specific one will shadow the specific one permanently.
+Choice in MuDSL is ordered, not longest-match. The first operand that succeeds wins, regardless of how much input it consumes. This is the PEG semantic: a grammar `a | b` is read as "attempt `a`; if it fails, attempt `b`". A consequence is that the order of alternatives matters. Placing a more general alternative before a more specific one will shadow the specific one permanently.
 
 When both branches fail, `merge_error` combines the two errors, preferring the one that made the furthest progress and unioning their `expected` labels. This is what produces the multi-label "expected digit or letter" style of diagnostic. The merge rules are examined in Chapter 25; for this chapter it is enough to know that the deeper failure wins.
 
@@ -351,7 +351,7 @@ The full run pipeline — including source loading from files via `dsl::load_par
 Combining the primitives yields a recogniser for a natural number in a few lines. The grammar is one or more digits, flattened into a vector of characters; a production layer (Chapter 25) would convert the vector into an integer.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {

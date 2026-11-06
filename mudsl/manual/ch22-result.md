@@ -1,8 +1,8 @@
 # Chapter 22: The `Result<T,E>` Type and Error Flow
 
-DSLtk treats failure as an ordinary value rather than an invisible jump. The `dsl::Result<T,E>` type is the toolkit's canonical carrier for a computation that can either succeed with a value of type `T` or fail with an error of type `E`. It is the explicit-error-flow counterpart to the optional-value machinery of Chapter 20 and the monadic `std::optional` helpers of Chapter 21. Where a `Maybe<T>` can express *that* a computation produced nothing, a `Result<T,E>` can also express *why*.
+MuDSL treats failure as an ordinary value rather than an invisible jump. The `dsl::Result<T,E>` type is the toolkit's canonical carrier for a computation that can either succeed with a value of type `T` or fail with an error of type `E`. It is the explicit-error-flow counterpart to the optional-value machinery of Chapter 20 and the monadic `std::optional` helpers of Chapter 21. Where a `Maybe<T>` can express *that* a computation produced nothing, a `Result<T,E>` can also express *why*.
 
-This chapter documents the public interface of `Result<T,E>` as defined in `DSLtk.hpp`, explains the combinators that operate on it, and shows how to assemble fallible pipelines that propagate the first error. The design ties directly to the first design pillar articulated in Chapter 1: the library prefers visible, inspectable error states over exceptions for control flow. Errors are values, and values compose.
+This chapter documents the public interface of `Result<T,E>` as defined in `MuDSL.hpp`, explains the combinators that operate on it, and shows how to assemble fallible pipelines that propagate the first error. The design ties directly to the first design pillar articulated in Chapter 1: the library prefers visible, inspectable error states over exceptions for control flow. Errors are values, and values compose.
 
 ## The Type and Its Storage
 
@@ -45,7 +45,7 @@ When `T` and `E` are distinct, both constructors participate in overload resolut
 
 ## The `Ok` and `Err` Wrappers
 
-DSLtk also provides two free function templates, `dsl::Ok` and `dsl::Err`, which package a value into a small wrapper struct. `Ok(t)` returns an `OkWrap<T>` whose single member `value` holds `t`; `Err(e)` returns an `ErrWrap<E>` whose single member `error` holds `e`. The wrappers deduce their template argument from the function argument, so the caller does not write the type.
+MuDSL also provides two free function templates, `dsl::Ok` and `dsl::Err`, which package a value into a small wrapper struct. `Ok(t)` returns an `OkWrap<T>` whose single member `value` holds `t`; `Err(e)` returns an `ErrWrap<E>` whose single member `error` holds `e`. The wrappers deduce their template argument from the function argument, so the caller does not write the type.
 
 ```cpp
 template <typename T> struct OkWrap  { T value; };
@@ -220,7 +220,7 @@ auto r = step_a (x)
 
 ## Recovery and Fallbacks
 
-Not every error is fatal. DSLtk offers two complementary ways to recover from an error result. The first is `unwrap_or`, which collapses a `Result<T,E>` to a `T` by substituting a fallback when the error branch is active. This is the simplest form of recovery: the caller abandons the distinction between success and error and commits to a concrete value.
+Not every error is fatal. MuDSL offers two complementary ways to recover from an error result. The first is `unwrap_or`, which collapses a `Result<T,E>` to a `T` by substituting a fallback when the error branch is active. This is the simplest form of recovery: the caller abandons the distinction between success and error and commits to a concrete value.
 
 ```cpp
 int port = parse_port (cfg).unwrap_or (80);

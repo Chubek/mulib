@@ -1,0 +1,15 @@
+var privateCount <- 100;
+val hostSecret <- 42;
+val C <- G:LoadLib("counter") or G:DieWith("$E?");
+G:Assert(C:Next() == 1);
+val Again <- G:LoadLib("counter");
+G:Assert(Again:Next() == 2);
+G:Assert(privateCount == 100);
+G:Assert(G:LoadLib("private") == nil);
+G:Assert(G:LoadLib("bad") == nil);
+G:Assert(G:LoadLib("cycleA") == nil);
+G:Assert(G:LoadLib("cycleA") == nil);
+# Failed imports must release the in-progress guard, including mutual cycles.
+val P <- G:LoadLib("printf") or G:DieWith("$E?");
+P:Println("packages ok");
+return C:Next();

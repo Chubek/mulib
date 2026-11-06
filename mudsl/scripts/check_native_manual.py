@@ -35,7 +35,7 @@ def main():
                 command([args.cxx, "-std=c++20", "-O0", "-g0", "-pthread", f"-I{ROOT}", path, "-o", binary])
             elif language == "d":
                 output = ["-o", binary] if "gdc" in args.d_compiler else [f"-of={binary}"]
-                command([args.d_compiler, f"-I{ROOT}", path, ROOT / "MetaML.d", ROOT / "DSLtk.d", *output])
+                command([args.d_compiler, f"-I{ROOT}", path, ROOT / "MetaML.d", ROOT / "MuDSL.d", *output])
             else:
                 obj = temp / "example43.o"
                 command([args.cc, "-std=c99", "-Werror", f"-I{ROOT}", "-c", path, "-o", obj])

@@ -1,0 +1,5 @@
+G:Assert("" == "");
+G:Assert("or" == "or");
+G:Assert("}" == "}");
+G:Assert("<-" == "<-");
+return 0.1;

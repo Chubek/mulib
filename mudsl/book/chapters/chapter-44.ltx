@@ -1,0 +1,27 @@
+\chapter{Cross-language conformance}
+Two implementations are most useful when they share a behavioral contract.
+Matching function names alone is insufficient: evaluation order, truth values,
+integer boundaries, error recovery, and string indexing can all diverge.
+
+\section{Use source-level fixtures}
+The MuLL suite executes identical \api{.mull} files against both embeddings.
+A successful fixture has a \api{.expected} output file. A negative fixture has
+a \api{.error} file containing the required diagnostic fragment. Tests cover
+aliasing, closure retention, recursion, precedence, short circuiting, package
+state, formatting, invalid indexes, and malformed source.
+
+Host-level tests exercise behavior that source fixtures cannot observe easily:
+registration of callbacks, persistence between runs, source-size limits,
+recovery after a step-budget error, and isolation between interpreter instances.
+Toolkit regression tests separately cover whole-pattern matching and empty
+source maps.
+
+\section{Make documentation executable}
+Complete MuLL listings in this book use the \api{mullcode} environment.
+\api{scripts/check_mull.py} extracts each listing and executes it in a fresh
+runtime. Both embeddings must produce the same output. Fragments that require
+a host setup use the ordinary \api{code} environment instead.
+
+When adding syntax, update the parser, both evaluators, a successful fixture,
+an error fixture, and the corresponding reference chapter together. This keeps
+the documented language smaller than or equal to the implemented language.

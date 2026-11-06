@@ -140,7 +140,7 @@ The practical consequence is that `Lazy<T>` can be stored in containers, returne
 The simplest non-trivial use is a lazy constant: a value whose computation is deferred but whose result does not depend on any later state. The header's own example is of this form.
 
 ```cpp
-#include <DSLtk.hpp>
+#include <MuDSL.hpp>
 #include <string>
 
 int main() {
@@ -238,7 +238,7 @@ struct WorkerPool {
 
 The lazy references defer the cross-module dereference until after both modules have been constructed. This is the same technique used in dependency-injection frameworks under the name "lazy proxy"; `Lazy<T>` provides it in a single header without a framework.
 
-Within DSLtk itself, this pattern is relevant to the pipeline feature of Chapter 6 and the task pipelines of Chapter 26, where stages may reference each other's outputs. A lazy reference lets a stage hold a handle to a downstream result without requiring the downstream stage to have already executed.
+Within MuDSL itself, this pattern is relevant to the pipeline feature of Chapter 6 and the task pipelines of Chapter 26, where stages may reference each other's outputs. A lazy reference lets a stage hold a handle to a downstream result without requiring the downstream stage to have already executed.
 
 ## Contrast with Memoization
 
@@ -406,7 +406,7 @@ When capturing by value, the captured state is stored inside the lambda, which i
 The chapter's final example ties several threads together. It builds a parser table lazily, composes it with a lazy default value, and forces it explicitly at a controlled point. The shape is representative of how `Lazy<T>` appears in the parser-combinator chapters (Chapters 23 through 25).
 
 ```cpp
-#include <DSLtk.hpp>
+#include <MuDSL.hpp>
 #include <string>
 #include <unordered_map>
 

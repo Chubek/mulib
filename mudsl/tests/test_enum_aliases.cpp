@@ -53,7 +53,7 @@ template <typename T> struct TinyOptional : std::optional<T>
 #define MAGIC_ENUM_USING_ALIAS_STRING using string = TinyString;
 #define MAGIC_ENUM_USING_ALIAS_STRING_VIEW using string_view = TinyView;
 #define MAGIC_ENUM_USING_ALIAS_OPTIONAL template <typename T> using optional = TinyOptional<T>;
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 
 enum class Flag { Read = 1, Write = 2 };
 

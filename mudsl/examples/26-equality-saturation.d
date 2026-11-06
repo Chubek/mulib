@@ -1,5 +1,5 @@
 module equality_saturation_example;
-import DSLtk;
+import MuDSL;
 import std.stdio : writeln;
 
 void main()

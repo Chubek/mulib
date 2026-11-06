@@ -1,0 +1,31 @@
+\chapter{Functions as values}
+A function expression uses \api{fn}, a parenthesized parameter list, and a
+braced body. Bind it with \api{val} to give it a stable name, pass it to another
+function, or store it in a collection. Parameters are local mutable bindings.
+
+\begin{mullcode}
+val twice <- fn(f, x){ return f(f(x)); };
+val increment <- fn(x){ return x + 1; };
+G:Assert(twice(increment, 10) == 12);
+val adjust <- fn(x){ x <- x + 5; return x; };
+var input <- 2;
+G:Assert(adjust(input) == 7);
+G:Assert(input == 2);
+\end{mullcode}
+
+\section{Arguments and results}
+Arguments are evaluated left to right before the call begins. A script function
+requires exactly its declared number of arguments. Duplicate parameter names
+are rejected during parsing. There are no default arguments, rest parameters,
+or overload resolution in the core language.
+
+\api{return expression;} returns a value immediately. \api{return;} returns
+nil. If control reaches the end of the body, the body returns the last
+statement's value; an empty body returns nil. Explicit returns are usually
+clearer in library interfaces, especially when the last statement is a loop
+or a declaration.
+
+Native functions use the same callable value kind. Their wrappers decide
+whether an argument count is fixed or variadic and should report invalid
+arguments with a MuLL error. The formatting library demonstrates both kinds:
+\api{SetMainSink} takes one argument, while \api{Println} accepts any number.

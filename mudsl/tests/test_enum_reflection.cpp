@@ -1,5 +1,5 @@
 #include "enum_fixtures.hpp"
-#include "DSLtk.hpp" // Repeated inclusion must be harmless.
+#include "MuDSL.hpp" // Repeated inclusion must be harmless.
 
 #include <sstream>
 

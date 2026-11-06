@@ -1,6 +1,6 @@
 # Chapter 20: The `Maybe<T>` Type and Monadic Operations
 
-DSLtk ships a small, self-contained monadic optional called `Maybe<T>`. It lives in the `dsl` namespace alongside the free-function combinators `dsl::map`, `dsl::flat_map`, `dsl::filter`, and `dsl::or_else` that operate on any optional-like value. The type is a thin value wrapper around `std::optional<T>`: it borrows the optional's storage, copy and move semantics, and value-access primitives, then layers fluent combinators on top. The result is a value type that can be chained through pure transformations without the noise of repeated `if` checks.
+MuDSL ships a small, self-contained monadic optional called `Maybe<T>`. It lives in the `dsl` namespace alongside the free-function combinators `dsl::map`, `dsl::flat_map`, `dsl::filter`, and `dsl::or_else` that operate on any optional-like value. The type is a thin value wrapper around `std::optional<T>`: it borrows the optional's storage, copy and move semantics, and value-access primitives, then layers fluent combinators on top. The result is a value type that can be chained through pure transformations without the noise of repeated `if` checks.
 
 This chapter describes the `Maybe<T>` API in full: its constructors, accessors, and the four combinators `map`, `flat_map`, `filter`, and `or_else`. It then builds up to realistic pipelines that combine the combinators, and contrasts `Maybe<T>` with the related free functions covered in Chapter 21 and the error-carrying `Result<T,E>` of Chapter 22. The chapter assumes familiarity with `std::optional` and with value-semantic C++20 templates.
 
@@ -47,7 +47,7 @@ The defaulted default constructor produces an empty `Maybe`. The value construct
 Constructing a `Maybe<T>` is no more complicated than constructing a `std::optional<T>`. The empty form is `Maybe<T>{}`, which value-initializes the underlying optional to `std::nullopt`. The valued form is `Maybe<T>(x)`, where `x` is convertible to `T`. The third form, `Maybe<T>(opt)`, takes a `std::optional<T>` and is useful when interoperating with code that already produces optionals.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <string>
 
 dsl::Maybe<int> empty{};                 // no value
@@ -59,7 +59,7 @@ The empty form is the identity element for the combinators: any `map`, `flat_map
 
 Because the constructors take their argument by value and move it into storage, constructing a `Maybe<std::string>` from a string literal goes through one `std::string` construction and one move. There is no surprising copy. For move-only types such as `std::unique_ptr<int>`, the value constructor accepts an rvalue and moves it in; the copy constructor of `Maybe<T>` itself is implicitly deleted when the underlying optional is non-copyable, which is the expected behavior.
 
-The `Maybe(std::optional<T>)` constructor is the bridge to the rest of the standard library. Any function that returns `std::optional<T>` can be absorbed into a `Maybe` pipeline by wrapping its result. This is important in practice because DSLtk's free-function combinators (Chapter 21) operate on raw optionals, and converting between the two representations is a one-liner.
+The `Maybe(std::optional<T>)` constructor is the bridge to the rest of the standard library. Any function that returns `std::optional<T>` can be absorbed into a `Maybe` pipeline by wrapping its result. This is important in practice because MuDSL's free-function combinators (Chapter 21) operate on raw optionals, and converting between the two representations is a one-liner.
 
 ## Value Access
 
@@ -260,7 +260,7 @@ auto ok = dsl::Maybe<int>(user_input)
             .filter([](int x){ return x % 2 == 0; });
 ```
 
-Each filter is an independent precondition. Multiple filters can be chained without introducing temporaries, and the chain short-circuits on the first failure. This is the shape of a parser-validator, and it is the same shape used internally by DSLtk's parser combinators (Chapter 23) when they gate results.
+Each filter is an independent precondition. Multiple filters can be chained without introducing temporaries, and the chain short-circuits on the first failure. This is the shape of a parser-validator, and it is the same shape used internally by MuDSL's parser combinators (Chapter 23) when they gate results.
 
 ## Value Semantics and Copy/Move
 
@@ -281,7 +281,7 @@ The defaulted destructor is also implicit. A `Maybe<T>` with a non-trivial `T` d
 
 ## The Free-Function Combinators
 
-Alongside the member combinators, DSLtk provides free functions `dsl::map`, `dsl::flat_map`, `dsl::filter`, and `dsl::or_else` that operate on any optional-like value, including raw `std::optional`. These are the subject of Chapter 21, but they are mentioned here because they are the natural counterpart to the `Maybe` members and because the two APIs are deliberately parallel.
+Alongside the member combinators, MuDSL provides free functions `dsl::map`, `dsl::flat_map`, `dsl::filter`, and `dsl::or_else` that operate on any optional-like value, including raw `std::optional`. These are the subject of Chapter 21, but they are mentioned here because they are the natural counterpart to the `Maybe` members and because the two APIs are deliberately parallel.
 
 The free functions are templates over the optional type. Their signatures, quoted verbatim, show the parallel structure:
 
@@ -435,7 +435,7 @@ Left identity says that constructing a `Maybe` from a value and then `flat_map`p
 
 When a function passed to `map` or `flat_map` has side effects — logging, mutation, I/O — the laws can appear to fail because the side effects occur a different number of times or in a different order than a reader expects. The fix is not to change the combinators but to extract the side effects from the functions. Pure transformations compose; side-effecting procedures do not. This is the same discipline required for any functional pipeline, including the memoized functions of Chapter 18 and the lazy values of Chapter 19.
 
-In practice, DSLtk pipelines that use `Maybe` are almost always pure. The type is small enough that the temptation to embed side effects is low, and the fluent style encourages a separation between transformation (in the chain) and observation (at the chain's end). When this separation is maintained, the monad laws hold and the chain can be refactored with confidence.
+In practice, MuDSL pipelines that use `Maybe` are almost always pure. The type is small enough that the temptation to embed side effects is low, and the fluent style encourages a separation between transformation (in the chain) and observation (at the chain's end). When this separation is maintained, the monad laws hold and the chain can be refactored with confidence.
 
 ## Relationship to `Lazy<T>` and Memoization
 
@@ -453,7 +453,7 @@ The choice between them is a question of information. If the caller of a functio
 
 The two types are not interchangeable in a single pipeline without conversion. A `Maybe<T>` can be lifted into a `Result<T,E>` by supplying a default error, and a `Result<T,E>` can be collapsed to a `Maybe<T>` by discarding the error. The conversion is a one-liner in either direction, but it forces a decision: at the point of conversion, information is either added (a default error) or discarded (the error value). Pipelines that mix the two should convert at a well-defined boundary rather than ad hoc.
 
-In DSLtk's parser infrastructure (Chapters 23 through 25), `Result`-like types dominate because parser failures carry diagnostic information. `Maybe` appears in the higher-level orchestration — caching lookups, optional configuration, optional rewrites — where the absence is self-explanatory. The two coexist comfortably, each used where its information content matches the problem.
+In MuDSL's parser infrastructure (Chapters 23 through 25), `Result`-like types dominate because parser failures carry diagnostic information. `Maybe` appears in the higher-level orchestration — caching lookups, optional configuration, optional rewrites — where the absence is self-explanatory. The two coexist comfortably, each used where its information content matches the problem.
 
 ## Stylistic Notes
 
@@ -469,7 +469,7 @@ Finally, prefer `flat_map` to nested `map` when nesting would occur. A `map` ret
 
 ## Summary
 
-`Maybe<T>` is DSLtk's monadic optional: a thin value wrapper around `std::optional<T>` with fluent `map`, `flat_map`, `filter`, and `or_else` combinators. It is constructed empty as `Maybe<T>{}`, with a value as `Maybe<T>(x)`, or from an existing optional as `Maybe<T>(opt)`. Access is through `has_value()`, `as_optional()`, and the terminal `or_else(fallback)`.
+`Maybe<T>` is MuDSL's monadic optional: a thin value wrapper around `std::optional<T>` with fluent `map`, `flat_map`, `filter`, and `or_else` combinators. It is constructed empty as `Maybe<T>{}`, with a value as `Maybe<T>(x)`, or from an existing optional as `Maybe<T>(opt)`. Access is through `has_value()`, `as_optional()`, and the terminal `or_else(fallback)`.
 
 `map` applies a pure function to the contained value, changing the type as the function dictates. `flat_map` applies a function that returns a `Maybe` and flattens the result, which is the combinator for chaining fallible steps. `filter` retains the value only if a predicate holds, providing short-circuiting validation. `or_else` collapses a `Maybe` to a plain value by supplying a fallback.
 

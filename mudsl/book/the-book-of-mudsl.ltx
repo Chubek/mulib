@@ -1,0 +1,50 @@
+\documentclass[14pt,a4paper]{the-book-of-mudsl}
+\usepackage{mudsl}
+\title{The Book of MuDSL\\\large A C++ and D Toolkit, and the MuLL Language}
+\author{D. B. Cooper}
+\date{}
+\begin{document}
+\frontmatter
+\maketitle
+\chapter*{How to read this book}
+MuDSL provides composable language-building tools in one C++20 header and
+one D module. Chapters 1--37 develop those tools, following the companion
+manual. Chapters 38--45 connect them into an implementation workflow.
+The final 25 chapters, 46--70, specify and teach MuLL: a terse, embeddable
+language whose parser and interpreter live in those same two source files.
+
+The examples use the current public names: \api{MuDSL.hpp}, \api{MuDSL.d},
+the C++ namespace \api{dsl} (also \api{mudsl}), and D's \api{MuDSL} module.
+MuLL's host interfaces are \api{mull::Runtime} and \api{MuLL.Runtime}.
+Complete MuLL listings are executed against both implementations by the
+conformance suite. Code fragments in the toolkit chapters illustrate
+individual APIs; their companion programs live in \api{examples/}.
+\tableofcontents
+\mainmatter
+\part{The MuDSL toolkit}
+\newcount\chapternumber
+\chapternumber=1
+\loop
+  \input{chapters/chapter-\the\chapternumber.ltx}
+  \advance\chapternumber by 1
+\ifnum\chapternumber<38\repeat
+\part{Building and embedding languages}
+\chapternumber=38
+\loop
+  \input{chapters/chapter-\the\chapternumber.ltx}
+  \advance\chapternumber by 1
+\ifnum\chapternumber<46\repeat
+\part{MuLL}
+\chapternumber=46
+\loop
+  \input{chapters/chapter-\the\chapternumber.ltx}
+  \advance\chapternumber by 1
+\ifnum\chapternumber<71\repeat
+\backmatter
+\chapter*{Source and verification}
+The authoritative APIs are in \api{MuDSL.hpp} and \api{MuDSL.d}.
+Native MuLL packages are under \api{mull/stdlib}. Run CMake and CTest as
+described in Chapter 45. To rebuild this document, run \api{make -C book}.
+The first 37 chapters are reproducibly exported from \api{manual/};
+\api{book/export_manual.py --check} detects drift.
+\end{document}

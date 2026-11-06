@@ -1,0 +1,38 @@
+\chapter{Creating native libraries}
+A native library is a record registered under a name. The record contains
+functions, constants, or nested records. A \api{Package.mull} entry point
+retrieves it with \api{G:Native}. This avoids a separate foreign-function
+signature language and lets the host compiler check the wrapper.
+
+\section{C++ registration}
+\begin{code}
+mull::Value::Object api;
+api["Double"] = mull::Value(mull::Value::Native(
+    [](const mull::Value::List &args) {
+        mull::arity(args, 1);
+        return mull::Value(args[0].number() * 2);
+    }));
+vm.registerLibrary("example", mull::Value(api));
+\end{code}
+\section{D registration}
+\begin{code}
+alias V = MuLLValue;
+V[string] api;
+api["Double"] = V((V[] args) {
+    mullArity(args, 1);
+    return V(args[0].number() * 2);
+});
+vm.registerLibrary("example", V(api));
+\end{code}
+Both versions use the same entry point at
+\api{your-root/example/Package.mull}:
+\begin{code}
+return G:Native("example");
+\end{code}
+
+Validate argument counts before indexing, and use typed value accessors for
+kind checks. Throw \api{mull::Error} or \api{MuLLError} for domain errors.
+The interpreter attaches the calling expression's location when needed.
+Callbacks may retain host state, so document the state's lifetime and sharing
+rules. Wrapping a C function follows the same pattern: convert checked MuLL
+values to the C signature, call it, and convert its result back.

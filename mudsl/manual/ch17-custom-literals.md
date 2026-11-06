@@ -3,7 +3,7 @@
 A domain-specific language frequently needs to recognise a fixed vocabulary of
 named spellings: keywords such as `if`, `then`, and `else`; operators such as
 `+`, `-`, and `<=`; or unit suffixes such as `_km` and `_cm` that decorate
-numeric literals. The `CustomLiterals` feature of DSLtk provides a small,
+numeric literals. The `CustomLiterals` feature of MuDSL provides a small,
 compile-time registry for exactly these cases. A DSL author declares a static
 table of literal entries, and the toolkit generates a parsing entry point that
 classifies an input string against that table at run time.
@@ -561,7 +561,7 @@ calling `parse`, because tokens carry no numeric prefix. The `entries` member
 is public, so the iteration is straightforward.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <string_view>
 #include <tuple>
 #include <iostream>
@@ -615,7 +615,7 @@ feature described in Chapter 6. The DSL registers unit suffixes through
 value into a chain of transformations. The example is reproduced below.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 struct MiniDSL : dsl::DSL<MiniDSL, dsl::Pipeline, dsl::CustomLiterals> {
@@ -748,7 +748,7 @@ numerics, and prints the results. It is a superset of the header example and
 is written to compile with `-std=c++20`.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 struct UnitsDSL : dsl::DSL<UnitsDSL, dsl::CustomLiterals> {

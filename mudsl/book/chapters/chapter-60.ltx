@@ -1,0 +1,29 @@
+\chapter{Library discovery and import state}
+A runtime stores an ordered list of library roots. For a name such as
+\api{printf}, discovery checks \api{root/printf/Package.mull} in order and
+uses the first regular file. Names consist of ASCII letters, digits,
+underscores, and hyphens. Path separators and traversal names are rejected.
+
+\section{Configure the roots}
+The default root is \api{mull/stdlib}, relative to the process working
+directory. Supply a list to the constructor for explicit roots, or append
+one with \api{addLibraryPath}. An empty list disables filesystem discovery
+until a root is appended. Native registration and package discovery are
+separate: registering a library does not create its package file.
+
+\section{Caching and cycles}
+A successful import must return a record. That record is cached by library
+name for the lifetime of the runtime. Later imports return the cached value,
+including stateful native functions such as the formatting sink. Changing
+search paths does not reload an already cached package.
+
+Imports in progress are tracked separately. Reentering an in-progress name
+fails with a cyclic-import error. Failed imports are not cached, so a host can
+repair a package or register its missing native implementation and retry.
+If a discovered package is invalid, its error is reported; discovery does
+not silently continue to a different package of the same name.
+
+Package source obeys the same source-size, evaluation, call-depth, and frame
+limits as other source. A nested import shares the caller's evaluation budget.
+Successful imports clear \api{$E?}; failures replace it with the latest
+diagnostic.

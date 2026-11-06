@@ -4,7 +4,7 @@ An ordinary arithmetic expression such as `a + b * c` evaluates eagerly: the com
 
 Expression templates solve this problem at the type level. Instead of computing a result, each operator application builds a small node that *records* the operation and refers to its operands. The full expression `a + b * c - a` becomes a compile-time tree of nested node types. Nothing is computed until the programmer explicitly asks for a result by calling `eval()`. At that point a single recursive walk fuses the whole computation into one pass, with no intermediate temporaries exposed to the caller.
 
-DSLtk provides this machinery through the `ExprTemplates` feature tag, the `ExprLike` concept, the `BinExpr` and `UnaryExpr` node templates, and a set of overloaded arithmetic operators. This chapter describes how the lazy tree is constructed. The mechanics of evaluation — `eval()`, `eval_operand()`, and fusion — are covered in detail in Chapter 16. The present chapter focuses on the construction side: how a DSL type becomes an expression leaf, how operators compose nodes, and what the resulting type encodes.
+MuDSL provides this machinery through the `ExprTemplates` feature tag, the `ExprLike` concept, the `BinExpr` and `UnaryExpr` node templates, and a set of overloaded arithmetic operators. This chapter describes how the lazy tree is constructed. The mechanics of evaluation — `eval()`, `eval_operand()`, and fusion — are covered in detail in Chapter 16. The present chapter focuses on the construction side: how a DSL type becomes an expression leaf, how operators compose nodes, and what the resulting type encodes.
 
 ## The Problem: Eager Evaluation Loses Structure
 
@@ -20,11 +20,11 @@ An expression template is a compile-time representation of an arithmetic express
 
 The defining property is laziness. Constructing a node performs no arithmetic. The node merely stores (copies of, or references to) its operands and remembers which operation to apply. Evaluation is deferred until an explicit `eval()` call traverses the tree and performs the computation. Because the tree is built entirely at compile time through template instantiation, the compiler can often inline the entire evaluation down to the same machine code an eager expression would produce, but without exposing any intermediate to the caller.
 
-This is the same technique used by Blitz++, Boost.uBLAS, and Eigen. DSLtk provides a small, self-contained implementation intended for embedded DSLs whose leaves are user-defined domain types.
+This is the same technique used by Blitz++, Boost.uBLAS, and Eigen. MuDSL provides a small, self-contained implementation intended for embedded DSLs whose leaves are user-defined domain types.
 
 ## The ExprTemplates Feature Tag
 
-The `ExprTemplates` feature tag is the entry point. Like every DSLtk feature tag (see Chapter 5), it is an empty struct with a nested `Mixin` template that injects members into the CRTP base class `dsl::DSL<Derived, Features...>` (see Chapter 3). A DSL type opts into expression templates by listing `dsl::ExprTemplates` among its feature arguments.
+The `ExprTemplates` feature tag is the entry point. Like every MuDSL feature tag (see Chapter 5), it is an empty struct with a nested `Mixin` template that injects members into the CRTP base class `dsl::DSL<Derived, Features...>` (see Chapter 3). A DSL type opts into expression templates by listing `dsl::ExprTemplates` among its feature arguments.
 
 ```cpp
 struct ExprTemplates
@@ -79,7 +79,7 @@ Because these operators are templates on the right-hand operand `R`, the right o
 
 ## The ExprLike Concept
 
-A type is not useful as an expression leaf unless the evaluator can extract a value from it. DSLtk captures this requirement with the `ExprLike` concept, defined in the utility-concepts section of the header (see Chapter 5).
+A type is not useful as an expression leaf unless the evaluator can extract a value from it. MuDSL captures this requirement with the `ExprLike` concept, defined in the utility-concepts section of the header (see Chapter 5).
 
 ```cpp
 template <typename T>
@@ -89,7 +89,7 @@ concept ExprLike = HasFeature<T, ExprTemplates>
 
 Two conditions must hold. First, `T` must mix in the `ExprTemplates` feature, which `HasFeature` checks by testing whether `T` is derived from `ExprTemplates::Mixin<T>`. Second, `T` must expose a `const`-qualified `expr_value()` member that returns the underlying value. Both conditions are structural; the concept verifies the *shape* of the type, not the meaning of its value.
 
-The `expr_value()` accessor is the contract a leaf type fulfills. Whatever it returns — a `double`, a vector, an AST node, a parser result — is what the evaluator will feed into the operation tag. By keeping the return type unconstrained, DSLtk leaves the value domain entirely to the user. The same machinery serves a scalar calculator, a symbolic vector DSL, and a parser-cost estimator; only the leaf type and its `expr_value()` change.
+The `expr_value()` accessor is the contract a leaf type fulfills. Whatever it returns — a `double`, a vector, an AST node, a parser result — is what the evaluator will feed into the operation tag. By keeping the return type unconstrained, MuDSL leaves the value domain entirely to the user. The same machinery serves a scalar calculator, a symbolic vector DSL, and a parser-cost estimator; only the leaf type and its `expr_value()` change.
 
 Note that `ExprLike` is not used to constrain the operator templates in the `ExprTemplates` mixin. Those operators accept any `Derived` on the left (they are found via ADL on `Derived`) and any `R` on the right. `ExprLike` is instead available for users who wish to write their own generic algorithms over expression leaves, or to constrain their own DSL extension points. The concept is descriptive of a leaf type, not prescriptive of the operator set.
 
@@ -98,7 +98,7 @@ Note that `ExprLike` is not used to constrain the operator templates in the `Exp
 The simplest concrete leaf is a scalar wrapper around a `double`. It derives from `dsl::DSL<Scalar, dsl::ExprTemplates>` to inherit the operator mix-in, stores a `double`, and exposes `expr_value()` to return it.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 struct Scalar : dsl::DSL<Scalar, dsl::ExprTemplates> {
@@ -184,7 +184,7 @@ Consider the expression `b * c`. Both operands are `Scalar`. The `ExprTemplates`
 
 Now consider `a + b * c`. The right operand of `+` is the `BinExpr` just constructed. The mixin's `operator+` is instantiated with `Derived = Scalar` and `R = BinExpr<std::multiplies<>, Scalar, Scalar>`. It returns `BinExpr<std::plus<>, Scalar, BinExpr<std::multiplies<>, Scalar, Scalar>>`. The type literally reads as "the sum of a `Scalar` and the product of two `Scalar`s". The structure of the expression is encoded in the type.
 
-Finally, `a + b * c - a` subtracts `a` from the previous result. Here the left operand is a `BinExpr`, not a `Scalar`. The mixin's `operator-` is found via ADL on `Derived = Scalar`, so it cannot apply when the left operand is a `BinExpr`. DSLtk therefore provides a second set of free-function overloads that handle a `BinExpr` on the left.
+Finally, `a + b * c - a` subtracts `a` from the previous result. Here the left operand is a `BinExpr`, not a `Scalar`. The mixin's `operator-` is found via ADL on `Derived = Scalar`, so it cannot apply when the left operand is a `BinExpr`. MuDSL therefore provides a second set of free-function overloads that handle a `BinExpr` on the left.
 
 ```cpp
 template <typename Op1, typename L1, typename R1, typename R>
@@ -257,7 +257,7 @@ The most important property of an expression-template type is that it records th
 
 This property has several consequences. First, two expressions that compute the same value but have different shapes have different types. `a + b * c` and `a + c * b` are not the same type, even when `b` and `c` are equal at runtime, because the operand order in the multiplication differs. The compiler treats them as distinct types and will not, for example, allow one to be assigned to the other.
 
-Second, the type is available for compile-time introspection. A generic algorithm can constrain on `BinExpr` instantiations, inspect the operation tag, or recurse into the operand types. Template metaprogramming over expression types is possible, though DSLtk does not impose any particular metaprogramming interface; the node templates are intentionally simple structs whose members are public.
+Second, the type is available for compile-time introspection. A generic algorithm can constrain on `BinExpr` instantiations, inspect the operation tag, or recurse into the operand types. Template metaprogramming over expression types is possible, though MuDSL does not impose any particular metaprogramming interface; the node templates are intentionally simple structs whose members are public.
 
 Third, the type is usually too complex to write by hand. A modest expression of six operators can easily produce a type name over a hundred characters long. The idiomatic way to bind an expression is `auto`, which deduces the full type without requiring the programmer to spell it. Where the type must be named — for example, as a function parameter or a class member — a trailing return type or a type alias is used.
 
@@ -266,7 +266,7 @@ Third, the type is usually too complex to write by hand. A modest expression of 
 The `Scalar` example is the simplest possible leaf, but expression templates are not limited to scalars. Any type that mixes in `ExprTemplates` and exposes `expr_value()` participates in the same machinery. Consider a small vector DSL whose leaves stand for elementwise vectors.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <array>
 #include <iostream>
 
@@ -360,9 +360,9 @@ This flexibility is valuable when a DSL must interoperate with raw numeric types
 
 The binary operators live inside the `ExprTemplates::Mixin` as `friend` function templates. This is a deliberate C++ idiom. A `friend` function defined inside a class template is only instantiated when found via argument-dependent lookup, and only for the specific template arguments that match a call. The effect is that each DSL type `Derived` gets its own set of operators, found only when an operand of type `Derived` appears.
 
-Without the `friend` trick, the operators would be ordinary free function templates visible in the enclosing namespace. They would then participate in overload resolution for every arithmetic expression in the program, including those that have nothing to do with DSLtk, producing ambiguity errors and surprising diagnostics. By embedding the operators in the mixin as `friend`s, DSLtk ensures they are considered only for expressions involving a `Derived` type.
+Without the `friend` trick, the operators would be ordinary free function templates visible in the enclosing namespace. They would then participate in overload resolution for every arithmetic expression in the program, including those that have nothing to do with MuDSL, producing ambiguity errors and surprising diagnostics. By embedding the operators in the mixin as `friend`s, MuDSL ensures they are considered only for expressions involving a `Derived` type.
 
-The free-function overloads for `BinExpr` left operands are ordinary templates in the `dsl` namespace. They are found via ADL on the `BinExpr` argument, which lives in `dsl`. Because `BinExpr` is exclusively a DSLtk type, these overloads do not pollute the overload sets of unrelated arithmetic.
+The free-function overloads for `BinExpr` left operands are ordinary templates in the `dsl` namespace. They are found via ADL on the `BinExpr` argument, which lives in `dsl`. Because `BinExpr` is exclusively a MuDSL type, these overloads do not pollute the overload sets of unrelated arithmetic.
 
 ## Why Laziness Matters: Fusion
 
@@ -395,7 +395,7 @@ The resulting type can participate in arithmetic expression trees *and* in predi
 To consolidate the material, consider a slightly larger expression that exercises every operator and a unary negation.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 struct Scalar : dsl::DSL<Scalar, dsl::ExprTemplates> {
@@ -451,7 +451,7 @@ auto make_expr(const Scalar& a, const Scalar& b, const Scalar& c) {
 
 Here the return type is deduced from the `return` statement, and the caller uses `auto` to bind the result. This style keeps the source readable while preserving the full type information for the compiler.
 
-Type erasure is sometimes appropriate when an expression must cross an API boundary that cannot expose the full type. A `std::function<double()>` wrapping `[e]{ return e.eval(); }` erases the expression type at the cost of a heap allocation and an indirect call. DSLtk does not provide such an erasure itself, but the regular value semantics of the node types make it straightforward to add.
+Type erasure is sometimes appropriate when an expression must cross an API boundary that cannot expose the full type. A `std::function<double()>` wrapping `[e]{ return e.eval(); }` erases the expression type at the cost of a heap allocation and an indirect call. MuDSL does not provide such an erasure itself, but the regular value semantics of the node types make it straightforward to add.
 
 ## Pitfall: Assignment Does Not Rebuild the Tree
 
@@ -463,11 +463,11 @@ When a program needs to vary the shape of an expression at runtime, the usual ap
 
 The free-function overloads for `BinExpr` left operands accept any `R` as the right operand. When `R` is itself a `BinExpr`, the result is a deeper tree, which is usually what is wanted. When `R` is a type that also has its own arithmetic operators — for example a type from another library — overload resolution may become ambiguous.
 
-The remedy is to ensure that the right operand is either a DSLtk leaf, a DSLtk node, or a plain value type that does not have competing `operator+` overloads found via ADL. Mixing expression-template types from different libraries in a single expression is generally not supported without explicit glue. Within a single DSLtk-based program, the operators are designed to compose without ambiguity.
+The remedy is to ensure that the right operand is either a MuDSL leaf, a MuDSL node, or a plain value type that does not have competing `operator+` overloads found via ADL. Mixing expression-template types from different libraries in a single expression is generally not supported without explicit glue. Within a single MuDSL-based program, the operators are designed to compose without ambiguity.
 
 ## Inspecting a Tree at Compile Time
 
-Although DSLtk does not provide a dedicated metaprogramming interface for expression trees, the node types are simple enough to introspect directly. A generic trait can detect `BinExpr` specializations, extract their operation tag and operand types, and recurse.
+Although MuDSL does not provide a dedicated metaprogramming interface for expression trees, the node types are simple enough to introspect directly. A generic trait can detect `BinExpr` specializations, extract their operation tag and operand types, and recurse.
 
 ```cpp
 template <typename T> struct ExprShape;
@@ -481,7 +481,7 @@ struct ExprShape<dsl::BinExpr<Op, L, R>> {
 
 Such a trait can be used to write algorithms that walk the type at compile time — for example, to verify that an expression contains no division, or to count the number of operation nodes. The header does not impose any particular trait; users are free to define their own. The `ExprTerminal` tag type is provided as a marker for terminal nodes should a metaprogram wish to distinguish them, though the leaf types themselves are not required to derive from it.
 
-This kind of introspection is rarely needed in application code, but it is the foundation of more advanced techniques such as automatic differentiation or symbolic simplification built on top of DSLtk expression trees.
+This kind of introspection is rarely needed in application code, but it is the foundation of more advanced techniques such as automatic differentiation or symbolic simplification built on top of MuDSL expression trees.
 
 ## Relationship to Chapter 16
 

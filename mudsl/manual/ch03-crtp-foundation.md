@@ -1,6 +1,6 @@
 # Chapter 3: The CRTP Foundation: `dsl::DSL<Derived, Features...>`
 
-The previous two chapters introduced DSLtk's purpose and walked through a first
+The previous two chapters introduced MuDSL's purpose and walked through a first
 compilable program. This chapter opens the black box at the centre of the
 library: the `dsl::DSL` base class. Every user-defined DSL inherits from it, and
 every feature the toolkit provides enters your class through it.
@@ -25,7 +25,7 @@ class passes its own name as a template argument to the base. The base therefore
 knows the exact type of the class that derives from it, even though inheritance
 ordinarily works in the opposite direction.
 
-A minimal sketch of the pattern captures its shape independently of DSLtk:
+A minimal sketch of the pattern captures its shape independently of MuDSL:
 
 ```cpp
 template <typename Derived>
@@ -58,10 +58,10 @@ relationship is fixed at compile time and expressed entirely in the type system.
 
 The pattern appears throughout the standard library and in many high-performance
 libraries. It is the conventional way to obtain polymorphic behaviour without
-paying for a vtable. DSLtk uses it for exactly that reason: every feature method
+paying for a vtable. MuDSL uses it for exactly that reason: every feature method
 is a direct call, with no indirection at run time.
 
-## Why DSLtk Uses CRTP Instead of Virtual Functions
+## Why MuDSL Uses CRTP Instead of Virtual Functions
 
 The header's design notes state the rationale in a single line: CRTP avoids
 virtual dispatch, so all polymorphism is compile-time. That one decision shapes
@@ -251,7 +251,7 @@ auto gt = BasicDSL::make_pred([](int x){ return x > 5; }); // from Operators::Mi
 The two methods coexist because they live in two different base subobjects.
 There is no name clash because the method names differ. Even when two features
 contributed methods with the same name, C++'s usual overload and hiding rules
-would apply — but DSLtk's features are designed so that their public method
+would apply — but MuDSL's features are designed so that their public method
 names do not collide.
 
 Because each mixin is parametrised on `Derived`, a mixin's methods can refer to
@@ -259,7 +259,7 @@ the eventual concrete type. This is what makes the two-way contract described
 later in this chapter possible: a mixin can call back into `Derived` for any
 domain-specific data it needs, through `self()` or through direct name lookup.
 
-This is the whole source of feature composition in DSLtk. There is no
+This is the whole source of feature composition in MuDSL. There is no
 registration step, no macro, and no run-time list of features. You name the
 features in angle brackets, and the base class becomes the union of their
 mixins. The order of features in the argument list does not affect which methods
@@ -365,7 +365,7 @@ custom-literal features in full.
 ## Compile-Time Polymorphism versus Runtime Dispatch
 
 The difference between CRTP polymorphism and virtual-function polymorphism is
-the difference between compile-time and run-time binding. DSLtk chooses the
+the difference between compile-time and run-time binding. MuDSL chooses the
 former throughout, and the consequences are worth stating plainly.
 
 With virtual functions, the call site does not know which function will run
@@ -393,7 +393,7 @@ cannot store them in a single container of pointers to a shared `dsl::DSL` root.
 That root does not exist as a polymorphic type; it exists only as a template,
 and each instantiation is a separate concrete class.
 
-This is an intentional trade-off. DSLtk DSLs are concrete value types. You
+This is an intentional trade-off. MuDSL DSLs are concrete value types. You
 author one DSL per language, instantiate it, and use it directly. You do not
 typically need to swap implementations at runtime, and the library does not
 spend effort supporting that case.
@@ -667,7 +667,7 @@ subclass, and combine features through multiple inheritance of those abstract
 bases.
 
 ```cpp
-// A sketch of the virtual-function alternative (NOT DSLtk's design).
+// A sketch of the virtual-function alternative (NOT MuDSL's design).
 struct IPipeline {
     virtual ~IPipeline() = default;
     virtual int wrap(int) const = 0;
@@ -688,7 +688,7 @@ every object carries one vptr per polymorphic base. The class can be used
 polymorphically through `IPipeline*` or `IOperators*`, but at the cost of an
 indirection per call and a larger object footprint.
 
-DSLtk's design is the opposite. Methods are non-virtual, calls are direct, and
+MuDSL's design is the opposite. Methods are non-virtual, calls are direct, and
 objects carry no vptrs for feature methods. The price is that the methods cannot
 be dispatched through a polymorphic pointer to a shared base, because no such
 base exists. Each `DSL<Derived, ...>` instantiation is its own concrete island.
@@ -696,10 +696,10 @@ base exists. Each `DSL<Derived, ...>` instantiation is its own concrete island.
 For a DSL toolkit, the trade is one-sided. DSLs are typically instantiated as
 concrete types and used directly within a single program. The flexibility of
 runtime polymorphism is rarely needed, while the cost of virtual dispatch is
-paid on every call. DSLtk therefore chooses static polymorphism and passes the
+paid on every call. MuDSL therefore chooses static polymorphism and passes the
 savings on to the user as inlined, optimisable code.
 
-The virtual-function sketch above is not how DSLtk works, and the design notes
+The virtual-function sketch above is not how MuDSL works, and the design notes
 make clear it never will be. The sketch is included only to make the contrast
 vivid. Once the trade-off is visible, the choice of CRTP reads as the natural
 one for a library whose methods are small, numerous, and called often — exactly
@@ -724,7 +724,7 @@ the derived class for named hooks like `rules`, `literals`, and `expr_value()`.
 A DSL whose features need no hooks can have an empty body and still exhibit real
 behaviour, as the first example of the manual demonstrates.
 
-The trade-off versus virtual-function inheritance is deliberate. DSLtk chooses
+The trade-off versus virtual-function inheritance is deliberate. MuDSL chooses
 compile-time polymorphism, full inlining, and concrete value types over runtime
 flexibility. The next chapter opens the first ingredient the base class relies
 on for its string-taking features: the `FixedString` type that lets string

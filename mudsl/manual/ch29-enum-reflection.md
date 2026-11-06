@@ -1,6 +1,6 @@
 # Chapter 29 — Enum Reflection
 
-`DSLtk.hpp` embeds the complete public header API of
+`MuDSL.hpp` embeds the complete public header API of
 [magic_enum v0.9.8](https://github.com/Neargye/magic_enum/tree/v0.9.8): core
 reflection, flags, utility functions, fusion, constexpr switch dispatch,
 containers, stream operators, and formatting. It remains a self-contained
@@ -22,7 +22,7 @@ parameters, return types, `constexpr`, and `noexcept` behavior.
 The entire API is also available through `dsl::enum_reflection`, which aliases
 `::magic_enum`. Namespace aliases expose the other public facilities:
 
-| DSLtk namespace | Upstream namespace |
+| MuDSL namespace | Upstream namespace |
 | --- | --- |
 | `dsl::customize` | `magic_enum::customize` |
 | `dsl::containers` | `magic_enum::containers` |
@@ -89,7 +89,7 @@ a named/reflected value and diagnose invalid template arguments at compilation.
 - `Enum<T>`: upstream enum-type wrapper;
 - `is_magic_enum_supported`: compiler support indicator;
 - `dsl::is_flags<T>`, `dsl::is_flags_v<T>`: whether an enum uses flags reflection;
-  these DSLtk additions are false for non-enum types.
+  these MuDSL additions are false for non-enum types.
 
 Where supported by an upstream function's signature, an explicit reflection
 mode can be selected with `dsl::as_flags<>` or `dsl::as_common<>`:
@@ -102,7 +102,7 @@ constexpr auto ordinary_values = dsl::enum_values<Access, dsl::as_common<>>();
 
 The default inclusive numeric search interval is `[-128, 127]`. Change the
 global interval with `MAGIC_ENUM_RANGE_MIN` and `MAGIC_ENUM_RANGE_MAX` before
-including `DSLtk.hpp`, or specialize an individual enum's range:
+including `MuDSL.hpp`, or specialize an individual enum's range:
 
 ```cpp
 enum class Opcode { Load = 1000, Store = 1010 };
@@ -156,7 +156,7 @@ All upstream `MAGIC_ENUM_*` configuration hooks are retained, including
 `MAGIC_ENUM_ENABLE_HASH`, `MAGIC_ENUM_ENABLE_HASH_SWITCH`, assertion controls,
 and container exception controls. Configuration must be consistent across
 translation units. The original per-header guards also permit including
-external magic_enum v0.9.8 headers before or after `DSLtk.hpp`.
+external magic_enum v0.9.8 headers before or after `MuDSL.hpp`.
 
 ## Flags and operators
 
@@ -267,14 +267,14 @@ name or flag combination and sets `failbit` on failure, leaving the destination
 value intact.
 
 If the standard library provides `<format>` and `__cpp_lib_format`, enum
-formatters are enabled automatically, including when `DSLtk.hpp` is included
+formatters are enabled automatically, including when `MuDSL.hpp` is included
 first. They support string formatting specifications and numeric fallback for
 unknown values. `{fmt}` support is enabled when its headers are included before
-`DSLtk.hpp`; it remains optional.
+`MuDSL.hpp`; it remains optional.
 
 ```cpp
 #include <fmt/format.h> // Optional external formatter, included first.
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 // fmt::format("{}", value), std::format("{}", value)
 ```
 
@@ -282,7 +282,7 @@ unknown values. `{fmt}` support is enabled when its headers are included before
 
 Reflection uses upstream compiler-signature parsing (`__PRETTY_FUNCTION__` or
 `__FUNCSIG__`). It supports GCC, Clang, and MSVC on the versions supported by
-magic_enum; the surrounding DSLtk API requires C++20. Forward-declared enums
+magic_enum; the surrounding MuDSL API requires C++20. Forward-declared enums
 cannot be reflected. Alias naming is compiler-dependent, and aliases do not
 add distinct values. Large scan intervals increase constexpr compilation work.
 See the pinned upstream [reference](https://github.com/Neargye/magic_enum/blob/v0.9.8/doc/reference.md)
@@ -299,16 +299,16 @@ pins the exact v0.9.8 headers. To reproduce or verify the block from an upstream
 v0.9.8 checkout:
 
 ```sh
-python3 DSLtk/scripts/update-magic-enum.py /path/to/magic_enum
-python3 DSLtk/scripts/update-magic-enum.py /path/to/magic_enum --check
+python3 MuDSL/scripts/update-magic-enum.py /path/to/magic_enum
+python3 MuDSL/scripts/update-magic-enum.py /path/to/magic_enum --check
 ```
 
 The integration tests can be built independently of the other MetaTk libraries:
 
 ```sh
-cmake -S DSLtk/tests -B build/dsltk-enums
-cmake --build build/dsltk-enums
-ctest --test-dir build/dsltk-enums --output-on-failure
+cmake -S MuDSL/tests -B build/mudsl-enums
+cmake --build build/mudsl-enums
+ctest --test-dir build/mudsl-enums --output-on-failure
 ```
 
 The MetaTk build also enables these tests with `BUILD_TESTING=ON` and the example

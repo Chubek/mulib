@@ -1,0 +1,31 @@
+\chapter{Strings and error interpolation}
+A string is an immutable sequence of bytes. Its literal form uses double
+quotes and supports escapes for newline, carriage return, tab, NUL, backslash,
+and double quote. Unknown escape sequences are rejected rather than silently
+losing the backslash.
+
+\begin{mullcode}
+val greeting <- "Hello, " + "MuLL";
+G:Assert(greeting == "Hello, MuLL");
+G:Assert(G:Len("a\0b") == 3);
+G:Assert("a\0b"[1] == "\0");
+G:Assert("quote: \"" == "quote: " + "\"");
+\end{mullcode}
+
+\section{Byte indexing}
+Indexing returns a one-byte string, and \api{G:Len} counts bytes. Thus a
+UTF-8 character may occupy several indexes. The text library's case conversion
+is deliberately ASCII-only; it leaves other bytes unchanged. Applications
+needing Unicode segmentation can register a dedicated native library.
+
+\section{The import error marker}
+Every occurrence of \api{$E?} in a string literal is replaced by the runtime's
+current import error when that literal is evaluated. Replacement is one pass:
+the inserted error text is not recursively interpreted. Successful imports,
+including cache hits, clear the error text. Other runtime errors throw directly
+and do not update this import-error slot.
+
+This is the only built-in string interpolation. To format arbitrary values,
+use \api{Printf:Format} with brace placeholders. To construct the literal
+marker itself without interpolation, concatenate \api{"$E"} and \api{"?"}.
+The resulting runtime string is not rescanned as source code.

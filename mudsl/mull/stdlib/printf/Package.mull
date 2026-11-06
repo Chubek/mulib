@@ -1,0 +1,2 @@
+# Native formatting and replaceable output sinks.
+return G:Native("printf");

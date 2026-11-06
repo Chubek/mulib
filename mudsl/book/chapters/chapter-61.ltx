@@ -1,0 +1,35 @@
+\chapter{Writing a Package.mull}
+A package is ordinary MuLL source evaluated in its own environment. Its
+top-level bindings do not become application globals. It receives \api{G}
+and returns a record containing its public exports.
+
+\section{A script package}
+Place the following in \api{your-root/counter/Package.mull}:
+\begin{code}
+var n <- 0;
+return {
+    Next: fn(){ n <- n + 1; return n; },
+    Reset: fn(){ n <- 0; }
+};
+\end{code}
+After adding \api{your-root} to the runtime's paths, import \api{counter} and
+call \api{Counter:Next()}. Both exported functions capture the package's
+private cell. Repeated imports share that cell through the package cache.
+No dedicated export statement is necessary.
+
+\section{A native package}
+The supplied libraries use a small entry point:
+\begin{code}
+return G:Native("printf");
+\end{code}
+The corresponding \api{Native.hpp} or \api{Native.d} registers the record
+with the host runtime. A package can wrap that record, add script helpers,
+or combine several imported records into a new interface. Native code is
+compiled with the embedding application; importing does not invoke a compiler.
+
+\section{Initialization effects}
+Initialization runs once per successful import. If it raises an error, the
+cache is not populated, but host effects already performed are not undone.
+Keep initialization small and make retry behavior deliberate. A package that
+needs another package should use the same \api{LoadLib(... ) or DieWith(...)}
+idiom as application code so dependency failures remain informative.

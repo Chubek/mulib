@@ -1,0 +1,37 @@
+\chapter{Embedding MuLL in C++}
+Include the runtime header and, when needed, the standard-library installer.
+Construct one runtime per session, register native services, then run source.
+\begin{code}
+#include "MuDSL.hpp"
+#include "mull/stdlib/Stdlib.hpp"
+
+int main() {
+    mull::Runtime vm({"/opt/myapp/mull/stdlib"});
+    mull::stdlib::install(vm);
+    vm.stdoutSink = [](std::string_view s) { std::cout << s; };
+    try {
+        auto result = vm.run("return 6 * 7;", "startup.mull");
+        return result.number() == 42 ? 0 : 1;
+    } catch (const mull::Error &error) {
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
+}
+\end{code}
+
+Build with a C++20 compiler and the toolkit directory on the include path.
+The runtime is header-only. The supplied native libraries are also inline
+headers, so no interpreter library needs to be linked separately.
+
+\section{Host bindings}
+\api{define(name, value, mutableBinding)} adds a global binding; mutability
+defaults to false. \api{get(name)} retrieves a binding's value. Construct
+\api{mull::Value} from a Boolean, integer, double, string, list, record, or
+\api{Value::Native} callable. A native callable accepts a list of arguments
+and returns a value.
+
+\api{runFile(path)} reads and runs a source file with its path in diagnostics.
+Runtime objects are noncopyable and nonmovable. Keep the runtime alive while
+using script functions returned from it. Calls into a given instance must be
+serialized, and recursive entry through \api{run} is rejected; native code
+can invoke a supplied function value through its \api{call} method instead.

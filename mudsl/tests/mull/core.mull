@@ -1,0 +1,45 @@
+# Bindings, aliasing, closures, recursion, control flow and collections.
+var x <- 1;
+ref y <- x;
+y <- 3;
+G:Assert(x == 3);
+val copy <- x;
+x <- 4;
+G:Assert(copy == 3);
+{ val x <- 99; G:Assert(x == 99); }
+G:Assert(x == 4);
+val make <- fn(n) {
+    var count <- n;
+    return fn() { count <- count + 1; return count; };
+};
+val counter <- make(10);
+G:Assert(counter() == 11);
+G:Assert(counter() == 12);
+val fact <- fn(n) { if n <= 1 { return 1; } return n * fact(n - 1); };
+G:Assert(fact(6) == 720);
+var sum <- 0;
+var i <- 0;
+while true {
+    if i == 5 { break; }
+    sum <- sum + i;
+    i <- i + 1;
+}
+G:Assert(sum == 10);
+G:Assert(2 + 3 * 4 == 14);
+G:Assert(10 - 3 - 2 == 5);
+G:Assert(8 / 2 / 2 == 2);
+G:Assert(-5 % 2 == -1);
+G:Assert(not false and !nil);
+G:Assert((0 or 5) == 0);
+G:Assert((false and G:DieWith("bad")) == false);
+G:Assert((true or G:DieWith("bad")) == true);
+G:Assert((nil or 8) == 8);
+val xs <- [1, 2] + [3];
+G:Assert(xs[2] == 3);
+val obj <- {name: "MuLL", values: xs};
+G:Assert(obj:name == "MuLL");
+G:Assert(obj["values"] == [1,2,3]);
+G:Assert("a\0b"[1] == "\0");
+G:Assert(G:Len("a\0b") == 3);
+G:Assert(G:Type(fn(){}) == "function");
+return "core ok";

@@ -1,9 +1,9 @@
-# DSLtk — A Manual
+# MuDSL — A Manual
 
-This directory contains the thirty-seven-chapter manual for **DSLtk**, the
+This directory contains the thirty-seven-chapter manual for **MuDSL**, the
 Domain-Specific Language construction toolkit for C++20 and D. The two
-implementations are distributed as one C++ header, `DSLtk.hpp`, and one D
-module, `DSLtk.d`. The manual explains the established toolkit, the D port,
+implementations are distributed as one C++ header, `MuDSL.hpp`, and one D
+module, `MuDSL.d`. The manual explains the established toolkit, the D port,
 and the shared language facilities added to both implementations.
 
 The manual is organised into twenty-one parts that progress from foundational
@@ -19,7 +19,7 @@ the table of contents below to jump directly to the feature they need.
   with mixins, alias callables, CTFE, native reflection, and build instructions.
 - **Shared extensions:** Chapter 30 is an overview; Chapters 32–37 provide
   focused tutorials, API contracts and examples for both languages.
-- **Full development record:** [DSLtk Development Progression](progression.md)
+- **Full development record:** [MuDSL Development Progression](progression.md)
   records the milestones from the C++ toolkit through the D translation,
   equality saturation, user backends, visitors, binary streams, preprocessing,
   optional Lua, explicit CFGs, directed graphs, terms, DOT rendering,
@@ -134,10 +134,10 @@ readable in a text editor or repository browser. To export the numbered
 chapters with [Pandoc](https://pandoc.org/), run from this directory:
 
 ```sh
-pandoc ch[0-9][0-9]-*.md --standalone --toc -o DSLtk-manual.html
-pandoc ch[0-9][0-9]-*.md --standalone --toc --pdf-engine=xelatex -o DSLtk-manual.pdf
-pandoc ch[0-9][0-9]-*.md --standalone -t latex -o DSLtk-manual.tex
-pandoc ch[0-9][0-9]-*.md --standalone -t docbook -o DSLtk-manual.xml
+pandoc ch[0-9][0-9]-*.md --standalone --toc -o MuDSL-manual.html
+pandoc ch[0-9][0-9]-*.md --standalone --toc --pdf-engine=xelatex -o MuDSL-manual.pdf
+pandoc ch[0-9][0-9]-*.md --standalone -t latex -o MuDSL-manual.tex
+pandoc ch[0-9][0-9]-*.md --standalone -t docbook -o MuDSL-manual.xml
 ```
 
 The two-digit filenames preserve chapter ordering. PDF export requires the
@@ -147,7 +147,7 @@ selected TeX engine. The progression record is a separate reading aid; append
 ## Conventions Used in This Manual
 
 Code listings are fenced and marked `cpp`, `d`, `lisp`, `ebnf`, or `sh` as
-appropriate. C++ uses `dsl::` names; D uses `import DSLtk`, native `!` template
+appropriate. C++ uses `dsl::` names; D uses `import MuDSL`, native `!` template
 arguments and CTFE. Fragments assume the corresponding header/import and
 surrounding example variables; complete programs show their entry point.
 Throughout the text, the names of types and functions are set in

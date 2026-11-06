@@ -1,0 +1,2 @@
+var privateCount <- 0;
+return {Next: fn(){ privateCount <- privateCount + 1; return privateCount; }};

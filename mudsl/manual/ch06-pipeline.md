@@ -4,7 +4,7 @@
 
 Functional composition is the most natural way to describe a transformation that happens in stages. When the stages are written as nested function calls, the reader must parse them from the inside out: `f2(f1(value))` reads "apply `f1`, then `f2`," but the textual order is reversed relative to the temporal order. The Pipeline feature inverts this so that the reading direction matches the data-flow direction.
 
-DSLtk provides the Pipeline feature so that a DSL author can write `value | pipe(f1) | pipe(f2)` and obtain the value `f2(f1(value))`. Each `|` is a single function application. There is no scheduler, no coroutine machinery, no runtime graph of nodes. The mechanism is a single overloaded `operator|` that forwards its left operand into the callable stored on its right.
+MuDSL provides the Pipeline feature so that a DSL author can write `value | pipe(f1) | pipe(f2)` and obtain the value `f2(f1(value))`. Each `|` is a single function application. There is no scheduler, no coroutine machinery, no runtime graph of nodes. The mechanism is a single overloaded `operator|` that forwards its left operand into the callable stored on its right.
 
 This chapter describes every component of the feature: the `PipeStage<F>` wrapper, the `pipe()` factory, the free `operator|`, the `Pipeline` feature tag, and its `Mixin::wrap` static identity lift. It then demonstrates type-changing chains, value semantics, `constexpr` evaluation, composition with other features, and the pitfalls that arise from operator precedence, reference captures, and temporary lifetimes.
 
@@ -128,7 +128,7 @@ The order of feature tags in the parameter pack does not affect the availability
 The header's own example is a complete, compiling program. It mirrors the canonical usage and shows the expected result.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 
 struct Proc : dsl::DSL<Proc, dsl::Pipeline> {};
 
@@ -151,7 +151,7 @@ Because the `operator|` deduces its return type with `auto`, each stage may retu
 A chain that converts an integer to a floating-point value and then to a string demonstrates this:
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <string>
 #include <sstream>
 
@@ -237,7 +237,7 @@ The `normalize` lambda wraps an inner pipeline and is itself wrapped as a single
 String processing benefits from the left-to-right reading order, because transformations are often described as a sequence of filtering and shaping steps. The example below trims whitespace, lowercases, and replaces spaces with underscores.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <algorithm>
 #include <cctype>
 #include <string>
@@ -275,7 +275,7 @@ Each stage is a self-contained function that accepts a `std::string` and returns
 A common DSL application is transforming tabular rows. The example below treats a row as a vector of strings, parses the first field as an integer, scales it, and re-emits the row with the scaled value.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <string>
 #include <vector>
 
@@ -314,7 +314,7 @@ After `std::move`, `input` is in a valid but unspecified state. The pipeline's s
 Not every stage must transform its input. A logging or inspection stage observes the value and returns it unchanged, allowing the chain to continue. This is a direct consequence of the `operator|` semantics: a stage that returns its argument unchanged is simply a stage whose callable is an identity function with a side effect.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 struct Proc : dsl::DSL<Proc, dsl::Pipeline> {};
@@ -341,7 +341,7 @@ Inspection stages are valuable for debugging. They can be inserted temporarily a
 The `pipe()` factory, the `PipeStage` constructor, the `operator|`, and `wrap` are all `constexpr`. A pipeline can therefore be evaluated at compile time, producing a value that is then available as a compile-time constant. This is useful for building lookup tables, computing configuration constants, or asserting invariants at compile time.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 
 struct C : dsl::DSL<C, dsl::Pipeline> {};
 
@@ -365,7 +365,7 @@ Compile-time pipelines compose naturally with `consteval` functions and with tem
 The `BasicDSL` example from Chapter 1 combines `Pipeline` with `Operators`. The pipeline produces a value, and the predicates built with `make_pred` are then applied to that value.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 struct BasicDSL : dsl::DSL<BasicDSL, dsl::Pipeline, dsl::Operators> {};
@@ -386,7 +386,7 @@ The pipeline computes `v == 16`. The predicates, described in Chapter 7, are the
 The `MiniDSL` example from Chapter 17 combines `Pipeline` with `CustomLiterals`. A literal is parsed, then piped through a transformation.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 struct MiniDSL : dsl::DSL<MiniDSL, dsl::Pipeline, dsl::CustomLiterals> {
@@ -445,7 +445,7 @@ A validation pipeline applies a series of checks to a value, aborting on failure
 A sketch using `std::optional`:
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <optional>
 
 struct Valid : dsl::DSL<Valid, dsl::Pipeline> {};

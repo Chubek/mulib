@@ -1,0 +1,33 @@
+\chapter{The math library}
+The \api{math} package collects numeric operations outside the core operator
+set. It exports \api{Abs}, \api{Floor}, \api{Ceil}, \api{Sqrt}, \api{Pow},
+\api{Min}, \api{Max}, and the numeric constant \api{Pi}.
+
+\begin{mullcode}
+val M <- G:LoadLib("math") or G:DieWith("$E?");
+G:Assert(M:Abs(-7) == 7);
+G:Assert(M:Floor(-1.2) == -2);
+G:Assert(M:Ceil(-1.2) == -1);
+G:Assert(M:Sqrt(81) == 9);
+G:Assert(M:Pow(2, 10) == 1024);
+G:Assert(M:Min(3, 8) == 3);
+G:Assert(M:Max(3, 8) == 8);
+G:Assert(M:Pi > 3.14 and M:Pi < 3.15);
+\end{mullcode}
+
+The first four operations take one number. \api{Pow}, \api{Min}, and
+\api{Max} take two. Every wrapper checks the argument count and numeric kind.
+Results pass through MuLL's finite-number constructor, so an invalid square
+root or an overflowing power raises an error instead of introducing NaN or
+infinity into later calculations.
+
+\section{Numerical expectations}
+The implementation uses the host's binary64 math functions. Exact integer
+examples are useful conformance tests; transcendental computations should
+normally be compared with an appropriate tolerance. Equality itself remains
+exact numeric equality because an implicit tolerance would make collection
+equality and branching difficult to reason about.
+
+For decimal money, arbitrary precision integers, or domain-specific units,
+register a dedicated native library and define an explicit representation.
+The core number kind is intentionally small and uniform across the two hosts.

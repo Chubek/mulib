@@ -1,19 +1,19 @@
 # Chapter 31 — The D Toolkit: Templates, Mixins and CTFE
 
-`DSLtk.d` is a self-contained D module using Phobos. This chapter maps the
+`MuDSL.d` is a self-contained D module using Phobos. This chapter maps the
 established C++ toolkit to D and introduces the language-specific API. The
 shared facilities introduced in Chapter 30 have focused tutorials in Chapters
 32–36.
 
 ## Build and import
 
-Keep `DSLtk.d` on the import path and supply the module to the compiler:
+Keep `MuDSL.d` on the import path and supply the module to the compiler:
 
 ```sh
-# From the DSLtk directory, with the user's app.d alongside the module:
-ldc2 app.d DSLtk.d -of=app
-dmd app.d DSLtk.d -of=app
-gdc app.d DSLtk.d -o app
+# From the MuDSL directory, with the user's app.d alongside the module:
+ldc2 app.d MuDSL.d -of=app
+dmd app.d MuDSL.d -of=app
+gdc app.d MuDSL.d -o app
 ```
 
 For an application in another directory, add the module's directory to `-I`.
@@ -22,7 +22,7 @@ target exports C++ usage requirements; D compilation is driven by the D
 compiler invocation above.
 
 ```d
-import DSLtk;
+import MuDSL;
 ```
 
 ## Compose features with a mixin
@@ -296,14 +296,14 @@ configuration, namespace aliases and stream/formatter APIs.
 ## Verify the D module
 
 ```sh
-ldc2 -unittest -main DSLtk.d -of=dsltk-test
-./dsltk-test
-dmd -unittest -main DSLtk.d -of=dsltk-test-dmd
-./dsltk-test-dmd
-gdc -funittest -fmain DSLtk.d -o dsltk-test-gdc
-./dsltk-test-gdc
+ldc2 -unittest -main MuDSL.d -of=mudsl-test
+./mudsl-test
+dmd -unittest -main MuDSL.d -of=mudsl-test-dmd
+./mudsl-test-dmd
+gdc -funittest -fmain MuDSL.d -o mudsl-test-gdc
+./mudsl-test-gdc
 ```
 
 The tests cover established features and the new shared facilities. Build the
-integration example with `ldc2 -I. DSLtk.d examples/26-equality-saturation.d
+integration example with `ldc2 -I. MuDSL.d examples/26-equality-saturation.d
 -of=eqsat-example`, then run `./eqsat-example`.

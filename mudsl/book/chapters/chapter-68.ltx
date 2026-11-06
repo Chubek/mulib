@@ -1,0 +1,39 @@
+\chapter{Embedding MuLL in D}
+The D runtime is part of the \api{MuDSL} module. The \api{MuLL} namespace-like
+struct supplies convenient aliases for \api{Runtime}, \api{Value}, and
+\api{Error}; the underlying public names are \api{MuLLRuntime},
+\api{MuLLValue}, and \api{MuLLError}.
+
+\begin{code}
+import MuDSL;
+import mull.stdlib.Stdlib;
+import std.stdio : writeln;
+
+void main() {
+    auto vm = new MuLL.Runtime(["mull/stdlib"]);
+    install(vm);
+    vm.stdoutSink = (string s) { /* send s to the application */ };
+    auto value = vm.run("return 6 * 7;", "startup.mull");
+    assert(value.number() == 42);
+}
+\end{code}
+
+Compile the embedding source, \api{MuDSL.d}, \api{mull/stdlib/Stdlib.d}, and
+the selected \api{Native.d} modules together. For example, from the toolkit
+root:
+\begin{code}
+ldc2 -I. examples/27-mull.d MuDSL.d mull/stdlib/Stdlib.d \
+    mull/stdlib/*/Native.d -of=mull-example
+\end{code}
+
+\section{Values and callbacks}
+Construct values with \api{MuLL.Value(...)}. Use \api{number},
+\api{stringValue}, \api{list}, \api{object}, \api{member}, and \api{call}
+to inspect and invoke them. Native callbacks are delegates taking
+\api{MuLLValue[]} and returning \api{MuLLValue}. A nil result is
+\api{MuLLValue.init}.
+
+D's garbage collector retains captured environments and delegates. The
+runtime still uses the same operational limits and single-threaded session
+model as C++. Catch \api{MuLL.Error} to access its \api{msg}, \api{line},
+and \api{column}. Application bindings and package caches persist across runs.

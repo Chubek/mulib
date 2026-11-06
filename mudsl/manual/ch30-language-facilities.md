@@ -1,6 +1,6 @@
 # Chapter 30 — Equality Saturation and Language Facilities (C++ and D)
 
-These facilities are in `DSLtk.hpp` (`dsl::`) and `DSLtk.d` (`import DSLtk`).
+These facilities are in `MuDSL.hpp` (`dsl::`) and `MuDSL.d` (`import MuDSL`).
 They use only the standard library unless the optional Lua bridge is enabled.
 Their feature tags are `SExpressions`, `EqualitySaturation`, `Serialization`,
 `AbstractIO`, `Visitors`, `StaticRegularExpressions`, `Preprocessing`, and
@@ -217,10 +217,10 @@ in `#if` are not implemented. `include` is a user callback returning source
 for a path; `script` returns source for a language and code string. Generated
 script output is macro-expanded. Expansion/include depths are bounded.
 
-For actual Lua embedding, C++ defines `DSLTK_ENABLE_LUA`, supplies the Lua
+For actual Lua embedding, C++ defines `MUDSL_ENABLE_LUA`, supplies the Lua
 include/link flags, and assigns `pp.script = dsl::lua_script_hook(state)`.
-D builds with `-d-version=DSLtkLua` (LDC), `-version=DSLtkLua` (DMD), or
-`-fversion=DSLtkLua` (GDC), links Lua 5.3/5.4, and assigns
+D builds with `-d-version=MuDSLLua` (LDC), `-version=MuDSLLua` (DMD), or
+`-fversion=MuDSLLua` (GDC), links Lua 5.3/5.4, and assigns
 `pp.script = lua_script_hook(state)`. The user owns/configures the Lua state.
 Each directive returns a string. The bridge restores the Lua stack after
 success or failure. For example: `#lua return '(= a b)'`.
@@ -261,14 +261,14 @@ replace the C++ stream/operator integrations.
 
 ## Verification
 
-From the DSLtk directory:
+From the MuDSL directory:
 
 ```sh
-cmake -S tests -B build/dsltk-tests -DDSLtk_TEST_LUA=ON
-cmake --build build/dsltk-tests
-ctest --test-dir build/dsltk-tests --output-on-failure
-ldc2 -unittest -main DSLtk.d -of=dsltk-test
-./dsltk-test
+cmake -S tests -B build/mudsl-tests -DMuDSL_TEST_LUA=ON
+cmake --build build/mudsl-tests
+ctest --test-dir build/mudsl-tests --output-on-failure
+ldc2 -unittest -main MuDSL.d -of=mudsl-test
+./mudsl-test
 ```
 
 The C++ test suite includes `test_language_facilities.cpp` and an optional

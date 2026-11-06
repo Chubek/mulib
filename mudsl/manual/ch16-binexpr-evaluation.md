@@ -1,6 +1,6 @@
 # Chapter 16: `BinExpr`, `UnaryExpr`, and Fused Evaluation
 
-Chapter 15 introduced the expression-template facility of DSLtk as a mechanism for building lazy arithmetic trees over types that derive from `dsl::DSL` with the `dsl::ExprTemplates` feature. The chapter ended at the point where overloaded operators return opaque node types, deferred until the caller explicitly asks for a result. This chapter opens those node types and explains exactly how evaluation proceeds.
+Chapter 15 introduced the expression-template facility of MuDSL as a mechanism for building lazy arithmetic trees over types that derive from `dsl::DSL` with the `dsl::ExprTemplates` feature. The chapter ended at the point where overloaded operators return opaque node types, deferred until the caller explicitly asks for a result. This chapter opens those node types and explains exactly how evaluation proceeds.
 
 Two node types form the spine of every expression tree: `BinExpr<Op, L, R>`, returned by every binary operator, and `UnaryExpr<Op, E>`, returned by unary negation. Both are trivial aggregates that store their operands and an operation tag, and both expose a `constexpr` `eval()` member that walks the subtree in a single fused pass. Understanding these two types is sufficient to predict the behaviour of any expression built through the `ExprTemplates` mixin.
 
@@ -80,7 +80,7 @@ The tags are invoked by value-construction: `Op{}` constructs a temporary and im
 
 ## The `eval()` Method: Verbatim Definition
 
-The heart of this chapter is the `eval()` member of `BinExpr`. Its definition is short, and is reproduced verbatim from `DSLtk.hpp`:
+The heart of this chapter is the `eval()` member of `BinExpr`. Its definition is short, and is reproduced verbatim from `MuDSL.hpp`:
 
 ```cpp
   constexpr auto
@@ -143,7 +143,7 @@ The `UnaryExpr` version inlines the dispatch that `BinExpr` factors into the `ev
 
 The first branch handles inner nodes — both `BinExpr` and `UnaryExpr` expose `eval()`, so a subtree is collapsed by a recursive call. The second branch handles leaves of the derived DSL type, which expose `expr_value()` but not `eval()`. The third branch handles raw values that have been woven into the tree, such as a plain `double` literal used as an operand; such a value is returned unchanged and is then passed directly to the operation tag.
 
-The use of `requires` expressions makes the dispatch structural rather than tag-based. Any type that exposes an `eval()` method will be treated as an inner node, regardless of whether it is one of DSLtk's node types. This means a user-defined node type that supplies a conforming `eval()` can participate in the same tree without modification to the library. The same openness applies to leaves: any type with an `expr_value()` method can serve as a leaf, even if it does not derive from `dsl::DSL`.
+The use of `requires` expressions makes the dispatch structural rather than tag-based. Any type that exposes an `eval()` method will be treated as an inner node, regardless of whether it is one of MuDSL's node types. This means a user-defined node type that supplies a conforming `eval()` can participate in the same tree without modification to the library. The same openness applies to leaves: any type with an `expr_value()` method can serve as a leaf, even if it does not derive from `dsl::DSL`.
 
 The third branch is what permits raw values to appear in expressions. Although the `ExprTemplates` mixin only defines operators with the derived type on the left, the free-function overloads described later in the chapter accept any right-hand operand, including built-in numeric types. When such a raw value reaches `eval_operand`, the third branch returns it unchanged, and the operation tag is then applied to the pair of evaluated values.
 
@@ -155,7 +155,7 @@ Consider the expression `a + b * c`. The multiplication binds tighter than the a
 
 Because each node applies its operation after its children have been fully evaluated, the entire tree is walked in a single post-order pass. There is no staging: no intermediate vector of partial results is assembled, and no sub-expression is evaluated more than once. The pass is what the literature calls *fused*: the operations are combined at the point of evaluation rather than materialised as separate results.
 
-The recursion depth is proportional to the height of the tree, which for a left-associative chain of `n` binary operators is `n`. For typical DSLtk usage, where expressions are short, this depth is negligible. For very long chains, the recursion is still bounded by the expression's syntactic nesting, not by any data structure size, so stack exhaustion is not a practical concern.
+The recursion depth is proportional to the height of the tree, which for a left-associative chain of `n` binary operators is `n`. For typical MuDSL usage, where expressions are short, this depth is negligible. For very long chains, the recursion is still bounded by the expression's syntactic nesting, not by any data structure size, so stack exhaustion is not a practical concern.
 
 ## Fusion Versus Eager Evaluation
 
@@ -201,7 +201,7 @@ The return type is preserved across nesting. A `BinExpr` whose right operand is 
 
 ## The `ExprLike` Concept
 
-DSLtk provides a concept, `ExprLike`, that characterises types usable as leaves in an expression template tree. The concept is defined near the bottom of `DSLtk.hpp` and requires two things: the type must have the `ExprTemplates` feature, and it must expose a `const`-qualified `expr_value()` method.
+MuDSL provides a concept, `ExprLike`, that characterises types usable as leaves in an expression template tree. The concept is defined near the bottom of `MuDSL.hpp` and requires two things: the type must have the `ExprTemplates` feature, and it must expose a `const`-qualified `expr_value()` method.
 
 ```cpp
 template <typename T>
@@ -217,7 +217,7 @@ The concept does not constrain the return type of `expr_value()`. Any return typ
 
 ## The `ExprTerminal` Tag
 
-`DSLtk.hpp` declares a small empty struct, `ExprTerminal`, that serves as a tag type indicating a terminal in an expression template tree. The tag itself is not used by the `ExprTemplates` mixin or by the node types described in this chapter; it is provided as a hook for user code that wishes to mark or detect leaves by trait.
+`MuDSL.hpp` declares a small empty struct, `ExprTerminal`, that serves as a tag type indicating a terminal in an expression template tree. The tag itself is not used by the `ExprTemplates` mixin or by the node types described in this chapter; it is provided as a hook for user code that wishes to mark or detect leaves by trait.
 
 ```cpp
 struct ExprTerminal
@@ -235,7 +235,7 @@ In practice, most user code will never mention `ExprTerminal`. It is mentioned h
 
 The `ExprTemplates` mixin defines its binary operators as hidden friends inside the derived class. This means the operators fire when the derived type appears on the left of the operator, but they do not fire when a `BinExpr` node appears on the left. Without further support, an expression like `(a + b) * c` would fail to compile: the left operand is a `BinExpr`, not a `Scalar`, and no `operator*` accepts a `BinExpr` on the left.
 
-DSLtk closes this gap with four free-function operator overloads at namespace scope, one for each binary operator. Each overload accepts a `BinExpr<Op1, L1, R1>` on the left and an arbitrary right operand, and returns a new `BinExpr` whose left operand is the inner `BinExpr`.
+MuDSL closes this gap with four free-function operator overloads at namespace scope, one for each binary operator. Each overload accepts a `BinExpr<Op1, L1, R1>` on the left and an arbitrary right operand, and returns a new `BinExpr` whose left operand is the inner `BinExpr`.
 
 ```cpp
 template <typename Op1, typename L1, typename R1, typename R>

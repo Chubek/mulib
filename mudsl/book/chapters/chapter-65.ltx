@@ -1,0 +1,28 @@
+\chapter{The text library}
+The \api{text} package implements byte-string transformations. Its functions
+return new values and never modify the supplied strings or lists.
+
+\begin{mullcode}
+val T <- G:LoadLib("text") or G:DieWith("$E?");
+G:Assert(T:Split("a,,b,", ",") == ["a", "", "b", ""]);
+G:Assert(T:Join(["one", "two"], "/") == "one/two");
+G:Assert(T:Replace("a-b-a", "a", "x") == "x-b-x");
+G:Assert(T:Upper("Hello 42") == "HELLO 42");
+G:Assert(T:Lower("Hello 42") == "hello 42");
+\end{mullcode}
+
+\api{Split(text, separator)} preserves empty fields, including a final empty
+field after a trailing separator. The separator must be nonempty.
+\api{Join(strings, separator)} accepts a list whose elements are all strings;
+it inserts the separator between elements, with none before the first or
+after the last. Joining an empty list returns an empty string.
+
+\api{Replace(text, from, to)} replaces nonoverlapping occurrences from left to
+right. The search string must be nonempty. Inserted replacement text is not
+searched again, so replacing a string with a longer string containing itself
+still terminates.
+
+\api{Upper} and \api{Lower} transform ASCII letters only. They preserve
+punctuation, digits, NUL, and non-ASCII bytes. This explicit byte policy matches
+the core string length and indexing rules. It also avoids hidden dependence
+on the process locale, making package behavior consistent in embedded hosts.

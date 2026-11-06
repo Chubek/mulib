@@ -6,11 +6,11 @@ Traversal of an `ASTNode` is, by design, an ordinary recursive operation over an
 
 The same plainness extends to output. Every `ASTNode` provides a `dump()` member that returns a single-line S-expression string. There is no streaming overload and no indentation parameter; the format is fixed and predictable. When richer rendering is required — colored output, indented multi-line boxes, annotated nodes — the application supplies its own walker, using `dump()` only as a fallback for quick inspection.
 
-The material below covers the traversal primitives, the dump format, several families of useful queries (counting, leaf collection, depth, search), mutation during traversal, and the bridge to the rewrite machinery of Chapters 13 and 14. All examples compile against `-std=c++20` with only `DSLtk.hpp` included.
+The material below covers the traversal primitives, the dump format, several families of useful queries (counting, leaf collection, depth, search), mutation during traversal, and the bridge to the rewrite machinery of Chapters 13 and 14. All examples compile against `-std=c++20` with only `MuDSL.hpp` included.
 
 ## The ASTNode Inspection Surface
 
-Before walking a tree it is worth restating the exact set of accessors available on `dsl::ASTNode`, because traversal code is built entirely from these members. The class is declared in `DSLtk.hpp` and is a regular value type: copyable, movable, and equality-comparable.
+Before walking a tree it is worth restating the exact set of accessors available on `dsl::ASTNode`, because traversal code is built entirely from these members. The class is declared in `MuDSL.hpp` and is a regular value type: copyable, movable, and equality-comparable.
 
 ```cpp
 class ASTNode {
@@ -71,7 +71,7 @@ The output of `dump()` is suitable for logging, unit-test assertions, and one-li
 A small example exercises the format end to end.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -92,7 +92,7 @@ The single-line output is compact but becomes unwieldy on deep trees. Later sect
 The most common traversal is a recursive pre-order visit: act on the node, then recurse into each child. Because `children()` returns a `const std::vector<ASTNode>&`, the body of the recursion is a plain range-based loop.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 void print_pre(const dsl::ASTNode& n) {
@@ -123,7 +123,7 @@ The recursive formulation is clear but shares the stack-depth characteristics of
 Post-order traversal reverses the action: recurse into the children first, then act on the node. This is the order used by evaluators, because the value of an inner node typically depends on the values of its children.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <vector>
 
@@ -157,7 +157,7 @@ Range-based loops are convenient when the position of a child is irrelevant. Som
 The indexed form uses `size()` and `child(i)`.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 void print_indexed(const dsl::ASTNode& n) {
@@ -196,7 +196,7 @@ The children, returned by `children()`, are a vector of `ASTNode` by value. Each
 A frequent query is the total number of nodes in a tree. The implementation is a one-liner recursion, and the example distributed with the library — `examples/09-ast-traversal.cpp` — is precisely this program, quoted here verbatim.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int count_nodes(const dsl::ASTNode& n) {
@@ -237,7 +237,7 @@ These queries are pure functions of the tree and are safe to call on `const` ref
 Collecting all leaf values into a container is the foundation of identifier listing, literal extraction, and token-level analysis. The pattern appends to a caller-supplied container during a pre-order walk.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -286,7 +286,7 @@ The pattern scales to any extraction policy: collect the first leaf per subtree,
 Searching for the first node matching a tag is a depth-first search that returns as soon as a match is found. Because `ASTNode` is a value type without optional semantics built in, the function returns a pointer — `nullptr` when no match exists.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 const dsl::ASTNode* find_first(const dsl::ASTNode& n, std::string_view want) {
@@ -327,7 +327,7 @@ This is the building block for rewrite-rule application: Chapter 13's rules loca
 Tree depth is the length of the longest root-to-leaf path, with a single node conventionally counted as depth one. The recursion takes the maximum over the children's depths and adds one.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <algorithm>
 
@@ -358,7 +358,7 @@ A breadth metric — the maximum number of children at any node — is computed 
 The recursive traversals above are each specialized for a particular action. Factoring the walk from the action yields a generic visitor. Because `ASTNode` is a regular type, a function object that takes a `const ASTNode&` and is called on each node suffices.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <functional>
 
@@ -399,7 +399,7 @@ A two-callback variant — one for the pre-visit and one for the post-visit — 
 The built-in `dump()` produces a single line. For human consumption an indented multi-line view is more readable, and it is straightforward to build from the public accessors. The renderer carries an indentation level and recurses.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <string>
 
@@ -433,7 +433,7 @@ A more elaborate renderer might align columns, colorize tags, or annotate each n
 Because `dump()` already emits S-expressions, a custom S-expression builder is rarely necessary. When it is — to insert comments, to quote values differently, or to limit depth — the same skeleton as `dump_impl` applies, written against the public API.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -470,7 +470,7 @@ This example also illustrates how the private `dump_impl` relates to the public 
 A post-order walk is the natural shape of an evaluator. For a tree whose inner nodes are arithmetic operators and whose leaves are numeric literals, the evaluator recurses into the children, obtains their values, and applies the operator.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <string>
 
@@ -507,7 +507,7 @@ This pattern generalizes to any bottom-up attribution: type synthesis, constant 
 A slightly richer query collects the values of all leaves whose tag is `ident`, deduplicated and sorted. This is the kind of analysis a compiler front end performs to build a use table.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <set>
 #include <string>
@@ -542,7 +542,7 @@ The same skeleton, with the predicate changed, collects any class of node: strin
 The mutable overload of `children()` and the mutable `child(i)` permit structural edits. The simplest is replacing a child by assignment.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -573,7 +573,7 @@ The `push_back` may reallocate the vector, invalidating references into earlier 
 A pure functional transformation does not mutate its input; it builds a new tree. This is the safest style when the original tree must be preserved — for example, when a transformation is speculative and may be discarded.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 dsl::ASTNode negate_all(const dsl::ASTNode& n) {
@@ -605,7 +605,7 @@ Combining mutation with iteration over the same `children()` vector requires car
 The safe discipline is to avoid mutating the vector being iterated. When an algorithm must insert or remove children, it should either build a fresh vector — as `negate_all` does — or iterate by index, taking care to adjust the index after structural changes.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 // Remove every leaf whose value is "0".
@@ -647,7 +647,7 @@ Copying an `ASTNode` copies its entire subtree, so returning a node by value fro
 The transformations shown in this chapter are written by hand. Chapter 13 introduces the `dsl::rule<Tag>` type, which encapsulates a predicate and a builder, and Chapter 14's `dsl::rewrite_set` composes multiple rules and applies them to fixpoint. The example distributed with the library — `examples/10-rewrite-basics.cpp` — shows the bridge concisely.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -672,7 +672,7 @@ Understanding the manual traversals in this chapter is therefore a prerequisite 
 Traversal is also the substrate for error reporting. A semantic check walks the tree, and on finding an inconsistency, emits a diagnostic. The `Maybe<T>` and `Result<T,E>` types of Chapters 19 and 22 integrate naturally: a traversal returns a `Result` that is OK on success and error on the first failure.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 bool check_div_by_zero(const dsl::ASTNode& n) {
@@ -700,7 +700,7 @@ The check is a pre-order walk that short-circuits on the first offending node. M
 Combining the pieces, a small program builds an arithmetic tree, prints it in three forms, evaluates it, and reports its depth and node count.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <algorithm>
 
@@ -761,4 +761,4 @@ The built-in `dump()` member emits a canonical single-line S-expression suitable
 
 Queries such as node counting, leaf collection, tag search, and depth measurement are one-liner recursions. Mutations — replacing, appending, or removing children — use the mutable `children()` overload and obey standard `std::vector` invalidation rules. The transformed-copy pattern builds a new tree from an old one without mutating the input, and is the explicit form of what the rewrite engine of Chapters 13 and 14 automates.
 
-The hazards are the standard hazards of recursive tree programming: stack depth on degenerate shapes, vector invalidation during mutation, and the discipline of testing `is_leaf()` before reading `value()`. None of these is specific to DSLtk; all are consequences of a deliberately plain, value-oriented design that keeps trees inspectable, copyable, and easy to reason about.
+The hazards are the standard hazards of recursive tree programming: stack depth on degenerate shapes, vector invalidation during mutation, and the discipline of testing `is_leaf()` before reading `value()`. None of these is specific to MuDSL; all are consequences of a deliberately plain, value-oriented design that keeps trees inspectable, copyable, and easy to reason about.

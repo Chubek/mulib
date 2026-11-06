@@ -1,0 +1,37 @@
+\chapter{A complete program and the language contract}
+The following program imports three native packages, builds a collection,
+passes a closure into a higher-order operation, and formats its result.
+It is a compact example of MuLL's intended balance: a small core and reusable
+library operations.
+
+\begin{mullcode}
+val P <- G:LoadLib("printf") or G:DieWith("$E?");
+val L <- G:LoadLib("list") or G:DieWith("$E?");
+val T <- G:LoadLib("text") or G:DieWith("$E?");
+val selected <- L:Filter(L:Range(1,11), fn(x){ return x % 2 == 0; });
+val labels <- L:Map(selected, fn(x){ return P:Format("n={}",x); });
+val sum <- L:Fold(selected, 0, fn(a,x){ return a+x; });
+P:Println(T:Join(labels, ", "));
+P:Printf("sum={}\n", sum);
+G:Assert(sum == 30);
+\end{mullcode}
+
+\section{Operational contract}
+By default a run permits one million evaluation steps, 128 nested script
+calls, 100,000 cumulative frame allocations, and four MiB of source per file.
+The host can change those limits. Parsing and expression evaluation also
+have fixed nesting guards. A native callback executes host code; the step
+counter counts interpreter work rather than elapsed time or native memory.
+
+A runtime retains top-level bindings, captured environments, registered native
+values, and cached packages. Syntax is validated before effects begin.
+Evaluation errors preserve effects already performed. Package initialization
+is isolated from application bindings but uses the same host services.
+
+\section{Extending deliberately}
+The reference grammar and library tables in \api{mull/README.md} summarize
+the implemented language. New services normally belong in native packages;
+new syntax belongs in both single-file runtimes and shared conformance tests.
+The current language has no classes, exception-catching syntax, dynamic shared
+library ABI, or compiler backend. Its complete execution model is the lexical,
+bounded tree interpreter described in these 25 chapters.

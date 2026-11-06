@@ -1,0 +1,27 @@
+\chapter{Rewriting and optimization contracts}
+An optimizer must preserve the behavior that the language actually defines.
+For pure arithmetic, replacing an addition by zero can be straightforward.
+For effectful expressions, removing a seemingly redundant operand may remove
+a library call or change which error occurs first.
+
+\section{Separate pure and effectful nodes}
+Use AST tags or a schema to distinguish literal computation from calls into
+the host. A rewriting pass can then operate on pure subtrees while preserving
+evaluation order at effectful boundaries. The rule should record its
+preconditions rather than infer them from a convenient example.
+
+MuDSL offers direct rewrite sets, first-order term rewriting, and equality
+saturation. Direct rewriting selects a particular replacement. E-graphs retain
+equivalent forms and extract a result according to a cost. Term graphs preserve
+sharing when reduction changes a common subexpression. Each approach has a
+different identity and termination contract.
+
+\section{Bound the search}
+Cycles in rewrite rules are easy to write. Use iteration, node, or step limits
+and report whether a fixpoint was reached. An interrupted optimizer can still
+return a useful result if the API distinguishes completion from exhaustion.
+
+MuLL currently evaluates its syntax directly. Its left-to-right effects and
+short-circuit operators are part of the language contract. Any future compiled
+backend must preserve those rules, including the fact that a failed library
+load updates the error text used by the fallback expression.

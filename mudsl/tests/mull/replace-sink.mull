@@ -1,0 +1,4 @@
+val P <- G:LoadLib("printf");
+P:SetMainSink(fn(s){ P:SetMainSink(G:GetStdout()); });
+P:Print("discarded");
+P:Println("restored");

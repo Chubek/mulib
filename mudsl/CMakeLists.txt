@@ -1,174 +1,47 @@
 cmake_minimum_required(VERSION 3.24)
-project(DSLtk VERSION 1.0 LANGUAGES CXX)
+project(MuDSL VERSION 1.1.0 LANGUAGES CXX)
 include(GNUInstallDirs)
 include(CTest)
+include(CMakePackageConfigHelpers)
 
-option(DSLtk_BUILD_GENERATOR "Build the parser generator" ON)
+add_library(MuDSL INTERFACE)
+add_library(MuDSL::MuDSL ALIAS MuDSL)
+target_include_directories(MuDSL INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_compile_features(MuDSL INTERFACE cxx_std_20)
 
-add_library(DSLtk INTERFACE)
-
-target_include_directories(DSLtk
-    INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-        $<INSTALL_INTERFACE:include>
-)
-
-target_compile_features(DSLtk INTERFACE cxx_std_20)
-
-# Opt-in platform services. The portable runtime does not require these libraries.
-option(METAML_BUILD_SERVICES "Build SQLite, NNG and HTTP-server service tests" OFF)
-set(METAML_THIRD_PARTY_DIR "/mnt/warble/metatk/third_party" CACHE PATH "MetaML third-party source root")
-if(NOT EXISTS "${METAML_THIRD_PARTY_DIR}" AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../third_party")
-    set(METAML_THIRD_PARTY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../third_party")
+option(BUILD_EXAMPLES "Build the MuDSL and MuLL examples" OFF)
+if(BUILD_EXAMPLES)
+    file(GLOB examples CONFIGURE_DEPENDS examples/*.cpp)
+    foreach(source IN LISTS examples)
+        get_filename_component(name ${source} NAME_WE)
+        add_executable(mudsl_${name} ${source})
+        target_link_libraries(mudsl_${name} PRIVATE MuDSL)
+    endforeach()
 endif()
-include(cmake/QBE.cmake)
-if(METAML_BUILD_SERVICES)
-    find_package(SQLite3 REQUIRED)
-    if(TARGET SQLite3::SQLite3)
-        set(_metaml_sqlite_target SQLite3::SQLite3)
-    else()
-        set(_metaml_sqlite_target SQLite::SQLite3)
-    endif()
-    find_package(Threads REQUIRED)
-    find_path(METAML_NNG_INCLUDE_DIR nng/nng.h REQUIRED)
-    find_library(METAML_NNG_LIBRARY nng REQUIRED)
-    find_path(METAML_HTTPLIB_INCLUDE_DIR httplib.h HINTS "${METAML_THIRD_PARTY_DIR}/cpp-httplib" REQUIRED)
-    add_library(metaml-services INTERFACE)
-    target_link_libraries(metaml-services INTERFACE DSLtk ${_metaml_sqlite_target} Threads::Threads ${METAML_NNG_LIBRARY} ${CMAKE_DL_LIBS})
-    target_include_directories(metaml-services INTERFACE ${METAML_NNG_INCLUDE_DIR} ${METAML_HTTPLIB_INCLUDE_DIR})
-endif()
-
-option(METAML_BUILD_REPL "Build the C++ MetaML REPL" ON)
-option(METAML_BUILD_C_API "Build the optional C embedding adapter" ON)
-if(METAML_BUILD_REPL OR METAML_BUILD_C_API)
-    find_package(Threads REQUIRED)
-endif()
-if(METAML_BUILD_REPL)
-    set(METAML_REPLXX_DIR "${METAML_THIRD_PARTY_DIR}/replxx" CACHE PATH "replxx source directory")
-    if(NOT TARGET replxx::replxx)
-        add_subdirectory("${METAML_REPLXX_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/replxx" EXCLUDE_FROM_ALL)
-        # This vendored version defines its own char8_t; keep its implementation
-        # in C++11 even when the parent project selects C++20 or later.
-        set_target_properties(replxx PROPERTIES CXX_STANDARD 11)
-    endif()
-    # MetaML.c deliberately uses the same C++-in-.c convention as metalib.
-    set_source_files_properties(MetaML.c PROPERTIES LANGUAGE CXX)
-    add_executable(metaml MetaML.c)
-    target_link_libraries(metaml PRIVATE DSLtk replxx::replxx Threads::Threads)
-    target_compile_definitions(metaml PRIVATE METAML_DEFAULT_STDLIB="${CMAKE_CURRENT_SOURCE_DIR}/metalib")
-    install(TARGETS metaml RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-    add_executable(metaml-repl-cpp metaml-cli/metaml.cpp)
-    target_link_libraries(metaml-repl-cpp PRIVATE DSLtk Threads::Threads)
-    install(TARGETS metaml-repl-cpp RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-    add_executable(metaml-mammal metaml-cli/mammal.cpp)
-    target_link_libraries(metaml-mammal PRIVATE DSLtk Threads::Threads)
-    install(TARGETS metaml-mammal RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-endif()
-if(METAML_BUILD_C_API)
-    add_library(metaml-c STATIC metalib/c/MetaML.cpp)
-    target_link_libraries(metaml-c PUBLIC DSLtk Threads::Threads)
-    install(TARGETS metaml-c EXPORT DSLtkTargets ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-endif()
-
 if(BUILD_TESTING)
-    enable_testing()
     add_subdirectory(tests)
 endif()
 
-if(BUILD_EXAMPLES)
-    add_executable(dsltk_enum_reflection_example examples/25-enum-reflection.cpp)
-    target_link_libraries(dsltk_enum_reflection_example PRIVATE DSLtk)
-    add_executable(dsltk_equality_saturation_example examples/26-equality-saturation.cpp)
-    target_link_libraries(dsltk_equality_saturation_example PRIVATE DSLtk)
-endif()
-
-install(
-    FILES DSLtk.hpp DSLtk.d MetaML.hpp MetaML.d XVMNative.hpp XVMCode.hpp XVMNative.d XVMCode.d QBENative.hpp QBENative.d
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-
-install(
-    TARGETS DSLtk
-    EXPORT DSLtkTargets
-)
-
-install(
-    EXPORT DSLtkTargets
-    FILE DSLtkTargets.cmake
-    NAMESPACE DSLtk::
-    DESTINATION lib/cmake/DSLtk
-)
-
-install(DIRECTORY metalib/ DESTINATION share/metaml/stdlib/cpp)
-install(DIRECTORY metalib/ DESTINATION share/metaml/stdlib/d)
-install(DIRECTORY metalib/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/metalib
-        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.c" PATTERN "*.d")
-install(DIRECTORY metaml-backends/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/metaml-backends
-        FILES_MATCHING PATTERN "*.hpp" PATTERN "*.d")
-install(DIRECTORY metaml-manual/ DESTINATION share/doc/metaml)
-install(DIRECTORY optml/ DESTINATION share/metaml/optml)
-install(FILES metaml-cli/README.md DESTINATION share/doc/metaml RENAME command-line.md)
-install(FILES XVM.md XVM_VALIDATION.md QBE.md DESTINATION share/doc/metaml)
-install(FILES XVM.md XVM_VALIDATION.md DESTINATION share/metaml/stdlib)
-
-if (DSLtk_BUILD_GENERATOR AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generator/DSLtk-ParserGenerator.d")
-    find_program(DSLtk_D_COMPILER NAMES ldc2 dmd gdc
-                 DOC "D compiler used to build the parser generator")
-
-    if (NOT DSLtk_D_COMPILER)
-        message(WARNING "DSLtk: no D compiler found (ldc2/dmd/gdc); "
-                        "the parser generator will not be built")
-    else()
-        set(DSLtk_GENERATOR_SRC
-            ${CMAKE_CURRENT_SOURCE_DIR}/generator/DSLtk-ParserGenerator.d)
-        set(DSLtk_GENERATOR_BIN
-            ${CMAKE_CURRENT_BINARY_DIR}/dsltk-generate${CMAKE_EXECUTABLE_SUFFIX})
-
-        # dmd/ldc2 take -of=<file>; gdc uses the usual -o <file>.
-        if (DSLtk_D_COMPILER MATCHES "gdc")
-            set(_dsltk_d_flags -O2 -o ${DSLtk_GENERATOR_BIN})
-        else()
-            set(_dsltk_d_flags -O -of=${DSLtk_GENERATOR_BIN})
-        endif()
-
-        add_custom_command(
-            OUTPUT ${DSLtk_GENERATOR_BIN}
-            COMMAND ${DSLtk_D_COMPILER} ${_dsltk_d_flags} ${DSLtk_GENERATOR_SRC}
-            DEPENDS ${DSLtk_GENERATOR_SRC}
-            COMMENT "Building DSLtk parser generator"
-            VERBATIM
-        )
-
-        add_custom_target(DSLtk_generator ALL DEPENDS ${DSLtk_GENERATOR_BIN})
-
-        add_executable(DSLtk::generator IMPORTED GLOBAL)
-        set_target_properties(DSLtk::generator PROPERTIES
-            IMPORTED_LOCATION ${DSLtk_GENERATOR_BIN})
-
-        install(PROGRAMS ${DSLtk_GENERATOR_BIN}
-                DESTINATION ${CMAKE_INSTALL_BINDIR})
-    endif()
-endif()
-
-include(CMakePackageConfigHelpers)
-
-configure_package_config_file(
-    cmake/DSLtkConfig.cmake.in
-    "${CMAKE_CURRENT_BINARY_DIR}/DSLtkConfig.cmake"
-    INSTALL_DESTINATION lib/cmake/DSLtk
-)
-
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/DSLtk.pc.in
-    ${CMAKE_CURRENT_BINARY_DIR}/DSLtk.pc
-    @ONLY)
-
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/DSLtk.pc
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
-
-install(
-    FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/DSLtkConfig.cmake"
-    DESTINATION lib/cmake/DSLtk
-)
+install(FILES MuDSL.hpp MuDSL.d DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(TARGETS MuDSL EXPORT MuDSLTargets)
+install(EXPORT MuDSLTargets FILE MuDSLTargets.cmake NAMESPACE MuDSL::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/MuDSL)
+configure_package_config_file(cmake/MuDSLConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/MuDSLConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/MuDSL)
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/MuDSLConfigVersion.cmake
+    VERSION ${PROJECT_VERSION} COMPATIBILITY SameMajorVersion)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/MuDSLConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/MuDSLConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/MuDSL)
+configure_file(cmake/MuDSL.pc.in ${CMAKE_CURRENT_BINARY_DIR}/MuDSL.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/MuDSL.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+install(DIRECTORY mull/stdlib/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mull/stdlib)
+install(DIRECTORY mull/stdlib/ DESTINATION ${CMAKE_INSTALL_DATADIR}/mull/stdlib)
+install(DIRECTORY book/ DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/MuDSL/book
+    PATTERN build EXCLUDE PATTERN __pycache__ EXCLUDE PATTERN .gitignore EXCLUDE)
+install(DIRECTORY manual/ DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/MuDSL/manual)
+install(FILES README.md DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/MuDSL)
+install(FILES mull/README.md DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/MuDSL/mull)

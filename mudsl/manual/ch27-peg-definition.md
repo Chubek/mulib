@@ -2,13 +2,13 @@
 
 The PEG (Parsing Expression Grammar) engine is a lightweight, additive grammar subsystem layered on top of the pattern-matching and parser-combinator machinery introduced earlier in this manual. Where Chapter 9 described the compile-time `dsl::pattern<>` regex engine, and Chapters 23 through 25 built parsers from small composable functions, the PEG engine provides a container-oriented model: a grammar is a set of named rules, each carrying a compile-time pattern and a semantic action, evaluated under PEG ordered-choice semantics. This chapter describes the grammar container and its rules. The matcher machinery that consumes a grammar streamingly is the subject of Chapter 28.
 
-The PEG subsystem is deliberately additive. No existing type, function, or layout in `DSLtk.hpp` is modified to accommodate it; the entire engine lives in a single self-contained section of the header behind forward-declared structs (`PEGDefinition`, `PEGRule`, `PEGMatch`, `PEGParseResult`, `PEGMatcher`). A grammar can be constructed, populated with rules, and used to parse input without pulling in any of the combinator types from Chapter 23. Readers familiar with the `dsl::pattern` regex subset will find the pattern language identical, because the PEG engine compiles its rule patterns with the same runtime matcher described in Chapter 9.
+The PEG subsystem is deliberately additive. No existing type, function, or layout in `MuDSL.hpp` is modified to accommodate it; the entire engine lives in a single self-contained section of the header behind forward-declared structs (`PEGDefinition`, `PEGRule`, `PEGMatch`, `PEGParseResult`, `PEGMatcher`). A grammar can be constructed, populated with rules, and used to parse input without pulling in any of the combinator types from Chapter 23. Readers familiar with the `dsl::pattern` regex subset will find the pattern language identical, because the PEG engine compiles its rule patterns with the same runtime matcher described in Chapter 9.
 
 This chapter covers the factory `create_peg_definition()`, the `PEGDefinition` container, the `add_rule<Pattern>(action)` template, the `PEGRule` record, the channel abstraction (`PEGChannel`, `PEGIgnoreChannel`, `PEGDefaultChannel`, `new_peg_channel`), the `PEGMatch` value handed to semantic actions, the `PEGParseResult` returned by `parse()`, and the ordered-choice algorithm that drives rule selection. Worked examples progress from a trivial whitespace-skipping tokenizer to a small expression grammar. Cross-references to Chapter 4 (FixedString), Chapter 9 (pattern subset), Chapter 10 (ASTNode), and Chapters 23 through 25 (parser combinators) appear throughout.
 
-## The PEG Model in DSLtk
+## The PEG Model in MuDSL
 
-A Parsing Expression Grammar, in the formal sense, is an ordered set of production rules where each rule is a parsing expression and choice is ordered: the first alternative that matches wins, and later alternatives are not tried at the same position. The DSLtk PEG engine embodies that semantics directly. A `PEGDefinition` stores rules in declaration order, and `parse()` walks the input position by position, attempting each visible rule at the current offset until one succeeds. There is no backtracking across positions, no ambiguity, and no lookahead beyond what the pattern subset itself provides.
+A Parsing Expression Grammar, in the formal sense, is an ordered set of production rules where each rule is a parsing expression and choice is ordered: the first alternative that matches wins, and later alternatives are not tried at the same position. The MuDSL PEG engine embodies that semantics directly. A `PEGDefinition` stores rules in declaration order, and `parse()` walks the input position by position, attempting each visible rule at the current offset until one succeeds. There is no backtracking across positions, no ambiguity, and no lookahead beyond what the pattern subset itself provides.
 
 This makes the engine a scanner rather than a recursive-descent parser of nested structures. Each rule consumes a contiguous span of input at the current position, fires its semantic action, and advances the position. The grammar does not, on its own, build a recursive tree; that is the job of the semantic action, which may use the AST facilities of Chapter 10 and Chapter 11 to construct a tree, or simply emit tokens. The PEG engine's responsibility is narrower: decide which rule matches here, run its action, advance.
 
@@ -297,7 +297,7 @@ The two failure modes are distinguishable by message. A failure with the message
 The first complete example mirrors `examples/23-peg-definition.cpp`. It defines a grammar that skips whitespace, recognises a handful of keywords, identifiers, numbers, and operators, and parses a short input. Each rule prints its match; the whitespace rule is routed to the ignore channel.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int
@@ -424,7 +424,7 @@ This pattern scales to grammars of moderate size. For larger grammars, the kind 
 The semantic action is the natural place to construct AST nodes. The `dsl::ASTNode` value type from Chapter 10 and the `dsl::leaf` and `dsl::node` builders from Chapter 11 are available for this purpose. An identifier action might push a leaf node onto a stack; an operator action might pop two operands and push a binary node.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <vector>
 #include <string>
 
@@ -572,7 +572,7 @@ Chapter 28 covers the matcher, the `PEGMatch` record from the matcher's perspect
 The following example assembles the chapter's material into a complete, self-contained tokenizer. It defines a grammar for a tiny expression language with keywords, identifiers, numbers, operators, and parentheses, ignores whitespace, collects tokens into a vector, and prints them.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <string>
 #include <vector>

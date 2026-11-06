@@ -1,0 +1,33 @@
+\chapter{Conditions and loops}
+\api{if} evaluates a condition and executes one braced branch. An optional
+\api{else} supplies the false branch, and \api{else if} chains conditions.
+Parentheses around the condition are optional because braces delimit the body.
+
+\begin{mullcode}
+var total <- 0;
+var i <- 0;
+while i < 10 {
+    i <- i + 1;
+    if i == 6 { break; }
+    if i % 2 == 0 { total <- total + i; }
+    else { total <- total + 1; }
+}
+G:Assert(total == 9);
+\end{mullcode}
+
+\section{Loop scope}
+\api{while} reevaluates its condition before every iteration. Each execution
+of the body creates a fresh lexical scope. Declare a running counter outside
+the loop when it must survive across iterations. A closure created within
+an iteration retains that iteration's bindings.
+
+\api{break;} exits the nearest enclosing loop. It cannot cross a function
+boundary: calling a function containing an otherwise unhandled break raises
+an error even if the caller happens to be inside a loop. \api{return} exits
+the current function, or ends a top-level run or package evaluation.
+
+The interpreter counts evaluation steps and allocated environments. An
+unbounded loop eventually raises a limit error under the default settings.
+Limits are configurable by the host, and a subsequent \api{run} receives a
+fresh step budget. Previously completed assignments remain visible after
+an interrupted loop.

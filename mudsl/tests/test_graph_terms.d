@@ -1,6 +1,6 @@
 module test_graph_terms;
 
-import DSLtk;
+import MuDSL;
 import std.algorithm : canFind;
 import std.exception : assertThrown;
 

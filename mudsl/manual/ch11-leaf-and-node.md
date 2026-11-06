@@ -1,8 +1,8 @@
 # Chapter 11: Building Trees with `leaf<>` and `node<>`
 
-Chapter 10 introduced `ASTNode`, the value-type node that backs every abstract syntax tree in DSLtk. Constructing those nodes by hand, however, requires spelling out the tag as a run-time `std::string_view`, choosing the correct constructor overload, and assembling the children vector yourself. The library therefore provides two ergonomic factory functions, `dsl::leaf<>` and `dsl::node<>`, that turn the common cases into one-line expressions. This chapter documents those factories in detail.
+Chapter 10 introduced `ASTNode`, the value-type node that backs every abstract syntax tree in MuDSL. Constructing those nodes by hand, however, requires spelling out the tag as a run-time `std::string_view`, choosing the correct constructor overload, and assembling the children vector yourself. The library therefore provides two ergonomic factory functions, `dsl::leaf<>` and `dsl::node<>`, that turn the common cases into one-line expressions. This chapter documents those factories in detail.
 
-Both factories share a single design idea: the tag is supplied as a compile-time string literal in the template argument list, while the run-time payload (a value or a list of children) is supplied as ordinary function arguments. The result is an `ASTNode` prvalue that can be immediately moved into a parent or bound to a variable. The factories are the primary way DSLtk code builds trees, and every later chapter on traversal, rewriting, and lazy evaluation assumes the trees were assembled this way.
+Both factories share a single design idea: the tag is supplied as a compile-time string literal in the template argument list, while the run-time payload (a value or a list of children) is supplied as ordinary function arguments. The result is an `ASTNode` prvalue that can be immediately moved into a parent or bound to a variable. The factories are the primary way MuDSL code builds trees, and every later chapter on traversal, rewriting, and lazy evaluation assumes the trees were assembled this way.
 
 ## 11.1 The Role of the Factories
 
@@ -137,7 +137,7 @@ auto b = dsl::leaf<name>(1);   // error
 
 The same restriction applies to `std::string` objects, which are not literal types and therefore cannot be non-type template parameters at all. Code that needs to choose a tag at run time must fall back to constructing an `ASTNode` directly, passing the tag to the constructor.
 
-This is an intentional trade-off. The factory syntax is optimized for the common case where the tag is a fixed, known label such as `"num"`, `"add"`, or `"if"`. Tags chosen at run time are rare in DSLtk usage, and the direct constructor remains available for them.
+This is an intentional trade-off. The factory syntax is optimized for the common case where the tag is a fixed, known label such as `"num"`, `"add"`, or `"if"`. Tags chosen at run time are rare in MuDSL usage, and the direct constructor remains available for them.
 
 ## 11.8 Children Must Be Convertible to `ASTNode`
 
@@ -219,7 +219,7 @@ std::cout << t.dump() << "\n";
 
 The whole tree is built in a single expression. No temporary variables are required, though they may be used for readability. The `dump` output is a flat S-expression that preserves the nesting.
 
-This compositional style is the idiomatic way to build ASTs in DSLtk. It mirrors the structure of the source language directly: an expression is a node whose children are subexpressions, all the way down to identifiers and literals.
+This compositional style is the idiomatic way to build ASTs in MuDSL. It mirrors the structure of the source language directly: an expression is a node whose children are subexpressions, all the way down to identifiers and literals.
 
 ## 11.12 Move Semantics and Prvalues
 
@@ -240,7 +240,7 @@ auto t = dsl::node<"+">(a, b);   // a and b are copied
 // a and b are still valid here
 ```
 
-Both forms are correct. The prvalue form avoids a copy; the lvalue form keeps the originals available for later use. DSLtk's value-semantics design (Chapter 10) means either choice is safe.
+Both forms are correct. The prvalue form avoids a copy; the lvalue form keeps the originals available for later use. MuDSL's value-semantics design (Chapter 10) means either choice is safe.
 
 ## 11.13 The `AST` Feature Tag
 

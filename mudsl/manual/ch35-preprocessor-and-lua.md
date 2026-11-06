@@ -129,12 +129,12 @@ bridge implements it for a user-owned Lua state.
 
 ## Enable native Lua in C++
 
-Define `DSLTK_ENABLE_LUA` before including the header and supply Lua's include
+Define `MUDSL_ENABLE_LUA` before including the header and supply Lua's include
 and link flags:
 
 ```cpp
-#define DSLTK_ENABLE_LUA
-#include "DSLtk.hpp"
+#define MUDSL_ENABLE_LUA
+#include "MuDSL.hpp"
 #include <cassert>
 
 int main() {
@@ -149,7 +149,7 @@ int main() {
 ```
 
 ```sh
-# From the DSLtk directory, with the example saved as lua-app.cpp:
+# From the MuDSL directory, with the example saved as lua-app.cpp:
 g++ -std=c++20 -I. lua-app.cpp $(pkg-config --cflags --libs lua5.4) -o lua-app
 ```
 
@@ -159,7 +159,7 @@ uses the supplied state; opening libraries and configuring it are user operation
 ## Enable native Lua in D
 
 ```d
-import DSLtk;
+import MuDSL;
 
 void main()
 {
@@ -174,9 +174,9 @@ void main()
 ```
 
 ```sh
-ldc2 -d-version=DSLtkLua lua-app.d DSLtk.d -L-llua5.4 -of=lua-app
-dmd -version=DSLtkLua lua-app.d DSLtk.d -L-llua5.4 -of=lua-app
-gdc -fversion=DSLtkLua lua-app.d DSLtk.d -llua5.4 -o lua-app
+ldc2 -d-version=MuDSLLua lua-app.d MuDSL.d -L-llua5.4 -of=lua-app
+dmd -version=MuDSLLua lua-app.d MuDSL.d -L-llua5.4 -of=lua-app
+gdc -fversion=MuDSLLua lua-app.d MuDSL.d -llua5.4 -o lua-app
 ```
 
 The D declarations target the Lua 5.3/5.4 ABI. A directive loads and executes
@@ -190,9 +190,9 @@ them. The bridge is optional; default builds use the standard library only.
 The ordinary facility tests cover macros, inactive branches, comments,
 continuations, include resolution and callback-based scripts. To enable the
 native C++ bridge test, configure the standalone test project with
-`-DDSLtk_TEST_LUA=ON`. For D native-bridge tests:
+`-DMuDSL_TEST_LUA=ON`. For D native-bridge tests:
 
 ```sh
-ldc2 -unittest -main -d-version=DSLtkLua DSLtk.d -L-llua5.4 -of=dsltk-lua-test
-./dsltk-lua-test
+ldc2 -unittest -main -d-version=MuDSLLua MuDSL.d -L-llua5.4 -of=mudsl-lua-test
+./mudsl-lua-test
 ```

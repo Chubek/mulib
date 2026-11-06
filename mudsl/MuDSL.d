@@ -1,8 +1,8 @@
 /**
  * Composable, single-module DSL construction toolkit for D.
  *
- * Port of DSLtk.hpp using template mixins, variadic tuples, static foreach,
- * string template parameters, operator templates, and CTFE. Import DSLtk;
+ * Port of MuDSL.hpp using template mixins, variadic tuples, static foreach,
+ * string template parameters, operator templates, and CTFE. Import MuDSL;
  * no dependencies beyond Phobos are required.
  *
  * Features are injected directly into a struct or class (no CRTP base):
@@ -52,14 +52,592 @@
  * and TermGraph provide first-order terms, unification and bounded reduction.
  * See manual/ch30-language-facilities.md for examples and supported syntax.
  *
- * Run the embedded tests: ldc2 -unittest -main DSLtk.d -of=dsltk-test
+ * Run the embedded tests: ldc2 -unittest -main MuDSL.d -of=mudsl-test
  */
-module DSLtk;
+module MuDSL;
 
 import std.conv : to;
 import std.meta : AliasSeq, staticIndexOf;
 import std.traits : EnumMembers, OriginalType, Unqual, isArray, isIntegral;
 import std.typecons : Nullable, Tuple, tuple;
+
+/// Namespaced embedding surface: new MuLL.Runtime(), MuLL.Value, MuLL.Error.
+struct MuLL
+{
+    alias Runtime = MuLLRuntime;
+    alias Value = MuLLValue;
+    alias Error = MuLLError;
+}
+
+class MuLLError : Exception
+{
+    size_t line, column;
+    this(string message, size_t l = 0, size_t c = 0)
+    { super(message); line = l; column = c; }
+}
+
+struct MuLLValue
+{
+    alias List = MuLLValue[];
+    alias Object = MuLLValue[string];
+    alias Native = MuLLValue delegate(MuLLValue[]);
+    private size_t tag;
+    private bool boolean;
+    private double numeric;
+    private string str;
+    private List elements;
+    private Object fields;
+    private Native function_;
+    private size_t nesting;
+    this(bool v) { tag = 1; boolean = v; }
+    this(double v)
+    {
+        import std.math : isFinite;
+        if (!isFinite(v)) throw new MuLLError("non-finite number");
+        tag = 2; numeric = v;
+    }
+    this(int v) { this(cast(double) v); }
+    this(string v) { tag = 3; str = v; }
+    this(List v)
+    {
+        import std.algorithm : max;
+        nesting = 1;
+        foreach (item; v) nesting = max(nesting, item.nesting + 1);
+        if (nesting > 256) throw new MuLLError("collection nesting limit exceeded");
+        tag = 4; elements = v.dup;
+    }
+    this(Object v)
+    {
+        import std.algorithm : max;
+        nesting = 1;
+        foreach (item; v) nesting = max(nesting, item.nesting + 1);
+        if (nesting > 256) throw new MuLLError("collection nesting limit exceeded");
+        tag = 5; fields = v.dup;
+    }
+    this(Native v) { tag = 6; function_ = v; }
+    size_t kind() const { return tag; }
+    bool truth() const { return tag != 0 && (tag != 1 || boolean); }
+    double number() const { if (tag != 2) throw new MuLLError("expected number"); return numeric; }
+    string stringValue() const { if (tag != 3) throw new MuLLError("expected string"); return str; }
+    List list() { if (tag != 4) throw new MuLLError("expected list"); return elements.dup; }
+    Object object() { if (tag != 5) throw new MuLLError("expected record"); return fields.dup; }
+    MuLLValue member(string name)
+    {
+        if (tag != 5) throw new MuLLError("expected record");
+        auto p = name in fields;
+        if (!p) throw new MuLLError("unknown member: " ~ name);
+        return *p;
+    }
+    MuLLValue call(List args = null)
+    { if (tag != 6) throw new MuLLError("expected function"); return function_(args); }
+    string type() const { return ["nil", "bool", "number", "string", "list", "record", "function"][tag]; }
+    string text()
+    {
+        import std.format : format;
+        import std.algorithm : sort;
+        final switch (tag)
+        {
+            case 0: return "nil";
+            case 1: return boolean ? "true" : "false";
+            case 2: return format("%.17g", numeric);
+            case 3: return str;
+            case 4:
+                string out_ = "[";
+                foreach (i, v; elements) { if (i) out_ ~= ", "; out_ ~= v.text(); }
+                return out_ ~ "]";
+            case 5:
+                string out_ = "{"; bool first = true;
+                foreach (k; fields.keys.sort)
+                { if (!first) out_ ~= ", "; first = false; out_ ~= k ~ ": " ~ fields[k].text(); }
+                return out_ ~ "}";
+            case 6: return "<function>";
+        }
+    }
+    bool opEquals(MuLLValue other)
+    {
+        if (tag != other.tag) return false;
+        final switch (tag)
+        {
+            case 0: return true;
+            case 1: return boolean == other.boolean;
+            case 2: return numeric == other.numeric;
+            case 3: return str == other.str;
+            case 4: return elements == other.elements;
+            case 5: return fields == other.fields;
+            case 6: return function_ == other.function_;
+        }
+    }
+}
+
+void mullArity(MuLLValue[] args, size_t n)
+{ if (args.length != n) throw new MuLLError("expected " ~ n.to!string ~ " arguments"); }
+
+private struct MuLLToken { string text; int kind; size_t line = 1, column = 1; }
+private MuLLToken[] mullLex(string source)
+{
+    MuLLToken[] tokens;
+    size_t p, line = 1, column = 1;
+    char take() { char c = source[p++]; if (c == '\n') { ++line; column = 1; } else ++column; return c; }
+    bool alpha(char c) { return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_'; }
+    bool digit(char c) { return c >= '0' && c <= '9'; }
+    while (p < source.length)
+    {
+        char c = source[p];
+        if (c == ' ' || c == '\t' || c == '\r' || c == '\n') { take(); continue; }
+        if (c == '#' || c == '/' && p + 1 < source.length && source[p+1] == '/')
+        { while (p < source.length && source[p] != '\n') take(); continue; }
+        MuLLToken t; t.line = line; t.column = column;
+        if (alpha(c))
+        {
+            t.kind = 1;
+            do { t.text ~= take(); } while (p < source.length && (alpha(source[p]) || digit(source[p])));
+        }
+        else if (digit(c))
+        {
+            t.kind = 2;
+            do { t.text ~= take(); } while (p < source.length && digit(source[p]));
+            if (p < source.length && source[p] == '.')
+            { t.text ~= take(); while (p < source.length && digit(source[p])) t.text ~= take(); }
+            if (p < source.length && (source[p] == 'e' || source[p] == 'E'))
+            {
+                t.text ~= take();
+                if (p < source.length && (source[p] == '+' || source[p] == '-')) t.text ~= take();
+                if (p == source.length || !digit(source[p])) throw new MuLLError("invalid exponent", t.line, t.column);
+                while (p < source.length && digit(source[p])) t.text ~= take();
+            }
+        }
+        else if (c == '"')
+        {
+            t.kind = 3; take(); bool closed;
+            while (p < source.length)
+            {
+                c = take(); if (c == '"') { closed = true; break; }
+                if (c == '\\')
+                {
+                    if (p == source.length) break;
+                    c = take();
+                    switch (c)
+                    {
+                        case 'n': c = '\n'; break; case 'r': c = '\r'; break; case 't': c = '\t'; break;
+                        case '0': c = '\0'; break; case '\\': case '"': break;
+                        default: throw new MuLLError("invalid string escape", t.line, t.column);
+                    }
+                }
+                t.text ~= c;
+            }
+            if (!closed) throw new MuLLError("unterminated string", t.line, t.column);
+        }
+        else
+        {
+            import std.algorithm : canFind;
+            t.text ~= take();
+            if (p < source.length)
+            {
+                auto pair = t.text ~ source[p];
+                if (["<-", "==", "!=", "<=", ">="].canFind(pair)) t.text ~= take();
+            }
+            if (t.text.length == 1 && !"+-*/%<>(){}[]:;,!".canFind(c))
+                throw new MuLLError("unexpected character", t.line, t.column);
+        }
+        tokens ~= t;
+    }
+    return tokens ~ MuLLToken("", 0, line, column);
+}
+
+private class MuLLNode
+{
+    string op, text;
+    MuLLNode[] children;
+    string[] names;
+    size_t line, column;
+    this(string op, MuLLToken t) { this.op = op; text = t.text; line = t.line; column = t.column; }
+}
+private class MuLLParser
+{
+    MuLLToken[] tokens;
+    size_t pos, depth;
+    this(string source) { tokens = mullLex(source); }
+    MuLLToken peek() { return tokens[pos]; }
+    bool at(string s) { return peek.kind != 3 && peek.text == s; }
+    bool eat(string s) { if (!at(s)) return false; ++pos; return true; }
+    void fail(string message) { throw new MuLLError(message, peek.line, peek.column); }
+    void need(string s) { if (!eat(s)) fail("expected '" ~ s ~ "'"); }
+    void enter() { if (++depth > 256) fail("syntax nesting limit exceeded"); }
+    string name()
+    {
+        import std.algorithm : canFind;
+        if (peek.kind != 1) fail("expected identifier");
+        auto s = tokens[pos++].text;
+        if (["val", "var", "ref", "fn", "if", "else", "while", "return", "break", "true", "false", "nil", "and", "or", "not"].canFind(s))
+            fail("reserved identifier: " ~ s);
+        return s;
+    }
+    static int precedence(string s)
+    {
+        switch (s)
+        {
+            case "or": return 1; case "and": return 2; case "==": case "!=": return 3;
+            case "<": case ">": case "<=": case ">=": return 4;
+            case "+": case "-": return 5; case "*": case "/": case "%": return 6;
+            default: return 0;
+        }
+    }
+    MuLLNode expression(int min = 1)
+    {
+        import std.algorithm : canFind;
+        enter(); scope(exit) --depth;
+        auto token = peek; MuLLNode left;
+        if (eat("-") || eat("+") || eat("!") || eat("not"))
+        { left = new MuLLNode("unary", token); left.children ~= expression(7); }
+        else if (eat("fn"))
+        {
+            left = new MuLLNode("fn", token); need("(");
+            if (!at(")")) do
+            {
+                auto s = name(); if (left.names.canFind(s)) fail("duplicate parameter"); left.names ~= s;
+            } while (eat(","));
+            need(")"); left.children ~= block();
+        }
+        else if (eat("(")) { left = expression(); need(")"); }
+        else if (eat("["))
+        {
+            left = new MuLLNode("list", token);
+            if (!at("]")) do { left.children ~= expression(); } while (eat(","));
+            need("]");
+        }
+        else if (eat("{"))
+        {
+            left = new MuLLNode("object", token);
+            if (!at("}")) do
+            {
+                auto s = peek.kind == 3 ? tokens[pos++].text : name(); need(":");
+                if (left.names.canFind(s)) fail("duplicate record key");
+                left.names ~= s; left.children ~= expression();
+            } while (eat(","));
+            need("}");
+        }
+        else if (token.kind == 2 || token.kind == 3)
+        { ++pos; left = new MuLLNode(token.kind == 2 ? "number" : "string", token); }
+        else if (eat("true") || eat("false") || eat("nil")) left = new MuLLNode("literal", token);
+        else { auto s = name(); left = new MuLLNode("name", token); left.text = s; }
+        size_t chain;
+        while (true)
+        {
+            if (++chain > 256) fail("expression chain limit exceeded");
+            if (eat("("))
+            {
+                auto n = new MuLLNode("call", token); n.children ~= left;
+                if (!at(")")) do { n.children ~= expression(); } while (eat(","));
+                need(")"); left = n;
+            }
+            else if (eat(":"))
+            { auto n = new MuLLNode("member", token); n.text = name(); n.children ~= left; left = n; }
+            else if (eat("["))
+            { auto n = new MuLLNode("index", token); n.children = [left, expression()]; need("]"); left = n; }
+            else break;
+        }
+        while (peek.kind != 3 && precedence(peek.text) >= min)
+        {
+            if (++chain > 256) fail("expression chain limit exceeded");
+            auto op = tokens[pos++]; auto n = new MuLLNode("binary", op);
+            n.children = [left, expression(precedence(op.text) + 1)]; left = n;
+        }
+        return left;
+    }
+    MuLLNode block()
+    {
+        enter(); scope(exit) --depth;
+        auto n = new MuLLNode("block", peek); need("{");
+        while (!at("}")) { if (at("")) fail("unterminated block"); n.children ~= statement(); }
+        need("}"); return n;
+    }
+    MuLLNode statement()
+    {
+        enter(); scope(exit) --depth;
+        auto t = peek;
+        if (eat("val") || eat("var") || eat("ref"))
+        {
+            auto n = new MuLLNode(t.text, t); n.text = name(); need("<-");
+            n.children ~= expression(); need(";"); return n;
+        }
+        if (eat("if") || eat("while"))
+        {
+            auto n = new MuLLNode(t.text, t); n.children = [expression(), block()];
+            if (t.text == "if" && eat("else")) n.children ~= at("if") ? statement() : block();
+            return n;
+        }
+        if (eat("return"))
+        { auto n = new MuLLNode("return", t); if (!at(";")) n.children ~= expression(); need(";"); return n; }
+        if (eat("break")) { auto n = new MuLLNode("break", t); need(";"); return n; }
+        if (at("{")) return block();
+        auto n = expression();
+        if (eat("<-")) { auto assign = new MuLLNode("assign", t); assign.children = [n, expression()]; n = assign; }
+        need(";"); return n;
+    }
+    MuLLNode parse()
+    { auto n = new MuLLNode("program", peek); while (!at("")) n.children ~= statement(); return n; }
+}
+private class MuLLCell
+{
+    MuLLValue value; bool mutable_;
+    this(MuLLValue v, bool m) { value = v; mutable_ = m; }
+}
+private class MuLLEnv
+{
+    MuLLEnv parent; MuLLCell[string] values;
+    MuLLCell lookup(string name)
+    {
+        for (auto e = this; e !is null; e = e.parent)
+            if (auto p = name in e.values) return *p;
+        throw new MuLLError("undefined binding: " ~ name);
+    }
+}
+private class MuLLReturn : Exception
+{ MuLLValue value; this(MuLLValue v) { super("return"); value = v; } }
+private class MuLLBreak : Exception { this() { super("break"); } }
+
+/// Independent, single-threaded interpreter. Native code is supplied by the host.
+class MuLLRuntime
+{
+    private MuLLEnv globals;
+    private MuLLValue[string] natives, packages;
+    private bool[string] loading;
+    private string[] paths;
+    private string error_;
+    private size_t steps, calls, frames, evalDepth;
+    private bool running;
+    size_t maxSteps = 1_000_000, maxCallDepth = 128, maxFrames = 100_000, maxSourceBytes = 4 * 1024 * 1024;
+    void delegate(string) stdoutSink;
+    private MuLLEnv frame(MuLLEnv parent)
+    {
+        if (frames >= maxFrames) throw new MuLLError("environment limit exceeded");
+        ++frames; auto env = new MuLLEnv; env.parent = parent; return env;
+    }
+    private static void bind(MuLLEnv env, string name, MuLLValue value, bool mut = false)
+    {
+        if (name in env.values) throw new MuLLError("duplicate binding: " ~ name);
+        env.values[name] = new MuLLCell(value, mut);
+    }
+    private MuLLValue eval(MuLLNode n, MuLLEnv env)
+    {
+        if (++steps > maxSteps) throw new MuLLError("execution limit exceeded", n.line, n.column);
+        if (evalDepth >= 512) throw new MuLLError("evaluation nesting limit exceeded", n.line, n.column);
+        ++evalDepth; scope(exit) --evalDepth;
+        try { return evaluate(n, env); }
+        catch (MuLLError e) { if (e.line) throw e; throw new MuLLError(e.msg, n.line, n.column); }
+        catch (MuLLReturn e) { throw e; }
+        catch (MuLLBreak e) { throw e; }
+        catch (Exception e) { throw new MuLLError(e.msg, n.line, n.column); }
+    }
+    private MuLLValue evaluate(MuLLNode n, MuLLEnv env)
+    {
+        import std.math : floor, fmod;
+        alias V = MuLLValue;
+        auto op = n.op;
+        V child(size_t i) { return eval(n.children[i], env); }
+        if (op == "program" || op == "block")
+        {
+            auto scope_ = op == "block" ? frame(env) : env; V result;
+            foreach (c; n.children) result = eval(c, scope_);
+            return result;
+        }
+        if (op == "number")
+        {
+            try
+            {
+                auto number = n.text.to!double;
+                // Match from_chars: a nonzero literal that rounds to zero is
+                // out of range. An all-zero mantissa remains valid at any exponent.
+                if (number == 0)
+                    foreach (char c; n.text)
+                    {
+                        if (c == 'e' || c == 'E') break;
+                        if (c >= '1' && c <= '9') throw new MuLLError("invalid number");
+                    }
+                return V(number);
+            }
+            catch (Exception e) { throw new MuLLError("invalid number"); }
+        }
+        if (op == "string")
+        { import std.string : replace; return V(n.text.replace("$E?", error_)); }
+        if (op == "literal") return n.text == "nil" ? V.init : V(n.text == "true");
+        if (op == "name") return env.lookup(n.text).value;
+        if (op == "val" || op == "var" || op == "ref")
+        {
+            if (n.text in env.values) throw new MuLLError("duplicate binding: " ~ n.text);
+            if (op == "ref")
+            {
+                if (n.children[0].op != "name") throw new MuLLError("ref requires a mutable binding");
+                auto cell = env.lookup(n.children[0].text);
+                if (!cell.mutable_) throw new MuLLError("cannot reference immutable binding");
+                env.values[n.text] = cell; return cell.value;
+            }
+            auto v = child(0); bind(env, n.text, v, op == "var"); return v;
+        }
+        if (op == "assign")
+        {
+            if (n.children[0].op != "name") throw new MuLLError("assignment requires a binding");
+            auto cell = env.lookup(n.children[0].text);
+            if (!cell.mutable_) throw new MuLLError("cannot assign immutable binding");
+            auto v = child(1); cell.value = v; return v;
+        }
+        if (op == "list") { V[] v; foreach (c; n.children) v ~= eval(c, env); return V(v); }
+        if (op == "object")
+        { V[string] v; foreach (i, name; n.names) v[name] = child(i); return V(v); }
+        if (op == "member") return child(0).member(n.text);
+        if (op == "index")
+        {
+            auto v = child(0); auto k = child(1);
+            if (v.tag == 5) return v.member(k.stringValue());
+            auto index = k.number(); auto size = v.tag == 3 ? v.str.length : v.list().length;
+            if (index < 0 || floor(index) != index || index >= cast(double) size) throw new MuLLError("index out of bounds");
+            auto i = cast(size_t) index;
+            return v.tag == 3 ? V(v.str[i .. i + 1]) : v.elements[i];
+        }
+        if (op == "unary")
+        {
+            auto v = child(0); if (n.text == "!" || n.text == "not") return V(!v.truth());
+            return V(n.text == "-" ? -v.number() : v.number());
+        }
+        if (op == "binary")
+        {
+            auto a = child(0); auto s = n.text;
+            if (s == "or") return a.truth() ? a : child(1);
+            if (s == "and") return a.truth() ? child(1) : a;
+            auto b = child(1);
+            if (s == "==") return V(a == b); if (s == "!=") return V(a != b);
+            if (s == "+" && a.tag == 3 && b.tag == 3) return V(a.str ~ b.str);
+            if (s == "+" && a.tag == 4 && b.tag == 4) return V(a.elements ~ b.elements);
+            auto x = a.number(), y = b.number();
+            if (s == "+") return V(x + y); if (s == "-") return V(x - y); if (s == "*") return V(x * y);
+            if (s == "/" || s == "%")
+            { if (y == 0) throw new MuLLError("division by zero"); return V(s == "/" ? x / y : fmod(x, y)); }
+            if (s == "<") return V(x < y); if (s == ">") return V(x > y);
+            if (s == "<=") return V(x <= y); if (s == ">=") return V(x >= y);
+        }
+        if (op == "if")
+        { if (child(0).truth()) return child(1); return n.children.length == 3 ? child(2) : V.init; }
+        if (op == "while")
+        {
+            V result;
+            try { while (child(0).truth()) result = child(1); } catch (MuLLBreak e) {}
+            return result;
+        }
+        if (op == "return") throw new MuLLReturn(n.children.length ? child(0) : V.init);
+        if (op == "break") throw new MuLLBreak;
+        if (op == "fn")
+        {
+            return V((V[] args) {
+                mullArity(args, n.names.length);
+                if (calls >= maxCallDepth) throw new MuLLError("call depth limit exceeded");
+                ++calls; scope(exit) --calls;
+                auto scope_ = frame(env);
+                foreach (i, arg; args) bind(scope_, n.names[i], arg, true);
+                try { return eval(n.children[0], scope_); }
+                catch (MuLLReturn r) { return r.value; }
+                catch (MuLLBreak e) { throw new MuLLError("break outside loop"); }
+            });
+        }
+        if (op == "call")
+        {
+            auto f = child(0); V[] args;
+            foreach (i; 1 .. n.children.length) args ~= child(i);
+            return f.call(args);
+        }
+        throw new MuLLError("invalid expression");
+    }
+    private MuLLValue execute(string source, MuLLEnv env, string name)
+    {
+        try
+        {
+            auto tree = (new MuLLParser(source)).parse();
+            try { return eval(tree, env); }
+            catch (MuLLReturn r) { return r.value; }
+            catch (MuLLBreak e) { throw new MuLLError("break outside loop"); }
+        }
+        catch (MuLLError e)
+        { throw new MuLLError(name ~ ":" ~ e.line.to!string ~ ":" ~ e.column.to!string ~ ": " ~ e.msg, e.line, e.column); }
+    }
+    this(string[] paths = ["mull/stdlib"])
+    {
+        import std.stdio : stdout;
+        alias V = MuLLValue;
+        this.paths = paths.dup; globals = frame(null);
+        stdoutSink = (string s) { stdout.rawWrite(s); };
+        V[string] g;
+        g["LoadLib"] = V((V[] a) { mullArity(a,1); return loadLibrary(a[0].stringValue()); });
+        g["Native"] = V((V[] a) {
+            mullArity(a,1); auto p = a[0].stringValue() in natives;
+            if (!p) throw new MuLLError("unregistered native library: " ~ a[0].stringValue()); return *p;
+        });
+        g["DieWith"] = V((V[] a) { mullArity(a,1); throw new MuLLError(a[0].text()); return V.init; });
+        g["GetStdout"] = V((V[] a) {
+            mullArity(a,0); return V((V[] s) { mullArity(s,1); stdoutSink(s[0].stringValue()); return V.init; });
+        });
+        g["Assert"] = V((V[] a) {
+            mullArity(a,1); if (!a[0].truth()) throw new MuLLError("assertion failed"); return a[0];
+        });
+        g["Str"] = V((V[] a) { mullArity(a,1); return V(a[0].text()); });
+        g["Type"] = V((V[] a) { mullArity(a,1); return V(a[0].type()); });
+        g["Len"] = V((V[] a) {
+            mullArity(a,1); auto v = a[0];
+            return V(cast(double)(v.tag == 3 ? v.str.length : v.tag == 5 ? v.fields.length : v.list().length));
+        });
+        bind(globals, "G", V(g));
+    }
+    void addLibraryPath(string path) { paths ~= path; }
+    void registerLibrary(string name, MuLLValue library) { natives[name] = library; }
+    void define(string name, MuLLValue value, bool mutableBinding = false) { bind(globals, name, value, mutableBinding); }
+    MuLLValue get(string name) { return globals.lookup(name).value; }
+    string lastError() const { return error_; }
+    MuLLValue run(string source, string name = "<input>")
+    {
+        if (running || evalDepth) throw new MuLLError("reentrant run is not supported");
+        if (source.length > maxSourceBytes) throw new MuLLError("source size limit exceeded");
+        steps = 0; running = true; scope(exit) running = false;
+        return execute(source, globals, name);
+    }
+    string readSource(string path)
+    {
+        import std.stdio : File;
+        auto file = File(path, "rb"); string source; ubyte[4096] buffer;
+        while (true)
+        {
+            auto bytes = file.rawRead(buffer[]); if (!bytes.length) break;
+            if (bytes.length > maxSourceBytes - source.length) throw new MuLLError("source size limit exceeded");
+            source ~= cast(string) bytes.idup;
+        }
+        return source;
+    }
+    MuLLValue runFile(string path) { return run(readSource(path), path); }
+    MuLLValue loadLibrary(string name)
+    {
+        import std.file : isFile, exists;
+        import std.path : buildPath;
+        import std.algorithm : canFind;
+        try
+        {
+            if (!name.length) throw new MuLLError("invalid library name: " ~ name);
+            foreach (char c; name)
+                if (!"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-".canFind(c))
+                    throw new MuLLError("invalid library name: " ~ name);
+            if (auto p = name in packages) { error_ = ""; return *p; }
+            if (name in loading) throw new MuLLError("cyclic library import: " ~ name);
+            loading[name] = true; scope(exit) loading.remove(name);
+            foreach (root; paths)
+            {
+                auto path = buildPath(root, name, "Package.mull");
+                if (!exists(path) || !isFile(path)) continue;
+                auto scope_ = frame(null); bind(scope_, "G", get("G"));
+                auto v = execute(readSource(path), scope_, path);
+                if (v.tag != 5) throw new MuLLError("package must return a record");
+                packages[name] = v; error_ = ""; return v;
+            }
+            throw new MuLLError("library not found: " ~ name);
+        }
+        catch (Exception e) { error_ = e.msg; return MuLLValue.init; }
+    }
+}
 
 // Feature tags and native feature composition.
 struct Pipeline {}
@@ -93,18 +671,18 @@ struct GraphReduction {}
 mixin template DSL(Features...)
 {
     import std.meta : AliasSeq, NoDuplicates, staticIndexOf;
-    import DSLtk;
+    import MuDSL;
     alias DSLFeatures = AliasSeq!Features;
     static assert(Features.length == NoDuplicates!Features.length,
                   "DSL features must be unique");
     static if (staticIndexOf!(Pipeline, Features) >= 0)
         static auto wrap(T)(T value) { return value; }
     static if (staticIndexOf!(Operators, Features) >= 0)
-        static auto make_pred(F)(F fn) { return DSLtk.predicate(fn); }
+        static auto make_pred(F)(F fn) { return MuDSL.predicate(fn); }
     static if (staticIndexOf!(AST, Features) >= 0)
     {
-        static auto make_leaf(string tag, T)(T value) { return DSLtk.leaf!tag(value); }
-        static auto make_node(string tag, C...)(C children) { return DSLtk.node!tag(children); }
+        static auto make_leaf(string tag, T)(T value) { return MuDSL.leaf!tag(value); }
+        static auto make_node(string tag, C...)(C children) { return MuDSL.node!tag(children); }
     }
     static if (staticIndexOf!(Rewrite, Features) >= 0)
         ASTNode rewrite(ASTNode tree) { return rules.apply(tree); }
@@ -294,7 +872,7 @@ struct MatchTable(C...)
         {
             static if (C[i].isOtherwise) return cast(R) clauses[i].handler(key, args);
         }
-        throw new Exception("DSLtk.match: no clause matched and no otherwise");
+        throw new Exception("MuDSL.match: no clause matched and no otherwise");
     }
 }
 auto match(C...)(C clauses)
@@ -398,7 +976,7 @@ private enum arithmetic(string op) = op == "+" || op == "-" || op == "*" || op =
 mixin template ExpressionOperators()
 {
     import std.traits : Unqual;
-    import DSLtk : BinExpr, UnaryExpr;
+    import MuDSL : BinExpr, UnaryExpr;
     auto opBinary(string op, R)(R rhs) if (op == "+" || op == "-" || op == "*" || op == "/")
     {
         alias L = Unqual!(typeof(this));
@@ -453,7 +1031,7 @@ struct BinExpr(string op, L, R) if (arithmetic!op)
             static if (indexed!L && indexed!R)
             {
                 auto n = operandLength(lhs);
-                if (n != operandLength(rhs)) throw new Exception("DSLtk: expression array lengths differ");
+                if (n != operandLength(rhs)) throw new Exception("MuDSL: expression array lengths differ");
                 return n;
             }
             else static if (indexed!L) return operandLength(lhs);
@@ -509,7 +1087,7 @@ struct LiteralSet(E...)
             if (input.length > E[i].suffix.length && input[$ - E[i].suffix.length .. $] == E[i].suffix)
                 return entries[i].handler(to!real(input[0 .. $ - E[i].suffix.length]));
         }
-        throw new Exception("DSLtk.LiteralSet.parse: no suffix matched for '" ~ input ~ "'");
+        throw new Exception("MuDSL.LiteralSet.parse: no suffix matched for '" ~ input ~ "'");
     }
 }
 auto literal_set(E...)(E entries) { return LiteralSet!E(tuple(entries)); }
@@ -596,12 +1174,12 @@ struct Result(T, E)
     bool is_err() const { return !ok_; }
     T unwrap()
     {
-        if (!ok_) throw new Exception("DSLtk.Result.unwrap called on Err");
+        if (!ok_) throw new Exception("MuDSL.Result.unwrap called on Err");
         return value_;
     }
     E unwrap_err()
     {
-        if (ok_) throw new Exception("DSLtk.Result.unwrap_err called on Ok");
+        if (ok_) throw new Exception("MuDSL.Result.unwrap_err called on Ok");
         return error_;
     }
     T unwrap_or(T fallback) { return ok_ ? value_ : fallback; }
@@ -642,7 +1220,7 @@ Result!(string, string) load_parse_input_file(string path)
 {
     import std.file : readText;
     try { return Result!(string, string).from_ok(readText(path)); }
-    catch (Exception e) { return Result!(string, string).from_err("DSLtk.load_parse_input_file: " ~ e.msg); }
+    catch (Exception e) { return Result!(string, string).from_err("MuDSL.load_parse_input_file: " ~ e.msg); }
 }
 enum ParseFailureKind { Soft, Committed }
 struct ParseError
@@ -704,8 +1282,8 @@ struct Parser(T, F = ExpectedResult!T delegate(ref ParsecInput))
             return parser(ChoiceParser!(typeof(this), typeof(other))(this, other));
         }
     }
-    auto many()() { return DSLtk.many(this); }
-    auto optional()() { return DSLtk.optional(this); }
+    auto many()() { return MuDSL.many(this); }
+    auto optional()() { return MuDSL.optional(this); }
 }
 auto parser(F)(F fn)
 {
@@ -1011,7 +1589,7 @@ enum PEGIgnoreChannel = PEGChannel("@IGNORE");
 enum PEGDefaultChannel = PEGChannel("@DEFAULT");
 PEGChannel new_peg_channel(string name)
 {
-    if (!name.length || name[0] != '@') throw new Exception("DSLtk: channel names must begin with '@'");
+    if (!name.length || name[0] != '@') throw new Exception("MuDSL: channel names must begin with '@'");
     return PEGChannel(name);
 }
 struct PEGMatch
@@ -1273,7 +1851,7 @@ class PEGMatcher
     }
     private void fire(PEGSemanticAction action, PEGRule rule, size_t end)
     {
-        if (end == pos) throw new Exception("DSLtk.PEGMatcher: rule matched empty input");
+        if (end == pos) throw new Exception("MuDSL.PEGMatcher: rule matched empty input");
         auto m = makePEGMatch(text, pos, end, rule);
         pos = end;
         if (action !is null) action(m);
@@ -1471,7 +2049,7 @@ Nullable!size_t enum_index(E)(E value) if (integralEnum!E)
 Nullable!size_t enum_index(alias value)() { return enum_index(value); }
 E enum_value(E)(size_t index) if (integralEnum!E)
 {
-    if (index >= EnumData!E.values.length) throw new Exception("DSLtk.enum_value: index out of range");
+    if (index >= EnumData!E.values.length) throw new Exception("MuDSL.enum_value: index out of range");
     return EnumData!E.values[index];
 }
 E enum_value(E, size_t index)() if (integralEnum!E)
@@ -1576,7 +2154,7 @@ auto enum_switch(F, E)(F fn, E value) if (integralEnum!E)
 {
     static foreach (v; EnumData!E.values)
         if (value == v) return fn(enum_constant!v());
-    throw new Exception("DSLtk.enum_switch: unrecognized enum value");
+    throw new Exception("MuDSL.enum_switch: unrecognized enum value");
 }
 auto enum_switch(F, E, R)(F fn, E value, R fallback) if (integralEnum!E)
 {
@@ -1598,7 +2176,7 @@ Nullable!ulong enum_fuse(E...)(E values)
         if (index.isNull) return Nullable!ulong.init;
         enum count = enum_count!(E[i])();
         if (result > (ulong.max - index.get) / count)
-            throw new Exception("DSLtk.enum_fuse: combined index exceeds ulong");
+            throw new Exception("MuDSL.enum_fuse: combined index exceeds ulong");
         result = result * count + index.get;
     }}
     return Nullable!ulong(result);
@@ -1681,7 +2259,7 @@ struct EnumArray(E, V) if (integralEnum!E)
 private size_t checkedEnumIndex(E)(E key)
 {
     auto index = enum_index(key);
-    if (index.isNull) throw new Exception("DSLtk: unrecognized enum container key");
+    if (index.isNull) throw new Exception("MuDSL: unrecognized enum container key");
     return index.get;
 }
 struct EnumBitset(E) if (integralEnum!E)
@@ -2413,7 +2991,7 @@ private struct SExprReader
             else break;
         }
     }
-    // Messages match DSLtk.hpp exactly (dialect parity).
+    // Messages match MuDSL.hpp exactly (dialect parity).
     noreturn error(string message) const
     {
         throw new Exception("S-expression at " ~ to!string(pos) ~ ": " ~ message);
@@ -2496,7 +3074,7 @@ ASTNode sexpr_to_ast(SExpr expression)
     return ASTNode(expression.items[0].text, children);
 }
 alias EClassId = size_t;
-/// Versioned, bounded S-expression bytecode; mirrored in DSLtk.hpp.
+/// Versioned, bounded S-expression bytecode; mirrored in MuDSL.hpp.
 ubyte[] encode_sexpr(SExpr term)
 {
     ubyte[] result = ['M', 'S', 'X', 1];
@@ -3546,7 +4124,7 @@ class Preprocessor
         return output;
     }
 }
-version (DSLtkLua)
+version (MuDSLLua)
 {
     // Lua 5.3/5.4 ABI. The user owns the state and links the Lua library.
     struct lua_State;
@@ -3567,7 +4145,7 @@ version (DSLtkLua)
             import std.string : fromStringz;
             if (state is null || language != "lua") throw new Exception("invalid Lua script backend");
             auto top = lua_gettop(state); scope(exit) lua_settop(state, top);
-            if (luaL_loadbufferx(state, code.ptr, code.length, "DSLtk preprocessor".ptr, null) || lua_pcallk(state, 0, 1, 0, 0, null))
+            if (luaL_loadbufferx(state, code.ptr, code.length, "MuDSL preprocessor".ptr, null) || lua_pcallk(state, 0, 1, 0, 0, null))
                 throw new Exception(fromStringz(lua_tolstring(state, -1, null)).idup);
             size_t length; auto value = lua_tolstring(state, -1, &length);
             if (value is null) throw new Exception("Lua preprocessing must return a string");
@@ -4006,7 +4584,7 @@ unittest
 // ============================================================
 //  Language front-end facilities: spans, tokens, diagnostics, REPL
 // ============================================================
-// Purely additive; mirrors the C++ section of DSLtk.hpp name for name.
+// Purely additive; mirrors the C++ section of MuDSL.hpp name for name.
 // A REPL Language policy provides:
 //   alias Program = ...; alias Value = ...;
 //   ParseResult!Program parse(string source);
@@ -4061,6 +4639,9 @@ struct SourceMap
     size_t[2] line_column(size_t offset) const
     {
         import std.range : assumeSorted;
+        import std.algorithm : min;
+        if (!starts_.length) return [size_t(1), size_t(1)];
+        offset = min(offset, text_.length);
         auto line = starts_.assumeSorted.lowerBound(offset + 1).length;
         if (line == 0) line = 1;
         return [line, offset - starts_[line - 1] + 1];
@@ -4073,7 +4654,7 @@ struct SourceMap
         while (e < text_.length && text_[e] != '\n' && text_[e] != '\r') ++e;
         return text_[b .. e];
     }
-    size_t line_count() const { return starts_.length; }
+    size_t line_count() const { return starts_.length ? starts_.length : 1; }
 }
 
 enum Severity { Error, Warning, Note, Hint }
@@ -4201,7 +4782,7 @@ final class DiagnosticBag
     void clear() { items_ = null; }
 }
 
-// ---- REPL subsystem (dsltk::repl in C++) ----
+// ---- REPL subsystem (mudsl::repl in C++) ----
 
 enum Outcome { Ok, Err, Incomplete, Quit }
 
@@ -4236,7 +4817,7 @@ struct ParseResult(Program)
 alias LineReader = Nullable!string delegate(string prompt);
 
 /**
- * Generic, reusable read-eval-print session (C++: dsltk::repl::Session).
+ * Generic, reusable read-eval-print session (C++: mudsl::repl::Session).
  * Owns the multi-line buffer, directive dispatch, history, completion and
  * the outcome of the last submission.
  */

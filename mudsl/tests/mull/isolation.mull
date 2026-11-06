@@ -1,0 +1,2 @@
+val hostSecret <- 42;
+G:LoadLib("private") or G:DieWith("$E?");

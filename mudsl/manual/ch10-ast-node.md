@@ -2,15 +2,15 @@
 
 ## Overview
 
-DSLtk represents parsed syntax trees with a single, self-contained value type: `dsl::ASTNode`. An `ASTNode` is a recursive class that owns its tag, its text payload, and a vector of child nodes. Every node is either a leaf carrying a string value or an inner node carrying zero or more subtrees. This chapter documents the structure, constructors, accessors, value semantics, and the surrounding `AST` feature tag that brings the AST vocabulary into a user's DSL.
+MuDSL represents parsed syntax trees with a single, self-contained value type: `dsl::ASTNode`. An `ASTNode` is a recursive class that owns its tag, its text payload, and a vector of child nodes. Every node is either a leaf carrying a string value or an inner node carrying zero or more subtrees. This chapter documents the structure, constructors, accessors, value semantics, and the surrounding `AST` feature tag that brings the AST vocabulary into a user's DSL.
 
-The `ASTNode` type is the common currency of every tree-shaped operation in DSLtk. Chapter 11 builds trees from `dsl::leaf<>` and `dsl::node<>`, which are thin factories over `ASTNode`. Chapter 12 traverses and dumps trees whose roots are `ASTNode` instances. Chapter 13 rewrites them in place. Understanding the value type itself is therefore a prerequisite for the chapters that follow.
+The `ASTNode` type is the common currency of every tree-shaped operation in MuDSL. Chapter 11 builds trees from `dsl::leaf<>` and `dsl::node<>`, which are thin factories over `ASTNode`. Chapter 12 traverses and dumps trees whose roots are `ASTNode` instances. Chapter 13 rewrites them in place. Understanding the value type itself is therefore a prerequisite for the chapters that follow.
 
 This chapter is concerned only with the type itself: its invariants, its constructors, its accessors, and the rules that govern copying, moving, and lifetime. It uses small, self-contained examples constructed by hand. The higher-level builders are introduced in Chapter 11; here we construct `ASTNode` values directly so that the type's contract is unmistakable.
 
 ## The Role of `ASTNode`
 
-An abstract syntax tree, in DSLtk's model, is a tree of homogeneous nodes. There is no per-grammar node class hierarchy: a numeric literal, a binary operator, a function call, and an `if` statement are all represented by the same class. What distinguishes one node from another is the contents of its `tag_` string and the shape of its `children_` vector. This homogeneous design keeps the type system simple and lets generic algorithms in later chapters operate uniformly over any tree.
+An abstract syntax tree, in MuDSL's model, is a tree of homogeneous nodes. There is no per-grammar node class hierarchy: a numeric literal, a binary operator, a function call, and an `if` statement are all represented by the same class. What distinguishes one node from another is the contents of its `tag_` string and the shape of its `children_` vector. This homogeneous design keeps the type system simple and lets generic algorithms in later chapters operate uniformly over any tree.
 
 A leaf node carries a string value and no children. An inner node carries children and an empty value. The distinction is recorded explicitly in the `is_leaf_` flag rather than inferred from the emptiness of the children vector, so an inner node with zero children is well-defined and distinct from a leaf. This matters when modelling forms such as empty argument lists or empty blocks, where the node kind matters even though the child list is empty.
 
@@ -22,7 +22,7 @@ The children vector, `children_`, is a `std::vector<ASTNode>`. Because the eleme
 
 ## The Class Definition
 
-The full declaration of `ASTNode` is small enough to read in one pass. It lives in the `dsl` namespace inside `DSLtk.hpp`. The public interface consists of constructors, inspectors, mutators, equality, and a dump helper; the private section holds the four data members.
+The full declaration of `ASTNode` is small enough to read in one pass. It lives in the `dsl` namespace inside `MuDSL.hpp`. The public interface consists of constructors, inspectors, mutators, equality, and a dump helper; the private section holds the four data members.
 
 ```cpp
 namespace dsl {
@@ -105,7 +105,7 @@ Because copy and move are compiler-generated, returning an `ASTNode` from a func
 Although Chapter 11 introduces the `dsl::leaf<>` and `dsl::node<>` factories, it is instructive to build `ASTNode` values directly. Doing so makes the type's contract visible: a leaf is a tag plus a string, and an inner node is a tag plus a vector.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <vector>
 
 int main() {
@@ -161,7 +161,7 @@ assert(empty_leaf.value().empty());
 
 The `tag()` member returns a `std::string_view` over the stored tag. The view is valid for as long as the `ASTNode` itself lives and is not mutated. Because the tag is stored as an owned `std::string`, the view dangles once the node is destroyed or moved-from; callers that need a tag with independent lifetime should construct a `std::string` from the view.
 
-Tags are compared for equality as part of `operator==`, and they are the primary key by which traversal and rewrite algorithms identify node kinds. By convention, tags are short, lowercase identifiers such as `"num"`, `"ident"`, `"add"`, `"mul"`, `"call"`, `"if"`, and `"block"`. DSLtk does not enforce a vocabulary; the tag is an ordinary string, and the set of tags is whatever the program chooses to use.
+Tags are compared for equality as part of `operator==`, and they are the primary key by which traversal and rewrite algorithms identify node kinds. By convention, tags are short, lowercase identifiers such as `"num"`, `"ident"`, `"add"`, `"mul"`, `"call"`, `"if"`, and `"block"`. MuDSL does not enforce a vocabulary; the tag is an ordinary string, and the set of tags is whatever the program chooses to use.
 
 Because the tag originates from a `FixedString` template parameter in the common case, the same tag string is repeated at every node of the same kind. There is no interning: each `ASTNode` owns its own copy. For very large trees this is a measurable memory cost, but it buys value semantics and avoids any need for a tag table.
 
@@ -171,7 +171,7 @@ The `value()` member returns a `const std::string&` to the leaf payload. For inn
 
 The payload is always text. When a leaf represents a number, `value()` returns the digits as a string, and the caller is responsible for parsing. When a leaf represents an identifier, `value()` returns the identifier's name. When a leaf represents a string literal, `value()` returns the literal's text, including or excluding surrounding quotes according to the convention adopted by the builder.
 
-This design keeps `ASTNode` independent of any value domain. The same node type can represent a C expression, a JSON document, or a configuration file; the only thing that changes is the interpretation of the value strings. The cost is that converting between the string payload and a typed value happens at every use site, but for the kind of small, throwaway trees that DSLtk targets, this cost is negligible.
+This design keeps `ASTNode` independent of any value domain. The same node type can represent a C expression, a JSON document, or a configuration file; the only thing that changes is the interpretation of the value strings. The cost is that converting between the string payload and a typed value happens at every use site, but for the kind of small, throwaway trees that MuDSL targets, this cost is negligible.
 
 ## The `children()` Accessors
 
@@ -179,7 +179,7 @@ Two overloads of `children()` are provided. The const overload returns a `const 
 
 The returned reference is valid for the lifetime of the node. Operations that reallocate the vector — such as `push_back` past capacity — invalidate references, pointers, and iterators into the vector, but they do not affect the node's other members or its identity.
 
-Because the children are stored in a `std::vector`, indexed access is O(1) and iteration is cache-friendly. The order of children is the order in which they were inserted, which in practice is source order. DSLtk does not reorder children; any reordering is the caller's responsibility.
+Because the children are stored in a `std::vector`, indexed access is O(1) and iteration is cache-friendly. The order of children is the order in which they were inserted, which in practice is source order. MuDSL does not reorder children; any reordering is the caller's responsibility.
 
 ## The `child()` Accessors
 
@@ -220,7 +220,7 @@ Structural equality means that two trees with identical shape and spelling compa
 
 Equality is deep. Comparing two large trees walks both of them fully and returns false as soon as a mismatch is found. There is no hashing and no short-circuit on node identity; every comparison is a content comparison. For repeated comparisons of the same large trees, memoisation (Chapter 18) or caching at a higher level may be appropriate.
 
-The default-constructed node — empty tag, empty value, leaf kind — is equal to any other default-constructed node and unequal to anything else. This gives a natural "null" node value, though DSLtk does not prescribe its use.
+The default-constructed node — empty tag, empty value, leaf kind — is equal to any other default-constructed node and unequal to anything else. This gives a natural "null" node value, though MuDSL does not prescribe its use.
 
 ## The `dump()` Method
 
@@ -253,7 +253,7 @@ Moving an `ASTNode` moves each member. The tag and value strings are moved (whic
 
 Because copies are deep, large trees are expensive to copy. A tree with ten thousand nodes copied through a value-taking function will allocate ten thousand strings and vectors. Code that handles large trees should pass `ASTNode` by const reference unless it needs to own or mutate a copy. The traversal and rewrite algorithms in Chapters 12 and 13 take const references and mutate in place through the non-const `children()` accessor where needed.
 
-The absence of shared ownership is deliberate. Shared ownership would complicate the type, introduce aliasing, and make mutation surprising. By making each node the sole owner of its children, DSLtk ensures that a node's subtree is never modified behind its back. The cost is the copy cost, which is acceptable for the trees the toolkit is designed for.
+The absence of shared ownership is deliberate. Shared ownership would complicate the type, introduce aliasing, and make mutation surprising. By making each node the sole owner of its children, MuDSL ensures that a node's subtree is never modified behind its back. The cost is the copy cost, which is acceptable for the trees the toolkit is designed for.
 
 ## Lifetime and Returning Nodes
 
@@ -290,7 +290,7 @@ A number leaf with a negative value, a fractional value, or a hexadecimal value 
 
 ## Building a Binary-Op Node
 
-A binary operation such as `(+ a b)` is naturally an inner node with three children: the operator and the two operands. In DSLtk's convention the operator is often folded into the tag, yielding a node with tag `"add"` and two operand children.
+A binary operation such as `(+ a b)` is naturally an inner node with three children: the operator and the two operands. In MuDSL's convention the operator is often folded into the tag, yielding a node with tag `"add"` and two operand children.
 
 ```cpp
 dsl::ASTNode add_expr{"add",
@@ -367,7 +367,7 @@ std::cout << if_stmt.dump() << '\n';
 Inspecting a tree is a matter of reading the tag, the kind, and the value, and recursing into the children. A minimal recursive printer reads each node and recurses on its children:
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 void print(const dsl::ASTNode& n, int depth = 0) {
@@ -385,9 +385,9 @@ void print(const dsl::ASTNode& n, int depth = 0) {
 
 The range-for over `children()` is the idiomatic way to visit every child. Because `children()` returns a const reference for a const node, no copy is made. The recursion bottoms out at leaves, which have no children and therefore do not recurse.
 
-Reading the tag at each node lets the inspector dispatch on node kind. A more elaborate inspector might switch on the tag to print different forms differently, or to extract typed values from the value string. The homogeneous nature of `ASTNode` means the dispatch is by string comparison, not by virtual function; for the tree sizes DSLtk targets, this is fast enough.
+Reading the tag at each node lets the inspector dispatch on node kind. A more elaborate inspector might switch on the tag to print different forms differently, or to extract typed values from the value string. The homogeneous nature of `ASTNode` means the dispatch is by string comparison, not by virtual function; for the tree sizes MuDSL targets, this is fast enough.
 
-Counting nodes is a similar recursion. The example from the DSLtk distribution is illustrative:
+Counting nodes is a similar recursion. The example from the MuDSL distribution is illustrative:
 
 ```cpp
 int count_nodes(const dsl::ASTNode& n) {

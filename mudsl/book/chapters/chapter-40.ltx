@@ -1,0 +1,30 @@
+\chapter{Locations and useful diagnostics}
+A source position is more useful when its meaning is precise. MuDSL spans are
+half-open byte ranges: the beginning belongs to the range and the end does not.
+Lines and columns are one-based. Byte columns avoid decoding ambiguities when
+the source contains arbitrary UTF-8 or binary data.
+
+\section{Source maps}
+\api{SourceMap} records the start of each line. Its \api{line_column} operation
+maps offsets to positions, and \api{line_text} retrieves a line for a diagnostic
+excerpt. A default-constructed map represents one empty line. Offsets beyond
+the source are clamped to EOF, including the largest representable offset.
+
+\begin{code}
+dsl::SourceMap source("alpha\nbeta");
+auto [line, column] = source.line_column(6);
+// line == 2, column == 1
+\end{code}
+
+The C++ map borrows its source view: retain the source storage while using the
+map. D strings retain their backing storage through the garbage collector.
+
+\section{Report context once}
+Give a diagnostic a stable category and a concrete message. Prefer ``expected
+closing parenthesis'' over ``parse failed.'' Include a source name when a host
+runs multiple files. MuLL errors carry a message and line/column fields; the
+embedding boundary adds the input filename. Native exceptions are translated
+at the calling expression so a library failure still points to script code.
+
+Test errors at EOF, after a newline, and with an empty source. These are common
+places for accidental index underflow and inconsistent coordinate conventions.

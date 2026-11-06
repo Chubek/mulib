@@ -1,7 +1,7 @@
 import MetaML;
 import metaml_backends.QBE : QBEBackend = QBE;
 import std.stdio : writeln, stderr;
-import DSLtk : Span;
+import MuDSL : Span;
 
 void error(RunReport report, string code) {
     assert(!report.ok() && report.errors[0].code == code, "expected " ~ code);

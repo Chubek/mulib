@@ -1,0 +1,33 @@
+\chapter{Immutable and mutable bindings}
+A binding gives a name to a value in an environment. Use \api{val} when the
+name should retain its initial value, and \api{var} when later assignment is
+part of the program. Both require an initializer.
+
+\begin{mullcode}
+val rate <- 3;
+var total <- 0;
+total <- total + rate;
+total <- total + rate;
+G:Assert(total == 6);
+{ val rate <- 10; G:Assert(rate == 10); }
+G:Assert(rate == 3);
+\end{mullcode}
+
+\section{Scope and assignment}
+Braces introduce lexical scopes. A declaration may shadow an outer name but
+cannot duplicate a name in the same scope. Assignment searches outward for
+the nearest binding and requires that binding to be mutable. Assigning an
+undefined name is an error; it does not create a global implicitly.
+
+Assignment uses the same arrow as initialization, but has no declaration
+keyword. It is a statement, not an expression that can be nested inside
+another expression. The target must be a binding name. Record members and
+list indexes are read-only; use library functions to construct updated values.
+
+\section{Persistence}
+Top-level bindings persist between calls to a runtime's \api{run} method.
+Running the same top-level \api{val} declaration twice therefore reports a
+duplicate binding. Use a braced scope for temporary calculations, a function
+for reusable logic, or a new runtime for an independent session. A runtime
+error preserves mutations already performed before the error; execution is
+not a transaction.

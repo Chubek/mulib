@@ -1,6 +1,6 @@
 # Chapter 23: Parser Combinators: `ParsecInput`, `ExpectedResult`, `Parser`
 
-DSLtk ships a small parser-combinator core in the `dsl` namespace, organized around three abstractions: an input cursor (`ParsecInput`), a structured result type (`ExpectedResult<T>`), and a callable model for parsers (`Parser<T>`). This chapter documents those three primitives and the machinery that ties them together. The combinators themselves — sequence, alternative, repetition, optional — are the subject of Chapter 24; this chapter concerns only the substrate on which they are built.
+MuDSL ships a small parser-combinator core in the `dsl` namespace, organized around three abstractions: an input cursor (`ParsecInput`), a structured result type (`ExpectedResult<T>`), and a callable model for parsers (`Parser<T>`). This chapter documents those three primitives and the machinery that ties them together. The combinators themselves — sequence, alternative, repetition, optional — are the subject of Chapter 24; this chapter concerns only the substrate on which they are built.
 
 The design is deliberately Parsec-like. A parser is not a function that throws on failure; it is a value, a callable that takes a mutable cursor by reference and returns a result object. Failure is a value, not an exception. This mirrors the philosophy of `Result<T,E>` introduced in Chapter 22, and readers familiar with that type will recognize the shape of the error flow immediately. The parser core reuses the same discipline: errors are carried alongside values, accumulated best-effort, and never raised through the call stack.
 
@@ -71,7 +71,7 @@ Note that there is no `remaining()` member and no `advance(n)` member. Input is 
 
 ## Position, Peeking, and End of Input
 
-`peek()` returns the character at the current cursor position without advancing. If the cursor is at end-of-input, it returns `'\0'`. This sentinel is unambiguous for text parsing: a real NUL in the source would be returned exactly the same way, but in practice DSLtk's parsers operate on source text where NUL does not occur. A parser that wishes to distinguish "NUL in input" from "past end" should call `eof()` first.
+`peek()` returns the character at the current cursor position without advancing. If the cursor is at end-of-input, it returns `'\0'`. This sentinel is unambiguous for text parsing: a real NUL in the source would be returned exactly the same way, but in practice MuDSL's parsers operate on source text where NUL does not occur. A parser that wishes to distinguish "NUL in input" from "past end" should call `eof()` first.
 
 ```cpp
 bool at_digit(dsl::ParsecInput &in) {
@@ -414,7 +414,7 @@ The trailing-input check is important. Without it, a parser that matches only a 
 The simplest end-to-end example runs `dsl::ch` on a one-character input.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -436,7 +436,7 @@ This example is the minimal pattern for using the parser core: build a parser, r
 Changing the input to one that does not match exercises the failure path.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -461,7 +461,7 @@ This is the shape of every diagnostic produced by the core: a position and a lis
 A multi-character literal is a sequence of single-character parsers. The sequence combinator `&` is documented in Chapter 24; here it is used only to demonstrate that composed parsers run through the same `run_parser` entry point.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -480,7 +480,7 @@ A hand-written literal parser that returns the matched text rather than a pair o
 The `satisfy` primitive handles most character-class matching without requiring a hand-written parser. A vowel matcher is a one-liner.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -503,7 +503,7 @@ This example demonstrates the division of labor between the core and the primiti
 `run_parser` is convenient but opinionated: it requires the parser to consume the entire input. For cases where a prefix parse is intended, a caller may construct a `ParsecInput` directly and invoke the parser.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -555,6 +555,6 @@ The sixth pitfall is conflating `ParseOutcome<T>` with `ExpectedResult<T>`. They
 
 ## Summary
 
-This chapter documented the parser-combinator substrate of DSLtk. `ParsecInput` is the mutable input cursor, holding a `string_view` source and a `pos` index, with `peek`, `eof`, `consume`, and `get_span` operations. `ParseError` is the structured failure record, carrying a position, a soft-or-committed kind, and a list of expected labels, merged by `merge_error` according to furthest-position-wins semantics. `ExpectedResult<T>` pairs an `std::optional<T>` value with a `ParseError`, serving as the universal return type of parsers. `Parser<T>` wraps a `std::function` and is itself callable, and the `dsl::parser` factory lifts lambdas into this model. `dsl::run_parser` is the top-level entry point, seeding a cursor from a `string_view`, running the parser, enforcing end-of-input, and returning a `ParseOutcome<T>`.
+This chapter documented the parser-combinator substrate of MuDSL. `ParsecInput` is the mutable input cursor, holding a `string_view` source and a `pos` index, with `peek`, `eof`, `consume`, and `get_span` operations. `ParseError` is the structured failure record, carrying a position, a soft-or-committed kind, and a list of expected labels, merged by `merge_error` according to furthest-position-wins semantics. `ExpectedResult<T>` pairs an `std::optional<T>` value with a `ParseError`, serving as the universal return type of parsers. `Parser<T>` wraps a `std::function` and is itself callable, and the `dsl::parser` factory lifts lambdas into this model. `dsl::run_parser` is the top-level entry point, seeding a cursor from a `string_view`, running the parser, enforcing end-of-input, and returning a `ParseOutcome<T>`.
 
 The core is deliberately minimal: it provides value-semantic parsers, structured best-effort diagnostics, and a clean separation between input state and parse results. Failures are values, not exceptions, consistent with the error-flow discipline of Chapter 22. The combinators that turn these primitives into a grammar — sequence, alternative, repetition, optional — are the subject of Chapter 24. Diagnostics, semantic actions, and the broader `run_parser` story are covered in Chapter 25. The PEG layers in Chapter 27 and Chapter 28 build specialized grammars on top of the same core.

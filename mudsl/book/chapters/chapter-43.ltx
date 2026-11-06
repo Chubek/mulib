@@ -1,0 +1,27 @@
+\chapter{Portable protocols and host services}
+Portable language code should describe an operation without assuming a
+particular operating-system integration. MuDSL's codec and I/O protocols make
+that boundary explicit: the user supplies a backend, and the toolkit supplies
+the composition and validation around it.
+
+\section{Binary data}
+\api{BinaryStream} buffers bytes and keeps a read cursor. Reads check the
+remaining length before constructing a view. Integer operations specify
+endianness instead of relying on the host representation. Regex-token reads
+reject zero-length matches so repeated tokenization makes progress.
+
+For serialization, decide whether a format is a durable file contract or an
+internal transport. A durable format needs versioning, size limits, and a
+definition of invalid input. A host-defined codec can make those choices
+without changing the toolkit.
+
+\section{MuLL native services}
+MuLL exposes native services as ordinary record members containing callable
+values. The host registers those records before scripts import packages.
+The supplied standard library implements formatting, terminal output, math,
+text processing, and list operations. An application can register additional
+records for its own data model or file services using the same mechanism.
+
+The runtime does not guess native signatures from a shared library. A C or C++
+function can be wrapped in a C++ callable; a D function can be wrapped in a
+delegate. The wrapper validates arguments and converts results into MuLL values.

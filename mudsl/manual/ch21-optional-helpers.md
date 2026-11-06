@@ -1,8 +1,8 @@
 # Chapter 21: Monadic Helpers for `std::optional`
 
-Chapter 20 introduced `dsl::Maybe<T>`, a thin wrapper over `std::optional<T>` that exposes `map`, `flat_map`, `filter`, and `or_else` as member functions. That wrapper is convenient when a value originates inside DSLtk code, but it is not always the right shape for the value at hand. A great deal of real code already holds a `std::optional<T>` returned by the standard library, by a third-party API, or by a colleague's function, and rewrapping such a value into a `Maybe<T>` just to call one combinator is noisy.
+Chapter 20 introduced `dsl::Maybe<T>`, a thin wrapper over `std::optional<T>` that exposes `map`, `flat_map`, `filter`, and `or_else` as member functions. That wrapper is convenient when a value originates inside MuDSL code, but it is not always the right shape for the value at hand. A great deal of real code already holds a `std::optional<T>` returned by the standard library, by a third-party API, or by a colleague's function, and rewrapping such a value into a `Maybe<T>` just to call one combinator is noisy.
 
-This chapter documents the second entry point into DSLtk's monadic layer: a set of free functions in namespace `dsl` that operate directly on any optional-like object. The four functions are `dsl::map`, `dsl::flat_map`, `dsl::filter`, and `dsl::or_else`. They provide exactly the same combinators as `Maybe<T>`, but without forcing the caller to adopt a new type.
+This chapter documents the second entry point into MuDSL's monadic layer: a set of free functions in namespace `dsl` that operate directly on any optional-like object. The four functions are `dsl::map`, `dsl::flat_map`, `dsl::filter`, and `dsl::or_else`. They provide exactly the same combinators as `Maybe<T>`, but without forcing the caller to adopt a new type.
 
 ## Motivation: Combinators Without Rewrapping
 
@@ -12,11 +12,11 @@ The idiomatic answer in a monadic style is to chain small transformations: map a
 
 `dsl::Maybe<T>` (Chapter 20) already offers these combinators as members, but only on its own type. Constructing a `Maybe<int>` from an existing `std::optional<int>` is cheap, yet it is still a syntactic speed bump: every chain start becomes `dsl::Maybe<int>{opt}.map(...)` instead of `dsl::map(opt, ...)`. The free-function form removes the bump.
 
-These helpers therefore exist for a single reason: to let monadic composition reach into the existing universe of `std::optional` values without requiring a wrapping conversion. They are the adapter that bridges the standard library's optional type and DSLtk's combinator vocabulary.
+These helpers therefore exist for a single reason: to let monadic composition reach into the existing universe of `std::optional` values without requiring a wrapping conversion. They are the adapter that bridges the standard library's optional type and MuDSL's combinator vocabulary.
 
 ## The Four Free Functions
 
-DSLtk exports four free function templates in namespace `dsl`. Each takes an optional-like object as its first argument and a callable as its second, and each returns a value of a type deduced from the callable. The signatures are generic in the optional type, so any type that supports `operator*`, `operator!`, and (for `or_else`) `value_or` will work; in practice this means `std::optional<T>` and `dsl::Maybe<T>` alike.
+MuDSL exports four free function templates in namespace `dsl`. Each takes an optional-like object as its first argument and a callable as its second, and each returns a value of a type deduced from the callable. The signatures are generic in the optional type, so any type that supports `operator*`, `operator!`, and (for `or_else`) `value_or` will work; in practice this means `std::optional<T>` and `dsl::Maybe<T>` alike.
 
 The four functions correspond one-to-one with the four member functions of `Maybe<T>`. `dsl::map` lifts a plain function into optional space. `dsl::flat_map` (the `and_then` combinator) handles functions that themselves return an optional. `dsl::filter` keeps or discards a value based on a predicate. `dsl::or_else` supplies a fallback when the optional is empty.
 
@@ -44,7 +44,7 @@ The return type is always a `std::optional<U>`, where `U` is the return type of 
 A short example shows the typical shape. Given an engaged optional, the function is applied and the result is wrapped; given an empty optional, the result is empty.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <optional>
 #include <iostream>
 
@@ -82,7 +82,7 @@ The return type is exactly the type returned by `fn`, which must be an optional-
 `flat_map` is the combinator to reach for whenever a step in a pipeline can itself fail. Parsing a string into an integer may fail; looking up an integer in a table may fail; converting an integer into a valid enum may fail. Each of these steps returns an optional, and chaining them with `flat_map` produces a single optional that is engaged only if every step succeeded.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <optional>
 #include <string>
 
@@ -124,7 +124,7 @@ The return type is the same optional type as the input. An engaged optional whos
 `filter` is most useful as a guard inside a pipeline. After mapping a value into a more refined form, a filter can assert an invariant: the number is positive, the string is non-empty, the index is in range. If the invariant fails, the pipeline short-circuits to empty.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <optional>
 #include <iostream>
 
@@ -157,7 +157,7 @@ The fallback is taken by value and moved into `opt.value_or`. The return type is
 `or_else` is the terminator of a monadic chain. Where `map`, `flat_map`, and `filter` keep the computation in optional space, `or_else` exits it, yielding a concrete value that the rest of the program can use without further checking. Placing `or_else` at the end of a pipeline is the conventional way to "unwrap or default".
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <optional>
 #include <iostream>
 
@@ -181,15 +181,15 @@ Second, much existing code already produces `std::optional`. A function that ret
 
 Third, free functions compose uniformly across optional-like types. Because the templates are generic in `Opt`, the same `dsl::map` works on `std::optional<T>`, `dsl::Maybe<T>`, and any user-defined optional-like type that supports the required operations. One combinator vocabulary covers a family of types.
 
-The cost is a slightly more verbose call site: `dsl::map(opt, f)` instead of `opt.map(f)`. In practice this is a minor concern, and the gained uniformity across types outweighs it. Chapter 5 discusses the concept-based design philosophy that motivates such generic free-function APIs elsewhere in DSLtk.
+The cost is a slightly more verbose call site: `dsl::map(opt, f)` instead of `opt.map(f)`. In practice this is a minor concern, and the gained uniformity across types outweighs it. Chapter 5 discusses the concept-based design philosophy that motivates such generic free-function APIs elsewhere in MuDSL.
 
 ## Relationship to `Maybe<T>`
 
 `Maybe<T>` and the free functions are two views of the same combinators. `Maybe<T>::map` calls the same logic that `dsl::map` does; the member version simply passes `*this` as the optional. The two layers exist so that callers can choose the entry point that fits their value.
 
-When a value originates as a `Maybe<T>` — for instance, returned by one of DSLtk's own parsing or lookup helpers — the member-function form is the natural choice. When a value originates as a `std::optional<T>` — for instance, returned by `std::find`-based logic or by a third-party API — the free-function form avoids a wrapping conversion.
+When a value originates as a `Maybe<T>` — for instance, returned by one of MuDSL's own parsing or lookup helpers — the member-function form is the natural choice. When a value originates as a `std::optional<T>` — for instance, returned by `std::find`-based logic or by a third-party API — the free-function form avoids a wrapping conversion.
 
-The two forms can be mixed in a single pipeline. A `Maybe<T>` produced by DSLtk can be passed to `dsl::filter` as a free function, or a `std::optional<T>` can be wrapped once at the start of a chain and then use member functions thereafter. The choice is stylistic.
+The two forms can be mixed in a single pipeline. A `Maybe<T>` produced by MuDSL can be passed to `dsl::filter` as a free function, or a `std::optional<T>` can be wrapped once at the start of a chain and then use member functions thereafter. The choice is stylistic.
 
 It is worth noting that `Maybe<T>` is constructible from a `std::optional<T>`, so wrapping is always available when the member form is preferred. The header doc-comment for the monadic layer shows both forms side by side:
 
@@ -211,7 +211,7 @@ The combinators are most powerful when chained. Each combinator returns an optio
 Because the free functions take the optional as their first argument, a chain reads naturally inside-out: the innermost call is applied first, and each enclosing call applies the next step. This is the same shape as function composition in the standard library, and it scales to as many steps as needed.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <optional>
 #include <string>
 
@@ -240,7 +240,7 @@ When a chain grows beyond three or four steps, the inside-out nesting becomes ha
 Consider a small program that reads a numeric key from a string, looks the key up in a map, and transforms the looked-up value. Each of these three steps can fail: the string may not be a number, the number may not be a key, and the looked-up value may fail a validity check. The combinators express this directly.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <map>
 #include <optional>
 #include <string>
@@ -297,7 +297,7 @@ Many standard-library APIs yield values that fit naturally into optional pipelin
 The free functions accept any optional-like type, so values from these diverse sources can be mixed in a single pipeline. A `std::optional<int>` from a config reader can be `flat_map`ped into a `std::optional<Handle>` from a resource manager, then `map`ped into a `std::optional<Result>` from a computation. The types flow through the chain, and absence at any stage produces an empty final result.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <optional>
 #include <vector>
 #include <algorithm>
@@ -326,7 +326,7 @@ Supplying a default is the most common way to exit a monadic pipeline. `dsl::or_
 A default can be a sentinel, a computed fallback, or a value read from a secondary source. When the fallback is expensive to compute, care should be taken: `or_else` eagerly takes the fallback by value, so the fallback is constructed at the call site regardless of whether the optional is engaged. For an expensive fallback, it may be preferable to compute it lazily or to check the optional explicitly before constructing it.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <optional>
 #include <string>
 
@@ -358,7 +358,7 @@ Finally, the combinators are not a substitute for error reporting. An empty opti
 
 ## Summary
 
-DSLtk provides four free-function combinators — `dsl::map`, `dsl::flat_map`, `dsl::filter`, and `dsl::or_else` — that extend monadic composition to any optional-like type, with `std::optional<T>` as the primary target. They mirror exactly the four member functions of `dsl::Maybe<T>` (Chapter 20), giving users two entry points into the same combinator vocabulary: a wrapper type for values that originate inside DSLtk, and free functions for values that arrive as raw `std::optional` from the standard library or third-party code.
+MuDSL provides four free-function combinators — `dsl::map`, `dsl::flat_map`, `dsl::filter`, and `dsl::or_else` — that extend monadic composition to any optional-like type, with `std::optional<T>` as the primary target. They mirror exactly the four member functions of `dsl::Maybe<T>` (Chapter 20), giving users two entry points into the same combinator vocabulary: a wrapper type for values that originate inside MuDSL, and free functions for values that arrive as raw `std::optional` from the standard library or third-party code.
 
 `dsl::map` lifts a total function `T -> U` into optional space. `dsl::flat_map` binds a partial function `T -> optional<U>`, flattening the result and short-circuiting on absence. `dsl::filter` retains a value only when a predicate holds. `dsl::or_else` collapses an optional to a plain value, supplying a fallback when the optional is empty. Together, they let a pipeline of parse-validate-transform steps be written as a straight line, with absence propagated implicitly between stages.
 

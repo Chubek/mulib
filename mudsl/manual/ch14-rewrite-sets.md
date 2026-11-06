@@ -8,7 +8,7 @@ The chapter sits between the rule mechanics of Chapter 13 and the larger DSL fea
 
 Consider the arithmetic tree `(* (+ x 0) 1)`. A rule that strips `(+ _ 0)` into `_` rewrites the inner node to `x`, yielding `(* x 1)`. But the outer multiplication by one is still there. A second rule, `(* _ 1) -> _`, must then fire to reach `x`. No single rule can do both jobs, and the second match only becomes available after the first has run.
 
-A naive driver that walks the tree once, applying each rule at most once per node, would leave `(* x 1)` untouched: the `mul-one` rule was not applicable to the original `(* (+ x 0) 1)` because the right child was `1` but the left child was an unevaluated `add`, and the rule's intent is to simplify regardless. The driver must therefore re-examine nodes after rewriting them. Two natural strategies exist: re-run the entire pass until nothing changes, or carefully schedule re-visits. DSLtk chooses the former, because it is simple, correct for a broad class of rule sets, and matches the semantics of term rewriting systems.
+A naive driver that walks the tree once, applying each rule at most once per node, would leave `(* x 1)` untouched: the `mul-one` rule was not applicable to the original `(* (+ x 0) 1)` because the right child was `1` but the left child was an unevaluated `add`, and the rule's intent is to simplify regardless. The driver must therefore re-examine nodes after rewriting them. Two natural strategies exist: re-run the entire pass until nothing changes, or carefully schedule re-visits. MuDSL chooses the former, because it is simple, correct for a broad class of rule sets, and matches the semantics of term rewriting systems.
 
 This is the fixpoint model. A bundle of rules is applied repeatedly to the whole tree; each pass may rewrite nodes anywhere; the process stops when a complete pass produces a tree identical to the one it started from. At that point no rule fires anywhere, and the tree is a normal form with respect to the rule set. The `RewriteSet` template is the embodiment of this model.
 
@@ -162,14 +162,14 @@ The factory deduces the rule types from its arguments, decays them so that the s
 
 The factory returns by value, relying on copy elision. The returned object is a `RewriteSet` with a concrete, fully-spelled type. This type can be stored in a variable declared with `auto`, which is the usual idiom, or it can be used as a static member of a DSL host, as shown later in the chapter.
 
-Because each rule's type involves unique lambda types, the type of the returned `RewriteSet` is unwieldy to spell by hand. The `auto` idiom is not just convenient; it is practically required. This is a common pattern in modern C++ template-heavy libraries and is consistent with the rest of DSLtk's API surface.
+Because each rule's type involves unique lambda types, the type of the returned `RewriteSet` is unwieldy to spell by hand. The `auto` idiom is not just convenient; it is practically required. This is a common pattern in modern C++ template-heavy libraries and is consistent with the rest of MuDSL's API surface.
 
 ## 14.8 A First Complete Example
 
 The following program builds a small rewrite set with two rules and applies it to a nested tree. It is the canonical "hello world" of rewrite sets.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -305,7 +305,7 @@ This composition is the primary value proposition of `RewriteSet`. Writing each 
 
 ## 14.12 The Rewrite Feature Tag
 
-DSLtk exposes the rewrite capability to a DSL host through the `Rewrite` feature tag, following the mixin pattern introduced in Chapter 5. The tag is a struct containing a `Mixin` template intended for the CRTP base.
+MuDSL exposes the rewrite capability to a DSL host through the `Rewrite` feature tag, following the mixin pattern introduced in Chapter 5. The tag is a struct containing a `Mixin` template intended for the CRTP base.
 
 ```cpp
 struct Rewrite
@@ -355,7 +355,7 @@ The `dsl::AST` base provides the tree-building members documented in Chapter 11,
 
 The `static inline auto rules` declaration initializes the set at namespace scope, so it is constructed once and shared. Because the rule objects hold only their predicates and transformers, which are stateless lambdas, the set is effectively a singleton with no per-call allocation. The `apply` member allocates only the rewritten tree nodes, which is inherent to the immutable `ASTNode` design.
 
-Calling `dsl.rewrite(tree)` returns a new `ASTNode`; the original is untouched. This value semantics matches the rest of DSLtk's API and makes rewriting safe to compose with other tree-producing operations. The result of one `rewrite` call can be fed directly into another pass, into a matcher from Chapter 8, or into a traversal from Chapter 12.
+Calling `dsl.rewrite(tree)` returns a new `ASTNode`; the original is untouched. This value semantics matches the rest of MuDSL's API and makes rewriting safe to compose with other tree-producing operations. The result of one `rewrite` call can be fed directly into another pass, into a matcher from Chapter 8, or into a traversal from Chapter 12.
 
 ## 14.14 Termination: When Fixpoints Reach Equilibrium
 
@@ -383,7 +383,7 @@ Finally, rules that grow the tree require special care. A rule like `x -> (+ x 0
 
 Several pitfalls await the unwary user of `RewriteSet`. The first is the interaction between rule ordering and fixpoint convergence. Because rules cascade within a node, an early rule can prevent a later rule from ever firing, by transforming the node into a shape the later rule does not match. If the later rule was intended to produce the canonical form, the result is a tree that converges to a non-canonical form. Reordering the rules, or splitting the later rule to match the transformed shape, resolves this.
 
-The second pitfall is deep recursion cost. The `rewrite_once` pass is recursive, descending into children at each level. For a tree of depth `d`, the recursion depth is `d`. Trees produced by parsing deeply nested input, or by repeated expansion, can exceed comfortable stack limits. DSLtk does not impose a depth limit; the user must ensure that the trees fed to `apply` are of reasonable depth, or restructure the input. The bottom-up traversal also rebuilds every node on every pass, so the per-pass cost is linear in the tree size, and the total cost is linear in the size times the number of passes to convergence.
+The second pitfall is deep recursion cost. The `rewrite_once` pass is recursive, descending into children at each level. For a tree of depth `d`, the recursion depth is `d`. Trees produced by parsing deeply nested input, or by repeated expansion, can exceed comfortable stack limits. MuDSL does not impose a depth limit; the user must ensure that the trees fed to `apply` are of reasonable depth, or restructure the input. The bottom-up traversal also rebuilds every node on every pass, so the per-pass cost is linear in the tree size, and the total cost is linear in the size times the number of passes to convergence.
 
 The third pitfall is rules that grow the tree, mentioned above. Beyond the termination concern, growing rules inflate the per-pass cost, because each pass must traverse the larger tree. A rule that doubles the tree size on each pass, run to a cap of one hundred, produces an exponentially large output. Growth rules should be used sparingly and always paired with a consumer.
 
@@ -449,7 +449,7 @@ When two sets must be applied in sequence with different fixpoint semantics — 
 
 ## 14.19 Observing the Passes
 
-DSLtk does not provide built-in tracing of the fixpoint loop, but the structure of `RewriteSet` makes tracing straightforward to add by wrapping the rules. A tracing wrapper can be written as a rule whose predicate delegates to the wrapped rule and whose transformer logs before returning.
+MuDSL does not provide built-in tracing of the fixpoint loop, but the structure of `RewriteSet` makes tracing straightforward to add by wrapping the rules. A tracing wrapper can be written as a rule whose predicate delegates to the wrapped rule and whose transformer logs before returning.
 
 ```cpp
 template <typename Rule>
@@ -474,7 +474,7 @@ Because the `RewriteSet` type depends on the wrapped rule types, the traced set 
 The example below exercises a set that requires several passes to converge, illustrating the fixpoint loop in action. The set combines constant folding with a rule that exposes new folding opportunities only after an identity is stripped.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -509,7 +509,7 @@ Although this tree converges in a single pass thanks to bottom-up evaluation, a 
 
 ## 14.21 The Semantics of "Fixpoint" in This Design
 
-The term "fixpoint" in DSLtk's rewrite machinery means specifically that a complete bottom-up pass over the tree produced no firings. It does not mean that the tree is a global normal form in the term-rewriting sense, because the rule set may be non-confluent — two different rewriting orders might lead to two different stable trees. The bottom-up, ordered application picks one specific order, and the fixpoint is the stable point reached by that order.
+The term "fixpoint" in MuDSL's rewrite machinery means specifically that a complete bottom-up pass over the tree produced no firings. It does not mean that the tree is a global normal form in the term-rewriting sense, because the rule set may be non-confluent — two different rewriting orders might lead to two different stable trees. The bottom-up, ordered application picks one specific order, and the fixpoint is the stable point reached by that order.
 
 Confluence is the user's to ensure. If two rules can both fire on the same node and lead to different stable forms, the order in the `rewrite_set` call decides which form is reached. The fixpoint loop does not explore alternatives; it commits to the cascade as it unfolds. For simplification rule sets, which are usually oriented toward shrinkage, confluence tends to hold naturally because shrinkage rules converge on a unique minimal form. For normalization rule sets with multiple canonical targets, the user must verify that the chosen order yields the intended target.
 
@@ -539,4 +539,4 @@ A `RewriteSet` is a bundle of `RewriteRule` objects applied together to a tree u
 
 Rule ordering matters because rules cascade: an earlier rule transforms a node before later rules see it, which can enable or suppress later matches. Bottom-up evaluation ensures that children are in a pass-local normal form before a parent is examined, which is essential for constant folding and similar rules. The `rewrite_set` factory constructs sets, and the `Rewrite` feature tag exposes a `rewrite` member to DSL hosts through the mixin pattern.
 
-Termination is the user's responsibility. Shrinkage rules terminate naturally because each firing reduces a well-founded measure. Normalization rules that preserve size must be oriented toward a unique canonical form to avoid cycles. The `max_iterations` cap backstops non-terminating sets, and tracing wrappers can diagnose convergence problems. With these caveats, `RewriteSet` provides a simple, composable foundation for tree simplification and normalization within DSLtk, integrating cleanly with the `ASTNode` value type of Chapter 10, the builders of Chapter 11, the traversal idioms of Chapter 12, and the rule definitions of Chapter 13.
+Termination is the user's responsibility. Shrinkage rules terminate naturally because each firing reduces a well-founded measure. Normalization rules that preserve size must be oriented toward a unique canonical form to avoid cycles. The `max_iterations` cap backstops non-terminating sets, and tracing wrappers can diagnose convergence problems. With these caveats, `RewriteSet` provides a simple, composable foundation for tree simplification and normalization within MuDSL, integrating cleanly with the `ASTNode` value type of Chapter 10, the builders of Chapter 11, the traversal idioms of Chapter 12, and the rule definitions of Chapter 13.

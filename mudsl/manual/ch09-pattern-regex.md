@@ -42,7 +42,7 @@ The anchoring has two practical consequences. First, a pattern such as `"[0-9]+"
 
 This anchoring decision is what makes `pattern<>` usable as a classification predicate in a `dsl::match` table. A `when<dsl::pattern<"[0-9]+">>` clause asserts that the *entire* key matches the integer pattern, not merely that the key contains an integer somewhere. That gives dispatch a precise, total-predicate semantics: for any given input key, at most one pattern in a well-formed table will match, provided the patterns are mutually exclusive. The engine itself does not enforce mutual exclusivity, but the anchoring makes it straightforward to achieve by construction.
 
-The decision also keeps the matcher small. A search-style matcher would have to iterate over every starting position in the input and retry the pattern at each; an anchored matcher only has to walk the input once, recursing through the pattern. The implementation analysed below is therefore linear in the combined size of pattern and input for the common cases, and at worst quadratic in pathological backtracking cases involving `*`.
+The decision also keeps the matcher small: it starts at offset zero rather than searching every input position. Simple patterns are inexpensive, but multiple overlapping repetitions can require combinatorial backtracking. Use `StaticRegex` for larger regular-expression workloads.
 
 ## Supported Syntax Subset
 
@@ -142,6 +142,8 @@ The core of the engine is `match_here`. It takes two `std::string_view` argument
       return str.empty ();
     if (pat[0] == '^')
       return match_here (pat.substr (1), str);
+    if (pat == "$")
+      return str.empty ();
 
     // Parse class [...]
     std::string_view cls;
@@ -183,9 +185,15 @@ The core of the engine is `match_here`. It takes two `std::string_view` argument
         if (str.empty () || !match_one (first, cls, str[0]))
           return false;
         str.remove_prefix (1);
+        if (match_here (rest, str))
+          return true;
         while (!str.empty () && match_one (first, cls, str[0]))
-          str.remove_prefix (1);
-        return match_here (rest, str);
+          {
+            str.remove_prefix (1);
+            if (match_here (rest, str))
+              return true;
+          }
+        return false;
       }
 
     // Exactly one
@@ -195,7 +203,7 @@ The core of the engine is `match_here`. It takes two `std::string_view` argument
   }
 ```
 
-The function opens with two base cases. If the pattern is empty, the match succeeds precisely when the input is also empty; this is what enforces end-anchoring. If the pattern begins with `^`, the anchor is discarded and the function recurses on the remainder. There is no explicit `$` handling: a trailing `$` is simply consumed as a literal character that the input is then required to contain, which is consistent with the documented behaviour that `$` is ignored. In practice, `$` is most useful at the end of a pattern, where it acts as a no-op literal that the input must also contain.
+The function begins with the empty-pattern case, which requires empty input. A leading `^` is discarded because matching already starts at offset zero. A remaining pattern consisting only of `$` also requires empty input, so a trailing end anchor never consumes a literal dollar sign.
 
 After the base cases, the function parses the current atom. It records the first character of the pattern in `first` and sets `pat_advance` to one, the default advance for a single-character atom. If that first character is `[`, it searches for the matching `]` starting at position one. If no `]` is found the pattern is malformed and the function returns `false`. Otherwise the class body is captured into `cls` and `pat_advance` is advanced to the position just past the `]`. This parsing happens once per atom, not once per character, which is the efficiency motivation mentioned earlier.
 
@@ -207,9 +215,9 @@ The `*` quantifier means "zero or more of the preceding atom". The implementatio
 
 If the zero case fails, the function enters a `while` loop that consumes input characters one at a time, provided each satisfies the atom via `match_one`. After each successful consumption it recurses on `rest` with the shortened input. As soon as a recursion succeeds, the function returns `true`. If the loop exhausts either the input or the matching characters without a successful recursion, the function returns `false`.
 
-This loop implements greedy matching with backtracking. Greedy, because the loop consumes as many matching characters as it can before each recursive check. Backtracking, because the recursive check is made after every single consumption, not only after the maximal consumption. If consuming three characters allows `rest` to match but consuming four would not, the loop finds the three-character split on its way up and returns `true` at that point. The first recursion that succeeds wins, which means the match is the leftmost-longest consistent with the rest of the pattern.
+This loop tests possible repetition lengths in ascending order. If consuming three characters permits the suffix to match, it succeeds without requiring a four-character repetition. Since the API returns only a Boolean and has no captures, this search order does not change the recognized language.
 
-The cost of this strategy is worth noting. In the worst case, where `*` is followed by a pattern that itself fails late, the loop may retry the recursion many times. For the small patterns and short inputs that `pattern<>` is designed for, this cost is negligible. For pathological inputs the behaviour is quadratic, which is another reason the engine is not intended as a general-purpose regex implementation.
+The loop may retry a suffix many times. Multiple overlapping quantified atoms can multiply those retries; there is no general quadratic bound. Keep this matcher for small classification patterns and use the NFA-based `StaticRegex` for larger inputs.
 
 The order of the two strategies matters. Trying the zero case first means that an empty match is preferred whenever it allows the rest of the pattern to succeed. For a pattern such as `[a-z]*x` against the input `"x"`, the engine first tries matching `[a-z]*` against the empty prefix, which leaves `x` to match the literal `x`, and succeeds immediately. Trying the greedy case first would have consumed the `x` and then failed to match the trailing literal, requiring a backtrack. The zero-first ordering avoids that backtrack in this common case.
 
@@ -217,13 +225,9 @@ The order of the two strategies matters. Trying the zero case first means that a
 
 The `+` quantifier means "one or more of the preceding atom". Its implementation is similar to the `*` branch but with the zero case removed. The function first requires that the input is non-empty and that its first character satisfies the atom; if not, the match fails immediately. This is the difference between `+` and `*`: `+` demands at least one match, `*` permits none.
 
-Having consumed the first character, the function enters a `while` loop that consumes further matching characters without performing intermediate recursion. This is the greedy phase: it eats as many matching characters as possible. Only when the loop terminates (because the input is exhausted or the next character fails the atom) does the function recurse on `rest` with the shortened input. The result of that recursion is returned directly.
+After consuming the mandatory first character, the function tests the suffix immediately. If needed, it consumes more matching characters one at a time and retries the suffix after each. This gives `+` the same backtracking completeness as `*`, with a minimum repetition count of one.
 
-This is a notable asymmetry with the `*` branch. The `*` branch recurses after every consumption, because it must be willing to backtrack to a shorter match. The `+` branch recurses only once, after maximal consumption, because it has already guaranteed at least one match and there is no shorter match that could satisfy `+` while failing the maximal one. In other words, `+` is greedily maximal and does not backtrack within itself; the recursion it performs at the end is the only point at which the rest of the pattern gets to vote.
-
-This means that a pattern such as `[0-9]+9` against the input `"99"` will fail. The `+` consumes both nines greedily, leaving the rest of the pattern `9` to match against the empty input, which fails. There is no backtrack to a one-character `+` match. Users should be aware of this when stacking quantifiers next to literals that overlap the quantified class. The behaviour is a deliberate trade-off favouring simplicity and speed over the full backtracking semantics of ECMAScript `+`.
-
-For the common lexical-classification patterns, this restriction is invisible. `[0-9]+` against `"123"` consumes all three digits and then recurses on the empty pattern with the empty input, which succeeds. `[a-zA-Z_][a-zA-Z_0-9]*` consumes an initial letter or underscore and then as many word characters as possible, again terminating cleanly. The restriction only bites when a literal follows a quantifier and that literal could itself be consumed by the quantified atom.
+For example, `[0-9]+9` matches `"99"`: the repetition consumes the first nine and the suffix consumes the second. `[a-z]+z` similarly matches `"az"`. Both C++ and D recognize these cases, and the regression suite checks them.
 
 ## The Exactly-One Fallthrough
 
@@ -233,15 +237,15 @@ This is the path taken by literal characters, by `.` wildcards without a quantif
 
 Because each recursive call in this branch advances the pattern by exactly one atom, the depth of recursion is bounded by the number of atoms in the pattern. For a pattern of length N the recursion depth is at most N. This makes the exactly-one path predictable and cheap, and it is the path that the overwhelming majority of atoms in a typical pattern take.
 
-The exactly-one path is also responsible for handling `$` if it appears at the end of a pattern without a quantifier. A pattern such as `[0-9]+$` is parsed as: a class atom `[0-9]`, followed by `+`, followed by a literal `$`. The `$` is matched as a literal character that the input must contain. This is rarely what the user intends, which is why the documentation describes `$` as "ignored": the practical way to use `$` is to omit it, since matching is end-anchored by construction.
+The trailing `$` is handled by the earlier end-anchor base case. Thus `[0-9]+$` and `[0-9]+` recognize the same whole-input strings.
 
-## Greedy Semantics and Backtracking
+## Repetition Search and Backtracking
 
-The interaction between the `*` and `+` branches and the rest of the pattern determines the engine's greedy semantics. Both quantifiers consume as much input as they can. The `*` branch then backtracks character by character, retrying the rest of the pattern at each shorter length, until it finds a split that lets the rest succeed. The `+` branch does not backtrack within itself; it commits to its maximal consumption and delegates to the rest of the pattern exactly once.
+Both repetition operators test the suffix at every admissible repetition length. The C++ implementation searches shorter lengths first; D searches longer lengths first. With whole-input Boolean matching and no captures, these strategies produce the same result.
 
 For most classification patterns, the rest of the pattern is empty or a fixed literal, and the distinction is invisible. The interesting cases arise when a quantifier is followed by another atom that overlaps the quantified class. Consider the pattern `[a-z]*z` against the input `"abz"`. The `*` branch first tries the zero case: matching `z` against `"abz"` fails, because the first character is `a`. The loop then consumes `a`, retries `z` against `"bz"` (fails), consumes `b`, retries `z` against `"z"` (succeeds), and returns `true`. The engine finds the split because of the per-consumption recursion in the `*` branch.
 
-The same pattern against `"abzc"` would fail, because the `*` branch would consume `a`, `b`, `z`, and then retry `z` against `"c"` (fails), exhaust the input, and return `false`. There is no mechanism to try a different split of the `*` consumption, because the loop only shortens by failing to match the next character; it cannot re-consume a character it has already passed. This is consistent with the leftmost-greedy model and is the same behaviour a user would obtain from a simple hand-rolled backtracking matcher.
+The same pattern against `"abzc"` fails because no split leaves exactly the suffix `"z"`. A candidate that leaves `"zc"` also fails: whole-input matching requires consuming the final `c`.
 
 The takeaway for users is that `pattern<>` implements a small, predictable subset of regex backtracking. It is sufficient for the lexical-classification tasks it was designed for, and it behaves consistently across all inputs. Where richer semantics are required — non-greedy quantifiers, alternation, grouping — the PEG engine in Chapters 27 and 28 is the appropriate tool.
 
@@ -283,7 +287,7 @@ This routing is what allows a single `dsl::match` table to mix value-based and p
 The simplest use of `pattern<>` is direct invocation of `matches()` from a lambda or function. The example shipped as `examples/04-pattern-classes.cpp` shows the canonical pattern: a small lambda that tests an input against several patterns in sequence and returns a label.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -331,7 +335,7 @@ The keyword test uses three separate `pattern<>` instantiations rather than a si
 The example shipped as `examples/19-pattern-match.cpp` shows the same classification idea in an even more compact form, returning string labels rather than enum values.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -423,9 +427,7 @@ static_assert( dsl::pattern<"^if">::matches("if"));
 static_assert( dsl::pattern<"if$">::matches("if"));
 ```
 
-The literal-pattern examples show end-anchoring in action. `"if"` matches the pattern `"if"` exactly, but `"iffy"` does not because the engine requires the entire input to be consumed. `"If"` does not match because matching is case-sensitive. The `^if` pattern matches because the `^` is discarded and the rest is the literal `if`. The `if$` pattern matches the input `"if"` because the `$` is treated as a literal that the input must contain; since the input is exactly `"if"`, the literal `$` would not in fact be present, and the assertion would fail for an input that did not contain a literal dollar sign. Users should therefore omit `$` rather than rely on it.
-
-The final point about `$` deserves emphasis. The documentation describes `$` as "ignored", but the implementation treats it as a literal character when it appears in a position where a literal would be expected. The practical consequence is that a pattern ending in `$` will only match inputs that literally contain a dollar sign at the corresponding position. To avoid surprises, users should treat `$` as unsupported and omit it entirely; the end-anchoring of the engine already provides the semantic that `$` would express in a conventional regex.
+The literal-pattern examples show whole-input matching: `"if"` matches `"if"`, while `"iffy"` and `"If"` do not. The explicit-anchor forms `^if`, `if$`, and `^if$` also match `"if"`. A trailing `$` requires the input to have ended; it does not require a dollar-sign byte.
 
 ## Limitations of the Engine
 
@@ -453,7 +455,7 @@ The library offers two recognition engines: the `pattern<>` engine described in 
 
 A useful rule of thumb is to reach for `pattern<>` first, and to move to the PEG engine only when `pattern<>` proves insufficient. The `pattern<>` engine is smaller, simpler, and has no dependencies beyond the header itself. Its matching algorithm is easy to reason about, and its limitations are easy to work around for the kinds of tasks it was designed for. The PEG engine is more powerful but also more complex, and it brings its own concepts of grammar definition, combinator composition, and parse-tree construction.
 
-In a typical DSLtk workflow, `pattern<>` is used in the early stages of a pipeline, where tokens are classified into kinds, and the PEG engine is used in later stages, where the token stream is parsed into a tree. The two engines share no code but coexist peacefully in the same header. A program can use both without conflict, and the choice of engine for a given task is purely a matter of expressiveness and convenience.
+In a typical MuDSL workflow, `pattern<>` is used in the early stages of a pipeline, where tokens are classified into kinds, and the PEG engine is used in later stages, where the token stream is parsed into a tree. The two engines share no code but coexist peacefully in the same header. A program can use both without conflict, and the choice of engine for a given task is purely a matter of expressiveness and convenience.
 
 ## A Note on `constexpr` Evaluability
 

@@ -1,0 +1,28 @@
+\chapter{Terminal output}
+The \api{terminal} package provides three small operations: \api{Write},
+\api{Clear}, and \api{Color}. These are native functions exposed through a
+record, just like the formatting package.
+
+\begin{mullcode}
+val T <- G:LoadLib("terminal") or G:DieWith("$E?");
+T:Write("status: ready\n");
+val red <- T:Color(31, "failure");
+G:Assert(G:Len(red) == 16);
+\end{mullcode}
+
+\api{Write(text)} passes one string directly to the runtime's stdout callback.
+It does not use the formatting package's replaceable main sink. This distinction
+lets a host capture all terminal output while a script independently sends
+formatted messages to a log collector.
+
+\api{Clear()} writes the ANSI clear-screen and cursor-home sequence.
+\api{Color(code, text)} returns a string wrapped in an ANSI SGR sequence and
+a reset sequence; it does not print it. The code must be an integer between
+0 and 107. The library validates that range, but the meaning of a particular
+code depends on the receiving terminal.
+
+The package does not initialize terminal modes, inspect terminal dimensions,
+or read keyboard input. Such services can be supplied by the embedding
+application as additional native members. Keeping this interface small makes
+the default standard library usable with a console, an editor output panel,
+or a test callback that simply accumulates bytes.

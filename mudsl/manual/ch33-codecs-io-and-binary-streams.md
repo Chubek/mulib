@@ -1,6 +1,6 @@
 # Chapter 33 — User Codecs, Abstract I/O and Static Binary Streams
 
-The user defines data syntax and backend operations. DSLtk provides protocols,
+The user defines data syntax and backend operations. MuDSL provides protocols,
 template forwarding, byte-stream helpers and static byte matching.
 
 ## Serializer and deserializer protocols
@@ -14,7 +14,7 @@ adapters or binary streams.
 The following user codec chooses a four-byte, big-endian integer syntax.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <cassert>
 
 struct IntegerCodec {

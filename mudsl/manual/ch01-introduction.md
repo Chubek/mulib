@@ -1,8 +1,8 @@
 # Chapter 1: Introduction and Design Philosophy
 
-DSLtk builds Domain-Specific Languages in C++20 and D. The C++ implementation
-is a single header, `DSLtk.hpp`, exposing the `dsl` namespace. The D
-implementation is a single module, `DSLtk.d`, imported with `import DSLtk`.
+MuDSL builds Domain-Specific Languages in C++20 and D. The C++ implementation
+is a single header, `MuDSL.hpp`, exposing the `dsl` namespace. The D
+implementation is a single module, `MuDSL.d`, imported with `import MuDSL`.
 Default builds use the host language's standard library. Optional native Lua
 embedding adds a user-supplied Lua library dependency.
 
@@ -21,13 +21,13 @@ host language's syntax, type system, and compiler while adding a thin,
 expressive layer that reads almost like prose. The host language does the heavy
 lifting; your layer provides the vocabulary.
 
-DSLtk exists to make that layer easy to assemble from reusable pieces. The
+MuDSL exists to make that layer easy to assemble from reusable pieces. The
 central observation is that most embedded DSLs share the same handful of
 building blocks. Pipes chain transformations. Predicates compose with logical
 operators. Pattern dispatch tables route keys to handlers. Trees represent
 syntax. Rewrite passes simplify trees. Lazy expressions fuse computation.
 
-Rather than reinvent these blocks for every project, DSLtk packages each one
+Rather than reinvent these blocks for every project, MuDSL packages each one
 as an orthogonal *feature*. You compose exactly the features your language
 needs and pay only for those you use.
 
@@ -48,7 +48,7 @@ technique known as CRTP, the Curiously Recurring Template Pattern.
 The D entry point injects features with a template mixin:
 
 ```d
-import DSLtk;
+import MuDSL;
 struct MyDSL { mixin DSL!(Pipeline, Operators); }
 ```
 
@@ -62,7 +62,7 @@ and so on. Each feature injects a small set of methods, operators, or nested
 types into your class through a mixin. The result is a fully concrete object
 with compile-time polymorphism and no virtual functions.
 
-The features DSLtk ships are deliberately broad, so that one toolkit can serve
+The features MuDSL ships are deliberately broad, so that one toolkit can serve
 many kinds of language. The pipeline feature adds the pipe operator so values
 flow through a chain. The operators feature gives you composable predicates
 joined by `&`, `|`, and `!`.
@@ -96,7 +96,7 @@ Let us look at the smallest possible DSL. The following class inherits two
 features but adds no members of its own:
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 
 struct BasicDSL : dsl::DSL<BasicDSL, dsl::Pipeline, dsl::Operators> {};
 ```
@@ -139,7 +139,7 @@ That dispatch costs an indirection and defeats inlining. CRTP instead lets the
 base class know the derived type at compile time. The base casts `*this` to the
 derived type, and the compiler sees a concrete call it can inline completely.
 
-DSLtk uses this everywhere, so there is no virtual call anywhere in the
+MuDSL uses this everywhere, so there is no virtual call anywhere in the
 toolkit. The base class is short and worth quoting in full:
 
 ```cpp
@@ -167,7 +167,7 @@ the class that hosts it is therefore small and explicit.
 
 The third pillar is *non-type template parameters carrying strings*. Before
 C++20, you could not pass a string literal as a template argument directly.
-DSLtk defines a small `FixedString<N>` type that wraps a compile-time char
+MuDSL defines a small `FixedString<N>` type that wraps a compile-time char
 array and qualifies as a non-type template parameter.
 
 This lets you write `dsl::leaf<"num">(42)` and `dsl::pattern<"[0-9]+">`. The
@@ -190,7 +190,7 @@ Expression templates build a tree of operations as you write `a + b * c` and
 perform a single fused evaluation when you call `.eval()`. Deferral lets you
 describe computation cheaply and commit to it deliberately.
 
-The sixth pillar is *explicit error flow*. DSLtk does not favour exceptions for
+The sixth pillar is *explicit error flow*. MuDSL does not favour exceptions for
 control flow. The `Result<T,E>` type models success and failure as data, with
 `map`, `and_then`, and `map_err` to transform each branch.
 
@@ -199,7 +199,7 @@ optional value *and* a structured `ParseError`. A failed parse is not an
 exception but a value you inspect.
 
 The seventh pillar is *compositionality through operators*. C++ lets you
-overload operators, and DSLtk leans on this to make DSLs read naturally.
+overload operators, and MuDSL leans on this to make DSLs read naturally.
 
 The pipe `|`, the logical `& | !` on predicates, the arithmetic `+ - * /` on
 expression-templated values, and the `& | *` on parsers all build larger
@@ -218,7 +218,7 @@ behaviour of an old feature will not quietly change when a new one arrives.
 ## What the Pillars Buy You
 
 These eight pillars are not abstract. They are the reason a program against
-DSLtk is short, fast, and type-safe at the same time.
+MuDSL is short, fast, and type-safe at the same time.
 
 CRTP and mixins give you composition *and* zero overhead together. These are
 two goals that usually conflict; here they are reconciled by doing all the work
@@ -229,9 +229,9 @@ performance, because the string never has to be re-parsed at run time. Value
 semantics give you safety *and* simplicity, because there are no dangling
 pointers to reason about.
 
-## Who DSLtk Is For
+## Who MuDSL Is For
 
-DSLtk is for library authors who want to ship a small embedded language without
+MuDSL is for library authors who want to ship a small embedded language without
 pulling in a framework. It is for application developers who need a
 configuration parser, a query builder, a rule engine, or a state machine
 without leaving C++.
@@ -241,9 +241,9 @@ rewrite engine for ASTs. And it is for anyone who wants to see how modern C++ �
 concepts, NTTPs, `constexpr`, variadic templates — comes together to build
 something practical.
 
-## What DSLtk Is Not
+## What MuDSL Is Not
 
-It is equally important to know what DSLtk is *not*. It is not a full
+It is equally important to know what MuDSL is *not*. It is not a full
 general-purpose parser generator like ANTLR. The PEG and combinator subsystems
 are intentionally lightweight.
 
@@ -262,15 +262,15 @@ that implements C++20. The library uses concepts, class-type non-type template
 parameters, `constexpr` lambdas, and modern standard-library idioms.
 
 You need no external dependencies. Everything comes from the standard library
-headers that `DSLtk.hpp` itself includes. And because the library is
+headers that `MuDSL.hpp` itself includes. And because the library is
 header-only, there is nothing to link.
 
 ```cpp
-#include "DSLtk.hpp"   // that is the whole dependency
+#include "MuDSL.hpp"   // that is the whole dependency
 ```
 
 The distribution provides a CMake `INTERFACE` library target so that projects
-using CMake can consume DSLtk the idiomatic way. The target sets `cxx_std_20`
+using CMake can consume MuDSL the idiomatic way. The target sets `cxx_std_20`
 as a required compile feature and exports the header into an include directory.
 
 Chapter 2 walks through both the CMake route and the plain-compiler route in
@@ -288,7 +288,7 @@ signature, the manual explains the semantics, the trade-offs, and the idioms.
 
 ## The Mental Model
 
-The mental model to carry forward is simple. A DSLtk program is a C++ program
+The mental model to carry forward is simple. A MuDSL program is a C++ program
 in which you do three things.
 
 First, you define a struct that inherits `dsl::DSL` with the features you want.
@@ -345,7 +345,7 @@ struct VecDSL : dsl::DSL<VecDSL, dsl::ExprTemplates> {
 ```
 
 These two examples — one dispatch-driven, one arithmetic-driven — show the
-range of languages DSLtk supports from the same base class. The features differ,
+range of languages MuDSL supports from the same base class. The features differ,
 but the loop is identical.
 
 ## How the Manual Is Organised
@@ -368,7 +368,7 @@ builds a connected picture rather than a bag of tricks.
 ## A Note on the Code Listings
 
 Every snippet in this manual uses the real `dsl::` API and is written to
-compile against `DSLtk.hpp` with a conforming C++20 compiler. Where a snippet
+compile against `MuDSL.hpp` with a conforming C++20 compiler. Where a snippet
 is abbreviated for space — for instance, omitting `#include` lines or `main` —
 that is noted.
 
@@ -394,7 +394,7 @@ fires any more; Chapter 14 covers this in detail.
 
 ## Expectations and Scope
 
-DSLtk values clarity and composability above completeness. The pattern engine
+MuDSL values clarity and composability above completeness. The pattern engine
 implements a useful subset, not full POSIX regex. The parser combinators are a
 teaching-quality Parsec, not an industrial parser toolkit. The PEG engine is
 additive and lightweight.
@@ -406,7 +406,7 @@ rather than arbitrary.
 
 ## Summary
 
-DSLtk is a header-only C++20 toolkit for embedded DSLs, built on CRTP, feature
+MuDSL is a header-only C++20 toolkit for embedded DSLs, built on CRTP, feature
 mixins, and NTTP strings. You compose features by inheriting `dsl::DSL`, and
 the compiler does all the polymorphic work. The library favours value
 semantics, deferred evaluation, explicit error flow, and operator-based

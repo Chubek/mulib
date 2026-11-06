@@ -1,0 +1,32 @@
+\chapter{Expressions and evaluation order}
+MuLL evaluates operands and function arguments from left to right. Parentheses
+override precedence. The precedence levels, from weakest to strongest, are:
+\api{or}; \api{and}; \api{== !=}; \api{< > <= >=}; \api{+ -};
+\api{* / \%}; unary \api{+ - ! not}; and member access, indexing, and calls.
+Binary operators at the same level associate left to right.
+
+\begin{mullcode}
+G:Assert(2 + 3 * 4 == 14);
+G:Assert((2 + 3) * 4 == 20);
+G:Assert(10 - 3 - 2 == 5);
+G:Assert(-5 % 2 == -1);
+G:Assert(not false and !nil);
+var order <- "";
+val mark <- fn(s){ order <- order + s; return s; };
+val pair <- [mark("a"), mark("b")];
+G:Assert(order == "ab");
+\end{mullcode}
+
+Arithmetic and ordering require numbers. Addition also concatenates two
+strings or two lists of the same kind. Equality accepts any pair of values
+and follows the structural rules in Chapter 48. Remainder uses floating-point
+remainder with the sign of the left operand.
+
+\section{Short circuiting}
+\api{a or b} returns \api{a} when it is true, otherwise evaluating and
+returning \api{b}. \api{a and b} returns \api{a} when it is false, otherwise
+evaluating and returning \api{b}. The unused expression produces neither
+effects nor errors. Unary \api{!} and \api{not} return a Boolean negation.
+
+Comparisons are ordinary binary expressions. Write \api{a < b and b < c}
+for a range test; \api{a < b < c} would attempt to order a Boolean and a number.

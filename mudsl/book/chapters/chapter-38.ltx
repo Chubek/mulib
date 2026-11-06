@@ -1,0 +1,30 @@
+\chapter{From source text to a language}
+An embedded C++ DSL and an interpreted language solve different interface
+problems. A C++ expression template delegates syntax checking and type checking
+to the host compiler. An interpreter accepts text at runtime and must make
+those decisions itself. MuDSL supports both workflows.
+
+\section{Choose the boundaries first}
+Write down the source representation, the parsed representation, and the result
+representation before choosing a parser. A configuration language might parse
+directly into immutable records. An optimizer benefits from a durable AST,
+source locations, and explicit transformations. A language with user functions
+also needs environments and a policy for retaining their captured bindings.
+
+The useful sequence is source, tokens, syntax, validation, evaluation, and
+formatting. Keep diagnostics attached to the earliest stage that can explain
+the failure. An unexpected closing bracket is a syntax error; an unknown
+binding is an evaluation error. Keeping this distinction makes editors and
+command-line tools easier to build.
+
+\section{An implementation exercise}
+Start with arithmetic on numbers. Add precedence tests before adding variables.
+Then introduce a symbol table, immutable declarations, and assignment. Finally,
+add functions and lexical scopes. After each step, retain both positive and
+negative examples. This progression exposes ownership and error-handling
+decisions before native libraries make the implementation larger.
+
+MuLL follows this arrangement inside the two toolkit source files: a lexer
+produces positioned tokens; a precedence parser constructs syntax nodes; an
+interpreter evaluates them against environments. Its public interface accepts
+source strings rather than exposing those internal node classes.

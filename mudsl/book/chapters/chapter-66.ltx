@@ -1,0 +1,32 @@
+\chapter{The list library}
+The \api{list} package supports construction and higher-order processing.
+\api{Range(start, end)} creates ascending integral values with an inclusive
+start and exclusive end. Bounds must be exact integers within the binary64
+safe-integer range, and the result is limited to one million elements.
+
+\begin{mullcode}
+val L <- G:LoadLib("list") or G:DieWith("$E?");
+val values <- L:Range(1,6);
+val squares <- L:Map(values, fn(x){ return x*x; });
+val even <- L:Filter(squares, fn(x){ return x % 2 == 0; });
+val sum <- L:Fold(even, 0, fn(a,x){ return a+x; });
+G:Assert(squares == [1,4,9,16,25]);
+G:Assert(even == [4,16]);
+G:Assert(sum == 20);
+G:Assert(L:Push([1],2) == [1,2]);
+G:Assert(L:Set([1,2],1,9) == [1,9]);
+\end{mullcode}
+
+\api{Map(list, function)} calls the function once per element and collects
+its results in order. \api{Filter(list, predicate)} retains elements whose
+predicate result is true under MuLL's truth rules. \api{Fold(list, initial,
+function)} calls the function with the accumulator followed by the current
+element, returning the final accumulator. Empty folds return the initial value.
+
+Callbacks can be script functions or native callables. Their effects occur
+in list order, and an error stops the operation immediately. Script callbacks
+consume the current interpreter step and call budgets.
+
+\api{Push} appends one value to a copy. \api{Set} replaces one element in a
+copy and checks the same index rules as core indexing. These are persistent
+updates, not mutable container methods.

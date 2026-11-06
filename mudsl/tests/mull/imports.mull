@@ -1,0 +1,6 @@
+G:Assert(G:LoadLib("missing") == nil);
+G:Assert("$E?" == "library not found: missing");
+G:Assert(G:LoadLib("../printf") == nil);
+val Printf <- G:LoadLib("printf") or G:DieWith("$E?");
+G:Assert("$E?" == "");
+return "imports ok";

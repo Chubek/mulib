@@ -2,7 +2,7 @@
 
 ## The Feature Tag Idiom
 
-Every non-trivial DSL built with DSLtk is assembled from a small set of reusable units called *feature tags*. A feature tag is a plain struct, typically empty or near-empty at its outer level, that exposes a single nested template:
+Every non-trivial DSL built with MuDSL is assembled from a small set of reusable units called *feature tags*. A feature tag is a plain struct, typically empty or near-empty at its outer level, that exposes a single nested template:
 
 ```cpp
 struct SomeFeature
@@ -298,7 +298,7 @@ This tag illustrates a subtle point about the method-injecting category: not eve
 
 The header forward-declares every feature tag before any of them is defined. This is what allows the order of definitions in the header to differ from the order in which they are used: a mixin may reference another feature's machinery, or be referenced by it, without forcing a strict topological ordering on the file.
 
-For the user, the practical consequence is that the entire feature-tag vocabulary is available as soon as `DSLtk.hpp` is included. There is no need to include sub-headers or to declare tags in any particular sequence. The following are all usable in any order in user code:
+For the user, the practical consequence is that the entire feature-tag vocabulary is available as soon as `MuDSL.hpp` is included. There is no need to include sub-headers or to declare tags in any particular sequence. The following are all usable in any order in user code:
 
 ```cpp
 struct A : dsl::DSL<A, dsl::Pipeline, dsl::Rewrite>          { static inline auto rules = dsl::rewrite_set(); };
@@ -355,7 +355,7 @@ Composition is not free of caveats. Two features that inject identically-named m
 The feature-tag pattern is intentionally simple, and the clearest way to demystify it is to write one. The code below is illustrative user code, not part of the library; it shows the minimum scaffolding needed to add a custom feature to a DSL.
 
 ```cpp
-// User code — not part of DSLtk.
+// User code — not part of MuDSL.
 namespace dsl {
 struct Greeter
 {
@@ -381,7 +381,7 @@ The tag is an empty struct. The `Mixin` is a class template with a single type p
 A slightly richer version can demonstrate the conditional-member contract:
 
 ```cpp
-// User code — not part of DSLtk.
+// User code — not part of MuDSL.
 namespace dsl {
 struct VerboseGreeter
 {
@@ -582,7 +582,7 @@ The remainder of this manual examines each feature tag in detail, in the order s
 
 ## Summary
 
-This chapter has catalogued the feature-tag idiom that underlies all of DSLtk's higher-level machinery. A feature tag is an empty or near-empty struct exposing a nested `template <typename Derived> struct Mixin`, and `dsl::DSL<Derived, Features...>` inherits each listed feature's `Mixin<Derived>` through variadic multiple inheritance.
+This chapter has catalogued the feature-tag idiom that underlies all of MuDSL's higher-level machinery. A feature tag is an empty or near-empty struct exposing a nested `template <typename Derived> struct Mixin`, and `dsl::DSL<Derived, Features...>` inherits each listed feature's `Mixin<Derived>` through variadic multiple inheritance.
 
 Three categories of feature were identified. Pure markers (`PatternMatch`, `LazyFeature`, `Monadic`, `ResultFeature`, `CombinatorParser`, `TaskPipeline`) inject nothing but enable concept-based introspection. Method-injecting features (`Pipeline`, `Operators`, `AST`, `Memoization`, and the conditional `Rewrite` and `CustomLiterals`) contribute static or instance member functions. Operator-injecting features (`ExprTemplates`) contribute `friend` operators found through argument-dependent lookup.
 

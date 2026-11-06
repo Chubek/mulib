@@ -1,6 +1,6 @@
 # Chapter 2: Getting Started: Installation, Build, and First Program
 
-This chapter takes you from an empty directory to a compiled, running DSLtk
+This chapter takes you from an empty directory to a compiled, running MuDSL
 program. The C++ header and D module are individually self-contained;
 installation means making the chosen implementation visible to its compiler.
 Default builds need only the corresponding standard library. Native Lua
@@ -13,11 +13,11 @@ run the bundled examples.
 
 Finally, we will walk through the first example program in detail and review
 the compile errors you are most likely to meet on day one. By the end you will
-have a working DSLtk program and the confidence to read the rest of the manual.
+have a working MuDSL program and the confidence to read the rest of the manual.
 
 ## Requirements
 
-For `DSLtk.hpp`, the language requirement is C++20. DSLtk relies on language
+For `MuDSL.hpp`, the language requirement is C++20. MuDSL relies on language
 features that did not exist before C++20. It uses concepts, both in real
 constraints and in `requires`-expressions.
 
@@ -27,24 +27,24 @@ standard-library headers that accompany the modern language.
 
 Any recent release of GCC, Clang, or MSVC that advertises C++20 support will
 do. If you are unsure of your toolchain, compile any small program with
-`-std=c++20` first. Confirm the toolchain accepts it before reaching for DSLtk.
+`-std=c++20` first. Confirm the toolchain accepts it before reaching for MuDSL.
 
 Default header builds use standard C++ facilities and the embedded
 `magic_enum` headers. The byte-stream and language facilities also use spans,
-fixed-width integers and standard containers. Enabling `DSLTK_ENABLE_LUA`
+fixed-width integers and standard containers. Enabling `MUDSL_ENABLE_LUA`
 requires Lua headers and linkage supplied by the user.
 
-For `DSLtk.d`, use a D compiler with Phobos and support for template mixins,
+For `MuDSL.d`, use a D compiler with Phobos and support for template mixins,
 `static foreach`, and CTFE. The module has been exercised with LDC, DMD and
-GDC. Its optional native bridge is selected with the `DSLtkLua` version
+GDC. Its optional native bridge is selected with the `MuDSLLua` version
 identifier and Lua linkage.
 
 ## A First D Program
 
-Save this as `hello.d` alongside `DSLtk.d`:
+Save this as `hello.d` alongside `MuDSL.d`:
 
 ```d
-import DSLtk;
+import MuDSL;
 import std.stdio : writeln;
 
 struct BasicDSL { mixin DSL!(Pipeline, Operators); }
@@ -59,11 +59,11 @@ void main()
 ```
 
 ```sh
-ldc2 hello.d DSLtk.d -of=hello
+ldc2 hello.d MuDSL.d -of=hello
 ./hello
 # Equivalent compiler invocations:
-dmd hello.d DSLtk.d -of=hello
-gdc hello.d DSLtk.d -o hello
+dmd hello.d MuDSL.d -of=hello
+gdc hello.d MuDSL.d -o hello
 ```
 
 Supply the module directory through `-I` when it is elsewhere. The CMake
@@ -72,19 +72,19 @@ exports the C++ usage requirements. Chapter 31 provides the D feature guide.
 
 ## Obtaining the Header
 
-Obtaining the library means obtaining `DSLtk.hpp`. In a typical source layout
-the header sits at the repository root. A project that vendors DSLtk simply
+Obtaining the library means obtaining `MuDSL.hpp`. In a typical source layout
+the header sits at the repository root. A project that vendors MuDSL simply
 copies that one file into its own include tree.
 
 There is no separate source file to compile, no static library to build, and no
 shared object to install for consumers. If your project already has an
-`include/` or `third_party/` directory, dropping `DSLtk.hpp` there is
+`include/` or `third_party/` directory, dropping `MuDSL.hpp` there is
 sufficient.
 
 Once the header is on your include path, using it is a single line:
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 ```
 
 That line pulls the entire `dsl` namespace into your translation unit. Because
@@ -98,10 +98,10 @@ headers it pulls in prevent repeated work across the rest of your build.
 ## A Direct Compiler Build
 
 The simplest possible build is a direct compiler invocation. Save the following
-as `hello.cpp` next to a copy of `DSLtk.hpp`:
+as `hello.cpp` next to a copy of `MuDSL.hpp`:
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 struct BasicDSL : dsl::DSL<BasicDSL, dsl::Pipeline, dsl::Operators> {};
@@ -137,13 +137,13 @@ will reject concepts and class-type NTTPs with errors that can look
 bewildering if you do not know the cause.
 
 If your project keeps headers in a separate directory, point the compiler at it
-with `-I`. For example, if `DSLtk.hpp` lives in `include/`:
+with `-I`. For example, if `MuDSL.hpp` lives in `include/`:
 
 ```sh
 g++ -std=c++20 -Iinclude src/hello.cpp -o hello
 ```
 
-Many DSLtk snippets construct class-type non-type template parameters. On some
+Many MuDSL snippets construct class-type non-type template parameters. On some
 toolchains you may benefit from a larger template backtrace limit to keep deep
 diagnostics navigable.
 
@@ -154,9 +154,9 @@ g++ -std=c++20 -ftemplate-backtrace-limit=0 hello.cpp -o hello
 These are quality-of-life flags, not requirements. They make error messages
 easier to read; they do not change whether the code compiles.
 
-## Consuming DSLtk Through CMake
+## Consuming MuDSL Through CMake
 
-For projects that already use CMake, DSLtk ships a ready-made `INTERFACE`
+For projects that already use CMake, MuDSL ships a ready-made `INTERFACE`
 library target. The distribution's `CMakeLists.txt` declares the target with a
 single line and exports the include directory and the C++20 requirement as
 usage requirements.
@@ -164,34 +164,34 @@ usage requirements.
 Consumers inherit these requirements automatically:
 
 ```cmake
-project(DSLtk VERSION 1.0 LANGUAGES CXX)
+project(MuDSL VERSION 1.0 LANGUAGES CXX)
 
-add_library(DSLtk INTERFACE)
+add_library(MuDSL INTERFACE)
 
-target_include_directories(DSLtk
+target_include_directories(MuDSL
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
         $<INSTALL_INTERFACE:include>
 )
 
-target_compile_features(DSLtk INTERFACE cxx_std_20)
+target_compile_features(MuDSL INTERFACE cxx_std_20)
 ```
 
 Because the target is `INTERFACE`, linking against it adds no compiled object
 code. It only propagates the include path and the `cxx_std_20` requirement.
 
-A consuming project written against DSLtk therefore needs nothing more than a
+A consuming project written against MuDSL therefore needs nothing more than a
 few lines of its own:
 
 ```cmake
-# Assuming DSLtk was added via add_subdirectory, FetchContent, or found
+# Assuming MuDSL was added via add_subdirectory, FetchContent, or found
 # through the installed package config.
 add_executable(hello src/hello.cpp)
-target_link_libraries(hello PRIVATE DSLtk)
+target_link_libraries(hello PRIVATE MuDSL)
 ```
 
-Linking `DSLtk` is enough to bring in both the include directory and the
+Linking `MuDSL` is enough to bring in both the include directory and the
 `-std=c++20` flag. CMake will not let you accidentally build the target with an
 older standard, because `target_compile_features(... INTERFACE cxx_std_20)`
 makes C++20 a hard usage requirement.
@@ -199,29 +199,29 @@ makes C++20 a hard usage requirement.
 ## Installing and Finding the Package
 
 The distribution also installs a package configuration. Downstream projects can
-then find DSLtk after it has been installed. The `CMakeLists.txt` exports the
-target under the `DSLtk::` namespace and generates a `DSLtkConfig.cmake` from a
+then find MuDSL after it has been installed. The `CMakeLists.txt` exports the
+target under the `MuDSL::` namespace and generates a `MuDSLConfig.cmake` from a
 template:
 
 ```cmake
 include(CMakePackageConfigHelpers)
 configure_package_config_file(
-    cmake/DSLtkConfig.cmake.in
-    "${CMAKE_CURRENT_BINARY_DIR}/DSLtkConfig.cmake"
-    INSTALL_DESTINATION lib/cmake/DSLtk
+    cmake/MuDSLConfig.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/MuDSLConfig.cmake"
+    INSTALL_DESTINATION lib/cmake/MuDSL
 )
 ```
 
 After `cmake --install`, a downstream project can write:
 
 ```cmake
-find_package(DSLtk REQUIRED)
+find_package(MuDSL REQUIRED)
 add_executable(app src/main.cpp)
-target_link_libraries(app PRIVATE DSLtk::DSLtk)
+target_link_libraries(app PRIVATE MuDSL::MuDSL)
 ```
 
 The generated config runs `check_required_components` and exposes
-`DSLtk_INCLUDE_DIR` and `DSLtk_INCLUDE_DIRS` variables. Projects that prefer to
+`MuDSL_INCLUDE_DIR` and `MuDSL_INCLUDE_DIRS` variables. Projects that prefer to
 set include paths manually can read those variables directly.
 
 The config template is short. It includes the generated targets file and sets
@@ -235,7 +235,7 @@ The source distribution includes an `examples/` directory with two dozen
 numbered programs. Each one illustrates a single feature or integration. They
 are the fastest way to see the library in motion.
 
-The examples are plain `.cpp` files that `#include "DSLtk.hpp"` and define a
+The examples are plain `.cpp` files that `#include "MuDSL.hpp"` and define a
 `main`. You can compile any one of them directly:
 
 ```sh
@@ -266,33 +266,33 @@ to learn, because each example is small enough to read in full.
 
 The matching C++/D equality-saturation examples combine preprocessing,
 S-expression rule loading, e-graphs, equality-triggered visitors, explicit
-CFGs and static regexes. From the DSLtk directory:
+CFGs and static regexes. From the MuDSL directory:
 
 ```sh
 g++ -std=c++20 -I. examples/26-equality-saturation.cpp -o eqsat-cpp
 ./eqsat-cpp
-ldc2 -I. DSLtk.d examples/26-equality-saturation.d -of=eqsat-d
+ldc2 -I. MuDSL.d examples/26-equality-saturation.d -of=eqsat-d
 ./eqsat-d
 ```
 
-The CMake example target is `dsltk_equality_saturation_example`, enabled by
-`BUILD_EXAMPLES`. `dsltk_enum_reflection_example` illustrates C++ reflection.
+The CMake example target is `mudsl_equality_saturation_example`, enabled by
+`BUILD_EXAMPLES`. `mudsl_enum_reflection_example` illustrates C++ reflection.
 
 The standalone C++ test project provides enum and language-facility coverage:
 
 ```sh
-cmake -S tests -B build/dsltk-tests
-cmake --build build/dsltk-tests
-ctest --test-dir build/dsltk-tests --output-on-failure
+cmake -S tests -B build/mudsl-tests
+cmake --build build/mudsl-tests
+ctest --test-dir build/mudsl-tests --output-on-failure
 ```
 
-Set `-DDSLtk_TEST_LUA=ON` at configuration to include native Lua preprocessing
+Set `-DMuDSL_TEST_LUA=ON` at configuration to include native Lua preprocessing
 tests. Lua discovery supplies the test target's include and link flags.
 D regression tests live in the source module:
 
 ```sh
-ldc2 -unittest -main DSLtk.d -of=dsltk-test
-./dsltk-test
+ldc2 -unittest -main MuDSL.d -of=mudsl-test
+./mudsl-test
 ```
 
 Chapter 31 includes DMD/GDC verification commands, and Chapter 35 includes
@@ -305,7 +305,7 @@ conventions used throughout the manual. `examples/01-basic-usage.cpp` is
 reproduced in full below:
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 struct BasicDSL : dsl::DSL<BasicDSL, dsl::Pipeline, dsl::Operators> {};
@@ -402,7 +402,7 @@ When a build fails, the cause is almost always one of a small number of
 things. The first is the standard version. If you see errors about `concepts`,
 `requires`, or `std::same_as`, you have forgotten `-std=c++20`.
 
-The second is the include path. If the compiler reports `DSLtk.hpp: No such
+The second is the include path. If the compiler reports `MuDSL.hpp: No such
 file or directory`, the header is not where the compiler is looking. Add the
 right `-I` flag or fix the `target_include_directories` entry.
 
@@ -410,7 +410,7 @@ The third is an old compiler. A toolchain that predates solid class-type NTTP
 support will choke on `dsl::leaf<"tag">` and `dsl::pattern<"...">` even with
 `-std=c++20`. The fix is to upgrade to a current release of your compiler.
 
-A subtler class of error involves template diagnostics. Because DSLtk is
+A subtler class of error involves template diagnostics. Because MuDSL is
 template-heavy, a mistake in your own code can produce a wall of instantiation
 traceback. Two habits help you cope.
 
@@ -425,23 +425,23 @@ when something goes wrong.
 ## A Productive Learning Workflow
 
 Another useful habit is to keep a throwaway translation unit that you compile
-often while learning. DSLtk's features are independent, so you can grow this
+often while learning. MuDSL's features are independent, so you can grow this
 file one feature at a time.
 
 Add the pipeline today, the operators tomorrow, and pattern matching the day
 after. Confirm each compiles before stacking the next. This incremental
 approach matches the manual's part structure and keeps feedback loops short.
 
-If you integrate DSLtk into a larger project, consider wrapping it behind your
-own thin header. Do not include `DSLtk.hpp` directly from many places.
+If you integrate MuDSL into a larger project, consider wrapping it behind your
+own thin header. Do not include `MuDSL.hpp` directly from many places.
 
 The library's own overview comment suggests exactly this. Define your DSL type
-in `mydsl.hpp`, include `DSLtk.hpp` there, and have the rest of your code
+in `mydsl.hpp`, include `MuDSL.hpp` there, and have the rest of your code
 include only `mydsl.hpp`.
 
 ```cpp
-// mydsl.hpp — the only file that sees DSLtk.hpp directly
-#include "DSLtk.hpp"
+// mydsl.hpp — the only file that sees MuDSL.hpp directly
+#include "MuDSL.hpp"
 
 struct MathDSL : dsl::DSL<MathDSL, dsl::Pipeline, dsl::Operators> {
     // domain-specific surface here
@@ -453,7 +453,7 @@ touching callers, and it keeps your build's include graph clean.
 
 ## Build Performance
 
-Build performance is rarely a concern for DSLtk itself. The header is modest in
+Build performance is rarely a concern for MuDSL itself. The header is modest in
 size, and the templates it instantiates are shallow.
 
 The expression templates and parser combinators are the most
@@ -467,9 +467,9 @@ hardware.
 
 ## Summary
 
-Put `DSLtk.hpp` on your include path and compile with `-std=c++20`; default
-builds need no extra library linkage. With CMake, link the `DSLtk` `INTERFACE`
-target and inherit its usage requirements. For D, place `DSLtk.d` on the import
+Put `MuDSL.hpp` on your include path and compile with `-std=c++20`; default
+builds need no extra library linkage. With CMake, link the `MuDSL` `INTERFACE`
+target and inherit its usage requirements. For D, place `MuDSL.d` on the import
 path and compile it alongside the application. Optional native Lua builds
 add the Lua dependency described in Chapter 35.
 
@@ -477,7 +477,7 @@ Build a bundled example first to confirm the toolchain, then write your own
 `dsl::DSL` subclass. The next chapter opens the black box of that base class.
 
 You will see how CRTP and the feature mixins turn one line of inheritance into
-a fully featured language. By now, though, you should have a compiled DSLtk
+a fully featured language. By now, though, you should have a compiled MuDSL
 program running on your machine and a feel for the three-step loop introduced
 in Chapter 1: inherit `dsl::DSL`, add your domain members, and express logic
 through the operators those features provide.

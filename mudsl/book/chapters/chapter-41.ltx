@@ -1,0 +1,28 @@
+\chapter{Ownership across an embedding boundary}
+Language runtimes manipulate values whose lifetimes differ from the host's
+stack frames. A returned function may still need variables from a call that
+has already finished. A parser may retain source text for diagnostics. A native
+callback may close over host-owned state.
+
+\section{Values and handles}
+Choose explicitly between copying a value and retaining a handle. MuDSL AST
+nodes and terms are structural values. Directed graphs expose graph-local
+handles so mutations can preserve identity. Handles from different graphs
+must not be mixed even when their integer representations happen to match.
+
+MuLL lists and records are immutable structural values. Binding reassignment
+replaces the value; it does not edit a previously copied list. Native function
+values, by contrast, may carry shared state such as a print sink. Copying such
+a function preserves that stateful capability.
+
+\section{Runtime lifetime}
+The C++ MuLL runtime owns an arena of environments. This keeps captured cells
+stable without reference-count cycles between closures and their scopes.
+Frames are released when the runtime is destroyed, and \api{maxFrames} bounds
+their cumulative number. D uses garbage-collected environments but applies the
+same frame-allocation limit for predictable cross-runtime behavior.
+
+Keep a C++ runtime alive while calling any script functions obtained from it.
+The runtime is neither copyable nor movable because callbacks refer to its
+identity. Create independent instances for independent sessions. This also
+provides a natural boundary for package caches and output configuration.

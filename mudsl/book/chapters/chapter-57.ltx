@@ -1,0 +1,36 @@
+\chapter{Closures and recursion}
+A function retains the lexical environment where it was created. Calls use
+that environment rather than the caller's local names. Captured mutable
+bindings remain shared cells, so closures can implement private state.
+
+\begin{mullcode}
+val makeCounter <- fn(start){
+    var n <- start;
+    return fn(){ n <- n + 1; return n; };
+};
+val a <- makeCounter(10);
+val b <- makeCounter(100);
+G:Assert(a() == 11);
+G:Assert(a() == 12);
+G:Assert(b() == 101);
+val factorial <- fn(n){
+    if n <= 1 { return 1; }
+    return n * factorial(n - 1);
+};
+G:Assert(factorial(6) == 720);
+\end{mullcode}
+
+The function initializer captures its containing environment, and the
+declaration then installs the binding in that environment. This permits the
+function body to refer to its own name when called later. The same rule allows
+mutually recursive functions declared in one scope before either is invoked.
+
+Captured environments remain live objects: a closure can observe later
+assignments and later declarations in its captured scope. Capturing does not
+freeze a snapshot. To retain a particular value, initialize a separate
+immutable binding and capture that binding.
+
+Recursive calls consume the host-configured \api{maxCallDepth}; tail calls are
+not optimized. The default is 128 script calls, and expression nesting has a
+separate guard. For large traversals, use iteration or a native library
+operation rather than relying on unbounded recursive execution.

@@ -18,7 +18,7 @@ void main(string[] args)
     foreach (source; ["1_", "1.0__2", "1__0"])
         assert(lex(source).diagnostics.length);
     {
-        import DSLtk : parse_sexpr, encode_sexpr, decode_sexpr;
+        import MuDSL : parse_sexpr, encode_sexpr, decode_sexpr;
         import std.string : indexOf;
         auto gc = new Session;
         auto parsed = parse("fn identity x := if true then x + 0 else 1\n");

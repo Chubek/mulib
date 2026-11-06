@@ -6,7 +6,7 @@ import metalib.objfile.Objfile;
 import metalib.xvm.Backend : Backend;
 import metalib.ast.Absyn : readFile;
 import std.path : buildPath, dirName;
-import DSLtk : Span;
+import MuDSL : Span;
 import std.stdio : writeln, stderr;
 
 Value eval(Session s, string source)

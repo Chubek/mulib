@@ -1,0 +1,32 @@
+\chapter{Formatting and output sinks}
+The \api{printf} package supplies structured formatting and replaceable output.
+Despite its name, it uses brace placeholders rather than C variadic format
+specifiers. This keeps native wrappers type-safe and identical across hosts.
+
+\begin{mullcode}
+val P <- G:LoadLib("printf") or G:DieWith("$E?");
+G:Assert(P:Format("{} + {} = {}", 2, 3, 5) == "2 + 3 = 5");
+G:Assert(P:Format("{{{}}}", "x") == "{x}");
+var log <- "";
+P:SetMainSink(fn(text){ log <- log + text; });
+P:Printf("item={}\n", 7);
+P:Print("a", "b");
+P:Println("c");
+G:Assert(log == "item=7\nabc\n");
+P:SetMainSink(G:GetStdout());
+\end{mullcode}
+
+\api{Format(template, ...)} returns a string. Each \api{{}} consumes one
+argument and inserts its display text. Doubled braces produce literal braces.
+Malformed braces and mismatched argument counts raise errors.
+
+\api{Printf(template, ...)} formats and writes once to the current sink.
+\api{Print(...)} concatenates display strings without separators or a newline.
+\api{Println(...)} does the same and appends a newline. All three output
+operations return nil.
+
+\api{SetMainSink(callable)} replaces the package's sink. It must accept one
+string; its return value is ignored. The initial sink is the runtime's stdout
+sink. Because package imports are cached, two bindings obtained by importing
+\api{printf} share the same sink configuration. Separate runtime instances
+have independent sink state.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reproduce DSLtk.hpp's embedded magic_enum v0.9.8 from an upstream checkout."""
+"""Reproduce MuDSL.hpp's embedded magic_enum v0.9.8 from an upstream checkout."""
 
 import argparse
 import hashlib
@@ -9,8 +9,8 @@ import re
 
 VERSION = "0.9.8"
 SOURCE_SHA256 = "8e39051ab6167a80897f9b67c24da77f29f108209b11f5ec47ab8d74964611d6"
-BEGIN = "// BEGIN DSLTK EMBEDDED MAGIC_ENUM\n"
-END = "// END DSLTK EMBEDDED MAGIC_ENUM"
+BEGIN = "// BEGIN MUDSL EMBEDDED MAGIC_ENUM\n"
+END = "// END MUDSL EMBEDDED MAGIC_ENUM"
 HEADERS = (
     "magic_enum.hpp",
     "magic_enum_all.hpp",
@@ -47,16 +47,16 @@ def amalgamate(source):
             text = text.replace(
                 "class bitset {\n",
                 "class bitset {\n"
-                "  // DSLtk: keep optional string facilities dependent on E.\n"
+                "  // MuDSL: keep optional string facilities dependent on E.\n"
                 "  using string = std::conditional_t<std::is_enum_v<E>, magic_enum::string, void>;\n"
                 "  using string_view = std::conditional_t<std::is_enum_v<E>, magic_enum::string_view, void>;\n",
                 1,
             )
             text = text.replace("string_view::size_type", "std::size_t")
         if name == "magic_enum_format.hpp":
-            # Discover std::format even when DSLtk.hpp is the first include.
+            # Discover std::format even when MuDSL.hpp is the first include.
             probe = (
-                "// DSLtk: formatting is optional on C++20 standard libraries.\n"
+                "// MuDSL: formatting is optional on C++20 standard libraries.\n"
                 "#ifndef MAGIC_ENUM_USE_STD_MODULE\n"
                 "#if __has_include(<format>)\n"
                 "#include <format>\n"
@@ -85,7 +85,7 @@ def main():
     parser.add_argument("source", type=Path, help="magic_enum v0.9.8 checkout root")
     parser.add_argument("--check", action="store_true", help="check without writing")
     args = parser.parse_args()
-    header = Path(__file__).resolve().parents[1] / "DSLtk.hpp"
+    header = Path(__file__).resolve().parents[1] / "MuDSL.hpp"
     text = header.read_text()
     before, block = text.split(BEGIN, 1)
     _, after = block.split(END, 1)

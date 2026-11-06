@@ -1,6 +1,6 @@
 # Chapter 4: `FixedString`: Compile-Time Strings as Template Parameters
 
-DSLtk is built around a single recurring idea: the names, tags, patterns, and rule identifiers that shape a domain-specific language should be known at compile time. A grammar rule called `"add"`, a token tag called `"num"`, and a regular-expression pattern like `"[0-9]+"` are not runtime configuration values but structural facts about the program. Carrying those facts through the type system lets the compiler optimize, check, and dispatch on them without any runtime cost.
+MuDSL is built around a single recurring idea: the names, tags, patterns, and rule identifiers that shape a domain-specific language should be known at compile time. A grammar rule called `"add"`, a token tag called `"num"`, and a regular-expression pattern like `"[0-9]+"` are not runtime configuration values but structural facts about the program. Carrying those facts through the type system lets the compiler optimize, check, and dispatch on them without any runtime cost.
 
 The obstacle, of course, is that C++ has historically refused to accept a string literal as a non-type template parameter (NTTP). This chapter introduces `dsl::FixedString`, the small literal class type that removes that obstacle. Every downstream chapter that writes something inside angle brackets — `dsl::leaf<"num">`, `dsl::node<"add">`, `dsl::pattern<"[0-9]+">`, `dsl::lit<"_km">`, `dsl::rule<"name">`, `dsl::when<...>`, and the PEG `add_rule<"...">` — depends on the type defined here.
 
@@ -16,9 +16,9 @@ leaf<"num"> n;                             // error before C++20
 
 The compiler rejects this because `"num"` does not designate an object with static storage duration in the sense the standard requires for a pointer NTTP. Even when a workaround using a reference to an array was employed, each distinct tag still required a separate named variable declared at namespace scope, which defeated the goal of writing self-documenting inline tags.
 
-The consequence for a library like DSLtk would be severe. Instead of writing `dsl::node<"add">(lhs, rhs)`, a user would have to declare `static constexpr char add_tag[] = "add";` somewhere and then write `dsl::node<add_tag>(lhs, rhs)`. The tag would no longer live at the point of use, grammar definitions would sprawl across declarations, and the pedagogical clarity that DSLtk is designed to deliver would evaporate. A type-level solution is needed.
+The consequence for a library like MuDSL would be severe. Instead of writing `dsl::node<"add">(lhs, rhs)`, a user would have to declare `static constexpr char add_tag[] = "add";` somewhere and then write `dsl::node<add_tag>(lhs, rhs)`. The tag would no longer live at the point of use, grammar definitions would sprawl across declarations, and the pedagogical clarity that MuDSL is designed to deliver would evaporate. A type-level solution is needed.
 
-The same obstacle blocks more than convenience. Many of DSLtk's compile-time mechanisms — pattern dispatch in `when<>`, rule naming in the rewrite system, production naming in the PEG layer — rely on the compiler being able to distinguish one string from another at instantiation time. Without a string NTTP, each of those mechanisms would have to fall back on runtime comparison of `std::string` values, which forfeits inlining, type-level dispatch, and the guarantee that two grammatically identical tags denote the same specialization. The library's design depends on the tag being part of the type, not part of the data.
+The same obstacle blocks more than convenience. Many of MuDSL's compile-time mechanisms — pattern dispatch in `when<>`, rule naming in the rewrite system, production naming in the PEG layer — rely on the compiler being able to distinguish one string from another at instantiation time. Without a string NTTP, each of those mechanisms would have to fall back on runtime comparison of `std::string` values, which forfeits inlining, type-level dispatch, and the guarantee that two grammatically identical tags denote the same specialization. The library's design depends on the tag being part of the type, not part of the data.
 
 ## C++20 Class-Type Non-Type Template Parameters
 
@@ -30,7 +30,7 @@ The structural-type rule has a subtle but important consequence. Two template ar
 
 ## The `FixedString<N>` Definition
 
-The type is deliberately minimal. The entire definition fits in ten lines and depends only on `<cstddef>` for `std::size_t`, `<algorithm>` for `std::copy_n`, and `<string_view>` for the `view()` return type. Quoted verbatim from `DSLtk.hpp`:
+The type is deliberately minimal. The entire definition fits in ten lines and depends only on `<cstddef>` for `std::size_t`, `<algorithm>` for `std::copy_n`, and `<string_view>` for the `view()` return type. Quoted verbatim from `MuDSL.hpp`:
 
 ```cpp
 template <std::size_t N> struct FixedString
@@ -96,7 +96,7 @@ The method is declared `constexpr` so that it can be evaluated during constant e
 
 The `std::string_view` return type was chosen over `std::string` deliberately. Returning a `std::string` would require dynamic allocation, which is not permitted during constant evaluation and would defeat the zero-overhead goal. A `string_view`, by contrast, is trivially copyable and points directly into the `data` array stored inside the `FixedString` object, which lives as long as the template argument that holds it.
 
-A consequence of this design is that the `string_view` returned by `view()` is only valid for as long as the `FixedString` from which it came. In DSLtk this is never a problem, because the `FixedString` is a template argument and therefore lives for the duration of the program. Users who copy a `view()` result into a local `string_view` variable should keep this lifetime in mind, but in ordinary usage the view is consumed immediately.
+A consequence of this design is that the `string_view` returned by `view()` is only valid for as long as the `FixedString` from which it came. In MuDSL this is never a problem, because the `FixedString` is a template argument and therefore lives for the duration of the program. Users who copy a `view()` result into a local `string_view` variable should keep this lifetime in mind, but in ordinary usage the view is consumed immediately.
 
 It is worth emphasizing that `view()` never allocates and never throws. The `std::string_view` constructor it invokes is trivial, and `data` is always a valid, NUL-terminated array. This makes `view()` safe to call from `noexcept` contexts and from code paths that must remain allocation-free, such as the hot paths of the matcher and the AST dumper.
 
@@ -132,13 +132,13 @@ static_assert(add_tag::value == "add");
 
 The fact that the bytes of a `FixedString` template argument are readable at runtime, even though the argument itself is fixed at compile time, is what bridges the compile-time and runtime worlds. A function instantiated with `FixedString<"add">` can call `Tag.view()` at runtime and obtain a perfectly ordinary `std::string_view` that spells `"add"`. This is how `dsl::node<"add">` ends up labelling its `ASTNode` with a runtime string: the tag is a compile-time fact, but the label is read out at runtime through `view()`.
 
-This bridge is one-directional. A compile-time `FixedString` can be projected into a runtime `string_view`, but a runtime `string_view` cannot be lifted back into a `FixedString` NTTP. DSLtk respects this asymmetry throughout: tags flow outward into runtime strings for display and matching, but never inward from runtime data into the type system. Recognizing this boundary is the key to using the library without fighting the language.
+This bridge is one-directional. A compile-time `FixedString` can be projected into a runtime `string_view`, but a runtime `string_view` cannot be lifted back into a `FixedString` NTTP. MuDSL respects this asymmetry throughout: tags flow outward into runtime strings for display and matching, but never inward from runtime data into the type system. Recognizing this boundary is the key to using the library without fighting the language.
 
 ## How `FixedString` Flows Into the Library
 
 `FixedString` is not a standalone utility; it is the connective tissue of the entire library. Almost every chapter that follows uses it in some form. The pattern is always the same: a string literal appears inside angle brackets, the compiler implicitly constructs a `FixedString` from it, and the resulting NTTP parameterizes a class or function template.
 
-The most direct uses are `dsl::leaf` and `dsl::node`, which build the leaf and inner nodes of an AST. Their signatures, quoted from `DSLtk.hpp`, show the `FixedString Tag` parameter in the leading position.
+The most direct uses are `dsl::leaf` and `dsl::node`, which build the leaf and inner nodes of an AST. Their signatures, quoted from `MuDSL.hpp`, show the `FixedString Tag` parameter in the leading position.
 
 ```cpp
 template <FixedString Tag, typename T>
@@ -206,7 +206,7 @@ Finally, the PEG grammar layer of Chapter 27 and Chapter 28 uses `FixedString` t
 The most common use of `FixedString` is labelling AST nodes. Chapter 11 covers `leaf` and `node` in depth; here we focus on the role of the tag. The tag is supplied as a string literal in angle brackets, and the compiler converts it to a `FixedString` before the template is instantiated.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main ()
@@ -226,7 +226,7 @@ Because the tag is part of the type, two `node` calls with different tags instan
 The example program from `examples/02-fixed-strings.cpp` exercises this path end to end with only a handful of lines.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -300,7 +300,7 @@ The tags `"add"` and `"sub"` are `FixedString` values embedded in the `pattern` 
 A small but complete demonstration shows how `FixedString` tags can drive a tagged-union style of value. Rather than declaring an enumeration and a variant, the tags are written directly into the type of each constructor. A visitor can then dispatch on the tag using `when<>`.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <string>
 
@@ -327,7 +327,7 @@ int main ()
 
 The tags `"num"` and `"str"` are compile-time facts about the two `leaf` calls. The `describe` function recovers them at runtime via `node.tag()`, which returns the `std::string_view` that `leaf` stored from `Tag.view()`. The `when<>` clauses then match against that view using the patterns, which are themselves `FixedString`-backed.
 
-This is the central pattern of DSLtk: compile-time names flow through `view()` into runtime strings, and runtime strings are matched back against compile-time names. `FixedString` is the hinge that makes the round trip possible.
+This is the central pattern of MuDSL: compile-time names flow through `view()` into runtime strings, and runtime strings are matched back against compile-time names. `FixedString` is the hinge that makes the round trip possible.
 
 ## Limitations
 
@@ -353,14 +353,14 @@ The fourth limitation follows from the structural-equality rule: two tags compar
 
 The C++ standardization committee has, over several cycles, considered a `fixed_string` type that would formalize the pattern represented here by `FixedString`. The most visible appearance of the idea in production code is `std::format`'s use of a fixed-string type to carry format strings as compile-time constants, enabling compile-time validation of format specifiers. `FixedString` is a minimal, self-contained realization of the same idea, tuned for the specific needs of an embedded-DSL library.
 
-The standard proposals differ from `FixedString` in detail — they may support trailing capacity, constexpr iteration, or integration with `std::string` — but the core principle is identical: a literal class type with a `char` array, usable as an NTTP, with `constexpr` access to its contents. Should a standardized `fixed_string` arrive, it would be a drop-in replacement for `FixedString` at the template-argument position, and the rest of DSLtk would be unaffected.
+The standard proposals differ from `FixedString` in detail — they may support trailing capacity, constexpr iteration, or integration with `std::string` — but the core principle is identical: a literal class type with a `char` array, usable as an NTTP, with `constexpr` access to its contents. Should a standardized `fixed_string` arrive, it would be a drop-in replacement for `FixedString` at the template-argument position, and the rest of MuDSL would be unaffected.
 
-Until then, `FixedString` provides the same service with a ten-line definition and no dependencies beyond the standard library headers that `DSLtk.hpp` already includes. Its smallness is a feature: it makes the type easy to read, easy to reason about, and easy to verify against the structural-type rules of C++20.
+Until then, `FixedString` provides the same service with a ten-line definition and no dependencies beyond the standard library headers that `MuDSL.hpp` already includes. Its smallness is a feature: it makes the type easy to read, easy to reason about, and easy to verify against the structural-type rules of C++20.
 
 ## Summary
 
 `dsl::FixedString<N>` is a literal class type whose single non-static data member is a `char` array of size `N`. Its constructor deduces `N` from a string literal via a reference-to-array parameter and copies the literal, terminator included, into the array with `std::copy_n`. The `view()` method returns a `std::string_view` of length `N - 1`, and a defaulted `operator==` provides structural equality. Every member is `constexpr`, so the type is usable in any constant-expression context.
 
-Because `FixedString` is a literal class type with structural members, it qualifies as a C++20 class-type non-type template parameter. This is what allows string literals to appear inside angle brackets throughout DSLtk: `dsl::leaf<"num">`, `dsl::node<"add">`, `dsl::pattern<"[0-9]+">`, `dsl::lit<"_km">`, `dsl::rule<"name">`, the keys of `when<>`, and the `add_rule<"...">` calls of the PEG layer all depend on this property. The tag is a compile-time fact carried in the type; its `view()` is the runtime string recovered from it.
+Because `FixedString` is a literal class type with structural members, it qualifies as a C++20 class-type non-type template parameter. This is what allows string literals to appear inside angle brackets throughout MuDSL: `dsl::leaf<"num">`, `dsl::node<"add">`, `dsl::pattern<"[0-9]+">`, `dsl::lit<"_km">`, `dsl::rule<"name">`, the keys of `when<>`, and the `add_rule<"...">` calls of the PEG layer all depend on this property. The tag is a compile-time fact carried in the type; its `view()` is the runtime string recovered from it.
 
-The type carries the usual limitations of an NTTP carrier: `N` is part of the type, the bytes are copied into the type, and only string literals — not runtime strings — may be used as arguments. Within those limits, `FixedString` is the mechanism that lets DSLtk spell a grammar in source code rather than in configuration. The remaining chapters of this manual use it freely, and this chapter is the foundation for all of them.
+The type carries the usual limitations of an NTTP carrier: `N` is part of the type, the bytes are copied into the type, and only string literals — not runtime strings — may be used as arguments. Within those limits, `FixedString` is the mechanism that lets MuDSL spell a grammar in source code rather than in configuration. The remaining chapters of this manual use it freely, and this chapter is the foundation for all of them.

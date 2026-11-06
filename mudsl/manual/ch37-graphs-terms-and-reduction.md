@@ -1,6 +1,6 @@
 # Chapter 37 — Graphs, Terms and Reduction
 
-`DSLtk.hpp` and `DSLtk.d` provide a directed multigraph, first-order terms,
+`MuDSL.hpp` and `MuDSL.d` provide a directed multigraph, first-order terms,
 term rewriting, and sharing-preserving term graph reduction. The feature tags
 are `Graphs`, `Terms`, `TermRewriting`, and `GraphReduction`. As with
 `EqualitySaturation`, the types and functions are also usable independently
@@ -72,7 +72,7 @@ std::ofstream("graph.dot") << dot;
 ```
 
 ```d
-import DSLtk;
+import MuDSL;
 import std.file : write;
 
 auto graph = new DirectedGraph!();
@@ -232,12 +232,12 @@ binding, cyclic term reduction, completion, or equality saturation; the separate
 
 The graph and term regression tests cover both implementations. The standalone
 test project includes D tests automatically when `ldc2`, `dmd`, or `gdc` is
-available; use `-DDSLtk_TEST_D=OFF` to disable that target.
+available; use `-DMuDSL_TEST_D=OFF` to disable that target.
 
 ```sh
 cmake -S tests -B build/tests -DCMAKE_BUILD_TYPE=Debug
 cmake --build build/tests
 ctest --test-dir build/tests --output-on-failure
-ldc2 -unittest -main DSLtk.d tests/test_graph_terms.d -of=dsltk-tests
-./dsltk-tests
+ldc2 -unittest -main MuDSL.d tests/test_graph_terms.d -of=mudsl-tests
+./mudsl-tests
 ```

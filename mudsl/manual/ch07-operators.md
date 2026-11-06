@@ -142,7 +142,7 @@ The `Derived` template parameter is unused inside the mixin. It is present becau
 The basic-usage example from the distribution combines Pipeline and Operators in a single DSL. A value is threaded through two pipes, and two predicates are constructed and evaluated separately. The example illustrates that the two features coexist without interference: a DSL may list both in its feature list and use the factories of each.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 struct BasicDSL : dsl::DSL<BasicDSL, dsl::Pipeline, dsl::Operators> {};
@@ -163,7 +163,7 @@ This example evaluates the two predicates separately and combines their results 
 The real power of the Operators feature is that composition happens before evaluation. Two predicates can be joined into a single value that is itself a predicate, and that composite can be passed around, stored, and applied to many values without re-stating the rule.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 struct BasicDSL : dsl::DSL<BasicDSL, dsl::Operators> {};
@@ -206,7 +206,7 @@ Because conjunction short-circuits, a value below the lower bound never reaches 
 String validators benefit from composition because real-world string rules are rarely single-condition. A username might need to be non-empty, begin with a letter, and contain only alphanumeric characters. Each of these is a separate predicate, and the composite is their conjunction.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <cctype>
 #include <string>
 #include <string_view>
@@ -517,7 +517,7 @@ A fifth pitfall is assuming that `!` distributes over a composite. The library d
 The following complete program exercises the feature end to end. It defines a DSL with the Operators feature, constructs several predicates, composes them into a rule, and applies the rule to a series of inputs.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <cctype>
 #include <iostream>
 #include <string_view>

@@ -2,7 +2,7 @@
 
 ## Motivation and Scope
 
-DSLtk provides a small pattern-matching facility for selecting a handler at run time based on a key known at compile time. The key is supplied as a non-type template parameter to `when`, and the handler is an arbitrary callable. When the table is invoked, the first clause whose key equals the supplied argument is dispatched; if none match, an `otherwise` fallback is invoked, or the table throws.
+MuDSL provides a small pattern-matching facility for selecting a handler at run time based on a key known at compile time. The key is supplied as a non-type template parameter to `when`, and the handler is an arbitrary callable. When the table is invoked, the first clause whose key equals the supplied argument is dispatched; if none match, an `otherwise` fallback is invoked, or the table throws.
 
 This facility is not a general-purpose pattern matcher in the style of functional-language `match`. It is a closed dispatch table: the set of keys is fixed at construction, the common return type is computed at compile time, and dispatch is a linear scan over the clauses. Its intended use is the kind of small, fixed branching that shows up repeatedly in DSL implementations: enum-to-string tables, token dispatchers, state-machine transition tables, and command routers.
 
@@ -256,7 +256,7 @@ The clause types are decayed before being stored. This means a lambda becomes it
 
 ## The PatternMatch Feature Tag
 
-DSLtk's feature-tag mechanism, described in Chapter 5, allows a DSL to advertise that it uses a particular facility. The `PatternMatch` tag is the marker for pattern matching. Its definition is minimal:
+MuDSL's feature-tag mechanism, described in Chapter 5, allows a DSL to advertise that it uses a particular facility. The `PatternMatch` tag is the marker for pattern matching. Its definition is minimal:
 
 ```cpp
 struct PatternMatch
@@ -289,7 +289,7 @@ Here the table is a static member, constructed once and reused. The `PatternMatc
 The simplest use of the matcher is to map an enum to a string. The keys are enumerators, the handlers return string literals, and the common return type is `const char*`:
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 enum class Color { Red, Green, Blue };
@@ -333,10 +333,10 @@ For a "greater than two" branch, the `otherwise` clause is the correct tool. The
 
 ## The Lexeme Dispatcher
 
-Example 19 from the DSLtk distribution combines value-based `when` with a separate classification step. The full program is reproduced here:
+Example 19 from the MuDSL distribution combines value-based `when` with a separate classification step. The full program is reproduced here:
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <string_view>
 

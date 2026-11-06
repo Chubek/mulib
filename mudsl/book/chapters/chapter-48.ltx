@@ -1,0 +1,30 @@
+\chapter{Values and truth}
+MuLL has seven value kinds: nil, Boolean, number, string, list, record, and
+function. \api{G:Type(value)} returns their names as strings. Values are
+dynamically checked at the operation that needs a particular kind.
+
+\begin{mullcode}
+G:Assert(G:Type(nil) == "nil");
+G:Assert(G:Type(42) == "number");
+G:Assert(G:Type([1,2]) == "list");
+G:Assert(G:Type({answer: 42}) == "record");
+G:Assert(G:Type(fn(){ return nil; }) == "function");
+G:Assert((0 or 99) == 0);
+G:Assert(("" or "fallback") == "");
+\end{mullcode}
+
+\section{Only two values are false}
+Only \api{nil} and \api{false} are false in conditions. Zero, an empty string,
+an empty list, and an empty record are true. This makes \api{or} useful for
+fallback without discarding a valid numeric zero or an intentionally empty
+collection. \api{and} and \api{or} return operands, not coerced Booleans.
+
+Numbers are finite IEEE-754 binary64 values. Integers are exact only within
+the representable range; the language does not provide a separate arbitrary
+precision integer kind. Arithmetic that produces infinity or NaN is an error.
+Division and remainder by zero are errors rather than special numeric values.
+
+Lists and records compare structurally. Values of different kinds are unequal;
+there is no implicit conversion between a string and a number. Functions
+compare by callable identity. Use \api{G:Str} when an explicit display string
+is needed, and \api{G:Len} for a string's byte count or a collection's size.

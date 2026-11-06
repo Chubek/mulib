@@ -1,6 +1,6 @@
 # Chapter 26: Task Pipelines: `Task`, `TaskChain`, `TaskState`
 
-The Task pipeline feature provides DSLtk's answer to a recurring need in embedded DSLs: describing a sequence of staged computations that run in order, can suspend themselves, and can resume later. Unlike the value-level pipelines of Chapter 6, which thread a value through pure transformations, task pipelines are concerned with units of work that have names, side effects, and explicit state.
+The Task pipeline feature provides MuDSL's answer to a recurring need in embedded DSLs: describing a sequence of staged computations that run in order, can suspend themselves, and can resume later. Unlike the value-level pipelines of Chapter 6, which thread a value through pure transformations, task pipelines are concerned with units of work that have names, side effects, and explicit state.
 
 A task pipeline is built from three cooperating pieces. `TaskState` holds the shared mutable context that every task reads and writes. `Task` is a single unit of work, pairing a name with a callable. `TaskChain` is an ordered sequence of `Task` objects composed with the `|` operator. Three free functions — `run`, `suspend`, and `upon` — drive and instrument the chain.
 
@@ -8,7 +8,7 @@ The execution model is cooperative and single-threaded. There are no preemptive 
 
 ## The Cooperative Execution Model
 
-Cooperative scheduling places the responsibility for fairness on the task itself. The runtime never interrupts a task that is in the middle of its work; the task must explicitly yield by setting the suspended flag. This is the same discipline that underlies coroutines, generators, and event loops in many language runtimes, but DSLtk expresses it with a single boolean field rather than a full coroutine machinery.
+Cooperative scheduling places the responsibility for fairness on the task itself. The runtime never interrupts a task that is in the middle of its work; the task must explicitly yield by setting the suspended flag. This is the same discipline that underlies coroutines, generators, and event loops in many language runtimes, but MuDSL expresses it with a single boolean field rather than a full coroutine machinery.
 
 The practical consequence is that a long-running task blocks the entire chain. If a task spins in a tight loop or performs blocking I/O, no other task will run until it returns. The programmer contracts to keep tasks short, or to break long work into multiple tasks that cooperate via `suspend`.
 
@@ -204,7 +204,7 @@ The `Result` wrapper means that the error channel is always available. A task th
 The canonical task pipeline is a load-transform-store sequence. Each stage is a `Task`, and they are composed with `|`.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main()
@@ -423,7 +423,7 @@ Choosing between the policies is a question of whether later tasks can usefully 
 
 A task that wants to suppress an error and let the chain continue can return `ok` with a marker value instead of `err`, leaving the policy to govern only genuine failures. This is the usual way to record a non-fatal warning without halting the chain.
 
-## Combining Pipelines with Other DSLtk Features
+## Combining Pipelines with Other MuDSL Features
 
 Task pipelines compose with the rest of the toolkit. A task's callable can invoke a parser (Chapter 23), drive a rewrite (Chapter 13), or evaluate a lazy expression (Chapter 19). The stringly-typed result map is the integration boundary: richer values produced by other features are marshalled to strings on the way in and parsed back out on the way out.
 
@@ -453,6 +453,6 @@ The eighth pitfall is confusing task chains with value pipes. They share the `|`
 
 ## Summary
 
-The Task pipeline feature gives DSLtk a cooperative, single-threaded staging mechanism. `TaskState` is the shared blackboard — a name-to-result map plus a suspended flag. `Task` is a named callable that reads from and writes to that blackboard. `TaskChain` composes tasks with the `|` operator and carries an error policy. `run` advances the chain one task at a time, stopping on error or suspension. `suspend` yields control back to the driver by setting a flag. `upon` registers a single-shot conditional hook that runs a task when a predicate over the state holds.
+The Task pipeline feature gives MuDSL a cooperative, single-threaded staging mechanism. `TaskState` is the shared blackboard — a name-to-result map plus a suspended flag. `Task` is a named callable that reads from and writes to that blackboard. `TaskChain` composes tasks with the `|` operator and carries an error policy. `run` advances the chain one task at a time, stopping on error or suspension. `suspend` yields control back to the driver by setting a flag. `upon` registers a single-shot conditional hook that runs a task when a predicate over the state holds.
 
 The model is deliberately simple: no threads, no locks, no scheduler. Tasks are responsible for keeping themselves short and for encoding their own resumption logic. The stringly-typed result map is the integration boundary with the rest of the toolkit, and the `Result` wrapper provides the error channel. Used within these constraints, task pipelines are a readable way to orchestrate staged, possibly suspending computations — complementing the pure value pipes of Chapter 6, the lazy values of Chapter 19, and the structural staging of the parser combinators of Chapter 23.

@@ -260,7 +260,7 @@ With this formatter, the diagnostic from `run_parser(p, "xz")` against the gramm
 The diagnostic example shipped with the library, reproduced below, exercises the full path from `labeled` through `run_parser` to a printed position.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 
 int main() {
@@ -280,7 +280,7 @@ The printed message `error at 1` is the byte offset. A more polished driver woul
 
 ## Semantic Actions: `parse_with_action`
 
-Recognition is half the work of a parser; the other half is turning the recognised text into a structure. DSLtk provides the `parse_with_action` template for the case where a grammar author wants a callback to fire whenever a particular parser matches, receiving the matched span and an external semantics map. The callback may return a value, which `parse_with_action` forwards to its caller as an `std::optional`.
+Recognition is half the work of a parser; the other half is turning the recognised text into a structure. MuDSL provides the `parse_with_action` template for the case where a grammar author wants a callback to fire whenever a particular parser matches, receiving the matched span and an external semantics map. The callback may return a value, which `parse_with_action` forwards to its caller as an `std::optional`.
 
 The definition is quoted verbatim below.
 
@@ -326,7 +326,7 @@ The return type is deduced from the action's return type via `decltype(action(se
 The simplest use of `parse_with_action` attaches an action to a primitive parser and inspects the matched span. The following example parses an integer literal and stores the matched text in a vector for later use.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -359,7 +359,7 @@ The same pattern works for any parser, including a sequence. Wrapping `ch('x') &
 A more realistic example parses a `key=value` pair and constructs a small AST from the matched spans. The AST node type is sketched here using the `dsl::ASTNode` value type introduced in Chapter 10; the principle is the same for any node representation the host application prefers.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <memory>
 #include <string>
@@ -421,7 +421,7 @@ This pattern composes well. A larger grammar can wrap each production in a simil
 The `*` (kleene) combinator returns a `std::vector<T>` of the values produced by each iteration. When the per-iteration value is unimportant and the matched text is what matters, `parse_with_action` can be wrapped inside the iterated parser so that each match appends to an external container. The following example parses a comma-separated list of integers and accumulates their numeric values.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <vector>
 #include <unordered_map>
@@ -490,7 +490,7 @@ The relationship between `parse_with_action` and `ProductionHandler` is one of l
 Combining `run_parser` with a formatter yields a complete driver that reports a friendly message on failure. The following example parses an integer with an optional sign and reports either the parsed value or a coordinate-and-expected diagnostic.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <string>
 #include <unordered_map>

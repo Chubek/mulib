@@ -4,7 +4,7 @@
 
 Many embedded-DSL computations re-evaluate the same pure function on the same inputs. A recursive descent parser may re-derive the same sub-parse for the same cursor position; a rewrite cost model may re-query the same node signature; a numeric DSL may recompute the same closed-form expression for the same coefficient tuple. Each redundant call wastes work that the program has, by definition, already performed once. Memoization is the standard remedy: store the result of a pure function keyed by its argument, and on subsequent calls with the same key return the stored result without recomputation.
 
-DSLtk provides a small, deliberate facility for this. The `dsl::MemoizedCallable<Key, Value, Fn>` class template wraps a callable together with an `std::unordered_map` cache, and the `dsl::memoize<Key, Value>(fn)` factory returns an instance of that wrapper. The result is a value-semantic, single-threaded, header-only memoization helper that integrates cleanly with the rest of the toolkit. This chapter documents the facility in full: its API, its cache key contract, its value semantics, and the situations in which it should and should not be used.
+MuDSL provides a small, deliberate facility for this. The `dsl::MemoizedCallable<Key, Value, Fn>` class template wraps a callable together with an `std::unordered_map` cache, and the `dsl::memoize<Key, Value>(fn)` factory returns an instance of that wrapper. The result is a value-semantic, single-threaded, header-only memoization helper that integrates cleanly with the rest of the toolkit. This chapter documents the facility in full: its API, its cache key contract, its value semantics, and the situations in which it should and should not be used.
 
 The design is intentionally narrow. There is no eviction policy, no locking, no expiration, and no instrumentation. The cache is a plain member of a plain object, and the user owns its lifetime and its growth. This austerity is consistent with the design pillars introduced in Chapter 1: the library depends on no threading library, allocates only through the standard containers the user already pays for, and exposes composable value types rather than singletons or global state.
 
@@ -18,7 +18,7 @@ The benefit is asymptotic. A naive recursive Fibonacci runs in exponential time;
 
 ## The `Memoization` Feature Tag
 
-DSLtk separates the memoization *callable* from the `Memoization` *feature tag*. The tag, declared in the feature machinery of Chapter 5, is a mixin intended for derived DSLs that wish to expose a `clear_cache()` member driven by the DSL object's own `memo_cache` member. It is the hook by which a DSL built on `dsl::DSL` (Chapter 3) can offer cache invalidation as a first-class operation on the DSL object itself.
+MuDSL separates the memoization *callable* from the `Memoization` *feature tag*. The tag, declared in the feature machinery of Chapter 5, is a mixin intended for derived DSLs that wish to expose a `clear_cache()` member driven by the DSL object's own `memo_cache` member. It is the hook by which a DSL built on `dsl::DSL` (Chapter 3) can offer cache invalidation as a first-class operation on the DSL object itself.
 
 ```cpp
 struct Memoization
@@ -188,7 +188,7 @@ This austerity is a feature. The wrapper is a few lines of code with no hidden m
 The canonical demonstration of memoization is the Fibonacci sequence. A naive recursive implementation recomputes the same values exponentially many times; a memoized implementation computes each value once.
 
 ```cpp
-#include <DSLtk.hpp>
+#include <MuDSL.hpp>
 #include <iostream>
 
 int main ()
@@ -277,7 +277,7 @@ The cost trade-off here is between the normalization work and the string allocat
 
 ## A Memoized Recursive Cost Function
 
-DSLtk itself is an embedded-DSL toolkit, and a realistic internal use of memoization is a recursive cost function over an AST. Suppose each node has a cost that depends on the costs of its children, and suppose the tree contains shared subtrees. A naive recursive walk recomputes the cost of each shared subtree as many times as it appears; a memoized walk computes each subtree's cost once.
+MuDSL itself is an embedded-DSL toolkit, and a realistic internal use of memoization is a recursive cost function over an AST. Suppose each node has a cost that depends on the costs of its children, and suppose the tree contains shared subtrees. A naive recursive walk recomputes the cost of each shared subtree as many times as it appears; a memoized walk computes each subtree's cost once.
 
 ```cpp
 auto node_cost = dsl::memoize<const Node*, double>(
@@ -363,7 +363,7 @@ The two compose naturally. A memoized callable whose value type is a `dsl::Lazy<
 
 The conceptual boundary is sharper than it first appears. A `dsl::Lazy<T>` is a single thunk with a single cached result; it has no key space, and it is not callable with arguments. A `MemoizedCallable<K, V, F>` is callable with a key, and it maintains a map from keys to results. Confusing the two leads to designs that try to memoize a thunk with arguments or to lazy-evaluate a function without a cache, both of which are better expressed by the other abstraction.
 
-## Integration with DSLtk Concepts
+## Integration with MuDSL Concepts
 
 The memoization facility interacts with the rest of the toolkit through the feature machinery of Chapter 5. The `Memoization` feature tag is a mixin that a DSL derived from `dsl::DSL` may include in its feature list, alongside `LazyFeature`, `Monadic`, and the other tags. When included, it adds the `clear_cache()` member to the DSL object, subject to the DSL also declaring a `memo_cache` member.
 

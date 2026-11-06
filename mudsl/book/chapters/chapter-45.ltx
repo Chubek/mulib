@@ -1,0 +1,31 @@
+\chapter{Building, installing, and validating MuDSL}
+The C++ toolkit requires C++20. The D module depends on Phobos. Standard
+builds do not require the separate legacy MetaML sources. The top-level CMake
+project exports an interface target named \api{MuDSL::MuDSL}.
+
+\begin{code}
+cmake -S . -B build -DBUILD_EXAMPLES=ON
+cmake --build build -j4
+ctest --test-dir build --output-on-failure
+cmake --install build --prefix /your/prefix
+\end{code}
+
+When an LDC, DMD, or GDC compiler is available, the tests also build and run
+the D toolkit and MuLL embedding. Set \api{MuDSL_TEST_D=OFF} to omit those
+targets. Lua preprocessing tests are opt-in through \api{MuDSL_TEST_LUA}.
+
+\section{Consume an installed package}
+\begin{code}
+find_package(MuDSL CONFIG REQUIRED)
+target_link_libraries(my_application PRIVATE MuDSL::MuDSL)
+\end{code}
+The header and D module are installed in the include directory. Native MuLL
+sources are installed under \api{include/mull/stdlib}, and package files are
+also available under \api{share/mull/stdlib}. Pass the latter path to the
+runtime when running an installed application. Package discovery is explicit;
+it does not infer the installation prefix from an executable's location.
+
+Build this book with \api{make -C book}. Its PDF is written under
+\api{book/build}. The generated toolkit chapters can be refreshed with
+\api{make -C book export}. The remaining chapters are authored directly in
+LaTeX, and their complete MuLL examples participate in CTest.

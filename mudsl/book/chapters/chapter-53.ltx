@@ -1,0 +1,33 @@
+\chapter{Lists and persistent updates}
+A list is an ordered collection of values, written with square brackets and
+comma-separated elements. Lists may be heterogeneous and nested. Indexes are
+zero-based, integral numbers; negative, fractional, and out-of-range indexes
+raise an error.
+
+\begin{mullcode}
+val items <- ["first", 2, [3,4]];
+G:Assert(items[0] == "first");
+G:Assert(items[2][1] == 4);
+G:Assert(G:Len(items) == 3);
+val List <- G:LoadLib("list") or G:DieWith("$E?");
+val original <- [1,2];
+val changed <- List:Set(original, 0, 9);
+G:Assert(original == [1,2]);
+G:Assert(changed == [9,2]);
+G:Assert(original + [3] == [1,2,3]);
+\end{mullcode}
+
+\section{Immutability is structural}
+Copying a list into a new binding preserves its value. Updating a list returns
+a new list; it does not mutate an earlier copy. This holds even for lists
+stored in \api{var} bindings. To maintain a growing collection, assign the
+result of \api{List:Push} back to a mutable name.
+
+Native callbacks receive list values through the embedding API. C++ exposes
+read-only collection storage, and the D accessors return copies of the outer
+container. Nested collections retain the same value semantics. Function
+elements can still contain shared callable state, as explained in Chapter 41.
+
+For bulk work, prefer \api{Map}, \api{Filter}, and \api{Fold} to repeated
+whole-list rebuilding inside a loop. Their callable arguments are ordinary
+MuLL functions or host-native functions with the same invocation interface.

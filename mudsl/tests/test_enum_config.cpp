@@ -2,7 +2,7 @@
 #define MAGIC_ENUM_RANGE_MAX 512
 #define MAGIC_ENUM_ENABLE_HASH
 #define MAGIC_ENUM_ENABLE_HASH_SWITCH
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 
 enum class Wide { Low = -256, Mid = 256, High = 512, Outside = 513 };
 enum class Narrow { Low = -5, Mid = 0, High = 5 };

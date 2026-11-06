@@ -1,0 +1,1 @@
+return G:LoadLib("cycleB") or G:DieWith("$E?");

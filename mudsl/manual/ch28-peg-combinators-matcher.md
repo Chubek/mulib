@@ -567,14 +567,14 @@ The `peg_channel` combinator assigns a channel to a parser's result. It takes a 
 
 ## Worked Examples
 
-This section assembles the pieces into running programs. Each example is complete enough to compile with `-std=c++20` against the single `DSLtk.hpp` header.
+This section assembles the pieces into running programs. Each example is complete enough to compile with `-std=c++20` against the single `MuDSL.hpp` header.
 
 ### Whitespace and Keywords
 
 The first example extends the pattern of example 23 with a derived grammar and a custom channel. The base grammar recognises `if` and `then` as keywords and `[a-zA-Z_][a-zA-Z_0-9]*` as an identifier. Whitespace is on `@IGNORE`. The derived grammar adds a hex literal rule on a custom `@HEX` channel.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <string>
 
@@ -606,7 +606,7 @@ The output shows the action firing order: `kw:if`, `skip_ws:1`, `id:flag`, `skip
 The second example uses the combinator family to build a tokenizer that distinguishes signed integers from identifiers. It mirrors example 22 but adds an action that collects tokens into a vector. The `peg_choice` combinator tries the integer rule first; if it matches, the identifier alternative is not tried at that position.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <cctype>
 #include <iostream>
 #include <string>
@@ -658,7 +658,7 @@ The `peg_choice` ordering matters: placing `integer` before `identifier` means t
 The third example demonstrates ordered choice at the rule level. Two grammars are constructed that differ only in the order of their rules. The first places a keyword rule before the identifier rule; the second reverses them. The same input produces different token streams from the two grammars.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <string>
 
@@ -687,7 +687,7 @@ The first grammar prints `kw:if` because the keyword rule appears first and matc
 The fourth example uses the `if_succeed` hook to capture structure that spans more than one rule. A rule matching an opening bracket fires a hook that attempts to match the body and the closing bracket. The hook's action records the inner span; the primary action records the outer span.
 
 ```cpp
-#include "DSLtk.hpp"
+#include "MuDSL.hpp"
 #include <iostream>
 #include <string>
 
@@ -754,10 +754,10 @@ The engine's semantics are unforgiving in the ways that matter. Ordered choice i
 
 ## Looking Back: The Whole Toolkit
 
-This chapter closes the 28-chapter tour of DSLtk. The toolkit began in Chapter 1 with a design philosophy: embedded DSLs expressed as C++20 libraries, header-only, namespace-`dsl`, built on the CRTP foundation of Chapter 3. It proceeded through compile-time strings (Chapter 4), feature tags and mixins (Chapter 5), the pipeline and operator features (Chapters 6 and 7), and the pattern-matching and compile-time regex facilities of Chapters 8 and 9. The pattern regex of Chapter 9 reappears here as the compiled-pattern engine inside `PEGRule`, the same regex subset powering both the static `dsl::pattern<>` matcher and the runtime PEG rules.
+This chapter closes the 28-chapter tour of MuDSL. The toolkit began in Chapter 1 with a design philosophy: embedded DSLs expressed as C++20 libraries, header-only, namespace-`dsl`, built on the CRTP foundation of Chapter 3. It proceeded through compile-time strings (Chapter 4), feature tags and mixins (Chapter 5), the pipeline and operator features (Chapters 6 and 7), and the pattern-matching and compile-time regex facilities of Chapters 8 and 9. The pattern regex of Chapter 9 reappears here as the compiled-pattern engine inside `PEGRule`, the same regex subset powering both the static `dsl::pattern<>` matcher and the runtime PEG rules.
 
 The AST layer of Chapters 10 through 14 provided the value type, the tree builders, the traversal and dumping machinery, and the rewrite engine with its fixpoint optimisation. The expression templates of Chapters 15 and 16 made trees lazy and fused their evaluation. Custom literals (Chapter 17), memoization (Chapter 18), `Lazy<T>` (Chapter 19), `Maybe<T>` (Chapter 20), the monadic optional helpers (Chapter 21), and `Result<T,E>` (Chapter 22) supplied the supporting infrastructure that makes embedded DSLs ergonomic and safe.
 
 The parser layer of Chapters 23 through 25 introduced the combinator framework, the primitive parsers, the diagnostic system, and the `run_parser` driver. Chapters 26 and 27 moved from parsing into task pipelines and the PEG definition grammar. This chapter unified the two: the PEG engine's rule-based path and the combinator-based path share the same `PEGMatch` record, the same channel discipline, and the same PEG semantics. A grammar author can choose the rule-based path for its runtime flexibility and the combinator path for its static composability, or mix the two through the `peg_rule` adapter.
 
-The thread that runs through all 28 chapters is the toolkit's commitment to composition. Features compose through mixins. Parsers compose through combinators. Patterns compose through the regex subset. PEG rules compose through ordered choice and the `if_succeed` hook. The same `PEGMatch` record serves both the rule-based and combinator-based PEG engines. The same `dsl::Parser` machinery serves both the standalone parser combinators and the `peg_*` family. A DSL built on DSLtk is itself a composition of these facilities, assembled into a header that reads like a grammar and compiles like a C++ program.
+The thread that runs through all 28 chapters is the toolkit's commitment to composition. Features compose through mixins. Parsers compose through combinators. Patterns compose through the regex subset. PEG rules compose through ordered choice and the `if_succeed` hook. The same `PEGMatch` record serves both the rule-based and combinator-based PEG engines. The same `dsl::Parser` machinery serves both the standalone parser combinators and the `peg_*` family. A DSL built on MuDSL is itself a composition of these facilities, assembled into a header that reads like a grammar and compiles like a C++ program.

@@ -1,0 +1,30 @@
+\chapter{Tokens, comments, and source files}
+MuLL source is a byte string. Keywords and identifiers use ASCII; quoted
+strings can carry arbitrary bytes, including UTF-8. An identifier begins with
+a letter or underscore and continues with letters, digits, or underscores.
+Names are case-sensitive: \api{Printf} and \api{printf} are different bindings.
+
+\begin{mullcode}
+# A hash starts a comment through the end of the line.
+val answer_2 <- 40 + 2; // This comment form works too.
+G:Assert(answer_2 == 42);
+\end{mullcode}
+
+Whitespace separates tokens but does not terminate statements. This permits a
+long import or function call to span several lines. Comments end at a newline
+or EOF. Block comments are not part of the grammar.
+
+\section{Literals and reserved words}
+Numbers use decimal notation, optionally with a decimal point and exponent:
+\api{12}, \api{12.5}, \api{1e3}, and \api{2.5e-2}. A minus sign is an
+operator rather than part of the numeric token. Strings use double quotes.
+The literals \api{true}, \api{false}, and \api{nil} have dedicated meanings.
+
+The reserved words are \api{val}, \api{var}, \api{ref}, \api{fn}, \api{if},
+\api{else}, \api{while}, \api{return}, \api{break}, \api{and}, \api{or},
+\api{not}, and the three literal names. Record keys that collide with a keyword
+can be quoted and selected with string indexing.
+
+Each token retains a one-based line and byte column. The entire input is parsed
+before execution begins, so a syntax error prevents earlier statements in the
+same run from producing effects.

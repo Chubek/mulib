@@ -1,0 +1,32 @@
+\chapter{Records and colon calls}
+A record maps string keys to values. Literal keys may be identifiers or
+quoted strings, and duplicate keys in one literal are a syntax error.
+Member access uses a colon; string indexing supports dynamically chosen keys.
+
+\begin{mullcode}
+val point <- {x: 3, y: 4, "display-name": "origin offset"};
+G:Assert(point:x == 3);
+G:Assert(point["display-name"] == "origin offset");
+val operations <- {
+    square: fn(x){ return x*x; },
+    label: "math"
+};
+G:Assert(operations:square(5) == 25);
+G:Assert(G:Len(operations) == 2);
+\end{mullcode}
+
+\section{No hidden receiver}
+\api{object:member(args)} first selects the member and then calls the resulting
+value. It does not inject \api{object} as an extra argument. A method that
+needs private state captures it in a closure or native callable. This keeps
+record-based APIs identical in C++ and D and makes an extracted callable
+behave the same as an immediate colon call.
+
+Records are immutable structural values. Unknown members are errors rather
+than implicit nil values. Equality compares keys and values recursively;
+display formatting orders keys lexicographically for deterministic output.
+
+An object literal at the beginning of a statement is ambiguous with a block.
+Use it as a declaration initializer, return expression, or parenthesized
+expression. Package entry points normally return a record containing their
+public API, which is why the standard libraries are used through colon calls.

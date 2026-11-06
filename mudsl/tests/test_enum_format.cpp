@@ -1,4 +1,4 @@
-#ifdef DSLTK_TEST_FMT
+#ifdef MUDSL_TEST_FMT
 #include <fmt/format.h>
 #endif
 #include "enum_fixtures.hpp"
@@ -13,7 +13,7 @@ main ()
   CHECK_ENUM (std::format ("{:>5}", Color::Red) == "  Red");
   CHECK_ENUM (std::format ("{}", State::Ready) == "ready-state");
 #endif
-#ifdef DSLTK_TEST_FMT
+#ifdef MUDSL_TEST_FMT
   CHECK_ENUM (fmt::format ("{}", Color::Red) == "Red");
   CHECK_ENUM (fmt::format ("{}", static_cast<Color> (42)) == "42");
   CHECK_ENUM (fmt::format ("{}", Permissions::ReadWrite) == "Read|Write");

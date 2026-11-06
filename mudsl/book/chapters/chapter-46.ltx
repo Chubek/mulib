@@ -1,0 +1,31 @@
+\chapter{Meet MuLL}
+MuLL is a small, dynamically typed language for embedding in C++ and D
+applications. Its core handles values, bindings, expressions, functions, and
+control flow. Libraries provide the higher-level operations. The parser and
+interpreter are part of \api{MuDSL.hpp} and \api{MuDSL.d}; native standard
+libraries and their package entry points live in \api{mull/stdlib}.
+
+\begin{mullcode}
+val Printf <- G:LoadLib("printf") or G:DieWith("Import Error: $E?");
+val Terminal <- G:LoadLib("terminal") or G:DieWith("Import Error: $E?");
+Printf:SetMainSink(G:GetStdout());
+Printf:Println("Hello, MuLL!");
+\end{mullcode}
+
+\section{Read the punctuation}
+\api{val} introduces an immutable binding. The arrow \api{<-} points from
+the expression to the binding receiving its value. A colon selects a member;
+parentheses invoke it. Semicolons terminate declarations, assignments, return
+statements, and expression statements. Braced control-flow blocks do not need
+a trailing semicolon.
+
+The built-in record \api{G} connects the language to its host. A failed
+\api{LoadLib} returns \api{nil} and records an error. Because \api{or}
+short-circuits, the fatal fallback runs only when the import fails. The string
+marker \api{$E?} is replaced by the last import error when that string is
+evaluated.
+
+The host must register the standard native libraries before running this
+example. Chapters 67 and 68 show complete embeddings. The default discovery
+root is relative to the process working directory; applications can instead
+pass their own absolute library roots.

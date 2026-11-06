@@ -1,0 +1,35 @@
+\chapter{References and shared cells}
+A \api{ref} declaration aliases an existing mutable binding. It does not copy
+the current value and does not create a pointer value in the language. Both
+names refer to the same cell in an environment.
+
+\begin{mullcode}
+var count <- 4;
+ref alias <- count;
+alias <- alias + 1;
+G:Assert(count == 5);
+count <- 9;
+G:Assert(alias == 9);
+val snapshot <- count;
+alias <- 12;
+G:Assert(snapshot == 9);
+\end{mullcode}
+
+The initializer of \api{ref} must be a name resolving to a mutable cell.
+An arbitrary expression, a list index, or an immutable binding is rejected.
+An alias to another reference is allowed because the latter already denotes
+the same mutable cell. Assignment through either name checks the cell's
+mutability.
+
+\section{References in closures}
+An alias can be captured by a function, and the cell remains available while
+the runtime retains the closure's environment. This is useful for shared
+counters or a replaceable host callback. Function parameters are ordinary
+mutable local bindings initialized with argument values; MuLL does not have
+reference-parameter syntax. Capture an existing cell when shared mutation is
+the intended interface.
+
+Lists and records remain structurally immutable even when reached through a
+reference. A reference permits replacing the entire stored value. This avoids
+hidden element mutation through a copied collection while still supporting
+explicit shared state through named cells.

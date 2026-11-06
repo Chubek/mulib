@@ -1,0 +1,31 @@
+\chapter{Failure, fallback, and recovery}
+MuLL distinguishes a failed library lookup from an ordinary evaluation error.
+\api{G:LoadLib} returns nil on failure and stores a diagnostic. Arithmetic
+errors, invalid calls, failed assertions, and explicit \api{DieWith} calls
+throw an error to the embedding application.
+
+\begin{mullcode}
+val absent <- G:LoadLib("not_installed");
+G:Assert(absent == nil);
+val detail <- "$E?";
+G:Assert(detail == "library not found: not_installed");
+val choice <- absent or {enabled: false};
+G:Assert(choice:enabled == false);
+\end{mullcode}
+
+\section{Fallback is not exception handling}
+\api{or} inspects the truth of its left operand. It does not catch arbitrary
+exceptions. For example, division by zero on the left of \api{or} still
+terminates the run. The import idiom works because \api{LoadLib} deliberately
+converts discovery, parsing, and package-evaluation failures into nil.
+
+Use \api{G:DieWith(message)} when a fallback cannot make progress. It raises
+the supplied display text. \api{G:Assert(value)} returns its input when true
+and raises ``assertion failed'' otherwise.
+
+\section{Host recovery}
+Catch \api{mull::Error} in C++ or \api{MuLL.Error} in D. Both expose the source
+line and column in addition to the message. A failed run does not roll back
+earlier native calls or assignments. The host can run another source string
+on the same instance, inspect retained bindings, or discard the instance and
+start a fresh session.

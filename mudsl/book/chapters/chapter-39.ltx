@@ -1,0 +1,28 @@
+\chapter{Choosing a grammar engine}
+MuDSL offers three distinct parsing tools. Whole-input patterns recognize
+small character languages. Parser combinators construct typed parsers from
+smaller parsers. Explicit context-free grammars use Earley parsing and can
+represent left-recursive and nullable productions directly.
+
+\section{Match the engine to the problem}
+Use \api{pattern} for small validation rules, such as a numeric identifier.
+Use \api{StaticRegex} when byte-oriented grouping, alternation, and compiled
+regular-expression structure matter. Both differ from a PEG rule, which
+recognizes a prefix and participates in ordered parsing.
+
+Combinators are convenient when the grammar is part of the host program and
+semantic result types are known in advance. The \api{try_parse} operation
+explicitly restores backtracking after a committed failure. Repetition must
+reject a parser that succeeds without consuming input; otherwise an innocent
+empty production becomes an infinite loop.
+
+An explicit CFG is appropriate when grammar data is itself supplied at runtime.
+Its terminals are tokens chosen by your lexer. Earley parsing recognizes left
+recursion without rewriting the grammar into a precedence ladder, but an
+ambiguous grammar still requires a policy for choosing a derivation.
+
+\section{Precedence parsing}
+MuLL uses a compact precedence parser because its operator table is fixed and
+small. This gives a direct correspondence between the reference table in
+Chapter 51 and the implementation. The reusable toolkit remains available for
+other languages with different grammar requirements.

@@ -1,4 +1,4 @@
-# DSLtk Development Progression
+# MuDSL Development Progression
 
 This record covers the progression from the C++ toolkit to its D counterpart,
 then to the shared language-construction facilities, graph and term reduction,
@@ -7,7 +7,7 @@ It describes implemented work. API details and tutorials are linked below.
 
 ## 1. Starting point: the C++ toolkit
 
-`DSLtk.hpp` supplies feature composition through `DSL<Derived, Features...>`
+`MuDSL.hpp` supplies feature composition through `DSL<Derived, Features...>`
 and CRTP mixins. Its established facilities are pipelines, predicates, pattern
 dispatch, value-type ASTs, bottom-up rewrite passes, expression templates,
 custom literals, memoization, lazy values, monadic optionals, results, parser
@@ -19,7 +19,7 @@ formatting are documented in [Chapter 29](ch29-enum-reflection.md).
 
 ## 2. Translating the toolkit to D
 
-The D implementation was created as one module, `DSLtk.d`, using Phobos.
+The D implementation was created as one module, `MuDSL.d`, using Phobos.
 Its design follows the behavior of the C++ toolkit while using D mechanisms:
 
 | C++ foundation | D implementation |
@@ -124,8 +124,8 @@ balanced arguments, continuation lines, recursive macro suppression,
 conditional directives, includes, and scripting directives. Include resolution
 and script execution are user callbacks.
 
-Native Lua bridges are optional: `DSLTK_ENABLE_LUA` selects the C++ bridge and
-the D version identifier `DSLtkLua` selects the D bridge. The user owns the Lua
+Native Lua bridges are optional: `MUDSL_ENABLE_LUA` selects the C++ bridge and
+the D version identifier `MuDSLLua` selects the D bridge. The user owns the Lua
 state and provides the library linkage. The bridge runs a directive, obtains
 its generated source, and restores the Lua stack on success or failure.
 
@@ -146,8 +146,8 @@ CFG tutorial is [Chapter 36](ch36-context-free-grammars.md).
 
 ## 10. Packaging, examples and verification
 
-The CMake install rule includes `DSLtk.hpp` and `DSLtk.d`. The C++ example
-target `dsltk_equality_saturation_example` accompanies the enum example.
+The CMake install rule includes `MuDSL.hpp` and `MuDSL.d`. The C++ example
+target `mudsl_equality_saturation_example` accompanies the enum example.
 Source examples in both languages combine preprocessing, equality saturation,
 equality-triggered visitors, grammar parsing and static regex matching:
 
@@ -156,7 +156,7 @@ equality-triggered visitors, grammar parsing and static regex matching:
 
 `tests/test_language_facilities.cpp` covers the new C++ facilities.
 `tests/test_lua_preprocessor.cpp` covers the optional native bridge.
-Equivalent D coverage is embedded in `DSLtk.d`.
+Equivalent D coverage is embedded in `MuDSL.d`.
 
 At the completion of the implementation, all seven configured C++ tests passed,
 including the enum/formatting tests and the optional Lua test. The new C++
@@ -244,7 +244,7 @@ unification and occurs checks, rule validation, rewrite strategies, step
 limits, shared versus unshared reduction, root changes, and garbage collection.
 
 The CMake test project now builds and runs the D module and its graph/term
-tests when a D compiler is available. `DSLtk_TEST_D` controls that integration;
+tests when a D compiler is available. `MuDSL_TEST_D` controls that integration;
 the local ignore rules retain D test sources in version control.
 
 All eight configured test targets passed after this extension. The C++ graph

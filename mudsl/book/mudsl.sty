@@ -1,0 +1,27 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{mudsl}[2026/11/07 MuDSL typography]
+\RequirePackage{iftex}
+\ifTUTeX
+  \RequirePackage{fontspec}
+  \setmainfont{TeX Gyre Pagella}
+  \setsansfont{TeX Gyre Heros}
+  \setmonofont{DejaVu Sans Mono}[Scale=MatchLowercase]
+\else
+  \RequirePackage[T1]{fontenc}
+  \RequirePackage[utf8]{inputenc}
+  \RequirePackage{lmodern}
+\fi
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{xcolor,graphicx,array,booktabs,longtable,calc}
+\RequirePackage{fvextra}
+\RequirePackage{hyperref}
+\definecolor{MuBlue}{HTML}{205577}
+\hypersetup{colorlinks=true,linkcolor=MuBlue,urlcolor=MuBlue,pdftitle={The Book of MuDSL}}
+\DefineVerbatimEnvironment{code}{Verbatim}{breaklines=true,breakanywhere=true,fontsize=\small,frame=leftline,rulecolor=\color{MuBlue}}
+\DefineVerbatimEnvironment{mullcode}{Verbatim}{breaklines=true,breakanywhere=true,fontsize=\small,frame=leftline,rulecolor=\color{MuBlue}}
+\pdfstringdefDisableCommands{\def\allowbreak{}}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+\providecommand{\pandocbounded}[1]{#1}
+\setlength{\emergencystretch}{3em}
+\newcommand{\api}[1]{\texttt{\detokenize{#1}}}
