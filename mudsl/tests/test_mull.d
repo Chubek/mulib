@@ -1,6 +1,7 @@
 module test_mull;
 import MuDSL;
 import mull.stdlib.Stdlib;
+version (MULL_ENABLE_MULIB) import mull.stdlib.Mulib.Native;
 import std.stdio : writeln, stderr;
 import std.algorithm : canFind;
 import std.array : replicate;
@@ -38,6 +39,16 @@ void hostChecks()
     assert(vm.lastError.canFind("invalid library"));
     auto other = new MuLLRuntime;
     try { other.get("x"); assert(false); } catch (MuLLError e) {}
+    fails("G:MulibWrap(\"Parsec\");", "wrapper is not installed");
+    version (MULL_ENABLE_MULIB)
+    {
+        installMulib(vm); installMulib(other);
+        vm.define("foreign", other.run("G:MulibWrap(\"Parsec\"):New(\"uint8_t\", 65);"));
+        fails("G:MulibWrap(\"Parsec\"):Byte(foreign);", "another MuLIB runtime");
+        auto limited=new MuLLRuntime; installMulib(limited,1);
+        try { limited.run("G:MulibWrap(\"Parsec\"):New(\"result\");"); assert(false); }
+        catch (MuLLError e) { assert(e.msg.canFind("storage limit"),e.msg); }
+    }
 }
 
 int main(string[] args)

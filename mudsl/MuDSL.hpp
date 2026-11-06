@@ -13005,13 +13005,26 @@ struct Error : std::runtime_error {
       : std::runtime_error(std::move(message)), line(l), column(c) {}
 };
 
+struct Value;
+/// Host-backed MuLIB namespace or typed native value. Callbacks belong to the
+/// embedding runtime; the core has no dependency on the optional C bridge.
+struct MulibValue {
+  std::string name;
+  std::function<Value(const std::string &)> member;
+  std::function<Value(const Value &)> index;
+  std::function<Value(const std::vector<Value> &)> call;
+  std::shared_ptr<void> payload;
+  const void *payloadType = nullptr;
+};
+
 struct Value {
   using List = std::vector<Value>;
   using Object = std::map<std::string, Value>;
   using Native = std::function<Value(const List &)>;
   using Function = std::shared_ptr<Native>;
   std::variant<std::monostate, bool, double, std::string,
-               std::shared_ptr<const List>, std::shared_ptr<const Object>, Function> data;
+               std::shared_ptr<const List>, std::shared_ptr<const Object>, Function,
+               std::shared_ptr<MulibValue>> data;
   std::size_t nesting = 0;
   Value() = default;
   Value(bool v) : data(v) {}
@@ -13032,6 +13045,13 @@ struct Value {
     data = std::make_shared<const Object>(std::move(v));
   }
   Value(Native v) : data(std::make_shared<Native>(std::move(v))) {}
+  explicit Value(std::shared_ptr<MulibValue> v) : data(std::move(v)) {
+    if (!std::get<std::shared_ptr<MulibValue>>(data)) throw Error("null mulib value");
+  }
+  const std::shared_ptr<MulibValue> &mulib() const {
+    if (auto v = std::get_if<std::shared_ptr<MulibValue>>(&data)) return *v;
+    throw Error("expected mulib");
+  }
   bool truth() const {
     if (std::holds_alternative<std::monostate>(data)) return false;
     if (auto v = std::get_if<bool>(&data)) return *v;
@@ -13054,19 +13074,25 @@ struct Value {
     throw Error("expected record");
   }
   Value member(const std::string &name) const {
+    if (data.index() == 7) {
+      if (!mulib()->member) throw Error("mulib value has no members");
+      return mulib()->member(name);
+    }
     const auto &o = object(); auto p = o.find(name);
     if (p == o.end()) throw Error("unknown member: " + name);
     return p->second;
   }
   Value call(const List &args = {}) const {
+    if (data.index() == 7 && mulib()->call) return mulib()->call(args);
     if (auto v = std::get_if<Function>(&data)) return (**v)(args);
     throw Error("expected function");
   }
   std::string type() const {
-    static constexpr const char *names[] = {"nil", "bool", "number", "string", "list", "record", "function"};
+    static constexpr const char *names[] = {"nil", "bool", "number", "string", "list", "record", "function", "mulib"};
     return names[data.index()];
   }
   std::string text() const {
+    if (data.index() == 7) return "<mulib:" + mulib()->name + ">";
     if (data.index() == 0) return "nil";
     if (auto v = std::get_if<bool>(&data)) return *v ? "true" : "false";
     if (auto v = std::get_if<double>(&data)) {
@@ -13184,7 +13210,7 @@ class Parser {
   std::string name() {
     if (peek().kind != 1) fail("expected identifier");
     auto s = tokens[pos++].text;
-    if (s == "val" || s == "var" || s == "ref" || s == "fn" || s == "if" || s == "else" || s == "while" ||
+    if (s == "val" || s == "var" || s == "ref" || s == "mulib" || s == "fn" || s == "if" || s == "else" || s == "while" ||
         s == "return" || s == "break" || s == "true" || s == "false" || s == "nil" || s == "and" || s == "or" || s == "not")
       fail("reserved identifier: " + s);
     return s;
@@ -13259,8 +13285,11 @@ class Parser {
   N statement() {
     Guard guard(depth);
     auto t = peek();
-    if (eat("val") || eat("var") || eat("ref")) {
-      auto n = node(t.text, t); n->text = name(); need("<-"); n->children.push_back(expression()); need(";"); return n;
+    if (eat("val") || eat("var") || eat("ref") || eat("mulib")) {
+      auto n = node(t.text, t); n->text = name(); need("<-"); n->children.push_back(expression());
+      if (t.text != "mulib" || (!at("") && !at("}") && peek().line == tokens[pos-1].line)) need(";");
+      else eat(";");
+      return n;
     }
     if (eat("if") || eat("while")) {
       auto n = node(t.text, t); n->children = {expression(), block()};
@@ -13345,7 +13374,7 @@ class Runtime {
     }
     if (op == "literal") return n->text == "nil" ? Value{} : Value(n->text == "true");
     if (op == "name") return env->lookup(n->text)->value;
-    if (op == "val" || op == "var" || op == "ref") {
+    if (op == "val" || op == "var" || op == "ref" || op == "mulib") {
       if (env->values.contains(n->text)) throw Error("duplicate binding: " + n->text);
       if (op == "ref") {
         if (n->children[0]->op != "name") throw Error("ref requires a mutable binding");
@@ -13353,7 +13382,9 @@ class Runtime {
         if (!cell->mutable_) throw Error("cannot reference immutable binding");
         env->values[n->text] = cell; return cell->value;
       }
-      auto v = child(0); bind(env, n->text, v, op == "var"); return v;
+      auto v = child(0);
+      if (op == "mulib" && v.data.index() != 7) throw Error("mulib declaration requires a mulib value");
+      bind(env, n->text, v, op == "var"); return v;
     }
     if (op == "assign") {
       if (n->children[0]->op != "name") throw Error("assignment requires a binding");
@@ -13368,6 +13399,11 @@ class Runtime {
     if (op == "member") return child(0).member(n->text);
     if (op == "index") {
       auto v = child(0); auto k = child(1);
+      if (v.data.index() == 7) {
+        if (k.type() == "string") return v.member(k.string());
+        if (!v.mulib()->index) throw Error("mulib value is not indexable");
+        return v.mulib()->index(k);
+      }
       if (v.data.index() == 5) return v.member(k.string());
       auto index = k.number();
       auto size = v.data.index() == 3 ? v.string().size() : v.list().size();
@@ -13438,9 +13474,17 @@ class Runtime {
 public:
   std::size_t maxSteps = 1000000, maxCallDepth = 128, maxFrames = 100000, maxSourceBytes = 4 * 1024 * 1024;
   std::function<void(std::string_view)> stdoutSink = [](std::string_view s) { std::cout << s; };
+  std::function<Value(const std::string &)> mulibWrapper;
   explicit Runtime(std::vector<std::filesystem::path> paths = {"mull/stdlib"}) : paths_(std::move(paths)) {
     globals_ = frame(nullptr);
     Value::Object g;
+    g["MulibWrap"] = Value(Value::Native([this](const auto &a) {
+      arity(a,1); const auto &name = a[0].string();
+      if (!mulibWrapper) throw Error("MuLIB wrapper is not installed");
+      auto result = mulibWrapper(name);
+      if (result.data.index() != 7) throw Error("MuLIB provider must return a mulib value");
+      return result;
+    }));
     g["LoadLib"] = Value(Value::Native([this](const auto &a) { arity(a,1); return loadLibrary(a[0].string()); }));
     g["Native"] = Value(Value::Native([this](const auto &a) {
       arity(a,1); auto p = natives_.find(a[0].string());

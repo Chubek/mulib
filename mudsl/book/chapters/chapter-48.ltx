@@ -1,6 +1,7 @@
 \chapter{Values and truth}
-MuLL has seven value kinds: nil, Boolean, number, string, list, record, and
-function. \api{G:Type(value)} returns their names as strings. Values are
+MuLL has eight value kinds: nil, Boolean, number, string, list, record,
+function, and \api{mulib}. The last represents native MuLIB namespaces and
+typed storage. \api{G:Type(value)} returns their names as strings. Values are
 dynamically checked at the operation that needs a particular kind.
 
 \begin{mullcode}

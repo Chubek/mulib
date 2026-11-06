@@ -10,6 +10,11 @@ target_include_directories(MuDSL INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_compile_features(MuDSL INTERFACE cxx_std_20)
+include(cmake/Mulib.cmake)
+if(MULL_ENABLE_MULIB)
+    target_link_libraries(MuDSL INTERFACE mull-mulib-bridge)
+    install(TARGETS mull-mulib-bridge EXPORT MuDSLTargets)
+endif()
 
 option(BUILD_EXAMPLES "Build the MuDSL and MuLL examples" OFF)
 if(BUILD_EXAMPLES)

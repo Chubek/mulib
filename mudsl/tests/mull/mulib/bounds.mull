@@ -1,0 +1,3 @@
+mulib B <- G:MulibWrap("Base64")
+val buffer <- B:Buffer(4);
+buffer:Set(4, 1);

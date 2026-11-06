@@ -1,4 +1,8 @@
 @PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
+if(@MULL_ENABLE_MULIB@)
+    find_dependency(Threads)
+endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/MuDSLTargets.cmake")
 

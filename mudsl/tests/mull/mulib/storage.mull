@@ -1,0 +1,18 @@
+mulib B <- G:MulibWrap("Base64");
+val out <- B:Buffer(16);
+G:Assert(B:Encode("hello", 5, out, out:Count) == 8);
+G:Assert(out:String() == "aGVsbG8=");
+val decoded <- B:Buffer(16);
+val written <- B:New("size_t");
+G:Assert(B:Decode(out, 8, decoded, 16, written) == 1);
+G:Assert(written:Get() == 5);
+G:Assert(decoded:String(written:Get()) == "hello");
+val ints <- B:Array("uint32_t", [10, 20, 30]);
+G:Assert(ints[1] == 20);
+ints:Set(1, 42);
+G:Assert(ints:At(1) == 42);
+val wide <- B:New("uint64_t", "18446744073709551615");
+G:Assert(wide:Get() == "18446744073709551615");
+val signed <- B:New("int64_t", "-9223372036854775808");
+G:Assert(signed:Get() == "-9223372036854775808");
+"storage ok";

@@ -1,0 +1,27 @@
+mulib Vec <- G:MulibWrap("vec")
+val vector <- Vec:New("mulib_vec_t");
+Vec:Init(vector, Vec:SizeOf("uint32_t"));
+val item <- Vec:New("uint32_t", 42);
+G:Assert(Vec:Push(vector, item) == 1);
+G:Assert(vector:length == 1);
+G:Assert(Vec:At(vector, 0):As("uint32_t"):Get() == 42);
+val popped <- Vec:New("uint32_t");
+G:Assert(Vec:Pop(vector, popped) == 1);
+G:Assert(popped:Get() == 42);
+Vec:Free(vector);
+mulib Map <- G:MulibWrap("map")
+val map <- Map:New("mulib_map_t");
+Map:Init(map);
+G:Assert(Map:Set(map, "answer", item) == 1);
+val pointer <- Map:New("void *");
+G:Assert(pointer:Get() == nil);
+G:Assert(Map:Get(map, "answer", pointer) == 1);
+G:Assert(pointer:As("uint32_t"):Get() == 42);
+Map:Free(map);
+val strings <- Vec:Array("const char *", ["one", "two"]);
+G:Assert(strings:Count == 2);
+G:Assert(strings[0]:String() == "one");
+G:Assert(strings[1]:String() == "two");
+val repeated <- strings:View(2);
+G:Assert(repeated[1]:String() == "two");
+"containers ok";

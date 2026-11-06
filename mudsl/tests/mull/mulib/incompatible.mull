@@ -1,0 +1,3 @@
+mulib P <- G:MulibWrap("Parsec")
+val wrong <- P:New("mulib_vec_t");
+P:Run(wrong, "", 0, nil, P:New("result"));

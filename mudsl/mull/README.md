@@ -32,7 +32,7 @@ Compile the complete D example from the project root:
 
 ```sh
 ldc2 -I. examples/27-mull.d MuDSL.d mull/stdlib/Stdlib.d \
-  mull/stdlib/*/Native.d -of=mull-example
+  mull/stdlib/{printf,terminal,math,text,list}/Native.d -of=mull-example
 ```
 
 Runtime methods in both implementations:
@@ -79,12 +79,16 @@ while count < 5 { count <- count + 1; }
 ```
 
 `val` is immutable; `var` is mutable; `ref` aliases an existing mutable cell.
+`mulib` declares an immutable name whose initializer must have the distinct
+`mulib` value type, for example `mulib Parsec <- G:MulibWrap("Parsec")`.
 References require an identifier initializer. Parameters are mutable local
 bindings initialized by value; sharing mutation uses captures, not ref parameters.
 `<-` also assigns to an existing mutable name. Assignment is a statement.
 Braces introduce scopes; same-scope duplicate declarations are errors.
 
 Statements require semicolons except blocks, `if`, and `while`.
+The semicolon on a `mulib` declaration may also be omitted at a newline,
+closing brace, or end of source.
 Conditions may be parenthesized. `else if` is supported. `break;` exits a loop
 but cannot cross a function boundary. `return expression;` returns immediately;
 `return;` returns nil. At top level, return ends the run or package. Otherwise
@@ -94,13 +98,14 @@ including subsequent assignments/declarations. Recursion is supported, without
 tail-call elimination.
 
 Identifiers are case-sensitive ASCII `[A-Za-z_][A-Za-z_0-9]*`. Keywords are
-`val var ref fn if else while return break and or not true false nil`.
+`val var ref mulib fn if else while return break and or not true false nil`.
 Comments start with `#` or `//` and extend to the newline. Strings can contain
 arbitrary bytes; whitespace outside strings is space, tab, CR, or LF.
 
 ### Values
 
-- `nil`, Booleans, finite binary64 numbers, byte strings, lists, records, functions.
+- `nil`, Booleans, finite binary64 numbers, byte strings, lists, records, functions,
+  and host-backed `mulib` namespaces/native values.
 - Only **nil and false** are falsey. Zero and empty collections are true.
 - Decimal numbers accept a fractional part and exponent. Overflow and nonzero
   literals rounding to zero are errors; arithmetic underflow follows binary64.
@@ -113,7 +118,8 @@ arbitrary bytes; whitespace outside strings is space, tab, CR, or LF.
 - Collections are structurally immutable; library updates return new values.
   Indexes must be nonnegative integral numbers in range. Missing keys throw.
 - Equality is structural, with different kinds unequal and functions compared
-  by identity. There is no implicit numeric/string coercion.
+  by identity. `mulib` values also compare by identity; library wrappers are
+  cached per runtime. There is no implicit numeric/string coercion.
 - `object:Method(args)` selects a member then calls it, **without** an implicit
   receiver argument. Methods capture state when needed.
 
@@ -139,6 +145,7 @@ Division/remainder by zero and nonfinite numeric results throw.
 ```ebnf
 program     = { statement } ;
 statement   = ("val" | "var" | "ref") name "<-" expression ";"
+            | "mulib" name "<-" expression (";" | declaration-boundary)
             | expression [ "<-" expression ] ";"
             | "return" [ expression ] ";"
             | "break" ";"
@@ -160,7 +167,9 @@ distinguish it from a block. Assignment/ref targets receive semantic checks.
 ## Host record `G`
 
 `LoadLib(name)`, `Native(name)`, `GetStdout()`, `DieWith(value)`, `Assert(value)`,
-`Str(value)`, `Type(value)`, and `Len(value)` are the core services.
+`Str(value)`, `Type(value)`, `Len(value)`, and `MulibWrap(name)` are the core services.
+`MulibWrap` returns a distinct `mulib` namespace using the installed provider;
+an unavailable provider or unknown library raises an error.
 `GetStdout()` returns a callable accepting one string, following the host's
 current `stdoutSink`. `Len` counts string bytes/list elements/record entries.
 `Str` produces display text, not a serialization format; numbers use 17
@@ -200,6 +209,11 @@ Syntax errors occur before any effects. Runtime failures preserve earlier effect
 | `math` | `Abs(x)`, `Floor(x)`, `Ceil(x)`, `Sqrt(x)`, `Pow(x,y)`, `Min(x,y)`, `Max(x,y)`, `Pi` |
 | `text` | `Split(text, sep)`, `Join(strings, sep)`, `Replace(text, from, to)`, `Upper(text)`, `Lower(text)` |
 | `list` | `Range(start,end)`, `Map(xs,fn)`, `Filter(xs,fn)`, `Fold(xs,initial,fn)`, `Push(xs,value)`, `Set(xs,index,value)` |
+| `Mulib` | `Wrap(name)`, `Libraries()`, `New(type, initial?)`, `Array(type, countOrList)`, `Buffer(sizeOrString)`, `Callback(type, fn)`, `SizeOf(type)` |
+
+The optional compiled `Mulib` package wraps the complete MuLIB header inventory.
+See [MuLIB wrapper reference](stdlib/Mulib/README.md) for build instructions,
+Parsec examples, native storage, callbacks, and ownership contracts.
 
 - Formatting uses `{}` placeholders, `{{`/`}}` for literal braces, and exact
   argument counts. `Print`/`Println` concatenate without separators. Output

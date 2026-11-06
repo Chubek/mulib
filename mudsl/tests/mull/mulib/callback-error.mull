@@ -1,0 +1,4 @@
+mulib P <- G:MulibWrap("Parsec")
+val parser <- P:Satisfy(fn(byte, user) { G:DieWith("predicate failed"); }, nil, "x");
+val result <- P:New("result");
+P:Run(parser, "x", 1, nil, result);

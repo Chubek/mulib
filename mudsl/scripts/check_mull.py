@@ -13,10 +13,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--cpp', required=True)
     parser.add_argument('--d')
+    parser.add_argument('--mulib', action='store_true', help='Include native MuLIB fixtures')
     args = parser.parse_args()
     binaries = [Path(p).resolve() for p in (args.cpp, args.d) if p]
     cases = 0
-    for source in sorted((ROOT / 'tests/mull').glob('*.mull')):
+    sources = list((ROOT / 'tests/mull').glob('*.mull'))
+    if args.mulib:
+        sources += list((ROOT / 'tests/mull/mulib').glob('*.mull'))
+    for source in sorted(sources):
         expected = source.with_suffix('.expected')
         error = source.with_suffix('.error')
         assert expected.exists() != error.exists(), source

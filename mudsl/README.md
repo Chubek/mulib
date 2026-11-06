@@ -19,12 +19,23 @@ ctest --test-dir build --output-on-failure
 
 CMake automatically tests the D implementation when LDC, DMD, or GDC is
 available. The installed CMake target is `MuDSL::MuDSL`.
+When the sibling MuLIB `include` directory is available, CMake also builds and
+installs the complete [MuLIB wrapper](mull/stdlib/Mulib/README.md), shared by the
+C++ and D runtimes. Set `MULL_MULIB_INCLUDE_DIR` for another location, or
+`MULL_ENABLE_MULIB=OFF` for the core-only build.
 
 ```mull
 val Printf <- G:LoadLib("printf") or G:DieWith("Import Error: $E?");
 val Terminal <- G:LoadLib("terminal") or G:DieWith("Import Error: $E?");
 Printf:SetMainSink(G:GetStdout());
 Printf:Println("Hello, MuLL!");
+```
+
+With the MuLIB provider installed:
+
+```mull
+mulib Parsec <- G:MulibWrap("Parsec")
+val digit <- Parsec:Range(48, 57);
 ```
 
 Initialize a runtime, install the native libraries, and configure package

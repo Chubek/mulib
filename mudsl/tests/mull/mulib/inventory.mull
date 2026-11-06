@@ -1,0 +1,20 @@
+val Mulib <- G:LoadLib("Mulib") or G:DieWith("Import Error: $E?");
+val libraries <- Mulib:Libraries();
+var i <- 0;
+var functions <- 0;
+while i < G:Len(libraries) {
+    mulib library <- G:MulibWrap(libraries[i]);
+    G:Assert(G:Type(library) == "mulib");
+    G:Assert(library:LibraryName == libraries[i]);
+    val symbols <- library:Symbols;
+    var j <- 0;
+    while j < G:Len(symbols) {
+        val symbol <- library[symbols[j]];
+        if G:Type(symbol) == "function" { functions <- functions + 1; }
+        j <- j + 1;
+    }
+    i <- i + 1;
+}
+G:Assert(i > 500);
+G:Assert(functions > 2900);
+"inventory ok";

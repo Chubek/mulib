@@ -76,6 +76,15 @@ class MuLLError : Exception
     { super(message); line = l; column = c; }
 }
 
+class MuLLMulib
+{
+    string name;
+    MuLLValue delegate(string) member;
+    MuLLValue delegate(MuLLValue) index;
+    MuLLValue delegate(MuLLValue[]) call;
+    Object payload;
+}
+
 struct MuLLValue
 {
     alias List = MuLLValue[];
@@ -89,6 +98,7 @@ struct MuLLValue
     private Object fields;
     private Native function_;
     private size_t nesting;
+    private MuLLMulib foreign;
     this(bool v) { tag = 1; boolean = v; }
     this(double v)
     {
@@ -115,6 +125,8 @@ struct MuLLValue
         tag = 5; fields = v.dup;
     }
     this(Native v) { tag = 6; function_ = v; }
+    this(MuLLMulib v) { if (v is null) throw new MuLLError("null mulib value"); tag = 7; foreign = v; }
+    MuLLMulib mulib() { if (tag != 7) throw new MuLLError("expected mulib"); return foreign; }
     size_t kind() const { return tag; }
     bool truth() const { return tag != 0 && (tag != 1 || boolean); }
     double number() const { if (tag != 2) throw new MuLLError("expected number"); return numeric; }
@@ -123,14 +135,22 @@ struct MuLLValue
     Object object() { if (tag != 5) throw new MuLLError("expected record"); return fields.dup; }
     MuLLValue member(string name)
     {
+        if (tag == 7)
+        {
+            if (foreign.member is null) throw new MuLLError("mulib value has no members");
+            return foreign.member(name);
+        }
         if (tag != 5) throw new MuLLError("expected record");
         auto p = name in fields;
         if (!p) throw new MuLLError("unknown member: " ~ name);
         return *p;
     }
     MuLLValue call(List args = null)
-    { if (tag != 6) throw new MuLLError("expected function"); return function_(args); }
-    string type() const { return ["nil", "bool", "number", "string", "list", "record", "function"][tag]; }
+    {
+        if (tag == 7 && foreign.call !is null) return foreign.call(args);
+        if (tag != 6) throw new MuLLError("expected function"); return function_(args);
+    }
+    string type() const { return ["nil", "bool", "number", "string", "list", "record", "function", "mulib"][tag]; }
     string text()
     {
         import std.format : format;
@@ -151,6 +171,7 @@ struct MuLLValue
                 { if (!first) out_ ~= ", "; first = false; out_ ~= k ~ ": " ~ fields[k].text(); }
                 return out_ ~ "}";
             case 6: return "<function>";
+            case 7: return "<mulib:" ~ foreign.name ~ ">";
         }
     }
     bool opEquals(MuLLValue other)
@@ -165,6 +186,7 @@ struct MuLLValue
             case 4: return elements == other.elements;
             case 5: return fields == other.fields;
             case 6: return function_ == other.function_;
+            case 7: return foreign is other.foreign;
         }
     }
 }
@@ -268,7 +290,7 @@ private class MuLLParser
         import std.algorithm : canFind;
         if (peek.kind != 1) fail("expected identifier");
         auto s = tokens[pos++].text;
-        if (["val", "var", "ref", "fn", "if", "else", "while", "return", "break", "true", "false", "nil", "and", "or", "not"].canFind(s))
+        if (["val", "var", "ref", "mulib", "fn", "if", "else", "while", "return", "break", "true", "false", "nil", "and", "or", "not"].canFind(s))
             fail("reserved identifier: " ~ s);
         return s;
     }
@@ -355,10 +377,13 @@ private class MuLLParser
     {
         enter(); scope(exit) --depth;
         auto t = peek;
-        if (eat("val") || eat("var") || eat("ref"))
+        if (eat("val") || eat("var") || eat("ref") || eat("mulib"))
         {
             auto n = new MuLLNode(t.text, t); n.text = name(); need("<-");
-            n.children ~= expression(); need(";"); return n;
+            n.children ~= expression();
+            if (t.text != "mulib" || (!at("") && !at("}") && peek.line == tokens[pos-1].line)) need(";");
+            else eat(";");
+            return n;
         }
         if (eat("if") || eat("while"))
         {
@@ -408,6 +433,7 @@ class MuLLRuntime
     private bool running;
     size_t maxSteps = 1_000_000, maxCallDepth = 128, maxFrames = 100_000, maxSourceBytes = 4 * 1024 * 1024;
     void delegate(string) stdoutSink;
+    MuLLValue delegate(string) mulibWrapper;
     private MuLLEnv frame(MuLLEnv parent)
     {
         if (frames >= maxFrames) throw new MuLLError("environment limit exceeded");
@@ -462,7 +488,7 @@ class MuLLRuntime
         { import std.string : replace; return V(n.text.replace("$E?", error_)); }
         if (op == "literal") return n.text == "nil" ? V.init : V(n.text == "true");
         if (op == "name") return env.lookup(n.text).value;
-        if (op == "val" || op == "var" || op == "ref")
+        if (op == "val" || op == "var" || op == "ref" || op == "mulib")
         {
             if (n.text in env.values) throw new MuLLError("duplicate binding: " ~ n.text);
             if (op == "ref")
@@ -472,7 +498,9 @@ class MuLLRuntime
                 if (!cell.mutable_) throw new MuLLError("cannot reference immutable binding");
                 env.values[n.text] = cell; return cell.value;
             }
-            auto v = child(0); bind(env, n.text, v, op == "var"); return v;
+            auto v = child(0);
+            if (op == "mulib" && v.tag != 7) throw new MuLLError("mulib declaration requires a mulib value");
+            bind(env, n.text, v, op == "var"); return v;
         }
         if (op == "assign")
         {
@@ -488,6 +516,12 @@ class MuLLRuntime
         if (op == "index")
         {
             auto v = child(0); auto k = child(1);
+            if (v.tag == 7)
+            {
+                if (k.tag == 3) return v.member(k.stringValue());
+                if (v.foreign.index is null) throw new MuLLError("mulib value is not indexable");
+                return v.foreign.index(k);
+            }
             if (v.tag == 5) return v.member(k.stringValue());
             auto index = k.number(); auto size = v.tag == 3 ? v.str.length : v.list().length;
             if (index < 0 || floor(index) != index || index >= cast(double) size) throw new MuLLError("index out of bounds");
@@ -565,6 +599,13 @@ class MuLLRuntime
         this.paths = paths.dup; globals = frame(null);
         stdoutSink = (string s) { stdout.rawWrite(s); };
         V[string] g;
+        g["MulibWrap"] = V((V[] a) {
+            mullArity(a,1); auto name = a[0].stringValue();
+            if (mulibWrapper is null) throw new MuLLError("MuLIB wrapper is not installed");
+            auto result = mulibWrapper(name);
+            if (result.tag != 7) throw new MuLLError("MuLIB provider must return a mulib value");
+            return result;
+        });
         g["LoadLib"] = V((V[] a) { mullArity(a,1); return loadLibrary(a[0].stringValue()); });
         g["Native"] = V((V[] a) {
             mullArity(a,1); auto p = a[0].stringValue() in natives;

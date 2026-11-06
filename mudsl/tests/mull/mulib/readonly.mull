@@ -1,0 +1,3 @@
+mulib P <- G:MulibWrap("Parsec")
+val named <- P:Named(P:Byte(65), "letter A");
+named:label:Set(0, 66);

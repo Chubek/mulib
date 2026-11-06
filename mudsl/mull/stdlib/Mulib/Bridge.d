@@ -1,0 +1,52 @@
+module mull.stdlib.Mulib.Bridge;
+
+enum : int { MULL_MB_VOID, MULL_MB_SIGNED, MULL_MB_UNSIGNED, MULL_MB_FLOAT,
+    MULL_MB_POINTER, MULL_MB_ARRAY, MULL_MB_RECORD, MULL_MB_FUNCTION, MULL_MB_OPAQUE }
+enum MULL_MB_NONE = size_t.max;
+struct mull_mb_arena;
+extern(C) alias mull_mb_callback_fn = void function(void*, size_t, void*, void**) nothrow;
+extern(C) nothrow:
+size_t mull_mb_library_count();
+const(char)* mull_mb_library_name(size_t);
+const(char)* mull_mb_library_header(size_t);
+size_t mull_mb_library_find(const(char)*);
+size_t mull_mb_symbol_count(size_t);
+const(char)* mull_mb_symbol_name(size_t, size_t);
+int mull_mb_symbol_find(size_t, const(char)*, size_t*);
+size_t mull_mb_type_find(size_t, const(char)*);
+const(char)* mull_mb_type_name(size_t);
+int mull_mb_type_kind(size_t);
+size_t mull_mb_type_size(size_t);
+size_t mull_mb_type_align(size_t);
+size_t mull_mb_type_element(size_t);
+size_t mull_mb_type_count(size_t);
+int mull_mb_type_pointee_const(size_t);
+size_t mull_mb_field_count(size_t);
+const(char)* mull_mb_field_name(size_t, size_t);
+size_t mull_mb_field_type(size_t, size_t);
+int mull_mb_field_readonly(size_t, size_t);
+void* mull_mb_field_address(size_t, size_t, void*);
+int mull_mb_field_get(size_t, size_t, const(void)*, void*);
+int mull_mb_field_set(size_t, size_t, void*, const(void)*);
+int mull_mb_number_read(size_t, const(void)*, double*);
+int mull_mb_number_write(size_t, void*, double);
+int mull_mb_integer_read(size_t, const(void)*, char*, size_t);
+int mull_mb_integer_write(size_t, void*, const(char)*);
+size_t mull_mb_function_type(size_t);
+size_t mull_mb_result_type(size_t);
+size_t mull_mb_argument_count(size_t);
+size_t mull_mb_argument_type(size_t, size_t);
+void mull_mb_invoke(size_t, void*, void**);
+void mull_mb_invoke_pointer(size_t, const(void)*, void*, void**);
+size_t mull_mb_constant_type(size_t);
+const(void)* mull_mb_constant_data(size_t);
+void* mull_mb_allocate(size_t, size_t);
+void mull_mb_deallocate(void*);
+void mull_mb_pointer_write(void*, void*);
+void* mull_mb_pointer_read(const(void)*);
+void* mull_mb_callback_create(size_t, mull_mb_callback_fn, void*, void*);
+void mull_mb_callback_release(void*);
+mull_mb_arena* mull_mb_arena_create(size_t);
+void mull_mb_arena_destroy(mull_mb_arena*);
+void* mull_mb_arena_allocate(mull_mb_arena*, size_t, size_t);
+int mull_mb_arena_callback(mull_mb_arena*, size_t, mull_mb_callback_fn, void*, void*);

@@ -5,9 +5,11 @@ import mull.stdlib.terminal.Native;
 import mull.stdlib.math.Native;
 import mull.stdlib.text.Native;
 import mull.stdlib.list.Native;
+version (MULL_ENABLE_MULIB) import mull.stdlib.Mulib.Native;
 
 void install(MuLLRuntime runtime)
 {
     installPrintf(runtime); installTerminal(runtime); installMath(runtime);
     installText(runtime); installList(runtime);
+    version (MULL_ENABLE_MULIB) installMulib(runtime);
 }

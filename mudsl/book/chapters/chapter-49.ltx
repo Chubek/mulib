@@ -2,6 +2,9 @@
 A binding gives a name to a value in an environment. Use \api{val} when the
 name should retain its initial value, and \api{var} when later assignment is
 part of the program. Both require an initializer.
+The \api{mulib} declaration also creates an immutable binding, but requires
+a native \api{mulib} value as its initializer. Its trailing semicolon may be
+omitted at a newline, closing brace, or end of source.
 
 \begin{mullcode}
 val rate <- 3;

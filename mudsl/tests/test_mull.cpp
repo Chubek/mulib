@@ -33,6 +33,23 @@ static void hostChecks() {
   assert(vm.lastError().find("invalid library") != std::string::npos);
   mull::Runtime other;
   try { other.get("x"); assert(false); } catch (const mull::Error &) {}
+  fails("G:MulibWrap(\"Parsec\");", "wrapper is not installed");
+#ifdef MULL_ENABLE_MULIB
+  mull::stdlib::installMulib(vm);
+  mull::stdlib::installMulib(other);
+  vm.define("foreign", other.run("G:MulibWrap(\"Parsec\"):New(\"uint8_t\", 65);"));
+  fails("G:MulibWrap(\"Parsec\"):Byte(foreign);", "another MuLIB runtime");
+  mull::Runtime limited;
+  mull::stdlib::installMulib(limited,1);
+  try { limited.run("G:MulibWrap(\"Parsec\"):New(\"result\");"); assert(false); }
+  catch (const mull::Error &e) { assert(std::string(e.what()).find("storage limit")!=std::string::npos); }
+  // Native callback slots must be reusable after their owning runtime dies.
+  for (int i=0;i<16;++i) {
+    mull::Runtime temporary;
+    mull::stdlib::installMulib(temporary);
+    assert(temporary.run("val P <- G:MulibWrap(\"Parsec\"); val cb <- P:Callback(\"mulib_parsec_predicate_fn\", fn(b,u){return b;}); cb(42,nil);").number()==42);
+  }
+#endif
 }
 
 int main(int argc, char **argv) {

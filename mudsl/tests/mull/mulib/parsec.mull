@@ -1,0 +1,21 @@
+mulib Parsec <- G:MulibWrap("Parsec")
+G:Assert(G:Type(Parsec) == "mulib");
+G:Assert(Parsec == G:MulibWrap("parsec"));
+val digit <- Parsec:Range(48, 57);
+val digits <- Parsec:Repeat(digit, 1, 100);
+val captured <- Parsec:Capture(digits, 42);
+val grammar <- Parsec:Sequence([captured, Parsec:End()], 2);
+val result <- Parsec:New("result");
+G:Assert(Parsec:Run(grammar, "12345", 5, nil, result) == 1);
+G:Assert(result:consumed == 5);
+G:Assert(result:count == 1);
+G:Assert(result:captures:tag == 42);
+G:Assert(result:captures:length == 5);
+Parsec:ResultFree(result);
+G:Assert(Parsec:Run(grammar, "12x", 3, nil, result) == 0);
+G:Assert(result:error:offset == 2);
+Parsec:ResultFree(result);
+val named <- Parsec:Named(Parsec:Literal("hello", 5), "greeting");
+G:Assert(Parsec:Run(named, "hello", 5, nil, result) == 1);
+Parsec:ResultFree(result);
+"parsec ok";

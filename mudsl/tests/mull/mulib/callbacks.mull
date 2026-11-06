@@ -1,0 +1,17 @@
+mulib P <- G:MulibWrap("Parsec")
+var calls <- 0;
+val predicate <- P:Callback("mulib_parsec_predicate_fn", fn(byte, user) {
+    calls <- calls + 1;
+    return byte == 120;
+});
+val parser <- P:Satisfy(predicate, nil, "x");
+val result <- P:New("result");
+G:Assert(P:Run(parser, "x", 1, nil, result) == 1);
+P:ResultFree(result);
+G:Assert(calls == 1);
+G:Assert(predicate(120, nil) == 1);
+G:Assert(calls == 2);
+val inlineParser <- P:Satisfy(fn(byte, user) { return byte == 97; }, nil, "a");
+G:Assert(P:Run(inlineParser, "a", 1, nil, result) == 1);
+P:ResultFree(result);
+"callbacks ok";
