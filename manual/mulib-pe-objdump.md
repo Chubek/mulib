@@ -3,7 +3,8 @@
 Include `mulib-pe-objdump.h`. Define `MULIB_IMPL_PE_OBJDUMP`,
 `MULIB_IMPL_COFF_OBJDUMP`, `MULIB_IMPL_PE`, `MULIB_IMPL_COFF`, `MULIB_IMPL_ENDIAN`,
 `MULIB_IMPL_OBJDUMP`, `MULIB_IMPL_TERMSTYLE`, `MULIB_IMPL_TERMINFO`,
-`MULIB_IMPL_STRBUF`. [Example](../examples/modules/pe-objdump.c).
+`MULIB_IMPL_STRBUF`, `MULIB_IMPL_CSS`, `MULIB_IMPL_XML`, `MULIB_IMPL_UTF8`,
+`MULIB_IMPL_VTERM`, `MULIB_IMPL_GRID`. [Example](../examples/modules/pe-objdump.c).
 
 `mulib_pe_objdump(data, length, options, out)` opens PE32/PE32+ and atomically
 appends a complete text dump. It returns 1 on success and 0 on malformed input,

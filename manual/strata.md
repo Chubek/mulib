@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 533 headers, 631 direct dependency edges.
+Inventory: 536 headers, 635 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (180 modules)
+## Stratum 0 (182 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -63,9 +63,11 @@ Compatibility group: `parsec`, `peg`.
 | [dns](mulib-dns.md) | none |
 | [drm](mulib-drm.md) | none |
 | [dsu](mulib-dsu.md) | none |
+| [dynbox](mulib-dynbox.md) | none |
 | [dyncall](mulib-dyncall.md) | none |
 | [dynload](mulib-dynload.md) | none |
 | [ebpf](mulib-ebpf.md) | none |
+| [edbuf](mulib-edbuf.md) | none |
 | [egraph](mulib-egraph.md) | none |
 | [embeddingsdb](mulib-embeddingsdb.md) | none |
 | [emitter](mulib-emitter.md) | none |
@@ -330,7 +332,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (77 modules)
+## Stratum 2 (76 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -399,7 +401,6 @@ Compatibility group: `parsec`, `peg`.
 | [superblocks](mulib-superblocks.md) | `gssair` |
 | [svg](mulib-svg.md) | `xml` |
 | [term_rewriting](mulib-term_rewriting.md) | `ast` |
-| [termstyle](mulib-termstyle.md) | `terminfo` |
 | [tree_parsing](mulib-tree_parsing.md) | `ast` |
 | [tui](mulib-tui.md) | `terminfo`, `termkey`, `vterm` |
 | [unibreak](mulib-unibreak.md) | `uniproc` |
@@ -445,7 +446,6 @@ Compatibility group: `parsec`, `peg`.
 | [mumq-server](mulib-mumq-server.md) | `mumq` |
 | [mumq-subscriber](mulib-mumq-subscriber.md) | `mumq` |
 | [oauth](mulib-oauth.md) | `oauth2` |
-| [objdump](mulib-objdump.md) | `termstyle` |
 | [objfile](mulib-objfile.md) | `binfile`, `elfutils` |
 | [objfilebuilder](mulib-objfilebuilder.md) | `objfilewriter` |
 | [objfileinjector](mulib-objfileinjector.md) | `elfutils` |
@@ -458,6 +458,7 @@ Compatibility group: `parsec`, `peg`.
 | [spellcheck](mulib-spellcheck.md) | `bktree`, `cache`, `endian`, `fst`, `utf8`, `weighted-edit-distance` |
 | [sqlite](mulib-sqlite.md) | `arena`, `parsec`, `peg`, `rng`, `sqlite-pager`, `strbuf`, `utf8` |
 | [stylesheet](mulib-stylesheet.md) | `css` |
+| [termstyle](mulib-termstyle.md) | `css`, `terminfo`, `vterm` |
 | [udev](mulib-udev.md) | `parsec` |
 | [vectgfx](mulib-vectgfx.md) | `glx`, `parsec`, `vec` |
 | [virtio-guest](mulib-virtio-guest.md) | `virtio` |
@@ -465,7 +466,7 @@ Compatibility group: `parsec`, `peg`.
 | [viterbi_decoding](mulib-viterbi_decoding.md) | `hidden_markov_chain` |
 | [vmm-host](mulib-vmm-host.md) | `virtio` |
 
-## Stratum 4 (34 modules)
+## Stratum 4 (33 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -473,23 +474,21 @@ Compatibility group: `parsec`, `peg`.
 | [bootmgr](mulib-bootmgr.md) | `bios`, `efi`, `uefiutils` |
 | [bson](mulib-bson.md) | `buffer`, `json` |
 | [cbor](mulib-cbor.md) | `buffer`, `json` |
-| [coff-objdump](mulib-coff-objdump.md) | `coff`, `objdump` |
 | [coffbuilder](mulib-coffbuilder.md) | `binfilewriter`, `buffer`, `bycutils`, `objfilebuilder` |
 | [containerboost](mulib-containerboost.md) | `container-runtime`, `imgformat` |
 | [containerd-mount](mulib-containerd-mount.md) | `container-vfs`, `fuse` |
 | [dbschema](mulib-dbschema.md) | `json` |
 | [documentdb](mulib-documentdb.md) | `json`, `memtable` |
 | [dsymspec](mulib-dsymspec.md) | `json` |
-| [elf-objdump](mulib-elf-objdump.md) | `elf`, `objdump` |
 | [elfbuilder](mulib-elfbuilder.md) | `objfilebuilder` |
 | [imgbuildspec](mulib-imgbuildspec.md) | `imgformat`, `rootfs-buildspec` |
 | [inet6](mulib-inet6.md) | `inet4` |
 | [isel](mulib-isel.md) | `archml`, `isched`, `lir`, `lowopt` |
-| [macho-objdump](mulib-macho-objdump.md) | `macho`, `objdump` |
 | [machobuilder](mulib-machobuilder.md) | `binfilewriter`, `bycutils`, `machobuidler`, `objfilebuilder` |
 | [messagepack](mulib-messagepack.md) | `buffer`, `json` |
 | [microcc](mulib-microcc.md) | `depir`, `isched`, `lowopt`, `machine`, `strbuf` |
 | [mune](mulib-mune.md) | `dynload`, `jit`, `parsec` |
+| [objdump](mulib-objdump.md) | `termstyle` |
 | [ocicontainermetadata](mulib-ocicontainermetadata.md) | `json`, `ocicontainer` |
 | [ocicontainernetwork](mulib-ocicontainernetwork.md) | `inet4` |
 | [ociimage](mulib-ociimage.md) | `json` |
@@ -498,19 +497,21 @@ Compatibility group: `parsec`, `peg`.
 | [readline](mulib-readline.md) | `json`, `strbuf`, `terminfo`, `termkey`, `termutils` |
 | [rpc](mulib-rpc.md) | `json` |
 | [template](mulib-template.md) | `json`, `strbuf`, `utf8` |
+| [termsyn](mulib-termsyn.md) | `edbuf`, `termstyle` |
 | [toml](mulib-toml.md) | `json`, `strbuf`, `utf8` |
 | [vmm](mulib-vmm.md) | `virtio-os`, `vmm-memory` |
 | [walker](mulib-walker.md) | `evtlistener` |
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (30 modules)
+## Stratum 5 (32 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [acl](mulib-acl.md) | `inet6` |
 | [assembler](mulib-assembler.md) | `dsymspec`, `emitter`, `linker` |
 | [audrey](mulib-audrey.md) | `midi`, `miniflac`, `minimpeg`, `minivorbis`, `miniwav`, `mune` |
+| [coff-objdump](mulib-coff-objdump.md) | `coff`, `objdump` |
 | [container-jitboost](mulib-container-jitboost.md) | `containerboost`, `jit` |
 | [container-kvmboost](mulib-container-kvmboost.md) | `containerboost`, `kvmcontainer` |
 | [container-qvmboost](mulib-container-qvmboost.md) | `containerboost` |
@@ -519,18 +520,19 @@ Compatibility group: `parsec`, `peg`.
 | [daemon](mulib-daemon.md) | `mune`, `process`, `strbuf` |
 | [dbserializer](mulib-dbserializer.md) | `bson`, `cbor`, `messagepack` |
 | [distribtask](mulib-distribtask.md) | `mune`, `utf8`, `yaml` |
+| [elf-objdump](mulib-elf-objdump.md) | `elf`, `objdump` |
 | [exec](mulib-exec.md) | `mune`, `perf`, `process` |
 | [getaddr](mulib-getaddr.md) | `inet6` |
 | [imgbuilder](mulib-imgbuilder.md) | `imgbuildspec`, `rootfsbuilder` |
 | [imgtrackerd](mulib-imgtrackerd.md) | `bycutils`, `memtable`, `ociimage` |
 | [immgtk](mulib-immgtk.md) | `glx`, `mune` |
 | [inte6](mulib-inte6.md) | `inet6` |
+| [macho-objdump](mulib-macho-objdump.md) | `macho`, `objdump` |
 | [muidl](mulib-muidl.md) | `buffer`, `dbschema` |
 | [ocicontainernetwrork](mulib-ocicontainernetwrork.md) | `ocicontainernetwork` |
 | [ociimagebuilder](mulib-ociimagebuilder.md) | `ociimage` |
 | [oix](mulib-oix.md) | `base64`, `confuse`, `crc32`, `emitter`, `json`, `kvm`, `toml`, `yaml` |
 | [optml](mulib-optml.md) | `isel`, `peephole`, `superinstr` |
-| [pe-objdump](mulib-pe-objdump.md) | `coff-objdump`, `pe` |
 | [pglayout](mulib-pglayout.md) | `bidi`, `fontshape`, `json`, `stylesheet`, `unibreak`, `yaml` |
 | [row-rdbms](mulib-row-rdbms.md) | `dbschema`, `documentdb` |
 | [vizigen](mulib-vizigen.md) | `asdl`, `binfilereader`, `binfilewriter`, `mmfile`, `walker` |
@@ -539,7 +541,7 @@ Compatibility group: `parsec`, `peg`.
 | [webidl](mulib-webidl.md) | `buffer`, `dbschema`, `utf8` |
 | [wit](mulib-wit.md) | `buffer`, `dbschema` |
 
-## Stratum 6 (10 modules)
+## Stratum 6 (11 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -551,6 +553,7 @@ Compatibility group: `parsec`, `peg`.
 | [fswatch](mulib-fswatch.md) | `daemon`, `glob`, `select`, `vfs` |
 | [git](mulib-git.md) | `exec` |
 | [glyph](mulib-glyph.md) | `fontdraw`, `ligature`, `pglayout`, `sysfonts` |
+| [pe-objdump](mulib-pe-objdump.md) | `coff-objdump`, `pe` |
 | [task](mulib-task.md) | `exec` |
 | [uri](mulib-uri.md) | `inte6`, `strbuf` |
 

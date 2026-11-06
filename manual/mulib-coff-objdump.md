@@ -2,7 +2,8 @@
 
 Include `mulib-coff-objdump.h`. Define `MULIB_IMPL_COFF_OBJDUMP`, `MULIB_IMPL_COFF`,
 `MULIB_IMPL_ENDIAN`, `MULIB_IMPL_OBJDUMP`, `MULIB_IMPL_TERMSTYLE`,
-`MULIB_IMPL_TERMINFO`, `MULIB_IMPL_STRBUF`.
+`MULIB_IMPL_TERMINFO`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_CSS`, `MULIB_IMPL_XML`,
+`MULIB_IMPL_UTF8`, `MULIB_IMPL_VTERM`, `MULIB_IMPL_GRID`.
 [Example](../examples/modules/coff-objdump.c).
 
 `mulib_coff_objdump(data, length, options, out)` opens the checked COFF reader

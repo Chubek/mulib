@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **533 implemented modules**.
+A C11 modular single-header utility library with **536 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -62,6 +62,22 @@ command constructors and detailed runtime string docstrings, with generic dispat
 for additional Git commands and extensions.
 
 ## Integration
+
+### Native calls and terminal editors
+
+[`dynbox`](manual/mulib-dynbox.md) provides dependency-free Linux x86-64 SysV
+runtime-typed calls, variadics, natural C structures and native callback closures.
+[`dynload`](manual/mulib-dynload.md) adds cross-platform library loading, typed
+symbol lookup, native filenames and export helpers. Dynbox explicitly reports
+unsupported ABIs; it does not claim all of libffi's architecture/type coverage.
+
+[`edbuf`](manual/mulib-edbuf.md) shares transactional editing, marks and undo/redo
+across gap, AVL-rope and piece-table storage. [`termstyle`](manual/mulib-termstyle.md)
+maps CSS into shared terminal-cell styles and safe capability-backed output,
+preserving its existing indexed API. [`termsyn`](manual/mulib-termsyn.md) adds
+incremental line-state lexers, custom backends and CSS token themes over edbuf.
+These are byte-oriented buffers and lexical colorizers, not full language parsers
+or Unicode editor-layout engines.
 
 ### Firmware, initramfs and multicall utilities
 

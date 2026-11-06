@@ -203,7 +203,8 @@ int mulib_virtio_guest_attach(mulib_virtio_guest_t *out, mulib_vmmdev_exchange_f
   int rc;
   if (!out) return MULIB_VMMDEV_EINVAL;
   memset(out, 0, sizeof *out);
-  if (!fn || !instance || !scratch || size < 512 || size > UINT64_MAX - address) return MULIB_VMMDEV_EINVAL;
+  if (!fn || !instance || !scratch || size < 512 || size > UINT64_MAX - address
+      || size > UINTPTR_MAX - (uintptr_t)scratch) return MULIB_VMMDEV_EINVAL;
   memset(&g, 0, sizeof g); g.exchange = fn; g.context = context; g.instance = instance;
   g.address = address; g.scratch = (unsigned char *)scratch; g.scratch_size = size;
   rc = mulib_virtio_guest_call_(&g, MULIB_VMMDEV_PROBE, 0, 0, NULL, 0, reply, &r); if (rc) return rc;
@@ -214,7 +215,9 @@ int mulib_virtio_guest_attach(mulib_virtio_guest_t *out, mulib_vmmdev_exchange_f
   p = mulib_virtio_profile(g.device_id);
   if (!p || p->support != MULIB_VIRTIO_PROFILE || (optional & ~(p->features | MULIB_VIRTIO_VERSION_1)))
     return MULIB_VMMDEV_ENOTSUP;
-  if (g.queues != p->queues || g.config_size < p->config_size || g.config_size > MULIB_VIRTIO_CONFIG_MAX
+  if (g.queues != p->queues || (g.status & ~207u)
+      || (p->id == MULIB_VIRTIO_9P ? g.config_size < 3 : g.config_size != p->config_size)
+      || g.config_size > MULIB_VIRTIO_CONFIG_MAX
       || g.limit < 512 || g.limit > MULIB_VIRTIO_TRANSFER_MAX) return MULIB_VMMDEV_EIO;
   if (!(g.offered & MULIB_VIRTIO_VERSION_1) || (g.offered & p->required_features) != p->required_features)
     return MULIB_VMMDEV_ENOTSUP;
@@ -270,6 +273,9 @@ int mulib_virtio_guest_submit(mulib_virtio_guest_t *g, unsigned q,
     if (!spans[i].length || spans[i].flags > 1 || (writing && !spans[i].flags)
         || spans[i].length > UINT64_MAX - spans[i].address) return MULIB_VMMDEV_EINVAL;
     if (spans[i].flags) writing = 1;
+    for (unsigned j = 0; j < i; ++j)
+      if (spans[i].address < spans[j].address + spans[j].length
+          && spans[j].address < spans[i].address + spans[i].length) return MULIB_VMMDEV_EINVAL;
     if (spans[i].length > g->limit - *total) return MULIB_VMMDEV_EBOUNDS;
     *total += spans[i].length;
     mulib_vmmdev_store64(wire + 16u * i, spans[i].address);

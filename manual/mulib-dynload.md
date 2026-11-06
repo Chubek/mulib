@@ -11,7 +11,7 @@ POSIX builds use `dlopen(RTLD_NOW | RTLD_LOCAL)`, `dlsym`, and `dlclose`. Window
 builds use `LoadLibraryA`, `GetModuleHandleA`, `GetProcAddress`, and `FreeLibrary`.
 Other platforms explicitly return `ENOTSUP`. Windows paths use the native ANSI
 API encoding, not a promised UTF-8 conversion. This API does not implement a
-plugin protocol, dependency isolation, custom search paths, lazy loading, or a
+plugin protocol, dependency isolation, custom search paths, or a
 sandbox. Library constructors/destructors execute native code. Only load trusted
 libraries; prefer explicit paths and understand the operating system's loader
 search policy.
@@ -24,10 +24,14 @@ defined. The declaration-only header is usable from C11 or C++17.
 ```c
 mulib_dynload_t library = MULIB_DYNLOAD_INIT;
 int mulib_dynload_open(mulib_dynload_t *, const char *path, char *error, size_t capacity);
+int mulib_dynload_open_ex(mulib_dynload_t *, const char *path, unsigned flags, char *error, size_t capacity);
 int mulib_dynload_open_pinned(mulib_dynload_t *, const char *path, char *error, size_t capacity);
 int mulib_dynload_symbol(const mulib_dynload_t *, const char *name, void **symbol,
                         char *error, size_t capacity);
 int mulib_dynload_close(mulib_dynload_t *, char *error, size_t capacity);
+int mulib_dynload_function(const mulib_dynload_t *, const char *name, void *function,
+                          size_t function_size, char *error, size_t capacity);
+int mulib_dynload_native_name(const char *name, char *output, size_t capacity);
 ```
 
 Initialize each handle and do not copy it while live. Passing NULL as the path
@@ -35,6 +39,17 @@ opens the current process. POSIX owns that loader reference; Windows borrows the
 main-module reference and does not pass it to `FreeLibrary`. Named Windows
 modules are owned normally. Open fails with `ESTATE` if already open. Failure
 leaves the handle unchanged.
+
+`open_ex` adds NOW/LAZY and LOCAL/GLOBAL flags on POSIX; omitted groups default
+to NOW and LOCAL. Conflicting/unknown flags are invalid. Windows rejects LAZY
+and GLOBAL with ENOTSUP. `open` retains its eager/local default behavior.
+
+The dynalo-style native-name helper formats a **bare** name as `libNAME.so`
+(Linux/Unix), `libNAME.dylib` (macOS), or `NAME.dll` (Windows). It appends prefix
+and suffix unconditionally, rejects empty/dot/path names, and returns ERANGE
+without modifying output if capacity (including NUL) is insufficient. In-place
+conversion is supported when the original name is in adequate writable storage.
+The helper does not search/load the name or infer whether it already has a suffix.
 
 `open_pinned` requires a named path and additionally pins the native module until
 process exit using POSIX `RTLD_NODELETE` or Windows `GetModuleHandleEx` with PIN.
@@ -58,6 +73,18 @@ type. Do not use a wrong prototype or assume all function pointers have the same
 representation. The Windows implementation checks representational size before
 copying `FARPROC` into the API's `void *` output.
 
+`mulib_dynload_function(&library, "name", &function, sizeof function, error, cap)`
+performs the equal-size host-ABI conversion without an unsafe `void **` cast.
+`function` is an exactly typed function-pointer variable; its bytes change only
+on successful lookup. The loader cannot validate the function's prototype.
+This also works with an erased `mulib_dynbox_fn` for runtime-typed calls through
+[dynbox](mulib-dynbox.md). Keep the library open until all calls/closures finish.
+
+For building plugins, `MULIB_DYNLOAD_EXPORT` supplies native export visibility;
+define `MULIB_DYNLOAD_EXPORT_SYMBOLS` when building a Windows DLL (otherwise it
+means dllimport). `MULIB_DYNLOAD_CALL` is __cdecl on Windows, empty elsewhere.
+These are C declarations/macros, not dynalo's C++ RAII/template interface.
+
 Close is idempotent. A native close failure retains the handle for retry. Do not
 close concurrently with lookups or calls through its symbols. No global mutable
 MuLIB error buffer or process-global handle cache is maintained.
@@ -65,7 +92,7 @@ MuLIB error buffer or process-global handle cache is maintained.
 ## Errors
 
 All APIs return zero on success and negative `EINVAL`, `EIO` (native loader
-failure), `ENOTSUP`, or `ESTATE`. On every call an optional caller-owned error
+failure), `ENOTSUP`, `ESTATE`, or `ERANGE` (name-buffer capacity). On loader calls an optional caller-owned error
 buffer receives a terminated message, truncated to capacity minus one; success
 clears it. NULL buffers or zero capacity are allowed. Capacity one produces only
 a NUL. Error buffers must not overlap input strings, output symbols, or handle

@@ -33,6 +33,9 @@ FEATURES_OK. Call config helpers for device-specific setup, then `start()`.
 Optional features not offered are ignored; asking for a feature not implemented
 by this profile is ENOTSUP. Failure zeroes the output client. Never attach over
 an active client without first resetting it.
+Discovery rejects reserved/out-of-byte status bits, incorrect queue counts,
+incorrect fixed configuration sizes and out-of-range transfer limits before
+resetting the provider. The variable-length 9P configuration is 3..256 bytes.
 
 `reset()` advances the epoch and invalidates submission. Reattach before using
 the device again. An old client cannot submit after another owner resets the
@@ -45,8 +48,9 @@ deduplicate requests.
 `submit()` sends caller-managed guest DMA spans. These may point anywhere in
 the mapped permitted guest RAM, not only in the frontend workspace. The caller
 owns layout and native device-response parsing. The function validates ordering,
-length sums, queue range and completion length. The backend additionally checks
-mapping permissions, overlap, framing and device semantics.
+length sums, overlap, queue range and completion length. Invalid local chains are
+rejected without transport dispatch. The backend additionally checks mapping
+permissions, framing and device semantics.
 
 `transact()` is a copying convenience API. It concatenates readable input then
 writable response capacity inside the workspace, submits up to two spans, and

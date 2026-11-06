@@ -16,6 +16,7 @@ typedef struct fixture {
   size_t packet_size;
   unsigned calls, fail, again, direction, value;
   unsigned short_reply;
+  unsigned reset_result;
   uint64_t clock_ns;
   mulib_vmmdev_region_t region;
   mulib_virtio_os_device_t device;
@@ -29,7 +30,7 @@ static int service(void *context, const mulib_virtio_service_request_t *r, size_
 {
   fixture_t *f = (fixture_t *)context;
   ++f->calls; *used = 0;
-  if (r->operation == MULIB_VIRTIO_SERVICE_RESET) return 0;
+  if (r->operation == MULIB_VIRTIO_SERVICE_RESET) return (int)f->reset_result;
   if (f->again) return MULIB_VMMDEV_AGAIN;
   if (f->fail) return MULIB_VMMDEV_EIO;
   switch (r->operation) {
@@ -172,7 +173,143 @@ static int corrupt_exchange(void *context, const void *request, size_t n, void *
   if (f->corrupt_reply == 2) p[12] ^= 1;
   if (f->corrupt_reply == 3) mulib_endian_store_le32(p + 32, UINT32_MAX);
   if (f->corrupt_reply == 4) mulib_endian_store_le32(p + 36, 1);
+  if (f->corrupt_reply == 5) mulib_endian_store_le32(p + 60, 1); /* RNG config must be empty. */
+  if (f->corrupt_reply == 6) mulib_endian_store_le32(p + 44, 256); /* Status is a byte. */
+  if (f->corrupt_reply == 7) mulib_endian_store_le32(p + 44, 16); /* Reserved status bit. */
+  if (f->corrupt_reply == 8) mulib_endian_store_le32(p + 56, 2); /* RNG has one queue. */
+  if (f->corrupt_reply == 9) mulib_endian_store_le32(p + 68, 511);
   return 0;
+}
+static void isolation(void)
+{
+  fixture_t f;
+  mulib_virtio_os_bus_t bus, previous;
+  mulib_vmmdev_region_t regions[2];
+  mulib_vmmdev_memory_t memory = {regions, 2};
+  unsigned char request[40], response[72];
+  mulib_vmmdev_message_t m = {0};
+  size_t n, size = sizeof request;
+  unsigned calls;
+  init(&f, MULIB_VIRTIO_RNG, NULL, 0, 0);
+  m.opcode = MULIB_VMMDEV_RESET; m.device = 42; m.epoch = f.device.epoch;
+  assert(!mulib_vmmdev_encode(&m, request, &size));
+  calls = f.calls;
+  {
+    void *forbidden[] = {f.ram, f.input, f.output, &f.device, &f.bus, f.devices, &f.region};
+    for (size_t i = 0; i < sizeof forbidden / sizeof forbidden[0]; ++i) {
+      n = sizeof response;
+      assert(mulib_virtio_os_exchange(&f.bus, request, size, forbidden[i], &n) == MULIB_VMMDEV_EINVAL);
+      assert(n == sizeof response && f.calls == calls && f.device.epoch == m.epoch);
+    }
+  }
+  memcpy(f.ram, request, size); n = sizeof response;
+  assert(mulib_virtio_os_exchange(&f.bus, f.ram, size, response, &n) == MULIB_VMMDEV_EINVAL);
+  memcpy(f.input, request, size); n = sizeof response;
+  assert(mulib_virtio_os_exchange(&f.bus, f.input, size, response, &n) == MULIB_VMMDEV_EINVAL);
+  n = size;
+  assert(mulib_virtio_os_exchange(&f.bus, request, size, request, &n) == MULIB_VMMDEV_EINVAL);
+  assert(mulib_virtio_os_exchange(&f.bus, request, size, response, &f.device.limit) == MULIB_VMMDEV_EINVAL);
+  assert(f.device.limit == sizeof f.input);
+  {
+    union { size_t capacity; unsigned char bytes[80]; } storage;
+    storage.capacity = sizeof storage.bytes;
+    assert(mulib_virtio_os_exchange(&f.bus, request, size, storage.bytes, &storage.capacity) == MULIB_VMMDEV_EINVAL);
+    assert(storage.capacity == sizeof storage.bytes);
+  }
+  assert(f.calls == calls && f.device.epoch == m.epoch);
+
+  /* Every form of endpoint metadata must remain outside guest RAM. */
+  memset(&bus, 0xa5, sizeof bus); memcpy(&previous, &bus, sizeof bus);
+  regions[0] = f.region;
+  regions[1].address = 0x10000; regions[1].permissions = 3;
+  {
+    void *forbidden[] = {&f.device, &bus, f.devices, regions, f.input, f.output};
+    const size_t sizes[] = {sizeof f.device, sizeof bus, sizeof f.devices, sizeof regions,
+                            sizeof f.input, sizeof f.output};
+    for (size_t i = 0; i < sizeof sizes / sizeof sizes[0]; ++i) {
+      regions[1].data = (unsigned char *)forbidden[i]; regions[1].size = sizes[i];
+      assert(mulib_virtio_os_bus_init(&bus, f.devices, 1, memory) == MULIB_VMMDEV_EINVAL);
+      assert(!memcmp(&bus, &previous, sizeof bus));
+    }
+  }
+  /* Valid adjacent host buffers are not mistaken for aliases. */
+  n = sizeof response;
+  assert(!mulib_virtio_os_exchange(&f.bus, request, size, response, &n));
+  assert(f.calls == calls + 1 && f.device.epoch == m.epoch + 1);
+}
+static void reset_cleanup(void)
+{
+  fixture_t f;
+  mulib_vmmdev_message_t r;
+  uint32_t epoch, generation;
+  unsigned char config[56] = {0};
+  unsigned char request[24] = {0}, response[16];
+  size_t n;
+  init(&f, MULIB_VIRTIO_RNG, NULL, 0, 0);
+  memset(f.input, 0xa5, sizeof f.input); memset(f.output, 0x5a, sizeof f.output);
+  epoch = f.device.epoch; generation = f.device.generation;
+  f.reset_result = MULIB_VMMDEV_EIO;
+  assert(mulib_virtio_guest_reset(&f.guest) == MULIB_VMMDEV_EIO);
+  assert(f.device.epoch == epoch && f.device.generation == generation);
+  assert(f.device.status & MULIB_VIRTIO_NEEDS_RESET);
+  assert(f.input[0] == 0xa5 && f.output[0] == 0x5a);
+  f.reset_result = 0;
+  assert(!mulib_virtio_guest_reset(&f.guest));
+  for (size_t i = 0; i < sizeof f.input; ++i) assert(!f.input[i] && !f.output[i]);
+  assert(f.device.epoch == epoch + 1 && !f.device.status && !f.device.negotiated);
+  assert(f.device.generation == generation + 1);
+
+  /* Exhaustion must not invoke RESET; host retirement must still release it. */
+  f.device.epoch = UINT32_MAX;
+  {
+    unsigned calls = f.calls;
+    assert(raw(&f, MULIB_VMMDEV_RESET, UINT32_MAX, 0, 0, NULL, 0, &r) == MULIB_VMMDEV_ESTATE);
+    assert(f.calls == calls);
+    f.reset_result = MULIB_VMMDEV_AGAIN;
+    assert(mulib_virtio_os_shutdown(&f.device) == MULIB_VMMDEV_AGAIN && f.device.epoch == UINT32_MAX);
+    f.reset_result = 0;
+    assert(!mulib_virtio_os_shutdown(&f.device) && !f.device.epoch);
+    calls = f.calls;
+    assert(!mulib_virtio_os_shutdown(&f.device) && f.calls == calls);
+    assert(raw(&f, MULIB_VMMDEV_PROBE, 0, 0, 0, NULL, 0, &r) == MULIB_VMMDEV_ENODEV);
+  }
+
+  /* Memory ownership is persistent, unlike scratch and negotiated state. */
+  mulib_vmmdev_store64(config, 4096); mulib_vmmdev_store64(config + 16, 0x100000);
+  mulib_vmmdev_store64(config + 24, 8192); mulib_vmmdev_store64(config + 32, 8192);
+  mulib_vmmdev_store64(config + 48, 8192);
+  init(&f, MULIB_VIRTIO_MEM, config, sizeof config, 0);
+  mulib_vmmdev_store64(request + 8, 0x100000); mulib_vmmdev_store16(request + 16, 1);
+  n = sizeof response;
+  assert(!mulib_virtio_guest_mem_request(&f.guest, 0, request, sizeof request, response, &n));
+  assert(!mulib_vmmdev_load16(response) && f.device.plugged[0] == 1);
+  assert(!mulib_virtio_guest_reset(&f.guest));
+  assert(f.device.plugged[0] == 1 && mulib_vmmdev_load64(f.device.config + 40) == 4096);
+}
+static void frontend_validation(void)
+{
+  fixture_t f;
+  mulib_virtio_guest_t guest, zero = {0};
+  mulib_vmmdev_span_t spans[2] = {{0x1000,16,1},{0x1008,16,1}};
+  unsigned calls;
+  size_t used;
+  init(&f, MULIB_VIRTIO_RNG, NULL, 0, 0);
+  calls = f.calls;
+  for (unsigned i = 5; i <= 9; ++i) {
+    f.corrupt_reply = i;
+    memset(&guest, 0xa5, sizeof guest);
+    assert(mulib_virtio_guest_attach(&guest, corrupt_exchange, &f, 42, 0,
+                                   0x1000, f.ram, sizeof f.ram) == MULIB_VMMDEV_EIO);
+    assert(!memcmp(&guest, &zero, sizeof guest));
+    assert(f.calls == calls && f.device.epoch == 2); /* Bad discovery cannot reset the provider. */
+  }
+  {
+    uint64_t token = f.guest.token;
+    assert(mulib_virtio_guest_submit(&f.guest, 0, spans, 2, &used) == MULIB_VMMDEV_EINVAL);
+    assert(!used && f.guest.token == token && f.calls == calls);
+    spans[1].address = 0x1010;
+    assert(!mulib_virtio_guest_submit(&f.guest, 0, spans, 2, &used) && used == 32);
+  }
 }
 static void transport(void)
 {
@@ -698,6 +835,13 @@ static void new_configurations(void)
   config[2] = 0; config[8] = 1;
   assert(mulib_virtio_os_init(&device, &options) == MULIB_VMMDEV_EINVAL);
   assert(!memcmp(&device, &previous, sizeof device));
+  options.device_id = MULIB_VIRTIO_RNG; options.config_size = 0;
+  options.input_scratch = (unsigned char *)&device;
+  assert(mulib_virtio_os_init(&device, &options) == MULIB_VMMDEV_EINVAL);
+  assert(!memcmp(&device, &previous, sizeof device));
+  options.input_scratch = input; options.output_scratch = (unsigned char *)&device;
+  assert(mulib_virtio_os_init(&device, &options) == MULIB_VMMDEV_EINVAL);
+  assert(!memcmp(&device, &previous, sizeof device));
 }
 
 int main(void)
@@ -720,6 +864,6 @@ int main(void)
   transport(); block(); streams(); devices(); memory_device();
   scsi_iommu_sound(); crypto_rpmb(); gpu_vsock();
   can_device(); bt_device(); spi_device(); rtc_device(); nsm_device(); request_entry_points();
-  new_configurations();
+  new_configurations(); isolation(); reset_cleanup(); frontend_validation();
   return 0;
 }

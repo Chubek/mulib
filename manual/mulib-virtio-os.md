@@ -43,10 +43,22 @@ An active bus's pointer/region inventories cannot move. There is no allocator,
 worker thread, hidden device opening or native interrupt injection.
 Calls and host configuration updates require an external VM lock.
 
+Bus initialization rejects guest mappings of the bus, device objects (including
+session keys), device/region inventories and scratch arrays. Scratch must also
+be disjoint from endpoint metadata. Exchange request/response buffers and the
+capacity word must be private host storage, disjoint from endpoint storage and
+from each other; invalid aliases return EINVAL before dispatch. A trap adapter
+must copy guest packets into private host storage, not pass mapped RAM directly.
+The embedding application must additionally keep provider-private state, code
+and other host allocations out of the RAM inventory.
+
 `transfer_limit` is 512..1048576 bytes for **each** stream; both private scratch
 arrays must be at least that long. They cannot alias each other or mapped guest
 RAM. Provider output is copied to guest memory only after validation. GPU backing
 associations additionally require stable mappings until detached/reset.
+Successful protocol RESET erases both complete scratch arrays as well as cipher
+sessions and transient state. Failed RESET retains the epoch and marks NEEDS_RESET;
+scratch is erased only after the provider successfully completes cleanup.
 
 ## Construction configuration
 

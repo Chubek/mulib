@@ -165,8 +165,9 @@ It is frozen after FEATURES_OK. Unsupported transport features are never offered
 No queue request is consumed before status 15. Driver-written configuration
 requires FEATURES_OK and a profile-defined writable field.
 
-RESET calls the provider synchronously, then clears negotiated features, status
-and transient state and increments the epoch. Stale requests cannot cross reset.
+RESET calls the provider synchronously, then clears negotiated features, status,
+both private scratch streams and transient state and increments the epoch.
+Stale requests cannot cross reset.
 Epoch UINT32_MAX cannot reset: retire the instance rather than reuse an epoch.
 Providers must release/reset external resources before returning success. If a
 provider fails reset, the device enters NEEDS_RESET without advancing the epoch.
@@ -342,7 +343,7 @@ python3 tools/check_virtio.py
 python3 tools/check_virtio.py --sanitizers
 python3 tools/amalgamate_virtio.py --check
 cmake -S . -B build
-cmake --build build --target mulib_virtio_devices_link mulib_test_virtio mulib_test_vmmdev mulib_test_vmm mulib_test_vmm_kvm
+cmake --build build --target mulib_virtio_link mulib_virtio_devices_link mulib_test_virtio mulib_test_vmmdev mulib_test_vmm mulib_test_vmm_kvm
 ctest --test-dir build -R 'virtio|mulib_test_(vmmdev|vmm|vmm_kvm)$' --output-on-failure
 ```
 

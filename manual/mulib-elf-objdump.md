@@ -2,7 +2,8 @@
 
 Include `mulib-elf-objdump.h`. Define `MULIB_IMPL_ELF_OBJDUMP`, `MULIB_IMPL_ELF`,
 `MULIB_IMPL_ENDIAN`, `MULIB_IMPL_OBJDUMP`, `MULIB_IMPL_TERMSTYLE`,
-`MULIB_IMPL_TERMINFO`, `MULIB_IMPL_STRBUF` before inclusion in one TU.
+`MULIB_IMPL_TERMINFO`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_CSS`, `MULIB_IMPL_XML`,
+`MULIB_IMPL_UTF8`, `MULIB_IMPL_VTERM`, `MULIB_IMPL_GRID` before inclusion in one TU.
 [Example](../examples/modules/elf-objdump.c).
 
 `mulib_elf_objdump(data, length, options, out)` validates ELF32/ELF64 in either

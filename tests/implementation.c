@@ -1,3 +1,6 @@
+#define MULIB_IMPL_DYNBOX
+#define MULIB_IMPL_EDBUF
+#define MULIB_IMPL_TERMSYN
 #define MULIB_IMPL_BIOS
 #define MULIB_IMPL_CPIO
 #define MULIB_IMPL_INITSYSUTILS
@@ -1071,3 +1074,6 @@
 #include "mulib-shoebox-contract.h"
 #include "mulib-uefi.h"
 #include "mulib-uefiutils.h"
+#include "mulib-dynbox.h"
+#include "mulib-edbuf.h"
+#include "mulib-termsyn.h"

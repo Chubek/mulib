@@ -2,7 +2,9 @@
 
 Include `mulib-macho-objdump.h`. Define `MULIB_IMPL_MACHO_OBJDUMP`,
 `MULIB_IMPL_MACHO`, `MULIB_IMPL_ENDIAN`, `MULIB_IMPL_OBJDUMP`,
-`MULIB_IMPL_TERMSTYLE`, `MULIB_IMPL_TERMINFO`, `MULIB_IMPL_STRBUF`.
+`MULIB_IMPL_TERMSTYLE`, `MULIB_IMPL_TERMINFO`, `MULIB_IMPL_STRBUF`,
+`MULIB_IMPL_CSS`, `MULIB_IMPL_XML`, `MULIB_IMPL_UTF8`, `MULIB_IMPL_VTERM`,
+`MULIB_IMPL_GRID`.
 [Example](../examples/modules/macho-objdump.c).
 
 `mulib_macho_objdump(data, length, options, out)` accepts the checked reader's

@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 533
-implemented_module_count: 533
+module_count: 536
+implemented_module_count: 536
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -702,7 +702,7 @@ modules:
   header: include/mulib-dynload.h
   manual: manual/mulib-dynload.md
   macro: MULIB_IMPL_DYNLOAD
-  purpose: Native dynamic library and symbol lifetime management.
+  purpose: Native dynamic libraries, typed symbol lookup, platform filenames and export helpers.
   dependencies: []
   status: implemented
 - name: yaml
@@ -3328,8 +3328,8 @@ modules:
   header: include/mulib-termstyle.h
   manual: manual/mulib-termstyle.md
   macro: MULIB_IMPL_TERMSTYLE
-  purpose: "Explicit, terminfo-backed terminal attributes and indexed colors."
-  dependencies: [terminfo]
+  purpose: "CSS cascade to shared terminal styles and safe terminfo output, with legacy indexed contexts."
+  dependencies: [css, terminfo, vterm]
   status: implemented
 - name: glyph
   header: include/mulib-glyph.h
@@ -3744,7 +3744,30 @@ modules:
   purpose: "UEFI device paths, load options, Boot#### names and Shell parameters."
   dependencies: [uefi]
   status: implemented
+- name: dynbox
+  header: include/mulib-dynbox.h
+  manual: manual/mulib-dynbox.md
+  macro: MULIB_IMPL_DYNBOX
+  purpose: "Native runtime-typed calls, variadics, structures and callback closures."
+  dependencies: []
+  status: implemented
+- name: edbuf
+  header: include/mulib-edbuf.h
+  manual: manual/mulib-edbuf.md
+  macro: MULIB_IMPL_EDBUF
+  purpose: "Transactional editor buffers: gap, persistent AVL rope and piece table."
+  dependencies: []
+  status: implemented
+- name: termsyn
+  header: include/mulib-termsyn.h
+  manual: manual/mulib-termsyn.md
+  macro: MULIB_IMPL_TERMSYN
+  purpose: "Stateful incremental editor-buffer lexing, CSS themes and terminal output."
+  dependencies: [edbuf, termstyle]
+  status: implemented
 project_files:
+- file: tools/check_dynbox_abi.py
+  purpose: "Compiler ABI oracle for runtime-typed calls, native closures and separately loaded shared libraries."
 - file: tools/check_boot_formats.py
   purpose: Independent GNU cpio archive and LLVM EFI image interoperability checks.
 - file: examples/distrib-common.h
@@ -5463,3 +5486,19 @@ project_files:
   purpose: "Focused regression suite for test_boot_standards."
 - file: tests/test_cpio_init_shoebox.c
   purpose: "Focused regression suite for test_cpio_init_shoebox."
+- file: examples/modules/dynbox.c
+  purpose: "Standalone checked usage example for dynbox."
+- file: examples/modules/edbuf.c
+  purpose: "Standalone checked usage example for edbuf."
+- file: examples/modules/termsyn.c
+  purpose: "Standalone checked usage example for termsyn."
+- file: tests/test_dynbox.c
+  purpose: "Focused regression suite for test_dynbox."
+- file: tests/test_dynload_extended.c
+  purpose: "Focused regression suite for test_dynload_extended."
+- file: tests/test_edbuf.c
+  purpose: "Focused regression suite for test_edbuf."
+- file: tests/test_editor_dynbox_alloc.c
+  purpose: "Focused regression suite for test_editor_dynbox_alloc."
+- file: tests/test_terminal_editor.c
+  purpose: "Focused regression suite for test_terminal_editor."

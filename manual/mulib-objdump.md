@@ -1,7 +1,10 @@
 # Shared object/binary dump tools
 
 Include `mulib-objdump.h`; define `MULIB_IMPL_OBJDUMP`, `MULIB_IMPL_TERMSTYLE`,
-`MULIB_IMPL_TERMINFO`, `MULIB_IMPL_STRBUF`. [Example](../examples/modules/objdump.c).
+`MULIB_IMPL_TERMINFO`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_CSS`, `MULIB_IMPL_XML`,
+`MULIB_IMPL_UTF8`, `MULIB_IMPL_VTERM`, `MULIB_IMPL_GRID`.
+[Example](../examples/modules/objdump.c). The additional switches supply
+termstyle's CSS/shared-cell APIs; existing indexed styling is unchanged.
 
 This is the common rendering layer, not a file-format detector or disassembler.
 `header`, `section`, `symbol`, `name` and `hex` append deterministic text to an

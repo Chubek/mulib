@@ -59,11 +59,11 @@ typedef struct mulib_virtio_os_bus {
 } mulib_virtio_os_bus_t;
 /** @brief Initialize a supported device transactionally, validating config and features. */
 int mulib_virtio_os_init(mulib_virtio_os_device_t *device, const mulib_virtio_os_options_t *options);
-/** @brief Validate and publish a fixed bus. Instances must be nonzero and unique. */
+/** @brief Validate and publish a fixed bus. Instances are unique; metadata/scratch must be outside RAM. */
 int mulib_virtio_os_bus_init(mulib_virtio_os_bus_t *bus,
                             mulib_virtio_os_device_t *const *devices, size_t count,
                             mulib_vmmdev_memory_t memory);
-/** @brief Exchange implementation for guest clients. Caller serializes all bus/guest access. */
+/** @brief Serialized exchange. Packets/capacity must be disjoint from RAM, endpoint storage and each other. */
 int mulib_virtio_os_exchange(void *bus, const void *request, size_t size,
                             void *response, size_t *capacity);
 /** @brief Change balloon target or virtio-mem requested bytes, incrementing config generation. */
@@ -148,6 +148,35 @@ MULIB_VIRTIO_INTERNAL int mulib_virtio_os_zero_(const unsigned char *p, size_t n
 { for (size_t i = 0; i < n; ++i) if (p[i]) return 0; return 1; }
 MULIB_VIRTIO_INTERNAL void mulib_virtio_os_erase_(void *p, size_t n)
 { volatile unsigned char *v = (volatile unsigned char *)p; while (n--) *v++ = 0; }
+/* Invalid host ranges are never considered disjoint. */
+static int mulib_virtio_os_overlap_(const void *p, size_t n, const void *q, size_t m)
+{
+  uintptr_t a = (uintptr_t)p, b = (uintptr_t)q;
+  if (n > UINTPTR_MAX - a || m > UINTPTR_MAX - b) return 1;
+  return n && m && a < b + m && b < a + n;
+}
+static int mulib_virtio_os_private_(const mulib_vmmdev_memory_t *memory, const void *p, size_t n)
+{
+  if (n > UINTPTR_MAX - (uintptr_t)p) return 0;
+  for (size_t i = 0; i < memory->count; ++i)
+    if (mulib_virtio_os_overlap_(p, n, memory->regions[i].data, memory->regions[i].size)) return 0;
+  return 1;
+}
+/* Packets and their capacity word must not clobber the endpoint or its DMA. */
+static int mulib_virtio_os_packet_(const mulib_virtio_os_bus_t *b, const void *p, size_t n)
+{
+  if (!mulib_virtio_os_private_(&b->memory, p, n)
+      || mulib_virtio_os_overlap_(p, n, b, sizeof *b)
+      || mulib_virtio_os_overlap_(p, n, b->devices, b->count * sizeof *b->devices)
+      || mulib_virtio_os_overlap_(p, n, b->memory.regions, b->memory.count * sizeof *b->memory.regions)) return 0;
+  for (size_t i = 0; i < b->count; ++i) {
+    const mulib_virtio_os_device_t *d = b->devices[i];
+    if (mulib_virtio_os_overlap_(p, n, d, sizeof *d)
+        || mulib_virtio_os_overlap_(p, n, d->input, d->limit)
+        || mulib_virtio_os_overlap_(p, n, d->output, d->limit)) return 0;
+  }
+  return 1;
+}
 MULIB_VIRTIO_INTERNAL int mulib_virtio_os_call_(mulib_virtio_os_device_t *d, unsigned op, unsigned queue,
                                 uint64_t addr, uint32_t flags, const unsigned char *in,
                                 size_t ni, unsigned char *out, size_t no, size_t *used)
@@ -195,7 +224,10 @@ int mulib_virtio_os_init(mulib_virtio_os_device_t *out, const mulib_virtio_os_op
     return MULIB_VMMDEV_ENOTSUP;
   a = (uintptr_t)o->input_scratch; b = (uintptr_t)o->output_scratch;
   if (o->transfer_limit > UINTPTR_MAX - a || o->transfer_limit > UINTPTR_MAX - b
-      || (a < b + o->transfer_limit && b < a + o->transfer_limit)) return MULIB_VMMDEV_EINVAL;
+      || (a < b + o->transfer_limit && b < a + o->transfer_limit)
+      || mulib_virtio_os_overlap_(out, sizeof *out, o->input_scratch, o->transfer_limit)
+      || mulib_virtio_os_overlap_(out, sizeof *out, o->output_scratch, o->transfer_limit))
+    return MULIB_VMMDEV_EINVAL;
   if (p->id != MULIB_VIRTIO_9P && o->config_size != p->config_size) return MULIB_VMMDEV_EINVAL;
   memset(&d, 0, sizeof d);
   d.instance = o->instance; d.epoch = 1; d.profile = p;
@@ -269,19 +301,36 @@ int mulib_virtio_os_bus_init(mulib_virtio_os_bus_t *out,
 {
   mulib_virtio_os_bus_t b;
   int rc;
-  if (!out || (!devices && n)) return MULIB_VMMDEV_EINVAL;
+  if (!out || (!devices && n) || n > SIZE_MAX / sizeof *devices
+      || memory.count > SIZE_MAX / sizeof *memory.regions) return MULIB_VMMDEV_EINVAL;
   rc = mulib_vmmdev_memory_validate(&memory); if (rc) return rc;
+  if (!mulib_virtio_os_private_(&memory, out, sizeof *out)
+      || !mulib_virtio_os_private_(&memory, devices, n * sizeof *devices)
+      || !mulib_virtio_os_private_(&memory, memory.regions, memory.count * sizeof *memory.regions)
+      || mulib_virtio_os_overlap_(out, sizeof *out, devices, n * sizeof *devices)
+      || mulib_virtio_os_overlap_(out, sizeof *out, memory.regions, memory.count * sizeof *memory.regions))
+    return MULIB_VMMDEV_EINVAL;
   for (size_t i = 0; i < n; ++i) {
     mulib_virtio_os_device_t *d = devices[i];
     if (!d || !d->profile || !d->instance || !d->epoch) return MULIB_VMMDEV_EINVAL;
     for (size_t j = 0; j < i; ++j)
       if (devices[j]->instance == d->instance) return MULIB_VMMDEV_EINVAL;
-    /* Scratch is private host storage, never guest DMA memory. */
-    for (size_t j = 0; j < memory.count; ++j) {
-      uintptr_t a = (uintptr_t)memory.regions[j].data, end = a + memory.regions[j].size;
-      uintptr_t x = (uintptr_t)d->input, y = (uintptr_t)d->output;
-      if ((a < x + d->limit && x < end) || (a < y + d->limit && y < end))
+    /* Device metadata (including keys), inventories and scratch are never RAM. */
+    if (!mulib_virtio_os_private_(&memory, d, sizeof *d)
+        || !mulib_virtio_os_private_(&memory, d->input, d->limit)
+        || !mulib_virtio_os_private_(&memory, d->output, d->limit)
+        || mulib_virtio_os_overlap_(out, sizeof *out, d, sizeof *d)
+        || mulib_virtio_os_overlap_(devices, n * sizeof *devices, d, sizeof *d)
+        || mulib_virtio_os_overlap_(memory.regions, memory.count * sizeof *memory.regions, d, sizeof *d))
+      return MULIB_VMMDEV_EINVAL;
+    for (unsigned k = 0; k < 2; ++k) {
+      const void *scratch = k ? d->output : d->input;
+      if (mulib_virtio_os_overlap_(scratch, d->limit, out, sizeof *out)
+          || mulib_virtio_os_overlap_(scratch, d->limit, devices, n * sizeof *devices)
+          || mulib_virtio_os_overlap_(scratch, d->limit, memory.regions, memory.count * sizeof *memory.regions))
         return MULIB_VMMDEV_EINVAL;
+      for (size_t j = 0; j < n; ++j)
+        if (mulib_virtio_os_overlap_(scratch, d->limit, devices[j], sizeof *d)) return MULIB_VMMDEV_EINVAL;
     }
   }
   b.devices = devices; b.count = n; b.memory = memory; b.busy = 0;
@@ -395,6 +444,7 @@ static int mulib_virtio_os_control_(mulib_virtio_os_bus_t *b, mulib_virtio_os_de
     if (d->profile->id == MULIB_VIRTIO_CAN) memset(d->config, 0, 2);
     memset(d->pcm_state, 0, sizeof d->pcm_state); memset(d->pcm_period, 0, sizeof d->pcm_period);
     mulib_virtio_os_erase_(d->sessions, sizeof d->sessions);
+    mulib_virtio_os_erase_(d->input, d->limit); mulib_virtio_os_erase_(d->output, d->limit);
     memset(d->resources, 0, sizeof d->resources);
     if (d->profile->id == MULIB_VIRTIO_SCSI) {
       mulib_endian_store_le32(d->config + 20, 96); mulib_endian_store_le32(d->config + 24, 32);
@@ -458,6 +508,11 @@ int mulib_virtio_os_exchange(void *context, const void *request, size_t n, void 
   size_t needed = 40;
   int rc;
   if (!b || !capacity || !response || b->busy) return MULIB_VMMDEV_EINVAL;
+  if (!request || !mulib_virtio_os_packet_(b, capacity, sizeof *capacity)
+      || !mulib_virtio_os_packet_(b, request, n) || !mulib_virtio_os_packet_(b, response, *capacity)
+      || mulib_virtio_os_overlap_(request, n, response, *capacity)
+      || mulib_virtio_os_overlap_(capacity, sizeof *capacity, request, n)
+      || mulib_virtio_os_overlap_(capacity, sizeof *capacity, response, *capacity)) return MULIB_VMMDEV_EINVAL;
   rc = mulib_vmmdev_decode(request, n, &m); if (rc) return rc;
   if (m.opcode & MULIB_VMMDEV_RESPONSE) return MULIB_VMMDEV_EINVAL;
   for (size_t i = 0; i < b->count; ++i)
