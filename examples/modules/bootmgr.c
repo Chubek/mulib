@@ -1,4 +1,11 @@
 #define MULIB_IMPL_BOOTMGR
+#define MULIB_IMPL_EFI
+#define MULIB_IMPL_PE
+#define MULIB_IMPL_COFF
+#define MULIB_IMPL_ENDIAN
+#define MULIB_IMPL_BIOS
+#define MULIB_IMPL_UEFI
+#define MULIB_IMPL_UEFIUTILS
 #include "mulib-bootmgr.h"
 #include <assert.h>
 int main(void) {

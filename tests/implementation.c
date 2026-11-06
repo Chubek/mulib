@@ -1,3 +1,9 @@
+#define MULIB_IMPL_BIOS
+#define MULIB_IMPL_CPIO
+#define MULIB_IMPL_INITSYSUTILS
+#define MULIB_IMPL_SHOEBOX_CONTRACT
+#define MULIB_IMPL_UEFI
+#define MULIB_IMPL_UEFIUTILS
 #define MULIB_IMPL_EVTLISTENER
 #define MULIB_IMPL_VIZIGEN
 #define MULIB_IMPL_WALKER
@@ -1059,3 +1065,9 @@
 #include "mulib-vizigen.h"
 #include "mulib-walker.h"
 #include "mulib-evtlistener.h"
+#include "mulib-bios.h"
+#include "mulib-cpio.h"
+#include "mulib-initsysutils.h"
+#include "mulib-shoebox-contract.h"
+#include "mulib-uefi.h"
+#include "mulib-uefiutils.h"

@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **516 implemented modules**.
+A C11 modular single-header utility library with **533 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -62,6 +62,20 @@ command constructors and detailed runtime string docstrings, with generic dispat
 for additional Git commands and extensions.
 
 ## Integration
+
+### Firmware, initramfs and multicall utilities
+
+[`efi`](manual/mulib-efi.md) handles `.efi` PE/COFF files;
+[`uefi`](manual/mulib-uefi.md) binds firmware services and enforces exit lifecycle;
+[`bios`](manual/mulib-bios.md) provides PC BIOS thunk and wire-format helpers.
+[`uefiutils`](manual/mulib-uefiutils.md) handles device paths, load options and
+Shell parameters. [`bootmgr`](manual/mulib-bootmgr.md) routes BIOS/UEFI entries.
+[`cpio`](manual/mulib-cpio.md) reads/builds newc/crc archives and
+[`initsysutils`](manual/mulib-initsysutils.md) validates/builds uncompressed Linux
+initramfs and runs rollback-capable initialization steps.
+[`shoebox-contract`](manual/mulib-shoebox-contract.md) defines the future
+multicall applet interface; no Shoebox utilities are included yet.
+Former firmware APIs in `mulib-efi.h` have moved; see its migration notes.
 
 ### Task execution and hermetic build data
 

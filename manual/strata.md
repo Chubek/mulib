@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 527 headers, 625 direct dependency edges.
+Inventory: 533 headers, 631 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (178 modules)
+## Stratum 0 (180 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -32,11 +32,11 @@ Compatibility group: `parsec`, `peg`.
 | [base64](mulib-base64.md) | none |
 | [baysian_ranking](mulib-baysian_ranking.md) | none |
 | [binfile](mulib-binfile.md) | none |
+| [bios](mulib-bios.md) | none |
 | [bitmap](mulib-bitmap.md) | none |
 | [bitset](mulib-bitset.md) | none |
 | [blockcache](mulib-blockcache.md) | none |
 | [bloom](mulib-bloom.md) | none |
-| [bootmgr](mulib-bootmgr.md) | none |
 | [bounds](mulib-bounds.md) | none |
 | [buffer](mulib-buffer.md) | none |
 | [bycutils](mulib-bycutils.md) | none |
@@ -50,6 +50,7 @@ Compatibility group: `parsec`, `peg`.
 | [container-netdev](mulib-container-netdev.md) | none |
 | [container](mulib-container.md) | none |
 | [cosine_similarity](mulib-cosine_similarity.md) | none |
+| [cpio](mulib-cpio.md) | none |
 | [crc32](mulib-crc32.md) | none |
 | [cron](mulib-cron.md) | none |
 | [csv](mulib-csv.md) | none |
@@ -65,7 +66,6 @@ Compatibility group: `parsec`, `peg`.
 | [dyncall](mulib-dyncall.md) | none |
 | [dynload](mulib-dynload.md) | none |
 | [ebpf](mulib-ebpf.md) | none |
-| [efi](mulib-efi.md) | none |
 | [egraph](mulib-egraph.md) | none |
 | [embeddingsdb](mulib-embeddingsdb.md) | none |
 | [emitter](mulib-emitter.md) | none |
@@ -164,6 +164,7 @@ Compatibility group: `parsec`, `peg`.
 | [sexpr](mulib-sexpr.md) | none |
 | [shadowsocks](mulib-shadowsocks.md) | none |
 | [shm](mulib-shm.md) | none |
+| [shoebox-contract](mulib-shoebox-contract.md) | none |
 | [signal](mulib-signal.md) | none |
 | [smtpserver](mulib-smtpserver.md) | none |
 | [socket](mulib-socket.md) | none |
@@ -182,6 +183,7 @@ Compatibility group: `parsec`, `peg`.
 | [timerfd](mulib-timerfd.md) | none |
 | [trie](mulib-trie.md) | none |
 | [tsl](mulib-tsl.md) | none |
+| [uefi](mulib-uefi.md) | none |
 | [upstream](mulib-upstream.md) | none |
 | [url](mulib-url.md) | none |
 | [utf8](mulib-utf8.md) | none |
@@ -198,7 +200,7 @@ Compatibility group: `parsec`, `peg`.
 | [xthreads](mulib-xthreads.md) | none |
 | [xtks](mulib-xtks.md) | none |
 
-## Stratum 1 (123 modules)
+## Stratum 1 (125 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -255,6 +257,7 @@ Compatibility group: `parsec`, `peg`.
 | [imgformat](mulib-imgformat.md) | `container`, `crc32` |
 | [impaclient](mulib-impaclient.md) | `imapserver` |
 | [index](mulib-index.md) | `b+tree` |
+| [initsysutils](mulib-initsysutils.md) | `cpio` |
 | [invindex](mulib-invindex.md) | `buffer`, `bycutils`, `memtable` |
 | [ipfs](mulib-ipfs.md) | `varint` |
 | [keyremap](mulib-keyremap.md) | `input` |
@@ -312,6 +315,7 @@ Compatibility group: `parsec`, `peg`.
 | [tunnel](mulib-tunnel.md) | `xtks` |
 | [tuntap](mulib-tuntap.md) | `abstun`, `filectl` |
 | [txtdiff](mulib-txtdiff.md) | `buffer`, `vec` |
+| [uefiutils](mulib-uefiutils.md) | `uefi` |
 | [uniproc](mulib-uniproc.md) | `dynload`, `utf8` |
 | [v2rayproto](mulib-v2rayproto.md) | `socks5` |
 | [vdev](mulib-vdev.md) | `input` |
@@ -408,7 +412,7 @@ Compatibility group: `parsec`, `peg`.
 | [xpath](mulib-xpath.md) | `xml` |
 | [xtbb](mulib-xtbb.md) | `parallel` |
 
-## Stratum 3 (47 modules)
+## Stratum 3 (48 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -426,6 +430,7 @@ Compatibility group: `parsec`, `peg`.
 | [curses](mulib-curses.md) | `termutils`, `tui` |
 | [depir](mulib-depir.md) | `anfir`, `clickir`, `superblocks` |
 | [dnsnmeserver](mulib-dnsnmeserver.md) | `nameserver` |
+| [efi](mulib-efi.md) | `pe` |
 | [evtlistener](mulib-evtlistener.md) | `evtstream` |
 | [geosolve](mulib-geosolve.md) | `alloc`, `cgeom`, `geometry` |
 | [hyphen](mulib-hyphen.md) | `cache`, `dfa`, `orhoconv` |
@@ -460,11 +465,12 @@ Compatibility group: `parsec`, `peg`.
 | [viterbi_decoding](mulib-viterbi_decoding.md) | `hidden_markov_chain` |
 | [vmm-host](mulib-vmm-host.md) | `virtio` |
 
-## Stratum 4 (33 modules)
+## Stratum 4 (34 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [beam_search](mulib-beam_search.md) | `viterbi_decoding` |
+| [bootmgr](mulib-bootmgr.md) | `bios`, `efi`, `uefiutils` |
 | [bson](mulib-bson.md) | `buffer`, `json` |
 | [cbor](mulib-cbor.md) | `buffer`, `json` |
 | [coff-objdump](mulib-coff-objdump.md) | `coff`, `objdump` |

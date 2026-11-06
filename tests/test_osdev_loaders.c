@@ -1,4 +1,10 @@
 #define MULIB_IMPL_EFI
+#define MULIB_IMPL_PE
+#define MULIB_IMPL_COFF
+#define MULIB_IMPL_ENDIAN
+#define MULIB_IMPL_BIOS
+#define MULIB_IMPL_UEFI
+#define MULIB_IMPL_UEFIUTILS
 #define MULIB_IMPL_BOOTMGR
 #define MULIB_IMPL_MEMTEST
 #define MULIB_IMPL_DESCRITORS
@@ -26,12 +32,12 @@
 static void put(uint8_t *p, uint64_t v, unsigned bytes) {
     unsigned i; for (i = 0; i < bytes; ++i) p[i] = (uint8_t)(v >> (8 * i));
 }
-static mulib_efi_status_t MULIB_EFI_API get_map(size_t *n, void *map, size_t *key, size_t *stride, uint32_t *version) {
+static mulib_uefi_status_t MULIB_UEFI_API get_map(size_t *n, mulib_uefi_memory_t *map, size_t *key, size_t *stride, uint32_t *version) {
     *stride = 40; *version = 1; *key = 17;
     if (*n < 40) { *n = 40; return ((uintptr_t)1 << (sizeof(uintptr_t) * 8 - 1)) | 5; }
     memset(map, 0, 40); *n = 40; return 0;
 }
-static mulib_efi_status_t MULIB_EFI_API exit_fw(void *image, size_t key) {
+static mulib_uefi_status_t MULIB_UEFI_API exit_fw(void *image, size_t key) {
     assert(image && key == 17); return 0;
 }
 static int table_read(void *ctx, uint64_t table, unsigned index, uint64_t *entry) {
@@ -52,21 +58,23 @@ static int cache_query(void *ctx, uint32_t leaf, uint32_t index, uint32_t r[4]) 
     return 0;
 }
 int main(void) {
-    uint8_t elf[256] = {0}, target[32], saved[32], map[40], tss[104], madt[52] = {0};
+    uint8_t elf[256] = {0}, target[32], saved[32], tss[104], madt[52] = {0};
+    _Alignas(8) uint8_t map[40];
     uint64_t tables[2048] = {0}, ram[16], ist[7] = {0};
     uint32_t config[64] = {0}, pixel, gpu[3];
     mulib_bootmgr_elf_t image;
-    mulib_efi_native_t native = {target, get_map, exit_fw, NULL, 0, 0};
-    mulib_efi_t fw;
+    mulib_uefi_native_t native = {0};
+    mulib_uefi_t fw;
     mulib_memtest_result_t memory;
     mulib_memtest_hooks_t hooks = {ram, corrupt_march, NULL};
     mulib_paging_translation_t tr;
     mulib_hwinfo_cache_t cache;
     size_t bytes = 1, stride, cursor, record_size, i; unsigned offset, sum = 0;
     const uint8_t *record;
-    assert(!mulib_efi_bind(&fw, &native));
-    assert(mulib_efi_exit(&fw, map, &bytes, &stride, 1) == MULIB_EFI_BUFFER && bytes == 40);
-    assert(!mulib_efi_exit(&fw, map, &bytes, &stride, 1) && native.descriptor_version == 1);
+    native.image = target; native.get_memory_map = get_map; native.exit_boot_services = exit_fw;
+    assert(!mulib_uefi_bind(&fw, &native));
+    assert(mulib_uefi_exit(&fw, map, &bytes, &stride, 1) == MULIB_UEFI_BUFFER_TOO_SMALL && bytes == 40);
+    assert(!mulib_uefi_exit(&fw, map, &bytes, &stride, 1) && fw.descriptor_version == 1);
 
     memcpy(elf, "\177ELF", 4); elf[4] = 2; elf[5] = 1; elf[6] = 1;
     put(elf + 16, 2, 2); put(elf + 18, 62, 2); put(elf + 20, 1, 4);

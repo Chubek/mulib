@@ -1,4 +1,10 @@
 #define MULIB_IMPL_EFI
+#define MULIB_IMPL_PE
+#define MULIB_IMPL_COFF
+#define MULIB_IMPL_ENDIAN
+#define MULIB_IMPL_BIOS
+#define MULIB_IMPL_UEFI
+#define MULIB_IMPL_UEFIUTILS
 #define MULIB_IMPL_BOOTMGR
 #define MULIB_IMPL_HWINFO
 #define MULIB_IMPL_MEMTEST
@@ -24,12 +30,12 @@
 #include <string.h>
 
 static unsigned exits, maps, cleanups, launches, visits;
-static int map_get(void *ctx, void *map, size_t *n, uint64_t *key, size_t *stride) {
-    (void)ctx; (void)map; ++maps; *stride = 40; *key = maps;
-    if (*n < 40) { *n = 40; return MULIB_EFI_BUFFER; } *n = 40; return 0;
+static mulib_uefi_status_t MULIB_UEFI_API map_get(size_t *n, mulib_uefi_memory_t *map, size_t *key, size_t *stride, uint32_t *version) {
+    (void)map; ++maps; *stride = 40; *key = maps; *version = 1;
+    if (*n < 40) { *n = 40; return MULIB_UEFI_BUFFER_TOO_SMALL; } *n = 40; return 0;
 }
-static int fw_exit(void *ctx, uint64_t key) {
-    (void)ctx; assert(key == maps); return ++exits == 1 ? MULIB_EFI_STALE : 0;
+static mulib_uefi_status_t MULIB_UEFI_API fw_exit(void *ctx, size_t key) {
+    (void)ctx; assert(key == maps); return ++exits == 1 ? MULIB_UEFI_INVALID_PARAMETER : 0;
 }
 static int load(void *ctx, const mulib_bootmgr_entry_t *e, void **image) {
     (void)ctx; *image = (void *)e; return 0;
@@ -54,8 +60,8 @@ static int bad_wait(void *ctx, uint32_t timeout) { (void)ctx; (void)timeout; ret
 static int bad_work(void *ctx, uint32_t seed, uint32_t count) {
     (void)ctx; (void)seed; (void)count; return 8;
 }
-static int stale_exit(void *ctx, uint64_t key) { (void)ctx; (void)key; ++exits; return MULIB_EFI_STALE; }
-static int bios_thunk(void *ctx, uint8_t interrupt, mulib_efi_bios_regs_t *regs) {
+static mulib_uefi_status_t MULIB_UEFI_API stale_exit(void *ctx, size_t key) { (void)ctx; (void)key; ++exits; return MULIB_UEFI_INVALID_PARAMETER; }
+static int bios_thunk(void *ctx, uint8_t interrupt, mulib_bios_regs_t *regs) {
     (void)ctx; assert(interrupt == 0x10); regs->eax = 0x004f; regs->flags = 0; return 0;
 }
 static int bad_load(void *ctx, const mulib_bootmgr_entry_t *e, void **image) {
@@ -89,7 +95,7 @@ static void checksum(uint8_t *p, size_t n, size_t at) {
 /* Exercise every truncated length and deterministic arbitrary firmware bytes. */
 static void hostile_firmware(void) {
     uint8_t buffer[96]; uint32_t state = 1; unsigned iteration; size_t i, n, length;
-    uint64_t root; unsigned width; mulib_efi_memory_t memory;
+    uint64_t root; unsigned width; mulib_uefi_memory_t memory;
     for (iteration = 0; iteration < 256; ++iteration) {
         for (i = 0; i < sizeof(buffer); ++i) {
             state = state * UINT32_C(1664525) + UINT32_C(1013904223);
@@ -99,18 +105,19 @@ static void hostile_firmware(void) {
             (void)mulib_acpi_rsdp(buffer, n, &root, &width);
             (void)mulib_acpi_sdt(buffer, n, NULL, &length);
             (void)mulib_acpi_root_at(buffer, n, SIZE_MAX, &root);
-            (void)mulib_efi_memory_at(buffer, n, 40, SIZE_MAX, &memory);
+            (void)mulib_uefi_memory_at(buffer, n, 40, SIZE_MAX, &memory);
         }
     }
 }
 int main(void) {
-    uint8_t map[80] = {0}, bytes[512] = {0}, desc[16], rsdp[36] = {0}, xsdt[44] = {0};
+    _Alignas(8) uint8_t map[80] = {0};
+    uint8_t bytes[512] = {0}, desc[16], rsdp[36] = {0}, xsdt[44] = {0};
     uint64_t ram[8], address, entry; uint32_t pixels[12];
     size_t n = 1, stride = 0, selected, length; unsigned width, temperature = 50000;
-    mulib_efi_t fw = {NULL, map_get, fw_exit, NULL, NULL, 0};
-    mulib_efi_memory_t memory;
-    mulib_efi_guid_t guid = {0, 0, 0, {0}};
-    mulib_efi_bios_regs_t regs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    mulib_uefi_native_t native = {0}; mulib_uefi_t fw;
+    mulib_uefi_memory_t memory;
+    mulib_uefi_guid_t guid = {0, 0, 0, {0}};
+    mulib_bios_regs_t regs = {0}; mulib_bios_t bios = {NULL, NULL};
     void *protocol = &fw;
     mulib_bootmgr_entry_t entries[] = {{"first", "a", "", 1, 1, 10}, {"second", "b", "", 1, 1, 1}};
     mulib_bootmgr_backend_t boot = {NULL, load, start, unload};
@@ -121,20 +128,22 @@ int main(void) {
     mulib_gputest_result_t gr;
     mulib_hwinfo_cpu_t cpu;
     mulib_framebuffer_t fb = {pixels, 12, 3, 3, 4};
-    assert(mulib_efi_guid_equal(&guid, &guid)); assert(!mulib_efi_guid_equal(NULL, &guid));
-    assert(mulib_efi_exit(&fw, map, &n, &stride, 2) == MULIB_EFI_BUFFER && n == 40);
-    n = sizeof(map); assert(!mulib_efi_exit(&fw, map, &n, &stride, 2));
-    assert(exits == 2 && fw.exited); assert(mulib_efi_exit(&fw, map, &n, &stride, 2) == -1);
-    assert(mulib_efi_bios(&fw, 0x10, &regs) == -1);
-    fw.exited = 0;
-    assert(mulib_efi_bios(&fw, 0x10, &regs) == MULIB_EFI_UNSUPPORTED);
-    fw.bios_interrupt = bios_thunk; assert(!mulib_efi_bios(&fw, 0x10, &regs) && regs.eax == 0x4f);
-    assert(mulib_efi_locate(&fw, &guid, &protocol) == MULIB_EFI_UNSUPPORTED && !protocol);
-    fw.exit_boot_services = stale_exit; n = sizeof(map);
-    assert(mulib_efi_exit(&fw, map, &n, &stride, 1) == MULIB_EFI_STALE && exits == 3 && !fw.exited);
+    native.image = &fw; native.get_memory_map = map_get; native.exit_boot_services = fw_exit;
+    assert(!mulib_uefi_bind(&fw, &native));
+    assert(mulib_uefi_guid_equal(&guid, &guid)); assert(!mulib_uefi_guid_equal(NULL, &guid));
+    assert(mulib_uefi_exit(&fw, map, &n, &stride, 2) == MULIB_UEFI_BUFFER_TOO_SMALL && n == 40);
+    n = sizeof(map); assert(!mulib_uefi_exit(&fw, map, &n, &stride, 2));
+    assert(exits == 2 && fw.phase == MULIB_UEFI_RUNTIME);
+    assert(mulib_uefi_exit(&fw, map, &n, &stride, 2) == MULIB_UEFI_INVALID_PARAMETER);
+    assert(mulib_bios_interrupt(&bios, 0x10, &regs) == MULIB_BIOS_UNSUPPORTED);
+    bios.interrupt = bios_thunk; assert(!mulib_bios_interrupt(&bios, 0x10, &regs) && regs.eax == 0x4f);
+    assert(!mulib_uefi_bind(&fw, &native));
+    assert(mulib_uefi_locate(&fw, &guid, &protocol) == MULIB_UEFI_UNSUPPORTED && !protocol);
+    native.exit_boot_services = stale_exit; n = sizeof(map);
+    assert(mulib_uefi_exit(&fw, map, &n, &stride, 1) == MULIB_UEFI_INVALID_PARAMETER && exits == 3 && fw.phase == MULIB_UEFI_EXIT_PENDING);
     map[0] = 7; map[24] = 4;
-    assert(!mulib_efi_memory_at(map, 40, 40, 0, &memory) && memory.type == 7 && memory.pages == 4);
-    assert(mulib_efi_memory_at(map, 39, 40, SIZE_MAX, &memory) == -1);
+    assert(!mulib_uefi_memory_at(map, 40, 40, 0, &memory) && memory.type == 7 && memory.pages == 4);
+    assert(mulib_uefi_memory_at(map, 39, 40, SIZE_MAX, &memory) == -1);
     assert(!mulib_bootmgr_boot(entries, 2, SIZE_MAX, &boot, &selected) && selected == 1 && cleanups == 2);
     boot.load = bad_load;
     assert(mulib_bootmgr_boot(entries, 2, SIZE_MAX, &boot, &selected) == -8 && cleanups == 2);

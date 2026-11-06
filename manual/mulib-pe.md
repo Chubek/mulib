@@ -24,6 +24,7 @@ resolution. Header RVAs map to file headers. A successful map borrows bytes.
 entries. All addresses are RVAs except certificate directory 4, whose address is
 a file offset. Certificate ranges are checked at open; other directory payloads
 are opaque and can be mapped explicitly using `rva`.
+GlobalPtr directory 8 permits a nonzero RVA with the required zero size.
 
 Import/export/resource decoding, relocation application, CLR metadata, debug
 formats, signatures and execution are not implemented. COFF symbols may be absent

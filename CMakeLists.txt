@@ -149,6 +149,18 @@ if(MULIB_BUILD_TESTS)
     mulib_register_test("mulib_${test_name}")
   endforeach()
   find_program(MULIB_NODE_EXECUTABLE NAMES node nodejs)
+  find_program(MULIB_CPIO_EXECUTABLE NAMES cpio)
+  find_program(MULIB_CLANG_EXECUTABLE NAMES clang)
+  find_program(MULIB_LLD_LINK_EXECUTABLE NAMES lld-link)
+  if(Python3_Interpreter_FOUND AND MULIB_CPIO_EXECUTABLE AND MULIB_CLANG_EXECUTABLE AND MULIB_LLD_LINK_EXECUTABLE AND UNIX)
+    add_test(NAME mulib_boot_formats_interoperability
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_boot_formats.py
+        --archive $<TARGET_FILE:mulib_test_cpio_init_shoebox>
+        --efi $<TARGET_FILE:mulib_test_boot_standards>
+        --cpio ${MULIB_CPIO_EXECUTABLE} --clang ${MULIB_CLANG_EXECUTABLE}
+        --linker ${MULIB_LLD_LINK_EXECUTABLE})
+    set_tests_properties(mulib_boot_formats_interoperability PROPERTIES TIMEOUT 60)
+  endif()
   if(Python3_Interpreter_FOUND AND UNIX)
     add_test(NAME mulib_sqlite_interoperability
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_sqlite.py

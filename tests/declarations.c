@@ -529,4 +529,10 @@
 #include "mulib-vizigen.h"
 #include "mulib-walker.h"
 #include "mulib-evtlistener.h"
+#include "mulib-bios.h"
+#include "mulib-cpio.h"
+#include "mulib-initsysutils.h"
+#include "mulib-shoebox-contract.h"
+#include "mulib-uefi.h"
+#include "mulib-uefiutils.h"
 int main(void) { return 0; }

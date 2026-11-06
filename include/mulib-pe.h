@@ -66,7 +66,8 @@ int mulib_pe_directory (const mulib_pe_t *v, size_t i, mulib_pe_directory_t *out
   if (i >= v->directory_count) return MULIB_COFF_EBOUNDS;
   if (mulib_coff_bytes (&v->coff, v->directory_offset + i * 8, 8, &p)) return MULIB_COFF_EBOUNDS;
   d.address = mulib_endian_load_le32 (p); d.size = mulib_endian_load_le32 (p + 4);
-  if ((!d.address) != (!d.size)) return MULIB_COFF_EFORMAT;
+  /* GlobalPtr is an RVA with a required zero size (PE/COFF directory 8). */
+  if (i == 8 ? d.size != 0 : ((!d.address) != (!d.size))) return MULIB_COFF_EFORMAT;
   *out = d; return 0;
 }
 int mulib_pe_rva (const mulib_pe_t *v, uint32_t rva, size_t n, const unsigned char **out)

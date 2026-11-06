@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 527
-implemented_module_count: 527
+module_count: 533
+implemented_module_count: 533
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2788,15 +2788,15 @@ modules:
   header: include/mulib-efi.h
   manual: manual/mulib-efi.md
   macro: MULIB_IMPL_EFI
-  purpose: BIOS thunk and EFI boot-service adapters with bounded map-key retries.
-  dependencies: []
+  purpose: Checked PE/COFF EFI application and driver files, entry points and certificate framing.
+  dependencies: [pe]
   status: implemented
 - name: bootmgr
   header: include/mulib-bootmgr.h
   manual: manual/mulib-bootmgr.md
   macro: MULIB_IMPL_BOOTMGR
-  purpose: Bounded boot entry selection and explicit-backend launch with fallback.
-  dependencies: []
+  purpose: Firmware-aware BIOS/UEFI boot selection, application launch, chainload handoff and ELF loading.
+  dependencies: [bios, efi, uefiutils]
   status: implemented
 - name: hwinfo
   header: include/mulib-hwinfo.h
@@ -3702,7 +3702,51 @@ modules:
   purpose: "Callback listeners for event streams and parser-produced events."
   dependencies: [evtstream]
   status: implemented
+- name: bios
+  header: include/mulib-bios.h
+  manual: manual/mulib-bios.md
+  macro: MULIB_IMPL_BIOS
+  purpose: "PC BIOS thunk interface, E820 records, EDD packets and MBR partitions."
+  dependencies: []
+  status: implemented
+- name: cpio
+  header: include/mulib-cpio.h
+  manual: manual/mulib-cpio.md
+  macro: MULIB_IMPL_CPIO
+  purpose: "Bounded newc/crc CPIO reading and deterministic archive construction."
+  dependencies: []
+  status: implemented
+- name: initsysutils
+  header: include/mulib-initsysutils.h
+  manual: manual/mulib-initsysutils.md
+  macro: MULIB_IMPL_INITSYSUTILS
+  purpose: "Linux initramfs inspection/building and explicit initialization steps."
+  dependencies: [cpio]
+  status: implemented
+- name: shoebox-contract
+  header: include/mulib-shoebox-contract.h
+  manual: manual/mulib-shoebox-contract.md
+  macro: MULIB_IMPL_SHOEBOX_CONTRACT
+  purpose: "Versioned Shoebox multicall applet contract, dispatch and bounded I/O."
+  dependencies: []
+  status: implemented
+- name: uefi
+  header: include/mulib-uefi.h
+  manual: manual/mulib-uefi.md
+  macro: MULIB_IMPL_UEFI
+  purpose: "UEFI native service bindings, status values and boot-services lifecycle."
+  dependencies: []
+  status: implemented
+- name: uefiutils
+  header: include/mulib-uefiutils.h
+  manual: manual/mulib-uefiutils.md
+  macro: MULIB_IMPL_UEFIUTILS
+  purpose: "UEFI device paths, load options, Boot#### names and Shell parameters."
+  dependencies: [uefi]
+  status: implemented
 project_files:
+- file: tools/check_boot_formats.py
+  purpose: Independent GNU cpio archive and LLVM EFI image interoperability checks.
 - file: examples/distrib-common.h
   purpose: Explicit implementation placement for distributed computing examples.
 - file: examples/mumq-common.h
@@ -5403,3 +5447,19 @@ project_files:
   purpose: "Standalone checked usage example for evtlistener."
 - file: tests/test_evtlistener.c
   purpose: "Focused regression suite for test_evtlistener."
+- file: examples/modules/bios.c
+  purpose: "Standalone checked usage example for bios."
+- file: examples/modules/cpio.c
+  purpose: "Standalone checked usage example for cpio."
+- file: examples/modules/initsysutils.c
+  purpose: "Standalone checked usage example for initsysutils."
+- file: examples/modules/shoebox-contract.c
+  purpose: "Standalone checked usage example for shoebox-contract."
+- file: examples/modules/uefi.c
+  purpose: "Standalone checked usage example for uefi."
+- file: examples/modules/uefiutils.c
+  purpose: "Standalone checked usage example for uefiutils."
+- file: tests/test_boot_standards.c
+  purpose: "Focused regression suite for test_boot_standards."
+- file: tests/test_cpio_init_shoebox.c
+  purpose: "Focused regression suite for test_cpio_init_shoebox."

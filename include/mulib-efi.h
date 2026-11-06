@@ -1,141 +1,125 @@
 /** @file mulib-efi.h
- * @brief Allocation-free firmware adapters for BIOS thunks and EFI boot services.
- * Define MULIB_IMPL_EFI in one C translation unit. No firmware ABI is assumed:
- * adapters translate native EFIAPI calls or real-mode BIOS transitions.
+ * @brief Checked PE/COFF EFI application and driver files (not firmware services).
+ * Define MULIB_IMPL_EFI, PE, COFF and ENDIAN in one translation unit.
+ * Views borrow immutable input. Validation is structural, not authentication.
  */
 #ifndef MULIB_EFI_H
 #define MULIB_EFI_H
-#include <stddef.h>
-#include <stdint.h>
+#include "mulib-pe.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct { uint32_t a; uint16_t b, c; uint8_t d[8]; } mulib_efi_guid_t;
-typedef struct { uint32_t type; uint64_t physical, virtual_address, pages, attributes; } mulib_efi_memory_t;
-typedef struct { uint32_t eax, ebx, ecx, edx, esi, edi, ebp; uint16_t ds, es, flags; } mulib_efi_bios_regs_t;
-/* Native x64 EFI uses the Microsoft ABI even in a SysV-built kernel. */
-#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
-#define MULIB_EFI_API __attribute__((ms_abi))
-#elif defined(_MSC_VER)
-#define MULIB_EFI_API __cdecl
-#else
-#define MULIB_EFI_API
-#endif
-typedef uintptr_t mulib_efi_status_t;
-typedef mulib_efi_status_t (MULIB_EFI_API *mulib_efi_get_map_fn)(size_t *, void *, size_t *, size_t *, uint32_t *);
-typedef mulib_efi_status_t (MULIB_EFI_API *mulib_efi_exit_fn)(void *, size_t);
-typedef mulib_efi_status_t (MULIB_EFI_API *mulib_efi_locate_fn)(const mulib_efi_guid_t *, void *, void **);
-/** Native boot-service binding. Assign function pointers from your firmware SDK.
- * Context must outlive fw. last_status preserves the full EFI status value.
+enum { MULIB_EFI_APPLICATION = 10, MULIB_EFI_BOOT_DRIVER = 11,
+       MULIB_EFI_RUNTIME_DRIVER = 12 };
+typedef mulib_pe_t mulib_efi_image_t;
+/** @brief Open a PE32/PE32+ EFI image. PE result codes; atomic output.
+ * Supports IA32, x64, ARM Thumb, AArch64, EBC, RISC-V 32/64 and LoongArch
+ * 32/64 headers. Other machines return EUNSUPPORTED. Does not load code.
  */
-typedef struct {
-    void *image;
-    mulib_efi_get_map_fn get_memory_map;
-    mulib_efi_exit_fn exit_boot_services;
-    mulib_efi_locate_fn locate_protocol;
-    mulib_efi_status_t last_status;
-    uint32_t descriptor_version;
-} mulib_efi_native_t;
-/** @brief Backend statuses: zero success, 1 buffer too small, 2 stale map key. */
-enum { MULIB_EFI_OK = 0, MULIB_EFI_BUFFER = 1, MULIB_EFI_STALE = 2,
-       MULIB_EFI_INVALID = -1, MULIB_EFI_UNSUPPORTED = -2 };
-typedef struct {
-    void *context;
-    int (*memory_map)(void *, void *, size_t *, uint64_t *, size_t *);
-    int (*exit_boot_services)(void *, uint64_t);
-    int (*locate_protocol)(void *, const mulib_efi_guid_t *, void **);
-    int (*bios_interrupt)(void *, uint8_t, mulib_efi_bios_regs_t *);
-    unsigned exited;
-} mulib_efi_t;
-/** @brief Bind native EFI ABI calls directly; no handwritten trampoline needed. */
-int mulib_efi_bind(mulib_efi_t *fw, mulib_efi_native_t *native);
-/** @brief Compare GUIDs fieldwise, without padding assumptions. */
-int mulib_efi_guid_equal(const mulib_efi_guid_t *a, const mulib_efi_guid_t *b);
-/** @brief Decode a standard EFI memory descriptor at a supplied stride. */
-int mulib_efi_memory_at(const void *map, size_t bytes, size_t stride, size_t index, mulib_efi_memory_t *out);
-/** @brief Get map then exit, retrying stale keys without allocating between calls.
- * bytes is capacity on entry and required/used bytes on return. attempts is bounded.
- * All service calls through this context are refused after successful exit.
+int mulib_efi_open(mulib_efi_image_t *out, const void *file, size_t bytes);
+/** @brief Borrow file-backed entry point byte; never returns zero-fill. */
+int mulib_efi_entry(const mulib_efi_image_t *image, const unsigned char **out);
+/** @brief Iterate WIN_CERTIFICATE records. cursor starts at zero, relative to
+ * certificate directory. 0 record, 1 end, negative PE error. Payload is borrowed;
+ * unknown certificate types/revisions are exposed without interpretation.
  */
-int mulib_efi_exit(mulib_efi_t *fw, void *map, size_t *bytes, size_t *stride, unsigned attempts);
-/** @brief Locate a protocol using the caller's native firmware adapter. */
-int mulib_efi_locate(mulib_efi_t *fw, const mulib_efi_guid_t *guid, void **protocol);
-/** @brief Execute a caller-supplied real-mode thunk; never issues int in long mode. */
-int mulib_efi_bios(mulib_efi_t *fw, uint8_t interrupt, mulib_efi_bios_regs_t *regs);
+int mulib_efi_certificate(const mulib_efi_image_t *image, size_t *cursor,
+    uint16_t *revision, uint16_t *type, const unsigned char **payload, size_t *bytes);
+/** @brief Standard removable-media filename for a supported machine, or NULL. */
+const char *mulib_efi_boot_name(uint16_t machine);
 #ifdef __cplusplus
 }
 #endif
 #endif
 #if defined(MULIB_IMPL_EFI) && !defined(MULIB_EFI_IMPLEMENTED)
 #define MULIB_EFI_IMPLEMENTED
-static int mulib_efi_status_(mulib_efi_status_t s) {
-    uintptr_t error = (uintptr_t)1 << (sizeof(uintptr_t) * 8 - 1);
-    if (!(s & error)) return 0;
-    if (s == (error | 5)) return MULIB_EFI_BUFFER;
-    return -3;
+const char *mulib_efi_boot_name(uint16_t machine) {
+    switch (machine) {
+    case 0x014c: return "BOOTIA32.EFI";
+    case 0x8664: return "BOOTX64.EFI";
+    case 0x01c2: return "BOOTARM.EFI";
+    case 0xaa64: return "BOOTAA64.EFI";
+    case 0x0ebc: return "BOOTEBC.EFI";
+    case 0x5032: return "BOOTRISCV32.EFI";
+    case 0x5064: return "BOOTRISCV64.EFI";
+    case 0x6232: return "BOOTLOONGARCH32.EFI";
+    case 0x6264: return "BOOTLOONGARCH64.EFI";
+    default: return NULL;
+    }
 }
-static int mulib_efi_native_map_(void *ctx, void *map, size_t *bytes, uint64_t *key, size_t *stride) {
-    mulib_efi_native_t *n = (mulib_efi_native_t *)ctx; size_t k = 0;
-    n->last_status = n->get_memory_map(bytes, map, &k, stride, &n->descriptor_version);
-    *key = k; return mulib_efi_status_(n->last_status);
+int mulib_efi_entry(const mulib_efi_image_t *v, const unsigned char **out) {
+    if (!v || !out) return MULIB_PE_EINVAL;
+    if (!v->entry) return MULIB_PE_EFORMAT;
+    return mulib_pe_rva(v, v->entry, 1, out);
 }
-static int mulib_efi_native_exit_(void *ctx, uint64_t key) {
-    mulib_efi_native_t *n = (mulib_efi_native_t *)ctx;
-    uintptr_t error = (uintptr_t)1 << (sizeof(uintptr_t) * 8 - 1);
-    if (key > SIZE_MAX) return MULIB_EFI_INVALID;
-    n->last_status = n->exit_boot_services(n->image, (size_t)key);
-    return n->last_status == (error | 2) ? MULIB_EFI_STALE : mulib_efi_status_(n->last_status);
+int mulib_efi_open(mulib_efi_image_t *out, const void *file, size_t bytes) {
+    mulib_pe_t v; mulib_pe_section_t s, previous;
+    mulib_pe_directory_t dir; const unsigned char *p;
+    size_t i, j; uint64_t end; int entry = 0, rc; unsigned bits;
+    if (!out) return MULIB_PE_EINVAL;
+    rc = mulib_pe_open(&v, file, bytes); if (rc) return rc;
+    if (!mulib_efi_boot_name(v.coff.machine)) return MULIB_PE_EUNSUPPORTED;
+    bits = (v.coff.machine == 0x014c || v.coff.machine == 0x01c2 ||
+            v.coff.machine == 0x5032 || v.coff.machine == 0x6232) ? 32 : 64;
+    if (v.bits != bits || v.subsystem < 10 || v.subsystem > 12 ||
+        !(v.coff.characteristics & 2) || !v.coff.section_count ||
+        !v.entry || v.image_size % v.section_alignment ||
+        v.headers_size % v.file_alignment ||
+        (v.section_alignment < 4096 ? v.file_alignment != v.section_alignment :
+         (v.file_alignment < 512 || v.file_alignment > 65536))) return MULIB_PE_EFORMAT;
+    end = v.headers_size;
+    for (i = 0; i < v.coff.section_count; ++i) {
+        rc = mulib_pe_section(&v, i, &s); if (rc) return rc;
+        if (s.address % v.section_alignment || s.address < end ||
+            s.size % v.file_alignment || (s.size &&
+            (s.offset < v.headers_size || s.offset % v.file_alignment ||
+             (v.section_alignment < 4096 && s.offset != s.address))) ||
+            s.relocation_count) return MULIB_PE_EFORMAT;
+        end = (uint64_t)s.address + (s.virtual_size > s.size ? s.virtual_size : s.size);
+        for (j = 0; s.size && j < i; ++j) {
+            rc = mulib_pe_section(&v, j, &previous); if (rc) return rc;
+            if (previous.size && (uint64_t)s.offset < (uint64_t)previous.offset + previous.size &&
+                (uint64_t)previous.offset < (uint64_t)s.offset + s.size) return MULIB_PE_EFORMAT;
+        }
+        if ((s.flags & UINT32_C(0x20000000)) && v.entry >= s.address &&
+            v.entry - s.address < s.size && (!s.virtual_size || v.entry - s.address < s.virtual_size)) entry = 1;
+    }
+    if (!entry || mulib_efi_entry(&v, &p)) return MULIB_PE_EFORMAT;
+    for (i = 0; i < v.directory_count; ++i) {
+        rc = mulib_pe_directory(&v, i, &dir); if (rc) return rc;
+        if (!dir.size) continue;
+        if (i == 4) {
+            if ((dir.address & 7) || dir.address < v.headers_size) return MULIB_PE_EFORMAT;
+            for (j = 0; j < v.coff.section_count; ++j) {
+                rc = mulib_pe_section(&v, j, &s); if (rc) return rc;
+                if (s.size && (uint64_t)dir.address < (uint64_t)s.offset + s.size &&
+                    (uint64_t)s.offset < (uint64_t)dir.address + dir.size) return MULIB_PE_EFORMAT;
+            }
+            {
+                size_t cursor = 0, length; uint16_t rev, type;
+                do { rc = mulib_efi_certificate(&v, &cursor, &rev, &type, &p, &length); } while (!rc);
+                if (rc != 1) return rc;
+            }
+        } else if (mulib_pe_rva(&v, dir.address, dir.size, &p)) return MULIB_PE_EBOUNDS;
+    }
+    *out = v; return 0;
 }
-static int mulib_efi_native_locate_(void *ctx, const mulib_efi_guid_t *guid, void **protocol) {
-    mulib_efi_native_t *n = (mulib_efi_native_t *)ctx;
-    if (!n->locate_protocol) return MULIB_EFI_UNSUPPORTED;
-    n->last_status = n->locate_protocol(guid, NULL, protocol);
-    return mulib_efi_status_(n->last_status);
-}
-int mulib_efi_bind(mulib_efi_t *fw, mulib_efi_native_t *n) {
-    if (!fw || !n || !n->image || !n->get_memory_map || !n->exit_boot_services) return MULIB_EFI_INVALID;
-    fw->context = n; fw->memory_map = mulib_efi_native_map_;
-    fw->exit_boot_services = mulib_efi_native_exit_; fw->locate_protocol = mulib_efi_native_locate_;
-    fw->bios_interrupt = NULL; fw->exited = 0; n->last_status = 0; n->descriptor_version = 0;
-    return 0;
-}
-static uint64_t mulib_efi_le_(const uint8_t *p, unsigned n) {
-    uint64_t v = 0; unsigned i; for (i = 0; i < n; ++i) v |= (uint64_t)p[i] << (i * 8); return v;
-}
-int mulib_efi_guid_equal(const mulib_efi_guid_t *a, const mulib_efi_guid_t *b) {
-    unsigned i; if (!a || !b || a->a != b->a || a->b != b->b || a->c != b->c) return 0;
-    for (i = 0; i < 8; ++i) if (a->d[i] != b->d[i]) return 0;
-    return 1;
-}
-int mulib_efi_memory_at(const void *map, size_t bytes, size_t stride, size_t index, mulib_efi_memory_t *out) {
-    const uint8_t *p;
-    if (!map || !out || stride < 40 || bytes % stride || index >= bytes / stride) return MULIB_EFI_INVALID;
-    p = (const uint8_t *)map + index * stride;
-    out->type = (uint32_t)mulib_efi_le_(p, 4); out->physical = mulib_efi_le_(p + 8, 8);
-    out->virtual_address = mulib_efi_le_(p + 16, 8); out->pages = mulib_efi_le_(p + 24, 8);
-    out->attributes = mulib_efi_le_(p + 32, 8); return 0;
-}
-int mulib_efi_exit(mulib_efi_t *fw, void *map, size_t *bytes, size_t *stride, unsigned attempts) {
-    size_t capacity, n; uint64_t key; int rc;
-    if (!fw || fw->exited || !map || !bytes || !stride || !attempts) return MULIB_EFI_INVALID;
-    if (!fw->memory_map || !fw->exit_boot_services) return MULIB_EFI_UNSUPPORTED;
-    capacity = *bytes;
-    do {
-        n = capacity; rc = fw->memory_map(fw->context, map, &n, &key, stride); *bytes = n;
-        if (rc) return rc;
-        if (n > capacity || *stride < 40 || n % *stride) return MULIB_EFI_INVALID;
-        rc = fw->exit_boot_services(fw->context, key);
-        if (!rc) { fw->exited = 1; return 0; }
-    } while (rc == MULIB_EFI_STALE && --attempts);
-    return rc;
-}
-int mulib_efi_locate(mulib_efi_t *fw, const mulib_efi_guid_t *guid, void **protocol) {
-    if (!fw || fw->exited || !guid || !protocol) return MULIB_EFI_INVALID;
-    *protocol = NULL;
-    return fw->locate_protocol ? fw->locate_protocol(fw->context, guid, protocol) : MULIB_EFI_UNSUPPORTED;
-}
-int mulib_efi_bios(mulib_efi_t *fw, uint8_t interrupt, mulib_efi_bios_regs_t *regs) {
-    if (!fw || fw->exited || !regs) return MULIB_EFI_INVALID;
-    return fw->bios_interrupt ? fw->bios_interrupt(fw->context, interrupt, regs) : MULIB_EFI_UNSUPPORTED;
+int mulib_efi_certificate(const mulib_efi_image_t *v, size_t *cursor,
+    uint16_t *revision, uint16_t *type, const unsigned char **payload, size_t *bytes) {
+    mulib_pe_directory_t d; const unsigned char *p; uint32_t n; size_t padded; int rc;
+    if (!v || !cursor || !revision || !type || !payload || !bytes) return MULIB_PE_EINVAL;
+    if (v->directory_count <= 4) return *cursor ? MULIB_PE_EBOUNDS : 1;
+    rc = mulib_pe_directory(v, 4, &d); if (rc) return rc;
+    if (*cursor > d.size || (*cursor & 7) || (d.address & 7)) return MULIB_PE_EFORMAT;
+    if (*cursor == d.size) return 1;
+    if (d.size - *cursor < 8) return MULIB_PE_EBOUNDS;
+    rc = mulib_pe_bytes(v, (uint64_t)d.address + *cursor, d.size - *cursor, &p); if (rc) return rc;
+    n = mulib_endian_load_le32(p);
+    if (n < 8 || n > d.size - *cursor || (uint64_t)n + 7 > SIZE_MAX) return MULIB_PE_EFORMAT;
+    padded = ((size_t)n + 7) & ~(size_t)7;
+    if (padded > d.size - *cursor) return MULIB_PE_EBOUNDS;
+    *revision = (uint16_t)(p[4] | (uint16_t)p[5] << 8);
+    *type = (uint16_t)(p[6] | (uint16_t)p[7] << 8);
+    *payload = p + 8; *bytes = n - 8; *cursor += padded; return 0;
 }
 #endif
