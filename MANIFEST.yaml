@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 536
-implemented_module_count: 536
+module_count: 537
+implemented_module_count: 537
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3765,7 +3765,38 @@ modules:
   purpose: "Stateful incremental editor-buffer lexing, CSS themes and terminal output."
   dependencies: [edbuf, termstyle]
   status: implemented
+- name: shiraz
+  header: include/mulib-shiraz.h
+  manual: manual/mulib-shiraz.md
+  macro: MULIB_IMPL_SHIRAZ
+  purpose: "Shiraz: Windows AMD64 PE/COFF loading, interpretation and helper-based C AOT."
+  dependencies: [pe, strbuf]
+  status: implemented
 project_files:
+- file: library/shiraz/core.c
+  purpose: Separately compiled Shiraz CPU, PE/COFF loader and storage implementations.
+- file: library/shiraz/runtime.c
+  purpose: Shared Windows runtime ownership, guest handles and import resolution.
+- file: library/shiraz/kernel32.c
+  purpose: Windows console, file, process-identification and heap services.
+- file: library/shiraz/registry.c
+  purpose: KVDB-backed persistent Windows registry and ADVAPI32 import services.
+- file: library/shiraz/internal.h
+  purpose: Private runtime contracts shared by Windows service implementations.
+- file: library/shiraz/cli.c
+  purpose: Interpreter, C translation and ELF compiler command-line application.
+- file: library/shiraz/reg.c
+  purpose: Registry get, set and delete command-line application.
+- file: library/shiraz/Makefile
+  purpose: Static/shared ELF runtime, tools, interoperability and installation rules.
+- file: library/shiraz/CMakeLists.txt
+  purpose: Root CMake integration for Shiraz libraries and applications.
+- file: library/shiraz/README.md
+  purpose: Runtime build, Windows API catalogue and registry application reference.
+- file: tools/check_shiraz.py
+  purpose: Real Windows PE/COFF interpretation, rebasing and static/shared ELF interoperability.
+- file: tests/test_shiraz.c
+  purpose: Loader, interpreter, guest memory, AOT and persistent registry regressions.
 - file: tools/check_dynbox_abi.py
   purpose: "Compiler ABI oracle for runtime-typed calls, native closures and separately loaded shared libraries."
 - file: tools/check_boot_formats.py
@@ -5502,3 +5533,7 @@ project_files:
   purpose: "Focused regression suite for test_editor_dynbox_alloc."
 - file: tests/test_terminal_editor.c
   purpose: "Focused regression suite for test_terminal_editor."
+- file: examples/modules/shiraz.c
+  purpose: "Standalone checked usage example for shiraz."
+- file: tests/test_shiraz.c
+  purpose: "Focused regression suite for test_shiraz."

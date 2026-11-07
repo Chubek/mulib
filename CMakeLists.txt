@@ -7,6 +7,11 @@ target_include_directories(mulib INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(mulib INTERFACE c_std_11)
 target_link_libraries(mulib INTERFACE Threads::Threads)
 
+option(MULIB_BUILD_SHIRAZ "Build the Linux Shiraz runtime libraries and tools" ${CMAKE_HOST_UNIX})
+if(MULIB_BUILD_SHIRAZ AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_subdirectory(library/shiraz)
+endif()
+
 # Opt-in header-only provider layer; implementation placement remains caller-owned.
 add_library(mulib_yantlr_stdlib INTERFACE)
 target_include_directories(mulib_yantlr_stdlib INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/library/yantlr)
@@ -94,6 +99,13 @@ if(MULIB_BUILD_TESTS)
     mulib_register_test(mulib_virtio_devices_link)
   endif()
   find_package(Python3 QUIET COMPONENTS Interpreter)
+  if(Python3_Interpreter_FOUND AND TARGET shiraz)
+    add_test(NAME mulib_shiraz_interoperability
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_shiraz.py
+        --shiraz $<TARGET_FILE:shiraz> --registry $<TARGET_FILE:shiraz-reg>)
+    set_tests_properties(mulib_shiraz_interoperability PROPERTIES TIMEOUT 180
+      SKIP_REGULAR_EXPRESSION "SKIP: Shiraz")
+  endif()
   if(Python3_Interpreter_FOUND)
     add_test(NAME mulib_virtio_amalgamation
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/amalgamate_virtio.py --check)

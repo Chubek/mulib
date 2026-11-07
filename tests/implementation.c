@@ -1,3 +1,4 @@
+#define MULIB_IMPL_SHIRAZ
 #define MULIB_IMPL_DYNBOX
 #define MULIB_IMPL_EDBUF
 #define MULIB_IMPL_TERMSYN
@@ -1077,3 +1078,4 @@
 #include "mulib-dynbox.h"
 #include "mulib-edbuf.h"
 #include "mulib-termsyn.h"
+#include "mulib-shiraz.h"

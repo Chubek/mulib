@@ -421,6 +421,7 @@
     "mulib-sexpr.h",
     "mulib-shaderx.h",
     "mulib-shadowsocks.h",
+    "mulib-shiraz.h",
     "mulib-shm.h",
     "mulib-shoebox-contract.h",
     "mulib-signal.h",
@@ -542,10 +543,10 @@
     "mulib-yantlr.h",
     "virtio.h"
   ],
-  "libraries": 540,
-  "functions": 2910,
-  "types": 5017,
-  "constants": 1804,
+  "libraries": 541,
+  "functions": 2936,
+  "types": 5061,
+  "constants": 1815,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -585,7 +586,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "43b44446363738169e1cc267af63b102b2302551adbb1dd8ee5588bca3fafce7",
+  "fingerprint": "41607e2f079e349f8c44728352fd6e6b07dc9401655bf26818aaae381d89ab45",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -4806,6 +4807,37 @@
         "mulib_shadowsocks_init",
         "mulib_shadowsocks_seal",
         "mulib_shadowsocks_open"
+      ]
+    },
+    "shiraz": {
+      "header": "mulib-shiraz.h",
+      "functions": [
+        "mulib_shiraz_load",
+        "mulib_shiraz_load_file",
+        "mulib_shiraz_destroy",
+        "mulib_shiraz_cpu",
+        "mulib_shiraz_error",
+        "mulib_shiraz_bind",
+        "mulib_shiraz_import_count",
+        "mulib_shiraz_import",
+        "mulib_shiraz_read",
+        "mulib_shiraz_write",
+        "mulib_shiraz_argument",
+        "mulib_shiraz_allocate",
+        "mulib_shiraz_release",
+        "mulib_shiraz_exit",
+        "mulib_shiraz_run",
+        "mulib_shiraz_decode",
+        "mulib_shiraz_execute",
+        "mulib_shiraz_dispatch",
+        "mulib_shiraz_emit_c",
+        "mulib_shiraz_runtime_create",
+        "mulib_shiraz_runtime_destroy",
+        "mulib_shiraz_runtime_attach",
+        "mulib_shiraz_runtime_save",
+        "mulib_shiraz_registry_set",
+        "mulib_shiraz_registry_get",
+        "mulib_shiraz_registry_delete"
       ]
     },
     "shm": {

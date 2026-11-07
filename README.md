@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **536 implemented modules**.
+A C11 modular single-header utility library with **537 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 ## Correct implementation-switch syntax
@@ -62,6 +62,15 @@ command constructors and detailed runtime string docstrings, with generic dispat
 for additional Git commands and extensions.
 
 ## Integration
+
+### Windows binaries on Linux
+
+[`Shiraz`](manual/mulib-shiraz.md) loads AMD64 Windows PE/COFF for bounded
+interpretation or helper-based C translation into ELF. Its
+[`runtime libraries and Makefile`](library/shiraz/README.md) provide static/shared
+ELF runtimes, Win32 console/file/heap imports, a persistent registry and the
+`shiraz-reg` application. The initial freestanding instruction/API profile is
+documented explicitly. Both MuLL hosts expose it with `G:MulibWrap("Shiraz")`.
 
 ### Native calls and terminal editors
 
@@ -141,7 +150,7 @@ symbol emissions. [Machinebuild](manual/mulib-machinebuild.md) parses a small
 automaton DSL and generates standalone JavaScript factories with step/reset/run
 APIs; it is separate from the compiler-target `mulib-machine.h` module.
 
-The term *header-only* here means no prebuilt or separately shipped `.c` files; implementations live in headers behind feature switches. These modules implement focused, documented APIs, not every feature implied by a format's name. In particular, configuration, markup, terminal, protocol, and grammar modules document their supported syntax and limits; they are not claims of full YAML, TOML, XPath, HTML5, CSS, CommonMark, VT, or DBus conformance. Unsupported features must not be mistaken for supported conversions. These modules are not complete substitutes for a production Tcl distribution, POSIX manuals toolchain, JSON Schema validator, full Unicode database or cryptographic engine. `mulib-microtcl.h` `loadall()` registers **all MuLIB MicroTcl built-ins**, not external Tcl packages. Documented support and actual APIs determine feature completeness. All names and responsibilities are enumerated in `MANIFEST.yaml`; every header has a dedicated manual in `manual/` and embedded Doxygen text.
+Core module implementations live in headers behind feature switches. Separately compiled runtime layers, including Shiraz and Virtio, ship source files under `library/`. These modules implement focused, documented APIs, not every feature implied by a format's name. In particular, configuration, markup, terminal, protocol, and grammar modules document their supported syntax and limits; they are not claims of full YAML, TOML, XPath, HTML5, CSS, CommonMark, VT, or DBus conformance. Unsupported features must not be mistaken for supported conversions. These modules are not complete substitutes for a production Tcl distribution, POSIX manuals toolchain, JSON Schema validator, full Unicode database or cryptographic engine. `mulib-microtcl.h` `loadall()` registers **all MuLIB MicroTcl built-ins**, not external Tcl packages. Documented support and actual APIs determine feature completeness. All names and responsibilities are enumerated in `MANIFEST.yaml`; every header has a dedicated manual in `manual/` and embedded Doxygen text.
 
 There are no mandatory third-party library dependencies. Wayland/Xlib connection
 helpers optionally load their native client runtimes; wlroots helpers provide

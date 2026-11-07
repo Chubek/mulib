@@ -9,14 +9,21 @@ creates an immutable binding and checks the initializer's type. A semicolon is
 optional at the declaration's end-of-line, closing brace, or end-of-source.
 Native data referenced by the binding can still be mutated by library calls.
 
-The checked-in generated bridge covers **541 public headers**, **540 library
-names**, **2,910 functions**, **5,017 native type descriptors**, and **1,804
+The checked-in generated bridge covers **542 public headers**, **541 library
+names**, **2,936 functions**, **5,061 native type descriptors**, and **1,815
 constants** from MuLIB. `virtio.h` and `mulib-virtio.h` name the same library.
 `Inventory.json` records the complete header/function inventory and fingerprint.
 Functions are real compiler-typed C calls, including struct/union returns,
 static-inline APIs, and callbacks. Both hosts use the same compiled bridge.
 
 ## Build and install
+
+Shiraz's header-only loader/interpreter and separately compiled Windows services
+are both exposed by `G:MulibWrap("Shiraz")`. The bridge builds `runtime.c`,
+`kernel32.c` and `registry.c` from the accompanying `library/shiraz` directory.
+Set `MULL_SHIRAZ_SOURCE_DIR` if those sources are located elsewhere. The
+[Shiraz manual](../../../../manual/mulib-shiraz.md) covers PE/COFF execution,
+C/ELF translation and registry operations; both C++ and D hosts use this runtime.
 
 From the MuDSL root:
 

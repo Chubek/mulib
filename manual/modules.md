@@ -1,6 +1,6 @@
 # MuLIB module and composition guide
 
-MuLIB has 536 implemented single-header C11 modules. Every implemented module has a corresponding
+MuLIB has 537 implemented single-header C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -24,6 +24,7 @@ consult each manual's exact supported syntax, errors, and limits.
 | Storage and native formats | [archive](mulib-archive.md), [mmfile](mulib-mmfile.md), [kvdb](mulib-kvdb.md), [elf](mulib-elf.md), [dynload](mulib-dynload.md), [drm](mulib-drm.md) |
 | SQLite-file database | [SQL engine](mulib-sqlite.md), [record/B-tree format](mulib-sqlite-format.md), [snapshot pager](mulib-sqlite-pager.md); implemented profile, not full SQLite compatibility |
 | Binary inspection and packing | [ELF/COFF/PE/Mach-O stack](binary-formats.md), [shared objdump](mulib-objdump.md), [terminal styles](mulib-termstyle.md) |
+| Windows binary translation | [Shiraz](mulib-shiraz.md): AMD64 PE/COFF interpretation, helper-based ELF AOT, Windows runtime libraries and Registry |
 | Terminals | [terminfo](mulib-terminfo.md), [termkey](mulib-termkey.md), [termutils](mulib-termutils.md), [vterm](mulib-vterm.md), [tui](mulib-tui.md), [readline](mulib-readline.md), [VGA text buffer](mulib-vgabuffer.md) |
 | Terminal editors | [gap/rope/piece-table buffers](mulib-edbuf.md), [CSS terminal styles](mulib-termstyle.md), [incremental syntax backend](mulib-termsyn.md) |
 | Native foreign interfaces | [runtime-typed SysV calls and closures](mulib-dynbox.md), [shared libraries and typed symbols](mulib-dynload.md); platform/type profiles are explicit |

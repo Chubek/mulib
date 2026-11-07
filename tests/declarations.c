@@ -538,4 +538,5 @@
 #include "mulib-dynbox.h"
 #include "mulib-edbuf.h"
 #include "mulib-termsyn.h"
+#include "mulib-shiraz.h"
 int main(void) { return 0; }

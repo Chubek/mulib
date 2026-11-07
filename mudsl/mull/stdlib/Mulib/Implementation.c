@@ -419,6 +419,7 @@
 #define MULIB_IMPL_SEXPR
 #define MULIB_IMPL_SHADERX
 #define MULIB_IMPL_SHADOWSOCKS
+#define MULIB_IMPL_SHIRAZ
 #define MULIB_IMPL_SHM
 #define MULIB_IMPL_SHOEBOX_CONTRACT
 #define MULIB_IMPL_SIGNAL
@@ -959,6 +960,7 @@
 #include "mulib-sexpr.h"
 #include "mulib-shaderx.h"
 #include "mulib-shadowsocks.h"
+#include "mulib-shiraz.h"
 #include "mulib-shm.h"
 #include "mulib-shoebox-contract.h"
 #include "mulib-signal.h"

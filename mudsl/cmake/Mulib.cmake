@@ -15,6 +15,18 @@ if(MULL_ENABLE_MULIB)
     add_library(mull-mulib-bridge STATIC
         ${CMAKE_CURRENT_LIST_DIR}/../mull/stdlib/Mulib/Bridge.c
         ${CMAKE_CURRENT_LIST_DIR}/../mull/stdlib/Mulib/Implementation.c)
+    # Shiraz's Windows services are deliberately separate from its header-only
+    # CPU/loader implementation. Both MuLL hosts use these same runtime objects.
+    set(MULL_SHIRAZ_SOURCE_DIR "${MULL_MULIB_INCLUDE_DIR}/../library/shiraz" CACHE PATH
+        "Shiraz runtime sources accompanying the MuLIB headers")
+    if(NOT EXISTS "${MULL_SHIRAZ_SOURCE_DIR}/runtime.c")
+        message(FATAL_ERROR "Set MULL_SHIRAZ_SOURCE_DIR to the MuLIB library/shiraz directory")
+    endif()
+    target_sources(mull-mulib-bridge PRIVATE
+        ${MULL_SHIRAZ_SOURCE_DIR}/runtime.c
+        ${MULL_SHIRAZ_SOURCE_DIR}/kernel32.c
+        ${MULL_SHIRAZ_SOURCE_DIR}/registry.c)
+    target_compile_definitions(mull-mulib-bridge PRIVATE _POSIX_C_SOURCE=200809L)
     add_library(MuDSL::Mulib ALIAS mull-mulib-bridge)
     set_target_properties(mull-mulib-bridge PROPERTIES EXPORT_NAME Mulib
         C_STANDARD 11 C_STANDARD_REQUIRED YES POSITION_INDEPENDENT_CODE YES)

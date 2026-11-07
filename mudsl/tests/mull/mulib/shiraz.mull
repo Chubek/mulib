@@ -1,0 +1,25 @@
+mulib S <- G:MulibWrap("Shiraz")
+mulib P <- G:MulibWrap("Pebuilder")
+mulib B <- G:MulibWrap("Buffer")
+val code <- S:Array("unsigned char", [184, 42, 0, 0, 0, 195]);
+val image <- B:New("mulib_buffer_t");
+G:Assert(P:Text(image, code, 6, 0) == 1);
+val output <- S:New("mulib_shiraz_t *");
+G:Assert(S:Load(output, image:data, image:length, nil, nil) == 0);
+val vm <- output:Get();
+val runtime <- S:RuntimeCreate(nil);
+G:Assert(S:RuntimeAttach(runtime, vm) == 0);
+G:Assert(S:Run(vm, 100) == S:MULIB_SHIRAZ_DONE);
+G:Assert(S:Cpu(vm):exit_code == 42);
+val bytes <- S:Array("unsigned char", [37, 0, 0, 0]);
+G:Assert(S:RegistrySet(runtime, "HKCU\\Software\\Shiraz", "Answer", 4, bytes, 4) == 0);
+val count <- S:New("size_t", 4);
+val kind <- S:New("uint32_t");
+val value <- S:Buffer(4);
+G:Assert(S:RegistryGet(runtime, "hkcu/software/shiraz", "answer", kind, value, count) == 0);
+G:Assert(kind:Get() == 4 and count:Get() == 4);
+G:Assert(value:As("unsigned char", 4)[0] == 37);
+S:Destroy(vm);
+S:RuntimeDestroy(runtime);
+B:Free(image);
+"shiraz ok";
