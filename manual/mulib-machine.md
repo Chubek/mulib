@@ -1,5 +1,7 @@
 # mulib-machine
 
+[Manuals](README.md) · [Library index](index.md)
+
 Retargetable machine descriptions, costed MuBURG selection and standalone ELF
 assembly emission for **x86-64 SysV** and **RV64IM LP64**.
 
@@ -115,3 +117,27 @@ The example selects immediate ADD on both targets. MicroCC tests change rule
 costs to force another cover, reject unavailable covers and malformed targets,
 execute x86-64 assembly with independent arithmetic/ABI checks, and
 cross-assemble RV64IM output when Clang is available.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-machine.h`](../include/mulib-machine.h) |
+| Implementation switch | `MULIB_IMPL_MACHINE` |
+| Repository-local includes | [mulib-mir](mulib-mir.md), [mulib-muburg](mulib-muburg.md) |
+| Complete example | [`examples/modules/machine.c`](../examples/modules/machine.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/machine.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

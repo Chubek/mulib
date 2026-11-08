@@ -1,5 +1,7 @@
 # MuLIB HAT-style trie
 
+[Manuals](README.md) · [Library index](index.md)
+
 - **Header:** `include/mulib-hattrie.h`
 - **Implementation switches:** `MULIB_IMPL_HATTRIE`, **`MULIB_IMPL_HASH`**
 - **Dependency:** `mulib-hash.h` (FNV-1a); ISO C11, C++17-compatible declarations.
@@ -111,3 +113,27 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/hattrie.c
 prefix enumeration, empty/binary keys, exact-prefix terminals, 16 KiB compressed
 prefixes, divergent/shorter-key splits, deletion to empty, injected split OOM and
 deferred bursting. No external libraries are used.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-hattrie.h`](../include/mulib-hattrie.h) |
+| Implementation switch | `MULIB_IMPL_HATTRIE` |
+| Repository-local includes | [mulib-hash](mulib-hash.md) |
+| Complete example | [`examples/modules/hattrie.c`](../examples/modules/hattrie.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hattrie.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

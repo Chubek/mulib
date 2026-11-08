@@ -1,5 +1,7 @@
 # mulib-midi
 
+[Manuals](README.md) · [Library index](index.md)
+
 Owned event sequences and Standard MIDI File (SMF) IO, independent of platform
 MIDI devices. Define `MULIB_IMPL_MIDI`, `MULIB_IMPL_AUDIO`, `MULIB_IMPL_XSIMD`;
 include `mulib-midi.h`. Example: `examples/modules/midi.c`.
@@ -32,3 +34,27 @@ in addition to the output file.
 
 Audrey adds Lua score notation and compiles beat-based notes into this model.
 MIDI files describe performance events; they do not contain synthesized audio.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-midi.h`](../include/mulib-midi.h) |
+| Implementation switch | `MULIB_IMPL_MIDI` |
+| Repository-local includes | [mulib-audio](mulib-audio.md) |
+| Complete example | [`examples/modules/midi.c`](../examples/modules/midi.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/midi.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

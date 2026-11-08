@@ -1,5 +1,7 @@
 # mulib-dnsnmeserver
 
+[Manuals](README.md) · [Library index](index.md)
+
 Compatibility facade for the historical `dnsnmeserver` spelling. New code should
 include [`mulib-nameserver.h`](mulib-nameserver.md) and use `mulib_nameserver_*`.
 The misspelled module is intentionally useful, not an empty reserved header or
@@ -64,3 +66,27 @@ assert-based example using only the facade to initialize and answer NXDOMAIN.
 `tests/test_dns_stack.c` exercises both forwarding functions alongside the
 canonical nameserver and callback resolver. Declaration-only C++ compilation
 does not require native networking headers.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-dnsnmeserver.h`](../include/mulib-dnsnmeserver.h) |
+| Implementation switch | `MULIB_IMPL_DNSNMESERVER` |
+| Repository-local includes | [mulib-nameserver](mulib-nameserver.md) |
+| Complete example | [`examples/modules/dnsnmeserver.c`](../examples/modules/dnsnmeserver.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dnsnmeserver.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

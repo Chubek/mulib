@@ -1,5 +1,7 @@
 # mulib-imgbuildspec
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME
 
 Reusable owned image recipes combining process configuration and filesystem steps.
@@ -47,3 +49,27 @@ ENOMEM. Runtime resource enforcement belongs to the selected backend.
 
 See [imgbuilder](mulib-imgbuilder.md) for deterministic build reports and
 [imgformat](mulib-imgformat.md) for serialized fields and compatibility.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-imgbuildspec.h`](../include/mulib-imgbuildspec.h) |
+| Implementation switch | `MULIB_IMPL_IMGBUILDSPEC` |
+| Repository-local includes | [mulib-imgformat](mulib-imgformat.md), [mulib-rootfs-buildspec](mulib-rootfs-buildspec.md) |
+| Complete example | [`examples/modules/imgbuildspec.c`](../examples/modules/imgbuildspec.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/imgbuildspec.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

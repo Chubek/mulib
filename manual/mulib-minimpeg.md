@@ -1,5 +1,7 @@
 # mulib-minimpeg
 
+[Manuals](README.md) · [Library index](index.md)
+
 Original MPEG-1 **Layer III (MP3)** encoding and profile-limited decoding;
 this module does not implement MPEG video or MPEG audio Layers I/II.
 Define `MULIB_IMPL_MINIMPEG`, `MULIB_IMPL_AUDIO`, `MULIB_IMPL_XSIMD`; link `-lm`
@@ -51,3 +53,27 @@ against the `intwinbase` data in
 No mpg123 implementation routines or other third-party codec code are included
 or linked. Optional interoperability tests use FFmpeg solely as an independent
 test oracle and compare PCM samples, not only container acceptance.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-minimpeg.h`](../include/mulib-minimpeg.h) |
+| Implementation switch | `MULIB_IMPL_MINIMPEG` |
+| Repository-local includes | [mulib-audio](mulib-audio.md) |
+| Complete example | [`examples/modules/minimpeg.c`](../examples/modules/minimpeg.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/minimpeg.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

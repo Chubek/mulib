@@ -1,5 +1,7 @@
 # mulib-dnscache
 
+[Manuals](README.md) · [Library index](index.md)
+
 A fixed-capacity positive cache of complete IN A/AAAA address sets. It caches
 values rather than packet pointers, so neither packet nor input names survive
 as borrowed storage. There is no allocation or system clock access.
@@ -65,3 +67,27 @@ The caller decides whether data is trustworthy before inserting it.
 copy-ownership and expiry example. `tests/test_dns_stack.c` checks normalization,
 family isolation, remaining TTL, replacement, zero capacity, invalid capacities,
 backwards clocks, zero TTL and timestamps near `UINT64_MAX`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-dnscache.h`](../include/mulib-dnscache.h) |
+| Implementation switch | `MULIB_IMPL_DNSCACHE` |
+| Repository-local includes | [mulib-dns](mulib-dns.md) |
+| Complete example | [`examples/modules/dnscache.c`](../examples/modules/dnscache.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dnscache.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

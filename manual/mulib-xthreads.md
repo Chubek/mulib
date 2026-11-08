@@ -1,5 +1,7 @@
 # mulib-xthreads
 
+[Manuals](README.md) · [Library index](index.md)
+
 Portable native threads and the low-level synchronization used by MuLIB's CSP
 runtime. Define `MULIB_IMPL_XTHREADS` in exactly one translation unit, then include
 `mulib-xthreads.h`. There are no MuLIB dependencies. On POSIX, compile/link with
@@ -63,3 +65,27 @@ misuse (invalid handles, wrong-owner unlock, recursive acquisition) is outside
 the contract. Thread cancellation/forced termination is unsupported.
 
 See [`examples/modules/xthreads.c`](../examples/modules/xthreads.c).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-xthreads.h`](../include/mulib-xthreads.h) |
+| Implementation switch | `MULIB_IMPL_XTHREADS` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/xthreads.c`](../examples/modules/xthreads.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xthreads.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

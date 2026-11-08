@@ -1,5 +1,7 @@
 # mulib-dns
 
+[Manuals](README.md) · [Library index](index.md)
+
 Allocation-free DNS packet construction and validation, with bounded compression.
 This is a focused wire codec, not a recursive resolver or a full DNS implementation.
 
@@ -84,3 +86,27 @@ feature outside this subset. Higher-level transaction errors share the enum.
 builds a runnable question/answer compression example. `tests/test_dns_stack.c`
 covers each supported RR, byte-for-byte compressed roundtrips, truncated packets,
 cyclic pointers, maximum names, count limits and deterministic malformed mutations.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-dns.h`](../include/mulib-dns.h) |
+| Implementation switch | `MULIB_IMPL_DNS` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/dns.c`](../examples/modules/dns.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dns.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

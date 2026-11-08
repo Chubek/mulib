@@ -1,5 +1,7 @@
 # mulib-containerd-cache
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Bounded validated-image cache with LRU eviction, expiry and pinned leases.
@@ -42,3 +44,27 @@ hits/misses/evictions saturate; replacement of the same key is not an eviction.
 Current count/bytes reflect retained images, including expired pinned ones.
 Uses CT errors, including image CRC errors. Cache does not authenticate images,
 write persistent storage or start an eviction thread. Externally serialize use.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-containerd-cache.h`](../include/mulib-containerd-cache.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINERD_CACHE` |
+| Repository-local includes | [mulib-imgformat](mulib-imgformat.md) |
+| Complete example | [`examples/modules/containerd-cache.c`](../examples/modules/containerd-cache.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containerd-cache.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

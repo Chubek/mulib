@@ -1,5 +1,7 @@
 # socket
 
+[Manuals](README.md) · [Library index](index.md)
+
 POSIX connected stream ownership. Initialize handles with `MULIB_SOCKET_INIT`.
 `pair` creates a close-on-exec AF_UNIX pair; outputs unchanged on failure.
 `nonblocking` controls O_NONBLOCK; `send`/`receive` perform one possibly short
@@ -23,3 +25,99 @@ only on success; `bound_port` remains unchanged on error. They use the platform
 IPv4 socket interface, not a third-party networking library. There is no timeout
 for blocking connect or name resolution. TCP roundtrip setup is tested in
 `tests/test_mumq.c`.
+
+<!-- manual-interface -->
+## Public header reference
+
+Verbatim declaration section from [`include/mulib-socket.h`](../include/mulib-socket.h).
+Include the header in application code; dependency types come from its includes.
+
+<details>
+<summary>Types, constants, and declarations</summary>
+
+```c
+/** @file mulib-socket.h
+ * @brief POSIX connected stream descriptor ownership and bounded I/O
+ * primitives and numeric IPv4 TCP setup. Define MULIB_IMPL_SOCKET once. No DNS or implicit
+ * security. */
+#ifndef MULIB_SOCKET_H
+#define MULIB_SOCKET_H
+#include <stddef.h>
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+  typedef struct mulib_socket
+  {
+    int fd;
+  } mulib_socket_t;
+#define MULIB_SOCKET_INIT { -1 }
+  enum
+  {
+    MULIB_SOCKET_OK = 0,
+    MULIB_SOCKET_AGAIN = 1,
+    MULIB_SOCKET_EOF = 2,
+    MULIB_SOCKET_EINVAL = -1,
+    MULIB_SOCKET_EIO = -2,
+    MULIB_SOCKET_ENOTSUP = -3
+  };
+  /** @brief Create owning close-on-exec AF_UNIX stream pair into two
+   * initialized invalid descriptors; 0 success. Outputs unchanged on failure.
+   */
+  int mulib_socket_pair (mulib_socket_t *a, mulib_socket_t *b);
+  /** @brief Blocking TCP connect to a numeric IPv4 address; output must be
+   * invalid. Close-on-exec, no DNS. Returns 0, EINVAL/EIO/ENOTSUP below. */
+  int mulib_socket_connect (mulib_socket_t *out, const char *address, unsigned port);
+  /** @brief Nonblocking numeric IPv4 listener. Port zero requests an ephemeral
+   * port, returned through bound_port. No implicit wildcard binding. */
+  int mulib_socket_listen (mulib_socket_t *out, const char *address, unsigned port,
+                          unsigned *bound_port);
+  /** @brief Accept a close-on-exec connected stream; AGAIN when no client. */
+  int mulib_socket_accept (mulib_socket_t *listener, mulib_socket_t *out);
+  /** @brief Enable/disable O_NONBLOCK; 0 success. */
+  int mulib_socket_nonblocking (mulib_socket_t *s, int enabled);
+  /** @brief Send once (short writes allowed). EINTR retried, EAGAIN explicit.
+   * SIGPIPE suppressed when platform supports MSG_NOSIGNAL/SO_NOSIGPIPE;
+   * otherwise ENOTSUP (never silently change process signal policy). Count set
+   * zero on errors. */
+  int mulib_socket_send (mulib_socket_t *s, const void *data, size_t size,
+                         size_t *sent);
+  /** @brief Receive once; EOF distinct from AGAIN, zero capacity succeeds with
+   * zero. */
+  int mulib_socket_receive (mulib_socket_t *s, void *data, size_t capacity,
+                            size_t *received);
+  /** @brief Close/reset idempotently, 0 success. Never retries close after
+   * EINTR. */
+  int mulib_socket_close (mulib_socket_t *s);
+#ifdef __cplusplus
+}
+#endif
+#endif
+```
+
+</details>
+<!-- /manual-interface -->
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-socket.h`](../include/mulib-socket.h) |
+| Implementation switch | `MULIB_IMPL_SOCKET` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/socket.c`](../examples/modules/socket.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/socket.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

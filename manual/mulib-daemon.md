@@ -1,5 +1,7 @@
 # MuLIB daemon
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-daemon.h` · **Switch:** `MULIB_IMPL_DAEMON`
 
 Build an owned daemon specification with C setters or a Mune configuration;
@@ -135,3 +137,27 @@ cc -std=c11 -Iinclude examples/modules/daemon.c -pthread -lm -ldl -o /tmp/openco
 `tests/test_daemon_fswatch.c` exercises Mune helpers, profile escaping and failed
 compilation, copied environments, child callbacks, exec/setup failure reporting,
 exit statuses, watcher launch, SIGTERM and reaping.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-daemon.h`](../include/mulib-daemon.h) |
+| Implementation switch | `MULIB_IMPL_DAEMON` |
+| Repository-local includes | [mulib-mune](mulib-mune.md), [mulib-process](mulib-process.md), [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/daemon.c`](../examples/modules/daemon.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/daemon.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

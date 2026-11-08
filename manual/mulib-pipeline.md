@@ -1,5 +1,7 @@
 # MuLIB pipeline
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header/switch:** `include/mulib-pipeline.h` / `MULIB_IMPL_PIPELINE`  
 **Required implementations:** `MULIB_IMPL_PARALLEL`, `MULIB_IMPL_TASKPOOL`  
 **Build:** C11, `-pthread`; C++17 declarations supported. Dependencies are never auto-enabled.
@@ -81,3 +83,27 @@ The example doubles two separately allocated integers and collects their sum in
 the release callback. Tests exercise buffer replacement, final release on the
 caller thread, original error preservation, cancellation before any work,
 validation failure retaining ownership, empty inputs, and cleared output handles.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-pipeline.h`](../include/mulib-pipeline.h) |
+| Implementation switch | `MULIB_IMPL_PIPELINE` |
+| Repository-local includes | [mulib-parallel](mulib-parallel.md) |
+| Complete example | [`examples/modules/pipeline.c`](../examples/modules/pipeline.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pipeline.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

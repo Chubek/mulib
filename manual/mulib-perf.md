@@ -1,5 +1,7 @@
 # MuLIB perf
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-perf.h` · **Switch:** `MULIB_IMPL_PERF`  
 **Dependencies:** none; native monotonic libc clock. C11 / C-linkage declarations.
 
@@ -58,3 +60,27 @@ The example checks ordering and elapsed subtraction without assuming a positive
 minimum duration; unavailable/denied clocks print a skip. `tests/test_os_events.c`
 adds null outputs, full-width subtraction, equal timestamps, and backwards
 input. Strict independent compilation also tests inclusion after `<time.h>`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-perf.h`](../include/mulib-perf.h) |
+| Implementation switch | `MULIB_IMPL_PERF` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/perf.c`](../examples/modules/perf.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/perf.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

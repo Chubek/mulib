@@ -1,5 +1,7 @@
 # mulib-walker
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_WALKER`, `MULIB_IMPL_EVTLISTENER` and `MULIB_IMPL_EVTSTREAM`
 once; include `mulib-walker.h`. No AST implementation or allocation is required unless the
 application uses AST constructors. See `examples/modules/walker.c` and
@@ -24,3 +26,60 @@ does not validate arbitrary graphs or detect cycles. No ownership transfers,
 storage limits or recursive C stack usage are introduced by the walker.
 For preorder skip/stop controls rather than paired events see
 `mulib-visitor.h`; for existing postorder action tables see `mulib-ast.h`.
+
+<!-- manual-interface -->
+## Public header reference
+
+Verbatim declaration section from [`include/mulib-walker.h`](../include/mulib-walker.h).
+Include the header in application code; dependency types come from its includes.
+
+<details>
+<summary>Types, constants, and declarations</summary>
+
+```c
+/** @file mulib-walker.h
+ * @brief Visitor walker sharing the parser event-listener interface.
+ * Define MULIB_IMPL_WALKER, MULIB_IMPL_EVTLISTENER and MULIB_IMPL_EVTSTREAM.
+ */
+#ifndef MULIB_WALKER_H
+#define MULIB_WALKER_H
+#include "mulib-evtlistener.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+/** Walk a borrowed AST/subtree in enter/leave order, without allocation.
+ * NULL root is empty. Returns 1 complete, 0 callback stopped, -1 error.
+ * Neither callbacks nor other threads may mutate the tree during traversal. */
+int mulib_walker_walk(const mulib_ast_t *, const mulib_evtlistener_t *);
+#ifdef __cplusplus
+}
+#endif
+#endif
+```
+
+</details>
+<!-- /manual-interface -->
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-walker.h`](../include/mulib-walker.h) |
+| Implementation switch | `MULIB_IMPL_WALKER` |
+| Repository-local includes | [mulib-evtlistener](mulib-evtlistener.md) |
+| Complete example | [`examples/modules/walker.c`](../examples/modules/walker.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/walker.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

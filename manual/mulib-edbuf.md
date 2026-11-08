@@ -1,5 +1,7 @@
 # Editor buffers
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `mulib-edbuf.h`; define **`MULIB_IMPL_EDBUF`** once. No dependencies.
 [Runnable example](../examples/modules/edbuf.c).
 
@@ -93,3 +95,27 @@ edits, validate AVL balance, and exercise binary bytes, empty/EOF lines, history
 marks, range errors and allocation-failure rollback.
 
 Build: `cc -std=c11 -Iinclude examples/modules/edbuf.c -o edbuf-example`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-edbuf.h`](../include/mulib-edbuf.h) |
+| Implementation switch | `MULIB_IMPL_EDBUF` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/edbuf.c`](../examples/modules/edbuf.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/edbuf.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

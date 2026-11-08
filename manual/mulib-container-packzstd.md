@@ -1,5 +1,7 @@
 # mulib-container-packzstd
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Standard Zstandard raw/RLE packaging for validated container images.
@@ -50,3 +52,27 @@ cmp image.bin restored.bin
 The focused checker performs this comparison when `zstd` is available. CT errors
 distinguish malformed frames/images, unsupported codecs, limits, allocation and
 image checksum failures.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-container-packzstd.h`](../include/mulib-container-packzstd.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINER_PACKZSTD` |
+| Repository-local includes | [include-mulib-zstd](include-mulib-zstd.md), [mulib-imgformat](mulib-imgformat.md) |
+| Complete example | [`examples/modules/container-packzstd.c`](../examples/modules/container-packzstd.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-packzstd.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

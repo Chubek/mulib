@@ -1,5 +1,7 @@
 # mulib-anfir
 
+[Manuals](README.md) · [Library index](index.md)
+
 **A-normal form** represented by ordered, named let bindings whose operands
 are either existing value names or literal atoms. CFG joins use block-parameter
 bindings (PHIs); effects are sequenced by binding order.
@@ -77,3 +79,27 @@ The example lowers `let v0 = param(0); let v1 = add(v0, 42); return v1`.
 `tests/test_microcc.c` exercises literal remapping, invalid masks, GSSA roundtrips
 and loop PHIs; `tests/test_microcc_alloc.c` covers failed transformations and
 compilation allocations.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-anfir.h`](../include/mulib-anfir.h) |
+| Implementation switch | `MULIB_IMPL_ANFIR` |
+| Repository-local includes | [mulib-gssair](mulib-gssair.md) |
+| Complete example | [`examples/modules/anfir.c`](../examples/modules/anfir.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/anfir.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

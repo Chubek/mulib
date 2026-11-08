@@ -1,5 +1,7 @@
 # MuLIB rubybind
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-rubybind.h`  
 **Implementation switches:** `MULIB_IMPL_RUBYBIND`, `MULIB_IMPL_PYBIND`, `MULIB_IMPL_STRBUF`  
 **Dependencies:** MuLIB pybind's shared descriptors/validator, strbuf, ISO C11.
@@ -119,3 +121,27 @@ ruby -r ./bindings.rb -e 'raise unless MuLIBBindings.add(20,22)==42'
 Define dependency implementation switches explicitly before all includes in
 exactly one translation unit. The header never turns them on itself.
 Declaration-only C++17 inclusion is supported through `extern "C"`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-rubybind.h`](../include/mulib-rubybind.h) |
+| Implementation switch | `MULIB_IMPL_RUBYBIND` |
+| Repository-local includes | [mulib-pybind](mulib-pybind.md) |
+| Complete example | [`examples/modules/rubybind.c`](../examples/modules/rubybind.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rubybind.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

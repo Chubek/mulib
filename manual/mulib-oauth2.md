@@ -1,5 +1,7 @@
 # OAuth2 policy, state and PKCE
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_OAUTH2`, `MULIB_IMPL_AUTH`, `MULIB_IMPL_AUTHCRYPTO`,
 `MULIB_IMPL_BASE64` and `MULIB_IMPL_SECURITY` in one translation unit.
 
@@ -55,3 +57,27 @@ endpoint. The library supplies no entropy or secret storage.
 Require authenticated TLS, exact redirect URI allowlists, replay protection and
 rate limiting externally. PKCE does not replace state or token verification.
 [Example](../examples/modules/oauth2.c), [tests](../tests/test_authentication.c).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-oauth2.h`](../include/mulib-oauth2.h) |
+| Implementation switch | `MULIB_IMPL_OAUTH2` |
+| Repository-local includes | [mulib-auth](mulib-auth.md), [mulib-authcrypto](mulib-authcrypto.md) |
+| Complete example | [`examples/modules/oauth2.c`](../examples/modules/oauth2.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/oauth2.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

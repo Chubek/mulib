@@ -1,5 +1,7 @@
 # mulib-superblocks
 
+[Manuals](README.md) · [Library index](index.md)
+
 Single-entry traces over typed SSA, with explicit side exits and native MIR
 lowering. It chooses block layout without moving effects across branches.
 
@@ -62,3 +64,27 @@ cc -std=c11 -Iinclude examples/modules/superblocks.c -lm -o superblocks
 The example forms two traces from a branch with two returns. MicroCC tests
 exercise loop/PHI trace derivation, semantic equivalence, assembly execution and
 allocation failures.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-superblocks.h`](../include/mulib-superblocks.h) |
+| Implementation switch | `MULIB_IMPL_SUPERBLOCKS` |
+| Repository-local includes | [mulib-gssair](mulib-gssair.md) |
+| Complete example | [`examples/modules/superblocks.c`](../examples/modules/superblocks.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/superblocks.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

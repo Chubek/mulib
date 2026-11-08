@@ -1,5 +1,7 @@
 # MuLIB PolyTask
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-polytask.h` · **Switch:** `MULIB_IMPL_POLYTASK`
 
 PolyTask combines native TASK plans, an owned JSON plan reader and a persistent
@@ -88,3 +90,27 @@ cc -std=c11 -Iinclude examples/modules/polytask.c -pthread -lm -ldl -o /tmp/open
 
 The focused `tests/test_build_tasks.c` exercises JSON rejection/empty plans,
 concurrent batches, stable results, failures, cancellation and graph dispatch.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-polytask.h`](../include/mulib-polytask.h) |
+| Implementation switch | `MULIB_IMPL_POLYTASK` |
+| Repository-local includes | [mulib-json](mulib-json.md), [mulib-task](mulib-task.md), [mulib-taskpool](mulib-taskpool.md) |
+| Complete example | [`examples/modules/polytask.c`](../examples/modules/polytask.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/polytask.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

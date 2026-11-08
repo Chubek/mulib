@@ -1,5 +1,7 @@
 # MuLIB fswatch
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-fswatch.h` · **Switch:** `MULIB_IMPL_FSWATCH`  
 **Dependencies:** daemon, glob, select, vfs and their transitive dependencies.
 C11 / C-linkage declarations. See the integration section below.
@@ -203,3 +205,27 @@ events, fd flags, and reactor integration.
 `tests/test_daemon_fswatch.c` covers DSL errors, native recursive changes, VFS
 same-size content changes, snapshot limits, failed scans, duplicate entries,
 handler failures, daemon execution and Mune/systemd profiles.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-fswatch.h`](../include/mulib-fswatch.h) |
+| Implementation switch | `MULIB_IMPL_FSWATCH` |
+| Repository-local includes | [mulib-daemon](mulib-daemon.md), [mulib-glob](mulib-glob.md), [mulib-select](mulib-select.md), [mulib-vfs](mulib-vfs.md) |
+| Complete example | [`examples/modules/fswatch.c`](../examples/modules/fswatch.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fswatch.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

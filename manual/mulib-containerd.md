@@ -1,5 +1,7 @@
 # mulib-containerd
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Embeddable container daemon composing execution pools, backend registry, image
@@ -57,3 +59,27 @@ pool entries while their roots are exported; use daemon DELETE. Destroy bridges
 and release cache/mount/pool leases before daemon shutdown. CT errors propagate;
 no Docker/containerd socket protocol, host mounts or automatic privilege changes
 are implied by this embeddable core.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-containerd.h`](../include/mulib-containerd.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINERD` |
+| Repository-local includes | [mulib-conainerd-ipc](mulib-conainerd-ipc.md), [mulib-container-log](mulib-container-log.md), [mulib-containerd-cache](mulib-containerd-cache.md), [mulib-containerd-mount](mulib-containerd-mount.md), [mulib-containterpool](mulib-containterpool.md) |
+| Complete example | [`examples/modules/containerd.c`](../examples/modules/containerd.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containerd.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # Positioned glyphs and paired fonts
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-glyph.h` bridges `fontshape`, `fontdraw`, `sysfonts`, `ligature`,
 and the existing `pglayout` Unicode itemizer. It has C11 implementation and C++
 declarations, without compile-time third-party dependencies.
@@ -53,3 +55,27 @@ other when rendering combining marks or ligatures.
 
 Tests: `tests/test_text_layout.c`, including real paired rendering and source
 mapping, and existing `tests/test_font_stack.c`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-glyph.h`](../include/mulib-glyph.h) |
+| Implementation switch | `MULIB_IMPL_GLYPH` |
+| Repository-local includes | [mulib-fontdraw](mulib-fontdraw.md), [mulib-ligature](mulib-ligature.md), [mulib-pglayout](mulib-pglayout.md), [mulib-sysfonts](mulib-sysfonts.md) |
+| Complete example | [`examples/modules/glyph.c`](../examples/modules/glyph.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/glyph.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-imgbuilder
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME
 
 Deterministic, transactional image builds from rootfs and process recipes.
@@ -54,3 +56,27 @@ and archive-buffer allocation failures also report ENOMEM; overflow and quota
 failures report ELIMIT. Full import is in [image2container](mulib-image2container.md).
 Tests verify deterministic output,
 empty roots, failure-preserved outputs and codec round-trips.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-imgbuilder.h`](../include/mulib-imgbuilder.h) |
+| Implementation switch | `MULIB_IMPL_IMGBUILDER` |
+| Repository-local includes | [mulib-imgbuildspec](mulib-imgbuildspec.md), [mulib-rootfsbuilder](mulib-rootfsbuilder.md) |
+| Complete example | [`examples/modules/imgbuilder.c`](../examples/modules/imgbuilder.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/imgbuilder.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-channel
 
+[Manuals](README.md) · [Library index](index.md)
+
 Thread-safe CSP channels that also suspend MuLIB fibers cooperatively. Define
 `MULIB_IMPL_CHANNEL`, `MULIB_IMPL_FIBER` and `MULIB_IMPL_XTHREADS` in exactly one
 translation unit each, before including headers. Link POSIX builds with
@@ -86,3 +88,27 @@ atomic multi-channel selection. No callbacks execute under it. Do not use native
 thread cancellation to interrupt these APIs.
 
 See [`examples/modules/channel.c`](../examples/modules/channel.c).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-channel.h`](../include/mulib-channel.h) |
+| Implementation switch | `MULIB_IMPL_CHANNEL` |
+| Repository-local includes | [mulib-fiber](mulib-fiber.md) |
+| Complete example | [`examples/modules/channel.c`](../examples/modules/channel.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/channel.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

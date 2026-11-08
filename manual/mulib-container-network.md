@@ -1,5 +1,7 @@
 # mulib-container-network
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 IPv4/IPv6 longest-prefix routing and ordered policy over virtual endpoints.
@@ -44,3 +46,27 @@ there is no TTL decrement, fragmentation, NAT or host-network modification.
 `free` releases routes/rules, never endpoints. Mutation during transmit callback
 is rejected with EBUSY; callers externally serialize all access. Tests cover
 Ethernet wrapping, receive pressure, route matching and default-drop policy.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-container-network.h`](../include/mulib-container-network.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINER_NETWORK` |
+| Repository-local includes | [mulib-container-netdev](mulib-container-netdev.md), [mulib-packetrules](mulib-packetrules.md) |
+| Complete example | [`examples/modules/container-network.c`](../examples/modules/container-network.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-network.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

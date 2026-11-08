@@ -1,5 +1,7 @@
 # mulib-containerd-accessstub
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Explicit authenticated-principal authorization for lifecycle commands. Define
@@ -46,3 +48,27 @@ Rules are owned values; no principal/command pointer is retained by a check.
 checks. There is no implicit administrator/root bypass, wildcard pattern grammar,
 network authentication service or durable audit output. CT errors cover malformed
 rules, capacity, allocation and denied access.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-containerd-accessstub.h`](../include/mulib-containerd-accessstub.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINERD_ACCESSSTUB` |
+| Repository-local includes | [mulib-conainerd-ipc](mulib-conainerd-ipc.md) |
+| Complete example | [`examples/modules/containerd-accessstub.c`](../examples/modules/containerd-accessstub.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containerd-accessstub.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

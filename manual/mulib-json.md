@@ -1,5 +1,7 @@
 # mulib-json
 
+[Manuals](README.md) · [Library index](index.md)
+
 Owned JSON values, RFC 8259 syntax recognition and UTF-8 serialization in ISO
 C11. The public declarations are the stable MuLIB JSON consumer contract.
 
@@ -147,3 +149,27 @@ int main(void) {
 cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinclude examples/modules/json.c -lm -o ./json
 ./json
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-json.h`](../include/mulib-json.h) |
+| Implementation switch | `MULIB_IMPL_JSON` |
+| Repository-local includes | [mulib-parsec](mulib-parsec.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/json.c`](../examples/modules/json.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/json.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

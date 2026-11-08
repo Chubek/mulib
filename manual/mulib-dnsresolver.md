@@ -1,5 +1,7 @@
 # mulib-dnsresolver
 
+[Manuals](README.md) · [Library index](index.md)
+
 Resolve one positive A or AAAA RRset through an application transport callback,
 optionally consulting and updating `mulib-dnscache`. This layer is deliberately
 not an iterative Internet resolver.
@@ -83,3 +85,27 @@ That example also explicitly defines `MULIB_IMPL_NAMESERVER`.
 Build with `cc -std=c11 -Iinclude examples/modules/dnsresolver.c -o dnsresolver`.
 `tests/test_dns_stack.c` checks actual end-to-end answer values, cache expiry,
 AAAA, alias rejection, NXDOMAIN/REFUSED, callback failure and ID wraparound.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-dnsresolver.h`](../include/mulib-dnsresolver.h) |
+| Implementation switch | `MULIB_IMPL_DNSRESOLVER` |
+| Repository-local includes | [mulib-dnscache](mulib-dnscache.md), [mulib-dnsclient](mulib-dnsclient.md) |
+| Complete example | [`examples/modules/dnsresolver.c`](../examples/modules/dnsresolver.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dnsresolver.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

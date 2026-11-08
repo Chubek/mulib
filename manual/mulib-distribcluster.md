@@ -1,5 +1,7 @@
 # mulib-distribcluster
 
+[Manuals](README.md) · [Library index](index.md)
+
 Optional concrete worker executor for `mulib-container-runtime`,
 `mulib-ocicontainer` and `mulib-vmm` resources. The required JSON/YAML config
 selects nodes and the Mune profile (`library/ldistrib/cluster.lua`) emits tasks
@@ -47,3 +49,27 @@ Define `MULIB_IMPL_DISTRIBCLUSTER` plus all distribcomp switches, and
 enabled macros. Linux links math, threads and dl. Runnable example:
 `examples/modules/distribcluster.c`; backend execution regressions are in
 `tests/test_distribcluster.c`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-distribcluster.h`](../include/mulib-distribcluster.h) |
+| Implementation switch | `MULIB_IMPL_DISTRIBCLUSTER` |
+| Repository-local includes | [mulib-container-runtime](mulib-container-runtime.md), [mulib-distribcomp](mulib-distribcomp.md), [mulib-ocicontainer](mulib-ocicontainer.md), [mulib-vmm](mulib-vmm.md) |
+| Complete example | [`examples/modules/distribcluster.c`](../examples/modules/distribcluster.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/distribcluster.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

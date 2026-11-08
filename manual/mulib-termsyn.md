@@ -1,5 +1,7 @@
 # Terminal syntax-highlighting backend
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `mulib-termsyn.h`. In one TU define `MULIB_IMPL_TERMSYN`,
 `MULIB_IMPL_EDBUF`, `MULIB_IMPL_TERMSTYLE`, `MULIB_IMPL_CSS`, `MULIB_IMPL_XML`,
 `MULIB_IMPL_TERMINFO`, `MULIB_IMPL_VTERM`, `MULIB_IMPL_GRID`, `MULIB_IMPL_UTF8`,
@@ -104,3 +106,27 @@ can also propagate negative termstyle errors; do not interpret overlapping enum
 numbers without knowing which operation failed.
 
 Build: `cc -std=c11 -Iinclude examples/modules/termsyn.c -lm -o termsyn-example`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-termsyn.h`](../include/mulib-termsyn.h) |
+| Implementation switch | `MULIB_IMPL_TERMSYN` |
+| Repository-local includes | [mulib-edbuf](mulib-edbuf.md), [mulib-termstyle](mulib-termstyle.md) |
+| Complete example | [`examples/modules/termsyn.c`](../examples/modules/termsyn.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/termsyn.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

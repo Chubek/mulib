@@ -1,5 +1,7 @@
 # mulib-container-log
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Bounded binary log ring with sequence cursors, filtering and loss metrics.
@@ -42,3 +44,27 @@ background thread or durable journal is opened. Externally serialize readers and
 writers; snapshot/copy borrowed bytes before a subsequent append. Allocation and
 limit failures use CT errors. Tests cover byte pressure, filtering, stale cursors,
 pin-independent binary storage and explicit pruning.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-container-log.h`](../include/mulib-container-log.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINER_LOG` |
+| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md) |
+| Complete example | [`examples/modules/container-log.c`](../examples/modules/container-log.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-log.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

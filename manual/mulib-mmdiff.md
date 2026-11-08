@@ -1,5 +1,7 @@
 # MuLIB binary memory diff
 
+[Manuals](README.md) · [Library index](index.md)
+
 - **Header:** `include/mulib-mmdiff.h`
 - **Implementation switches:** `MULIB_IMPL_MMDIFF`, **`MULIB_IMPL_VEC`**,
   **`MULIB_IMPL_BUFFER`**
@@ -132,3 +134,27 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/mmdiff.c 
 empty/repetitive/reordered/duplicated sources, concrete COPY generation,
 wrong-base rejection, malformed commands/metadata, input/output/work/index
 limits, alias-safe application and injected allocation failures.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-mmdiff.h`](../include/mulib-mmdiff.h) |
+| Implementation switch | `MULIB_IMPL_MMDIFF` |
+| Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-vec](mulib-vec.md) |
+| Complete example | [`examples/modules/mmdiff.c`](../examples/modules/mmdiff.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mmdiff.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

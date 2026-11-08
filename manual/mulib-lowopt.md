@@ -1,5 +1,7 @@
 # mulib-lowopt
 
+[Manuals](README.md) · [Library index](index.md)
+
 Conservative low-level optimization of [native MIR](mulib-mir.md). It follows
 wrapping machine-word semantics, not the older checked SSA dialect.
 
@@ -72,3 +74,27 @@ The example folds `6 * 7` and removes its unused operand definitions. MicroCC
 tests compare passes enabled/disabled through loop PHIs, native randomized
 boundary operations, mutable hazards and effectful calls, and inject allocation
 failures through the optimization pipeline.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-lowopt.h`](../include/mulib-lowopt.h) |
+| Implementation switch | `MULIB_IMPL_LOWOPT` |
+| Repository-local includes | [mulib-mir](mulib-mir.md) |
+| Complete example | [`examples/modules/lowopt.c`](../examples/modules/lowopt.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lowopt.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

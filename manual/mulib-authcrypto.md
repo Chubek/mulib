@@ -1,5 +1,7 @@
 # Authentication cryptography primitives
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_AUTHCRYPTO` once. No external libraries or MuLIB dependencies.
 ISO C11 fixed-width unsigned arithmetic; no allocations, platform entropy or I/O.
 
@@ -32,3 +34,27 @@ audit. For high-assurance deployments use an independently audited provider.
 Tests include SHA, RFC 2202/4231 HMAC, PBKDF2, RFC 4226/6238 OTP and RFC 7636
 vectors, plus hostile input and boundary cases.
 [Example](../examples/modules/authcrypto.c), [tests](../tests/test_authentication.c).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-authcrypto.h`](../include/mulib-authcrypto.h) |
+| Implementation switch | `MULIB_IMPL_AUTHCRYPTO` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/authcrypto.c`](../examples/modules/authcrypto.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/authcrypto.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

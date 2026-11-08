@@ -1,6 +1,6 @@
 /**
  * @file mulib-bitset.h
- * @brief Resizable bit-array with test, set, clear, and population count.
+ * @brief Fixed-size allocated bit-array with test, set, clear, and population count.
  * @defgroup mulib_bitset MuLIB bitset
  * @{
  * @details Bit indices start at zero. Unused high bits in the last byte stay
@@ -33,7 +33,7 @@ extern "C"
 {
 #endif
 
-  /** @brief Resizable bit-array with test, set, clear, and population count.
+  /** @brief Fixed-size allocated bit-array with test, set, clear, and population count.
    */
   typedef struct mulib_bitset
   {

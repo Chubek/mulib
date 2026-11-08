@@ -3,8 +3,9 @@
  * @brief Dynamically growing binary byte buffer.
  * @defgroup mulib_buffer MuLIB buffer
  * @{
- * @details Unlike strbuf, buffer permits zero bytes and does not append a
- * string terminator. Appending a range from the same buffer is supported,
+ * @details Stores arbitrary bytes without appending a string terminator.
+ * Both buffer and strbuf accept embedded NULs through explicit-length APIs.
+ * Appending a range from the same buffer is supported,
  * including when growth reallocates it.
  * @par Integration
  * In exactly one translation unit define MULIB_IMPL_BUFFER before including

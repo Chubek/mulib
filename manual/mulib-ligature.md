@@ -1,5 +1,7 @@
 # OpenType ligature controls and clusters
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-ligature.h` operates on real HarfBuzz glyph output. It does not
 replace character strings with Unicode presentation-form characters, which
 would lose font-specific shaping and source correspondence.
@@ -39,3 +41,27 @@ positions. It returns owned signed positions in the font's configured scale and
 the requested direction. Missing GDEF carets produce a successful empty array;
 the API never synthesizes evenly spaced positions. Layout hit testing instead
 uses cluster edges so it cannot split combining sequences.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-ligature.h`](../include/mulib-ligature.h) |
+| Implementation switch | `MULIB_IMPL_LIGATURE` |
+| Repository-local includes | [mulib-fontshape](mulib-fontshape.md) |
+| Complete example | [`examples/modules/ligature.c`](../examples/modules/ligature.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ligature.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -48,6 +48,13 @@ invalid input is rejected before writing inventory files.
 Then regenerate dependency documentation with `python3 tools/stratify.py`.
 Neither command implements APIs or replaces handwritten examples/manuals.
 
+Follow the [manual authoring guide](manual/authoring.md) for ownership, return
+values, supported profiles, and runnable examples. After changing a header or
+manual, run `python3 tools/manuals.py --write` to refresh marked source references
+and the library index, then `python3 tools/manuals.py --check` to verify them and
+local links. The latter is also part of `tools/check.py`. Behavioral prose remains
+handwritten; the generator does not infer contracts from signatures.
+
 For shared storage or parser changes, also run `tests/test_hardening.c` (moving
 allocation/failure injection) and `tests/test_hostile_inputs.c`. The optional
 Clang `MULIB_BUILD_FUZZER` target enables bounded mutation fuzzing; see

@@ -1,5 +1,7 @@
 # mulib-peg
 
+[Manuals](README.md) · [Library index](index.md)
+
 The compiler also supports EBNF through `mulib_peg_compile_ebnf`, lexical
 S-expression forms and `-> action_name` annotations. The optional owned loaders,
 AST construction and action dispatch are described in
@@ -128,3 +130,27 @@ int main(void) {
 cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinclude examples/modules/peg.c -o ./peg
 ./peg
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-peg.h`](../include/mulib-peg.h) |
+| Implementation switch | `MULIB_IMPL_PEG` |
+| Repository-local includes | [mulib-parsec](mulib-parsec.md), [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/peg.c`](../examples/modules/peg.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/peg.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

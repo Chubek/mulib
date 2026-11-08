@@ -1,5 +1,7 @@
 # IPv4/IPv6 access control
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_ACL`, `MULIB_IMPL_INET6`, `MULIB_IMPL_INET4` and
 `MULIB_IMPL_PARSEC` in one implementation translation unit.
 
@@ -28,3 +30,27 @@ addresses do not automatically enter the IPv4 ruleset. Address ACLs are not user
 authentication, and concurrent mutation of a borrowed rule array is unsupported.
 
 [Example](../examples/modules/acl.c), [tests](../tests/test_authentication.c).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-acl.h`](../include/mulib-acl.h) |
+| Implementation switch | `MULIB_IMPL_ACL` |
+| Repository-local includes | [mulib-inet6](mulib-inet6.md) |
+| Complete example | [`examples/modules/acl.c`](../examples/modules/acl.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/acl.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

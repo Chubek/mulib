@@ -59,6 +59,12 @@ def main():
         failures.append(('dependency strata', strata.stderr or strata.stdout))
     else:
         print(strata.stdout.strip())
+    manuals = subprocess.run([sys.executable, str(root / 'tools/manuals.py'), '--check'],
+                             capture_output=True, text=True)
+    if manuals.returncode:
+        failures.append(('manual references', manuals.stderr or manuals.stdout))
+    else:
+        print(manuals.stdout.strip())
     tool_tests = subprocess.run([sys.executable, str(root / 'tests/test_tools.py')],
                                 capture_output=True, text=True)
     if tool_tests.returncode:

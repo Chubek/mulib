@@ -1,5 +1,7 @@
 # mulib-cpio
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_CPIO` once. No dependencies or dynamic allocations.
 [Example](../examples/modules/cpio.c).
 
@@ -60,3 +62,27 @@ GNU cpio emits zero instead of a data checksum for crc symlinks; this reader
 applies the documented crc byte-sum rule to every payload and rejects such a
 record when its sum is nonzero. Use GNU newc for symlink interoperability.
 See also [cpio(5)](https://man.freebsd.org/cgi/man.cgi?query=cpio&sektion=5).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-cpio.h`](../include/mulib-cpio.h) |
+| Implementation switch | `MULIB_IMPL_CPIO` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/cpio.c`](../examples/modules/cpio.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cpio.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

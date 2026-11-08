@@ -1,5 +1,7 @@
 # mulib-simdmath
 
+[Manuals](README.md) · [Library index](index.md)
+
 SIMD graphics arithmetic sharing linalg's float/column-major conventions.
 Define `MULIB_IMPL_SIMDMATH` and `MULIB_IMPL_LINALG` before inclusion; link `-lm`.
 
@@ -34,3 +36,27 @@ No allocations or mutable global state. `examples/modules/simdmath.c` prints the
 active backend and transforms an array. `tests/test_graphics_math.c` and
 `tests/test_simdmath_scalar.c` run numerical contracts through native and forced
 scalar implementations.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-simdmath.h`](../include/mulib-simdmath.h) |
+| Implementation switch | `MULIB_IMPL_SIMDMATH` |
+| Repository-local includes | [mulib-linalg](mulib-linalg.md) |
+| Complete example | [`examples/modules/simdmath.c`](../examples/modules/simdmath.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/simdmath.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

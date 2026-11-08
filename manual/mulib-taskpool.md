@@ -1,5 +1,7 @@
 # MuLIB taskpool
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-taskpool.h`  
 **Implementation:** `MULIB_IMPL_TASKPOOL`, in exactly one C11 translation unit  
 **Dependencies:** C library, C11 atomics, POSIX pthreads; link **`-pthread`**.
@@ -87,3 +89,27 @@ independent callbacks, deterministically fills a one-slot pending queue, checks
 cleanup selection and closed rejection, and verifies draining teardown. Allocation
 failure injection is not exposed. Counts are checked before allocating; thread
 creation failure joins already-started workers before returning.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-taskpool.h`](../include/mulib-taskpool.h) |
+| Implementation switch | `MULIB_IMPL_TASKPOOL` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/taskpool.c`](../examples/modules/taskpool.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/taskpool.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-conainerd-ipc
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Container daemon command and status records. The requested `conainerd` spelling
@@ -44,3 +46,27 @@ Commands/statuses are freely copyable fixed records. Encode outputs are initiali
 CT blobs; decoded commands own their fixed ID bytes. All result values are CT
 codes. Creating/importing images is a direct daemon API; these lifecycle commands
 do not embed arbitrary image uploads or transport credentials.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-conainerd-ipc.h`](../include/mulib-conainerd-ipc.h) |
+| Implementation switch | `MULIB_IMPL_CONAINERD_IPC` |
+| Repository-local includes | [mulib-container-ipc](mulib-container-ipc.md), [mulib-container](mulib-container.md) |
+| Complete example | [`examples/modules/conainerd-ipc.c`](../examples/modules/conainerd-ipc.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/conainerd-ipc.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

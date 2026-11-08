@@ -1,5 +1,7 @@
 # MuLIB vterm
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-vterm.h` implements a bounded in-memory terminal screen emulator
 and the cell/style value types shared with MuLIB TUI. Bytes can be supplied in
 arbitrary fragments; there is no PTY, terminal access, or output callback.
@@ -155,3 +157,27 @@ relative vertical margin stops with origin mode off, nonmovement commands after
 an absolute API move outside the origin region, editing, erases, rendition,
 fragmented escapes/UTF-8, parser limits, resize, random byte fragmentation and
 TUI output replay without an interactive terminal.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-vterm.h`](../include/mulib-vterm.h) |
+| Implementation switch | `MULIB_IMPL_VTERM` |
+| Repository-local includes | [mulib-grid](mulib-grid.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/vterm.c`](../examples/modules/vterm.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vterm.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

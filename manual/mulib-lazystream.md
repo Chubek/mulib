@@ -1,5 +1,7 @@
 # mulib-lazystream
 
+[Manuals](README.md) · [Library index](index.md)
+
 Pipelines are limited to 256 stages including their source, bounding the recursive
 `next` call chain. Constructing stage 257 returns NULL and leaves upstream ownership
 with the caller. Destruction remains iterative and does not pull source values.
@@ -43,3 +45,27 @@ poison the stream, so iteration can resume. It does not destroy the pipeline.
 cleanup; yielded elements remain caller-owned. Adapters pull upstream
 recursively, so keep pipeline depth within your platform's call-stack budget.
 Borrowed values may be valid only until the next pull, depending on the source.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-lazystream.h`](../include/mulib-lazystream.h) |
+| Implementation switch | `MULIB_IMPL_LAZYSTREAM` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/lazystream.c`](../examples/modules/lazystream.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lazystream.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # HOTP/TOTP authentication
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_OTPAUTH`, `MULIB_IMPL_AUTHCRYPTO` and `MULIB_IMPL_SECURITY`.
 All secrets/configuration are borrowed; no allocation, clock reads, entropy,
 provisioning URI/QR generation, persistence or network I/O is performed.
@@ -42,3 +44,27 @@ system time or accepting future steps can invalidate earlier codes intentionally
 Code/secret/output buffers must not alias the configuration or secret storage.
 
 [Example](../examples/modules/otpauth.c), [tests](../tests/test_authentication.c).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-otpauth.h`](../include/mulib-otpauth.h) |
+| Implementation switch | `MULIB_IMPL_OTPAUTH` |
+| Repository-local includes | [mulib-authcrypto](mulib-authcrypto.md), [mulib-seurity](mulib-seurity.md) |
+| Complete example | [`examples/modules/otpauth.c`](../examples/modules/otpauth.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/otpauth.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-concurrency-prim
 
+[Manuals](README.md) · [Library index](index.md)
+
 Synchronization shared by native threads and stackful fibers. Define
 `MULIB_IMPL_CONCURRENCY_PRIM`, `MULIB_IMPL_FIBER` and `MULIB_IMPL_XTHREADS` exactly
 once each. Dependencies are included normally; switches are application-owned.
@@ -83,3 +85,27 @@ and forced fiber termination are unsupported. Native conditions, once flags and
 TLS keys are additionally available in `mulib-xthreads.h`.
 
 See [`examples/modules/concurrency-prim.c`](../examples/modules/concurrency-prim.c).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-concurrency-prim.h`](../include/mulib-concurrency-prim.h) |
+| Implementation switch | `MULIB_IMPL_CONCURRENCY_PRIM` |
+| Repository-local includes | [mulib-fiber](mulib-fiber.md) |
+| Complete example | [`examples/modules/concurrency-prim.c`](../examples/modules/concurrency-prim.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/concurrency-prim.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

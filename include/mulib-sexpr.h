@@ -6,7 +6,7 @@
  * @{
  * @details The parser accepts proper nested lists, unquoted atoms, and
  * double-quoted atoms with basic escapes. It has a recursion-depth limit of
- * 128. The returned tree owns all atom strings; destroy it recursively. Parse
+ * 128. The returned tree owns all atom strings; destroy releases it iteratively. Parse
  * does not enforce end-of-input; consult the optional end pointer.
  * @par Integration
  * In exactly one translation unit define MULIB_IMPL_SEXPR before including

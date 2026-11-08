@@ -1,5 +1,7 @@
 # mulib-fst — finite-state transducers
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-fst.h` implements an owned, deterministic Mealy-style finite-state
 transducer over `uint32_t` input and output symbols. An edge consumes exactly
 one input symbol, matches an inclusive range, and emits either one constant
@@ -112,3 +114,27 @@ silent/zero/maximal emissions, empty and rejected inputs, exact shared budgets,
 transactional results, invalid IDs and injected allocation failures. CMake
 discovers it automatically. The machinebuild JavaScript test checks the same
 numeric transition semantics in Node when available.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-fst.h`](../include/mulib-fst.h) |
+| Implementation switch | `MULIB_IMPL_FST` |
+| Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-crc32](mulib-crc32.md), [mulib-endian](mulib-endian.md), [mulib-vec](mulib-vec.md) |
+| Complete example | [`examples/modules/fst.c`](../examples/modules/fst.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fst.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

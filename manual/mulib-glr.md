@@ -1,5 +1,7 @@
 # mulib-glr — generalized LR CFG parsing
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-glr.h` compiles a context-free grammar into canonical **LR(0)
 item sets**, then parses with a graph-structured stack (`mulib-gss`) and an
 n-ary shared packed parse forest (`mulib-sppf`). All shift/reduce and
@@ -223,3 +225,27 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/glr.c -o 
 cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test_grammar.c -o ./test_grammar
 ./test_grammar
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-glr.h`](../include/mulib-glr.h) |
+| Implementation switch | `MULIB_IMPL_GLR` |
+| Repository-local includes | [mulib-atn](mulib-atn.md), [mulib-gss](mulib-gss.md), [mulib-sppf](mulib-sppf.md) |
+| Complete example | [`examples/modules/glr.c`](../examples/modules/glr.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/glr.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

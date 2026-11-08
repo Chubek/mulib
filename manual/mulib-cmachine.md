@@ -1,5 +1,7 @@
 # mulib-cmachine
 
+[Manuals](README.md) · [Library index](index.md)
+
 Checked lowering from common MIR to the existing `mulib-minivm` interpreter.
 This module does not generate native machine code and makes no platform ABI claim.
 
@@ -77,3 +79,27 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/cmachine
 The example lowers `argument * 7`, changes the original argument, and still
 executes to 42, asserting the specialization/ownership contract. The compiler
 IR suite also checks optimized/unoptimized equivalence and runtime faults.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-cmachine.h`](../include/mulib-cmachine.h) |
+| Implementation switch | `MULIB_IMPL_CMACHINE` |
+| Repository-local includes | [mulib-minivm](mulib-minivm.md), [mulib-mir](mulib-mir.md) |
+| Complete example | [`examples/modules/cmachine.c`](../examples/modules/cmachine.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cmachine.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

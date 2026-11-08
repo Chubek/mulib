@@ -1,5 +1,7 @@
 # MuLIB asyncio
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-asyncio.h` · **Switch:** `MULIB_IMPL_ASYNCIO`  
 **Header dependency:** `mulib-select.h`; separately define `MULIB_IMPL_SELECT`
 in one implementation translation unit. No switch is implicitly enabled.
@@ -122,3 +124,27 @@ mutation/stale-ID suppression, allocation failures, limits, recursion/lifecycle
 errors, fd ownership, and a single reactor integrating real eventfd, timerfd,
 and inotify events with bounded waits. Platform/permission restrictions are
 reported as explicit skips, never simulated successes.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-asyncio.h`](../include/mulib-asyncio.h) |
+| Implementation switch | `MULIB_IMPL_ASYNCIO` |
+| Repository-local includes | [mulib-select](mulib-select.md) |
+| Complete example | [`examples/modules/asyncio.c`](../examples/modules/asyncio.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/asyncio.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

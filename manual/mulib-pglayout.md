@@ -1,5 +1,7 @@
 # mulib-pglayout
 
+[Manuals](README.md) · [Library index](index.md)
+
 An owned page-object model with stylesheet-driven block flow, Unicode-aware
 text wrapping, pluggable measurement and JSON/YAML persistence.
 
@@ -165,3 +167,27 @@ schema, depth or allocation errors. Buffers/DOMs use `free`/`mulib_json_destroy`
 round trips, wrapping, mandatory breaks, hidden flow and transactional failure.
 `tests/test_text_allocations.c` injects allocation failures. Run
 `python3 tools/check_text.py --sanitizers --require-backends` for focused checks.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-pglayout.h`](../include/mulib-pglayout.h) |
+| Implementation switch | `MULIB_IMPL_PGLAYOUT` |
+| Repository-local includes | [mulib-bidi](mulib-bidi.md), [mulib-fontshape](mulib-fontshape.md), [mulib-json](mulib-json.md), [mulib-stylesheet](mulib-stylesheet.md), [mulib-unibreak](mulib-unibreak.md), [mulib-yaml](mulib-yaml.md) |
+| Complete example | [`examples/modules/pglayout.c`](../examples/modules/pglayout.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pglayout.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

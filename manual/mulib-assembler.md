@@ -1,5 +1,7 @@
 # mulib-assembler
 
+[Manuals](README.md) · [Library index](index.md)
+
 A typed, single-instruction AMD64 assembler subset. **Opcode bytes, register
 encodings, ModRM direction/groups, widths and REX policies come from the
 supplied `dsymspec/amd64.dsymspec.yaml` metadata**, resolved by
@@ -119,3 +121,27 @@ the expected bytes, and returns 42 through the W^X JIT on supported hosts.
 unsupported cases, atomic failure, real source/schema metadata and native
 execution. It also changes a cloned resolved opcode and verifies the output
 changes, demonstrating the encoder actually consults its metadata.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-assembler.h`](../include/mulib-assembler.h) |
+| Implementation switch | `MULIB_IMPL_ASSEMBLER` |
+| Repository-local includes | [mulib-dsymspec](mulib-dsymspec.md), [mulib-emitter](mulib-emitter.md), [mulib-linker](mulib-linker.md) |
+| Complete example | [`examples/modules/assembler.c`](../examples/modules/assembler.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/assembler.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

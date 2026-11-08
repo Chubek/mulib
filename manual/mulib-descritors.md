@@ -1,5 +1,7 @@
 # mulib-descritors
 
+[Manuals](README.md) · [Library index](index.md)
+
 The requested filename spelling is preserved. Define `MULIB_IMPL_DESCRITORS`
 once before including `mulib-descritors.h`. No dependencies or libc.
 [Example](../examples/modules/descritors.c).
@@ -31,3 +33,27 @@ selector permissions and descriptor semantics. Actual interrupt entry/return
 assembly must handle error codes, stack alignment, register saving and red-zone
 constraints. `mulib-io.h` optionally loads tables; CS/data/TR reload and interrupt
 masking are deliberately separate. Wrong tables can triple-fault a machine.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-descritors.h`](../include/mulib-descritors.h) |
+| Implementation switch | `MULIB_IMPL_DESCRITORS` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/descritors.c`](../examples/modules/descritors.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/descritors.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

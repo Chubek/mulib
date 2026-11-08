@@ -1,5 +1,7 @@
 # mulib-inet6
 
+[Manuals](README.md) · [Library index](index.md)
+
 Portable IPv6 literals, canonical hexadecimal formatting, and prefix operations.
 `mulib-inet6.h` is the canonical header; the historical `mulib-inte6.h` still
 includes it and preserves existing `MULIB_IMPL_INET6` applications.
@@ -63,3 +65,27 @@ not need that switch. See [`mulib-inte6`](mulib-inte6.md).
 canonicalization/prefix example. Existing `tests/test_network.c` covers malformed
 forms, every prefix and deterministic native `inet_pton` roundtrips on POSIX;
 `tests/test_dns_stack.c` adds canonical/compatibility and getaddr composition.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-inet6.h`](../include/mulib-inet6.h) |
+| Implementation switch | `MULIB_IMPL_INET6` |
+| Repository-local includes | [mulib-inet4](mulib-inet4.md) |
+| Complete example | [`examples/modules/inet6.c`](../examples/modules/inet6.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/inet6.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

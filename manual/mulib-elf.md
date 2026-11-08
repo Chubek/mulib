@@ -1,5 +1,7 @@
 # MuLIB elf: checked ELF32/ELF64 views
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-elf.h`  
 **Implementation switches:** `MULIB_IMPL_ELF`, `MULIB_IMPL_ENDIAN`  
 **Link flags:** none. ISO C11, C++17 declaration compatibility.
@@ -99,3 +101,27 @@ then run `./elf-example`. For an actual file, combine with `mulib-mmfile.h` or
 `tests/test_storage.c` uses unaligned synthetic inputs across both classes and
 byte orders, extended counts/indexes, malformed tables/strings, every truncated
 prefix, and (on Linux) the running test executable's real headers/symbols.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-elf.h`](../include/mulib-elf.h) |
+| Implementation switch | `MULIB_IMPL_ELF` |
+| Repository-local includes | [mulib-endian](mulib-endian.md) |
+| Complete example | [`examples/modules/elf.c`](../examples/modules/elf.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/elf.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

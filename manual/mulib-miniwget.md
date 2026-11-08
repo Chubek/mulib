@@ -1,5 +1,7 @@
 # mulib-miniwget
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-miniwget.h` downloads a single HTTP resource into caller-owned memory,
 with a hard bound on decoded destination bytes. It uses
 [mulib-webclient](mulib-webclient.md) for request generation, transport and HTTP
@@ -73,3 +75,27 @@ the peer nor the contents.
 `tests/test_web_stack.c` covers exact capacity, smaller capacity, unchanged
 outputs, binary content, empty success, status failure and client/router/file
 server composition.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-miniwget.h`](../include/mulib-miniwget.h) |
+| Implementation switch | `MULIB_IMPL_MINIWGET` |
+| Repository-local includes | [mulib-webclient](mulib-webclient.md) |
+| Complete example | [`examples/modules/miniwget.c`](../examples/modules/miniwget.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/miniwget.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

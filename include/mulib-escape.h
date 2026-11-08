@@ -3,7 +3,7 @@
  * @brief C-style escaping and unescaping of byte strings.
  * @defgroup mulib_escape MuLIB escape
  * @{
- * @details Escapes standard control bytes newline, tab, carriage return, slash
+ * @details Escapes newline, tab, carriage return, backslash
  * and double quotes. This is not a full C lexical escape parser; hex and octal
  * escapes are unsupported.
  * @par Integration

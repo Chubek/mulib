@@ -1,5 +1,7 @@
 # Terminal styling
 
+[Manuals](README.md) · [Library index](index.md)
+
 Include `mulib-termstyle.h`; define `MULIB_IMPL_TERMSTYLE`, `MULIB_IMPL_TERMINFO`,
 `MULIB_IMPL_STRBUF`, `MULIB_IMPL_CSS`, `MULIB_IMPL_XML`, `MULIB_IMPL_UTF8`,
 `MULIB_IMPL_VTERM` and `MULIB_IMPL_GRID` in one TU. These additional dependency
@@ -91,3 +93,27 @@ prior style; write resets to terminal defaults at the end.
 
 The [syntax backend](mulib-termsyn.md) connects these styles to editor-buffer
 token classes and incremental per-line lexical states.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-termstyle.h`](../include/mulib-termstyle.h) |
+| Implementation switch | `MULIB_IMPL_TERMSTYLE` |
+| Repository-local includes | [mulib-css](mulib-css.md), [mulib-terminfo](mulib-terminfo.md), [mulib-vterm](mulib-vterm.md) |
+| Complete example | [`examples/modules/termstyle.c`](../examples/modules/termstyle.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/termstyle.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

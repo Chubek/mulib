@@ -1,5 +1,7 @@
 # mulib-memtest
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_MEMTEST` once; no dependencies or allocations.
 [Example](../examples/modules/memtest.c).
 
@@ -30,3 +32,27 @@ Each pass performs five reads and five writes per word. Read/modify operations
 are interleaved to exercise coupling and address faults. Hooks run after each of
 six sweeps; cancellation leaves partial state, and completed passes leave zeros.
 Cache-maintenance and exclusive-memory requirements are identical to `run`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-memtest.h`](../include/mulib-memtest.h) |
+| Implementation switch | `MULIB_IMPL_MEMTEST` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/memtest.c`](../examples/modules/memtest.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/memtest.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

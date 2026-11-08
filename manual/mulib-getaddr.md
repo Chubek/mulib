@@ -1,5 +1,7 @@
 # mulib-getaddr
 
+[Manuals](README.md) · [Library index](index.md)
+
 Owned numeric address values, strict portable literal parsing, and optional
 synchronous operating-system host lookup. It is independent of the DNS stack:
 native name service may use hosts files, DNS or other platform services.
@@ -88,3 +90,27 @@ always suffice. It does not convert the value into a native socket address.
 `examples/modules/getaddr.c` checks literal parsing, formatting, sizing, and
 guarded localhost lookup. `tests/test_dns_stack.c` is exercised both with plain
 strict C11 and with POSIX feature macros, covering both platform branches.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-getaddr.h`](../include/mulib-getaddr.h) |
+| Implementation switch | `MULIB_IMPL_GETADDR` |
+| Repository-local includes | [mulib-inet6](mulib-inet6.md) |
+| Complete example | [`examples/modules/getaddr.c`](../examples/modules/getaddr.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/getaddr.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

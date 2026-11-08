@@ -1,5 +1,7 @@
 # shadowsocks — SIP004 AEAD TCP chunks
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_SHADOWSOCKS`; no MuLIB dependencies.
 See [`examples/modules/shadowsocks.c`](../examples/modules/shadowsocks.c).
 
@@ -27,3 +29,27 @@ seal output may be partially written on backend failure. Buffers must not
 overlap. UDP, legacy stream ciphers and Shadowsocks 2022 are outside this API.
 Tests use explicitly noncryptographic fixtures to verify framing and nonce
 policy; real cryptography must come from the backend.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-shadowsocks.h`](../include/mulib-shadowsocks.h) |
+| Implementation switch | `MULIB_IMPL_SHADOWSOCKS` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/shadowsocks.c`](../examples/modules/shadowsocks.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/shadowsocks.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

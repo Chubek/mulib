@@ -1,5 +1,7 @@
 # MuLIB AVL
 
+[Manuals](README.md) · [Library index](index.md)
+
 - **Header:** `include/mulib-avl.h`
 - **Implementation switch:** `MULIB_IMPL_AVL`
 - **Dependencies:** ISO C11 standard library only; declaration-only C++17 compatible.
@@ -87,3 +89,27 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/avl.c -o 
 an independent reference array. It also checks ascending/descending adversarial
 insertion/deletion, duplicate replacement, empty trees, key extremes, early stop
 and allocation-failure preservation.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-avl.h`](../include/mulib-avl.h) |
+| Implementation switch | `MULIB_IMPL_AVL` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/avl.c`](../examples/modules/avl.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/avl.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

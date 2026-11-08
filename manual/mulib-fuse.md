@@ -1,5 +1,7 @@
 # mulib-fuse
 
+[Manuals](README.md) · [Library index](index.md)
+
 This module is a **userspace low-level request-record dispatch adapter** for
 `mulib-vfs`, with no third-party dependency. It is **not** a kernel filesystem,
 libfuse ABI, Linux FUSE wire-protocol parser, inode/open-handle table,
@@ -92,3 +94,27 @@ return ECANCELED. `session_close` marks an idle session closed and is idempotent
 later dispatch is canceled. It does not release the borrowed VFS. Applications
 still serialize access across threads and avoid changing mounts during callbacks.
 The daemon mount module provides generation-tagged leases around these sessions.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-fuse.h`](../include/mulib-fuse.h) |
+| Implementation switch | `MULIB_IMPL_FUSE` |
+| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md), [mulib-vfs](mulib-vfs.md) |
+| Complete example | [`examples/modules/fuse.c`](../examples/modules/fuse.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fuse.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

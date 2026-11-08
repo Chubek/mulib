@@ -1,58 +1,125 @@
-# MuLIB fraction: Reference Manual
+# MuLIB fraction
 
-**Header:** `include/mulib-fraction.h` · **Switch:** `MULIB_IMPL_FRACTION` · **Language:** C11 (C++17-linkable)
-
-## Purpose and design
+[Manuals](README.md) · [Library index](index.md)
 
 Normalized signed rational numbers with checked arithmetic. The representation uses positive denominators and reduces fractions by GCD. Arithmetic is deliberately conservative on overflow. The addition helper may reject some mathematically valid operations where the intermediate product exceeds signed 64-bit range.
 
-This component is intended to be selected independently from MuLIB's other headers. It does not force clients to link a binary runtime. It follows explicit lifecycle management and uses public `mulib_` names to avoid common clashes with the C standard library and other toolkits. The implementation is intentionally small enough to audit. Prefer using this module in code where its documented representation, algorithmic behavior, and error contract match the workload rather than treating it as an automatic replacement for a large specialized dependency.
+## Contract and behavior
 
-## Getting started
+`make(num, den, out)` reduces by the GCD and normalizes to a positive
+denominator; zero becomes 0/1. It returns 0 for a zero denominator, NULL output,
+or a reduced result not representable in signed 64-bit fields. `add()` expects
+positive input denominators and checks intermediate arithmetic. It can fail
+when an intermediate does not fit even if a more elaborate reduction would
+produce a representable result. Both return 1 on success and preserve output
+on failure. Values own no dynamic storage.
+
+## Example
 
 ```c
 #include <assert.h>
-#include <string.h>
 #include <math.h>
+#include <string.h>
 #define MULIB_IMPL_FRACTION
 #include "mulib-fraction.h"
-int main(void){
-  mulib_fraction_t f; assert(mulib_fraction_make(2,4,&f)); assert(f.num==1&&f.den==2);
-  return 0;
+int main(void) {
+    mulib_fraction_t f;
+    assert(mulib_fraction_make(2, 4, &f));
+    assert(f.num == 1 && f.den == 2);
+    return 0;
 }
 ```
 
-Compile a one-file example with `cc -std=c11 -Iinclude example.c -o example` (add `-lm` for mathematical functions when required). To share this header across translation units, put its `#define MULIB_IMPL_FRACTION` in exactly one `.c` or `.cpp` file. Every other translation unit includes the header with no implementation switch. Defining it in several translation units causes duplicate definitions at link time. Defining a switch after the header has already been included in a translation unit is not supported.
+<!-- manual-interface -->
+## Public header reference
 
-## Public declarations
+Verbatim declaration section from [`include/mulib-fraction.h`](../include/mulib-fraction.h).
+Include the header in application code; dependency types come from its includes.
+
+<details>
+<summary>Types, constants, and declarations</summary>
 
 ```c
-typedef struct mulib_fraction { int64_t num,den; } mulib_fraction_t;
-int mulib_fraction_make(int64_t numerator,int64_t denominator,mulib_fraction_t*out);
-int mulib_fraction_add(mulib_fraction_t a,mulib_fraction_t b,mulib_fraction_t*out);
+/**
+ * @file mulib-fraction.h
+ * @brief Normalized signed rational numbers with checked arithmetic.
+ * @defgroup mulib_fraction MuLIB fraction
+ * @{
+ * @details The representation uses positive denominators and reduces fractions
+ * by GCD. Arithmetic is deliberately conservative on overflow. The addition
+ * helper may reject some mathematically valid operations where the
+ * intermediate product exceeds signed 64-bit range.
+ * @par Integration
+ * In exactly one translation unit define MULIB_IMPL_FRACTION before including
+ * this file. Other translation units may include it without the implementation
+ * switch.
+ * @par Portability
+ * ISO C11, C++17 compatible C linkage. All allocations use the C standard
+ * library.
+ * @}
+ */
+#ifndef MULIB_FRACTION_H
+#define MULIB_FRACTION_H
+#include <ctype.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+  /** @brief Normalized signed rational numbers with checked arithmetic. */
+  typedef struct mulib_fraction
+  {
+    int64_t num, den;
+  } mulib_fraction_t;
+  /** @brief mulib fraction make; see manual/mulib-fraction.md for contracts
+   * and examples. */
+  int mulib_fraction_make (int64_t numerator, int64_t denominator,
+                           mulib_fraction_t *out);
+  /** @brief mulib fraction add; see manual/mulib-fraction.md for contracts and
+   * examples. */
+  int mulib_fraction_add (mulib_fraction_t a, mulib_fraction_t b,
+                          mulib_fraction_t *out);
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* MULIB_FRACTION_H */
 ```
 
-The declarations are stable C entry points, with `extern "C"` linkage when compiled as C++. Public data structures are intentionally visible and inspectable rather than hiding allocation behind an ABI. Treat any `data`, `items`, or linked pointers as borrowed views unless the specific function explicitly transfers ownership. No function is implicitly thread-safe for mutable shared objects.
+</details>
+<!-- /manual-interface -->
 
-## Ownership, errors, and lifetime
+<!-- manual-reference -->
+## Source and build reference
 
-The representation uses positive denominators and reduces fractions by GCD. Arithmetic is deliberately conservative on overflow. The addition helper may reject some mathematically valid operations where the intermediate product exceeds signed 64-bit range. Values returned through output parameters are only guaranteed after a successful call. For functions returning an integer success code, **1** means success and **0** means failure unless a more specific result is documented by the API. Do not infer a `errno` value from an API that does not explicitly promise one. For heap-allocated state, pair creation or initialization with its corresponding destroy or free operation. Never reuse internal buffer pointers after an operation that can grow or release storage.
+[Manual index](index.md) · [Integration guide](integration.md)
 
-## Behavior, constraints, and interoperability
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-fraction.h`](../include/mulib-fraction.h) |
+| Implementation switch | `MULIB_IMPL_FRACTION` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/fraction.c`](../examples/modules/fraction.c) |
 
-Operations are designed around bounded input, explicit lengths where relevant, and ordinary C ownership. They do not perform locking and do not provide a global allocator override. File, terminal and parser functions are intended as lightweight building blocks; inputs that require complete standard compliance, hostile-input hardening or advanced Unicode processing may need a dedicated mature library. Confirm prerequisites and endianness for binary serialization; never serialize the memory layout of MuLIB structures directly.
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
 
-## Example-driven validation
+Compile the example from the repository root on Linux:
 
-The examples folder demonstrates the overall build pattern, and the test suite exercises representative successful and unsuccessful operations. Compile with warnings and run with AddressSanitizer/UndefinedBehaviorSanitizer for new integrations. Keep tests for empty inputs, repeated updates, integer bounds, and failure behavior when extending a module. The implementation uses standard C runtime functions and deliberately keeps dependencies discoverable rather than embedding hidden platform-specific services.
-
-## Implementation guidance
-
-The source implementation is appended in the header below the public interface guard. It is included only if `MULIB_IMPL_FRACTION` is defined before inclusion. This arrangement allows separate declaration-only compilation and a single translation unit that emits the definitions. API additions should include an unambiguous ownership rule, Doxygen documentation, a regression test, and an updated entry in the root `MANIFEST.yaml`. See the suite's `docs/`-style manuals in `manual/` for sibling modules and `README.md` for integration into existing projects.
-
-Normalization reduces unsigned magnitudes before checking signed ranges, including
-INT64_MIN denominators when reduction makes the result representable. Addition
-reduces common denominator factors before multiplication and accepts INT64_MIN
-numerators when intermediate arithmetic fits. Unrepresentable intermediate
-products or sums are conservatively rejected even if later reduction could fit;
-outputs remain unchanged on failure.
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fraction.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

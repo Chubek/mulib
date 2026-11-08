@@ -1,5 +1,7 @@
 # mulib-uefiutils
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_UEFIUTILS` and `MULIB_IMPL_UEFI` once.
 [Example](../examples/modules/uefiutils.c). All storage is caller-owned.
 
@@ -56,3 +58,27 @@ Cross-checked with [EDK II ShellParameters.h](https://github.com/tianocore/edk2/
 and [LoadedImage.h](https://github.com/tianocore/edk2/blob/master/MdePkg/Include/Protocol/LoadedImage.h).
 Accessed 2026-11-06; original implementation. Tests cover truncated paths,
 binary optional data, Shell lookup, Unicode and native layout offsets.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-uefiutils.h`](../include/mulib-uefiutils.h) |
+| Implementation switch | `MULIB_IMPL_UEFIUTILS` |
+| Repository-local includes | [mulib-uefi](mulib-uefi.md) |
+| Complete example | [`examples/modules/uefiutils.c`](../examples/modules/uefiutils.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uefiutils.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

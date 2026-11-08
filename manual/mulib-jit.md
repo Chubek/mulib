@@ -1,5 +1,7 @@
 # mulib-jit
 
+[Manuals](README.md) · [Library index](index.md)
+
 Owning native code memory with a one-way **RW, non-executable → RX,
 non-writable** transition, plus a baseline compiler for typed MIR control-flow
 programs.
@@ -109,3 +111,27 @@ OS error and retains ownership if unmapping fails. The compiler and native
 execution are supported on the same Linux AMD64 LP64 platform as the raw memory
 API. `tests/test_mir_flow.c` compares VM/native results, fault locations,
 instruction counts, resumption, and side effects.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-jit.h`](../include/mulib-jit.h) |
+| Implementation switch | `MULIB_IMPL_JIT` |
+| Repository-local includes | [mulib-dyncall](mulib-dyncall.md), [mulib-vmweave](mulib-vmweave.md) |
+| Complete example | [`examples/modules/jit.c`](../examples/modules/jit.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/jit.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

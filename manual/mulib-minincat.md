@@ -1,5 +1,7 @@
 # mulib-minincat
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-minincat.h` is an allocation-free, one-way blocking binary stream relay.
 Explicit read/write callbacks can wrap files, pipes, sockets or memory. It has
 no network or HTTP dependency and is not a netcat command-line replacement.
@@ -64,3 +66,27 @@ its peer is untrusted.
 
 `tests/test_web_stack.c` exercises binary EOF relay, short writes, exact/zero
 budget, invalid callbacks, oversized read counts and zero-progress writes.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-minincat.h`](../include/mulib-minincat.h) |
+| Implementation switch | `MULIB_IMPL_MININCAT` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/minincat.c`](../examples/modules/minincat.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/minincat.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

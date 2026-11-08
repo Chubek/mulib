@@ -1,5 +1,7 @@
 # microjs: checked JS-like expressions
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-microjs.h` embeds a small, synchronous expression language. It is **not
 ECMAScript**, does not execute browser scripts, and does not claim JavaScript
 compatibility beyond the syntax described here. There are no third-party or
@@ -102,3 +104,27 @@ lifetime. Creation returns NULL on invalid limits or allocation failure.
 `tests/test_language_tools.c` covers expression precedence, persisted assignment,
 typed string/boolean operations, short-circuiting, malformed/empty/NUL input,
 numeric faults, boundary budgets, allocation failure, and bounded mutations.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-microjs.h`](../include/mulib-microjs.h) |
+| Implementation switch | `MULIB_IMPL_MICROJS` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/microjs.c`](../examples/modules/microjs.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/microjs.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-sysfonts
 
+[Manuals](README.md) · [Library index](index.md)
+
 System font discovery and matching, plus private application-font registration,
 using a runtime-loaded Fontconfig library. This works wherever a compatible
 Fontconfig runtime and configuration are installed, including Unix and configured
@@ -58,3 +60,27 @@ report a skip when a library is absent.
 The implementation uses documented Fontconfig C functions and the stable public
 `FcFontSet` layout: <https://www.freedesktop.org/software/fontconfig/fontconfig-devel/>.
 No native implementation source is copied or bundled.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-sysfonts.h`](../include/mulib-sysfonts.h) |
+| Implementation switch | `MULIB_IMPL_SYSFONTS` |
+| Repository-local includes | [mulib-dynload](mulib-dynload.md) |
+| Complete example | [`examples/modules/sysfonts.c`](../examples/modules/sysfonts.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sysfonts.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-mempool
 
+[Manuals](README.md) · [Library index](index.md)
+
 A growing pool of fixed-size objects, dogfooding `mulib-alloc` and
 `mulib-port`. Define `MULIB_IMPL_MEMPOOL`, `MULIB_IMPL_ALLOC`, and
 `MULIB_IMPL_PORT` once. No external dependencies.
@@ -46,3 +48,27 @@ int main(void) {
 ```
 
 Runnable example: `examples/modules/mempool.c`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-mempool.h`](../include/mulib-mempool.h) |
+| Implementation switch | `MULIB_IMPL_MEMPOOL` |
+| Repository-local includes | [mulib-alloc](mulib-alloc.md) |
+| Complete example | [`examples/modules/mempool.c`](../examples/modules/mempool.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mempool.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

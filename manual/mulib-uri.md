@@ -1,5 +1,7 @@
 # mulib-uri
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-uri.h` parses ASCII URI references and resolves them using RFC 3986
 section 5.2. It is not a network client or an IRI/IDNA implementation.
 
@@ -60,3 +62,27 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/uri.c -o 
 ```
 
 It resolves `../c?new#part` against `https://example.org/a/b?old`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-uri.h`](../include/mulib-uri.h) |
+| Implementation switch | `MULIB_IMPL_URI` |
+| Repository-local includes | [mulib-inte6](mulib-inte6.md), [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/uri.c`](../examples/modules/uri.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uri.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

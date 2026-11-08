@@ -1,5 +1,7 @@
 # mulib-template
 
+[Manuals](README.md) · [Library index](index.md)
+
 A length-delimited template renderer using borrowed JSON contexts and MuLIB
 strbuf output. It is a small template language, not a Mustache/Handlebars
 compatibility implementation or a general expression interpreter.
@@ -86,3 +88,27 @@ The example renders a JSON user list through nested `each`/`if` blocks and
 asserts that `Ada & Lin` becomes `<p>Ada &amp; Lin</p>`.
 `tests/test_config.c` also checks nested alternates, inactive-branch errors,
 Unicode, NULs, root/parent/index/key paths, and borrowed-context ownership.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-template.h`](../include/mulib-template.h) |
+| Implementation switch | `MULIB_IMPL_TEMPLATE` |
+| Repository-local includes | [mulib-json](mulib-json.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/template.c`](../examples/modules/template.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/template.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

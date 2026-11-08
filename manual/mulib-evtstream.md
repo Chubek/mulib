@@ -1,5 +1,7 @@
 # mulib-evtstream
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_EVTSTREAM`. Includes AST declarations; event iteration itself
 has no allocation or link-time AST dependency.
 
@@ -22,3 +24,77 @@ The listener structure and delivery API live in
 `mulib_evtlistener_push(&listener, &event)` to deliver parser-time events.
 Implement `MULIB_IMPL_EVTLISTENER` explicitly when using these APIs.
 `mulib-walker.h` and `mulib-vizigen.h` share this listener interface.
+
+<!-- manual-interface -->
+## Public header reference
+
+Verbatim declaration section from [`include/mulib-evtstream.h`](../include/mulib-evtstream.h).
+Include the header in application code; dependency types come from its includes.
+
+<details>
+<summary>Types, constants, and declarations</summary>
+
+```c
+/** @file mulib-evtstream.h
+ * @brief Allocation-free pull stream of balanced AST enter/leave events.
+ * Define MULIB_IMPL_EVTSTREAM. Trees remain borrowed and must not be mutated.
+ */
+#ifndef MULIB_EVTSTREAM_H
+#define MULIB_EVTSTREAM_H
+#include "mulib-ast.h"
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+  typedef enum mulib_event_kind
+  {
+    MULIB_EVENT_ENTER,
+    MULIB_EVENT_LEAVE
+  } mulib_event_kind_t;
+  typedef struct mulib_event
+  {
+    mulib_event_kind_t kind;
+    const mulib_ast_t *node;
+    size_t depth;
+  } mulib_event_t;
+  typedef struct mulib_evtstream
+  {
+    const mulib_ast_t *root, *node;
+    size_t depth;
+    int leaving;
+  } mulib_evtstream_t;
+  mulib_evtstream_t mulib_evtstream_from_ast (const mulib_ast_t *root);
+  /** Returns 1 for an event, 0 at end, -1 for invalid arguments. */
+  int mulib_evtstream_next (mulib_evtstream_t *stream, mulib_event_t *event);
+#ifdef __cplusplus
+}
+#endif
+#endif
+```
+
+</details>
+<!-- /manual-interface -->
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-evtstream.h`](../include/mulib-evtstream.h) |
+| Implementation switch | `MULIB_IMPL_EVTSTREAM` |
+| Repository-local includes | [mulib-ast](mulib-ast.md) |
+| Complete example | [`examples/modules/evtstream.c`](../examples/modules/evtstream.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/evtstream.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

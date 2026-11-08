@@ -1,5 +1,7 @@
 # mulib-spellcheck
 
+[Manuals](README.md) · [Library index](index.md)
+
 Configurable spell recognition and suggestion algorithms, using existing MuLIB
 dictionary, edit, trie, BK-tree and finite-state primitives. No system word
 lists, Hunspell data, Unicode normalization or implicit case folding are loaded.
@@ -93,3 +95,27 @@ records and rebuilds the selected index. Pointers are never serialized.
 Text imports cap at 16 MiB, model decoding at 64 MiB. Callers explicitly store
 serialized models/results in `mulib-cache` and choose disk paths, namespace,
 model versions and invalidation policy. `destroy` never commits files.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-spellcheck.h`](../include/mulib-spellcheck.h) |
+| Implementation switch | `MULIB_IMPL_SPELLCHECK` |
+| Repository-local includes | [mulib-bktree](mulib-bktree.md), [mulib-cache](mulib-cache.md), [mulib-endian](mulib-endian.md), [mulib-fst](mulib-fst.md), [mulib-utf8](mulib-utf8.md), [mulib-weighted-edit-distance](mulib-weighted-edit-distance.md) |
+| Complete example | [`examples/modules/spellcheck.c`](../examples/modules/spellcheck.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/spellcheck.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

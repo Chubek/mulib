@@ -1,5 +1,7 @@
 # mulib-procfs
 
+[Manuals](README.md) · [Library index](index.md)
+
 A focused parser/query API for Linux `/proc/<pid>/stat` and `status`, not a
 complete procfs implementation. Parsing and VFS queries are portable ISO C11.
 Native access uses Linux stdio and explicitly returns `MULIB_VFS_ENOTSUP` on
@@ -103,3 +105,27 @@ required, even if this header follows other standard headers in one large TU.
 NUL/overflow input, missing/duplicate status fields, exact optional presence,
 VFS query ownership/error paths, allocation failure, and optional live Linux
 `/proc/self` queries without privileges.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-procfs.h`](../include/mulib-procfs.h) |
+| Implementation switch | `MULIB_IMPL_PROCFS` |
+| Repository-local includes | [mulib-vfs](mulib-vfs.md) |
+| Complete example | [`examples/modules/procfs.c`](../examples/modules/procfs.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/procfs.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-orhoconv
 
+[Manuals](README.md) · [Library index](index.md)
+
 An independent orthographic-convention filter; the requested filename spelling
 is retained. Define `MULIB_IMPL_ORHOCONV`, `MULIB_IMPL_UTF8`, `MULIB_IMPL_KVDB`,
 `MULIB_IMPL_BUFFER`, `MULIB_IMPL_ENDIAN`, `MULIB_IMPL_CRC32` and
@@ -46,3 +48,27 @@ leaves output untouched on failure. `destroy` accepts NULL. No language rule
 files or dictionaries are bundled or implicitly loaded.
 
 See [`examples/modules/orhoconv.c`](../examples/modules/orhoconv.c).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-orhoconv.h`](../include/mulib-orhoconv.h) |
+| Implementation switch | `MULIB_IMPL_ORHOCONV` |
+| Repository-local includes | [mulib-endian](mulib-endian.md), [mulib-kvdb](mulib-kvdb.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/orhoconv.c`](../examples/modules/orhoconv.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/orhoconv.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

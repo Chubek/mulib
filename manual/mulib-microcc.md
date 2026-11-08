@@ -1,5 +1,7 @@
 # mulib-microcc
 
+[Manuals](README.md) · [Library index](index.md)
+
 MicroCC compiles one function from five high-level IRs (or native MIR) into
 standalone assembly. Built-in targets are **ELF x86-64 System V** and **RV64IM
 LP64**. Compilation is portable C11; it does not need to run on the target.
@@ -160,3 +162,27 @@ inputs and structural conversions, checking atomicity and leaks.
 independent C boundary/randomized arithmetic, memory ordering, nested calls,
 register hazards, large frames and stack-argument tests; it also cross-assembles
 RV64IM with Clang when available. CTest and `tools/check.py` run these checks.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-microcc.h`](../include/mulib-microcc.h) |
+| Implementation switch | `MULIB_IMPL_MICROCC` |
+| Repository-local includes | [mulib-depir](mulib-depir.md), [mulib-isched](mulib-isched.md), [mulib-lowopt](mulib-lowopt.md), [mulib-machine](mulib-machine.md), [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/microcc.c`](../examples/modules/microcc.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/microcc.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

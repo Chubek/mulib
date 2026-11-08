@@ -1,5 +1,7 @@
 # MuLIB B+ tree
 
+[Manuals](README.md) · [Library index](index.md)
+
 - **Header:** `include/mulib-b+tree.h`
 - **Implementation switch:** `MULIB_IMPL_BPTREE`
 - **Dependencies:** ISO C11 standard library only; declarations support C++17.
@@ -98,3 +100,27 @@ The shared `tests/test_indexes.c` executable checks random differential behavior
 duplicates, empty trees, range ordering, signed extremes, invariant preservation
 under many ascending/descending inserts/removes, and OOM at each allocation of
 a leaf/internal/root split chain.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-b+tree.h`](../include/mulib-b+tree.h) |
+| Implementation switch | `MULIB_IMPL_BPTREE` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/b+tree.c`](../examples/modules/b+tree.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/b+tree.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

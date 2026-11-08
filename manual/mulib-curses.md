@@ -1,5 +1,7 @@
 # mulib-curses
 
+[Manuals](README.md) · [Library index](index.md)
+
 Retained, independently owned windows over the shared vterm cell model, with
 terminfo-driven differential rendering through TUI. This is a prefixed C11 API,
 not an ncurses ABI replacement. Include `mulib-curses.h`; define
@@ -56,3 +58,27 @@ counts, drain events, and pass `flush=1` at an Escape timeout or EOF. Input
 supports termkey's UTF-8/VT/xterm keys, mouse and paste protocols; arbitrary
 database-specific key strings are not currently decoded. Applications own
 polling, resize notifications and event dispatch.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-curses.h`](../include/mulib-curses.h) |
+| Implementation switch | `MULIB_IMPL_CURSES` |
+| Repository-local includes | [mulib-termutils](mulib-termutils.md), [mulib-tui](mulib-tui.md) |
+| Complete example | [`examples/modules/curses.c`](../examples/modules/curses.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/curses.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

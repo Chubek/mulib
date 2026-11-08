@@ -1,5 +1,7 @@
 # mulib-vfs
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-vfs.h` implements a lexical mount table and a useful in-memory filesystem.
 It does not mount anything in the operating system, resolve native symlinks,
 enforce permissions, or implement a POSIX filesystem. It is ISO C11; declarations
@@ -114,3 +116,27 @@ memory storage and user-supplied callbacks are the backend implementations.
 `tests/test_virtual_files.c` exercises normalization boundaries, mount-prefix
 selection, ownership, binary/sparse data, malformed backend counts, dispatch
 composition, and injected allocation failures with always-moving realloc.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-vfs.h`](../include/mulib-vfs.h) |
+| Implementation switch | `MULIB_IMPL_VFS` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/vfs.c`](../examples/modules/vfs.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vfs.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # MuLIB drm: Linux Direct Rendering Manager helpers
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-drm.h`  
 **Implementation switch:** `MULIB_IMPL_DRM`  
 **Dependencies/link flags:** Linux native ioctl/mmap APIs only; **no libdrm**, GPU
@@ -120,3 +122,27 @@ unsupported platforms and failed creation. Build with
 outputs and fd cleanup on `/dev/null` ioctl failures, retryable destroy state,
 and real non-GPU mapping cleanup. It deliberately does not require or claim
 successful operation against a physical DRM/GPU device.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-drm.h`](../include/mulib-drm.h) |
+| Implementation switch | `MULIB_IMPL_DRM` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/drm.c`](../examples/modules/drm.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/drm.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

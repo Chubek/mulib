@@ -1,5 +1,7 @@
 # MuLIB initsys
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header/switch:** `include/mulib-initsys.h` / `MULIB_IMPL_INITSYS`  
 **Transitive implementations:** `MULIB_IMPL_TASKDAG`, `MULIB_IMPL_TASKPOOL`,
 `MULIB_IMPL_PROCESS`, each provided explicitly in exactly one C11 translation unit.
@@ -114,3 +116,27 @@ supervisor immediately: sleep is killed/reaped before the resource stops.
 failed-start rollback, failed-stop retry retaining the object, cycle detection
 without side effects, direct-child reaping and nonblocking unexpected-exit
 supervision. Its process tests use only local standard executables and no network.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-initsys.h`](../include/mulib-initsys.h) |
+| Implementation switch | `MULIB_IMPL_INITSYS` |
+| Repository-local includes | [mulib-process](mulib-process.md), [mulib-taskdag](mulib-taskdag.md) |
+| Complete example | [`examples/modules/initsys.c`](../examples/modules/initsys.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/initsys.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

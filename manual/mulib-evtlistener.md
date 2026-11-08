@@ -1,5 +1,7 @@
 # mulib-evtlistener
 
+[Manuals](README.md) · [Library index](index.md)
+
 The listener side of [`mulib-evtstream`](mulib-evtstream.md). Define
 `MULIB_IMPL_EVTLISTENER` and `MULIB_IMPL_EVTSTREAM` in one translation unit and
 include `mulib-evtlistener.h`. No AST implementation or allocation is needed
@@ -56,3 +58,27 @@ visits. [`mulib-vizigen`](mulib-vizigen.md) returns a `mulib_evtlistener_t` from
 `mulib_vizigen_listener`, allowing the same bytecode to receive parser-time
 events or walk an existing tree. The older `mulib-listener.h` remains a separate
 production-specific enter/leave callback-table API.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-evtlistener.h`](../include/mulib-evtlistener.h) |
+| Implementation switch | `MULIB_IMPL_EVTLISTENER` |
+| Repository-local includes | [mulib-evtstream](mulib-evtstream.md) |
+| Complete example | [`examples/modules/evtlistener.c`](../examples/modules/evtlistener.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/evtlistener.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

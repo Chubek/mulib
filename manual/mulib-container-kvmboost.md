@@ -1,5 +1,7 @@
 # mulib-container-kvmboost
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Owning single-vCPU KVM execution adapter with explicit guest and device callbacks.
@@ -45,3 +47,27 @@ Destroy closes vCPU, VM, then device; failure retains ownership for retry. No
 automatic fallback, external emulator, kernel image or host mount is created.
 Tests cover missing-device/invalid-config paths; actual guest execution needs a
 usable host KVM device and valid guest callbacks.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-container-kvmboost.h`](../include/mulib-container-kvmboost.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINER_KVMBOOST` |
+| Repository-local includes | [mulib-containerboost](mulib-containerboost.md), [mulib-kvmcontainer](mulib-kvmcontainer.md) |
+| Complete example | [`examples/modules/container-kvmboost.c`](../examples/modules/container-kvmboost.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-kvmboost.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

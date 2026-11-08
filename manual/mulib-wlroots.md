@@ -1,5 +1,7 @@
 # mulib-wlroots
 
+[Manuals](README.md) · [Library index](index.md)
+
 Wlroots-style **logical output geometry and bookkeeping**, not a binary binding
 to wlroots, a compositor, backend, scene graph or seat implementation. This
 deliberately avoids wlroots' version-specific struct layout and external headers.
@@ -35,3 +37,27 @@ No pointers to native outputs are retained; caller handles hotplug id lifetimes.
 `cc -std=c11 -Iinclude examples/modules/wlroots.c -o wlroots`.
 Tests exercise all eight transforms, invalid coordinates, boundaries, overlap,
 update, removal and repeated cleanup without starting a desktop session.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-wlroots.h`](../include/mulib-wlroots.h) |
+| Implementation switch | `MULIB_IMPL_WLROOTS` |
+| Repository-local includes | [mulib-vec](mulib-vec.md) |
+| Complete example | [`examples/modules/wlroots.c`](../examples/modules/wlroots.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wlroots.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

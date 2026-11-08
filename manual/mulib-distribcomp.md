@@ -1,5 +1,7 @@
 # mulib-distribcomp
 
+[Manuals](README.md) · [Library index](index.md)
+
 Distributed DAG orchestration over internal MuMQ with trusted Mune execution,
 daemon control, and explicitly supplied container/OCI/VMM backends. There are no
 third-party parser, MQ, crypto or Lua dependencies. A required JSON/YAML document
@@ -120,3 +122,27 @@ Define `MULIB_IMPL_DISTRIBCOMP`, `MULIB_IMPL_DISTRIBTASK`,
 `MULIB_IMPL_MUMQ_SERVER`. `examples/distrib-common.h` shows explicit placement.
 Linux: `cc -std=c11 -Iinclude examples/modules/distribcomp.c -lm -pthread -ldl`.
 All public objects require external synchronization; callbacks must not reenter.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-distribcomp.h`](../include/mulib-distribcomp.h) |
+| Implementation switch | `MULIB_IMPL_DISTRIBCOMP` |
+| Repository-local includes | [mulib-daemon](mulib-daemon.md), [mulib-distribtask](mulib-distribtask.md), [mulib-mumq-publisher](mulib-mumq-publisher.md), [mulib-mumq-subscriber](mulib-mumq-subscriber.md) |
+| Complete example | [`examples/modules/distribcomp.c`](../examples/modules/distribcomp.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/distribcomp.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

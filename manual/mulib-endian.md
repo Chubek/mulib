@@ -1,56 +1,126 @@
-# MuLIB endian: Reference Manual
+# MuLIB endian
 
-**Header:** `include/mulib-endian.h` · **Switch:** `MULIB_IMPL_ENDIAN` · **Language:** C11 (C++17-linkable)
-
-## Purpose and design
+[Manuals](README.md) · [Library index](index.md)
 
 Explicit little- and big-endian primitive load/store helpers. Safe on unaligned byte buffers; unlike pointer casts these functions avoid alignment and strict-aliasing violations.
 
-This component is intended to be selected independently from MuLIB's other headers. It does not force clients to link a binary runtime. It follows explicit lifecycle management and uses public `mulib_` names to avoid common clashes with the C standard library and other toolkits. The implementation is intentionally small enough to audit. Prefer using this module in code where its documented representation, algorithmic behavior, and error contract match the workload rather than treating it as an automatic replacement for a large specialized dependency.
+## Contract and behavior
 
-## Getting started
+Loads and stores operate on exactly four bytes for 32-bit values or
+eight bytes for 64-bit values. Bytewise access supports unaligned addresses and
+is independent of host byte order. A non-NULL pointer must provide the full
+accessible range; there is no length parameter. NULL loads return zero and NULL
+stores do nothing. No allocation occurs. These helpers serialize integers,
+not C structure layouts.
+
+## Example
 
 ```c
 #include <assert.h>
-#include <string.h>
 #include <math.h>
+#include <string.h>
 #define MULIB_IMPL_ENDIAN
 #include "mulib-endian.h"
-int main(void){
-  unsigned char b[4]; mulib_endian_store_le32(b,0x12345678u); assert(mulib_endian_load_le32(b)==0x12345678u);
-  return 0;
+int main(void) {
+    unsigned char b[4];
+    mulib_endian_store_le32(b, 0x12345678u);
+    assert(mulib_endian_load_le32(b) == 0x12345678u);
+    return 0;
 }
 ```
 
-Compile a one-file example with `cc -std=c11 -Iinclude example.c -o example` (add `-lm` for mathematical functions when required). To share this header across translation units, put its `#define MULIB_IMPL_ENDIAN` in exactly one `.c` or `.cpp` file. Every other translation unit includes the header with no implementation switch. Defining it in several translation units causes duplicate definitions at link time. Defining a switch after the header has already been included in a translation unit is not supported.
+<!-- manual-interface -->
+## Public header reference
 
-## Public declarations
+Verbatim declaration section from [`include/mulib-endian.h`](../include/mulib-endian.h).
+Include the header in application code; dependency types come from its includes.
+
+<details>
+<summary>Types, constants, and declarations</summary>
 
 ```c
-uint32_t mulib_endian_load_le32(const unsigned char *bytes);
-uint32_t mulib_endian_load_be32(const unsigned char *bytes);
-void mulib_endian_store_le32(unsigned char *bytes,uint32_t value);
-void mulib_endian_store_be32(unsigned char *bytes,uint32_t value);
-uint64_t mulib_endian_load_le64(const unsigned char *bytes);
-uint64_t mulib_endian_load_be64(const unsigned char *bytes);
-void mulib_endian_store_le64(unsigned char *bytes,uint64_t value);
-void mulib_endian_store_be64(unsigned char *bytes,uint64_t value);
+/**
+ * @file mulib-endian.h
+ * @brief Explicit little- and big-endian primitive load/store helpers.
+ * @defgroup mulib_endian MuLIB endian
+ * @{
+ * @details Safe on unaligned byte buffers; unlike pointer casts these
+ * functions avoid alignment and strict-aliasing violations.
+ * @par Integration
+ * In exactly one translation unit define MULIB_IMPL_ENDIAN before including
+ * this file. Other translation units may include it without the implementation
+ * switch.
+ * @par Portability
+ * ISO C11, C++17 compatible C linkage. All allocations use the C standard
+ * library.
+ * @}
+ */
+#ifndef MULIB_ENDIAN_H
+#define MULIB_ENDIAN_H
+#include <ctype.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+  /** @brief mulib endian load le32; see manual/mulib-endian.md for contracts
+   * and examples. */
+  uint32_t mulib_endian_load_le32 (const unsigned char *bytes);
+  /** @brief mulib endian load be32; see manual/mulib-endian.md for contracts
+   * and examples. */
+  uint32_t mulib_endian_load_be32 (const unsigned char *bytes);
+  /** @brief mulib endian store le32; see manual/mulib-endian.md for contracts
+   * and examples. */
+  void mulib_endian_store_le32 (unsigned char *bytes, uint32_t value);
+  /** @brief mulib endian store be32; see manual/mulib-endian.md for contracts
+   * and examples. */
+  void mulib_endian_store_be32 (unsigned char *bytes, uint32_t value);
+  /** Unaligned 64-bit counterparts; NULL loads zero and stores do nothing. */
+  uint64_t mulib_endian_load_le64 (const unsigned char *bytes);
+  uint64_t mulib_endian_load_be64 (const unsigned char *bytes);
+  void mulib_endian_store_le64 (unsigned char *bytes, uint64_t value);
+  void mulib_endian_store_be64 (unsigned char *bytes, uint64_t value);
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* MULIB_ENDIAN_H */
 ```
 
-The declarations are stable C entry points, with `extern "C"` linkage when compiled as C++. Public data structures are intentionally visible and inspectable rather than hiding allocation behind an ABI. Treat any `data`, `items`, or linked pointers as borrowed views unless the specific function explicitly transfers ownership. No function is implicitly thread-safe for mutable shared objects.
+</details>
+<!-- /manual-interface -->
 
-## Ownership, errors, and lifetime
+<!-- manual-reference -->
+## Source and build reference
 
-Safe on unaligned byte buffers; unlike pointer casts these functions avoid alignment and strict-aliasing violations. Values returned through output parameters are only guaranteed after a successful call. For functions returning an integer success code, **1** means success and **0** means failure unless a more specific result is documented by the API. Do not infer a `errno` value from an API that does not explicitly promise one. For heap-allocated state, pair creation or initialization with its corresponding destroy or free operation. Never reuse internal buffer pointers after an operation that can grow or release storage.
+[Manual index](index.md) · [Integration guide](integration.md)
 
-## Behavior, constraints, and interoperability
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-endian.h`](../include/mulib-endian.h) |
+| Implementation switch | `MULIB_IMPL_ENDIAN` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/endian.c`](../examples/modules/endian.c) |
 
-Operations are designed around bounded input, explicit lengths where relevant, and ordinary C ownership. They do not perform locking and do not provide a global allocator override. File, terminal and parser functions are intended as lightweight building blocks; inputs that require complete standard compliance, hostile-input hardening or advanced Unicode processing may need a dedicated mature library. Confirm prerequisites and endianness for binary serialization; never serialize the memory layout of MuLIB structures directly.
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
 
-## Example-driven validation
+Compile the example from the repository root on Linux:
 
-The examples folder demonstrates the overall build pattern, and the test suite exercises representative successful and unsuccessful operations. Compile with warnings and run with AddressSanitizer/UndefinedBehaviorSanitizer for new integrations. Keep tests for empty inputs, repeated updates, integer bounds, and failure behavior when extending a module. The implementation uses standard C runtime functions and deliberately keeps dependencies discoverable rather than embedding hidden platform-specific services.
-
-## Implementation guidance
-
-The source implementation is appended in the header below the public interface guard. It is included only if `MULIB_IMPL_ENDIAN` is defined before inclusion. This arrangement allows separate declaration-only compilation and a single translation unit that emits the definitions. API additions should include an unambiguous ownership rule, Doxygen documentation, a regression test, and an updated entry in the root `MANIFEST.yaml`. See the suite's `docs/`-style manuals in `manual/` for sibling modules and `README.md` for integration into existing projects.
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/endian.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

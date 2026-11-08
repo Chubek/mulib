@@ -1,5 +1,7 @@
 # mulib-optml
 
+[Manuals](README.md) · [Library index](index.md)
+
 Annotation-driven LIR optimization and complete native-MIR-to-assembly pipeline.
 The static catalogue contains 75 guarded shallow-tree rewrites, followed by
 conservative dead-write elimination. All implementation code is in `include/`;
@@ -99,3 +101,27 @@ Tests include all 75 rewrite properties, non-SSA register reuse, CFG loops,
 randomized semantic equivalence, ArchML resources/barriers, allocation rollback,
 writer failures, assembly macro expansion, native arithmetic/memory/calls and
 RV64 cross-assembly. No unimplemented optimization names are advertised as passes.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-optml.h`](../include/mulib-optml.h) |
+| Implementation switch | `MULIB_IMPL_OPTML` |
+| Repository-local includes | [mulib-isel](mulib-isel.md), [mulib-peephole](mulib-peephole.md), [mulib-superinstr](mulib-superinstr.md) |
+| Complete example | [`examples/modules/optml.c`](../examples/modules/optml.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/optml.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

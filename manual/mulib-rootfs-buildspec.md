@@ -1,5 +1,7 @@
 # mulib-rootfs-buildspec
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME
 
 Owned ordered rootfs recipes with transactional execution and aggregate quotas.
@@ -51,3 +53,27 @@ Invalid operations/paths are EINVAL, quota failures ELIMIT, copied-storage
 allocation failures (including the initial root clone) ENOMEM, other filesystem
 operation failures EIO. No host filesystem
 operations or process execution occur. See [stack](container-stack.md) for tests.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-rootfs-buildspec.h`](../include/mulib-rootfs-buildspec.h) |
+| Implementation switch | `MULIB_IMPL_ROOTFS_BUILDSPEC` |
+| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md), [mulib-rootfs](mulib-rootfs.md) |
+| Complete example | [`examples/modules/rootfs-buildspec.c`](../examples/modules/rootfs-buildspec.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rootfs-buildspec.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

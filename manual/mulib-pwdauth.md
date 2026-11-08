@@ -1,5 +1,7 @@
 # Password records
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_PWDAUTH`, `MULIB_IMPL_AUTHCRYPTO` and `MULIB_IMPL_SECURITY`.
 `mulib_pwdauth_create` derives a 32-byte PBKDF2-HMAC-SHA-256 key from an explicit
 length binary password and a caller-supplied 16-byte salt. The record contains
@@ -30,3 +32,27 @@ available. This dependency-free PBKDF2 implementation is unaudited, not a claim
 of equivalent memory hardness. Add TLS, account lockout/rate limits, dummy work
 for unknown users, audit logging and secure recovery externally.
 [Example](../examples/modules/pwdauth.c), [tests](../tests/test_authentication.c).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-pwdauth.h`](../include/mulib-pwdauth.h) |
+| Implementation switch | `MULIB_IMPL_PWDAUTH` |
+| Repository-local includes | [mulib-authcrypto](mulib-authcrypto.md), [mulib-seurity](mulib-seurity.md) |
+| Complete example | [`examples/modules/pwdauth.c`](../examples/modules/pwdauth.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pwdauth.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -99,7 +99,7 @@ modules:
   header: include/mulib-bitset.h
   manual: manual/mulib-bitset.md
   macro: MULIB_IMPL_BITSET
-  purpose: Resizable bit-array with test, set, clear, and population count.
+  purpose: Fixed-size allocated bit-array with test, set, clear, and population count.
   dependencies: []
   status: implemented
 - name: heap
@@ -442,7 +442,7 @@ modules:
   header: include/mulib-text.h
   manual: manual/mulib-text.md
   macro: MULIB_IMPL_TEXT
-  purpose: ASCII-only whitespace trim and case conversion routines.
+  purpose: Locale-sensitive whitespace trim and ASCII case conversion routines.
   dependencies: []
   status: implemented
 - name: replace
@@ -4637,6 +4637,16 @@ project_files:
   purpose: Generated architecture metadata snapshot with source and schema hashes.
 - file: manual/modules.md
   purpose: Module index, dependency ownership, scope, and composition guide.
+- file: manual/README.md
+  purpose: Manual navigation and contract-reading guide.
+- file: manual/index.md
+  purpose: Generated alphabetical library and support-header index.
+- file: manual/integration.md
+  purpose: Single-file, multi-file, C++ and CMake integration recipes.
+- file: manual/authoring.md
+  purpose: Behavioral contract and manual maintenance guidance.
+- file: tools/manuals.py
+  purpose: Generated reference maintenance, local link checks and example compilation.
 - file: tests/composition.c
   purpose: Cross-module composition through a separate implementation translation unit.
 - file: tests/extensions.c

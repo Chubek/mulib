@@ -1,5 +1,7 @@
 # MuLIB line text diff
 
+[Manuals](README.md) · [Library index](index.md)
+
 - **Header:** `include/mulib-txtdiff.h`
 - **Implementation switches:** `MULIB_IMPL_TXTDIFF`, **`MULIB_IMPL_VEC`**,
   **`MULIB_IMPL_BUFFER`**
@@ -133,3 +135,27 @@ forward/reverse roundtrips (including more than 64 lines, NUL/CRLF/missing final
 LF), empty inputs, wrong bases, limits, malformed edit spans/metadata, split-line
 scripts and output after an unterminated line, alias-safe application and
 allocation-failure preservation.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-txtdiff.h`](../include/mulib-txtdiff.h) |
+| Implementation switch | `MULIB_IMPL_TXTDIFF` |
+| Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-vec](mulib-vec.md) |
+| Complete example | [`examples/modules/txtdiff.c`](../examples/modules/txtdiff.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/txtdiff.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

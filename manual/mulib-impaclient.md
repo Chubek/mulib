@@ -1,5 +1,7 @@
 # mulib-impaclient (IMAP client)
 
+[Manuals](README.md) · [Library index](index.md)
+
 **The module's historical spelling is `impaclient`, not `imapclient`.** Its file,
 symbols (`mulib_impaclient_*`) and implementation switch preserve that spelling;
 the protocol enum prefix is `MULIB_IMAP_`. It implements the useful tagged IMAP
@@ -97,3 +99,27 @@ Capacity arithmetic and quote expansion are checked for overflow.
 commands/replies, capacity/state errors and output failure.
 Only init accepts uninitialized session storage; do not copy a live session and
 share its scratch buffer.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-impaclient.h`](../include/mulib-impaclient.h) |
+| Implementation switch | `MULIB_IMPL_IMPACLIENT` |
+| Repository-local includes | [mulib-imapserver](mulib-imapserver.md) |
+| Complete example | [`examples/modules/impaclient.c`](../examples/modules/impaclient.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/impaclient.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

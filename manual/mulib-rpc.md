@@ -1,5 +1,7 @@
 # mulib-rpc
 
+[Manuals](README.md) · [Library index](index.md)
+
 Synchronous JSON-RPC 2.0 **server dispatch**, independent of HTTP, sockets,
 threads, and process state. Includes single requests, batches, notifications,
 IDs, parse/validation/method/handler errors. It is not a transport or an RPC
@@ -70,3 +72,27 @@ an exact byte-length JSON request, and checks the result through the DOM:
 cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/rpc.c -o ./rpc
 ./rpc
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-rpc.h`](../include/mulib-rpc.h) |
+| Implementation switch | `MULIB_IMPL_RPC` |
+| Repository-local includes | [mulib-json](mulib-json.md) |
+| Complete example | [`examples/modules/rpc.c`](../examples/modules/rpc.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rpc.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

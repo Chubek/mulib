@@ -1,5 +1,7 @@
 # mulib-container-stub
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Nonblocking lifecycle client with partial I/O and request/response correlation.
@@ -45,3 +47,27 @@ already sent or a server operation. A busy free is ignored until callback return
 The underlying protocol and server replay policy are documented in
 [conainerd-ipc](mulib-conainerd-ipc.md) and
 [ctrlbridge](mulib-containerd-ctrlbridge.md). All results use CT codes.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-container-stub.h`](../include/mulib-container-stub.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINER_STUB` |
+| Repository-local includes | [mulib-conainerd-ipc](mulib-conainerd-ipc.md) |
+| Complete example | [`examples/modules/container-stub.c`](../examples/modules/container-stub.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-stub.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

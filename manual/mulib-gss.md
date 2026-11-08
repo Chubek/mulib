@@ -1,5 +1,7 @@
 # mulib-gss — graph-structured stacks
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-gss.h` stores shared stack tops and labelled predecessor edges.
 A node is interned by **(state, input position)**. An edge is interned by
 **(head node, predecessor node, label)**. Distinct histories can consequently
@@ -108,3 +110,27 @@ The equivalent standalone example is `examples/modules/gss.c`:
 cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/gss.c -o ./gss
 ./gss
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-gss.h`](../include/mulib-gss.h) |
+| Implementation switch | `MULIB_IMPL_GSS` |
+| Repository-local includes | [mulib-vec](mulib-vec.md) |
+| Complete example | [`examples/modules/gss.c`](../examples/modules/gss.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/gss.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

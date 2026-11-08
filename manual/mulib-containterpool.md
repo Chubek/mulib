@@ -1,5 +1,7 @@
 # mulib-containterpool
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Stable owned container slots, generation handles and fair cooperative polling.
@@ -45,3 +47,27 @@ remaining table is live for retry; only complete success releases the table.
 Generation exhaustion is ELIMIT; stale handles ESTALE; active/borrowed/reentrant
 mutation EBUSY. All operations use CT codes. External exports borrowing rootfs
 must be removed before raw pool removal; `containerd` coordinates this ordering.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-containterpool.h`](../include/mulib-containterpool.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINTERPOOL` |
+| Repository-local includes | [mulib-containerboost](mulib-containerboost.md), [mulib-image2container](mulib-image2container.md) |
+| Complete example | [`examples/modules/containterpool.c`](../examples/modules/containterpool.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containterpool.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

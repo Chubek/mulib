@@ -1,5 +1,7 @@
 # mulib-vectgfx
 
+[Manuals](README.md) · [Library index](index.md)
+
 Vector drawing API and a small absolute-coordinate language. Define
 `MULIB_IMPL_VECTGFX`, `MULIB_IMPL_GLX`, `MULIB_IMPL_DRM`, `MULIB_IMPL_LINALG`,
 `MULIB_IMPL_VEC`, `MULIB_IMPL_PARSEC`; link `-lm`.
@@ -74,3 +76,27 @@ for bounded software workloads; stroke work grows with segment bounding areas.
 
 See `examples/modules/vectgfx.c` and `tests/test_graphics_render.c` for curves,
 holes, round strokes, parser errors and alpha-union checks.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-vectgfx.h`](../include/mulib-vectgfx.h) |
+| Implementation switch | `MULIB_IMPL_VECTGFX` |
+| Repository-local includes | [mulib-glx](mulib-glx.md), [mulib-parsec](mulib-parsec.md), [mulib-vec](mulib-vec.md) |
+| Complete example | [`examples/modules/vectgfx.c`](../examples/modules/vectgfx.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vectgfx.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

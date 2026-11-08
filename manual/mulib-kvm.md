@@ -1,5 +1,7 @@
 # mulib-kvm
 
+[Manuals](README.md) · [Library index](index.md)
+
 Linux **Kernel-based Virtual Machine** helpers, not keyboard/video/mouse sharing.
 Provides device/VM/vCPU ownership, capability queries, borrowed RAM registration
 and one-step execution. Not a complete VMM, firmware loader or architecture setup.
@@ -39,3 +41,27 @@ thread per vCPU and coordinate concurrent teardown. No automatic signal handling
 example. Tests cover invalid state and `/dev/null` ioctl failure/cleanup, not
 successful guest execution. Real execution requires hardware virtualization,
 kernel support, permissions and architecture-specific setup supplied by the caller.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-kvm.h`](../include/mulib-kvm.h) |
+| Implementation switch | `MULIB_IMPL_KVM` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/kvm.c`](../examples/modules/kvm.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/kvm.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

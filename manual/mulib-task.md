@@ -1,5 +1,7 @@
 # MuLIB task
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-task.h` · **Switch:** `MULIB_IMPL_TASK`
 
 An inert `mulib_task_t` describes one native process boundary. Initialize with
@@ -55,3 +57,27 @@ cc -std=c11 -Iinclude examples/modules/task.c -pthread -lm -ldl -o /tmp/opencode
 `tests/test_build_tasks.c` checks default environment, shebang execution, missing
 executables, capture, deadlines and output limits. Native execution is POSIX-only
 and returns EXEC_UNSUPPORTED elsewhere.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-task.h`](../include/mulib-task.h) |
+| Implementation switch | `MULIB_IMPL_TASK` |
+| Repository-local includes | [mulib-exec](mulib-exec.md) |
+| Complete example | [`examples/modules/task.c`](../examples/modules/task.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/task.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

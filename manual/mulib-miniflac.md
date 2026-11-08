@@ -1,5 +1,7 @@
 # mulib-miniflac
 
+[Manuals](README.md) · [Library index](index.md)
+
 Original native FLAC implementation, without libFLAC or other external codecs.
 Define `MULIB_IMPL_MINIFLAC`, `MULIB_IMPL_AUDIO`, `MULIB_IMPL_XSIMD`; link `-lm`
 on Unix. Example: `examples/modules/miniflac.c`.
@@ -34,3 +36,27 @@ Output objects must be zero-initialized and released with the audio free APIs.
 SIMD accelerates normalization/quantization scaling. Failures leave output
 unchanged. Optional external-tool tests verify files with `flac -t` and decode
 reference-encoded predictor streams; tools are test oracles, not dependencies.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-miniflac.h`](../include/mulib-miniflac.h) |
+| Implementation switch | `MULIB_IMPL_MINIFLAC` |
+| Repository-local includes | [mulib-audio](mulib-audio.md) |
+| Complete example | [`examples/modules/miniflac.c`](../examples/modules/miniflac.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/miniflac.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

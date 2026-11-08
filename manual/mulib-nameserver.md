@@ -1,5 +1,7 @@
 # mulib-nameserver
 
+[Manuals](README.md) · [Library index](index.md)
+
 A no-I/O authoritative answer engine for one static zone. It converts a query
 packet and a borrowed record table into a DNS reply in caller storage.
 
@@ -75,3 +77,27 @@ The caller owns serving policy and deployment security.
 query/answer and NXDOMAIN example. `tests/test_dns_stack.c` verifies resolver
 composition, NODATA/apex behavior, ID echoing, truncation, REFUSED, CNAME rules,
 out-of-zone rejection and the compatibility facade.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-nameserver.h`](../include/mulib-nameserver.h) |
+| Implementation switch | `MULIB_IMPL_NAMESERVER` |
+| Repository-local includes | [mulib-dnsclient](mulib-dnsclient.md) |
+| Complete example | [`examples/modules/nameserver.c`](../examples/modules/nameserver.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/nameserver.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

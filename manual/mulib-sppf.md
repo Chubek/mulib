@@ -1,5 +1,7 @@
 # mulib-sppf — shared packed parse forests
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-sppf.h` represents many derivation trees using shared symbol
 nodes and packed alternatives. It supports nullable spans and cycles, including
 finite graphs representing infinitely many finite derivation trees.
@@ -147,3 +149,27 @@ See `examples/modules/sppf.c` for additional sharing assertions:
 cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/sppf.c -o ./sppf
 ./sppf
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-sppf.h`](../include/mulib-sppf.h) |
+| Implementation switch | `MULIB_IMPL_SPPF` |
+| Repository-local includes | [mulib-vec](mulib-vec.md) |
+| Complete example | [`examples/modules/sppf.c`](../examples/modules/sppf.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sppf.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

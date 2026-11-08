@@ -1,5 +1,7 @@
 # mulib-regex
 
+[Manuals](README.md) · [Library index](index.md)
+
 A self-contained, case-sensitive **byte regular-expression** compiler and
 Thompson-NFA matcher in ISO C11. This module does not call POSIX regex or use
 third-party code. It has **no module dependencies**. Define `MULIB_IMPL_REGEX`
@@ -128,3 +130,27 @@ int main(void) {
 cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinclude examples/modules/regex.c -o ./regex
 ./regex
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-regex.h`](../include/mulib-regex.h) |
+| Implementation switch | `MULIB_IMPL_REGEX` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/regex.c`](../examples/modules/regex.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/regex.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

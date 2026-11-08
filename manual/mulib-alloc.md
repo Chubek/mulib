@@ -1,5 +1,7 @@
 # mulib-alloc
 
+[Manuals](README.md) · [Library index](index.md)
+
 Allocator callbacks, overflow-checked zero allocation, string copying, and
 transactional array resizing. Define `MULIB_IMPL_ALLOC` and
 `MULIB_IMPL_PORT` in one C11 implementation translation unit.
@@ -43,3 +45,27 @@ int main(void) {
 ```
 
 Runnable example: `examples/modules/alloc.c`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-alloc.h`](../include/mulib-alloc.h) |
+| Implementation switch | `MULIB_IMPL_ALLOC` |
+| Repository-local includes | [mulib-port](mulib-port.md) |
+| Complete example | [`examples/modules/alloc.c`](../examples/modules/alloc.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/alloc.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

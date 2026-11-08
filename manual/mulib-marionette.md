@@ -1,5 +1,7 @@
 # mulib-marionette
 
+[Manuals](README.md) · [Library index](index.md)
+
 Bounded input recording and deterministic callback playback. No scripting engine,
 file format, sleeping, global clock, browser protocol or automatic input injection.
 
@@ -35,3 +37,27 @@ No concurrency guarantee; callbacks can forward to `mulib-vdev` explicitly.
 
 `cc -std=c11 -Iinclude examples/modules/marionette.c -o marionette`.
 Tests cover limits, empty playback, clock/overflow boundaries and sink retry.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-marionette.h`](../include/mulib-marionette.h) |
+| Implementation switch | `MULIB_IMPL_MARIONETTE` |
+| Repository-local includes | [mulib-input](mulib-input.md), [mulib-vec](mulib-vec.md) |
+| Complete example | [`examples/modules/marionette.c`](../examples/modules/marionette.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/marionette.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-fiber
 
+[Manuals](README.md) · [Library index](index.md)
+
 Stackful cooperative fibers: callbacks can suspend from nested functions without
 manually storing continuation state. Define `MULIB_IMPL_FIBER` and
 `MULIB_IMPL_XTHREADS` in exactly one implementation translation unit each; define
@@ -80,3 +82,27 @@ Valid context-switch failure is fatal (`abort`), since returning normally would
 violate the scheduler's stack/state invariants.
 
 See [`examples/modules/fiber.c`](../examples/modules/fiber.c).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-fiber.h`](../include/mulib-fiber.h) |
+| Implementation switch | `MULIB_IMPL_FIBER` |
+| Repository-local includes | [mulib-xthreads](mulib-xthreads.md) |
+| Complete example | [`examples/modules/fiber.c`](../examples/modules/fiber.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fiber.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

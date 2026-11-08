@@ -1,5 +1,7 @@
 # mulib-superinstr
 
+[Manuals](README.md) · [Library index](index.md)
+
 Exact repeated assembly sequences factored into GAS macros. All implementation
 code lives in `include/mulib-superinstr.h`.
 
@@ -49,3 +51,27 @@ macro-expanded arithmetic and cross-assembles RV64 macros.
 cc -std=c11 -Iinclude examples/modules/superinstr.c -lm -o superinstr
 ./superinstr
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-superinstr.h`](../include/mulib-superinstr.h) |
+| Implementation switch | `MULIB_IMPL_SUPERINSTR` |
+| Repository-local includes | [mulib-mir](mulib-mir.md), [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/superinstr.c`](../examples/modules/superinstr.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/superinstr.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

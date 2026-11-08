@@ -22,9 +22,43 @@ def module(name):
 snapshot = module('check_snapshot')
 strata = module('stratify')
 inventory = module('sync_inventory')
+manuals = module('manuals')
 
 
 class Tools(unittest.TestCase):
+    def test_manual_sections_preserve_prose(self):
+        before = ('# User title\n\nContract written by a maintainer.\n\n'
+                  '<!-- manual-interface -->\nold\n<!-- /manual-interface -->\n'
+                  '\nAdditional handwritten notes.\n')
+        after = manuals.replace_section(before, 'interface', 'new reference')
+        self.assertEqual(after, before.replace('\nold\n', '\nnew reference\n'))
+        self.assertEqual(after, manuals.replace_section(after, 'interface', 'new reference'))
+        for broken in (before.replace('<!-- /manual-interface -->', ''),
+                       before + before,
+                       '<!-- /manual-interface -->\n<!-- manual-interface -->'):
+            with self.subTest(broken=broken), self.assertRaises(ValueError):
+                manuals.replace_section(broken, 'interface', 'new')
+
+    def test_manual_links(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            page = directory / 'manual.md'
+            target = directory / 'with space.md'
+            documents = {
+                page: ('# Reference\n[valid](with%20space.md#api-1)\n'
+                       '[`source`](with%20space.md)\n'
+                       '`[example](NOT-A-LINK)`\n'
+                       '```c\n[example](NOT-A-LINK)\n```\n'
+                       '[external](https://example.com/missing)\n'),
+                target: '# API\n## API\n',
+            }
+            self.assertEqual(manuals.check_links(documents), [])
+            documents[page] += '[broken](with%20space.md#missing)\n[absent](absent.md)\n'
+            failures = manuals.check_links(documents)
+            self.assertEqual(len(failures), 2)
+            self.assertIn('missing anchor', failures[0])
+            self.assertIn('missing link', failures[1])
+
     def test_inventory_sync(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

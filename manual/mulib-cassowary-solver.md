@@ -1,5 +1,7 @@
 # mulib-cassowary-solver
 
+[Manuals](README.md) · [Library index](index.md)
+
 A Cassowary-style linear constraint tableau solver: required equalities and
 inequalities, nonnegative slack/error variables, artificial-variable feasibility
 and simplex minimization of weighted absolute errors. It is separate from the
@@ -70,3 +72,27 @@ See [`examples/modules/cassowary-solver.c`](../examples/modules/cassowary-solver
 `tools/check_cassowary.py` compares 100 deterministic 2D problems against an
 independent exact-rational vertex enumeration of the weighted-L1 objective;
 unit tests also cover edits, redundant constraints, infeasibility and rollback.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-cassowary-solver.h`](../include/mulib-cassowary-solver.h) |
+| Implementation switch | `MULIB_IMPL_CASSOWARY_SOLVER` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/cassowary-solver.c`](../examples/modules/cassowary-solver.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cassowary-solver.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

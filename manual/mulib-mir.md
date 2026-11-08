@@ -1,5 +1,7 @@
 # mulib-mir
 
+[Manuals](README.md) · [Library index](index.md)
+
 Typed record IR shared by the compiler backends. The original SSA interface is
 joined by a typed register/control-flow dialect for VM/AOT execution and an
 explicit lower-level native machine dialect for MicroCC.
@@ -267,3 +269,27 @@ block, and bounds each array with `limit`. Zero is a real limit. Allocation-size
 overflow returns RESOURCE_LIMIT. Empty programs are INVALID. Diagnostic indices
 name the relevant instruction, block boundary or descriptor array. Native MIR
 does not require high-level input graphs to stay alive after lowering.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-mir.h`](../include/mulib-mir.h) |
+| Implementation switch | `MULIB_IMPL_MIR` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/mir.c`](../examples/modules/mir.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mir.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

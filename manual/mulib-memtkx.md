@@ -1,5 +1,7 @@
 # mulib-memtkx
 
+[Manuals](README.md) · [Library index](index.md)
+
 An original memory-toolkit extension: a per-instance tracking allocator with
 live-byte budgets and allocation checkpoints. It does not reproduce an external
 project's API. Define `MULIB_IMPL_MEMTKX`, `MULIB_IMPL_ALLOC`, and
@@ -54,3 +56,27 @@ int main(void) {
 ```
 
 `examples/modules/memtkx.c` also demonstrates tracking a MuLIB memory pool.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-memtkx.h`](../include/mulib-memtkx.h) |
+| Implementation switch | `MULIB_IMPL_MEMTKX` |
+| Repository-local includes | [mulib-alloc](mulib-alloc.md) |
+| Complete example | [`examples/modules/memtkx.c`](../examples/modules/memtkx.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/memtkx.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

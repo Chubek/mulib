@@ -1,5 +1,7 @@
 # HTTP/3 frames
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_HTTP3`, `MULIB_IMPL_QUIC` and `MULIB_IMPL_BUFFER`. The codec
 handles QUIC-varint type/length envelopes and validates frame-local HTTP/3 payload
 structure. It does not implement QUIC transport, QPACK or connection state.
@@ -46,3 +48,27 @@ QPACK semantics still require the surrounding connection implementation.
 [Example](../examples/modules/http3.c). Regression and allocation suites:
 `tests/test_http_hardening.c`, `tests/test_http_alloc.c`. The shared fuzz target
 also checks parse/write/read semantics and failure output preservation.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-http3.h`](../include/mulib-http3.h) |
+| Implementation switch | `MULIB_IMPL_HTTP3` |
+| Repository-local includes | [mulib-quic](mulib-quic.md) |
+| Complete example | [`examples/modules/http3.c`](../examples/modules/http3.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/http3.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -3,6 +3,9 @@
 A C11 modular single-header utility library with **537 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
+[Manuals](manual/README.md) · [Complete library index](manual/index.md) ·
+[Build and integration guide](manual/integration.md)
+
 ## Correct implementation-switch syntax
 
 The example shorthand `#MULIB_IMPL_STACK` is not valid C preprocessing syntax.

@@ -1,5 +1,7 @@
 # MuLIB timerfd
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-timerfd.h` · **Switch:** `MULIB_IMPL_TIMERFD`  
 **Dependencies:** none. Linux native timerfd; C11 / C-linkage declarations.
 
@@ -65,3 +67,27 @@ waits at most 2000 ms, reads, disarms, and closes. Unsupported/permission
 restrictions print a skip. `tests/test_os_events.c` also covers periodic timers,
 empty reads, conversion limits, fd flags, borrowed ownership, and event-loop
 integration. No elevated permissions or third-party library is normally needed.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-timerfd.h`](../include/mulib-timerfd.h) |
+| Implementation switch | `MULIB_IMPL_TIMERFD` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/timerfd.c`](../examples/modules/timerfd.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/timerfd.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

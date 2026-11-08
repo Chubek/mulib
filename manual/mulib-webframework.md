@@ -1,5 +1,7 @@
 # mulib-webframework
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-webframework.h` supplies an owned exact-route registry, dispatcher and
 binary response builder using `mulib_http_message_t`. It is an application core,
 not a listener, web runtime or authorization framework.
@@ -91,3 +93,27 @@ Ingress Host/forwarded-header policies, IO timeouts, CSRF and authorization belo
 to the application. `tests/test_web_stack.c` tests registration ownership,
 duplicates, limits, binary replies, HEAD, malformed/injected inputs and offline
 client/file server composition.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-webframework.h`](../include/mulib-webframework.h) |
+| Implementation switch | `MULIB_IMPL_WEBFRAMEWORK` |
+| Repository-local includes | [mulib-http](mulib-http.md) |
+| Complete example | [`examples/modules/webframework.c`](../examples/modules/webframework.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/webframework.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

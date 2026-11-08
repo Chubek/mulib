@@ -1,5 +1,7 @@
 # mulib-gssair
 
+[Manuals](README.md) · [Library index](index.md)
+
 Typed, gated, memory-aware SSA for one word-valued function. It validates a
 control-flow graph and lowers it to the native dialect in [MIR](mulib-mir.md).
 
@@ -103,3 +105,27 @@ The example lowers a constant-return function. `tests/test_microcc.c` also
 checks loop-carried parallel copies, critical edges, ordering, dominance,
 duplicate/missing PHI inputs, unreachable blocks, types, memory chains and
 limits. Allocation-failure coverage is in `tests/test_microcc_alloc.c`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-gssair.h`](../include/mulib-gssair.h) |
+| Implementation switch | `MULIB_IMPL_GSSAIR` |
+| Repository-local includes | [mulib-mir](mulib-mir.md) |
+| Complete example | [`examples/modules/gssair.c`](../examples/modules/gssair.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/gssair.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

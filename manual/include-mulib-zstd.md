@@ -1,5 +1,7 @@
 # include-mulib-zstd
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND SYNOPSIS
 
 Dependency-free standard Zstandard frame encoder/decoder for raw and RLE blocks.
@@ -49,3 +51,27 @@ by max_output even for malicious advertised sizes. Free outputs with CT blob fre
 Use [container-packzstd](mulib-container-packzstd.md) for image validation and an
 optional full-codec callback. Tests include empty/random/repeated data and
 interoperability with the installed `zstd` command when available.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/include-mulib-zstd.h`](../include/include-mulib-zstd.h) |
+| Implementation switch | None (support header; see scope above) |
+| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md) |
+| Complete example | [`examples/modules/zstd-raw.c`](../examples/modules/zstd-raw.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/zstd-raw.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

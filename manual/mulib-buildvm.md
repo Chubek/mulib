@@ -1,5 +1,7 @@
 # MuLIB BuildVM
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-buildvm.h` · **Switches:** `MULIB_IMPL_BUILDVM`,
 `MULIB_IMPL_BUILDGRAPH`, `MULIB_IMPL_ARTIFACT`, `MULIB_IMPL_VCDIFF`.
 
@@ -75,3 +77,27 @@ cc -std=c11 -Iinclude examples/modules/buildvm.c -o /tmp/opencode/buildvm
 operations including binary diff/patch, bad registers/slices, limits and rollback.
 This is a focused build-data VM, not a claim of arbitrary native build hermeticity
 or a production distributed build system.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-buildvm.h`](../include/mulib-buildvm.h) |
+| Implementation switch | `MULIB_IMPL_BUILDVM` |
+| Repository-local includes | [mulib-buildgraph](mulib-buildgraph.md), [mulib-vcdiff](mulib-vcdiff.md) |
+| Complete example | [`examples/modules/buildvm.c`](../examples/modules/buildvm.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/buildvm.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

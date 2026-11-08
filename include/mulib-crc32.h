@@ -4,8 +4,8 @@
  * @defgroup mulib_crc32 MuLIB crc32
  * @{
  * @details Use seed zero for a fresh CRC. Passing a completed CRC as seed
- * continues the same checksum; result is little-endian reflected
- * CRC-32/ISO-HDLC.
+ * continues the same reflected CRC-32/ISO-HDLC checksum. Results are integers;
+ * serialization byte order is chosen by the caller's format.
  * @par Integration
  * In exactly one translation unit define MULIB_IMPL_CRC32 before including
  * this file. Other translation units may include it without the implementation

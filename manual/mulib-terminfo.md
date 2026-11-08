@@ -1,5 +1,7 @@
 # MuLIB terminfo
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-terminfo.h` provides a **native compiled-record reader**, a
 numeric terminfo parameter interpreter, and a separately selected ANSI profile.
 It does not use curses or another terminal library.
@@ -152,3 +154,27 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/terminfo.
 orders, checks truncation/offset errors, transactional replacement, numeric
 expansion, malformed programs and the output/stack limits. No interactive
 terminal or installed terminfo database is required.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-terminfo.h`](../include/mulib-terminfo.h) |
+| Implementation switch | `MULIB_IMPL_TERMINFO` |
+| Repository-local includes | [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/terminfo.c`](../examples/modules/terminfo.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/terminfo.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-acpi
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_ACPI` once; no dependencies, allocation or OS calls.
 [Example](../examples/modules/acpi.c).
 
@@ -30,3 +32,27 @@ records, truncation and undersized standard LAPIC/IOAPIC/ISO/override/x2APIC
 records. Unknown types are exposed for forward compatibility. Fields inside
 records must be decoded as little-endian bytes; no MMIO is touched. Each call
 revalidates checksum and cursor boundaries; retain a stable buffer.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-acpi.h`](../include/mulib-acpi.h) |
+| Implementation switch | `MULIB_IMPL_ACPI` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/acpi.c`](../examples/modules/acpi.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/acpi.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

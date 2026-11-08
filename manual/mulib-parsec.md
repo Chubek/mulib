@@ -1,5 +1,7 @@
 # mulib-parsec
 
+[Manuals](README.md) · [Library index](index.md)
+
 Composable, length-delimited **byte** parsers, implemented in ISO C11. This is a
 real parser-combinator engine: the same sequence, choice, repetition, lookahead,
 reference and capture operations implement MuLIB JSON and compiled PEG grammars.
@@ -205,3 +207,27 @@ pointers may be NULL. Walkers and their copied text outlive both parser and
 source. AST depth is bounded to 256; parsec evaluator limits still apply.
 Parser work/depth/capture exhaustion and AST depth exhaustion report
 `MULIB_PARSER_LIMIT`, separately from `MULIB_PARSER_MEMORY` allocation failures.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-parsec.h`](../include/mulib-parsec.h) |
+| Implementation switch | `MULIB_IMPL_PARSEC` |
+| Repository-local includes | [mulib-ast](mulib-ast.md), [mulib-glob](mulib-glob.md), [mulib-peg](mulib-peg.md), [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/parsec.c`](../examples/modules/parsec.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/parsec.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

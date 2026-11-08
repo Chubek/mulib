@@ -1,5 +1,7 @@
 # MuLIB module and composition guide
 
+[Manuals](README.md) · [Complete alphabetical index](index.md) · [Integration](integration.md)
+
 MuLIB has 537 implemented single-header C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;

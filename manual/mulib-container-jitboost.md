@@ -1,5 +1,7 @@
 # mulib-container-jitboost
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Native MIR container execution with instruction budgets and suspended host calls.
@@ -46,3 +48,27 @@ handle for retry. JIT and callbacks execute in the embedding process, with calle
 synchronization and trusted host functions. Work budgets do not interrupt a
 blocking callback. Tests execute real native code and restart/signal paths when
 native execution is supported.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-container-jitboost.h`](../include/mulib-container-jitboost.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINER_JITBOOST` |
+| Repository-local includes | [mulib-containerboost](mulib-containerboost.md), [mulib-jit](mulib-jit.md) |
+| Complete example | [`examples/modules/container-jitboost.c`](../examples/modules/container-jitboost.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-jitboost.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

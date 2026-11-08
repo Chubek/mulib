@@ -1,5 +1,7 @@
 # MuLIB Graphviz DOT output
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-graphviz.h` · **Language:** ISO C11, C++17 declarations
 
 ## Scope and dependencies
@@ -109,3 +111,27 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/graphviz
 The example prints DOT; it can optionally be passed to an independently installed
 `dot` program. `tests/test_markup.c` checks quote/injection boundaries, literal
 backslashes, labels/default attributes, loops, empty graphs and OOM behavior.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-graphviz.h`](../include/mulib-graphviz.h) |
+| Implementation switch | `MULIB_IMPL_GRAPHVIZ` |
+| Repository-local includes | [mulib-graph](mulib-graph.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/graphviz.c`](../examples/modules/graphviz.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/graphviz.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # MuLIB cron
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header/switch:** `include/mulib-cron.h` / `MULIB_IMPL_CRON`  
 **Dependencies:** standard C11 integer/time declarations only. C++17-linkable
 declarations; no allocation, external process, clock access or threads.
@@ -88,3 +90,27 @@ The example dispatches a weekday, business-hour quarter-hour schedule. Tests cov
 lists/ranges/steps, Sunday alias, both day-field semantics, malformed/extra/missing
 fields, numeric and length limits, unchanged output on parse failure, leap-day
 validation, invalid civil fields, unmatched dispatch and pool callback composition.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-cron.h`](../include/mulib-cron.h) |
+| Implementation switch | `MULIB_IMPL_CRON` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/cron.c`](../examples/modules/cron.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cron.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

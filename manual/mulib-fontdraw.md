@@ -1,5 +1,7 @@
 # mulib-fontdraw
 
+[Manuals](README.md) · [Library index](index.md)
+
 Font loading, glyph outlines and rasterization using runtime-loaded FreeType 2.
 Font formats, hinting, bitmap strikes, variable-font support and color renderers
 are those enabled in the installed native library, rather than a partial
@@ -94,3 +96,27 @@ them with these per-glyph metrics.
 `mulib-glyph` opens paired HarfBuzz/FreeType contexts from one path/index/size,
 exposes borrowed handles and renders the IDs produced by shaping. Owned copied
 bitmaps/outlines remain valid after the paired font is closed.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-fontdraw.h`](../include/mulib-fontdraw.h) |
+| Implementation switch | `MULIB_IMPL_FONTDRAW` |
+| Repository-local includes | [mulib-dynload](mulib-dynload.md) |
+| Complete example | [`examples/modules/fontdraw.c`](../examples/modules/fontdraw.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fontdraw.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

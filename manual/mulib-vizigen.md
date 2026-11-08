@@ -1,5 +1,7 @@
 # mulib-vizigen
 
+[Manuals](README.md) · [Library index](index.md)
+
 Compile Zephyr ASDL schemas with named semantic actions into portable event
 dispatch bytecode. The same executor serves parser-time push listeners and an
 AST visitor walker. No native code, C snippets or process addresses are stored.
@@ -175,3 +177,27 @@ deserialized views, listeners and runtimes own no memory and need no destroy
 function. Reallocating/freeing a buffer or closing its mapping invalidates all
 views/runtimes that reference it. The compiler stages output so failures,
 including allocation failures, do not alter the destination.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-vizigen.h`](../include/mulib-vizigen.h) |
+| Implementation switch | `MULIB_IMPL_VIZIGEN` |
+| Repository-local includes | [mulib-asdl](mulib-asdl.md), [mulib-binfilereader](mulib-binfilereader.md), [mulib-binfilewriter](mulib-binfilewriter.md), [mulib-mmfile](mulib-mmfile.md), [mulib-walker](mulib-walker.md) |
+| Complete example | [`examples/modules/vizigen.c`](../examples/modules/vizigen.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vizigen.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # MuLIB signal
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-signal.h` · **Switch:** `MULIB_IMPL_SIGNAL`  
 **Dependencies:** none; hosted ISO C `signal()`. C11 / C-linkage declarations.
 
@@ -75,3 +77,27 @@ The example installs a flag-only SIGINT handler, uses `raise(SIGINT)` once,
 verifies synchronous delivery, and restores the original disposition. It does
 not send external signals or wait indefinitely. The focused OS suite adds
 invalid input, active-guard rejection, and idempotent restoration tests.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-signal.h`](../include/mulib-signal.h) |
+| Implementation switch | `MULIB_IMPL_SIGNAL` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/signal.c`](../examples/modules/signal.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/signal.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

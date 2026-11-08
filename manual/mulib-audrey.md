@@ -1,5 +1,7 @@
 # mulib-audrey
 
+[Manuals](README.md) · [Library index](index.md)
+
 Offline, dependency-free audio editing and a small DAW-style render/score layer.
 It uses MuLIB codecs, xsimd and Mune; no third-party codec or Lua libraries.
 It is not a realtime audio-device engine, plugin host, GUI DAW or instrument bank.
@@ -110,3 +112,27 @@ The output is performance-event MIDI, not synthesized instrumental audio.
 
 See also [audio](mulib-audio.md), [Mune](mulib-mune.md), [MIDI](mulib-midi.md)
 and [xsimd](mulib-xsimd.md) for ownership, failure and implementation details.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-audrey.h`](../include/mulib-audrey.h) |
+| Implementation switch | `MULIB_IMPL_AUDREY` |
+| Repository-local includes | [mulib-midi](mulib-midi.md), [mulib-miniflac](mulib-miniflac.md), [mulib-minimpeg](mulib-minimpeg.md), [mulib-minivorbis](mulib-minivorbis.md), [mulib-miniwav](mulib-miniwav.md), [mulib-mune](mulib-mune.md) |
+| Complete example | [`examples/modules/audrey.c`](../examples/modules/audrey.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/audrey.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

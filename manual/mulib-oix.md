@@ -1,5 +1,7 @@
 # mulib-oix
 
+[Manuals](README.md) · [Library index](index.md)
+
 OIX is a freestanding, cooperative, single-address-space operating system for a
 16-bit x86 guest. `mulib-oix.h` contains its native kernel, configuration compiler,
 image validator, and a Linux x86 KVM virtual machine monitor. Building the image
@@ -366,3 +368,27 @@ MULIB_OIX_TEST_KVM=1 ./test-oix
 The latter requires accessible KVM and fails if unavailable; normal portable tests
 clearly report the hardware test as skipped. Instruction interpretation verifies
 the generated kernel behavior but cannot validate KVM setup or hardware execution.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-oix.h`](../include/mulib-oix.h) |
+| Implementation switch | `MULIB_IMPL_OIX` |
+| Repository-local includes | [mulib-base64](mulib-base64.md), [mulib-confuse](mulib-confuse.md), [mulib-crc32](mulib-crc32.md), [mulib-emitter](mulib-emitter.md), [mulib-json](mulib-json.md), [mulib-kvm](mulib-kvm.md), [mulib-toml](mulib-toml.md), [mulib-yaml](mulib-yaml.md) |
+| Complete example | [`examples/modules/oix.c`](../examples/modules/oix.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/oix.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

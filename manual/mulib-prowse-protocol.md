@@ -1,5 +1,7 @@
 # Prowse protocol: browser connections
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-prowse-protocol.h` supplies synchronous browser-protocol clients,
 including stream framing, native POSIX TCP transport, response correlation and
 owned JSON replies. Use [Prowse control](mulib-prowse-control.md) for portable
@@ -136,3 +138,27 @@ Protocol references: [CDP](https://chromedevtools.github.io/devtools-protocol/),
 [Marionette](https://firefox-source-docs.mozilla.org/testing/marionette/Protocol.html),
 [RFC 6455](https://www.rfc-editor.org/rfc/rfc6455).
 The implementation is original MuLIB code.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-prowse-protocol.h`](../include/mulib-prowse-protocol.h) |
+| Implementation switch | `MULIB_IMPL_PROWSE_PROTOCOL` |
+| Repository-local includes | [mulib-base64](mulib-base64.md), [mulib-git](mulib-git.md), [mulib-http](mulib-http.md), [mulib-json](mulib-json.md), [mulib-socket](mulib-socket.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/prowse-protocol.c`](../examples/modules/prowse-protocol.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/prowse-protocol.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

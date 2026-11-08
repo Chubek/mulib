@@ -1,5 +1,7 @@
 # MuLIB epoll
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-epoll.h` · **Switch:** `MULIB_IMPL_EPOLL`  
 **Dependencies:** none; Linux libc/kernel epoll. C11 and C-linkage declarations.
 
@@ -74,3 +76,27 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/epoll.c 
 
 `tests/test_os_events.c` checks actual readiness, full-width tokens, duplicate
 registration, one-shot rearming, invalid bounds, removal, and borrowed ownership.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-epoll.h`](../include/mulib-epoll.h) |
+| Implementation switch | `MULIB_IMPL_EPOLL` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/epoll.c`](../examples/modules/epoll.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/epoll.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

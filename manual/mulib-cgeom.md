@@ -1,5 +1,7 @@
 # mulib-cgeom
 
+[Manuals](README.md) · [Library index](index.md)
+
 Computational geometry on linalg vectors, with shared ray, AABB, sphere and
 triangle descriptors. Define `MULIB_IMPL_CGEOM`, `MULIB_IMPL_SIMDMATH` and
 `MULIB_IMPL_LINALG`; link `-lm`.
@@ -51,3 +53,27 @@ and float overflow; use the validity helpers when finite geometry is required.
 
 See `examples/modules/cgeom.c` and `tests/test_graphics_math.c` for hull, boundary,
 degeneracy, capacity and SIMD-tail checks.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-cgeom.h`](../include/mulib-cgeom.h) |
+| Implementation switch | `MULIB_IMPL_CGEOM` |
+| Repository-local includes | [mulib-linalg](mulib-linalg.md), [mulib-simdmath](mulib-simdmath.md) |
+| Complete example | [`examples/modules/cgeom.c`](../examples/modules/cgeom.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cgeom.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # MuLIB minish
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-minish.h`  
 **Implementation switches:** `MULIB_IMPL_MINISH`, `MULIB_IMPL_MAP`, `MULIB_IMPL_VEC`, `MULIB_IMPL_STRBUF`  
 **Dependencies:** MuLIB map/vec/strbuf and ISO C11. Optional POSIX OS APIs only.
@@ -214,3 +216,27 @@ Build it with the same flags and optionally ASan+UBSan. Adding
 the test binary and precise ENOENT reporting. All implementation switches must
 be defined explicitly before includes; no dependency switch is enabled by the
 header. Declaration-only C++17 callers are supported via C linkage.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-minish.h`](../include/mulib-minish.h) |
+| Implementation switch | `MULIB_IMPL_MINISH` |
+| Repository-local includes | [mulib-map](mulib-map.md), [mulib-strbuf](mulib-strbuf.md), [mulib-vec](mulib-vec.md) |
+| Complete example | [`examples/modules/minish.c`](../examples/modules/minish.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/minish.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

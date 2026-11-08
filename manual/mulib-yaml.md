@@ -1,5 +1,7 @@
 # mulib-yaml
 
+[Manuals](README.md) · [Library index](index.md)
+
 A small, owned-JSON-DOM configuration reader and block-style YAML writer. This
 is a **documented YAML 1.2-style subset, not a complete YAML processor**.
 
@@ -102,3 +104,27 @@ workers:
 
 `tests/test_config.c` adds malformed-input, Unicode, ownership, depth-limit, and
 generated-DOM roundtrip coverage.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-yaml.h`](../include/mulib-yaml.h) |
+| Implementation switch | `MULIB_IMPL_YAML` |
+| Repository-local includes | [mulib-json](mulib-json.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/yaml.c`](../examples/modules/yaml.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/yaml.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

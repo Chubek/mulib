@@ -1,5 +1,7 @@
 # mulib-hyphen
 
+[Manuals](README.md) · [Library index](index.md)
+
 Six configurable hyphenation engines sharing UTF-8 boundary conventions and
 portable model persistence. All linguistic data is supplied by the application;
 there is no claim of universal language coverage or automatic language detection.
@@ -76,3 +78,27 @@ Failure preserves existing results and models. CRC is not authentication.
 See [`examples/modules/hyphen.c`](../examples/modules/hyphen.c) and
 `tests/test_hyphen.c` for all six engines, Unicode offsets, disk roundtrips,
 machine composition, even-weight inhibition and morphology.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-hyphen.h`](../include/mulib-hyphen.h) |
+| Implementation switch | `MULIB_IMPL_HYPHEN` |
+| Repository-local includes | [mulib-cache](mulib-cache.md), [mulib-dfa](mulib-dfa.md), [mulib-orhoconv](mulib-orhoconv.md) |
+| Complete example | [`examples/modules/hyphen.c`](../examples/modules/hyphen.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hyphen.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

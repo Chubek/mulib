@@ -1,5 +1,7 @@
 # mulib-audio
 
+[Manuals](README.md) · [Library index](index.md)
+
 Common PCM, status, limits, encoded-byte storage and file IO for the audio
 modules. Define `MULIB_IMPL_AUDIO` and `MULIB_IMPL_XSIMD`; include
 `mulib-audio.h`. Uses only the C runtime and MuLIB. Example:
@@ -30,3 +32,27 @@ features, resource limits, allocation, IO and script failures. `status_string`
 returns static text. An unsupported SIMD selection is also `UNSUPPORTED`.
 Objects require external synchronization if shared; independent objects can be
 used concurrently.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-audio.h`](../include/mulib-audio.h) |
+| Implementation switch | `MULIB_IMPL_AUDIO` |
+| Repository-local includes | [mulib-xsimd](mulib-xsimd.md) |
+| Complete example | [`examples/modules/audio.c`](../examples/modules/audio.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/audio.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

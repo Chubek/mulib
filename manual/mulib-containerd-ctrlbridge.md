@@ -1,5 +1,7 @@
 # mulib-containerd-ctrlbridge
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Incremental authorized daemon control connection with output backpressure and
@@ -47,3 +49,27 @@ confidentiality remain explicit application responsibilities.
 
 Tests exercise fragmented requests/replies, stale generations, cached START replay,
 policy denial, mount-lease deletion rejection and complete client/server composition.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-containerd-ctrlbridge.h`](../include/mulib-containerd-ctrlbridge.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINERD_CTRLBRIDGE` |
+| Repository-local includes | [mulib-containerd-accessstub](mulib-containerd-accessstub.md), [mulib-containerd](mulib-containerd.md) |
+| Complete example | [`examples/modules/containerd-ctrlbridge.c`](../examples/modules/containerd-ctrlbridge.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containerd-ctrlbridge.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

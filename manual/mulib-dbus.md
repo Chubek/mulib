@@ -1,5 +1,7 @@
 # mulib-dbus
 
+[Manuals](README.md) · [Library index](index.md)
+
 An actual **D-Bus version 1 binary wire codec**. It emits/parses the 16-byte
 fixed header, aligned `a(yv)` header fields, body signature and binary values.
 It does not encode JSON or imitate D-Bus with a different protocol.
@@ -95,3 +97,27 @@ checks its binary header, then decodes the string body:
 cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/dbus.c -o ./dbus
 ./dbus
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-dbus.h`](../include/mulib-dbus.h) |
+| Implementation switch | `MULIB_IMPL_DBUS` |
+| Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-endian](mulib-endian.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/dbus.c`](../examples/modules/dbus.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dbus.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

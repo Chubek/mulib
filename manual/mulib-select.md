@@ -1,5 +1,7 @@
 # MuLIB select
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-select.h`  
 **Implementation:** `MULIB_IMPL_SELECT` in exactly one translation unit.  
 **Dependencies:** none; POSIX libc. C11, C++ declarations with C linkage.
@@ -67,3 +69,27 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/select.c
 `tests/test_os_events.c` also covers EOF, duplicate entries, high/negative
 descriptors, invalid masks, count limits, empty input, socket loopback connect,
 and reactor integration. No third-party library is required.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-select.h`](../include/mulib-select.h) |
+| Implementation switch | `MULIB_IMPL_SELECT` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/select.c`](../examples/modules/select.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/select.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

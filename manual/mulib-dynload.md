@@ -1,5 +1,7 @@
 # MuLIB dynload: native shared libraries
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-dynload.h`  
 **Implementation switch:** `MULIB_IMPL_DYNLOAD`  
 **MuLIB dependencies:** none. **Link:** `-ldl` on Linux/other libdl systems;
@@ -123,3 +125,27 @@ On Linux build/run with
 `cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/dynload.c -ldl -o dynload-example`
 then `./dynload-example`. Storage tests cover native failures, unchanged symbol
 outputs, current-process lookup, tiny error buffers, state, and repeated close.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-dynload.h`](../include/mulib-dynload.h) |
+| Implementation switch | `MULIB_IMPL_DYNLOAD` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/dynload.c`](../examples/modules/dynload.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dynload.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

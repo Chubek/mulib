@@ -1,5 +1,7 @@
 # mulib-minicurl
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-minicurl.h` is a small C API for GET and method/body requests. It is not
 the curl command line, libcurl, or a TLS implementation. Its real transaction
 engine is [mulib-webclient](mulib-webclient.md), not a second HTTP parser.
@@ -64,3 +66,27 @@ has no peer authentication or encryption.
 
 Tests in `tests/test_web_stack.c` cover successful requests, binary POSTs,
 Content-Type injection, URL rejection, HEAD, IO errors and composed behavior.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-minicurl.h`](../include/mulib-minicurl.h) |
+| Implementation switch | `MULIB_IMPL_MINICURL` |
+| Repository-local includes | [mulib-webclient](mulib-webclient.md) |
+| Complete example | [`examples/modules/minicurl.c`](../examples/modules/minicurl.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/minicurl.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # Embedded lprowse library
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/include-mulib-lprowse.h` is internal, generated C string data used by
 `MULIB_IMPL_PROWSE_CONTROL`. Its source of truth is
 [`library/lprowse/lprowse.lua`](../library/lprowse/lprowse.lua). It exports no
@@ -16,3 +18,27 @@ be used by a compatible Lua host supplying the `__mulib_lprowse` native callback
 
 See [Prowse control](mulib-prowse-control.md) for the DSL, lifecycle, limits and
 examples. Generated code and Lua source are original MuLIB MIT-licensed code.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/include-mulib-lprowse.h`](../include/include-mulib-lprowse.h) |
+| Implementation switch | None (support header; see scope above) |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/prowse-control.c`](../examples/modules/prowse-control.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/prowse-control.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

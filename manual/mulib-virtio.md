@@ -1,5 +1,7 @@
 # mulib-virtio
 
+[Manuals](README.md) · [Library index](index.md)
+
 Shared Virtio payload contract for MuLIB's future type-2 VMM. Include either
 `virtio.h` or the canonical `mulib-virtio.h`. The former is a public entry point,
 not a second implementation.
@@ -42,3 +44,27 @@ The implementation is allocation-free, has no process globals with mutable state
 and supplies no implicit host I/O. Errors use the shared `MULIB_VMMDEV_*` namespace.
 `tests/test_virtio.c` checks the registry, codecs, all implemented device profiles
 and negative transport paths. It does not certify full Virtio conformance.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-virtio.h`](../include/mulib-virtio.h) |
+| Implementation switch | `MULIB_IMPL_VIRTIO` |
+| Repository-local includes | [mulib-vmmdev](mulib-vmmdev.md) |
+| Complete example | [`examples/modules/virtio.c`](../examples/modules/virtio.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/virtio.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

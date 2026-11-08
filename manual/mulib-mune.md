@@ -1,5 +1,7 @@
 # mulib-mune
 
+[Manuals](README.md) · [Library index](index.md)
+
 Mune is an independent Lua implementation targeting Lua 5.4. It provides an
 owned syntax-tree frontend, lexical analysis, a garbage-collected runtime,
 embedded standard libraries, tree/VM/JIT/C-AOT execution, and module bundles.
@@ -365,3 +367,27 @@ failure at creation returns NULL. Evaluation uses bounded temporary storage.
 See `examples/modules/mune.c` and `tests/test_new_modules.c` for the numeric API.
 
 `mulib_mune_version()` returns API revision 1.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-mune.h`](../include/mulib-mune.h) |
+| Implementation switch | `MULIB_IMPL_MUNE` |
+| Repository-local includes | [mulib-dynload](mulib-dynload.md), [mulib-jit](mulib-jit.md), [mulib-parsec](mulib-parsec.md) |
+| Complete example | [`examples/modules/mune.c`](../examples/modules/mune.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mune.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

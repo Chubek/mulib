@@ -1,5 +1,7 @@
 # mulib-virtio-guest — VMM device frontend
 
+[Manuals](README.md) · [Library index](index.md)
+
 The frontend implements discovery, reset, feature/status negotiation,
 configuration snapshots and bounded queue submission over
 [`MULIB_VMMPROTO.md`](../MULIB_VMMPROTO.md). It is portable C11 and contains no
@@ -110,3 +112,27 @@ integration. Resource/feature limits and provider requirements are explicit.
 Run `python3 tools/check_virtio.py --sanitizers`. Tests cover successful
 frontend/backend exchanges, malformed responses, status/epoch failures and all
 implemented profiles. Standalone C and C++ declarations are checked separately.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-virtio-guest.h`](../include/mulib-virtio-guest.h) |
+| Implementation switch | `MULIB_IMPL_VIRTIO_GUEST` |
+| Repository-local includes | [mulib-virtio](mulib-virtio.md) |
+| Complete example | [`examples/modules/virtio-guest.c`](../examples/modules/virtio-guest.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/virtio-guest.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

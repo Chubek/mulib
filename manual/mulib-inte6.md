@@ -1,5 +1,7 @@
 # mulib-inte6
 
+[Manuals](README.md) · [Library index](index.md)
+
 Backward-compatible historical spelling of [`mulib-inet6`](mulib-inet6.md).
 The implementation now lives in `mulib-inet6.h`, while old source including
 `mulib-inte6.h` and defining `MULIB_IMPL_INET6` continues to work unchanged.
@@ -64,3 +66,27 @@ example exercising both spellings. `tests/test_dns_stack.c` tests the actual
 forwarding functions; existing network/protocol suites continue using the
 historical header with `MULIB_IMPL_INET6`. New applications should prefer the
 canonical filename and API documented in `manual/mulib-inet6.md`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-inte6.h`](../include/mulib-inte6.h) |
+| Implementation switch | `MULIB_IMPL_INTE6` |
+| Repository-local includes | [mulib-inet6](mulib-inet6.md) |
+| Complete example | [`examples/modules/inte6.c`](../examples/modules/inte6.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/inte6.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-machinebuild — DSL to JavaScript automata
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-machinebuild.h` parses a small declarative language into an owned
 [FST](mulib-fst.md) and generates an ES2015 JavaScript factory expression.
 It describes automata, **not** native instruction-selection machines from
@@ -151,3 +153,27 @@ and checking independent instances, reset/step/run, numeric boundaries,
 rejections and runtime argument validation. It also compares JavaScript results
 against C transductions for all 2801 sequences of length zero through four over
 a seven-symbol boundary-focused alphabet.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-machinebuild.h`](../include/mulib-machinebuild.h) |
+| Implementation switch | `MULIB_IMPL_MACHINEBUILD` |
+| Repository-local includes | [mulib-fst](mulib-fst.md), [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/machinebuild.c`](../examples/modules/machinebuild.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/machinebuild.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

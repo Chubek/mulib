@@ -1,5 +1,7 @@
 # mulib-container-qvmboost
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Container backend for the portable Quota VM. Define
@@ -43,3 +45,27 @@ does not include the small handle struct or memory owned by host callbacks.
 
 See [inline QVM](include-mulib-qvm.md) for instruction semantics and
 [runtime](mulib-container-runtime.md) for deadline and generation behavior.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-container-qvmboost.h`](../include/mulib-container-qvmboost.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINER_QVMBOOST` |
+| Repository-local includes | [include-mulib-qvm](include-mulib-qvm.md), [mulib-containerboost](mulib-containerboost.md) |
+| Complete example | [`examples/modules/container-qvmboost.c`](../examples/modules/container-qvmboost.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-qvmboost.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

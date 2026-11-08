@@ -1,5 +1,7 @@
 # MuLIB TUI
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-tui.h` is a small immediate-mode UI and double-buffered terminal
 renderer. It provides clipped text, boxes, buttons, row/column splits, event
 activation helpers and transactional changed-cell output. Applications own I/O,
@@ -181,3 +183,27 @@ vterm screen, including the bottom-right cell, unchanged renders, missing-capabi
 failures, a compiled profile whose `sgr0` preserves colors, missing/malformed `op`
 atomicity, cursor-only updates, invalidation, clipping, widgets, input events,
 resize and layout-overflow checks. No interactive terminal is required.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-tui.h`](../include/mulib-tui.h) |
+| Implementation switch | `MULIB_IMPL_TUI` |
+| Repository-local includes | [mulib-terminfo](mulib-terminfo.md), [mulib-termkey](mulib-termkey.md), [mulib-vterm](mulib-vterm.md) |
+| Complete example | [`examples/modules/tui.c`](../examples/modules/tui.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/tui.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

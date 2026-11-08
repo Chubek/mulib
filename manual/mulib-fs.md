@@ -1,50 +1,122 @@
-# MuLIB fs: Reference Manual
+# MuLIB fs
 
-**Header:** `include/mulib-fs.h` · **Switch:** `MULIB_IMPL_FS` · **Language:** C11 (C++17-linkable)
-
-## Purpose and design
+[Manuals](README.md) · [Library index](index.md)
 
 Whole-file read and write helpers with explicit byte length. Reading allocates a NUL padding byte after the actual file contents for convenience, but binary data may itself contain NULs. Writing truncates existing destination files; writes are not atomic.
 
-This component is intended to be selected independently from MuLIB's other headers. It does not force clients to link a binary runtime. It follows explicit lifecycle management and uses public `mulib_` names to avoid common clashes with the C standard library and other toolkits. The implementation is intentionally small enough to audit. Prefer using this module in code where its documented representation, algorithmic behavior, and error contract match the workload rather than treating it as an automatic replacement for a large specialized dependency.
+## Contract and behavior
 
-## Getting started
+`read()` returns a malloc-owned byte array, including for an empty file;
+free it with `free()`. The optional length excludes a convenience trailing NUL;
+embedded NUL bytes are preserved. NULL means argument, allocation, size, or I/O
+failure and leaves the length output unchanged. The entire file is buffered.
+
+`write()` opens with `wb`, replacing/truncating an existing file. It returns 1
+only if writing, flushing, and closing succeed. Failure can leave a truncated
+or partial file; this is not atomic replacement or a durability/fsync guarantee.
+NULL data is accepted for a zero-byte write.
+
+## Example
 
 ```c
 #include <assert.h>
-#include <string.h>
 #include <math.h>
+#include <string.h>
 #define MULIB_IMPL_FS
 #include "mulib-fs.h"
-int main(void){
-  assert(mulib_fs_write("mulib-example-tmp.txt","ok",2)); size_t n=0; unsigned char*p=mulib_fs_read("mulib-example-tmp.txt",&n); assert(p&&n==2); free(p); remove("mulib-example-tmp.txt");
-  return 0;
+int main(void) {
+    assert(mulib_fs_write("mulib-example-tmp.txt", "ok", 2));
+    size_t n = 0;
+    unsigned char *p = mulib_fs_read("mulib-example-tmp.txt", &n);
+    assert(p && n == 2);
+    free(p);
+    remove("mulib-example-tmp.txt");
+    return 0;
 }
 ```
 
-Compile a one-file example with `cc -std=c11 -Iinclude example.c -o example` (add `-lm` for mathematical functions when required). To share this header across translation units, put its `#define MULIB_IMPL_FS` in exactly one `.c` or `.cpp` file. Every other translation unit includes the header with no implementation switch. Defining it in several translation units causes duplicate definitions at link time. Defining a switch after the header has already been included in a translation unit is not supported.
+<!-- manual-interface -->
+## Public header reference
 
-## Public declarations
+Verbatim declaration section from [`include/mulib-fs.h`](../include/mulib-fs.h).
+Include the header in application code; dependency types come from its includes.
+
+<details>
+<summary>Types, constants, and declarations</summary>
 
 ```c
-unsigned char *mulib_fs_read(const char*path,size_t*length);
-int mulib_fs_write(const char*path,const void*data,size_t length);
+/**
+ * @file mulib-fs.h
+ * @brief Whole-file read and write helpers with explicit byte length.
+ * @defgroup mulib_fs MuLIB fs
+ * @{
+ * @details Reading allocates a NUL padding byte after the actual file contents
+ * for convenience, but binary data may itself contain NULs. Writing truncates
+ * existing destination files; writes are not atomic.
+ * @par Integration
+ * In exactly one translation unit define MULIB_IMPL_FS before including this
+ * file. Other translation units may include it without the implementation
+ * switch.
+ * @par Portability
+ * ISO C11, C++17 compatible C linkage. All allocations use the C standard
+ * library.
+ * @}
+ */
+#ifndef MULIB_FS_H
+#define MULIB_FS_H
+#include <ctype.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+  /** @brief mulib fs read; see manual/mulib-fs.md for contracts and examples.
+   */
+  unsigned char *mulib_fs_read (const char *path, size_t *length);
+  /** @brief mulib fs write; see manual/mulib-fs.md for contracts and examples.
+   */
+  int mulib_fs_write (const char *path, const void *data, size_t length);
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* MULIB_FS_H */
 ```
 
-The declarations are stable C entry points, with `extern "C"` linkage when compiled as C++. Public data structures are intentionally visible and inspectable rather than hiding allocation behind an ABI. Treat any `data`, `items`, or linked pointers as borrowed views unless the specific function explicitly transfers ownership. No function is implicitly thread-safe for mutable shared objects.
+</details>
+<!-- /manual-interface -->
 
-## Ownership, errors, and lifetime
+<!-- manual-reference -->
+## Source and build reference
 
-Reading allocates a NUL padding byte after the actual file contents for convenience, but binary data may itself contain NULs. Writing truncates existing destination files; writes are not atomic. Values returned through output parameters are only guaranteed after a successful call. For functions returning an integer success code, **1** means success and **0** means failure unless a more specific result is documented by the API. Do not infer a `errno` value from an API that does not explicitly promise one. For heap-allocated state, pair creation or initialization with its corresponding destroy or free operation. Never reuse internal buffer pointers after an operation that can grow or release storage.
+[Manual index](index.md) · [Integration guide](integration.md)
 
-## Behavior, constraints, and interoperability
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-fs.h`](../include/mulib-fs.h) |
+| Implementation switch | `MULIB_IMPL_FS` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/fs.c`](../examples/modules/fs.c) |
 
-Operations are designed around bounded input, explicit lengths where relevant, and ordinary C ownership. They do not perform locking and do not provide a global allocator override. File, terminal and parser functions are intended as lightweight building blocks; inputs that require complete standard compliance, hostile-input hardening or advanced Unicode processing may need a dedicated mature library. Confirm prerequisites and endianness for binary serialization; never serialize the memory layout of MuLIB structures directly.
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
 
-## Example-driven validation
+Compile the example from the repository root on Linux:
 
-The examples folder demonstrates the overall build pattern, and the test suite exercises representative successful and unsuccessful operations. Compile with warnings and run with AddressSanitizer/UndefinedBehaviorSanitizer for new integrations. Keep tests for empty inputs, repeated updates, integer bounds, and failure behavior when extending a module. The implementation uses standard C runtime functions and deliberately keeps dependencies discoverable rather than embedding hidden platform-specific services.
-
-## Implementation guidance
-
-The source implementation is appended in the header below the public interface guard. It is included only if `MULIB_IMPL_FS` is defined before inclusion. This arrangement allows separate declaration-only compilation and a single translation unit that emits the definitions. API additions should include an unambiguous ownership rule, Doxygen documentation, a regression test, and an updated entry in the root `MANIFEST.yaml`. See the suite's `docs/`-style manuals in `manual/` for sibling modules and `README.md` for integration into existing projects.
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fs.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

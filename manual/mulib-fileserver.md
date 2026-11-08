@@ -1,5 +1,7 @@
 # mulib-fileserver
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-fileserver.h` maps strict origin-form targets to safe relative filenames,
 loads bounded bytes, and creates owned GET/HEAD responses. Portable C11 uses an
 explicit filesystem/virtual-filesystem loader. An opt-in POSIX.1-2008 loader
@@ -110,3 +112,27 @@ No sockets, TLS, content negotiation, ranges, conditional requests, cache
 validation, compression or MIME guessing are provided. The focused suite tests
 traversal variants, binary GET/HEAD, limits, missing/forbidden/IO errors, loader
 allocation failure, method policy and (on POSIX) real symlink/FIFO rejection.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-fileserver.h`](../include/mulib-fileserver.h) |
+| Implementation switch | `MULIB_IMPL_FILESERVER` |
+| Repository-local includes | [mulib-webframework](mulib-webframework.md) |
+| Complete example | [`examples/modules/fileserver.c`](../examples/modules/fileserver.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fileserver.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

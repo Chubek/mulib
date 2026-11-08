@@ -1,5 +1,7 @@
 # MuLIB process
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header/switch:** `include/mulib-process.h` / `MULIB_IMPL_PROCESS`  
 **Dependencies:** POSIX `posix_spawnp`, pipes/fcntl, signals and waitpid; no MuLIB
 dependencies and no shell. C11 implementation, C++17 declaration inclusion.
@@ -102,3 +104,27 @@ through a pipe, and reaps the child. The focused Linux tests compose echo -> cat
 with two pipes, check missing executable/nonzero exit/nohang, and verify SIGKILL
 teardown leaves no waitable child. Examples assume `/bin/echo`, `/bin/cat`,
 `/bin/false`, `/bin/true`, `/bin/sleep` as appropriate; no public network is used.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-process.h`](../include/mulib-process.h) |
+| Implementation switch | `MULIB_IMPL_PROCESS` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/process.c`](../examples/modules/process.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/process.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

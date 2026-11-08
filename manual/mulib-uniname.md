@@ -1,5 +1,7 @@
 # mulib-uniname
 
+[Manuals](README.md) · [Library index](index.md)
+
 Unicode names and reverse lookup using the ICU database, including algorithmic
 Hangul syllable and CJK ideograph names.
 
@@ -39,3 +41,27 @@ algorithmic Hangul/CJK, unknown names and invalid codepoints. Run
 `python3 tools/check_text.py --require-backends` to require an installed ICU.
 The implementation resolves the documented ICU `u_charName` and
 `u_charFromName` C APIs; it vendors neither implementation code nor data.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-uniname.h`](../include/mulib-uniname.h) |
+| Implementation switch | `MULIB_IMPL_UNINAME` |
+| Repository-local includes | [mulib-uniproc](mulib-uniproc.md) |
+| Complete example | [`examples/modules/uniname.c`](../examples/modules/uniname.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uniname.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

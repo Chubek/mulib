@@ -1,6 +1,6 @@
 /**
  * @file mulib-text.h
- * @brief ASCII-only whitespace trim and case conversion routines.
+ * @brief Locale-sensitive whitespace trim and ASCII case conversion routines.
  * @defgroup mulib_text MuLIB text
  * @{
  * @details Works on mutable NUL-terminated strings. The trim result points

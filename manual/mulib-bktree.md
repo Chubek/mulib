@@ -1,5 +1,7 @@
 # mulib-bktree
 
+[Manuals](README.md) · [Library index](index.md)
+
 A canonical API for MuLIB's existing owned BK-tree implementation in
 `mulib-bk-trees.h`. Define `MULIB_IMPL_BKTREE`, `MULIB_IMPL_BK_TREES` and
 `MULIB_IMPL_LEVENSHTEIN` in one C11 translation unit. No second tree or competing
@@ -31,3 +33,27 @@ balance/minimization guarantee. Spellcheck supplies deterministic ranking and
 owned transactional result lists around this callback API.
 
 See [`examples/modules/bktree.c`](../examples/modules/bktree.c).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-bktree.h`](../include/mulib-bktree.h) |
+| Implementation switch | `MULIB_IMPL_BKTREE` |
+| Repository-local includes | [mulib-bk-trees](mulib-bk-trees.md) |
+| Complete example | [`examples/modules/bktree.c`](../examples/modules/bktree.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bktree.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

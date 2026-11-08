@@ -1,5 +1,7 @@
 # mulib-isched
 
+[Manuals](README.md) · [Library index](index.md)
+
 Dependency-aware, single-issue, latency-aware list scheduling of a bounded DAG.
 This is not a machine-specific pipeline simulator, register allocator, or an
 optimal makespan solver.
@@ -97,3 +99,27 @@ The example asserts overlapping independent operations, a four-cycle dependency
 wait, and cycle rejection. Compiler IR tests also cover impossible edge IDs,
 zero latency, makespan limits, overflow, empty graphs, and actual MIR reordering
 with SSA remapping followed by equivalent MINIVM execution.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-isched.h`](../include/mulib-isched.h) |
+| Implementation switch | `MULIB_IMPL_ISCHED` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/isched.c`](../examples/modules/isched.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/isched.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

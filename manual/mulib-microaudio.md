@@ -1,5 +1,7 @@
 # microaudio: portable PCM and WAV utilities
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-microaudio.h` provides interleaved float PCM storage, sine generation,
 saturating mixing, and a focused RIFF/WAVE codec. It does **not** open audio
 devices or decode compressed audio. There are no MuLIB or third-party dependencies.
@@ -112,3 +114,27 @@ work budget. No global state, external I/O, callbacks, or realtime guarantees.
 PCM16 quantization, PCM8 with odd chunks, every truncation of a valid WAV,
 malformed/unsupported formats, empty data, nonfinite samples, overflow/resource
 budgets, and allocation failure.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-microaudio.h`](../include/mulib-microaudio.h) |
+| Implementation switch | `MULIB_IMPL_MICROAUDIO` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/microaudio.c`](../examples/modules/microaudio.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/microaudio.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

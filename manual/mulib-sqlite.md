@@ -1,5 +1,7 @@
 # Independent SQLite-file SQL engine
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-sqlite.h` now implements a native SQLite-file database and parsec-based SQL
 execution, **not yet the full SQLite system requested in the roadmap**. It uses
 no linked/dynamically loaded SQLite, subprocess database backend or copied
@@ -216,3 +218,27 @@ integrity checks, page sizes/overflow, unsupported-write preservation, native
 lock conflicts, hot-journal recovery and WAL rejection. It reports the actual
 oracle version, not a counterfeit pass against the full 3.54.1 target. SQLite
 is used by the test runner only; no SQLite dependency enters the native engine.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-sqlite.h`](../include/mulib-sqlite.h) |
+| Implementation switch | `MULIB_IMPL_SQLITE` |
+| Repository-local includes | [mulib-arena](mulib-arena.md), [mulib-parsec](mulib-parsec.md), [mulib-peg](mulib-peg.md), [mulib-rng](mulib-rng.md), [mulib-sqlite-pager](mulib-sqlite-pager.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/sqlite.c`](../examples/modules/sqlite.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sqlite.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

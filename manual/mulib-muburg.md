@@ -1,5 +1,7 @@
 # mulib-muburg
 
+[Manuals](README.md) · [Library index](index.md)
+
 Costed bottom-up tree-grammar instruction selection. This is a small dynamic
 programming selector, not an alias for a tree walk or an implementation of a
 particular BURG source-language parser.
@@ -102,3 +104,27 @@ Tests also exercise malformed graph IDs, cycles, no cover, overflow and emission
 limits/callback cancellation. They also interpret selected immediate/register
 instruction tags into real MINIVM bytecode and compare execution with common
 MIR lowered through CMACHINE.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-muburg.h`](../include/mulib-muburg.h) |
+| Implementation switch | `MULIB_IMPL_MUBURG` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/muburg.c`](../examples/modules/muburg.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/muburg.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

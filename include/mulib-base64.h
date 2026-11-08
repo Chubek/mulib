@@ -5,8 +5,8 @@
  * @{
  * @details Encoder requires a destination buffer including one final NUL.
  * Decoder accepts padded standard alphabet only (not URL-safe alphabet or
- * whitespace); errors do not guarantee that the output buffer was left
- * untouched.
+ * whitespace); validation and capacity failures leave output and the optional
+ * written count unchanged.
  * @par Integration
  * In exactly one translation unit define MULIB_IMPL_BASE64 before including
  * this file. Other translation units may include it without the implementation

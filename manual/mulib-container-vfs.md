@@ -1,5 +1,7 @@
 # mulib-container-vfs
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Per-container path routing, read-only bindings and root checkpoints.
@@ -43,3 +45,27 @@ callback is using the router. Keep root at a stable address while mounted.
 Paths are lexical userspace paths. No symlink resolution, host mounting, kernel
 permissions, inode/open-handle semantics or OS namespace changes are implied.
 See [containerd-mount](mulib-containerd-mount.md) for export leases.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-container-vfs.h`](../include/mulib-container-vfs.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINER_VFS` |
+| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md), [mulib-rootfs](mulib-rootfs.md) |
+| Complete example | [`examples/modules/container-vfs.c`](../examples/modules/container-vfs.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-vfs.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

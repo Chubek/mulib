@@ -1,5 +1,7 @@
 # mulib-weighted-edit-distance
 
+[Manuals](README.md) · [Library index](index.md)
+
 Canonical weighted-edit interface, reusing the existing typo-named
 `mulib-weighed_edit_distane.h` rather than defining a conflicting second
 `mulib_weighted_edit_distance` symbol. Define
@@ -31,3 +33,27 @@ multi-character rewrite costs or guarantee a metric for arbitrary callback
 costs. Do not use arbitrary weighted costs with BK-tree metric pruning.
 
 See [`examples/modules/weighted-edit-distance.c`](../examples/modules/weighted-edit-distance.c).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-weighted-edit-distance.h`](../include/mulib-weighted-edit-distance.h) |
+| Implementation switch | `MULIB_IMPL_WEIGHTED_EDIT_DISTANCE` |
+| Repository-local includes | [mulib-weighed_edit_distane](mulib-weighed_edit_distane.md) |
+| Complete example | [`examples/modules/weighted-edit-distance.c`](../examples/modules/weighted-edit-distance.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/weighted-edit-distance.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

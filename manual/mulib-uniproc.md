@@ -1,5 +1,7 @@
 # mulib-uniproc
 
+[Manuals](README.md) · [Library index](index.md)
+
 Strict UTF conversion and Unicode normalization, casing and scalar properties.
 The Unicode algorithms and database are provided by the installed ICU common
 runtime; no ICU development headers or link-time dependency are required.
@@ -68,3 +70,27 @@ Tests: `tests/test_unicode_text.c`, `tests/test_text_allocations.c` and
 
 ABI reference: <https://unicode-org.github.io/icu-docs/apidoc/released/icu4c/>.
 The wrapper is original code; no ICU implementation or data is vendored.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-uniproc.h`](../include/mulib-uniproc.h) |
+| Implementation switch | `MULIB_IMPL_UNIPROC` |
+| Repository-local includes | [mulib-dynload](mulib-dynload.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/uniproc.c`](../examples/modules/uniproc.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uniproc.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-bootmgr
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_BOOTMGR`, `MULIB_IMPL_EFI`, `MULIB_IMPL_PE`,
 `MULIB_IMPL_COFF`, `MULIB_IMPL_ENDIAN`, `MULIB_IMPL_BIOS`,
 `MULIB_IMPL_UEFIUTILS` and `MULIB_IMPL_UEFI` once. No allocations are made
@@ -77,3 +79,27 @@ The BIOS header supplies EDD/E820/MBR preparation; disk I/O is caller-owned.
 Tests in `test_boot_standards.c` verify cross-firmware filtering, failed-load
 ownership, security rejection, application auto-unload and exit-data release.
 Host mocks do not establish actual firmware boot success.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-bootmgr.h`](../include/mulib-bootmgr.h) |
+| Implementation switch | `MULIB_IMPL_BOOTMGR` |
+| Repository-local includes | [mulib-bios](mulib-bios.md), [mulib-efi](mulib-efi.md), [mulib-uefiutils](mulib-uefiutils.md) |
+| Complete example | [`examples/modules/bootmgr.c`](../examples/modules/bootmgr.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bootmgr.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

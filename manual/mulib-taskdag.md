@@ -1,5 +1,7 @@
 # MuLIB taskdag
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header/switch:** `include/mulib-taskdag.h` / `MULIB_IMPL_TASKDAG`  
 **Transitive implementation switches:** `MULIB_IMPL_TASKPOOL`  
 **Build:** C11, `-pthread`; C++17 declaration-only inclusion supported.
@@ -82,3 +84,27 @@ It cannot be nested inside callbacks on the same pool. No futures or deadlines
 are implied. Tests cover success, failed-prerequisite blocking, an independent
 successful branch, repeated runs, duplicates, capacity errors, pre-cancellation,
 self-cycles and multi-node cycles with no callback side effects.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-taskdag.h`](../include/mulib-taskdag.h) |
+| Implementation switch | `MULIB_IMPL_TASKDAG` |
+| Repository-local includes | [mulib-taskpool](mulib-taskpool.md) |
+| Complete example | [`examples/modules/taskdag.c`](../examples/modules/taskdag.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/taskdag.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

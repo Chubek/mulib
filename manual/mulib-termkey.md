@@ -1,5 +1,7 @@
 # MuLIB termkey
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-termkey.h` is an allocation-free, incremental byte-to-event
 decoder. It does not read stdin, change termios settings, query terminfo, start
 timers, or assume a terminal is attached.
@@ -108,3 +110,27 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/termkey.c
 The example and `tests/test_terminal.c` require no terminal. Tests feed single
 bytes, compare complete/fragmented events, test Escape flushing, malformed UTF-8,
 numeric/sequence limits, mouse coordinates and paste-end fragmentation.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-termkey.h`](../include/mulib-termkey.h) |
+| Implementation switch | `MULIB_IMPL_TERMKEY` |
+| Repository-local includes | [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/termkey.c`](../examples/modules/termkey.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/termkey.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-clickir
 
+[Manuals](README.md) · [Library index](index.md)
+
 Block-pinned **Sea of Nodes** with explicit data, control placement and memory
 dependencies. Node order is arbitrary; normalization creates ordered GSSA and
 lowering creates native MIR.
@@ -70,3 +72,27 @@ cc -std=c11 -Iinclude examples/modules/clickir.c -lm -o clickir
 `tests/test_microcc.c` reverses a cyclic-loop SSA graph's physical node order,
 compiles it through ClickIR, checks semantics, and rejects local precedence
 cycles and out-of-range edges.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-clickir.h`](../include/mulib-clickir.h) |
+| Implementation switch | `MULIB_IMPL_CLICKIR` |
+| Repository-local includes | [mulib-gssair](mulib-gssair.md) |
+| Complete example | [`examples/modules/clickir.c`](../examples/modules/clickir.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/clickir.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # MuLIB CSS declarations, rules and selectors
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-css.h` · **Language:** ISO C11, C++17 declarations
 
 ## Supported scope
@@ -150,3 +152,27 @@ boundaries; literal newlines/form feeds in quoted strings are rejected.
 `tests/test_html_css_pipeline.c` covers author precedence, nonmatching selector
 branches, custom-property casing, unit conversion, roundtrips and allocation
 failure cleanup.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-css.h`](../include/mulib-css.h) |
+| Implementation switch | `MULIB_IMPL_CSS` |
+| Repository-local includes | [mulib-xml](mulib-xml.md) |
+| Complete example | [`examples/modules/css.c`](../examples/modules/css.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/css.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

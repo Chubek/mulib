@@ -1,5 +1,7 @@
 # Shiraz: Windows PE/COFF execution and ELF translation
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-shiraz.h` provides an owned AMD64 image loader, a resumable
 interpreter and helper-based C ahead-of-time translation. The separately compiled
 [`library/shiraz`](../library/shiraz/) sources provide Windows imports, handles,
@@ -194,3 +196,27 @@ reuse, malformed/truncated images, atomic AOT output and registry snapshots.
 and llvm-dlltool and verifies interpretation, rebasing, output, registry changes,
 static/shared-runtime and fully static ELF execution, malformed input and compiler
 argv handling. No Windows SDK or Wine installation is needed.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-shiraz.h`](../include/mulib-shiraz.h) |
+| Implementation switch | `MULIB_IMPL_SHIRAZ` |
+| Repository-local includes | [mulib-pe](mulib-pe.md), [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/shiraz.c`](../examples/modules/shiraz.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/shiraz.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

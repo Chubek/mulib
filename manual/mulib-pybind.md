@@ -1,5 +1,7 @@
 # MuLIB pybind
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-pybind.h`  
 **Implementation switches:** `MULIB_IMPL_PYBIND`, `MULIB_IMPL_STRBUF`  
 **Dependencies:** MuLIB strbuf and ISO C11 only.
@@ -154,3 +156,27 @@ python3 -c 'import runpy; b=runpy.run_path("./bindings.py"); assert b["add"](20,
 No dependency implementation switch is defined implicitly. Put all switches
 before any includes in exactly one translation unit. Other translation units
 include declarations only; those declarations support C++17 with C linkage.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-pybind.h`](../include/mulib-pybind.h) |
+| Implementation switch | `MULIB_IMPL_PYBIND` |
+| Repository-local includes | [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/pybind.c`](../examples/modules/pybind.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pybind.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

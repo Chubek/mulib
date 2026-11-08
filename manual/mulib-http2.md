@@ -1,5 +1,7 @@
 # HTTP/2 frames
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_HTTP2` and `MULIB_IMPL_BUFFER`. The codec reads and writes
 the nine-byte frame envelope and validates known frame payloads. It implements
 neither HPACK nor a connection/stream state machine.
@@ -47,3 +49,27 @@ connection implementation. Frame-local validation is not a complete HTTP/2 peer.
 [Example](../examples/modules/http2.c). Tests:
 `tests/test_http_hardening.c`, `tests/test_http_alloc.c`, and HTTP/2 mutation/
 roundtrip coverage in `tests/fuzz_headers.c`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-http2.h`](../include/mulib-http2.h) |
+| Implementation switch | `MULIB_IMPL_HTTP2` |
+| Repository-local includes | [mulib-buffer](mulib-buffer.md) |
+| Complete example | [`examples/modules/http2.c`](../examples/modules/http2.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/http2.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

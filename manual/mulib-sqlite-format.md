@@ -1,5 +1,7 @@
 # SQLite format-3 codecs and table B-trees
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-sqlite-format.h` implements native SQLite varints, typed records, main-file
 header inspection, rowid-table scanning and fresh table B-tree image construction.
 It has no SQLite dependency and does not execute SQL or write files.
@@ -83,3 +85,27 @@ varints, truncated varints, every page size, multi-level trees and 7000-byte
 overflow records. `tools/check_sqlite.py` validates native written files with an
 independent SQLite engine. The format specification is
 <https://www.sqlite.org/fileformat2.html>; implementation code is independent.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-sqlite-format.h`](../include/mulib-sqlite-format.h) |
+| Implementation switch | `MULIB_IMPL_SQLITE_FORMAT` |
+| Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-endian](mulib-endian.md) |
+| Complete example | [`examples/modules/sqlite-format.c`](../examples/modules/sqlite-format.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sqlite-format.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

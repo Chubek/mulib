@@ -1,5 +1,7 @@
 # mulib-confuse
 
+[Manuals](README.md) · [Library index](index.md)
+
 Dynamic, libconfuse-inspired configuration, recognized by the PEG/parsec engine.
 It is not libconfuse's schema API or ABI.
 
@@ -48,3 +50,27 @@ selects the nth child overall, including list elements. Sections carry optional
 corresponding `as` union members. `getstr/getint/getreal/getbool` select the first
 named child and return the supplied fallback if missing or differently typed.
 All lookup pointers are valid only while the owning configuration remains alive.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-confuse.h`](../include/mulib-confuse.h) |
+| Implementation switch | `MULIB_IMPL_CONFUSE` |
+| Repository-local includes | [mulib-parsec](mulib-parsec.md) |
+| Complete example | [`examples/modules/confuse.c`](../examples/modules/confuse.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/confuse.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

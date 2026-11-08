@@ -1,5 +1,7 @@
 # mulib-vdev
 
+[Manuals](README.md) · [Library index](index.md)
+
 Linux uinput virtual keyboards and relative pointers, without libevdev/libinput.
 No absolute axes, multitouch, force feedback, LEDs or device-discovery handshake.
 
@@ -35,3 +37,27 @@ automatic release generation or global input injection occurs merely by inclusio
 `cc -std=c11 -Iinclude examples/modules/vdev.c -o vdev` intentionally creates no
 device. Tests cover validation and native failure cleanup; successful injection
 requires explicit hardware/environment testing and is not run by the suite.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-vdev.h`](../include/mulib-vdev.h) |
+| Implementation switch | `MULIB_IMPL_VDEV` |
+| Repository-local includes | [mulib-input](mulib-input.md) |
+| Complete example | [`examples/modules/vdev.c`](../examples/modules/vdev.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vdev.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

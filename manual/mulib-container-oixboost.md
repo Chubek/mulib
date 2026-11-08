@@ -1,5 +1,7 @@
 # mulib-container-oixboost
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Compile rootfs files into OIX guests and run them through container lifecycle APIs.
@@ -47,3 +49,27 @@ Linux x86 KVM. A single KVM_RUN may block independently of its exit budget.
 Common CT errors describe wrapper failures; compilation's optional OIX diagnostic
 provides detailed compiler information. Close destroys VM and copied image.
 Tests compile/validate rootfs-based native images without requiring guest execution.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-container-oixboost.h`](../include/mulib-container-oixboost.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINER_OIXBOOST` |
+| Repository-local includes | [mulib-containerboost](mulib-containerboost.md), [mulib-oix](mulib-oix.md) |
+| Complete example | [`examples/modules/container-oixboost.c`](../examples/modules/container-oixboost.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-oixboost.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

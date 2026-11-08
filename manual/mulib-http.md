@@ -1,5 +1,7 @@
 # mulib-http
 
+[Manuals](README.md) · [Library index](index.md)
+
 A strict HTTP/1.1 **wire-format utility**, not a socket client/server. Requests,
 responses, binary bodies, content-length framing, chunked framing and
 close-delimited responses are supported. HTTP/1.0, HTTP/2, upgrade protocols,
@@ -119,3 +121,27 @@ chunked request containing an embedded NUL:
 cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/http.c -o ./http
 ./http
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-http.h`](../include/mulib-http.h) |
+| Implementation switch | `MULIB_IMPL_HTTP` |
+| Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-parsec](mulib-parsec.md), [mulib-uri](mulib-uri.md) |
+| Complete example | [`examples/modules/http.c`](../examples/modules/http.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/http.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

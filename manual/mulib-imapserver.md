@@ -1,5 +1,7 @@
 # mulib-imapserver
 
+[Manuals](README.md) · [Library index](index.md)
+
 A bounded tagged-command **IMAP-inspired subset**, not a complete RFC IMAP
 service. It intentionally advertises `X-MULIB-FOCUSED`, **not** IMAP4rev1/rev2:
 SELECT supplies only EXISTS/read-only status, with no FLAGS, UID model, FETCH,
@@ -97,3 +99,27 @@ There is no allocation failure path. See `tests/test_mail_ftp.c` for quoted
 roundtrips, malformed literals/escapes, state errors and pairing tests.
 Only init accepts uninitialized session storage; do not copy a live session and
 share its scratch buffer.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-imapserver.h`](../include/mulib-imapserver.h) |
+| Implementation switch | `MULIB_IMPL_IMAPSERVER` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/imapserver.c`](../examples/modules/imapserver.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/imapserver.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

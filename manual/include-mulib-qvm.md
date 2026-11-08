@@ -1,5 +1,7 @@
 # include-mulib-qvm
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND SYNOPSIS
 
 Quota VM: a portable resumable 16-register unsigned-64-bit interpreter.
@@ -45,3 +47,27 @@ preserving owned code and callback configuration. `free` releases code/RAM and
 resets the object. No scheduler, threads or host filesystem access is implicit.
 
 Use [container-qvmboost](mulib-container-qvmboost.md) for lifecycle integration.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/include-mulib-qvm.h`](../include/include-mulib-qvm.h) |
+| Implementation switch | None (support header; see scope above) |
+| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md) |
+| Complete example | [`examples/modules/qvm-core.c`](../examples/modules/qvm-core.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/qvm-core.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

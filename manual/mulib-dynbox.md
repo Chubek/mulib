@@ -1,5 +1,7 @@
 # Native dynamic calls and closures
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `mulib-dynbox.h`; define **`MULIB_IMPL_DYNBOX`** in exactly one C11
 implementation TU. No MuLIB or third-party dependencies; no libffi/dyncall link.
 Declaration-only use is also supported from C++17.
@@ -100,3 +102,27 @@ signatures, compares calls and closures with compiler-generated calls, and loads
 a separately compiled shared-library fixture. It exercises separate implementation
 and client TUs without libffi. Use `--compiler clang --sanitizers` for ASan/UBSan.
 The tool is also registered with CTest and the repository checker.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-dynbox.h`](../include/mulib-dynbox.h) |
+| Implementation switch | `MULIB_IMPL_DYNBOX` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/dynbox.c`](../examples/modules/dynbox.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dynbox.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

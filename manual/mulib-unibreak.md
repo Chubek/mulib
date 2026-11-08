@@ -1,5 +1,7 @@
 # mulib-unibreak
 
+[Manuals](README.md) · [Library index](index.md)
+
 Unicode line-break opportunities, extended grapheme boundaries, word and
 sentence segmentation through ICU BreakIterator. This is a segmentation API;
 it does not choose line widths, measure fonts or insert hyphenation glyphs.
@@ -49,3 +51,27 @@ graphemes and locale tailoring. There is no heuristic fallback if ICU is absent.
 Tests in `tests/test_unicode_text.c` cover combining marks, ZWJ sequences,
 CRLF mandatory breaks, empty input and invalid encodings. `tools/check_text.py`
 can require backend availability and run ASan/UBSan.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-unibreak.h`](../include/mulib-unibreak.h) |
+| Implementation switch | `MULIB_IMPL_UNIBREAK` |
+| Repository-local includes | [mulib-uniproc](mulib-uniproc.md) |
+| Complete example | [`examples/modules/unibreak.c`](../examples/modules/unibreak.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/unibreak.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

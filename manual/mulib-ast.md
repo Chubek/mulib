@@ -1,5 +1,7 @@
 # mulib-ast
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_AST` and `MULIB_IMPL_STRBUF` in one translation unit.
 
 `mulib_ast_create(production,text,length)` copies its arguments; text is a byte
@@ -38,3 +40,27 @@ A `mulib_ast_walker_t` owns its root. Use `mulib_ast_walker_walk` and
 
 See also [visitors](mulib-visitor.md), [listeners](mulib-listener.md),
 [event streams](mulib-evtstream.md), and [grammar loading](mulib-parsec.md#owned-grammar-loading).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-ast.h`](../include/mulib-ast.h) |
+| Implementation switch | `MULIB_IMPL_AST` |
+| Repository-local includes | [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/ast.c`](../examples/modules/ast.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ast.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

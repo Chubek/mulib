@@ -1,5 +1,7 @@
 # mulib-peephole
 
+[Manuals](README.md) · [Library index](index.md)
+
 Guarded shallow-tree rewriting for native 64-bit wrapping operations.
 
 Define `MULIB_IMPL_MIR`, `MULIB_IMPL_LOWOPT`, and `MULIB_IMPL_PEEPHOLE` in one C11
@@ -44,3 +46,27 @@ arithmetic evaluator, including random words and each rule's boundary literals.
 cc -std=c11 -Iinclude examples/modules/peephole.c -lm -o peephole
 ./peephole
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-peephole.h`](../include/mulib-peephole.h) |
+| Implementation switch | `MULIB_IMPL_PEEPHOLE` |
+| Repository-local includes | [mulib-lowopt](mulib-lowopt.md) |
+| Complete example | [`examples/modules/peephole.c`](../examples/modules/peephole.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/peephole.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-2dgeom
 
+[Manuals](README.md) · [Library index](index.md)
+
 Computational 2D vector-path geometry, not a renderer. Define
 `MULIB_IMPL_2DGEOM`, `MULIB_IMPL_GEOMETRY`, `MULIB_IMPL_VEC` and
 `MULIB_IMPL_PARSEC` in one C11 translation unit; link libm. Points reuse
@@ -83,3 +85,27 @@ enumeration or a drawing GUI. Existing geometry modules supply complementary
 line/polygon operations. See the
 [example](../examples/modules/2dgeom.c) and `tests/test_2dgeom.c` for subdivision
 identities, analytic curvature/length, exact extrema, transforms and DSL errors.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-2dgeom.h`](../include/mulib-2dgeom.h) |
+| Implementation switch | `MULIB_IMPL_2DGEOM` |
+| Repository-local includes | [mulib-geometry](mulib-geometry.md), [mulib-parsec](mulib-parsec.md), [mulib-vec](mulib-vec.md) |
+| Complete example | [`examples/modules/2dgeom.c`](../examples/modules/2dgeom.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/2dgeom.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

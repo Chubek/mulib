@@ -1,5 +1,7 @@
 # YANTLR core
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-yantlr.h` implements the `.y1` **host language**, static linking,
 evaluation and provider-driven artifact generation. The opt-in
 [standard library](../library/yantlr/README.md) supplies value utilities,
@@ -150,3 +152,27 @@ literal decoding, lexical closures/currying, linking and cycles, provider
 failures, ownership, generation staging and resource limits.
 `tests/test_yantlr_alloc.c` sweeps allocation failures through parsing and
 evaluation, checking cleanup of partial values, opaque owners and artifacts.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-yantlr.h`](../include/mulib-yantlr.h) |
+| Implementation switch | `MULIB_IMPL_YANTLR` |
+| Repository-local includes | [mulib-arena](mulib-arena.md), [mulib-json](mulib-json.md), [mulib-parsec](mulib-parsec.md), [mulib-peg](mulib-peg.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/yantlr.c`](../examples/modules/yantlr.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/yantlr.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

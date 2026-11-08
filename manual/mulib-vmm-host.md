@@ -1,5 +1,7 @@
 # mulib-vmm-host
 
+[Manuals](README.md) · [Library index](index.md)
+
 Concrete host services for the VMM's existing Virtio backend contract. Define
 `MULIB_IMPL_ENDIAN`, `MULIB_IMPL_VMMDEV`, `MULIB_IMPL_VIRTIO` and
 `MULIB_IMPL_VMM_HOST` once. Example: `examples/modules/vmm-host.c`.
@@ -38,3 +40,27 @@ contracts. This module does not implement them.
 Tests in `tests/test_vmm.c` cover read-only handling, address limits, real system
 entropy invocation and end-to-end RAM block I/O. `tests/test_vmm_kvm.c` executes a
 native guest that uses the RAM block provider through the VMM call-frame boundary.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-vmm-host.h`](../include/mulib-vmm-host.h) |
+| Implementation switch | `MULIB_IMPL_VMM_HOST` |
+| Repository-local includes | [mulib-virtio](mulib-virtio.md) |
+| Complete example | [`examples/modules/vmm-host.c`](../examples/modules/vmm-host.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vmm-host.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

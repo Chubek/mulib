@@ -1,5 +1,7 @@
 # mulib-gputest
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_GPUTEST` once. No dependencies or allocations.
 [Example](../examples/modules/gputest.c) uses an explicitly labeled mock driver.
 
@@ -43,3 +45,27 @@ SIZE_MAX for invalid bounds. Synchronize GPU writes/invalidate CPU caches as
 required by the driver. The source is suitable for an OpenGL compute backend;
 bare-metal drivers must compile/translate it for their hardware. A GPU driver
 and shader compiler are still required for real device execution.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-gputest.h`](../include/mulib-gputest.h) |
+| Implementation switch | `MULIB_IMPL_GPUTEST` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/gputest.c`](../examples/modules/gputest.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/gputest.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

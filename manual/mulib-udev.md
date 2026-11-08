@@ -1,5 +1,7 @@
 # mulib-udev
 
+[Manuals](README.md) · [Library index](index.md)
+
 Linux **kernel uevents**, parsed into borrowed views, with optional netlink
 monitoring. Not a libudev replacement: no device database, rule processing,
 enumeration, sysfs traversal, userspace group-2 packets or libudev wire headers.
@@ -39,3 +41,27 @@ kernel netlink sender address; it is not a cryptographic event signature.
 
 `cc -std=c11 -Iinclude examples/modules/udev.c -o udev`. Tests decode synthetic
 packets, duplicates, contradictions, truncated fields and limits, without devices.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-udev.h`](../include/mulib-udev.h) |
+| Implementation switch | `MULIB_IMPL_UDEV` |
+| Repository-local includes | [mulib-parsec](mulib-parsec.md) |
+| Complete example | [`examples/modules/udev.c`](../examples/modules/udev.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/udev.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

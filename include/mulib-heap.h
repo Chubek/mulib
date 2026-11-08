@@ -3,8 +3,8 @@
  * @brief A binary min-heap of signed 64-bit integers.
  * @defgroup mulib_heap MuLIB heap
  * @{
- * @details The minimum value is returned first. Push and pop take logarithmic
- * time; memory is owned by the heap.
+ * @details The minimum value is returned first. Heap adjustment takes
+ * logarithmic time; growth may move all elements. Memory is owned by the heap.
  * @par Integration
  * In exactly one translation unit define MULIB_IMPL_HEAP before including this
  * file. Other translation units may include it without the implementation

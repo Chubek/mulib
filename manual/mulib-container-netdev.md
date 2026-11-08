@@ -1,5 +1,7 @@
 # mulib-container-netdev
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Virtual packet endpoints with bounded receive queues and whole-packet transports.
@@ -43,3 +45,27 @@ checksums, implement sockets, ARP/NDP or configure native interfaces. Connect a
 TUN/TAP or other transport through the callback, with its own lifetime/error policy.
 `free` releases queued bytes/table, never the transport context or peer endpoint.
 Use [container-network](mulib-container-network.md) for routing/filtering.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-container-netdev.h`](../include/mulib-container-netdev.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINER_NETDEV` |
+| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md) |
+| Complete example | [`examples/modules/container-netdev.c`](../examples/modules/container-netdev.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-netdev.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

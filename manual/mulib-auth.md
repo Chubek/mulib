@@ -1,5 +1,7 @@
 # HTTP credentials and API keys
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_AUTH`, `MULIB_IMPL_BASE64` and `MULIB_IMPL_SECURITY`.
 All methods require an authenticated TLS transport supplied by the application.
 
@@ -36,3 +38,27 @@ human-chosen strings. Length is not hidden.
 No account database, TLS stack, rate limiter or audit log is supplied. Applications
 must also reject duplicate Authorization headers before calling these helpers.
 [Example](../examples/modules/auth.c), [tests](../tests/test_authentication.c).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-auth.h`](../include/mulib-auth.h) |
+| Implementation switch | `MULIB_IMPL_AUTH` |
+| Repository-local includes | [mulib-base64](mulib-base64.md), [mulib-seurity](mulib-seurity.md) |
+| Complete example | [`examples/modules/auth.c`](../examples/modules/auth.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/auth.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

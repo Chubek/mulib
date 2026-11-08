@@ -1,5 +1,7 @@
 # datalog: finite positive rule evaluation
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-datalog.h` computes a least fixed point for positive relational rules over
 finite string constants. It supplies a **C term/atom API**, not a text parser or
 Prolog interpreter. There are no module or third-party dependencies.
@@ -110,3 +112,27 @@ status. `mulib_datalog_fact_count` includes base and derived facts.
 `tests/test_language_tools.c` exercises recursive closure, repeated-variable
 unification, nullary/unknown/empty queries, unsafe rules, duplicates, rollback on
 fact/step/round budgets, and allocation failure.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-datalog.h`](../include/mulib-datalog.h) |
+| Implementation switch | `MULIB_IMPL_DATALOG` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/datalog.c`](../examples/modules/datalog.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/datalog.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

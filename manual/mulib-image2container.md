@@ -1,5 +1,7 @@
 # mulib-image2container
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME
 
 Atomic materialization of image bytes into owned container metadata and rootfs.
@@ -46,3 +48,27 @@ EFORMAT result. Allocation errors from rootfs import/clone remain ENOMEM, and
 quota failures remain ELIMIT. Architecture is a routing label; importing never starts code or
 extracts into the host filesystem. Use [containterpool](mulib-containterpool.md)
 or [containerd](mulib-containerd.md) to prepare and manage an execution backend.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-image2container.h`](../include/mulib-image2container.h) |
+| Implementation switch | `MULIB_IMPL_IMAGE2CONTAINER` |
+| Repository-local includes | [mulib-imgformat](mulib-imgformat.md), [mulib-rootfs](mulib-rootfs.md) |
+| Complete example | [`examples/modules/image2container.c`](../examples/modules/image2container.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/image2container.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

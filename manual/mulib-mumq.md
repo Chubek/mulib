@@ -1,5 +1,7 @@
 # mulib-mumq
 
+[Manuals](README.md) · [Library index](index.md)
+
 MuMQ v1 is MuLIB's bounded topic message protocol, **not MQTT, AMQP or a claim
 of interoperability with an unspecified existing MQ standard**. It uses only
 internal socket/AES/authentication libraries and the OS socket interface.
@@ -72,3 +74,27 @@ cipher implementing the documented nonce/AAD/in-place and fixed 32-byte-tag
 contract. Context remains borrowed. A custom provider must preserve nonce
 uniqueness and verify before decrypting. No external crypto dependency is
 required or automatically loaded. See AES manual for audit limitations.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-mumq.h`](../include/mulib-mumq.h) |
+| Implementation switch | `MULIB_IMPL_MUMQ` |
+| Repository-local includes | [mulib-aes](mulib-aes.md), [mulib-socket](mulib-socket.md) |
+| Complete example | [`examples/modules/mumq.c`](../examples/modules/mumq.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mumq.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

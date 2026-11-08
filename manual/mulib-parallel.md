@@ -1,5 +1,7 @@
 # MuLIB parallel
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header/switch:** `include/mulib-parallel.h` / `MULIB_IMPL_PARALLEL`  
 **Required implementation:** `MULIB_IMPL_TASKPOOL` (not auto-defined)  
 **Build:** C11 implementation, C++17 declarations, POSIX pthread pool and `-pthread`.
@@ -75,3 +77,27 @@ The runnable example squares four integers using two workers. The focused test
 suite also checks a non-divisible chunk count, in-place map, overlap/overflow
 rejection, empty input, original callback error preservation, and cancellation
 requested from inside a callback.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-parallel.h`](../include/mulib-parallel.h) |
+| Implementation switch | `MULIB_IMPL_PARALLEL` |
+| Repository-local includes | [mulib-taskpool](mulib-taskpool.md) |
+| Complete example | [`examples/modules/parallel.c`](../examples/modules/parallel.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/parallel.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

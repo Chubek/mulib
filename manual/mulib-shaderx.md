@@ -1,5 +1,7 @@
 # mulib-shaderx
 
+[Manuals](README.md) · [Library index](index.md)
+
 A typed expression-graph API and high-level shader language, compiling to
 **GLSL 330 core** or **HLSL 5 source**. Define `MULIB_IMPL_SHADERX`,
 `MULIB_IMPL_PARSEC`, `MULIB_IMPL_STRBUF`. Parsec's base combinators perform
@@ -76,3 +78,27 @@ or GPU execution are implied by this expression profile.
 `examples/modules/shaderx.c` prints GLSL. `tests/test_graphics_languages.c` covers
 API/text construction, diagnostics, bounds and both backends. Its optional
 `fragment|vertex output-file` mode emits shaders for external compiler validation.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-shaderx.h`](../include/mulib-shaderx.h) |
+| Implementation switch | `MULIB_IMPL_SHADERX` |
+| Repository-local includes | [mulib-parsec](mulib-parsec.md), [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/shaderx.c`](../examples/modules/shaderx.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/shaderx.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

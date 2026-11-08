@@ -1,5 +1,7 @@
 # mulib-sysfs
 
+[Manuals](README.md) · [Library index](index.md)
+
 Bounded text attributes and typed decimal values over a VFS fixture/backend or
 native Linux files. This is not a sysfs enumerator, device manager, permission
 layer, filesystem sandbox or complete Linux sysfs API. No third-party libraries
@@ -104,3 +106,27 @@ allocate nothing; the chosen VFS backend may return `ENOMEM`.
 buffer/content boundaries, empty/NUL/malformed values, integer extrema/overflow,
 typed writes, unchanged failed outputs, and optional read-only native Linux
 `/proc/sys/kernel/pid_max` access. No host attribute write is part of the tests.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-sysfs.h`](../include/mulib-sysfs.h) |
+| Implementation switch | `MULIB_IMPL_SYSFS` |
+| Repository-local includes | [mulib-vfs](mulib-vfs.md) |
+| Complete example | [`examples/modules/sysfs.c`](../examples/modules/sysfs.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sysfs.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

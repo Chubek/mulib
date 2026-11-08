@@ -1,5 +1,7 @@
 # mulib-depir
 
+[Manuals](README.md) · [Library index](index.md)
+
 An entity/dependency representation from which executable Sea of Nodes,
 A-normal form, gated SSA, superblocks and native MIR can be derived.
 
@@ -90,3 +92,27 @@ cc -std=c11 -Iinclude examples/modules/depir.c -lm -o depir
 The example derives dependency records, ANF and native MIR from a scalar return.
 MicroCC tests derive every supported representation from loop-bearing DepIR,
 execute the generated assembly, and inject failure at every allocation.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-depir.h`](../include/mulib-depir.h) |
+| Implementation switch | `MULIB_IMPL_DEPIR` |
+| Repository-local includes | [mulib-anfir](mulib-anfir.md), [mulib-clickir](mulib-clickir.md), [mulib-superblocks](mulib-superblocks.md) |
+| Complete example | [`examples/modules/depir.c`](../examples/modules/depir.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/depir.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

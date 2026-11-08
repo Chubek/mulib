@@ -1,5 +1,7 @@
 # mulib-fontshape
 
+[Manuals](README.md) · [Library index](index.md)
+
 Real OpenType shaping through HarfBuzz, rather than a cmap/kerning approximation.
 Features, contextual substitutions/positioning, script shaping and variable-font
 coordinates use the native HarfBuzz engine and the selected font's tables.
@@ -91,3 +93,27 @@ font-scale units; absence of caret data succeeds with count zero. Free the array
 with `free`. Outputs are unchanged on failure. `mulib-ligature` adds explicit
 optional-feature controls and source cluster mapping; `mulib-glyph` pairs shaped
 IDs with the same font face for FreeType rendering.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-fontshape.h`](../include/mulib-fontshape.h) |
+| Implementation switch | `MULIB_IMPL_FONTSHAPE` |
+| Repository-local includes | [mulib-dynload](mulib-dynload.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/fontshape.c`](../examples/modules/fontshape.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fontshape.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

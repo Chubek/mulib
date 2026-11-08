@@ -1,5 +1,7 @@
 # mulib-ccweave
 
+[Manuals](README.md) · [Library index](index.md)
+
 Standalone checked C11 source generation for the common MIR, not a C parser or
 general source-to-source compiler. Every opcode in `manual/mulib-mir.md` is
 implemented; no extra control flow, pointers, calls or memory operations are
@@ -80,3 +82,27 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude tests/test_compiler_ir.c 
 cc -std=c11 -Wall -Wextra -Wpedantic -Werror /tmp/generated-tests.c -o /tmp/generated-tests
 /tmp/generated-tests
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-ccweave.h`](../include/mulib-ccweave.h) |
+| Implementation switch | `MULIB_IMPL_CCWEAVE` |
+| Repository-local includes | [mulib-mir](mulib-mir.md), [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/ccweave.c`](../examples/modules/ccweave.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ccweave.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

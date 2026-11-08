@@ -1,5 +1,7 @@
 # browsertools: CDP messages, not a built-in browser
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-browsertools.h` builds Chrome DevTools Protocol (CDP) JSON requests,
 tracks pending requests, matches responses by ID **and flattened session ID**,
 and inspects `/json/list` target bodies. The application supplies a transport
@@ -121,3 +123,27 @@ pending data but never closes caller-owned transport resources.
 `tests/test_language_tools.c` verifies escaping/JSON roundtrip, event/error/result
 shapes, ID/session mismatch, cancellation, transport failure, empty/malformed
 discovery, pending/message budgets, allocation failures, and mutated inputs.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-browsertools.h`](../include/mulib-browsertools.h) |
+| Implementation switch | `MULIB_IMPL_BROWSERTOOLS` |
+| Repository-local includes | [mulib-http](mulib-http.md), [mulib-json](mulib-json.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/browsertools.c`](../examples/modules/browsertools.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/browsertools.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

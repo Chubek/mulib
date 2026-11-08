@@ -1,5 +1,7 @@
 # WebIDL compiler
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-webidl.h` parses a UTF-8 WebIDL source span and compiles it to:
 
 * **S-expression AST** (default): semantic definitions, members, types and arguments.
@@ -195,3 +197,27 @@ escaping; null-only fields fail, arrays map to `sequence<any>`, objects to
 empty input, invalid UTF-8/options, recursion limits and allocation failure at
 every allocation in each backend. `tools/check_webidl.py` compiles generated
 output as strict C99 and verifies concrete-token roundtrips and YAML structure.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-webidl.h`](../include/mulib-webidl.h) |
+| Implementation switch | `MULIB_IMPL_WEBIDL` |
+| Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-dbschema](mulib-dbschema.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/webidl.c`](../examples/modules/webidl.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/webidl.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

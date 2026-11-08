@@ -1,5 +1,7 @@
 # mulib-linker
 
+[Manuals](README.md) · [Library index](index.md)
+
 A **single flat image** linker: owned named symbols and checked relocation
 fields, composed with `mulib-emitter`. It is not an ELF/COFF/Mach-O reader,
 section placer, dynamic loader, PLT/GOT builder, or archive linker.
@@ -75,3 +77,27 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
 The example resolves a forward AMD64 jump. `tests/test_codegen.c` covers
 undefined/duplicate symbols, atomic failure, both byte orders, backward
 branches at base zero, signed boundaries/cancellation, limits and overflow.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-linker.h`](../include/mulib-linker.h) |
+| Implementation switch | `MULIB_IMPL_LINKER` |
+| Repository-local includes | [mulib-emitter](mulib-emitter.md) |
+| Complete example | [`examples/modules/linker.c`](../examples/modules/linker.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/linker.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

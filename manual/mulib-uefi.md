@@ -1,5 +1,7 @@
 # mulib-uefi — firmware framework
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_UEFI` once. No transitive switches, allocation or OS calls.
 [Example](../examples/modules/uefi.c).
 
@@ -77,3 +79,27 @@ accessed 2026-11-06. Code is original, not vendored EDK II. Host tests check ABI
 sizes, x64 calling conventions, retries, phase restrictions, warning/error
 distinction and CRC against Python zlib. This focused binding is not a complete
 firmware SDK or a claim of firmware conformance certification.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-uefi.h`](../include/mulib-uefi.h) |
+| Implementation switch | `MULIB_IMPL_UEFI` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/uefi.c`](../examples/modules/uefi.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uefi.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

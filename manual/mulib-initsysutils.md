@@ -1,5 +1,7 @@
 # mulib-initsysutils
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_INITSYSUTILS` and `MULIB_IMPL_CPIO` once.
 [Example](../examples/modules/initsysutils.c). No dynamic allocation or implicit
 process/filesystem operations.
@@ -51,3 +53,27 @@ All APIs are synchronous and require caller serialization for mutable state.
 Reference: [Linux buffer grammar](https://docs.kernel.org/driver-api/early-userspace/buffer-format.html),
 cross-checked with Linux `init/initramfs.c`, accessed 2026-11-06. Tests cover
 concatenation, missing trailers, invalid paths and rollback failure ordering.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-initsysutils.h`](../include/mulib-initsysutils.h) |
+| Implementation switch | `MULIB_IMPL_INITSYSUTILS` |
+| Repository-local includes | [mulib-cpio](mulib-cpio.md) |
+| Complete example | [`examples/modules/initsysutils.c`](../examples/modules/initsysutils.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/initsysutils.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

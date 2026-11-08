@@ -1,5 +1,7 @@
 # mulib-mumq-server
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_MUMQ_SERVER` plus `MULIB_IMPL_MUMQ`, `MULIB_IMPL_SOCKET`,
 `MULIB_IMPL_AES`, `MULIB_IMPL_AUTHCRYPTO`. The broker owns up to 32 channels;
 `server_add` transfers ownership only on zero, `remove`/destroy close them.
@@ -33,3 +35,27 @@ The application owns numeric TCP listeners and accepts channels using internal
 `mulib-socket` APIs. It selects credentials/options for each accepted connection
 and calls add. There are no hidden threads, background daemons or DNS. See
 `mulib-mumq.md` for framing, encryption and implementation-placement contracts.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-mumq-server.h`](../include/mulib-mumq-server.h) |
+| Implementation switch | `MULIB_IMPL_MUMQ_SERVER` |
+| Repository-local includes | [mulib-mumq](mulib-mumq.md) |
+| Complete example | [`examples/modules/mumq-server.c`](../examples/modules/mumq-server.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mumq-server.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

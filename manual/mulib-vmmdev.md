@@ -1,5 +1,7 @@
 # mulib-vmmdev
 
+[Manuals](README.md) · [Library index](index.md)
+
 Portable, allocation-free MVMD message and guest-memory primitives. The normative
 wire and execution contract is [`MULIB_VMMPROTO.md`](../MULIB_VMMPROTO.md).
 
@@ -37,3 +39,27 @@ these low-level helpers themselves do not copy or lock guest storage.
 Failures are `MULIB_VMMDEV_*` result codes. No allocation can fail because no
 function allocates. Size/address overflow and insufficient caller storage are
 explicitly rejected. Tests: `tests/test_vmmdev.c`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-vmmdev.h`](../include/mulib-vmmdev.h) |
+| Implementation switch | `MULIB_IMPL_VMMDEV` |
+| Repository-local includes | [mulib-endian](mulib-endian.md) |
+| Complete example | [`examples/modules/vmmdev.c`](../examples/modules/vmmdev.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vmmdev.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

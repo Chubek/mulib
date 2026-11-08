@@ -1,5 +1,7 @@
 # mulib-distfield
 
+[Manuals](README.md) · [Library index](index.md)
+
 Signed Euclidean distance fields for scalable glyph masks and other binary
 silhouettes. This module is independent of native font and Unicode libraries.
 
@@ -53,3 +55,27 @@ the renderer. Very large spread values lose quantized edge precision.
 brute-force Euclidean reference for deterministic random masks, empty and solid
 masks, plus malformed dimensions and numerical edge cases. Allocation-failure
 coverage is in `tests/test_text_allocations.c`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-distfield.h`](../include/mulib-distfield.h) |
+| Implementation switch | `MULIB_IMPL_DISTFIELD` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/distfield.c`](../examples/modules/distfield.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/distfield.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

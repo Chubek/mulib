@@ -1,5 +1,7 @@
 # mulib-wask
 
+[Manuals](README.md) · [Library index](index.md)
+
 A small, embeddable **i32 WebAssembly binary module runtime**. This is a focused
 straight-line execution profile, not a complete WebAssembly engine or WASI host.
 No third-party library, native code generation, filesystem or network access.
@@ -59,3 +61,27 @@ wrapping arithmetic, traps, truncation, malformed LEBs and bounded mutations.
 
 `mulib_wask_version()` returns API revision 1.
 `mulib_wask_supports(mnemonic)` reports exact instruction support without loading a module.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-wask.h`](../include/mulib-wask.h) |
+| Implementation switch | `MULIB_IMPL_WASK` |
+| Repository-local includes | [mulib-dsymspec](mulib-dsymspec.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/wask.c`](../examples/modules/wask.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wask.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

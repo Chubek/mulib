@@ -1,5 +1,7 @@
 # mulib-container-packelf
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 ELF64 image objects and non-destructive ELF file image overlays.
@@ -49,3 +51,27 @@ Object/append replace initialized CT blobs atomically and allow input to refer t
 old output bytes. open outputs borrow immutable ELF storage. Limits bound final
 packaging or extracted image size; allocation/overflow/format/checksum errors use
 CT codes. Tests verify byte-preserving overlays and section/trailer round-trips.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-container-packelf.h`](../include/mulib-container-packelf.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINER_PACKELF` |
+| Repository-local includes | [mulib-elf](mulib-elf.md), [mulib-imgformat](mulib-imgformat.md) |
+| Complete example | [`examples/modules/container-packelf.c`](../examples/modules/container-packelf.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-packelf.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

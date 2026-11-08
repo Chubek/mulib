@@ -1,5 +1,7 @@
 # mulib-linalg
 
+[Manuals](README.md) · [Library index](index.md)
+
 Graphics math using copyable, allocation-free `float` vectors (`vec2`, `vec3`,
 `vec4`), 4×4 matrices and `(x,y,z,w)` quaternions. Define `MULIB_IMPL_LINALG`
 in one C11 translation unit and link `-lm`. Declarations have C linkage.
@@ -49,3 +51,27 @@ Build `examples/modules/linalg.c` with
 `cc -std=c11 -Iinclude examples/modules/linalg.c -lm -o linalg`.
 `tests/test_graphics_math.c` checks inverse roundtrips, projection endpoints,
 quaternion rotations and normalization extremes. No hidden state or allocations.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-linalg.h`](../include/mulib-linalg.h) |
+| Implementation switch | `MULIB_IMPL_LINALG` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/linalg.c`](../examples/modules/linalg.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/linalg.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # PE reader
 
+[Manuals](README.md) · [Library index](index.md)
+
 Include `mulib-pe.h`; define `MULIB_IMPL_PE`, `MULIB_IMPL_COFF`,
 `MULIB_IMPL_ENDIAN`. [Example](../examples/modules/pe.c).
 
@@ -30,3 +32,27 @@ Import/export/resource decoding, relocation application, CLR metadata, debug
 formats, signatures and execution are not implemented. COFF symbols may be absent
 in stripped images. No native Windows headers are needed. See
 [shared contracts](binary-formats.md) and [PE lookup](mulib-peutils.md).
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-pe.h`](../include/mulib-pe.h) |
+| Implementation switch | `MULIB_IMPL_PE` |
+| Repository-local includes | [mulib-coff](mulib-coff.md) |
+| Complete example | [`examples/modules/pe.c`](../examples/modules/pe.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pe.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

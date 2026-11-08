@@ -1,5 +1,7 @@
 # mulib-aes
 
+[Manuals](README.md) · [Library index](index.md)
+
 Original scalar FIPS 197 AES-256 encryption, 96-bit-nonce CTR, and authenticated
 encrypt-then-HMAC-SHA256 messages. No external crypto library, entropy source,
 password handling, padding, ECB message mode or implicit key management.
@@ -32,3 +34,27 @@ The implementation and best-effort volatile wiping have not been independently
 audited; no constant-time, side-channel-resistance or production-security
 certification is claimed. Review cryptography and key distribution before use
 on an untrusted network.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-aes.h`](../include/mulib-aes.h) |
+| Implementation switch | `MULIB_IMPL_AES` |
+| Repository-local includes | [mulib-authcrypto](mulib-authcrypto.md) |
+| Complete example | [`examples/modules/aes.c`](../examples/modules/aes.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/aes.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

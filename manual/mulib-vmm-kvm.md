@@ -1,5 +1,7 @@
 # mulib-vmm-kvm
 
+[Manuals](README.md) · [Library index](index.md)
+
 Linux x86 type-2 execution adapter, composed with `mulib-kvm` and `mulib-vmm`.
 It runs real guest instructions using `/dev/kvm`, one vCPU and caller-owned RAM.
 
@@ -72,3 +74,27 @@ The native regression executes negotiation and block read/write through nine
 port exits, halts, and verifies reset with pending I/O. It prints an explicit skip
 when KVM is unavailable; set `MULIB_REQUIRE_KVM=1` to make that a failure. CTest
 marks the skip separately. Native tests actually passed on the development host.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-vmm-kvm.h`](../include/mulib-vmm-kvm.h) |
+| Implementation switch | `MULIB_IMPL_VMM_KVM` |
+| Repository-local includes | [mulib-kvm](mulib-kvm.md), [mulib-vmm](mulib-vmm.md) |
+| Complete example | [`examples/modules/vmm-kvm.c`](../examples/modules/vmm-kvm.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vmm-kvm.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-dnsclient
 
+[Manuals](README.md) · [Library index](index.md)
+
 A synchronous, single-question DNS transaction layer over an application callback.
 There is no implicit socket, global resolver configuration or background work.
 
@@ -76,3 +78,27 @@ checks a valid empty reply, then demonstrates ID-mismatch rejection. Build with
 `cc -std=c11 -Iinclude examples/modules/dnsclient.c -o dnsclient`.
 `tests/test_dns_stack.c` also tests authoritative replies, malformed flags,
 truncation, callback failures and an oversized callback length.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-dnsclient.h`](../include/mulib-dnsclient.h) |
+| Implementation switch | `MULIB_IMPL_DNSCLIENT` |
+| Repository-local includes | [mulib-dns](mulib-dns.md) |
+| Complete example | [`examples/modules/dnsclient.c`](../examples/modules/dnsclient.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dnsclient.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

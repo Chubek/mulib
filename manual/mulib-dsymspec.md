@@ -1,5 +1,7 @@
 # mulib-dsymspec
 
+[Manuals](README.md) · [Library index](index.md)
+
 Owned, read-only queries over **the actual supplied `dsymspec/` architecture
 files**. The generated snapshot includes all 28 schema-1 YAML documents, their
 targets, registers, features, mnemonics, forms, encoder bodies, syntaxes,
@@ -101,3 +103,27 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
 and schema, checks records/bodies, tests ownership and JSON roundtrips, and
 rejects malformed/invalid metadata. The generator's `--check` verifies the
 checked-in snapshot still matches all real source files.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-dsymspec.h`](../include/mulib-dsymspec.h) |
+| Implementation switch | `MULIB_IMPL_DSYMSPEC` |
+| Repository-local includes | [`include/mulib-dsymspec-data.inc`](../include/mulib-dsymspec-data.inc), [mulib-json](mulib-json.md) |
+| Complete example | [`examples/modules/dsymspec.c`](../examples/modules/dsymspec.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dsymspec.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

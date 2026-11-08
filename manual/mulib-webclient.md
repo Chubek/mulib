@@ -1,5 +1,7 @@
 # mulib-webclient
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-webclient.h` implements a synchronous, bounded HTTP/1.1 transaction. It
 generates requests and validates/parses responses using the shared
 `mulib_http_message_t` model. It does **not** open sockets or provide TLS.
@@ -95,3 +97,27 @@ or peer authentication.
 Focused tests: `tests/test_web_stack.c` covers binary chunks, ownership,
 informationals, HEAD, EOF bodies, malformed/truncated frames, injection,
 transport failure, limits and offline application composition.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-webclient.h`](../include/mulib-webclient.h) |
+| Implementation switch | `MULIB_IMPL_WEBCLIENT` |
+| Repository-local includes | [mulib-http](mulib-http.md) |
+| Complete example | [`examples/modules/webclient.c`](../examples/modules/webclient.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/webclient.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

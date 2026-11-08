@@ -1,5 +1,7 @@
 # mulib-smtpserver
 
+[Manuals](README.md) · [Library index](index.md)
+
 An allocation-free, bounded SMTP envelope/DATA session subset, not a mail listener,
 relay, RFC-complete MTA, or secure service. There are no sockets, DNS, TLS,
 authentication, MIME parsing, disk queues or delivery retries. Applications must
@@ -100,3 +102,27 @@ allocation-failure paths exist. See `tests/test_mail_ftp.c` for composition,
 binary rejection, dot handling, bounds and malformed-input coverage.
 Only init accepts uninitialized session storage; do not copy a live session and
 share its buffers.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-smtpserver.h`](../include/mulib-smtpserver.h) |
+| Implementation switch | `MULIB_IMPL_SMTPSERVER` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/smtpserver.c`](../examples/modules/smtpserver.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/smtpserver.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

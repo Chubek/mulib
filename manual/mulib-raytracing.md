@@ -1,5 +1,7 @@
 # mulib-raytracing
 
+[Manuals](README.md) · [Library index](index.md)
+
 A deterministic CPU ray renderer using the collision library for primitive hits
 and GLX for its destination. Define `MULIB_IMPL_RAYTRACING`,
 `MULIB_IMPL_COLLISION`, `MULIB_IMPL_CGEOM`, `MULIB_IMPL_SIMDMATH`,
@@ -49,3 +51,27 @@ bounded but do not imply real-time performance for maximum-size scenes.
 `examples/modules/raytracing.c` writes a 96×64 `raytracing.ppm` without a display.
 `tests/test_graphics_render.c` checks nearest hits, background, emissive pixels,
 reflection and a point-light occluder.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-raytracing.h`](../include/mulib-raytracing.h) |
+| Implementation switch | `MULIB_IMPL_RAYTRACING` |
+| Repository-local includes | [mulib-collision](mulib-collision.md), [mulib-glx](mulib-glx.md) |
+| Complete example | [`examples/modules/raytracing.c`](../examples/modules/raytracing.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/raytracing.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

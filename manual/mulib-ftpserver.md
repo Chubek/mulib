@@ -1,5 +1,7 @@
 # mulib-ftpserver
 
+[Manuals](README.md) · [Library index](index.md)
+
 An allocation-free FTP **control-session subset**, with application-owned binary
 data transport and storage. This is not a socket listener, complete FTP service,
 or security boundary. TLS, passive/active endpoint negotiation, filesystem access,
@@ -108,3 +110,27 @@ require an initialized object. Do not copy a live session and share its scratch.
 
 See `examples/modules/ftpclient.c` for control-session composition and
 `tests/test_mail_ftp.c` for binary upload/download and malformed-input tests.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-ftpserver.h`](../include/mulib-ftpserver.h) |
+| Implementation switch | `MULIB_IMPL_FTPSERVER` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/ftpserver.c`](../examples/modules/ftpserver.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ftpserver.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

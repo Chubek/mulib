@@ -1,5 +1,7 @@
 # mulib-rewrite
 
+[Manuals](README.md) · [Library index](index.md)
+
 Bounded e-matching and equality saturation on `mulib-egraph`, with real
 backtracking, repeated-variable constraints, RHS construction and congruence
 rebuilds. No predefined algebra or semantic soundness is assumed.
@@ -111,3 +113,27 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/rewrite.
 The example encodes `42+0`, saturates with `x+0=x`, and extracts the one-node
 constant 42. Tests cover invalid/unbound/cyclic patterns, repeated variables,
 iteration/match/work/graph limits and executable MIR extraction.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-rewrite.h`](../include/mulib-rewrite.h) |
+| Implementation switch | `MULIB_IMPL_REWRITE` |
+| Repository-local includes | [mulib-egraph](mulib-egraph.md) |
+| Complete example | [`examples/modules/rewrite.c`](../examples/modules/rewrite.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rewrite.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

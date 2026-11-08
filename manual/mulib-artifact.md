@@ -1,5 +1,7 @@
 # MuLIB artifact
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-artifact.h`  
 **Switch:** `MULIB_IMPL_ARTIFACT` · **Dependencies:** none
 
@@ -82,3 +84,27 @@ cc -std=c11 -Iinclude examples/modules/artifact.c -o /tmp/opencode/artifact
 `tests/test_buildgraph.c` checks binary payload copying, empty values, references,
 destructor ownership, invalid descriptors and allocation failures, together with
 retained graph inputs and outputs.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-artifact.h`](../include/mulib-artifact.h) |
+| Implementation switch | `MULIB_IMPL_ARTIFACT` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/artifact.c`](../examples/modules/artifact.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/artifact.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

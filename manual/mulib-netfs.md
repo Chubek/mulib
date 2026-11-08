@@ -1,5 +1,7 @@
 # netfs — remote filesystem over MuLIB FUSE
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_VFS`, `MULIB_IMPL_FUSE`, `MULIB_IMPL_ENDIAN`,
 `MULIB_IMPL_XTKS`, `MULIB_IMPL_NETFS` before including the header.
 See [`examples/modules/netfs.c`](../examples/modules/netfs.c) for a complete
@@ -61,3 +63,27 @@ callbacks. Partial transfer errors, AGAIN, oversize frame or unexpected EOF
 poison the stream adapter until the application reconnects/reinitializes it;
 they never attempt ambiguous replay. Server stream helpers use two disjoint
 caller-provided scratch buffers. Neither helper owns or closes its stream.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-netfs.h`](../include/mulib-netfs.h) |
+| Implementation switch | `MULIB_IMPL_NETFS` |
+| Repository-local includes | [mulib-endian](mulib-endian.md), [mulib-fuse](mulib-fuse.md), [mulib-xtks](mulib-xtks.md) |
+| Complete example | [`examples/modules/netfs.c`](../examples/modules/netfs.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/netfs.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

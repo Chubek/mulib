@@ -1,5 +1,7 @@
 # mulib-xlib
 
+[Manuals](README.md) · [Library index](index.md)
+
 Optional runtime-loaded Xlib display/default-screen and simple-window helpers.
 No build-time X11 dependency, event loop, drawing API, input injection or WM policy.
 
@@ -39,3 +41,27 @@ a brief window creation/map/destroy sequence. Core tests validate NULL operation
 they do not claim successful communication with a live X server. The isolated
 `tests/test_desktop_adapters.c` additionally verifies loader failure cleanup and
 native call forwarding using a deterministic synthetic loader.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-xlib.h`](../include/mulib-xlib.h) |
+| Implementation switch | `MULIB_IMPL_XLIB` |
+| Repository-local includes | [mulib-dynload](mulib-dynload.md) |
+| Complete example | [`examples/modules/xlib.c`](../examples/modules/xlib.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xlib.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

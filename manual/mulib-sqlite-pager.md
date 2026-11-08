@@ -1,5 +1,7 @@
 # SQLite snapshot pager
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-sqlite-pager.h` owns bounded main-file snapshots and implements native
 POSIX file locking, SQLite DELETE rollback-journal commits and journal recovery.
 It is independent of SQLite, is not an SQL engine, and does not use MuLIB's
@@ -91,3 +93,27 @@ and checks duplicate-handle locking. `tools/check_sqlite.py` additionally tests
 mixed-engine native locks and recovery fixtures with real SQLite. These tests
 are not exhaustive power-loss certification; a capability-aware VFS and broader
 crash/reordering tests remain on the full-compatibility roadmap.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-sqlite-pager.h`](../include/mulib-sqlite-pager.h) |
+| Implementation switch | `MULIB_IMPL_SQLITE_PAGER` |
+| Repository-local includes | [mulib-sqlite-format](mulib-sqlite-format.md) |
+| Complete example | [`examples/modules/sqlite-pager.c`](../examples/modules/sqlite-pager.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sqlite-pager.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

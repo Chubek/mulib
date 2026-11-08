@@ -1,5 +1,7 @@
 # mulib-glx
 
+[Manuals](README.md) · [Library index](index.md)
+
 MuLIB GLX is a software graphics library over memory and `mulib-drm` dumb buffers.
 Define `MULIB_IMPL_GLX`, `MULIB_IMPL_DRM`, `MULIB_IMPL_LINALG`; link `-lm`.
 This API has its own namespace and is independent of X11 GLX/OpenGL contexts.
@@ -63,3 +65,27 @@ NULL-safe void operations simply do nothing.
 
 `examples/modules/glx.c` draws an interpolated triangle. Tests exercise pitch
 padding, alpha, scissor, shared edges, depth, lines and blits in memory.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-glx.h`](../include/mulib-glx.h) |
+| Implementation switch | `MULIB_IMPL_GLX` |
+| Repository-local includes | [mulib-drm](mulib-drm.md), [mulib-linalg](mulib-linalg.md) |
+| Complete example | [`examples/modules/glx.c`](../examples/modules/glx.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/glx.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

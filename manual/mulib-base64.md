@@ -1,55 +1,125 @@
-# MuLIB base64: Reference Manual
+# MuLIB base64
 
-**Header:** `include/mulib-base64.h` · **Switch:** `MULIB_IMPL_BASE64` · **Language:** C11 (C++17-linkable)
+[Manuals](README.md) · [Library index](index.md)
 
-## Purpose and design
+RFC 4648 padded Base64 encoder and strict decoder using caller-owned buffers.
 
-RFC 4648 padded Base64 encoder and strict decoder. Encoder requires a destination buffer including one final NUL. Decoder accepts padded standard alphabet only (not URL-safe alphabet or whitespace); errors do not guarantee that the output buffer was left untouched.
+## Contract and behavior
 
-This component is intended to be selected independently from MuLIB's other headers. It does not force clients to link a binary runtime. It follows explicit lifecycle management and uses public `mulib_` names to avoid common clashes with the C standard library and other toolkits. The implementation is intentionally small enough to audit. Prefer using this module in code where its documented representation, algorithmic behavior, and error contract match the workload rather than treating it as an automatic replacement for a large specialized dependency.
+Encoding uses the standard `+/` alphabet and `=` padding. Provide
+`4 * ceil(length / 3) + 1` output bytes, with checked arithmetic in your caller.
+The encoder returns the encoded length excluding its NUL terminator; zero also
+represents a successful empty encoding. It validates capacity before writing.
 
-## Getting started
+Decoding requires a multiple-of-four input length, correct final padding, and
+zero unused padding bits. Whitespace and URL-safe `-_` are rejected. It returns
+1 on success and 0 on malformed input or insufficient capacity, leaving output
+and optional `written` unchanged on failure. Decoded bytes have no added NUL.
+No allocations occur; use separate input/output storage.
+
+## Example
 
 ```c
 #include <assert.h>
-#include <string.h>
 #include <math.h>
+#include <string.h>
 #define MULIB_IMPL_BASE64
 #include "mulib-base64.h"
-int main(void){
-  char s[16]; assert(mulib_base64_encode("Hi",2,s,sizeof s)==4); assert(!strcmp(s,"SGk="));
-  return 0;
+int main(void) {
+    char s[16];
+    assert(mulib_base64_encode("Hi", 2, s, sizeof s) == 4);
+    assert(!strcmp(s, "SGk="));
+    return 0;
 }
 ```
 
-Compile a one-file example with `cc -std=c11 -Iinclude example.c -o example` (add `-lm` for mathematical functions when required). To share this header across translation units, put its `#define MULIB_IMPL_BASE64` in exactly one `.c` or `.cpp` file. Every other translation unit includes the header with no implementation switch. Defining it in several translation units causes duplicate definitions at link time. Defining a switch after the header has already been included in a translation unit is not supported.
+<!-- manual-interface -->
+## Public header reference
 
-## Public declarations
+Verbatim declaration section from [`include/mulib-base64.h`](../include/mulib-base64.h).
+Include the header in application code; dependency types come from its includes.
+
+<details>
+<summary>Types, constants, and declarations</summary>
 
 ```c
-size_t mulib_base64_encode(const void*data,size_t n,char*out,size_t capacity);
-int mulib_base64_decode(const char*data,size_t n,unsigned char*out,size_t capacity,size_t*written);
+/**
+ * @file mulib-base64.h
+ * @brief RFC 4648 padded Base64 encoder and strict decoder.
+ * @defgroup mulib_base64 MuLIB base64
+ * @{
+ * @details Encoder requires a destination buffer including one final NUL.
+ * Decoder accepts padded standard alphabet only (not URL-safe alphabet or
+ * whitespace); validation and capacity failures leave output and the optional
+ * written count unchanged.
+ * @par Integration
+ * In exactly one translation unit define MULIB_IMPL_BASE64 before including
+ * this file. Other translation units may include it without the implementation
+ * switch.
+ * @par Portability
+ * ISO C11, C++17 compatible C linkage. All allocations use the C standard
+ * library.
+ * @}
+ */
+#ifndef MULIB_BASE64_H
+#define MULIB_BASE64_H
+#include <ctype.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+  /** @brief mulib base64 encode; see manual/mulib-base64.md for contracts and
+   * examples. */
+  size_t mulib_base64_encode (const void *data, size_t n, char *out,
+                              size_t capacity);
+  /** @brief Strict padded decode. Invalid data/capacity leaves output and
+   * written unchanged. NULL source/output are allowed at length zero. Exact
+   * in-place decoding is supported.
+   */
+  int mulib_base64_decode (const char *data, size_t n, unsigned char *out,
+                           size_t capacity, size_t *written);
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* MULIB_BASE64_H */
 ```
 
-The declarations are stable C entry points, with `extern "C"` linkage when compiled as C++. Public data structures are intentionally visible and inspectable rather than hiding allocation behind an ABI. Treat any `data`, `items`, or linked pointers as borrowed views unless the specific function explicitly transfers ownership. No function is implicitly thread-safe for mutable shared objects.
+</details>
+<!-- /manual-interface -->
 
-## Ownership, errors, and lifetime
+<!-- manual-reference -->
+## Source and build reference
 
-Encoder requires a destination buffer including one final NUL. Decoder accepts
-padded standard alphabet only (not URL-safe alphabet or whitespace), including
-canonical zero padding bits. It validates all input and output capacity before
-writing, so failure leaves output and optional `written` unchanged. Exact in-place
-decoding is supported; other overlap is not promised. NULL source/output is valid
-at length zero. Decoder returns 1 on success, 0 on failure; no errno contract.
+[Manual index](index.md) · [Integration guide](integration.md)
 
-## Behavior, constraints, and interoperability
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-base64.h`](../include/mulib-base64.h) |
+| Implementation switch | `MULIB_IMPL_BASE64` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/base64.c`](../examples/modules/base64.c) |
 
-Operations are designed around bounded input, explicit lengths where relevant, and ordinary C ownership. They do not perform locking and do not provide a global allocator override. File, terminal and parser functions are intended as lightweight building blocks; inputs that require complete standard compliance, hostile-input hardening or advanced Unicode processing may need a dedicated mature library. Confirm prerequisites and endianness for binary serialization; never serialize the memory layout of MuLIB structures directly.
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
 
-## Example-driven validation
+Compile the example from the repository root on Linux:
 
-The examples folder demonstrates the overall build pattern, and the test suite exercises representative successful and unsuccessful operations. Compile with warnings and run with AddressSanitizer/UndefinedBehaviorSanitizer for new integrations. Keep tests for empty inputs, repeated updates, integer bounds, and failure behavior when extending a module. The implementation uses standard C runtime functions and deliberately keeps dependencies discoverable rather than embedding hidden platform-specific services.
-
-## Implementation guidance
-
-The source implementation is appended in the header below the public interface guard. It is included only if `MULIB_IMPL_BASE64` is defined before inclusion. This arrangement allows separate declaration-only compilation and a single translation unit that emits the definitions. API additions should include an unambiguous ownership rule, Doxygen documentation, a regression test, and an updated entry in the root `MANIFEST.yaml`. See the suite's `docs/`-style manuals in `manual/` for sibling modules and `README.md` for integration into existing projects.
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/base64.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

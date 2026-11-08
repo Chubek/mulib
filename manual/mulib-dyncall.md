@@ -1,5 +1,7 @@
 # mulib-dyncall
 
+[Manuals](README.md) · [Library index](index.md)
+
 A small **exactly typed native C invocation** API. It deliberately avoids a
 generic untyped function pointer, signature string, argument byte stack,
 function-pointer casts, or arbitrary ABI dispatcher. No libffi dependency.
@@ -64,3 +66,27 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
 
 `tests/test_codegen.c` exercises all six signatures and NULL rejection without
 any incompatible function-pointer casts.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-dyncall.h`](../include/mulib-dyncall.h) |
+| Implementation switch | `MULIB_IMPL_DYNCALL` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/dyncall.c`](../examples/modules/dyncall.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dyncall.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

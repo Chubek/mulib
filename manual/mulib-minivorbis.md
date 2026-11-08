@@ -1,5 +1,7 @@
 # mulib-minivorbis
 
+[Manuals](README.md) · [Library index](index.md)
+
 An original, compact **profile-limited** Ogg/Vorbis encoder and decoder. It does
 not embed libvorbis, stb_vorbis, libogg or any third-party codec code. Define
 `MULIB_IMPL_MINIVORBIS`, `MULIB_IMPL_AUDIO`, `MULIB_IMPL_XSIMD`; link `-lm` on
@@ -44,3 +46,27 @@ Format reference: [Vorbis I specification](https://xiph.org/vorbis/doc/Vorbis_I_
 including codebook errata and Ogg encapsulation. No implementation source was
 copied. The optional FFmpeg oracle compares independently decoded samples and
 final granule counts, not just this implementation's own roundtrip.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-minivorbis.h`](../include/mulib-minivorbis.h) |
+| Implementation switch | `MULIB_IMPL_MINIVORBIS` |
+| Repository-local includes | [mulib-audio](mulib-audio.md) |
+| Complete example | [`examples/modules/minivorbis.c`](../examples/modules/minivorbis.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/minivorbis.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

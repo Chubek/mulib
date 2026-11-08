@@ -1,5 +1,7 @@
 # ArchML — architecture data for compiler backends
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-archml.h` provides a versioned S-expression DSL, owned immutable documents,
 validated cross-references, register maps, structured instruction P-code, and
 transactional instruction encoding/decoding. The data model covers all sixteen
@@ -313,3 +315,27 @@ are a deployment convention, not a parser restriction. Generator tables are revi
 source data, not claims that complete ISA references have been mechanically
 imported. Add new concrete forms together with assembler fixtures and semantic
 contracts. Extend runtime coverage records whenever a feature becomes selectable.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-archml.h`](../include/mulib-archml.h) |
+| Implementation switch | `MULIB_IMPL_ARCHML` |
+| Repository-local includes | [mulib-parsec](mulib-parsec.md) |
+| Complete example | [`examples/modules/archml.c`](../examples/modules/archml.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/archml.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

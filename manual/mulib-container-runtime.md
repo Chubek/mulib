@@ -1,5 +1,7 @@
 # mulib-container-runtime
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Backend-acknowledged lifecycle execution and bounded cooperative polling.
@@ -52,3 +54,27 @@ usage. last_error retains the most recent negative callback result. Positive
 callback results outside documented control flow become EIO. Failed callbacks
 leave lifecycle metadata unchanged, but application callbacks may have their own
 side effects. See [container-stack](container-stack.md) for ownership and tests.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-container-runtime.h`](../include/mulib-container-runtime.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINER_RUNTIME` |
+| Repository-local includes | [mulib-container](mulib-container.md), [mulib-rootfs](mulib-rootfs.md) |
+| Complete example | [`examples/modules/container-runtime.c`](../examples/modules/container-runtime.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-runtime.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

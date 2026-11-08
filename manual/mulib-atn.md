@@ -1,5 +1,7 @@
 # mulib-atn — epsilon/range transition networks
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-atn.h` implements a finite nondeterministic automaton over
 `uint32_t` tokens. Edges either consume no input (epsilon) or one token in an
 inclusive `[lower, upper]` range. Multiple accepting states, nondeterministic
@@ -124,3 +126,27 @@ positive, negative, and empty-input checks. From the repository root:
 cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/atn.c -o ./atn
 ./atn
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-atn.h`](../include/mulib-atn.h) |
+| Implementation switch | `MULIB_IMPL_ATN` |
+| Repository-local includes | [mulib-bitset](mulib-bitset.md), [mulib-vec](mulib-vec.md) |
+| Complete example | [`examples/modules/atn.c`](../examples/modules/atn.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/atn.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

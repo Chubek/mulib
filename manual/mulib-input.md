@@ -1,5 +1,7 @@
 # mulib-input
 
+[Manuals](README.md) · [Library index](index.md)
+
 Shared copyable input events plus nonblocking Linux evdev access, not libinput's
 device discovery, acceleration, gestures or seat handling.
 
@@ -35,3 +37,27 @@ external synchronization. Keep devices open only while actively consuming events
 `cc -std=c11 -Iinclude examples/modules/input.c -o input` runs without hardware.
 `tests/test_devices.c` exercises native-record translation using a pipe and
 nonblocking/error paths without reading the user's keyboard.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-input.h`](../include/mulib-input.h) |
+| Implementation switch | `MULIB_IMPL_INPUT` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/input.c`](../examples/modules/input.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/input.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

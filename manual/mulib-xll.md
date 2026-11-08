@@ -1,5 +1,7 @@
 # X Layout Language (XLL)
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-xll.h` — C11 implementation, C++ declarations.
 
 XLL version 1 describes named Unicode text layouts. The same owned program can
@@ -257,3 +259,27 @@ implementation and exercises empty/long-text programs. CMake/CTest and
 `tools/check.py` both run this generated-code check. Set
 `MULIB_TEXT_REQUIRE_BACKENDS=1` to require real ICU/HarfBuzz/FreeType/Fontconfig
 coverage instead of allowing a backend-unavailable skip.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-xll.h`](../include/mulib-xll.h) |
+| Implementation switch | `MULIB_IMPL_XLL` |
+| Repository-local includes | [mulib-json](mulib-json.md), [mulib-layout](mulib-layout.md), [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/xll.c`](../examples/modules/xll.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xll.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

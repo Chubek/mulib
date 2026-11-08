@@ -1,5 +1,7 @@
 # mulib-lir
 
+[Manuals](README.md) · [Library index](index.md)
+
 Owned, terse 64-bit register LIR with extensible per-record annotations. The
 semantic core reuses `mulib_mir_native_instruction_t`: constants, parameters,
 copies, integer operations, memory, direct calls and explicit block terminators.
@@ -83,3 +85,27 @@ Writers return nonzero on success; a failed writer may have partial output.
 cc -std=c11 -Iinclude examples/modules/lir.c -lm -o lir
 ./lir
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-lir.h`](../include/mulib-lir.h) |
+| Implementation switch | `MULIB_IMPL_LIR` |
+| Repository-local includes | [mulib-lowopt](mulib-lowopt.md), [mulib-machine](mulib-machine.md) |
+| Complete example | [`examples/modules/lir.c`](../examples/modules/lir.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lir.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

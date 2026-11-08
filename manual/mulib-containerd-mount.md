@@ -1,5 +1,7 @@
 # mulib-containerd-mount
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Stable daemon filesystem exports with generation-tagged leases and bounded FUSE
@@ -42,3 +44,27 @@ cookies/open handles. File bytes live in borrowed storage; the table quota bound
 exports and each VFS quota bounds bindings. Externally serialize operations and
 do not free a root while exported. Daemon deletion preflights leases before
 destroying the corresponding container/rootfs.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-containerd-mount.h`](../include/mulib-containerd-mount.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINERD_MOUNT` |
+| Repository-local includes | [mulib-container-vfs](mulib-container-vfs.md), [mulib-fuse](mulib-fuse.md) |
+| Complete example | [`examples/modules/containerd-mount.c`](../examples/modules/containerd-mount.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containerd-mount.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

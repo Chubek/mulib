@@ -1,5 +1,7 @@
 # mulib-pathdb
 
+[Manuals](README.md) · [Library index](index.md)
+
 An owned, sorted path/metadata index with component-prefix and substring queries,
 transactional VFS snapshots, and a small portable binary persistence format.
 This is not an OS crawler, watcher, live database, content index or SQL engine.
@@ -130,3 +132,27 @@ report `EINVAL`. No native backend is claimed: scan uses any provided VFS backen
 limit/update/removal cases, stream roundtrips and malformed/truncated/trailing
 input, recursive VFS snapshots, unchanged failed snapshots, and injected
 allocation failure with always-moving realloc.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-pathdb.h`](../include/mulib-pathdb.h) |
+| Implementation switch | `MULIB_IMPL_PATHDB` |
+| Repository-local includes | [mulib-vfs](mulib-vfs.md) |
+| Complete example | [`examples/modules/pathdb.c`](../examples/modules/pathdb.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pathdb.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

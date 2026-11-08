@@ -1,5 +1,7 @@
 # mulib-dfa
 
+[Manuals](README.md) · [Library index](index.md)
+
 Deterministic finite automata over inclusive `uint32_t` input ranges, plus actual
 epsilon-NFA subset construction. Define `MULIB_IMPL_DFA`, `MULIB_IMPL_FST`,
 `MULIB_IMPL_FST_SERIALIZE`, `MULIB_IMPL_VEC`, `MULIB_IMPL_BUFFER`,
@@ -52,3 +54,27 @@ CRC is not authentication. Use `mulib-cache` for explicit indexed disk caching.
 See [`examples/modules/dfa.c`](../examples/modules/dfa.c) and
 `tests/test_hyphen.c` for epsilon cycles, overlapping ranges, UINT32_MAX labels,
 serialization, corruption and state-limit tests.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-dfa.h`](../include/mulib-dfa.h) |
+| Implementation switch | `MULIB_IMPL_DFA` |
+| Repository-local includes | [mulib-crc32](mulib-crc32.md), [mulib-endian](mulib-endian.md), [mulib-fst](mulib-fst.md) |
+| Complete example | [`examples/modules/dfa.c`](../examples/modules/dfa.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dfa.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

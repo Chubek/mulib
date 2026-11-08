@@ -1,5 +1,7 @@
 # Shared object/binary dump tools
 
+[Manuals](README.md) · [Library index](index.md)
+
 Include `mulib-objdump.h`; define `MULIB_IMPL_OBJDUMP`, `MULIB_IMPL_TERMSTYLE`,
 `MULIB_IMPL_TERMINFO`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_CSS`, `MULIB_IMPL_XML`,
 `MULIB_IMPL_UTF8`, `MULIB_IMPL_VTERM`, `MULIB_IMPL_GRID`.
@@ -31,3 +33,27 @@ contains no terminal controls from names. Applications choose the correct adapte
 [ELF](mulib-elf-objdump.md), [COFF](mulib-coff-objdump.md),
 [PE](mulib-pe-objdump.md), [Mach-O](mulib-macho-objdump.md).
 No file I/O, machine-code decoding, demangling or relocation application occurs.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-objdump.h`](../include/mulib-objdump.h) |
+| Implementation switch | `MULIB_IMPL_OBJDUMP` |
+| Repository-local includes | [mulib-termstyle](mulib-termstyle.md) |
+| Complete example | [`examples/modules/objdump.c`](../examples/modules/objdump.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/objdump.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-vector
 
+[Manuals](README.md) · [Library index](index.md)
+
 Arbitrary-dimensional numerical vectors of doubles, using `mulib-vec` for
 storage. This module provides algebra; `mulib-vec` remains the generic dynamic
 container. Define `MULIB_IMPL_VECTOR` and `MULIB_IMPL_VEC` once. Link `-lm` on
@@ -49,3 +51,27 @@ int main(void) {
 ```
 
 Runnable 3D example: `examples/modules/vector.c`.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-vector.h`](../include/mulib-vector.h) |
+| Implementation switch | `MULIB_IMPL_VECTOR` |
+| Repository-local includes | [mulib-vec](mulib-vec.md) |
+| Complete example | [`examples/modules/vector.c`](../examples/modules/vector.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vector.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

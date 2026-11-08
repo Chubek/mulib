@@ -1,5 +1,7 @@
 # mulib-efi — `.efi` files
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_EFI`, `MULIB_IMPL_PE`, `MULIB_IMPL_COFF` and
 `MULIB_IMPL_ENDIAN` in one C11 translation unit.
 [Example](../examples/modules/efi.c).
@@ -50,3 +52,27 @@ implementation was copied. `tests/test_boot_standards.c` covers truncated images
 entry and certificate corruption. `tools/check_boot_formats.py` independently
 links an EFI application with Clang/LLD and parses it. Firmware execution and
 Secure Boot validation are not exercised by these host tests.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-efi.h`](../include/mulib-efi.h) |
+| Implementation switch | `MULIB_IMPL_EFI` |
+| Repository-local includes | [mulib-pe](mulib-pe.md) |
+| Complete example | [`examples/modules/efi.c`](../examples/modules/efi.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/efi.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

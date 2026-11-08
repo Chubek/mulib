@@ -1,5 +1,7 @@
 # MuLIB XPath-style queries
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-xpath.h` · **Language:** ISO C11, C++17 declarations
 
 ## Scope and dependencies
@@ -99,3 +101,27 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/xpath.c 
 
 The deeper tests in `tests/test_markup.c` exercise positions, predicate ordering,
 CDATA matching, parent/self paths, document order, malformed queries and OOM.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-xpath.h`](../include/mulib-xpath.h) |
+| Implementation switch | `MULIB_IMPL_XPATH` |
+| Repository-local includes | [mulib-xml](mulib-xml.md) |
+| Complete example | [`examples/modules/xpath.c`](../examples/modules/xpath.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xpath.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

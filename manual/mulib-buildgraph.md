@@ -1,5 +1,7 @@
 # MuLIB buildgraph
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-buildgraph.h`  
 **Switches:** `MULIB_IMPL_ARTIFACT`, `MULIB_IMPL_BUILDGRAPH`
 
@@ -138,3 +140,27 @@ cc -std=c11 -Iinclude examples/modules/buildgraph.c -o /tmp/opencode/buildgraph
 `tests/test_buildgraph.c` covers both walkers, target closure and sibling outputs,
 duplicate/invalid edges, cycles, missing producers, failed/missing outputs,
 descendant blocking, report ownership, allocation failures and empty graphs.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-buildgraph.h`](../include/mulib-buildgraph.h) |
+| Implementation switch | `MULIB_IMPL_BUILDGRAPH` |
+| Repository-local includes | [mulib-artifact](mulib-artifact.md) |
+| Complete example | [`examples/modules/buildgraph.c`](../examples/modules/buildgraph.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/buildgraph.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

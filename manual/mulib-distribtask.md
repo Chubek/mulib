@@ -1,5 +1,7 @@
 # mulib-distribtask
 
+[Manuals](README.md) · [Library index](index.md)
+
 Compile an owned immutable task DAG from **both** a JSON/YAML configuration
 document and trusted Mune source. This is not a C header parser: task files
 contain Mune/Lua text, conventionally `.distribtask` or `.lua`, regardless of
@@ -66,3 +68,27 @@ Define `MULIB_IMPL_DISTRIBTASK`, `MULIB_IMPL_JSON`, `MULIB_IMPL_YAML`,
 `MULIB_IMPL_STRBUF`, `MULIB_IMPL_GLOB` once. Linux links `-lm -pthread -ldl`.
 `examples/modules/distribtask.c` is a standalone checked example;
 `examples/distrib-common.h` includes additional coordinator dependencies.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-distribtask.h`](../include/mulib-distribtask.h) |
+| Implementation switch | `MULIB_IMPL_DISTRIBTASK` |
+| Repository-local includes | [mulib-mune](mulib-mune.md), [mulib-utf8](mulib-utf8.md), [mulib-yaml](mulib-yaml.md) |
+| Complete example | [`examples/modules/distribtask.c`](../examples/modules/distribtask.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/distribtask.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

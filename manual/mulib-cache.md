@@ -1,5 +1,7 @@
 # mulib-cache
 
+[Manuals](README.md) · [Library index](index.md)
+
 Explicit binary key/value disk caches with selectable indexes. Define
 `MULIB_IMPL_CACHE`, `MULIB_IMPL_KVDB`, `MULIB_IMPL_BUFFER`, `MULIB_IMPL_VARINT`,
 `MULIB_IMPL_CRC32`, `MULIB_IMPL_ENDIAN`, `MULIB_IMPL_HATTRIE`, `MULIB_IMPL_HASH`,
@@ -44,3 +46,27 @@ Serialized DFA/FST/hyphen/spelling models can be stored as ordinary cache values
 See [`examples/modules/cache.c`](../examples/modules/cache.c). Disk roundtrips,
 binary/empty keys, cross-index decoding, corruption, aliasing and injected
 allocation failures are checked in the focused language tests.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-cache.h`](../include/mulib-cache.h) |
+| Implementation switch | `MULIB_IMPL_CACHE` |
+| Repository-local includes | [mulib-hattrie](mulib-hattrie.md), [mulib-kvdb](mulib-kvdb.md), [mulib-trie](mulib-trie.md) |
+| Complete example | [`examples/modules/cache.c`](../examples/modules/cache.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cache.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

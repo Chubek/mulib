@@ -1,5 +1,7 @@
 # MuLIB eventfd
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-eventfd.h` · **Switch:** `MULIB_IMPL_EVENTFD`  
 **Dependencies:** none. Linux eventfd; C11 / C-linkage declarations.
 
@@ -60,3 +62,27 @@ invalid values; unsupported/permission restrictions print a skip. The focused
 `tests/test_os_events.c` additionally checks saturation, semaphore reads, fd flags,
 unchanged failure outputs, epoll registration, reactor integration, and close
 ownership. No privileges or third-party libraries are normally needed.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-eventfd.h`](../include/mulib-eventfd.h) |
+| Implementation switch | `MULIB_IMPL_EVENTFD` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/eventfd.c`](../examples/modules/eventfd.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eventfd.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

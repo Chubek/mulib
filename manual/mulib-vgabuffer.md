@@ -1,5 +1,7 @@
 # mulib-vgabuffer
 
+[Manuals](README.md) · [Library index](index.md)
+
 Allocation-free rendering into PC VGA **text-mode** memory, from boot messages
 to multiwindow TUIs. Define `MULIB_IMPL_VGABUFFER` in exactly one translation
 unit. No other implementation switches, OS services, or MuLIB dependencies are
@@ -162,3 +164,27 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude tests/test_vgabuffer.c -o
 cc -std=c11 -Iinclude examples/modules/vgabuffer.c -o /tmp/opencode/vgabuffer
 /tmp/opencode/vgabuffer
 ```
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-vgabuffer.h`](../include/mulib-vgabuffer.h) |
+| Implementation switch | `MULIB_IMPL_VGABUFFER` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/vgabuffer.c`](../examples/modules/vgabuffer.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vgabuffer.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

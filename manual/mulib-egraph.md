@@ -1,5 +1,7 @@
 # mulib-egraph
 
+[Manuals](README.md) · [Library index](index.md)
+
 Bounded binary equality graphs with real hash-consing, disjoint-set unions,
 congruence rebuilding, and minimum-additive-cost expression extraction. This
 is an untyped term container, not a solver for arithmetic equalities or types.
@@ -116,3 +118,27 @@ The example unions two terminals, proves equality of their parent terms through
 rebuild, and extracts a two-node minimum-cost tree. Compiler IR tests cover
 multilevel congruence, dirty/rebuild limits, cyclic classes with finite leaves,
 zero costs, overflow, duplicate hash-consing and output limits.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-egraph.h`](../include/mulib-egraph.h) |
+| Implementation switch | `MULIB_IMPL_EGRAPH` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/egraph.c`](../examples/modules/egraph.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/egraph.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

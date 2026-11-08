@@ -1,5 +1,7 @@
 # mulib-container
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME
 
 Owned process specifications and generation-tracked lifecycle metadata.
@@ -56,3 +58,27 @@ All results use `MULIB_CT_*`. String mutations preserve owned data on allocation
 failure. Clone/init outputs are unchanged on failure. Public owners must not be
 shallow-copied or edited while borrowed. See [runtime](mulib-container-runtime.md)
 for backend-acknowledged transitions and [stack](container-stack.md) for tests.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-container.h`](../include/mulib-container.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINER` |
+| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md) |
+| Complete example | [`examples/modules/container.c`](../examples/modules/container.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

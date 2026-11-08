@@ -1,5 +1,7 @@
 # perlpod: strict focused POD rendering
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-perlpod.h` renders a documented POD subset into a safe HTML fragment or
 plain text. It does not parse Perl or claim full `perlpod` compatibility. Unsupported
 directives and formatting codes return errors rather than disappearing.
@@ -101,3 +103,27 @@ bounded by the format-depth limit.
 `tests/test_language_tools.c` covers both formats, nested lists/formatting,
 verbatim escaping, malformed/unknown directives, UTF-8 and NUL errors, exact
 output limits, nesting limits, empty input, allocation failure, and mutations.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-perlpod.h`](../include/mulib-perlpod.h) |
+| Implementation switch | `MULIB_IMPL_PERLPOD` |
+| Repository-local includes | [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/perlpod.c`](../examples/modules/perlpod.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/perlpod.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

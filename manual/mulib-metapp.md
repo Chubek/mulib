@@ -1,5 +1,7 @@
 # MuLIB MetaPP
 
+[Manuals](README.md) · [Library index](index.md)
+
 **Header:** `include/mulib-metapp.h`  
 **Implementation:** C11; declarations usable from C++17 and later.
 
@@ -376,3 +378,27 @@ entry-independent connected dependency graphs, native project discovery,
 translation-unit macro isolation, and token-stream comparisons against GCC/Clang. CMake discovers the unit suite
 and adds the compiler-reference/native-plugin check when Python and GCC/Clang
 are available.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-metapp.h`](../include/mulib-metapp.h) |
+| Implementation switch | `MULIB_IMPL_METAPP` |
+| Repository-local includes | [mulib-arena](mulib-arena.md), [mulib-dsu](mulib-dsu.md), [mulib-elf](mulib-elf.md), [mulib-endian](mulib-endian.md), [mulib-linker](mulib-linker.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
+| Complete example | [`examples/modules/metapp.c`](../examples/modules/metapp.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/metapp.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -5,10 +5,9 @@
  * @{
  * @details Produces `.TH`, `.SH NAME`, `.SH SYNOPSIS`, and `.SH DESCRIPTION`
  * roff sections. Its output is deliberately minimal; it is not a complete
- * man(7) formatter and does not accept raw trusted roff markup. Treat
- * untrusted input cautiously: newlines and backslashes are replaced, but a
- * production manpage generator should also escape leading roff control
- * characters.
+ * man(7) formatter and does not accept raw roff markup. Newlines and backslashes
+ * are replaced with spaces; leading roff control characters in body fields
+ * are guarded.
  * @par Integration
  * In exactly one translation unit define MULIB_IMPL_MANPAGE before including
  * this file. Other translation units may include it without the implementation

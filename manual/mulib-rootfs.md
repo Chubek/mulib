@@ -1,5 +1,7 @@
 # rootfs
 
+[Manuals](README.md) · [Library index](index.md)
+
 Bounded in-memory root filesystem sharing VFS storage. `init` sets node/per-file
 limits; root is implicit. `import` constructs a fresh root from a complete USTAR
 archive, creating missing parents, rejecting duplicate explicit paths and `.wh.*`
@@ -59,3 +61,27 @@ The rootfs storage layout is unchanged; imports normalize archive parser errors
 to the VFS error family rather than exposing overlapping archive/VFS codes.
 `tests/test_container_stack.c` covers cloning, recursive removal, transactional
 failure and checkpoint restore. No method extracts paths onto the host.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-rootfs.h`](../include/mulib-rootfs.h) |
+| Implementation switch | `MULIB_IMPL_ROOTFS` |
+| Repository-local includes | [mulib-archive](mulib-archive.md), [mulib-vfs](mulib-vfs.md) |
+| Complete example | [`examples/modules/rootfs.c`](../examples/modules/rootfs.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rootfs.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

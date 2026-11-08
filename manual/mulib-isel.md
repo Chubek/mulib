@@ -1,5 +1,7 @@
 # mulib-isel
 
+[Manuals](README.md) · [Library index](index.md)
+
 Memoized minimum-cost tree covering and native MIR → annotated LIR selection.
 
 ## Integration
@@ -103,3 +105,27 @@ cycles, resource stalls, real ArchML profiles, randomized native semantics and
 loop/control flow. `tests/test_isel_alloc.c` fails every pipeline/refresh
 allocation and checks rollback and leaks. `tools/check_isel_native.py` assembles
 and executes AMD64 output and cross-assembles RV64 with Clang when available.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-isel.h`](../include/mulib-isel.h) |
+| Implementation switch | `MULIB_IMPL_ISEL` |
+| Repository-local includes | [mulib-archml](mulib-archml.md), [mulib-isched](mulib-isched.md), [mulib-lir](mulib-lir.md), [mulib-lowopt](mulib-lowopt.md) |
+| Complete example | [`examples/modules/isel.c`](../examples/modules/isel.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/isel.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

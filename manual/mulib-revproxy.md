@@ -1,5 +1,7 @@
 # mulib-revproxy
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-revproxy.h` forwards one parsed HTTP request to a configured fixed origin,
 using [mulib-webclient](mulib-webclient.md), and returns an independently owned
 response. It is a reverse-proxy transaction core, not a listening proxy daemon.
@@ -93,3 +95,27 @@ outside this core. Unauthenticated HTTP is unsuitable for sensitive traffic.
 and nominated fields, invalid Connection syntax, origin restrictions, preserved
 end-to-end fields, independent ownership and client/router/file-server/HEAD
 composition.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-revproxy.h`](../include/mulib-revproxy.h) |
+| Implementation switch | `MULIB_IMPL_REVPROXY` |
+| Repository-local includes | [mulib-webclient](mulib-webclient.md) |
+| Complete example | [`examples/modules/revproxy.c`](../examples/modules/revproxy.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/revproxy.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

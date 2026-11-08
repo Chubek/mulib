@@ -1,5 +1,7 @@
 # https — verified TLS plus HTTP/1.1
 
+[Manuals](README.md) · [Library index](index.md)
+
 Implementation switches: `MULIB_IMPL_STRBUF`, `MULIB_IMPL_BUFFER`,
 `MULIB_IMPL_PARSEC`, `MULIB_IMPL_INET4`, `MULIB_IMPL_INET6`, `MULIB_IMPL_URI`,
 `MULIB_IMPL_HTTP`, `MULIB_IMPL_WEBCLIENT`, `MULIB_IMPL_TSL`, `MULIB_IMPL_HTTPS`.
@@ -41,3 +43,27 @@ after session initialization, handshake AGAIN, backend overreported write counts
 authentication failures, informational responses, raw response limits and exact
 request construction. `tests/test_http_alloc.c` fails every transaction allocation
 and checks unchanged response ownership and exactly-once session cleanup.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-https.h`](../include/mulib-https.h) |
+| Implementation switch | `MULIB_IMPL_HTTPS` |
+| Repository-local includes | [mulib-tsl](mulib-tsl.md), [mulib-webclient](mulib-webclient.md) |
+| Complete example | [`examples/modules/https.c`](../examples/modules/https.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/https.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

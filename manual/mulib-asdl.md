@@ -1,5 +1,7 @@
 # mulib-asdl
 
+[Manuals](README.md) · [Library index](index.md)
+
 An owned schema API and compiler for the **Zephyr Abstract Syntax Description
 Language** described by Wang, Appel, Korn and Serra, *The Zephyr Abstract Syntax
 Description Language* (DSL'97), especially Figures 1–2 and Sections 2.1–2.6.
@@ -229,3 +231,27 @@ ownership, limits, transactional append, and parsing/evaluating YANTLR output.
 compiles and executes generated code under strict C99. CMake registers all
 three checks; `tools/check.py` also runs the generated-code check. GCC, Clang,
 and ASan/UBSan can be used without any external ASDL toolchain.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-asdl.h`](../include/mulib-asdl.h) |
+| Implementation switch | `MULIB_IMPL_ASDL` |
+| Repository-local includes | [mulib-arena](mulib-arena.md), [mulib-parsec](mulib-parsec.md), [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/asdl.c`](../examples/modules/asdl.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/asdl.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

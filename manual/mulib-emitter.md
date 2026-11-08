@@ -1,5 +1,7 @@
 # mulib-emitter
 
+[Manuals](README.md) · [Library index](index.md)
+
 An allocation-free, bounded byte image builder. Define `MULIB_IMPL_EMITTER` in
 one C11 translation unit; no dependencies or platform feature macros.
 Declarations support C++17. Eight-bit bytes and the standard fixed-width
@@ -53,3 +55,27 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
 The example writes a big-endian header, reserves a patch field, and rejects
 integer truncation. `tests/test_codegen.c` also tests both byte orders,
 overlapping buffers, empty images, full capacity, and overflowing ranges.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-emitter.h`](../include/mulib-emitter.h) |
+| Implementation switch | `MULIB_IMPL_EMITTER` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/emitter.c`](../examples/modules/emitter.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/emitter.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

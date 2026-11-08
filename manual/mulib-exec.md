@@ -1,5 +1,7 @@
 # exec — command execution and Mune workflows
 
+[Manuals](README.md) · [Library index](index.md)
+
 `mulib-exec.h` provides POSIX fork/exec and `posix_spawn` execution, asynchronous
 child ownership, synchronous communication, concurrent pipelines, file
 redirection, binary capture, deadlines and an embedded Lua/Mune execution DSL.
@@ -250,3 +252,27 @@ partial-launch cleanup, timeout reaping, asynchronous signal/wait and TREE/VM DS
 execution. Git workflows are covered separately in `tests/test_git_exec.c`.
 `tests/test_vcs_netfs_alloc.c` injects failure at every native pipeline allocation
 for both backends and checks that allocations and direct children are released.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-exec.h`](../include/mulib-exec.h) |
+| Implementation switch | `MULIB_IMPL_EXEC` |
+| Repository-local includes | [mulib-mune](mulib-mune.md), [mulib-perf](mulib-perf.md), [mulib-process](mulib-process.md) |
+| Complete example | [`examples/modules/exec.c`](../examples/modules/exec.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/exec.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

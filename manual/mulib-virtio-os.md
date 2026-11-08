@@ -1,5 +1,7 @@
 # mulib-virtio-os — VMM device backend
 
+[Manuals](README.md) · [Library index](index.md)
+
 This header implements the backend of the [MVMD contract](../MULIB_VMMPROTO.md).
 It contains lifecycle, feature negotiation, configuration, DMA validation and
 26 device-specific bounded profiles. Real host resources are supplied through
@@ -284,3 +286,27 @@ including failure, resource bounds, lifecycle, cipher session invalidation and
 DMA errors. `tools/check_virtio.py` independently builds with GCC/Clang and can
 enable ASan/UBSan. Real host-service integration needs additional tests in the
 future VMM; this module does not claim full device/standards conformance.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-virtio-os.h`](../include/mulib-virtio-os.h) |
+| Implementation switch | `MULIB_IMPL_VIRTIO_OS` |
+| Repository-local includes | [mulib-virtio](mulib-virtio.md) |
+| Complete example | [`examples/modules/virtio-os.c`](../examples/modules/virtio-os.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/virtio-os.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

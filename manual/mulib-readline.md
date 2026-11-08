@@ -1,5 +1,7 @@
 # MuLIB Readline
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-readline.h` provides a bounded UTF-8 editor, ordered lexical
 highlighting, prefix completion, history, declarative directives, and POSIX
 terminal/pipe input. It can be embedded without terminal I/O by feeding
@@ -178,3 +180,27 @@ Rules/completions/directives remain intact if a transactional load fails.
 completion boundaries, history drafts, directives, rollback and all bundled
 profiles. `tools/check_prowse_io.py` additionally checks actual PTY editing,
 completion, history, paste, interrupts and terminal restoration through the REPL.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-readline.h`](../include/mulib-readline.h) |
+| Implementation switch | `MULIB_IMPL_READLINE` |
+| Repository-local includes | [mulib-json](mulib-json.md), [mulib-strbuf](mulib-strbuf.md), [mulib-terminfo](mulib-terminfo.md), [mulib-termkey](mulib-termkey.md), [mulib-termutils](mulib-termutils.md) |
+| Complete example | [`examples/modules/readline.c`](../examples/modules/readline.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/readline.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

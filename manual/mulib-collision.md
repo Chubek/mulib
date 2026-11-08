@@ -1,5 +1,7 @@
 # mulib-collision
 
+[Manuals](README.md) · [Library index](index.md)
+
 Discrete primitive collisions and ray queries using cgeom's shared geometry.
 Define `MULIB_IMPL_COLLISION`, `MULIB_IMPL_CGEOM`, `MULIB_IMPL_SIMDMATH`,
 `MULIB_IMPL_LINALG`; link `-lm`.
@@ -44,3 +46,27 @@ Floating-point algorithms do not supply exact predicates, continuous rigid-body
 simulation, contact manifolds or response integration. `examples/modules/collision.c`
 demonstrates a hit; `tests/test_graphics_math.c` covers tangency, containment,
 inside rays, interval clipping, non-unit directions and triangle weights.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-collision.h`](../include/mulib-collision.h) |
+| Implementation switch | `MULIB_IMPL_COLLISION` |
+| Repository-local includes | [mulib-cgeom](mulib-cgeom.md) |
+| Complete example | [`examples/modules/collision.c`](../examples/modules/collision.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/collision.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

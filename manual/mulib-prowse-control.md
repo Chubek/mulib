@@ -1,5 +1,7 @@
 # Prowse control and the lprowse automation DSL
 
+[Manuals](README.md) · [Library index](index.md)
+
 `include/mulib-prowse-control.h` combines [browser protocols](mulib-prowse-protocol.md),
 [Mune Lua](mulib-mune.md), and [MuLIB Readline](mulib-readline.md). It provides C
 automation functions, a persistent Lua environment with `require('lprowse')`, and
@@ -196,3 +198,27 @@ examples, offline/loopback protocol checks, all 45 profiles and pipe/PTY editing
 Use `CC=clang CXX=clang++ ... --sanitizers` for ASan/UBSan, and `--live-firefox`
 for the optional isolated headless-browser smoke run. Full-repository checks may
 also diagnose unrelated legacy-header inventory problems.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-prowse-control.h`](../include/mulib-prowse-control.h) |
+| Implementation switch | `MULIB_IMPL_PROWSE_CONTROL` |
+| Repository-local includes | [include-mulib-lprowse](include-mulib-lprowse.md), [mulib-mune](mulib-mune.md), [mulib-prowse-protocol](mulib-prowse-protocol.md), [mulib-readline](mulib-readline.md), [mulib-strbuf](mulib-strbuf.md) |
+| Complete example | [`examples/modules/prowse-control.c`](../examples/modules/prowse-control.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/prowse-control.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

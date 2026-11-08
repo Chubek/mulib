@@ -1,5 +1,7 @@
 # mulib-containerboost
 
+[Manuals](README.md) · [Library index](index.md)
+
 ## NAME AND INTEGRATION
 
 Explicit execution-backend registration, capability matching and deterministic
@@ -45,3 +47,27 @@ mutate/reenter the registry. Registration does not start containers.
 
 See the [QVM](mulib-container-qvmboost.md), [JIT](mulib-container-jitboost.md),
 [KVM](mulib-container-kvmboost.md), and [OIX](mulib-container-oixboost.md) adapters.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-containerboost.h`](../include/mulib-containerboost.h) |
+| Implementation switch | `MULIB_IMPL_CONTAINERBOOST` |
+| Repository-local includes | [mulib-container-runtime](mulib-container-runtime.md), [mulib-imgformat](mulib-imgformat.md) |
+| Complete example | [`examples/modules/containerboost.c`](../examples/modules/containerboost.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containerboost.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

@@ -1,5 +1,7 @@
 # mulib-bios
 
+[Manuals](README.md) · [Library index](index.md)
+
 Define `MULIB_IMPL_BIOS` once. No transitive switches or allocations.
 [Example](../examples/modules/bios.c).
 
@@ -46,3 +48,27 @@ programs cannot assume legacy BIOS services exist. Tests in
 `tests/test_boot_standards.c` check exact packet bytes, boundary failures,
 E820 register contracts, MBR decoding and explicit chainloader handoff.
 Hardware/real-mode transitions remain integration responsibilities.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-bios.h`](../include/mulib-bios.h) |
+| Implementation switch | `MULIB_IMPL_BIOS` |
+| Repository-local includes | None |
+| Complete example | [`examples/modules/bios.c`](../examples/modules/bios.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bios.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

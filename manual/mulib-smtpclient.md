@@ -1,5 +1,7 @@
 # mulib-smtpclient
 
+[Manuals](README.md) · [Library index](index.md)
+
 A bounded SMTP session/envelope client with complete-message validation and
 DATA dot stuffing. It is transport independent and intentionally supports only
 the server's documented 7-bit subset, not arbitrary Internet mail, TLS, AUTH,
@@ -100,3 +102,27 @@ empty/dot/binary rejection and malformed replies are tested in
 `tests/test_mail_ftp.c`.
 Only init accepts uninitialized session storage; do not copy a live session and
 share its scratch buffer.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-smtpclient.h`](../include/mulib-smtpclient.h) |
+| Implementation switch | `MULIB_IMPL_SMTPCLIENT` |
+| Repository-local includes | [mulib-smtpserver](mulib-smtpserver.md) |
+| Complete example | [`examples/modules/smtpclient.c`](../examples/modules/smtpclient.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/smtpclient.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

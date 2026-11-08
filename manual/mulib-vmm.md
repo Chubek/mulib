@@ -1,5 +1,7 @@
 # mulib-vmm
 
+[Manuals](README.md) · [Library index](index.md)
+
 The type-2 VMM runtime owns lifecycle and serialized access to the previously
 implemented MVMD device layer. It adds copied boot/device inventories, explicit
 per-device DMA allowlists, a guest-physical call boundary and an execution-engine
@@ -122,3 +124,27 @@ native guest. `tools/check_virtio.py --sanitizers` verifies the entire stack.
 This is a fixed-inventory single-executor runtime. It does not implement hotplug,
 migration, a guest kernel, firmware, an ELF boot policy or a general-purpose
 multi-vCPU scheduler. Other host services retain the explicit support matrix.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-vmm.h`](../include/mulib-vmm.h) |
+| Implementation switch | `MULIB_IMPL_VMM` |
+| Repository-local includes | [mulib-virtio-os](mulib-virtio-os.md), [mulib-vmm-memory](mulib-vmm-memory.md) |
+| Complete example | [`examples/modules/vmm.c`](../examples/modules/vmm.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vmm.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->
