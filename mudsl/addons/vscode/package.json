@@ -1,0 +1,44 @@
+{
+  "name": "mu-language-tools",
+  "displayName": "MuLL, MuDSL and MuLIB",
+  "description": "MuLL syntax and language tools, with MuDSL and MuLIB snippets and API lookup.",
+  "version": "0.1.0",
+  "publisher": "mulib",
+  "license": "MIT",
+  "engines": {"vscode": "^1.85.0"},
+  "categories": ["Programming Languages", "Snippets"],
+  "main": "./extension.js",
+  "activationEvents": ["onLanguage:mull", "onLanguage:c", "onLanguage:cpp", "onLanguage:d"],
+  "capabilities": {"untrustedWorkspaces": {"supported": "limited", "description": "Syntax and snippets are available; the language server requires a trusted workspace."}},
+  "contributes": {
+    "languages": [{"id": "mull", "aliases": ["MuLL", "mull"], "extensions": [".mull"], "configuration": "./language-configuration.json"}],
+    "grammars": [{"language": "mull", "scopeName": "source.mull", "path": "./syntaxes/mull.tmLanguage.json"}],
+    "snippets": [
+      {"language": "mull", "path": "./snippets/mull.json"},
+      {"language": "cpp", "path": "./snippets/cpp.json"},
+      {"language": "c", "path": "./snippets/c.json"},
+      {"language": "d", "path": "./snippets/d.json"}
+    ],
+    "commands": [
+      {"command": "mu.openDocumentation", "title": "Mu: Open Documentation"},
+      {"command": "mu.restartServer", "title": "Mu: Restart Language Server"}
+    ],
+    "configuration": {
+      "title": "Mu Language Tools",
+      "properties": {
+        "mu.pythonPath": {"type": "string", "default": "python3", "scope": "machine", "description": "Python 3.9+ executable used for the bundled server."},
+        "mu.repositoryRoot": {"type": "string", "default": "", "description": "Absolute MuLIB repository or standalone MuDSL directory, for local manuals and headers."},
+        "mu.checkerPath": {"type": "string", "default": "", "scope": "machine", "description": "Optional parse-only mull-check executable. Otherwise search PATH."},
+        "mu.packagePaths": {"type": "array", "items": {"type": "string"}, "default": [], "description": "Absolute MuLL package search roots, in discovery order."},
+        "mu.nativeApi": {"type": "boolean", "default": true, "description": "Supplement C/C++/D language servers with MuDSL and MuLIB API lookup."}
+      }
+    }
+  },
+  "scripts": {
+    "prepare-assets": "python3 ../generate.py --vscode",
+    "vscode:prepublish": "npm run prepare-assets",
+    "package": "vsce package --allow-missing-repository --out mu-language-tools.vsix"
+  },
+  "dependencies": {"vscode-languageclient": "^9.0.1"},
+  "devDependencies": {"@vscode/vsce": "^3.2.0"}
+}

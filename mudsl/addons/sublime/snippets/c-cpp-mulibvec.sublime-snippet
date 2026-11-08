@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>mulib_vec_t ${1:values};
+mulib_vec_init(&amp;$1, sizeof(${2:int}));
+$0
+mulib_vec_free(&amp;$1);</content>
+  <tabTrigger>mulibvec</tabTrigger>
+  <scope>source.c, source.c++</scope>
+  <description>MuLIB vector lifetime</description>
+</snippet>

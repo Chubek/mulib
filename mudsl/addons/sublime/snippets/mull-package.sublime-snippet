@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>return {
+	${1:name}: ${2:value}
+};</content>
+  <tabTrigger>package</tabTrigger>
+  <scope>source.mull</scope>
+  <description>Package exports</description>
+</snippet>

@@ -1,0 +1,26 @@
+{
+  "MuDSL feature composition": {
+    "prefix": "mudsl",
+    "body": "#include \"MuDSL.hpp\"\n\nstruct ${1:Language} : dsl::DSL<$1, dsl::Pipeline, dsl::Operators> {};\n$0"
+  },
+  "MuDSL parser": {
+    "prefix": "mudslparse",
+    "body": "auto ${1:parser} = dsl::ch('${2:a}') & dsl::ch('${3:b}');\nauto ${4:result} = dsl::run_parser($1, \"${5:ab}\");"
+  },
+  "Embed MuLL in C++": {
+    "prefix": "mullembed",
+    "body": "#include \"MuDSL.hpp\"\n#include \"mull/stdlib/Stdlib.hpp\"\n\nint main() {\n\tmull::Runtime ${1:vm}({\"${2:mull/stdlib}\"});\n\tmull::stdlib::install($1);\n\tauto ${3:result} = $1.run(R\"mull(\n${0:return 42;}\n)mull\", \"embedded.mull\");\n\treturn 0;\n}"
+  },
+  "MuLIB implementation header": {
+    "prefix": "mulibimpl",
+    "body": "// Define implementation switches in exactly one translation unit.\n#define MULIB_IMPL_${1:VEC}\n#include <mulib-${2:vec}.h>\n$0"
+  },
+  "MuLIB include": {
+    "prefix": "mulibinclude",
+    "body": "#include <mulib-${1:vec}.h>"
+  },
+  "MuLIB vector lifetime": {
+    "prefix": "mulibvec",
+    "body": "mulib_vec_t ${1:values};\nmulib_vec_init(&$1, sizeof(${2:int}));\n$0\nmulib_vec_free(&$1);"
+  }
+}

@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='utf-8'?>
+<templateSet group="Mu">
+  <template name="mull-val" value="val $V1$ &lt;- $V2$;" description="Immutable binding" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;name&quot;" alwaysStopAt="true" />
+    <variable name="V2" expression="" defaultValue="&quot;nil&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="mull-var" value="var $V1$ &lt;- $V2$;" description="Mutable binding" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;name&quot;" alwaysStopAt="true" />
+    <variable name="V2" expression="" defaultValue="&quot;0&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="mull-ref" value="ref $V1$ &lt;- $V2$;" description="Reference binding" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;alias&quot;" alwaysStopAt="true" />
+    <variable name="V2" expression="" defaultValue="&quot;variable&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="mull-fn" value="val $V1$ &lt;- fn($V2$) {&#10;&#09;return nil;$END$&#10;};" description="Function" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;name&quot;" alwaysStopAt="true" />
+    <variable name="V2" expression="" defaultValue="&quot;args&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="mull-if" value="if $V1$ {&#10;&#09;$END$&#10;}" description="Conditional" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;condition&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="mull-while" value="while $V1$ {&#10;&#09;$END$&#10;}" description="While loop" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;condition&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="mull-loadlib" value="val $V1$ &lt;- G:LoadLib(&quot;$V2$&quot;) or G:DieWith(&quot;Import Error: $$E?&quot;);" description="Load package" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;Printf&quot;" alwaysStopAt="true" />
+    <variable name="V2" expression="" defaultValue="&quot;printf&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="mull-mulib" value="mulib $V1$ &lt;- G:MulibWrap(&quot;$V2$&quot;);" description="MuLIB namespace" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;Parsec&quot;" alwaysStopAt="true" />
+    <variable name="V2" expression="" defaultValue="&quot;Parsec&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="mull-package" value="return {&#10;&#09;$V1$: $V2$&#10;};" description="Package exports" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;name&quot;" alwaysStopAt="true" />
+    <variable name="V2" expression="" defaultValue="&quot;value&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="mull-mullhello" value="val Printf &lt;- G:LoadLib(&quot;printf&quot;) or G:DieWith(&quot;Import Error: $$E?&quot;);&#10;Printf:SetMainSink(G:GetStdout());&#10;Printf:Println(&quot;$V1$&quot;);&#10;$END$" description="Hello MuLL" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;Hello, MuLL!&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="cpp-mudsl" value="#include &quot;MuDSL.hpp&quot;&#10;&#10;struct $V1$ : dsl::DSL&lt;$V1$, dsl::Pipeline, dsl::Operators&gt; {};&#10;$END$" description="MuDSL feature composition" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;Language&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="cpp-mudslparse" value="auto $V1$ = dsl::ch('$V2$') &amp; dsl::ch('$V3$');&#10;auto $V4$ = dsl::run_parser($V1$, &quot;$V5$&quot;);" description="MuDSL parser" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;parser&quot;" alwaysStopAt="true" />
+    <variable name="V2" expression="" defaultValue="&quot;a&quot;" alwaysStopAt="true" />
+    <variable name="V3" expression="" defaultValue="&quot;b&quot;" alwaysStopAt="true" />
+    <variable name="V4" expression="" defaultValue="&quot;result&quot;" alwaysStopAt="true" />
+    <variable name="V5" expression="" defaultValue="&quot;ab&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="cpp-mullembed" value="#include &quot;MuDSL.hpp&quot;&#10;#include &quot;mull/stdlib/Stdlib.hpp&quot;&#10;&#10;int main() {&#10;&#09;mull::Runtime $V1$({&quot;$V2$&quot;});&#10;&#09;mull::stdlib::install($V1$);&#10;&#09;auto $V3$ = $V1$.run(R&quot;mull(&#10;return 42;$END$&#10;)mull&quot;, &quot;embedded.mull&quot;);&#10;&#09;return 0;&#10;}" description="Embed MuLL in C++" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;vm&quot;" alwaysStopAt="true" />
+    <variable name="V2" expression="" defaultValue="&quot;mull/stdlib&quot;" alwaysStopAt="true" />
+    <variable name="V3" expression="" defaultValue="&quot;result&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="d-mudsl" value="import MuDSL;&#10;$END$" description="Import MuDSL" toReformat="false" toShortenFQNames="false">
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="d-mullembed" value="import MuDSL;&#10;import mull.stdlib.Stdlib;&#10;&#10;void main() {&#10;&#09;auto $V1$ = new MuLL.Runtime([&quot;$V2$&quot;]);&#10;&#09;install($V1$);&#10;&#09;auto $V3$ = $V1$.run(q{&#10;return 42;$END$&#10;}, &quot;embedded.mull&quot;);&#10;}" description="Embed MuLL in D" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;vm&quot;" alwaysStopAt="true" />
+    <variable name="V2" expression="" defaultValue="&quot;mull/stdlib&quot;" alwaysStopAt="true" />
+    <variable name="V3" expression="" defaultValue="&quot;result&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="c-cpp-mulibimpl" value="// Define implementation switches in exactly one translation unit.&#10;#define MULIB_IMPL_$V1$&#10;#include &lt;mulib-$V2$.h&gt;&#10;$END$" description="MuLIB implementation header" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;VEC&quot;" alwaysStopAt="true" />
+    <variable name="V2" expression="" defaultValue="&quot;vec&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="c-cpp-mulibinclude" value="#include &lt;mulib-$V1$.h&gt;" description="MuLIB include" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;vec&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+  <template name="c-cpp-mulibvec" value="mulib_vec_t $V1$;&#10;mulib_vec_init(&amp;$V1$, sizeof($V2$));&#10;$END$&#10;mulib_vec_free(&amp;$V1$);" description="MuLIB vector lifetime" toReformat="false" toShortenFQNames="false">
+    <variable name="V1" expression="" defaultValue="&quot;values&quot;" alwaysStopAt="true" />
+    <variable name="V2" expression="" defaultValue="&quot;int&quot;" alwaysStopAt="true" />
+    <context>
+      <option name="OTHER" value="true" />
+    </context>
+  </template>
+</templateSet>

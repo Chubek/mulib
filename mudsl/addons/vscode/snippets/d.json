@@ -1,0 +1,10 @@
+{
+  "Import MuDSL": {
+    "prefix": "mudsl",
+    "body": "import MuDSL;\n$0"
+  },
+  "Embed MuLL in D": {
+    "prefix": "mullembed",
+    "body": "import MuDSL;\nimport mull.stdlib.Stdlib;\n\nvoid main() {\n\tauto ${1:vm} = new MuLL.Runtime([\"${2:mull/stdlib}\"]);\n\tinstall($1);\n\tauto ${3:result} = $1.run(q{\n${0:return 42;}\n}, \"embedded.mull\");\n}"
+  }
+}

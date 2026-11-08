@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>val Printf &lt;- G:LoadLib("printf") or G:DieWith("Import Error: \$E?");
+Printf:SetMainSink(G:GetStdout());
+Printf:Println("${1:Hello, MuLL!}");
+$0</content>
+  <tabTrigger>mullhello</tabTrigger>
+  <scope>source.mull</scope>
+  <description>Hello MuLL</description>
+</snippet>

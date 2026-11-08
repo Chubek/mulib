@@ -1,0 +1,6 @@
+node_modules/@vscode/vsce/**
+node_modules/typescript/**
+install.sh
+package-lock.json
+*.vsix
+**/__pycache__/**

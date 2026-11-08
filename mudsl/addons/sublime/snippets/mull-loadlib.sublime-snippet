@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>val ${1:Printf} &lt;- G:LoadLib("${2:printf}") or G:DieWith("Import Error: \$E?");</content>
+  <tabTrigger>loadlib</tabTrigger>
+  <scope>source.mull</scope>
+  <description>Load package</description>
+</snippet>

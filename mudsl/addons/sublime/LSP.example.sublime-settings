@@ -1,0 +1,13 @@
+{
+  "clients": {
+    "mu": {
+      "enabled": true,
+      "command": ["mull-lsp"],
+      "selector": "source.mull | source.c | source.c++ | source.d",
+      "initializationOptions": {
+        "repositoryRoot": "/absolute/path/to/mulib",
+        "packagePaths": []
+      }
+    }
+  }
+}

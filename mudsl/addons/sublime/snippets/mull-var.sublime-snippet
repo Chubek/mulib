@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>var ${1:name} &lt;- ${2:0};</content>
+  <tabTrigger>var</tabTrigger>
+  <scope>source.mull</scope>
+  <description>Mutable binding</description>
+</snippet>

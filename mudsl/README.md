@@ -9,6 +9,8 @@ including the embeddable **MuLL** interpreter.
 - Native MuLL packages: [`mull/stdlib`](mull/stdlib).
 - [Language and embedding reference](mull/README.md).
 - [Toolkit manual](manual/README.md) and [70-chapter book](book/README.md).
+- [Editor addons](addons/README.md): VS Code, Vim/Neovim, Sublime Text,
+  JetBrains, and a shared MuLL/MuDSL/MuLIB language server.
 
 ```sh
 cmake -S . -B build -DBUILD_EXAMPLES=ON

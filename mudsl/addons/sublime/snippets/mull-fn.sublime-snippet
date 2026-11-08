@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>val ${1:name} &lt;- fn(${2:args}) {
+	${0:return nil;}
+};</content>
+  <tabTrigger>fn</tabTrigger>
+  <scope>source.mull</scope>
+  <description>Function</description>
+</snippet>

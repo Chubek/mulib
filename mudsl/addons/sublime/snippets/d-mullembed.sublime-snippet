@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>import MuDSL;
+import mull.stdlib.Stdlib;
+
+void main() {
+	auto ${1:vm} = new MuLL.Runtime(["${2:mull/stdlib}"]);
+	install($1);
+	auto ${3:result} = $1.run(q{
+${0:return 42;}
+}, "embedded.mull");
+}</content>
+  <tabTrigger>mullembed</tabTrigger>
+  <scope>source.d</scope>
+  <description>Embed MuLL in D</description>
+</snippet>

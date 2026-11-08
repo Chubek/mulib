@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>description</key>
+	<string>MuLL language syntax for MuDSL and MuLIB</string>
+	<key>name</key>
+	<string>MuLL</string>
+	<key>uuid</key>
+	<string>A50726C6-EE84-420B-B4CE-682E29F349AC</string>
+</dict>
+</plist>

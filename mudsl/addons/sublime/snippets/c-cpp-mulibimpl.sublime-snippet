@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>// Define implementation switches in exactly one translation unit.
+#define MULIB_IMPL_${1:VEC}
+#include &lt;mulib-${2:vec}.h&gt;
+$0</content>
+  <tabTrigger>mulibimpl</tabTrigger>
+  <scope>source.c, source.c++</scope>
+  <description>MuLIB implementation header</description>
+</snippet>

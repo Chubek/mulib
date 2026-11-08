@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>ref ${1:alias} &lt;- ${2:variable};</content>
+  <tabTrigger>ref</tabTrigger>
+  <scope>source.mull</scope>
+  <description>Reference binding</description>
+</snippet>

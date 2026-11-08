@@ -1,0 +1,82 @@
+{
+  "name": "MuLL",
+  "scopeName": "source.mull",
+  "fileTypes": [
+    "mull"
+  ],
+  "patterns": [
+    {
+      "name": "comment.line.number-sign.mull",
+      "begin": "#",
+      "end": "$"
+    },
+    {
+      "name": "comment.line.double-slash.mull",
+      "begin": "//",
+      "end": "$"
+    },
+    {
+      "name": "string.quoted.double.mull",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.mull",
+          "match": "\\\\[nrt0\\\\\"]"
+        },
+        {
+          "name": "invalid.illegal.escape.mull",
+          "match": "\\\\."
+        },
+        {
+          "name": "variable.language.last-error.mull",
+          "match": "\\$E\\?"
+        }
+      ]
+    },
+    {
+      "name": "storage.type.mull",
+      "match": "\\b(val|var|ref|mulib|fn)\\b"
+    },
+    {
+      "name": "keyword.control.mull",
+      "match": "\\b(if|else|while|return|break)\\b"
+    },
+    {
+      "name": "constant.language.mull",
+      "match": "\\b(true|false|nil)\\b"
+    },
+    {
+      "name": "keyword.operator.word.mull",
+      "match": "\\b(and|or|not)\\b"
+    },
+    {
+      "name": "variable.language.mull",
+      "match": "\\bG\\b"
+    },
+    {
+      "name": "constant.numeric.mull",
+      "match": "\\b[0-9]+(?:\\.[0-9]*)?(?:[eE][+-]?[0-9]+)?"
+    },
+    {
+      "name": "entity.name.function.mull",
+      "match": "\\b[A-Za-z_][A-Za-z_0-9]*(?=\\s*\\()"
+    },
+    {
+      "name": "keyword.operator.mull",
+      "match": "<-|==|!=|<=|>=|[+*/%<>!\\-]"
+    },
+    {
+      "name": "punctuation.separator.mull",
+      "match": "[:;,]"
+    },
+    {
+      "name": "punctuation.section.mull",
+      "match": "[(){}\\[\\]]"
+    },
+    {
+      "name": "variable.other.mull",
+      "match": "\\b[A-Za-z_][A-Za-z_0-9]*\\b"
+    }
+  ]
+}

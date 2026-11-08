@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>auto ${1:parser} = dsl::ch('${2:a}') &amp; dsl::ch('${3:b}');
+auto ${4:result} = dsl::run_parser($1, "${5:ab}");</content>
+  <tabTrigger>mudslparse</tabTrigger>
+  <scope>source.c++</scope>
+  <description>MuDSL parser</description>
+</snippet>

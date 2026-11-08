@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>import MuDSL;
+$0</content>
+  <tabTrigger>mudsl</tabTrigger>
+  <scope>source.d</scope>
+  <description>Import MuDSL</description>
+</snippet>

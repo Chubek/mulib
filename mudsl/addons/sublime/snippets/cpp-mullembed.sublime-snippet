@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>#include "MuDSL.hpp"
+#include "mull/stdlib/Stdlib.hpp"
+
+int main() {
+	mull::Runtime ${1:vm}({"${2:mull/stdlib}"});
+	mull::stdlib::install($1);
+	auto ${3:result} = $1.run(R"mull(
+${0:return 42;}
+)mull", "embedded.mull");
+	return 0;
+}</content>
+  <tabTrigger>mullembed</tabTrigger>
+  <scope>source.c++</scope>
+  <description>Embed MuLL in C++</description>
+</snippet>

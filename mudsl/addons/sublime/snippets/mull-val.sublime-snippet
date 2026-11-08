@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>val ${1:name} &lt;- ${2:nil};</content>
+  <tabTrigger>val</tabTrigger>
+  <scope>source.mull</scope>
+  <description>Immutable binding</description>
+</snippet>

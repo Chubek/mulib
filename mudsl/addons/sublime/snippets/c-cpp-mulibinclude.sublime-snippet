@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>#include &lt;mulib-${1:vec}.h&gt;</content>
+  <tabTrigger>mulibinclude</tabTrigger>
+  <scope>source.c, source.c++</scope>
+  <description>MuLIB include</description>
+</snippet>

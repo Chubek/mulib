@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>mulib ${1:Parsec} &lt;- G:MulibWrap("${2:Parsec}");</content>
+  <tabTrigger>mulib</tabTrigger>
+  <scope>source.mull</scope>
+  <description>MuLIB namespace</description>
+</snippet>

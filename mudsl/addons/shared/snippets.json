@@ -1,0 +1,28 @@
+{
+  "mull": {
+    "Immutable binding": {"prefix": "val", "body": "val ${1:name} <- ${2:nil};"},
+    "Mutable binding": {"prefix": "var", "body": "var ${1:name} <- ${2:0};"},
+    "Reference binding": {"prefix": "ref", "body": "ref ${1:alias} <- ${2:variable};"},
+    "Function": {"prefix": "fn", "body": "val ${1:name} <- fn(${2:args}) {\n\t${0:return nil;}\n};"},
+    "Conditional": {"prefix": "if", "body": "if ${1:condition} {\n\t$0\n}"},
+    "While loop": {"prefix": "while", "body": "while ${1:condition} {\n\t$0\n}"},
+    "Load package": {"prefix": "loadlib", "body": "val ${1:Printf} <- G:LoadLib(\"${2:printf}\") or G:DieWith(\"Import Error: \\$E?\");"},
+    "MuLIB namespace": {"prefix": "mulib", "body": "mulib ${1:Parsec} <- G:MulibWrap(\"${2:Parsec}\");"},
+    "Package exports": {"prefix": "package", "body": "return {\n\t${1:name}: ${2:value}\n};"},
+    "Hello MuLL": {"prefix": "mullhello", "body": "val Printf <- G:LoadLib(\"printf\") or G:DieWith(\"Import Error: \\$E?\");\nPrintf:SetMainSink(G:GetStdout());\nPrintf:Println(\"${1:Hello, MuLL!}\");\n$0"}
+  },
+  "cpp": {
+    "MuDSL feature composition": {"prefix": "mudsl", "body": "#include \"MuDSL.hpp\"\n\nstruct ${1:Language} : dsl::DSL<$1, dsl::Pipeline, dsl::Operators> {};\n$0"},
+    "MuDSL parser": {"prefix": "mudslparse", "body": "auto ${1:parser} = dsl::ch('${2:a}') & dsl::ch('${3:b}');\nauto ${4:result} = dsl::run_parser($1, \"${5:ab}\");"},
+    "Embed MuLL in C++": {"prefix": "mullembed", "body": "#include \"MuDSL.hpp\"\n#include \"mull/stdlib/Stdlib.hpp\"\n\nint main() {\n\tmull::Runtime ${1:vm}({\"${2:mull/stdlib}\"});\n\tmull::stdlib::install($1);\n\tauto ${3:result} = $1.run(R\"mull(\n${0:return 42;}\n)mull\", \"embedded.mull\");\n\treturn 0;\n}"}
+  },
+  "d": {
+    "Import MuDSL": {"prefix": "mudsl", "body": "import MuDSL;\n$0"},
+    "Embed MuLL in D": {"prefix": "mullembed", "body": "import MuDSL;\nimport mull.stdlib.Stdlib;\n\nvoid main() {\n\tauto ${1:vm} = new MuLL.Runtime([\"${2:mull/stdlib}\"]);\n\tinstall($1);\n\tauto ${3:result} = $1.run(q{\n${0:return 42;}\n}, \"embedded.mull\");\n}"}
+  },
+  "c,cpp": {
+    "MuLIB implementation header": {"prefix": "mulibimpl", "body": "// Define implementation switches in exactly one translation unit.\n#define MULIB_IMPL_${1:VEC}\n#include <mulib-${2:vec}.h>\n$0"},
+    "MuLIB include": {"prefix": "mulibinclude", "body": "#include <mulib-${1:vec}.h>"},
+    "MuLIB vector lifetime": {"prefix": "mulibvec", "body": "mulib_vec_t ${1:values};\nmulib_vec_init(&$1, sizeof(${2:int}));\n$0\nmulib_vec_free(&$1);"}
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "Immutable binding": {
+    "prefix": "val",
+    "body": "val ${1:name} <- ${2:nil};"
+  },
+  "Mutable binding": {
+    "prefix": "var",
+    "body": "var ${1:name} <- ${2:0};"
+  },
+  "Reference binding": {
+    "prefix": "ref",
+    "body": "ref ${1:alias} <- ${2:variable};"
+  },
+  "Function": {
+    "prefix": "fn",
+    "body": "val ${1:name} <- fn(${2:args}) {\n\t${0:return nil;}\n};"
+  },
+  "Conditional": {
+    "prefix": "if",
+    "body": "if ${1:condition} {\n\t$0\n}"
+  },
+  "While loop": {
+    "prefix": "while",
+    "body": "while ${1:condition} {\n\t$0\n}"
+  },
+  "Load package": {
+    "prefix": "loadlib",
+    "body": "val ${1:Printf} <- G:LoadLib(\"${2:printf}\") or G:DieWith(\"Import Error: \\$E?\");"
+  },
+  "MuLIB namespace": {
+    "prefix": "mulib",
+    "body": "mulib ${1:Parsec} <- G:MulibWrap(\"${2:Parsec}\");"
+  },
+  "Package exports": {
+    "prefix": "package",
+    "body": "return {\n\t${1:name}: ${2:value}\n};"
+  },
+  "Hello MuLL": {
+    "prefix": "mullhello",
+    "body": "val Printf <- G:LoadLib(\"printf\") or G:DieWith(\"Import Error: \\$E?\");\nPrintf:SetMainSink(G:GetStdout());\nPrintf:Println(\"${1:Hello, MuLL!}\");\n$0"
+  }
+}

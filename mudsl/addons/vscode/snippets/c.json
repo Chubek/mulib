@@ -1,0 +1,14 @@
+{
+  "MuLIB implementation header": {
+    "prefix": "mulibimpl",
+    "body": "// Define implementation switches in exactly one translation unit.\n#define MULIB_IMPL_${1:VEC}\n#include <mulib-${2:vec}.h>\n$0"
+  },
+  "MuLIB include": {
+    "prefix": "mulibinclude",
+    "body": "#include <mulib-${1:vec}.h>"
+  },
+  "MuLIB vector lifetime": {
+    "prefix": "mulibvec",
+    "body": "mulib_vec_t ${1:values};\nmulib_vec_init(&$1, sizeof(${2:int}));\n$0\nmulib_vec_free(&$1);"
+  }
+}
