@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 537
-implemented_module_count: 537
+module_count: 547
+implemented_module_count: 547
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2249,8 +2249,8 @@ modules:
   header: include/mulib-amd64.h
   manual: manual/mulib-amd64.md
   macro: MULIB_IMPL_AMD64
-  purpose: Owned AMD64 metadata assembler convenience context.
-  dependencies: [assembler]
+  purpose: Owned AMD64 typed assembler and enriched MPU architecture context.
+  dependencies: [assembler, mpu]
   status: implemented
 - name: row-rdbms
   header: include/mulib-row-rdbms.h
@@ -3771,6 +3771,76 @@ modules:
   macro: MULIB_IMPL_SHIRAZ
   purpose: "Shiraz: Windows AMD64 PE/COFF loading, interpretation and helper-based C AOT."
   dependencies: [pe, strbuf]
+  status: implemented
+- name: aarch64
+  header: include/mulib-aarch64.h
+  manual: manual/mulib-aarch64.md
+  macro: MULIB_IMPL_AARCH64
+  purpose: "Owned AArch64 profile implementing the MPU contract."
+  dependencies: [mpu]
+  status: implemented
+- name: amdgpu
+  header: include/mulib-amdgpu.h
+  manual: manual/mulib-amdgpu.md
+  macro: MULIB_IMPL_AMDGPU
+  purpose: "Owned AMDGPU gfx600 wave64 SALU GPU implementation."
+  dependencies: [gpu]
+  status: implemented
+- name: avr32
+  header: include/mulib-avr32.h
+  manual: manual/mulib-avr32.md
+  macro: MULIB_IMPL_AVR32
+  purpose: "Owned big-endian AVR32A selected-form MCU implementation."
+  dependencies: [mcu]
+  status: implemented
+- name: gpu
+  header: include/mulib-gpu.h
+  manual: manual/mulib-gpu.md
+  macro: MULIB_IMPL_GPU
+  purpose: "GPU binary-profile and virtual-ISA text emission contract."
+  dependencies: [unit]
+  status: implemented
+- name: mcu
+  header: include/mulib-mcu.h
+  manual: manual/mulib-mcu.md
+  macro: MULIB_IMPL_MCU
+  purpose: "Extensible microcontroller architecture and encoding contract."
+  dependencies: [unit]
+  status: implemented
+- name: mpu
+  header: include/mulib-mpu.h
+  manual: manual/mulib-mpu.md
+  macro: MULIB_IMPL_MPU
+  purpose: "Extensible microprocessor profile, query and code emission contract."
+  dependencies: [unit]
+  status: implemented
+- name: nvptx
+  header: include/mulib-nvptx.h
+  manual: manual/mulib-nvptx.md
+  macro: MULIB_IMPL_NVPTX
+  purpose: "Owned NVPTX64 virtual-ISA text GPU implementation."
+  dependencies: [gpu]
+  status: implemented
+- name: riscv64
+  header: include/mulib-riscv64.h
+  manual: manual/mulib-riscv64.md
+  macro: MULIB_IMPL_RISCV64
+  purpose: "Owned RV64 profile implementing the MPU contract."
+  dependencies: [mpu]
+  status: implemented
+- name: unit
+  header: include/mulib-unit.h
+  manual: manual/mulib-unit.md
+  macro: MULIB_IMPL_UNIT
+  purpose: "Shared owned architecture profiles for MPU, MCU and GPU contracts."
+  dependencies: [archml, emitter]
+  status: implemented
+- name: xtensa
+  header: include/mulib-xtensa.h
+  manual: manual/mulib-xtensa.md
+  macro: MULIB_IMPL_XTENSA
+  purpose: "Owned little-endian Xtensa core 24-bit MCU implementation."
+  dependencies: [mcu]
   status: implemented
 project_files:
 - file: library/shiraz/core.c
@@ -5547,3 +5617,29 @@ project_files:
   purpose: "Standalone checked usage example for shiraz."
 - file: tests/test_shiraz.c
   purpose: "Focused regression suite for test_shiraz."
+- file: examples/modules/aarch64.c
+  purpose: "Standalone checked usage example for aarch64."
+- file: examples/modules/amdgpu.c
+  purpose: "Standalone checked usage example for amdgpu."
+- file: examples/modules/avr32.c
+  purpose: "Standalone checked usage example for avr32."
+- file: examples/modules/gpu.c
+  purpose: "Standalone checked usage example for gpu."
+- file: examples/modules/mcu.c
+  purpose: "Standalone checked usage example for mcu."
+- file: examples/modules/mpu.c
+  purpose: "Standalone checked usage example for mpu."
+- file: examples/modules/nvptx.c
+  purpose: "Standalone checked usage example for nvptx."
+- file: examples/modules/riscv64.c
+  purpose: "Standalone checked usage example for riscv64."
+- file: examples/modules/unit.c
+  purpose: "Standalone checked usage example for unit."
+- file: examples/modules/xtensa.c
+  purpose: "Standalone checked usage example for xtensa."
+- file: tests/test_units.c
+  purpose: "Focused regression suite for test_units."
+- file: tools/embed_units.py
+  purpose: Deterministic embedding and freshness checking of processor ArchML profiles.
+- file: include/mulib-unit-data.inc
+  purpose: Generated processor profiles shared by the MPU, MCU and GPU contracts.

@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 537 headers, 637 direct dependency edges.
+Inventory: 547 headers, 649 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -467,7 +467,7 @@ Compatibility group: `parsec`, `peg`.
 | [viterbi_decoding](mulib-viterbi_decoding.md) | `hidden_markov_chain` |
 | [vmm-host](mulib-vmm-host.md) | `virtio` |
 
-## Stratum 4 (33 modules)
+## Stratum 4 (34 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -500,12 +500,13 @@ Compatibility group: `parsec`, `peg`.
 | [template](mulib-template.md) | `json`, `strbuf`, `utf8` |
 | [termsyn](mulib-termsyn.md) | `edbuf`, `termstyle` |
 | [toml](mulib-toml.md) | `json`, `strbuf`, `utf8` |
+| [unit](mulib-unit.md) | `archml`, `emitter` |
 | [vmm](mulib-vmm.md) | `virtio-os`, `vmm-memory` |
 | [walker](mulib-walker.md) | `evtlistener` |
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (32 modules)
+## Stratum 5 (35 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -524,11 +525,14 @@ Compatibility group: `parsec`, `peg`.
 | [elf-objdump](mulib-elf-objdump.md) | `elf`, `objdump` |
 | [exec](mulib-exec.md) | `mune`, `perf`, `process` |
 | [getaddr](mulib-getaddr.md) | `inet6` |
+| [gpu](mulib-gpu.md) | `unit` |
 | [imgbuilder](mulib-imgbuilder.md) | `imgbuildspec`, `rootfsbuilder` |
 | [imgtrackerd](mulib-imgtrackerd.md) | `bycutils`, `memtable`, `ociimage` |
 | [immgtk](mulib-immgtk.md) | `glx`, `mune` |
 | [inte6](mulib-inte6.md) | `inet6` |
 | [macho-objdump](mulib-macho-objdump.md) | `macho`, `objdump` |
+| [mcu](mulib-mcu.md) | `unit` |
+| [mpu](mulib-mpu.md) | `unit` |
 | [muidl](mulib-muidl.md) | `buffer`, `dbschema` |
 | [ocicontainernetwrork](mulib-ocicontainernetwrork.md) | `ocicontainernetwork` |
 | [ociimagebuilder](mulib-ociimagebuilder.md) | `ociimage` |
@@ -542,11 +546,14 @@ Compatibility group: `parsec`, `peg`.
 | [webidl](mulib-webidl.md) | `buffer`, `dbschema`, `utf8` |
 | [wit](mulib-wit.md) | `buffer`, `dbschema` |
 
-## Stratum 6 (11 modules)
+## Stratum 6 (17 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
-| [amd64](mulib-amd64.md) | `assembler` |
+| [aarch64](mulib-aarch64.md) | `mpu` |
+| [amd64](mulib-amd64.md) | `assembler`, `mpu` |
+| [amdgpu](mulib-amdgpu.md) | `gpu` |
+| [avr32](mulib-avr32.md) | `mcu` |
 | [container-oixboost](mulib-container-oixboost.md) | `containerboost`, `oix` |
 | [containerd](mulib-containerd.md) | `conainerd-ipc`, `container-log`, `containerd-cache`, `containerd-mount`, `containterpool` |
 | [dbdesializer](mulib-dbdesializer.md) | `dbserializer` |
@@ -554,9 +561,12 @@ Compatibility group: `parsec`, `peg`.
 | [fswatch](mulib-fswatch.md) | `daemon`, `glob`, `select`, `vfs` |
 | [git](mulib-git.md) | `exec` |
 | [glyph](mulib-glyph.md) | `fontdraw`, `ligature`, `pglayout`, `sysfonts` |
+| [nvptx](mulib-nvptx.md) | `gpu` |
 | [pe-objdump](mulib-pe-objdump.md) | `coff-objdump`, `pe` |
+| [riscv64](mulib-riscv64.md) | `mpu` |
 | [task](mulib-task.md) | `exec` |
 | [uri](mulib-uri.md) | `inte6`, `strbuf` |
+| [xtensa](mulib-xtensa.md) | `mcu` |
 
 ## Stratum 7 (8 modules)
 

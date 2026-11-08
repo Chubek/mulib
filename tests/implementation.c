@@ -1,3 +1,13 @@
+#define MULIB_IMPL_AARCH64
+#define MULIB_IMPL_AMDGPU
+#define MULIB_IMPL_AVR32
+#define MULIB_IMPL_GPU
+#define MULIB_IMPL_MCU
+#define MULIB_IMPL_MPU
+#define MULIB_IMPL_NVPTX
+#define MULIB_IMPL_RISCV64
+#define MULIB_IMPL_UNIT
+#define MULIB_IMPL_XTENSA
 #define MULIB_IMPL_SHIRAZ
 #define MULIB_IMPL_DYNBOX
 #define MULIB_IMPL_EDBUF
@@ -1079,3 +1089,13 @@
 #include "mulib-edbuf.h"
 #include "mulib-termsyn.h"
 #include "mulib-shiraz.h"
+#include "mulib-aarch64.h"
+#include "mulib-amdgpu.h"
+#include "mulib-avr32.h"
+#include "mulib-gpu.h"
+#include "mulib-mcu.h"
+#include "mulib-mpu.h"
+#include "mulib-nvptx.h"
+#include "mulib-riscv64.h"
+#include "mulib-unit.h"
+#include "mulib-xtensa.h"

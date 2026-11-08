@@ -122,6 +122,8 @@ if(MULIB_BUILD_TESTS)
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_librl.py --check)
     add_test(NAME mulib_archml_profiles_generated
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_archml.py --check)
+    add_test(NAME mulib_unit_profiles_embedded
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed_units.py --check)
   endif()
   add_executable(mulib_smoke tests/smoke.c)
   mulib_test_executable(mulib_smoke)

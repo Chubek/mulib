@@ -1,6 +1,6 @@
 # MuLIB
 
-A C11 modular single-header utility library with **537 implemented modules**.
+A C11 modular single-header utility library with **547 implemented modules**.
 Inspired by the simplicity of CTL and Klib; code is original, not vendored from the provided archives.
 
 [Manuals](manual/README.md) · [Complete library index](manual/index.md) ·
@@ -54,6 +54,13 @@ plus selected AMDGPU, ARM A32, NVPTX, SPIR-V, Xtensa, eBPF, DirectX/DXIL,
 M68k and Hexagon forms. PTX/DXIL use non-binary operation metadata; other profiles
 have explicit concrete-form and extension coverage. PARSEC retains its existing
 API while adding bounded-work execution and an explicit parser stack.
+
+[MPU](manual/mulib-mpu.md), [MCU](manual/mulib-mcu.md) and
+[GPU](manual/mulib-gpu.md) contracts expose owned, embedded profiles for AMD64,
+AArch64, RISC-V64, AVR32A, Xtensa, AMDGPU gfx600 and NVPTX. They share metadata
+queries and transactional concrete-form codecs; NVPTX emits PTX operation text.
+AMD64 also preserves its typed dsymspec assembler interface. Future targets can
+load custom ArchML profiles through the same family contracts.
 
 ## Command execution and Git workflows
 

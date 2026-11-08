@@ -53,6 +53,12 @@ def main():
         failures.append(('dsymspec snapshot', snapshot.stderr or snapshot.stdout))
     else:
         print(snapshot.stdout.strip())
+    units = subprocess.run([sys.executable, str(root / 'tools/embed_units.py'), '--check'],
+                           capture_output=True, text=True)
+    if units.returncode:
+        failures.append(('unit profiles', units.stderr or units.stdout))
+    else:
+        print(units.stdout.strip())
     strata = subprocess.run([sys.executable, str(root / 'tools/stratify.py'), '--check'],
                             capture_output=True, text=True)
     if strata.returncode:
