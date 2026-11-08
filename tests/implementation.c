@@ -1,3 +1,4 @@
+#define MULIB_IMPL_DOM
 #define MULIB_IMPL_AARCH64
 #define MULIB_IMPL_AMDGPU
 #define MULIB_IMPL_AVR32
@@ -1099,3 +1100,4 @@
 #include "mulib-riscv64.h"
 #include "mulib-unit.h"
 #include "mulib-xtensa.h"
+#include "mulib-dom.h"

@@ -63,7 +63,17 @@ static const char fixture[]
       "namespace Utility { readonly attribute long version; undefined run(); "
       "};\n"
       "typedef sequence<long> Counts; interface List { attribute Counts "
-      "counts; };\n";
+      "counts; };\n"
+      "partial interface List { undefined clear(); };\n"
+      "interface mixin Labelled { readonly attribute DOMString label; };\n"
+      "partial interface mixin Labelled { undefined reset(); };\n"
+      "List includes Labelled;\n"
+      "partial dictionary Parent { long generation = 0; };\n"
+      "typedef undefined Nothing; typedef (undefined or long) MaybeCount;\n"
+      "interface Async { Nothing finish(); MaybeCount count(); "
+      "undefined consume(async_sequence<DOMString> values); };\n"
+      "typedef unsigned long long _boolean; interface _long {};"
+      "dictionary Escaped { _boolean count; _long _object; };\n";
 
 static int
 contains (const mulib_buffer_t *b, const char *s)
@@ -82,7 +92,12 @@ reject (const char *source, mulib_webidl_format_t format)
   mulib_webidl_error_t e;
   o.format = format;
   assert (mulib_buffer_append (&b, "prefix", 6));
-  assert (!mulib_webidl_compile (source, strlen (source), &o, &b, &e));
+  {
+    int ok = mulib_webidl_compile (source, strlen (source), &o, &b, &e);
+    if (ok)
+      fprintf (stderr, "unexpectedly accepted: %s\n", source);
+    assert (!ok);
+  }
   assert (e.message && e.offset <= strlen (source) && e.line && e.column);
   assert (b.length == 6 && !memcmp (b.data, "prefix", 6));
   mulib_buffer_free (&b);
@@ -94,6 +109,27 @@ main (int argc, char **argv)
   mulib_webidl_error_t e;
   mulib_buffer_t b = { 0 };
   size_t i, total;
+  if (argc == 3 && !strcmp (argv[1], "--check-file"))
+    {
+      mulib_buffer_t input = { 0 };
+      unsigned char bytes[4096];
+      size_t n;
+      int ok;
+      FILE *file = fopen (argv[2], "rb");
+      assert (file);
+      while ((n = fread (bytes, 1, sizeof bytes, file)) != 0)
+        assert (mulib_buffer_append (&input, bytes, n));
+      assert (!ferror (file));
+      assert (!fclose (file));
+      ok = mulib_webidl_compile ((const char *)input.data, input.length, NULL,
+                                 &b, &e);
+      if (!ok)
+        fprintf (stderr, "%s:%zu:%zu: %s\n", argv[2], e.line, e.column,
+                 e.message);
+      mulib_buffer_free (&input);
+      mulib_buffer_free (&b);
+      return !ok;
+    }
   if (argc == 2)
     {
       if (!strcmp (argv[1], "--source"))
@@ -153,6 +189,21 @@ main (int argc, char **argv)
     assert (
         mulib_webidl_compile ((const char *)b.data, b.length, NULL, &b, &e));
     mulib_buffer_free (&b);
+    {
+      mulib_dbschema_t invalid = schema;
+      const mulib_dbschema_field_t reserved[] = {
+        { "constructor", MULIB_JSON_STRING, 0, 0 }
+      };
+      invalid.name = "_Private";
+      assert (mulib_buffer_append (&b, "prefix", 6));
+      assert (!mulib_webidl_generate (&invalid, &b));
+      invalid.name = "Valid";
+      invalid.fields = reserved;
+      invalid.count = 1;
+      assert (!mulib_webidl_generate (&invalid, &b));
+      assert (b.length == 6 && !memcmp (b.data, "prefix", 6));
+      mulib_buffer_free (&b);
+    }
   }
 
   /* Empty source is a valid definitions list in all output languages. */
@@ -180,15 +231,21 @@ main (int argc, char **argv)
   reject ("interface X {", MULIB_WEBIDL_SEXPR);
   reject ("dictionary X { required long x = 2; };", MULIB_WEBIDL_SEXPR);
   reject ("interface X { void x(long a = 1); };", MULIB_WEBIDL_SEXPR);
-  reject ("interface X { void x(optional long a, long b); };",
-          MULIB_WEBIDL_SEXPR);
+  reject ("interface X { void x(optional long... a); };", MULIB_WEBIDL_SEXPR);
   reject ("interface X { void x(long... a, long b); };", MULIB_WEBIDL_SEXPR);
   reject ("typedef sequence<long X;", MULIB_WEBIDL_SEXPR);
   reject ("typedef any? X;", MULIB_WEBIDL_SEXPR);
   reject ("typedef void X;", MULIB_WEBIDL_SEXPR);
   reject ("typedef record<long, long> X;", MULIB_WEBIDL_SEXPR);
+  reject ("typedef record<DOMString?, long> X;", MULIB_WEBIDL_SEXPR);
+  reject ("typedef (any or long) X;", MULIB_WEBIDL_SEXPR);
+  reject ("typedef (Promise<long> or long) X;", MULIB_WEBIDL_SEXPR);
+  reject ("typedef (DOMString? or long)? X;", MULIB_WEBIDL_SEXPR);
+  reject ("dictionary X { (undefined or long) value; };", MULIB_WEBIDL_SEXPR);
+  reject ("interface X { undefined f(undefined value); };",
+          MULIB_WEBIDL_SEXPR);
   reject ("enum X {};", MULIB_WEBIDL_SEXPR);
-  reject ("enum X {\"bad\nstring\"};", MULIB_WEBIDL_SEXPR);
+  reject ("enum X {\"unterminated};", MULIB_WEBIDL_SEXPR);
   reject ("/* unterminated", MULIB_WEBIDL_SEXPR);
   reject ("[Foo=(])] interface X {};", MULIB_WEBIDL_SEXPR);
   reject ("interface X { const long X = 0x; };", MULIB_WEBIDL_SEXPR);
@@ -202,6 +259,27 @@ main (int argc, char **argv)
   reject ("enum X {\"a\", \"a\"};", MULIB_WEBIDL_SEXPR);
   reject ("interface X {}; interface X {};", MULIB_WEBIDL_SEXPR);
   reject ("interface X { static; };", MULIB_WEBIDL_SEXPR);
+  reject ("interface X { static getter long x(); };", MULIB_WEBIDL_SEXPR);
+  reject ("interface X { readonly iterable<long>; };", MULIB_WEBIDL_SEXPR);
+  reject ("interface X { iterable<long>(); };", MULIB_WEBIDL_SEXPR);
+  reject ("interface X { getter attribute long x; };", MULIB_WEBIDL_SEXPR);
+  reject ("interface mixin X { static long x(); };", MULIB_WEBIDL_SEXPR);
+  reject ("callback interface X { attribute long x; };", MULIB_WEBIDL_SEXPR);
+  reject ("callback interface X : Y {};", MULIB_WEBIDL_SEXPR);
+  reject ("namespace X { attribute long x; };", MULIB_WEBIDL_SEXPR);
+  reject ("partial interface X { constructor(); };", MULIB_WEBIDL_SEXPR);
+  reject ("interface X { const long? x = 0; };", MULIB_WEBIDL_SEXPR);
+  reject ("interface interface {};", MULIB_WEBIDL_SEXPR);
+  reject ("interface _ {};", MULIB_WEBIDL_SEXPR);
+  reject ("interface _1 {};", MULIB_WEBIDL_SEXPR);
+  reject ("interface __X {};", MULIB_WEBIDL_SEXPR);
+  reject ("interface X { attribute long constructor; };", MULIB_WEBIDL_SEXPR);
+  reject ("interface X {}; partial interface X { attribute long a; };"
+          "partial interface X { attribute long a; };",
+          MULIB_WEBIDL_C99);
+  reject ("dictionary X {}; interface mixin M {}; X includes M;",
+          MULIB_WEBIDL_C99);
+  reject ("interface X {}; X includes Missing;", MULIB_WEBIDL_C99);
   reject ("namespace X { constructor(); };", MULIB_WEBIDL_SEXPR);
   reject ("interface X : Missing {};", MULIB_WEBIDL_C99);
   reject ("interface X : Y {}; interface Y : X {};", MULIB_WEBIDL_C99);
@@ -219,11 +297,28 @@ main (int argc, char **argv)
           "partial interface X { getter DOMString (unsigned long i); };"
           "interface Y { readonly maplike<DOMString, long>; setlike<long>;"
           "async iterable<long>(optional long start = 0); };"
-          "callback interface Listener { undefined handle(); };";
+          "callback interface Listener { undefined handle(); };"
+          "interface -Vendor { async_iterable<DOMString, long>; };"
+          "enum Multiline {\"first\nsecond\"};"
+          "[Conditional=A&B|C, Custom=foo.bar] interface _interface {};"
+          "typedef undefined? NullableUndefined;"
+          "dictionary Defaults { any value = undefined; };"
+          "interface Ordered { constructor(optional DOMString message = \"\", "
+          "object options); };"
+          "interface Names { attribute long required; undefined includes(long "
+          "interface); };";
     assert (mulib_webidl_compile (extra, strlen (extra), NULL, &b, &e));
     mulib_buffer_free (&b);
   }
   /* Bounded recursion and byte-span ownership (including aliased output). */
+  {
+    const char *trivia = "typedef long     Count; typedef unrestricted float "
+                         "/* trailing */ Real;";
+    assert (mulib_webidl_compile (trivia, strlen (trivia), NULL, &b, &e));
+    assert (contains (&b, "(type \"long\")")
+            && contains (&b, "(type \"unrestricted float\")"));
+    mulib_buffer_free (&b);
+  }
   {
     char deep[2048];
     size_t n = 0;

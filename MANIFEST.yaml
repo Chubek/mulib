@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 547
-implemented_module_count: 547
+module_count: 548
+implemented_module_count: 548
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3842,6 +3842,13 @@ modules:
   purpose: "Owned little-endian Xtensa core 24-bit MCU implementation."
   dependencies: [mcu]
   status: implemented
+- name: dom
+  header: include/mulib-dom.h
+  manual: manual/mulib-dom.md
+  macro: MULIB_IMPL_DOM
+  purpose: "Native DOM trees, UTF-16 character data, namespace-aware attributes and event dispatch."
+  dependencies: [buffer, utf8]
+  status: implemented
 project_files:
 - file: library/shiraz/core.c
   purpose: Separately compiled Shiraz CPU, PE/COFF loader and storage implementations.
@@ -5643,3 +5650,7 @@ project_files:
   purpose: Deterministic embedding and freshness checking of processor ArchML profiles.
 - file: include/mulib-unit-data.inc
   purpose: Generated processor profiles shared by the MPU, MCU and GPU contracts.
+- file: examples/modules/dom.c
+  purpose: "Standalone checked usage example for dom."
+- file: tests/test_dom.c
+  purpose: "Focused regression suite for test_dom."

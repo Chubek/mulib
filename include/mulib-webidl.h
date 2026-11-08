@@ -62,6 +62,11 @@ mulib_webidl_schema_text_ (mulib_buffer_t *b, const char *s)
 {
   return mulib_buffer_append (b, s, strlen (s));
 }
+static int
+mulib_webidl_schema_name_ (const char *s)
+{
+  return s[0] != '_' && strcmp (s, "constructor") && strcmp (s, "toString");
+}
 int
 mulib_webidl_generate (const mulib_dbschema_t *s, mulib_buffer_t *out)
 {
@@ -69,7 +74,8 @@ mulib_webidl_generate (const mulib_dbschema_t *s, mulib_buffer_t *out)
       = { NULL, "boolean", "double", "DOMString", "sequence<any>", "object" };
   mulib_buffer_t b = { 0 };
   int ok = 0;
-  if (!out || !mulib_dbschema_validate (s))
+  if (!out || !mulib_dbschema_validate (s)
+      || !mulib_webidl_schema_name_ (s->name))
     return 0;
   if (!mulib_webidl_schema_text_ (&b, "dictionary _")
       || !mulib_webidl_schema_text_ (&b, s->name)
@@ -78,7 +84,8 @@ mulib_webidl_generate (const mulib_dbschema_t *s, mulib_buffer_t *out)
   for (size_t i = 0; i < s->count; ++i)
     {
       const mulib_dbschema_field_t *f = s->fields + i;
-      if (!types[f->type] || !mulib_webidl_schema_text_ (&b, "  ")
+      if (!types[f->type] || !mulib_webidl_schema_name_ (f->name)
+          || !mulib_webidl_schema_text_ (&b, "  ")
           || (f->required && !mulib_webidl_schema_text_ (&b, "required "))
           || !mulib_webidl_schema_text_ (&b, types[f->type])
           || (f->nullable && !mulib_webidl_schema_text_ (&b, "?"))
@@ -165,7 +172,7 @@ mulib_webidl_lex_ (mulib_webidl_parser_ *p)
       mulib_webidl_token_ t;
       unsigned char c = (unsigned char)s[i];
       t.start = i;
-      if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f')
+      if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
         {
           t.kind = "whitespace";
           do
@@ -174,7 +181,7 @@ mulib_webidl_lex_ (mulib_webidl_parser_ *p)
             }
           while (i < p->length
                  && (s[i] == ' ' || s[i] == '\t' || s[i] == '\n'
-                     || s[i] == '\r' || s[i] == '\f'));
+                     || s[i] == '\r'));
         }
       else if (c == '/' && i + 1 < p->length && s[i + 1] == '/')
         {
@@ -201,7 +208,10 @@ mulib_webidl_lex_ (mulib_webidl_parser_ *p)
             return mulib_webidl_fail_ (p, t.start, "unterminated comment");
           i += 2;
         }
-      else if (mulib_webidl_alpha_ (c))
+      else if ((mulib_webidl_alpha_ (c) && c != '_')
+               || ((c == '_' || c == '-') && i + 1 < p->length
+                   && mulib_webidl_alpha_ ((unsigned char)s[i + 1])
+                   && s[i + 1] != '_'))
         {
           t.kind = "identifier";
           while (++i < p->length
@@ -216,7 +226,7 @@ mulib_webidl_lex_ (mulib_webidl_parser_ *p)
           ++i;
           while (i < p->length && s[i] != '"')
             {
-              if (!s[i] || s[i] == '\n' || s[i] == '\r')
+              if (!s[i])
                 return mulib_webidl_fail_ (p, i, "invalid string literal");
               ++i;
             }
@@ -304,13 +314,23 @@ mulib_webidl_lex_ (mulib_webidl_parser_ *p)
           t.kind = "punctuation";
           i += 3;
         }
-      else if (c && strchr ("{}()[]<>,;:=?*-", c))
+      else if (c && strchr ("{}()[]<>,;:=?*-.", c))
         {
           t.kind = "punctuation";
           ++i;
         }
+      else if (c)
+        {
+          uint32_t scalar;
+          size_t used;
+          t.kind = "other";
+          if (!mulib_utf8_decode ((const unsigned char *)s + i, p->length - i,
+                                  &scalar, &used))
+            return mulib_webidl_fail_ (p, i, "invalid UTF-8 source");
+          i += used;
+        }
       else
-        return mulib_webidl_fail_ (p, i, "invalid source byte");
+        return mulib_webidl_fail_ (p, i, "NUL in source");
       t.end = i;
       if (p->count == 262144)
         return mulib_webidl_fail_ (p, t.start, "token limit exceeded");
@@ -412,15 +432,99 @@ static int
 mulib_webidl_name_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *parent,
                     const char *kind)
 {
+  static const char *const keywords[] = { "attribute",
+                                          "callback",
+                                          "const",
+                                          "constructor",
+                                          "deleter",
+                                          "dictionary",
+                                          "enum",
+                                          "getter",
+                                          "includes",
+                                          "inherit",
+                                          "interface",
+                                          "iterable",
+                                          "maplike",
+                                          "mixin",
+                                          "namespace",
+                                          "partial",
+                                          "readonly",
+                                          "required",
+                                          "setlike",
+                                          "setter",
+                                          "static",
+                                          "stringifier",
+                                          "typedef",
+                                          "unrestricted",
+                                          "any",
+                                          "async_iterable",
+                                          "async_sequence",
+                                          "boolean",
+                                          "byte",
+                                          "octet",
+                                          "short",
+                                          "long",
+                                          "unsigned",
+                                          "float",
+                                          "double",
+                                          "bigint",
+                                          "symbol",
+                                          "object",
+                                          "undefined",
+                                          "void",
+                                          "DOMString",
+                                          "ByteString",
+                                          "USVString",
+                                          "sequence",
+                                          "record",
+                                          "Promise",
+                                          "FrozenArray",
+                                          "ObservableArray",
+                                          "optional",
+                                          "or",
+                                          "true",
+                                          "false",
+                                          "null",
+                                          "Infinity",
+                                          "NaN",
+                                          "-Infinity",
+                                          "ArrayBuffer",
+                                          "SharedArrayBuffer",
+                                          "DataView",
+                                          "Int8Array",
+                                          "Int16Array",
+                                          "Int32Array",
+                                          "Uint8Array",
+                                          "Uint16Array",
+                                          "Uint32Array",
+                                          "Uint8ClampedArray",
+                                          "BigInt64Array",
+                                          "BigUint64Array",
+                                          "Float16Array",
+                                          "Float32Array",
+                                          "Float64Array" };
   mulib_webidl_token_ *t = mulib_webidl_peek_ (p);
-  size_t start;
+  size_t start, i;
   if (!t || strcmp (t->kind, "identifier"))
     return mulib_webidl_fail_ (p, mulib_webidl_offset_ (p),
                                "expected identifier");
   start = t->start;
+  for (i = 0; i < sizeof keywords / sizeof *keywords; ++i)
+    if (mulib_webidl_is_ (p, keywords[i])
+        && !(i < 24 && !strcmp (parent->kind, "argument"))
+        && !(i == 17 && !strcmp (parent->kind, "attribute"))
+        && !(i == 8 && !strcmp (parent->kind, "operation")))
+      return mulib_webidl_fail_ (p, start,
+                                 "keyword requires identifier escape");
   /* WebIDL's leading underscore escapes an identifier, it is not its name. */
   if (p->source[start] == '_' && start + 1 < t->end)
     ++start;
+  if (strcmp (parent->kind, "argument")
+      && ((t->end - start == 11
+           && !memcmp (p->source + start, "constructor", 11))
+          || (t->end - start == 8
+              && !memcmp (p->source + start, "toString", 8))))
+    return mulib_webidl_fail_ (p, start, "reserved identifier");
   ++p->pos;
   return mulib_webidl_node_new_ (p, parent, kind, p->source + start,
                                  t->end - start, t->start)
@@ -493,7 +597,7 @@ mulib_webidl_type_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *parent,
 {
   mulib_webidl_node_ *v = mulib_webidl_add_ (p, parent, "type");
   size_t start, end;
-  int ok = 0;
+  int ok = 0, named = 0;
   if (!v)
     return 0;
   if (++p->depth > 64)
@@ -530,6 +634,8 @@ mulib_webidl_type_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *parent,
         }
       if (mulib_webidl_is_ (p, "sequence"))
         generic = "sequence";
+      else if (mulib_webidl_is_ (p, "async_sequence"))
+        generic = "async_sequence";
       else if (mulib_webidl_is_ (p, "FrozenArray"))
         generic = "FrozenArray";
       else if (mulib_webidl_is_ (p, "ObservableArray"))
@@ -591,15 +697,17 @@ mulib_webidl_type_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *parent,
             }
           else
             {
-              static const char *const reserved[]
-                  = { "attribute", "callback",   "const",     "constructor",
-                      "deleter",   "dictionary", "enum",      "getter",
-                      "includes",  "inherit",    "interface", "iterable",
-                      "maplike",   "mixin",      "namespace", "optional",
-                      "or",        "partial",    "readonly",  "required",
-                      "setlike",   "setter",     "static",    "stringifier",
-                      "typedef",   "async",      "true",      "false",
-                      "null" };
+              static const char *const reserved[] = {
+                "attribute", "callback",       "const",     "constructor",
+                "deleter",   "dictionary",     "enum",      "getter",
+                "includes",  "inherit",        "interface", "iterable",
+                "maplike",   "mixin",          "namespace", "optional",
+                "or",        "partial",        "readonly",  "required",
+                "setlike",   "setter",         "static",    "stringifier",
+                "typedef",   "async",          "true",      "false",
+                "null",      "async_iterable", "Infinity",  "NaN",
+                "-Infinity"
+              };
               size_t k;
               for (k = 0; k < sizeof reserved / sizeof *reserved; ++k)
                 if (mulib_webidl_is_ (p, reserved[k]))
@@ -608,23 +716,29 @@ mulib_webidl_type_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *parent,
                                         "expected type, not keyword");
                     goto done;
                   }
-              if (!allow_void
-                  && (mulib_webidl_is_ (p, "void")
-                      || mulib_webidl_is_ (p, "undefined")))
+              if (!allow_void && mulib_webidl_is_ (p, "void"))
                 {
                   mulib_webidl_fail_ (p, start,
-                                      "void/undefined is only a return type");
+                                      "legacy void is only a return type");
                   goto done;
                 }
               ++p->pos;
             }
-          end = ((mulib_webidl_token_ *)p->tokens.data)[p->pos - 1].end;
+          /* Failed optional lookahead can skip trivia. Find the last consumed
+           * significant token rather than treating that trivia as a type word.
+           */
+          size_t last_token = p->pos;
+          mulib_webidl_token_ *ts = (mulib_webidl_token_ *)p->tokens.data;
+          while (last_token > first_token
+                 && (!strcmp (ts[last_token - 1].kind, "whitespace")
+                     || !strcmp (ts[last_token - 1].kind, "comment")))
+            --last_token;
+          end = ts[last_token - 1].end;
           if (multi)
             {
               /* Canonicalize multiword builtins independently of trivia. */
-              mulib_webidl_token_ *ts = (mulib_webidl_token_ *)p->tokens.data;
-              const char *last = p->source + ts[p->pos - 1].start;
-              size_t ln = ts[p->pos - 1].end - ts[p->pos - 1].start;
+              const char *last = p->source + ts[last_token - 1].start;
+              size_t ln = ts[last_token - 1].end - ts[last_token - 1].start;
               int uns = t->end - t->start == 8
                         && !memcmp (p->source + start, "unsigned", 8);
               int unr = t->end - t->start == 12
@@ -653,7 +767,12 @@ mulib_webidl_type_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *parent,
           else
             {
               if (p->source[start] == '_' && start + 1 < end)
-                ++start;
+                {
+                  ++start;
+                  named = 1;
+                  if (!mulib_webidl_add_ (p, v, "identifier"))
+                    goto done;
+                }
               v->value.p = p->source + start;
               v->value.n = end - start;
             }
@@ -661,10 +780,10 @@ mulib_webidl_type_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *parent,
     }
   if (mulib_webidl_take_ (p, "?"))
     {
-      if ((v->value.n == 3 && !memcmp (v->value.p, "any", 3))
-          || (v->value.n == 7 && !memcmp (v->value.p, "Promise", 7))
-          || (v->value.n == 4 && !memcmp (v->value.p, "void", 4))
-          || (v->value.n == 9 && !memcmp (v->value.p, "undefined", 9)))
+      if (!named
+          && ((v->value.n == 3 && !memcmp (v->value.p, "any", 3))
+              || (v->value.n == 7 && !memcmp (v->value.p, "Promise", 7))
+              || (v->value.n == 4 && !memcmp (v->value.p, "void", 4))))
         {
           mulib_webidl_fail_ (p, v->offset, "this type cannot be nullable");
           goto done;
@@ -702,7 +821,8 @@ mulib_webidl_default_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *parent)
   else if (!strcmp (t->kind, "string") || !strcmp (t->kind, "number")
            || mulib_webidl_is_ (p, "true") || mulib_webidl_is_ (p, "false")
            || mulib_webidl_is_ (p, "null") || mulib_webidl_is_ (p, "Infinity")
-           || mulib_webidl_is_ (p, "NaN"))
+           || mulib_webidl_is_ (p, "NaN") || mulib_webidl_is_ (p, "undefined")
+           || mulib_webidl_is_ (p, "-Infinity"))
     ++p->pos;
   else
     return mulib_webidl_fail_ (p, start, "expected literal");
@@ -714,7 +834,6 @@ mulib_webidl_default_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *parent)
 static int
 mulib_webidl_arguments_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *parent)
 {
-  int optional_seen = 0;
   if (!mulib_webidl_expect_ (p, "("))
     return 0;
   if (mulib_webidl_take_ (p, ")"))
@@ -733,10 +852,9 @@ mulib_webidl_arguments_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *parent)
       variadic = mulib_webidl_take_ (p, "...");
       if (variadic && !mulib_webidl_add_ (p, v, "variadic"))
         return 0;
-      if ((optional && variadic) || (optional_seen && !optional && !variadic))
+      if (optional && variadic)
         return mulib_webidl_fail_ (p, v->offset,
                                    "invalid optional/variadic argument order");
-      optional_seen |= optional;
       if (!mulib_webidl_name_ (p, v, "name"))
         return 0;
       if (mulib_webidl_take_ (p, "="))
@@ -829,14 +947,18 @@ mulib_webidl_member_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *def)
             return 0;
         }
       else if (mulib_webidl_is_ (p, "iterable")
+               || mulib_webidl_is_ (p, "async_iterable")
                || mulib_webidl_is_ (p, "maplike")
                || mulib_webidl_is_ (p, "setlike"))
         {
           mulib_webidl_token_ *t = mulib_webidl_peek_ (p);
-          v->kind = mulib_webidl_is_ (p, "iterable")  ? "iterable"
-                    : mulib_webidl_is_ (p, "maplike") ? "maplike"
-                                                      : "setlike";
+          int async = mulib_webidl_is_ (p, "async_iterable");
+          v->kind = (mulib_webidl_is_ (p, "iterable") || async) ? "iterable"
+                    : mulib_webidl_is_ (p, "maplike")           ? "maplike"
+                                                                : "setlike";
           ++p->pos;
+          if (async && !mulib_webidl_add_ (p, v, "async"))
+            return 0;
           if (!mulib_webidl_expect_ (p, "<") || !mulib_webidl_type_ (p, v, 0))
             return 0;
           if (mulib_webidl_take_ (p, ","))
@@ -852,8 +974,19 @@ mulib_webidl_member_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *def)
                                        "maplike requires two types");
           if (!mulib_webidl_expect_ (p, ">"))
             return 0;
-          if (mulib_webidl_is_ (p, "(") && !mulib_webidl_arguments_ (p, v))
-            return 0;
+          if (mulib_webidl_is_ (p, "("))
+            {
+              mulib_webidl_node_ *flag;
+              int is_async = 0;
+              for (flag = v->child; flag; flag = flag->next)
+                if (!strcmp (flag->kind, "async"))
+                  is_async = 1;
+              if (!is_async)
+                return mulib_webidl_fail_ (
+                    p, v->offset, "only async iterables have arguments");
+              if (!mulib_webidl_arguments_ (p, v))
+                return 0;
+            }
         }
       else
         {
@@ -968,7 +1101,7 @@ mulib_webidl_parse_ (mulib_webidl_parser_ *p)
         return 0;
       if (mulib_webidl_take_ (p, ":"))
         {
-          if (partial || !strcmp (v->kind, "namespace")
+          if (partial || callback || !strcmp (v->kind, "namespace")
               || !strcmp (v->kind, "mixin"))
             return mulib_webidl_fail_ (p, v->offset,
                                        "inheritance is not allowed here");
@@ -1008,7 +1141,117 @@ mulib_webidl_equal_ (mulib_webidl_slice_ a, mulib_webidl_slice_ b)
 static int
 mulib_webidl_value_is_ (const mulib_webidl_node_ *v, const char *s)
 {
-  return v && v->value.n == strlen (s) && !memcmp (v->value.p, s, v->value.n);
+  /* Names passed to the C backend and escaped type references denote named
+   * declarations, even when their unescaped spelling matches a builtin. */
+  return v && strcmp (v->kind, "name")
+         && !(!strcmp (v->kind, "type")
+              && mulib_webidl_child_ (v, "identifier"))
+         && v->value.n == strlen (s) && !memcmp (v->value.p, s, v->value.n);
+}
+/* Grammar-level restrictions shared by every output format. Type linking is
+ * deliberately deferred so a single fragment can refer to another file. */
+static int
+mulib_webidl_member_valid_ (mulib_webidl_parser_ *p,
+                            const mulib_webidl_node_ *owner,
+                            const mulib_webidl_node_ *v)
+{
+  const mulib_webidl_node_ *flag;
+  int attr = !strcmp (v->kind, "attribute");
+  int op = !strcmp (v->kind, "operation");
+  int collection
+      = !strcmp (v->kind, "maplike") || !strcmp (v->kind, "setlike");
+  int iterable = !strcmp (v->kind, "iterable");
+  int bare = !strcmp (v->kind, "stringifier");
+  int ctor = !strcmp (v->kind, "constructor");
+  int constant = !strcmp (v->kind, "const");
+  int modifiers = 0;
+  if (!(attr || op || collection || iterable || bare || ctor || constant))
+    return 1;
+  if ((ctor
+       && (strcmp (owner->kind, "interface")
+           || mulib_webidl_child_ (owner, "partial")))
+      || (!strcmp (owner->kind, "callback-interface") && !(op || constant))
+      || (!strcmp (owner->kind, "mixin") && !(op || attr || constant || bare))
+      || (!strcmp (owner->kind, "namespace")
+          && !(op || constant
+               || (attr && mulib_webidl_child_ (v, "readonly")))))
+    return mulib_webidl_fail_ (p, v->offset,
+                               "member not allowed in this definition");
+  for (flag = v->child; flag; flag = flag->next)
+    {
+      const char *k = flag->kind;
+      int valid = 1, modifier = 1;
+      if (!strcmp (k, "static"))
+        valid = (attr || op) && !strcmp (owner->kind, "interface");
+      else if (!strcmp (k, "readonly"))
+        {
+          valid = attr || collection;
+          modifier = 0;
+        }
+      else if (!strcmp (k, "inherit"))
+        valid = attr && !mulib_webidl_child_ (v, "readonly")
+                && !strcmp (owner->kind, "interface");
+      else if (!strcmp (k, "stringifier"))
+        valid = (attr || bare) && strcmp (owner->kind, "namespace")
+                && strcmp (owner->kind, "callback-interface");
+      else if (!strcmp (k, "getter") || !strcmp (k, "setter")
+               || !strcmp (k, "deleter") || !strcmp (k, "legacycaller"))
+        valid = op && !strcmp (owner->kind, "interface");
+      else if (!strcmp (k, "async"))
+        valid = iterable;
+      else
+        modifier = 0;
+      modifiers += modifier;
+      if (!valid || modifiers > 1)
+        return mulib_webidl_fail_ (p, flag->offset, "invalid member modifier");
+    }
+  if ((iterable && mulib_webidl_child_ (v, "readonly"))
+      || ((collection || iterable) && mulib_webidl_child_ (v, "argument")
+          && !mulib_webidl_child_ (v, "async")))
+    return mulib_webidl_fail_ (p, v->offset, "invalid collection declaration");
+  if (constant)
+    {
+      const mulib_webidl_node_ *t = mulib_webidl_child_ (v, "type");
+      const mulib_webidl_node_ *d = mulib_webidl_child_ (v, "default");
+      if (mulib_webidl_child_ (t, "type")
+          || mulib_webidl_child_ (t, "nullable") || !d
+          || !(
+              mulib_webidl_value_is_ (d, "true")
+              || mulib_webidl_value_is_ (d, "false")
+              || mulib_webidl_value_is_ (d, "Infinity")
+              || mulib_webidl_value_is_ (d, "NaN")
+              || (d->value.n
+                  && (d->value.p[0] == '-' || d->value.p[0] == '.'
+                      || mulib_webidl_digit_ ((unsigned char)d->value.p[0])))))
+        return mulib_webidl_fail_ (p, v->offset,
+                                   "invalid constant type or literal");
+    }
+  return 1;
+}
+static int
+mulib_webidl_union_has_ (const mulib_webidl_node_ *t, const char *name)
+{
+  const mulib_webidl_node_ *c;
+  if (!t)
+    return 0;
+  if (mulib_webidl_value_is_ (t, name))
+    return 1;
+  if (mulib_webidl_value_is_ (t, "union"))
+    for (c = t->child; c; c = c->next)
+      if (!strcmp (c->kind, "type") && mulib_webidl_union_has_ (c, name))
+        return 1;
+  return 0;
+}
+static size_t
+mulib_webidl_union_nulls_ (const mulib_webidl_node_ *t)
+{
+  const mulib_webidl_node_ *c;
+  size_t count = mulib_webidl_child_ (t, "nullable") != NULL;
+  if (mulib_webidl_value_is_ (t, "union"))
+    for (c = t->child; c; c = c->next)
+      if (!strcmp (c->kind, "type"))
+        count += mulib_webidl_union_nulls_ (c);
+  return count;
 }
 /* Local consistency checks; cross-file name resolution and WebIDL conversion
  * semantics are separate from parsing. The C backend requires closed types. */
@@ -1020,6 +1263,27 @@ mulib_webidl_validate_nodes_ (mulib_webidl_parser_ *p,
   for (v = parent->child; v; v = v->next)
     {
       mulib_webidl_node_ *name = mulib_webidl_child_ (v, "name");
+      if (!mulib_webidl_member_valid_ (p, parent, v))
+        return 0;
+      if (!strcmp (v->kind, "type"))
+        {
+          if (mulib_webidl_value_is_ (v, "union")
+              && (mulib_webidl_union_has_ (v, "any")
+                  || mulib_webidl_union_has_ (v, "Promise")
+                  || mulib_webidl_union_nulls_ (v) > 1))
+            return mulib_webidl_fail_ (p, v->offset,
+                                       "invalid union member type");
+          if (mulib_webidl_value_is_ (v, "record")
+              && mulib_webidl_child_ (mulib_webidl_child_ (v, "type"),
+                                      "nullable"))
+            return mulib_webidl_fail_ (p, v->offset,
+                                       "record key cannot be nullable");
+          if ((!strcmp (parent->kind, "argument")
+               || !strcmp (parent->kind, "field"))
+              && mulib_webidl_union_has_ (v, "undefined"))
+            return mulib_webidl_fail_ (
+                p, v->offset, "undefined argument or dictionary member");
+        }
       if (!strcmp (v->kind, "constructor")
           && strcmp (parent->kind, "interface"))
         return mulib_webidl_fail_ (p, v->offset,
@@ -1239,6 +1503,24 @@ mulib_webidl_find_ (mulib_webidl_parser_ *p, mulib_webidl_slice_ name)
 static int mulib_webidl_ctype_ (mulib_webidl_c_ *, const mulib_webidl_node_ *,
                                 mulib_buffer_t *, size_t, int);
 static int
+mulib_webidl_creturn_ (mulib_webidl_c_ *c, const mulib_webidl_node_ *t,
+                       mulib_buffer_t *b, size_t depth)
+{
+  const mulib_webidl_node_ *base = t;
+  size_t n = 0;
+  while (base && !mulib_webidl_child_ (base, "nullable") && n++ < 64)
+    {
+      mulib_webidl_node_ *alias;
+      if (mulib_webidl_value_is_ (base, "undefined"))
+        return mulib_webidl_text_ (b, "void");
+      alias = mulib_webidl_find_ (c->p, base->value);
+      if (!alias || strcmp (alias->kind, "typedef"))
+        break;
+      base = mulib_webidl_child_ (alias, "type");
+    }
+  return mulib_webidl_ctype_ (c, t, b, depth, 0);
+}
+static int
 mulib_webidl_cargs_ (mulib_webidl_c_ *c, const mulib_webidl_node_ *v,
                      mulib_buffer_t *b, int have_self, size_t depth)
 {
@@ -1297,7 +1579,7 @@ mulib_webidl_ctype_build_ (mulib_webidl_c_ *c, const mulib_webidl_node_ *t,
                   { "double", "double" },
                   { "unrestricted double", "double" },
                   { "void", "void" },
-                  { "undefined", "void" },
+                  { "undefined", "webidl__undefined" },
                   { "DOMString", "webidl__string" },
                   { "USVString", "webidl__string" },
                   { "ByteString", "webidl__string" },
@@ -1344,11 +1626,14 @@ mulib_webidl_ctype_build_ (mulib_webidl_c_ *c, const mulib_webidl_node_ *t,
       for (i = 0; i < sizeof scalars / sizeof *scalars; ++i)
         if (mulib_webidl_value_is_ (t, scalars[i].idl))
           return mulib_webidl_text_ (b, scalars[i].c);
-      if (mulib_webidl_value_is_ (t, "Promise"))
+      if (mulib_webidl_value_is_ (t, "Promise")
+          || mulib_webidl_value_is_ (t, "async_sequence"))
         {
           ok = mulib_webidl_ctype_ (c, mulib_webidl_child_ (t, "type"),
                                     &fields, depth + 1, 0)
-               && mulib_webidl_text_ (b, "webidl__promise *");
+               && mulib_webidl_text_ (b, mulib_webidl_value_is_ (t, "Promise")
+                                             ? "webidl__promise *"
+                                             : "webidl__async_sequence *");
           goto done;
         }
       if (mulib_webidl_value_is_ (t, "sequence")
@@ -1403,9 +1688,9 @@ mulib_webidl_ctype_build_ (mulib_webidl_c_ *c, const mulib_webidl_node_ *t,
               (void)snprintf (helper, sizeof helper, "webidl__type_%zu",
                               c->serial++);
               ok = mulib_webidl_text_ (&signature, "typedef ")
-                   && mulib_webidl_ctype_ (c,
-                                           mulib_webidl_child_ (def, "type"),
-                                           &signature, depth + 1, 0)
+                   && mulib_webidl_creturn_ (c,
+                                             mulib_webidl_child_ (def, "type"),
+                                             &signature, depth + 1)
                    && mulib_webidl_text_ (&signature, " (*")
                    && mulib_webidl_text_ (&signature, helper)
                    && mulib_webidl_text_ (&signature, ")(")
@@ -1678,7 +1963,7 @@ mulib_webidl_cmember_ (mulib_webidl_c_ *c, mulib_buffer_t *b,
               || !mulib_webidl_text_ (b, " *"))
             return 0;
         }
-      else if (!mulib_webidl_ctype_ (c, type, b, 0, 0))
+      else if (!mulib_webidl_creturn_ (c, type, b, 0))
         return 0;
       (void)snprintf (suffix, sizeof suffix, "%s_%zu", ctor ? "new" : "call",
                       ordinal);
@@ -1696,6 +1981,79 @@ mulib_webidl_cmember_ (mulib_webidl_c_ *c, mulib_buffer_t *b,
       "C99 does not lower iterable/maplike/setlike/stringifier members");
 }
 static int
+mulib_webidl_is_member_ (const mulib_webidl_node_ *v)
+{
+  return strcmp (v->kind, "name") && strcmp (v->kind, "inheritance")
+         && strcmp (v->kind, "partial")
+         && strcmp (v->kind, "extended-attributes");
+}
+static int
+mulib_webidl_copy_node_ (mulib_webidl_parser_ *p, mulib_webidl_node_ *parent,
+                         const mulib_webidl_node_ *source)
+{
+  const mulib_webidl_node_ *child;
+  mulib_webidl_node_ *v
+      = mulib_webidl_node_new_ (p, parent, source->kind, source->value.p,
+                                source->value.n, source->offset);
+  if (!v)
+    return 0;
+  for (child = source->child; child; child = child->next)
+    if (!mulib_webidl_copy_node_ (p, v, child))
+      return 0;
+  return 1;
+}
+/* C lowering links only its private tree; semantic output preserves fragments.
+ * First merge partials (including partial mixins), then copy included members.
+ */
+static int
+mulib_webidl_merge_ (mulib_webidl_parser_ *p)
+{
+  mulib_webidl_node_ *d, *v, *base, **link;
+  for (d = p->root->child; d; d = d->next)
+    if (mulib_webidl_child_ (d, "partial"))
+      {
+        base = mulib_webidl_find_ (p, mulib_webidl_child_ (d, "name")->value);
+        if (!base || strcmp (base->kind, d->kind))
+          return mulib_webidl_fail_ (
+              p, d->offset, "unresolved or mismatched partial definition");
+        for (v = d->child; v; v = v->next)
+          if (mulib_webidl_is_member_ (v)
+              && !mulib_webidl_copy_node_ (p, base, v))
+            return 0;
+      }
+  for (d = p->root->child; d; d = d->next)
+    if (!strcmp (d->kind, "includes"))
+      {
+        mulib_webidl_node_ *mixin
+            = mulib_webidl_find_ (p, mulib_webidl_child_ (d, "mixin")->value);
+        base = mulib_webidl_find_ (p, mulib_webidl_child_ (d, "name")->value);
+        if (!base || strcmp (base->kind, "interface") || !mixin
+            || strcmp (mixin->kind, "mixin"))
+          return mulib_webidl_fail_ (
+              p, d->offset, "includes requires an interface and a mixin");
+        for (v = mixin->child; v; v = v->next)
+          if (mulib_webidl_is_member_ (v)
+              && !mulib_webidl_copy_node_ (p, base, v))
+            return 0;
+      }
+  link = &p->root->child;
+  p->root->tail = NULL;
+  while ((d = *link) != NULL)
+    if (mulib_webidl_child_ (d, "partial") || !strcmp (d->kind, "mixin")
+        || !strcmp (d->kind, "includes"))
+      {
+        *link = d->next;
+        d->next = NULL;
+        mulib_webidl_nodes_free_ (d);
+      }
+    else
+      {
+        p->root->tail = d;
+        link = &d->next;
+      }
+  return mulib_webidl_validate_nodes_ (p, p->root);
+}
+static int
 mulib_webidl_c99_ (mulib_webidl_parser_ *p, mulib_buffer_t *b)
 {
   mulib_webidl_c_ c;
@@ -1704,6 +2062,8 @@ mulib_webidl_c99_ (mulib_webidl_parser_ *p, mulib_buffer_t *b)
   int ok = 0;
   memset (&c, 0, sizeof c);
   c.p = p;
+  if (!mulib_webidl_merge_ (p))
+    goto done;
   if (!mulib_webidl_text_ (
           b, "/* Generated WebIDL C99 declarations; no runtime bindings. */\n"
              "#include <stddef.h>\n#include <stdint.h>\n#include "
@@ -1713,6 +2073,8 @@ mulib_webidl_c99_ (mulib_webidl_parser_ *p, mulib_buffer_t *b)
              "webidl__string;\n"
              "typedef struct { void *data; size_t length; } webidl__bytes;\n"
              "typedef struct { void *data; size_t tag; } webidl__any;\n"
+             "typedef struct { unsigned char unused; } webidl__undefined;\n"
+             "typedef struct webidl__async_sequence webidl__async_sequence;\n"
              "typedef struct webidl__promise webidl__promise;\n#endif\n"))
     goto done;
   for (d = p->root->child; d; d = d->next)
@@ -1720,14 +2082,6 @@ mulib_webidl_c99_ (mulib_webidl_parser_ *p, mulib_buffer_t *b)
       mulib_webidl_node_ *ancestor = d;
       size_t depth = 0;
       name = mulib_webidl_child_ (d, "name");
-      if (mulib_webidl_child_ (d, "partial") || !strcmp (d->kind, "mixin")
-          || !strcmp (d->kind, "includes"))
-        {
-          mulib_webidl_fail_ (
-              p, d->offset,
-              "C99 requires merged definitions (no partial/mixin/includes)");
-          goto done;
-        }
       while (mulib_webidl_child_ (ancestor, "inheritance"))
         {
           mulib_webidl_node_ *base

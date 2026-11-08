@@ -549,4 +549,5 @@
 #include "mulib-riscv64.h"
 #include "mulib-unit.h"
 #include "mulib-xtensa.h"
+#include "mulib-dom.h"
 int main(void) { return 0; }

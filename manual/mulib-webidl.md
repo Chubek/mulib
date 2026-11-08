@@ -67,25 +67,51 @@ nullable types, unions, `sequence`, `FrozenArray`, `ObservableArray`, `Promise`
 and string-keyed `record`. Arguments support extended attributes, optional values,
 defaults and variadics. Literals support integers (decimal/octal/hex), floating
 point/exponents, booleans, strings, null, infinities, NaN, empty arrays and empty
-dictionaries. WebIDL strings have no backslash escape processing: a backslash is
+dictionaries, and `undefined` defaults. The current grammar's `async_sequence<T>`
+and `async_iterable<T>`/`async_iterable<K, V>` are supported. The older
+`async iterable` and return-only `void` spellings remain accepted.
+WebIDL strings have no backslash escape processing: a backslash is
 a literal character. Non-ASCII UTF-8 is supported in strings and comments;
-identifiers use ASCII letters, digits, underscores and internal hyphens.
+multiline strings are valid. Identifiers follow `[_-]?[A-Za-z][0-9A-Z_a-z-]*`.
+Whitespace follows the standard's space, tab, CR and LF set.
 
 Extended attributes are preserved as balanced token/group trees, including
 unknown vendor attributes. Their individual grammars and effects are not
 interpreted. A leading underscore is removed from semantic names, as WebIDL's
 identifier escape; concrete tokens retain it. Multiword type whitespace and
-comments are normalized in the AST.
+comments are normalized in the AST. Attribute token trees also preserve the
+grammar's `other` scalar tokens (e.g. vendor `Conditional=A&B`). Trailing commas
+in extended attribute lists remain accepted for compatibility with WebCore.
+Escaped type references carry an `identifier` child so named `_boolean` or
+`_long` definitions cannot accidentally lower as primitive C types.
 
 Malformed tokens, mismatched delimiters, missing terminators, misplaced defaults,
-invalid optional/variadic argument ordering, invalid generic arity, duplicate
+explicitly optional variadics, invalid generic arity, duplicate
 local names/enum values/full definitions and some invalid nullable types are
 rejected. Operations may share names (overloads); partial definitions can share
-their full definition's name. Cross-file linking, all reserved-name restrictions,
-overload ambiguity, member-modifier legality, type compatibility/ranges of
+their full definition's name. Optional arguments may precede required arguments,
+as allowed by the grammar (e.g. the corpus's GPUPipelineError constructor).
+Keyword names require escaping except the grammar's argument, attribute and
+operation name exceptions. Reserved `constructor`/`toString` names, misplaced
+constructors, callback-interface inheritance, invalid member modifiers and
+member kinds are diagnosed. Namespace constants are supported. Unions cannot
+directly contain `any`/`Promise` or multiple nullable alternatives, record keys
+cannot be nullable, and direct/union `undefined` arguments and dictionary fields
+are rejected. `undefined` is otherwise a distinguishable type, including in
+return unions and typedefs, rather than only a return keyword.
+Cross-file linking, typedef-mediated semantic restrictions,
+overload ambiguity, type compatibility/ranges of
 defaults/constants and extended-attribute semantics are **not** fully validated.
 Legacy `implements`, exceptions, arbitrary expressions and nonempty literal
-arrays/dictionaries are not supported.
+arrays/dictionaries are not supported. Neither are vendor forward interface
+declarations, callback constructors, UTF8String record keys, old stringifier
+operations, or preprocessor directives. Build-condition evaluation must occur
+before compilation; directives are never silently discarded.
+
+The grammar reference is the local
+[`standards/webidl/index.bs`](../standards/webidl/index.bs), particularly
+Definitions, Type/DistinguishableType, AsyncIterable, DefaultValue, and the
+tokenizer appendix. Implementation is original; the reference remains unchanged.
 
 Limits per call: 16 MiB input, 262144 tokens (including trivia), 65536 AST nodes,
 64 levels of syntactic nesting or C type expansion, 262144 C type expansions,
@@ -110,6 +136,7 @@ For `dictionary P { required long x; };` the S-expression AST is:
 
 The CST is `(webidl-cst (TOKEN-KIND OFFSET "EXACT-TEXT") ...)`, with token kinds
 `identifier`, `number`, `string`, `punctuation`, `whitespace`, and `comment`.
+The extended-attribute grammar can additionally produce `other` tokens.
 Concatenating the decoded token strings, in order, reconstructs the entire input
 exactly. CST mode still parses and validates the grammar, not merely lexes it.
 Quoted S-expression strings use JSON escaping. UTF-8 text remains UTF-8.
@@ -172,23 +199,36 @@ attribute effects or inheritance dispatch automatically.
   become `{T *data; size_t length;}`. Records become parallel string-key and
   typed-value arrays plus length. Unions have a zero-based alternative `tag`
   and a C union with `value_N` fields. Helper typedefs are generated as needed.
+* Non-return `undefined` uses a one-byte `webidl__undefined` unit struct, allowing
+  nullable and union layouts to remain valid C. A nonnullable `undefined` return
+  (including through typedefs) uses `void`.
 * `any` is an application-defined `{void *data; size_t tag;}`;
   object/symbol are opaque pointers; Promise is an opaque promise pointer.
+  `async_sequence<T>` is an opaque `webidl__async_sequence *`, not an eager array;
+  its element type is still checked for resolution.
   Buffer and typed-array types use `{void *data; size_t length;}` byte spans.
 
 The C backend requires all referenced named types (including Promise results) to
-resolve. Cyclic typedefs/callback signatures, partials, mixins, includes,
+resolve. Partial interfaces, namespaces, dictionaries and mixins are merged
+into their full definitions for C generation; included mixin members are copied
+into each receiving interface. Base members precede partial members (source
+order), followed by included members (includes order). The resulting member
+ordinals determine C symbol suffixes. Unresolved/mismatched partials or includes
+and duplicate merged names are diagnosed atomically. Semantic AST/CST/YAML retain
+the original fragment structure. Standalone mixins have no C declaration.
+Cyclic typedefs/callback signatures,
 iterable/maplike/setlike/bare stringifiers, nonnumeric constants and constants
-with nonnumeric/nullable types fail explicitly. Merge declarations before C
-lowering when using partials/mixins. Extended attributes remain metadata in the
+with nonnumeric/nullable types fail explicitly. Extended attributes remain metadata in the
 semantic formats and have no binding behavior in C declarations.
 
 ## Compatibility: schema generation
 
-`mulib_webidl_generate(schema, out)` is unchanged. It generates one flat WebIDL
+`mulib_webidl_generate(schema, out)` retains its API. It generates one flat WebIDL
 dictionary from `mulib_dbschema_t`, not from source. Names use underscore
 escaping; null-only fields fail, arrays map to `sequence<any>`, objects to
-`object`. Append is atomic without a trailing NUL. See also
+`object`. Schema names/fields starting with underscore or named `constructor`
+or `toString` are rejected because they cannot preserve those semantic names in
+valid WebIDL. Append is atomic without a trailing NUL. See also
 [schema mapping](storage-server.md#idl-and-native-output).
 
 ## Verification
@@ -197,6 +237,10 @@ escaping; null-only fields fail, arrays map to `sequence<any>`, objects to
 empty input, invalid UTF-8/options, recursion limits and allocation failure at
 every allocation in each backend. `tools/check_webidl.py` compiles generated
 output as strict C99 and verifies concrete-token roundtrips and YAML structure.
+It also runs all 1,033 `.idl`/`.webidl` inputs in `library/webidl`: 989 parse and
+44 produce expected diagnostics for explicitly identified vendor/preprocessor
+constructs. The checker does not preprocess or rewrite those inputs. Native DOM
+behavior is implemented separately by [mulib-dom](mulib-dom.md).
 
 <!-- manual-reference -->
 ## Source and build reference

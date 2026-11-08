@@ -73,6 +73,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--emitter', required=True)
     parser.add_argument('--compiler', default='cc')
+    parser.add_argument('--corpus', type=Path,
+                        default=Path(__file__).resolve().parent.parent / 'library/webidl')
     args = parser.parse_args()
 
     def emit(flag):
@@ -83,7 +85,7 @@ def main():
     assert cst[0] == 'webidl-cst'
     offset, parts = 0, []
     for kind, start, raw in cst[1:]:
-        assert kind in {'identifier', 'number', 'string', 'punctuation', 'comment', 'whitespace'}
+        assert kind in {'identifier', 'number', 'string', 'punctuation', 'comment', 'whitespace', 'other'}
         assert int(start) == offset
         encoded = raw.encode('utf-8')
         offset += len(encoded)
@@ -108,12 +110,44 @@ void webidl_generated_typecheck(void)
   int64_t minimum = webidl_Sample__webidl_MIN__constant;
   double infinity = webidl_Sample__webidl_INF__constant;
   (void)maximum; (void)minimum; (void)infinity;
+  webidl_List__webidl_clear__call_1((webidl_List *)0);
+  webidl_List__webidl_reset__call_3((webidl_List *)0);
+  webidl_Async__webidl_finish__call_0((webidl_Async *)0);
+  webidl_MaybeCount maybe = webidl_Async__webidl_count__call_1((webidl_Async *)0);
+  (void)maybe;
+  webidl_Escaped escaped = {0};
+  webidl_boolean large = UINT64_MAX;
+  escaped.webidl_count = large;
+  webidl_long *object = escaped.webidl_object;
+  (void)object;
 }
 ''')
         subprocess.run(shlex.split(args.compiler) + [
             '-std=c99', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-c', str(path),
             '-o', str(Path(tmp) / 'generated.o')], check=True)
-    print('WebIDL: strict C99, CST roundtrip and AST/CodeYAML agreement passed')
+    # Test the vendored inputs without rewriting their dialect or evaluating
+    # build conditionals. Unsupported dialect constructs must fail explicitly.
+    unsupported = re.compile(
+        r'^\s*interface\s+[A-Za-z_][\w-]*\s*;'
+        r'|\bcallback\s+constructor\b'
+        r'|\brecord\s*<\s*UTF8String\b'
+        r'|\bstringifier\s+\w+\s*\('
+        r'|^\s*#\s*(?:if|ifdef|ifndef)\b', re.M)
+    passed = rejected = 0
+    files = sorted(p for p in args.corpus.rglob('*') if p.suffix in {'.idl', '.webidl'})
+    assert files, f'no IDL files in {args.corpus}'
+    for file in files:
+        text = re.sub(r'/\*.*?\*/|//[^\n]*', '', file.read_text(), flags=re.S)
+        result = subprocess.run([args.emitter, '--check-file', str(file)],
+                                capture_output=True, text=True)
+        if unsupported.search(text):
+            assert result.returncode == 1 and result.stderr, f'expected dialect diagnostic: {file}'
+            rejected += 1
+        else:
+            assert result.returncode == 0, result.stderr or str(file)
+            passed += 1
+    print(f'WebIDL: strict C99, CST roundtrip, AST/CodeYAML agreement; '
+          f'{passed} corpus inputs parsed, {rejected} diagnosed dialect inputs')
 
 
 if __name__ == '__main__':
