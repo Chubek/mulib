@@ -3,7 +3,7 @@
  * Define MULIB_IMPL_CONTAINER_VFS plus ROOTFS/VFS dependencies. */
 #ifndef MULIB_CONTAINER_VFS_H
 #define MULIB_CONTAINER_VFS_H
-#include "include-mulib-container-core.h"
+#include "mulib-container-core.h"
 #include "mulib-rootfs.h"
 #ifdef __cplusplus
 extern "C" {

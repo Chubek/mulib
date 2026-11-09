@@ -3,7 +3,7 @@
  * Define MULIB_IMPL_CONTAINER_LOG once. */
 #ifndef MULIB_CONTAINER_LOG_H
 #define MULIB_CONTAINER_LOG_H
-#include "include-mulib-container-core.h"
+#include "mulib-container-core.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -77,7 +77,7 @@ int mulib_prowse_control_repl (mulib_prowse_control_t *, int input_fd, int outpu
 #endif
 #if defined(MULIB_IMPL_PROWSE_CONTROL) && !defined(MULIB_PROWSE_CONTROL_IMPLEMENTED)
 #define MULIB_PROWSE_CONTROL_IMPLEMENTED
-#include "include-mulib-lprowse.h"
+#include "mulib-lprowse.h"
 #include "mulib-strbuf.h"
 #include <stdlib.h>
 #include <string.h>

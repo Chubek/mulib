@@ -4,7 +4,7 @@
 #ifndef MULIB_CONTAINER_PACKZSTD_H
 #define MULIB_CONTAINER_PACKZSTD_H
 #include "mulib-imgformat.h"
-#include "include-mulib-zstd.h"
+#include "mulib-zstd.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

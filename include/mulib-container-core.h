@@ -1,5 +1,5 @@
 /**
- * @file include-mulib-container-core.h
+ * @file mulib-container-core.h
  * @brief Shared checked storage, wire primitives and errors for containers.
  * All functions are static inline; no implementation switch is necessary.
  * Define MULIB_CT_MALLOC/REALLOC/FREE together to inject an allocator. Objects

@@ -1,10 +1,10 @@
-/** @file include-mulib-qvm.h
+/** @file mulib-qvm.h
  * @brief Quota VM: a resumable 16-register, unsigned-64-bit bytecode engine.
  * Static-inline dependency, with owned code/RAM and explicit host calls.
  * Arithmetic wraps modulo 2^64; memory accesses are checked and little-endian. */
 #ifndef INCLUDE_MULIB_QVM_H
 #define INCLUDE_MULIB_QVM_H
-#include "include-mulib-container-core.h"
+#include "mulib-container-core.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

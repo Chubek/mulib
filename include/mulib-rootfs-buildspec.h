@@ -3,7 +3,7 @@
  * Define MULIB_IMPL_ROOTFS_BUILDSPEC and the ROOTFS dependency switches. */
 #ifndef MULIB_ROOTFS_BUILDSPEC_H
 #define MULIB_ROOTFS_BUILDSPEC_H
-#include "include-mulib-container-core.h"
+#include "mulib-container-core.h"
 #include "mulib-rootfs.h"
 #ifdef __cplusplus
 extern "C" {

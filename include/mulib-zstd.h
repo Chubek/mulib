@@ -1,11 +1,11 @@
-/** @file include-mulib-zstd.h
+/** @file mulib-zstd.h
  * @brief Dependency-free Zstandard single-segment raw/RLE frame codec.
  * Static-inline implementation. Standard magic, content sizes and 128 KiB block
  * bounds are supported. Entropy-compressed blocks, dictionaries, checksums and
  * multi-frame/skippable streams return ENOTSUP or EFORMAT; see the manual. */
 #ifndef INCLUDE_MULIB_ZSTD_H
 #define INCLUDE_MULIB_ZSTD_H
-#include "include-mulib-container-core.h"
+#include "mulib-container-core.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

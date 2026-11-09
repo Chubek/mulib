@@ -4,7 +4,7 @@
 #ifndef MULIB_CONTAINER_QVMBOOST_H
 #define MULIB_CONTAINER_QVMBOOST_H
 #include "mulib-containerboost.h"
-#include "include-mulib-qvm.h"
+#include "mulib-qvm.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

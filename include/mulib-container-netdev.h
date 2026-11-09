@@ -3,7 +3,7 @@
  * Define MULIB_IMPL_CONTAINER_NETDEV once; transports are explicit callbacks. */
 #ifndef MULIB_CONTAINER_NETDEV_H
 #define MULIB_CONTAINER_NETDEV_H
-#include "include-mulib-container-core.h"
+#include "mulib-container-core.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

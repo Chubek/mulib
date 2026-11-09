@@ -3,7 +3,7 @@
  * Define MULIB_IMPL_CONTAINER_IPC and MULIB_IMPL_CRC32 once. */
 #ifndef MULIB_CONTAINER_IPC_H
 #define MULIB_CONTAINER_IPC_H
-#include "include-mulib-container-core.h"
+#include "mulib-container-core.h"
 #include "mulib-crc32.h"
 #ifdef __cplusplus
 extern "C" {

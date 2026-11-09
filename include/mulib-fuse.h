@@ -81,7 +81,7 @@ extern "C"
 
 #if defined(MULIB_IMPL_FUSE) && !defined(MULIB_FUSE_IMPLEMENTED)
 #define MULIB_FUSE_IMPLEMENTED
-#include "include-mulib-container-core.h"
+#include "mulib-container-core.h"
 #include <string.h>
 #ifdef __cplusplus
 extern "C"

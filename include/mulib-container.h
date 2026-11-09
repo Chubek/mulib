@@ -5,7 +5,7 @@
  */
 #ifndef MULIB_CONTAINER_H
 #define MULIB_CONTAINER_H
-#include "include-mulib-container-core.h"
+#include "mulib-container-core.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
