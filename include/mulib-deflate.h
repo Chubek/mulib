@@ -28,6 +28,10 @@ extern "C"
    * out. */
   int mulib_deflate_decode (const void *data, size_t size, size_t limit,
                             mulib_buffer_t *out);
+  /** @brief Decode the first raw stream. On success consumed is its byte size;
+   * trailing bytes are left to a framing codec. Both outputs survive failure. */
+  int mulib_deflate_decode_prefix (const void *data, size_t size, size_t limit,
+                                   size_t *consumed, mulib_buffer_t *out);
 #ifdef __cplusplus
 }
 #endif
@@ -184,9 +188,9 @@ mulib_deflate_dynamic_ (mulib_deflate_bits_ *b, mulib_deflate_tree_ *lt,
     return 0;
   return 1;
 }
-int
-mulib_deflate_decode (const void *data, size_t size, size_t limit,
-                      mulib_buffer_t *out)
+static int
+mulib_deflate_decode_ (const void *data, size_t size, size_t limit,
+                       size_t *consumed, mulib_buffer_t *out)
 {
   mulib_deflate_bits_ b;
   mulib_buffer_t tmp = { 0 };
@@ -283,14 +287,27 @@ mulib_deflate_decode (const void *data, size_t size, size_t limit,
             }
         }
     }
-  if (b.pos != b.size)
+  if (!consumed && b.pos != b.size)
     goto done;
   result = mulib_buffer_append (out, tmp.data, tmp.length)
-               ? MULIB_DEFLATE_OK
-               : MULIB_DEFLATE_ENOMEM;
+                ? MULIB_DEFLATE_OK
+                : MULIB_DEFLATE_ENOMEM;
+  if (!result && consumed)
+    *consumed = b.pos;
 done:
   mulib_buffer_free (&tmp);
   return result;
+}
+int
+mulib_deflate_decode (const void *data, size_t size, size_t limit,
+                      mulib_buffer_t *out)
+{ return mulib_deflate_decode_ (data, size, limit, NULL, out); }
+int
+mulib_deflate_decode_prefix (const void *data, size_t size, size_t limit,
+                             size_t *consumed, mulib_buffer_t *out)
+{
+  if (!consumed) return MULIB_DEFLATE_EINVAL;
+  return mulib_deflate_decode_ (data, size, limit, consumed, out);
 }
 typedef struct mulib_deflate_writer_
 {

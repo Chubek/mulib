@@ -23,7 +23,6 @@ INCLUDE = re.compile(r'^\s*#\s*include\s*["<]([^">]+)[">]', re.M)
 AUXILIARY = {
     'mulib-container-core': 'container-core',
     'mulib-qvm': 'qvm-core',
-    'mulib-zstd': 'zstd-raw',
     'mulib-lprowse': 'prowse-control',
 }
 

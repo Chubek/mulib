@@ -36,6 +36,7 @@
 #define MULIB_IMPL_BASE64
 #define MULIB_IMPL_BAYESIAN_METHODS
 #define MULIB_IMPL_BAYSIAN_RANKING
+#define MULIB_IMPL_BCJ
 #define MULIB_IMPL_BEAM_SEARCH
 #define MULIB_IMPL_BIDI
 #define MULIB_IMPL_BINFILE
@@ -68,6 +69,7 @@
 #define MULIB_IMPL_BUILDGRAPH
 #define MULIB_IMPL_BUILDVM
 #define MULIB_IMPL_BYCUTILS
+#define MULIB_IMPL_BZIP2
 #define MULIB_IMPL_CACHE
 #define MULIB_IMPL_CASSOWARY_SOLVER
 #define MULIB_IMPL_CBOR
@@ -81,6 +83,7 @@
 #define MULIB_IMPL_CLASSIC_BPF
 #define MULIB_IMPL_CLICKIR
 #define MULIB_IMPL_CMACHINE
+#define MULIB_IMPL_CODEC_CORE
 #define MULIB_IMPL_COFF
 #define MULIB_IMPL_COFFBUILDER
 #define MULIB_IMPL_COFFUTILS
@@ -280,6 +283,7 @@
 #define MULIB_IMPL_GSS
 #define MULIB_IMPL_GSSAIR
 #define MULIB_IMPL_GVIZZ
+#define MULIB_IMPL_GZIP
 #define MULIB_IMPL_HAMMING_DISTANCE
 #define MULIB_IMPL_HASH
 #define MULIB_IMPL_HATTRIE
@@ -367,6 +371,11 @@
 #define MULIB_IMPL_LOGGER
 #define MULIB_IMPL_LOWOPT
 #define MULIB_IMPL_LSMTREE
+#define MULIB_IMPL_LZF
+#define MULIB_IMPL_LZIP
+#define MULIB_IMPL_LZMA
+#define MULIB_IMPL_LZO
+#define MULIB_IMPL_LZOP
 #define MULIB_IMPL_MACHINE
 #define MULIB_IMPL_MACHINEBUILD
 #define MULIB_IMPL_MACHO
@@ -790,9 +799,11 @@
 #define MULIB_IMPL_XTENSA
 #define MULIB_IMPL_XTHREADS
 #define MULIB_IMPL_XTKS
+#define MULIB_IMPL_XZ
 #define MULIB_IMPL_YAML
 #define MULIB_IMPL_YANTLR
 #define MULIB_IMPL_ZIP
+#define MULIB_IMPL_ZSTD
 #include "mulib-2dgeom.h"
 #include "mulib-aarch64.h"
 #include "mulib-abstun.h"
@@ -831,6 +842,7 @@
 #include "mulib-base64.h"
 #include "mulib-bayesian_methods.h"
 #include "mulib-baysian_ranking.h"
+#include "mulib-bcj.h"
 #include "mulib-beam_search.h"
 #include "mulib-bidi.h"
 #include "mulib-binfile.h"
@@ -862,6 +874,7 @@
 #include "mulib-buildgraph.h"
 #include "mulib-buildvm.h"
 #include "mulib-bycutils.h"
+#include "mulib-bzip2.h"
 #include "mulib-cache.h"
 #include "mulib-cassowary-solver.h"
 #include "mulib-cbor.h"
@@ -875,6 +888,7 @@
 #include "mulib-classic-bpf.h"
 #include "mulib-clickir.h"
 #include "mulib-cmachine.h"
+#include "mulib-codec-core.h"
 #include "mulib-coff-objdump.h"
 #include "mulib-coff.h"
 #include "mulib-coffbuilder.h"
@@ -1074,6 +1088,7 @@
 #include "mulib-gss.h"
 #include "mulib-gssair.h"
 #include "mulib-gvizz.h"
+#include "mulib-gzip.h"
 #include "mulib-hamming_distance.h"
 #include "mulib-hash.h"
 #include "mulib-hattrie.h"
@@ -1162,6 +1177,11 @@
 #include "mulib-lowopt.h"
 #include "mulib-lprowse.h"
 #include "mulib-lsmtree.h"
+#include "mulib-lzf.h"
+#include "mulib-lzip.h"
+#include "mulib-lzma.h"
+#include "mulib-lzo.h"
+#include "mulib-lzop.h"
 #include "mulib-machine.h"
 #include "mulib-machinebuild.h"
 #include "mulib-macho-objdump.h"
@@ -1584,6 +1604,7 @@
 #include "mulib-xtensa.h"
 #include "mulib-xthreads.h"
 #include "mulib-xtks.h"
+#include "mulib-xz.h"
 #include "mulib-yaml.h"
 #include "mulib-yantlr.h"
 #include "mulib-zip.h"

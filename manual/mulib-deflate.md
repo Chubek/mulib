@@ -34,6 +34,14 @@ limit applies to newly decoded bytes, not output's existing prefix. Neither API
 adds a terminator. Call `mulib_buffer_free` on owned output. Scratch memory is
 released on every path; there is no mutable global state.
 
+`mulib_deflate_decode_prefix(data,size,limit,&consumed,&out)` decodes the first
+complete raw stream and reports its byte count instead of rejecting trailing
+bytes. This lets framing codecs such as [gzip](mulib-gzip.md) locate the trailer
+without guessing from marker bytes. It includes the final partial byte, ignores
+unused bits in that byte, and leaves both `consumed` and output unchanged on
+failure. The consumed pointer is required. The original exact-stream decoder
+retains its trailing-byte rejection and existing error/ownership contract.
+
 The decoder buffers its result before appending, using O(decoded size) memory.
 The encoder uses O(encoded size) scratch plus 4096 `size_t` entries. Matching work
 per input position is bounded by 258 comparisons. Integer overflow and buffer
@@ -47,6 +55,8 @@ The shared `tests/fuzz_headers.c` harness also exercises bounded decoding.
 `tools/check_ebook_formats.py` tests interoperability against Python zlib with all
 three block types, multiple blocks, several strategies and independently decoded
 MuLIB output.
+`tests/test_compression_codecs.c` additionally checks prefix consumption, strict
+versus prefix behavior, truncation and preservation of the consumed count.
 
 Reference: [RFC 1951](https://www.rfc-editor.org/rfc/rfc1951).
 

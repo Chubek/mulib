@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 795 headers, 845 direct dependency edges.
+Inventory: 805 headers, 863 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (302 modules)
+## Stratum 0 (303 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -33,6 +33,7 @@ Compatibility group: `parsec`, `peg`.
 | [b+tree](mulib-b+tree.md) | none |
 | [base64](mulib-base64.md) | none |
 | [baysian_ranking](mulib-baysian_ranking.md) | none |
+| [bcj](mulib-bcj.md) | none |
 | [binfile](mulib-binfile.md) | none |
 | [bios](mulib-bios.md) | none |
 | [bitmap](mulib-bitmap.md) | none |
@@ -344,6 +345,7 @@ Compatibility group: `parsec`, `peg`.
 | [buildgraph](mulib-buildgraph.md) | `artifact` |
 | [ccweave](mulib-ccweave.md) | `mir`, `strbuf` |
 | [cmachine](mulib-cmachine.md) | `minivm`, `mir` |
+| [codec-core](mulib-codec-core.md) | `buffer` |
 | [coff](mulib-coff.md) | `endian` |
 | [competprice](mulib-competprice.md) | `statsproc` |
 | [compression](mulib-compression.md) | `buffer`, `rle` |
@@ -510,9 +512,8 @@ Compatibility group: `parsec`, `peg`.
 | [wlroots](mulib-wlroots.md) | `vec` |
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
-| [zstd](mulib-zstd.md) | `container-core` |
 
-## Stratum 2 (102 modules)
+## Stratum 2 (108 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -523,6 +524,7 @@ Compatibility group: `parsec`, `peg`.
 | [binfilebuilder](mulib-binfilebuilder.md) | `binfileschema`, `buffer`, `bycutils` |
 | [bktree](mulib-bktree.md) | `bk-trees` |
 | [buildvm](mulib-buildvm.md) | `buildgraph`, `vcdiff` |
+| [bzip2](mulib-bzip2.md) | `codec-core` |
 | [cache](mulib-cache.md) | `hattrie`, `kvdb`, `trie` |
 | [cgeom](mulib-cgeom.md) | `linalg`, `simdmath` |
 | [channel](mulib-channel.md) | `fiber` |
@@ -544,6 +546,7 @@ Compatibility group: `parsec`, `peg`.
 | [evtstream](mulib-evtstream.md) | `ast` |
 | [fmt-sv](mulib-fmt-sv.md) | `hwil-module` |
 | [glr](mulib-glr.md) | `atn`, `gss`, `sppf` |
+| [gzip](mulib-gzip.md) | `codec-core`, `crc32`, `deflate` |
 | [hidden_markov_chain](mulib-hidden_markov_chain.md) | `markov_chain` |
 | [html](mulib-html.md) | `xml` |
 | [http3](mulib-http3.md) | `quic` |
@@ -555,6 +558,9 @@ Compatibility group: `parsec`, `peg`.
 | [latex](mulib-latex.md) | `tex` |
 | [ligature](mulib-ligature.md) | `fontshape` |
 | [lir](mulib-lir.md) | `lowopt`, `machine` |
+| [lzf](mulib-lzf.md) | `codec-core` |
+| [lzma](mulib-lzma.md) | `codec-core` |
+| [lzo](mulib-lzo.md) | `codec-core` |
 | [machinebuild](mulib-machinebuild.md) | `fst`, `strbuf` |
 | [machoutils](mulib-machoutils.md) | `macho` |
 | [mathml](mulib-mathml.md) | `xml` |
@@ -618,8 +624,9 @@ Compatibility group: `parsec`, `peg`.
 | [xpath](mulib-xpath.md) | `xml` |
 | [xtbb](mulib-xtbb.md) | `parallel` |
 | [zip](mulib-zip.md) | `crc32`, `deflate`, `utf8` |
+| [zstd](mulib-zstd.md) | `codec-core`, `container-core` |
 
-## Stratum 3 (79 modules)
+## Stratum 3 (82 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -657,6 +664,8 @@ Compatibility group: `parsec`, `peg`.
 | [linebreak](mulib-linebreak.md) | `unibreak` |
 | [listener](mulib-listener.md) | `evtstream` |
 | [lsmtree](mulib-lsmtree.md) | `sstfile`, `wal` |
+| [lzip](mulib-lzip.md) | `crc32`, `lzma` |
+| [lzop](mulib-lzop.md) | `adler32`, `crc32`, `lzo` |
 | [markdown](mulib-markdown.md) | `html` |
 | [mumq-publisher](mulib-mumq-publisher.md) | `mumq` |
 | [mumq-server](mulib-mumq-server.md) | `mumq` |
@@ -702,6 +711,7 @@ Compatibility group: `parsec`, `peg`.
 | [wifi-scan](mulib-wifi-scan.md) | `nl80211` |
 | [wifi-station](mulib-wifi-station.md) | `nl80211` |
 | [xtas](mulib-xtas.md) | `dsdom` |
+| [xz](mulib-xz.md) | `authcrypto`, `bcj`, `crc32`, `lzma` |
 
 ## Stratum 4 (42 modules)
 

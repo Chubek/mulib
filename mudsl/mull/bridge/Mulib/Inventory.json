@@ -38,6 +38,7 @@
     "mulib-base64.h",
     "mulib-bayesian_methods.h",
     "mulib-baysian_ranking.h",
+    "mulib-bcj.h",
     "mulib-beam_search.h",
     "mulib-bidi.h",
     "mulib-binfile.h",
@@ -69,6 +70,7 @@
     "mulib-buildgraph.h",
     "mulib-buildvm.h",
     "mulib-bycutils.h",
+    "mulib-bzip2.h",
     "mulib-cache.h",
     "mulib-cassowary-solver.h",
     "mulib-cbor.h",
@@ -82,6 +84,7 @@
     "mulib-classic-bpf.h",
     "mulib-clickir.h",
     "mulib-cmachine.h",
+    "mulib-codec-core.h",
     "mulib-coff-objdump.h",
     "mulib-coff.h",
     "mulib-coffbuilder.h",
@@ -281,6 +284,7 @@
     "mulib-gss.h",
     "mulib-gssair.h",
     "mulib-gvizz.h",
+    "mulib-gzip.h",
     "mulib-hamming_distance.h",
     "mulib-hash.h",
     "mulib-hattrie.h",
@@ -369,6 +373,11 @@
     "mulib-lowopt.h",
     "mulib-lprowse.h",
     "mulib-lsmtree.h",
+    "mulib-lzf.h",
+    "mulib-lzip.h",
+    "mulib-lzma.h",
+    "mulib-lzo.h",
+    "mulib-lzop.h",
     "mulib-machine.h",
     "mulib-machinebuild.h",
     "mulib-macho-objdump.h",
@@ -791,15 +800,16 @@
     "mulib-xtensa.h",
     "mulib-xthreads.h",
     "mulib-xtks.h",
+    "mulib-xz.h",
     "mulib-yaml.h",
     "mulib-yantlr.h",
     "mulib-zip.h",
     "mulib-zstd.h"
   ],
-  "libraries": 795,
-  "functions": 3720,
-  "types": 6215,
-  "constants": 2160,
+  "libraries": 805,
+  "functions": 3763,
+  "types": 6231,
+  "constants": 2167,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -841,7 +851,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "cc5b61a8d82d7dfba8c32e33e61b30b9febd32e1dbcaabcb3d52f05fbc34c85b",
+  "fingerprint": "cbd60dae6b597c43a0c9439ee954c28d731c0e7714b8d383489e0984fbe48bc7",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -1277,6 +1287,12 @@
         "mulib_bayesian_rank"
       ]
     },
+    "bcj": {
+      "header": "mulib-bcj.h",
+      "functions": [
+        "mulib_bcj_transform"
+      ]
+    },
     "beam_search": {
       "header": "mulib-beam_search.h",
       "functions": [
@@ -1556,6 +1572,13 @@
         "mulib_bycutils_store"
       ]
     },
+    "bzip2": {
+      "header": "mulib-bzip2.h",
+      "functions": [
+        "mulib_bzip2_encode",
+        "mulib_bzip2_decode"
+      ]
+    },
     "cache": {
       "header": "mulib-cache.h",
       "functions": [
@@ -1703,6 +1726,26 @@
         "mulib_cmachine_lower",
         "mulib_cmachine_run",
         "mulib_cmachine_free"
+      ]
+    },
+    "codec-core": {
+      "header": "mulib-codec-core.h",
+      "functions": [
+        "mulib_codec_buffer_valid",
+        "mulib_codec_reserve",
+        "mulib_codec_append",
+        "mulib_codec_match",
+        "mulib_codec_crc64",
+        "mulib_codec_xxh64",
+        "mulib_codec_le32",
+        "mulib_codec_le64",
+        "mulib_codec_be32",
+        "mulib_codec_put32",
+        "mulib_codec_put64",
+        "mulib_codec_putbe32",
+        "mulib_codec_get",
+        "mulib_codec_put",
+        "mulib_codec_flush"
       ]
     },
     "coff": {
@@ -2425,7 +2468,8 @@
       "header": "mulib-deflate.h",
       "functions": [
         "mulib_deflate_encode",
-        "mulib_deflate_decode"
+        "mulib_deflate_decode",
+        "mulib_deflate_decode_prefix"
       ]
     },
     "depir": {
@@ -3761,6 +3805,13 @@
         "mulib_gvizz_svg"
       ]
     },
+    "gzip": {
+      "header": "mulib-gzip.h",
+      "functions": [
+        "mulib_gzip_encode",
+        "mulib_gzip_decode"
+      ]
+    },
     "hamming_distance": {
       "header": "mulib-hamming_distance.h",
       "functions": [
@@ -4560,6 +4611,47 @@
         "mulib_lsmtree_compact",
         "mulib_lsmtree_recover",
         "mulib_lsmtree_free"
+      ]
+    },
+    "lzf": {
+      "header": "mulib-lzf.h",
+      "functions": [
+        "mulib_lzf_raw_encode",
+        "mulib_lzf_raw_decode",
+        "mulib_lzf_encode",
+        "mulib_lzf_decode"
+      ]
+    },
+    "lzip": {
+      "header": "mulib-lzip.h",
+      "functions": [
+        "mulib_lzip_encode",
+        "mulib_lzip_decode"
+      ]
+    },
+    "lzma": {
+      "header": "mulib-lzma.h",
+      "functions": [
+        "mulib_lzma_encode",
+        "mulib_lzma_decode",
+        "mulib_lzma_raw_encode",
+        "mulib_lzma_raw_decode",
+        "mulib_lzma2_encode",
+        "mulib_lzma2_decode"
+      ]
+    },
+    "lzo": {
+      "header": "mulib-lzo.h",
+      "functions": [
+        "mulib_lzo1x_encode",
+        "mulib_lzo1x_decode"
+      ]
+    },
+    "lzop": {
+      "header": "mulib-lzop.h",
+      "functions": [
+        "mulib_lzop_encode",
+        "mulib_lzop_decode"
       ]
     },
     "machine": {
@@ -8459,6 +8551,13 @@
         "mulib_xtks_write_all"
       ]
     },
+    "xz": {
+      "header": "mulib-xz.h",
+      "functions": [
+        "mulib_xz_encode",
+        "mulib_xz_decode"
+      ]
+    },
     "yaml": {
       "header": "mulib-yaml.h",
       "functions": [
@@ -8511,6 +8610,7 @@
       "functions": [
         "mulib_zip_safe_path",
         "mulib_zip_open",
+        "mulib_zip_open_limited",
         "mulib_zip_close",
         "mulib_zip_find",
         "mulib_zip_extract",
@@ -8522,13 +8622,16 @@
     "zstd": {
       "header": "mulib-zstd.h",
       "functions": [
+        "mulib_zstd_encode",
+        "mulib_zstd_decode",
+        "mulib_zstd_decode_dict",
         "mulib_zstd_raw_encode",
         "mulib_zstd_raw_decode"
       ]
     }
   },
   "artifacts": {
-    "Generated.inc": "aa05cdb5df26454b3001b1c736ad71ec67eccd2fa55491b4764d6dddfd5bf2ec",
-    "Implementation.c": "d6bbfb2174ce2650927c748b48107da14c87751e0cfd212dee8f21d32c334156"
+    "Generated.inc": "78fa02edaff812d1a4d72344caf5404423b64a5b3c003a98568b68baa2cca8b2",
+    "Implementation.c": "7874b9b3ca66040147aef42925911939a1315a8d010984a08ef5980c30877875"
   }
 }

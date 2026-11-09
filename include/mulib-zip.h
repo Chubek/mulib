@@ -51,7 +51,12 @@ extern "C"
   /** @brief Validate ZIP32 structure and index entries in local-file order.
    * Reader must be zero initialized. Failure leaves it unchanged. */
   int mulib_zip_open (mulib_zip_reader_t *reader, const void *data,
-                      size_t size);
+                       size_t size);
+  /** @brief Open with explicit index-entry and aggregate uncompressed-byte
+   * budgets. CRCs remain checked on extraction. Failure preserves reader. */
+  int mulib_zip_open_limited (mulib_zip_reader_t *reader, const void *data,
+                              size_t size, size_t max_entries,
+                              size_t max_uncompressed);
   /** @brief Release index and zero reader; does not release input. */
   void mulib_zip_close (mulib_zip_reader_t *reader);
   /** @brief Borrow entry by exact path, or NULL. */
@@ -170,13 +175,14 @@ mulib_zip_extra_ (const unsigned char *p, size_t n)
   return 0;
 }
 int
-mulib_zip_open (mulib_zip_reader_t *r, const void *data, size_t size)
+mulib_zip_open_limited (mulib_zip_reader_t *r, const void *data, size_t size,
+                        size_t max_entries, size_t max_uncompressed)
 {
   const unsigned char *p = (const unsigned char *)data, *c, *h;
   mulib_zip_reader_t tmp;
-  size_t end, low, cd, cds, pos, i, n, extra, comment, off, payload;
+  size_t end, low, cd, cds, pos, i, n, extra, comment, off, payload, total = 0;
   int result = MULIB_ZIP_EFORMAT;
-  if (!r || r->entries || r->data || (!data && size))
+  if (!r || r->entries || r->data || r->count || r->size || (!data && size))
     return MULIB_ZIP_EINVAL;
   if (size < 22)
     return result;
@@ -199,7 +205,7 @@ mulib_zip_open (mulib_zip_reader_t *r, const void *data, size_t size)
                    && count <= length / 46
                    && (count ? mulib_zip_u32_ (p + start)
                                    == UINT32_C (0x02014b50)
-                             : length == 0))
+                              : length == 0 && start == 0))
             break;
         }
       if (end == low)
@@ -217,6 +223,8 @@ mulib_zip_open (mulib_zip_reader_t *r, const void *data, size_t size)
     return MULIB_ZIP_EUNSUPPORTED;
   if (cd > end || cds != end - cd || tmp.count > cds / 46)
     return result;
+  if (tmp.count > max_entries)
+    return MULIB_ZIP_ELIMIT;
   tmp.entries = (mulib_zip_entry_t *)calloc (tmp.count ? tmp.count : 1,
                                              sizeof (*tmp.entries));
   if (!tmp.entries)
@@ -249,6 +257,12 @@ mulib_zip_open (mulib_zip_reader_t *r, const void *data, size_t size)
       e->crc = mulib_zip_u32_ (c + 16);
       e->compressed_size = mulib_zip_u32_ (c + 20);
       e->size = mulib_zip_u32_ (c + 24);
+      if (e->size > max_uncompressed - total)
+        {
+          result = MULIB_ZIP_ELIMIT;
+          goto fail;
+        }
+      total += e->size;
       off = mulib_zip_u32_ (c + 42);
       e->offset = off;
       if (e->size == UINT32_MAX || e->compressed_size == UINT32_MAX
@@ -345,6 +359,9 @@ fail:
   free (tmp.entries);
   return result;
 }
+int
+mulib_zip_open (mulib_zip_reader_t *r, const void *data, size_t size)
+{ return mulib_zip_open_limited (r, data, size, SIZE_MAX, SIZE_MAX); }
 void
 mulib_zip_close (mulib_zip_reader_t *r)
 {
@@ -358,7 +375,7 @@ const mulib_zip_entry_t *
 mulib_zip_find (const mulib_zip_reader_t *r, const char *path)
 {
   size_t i, n;
-  if (!r || !path)
+  if (!r || !path || (r->count && !r->entries))
     return NULL;
   n = strlen (path);
   for (i = 0; i < r->count; ++i)
@@ -374,9 +391,15 @@ mulib_zip_extract (const mulib_zip_reader_t *r, size_t index, size_t limit,
   const mulib_zip_entry_t *e;
   mulib_buffer_t tmp = { 0 };
   int result;
-  if (!r || !r->data || !out || index >= r->count)
+  if (!r || !r->data || !r->entries || !out || index >= r->count
+      || out->length > out->capacity || (!out->data && out->capacity))
     return MULIB_ZIP_EINVAL;
   e = &r->entries[index];
+  if (e->data_offset > r->size
+      || e->compressed_size > r->size - e->data_offset
+      || (e->method != 0 && e->method != 8)
+      || (e->method == 0 && e->compressed_size != e->size))
+    return MULIB_ZIP_EFORMAT;
   if (e->size > limit)
     return MULIB_ZIP_ELIMIT;
   if (e->method == 0)
@@ -409,7 +432,11 @@ mulib_zip_add (mulib_zip_writer_t *w, const char *path, const void *data,
   size_t n, pos, old;
   uint32_t crc;
   int result = MULIB_ZIP_ENOMEM;
-  if (!w || w->finished || !mulib_zip_safe_path (path) || (!data && size))
+  if (!w || w->finished || !mulib_zip_safe_path (path) || (!data && size)
+      || w->bytes.length > w->bytes.capacity
+      || (!w->bytes.data && w->bytes.capacity)
+      || w->directory.length > w->directory.capacity
+      || (!w->directory.data && w->directory.capacity))
     return MULIB_ZIP_EINVAL;
   if (method != 0 && method != 8)
     return MULIB_ZIP_EUNSUPPORTED;
@@ -421,7 +448,12 @@ mulib_zip_add (mulib_zip_writer_t *w, const char *path, const void *data,
   for (pos = 0; pos < w->directory.length;)
     {
       const unsigned char *c = w->directory.data + pos;
-      size_t len = mulib_zip_u16_ (c + 28);
+      size_t len;
+      if (w->directory.length - pos < 46)
+        return MULIB_ZIP_EINVAL;
+      len = mulib_zip_u16_ (c + 28);
+      if (len > w->directory.length - pos - 46)
+        return MULIB_ZIP_EINVAL;
       if (len == n && !memcmp (c + 46, path, n))
         return MULIB_ZIP_EINVAL;
       pos += 46 + len;
@@ -490,7 +522,11 @@ mulib_zip_finish (mulib_zip_writer_t *w)
   mulib_buffer_t tail = { 0 };
   unsigned char h[22] = { 0 };
   int ok;
-  if (!w)
+  if (!w || w->bytes.length > w->bytes.capacity
+      || (!w->bytes.data && w->bytes.capacity)
+      || w->directory.length > w->directory.capacity
+      || (!w->directory.data && w->directory.capacity)
+      || w->count > 65534)
     return MULIB_ZIP_EINVAL;
   if (w->finished)
     return 0;

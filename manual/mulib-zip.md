@@ -34,6 +34,13 @@ borrowed and must stay immutable and live through `mulib_zip_close`. Open
 allocates an entry index, sorted by local-header offset, and changes the reader
 only on success. Opening an already-live reader is an argument error.
 
+`mulib_zip_open_limited(reader,data,size,max_entries,max_uncompressed)` additionally
+bounds index entries before allocation and checks the aggregate declared decoded
+size with overflow-safe subtraction. `mulib_zip_open` retains its original API
+and uses `SIZE_MAX` budgets. A fake empty EOCD inside a nonempty archive's comment
+is not accepted as an empty archive. Extraction still verifies actual size and CRC;
+open does not decompress every entry merely to estimate its expansion.
+
 `reader.entries[i]` contains decoded scalars and a borrowed **non-NUL-terminated**
 name slice. `mulib_zip_find` returns an entry pointer or NULL. It performs an exact,
 case-sensitive linear search; no Unicode normalization occurs.
@@ -71,6 +78,9 @@ be used concurrently; a single object requires caller synchronization.
 See `tests/test_ebook_formats.c`, `tests/test_ebook_alloc.c` and
 `tools/check_ebook_formats.py`. Python `zipfile` verifies output and supplies
 stored/deflated archives with comments and streaming data descriptors.
+`tests/test_compression_codecs.c` also checks aggregate/index budgets and forged
+empty EOCDs in comments. The ZIP32/encryption/method scope above is unchanged;
+this header does not claim ZIP64 or encrypted-archive support.
 
 <!-- manual-reference -->
 ## Source and build reference

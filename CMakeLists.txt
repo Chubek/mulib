@@ -209,6 +209,10 @@ if(MULIB_BUILD_TESTS)
     endforeach()
   endif()
   if(Python3_Interpreter_FOUND)
+    add_test(NAME mulib_compression_interoperability
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_compression.py
+        --codec $<TARGET_FILE:mulib_test_compression_codecs>)
+    set_tests_properties(mulib_compression_interoperability PROPERTIES TIMEOUT 180)
     find_program(MULIB_PANDOC_EXECUTABLE NAMES pandoc)
     set(docstring_options)
     if(MULIB_PANDOC_EXECUTABLE)
@@ -428,6 +432,11 @@ if(MULIB_BUILD_FUZZER)
   target_compile_options(mulib_fuzz_ebooks PRIVATE -fsanitize=fuzzer,address,undefined
     -fno-sanitize-recover=all -fno-omit-frame-pointer)
   target_link_options(mulib_fuzz_ebooks PRIVATE -fsanitize=fuzzer,address,undefined)
+  add_executable(mulib_fuzz_compression tests/fuzz_compression.c)
+  mulib_test_executable(mulib_fuzz_compression)
+  target_compile_options(mulib_fuzz_compression PRIVATE -fsanitize=fuzzer,address,undefined
+    -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  target_link_options(mulib_fuzz_compression PRIVATE -fsanitize=fuzzer,address,undefined)
 endif()
 
 if(MULIB_BUILD_MODULE_EXAMPLES)

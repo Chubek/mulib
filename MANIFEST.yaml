@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 791
-implemented_module_count: 791
+module_count: 802
+implemented_module_count: 802
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2173,7 +2173,7 @@ modules:
   manual: manual/mulib-container-packzstd.md
   macro: MULIB_IMPL_CONTAINER_PACKZSTD
   purpose: Standard Zstandard raw/RLE image packaging and explicit codec integration.
-  dependencies: [imgformat]
+  dependencies: [imgformat, zstd]
   status: implemented
 - name: container-stub
   header: include/mulib-container-stub.h
@@ -5550,6 +5550,83 @@ modules:
   purpose: "Caller-clocked fixed-capacity timer scheduler."
   dependencies: []
   status: implemented
+- name: bcj
+  header: include/mulib-bcj.h
+  manual: manual/mulib-bcj.md
+  macro: MULIB_IMPL_BCJ
+  purpose: "Reversible XZ branch/call filters for x86, PowerPC, IA64, ARM, Thumb, SPARC."
+  dependencies: []
+  status: implemented
+- name: bzip2
+  header: include/mulib-bzip2.h
+  manual: manual/mulib-bzip2.md
+  macro: MULIB_IMPL_BZIP2
+  purpose: "Dependency-free bzip2 BWT/MTF/RLE/Huffman compression and decompression."
+  dependencies: [codec-core]
+  status: implemented
+- name: codec-core
+  header: include/mulib-codec-core.h
+  manual: manual/mulib-codec-core.md
+  macro: MULIB_IMPL_CODEC_CORE
+  purpose: "Checked storage, bit I/O and wire integers shared by compression codecs."
+  dependencies: [buffer]
+  status: implemented
+- name: gzip
+  header: include/mulib-gzip.h
+  manual: manual/mulib-gzip.md
+  macro: MULIB_IMPL_GZIP
+  purpose: "RFC 1952 gzip compression, concatenated members and integrity checks."
+  dependencies: [codec-core, crc32, deflate]
+  status: implemented
+- name: lzf
+  header: include/mulib-lzf.h
+  manual: manual/mulib-lzf.md
+  macro: MULIB_IMPL_LZF
+  purpose: "Dependency-free LZF blocks and standard ZV-framed .lzf streams."
+  dependencies: [codec-core]
+  status: implemented
+- name: lzip
+  header: include/mulib-lzip.h
+  manual: manual/mulib-lzip.md
+  macro: MULIB_IMPL_LZIP
+  purpose: "Lzip v1 members with LZMA-302, CRC32 and 64-bit size verification."
+  dependencies: [crc32, lzma]
+  status: implemented
+- name: lzma
+  header: include/mulib-lzma.h
+  manual: manual/mulib-lzma.md
+  macro: MULIB_IMPL_LZMA
+  purpose: "Dependency-free LZMA1 and LZMA2 range/LZ codecs and LZMA-alone files."
+  dependencies: [codec-core]
+  status: implemented
+- name: lzo
+  header: include/mulib-lzo.h
+  manual: manual/mulib-lzo.md
+  macro: MULIB_IMPL_LZO
+  purpose: "Dependency-free LZO1X bytecode compressor/decompressor shared by lzop."
+  dependencies: [codec-core]
+  status: implemented
+- name: lzop
+  header: include/mulib-lzop.h
+  manual: manual/mulib-lzop.md
+  macro: MULIB_IMPL_LZOP
+  purpose: "Dependency-free lzop container and LZO1X block compression."
+  dependencies: [adler32, crc32, lzo]
+  status: implemented
+- name: xz
+  header: include/mulib-xz.h
+  manual: manual/mulib-xz.md
+  macro: MULIB_IMPL_XZ
+  purpose: "Dependency-free XZ streams with LZMA2, block/index validation and checks."
+  dependencies: [authcrypto, bcj, crc32, lzma]
+  status: implemented
+- name: zstd
+  header: include/mulib-zstd.h
+  manual: manual/mulib-zstd.md
+  macro: MULIB_IMPL_ZSTD
+  purpose: "Dependency-free Zstandard LZ/FSE/Huffman codec and raw/RLE helpers."
+  dependencies: [codec-core]
+  status: implemented
 project_files:
 - file: include/detail/mulib-webscan.h
   purpose: Internal allocation-free HTML subset scanner shared by web extractors.
@@ -8443,3 +8520,41 @@ project_files:
   purpose: "Focused regression suite for test-webstorage."
 - file: tests/test-webtimers.c
   purpose: "Focused regression suite for test-webtimers."
+- file: examples/modules/bcj.c
+  purpose: "Standalone checked usage example for bcj."
+- file: examples/modules/bzip2.c
+  purpose: "Standalone checked usage example for bzip2."
+- file: examples/modules/codec-core.c
+  purpose: "Standalone checked usage example for codec-core."
+- file: examples/modules/gzip.c
+  purpose: "Standalone checked usage example for gzip."
+- file: examples/modules/lzf.c
+  purpose: "Standalone checked usage example for lzf."
+- file: examples/modules/lzip.c
+  purpose: "Standalone checked usage example for lzip."
+- file: examples/modules/lzma.c
+  purpose: "Standalone checked usage example for lzma."
+- file: examples/modules/lzo.c
+  purpose: "Standalone checked usage example for lzo."
+- file: examples/modules/lzop.c
+  purpose: "Standalone checked usage example for lzop."
+- file: examples/modules/xz.c
+  purpose: "Standalone checked usage example for xz."
+- file: examples/modules/zstd.c
+  purpose: "Standalone checked usage example for zstd."
+- file: tests/test_compression_alloc.c
+  purpose: "Focused regression suite for test_compression_alloc."
+- file: tests/test_compression_codecs.c
+  purpose: "Focused regression suite for test_compression_codecs."
+- file: tests/compression_test_setup.h
+  purpose: Shared compression implementation and test codec inventory.
+- file: tests/fuzz_compression.c
+  purpose: Bounded libFuzzer target for all compression codecs and ZIP.
+- file: tools/check_compression.py
+  purpose: Independent bidirectional compression interoperability checks.
+- file: manual/compression-codecs.md
+  purpose: Common compression ownership, limits, errors and verification scope.
+- file: mudsl/tests/mull/mulib/compression.mull
+  purpose: MuLL compression and bounded ZIP native bridge integration fixture.
+- file: mudsl/tests/mull/mulib/compression.expected
+  purpose: Expected MuLL compression integration output.

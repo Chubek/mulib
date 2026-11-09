@@ -11,7 +11,7 @@ from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parent.parent
-SUPPORT_HEADERS = {'mulib-container-core.h', 'mulib-qvm.h', 'mulib-zstd.h', 'mulib-lprowse.h'}
+SUPPORT_HEADERS = {'mulib-container-core.h', 'mulib-qvm.h', 'mulib-lprowse.h'}
 
 
 def sync(root):

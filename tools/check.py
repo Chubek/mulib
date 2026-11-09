@@ -16,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
-SUPPORT_HEADERS = {'mulib-container-core.h', 'mulib-qvm.h', 'mulib-zstd.h', 'mulib-lprowse.h'}
+SUPPORT_HEADERS = {'mulib-container-core.h', 'mulib-qvm.h', 'mulib-lprowse.h'}
 
 
 def main():
@@ -247,6 +247,13 @@ def main():
                             if shutil.which('pandoc'):
                                 command += ['--pandoc', shutil.which('pandoc')]
                             interop = subprocess.run(command, cwd=work, capture_output=True, text=True, timeout=180)
+                            if interop.returncode:
+                                failures.append((label + ' interoperability', interop.stderr or interop.stdout))
+                                return False
+                        if sources and len(sources) == 1 and sources[0].name == 'test_compression_codecs.c':
+                            interop = subprocess.run(
+                                [sys.executable, str(root / 'tools/check_compression.py'), '--codec', str(binary)],
+                                cwd=work, capture_output=True, text=True, timeout=180)
                             if interop.returncode:
                                 failures.append((label + ' interoperability', interop.stderr or interop.stdout))
                                 return False
