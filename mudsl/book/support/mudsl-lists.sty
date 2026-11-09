@@ -1,0 +1,13 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-lists}[2026/11/09 Lists and reference field descriptions]
+\RequirePackage{support/mudsl-palette}
+\RequirePackage{enumitem}
+\setlist{topsep=0.45\baselineskip,itemsep=0.2\baselineskip,
+  parsep=0.1\baselineskip,partopsep=0pt}
+\setlist[itemize]{leftmargin=1.6em,labelsep=0.6em}
+\setlist[itemize,1]{label=\textcolor{MuAccent}{\textbullet}}
+\setlist[enumerate]{leftmargin=*,labelsep=0.6em,
+  font=\sffamily\small\bfseries\color{MuAccent}}
+\setlist[description]{style=nextline,leftmargin=1.5em,labelindent=0pt,
+  font=\sffamily\small\bfseries\color{MuInk}}
+\endinput

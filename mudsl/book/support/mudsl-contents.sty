@@ -1,0 +1,19 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-contents}[2026/11/09 Long-book contents with generous number columns]
+\RequirePackage{support/mudsl-palette}
+\RequirePackage{titletoc}
+\setcounter{tocdepth}{1}
+% The complete reference has hundreds of chapters and four-digit folios.
+\renewcommand{\@pnumwidth}{3em}
+\renewcommand{\@tocrmarg}{4em}
+\contentsmargin{3em}
+\titlecontents{part}[0pt]
+  {\addvspace{1.2\baselineskip}\sffamily\normalsize\bfseries\color{MuAccent}}
+  {\thecontentslabel\enspace}{}{\hfill\contentspage}
+\titlecontents{chapter}[3.3em]
+  {\addvspace{0.45\baselineskip}\small\bfseries}
+  {\contentslabel{3.3em}}{}{\hfill\contentspage}
+\titlecontents{section}[7.4em]
+  {\small\color{MuMuted}}
+  {\contentslabel{4.1em}}{}{\titlerule*[0.7pc]{.}\contentspage}
+\endinput

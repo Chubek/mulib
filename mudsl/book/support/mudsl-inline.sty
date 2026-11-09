@@ -1,0 +1,21 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-inline}[2026/11/09 Breakable literal API names and semantic text]
+\RequirePackage{support/mudsl-palette}
+\ExplSyntaxOn
+% Literal characters, not executable TeX. Break points survive in narrow cells.
+\cs_new_protected:Npn \mu_api:n #1
+  {
+    \group_begin:
+    \ttfamily
+    \tl_set:Nx \l_tmpa_tl { \tl_to_str:n {#1} }
+    % TeX's detokenize doubles parameter characters; display literal hashes once.
+    \exp_args:NNxx \tl_replace_all:Nnn \l_tmpa_tl
+      { \c_hash_str \c_hash_str } { \c_hash_str }
+    \exp_args:NV \str_map_inline:nn \l_tmpa_tl { \strut ##1 \allowbreak }
+    \group_end:
+  }
+\NewDocumentCommand \api {m} { \mu_api:n {#1} }
+\ExplSyntaxOff
+\DeclareRobustCommand{\MuTerm}[1]{\emph{#1}}
+\DeclareRobustCommand{\MuKey}[1]{{\sffamily\small\bfseries #1}}
+\endinput

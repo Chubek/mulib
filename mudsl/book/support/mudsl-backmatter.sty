@@ -1,0 +1,11 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-backmatter}[2026/11/09 Bibliography and index typography]
+\RequirePackage{etoolbox}
+\AtBeginEnvironment{thebibliography}{%
+  \small\setlength{\parskip}{0pt}\setlength{\itemsep}{0.4\baselineskip}}
+\AtBeginEnvironment{theindex}{%
+  \small\setlength{\columnsep}{7mm}\setlength{\parskip}{0pt}}
+\newcommand{\MuSourceNote}[1]{%
+  \par\addvspace{0.5\baselineskip}%
+  {\small\color{MuMuted}\noindent\textsf{Source and verification.}\enspace#1\par}}
+\endinput

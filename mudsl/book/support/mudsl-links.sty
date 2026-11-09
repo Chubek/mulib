@@ -1,0 +1,17 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-links}[2026/11/09 PDF metadata, bookmarks and link appearance]
+\RequirePackage{support/mudsl-palette}
+\RequirePackage{xurl}
+\RequirePackage[unicode,pdfencoding=auto,psdextra]{hyperref}
+\RequirePackage{bookmark}
+\hypersetup{colorlinks=true,linkcolor=MuAccent,urlcolor=MuAccent,citecolor=MuGreen,
+  bookmarksnumbered=true,bookmarksopen=false,linktoc=all,
+  pdfdisplaydoctitle=true,pdfpagemode=UseOutlines,pdfborder={0 0 0}}
+\ifdefined\ifMuPrint\ifMuPrint\hypersetup{hidelinks}\fi\fi
+\urlstyle{tt}
+\AtBeginDocument{\hypersetup{pdftitle={\@title},pdfauthor={\@author},pdfsubject={\Mu@subtitle}}}
+\pdfstringdefDisableCommands{%
+  \def\allowbreak{}\def\strut{}\def\api#1{\detokenize{#1}}%
+  \def\MuTerm#1{#1}\def\MuKey#1{#1}\def\mdstrike#1{#1}%
+  \def\tightlist{}\def\passthrough#1{#1}}
+\endinput

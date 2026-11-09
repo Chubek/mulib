@@ -1,0 +1,22 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-headings}[2026/11/09 Section hierarchy and spacing]
+\RequirePackage{support/mudsl-palette}
+\RequirePackage{titlesec}
+\RequirePackage{needspace}
+\setcounter{secnumdepth}{2}
+\titleformat{\section}{\normalfont\sffamily\Large\bfseries\raggedright\color{MuInk}}
+  {\color{MuAccent}\thesection}{0.7em}{}
+\titleformat{\subsection}{\normalfont\sffamily\large\bfseries\raggedright\color{MuInk}}
+  {\color{MuAccent}\thesubsection}{0.7em}{}
+\titleformat{\subsubsection}{\normalfont\sffamily\normalsize\bfseries\raggedright}
+  {\thesubsubsection}{0.7em}{}
+\titleformat{\paragraph}[runin]{\normalfont\bfseries}{\theparagraph}{0.6em}{}[.]
+\titlespacing*{\section}{0pt}{1.6\baselineskip plus 4pt minus 2pt}{0.55\baselineskip}
+\titlespacing*{\subsection}{0pt}{1.15\baselineskip plus 3pt minus 2pt}{0.35\baselineskip}
+\titlespacing*{\subsubsection}{0pt}{1\baselineskip plus 2pt}{0.3\baselineskip}
+\titlespacing*{\paragraph}{0pt}{0.65\baselineskip}{0.8em}
+% Reserve room for the heading and a useful start, not a single stranded item.
+\AddToHook{cmd/section/before}{\Needspace{6\baselineskip}}
+\AddToHook{cmd/subsection/before}{\Needspace{5\baselineskip}}
+\AddToHook{cmd/subsubsection/before}{\Needspace{4\baselineskip}}
+\endinput

@@ -1,0 +1,30 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-titlepage}[2026/11/09 Editorial title page and metadata]
+\RequirePackage{support/mudsl-palette}
+\newcommand{\MuBookSubtitle}[1]{\gdef\Mu@subtitle{#1}}
+\newcommand{\MuBookEdition}[1]{\gdef\Mu@edition{#1}}
+\newcommand{\MuBookImprint}[1]{\gdef\Mu@imprint{#1}}
+\newcommand{\Mu@subtitle}{}
+\newcommand{\Mu@edition}{}
+\newcommand{\Mu@imprint}{LANGUAGE TOOLKIT\enspace /\enspace LANGUAGE REFERENCE}
+\renewcommand{\maketitle}{%
+  \begin{titlepage}
+    % The oneside class resets page i after the title; do not create it twice.
+    % This setting is local to the titlepage group and survives its shipout.
+    \@ifpackageloaded{hyperref}{\hypersetup{pageanchor=false}}{}
+    \thispagestyle{empty}
+    \noindent{\sffamily\scriptsize\bfseries\color{MuMuted}\Mu@imprint\par}
+    \vspace*{0.15\textheight}
+    \noindent{\color{MuAccent}\rule{19mm}{2pt}\par}
+    \vspace{10mm}
+    {\raggedright\fontsize{42}{47}\selectfont\bfseries\color{MuInk}\@title\par}
+    \vspace{6mm}
+    {\raggedright\sffamily\Large\color{MuMuted}\Mu@subtitle\par}
+    \vfill
+    {\noindent\large\@author\par}
+    \vspace{4mm}
+    {\sffamily\small\color{MuMuted}\noindent\Mu@edition\par\noindent\@date\par}
+    \vspace{7mm}
+    \noindent{\color{MuRule}\rule{\textwidth}{0.5pt}\par}
+  \end{titlepage}}
+\endinput

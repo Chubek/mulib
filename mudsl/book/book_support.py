@@ -58,9 +58,28 @@ class BookMarkdown(md2latex.MarkdownParser):
 def fragment(source, chapter=False):
     parser = BookMarkdown(source)
     result = parser.parse()
-    # Long reference tables must span pages, rather than becoming tall boxes.
-    result = result.replace("\\begin{center}\n\\begin{tabularx}", "\\begin{xltabular}")
-    result = result.replace("\\end{tabularx}\n\\end{center}", "\\end{xltabular}")
+    # Replace the converter's boxed grids with open, multipage book tables.
+    # Work before restoring code placeholders: literal TeX in listings is data.
+    def reference_table(match):
+        spec = match[1].replace("|", "")
+        rows = [row.removesuffix(r" \hline") for row in match[2].splitlines()]
+        header, *body = rows
+        columns = spec.count("X")
+        return "\n".join([
+            r"\begin{xltabular}{\linewidth}{@{}" + spec + r"@{}}",
+            r"\toprule", header, r"\midrule", r"\endfirsthead",
+            r"\toprule", header, r"\midrule", r"\endhead",
+            r"\midrule",
+            rf"\multicolumn{{{columns}}}{{r}}{{\footnotesize\itshape Continued on next page}} \\",
+            r"\endfoot", r"\bottomrule", r"\endlastfoot",
+            *body, r"\end{xltabular}",
+        ])
+
+    result = re.sub(
+        r"\\begin\{center\}\n\\begin\{tabularx\}\{\\linewidth\}\{([^\n]+)\}\n"
+        r"\\hline\n(.*?)\n\\end\{tabularx\}\n\\end\{center\}",
+        reference_table, result, flags=re.DOTALL,
+    )
     # Permit identifiers and paths to wrap in prose/table cells. Keep escaped
     # TeX commands intact and never modify literal code listings.
     def break_code(match):

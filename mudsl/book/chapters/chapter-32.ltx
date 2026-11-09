@@ -132,12 +132,23 @@ assert(graph.extract(root).dump() == "a");
 
 \texttt{S\allowbreak{}a\allowbreak{}t\allowbreak{}u\allowbreak{}r\allowbreak{}a\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n\allowbreak{}L\allowbreak{}i\allowbreak{}m\allowbreak{}i\allowbreak{}t\allowbreak{}s} fields/\allowbreak{}defaults are:
 
-\begin{xltabular}{\linewidth}{|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}X|>{\raggedright\arraybackslash}X|}
-\hline
-\textbf{Field} & \textbf{Default} & \textbf{Bound} \\ \hline
-\texttt{i\allowbreak{}t\allowbreak{}e\allowbreak{}r\allowbreak{}a\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n\allowbreak{}s} & 30 & Number of saturation iterations \\ \hline
-\texttt{n\allowbreak{}o\allowbreak{}d\allowbreak{}e\allowbreak{}s} & 100000 & Retained graph node budget during insertion \\ \hline
-\texttt{m\allowbreak{}a\allowbreak{}t\allowbreak{}c\allowbreak{}h\allowbreak{}e\allowbreak{}s} & 100000 & Total successful rule applications \\ \hline
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}X>{\raggedleft\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Field} & \textbf{Default} & \textbf{Bound} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Field} & \textbf{Default} & \textbf{Bound} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\footnotesize\itshape Continued on next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\texttt{i\allowbreak{}t\allowbreak{}e\allowbreak{}r\allowbreak{}a\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n\allowbreak{}s} & 30 & Number of saturation iterations \\
+\texttt{n\allowbreak{}o\allowbreak{}d\allowbreak{}e\allowbreak{}s} & 100000 & Retained graph node budget during insertion \\
+\texttt{m\allowbreak{}a\allowbreak{}t\allowbreak{}c\allowbreak{}h\allowbreak{}e\allowbreak{}s} & 100000 & Total successful rule applications \\
 \end{xltabular}
 
 \texttt{S\allowbreak{}a\allowbreak{}t\allowbreak{}u\allowbreak{}r\allowbreak{}a\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n\allowbreak{}R\allowbreak{}e\allowbreak{}s\allowbreak{}u\allowbreak{}l\allowbreak{}t} exposes \texttt{i\allowbreak{}t\allowbreak{}e\allowbreak{}r\allowbreak{}a\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n\allowbreak{}s}, \texttt{a\allowbreak{}p\allowbreak{}p\allowbreak{}l\allowbreak{}i\allowbreak{}c\allowbreak{}a\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n\allowbreak{}s}, \texttt{s\allowbreak{}t\allowbreak{}o\allowbreak{}p}, and \texttt{s\allowbreak{}a\allowbreak{}t\allowbreak{}u\allowbreak{}r\allowbreak{}a\allowbreak{}t\allowbreak{}e\allowbreak{}d\allowbreak{}(\allowbreak{})}. \texttt{s\allowbreak{}t\allowbreak{}o\allowbreak{}p} is \texttt{S\allowbreak{}a\allowbreak{}t\allowbreak{}u\allowbreak{}r\allowbreak{}a\allowbreak{}t\allowbreak{}e\allowbreak{}d}, \texttt{I\allowbreak{}t\allowbreak{}e\allowbreak{}r\allowbreak{}a\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n\allowbreak{}L\allowbreak{}i\allowbreak{}m\allowbreak{}i\allowbreak{}t}, \texttt{N\allowbreak{}o\allowbreak{}d\allowbreak{}e\allowbreak{}L\allowbreak{}i\allowbreak{}m\allowbreak{}i\allowbreak{}t}, or \texttt{M\allowbreak{}a\allowbreak{}t\allowbreak{}c\allowbreak{}h\allowbreak{}L\allowbreak{}i\allowbreak{}m\allowbreak{}i\allowbreak{}t}. Partial results remain valid after a bounded stop; an interrupted RHS insertion can leave newly inserted subterms without merging its unfinished parent. The temporary node budget is restored when the run returns.

@@ -1,0 +1,10 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-page}[2026/11/09 Binding-aware page geometry]
+\RequirePackage{geometry}
+% A 150 mm measure on the book's A4 stock, with room for binding and notes.
+% Relative dimensions also behave sensibly for letter-sized chapter previews.
+\geometry{inner=0.15\paperwidth,outer=0.135\paperwidth,
+  top=27mm,bottom=29mm,headheight=18pt,headsep=7mm,footskip=13mm}
+\setlength{\marginparwidth}{18mm}
+\setlength{\marginparsep}{4mm}
+\endinput

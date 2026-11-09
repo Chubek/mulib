@@ -1,0 +1,23 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-code}[2026/11/09 Page-breakable syntax-highlighted listings]
+\RequirePackage{support/mudsl-palette}
+\RequirePackage{fvextra,upquote,minted}
+\setminted{style=default,encoding=utf8,fontsize=\small,
+  breaklines=true,breakanywhere=true,breakautoindent=false,breakindent=1em,
+  bgcolor=MuCode,frame=leftline,framesep=2.5mm,rulecolor=\color{MuRule},
+  framerule=0.7pt,tabsize=4,obeytabs=true,
+  numbersep=8pt,baselinestretch=1.05,
+  breakanywheresymbolpre=\tiny\textcolor{MuMuted}{\ensuremath{\hookrightarrow}},
+  breakanywheresymbolpost={},
+  listparameters={\setlength{\topsep}{0.7\baselineskip}\setlength{\partopsep}{0pt}}}
+\renewcommand{\theFancyVerbLine}{\sffamily\tiny\color{MuMuted}\arabic{FancyVerbLine}}
+% These five names are the existing authored chapter API.
+\newminted[code]{text}{}
+\newminted[mullcode]{mull}{}
+\newminted[cppcode]{cpp}{}
+\newminted[dcode]{d}{}
+\newminted[rulecode]{scheme}{}
+% Source-reference defaults, overridable by the optional inputminted argument.
+\setminted[cpp]{stripnl=false}
+\setminted[d]{stripnl=false}
+\endinput

@@ -1,0 +1,152 @@
+% Compiled by check_typography.py in both the direct and compatibility profiles.
+\ifdefined\MuSmokeLegacy
+  \documentclass[11pt,oneside,letterpaper]{the-book-of-mudsl}
+  \usepackage[print]{mudsl}
+\else
+  \documentclass[12pt,a4paper,openright]{the-book-of-mudsl}
+  \usepackage{support/mudsl-book}
+\fi
+\title{The Book of MuDSL}
+\MuBookSubtitle{A C++ and D Toolkit, and the MuLL Language}
+\MuBookEdition{Typography specimen}
+\author{D. B. Cooper}
+\date{}
+\begin{document}
+\frontmatter
+\maketitle
+\chapter*{How to read this specimen}
+This specimen exercises the shared book design without compiling the entire
+reference. It includes long identifiers, repeated table heads, code, mathematics,
+cross-references, footnotes, and the optional learning aids.
+\tableofcontents
+\mainmatter
+\part{Language-building tools}
+\chapter{Composition, clarity, and a readable page}\label{ch:specimen}
+\begin{MuObjectives}
+\item Recognize the hierarchy of the toolkit and its implementation contracts.
+\item Read a listing without losing the thread of the surrounding explanation.
+\end{MuObjectives}
+MuDSL packages language-building blocks as orthogonal features. Compose the
+features you need, describe your domain, and let the host language perform the
+work. A book about that process should be just as composable: its typography
+should reveal structure rather than compete with it.
+
+The entry points are \api{MuDSL.hpp} and \api{MuDSL.d}. A literal name such as
+\api{mull::Runtime::mullier.lastIR.dump()} can wrap in a narrow measure, as can
+\api{share/mull/stdlib/collections/sequence.mull}. Special characters remain
+literal: \api{a_b<T>&value}, \api{$E?}, and \api{#include}.
+\footnote{Footnotes use a hanging marker and stay below the main reading area.}
+\section{A small, complete example}\label{sec:composition}
+The same design serves short fragments and full source appendices. Listings
+remain selectable text, keep their indentation, and can break across pages.
+\begin{cppcode}
+#include "MuDSL.hpp"
+struct Language : dsl::DSL<Language, dsl::Pipeline, dsl::Operators> {};
+auto value = Language::wrap(5)
+           | dsl::pipe([](int x) { return x + 3; });
+// A deliberately long line checks the continuation marker and the available measure without changing the source text or shrinking every listing to an unreadable size.
+\end{cppcode}
+\begin{mullcode}
+val values <- [1, 2, 3];
+return values;
+\end{mullcode}
+\begin{dcode}
+import MuDSL;
+struct Language { mixin DSL!(Pipeline, Operators); }
+\end{dcode}
+\begin{rulecode}
+(binary "and" (literal "true") (number "42"))
+\end{rulecode}
+\begin{code}
+make -C mudsl/book check
+\end{code}
+\subsection{Math belongs to the same book}
+\subsubsection{A shared mathematical vocabulary}
+The body and mathematics share a family. A simple identity is
+\begin{equation}\label{eq:sum}
+  \sum_{k=1}^{n} k = \frac{n(n+1)}{2},\qquad n\in\mathbb{N}.
+\end{equation}
+\begin{MuDefinition}{composition}
+The operation that connects the output of one transformation to the input of
+another, while preserving the contract between them.
+\end{MuDefinition}
+\begin{MuExample}{Follow the data}\label{ex:data}
+The pipeline in \cref{sec:composition} produces eight. Compare its explicit
+control flow with the notation in \cref{eq:sum}.
+\end{MuExample}
+\begin{MuCaution}
+An attractive listing is not evidence of correctness. Run the companion tests
+before relying on a fragment in an application.
+\end{MuCaution}
+\begin{quote}
+The page should make the relationship between explanation, example, and contract
+visible without relying on color alone.
+\end{quote}
+\begin{description}
+\item[\api{mull/mullier}] Analysis, rewriting, and executable representations.
+\item[A longer reference field with enough words to require a separate line]
+  Reference labels should never collide with their descriptions.
+\end{description}
+\paragraph{Readability} Inline labels should share the same paragraph rhythm.
+\begin{MuSummary}
+\item Features compose; the typography follows the same principle.
+\item Examples, cautions, and definitions have names as well as visual cues.
+\end{MuSummary}
+\section{Exercises}
+\begin{MuExercises}
+\item\label{ex:check} Trace the value through the pipeline in \cref{ex:data}.
+\item Explain why \cref{ch:specimen} uses separate type families for code and prose.
+\end{MuExercises}
+\chapter{Tables and the reference apparatus}
+\input{build/typography/table.tex}
+\MuTableNote{The header repeats on continuation pages; there are no vertical rules.}
+\section{Figures, captions, and the \api{mull::Runtime} contract}
+\input{build/typography/prose.tex}
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox[c][22mm][c]{0.8\linewidth}{\centering\sffamily
+  Source\quad$\longrightarrow$\quad Analysis\quad$\longrightarrow$\quad Execution}}
+\caption{An original schematic of the language pipeline.}\label{fig:pipeline}
+\end{figure}
+\Cref{fig:pipeline} uses the same caption vocabulary as a table.
+See \cref{ex:check} on \cpageref{ex:check}.
+\begin{table}[htbp]
+\caption{Aligned reference fields.}
+\centering
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+\textbf{Host} & \textbf{Entry point} \\
+\midrule
+C++ & \api{MuDSL.hpp} \\
+D & \api{MuDSL.d} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\href{https://example.org/mudsl}{A linked reference} and a breakable URL:
+\url{https://example.org/mudsl/reference/a_very_long_path/to_the_language_contract}.
+Markdown helpers: \mdstrike{removed text}, \mdchar{95}, \passthrough{retained text}.
+\begin{itemize}\tightlist\item A compact generated list.\item Another item.\end{itemize}
+\clearpage
+\section{A listing continued across pages}
+\inputminted[linenos,fontsize=\footnotesize]{cpp}{build/typography/long.cpp}
+\clearpage
+\setcounter{chapter}{648}
+\setcounter{page}{1234}
+\chapter{A long reference title that must wrap naturally without colliding with its chapter number}
+\label{ch:long-reference}
+\section{Long-book navigation at three-digit chapter and four-digit page counts}
+The contents number columns must accommodate the complete reference, not just a
+short chapter preview. This page also checks that running titles stay inside
+their allotted width.
+\newpage
+This continuation page carries the long section title in the running head.
+See \cref{ch:long-reference} on \cpageref{ch:long-reference}.
+\appendix
+\chapter{Source-reference conventions}
+\MuSourceNote{The source listings are loaded directly from the repository.
+The full book and this specimen use exactly the same package loader.}
+\backmatter
+\begin{thebibliography}{9}
+\bibitem{local} MuDSL repository. \emph{The companion manual and executable examples}.
+\end{thebibliography}
+\end{document}

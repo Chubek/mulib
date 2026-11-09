@@ -1,0 +1,17 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-fonts}[2026/11/09 Coordinated text and code families]
+\RequirePackage{support/mudsl-engine}
+\ifTUTeX
+  \RequirePackage{fontspec}
+  \setmainfont{TeX Gyre Pagella}[Numbers=Proportional,Ligatures=TeX]
+  \setsansfont{TeX Gyre Heros}[Scale=MatchLowercase,Ligatures=TeX]
+  % Avoid oversized monospace in prose; disable typographic code ligatures.
+  \setmonofont{DejaVu Sans Mono}[Scale=0.82,Ligatures={NoCommon,TeXOff}]
+\else
+  \RequirePackage[T1]{fontenc}
+  \RequirePackage[utf8]{inputenc}
+  \RequirePackage{newpxtext}
+  \RequirePackage[scaled=0.92]{helvet}
+  \RequirePackage[scaled=0.85]{beramono}
+\fi
+\endinput

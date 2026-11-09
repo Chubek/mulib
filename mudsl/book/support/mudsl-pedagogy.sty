@@ -1,0 +1,21 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-pedagogy}[2026/11/09 Learning aids and numbered exercises]
+\RequirePackage{support/mudsl-boxes}
+\RequirePackage{support/mudsl-lists}
+\RequirePackage{needspace}
+\newenvironment{MuObjectives}
+  {\begin{MuNote}[In this chapter]\begin{itemize}[nosep]}
+  {\end{itemize}\end{MuNote}}
+\newenvironment{MuSummary}
+  {\begin{MuNote}[Key ideas]\begin{itemize}[nosep]}
+  {\end{itemize}\end{MuNote}}
+\newcounter{MuExample}[chapter]
+\renewcommand{\theMuExample}{\thechapter.\arabic{MuExample}}
+\newenvironment{MuExample}[1]
+  {\par\Needspace{4\baselineskip}\refstepcounter{MuExample}%
+    \noindent{\sffamily\bfseries\color{MuAccent}Example \theMuExample\enspace #1}\par\nobreak}
+  {\par\addvspace{0.5\baselineskip}}
+\newlist{MuExercises}{enumerate}{1}
+\setlist[MuExercises]{label=\thechapter.\arabic*,ref=\thechapter.\arabic*,
+  leftmargin=*,font=\sffamily\small\bfseries\color{MuAccent}}
+\endinput

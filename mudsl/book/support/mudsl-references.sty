@@ -1,0 +1,13 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-references}[2026/11/09 Semantic cross-references]
+% Load after hyperref; do not force authors to assemble reference labels by hand.
+\RequirePackage[nameinlink,noabbrev]{cleveref}
+\crefname{chapter}{chapter}{chapters}
+\Crefname{chapter}{Chapter}{Chapters}
+\crefname{MuExample}{example}{examples}
+\Crefname{MuExample}{Example}{Examples}
+\crefname{MuExercisesi}{exercise}{exercises}
+\Crefname{MuExercisesi}{Exercise}{Exercises}
+\newcommand{\MuChapterRef}[1]{\cref{#1}}
+\newcommand{\MuPageRef}[1]{\cpageref{#1}}
+\endinput

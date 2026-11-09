@@ -61,11 +61,22 @@ C++ protocol queries are \texttt{S\allowbreak{}e\allowbreak{}r\allowbreak{}i\all
 
 The \texttt{I\allowbreak{}O\allowbreak{}B\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d} protocol requires both byte-read and byte-write operations:
 
-\begin{xltabular}{\linewidth}{|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
-\hline
-\textbf{Operation} & \textbf{C++ buffer} & \textbf{D buffer} & \textbf{Result} \\ \hline
-\texttt{r\allowbreak{}e\allowbreak{}a\allowbreak{}d} & \texttt{s\allowbreak{}t\allowbreak{}d\allowbreak{}:\allowbreak{}:\allowbreak{}s\allowbreak{}p\allowbreak{}a\allowbreak{}n\allowbreak{}<\allowbreak{}s\allowbreak{}t\allowbreak{}d\allowbreak{}:\allowbreak{}:\allowbreak{}b\allowbreak{}y\allowbreak{}t\allowbreak{}e\allowbreak{}>} & \texttt{u\allowbreak{}b\allowbreak{}y\allowbreak{}t\allowbreak{}e\allowbreak{}[\allowbreak{}]} & Transferred byte count \\ \hline
-\texttt{w\allowbreak{}r\allowbreak{}i\allowbreak{}t\allowbreak{}e} & \texttt{s\allowbreak{}t\allowbreak{}d\allowbreak{}:\allowbreak{}:\allowbreak{}s\allowbreak{}p\allowbreak{}a\allowbreak{}n\allowbreak{}<\allowbreak{}c\allowbreak{}o\allowbreak{}n\allowbreak{}s\allowbreak{}t\allowbreak{}\ \allowbreak{}s\allowbreak{}t\allowbreak{}d\allowbreak{}:\allowbreak{}:\allowbreak{}b\allowbreak{}y\allowbreak{}t\allowbreak{}e\allowbreak{}>} & \texttt{c\allowbreak{}o\allowbreak{}n\allowbreak{}s\allowbreak{}t\allowbreak{}(\allowbreak{}u\allowbreak{}b\allowbreak{}y\allowbreak{}t\allowbreak{}e\allowbreak{})\allowbreak{}[\allowbreak{}]} & Transferred byte count \\ \hline
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Operation} & \textbf{C++ buffer} & \textbf{D buffer} & \textbf{Result} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Operation} & \textbf{C++ buffer} & \textbf{D buffer} & \textbf{Result} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r}{\footnotesize\itshape Continued on next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\texttt{r\allowbreak{}e\allowbreak{}a\allowbreak{}d} & \texttt{s\allowbreak{}t\allowbreak{}d\allowbreak{}:\allowbreak{}:\allowbreak{}s\allowbreak{}p\allowbreak{}a\allowbreak{}n\allowbreak{}<\allowbreak{}s\allowbreak{}t\allowbreak{}d\allowbreak{}:\allowbreak{}:\allowbreak{}b\allowbreak{}y\allowbreak{}t\allowbreak{}e\allowbreak{}>} & \texttt{u\allowbreak{}b\allowbreak{}y\allowbreak{}t\allowbreak{}e\allowbreak{}[\allowbreak{}]} & Transferred byte count \\
+\texttt{w\allowbreak{}r\allowbreak{}i\allowbreak{}t\allowbreak{}e} & \texttt{s\allowbreak{}t\allowbreak{}d\allowbreak{}:\allowbreak{}:\allowbreak{}s\allowbreak{}p\allowbreak{}a\allowbreak{}n\allowbreak{}<\allowbreak{}c\allowbreak{}o\allowbreak{}n\allowbreak{}s\allowbreak{}t\allowbreak{}\ \allowbreak{}s\allowbreak{}t\allowbreak{}d\allowbreak{}:\allowbreak{}:\allowbreak{}b\allowbreak{}y\allowbreak{}t\allowbreak{}e\allowbreak{}>} & \texttt{c\allowbreak{}o\allowbreak{}n\allowbreak{}s\allowbreak{}t\allowbreak{}(\allowbreak{}u\allowbreak{}b\allowbreak{}y\allowbreak{}t\allowbreak{}e\allowbreak{})\allowbreak{}[\allowbreak{}]} & Transferred byte count \\
 \end{xltabular}
 
 \texttt{I\allowbreak{}O} borrows its backend. In C++ it stores a reference; in D the constructor takes a \texttt{r\allowbreak{}e\allowbreak{}f} backend and stores a pointer. Keep the backend alive and at a stable location for the adapter's use. The backend owns its resource policy.
@@ -112,17 +123,28 @@ The C++ form substitutes a vector, spans and \texttt{I\allowbreak{}O\allowbreak{
 
 \texttt{S\allowbreak{}t\allowbreak{}a\allowbreak{}t\allowbreak{}i\allowbreak{}c\allowbreak{}R\allowbreak{}e\allowbreak{}g\allowbreak{}e\allowbreak{}x\allowbreak{}<\allowbreak{}S\allowbreak{}o\allowbreak{}u\allowbreak{}r\allowbreak{}c\allowbreak{}e\allowbreak{}>} in C++ and \texttt{S\allowbreak{}t\allowbreak{}a\allowbreak{}t\allowbreak{}i\allowbreak{}c\allowbreak{}R\allowbreak{}e\allowbreak{}g\allowbreak{}e\allowbreak{}x\allowbreak{}!\allowbreak{}S\allowbreak{}o\allowbreak{}u\allowbreak{}r\allowbreak{}c\allowbreak{}e} in D compile a Thompson NFA from a string template argument. Invalid supported-syntax patterns are diagnosed at compilation. Matching uses byte values, so NUL, newlines and bytes from \texttt{0\allowbreak{}x\allowbreak{}8\allowbreak{}0} through \texttt{0\allowbreak{}x\allowbreak{}f\allowbreak{}f} are ordinary input values.
 
-\begin{xltabular}{\linewidth}{|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
-\hline
-\textbf{Syntax} & \textbf{Meaning} \\ \hline
-\texttt{a}, \texttt{\textbackslash{}\allowbreak{}*}, \texttt{\textbackslash{}\allowbreak{}(} & Literal/\allowbreak{}escaped literal byte \\ \hline
-\texttt{.} & Any byte \\ \hline
-\texttt{[\allowbreak{}a\allowbreak{}b\allowbreak{}c\allowbreak{}]}, \texttt{[\allowbreak{}a\allowbreak{}-\allowbreak{}z\allowbreak{}]}, \texttt{[\allowbreak{}\textasciicircum{}\allowbreak{}a\allowbreak{}-\allowbreak{}z\allowbreak{}]} & Class, range, negated class \\ \hline
-\texttt{(\allowbreak{}a\allowbreak{}b\allowbreak{}|\allowbreak{}c\allowbreak{}d\allowbreak{})} & Grouping and alternation \\ \hline
-\texttt{a\allowbreak{}*}, \texttt{a\allowbreak{}+}, \texttt{a\allowbreak{}?} & Zero-or-more, one-or-more, optional \\ \hline
-\texttt{\textasciicircum{}}, \texttt{\$} & Absolute beginning/\allowbreak{}end of the complete input \\ \hline
-\texttt{\textbackslash{}\allowbreak{}x\allowbreak{}H\allowbreak{}H}, \texttt{\textbackslash{}\allowbreak{}0} & Hexadecimal byte and NUL \\ \hline
-\texttt{\textbackslash{}\allowbreak{}n}, \texttt{\textbackslash{}\allowbreak{}r}, \texttt{\textbackslash{}\allowbreak{}t} & Newline, carriage return, tab \\ \hline
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Syntax} & \textbf{Meaning} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Syntax} & \textbf{Meaning} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{2}{r}{\footnotesize\itshape Continued on next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\texttt{a}, \texttt{\textbackslash{}\allowbreak{}*}, \texttt{\textbackslash{}\allowbreak{}(} & Literal/\allowbreak{}escaped literal byte \\
+\texttt{.} & Any byte \\
+\texttt{[\allowbreak{}a\allowbreak{}b\allowbreak{}c\allowbreak{}]}, \texttt{[\allowbreak{}a\allowbreak{}-\allowbreak{}z\allowbreak{}]}, \texttt{[\allowbreak{}\textasciicircum{}\allowbreak{}a\allowbreak{}-\allowbreak{}z\allowbreak{}]} & Class, range, negated class \\
+\texttt{(\allowbreak{}a\allowbreak{}b\allowbreak{}|\allowbreak{}c\allowbreak{}d\allowbreak{})} & Grouping and alternation \\
+\texttt{a\allowbreak{}*}, \texttt{a\allowbreak{}+}, \texttt{a\allowbreak{}?} & Zero-or-more, one-or-more, optional \\
+\texttt{\textasciicircum{}}, \texttt{\$} & Absolute beginning/\allowbreak{}end of the complete input \\
+\texttt{\textbackslash{}\allowbreak{}x\allowbreak{}H\allowbreak{}H}, \texttt{\textbackslash{}\allowbreak{}0} & Hexadecimal byte and NUL \\
+\texttt{\textbackslash{}\allowbreak{}n}, \texttt{\textbackslash{}\allowbreak{}r}, \texttt{\textbackslash{}\allowbreak{}t} & Newline, carriage return, tab \\
 \end{xltabular}
 
 The current engine does not supply captures, counted repetitions, backreferences or shorthand classes such as \texttt{\textbackslash{}\allowbreak{}d}. Use \texttt{[\allowbreak{}0\allowbreak{}-\allowbreak{}9\allowbreak{}]} for digits.

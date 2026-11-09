@@ -103,11 +103,22 @@ Each discovered schema tag is checked by \texttt{s\allowbreak{}t\allowbreak{}a\a
 
 \texttt{v\allowbreak{}i\allowbreak{}s\allowbreak{}i\allowbreak{}t\allowbreak{}(\allowbreak{}n\allowbreak{}o\allowbreak{}d\allowbreak{}e\allowbreak{})} dispatches one node. \texttt{w\allowbreak{}a\allowbreak{}l\allowbreak{}k\allowbreak{}(\allowbreak{}n\allowbreak{}o\allowbreak{}d\allowbreak{}e\allowbreak{},\allowbreak{}\ \allowbreak{}o\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r\allowbreak{})} recursively traverses:
 
-\begin{xltabular}{\linewidth}{|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
-\hline
-\textbf{Order} & \textbf{C++} & \textbf{D} & \textbf{Handler timing} \\ \hline
-Preorder & \texttt{V\allowbreak{}i\allowbreak{}s\allowbreak{}i\allowbreak{}t\allowbreak{}O\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r\allowbreak{}:\allowbreak{}:\allowbreak{}P\allowbreak{}r\allowbreak{}e\allowbreak{}o\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r} & \texttt{V\allowbreak{}i\allowbreak{}s\allowbreak{}i\allowbreak{}t\allowbreak{}O\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r\allowbreak{}.\allowbreak{}P\allowbreak{}r\allowbreak{}e\allowbreak{}o\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r} & Before children \\ \hline
-Postorder & \texttt{V\allowbreak{}i\allowbreak{}s\allowbreak{}i\allowbreak{}t\allowbreak{}O\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r\allowbreak{}:\allowbreak{}:\allowbreak{}P\allowbreak{}o\allowbreak{}s\allowbreak{}t\allowbreak{}o\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r} & \texttt{V\allowbreak{}i\allowbreak{}s\allowbreak{}i\allowbreak{}t\allowbreak{}O\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r\allowbreak{}.\allowbreak{}P\allowbreak{}o\allowbreak{}s\allowbreak{}t\allowbreak{}o\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r} & After children \\ \hline
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Order} & \textbf{C++} & \textbf{D} & \textbf{Handler timing} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Order} & \textbf{C++} & \textbf{D} & \textbf{Handler timing} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r}{\footnotesize\itshape Continued on next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Preorder & \texttt{V\allowbreak{}i\allowbreak{}s\allowbreak{}i\allowbreak{}t\allowbreak{}O\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r\allowbreak{}:\allowbreak{}:\allowbreak{}P\allowbreak{}r\allowbreak{}e\allowbreak{}o\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r} & \texttt{V\allowbreak{}i\allowbreak{}s\allowbreak{}i\allowbreak{}t\allowbreak{}O\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r\allowbreak{}.\allowbreak{}P\allowbreak{}r\allowbreak{}e\allowbreak{}o\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r} & Before children \\
+Postorder & \texttt{V\allowbreak{}i\allowbreak{}s\allowbreak{}i\allowbreak{}t\allowbreak{}O\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r\allowbreak{}:\allowbreak{}:\allowbreak{}P\allowbreak{}o\allowbreak{}s\allowbreak{}t\allowbreak{}o\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r} & \texttt{V\allowbreak{}i\allowbreak{}s\allowbreak{}i\allowbreak{}t\allowbreak{}O\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r\allowbreak{}.\allowbreak{}P\allowbreak{}o\allowbreak{}s\allowbreak{}t\allowbreak{}o\allowbreak{}r\allowbreak{}d\allowbreak{}e\allowbreak{}r} & After children \\
 \end{xltabular}
 
 Preorder is the default. C++ traversal supports const or mutable ASTs when the handlers accept the corresponding node reference. D's public visitor operations take \texttt{r\allowbreak{}e\allowbreak{}f\allowbreak{}\ \allowbreak{}A\allowbreak{}S\allowbreak{}T\allowbreak{}N\allowbreak{}o\allowbreak{}d\allowbreak{}e}, permitting mutation by callbacks. Handlers that change child structure affect the traversal as it runs; choose the order to suit the transformation.

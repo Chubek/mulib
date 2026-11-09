@@ -1,0 +1,23 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-tables}[2026/11/09 Airy multipage reference tables]
+\RequirePackage{support/mudsl-palette}
+\RequirePackage{etoolbox,ragged2e,array,booktabs,longtable,tabularx,xltabular}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\heavyrulewidth}{0.7pt}
+\setlength{\lightrulewidth}{0.4pt}
+\setlength{\aboverulesep}{0.45ex}
+\setlength{\belowrulesep}{0.65ex}
+\setlength{\LTpre}{0.6\baselineskip}
+\setlength{\LTpost}{0.6\baselineskip}
+\setlength{\LTleft}{0pt}
+\setlength{\LTright}{0pt}
+\renewcommand{\tabularxcolumn}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\Centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\RaggedLeft\arraybackslash}p{#1}}
+\AtBeginEnvironment{tabularx}{\small}
+\AtBeginEnvironment{longtable}{\small}
+\AtBeginEnvironment{xltabular}{\small}
+\newcommand{\MuTableNote}[1]{\par\smallskip{\footnotesize\color{MuMuted}#1\par}}
+\endinput

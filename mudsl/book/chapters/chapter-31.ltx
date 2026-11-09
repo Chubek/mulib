@@ -42,16 +42,27 @@ struct MathDSL
 
 The mixin adds selected methods directly to the enclosing aggregate. Features must be unique. \texttt{D\allowbreak{}S\allowbreak{}L\allowbreak{}F\allowbreak{}e\allowbreak{}a\allowbreak{}t\allowbreak{}u\allowbreak{}r\allowbreak{}e\allowbreak{}s} records the selected types; \texttt{H\allowbreak{}a\allowbreak{}s\allowbreak{}F\allowbreak{}e\allowbreak{}a\allowbreak{}t\allowbreak{}u\allowbreak{}r\allowbreak{}e\allowbreak{}!\allowbreak{}(\allowbreak{}T\allowbreak{},\allowbreak{}\ \allowbreak{}F\allowbreak{})} queries that list. The convenience predicates are \texttt{P\allowbreak{}i\allowbreak{}p\allowbreak{}e\allowbreak{}a\allowbreak{}b\allowbreak{}l\allowbreak{}e\allowbreak{}!\allowbreak{}T}, \texttt{E\allowbreak{}x\allowbreak{}p\allowbreak{}r\allowbreak{}L\allowbreak{}i\allowbreak{}k\allowbreak{}e\allowbreak{}!\allowbreak{}T}, \texttt{H\allowbreak{}a\allowbreak{}s\allowbreak{}L\allowbreak{}i\allowbreak{}t\allowbreak{}e\allowbreak{}r\allowbreak{}a\allowbreak{}l\allowbreak{}s\allowbreak{}!\allowbreak{}T}, and \texttt{R\allowbreak{}e\allowbreak{}w\allowbreak{}r\allowbreak{}i\allowbreak{}t\allowbreak{}a\allowbreak{}b\allowbreak{}l\allowbreak{}e\allowbreak{}!\allowbreak{}T}.
 
-\begin{xltabular}{\linewidth}{|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
-\hline
-\textbf{Feature} & \textbf{Injected convenience operations} \\ \hline
-\texttt{P\allowbreak{}i\allowbreak{}p\allowbreak{}e\allowbreak{}l\allowbreak{}i\allowbreak{}n\allowbreak{}e} & \texttt{w\allowbreak{}r\allowbreak{}a\allowbreak{}p\allowbreak{}(\allowbreak{}v\allowbreak{}a\allowbreak{}l\allowbreak{}u\allowbreak{}e\allowbreak{})} \\ \hline
-\texttt{O\allowbreak{}p\allowbreak{}e\allowbreak{}r\allowbreak{}a\allowbreak{}t\allowbreak{}o\allowbreak{}r\allowbreak{}s} & \texttt{m\allowbreak{}a\allowbreak{}k\allowbreak{}e\allowbreak{}\_\allowbreak{}\allowbreak{}p\allowbreak{}r\allowbreak{}e\allowbreak{}d\allowbreak{}(\allowbreak{}f\allowbreak{}n\allowbreak{})} \\ \hline
-\texttt{A\allowbreak{}S\allowbreak{}T} & \texttt{m\allowbreak{}a\allowbreak{}k\allowbreak{}e\allowbreak{}\_\allowbreak{}\allowbreak{}l\allowbreak{}e\allowbreak{}a\allowbreak{}f\allowbreak{}!\allowbreak{}t\allowbreak{}a\allowbreak{}g\allowbreak{}(\allowbreak{}v\allowbreak{}a\allowbreak{}l\allowbreak{}u\allowbreak{}e\allowbreak{})}, \texttt{m\allowbreak{}a\allowbreak{}k\allowbreak{}e\allowbreak{}\_\allowbreak{}\allowbreak{}n\allowbreak{}o\allowbreak{}d\allowbreak{}e\allowbreak{}!\allowbreak{}t\allowbreak{}a\allowbreak{}g\allowbreak{}(\allowbreak{}c\allowbreak{}h\allowbreak{}i\allowbreak{}l\allowbreak{}d\allowbreak{}r\allowbreak{}e\allowbreak{}n\allowbreak{}.\allowbreak{}.\allowbreak{}.\allowbreak{})} \\ \hline
-\texttt{E\allowbreak{}x\allowbreak{}p\allowbreak{}r\allowbreak{}T\allowbreak{}e\allowbreak{}m\allowbreak{}p\allowbreak{}l\allowbreak{}a\allowbreak{}t\allowbreak{}e\allowbreak{}s} & Arithmetic operator templates; requires \texttt{e\allowbreak{}x\allowbreak{}p\allowbreak{}r\allowbreak{}\_\allowbreak{}\allowbreak{}v\allowbreak{}a\allowbreak{}l\allowbreak{}u\allowbreak{}e\allowbreak{}(\allowbreak{})} \\ \hline
-\texttt{R\allowbreak{}e\allowbreak{}w\allowbreak{}r\allowbreak{}i\allowbreak{}t\allowbreak{}e} & \texttt{r\allowbreak{}e\allowbreak{}w\allowbreak{}r\allowbreak{}i\allowbreak{}t\allowbreak{}e\allowbreak{}(\allowbreak{}t\allowbreak{}r\allowbreak{}e\allowbreak{}e\allowbreak{})} using the aggregate's \texttt{r\allowbreak{}u\allowbreak{}l\allowbreak{}e\allowbreak{}s} \\ \hline
-\texttt{C\allowbreak{}u\allowbreak{}s\allowbreak{}t\allowbreak{}o\allowbreak{}m\allowbreak{}L\allowbreak{}i\allowbreak{}t\allowbreak{}e\allowbreak{}r\allowbreak{}a\allowbreak{}l\allowbreak{}s} & \texttt{p\allowbreak{}a\allowbreak{}r\allowbreak{}s\allowbreak{}e\allowbreak{}\_\allowbreak{}\allowbreak{}l\allowbreak{}i\allowbreak{}t\allowbreak{}e\allowbreak{}r\allowbreak{}a\allowbreak{}l\allowbreak{}(\allowbreak{}t\allowbreak{}e\allowbreak{}x\allowbreak{}t\allowbreak{})} using its static \texttt{l\allowbreak{}i\allowbreak{}t\allowbreak{}e\allowbreak{}r\allowbreak{}a\allowbreak{}l\allowbreak{}s} \\ \hline
-\texttt{M\allowbreak{}e\allowbreak{}m\allowbreak{}o\allowbreak{}i\allowbreak{}z\allowbreak{}a\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n} & \texttt{c\allowbreak{}l\allowbreak{}e\allowbreak{}a\allowbreak{}r\allowbreak{}\_\allowbreak{}\allowbreak{}c\allowbreak{}a\allowbreak{}c\allowbreak{}h\allowbreak{}e\allowbreak{}(\allowbreak{})} for the aggregate's \texttt{m\allowbreak{}e\allowbreak{}m\allowbreak{}o\allowbreak{}\_\allowbreak{}\allowbreak{}c\allowbreak{}a\allowbreak{}c\allowbreak{}h\allowbreak{}e} \\ \hline
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Feature} & \textbf{Injected convenience operations} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Feature} & \textbf{Injected convenience operations} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{2}{r}{\footnotesize\itshape Continued on next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\texttt{P\allowbreak{}i\allowbreak{}p\allowbreak{}e\allowbreak{}l\allowbreak{}i\allowbreak{}n\allowbreak{}e} & \texttt{w\allowbreak{}r\allowbreak{}a\allowbreak{}p\allowbreak{}(\allowbreak{}v\allowbreak{}a\allowbreak{}l\allowbreak{}u\allowbreak{}e\allowbreak{})} \\
+\texttt{O\allowbreak{}p\allowbreak{}e\allowbreak{}r\allowbreak{}a\allowbreak{}t\allowbreak{}o\allowbreak{}r\allowbreak{}s} & \texttt{m\allowbreak{}a\allowbreak{}k\allowbreak{}e\allowbreak{}\_\allowbreak{}\allowbreak{}p\allowbreak{}r\allowbreak{}e\allowbreak{}d\allowbreak{}(\allowbreak{}f\allowbreak{}n\allowbreak{})} \\
+\texttt{A\allowbreak{}S\allowbreak{}T} & \texttt{m\allowbreak{}a\allowbreak{}k\allowbreak{}e\allowbreak{}\_\allowbreak{}\allowbreak{}l\allowbreak{}e\allowbreak{}a\allowbreak{}f\allowbreak{}!\allowbreak{}t\allowbreak{}a\allowbreak{}g\allowbreak{}(\allowbreak{}v\allowbreak{}a\allowbreak{}l\allowbreak{}u\allowbreak{}e\allowbreak{})}, \texttt{m\allowbreak{}a\allowbreak{}k\allowbreak{}e\allowbreak{}\_\allowbreak{}\allowbreak{}n\allowbreak{}o\allowbreak{}d\allowbreak{}e\allowbreak{}!\allowbreak{}t\allowbreak{}a\allowbreak{}g\allowbreak{}(\allowbreak{}c\allowbreak{}h\allowbreak{}i\allowbreak{}l\allowbreak{}d\allowbreak{}r\allowbreak{}e\allowbreak{}n\allowbreak{}.\allowbreak{}.\allowbreak{}.\allowbreak{})} \\
+\texttt{E\allowbreak{}x\allowbreak{}p\allowbreak{}r\allowbreak{}T\allowbreak{}e\allowbreak{}m\allowbreak{}p\allowbreak{}l\allowbreak{}a\allowbreak{}t\allowbreak{}e\allowbreak{}s} & Arithmetic operator templates; requires \texttt{e\allowbreak{}x\allowbreak{}p\allowbreak{}r\allowbreak{}\_\allowbreak{}\allowbreak{}v\allowbreak{}a\allowbreak{}l\allowbreak{}u\allowbreak{}e\allowbreak{}(\allowbreak{})} \\
+\texttt{R\allowbreak{}e\allowbreak{}w\allowbreak{}r\allowbreak{}i\allowbreak{}t\allowbreak{}e} & \texttt{r\allowbreak{}e\allowbreak{}w\allowbreak{}r\allowbreak{}i\allowbreak{}t\allowbreak{}e\allowbreak{}(\allowbreak{}t\allowbreak{}r\allowbreak{}e\allowbreak{}e\allowbreak{})} using the aggregate's \texttt{r\allowbreak{}u\allowbreak{}l\allowbreak{}e\allowbreak{}s} \\
+\texttt{C\allowbreak{}u\allowbreak{}s\allowbreak{}t\allowbreak{}o\allowbreak{}m\allowbreak{}L\allowbreak{}i\allowbreak{}t\allowbreak{}e\allowbreak{}r\allowbreak{}a\allowbreak{}l\allowbreak{}s} & \texttt{p\allowbreak{}a\allowbreak{}r\allowbreak{}s\allowbreak{}e\allowbreak{}\_\allowbreak{}\allowbreak{}l\allowbreak{}i\allowbreak{}t\allowbreak{}e\allowbreak{}r\allowbreak{}a\allowbreak{}l\allowbreak{}(\allowbreak{}t\allowbreak{}e\allowbreak{}x\allowbreak{}t\allowbreak{})} using its static \texttt{l\allowbreak{}i\allowbreak{}t\allowbreak{}e\allowbreak{}r\allowbreak{}a\allowbreak{}l\allowbreak{}s} \\
+\texttt{M\allowbreak{}e\allowbreak{}m\allowbreak{}o\allowbreak{}i\allowbreak{}z\allowbreak{}a\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n} & \texttt{c\allowbreak{}l\allowbreak{}e\allowbreak{}a\allowbreak{}r\allowbreak{}\_\allowbreak{}\allowbreak{}c\allowbreak{}a\allowbreak{}c\allowbreak{}h\allowbreak{}e\allowbreak{}(\allowbreak{})} for the aggregate's \texttt{m\allowbreak{}e\allowbreak{}m\allowbreak{}o\allowbreak{}\_\allowbreak{}\allowbreak{}c\allowbreak{}a\allowbreak{}c\allowbreak{}h\allowbreak{}e} \\
 \end{xltabular}
 
 Other built-in tags record feature presence while their facilities are used through module-level functions/\allowbreak{}types. Their list includes \texttt{P\allowbreak{}a\allowbreak{}t\allowbreak{}t\allowbreak{}e\allowbreak{}r\allowbreak{}n\allowbreak{}M\allowbreak{}a\allowbreak{}t\allowbreak{}c\allowbreak{}h}, \texttt{L\allowbreak{}a\allowbreak{}z\allowbreak{}y\allowbreak{}F\allowbreak{}e\allowbreak{}a\allowbreak{}t\allowbreak{}u\allowbreak{}r\allowbreak{}e}, \texttt{M\allowbreak{}o\allowbreak{}n\allowbreak{}a\allowbreak{}d\allowbreak{}i\allowbreak{}c}, \texttt{R\allowbreak{}e\allowbreak{}s\allowbreak{}u\allowbreak{}l\allowbreak{}t\allowbreak{}F\allowbreak{}e\allowbreak{}a\allowbreak{}t\allowbreak{}u\allowbreak{}r\allowbreak{}e}, \texttt{C\allowbreak{}o\allowbreak{}m\allowbreak{}b\allowbreak{}i\allowbreak{}n\allowbreak{}a\allowbreak{}t\allowbreak{}o\allowbreak{}r\allowbreak{}P\allowbreak{}a\allowbreak{}r\allowbreak{}s\allowbreak{}e\allowbreak{}r}, \texttt{T\allowbreak{}a\allowbreak{}s\allowbreak{}k\allowbreak{}P\allowbreak{}i\allowbreak{}p\allowbreak{}e\allowbreak{}l\allowbreak{}i\allowbreak{}n\allowbreak{}e}, \texttt{E\allowbreak{}n\allowbreak{}u\allowbreak{}m\allowbreak{}R\allowbreak{}e\allowbreak{}f\allowbreak{}l\allowbreak{}e\allowbreak{}c\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n}, and the eight shared facility tags from Chapter 30.
@@ -225,16 +236,27 @@ assert(err.map((string s) => s.length).unwrap_err() == "error");
 
 \texttt{p\allowbreak{}a\allowbreak{}r\allowbreak{}s\allowbreak{}e\allowbreak{}r\allowbreak{}(\allowbreak{}f\allowbreak{}n\allowbreak{})} wraps a callable taking \texttt{r\allowbreak{}e\allowbreak{}f\allowbreak{}\ \allowbreak{}P\allowbreak{}a\allowbreak{}r\allowbreak{}s\allowbreak{}e\allowbreak{}c\allowbreak{}I\allowbreak{}n\allowbreak{}p\allowbreak{}u\allowbreak{}t} and returning \texttt{E\allowbreak{}x\allowbreak{}p\allowbreak{}e\allowbreak{}c\allowbreak{}t\allowbreak{}e\allowbreak{}d\allowbreak{}R\allowbreak{}e\allowbreak{}s\allowbreak{}u\allowbreak{}l\allowbreak{}t\allowbreak{}!\allowbreak{}T}. Composition preserves concrete parser/\allowbreak{}callable types:
 
-\begin{xltabular}{\linewidth}{|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
-\hline
-\textbf{Operation} & \textbf{D syntax} \\ \hline
-Sequence & \texttt{a\allowbreak{}\ \allowbreak{}\&\allowbreak{}\ \allowbreak{}b} returns a \texttt{T\allowbreak{}u\allowbreak{}p\allowbreak{}l\allowbreak{}e} \\ \hline
-Choice & \texttt{a\allowbreak{}\ \allowbreak{}|\allowbreak{}\ \allowbreak{}b} with equal output types \\ \hline
-Zero-or-more & \texttt{p\allowbreak{}.\allowbreak{}m\allowbreak{}a\allowbreak{}n\allowbreak{}y\allowbreak{}(\allowbreak{})} /\allowbreak{} \texttt{m\allowbreak{}a\allowbreak{}n\allowbreak{}y\allowbreak{}(\allowbreak{}p\allowbreak{})} \\ \hline
-Optional & \texttt{p\allowbreak{}.\allowbreak{}o\allowbreak{}p\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n\allowbreak{}a\allowbreak{}l\allowbreak{}(\allowbreak{})} /\allowbreak{} \texttt{o\allowbreak{}p\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n\allowbreak{}a\allowbreak{}l\allowbreak{}(\allowbreak{}p\allowbreak{})} \\ \hline
-Backtracking & \texttt{t\allowbreak{}r\allowbreak{}y\allowbreak{}\_\allowbreak{}\allowbreak{}p\allowbreak{}a\allowbreak{}r\allowbreak{}s\allowbreak{}e\allowbreak{}(\allowbreak{}p\allowbreak{})} \\ \hline
-Expected-label replacement & \texttt{l\allowbreak{}a\allowbreak{}b\allowbreak{}e\allowbreak{}l\allowbreak{}e\allowbreak{}d\allowbreak{}(\allowbreak{}p\allowbreak{},\allowbreak{}\ \allowbreak{}l\allowbreak{}a\allowbreak{}b\allowbreak{}e\allowbreak{}l\allowbreak{})} \\ \hline
-Whole-source execution & \texttt{r\allowbreak{}u\allowbreak{}n\allowbreak{}\_\allowbreak{}\allowbreak{}p\allowbreak{}a\allowbreak{}r\allowbreak{}s\allowbreak{}e\allowbreak{}r\allowbreak{}(\allowbreak{}p\allowbreak{},\allowbreak{}\ \allowbreak{}s\allowbreak{}o\allowbreak{}u\allowbreak{}r\allowbreak{}c\allowbreak{}e\allowbreak{})} \\ \hline
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Operation} & \textbf{D syntax} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Operation} & \textbf{D syntax} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{2}{r}{\footnotesize\itshape Continued on next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Sequence & \texttt{a\allowbreak{}\ \allowbreak{}\&\allowbreak{}\ \allowbreak{}b} returns a \texttt{T\allowbreak{}u\allowbreak{}p\allowbreak{}l\allowbreak{}e} \\
+Choice & \texttt{a\allowbreak{}\ \allowbreak{}|\allowbreak{}\ \allowbreak{}b} with equal output types \\
+Zero-or-more & \texttt{p\allowbreak{}.\allowbreak{}m\allowbreak{}a\allowbreak{}n\allowbreak{}y\allowbreak{}(\allowbreak{})} /\allowbreak{} \texttt{m\allowbreak{}a\allowbreak{}n\allowbreak{}y\allowbreak{}(\allowbreak{}p\allowbreak{})} \\
+Optional & \texttt{p\allowbreak{}.\allowbreak{}o\allowbreak{}p\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n\allowbreak{}a\allowbreak{}l\allowbreak{}(\allowbreak{})} /\allowbreak{} \texttt{o\allowbreak{}p\allowbreak{}t\allowbreak{}i\allowbreak{}o\allowbreak{}n\allowbreak{}a\allowbreak{}l\allowbreak{}(\allowbreak{}p\allowbreak{})} \\
+Backtracking & \texttt{t\allowbreak{}r\allowbreak{}y\allowbreak{}\_\allowbreak{}\allowbreak{}p\allowbreak{}a\allowbreak{}r\allowbreak{}s\allowbreak{}e\allowbreak{}(\allowbreak{}p\allowbreak{})} \\
+Expected-label replacement & \texttt{l\allowbreak{}a\allowbreak{}b\allowbreak{}e\allowbreak{}l\allowbreak{}e\allowbreak{}d\allowbreak{}(\allowbreak{}p\allowbreak{},\allowbreak{}\ \allowbreak{}l\allowbreak{}a\allowbreak{}b\allowbreak{}e\allowbreak{}l\allowbreak{})} \\
+Whole-source execution & \texttt{r\allowbreak{}u\allowbreak{}n\allowbreak{}\_\allowbreak{}\allowbreak{}p\allowbreak{}a\allowbreak{}r\allowbreak{}s\allowbreak{}e\allowbreak{}r\allowbreak{}(\allowbreak{}p\allowbreak{},\allowbreak{}\ \allowbreak{}s\allowbreak{}o\allowbreak{}u\allowbreak{}r\allowbreak{}c\allowbreak{}e\allowbreak{})} \\
 \end{xltabular}
 
 \begingroup

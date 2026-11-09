@@ -155,12 +155,23 @@ For the expression grammar above, input \texttt{n\allowbreak{}u\allowbreak{}m\al
 
 \section{Choose the parser semantics explicitly}
 
-\begin{xltabular}{\linewidth}{|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
-\hline
-\textbf{Facility} & \textbf{Input/\allowbreak{}semantics} \\ \hline
-Parser combinators & Callable-based parsers over \texttt{P\allowbreak{}a\allowbreak{}r\allowbreak{}s\allowbreak{}e\allowbreak{}c\allowbreak{}I\allowbreak{}n\allowbreak{}p\allowbreak{}u\allowbreak{}t}, with soft/\allowbreak{}committed errors \\ \hline
-PEG facilities & Ordered choice, spans, lookahead and rule/\allowbreak{}channel matching \\ \hline
-\texttt{C\allowbreak{}F\allowbreak{}G} & Token-level productions, unordered alternatives, left recursion and epsilon \\ \hline
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Facility} & \textbf{Input/\allowbreak{}semantics} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Facility} & \textbf{Input/\allowbreak{}semantics} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{2}{r}{\footnotesize\itshape Continued on next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Parser combinators & Callable-based parsers over \texttt{P\allowbreak{}a\allowbreak{}r\allowbreak{}s\allowbreak{}e\allowbreak{}c\allowbreak{}I\allowbreak{}n\allowbreak{}p\allowbreak{}u\allowbreak{}t}, with soft/\allowbreak{}committed errors \\
+PEG facilities & Ordered choice, spans, lookahead and rule/\allowbreak{}channel matching \\
+\texttt{C\allowbreak{}F\allowbreak{}G} & Token-level productions, unordered alternatives, left recursion and epsilon \\
 \end{xltabular}
 
 The same S-expression substrate can hold either equality rules or CFG declarations, but their readers and semantics are separate. \texttt{s\allowbreak{}e\allowbreak{}x\allowbreak{}p\allowbreak{}r\allowbreak{}\_\allowbreak{}\allowbreak{}r\allowbreak{}u\allowbreak{}l\allowbreak{}e\allowbreak{}s} reads rewrite rules; \texttt{s\allowbreak{}e\allowbreak{}x\allowbreak{}p\allowbreak{}r\allowbreak{}\_\allowbreak{}\allowbreak{}g\allowbreak{}r\allowbreak{}a\allowbreak{}m\allowbreak{}m\allowbreak{}a\allowbreak{}r} reads grammar declarations. A static byte regex (Chapter 33) can assist a user lexer; it is not a CFG nonterminal.

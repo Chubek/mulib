@@ -1,0 +1,39 @@
+\NeedsTeXFormat{LaTeX2e}[2022-06-01]
+\ProvidesPackage{support/mudsl-book}[2026/11/09 MuDSL book design suite]
+% Load order is intentional: foundations, page furniture, content, navigation.
+\newif\ifMuPrint
+\DeclareOption{screen}{\MuPrintfalse}
+\DeclareOption{print}{\MuPrinttrue}
+\DeclareOption*{\PackageError{mudsl-book}{Unknown option `\CurrentOption'}{Use screen or print.}}
+\ExecuteOptions{screen}
+\ProcessOptions\relax
+\RequirePackage{support/mudsl-engine}
+\RequirePackage{support/mudsl-palette}
+\RequirePackage{support/mudsl-fonts}
+\RequirePackage{support/mudsl-math}
+\RequirePackage{support/mudsl-page}
+\RequirePackage{support/mudsl-microtype}
+\RequirePackage{support/mudsl-paragraphs}
+\RequirePackage{support/mudsl-headings}
+\RequirePackage{support/mudsl-chapters}
+\RequirePackage{support/mudsl-parts}
+\RequirePackage{support/mudsl-titlepage}
+\RequirePackage{support/mudsl-runningheads}
+\RequirePackage{support/mudsl-contents}
+\RequirePackage{support/mudsl-lists}
+\RequirePackage{support/mudsl-inline}
+\RequirePackage{support/mudsl-code}
+\RequirePackage{support/mudsl-tables}
+\RequirePackage{support/mudsl-captions}
+\RequirePackage{support/mudsl-floats}
+\RequirePackage{support/mudsl-figures}
+\RequirePackage{support/mudsl-footnotes}
+\RequirePackage{support/mudsl-quotes}
+\RequirePackage{support/mudsl-boxes}
+\RequirePackage{support/mudsl-pedagogy}
+\RequirePackage{support/mudsl-backmatter}
+\RequirePackage{support/mudsl-pagination}
+\RequirePackage{support/mudsl-links}
+\RequirePackage{support/mudsl-markdown}
+\RequirePackage{support/mudsl-references}
+\endinput

@@ -1,0 +1,9 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-captions}[2026/11/09 Quiet, consistently aligned captions]
+\RequirePackage{support/mudsl-palette}
+\RequirePackage{caption}
+\DeclareCaptionFont{muink}{\color{MuMuted}}
+\captionsetup{font={small,muink},labelfont={sf,bf},labelsep=period,
+  justification=raggedright,singlelinecheck=false,skip=8pt}
+\captionsetup[table]{position=top}
+\endinput

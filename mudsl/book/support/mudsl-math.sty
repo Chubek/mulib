@@ -1,0 +1,17 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-math}[2026/11/09 Pagella mathematics and display rhythm]
+\RequirePackage{support/mudsl-fonts}
+\RequirePackage{mathtools}
+\ifTUTeX
+  \RequirePackage{unicode-math}
+  \setmathfont{texgyrepagella-math.otf}
+\else
+  \RequirePackage{amssymb,newpxmath}
+\fi
+\allowdisplaybreaks[1]
+\AtBeginDocument{%
+  \setlength{\abovedisplayskip}{0.8\baselineskip plus 3pt minus 2pt}%
+  \setlength{\belowdisplayskip}{0.8\baselineskip plus 3pt minus 2pt}%
+  \setlength{\abovedisplayshortskip}{0.3\baselineskip plus 2pt}%
+  \setlength{\belowdisplayshortskip}{0.5\baselineskip plus 2pt minus 2pt}}
+\endinput

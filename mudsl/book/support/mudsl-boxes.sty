@@ -1,0 +1,16 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-boxes}[2026/11/09 Breakable notes, cautions and definitions]
+\RequirePackage{support/mudsl-palette}
+\RequirePackage{tcolorbox}
+\tcbuselibrary{breakable,skins}
+\tcbset{mu/base/.style={enhanced,breakable,sharp corners,
+  boxrule=0pt,leftrule=1.2pt,colframe=MuAccent,colback=MuPaper,
+  coltext=MuInk,coltitle=MuInk,fonttitle=\sffamily\small\bfseries,
+  title filled=false,attach title to upper={\par\smallskip},
+  left=3mm,right=3mm,top=2.5mm,bottom=2.5mm,
+  before skip=0.7\baselineskip,after skip=0.7\baselineskip}}
+\NewTColorBox{MuNote}{O{Note}}{mu/base,title={#1}}
+\NewTColorBox{MuCaution}{O{Caution}}{mu/base,colframe=MuWarm,
+  colback=MuWarmPaper,title={#1}}
+\NewTColorBox{MuDefinition}{m}{mu/base,colframe=MuGreen,title={Definition: #1}}
+\endinput

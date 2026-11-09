@@ -3,6 +3,7 @@
 import importlib.util
 from pathlib import Path
 import tempfile
+import re
 import unittest
 
 from book_support import fragment
@@ -69,6 +70,33 @@ class BookTests(unittest.TestCase):
         table = fragment('| A | B |\n| --- | --- |\n| x | y |\n')
         self.assertIn(r'\begin{xltabular}', table)
         self.assertNotIn(r'\begin{center}', table)
+
+    def test_reference_tables_have_repeated_open_headers(self):
+        table = fragment('| Name | Value |\n| --- | ---: |\n| a | b |\n| c | d |\n')
+        self.assertEqual(table.count(r'\textbf{Name}'), 2)
+        for command in ('toprule', 'midrule', 'bottomrule', 'endfirsthead',
+                        'endhead', 'endfoot', 'endlastfoot'):
+            self.assertIn('\\' + command, table)
+        self.assertNotIn(r'\hline', table)
+        self.assertNotIn('|', table)
+        self.assertIn(r'\multicolumn{2}', table)
+        self.assertIn(r'a & b \\', table)
+        literal = fragment('```tex\n\\begin{tabularx}{\\linewidth}{|X|}\n\\hline\n```\n')
+        self.assertIn(r'\begin{tabularx}{\linewidth}{|X|}', literal)
+        self.assertIn(r'\hline', literal)
+
+    def test_typography_suite_is_complete_and_loaded(self):
+        support = HERE / 'support'
+        packages = {path.stem for path in support.glob('*.sty')}
+        self.assertGreater(len(packages), 20)
+        loader = (support / 'mudsl-book.sty').read_text()
+        loaded = set(re.findall(r'\\RequirePackage\{support/([^}]+)\}', loader))
+        self.assertEqual(packages - {'mudsl-book'}, loaded)
+        for name in packages:
+            self.assertIn(r'\ProvidesPackage{support/' + name + '}',
+                          (support / (name + '.sty')).read_text())
+        self.assertIn(r'\RequirePackageWithOptions{support/mudsl-book}',
+                      (HERE / 'mudsl.sty').read_text())
 
 
 if __name__ == "__main__":

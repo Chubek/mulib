@@ -1,0 +1,11 @@
+\NeedsTeXFormat{LaTeX2e}[2022-06-01]
+\ProvidesPackage{support/mudsl-engine}[2026/11/09 Engine and shared infrastructure]
+\RequirePackage{iftex}
+\RequirePackage{etoolbox}
+\RequirePackage{calc}
+\RequirePackage{needspace}
+% LuaLaTeX is the publishing engine; the font modules retain a pdfTeX fallback.
+\ifLuaTeX\else
+  \PackageWarningNoLine{mudsl-engine}{LuaLaTeX is recommended for the complete Unicode reference}
+\fi
+\endinput

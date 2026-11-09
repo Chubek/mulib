@@ -1,0 +1,12 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-parts}[2026/11/09 Quiet full-page part dividers]
+\RequirePackage{support/mudsl-headings}
+\titleformat{\part}[display]
+  {\normalfont\centering\color{MuInk}}
+  {\sffamily\large\bfseries\color{MuAccent}\MakeUppercase{\partname}\enspace\thepart}
+  {1.4\baselineskip}{\Huge\bfseries}
+  [\vspace{1.4\baselineskip}{\color{MuAccent}\rule{0.18\textwidth}{1.5pt}}]
+\titleformat{name=\part,numberless}[display]
+  {\normalfont\centering\Huge\bfseries\color{MuInk}}{}{0pt}{}
+  [\vspace{1.4\baselineskip}{\color{MuAccent}\rule{0.18\textwidth}{1.5pt}}]
+\endinput

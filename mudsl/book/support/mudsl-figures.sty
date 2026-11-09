@@ -1,0 +1,16 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-figures}[2026/11/09 Bounded graphics and source notes]
+\RequirePackage{graphicx}
+\RequirePackage{support/mudsl-palette}
+\newcommand{\MuFigure}[2][]{%
+  \includegraphics[width=\linewidth,height=0.68\textheight,keepaspectratio,#1]{#2}}
+\newcommand{\MuFigureSource}[1]{%
+  \par\smallskip{\footnotesize\color{MuMuted}Source: #1\par}}
+% Pandoc's wrapper must not let natural-size images overrun the text measure.
+\newsavebox{\Mu@imagebox}
+\providecommand{\pandocbounded}[1]{%
+  \sbox{\Mu@imagebox}{#1}%
+  \ifdim\wd\Mu@imagebox>\linewidth
+    \resizebox{\linewidth}{!}{\usebox{\Mu@imagebox}}%
+  \else\usebox{\Mu@imagebox}\fi}
+\endinput

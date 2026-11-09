@@ -1,0 +1,16 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-pagination}[2026/11/09 Widow control and truly blank versos]
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000
+\brokenpenalty=3000
+\interfootnotelinepenalty=1000
+\raggedbottom
+% Honor openright documents without putting running heads on inserted blanks.
+\renewcommand{\cleardoublepage}{%
+  \clearpage
+  \if@twoside\ifodd\c@page\else
+    \hbox{}\thispagestyle{empty}\newpage
+    \if@twocolumn\hbox{}\newpage\fi
+  \fi\fi}
+\endinput

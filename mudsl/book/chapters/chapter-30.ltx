@@ -92,11 +92,22 @@ See Chapter 37 (Chapter 37) for both language APIs, examples, DOT rendering, roo
 
 The library defines protocols and forwarding adapters, with no prescribed wire syntax. A user backend supplies:
 
-\begin{xltabular}{\linewidth}{|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
-\hline
-\textbf{Operation} & \textbf{C++} & \textbf{D} \\ \hline
-Serialize & \texttt{b\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}.\allowbreak{}s\allowbreak{}e\allowbreak{}r\allowbreak{}i\allowbreak{}a\allowbreak{}l\allowbreak{}i\allowbreak{}z\allowbreak{}e\allowbreak{}(\allowbreak{}v\allowbreak{}a\allowbreak{}l\allowbreak{}u\allowbreak{}e\allowbreak{},\allowbreak{}\ \allowbreak{}o\allowbreak{}u\allowbreak{}t\allowbreak{}p\allowbreak{}u\allowbreak{}t\allowbreak{})} & same \\ \hline
-Deserialize & \texttt{b\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}.\allowbreak{}t\allowbreak{}e\allowbreak{}m\allowbreak{}p\allowbreak{}l\allowbreak{}a\allowbreak{}t\allowbreak{}e\allowbreak{}\ \allowbreak{}d\allowbreak{}e\allowbreak{}s\allowbreak{}e\allowbreak{}r\allowbreak{}i\allowbreak{}a\allowbreak{}l\allowbreak{}i\allowbreak{}z\allowbreak{}e\allowbreak{}<\allowbreak{}T\allowbreak{}>\allowbreak{}(\allowbreak{}i\allowbreak{}n\allowbreak{}p\allowbreak{}u\allowbreak{}t\allowbreak{})} & \texttt{b\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}.\allowbreak{}d\allowbreak{}e\allowbreak{}s\allowbreak{}e\allowbreak{}r\allowbreak{}i\allowbreak{}a\allowbreak{}l\allowbreak{}i\allowbreak{}z\allowbreak{}e\allowbreak{}!\allowbreak{}T\allowbreak{}(\allowbreak{}i\allowbreak{}n\allowbreak{}p\allowbreak{}u\allowbreak{}t\allowbreak{})} \\ \hline
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Operation} & \textbf{C++} & \textbf{D} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Operation} & \textbf{C++} & \textbf{D} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\footnotesize\itshape Continued on next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Serialize & \texttt{b\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}.\allowbreak{}s\allowbreak{}e\allowbreak{}r\allowbreak{}i\allowbreak{}a\allowbreak{}l\allowbreak{}i\allowbreak{}z\allowbreak{}e\allowbreak{}(\allowbreak{}v\allowbreak{}a\allowbreak{}l\allowbreak{}u\allowbreak{}e\allowbreak{},\allowbreak{}\ \allowbreak{}o\allowbreak{}u\allowbreak{}t\allowbreak{}p\allowbreak{}u\allowbreak{}t\allowbreak{})} & same \\
+Deserialize & \texttt{b\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}.\allowbreak{}t\allowbreak{}e\allowbreak{}m\allowbreak{}p\allowbreak{}l\allowbreak{}a\allowbreak{}t\allowbreak{}e\allowbreak{}\ \allowbreak{}d\allowbreak{}e\allowbreak{}s\allowbreak{}e\allowbreak{}r\allowbreak{}i\allowbreak{}a\allowbreak{}l\allowbreak{}i\allowbreak{}z\allowbreak{}e\allowbreak{}<\allowbreak{}T\allowbreak{}>\allowbreak{}(\allowbreak{}i\allowbreak{}n\allowbreak{}p\allowbreak{}u\allowbreak{}t\allowbreak{})} & \texttt{b\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}.\allowbreak{}d\allowbreak{}e\allowbreak{}s\allowbreak{}e\allowbreak{}r\allowbreak{}i\allowbreak{}a\allowbreak{}l\allowbreak{}i\allowbreak{}z\allowbreak{}e\allowbreak{}!\allowbreak{}T\allowbreak{}(\allowbreak{}i\allowbreak{}n\allowbreak{}p\allowbreak{}u\allowbreak{}t\allowbreak{})} \\
 \end{xltabular}
 
 \texttt{S\allowbreak{}e\allowbreak{}r\allowbreak{}i\allowbreak{}a\allowbreak{}l\allowbreak{}i\allowbreak{}z\allowbreak{}e\allowbreak{}r\allowbreak{}<\allowbreak{}B\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d\allowbreak{}>} /\allowbreak{} \texttt{S\allowbreak{}e\allowbreak{}r\allowbreak{}i\allowbreak{}a\allowbreak{}l\allowbreak{}i\allowbreak{}z\allowbreak{}e\allowbreak{}r\allowbreak{}!\allowbreak{}B\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d} and \texttt{D\allowbreak{}e\allowbreak{}s\allowbreak{}e\allowbreak{}r\allowbreak{}i\allowbreak{}a\allowbreak{}l\allowbreak{}i\allowbreak{}z\allowbreak{}e\allowbreak{}r} borrow that backend and preserve its return type and error handling. Inputs and outputs can be any user type; they need not be binary streams. \texttt{S\allowbreak{}e\allowbreak{}r\allowbreak{}i\allowbreak{}a\allowbreak{}l\allowbreak{}i\allowbreak{}z\allowbreak{}e\allowbreak{}r\allowbreak{}B\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d} and \texttt{D\allowbreak{}e\allowbreak{}s\allowbreak{}e\allowbreak{}r\allowbreak{}i\allowbreak{}a\allowbreak{}l\allowbreak{}i\allowbreak{}z\allowbreak{}e\allowbreak{}r\allowbreak{}B\allowbreak{}a\allowbreak{}c\allowbreak{}k\allowbreak{}e\allowbreak{}n\allowbreak{}d} expose protocol checks.

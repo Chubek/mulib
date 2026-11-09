@@ -1,0 +1,9 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-footnotes}[2026/11/09 Hanging footnotes and page separation]
+\RequirePackage[bottom,hang,stable]{footmisc}
+\setlength{\footnotemargin}{1.3em}
+\setlength{\footnotesep}{0.75\baselineskip}
+\setlength{\skip\footins}{1\baselineskip plus 4pt minus 2pt}
+\renewcommand{\footnoterule}{%
+  \kern-3pt{\color{MuRule}\hrule width 0.22\columnwidth height 0.4pt}\kern2.6pt}
+\endinput

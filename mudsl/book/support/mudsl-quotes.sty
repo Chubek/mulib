@@ -1,0 +1,13 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support/mudsl-quotes}[2026/11/09 Quotations and epigraphs]
+\RequirePackage{support/mudsl-palette}
+\RequirePackage{csquotes}
+\renewenvironment{quote}
+  {\list{}{\leftmargin=1.5em\rightmargin=1em
+    \topsep=0.5\baselineskip\parsep=0.15\baselineskip}%
+    \item\relax\small\color{MuMuted}}
+  {\endlist}
+\newcommand{\MuEpigraph}[2]{%
+  \begin{quote}\itshape #1\par\smallskip
+    {\upshape\sffamily\footnotesize\hfill--- #2\par}\end{quote}}
+\endinput

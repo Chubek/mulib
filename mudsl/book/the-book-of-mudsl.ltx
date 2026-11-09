@@ -1,6 +1,7 @@
-\documentclass[14pt,a4paper]{the-book-of-mudsl}
-\usepackage{mudsl}
-\title{The Book of MuDSL\\\large A C++ and D Toolkit, and the MuLL Language}
+\documentclass[12pt,a4paper]{the-book-of-mudsl}
+\usepackage{support/mudsl-book}
+\title{The Book of MuDSL}
+\MuBookSubtitle{A C++ and D Toolkit, and the MuLL Language}
 \author{D. B. Cooper}
 \date{}
 \begin{document}
@@ -59,11 +60,11 @@ individual APIs; their companion programs live in \api{examples/}.
 This listing is read directly from the source used by the build. MuLLIER's
 included implementation is under \api{mull/mullier}; its rule files were
 introduced in Chapter 72.
-\inputminted[fontsize=\scriptsize,linenos]{cpp}{../MuDSL.hpp}
+\inputminted[fontsize=\footnotesize,linenos]{cpp}{../MuDSL.hpp}
 \chapter{MuDSL.d: the D toolkit and MuLL host}
 The module implements the same language contract using D templates, delegates,
 and garbage-collected environments. Compile it with \api{mull/mullier/*.d}.
-\inputminted[fontsize=\scriptsize,linenos]{d}{../MuDSL.d}
+\inputminted[fontsize=\footnotesize,linenos]{d}{../MuDSL.d}
 \backmatter
 \chapter*{Source and verification}
 The authoritative APIs are in \api{MuDSL.hpp} and \api{MuDSL.d}.
