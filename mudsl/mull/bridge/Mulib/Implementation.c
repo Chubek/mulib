@@ -9,12 +9,14 @@
 #define MULIB_IMPL_ALLOC
 #define MULIB_IMPL_AMD64
 #define MULIB_IMPL_AMDGPU
+#define MULIB_IMPL_ANDROIDLIBS
 #define MULIB_IMPL_ANFIR
 #define MULIB_IMPL_ANOMALY_DETECTION
 #define MULIB_IMPL_ARCHIVE
 #define MULIB_IMPL_ARCHML
 #define MULIB_IMPL_ARENA
 #define MULIB_IMPL_ARGPARSE
+#define MULIB_IMPL_ART
 #define MULIB_IMPL_ARTIFACT
 #define MULIB_IMPL_ASDL
 #define MULIB_IMPL_ASSEMBLER
@@ -134,6 +136,7 @@
 #define MULIB_IMPL_DEPIR
 #define MULIB_IMPL_DEQUE
 #define MULIB_IMPL_DESCRITORS
+#define MULIB_IMPL_DEXCC
 #define MULIB_IMPL_DFA
 #define MULIB_IMPL_DIAG
 #define MULIB_IMPL_DISTFIELD
@@ -179,6 +182,8 @@
 #define MULIB_IMPL_EVTLOOP
 #define MULIB_IMPL_EVTSTREAM
 #define MULIB_IMPL_EXEC
+#define MULIB_IMPL_EZJNI
+#define MULIB_IMPL_EZNDK
 #define MULIB_IMPL_FFT
 #define MULIB_IMPL_FIBER
 #define MULIB_IMPL_FILECTL
@@ -259,6 +264,7 @@
 #define MULIB_IMPL_JACCARD_SIMILARITY
 #define MULIB_IMPL_JIT
 #define MULIB_IMPL_JSON
+#define MULIB_IMPL_JVM
 #define MULIB_IMPL_KEYREMAP
 #define MULIB_IMPL_KMM
 #define MULIB_IMPL_KVDB
@@ -581,12 +587,14 @@
 #include "mulib-alloc.h"
 #include "mulib-amd64.h"
 #include "mulib-amdgpu.h"
+#include "mulib-androidlibs.h"
 #include "mulib-anfir.h"
 #include "mulib-anomaly-detection.h"
 #include "mulib-archive.h"
 #include "mulib-archml.h"
 #include "mulib-arena.h"
 #include "mulib-argparse.h"
+#include "mulib-art.h"
 #include "mulib-artifact.h"
 #include "mulib-asdl.h"
 #include "mulib-assembler.h"
@@ -707,6 +715,7 @@
 #include "mulib-depir.h"
 #include "mulib-deque.h"
 #include "mulib-descritors.h"
+#include "mulib-dexcc.h"
 #include "mulib-dfa.h"
 #include "mulib-diag.h"
 #include "mulib-distfield.h"
@@ -752,6 +761,8 @@
 #include "mulib-evtloop.h"
 #include "mulib-evtstream.h"
 #include "mulib-exec.h"
+#include "mulib-ezjni.h"
+#include "mulib-ezndk.h"
 #include "mulib-fft.h"
 #include "mulib-fiber.h"
 #include "mulib-filectl.h"
@@ -831,6 +842,7 @@
 #include "mulib-jaccard_similarity.h"
 #include "mulib-jit.h"
 #include "mulib-json.h"
+#include "mulib-jvm.h"
 #include "mulib-keyremap.h"
 #include "mulib-kmm.h"
 #include "mulib-kvdb.h"

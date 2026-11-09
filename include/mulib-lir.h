@@ -94,8 +94,10 @@ void mulib_lir_free (mulib_lir_t *r)
 const char *mulib_lir_opcode_name (int op)
 {
   static const char *const names[] = {"nop","const","param","copy","add","sub",
-    "mul","and","or","xor","shl","shr","sar","eq","slt","ult","load",
+    "mul","and","or","xor","shl","shr","sar","eq","slt","ult","sdiv","srem","load",
     "store","call","jump","branch","return"};
+  _Static_assert (sizeof (names) / sizeof (*names) == MULIB_MIR_NATIVE_OPCODE_COUNT,
+                  "native opcode names must match the MIR enum");
   return op >= 0 && op < MULIB_MIR_NATIVE_OPCODE_COUNT ? names[op] : NULL;
 }
 mulib_mir_status_t mulib_lir_from_mir (const mulib_mir_native_program_t *p,

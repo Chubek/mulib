@@ -26,6 +26,17 @@ extern "C"
   int mulib_pebuilder_finish (const mulib_pebuilder_t *b, uint16_t machine, mulib_buffer_t *out);
   /** @brief Release all builder storage. */
   void mulib_pebuilder_free (mulib_pebuilder_t *b);
+  typedef enum mulib_pebuilder_abi {
+    MULIB_PEBUILDER_WINDOWS_X64, MULIB_PEBUILDER_WINDOWS_ARM64,
+    MULIB_PEBUILDER_UEFI_X64, MULIB_PEBUILDER_UEFI_ARM64
+  } mulib_pebuilder_abi_t;
+  /** Emit a freestanding PE32+ image with Windows console or EFI application
+   * subsystem and matching machine. No imports/unwind/relocations supplied. */
+  int mulib_pebuilder_text_abi (mulib_buffer_t *out, const void *code,
+      size_t length, size_t entry_offset, mulib_pebuilder_abi_t abi);
+  /** Emit a Windows data-only DLL; UEFI profiles require text_abi and an entry. */
+  int mulib_pebuilder_finish_abi (const mulib_pebuilder_t *b,
+      mulib_pebuilder_abi_t abi, mulib_buffer_t *out);
 #ifdef __cplusplus
 }
 #endif
@@ -33,6 +44,34 @@ extern "C"
 #if defined(MULIB_IMPL_PEBUILDER) && !defined(MULIB_PEBUILDER_IMPLEMENTED)
 #define MULIB_PEBUILDER_IMPLEMENTED
 #include <string.h>
+int mulib_pebuilder_text_abi (mulib_buffer_t *out, const void *code,
+    size_t length, size_t entry, mulib_pebuilder_abi_t abi)
+{
+  mulib_buffer_t tmp = {0};
+  int ok = 0;
+  if (!out || (unsigned)abi > MULIB_PEBUILDER_UEFI_ARM64
+      || (((unsigned)abi & 1) && ((entry & 3) || (length & 3)))) return 0;
+  if (mulib_pebuilder_text (&tmp, code, length, entry))
+    {
+      mulib_binfilewriter_patch (&tmp, 132, 2, ((unsigned)abi & 1) ? 0xaa64 : 0x8664);
+      mulib_binfilewriter_patch (&tmp, 220, 2, (unsigned)abi >= MULIB_PEBUILDER_UEFI_X64 ? 10 : 3);
+      ok = mulib_buffer_append (out, tmp.data, tmp.length);
+    }
+  mulib_buffer_free (&tmp); return ok;
+}
+int mulib_pebuilder_finish_abi (const mulib_pebuilder_t *b,
+    mulib_pebuilder_abi_t abi, mulib_buffer_t *out)
+{
+  mulib_buffer_t tmp = {0};
+  int ok = 0;
+  if (!out || (unsigned)abi > MULIB_PEBUILDER_WINDOWS_ARM64) return 0;
+  if (mulib_pebuilder_finish (b, 0x8664, &tmp))
+    {
+      mulib_binfilewriter_patch (&tmp, 132, 2, abi == MULIB_PEBUILDER_WINDOWS_ARM64 ? 0xaa64 : 0x8664);
+      ok = mulib_buffer_append (out, tmp.data, tmp.length);
+    }
+  mulib_buffer_free (&tmp); return ok;
+}
 int mulib_pebuilder_add (mulib_pebuilder_t *b, const char *name,
     const void *p, size_t n, size_t a, uint64_t flags)
 {

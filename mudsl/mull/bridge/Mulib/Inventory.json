@@ -10,12 +10,14 @@
     "mulib-alloc.h",
     "mulib-amd64.h",
     "mulib-amdgpu.h",
+    "mulib-androidlibs.h",
     "mulib-anfir.h",
     "mulib-anomaly-detection.h",
     "mulib-archive.h",
     "mulib-archml.h",
     "mulib-arena.h",
     "mulib-argparse.h",
+    "mulib-art.h",
     "mulib-artifact.h",
     "mulib-asdl.h",
     "mulib-assembler.h",
@@ -136,6 +138,7 @@
     "mulib-depir.h",
     "mulib-deque.h",
     "mulib-descritors.h",
+    "mulib-dexcc.h",
     "mulib-dfa.h",
     "mulib-diag.h",
     "mulib-distfield.h",
@@ -181,6 +184,8 @@
     "mulib-evtloop.h",
     "mulib-evtstream.h",
     "mulib-exec.h",
+    "mulib-ezjni.h",
+    "mulib-ezndk.h",
     "mulib-fft.h",
     "mulib-fiber.h",
     "mulib-filectl.h",
@@ -260,6 +265,7 @@
     "mulib-jaccard_similarity.h",
     "mulib-jit.h",
     "mulib-json.h",
+    "mulib-jvm.h",
     "mulib-keyremap.h",
     "mulib-kmm.h",
     "mulib-kvdb.h",
@@ -574,10 +580,10 @@
     "mulib-zip.h",
     "mulib-zstd.h"
   ],
-  "libraries": 573,
-  "functions": 3190,
-  "types": 5384,
-  "constants": 1935,
+  "libraries": 579,
+  "functions": 3272,
+  "types": 5514,
+  "constants": 2056,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -617,7 +623,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "0a850891b634ecb75f0e976f1ab94158f1c95f71e89748672ccc90377e5b9b15",
+  "fingerprint": "f03dba0332a625e4d9c9dcb43ce12dcd040b8400df21148590492d6bcea6b05d",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -729,6 +735,22 @@
         "mulib_amdgpu_free"
       ]
     },
+    "androidlibs": {
+      "header": "mulib-androidlibs.h",
+      "functions": [
+        "mulib_androidlibs_info",
+        "mulib_androidlibs_open",
+        "mulib_androidlibs_function",
+        "mulib_androidlibs_close",
+        "mulib_androidlibs_service_info",
+        "mulib_androidlibs_sdk",
+        "mulib_androidlibs_context_init",
+        "mulib_androidlibs_context_free",
+        "mulib_androidlibs_service",
+        "mulib_androidlibs_package",
+        "mulib_androidlibs_permission"
+      ]
+    },
     "anfir": {
       "header": "mulib-anfir.h",
       "functions": [
@@ -797,6 +819,22 @@
         "mulib_argparse_get",
         "mulib_argparse_has",
         "mulib_argparse_destroy"
+      ]
+    },
+    "art": {
+      "header": "mulib-art.h",
+      "functions": [
+        "mulib_art_compile",
+        "mulib_art_load_code",
+        "mulib_art_load_dex",
+        "mulib_art_graph",
+        "mulib_art_jit",
+        "mulib_art_program",
+        "mulib_art_frame_init",
+        "mulib_art_run",
+        "mulib_art_invoke",
+        "mulib_art_emit_c",
+        "mulib_art_destroy"
       ]
     },
     "artifact": {
@@ -1361,7 +1399,12 @@
         "mulib_clickir_to_gssair",
         "mulib_clickir_from_gssair",
         "mulib_clickir_lower",
-        "mulib_clickir_free"
+        "mulib_clickir_free",
+        "mulib_clickir_validate",
+        "mulib_clickir_clone",
+        "mulib_clickir_from_native",
+        "mulib_clickir_to_flow",
+        "mulib_clickir_flow_free"
       ]
     },
     "cmachine": {
@@ -1397,7 +1440,8 @@
         "mulib_coffbuilder_text",
         "mulib_coffbuilder_add",
         "mulib_coffbuilder_finish",
-        "mulib_coffbuilder_free"
+        "mulib_coffbuilder_free",
+        "mulib_coffbuilder_finish_abi"
       ]
     },
     "coffutils": {
@@ -2064,6 +2108,19 @@
         "mulib_descritors_tss_init"
       ]
     },
+    "dexcc": {
+      "header": "mulib-dexcc.h",
+      "functions": [
+        "mulib_dexcc_instruction",
+        "mulib_dexcc_validate",
+        "mulib_dexcc_encode",
+        "mulib_dexcc_decode",
+        "mulib_dexcc_free",
+        "mulib_dexcc_import",
+        "mulib_dexcc_file",
+        "mulib_dexcc_check_file"
+      ]
+    },
     "dfa": {
       "header": "mulib-dfa.h",
       "functions": [
@@ -2470,7 +2527,9 @@
       "functions": [
         "mulib_elfbuilder_add",
         "mulib_elfbuilder_finish",
-        "mulib_elfbuilder_free"
+        "mulib_elfbuilder_free",
+        "mulib_elfbuilder_abi_info",
+        "mulib_elfbuilder_finish_abi"
       ]
     },
     "elfutils": {
@@ -2613,6 +2672,48 @@
         "mulib_exec_run_file",
         "mulib_exec_run_text",
         "mulib_exec_bind"
+      ]
+    },
+    "ezjni": {
+      "header": "mulib-ezjni.h",
+      "functions": [
+        "mulib_ezjni_signature",
+        "mulib_ezjni_available",
+        "mulib_ezjni_enter",
+        "mulib_ezjni_leave",
+        "mulib_ezjni_exception",
+        "mulib_ezjni_clear_exception",
+        "mulib_ezjni_global",
+        "mulib_ezjni_delete_global",
+        "mulib_ezjni_delete_local",
+        "mulib_ezjni_method",
+        "mulib_ezjni_method_class",
+        "mulib_ezjni_method_free",
+        "mulib_ezjni_call",
+        "mulib_ezjni_string",
+        "mulib_ezjni_string_copy",
+        "mulib_ezjni_bytes",
+        "mulib_ezjni_bytes_copy",
+        "mulib_ezjni_static_int",
+        "mulib_ezjni_register"
+      ]
+    },
+    "ezndk": {
+      "header": "mulib-ezndk.h",
+      "functions": [
+        "mulib_ezndk_available",
+        "mulib_ezndk_asset_load",
+        "mulib_ezndk_window_open",
+        "mulib_ezndk_window_geometry",
+        "mulib_ezndk_window_lock",
+        "mulib_ezndk_window_post",
+        "mulib_ezndk_window_fill",
+        "mulib_ezndk_window_close",
+        "mulib_ezndk_looper_prepare",
+        "mulib_ezndk_looper_add",
+        "mulib_ezndk_looper_remove",
+        "mulib_ezndk_looper_poll",
+        "mulib_ezndk_log"
       ]
     },
     "fft": {
@@ -3408,6 +3509,20 @@
         "mulib_json_stringify"
       ]
     },
+    "jvm": {
+      "header": "mulib-jvm.h",
+      "functions": [
+        "mulib_jvm_load_code",
+        "mulib_jvm_load_class",
+        "mulib_jvm_graph",
+        "mulib_jvm_jit",
+        "mulib_jvm_frame_init",
+        "mulib_jvm_run",
+        "mulib_jvm_invoke",
+        "mulib_jvm_emit_c",
+        "mulib_jvm_destroy"
+      ]
+    },
     "keyremap": {
       "header": "mulib-keyremap.h",
       "functions": [
@@ -3708,7 +3823,8 @@
       "functions": [
         "mulib_machobuilder_add",
         "mulib_machobuilder_finish",
-        "mulib_machobuilder_free"
+        "mulib_machobuilder_free",
+        "mulib_machobuilder_finish_abi"
       ]
     },
     "machoutils": {
@@ -4678,7 +4794,9 @@
         "mulib_pebuilder_text",
         "mulib_pebuilder_add",
         "mulib_pebuilder_finish",
-        "mulib_pebuilder_free"
+        "mulib_pebuilder_free",
+        "mulib_pebuilder_text_abi",
+        "mulib_pebuilder_finish_abi"
       ]
     },
     "peephole": {
@@ -6664,7 +6782,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "cda26fea6505940e14d5ba2a0bc3efb47d831894ac84199c4a6d3397a77e3d17",
-    "Implementation.c": "cd2866c5adfdbc1c2f226e07d298985f380fd930ae64a529eabf003498b7b227"
+    "Generated.inc": "9eb5272c4a319f824d5a210e8601b5b42d7106f431b94136da3fac6baca2ccc2",
+    "Implementation.c": "d7b3f3afcf9dd33b73e06775355111a0346eb79de547597873f9e8d45be83687"
   }
 }

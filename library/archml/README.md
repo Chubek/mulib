@@ -23,6 +23,7 @@ the loader does not depend on the filename extension.
 | `directx.am` | DXIL scalar i32 min/max and dispatch/group IDs, LLVM IR only | 0 (8 operations) |
 | `m68k.am` | Big-endian 68000 register-direct byte/word/long integer subset | 20 |
 | `hexagon.am` | Hexagon V60 scalar forms in single-instruction packets | 7 |
+| `dex.am` | DEX035 selected virtual-register integer/control/invoke forms; ART metadata | 98 |
 
 The AMD64, AArch64 and RV64 compiler profiles include register storage/aliases, classes and allocation restrictions,
 concrete bit encodings, structured P-code, memory/atomic/exception semantics,
@@ -64,6 +65,13 @@ The additional profiles preserve important target distinctions:
   `encode`/`decode` return `MULIB_ARCHML_INVALID` without changing outputs.
   Consumers emit the PTX text/DXIL LLVM IR templates and supply valid module
   context. A DXIL opcode is an IR call argument, not a byte instruction encoding.
+* DEX uses 16-bit little-endian code units and **virtual frame indices**, not a
+  finite physical-register bank. Register indices are encoded as immediate
+  operands and accessed by dex-read/dex-write P-code. Wide pairs may overlap and
+  need no even alignment. Branch values are byte displacements from current PC,
+  encoded at scale 2. Verification, pool lookup and invoke-result adjacency are
+  runtime obligations. ART GC/JIT/AOT records are explicitly metadata-only;
+  MuLIB's executable integer-method subset is documented in mulib-art.h.
 
 ## Local source provenance
 
@@ -86,6 +94,10 @@ to that directory); regeneration does not require the corpus:
 | DirectX | `LLVM-Target/DirectX/DXIL.td`, `DXILOpBuilder.cpp`, `DXILWriter/DXILBitcodeWriter.cpp` |
 | M68k | `LLVM-Target/M68k/M68kInstrArithmetic.td`, `M68kInstrData.td`, `M68kInstrControl.td`, `M68kRegisterInfo.td` |
 | Hexagon | `LLVM-Target/Hexagon/HexagonDepInstrInfo.td`, `HexagonDepInstrFormats.td`, `HexagonInstrFormats.td`, `MCTargetDesc/HexagonBaseInfo.h` |
+
+DEX/ART facts come from repository-local `standards/android/android-bytecode.txt`,
+`android-dex.txt`, `android-art.txt` and `android-abi.txt`; its original generator
+tables do not require any third-party source tree.
 
 AVR32 is absent from this Capstone snapshot; its profile uses the surrounding
 Ghidra corpus instead. Tables describe selected facts, not a wholesale conversion
@@ -131,6 +143,7 @@ The public schema and ownership contracts are in
 The AML is generated deterministically from
 [`tools/generate_archml.py`](../../tools/generate_archml.py),
 [`tools/archml_extra.py`](../../tools/archml_extra.py) and
-[`tools/archml_targets.py`](../../tools/archml_targets.py); use `--check` in CI.
+[`tools/archml_targets.py`](../../tools/archml_targets.py), and
+[`tools/archml_android.py`](../../tools/archml_android.py); use `--check` in CI.
 Tests load these actual files, roundtrip every form, and compare representative
 forms with independent LLVM MC encodings.

@@ -146,6 +146,7 @@ extern "C"
     MULIB_MIR_FLOW_XOR,
     MULIB_MIR_FLOW_SHL,
     MULIB_MIR_FLOW_SHR,
+    MULIB_MIR_FLOW_SAR,
     MULIB_MIR_FLOW_I64_F64,
     MULIB_MIR_FLOW_F64_I64,
     MULIB_MIR_FLOW_JUMP,
@@ -239,8 +240,9 @@ extern "C"
        const mulib_mir_flow_program_t *program, const char *symbol, size_t limit,
        mulib_mir_write_fn writer, void *user, mulib_mir_diagnostic_t *diagnostic);
 
-  /** Native machine IR: untyped 64-bit virtual registers, explicit blocks,
-   * memory and direct calls. Integer arithmetic wraps; shifts mask the count
+   /** Native machine IR: untyped 64-bit virtual registers, explicit blocks,
+    * memory and direct calls. Integer arithmetic wraps except signed SDIV/SREM,
+    * which trap on zero or INT64_MIN/-1; shifts mask the count
    * to six bits. SLT/SAR are signed, ULT/SHR unsigned. Registers start at zero.
    * This dialect deliberately has no SSA, phi, implicit fallthrough or host
    * runtime. The earlier checked SSA/VM dialects retain their semantics. */
@@ -251,7 +253,8 @@ extern "C"
     MULIB_MIR_NATIVE_MUL, MULIB_MIR_NATIVE_AND, MULIB_MIR_NATIVE_OR,
     MULIB_MIR_NATIVE_XOR, MULIB_MIR_NATIVE_SHL, MULIB_MIR_NATIVE_SHR,
     MULIB_MIR_NATIVE_SAR, MULIB_MIR_NATIVE_EQ, MULIB_MIR_NATIVE_SLT,
-    MULIB_MIR_NATIVE_ULT, MULIB_MIR_NATIVE_LOAD, MULIB_MIR_NATIVE_STORE,
+    MULIB_MIR_NATIVE_ULT, MULIB_MIR_NATIVE_SDIV, MULIB_MIR_NATIVE_SREM,
+    MULIB_MIR_NATIVE_LOAD, MULIB_MIR_NATIVE_STORE,
     MULIB_MIR_NATIVE_CALL, MULIB_MIR_NATIVE_JUMP, MULIB_MIR_NATIVE_BRANCH,
     MULIB_MIR_NATIVE_RETURN, MULIB_MIR_NATIVE_OPCODE_COUNT
   } mulib_mir_native_opcode_t;
@@ -316,7 +319,7 @@ extern "C"
   int mulib_mir_native_arity (int opcode);
   /** Whether an opcode writes a virtual register. */
   int mulib_mir_native_defines (int opcode);
-  /** Whether an opcode may access memory (LOAD, STORE, CALL). */
+   /** Whether an opcode may access memory or trap (including SDIV/SREM). */
   int mulib_mir_native_effect (int opcode);
   /** Construct a canonical empty instruction with all indices NONE. */
   mulib_mir_native_instruction_t mulib_mir_native_instruction (
@@ -654,7 +657,7 @@ extern "C"
   mulib_mir_native_arity (int op)
   {
     if (op < 0 || op >= MULIB_MIR_NATIVE_OPCODE_COUNT) return -1;
-    if ((op >= MULIB_MIR_NATIVE_ADD && op <= MULIB_MIR_NATIVE_ULT)
+    if ((op >= MULIB_MIR_NATIVE_ADD && op <= MULIB_MIR_NATIVE_SREM)
         || op == MULIB_MIR_NATIVE_STORE) return 2;
     if (op == MULIB_MIR_NATIVE_COPY || op == MULIB_MIR_NATIVE_LOAD
         || op == MULIB_MIR_NATIVE_BRANCH || op == MULIB_MIR_NATIVE_RETURN)
@@ -670,7 +673,8 @@ extern "C"
   int
   mulib_mir_native_effect (int op)
   {
-    return op == MULIB_MIR_NATIVE_LOAD || op == MULIB_MIR_NATIVE_STORE
+    return op == MULIB_MIR_NATIVE_SDIV || op == MULIB_MIR_NATIVE_SREM
+           || op == MULIB_MIR_NATIVE_LOAD || op == MULIB_MIR_NATIVE_STORE
            || op == MULIB_MIR_NATIVE_CALL;
   }
   mulib_mir_native_instruction_t
@@ -915,7 +919,8 @@ extern "C"
           case MULIB_MIR_FLOW_WRAP_ADD: case MULIB_MIR_FLOW_WRAP_SUB:
           case MULIB_MIR_FLOW_WRAP_MUL: case MULIB_MIR_FLOW_AND:
           case MULIB_MIR_FLOW_OR: case MULIB_MIR_FLOW_XOR:
-          case MULIB_MIR_FLOW_SHL: case MULIB_MIR_FLOW_SHR: arity = 2; break;
+          case MULIB_MIR_FLOW_SHL: case MULIB_MIR_FLOW_SHR:
+          case MULIB_MIR_FLOW_SAR: arity = 2; break;
           case MULIB_MIR_FLOW_JUMP: destination = 0; target = 1; break;
           case MULIB_MIR_FLOW_BRANCH:
             destination = 0; target = 1; arity = 1; break;
@@ -971,7 +976,7 @@ extern "C"
           case MULIB_MIR_FLOW_WRAP_ADD: case MULIB_MIR_FLOW_WRAP_SUB:
           case MULIB_MIR_FLOW_WRAP_MUL: case MULIB_MIR_FLOW_AND:
           case MULIB_MIR_FLOW_OR: case MULIB_MIR_FLOW_XOR:
-          case MULIB_MIR_FLOW_SHL: case MULIB_MIR_FLOW_SHR:
+          case MULIB_MIR_FLOW_SHL: case MULIB_MIR_FLOW_SHR: case MULIB_MIR_FLOW_SAR:
             if (a != b || t != a || (a != MULIB_MIR_WORD && a != MULIB_MIR_I64))
               s = MULIB_MIR_BAD_TYPE;
             break;
@@ -1120,7 +1125,7 @@ extern "C"
       case MULIB_MIR_FLOW_WRAP_ADD: case MULIB_MIR_FLOW_WRAP_SUB:
       case MULIB_MIR_FLOW_WRAP_MUL: case MULIB_MIR_FLOW_AND:
       case MULIB_MIR_FLOW_OR: case MULIB_MIR_FLOW_XOR:
-      case MULIB_MIR_FLOW_SHL: case MULIB_MIR_FLOW_SHR:
+      case MULIB_MIR_FLOW_SHL: case MULIB_MIR_FLOW_SHR: case MULIB_MIR_FLOW_SAR:
         {
           uint64_t x = t == MULIB_MIR_I64 ? (uint64_t)a.integer : a.word;
           uint64_t y = t == MULIB_MIR_I64 ? (uint64_t)b.integer : b.word, z = 0;
@@ -1133,6 +1138,10 @@ extern "C"
             case MULIB_MIR_FLOW_OR: z = x | y; break;
             case MULIB_MIR_FLOW_XOR: z = x ^ y; break;
             case MULIB_MIR_FLOW_SHL: z = y < 64 ? x << y : 0; break;
+            case MULIB_MIR_FLOW_SAR:
+              z = y < 64 ? x >> y : 0;
+              if (x >> 63) z |= y >= 64 ? UINT64_MAX : y ? UINT64_MAX << (64 - y) : 0;
+              break;
             default: z = y < 64 ? x >> y : 0; break;
             }
           if (t == MULIB_MIR_I64) v.integer = mulib_mir_flow_signed_ (z);

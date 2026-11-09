@@ -12,7 +12,7 @@ enum { MULIB_GSSAIR_PHI = MULIB_MIR_NATIVE_OPCODE_COUNT };
 /** Node ID is its array index. Native value opcodes use a/b as value IDs;
  * PARAM uses immediate as parameter index. CALL uses immediate as function
  * index and a/b as argument slice. PHI uses a/b as incoming-edge slice.
- * memory is the preceding LOAD/STORE/CALL in this block, or NONE at entry.
+ * memory is the preceding LOAD/STORE/CALL/SDIV/SREM in this block, or NONE at entry.
  * Other unused references are NONE and unused immediates zero. */
 typedef struct mulib_gssair_node {
   int opcode;
@@ -218,6 +218,8 @@ mulib_gssair_shape (const mulib_gssair_program_t *p, size_t limit,
               if (a != b || (a != MULIB_MIR_I64 && a != MULIB_MIR_WORD)
                   || n->type != MULIB_MIR_BOOL) goto done;
             }
+          else if (n->opcode == MULIB_MIR_NATIVE_SDIV || n->opcode == MULIB_MIR_NATIVE_SREM)
+            { if (a != MULIB_MIR_I64 || b != a || n->type != a) goto done; }
           else if (a != b || a != n->type || (a != MULIB_MIR_I64 && a != MULIB_MIR_WORD)) goto done;
         }
       s = MULIB_MIR_INVALID;

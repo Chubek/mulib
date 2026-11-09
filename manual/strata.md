@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 573 headers, 708 direct dependency edges.
+Inventory: 579 headers, 721 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (181 modules)
+## Stratum 0 (182 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -76,6 +76,7 @@ Compatibility group: `parsec`, `peg`.
 | [euclidean_distance](mulib-euclidean_distance.md) | none |
 | [eventfd](mulib-eventfd.md) | none |
 | [evtloop](mulib-evtloop.md) | none |
+| [ezjni](mulib-ezjni.md) | none |
 | [filectl](mulib-filectl.md) | none |
 | [fraction](mulib-fraction.md) | none |
 | [framebuffer](mulib-framebuffer.md) | none |
@@ -201,7 +202,7 @@ Compatibility group: `parsec`, `peg`.
 | [xthreads](mulib-xthreads.md) | none |
 | [xtks](mulib-xtks.md) | none |
 
-## Stratum 1 (133 modules)
+## Stratum 1 (135 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -239,11 +240,13 @@ Compatibility group: `parsec`, `peg`.
 | [dbtransaction](mulib-dbtransaction.md) | `memtable` |
 | [dbus](mulib-dbus.md) | `buffer`, `endian`, `strbuf`, `utf8` |
 | [deflate](mulib-deflate.md) | `buffer` |
+| [dexcc](mulib-dexcc.md) | `adler32`, `authcrypto`, `buffer` |
 | [dnscache](mulib-dnscache.md) | `dns` |
 | [dnsclient](mulib-dnsclient.md) | `dns` |
 | [dom](mulib-dom.md) | `buffer`, `utf8` |
 | [edit_distance](mulib-edit_distance.md) | `levenshtein` |
 | [elf](mulib-elf.md) | `endian` |
+| [ezndk](mulib-ezndk.md) | `buffer` |
 | [fft](mulib-fft.md) | `complex` |
 | [fiber](mulib-fiber.md) | `xthreads` |
 | [flatbuffers](mulib-flatbuffers.md) | `binfile`, `bycutils` |
@@ -339,10 +342,11 @@ Compatibility group: `parsec`, `peg`.
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 | [zstd](mulib-zstd.md) | `container-core` |
 
-## Stratum 2 (76 modules)
+## Stratum 2 (77 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
+| [androidlibs](mulib-androidlibs.md) | `dynload`, `ezjni`, `ezndk` |
 | [anfir](mulib-anfir.md) | `gssair` |
 | [azw3](mulib-azw3.md) | `mobi` |
 | [bidi](mulib-bidi.md) | `uniproc` |
@@ -485,10 +489,11 @@ Compatibility group: `parsec`, `peg`.
 | [vmm-host](mulib-vmm-host.md) | `virtio` |
 | [xtas](mulib-xtas.md) | `dsdom` |
 
-## Stratum 4 (39 modules)
+## Stratum 4 (40 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
+| [art](mulib-art.md) | `clickir`, `dexcc`, `jit` |
 | [beam_search](mulib-beam_search.md) | `viterbi_decoding` |
 | [bootmgr](mulib-bootmgr.md) | `bios`, `efi`, `uefiutils` |
 | [bson](mulib-bson.md) | `buffer`, `json` |
@@ -501,7 +506,7 @@ Compatibility group: `parsec`, `peg`.
 | [documentdb](mulib-documentdb.md) | `json`, `memtable` |
 | [dsymspec](mulib-dsymspec.md) | `json` |
 | [dyegram](mulib-dyegram.md) | `gvizz` |
-| [elfbuilder](mulib-elfbuilder.md) | `objfilebuilder` |
+| [elfbuilder](mulib-elfbuilder.md) | `binfilewriter`, `bycutils`, `objfilebuilder` |
 | [eqn](mulib-eqn.md) | `symbol`, `tex` |
 | [imgbuildspec](mulib-imgbuildspec.md) | `imgformat`, `rootfs-buildspec` |
 | [inet6](mulib-inet6.md) | `inet4` |
@@ -529,7 +534,7 @@ Compatibility group: `parsec`, `peg`.
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (38 modules)
+## Stratum 5 (39 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -555,6 +560,7 @@ Compatibility group: `parsec`, `peg`.
 | [imgtrackerd](mulib-imgtrackerd.md) | `bycutils`, `memtable`, `ociimage` |
 | [immgtk](mulib-immgtk.md) | `glx`, `mune` |
 | [inte6](mulib-inte6.md) | `inet6` |
+| [jvm](mulib-jvm.md) | `art` |
 | [macho-objdump](mulib-macho-objdump.md) | `macho`, `objdump` |
 | [mcu](mulib-mcu.md) | `unit` |
 | [mpu](mulib-mpu.md) | `unit` |

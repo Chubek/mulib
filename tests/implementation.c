@@ -1,3 +1,9 @@
+#define MULIB_IMPL_ANDROIDLIBS
+#define MULIB_IMPL_ART
+#define MULIB_IMPL_DEXCC
+#define MULIB_IMPL_EZJNI
+#define MULIB_IMPL_EZNDK
+#define MULIB_IMPL_JVM
 #define MULIB_IMPL_CHART
 #define MULIB_IMPL_CHEM
 #define MULIB_IMPL_EQN
@@ -1143,3 +1149,9 @@
 #include "mulib-paleography.h"
 #include "mulib-symbol.h"
 #include "mulib-tbl.h"
+#include "mulib-androidlibs.h"
+#include "mulib-art.h"
+#include "mulib-dexcc.h"
+#include "mulib-ezjni.h"
+#include "mulib-ezndk.h"
+#include "mulib-jvm.h"

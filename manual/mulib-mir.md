@@ -127,6 +127,7 @@ Unused indices are `MULIB_MIR_NONE`, and unused `immediate.word` is zero.
 | NOT | BOOL logical negation |
 | WRAP_ADD WRAP_SUB WRAP_MUL | I64 or WORD modulo-2^64 arithmetic |
 | AND OR XOR SHL SHR | I64 or WORD bit operations; shifts are logical, and counts outside 0–63 produce zero |
+| SAR | I64 or WORD arithmetic right shift; the high bit is sign-filled, and counts outside 0–63 produce all sign bits |
 | I64_F64 | Convert I64 to F64, with host double rounding |
 | F64_I64 | Truncate toward zero; NaN, infinity, and values outside [-2^63,2^63) fault |
 | JUMP | Unconditional absolute target |
@@ -222,6 +223,9 @@ SAR sign-extends; SLT compares signed bits and ULT unsigned bits. EQ/SLT/ULT ret
 0 or 1; BRANCH tests nonzero. No division, floating-point, checked arithmetic,
 conversion, atomics or indirect calls are currently defined. Native addresses
 are supplied as word bits; LOAD/STORE access an aligned native eight-byte word.
+Native SDIV/SREM are signed, truncating operations with checked zero and
+INT64_MIN/-1 faults (not wrapping division). They are classified as trapping
+effects so SSA scheduling cannot reorder them past other ordered effects.
 The caller provides valid memory and an external function with the declared ABI.
 
 Each instruction has `opcode,destination,a,b,target,immediate`. Unused indices
@@ -244,7 +248,7 @@ must be NONE and unused immediate zero:
 `mulib_mir_native_instruction(op)` constructs an instruction with canonical
 unused fields. `native_arity` counts scalar register operands (not CALL slices or
 PARAM metadata); `native_defines` and `native_effect` classify register writes
-and LOAD/STORE/CALL effects. `native_name` checks ASCII identifiers up to 127 bytes.
+and LOAD/STORE/CALL/SDIV/SREM effects. `native_name` checks ASCII identifiers up to 127 bytes.
 
 Blocks partition the code array without gaps or overlap, starting at zero.
 Each has nonzero count and exactly one final JUMP/BRANCH/RETURN; no terminators

@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 569
-implemented_module_count: 569
+module_count: 575
+implemented_module_count: 575
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -2376,7 +2376,7 @@ modules:
   manual: manual/mulib-elfbuilder.md
   macro: MULIB_IMPL_ELFBUILDER
   purpose: Owned ELF64 relocatable section builder reusing objfilebuilder.
-  dependencies: [objfilebuilder]
+  dependencies: [binfilewriter, bycutils, objfilebuilder]
   status: implemented
 - name: machobuidler
   header: include/mulib-machobuidler.h
@@ -3996,6 +3996,48 @@ modules:
   purpose: "Rectangular documentation tables, pipe/CSV readers and portable writers."
   dependencies: [csv, dsdom, tex]
   status: implemented
+- name: androidlibs
+  header: include/mulib-androidlibs.h
+  manual: manual/mulib-androidlibs.md
+  macro: MULIB_IMPL_ANDROIDLIBS
+  purpose: "Android public native-library catalogue and checked framework services."
+  dependencies: [dynload, ezjni, ezndk]
+  status: implemented
+- name: art
+  header: include/mulib-art.h
+  manual: manual/mulib-art.md
+  macro: MULIB_IMPL_ART
+  purpose: "Small verified DEX integer-method runtime through ClickIR, with JIT/AOT."
+  dependencies: [clickir, dexcc, jit]
+  status: implemented
+- name: dexcc
+  header: include/mulib-dexcc.h
+  manual: manual/mulib-dexcc.md
+  macro: MULIB_IMPL_DEXCC
+  purpose: "IR-neutral verified integer DEX assembler, decoder and DEX035 writer."
+  dependencies: [adler32, authcrypto, buffer]
+  status: implemented
+- name: ezjni
+  header: include/mulib-ezjni.h
+  manual: manual/mulib-ezjni.md
+  macro: MULIB_IMPL_EZJNI
+  purpose: "Checked JNI scopes, cached methods, references and UTF-16/byte copies."
+  dependencies: []
+  status: implemented
+- name: ezndk
+  header: include/mulib-ezndk.h
+  manual: manual/mulib-ezndk.md
+  macro: MULIB_IMPL_EZNDK
+  purpose: "Owned Android assets/windows, looper helpers and safe logcat messages."
+  dependencies: [buffer]
+  status: implemented
+- name: jvm
+  header: include/mulib-jvm.h
+  manual: manual/mulib-jvm.md
+  macro: MULIB_IMPL_JVM
+  purpose: "Verified JVM integer-method frontend to ClickIR, with shared JIT/AOT."
+  dependencies: [art]
+  status: implemented
 project_files:
 - file: include/mulib-docstring-data.inc
   purpose: Embedded default ldocstr constructors, filters and Lua stylesheet helpers.
@@ -4181,6 +4223,28 @@ project_files:
   purpose: Source-traceable PowerPC64, MIPS32, AVR32A and WebAssembly profile tables.
 - file: tools/archml_targets.py
   purpose: Source-traceable bounded profiles for nine additional LLVM targets, including non-binary PTX/DXIL operations.
+- file: tools/archml_android.py
+  purpose: Original DEX/ART ArchML encoding tables derived from standards/android.
+- file: library/archml/dex.am
+  purpose: Generated 98-form DEX bytecode and descriptive ART runtime profile.
+- file: tools/check_android.py
+  purpose: Independent DEX layout/hash, JVM fixture, executable AOT and object ABI checks.
+- file: examples/android_runtime_setup.h
+  purpose: Explicit implementation-switch placement for standalone Android/JVM examples.
+- file: tests/fixtures/android-sdk/jni.h
+  purpose: MuLIB-owned JNI API test double, not a binary ABI header.
+- file: tests/fixtures/android-sdk/android/asset_manager.h
+  purpose: Android asset API declarations for deterministic native-backend tests.
+- file: tests/fixtures/android-sdk/android/native_window.h
+  purpose: Android software window API declarations for deterministic native-backend tests.
+- file: tests/fixtures/android-sdk/android/looper.h
+  purpose: Android looper API declarations for deterministic native-backend tests.
+- file: tests/fixtures/android-sdk/android/log.h
+  purpose: Android log API declarations for deterministic native-backend tests.
+- file: mudsl/tests/mull/mulib/android.mull
+  purpose: MuLL bridge integration fixture for Android/JNI and Android ELF ABI queries.
+- file: mudsl/tests/mull/mulib/android.expected
+  purpose: Expected Android MuLL integration fixture output.
 - file: tools/check_archml.py
   purpose: Independent LLVM MC and optional SPIRV-Tools oracles for ArchML instruction encoding fixtures.
 - file: examples/exec-common.h
@@ -5915,3 +5979,31 @@ project_files:
   purpose: Shared C++/D MuLL integration for tables, symbols, equations, chemistry, charts and paleography.
 - file: mudsl/tests/mull/mulib/notation.expected
   purpose: Expected result for MuLL notation integration.
+- file: examples/modules/androidlibs.c
+  purpose: "Standalone checked usage example for androidlibs."
+- file: examples/modules/art.c
+  purpose: "Standalone checked usage example for art."
+- file: examples/modules/dexcc.c
+  purpose: "Standalone checked usage example for dexcc."
+- file: examples/modules/ezjni.c
+  purpose: "Standalone checked usage example for ezjni."
+- file: examples/modules/ezndk.c
+  purpose: "Standalone checked usage example for ezndk."
+- file: examples/modules/jvm.c
+  purpose: "Standalone checked usage example for jvm."
+- file: tests/test_android_abi.c
+  purpose: "Focused regression suite for test_android_abi."
+- file: tests/test_android_alloc.c
+  purpose: "Focused regression suite for test_android_alloc."
+- file: tests/test_android_runtime.c
+  purpose: "Focused regression suite for test_android_runtime."
+- file: tests/test_android_sdk.c
+  purpose: "Focused regression suite for test_android_sdk."
+- file: tests/test_androidlibs.c
+  purpose: "Focused regression suite for test_androidlibs."
+- file: tests/test_clickir.c
+  purpose: "Focused regression suite for test_clickir."
+- file: tests/test_android_hostile.c
+  purpose: "Focused regression suite for test_android_hostile."
+- file: tests/test_android_abi_alloc.c
+  purpose: "Focused regression suite for test_android_abi_alloc."

@@ -754,7 +754,8 @@ def main():
     args = parser.parse_args()
     from archml_extra import profiles
     from archml_targets import profiles as target_profiles
-    for build in [amd64, arm64, riscv64, *profiles(), *target_profiles()]:
+    from archml_android import dex
+    for build in [amd64, arm64, riscv64, *profiles(), *target_profiles(), dex]:
         profile = build()
         path = ROOT / 'library' / 'archml' / getattr(profile, 'filename', profile.name + '.aml')
         text = profile.render(trim=hasattr(profile, 'filename'))

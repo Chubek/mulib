@@ -16,7 +16,8 @@ requires it. Declarations support C++ clients through C linkage.
 call-argument records described in [GSSA](mulib-gssair.md). Nodes may be in any
 array order and refer forward locally. A node's `block` fixes where it executes;
 there is no implicit placement inference. PHI inputs gate control-flow merges.
-The complete memory chain explicitly orders may-alias LOAD/STORE/CALL nodes.
+The complete effect chain explicitly orders may-alias LOAD/STORE/CALL nodes and
+the trapping SDIV/SREM integer operations.
 
 `edges[edge_count]` adds `{before,after}` precedence constraints within one
 block. Endpoints must be valid node IDs in the same block. These constrain
@@ -44,6 +45,37 @@ native lowering. `mulib_clickir_from_gssair` validates and copies an already
 ordered graph into an owned Sea of Nodes with no additional edges. Clients can
 use `mulib_gssair_permute` to construct differently ordered graph structures.
 
+`mulib_clickir_validate` checks the same unordered graph without retaining an
+owner. `mulib_clickir_clone` validates and copies both structural arrays and
+additional precedence edges, preserving the input's physical node order. It does
+not silently drop precedence constraints or accept a partially live destination.
+Self edges and cross-block memory predecessors are explicitly rejected.
+
+## Register import and executable lowering
+
+`mulib_clickir_from_native` imports a typed mutable native-MIR register program.
+Supply one fixed I64/BOOL/WORD type per register plus a borrowed signature. The
+converter adds a synthetic entry with typed zero initial register values, then
+PHIs for every register in every original block. It remaps uses/definitions and
+fills incoming values from predecessor exits, preserving loops and cyclic parallel
+copies. Every original block must be reachable. Native NOPs disappear. Memory and
+external calls are unsupported by this importer; SDIV/SREM are explicitly ordered
+as trapping effects. Frontends requiring definite assignment must verify it before
+import, rather than treating the native zero initialization as bytecode validity.
+
+`mulib_clickir_to_flow` normalizes and lowers an I64/BOOL graph into an owned,
+safe MIR register image. WORD, memory and calls return UNSUPPORTED. Wrapping
+arithmetic, native six-bit masked shifts (including SAR), signed/unsigned compares
+and PHI parallel copies retain their semantics. Signed divide/remainder trap on
+zero and INT64_MIN/-1; they are not Java's width-specific MIN/-1 operations.
+The Android/JVM frontends implement 32-bit Java semantics with explicit widening
+and truncation around these operations.
+
+The flow owner owns instructions/types and borrows signature parameters. Release
+it with `mulib_clickir_flow_free`. Its immutable program can initialize MIR frames,
+feed the existing native JIT, or emit portable C AOT. No external compiler or
+unrestricted host-memory interpreter is introduced into ClickIR.
+
 ## Ownership, bounds and failures
 
 Program descriptors and input arrays are borrowed and immutable. An owned
@@ -58,6 +90,10 @@ storage used by GSSA validation. Zero is not unlimited. Allocation-size overflow
 and allocation failure have distinct RESOURCE_LIMIT/NO_MEMORY results. Normalization
 uses repeated ready-node scans; it is a bounded-storage implementation rather
 than a linear-time graph scheduler. All C descriptors must name readable arrays.
+Register import also bounds register*block cells, generated nodes/PHI inputs and
+the enlarged synthetic-entry CFG. Flow lowering conservatively reserves up to
+five records per native instruction and three integer scratch registers, all
+within the supplied limit. These explicit, dense algorithms target small graphs.
 
 ## Example
 

@@ -19,6 +19,13 @@ No long-name table, symbols, relocation records, bigobj or archive writer.
 Results are 1/0, failures leave output unchanged, finish does not consume builder.
 See [binary format contracts](binary-formats.md).
 
+`finish_abi` selects Microsoft i386 (0x14c), AMD64 (0x8664), Thumb-2 ARMNT (0x1c4)
+or ARM64 (0xaa64) COFF object profiles. Unknown selectors fail atomically; the
+arbitrary-machine finish API and AMD64 text helper remain compatible. These are
+object-format target choices, not generated C calling-convention stubs: callers
+must provide matching code, symbol decoration and relocations where needed.
+`tests/test_android_abi.c` and independent LLVM readers verify emitted headers.
+
 <!-- manual-interface -->
 ## Public header reference
 
@@ -55,6 +62,14 @@ extern "C"
   int mulib_coffbuilder_finish (const mulib_coffbuilder_t *b, uint16_t machine, mulib_buffer_t *out);
   /** @brief Free owned names/bytes and reset; NULL allowed. */
   void mulib_coffbuilder_free (mulib_coffbuilder_t *b);
+  typedef enum mulib_coffbuilder_abi {
+    MULIB_COFFBUILDER_MS_X86, MULIB_COFFBUILDER_MS_X64,
+    MULIB_COFFBUILDER_MS_ARMNT, MULIB_COFFBUILDER_MS_ARM64
+  } mulib_coffbuilder_abi_t;
+  /** Select Microsoft i386, AMD64, Thumb-2 ARM or ARM64 COFF. Atomic append;
+   * calling-convention code, symbols and relocations remain caller-owned. */
+  int mulib_coffbuilder_finish_abi (const mulib_coffbuilder_t *b,
+      mulib_coffbuilder_abi_t abi, mulib_buffer_t *out);
 #ifdef __cplusplus
 }
 #endif

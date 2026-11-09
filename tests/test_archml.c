@@ -197,8 +197,8 @@ static void all_forms (mulib_archml_t *a)
 int main (int argc, char **argv)
 {
   const char *names[] = {"amd64", "arm64", "riscv64", "ppc64", "mips", "avr32", "wasm",
-    "amdgpu", "arm", "nvptx", "spirv", "xtensa", "bpf", "directx", "m68k", "hexagon"};
-  const size_t concrete[] = {124,80,92,23,29,9,36,8,19,0,12,20,57,0,20,7};
+    "amdgpu", "arm", "nvptx", "spirv", "xtensa", "bpf", "directx", "m68k", "hexagon", "dex"};
+  const size_t concrete[] = {124,80,92,23,29,9,36,8,19,0,12,20,57,0,20,7,98};
   char directory[4096], path[4096];
   /* Machine-readable encoder for the independent LLVM MC fixture check. */
   if (argc >= 4 && !strcmp(argv[1],"--encode")) {
@@ -419,6 +419,17 @@ int main (int argc, char **argv)
       golden(a,"nop",NULL,0,"00c0007f");
       const unsigned char not_packet_end[] = {0,0,0,0x7f}; size_t used=99;
       assert(mulib_archml_decode(a,"nop",not_packet_end,4,NULL,0,&used)==MULIB_ARCHML_MISMATCH && used==99);
+    } else if (i == 16) {
+      const uint64_t rr[] = {0,1,2}, constant[] = {3,(uint64_t)-1}, jump[] = {(uint64_t)-4};
+      const uint64_t move[] = {256,65534}, wide[] = {2,UINT64_C(0x1122334455667788)};
+      golden(a,"add-int",rr,3,"90000102");
+      golden(a,"const/4",constant,2,"12f3");
+      golden(a,"goto/16",jump,1,"2900feff");
+      golden(a,"move/16",move,2,"03000001feff");
+      golden(a,"const-wide",wide,2,"18028877665544332211");
+      golden(a,"return-void",NULL,0,"0e00");
+      assert(mulib_archml_count(a,"register")==0);
+      assert(mulib_archml_find(a,"abi","dex-frame") && mulib_archml_find(a,"extension","art-gc"));
     }
     mulib_archml_destroy(a);
   }

@@ -571,4 +571,10 @@
 #include "mulib-paleography.h"
 #include "mulib-symbol.h"
 #include "mulib-tbl.h"
+#include "mulib-androidlibs.h"
+#include "mulib-art.h"
+#include "mulib-dexcc.h"
+#include "mulib-ezjni.h"
+#include "mulib-ezndk.h"
+#include "mulib-jvm.h"
 int main(void) { return 0; }

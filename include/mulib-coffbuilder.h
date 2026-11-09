@@ -24,12 +24,27 @@ extern "C"
   int mulib_coffbuilder_finish (const mulib_coffbuilder_t *b, uint16_t machine, mulib_buffer_t *out);
   /** @brief Free owned names/bytes and reset; NULL allowed. */
   void mulib_coffbuilder_free (mulib_coffbuilder_t *b);
+  typedef enum mulib_coffbuilder_abi {
+    MULIB_COFFBUILDER_MS_X86, MULIB_COFFBUILDER_MS_X64,
+    MULIB_COFFBUILDER_MS_ARMNT, MULIB_COFFBUILDER_MS_ARM64
+  } mulib_coffbuilder_abi_t;
+  /** Select Microsoft i386, AMD64, Thumb-2 ARM or ARM64 COFF. Atomic append;
+   * calling-convention code, symbols and relocations remain caller-owned. */
+  int mulib_coffbuilder_finish_abi (const mulib_coffbuilder_t *b,
+      mulib_coffbuilder_abi_t abi, mulib_buffer_t *out);
 #ifdef __cplusplus
 }
 #endif
 #endif
 #if defined(MULIB_IMPL_COFFBUILDER) && !defined(MULIB_COFFBUILDER_IMPLEMENTED)
 #define MULIB_COFFBUILDER_IMPLEMENTED
+int mulib_coffbuilder_finish_abi (const mulib_coffbuilder_t *b,
+    mulib_coffbuilder_abi_t abi, mulib_buffer_t *out)
+{
+  static const uint16_t machine[] = {0x14c, 0x8664, 0x1c4, 0xaa64};
+  return (unsigned)abi < sizeof (machine) / sizeof (*machine)
+    && mulib_coffbuilder_finish (b, machine[(unsigned)abi], out);
+}
 int mulib_coffbuilder_add (mulib_coffbuilder_t *b, const char *name,
     const void *p, size_t n, size_t a, uint64_t flags)
 {

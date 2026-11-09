@@ -62,9 +62,9 @@ self/cyclic PHIs. Ordinary uses must be dominated by their definitions; local
 uses refer to an earlier node. PHIs cannot appear at entry or after block body
 operations. Unreachable blocks and edges into the external entry are rejected.
 
-Every LOAD, STORE and CALL names the preceding such node in its **own block**
+Every LOAD, STORE, CALL, SDIV and SREM names the preceding such node in its **own block**
 through `memory`. The first uses NONE. All other nodes use NONE. This is one
-conservative, may-alias memory chain; block-entry memory is implicitly gated by
+conservative memory/trap-order chain; block-entry memory is implicitly gated by
 the incoming control edge. There is no claim of disjoint alias regions, memory
 speculation or atomic accesses. Faulting loads/stores and calls remain ordered
 through native lowering and scheduling.

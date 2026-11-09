@@ -634,6 +634,12 @@ static void emit_native (const char *path, int rv)
 }
 int main (int argc, char **argv)
 {
+  int op;
+  for (op = 0; op < MULIB_MIR_NATIVE_OPCODE_COUNT; ++op) assert (mulib_lir_opcode_name (op));
+  assert (!strcmp (mulib_lir_opcode_name (MULIB_MIR_NATIVE_RETURN),"return"));
+  assert (!strcmp (mulib_lir_opcode_name (MULIB_MIR_NATIVE_SDIV),"sdiv"));
+  assert (!strcmp (mulib_lir_opcode_name (MULIB_MIR_NATIVE_SREM),"srem"));
+  assert (!mulib_lir_opcode_name (MULIB_MIR_NATIVE_OPCODE_COUNT));
   if (argc > 2 && !strcmp (argv[1],"--emit")) { emit_native (argv[2],argc > 3); return 0; }
   test_cover (); test_cover_differential (); test_rules (); test_resources (); test_random (); test_flow (); test_annotations (); test_macros (); test_failure ();
   test_stale_lir (); test_invalid_rules (); test_resource_properties (); test_macro_input ();

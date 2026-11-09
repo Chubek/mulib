@@ -20,6 +20,15 @@ Every section is raw initialized data (including any caller-supplied zeroes).
 All writes append atomically, returning 1/0. Finish does not consume builder.
 See [ownership and format contracts](binary-formats.md).
 
+`text_abi` selects Windows x64, Windows ARM64, UEFI x64 or UEFI ARM64 PE32+
+profiles. Machine is AMD64/ARM64; subsystem is Windows console (3) or EFI
+application (10). ARM64 code length and entry must be four-byte aligned. Existing
+text/finish APIs retain their AMD64 defaults. `finish_abi` supports the two Windows
+data-only DLL profiles; UEFI requires text_abi and an entry. Unknown ABI IDs are
+rejected without output changes. These selectors do not synthesize a Windows
+runtime, EFI entry prototype, imports, call ABI lowering or unwind metadata.
+`tests/test_android_abi.c` and independent llvm-readobj checks cover all profiles.
+
 <!-- manual-interface -->
 ## Public header reference
 
@@ -58,6 +67,17 @@ extern "C"
   int mulib_pebuilder_finish (const mulib_pebuilder_t *b, uint16_t machine, mulib_buffer_t *out);
   /** @brief Release all builder storage. */
   void mulib_pebuilder_free (mulib_pebuilder_t *b);
+  typedef enum mulib_pebuilder_abi {
+    MULIB_PEBUILDER_WINDOWS_X64, MULIB_PEBUILDER_WINDOWS_ARM64,
+    MULIB_PEBUILDER_UEFI_X64, MULIB_PEBUILDER_UEFI_ARM64
+  } mulib_pebuilder_abi_t;
+  /** Emit a freestanding PE32+ image with Windows console or EFI application
+   * subsystem and matching machine. No imports/unwind/relocations supplied. */
+  int mulib_pebuilder_text_abi (mulib_buffer_t *out, const void *code,
+      size_t length, size_t entry_offset, mulib_pebuilder_abi_t abi);
+  /** Emit a Windows data-only DLL; UEFI profiles require text_abi and an entry. */
+  int mulib_pebuilder_finish_abi (const mulib_pebuilder_t *b,
+      mulib_pebuilder_abi_t abi, mulib_buffer_t *out);
 #ifdef __cplusplus
 }
 #endif

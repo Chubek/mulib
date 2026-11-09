@@ -196,6 +196,8 @@ def main():
                 command = (compiler if language == 'c' else cxx) + [
                     '-std=c11' if language == 'c' else '-std=c++17'] + flags
                 command += extra_flags or []
+                if sources and len(sources) == 1 and sources[0].name == 'test_android_sdk.c':
+                    command += ['-I' + str(root / 'tests/fixtures/android-sdk')]
                 if sources and len(sources) == 1 and sources[0].name == 'test_mune_runtime.c' and sys.platform.startswith(('linux', 'freebsd')):
                     command += ['-rdynamic']
                 if source_text is not None:

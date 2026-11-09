@@ -1,0 +1,13 @@
+mulib Jni <- G:MulibWrap("Ezjni");
+val signature <- Jni:New("mulib_ezjni_signature_t");
+G:Assert(Jni:mulib_ezjni_signature("(I[J)Z", signature) == Jni:MULIB_EZJNI_OK);
+G:Assert(signature:count == 2 and signature:result == 90);
+mulib Android <- G:MulibWrap("Androidlibs");
+val info <- Android:New("mulib_androidlibs_info_t");
+G:Assert(Android:mulib_androidlibs_info(Android:MULIB_ANDROIDLIBS_VULKAN, info) == 1);
+G:Assert(info:min_api == 24);
+mulib Elf <- G:MulibWrap("Elfbuilder");
+val abi <- Elf:New("mulib_elfbuilder_abi_info_t");
+G:Assert(Elf:mulib_elfbuilder_abi_info(Elf:MULIB_ELFBUILDER_ANDROID_ARM64_V8A, abi) == 1);
+G:Assert(abi:reserved_x18 == 1 and abi:bits == 64 and abi:osabi == 0);
+"android ok";

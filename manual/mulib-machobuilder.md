@@ -26,6 +26,16 @@ the builder; `free` resets it. Output is an ordinary owned `mulib_buffer_t`.
 The historical misspelled header/switch remain valid and unchanged for the
 single-text-section API. See [shared contracts](binary-formats.md).
 
+`finish_abi` adds macOS x86-64/arm64, iOS arm64 and iOS-simulator x86-64/arm64
+profiles. It emits the correct CPU/subtype and an LC_BUILD_VERSION command with
+platform macOS=1, iOS=2 or iOS simulator=7. min_os/sdk use major<<16|minor<<8|patch;
+min_os must be nonzero and a specified sdk cannot predate min_os. Callers select
+deployment versions valid for their actual target/toolchain. Section data offsets
+are recomputed after the additional command, not patched without relocating data.
+No arm64e/pointer-authenticated ABI, dylib linking, dyld entry or native call
+lowering is implied. Legacy finish omits LC_BUILD_VERSION as before. Independent
+LLVM format-reader checks are in `tools/check_android.py`.
+
 <!-- manual-interface -->
 ## Public header reference
 
@@ -60,6 +70,15 @@ int mulib_machobuilder_add (mulib_machobuilder_t *b, const char *name,
 int mulib_machobuilder_finish (const mulib_machobuilder_t *b, uint32_t cpu, mulib_buffer_t *out);
 /** @brief Release copied names/bytes. */
 void mulib_machobuilder_free (mulib_machobuilder_t *b);
+typedef enum mulib_machobuilder_abi {
+  MULIB_MACHOBUILDER_MACOS_X86_64, MULIB_MACHOBUILDER_MACOS_ARM64,
+  MULIB_MACHOBUILDER_IOS_ARM64, MULIB_MACHOBUILDER_IOS_SIM_X86_64,
+  MULIB_MACHOBUILDER_IOS_SIM_ARM64
+} mulib_machobuilder_abi_t;
+/** Append MH_OBJECT with CPU/subtype and LC_BUILD_VERSION platform. min_os and
+ * sdk use packed major<<16|minor<<8|patch; zero SDK means unspecified. */
+int mulib_machobuilder_finish_abi (const mulib_machobuilder_t *b,
+    mulib_machobuilder_abi_t abi, uint32_t min_os, uint32_t sdk, mulib_buffer_t *out);
 #ifdef __cplusplus
 }
 #endif
