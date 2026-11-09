@@ -1,5 +1,6 @@
 /* Generated implementation switches for every public header. */
 #define MULIB_IMPL_2DGEOM
+#define MULIB_IMPL_AARCH64
 #define MULIB_IMPL_ABSTUN
 #define MULIB_IMPL_ACL
 #define MULIB_IMPL_ACPI
@@ -7,8 +8,7 @@
 #define MULIB_IMPL_AES
 #define MULIB_IMPL_ALLOC
 #define MULIB_IMPL_AMD64
-#define MULIB_IMPL_MPU
-#define MULIB_IMPL_UNIT
+#define MULIB_IMPL_AMDGPU
 #define MULIB_IMPL_ANFIR
 #define MULIB_IMPL_ANOMALY_DETECTION
 #define MULIB_IMPL_ARCHIVE
@@ -27,6 +27,8 @@
 #define MULIB_IMPL_AUTHCRYPTO
 #define MULIB_IMPL_AUTOMATA_LEVENSHTEIN
 #define MULIB_IMPL_AVL
+#define MULIB_IMPL_AVR32
+#define MULIB_IMPL_AZW3
 #define MULIB_IMPL_BASE64
 #define MULIB_IMPL_BAYESIAN_METHODS
 #define MULIB_IMPL_BAYSIAN_RANKING
@@ -126,6 +128,7 @@
 #define MULIB_IMPL_DBSUMMARY
 #define MULIB_IMPL_DBTRANSACTION
 #define MULIB_IMPL_DBUS
+#define MULIB_IMPL_DEFLATE
 #define MULIB_IMPL_DEPIR
 #define MULIB_IMPL_DEQUE
 #define MULIB_IMPL_DESCRITORS
@@ -141,6 +144,7 @@
 #define MULIB_IMPL_DNSNMESERVER
 #define MULIB_IMPL_DNSRESOLVER
 #define MULIB_IMPL_DOCUMENTDB
+#define MULIB_IMPL_DOM
 #define MULIB_IMPL_DRM
 #define MULIB_IMPL_DSU
 #define MULIB_IMPL_DSYMSPEC
@@ -161,6 +165,7 @@
 #define MULIB_IMPL_ENDIAN
 #define MULIB_IMPL_ENV
 #define MULIB_IMPL_EPOLL
+#define MULIB_IMPL_EPUB
 #define MULIB_IMPL_ESCAPE
 #define MULIB_IMPL_EUCLIDEAN_DISTANCE
 #define MULIB_IMPL_EVENTFD
@@ -192,6 +197,7 @@
 #define MULIB_IMPL_GLR
 #define MULIB_IMPL_GLX
 #define MULIB_IMPL_GLYPH
+#define MULIB_IMPL_GPU
 #define MULIB_IMPL_GPUTEST
 #define MULIB_IMPL_GRAPH
 #define MULIB_IMPL_GRAPHDB
@@ -281,7 +287,9 @@
 #define MULIB_IMPL_MARKDOWN
 #define MULIB_IMPL_MARKOV_CHAIN
 #define MULIB_IMPL_MATH
+#define MULIB_IMPL_MATHML
 #define MULIB_IMPL_MATRIX
+#define MULIB_IMPL_MCU
 #define MULIB_IMPL_MEMPOOL
 #define MULIB_IMPL_MEMTABLE
 #define MULIB_IMPL_MEMTEST
@@ -307,8 +315,10 @@
 #define MULIB_IMPL_MIR
 #define MULIB_IMPL_MMDIFF
 #define MULIB_IMPL_MMFILE
+#define MULIB_IMPL_MOBI
 #define MULIB_IMPL_MOP
 #define MULIB_IMPL_MOVINGAVG
+#define MULIB_IMPL_MPU
 #define MULIB_IMPL_MQUEUE
 #define MULIB_IMPL_MUBURG
 #define MULIB_IMPL_MUIDL
@@ -321,6 +331,7 @@
 #define MULIB_IMPL_NAMESERVER
 #define MULIB_IMPL_NETDEVICE
 #define MULIB_IMPL_NETFS
+#define MULIB_IMPL_NVPTX
 #define MULIB_IMPL_N_GRAMS
 #define MULIB_IMPL_OAUTH
 #define MULIB_IMPL_OAUTH2
@@ -367,6 +378,7 @@
 #define MULIB_IMPL_PATH
 #define MULIB_IMPL_PATHDB
 #define MULIB_IMPL_PCI
+#define MULIB_IMPL_PDF
 #define MULIB_IMPL_PE
 #define MULIB_IMPL_PEARSON_SIMILARITY
 #define MULIB_IMPL_PEBUILDER
@@ -402,6 +414,7 @@
 #define MULIB_IMPL_REWRITE
 #define MULIB_IMPL_REWRITE_URL
 #define MULIB_IMPL_RING
+#define MULIB_IMPL_RISCV64
 #define MULIB_IMPL_RLE
 #define MULIB_IMPL_RNG
 #define MULIB_IMPL_ROMAN
@@ -483,6 +496,7 @@
 #define MULIB_IMPL_UNIBREAK
 #define MULIB_IMPL_UNINAME
 #define MULIB_IMPL_UNIPROC
+#define MULIB_IMPL_UNIT
 #define MULIB_IMPL_UPSTREAM
 #define MULIB_IMPL_URI
 #define MULIB_IMPL_URL
@@ -537,15 +551,18 @@
 #define MULIB_IMPL_XPATH
 #define MULIB_IMPL_XSIMD
 #define MULIB_IMPL_XTBB
+#define MULIB_IMPL_XTENSA
 #define MULIB_IMPL_XTHREADS
 #define MULIB_IMPL_XTKS
 #define MULIB_IMPL_YAML
 #define MULIB_IMPL_YANTLR
+#define MULIB_IMPL_ZIP
 #include "include-mulib-container-core.h"
 #include "include-mulib-lprowse.h"
 #include "include-mulib-qvm.h"
 #include "include-mulib-zstd.h"
 #include "mulib-2dgeom.h"
+#include "mulib-aarch64.h"
 #include "mulib-abstun.h"
 #include "mulib-acl.h"
 #include "mulib-acpi.h"
@@ -553,6 +570,7 @@
 #include "mulib-aes.h"
 #include "mulib-alloc.h"
 #include "mulib-amd64.h"
+#include "mulib-amdgpu.h"
 #include "mulib-anfir.h"
 #include "mulib-anomaly-detection.h"
 #include "mulib-archive.h"
@@ -571,6 +589,8 @@
 #include "mulib-authcrypto.h"
 #include "mulib-automata-levenshtein.h"
 #include "mulib-avl.h"
+#include "mulib-avr32.h"
+#include "mulib-azw3.h"
 #include "mulib-b+tree.h"
 #include "mulib-base64.h"
 #include "mulib-bayesian_methods.h"
@@ -670,6 +690,7 @@
 #include "mulib-dbsummary.h"
 #include "mulib-dbtransaction.h"
 #include "mulib-dbus.h"
+#include "mulib-deflate.h"
 #include "mulib-depir.h"
 #include "mulib-deque.h"
 #include "mulib-descritors.h"
@@ -685,6 +706,7 @@
 #include "mulib-dnsnmeserver.h"
 #include "mulib-dnsresolver.h"
 #include "mulib-documentdb.h"
+#include "mulib-dom.h"
 #include "mulib-drm.h"
 #include "mulib-dsu.h"
 #include "mulib-dsymspec.h"
@@ -705,6 +727,7 @@
 #include "mulib-endian.h"
 #include "mulib-env.h"
 #include "mulib-epoll.h"
+#include "mulib-epub.h"
 #include "mulib-escape.h"
 #include "mulib-euclidean_distance.h"
 #include "mulib-eventfd.h"
@@ -735,6 +758,7 @@
 #include "mulib-glr.h"
 #include "mulib-glx.h"
 #include "mulib-glyph.h"
+#include "mulib-gpu.h"
 #include "mulib-gputest.h"
 #include "mulib-graph.h"
 #include "mulib-graphdb.h"
@@ -824,7 +848,9 @@
 #include "mulib-markdown.h"
 #include "mulib-markov_chain.h"
 #include "mulib-math.h"
+#include "mulib-mathml.h"
 #include "mulib-matrix.h"
+#include "mulib-mcu.h"
 #include "mulib-mempool.h"
 #include "mulib-memtable.h"
 #include "mulib-memtest.h"
@@ -850,8 +876,10 @@
 #include "mulib-mir.h"
 #include "mulib-mmdiff.h"
 #include "mulib-mmfile.h"
+#include "mulib-mobi.h"
 #include "mulib-mop.h"
 #include "mulib-movingavg.h"
+#include "mulib-mpu.h"
 #include "mulib-mqueue.h"
 #include "mulib-muburg.h"
 #include "mulib-muidl.h"
@@ -865,6 +893,7 @@
 #include "mulib-nameserver.h"
 #include "mulib-netdevice.h"
 #include "mulib-netfs.h"
+#include "mulib-nvptx.h"
 #include "mulib-oauth.h"
 #include "mulib-oauth2.h"
 #include "mulib-objdump.h"
@@ -909,6 +938,7 @@
 #include "mulib-path.h"
 #include "mulib-pathdb.h"
 #include "mulib-pci.h"
+#include "mulib-pdf.h"
 #include "mulib-pe-objdump.h"
 #include "mulib-pe.h"
 #include "mulib-pearson_similarity.h"
@@ -944,6 +974,7 @@
 #include "mulib-rewrite.h"
 #include "mulib-rewrite_url.h"
 #include "mulib-ring.h"
+#include "mulib-riscv64.h"
 #include "mulib-rle.h"
 #include "mulib-rng.h"
 #include "mulib-roman.h"
@@ -1024,6 +1055,7 @@
 #include "mulib-unibreak.h"
 #include "mulib-uniname.h"
 #include "mulib-uniproc.h"
+#include "mulib-unit.h"
 #include "mulib-upstream.h"
 #include "mulib-uri.h"
 #include "mulib-url.h"
@@ -1078,8 +1110,10 @@
 #include "mulib-xpath.h"
 #include "mulib-xsimd.h"
 #include "mulib-xtbb.h"
+#include "mulib-xtensa.h"
 #include "mulib-xthreads.h"
 #include "mulib-xtks.h"
 #include "mulib-yaml.h"
 #include "mulib-yantlr.h"
+#include "mulib-zip.h"
 #include "virtio.h"

@@ -9,8 +9,8 @@ creates an immutable binding and checks the initializer's type. A semicolon is
 optional at the declaration's end-of-line, closing brace, or end-of-source.
 Native data referenced by the binding can still be mutated by library calls.
 
-The checked-in generated bridge covers **542 public headers**, **541 library
-names**, **2,936 functions**, **5,061 native type descriptors**, and **1,815
+The checked-in generated bridge covers **560 public headers**, **559 library
+names**, **3,091 functions**, **5,219 native type descriptors**, and **1,887
 constants** from MuLIB. `virtio.h` and `mulib-virtio.h` name the same library.
 `Inventory.json` records the complete header/function inventory and fingerprint.
 Functions are real compiler-typed C calls, including struct/union returns,
@@ -197,3 +197,15 @@ The normal build links all implementations, so unresolved native functions
 fail at link time. Shared fixtures exercise inventory resolution, Parsec,
 buffers, integers, pointer outputs, containers, callbacks, and error cases in
 both runtimes.
+
+The dependency-free freshness check runs in both MuLIB and MuDSL CTest suites:
+
+```sh
+python3 scripts/check_mulib_inventory.py --include ../include
+```
+
+It verifies complete header/library/function registration, the header fingerprint,
+and the generated C artifacts' hashes. Run the generator after changing a public
+header, then use `--check` for a compiler-backed reproduction of the snapshot.
+The `ebooks.mull` fixture exercises EPUB, ZIP, DEFLATE, MOBI, AZW3, PDF and MathML
+through both C++ and D hosts, including native storage and explicit cleanup.

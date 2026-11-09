@@ -339,7 +339,12 @@ def main():
                  'preprocessor_only': sorted(set(preprocessor_only)),
                  'fingerprint': hashlib.sha256(''.join(h.read_text() for h in headers).encode()).hexdigest(),
                  'modules': {name: {'header': m['header'], 'functions': [n for n,k,_ in m['symbols'] if k==0]} for name,m in sorted(modules.items())}}
-    outputs = {'Generated.inc': '\n'.join(out)+'\n', 'Implementation.c': implementation,
+    generated = '\n'.join(out)+'\n'
+    inventory['artifacts'] = {
+        'Generated.inc': hashlib.sha256(generated.encode()).hexdigest(),
+        'Implementation.c': hashlib.sha256(implementation.encode()).hexdigest(),
+    }
+    outputs = {'Generated.inc': generated, 'Implementation.c': implementation,
                'Inventory.json': json.dumps(inventory, indent=2)+'\n'}
     for filename, content in outputs.items():
         path = DEST / filename

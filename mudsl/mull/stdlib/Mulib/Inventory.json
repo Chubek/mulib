@@ -5,6 +5,7 @@
     "include-mulib-qvm.h",
     "include-mulib-zstd.h",
     "mulib-2dgeom.h",
+    "mulib-aarch64.h",
     "mulib-abstun.h",
     "mulib-acl.h",
     "mulib-acpi.h",
@@ -12,6 +13,7 @@
     "mulib-aes.h",
     "mulib-alloc.h",
     "mulib-amd64.h",
+    "mulib-amdgpu.h",
     "mulib-anfir.h",
     "mulib-anomaly-detection.h",
     "mulib-archive.h",
@@ -30,6 +32,8 @@
     "mulib-authcrypto.h",
     "mulib-automata-levenshtein.h",
     "mulib-avl.h",
+    "mulib-avr32.h",
+    "mulib-azw3.h",
     "mulib-b+tree.h",
     "mulib-base64.h",
     "mulib-bayesian_methods.h",
@@ -129,6 +133,7 @@
     "mulib-dbsummary.h",
     "mulib-dbtransaction.h",
     "mulib-dbus.h",
+    "mulib-deflate.h",
     "mulib-depir.h",
     "mulib-deque.h",
     "mulib-descritors.h",
@@ -144,6 +149,7 @@
     "mulib-dnsnmeserver.h",
     "mulib-dnsresolver.h",
     "mulib-documentdb.h",
+    "mulib-dom.h",
     "mulib-drm.h",
     "mulib-dsu.h",
     "mulib-dsymspec.h",
@@ -164,6 +170,7 @@
     "mulib-endian.h",
     "mulib-env.h",
     "mulib-epoll.h",
+    "mulib-epub.h",
     "mulib-escape.h",
     "mulib-euclidean_distance.h",
     "mulib-eventfd.h",
@@ -194,6 +201,7 @@
     "mulib-glr.h",
     "mulib-glx.h",
     "mulib-glyph.h",
+    "mulib-gpu.h",
     "mulib-gputest.h",
     "mulib-graph.h",
     "mulib-graphdb.h",
@@ -283,7 +291,9 @@
     "mulib-markdown.h",
     "mulib-markov_chain.h",
     "mulib-math.h",
+    "mulib-mathml.h",
     "mulib-matrix.h",
+    "mulib-mcu.h",
     "mulib-mempool.h",
     "mulib-memtable.h",
     "mulib-memtest.h",
@@ -309,8 +319,10 @@
     "mulib-mir.h",
     "mulib-mmdiff.h",
     "mulib-mmfile.h",
+    "mulib-mobi.h",
     "mulib-mop.h",
     "mulib-movingavg.h",
+    "mulib-mpu.h",
     "mulib-mqueue.h",
     "mulib-muburg.h",
     "mulib-muidl.h",
@@ -324,6 +336,7 @@
     "mulib-nameserver.h",
     "mulib-netdevice.h",
     "mulib-netfs.h",
+    "mulib-nvptx.h",
     "mulib-oauth.h",
     "mulib-oauth2.h",
     "mulib-objdump.h",
@@ -368,6 +381,7 @@
     "mulib-path.h",
     "mulib-pathdb.h",
     "mulib-pci.h",
+    "mulib-pdf.h",
     "mulib-pe-objdump.h",
     "mulib-pe.h",
     "mulib-pearson_similarity.h",
@@ -403,6 +417,7 @@
     "mulib-rewrite.h",
     "mulib-rewrite_url.h",
     "mulib-ring.h",
+    "mulib-riscv64.h",
     "mulib-rle.h",
     "mulib-rng.h",
     "mulib-roman.h",
@@ -483,6 +498,7 @@
     "mulib-unibreak.h",
     "mulib-uniname.h",
     "mulib-uniproc.h",
+    "mulib-unit.h",
     "mulib-upstream.h",
     "mulib-uri.h",
     "mulib-url.h",
@@ -537,16 +553,18 @@
     "mulib-xpath.h",
     "mulib-xsimd.h",
     "mulib-xtbb.h",
+    "mulib-xtensa.h",
     "mulib-xthreads.h",
     "mulib-xtks.h",
     "mulib-yaml.h",
     "mulib-yantlr.h",
+    "mulib-zip.h",
     "virtio.h"
   ],
-  "libraries": 541,
-  "functions": 2936,
-  "types": 5061,
-  "constants": 1815,
+  "libraries": 559,
+  "functions": 3091,
+  "types": 5219,
+  "constants": 1887,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -586,7 +604,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "41607e2f079e349f8c44728352fd6e6b07dc9401655bf26818aaae381d89ab45",
+  "fingerprint": "6350b02ae4d3e2e9683b9e8af2b40fb6250fbf08391d9c09f20de2cd3f1cbe3a",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -610,6 +628,14 @@
         "mulib_2dgeom_path_split",
         "mulib_2dgeom_path_area",
         "mulib_2dgeom_path_parse"
+      ]
+    },
+    "aarch64": {
+      "header": "mulib-aarch64.h",
+      "functions": [
+        "mulib_aarch64_init",
+        "mulib_aarch64_init_ex",
+        "mulib_aarch64_free"
       ]
     },
     "abstun": {
@@ -673,8 +699,21 @@
       "header": "mulib-amd64.h",
       "functions": [
         "mulib_amd64_init",
+        "mulib_amd64_init_ex",
         "mulib_amd64_free",
-        "mulib_amd64_emit"
+        "mulib_amd64_emit",
+        "mulib_amd64_mpu",
+        "mulib_amd64_encode",
+        "mulib_amd64_decode",
+        "mulib_amd64_emit_form"
+      ]
+    },
+    "amdgpu": {
+      "header": "mulib-amdgpu.h",
+      "functions": [
+        "mulib_amdgpu_init",
+        "mulib_amdgpu_init_ex",
+        "mulib_amdgpu_free"
       ]
     },
     "anfir": {
@@ -904,6 +943,23 @@
         "mulib_avl_foreach",
         "mulib_avl_validate",
         "mulib_avl_free"
+      ]
+    },
+    "avr32": {
+      "header": "mulib-avr32.h",
+      "functions": [
+        "mulib_avr32_init",
+        "mulib_avr32_init_ex",
+        "mulib_avr32_free"
+      ]
+    },
+    "azw3": {
+      "header": "mulib-azw3.h",
+      "functions": [
+        "mulib_azw3_open",
+        "mulib_azw3_text",
+        "mulib_azw3_flow_range",
+        "mulib_azw3_flow"
       ]
     },
     "b+tree": {
@@ -1927,6 +1983,13 @@
         "mulib_dbus_decode"
       ]
     },
+    "deflate": {
+      "header": "mulib-deflate.h",
+      "functions": [
+        "mulib_deflate_encode",
+        "mulib_deflate_decode"
+      ]
+    },
     "depir": {
       "header": "mulib-depir.h",
       "functions": [
@@ -2089,6 +2152,85 @@
         "mulib_documentdb_get",
         "mulib_documentdb_delete",
         "mulib_documentdb_free"
+      ]
+    },
+    "dom": {
+      "header": "mulib-dom.h",
+      "functions": [
+        "mulib_dom_document_new",
+        "mulib_dom_document_destroy",
+        "mulib_dom_document_node",
+        "mulib_dom_document_element",
+        "mulib_dom_owner_document",
+        "mulib_dom_create_element",
+        "mulib_dom_create_attribute",
+        "mulib_dom_create_character_data",
+        "mulib_dom_create_text_utf8",
+        "mulib_dom_create_fragment",
+        "mulib_dom_create_doctype",
+        "mulib_dom_node_type",
+        "mulib_dom_node_name",
+        "mulib_dom_namespace_uri",
+        "mulib_dom_prefix",
+        "mulib_dom_local_name",
+        "mulib_dom_public_id",
+        "mulib_dom_system_id",
+        "mulib_dom_parent",
+        "mulib_dom_first_child",
+        "mulib_dom_last_child",
+        "mulib_dom_next_sibling",
+        "mulib_dom_previous_sibling",
+        "mulib_dom_get_root_node",
+        "mulib_dom_is_connected",
+        "mulib_dom_contains",
+        "mulib_dom_child_count",
+        "mulib_dom_child_at",
+        "mulib_dom_insert_before",
+        "mulib_dom_append_child",
+        "mulib_dom_replace_child",
+        "mulib_dom_remove_child",
+        "mulib_dom_adopt_node",
+        "mulib_dom_import_node",
+        "mulib_dom_clone_node",
+        "mulib_dom_is_equal_node",
+        "mulib_dom_compare_document_position",
+        "mulib_dom_node_value",
+        "mulib_dom_set_node_value",
+        "mulib_dom_text_content",
+        "mulib_dom_set_text_content",
+        "mulib_dom_substring_data",
+        "mulib_dom_replace_data",
+        "mulib_dom_split_text",
+        "mulib_dom_normalize",
+        "mulib_dom_attribute_count",
+        "mulib_dom_attribute_at",
+        "mulib_dom_get_attribute_node",
+        "mulib_dom_owner_element",
+        "mulib_dom_set_attribute",
+        "mulib_dom_set_attribute_node",
+        "mulib_dom_remove_attribute",
+        "mulib_dom_get_element_by_id",
+        "mulib_dom_get_elements_by_tag_name",
+        "mulib_dom_lookup_namespace_uri",
+        "mulib_dom_utf8_to_string",
+        "mulib_dom_string_to_utf8",
+        "mulib_dom_event_new",
+        "mulib_dom_event_destroy",
+        "mulib_dom_event_type",
+        "mulib_dom_event_detail",
+        "mulib_dom_event_target",
+        "mulib_dom_event_current_target",
+        "mulib_dom_event_phase",
+        "mulib_dom_event_bubbles",
+        "mulib_dom_event_cancelable",
+        "mulib_dom_event_composed_path",
+        "mulib_dom_event_default_prevented",
+        "mulib_dom_event_prevent_default",
+        "mulib_dom_event_stop_propagation",
+        "mulib_dom_event_stop_immediate_propagation",
+        "mulib_dom_add_event_listener",
+        "mulib_dom_remove_event_listener",
+        "mulib_dom_dispatch_event"
       ]
     },
     "drm": {
@@ -2317,6 +2459,16 @@
         "mulib_epoll_remove",
         "mulib_epoll_wait",
         "mulib_epoll_close"
+      ]
+    },
+    "epub": {
+      "header": "mulib-epub.h",
+      "functions": [
+        "mulib_epub_write",
+        "mulib_epub_open",
+        "mulib_epub_read",
+        "mulib_epub_find",
+        "mulib_epub_close"
       ]
     },
     "escape": {
@@ -2653,6 +2805,15 @@
         "mulib_glyph_shape",
         "mulib_glyph_run_destroy",
         "mulib_glyph_render"
+      ]
+    },
+    "gpu": {
+      "header": "mulib-gpu.h",
+      "functions": [
+        "mulib_gpu_init",
+        "mulib_gpu_parse",
+        "mulib_gpu_free",
+        "mulib_gpu_emit_text"
       ]
     },
     "gputest": {
@@ -3501,6 +3662,17 @@
         "mulib_math_pow_u64"
       ]
     },
+    "mathml": {
+      "header": "mulib-mathml.h",
+      "functions": [
+        "mulib_mathml_new",
+        "mulib_mathml_element",
+        "mulib_mathml_token",
+        "mulib_mathml_validate",
+        "mulib_mathml_parse",
+        "mulib_mathml_serialize"
+      ]
+    },
     "matrix": {
       "header": "mulib-matrix.h",
       "functions": [
@@ -3508,6 +3680,14 @@
         "mulib_matrix_multiply",
         "mulib_matrix_transpose",
         "mulib_matrix_free"
+      ]
+    },
+    "mcu": {
+      "header": "mulib-mcu.h",
+      "functions": [
+        "mulib_mcu_init",
+        "mulib_mcu_parse",
+        "mulib_mcu_free"
       ]
     },
     "mempool": {
@@ -3772,6 +3952,17 @@
         "mulib_mmfile_close"
       ]
     },
+    "mobi": {
+      "header": "mulib-mobi.h",
+      "functions": [
+        "mulib_mobi_open",
+        "mulib_mobi_select",
+        "mulib_mobi_record",
+        "mulib_mobi_metadata",
+        "mulib_mobi_palmdoc_decode",
+        "mulib_mobi_text"
+      ]
+    },
     "mop": {
       "header": "mulib-mop.h",
       "functions": [
@@ -3789,6 +3980,14 @@
         "mulib_movingavg_init",
         "mulib_movingavg_push",
         "mulib_movingavg_free"
+      ]
+    },
+    "mpu": {
+      "header": "mulib-mpu.h",
+      "functions": [
+        "mulib_mpu_init",
+        "mulib_mpu_parse",
+        "mulib_mpu_free"
       ]
     },
     "mqueue": {
@@ -3942,6 +4141,14 @@
         "mulib_netfs_serve",
         "mulib_netfs_stream_exchange",
         "mulib_netfs_stream_serve"
+      ]
+    },
+    "nvptx": {
+      "header": "mulib-nvptx.h",
+      "functions": [
+        "mulib_nvptx_init",
+        "mulib_nvptx_init_ex",
+        "mulib_nvptx_free"
       ]
     },
     "oauth": {
@@ -4291,6 +4498,18 @@
         "mulib_pci_scan",
         "mulib_pci_ecam",
         "mulib_pci_capability"
+      ]
+    },
+    "pdf": {
+      "header": "mulib-pdf.h",
+      "functions": [
+        "mulib_pdf_add_page",
+        "mulib_pdf_color",
+        "mulib_pdf_text",
+        "mulib_pdf_line",
+        "mulib_pdf_rect",
+        "mulib_pdf_write",
+        "mulib_pdf_free"
       ]
     },
     "pe": {
@@ -4650,6 +4869,14 @@
         "mulib_ring_write",
         "mulib_ring_read",
         "mulib_ring_free"
+      ]
+    },
+    "riscv64": {
+      "header": "mulib-riscv64.h",
+      "functions": [
+        "mulib_riscv64_init",
+        "mulib_riscv64_init_ex",
+        "mulib_riscv64_free"
       ]
     },
     "rle": {
@@ -5495,6 +5722,21 @@
         "mulib_uniproc_script"
       ]
     },
+    "unit": {
+      "header": "mulib-unit.h",
+      "functions": [
+        "mulib_unit_init",
+        "mulib_unit_parse",
+        "mulib_unit_free",
+        "mulib_unit_document",
+        "mulib_unit_find",
+        "mulib_unit_register_info",
+        "mulib_unit_enabled",
+        "mulib_unit_encode",
+        "mulib_unit_decode",
+        "mulib_unit_emit"
+      ]
+    },
     "upstream": {
       "header": "mulib-upstream.h",
       "functions": [
@@ -6126,6 +6368,14 @@
         "mulib_xtbb_reduce"
       ]
     },
+    "xtensa": {
+      "header": "mulib-xtensa.h",
+      "functions": [
+        "mulib_xtensa_init",
+        "mulib_xtensa_init_ex",
+        "mulib_xtensa_free"
+      ]
+    },
     "xthreads": {
       "header": "mulib-xthreads.h",
       "functions": [
@@ -6210,6 +6460,19 @@
         "mulib_yantlr_artifact"
       ]
     },
+    "zip": {
+      "header": "mulib-zip.h",
+      "functions": [
+        "mulib_zip_safe_path",
+        "mulib_zip_open",
+        "mulib_zip_close",
+        "mulib_zip_find",
+        "mulib_zip_extract",
+        "mulib_zip_add",
+        "mulib_zip_finish",
+        "mulib_zip_writer_free"
+      ]
+    },
     "zstd": {
       "header": "include-mulib-zstd.h",
       "functions": [
@@ -6217,5 +6480,9 @@
         "mulib_zstd_raw_decode"
       ]
     }
+  },
+  "artifacts": {
+    "Generated.inc": "01d905f591c6002f54d111b9c714daa6afd4970d57278faaa2843e9ea638b614",
+    "Implementation.c": "cf8a34aa3ef74399be7c05694fcf45a541cab057b3f02b62890c8f0845c41006"
   }
 }

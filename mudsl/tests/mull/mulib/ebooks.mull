@@ -1,0 +1,106 @@
+mulib Buffer <- G:MulibWrap("Buffer");
+mulib Deflate <- G:MulibWrap("Deflate");
+val compressed <- Buffer:New("mulib_buffer_t");
+val text <- Buffer:New("mulib_buffer_t");
+G:Assert(Deflate:Encode("hello hello hello", 17, compressed) == 0);
+G:Assert(Deflate:Decode(compressed:data, compressed:length, 100, text) == 0);
+G:Assert(text:data:String(text:length) == "hello hello hello");
+G:Assert(Deflate:Decode(compressed:data, compressed:length, 1, text) == Deflate:MULIB_DEFLATE_ELIMIT);
+G:Assert(text:length == 17);
+Buffer:Free(compressed);
+Buffer:Free(text);
+
+mulib Zip <- G:MulibWrap("Zip");
+val zip <- Zip:New("mulib_zip_writer_t");
+val archive <- Zip:New("mulib_zip_reader_t");
+G:Assert(Zip:Add(zip, "hello.txt", "hello", 5, 8) == 0);
+G:Assert(Zip:Finish(zip) == 0);
+G:Assert(Zip:Open(archive, zip:bytes:data, zip:bytes:length) == 0);
+G:Assert(Zip:Extract(archive, 0, 5, text) == 0);
+G:Assert(text:data:String(5) == "hello");
+Zip:Close(archive);
+Zip:WriterFree(zip);
+Buffer:Free(text);
+
+mulib Epub <- G:MulibWrap("Epub");
+val xhtml <- "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>X</title></head><body><p>Hello</p></body></html>";
+val resources <- Epub:Array("mulib_epub_resource_t", [{path: "chapter.xhtml",
+    media_type: "application/xhtml+xml", title: "Chapter", data: xhtml, size: G:Len(xhtml)}]);
+val book <- Epub:New("mulib_epub_book_t", {identifier: "urn:mull:book", title: "MuLL Book",
+    language: "en", modified: "2026-11-09T00:00:00Z", resources: resources, resource_count: 1});
+val epubBytes <- Buffer:New("mulib_buffer_t");
+val publication <- Epub:New("mulib_epub_reader_t");
+G:Assert(Epub:Write(book, epubBytes) == 0);
+G:Assert(Epub:Open(publication, epubBytes:data, epubBytes:length, 65536) == 0);
+G:Assert(publication:spine_count == 1);
+G:Assert(Epub:Read(publication, publication:spine[0], 65536, text) == 0);
+G:Assert(text:data:String(text:length) == xhtml);
+Epub:Close(publication);
+Buffer:Free(epubBytes);
+Buffer:Free(text);
+
+mulib MathML <- G:MulibWrap("MathML");
+mulib Xml <- G:MulibWrap("Xml");
+mulib Alloc <- G:MulibWrap("Alloc");
+val math <- MathML:New("int", 0);
+# Use the exact name because New is the bridge's native-storage helper.
+val root <- MathML:mulib_mathml_new(math:Get());
+val fraction <- MathML:Element("mfrac");
+G:Assert(Xml:Append(fraction, MathML:Token("mn", "1")) == 1);
+G:Assert(MathML:Validate(root, nil) == 1);
+G:Assert(Xml:Append(root, fraction) == 1);
+G:Assert(MathML:Validate(root, nil) == 0);
+G:Assert(Xml:Append(fraction, MathML:Token("mi", "x")) == 1);
+val xmlLength <- MathML:New("size_t");
+val serialized <- MathML:Serialize(root, xmlLength, nil);
+val parsed <- MathML:Parse(serialized, xmlLength:Get(), nil);
+G:Assert(parsed != nil and MathML:Validate(parsed, nil) == 1);
+Alloc:Free(nil, serialized);
+Xml:Destroy(parsed);
+Xml:Destroy(root);
+
+mulib Pdf <- G:MulibWrap("Pdf");
+val pdf <- Pdf:New("mulib_pdf_t");
+val page <- Pdf:New("size_t");
+G:Assert(Pdf:AddPage(pdf, 595, 842, page) == 0);
+G:Assert(Pdf:Text(pdf, page:Get(), 72, 770, 12, "Hello MuLL", 10) == 0);
+G:Assert(Pdf:Write(pdf, text) == 0);
+G:Assert(text:data:String(8) == "%PDF-1.4");
+Pdf:Free(pdf);
+Buffer:Free(text);
+
+mulib Mobi <- G:MulibWrap("Mobi");
+mulib Azw3 <- G:MulibWrap("Azw3");
+val Math <- G:LoadLib("math");
+val put32 <- fn(bytes, offset, value) {
+    var i <- 3;
+    while i >= 0 {
+        bytes:Set(offset + i, value % 256);
+        value <- Math:Floor(value / 256);
+        i <- i - 1;
+    }
+};
+val pdb <- Mobi:Buffer(365);
+val magic <- [66, 79, 79, 75, 77, 79, 66, 73];
+var i <- 0;
+while i < 8 { pdb:Set(60 + i, magic[i]); i <- i + 1; }
+pdb:Set(77, 2); put32(pdb, 78, 96); put32(pdb, 86, 360);
+pdb:Set(97, 1); put32(pdb, 100, 5); pdb:Set(105, 1); pdb:Set(106, 16);
+val mobiMagic <- [77, 79, 66, 73];
+i <- 0;
+while i < 4 { pdb:Set(112 + i, mobiMagic[i]); i <- i + 1; }
+put32(pdb, 116, 248); put32(pdb, 120, 2); put32(pdb, 124, 65001);
+put32(pdb, 132, 8); put32(pdb, 200, 8); put32(pdb, 204, 4294967295);
+put32(pdb, 288, 4294967295); put32(pdb, 292, 1);
+val hello <- [72, 101, 108, 108, 111];
+i <- 0;
+while i < 5 { pdb:Set(360 + i, hello[i]); i <- i + 1; }
+val mobi <- Mobi:New("mulib_mobi_reader_t");
+G:Assert(Mobi:Open(mobi, pdb, 365) == 0 and mobi:record_size == 4096);
+G:Assert(Mobi:Text(mobi, 100, text) == 0 and text:data:String(5) == "Hello");
+Buffer:Free(text);
+val kindle <- Azw3:New("mulib_azw3_reader_t");
+G:Assert(Azw3:Open(kindle, pdb, 365) == 0);
+G:Assert(Azw3:Flow(kindle, 0, 100, text) == 0 and text:data:String(5) == "Hello");
+Buffer:Free(text);
+"ebooks ok";

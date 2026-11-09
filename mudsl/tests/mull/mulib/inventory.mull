@@ -17,4 +17,14 @@ while i < G:Len(libraries) {
 }
 G:Assert(i > 500);
 G:Assert(functions > 2900);
+val additions <- ["aarch64", "amdgpu", "avr32", "azw3", "deflate", "dom",
+    "epub", "gpu", "mathml", "mcu", "mobi", "mpu", "nvptx", "pdf",
+    "riscv64", "unit", "xtensa", "zip"];
+var added <- 0;
+while added < G:Len(additions) {
+    mulib registered <- G:MulibWrap(additions[added]);
+    G:Assert(registered:LibraryName == additions[added]);
+    G:Assert(G:Len(registered:Symbols) > 0);
+    added <- added + 1;
+}
 "inventory ok";

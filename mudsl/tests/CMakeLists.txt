@@ -264,6 +264,11 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
 set(_mull_parity_args --cpp $<TARGET_FILE:mull_tests>)
 if(MULL_ENABLE_MULIB)
     list(APPEND _mull_parity_args --mulib)
+    add_test(NAME mull_mulib_inventory COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/check_mulib_inventory.py
+        --include ${MULL_MULIB_INCLUDE_DIR})
+    add_test(NAME mull_mulib_inventory_regressions COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_mulib_inventory.py)
 endif()
 
 option(MuDSL_TEST_D "Test the D module when a D compiler is available" ON)
