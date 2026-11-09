@@ -33,6 +33,24 @@ int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size) {
     json = mulib_yaml_parse(text,size,NULL); mulib_json_destroy(json);
     json = mulib_toml_parse(text,size,NULL); mulib_json_destroy(json);
     xml = mulib_xml_parse(text,size,NULL); mulib_xml_destroy(xml);
+    xml = mulib_mathml_parse(text,size,NULL); mulib_xml_destroy(xml);
+    { mulib_buffer_t bytes = {0}; mulib_zip_reader_t zip = {0};
+      mulib_epub_reader_t epub = {0}; mulib_mobi_reader_t mobi; mulib_azw3_reader_t azw3;
+      (void)mulib_deflate_decode(data,size,1024,&bytes); mulib_buffer_free(&bytes);
+      (void)mulib_mobi_palmdoc_decode(data,size,1024,&bytes); mulib_buffer_free(&bytes);
+      if (mulib_zip_open(&zip,data,size) == 0) {
+          for (size_t i = 0; i < zip.count; ++i) {
+              (void)mulib_zip_extract(&zip,i,1024,&bytes); mulib_buffer_free(&bytes);
+          }
+      }
+      mulib_zip_close(&zip);
+      (void)mulib_epub_open(&epub,data,size,1024); mulib_epub_close(&epub);
+      if (mulib_mobi_open(&mobi,data,size) == 0) {
+          (void)mulib_mobi_text(&mobi,1024,&bytes); mulib_buffer_free(&bytes);
+      }
+      if (mulib_azw3_open(&azw3,data,size) == 0) {
+          (void)mulib_azw3_text(&azw3,1024,&bytes); mulib_buffer_free(&bytes);
+      } }
     sexpr = mulib_sexpr_parse(text,NULL);
     if (sexpr) { char *rendered = mulib_sexpr_render(sexpr); free(rendered); }
     mulib_sexpr_destroy(sexpr);

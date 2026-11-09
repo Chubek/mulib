@@ -1,3 +1,10 @@
+#define MULIB_IMPL_AZW3
+#define MULIB_IMPL_DEFLATE
+#define MULIB_IMPL_EPUB
+#define MULIB_IMPL_MATHML
+#define MULIB_IMPL_MOBI
+#define MULIB_IMPL_PDF
+#define MULIB_IMPL_ZIP
 #define MULIB_IMPL_DOM
 #define MULIB_IMPL_AARCH64
 #define MULIB_IMPL_AMDGPU
@@ -1101,3 +1108,10 @@
 #include "mulib-unit.h"
 #include "mulib-xtensa.h"
 #include "mulib-dom.h"
+#include "mulib-azw3.h"
+#include "mulib-deflate.h"
+#include "mulib-epub.h"
+#include "mulib-mathml.h"
+#include "mulib-mobi.h"
+#include "mulib-pdf.h"
+#include "mulib-zip.h"
