@@ -139,3 +139,28 @@ arbitrary dangling pointers or caller-forged allocation capacities.
 
 `examples/calculator.c` is a runnable MicroJS integration example, registered
 alongside `quickstart` and `dogfood` when module examples are enabled.
+
+## Publication-format hardening
+
+`tests/test_ebook_formats.c` checks ZIP directory/header consistency, EPUB
+namespace and metadata validation, PalmDOC record limits, KF8 boundary/FDST
+references, PDF numeric/size boundaries and MathML tree depths. The allocation
+suite `tests/test_ebook_alloc.c` fails each allocation in generation, parsing,
+serialization and finalization paths and checks cleanup and output preservation.
+
+`tools/check_ebook_formats.py` compares DEFLATE against zlib, including deterministic
+bit mutations, reads ZIP data descriptors with Python's independent writer,
+repackages EPUB publications with namespace prefixes, and checks PDF xref/stream
+integrity and optional Poppler output. MuLL's shared `ebooks.mull` fixture invokes
+all seven modules through both native hosts.
+
+The focused `mulib_fuzz_ebooks` target uses ASan/UBSan and caps input and each
+decoded output at 64 KiB. Seed it with valid independent format families:
+
+```sh
+cmake -S . -B build/ebook-fuzz -DCMAKE_C_COMPILER=clang -DMULIB_BUILD_FUZZER=ON
+cmake --build build/ebook-fuzz --target mulib_test_ebook_formats mulib_fuzz_ebooks
+mkdir -p build/ebook-corpus
+build/ebook-fuzz/mulib_test_ebook_formats emit build/ebook-corpus
+build/ebook-fuzz/mulib_fuzz_ebooks -max_total_time=30 -max_len=65536 build/ebook-corpus
+```

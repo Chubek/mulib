@@ -116,6 +116,9 @@ if(MULIB_BUILD_TESTS)
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_tools.py)
     add_test(NAME mulib_dependency_strata
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/stratify.py --check)
+    add_test(NAME mulib_mull_inventory
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/mudsl/scripts/check_mulib_inventory.py
+        --include ${CMAKE_CURRENT_SOURCE_DIR}/include)
     add_test(NAME mulib_lprowse_embedded
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed_lprowse.py --check)
     add_test(NAME mulib_readline_profiles_generated
@@ -182,6 +185,21 @@ if(MULIB_BUILD_TESTS)
     set_tests_properties(mulib_sqlite_interoperability PROPERTIES TIMEOUT 180)
   endif()
   find_program(MULIB_FFMPEG_EXECUTABLE NAMES ffmpeg)
+  find_program(MULIB_PDFTOTEXT_EXECUTABLE NAMES pdftotext)
+  find_program(MULIB_PDFINFO_EXECUTABLE NAMES pdfinfo)
+  if(Python3_Interpreter_FOUND)
+    set(ebook_options)
+    if(MULIB_PDFTOTEXT_EXECUTABLE)
+      list(APPEND ebook_options --pdftotext ${MULIB_PDFTOTEXT_EXECUTABLE})
+    endif()
+    if(MULIB_PDFINFO_EXECUTABLE)
+      list(APPEND ebook_options --pdfinfo ${MULIB_PDFINFO_EXECUTABLE})
+    endif()
+    add_test(NAME mulib_ebook_interoperability
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_ebook_formats.py
+        --codec $<TARGET_FILE:mulib_test_ebook_formats> ${ebook_options})
+    set_tests_properties(mulib_ebook_interoperability PROPERTIES TIMEOUT 120)
+  endif()
   find_program(MULIB_FLAC_EXECUTABLE NAMES flac)
   if(Python3_Interpreter_FOUND AND MULIB_FFMPEG_EXECUTABLE AND MULIB_FLAC_EXECUTABLE)
     add_test(NAME mulib_audio_interoperability
@@ -324,6 +342,11 @@ if(MULIB_BUILD_FUZZER)
   target_compile_options(mulib_fuzz_headers PRIVATE -fsanitize=fuzzer,address,undefined
     -fno-sanitize-recover=all -fno-omit-frame-pointer)
   target_link_options(mulib_fuzz_headers PRIVATE -fsanitize=fuzzer,address,undefined)
+  add_executable(mulib_fuzz_ebooks tests/fuzz_ebooks.c)
+  mulib_test_executable(mulib_fuzz_ebooks)
+  target_compile_options(mulib_fuzz_ebooks PRIVATE -fsanitize=fuzzer,address,undefined
+    -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  target_link_options(mulib_fuzz_ebooks PRIVATE -fsanitize=fuzzer,address,undefined)
 endif()
 
 if(MULIB_BUILD_MODULE_EXAMPLES)

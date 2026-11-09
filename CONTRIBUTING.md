@@ -48,6 +48,14 @@ invalid input is rejected before writing inventory files.
 Then regenerate dependency documentation with `python3 tools/stratify.py`.
 Neither command implements APIs or replaces handwritten examples/manuals.
 
+Public-header changes also require refreshing the MuLL native bridge with
+`python3 mudsl/scripts/generate_mulib.py --include include` (Python libclang
+bindings are required for generation). The normal verification suite runs
+`python3 mudsl/scripts/check_mulib_inventory.py --include include` without
+libclang to catch missing registrations and stale generated artifacts. Add
+MuLL integration fixtures under `mudsl/tests/mull/mulib/` when introducing
+new callable APIs; MuDSL CTest exercises them through both available hosts.
+
 Follow the [manual authoring guide](manual/authoring.md) for ownership, return
 values, supported profiles, and runnable examples. After changing a header or
 manual, run `python3 tools/manuals.py --write` to refresh marked source references

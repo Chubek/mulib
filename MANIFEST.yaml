@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 548
-implemented_module_count: 548
+module_count: 555
+implemented_module_count: 555
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3849,6 +3849,55 @@ modules:
   purpose: "Native DOM trees, UTF-16 character data, namespace-aware attributes and event dispatch."
   dependencies: [buffer, utf8]
   status: implemented
+- name: azw3
+  header: include/mulib-azw3.h
+  manual: manual/mulib-azw3.md
+  macro: MULIB_IMPL_AZW3
+  purpose: "Unencrypted KF8/AZW3 section selection and checked FDST flow access."
+  dependencies: [mobi]
+  status: implemented
+- name: deflate
+  header: include/mulib-deflate.h
+  manual: manual/mulib-deflate.md
+  macro: MULIB_IMPL_DEFLATE
+  purpose: Bounded RFC 1951 raw DEFLATE compression and decompression.
+  dependencies: [buffer]
+  status: implemented
+- name: epub
+  header: include/mulib-epub.h
+  manual: manual/mulib-epub.md
+  macro: MULIB_IMPL_EPUB
+  purpose: "EPUB 3 package generation and checked in-memory publication access."
+  dependencies: [xml, zip]
+  status: implemented
+- name: mathml
+  header: include/mulib-mathml.h
+  manual: manual/mulib-mathml.md
+  macro: MULIB_IMPL_MATHML
+  purpose: Presentation MathML DOM construction, structural validation and XML serialization.
+  dependencies: [xml]
+  status: implemented
+- name: mobi
+  header: include/mulib-mobi.h
+  manual: manual/mulib-mobi.md
+  macro: MULIB_IMPL_MOBI
+  purpose: "PalmDB/PalmDOC and MOBI 6/7/8 inspection and bounded text decoding."
+  dependencies: [buffer]
+  status: implemented
+- name: pdf
+  header: include/mulib-pdf.h
+  manual: manual/mulib-pdf.md
+  macro: MULIB_IMPL_PDF
+  purpose: "Deterministic PDF 1.4 generation: pages, Helvetica text and vector paths."
+  dependencies: [buffer, strbuf]
+  status: implemented
+- name: zip
+  header: include/mulib-zip.h
+  manual: manual/mulib-zip.md
+  macro: MULIB_IMPL_ZIP
+  purpose: "Checked memory ZIP32 archives with stored and DEFLATE entries."
+  dependencies: [crc32, deflate, utf8]
+  status: implemented
 project_files:
 - file: library/shiraz/core.c
   purpose: Separately compiled Shiraz CPU, PE/COFF loader and storage implementations.
@@ -5654,3 +5703,31 @@ project_files:
   purpose: "Standalone checked usage example for dom."
 - file: tests/test_dom.c
   purpose: "Focused regression suite for test_dom."
+- file: examples/modules/azw3.c
+  purpose: "Standalone checked usage example for azw3."
+- file: examples/modules/deflate.c
+  purpose: "Standalone checked usage example for deflate."
+- file: examples/modules/epub.c
+  purpose: "Standalone checked usage example for epub."
+- file: examples/modules/mathml.c
+  purpose: "Standalone checked usage example for mathml."
+- file: examples/modules/mobi.c
+  purpose: "Standalone checked usage example for mobi."
+- file: examples/modules/pdf.c
+  purpose: "Standalone checked usage example for pdf."
+- file: examples/modules/zip.c
+  purpose: "Standalone checked usage example for zip."
+- file: tests/test_ebook_alloc.c
+  purpose: "Focused regression suite for test_ebook_alloc."
+- file: tests/test_ebook_formats.c
+  purpose: "Focused regression suite for test_ebook_formats."
+- file: tools/check_ebook_formats.py
+  purpose: Independent zlib, ZIP, EPUB XML and PDF interoperability checks.
+- file: tests/fuzz_ebooks.c
+  purpose: Bounded mutation fuzzing for publication formats and compression.
+- file: mudsl/scripts/check_mulib_inventory.py
+  purpose: Dependency-free verification of complete and current MuLL native registrations.
+- file: mudsl/tests/test_mulib_inventory.py
+  purpose: Regression checks for missing modules and stale MuLL bridge artifacts.
+- file: mudsl/tests/mull/mulib/ebooks.mull
+  purpose: Shared C++/D MuLL coverage for publication APIs, compression and ownership.

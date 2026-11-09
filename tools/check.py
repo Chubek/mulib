@@ -71,6 +71,12 @@ def main():
         failures.append(('manual references', manuals.stderr or manuals.stdout))
     else:
         print(manuals.stdout.strip())
+    mull = subprocess.run([sys.executable, str(root / 'mudsl/scripts/check_mulib_inventory.py'),
+                           '--include', str(root / 'include')], capture_output=True, text=True)
+    if mull.returncode:
+        failures.append(('MuLL bindings', mull.stderr or mull.stdout))
+    else:
+        print(mull.stdout.strip())
     tool_tests = subprocess.run([sys.executable, str(root / 'tests/test_tools.py')],
                                 capture_output=True, text=True)
     if tool_tests.returncode:
