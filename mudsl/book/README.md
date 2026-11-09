@@ -51,8 +51,8 @@ manuals a dedicated reference layout without changing the Markdown:
 
 Repository-file links are rebased for the PDF's `build/` location, and local
 images for TeX's working directory; external web destinations are preserved.
-Internal manual links remain portable,
-while links to repository files require that source tree. Unknown fragments link
+Internal manual links remain portable, while links to repository files require
+that source tree. Unknown fragments link
 to the corresponding manual opening and produce an explicit generation warning.
 Changes to standalone converter rendering hooks preserve its default output;
 `export_manual.py --check` guards the existing toolkit chapter exports.

@@ -70,7 +70,24 @@ def main():
         '<!-- generated marker, not prose -->\n<details>\n'
         '<summary>Types, constants, and declarations</summary>\n\n'
         '```c\nconst char *literal = "<details> <!-- still code -->";\n```\n\n'
-        '</details>\n\n## Contract\n\n' + table)
+        '</details>\n\n## Long signatures\n\n'
+        'Zero initialize `mulib_cmachine_t`. Call '
+        '`mulib_cmachine_lower(program, arguments, argument_count, record_limit, code_limit, &machine, diagnostic)`. '
+        'Output must be empty. The entire MIR is validated before allocation; every opcode '
+        'in `manual/mulib-mir.md` is supported. The supplied argument count must exactly '
+        'match `parameter_count`. A nonempty argument array cannot be NULL. Every BOOL PARAM '
+        'argument is preflight checked for 0/1 before any VM arithmetic. Invalid arguments '
+        'return INVALID/BAD_TYPE.\n\n'
+        '- `mulib_minicurl_send(url, method, content_type, body, length, options, transport, user, response)` '
+        'sends an explicit method and binary body.\n\n'
+        '`mulib_minincat_relay(read_fn, reader, write_fn, writer, buffer, capacity, max_bytes, transferred)` '
+        'borrows all pointers. A non-NULL scratch buffer, positive capacity, both functions '
+        'and non-NULL `transferred` are required. Reader and writer contexts can be NULL '
+        'if the callbacks permit it.\n\n'
+        '- `SELECT [DISTINCT] expressions-or-* [FROM one-table] [WHERE expression] '
+        '[ORDER BY expressions [ASC|DESC], ...] [LIMIT integer [OFFSET integer]]`. '
+        'Result aliases use AS. ORDER BY accepts aliases and one-based output ordinals.\n\n'
+        '## Contract\n\n' + table)
     spec = importlib.util.spec_from_file_location("manual_generator", HERE / "typeset-manuals.py")
     generator = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(generator)
