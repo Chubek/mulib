@@ -326,6 +326,7 @@ def main():
         ]:
             passed = check_many([dict(label=str(p.relative_to(root)), sources=[p]) for p in sources])
             counts[category] = (passed, len(sources))
+            print(f'MuLIB {category}: {passed}/{len(sources)} passed', flush=True)
         integration = [
             ('smoke', [root / 'tests/smoke.c']),
             ('functional', [root / 'tests/implementation.c', root / 'tests/functional.c']),
@@ -354,6 +355,7 @@ def main():
         else:
             print('C++ declaration check skipped: no C++ compiler')
         counts['combined builds'] = (check_many(cases), len(cases))
+        print('MuLIB combined builds: %s/%s passed' % counts['combined builds'], flush=True)
         if not args.no_isolation:
             cases = []
             for header in headers:
@@ -373,6 +375,7 @@ def main():
                 defines = ''.join('#define ' + switch + '\n' for switch in sorted(enabled))
                 cases.append(dict(label='isolated implementation: ' + name,
                                   source_text=defines + declaration))
+            print(f'MuLIB checking {len(cases)} isolated header builds', flush=True)
             counts['isolated headers'] = (check_many(cases), len(cases))
     for category, (passed, total) in counts.items():
         print(f'MuLIB {category}: {passed}/{total} passed')

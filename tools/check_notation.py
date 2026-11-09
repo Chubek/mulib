@@ -44,7 +44,8 @@ def main():
     encoding = emitted('paleo-encoding')
     assert len(re.findall(r'^/', encoding, re.M)) == 257 and '/triangle' in encoding
 
-    with tempfile.TemporaryDirectory(prefix='mulib-notation-', dir='/tmp/opencode') as directory:
+    parent = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None
+    with tempfile.TemporaryDirectory(prefix='mulib-notation-', dir=parent) as directory:
         work = Path(directory)
         for kind in ['chart-pie', 'chart-donut', 'chart-bar', 'chart-line', 'paleo-svg']:
             source = emitted(kind)

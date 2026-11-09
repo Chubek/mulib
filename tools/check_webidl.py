@@ -94,7 +94,8 @@ def main():
     assert ast_node(sexpr(emit('--emit-ast').decode('utf-8'))) == yaml_node(
         emit('--emit-yaml').decode('utf-8'))
 
-    with tempfile.TemporaryDirectory(prefix='webidl-', dir='/tmp/opencode') as tmp:
+    parent = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None
+    with tempfile.TemporaryDirectory(prefix='webidl-', dir=parent) as tmp:
         path = Path(tmp) / 'generated.c'
         path.write_bytes(emit('--emit') + b'''
 void webidl_generated_typecheck(void)

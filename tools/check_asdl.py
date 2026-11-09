@@ -110,7 +110,8 @@ def main():
     yantlr = emit('--emit-yantlr')
     assert yantlr.startswith('intermediary "Trees";\nset Schema ') and yantlr.endswith(';\n')
     assert tree == json.loads(yantlr.split('set Schema ', 1)[1][:-2])
-    with tempfile.TemporaryDirectory(prefix='asdl-', dir='/tmp/opencode') as tmp:
+    parent = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None
+    with tempfile.TemporaryDirectory(prefix='asdl-', dir=parent) as tmp:
         path = Path(tmp)
         (path / 'generated.h').write_text(emit('--emit-c'))
         (path / 'client.c').write_text(CLIENT)

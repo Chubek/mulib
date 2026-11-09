@@ -20,6 +20,8 @@
     "mulib-art.h",
     "mulib-artifact.h",
     "mulib-asdl.h",
+    "mulib-asic-floorplan.h",
+    "mulib-asic-sta.h",
     "mulib-assembler.h",
     "mulib-ast.h",
     "mulib-asyncio.h",
@@ -156,6 +158,9 @@
     "mulib-dom.h",
     "mulib-drm.h",
     "mulib-dsdom.h",
+    "mulib-dsim-bitvec.h",
+    "mulib-dsim-logic4.h",
+    "mulib-dsim-scheduler.h",
     "mulib-dsu.h",
     "mulib-dsymspec.h",
     "mulib-dyegram.h",
@@ -163,6 +168,27 @@
     "mulib-dyncall.h",
     "mulib-dynload.h",
     "mulib-ebpf.h",
+    "mulib-ecad-connect.h",
+    "mulib-ecad-erc.h",
+    "mulib-ecad-netlist.h",
+    "mulib-ecad-pcb-sync.h",
+    "mulib-ecad-schematic.h",
+    "mulib-ecad-symbol.h",
+    "mulib-eda-attributes.h",
+    "mulib-eda-constraints.h",
+    "mulib-eda-design-db.h",
+    "mulib-eda-hierarchy.h",
+    "mulib-eda-ids.h",
+    "mulib-eda-incremental.h",
+    "mulib-eda-library.h",
+    "mulib-eda-netgraph.h",
+    "mulib-eda-object.h",
+    "mulib-eda-project.h",
+    "mulib-eda-quantity.h",
+    "mulib-eda-status.h",
+    "mulib-eda-transaction.h",
+    "mulib-eda-undo.h",
+    "mulib-eda-units.h",
     "mulib-edbuf.h",
     "mulib-edit_distance.h",
     "mulib-efi.h",
@@ -189,11 +215,21 @@
     "mulib-ezndk.h",
     "mulib-fft.h",
     "mulib-fiber.h",
+    "mulib-field-poisson.h",
+    "mulib-field-thermal.h",
     "mulib-filectl.h",
     "mulib-fileserver.h",
     "mulib-flatbuffers.h",
+    "mulib-flow-graph.h",
+    "mulib-fmt-aiger.h",
+    "mulib-fmt-sv.h",
     "mulib-fontdraw.h",
     "mulib-fontshape.h",
+    "mulib-formal-cec.h",
+    "mulib-formal-cnf.h",
+    "mulib-formal-sat.h",
+    "mulib-fpga-lut.h",
+    "mulib-fpga-route.h",
     "mulib-fraction.h",
     "mulib-framebuffer.h",
     "mulib-fs.h",
@@ -222,6 +258,8 @@
     "mulib-hamming_distance.h",
     "mulib-hash.h",
     "mulib-hattrie.h",
+    "mulib-hdl-source.h",
+    "mulib-hdl-verilog-lex.h",
     "mulib-health_checker.h",
     "mulib-heap.h",
     "mulib-heaptable.h",
@@ -229,6 +267,7 @@
     "mulib-hidden_markov_chain.h",
     "mulib-histogram.h",
     "mulib-histprice.h",
+    "mulib-hls-schedule.h",
     "mulib-html.h",
     "mulib-http.h",
     "mulib-http1.h",
@@ -238,6 +277,9 @@
     "mulib-http_response.h",
     "mulib-https.h",
     "mulib-httpserver_config.h",
+    "mulib-hwil-module.h",
+    "mulib-hwil-types.h",
+    "mulib-hwil-verify.h",
     "mulib-hwinfo.h",
     "mulib-hyphen.h",
     "mulib-ifft.h",
@@ -247,6 +289,9 @@
     "mulib-imgbuildspec.h",
     "mulib-imgformat.h",
     "mulib-imgtrackerd.h",
+    "mulib-immgtk-canvas.h",
+    "mulib-immgtk-drawlist.h",
+    "mulib-immgtk-plot.h",
     "mulib-immgtk.h",
     "mulib-impaclient.h",
     "mulib-index.h",
@@ -350,6 +395,13 @@
     "mulib-nameserver.h",
     "mulib-netdevice.h",
     "mulib-netfs.h",
+    "mulib-num-csc.h",
+    "mulib-num-csr.h",
+    "mulib-num-dense.h",
+    "mulib-num-integration.h",
+    "mulib-num-rootfind.h",
+    "mulib-num-sparse.h",
+    "mulib-num-statistics.h",
     "mulib-nvptx.h",
     "mulib-oauth.h",
     "mulib-oauth2.h",
@@ -396,6 +448,14 @@
     "mulib-parsec.h",
     "mulib-path.h",
     "mulib-pathdb.h",
+    "mulib-pcb-board.h",
+    "mulib-pcb-bom.h",
+    "mulib-pcb-drc.h",
+    "mulib-pcb-excellon.h",
+    "mulib-pcb-geometry.h",
+    "mulib-pcb-gerber.h",
+    "mulib-pcb-impedance.h",
+    "mulib-pcb-pnp.h",
     "mulib-pci.h",
     "mulib-pdf.h",
     "mulib-pe-objdump.h",
@@ -423,6 +483,8 @@
     "mulib-prowse-protocol.h",
     "mulib-pwdauth.h",
     "mulib-pybind.h",
+    "mulib-qa-corpus.h",
+    "mulib-qa-repro.h",
     "mulib-queue.h",
     "mulib-quic.h",
     "mulib-qvm.h",
@@ -434,6 +496,9 @@
     "mulib-revproxy.h",
     "mulib-rewrite.h",
     "mulib-rewrite_url.h",
+    "mulib-rf-microstrip.h",
+    "mulib-rf-smith.h",
+    "mulib-rf-sparams.h",
     "mulib-ring.h",
     "mulib-riscv64.h",
     "mulib-rle.h",
@@ -463,11 +528,23 @@
     "mulib-smt.h",
     "mulib-smtpclient.h",
     "mulib-smtpserver.h",
+    "mulib-soc-memorymap.h",
     "mulib-socket.h",
     "mulib-socks5.h",
     "mulib-sort.h",
     "mulib-spatialtree.h",
     "mulib-spellcheck.h",
+    "mulib-spice-ac.h",
+    "mulib-spice-c.h",
+    "mulib-spice-dc.h",
+    "mulib-spice-independent.h",
+    "mulib-spice-lexer.h",
+    "mulib-spice-measure.h",
+    "mulib-spice-netlist.h",
+    "mulib-spice-op.h",
+    "mulib-spice-r.h",
+    "mulib-spice-stamp.h",
+    "mulib-spice-tran.h",
     "mulib-split.h",
     "mulib-sppf.h",
     "mulib-sql.h",
@@ -489,6 +566,8 @@
     "mulib-superinstr.h",
     "mulib-svg.h",
     "mulib-symbol.h",
+    "mulib-synth-aig.h",
+    "mulib-synth-truthtable.h",
     "mulib-syscall.h",
     "mulib-sysfonts.h",
     "mulib-sysfs.h",
@@ -561,6 +640,10 @@
     "mulib-wal.h",
     "mulib-walker.h",
     "mulib-wask.h",
+    "mulib-wave-decimate.h",
+    "mulib-wave-measure.h",
+    "mulib-wave-signal.h",
+    "mulib-wave-vcd.h",
     "mulib-wayland.h",
     "mulib-web_conntection.h",
     "mulib-webclient.h",
@@ -587,10 +670,10 @@
     "mulib-zip.h",
     "mulib-zstd.h"
   ],
-  "libraries": 586,
-  "functions": 3310,
-  "types": 5573,
-  "constants": 2083,
+  "libraries": 669,
+  "functions": 3518,
+  "types": 5959,
+  "constants": 2135,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -630,7 +713,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "5d544f91c231c395177d584c512c87a7bab6eb5b59b6918d61e5c16f43208a9c",
+  "fingerprint": "899489687c6b7928878f992478a737589825852b0197a71337603ebcdb39d874",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -874,6 +957,20 @@
         "mulib_asdl_find",
         "mulib_asdl_generate",
         "mulib_asdl_compile"
+      ]
+    },
+    "asic-floorplan": {
+      "header": "mulib-asic-floorplan.h",
+      "functions": [
+        "mulib_asic_floorplan_overlaps",
+        "mulib_asic_floorplan_place_row"
+      ]
+    },
+    "asic-sta": {
+      "header": "mulib-asic-sta.h",
+      "functions": [
+        "mulib_asic_sta_propagate",
+        "mulib_asic_sta_slack"
       ]
     },
     "assembler": {
@@ -2381,6 +2478,42 @@
         "mulib_dsdom_find_id"
       ]
     },
+    "dsim-bitvec": {
+      "header": "mulib-dsim-bitvec.h",
+      "functions": [
+        "mulib_dsim_bitvec_parse",
+        "mulib_dsim_bitvec_format",
+        "mulib_dsim_bitvec_bit",
+        "mulib_dsim_bitvec_and",
+        "mulib_dsim_bitvec_or",
+        "mulib_dsim_bitvec_xor",
+        "mulib_dsim_bitvec_not",
+        "mulib_dsim_bitvec_add",
+        "mulib_dsim_bitvec_shift",
+        "mulib_dsim_bitvec_concat"
+      ]
+    },
+    "dsim-logic4": {
+      "header": "mulib-dsim-logic4.h",
+      "functions": [
+        "mulib_dsim_not",
+        "mulib_dsim_and",
+        "mulib_dsim_or",
+        "mulib_dsim_xor",
+        "mulib_dsim_resolve",
+        "mulib_dsim_logic4_char"
+      ]
+    },
+    "dsim-scheduler": {
+      "header": "mulib-dsim-scheduler.h",
+      "functions": [
+        "mulib_dsim_scheduler_push",
+        "mulib_dsim_scheduler_pop",
+        "mulib_dsim_scheduler_free",
+        "mulib_dsim_scheduler_peek",
+        "mulib_dsim_scheduler_cancel"
+      ]
+    },
     "dsu": {
       "header": "mulib-dsu.h",
       "functions": [
@@ -2455,6 +2588,170 @@
       "functions": [
         "mulib_ebpf_validate",
         "mulib_ebpf_run"
+      ]
+    },
+    "ecad-connect": {
+      "header": "mulib-ecad-connect.h",
+      "functions": [
+        "mulib_ecad_connect_count_nodes"
+      ]
+    },
+    "ecad-erc": {
+      "header": "mulib-ecad-erc.h",
+      "functions": [
+        "mulib_ecad_erc_run"
+      ]
+    },
+    "ecad-netlist": {
+      "header": "mulib-ecad-netlist.h",
+      "functions": [
+        "mulib_ecad_netlist_write"
+      ]
+    },
+    "ecad-pcb-sync": {
+      "header": "mulib-ecad-pcb-sync.h",
+      "functions": [
+        "mulib_ecad_pcb_sync_add",
+        "mulib_ecad_pcb_sync_lookup"
+      ]
+    },
+    "ecad-schematic": {
+      "header": "mulib-ecad-schematic.h",
+      "functions": [
+        "mulib_ecad_schematic_add",
+        "mulib_ecad_schematic_valid"
+      ]
+    },
+    "ecad-symbol": {
+      "header": "mulib-ecad-symbol.h",
+      "functions": [
+        "mulib_ecad_symbol_pin"
+      ]
+    },
+    "eda-attributes": {
+      "header": "mulib-eda-attributes.h",
+      "functions": [
+        "mulib_eda_attrs_set",
+        "mulib_eda_attrs_get",
+        "mulib_eda_attrs_free",
+        "mulib_eda_attrs_remove"
+      ]
+    },
+    "eda-constraints": {
+      "header": "mulib-eda-constraints.h",
+      "functions": [
+        "mulib_eda_constraint_check"
+      ]
+    },
+    "eda-design-db": {
+      "header": "mulib-eda-design-db.h",
+      "functions": [
+        "mulib_eda_db_put",
+        "mulib_eda_db_get",
+        "mulib_eda_db_delete",
+        "mulib_eda_db_free",
+        "mulib_eda_db_clone"
+      ]
+    },
+    "eda-hierarchy": {
+      "header": "mulib-eda-hierarchy.h",
+      "functions": [
+        "mulib_eda_hierarchy_add",
+        "mulib_eda_hierarchy_path",
+        "mulib_eda_hierarchy_free"
+      ]
+    },
+    "eda-ids": {
+      "header": "mulib-eda-ids.h",
+      "functions": [
+        "mulib_eda_id_pool_init",
+        "mulib_eda_id_pool_free",
+        "mulib_eda_id_create",
+        "mulib_eda_id_valid",
+        "mulib_eda_id_remove",
+        "mulib_eda_id_index"
+      ]
+    },
+    "eda-incremental": {
+      "header": "mulib-eda-incremental.h",
+      "functions": [
+        "mulib_eda_incremental_init",
+        "mulib_eda_incremental_depend",
+        "mulib_eda_incremental_invalidate",
+        "mulib_eda_incremental_clear",
+        "mulib_eda_incremental_free"
+      ]
+    },
+    "eda-library": {
+      "header": "mulib-eda-library.h",
+      "functions": [
+        "mulib_eda_library_register",
+        "mulib_eda_library_find",
+        "mulib_eda_library_free"
+      ]
+    },
+    "eda-netgraph": {
+      "header": "mulib-eda-netgraph.h",
+      "functions": [
+        "mulib_eda_netgraph_net",
+        "mulib_eda_netgraph_terminal",
+        "mulib_eda_netgraph_connect",
+        "mulib_eda_netgraph_degree",
+        "mulib_eda_netgraph_free",
+        "mulib_eda_netgraph_merge"
+      ]
+    },
+    "eda-object": {
+      "header": "mulib-eda-object.h",
+      "functions": [
+        "mulib_eda_object_init",
+        "mulib_eda_object_rename"
+      ]
+    },
+    "eda-project": {
+      "header": "mulib-eda-project.h",
+      "functions": [
+        "mulib_eda_project_init"
+      ]
+    },
+    "eda-quantity": {
+      "header": "mulib-eda-quantity.h",
+      "functions": [
+        "mulib_eda_quantity_add",
+        "mulib_eda_quantity_mul",
+        "mulib_eda_quantity_div"
+      ]
+    },
+    "eda-status": {
+      "header": "mulib-eda-status.h",
+      "functions": [
+        "mulib_eda_code_name",
+        "mulib_eda_diagnostic_set"
+      ]
+    },
+    "eda-transaction": {
+      "header": "mulib-eda-transaction.h",
+      "functions": [
+        "mulib_eda_transaction_begin",
+        "mulib_eda_transaction_commit",
+        "mulib_eda_transaction_rollback"
+      ]
+    },
+    "eda-undo": {
+      "header": "mulib-eda-undo.h",
+      "functions": [
+        "mulib_eda_undo_apply",
+        "mulib_eda_undo_back",
+        "mulib_eda_undo_forward"
+      ]
+    },
+    "eda-units": {
+      "header": "mulib-eda-units.h",
+      "functions": [
+        "mulib_eda_unit_lookup",
+        "mulib_eda_parse_engineering",
+        "mulib_eda_convert",
+        "mulib_eda_dimension_equal"
       ]
     },
     "edbuf": {
@@ -2751,6 +3048,20 @@
         "mulib_fiber_sleep"
       ]
     },
+    "field-poisson": {
+      "header": "mulib-field-poisson.h",
+      "functions": [
+        "mulib_field_poisson_1d",
+        "mulib_field_poisson_field_1d"
+      ]
+    },
+    "field-thermal": {
+      "header": "mulib-field-thermal.h",
+      "functions": [
+        "mulib_field_thermal_1d",
+        "mulib_field_thermal_flux_1d"
+      ]
+    },
     "filectl": {
       "header": "mulib-filectl.h",
       "functions": [
@@ -2773,6 +3084,26 @@
         "mulib_flatbuffers_root",
         "mulib_flatbuffers_uint",
         "mulib_flatbuffers_string"
+      ]
+    },
+    "flow-graph": {
+      "header": "mulib-flow-graph.h",
+      "functions": [
+        "mulib_flow_graph_add",
+        "mulib_flow_graph_depend",
+        "mulib_flow_graph_toposort"
+      ]
+    },
+    "fmt-aiger": {
+      "header": "mulib-fmt-aiger.h",
+      "functions": [
+        "mulib_fmt_aiger_write_ascii"
+      ]
+    },
+    "fmt-sv": {
+      "header": "mulib-fmt-sv.h",
+      "functions": [
+        "mulib_fmt_sv_emit"
       ]
     },
     "fontdraw": {
@@ -2805,6 +3136,39 @@
         "mulib_fontshape_extents",
         "mulib_fontshape_scale",
         "mulib_fontshape_carets"
+      ]
+    },
+    "formal-cec": {
+      "header": "mulib-formal-cec.h",
+      "functions": [
+        "mulib_formal_truth_equivalent"
+      ]
+    },
+    "formal-cnf": {
+      "header": "mulib-formal-cnf.h",
+      "functions": [
+        "mulib_formal_cnf_add",
+        "mulib_formal_cnf_validate",
+        "mulib_formal_cnf_and"
+      ]
+    },
+    "formal-sat": {
+      "header": "mulib-formal-sat.h",
+      "functions": [
+        "mulib_formal_sat_solve"
+      ]
+    },
+    "fpga-lut": {
+      "header": "mulib-fpga-lut.h",
+      "functions": [
+        "mulib_fpga_lut_eval",
+        "mulib_fpga_lut_from_truth"
+      ]
+    },
+    "fpga-route": {
+      "header": "mulib-fpga-route.h",
+      "functions": [
+        "mulib_fpga_route_bfs"
       ]
     },
     "fraction": {
@@ -3123,6 +3487,19 @@
         "mulib_hattrie_free"
       ]
     },
+    "hdl-source": {
+      "header": "mulib-hdl-source.h",
+      "functions": [
+        "mulib_hdl_source_linecol"
+      ]
+    },
+    "hdl-verilog-lex": {
+      "header": "mulib-hdl-verilog-lex.h",
+      "functions": [
+        "mulib_hdl_lexer_init",
+        "mulib_hdl_lexer_next"
+      ]
+    },
     "health_checker": {
       "header": "mulib-health_checker.h",
       "functions": [
@@ -3179,6 +3556,12 @@
         "mulib_histprice_ar1",
         "mulib_histprice_robust_trend",
         "mulib_histprice_ema_mae"
+      ]
+    },
+    "hls-schedule": {
+      "header": "mulib-hls-schedule.h",
+      "functions": [
+        "mulib_hls_schedule_asap"
       ]
     },
     "html": {
@@ -3246,6 +3629,27 @@
       "functions": [
         "mulib_httpserver_config_default",
         "mulib_httpserver_config_validate"
+      ]
+    },
+    "hwil-module": {
+      "header": "mulib-hwil-module.h",
+      "functions": [
+        "mulib_hwil_module_add",
+        "mulib_hwil_module_eval",
+        "mulib_hwil_module_valid"
+      ]
+    },
+    "hwil-types": {
+      "header": "mulib-hwil-types.h",
+      "functions": [
+        "mulib_hwil_type_valid",
+        "mulib_hwil_type_equal"
+      ]
+    },
+    "hwil-verify": {
+      "header": "mulib-hwil-verify.h",
+      "functions": [
+        "mulib_hwil_module_verify"
       ]
     },
     "hwinfo": {
@@ -3340,6 +3744,29 @@
         "mulib_immgtk_hot",
         "mulib_immgtk_active",
         "mulib_immgtk_focus"
+      ]
+    },
+    "immgtk-canvas": {
+      "header": "mulib-immgtk-canvas.h",
+      "functions": [
+        "mulib_immgtk_canvas_world_to_screen",
+        "mulib_immgtk_canvas_screen_to_world",
+        "mulib_immgtk_canvas_zoom_at"
+      ]
+    },
+    "immgtk-drawlist": {
+      "header": "mulib-immgtk-drawlist.h",
+      "functions": [
+        "mulib_immgtk_drawlist_push",
+        "mulib_immgtk_drawlist_clear",
+        "mulib_immgtk_drawlist_free"
+      ]
+    },
+    "immgtk-plot": {
+      "header": "mulib-immgtk-plot.h",
+      "functions": [
+        "mulib_immgtk_plot_bounds",
+        "mulib_immgtk_plot_log_transform"
       ]
     },
     "impaclient": {
@@ -4393,6 +4820,67 @@
         "mulib_netfs_stream_serve"
       ]
     },
+    "num-csc": {
+      "header": "mulib-num-csc.h",
+      "functions": [
+        "mulib_num_csc_from_triplets",
+        "mulib_num_csc_matvec",
+        "mulib_num_csc_free",
+        "mulib_num_csc_validate"
+      ]
+    },
+    "num-csr": {
+      "header": "mulib-num-csr.h",
+      "functions": [
+        "mulib_num_csr_from_triplets",
+        "mulib_num_csr_matvec",
+        "mulib_num_csr_free",
+        "mulib_num_csr_validate",
+        "mulib_num_csr_transpose"
+      ]
+    },
+    "num-dense": {
+      "header": "mulib-num-dense.h",
+      "functions": [
+        "mulib_num_dense_init",
+        "mulib_num_dense_free",
+        "mulib_num_dense_solve"
+      ]
+    },
+    "num-integration": {
+      "header": "mulib-num-integration.h",
+      "functions": [
+        "mulib_num_integrate_trapezoid",
+        "mulib_num_integrate_simpson",
+        "mulib_num_integrate_adaptive"
+      ]
+    },
+    "num-rootfind": {
+      "header": "mulib-num-rootfind.h",
+      "functions": [
+        "mulib_num_bisect",
+        "mulib_num_newton"
+      ]
+    },
+    "num-sparse": {
+      "header": "mulib-num-sparse.h",
+      "functions": [
+        "mulib_num_sparse_init",
+        "mulib_num_sparse_add",
+        "mulib_num_sparse_matvec",
+        "mulib_num_sparse_free",
+        "mulib_num_sparse_validate",
+        "mulib_num_sparse_canonicalize"
+      ]
+    },
+    "num-statistics": {
+      "header": "mulib-num-statistics.h",
+      "functions": [
+        "mulib_num_stat_push",
+        "mulib_num_stat_variance",
+        "mulib_num_stat_merge"
+      ]
+    },
     "nvptx": {
       "header": "mulib-nvptx.h",
       "functions": [
@@ -4768,6 +5256,58 @@
         "mulib_pathdb_load"
       ]
     },
+    "pcb-board": {
+      "header": "mulib-pcb-board.h",
+      "functions": [
+        "mulib_pcb_board_init",
+        "mulib_pcb_board_add_trace",
+        "mulib_pcb_board_free"
+      ]
+    },
+    "pcb-bom": {
+      "header": "mulib-pcb-bom.h",
+      "functions": [
+        "mulib_pcb_bom_add"
+      ]
+    },
+    "pcb-drc": {
+      "header": "mulib-pcb-drc.h",
+      "functions": [
+        "mulib_pcb_drc_segments"
+      ]
+    },
+    "pcb-excellon": {
+      "header": "mulib-pcb-excellon.h",
+      "functions": [
+        "mulib_pcb_excellon_write"
+      ]
+    },
+    "pcb-geometry": {
+      "header": "mulib-pcb-geometry.h",
+      "functions": [
+        "mulib_pcb_point_segment_distance",
+        "mulib_pcb_segment_distance",
+        "mulib_pcb_segments_violate"
+      ]
+    },
+    "pcb-gerber": {
+      "header": "mulib-pcb-gerber.h",
+      "functions": [
+        "mulib_pcb_gerber_write"
+      ]
+    },
+    "pcb-impedance": {
+      "header": "mulib-pcb-impedance.h",
+      "functions": [
+        "mulib_pcb_microstrip_impedance"
+      ]
+    },
+    "pcb-pnp": {
+      "header": "mulib-pcb-pnp.h",
+      "functions": [
+        "mulib_pcb_pnp_write"
+      ]
+    },
     "pci": {
       "header": "mulib-pci.h",
       "functions": [
@@ -5049,6 +5589,20 @@
         "mulib_pybind_generate"
       ]
     },
+    "qa-corpus": {
+      "header": "mulib-qa-corpus.h",
+      "functions": [
+        "mulib_qa_corpus_add",
+        "mulib_qa_corpus_find"
+      ]
+    },
+    "qa-repro": {
+      "header": "mulib-qa-repro.h",
+      "functions": [
+        "mulib_qa_repro_init",
+        "mulib_qa_repro_hash"
+      ]
+    },
     "queue": {
       "header": "mulib-queue.h",
       "functions": [
@@ -5148,6 +5702,26 @@
       "header": "mulib-rewrite_url.h",
       "functions": [
         "mulib_rewrite_url"
+      ]
+    },
+    "rf-microstrip": {
+      "header": "mulib-rf-microstrip.h",
+      "functions": [
+        "mulib_rf_microstrip_z0"
+      ]
+    },
+    "rf-smith": {
+      "header": "mulib-rf-smith.h",
+      "functions": [
+        "mulib_rf_smith_xy"
+      ]
+    },
+    "rf-sparams": {
+      "header": "mulib-rf-sparams.h",
+      "functions": [
+        "mulib_rf_s11_from_impedance",
+        "mulib_rf_impedance_from_s11",
+        "mulib_rf_s11_vswr"
       ]
     },
     "ring": {
@@ -5440,6 +6014,13 @@
         "mulib_smtpserver_feed"
       ]
     },
+    "soc-memorymap": {
+      "header": "mulib-soc-memorymap.h",
+      "functions": [
+        "mulib_soc_memorymap_add",
+        "mulib_soc_memorymap_lookup"
+      ]
+    },
     "socket": {
       "header": "mulib-socket.h",
       "functions": [
@@ -5493,6 +6074,81 @@
         "mulib_spellcheck_serialize",
         "mulib_spellcheck_deserialize",
         "mulib_spellcheck_dictionary_load"
+      ]
+    },
+    "spice-ac": {
+      "header": "mulib-spice-ac.h",
+      "functions": [
+        "mulib_spice_ac_solve"
+      ]
+    },
+    "spice-c": {
+      "header": "mulib-spice-c.h",
+      "functions": [
+        "mulib_spice_c_backward_euler"
+      ]
+    },
+    "spice-dc": {
+      "header": "mulib-spice-dc.h",
+      "functions": [
+        "mulib_spice_dc_sweep"
+      ]
+    },
+    "spice-independent": {
+      "header": "mulib-spice-independent.h",
+      "functions": [
+        "mulib_spice_independent_current",
+        "mulib_spice_independent_voltage"
+      ]
+    },
+    "spice-lexer": {
+      "header": "mulib-spice-lexer.h",
+      "functions": [
+        "mulib_spice_parse_number",
+        "mulib_spice_split_line"
+      ]
+    },
+    "spice-measure": {
+      "header": "mulib-spice-measure.h",
+      "functions": [
+        "mulib_spice_measure_rms",
+        "mulib_spice_measure_peaks"
+      ]
+    },
+    "spice-netlist": {
+      "header": "mulib-spice-netlist.h",
+      "functions": [
+        "mulib_spice_netlist_parse",
+        "mulib_spice_netlist_find_node",
+        "mulib_spice_netlist_valid"
+      ]
+    },
+    "spice-op": {
+      "header": "mulib-spice-op.h",
+      "functions": [
+        "mulib_spice_op_solve"
+      ]
+    },
+    "spice-r": {
+      "header": "mulib-spice-r.h",
+      "functions": [
+        "mulib_spice_r_stamp"
+      ]
+    },
+    "spice-stamp": {
+      "header": "mulib-spice-stamp.h",
+      "functions": [
+        "mulib_spice_stamp_init",
+        "mulib_spice_stamp_free",
+        "mulib_spice_stamp_conductance",
+        "mulib_spice_stamp_current",
+        "mulib_spice_stamp_voltage"
+      ]
+    },
+    "spice-tran": {
+      "header": "mulib-spice-tran.h",
+      "functions": [
+        "mulib_spice_tran_fixed"
       ]
     },
     "split": {
@@ -5727,6 +6383,25 @@
         "mulib_symbol_count",
         "mulib_symbol_at",
         "mulib_symbol_mathml"
+      ]
+    },
+    "synth-aig": {
+      "header": "mulib-synth-aig.h",
+      "functions": [
+        "mulib_synth_aig_input",
+        "mulib_synth_aig_and",
+        "mulib_synth_aig_eval",
+        "mulib_synth_aig_valid"
+      ]
+    },
+    "synth-truthtable": {
+      "header": "mulib-synth-truthtable.h",
+      "functions": [
+        "mulib_synth_truth_valid",
+        "mulib_synth_truth_variable",
+        "mulib_synth_truth_apply",
+        "mulib_synth_truth_eval",
+        "mulib_synth_truth_cofactor"
       ]
     },
     "syscall": {
@@ -6541,6 +7216,37 @@
         "mulib_wask_call"
       ]
     },
+    "wave-decimate": {
+      "header": "mulib-wave-decimate.h",
+      "functions": [
+        "mulib_wave_decimate_minmax"
+      ]
+    },
+    "wave-measure": {
+      "header": "mulib-wave-measure.h",
+      "functions": [
+        "mulib_wave_measure_rms",
+        "mulib_wave_measure_peak",
+        "mulib_wave_measure_crossings",
+        "mulib_wave_measure_integral"
+      ]
+    },
+    "wave-signal": {
+      "header": "mulib-wave-signal.h",
+      "functions": [
+        "mulib_wave_signal_push",
+        "mulib_wave_signal_free",
+        "mulib_wave_signal_valid",
+        "mulib_wave_signal_interpolate"
+      ]
+    },
+    "wave-vcd": {
+      "header": "mulib-wave-vcd.h",
+      "functions": [
+        "mulib_wave_vcd_begin",
+        "mulib_wave_vcd_at"
+      ]
+    },
     "wayland": {
       "header": "mulib-wayland.h",
       "functions": [
@@ -6862,7 +7568,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "2ed672726d045f62fe0b3fea52c90a7e0c3bc3390c9ecf9d930b99db2434f036",
-    "Implementation.c": "6b6ea4d34171b0767c861de8eaa91c23e0e1ea0406cb9a47fb65fe564c7f3d20"
+    "Generated.inc": "31f25082e778035e99abc8b47049c179b3a111c7d212425f94c0d4e26d6f2b90",
+    "Implementation.c": "6c8bb85d2e69925a5a7e99a1ca0d426094201b87f9597c3ee70c65e7709940c2"
   }
 }

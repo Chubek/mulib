@@ -185,6 +185,18 @@ if(MULIB_BUILD_TESTS)
       CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS NO)
     mulib_test_executable(mulib_test_pricing_cpp)
     mulib_register_test(mulib_test_pricing_cpp)
+
+    add_library(mulib_eda_implementation OBJECT tests/amb3r_implementation.c)
+    mulib_test_executable(mulib_eda_implementation)
+    add_executable(mulib_test_cpp_link tests/test_cpp_link.cpp
+      $<TARGET_OBJECTS:mulib_eda_implementation>)
+    add_executable(mulib_test_all_headers_cpp tests/test_all_headers_cpp.cpp)
+    foreach(target mulib_test_cpp_link mulib_test_all_headers_cpp)
+      set_target_properties(${target} PROPERTIES
+        CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS NO)
+      mulib_test_executable(${target})
+      mulib_register_test(${target})
+    endforeach()
   endif()
   if(Python3_Interpreter_FOUND)
     find_program(MULIB_PANDOC_EXECUTABLE NAMES pandoc)

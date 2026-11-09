@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 582
-implemented_module_count: 582
+module_count: 665
+implemented_module_count: 665
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -4087,6 +4087,587 @@ modules:
   purpose: Bounded Boolean and real difference-logic satisfiability using SAT and Bellman-Ford.
   dependencies: [sat]
   status: implemented
+- name: eda-status
+  header: include/mulib-eda-status.h
+  manual: manual/mulib-eda-status.md
+  macro: MULIB_IMPL_EDA_STATUS
+  purpose: "Shared status names and bounded diagnostic record with line/column context."
+  dependencies: []
+  status: implemented
+- name: eda-ids
+  header: include/mulib-eda-ids.h
+  manual: manual/mulib-eda-ids.md
+  macro: MULIB_IMPL_EDA_IDS
+  purpose: "Typed 64-bit IDs: 8-bit kind, 24-bit generation and 32-bit index plus one; stale generations are rejected."
+  dependencies: []
+  status: implemented
+- name: eda-units
+  header: include/mulib-eda-units.h
+  manual: manual/mulib-eda-units.md
+  macro: MULIB_IMPL_EDA_UNITS
+  purpose: "SI base dimensions and a deliberately scoped engineering unit set (m, kg, s, A, K, mol, cd, Hz, V, Ohm, F, H, W, C, degC, rad, deg)."
+  dependencies: []
+  status: implemented
+- name: eda-quantity
+  header: include/mulib-eda-quantity.h
+  manual: manual/mulib-eda-quantity.md
+  macro: MULIB_IMPL_EDA_QUANTITY
+  purpose: "First-order uncertainty propagation for independent unit-tagged quantities with addition, multiplication and division."
+  dependencies: [eda-units]
+  status: implemented
+- name: eda-object
+  header: include/mulib-eda-object.h
+  manual: manual/mulib-eda-object.md
+  macro: MULIB_IMPL_EDA_OBJECT
+  purpose: "Small immutable-ID object header with checked type/name, monotonic revision on rename; object persistence and schema registry are outside scope."
+  dependencies: [eda-ids]
+  status: implemented
+- name: eda-hierarchy
+  header: include/mulib-eda-hierarchy.h
+  manual: manual/mulib-eda-hierarchy.md
+  macro: MULIB_IMPL_EDA_HIERARCHY
+  purpose: "Append-only hierarchy with unique sibling names and slash-separated paths."
+  dependencies: []
+  status: implemented
+- name: eda-netgraph
+  header: include/mulib-eda-netgraph.h
+  manual: manual/mulib-eda-netgraph.md
+  macro: MULIB_IMPL_EDA_NETGRAPH
+  purpose: "Append-only connectivity hypergraph with indexed nets, terminals, explicit disconnection, net merging and deterministic degrees."
+  dependencies: []
+  status: implemented
+- name: eda-attributes
+  header: include/mulib-eda-attributes.h
+  manual: manual/mulib-eda-attributes.md
+  macro: MULIB_IMPL_EDA_ATTRIBUTES
+  purpose: "Owned typed attribute table with integer, finite real and bounded byte-string values, replacement, lookup and removal."
+  dependencies: []
+  status: implemented
+- name: eda-incremental
+  header: include/mulib-eda-incremental.h
+  manual: manual/mulib-eda-incremental.md
+  macro: MULIB_IMPL_EDA_INCREMENTAL
+  purpose: "Dense adjacency invalidation propagation including cyclic dependencies; intended for small incremental graphs (O(n\u00b2) memory), not the final million-node build graph."
+  dependencies: []
+  status: implemented
+- name: eda-constraints
+  header: include/mulib-eda-constraints.h
+  manual: manual/mulib-eda-constraints.md
+  macro: MULIB_IMPL_EDA_CONSTRAINTS
+  purpose: "Evaluates equality, minimum and maximum scalar constraints with absolute tolerance, returning nonnegative violation magnitudes."
+  dependencies: []
+  status: implemented
+- name: num-dense
+  header: include/mulib-num-dense.h
+  manual: manual/mulib-num-dense.md
+  macro: MULIB_IMPL_NUM_DENSE
+  purpose: "Dense double matrices and Gaussian elimination with partial row pivoting."
+  dependencies: []
+  status: implemented
+- name: num-sparse
+  header: include/mulib-num-sparse.h
+  manual: manual/mulib-num-sparse.md
+  macro: MULIB_IMPL_NUM_SPARSE
+  purpose: "Owned coordinate-list sparse double matrix with checked assembly, repeated-coordinate accumulation and explicit canonicalization."
+  dependencies: []
+  status: implemented
+- name: num-csr
+  header: include/mulib-num-csr.h
+  manual: manual/mulib-num-csr.md
+  macro: MULIB_IMPL_NUM_CSR
+  purpose: "Compressed sparse row conversion, validation, matvec and transpose."
+  dependencies: [num-sparse]
+  status: implemented
+- name: num-rootfind
+  header: include/mulib-num-rootfind.h
+  manual: manual/mulib-num-rootfind.md
+  macro: MULIB_IMPL_NUM_ROOTFIND
+  purpose: "Bracketed scalar bisection and damped Newton iteration with bounded residual-decreasing backtracking."
+  dependencies: []
+  status: implemented
+- name: num-integration
+  header: include/mulib-num-integration.h
+  manual: manual/mulib-num-integration.md
+  macro: MULIB_IMPL_NUM_INTEGRATION
+  purpose: "Composite trapezoid and Simpson quadrature, plus adaptive trapezoids using a Richardson error estimate and at most 30 refinement rounds."
+  dependencies: []
+  status: implemented
+- name: num-statistics
+  header: include/mulib-num-statistics.h
+  manual: manual/mulib-num-statistics.md
+  macro: MULIB_IMPL_NUM_STATISTICS
+  purpose: "Streaming Welford mean, sample variance and extrema, with checked count growth and merging of independent summaries."
+  dependencies: []
+  status: implemented
+- name: spice-lexer
+  header: include/mulib-spice-lexer.h
+  manual: manual/mulib-spice-lexer.md
+  macro: MULIB_IMPL_SPICE_LEXER
+  purpose: "SPICE engineering numeric suffixes (T,G,MEG,K,M,U,N,P,F) and bounded whitespace-line tokenization for basic component records."
+  dependencies: []
+  status: implemented
+- name: spice-netlist
+  header: include/mulib-spice-netlist.h
+  manual: manual/mulib-spice-netlist.md
+  macro: MULIB_IMPL_SPICE_NETLIST
+  purpose: "Transactional parser for four passive/independent-device card types: R, C, V, I with 2 nodes and one numeric DC value."
+  dependencies: [spice-lexer]
+  status: implemented
+- name: spice-stamp
+  header: include/mulib-spice-stamp.h
+  manual: manual/mulib-spice-stamp.md
+  macro: MULIB_IMPL_SPICE_STAMP
+  purpose: "MNA matrix and RHS allocation and linear conductance/independent current/ideal voltage-source stamps."
+  dependencies: []
+  status: implemented
+- name: spice-r
+  header: include/mulib-spice-r.h
+  manual: manual/mulib-spice-r.md
+  macro: MULIB_IMPL_SPICE_R
+  purpose: "Linear DC resistor MNA stamp with strictly positive finite resistance."
+  dependencies: [spice-stamp]
+  status: implemented
+- name: spice-c
+  header: include/mulib-spice-c.h
+  manual: manual/mulib-spice-c.md
+  macro: MULIB_IMPL_SPICE_C
+  purpose: "Backward-Euler companion for an ideal linear capacitor: conductance C/dt and equivalent history current."
+  dependencies: [spice-stamp]
+  status: implemented
+- name: spice-independent
+  header: include/mulib-spice-independent.h
+  manual: manual/mulib-spice-independent.md
+  macro: MULIB_IMPL_SPICE_INDEPENDENT
+  purpose: "Time-independent DC current and voltage MNA source stamps."
+  dependencies: [spice-stamp]
+  status: implemented
+- name: spice-op
+  header: include/mulib-spice-op.h
+  manual: manual/mulib-spice-op.md
+  macro: MULIB_IMPL_SPICE_OP
+  purpose: "DC operating-point solver for linear R/I/V circuits with open capacitors; dense MNA and partial-pivot Gaussian elimination."
+  dependencies: [spice-netlist, spice-stamp, spice-r, spice-independent, num-dense]
+  status: implemented
+- name: spice-tran
+  header: include/mulib-spice-tran.h
+  manual: manual/mulib-spice-tran.md
+  macro: MULIB_IMPL_SPICE_TRAN
+  purpose: "Fixed-timestep backward-Euler transient for linear R/C/I/V networks, zero initial capacitor voltages, time-invariant DC sources, no inductors."
+  dependencies: [spice-netlist, spice-stamp, spice-r, spice-c, spice-independent, num-dense]
+  status: implemented
+- name: dsim-logic4
+  header: include/mulib-dsim-logic4.h
+  manual: manual/mulib-dsim-logic4.md
+  macro: MULIB_IMPL_DSIM_LOGIC4
+  purpose: "Scalar 4-state 0/1/X/Z Boolean truth tables and simple two-driver resolution without drive strengths."
+  dependencies: []
+  status: implemented
+- name: dsim-bitvec
+  header: include/mulib-dsim-bitvec.h
+  manual: manual/mulib-dsim-bitvec.md
+  macro: MULIB_IMPL_DSIM_BITVEC
+  purpose: "Four-state vectors of 1..64 bits with string parsing/formatting, extraction, bitwise AND/OR/XOR/NOT, zero-filled logical shifts, concatenation and modular addition."
+  dependencies: [dsim-logic4]
+  status: implemented
+- name: dsim-scheduler
+  header: include/mulib-dsim-scheduler.h
+  manual: manual/mulib-dsim-scheduler.md
+  macro: MULIB_IMPL_DSIM_SCHEDULER
+  purpose: "Stable min-heap event ordering by time, delta, region and insertion order, with peek and cancellation by signal."
+  dependencies: [dsim-logic4]
+  status: implemented
+- name: hwil-types
+  header: include/mulib-hwil-types.h
+  manual: manual/mulib-hwil-types.md
+  macro: MULIB_IMPL_HWIL_TYPES
+  purpose: "Validation and exact matching of bit-vector and single-bit clock types."
+  dependencies: []
+  status: implemented
+- name: hwil-module
+  header: include/mulib-hwil-module.h
+  manual: manual/mulib-hwil-module.md
+  macro: MULIB_IMPL_HWIL_MODULE
+  purpose: "Append-only combinational, single-bit HWIL netlist with forward-referenced DAG disallowed by construction; 512-node bound."
+  dependencies: [dsim-logic4]
+  status: implemented
+- name: hwil-verify
+  header: include/mulib-hwil-verify.h
+  manual: manual/mulib-hwil-verify.md
+  macro: MULIB_IMPL_HWIL_VERIFY
+  purpose: "Deterministic structural verification for bounded combinational HWIL modules; checks opcode validity, input references and topological order."
+  dependencies: [hwil-module]
+  status: implemented
+- name: synth-truthtable
+  header: include/mulib-synth-truthtable.h
+  manual: manual/mulib-synth-truthtable.md
+  macro: MULIB_IMPL_SYNTH_TRUTHTABLE
+  purpose: "Packed truth tables for zero to six inputs with variable generation, Boolean operations, evaluation and variable-removing cofactors."
+  dependencies: []
+  status: implemented
+- name: synth-aig
+  header: include/mulib-synth-aig.h
+  manual: manual/mulib-synth-aig.md
+  macro: MULIB_IMPL_SYNTH_AIG
+  purpose: "Bounded AIG with constant 0/1, complemented edges, structural hashing and simple constant/identity simplification."
+  dependencies: []
+  status: implemented
+- name: formal-cnf
+  header: include/mulib-formal-cnf.h
+  manual: manual/mulib-formal-cnf.md
+  macro: MULIB_IMPL_FORMAL_CNF
+  purpose: "Bounded CNF storage for 32 variables, 512 clauses and 16 literals per clause, with structural validation and an AND-gate Tseitin encoder."
+  dependencies: []
+  status: implemented
+- name: formal-sat
+  header: include/mulib-formal-sat.h
+  manual: manual/mulib-formal-sat.md
+  macro: MULIB_IMPL_FORMAL_SAT
+  purpose: "Correct bounded DPLL SAT solver with repeated unit propagation, chronological branching and branch-budget UNKNOWN."
+  dependencies: [formal-cnf]
+  status: implemented
+- name: formal-cec
+  header: include/mulib-formal-cec.h
+  manual: manual/mulib-formal-cec.md
+  macro: MULIB_IMPL_FORMAL_CEC
+  purpose: "Exact combinational equivalence for explicit truth tables with at most six inputs."
+  dependencies: [synth-truthtable]
+  status: implemented
+- name: wave-signal
+  header: include/mulib-wave-signal.h
+  manual: manual/mulib-wave-signal.md
+  macro: MULIB_IMPL_WAVE_SIGNAL
+  purpose: "Owned finite time-value sample series with nondecreasing timestamps, validation and interpolation."
+  dependencies: []
+  status: implemented
+- name: wave-measure
+  header: include/mulib-wave-measure.h
+  manual: manual/mulib-wave-measure.md
+  macro: MULIB_IMPL_WAVE_MEASURE
+  purpose: "Sample-weighted RMS, extrema, threshold crossing counts and time-domain integration."
+  dependencies: [wave-signal]
+  status: implemented
+- name: wave-decimate
+  header: include/mulib-wave-decimate.h
+  manual: manual/mulib-wave-decimate.md
+  macro: MULIB_IMPL_WAVE_DECIMATE
+  purpose: "Min/max display decimation in index-aligned buckets, preserving extrema."
+  dependencies: [wave-signal]
+  status: implemented
+- name: wave-vcd
+  header: include/mulib-wave-vcd.h
+  manual: manual/mulib-wave-vcd.md
+  macro: MULIB_IMPL_WAVE_VCD
+  purpose: "VCD writer for one scalar four-state signal with a fixed identifier (!) and 1ns timescale."
+  dependencies: [dsim-logic4]
+  status: implemented
+- name: pcb-geometry
+  header: include/mulib-pcb-geometry.h
+  manual: manual/mulib-pcb-geometry.md
+  macro: MULIB_IMPL_PCB_GEOMETRY
+  purpose: "2D Euclidean point-to-segment and segment-to-segment distances and centerline clearance for straight copper tracks with width and net IDs."
+  dependencies: []
+  status: implemented
+- name: pcb-drc
+  header: include/mulib-pcb-drc.h
+  manual: manual/mulib-pcb-drc.md
+  macro: MULIB_IMPL_PCB_DRC
+  purpose: "All-pairs straight-segment copper clearance checks for distinct nets."
+  dependencies: [pcb-geometry]
+  status: implemented
+- name: pcb-gerber
+  header: include/mulib-pcb-gerber.h
+  manual: manual/mulib-pcb-gerber.md
+  macro: MULIB_IMPL_PCB_GERBER
+  purpose: "Restricted RS-274X Gerber trace layer output: millimetres, leading-absolute 4.6 coordinates, circular D-code apertures, straight tracks only."
+  dependencies: [pcb-geometry]
+  status: implemented
+- name: pcb-excellon
+  header: include/mulib-pcb-excellon.h
+  manual: manual/mulib-pcb-excellon.md
+  macro: MULIB_IMPL_PCB_EXCELLON
+  purpose: "Minimal Excellon-style metric coordinate drill output, one tool number per hole."
+  dependencies: []
+  status: implemented
+- name: immgtk-canvas
+  header: include/mulib-immgtk-canvas.h
+  manual: manual/mulib-immgtk-canvas.md
+  macro: MULIB_IMPL_IMMGTK_CANVAS
+  purpose: "GUI-backend-neutral 2D pan/zoom transforms with cursor-centered zoom and reciprocal coordinate mapping."
+  dependencies: []
+  status: implemented
+- name: immgtk-drawlist
+  header: include/mulib-immgtk-drawlist.h
+  manual: manual/mulib-immgtk-drawlist.md
+  macro: MULIB_IMPL_IMMGTK_DRAWLIST
+  purpose: "Backend-neutral owned draw-command array for lines, rectangles and circles; renderer retains clipping and rasterization responsibilities."
+  dependencies: []
+  status: implemented
+- name: immgtk-plot
+  header: include/mulib-immgtk-plot.h
+  manual: manual/mulib-immgtk-plot.md
+  macro: MULIB_IMPL_IMMGTK_PLOT
+  purpose: "Engineering plot autoscaling bounds and logarithmic axis transformation helpers."
+  dependencies: []
+  status: implemented
+- name: hdl-verilog-lex
+  header: include/mulib-hdl-verilog-lex.h
+  manual: manual/mulib-hdl-verilog-lex.md
+  macro: MULIB_IMPL_HDL_VERILOG_LEX
+  purpose: "Source-offset tokens for identifiers, escaped identifiers, decimal/based-number-like spans, punctuation and line/block comments."
+  dependencies: []
+  status: implemented
+- name: qa-repro
+  header: include/mulib-qa-repro.h
+  manual: manual/mulib-qa-repro.md
+  macro: MULIB_IMPL_QA_REPRO
+  purpose: "Platform-independent FNV-1a fingerprint for a reproducibility record (seed, feature mask, compiler and target strings)."
+  dependencies: []
+  status: implemented
+- name: eda-design-db
+  header: include/mulib-eda-design-db.h
+  manual: manual/mulib-eda-design-db.md
+  macro: MULIB_IMPL_EDA_DESIGN_DB
+  purpose: "Flat revisioned design store keyed by nonzero external IDs, with typed finite scalar values and independent owned snapshot cloning."
+  dependencies: []
+  status: implemented
+- name: eda-transaction
+  header: include/mulib-eda-transaction.h
+  manual: manual/mulib-eda-transaction.md
+  macro: MULIB_IMPL_EDA_TRANSACTION
+  purpose: "Optimistic owned-snapshot transaction over eda-design-db."
+  dependencies: [eda-design-db]
+  status: implemented
+- name: eda-undo
+  header: include/mulib-eda-undo.h
+  manual: manual/mulib-eda-undo.md
+  macro: MULIB_IMPL_EDA_UNDO
+  purpose: "Bounded 256-command reversible scalar-field journal over eda-design-db."
+  dependencies: [eda-design-db]
+  status: implemented
+- name: eda-project
+  header: include/mulib-eda-project.h
+  manual: manual/mulib-eda-project.md
+  macro: MULIB_IMPL_EDA_PROJECT
+  purpose: "Validated in-memory project identity, revision, variant count and reproducible seed."
+  dependencies: []
+  status: implemented
+- name: eda-library
+  header: include/mulib-eda-library.h
+  manual: manual/mulib-eda-library.md
+  macro: MULIB_IMPL_EDA_LIBRARY
+  purpose: "In-memory part definition catalog with immutable key, description and pin count."
+  dependencies: []
+  status: implemented
+- name: ecad-symbol
+  header: include/mulib-ecad-symbol.h
+  manual: manual/mulib-ecad-symbol.md
+  macro: MULIB_IMPL_ECAD_SYMBOL
+  purpose: "Bounded symbol metadata with 32 typed pins and integer drawing-space anchor positions."
+  dependencies: []
+  status: implemented
+- name: ecad-schematic
+  header: include/mulib-ecad-schematic.h
+  manual: manual/mulib-ecad-schematic.md
+  macro: MULIB_IMPL_ECAD_SCHEMATIC
+  purpose: "Bounded 256-component flat schematic for R/C/I/V 2-terminal devices, duplicate reference detection and fixed 32-byte names."
+  dependencies: []
+  status: implemented
+- name: ecad-connect
+  header: include/mulib-ecad-connect.h
+  manual: manual/mulib-ecad-connect.md
+  macro: MULIB_IMPL_ECAD_CONNECT
+  purpose: "Name-based connectivity count for flat two-terminal schematic, with literal ground name 0."
+  dependencies: [ecad-schematic]
+  status: implemented
+- name: ecad-erc
+  header: include/mulib-ecad-erc.h
+  manual: manual/mulib-ecad-erc.md
+  macro: MULIB_IMPL_ECAD_ERC
+  purpose: "Flat schematic ERC diagnostics: self-shorted components, single-use (dangling) named terminals, and missing ground node."
+  dependencies: [ecad-schematic]
+  status: implemented
+- name: ecad-netlist
+  header: include/mulib-ecad-netlist.h
+  manual: manual/mulib-ecad-netlist.md
+  macro: MULIB_IMPL_ECAD_NETLIST
+  purpose: "Deterministic SPICE-card export from supported flat R/C/I/V schematic, retaining names and double values, with bounded caller buffer."
+  dependencies: [ecad-schematic]
+  status: implemented
+- name: ecad-pcb-sync
+  header: include/mulib-ecad-pcb-sync.h
+  manual: manual/mulib-ecad-pcb-sync.md
+  macro: MULIB_IMPL_ECAD_PCB_SYNC
+  purpose: "Stable bijective object-ID lookup between 256 schematic and PCB objects; no object model introspection, reconciliation or automatic synchronization."
+  dependencies: []
+  status: implemented
+- name: pcb-board
+  header: include/mulib-pcb-board.h
+  manual: manual/mulib-pcb-board.md
+  macro: MULIB_IMPL_PCB_BOARD
+  purpose: "Owned flat straight-track PCB container with 1..64 declared copper layers and validated real geometry."
+  dependencies: [pcb-geometry]
+  status: implemented
+- name: pcb-bom
+  header: include/mulib-pcb-bom.h
+  manual: manual/mulib-pcb-bom.md
+  macro: MULIB_IMPL_PCB_BOM
+  purpose: "Deterministic fixed-size BOM aggregator by manufacturer and exact part number, with checked size_t quantity accumulation."
+  dependencies: []
+  status: implemented
+- name: pcb-pnp
+  header: include/mulib-pcb-pnp.h
+  manual: manual/mulib-pcb-pnp.md
+  macro: MULIB_IMPL_PCB_PNP
+  purpose: "CSV pick-and-place placement export with millimetre XY, degrees and top/bottom side; no footprint origins/centroid correction, assembly variant or machine-specific profile."
+  dependencies: []
+  status: implemented
+- name: fpga-lut
+  header: include/mulib-fpga-lut.h
+  manual: manual/mulib-fpga-lut.md
+  macro: MULIB_IMPL_FPGA_LUT
+  purpose: "Pure combinational lookup-table element evaluator and truth-table mapping for up to six inputs."
+  dependencies: [synth-truthtable]
+  status: implemented
+- name: fpga-route
+  header: include/mulib-fpga-route.h
+  manual: manual/mulib-fpga-route.md
+  macro: MULIB_IMPL_FPGA_ROUTE
+  purpose: "Shortest Manhattan four-neighbour path on a rectangular 2D obstacle grid, BFS with deterministic neighbour ordering."
+  dependencies: []
+  status: implemented
+- name: asic-sta
+  header: include/mulib-asic-sta.h
+  manual: manual/mulib-asic-sta.md
+  macro: MULIB_IMPL_ASIC_STA
+  purpose: "Arrival-time max-plus propagation on a topologically ordered timing DAG with up to eight predecessors per node, plus slack against a common deadline."
+  dependencies: []
+  status: implemented
+- name: asic-floorplan
+  header: include/mulib-asic-floorplan.h
+  manual: manual/mulib-asic-floorplan.md
+  macro: MULIB_IMPL_ASIC_FLOORPLAN
+  purpose: "Flat rectangular cell overlap test and deterministic single-row placement with spacing and height validation."
+  dependencies: []
+  status: implemented
+- name: rf-microstrip
+  header: include/mulib-rf-microstrip.h
+  manual: manual/mulib-rf-microstrip.md
+  macro: MULIB_IMPL_RF_MICROSTRIP
+  purpose: "Quasi-static zero-thickness microstrip impedance estimate for width/substrate thickness ratio and dielectric constant."
+  dependencies: []
+  status: implemented
+- name: hls-schedule
+  header: include/mulib-hls-schedule.h
+  manual: manual/mulib-hls-schedule.md
+  macro: MULIB_IMPL_HLS_SCHEDULE
+  purpose: "Resource-unconstrained ASAP scheduling of a topologically sorted operation DAG with integral cycle latencies and up to eight dependencies."
+  dependencies: []
+  status: implemented
+- name: flow-graph
+  header: include/mulib-flow-graph.h
+  manual: manual/mulib-flow-graph.md
+  macro: MULIB_IMPL_FLOW_GRAPH
+  purpose: "Deterministic topological sort and cycle detection on up to 64 jobs with dense adjacency."
+  dependencies: []
+  status: implemented
+- name: fmt-aiger
+  header: include/mulib-fmt-aiger.h
+  manual: manual/mulib-fmt-aiger.md
+  macro: MULIB_IMPL_FMT_AIGER
+  purpose: "ASCII AIGER AAG writer for a single-output combinational AIG where primary inputs occur before all AND nodes; sequential and symbol extensions are excluded."
+  dependencies: [synth-aig]
+  status: implemented
+- name: fmt-sv
+  header: include/mulib-fmt-sv.h
+  manual: manual/mulib-fmt-sv.md
+  macro: MULIB_IMPL_FMT_SV
+  purpose: "Structural synthesizable Verilog module emitter for one-bit HWIL combinational nodes, one output and generated port names."
+  dependencies: [hwil-module]
+  status: implemented
+- name: num-csc
+  header: include/mulib-num-csc.h
+  manual: manual/mulib-num-csc.md
+  macro: MULIB_IMPL_NUM_CSC
+  purpose: "Compressed sparse column conversion, validation and matvec."
+  dependencies: [num-sparse]
+  status: implemented
+- name: spice-dc
+  header: include/mulib-spice-dc.h
+  manual: manual/mulib-spice-dc.md
+  macro: MULIB_IMPL_SPICE_DC
+  purpose: "Linear DC source sweep over a named independent voltage/current source."
+  dependencies: [spice-op]
+  status: implemented
+- name: spice-ac
+  header: include/mulib-spice-ac.h
+  manual: manual/mulib-spice-ac.md
+  macro: MULIB_IMPL_SPICE_AC
+  purpose: "Frequency-domain complex MNA for linear R/C/I/V circuits at one nonnegative frequency, interpreting independent DC source magnitudes as AC phasor amplitudes of zero phase for this narrow profile."
+  dependencies: [spice-netlist]
+  status: implemented
+- name: spice-measure
+  header: include/mulib-spice-measure.h
+  manual: manual/mulib-spice-measure.md
+  macro: MULIB_IMPL_SPICE_MEASURE
+  purpose: "SPICE-facing sample-domain RMS and extrema helpers delegated to the existing wave-measure primitive."
+  dependencies: [wave-measure]
+  status: implemented
+- name: rf-sparams
+  header: include/mulib-rf-sparams.h
+  manual: manual/mulib-rf-sparams.md
+  macro: MULIB_IMPL_RF_SPARAMS
+  purpose: "Single-port complex impedance/S11 conversion with scaled arithmetic and VSWR for reflection magnitude below one."
+  dependencies: []
+  status: implemented
+- name: rf-smith
+  header: include/mulib-rf-smith.h
+  manual: manual/mulib-rf-smith.md
+  macro: MULIB_IMPL_RF_SMITH
+  purpose: "Smith chart Cartesian coordinates from normalized single-port impedance using the S11 transform."
+  dependencies: [rf-sparams]
+  status: implemented
+- name: pcb-impedance
+  header: include/mulib-pcb-impedance.h
+  manual: manual/mulib-pcb-impedance.md
+  macro: MULIB_IMPL_PCB_IMPEDANCE
+  purpose: "PCB convenience API for approximate zero-thickness quasi-static microstrip impedance."
+  dependencies: [rf-microstrip]
+  status: implemented
+- name: field-thermal
+  header: include/mulib-field-thermal.h
+  manual: manual/mulib-field-thermal.md
+  macro: MULIB_IMPL_FIELD_THERMAL
+  purpose: "Closed-form homogeneous 1D steady conduction with uniform heat generation and fixed boundary temperatures, plus heat flux."
+  dependencies: []
+  status: implemented
+- name: field-poisson
+  header: include/mulib-field-poisson.h
+  manual: manual/mulib-field-poisson.md
+  macro: MULIB_IMPL_FIELD_POISSON
+  purpose: "Closed-form homogeneous 1D electrostatic potential and electric field with uniform free charge and fixed boundary potentials."
+  dependencies: []
+  status: implemented
+- name: soc-memorymap
+  header: include/mulib-soc-memorymap.h
+  manual: manual/mulib-soc-memorymap.md
+  macro: MULIB_IMPL_SOC_MEMORYMAP
+  purpose: "Bounded 128-entry nonoverlapping physical address map with overflow-checked half-open regions, device IDs and offset lookup."
+  dependencies: []
+  status: implemented
+- name: hdl-source
+  header: include/mulib-hdl-source.h
+  manual: manual/mulib-hdl-source.md
+  macro: MULIB_IMPL_HDL_SOURCE
+  purpose: "Borrowed HDL source bytes and byte-offset to 1-based line/column mapping."
+  dependencies: []
+  status: implemented
+- name: qa-corpus
+  header: include/mulib-qa-corpus.h
+  manual: manual/mulib-qa-corpus.md
+  macro: MULIB_IMPL_QA_CORPUS
+  purpose: "Bounded 256-entry registry of golden fixture identifiers, input fingerprints and expected statuses."
+  dependencies: []
+  status: implemented
 project_files:
 - file: manual/mulib-pricing-suite.md
   purpose: Combined integration, testing, numerical contracts and solver boundaries for pricing modules.
@@ -6102,3 +6683,353 @@ project_files:
   purpose: "Focused regression suite for test_pricing_failures."
 - file: tests/test_smt_oracle.c
   purpose: "Focused regression suite for test_smt_oracle."
+- file: examples/modules/asic-floorplan.c
+  purpose: "Standalone checked usage example for asic-floorplan."
+- file: examples/modules/asic-sta.c
+  purpose: "Standalone checked usage example for asic-sta."
+- file: examples/modules/dsim-bitvec.c
+  purpose: "Standalone checked usage example for dsim-bitvec."
+- file: examples/modules/dsim-logic4.c
+  purpose: "Standalone checked usage example for dsim-logic4."
+- file: examples/modules/dsim-scheduler.c
+  purpose: "Standalone checked usage example for dsim-scheduler."
+- file: examples/modules/ecad-connect.c
+  purpose: "Standalone checked usage example for ecad-connect."
+- file: examples/modules/ecad-erc.c
+  purpose: "Standalone checked usage example for ecad-erc."
+- file: examples/modules/ecad-netlist.c
+  purpose: "Standalone checked usage example for ecad-netlist."
+- file: examples/modules/ecad-pcb-sync.c
+  purpose: "Standalone checked usage example for ecad-pcb-sync."
+- file: examples/modules/ecad-schematic.c
+  purpose: "Standalone checked usage example for ecad-schematic."
+- file: examples/modules/ecad-symbol.c
+  purpose: "Standalone checked usage example for ecad-symbol."
+- file: examples/modules/eda-attributes.c
+  purpose: "Standalone checked usage example for eda-attributes."
+- file: examples/modules/eda-constraints.c
+  purpose: "Standalone checked usage example for eda-constraints."
+- file: examples/modules/eda-design-db.c
+  purpose: "Standalone checked usage example for eda-design-db."
+- file: examples/modules/eda-hierarchy.c
+  purpose: "Standalone checked usage example for eda-hierarchy."
+- file: examples/modules/eda-ids.c
+  purpose: "Standalone checked usage example for eda-ids."
+- file: examples/modules/eda-incremental.c
+  purpose: "Standalone checked usage example for eda-incremental."
+- file: examples/modules/eda-library.c
+  purpose: "Standalone checked usage example for eda-library."
+- file: examples/modules/eda-netgraph.c
+  purpose: "Standalone checked usage example for eda-netgraph."
+- file: examples/modules/eda-object.c
+  purpose: "Standalone checked usage example for eda-object."
+- file: examples/modules/eda-project.c
+  purpose: "Standalone checked usage example for eda-project."
+- file: examples/modules/eda-quantity.c
+  purpose: "Standalone checked usage example for eda-quantity."
+- file: examples/modules/eda-status.c
+  purpose: "Standalone checked usage example for eda-status."
+- file: examples/modules/eda-transaction.c
+  purpose: "Standalone checked usage example for eda-transaction."
+- file: examples/modules/eda-undo.c
+  purpose: "Standalone checked usage example for eda-undo."
+- file: examples/modules/eda-units.c
+  purpose: "Standalone checked usage example for eda-units."
+- file: examples/modules/field-poisson.c
+  purpose: "Standalone checked usage example for field-poisson."
+- file: examples/modules/field-thermal.c
+  purpose: "Standalone checked usage example for field-thermal."
+- file: examples/modules/flow-graph.c
+  purpose: "Standalone checked usage example for flow-graph."
+- file: examples/modules/fmt-aiger.c
+  purpose: "Standalone checked usage example for fmt-aiger."
+- file: examples/modules/fmt-sv.c
+  purpose: "Standalone checked usage example for fmt-sv."
+- file: examples/modules/formal-cec.c
+  purpose: "Standalone checked usage example for formal-cec."
+- file: examples/modules/formal-cnf.c
+  purpose: "Standalone checked usage example for formal-cnf."
+- file: examples/modules/formal-sat.c
+  purpose: "Standalone checked usage example for formal-sat."
+- file: examples/modules/fpga-lut.c
+  purpose: "Standalone checked usage example for fpga-lut."
+- file: examples/modules/fpga-route.c
+  purpose: "Standalone checked usage example for fpga-route."
+- file: examples/modules/hdl-source.c
+  purpose: "Standalone checked usage example for hdl-source."
+- file: examples/modules/hdl-verilog-lex.c
+  purpose: "Standalone checked usage example for hdl-verilog-lex."
+- file: examples/modules/hls-schedule.c
+  purpose: "Standalone checked usage example for hls-schedule."
+- file: examples/modules/hwil-module.c
+  purpose: "Standalone checked usage example for hwil-module."
+- file: examples/modules/hwil-types.c
+  purpose: "Standalone checked usage example for hwil-types."
+- file: examples/modules/hwil-verify.c
+  purpose: "Standalone checked usage example for hwil-verify."
+- file: examples/modules/immgtk-canvas.c
+  purpose: "Standalone checked usage example for immgtk-canvas."
+- file: examples/modules/immgtk-drawlist.c
+  purpose: "Standalone checked usage example for immgtk-drawlist."
+- file: examples/modules/immgtk-plot.c
+  purpose: "Standalone checked usage example for immgtk-plot."
+- file: examples/modules/num-csc.c
+  purpose: "Standalone checked usage example for num-csc."
+- file: examples/modules/num-csr.c
+  purpose: "Standalone checked usage example for num-csr."
+- file: examples/modules/num-dense.c
+  purpose: "Standalone checked usage example for num-dense."
+- file: examples/modules/num-integration.c
+  purpose: "Standalone checked usage example for num-integration."
+- file: examples/modules/num-rootfind.c
+  purpose: "Standalone checked usage example for num-rootfind."
+- file: examples/modules/num-sparse.c
+  purpose: "Standalone checked usage example for num-sparse."
+- file: examples/modules/num-statistics.c
+  purpose: "Standalone checked usage example for num-statistics."
+- file: examples/modules/pcb-board.c
+  purpose: "Standalone checked usage example for pcb-board."
+- file: examples/modules/pcb-bom.c
+  purpose: "Standalone checked usage example for pcb-bom."
+- file: examples/modules/pcb-drc.c
+  purpose: "Standalone checked usage example for pcb-drc."
+- file: examples/modules/pcb-excellon.c
+  purpose: "Standalone checked usage example for pcb-excellon."
+- file: examples/modules/pcb-geometry.c
+  purpose: "Standalone checked usage example for pcb-geometry."
+- file: examples/modules/pcb-gerber.c
+  purpose: "Standalone checked usage example for pcb-gerber."
+- file: examples/modules/pcb-impedance.c
+  purpose: "Standalone checked usage example for pcb-impedance."
+- file: examples/modules/pcb-pnp.c
+  purpose: "Standalone checked usage example for pcb-pnp."
+- file: examples/modules/qa-corpus.c
+  purpose: "Standalone checked usage example for qa-corpus."
+- file: examples/modules/qa-repro.c
+  purpose: "Standalone checked usage example for qa-repro."
+- file: examples/modules/rf-microstrip.c
+  purpose: "Standalone checked usage example for rf-microstrip."
+- file: examples/modules/rf-smith.c
+  purpose: "Standalone checked usage example for rf-smith."
+- file: examples/modules/rf-sparams.c
+  purpose: "Standalone checked usage example for rf-sparams."
+- file: examples/modules/soc-memorymap.c
+  purpose: "Standalone checked usage example for soc-memorymap."
+- file: examples/modules/spice-ac.c
+  purpose: "Standalone checked usage example for spice-ac."
+- file: examples/modules/spice-c.c
+  purpose: "Standalone checked usage example for spice-c."
+- file: examples/modules/spice-dc.c
+  purpose: "Standalone checked usage example for spice-dc."
+- file: examples/modules/spice-independent.c
+  purpose: "Standalone checked usage example for spice-independent."
+- file: examples/modules/spice-lexer.c
+  purpose: "Standalone checked usage example for spice-lexer."
+- file: examples/modules/spice-measure.c
+  purpose: "Standalone checked usage example for spice-measure."
+- file: examples/modules/spice-netlist.c
+  purpose: "Standalone checked usage example for spice-netlist."
+- file: examples/modules/spice-op.c
+  purpose: "Standalone checked usage example for spice-op."
+- file: examples/modules/spice-r.c
+  purpose: "Standalone checked usage example for spice-r."
+- file: examples/modules/spice-stamp.c
+  purpose: "Standalone checked usage example for spice-stamp."
+- file: examples/modules/spice-tran.c
+  purpose: "Standalone checked usage example for spice-tran."
+- file: examples/modules/synth-aig.c
+  purpose: "Standalone checked usage example for synth-aig."
+- file: examples/modules/synth-truthtable.c
+  purpose: "Standalone checked usage example for synth-truthtable."
+- file: examples/modules/wave-decimate.c
+  purpose: "Standalone checked usage example for wave-decimate."
+- file: examples/modules/wave-measure.c
+  purpose: "Standalone checked usage example for wave-measure."
+- file: examples/modules/wave-signal.c
+  purpose: "Standalone checked usage example for wave-signal."
+- file: examples/modules/wave-vcd.c
+  purpose: "Standalone checked usage example for wave-vcd."
+- file: tests/test_all_headers.c
+  purpose: "Focused regression suite for test_all_headers."
+- file: tests/test_amb3r_vertical.c
+  purpose: "Focused regression suite for test_amb3r_vertical."
+- file: tests/test_asic_floorplan.c
+  purpose: "Focused regression suite for test_asic_floorplan."
+- file: tests/test_asic_sta.c
+  purpose: "Focused regression suite for test_asic_sta."
+- file: tests/test_dsim_bitvec.c
+  purpose: "Focused regression suite for test_dsim_bitvec."
+- file: tests/test_dsim_logic4.c
+  purpose: "Focused regression suite for test_dsim_logic4."
+- file: tests/test_dsim_scheduler.c
+  purpose: "Focused regression suite for test_dsim_scheduler."
+- file: tests/test_ecad_connect.c
+  purpose: "Focused regression suite for test_ecad_connect."
+- file: tests/test_ecad_erc.c
+  purpose: "Focused regression suite for test_ecad_erc."
+- file: tests/test_ecad_netlist.c
+  purpose: "Focused regression suite for test_ecad_netlist."
+- file: tests/test_ecad_pcb_sync.c
+  purpose: "Focused regression suite for test_ecad_pcb_sync."
+- file: tests/test_ecad_schematic.c
+  purpose: "Focused regression suite for test_ecad_schematic."
+- file: tests/test_ecad_symbol.c
+  purpose: "Focused regression suite for test_ecad_symbol."
+- file: tests/test_eda_alloc.c
+  purpose: "Focused regression suite for test_eda_alloc."
+- file: tests/test_eda_attributes.c
+  purpose: "Focused regression suite for test_eda_attributes."
+- file: tests/test_eda_constraints.c
+  purpose: "Focused regression suite for test_eda_constraints."
+- file: tests/test_eda_design_db.c
+  purpose: "Focused regression suite for test_eda_design_db."
+- file: tests/test_eda_extended.c
+  purpose: "Focused regression suite for test_eda_extended."
+- file: tests/test_eda_hierarchy.c
+  purpose: "Focused regression suite for test_eda_hierarchy."
+- file: tests/test_eda_ids.c
+  purpose: "Focused regression suite for test_eda_ids."
+- file: tests/test_eda_incremental.c
+  purpose: "Focused regression suite for test_eda_incremental."
+- file: tests/test_eda_library.c
+  purpose: "Focused regression suite for test_eda_library."
+- file: tests/test_eda_netgraph.c
+  purpose: "Focused regression suite for test_eda_netgraph."
+- file: tests/test_eda_object.c
+  purpose: "Focused regression suite for test_eda_object."
+- file: tests/test_eda_project.c
+  purpose: "Focused regression suite for test_eda_project."
+- file: tests/test_eda_quantity.c
+  purpose: "Focused regression suite for test_eda_quantity."
+- file: tests/test_eda_status.c
+  purpose: "Focused regression suite for test_eda_status."
+- file: tests/test_eda_transaction.c
+  purpose: "Focused regression suite for test_eda_transaction."
+- file: tests/test_eda_undo.c
+  purpose: "Focused regression suite for test_eda_undo."
+- file: tests/test_eda_units.c
+  purpose: "Focused regression suite for test_eda_units."
+- file: tests/test_field_poisson.c
+  purpose: "Focused regression suite for test_field_poisson."
+- file: tests/test_field_thermal.c
+  purpose: "Focused regression suite for test_field_thermal."
+- file: tests/test_flow_graph.c
+  purpose: "Focused regression suite for test_flow_graph."
+- file: tests/test_fmt_aiger.c
+  purpose: "Focused regression suite for test_fmt_aiger."
+- file: tests/test_fmt_sv.c
+  purpose: "Focused regression suite for test_fmt_sv."
+- file: tests/test_formal_cec.c
+  purpose: "Focused regression suite for test_formal_cec."
+- file: tests/test_formal_cnf.c
+  purpose: "Focused regression suite for test_formal_cnf."
+- file: tests/test_formal_sat.c
+  purpose: "Focused regression suite for test_formal_sat."
+- file: tests/test_fpga_lut.c
+  purpose: "Focused regression suite for test_fpga_lut."
+- file: tests/test_fpga_route.c
+  purpose: "Focused regression suite for test_fpga_route."
+- file: tests/test_hdl_source.c
+  purpose: "Focused regression suite for test_hdl_source."
+- file: tests/test_hdl_verilog_lex.c
+  purpose: "Focused regression suite for test_hdl_verilog_lex."
+- file: tests/test_hls_schedule.c
+  purpose: "Focused regression suite for test_hls_schedule."
+- file: tests/test_hwil_module.c
+  purpose: "Focused regression suite for test_hwil_module."
+- file: tests/test_hwil_types.c
+  purpose: "Focused regression suite for test_hwil_types."
+- file: tests/test_hwil_verify.c
+  purpose: "Focused regression suite for test_hwil_verify."
+- file: tests/test_immgtk_canvas.c
+  purpose: "Focused regression suite for test_immgtk_canvas."
+- file: tests/test_immgtk_drawlist.c
+  purpose: "Focused regression suite for test_immgtk_drawlist."
+- file: tests/test_immgtk_plot.c
+  purpose: "Focused regression suite for test_immgtk_plot."
+- file: tests/test_num_csc.c
+  purpose: "Focused regression suite for test_num_csc."
+- file: tests/test_num_csr.c
+  purpose: "Focused regression suite for test_num_csr."
+- file: tests/test_num_dense.c
+  purpose: "Focused regression suite for test_num_dense."
+- file: tests/test_num_integration.c
+  purpose: "Focused regression suite for test_num_integration."
+- file: tests/test_num_rootfind.c
+  purpose: "Focused regression suite for test_num_rootfind."
+- file: tests/test_num_sparse.c
+  purpose: "Focused regression suite for test_num_sparse."
+- file: tests/test_num_statistics.c
+  purpose: "Focused regression suite for test_num_statistics."
+- file: tests/test_pcb_board.c
+  purpose: "Focused regression suite for test_pcb_board."
+- file: tests/test_pcb_bom.c
+  purpose: "Focused regression suite for test_pcb_bom."
+- file: tests/test_pcb_drc.c
+  purpose: "Focused regression suite for test_pcb_drc."
+- file: tests/test_pcb_excellon.c
+  purpose: "Focused regression suite for test_pcb_excellon."
+- file: tests/test_pcb_geometry.c
+  purpose: "Focused regression suite for test_pcb_geometry."
+- file: tests/test_pcb_gerber.c
+  purpose: "Focused regression suite for test_pcb_gerber."
+- file: tests/test_pcb_impedance.c
+  purpose: "Focused regression suite for test_pcb_impedance."
+- file: tests/test_pcb_pnp.c
+  purpose: "Focused regression suite for test_pcb_pnp."
+- file: tests/test_qa_corpus.c
+  purpose: "Focused regression suite for test_qa_corpus."
+- file: tests/test_qa_repro.c
+  purpose: "Focused regression suite for test_qa_repro."
+- file: tests/test_rf_microstrip.c
+  purpose: "Focused regression suite for test_rf_microstrip."
+- file: tests/test_rf_smith.c
+  purpose: "Focused regression suite for test_rf_smith."
+- file: tests/test_rf_sparams.c
+  purpose: "Focused regression suite for test_rf_sparams."
+- file: tests/test_soc_memorymap.c
+  purpose: "Focused regression suite for test_soc_memorymap."
+- file: tests/test_spice_ac.c
+  purpose: "Focused regression suite for test_spice_ac."
+- file: tests/test_spice_c.c
+  purpose: "Focused regression suite for test_spice_c."
+- file: tests/test_spice_dc.c
+  purpose: "Focused regression suite for test_spice_dc."
+- file: tests/test_spice_independent.c
+  purpose: "Focused regression suite for test_spice_independent."
+- file: tests/test_spice_lexer.c
+  purpose: "Focused regression suite for test_spice_lexer."
+- file: tests/test_spice_measure.c
+  purpose: "Focused regression suite for test_spice_measure."
+- file: tests/test_spice_netlist.c
+  purpose: "Focused regression suite for test_spice_netlist."
+- file: tests/test_spice_op.c
+  purpose: "Focused regression suite for test_spice_op."
+- file: tests/test_spice_r.c
+  purpose: "Focused regression suite for test_spice_r."
+- file: tests/test_spice_stamp.c
+  purpose: "Focused regression suite for test_spice_stamp."
+- file: tests/test_spice_tran.c
+  purpose: "Focused regression suite for test_spice_tran."
+- file: tests/test_synth_aig.c
+  purpose: "Focused regression suite for test_synth_aig."
+- file: tests/test_synth_truthtable.c
+  purpose: "Focused regression suite for test_synth_truthtable."
+- file: tests/test_wave_decimate.c
+  purpose: "Focused regression suite for test_wave_decimate."
+- file: tests/test_wave_measure.c
+  purpose: "Focused regression suite for test_wave_measure."
+- file: tests/test_wave_signal.c
+  purpose: "Focused regression suite for test_wave_signal."
+- file: tests/test_wave_vcd.c
+  purpose: "Focused regression suite for test_wave_vcd."
+- file: tests/amb3r_implementation.c
+  purpose: Shared C implementation object for EDA C++ linkage checks.
+- file: tests/test_all_headers_cpp.cpp
+  purpose: EDA C++17 declarations aggregation.
+- file: tests/test_cpp_link.cpp
+  purpose: EDA C/C++ ABI regression client.
+- file: tests/run_amb3r_tests.sh
+  purpose: Focused EDA regression, declaration and linkage runner.
+- file: manual/AMB3R_IMPLEMENTATION_STATUS.md
+  purpose: Integrated EDA implementation scope and verification report.
