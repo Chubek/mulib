@@ -78,6 +78,7 @@
     "mulib-collision.h",
     "mulib-color.h",
     "mulib-column-rdbms.h",
+    "mulib-competprice.h",
     "mulib-complex.h",
     "mulib-compression.h",
     "mulib-conainerd-ipc.h",
@@ -227,6 +228,7 @@
     "mulib-hex.h",
     "mulib-hidden_markov_chain.h",
     "mulib-histogram.h",
+    "mulib-histprice.h",
     "mulib-html.h",
     "mulib-http.h",
     "mulib-http1.h",
@@ -411,6 +413,7 @@
     "mulib-polytask.h",
     "mulib-popcount.h",
     "mulib-port.h",
+    "mulib-priceopt.h",
     "mulib-prime.h",
     "mulib-probability.h",
     "mulib-process.h",
@@ -442,6 +445,7 @@
     "mulib-row-rdbms.h",
     "mulib-rpc.h",
     "mulib-rubybind.h",
+    "mulib-sat.h",
     "mulib-schedutils.h",
     "mulib-search.h",
     "mulib-select.h",
@@ -456,6 +460,7 @@
     "mulib-shoebox-contract.h",
     "mulib-signal.h",
     "mulib-simdmath.h",
+    "mulib-smt.h",
     "mulib-smtpclient.h",
     "mulib-smtpserver.h",
     "mulib-socket.h",
@@ -475,6 +480,8 @@
     "mulib-stack.h",
     "mulib-static_file.h",
     "mulib-stats.h",
+    "mulib-statsprice.h",
+    "mulib-statsproc.h",
     "mulib-strbuf.h",
     "mulib-strpool.h",
     "mulib-stylesheet.h",
@@ -580,10 +587,10 @@
     "mulib-zip.h",
     "mulib-zstd.h"
   ],
-  "libraries": 579,
-  "functions": 3272,
-  "types": 5514,
-  "constants": 2056,
+  "libraries": 586,
+  "functions": 3310,
+  "types": 5573,
+  "constants": 2083,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -623,7 +630,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "f03dba0332a625e4d9c9dcb43ce12dcd040b8400df21148590492d6bcea6b05d",
+  "fingerprint": "5d544f91c231c395177d584c512c87a7bab6eb5b59b6918d61e5c16f43208a9c",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -1476,6 +1483,12 @@
         "mulib_column_rdbms_append",
         "mulib_column_rdbms_column",
         "mulib_column_rdbms_free"
+      ]
+    },
+    "competprice": {
+      "header": "mulib-competprice.h",
+      "functions": [
+        "mulib_competprice_recommend"
       ]
     },
     "complex": {
@@ -3154,6 +3167,18 @@
         "mulib_histogram_init",
         "mulib_histogram_add",
         "mulib_histogram_free"
+      ]
+    },
+    "histprice": {
+      "header": "mulib-histprice.h",
+      "functions": [
+        "mulib_histprice_ema",
+        "mulib_histprice_holt",
+        "mulib_histprice_seasonal",
+        "mulib_histprice_kalman",
+        "mulib_histprice_ar1",
+        "mulib_histprice_robust_trend",
+        "mulib_histprice_ema_mae"
       ]
     },
     "html": {
@@ -4914,6 +4939,16 @@
         "mulib_port_secure_zero"
       ]
     },
+    "priceopt": {
+      "header": "mulib-priceopt.h",
+      "functions": [
+        "mulib_priceopt_demand",
+        "mulib_priceopt_optimize",
+        "mulib_priceopt_scenarios",
+        "mulib_priceopt_candidates",
+        "mulib_priceopt_ucb"
+      ]
+    },
     "prime": {
       "header": "mulib-prime.h",
       "functions": [
@@ -5209,6 +5244,17 @@
         "mulib_rubybind_generate"
       ]
     },
+    "sat": {
+      "header": "mulib-sat.h",
+      "functions": [
+        "mulib_sat_create",
+        "mulib_sat_destroy",
+        "mulib_sat_add_clause",
+        "mulib_sat_solve",
+        "mulib_sat_value",
+        "mulib_sat_variables"
+      ]
+    },
     "schedutils": {
       "header": "mulib-schedutils.h",
       "functions": [
@@ -5363,6 +5409,18 @@
         "mulib_simdmath_mat4_mul",
         "mulib_simdmath_transform",
         "mulib_simdmath_transform_many"
+      ]
+    },
+    "smt": {
+      "header": "mulib-smt.h",
+      "functions": [
+        "mulib_smt_create",
+        "mulib_smt_destroy",
+        "mulib_smt_clause",
+        "mulib_smt_difference",
+        "mulib_smt_solve",
+        "mulib_smt_boolean_value",
+        "mulib_smt_real_value"
       ]
     },
     "smtpclient": {
@@ -5569,6 +5627,28 @@
         "mulib_stats_add",
         "mulib_stats_variance",
         "mulib_stats_stddev"
+      ]
+    },
+    "statsprice": {
+      "header": "mulib-statsprice.h",
+      "functions": [
+        "mulib_statsprice_estimate",
+        "mulib_statsprice_weighted",
+        "mulib_statsprice_summarize"
+      ]
+    },
+    "statsproc": {
+      "header": "mulib-statsproc.h",
+      "functions": [
+        "mulib_statsproc_quantile",
+        "mulib_statsproc_trimmed_mean",
+        "mulib_statsproc_winsor_mean",
+        "mulib_statsproc_weighted_mean",
+        "mulib_statsproc_weighted_quantile",
+        "mulib_statsproc_mad",
+        "mulib_statsproc_huber",
+        "mulib_statsproc_kde_mode",
+        "mulib_statsproc_theil_sen"
       ]
     },
     "strbuf": {
@@ -6782,7 +6862,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "9eb5272c4a319f824d5a210e8601b5b42d7106f431b94136da3fac6baca2ccc2",
-    "Implementation.c": "d7b3f3afcf9dd33b73e06775355111a0346eb79de547597873f9e8d45be83687"
+    "Generated.inc": "2ed672726d045f62fe0b3fea52c90a7e0c3bc3390c9ecf9d930b99db2434f036",
+    "Implementation.c": "6b6ea4d34171b0767c861de8eaa91c23e0e1ea0406cb9a47fb65fe564c7f3d20"
   }
 }

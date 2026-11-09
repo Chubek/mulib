@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 579 headers, 721 direct dependency edges.
+Inventory: 586 headers, 725 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (182 modules)
+## Stratum 0 (185 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -146,6 +146,7 @@ Compatibility group: `parsec`, `peg`.
 | [phonetic_utils](mulib-phonetic_utils.md) | none |
 | [popcount](mulib-popcount.md) | none |
 | [port](mulib-port.md) | none |
+| [priceopt](mulib-priceopt.md) | none |
 | [prime](mulib-prime.md) | none |
 | [probability](mulib-probability.md) | none |
 | [process](mulib-process.md) | none |
@@ -157,6 +158,7 @@ Compatibility group: `parsec`, `peg`.
 | [rle](mulib-rle.md) | none |
 | [rng](mulib-rng.md) | none |
 | [roman](mulib-roman.md) | none |
+| [sat](mulib-sat.md) | none |
 | [schedutils](mulib-schedutils.md) | none |
 | [search](mulib-search.md) | none |
 | [select](mulib-select.md) | none |
@@ -176,6 +178,7 @@ Compatibility group: `parsec`, `peg`.
 | [split](mulib-split.md) | none |
 | [stack](mulib-stack.md) | none |
 | [stats](mulib-stats.md) | none |
+| [statsproc](mulib-statsproc.md) | none |
 | [strbuf](mulib-strbuf.md) | none |
 | [syscall](mulib-syscall.md) | none |
 | [taskpool](mulib-taskpool.md) | none |
@@ -202,7 +205,7 @@ Compatibility group: `parsec`, `peg`.
 | [xthreads](mulib-xthreads.md) | none |
 | [xtks](mulib-xtks.md) | none |
 
-## Stratum 1 (135 modules)
+## Stratum 1 (139 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -225,6 +228,7 @@ Compatibility group: `parsec`, `peg`.
 | [ccweave](mulib-ccweave.md) | `mir`, `strbuf` |
 | [cmachine](mulib-cmachine.md) | `minivm`, `mir` |
 | [coff](mulib-coff.md) | `endian` |
+| [competprice](mulib-competprice.md) | `statsproc` |
 | [compression](mulib-compression.md) | `buffer`, `rle` |
 | [container-ipc](mulib-container-ipc.md) | `container-core`, `crc32` |
 | [container-log](mulib-container-log.md) | `container-core` |
@@ -262,6 +266,7 @@ Compatibility group: `parsec`, `peg`.
 | [hattrie](mulib-hattrie.md) | `hash` |
 | [health_checker](mulib-health_checker.md) | `upstream` |
 | [heaptable](mulib-heaptable.md) | `memtable` |
+| [histprice](mulib-histprice.md) | `statsproc` |
 | [http2](mulib-http2.md) | `buffer` |
 | [impaclient](mulib-impaclient.md) | `imapserver` |
 | [index](mulib-index.md) | `b+tree` |
@@ -309,12 +314,14 @@ Compatibility group: `parsec`, `peg`.
 | [rewrite](mulib-rewrite.md) | `egraph` |
 | [rewrite_url](mulib-rewrite_url.md) | `seurity` |
 | [simdmath](mulib-simdmath.md) | `linalg` |
+| [smt](mulib-smt.md) | `sat` |
 | [smtpclient](mulib-smtpclient.md) | `smtpserver` |
 | [sppf](mulib-sppf.md) | `vec` |
 | [sql](mulib-sql.md) | `buffer`, `memtable`, `strbuf` |
 | [sqlite-format](mulib-sqlite-format.md) | `buffer`, `endian` |
 | [sshclient](mulib-sshclient.md) | `endian` |
 | [sshserver](mulib-sshserver.md) | `endian` |
+| [statsprice](mulib-statsprice.md) | `statsproc` |
 | [superinstr](mulib-superinstr.md) | `mir`, `strbuf` |
 | [sysfonts](mulib-sysfonts.md) | `dynload` |
 | [sysfs](mulib-sysfs.md) | `vfs` |

@@ -77,6 +77,7 @@
 #define MULIB_IMPL_COLLISION
 #define MULIB_IMPL_COLOR
 #define MULIB_IMPL_COLUMN_RDBMS
+#define MULIB_IMPL_COMPETPRICE
 #define MULIB_IMPL_COMPLEX
 #define MULIB_IMPL_COMPRESSION
 #define MULIB_IMPL_CONAINERD_IPC
@@ -226,6 +227,7 @@
 #define MULIB_IMPL_HEX
 #define MULIB_IMPL_HIDDEN_MARKOV_CHAIN
 #define MULIB_IMPL_HISTOGRAM
+#define MULIB_IMPL_HISTPRICE
 #define MULIB_IMPL_HTML
 #define MULIB_IMPL_HTTP
 #define MULIB_IMPL_HTTP1
@@ -410,6 +412,7 @@
 #define MULIB_IMPL_POLYTASK
 #define MULIB_IMPL_POPCOUNT
 #define MULIB_IMPL_PORT
+#define MULIB_IMPL_PRICEOPT
 #define MULIB_IMPL_PRIME
 #define MULIB_IMPL_PROBABILITY
 #define MULIB_IMPL_PROCESS
@@ -440,6 +443,7 @@
 #define MULIB_IMPL_ROW_RDBMS
 #define MULIB_IMPL_RPC
 #define MULIB_IMPL_RUBYBIND
+#define MULIB_IMPL_SAT
 #define MULIB_IMPL_SCHEDUTILS
 #define MULIB_IMPL_SEARCH
 #define MULIB_IMPL_SECURITY
@@ -455,6 +459,7 @@
 #define MULIB_IMPL_SHOEBOX_CONTRACT
 #define MULIB_IMPL_SIGNAL
 #define MULIB_IMPL_SIMDMATH
+#define MULIB_IMPL_SMT
 #define MULIB_IMPL_SMTPCLIENT
 #define MULIB_IMPL_SMTPSERVER
 #define MULIB_IMPL_SOCKET
@@ -474,6 +479,8 @@
 #define MULIB_IMPL_STACK
 #define MULIB_IMPL_STATIC_FILE
 #define MULIB_IMPL_STATS
+#define MULIB_IMPL_STATSPRICE
+#define MULIB_IMPL_STATSPROC
 #define MULIB_IMPL_STRBUF
 #define MULIB_IMPL_STRPOOL
 #define MULIB_IMPL_STYLESHEET
@@ -655,6 +662,7 @@
 #include "mulib-collision.h"
 #include "mulib-color.h"
 #include "mulib-column-rdbms.h"
+#include "mulib-competprice.h"
 #include "mulib-complex.h"
 #include "mulib-compression.h"
 #include "mulib-conainerd-ipc.h"
@@ -804,6 +812,7 @@
 #include "mulib-hex.h"
 #include "mulib-hidden_markov_chain.h"
 #include "mulib-histogram.h"
+#include "mulib-histprice.h"
 #include "mulib-html.h"
 #include "mulib-http.h"
 #include "mulib-http1.h"
@@ -988,6 +997,7 @@
 #include "mulib-polytask.h"
 #include "mulib-popcount.h"
 #include "mulib-port.h"
+#include "mulib-priceopt.h"
 #include "mulib-prime.h"
 #include "mulib-probability.h"
 #include "mulib-process.h"
@@ -1019,6 +1029,7 @@
 #include "mulib-row-rdbms.h"
 #include "mulib-rpc.h"
 #include "mulib-rubybind.h"
+#include "mulib-sat.h"
 #include "mulib-schedutils.h"
 #include "mulib-search.h"
 #include "mulib-select.h"
@@ -1033,6 +1044,7 @@
 #include "mulib-shoebox-contract.h"
 #include "mulib-signal.h"
 #include "mulib-simdmath.h"
+#include "mulib-smt.h"
 #include "mulib-smtpclient.h"
 #include "mulib-smtpserver.h"
 #include "mulib-socket.h"
@@ -1052,6 +1064,8 @@
 #include "mulib-stack.h"
 #include "mulib-static_file.h"
 #include "mulib-stats.h"
+#include "mulib-statsprice.h"
+#include "mulib-statsproc.h"
 #include "mulib-strbuf.h"
 #include "mulib-strpool.h"
 #include "mulib-stylesheet.h"

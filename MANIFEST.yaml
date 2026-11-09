@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 575
-implemented_module_count: 575
+module_count: 582
+implemented_module_count: 582
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -4038,7 +4038,84 @@ modules:
   purpose: "Verified JVM integer-method frontend to ClickIR, with shared JIT/AOT."
   dependencies: [art]
   status: implemented
+- name: statsproc
+  header: include/mulib-statsproc.h
+  manual: manual/mulib-statsproc.md
+  macro: MULIB_IMPL_STATSPROC
+  purpose: Robust generic quantiles, weighted estimators, MAD, Huber, KDE and Theil-Sen fitting.
+  dependencies: []
+  status: implemented
+- name: statsprice
+  header: include/mulib-statsprice.h
+  manual: manual/mulib-statsprice.md
+  macro: MULIB_IMPL_STATSPRICE
+  purpose: Robust cross-sectional market price estimates and descriptive snapshots.
+  dependencies: [statsproc]
+  status: implemented
+- name: competprice
+  header: include/mulib-competprice.h
+  manual: manual/mulib-competprice.md
+  macro: MULIB_IMPL_COMPETPRICE
+  purpose: Competitive benchmark and quality-adjusted position-based pricing with hard bounds.
+  dependencies: [statsproc]
+  status: implemented
+- name: histprice
+  header: include/mulib-histprice.h
+  manual: manual/mulib-histprice.md
+  macro: MULIB_IMPL_HISTPRICE
+  purpose: Price time-series forecasts with EMA, Holt, additive seasons, Kalman and robust trend.
+  dependencies: [statsproc]
+  status: implemented
+- name: priceopt
+  header: include/mulib-priceopt.h
+  manual: manual/mulib-priceopt.md
+  macro: MULIB_IMPL_PRICEOPT
+  purpose: Model-based bounded profit or revenue optimization, scenarios and UCB exploration.
+  dependencies: []
+  status: implemented
+- name: sat
+  header: include/mulib-sat.h
+  manual: manual/mulib-sat.md
+  macro: MULIB_IMPL_SAT
+  purpose: Bounded complete DPLL SAT solver for CNF and temporary assumptions.
+  dependencies: []
+  status: implemented
+- name: smt
+  header: include/mulib-smt.h
+  manual: manual/mulib-smt.md
+  macro: MULIB_IMPL_SMT
+  purpose: Bounded Boolean and real difference-logic satisfiability using SAT and Bellman-Ford.
+  dependencies: [sat]
+  status: implemented
 project_files:
+- file: manual/mulib-pricing-suite.md
+  purpose: Combined integration, testing, numerical contracts and solver boundaries for pricing modules.
+- file: tests/price_implementations.c
+  purpose: Complete one-translation-unit implementation-switch recipe for all seven modules.
+- file: tests/run_pricing_tests.sh
+  purpose: Compile-and-run ISO C11 module regressions and C++17 cross-language linkage.
+- file: tests/test_price_statistics.c
+  purpose: Independent robust statistics and market estimator numerical regression vectors.
+- file: tests/test_competprice.c
+  purpose: Competitive market positioning, quality adjustment, and pricing constraint regression.
+- file: tests/test_histprice.c
+  purpose: EMA, Holt, Holt-Winters, Kalman, AR(1) and robust price-trend regression.
+- file: tests/test_priceopt.c
+  purpose: Analytic demand optimum, scenarios, discretized price grid and UCB regression.
+- file: tests/test_sat.c
+  purpose: CNF SAT, UNSAT, assumptions, bounds and model validity regression.
+- file: tests/test_smt.c
+  purpose: Guarded difference-logic satisfiability and unsatisfiable theory branch regression.
+- file: tests/test_sat_oracle.c
+  purpose: Exhaustive reference truth-table cross-check against hundreds of generated CNF problems.
+- file: tests/test_pricing_properties.c
+  purpose: Metamorphic price estimator properties and constrained optimizer feasibility checks.
+- file: tests/test_pricing_cpp.cpp
+  purpose: C++17 public-header ABI client linked with the single C implementation unit.
+- file: mudsl/tests/mull/mulib/pricing.mull
+  purpose: Native pricing/statistics/SAT calls exercised through both MuLL hosts.
+- file: mudsl/tests/mull/mulib/pricing.expected
+  purpose: Expected output of the MuLL pricing integration fixture.
 - file: include/mulib-docstring-data.inc
   purpose: Embedded default ldocstr constructors, filters and Lua stylesheet helpers.
 - file: tools/embed_ldocstr.py
@@ -6007,3 +6084,21 @@ project_files:
   purpose: "Focused regression suite for test_android_hostile."
 - file: tests/test_android_abi_alloc.c
   purpose: "Focused regression suite for test_android_abi_alloc."
+- file: examples/modules/competprice.c
+  purpose: "Standalone checked usage example for competprice."
+- file: examples/modules/histprice.c
+  purpose: "Standalone checked usage example for histprice."
+- file: examples/modules/priceopt.c
+  purpose: "Standalone checked usage example for priceopt."
+- file: examples/modules/sat.c
+  purpose: "Standalone checked usage example for sat."
+- file: examples/modules/smt.c
+  purpose: "Standalone checked usage example for smt."
+- file: examples/modules/statsprice.c
+  purpose: "Standalone checked usage example for statsprice."
+- file: examples/modules/statsproc.c
+  purpose: "Standalone checked usage example for statsproc."
+- file: tests/test_pricing_failures.c
+  purpose: "Focused regression suite for test_pricing_failures."
+- file: tests/test_smt_oracle.c
+  purpose: "Focused regression suite for test_smt_oracle."

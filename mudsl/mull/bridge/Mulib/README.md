@@ -9,8 +9,8 @@ creates an immutable binding and checks the initializer's type. A semicolon is
 optional at the declaration's end-of-line, closing brace, or end-of-source.
 Native data referenced by the binding can still be mutated by library calls.
 
-The checked-in generated bridge covers **579 public headers**, **579 library
-names**, **3,272 functions**, **5,514 native type descriptors**, and **2,056
+The checked-in generated bridge covers **586 public headers**, **586 library
+names**, **3,310 functions**, **5,573 native type descriptors**, and **2,083
 constants** from MuLIB. `virtio.h` and `mulib-virtio.h` name the same library.
 `Inventory.json` records the complete header/function inventory and fingerprint.
 Functions are real compiler-typed C calls, including struct/union returns,

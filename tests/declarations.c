@@ -577,4 +577,11 @@
 #include "mulib-ezjni.h"
 #include "mulib-ezndk.h"
 #include "mulib-jvm.h"
+#include "mulib-competprice.h"
+#include "mulib-histprice.h"
+#include "mulib-priceopt.h"
+#include "mulib-sat.h"
+#include "mulib-smt.h"
+#include "mulib-statsprice.h"
+#include "mulib-statsproc.h"
 int main(void) { return 0; }
