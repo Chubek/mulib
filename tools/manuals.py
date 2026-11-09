@@ -21,10 +21,10 @@ IMPLEMENTATION = re.compile(
     r'^#\s*if(?:def\s+|\s+defined\s*\(\s*)(MULIB_IMPL_[A-Z0-9_]+)', re.M)
 INCLUDE = re.compile(r'^\s*#\s*include\s*["<]([^">]+)[">]', re.M)
 AUXILIARY = {
-    'include-mulib-container-core': 'container-core',
-    'include-mulib-qvm': 'qvm-core',
-    'include-mulib-zstd': 'zstd-raw',
-    'include-mulib-lprowse': 'prowse-control',
+    'mulib-container-core': 'container-core',
+    'mulib-qvm': 'qvm-core',
+    'mulib-zstd': 'zstd-raw',
+    'mulib-lprowse': 'prowse-control',
 }
 
 
@@ -56,7 +56,7 @@ def inventory():
         if header in entries:
             raise ValueError('duplicate manifest header: ' + str(header))
         entries[header] = fields
-    headers = set((ROOT / 'include').glob('mulib-*.h'))
+    headers = {p for p in (ROOT / 'include').glob('mulib-*.h') if p.stem not in AUXILIARY}
     if set(entries) != headers:
         raise ValueError('manifest and mulib header inventory differ')
     records = []

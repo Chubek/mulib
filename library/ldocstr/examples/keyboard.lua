@@ -1,0 +1,10 @@
+ldocstr.element('kbd', function(content, attrs)
+  attrs.inline = 'true'
+  return ldocstr.Element('kbd', content, attrs)
+end)
+ldocstr.directive('todo', function(argument)
+  return ldocstr.Para('TODO: ' .. argument)
+end)
+ldocstr.macro('key', function(name)
+  return ldocstr.Element('kbd', name, { inline = 'true' })
+end)

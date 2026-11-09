@@ -1,0 +1,120 @@
+<document>
+<source>https://source.android.com/docs/core/runtime</source>
+<content>Effective in 2026, to align with our trunk stable development model and ensure platform stability for the ecosystem, we will publish source code to AOSP in Q2 and Q4. For building and contributing to AOSP, use `android-latest-release`. The `android-latest-release` manifest branch will always reference the most recent release pushed to AOSP. For more information, see Changes to AOSP.
+
+Android runtime and Dalvik
+
+Stay organized with collections
+
+Save and categorize content based on your preferences.
+
+Android runtime (ART) is the managed runtime used by apps and some system
+services on Android. ART and its predecessor Dalvik were originally created
+specifically for the Android project. ART as the runtime executes the Dalvik
+executable (DEX) format and DEX bytecode specification.
+
+ART and Dalvik are compatible runtimes running DEX bytecode, so apps
+developed for Dalvik should work when running with ART. However, some
+techniques that work on Dalvik do not work on ART. For information about the
+most important issues, see Verifying app behavior on the Android runtime (ART).
+
+ART features
+
+Here are some of the major features implemented by ART.
+
+### Ahead-of-time (AOT) compilation
+
+ART introduces ahead-of-time (AOT) compilation, which can improve app
+performance. ART also has tighter install-time verification than Dalvik.
+
+At install time, ART compiles apps using the on-device
+**dex2oat** tool. This utility accepts DEX files as input and generates
+a compiled app executable for the target device. The utility should be able to
+compile all valid DEX files without difficulty. However, some post-processing
+tools produce invalid files that may be tolerated by Dalvik but cannot be
+compiled by ART. For more information, see Addressing Garbage Collection Issues.
+
+### Improved garbage collection
+
+Garbage collection (GC) is very resource intensive, which can impair an app's performance,
+resulting in choppy display, poor UI responsiveness, and other problems. ART improves garbage
+collection in several ways:
+
+* Mostly concurrent design with a single GC pause
+* Concurrent copying to reduce background memory usage and fragmentation
+* The length of the GC pause is independent of the heap size
+* Collector with lower total GC time for the special case of cleaning up
+recently-allocated, short-lived objects
+* Improved garbage collection ergonomics, making concurrent garbage
+collections more timely, which makes `GC_FOR_ALLOC`
+events extremely rare in typical use cases
+
+### Development and debugging improvements
+
+ART offers a number of features to improve app development and debugging.
+
+#### Support for sampling profiler
+
+Historically, developers have used the Traceview
+tool (designed for tracing
+app execution) as a profiler. While Traceview gives useful information,
+its results on Dalvik have been skewed by the per-method-call overhead, and use
+of the tool noticeably affects run time performance.
+
+ART adds support for a dedicated sampling profiler that does not have these
+limitations. This gives a more accurate view of app execution without
+significant slowdown. Sampling support was added to Traceview for
+Dalvik in the KitKat release.
+
+#### Support for more debugging features
+
+ART supports a number of new debugging options, particularly in monitor- and
+garbage collection-related functionality. For example, you can:
+
+* See what locks are held in stack traces, then jump to the thread that
+holds a lock.
+* Ask how many live instances there are of a given class, ask to see the
+instances, and see what references are keeping an object live.
+* Filter events (like breakpoint) for a specific instance.
+* See the value returned by a method when it exits (using "method-exit"
+events).
+* Set field watchpoint to suspend the execution of a program when a specific
+field is accessed and/or modified.
+
+#### Improved diagnostic detail in exceptions and crash reports
+
+ART gives you as much context and detail as possible when runtime exceptions
+occur. ART provides expanded exception detail for `java.lang.ClassCastException`,
+`java.lang.ClassNotFoundException`,
+and `java.lang.NullPointerException`.
+(Later versions of Dalvik provided expanded exception detail for `java.lang.ArrayIndexOutOfBoundsException`
+and `java.lang.ArrayStoreException`,
+which now include the size of the array and the out-of-bounds offset, and ART
+does this as well.)
+
+For example, `java.lang.NullPointerException`
+now shows information about what the app was trying to do with the null pointer,
+such as the field the app was trying to write to, or the method it was trying to
+call. Here are some typical examples:
+
+java.lang.NullPointerException: Attempt to write to field 'int
+android.accessibilityservice.AccessibilityServiceInfo.flags' on a null object
+reference
+
+java.lang.NullPointerException: Attempt to invoke virtual method
+'java.lang.String java.lang.Object.toString()' on a null object reference
+
+ART also provides improved context information in app native crash reports,
+by including both Java and native stack information.
+
+Report problems
+
+If you run into any issues that aren't due to app JNI issues, report
+them through the Android Open Source Project Issue Tracker. Include an `adb bugreport` and link to
+the app in Google Play store if available. Otherwise, if possible, attach an
+APK that reproduces the issue.
+
+Content and code samples on this page are subject to the licenses described in the Content License. Java and OpenJDK are trademarks or registered trademarks of Oracle and/or its affiliates.
+
+Last updated 2026-10-09 UTC.</content>
+</document>

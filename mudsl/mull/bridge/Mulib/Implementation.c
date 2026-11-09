@@ -143,11 +143,14 @@
 #define MULIB_IMPL_DNSCLIENT
 #define MULIB_IMPL_DNSNMESERVER
 #define MULIB_IMPL_DNSRESOLVER
+#define MULIB_IMPL_DOCSTRING
 #define MULIB_IMPL_DOCUMENTDB
 #define MULIB_IMPL_DOM
 #define MULIB_IMPL_DRM
+#define MULIB_IMPL_DSDOM
 #define MULIB_IMPL_DSU
 #define MULIB_IMPL_DSYMSPEC
+#define MULIB_IMPL_DYEGRAM
 #define MULIB_IMPL_DYNBOX
 #define MULIB_IMPL_DYNCALL
 #define MULIB_IMPL_DYNLOAD
@@ -205,6 +208,7 @@
 #define MULIB_IMPL_GRID
 #define MULIB_IMPL_GSS
 #define MULIB_IMPL_GSSAIR
+#define MULIB_IMPL_GVIZZ
 #define MULIB_IMPL_HAMMING_DISTANCE
 #define MULIB_IMPL_HASH
 #define MULIB_IMPL_HATTRIE
@@ -373,6 +377,7 @@
 #define MULIB_IMPL_PACKETSTREAM
 #define MULIB_IMPL_PACKETVM
 #define MULIB_IMPL_PAGING
+#define MULIB_IMPL_PANDOCAST
 #define MULIB_IMPL_PARALLEL
 #define MULIB_IMPL_PARSEC
 #define MULIB_IMPL_PARSER
@@ -468,6 +473,7 @@
 #define MULIB_IMPL_SYSCALL
 #define MULIB_IMPL_SYSFONTS
 #define MULIB_IMPL_SYSFS
+#define MULIB_IMPL_TAS
 #define MULIB_IMPL_TASK
 #define MULIB_IMPL_TASKDAG
 #define MULIB_IMPL_TASKPOOL
@@ -551,6 +557,7 @@
 #define MULIB_IMPL_XML
 #define MULIB_IMPL_XPATH
 #define MULIB_IMPL_XSIMD
+#define MULIB_IMPL_XTAS
 #define MULIB_IMPL_XTBB
 #define MULIB_IMPL_XTENSA
 #define MULIB_IMPL_XTHREADS
@@ -703,11 +710,14 @@
 #include "mulib-dnsclient.h"
 #include "mulib-dnsnmeserver.h"
 #include "mulib-dnsresolver.h"
+#include "mulib-docstring.h"
 #include "mulib-documentdb.h"
 #include "mulib-dom.h"
 #include "mulib-drm.h"
+#include "mulib-dsdom.h"
 #include "mulib-dsu.h"
 #include "mulib-dsymspec.h"
+#include "mulib-dyegram.h"
 #include "mulib-dynbox.h"
 #include "mulib-dyncall.h"
 #include "mulib-dynload.h"
@@ -764,6 +774,7 @@
 #include "mulib-grid.h"
 #include "mulib-gss.h"
 #include "mulib-gssair.h"
+#include "mulib-gvizz.h"
 #include "mulib-hamming_distance.h"
 #include "mulib-hash.h"
 #include "mulib-hattrie.h"
@@ -933,6 +944,7 @@
 #include "mulib-packetstream.h"
 #include "mulib-packetvm.h"
 #include "mulib-paging.h"
+#include "mulib-pandocast.h"
 #include "mulib-parallel.h"
 #include "mulib-parsec.h"
 #include "mulib-path.h"
@@ -1027,6 +1039,7 @@
 #include "mulib-syscall.h"
 #include "mulib-sysfonts.h"
 #include "mulib-sysfs.h"
+#include "mulib-tas.h"
 #include "mulib-task.h"
 #include "mulib-taskdag.h"
 #include "mulib-taskpool.h"
@@ -1110,6 +1123,7 @@
 #include "mulib-xml.h"
 #include "mulib-xpath.h"
 #include "mulib-xsimd.h"
+#include "mulib-xtas.h"
 #include "mulib-xtbb.h"
 #include "mulib-xtensa.h"
 #include "mulib-xthreads.h"

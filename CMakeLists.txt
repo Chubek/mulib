@@ -127,6 +127,8 @@ if(MULIB_BUILD_TESTS)
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_archml.py --check)
     add_test(NAME mulib_unit_profiles_embedded
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed_units.py --check)
+    add_test(NAME mulib_ldocstr_embedded
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed_ldocstr.py --check)
   endif()
   add_executable(mulib_smoke tests/smoke.c)
   mulib_test_executable(mulib_smoke)
@@ -165,6 +167,18 @@ if(MULIB_BUILD_TESTS)
     endif()
     mulib_register_test("mulib_${test_name}")
   endforeach()
+  if(Python3_Interpreter_FOUND)
+    find_program(MULIB_PANDOC_EXECUTABLE NAMES pandoc)
+    set(docstring_options)
+    if(MULIB_PANDOC_EXECUTABLE)
+      list(APPEND docstring_options --pandoc ${MULIB_PANDOC_EXECUTABLE})
+    endif()
+    add_test(NAME mulib_docstring_interoperability
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_docstring.py
+        --runtime $<TARGET_FILE:mulib_test_docstring>
+        --library ${CMAKE_CURRENT_SOURCE_DIR}/library/ldocstr ${docstring_options})
+    set_tests_properties(mulib_docstring_interoperability PROPERTIES TIMEOUT 180)
+  endif()
   find_program(MULIB_NODE_EXECUTABLE NAMES node nodejs)
   find_program(MULIB_CPIO_EXECUTABLE NAMES cpio)
   find_program(MULIB_CLANG_EXECUTABLE NAMES clang)

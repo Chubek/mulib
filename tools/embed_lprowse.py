@@ -21,7 +21,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
-    path = ROOT / 'include/include-mulib-lprowse.h'
+    path = ROOT / 'include/mulib-lprowse.h'
     text = generated()
     if args.check:
         if not path.exists() or path.read_text() != text:

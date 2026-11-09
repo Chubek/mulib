@@ -55,7 +55,7 @@ See [inline QVM](mulib-qvm.md) for instruction semantics and
 | --- | --- |
 | Header | [`include/mulib-container-qvmboost.h`](../include/mulib-container-qvmboost.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_QVMBOOST` |
-| Repository-local includes | [mulib-qvm](mulib-qvm.md), [mulib-containerboost](mulib-containerboost.md) |
+| Repository-local includes | [mulib-containerboost](mulib-containerboost.md), [mulib-qvm](mulib-qvm.md) |
 | Complete example | [`examples/modules/container-qvmboost.c`](../examples/modules/container-qvmboost.c) |
 
 The include list includes conditional and implementation-only includes;

@@ -1,3 +1,10 @@
+#define MULIB_IMPL_DOCSTRING
+#define MULIB_IMPL_DSDOM
+#define MULIB_IMPL_DYEGRAM
+#define MULIB_IMPL_GVIZZ
+#define MULIB_IMPL_PANDOCAST
+#define MULIB_IMPL_TAS
+#define MULIB_IMPL_XTAS
 #define MULIB_IMPL_LINEBREAK
 #define MULIB_IMPL_AZW3
 #define MULIB_IMPL_DEFLATE
@@ -931,9 +938,9 @@
 #include "mulib-vmm.h"
 #include "mulib-vmm-host.h"
 #include "mulib-vmm-kvm.h"
-#include "include-mulib-container-core.h"
-#include "include-mulib-qvm.h"
-#include "include-mulib-zstd.h"
+#include "mulib-container-core.h"
+#include "mulib-qvm.h"
+#include "mulib-zstd.h"
 #include "mulib-readline.h"
 #include "mulib-curses.h"
 #include "mulib-prowse-protocol.h"
@@ -1117,3 +1124,10 @@
 #include "mulib-mobi.h"
 #include "mulib-pdf.h"
 #include "mulib-zip.h"
+#include "mulib-docstring.h"
+#include "mulib-dsdom.h"
+#include "mulib-dyegram.h"
+#include "mulib-gvizz.h"
+#include "mulib-pandocast.h"
+#include "mulib-tas.h"
+#include "mulib-xtas.h"

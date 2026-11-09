@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 556
-implemented_module_count: 556
+module_count: 563
+implemented_module_count: 563
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3905,7 +3905,80 @@ modules:
   purpose: Seven UTF-8 wrapping strategies, including Knuth-Plass and Unicode.
   dependencies: [unibreak]
   status: implemented
+- name: docstring
+  header: include/mulib-docstring.h
+  manual: manual/mulib-docstring.md
+  macro: MULIB_IMPL_DOCSTRING
+  purpose: "Rich documentation DSL, DocstrIL compiler, Mune Lua extensions/filters"
+  dependencies: [css, dsdom, dyegram, mune, pandocast, tas, termsyn, yaml]
+  status: implemented
+- name: dsdom
+  header: include/mulib-dsdom.h
+  manual: manual/mulib-dsdom.md
+  macro: MULIB_IMPL_DSDOM
+  purpose: "Documentation DOM utilities over MuLIB's owned UTF-8 XML tree."
+  dependencies: [xml]
+  status: implemented
+- name: dyegram
+  header: include/mulib-dyegram.h
+  manual: manual/mulib-dyegram.md
+  macro: MULIB_IMPL_DYEGRAM
+  purpose: "Native SVG sequence diagrams using labelled graph message order."
+  dependencies: [gvizz]
+  status: implemented
+- name: gvizz
+  header: include/mulib-gvizz.h
+  manual: manual/mulib-gvizz.md
+  macro: MULIB_IMPL_GVIZZ
+  purpose: "Small directed labelled graphs and deterministic native SVG rendering."
+  dependencies: [dsdom]
+  status: implemented
+- name: pandocast
+  header: include/mulib-pandocast.h
+  manual: manual/mulib-pandocast.md
+  macro: MULIB_IMPL_PANDOCAST
+  purpose: "DocstrIL to Pandoc JSON AST 1.23.1, without a Pandoc dependency."
+  dependencies: [dsdom, json]
+  status: implemented
+- name: tas
+  header: include/mulib-tas.h
+  manual: manual/mulib-tas.md
+  macro: MULIB_IMPL_TAS
+  purpose: "Owned, lossless element/attribute/text/end documentation token stream."
+  dependencies: [xtas]
+  status: implemented
+- name: xtas
+  header: include/mulib-xtas.h
+  manual: manual/mulib-xtas.md
+  macro: MULIB_IMPL_XTAS
+  purpose: "Bounded, cancellable documentation-tree event stream."
+  dependencies: [dsdom]
+  status: implemented
 project_files:
+- file: include/mulib-docstring-data.inc
+  purpose: Embedded default ldocstr constructors, filters and Lua stylesheet helpers.
+- file: tools/embed_ldocstr.py
+  purpose: Reproducible embedding and freshness verification for ldocstr Lua modules.
+- file: tools/check_docstring.py
+  purpose: DocstrIL XML/SVG, Lua fixtures and optional real Pandoc interoperability.
+- file: library/ldocstr/README.md
+  purpose: Automatically loaded documentation Lua library integration guide.
+- file: library/ldocstr/ldocstr.lua
+  purpose: DocstrIL constructors, extension registration and document/stream filters.
+- file: library/ldocstr/ldstr-style.lua
+  purpose: Lua stylesheet constructors and document filters using the CSS cascade.
+- file: library/ldocstr/examples/keyboard.lua
+  purpose: Inline keyboard element, directive and macro extension example.
+- file: library/ldocstr/examples/document.lua
+  purpose: Documentation authored as a Lua program returning DocstrIL.
+- file: library/ldocstr/examples/filter.lua
+  purpose: Pandoc-like postorder walk filter example.
+- file: library/ldocstr/examples/style.lua
+  purpose: Lua stylesheet filter example.
+- file: mudsl/tests/mull/mulib/docstring.mull
+  purpose: MuLL native documentation compiler, validation and stream integration fixture.
+- file: mudsl/tests/mull/mulib/docstring.expected
+  purpose: Expected output for the MuLL documentation integration fixture.
 - file: examples/modules/linebreak.c
   purpose: Standalone checked usage example for linebreak.
 - file: tests/test_linebreak.c
@@ -5744,3 +5817,19 @@ project_files:
   purpose: Regression checks for missing modules and stale MuLL bridge artifacts.
 - file: mudsl/tests/mull/mulib/ebooks.mull
   purpose: Shared C++/D MuLL coverage for publication APIs, compression and ownership.
+- file: examples/modules/docstring.c
+  purpose: "Standalone checked usage example for docstring."
+- file: examples/modules/dsdom.c
+  purpose: "Standalone checked usage example for dsdom."
+- file: examples/modules/dyegram.c
+  purpose: "Standalone checked usage example for dyegram."
+- file: examples/modules/gvizz.c
+  purpose: "Standalone checked usage example for gvizz."
+- file: examples/modules/pandocast.c
+  purpose: "Standalone checked usage example for pandocast."
+- file: examples/modules/tas.c
+  purpose: "Standalone checked usage example for tas."
+- file: examples/modules/xtas.c
+  purpose: "Standalone checked usage example for xtas."
+- file: tests/test_docstring.c
+  purpose: "Focused regression suite for test_docstring."

@@ -1,0 +1,329 @@
+<document>
+<source>https://developer.android.com/reference/packages</source>
+<content>Stay organized with collections
+
+Save and categorize content based on your preferences.
+
+Package Index
+
+Kotlin
+Java
+
+These are the API packages.
+See all API classes.
+
+android | Contains resource classes used by applications included in the platform and defines application permissions for system features.
+android.accessibilityservice | The classes in this package are used for development of accessibility service that provide alternative or augmented feedback to the user.
+android.accounts
+android.adservices
+android.adservices.adid
+android.adservices.adselection
+android.adservices.appsetid
+android.adservices.common
+android.adservices.customaudience
+android.adservices.exceptions
+android.adservices.measurement
+android.adservices.ondevicepersonalization
+android.adservices.signals
+android.adservices.topics
+android.animation | These classes provide functionality for the property animation system, which allows you to animate object properties of any type. `int`, `float`, and hexadecimal color values are supported by default. You can animate any other type by telling the system how to calculate the values for that given type with a custom `TypeEvaluator`. For more information, see the Animation guide.
+android.annotation
+android.app | Contains high-level classes encapsulating the overall Android application model.
+android.app.admin | Provides device administration features at the system level, allowing you to create security-aware applications that are useful in enterprise settings, in which IT professionals require rich control over employee devices. For more information, see the Device Administration guide.
+android.app.admin.policy
+android.app.appfunctions | Android App Functions provides APIs for applications to expose functionality to the system for cross-app orchestration, and for system-privileged agents to discover and execute this functionality.
+android.app.appsearch
+android.app.appsearch.exceptions
+android.app.appsearch.observer
+android.app.appsearch.util
+android.app.assist
+android.app.backup | Contains the backup and restore functionality available to applications. If a user wipes the data on their device or upgrades to a new Android-powered device, all applications that have enabled backup can restore the user's previous data when the application is reinstalled. For more information, see the Data Backup guide.
+android.app.blob
+android.app.contentsafety
+android.app.jank
+android.app.job
+android.app.people
+android.app.permissionui
+android.app.privatecompute
+android.app.role
+android.app.sdksandbox
+android.app.sdksandbox.sdkprovider
+android.app.slice
+android.app.time
+android.app.usage
+android.app.voiceinteraction
+android.app.wallpaper
+android.appwidget | Contains the components necessary to create "app widgets", which users can embed in other applications (such as the home screen) to quickly access application data and services without launching a new activity. For more information, see the App Widgets guide.
+android.bluetooth
+android.bluetooth.le
+android.companion
+android.companion.virtual
+android.content | Contains classes for accessing and publishing data on a device.
+android.content.om
+android.content.pm | Contains classes for accessing information about an application package, including information about its activities, permissions, services, signatures, and providers.
+android.content.pm.verify.domain
+android.content.pm.webapp
+android.content.res | Contains classes for accessing application resources, such as raw asset files, colors, drawables, media, or other files in the package, plus important device configuration details (orientation, input types, etc.) that affect how the application may behave. For more information, see the Application Resources guide.
+android.content.res.loader
+android.credentials
+android.crypto.hpke
+android.database | Contains classes to explore data returned through a content provider.
+android.database.sqlite | Contains the SQLite database management classes that an application would use to manage its own private database.
+android.devicelock
+android.drm | Provides classes for managing DRM content and determining the capabilities of DRM plugins (agents).
+android.gesture | Provides classes to create, recognize, load and save gestures.
+android.graphics | Provides low level graphics tools such as canvases, color filters, points, and rectangles that let you handle drawing to the screen directly.
+android.graphics.drawable | Provides classes to manage a variety of visual elements that are intended for display only, such as bitmaps and gradients.
+android.graphics.drawable.shapes | Contains classes for drawing geometric shapes.
+android.graphics.fonts
+android.graphics.pdf | Contains classes for manipulation of PDF content.
+android.graphics.pdf.component
+android.graphics.pdf.content
+android.graphics.pdf.models
+android.graphics.pdf.models.selection
+android.graphics.text
+android.hardware | Provides support for hardware features, such as the camera and other sensors.
+android.hardware.biometrics
+android.hardware.camera2 | The android.hardware.camera2 package provides an interface to individual camera devices connected to an Android device.
+android.hardware.camera2.params
+android.hardware.display
+android.hardware.hid
+android.hardware.input
+android.hardware.lights
+android.hardware.serial
+android.hardware.usb | Provides support to communicate with USB hardware peripherals that are connected to Android-powered devices. For more information, see the USB guide.
+android.health.connect
+android.health.connect.changelog
+android.health.connect.datatypes
+android.health.connect.datatypes.units
+android.icu.lang
+android.icu.math
+android.icu.number
+android.icu.text
+android.icu.util
+android.inputmethodservice | Base classes for writing input methods (such as software keyboards).
+android.location | Contains framework API classes for accessing a variety of location related services.
+android.media | Provides classes that manage various media interfaces in audio and video.
+android.media.audiofx | Provides classes that manage audio effects implemented in the media framework.
+android.media.browse
+android.media.effect | Provides classes that allow you to apply a variety of visual effects to images and videos.
+android.media.metrics
+android.media.midi | Provides classes for sending and receiving messages using the standard MIDI event protocol over USB, Bluetooth LE, and virtual (inter-app) transports.
+android.media.projection
+android.media.quality
+android.media.session
+android.media.tv
+android.media.tv.ad
+android.media.tv.interactive
+android.mtp | Provides APIs that let you interact directly with connected cameras and other devices, using the PTP (Picture Transfer Protocol) subset of the MTP (Media Transfer Protocol) specification.
+android.net | Classes that help with network access, beyond the normal java.net.\* APIs.
+android.net.dns
+android.net.eap
+android.net.http
+android.net.ipsec.ike
+android.net.ipsec.ike.exceptions
+android.net.nsd
+android.net.rtp
+android.net.sip
+android.net.ssl
+android.net.vcn
+android.net.wifi | Provides classes to manage Wi-Fi functionality on the device.
+android.net.wifi.aware | Provides classes which allow applications to use Wi-Fi Aware to discover peers and create connections to them.
+android.net.wifi.hotspot2
+android.net.wifi.hotspot2.omadm
+android.net.wifi.hotspot2.pps
+android.net.wifi.p2p | Provides classes to create peer-to-peer (P2P) connections with Wi-Fi Direct.
+android.net.wifi.p2p.nsd
+android.net.wifi.rtt | Provides classes which allow applications to use Wi-Fi RTT (IEEE 802.11mc) to measure distance to supporting Access Points and peer devices.
+android.nfc
+android.nfc.cardemulation
+android.nfc.tech
+android.opengl | Provides an OpenGL ES static interface and utilities.
+android.os | Provides basic operating system services, message passing, and inter-process communication on the device.
+android.os.ext
+android.os.flagging
+android.os.health | The android.os.health package contains a set of classes to provide data to track the system resources of applications.
+android.os.multisensory
+android.os.storage | Contains classes for the system storage service, which manages binary asset filesystems known as Opaque Binary Blobs (OBBs).
+android.os.storage.operations
+android.os.storage.operations.sources
+android.os.storage.operations.targets
+android.os.strictmode
+android.os.vibrator
+android.preference | These classes are deprecated.
+android.print | Overview Provides classes for implementing print support in applications and also contains all base classes and abstractions involved in printing.
+android.print.pdf
+android.printservice | Provides classes for implementing print services.
+android.provider | Provides convenience classes to access the content providers supplied by Android.
+android.ranging
+android.ranging.ble
+android.ranging.ble.cs
+android.ranging.ble.rssi
+android.ranging.oob
+android.ranging.raw
+android.ranging.uwb
+android.ranging.wifi.pd
+android.ranging.wifi.rtt
+android.renderscript | Renderscript is deprecated since API level 31. Please refer to the migration guide for alternatives.
+android.sax | A framework that makes it easy to write efficient and robust SAX handlers.
+android.se.omapi
+android.security | Provides access to a few facilities of the Android security subsystems.
+android.security.advancedprotection
+android.security.authenticationpolicy
+android.security.identity
+android.security.keystore
+android.security.net.config
+android.service.assist.classification
+android.service.autofill
+android.service.carrier
+android.service.chooser
+android.service.contentsafety
+android.service.controls
+android.service.controls.actions
+android.service.controls.templates
+android.service.credentials
+android.service.dreams
+android.service.media
+android.service.messaging
+android.service.notification
+android.service.persistentdata
+android.service.quickaccesswallet
+android.service.quicksettings
+android.service.restrictions
+android.service.settings.preferences
+android.service.textservice | Provides classes that allow you to create spell checkers in a manner similar to the input method framework (for IMEs).
+android.service.voice
+android.service.vr
+android.service.wallpaper
+android.speech
+android.speech.tts
+android.system
+android.telecom | The Android Telecom framework is responsible for managing calls on an Android device.
+android.telephony | Provides APIs for monitoring the basic phone information, such as the network type and connection state, plus utilities for manipulating phone number strings.
+android.telephony.cdma | Provides APIs for utilizing CDMA-specific telephony features.
+android.telephony.data
+android.telephony.emergency
+android.telephony.euicc
+android.telephony.gsm | Provides APIs for utilizing GSM-specific telephony features, such as text/data/PDU SMS messages.
+android.telephony.ims
+android.telephony.ims.feature
+android.telephony.ims.stub
+android.telephony.mbms
+android.telephony.satellite
+android.test | A framework for writing Android test cases and suites. For more information, see the Testing developer guide.
+android.test.mock | Utility classes providing stubs or mocks of various Android framework building blocks. For more information, see the Testing guide.
+android.test.suitebuilder | Utility classes supporting the test runner classes.
+android.test.suitebuilder.annotation | Utility classes supporting the test runner classes.
+android.text | Provides classes used to render or track text and text spans on the screen.
+android.text.format | This package contains alternative classes for some text formatting classes defined in `java.util` and `java.text`.
+android.text.method | Provides classes that monitor or modify keypad input.
+android.text.style | Provides classes used to view or change the style of a span of text in a View object.
+android.text.util | Utilities for converting identifiable text strings into clickable links and creating RFC 822-type message (SMTP) tokens.
+android.transition | The classes in this package enable "scenes & transitions" functionality for view hiearchies.
+android.util | Provides common utility methods such as date/time manipulation, base64 encoders and decoders, string and number conversion methods, and XML utilities.
+android.util.function
+android.util.proto | Provides utility classes to export protocol buffers from the system.
+android.view | Provides classes that expose basic user interface classes that handle screen layout and interaction with the user.
+android.view.accessibility | The classes in this package are used to represent screen content and changes to it as well as APIs for querying the global accessibility state of the system.
+android.view.animation | Provides classes that handle tweened animations.
+android.view.autofill
+android.view.contentcapture
+android.view.displayhash
+android.view.inputmethod | Framework classes for interaction between views and input methods (such as soft keyboards).
+android.view.inspector
+android.view.textclassifier
+android.view.textservice
+android.view.translation
+android.webkit | Provides tools for browsing the web.
+android.widget | The widget package contains (mostly visual) UI elements to use on your Application screen.
+android.widget.inline
+android.widget.photopicker
+android.window
+dalvik.annotation
+dalvik.annotation.optimization
+dalvik.bytecode
+dalvik.system
+java.awt.font
+java.beans
+java.io | Provides for system input and output through data streams, serialization and the file system.
+java.lang | Provides classes that are fundamental to the design of the Java programming language.
+java.lang.annotation | Provides library support for the Java programming language annotation facility.
+java.lang.invoke
+java.lang.ref | Provides reference-object classes, which support a limited degree of interaction with the garbage collector.
+java.lang.reflect | Provides classes and interfaces for obtaining reflective information about classes and objects.
+java.lang.runtime | The `java.lang.runtime` package provides low-level runtime support for the Java language.
+java.math
+java.net | Provides the classes for implementing networking applications.
+java.nio | Defines buffers, which are containers for data, and provides an overview of the other NIO packages.
+java.nio.channels | Defines channels, which represent connections to entities that are capable of performing I/O operations, such as files and sockets; defines selectors, for multiplexed, non-blocking I/O operations.
+java.nio.channels.spi | Service-provider classes for the `java.nio.channels` package.
+java.nio.charset | Defines charsets, decoders, and encoders, for translating between bytes and Unicode characters.
+java.nio.charset.spi | Service-provider classes for the `java.nio.charset` package.
+java.nio.file
+java.nio.file.attribute
+java.nio.file.spi
+java.security | Provides the classes and interfaces for the security framework.
+java.security.acl | The classes and interfaces in this package have been superseded by classes in the java.security package.
+java.security.cert | Provides classes and interfaces for parsing and managing certificates, certificate revocation lists (CRLs), and certification paths.
+java.security.interfaces | Provides interfaces for generating RSA (Rivest, Shamir and Adleman AsymmetricCipher algorithm) keys as defined in the RSA Laboratory Technical Note PKCS#1, and DSA (Digital Signature Algorithm) keys as defined in NIST's FIPS-186.
+java.security.spec | Provides classes and interfaces for key specifications and algorithm parameter specifications.
+java.sql | Provides the API for accessing and processing data stored in a data source (usually a relational database) using the JavaTM programming language.
+java.text | Provides classes and interfaces for handling text, dates, numbers, and messages in a manner independent of natural languages.
+java.time | The main API for dates, times, instants, and durations.
+java.time.chrono | Generic API for calendar systems other than the default ISO.
+java.time.format | Provides classes to print and parse dates and times.
+java.time.temporal | Access to date and time using fields and units, and date time adjusters.
+java.time.zone | Support for time-zones and their rules.
+java.util | Contains the collections framework, some internationalization support classes, a service loader, properties, random number generation, string parsing and scanning classes, base64 encoding and decoding, a bit array, and several miscellaneous utility classes.
+java.util.concurrent | Utility classes commonly useful in concurrent programming.
+java.util.concurrent.atomic | A small toolkit of classes that support lock-free thread-safe programming on single variables.
+java.util.concurrent.locks | Interfaces and classes providing a framework for locking and waiting for conditions that is distinct from built-in synchronization and monitors.
+java.util.function | *Functional interfaces* provide target types for lambda expressions and method references.
+java.util.jar | Provides classes for reading and writing the JAR (Java ARchive) file format, which is based on the standard ZIP file format with an optional manifest file.
+java.util.logging | Provides the classes and interfaces of the Java 2 platform's core logging facilities.
+java.util.prefs | This package allows applications to store and retrieve user and system preference and configuration data.
+java.util.random | This package contains classes and interfaces that support a generic API for random number generation.
+java.util.regex | Classes for matching character sequences against patterns specified by regular expressions.
+java.util.stream | Classes to support functional-style operations on streams of elements, such as map-reduce transformations on collections.
+java.util.zip | Provides classes for reading and writing the standard ZIP and GZIP file formats.
+javax.annotation.processing
+javax.crypto | Provides the classes and interfaces for cryptographic operations.
+javax.crypto.interfaces | Provides interfaces for Diffie-Hellman keys as defined in RSA Laboratories' PKCS #3.
+javax.crypto.spec | Provides classes and interfaces for key specifications and algorithm parameter specifications.
+javax.microedition.khronos.egl
+javax.microedition.khronos.opengles | Provides a standard OpenGL interface.
+javax.net | Provides classes for networking applications.
+javax.net.ssl | Provides classes for the secure socket package.
+javax.security.auth | This package provides a framework for authentication and authorization.
+javax.security.auth.callback | This package provides the classes necessary for services to interact with applications in order to retrieve information (authentication data including usernames or passwords, for example) or to display information (error and warning messages, for example).
+javax.security.auth.login | This package provides a pluggable authentication framework.
+javax.security.auth.x500 | This package contains the classes that should be used to store X500 Principal and X500 Private Credentials in a *Subject*.
+javax.security.cert | Provides classes for public key certificates.
+javax.sql | Provides the API for server side data source access and processing from the JavaTM programming language.
+javax.xml
+javax.xml.datatype
+javax.xml.namespace
+javax.xml.parsers
+javax.xml.transform
+javax.xml.transform.dom
+javax.xml.transform.sax
+javax.xml.transform.stream
+javax.xml.validation
+javax.xml.xpath
+org.apache.http.conn
+org.apache.http.conn.scheme
+org.apache.http.conn.ssl | TLS/SSL specific parts of the *HttpConn* API.
+org.apache.http.params
+org.json
+org.w3c.dom
+org.w3c.dom.ls
+org.xml.sax
+org.xml.sax.ext
+org.xml.sax.helpers
+org.xmlpull.v1
+org.xmlpull.v1.sax2
+
+Content and code samples on this page are subject to the licenses described in the Content License. Java and OpenJDK are trademarks or registered trademarks of Oracle and/or its affiliates.
+
+Last updated 2026-10-09 UTC.</content>
+</document>

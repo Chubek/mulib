@@ -21,6 +21,6 @@ scrapers, workflows and bounded breadth-first crawlers.
 * [`examples/crawl.lua`](examples/crawl.lua)
 * [`examples/local-smoke.lua`](examples/local-smoke.lua), a local data-URL workflow
 
-The host embeds `lprowse.lua` using `include/include-mulib-lprowse.h`. Regenerate
+The host embeds `lprowse.lua` using `include/mulib-lprowse.h`. Regenerate
 with `python3 tools/embed_lprowse.py` and verify with `--check`. No Lua installation
 is required by the default C/Mune application.

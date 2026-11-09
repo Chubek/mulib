@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parent.parent
+SUPPORT_HEADERS = {'mulib-container-core.h', 'mulib-qvm.h', 'mulib-zstd.h', 'mulib-lprowse.h'}
 
 
 def sync(root):
@@ -18,7 +19,7 @@ def sync(root):
     manifest = manifest_path.read_text()
     if not re.search(r'^project_files:\s*$', manifest, re.M):
         raise ValueError('manifest lacks project_files section')
-    headers = sorted((root / 'include').glob('mulib-*.h'))
+    headers = sorted(p for p in (root / 'include').glob('mulib-*.h') if p.name not in SUPPORT_HEADERS)
     registered = {}
     for block in re.findall(r'^- name: .*?(?=^- name: |^project_files:|\Z)',
                             manifest, re.M | re.S):
@@ -38,7 +39,8 @@ def sync(root):
         elif re.sub(r'/\*.*?\*/|//[^\n]*', '', text, flags=re.S).strip():
             raise ValueError('header lacks implementation switch: ' + header.name)
         name = header.stem[6:]
-        deps = sorted(set(re.findall(r'^\s*#\s*include\s*["<]mulib-([^">]+)\.h[">]', text, re.M)))
+        deps = sorted({d for d in re.findall(r'^\s*#\s*include\s*["<]mulib-([^">]+)\.h[">]', text, re.M)
+                       if 'mulib-' + d + '.h' not in SUPPORT_HEADERS})
         if header.name in registered:
             old = registered[header.name]
             implemented = bool(re.search(r'^  status: implemented$', old, re.M))

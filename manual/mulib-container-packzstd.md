@@ -62,7 +62,7 @@ image checksum failures.
 | --- | --- |
 | Header | [`include/mulib-container-packzstd.h`](../include/mulib-container-packzstd.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_PACKZSTD` |
-| Repository-local includes | [mulib-zstd](mulib-zstd.md), [mulib-imgformat](mulib-imgformat.md) |
+| Repository-local includes | [mulib-imgformat](mulib-imgformat.md), [mulib-zstd](mulib-zstd.md) |
 | Complete example | [`examples/modules/container-packzstd.c`](../examples/modules/container-packzstd.c) |
 
 The include list includes conditional and implementation-only includes;

@@ -1,0 +1,18 @@
+mulib D <- G:MulibWrap("Docstring");
+mulib Xml <- G:MulibWrap("Xml");
+mulib Tas <- G:MulibWrap("Tas");
+mulib Alloc <- G:MulibWrap("Alloc");
+val compiler <- D:mulib_docstrings_create(nil);
+val source <- "# MuLL documentation\n\n**Shared** DocstrIL.\n";
+val document <- D:mulib_docstrings_compile(compiler, source, G:Len(source), nil, nil);
+G:Assert(document != nil and D:mulib_docstril_validate(document, 0, 0, nil) == 1);
+val tokens <- Tas:FromDom(document);
+G:Assert(Tas:Count(tokens) > 0);
+val length <- D:New("size_t");
+val xml <- D:mulib_docstrings_render(document, "xml", length, nil);
+G:Assert(xml:String(length:Get()) != "");
+Alloc:Free(nil, xml);
+Tas:Destroy(tokens);
+Xml:Destroy(document);
+D:mulib_docstrings_destroy(compiler);
+"docstring ok";

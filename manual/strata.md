@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 560 headers, 675 direct dependency edges.
+Inventory: 567 headers, 690 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -339,7 +339,7 @@ Compatibility group: `parsec`, `peg`.
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 | [zstd](mulib-zstd.md) | `container-core` |
 
-## Stratum 2 (75 modules)
+## Stratum 2 (76 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -361,6 +361,7 @@ Compatibility group: `parsec`, `peg`.
 | [css](mulib-css.md) | `xml` |
 | [dfa](mulib-dfa.md) | `crc32`, `endian`, `fst` |
 | [dnsresolver](mulib-dnsresolver.md) | `dnscache`, `dnsclient` |
+| [dsdom](mulib-dsdom.md) | `xml` |
 | [elfutils](mulib-elfutils.md) | `elf` |
 | [evtstream](mulib-evtstream.md) | `ast` |
 | [glr](mulib-glr.md) | `atn`, `gss`, `sppf` |
@@ -419,7 +420,7 @@ Compatibility group: `parsec`, `peg`.
 | [xtbb](mulib-xtbb.md) | `parallel` |
 | [zip](mulib-zip.md) | `crc32`, `deflate`, `utf8` |
 
-## Stratum 3 (56 modules)
+## Stratum 3 (58 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -446,6 +447,7 @@ Compatibility group: `parsec`, `peg`.
 | [epub](mulib-epub.md) | `xml`, `zip` |
 | [evtlistener](mulib-evtlistener.md) | `evtstream` |
 | [geosolve](mulib-geosolve.md) | `alloc`, `cgeom`, `geometry` |
+| [gvizz](mulib-gvizz.md) | `dsdom` |
 | [hyphen](mulib-hyphen.md) | `cache`, `dfa`, `orhoconv` |
 | [image2container](mulib-image2container.md) | `imgformat`, `rootfs` |
 | [inet4](mulib-inet4.md) | `parsec` |
@@ -479,8 +481,9 @@ Compatibility group: `parsec`, `peg`.
 | [virtio-os](mulib-virtio-os.md) | `virtio` |
 | [viterbi_decoding](mulib-viterbi_decoding.md) | `hidden_markov_chain` |
 | [vmm-host](mulib-vmm-host.md) | `virtio` |
+| [xtas](mulib-xtas.md) | `dsdom` |
 
-## Stratum 4 (34 modules)
+## Stratum 4 (37 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -494,6 +497,7 @@ Compatibility group: `parsec`, `peg`.
 | [dbschema](mulib-dbschema.md) | `json` |
 | [documentdb](mulib-documentdb.md) | `json`, `memtable` |
 | [dsymspec](mulib-dsymspec.md) | `json` |
+| [dyegram](mulib-dyegram.md) | `gvizz` |
 | [elfbuilder](mulib-elfbuilder.md) | `objfilebuilder` |
 | [imgbuildspec](mulib-imgbuildspec.md) | `imgformat`, `rootfs-buildspec` |
 | [inet6](mulib-inet6.md) | `inet4` |
@@ -506,10 +510,12 @@ Compatibility group: `parsec`, `peg`.
 | [ocicontainermetadata](mulib-ocicontainermetadata.md) | `json`, `ocicontainer` |
 | [ocicontainernetwork](mulib-ocicontainernetwork.md) | `inet4` |
 | [ociimage](mulib-ociimage.md) | `json` |
+| [pandocast](mulib-pandocast.md) | `dsdom`, `json` |
 | [pebuilder](mulib-pebuilder.md) | `binfilewriter`, `bycutils`, `objfilebuilder` |
 | [raytracing](mulib-raytracing.md) | `collision`, `glx` |
 | [readline](mulib-readline.md) | `json`, `strbuf`, `terminfo`, `termkey`, `termutils` |
 | [rpc](mulib-rpc.md) | `json` |
+| [tas](mulib-tas.md) | `xtas` |
 | [template](mulib-template.md) | `json`, `strbuf`, `utf8` |
 | [termsyn](mulib-termsyn.md) | `edbuf`, `termstyle` |
 | [toml](mulib-toml.md) | `json`, `strbuf`, `utf8` |
@@ -519,7 +525,7 @@ Compatibility group: `parsec`, `peg`.
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (35 modules)
+## Stratum 5 (36 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -535,6 +541,7 @@ Compatibility group: `parsec`, `peg`.
 | [daemon](mulib-daemon.md) | `mune`, `process`, `strbuf` |
 | [dbserializer](mulib-dbserializer.md) | `bson`, `cbor`, `messagepack` |
 | [distribtask](mulib-distribtask.md) | `mune`, `utf8`, `yaml` |
+| [docstring](mulib-docstring.md) | `css`, `dsdom`, `dyegram`, `mune`, `pandocast`, `tas`, `termsyn`, `yaml` |
 | [elf-objdump](mulib-elf-objdump.md) | `elf`, `objdump` |
 | [exec](mulib-exec.md) | `mune`, `perf`, `process` |
 | [getaddr](mulib-getaddr.md) | `inet6` |

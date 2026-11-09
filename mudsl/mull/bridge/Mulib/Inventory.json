@@ -145,11 +145,14 @@
     "mulib-dnsclient.h",
     "mulib-dnsnmeserver.h",
     "mulib-dnsresolver.h",
+    "mulib-docstring.h",
     "mulib-documentdb.h",
     "mulib-dom.h",
     "mulib-drm.h",
+    "mulib-dsdom.h",
     "mulib-dsu.h",
     "mulib-dsymspec.h",
+    "mulib-dyegram.h",
     "mulib-dynbox.h",
     "mulib-dyncall.h",
     "mulib-dynload.h",
@@ -206,6 +209,7 @@
     "mulib-grid.h",
     "mulib-gss.h",
     "mulib-gssair.h",
+    "mulib-gvizz.h",
     "mulib-hamming_distance.h",
     "mulib-hash.h",
     "mulib-hattrie.h",
@@ -375,6 +379,7 @@
     "mulib-packetstream.h",
     "mulib-packetvm.h",
     "mulib-paging.h",
+    "mulib-pandocast.h",
     "mulib-parallel.h",
     "mulib-parsec.h",
     "mulib-path.h",
@@ -469,6 +474,7 @@
     "mulib-syscall.h",
     "mulib-sysfonts.h",
     "mulib-sysfs.h",
+    "mulib-tas.h",
     "mulib-task.h",
     "mulib-taskdag.h",
     "mulib-taskpool.h",
@@ -552,6 +558,7 @@
     "mulib-xml.h",
     "mulib-xpath.h",
     "mulib-xsimd.h",
+    "mulib-xtas.h",
     "mulib-xtbb.h",
     "mulib-xtensa.h",
     "mulib-xthreads.h",
@@ -561,10 +568,10 @@
     "mulib-zip.h",
     "mulib-zstd.h"
   ],
-  "libraries": 560,
-  "functions": 3094,
-  "types": 5234,
-  "constants": 1903,
+  "libraries": 567,
+  "functions": 3130,
+  "types": 5290,
+  "constants": 1921,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -604,7 +611,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "77ce8c4f8e3586717ebdb2ee8dd36dda7458e259b21d4dac23061b62ee35653f",
+  "fingerprint": "5ee2079bbcc55dd4cdf154ab85a72d2c435911d4b9c40a2697b7224f505f640a",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -2145,6 +2152,21 @@
         "mulib_dnsresolver_resolve"
       ]
     },
+    "docstring": {
+      "header": "mulib-docstring.h",
+      "functions": [
+        "mulib_docstril_create",
+        "mulib_docstril_validate",
+        "mulib_docstrings_create",
+        "mulib_docstrings_destroy",
+        "mulib_docstrings_compile",
+        "mulib_docstrings_extend",
+        "mulib_docstrings_lua",
+        "mulib_docstrings_filter",
+        "mulib_docstrings_style",
+        "mulib_docstrings_render"
+      ]
+    },
     "documentdb": {
       "header": "mulib-documentdb.h",
       "functions": [
@@ -2247,6 +2269,15 @@
         "mulib_drm_dumb_destroy"
       ]
     },
+    "dsdom": {
+      "header": "mulib-dsdom.h",
+      "functions": [
+        "mulib_dsdom_clone",
+        "mulib_dsdom_element",
+        "mulib_dsdom_text",
+        "mulib_dsdom_find_id"
+      ]
+    },
     "dsu": {
       "header": "mulib-dsu.h",
       "functions": [
@@ -2269,6 +2300,12 @@
         "mulib_dsymspec_record",
         "mulib_dsymspec_find",
         "mulib_dsymspec_encodings"
+      ]
+    },
+    "dyegram": {
+      "header": "mulib-dyegram.h",
+      "functions": [
+        "mulib_dyegram_svg"
       ]
     },
     "dynbox": {
@@ -2880,6 +2917,22 @@
         "mulib_gssair_free",
         "mulib_gssair_edge",
         "mulib_gssair_lower"
+      ]
+    },
+    "gvizz": {
+      "header": "mulib-gvizz.h",
+      "functions": [
+        "mulib_gvizz_create",
+        "mulib_gvizz_destroy",
+        "mulib_gvizz_node",
+        "mulib_gvizz_edge",
+        "mulib_gvizz_node_count",
+        "mulib_gvizz_edge_count",
+        "mulib_gvizz_node_id",
+        "mulib_gvizz_node_label",
+        "mulib_gvizz_edge_at",
+        "mulib_gvizz_parse",
+        "mulib_gvizz_svg"
       ]
     },
     "hamming_distance": {
@@ -4442,6 +4495,13 @@
         "mulib_paging_translate"
       ]
     },
+    "pandocast": {
+      "header": "mulib-pandocast.h",
+      "functions": [
+        "mulib_pandocast_from_docstril",
+        "mulib_pandocast_serialize"
+      ]
+    },
     "parallel": {
       "header": "mulib-parallel.h",
       "functions": [
@@ -5427,6 +5487,18 @@
         "mulib_sysfs_write_bool"
       ]
     },
+    "tas": {
+      "header": "mulib-tas.h",
+      "functions": [
+        "mulib_tas_create",
+        "mulib_tas_destroy",
+        "mulib_tas_push",
+        "mulib_tas_count",
+        "mulib_tas_at",
+        "mulib_tas_from_dom",
+        "mulib_tas_to_dom"
+      ]
+    },
     "task": {
       "header": "mulib-task.h",
       "functions": [
@@ -6365,6 +6437,12 @@
         "mulib_xsimd_dot"
       ]
     },
+    "xtas": {
+      "header": "mulib-xtas.h",
+      "functions": [
+        "mulib_xtas_stream"
+      ]
+    },
     "xtbb": {
       "header": "mulib-xtbb.h",
       "functions": [
@@ -6490,7 +6568,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "b8f6830d52f5087d2215be03a1124a79b9a26456e8afd894a72bb71aa508902d",
-    "Implementation.c": "283da78e7dec208c71cefb870d885bfc216f7572db422cd74a647073e550f7a3"
+    "Generated.inc": "71e0fb4b21a509583a6812a7be26a3280ca2bab2693cb97fab0e7494abc741d0",
+    "Implementation.c": "10bbc3720b0a95f12581f3e81b3de0506f832c85c465370e8dd5ea3d655215a3"
   }
 }

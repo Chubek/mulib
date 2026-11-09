@@ -69,13 +69,17 @@ class Tools(unittest.TestCase):
             (root / 'tests/implementation.c').write_text('/* existing client */\n')
             (root / 'tests/declarations.c').write_text('int main(void) { return 0; }\n')
             (root / 'include/mulib-a.h').write_text(
-                '/** @brief Sample API. */\n#if defined(MULIB_IMPL_A)\n#endif\n')
+                '/** @brief Sample API. */\n#include "mulib-container-core.h"\n#if defined(MULIB_IMPL_A)\n#endif\n')
+            (root / 'include/mulib-container-core.h').write_text(
+                'static inline int mulib_ct_support(void) { return 1; }\n')
             (root / 'include/mulib-future.h').write_text('/* reserved user notes */\n')
             inventory.sync(root)
             before = {p: p.read_text() for p in (root / 'MANIFEST.yaml',
                       root / 'tests/implementation.c', root / 'tests/declarations.c')}
             self.assertIn('module_count: 2', before[root / 'MANIFEST.yaml'])
             self.assertIn('implemented_module_count: 1', before[root / 'MANIFEST.yaml'])
+            self.assertNotIn('- name: container-core', before[root / 'MANIFEST.yaml'])
+            self.assertIn('dependencies: []', before[root / 'MANIFEST.yaml'])
             self.assertIn('status: reserved', before[root / 'MANIFEST.yaml'])
             self.assertIn('#define MULIB_IMPL_A', before[root / 'tests/implementation.c'])
             inventory.sync(root)

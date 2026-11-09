@@ -1,4 +1,4 @@
-#include "include-mulib-container-core.h"
+#include "mulib-container-core.h"
 #include <assert.h>
 int main (void)
 {

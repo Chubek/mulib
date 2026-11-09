@@ -1,4 +1,4 @@
-#include "include-mulib-zstd.h"
+#include "mulib-zstd.h"
 #include <assert.h>
 int main (void)
 {

@@ -212,14 +212,28 @@ static void allocating_operation(unsigned kind) {
     else if (kind == 8) { mulib_sexpr_t *s = mulib_sexpr_parse("(one (two three) \"four\\nfive\")",NULL); if (s) { char *text = mulib_sexpr_render(s); hard_free(text); } mulib_sexpr_destroy(s); }
     else if (kind == 9) { const char s[] = "# title\n\n* one\n* **two**\n\n[text](https://example.org)"; char *text = mulib_markdown_to_html(s,sizeof(s)-1,NULL,NULL); hard_free(text); }
     else if (kind == 10) { const char s[] = "a { color: red; --x: 'escaped\\\"'; }"; mulib_css_sheet_t *v = mulib_css_parse(s,sizeof(s)-1,NULL); mulib_css_destroy(v); }
-    else {
+    else if (kind == 11) {
         mulib_json_t *v = mulib_json_parse(json,sizeof(json)-1,NULL);
         if (v) { const char s[] = "{{#each array}}{{this}}{{/each}}"; char *text = mulib_template_render(s,sizeof(s)-1,v,NULL,NULL); hard_free(text); }
         mulib_json_destroy(v);
     }
+    else {
+        const char s[] = ".define NAME Test\n# {{NAME}}\n.toc\n\n| A | B |\n| --- | --- |\n| x | y |\n\n.graph\nA -> B: label\n.endgraph\n.index term\n.indices\n.style css\nheading {color:red} toc link {color:blue}\n.endstyle\n";
+        mulib_docstrings_t *c = mulib_docstrings_create(NULL);
+        if (c) {
+            mulib_docstril_t *d = mulib_docstrings_compile(c,s,sizeof s-1,NULL,NULL);
+            if (d) {
+                char *text = mulib_docstrings_render(d,"pandoc",NULL,NULL);
+                mulib_tas_t *tokens = mulib_tas_from_dom(d);
+                mulib_dsdom_t *copy = tokens ? mulib_tas_to_dom(tokens,NULL) : NULL;
+                hard_free(text); mulib_xml_destroy(copy); mulib_tas_destroy(tokens);
+            }
+            mulib_xml_destroy(d); mulib_docstrings_destroy(c);
+        }
+    }
 }
 static void parser_failures(void) {
-    for (unsigned kind = 0; kind < 12; ++kind) {
+    for (unsigned kind = 0; kind < 13; ++kind) {
         size_t begin = calls, count;
         allocating_operation(kind); assert(!live); count = calls-begin;
         for (size_t failure = 1; failure <= count; ++failure) {

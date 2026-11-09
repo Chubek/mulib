@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
+SUPPORT_HEADERS = {'mulib-container-core.h', 'mulib-qvm.h', 'mulib-zstd.h', 'mulib-lprowse.h'}
 
 
 def main():
@@ -43,7 +44,7 @@ def main():
     links = ([] if sys.platform == 'win32' else ['-lm'])
     if sys.platform.startswith(('linux', 'freebsd')):
         links += ['-ldl']
-    headers = sorted((root / 'include').glob('mulib-*.h'))
+    headers = sorted(p for p in (root / 'include').glob('mulib-*.h') if p.name not in SUPPORT_HEADERS)
     texts = {p.name: p.read_text() for p in headers}
     switches, dependencies, extra_switches, failures = {}, {}, {}, []
     reserved = set()
@@ -59,6 +60,12 @@ def main():
         failures.append(('unit profiles', units.stderr or units.stdout))
     else:
         print(units.stdout.strip())
+    ldocstr = subprocess.run([sys.executable, str(root / 'tools/embed_ldocstr.py'), '--check'],
+                            capture_output=True, text=True)
+    if ldocstr.returncode:
+        failures.append(('ldocstr modules', ldocstr.stderr or ldocstr.stdout))
+    else:
+        print(ldocstr.stdout.strip())
     strata = subprocess.run([sys.executable, str(root / 'tools/stratify.py'), '--check'],
                             capture_output=True, text=True)
     if strata.returncode:
@@ -116,8 +123,8 @@ def main():
         if not re.search(r'^  status: implemented$', block, re.M):
             failures.append((name, 'implemented header must have status: implemented'))
         switches[name] = match.group(1)
-        dependencies[name] = re.findall(r'^\s*#\s*include\s*["<]'
-                                        r'(mulib-[^">]+\.h)[">]', text, re.M)
+        dependencies[name] = [d for d in re.findall(r'^\s*#\s*include\s*["<]'
+                                        r'(mulib-[^">]+\.h)[">]', text, re.M) if d not in SUPPORT_HEADERS]
         module = name[len('mulib-'):-len('.h')]
         for expected in ['manual/mulib-' + module + '.md',
                          'examples/modules/' + module + '.c']:
@@ -225,6 +232,15 @@ def main():
                                 cwd=work, capture_output=True, text=True, timeout=300)
                             if runtime.returncode:
                                 failures.append((label + ' backends/reference', runtime.stderr or runtime.stdout))
+                                return False
+                        if sources and len(sources) == 1 and sources[0].name == 'test_docstring.c':
+                            command = [sys.executable, str(root / 'tools/check_docstring.py'),
+                                       '--runtime', str(binary), '--library', str(root / 'library/ldocstr')]
+                            if shutil.which('pandoc'):
+                                command += ['--pandoc', shutil.which('pandoc')]
+                            interop = subprocess.run(command, cwd=work, capture_output=True, text=True, timeout=180)
+                            if interop.returncode:
+                                failures.append((label + ' interoperability', interop.stderr or interop.stdout))
                                 return False
                         if sources and len(sources) == 1 and sources[0].name == 'test_dynbox.c':
                             abi = subprocess.run(
