@@ -489,6 +489,17 @@ class MarkdownParser:
             + "\n\\end{" + env + "}"
         )
 
+    def _inline(self, text):
+        """Rendering hook; subclasses may customize presentation without parsing again."""
+        return inline(text)
+
+    def _heading(self, level, text):
+        command = (
+            "section", "subsection", "subsubsection",
+            "paragraph", "subparagraph", "subparagraph",
+        )[level - 1]
+        return "\\" + command + "{" + self._inline(text) + "}"
+
     @staticmethod
     def _starts_block(lines, i):
         line = lines[i]
@@ -619,11 +630,7 @@ class MarkdownParser:
                 value = re.sub(
                     r"[ \t]+#+[ \t]*$", "", heading[2] or ""
                 )
-                command = (
-                    "section", "subsection", "subsubsection",
-                    "paragraph", "subparagraph", "subparagraph",
-                )[level - 1]
-                out.append("\\" + command + "{" + inline(value) + "}")
+                out.append(self._heading(level, value))
                 i += 1
                 continue
 
@@ -671,7 +678,7 @@ class MarkdownParser:
                 ]
                 table.append(
                     " & ".join(
-                        r"\textbf{" + inline(c) + "}"
+                        r"\textbf{" + self._inline(c) + "}"
                         for c in _cells(line)
                     ) + r" \\ \hline"
                 )
@@ -687,7 +694,7 @@ class MarkdownParser:
                         _cells(lines[i]) + [""] * len(align)
                     )[:len(align)]
                     table.append(
-                        " & ".join(inline(c) for c in cells)
+                        " & ".join(self._inline(c) for c in cells)
                         + r" \\ \hline"
                     )
                     i += 1
@@ -713,12 +720,11 @@ class MarkdownParser:
                 paragraph.append(lines[i].lstrip())
                 i += 1
 
-            value = inline("\n".join(paragraph).rstrip())
             if setext:
-                command = (
-                    "section" if setext[1][0] == "=" else "subsection"
-                )
-                value = "\\" + command + "{" + value + "}"
+                value = self._heading(1 if setext[1][0] == "=" else 2,
+                                      "\n".join(paragraph).rstrip())
+            else:
+                value = self._inline("\n".join(paragraph).rstrip())
             out.append(value)
 
         return "\n\n".join(out)

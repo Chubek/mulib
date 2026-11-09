@@ -557,10 +557,6 @@
 #define MULIB_IMPL_YAML
 #define MULIB_IMPL_YANTLR
 #define MULIB_IMPL_ZIP
-#include "include-mulib-container-core.h"
-#include "include-mulib-lprowse.h"
-#include "include-mulib-qvm.h"
-#include "include-mulib-zstd.h"
 #include "mulib-2dgeom.h"
 #include "mulib-aarch64.h"
 #include "mulib-abstun.h"
@@ -641,6 +637,7 @@
 #include "mulib-concurrency-prim.h"
 #include "mulib-conditional_probablity.h"
 #include "mulib-confuse.h"
+#include "mulib-container-core.h"
 #include "mulib-container-ipc.h"
 #include "mulib-container-jitboost.h"
 #include "mulib-container-kvmboost.h"
@@ -834,6 +831,7 @@
 #include "mulib-load_balancer.h"
 #include "mulib-logger.h"
 #include "mulib-lowopt.h"
+#include "mulib-lprowse.h"
 #include "mulib-lsmtree.h"
 #include "mulib-machine.h"
 #include "mulib-machinebuild.h"
@@ -965,6 +963,7 @@
 #include "mulib-pybind.h"
 #include "mulib-queue.h"
 #include "mulib-quic.h"
+#include "mulib-qvm.h"
 #include "mulib-rate_limit.h"
 #include "mulib-raytracing.h"
 #include "mulib-readline.h"
@@ -1116,4 +1115,4 @@
 #include "mulib-yaml.h"
 #include "mulib-yantlr.h"
 #include "mulib-zip.h"
-#include "virtio.h"
+#include "mulib-zstd.h"

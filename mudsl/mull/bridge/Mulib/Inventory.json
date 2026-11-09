@@ -1,9 +1,5 @@
 {
   "headers": [
-    "include-mulib-container-core.h",
-    "include-mulib-lprowse.h",
-    "include-mulib-qvm.h",
-    "include-mulib-zstd.h",
     "mulib-2dgeom.h",
     "mulib-aarch64.h",
     "mulib-abstun.h",
@@ -84,6 +80,7 @@
     "mulib-concurrency-prim.h",
     "mulib-conditional_probablity.h",
     "mulib-confuse.h",
+    "mulib-container-core.h",
     "mulib-container-ipc.h",
     "mulib-container-jitboost.h",
     "mulib-container-kvmboost.h",
@@ -277,6 +274,7 @@
     "mulib-load_balancer.h",
     "mulib-logger.h",
     "mulib-lowopt.h",
+    "mulib-lprowse.h",
     "mulib-lsmtree.h",
     "mulib-machine.h",
     "mulib-machinebuild.h",
@@ -408,6 +406,7 @@
     "mulib-pybind.h",
     "mulib-queue.h",
     "mulib-quic.h",
+    "mulib-qvm.h",
     "mulib-rate_limit.h",
     "mulib-raytracing.h",
     "mulib-readline.h",
@@ -559,7 +558,7 @@
     "mulib-yaml.h",
     "mulib-yantlr.h",
     "mulib-zip.h",
-    "virtio.h"
+    "mulib-zstd.h"
   ],
   "libraries": 559,
   "functions": 3091,
@@ -604,7 +603,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "6350b02ae4d3e2e9683b9e8af2b40fb6250fbf08391d9c09f20de2cd3f1cbe3a",
+  "fingerprint": "e5373e8961f5f773bc3af91e4a1d42f9628253c2ef0e823c9b5e43e9545c3b3b",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -1486,7 +1485,7 @@
       ]
     },
     "container-core": {
-      "header": "include-mulib-container-core.h",
+      "header": "mulib-container-core.h",
       "functions": [
         "mulib_ct_strerror",
         "mulib_ct_add_size",
@@ -3534,7 +3533,7 @@
       ]
     },
     "lprowse": {
-      "header": "include-mulib-lprowse.h",
+      "header": "mulib-lprowse.h",
       "functions": []
     },
     "lsmtree": {
@@ -4780,7 +4779,7 @@
       ]
     },
     "qvm": {
-      "header": "include-mulib-qvm.h",
+      "header": "mulib-qvm.h",
       "functions": [
         "mulib_qvm_validate",
         "mulib_qvm_free",
@@ -5949,7 +5948,7 @@
       ]
     },
     "virtio": {
-      "header": "virtio.h",
+      "header": "mulib-virtio.h",
       "functions": [
         "mulib_virtio_profile",
         "mulib_virtio_profile_count",
@@ -6474,7 +6473,7 @@
       ]
     },
     "zstd": {
-      "header": "include-mulib-zstd.h",
+      "header": "mulib-zstd.h",
       "functions": [
         "mulib_zstd_raw_encode",
         "mulib_zstd_raw_decode"
@@ -6482,7 +6481,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "01d905f591c6002f54d111b9c714daa6afd4970d57278faaa2843e9ea638b614",
-    "Implementation.c": "cf8a34aa3ef74399be7c05694fcf45a541cab057b3f02b62890c8f0845c41006"
+    "Generated.inc": "e86ab53aa4f7f17433cc6ae635cc5ad89499aea1baefbe68216ffc6b90d0045a",
+    "Implementation.c": "0af73b866e2c5cfc4337d4b897e45e042f5bf66c787156b0b15d5142d5cfe2b4"
   }
 }

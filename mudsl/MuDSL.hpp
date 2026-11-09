@@ -13362,6 +13362,7 @@ class Runtime {
   bool running_ = false;
   Env *frame(Env *parent) {
     if (frames_.size() >= maxFrames) throw Error("environment limit exceeded");
+    if (frameObserver) frameObserver();
     frames_.push_back(std::make_unique<Env>()); frames_.back()->parent = parent; return frames_.back().get();
   }
   static void bind(Env *env, const std::string &name, Value value, bool mut = false) {
@@ -13369,6 +13370,7 @@ class Runtime {
     env->values[name] = std::make_shared<detail::Cell>(detail::Cell{std::move(value), mut});
   }
   Value eval(const N &n, Env *env) {
+    if (stepObserver) stepObserver(n->line,n->column);
     if (++steps_ > maxSteps) throw Error("execution limit exceeded", n->line, n->column);
     if (evalDepth_ >= 512) throw Error("evaluation nesting limit exceeded", n->line, n->column);
     ++evalDepth_; struct Guard { std::size_t &n; ~Guard() { --n; } } guard{evalDepth_};
@@ -13468,7 +13470,8 @@ class Runtime {
       return Value(Value::Native([this, n, env](const Value::List &args) {
         arity(args, n->names.size());
         if (calls_ >= maxCallDepth) throw Error("call depth limit exceeded");
-        ++calls_; struct Guard { std::size_t &n; ~Guard() { --n; } } guard{calls_};
+        if (callObserver) callObserver(true);
+        ++calls_; struct Guard { Runtime *vm; ~Guard() { --vm->calls_; if (vm->callObserver) vm->callObserver(false); } } guard{this};
         auto scope = frame(env);
         for (std::size_t i = 0; i < args.size(); ++i) bind(scope, n->names[i], args[i], true);
         try { return eval(n->children[0], scope); }
@@ -13501,6 +13504,10 @@ public:
   std::size_t maxSteps = 1000000, maxCallDepth = 128, maxFrames = 100000, maxSourceBytes = 4 * 1024 * 1024;
   mullier::Pipeline mullier;
   std::function<void(std::string_view)> stdoutSink = [](std::string_view s) { std::cout << s; };
+  // Optional backend accounting hooks; empty for ordinary tree evaluation.
+  std::function<void(std::size_t,std::size_t)> stepObserver;
+  std::function<void()> frameObserver;
+  std::function<void(bool)> callObserver; // The leave notification must not throw.
   std::function<Value(const std::string &)> mulibWrapper;
   explicit Runtime(std::vector<std::filesystem::path> paths = {"mull/stdlib"}) : paths_(std::move(paths)) {
     globals_ = frame(nullptr);
@@ -13546,6 +13553,23 @@ public:
   void define(std::string name, Value value, bool mutableBinding = false) { bind(globals_, name, std::move(value), mutableBinding); }
   Value get(const std::string &name) { return globals_->lookup(name)->value; }
   const std::string &lastError() const { return error_; }
+  /// Parse/compile without evaluating the program or importing packages.
+  dsl::SExpr parse(std::string_view source, const std::string &name = "<input>") const {
+    if (source.size() > maxSourceBytes) throw Error("source size limit exceeded");
+    try { return detail::lower(detail::Parser(source).parse()); }
+    catch (const Error &e) {
+      throw Error(name + ":" + std::to_string(e.line) + ":" + std::to_string(e.column) + ": " + e.what(), e.line, e.column);
+    }
+  }
+  dsl::SExpr compile(std::string_view source, const std::string &name = "<input>") {
+    auto tree = parse(source, name);
+    std::map<std::string, bool> bindings;
+    for (const auto &[key, cell] : globals_->values) bindings[key] = cell->mutable_;
+    try { return mullier.process(tree, bindings); }
+    catch (const mullier::Diagnostic &e) {
+      throw Error(name + ":" + std::to_string(e.line) + ":" + std::to_string(e.column) + ": " + e.what(), e.line, e.column);
+    }
+  }
   Value run(std::string_view source, const std::string &name = "<input>") {
     if (running_ || evalDepth_) throw Error("reentrant run is not supported");
     if (source.size() > maxSourceBytes) throw Error("source size limit exceeded");

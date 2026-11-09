@@ -8,14 +8,12 @@ generate:
 	$(PYTHON) prepare_highlighting.py
 	$(PYTHON) typeset-manuals.py
 	$(PYTHON) typeset-manuals.py --manual-dir ../mull/stdlib --output build/generated/stdlib.tex
-	$(PYTHON) typeset-manifest.py
 export:
 	$(PYTHON) export_manual.py
 check: generate
 	$(PYTHON) export_manual.py --check
 	$(PYTHON) typeset-manuals.py --check
 	$(PYTHON) typeset-manuals.py --manual-dir ../mull/stdlib --output build/generated/stdlib.tex --check
-	$(PYTHON) typeset-manifest.py --check
 	$(PYTHON) test_book.py
 typography: generate
 	$(PYTHON) check_typography.py

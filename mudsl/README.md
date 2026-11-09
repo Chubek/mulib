@@ -2,6 +2,8 @@
 
 A C++20 and D toolkit for building languages, including the embeddable **MuLL**
 interpreter and its **MuLLIER** semantic-analysis/equality-saturation pipeline.
+The **Mu3AC** backend adds three-address lowering and Linux x86-64 native code;
+the installed `mull` command selects the C++ or D host and compilation stage.
 The public entry points are `MuDSL.hpp` and `MuDSL.d`; ship the accompanying
 `mull/mullier` directory as well.
 
@@ -11,6 +13,7 @@ The public entry points are `MuDSL.hpp` and `MuDSL.d`; ship the accompanying
 - MuLL packages: [`mull/stdlib`](mull/stdlib), including 30 portable additions.
 - Native hosts: `mull/native`; MuLIB bridge: `mull/bridge`; rewrite rules: `mull/rewrite`.
 - [Language and embedding reference](mull/README.md).
+- [Command line and installation](mull/cli/README.md), [Mu3AC backend](mull/mu3ac/README.md).
 - [Toolkit manual](manual/README.md) and [expanded book](book/README.md).
 - [Editor addons](addons/README.md): VS Code, Vim/Neovim, Sublime Text,
   JetBrains, and a shared MuLL/MuDSL/MuLIB language server.

@@ -1,0 +1,125 @@
+\chapter{Mu3AC: making evaluation order explicit}\label{ch:mu3ac}
+\begin{MuObjectives}
+\item Read a three-address operation as a result and at most two value inputs.
+\item Follow control flow, lexical cells, and call parameters separately.
+\item Explain why a dynamic language backend still needs runtime services.
+\end{MuObjectives}
+
+MuLLIER is a tree representation well suited to syntax-level analysis and
+equality saturation. A native backend also needs an explicit sequence: where
+values are produced, which branch executes next, when an environment is entered,
+and how arguments reach a call. Mu3AC supplies that representation without
+replacing MuLL's dynamic value model with an unrelated integer language.
+
+\section{A public compile-only boundary}
+The two hosts now expose \api{Runtime.parse(source,name)} and
+\api{Runtime.compile(source,name)}. The first returns the original tree in
+MuLLIER's interchange format. The second applies the existing semantic policies
+and optional optimization, using the runtime's known global mutability. Neither
+evaluates user code or imports a package. Existing \api{run} behavior remains
+the default interpreter path.
+\begin{cppcode}
+#include "MuDSL.hpp"
+#include "mull/mu3ac/Mu3AC.hpp"
+mull::Runtime runtime;
+auto ir = runtime.compile("return 6*7;", "answer.mull");
+auto program = mull::mu3ac::Lowering{}.compile(ir);
+mull::mu3ac::Rewriter rewrite;
+rewrite.optimize(program);
+auto assembly = mull::mu3ac::X86_64{}.emit(program);
+\end{cppcode}
+The D surface has the same stages:
+\begin{dcode}
+import MuDSL;
+import mull.mu3ac.Mu3AC;
+auto runtime = new MuLL.Runtime;
+auto program = (new Lowering).compile(
+    runtime.compile("return 6*7;", "answer.mull"));
+(new Rewriter).optimize(program);
+auto assembly = (new X86_64).emit(program);
+\end{dcode}
+Assembly emission does not itself invoke a toolchain. The CLI owns assembly,
+linking, output paths, and process execution.
+
+\section{Registers are values, not bindings}
+A \api{Program} contains functions. Each function has parameter names, a virtual
+register count, and an instruction sequence. Arithmetic and indexing consume at
+most two value registers and produce one. Registers contain opaque runtime
+handles, not raw host objects. They are non-SSA: explicit moves assign results
+at branch joins, and registers begin as nil.
+
+Lexical names refer to environment cells, separately from these temporaries.
+\api{load} snapshots a cell's current value into a register. \api{bind}
+creates a binding with its mutability; \api{store} updates a mutable cell;
+\api{alias} makes a reference to an existing mutable cell. \api{enter} and
+\api{leave} express scope transitions. Closures retain the live environment,
+not a copied table of values, preserving late declarations and captured writes.
+
+\begin{mullcode}
+var total <- 0;
+val add <- fn(x) { total <- total + x; return total; };
+add(10);
+return add(5);
+\end{mullcode}
+The calls above return through compiled function bodies in the native backend.
+Their shared \api{total} is still one lexical cell.
+
+\section{Control flow replaces implicit tree traversal}
+\api{label}, \api{jump}, \api{branch-false}, and \api{return} make sequencing
+visible. \api{and}/\api{or} become branches and moves, so the unused operand
+does not execute and the result remains an operand value rather than a coerced
+Boolean. Zero stays truthy.
+
+\begin{mullcode}
+var count <- 0;
+while count < 8 {
+  count <- count + 1;
+  { if count > 2 { break; } }
+}
+return count;
+\end{mullcode}
+A break leaves exactly the active loop-body scopes before jumping to the exit.
+The result of a while statement is updated only after a complete iteration;
+breaking partway through the next iteration does not replace that result.
+Function returns jump to their own epilogue and cannot become loop breaks.
+
+\api{check-store} is deliberately separate from \api{store}: assignment checks
+that its target exists and is mutable \emph{before} evaluating its RHS. Reversing
+these operations could print output or call a host function before reporting an
+immutable-target error, changing the language's effect ordering.
+
+\section{Arguments, collections, and source sites}
+The callee is evaluated first, then argument expressions from left to right.
+Adjacent \api{param} instructions transfer the resulting handles to a bounded
+call scratch area; \api{call} consumes them. \api{list} and \api{record} use the
+same explicit parameter mechanism, with separate record-key metadata.
+\api{member}, \api{index}, and \api{closure} complete the current value surface.
+Host-backed MuLIB values keep their existing member/index/call contracts.
+
+Every instruction retains a source line and byte column. \api{tick} marks
+evaluated source-node work; it is not an arbitrary machine-instruction counter.
+Native helpers restore the appropriate site before operations that can fail.
+Thus a division-by-zero or callback error can still identify a MuLL location.
+
+\section{An inspection format with explicit bounds}
+\api{Program.dump()} emits the same version-1 S-expression format in C++ and D.
+The following is schematic; the exact register numbering depends on lowering:
+\begin{rulecode}
+(mu3ac 1
+  (function 0 2 (params)
+    (tick (site 1 1))
+    (number 1 "42" (site 1 8))
+    (return 1 (site 1 1))))
+\end{rulecode}
+The current CLI writes this format for inspection, not as a second source input.
+Lowering bounds functions at 4096, registers per function at 4096, total
+instructions at 262144, and arguments, parameters, or literal collection entries
+at 256. These are compiler representation limits, not the size limit of a list
+returned by a library. Unsupported or oversized lowering fails explicitly;
+there is no hidden fallback that interprets the entry source instead.
+
+\begin{MuSummary}
+\item Temporary value registers and persistent lexical cells solve different problems.
+\item Branches and explicit parameter transfer preserve MuLL's evaluation order.
+\item Source sites and limits are part of the backend contract, not afterthoughts.
+\end{MuSummary}

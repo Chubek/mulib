@@ -1,0 +1,129 @@
+\chapter{The MuLL command line and system installation}\label{ch:mull-cli}
+\begin{MuObjectives}
+\item Choose the C++ or D implementation without changing a source program.
+\item Inspect a compilation stage without executing user code.
+\item Distinguish package discovery from native library linking.
+\end{MuObjectives}
+
+The \api{mull} command is the shared interface to the two MuDSL hosts. Its
+default implementation is \api{MuDSL.hpp}; \api{--engine=d} selects
+\api{MuDSL.d}. Each compiled worker performs its own parsing, MuLLIER analysis,
+Mu3AC lowering, and code emission. The D implementation does not call the C++
+compiler worker, and an unavailable implementation is an error rather than an
+implicit fallback.
+
+\section{Build once, install under a prefix}
+From the repository root, the standalone entry point is:
+\begin{code}
+cmake -S mudsl/mull -B build/mull -DMULL_ENABLE_MULIB=OFF
+cmake --build build/mull --parallel 4
+ctest --test-dir build/mull --output-on-failure
+cmake --install build/mull --prefix "$HOME/.local"
+\end{code}
+The normal \api{mudsl/CMakeLists.txt} entry point builds the same CLI targets.
+The core-only switch above omits the optional MuLIB bridge, not the five native
+base packages or thirty portable packages. Enable that bridge when its native
+headers and runtime sources are available. A D compiler is optional for the
+C++ host; LDC or DMD also builds the D native runtime archive. A GDC-only build
+currently provides the D interpreter/compiler worker, not that native archive.
+
+CMake installs the command under \api{bin}, private workers/configuration under
+\api{libexec/mull}, native runtime archives under the configured library
+directory, and package data under \api{share/mull/stdlib}. The command's
+configuration is prefix-relative, including staged installations. Add a local
+prefix's binary and man directories to the appropriate shell search paths.
+\api{mull --list-engines} reports the installed workers.
+
+\section{Execution and arguments}
+\begin{code}
+mull -p -e 'return 6*7;'
+mull --engine=d -p example.mull -- input.txt -option
+mull --backend=x86-64 -p example.mull
+\end{code}
+The interpreter remains the default backend. Without an emission option, the
+native backend builds and runs a temporary executable. \api{-p} prints the
+final value; otherwise only explicit program output is printed. A returned
+number is a language value, not a process exit status.
+
+The immutable CLI global \api{Args} contains arguments following the separate
+\api{--}, without the source or executable name. Input \api{-} reads standard
+input; \api{-e} supplies an expression/program directly. With a terminal and no
+source, or with \api{--repl}, the interpreter retains bindings between complete
+one-line programs. \api{:quit} ends that session.
+
+\section{Stopping the pipeline}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+\textbf{Option} & \textbf{Artifact or action} \\
+\midrule
+\api{--check} & Parse and analyze, with no evaluation or artifact. \\
+\api{--emit=ast} & Original parsed tree in the MuLLIER interchange format. \\
+\api{--emit=mullier} & Analyzed, optionally optimized MuLLIER. \\
+\api{--emit=mu3ac} & Versioned per-function three-address code. \\
+\api{-S} & GNU assembler source for Linux x86-64. \\
+\api{-c} & An ELF relocatable object. \\
+\api{--emit=exe} & A native executable linked with the selected host runtime. \\
+\bottomrule
+\end{tabularx}
+The corresponding \api{--stop-after} names are \api{parse}, \api{mullier},
+\api{mu3ac}, \api{assembly}, \api{object}, and \api{link}. Text artifacts default
+to standard output; objects default to \api{a.o}, executables to \api{a.out}.
+Use \api{-o} to name an artifact and \api{--run} to run an explicitly emitted
+executable after linking. Mu3AC output is currently an inspection format, not
+a second source-input language for the command.
+
+\begin{MuCaution}[Checking is not execution]
+Compile-only stages do not evaluate the entry program or preload packages.
+They therefore cannot establish that every late-bound name, dynamic type,
+package import, or foreign symbol will succeed at execution/link time.
+\end{MuCaution}
+
+\section{Two distinct library paths}
+\api{-I DIR} adds a MuLL discovery root. Explicit roots precede nonempty
+\api{MULL_PATH} entries and the installed standard-library root. Discovery
+looks for \api{DIR/name/Package.mull}; it does not load a shared object.
+\api{--no-default-paths} keeps only explicit roots. \api{--no-stdlib} omits
+native package registration, not the core \api{G} record. \api{--load NAME}
+preloads a package at execution time and reports import failures immediately.
+Native artifacts snapshot these paths and preloads; package files are not
+embedded into the executable.
+
+By contrast, \api{-L DIR}, \api{-l NAME}, and \api{--link-object FILE} are native
+linker inputs. A symbol becomes a MuLL callable only with an explicit ABI
+binding. For example, a C library can supply:
+\begin{cppcode}
+/* In a C translation unit, or extern "C" when compiled as C++. */
+double custom_square(double value) { return value * value; }
+\end{cppcode}
+\begin{code}
+mull --backend=x86-64 -L ./lib -lcustom \
+  --extern=Square=custom_square:1 -p -e 'return Square(7);'
+\end{code}
+The narrow foreign ABI accepts zero through eight \api{double} arguments and
+returns one \api{double}. It checks MuLL arity, numeric arguments, and finite
+results, but cannot verify a linked function's actual C signature. Shared
+libraries may additionally need \api{--rpath DIR} or platform loader setup.
+The richer typed MuLIB wrapper is a separate provider, not this ABI.
+
+\section{Operational controls and manuals}
+\api{-O0} disables transformations in both IRs, never semantic analysis;
+\api{-O1} enables bounded optimization. Custom rule inputs are
+\api{--mullier-rules DIR} and \api{--mu3ac-rules FILE}. Execution budgets include
+\api{--max-steps}, \api{--max-call-depth}, \api{--max-frames},
+\api{--max-source-bytes}, and the native-only \api{--max-values} arena limit.
+\api{--cc}, \api{--cxx}, and \api{--dc} choose tool executables; \api{--verbose}
+prints their argument vectors. The driver never constructs shell commands.
+Trusted compiler options and native libraries are nevertheless executable
+authority, not a security boundary.
+
+The installed \api{mull(1)} is the complete CLI reference. The single
+\api{mull(5)} manual describes the five native base packages, thirty portable
+packages, optional MuLIB provider, discovery, value contracts, and costs.
+Chapters 46--70 and 73 remain the narrative language/library introduction;
+the manpages are the concise system-facing reference.
+
+\begin{MuSummary}
+\item Host selection and backend selection are independent decisions.
+\item A stopping stage emits only what that stage establishes.
+\item Package roots and native linker search paths are not interchangeable.
+\end{MuSummary}

@@ -1,0 +1,287 @@
+.TH MULL 5 "November 9, 2026" "MuLL" "File Formats and Libraries"
+.SH NAME
+mull \- MuLL standard-library packages, interfaces, and contracts
+.SH DESCRIPTION
+The standard library contains five native base packages and thirty portable
+MuLL packages, shared by the C++ and D hosts. The optional Mulib provider adds
+a separate native package. Package names and member names are case-sensitive.
+The command-line hosts register the available native packages automatically;
+embedding applications call mull::stdlib::install or mull.stdlib.Stdlib.install.
+.SH DISCOVERY AND IMPORTS
+For each configured root, the loader searches root/name/Package.mull in order.
+Names contain ASCII letters, digits, underscores, and hyphens.
+Successful packages must return records and are cached by runtime and name.
+Failures return nil and set the import diagnostic;
+recursive imports are rejected.
+An existing package's parse/evaluation failure does not fall through
+to a later root.
+Success, including a cache hit, clears the diagnostic.
+.PP
+Packages run in isolated environments containing G. Returned closures can retain
+private state. Native Package.mull facades return G:Native("name"); registration
+alone does not replace the discoverable package file.
+.nf
+val P <- G:LoadLib("printf") or G:DieWith("Import Error: $E?");
+P:SetMainSink(G:GetStdout());
+P:Println("ready");
+.fi
+.PP
+Use mull -I DIR to add discovery roots; MULL_PATH follows explicit roots.
+The installed root is normally PREFIX/share/mull/stdlib.
+Package discovery is not native shared-library loading. Native -L/-l options
+and --extern bindings are described in mull(1).
+.SH COMMON VALUE CONTRACTS
+Numbers are finite IEEE binary64 values. No implicit string/number coercion is
+performed. Only nil and false are falsey; zero and empty lists/strings are true.
+Collections are structurally immutable; updating functions return new values.
+Equality is structural except callable/foreign identities.
+Strings and indices are byte-oriented, not Unicode-character-oriented.
+Indices and counts are integral and checked; invalid preconditions throw unless
+an API explicitly documents a fallback or Clamp operation.
+Arguments evaluate eagerly and left to right; library functions cannot make an
+already-evaluated argument lazy.
+.SH CORE HOST RECORD
+.TP
+.B G:LoadLib(name), G:Native(name)
+Discover a package, or retrieve a registered native package implementation.
+.TP
+.B G:GetStdout(), G:DieWith(value), G:Assert(value)
+Obtain the current output callable, raise an error,
+or reject a falsey assertion.
+.TP
+.B G:Str(value), G:Type(value), G:Len(value)
+Display text, type name, or byte/list/record length. Display text is not a
+serialization format; numeric display uses seventeen significant digits.
+.TP
+.B G:MulibWrap(name)
+Obtain a typed namespace from the optional MuLIB provider; unavailable providers
+and unknown libraries raise an error.
+.SH NATIVE BASE PACKAGES
+.TP
+.B printf
+SetMainSink(fn), Format(template,...), Printf(template,...),
+Print(...), Println(...).
+Format substitutes {} placeholders, with {{ and }} for literal braces and exact
+argument counts. Print functions concatenate without separators;
+Println adds LF.
+Sinks take one string; output functions return nil. Recursive writes through
+the same sink are rejected. A sink can replace itself for subsequent writes.
+.TP
+.B terminal
+Write(string), Clear(), Color(code,string). Write/Clear use the runtime stdout
+callback directly; Clear emits ANSI control bytes.
+Color returns a string wrapped
+in ANSI SGR for integral codes 0 through 107; it does not write it.
+.TP
+.B math
+Abs(x), Floor(x), Ceil(x), Sqrt(x), Pow(x,y), Min(x,y), Max(x,y), Pi.
+Nonfinite results and invalid numeric operations are errors.
+.TP
+.B text
+Split(s,separator), Join(strings,separator), Replace(s,from,to),
+Upper(s), Lower(s).
+Split preserves empty fields. Empty separators/search strings are rejected.
+Replace is nonoverlapping; case conversion is ASCII-only.
+.TP
+.B list
+Range(start,end), Map(xs,fn), Filter(xs,fn), Fold(xs,initial,fn),
+Push(xs,value),
+Set(xs,index,value). Range is ascending, integral, end-exclusive, within
+plus/minus (2^53-1), with at most one million elements.
+Callbacks receive one element, or accumulator then element for Fold,
+in list order.
+Push/Set return new lists; Set requires an existing index.
+.SH COMPOSITION AND DATA
+.TP
+.B option
+Some(x), None(), GetOr(o,fallback), Map(o,f), Bind(o,f).
+Records contain present and value. Some(nil) is present.
+Map wraps its callback's
+result; Bind returns the callback result directly. Fallback arguments are eager.
+.TP
+.B result
+Ok(x), Err(e), Map(r,f), Bind(r,f), Unwrap(r).
+Records contain ok, value, error. Failed results bypass callbacks; Unwrap raises
+the stored error. These functions do not catch runtime exceptions.
+.TP
+.B function
+Identity(x), Constant(x), Compose(f,g), Flip(f), Partial(f,a), Times(n,f,x).
+Composition is f(g(x)); Flip/Partial operate on binary functions.
+Times iterates a unary function with a nonnegative integral count.
+.TP
+.B predicate
+Negate(p), Both(p,q), Either(p,q), All(xs,p), Any(xs,p).
+Both/Either preserve operand-valued short-circuit results. All/Any return
+Booleans; All of an empty list is true and Any of an empty list is false.
+.TP
+.B pair
+New(a,b), First(p), Second(p), Swap(p), Map(p,f,g).
+Pairs are lists of exactly two elements; consumers check that length.
+.TP
+.B sequence
+Zip(a,b), Enumerate(xs), Flatten(xs), Reverse(xs).
+Zip truncates to the shorter input; enumeration is zero-based; Flatten removes
+exactly one list level.
+.TP
+.B slice
+Sub(xs,start,end), Take(xs,n), Drop(xs,n), Chunk(xs,n).
+Sub uses checked half-open integral bounds. Chunk size is positive; the last
+chunk may be shorter.
+.TP
+.B search
+Index(xs,value), Contains(xs,value), Find(xs,p), Count(xs,p).
+Index returns nil when absent. Find returns a record with found, index, value,
+distinguishing an actual matched nil. The first match wins;
+equality is structural.
+.TP
+.B sort
+By(xs,less), Ascending(xs), Descending(xs).
+Stable insertion sorting; less must define a strict ordering.
+Ascending/Descending are numeric; input is unchanged.
+.TP
+.B set
+Unique(xs), Union(a,b), Intersection(a,b), Difference(a,b).
+Lists represent sets with structural equality, unique results, and stable
+first-occurrence order.
+.TP
+.B stack
+New(), Push(xs,x), Peek(xs), Pop(xs). The last element is top.
+Pop returns a record with value and rest; Peek/Pop reject empty input.
+.TP
+.B queue
+New(), Enqueue(xs,x), Peek(xs), Dequeue(xs). The first element is front.
+Dequeue returns value and rest; Peek/Dequeue reject empty input.
+.TP
+.B deque
+New(), PushFront(xs,x), PushBack(xs,x), PopFront(xs), PopBack(xs).
+Functional double-ended queue; removals return value and rest
+and reject emptiness.
+.SH NUMBERS AND COLLECTIONS
+.TP
+.B vector
+Dot(a,b), Scale(a,k), Norm(a), Add(a,b), Normalize(a).
+Numeric lists; binary operations require equal lengths. Empty dot is zero;
+normalization rejects zero norm.
+.TP
+.B matrix
+Shape(m), Transpose(m), Multiply(a,b).
+Rectangular lists of rows; shape is [rows,columns]. Empty outer lists have shape
+[0,0] and cannot retain a nonzero column count.
+Multiplication requires compatible
+dimensions and numeric entries.
+.TP
+.B statistics
+Sum(xs), Mean(xs), Variance(xs), Median(xs).
+Variance is population variance (divide by n); median averages the middle pair.
+Empty sum is zero; the other functions reject emptiness.
+Binary64 rounding applies.
+.TP
+.B integer
+Check(x), Gcd(a,b), Lcm(a,b), DivMod(a,b), IsEven(x).
+Checked exact integers within plus/minus (2^53-1); LCM checks its result.
+GCD/LCM are nonnegative; gcd(0,0) is zero.
+DivMod uses floor quotient and remainder
+with the divisor's sign; zero divisor is rejected.
+.TP
+.B bit
+And(a,b), Or(a,b), Xor(a,b), Not(a), ShiftLeft(a,n), ShiftRight(a,n).
+Unsigned 32-bit inputs; integral shift counts 0 through 32. Left shift wraps
+modulo 2^32; right shift is logical. A shift by 32 returns zero.
+.TP
+.B combinatorics
+Factorial(n), Choose(n,k), Cartesian(a,b).
+Factorial accepts 0 through 18; Choose accepts 0<=k<=n<=50,
+keeping intermediates
+exact. Cartesian order is left-list-major; an empty input yields empty output.
+.TP
+.B range
+Step(start,end,step), Contains(start,end,x), Clamp(x,low,high).
+Step uses checked exact integers and a nonzero signed step, excluding the end;
+a direction mismatch yields empty output. Contains is half-open. Clamp requires
+low<=high.
+.SH STRINGS AND APPLICATION UTILITIES
+.TP
+.B string
+Sub(s,start,end), StartsWith(s,p), EndsWith(s,p), Trim(s), Repeat(s,n).
+Sub uses checked integral half-open byte bounds. Trim removes space/TAB/CR/LF.
+Empty prefixes/suffixes match. Repeat count is nonnegative integral.
+.TP
+.B ascii
+Digits, Upper, Lower, IsDigit(c), IsAlpha(c), IsAlnum(c), IsSpace(c), Digit(c).
+Predicates require one byte. Whitespace means space/TAB/CR/LF. Digit accepts
+a decimal ASCII digit and returns 0 through 9.
+.TP
+.B csv
+Encode(rows), Decode(s).
+String fields, commas, doubled-quote escaping. Decode accepts LF/CR/CRLF and
+quoted embedded newlines, rejecting malformed quotes. Encode quotes every field
+and terminates every nonempty row with LF. Empty document is []; an empty field
+is an empty string.
+.TP
+.B path
+Normalize(p), Join(a,b), Basename(p), Dirname(p).
+POSIX lexical operations, not filesystem access. Dot segments and repeated
+slashes are removed, unresolved relative .. is preserved, and absolute paths
+stay rooted. Empty normalizes to a dot. Absolute b replaces a in Join.
+.TP
+.B url
+Encode(s), Decode(s).
+Percent coding for printable ASCII plus TAB/CR/LF.
+Unreserved bytes pass through;
+plus is literal. Decode accepts either hex case. Malformed/truncated escapes or
+unsupported bytes are errors. This is not a full URL parser or Unicode codec.
+.TP
+.B semver
+Parse(s), Compare(a,b), Compatible(a,b).
+Strict major.minor.patch cores, exact integers, no leading zeros or suffixes.
+Compare returns -1, 0, or 1. Compatibility means same nonzero major,
+same nonzero minor under major zero, or identical patch under 0.0.
+It is symmetric, not a range.
+.TP
+.B units
+Radians(degrees), Degrees(radians), CelsiusToFahrenheit(c),
+FahrenheitToCelsius(f), MetersToFeet(m), FeetToMeters(f),
+SecondsToMilliseconds(s), MillisecondsToSeconds(ms).
+Scalar binary64 conversions; one foot is exactly 0.3048 meters by definition.
+.TP
+.B geometry
+Point(x,y), Rect(x,y,w,h), Distance(a,b), Area(r), Contains(r,p),
+Intersection(a,b).
+Records with x/y and width/height. Extents are nonnegative; right/bottom edges
+are excluded. Disjoint intersection has zero extent.
+.TP
+.B color
+Rgb(r,g,b), Hex(c), Mix(a,b,t), Invert(c).
+Integral channels 0 through 255; uppercase #RRGGBB. Mix uses t in [0,1] and
+nearest-integer rounding, without gamma correction.
+.TP
+.B assert
+Check(condition,message), Equal(a,b), NotEqual(a,b), Near(a,b,tolerance).
+Failures throw through G:DieWith/G:Assert.
+Near uses nonnegative absolute tolerance.
+Successful checks return the first value or condition.
+.SH OPTIONAL MULIB PROVIDER
+.B Mulib
+provides Wrap(name), Libraries(), New(type,initial?), Array(type,countOrList),
+Buffer(sizeOrString), Callback(type,fn), SizeOf(type).
+It is present only when built with the optional MuLIB bridge. Wrapped values
+have a distinct mulib type, runtime ownership, native storage, and callback
+lifetime rules. It is not the narrow --extern double-function ABI.
+See the installed MuLIB bridge reference for supported typed adapters.
+.SH COST AND LIMITS
+Portable packages favor small reusable algorithms. Repeated immutable appends
+copy accumulated output; many builders are quadratic. Set membership is linear;
+insertion sort is quadratic in comparisons with additional copying costs.
+Square matrix multiplication uses cubic scalar work. Use native packages for
+large workloads. All MuLL loops and script callbacks share configured step,
+call-depth, environment, and collection-depth budgets; arbitrary native code
+is outside those work/time bounds. Mu3AC adds a bounded value-handle arena.
+.SH FILES
+.TP
+.I PREFIX/share/mull/stdlib/*/Package.mull
+Discoverable package implementations or native facades.
+.TP
+.I PREFIX/share/doc/MuDSL/mull/stdlib/README.md
+Expanded source catalogue and detailed package contracts.
+.SH SEE ALSO
+.BR mull (1)

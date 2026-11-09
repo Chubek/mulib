@@ -14,6 +14,8 @@ saturation facilities. C++ needs C++20 and the STL; D needs Phobos.
 | `stdlib/` | Discoverable MuLL packages and aggregate installer facades |
 | `native/` | C++ and D implementations of the five base packages |
 | `bridge/Mulib/` | Optional C bridge, host bindings, generated inventory |
+| `cli/` | Installed `mull` driver, independent C++/D workers, `mull(1)` and `mull(5)` |
+| `mu3ac/` | Three-address lowering, local MuDSL rewrites, and x86-64 native backend/runtime |
 
 Keep these directories alongside the toolkit sources when copying them manually.
 The CMake install includes all required headers/modules and package data.
@@ -53,6 +55,8 @@ Runtime methods in both implementations:
 | Method | Meaning |
 | --- | --- |
 | `run(source, name = "<input>")` | Parse, analyze, optimize, then evaluate; return its result. |
+| `parse(source, name = "<input>")` | Return the unoptimized tree without evaluation. |
+| `compile(source, name = "<input>")` | Return analyzed/optimized MuLLIER without evaluation. |
 | `runFile(path)` | Bounded file read followed by `run`. |
 | `define(name, value, mutableBinding = false)` | Add a host global; duplicate names throw. |
 | `get(name)` | Retrieve the current value of a global binding. |
@@ -257,8 +261,19 @@ unreachable frames but enforces the same allocation count. Parser nesting and
 operator chains and collection nesting are limited to 256; evaluator nesting is limited to 512.
 Limits count interpreter work, not native callback time or arbitrary host memory.
 
-The language has no classes, catch syntax, mutable collection elements, or
-compiler backend. Extend services using native packages and the same value API.
+The language has no classes, catch syntax, or mutable collection elements.
+The optional [Mu3AC backend](mu3ac/README.md) compiles analyzed entry programs to
+Linux x86-64 native code; the interpreter remains the default. Extend services
+using native packages and the same value API.
+
+## Command line and installation
+
+The [CLI reference](cli/README.md) explains building/installing `mull`, choosing
+`--engine=cpp` (default) or `--engine=d`, stopping after MuLLIER/Mu3AC, and linking
+third-party libraries through explicit numeric C-ABI bindings. Run
+`cmake -S mudsl/mull -B build/mull` from the repository root, or use the existing
+toolkit CMake entry point. Installed manuals are `mull(1)` and `mull(5)`; the
+latter covers all five native and thirty portable standard-library packages.
 
 ## MuLLIER
 

@@ -1,0 +1,105 @@
+\chapter{Mu3AC rewrites and the x86-64 runtime boundary}\label{ch:mu3ac-native}
+\section{Optimize facts, not wishes}
+Mu3AC uses MuDSL's existing S-expression rules, e-graph matching, bounded
+saturation, and minimum-node extraction. Its local optimizer records facts about
+\emph{already evaluated} scalar registers. A fact is not permission to evaluate
+an expression early, repeat a callback, or erase a possible runtime error.
+
+The shared defaults in \api{mull/mu3ac/rewrite/default.t} include:
+\begin{rulecode}
+(rewrite positive-number (positive (number ?r)) (use ?r))
+(rewrite double-negative (negative (negative ?r)) (use ?r))
+(rewrite not-nil (not (literal "nil")) (literal "true"))
+\end{rulecode}
+Here \api{number ?r} describes an existing numeric value. Numeric unary plus
+can use that register directly. Double negation can use the original numeric
+value, preserving signed zero. Known truth values can simplify negation.
+The original value-producing operations and source ticks remain in place.
+
+\begin{MuCaution}[Floating-point identities are not integer algebra]
+The defaults do not rewrite \api{x + 0}, \api{x * 0}, or reassociate arithmetic.
+Besides dynamic type checks and effects, binary64 rounding, signed zero, and
+nonfinite-result errors constrain valid transformations.
+\end{MuCaution}
+
+Facts are discarded at control-flow boundaries and conservatively invalidated
+when a register is reassigned. Each candidate has bounded saturation: defaults
+are eight iterations, 512 nodes, and 1024 matches. \api{Rewriter.changes}
+reports replaced instructions. \api{loadRules} transactionally replaces a parsed
+rule set, bounded to one MiB. Supported replacement forms are a register use or
+a nil/Boolean literal. Custom rules are trusted extensions; accepting their
+syntax is not a proof of equivalence.
+
+The C++ and D defaults are reproducible snapshots:
+\begin{code}
+python3 mudsl/mull/mu3ac/rewrite/embed.py
+python3 mudsl/mull/mu3ac/rewrite/embed.py --check
+\end{code}
+The corresponding CTest checks drift before a rule change can silently split
+the two implementations.
+
+\section{A deliberately simple native emitter}
+The first target is Linux x86-64, ELF, System V AMD64. The emitter writes real
+function bodies, branches, scope transitions, calls, and returns in GNU assembler
+syntax. It does not embed the entry source for later \api{Runtime.run}.
+Virtual handle registers occupy stack slots; bounded scratch storage holds
+call arguments. Dynamic operations call helpers implemented with the chosen
+host's existing \api{Value} representation.
+
+This is a correctness-oriented baseline, not a claim that native execution is
+always faster than tree evaluation. Stack-slot allocation and helper calls
+leave clear opportunities for later register allocation, scalar specialization,
+and measured optimization. Such work must preserve the same checks and effect
+order before performance claims are meaningful.
+
+The emitter maintains call-site stack alignment and the callee-saved frame
+pointer. CFI descriptions allow C++ or D errors to unwind through generated
+frames. Length-bearing byte views preserve embedded NULs in strings and record
+keys. A non-executable-stack note avoids requesting executable stack memory.
+Register ranges, branch labels, function references, and parameter/consumer
+balance are checked before assembly is accepted for output.
+
+\section{The private runtime ABI}
+Objects export \api{mu3ac_entry} and a versioned \api{mu3ac_config}. The current
+native configuration occupies 136 bytes and includes source identity, limits,
+package paths/preloads, foreign bindings, rule-directory information, and flags.
+The private \api{mu3ac_*} helper ABI is implemented independently in
+\api{Runtime.cpp} and \api{Runtime.d}; matching \api{Main.cpp}/\api{Main.d}
+files provide process startup. The CLI links the selected runtime archive.
+
+A generated object is an entry module, not a general multi-module or portable
+bytecode format. Do not mix private native ABI versions. A native executable
+also still depends on its platform libraries and any discovered package files,
+custom MuLLIER rule directory, or shared foreign library that it uses.
+
+\section{Crossing into packages and callbacks}
+Imported source packages currently use the existing host interpreter. Their
+returned records and closures remain ordinary MuLL values, so compiled entry
+functions can call package closures and native callbacks can call compiled
+closures. The core \api{G} services and standard-library loader are unchanged.
+
+Backend accounting hooks share steps, script-call depth, and cumulative lexical
+frame budgets across that boundary. The flat native backend does not use the
+interpreter's AST evaluation-depth guard; parser/IR bounds, call depth, stack
+availability, and native representation limits remain relevant. Optimized and
+unoptimized allocations/work counts need not match exactly.
+
+The native context retains value handles and environments until execution ends.
+Its additional \api{maxValues} arena defaults to two million entries; a large
+loop can hit this limit before the step budget. Native/foreign code is not
+bounded in wall-clock time by MuLL's source-step limit. These mechanisms are
+resource controls, not a sandbox.
+
+\section{Verification before extending the target}
+The \api{mull_mu3ac} unit test checks compile-only behavior, rewrite replacement,
+transactional reload, branch/register rejection, and generated unwind/stack
+directives. \api{mu3ac_embedded_rules} checks snapshot reproducibility.
+The \api{mull_cli} suite compares the existing language fixtures across C++/D,
+interpreter/native, and optimized/unoptimized paths. It also exercises real
+object/executable generation, process arguments, unusual filenames, budgets,
+assignment effect ordering, and third-party C-ABI linking.
+
+When adding an opcode or target, extend both host implementations, the relevant
+runtime helpers, and those differential tests together. A successful assembler
+invocation proves only that the machine syntax was accepted, not that the
+language contract survived lowering.

@@ -1,8 +1,8 @@
 # MuDSL book design system
 
-The book's presentation lives in **30 small `.sty` files**, not in the document
+The book's presentation lives in **31 small `.sty` files**, not in the document
 class or in individual chapters. `mudsl-book.sty` is the entry point; the other
-29 modules are its implementation. Build from `mudsl/book`, as with the existing
+30 modules are its implementation. Build from `mudsl/book`, as with the existing
 book workflow. No `TEXINPUTS` changes or system-wide installation are required.
 
 ```latex
@@ -81,6 +81,7 @@ of adding local formatting to chapter sources.
 | `links` | Screen/print links, metadata, URLs, and bookmarks |
 | `markdown` | Converter/Pandoc compatibility macros |
 | `references` | Named, linked cross-references through cleveref |
+| `manuals` | Compact reference chapters, source provenance, linked unnumbered headings, and identifier breaks |
 
 ## Author-facing commands
 
@@ -174,8 +175,10 @@ Inspect those PDFs as well as representative full-book pages after changing
 fonts, dimensions, or counters. Automated checks are not a substitute for visual
 review, and no chapter's technical-review status is changed by this suite.
 
-The full reference still contains pre-existing Markdown fragment links such as
-`#a` and `#direct-dependencies`. The supplied converter does not create their
-targets, so LuaLaTeX reports unreferenced destinations for those links. They are
-separate from the working contents/bookmarks and the specimen's cross-reference
-checks; this typography suite does not invent or redirect missing source anchors.
+The real manual generator is also exercised by the specimens: document titles,
+local/fragment links, duplicate headings, expanded HTML disclosures, preserved
+literal code, weighted multipage tables, and style restoration before appendices.
+`manual_support.py` provides namespaced targets for all imported manuals, so
+links such as `#a` and `#direct-dependencies` no longer become unresolved PDF
+destinations. An unknown fragment falls back to its manual opening with an
+explicit generation warning; external web links are not rewritten.

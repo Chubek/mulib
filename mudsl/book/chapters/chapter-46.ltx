@@ -5,7 +5,8 @@ control flow. Libraries provide the higher-level operations. The parser and
 interpreter are part of \api{MuDSL.hpp} and \api{MuDSL.d}; native standard
 implementations live in \api{mull/native}, and package entry points in
 \api{mull/stdlib}. MuLLIER, under \api{mull/mullier}, analyzes and optimizes
-each parsed unit before evaluation; Chapters 71--76 develop that pipeline.
+each parsed unit before evaluation; Chapters 71--79 develop that pipeline and
+its optional Mu3AC native backend.
 
 \begin{mullcode}
 val Printf <- G:LoadLib("printf") or G:DieWith("Import Error: $E?");

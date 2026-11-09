@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Compile small, representative PDFs and reject typography regressions."""
 from pathlib import Path
+import importlib.util
 import re
 import shutil
+import struct
 import subprocess
+import zlib
 
 from book_support import fragment
 
@@ -42,6 +45,36 @@ def main():
     (OUTPUT / "prose.tex").write_text(fragment(prose))
     (OUTPUT / "long.cpp").write_text("".join(
         f"int step_{i}(int value) {{ return value + {i}; }}\n" for i in range(1, 121)))
+    # A miniature manual collection exercises the real generator and its scoped
+    # reference style, rather than a separately maintained imitation.
+    manuals = OUTPUT / "manual-sources"
+    manuals.mkdir(exist_ok=True)
+    # A small original raster also catches confusion between TeX's working
+    # directory and the PDF output directory when rebasing Markdown images.
+    def png_chunk(kind, payload):
+        return (struct.pack('>I', len(payload)) + kind + payload
+                + struct.pack('>I', zlib.crc32(kind + payload)))
+    raster = b''.join(b'\x00' + b'\x32\x68\x7a' * 160 for _ in range(8))
+    (manuals / 'reference_strip.png').write_bytes(
+        b'\x89PNG\r\n\x1a\n'
+        + png_chunk(b'IHDR', struct.pack('>IIBBBBB', 160, 8, 8, 2, 0, 0, 0))
+        + png_chunk(b'IDAT', zlib.compress(raster)) + png_chunk(b'IEND', b''))
+    (manuals / "README.md").write_text(
+        '# Manual guide\n\n[Contract](mulib-specimen.md#contract) and '
+        '[repeated heading](mulib-specimen.md#contract-1) are linked inside this PDF.\n\n'
+        '![Reference strip](reference_strip.png)\n')
+    (manuals / "mulib-specimen.md").write_text(
+        '# MuLIB specimen\n\n[Manuals](README.md)\n\n## Contract\n\n'
+        'Identifiers such as `mulib_averylongidentifierwithmanyletters_suffix` '
+        'prefer their natural punctuation boundaries.\n\n'
+        '<!-- generated marker, not prose -->\n<details>\n'
+        '<summary>Types, constants, and declarations</summary>\n\n'
+        '```c\nconst char *literal = "<details> <!-- still code -->";\n```\n\n'
+        '</details>\n\n## Contract\n\n' + table)
+    spec = importlib.util.spec_from_file_location("manual_generator", HERE / "typeset-manuals.py")
+    generator = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(generator)
+    generator.generate(manuals, OUTPUT / "manual-reference.tex")
     for profile, prefix in (("screen", ""), ("legacy-print", r"\def\MuSmokeLegacy{1}")):
         source = OUTPUT / f"{profile}.tex"
         source.write_text(prefix + "\n" + r"\input{support/typography-smoke.ltx}" + "\n")
@@ -64,6 +97,10 @@ def main():
             raise RuntimeError(f"{profile}: code quotes were changed by typographic ligatures")
         if '##include' in text:
             raise RuntimeError(f"{profile}: a literal API hash was doubled")
+        if 'MuLIB specimen' not in text or 'generated marker, not prose' in text:
+            raise RuntimeError(f"{profile}: manual title/disclosure rendering regressed")
+        if not re.search(r'APPENDIX\s+A', text):
+            raise RuntimeError(f"{profile}: the manual style leaked into source appendices")
         print(f"{profile}: typography checks passed ({source.with_suffix('.pdf').relative_to(HERE)})")
 
 

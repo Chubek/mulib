@@ -1,0 +1,247 @@
+.TH MULL 1 "November 9, 2026" "MuLL" "User Commands"
+.SH NAME
+mull \- interpret MuLL or compile it through MuLLIER and Mu3AC
+.SH SYNOPSIS
+.B mull
+.RI [ options ] " file " [ "-- arguments..." ]
+.br
+.B mull
+.RI [ options ] " -e source " [ "-- arguments..." ]
+.br
+.B mull --repl
+.SH DESCRIPTION
+MuLL is a dynamically typed, lexically scoped language hosted by MuDSL.
+The default host is the C++20 implementation in MuDSL.hpp; the D implementation
+in MuDSL.d is selected explicitly. There is no silent fallback between hosts.
+The default backend interprets the analyzed MuLLIER tree.
+.PP
+The native backend lowers that same tree to Mu3AC, a register-based
+three-address
+representation with explicit branches, scopes, closures, and call parameters.
+It emits GNU assembler syntax for Linux x86-64 using the System V AMD64 ABI,
+then invokes an assembler and the selected host's linker driver.
+Generated code uses the selected host's value/runtime services; it does not
+reparse and interpret the original entry-point source.
+Imported MuLL packages continue to use the host's package evaluator.
+.PP
+With no file, standard input is read, or an interactive interpreter is started
+when standard input is a terminal. A file named minus also denotes standard
+input. Script arguments must follow a separate double dash, after the source
+file or evaluation option. They are available as the immutable global
+.B Args
+list; the executable name is not included. The host service record is
+.BR G .
+.SH HOST AND BACKEND OPTIONS
+.TP
+.BR --engine=cpp | d " (also --host)"
+Select MuDSL.hpp or MuDSL.d. C++ is the default.
+The D worker must have been built with a D compiler.
+.TP
+.BR --backend=interpreter | x86-64
+Choose tree evaluation or native compilation and execution.
+Without an emission option the native executable is temporary and is run
+immediately. Explicit assembly/object/executable emission selects the native
+backend unless a conflicting interpreter backend was requested.
+.TP
+.B --list-engines
+Show which host workers and native runtime archives are installed.
+.TP
+.B --target=x86_64-linux-gnu
+Select the currently supported native target. Other targets are rejected.
+.SH COMPILATION STAGES
+.TP
+.BI --emit= stage
+Write an artifact and stop. Stages are
+.BR ast , " mullier", " mu3ac", " asm", " obj", " exe".
+The AST is the parsed tree in MuLLIER's S-expression interchange format.
+MuLLIER output has undergone semantic analysis and optional optimization.
+Mu3AC output is versioned, flat, per-function three-address code.
+Assembly is GNU/ELF text; objects are ELF relocatables; executable output
+links the corresponding C++ or D native runtime.
+.TP
+.BI --stop-after= stage
+Equivalent names are
+.BR parse , " mullier", " mu3ac", " assembly", " object", " link".
+.TP
+.B --check
+Parse and analyze without evaluating, importing packages, or emitting output.
+It is not a proof that late-bound names, dynamic types, or imports will succeed.
+.TP
+.B -S
+Equivalent to --emit=asm.
+.TP
+.B -c
+Equivalent to --emit=obj.
+.TP
+.BI -o " file"
+Write an artifact to file. Text artifacts default to standard output;
+objects default to a.o and executables to a.out.
+Binary artifacts cannot be written to standard output.
+The source file cannot also be the output file.
+.TP
+.B --run
+Run the executable after linking. This cannot be combined with a stopping
+stage earlier than executable emission.
+.TP
+.B -O0
+Disable MuLLIER and Mu3AC transformations. Semantic analysis remains enabled.
+.TP
+.B -O1
+Enable bounded optimization, the default. Default Mu3AC rules simplify only
+local, already-evaluated scalar expressions; they do not reassociate floating
+point arithmetic, reorder effects, or discard runtime checks without a fact.
+.SH SOURCE AND EXECUTION
+.TP
+.BI "-e, --eval " source
+Use the argument as source. Cannot be combined with a source file.
+.TP
+.B --repl
+Persistent interpreter, one complete MuLL program per input line.
+Bindings survive subsequent lines. Type :quit to exit.
+REPL mode is not available for compile-only or native modes.
+.TP
+.B -p, --print-result
+Print the final value followed by a newline. Without this option only explicit
+program output is printed. A numeric return value is not a process exit code.
+.SH PACKAGES AND THIRD-PARTY LIBRARIES
+.TP
+.BI "-I, --package-path " directory
+Add a package discovery root, repeatable. Explicit roots precede MULL_PATH
+and the installed standard-library root. A package named example is found at
+directory/example/Package.mull. The current directory is not implicitly added.
+.TP
+.B --no-default-paths
+Omit MULL_PATH and the installed standard-library root; keep explicit -I roots.
+.TP
+.B --no-stdlib
+Do not register native standard-library records. This does not remove
+discovery roots or the core G services.
+.TP
+.BI --load " package"
+Preload a package at execution time, repeatable. Compile-only stages never
+evaluate these packages. A preload failure terminates execution.
+.TP
+.BI "-L, --library-path " directory
+Add a native linker search directory.
+.TP
+.BI "-l, --library " name
+Link a native archive or shared library by name.
+Package discovery (-I) and native linking (-L/-l) are different mechanisms.
+Native linker options require the native backend.
+.TP
+.BI --link-object " file"
+Link an additional object or archive, repeatable.
+.TP
+.BI --extern= name=symbol:arity
+Expose a native C-ABI function as a MuLL global name.
+The symbol must have exactly zero through eight double arguments and return
+one double. Argument counts, numeric MuLL inputs, and finite results
+are checked.
+For example, --extern=Square=custom_square:1 binds double custom_square(double).
+C++ functions must use extern "C". Arbitrary C structs, variadic functions,
+pointer signatures, C++/D objects, and exceptions across this foreign ABI are
+not supported. A false signature can cause undefined behavior: this is a
+trusted FFI contract, not automatic header introspection or a sandbox.
+Names G and Args are reserved.
+.TP
+.BI --rpath " directory"
+Add a runtime shared-library search path to a linked executable.
+.TP
+.BI --link-arg " argument"
+Pass one argument directly to the host compiler during linking, repeatable.
+Use --link-arg=ARG when ARG starts with a minus.
+No shell splitting is performed.
+.SH COMPILER AND RESOURCE OPTIONS
+.TP
+.BI --mullier-rules " directory"
+Replace MuLLIER rules from sorted .a and .t files. Both kinds are required.
+Reloading is transactional. Native package evaluation also uses this directory;
+it must remain available if the executable imports packages.
+.TP
+.BI --mu3ac-rules " file"
+Replace local Mu3AC rewrite equalities with a trusted MuDSL rule file, at most
+one MiB. Only supported scalar replacement forms are accepted by the optimizer.
+User equalities are compiler extensions and need not preserve
+language semantics.
+.TP
+.BI --cc " executable"
+Assembler driver, default CC or cc.
+.TP
+.BI --cxx " executable"
+C++ linker driver, default CXX or the configured compiler.
+.TP
+.BI --dc " executable"
+D linker driver, default DC or the configured compiler.
+Native D archives are built with LDC or DMD; a GDC-only installation provides
+the D interpreter/compiler worker but not the native D runtime archive.
+.TP
+.BI --max-steps= N
+Execution work budget; default 1000000. Native entry code and interpreted
+package/callback work share a budget. Optimized and unoptimized work counts
+need not be identical.
+.TP
+.BI --max-call-depth= N
+Maximum nested script calls; default 128.
+.TP
+.BI --max-frames= N
+Cumulative lexical-environment allocation budget; default 100000.
+.TP
+.BI --max-source-bytes= N
+Maximum source/package input size; default 4194304 bytes.
+.TP
+.BI --max-values= N
+Native handle-arena budget; default 2000000. Handles and their values remain
+alive for the native execution context. This option does not limit the tree
+interpreter's host allocations.
+.PP
+All numeric limits must be positive. Native compilation also bounds functions
+(4096), registers per function (4096), instructions (262144), and arguments,
+parameters, or entries in a collection literal (256).
+Large runtime collections can still be built by library functions.
+Limits are not timeouts and do not bound arbitrary foreign/native code or
+the operating system's stack. Neither backend is a security sandbox.
+.TP
+.B -v, --verbose
+Print argument vectors for invoked tools on standard error.
+.TP
+.B --help
+Print usage and all options.
+.TP
+.B --version
+Print the command version.
+.SH ENVIRONMENT
+.TP
+.B MULL_PATH
+Colon-separated package roots after explicit -I roots and before the installed
+standard library. Empty entries are ignored, not interpreted as
+the current directory.
+.TP
+.BR CC , " CXX", " DC"
+Default assembler and host linker executables. Each value names one executable,
+not a shell command with embedded flags.
+.TP
+.B MULL_CONFIG
+Override the worker/runtime installation descriptor, primarily for development.
+.SH EXAMPLES
+.nf
+mull -p -e 'return 6*7;'
+mull --engine=d -p app.mull -- input.txt
+mull --stop-after=mullier app.mull > app.mullier
+mull --emit=mu3ac -O0 app.mull > app.mu3ac
+mull --emit=exe -o app -p app.mull
+mull --backend=x86-64 -L ./lib -lcustom \\
+  --extern=Square=custom_square:1 -p -e 'return Square(7);'
+cmake -S mudsl/mull -B build/mull -DMULL_ENABLE_MULIB=OFF
+cmake --build build/mull --parallel
+cmake --install build/mull --prefix "$HOME/.local"
+.fi
+.SH EXIT STATUS
+Zero indicates success, one a compiler/runtime/link failure, two invalid
+command usage, and 127 a missing worker, configuration, or tool.
+Invoked tool/program nonzero statuses are propagated; termination by a signal
+is reported as 128 plus the signal number.
+.SH SEE ALSO
+.BR mull (5),
+.BR cc (1),
+.BR ld (1),
+.BR cmake (1)

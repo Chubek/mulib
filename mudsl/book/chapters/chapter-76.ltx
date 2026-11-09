@@ -15,9 +15,10 @@ Host-selected rules can instead be loaded from \api{share/mull/rewrite}.
 The repository-root \api{manual/} describes MuLIB. The toolkit's separate
 \api{mudsl/manual/} supplies the first 37 chapters. Both conversions use the
 provided \api{md2latex.py} parser through a book-specific renderer that selects
-minted languages and promotes headings. \api{typeset-manuals.py} enumerates all
-root Markdown manuals in stable order, while \api{typeset-manifest.py} safely
-loads YAML, validates module counts and names, and renders every metadata field.
+minted languages and promotes headings. \api{typeset-manuals.py} renders all
+root Markdown manuals with their document titles, source provenance, and linked
+sections. Reading guides precede the alphabetic module reference. HTML disclosure
+sections are expanded for print, and multipage tables repeat their headers.
 Generated fragments live below \api{book/build/generated}.
 
 \section{Typography as part of the build}
@@ -36,7 +37,7 @@ make -C mudsl/book export
 make -C mudsl/book check
 make -C mudsl/book
 \end{code}
-The book requires Python with PyYAML and Pygments, LuaLaTeX, latexmk, minted's
+The book requires Python with Pygments, LuaLaTeX, latexmk, minted's
 Python executable, and the TeX Gyre/DejaVu fonts. The Makefile supplies shell
 escape for highlighting and a local plugin path. Edit authored Markdown or
 LaTeX sources, regenerate, and verify the result; generated files are not the

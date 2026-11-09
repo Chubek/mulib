@@ -453,10 +453,14 @@ class MuLLRuntime
     size_t maxSteps = 1_000_000, maxCallDepth = 128, maxFrames = 100_000, maxSourceBytes = 4 * 1024 * 1024;
     MuLLIERPipeline mullier;
     void delegate(string) stdoutSink;
+    void delegate(size_t, size_t) stepObserver;
+    void delegate() frameObserver;
+    void delegate(bool) callObserver;
     MuLLValue delegate(string) mulibWrapper;
     private MuLLEnv frame(MuLLEnv parent)
     {
         if (frames >= maxFrames) throw new MuLLError("environment limit exceeded");
+        if (frameObserver !is null) frameObserver();
         ++frames; auto env = new MuLLEnv; env.parent = parent; return env;
     }
     private static void bind(MuLLEnv env, string name, MuLLValue value, bool mut = false)
@@ -466,6 +470,7 @@ class MuLLRuntime
     }
     private MuLLValue eval(MuLLNode n, MuLLEnv env)
     {
+        if (stepObserver !is null) stepObserver(n.line, n.column);
         if (++steps > maxSteps) throw new MuLLError("execution limit exceeded", n.line, n.column);
         if (evalDepth >= 512) throw new MuLLError("evaluation nesting limit exceeded", n.line, n.column);
         ++evalDepth; scope(exit) --evalDepth;
@@ -584,7 +589,8 @@ class MuLLRuntime
             return V((V[] args) {
                 mullArity(args, n.names.length);
                 if (calls >= maxCallDepth) throw new MuLLError("call depth limit exceeded");
-                ++calls; scope(exit) --calls;
+                if (callObserver !is null) callObserver(true);
+                ++calls; scope(exit) { --calls; if (callObserver !is null) callObserver(false); }
                 auto scope_ = frame(env);
                 foreach (i, arg; args) bind(scope_, n.names[i], arg, true);
                 try { return eval(n.children[0], scope_); }
@@ -656,6 +662,23 @@ class MuLLRuntime
     void define(string name, MuLLValue value, bool mutableBinding = false) { bind(globals, name, value, mutableBinding); }
     MuLLValue get(string name) { return globals.lookup(name).value; }
     string lastError() const { return error_; }
+    /// Compile-only front-end APIs: no evaluation, imports, or user effects.
+    SExpr parse(string source, string name = "<input>")
+    {
+        if (source.length > maxSourceBytes) throw new MuLLError("source size limit exceeded");
+        try { return mullLower((new MuLLParser(source)).parse()); }
+        catch (MuLLError e)
+        { throw new MuLLError(name ~ ":" ~ e.line.to!string ~ ":" ~ e.column.to!string ~ ": " ~ e.msg, e.line, e.column); }
+    }
+    SExpr compile(string source, string name = "<input>")
+    {
+        auto tree = parse(source, name);
+        bool[string] bindings;
+        foreach (key, cell; globals.values) bindings[key] = cell.mutable_;
+        try { return mullier.process(tree, bindings); }
+        catch (MuLLIERDiagnostic e)
+        { throw new MuLLError(name ~ ":" ~ e.line.to!string ~ ":" ~ e.column.to!string ~ ": " ~ e.msg, e.line, e.column); }
+    }
     MuLLValue run(string source, string name = "<input>")
     {
         if (running || evalDepth) throw new MuLLError("reentrant run is not supported");
