@@ -4369,9 +4369,9 @@ project_files:
   purpose: Mune widgets, capture, focus and frame lifecycle tests.
 - file: tests/test_simdmath_scalar.c
   purpose: Numerical graphics tests using the forced scalar SIMD fallback.
-- file: include/include-mulib-lprowse.h
+- file: include/mulib-lprowse.h
   purpose: Embedded original lprowse Lua source; generated from library/lprowse/lprowse.lua.
-- file: manual/include-mulib-lprowse.md
+- file: manual/mulib-lprowse.md
   purpose: Embedded lprowse regeneration and native-host integration contracts.
 - file: examples/prowse-common.h
   purpose: Explicit implementation switch closure for Prowse examples and focused tests.
@@ -4503,17 +4503,17 @@ project_files:
   purpose: Container wire truncation, mutation, streaming and roundtrip regressions with optional libFuzzer entry point.
 - file: tests/test_binary_alloc.c
   purpose: Binary writer and record-builder allocation bounds and failure-atomicity regressions.
-- file: include/include-mulib-container-core.h
+- file: include/mulib-container-core.h
   purpose: Inline checked storage, result codes and wire primitives for containers.
-- file: manual/include-mulib-container-core.md
+- file: manual/mulib-container-core.md
   purpose: Container dependency ownership, allocation and wire helper manual.
-- file: include/include-mulib-qvm.h
+- file: include/mulib-qvm.h
   purpose: Portable resumable register VM dependency with bounded code and RAM.
-- file: manual/include-mulib-qvm.md
+- file: manual/mulib-qvm.md
   purpose: Quota VM instruction, lifetime and fault contracts.
-- file: include/include-mulib-zstd.h
+- file: include/mulib-zstd.h
   purpose: Standard Zstandard single-segment raw and RLE codec dependency.
-- file: manual/include-mulib-zstd.md
+- file: manual/mulib-zstd.md
   purpose: Supported Zstandard grammar, quotas and ownership manual.
 - file: manual/container-stack.md
   purpose: Container stack integration, dependency switches and execution contracts.
