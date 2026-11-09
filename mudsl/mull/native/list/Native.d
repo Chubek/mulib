@@ -1,4 +1,4 @@
-module mull.stdlib.list.Native;
+module mull.native.list.Native;
 import MuDSL;
 import std.math : floor, fabs;
 private alias V = MuLLValue;

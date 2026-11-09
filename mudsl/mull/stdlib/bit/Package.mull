@@ -1,0 +1,16 @@
+# Portable unsigned 32-bit arithmetic; shifts do not wrap the shift count.
+val Math <- G:LoadLib("math") or G:DieWith("$E?");
+val Check <- fn(x) { G:Assert(x >= 0 and x <= 4294967295 and x % 1 == 0); return x; };
+val Combine <- fn(a, b, mode) { Check(a); Check(b); var out <- 0; var place <- 1; var i <- 0;
+  while i < 32 { val x <- a % 2; val y <- b % 2;
+    if (mode == 0 and x == 1 and y == 1) or (mode == 1 and (x == 1 or y == 1)) or (mode == 2 and x != y) {
+      out <- out + place;
+    }
+    a <- Math:Floor(a/2); b <- Math:Floor(b/2); place <- place*2; i <- i + 1;
+  } return out;
+};
+return {And: fn(a,b) { return Combine(a,b,0); }, Or: fn(a,b) { return Combine(a,b,1); },
+  Xor: fn(a,b) { return Combine(a,b,2); }, Not: fn(a) { return 4294967295-Check(a); },
+  ShiftRight: fn(a,n) { Check(a); G:Assert(n >= 0 and n <= 32 and n % 1 == 0); return Math:Floor(a/Math:Pow(2,n)); },
+  ShiftLeft: fn(a,n) { Check(a); G:Assert(n >= 0 and n <= 32 and n % 1 == 0);
+    val p <- Math:Pow(2,n); return (a % (4294967296/p))*p; }};

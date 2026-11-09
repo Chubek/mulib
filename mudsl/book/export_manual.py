@@ -3,7 +3,7 @@
 import argparse
 from pathlib import Path
 import re
-import subprocess
+from book_support import fragment
 
 HERE = Path(__file__).resolve().parent
 
@@ -13,11 +13,7 @@ def export(source, number):
     text = re.sub(r'^# Chapter \d+\s*[:—-]\s*', '# ', text, count=1)
     text = re.sub(r'\[([^\]]+)\]\(ch(\d+)[^)]*\.md(?:#[^)]*)?\)',
                   lambda m: m[1] + ' (Chapter ' + str(int(m[2])) + ')', text)
-    result = subprocess.run(['pandoc', '-f', 'markdown', '-t', 'latex',
-                             '--top-level-division=chapter', '--syntax-highlighting=none',
-                             '--lua-filter=' + str(HERE / 'inline-code.lua')],
-                            input=text, text=True, capture_output=True, check=True).stdout
-    result = result.replace(r'\begin{verbatim}', r'\begin{code}').replace(r'\end{verbatim}', r'\end{code}')
+    result = fragment(text, chapter=True)
     # Pandoc heading IDs are local to each input. Prefix them for a single book.
     result = re.sub(r'\\label\{([^}]+)\}', lambda m: r'\label{ch' + str(number) + '-' + m[1] + '}', result)
     result = re.sub(r'\\hyperref\[([^]]+)\]', lambda m: r'\hyperref[ch' + str(number) + '-' + m[1] + ']', result)

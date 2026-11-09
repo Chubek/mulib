@@ -1,0 +1,12 @@
+val Shape <- fn(m) { val rows <- G:Len(m); var cols <- 0;
+  if rows > 0 { cols <- G:Len(m[0]); } var i <- 0;
+  while i < rows { G:Assert(G:Len(m[i]) == cols); i <- i + 1; } return [rows, cols]; };
+val Transpose <- fn(m) { val shape <- Shape(m); var out <- []; var j <- 0;
+  while j < shape[1] { var row <- []; var i <- 0;
+    while i < shape[0] { row <- row + [m[i][j]]; i <- i + 1; } out <- out + [row]; j <- j + 1; } return out; };
+return {Shape: Shape, Transpose: Transpose,
+  Multiply: fn(a, b) { val sa <- Shape(a); val sb <- Shape(b); G:Assert(sa[1] == sb[0]);
+    var out <- []; var i <- 0; while i < sa[0] { var row <- []; var j <- 0;
+      while j < sb[1] { var sum <- 0; var k <- 0;
+        while k < sa[1] { sum <- sum + a[i][k]*b[k][j]; k <- k + 1; }
+        row <- row + [sum]; j <- j + 1; } out <- out + [row]; i <- i + 1; } return out; }};

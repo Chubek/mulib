@@ -174,8 +174,8 @@ void main()
 ```
 
 ```sh
-ldc2 -d-version=MuDSLLua lua-app.d MuDSL.d -L-llua5.4 -of=lua-app
-dmd -version=MuDSLLua lua-app.d MuDSL.d -L-llua5.4 -of=lua-app
+ldc2 -d-version=MuDSLLua lua-app.d MuDSL.d mull/mullier/*.d -L-llua5.4 -of=lua-app
+dmd -version=MuDSLLua lua-app.d MuDSL.d mull/mullier/*.d -L-llua5.4 -of=lua-app
 gdc -fversion=MuDSLLua lua-app.d MuDSL.d -llua5.4 -o lua-app
 ```
 
@@ -193,6 +193,6 @@ native C++ bridge test, configure the standalone test project with
 `-DMuDSL_TEST_LUA=ON`. For D native-bridge tests:
 
 ```sh
-ldc2 -unittest -main -d-version=MuDSLLua MuDSL.d -L-llua5.4 -of=mudsl-lua-test
+ldc2 -unittest -main -d-version=MuDSLLua MuDSL.d mull/mullier/*.d -L-llua5.4 -of=mudsl-lua-test
 ./mudsl-lua-test
 ```

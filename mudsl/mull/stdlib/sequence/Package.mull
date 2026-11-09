@@ -1,0 +1,8 @@
+return {Zip: fn(a, b) { var out <- []; var i <- 0;
+    while i < G:Len(a) and i < G:Len(b) { out <- out + [[a[i], b[i]]]; i <- i + 1; } return out; },
+  Enumerate: fn(xs) { var out <- []; var i <- 0;
+    while i < G:Len(xs) { out <- out + [[i, xs[i]]]; i <- i + 1; } return out; },
+  Flatten: fn(xs) { var out <- []; var i <- 0;
+    while i < G:Len(xs) { out <- out + xs[i]; i <- i + 1; } return out; },
+  Reverse: fn(xs) { var out <- []; var i <- G:Len(xs);
+    while i > 0 { i <- i - 1; out <- out + [xs[i]]; } return out; }};

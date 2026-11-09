@@ -267,9 +267,10 @@ From the MuDSL directory:
 cmake -S tests -B build/mudsl-tests -DMuDSL_TEST_LUA=ON
 cmake --build build/mudsl-tests
 ctest --test-dir build/mudsl-tests --output-on-failure
-ldc2 -unittest -main MuDSL.d -of=mudsl-test
+ldc2 -unittest -main MuDSL.d mull/mullier/*.d -of=mudsl-test
 ./mudsl-test
 ```
 
 The C++ test suite includes `test_language_facilities.cpp` and an optional
-native Lua bridge test. D's tests are embedded in its single module.
+native Lua bridge test. D's toolkit tests are embedded in its public module;
+the MuLLIER modules are linked alongside it.

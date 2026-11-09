@@ -238,6 +238,6 @@ available; use `-DMuDSL_TEST_D=OFF` to disable that target.
 cmake -S tests -B build/tests -DCMAKE_BUILD_TYPE=Debug
 cmake --build build/tests
 ctest --test-dir build/tests --output-on-failure
-ldc2 -unittest -main MuDSL.d tests/test_graph_terms.d -of=mudsl-tests
+ldc2 -unittest -main MuDSL.d mull/mullier/*.d tests/test_graph_terms.d -of=mudsl-tests
 ./mudsl-tests
 ```

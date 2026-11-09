@@ -1,6 +1,74 @@
 #include "MuDSL.hpp"
 #include "mull/stdlib/Stdlib.hpp"
 #include <cassert>
+#include <cstdlib>
+#include <chrono>
+
+static void mullierChecks() {
+  mull::Runtime vm;
+  vm.mullier.loadDirectory(std::filesystem::path(__FILE__).parent_path() / "../mull/rewrite");
+  assert(vm.run("return true and (false or +42);").number() == 42);
+  assert(vm.mullier.lastSaturation.saturated());
+  auto optimized = vm.mullier.lastIR.dump();
+  assert(optimized.find("binary") == std::string::npos);
+  assert(dsl::decode_sexpr(dsl::encode_sexpr(vm.mullier.lastIR)) == vm.mullier.lastIR);
+  vm.mullier.optimize = false;
+  assert(vm.run("return true and (false or +42);").number() == 42);
+  assert(vm.mullier.lastIR.dump().find("binary") != std::string::npos);
+  vm.define("effect", 0, true);
+  for (auto source : {"effect <- 1; val a <- 1; a <- 2;", "effect <- 1; while true { val f <- fn(){break;}; break; }"}) {
+    try { vm.run(source, "analysis.mull"); assert(false); }
+    catch (const mull::Error &e) { assert(e.line == 1 && e.column > 0); }
+    assert(vm.get("effect").number() == 0);
+  }
+  // Closures can see bindings declared later in their captured environment.
+  assert(vm.run("val late <- 0; { val f <- fn(){late <- 7;}; var late <- 1; f(); return late; }").number() == 7);
+  vm.mullier.optimize = true;
+  vm.mullier.limits.nodes = 1;
+  assert(vm.run("return true and 9;").number() == 9);
+  assert(vm.mullier.lastSaturation.stop == dsl::SaturationStop::NodeLimit);
+  vm.mullier.limits.nodes = 20000;
+  // A failed reload must leave the previous rule set intact.
+  try { vm.mullier.loadDirectory(std::filesystem::path(__FILE__).parent_path()); assert(false); }
+  catch (const std::invalid_argument &) {}
+  assert(vm.run("return false or 8;").number() == 8);
+  assert(vm.mullier.lastIR.dump().find("binary") == std::string::npos);
+  auto directory = std::filesystem::temp_directory_path() / ("mullier-cpp-" +
+      std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+  std::filesystem::create_directory(directory);
+  struct Cleanup {
+    std::filesystem::path path;
+    ~Cleanup() { std::error_code ec; std::filesystem::remove_all(path, ec); }
+  } cleanup{directory};
+  auto write = [&](const char *name, const std::string &source) {
+    std::ofstream out(directory / name, std::ios::binary);
+    out << source;
+    out.close();
+    assert(out);
+  };
+  std::string analysis(mull::mullier::default_analysis);
+  analysis.resize(1024 * 1024, ' ');
+  write("01.a", analysis);
+  write("02.t", std::string(mull::mullier::default_transforms));
+  vm.mullier.loadDirectory(directory); // Exactly the byte limit is accepted.
+  for (const auto &source : {analysis + " ", std::string("(check unknown)")}) {
+    write("01.a", source);
+    try { vm.mullier.loadDirectory(directory); assert(false); }
+    catch (const std::invalid_argument &e) {
+      assert(std::string(e.what()).find("01.a") != std::string::npos);
+    }
+    assert(vm.run("return false or 8;").number() == 8);
+    assert(vm.mullier.lastIR.dump().find("binary") == std::string::npos);
+    try { vm.run("if false { break; }"); assert(false); }
+    catch (const mull::Error &) {} // Analysis policies survive failed reloads too.
+  }
+  write("01.a", "(check lexical)");
+  write("02.t", "("); // Failure after an analysis file has already been parsed.
+  try { vm.mullier.loadDirectory(directory); assert(false); }
+  catch (const std::invalid_argument &) {}
+  try { vm.run("if false { break; }"); assert(false); }
+  catch (const mull::Error &) {}
+}
 
 static void hostChecks() {
   mull::Runtime vm;
@@ -29,6 +97,10 @@ static void hostChecks() {
   fails("12345;", "source size");
   vm.maxSourceBytes = 10000;
   fails(std::string(300, '(') + "1" + std::string(300, ')') + ";", "nesting limit");
+  std::string nested = "1", chain;
+  for (int i = 0; i < 200; ++i) chain += "+1";
+  for (int i = 0; i < 3; ++i) nested = "(" + nested + chain + ")";
+  fails(nested + ";", "IR nesting limit");
   assert(!vm.loadLibrary("../secret").truth());
   assert(vm.lastError().find("invalid library") != std::string::npos);
   mull::Runtime other;
@@ -54,9 +126,10 @@ static void hostChecks() {
 
 int main(int argc, char **argv) {
   try {
-    if (argc == 1) { hostChecks(); return 0; }
+    if (argc == 1) { hostChecks(); mullierChecks(); return 0; }
     if (argc != 3) return 2;
     mull::Runtime vm({argv[1]}); mull::stdlib::install(vm);
+    vm.mullier.optimize = std::getenv("MULL_NO_OPTIMIZE") == nullptr;
     vm.addLibraryPath(std::filesystem::path(argv[2]).parent_path() / "packages");
     auto value = vm.runFile(argv[2]);
     std::cout << "=> " << value.text() << '\n';

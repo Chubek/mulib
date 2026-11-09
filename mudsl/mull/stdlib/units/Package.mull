@@ -1,0 +1,5 @@
+val Pi <- 3.141592653589793;
+return {Radians: fn(degrees) { return degrees*Pi/180; }, Degrees: fn(radians) { return radians*180/Pi; },
+  CelsiusToFahrenheit: fn(c) { return c*9/5+32; }, FahrenheitToCelsius: fn(f) { return (f-32)*5/9; },
+  MetersToFeet: fn(m) { return m/0.3048; }, FeetToMeters: fn(f) { return f*0.3048; },
+  SecondsToMilliseconds: fn(s) { return s*1000; }, MillisecondsToSeconds: fn(ms) { return ms/1000; }};

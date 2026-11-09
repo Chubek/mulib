@@ -1,0 +1,5 @@
+return {Check: fn(condition,message) { if not condition { G:DieWith(message); } return condition; },
+  Equal: fn(a,b) { if a != b { G:DieWith("expected equal values: "+G:Str(a)+" != "+G:Str(b)); } return a; },
+  NotEqual: fn(a,b) { G:Assert(a != b); return a; },
+  Near: fn(a,b,tolerance) { G:Assert(tolerance >= 0); var d <- a-b; if d < 0 { d <- -d; }
+    G:Assert(d <= tolerance); return a; }};

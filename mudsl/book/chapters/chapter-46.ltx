@@ -3,7 +3,9 @@ MuLL is a small, dynamically typed language for embedding in C++ and D
 applications. Its core handles values, bindings, expressions, functions, and
 control flow. Libraries provide the higher-level operations. The parser and
 interpreter are part of \api{MuDSL.hpp} and \api{MuDSL.d}; native standard
-libraries and their package entry points live in \api{mull/stdlib}.
+implementations live in \api{mull/native}, and package entry points in
+\api{mull/stdlib}. MuLLIER, under \api{mull/mullier}, analyzes and optimizes
+each parsed unit before evaluation; Chapters 71--76 develop that pipeline.
 
 \begin{mullcode}
 val Printf <- G:LoadLib("printf") or G:DieWith("Import Error: $E?");

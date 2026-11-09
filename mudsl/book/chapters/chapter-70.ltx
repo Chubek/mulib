@@ -24,14 +24,15 @@ have fixed nesting guards. A native callback executes host code; the step
 counter counts interpreter work rather than elapsed time or native memory.
 
 A runtime retains top-level bindings, captured environments, registered native
-values, and cached packages. Syntax is validated before effects begin.
+values, and cached packages. Syntax and static semantics are validated before effects begin.
 Evaluation errors preserve effects already performed. Package initialization
 is isolated from application bindings but uses the same host services.
 
 \section{Extending deliberately}
 The reference grammar and library tables in \api{mull/README.md} summarize
 the implemented language. New services normally belong in native packages;
-new syntax belongs in both single-file runtimes and shared conformance tests.
+new syntax belongs in both hosts, MuLLIER, and shared conformance tests.
 The current language has no classes, exception-catching syntax, dynamic shared
 library ABI, or compiler backend. Its complete execution model is the lexical,
-bounded tree interpreter described in these 25 chapters.
+bounded tree interpreter described here, preceded by the MuLLIER passes in the
+following chapters.

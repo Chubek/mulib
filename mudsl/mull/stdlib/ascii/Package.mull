@@ -1,0 +1,10 @@
+val Digits <- "0123456789";
+val Upper <- "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+val Lower <- "abcdefghijklmnopqrstuvwxyz";
+val In <- fn(s,c) { G:Assert(G:Len(c) == 1); var i <- 0;
+  while i < G:Len(s) { if s[i] == c { return true; } i <- i + 1; } return false; };
+return {Digits: Digits, Upper: Upper, Lower: Lower,
+  IsDigit: fn(c) { return In(Digits,c); }, IsAlpha: fn(c) { return In(Upper+Lower,c); },
+  IsAlnum: fn(c) { return In(Digits+Upper+Lower,c); },
+  IsSpace: fn(c) { return In(" \t\r\n",c); },
+  Digit: fn(c) { G:Assert(In(Digits,c)); var i <- 0; while Digits[i] != c { i <- i + 1; } return i; }};

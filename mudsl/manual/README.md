@@ -2,8 +2,8 @@
 
 This directory contains the thirty-seven-chapter manual for **MuDSL**, the
 Domain-Specific Language construction toolkit for C++20 and D. The two
-implementations are distributed as one C++ header, `MuDSL.hpp`, and one D
-module, `MuDSL.d`. The manual explains the established toolkit, the D port,
+public entry points are the C++ header `MuDSL.hpp` and D module `MuDSL.d`,
+with MuLLIER companions under `mull/mullier`. The manual explains the toolkit, the D port,
 and the shared language facilities added to both implementations.
 
 The manual is organised into twenty-one parts that progress from foundational

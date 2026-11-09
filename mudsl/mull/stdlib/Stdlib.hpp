@@ -1,11 +1,11 @@
 #pragma once
-#include "printf/Native.hpp"
-#include "terminal/Native.hpp"
-#include "math/Native.hpp"
-#include "text/Native.hpp"
-#include "list/Native.hpp"
+#include "../native/printf/Native.hpp"
+#include "../native/terminal/Native.hpp"
+#include "../native/math/Native.hpp"
+#include "../native/text/Native.hpp"
+#include "../native/list/Native.hpp"
 #ifdef MULL_ENABLE_MULIB
-#include "Mulib/Native.hpp"
+#include "../bridge/Mulib/Native.hpp"
 #endif
 
 namespace mull::stdlib {

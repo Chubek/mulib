@@ -1,0 +1,7 @@
+return {Negate: fn(p) { return fn(x) { return not p(x); }; },
+  Both: fn(p, q) { return fn(x) { return p(x) and q(x); }; },
+  Either: fn(p, q) { return fn(x) { return p(x) or q(x); }; },
+  All: fn(xs, p) { var i <- 0; while i < G:Len(xs) {
+    if not p(xs[i]) { return false; } i <- i + 1; } return true; },
+  Any: fn(xs, p) { var i <- 0; while i < G:Len(xs) {
+    if p(xs[i]) { return true; } i <- i + 1; } return false; }};

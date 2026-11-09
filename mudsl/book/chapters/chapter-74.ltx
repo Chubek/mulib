@@ -1,0 +1,49 @@
+\chapter{Reading MuDSL.hpp and MuDSL.d together}
+The source appendices include the actual C++ header and D module. They expose
+the same toolkit ideas through each host's native composition mechanisms.
+Understanding their differences prevents mechanically translating an API into
+an ownership or evaluation bug.
+
+\section{Composition and staging}
+C++ uses feature tags and CRTP mixins to build a concrete DSL type. Concepts and
+requires-expressions reject unsupported operations during compilation. Fixed
+strings permit identifiers and grammar fragments to become template arguments.
+D uses template mixins, alias parameters, static foreach, and compile-time
+function evaluation. Strings are already legal template arguments, so a separate
+fixed-string wrapper is optional. In both hosts, concrete callable types allow
+inlining and retain captured state without mandatory type erasure.
+
+\section{Parsers and trees}
+Parser combinators retain success/failure and remaining-input information.
+Repetition must make progress; a parser accepting an empty string cannot be
+blindly repeated. PEG choice is ordered and greedy, whereas the CFG Earley
+parser represents explicit grammar productions and supports ambiguity. Choose
+the parser whose commitment rules match the language rather than attempting to
+repair ambiguities after evaluation.
+
+AST nodes, first-order terms, term graphs, and e-graphs have different contracts.
+ASTs preserve syntactic order. Term unification binds variables structurally.
+Term graphs share nodes. E-graphs represent equivalence classes and congruence;
+they do not encode sequencing effects by themselves. MuLLIER therefore retains
+ordered children and ships only effect-preserving transformations.
+
+\section{Serialization, I/O, and visitors}
+Serializer/deserializer adapters borrow user-supplied backends and dispatch to
+their protocols. The byte I/O adapter supports short reads and writes; clients
+must distinguish end-of-file from incomplete transfer. Visitors can be derived
+from runtime trees or schemas. These are independent facilities: adopting the
+MuLL interpreter does not replace or disable the toolkit's parser, graph,
+reflection, regular-expression, preprocessing, and task-pipeline APIs.
+
+\section{Host-specific lifetime rules}
+C++ native functions are shared callable objects, while environments belong to
+a runtime-owned arena. A function value must not outlive its runtime. D uses
+delegates and garbage-collected environments, but retaining a delegate also
+retains its captures. Neither implementation makes a single runtime thread-safe.
+Host callbacks can call a MuLL function argument; reentering \api{run} is rejected.
+
+C++ includes \api{mull/mullier/Passes.hpp} from the public toolkit header. D
+imports \api{mull.mullier.MuLLIER}, whose toolkit imports are explicit. Link the
+D MuLLIER modules along with \api{MuDSL.d}; templates alone do not supply the
+runtime pass implementations. The installed CMake interface includes all required
+C++ headers, and installed D sources retain their module-relative directories.

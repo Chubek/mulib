@@ -1,0 +1,9 @@
+val Sort <- G:LoadLib("sort") or G:DieWith("$E?");
+val Sum <- fn(xs) { var out <- 0; var i <- 0;
+  while i < G:Len(xs) { out <- out + xs[i]; i <- i + 1; } return out; };
+val Mean <- fn(xs) { G:Assert(G:Len(xs) > 0); return Sum(xs)/G:Len(xs); };
+return {Sum: Sum, Mean: Mean,
+  Variance: fn(xs) { val mean <- Mean(xs); var sum <- 0; var i <- 0;
+    while i < G:Len(xs) { val d <- xs[i]-mean; sum <- sum + d*d; i <- i + 1; } return sum/G:Len(xs); },
+  Median: fn(xs) { G:Assert(G:Len(xs) > 0); xs <- Sort:Ascending(xs); val n <- G:Len(xs);
+    if n % 2 == 1 { return xs[(n-1)/2]; } return (xs[n/2-1]+xs[n/2])/2; }};

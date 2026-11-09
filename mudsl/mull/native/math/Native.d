@@ -1,4 +1,4 @@
-module mull.stdlib.math.Native;
+module mull.native.math.Native;
 import MuDSL;
 import std.math : fabs, floor, ceil, sqrt, pow;
 import std.algorithm : min, max;

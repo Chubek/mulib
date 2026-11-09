@@ -1,0 +1,5 @@
+return {New: fn(a, b) { return [a, b]; },
+  First: fn(p) { G:Assert(G:Len(p) == 2); return p[0]; },
+  Second: fn(p) { G:Assert(G:Len(p) == 2); return p[1]; },
+  Swap: fn(p) { G:Assert(G:Len(p) == 2); return [p[1], p[0]]; },
+  Map: fn(p, f, g) { G:Assert(G:Len(p) == 2); return [f(p[0]), g(p[1])]; }};

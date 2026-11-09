@@ -1,0 +1,25 @@
+# POSIX lexical paths; this package performs no filesystem I/O.
+val Text <- G:LoadLib("text") or G:DieWith("$E?");
+val Slice <- G:LoadLib("slice") or G:DieWith("$E?");
+val Normalize <- fn(path) { G:Assert(G:Type(path) == "string");
+  val absolute <- G:Len(path) > 0 and path[0] == "/";
+  val parts <- Text:Split(path,"/"); var out <- []; var i <- 0;
+  while i < G:Len(parts) { val p <- parts[i];
+    if p != "" and p != "." {
+      if p == ".." {
+        if G:Len(out) > 0 and out[G:Len(out)-1] != ".." { out <- Slice:Take(out,G:Len(out)-1); }
+        else { if not absolute { out <- out + [p]; } }
+      } else { out <- out + [p]; }
+    } i <- i + 1;
+  }
+  val result <- Text:Join(out,"/"); if absolute { return "/" + result; }
+  if result == "" { return "."; } return result;
+};
+return {Normalize: Normalize,
+  Join: fn(a,b) { if a == "" or (G:Len(b) > 0 and b[0] == "/") { return Normalize(b); } return Normalize(a+"/"+b); },
+  Basename: fn(p) { p <- Normalize(p); if p == "/" { return "/"; }
+    val parts <- Text:Split(p,"/"); return parts[G:Len(parts)-1]; },
+  Dirname: fn(p) { p <- Normalize(p); val parts <- Text:Split(p,"/");
+    if G:Len(parts) == 1 { return "."; }
+    val result <- Text:Join(Slice:Take(parts,G:Len(parts)-1),"/");
+    if result == "" { return "/"; } return result; }};

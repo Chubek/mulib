@@ -1,0 +1,7 @@
+val Integer <- G:LoadLib("integer") or G:DieWith("$E?");
+return {Step: fn(start,end,step) { Integer:Check(start); Integer:Check(end); Integer:Check(step); G:Assert(step != 0);
+    var out <- []; var x <- start; while (step > 0 and x < end) or (step < 0 and x > end) {
+      out <- out + [x]; val next <- x + step; G:Assert(next != x); x <- next;
+    } return out; },
+  Contains: fn(start,end,x) { return start <= x and x < end; },
+  Clamp: fn(x,low,high) { G:Assert(low <= high); if x < low { return low; } if x > high { return high; } return x; }};

@@ -23,7 +23,7 @@ the selected \api{Native.d} modules together. For example, from the toolkit
 root:
 \begin{code}
 ldc2 -I. examples/27-mull.d MuDSL.d mull/stdlib/Stdlib.d \
-    mull/stdlib/{printf,terminal,math,text,list}/Native.d \
+    mull/mullier/*.d mull/native/*/Native.d \
     -of=mull-example
 \end{code}
 
@@ -43,7 +43,7 @@ and \api{column}. Application bindings and package caches persist across runs.
 Both hosts can install the generated native MuLIB provider. Enable
 \api{MULL_ENABLE_MULIB} in CMake and point \api{MULL_MULIB_INCLUDE_DIR} at the
 MuLIB headers. C++ standard-library installation then includes the provider.
-In D, compile \api{mull/stdlib/Mulib/Native.d} and \api{Bridge.d}, link
+In D, compile \api{mull/bridge/Mulib/Native.d} and \api{Bridge.d}, link
 \api{libmull-mulib-bridge.a}, and call \api{installMulib}, or enable the
 \api{MULL_ENABLE_MULIB} version for aggregate installation.
 
@@ -59,5 +59,5 @@ Wrappers expose full C function names and short aliases, native constructors,
 field access, buffers, arrays, pointer outputs, and typed callbacks. They follow
 the original library's argument and ownership contracts. The runtime-scoped
 storage budget defaults to 64 MiB. Native resources still require their
-documented release calls. See \api{mull/stdlib/Mulib/README.md} for the complete
+documented release calls. See \api{mull/bridge/Mulib/README.md} for the complete
 binding interface and regeneration procedure.

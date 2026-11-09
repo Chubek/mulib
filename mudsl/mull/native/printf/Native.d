@@ -1,4 +1,4 @@
-module mull.stdlib.printf.Native;
+module mull.native.printf.Native;
 import MuDSL;
 private alias V = MuLLValue;
 

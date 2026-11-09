@@ -262,6 +262,8 @@ target_link_libraries(mull_tests PRIVATE MuDSL)
 add_test(NAME mull_host COMMAND mull_tests)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 set(_mull_parity_args --cpp $<TARGET_FILE:mull_tests>)
+add_test(NAME mullier_embedded_rules COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../mull/rewrite/embed.py --check)
 if(MULL_ENABLE_MULIB)
     list(APPEND _mull_parity_args --mulib)
     add_test(NAME mull_mulib_inventory COMMAND ${Python3_EXECUTABLE}
@@ -286,13 +288,16 @@ if(MuDSL_TEST_D)
             COMMAND ${MuDSL_TEST_D_COMPILER} ${_mudsl_d_test_flags}
                     -I${CMAKE_CURRENT_SOURCE_DIR}/..
                     ${CMAKE_CURRENT_SOURCE_DIR}/../MuDSL.d
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../mull/mullier/MuLLIER.d
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../mull/mullier/DefaultRules.d
                     ${CMAKE_CURRENT_SOURCE_DIR}/test_graph_terms.d
                     ${CMAKE_CURRENT_SOURCE_DIR}/test_regressions.d
-            DEPENDS ../MuDSL.d test_graph_terms.d test_regressions.d
+            DEPENDS ../MuDSL.d ../mull/mullier/MuLLIER.d ../mull/mullier/DefaultRules.d test_graph_terms.d test_regressions.d
             VERBATIM)
         add_custom_target(mudsl_d_test_build ALL DEPENDS ${_mudsl_d_test})
         add_test(NAME mudsl_d_module COMMAND ${_mudsl_d_test})
-        file(GLOB _mull_d_sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../mull/stdlib/*/Native.d)
+        file(GLOB _mull_d_sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../mull/native/*/Native.d
+            ${CMAKE_CURRENT_SOURCE_DIR}/../mull/mullier/*.d)
         list(FILTER _mull_d_sources EXCLUDE REGEX "/Mulib/")
         list(APPEND _mull_d_sources ${CMAKE_CURRENT_SOURCE_DIR}/../mull/stdlib/Stdlib.d)
         set(_mull_d_test ${CMAKE_CURRENT_BINARY_DIR}/mull_d_tests${CMAKE_EXECUTABLE_SUFFIX})
@@ -303,8 +308,8 @@ if(MuDSL_TEST_D)
         endif()
         if(MULL_ENABLE_MULIB)
             list(APPEND _mull_d_sources
-                ${CMAKE_CURRENT_SOURCE_DIR}/../mull/stdlib/Mulib/Native.d
-                ${CMAKE_CURRENT_SOURCE_DIR}/../mull/stdlib/Mulib/Bridge.d)
+                ${CMAKE_CURRENT_SOURCE_DIR}/../mull/bridge/Mulib/Native.d
+                ${CMAKE_CURRENT_SOURCE_DIR}/../mull/bridge/Mulib/Bridge.d)
             if(MuDSL_TEST_D_COMPILER MATCHES "gdc")
                 list(APPEND _mull_d_flags -fversion=MULL_ENABLE_MULIB -lpthread -ldl -lm)
             elseif(MuDSL_TEST_D_COMPILER MATCHES "ldc")
@@ -327,6 +332,9 @@ endif()
 
 add_test(NAME mull_conformance COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/check_mull.py ${_mull_parity_args})
+add_test(NAME mull_conformance_unoptimized COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/check_mull.py ${_mull_parity_args})
+set_tests_properties(mull_conformance_unoptimized PROPERTIES ENVIRONMENT "MULL_NO_OPTIMIZE=1")
 
 option(MuDSL_TEST_LUA "Test the optional Lua preprocessing bridge" OFF)
 if(MuDSL_TEST_LUA)

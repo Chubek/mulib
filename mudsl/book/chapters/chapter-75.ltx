@@ -1,0 +1,46 @@
+\chapter{Effects, errors, and optimization contracts}
+Optimization correctness includes values, visible effects, and failure behavior.
+MuLL numbers are finite binary64 values, collections are immutable values, and
+calls may mutate captured cells or invoke arbitrary host services. A rewrite
+that looks algebraically reasonable can therefore be observably wrong.
+
+\begin{mullcode}
+var calls <- 0;
+val next <- fn() { calls <- calls + 1; return calls; };
+G:Assert((true and next()) == 1);
+G:Assert((false and next()) == false);
+G:Assert((nil or next()) == 2);
+G:Assert(calls == 2);
+G:Assert((1e16 + -1e16) + 1 == 1);
+G:Assert(1e16 + (-1e16 + 1) == 0);
+\end{mullcode}
+
+\section{What the passes can prove}
+Literal short-circuit conditions determine which operand is evaluated without
+consulting host state. Unresolved names and calls cannot be assumed pure.
+Even \api{x + 0} is not generally an identity: x may be a string, list, nil,
+or an invalid numeric result. Numeric literals retain their original spelling
+and evaluator validation. No pass moves a callback across another callback.
+
+\section{Diagnostics and state}
+Parsing and MuLLIER's static checks precede effects for the entire compilation
+unit. Evaluation failures retain earlier effects. Import failures are converted
+to nil and recorded in \api{lastError}; failed imports can be retried. A successful
+import, including a cache hit, clears that message. String \api{$E?} expansion
+is an evaluation-time operation, so string literals are not globally folded.
+
+\section{Resource accounting}
+Optimization can reduce interpreter steps. The evaluator's maximum-step setting
+is a work bound, not a promise that optimized and unoptimized executions consume
+the same count. Differential tests compare results and effects with sufficient
+budgets, then independently exercise exhaustion. E-graph iteration, node, and
+match bounds constrain saturation; source size and parser nesting bound inputs.
+Large native operations remain subject to their own contracts.
+
+\section{Verification strategy}
+Toolkit tests cover parsing, matching, congruence, extraction, and serialization.
+Host tests cover pass invocation, source sites, rule reload, budget exhaustion,
+and pre-effect diagnostics. Shared fixtures exercise language semantics, all
+new libraries, and complete \api{mullcode} listings. Running these in both host
+languages and both optimizer modes catches differences invisible to a single
+implementation's unit tests.

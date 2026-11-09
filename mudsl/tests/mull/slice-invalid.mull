@@ -1,0 +1,2 @@
+val Slice <- G:LoadLib("slice") or G:DieWith("$E?");
+return Slice:Sub([1,2],0.5,2);

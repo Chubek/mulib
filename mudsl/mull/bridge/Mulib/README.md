@@ -42,16 +42,16 @@ bindings are needed only for regeneration, not normal builds.
 
 C++ applications using the CMake target can call the usual
 `mull::stdlib::install(runtime)` to install all packages including `Mulib`.
-For explicit installation, include `mull/stdlib/Mulib/Native.hpp`, link the
+For explicit installation, include `mull/bridge/Mulib/Native.hpp`, link the
 bridge, and call `mull::stdlib::installMulib(runtime)`.
 
-D applications can import `mull.stdlib.Mulib.Native` and call
+D applications can import `mull.bridge.Mulib.Native` and call
 `installMulib(runtime)`. To include it in the aggregate standard-library installer:
 
 ```sh
 ldc2 -I. -d-version=MULL_ENABLE_MULIB \
   examples/27-mull.d MuDSL.d mull/stdlib/Stdlib.d \
-  mull/stdlib/*/Native.d mull/stdlib/Mulib/Bridge.d \
+  mull/mullier/*.d mull/native/*/Native.d mull/bridge/Mulib/*.d \
   build/libmull-mulib-bridge.a -L-lpthread -L-ldl -L-lm -of=mull-example
 ```
 

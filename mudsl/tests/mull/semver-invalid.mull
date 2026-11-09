@@ -1,0 +1,2 @@
+val V <- G:LoadLib("semver") or G:DieWith("$E?");
+return V:Parse("01.2.3");

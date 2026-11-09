@@ -1,13 +1,14 @@
--- Portable alternative to make: texlua build.lua [clean|check|export]
+-- texlua entry point for the Makefile workflow: [clean|check|export|generate]
 local action = arg[1] or "build"
 local commands = {
-  build = "latexmk -lualatex -interaction=nonstopmode -halt-on-error -outdir=build the-book-of-mudsl.ltx",
+  build = "make all",
   clean = "latexmk -C -outdir=build the-book-of-mudsl.ltx",
-  check = "python3 export_manual.py --check",
+  check = "make check",
+  generate = "make generate",
   export = "python3 export_manual.py"
 }
 if not commands[action] then
-  io.stderr:write("usage: texlua build.lua [build|clean|check|export]\n")
+  io.stderr:write("usage: texlua build.lua [build|clean|check|export|generate]\n")
   os.exit(2)
 end
 local ok, _, status = os.execute(commands[action])

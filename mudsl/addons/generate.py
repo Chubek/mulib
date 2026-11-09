@@ -86,7 +86,7 @@ def bundle_server(destination):
     destination.mkdir(parents=True, exist_ok=True)
     for name in ("server.py", "api.py"):
         shutil.copy2(ROOT / "lsp" / name, destination / name)
-    inventory = ROOT.parent / "mull/stdlib/Mulib/Inventory.json"
+    inventory = ROOT.parent / "mull/bridge/Mulib/Inventory.json"
     if inventory.is_file():
         shutil.copy2(inventory, destination / "Inventory.json")
 

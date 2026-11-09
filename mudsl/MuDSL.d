@@ -1,5 +1,5 @@
 /**
- * Composable, single-module DSL construction toolkit for D.
+ * Composable DSL construction toolkit for D, with MuLLIER companion modules.
  *
  * Port of MuDSL.hpp using template mixins, variadic tuples, static foreach,
  * string template parameters, operator templates, and CTFE. Import MuDSL;
@@ -52,7 +52,7 @@
  * and TermGraph provide first-order terms, unification and bounded reduction.
  * See manual/ch30-language-facilities.md for examples and supported syntax.
  *
- * Run the embedded tests: ldc2 -unittest -main MuDSL.d -of=mudsl-test
+ * Run the embedded tests: ldc2 -i -unittest -main MuDSL.d -of=mudsl-test
  */
 module MuDSL;
 
@@ -60,6 +60,7 @@ import std.conv : to;
 import std.meta : AliasSeq, staticIndexOf;
 import std.traits : EnumMembers, OriginalType, Unqual, isArray, isIntegral;
 import std.typecons : Nullable, Tuple, tuple;
+private import mull.mullier.MuLLIER : MuLLIERPipeline = Pipeline, MuLLIERDiagnostic = Diagnostic;
 
 /// Namespaced embedding surface: new MuLL.Runtime(), MuLL.Value, MuLL.Error.
 struct MuLL
@@ -402,6 +403,24 @@ private class MuLLParser
     MuLLNode parse()
     { auto n = new MuLLNode("program", peek); while (!at("")) n.children ~= statement(); return n; }
 }
+private SExpr mullLower(MuLLNode node, size_t depth = 0)
+{
+    if (depth > 512) throw new MuLLError("IR nesting limit exceeded", node.line, node.column);
+    SExpr[] names = [SExpr.atom("names")];
+    foreach (name; node.names) names ~= SExpr.atom(name, true);
+    SExpr[] items = [SExpr.atom(node.op), SExpr.atom(node.text, true), SExpr.list(names),
+        SExpr.list([SExpr.atom("site"), SExpr.atom(node.line.to!string), SExpr.atom(node.column.to!string)])];
+    foreach (child; node.children) items ~= mullLower(child, depth + 1);
+    return SExpr.list(items);
+}
+private MuLLNode mullRaise(SExpr term)
+{
+    auto node = new MuLLNode(term.items[0].text, MuLLToken(term.items[1].text, 0,
+        term.items[3].items[1].text.to!size_t, term.items[3].items[2].text.to!size_t));
+    foreach (name; term.items[2].items[1 .. $]) node.names ~= name.text;
+    foreach (child; term.items[4 .. $]) node.children ~= mullRaise(child);
+    return node;
+}
 private class MuLLCell
 {
     MuLLValue value; bool mutable_;
@@ -432,6 +451,7 @@ class MuLLRuntime
     private size_t steps, calls, frames, evalDepth;
     private bool running;
     size_t maxSteps = 1_000_000, maxCallDepth = 128, maxFrames = 100_000, maxSourceBytes = 4 * 1024 * 1024;
+    MuLLIERPipeline mullier;
     void delegate(string) stdoutSink;
     MuLLValue delegate(string) mulibWrapper;
     private MuLLEnv frame(MuLLEnv parent)
@@ -585,6 +605,10 @@ class MuLLRuntime
         try
         {
             auto tree = (new MuLLParser(source)).parse();
+            bool[string] bindings;
+            foreach (key, cell; env.values) bindings[key] = cell.mutable_;
+            try { tree = mullRaise(mullier.process(mullLower(tree), bindings)); }
+            catch (MuLLIERDiagnostic e) { throw new MuLLError(e.msg, e.line, e.column); }
             try { return eval(tree, env); }
             catch (MuLLReturn r) { return r.value; }
             catch (MuLLBreak e) { throw new MuLLError("break outside loop"); }
@@ -597,6 +621,7 @@ class MuLLRuntime
         import std.stdio : stdout;
         alias V = MuLLValue;
         this.paths = paths.dup; globals = frame(null);
+        mullier = new MuLLIERPipeline;
         stdoutSink = (string s) { stdout.rawWrite(s); };
         V[string] g;
         g["MulibWrap"] = V((V[] a) {

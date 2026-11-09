@@ -12,3 +12,4 @@
 \fancyhead[RE]{\small\nouppercase{\leftmark}}
 \setcounter{tocdepth}{1}
 \setcounter{secnumdepth}{2}
+\raggedbottom

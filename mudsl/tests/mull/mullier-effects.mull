@@ -1,0 +1,13 @@
+var count <- 0;
+val effect <- fn() { count <- count+1; return count; };
+G:Assert((true and effect()) == 1);
+G:Assert((false or effect()) == 2);
+G:Assert((nil or effect()) == 3);
+G:Assert((false and effect()) == false);
+G:Assert((nil and effect()) == nil);
+G:Assert((true or effect()) == true);
+G:Assert((not true) == false and (not nil) == true);
+G:Assert((true and 0) == 0);
+G:Assert((1e16 + -1e16) + 1 == 1);
+G:Assert(1e16 + (-1e16 + 1) == 0);
+return count;

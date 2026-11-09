@@ -1,0 +1,9 @@
+val Math <- G:LoadLib("math") or G:DieWith("$E?");
+val Dot <- fn(a, b) { G:Assert(G:Len(a) == G:Len(b)); var sum <- 0; var i <- 0;
+  while i < G:Len(a) { sum <- sum + a[i]*b[i]; i <- i + 1; } return sum; };
+val Scale <- fn(a, k) { var out <- []; var i <- 0;
+  while i < G:Len(a) { out <- out + [a[i]*k]; i <- i + 1; } return out; };
+return {Dot: Dot, Scale: Scale, Norm: fn(a) { return Math:Sqrt(Dot(a, a)); },
+  Add: fn(a, b) { G:Assert(G:Len(a) == G:Len(b)); var out <- []; var i <- 0;
+    while i < G:Len(a) { out <- out + [a[i]*1+b[i]*1]; i <- i + 1; } return out; },
+  Normalize: fn(a) { val n <- Math:Sqrt(Dot(a, a)); G:Assert(n > 0); return Scale(a, 1/n); }};

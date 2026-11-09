@@ -12987,9 +12987,11 @@ private:
 /// The toolkit is also reachable as `mudsl` (AGENTS.md naming).
 namespace mudsl = dsl;
 
+#include "mull/mullier/Passes.hpp"
+
 // ============================================================
 // MuLL: a small embeddable language. No process-global interpreter state.
-// Native libraries live in mull/stdlib; this runtime needs only the STL.
+// Packages live in mull/stdlib, native hosts in mull/native and mull/bridge.
 // ============================================================
 #include <charconv>
 #include <cmath>
@@ -13194,6 +13196,26 @@ struct Node {
   std::size_t line = 0, column = 0;
 };
 using N = std::shared_ptr<Node>;
+inline dsl::SExpr lower(const N &node, std::size_t depth = 0) {
+  if (depth > 512) throw Error("IR nesting limit exceeded", node->line, node->column);
+  using dsl::SExpr;
+  std::vector<SExpr> names{SExpr::atom("names")};
+  for (const auto &name : node->names) names.push_back(SExpr::atom(name, true));
+  std::vector<SExpr> items{SExpr::atom(node->op), SExpr::atom(node->text, true),
+    SExpr::list(std::move(names)), SExpr::list({SExpr::atom("site"),
+      SExpr::atom(std::to_string(node->line)), SExpr::atom(std::to_string(node->column))})};
+  for (const auto &child : node->children) items.push_back(lower(child, depth + 1));
+  return SExpr::list(std::move(items));
+}
+inline N raise(const dsl::SExpr &term) {
+  auto node = std::make_shared<Node>();
+  node->op = term.items.at(0).text; node->text = term.items.at(1).text;
+  for (std::size_t i = 1; i < term.items.at(2).items.size(); ++i) node->names.push_back(term.items[2].items[i].text);
+  node->line = std::stoull(term.items.at(3).items.at(1).text);
+  node->column = std::stoull(term.items.at(3).items.at(2).text);
+  for (std::size_t i = 4; i < term.items.size(); ++i) node->children.push_back(raise(term.items[i]));
+  return node;
+}
 class Parser {
   std::vector<Token> tokens;
   std::size_t pos = 0, depth = 0;
@@ -13464,6 +13486,10 @@ class Runtime {
   Value execute(std::string_view source, Env *env, const std::string &name) {
     try {
       auto tree = detail::Parser(source).parse();
+      std::map<std::string, bool> bindings;
+      for (const auto &[key, cell] : env->values) bindings[key] = cell->mutable_;
+      try { tree = detail::raise(mullier.process(detail::lower(tree), bindings)); }
+      catch (const mullier::Diagnostic &e) { throw Error(e.what(), e.line, e.column); }
       try { return eval(tree, env); }
       catch (const detail::Return &r) { return r.value; }
       catch (const detail::Break &) { throw Error("break outside loop"); }
@@ -13473,6 +13499,7 @@ class Runtime {
   }
 public:
   std::size_t maxSteps = 1000000, maxCallDepth = 128, maxFrames = 100000, maxSourceBytes = 4 * 1024 * 1024;
+  mullier::Pipeline mullier;
   std::function<void(std::string_view)> stdoutSink = [](std::string_view s) { std::cout << s; };
   std::function<Value(const std::string &)> mulibWrapper;
   explicit Runtime(std::vector<std::filesystem::path> paths = {"mull/stdlib"}) : paths_(std::move(paths)) {

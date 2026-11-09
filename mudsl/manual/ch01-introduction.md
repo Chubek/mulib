@@ -1,8 +1,9 @@
 # Chapter 1: Introduction and Design Philosophy
 
 MuDSL builds Domain-Specific Languages in C++20 and D. The C++ implementation
-is a single header, `MuDSL.hpp`, exposing the `dsl` namespace. The D
-implementation is a single module, `MuDSL.d`, imported with `import MuDSL`.
+has the public header `MuDSL.hpp`, exposing the `dsl` namespace. The D
+entry point is `MuDSL.d`, imported with `import MuDSL`. Both hosts use the
+accompanying `mull/mullier` implementation for MuLL analysis and optimization.
 Default builds use the host language's standard library. Optional native Lua
 embedding adds a user-supplied Lua library dependency.
 

@@ -1,0 +1,5 @@
+val Slice <- G:LoadLib("slice") or G:DieWith("$E?");
+return {New: fn() { return []; }, Push: fn(xs, x) { return xs + [x]; },
+  Peek: fn(xs) { G:Assert(G:Len(xs) > 0); return xs[G:Len(xs)-1]; },
+  Pop: fn(xs) { G:Assert(G:Len(xs) > 0);
+    return {value: xs[G:Len(xs)-1], rest: Slice:Take(xs, G:Len(xs)-1)}; }};

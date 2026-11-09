@@ -1,0 +1,54 @@
+\chapter{MuLLIER: from syntax to execution}
+MuLLIER is MuLL's intermediate representation and pass pipeline. Parsing still
+uses the lexer and precedence parser in \api{MuDSL.hpp} and \api{MuDSL.d}.
+Each successful parse now follows the same sequence in both hosts:
+\begin{enumerate}
+\item Lower the syntax tree to MuDSL \api{SExpr} values.
+\item Analyze lexical declarations, reference targets, and loop control.
+\item Saturate an e-graph with transformation rules and extract a compact term.
+\item Raise that term to the executable tree, retaining source locations.
+\item Evaluate using the existing cells, environments, callbacks, and budgets.
+\end{enumerate}
+The same path handles scripts and package initializers. A cached package does
+not initialize again. Host callbacks call captured executable functions directly.
+
+\section{The interchange contract}
+Every node is a list containing its operator, quoted payload, name list, source
+site, and ordered children. Empty metadata lists retain their literal heads.
+This makes all terms suitable for MuDSL's e-graph, whose lists require atom heads.
+\begin{rulecode}
+(binary "and" (names) (site 1 13)
+  (literal "true" (names) (site 1 8))
+  (number "42" (names) (site 1 17)))
+\end{rulecode}
+The payload is always quoted: a string such as \api{?x} must never become a
+pattern variable. A function's \api{names} list contains parameters; a record's
+contains keys in evaluation order. \api{site} stores a one-based line and byte
+column. The outer execution boundary attaches the source filename to diagnostics.
+\api{dump}, \api{parse_sexpr}, \api{encode_sexpr}, and \api{decode_sexpr}
+provide text and binary interchange using MuDSL itself.
+
+\section{Semantic analysis before effects}
+Same-scope duplicates, assignments to statically known immutable bindings,
+invalid reference targets, and \api{break} outside a loop are diagnosed before
+execution. A function resets the loop context: its break cannot escape the caller.
+Analysis includes unreachable branches, so malformed control flow is rejected
+even when a later optimization would remove the branch.
+
+MuLL closures retain live environments. A name can be supplied by the host or
+declared later in a captured scope. Analysis therefore leaves unresolved names
+and captured-cell mutability to the evaluator; it is not a static type checker.
+This distinction preserves recursion and later declarations. Runtime type,
+bounds, import, and arithmetic failures still occur at their evaluation points.
+
+\section{Inspecting a compilation}
+\begin{cppcode}
+mull::Runtime vm;
+auto answer = vm.run("return true and 42;", "answer.mull");
+assert(answer.number() == 42);
+std::cout << vm.mullier.lastIR.dump() << '\n';
+vm.mullier.optimize = false;
+\end{cppcode}
+Disabling optimization leaves semantic analysis active. The IR and saturation
+report describe the most recently compiled unit, which may be an imported
+package. Independent runtimes have independent pass settings and rule sets.

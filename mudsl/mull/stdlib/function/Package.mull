@@ -1,0 +1,7 @@
+return {Identity: fn(x) { return x; },
+  Constant: fn(x) { return fn(ignored) { return x; }; },
+  Compose: fn(f, g) { return fn(x) { return f(g(x)); }; },
+  Flip: fn(f) { return fn(a, b) { return f(b, a); }; },
+  Partial: fn(f, a) { return fn(b) { return f(a, b); }; },
+  Times: fn(n, f, x) { G:Assert(n >= 0 and n % 1 == 0); var i <- 0;
+    while i < n { x <- f(x); i <- i + 1; } return x; }};

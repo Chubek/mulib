@@ -1,0 +1,10 @@
+val Math <- G:LoadLib("math") or G:DieWith("$E?");
+val Check <- fn(x) { G:Assert(x % 1 == 0 and Math:Abs(x) <= 9007199254740991); return x; };
+val Gcd <- fn(a, b) { a <- Math:Abs(Check(a)); b <- Math:Abs(Check(b));
+  while b != 0 { val r <- a % b; a <- b; b <- r; } return a; };
+return {Check: Check, Gcd: Gcd,
+  Lcm: fn(a, b) { Check(a); Check(b); if a == 0 or b == 0 { return 0; }
+    return Check(Math:Abs((a/Gcd(a,b))*b)); },
+  DivMod: fn(a, b) { Check(a); Check(b); G:Assert(b != 0);
+    val q <- Math:Floor(a/b); return [q, a-q*b]; },
+  IsEven: fn(x) { return Check(x) % 2 == 0; }};

@@ -59,11 +59,11 @@ void main()
 ```
 
 ```sh
-ldc2 hello.d MuDSL.d -of=hello
+ldc2 hello.d MuDSL.d mull/mullier/*.d -of=hello
 ./hello
 # Equivalent compiler invocations:
-dmd hello.d MuDSL.d -of=hello
-gdc hello.d MuDSL.d -o hello
+dmd hello.d MuDSL.d mull/mullier/*.d -of=hello
+gdc hello.d MuDSL.d mull/mullier/*.d -o hello
 ```
 
 Supply the module directory through `-I` when it is elsewhere. The CMake
@@ -72,14 +72,14 @@ exports the C++ usage requirements. Chapter 31 provides the D feature guide.
 
 ## Obtaining the Header
 
-Obtaining the library means obtaining `MuDSL.hpp`. In a typical source layout
-the header sits at the repository root. A project that vendors MuDSL simply
-copies that one file into its own include tree.
+The public header is `mudsl/MuDSL.hpp` in the repository. A project that vendors
+MuDSL copies that file and the accompanying `mull/mullier` directory into its
+include tree, preserving relative paths. The CMake installation does this automatically.
 
 There is no separate source file to compile, no static library to build, and no
 shared object to install for consumers. If your project already has an
-`include/` or `third_party/` directory, dropping `MuDSL.hpp` there is
-sufficient.
+`include/` or `third_party/` directory, place the public header and its companion
+directory there. The optional MuLIB bridge has its own compiled-library target.
 
 Once the header is on your include path, using it is a single line:
 
@@ -271,7 +271,7 @@ CFGs and static regexes. From the MuDSL directory:
 ```sh
 g++ -std=c++20 -I. examples/26-equality-saturation.cpp -o eqsat-cpp
 ./eqsat-cpp
-ldc2 -I. MuDSL.d examples/26-equality-saturation.d -of=eqsat-d
+ldc2 -I. MuDSL.d mull/mullier/*.d examples/26-equality-saturation.d -of=eqsat-d
 ./eqsat-d
 ```
 
@@ -291,7 +291,7 @@ tests. Lua discovery supplies the test target's include and link flags.
 D regression tests live in the source module:
 
 ```sh
-ldc2 -unittest -main MuDSL.d -of=mudsl-test
+ldc2 -unittest -main MuDSL.d mull/mullier/*.d -of=mudsl-test
 ./mudsl-test
 ```
 

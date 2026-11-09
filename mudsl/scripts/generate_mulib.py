@@ -13,7 +13,7 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-DEST = ROOT / 'mull/stdlib/Mulib'
+DEST = ROOT / 'mull/bridge/Mulib'
 
 
 def quote(text):

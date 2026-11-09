@@ -1,4 +1,4 @@
-module mull.stdlib.terminal.Native;
+module mull.native.terminal.Native;
 import MuDSL;
 import std.conv : to;
 import std.math : floor;

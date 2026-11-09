@@ -1,6 +1,6 @@
-module mull.stdlib.Mulib.Native;
+module mull.bridge.Mulib.Native;
 import MuDSL;
-import mull.stdlib.Mulib.Bridge;
+import mull.bridge.Mulib.Bridge;
 import core.stdc.string : memcpy;
 import std.string : fromStringz, toStringz;
 import std.math : floor;

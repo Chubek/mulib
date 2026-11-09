@@ -1,0 +1,9 @@
+val Math <- G:LoadLib("math") or G:DieWith("$E?");
+val Hex <- "0123456789ABCDEF";
+val Channel <- fn(x) { G:Assert(x >= 0 and x <= 255 and x % 1 == 0); return x; };
+val Rgb <- fn(r,g,b) { return {r:Channel(r),g:Channel(g),b:Channel(b)}; };
+val Byte <- fn(x) { Channel(x); return Hex[Math:Floor(x/16)]+Hex[x%16]; };
+return {Rgb: Rgb, Hex: fn(c) { return "#"+Byte(c:r)+Byte(c:g)+Byte(c:b); },
+  Mix: fn(a,b,t) { G:Assert(t >= 0 and t <= 1);
+    return Rgb(Math:Floor(a:r*(1-t)+b:r*t+0.5),Math:Floor(a:g*(1-t)+b:g*t+0.5),Math:Floor(a:b*(1-t)+b:b*t+0.5)); },
+  Invert: fn(c) { return Rgb(255-c:r,255-c:g,255-c:b); }};

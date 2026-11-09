@@ -1,0 +1,43 @@
+\chapter{Repository layout and reproducible publishing}
+\begin{description}
+\item[\api{mull/mullier}] C++ and D passes, public entry points, embedded rules.
+\item[\api{mull/rewrite}] Authored analysis/transformation S-expressions and their embedder.
+\item[\api{mull/stdlib}] Discoverable MuLL packages and aggregate installer facades.
+\item[\api{mull/native}] C++ and D implementations of the five native base packages.
+\item[\api{mull/bridge}] MuLIB's generated inventory, typed adapters, and shared C ABI.
+\end{description}
+This layout separates compiler inputs, language packages, and compiled host code.
+An installed application supplies its package root explicitly, commonly
+\api{share/mull/stdlib}. Default embedded rewrite rules need no filesystem access.
+Host-selected rules can instead be loaded from \api{share/mull/rewrite}.
+
+\section{The generated reference parts}
+The repository-root \api{manual/} describes MuLIB. The toolkit's separate
+\api{mudsl/manual/} supplies the first 37 chapters. Both conversions use the
+provided \api{md2latex.py} parser through a book-specific renderer that selects
+minted languages and promotes headings. \api{typeset-manuals.py} enumerates all
+root Markdown manuals in stable order, while \api{typeset-manifest.py} safely
+loads YAML, validates module counts and names, and renders every metadata field.
+Generated fragments live below \api{book/build/generated}.
+
+\section{Typography as part of the build}
+MuLL has its own Pygments lexer: declaration/control keywords, short-circuit
+operators, byte-string escapes, error interpolation, and both comment forms.
+The build stages the plugin under \api{build/python}; it does not modify the
+Python installation. LuaLaTeX uses minted, microtypography, shaded breakable code,
+running headings, and linked contents. Source appendices are read directly with
+\api{inputminted}, so they cannot drift from the repository sources.
+
+\begin{code}
+cmake -S mudsl -B build/mudsl -DMULL_ENABLE_MULIB=OFF
+cmake --build build/mudsl -j4
+ctest --test-dir build/mudsl --output-on-failure
+make -C mudsl/book export
+make -C mudsl/book check
+make -C mudsl/book
+\end{code}
+The book requires Python with PyYAML and Pygments, LuaLaTeX, latexmk, minted's
+Python executable, and the TeX Gyre/DejaVu fonts. The Makefile supplies shell
+escape for highlighting and a local plugin path. Edit authored Markdown or
+LaTeX sources, regenerate, and verify the result; generated files are not the
+place to repair a source-level mistake.

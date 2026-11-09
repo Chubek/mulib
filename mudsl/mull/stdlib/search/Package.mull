@@ -1,0 +1,8 @@
+val Index <- fn(xs, value) { var i <- 0; while i < G:Len(xs) {
+  if xs[i] == value { return i; } i <- i + 1; } return nil; };
+return {Index: Index, Contains: fn(xs, x) { return Index(xs, x) != nil; },
+  Find: fn(xs, p) { var i <- 0; while i < G:Len(xs) {
+    if p(xs[i]) { return {found: true, index: i, value: xs[i]}; } i <- i + 1; }
+    return {found: false, index: nil, value: nil}; },
+  Count: fn(xs, p) { var n <- 0; var i <- 0; while i < G:Len(xs) {
+    if p(xs[i]) { n <- n + 1; } i <- i + 1; } return n; }};

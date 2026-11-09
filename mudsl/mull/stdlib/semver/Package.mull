@@ -1,0 +1,12 @@
+# Strict major.minor.patch core versions; prerelease/build suffixes are rejected.
+val Text <- G:LoadLib("text") or G:DieWith("$E?");
+val Ascii <- G:LoadLib("ascii") or G:DieWith("$E?");
+val Parse <- fn(s) { val parts <- Text:Split(s,"."); G:Assert(G:Len(parts) == 3); var out <- []; var i <- 0;
+  while i < 3 { val p <- parts[i]; G:Assert(G:Len(p) > 0 and (G:Len(p) == 1 or p[0] != "0")); var n <- 0; var j <- 0;
+    while j < G:Len(p) { n <- n*10+Ascii:Digit(p[j]); G:Assert(n <= 9007199254740991); j <- j + 1; }
+    out <- out + [n]; i <- i + 1; } return out; };
+return {Parse: Parse, Compare: fn(a,b) { a <- Parse(a); b <- Parse(b); var i <- 0;
+    while i < 3 { if a[i] < b[i] { return -1; } if a[i] > b[i] { return 1; } i <- i + 1; } return 0; },
+  Compatible: fn(a,b) { a <- Parse(a); b <- Parse(b);
+    if a[0] != b[0] { return false; } if a[0] > 0 { return true; }
+    if a[1] != b[1] { return false; } return a[1] > 0 or a[2] == b[2]; }};

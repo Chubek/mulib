@@ -1,11 +1,11 @@
 module mull.stdlib.Stdlib;
 import MuDSL;
-import mull.stdlib.printf.Native;
-import mull.stdlib.terminal.Native;
-import mull.stdlib.math.Native;
-import mull.stdlib.text.Native;
-import mull.stdlib.list.Native;
-version (MULL_ENABLE_MULIB) import mull.stdlib.Mulib.Native;
+import mull.native.printf.Native;
+import mull.native.terminal.Native;
+import mull.native.math.Native;
+import mull.native.text.Native;
+import mull.native.list.Native;
+version (MULL_ENABLE_MULIB) import mull.bridge.Mulib.Native;
 
 void install(MuLLRuntime runtime)
 {

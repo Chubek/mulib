@@ -1,0 +1,11 @@
+val Sub <- fn(s,start,end) { G:Assert(G:Type(s) == "string");
+  G:Assert(start >= 0 and start <= end and end <= G:Len(s) and start % 1 == 0 and end % 1 == 0);
+  var out <- ""; var i <- start; while i < end { out <- out + s[i]; i <- i + 1; } return out; };
+val Space <- fn(c) { return c == " " or c == "\t" or c == "\n" or c == "\r"; };
+return {Sub: Sub,
+  StartsWith: fn(s,p) { return G:Len(p) <= G:Len(s) and Sub(s,0,G:Len(p)) == p; },
+  EndsWith: fn(s,p) { return G:Len(p) <= G:Len(s) and Sub(s,G:Len(s)-G:Len(p),G:Len(s)) == p; },
+  Trim: fn(s) { var a <- 0; var b <- G:Len(s); while a < b and Space(s[a]) { a <- a + 1; }
+    while b > a and Space(s[b-1]) { b <- b - 1; } return Sub(s,a,b); },
+  Repeat: fn(s,n) { G:Assert(G:Type(s) == "string" and n >= 0 and n % 1 == 0); var out <- ""; var i <- 0;
+    while i < n { out <- out + s; i <- i + 1; } return out; }};

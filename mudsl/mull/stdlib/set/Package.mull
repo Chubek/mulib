@@ -1,0 +1,9 @@
+# Sets are lists with structural equality and stable first-occurrence order.
+val Search <- G:LoadLib("search") or G:DieWith("$E?");
+val Unique <- fn(xs) { var out <- []; var i <- 0; while i < G:Len(xs) {
+  if not Search:Contains(out, xs[i]) { out <- out + [xs[i]]; } i <- i + 1; } return out; };
+return {Unique: Unique, Union: fn(a, b) { return Unique(a + b); },
+  Intersection: fn(a, b) { var out <- []; var i <- 0; a <- Unique(a);
+    while i < G:Len(a) { if Search:Contains(b, a[i]) { out <- out + [a[i]]; } i <- i + 1; } return out; },
+  Difference: fn(a, b) { var out <- []; var i <- 0; a <- Unique(a);
+    while i < G:Len(a) { if not Search:Contains(b, a[i]) { out <- out + [a[i]]; } i <- i + 1; } return out; }};

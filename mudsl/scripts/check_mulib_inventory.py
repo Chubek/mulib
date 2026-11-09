@@ -46,7 +46,7 @@ def check_inventory(include, bindings):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--include', type=Path, default=ROOT.parent / 'include')
-    parser.add_argument('--bindings', type=Path, default=ROOT / 'mull/stdlib/Mulib')
+    parser.add_argument('--bindings', type=Path, default=ROOT / 'mull/bridge/Mulib')
     args = parser.parse_args()
     try:
         headers, libraries, functions = check_inventory(args.include, args.bindings)

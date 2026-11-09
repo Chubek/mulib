@@ -1,0 +1,2 @@
+val M <- G:LoadLib("matrix") or G:DieWith("$E?");
+return M:Transpose([[1],[2,3]]);

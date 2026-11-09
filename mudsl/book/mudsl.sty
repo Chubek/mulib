@@ -12,13 +12,30 @@
   \RequirePackage{lmodern}
 \fi
 \RequirePackage{amsmath,amssymb}
-\RequirePackage{xcolor,graphicx,array,booktabs,longtable,calc}
+\RequirePackage{xcolor,graphicx,array,booktabs,longtable,tabularx,calc}
+\RequirePackage{microtype}
+\RequirePackage{xltabular}
 \RequirePackage{fvextra}
+\RequirePackage{minted}
 \RequirePackage{hyperref}
 \definecolor{MuBlue}{HTML}{205577}
 \hypersetup{colorlinks=true,linkcolor=MuBlue,urlcolor=MuBlue,pdftitle={The Book of MuDSL}}
-\DefineVerbatimEnvironment{code}{Verbatim}{breaklines=true,breakanywhere=true,fontsize=\small,frame=leftline,rulecolor=\color{MuBlue}}
-\DefineVerbatimEnvironment{mullcode}{Verbatim}{breaklines=true,breakanywhere=true,fontsize=\small,frame=leftline,rulecolor=\color{MuBlue}}
+\definecolor{MuCode}{HTML}{F3F6F8}
+\setminted{breaklines=true,breakanywhere=true,breakautoindent=false,breakindent=1em,fontsize=\footnotesize,
+  bgcolor=MuCode,frame=leftline,framesep=2mm,rulecolor=\color{MuBlue},tabsize=4}
+\newminted[code]{text}{}
+\newminted[mullcode]{mull}{}
+\newminted[cppcode]{cpp}{}
+\newminted[dcode]{d}{}
+\newminted[rulecode]{scheme}{}
+\ExplSyntaxOn
+\cs_new:Npn \mdchar #1 { \char_generate:nn {#1} {12} }
+\ExplSyntaxOff
+\newsavebox{\mdstrikebox}
+\DeclareRobustCommand{\mdstrike}[1]{%
+  \begingroup\sbox{\mdstrikebox}{#1}%
+  \leavevmode\rlap{\raisebox{0.5ex}{\rule{\wd\mdstrikebox}{0.4pt}}}%
+  \usebox{\mdstrikebox}\endgroup}
 \pdfstringdefDisableCommands{\def\allowbreak{}}
 \providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 \providecommand{\passthrough}[1]{#1}

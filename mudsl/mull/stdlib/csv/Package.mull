@@ -1,0 +1,32 @@
+# RFC-style comma-separated byte strings. Writer quotes every field, emits LF.
+val Text <- G:LoadLib("text") or G:DieWith("$E?");
+return {Encode: fn(rows) { var out <- ""; var r <- 0;
+    while r < G:Len(rows) { G:Assert(G:Len(rows[r]) > 0); var c <- 0;
+      while c < G:Len(rows[r]) { if c > 0 { out <- out + ","; }
+        out <- out + "\"" + Text:Replace(rows[r][c],"\"","\"\"") + "\""; c <- c + 1; }
+      out <- out + "\n"; r <- r + 1; } return out; },
+  Decode: fn(s) { var rows <- []; var row <- []; var field <- "";
+    var quoted <- false; var closed <- false; var started <- false; var i <- 0;
+    while i < G:Len(s) { val c <- s[i];
+      if quoted {
+        if c == "\"" {
+          if i+1 < G:Len(s) and s[i+1] == "\"" { field <- field + "\""; i <- i + 1; }
+          else { quoted <- false; closed <- true; }
+        } else { field <- field + c; }
+      } else {
+        if c == "," or c == "\n" or c == "\r" {
+          row <- row + [field]; field <- ""; closed <- false; started <- false;
+          if c != "," { rows <- rows + [row]; row <- [];
+            if c == "\r" and i+1 < G:Len(s) and s[i+1] == "\n" { i <- i + 1; }
+          }
+        } else {
+          G:Assert(not closed);
+          if c == "\"" { G:Assert(not started); quoted <- true; }
+          else { field <- field + c; } started <- true;
+        }
+      } i <- i + 1;
+    }
+    G:Assert(not quoted);
+    if started or closed or G:Len(row) > 0 { rows <- rows + [row + [field]]; }
+    return rows;
+  }};

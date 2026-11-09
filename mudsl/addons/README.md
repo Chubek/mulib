@@ -58,7 +58,7 @@ types, numeric evaluation, native ownership, or package execution errors).
   Direct `val Name <- G:LoadLib("package")` and
   `mulib Name <- G:MulibWrap("library")` bindings are recognized.
 - MuLIB wrapper completions use exact C function names from
-  `mull/stdlib/Mulib/Inventory.json`, plus bridge helpers. Short aliases, native
+  `mull/bridge/Mulib/Inventory.json`, plus bridge helpers. Short aliases, native
   constants/types, arbitrary records, and indirect import expressions are not
   inferred.
 - Hover documentation, current-document declarations/parameters in the outline,

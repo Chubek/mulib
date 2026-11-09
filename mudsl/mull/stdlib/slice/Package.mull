@@ -1,0 +1,10 @@
+val Sub <- fn(xs, start, end) {
+  G:Assert(start >= 0 and start <= end and end <= G:Len(xs) and start % 1 == 0 and end % 1 == 0);
+  var out <- []; var i <- start;
+  while i < end { out <- out + [xs[i]]; i <- i + 1; } return out;
+};
+return {Sub: Sub, Take: fn(xs, n) { return Sub(xs, 0, n); },
+  Drop: fn(xs, n) { return Sub(xs, n, G:Len(xs)); },
+  Chunk: fn(xs, n) { G:Assert(n > 0 and n % 1 == 0); var out <- []; var i <- 0;
+    while i < G:Len(xs) { var end <- i + n; if end > G:Len(xs) { end <- G:Len(xs); }
+      out <- out + [Sub(xs, i, end)]; i <- end; } return out; }};

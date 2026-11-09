@@ -20,7 +20,8 @@ find_package(MuDSL CONFIG REQUIRED)
 target_link_libraries(my_application PRIVATE MuDSL::MuDSL)
 \end{code}
 The header and D module are installed in the include directory. Native MuLL
-sources are installed under \api{include/mull/stdlib}, and package files are
+sources are installed under \api{include/mull/native} and \api{include/mull/bridge};
+MuLLIER is under \api{include/mull/mullier}. Package files are
 also available under \api{share/mull/stdlib}. Pass the latter path to the
 runtime when running an installed application. Package discovery is explicit;
 it does not infer the installation prefix from an executable's location.

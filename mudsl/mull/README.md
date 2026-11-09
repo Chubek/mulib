@@ -1,9 +1,22 @@
 # MuLL language and embedding reference
 
-MuLL is a dynamically typed, lexically scoped tree interpreter. Its complete
-lexer, parser, value model, environments, package loader, and evaluator live
-in `MuDSL.hpp` and `MuDSL.d`. Standard-library implementations live here, outside
-the core. C++ needs C++20 and the STL; D needs Phobos.
+MuLL is a dynamically typed, lexically scoped language with a MuLLIER analysis
+and optimization pipeline before tree evaluation. Its public hosts remain
+`MuDSL.hpp` and `MuDSL.d`; MuLLIER uses MuDSL's S-expression parser and equality
+saturation facilities. C++ needs C++20 and the STL; D needs Phobos.
+
+## Layout
+
+| Directory | Responsibility |
+| --- | --- |
+| `mullier/` | Intermediate representation, semantic analysis, e-graph optimization, embedded defaults |
+| `rewrite/` | Authored `.a` analysis and `.t` transformation rules, embedding generator |
+| `stdlib/` | Discoverable MuLL packages and aggregate installer facades |
+| `native/` | C++ and D implementations of the five base packages |
+| `bridge/Mulib/` | Optional C bridge, host bindings, generated inventory |
+
+Keep these directories alongside the toolkit sources when copying them manually.
+The CMake install includes all required headers/modules and package data.
 
 ## Embed
 
@@ -32,14 +45,14 @@ Compile the complete D example from the project root:
 
 ```sh
 ldc2 -I. examples/27-mull.d MuDSL.d mull/stdlib/Stdlib.d \
-  mull/stdlib/{printf,terminal,math,text,list}/Native.d -of=mull-example
+  mull/mullier/*.d mull/native/*/Native.d -of=mull-example
 ```
 
 Runtime methods in both implementations:
 
 | Method | Meaning |
 | --- | --- |
-| `run(source, name = "<input>")` | Parse all source, then evaluate; return its result. |
+| `run(source, name = "<input>")` | Parse, analyze, optimize, then evaluate; return its result. |
 | `runFile(path)` | Bounded file read followed by `run`. |
 | `define(name, value, mutableBinding = false)` | Add a host global; duplicate names throw. |
 | `get(name)` | Retrieve the current value of a global binding. |
@@ -198,7 +211,7 @@ Printf:Println("ready");
 `LoadLib` converts discovery/parse/evaluation exceptions to nil and records their
 message. Success clears that message, including cache hits. Other runtime errors
 throw `mull::Error` / `MuLL.Error`, with source name, line, and byte column.
-Syntax errors occur before any effects. Runtime failures preserve earlier effects.
+Syntax and static semantic errors occur before any effects. Runtime failures preserve earlier effects.
 
 ## Standard library
 
@@ -212,7 +225,7 @@ Syntax errors occur before any effects. Runtime failures preserve earlier effect
 | `Mulib` | `Wrap(name)`, `Libraries()`, `New(type, initial?)`, `Array(type, countOrList)`, `Buffer(sizeOrString)`, `Callback(type, fn)`, `SizeOf(type)` |
 
 The optional compiled `Mulib` package wraps the complete MuLIB header inventory.
-See [MuLIB wrapper reference](stdlib/Mulib/README.md) for build instructions,
+See [MuLIB wrapper reference](bridge/Mulib/README.md) for build instructions,
 Parsec examples, native storage, callbacks, and ownership contracts.
 
 - Formatting uses `{}` placeholders, `{{`/`}}` for literal braces, and exact
@@ -230,6 +243,12 @@ Parsec examples, native storage, callbacks, and ownership contracts.
 
 ## Limits and lifetime
 
+The [expanded library catalogue](stdlib/README.md) documents the 30 additional
+portable packages: option, result, function, predicate, pair, sequence, slice,
+search, sort, set, stack, queue, deque, vector, matrix, statistics, integer, bit,
+combinatorics, range, string, ascii, csv, path, url, semver, units, geometry,
+color, and assert. All use the same loader and execution budgets in both hosts.
+
 Host-configurable defaults: `maxSteps=1000000`, `maxCallDepth=128`,
 `maxFrames=100000`, `maxSourceBytes=4194304`. `run` resets steps; nested imports
 and script callbacks share that budget. Frames count cumulatively for a runtime.
@@ -241,9 +260,43 @@ Limits count interpreter work, not native callback time or arbitrary host memory
 The language has no classes, catch syntax, mutable collection elements, or
 compiler backend. Extend services using native packages and the same value API.
 
+## MuLLIER
+
+Each compilation lowers the syntax tree to `(op "text" (names ...) (site line
+column) child ...)`, analyzes it, saturates a MuDSL e-graph, extracts a
+minimum-node representative, and raises it for evaluation. Payloads and names
+are quoted data; source sites survive extraction. Analysis rejects same-scope
+duplicates, invalid reference/assignment targets, known immutable writes, and
+breaks outside the current function's loops, including unreachable code.
+Unresolved names and captured-cell mutability remain runtime checks, preserving
+live captures and later declarations. This is not a static type system.
+
+`runtime.mullier` exposes the pipeline in both languages:
+
+- `optimize` (default true): switch transformation/extraction off; analysis stays on.
+- `limits`: saturation iterations/nodes/matches (defaults 12/20000/20000).
+- `lastIR`: the most recently compiled unit's MuDSL `SExpr`.
+- `lastSaturation`: saturation status and work counts.
+- `loadDirectory(path)`: replace rules from sorted `.a`/`.t` files transactionally.
+
+`.a` files contain `(check lexical)`, `(check control-flow)`, and category
+rewrite facts. `.t` files contain executable equivalences. The shipped rules
+simplify literal short circuits, literal negation, and numeric unary plus;
+they do not reorder effects or reassociate floating-point arithmetic. Optimizer
+limits still allow equivalent extraction; incomplete analysis saturation fails.
+The initial graph is built before saturation's node budget takes effect.
+Optimization can reduce evaluation steps; it does not promise identical budget
+consumption. User-provided rewrite rules are trusted compiler extensions.
+
+Default rules are embedded, so normal execution is independent of the working
+directory. After editing `rewrite/*.a` or `rewrite/*.t`, run
+`python3 mudsl/mull/rewrite/embed.py` from the repository root; `--check` detects
+snapshot drift. C++ includes the passes through `MuDSL.hpp`; D applications
+compile `mull/mullier/*.d` along with `MuDSL.d`.
+
 ## Verification
 
 CTest runs toolkit regressions, embedding tests, and shared `.mull` fixtures
 against both implementations when a D compiler is available. Complete MuLL code
-blocks in book chapters 46–70 are also executed and compared. See
+blocks in the book are also executed and compared, with optimization on and off. See
 `scripts/check_mull.py` and `tests/mull/`.

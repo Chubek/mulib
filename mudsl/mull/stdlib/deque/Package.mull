@@ -1,0 +1,4 @@
+val Stack <- G:LoadLib("stack") or G:DieWith("$E?");
+val Queue <- G:LoadLib("queue") or G:DieWith("$E?");
+return {New: fn() { return []; }, PushFront: fn(xs, x) { return [x] + xs; },
+  PushBack: Stack:Push, PopFront: Queue:Dequeue, PopBack: Stack:Pop};

@@ -1,0 +1,21 @@
+# Percent coding for printable ASCII and TAB/CR/LF. '+' is literal, not space.
+val Ascii <- G:LoadLib("ascii") or G:DieWith("$E?");
+val Math <- G:LoadLib("math") or G:DieWith("$E?");
+val Table <- " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+val Hex <- "0123456789ABCDEF";
+val Code <- fn(c) { if c == "\t" { return 9; } if c == "\n" { return 10; } if c == "\r" { return 13; }
+  var i <- 0; while i < G:Len(Table) { if Table[i] == c { return i+32; } i <- i + 1; }
+  return G:DieWith("url requires printable ASCII or TAB/CR/LF"); };
+val Nibble <- fn(c) { var i <- 0; while i < 16 { if Hex[i] == c { return i; } i <- i + 1; }
+  val lower <- "abcdef"; i <- 0; while i < 6 { if lower[i] == c { return i+10; } i <- i + 1; }
+  return G:DieWith("invalid percent escape"); };
+return {Encode: fn(s) { var out <- ""; var i <- 0; while i < G:Len(s) { val c <- s[i];
+    if Ascii:IsAlnum(c) or c == "-" or c == "." or c == "_" or c == "~" { out <- out + c; }
+    else { val n <- Code(c); out <- out + "%" + Hex[Math:Floor(n/16)] + Hex[n%16]; } i <- i + 1; } return out; },
+  Decode: fn(s) { var out <- ""; var i <- 0; while i < G:Len(s) {
+    if s[i] == "%" { G:Assert(i+2 < G:Len(s)); val n <- 16*Nibble(s[i+1])+Nibble(s[i+2]);
+      if n == 9 { out <- out + "\t"; } else if n == 10 { out <- out + "\n"; }
+      else if n == 13 { out <- out + "\r"; } else { G:Assert(n >= 32 and n <= 126); out <- out + Table[n-32]; }
+      i <- i + 3;
+    } else { Code(s[i]); out <- out + s[i]; i <- i + 1; }
+  } return out; }};

@@ -1,0 +1,6 @@
+val Ok <- fn(x) { return {ok: true, value: x, error: nil}; };
+val Err <- fn(e) { return {ok: false, value: nil, error: e}; };
+return {Ok: Ok, Err: Err,
+  Map: fn(r, f) { if r:ok { return Ok(f(r:value)); } return r; },
+  Bind: fn(r, f) { if r:ok { return f(r:value); } return r; },
+  Unwrap: fn(r) { if r:ok { return r:value; } return G:DieWith(r:error); }};

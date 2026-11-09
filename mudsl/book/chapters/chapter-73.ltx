@@ -1,0 +1,69 @@
+\chapter{Thirty portable libraries}
+The expanded library is written in MuLL. Both hosts load the same package files,
+and callbacks, loops, and allocations participate in the interpreter's existing
+budgets. The native \api{math}, \api{text}, and \api{list} services remain
+available through the aggregate installer. Package dependencies use the ordinary
+isolated loader and per-runtime cache.
+
+\section{Composition and collections}
+\api{option} represents presence separately from a nil value; \api{result}
+represents success separately from failure. \api{function} provides composition,
+partial application, flipping, and iteration. \api{predicate} combines
+predicates with short-circuit evaluation and quantifies lists. \api{pair}
+constructs and maps two-element lists.
+
+\api{sequence} provides zip, enumeration, one-level flattening, and reversal.
+\api{slice} implements checked half-open slices and chunking. \api{search}
+finds values and predicates; a found nil is distinguished by an explicit flag.
+\api{sort} offers stable comparator-driven insertion sort. \api{set} preserves
+first-occurrence order with structural equality. \api{stack}, \api{queue}, and
+\api{deque} return new collections, with removals returning a value/rest record.
+
+\begin{mullcode}
+val O <- G:LoadLib("option") or G:DieWith("$E?");
+val Q <- G:LoadLib("queue") or G:DieWith("$E?");
+val q <- Q:Enqueue(Q:Enqueue(Q:New(), O:Some(nil)), O:None());
+val first <- Q:Dequeue(q);
+G:Assert(first:value:present);
+G:Assert(O:GetOr(first:value, 99) == nil);
+G:Assert(G:Len(first:rest) == 1);
+\end{mullcode}
+
+\section{Numerical building blocks}
+\api{vector} supplies dot products, scaling, addition, norms, and normalization.
+\api{matrix} checks rectangular shape and implements transpose/multiplication.
+\api{statistics} supplies sum, mean, median, and population variance.
+\api{integer} checks exact-integer range and supplies gcd, lcm, and floor divmod.
+\api{bit} performs unsigned 32-bit logical operations and shifts using exact
+binary64 arithmetic. \api{combinatorics} implements bounded factorial/binomial
+coefficients and Cartesian products. \api{range} supplies signed-step integer
+ranges, half-open membership, and clamping.
+
+\section{Text and interchange}
+\api{string} adds byte slices, trimming, prefixes/suffixes, and repetition;
+\api{ascii} supplies character predicates and decimal digit conversion.
+\api{csv} reads quoted comma-separated fields, doubled quotes, embedded newlines,
+and CRLF records, and writes fully quoted LF records. \api{path} normalizes
+POSIX lexical paths without filesystem access. \api{url} percent-codes printable
+ASCII and tab/CR/LF; plus is literal and arbitrary binary/Unicode escapes are
+outside its contract. \api{semver} handles strict three-component core versions,
+rejecting prerelease/build suffixes and leading zeros.
+
+\section{Application utilities}
+\api{units} converts angles, temperatures, lengths, and time scales.
+\api{geometry} implements points and half-open rectangles, distance, area, and
+intersection. \api{color} validates byte RGB channels, formats hexadecimal
+colors, blends with nearest-integer rounding, and inverts. \api{assert} supplies
+named checks, structural equality, inequality, and absolute-tolerance comparison.
+
+\begin{mullcode}
+val Csv <- G:LoadLib("csv") or G:DieWith("$E?");
+val Stats <- G:LoadLib("statistics") or G:DieWith("$E?");
+val A <- G:LoadLib("assert") or G:DieWith("$E?");
+val rows <- [["name", "comment"], ["MuLL", "a,b and \"quotes\""]];
+A:Equal(Csv:Decode(Csv:Encode(rows)), rows);
+A:Equal(Stats:Median([4, 1, 3, 2]), 2.5);
+\end{mullcode}
+The API catalogue in \api{mull/stdlib/README.md} specifies signatures, failure
+cases, and bounds. The shared conformance suite exercises all thirty packages
+with optimization enabled and disabled in each host.

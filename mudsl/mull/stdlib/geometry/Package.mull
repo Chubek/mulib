@@ -1,0 +1,8 @@
+val Math <- G:LoadLib("math") or G:DieWith("$E?");
+val Rect <- fn(x,y,w,h) { G:Assert(w >= 0 and h >= 0); return {x:x,y:y,width:w,height:h}; };
+return {Point: fn(x,y) { return {x:x,y:y}; }, Rect: Rect,
+  Distance: fn(a,b) { val x <- a:x-b:x; val y <- a:y-b:y; return Math:Sqrt(x*x+y*y); },
+  Area: fn(r) { G:Assert(r:width >= 0 and r:height >= 0); return r:width*r:height; },
+  Contains: fn(r,p) { return p:x >= r:x and p:x < r:x+r:width and p:y >= r:y and p:y < r:y+r:height; },
+  Intersection: fn(a,b) { val x <- Math:Max(a:x,b:x); val y <- Math:Max(a:y,b:y);
+    return Rect(x,y,Math:Max(0,Math:Min(a:x+a:width,b:x+b:width)-x),Math:Max(0,Math:Min(a:y+a:height,b:y+b:height)-y)); }};

@@ -1,0 +1,4 @@
+val Slice <- G:LoadLib("slice") or G:DieWith("$E?");
+return {New: fn() { return []; }, Enqueue: fn(xs, x) { return xs + [x]; },
+  Peek: fn(xs) { G:Assert(G:Len(xs) > 0); return xs[0]; },
+  Dequeue: fn(xs) { G:Assert(G:Len(xs) > 0); return {value: xs[0], rest: Slice:Drop(xs, 1)}; }};

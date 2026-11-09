@@ -1,4 +1,4 @@
-module mull.stdlib.text.Native;
+module mull.native.text.Native;
 import MuDSL;
 import std.string : split, replace;
 private alias V = MuLLValue;

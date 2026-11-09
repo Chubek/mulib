@@ -10,8 +10,11 @@
 MuDSL provides composable language-building tools in one C++20 header and
 one D module. Chapters 1--37 develop those tools, following the companion
 manual. Chapters 38--45 connect them into an implementation workflow.
-The final 25 chapters, 46--70, specify and teach MuLL: a terse, embeddable
-language whose parser and interpreter live in those same two source files.
+Chapters 46--70 specify and teach MuLL: a terse, embeddable language.
+Chapters 71--76 develop its MuLLIER analysis and optimization pipeline,
+portable libraries, and the implementation contracts of both host languages.
+The reference parts include the repository's complete MuLIB manuals and
+manifest, followed by the C++ and D toolkit sources.
 
 The examples use the current public names: \api{MuDSL.hpp}, \api{MuDSL.d},
 the C++ namespace \api{dsl} (also \api{mudsl}), and D's \api{MuDSL} module.
@@ -40,11 +43,35 @@ individual APIs; their companion programs live in \api{examples/}.
   \input{chapters/chapter-\the\chapternumber.ltx}
   \advance\chapternumber by 1
 \ifnum\chapternumber<71\repeat
+\part{MuLLIER and language engineering}
+\chapternumber=71
+\loop
+  \input{chapters/chapter-\the\chapternumber.ltx}
+  \advance\chapternumber by 1
+\ifnum\chapternumber<77\repeat
+\input{build/generated/stdlib.tex}
+\part{MuLIB reference}
+\input{build/generated/manifest.tex}
+\input{build/generated/manuals.tex}
+\appendix
+\part{Implementation source reference}
+\chapter{MuDSL.hpp: the C++20 toolkit and MuLL host}
+This listing is read directly from the source used by the build. MuLLIER's
+included implementation is under \api{mull/mullier}; its rule files were
+introduced in Chapter 72.
+\inputminted[fontsize=\scriptsize,linenos]{cpp}{../MuDSL.hpp}
+\chapter{MuDSL.d: the D toolkit and MuLL host}
+The module implements the same language contract using D templates, delegates,
+and garbage-collected environments. Compile it with \api{mull/mullier/*.d}.
+\inputminted[fontsize=\scriptsize,linenos]{d}{../MuDSL.d}
 \backmatter
 \chapter*{Source and verification}
 The authoritative APIs are in \api{MuDSL.hpp} and \api{MuDSL.d}.
-Native MuLL packages are under \api{mull/stdlib}. Run CMake and CTest as
+MuLL packages are under \api{mull/stdlib}, native implementations under
+\api{mull/native}, and the C bridge under \api{mull/bridge}. Run CMake and CTest as
 described in Chapter 45. To rebuild this document, run \api{make -C book}.
 The first 37 chapters are reproducibly exported from \api{manual/};
-\api{book/export_manual.py --check} detects drift.
+\api{book/export_manual.py --check} detects drift. The root \api{manual/}
+and \api{MANIFEST.yaml} are typeset by \api{typeset-manuals.py} and
+\api{typeset-manifest.py}; the build checks their generated fragments.
 \end{document}

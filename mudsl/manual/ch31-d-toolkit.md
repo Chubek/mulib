@@ -1,6 +1,6 @@
 # Chapter 31 — The D Toolkit: Templates, Mixins and CTFE
 
-`MuDSL.d` is a self-contained D module using Phobos. This chapter maps the
+`MuDSL.d` is the public D module using Phobos and the companion MuLLIER modules. This chapter maps the
 established C++ toolkit to D and introduces the language-specific API. The
 shared facilities introduced in Chapter 30 have focused tutorials in Chapters
 32–36.
@@ -11,9 +11,9 @@ Keep `MuDSL.d` on the import path and supply the module to the compiler:
 
 ```sh
 # From the MuDSL directory, with the user's app.d alongside the module:
-ldc2 app.d MuDSL.d -of=app
-dmd app.d MuDSL.d -of=app
-gdc app.d MuDSL.d -o app
+ldc2 app.d MuDSL.d mull/mullier/*.d -of=app
+dmd app.d MuDSL.d mull/mullier/*.d -of=app
+gdc app.d MuDSL.d mull/mullier/*.d -o app
 ```
 
 For an application in another directory, add the module's directory to `-I`.
@@ -296,9 +296,9 @@ configuration, namespace aliases and stream/formatter APIs.
 ## Verify the D module
 
 ```sh
-ldc2 -unittest -main MuDSL.d -of=mudsl-test
+ldc2 -unittest -main MuDSL.d mull/mullier/*.d -of=mudsl-test
 ./mudsl-test
-dmd -unittest -main MuDSL.d -of=mudsl-test-dmd
+dmd -unittest -main MuDSL.d mull/mullier/*.d -of=mudsl-test-dmd
 ./mudsl-test-dmd
 gdc -funittest -fmain MuDSL.d -o mudsl-test-gdc
 ./mudsl-test-gdc

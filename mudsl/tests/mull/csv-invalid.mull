@@ -1,0 +1,2 @@
+val Csv <- G:LoadLib("csv") or G:DieWith("$E?");
+return Csv:Decode("\"unterminated");

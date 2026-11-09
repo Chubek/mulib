@@ -1,4 +1,4 @@
-module mull.stdlib.Mulib.Bridge;
+module mull.bridge.Mulib.Bridge;
 
 enum : int { MULL_MB_VOID, MULL_MB_SIGNED, MULL_MB_UNSIGNED, MULL_MB_FLOAT,
     MULL_MB_POINTER, MULL_MB_ARRAY, MULL_MB_RECORD, MULL_MB_FUNCTION, MULL_MB_OPAQUE }

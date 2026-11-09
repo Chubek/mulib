@@ -13,8 +13,8 @@ if(MULL_ENABLE_MULIB)
     enable_language(C)
     find_package(Threads REQUIRED)
     add_library(mull-mulib-bridge STATIC
-        ${CMAKE_CURRENT_LIST_DIR}/../mull/stdlib/Mulib/Bridge.c
-        ${CMAKE_CURRENT_LIST_DIR}/../mull/stdlib/Mulib/Implementation.c)
+        ${CMAKE_CURRENT_LIST_DIR}/../mull/bridge/Mulib/Bridge.c
+        ${CMAKE_CURRENT_LIST_DIR}/../mull/bridge/Mulib/Implementation.c)
     # Shiraz's Windows services are deliberately separate from its header-only
     # CPU/loader implementation. Both MuLL hosts use these same runtime objects.
     set(MULL_SHIRAZ_SOURCE_DIR "${MULL_MULIB_INCLUDE_DIR}/../library/shiraz" CACHE PATH

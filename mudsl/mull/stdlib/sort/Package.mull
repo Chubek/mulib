@@ -1,0 +1,12 @@
+# Stable insertion sort. less(a,b) must define a strict ordering.
+val By <- fn(xs, less) { var out <- []; var i <- 0;
+  while i < G:Len(xs) { var next <- []; var inserted <- false; var j <- 0;
+    while j < G:Len(out) {
+      if not inserted and less(xs[i], out[j]) { next <- next + [xs[i]]; inserted <- true; }
+      next <- next + [out[j]]; j <- j + 1;
+    }
+    if not inserted { next <- next + [xs[i]]; } out <- next; i <- i + 1;
+  } return out;
+};
+return {By: By, Ascending: fn(xs) { return By(xs, fn(a, b) { return a < b; }); },
+  Descending: fn(xs) { return By(xs, fn(a, b) { return a > b; }); }};

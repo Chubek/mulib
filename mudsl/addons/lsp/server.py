@@ -200,7 +200,7 @@ class Server:
                 break
         inventories = [Path(__file__).with_name("Inventory.json")]
         if self.mudsl:
-            inventories.insert(0, self.mudsl / "mull/stdlib/Mulib/Inventory.json")
+            inventories.insert(0, self.mudsl / "mull/bridge/Mulib/Inventory.json")
         for path in inventories:
             if path.is_file():
                 self.modules = json.loads(path.read_text(encoding="utf-8"))["modules"]
