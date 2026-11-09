@@ -38,7 +38,7 @@ static int mulib_pandocast_set_(mulib_json_t *a, const char *key, mulib_json_t *
 static mulib_json_t *mulib_pandocast_array_(void) { return mulib_json_new(MULIB_JSON_ARRAY); }
 static mulib_json_t *mulib_pandocast_tag_(const char *tag, mulib_json_t *content) {
     if (!content && strcmp(tag,"Space") && strcmp(tag,"SoftBreak") && strcmp(tag,"LineBreak") &&
-        strcmp(tag,"HorizontalRule") && strcmp(tag,"AlignDefault") && strcmp(tag,"ColWidthDefault") &&
+        strcmp(tag,"HorizontalRule") && strcmp(tag,"AlignDefault") && strcmp(tag,"AlignLeft") && strcmp(tag,"AlignCenter") && strcmp(tag,"AlignRight") && strcmp(tag,"ColWidthDefault") &&
         strcmp(tag,"DefaultStyle") && strcmp(tag,"DefaultDelim")) return NULL;
     mulib_json_t *o = mulib_json_new(MULIB_JSON_OBJECT);
     if (!o || !mulib_pandocast_set_(o,"t",mulib_json_string(tag))) { mulib_json_destroy(content); mulib_json_destroy(o); return NULL; }
@@ -137,6 +137,10 @@ static mulib_json_t *mulib_pandocast_inlines_(const mulib_dsdom_t *n, unsigned d
         if (!mulib_pandocast_inline_(a,c,depth+1)) { mulib_json_destroy(a); return NULL; }
     return a;
 }
+static const char *mulib_pandocast_align_(const mulib_dsdom_t *n) {
+    const char *a=mulib_xml_attr(n,"align");
+    return a&&!strcmp(a,"left")?"AlignLeft":a&&!strcmp(a,"center")?"AlignCenter":a&&!strcmp(a,"right")?"AlignRight":"AlignDefault";
+}
 static mulib_json_t *mulib_pandocast_row_(const mulib_dsdom_t *row, size_t columns, unsigned depth) {
     mulib_json_t *a = mulib_pandocast_array_(), *cells = NULL, *cell = NULL;
     const mulib_dsdom_t *c;
@@ -146,7 +150,7 @@ static mulib_json_t *mulib_pandocast_row_(const mulib_dsdom_t *row, size_t colum
     for (c = mulib_xml_first(row); c; c = mulib_xml_next(c)) {
         ++count; cell = mulib_pandocast_array_();
         if (!cell || !mulib_pandocast_push_(cell,mulib_pandocast_attr_(c,0)) ||
-            !mulib_pandocast_push_(cell,mulib_pandocast_tag_("AlignDefault",NULL)) ||
+            !mulib_pandocast_push_(cell,mulib_pandocast_tag_(mulib_pandocast_align_(c),NULL)) ||
             !mulib_pandocast_push_(cell,mulib_json_number(1)) || !mulib_pandocast_push_(cell,mulib_json_number(1)) ||
             !mulib_pandocast_push_(cell,mulib_pandocast_blocks_(c,depth+1))) goto fail;
         if (!mulib_json_append(cells,cell)) goto fail;
@@ -172,9 +176,9 @@ static mulib_json_t *mulib_pandocast_table_(const mulib_dsdom_t *n, unsigned dep
     if (!caption || !mulib_pandocast_push_(caption,mulib_json_new(MULIB_JSON_NULL)) ||
         !mulib_pandocast_push_(caption,mulib_pandocast_array_()) || !mulib_json_append(a,caption)) goto fail;
     caption = NULL; specs = mulib_pandocast_array_(); if (!specs) goto fail;
-    for (i = 0; i < columns; ++i) {
+    for (i = 0,c=mulib_xml_first(r); i < columns; ++i,c=mulib_xml_next(c)) {
         spec = mulib_pandocast_array_();
-        if (!spec || !mulib_pandocast_push_(spec,mulib_pandocast_tag_("AlignDefault",NULL)) ||
+        if (!spec || !mulib_pandocast_push_(spec,mulib_pandocast_tag_(mulib_pandocast_align_(c),NULL)) ||
             !mulib_pandocast_push_(spec,mulib_pandocast_tag_("ColWidthDefault",NULL)) || !mulib_json_append(specs,spec)) goto fail;
         spec = NULL;
     }

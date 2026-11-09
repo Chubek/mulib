@@ -1,6 +1,6 @@
 # MuLIB
 
-MuLIB is a modular C11 utility library with **563 implemented modules**, from
+MuLIB is a modular C11 utility library with **569 implemented modules**, from
 containers and parsers to compiler tooling, graphics, networking, and virtual
 machines. Choose the modules you need and compile their implementations into
 your application.
@@ -71,6 +71,7 @@ the [usage guide](GUIDE.md) for a complete multi-file application.
 | Terminals and editors | [Readline](manual/mulib-readline.md), [editing buffers](manual/mulib-edbuf.md), [syntax highlighting](manual/mulib-termsyn.md), [terminal UI](manual/mulib-tui.md) |
 | Graphics, text and layout | [Linear algebra](manual/mulib-linalg.md), [vector graphics](manual/mulib-vectgfx.md), [ShaderX](manual/mulib-shaderx.md), [font shaping](manual/mulib-fontshape.md), [page layout](manual/mulib-pglayout.md) |
 | Documentation | [Docstrings and DocstrIL](manual/mulib-docstring.md), [Lua extensions/filters](library/ldocstr/README.md), [Pandoc AST](manual/mulib-pandocast.md), [graphs](manual/mulib-gvizz.md), [sequence diagrams](manual/mulib-dyegram.md) |
+| Notation and visualization | [Tables](manual/mulib-tbl.md), [symbols](manual/mulib-symbol.md), [math/logic equations](manual/mulib-eqn.md), [chemistry](manual/mulib-chem.md), [Lua-extensible charts](manual/mulib-chart.md), [paleography and script fonts](manual/mulib-paleography.md) |
 | Algorithms and numerical methods | [Statistics](manual/mulib-stats.md), [geometry constraints](manual/mulib-geosolve.md), [Cassowary](manual/mulib-cassowary-solver.md), [statistical/text fixtures](library/statistical-text/) |
 | Native runtimes and systems | [Dynbox](manual/mulib-dynbox.md), [Shiraz](library/shiraz/README.md), [container stack](manual/container-stack.md), [VMM](manual/mulib-vmm.md), [OIX](manual/mulib-oix.md), [boot manager](manual/mulib-bootmgr.md) |
 

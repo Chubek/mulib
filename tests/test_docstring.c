@@ -1,4 +1,7 @@
 #define MULIB_IMPL_DOCSTRING
+#define MULIB_IMPL_TBL
+#define MULIB_IMPL_CSV
+#define MULIB_IMPL_TEX
 #define MULIB_IMPL_DSDOM
 #define MULIB_IMPL_TAS
 #define MULIB_IMPL_XTAS
@@ -170,6 +173,26 @@ static void embeddings(void) {
     assert(!mulib_docstrings_compile(c,".include docstrings broken",26,NULL,&e) && !strcmp(e.source,"broken"));
     mulib_docstrings_destroy(c);
 }
+static void imported_tables(void) {
+    mulib_docstrings_t *c=mulib_docstrings_create(NULL);
+    mulib_docstrings_options_t options={0};
+    mulib_docstrings_error_t error;
+    mulib_docstril_t *d;
+    char *text;
+    assert(c);
+    d=compile(c,".table csv\n\"A & B\",\"**literal**\"\n\"quoted, value\",\"1\"\n.endtable\n",NULL);
+    text=mulib_docstrings_render(d,"html",NULL,&error);
+    assert(text&&strstr(text,"A &amp; B")&&strstr(text,"**literal**")&&!strstr(text,"<strong>"));free(text);mulib_xml_destroy(d);
+    d=compile(c,"return ldocstr.Doc{ldocstr.table('| A | B |\\n| :---: | ---: |\\n| 1 | 2 |')}","lua");
+    text=mulib_docstrings_render(d,"html",NULL,&error);assert(text&&strstr(text,"align=\"center\"")&&strstr(text,"align=\"right\""));free(text);
+    text=mulib_docstrings_render(d,"pandoc",NULL,&error);assert(text&&strstr(text,"AlignCenter")&&strstr(text,"AlignRight"));free(text);mulib_xml_destroy(d);
+    rejected(c,"| A | B |\n| --- | --- |\n| --- | --- |",MULIB_DOCSTRINGS_SYNTAX);
+    rejected(c,".table csv\nA,B\nragged\n.endtable",MULIB_DOCSTRINGS_SYNTAX);
+    rejected(c,".table no-such-format\nA\n.endtable",MULIB_DOCSTRINGS_SYNTAX);
+    mulib_docstrings_destroy(c);
+    options.nodes=4;c=mulib_docstrings_create(&options);assert(c);
+    rejected(c,".table csv\na,b\n.endtable",MULIB_DOCSTRINGS_LIMIT);mulib_docstrings_destroy(c);
+}
 static void lua(void) {
     const char extension[] =
         "assert(io == nil and os == nil and package == nil and debug == nil)\n"
@@ -290,7 +313,7 @@ static void emit(const char *format) {
 }
 int main(int argc, char **argv) {
     if (argc == 3 && !strcmp(argv[1],"--emit")) { emit(argv[2]); return 0; }
-    streams(); language(); embeddings(); lua(); styles_and_limits(); hostile();
+    streams(); language(); embeddings(); imported_tables(); lua(); styles_and_limits(); hostile();
     if (argc == 3 && !strcmp(argv[1],"--fixtures")) fixtures(argv[2]);
     puts("docstring: OK"); return 0;
 }

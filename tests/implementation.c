@@ -1,3 +1,9 @@
+#define MULIB_IMPL_CHART
+#define MULIB_IMPL_CHEM
+#define MULIB_IMPL_EQN
+#define MULIB_IMPL_PALEOGRAPHY
+#define MULIB_IMPL_SYMBOL
+#define MULIB_IMPL_TBL
 #define MULIB_IMPL_DOCSTRING
 #define MULIB_IMPL_DSDOM
 #define MULIB_IMPL_DYEGRAM
@@ -1131,3 +1137,9 @@
 #include "mulib-pandocast.h"
 #include "mulib-tas.h"
 #include "mulib-xtas.h"
+#include "mulib-chart.h"
+#include "mulib-chem.h"
+#include "mulib-eqn.h"
+#include "mulib-paleography.h"
+#include "mulib-symbol.h"
+#include "mulib-tbl.h"

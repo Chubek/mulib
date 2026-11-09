@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 563
-implemented_module_count: 563
+module_count: 569
+implemented_module_count: 569
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3910,7 +3910,7 @@ modules:
   manual: manual/mulib-docstring.md
   macro: MULIB_IMPL_DOCSTRING
   purpose: "Rich documentation DSL, DocstrIL compiler, Mune Lua extensions/filters"
-  dependencies: [css, dsdom, dyegram, mune, pandocast, tas, termsyn, yaml]
+  dependencies: [css, dsdom, dyegram, mune, pandocast, tas, tbl, termsyn, yaml]
   status: implemented
 - name: dsdom
   header: include/mulib-dsdom.h
@@ -3953,6 +3953,48 @@ modules:
   macro: MULIB_IMPL_XTAS
   purpose: "Bounded, cancellable documentation-tree event stream."
   dependencies: [dsdom]
+  status: implemented
+- name: chart
+  header: include/mulib-chart.h
+  manual: manual/mulib-chart.md
+  macro: MULIB_IMPL_CHART
+  purpose: "Extensible Lua-driven SVG charts, with automatically loaded lcharts."
+  dependencies: [json, mune, xml]
+  status: implemented
+- name: chem
+  header: include/mulib-chem.h
+  manual: manual/mulib-chem.md
+  macro: MULIB_IMPL_CHEM
+  purpose: "Chemical formula composition, approximate molar masses, notation and"
+  dependencies: [fraction, symbol, tex]
+  status: implemented
+- name: eqn
+  header: include/mulib-eqn.h
+  manual: manual/mulib-eqn.md
+  macro: MULIB_IMPL_EQN
+  purpose: "Bounded mathematical/logic expression trees, MathML, LaTeX and evaluation."
+  dependencies: [symbol, tex]
+  status: implemented
+- name: paleography
+  header: include/mulib-paleography.h
+  manual: manual/mulib-paleography.md
+  macro: MULIB_IMPL_PALEOGRAPHY
+  purpose: "Native/Lua script profiles, vector glyphs, SVG fonts, CSS and hybrid"
+  dependencies: [base64, json, mune, svg, tex]
+  status: implemented
+- name: symbol
+  header: include/mulib-symbol.h
+  manual: manual/mulib-symbol.md
+  macro: MULIB_IMPL_SYMBOL
+  purpose: "Dependency-free extensible mathematical/logic Unicode and TeX symbols."
+  dependencies: [mathml]
+  status: implemented
+- name: tbl
+  header: include/mulib-tbl.h
+  manual: manual/mulib-tbl.md
+  macro: MULIB_IMPL_TBL
+  purpose: "Rectangular documentation tables, pipe/CSV readers and portable writers."
+  dependencies: [csv, dsdom, tex]
   status: implemented
 project_files:
 - file: include/mulib-docstring-data.inc
@@ -5833,3 +5875,43 @@ project_files:
   purpose: "Standalone checked usage example for xtas."
 - file: tests/test_docstring.c
   purpose: "Focused regression suite for test_docstring."
+- file: examples/modules/chart.c
+  purpose: "Standalone checked usage example for chart."
+- file: examples/modules/chem.c
+  purpose: "Standalone checked usage example for chem."
+- file: examples/modules/eqn.c
+  purpose: "Standalone checked usage example for eqn."
+- file: examples/modules/paleography.c
+  purpose: "Standalone checked usage example for paleography."
+- file: examples/modules/symbol.c
+  purpose: "Standalone checked usage example for symbol."
+- file: examples/modules/tbl.c
+  purpose: "Standalone checked usage example for tbl."
+- file: tests/test_notation.c
+  purpose: "Focused regression suite for test_notation."
+- file: tests/test_notation_alloc.c
+  purpose: "Focused regression suite for test_notation_alloc."
+- file: examples/notation-common.h
+  purpose: Explicit dependency-complete implementation recipe for notation examples and tests.
+- file: tools/embed_notation.py
+  purpose: Deterministic lcharts and lpaleo embedding and freshness checks.
+- file: tools/check_notation.py
+  purpose: Independent CSV, XML, SVG/font and optional LaTeX consumer interoperability checks.
+- file: include/mulib-mune-markup.inc
+  purpose: Private bounded JSON/Mune/SVG bridge shared by charts and paleography.
+- file: include/mulib-chart-data.inc
+  purpose: Generated lcharts source; no runtime filesystem dependency.
+- file: include/mulib-paleography-data.inc
+  purpose: Generated lpaleo source; no runtime filesystem dependency.
+- file: library/lcharts/lcharts.lua
+  purpose: Automatically loaded chart registry, SVG constructors and pie/donut/bar/line/scatter plugins.
+- file: library/lcharts/README.md
+  purpose: Lua chart extension recipe and provenance.
+- file: library/lpaleo/lpaleo.lua
+  purpose: Automatically loaded script profiles, transcription and native glyph-provider bindings.
+- file: library/lpaleo/README.md
+  purpose: Paleography Lua extension recipe, output formats and limitations.
+- file: mudsl/tests/mull/mulib/notation.mull
+  purpose: Shared C++/D MuLL integration for tables, symbols, equations, chemistry, charts and paleography.
+- file: mudsl/tests/mull/mulib/notation.expected
+  purpose: Expected result for MuLL notation integration.

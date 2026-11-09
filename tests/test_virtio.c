@@ -7,7 +7,7 @@
 #endif
 #include "mulib-virtio-os.h"
 #include "mulib-virtio-guest.h"
-#include "virtio.h"
+#include "mulib-virtio.h"
 #include <assert.h>
 #include <string.h>
 

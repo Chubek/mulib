@@ -1,7 +1,7 @@
 #define MULIB_IMPL_ENDIAN
 #define MULIB_IMPL_VMMDEV
 #define MULIB_IMPL_VIRTIO
-#include "virtio.h"
+#include "mulib-virtio.h"
 #include <assert.h>
 #include <stdio.h>
 

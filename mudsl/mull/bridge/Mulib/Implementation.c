@@ -63,6 +63,8 @@
 #define MULIB_IMPL_CCWEAVE
 #define MULIB_IMPL_CGEOM
 #define MULIB_IMPL_CHANNEL
+#define MULIB_IMPL_CHART
+#define MULIB_IMPL_CHEM
 #define MULIB_IMPL_CLAMP
 #define MULIB_IMPL_CLICKIR
 #define MULIB_IMPL_CMACHINE
@@ -169,6 +171,7 @@
 #define MULIB_IMPL_ENV
 #define MULIB_IMPL_EPOLL
 #define MULIB_IMPL_EPUB
+#define MULIB_IMPL_EQN
 #define MULIB_IMPL_ESCAPE
 #define MULIB_IMPL_EUCLIDEAN_DISTANCE
 #define MULIB_IMPL_EVENTFD
@@ -377,6 +380,7 @@
 #define MULIB_IMPL_PACKETSTREAM
 #define MULIB_IMPL_PACKETVM
 #define MULIB_IMPL_PAGING
+#define MULIB_IMPL_PALEOGRAPHY
 #define MULIB_IMPL_PANDOCAST
 #define MULIB_IMPL_PARALLEL
 #define MULIB_IMPL_PARSEC
@@ -470,6 +474,7 @@
 #define MULIB_IMPL_SUPERBLOCKS
 #define MULIB_IMPL_SUPERINSTR
 #define MULIB_IMPL_SVG
+#define MULIB_IMPL_SYMBOL
 #define MULIB_IMPL_SYSCALL
 #define MULIB_IMPL_SYSFONTS
 #define MULIB_IMPL_SYSFS
@@ -477,6 +482,7 @@
 #define MULIB_IMPL_TASK
 #define MULIB_IMPL_TASKDAG
 #define MULIB_IMPL_TASKPOOL
+#define MULIB_IMPL_TBL
 #define MULIB_IMPL_TEMPLATE
 #define MULIB_IMPL_TERMINFO
 #define MULIB_IMPL_TERMKEY
@@ -629,6 +635,8 @@
 #include "mulib-ccweave.h"
 #include "mulib-cgeom.h"
 #include "mulib-channel.h"
+#include "mulib-chart.h"
+#include "mulib-chem.h"
 #include "mulib-clamp.h"
 #include "mulib-clickir.h"
 #include "mulib-cmachine.h"
@@ -736,6 +744,7 @@
 #include "mulib-env.h"
 #include "mulib-epoll.h"
 #include "mulib-epub.h"
+#include "mulib-eqn.h"
 #include "mulib-escape.h"
 #include "mulib-euclidean_distance.h"
 #include "mulib-eventfd.h"
@@ -944,6 +953,7 @@
 #include "mulib-packetstream.h"
 #include "mulib-packetvm.h"
 #include "mulib-paging.h"
+#include "mulib-paleography.h"
 #include "mulib-pandocast.h"
 #include "mulib-parallel.h"
 #include "mulib-parsec.h"
@@ -1036,6 +1046,7 @@
 #include "mulib-superblocks.h"
 #include "mulib-superinstr.h"
 #include "mulib-svg.h"
+#include "mulib-symbol.h"
 #include "mulib-syscall.h"
 #include "mulib-sysfonts.h"
 #include "mulib-sysfs.h"
@@ -1043,6 +1054,7 @@
 #include "mulib-task.h"
 #include "mulib-taskdag.h"
 #include "mulib-taskpool.h"
+#include "mulib-tbl.h"
 #include "mulib-template.h"
 #include "mulib-term_rewriting.h"
 #include "mulib-terminfo.h"

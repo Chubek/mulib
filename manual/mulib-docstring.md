@@ -17,6 +17,9 @@ implementation switch. Define them in **one** implementation translation unit:
 
 ```c
 #define MULIB_IMPL_DOCSTRING
+#define MULIB_IMPL_TBL
+#define MULIB_IMPL_CSV
+#define MULIB_IMPL_TEX
 #define MULIB_IMPL_DSDOM
 #define MULIB_IMPL_TAS
 #define MULIB_IMPL_XTAS
@@ -130,6 +133,13 @@ indented list items are deliberately rejected; use Lua/IR constructors for neste
 lists. List items are single-line. Tables are rectangular, with one row per line;
 escaped pipes and pipes inside code/element bodies do not split cells. Separator
 rows mark the preceding first row's cells as headers. There are no cell spans.
+
+Table scanning and validation are provided by [mulib-tbl](mulib-tbl.md).
+Separator colons set left/center/right column alignment, preserved in DOM/streams
+and emitted by HTML/Pandoc writers. `.table csv` or `.table pipe`, closed with
+`.endtable`, imports a literal table; `ldocstr.table(source,format)` provides the
+same reader to Lua extensions. The ordinary pipe syntax still parses rich inline
+Docstrings in each cell. The other notation modules remain independent.
 
 Builtin inline elements are `strong`, `emphasis`, `underline`, `strike`, `code`,
 `span`, `link`, `image`, `superscript`, `subscript`, `break`, and `index-entry`.
@@ -368,7 +378,7 @@ embedded default modules; edit their Lua sources, not the generated include.
 | --- | --- |
 | Header | [`include/mulib-docstring.h`](../include/mulib-docstring.h) |
 | Implementation switch | `MULIB_IMPL_DOCSTRING` |
-| Repository-local includes | [mulib-css](mulib-css.md), [`include/mulib-docstring-data.inc`](../include/mulib-docstring-data.inc), [mulib-dsdom](mulib-dsdom.md), [mulib-dyegram](mulib-dyegram.md), [mulib-mune](mulib-mune.md), [mulib-pandocast](mulib-pandocast.md), [mulib-tas](mulib-tas.md), [mulib-termsyn](mulib-termsyn.md), [mulib-yaml](mulib-yaml.md) |
+| Repository-local includes | [mulib-css](mulib-css.md), [`include/mulib-docstring-data.inc`](../include/mulib-docstring-data.inc), [mulib-dsdom](mulib-dsdom.md), [mulib-dyegram](mulib-dyegram.md), [mulib-mune](mulib-mune.md), [mulib-pandocast](mulib-pandocast.md), [mulib-tas](mulib-tas.md), [mulib-tbl](mulib-tbl.md), [mulib-termsyn](mulib-termsyn.md), [mulib-yaml](mulib-yaml.md) |
 | Complete example | [`examples/modules/docstring.c`](../examples/modules/docstring.c) |
 
 The include list includes conditional and implementation-only includes;

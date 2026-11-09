@@ -52,6 +52,7 @@ function M.element(name, fn) assert(type(fn) == 'function'); M.elements[name] = 
 function M.directive(name, fn) assert(type(fn) == 'function'); M.directives[name] = fn end
 function M.macro(name, fn) assert(type(fn) == 'function'); M.macros[name] = fn end
 function M.parse(source, format) return _ldocstr_parse(source, format or 'docstrings') end
+function M.table(source, format) return _ldocstr_table(source, format or 'pipe') end
 function M.xml(doc) return _ldocstr_output(doc, 'xml') end
 function M.html(doc) return _ldocstr_output(doc, 'html') end
 function M.render(doc, format) return _ldocstr_output(doc, format or 'xml') end

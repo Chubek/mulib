@@ -565,4 +565,10 @@
 #include "mulib-pandocast.h"
 #include "mulib-tas.h"
 #include "mulib-xtas.h"
+#include "mulib-chart.h"
+#include "mulib-chem.h"
+#include "mulib-eqn.h"
+#include "mulib-paleography.h"
+#include "mulib-symbol.h"
+#include "mulib-tbl.h"
 int main(void) { return 0; }

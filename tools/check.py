@@ -66,6 +66,12 @@ def main():
         failures.append(('ldocstr modules', ldocstr.stderr or ldocstr.stdout))
     else:
         print(ldocstr.stdout.strip())
+    notation = subprocess.run([sys.executable, str(root / 'tools/embed_notation.py'), '--check'],
+                             capture_output=True, text=True)
+    if notation.returncode:
+        failures.append(('notation libraries', notation.stderr or notation.stdout))
+    else:
+        print(notation.stdout.strip())
     strata = subprocess.run([sys.executable, str(root / 'tools/stratify.py'), '--check'],
                             capture_output=True, text=True)
     if strata.returncode:
@@ -239,6 +245,15 @@ def main():
                             if shutil.which('pandoc'):
                                 command += ['--pandoc', shutil.which('pandoc')]
                             interop = subprocess.run(command, cwd=work, capture_output=True, text=True, timeout=180)
+                            if interop.returncode:
+                                failures.append((label + ' interoperability', interop.stderr or interop.stdout))
+                                return False
+                        if sources and len(sources) == 1 and sources[0].name == 'test_notation.c':
+                            command = [sys.executable, str(root / 'tools/check_notation.py'), '--runtime', str(binary)]
+                            for program, option in [('rsvg-convert', '--rsvg'), ('pdflatex', '--pdflatex'), ('lualatex', '--lualatex')]:
+                                if shutil.which(program):
+                                    command += [option, shutil.which(program)]
+                            interop = subprocess.run(command, cwd=work, capture_output=True, text=True, timeout=240)
                             if interop.returncode:
                                 failures.append((label + ' interoperability', interop.stderr or interop.stdout))
                                 return False

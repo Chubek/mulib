@@ -73,10 +73,10 @@ def main():
                 header = f'#include "mulib-{name}.h"\n'
                 implementations = ''.join(f'#include "mulib-{d}.h"\n' for d in deps)
                 build(cc, text=header + macros + implementations + 'int main(void) { return 0; }\n')
-            # Public contract alias also supports implementation after declarations.
-            build(cc, text='#include "virtio.h"\n#define MULIB_IMPL_ENDIAN\n'
+            # Check the canonical registry contract after an initial declaration include.
+            build(cc, text='#include "mulib-virtio.h"\n#define MULIB_IMPL_ENDIAN\n'
                   '#define MULIB_IMPL_VMMDEV\n#define MULIB_IMPL_VIRTIO\n'
-                  '#include "mulib-endian.h"\n#include "mulib-vmmdev.h"\n#include "virtio.h"\n'
+                  '#include "mulib-endian.h"\n#include "mulib-vmmdev.h"\n#include "mulib-virtio.h"\n'
                   'int main(void) { return mulib_virtio_profile_count() == 48 ? 0 : 1; }\n')
             sources = sorted(str(p.relative_to(ROOT)) for side in ('os', 'guest')
                              for p in (ROOT / 'library' / ('virtio-' + side)).glob('*.c'))

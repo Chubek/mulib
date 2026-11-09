@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 567 headers, 690 direct dependency edges.
+Inventory: 573 headers, 708 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -420,7 +420,7 @@ Compatibility group: `parsec`, `peg`.
 | [xtbb](mulib-xtbb.md) | `parallel` |
 | [zip](mulib-zip.md) | `crc32`, `deflate`, `utf8` |
 
-## Stratum 3 (58 modules)
+## Stratum 3 (60 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -474,6 +474,8 @@ Compatibility group: `parsec`, `peg`.
 | [spellcheck](mulib-spellcheck.md) | `bktree`, `cache`, `endian`, `fst`, `utf8`, `weighted-edit-distance` |
 | [sqlite](mulib-sqlite.md) | `arena`, `parsec`, `peg`, `rng`, `sqlite-pager`, `strbuf`, `utf8` |
 | [stylesheet](mulib-stylesheet.md) | `css` |
+| [symbol](mulib-symbol.md) | `mathml` |
+| [tbl](mulib-tbl.md) | `csv`, `dsdom`, `tex` |
 | [termstyle](mulib-termstyle.md) | `css`, `terminfo`, `vterm` |
 | [udev](mulib-udev.md) | `parsec` |
 | [vectgfx](mulib-vectgfx.md) | `glx`, `parsec`, `vec` |
@@ -483,7 +485,7 @@ Compatibility group: `parsec`, `peg`.
 | [vmm-host](mulib-vmm-host.md) | `virtio` |
 | [xtas](mulib-xtas.md) | `dsdom` |
 
-## Stratum 4 (37 modules)
+## Stratum 4 (39 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -491,6 +493,7 @@ Compatibility group: `parsec`, `peg`.
 | [bootmgr](mulib-bootmgr.md) | `bios`, `efi`, `uefiutils` |
 | [bson](mulib-bson.md) | `buffer`, `json` |
 | [cbor](mulib-cbor.md) | `buffer`, `json` |
+| [chem](mulib-chem.md) | `fraction`, `symbol`, `tex` |
 | [coffbuilder](mulib-coffbuilder.md) | `binfilewriter`, `buffer`, `bycutils`, `objfilebuilder` |
 | [containerboost](mulib-containerboost.md) | `container-runtime`, `imgformat` |
 | [containerd-mount](mulib-containerd-mount.md) | `container-vfs`, `fuse` |
@@ -499,6 +502,7 @@ Compatibility group: `parsec`, `peg`.
 | [dsymspec](mulib-dsymspec.md) | `json` |
 | [dyegram](mulib-dyegram.md) | `gvizz` |
 | [elfbuilder](mulib-elfbuilder.md) | `objfilebuilder` |
+| [eqn](mulib-eqn.md) | `symbol`, `tex` |
 | [imgbuildspec](mulib-imgbuildspec.md) | `imgformat`, `rootfs-buildspec` |
 | [inet6](mulib-inet6.md) | `inet4` |
 | [isel](mulib-isel.md) | `archml`, `isched`, `lir`, `lowopt` |
@@ -525,13 +529,14 @@ Compatibility group: `parsec`, `peg`.
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (36 modules)
+## Stratum 5 (38 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [acl](mulib-acl.md) | `inet6` |
 | [assembler](mulib-assembler.md) | `dsymspec`, `emitter`, `linker` |
 | [audrey](mulib-audrey.md) | `midi`, `miniflac`, `minimpeg`, `minivorbis`, `miniwav`, `mune` |
+| [chart](mulib-chart.md) | `json`, `mune`, `xml` |
 | [coff-objdump](mulib-coff-objdump.md) | `coff`, `objdump` |
 | [container-jitboost](mulib-container-jitboost.md) | `containerboost`, `jit` |
 | [container-kvmboost](mulib-container-kvmboost.md) | `containerboost`, `kvmcontainer` |
@@ -541,7 +546,7 @@ Compatibility group: `parsec`, `peg`.
 | [daemon](mulib-daemon.md) | `mune`, `process`, `strbuf` |
 | [dbserializer](mulib-dbserializer.md) | `bson`, `cbor`, `messagepack` |
 | [distribtask](mulib-distribtask.md) | `mune`, `utf8`, `yaml` |
-| [docstring](mulib-docstring.md) | `css`, `dsdom`, `dyegram`, `mune`, `pandocast`, `tas`, `termsyn`, `yaml` |
+| [docstring](mulib-docstring.md) | `css`, `dsdom`, `dyegram`, `mune`, `pandocast`, `tas`, `tbl`, `termsyn`, `yaml` |
 | [elf-objdump](mulib-elf-objdump.md) | `elf`, `objdump` |
 | [exec](mulib-exec.md) | `mune`, `perf`, `process` |
 | [getaddr](mulib-getaddr.md) | `inet6` |
@@ -558,6 +563,7 @@ Compatibility group: `parsec`, `peg`.
 | [ociimagebuilder](mulib-ociimagebuilder.md) | `ociimage` |
 | [oix](mulib-oix.md) | `base64`, `confuse`, `crc32`, `emitter`, `json`, `kvm`, `toml`, `yaml` |
 | [optml](mulib-optml.md) | `isel`, `peephole`, `superinstr` |
+| [paleography](mulib-paleography.md) | `base64`, `json`, `mune`, `svg`, `tex` |
 | [pglayout](mulib-pglayout.md) | `bidi`, `fontshape`, `json`, `stylesheet`, `unibreak`, `yaml` |
 | [row-rdbms](mulib-row-rdbms.md) | `dbschema`, `documentdb` |
 | [vizigen](mulib-vizigen.md) | `asdl`, `binfilereader`, `binfilewriter`, `mmfile`, `walker` |

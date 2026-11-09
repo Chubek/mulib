@@ -14,6 +14,7 @@
 #include "mulib-yaml.h"
 #include "mulib-mune.h"
 #include "mulib-termsyn.h"
+#include "mulib-tbl.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -142,6 +143,10 @@ static int mulib_docstril_check_(const mulib_docstril_t *n, size_t depth, size_t
     if (name && !strcmp(name, "heading")) {
         value = mulib_xml_attr(n, "level");
         if (!value || value[0] < '1' || value[0] > '6' || value[1]) { *message = "invalid heading level"; return 0; }
+    }
+    if (name && !strcmp(name,"table")) {
+        mulib_xml_error_t table_error;
+        if (!mulib_tbl_validate(n,&table_error)) { *message=table_error.message; return 0; }
     }
     value = name ? name : mulib_xml_value(n);
     length = strlen(value);
@@ -278,6 +283,15 @@ static int mulib_docstrings_text_(mulib_docstrings_parser_ *p, mulib_dsdom_t *pa
 static int mulib_docstrings_attr_(mulib_docstrings_parser_ *p, mulib_dsdom_t *n, const char *key, const char *value) {
     if (!mulib_docstrings_work_(p,1) || !mulib_docstrings_bytes_(p,strlen(key)) || !mulib_docstrings_bytes_(p,strlen(value))) return 0;
     if (!mulib_xml_set_attr(n,key,value)) return mulib_docstrings_fail_(p,MULIB_DOCSTRINGS_MEMORY,"attribute allocation/invalid value");
+    return 1;
+}
+static int mulib_docstrings_import_tree_(mulib_docstrings_parser_ *p,mulib_dsdom_t *parent,mulib_dsdom_t *tree) {
+    size_t nodes=p->ctx->options.nodes-p->nodes,bytes=p->ctx->options.output_bytes-p->bytes,before=nodes;
+    const char *message=NULL;
+    if(!mulib_docstril_check_(tree,0,&nodes,&bytes,&message))return mulib_docstrings_fail_(p,MULIB_DOCSTRINGS_LIMIT,message);
+    if(!mulib_docstrings_work_(p,before-nodes))return 0;
+    p->nodes=p->ctx->options.nodes-nodes;p->bytes=p->ctx->options.output_bytes-bytes;
+    if(!mulib_xml_append(parent,tree))return mulib_docstrings_fail_(p,MULIB_DOCSTRINGS_INVALID,"table import attachment failure");
     return 1;
 }
 static int mulib_docstrings_lua_error_(mulib_docstrings_parser_ *p, const mulib_mune_error_t *e) {
@@ -624,6 +638,14 @@ static mulib_mune_status_t mulib_docstrings_native_(mulib_mune_state_t *s, const
         if (!root) goto memory;
         if (!mulib_docstrings_parse_(p,root,source,length,format) || !mulib_docstrings_finalize_(p,root)) goto done;
         ok = mulib_docstrings_to_lua_(s,root,&result,0);
+    } else if (operation == 5) {
+        mulib_xml_error_t table_error;
+        source=mulib_mune_value_string(args[0],&length);
+        format=count>1?mulib_docstrings_string_(args[1]):"pipe";
+        if (!source || !format || length>ctx->options.source_bytes) goto invalid;
+        root=mulib_tbl_parse(source,length,format,&table_error);
+        if (!root) { (void)mulib_docstrings_fail_(p,MULIB_DOCSTRINGS_SYNTAX,table_error.message); goto done; }
+        ok=mulib_docstrings_to_lua_(s,root,&result,0);
     } else if (operation == 2) {
         root = mulib_docstrings_tokens_dom_(p,args[0]); if (!root) goto done;
         ok = mulib_docstrings_to_lua_(s,root,&result,0);
@@ -665,6 +687,7 @@ static mulib_mune_status_t mulib_docstrings_native_output_(mulib_mune_state_t *s
 static mulib_mune_status_t mulib_docstrings_native_tokens_(mulib_mune_state_t *s, const mulib_mune_value_t *a, size_t n, mulib_mune_result_t *r, void *u) { return mulib_docstrings_native_(s,a,n,r,u,2); }
 static mulib_mune_status_t mulib_docstrings_native_style_(mulib_mune_state_t *s, const mulib_mune_value_t *a, size_t n, mulib_mune_result_t *r, void *u) { return mulib_docstrings_native_(s,a,n,r,u,3); }
 static mulib_mune_status_t mulib_docstrings_native_require_(mulib_mune_state_t *s, const mulib_mune_value_t *a, size_t n, mulib_mune_result_t *r, void *u) { return mulib_docstrings_native_(s,a,n,r,u,4); }
+static mulib_mune_status_t mulib_docstrings_native_table_(mulib_mune_state_t *s, const mulib_mune_value_t *a, size_t n, mulib_mune_result_t *r, void *u) { return mulib_docstrings_native_(s,a,n,r,u,5); }
 static int mulib_docstrings_bootstrap_(mulib_docstrings_parser_ *p, const char *const *parts, size_t count, const char *global) {
     mulib_strbuf_t b;
     mulib_mune_result_t *r = NULL;
@@ -696,7 +719,8 @@ static int mulib_docstrings_lua_init_(mulib_docstrings_parser_ *p) {
     if (mulib_mune_bind(s,"_ldocstr_parse",mulib_docstrings_native_parse_,ctx) ||
         mulib_mune_bind(s,"_ldocstr_output",mulib_docstrings_native_output_,ctx) ||
         mulib_mune_bind(s,"_ldocstr_from_tokens",mulib_docstrings_native_tokens_,ctx) ||
-        mulib_mune_bind(s,"_ldocstr_style",mulib_docstrings_native_style_,ctx)) goto fail;
+        mulib_mune_bind(s,"_ldocstr_style",mulib_docstrings_native_style_,ctx) ||
+        mulib_mune_bind(s,"_ldocstr_table",mulib_docstrings_native_table_,ctx)) goto fail;
     if (!mulib_docstrings_bootstrap_(p,mulib_docstrings_core_source_,sizeof mulib_docstrings_core_source_/sizeof mulib_docstrings_core_source_[0],"ldocstr") ||
         !mulib_docstrings_bootstrap_(p,mulib_docstrings_style_source_,sizeof mulib_docstrings_style_source_/sizeof mulib_docstrings_style_source_[0],NULL)) goto fail;
     if (!(ctx->options.flags & MULIB_DOCSTRINGS_TRUSTED_LUA)) {
@@ -1266,42 +1290,36 @@ static int mulib_docstrings_heading_(mulib_docstrings_parser_ *p, mulib_dsdom_t 
 }
 static int mulib_docstrings_table_row_(mulib_docstrings_parser_ *p, mulib_dsdom_t *table, const char *s, size_t length,
     size_t *columns, size_t *rows) {
-    size_t at = 1, start = 1, count = 0, depth = 0, i;
-    int code = 0, separator = 1, hyphens = 0;
+    mulib_tbl_fields_t fields={0};
+    mulib_xml_error_t error;
+    size_t i;
     mulib_dsdom_t *row = NULL, *cell, *first;
-    if (length && s[length-1] == '|') --length;
-    /* A separator is a row consisting solely of pipes, dashes, colons, space. */
-    for (i = 1; i < length; ++i) {
-        if (s[i] == '-') ++hyphens;
-        else if (s[i] != '|' && s[i] != ':' && !mulib_docstrings_space_(s[i])) separator = 0;
-    }
-    separator = separator && hyphens >= 3;
-    if (!separator) { row = mulib_docstrings_node_(p,table,"row"); if (!row) return 0; }
-    for (; at <= length; ++at) {
-        if (at < length) {
-            if (s[at] == '\\' && at+1 < length) { ++at; continue; }
-            if (s[at] == '`') code = !code;
-            if (!code && (s[at] == '{' || s[at] == '[' || s[at] == '(')) ++depth;
-            else if (!code && depth && (s[at] == '}' || s[at] == ']' || s[at] == ')')) --depth;
-            if (s[at] != '|' || code || depth) continue;
-        }
-        ++count;
-        if (!separator) {
-            const char *body = s+start; size_t n = at-start; mulib_docstrings_trim_(&body,&n);
-            cell = mulib_docstrings_node_(p,row,"cell");
-            if (!cell || !mulib_docstrings_inline_(p,cell,body,n)) return 0;
-        }
-        start = at+1;
-    }
-    if (!*columns) *columns = count;
-    if (count != *columns) return mulib_docstrings_fail_(p,MULIB_DOCSTRINGS_SYNTAX,"ragged documentation table");
-    if (separator) {
-        if (*rows != 1) return mulib_docstrings_fail_(p,MULIB_DOCSTRINGS_SYNTAX,"table separator must follow the header row");
+    int ok=0;
+    if (!mulib_tbl_split(s,length,&fields,&error)) return mulib_docstrings_fail_(p,MULIB_DOCSTRINGS_SYNTAX,error.message);
+    if (!*columns) *columns=fields.count;
+    if (fields.count!=*columns || !fields.count) { (void)mulib_docstrings_fail_(p,MULIB_DOCSTRINGS_SYNTAX,"ragged/empty documentation table row"); goto done; }
+    if (fields.separator) {
+        if (*rows!=1) { (void)mulib_docstrings_fail_(p,MULIB_DOCSTRINGS_SYNTAX,"table separator must follow the header row"); goto done; }
         first = mulib_xml_first(table);
-        for (cell = mulib_xml_first(first); cell; cell = mulib_xml_next(cell))
-            if (!mulib_docstrings_attr_(p,cell,"header","true")) return 0;
-    } else ++*rows;
-    return 1;
+        if (mulib_xml_attr(mulib_xml_first(first),"header")) { (void)mulib_docstrings_fail_(p,MULIB_DOCSTRINGS_SYNTAX,"repeated table separator");goto done; }
+        for (cell=mulib_xml_first(first),i=0;cell;cell=mulib_xml_next(cell),++i) {
+            static const char *const align[]={"default","left","center","right"};
+            if (!mulib_docstrings_attr_(p,cell,"header","true") ||
+                (fields.align[i] && !mulib_docstrings_attr_(p,cell,"align",align[fields.align[i]]))) goto done;
+        }
+    } else {
+        row=mulib_docstrings_node_(p,table,"row"); if (!row) goto done;
+        for (i=0;i<fields.count;++i) {
+            const char *align=mulib_xml_attr(mulib_tbl_cell(table,0,i),"align");
+            cell=mulib_docstrings_node_(p,row,"cell");
+            if (!cell || (align && !mulib_docstrings_attr_(p,cell,"align",align)) ||
+                !mulib_docstrings_inline_(p,cell,fields.items[i],strlen(fields.items[i]))) goto done;
+        }
+        ++*rows;
+    }
+    ok=1;
+done:
+    mulib_tbl_fields_free(&fields);return ok;
 }
 static int mulib_docstrings_directive_(mulib_docstrings_parser_ *p, mulib_dsdom_t *parent,
     const char *name, const char *arg, size_t argn) {
@@ -1469,14 +1487,20 @@ static int mulib_docstrings_parse_(mulib_docstrings_parser_ *p, mulib_dsdom_t *p
                     if (!mulib_docstrings_block_(p,source,length,&at,".endmacro",&body,&bodyn)) goto done;
                 } else { body = arg+siglen; bodyn = argn-siglen; mulib_docstrings_trim_(&body,&bodyn); }
                 if (!mulib_docstrings_define_(p,arg,siglen,body,bodyn)) goto done;
-            } else if (!strcmp(name,"code") || !strcmp(name,"graph") || !strcmp(name,"diagram") || !strcmp(name,"lua") || !strcmp(name,"style")) {
+            } else if (!strcmp(name,"code") || !strcmp(name,"graph") || !strcmp(name,"diagram") || !strcmp(name,"lua") || !strcmp(name,"style") || !strcmp(name,"table")) {
                 (void)snprintf(closing,sizeof closing,".end%s",name);
                 if (!mulib_docstrings_block_(p,source,length,&at,closing,&body,&bodyn)) goto done;
                 if (!strcmp(name,"lua")) {
                     if (argn) { (void)mulib_docstrings_fail_(p,MULIB_DOCSTRINGS_SYNTAX,"unexpected Lua block arguments"); goto done; }
                     if (!mulib_docstrings_lua_block_(p,parent,body,bodyn)) goto done;
                 }
-                else if (!strcmp(name,"style")) {
+                else if (!strcmp(name,"table")) {
+                    mulib_xml_error_t table_error;
+                    char *fmt=mulib_docstrings_copy_(arg,argn); if (!fmt) goto memory;
+                    node=mulib_tbl_parse(body,bodyn,*fmt?fmt:"pipe",&table_error);free(fmt);
+                    if (!node) { (void)mulib_docstrings_fail_(p,MULIB_DOCSTRINGS_SYNTAX,table_error.message); goto done; }
+                    if (!mulib_docstrings_import_tree_(p,parent,node)) { mulib_xml_destroy(node); goto done; }
+                } else if (!strcmp(name,"style")) {
                     char *fmt = mulib_docstrings_copy_(arg,argn); if (!fmt) goto memory;
                     node = mulib_docstrings_node_(p,parent,"stylesheet");
                     ok = node && mulib_docstrings_attr_(p,node,"format",*fmt ? fmt : "css") && mulib_docstrings_text_(p,node,body,bodyn);
@@ -1864,6 +1888,7 @@ static int mulib_docstrings_html_(const mulib_dsdom_t *n, mulib_strbuf_t *out, i
         if (svg) { size_t j; for (j = 0; j < sizeof svg_attrs/sizeof svg_attrs[0]; ++j) if (!strcmp(key,svg_attrs[j])) allowed = 1; }
         if ((!strcmp(tag,"a") && !strcmp(key,"href")) || (!strcmp(tag,"img") && !strcmp(key,"src"))) allowed = mulib_docstrings_url_(value);
         if (!strcmp(tag,"img") && !strcmp(key,"alt")) allowed = 1;
+        if ((!strcmp(tag,"td") || !strcmp(tag,"th")) && !strcmp(key,"align")) allowed=1;
         if (allowed && (!mulib_strbuf_putc(out,' ') || !mulib_strbuf_append(out,key) || !mulib_strbuf_append(out,"=\"") ||
             !mulib_xml_escape(out,value,strlen(value),1) || !mulib_strbuf_putc(out,'"'))) return 0;
     }

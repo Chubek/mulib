@@ -64,6 +64,8 @@
     "mulib-ccweave.h",
     "mulib-cgeom.h",
     "mulib-channel.h",
+    "mulib-chart.h",
+    "mulib-chem.h",
     "mulib-clamp.h",
     "mulib-clickir.h",
     "mulib-cmachine.h",
@@ -171,6 +173,7 @@
     "mulib-env.h",
     "mulib-epoll.h",
     "mulib-epub.h",
+    "mulib-eqn.h",
     "mulib-escape.h",
     "mulib-euclidean_distance.h",
     "mulib-eventfd.h",
@@ -379,6 +382,7 @@
     "mulib-packetstream.h",
     "mulib-packetvm.h",
     "mulib-paging.h",
+    "mulib-paleography.h",
     "mulib-pandocast.h",
     "mulib-parallel.h",
     "mulib-parsec.h",
@@ -471,6 +475,7 @@
     "mulib-superblocks.h",
     "mulib-superinstr.h",
     "mulib-svg.h",
+    "mulib-symbol.h",
     "mulib-syscall.h",
     "mulib-sysfonts.h",
     "mulib-sysfs.h",
@@ -478,6 +483,7 @@
     "mulib-task.h",
     "mulib-taskdag.h",
     "mulib-taskpool.h",
+    "mulib-tbl.h",
     "mulib-template.h",
     "mulib-term_rewriting.h",
     "mulib-terminfo.h",
@@ -568,10 +574,10 @@
     "mulib-zip.h",
     "mulib-zstd.h"
   ],
-  "libraries": 567,
-  "functions": 3130,
-  "types": 5290,
-  "constants": 1921,
+  "libraries": 573,
+  "functions": 3190,
+  "types": 5384,
+  "constants": 1935,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -611,7 +617,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "5ee2079bbcc55dd4cdf154ab85a72d2c435911d4b9c40a2697b7224f505f640a",
+  "fingerprint": "0a850891b634ecb75f0e976f1ab94158f1c95f71e89748672ccc90377e5b9b15",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -1312,6 +1318,33 @@
         "mulib_channel_send_case",
         "mulib_channel_receive_case",
         "mulib_channel_select"
+      ]
+    },
+    "chart": {
+      "header": "mulib-chart.h",
+      "functions": [
+        "mulib_chart_create",
+        "mulib_chart_destroy",
+        "mulib_chart_extend",
+        "mulib_chart_render",
+        "mulib_chart_lua"
+      ]
+    },
+    "chem": {
+      "header": "mulib-chem.h",
+      "functions": [
+        "mulib_chem_element",
+        "mulib_chem_find_element",
+        "mulib_chem_parse",
+        "mulib_chem_destroy",
+        "mulib_chem_count",
+        "mulib_chem_molar_mass",
+        "mulib_chem_charge",
+        "mulib_chem_phase",
+        "mulib_chem_tree",
+        "mulib_chem_mathml",
+        "mulib_chem_latex",
+        "mulib_chem_balance"
       ]
     },
     "clamp": {
@@ -2506,6 +2539,21 @@
         "mulib_epub_read",
         "mulib_epub_find",
         "mulib_epub_close"
+      ]
+    },
+    "eqn": {
+      "header": "mulib-eqn.h",
+      "functions": [
+        "mulib_eqn_parse",
+        "mulib_eqn_destroy",
+        "mulib_eqn_kind",
+        "mulib_eqn_text",
+        "mulib_eqn_symbol",
+        "mulib_eqn_child_count",
+        "mulib_eqn_child",
+        "mulib_eqn_mathml",
+        "mulib_eqn_latex",
+        "mulib_eqn_eval"
       ]
     },
     "escape": {
@@ -4495,6 +4543,25 @@
         "mulib_paging_translate"
       ]
     },
+    "paleography": {
+      "header": "mulib-paleography.h",
+      "functions": [
+        "mulib_paleography_create",
+        "mulib_paleography_destroy",
+        "mulib_paleography_define",
+        "mulib_paleography_import",
+        "mulib_paleography_count",
+        "mulib_paleography_glyph",
+        "mulib_paleography_extend",
+        "mulib_paleography_lua",
+        "mulib_paleography_svg",
+        "mulib_paleography_font",
+        "mulib_paleography_css",
+        "mulib_paleography_package",
+        "mulib_paleography_encoding",
+        "mulib_paleography_latex"
+      ]
+    },
     "pandocast": {
       "header": "mulib-pandocast.h",
       "functions": [
@@ -5450,6 +5517,20 @@
         "mulib_svg_serialize"
       ]
     },
+    "symbol": {
+      "header": "mulib-symbol.h",
+      "functions": [
+        "mulib_symbol_create",
+        "mulib_symbol_destroy",
+        "mulib_symbol_define",
+        "mulib_symbol_find",
+        "mulib_symbol_unicode",
+        "mulib_symbol_match",
+        "mulib_symbol_count",
+        "mulib_symbol_at",
+        "mulib_symbol_mathml"
+      ]
+    },
     "syscall": {
       "header": "mulib-syscall.h",
       "functions": [
@@ -5532,6 +5613,21 @@
         "mulib_task_cancel_request",
         "mulib_task_cancel_requested",
         "mulib_task_cancel_destroy"
+      ]
+    },
+    "tbl": {
+      "header": "mulib-tbl.h",
+      "functions": [
+        "mulib_tbl_split",
+        "mulib_tbl_fields_free",
+        "mulib_tbl_create",
+        "mulib_tbl_add_row",
+        "mulib_tbl_rows",
+        "mulib_tbl_columns",
+        "mulib_tbl_cell",
+        "mulib_tbl_validate",
+        "mulib_tbl_parse",
+        "mulib_tbl_render"
       ]
     },
     "template": {
@@ -6568,7 +6664,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "71e0fb4b21a509583a6812a7be26a3280ca2bab2693cb97fab0e7494abc741d0",
-    "Implementation.c": "10bbc3720b0a95f12581f3e81b3de0506f832c85c465370e8dd5ea3d655215a3"
+    "Generated.inc": "cda26fea6505940e14d5ba2a0bc3efb47d831894ac84199c4a6d3397a77e3d17",
+    "Implementation.c": "cd2866c5adfdbc1c2f226e07d298985f380fd930ae64a529eabf003498b7b227"
   }
 }
