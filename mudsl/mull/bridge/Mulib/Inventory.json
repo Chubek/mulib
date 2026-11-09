@@ -56,6 +56,7 @@
     "mulib-bloom.h",
     "mulib-bootmgr.h",
     "mulib-bounds.h",
+    "mulib-bpf-kernel.h",
     "mulib-browsertools.h",
     "mulib-bson.h",
     "mulib-buffer.h",
@@ -71,6 +72,7 @@
     "mulib-chart.h",
     "mulib-chem.h",
     "mulib-clamp.h",
+    "mulib-classic-bpf.h",
     "mulib-clickir.h",
     "mulib-cmachine.h",
     "mulib-coff-objdump.h",
@@ -87,6 +89,7 @@
     "mulib-concurrency-prim.h",
     "mulib-conditional_probablity.h",
     "mulib-confuse.h",
+    "mulib-conntrack.h",
     "mulib-container-core.h",
     "mulib-container-ipc.h",
     "mulib-container-jitboost.h",
@@ -136,18 +139,26 @@
     "mulib-dbserializer.h",
     "mulib-dbsummary.h",
     "mulib-dbtransaction.h",
+    "mulib-dbus-auth.h",
+    "mulib-dbus-client.h",
+    "mulib-dbus-properties.h",
+    "mulib-dbus-transport.h",
     "mulib-dbus.h",
     "mulib-deflate.h",
     "mulib-depir.h",
     "mulib-deque.h",
     "mulib-descritors.h",
+    "mulib-devlink.h",
     "mulib-dexcc.h",
     "mulib-dfa.h",
+    "mulib-dhcp4-client.h",
+    "mulib-dhcp6-client.h",
     "mulib-diag.h",
     "mulib-distfield.h",
     "mulib-distribcluster.h",
     "mulib-distribcomp.h",
     "mulib-distribtask.h",
+    "mulib-dns-manager.h",
     "mulib-dns.h",
     "mulib-dnscache.h",
     "mulib-dnsclient.h",
@@ -205,6 +216,10 @@
     "mulib-epub.h",
     "mulib-eqn.h",
     "mulib-escape.h",
+    "mulib-ethtool-features.h",
+    "mulib-ethtool-module.h",
+    "mulib-ethtool-netlink.h",
+    "mulib-ethtool-stats.h",
     "mulib-euclidean_distance.h",
     "mulib-eventfd.h",
     "mulib-evtlistener.h",
@@ -282,6 +297,7 @@
     "mulib-hwil-verify.h",
     "mulib-hwinfo.h",
     "mulib-hyphen.h",
+    "mulib-icmp.h",
     "mulib-ifft.h",
     "mulib-image2container.h",
     "mulib-imapserver.h",
@@ -295,6 +311,7 @@
     "mulib-immgtk.h",
     "mulib-impaclient.h",
     "mulib-index.h",
+    "mulib-inet-diag.h",
     "mulib-inet4.h",
     "mulib-inet6.h",
     "mulib-ini.h",
@@ -307,8 +324,11 @@
     "mulib-invindex.h",
     "mulib-io.h",
     "mulib-ipfs.h",
+    "mulib-ipv6-ndp.h",
+    "mulib-ipv6-ra.h",
     "mulib-isched.h",
     "mulib-isel.h",
+    "mulib-iwd-client.h",
     "mulib-jaccard_similarity.h",
     "mulib-jit.h",
     "mulib-json.h",
@@ -332,6 +352,7 @@
     "mulib-lir.h",
     "mulib-list.h",
     "mulib-listener.h",
+    "mulib-lldp.h",
     "mulib-load_balancer.h",
     "mulib-logger.h",
     "mulib-lowopt.h",
@@ -393,8 +414,33 @@
     "mulib-mune.h",
     "mulib-n-grams.h",
     "mulib-nameserver.h",
+    "mulib-net-cap.h",
+    "mulib-net-cli-format.h",
+    "mulib-net-monitor.h",
+    "mulib-net-profile.h",
+    "mulib-net-reconcile.h",
+    "mulib-net-state.h",
+    "mulib-net-stats.h",
     "mulib-netdevice.h",
+    "mulib-netfilter-log.h",
+    "mulib-netfilter-queue.h",
     "mulib-netfs.h",
+    "mulib-netlink-async.h",
+    "mulib-netlink-attr.h",
+    "mulib-netlink-extack.h",
+    "mulib-netlink-genl.h",
+    "mulib-netlink-schema.h",
+    "mulib-netlink.h",
+    "mulib-netns.h",
+    "mulib-networkd-client.h",
+    "mulib-nfnetlink.h",
+    "mulib-nftables.h",
+    "mulib-nl80211.h",
+    "mulib-nm-client.h",
+    "mulib-nm-connection.h",
+    "mulib-nm-device.h",
+    "mulib-nm-secret-agent.h",
+    "mulib-nm-wifi.h",
     "mulib-num-csc.h",
     "mulib-num-csr.h",
     "mulib-num-dense.h",
@@ -437,6 +483,7 @@
     "mulib-otpath.h",
     "mulib-otpauth.h",
     "mulib-p2pproto.h",
+    "mulib-packet-socket.h",
     "mulib-packetfiter.h",
     "mulib-packetrules.h",
     "mulib-packetstream.h",
@@ -448,6 +495,7 @@
     "mulib-parsec.h",
     "mulib-path.h",
     "mulib-pathdb.h",
+    "mulib-pcap.h",
     "mulib-pcb-board.h",
     "mulib-pcb-bom.h",
     "mulib-pcb-drc.h",
@@ -470,6 +518,7 @@
     "mulib-pglayout.h",
     "mulib-phonetic_utils.h",
     "mulib-pipeline.h",
+    "mulib-polkit-client.h",
     "mulib-polytask.h",
     "mulib-popcount.h",
     "mulib-port.h",
@@ -493,6 +542,7 @@
     "mulib-readline.h",
     "mulib-regex.h",
     "mulib-replace.h",
+    "mulib-resolved-client.h",
     "mulib-revproxy.h",
     "mulib-rewrite.h",
     "mulib-rewrite_url.h",
@@ -509,6 +559,21 @@
     "mulib-rootfsbuilder.h",
     "mulib-row-rdbms.h",
     "mulib-rpc.h",
+    "mulib-rtnl-address.h",
+    "mulib-rtnl-bridge.h",
+    "mulib-rtnl-link.h",
+    "mulib-rtnl-neighbor.h",
+    "mulib-rtnl-nexthop.h",
+    "mulib-rtnl-nsid.h",
+    "mulib-rtnl-qdisc.h",
+    "mulib-rtnl-route.h",
+    "mulib-rtnl-rule.h",
+    "mulib-rtnl-tc.h",
+    "mulib-rtnl-tunnel.h",
+    "mulib-rtnl-veth.h",
+    "mulib-rtnl-vlan.h",
+    "mulib-rtnl-vrf.h",
+    "mulib-rtnl.h",
     "mulib-rubybind.h",
     "mulib-sat.h",
     "mulib-schedutils.h",
@@ -529,6 +594,7 @@
     "mulib-smtpclient.h",
     "mulib-smtpserver.h",
     "mulib-soc-memorymap.h",
+    "mulib-sock-diag.h",
     "mulib-socket.h",
     "mulib-socks5.h",
     "mulib-sort.h",
@@ -588,6 +654,7 @@
     "mulib-timer.h",
     "mulib-timerfd.h",
     "mulib-toml.h",
+    "mulib-tracepath.h",
     "mulib-tree_parsing.h",
     "mulib-trie.h",
     "mulib-trie_traversal.h",
@@ -599,6 +666,21 @@
     "mulib-udev.h",
     "mulib-uefi.h",
     "mulib-uefiutils.h",
+    "mulib-uip-arp-cache.h",
+    "mulib-uip-arp.h",
+    "mulib-uip-checksum.h",
+    "mulib-uip-dns.h",
+    "mulib-uip-ethernet.h",
+    "mulib-uip-fragment.h",
+    "mulib-uip-icmp.h",
+    "mulib-uip-ipv4.h",
+    "mulib-uip-ipv6.h",
+    "mulib-uip-pbuf.h",
+    "mulib-uip-route.h",
+    "mulib-uip-tcp-state.h",
+    "mulib-uip-tcp.h",
+    "mulib-uip-timer.h",
+    "mulib-uip-udp.h",
     "mulib-unibreak.h",
     "mulib-uniname.h",
     "mulib-uniproc.h",
@@ -606,6 +688,8 @@
     "mulib-upstream.h",
     "mulib-uri.h",
     "mulib-url.h",
+    "mulib-ustack-tuntap.h",
+    "mulib-ustack.h",
     "mulib-utf8.h",
     "mulib-uuid.h",
     "mulib-v2rayproto.h",
@@ -651,9 +735,17 @@
     "mulib-webidl.h",
     "mulib-weighed_edit_distane.h",
     "mulib-weighted-edit-distance.h",
+    "mulib-wifi-ap.h",
+    "mulib-wifi-monitor.h",
+    "mulib-wifi-regulatory.h",
+    "mulib-wifi-rfkill.h",
+    "mulib-wifi-scan.h",
+    "mulib-wifi-security.h",
+    "mulib-wifi-station.h",
     "mulib-wit.h",
     "mulib-wlroots.h",
     "mulib-wmfunc.h",
+    "mulib-wpa-ctrl.h",
     "mulib-xatomics.h",
     "mulib-xlib.h",
     "mulib-xll.h",
@@ -670,10 +762,10 @@
     "mulib-zip.h",
     "mulib-zstd.h"
   ],
-  "libraries": 669,
-  "functions": 3518,
-  "types": 5959,
-  "constants": 2135,
+  "libraries": 761,
+  "functions": 3667,
+  "types": 6136,
+  "constants": 2154,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -685,6 +777,7 @@
     "MULIB_ASDL_SEQ",
     "MULIB_ASDL_SUM_TYPE",
     "MULIB_DATAGRAM_INIT",
+    "MULIB_DBUS_CLIENT_INIT",
     "MULIB_DRM_DEVICE_INIT",
     "MULIB_DRM_DUMB_INIT",
     "MULIB_DYNLOAD_EXPORT",
@@ -695,6 +788,7 @@
     "MULIB_KVM_VCPU_INIT",
     "MULIB_KVM_VM_INIT",
     "MULIB_MMFILE_INIT",
+    "MULIB_NETLINK_INIT",
     "MULIB_OIX_IMAGE_INIT",
     "MULIB_SHM_INIT",
     "MULIB_SOCKET_INIT",
@@ -713,7 +807,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "899489687c6b7928878f992478a737589825852b0197a71337603ebcdb39d874",
+  "fingerprint": "9297fc8aba5fff23b8d4f7639901b0fa9c14cd5b7c1fb538ab6ac1df524560bb",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -1311,6 +1405,12 @@
         "mulib_bounds_union"
       ]
     },
+    "bpf-kernel": {
+      "header": "mulib-bpf-kernel.h",
+      "functions": [
+        "mulib_bpf_kernel_array_map"
+      ]
+    },
     "browsertools": {
       "header": "mulib-browsertools.h",
       "functions": [
@@ -1497,6 +1597,12 @@
         "mulib_clamp_sub_i64"
       ]
     },
+    "classic-bpf": {
+      "header": "mulib-classic-bpf.h",
+      "functions": [
+        "mulib_classic_bpf_attach"
+      ]
+    },
     "clickir": {
       "header": "mulib-clickir.h",
       "functions": [
@@ -1659,6 +1765,12 @@
         "mulib_confuse_getint",
         "mulib_confuse_getreal",
         "mulib_confuse_getbool"
+      ]
+    },
+    "conntrack": {
+      "header": "mulib-conntrack.h",
+      "functions": [
+        "mulib_conntrack_dump"
       ]
     },
     "container": {
@@ -2177,6 +2289,36 @@
         "mulib_dbus_decode"
       ]
     },
+    "dbus-auth": {
+      "header": "mulib-dbus-auth.h",
+      "functions": [
+        "mulib_dbus_auth_external"
+      ]
+    },
+    "dbus-client": {
+      "header": "mulib-dbus-client.h",
+      "functions": [
+        "mulib_dbus_client_open",
+        "mulib_dbus_client_close",
+        "mulib_dbus_client_call",
+        "mulib_dbus_client_body_offset"
+      ]
+    },
+    "dbus-properties": {
+      "header": "mulib-dbus-properties.h",
+      "functions": [
+        "mulib_dbus_properties_u32",
+        "mulib_dbus_properties_string"
+      ]
+    },
+    "dbus-transport": {
+      "header": "mulib-dbus-transport.h",
+      "functions": [
+        "mulib_dbus_transport_connect",
+        "mulib_dbus_transport_write",
+        "mulib_dbus_transport_read"
+      ]
+    },
     "deflate": {
       "header": "mulib-deflate.h",
       "functions": [
@@ -2218,6 +2360,12 @@
         "mulib_descritors_tss_init"
       ]
     },
+    "devlink": {
+      "header": "mulib-devlink.h",
+      "functions": [
+        "mulib_devlink_family"
+      ]
+    },
     "dexcc": {
       "header": "mulib-dexcc.h",
       "functions": [
@@ -2245,6 +2393,20 @@
         "mulib_dfa_from_nfa",
         "mulib_dfa_serialize",
         "mulib_dfa_deserialize"
+      ]
+    },
+    "dhcp4-client": {
+      "header": "mulib-dhcp4-client.h",
+      "functions": [
+        "mulib_dhcp4_client_discover",
+        "mulib_dhcp4_client_type"
+      ]
+    },
+    "dhcp6-client": {
+      "header": "mulib-dhcp6-client.h",
+      "functions": [
+        "mulib_dhcp6_client_solicit",
+        "mulib_dhcp6_client_option"
       ]
     },
     "diag": {
@@ -2318,6 +2480,12 @@
         "mulib_dns_writer_init",
         "mulib_dns_writer_question",
         "mulib_dns_writer_rr"
+      ]
+    },
+    "dns-manager": {
+      "header": "mulib-dns-manager.h",
+      "functions": [
+        "mulib_dns_manager_first_nameserver"
       ]
     },
     "dnscache": {
@@ -2930,6 +3098,30 @@
       "functions": [
         "mulib_escape_c",
         "mulib_escape_unc"
+      ]
+    },
+    "ethtool-features": {
+      "header": "mulib-ethtool-features.h",
+      "functions": [
+        "mulib_ethtool_features_get"
+      ]
+    },
+    "ethtool-module": {
+      "header": "mulib-ethtool-module.h",
+      "functions": [
+        "mulib_ethtool_module_info"
+      ]
+    },
+    "ethtool-netlink": {
+      "header": "mulib-ethtool-netlink.h",
+      "functions": [
+        "mulib_ethtool_netlink_family"
+      ]
+    },
+    "ethtool-stats": {
+      "header": "mulib-ethtool-stats.h",
+      "functions": [
+        "mulib_ethtool_stats_sysfs"
       ]
     },
     "euclidean_distance": {
@@ -3678,6 +3870,13 @@
         "mulib_hyphen_deserialize"
       ]
     },
+    "icmp": {
+      "header": "mulib-icmp.h",
+      "functions": [
+        "mulib_icmp_checksum",
+        "mulib_icmp_echo"
+      ]
+    },
     "ifft": {
       "header": "mulib-ifft.h",
       "functions": [
@@ -3784,6 +3983,12 @@
         "mulib_index_find",
         "mulib_index_remove",
         "mulib_index_free"
+      ]
+    },
+    "inet-diag": {
+      "header": "mulib-inet-diag.h",
+      "functions": [
+        "mulib_inet_diag_decode"
       ]
     },
     "inet4": {
@@ -3895,6 +4100,19 @@
         "mulib_ipfs_verify"
       ]
     },
+    "ipv6-ndp": {
+      "header": "mulib-ipv6-ndp.h",
+      "functions": [
+        "mulib_ipv6_ndp_parse"
+      ]
+    },
+    "ipv6-ra": {
+      "header": "mulib-ipv6-ra.h",
+      "functions": [
+        "mulib_ipv6_ra_parse",
+        "mulib_ipv6_ra_prefix"
+      ]
+    },
     "isched": {
       "header": "mulib-isched.h",
       "functions": [
@@ -3913,6 +4131,12 @@
         "mulib_isel_run",
         "mulib_isel_refresh",
         "mulib_isel_schedule"
+      ]
+    },
+    "iwd-client": {
+      "header": "mulib-iwd-client.h",
+      "functions": [
+        "mulib_iwd_client_objects"
       ]
     },
     "jaccard_similarity": {
@@ -4187,6 +4411,12 @@
       "header": "mulib-listener.h",
       "functions": [
         "mulib_listener_walk"
+      ]
+    },
+    "lldp": {
+      "header": "mulib-lldp.h",
+      "functions": [
+        "mulib_lldp_foreach"
       ]
     },
     "load_balancer": {
@@ -4803,11 +5033,68 @@
         "mulib_nameserver_answer"
       ]
     },
+    "net-cap": {
+      "header": "mulib-net-cap.h",
+      "functions": [
+        "mulib_net_cap_effective",
+        "mulib_net_cap_has"
+      ]
+    },
+    "net-cli-format": {
+      "header": "mulib-net-cli-format.h",
+      "functions": [
+        "mulib_net_cli_format_ipv4",
+        "mulib_net_cli_format_json"
+      ]
+    },
+    "net-monitor": {
+      "header": "mulib-net-monitor.h",
+      "functions": [
+        "mulib_net_monitor_open",
+        "mulib_net_monitor_read"
+      ]
+    },
+    "net-profile": {
+      "header": "mulib-net-profile.h",
+      "functions": [
+        "mulib_net_profile_parse"
+      ]
+    },
+    "net-reconcile": {
+      "header": "mulib-net-reconcile.h",
+      "functions": [
+        "mulib_net_reconcile_check"
+      ]
+    },
+    "net-state": {
+      "header": "mulib-net-state.h",
+      "functions": [
+        "mulib_net_state_read"
+      ]
+    },
+    "net-stats": {
+      "header": "mulib-net-stats.h",
+      "functions": [
+        "mulib_net_stats_read"
+      ]
+    },
     "netdevice": {
       "header": "mulib-netdevice.h",
       "functions": [
         "mulib_netdevice_list",
         "mulib_netdevice_index"
+      ]
+    },
+    "netfilter-log": {
+      "header": "mulib-netfilter-log.h",
+      "functions": [
+        "mulib_netfilter_log_subscribe"
+      ]
+    },
+    "netfilter-queue": {
+      "header": "mulib-netfilter-queue.h",
+      "functions": [
+        "mulib_netfilter_queue_bind"
       ]
     },
     "netfs": {
@@ -4818,6 +5105,114 @@
         "mulib_netfs_serve",
         "mulib_netfs_stream_exchange",
         "mulib_netfs_stream_serve"
+      ]
+    },
+    "netlink": {
+      "header": "mulib-netlink.h",
+      "functions": [
+        "mulib_netlink_open",
+        "mulib_netlink_close",
+        "mulib_netlink_send",
+        "mulib_netlink_receive",
+        "mulib_netlink_transact",
+        "mulib_netlink_foreach"
+      ]
+    },
+    "netlink-async": {
+      "header": "mulib-netlink-async.h",
+      "functions": [
+        "mulib_netlink_async_wait",
+        "mulib_netlink_async_recv"
+      ]
+    },
+    "netlink-attr": {
+      "header": "mulib-netlink-attr.h",
+      "functions": [
+        "mulib_netlink_attr_append",
+        "mulib_netlink_attr_foreach",
+        "mulib_netlink_attr_u32"
+      ]
+    },
+    "netlink-extack": {
+      "header": "mulib-netlink-extack.h",
+      "functions": [
+        "mulib_netlink_extack_parse"
+      ]
+    },
+    "netlink-genl": {
+      "header": "mulib-netlink-genl.h",
+      "functions": [
+        "mulib_netlink_genl_resolve"
+      ]
+    },
+    "netlink-schema": {
+      "header": "mulib-netlink-schema.h",
+      "functions": [
+        "mulib_netlink_schema_check"
+      ]
+    },
+    "netns": {
+      "header": "mulib-netns.h",
+      "functions": [
+        "mulib_netns_open_self",
+        "mulib_netns_open_pid",
+        "mulib_netns_enter"
+      ]
+    },
+    "networkd-client": {
+      "header": "mulib-networkd-client.h",
+      "functions": [
+        "mulib_networkd_client_links"
+      ]
+    },
+    "nfnetlink": {
+      "header": "mulib-nfnetlink.h",
+      "functions": [
+        "mulib_nfnetlink_open",
+        "mulib_nfnetlink_send"
+      ]
+    },
+    "nftables": {
+      "header": "mulib-nftables.h",
+      "functions": [
+        "mulib_nftables_tables"
+      ]
+    },
+    "nl80211": {
+      "header": "mulib-nl80211.h",
+      "functions": [
+        "mulib_nl80211_command"
+      ]
+    },
+    "nm-client": {
+      "header": "mulib-nm-client.h",
+      "functions": [
+        "mulib_nm_client_state",
+        "mulib_nm_client_devices"
+      ]
+    },
+    "nm-connection": {
+      "header": "mulib-nm-connection.h",
+      "functions": [
+        "mulib_nm_connection_list"
+      ]
+    },
+    "nm-device": {
+      "header": "mulib-nm-device.h",
+      "functions": [
+        "mulib_nm_device_interface"
+      ]
+    },
+    "nm-secret-agent": {
+      "header": "mulib-nm-secret-agent.h",
+      "functions": [
+        "mulib_nm_secret_agent_unregister"
+      ]
+    },
+    "nm-wifi": {
+      "header": "mulib-nm-wifi.h",
+      "functions": [
+        "mulib_nm_wifi_access_points"
       ]
     },
     "num-csc": {
@@ -5134,6 +5529,13 @@
         "mulib_p2pproto_select"
       ]
     },
+    "packet-socket": {
+      "header": "mulib-packet-socket.h",
+      "functions": [
+        "mulib_packet_socket_open",
+        "mulib_packet_socket_receive"
+      ]
+    },
     "packetfiter": {
       "header": "mulib-packetfiter.h",
       "functions": [
@@ -5254,6 +5656,13 @@
         "mulib_pathdb_scan",
         "mulib_pathdb_save",
         "mulib_pathdb_load"
+      ]
+    },
+    "pcap": {
+      "header": "mulib-pcap.h",
+      "functions": [
+        "mulib_pcap_write_global",
+        "mulib_pcap_write_record"
       ]
     },
     "pcb-board": {
@@ -5444,6 +5853,12 @@
       "header": "mulib-pipeline.h",
       "functions": [
         "mulib_pipeline_run"
+      ]
+    },
+    "polkit-client": {
+      "header": "mulib-polkit-client.h",
+      "functions": [
+        "mulib_polkit_client_name_has_owner"
       ]
     },
     "polytask": {
@@ -5685,6 +6100,12 @@
         "mulib_replace_all"
       ]
     },
+    "resolved-client": {
+      "header": "mulib-resolved-client.h",
+      "functions": [
+        "mulib_resolved_client_dns"
+      ]
+    },
     "revproxy": {
       "header": "mulib-revproxy.h",
       "functions": [
@@ -5810,6 +6231,103 @@
       "functions": [
         "mulib_rpc_dispatch",
         "mulib_rpc_process"
+      ]
+    },
+    "rtnl": {
+      "header": "mulib-rtnl.h",
+      "functions": [
+        "mulib_rtnl_request",
+        "mulib_rtnl_dump",
+        "mulib_rtnl_link_kind"
+      ]
+    },
+    "rtnl-address": {
+      "header": "mulib-rtnl-address.h",
+      "functions": [
+        "mulib_rtnl_address_dump",
+        "mulib_rtnl_address_change"
+      ]
+    },
+    "rtnl-bridge": {
+      "header": "mulib-rtnl-bridge.h",
+      "functions": [
+        "mulib_rtnl_bridge_dump"
+      ]
+    },
+    "rtnl-link": {
+      "header": "mulib-rtnl-link.h",
+      "functions": [
+        "mulib_rtnl_link_index",
+        "mulib_rtnl_link_set_up",
+        "mulib_rtnl_link_dump"
+      ]
+    },
+    "rtnl-neighbor": {
+      "header": "mulib-rtnl-neighbor.h",
+      "functions": [
+        "mulib_rtnl_neighbor_dump",
+        "mulib_rtnl_neighbor_change"
+      ]
+    },
+    "rtnl-nexthop": {
+      "header": "mulib-rtnl-nexthop.h",
+      "functions": [
+        "mulib_rtnl_nexthop_dump"
+      ]
+    },
+    "rtnl-nsid": {
+      "header": "mulib-rtnl-nsid.h",
+      "functions": [
+        "mulib_rtnl_nsid_dump"
+      ]
+    },
+    "rtnl-qdisc": {
+      "header": "mulib-rtnl-qdisc.h",
+      "functions": [
+        "mulib_rtnl_qdisc_dump"
+      ]
+    },
+    "rtnl-route": {
+      "header": "mulib-rtnl-route.h",
+      "functions": [
+        "mulib_rtnl_route_dump",
+        "mulib_rtnl_route_change"
+      ]
+    },
+    "rtnl-rule": {
+      "header": "mulib-rtnl-rule.h",
+      "functions": [
+        "mulib_rtnl_rule_dump"
+      ]
+    },
+    "rtnl-tc": {
+      "header": "mulib-rtnl-tc.h",
+      "functions": [
+        "mulib_rtnl_tc_dump"
+      ]
+    },
+    "rtnl-tunnel": {
+      "header": "mulib-rtnl-tunnel.h",
+      "functions": [
+        "mulib_rtnl_tunnel_dump"
+      ]
+    },
+    "rtnl-veth": {
+      "header": "mulib-rtnl-veth.h",
+      "functions": [
+        "mulib_rtnl_veth_dump"
+      ]
+    },
+    "rtnl-vlan": {
+      "header": "mulib-rtnl-vlan.h",
+      "functions": [
+        "mulib_rtnl_vlan_dump"
+      ]
+    },
+    "rtnl-vrf": {
+      "header": "mulib-rtnl-vrf.h",
+      "functions": [
+        "mulib_rtnl_vrf_dump"
       ]
     },
     "rubybind": {
@@ -6019,6 +6537,12 @@
       "functions": [
         "mulib_soc_memorymap_add",
         "mulib_soc_memorymap_lookup"
+      ]
+    },
+    "sock-diag": {
+      "header": "mulib-sock-diag.h",
+      "functions": [
+        "mulib_sock_diag_dump"
       ]
     },
     "socket": {
@@ -6623,6 +7147,12 @@
         "mulib_toml_stringify"
       ]
     },
+    "tracepath": {
+      "header": "mulib-tracepath.h",
+      "functions": [
+        "mulib_tracepath_probe"
+      ]
+    },
     "tree_parsing": {
       "header": "mulib-tree_parsing.h",
       "functions": [
@@ -6744,6 +7274,113 @@
         "mulib_uefiutils_utf8"
       ]
     },
+    "uip-arp": {
+      "header": "mulib-uip-arp.h",
+      "functions": [
+        "mulib_uip_arp_parse",
+        "mulib_uip_arp_pack"
+      ]
+    },
+    "uip-arp-cache": {
+      "header": "mulib-uip-arp-cache.h",
+      "functions": [
+        "mulib_uip_arp_cache_store",
+        "mulib_uip_arp_cache_find",
+        "mulib_uip_arp_cache_expire"
+      ]
+    },
+    "uip-checksum": {
+      "header": "mulib-uip-checksum.h",
+      "functions": [
+        "mulib_uip_checksum",
+        "mulib_uip_checksum_ipv4"
+      ]
+    },
+    "uip-dns": {
+      "header": "mulib-uip-dns.h",
+      "functions": [
+        "mulib_uip_dns_query_a",
+        "mulib_uip_dns_first_a"
+      ]
+    },
+    "uip-ethernet": {
+      "header": "mulib-uip-ethernet.h",
+      "functions": [
+        "mulib_uip_ethernet_parse",
+        "mulib_uip_ethernet_pack"
+      ]
+    },
+    "uip-fragment": {
+      "header": "mulib-uip-fragment.h",
+      "functions": [
+        "mulib_uip_frag_reset",
+        "mulib_uip_frag_push"
+      ]
+    },
+    "uip-icmp": {
+      "header": "mulib-uip-icmp.h",
+      "functions": [
+        "mulib_uip_icmp_echo",
+        "mulib_uip_icmp_verify"
+      ]
+    },
+    "uip-ipv4": {
+      "header": "mulib-uip-ipv4.h",
+      "functions": [
+        "mulib_uip_ipv4_parse",
+        "mulib_uip_ipv4_pack"
+      ]
+    },
+    "uip-ipv6": {
+      "header": "mulib-uip-ipv6.h",
+      "functions": [
+        "mulib_uip_ipv6_parse",
+        "mulib_uip_ipv6_pack"
+      ]
+    },
+    "uip-pbuf": {
+      "header": "mulib-uip-pbuf.h",
+      "functions": [
+        "mulib_uip_pbuf_init",
+        "mulib_uip_pbuf_destroy",
+        "mulib_uip_pbuf_prepend",
+        "mulib_uip_pbuf_append",
+        "mulib_uip_pbuf_data"
+      ]
+    },
+    "uip-route": {
+      "header": "mulib-uip-route.h",
+      "functions": [
+        "mulib_uip_route_add",
+        "mulib_uip_route_find"
+      ]
+    },
+    "uip-tcp": {
+      "header": "mulib-uip-tcp.h",
+      "functions": [
+        "mulib_uip_tcp_parse",
+        "mulib_uip_tcp_pack"
+      ]
+    },
+    "uip-tcp-state": {
+      "header": "mulib-uip-tcp-state.h",
+      "functions": [
+        "mulib_uip_tcp_state_next"
+      ]
+    },
+    "uip-timer": {
+      "header": "mulib-uip-timer.h",
+      "functions": [
+        "mulib_uip_timer_monotonic_ms"
+      ]
+    },
+    "uip-udp": {
+      "header": "mulib-uip-udp.h",
+      "functions": [
+        "mulib_uip_udp_parse",
+        "mulib_uip_udp_pack"
+      ]
+    },
     "unibreak": {
       "header": "mulib-unibreak.h",
       "functions": [
@@ -6807,6 +7444,22 @@
       "functions": [
         "mulib_url_encode",
         "mulib_url_decode"
+      ]
+    },
+    "ustack": {
+      "header": "mulib-ustack.h",
+      "functions": [
+        "mulib_ustack_init",
+        "mulib_ustack_process",
+        "mulib_ustack_send_udp",
+        "mulib_ustack_tick"
+      ]
+    },
+    "ustack-tuntap": {
+      "header": "mulib-ustack-tuntap.h",
+      "functions": [
+        "mulib_ustack_tap_once",
+        "mulib_ustack_tap_emit"
       ]
     },
     "utf8": {
@@ -7304,6 +7957,50 @@
         "mulib_weighted_edit_distance_ex"
       ]
     },
+    "wifi-ap": {
+      "header": "mulib-wifi-ap.h",
+      "functions": [
+        "mulib_wifi_ap_query"
+      ]
+    },
+    "wifi-monitor": {
+      "header": "mulib-wifi-monitor.h",
+      "functions": [
+        "mulib_wifi_monitor_open",
+        "mulib_wifi_monitor_next"
+      ]
+    },
+    "wifi-regulatory": {
+      "header": "mulib-wifi-regulatory.h",
+      "functions": [
+        "mulib_wifi_regulatory_query"
+      ]
+    },
+    "wifi-rfkill": {
+      "header": "mulib-wifi-rfkill.h",
+      "functions": [
+        "mulib_wifi_rfkill_read",
+        "mulib_wifi_rfkill_open"
+      ]
+    },
+    "wifi-scan": {
+      "header": "mulib-wifi-scan.h",
+      "functions": [
+        "mulib_wifi_scan_query"
+      ]
+    },
+    "wifi-security": {
+      "header": "mulib-wifi-security.h",
+      "functions": [
+        "mulib_wifi_security_rsn_parse"
+      ]
+    },
+    "wifi-station": {
+      "header": "mulib-wifi-station.h",
+      "functions": [
+        "mulib_wifi_station_query"
+      ]
+    },
     "wit": {
       "header": "mulib-wit.h",
       "functions": [
@@ -7331,6 +8028,12 @@
         "mulib_wmfunc_init",
         "mulib_wmfunc_fit",
         "mulib_wmfunc_apply"
+      ]
+    },
+    "wpa-ctrl": {
+      "header": "mulib-wpa-ctrl.h",
+      "functions": [
+        "mulib_wpa_ctrl_request"
       ]
     },
     "xatomics": {
@@ -7568,7 +8271,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "31f25082e778035e99abc8b47049c179b3a111c7d212425f94c0d4e26d6f2b90",
-    "Implementation.c": "6c8bb85d2e69925a5a7e99a1ca0d426094201b87f9597c3ee70c65e7709940c2"
+    "Generated.inc": "e674eb0a452562681fcc9b03f5311fba7bce352f83792ffa28b11089cff7177e",
+    "Implementation.c": "d49436eccdacd8fbbfbafeeb5b57862331bccc830132addc031e678ac60ed685"
   }
 }

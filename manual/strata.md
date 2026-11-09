@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 669 headers, 769 direct dependency edges.
+Inventory: 761 headers, 842 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (233 modules)
+## Stratum 0 (271 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -40,10 +40,12 @@ Compatibility group: `parsec`, `peg`.
 | [blockcache](mulib-blockcache.md) | none |
 | [bloom](mulib-bloom.md) | none |
 | [bounds](mulib-bounds.md) | none |
+| [bpf-kernel](mulib-bpf-kernel.md) | none |
 | [buffer](mulib-buffer.md) | none |
 | [bycutils](mulib-bycutils.md) | none |
 | [cassowary-solver](mulib-cassowary-solver.md) | none |
 | [clamp](mulib-clamp.md) | none |
+| [classic-bpf](mulib-classic-bpf.md) | none |
 | [color](mulib-color.md) | none |
 | [column-rdbms](mulib-column-rdbms.md) | none |
 | [complex](mulib-complex.md) | none |
@@ -56,10 +58,14 @@ Compatibility group: `parsec`, `peg`.
 | [csv](mulib-csv.md) | none |
 | [datalog](mulib-datalog.md) | none |
 | [date](mulib-date.md) | none |
+| [dbus-auth](mulib-dbus-auth.md) | none |
 | [deque](mulib-deque.md) | none |
 | [descritors](mulib-descritors.md) | none |
+| [dhcp4-client](mulib-dhcp4-client.md) | none |
+| [dhcp6-client](mulib-dhcp6-client.md) | none |
 | [diag](mulib-diag.md) | none |
 | [distfield](mulib-distfield.md) | none |
+| [dns-manager](mulib-dns-manager.md) | none |
 | [dns](mulib-dns.md) | none |
 | [drm](mulib-drm.md) | none |
 | [dsim-logic4](mulib-dsim-logic4.md) | none |
@@ -90,6 +96,9 @@ Compatibility group: `parsec`, `peg`.
 | [env](mulib-env.md) | none |
 | [epoll](mulib-epoll.md) | none |
 | [escape](mulib-escape.md) | none |
+| [ethtool-features](mulib-ethtool-features.md) | none |
+| [ethtool-module](mulib-ethtool-module.md) | none |
+| [ethtool-stats](mulib-ethtool-stats.md) | none |
 | [euclidean_distance](mulib-euclidean_distance.md) | none |
 | [eventfd](mulib-eventfd.md) | none |
 | [evtloop](mulib-evtloop.md) | none |
@@ -120,6 +129,7 @@ Compatibility group: `parsec`, `peg`.
 | [hls-schedule](mulib-hls-schedule.md) | none |
 | [hwil-types](mulib-hwil-types.md) | none |
 | [hwinfo](mulib-hwinfo.md) | none |
+| [icmp](mulib-icmp.md) | none |
 | [imapserver](mulib-imapserver.md) | none |
 | [immgtk-canvas](mulib-immgtk-canvas.md) | none |
 | [immgtk-drawlist](mulib-immgtk-drawlist.md) | none |
@@ -129,6 +139,8 @@ Compatibility group: `parsec`, `peg`.
 | [input](mulib-input.md) | none |
 | [interpolate](mulib-interpolate.md) | none |
 | [io](mulib-io.md) | none |
+| [ipv6-ndp](mulib-ipv6-ndp.md) | none |
+| [ipv6-ra](mulib-ipv6-ra.md) | none |
 | [isched](mulib-isched.md) | none |
 | [jaccard_similarity](mulib-jaccard_similarity.md) | none |
 | [kmm](mulib-kmm.md) | none |
@@ -139,6 +151,7 @@ Compatibility group: `parsec`, `peg`.
 | [linalg](mulib-linalg.md) | none |
 | [liner_regression](mulib-liner_regression.md) | none |
 | [list](mulib-list.md) | none |
+| [lldp](mulib-lldp.md) | none |
 | [logger](mulib-logger.md) | none |
 | [lprowse](mulib-lprowse.md) | none |
 | [manpage](mulib-manpage.md) | none |
@@ -160,7 +173,15 @@ Compatibility group: `parsec`, `peg`.
 | [mqueue](mulib-mqueue.md) | none |
 | [muburg](mulib-muburg.md) | none |
 | [n-grams](mulib-n-grams.md) | none |
+| [net-cap](mulib-net-cap.md) | none |
+| [net-cli-format](mulib-net-cli-format.md) | none |
+| [net-profile](mulib-net-profile.md) | none |
+| [net-state](mulib-net-state.md) | none |
+| [net-stats](mulib-net-stats.md) | none |
 | [netdevice](mulib-netdevice.md) | none |
+| [netlink-attr](mulib-netlink-attr.md) | none |
+| [netlink](mulib-netlink.md) | none |
+| [netns](mulib-netns.md) | none |
 | [num-dense](mulib-num-dense.md) | none |
 | [num-integration](mulib-num-integration.md) | none |
 | [num-rootfind](mulib-num-rootfind.md) | none |
@@ -170,10 +191,12 @@ Compatibility group: `parsec`, `peg`.
 | [ocicontainer](mulib-ocicontainer.md) | none |
 | [openvpn](mulib-openvpn.md) | none |
 | [orthographic_rules](mulib-orthographic_rules.md) | none |
+| [packet-socket](mulib-packet-socket.md) | none |
 | [packetfiter](mulib-packetfiter.md) | none |
 | [packetvm](mulib-packetvm.md) | none |
 | [paging](mulib-paging.md) | none |
 | [path](mulib-path.md) | none |
+| [pcap](mulib-pcap.md) | none |
 | [pcb-bom](mulib-pcb-bom.md) | none |
 | [pcb-excellon](mulib-pcb-excellon.md) | none |
 | [pcb-geometry](mulib-pcb-geometry.md) | none |
@@ -233,9 +256,21 @@ Compatibility group: `parsec`, `peg`.
 | [text](mulib-text.md) | none |
 | [timer](mulib-timer.md) | none |
 | [timerfd](mulib-timerfd.md) | none |
+| [tracepath](mulib-tracepath.md) | none |
 | [trie](mulib-trie.md) | none |
 | [tsl](mulib-tsl.md) | none |
 | [uefi](mulib-uefi.md) | none |
+| [uip-arp-cache](mulib-uip-arp-cache.md) | none |
+| [uip-arp](mulib-uip-arp.md) | none |
+| [uip-checksum](mulib-uip-checksum.md) | none |
+| [uip-dns](mulib-uip-dns.md) | none |
+| [uip-ethernet](mulib-uip-ethernet.md) | none |
+| [uip-fragment](mulib-uip-fragment.md) | none |
+| [uip-ipv6](mulib-uip-ipv6.md) | none |
+| [uip-pbuf](mulib-uip-pbuf.md) | none |
+| [uip-route](mulib-uip-route.md) | none |
+| [uip-tcp-state](mulib-uip-tcp-state.md) | none |
+| [uip-timer](mulib-uip-timer.md) | none |
 | [upstream](mulib-upstream.md) | none |
 | [url](mulib-url.md) | none |
 | [utf8](mulib-utf8.md) | none |
@@ -248,12 +283,15 @@ Compatibility group: `parsec`, `peg`.
 | [vgabuffer](mulib-vgabuffer.md) | none |
 | [wave-signal](mulib-wave-signal.md) | none |
 | [weighed_edit_distane](mulib-weighed_edit_distane.md) | none |
+| [wifi-rfkill](mulib-wifi-rfkill.md) | none |
+| [wifi-security](mulib-wifi-security.md) | none |
+| [wpa-ctrl](mulib-wpa-ctrl.md) | none |
 | [xatomics](mulib-xatomics.md) | none |
 | [xsimd](mulib-xsimd.md) | none |
 | [xthreads](mulib-xthreads.md) | none |
 | [xtks](mulib-xtks.md) | none |
 
-## Stratum 1 (167 modules)
+## Stratum 1 (182 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -290,6 +328,7 @@ Compatibility group: `parsec`, `peg`.
 | [dbquery](mulib-dbquery.md) | `memtable` |
 | [dbsummary](mulib-dbsummary.md) | `memtable` |
 | [dbtransaction](mulib-dbtransaction.md) | `memtable` |
+| [dbus-transport](mulib-dbus-transport.md) | `dbus-auth` |
 | [dbus](mulib-dbus.md) | `buffer`, `endian`, `strbuf`, `utf8` |
 | [deflate](mulib-deflate.md) | `buffer` |
 | [dexcc](mulib-dexcc.md) | `adler32`, `authcrypto`, `buffer` |
@@ -351,6 +390,13 @@ Compatibility group: `parsec`, `peg`.
 | [mmdiff](mulib-mmdiff.md) | `buffer`, `vec` |
 | [mobi](mulib-mobi.md) | `buffer` |
 | [mulib](mulib-mulib.md) | `buffer`, `strbuf` |
+| [net-monitor](mulib-net-monitor.md) | `netlink` |
+| [net-reconcile](mulib-net-reconcile.md) | `net-profile`, `net-state` |
+| [netlink-async](mulib-netlink-async.md) | `netlink` |
+| [netlink-extack](mulib-netlink-extack.md) | `netlink` |
+| [netlink-genl](mulib-netlink-genl.md) | `netlink`, `netlink-attr` |
+| [netlink-schema](mulib-netlink-schema.md) | `netlink-attr` |
+| [nfnetlink](mulib-nfnetlink.md) | `netlink` |
 | [num-csc](mulib-num-csc.md) | `num-sparse` |
 | [num-csr](mulib-num-csr.md) | `num-sparse` |
 | [objectdb](mulib-objectdb.md) | `memtable` |
@@ -382,9 +428,11 @@ Compatibility group: `parsec`, `peg`.
 | [rewrite](mulib-rewrite.md) | `egraph` |
 | [rewrite_url](mulib-rewrite_url.md) | `seurity` |
 | [rf-smith](mulib-rf-smith.md) | `rf-sparams` |
+| [rtnl](mulib-rtnl.md) | `netlink` |
 | [simdmath](mulib-simdmath.md) | `linalg` |
 | [smt](mulib-smt.md) | `sat` |
 | [smtpclient](mulib-smtpclient.md) | `smtpserver` |
+| [sock-diag](mulib-sock-diag.md) | `netlink` |
 | [spice-c](mulib-spice-c.md) | `spice-stamp` |
 | [spice-independent](mulib-spice-independent.md) | `spice-stamp` |
 | [spice-netlist](mulib-spice-netlist.md) | `spice-lexer` |
@@ -407,6 +455,10 @@ Compatibility group: `parsec`, `peg`.
 | [tuntap](mulib-tuntap.md) | `abstun`, `filectl` |
 | [txtdiff](mulib-txtdiff.md) | `buffer`, `vec` |
 | [uefiutils](mulib-uefiutils.md) | `uefi` |
+| [uip-icmp](mulib-uip-icmp.md) | `uip-checksum` |
+| [uip-ipv4](mulib-uip-ipv4.md) | `uip-checksum` |
+| [uip-tcp](mulib-uip-tcp.md) | `uip-checksum` |
+| [uip-udp](mulib-uip-udp.md) | `uip-checksum` |
 | [uniproc](mulib-uniproc.md) | `dynload`, `utf8` |
 | [v2rayproto](mulib-v2rayproto.md) | `socks5` |
 | [vdev](mulib-vdev.md) | `input` |
@@ -420,12 +472,13 @@ Compatibility group: `parsec`, `peg`.
 | [wave-vcd](mulib-wave-vcd.md) | `dsim-logic4` |
 | [wayland](mulib-wayland.md) | `dynload` |
 | [weighted-edit-distance](mulib-weighted-edit-distance.md) | `weighed_edit_distane` |
+| [wifi-monitor](mulib-wifi-monitor.md) | `netlink` |
 | [wlroots](mulib-wlroots.md) | `vec` |
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 | [zstd](mulib-zstd.md) | `container-core` |
 
-## Stratum 2 (83 modules)
+## Stratum 2 (102 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -443,13 +496,17 @@ Compatibility group: `parsec`, `peg`.
 | [coffutils](mulib-coffutils.md) | `coff` |
 | [conainerd-ipc](mulib-conainerd-ipc.md) | `container`, `container-ipc` |
 | [concurrency-prim](mulib-concurrency-prim.md) | `fiber` |
+| [conntrack](mulib-conntrack.md) | `nfnetlink` |
 | [container-network](mulib-container-network.md) | `container-netdev`, `packetrules` |
 | [containerstub](mulib-containerstub.md) | `container2daemonproto`, `ocicontainer` |
 | [css](mulib-css.md) | `xml` |
+| [dbus-client](mulib-dbus-client.md) | `dbus-transport` |
+| [devlink](mulib-devlink.md) | `netlink-genl` |
 | [dfa](mulib-dfa.md) | `crc32`, `endian`, `fst` |
 | [dnsresolver](mulib-dnsresolver.md) | `dnscache`, `dnsclient` |
 | [dsdom](mulib-dsdom.md) | `xml` |
 | [elfutils](mulib-elfutils.md) | `elf` |
+| [ethtool-netlink](mulib-ethtool-netlink.md) | `netlink-genl` |
 | [evtstream](mulib-evtstream.md) | `ast` |
 | [fmt-sv](mulib-fmt-sv.md) | `hwil-module` |
 | [glr](mulib-glr.md) | `atn`, `gss`, `sppf` |
@@ -459,6 +516,7 @@ Compatibility group: `parsec`, `peg`.
 | [hwil-verify](mulib-hwil-verify.md) | `hwil-module` |
 | [ifft](mulib-ifft.md) | `fft` |
 | [imgformat](mulib-imgformat.md) | `container`, `crc32` |
+| [inet-diag](mulib-inet-diag.md) | `sock-diag` |
 | [initsys](mulib-initsys.md) | `process`, `taskdag` |
 | [latex](mulib-latex.md) | `tex` |
 | [ligature](mulib-ligature.md) | `fontshape` |
@@ -476,7 +534,11 @@ Compatibility group: `parsec`, `peg`.
 | [miniwav](mulib-miniwav.md) | `audio` |
 | [mumq](mulib-mumq.md) | `aes`, `socket` |
 | [nameserver](mulib-nameserver.md) | `dnsclient` |
+| [netfilter-log](mulib-netfilter-log.md) | `netlink-attr`, `nfnetlink` |
+| [netfilter-queue](mulib-netfilter-queue.md) | `netlink-attr`, `nfnetlink` |
 | [netfs](mulib-netfs.md) | `endian`, `fuse`, `xtks` |
+| [nftables](mulib-nftables.md) | `nfnetlink` |
+| [nl80211](mulib-nl80211.md) | `netlink`, `netlink-attr`, `netlink-genl` |
 | [oauth2](mulib-oauth2.md) | `auth`, `authcrypto` |
 | [objfileleader](mulib-objfileleader.md) | `elf` |
 | [objfilewriter](mulib-objfilewriter.md) | `binfilewriter`, `buffer`, `bycutils` |
@@ -489,6 +551,15 @@ Compatibility group: `parsec`, `peg`.
 | [peg](mulib-peg.md) | `parsec`, `strbuf` |
 | [pipeline](mulib-pipeline.md) | `parallel` |
 | [rootfs](mulib-rootfs.md) | `archive`, `vfs` |
+| [rtnl-address](mulib-rtnl-address.md) | `netlink-attr`, `rtnl` |
+| [rtnl-link](mulib-rtnl-link.md) | `rtnl` |
+| [rtnl-neighbor](mulib-rtnl-neighbor.md) | `netlink-attr`, `rtnl` |
+| [rtnl-nexthop](mulib-rtnl-nexthop.md) | `rtnl` |
+| [rtnl-nsid](mulib-rtnl-nsid.md) | `rtnl` |
+| [rtnl-qdisc](mulib-rtnl-qdisc.md) | `rtnl` |
+| [rtnl-route](mulib-rtnl-route.md) | `netlink-attr`, `rtnl` |
+| [rtnl-rule](mulib-rtnl-rule.md) | `rtnl` |
+| [rtnl-tc](mulib-rtnl-tc.md) | `rtnl` |
 | [rubybind](mulib-rubybind.md) | `pybind` |
 | [spice-ac](mulib-spice-ac.md) | `spice-netlist` |
 | [spice-measure](mulib-spice-measure.md) | `wave-measure` |
@@ -504,6 +575,7 @@ Compatibility group: `parsec`, `peg`.
 | [tui](mulib-tui.md) | `terminfo`, `termkey`, `vterm` |
 | [unibreak](mulib-unibreak.md) | `uniproc` |
 | [uniname](mulib-uniname.md) | `uniproc` |
+| [ustack](mulib-ustack.md) | `uip-arp`, `uip-arp-cache`, `uip-ethernet`, `uip-icmp`, `uip-ipv4`, `uip-udp` |
 | [virtio](mulib-virtio.md) | `vmmdev` |
 | [visitor](mulib-visitor.md) | `ast` |
 | [vmm-memory](mulib-vmm-memory.md) | `vmmdev` |
@@ -513,7 +585,7 @@ Compatibility group: `parsec`, `peg`.
 | [xtbb](mulib-xtbb.md) | `parallel` |
 | [zip](mulib-zip.md) | `crc32`, `deflate`, `utf8` |
 
-## Stratum 3 (61 modules)
+## Stratum 3 (79 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -534,6 +606,7 @@ Compatibility group: `parsec`, `peg`.
 | [containerd-cache](mulib-containerd-cache.md) | `imgformat` |
 | [containerinjector](mulib-containerinjector.md) | `rootfs` |
 | [curses](mulib-curses.md) | `termutils`, `tui` |
+| [dbus-properties](mulib-dbus-properties.md) | `dbus-client` |
 | [depir](mulib-depir.md) | `anfir`, `clickir`, `superblocks` |
 | [dnsnmeserver](mulib-dnsnmeserver.md) | `nameserver` |
 | [efi](mulib-efi.md) | `pe` |
@@ -544,6 +617,7 @@ Compatibility group: `parsec`, `peg`.
 | [hyphen](mulib-hyphen.md) | `cache`, `dfa`, `orhoconv` |
 | [image2container](mulib-image2container.md) | `imgformat`, `rootfs` |
 | [inet4](mulib-inet4.md) | `parsec` |
+| [iwd-client](mulib-iwd-client.md) | `dbus-client` |
 | [jit](mulib-jit.md) | `dyncall`, `vmweave` |
 | [json](mulib-json.md) | `parsec`, `strbuf`, `utf8` |
 | [linebreak](mulib-linebreak.md) | `unibreak` |
@@ -553,6 +627,10 @@ Compatibility group: `parsec`, `peg`.
 | [mumq-publisher](mulib-mumq-publisher.md) | `mumq` |
 | [mumq-server](mulib-mumq-server.md) | `mumq` |
 | [mumq-subscriber](mulib-mumq-subscriber.md) | `mumq` |
+| [networkd-client](mulib-networkd-client.md) | `dbus-client` |
+| [nm-connection](mulib-nm-connection.md) | `dbus-client` |
+| [nm-secret-agent](mulib-nm-secret-agent.md) | `dbus-client` |
+| [nm-wifi](mulib-nm-wifi.md) | `dbus-client` |
 | [oauth](mulib-oauth.md) | `oauth2` |
 | [objfile](mulib-objfile.md) | `binfile`, `elfutils` |
 | [objfilebuilder](mulib-objfilebuilder.md) | `objfilewriter` |
@@ -560,8 +638,15 @@ Compatibility group: `parsec`, `peg`.
 | [objfilesymloc](mulib-objfilesymloc.md) | `binfile`, `elfutils` |
 | [ocicontainervfs](mulib-ocicontainervfs.md) | `rootfs` |
 | [peutils](mulib-peutils.md) | `coffutils`, `pe` |
+| [polkit-client](mulib-polkit-client.md) | `dbus-client` |
+| [resolved-client](mulib-resolved-client.md) | `dbus-client` |
 | [rootfs-buildspec](mulib-rootfs-buildspec.md) | `container-core`, `rootfs` |
 | [rootfsbuilder](mulib-rootfsbuilder.md) | `archive`, `buffer`, `rootfs` |
+| [rtnl-bridge](mulib-rtnl-bridge.md) | `rtnl`, `rtnl-link` |
+| [rtnl-tunnel](mulib-rtnl-tunnel.md) | `rtnl`, `rtnl-link` |
+| [rtnl-veth](mulib-rtnl-veth.md) | `rtnl`, `rtnl-link` |
+| [rtnl-vlan](mulib-rtnl-vlan.md) | `rtnl`, `rtnl-link` |
+| [rtnl-vrf](mulib-rtnl-vrf.md) | `rtnl`, `rtnl-link` |
 | [shaderx](mulib-shaderx.md) | `parsec`, `strbuf` |
 | [shiraz](mulib-shiraz.md) | `pe`, `strbuf` |
 | [spellcheck](mulib-spellcheck.md) | `bktree`, `cache`, `endian`, `fst`, `utf8`, `weighted-edit-distance` |
@@ -572,14 +657,19 @@ Compatibility group: `parsec`, `peg`.
 | [tbl](mulib-tbl.md) | `csv`, `dsdom`, `tex` |
 | [termstyle](mulib-termstyle.md) | `css`, `terminfo`, `vterm` |
 | [udev](mulib-udev.md) | `parsec` |
+| [ustack-tuntap](mulib-ustack-tuntap.md) | `ustack` |
 | [vectgfx](mulib-vectgfx.md) | `glx`, `parsec`, `vec` |
 | [virtio-guest](mulib-virtio-guest.md) | `virtio` |
 | [virtio-os](mulib-virtio-os.md) | `virtio` |
 | [viterbi_decoding](mulib-viterbi_decoding.md) | `hidden_markov_chain` |
 | [vmm-host](mulib-vmm-host.md) | `virtio` |
+| [wifi-ap](mulib-wifi-ap.md) | `nl80211` |
+| [wifi-regulatory](mulib-wifi-regulatory.md) | `nl80211` |
+| [wifi-scan](mulib-wifi-scan.md) | `nl80211` |
+| [wifi-station](mulib-wifi-station.md) | `nl80211` |
 | [xtas](mulib-xtas.md) | `dsdom` |
 
-## Stratum 4 (40 modules)
+## Stratum 4 (42 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -605,6 +695,8 @@ Compatibility group: `parsec`, `peg`.
 | [messagepack](mulib-messagepack.md) | `buffer`, `json` |
 | [microcc](mulib-microcc.md) | `depir`, `isched`, `lowopt`, `machine`, `strbuf` |
 | [mune](mulib-mune.md) | `dynload`, `jit`, `parsec` |
+| [nm-client](mulib-nm-client.md) | `dbus-properties` |
+| [nm-device](mulib-nm-device.md) | `dbus-properties` |
 | [objdump](mulib-objdump.md) | `termstyle` |
 | [ocicontainermetadata](mulib-ocicontainermetadata.md) | `json`, `ocicontainer` |
 | [ocicontainernetwork](mulib-ocicontainernetwork.md) | `inet4` |

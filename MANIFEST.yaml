@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 665
-implemented_module_count: 665
+module_count: 757
+implemented_module_count: 757
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -4668,6 +4668,650 @@ modules:
   purpose: "Bounded 256-entry registry of golden fixture identifiers, input fingerprints and expected statuses."
   dependencies: []
   status: implemented
+- name: bpf-kernel
+  header: include/mulib-bpf-kernel.h
+  manual: manual/mulib-bpf-kernel.md
+  macro: MULIB_IMPL_BPF_KERNEL
+  purpose: "Invoke Linux BPF_MAP_CREATE for an ARRAY map using the kernel bpf syscall"
+  dependencies: []
+  status: implemented
+- name: classic-bpf
+  header: include/mulib-classic-bpf.h
+  manual: manual/mulib-classic-bpf.md
+  macro: MULIB_IMPL_CLASSIC_BPF
+  purpose: "Attach Linux classic socket BPF instruction arrays to an existing socket"
+  dependencies: []
+  status: implemented
+- name: conntrack
+  header: include/mulib-conntrack.h
+  manual: manual/mulib-conntrack.md
+  macro: MULIB_IMPL_CONNTRACK
+  purpose: "Dump conntrack table entries through netfilter conntrack Netlink subsystem"
+  dependencies: [nfnetlink]
+  status: implemented
+- name: dbus-auth
+  header: include/mulib-dbus-auth.h
+  manual: manual/mulib-dbus-auth.md
+  macro: MULIB_IMPL_DBUS_AUTH
+  purpose: "Authenticate to the system D-Bus socket using EXTERNAL peer credentials"
+  dependencies: []
+  status: implemented
+- name: dbus-client
+  header: include/mulib-dbus-client.h
+  manual: manual/mulib-dbus-client.md
+  macro: MULIB_IMPL_DBUS_CLIENT
+  purpose: "Minimal system D-Bus method-call client with zero, one, or two string arguments"
+  dependencies: [dbus-transport]
+  status: implemented
+- name: dbus-properties
+  header: include/mulib-dbus-properties.h
+  manual: manual/mulib-dbus-properties.md
+  macro: MULIB_IMPL_DBUS_PROPERTIES
+  purpose: "Call D-Bus Properties.Get and decode uint32 or string variant replies"
+  dependencies: [dbus-client]
+  status: implemented
+- name: dbus-transport
+  header: include/mulib-dbus-transport.h
+  manual: manual/mulib-dbus-transport.md
+  macro: MULIB_IMPL_DBUS_TRANSPORT
+  purpose: "Connect to and read/write a framed D-Bus UNIX system-bus connection"
+  dependencies: [dbus-auth]
+  status: implemented
+- name: devlink
+  header: include/mulib-devlink.h
+  manual: manual/mulib-devlink.md
+  macro: MULIB_IMPL_DEVLINK
+  purpose: "Discover the Linux devlink Generic Netlink family ID"
+  dependencies: [netlink-genl]
+  status: implemented
+- name: dhcp4-client
+  header: include/mulib-dhcp4-client.h
+  manual: manual/mulib-dhcp4-client.md
+  macro: MULIB_IMPL_DHCP4_CLIENT
+  purpose: "Build DHCPv4 DISCOVER messages and decode DHCP message type options"
+  dependencies: []
+  status: implemented
+- name: dhcp6-client
+  header: include/mulib-dhcp6-client.h
+  manual: manual/mulib-dhcp6-client.md
+  macro: MULIB_IMPL_DHCP6_CLIENT
+  purpose: "Build a DHCPv6 SOLICIT and parse a DHCPv6 option TLV"
+  dependencies: []
+  status: implemented
+- name: dns-manager
+  header: include/mulib-dns-manager.h
+  manual: manual/mulib-dns-manager.md
+  macro: MULIB_IMPL_DNS_MANAGER
+  purpose: "Read first nameserver IP literal from resolv.conf without changing system DNS"
+  dependencies: []
+  status: implemented
+- name: ethtool-features
+  header: include/mulib-ethtool-features.h
+  manual: manual/mulib-ethtool-features.md
+  macro: MULIB_IMPL_ETHTOOL_FEATURES
+  purpose: "Read an actual 32-bit block of kernel ethtool available/requested/active feature bits"
+  dependencies: []
+  status: implemented
+- name: ethtool-module
+  header: include/mulib-ethtool-module.h
+  manual: manual/mulib-ethtool-module.md
+  macro: MULIB_IMPL_ETHTOOL_MODULE
+  purpose: "Retrieve transceiver SFP/module EEPROM type and size via real ETHTOOL_GMODULEINFO ioctl"
+  dependencies: []
+  status: implemented
+- name: ethtool-netlink
+  header: include/mulib-ethtool-netlink.h
+  manual: manual/mulib-ethtool-netlink.md
+  macro: MULIB_IMPL_ETHTOOL_NETLINK
+  purpose: "Discover the Linux ethtool Generic Netlink family ID"
+  dependencies: [netlink-genl]
+  status: implemented
+- name: ethtool-stats
+  header: include/mulib-ethtool-stats.h
+  manual: manual/mulib-ethtool-stats.md
+  macro: MULIB_IMPL_ETHTOOL_STATS
+  purpose: "Read interface receive byte statistics from sysfs (not complete driver ethtool counters)"
+  dependencies: []
+  status: implemented
+- name: icmp
+  header: include/mulib-icmp.h
+  manual: manual/mulib-icmp.md
+  macro: MULIB_IMPL_ICMP
+  purpose: "Compose and verify ICMP echo packets, with ones-complement checksum"
+  dependencies: []
+  status: implemented
+- name: inet-diag
+  header: include/mulib-inet-diag.h
+  manual: manual/mulib-inet-diag.md
+  macro: MULIB_IMPL_INET_DIAG
+  purpose: "Decode a Linux inet_diag_msg reply into a concise socket record"
+  dependencies: [sock-diag]
+  status: implemented
+- name: ipv6-ndp
+  header: include/mulib-ipv6-ndp.h
+  manual: manual/mulib-ipv6-ndp.md
+  macro: MULIB_IMPL_IPV6_NDP
+  purpose: "Parse a bounded IPv6 Neighbor Solicitation or Advertisement header"
+  dependencies: []
+  status: implemented
+- name: ipv6-ra
+  header: include/mulib-ipv6-ra.h
+  manual: manual/mulib-ipv6-ra.md
+  macro: MULIB_IMPL_IPV6_RA
+  purpose: "Parse ICMPv6 Router Advertisement header and a prefix-information option"
+  dependencies: []
+  status: implemented
+- name: iwd-client
+  header: include/mulib-iwd-client.h
+  manual: manual/mulib-iwd-client.md
+  macro: MULIB_IMPL_IWD_CLIENT
+  purpose: "Read iwd object hierarchy through ObjectManager.GetManagedObjects"
+  dependencies: [dbus-client]
+  status: implemented
+- name: lldp
+  header: include/mulib-lldp.h
+  manual: manual/mulib-lldp.md
+  macro: MULIB_IMPL_LLDP
+  purpose: "Decode bounds-checked Ethernet LLDP TLVs"
+  dependencies: []
+  status: implemented
+- name: net-cap
+  header: include/mulib-net-cap.h
+  manual: manual/mulib-net-cap.md
+  macro: MULIB_IMPL_NET_CAP
+  purpose: "Inspect effective Linux capability bits without changing credentials"
+  dependencies: []
+  status: implemented
+- name: net-cli-format
+  header: include/mulib-net-cli-format.h
+  manual: manual/mulib-net-cli-format.md
+  macro: MULIB_IMPL_NET_CLI_FORMAT
+  purpose: "Format IPv4 and JSON-escaped interface names without third-party libraries"
+  dependencies: []
+  status: implemented
+- name: net-monitor
+  header: include/mulib-net-monitor.h
+  manual: manual/mulib-net-monitor.md
+  macro: MULIB_IMPL_NET_MONITOR
+  purpose: "Subscribe to link, IPv4/IPv6 address and route multicast Netlink events"
+  dependencies: [netlink]
+  status: implemented
+- name: net-profile
+  header: include/mulib-net-profile.h
+  manual: manual/mulib-net-profile.md
+  macro: MULIB_IMPL_NET_PROFILE
+  purpose: "Parse a bounded flat INI-style network profile with interface, IPv4 address and gateway fields"
+  dependencies: []
+  status: implemented
+- name: net-reconcile
+  header: include/mulib-net-reconcile.h
+  manual: manual/mulib-net-reconcile.md
+  macro: MULIB_IMPL_NET_RECONCILE
+  purpose: "Read-only desired-versus-observed interface activation comparison"
+  dependencies: [net-profile, net-state]
+  status: implemented
+- name: net-state
+  header: include/mulib-net-state.h
+  manual: manual/mulib-net-state.md
+  macro: MULIB_IMPL_NET_STATE
+  purpose: "Snapshot interface state from sysfs without modifying the network"
+  dependencies: []
+  status: implemented
+- name: net-stats
+  header: include/mulib-net-stats.h
+  manual: manual/mulib-net-stats.md
+  macro: MULIB_IMPL_NET_STATS
+  purpose: "Read rx/tx packet and byte counters from /sys/class/net/<interface>/statistics"
+  dependencies: []
+  status: implemented
+- name: netfilter-log
+  header: include/mulib-netfilter-log.h
+  manual: manual/mulib-netfilter-log.md
+  macro: MULIB_IMPL_NETFILTER_LOG
+  purpose: "Subscribe to a Linux NFLOG group with a raw NETLINK_NETFILTER socket"
+  dependencies: [netlink-attr, nfnetlink]
+  status: implemented
+- name: netfilter-queue
+  header: include/mulib-netfilter-queue.h
+  manual: manual/mulib-netfilter-queue.md
+  macro: MULIB_IMPL_NETFILTER_QUEUE
+  purpose: "Construct NFQUEUE queue-bind commands and open a bound Netfilter queue socket"
+  dependencies: [netlink-attr, nfnetlink]
+  status: implemented
+- name: netlink-async
+  header: include/mulib-netlink-async.h
+  manual: manual/mulib-netlink-async.md
+  macro: MULIB_IMPL_NETLINK_ASYNC
+  purpose: "poll-based bounded readiness and a single pending request completion primitive"
+  dependencies: [netlink]
+  status: implemented
+- name: netlink-attr
+  header: include/mulib-netlink-attr.h
+  manual: manual/mulib-netlink-attr.md
+  macro: MULIB_IMPL_NETLINK_ATTR
+  purpose: "Bounded aligned RTATTR and NLA encode/decode helpers"
+  dependencies: []
+  status: implemented
+- name: netlink-extack
+  header: include/mulib-netlink-extack.h
+  manual: manual/mulib-netlink-extack.md
+  macro: MULIB_IMPL_NETLINK_EXTACK
+  purpose: "Decode NLMSG_ERROR and kernel extended acknowledgment attributes"
+  dependencies: [netlink]
+  status: implemented
+- name: netlink-genl
+  header: include/mulib-netlink-genl.h
+  manual: manual/mulib-netlink-genl.md
+  macro: MULIB_IMPL_NETLINK_GENL
+  purpose: "Resolve Generic Netlink family IDs through the kernel control family"
+  dependencies: [netlink, netlink-attr]
+  status: implemented
+- name: netlink-schema
+  header: include/mulib-netlink-schema.h
+  manual: manual/mulib-netlink-schema.md
+  macro: MULIB_IMPL_NETLINK_SCHEMA
+  purpose: "Typed fixed-width policy checks for a collection of parsed Netlink attributes"
+  dependencies: [netlink-attr]
+  status: implemented
+- name: netlink
+  header: include/mulib-netlink.h
+  manual: manual/mulib-netlink.md
+  macro: MULIB_IMPL_NETLINK
+  purpose: "Linux NETLINK_ROUTE/Generic Netlink socket, bounded request/response transactions and message iteration"
+  dependencies: []
+  status: implemented
+- name: netns
+  header: include/mulib-netns.h
+  manual: manual/mulib-netns.md
+  macro: MULIB_IMPL_NETNS
+  purpose: "Open and enter Linux network namespaces explicitly"
+  dependencies: []
+  status: implemented
+- name: networkd-client
+  header: include/mulib-networkd-client.h
+  manual: manual/mulib-networkd-client.md
+  macro: MULIB_IMPL_NETWORKD_CLIENT
+  purpose: "Read systemd-networkd managed link list as a raw D-Bus reply"
+  dependencies: [dbus-client]
+  status: implemented
+- name: nfnetlink
+  header: include/mulib-nfnetlink.h
+  manual: manual/mulib-nfnetlink.md
+  macro: MULIB_IMPL_NFNETLINK
+  purpose: "Open Linux NETLINK_NETFILTER and send bounded netfilter messages"
+  dependencies: [netlink]
+  status: implemented
+- name: nftables
+  header: include/mulib-nftables.h
+  manual: manual/mulib-nftables.md
+  macro: MULIB_IMPL_NFTABLES
+  purpose: "Dump kernel nftables tables through NFNETLINK_SUBSYS_NFTABLES"
+  dependencies: [nfnetlink]
+  status: implemented
+- name: nl80211
+  header: include/mulib-nl80211.h
+  manual: manual/mulib-nl80211.md
+  macro: MULIB_IMPL_NL80211
+  purpose: "Generic Netlink nl80211 request helper for wireless devices"
+  dependencies: [netlink, netlink-attr, netlink-genl]
+  status: implemented
+- name: nm-client
+  header: include/mulib-nm-client.h
+  manual: manual/mulib-nm-client.md
+  macro: MULIB_IMPL_NM_CLIENT
+  purpose: "Read NetworkManager global state and device object-path reply"
+  dependencies: [dbus-properties]
+  status: implemented
+- name: nm-connection
+  header: include/mulib-nm-connection.h
+  manual: manual/mulib-nm-connection.md
+  macro: MULIB_IMPL_NM_CONNECTION
+  purpose: "List NetworkManager Settings connection object-paths as raw D-Bus frames"
+  dependencies: [dbus-client]
+  status: implemented
+- name: nm-device
+  header: include/mulib-nm-device.h
+  manual: manual/mulib-nm-device.md
+  macro: MULIB_IMPL_NM_DEVICE
+  purpose: "Read a NetworkManager device Interface string via D-Bus Properties.Get"
+  dependencies: [dbus-properties]
+  status: implemented
+- name: nm-secret-agent
+  header: include/mulib-nm-secret-agent.h
+  manual: manual/mulib-nm-secret-agent.md
+  macro: MULIB_IMPL_NM_SECRET_AGENT
+  purpose: "Explicitly unregister a NetworkManager secret agent already registered by the caller"
+  dependencies: [dbus-client]
+  status: implemented
+- name: nm-wifi
+  header: include/mulib-nm-wifi.h
+  manual: manual/mulib-nm-wifi.md
+  macro: MULIB_IMPL_NM_WIFI
+  purpose: "Query NetworkManager Wi-Fi access point object paths as raw D-Bus reply"
+  dependencies: [dbus-client]
+  status: implemented
+- name: packet-socket
+  header: include/mulib-packet-socket.h
+  manual: manual/mulib-packet-socket.md
+  macro: MULIB_IMPL_PACKET_SOCKET
+  purpose: "Open, bind, and receive Linux AF_PACKET raw Ethernet frames"
+  dependencies: []
+  status: implemented
+- name: pcap
+  header: include/mulib-pcap.h
+  manual: manual/mulib-pcap.md
+  macro: MULIB_IMPL_PCAP
+  purpose: "Write classic little-endian PCAP stream headers and timestamped capture records"
+  dependencies: []
+  status: implemented
+- name: polkit-client
+  header: include/mulib-polkit-client.h
+  manual: manual/mulib-polkit-client.md
+  macro: MULIB_IMPL_POLKIT_CLIENT
+  purpose: "Check whether the PolicyKit D-Bus service is currently registered"
+  dependencies: [dbus-client]
+  status: implemented
+- name: resolved-client
+  header: include/mulib-resolved-client.h
+  manual: manual/mulib-resolved-client.md
+  macro: MULIB_IMPL_RESOLVED_CLIENT
+  purpose: "Request systemd-resolved Manager DNS property using raw D-Bus reply"
+  dependencies: [dbus-client]
+  status: implemented
+- name: rtnl-address
+  header: include/mulib-rtnl-address.h
+  manual: manual/mulib-rtnl-address.md
+  macro: MULIB_IMPL_RTNL_ADDRESS
+  purpose: "Enumerate or assign IPv4/IPv6 interface addresses over rtnetlink"
+  dependencies: [netlink-attr, rtnl]
+  status: implemented
+- name: rtnl-bridge
+  header: include/mulib-rtnl-bridge.h
+  manual: manual/mulib-rtnl-bridge.md
+  macro: MULIB_IMPL_RTNL_BRIDGE
+  purpose: "Discover Linux bridge link-kind interfaces using RTM_GETLINK linkinfo filtering"
+  dependencies: [rtnl, rtnl-link]
+  status: implemented
+- name: rtnl-link
+  header: include/mulib-rtnl-link.h
+  manual: manual/mulib-rtnl-link.md
+  macro: MULIB_IMPL_RTNL_LINK
+  purpose: "Inspect and administratively bring interfaces up/down via RTM_NEWLINK"
+  dependencies: [rtnl]
+  status: implemented
+- name: rtnl-neighbor
+  header: include/mulib-rtnl-neighbor.h
+  manual: manual/mulib-rtnl-neighbor.md
+  macro: MULIB_IMPL_RTNL_NEIGHBOR
+  purpose: "Dump kernel ARP/NDP neighbor entries and add or remove static neighbors"
+  dependencies: [netlink-attr, rtnl]
+  status: implemented
+- name: rtnl-nexthop
+  header: include/mulib-rtnl-nexthop.h
+  manual: manual/mulib-rtnl-nexthop.md
+  macro: MULIB_IMPL_RTNL_NEXTHOP
+  purpose: "Dump kernel nexthop objects via RTM_GETNEXTHOP"
+  dependencies: [rtnl]
+  status: implemented
+- name: rtnl-nsid
+  header: include/mulib-rtnl-nsid.h
+  manual: manual/mulib-rtnl-nsid.md
+  macro: MULIB_IMPL_RTNL_NSID
+  purpose: "Dump kernel nsid objects via RTM_GETNSID"
+  dependencies: [rtnl]
+  status: implemented
+- name: rtnl-qdisc
+  header: include/mulib-rtnl-qdisc.h
+  manual: manual/mulib-rtnl-qdisc.md
+  macro: MULIB_IMPL_RTNL_QDISC
+  purpose: "Dump kernel qdisc objects via RTM_GETQDISC"
+  dependencies: [rtnl]
+  status: implemented
+- name: rtnl-route
+  header: include/mulib-rtnl-route.h
+  manual: manual/mulib-rtnl-route.md
+  macro: MULIB_IMPL_RTNL_ROUTE
+  purpose: "Query IPv4/IPv6 routing tables and add or remove an ordinary unicast route"
+  dependencies: [netlink-attr, rtnl]
+  status: implemented
+- name: rtnl-rule
+  header: include/mulib-rtnl-rule.h
+  manual: manual/mulib-rtnl-rule.md
+  macro: MULIB_IMPL_RTNL_RULE
+  purpose: "Dump kernel rule objects via RTM_GETRULE"
+  dependencies: [rtnl]
+  status: implemented
+- name: rtnl-tc
+  header: include/mulib-rtnl-tc.h
+  manual: manual/mulib-rtnl-tc.md
+  macro: MULIB_IMPL_RTNL_TC
+  purpose: "Dump kernel tc objects via RTM_GETTFILTER"
+  dependencies: [rtnl]
+  status: implemented
+- name: rtnl-tunnel
+  header: include/mulib-rtnl-tunnel.h
+  manual: manual/mulib-rtnl-tunnel.md
+  macro: MULIB_IMPL_RTNL_TUNNEL
+  purpose: "Discover Linux tunnel link-kind interfaces using RTM_GETLINK linkinfo filtering"
+  dependencies: [rtnl, rtnl-link]
+  status: implemented
+- name: rtnl-veth
+  header: include/mulib-rtnl-veth.h
+  manual: manual/mulib-rtnl-veth.md
+  macro: MULIB_IMPL_RTNL_VETH
+  purpose: "Discover Linux veth link-kind interfaces using RTM_GETLINK linkinfo filtering"
+  dependencies: [rtnl, rtnl-link]
+  status: implemented
+- name: rtnl-vlan
+  header: include/mulib-rtnl-vlan.h
+  manual: manual/mulib-rtnl-vlan.md
+  macro: MULIB_IMPL_RTNL_VLAN
+  purpose: "Discover Linux vlan link-kind interfaces using RTM_GETLINK linkinfo filtering"
+  dependencies: [rtnl, rtnl-link]
+  status: implemented
+- name: rtnl-vrf
+  header: include/mulib-rtnl-vrf.h
+  manual: manual/mulib-rtnl-vrf.md
+  macro: MULIB_IMPL_RTNL_VRF
+  purpose: "Discover Linux vrf link-kind interfaces using RTM_GETLINK linkinfo filtering"
+  dependencies: [rtnl, rtnl-link]
+  status: implemented
+- name: rtnl
+  header: include/mulib-rtnl.h
+  manual: manual/mulib-rtnl.md
+  macro: MULIB_IMPL_RTNL
+  purpose: "NETLINK_ROUTE request builder and bounded synchronous kernel dumps"
+  dependencies: [netlink]
+  status: implemented
+- name: sock-diag
+  header: include/mulib-sock-diag.h
+  manual: manual/mulib-sock-diag.md
+  macro: MULIB_IMPL_SOCK_DIAG
+  purpose: "Issue a bounded NETLINK_SOCK_DIAG inet socket dump request"
+  dependencies: [netlink]
+  status: implemented
+- name: tracepath
+  header: include/mulib-tracepath.h
+  manual: manual/mulib-tracepath.md
+  macro: MULIB_IMPL_TRACEPATH
+  purpose: "Single-hop UDP TTL probe with Linux IP_RECVERR error-queue response"
+  dependencies: []
+  status: implemented
+- name: uip-arp-cache
+  header: include/mulib-uip-arp-cache.h
+  manual: manual/mulib-uip-arp-cache.md
+  macro: MULIB_IMPL_UIP_ARP_CACHE
+  purpose: "Small time-bounded IPv4-to-MAC ARP cache with deterministic eviction"
+  dependencies: []
+  status: implemented
+- name: uip-arp
+  header: include/mulib-uip-arp.h
+  manual: manual/mulib-uip-arp.md
+  macro: MULIB_IMPL_UIP_ARP
+  purpose: "Encode/decode Ethernet IPv4 ARP request and reply packets"
+  dependencies: []
+  status: implemented
+- name: uip-checksum
+  header: include/mulib-uip-checksum.h
+  manual: manual/mulib-uip-checksum.md
+  macro: MULIB_IMPL_UIP_CHECKSUM
+  purpose: "RFC 1071 Internet checksum and IPv4 TCP/UDP pseudoheader checksum"
+  dependencies: []
+  status: implemented
+- name: uip-dns
+  header: include/mulib-uip-dns.h
+  manual: manual/mulib-uip-dns.md
+  macro: MULIB_IMPL_UIP_DNS
+  purpose: "Build DNS A queries and decode one uncompressed or compressed A answer"
+  dependencies: []
+  status: implemented
+- name: uip-ethernet
+  header: include/mulib-uip-ethernet.h
+  manual: manual/mulib-uip-ethernet.md
+  macro: MULIB_IMPL_UIP_ETHERNET
+  purpose: "Serialize and validate fixed-length Ethernet II frames"
+  dependencies: []
+  status: implemented
+- name: uip-fragment
+  header: include/mulib-uip-fragment.h
+  manual: manual/mulib-uip-fragment.md
+  macro: MULIB_IMPL_UIP_FRAGMENT
+  purpose: "One-datagram IPv4 payload reassembly with overlap rejection and bounded memory"
+  dependencies: []
+  status: implemented
+- name: uip-icmp
+  header: include/mulib-uip-icmp.h
+  manual: manual/mulib-uip-icmp.md
+  macro: MULIB_IMPL_UIP_ICMP
+  purpose: "Build verified ICMPv4 echo requests or replies for userspace IPv4"
+  dependencies: [uip-checksum]
+  status: implemented
+- name: uip-ipv4
+  header: include/mulib-uip-ipv4.h
+  manual: manual/mulib-uip-ipv4.md
+  macro: MULIB_IMPL_UIP_IPV4
+  purpose: "Build and parse verified unfragmented IPv4 packets and expose fragmentation flags"
+  dependencies: [uip-checksum]
+  status: implemented
+- name: uip-ipv6
+  header: include/mulib-uip-ipv6.h
+  manual: manual/mulib-uip-ipv6.md
+  macro: MULIB_IMPL_UIP_IPV6
+  purpose: "Build and parse basic IPv6 fixed headers without extension-header processing"
+  dependencies: []
+  status: implemented
+- name: uip-pbuf
+  header: include/mulib-uip-pbuf.h
+  manual: manual/mulib-uip-pbuf.md
+  macro: MULIB_IMPL_UIP_PBUF
+  purpose: "Owned dynamically allocated packet buffer supporting prepend and append"
+  dependencies: []
+  status: implemented
+- name: uip-route
+  header: include/mulib-uip-route.h
+  manual: manual/mulib-uip-route.md
+  macro: MULIB_IMPL_UIP_ROUTE
+  purpose: "Fixed-table longest-prefix matching for userspace IPv4 routing"
+  dependencies: []
+  status: implemented
+- name: uip-tcp-state
+  header: include/mulib-uip-tcp-state.h
+  manual: manual/mulib-uip-tcp-state.md
+  macro: MULIB_IMPL_UIP_TCP_STATE
+  purpose: "Deterministic subset TCP connection state transitions for active open/close"
+  dependencies: []
+  status: implemented
+- name: uip-tcp
+  header: include/mulib-uip-tcp.h
+  manual: manual/mulib-uip-tcp.md
+  macro: MULIB_IMPL_UIP_TCP
+  purpose: "Parse basic TCP headers and encode TCP no-option IPv4 segments with checksum"
+  dependencies: [uip-checksum]
+  status: implemented
+- name: uip-timer
+  header: include/mulib-uip-timer.h
+  manual: manual/mulib-uip-timer.md
+  macro: MULIB_IMPL_UIP_TIMER
+  purpose: "Monotonic clock helper for userspace IP ARP expiry and retransmission scheduling"
+  dependencies: []
+  status: implemented
+- name: uip-udp
+  header: include/mulib-uip-udp.h
+  manual: manual/mulib-uip-udp.md
+  macro: MULIB_IMPL_UIP_UDP
+  purpose: "Build/check IPv4 UDP datagrams with correct pseudoheader checksums"
+  dependencies: [uip-checksum]
+  status: implemented
+- name: ustack-tuntap
+  header: include/mulib-ustack-tuntap.h
+  manual: manual/mulib-ustack-tuntap.md
+  macro: MULIB_IMPL_USTACK_TUNTAP
+  purpose: "Drive userspace Ethernet stack using an existing Linux TAP descriptor"
+  dependencies: [ustack]
+  status: implemented
+- name: ustack
+  header: include/mulib-ustack.h
+  manual: manual/mulib-ustack.md
+  macro: MULIB_IMPL_USTACK
+  purpose: "Small userspace Ethernet/ARP/IPv4/ICMP echo/UDP endpoint with callback-driven I/O"
+  dependencies: [uip-arp, uip-arp-cache, uip-ethernet, uip-icmp, uip-ipv4, uip-udp]
+  status: implemented
+- name: wifi-ap
+  header: include/mulib-wifi-ap.h
+  manual: manual/mulib-wifi-ap.md
+  macro: MULIB_IMPL_WIFI_AP
+  purpose: "Request wireless ap information from nl80211 (NL80211_CMD_GET_INTERFACE)"
+  dependencies: [nl80211]
+  status: implemented
+- name: wifi-monitor
+  header: include/mulib-wifi-monitor.h
+  manual: manual/mulib-wifi-monitor.md
+  macro: MULIB_IMPL_WIFI_MONITOR
+  purpose: "Receive Linux RTMGRP_LINK notifications for wireless device state changes"
+  dependencies: [netlink]
+  status: implemented
+- name: wifi-regulatory
+  header: include/mulib-wifi-regulatory.h
+  manual: manual/mulib-wifi-regulatory.md
+  macro: MULIB_IMPL_WIFI_REGULATORY
+  purpose: "Request wireless regulatory information from nl80211 (NL80211_CMD_GET_REG)"
+  dependencies: [nl80211]
+  status: implemented
+- name: wifi-rfkill
+  header: include/mulib-wifi-rfkill.h
+  manual: manual/mulib-wifi-rfkill.md
+  macro: MULIB_IMPL_WIFI_RFKILL
+  purpose: "Read hardware and software radio block state from /dev/rfkill"
+  dependencies: []
+  status: implemented
+- name: wifi-scan
+  header: include/mulib-wifi-scan.h
+  manual: manual/mulib-wifi-scan.md
+  macro: MULIB_IMPL_WIFI_SCAN
+  purpose: "Request wireless scan information from nl80211 (NL80211_CMD_GET_SCAN)"
+  dependencies: [nl80211]
+  status: implemented
+- name: wifi-security
+  header: include/mulib-wifi-security.h
+  manual: manual/mulib-wifi-security.md
+  macro: MULIB_IMPL_WIFI_SECURITY
+  purpose: "Strict bounded WPA2 RSN information element parsing"
+  dependencies: []
+  status: implemented
+- name: wifi-station
+  header: include/mulib-wifi-station.h
+  manual: manual/mulib-wifi-station.md
+  macro: MULIB_IMPL_WIFI_STATION
+  purpose: "Request wireless station information from nl80211 (NL80211_CMD_GET_STATION)"
+  dependencies: [nl80211]
+  status: implemented
+- name: wpa-ctrl
+  header: include/mulib-wpa-ctrl.h
+  manual: manual/mulib-wpa-ctrl.md
+  macro: MULIB_IMPL_WPA_CTRL
+  purpose: "Send a single wpa_supplicant control request over an AF_UNIX datagram socket"
+  dependencies: []
+  status: implemented
 project_files:
 - file: manual/mulib-pricing-suite.md
   purpose: Combined integration, testing, numerical contracts and solver boundaries for pricing modules.
@@ -7033,3 +7677,383 @@ project_files:
   purpose: Focused EDA regression, declaration and linkage runner.
 - file: manual/AMB3R_IMPLEMENTATION_STATUS.md
   purpose: Integrated EDA implementation scope and verification report.
+- file: examples/modules/bpf-kernel.c
+  purpose: "Standalone checked usage example for bpf-kernel."
+- file: examples/modules/classic-bpf.c
+  purpose: "Standalone checked usage example for classic-bpf."
+- file: examples/modules/conntrack.c
+  purpose: "Standalone checked usage example for conntrack."
+- file: examples/modules/dbus-auth.c
+  purpose: "Standalone checked usage example for dbus-auth."
+- file: examples/modules/dbus-client.c
+  purpose: "Standalone checked usage example for dbus-client."
+- file: examples/modules/dbus-properties.c
+  purpose: "Standalone checked usage example for dbus-properties."
+- file: examples/modules/dbus-transport.c
+  purpose: "Standalone checked usage example for dbus-transport."
+- file: examples/modules/devlink.c
+  purpose: "Standalone checked usage example for devlink."
+- file: examples/modules/dhcp4-client.c
+  purpose: "Standalone checked usage example for dhcp4-client."
+- file: examples/modules/dhcp6-client.c
+  purpose: "Standalone checked usage example for dhcp6-client."
+- file: examples/modules/dns-manager.c
+  purpose: "Standalone checked usage example for dns-manager."
+- file: examples/modules/ethtool-features.c
+  purpose: "Standalone checked usage example for ethtool-features."
+- file: examples/modules/ethtool-module.c
+  purpose: "Standalone checked usage example for ethtool-module."
+- file: examples/modules/ethtool-netlink.c
+  purpose: "Standalone checked usage example for ethtool-netlink."
+- file: examples/modules/ethtool-stats.c
+  purpose: "Standalone checked usage example for ethtool-stats."
+- file: examples/modules/icmp.c
+  purpose: "Standalone checked usage example for icmp."
+- file: examples/modules/inet-diag.c
+  purpose: "Standalone checked usage example for inet-diag."
+- file: examples/modules/ipv6-ndp.c
+  purpose: "Standalone checked usage example for ipv6-ndp."
+- file: examples/modules/ipv6-ra.c
+  purpose: "Standalone checked usage example for ipv6-ra."
+- file: examples/modules/iwd-client.c
+  purpose: "Standalone checked usage example for iwd-client."
+- file: examples/modules/lldp.c
+  purpose: "Standalone checked usage example for lldp."
+- file: examples/modules/net-cap.c
+  purpose: "Standalone checked usage example for net-cap."
+- file: examples/modules/net-cli-format.c
+  purpose: "Standalone checked usage example for net-cli-format."
+- file: examples/modules/net-monitor.c
+  purpose: "Standalone checked usage example for net-monitor."
+- file: examples/modules/net-profile.c
+  purpose: "Standalone checked usage example for net-profile."
+- file: examples/modules/net-reconcile.c
+  purpose: "Standalone checked usage example for net-reconcile."
+- file: examples/modules/net-state.c
+  purpose: "Standalone checked usage example for net-state."
+- file: examples/modules/net-stats.c
+  purpose: "Standalone checked usage example for net-stats."
+- file: examples/modules/netfilter-log.c
+  purpose: "Standalone checked usage example for netfilter-log."
+- file: examples/modules/netfilter-queue.c
+  purpose: "Standalone checked usage example for netfilter-queue."
+- file: examples/modules/netlink-async.c
+  purpose: "Standalone checked usage example for netlink-async."
+- file: examples/modules/netlink-attr.c
+  purpose: "Standalone checked usage example for netlink-attr."
+- file: examples/modules/netlink-extack.c
+  purpose: "Standalone checked usage example for netlink-extack."
+- file: examples/modules/netlink-genl.c
+  purpose: "Standalone checked usage example for netlink-genl."
+- file: examples/modules/netlink-schema.c
+  purpose: "Standalone checked usage example for netlink-schema."
+- file: examples/modules/netlink.c
+  purpose: "Standalone checked usage example for netlink."
+- file: examples/modules/netns.c
+  purpose: "Standalone checked usage example for netns."
+- file: examples/modules/networkd-client.c
+  purpose: "Standalone checked usage example for networkd-client."
+- file: examples/modules/nfnetlink.c
+  purpose: "Standalone checked usage example for nfnetlink."
+- file: examples/modules/nftables.c
+  purpose: "Standalone checked usage example for nftables."
+- file: examples/modules/nl80211.c
+  purpose: "Standalone checked usage example for nl80211."
+- file: examples/modules/nm-client.c
+  purpose: "Standalone checked usage example for nm-client."
+- file: examples/modules/nm-connection.c
+  purpose: "Standalone checked usage example for nm-connection."
+- file: examples/modules/nm-device.c
+  purpose: "Standalone checked usage example for nm-device."
+- file: examples/modules/nm-secret-agent.c
+  purpose: "Standalone checked usage example for nm-secret-agent."
+- file: examples/modules/nm-wifi.c
+  purpose: "Standalone checked usage example for nm-wifi."
+- file: examples/modules/packet-socket.c
+  purpose: "Standalone checked usage example for packet-socket."
+- file: examples/modules/pcap.c
+  purpose: "Standalone checked usage example for pcap."
+- file: examples/modules/polkit-client.c
+  purpose: "Standalone checked usage example for polkit-client."
+- file: examples/modules/resolved-client.c
+  purpose: "Standalone checked usage example for resolved-client."
+- file: examples/modules/rtnl-address.c
+  purpose: "Standalone checked usage example for rtnl-address."
+- file: examples/modules/rtnl-bridge.c
+  purpose: "Standalone checked usage example for rtnl-bridge."
+- file: examples/modules/rtnl-link.c
+  purpose: "Standalone checked usage example for rtnl-link."
+- file: examples/modules/rtnl-neighbor.c
+  purpose: "Standalone checked usage example for rtnl-neighbor."
+- file: examples/modules/rtnl-nexthop.c
+  purpose: "Standalone checked usage example for rtnl-nexthop."
+- file: examples/modules/rtnl-nsid.c
+  purpose: "Standalone checked usage example for rtnl-nsid."
+- file: examples/modules/rtnl-qdisc.c
+  purpose: "Standalone checked usage example for rtnl-qdisc."
+- file: examples/modules/rtnl-route.c
+  purpose: "Standalone checked usage example for rtnl-route."
+- file: examples/modules/rtnl-rule.c
+  purpose: "Standalone checked usage example for rtnl-rule."
+- file: examples/modules/rtnl-tc.c
+  purpose: "Standalone checked usage example for rtnl-tc."
+- file: examples/modules/rtnl-tunnel.c
+  purpose: "Standalone checked usage example for rtnl-tunnel."
+- file: examples/modules/rtnl-veth.c
+  purpose: "Standalone checked usage example for rtnl-veth."
+- file: examples/modules/rtnl-vlan.c
+  purpose: "Standalone checked usage example for rtnl-vlan."
+- file: examples/modules/rtnl-vrf.c
+  purpose: "Standalone checked usage example for rtnl-vrf."
+- file: examples/modules/rtnl.c
+  purpose: "Standalone checked usage example for rtnl."
+- file: examples/modules/sock-diag.c
+  purpose: "Standalone checked usage example for sock-diag."
+- file: examples/modules/tracepath.c
+  purpose: "Standalone checked usage example for tracepath."
+- file: examples/modules/uip-arp-cache.c
+  purpose: "Standalone checked usage example for uip-arp-cache."
+- file: examples/modules/uip-arp.c
+  purpose: "Standalone checked usage example for uip-arp."
+- file: examples/modules/uip-checksum.c
+  purpose: "Standalone checked usage example for uip-checksum."
+- file: examples/modules/uip-dns.c
+  purpose: "Standalone checked usage example for uip-dns."
+- file: examples/modules/uip-ethernet.c
+  purpose: "Standalone checked usage example for uip-ethernet."
+- file: examples/modules/uip-fragment.c
+  purpose: "Standalone checked usage example for uip-fragment."
+- file: examples/modules/uip-icmp.c
+  purpose: "Standalone checked usage example for uip-icmp."
+- file: examples/modules/uip-ipv4.c
+  purpose: "Standalone checked usage example for uip-ipv4."
+- file: examples/modules/uip-ipv6.c
+  purpose: "Standalone checked usage example for uip-ipv6."
+- file: examples/modules/uip-pbuf.c
+  purpose: "Standalone checked usage example for uip-pbuf."
+- file: examples/modules/uip-route.c
+  purpose: "Standalone checked usage example for uip-route."
+- file: examples/modules/uip-tcp-state.c
+  purpose: "Standalone checked usage example for uip-tcp-state."
+- file: examples/modules/uip-tcp.c
+  purpose: "Standalone checked usage example for uip-tcp."
+- file: examples/modules/uip-timer.c
+  purpose: "Standalone checked usage example for uip-timer."
+- file: examples/modules/uip-udp.c
+  purpose: "Standalone checked usage example for uip-udp."
+- file: examples/modules/ustack-tuntap.c
+  purpose: "Standalone checked usage example for ustack-tuntap."
+- file: examples/modules/ustack.c
+  purpose: "Standalone checked usage example for ustack."
+- file: examples/modules/wifi-ap.c
+  purpose: "Standalone checked usage example for wifi-ap."
+- file: examples/modules/wifi-monitor.c
+  purpose: "Standalone checked usage example for wifi-monitor."
+- file: examples/modules/wifi-regulatory.c
+  purpose: "Standalone checked usage example for wifi-regulatory."
+- file: examples/modules/wifi-rfkill.c
+  purpose: "Standalone checked usage example for wifi-rfkill."
+- file: examples/modules/wifi-scan.c
+  purpose: "Standalone checked usage example for wifi-scan."
+- file: examples/modules/wifi-security.c
+  purpose: "Standalone checked usage example for wifi-security."
+- file: examples/modules/wifi-station.c
+  purpose: "Standalone checked usage example for wifi-station."
+- file: examples/modules/wpa-ctrl.c
+  purpose: "Standalone checked usage example for wpa-ctrl."
+- file: tests/test_bpf-kernel.c
+  purpose: "Focused regression suite for test_bpf-kernel."
+- file: tests/test_classic-bpf.c
+  purpose: "Focused regression suite for test_classic-bpf."
+- file: tests/test_conntrack.c
+  purpose: "Focused regression suite for test_conntrack."
+- file: tests/test_dbus-auth.c
+  purpose: "Focused regression suite for test_dbus-auth."
+- file: tests/test_dbus-client.c
+  purpose: "Focused regression suite for test_dbus-client."
+- file: tests/test_dbus-properties.c
+  purpose: "Focused regression suite for test_dbus-properties."
+- file: tests/test_dbus-transport.c
+  purpose: "Focused regression suite for test_dbus-transport."
+- file: tests/test_dbus_wire.c
+  purpose: "Focused regression suite for test_dbus_wire."
+- file: tests/test_devlink.c
+  purpose: "Focused regression suite for test_devlink."
+- file: tests/test_dhcp4-client.c
+  purpose: "Focused regression suite for test_dhcp4-client."
+- file: tests/test_dhcp6-client.c
+  purpose: "Focused regression suite for test_dhcp6-client."
+- file: tests/test_dns-manager.c
+  purpose: "Focused regression suite for test_dns-manager."
+- file: tests/test_ethtool-features.c
+  purpose: "Focused regression suite for test_ethtool-features."
+- file: tests/test_ethtool-module.c
+  purpose: "Focused regression suite for test_ethtool-module."
+- file: tests/test_ethtool-netlink.c
+  purpose: "Focused regression suite for test_ethtool-netlink."
+- file: tests/test_ethtool-stats.c
+  purpose: "Focused regression suite for test_ethtool-stats."
+- file: tests/test_icmp.c
+  purpose: "Focused regression suite for test_icmp."
+- file: tests/test_inet-diag.c
+  purpose: "Focused regression suite for test_inet-diag."
+- file: tests/test_ipv6-ndp.c
+  purpose: "Focused regression suite for test_ipv6-ndp."
+- file: tests/test_ipv6-ra.c
+  purpose: "Focused regression suite for test_ipv6-ra."
+- file: tests/test_iwd-client.c
+  purpose: "Focused regression suite for test_iwd-client."
+- file: tests/test_lldp.c
+  purpose: "Focused regression suite for test_lldp."
+- file: tests/test_malformed_packets.c
+  purpose: "Focused regression suite for test_malformed_packets."
+- file: tests/test_net-cap.c
+  purpose: "Focused regression suite for test_net-cap."
+- file: tests/test_net-cli-format.c
+  purpose: "Focused regression suite for test_net-cli-format."
+- file: tests/test_net-monitor.c
+  purpose: "Focused regression suite for test_net-monitor."
+- file: tests/test_net-profile.c
+  purpose: "Focused regression suite for test_net-profile."
+- file: tests/test_net-reconcile.c
+  purpose: "Focused regression suite for test_net-reconcile."
+- file: tests/test_net-state.c
+  purpose: "Focused regression suite for test_net-state."
+- file: tests/test_net-stats.c
+  purpose: "Focused regression suite for test_net-stats."
+- file: tests/test_netfilter-log.c
+  purpose: "Focused regression suite for test_netfilter-log."
+- file: tests/test_netfilter-queue.c
+  purpose: "Focused regression suite for test_netfilter-queue."
+- file: tests/test_netlink-async.c
+  purpose: "Focused regression suite for test_netlink-async."
+- file: tests/test_netlink-attr.c
+  purpose: "Focused regression suite for test_netlink-attr."
+- file: tests/test_netlink-extack.c
+  purpose: "Focused regression suite for test_netlink-extack."
+- file: tests/test_netlink-genl.c
+  purpose: "Focused regression suite for test_netlink-genl."
+- file: tests/test_netlink-schema.c
+  purpose: "Focused regression suite for test_netlink-schema."
+- file: tests/test_netlink.c
+  purpose: "Focused regression suite for test_netlink."
+- file: tests/test_netlink_transactions.c
+  purpose: "Focused regression suite for test_netlink_transactions."
+- file: tests/test_netns.c
+  purpose: "Focused regression suite for test_netns."
+- file: tests/test_network_hardening.c
+  purpose: "Focused regression suite for test_network_hardening."
+- file: tests/test_networkd-client.c
+  purpose: "Focused regression suite for test_networkd-client."
+- file: tests/test_nfnetlink.c
+  purpose: "Focused regression suite for test_nfnetlink."
+- file: tests/test_nftables.c
+  purpose: "Focused regression suite for test_nftables."
+- file: tests/test_nl80211.c
+  purpose: "Focused regression suite for test_nl80211."
+- file: tests/test_nm-client.c
+  purpose: "Focused regression suite for test_nm-client."
+- file: tests/test_nm-connection.c
+  purpose: "Focused regression suite for test_nm-connection."
+- file: tests/test_nm-device.c
+  purpose: "Focused regression suite for test_nm-device."
+- file: tests/test_nm-secret-agent.c
+  purpose: "Focused regression suite for test_nm-secret-agent."
+- file: tests/test_nm-wifi.c
+  purpose: "Focused regression suite for test_nm-wifi."
+- file: tests/test_packet-socket.c
+  purpose: "Focused regression suite for test_packet-socket."
+- file: tests/test_pcap.c
+  purpose: "Focused regression suite for test_pcap."
+- file: tests/test_polkit-client.c
+  purpose: "Focused regression suite for test_polkit-client."
+- file: tests/test_resolved-client.c
+  purpose: "Focused regression suite for test_resolved-client."
+- file: tests/test_rtnl-address.c
+  purpose: "Focused regression suite for test_rtnl-address."
+- file: tests/test_rtnl-bridge.c
+  purpose: "Focused regression suite for test_rtnl-bridge."
+- file: tests/test_rtnl-link.c
+  purpose: "Focused regression suite for test_rtnl-link."
+- file: tests/test_rtnl-neighbor.c
+  purpose: "Focused regression suite for test_rtnl-neighbor."
+- file: tests/test_rtnl-nexthop.c
+  purpose: "Focused regression suite for test_rtnl-nexthop."
+- file: tests/test_rtnl-nsid.c
+  purpose: "Focused regression suite for test_rtnl-nsid."
+- file: tests/test_rtnl-qdisc.c
+  purpose: "Focused regression suite for test_rtnl-qdisc."
+- file: tests/test_rtnl-route.c
+  purpose: "Focused regression suite for test_rtnl-route."
+- file: tests/test_rtnl-rule.c
+  purpose: "Focused regression suite for test_rtnl-rule."
+- file: tests/test_rtnl-tc.c
+  purpose: "Focused regression suite for test_rtnl-tc."
+- file: tests/test_rtnl-tunnel.c
+  purpose: "Focused regression suite for test_rtnl-tunnel."
+- file: tests/test_rtnl-veth.c
+  purpose: "Focused regression suite for test_rtnl-veth."
+- file: tests/test_rtnl-vlan.c
+  purpose: "Focused regression suite for test_rtnl-vlan."
+- file: tests/test_rtnl-vrf.c
+  purpose: "Focused regression suite for test_rtnl-vrf."
+- file: tests/test_rtnl.c
+  purpose: "Focused regression suite for test_rtnl."
+- file: tests/test_sock-diag.c
+  purpose: "Focused regression suite for test_sock-diag."
+- file: tests/test_stack_datapath.c
+  purpose: "Focused regression suite for test_stack_datapath."
+- file: tests/test_tracepath.c
+  purpose: "Focused regression suite for test_tracepath."
+- file: tests/test_uip-arp-cache.c
+  purpose: "Focused regression suite for test_uip-arp-cache."
+- file: tests/test_uip-arp.c
+  purpose: "Focused regression suite for test_uip-arp."
+- file: tests/test_uip-checksum.c
+  purpose: "Focused regression suite for test_uip-checksum."
+- file: tests/test_uip-dns.c
+  purpose: "Focused regression suite for test_uip-dns."
+- file: tests/test_uip-ethernet.c
+  purpose: "Focused regression suite for test_uip-ethernet."
+- file: tests/test_uip-fragment.c
+  purpose: "Focused regression suite for test_uip-fragment."
+- file: tests/test_uip-icmp.c
+  purpose: "Focused regression suite for test_uip-icmp."
+- file: tests/test_uip-ipv4.c
+  purpose: "Focused regression suite for test_uip-ipv4."
+- file: tests/test_uip-ipv6.c
+  purpose: "Focused regression suite for test_uip-ipv6."
+- file: tests/test_uip-pbuf.c
+  purpose: "Focused regression suite for test_uip-pbuf."
+- file: tests/test_uip-route.c
+  purpose: "Focused regression suite for test_uip-route."
+- file: tests/test_uip-tcp-state.c
+  purpose: "Focused regression suite for test_uip-tcp-state."
+- file: tests/test_uip-tcp.c
+  purpose: "Focused regression suite for test_uip-tcp."
+- file: tests/test_uip-timer.c
+  purpose: "Focused regression suite for test_uip-timer."
+- file: tests/test_uip-udp.c
+  purpose: "Focused regression suite for test_uip-udp."
+- file: tests/test_ustack-tuntap.c
+  purpose: "Focused regression suite for test_ustack-tuntap."
+- file: tests/test_ustack.c
+  purpose: "Focused regression suite for test_ustack."
+- file: tests/test_wifi-ap.c
+  purpose: "Focused regression suite for test_wifi-ap."
+- file: tests/test_wifi-monitor.c
+  purpose: "Focused regression suite for test_wifi-monitor."
+- file: tests/test_wifi-regulatory.c
+  purpose: "Focused regression suite for test_wifi-regulatory."
+- file: tests/test_wifi-rfkill.c
+  purpose: "Focused regression suite for test_wifi-rfkill."
+- file: tests/test_wifi-scan.c
+  purpose: "Focused regression suite for test_wifi-scan."
+- file: tests/test_wifi-security.c
+  purpose: "Focused regression suite for test_wifi-security."
+- file: tests/test_wifi-station.c
+  purpose: "Focused regression suite for test_wifi-station."
+- file: tests/test_wpa-ctrl.c
+  purpose: "Focused regression suite for test_wpa-ctrl."
+- file: tests/test_network_include_order.c
+  purpose: "Focused regression suite for test_network_include_order."

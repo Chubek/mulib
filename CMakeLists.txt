@@ -177,6 +177,15 @@ if(MULIB_BUILD_TESTS)
   check_language(CXX)
   if(CMAKE_CXX_COMPILER)
     enable_language(CXX)
+    add_library(mulib_network_implementation OBJECT tests/cpp_impl.c)
+    mulib_test_executable(mulib_network_implementation)
+    add_executable(mulib_test_network_cpp tests/cpp_consumer.cpp
+      $<TARGET_OBJECTS:mulib_network_implementation>)
+    set_target_properties(mulib_test_network_cpp PROPERTIES
+      CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS NO)
+    mulib_test_executable(mulib_test_network_cpp)
+    mulib_register_test(mulib_test_network_cpp)
+
     add_library(mulib_pricing_implementation OBJECT tests/price_implementations.c)
     mulib_test_executable(mulib_pricing_implementation)
     add_executable(mulib_test_pricing_cpp tests/test_pricing_cpp.cpp
