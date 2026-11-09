@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 761 headers, 842 direct dependency edges.
+Inventory: 795 headers, 845 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (271 modules)
+## Stratum 0 (302 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -41,9 +41,16 @@ Compatibility group: `parsec`, `peg`.
 | [bloom](mulib-bloom.md) | none |
 | [bounds](mulib-bounds.md) | none |
 | [bpf-kernel](mulib-bpf-kernel.md) | none |
+| [browsercontext](mulib-browsercontext.md) | none |
+| [browserlocator](mulib-browserlocator.md) | none |
+| [browserscreenshot](mulib-browserscreenshot.md) | none |
+| [browsersnapshot](mulib-browsersnapshot.md) | none |
+| [browsertrace](mulib-browsertrace.md) | none |
+| [browserwait](mulib-browserwait.md) | none |
 | [buffer](mulib-buffer.md) | none |
 | [bycutils](mulib-bycutils.md) | none |
 | [cassowary-solver](mulib-cassowary-solver.md) | none |
+| [charset](mulib-charset.md) | none |
 | [clamp](mulib-clamp.md) | none |
 | [classic-bpf](mulib-classic-bpf.md) | none |
 | [color](mulib-color.md) | none |
@@ -51,8 +58,11 @@ Compatibility group: `parsec`, `peg`.
 | [complex](mulib-complex.md) | none |
 | [conditional_probablity](mulib-conditional_probablity.md) | none |
 | [container-core](mulib-container-core.md) | none |
+| [cookie](mulib-cookie.md) | none |
+| [cookiejar](mulib-cookiejar.md) | none |
 | [cosine_similarity](mulib-cosine_similarity.md) | none |
 | [cpio](mulib-cpio.md) | none |
+| [crawlqueue](mulib-crawlqueue.md) | none |
 | [crc32](mulib-crc32.md) | none |
 | [cron](mulib-cron.md) | none |
 | [csv](mulib-csv.md) | none |
@@ -67,6 +77,7 @@ Compatibility group: `parsec`, `peg`.
 | [distfield](mulib-distfield.md) | none |
 | [dns-manager](mulib-dns-manager.md) | none |
 | [dns](mulib-dns.md) | none |
+| [domserialize](mulib-domserialize.md) | none |
 | [drm](mulib-drm.md) | none |
 | [dsim-logic4](mulib-dsim-logic4.md) | none |
 | [dsu](mulib-dsu.md) | none |
@@ -172,6 +183,7 @@ Compatibility group: `parsec`, `peg`.
 | [movingavg](mulib-movingavg.md) | none |
 | [mqueue](mulib-mqueue.md) | none |
 | [muburg](mulib-muburg.md) | none |
+| [multipart](mulib-multipart.md) | none |
 | [n-grams](mulib-n-grams.md) | none |
 | [net-cap](mulib-net-cap.md) | none |
 | [net-cli-format](mulib-net-cli-format.md) | none |
@@ -215,6 +227,7 @@ Compatibility group: `parsec`, `peg`.
 | [qa-repro](mulib-qa-repro.md) | none |
 | [queue](mulib-queue.md) | none |
 | [rate_limit](mulib-rate_limit.md) | none |
+| [redirect](mulib-redirect.md) | none |
 | [regex](mulib-regex.md) | none |
 | [replace](mulib-replace.md) | none |
 | [rf-microstrip](mulib-rf-microstrip.md) | none |
@@ -222,9 +235,19 @@ Compatibility group: `parsec`, `peg`.
 | [ring](mulib-ring.md) | none |
 | [rle](mulib-rle.md) | none |
 | [rng](mulib-rng.md) | none |
+| [robots](mulib-robots.md) | none |
 | [roman](mulib-roman.md) | none |
 | [sat](mulib-sat.md) | none |
 | [schedutils](mulib-schedutils.md) | none |
+| [scrape-metadata](mulib-scrape-metadata.md) | none |
+| [scrape-readable](mulib-scrape-readable.md) | none |
+| [scrape-rule](mulib-scrape-rule.md) | none |
+| [scrape-schema](mulib-scrape-schema.md) | none |
+| [scrape-table](mulib-scrape-table.md) | none |
+| [search-query](mulib-search-query.md) | none |
+| [search-rank](mulib-search-rank.md) | none |
+| [search-serp](mulib-search-serp.md) | none |
+| [search-session](mulib-search-session.md) | none |
 | [search](mulib-search.md) | none |
 | [select](mulib-select.md) | none |
 | [semver](mulib-semver.md) | none |
@@ -235,6 +258,7 @@ Compatibility group: `parsec`, `peg`.
 | [shm](mulib-shm.md) | none |
 | [shoebox-contract](mulib-shoebox-contract.md) | none |
 | [signal](mulib-signal.md) | none |
+| [sitemap](mulib-sitemap.md) | none |
 | [smtpserver](mulib-smtpserver.md) | none |
 | [soc-memorymap](mulib-soc-memorymap.md) | none |
 | [socket](mulib-socket.md) | none |
@@ -273,6 +297,7 @@ Compatibility group: `parsec`, `peg`.
 | [uip-timer](mulib-uip-timer.md) | none |
 | [upstream](mulib-upstream.md) | none |
 | [url](mulib-url.md) | none |
+| [urlcanon](mulib-urlcanon.md) | none |
 | [utf8](mulib-utf8.md) | none |
 | [uuid](mulib-uuid.md) | none |
 | [vangage_point_trees](mulib-vangage_point_trees.md) | none |
@@ -282,6 +307,12 @@ Compatibility group: `parsec`, `peg`.
 | [vfs](mulib-vfs.md) | none |
 | [vgabuffer](mulib-vgabuffer.md) | none |
 | [wave-signal](mulib-wave-signal.md) | none |
+| [webarchive](mulib-webarchive.md) | none |
+| [webextract](mulib-webextract.md) | none |
+| [webratelimit](mulib-webratelimit.md) | none |
+| [websearch](mulib-websearch.md) | none |
+| [webstorage](mulib-webstorage.md) | none |
+| [webtimers](mulib-webtimers.md) | none |
 | [weighed_edit_distane](mulib-weighed_edit_distane.md) | none |
 | [wifi-rfkill](mulib-wifi-rfkill.md) | none |
 | [wifi-security](mulib-wifi-security.md) | none |
@@ -291,7 +322,7 @@ Compatibility group: `parsec`, `peg`.
 | [xthreads](mulib-xthreads.md) | none |
 | [xtks](mulib-xtks.md) | none |
 
-## Stratum 1 (182 modules)
+## Stratum 1 (185 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -396,6 +427,7 @@ Compatibility group: `parsec`, `peg`.
 | [netlink-extack](mulib-netlink-extack.md) | `netlink` |
 | [netlink-genl](mulib-netlink-genl.md) | `netlink`, `netlink-attr` |
 | [netlink-schema](mulib-netlink-schema.md) | `netlink-attr` |
+| [netpolicy](mulib-netpolicy.md) | `urlcanon` |
 | [nfnetlink](mulib-nfnetlink.md) | `netlink` |
 | [num-csc](mulib-num-csc.md) | `num-sparse` |
 | [num-csr](mulib-num-csr.md) | `num-sparse` |
@@ -429,6 +461,7 @@ Compatibility group: `parsec`, `peg`.
 | [rewrite_url](mulib-rewrite_url.md) | `seurity` |
 | [rf-smith](mulib-rf-smith.md) | `rf-sparams` |
 | [rtnl](mulib-rtnl.md) | `netlink` |
+| [scrape](mulib-scrape.md) | `scrape-readable` |
 | [simdmath](mulib-simdmath.md) | `linalg` |
 | [smt](mulib-smt.md) | `sat` |
 | [smtpclient](mulib-smtpclient.md) | `smtpserver` |
@@ -471,6 +504,7 @@ Compatibility group: `parsec`, `peg`.
 | [wave-measure](mulib-wave-measure.md) | `wave-signal` |
 | [wave-vcd](mulib-wave-vcd.md) | `dsim-logic4` |
 | [wayland](mulib-wayland.md) | `dynload` |
+| [weblocation](mulib-weblocation.md) | `urlcanon` |
 | [weighted-edit-distance](mulib-weighted-edit-distance.md) | `weighed_edit_distane` |
 | [wifi-monitor](mulib-wifi-monitor.md) | `netlink` |
 | [wlroots](mulib-wlroots.md) | `vec` |

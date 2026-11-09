@@ -1,54 +1,39 @@
-# MIME lookup
+# MIME lookup and Content-Type normalization
 
-[Manuals](README.md) · [Library index](index.md)
+[MuLIB repository](https://github.com/Chubek/mulib)
 
-Define `MULIB_IMPL_MIME` and `SECURITY`. Case-insensitive filename extensions
-select static MIME strings. Unknown/missing extensions return
-application/octet-stream. No content sniffing or allocation.
-[Example](../examples/modules/mime.c), [contracts](storage-server.md).
+## Scope
 
-## Lookup contract
+Case-insensitive filename-extension lookup and bounded HTTP Content-Type normalization. No content sniffing, encoding detection or allocation.
 
-`mulib_mime_type(filename)` returns a static immutable string; never free it.
-It compares the final filename extension case-insensitively, resetting extension
-tracking at either `/` or `\`. NULL, missing extensions, and unknown extensions
-return `application/octet-stream`. There is no allocation or content inspection.
+## Integration
 
-The built-in table covers html/htm, css, js, json, txt, svg, png, jpg/jpeg, gif,
-ico, pdf, wasm, and xml. HTML, CSS, JavaScript, and plain-text results include
-`charset=utf-8`; the function does not validate that the file actually uses UTF-8.
-Pass a filename rather than a URL with a query or fragment.
+Define `MULIB_IMPL_MIME` and `MULIB_IMPL_SECURITY` in exactly one C11 translation unit. Include `mulib-mime.h` normally elsewhere. See [storage/server contracts](storage-server.md).
 
-<!-- manual-interface -->
-## Public header reference
+## Build and test
 
-Verbatim declaration section from [`include/mulib-mime.h`](../include/mulib-mime.h).
-Include the header in application code; dependency types come from its includes.
-
-<details>
-<summary>Types, constants, and declarations</summary>
-
-```c
-/** @file mulib-mime.h
- * @brief Case-insensitive filename-extension MIME lookup; no content sniffing.
- * Define MULIB_IMPL_MIME and SECURITY. Returned strings have static lifetime.
- */
-#ifndef MULIB_MIME_H
-#define MULIB_MIME_H
-#include "mulib-seurity.h"
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-  const char *mulib_mime_type (const char *filename);
-#ifdef __cplusplus
-}
-#endif
-#endif
+```sh
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-mime.c -o /tmp/test-mime
+/tmp/test-mime
+cc -std=c11 -Wall -Wextra -Iinclude examples/modules/mime.c -o /tmp/example-mime
 ```
 
-</details>
-<!-- /manual-interface -->
+## API
+
+```c
+const char *mulib_mime_type(const char *filename);
+int mulib_mime_content_type(const char *header,char *out,size_t cap);
+```
+
+## Safety and ownership
+
+`mulib_mime_type(filename)` retains the existing filename API. It returns a static immutable MIME string; never free it. NULL, unknown/missing extensions and directory-only extensions return `application/octet-stream`. Both slash styles reset extension tracking. The table covers html/htm, css, js, json, txt, svg, png, jpg/jpeg, gif, ico, pdf, wasm and xml. HTML/CSS/JS/plain text include `charset=utf-8` without validating file bytes. Pass a filename, not a URL with query/fragment.
+
+`mulib_mime_content_type` copies lowercase HTTP `token/token`, excluding parameters. Both components must be nonempty, with exactly one slash and no embedded whitespace. Optional leading/trailing horizontal whitespace is accepted; trailing junk and controls are rejected. Parameters after `;` are not parsed (use [charset](mulib-charset.md) for charset extraction). Returns 1 success, 0 invalid/too small with output unchanged. Capacity includes NUL; input/output must not overlap.
+
+## Limitations
+
+This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScript compliance. For dynamic page execution use MuLIB Prowse with an external browser pending a native ECMAScript/Web API runtime.
 
 <!-- manual-reference -->
 ## Source and build reference

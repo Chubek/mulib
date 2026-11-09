@@ -159,7 +159,8 @@ if(MULIB_BUILD_TESTS)
   mulib_test_executable(mulib_declarations)
   mulib_register_test(mulib_declarations)
 
-  file(GLOB focused_tests CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_*.c")
+  file(GLOB focused_tests CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_*.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test-*.c")
   foreach(source_file IN LISTS focused_tests)
     get_filename_component(test_name "${source_file}" NAME_WE)
     add_executable("mulib_${test_name}" "${source_file}")

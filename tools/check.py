@@ -322,7 +322,8 @@ def main():
         for category, sources in [
             ('module examples', sorted((root / 'examples/modules').glob('*.c'))),
             ('composition examples', sorted((root / 'examples').glob('*.c'))),
-            ('focused tests', sorted((root / 'tests').glob('test_*.c'))),
+            ('focused tests', sorted((root / 'tests').glob('test_*.c'))
+             + sorted((root / 'tests').glob('test-*.c'))),
         ]:
             passed = check_many([dict(label=str(p.relative_to(root)), sources=[p]) for p in sources])
             counts[category] = (passed, len(sources))

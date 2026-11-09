@@ -89,7 +89,8 @@ def sync(root):
     candidates = [(p, 'Standalone checked usage example for ' + p.stem + '.')
                   for p in sorted((root / 'examples/modules').glob('*.c'))]
     candidates += [(p, 'Focused regression suite for ' + p.stem + '.')
-                   for p in sorted((root / 'tests').glob('test_*.c'))]
+                   for p in sorted((root / 'tests').glob('test_*.c'))
+                   + sorted((root / 'tests').glob('test-*.c'))]
     candidates += [(root / 'tools/sync_inventory.py', 'Additive header inventory and combined-test synchronization.'),
                    (root / 'manual/extension-layers.md', 'Shared storage, binary, document and container contracts and limits.')]
     for path, purpose in candidates:

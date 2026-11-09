@@ -57,7 +57,13 @@
     "mulib-bootmgr.h",
     "mulib-bounds.h",
     "mulib-bpf-kernel.h",
+    "mulib-browsercontext.h",
+    "mulib-browserlocator.h",
+    "mulib-browserscreenshot.h",
+    "mulib-browsersnapshot.h",
     "mulib-browsertools.h",
+    "mulib-browsertrace.h",
+    "mulib-browserwait.h",
     "mulib-bson.h",
     "mulib-buffer.h",
     "mulib-buildgraph.h",
@@ -69,6 +75,7 @@
     "mulib-ccweave.h",
     "mulib-cgeom.h",
     "mulib-channel.h",
+    "mulib-charset.h",
     "mulib-chart.h",
     "mulib-chem.h",
     "mulib-clamp.h",
@@ -119,10 +126,13 @@
     "mulib-containerserverd.h",
     "mulib-containerstub.h",
     "mulib-containterpool.h",
+    "mulib-cookie.h",
+    "mulib-cookiejar.h",
     "mulib-corpus.h",
     "mulib-cosine_similarity.h",
     "mulib-cowb+tree.h",
     "mulib-cpio.h",
+    "mulib-crawlqueue.h",
     "mulib-crc32.h",
     "mulib-cron.h",
     "mulib-css.h",
@@ -167,6 +177,7 @@
     "mulib-docstring.h",
     "mulib-documentdb.h",
     "mulib-dom.h",
+    "mulib-domserialize.h",
     "mulib-drm.h",
     "mulib-dsdom.h",
     "mulib-dsim-bitvec.h",
@@ -407,6 +418,7 @@
     "mulib-muburg.h",
     "mulib-muidl.h",
     "mulib-mulib.h",
+    "mulib-multipart.h",
     "mulib-mumq-publisher.h",
     "mulib-mumq-server.h",
     "mulib-mumq-subscriber.h",
@@ -432,6 +444,7 @@
     "mulib-netlink-schema.h",
     "mulib-netlink.h",
     "mulib-netns.h",
+    "mulib-netpolicy.h",
     "mulib-networkd-client.h",
     "mulib-nfnetlink.h",
     "mulib-nftables.h",
@@ -540,6 +553,7 @@
     "mulib-rate_limit.h",
     "mulib-raytracing.h",
     "mulib-readline.h",
+    "mulib-redirect.h",
     "mulib-regex.h",
     "mulib-replace.h",
     "mulib-resolved-client.h",
@@ -553,6 +567,7 @@
     "mulib-riscv64.h",
     "mulib-rle.h",
     "mulib-rng.h",
+    "mulib-robots.h",
     "mulib-roman.h",
     "mulib-rootfs-buildspec.h",
     "mulib-rootfs.h",
@@ -577,6 +592,16 @@
     "mulib-rubybind.h",
     "mulib-sat.h",
     "mulib-schedutils.h",
+    "mulib-scrape-metadata.h",
+    "mulib-scrape-readable.h",
+    "mulib-scrape-rule.h",
+    "mulib-scrape-schema.h",
+    "mulib-scrape-table.h",
+    "mulib-scrape.h",
+    "mulib-search-query.h",
+    "mulib-search-rank.h",
+    "mulib-search-serp.h",
+    "mulib-search-session.h",
     "mulib-search.h",
     "mulib-select.h",
     "mulib-semver.h",
@@ -590,6 +615,7 @@
     "mulib-shoebox-contract.h",
     "mulib-signal.h",
     "mulib-simdmath.h",
+    "mulib-sitemap.h",
     "mulib-smt.h",
     "mulib-smtpclient.h",
     "mulib-smtpserver.h",
@@ -688,6 +714,7 @@
     "mulib-upstream.h",
     "mulib-uri.h",
     "mulib-url.h",
+    "mulib-urlcanon.h",
     "mulib-ustack-tuntap.h",
     "mulib-ustack.h",
     "mulib-utf8.h",
@@ -730,9 +757,16 @@
     "mulib-wave-vcd.h",
     "mulib-wayland.h",
     "mulib-web_conntection.h",
+    "mulib-webarchive.h",
     "mulib-webclient.h",
+    "mulib-webextract.h",
     "mulib-webframework.h",
     "mulib-webidl.h",
+    "mulib-weblocation.h",
+    "mulib-webratelimit.h",
+    "mulib-websearch.h",
+    "mulib-webstorage.h",
+    "mulib-webtimers.h",
     "mulib-weighed_edit_distane.h",
     "mulib-weighted-edit-distance.h",
     "mulib-wifi-ap.h",
@@ -762,10 +796,10 @@
     "mulib-zip.h",
     "mulib-zstd.h"
   ],
-  "libraries": 761,
-  "functions": 3667,
-  "types": 6136,
-  "constants": 2154,
+  "libraries": 795,
+  "functions": 3720,
+  "types": 6215,
+  "constants": 2160,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -807,7 +841,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "9297fc8aba5fff23b8d4f7639901b0fa9c14cd5b7c1fb538ab6ac1df524560bb",
+  "fingerprint": "cc5b61a8d82d7dfba8c32e33e61b30b9febd32e1dbcaabcb3d52f05fbc34c85b",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -1411,6 +1445,32 @@
         "mulib_bpf_kernel_array_map"
       ]
     },
+    "browsercontext": {
+      "header": "mulib-browsercontext.h",
+      "functions": [
+        "mulib_browsercontext_init"
+      ]
+    },
+    "browserlocator": {
+      "header": "mulib-browserlocator.h",
+      "functions": [
+        "mulib_browserlocator_init",
+        "mulib_browserlocator_free"
+      ]
+    },
+    "browserscreenshot": {
+      "header": "mulib-browserscreenshot.h",
+      "functions": [
+        "mulib_browserscreenshot_size"
+      ]
+    },
+    "browsersnapshot": {
+      "header": "mulib-browsersnapshot.h",
+      "functions": [
+        "mulib_browsersnapshot_create",
+        "mulib_browsersnapshot_free"
+      ]
+    },
     "browsertools": {
       "header": "mulib-browsertools.h",
       "functions": [
@@ -1424,6 +1484,20 @@
         "mulib_browsertools_navigate",
         "mulib_browsertools_evaluate",
         "mulib_browsertools_targets"
+      ]
+    },
+    "browsertrace": {
+      "header": "mulib-browsertrace.h",
+      "functions": [
+        "mulib_browsertrace_push",
+        "mulib_browsertrace_get"
+      ]
+    },
+    "browserwait": {
+      "header": "mulib-browserwait.h",
+      "functions": [
+        "mulib_browserwait_init",
+        "mulib_browserwait_poll"
       ]
     },
     "bson": {
@@ -1560,6 +1634,12 @@
         "mulib_channel_send_case",
         "mulib_channel_receive_case",
         "mulib_channel_select"
+      ]
+    },
+    "charset": {
+      "header": "mulib-charset.h",
+      "functions": [
+        "mulib_charset_extract"
       ]
     },
     "chart": {
@@ -2072,6 +2152,20 @@
         "mulib_containterpool_tick"
       ]
     },
+    "cookie": {
+      "header": "mulib-cookie.h",
+      "functions": [
+        "mulib_cookie_pair"
+      ]
+    },
+    "cookiejar": {
+      "header": "mulib-cookiejar.h",
+      "functions": [
+        "mulib_cookiejar_set",
+        "mulib_cookiejar_get",
+        "mulib_cookiejar_free"
+      ]
+    },
     "corpus": {
       "header": "mulib-corpus.h",
       "functions": [
@@ -2107,6 +2201,14 @@
         "mulib_cpio_record_size",
         "mulib_cpio_add",
         "mulib_cpio_finish"
+      ]
+    },
+    "crawlqueue": {
+      "header": "mulib-crawlqueue.h",
+      "functions": [
+        "mulib_crawlqueue_push",
+        "mulib_crawlqueue_next",
+        "mulib_crawlqueue_free"
       ]
     },
     "crc32": {
@@ -2621,6 +2723,12 @@
         "mulib_dom_add_event_listener",
         "mulib_dom_remove_event_listener",
         "mulib_dom_dispatch_event"
+      ]
+    },
+    "domserialize": {
+      "header": "mulib-domserialize.h",
+      "functions": [
+        "mulib_domserialize_escape"
       ]
     },
     "drm": {
@@ -4736,7 +4844,8 @@
     "mime": {
       "header": "mulib-mime.h",
       "functions": [
-        "mulib_mime_type"
+        "mulib_mime_type",
+        "mulib_mime_content_type"
       ]
     },
     "minicurl": {
@@ -4925,6 +5034,12 @@
       "header": "mulib-mulib.h",
       "functions": [
         "mulib_version"
+      ]
+    },
+    "multipart": {
+      "header": "mulib-multipart.h",
+      "functions": [
+        "mulib_multipart_field"
       ]
     },
     "mumq": {
@@ -5157,6 +5272,12 @@
         "mulib_netns_open_self",
         "mulib_netns_open_pid",
         "mulib_netns_enter"
+      ]
+    },
+    "netpolicy": {
+      "header": "mulib-netpolicy.h",
+      "functions": [
+        "mulib_netpolicy_public_url"
       ]
     },
     "networkd-client": {
@@ -6085,6 +6206,13 @@
         "mulib_readline_read"
       ]
     },
+    "redirect": {
+      "header": "mulib-redirect.h",
+      "functions": [
+        "mulib_redirect_status",
+        "mulib_redirect_post_to_get"
+      ]
+    },
     "regex": {
       "header": "mulib-regex.h",
       "functions": [
@@ -6175,6 +6303,12 @@
         "mulib_rng_seed",
         "mulib_rng_next",
         "mulib_rng_unit"
+      ]
+    },
+    "robots": {
+      "header": "mulib-robots.h",
+      "functions": [
+        "mulib_robots_allowed"
       ]
     },
     "roman": {
@@ -6355,10 +6489,72 @@
         "mulib_schedutils_next"
       ]
     },
+    "scrape": {
+      "header": "mulib-scrape.h",
+      "functions": [
+        "mulib_scrape_text"
+      ]
+    },
+    "scrape-metadata": {
+      "header": "mulib-scrape-metadata.h",
+      "functions": [
+        "mulib_scrape_metadata_get"
+      ]
+    },
+    "scrape-readable": {
+      "header": "mulib-scrape-readable.h",
+      "functions": [
+        "mulib_scrape_readable"
+      ]
+    },
+    "scrape-rule": {
+      "header": "mulib-scrape-rule.h",
+      "functions": [
+        "mulib_scrape_rule_init",
+        "mulib_scrape_rule_free"
+      ]
+    },
+    "scrape-schema": {
+      "header": "mulib-scrape-schema.h",
+      "functions": [
+        "mulib_scrape_schema_string"
+      ]
+    },
+    "scrape-table": {
+      "header": "mulib-scrape-table.h",
+      "functions": [
+        "mulib_scrape_table_cells"
+      ]
+    },
     "search": {
       "header": "mulib-search.h",
       "functions": [
         "mulib_search_kmp"
+      ]
+    },
+    "search-query": {
+      "header": "mulib-search-query.h",
+      "functions": [
+        "mulib_search_query_url"
+      ]
+    },
+    "search-rank": {
+      "header": "mulib-search-rank.h",
+      "functions": [
+        "mulib_search_rank_count"
+      ]
+    },
+    "search-serp": {
+      "header": "mulib-search-serp.h",
+      "functions": [
+        "mulib_search_serp_href"
+      ]
+    },
+    "search-session": {
+      "header": "mulib-search-session.h",
+      "functions": [
+        "mulib_search_session_init",
+        "mulib_search_session_next"
       ]
     },
     "select": {
@@ -6501,6 +6697,12 @@
         "mulib_simdmath_mat4_mul",
         "mulib_simdmath_transform",
         "mulib_simdmath_transform_many"
+      ]
+    },
+    "sitemap": {
+      "header": "mulib-sitemap.h",
+      "functions": [
+        "mulib_sitemap_next"
       ]
     },
     "smt": {
@@ -7446,6 +7648,12 @@
         "mulib_url_decode"
       ]
     },
+    "urlcanon": {
+      "header": "mulib-urlcanon.h",
+      "functions": [
+        "mulib_urlcanon_normalize"
+      ]
+    },
     "ustack": {
       "header": "mulib-ustack.h",
       "functions": [
@@ -7922,10 +8130,22 @@
         "mulib_web_connection_free"
       ]
     },
+    "webarchive": {
+      "header": "mulib-webarchive.h",
+      "functions": [
+        "mulib_webarchive_record_header"
+      ]
+    },
     "webclient": {
       "header": "mulib-webclient.h",
       "functions": [
         "mulib_webclient_request"
+      ]
+    },
+    "webextract": {
+      "header": "mulib-webextract.h",
+      "functions": [
+        "mulib_webextract_jsonld"
       ]
     },
     "webframework": {
@@ -7943,6 +8163,43 @@
       "functions": [
         "mulib_webidl_generate",
         "mulib_webidl_compile"
+      ]
+    },
+    "weblocation": {
+      "header": "mulib-weblocation.h",
+      "functions": [
+        "mulib_weblocation_set",
+        "mulib_weblocation_free"
+      ]
+    },
+    "webratelimit": {
+      "header": "mulib-webratelimit.h",
+      "functions": [
+        "mulib_webratelimit_init",
+        "mulib_webratelimit_take"
+      ]
+    },
+    "websearch": {
+      "header": "mulib-websearch.h",
+      "functions": [
+        "mulib_websearch_provider_name",
+        "mulib_websearch_known"
+      ]
+    },
+    "webstorage": {
+      "header": "mulib-webstorage.h",
+      "functions": [
+        "mulib_webstorage_set",
+        "mulib_webstorage_get",
+        "mulib_webstorage_free"
+      ]
+    },
+    "webtimers": {
+      "header": "mulib-webtimers.h",
+      "functions": [
+        "mulib_webtimers_add",
+        "mulib_webtimers_cancel",
+        "mulib_webtimers_next"
       ]
     },
     "weighed_edit_distane": {
@@ -8271,7 +8528,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "e674eb0a452562681fcc9b03f5311fba7bce352f83792ffa28b11089cff7177e",
-    "Implementation.c": "d49436eccdacd8fbbfbafeeb5b57862331bccc830132addc031e678ac60ed685"
+    "Generated.inc": "aa05cdb5df26454b3001b1c736ad71ec67eccd2fa55491b4764d6dddfd5bf2ec",
+    "Implementation.c": "d6bbfb2174ce2650927c748b48107da14c87751e0cfd212dee8f21d32c334156"
   }
 }
