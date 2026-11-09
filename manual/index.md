@@ -294,10 +294,10 @@ entry point documented by [mulib-virtio](mulib-virtio.md).
 | [imgtrackerd](mulib-imgtrackerd.md) | In-memory reference counts for OCI sha256 image digests, not a daemon. | [header](../include/mulib-imgtrackerd.h) · [example](../examples/modules/imgtrackerd.c) |
 | [immgtk](mulib-immgtk.md) | Immediate-mode GUI with Mune-written widgets and GLX drawing primitives. | [header](../include/mulib-immgtk.h) · [example](../examples/modules/immgtk.c) |
 | [impaclient](mulib-impaclient.md) | Historical-spelling IMAP client with tagged response matching. | [header](../include/mulib-impaclient.h) · [example](../examples/modules/impaclient.c) |
-| [include-mulib-container-core](include-mulib-container-core.md) | Shared checked storage, wire primitives and errors for containers. | [header](../include/include-mulib-container-core.h) · [example](../examples/modules/container-core.c) |
-| [include-mulib-lprowse](include-mulib-lprowse.md) | Embedded support data. | [header](../include/include-mulib-lprowse.h) · [example](../examples/modules/prowse-control.c) |
-| [include-mulib-qvm](include-mulib-qvm.md) | Quota VM: a resumable 16-register, unsigned-64-bit bytecode engine. | [header](../include/include-mulib-qvm.h) · [example](../examples/modules/qvm-core.c) |
-| [include-mulib-zstd](include-mulib-zstd.md) | Dependency-free Zstandard single-segment raw/RLE frame codec. | [header](../include/include-mulib-zstd.h) · [example](../examples/modules/zstd-raw.c) |
+| [mulib-container-core](mulib-container-core.md) | Shared checked storage, wire primitives and errors for containers. | [header](../include/mulib-container-core.h) · [example](../examples/modules/container-core.c) |
+| [mulib-lprowse](mulib-lprowse.md) | Embedded support data. | [header](../include/mulib-lprowse.h) · [example](../examples/modules/prowse-control.c) |
+| [mulib-qvm](mulib-qvm.md) | Quota VM: a resumable 16-register, unsigned-64-bit bytecode engine. | [header](../include/mulib-qvm.h) · [example](../examples/modules/qvm-core.c) |
+| [mulib-zstd](mulib-zstd.md) | Dependency-free Zstandard single-segment raw/RLE frame codec. | [header](../include/mulib-zstd.h) · [example](../examples/modules/zstd-raw.c) |
 | [index](mulib-index.md) | Unique ordered integer-to-row-ID secondary index using the B+ tree. | [header](../include/mulib-index.h) · [example](../examples/modules/index.c) |
 | [inet4](mulib-inet4.md) | Strict parser-backed IPv4 literals and prefix operations. | [header](../include/mulib-inet4.h) · [example](../examples/modules/inet4.c) |
 | [inet6](mulib-inet6.md) | Canonical IPv6 literals, formatting and network-prefix operations. | [header](../include/mulib-inet6.h) · [example](../examples/modules/inet6.c) |

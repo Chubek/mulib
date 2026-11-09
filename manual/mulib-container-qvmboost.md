@@ -6,7 +6,7 @@
 
 Container backend for the portable Quota VM. Define
 `MULIB_IMPL_CONTAINER_QVMBOOST` and `containerboost` transitive switches.
-`include-mulib-qvm.h` is the implemented inline VM dependency. Example:
+`mulib-qvm.h` is the implemented inline VM dependency. Example:
 `examples/modules/container-qvmboost.c`.
 
 ## CONFIGURATION
@@ -43,7 +43,7 @@ VM state, even when configurations share code. CT errors cover invalid programs,
 allocation, unsupported requests and lifecycle errors. Total code/RAM allocation
 does not include the small handle struct or memory owned by host callbacks.
 
-See [inline QVM](include-mulib-qvm.md) for instruction semantics and
+See [inline QVM](mulib-qvm.md) for instruction semantics and
 [runtime](mulib-container-runtime.md) for deadline and generation behavior.
 
 <!-- manual-reference -->
@@ -55,7 +55,7 @@ See [inline QVM](include-mulib-qvm.md) for instruction semantics and
 | --- | --- |
 | Header | [`include/mulib-container-qvmboost.h`](../include/mulib-container-qvmboost.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_QVMBOOST` |
-| Repository-local includes | [include-mulib-qvm](include-mulib-qvm.md), [mulib-containerboost](mulib-containerboost.md) |
+| Repository-local includes | [mulib-qvm](mulib-qvm.md), [mulib-containerboost](mulib-containerboost.md) |
 | Complete example | [`examples/modules/container-qvmboost.c`](../examples/modules/container-qvmboost.c) |
 
 The include list includes conditional and implementation-only includes;

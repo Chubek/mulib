@@ -55,7 +55,7 @@ See [containerd-mount](mulib-containerd-mount.md) for export leases.
 | --- | --- |
 | Header | [`include/mulib-container-vfs.h`](../include/mulib-container-vfs.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_VFS` |
-| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md), [mulib-rootfs](mulib-rootfs.md) |
+| Repository-local includes | [mulib-container-core](mulib-container-core.md), [mulib-rootfs](mulib-rootfs.md) |
 | Complete example | [`examples/modules/container-vfs.c`](../examples/modules/container-vfs.c) |
 
 The include list includes conditional and implementation-only includes;

@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/include-mulib-lprowse.h` is internal, generated C string data used by
+`include/mulib-lprowse.h` is internal, generated C string data used by
 `MULIB_IMPL_PROWSE_CONTROL`. Its source of truth is
 [`library/lprowse/lprowse.lua`](../library/lprowse/lprowse.lua). It exports no
 public API and requires no implementation switch. The static string array has
@@ -26,7 +26,7 @@ examples. Generated code and Lua source are original MuLIB MIT-licensed code.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/include-mulib-lprowse.h`](../include/include-mulib-lprowse.h) |
+| Header | [`include/mulib-lprowse.h`](../include/mulib-lprowse.h) |
 | Implementation switch | None (support header; see scope above) |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/prowse-control.c`](../examples/modules/prowse-control.c) |

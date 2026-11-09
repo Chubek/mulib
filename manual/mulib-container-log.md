@@ -54,7 +54,7 @@ pin-independent binary storage and explicit pruning.
 | --- | --- |
 | Header | [`include/mulib-container-log.h`](../include/mulib-container-log.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_LOG` |
-| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md) |
+| Repository-local includes | [mulib-container-core](mulib-container-core.md) |
 | Complete example | [`examples/modules/container-log.c`](../examples/modules/container-log.c) |
 
 The include list includes conditional and implementation-only includes;

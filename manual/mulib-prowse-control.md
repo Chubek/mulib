@@ -61,7 +61,7 @@ MULIB_IMPL_SOCKET MULIB_IMPL_STRBUF MULIB_IMPL_TERMKEY MULIB_IMPL_TERMUTILS
 MULIB_IMPL_URI MULIB_IMPL_UTF8 MULIB_IMPL_VMWEAVE
 ```
 
-Use `#define` for each name. `include-mulib-lprowse.h` is checked-in embedded Lua
+Use `#define` for each name. `mulib-lprowse.h` is checked-in embedded Lua
 data and needs no switch. Python and an installed Lua interpreter are not runtime
 dependencies. Link POSIX builds with threads, math and the dynamic-loader library
 (`-ldl` where required). C++ declaration clients link a C11 implementation TU.
@@ -208,7 +208,7 @@ also diagnose unrelated legacy-header inventory problems.
 | --- | --- |
 | Header | [`include/mulib-prowse-control.h`](../include/mulib-prowse-control.h) |
 | Implementation switch | `MULIB_IMPL_PROWSE_CONTROL` |
-| Repository-local includes | [include-mulib-lprowse](include-mulib-lprowse.md), [mulib-mune](mulib-mune.md), [mulib-prowse-protocol](mulib-prowse-protocol.md), [mulib-readline](mulib-readline.md), [mulib-strbuf](mulib-strbuf.md) |
+| Repository-local includes | [mulib-lprowse](mulib-lprowse.md), [mulib-mune](mulib-mune.md), [mulib-prowse-protocol](mulib-prowse-protocol.md), [mulib-readline](mulib-readline.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/prowse-control.c`](../examples/modules/prowse-control.c) |
 
 The include list includes conditional and implementation-only includes;

@@ -13,7 +13,7 @@ Owned process specifications and generation-tracked lifecycle metadata.
 #include "mulib-container.h"
 ```
 
-The only dependency is inline `include-mulib-container-core.h`.
+The only dependency is inline `mulib-container-core.h`.
 Example: `examples/modules/container.c`.
 
 ## SPECIFICATIONS
@@ -68,7 +68,7 @@ for backend-acknowledged transitions and [stack](container-stack.md) for tests.
 | --- | --- |
 | Header | [`include/mulib-container.h`](../include/mulib-container.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER` |
-| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md) |
+| Repository-local includes | [mulib-container-core](mulib-container-core.md) |
 | Complete example | [`examples/modules/container.c`](../examples/modules/container.c) |
 
 The include list includes conditional and implementation-only includes;

@@ -80,7 +80,7 @@ unknown opcodes, and traversal rejection.
 `mulib_fuse_session_init(session,vfs,read_only,max_transfer)` wraps the existing
 adapter with a per-request transfer quota, saturating counters and lifecycle.
 The VFS remains borrowed. No session allocation or kernel mount occurs. The
-inline `include-mulib-container-core.h` dependency supplies saturating counters;
+inline `mulib-container-core.h` dependency supplies saturating counters;
 it requires no additional implementation switch.
 
 `session_dispatch` retains the existing response contract and rejects READ/WRITE
@@ -104,7 +104,7 @@ The daemon mount module provides generation-tagged leases around these sessions.
 | --- | --- |
 | Header | [`include/mulib-fuse.h`](../include/mulib-fuse.h) |
 | Implementation switch | `MULIB_IMPL_FUSE` |
-| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md), [mulib-vfs](mulib-vfs.md) |
+| Repository-local includes | [mulib-container-core](mulib-container-core.md), [mulib-vfs](mulib-vfs.md) |
 | Complete example | [`examples/modules/fuse.c`](../examples/modules/fuse.c) |
 
 The include list includes conditional and implementation-only includes;

@@ -61,7 +61,7 @@ split point, empty payloads, quota failures and checksum corruption.
 | --- | --- |
 | Header | [`include/mulib-container-ipc.h`](../include/mulib-container-ipc.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_IPC` |
-| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md), [mulib-crc32](mulib-crc32.md) |
+| Repository-local includes | [mulib-container-core](mulib-container-core.md), [mulib-crc32](mulib-crc32.md) |
 | Complete example | [`examples/modules/container-ipc.c`](../examples/modules/container-ipc.c) |
 
 The include list includes conditional and implementation-only includes;

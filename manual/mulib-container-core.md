@@ -1,16 +1,16 @@
-# include-mulib-container-core
+# mulib-container-core
 
 [Manuals](README.md) · [Library index](index.md)
 
 ## NAME
 
-`include/include-mulib-container-core.h` — checked storage, wire integers and
+`include/mulib-container-core.h` — checked storage, wire integers and
 shared result codes for the container stack.
 
 ## SYNOPSIS
 
 ```c
-#include "include-mulib-container-core.h"
+#include "mulib-container-core.h"
 mulib_ct_blob bytes = {0};
 int rc = mulib_ct_blob_append(&bytes, "hello", 5, 1024);
 mulib_ct_blob_free(&bytes);
@@ -62,7 +62,7 @@ See [container-stack](container-stack.md) for cross-module ownership and error f
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/include-mulib-container-core.h`](../include/include-mulib-container-core.h) |
+| Header | [`include/mulib-container-core.h`](../include/mulib-container-core.h) |
 | Implementation switch | None (support header; see scope above) |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/container-core.c`](../examples/modules/container-core.c) |

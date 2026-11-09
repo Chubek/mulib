@@ -1,4 +1,4 @@
-# include-mulib-zstd
+# mulib-zstd
 
 [Manuals](README.md) · [Library index](index.md)
 
@@ -7,10 +7,10 @@
 Dependency-free standard Zstandard frame encoder/decoder for raw and RLE blocks.
 
 ```c
-#include "include-mulib-zstd.h"
+#include "mulib-zstd.h"
 ```
 
-Static-inline dependency using `include-mulib-container-core.h`; no switch or
+Static-inline dependency using `mulib-container-core.h`; no switch or
 external compression library. Example: `examples/modules/zstd-raw.c`.
 
 ## ENCODING PROFILE
@@ -59,9 +59,9 @@ interoperability with the installed `zstd` command when available.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/include-mulib-zstd.h`](../include/include-mulib-zstd.h) |
+| Header | [`include/mulib-zstd.h`](../include/mulib-zstd.h) |
 | Implementation switch | None (support header; see scope above) |
-| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md) |
+| Repository-local includes | [mulib-container-core](mulib-container-core.md) |
 | Complete example | [`examples/modules/zstd-raw.c`](../examples/modules/zstd-raw.c) |
 
 The include list includes conditional and implementation-only includes;

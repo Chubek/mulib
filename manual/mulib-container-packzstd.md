@@ -6,7 +6,7 @@
 
 Standard Zstandard raw/RLE packaging for validated container images.
 Define `MULIB_IMPL_CONTAINER_PACKZSTD` and the `imgformat` closure. The implemented
-`include-mulib-zstd.h` dependency is inline. Example:
+`mulib-zstd.h` dependency is inline. Example:
 `examples/modules/container-packzstd.c`.
 
 ## PACKING AND UNPACKING
@@ -27,7 +27,7 @@ and released using `mulib_ct_blob_free`.
 
 ## FULL CODEC INTEGRATION
 
-The default decoder supports the exact [raw/RLE profile](include-mulib-zstd.md).
+The default decoder supports the exact [raw/RLE profile](mulib-zstd.md).
 Entropy-coded blocks and other unsupported features return ENOTSUP explicitly.
 `unpack_with` accepts a caller codec for full Zstandard support. Callback receives
 input, output_limit and an initialized empty CT blob. It must allocate through
@@ -62,7 +62,7 @@ image checksum failures.
 | --- | --- |
 | Header | [`include/mulib-container-packzstd.h`](../include/mulib-container-packzstd.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_PACKZSTD` |
-| Repository-local includes | [include-mulib-zstd](include-mulib-zstd.md), [mulib-imgformat](mulib-imgformat.md) |
+| Repository-local includes | [mulib-zstd](mulib-zstd.md), [mulib-imgformat](mulib-imgformat.md) |
 | Complete example | [`examples/modules/container-packzstd.c`](../examples/modules/container-packzstd.c) |
 
 The include list includes conditional and implementation-only includes;

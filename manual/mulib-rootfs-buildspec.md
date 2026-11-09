@@ -63,7 +63,7 @@ operations or process execution occur. See [stack](container-stack.md) for tests
 | --- | --- |
 | Header | [`include/mulib-rootfs-buildspec.h`](../include/mulib-rootfs-buildspec.h) |
 | Implementation switch | `MULIB_IMPL_ROOTFS_BUILDSPEC` |
-| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md), [mulib-rootfs](mulib-rootfs.md) |
+| Repository-local includes | [mulib-container-core](mulib-container-core.md), [mulib-rootfs](mulib-rootfs.md) |
 | Complete example | [`examples/modules/rootfs-buildspec.c`](../examples/modules/rootfs-buildspec.c) |
 
 The include list includes conditional and implementation-only includes;

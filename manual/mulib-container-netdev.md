@@ -55,7 +55,7 @@ Use [container-network](mulib-container-network.md) for routing/filtering.
 | --- | --- |
 | Header | [`include/mulib-container-netdev.h`](../include/mulib-container-netdev.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_NETDEV` |
-| Repository-local includes | [include-mulib-container-core](include-mulib-container-core.md) |
+| Repository-local includes | [mulib-container-core](mulib-container-core.md) |
 | Complete example | [`examples/modules/container-netdev.c`](../examples/modules/container-netdev.c) |
 
 The include list includes conditional and implementation-only includes;
