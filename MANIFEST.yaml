@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 555
-implemented_module_count: 555
+module_count: 556
+implemented_module_count: 556
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -3898,7 +3898,20 @@ modules:
   purpose: "Checked memory ZIP32 archives with stored and DEFLATE entries."
   dependencies: [crc32, deflate, utf8]
   status: implemented
+- name: linebreak
+  header: include/mulib-linebreak.h
+  manual: manual/mulib-linebreak.md
+  macro: MULIB_IMPL_LINEBREAK
+  purpose: Seven UTF-8 wrapping strategies, including Knuth-Plass and Unicode.
+  dependencies: [unibreak]
+  status: implemented
 project_files:
+- file: examples/modules/linebreak.c
+  purpose: Standalone checked usage example for linebreak.
+- file: tests/test_linebreak.c
+  purpose: Line wrapping, Unicode boundaries and exhaustive optimization oracles.
+- file: tests/test_linebreak_alloc.c
+  purpose: Transactional line-breaking allocation failure and ownership checks.
 - file: library/shiraz/core.c
   purpose: Separately compiled Shiraz CPU, PE/COFF loader and storage implementations.
 - file: library/shiraz/runtime.c

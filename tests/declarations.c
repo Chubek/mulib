@@ -557,4 +557,5 @@
 #include "mulib-mobi.h"
 #include "mulib-pdf.h"
 #include "mulib-zip.h"
+#include "mulib-linebreak.h"
 int main(void) { return 0; }

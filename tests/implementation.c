@@ -1,3 +1,4 @@
+#define MULIB_IMPL_LINEBREAK
 #define MULIB_IMPL_AZW3
 #define MULIB_IMPL_DEFLATE
 #define MULIB_IMPL_EPUB
@@ -1108,6 +1109,7 @@
 #include "mulib-unit.h"
 #include "mulib-xtensa.h"
 #include "mulib-dom.h"
+#include "mulib-linebreak.h"
 #include "mulib-azw3.h"
 #include "mulib-deflate.h"
 #include "mulib-epub.h"

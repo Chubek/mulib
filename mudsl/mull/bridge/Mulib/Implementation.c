@@ -265,6 +265,7 @@
 #define MULIB_IMPL_LEXOGRAPHIC_SORT
 #define MULIB_IMPL_LIGATURE
 #define MULIB_IMPL_LINALG
+#define MULIB_IMPL_LINEBREAK
 #define MULIB_IMPL_LINER_REGRESSION
 #define MULIB_IMPL_LINKER
 #define MULIB_IMPL_LIR
@@ -823,6 +824,7 @@
 #include "mulib-lexographic_sort.h"
 #include "mulib-ligature.h"
 #include "mulib-linalg.h"
+#include "mulib-linebreak.h"
 #include "mulib-liner_regression.h"
 #include "mulib-linker.h"
 #include "mulib-lir.h"

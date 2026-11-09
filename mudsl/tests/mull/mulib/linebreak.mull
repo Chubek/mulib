@@ -1,0 +1,9 @@
+mulib Linebreak <- G:MulibWrap("Linebreak");
+val options <- Linebreak:New("mulib_linebreak_options_t");
+val result <- Linebreak:New("mulib_linebreak_result_t");
+Linebreak:OptionsInit(options, 6);
+G:Assert(Linebreak:mulib_linebreak("aaa bb cc ddddd", 15, Linebreak:MULIB_LINEBREAK_MINIMUM_RAGGEDNESS, options, result) == 0);
+G:Assert(result:count == 3 and result:lines[0]:end == 3);
+Linebreak:ResultFree(result);
+G:Assert(result:count == 0);
+"linebreak ok";

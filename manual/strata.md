@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 555 headers, 662 direct dependency edges.
+Inventory: 560 headers, 675 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (182 modules)
+## Stratum 0 (181 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -46,9 +46,7 @@ Compatibility group: `parsec`, `peg`.
 | [column-rdbms](mulib-column-rdbms.md) | none |
 | [complex](mulib-complex.md) | none |
 | [conditional_probablity](mulib-conditional_probablity.md) | none |
-| [container-log](mulib-container-log.md) | none |
-| [container-netdev](mulib-container-netdev.md) | none |
-| [container](mulib-container.md) | none |
+| [container-core](mulib-container-core.md) | none |
 | [cosine_similarity](mulib-cosine_similarity.md) | none |
 | [cpio](mulib-cpio.md) | none |
 | [crc32](mulib-crc32.md) | none |
@@ -112,6 +110,7 @@ Compatibility group: `parsec`, `peg`.
 | [liner_regression](mulib-liner_regression.md) | none |
 | [list](mulib-list.md) | none |
 | [logger](mulib-logger.md) | none |
+| [lprowse](mulib-lprowse.md) | none |
 | [manpage](mulib-manpage.md) | none |
 | [map](mulib-map.md) | none |
 | [math](mulib-math.md) | none |
@@ -202,7 +201,7 @@ Compatibility group: `parsec`, `peg`.
 | [xthreads](mulib-xthreads.md) | none |
 | [xtks](mulib-xtks.md) | none |
 
-## Stratum 1 (129 modules)
+## Stratum 1 (133 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -226,7 +225,10 @@ Compatibility group: `parsec`, `peg`.
 | [cmachine](mulib-cmachine.md) | `minivm`, `mir` |
 | [coff](mulib-coff.md) | `endian` |
 | [compression](mulib-compression.md) | `buffer`, `rle` |
-| [container-ipc](mulib-container-ipc.md) | `crc32` |
+| [container-ipc](mulib-container-ipc.md) | `container-core`, `crc32` |
+| [container-log](mulib-container-log.md) | `container-core` |
+| [container-netdev](mulib-container-netdev.md) | `container-core` |
+| [container](mulib-container.md) | `container-core` |
 | [container2daemonproto](mulib-container2daemonproto.md) | `buffer`, `bycutils`, `crc32` |
 | [corpus](mulib-corpus.md) | `trie` |
 | [cowb+tree](mulib-cowb+tree.md) | `b+tree` |
@@ -248,7 +250,7 @@ Compatibility group: `parsec`, `peg`.
 | [fontdraw](mulib-fontdraw.md) | `dynload` |
 | [fontshape](mulib-fontshape.md) | `dynload`, `utf8` |
 | [fst](mulib-fst.md) | `buffer`, `crc32`, `endian`, `vec` |
-| [fuse](mulib-fuse.md) | `vfs` |
+| [fuse](mulib-fuse.md) | `container-core`, `vfs` |
 | [glx](mulib-glx.md) | `drm`, `linalg` |
 | [graphdb](mulib-graphdb.md) | `memtable` |
 | [graphviz](mulib-graphviz.md) | `graph`, `strbuf`, `utf8` |
@@ -258,7 +260,6 @@ Compatibility group: `parsec`, `peg`.
 | [health_checker](mulib-health_checker.md) | `upstream` |
 | [heaptable](mulib-heaptable.md) | `memtable` |
 | [http2](mulib-http2.md) | `buffer` |
-| [imgformat](mulib-imgformat.md) | `container`, `crc32` |
 | [impaclient](mulib-impaclient.md) | `imapserver` |
 | [index](mulib-index.md) | `b+tree` |
 | [initsysutils](mulib-initsysutils.md) | `cpio` |
@@ -301,6 +302,7 @@ Compatibility group: `parsec`, `peg`.
 | [pwdauth](mulib-pwdauth.md) | `authcrypto`, `seurity` |
 | [pybind](mulib-pybind.md) | `strbuf` |
 | [quic](mulib-quic.md) | `buffer` |
+| [qvm](mulib-qvm.md) | `container-core` |
 | [rewrite](mulib-rewrite.md) | `egraph` |
 | [rewrite_url](mulib-rewrite_url.md) | `seurity` |
 | [simdmath](mulib-simdmath.md) | `linalg` |
@@ -335,8 +337,9 @@ Compatibility group: `parsec`, `peg`.
 | [wlroots](mulib-wlroots.md) | `vec` |
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
+| [zstd](mulib-zstd.md) | `container-core` |
 
-## Stratum 2 (79 modules)
+## Stratum 2 (75 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -354,11 +357,6 @@ Compatibility group: `parsec`, `peg`.
 | [conainerd-ipc](mulib-conainerd-ipc.md) | `container`, `container-ipc` |
 | [concurrency-prim](mulib-concurrency-prim.md) | `fiber` |
 | [container-network](mulib-container-network.md) | `container-netdev`, `packetrules` |
-| [container-packcoff](mulib-container-packcoff.md) | `coff`, `imgformat` |
-| [container-packelf](mulib-container-packelf.md) | `elf`, `imgformat` |
-| [container-packmacho](mulib-container-packmacho.md) | `imgformat`, `macho` |
-| [container-packzstd](mulib-container-packzstd.md) | `imgformat` |
-| [containerd-cache](mulib-containerd-cache.md) | `imgformat` |
 | [containerstub](mulib-containerstub.md) | `container2daemonproto`, `ocicontainer` |
 | [css](mulib-css.md) | `xml` |
 | [dfa](mulib-dfa.md) | `crc32`, `endian`, `fst` |
@@ -370,6 +368,7 @@ Compatibility group: `parsec`, `peg`.
 | [html](mulib-html.md) | `xml` |
 | [http3](mulib-http3.md) | `quic` |
 | [ifft](mulib-ifft.md) | `fft` |
+| [imgformat](mulib-imgformat.md) | `container`, `crc32` |
 | [initsys](mulib-initsys.md) | `process`, `taskdag` |
 | [latex](mulib-latex.md) | `tex` |
 | [ligature](mulib-ligature.md) | `fontshape` |
@@ -420,7 +419,7 @@ Compatibility group: `parsec`, `peg`.
 | [xtbb](mulib-xtbb.md) | `parallel` |
 | [zip](mulib-zip.md) | `crc32`, `deflate`, `utf8` |
 
-## Stratum 3 (50 modules)
+## Stratum 3 (56 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -429,11 +428,16 @@ Compatibility group: `parsec`, `peg`.
 | [asdl](mulib-asdl.md) | `arena`, `parsec`, `strbuf` |
 | [collision](mulib-collision.md) | `cgeom` |
 | [confuse](mulib-confuse.md) | `parsec` |
+| [container-packcoff](mulib-container-packcoff.md) | `coff`, `imgformat` |
+| [container-packelf](mulib-container-packelf.md) | `elf`, `imgformat` |
+| [container-packmacho](mulib-container-packmacho.md) | `imgformat`, `macho` |
 | [container-packpe](mulib-container-packpe.md) | `imgformat`, `pe` |
+| [container-packzstd](mulib-container-packzstd.md) | `imgformat`, `zstd` |
 | [container-runtime](mulib-container-runtime.md) | `container`, `rootfs` |
 | [container-stub](mulib-container-stub.md) | `conainerd-ipc` |
-| [container-vfs](mulib-container-vfs.md) | `rootfs` |
+| [container-vfs](mulib-container-vfs.md) | `container-core`, `rootfs` |
 | [containerd-accessstub](mulib-containerd-accessstub.md) | `conainerd-ipc` |
+| [containerd-cache](mulib-containerd-cache.md) | `imgformat` |
 | [containerinjector](mulib-containerinjector.md) | `rootfs` |
 | [curses](mulib-curses.md) | `termutils`, `tui` |
 | [depir](mulib-depir.md) | `anfir`, `clickir`, `superblocks` |
@@ -447,6 +451,7 @@ Compatibility group: `parsec`, `peg`.
 | [inet4](mulib-inet4.md) | `parsec` |
 | [jit](mulib-jit.md) | `dyncall`, `vmweave` |
 | [json](mulib-json.md) | `parsec`, `strbuf`, `utf8` |
+| [linebreak](mulib-linebreak.md) | `unibreak` |
 | [listener](mulib-listener.md) | `evtstream` |
 | [lsmtree](mulib-lsmtree.md) | `sstfile`, `wal` |
 | [markdown](mulib-markdown.md) | `html` |
@@ -460,7 +465,7 @@ Compatibility group: `parsec`, `peg`.
 | [objfilesymloc](mulib-objfilesymloc.md) | `binfile`, `elfutils` |
 | [ocicontainervfs](mulib-ocicontainervfs.md) | `rootfs` |
 | [peutils](mulib-peutils.md) | `coffutils`, `pe` |
-| [rootfs-buildspec](mulib-rootfs-buildspec.md) | `rootfs` |
+| [rootfs-buildspec](mulib-rootfs-buildspec.md) | `container-core`, `rootfs` |
 | [rootfsbuilder](mulib-rootfsbuilder.md) | `archive`, `buffer`, `rootfs` |
 | [shaderx](mulib-shaderx.md) | `parsec`, `strbuf` |
 | [shiraz](mulib-shiraz.md) | `pe`, `strbuf` |
@@ -524,7 +529,7 @@ Compatibility group: `parsec`, `peg`.
 | [coff-objdump](mulib-coff-objdump.md) | `coff`, `objdump` |
 | [container-jitboost](mulib-container-jitboost.md) | `containerboost`, `jit` |
 | [container-kvmboost](mulib-container-kvmboost.md) | `containerboost`, `kvmcontainer` |
-| [container-qvmboost](mulib-container-qvmboost.md) | `containerboost` |
+| [container-qvmboost](mulib-container-qvmboost.md) | `containerboost`, `qvm` |
 | [containerserverd](mulib-containerserverd.md) | `container2daemonproto`, `ocicontainermetadata`, `ocicontainerruntime` |
 | [containterpool](mulib-containterpool.md) | `containerboost`, `image2container` |
 | [daemon](mulib-daemon.md) | `mune`, `process`, `strbuf` |
@@ -614,7 +619,7 @@ Compatibility group: `parsec`, `peg`.
 | [https](mulib-https.md) | `tsl`, `webclient` |
 | [minicurl](mulib-minicurl.md) | `webclient` |
 | [miniwget](mulib-miniwget.md) | `webclient` |
-| [prowse-control](mulib-prowse-control.md) | `mune`, `prowse-protocol`, `readline`, `strbuf` |
+| [prowse-control](mulib-prowse-control.md) | `lprowse`, `mune`, `prowse-protocol`, `readline`, `strbuf` |
 | [revproxy](mulib-revproxy.md) | `webclient` |
 | [vcscomitt](mulib-vcscomitt.md) | `vcscommit` |
 | [web_conntection](mulib-web_conntection.md) | `http1` |
