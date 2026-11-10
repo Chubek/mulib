@@ -1,0 +1,17 @@
+mulib Ids <- G:MulibWrap("eda-ids");
+val pool <- Ids:New("mulib_eda_id_pool_t");
+val first <- Ids:New("mulib_eda_id_t");
+val second <- Ids:New("mulib_eda_id_t");
+G:Assert(Ids:mulib_eda_id_pool_init(pool, 1) == 1);
+G:Assert(Ids:mulib_eda_id_create(pool, 7, first) == 1);
+G:Assert(Ids:mulib_eda_id_valid(pool, first:Get(), 7) == 1);
+G:Assert(Ids:mulib_eda_id_valid(pool, first:Get(), 8) == 0);
+G:Assert(Ids:mulib_eda_id_remove(pool, first:Get()) == 1);
+G:Assert(Ids:mulib_eda_id_create(pool, 7, second) == 1);
+G:Assert(Ids:mulib_eda_id_index(first:Get()) == Ids:mulib_eda_id_index(second:Get()));
+G:Assert(first:Get() != second:Get());
+G:Assert(Ids:mulib_eda_id_valid(pool, first:Get(), 7) == 0);
+G:Assert(Ids:mulib_eda_id_valid(pool, second:Get(), 7) == 1);
+Ids:mulib_eda_id_pool_free(pool);
+G:Assert(pool:length == 0);
+"eda ids ok";

@@ -672,6 +672,7 @@
 #define MULIB_IMPL_PALMDB
 #define MULIB_IMPL_PANDOCAST
 #define MULIB_IMPL_PARALLEL
+#define MULIB_IMPL_PARALLEL_SH
 #define MULIB_IMPL_PARSEC
 #define MULIB_IMPL_PARSER
 #define MULIB_IMPL_PARSER_PRATT
@@ -810,6 +811,7 @@
 #define MULIB_IMPL_SHA
 #define MULIB_IMPL_SHADERX
 #define MULIB_IMPL_SHADOWSOCKS
+#define MULIB_IMPL_SHEBANG_SH
 #define MULIB_IMPL_SHIRAZ
 #define MULIB_IMPL_SHM
 #define MULIB_IMPL_SHOEBOX_CONTRACT
@@ -1755,6 +1757,7 @@
 #include "mulib-paleography.h"
 #include "mulib-palmdb.h"
 #include "mulib-pandocast.h"
+#include "mulib-parallel-sh.h"
 #include "mulib-parallel.h"
 #include "mulib-parsec.h"
 #include "mulib-parser-pratt.h"
@@ -1893,6 +1896,7 @@
 #include "mulib-sha.h"
 #include "mulib-shaderx.h"
 #include "mulib-shadowsocks.h"
+#include "mulib-shebang-sh.h"
 #include "mulib-shiraz.h"
 #include "mulib-shm.h"
 #include "mulib-shoebox-contract.h"

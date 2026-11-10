@@ -19,11 +19,37 @@ typedef struct mulib_eda_id_pool {
     uint8_t *kind;
     size_t length, capacity;
 } mulib_eda_id_pool_t;
+/** Initialize fresh (possibly uninitialized) storage with capacity in slots.
+ * Returns 1 on success, 0 on NULL, capacity overflow or allocation failure.
+ * Failure leaves *p byte-for-byte unchanged and frees temporary allocations.
+ * Success owns three arrays; release with mulib_eda_id_pool_free. Do not
+ * initialize over a live pool: successful initialization does not free it.
+ * O(initial_capacity) time/storage; no global state or internal locking.
+ */
 int mulib_eda_id_pool_init(mulib_eda_id_pool_t *p, size_t initial_capacity);
+/** Free owned arrays and zero the pool. NULL and repeated free are harmless.
+ * Invalidates all IDs; IDs are pool-local and must not outlive this lifetime.
+ */
 void mulib_eda_id_pool_free(mulib_eda_id_pool_t *p);
+/** Create a nonzero-kind ID in an initialized pool; return 1 on success.
+ * Uses the first inactive, unexhausted slot, growing arrays if necessary.
+ * Generations 1..0xffffff are usable; a slot is retired after removing its
+ * final generation. Returns 0 on invalid arguments, slot/size limit or OOM,
+ * leaving pool and *out unchanged. out must not alias pool-owned storage.
+ * O(length) scan, O(capacity) on growth. Externally synchronize pool access.
+ */
 int mulib_eda_id_create(mulib_eda_id_pool_t *p, uint8_t kind, mulib_eda_id_t *out);
+/** Return 1 only for a live matching ID in this pool; kind=0 accepts any kind.
+ * O(1), allocation-free. NULL pool, zero ID and stale/wrong-kind IDs return 0.
+ */
 int mulib_eda_id_valid(const mulib_eda_id_pool_t *p, mulib_eda_id_t id, uint8_t kind);
+/** Invalidate a live ID, advancing its generation without wrapping; return 1.
+ * Invalid/stale IDs return 0 without mutation. O(1), allocation-free.
+ */
 int mulib_eda_id_remove(mulib_eda_id_pool_t *p, mulib_eda_id_t id);
+/** Decode the zero-based slot, or UINT32_MAX for a zero low word.
+ * This does not validate pool membership, kind or generation.
+ */
 uint32_t mulib_eda_id_index(mulib_eda_id_t id);
 #ifdef __cplusplus
 }
@@ -47,17 +73,18 @@ uint32_t mulib_eda_id_index(mulib_eda_id_t id) {
 int mulib_eda_id_pool_init(mulib_eda_id_pool_t *p, size_t c) {
     if (!p || c > UINT32_MAX || c > SIZE_MAX / sizeof(uint32_t))
         return 0;
-    memset(p, 0, sizeof *p);
-    if (!c)
-        return 1;
-    p->generation = calloc(c, sizeof(uint32_t));
-    p->active = calloc(c, 1);
-    p->kind = calloc(c, 1);
-    if (!p->generation || !p->active || !p->kind) {
-        mulib_eda_id_pool_free(p);
-        return 0;
+    mulib_eda_id_pool_t result = {0};
+    if (c) {
+        result.generation = calloc(c, sizeof *result.generation);
+        result.active = calloc(c, sizeof *result.active);
+        result.kind = calloc(c, sizeof *result.kind);
+        if (!result.generation || !result.active || !result.kind) {
+            mulib_eda_id_pool_free(&result);
+            return 0;
+        }
     }
-    p->capacity = c;
+    result.capacity = c;
+    *p = result;
     return 1;
 }
 void mulib_eda_id_pool_free(mulib_eda_id_pool_t *p) {
@@ -73,7 +100,7 @@ int mulib_eda_id_create(mulib_eda_id_pool_t *p, uint8_t kind, mulib_eda_id_t *ou
         return 0;
     size_t i = 0;
     for (; i < p->length; i++)
-        if (!p->active[i] && p->generation[i] < 0xffffffu)
+        if (!p->active[i] && p->generation[i] <= 0xffffffu)
             break;
     if (i == p->length) {
         if (i == UINT32_MAX)

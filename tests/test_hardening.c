@@ -1,5 +1,8 @@
 /* Always-moving realloc and injectable allocation failures turn stale aliases
  * and incomplete failure cleanup into deterministic regression failures. */
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>

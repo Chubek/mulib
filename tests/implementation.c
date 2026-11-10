@@ -1,3 +1,9 @@
+/* Required before system headers by the POSIX shell implementation profile. */
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#define MULIB_IMPL_PARALLEL_SH
+#define MULIB_IMPL_SHEBANG_SH
 #define MULIB_IMPL_AUXHASH
 #define MULIB_IMPL_CHECKSUM
 #define MULIB_IMPL_CRC
@@ -2164,3 +2170,5 @@
 #include "mulib-crc.h"
 #include "mulib-cryptohash.h"
 #include "mulib-sha.h"
+#include "mulib-parallel-sh.h"
+#include "mulib-shebang-sh.h"

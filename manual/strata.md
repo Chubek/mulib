@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1083 headers, 1087 direct dependency edges.
+Inventory: 1085 headers, 1089 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -1038,7 +1038,7 @@ Compatibility group: `parsec`, `peg`.
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (39 modules)
+## Stratum 5 (41 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1074,8 +1074,10 @@ Compatibility group: `parsec`, `peg`.
 | [oix](mulib-oix.md) | `base64`, `confuse`, `crc32`, `emitter`, `json`, `kvm`, `toml`, `yaml` |
 | [optml](mulib-optml.md) | `isel`, `peephole`, `superinstr` |
 | [paleography](mulib-paleography.md) | `base64`, `json`, `mune`, `svg`, `tex` |
+| [parallel-sh](mulib-parallel-sh.md) | `mune` |
 | [pglayout](mulib-pglayout.md) | `bidi`, `fontshape`, `json`, `stylesheet`, `unibreak`, `yaml` |
 | [row-rdbms](mulib-row-rdbms.md) | `dbschema`, `documentdb` |
+| [shebang-sh](mulib-shebang-sh.md) | `mune` |
 | [vizigen](mulib-vizigen.md) | `asdl`, `binfilereader`, `binfilewriter`, `mmfile`, `walker` |
 | [vmm-kvm](mulib-vmm-kvm.md) | `kvm`, `vmm` |
 | [wask](mulib-wask.md) | `dsymspec`, `utf8` |

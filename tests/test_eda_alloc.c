@@ -56,7 +56,40 @@ static void checked_free(void *p) {
 #undef realloc
 #undef free
 
+static void ids_failure_atomicity(void) {
+    for (size_t fail = 0; fail < 3; fail++) {
+        /* Fresh storage need not contain a valid pool before initialization. */
+        mulib_eda_id_pool_t ids;
+        unsigned char before[sizeof ids];
+        memset(&ids, 0xa5, sizeof ids);
+        memcpy(before, &ids, sizeof ids);
+        remaining = fail;
+        assert(!mulib_eda_id_pool_init(&ids, 4));
+        assert(!memcmp(before, &ids, sizeof ids));
+        assert(!live);
+
+        remaining = SIZE_MAX;
+        assert(mulib_eda_id_pool_init(&ids, 1));
+        mulib_eda_id_t first, second = 42;
+        assert(mulib_eda_id_create(&ids, 7, &first));
+        memcpy(before, &ids, sizeof ids);
+        size_t baseline = live;
+        remaining = fail;
+        assert(!mulib_eda_id_create(&ids, 8, &second) && second == 42);
+        assert(!memcmp(before, &ids, sizeof ids) && live == baseline);
+        assert(mulib_eda_id_valid(&ids, first, 7));
+        assert(ids.generation[0] == 1 && ids.kind[0] == 7 && ids.active[0] == 1);
+        remaining = SIZE_MAX;
+        assert(mulib_eda_id_create(&ids, 8, &second));
+        assert(mulib_eda_id_valid(&ids, first, 7));
+        assert(mulib_eda_id_valid(&ids, second, 8));
+        mulib_eda_id_pool_free(&ids);
+        assert(!live);
+    }
+}
+
 int main(void) {
+    ids_failure_atomicity();
     for (size_t fail = 0; fail < 5; fail++) {
         remaining = fail;
         mulib_eda_id_pool_t ids = {0};
@@ -120,9 +153,34 @@ int main(void) {
     remaining = 0;
     assert(!mulib_eda_db_clone(&db, &clone) && !clone.items);
     mulib_eda_transaction_t transaction = {0};
+    transaction.expected_epoch = 42;
+    unsigned char transaction_before[sizeof transaction];
+    memcpy(transaction_before, &transaction, sizeof transaction);
     assert(!mulib_eda_transaction_begin(&transaction, &db) && !transaction.active);
+    assert(!memcmp(transaction_before, &transaction, sizeof transaction));
     mulib_eda_transaction_rollback(&transaction);
     assert(live == baseline);
+
+    remaining = SIZE_MAX;
+    assert(mulib_eda_transaction_begin(&transaction, &db));
+    assert(mulib_eda_db_put(&transaction.staged, (mulib_eda_db_record_t){1, 1, 5}));
+    mulib_eda_design_db_t *staged = &transaction.staged;
+    unsigned char staged_before[sizeof *staged];
+    memcpy(staged_before, staged, sizeof *staged);
+    baseline = live;
+    remaining = 0;
+    assert(!mulib_eda_db_put(staged, (mulib_eda_db_record_t){2, 1, 8}));
+    assert(!memcmp(staged_before, staged, sizeof *staged) && live == baseline);
+    assert(staged->items[0].value == 5 && db.items[0].value == 2);
+    remaining = SIZE_MAX;
+    assert(mulib_eda_db_put(staged, (mulib_eda_db_record_t){2, 1, 8}));
+    remaining = 0;
+    assert(mulib_eda_transaction_commit(&transaction));
+    assert(db.count == 2 && db.items[0].value == 5 && db.items[1].value == 8);
+    mulib_eda_db_free(&db);
+    assert(!live);
+    assert(mulib_eda_transaction_begin(&transaction, &db));
+    assert(mulib_eda_transaction_commit(&transaction) && db.epoch == 1);
     mulib_eda_db_free(&db);
     assert(!live);
     puts("PASS EDA allocation failures");

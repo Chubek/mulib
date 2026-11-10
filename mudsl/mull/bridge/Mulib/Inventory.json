@@ -673,6 +673,7 @@
     "mulib-paleography.h",
     "mulib-palmdb.h",
     "mulib-pandocast.h",
+    "mulib-parallel-sh.h",
     "mulib-parallel.h",
     "mulib-parsec.h",
     "mulib-parser-pratt.h",
@@ -811,6 +812,7 @@
     "mulib-sha.h",
     "mulib-shaderx.h",
     "mulib-shadowsocks.h",
+    "mulib-shebang-sh.h",
     "mulib-shiraz.h",
     "mulib-shm.h",
     "mulib-shoebox-contract.h",
@@ -1084,10 +1086,10 @@
     "mulib-zorder.h",
     "mulib-zstd.h"
   ],
-  "libraries": 1083,
-  "functions": 4841,
-  "types": 7916,
-  "constants": 2478,
+  "libraries": 1085,
+  "functions": 4869,
+  "types": 7954,
+  "constants": 2494,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -1129,7 +1131,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "bd324a6f2090cdc8e2e3245e002b3125ba5c952633386ada45a7beab2e078c32",
+  "fingerprint": "d3bdc8e81c9bf47a9b29e612801e603bca22bf69e0e107d478910230d83d2f69",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -7576,6 +7578,28 @@
         "mulib_parallel_map"
       ]
     },
+    "parallel-sh": {
+      "header": "mulib-parallel-sh.h",
+      "functions": [
+        "mulib_parallel_sh_init",
+        "mulib_parallel_sh_add",
+        "mulib_parallel_sh_add_lua",
+        "mulib_parallel_sh_expand",
+        "mulib_parallel_sh_add_input",
+        "mulib_parallel_sh_run",
+        "mulib_parallel_sh_free",
+        "mulib_parallel_sh_channel_create",
+        "mulib_parallel_sh_channel_find",
+        "mulib_parallel_sh_channel_send",
+        "mulib_parallel_sh_channel_set_limit",
+        "mulib_parallel_sh_channel_receive",
+        "mulib_parallel_sh_channel_receive_wait",
+        "mulib_parallel_sh_channel_close",
+        "mulib_parallel_sh_lua",
+        "mulib_parallel_sh_lua_file",
+        "mulib_parallel_sh_main"
+      ]
+    },
     "parsec": {
       "header": "mulib-parsec.h",
       "functions": [
@@ -8738,6 +8762,22 @@
         "mulib_shadowsocks_init",
         "mulib_shadowsocks_seal",
         "mulib_shadowsocks_open"
+      ]
+    },
+    "shebang-sh": {
+      "header": "mulib-shebang-sh.h",
+      "functions": [
+        "mulib_shebang_sh_init",
+        "mulib_shebang_sh_free",
+        "mulib_shebang_sh_define",
+        "mulib_shebang_sh_lookup",
+        "mulib_shebang_sh_undefine",
+        "mulib_shebang_sh_add_filter",
+        "mulib_shebang_sh_transform",
+        "mulib_shebang_sh_process",
+        "mulib_shebang_sh_lua",
+        "mulib_shebang_sh_lua_file",
+        "mulib_shebang_sh_main"
       ]
     },
     "shiraz": {
@@ -11377,7 +11417,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "ca07d9d2a716324434bc880519f47a00fbd9eb1eeb9a4d0c06fab8c3efed7d38",
-    "Implementation.c": "f34580368bd00b817e05788327fd08c937a4bcf57b7f8a25c23c556558b1dd72"
+    "Generated.inc": "78e7137e9a3f319719f8e4116e6cac303733817b28421c29402455c4e64c421a",
+    "Implementation.c": "f9f069373a1322660b941b64b329d4557d802eb2682390851314175c526dcecd"
   }
 }

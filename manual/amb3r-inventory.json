@@ -1,0 +1,3130 @@
+{
+  "schema": 1,
+  "baseline_sha": "b6f240d440e20683698ee5ee525a86ec833b49ff",
+  "scope_fixture": "tests/amb3r_implementation.c",
+  "slice_module_count": 83,
+  "additional_modules": [
+    "immgtk"
+  ],
+  "repository_counts": {
+    "include/mulib-*.h": 1085,
+    "tests/test_*.c": 375,
+    "manual/mulib-*.md": 1086
+  },
+  "interpretation": "Extracted dependency/type/profile map. No inferred adapters, runtime results, standards conformance, or missing-module claims.",
+  "modules": [
+    {
+      "module": "asic-floorplan",
+      "owner": "asic",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-asic-floorplan.h",
+      "source_sha256": "07540fc9ffd73928cc8e8a31263c2d20b5af7ddb4a855c4d0b6eaa4bdedfa8ba",
+      "manual": "manual/mulib-asic-floorplan.md",
+      "documented_profile": "Flat rectangular cell overlap test and deterministic single-row placement with spacing and height validation. No floorplan blockages, sites, orientation or optimized 2D placement.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_asic_rect_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_asic_floorplan.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/asic-floorplan.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "asic-sta",
+      "owner": "asic",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-asic-sta.h",
+      "source_sha256": "a107f5b53a1d29427e0d5e85497c59061e4dc5cbde42c1747f076b6922541a19",
+      "manual": "manual/mulib-asic-sta.md",
+      "documented_profile": "Arrival-time max-plus propagation on a topologically ordered timing DAG with up to eight predecessors per node, plus slack against a common deadline. Failed propagation preserves arrivals and critical-path output. No clock, slew, Liberty or multi-corner analysis.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_asic_timing_node_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 17,
+          "text": "uint16_t pred[8];"
+        },
+        {
+          "line": 40,
+          "text": "if ((!nodes && count) || !critical || count > UINT16_MAX)"
+        },
+        {
+          "line": 80,
+          "text": "if ((!nodes && count) || !slack || !isfinite(deadline) || count > UINT16_MAX)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_asic_sta.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/asic-sta.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "dsim-bitvec",
+      "owner": "dsim",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-dsim-bitvec.h",
+      "source_sha256": "8942ffa18619ea12dab4bbe09d93c23218b16a56acc8f46b0eb3e250b3ee5821",
+      "manual": "manual/mulib-dsim-bitvec.md",
+      "documented_profile": "Four-state vectors of 1..64 bits with string parsing/formatting, extraction, bitwise AND/OR/XOR/NOT, zero-filled logical shifts, concatenation and modular addition. Addition yields an all-X vector if either operand contains X/Z. Shifts preserve X/Z; bitwise operations treat Z as unknown. No signed extension or arbitrary-width arithmetic.",
+      "dependencies": [
+        "dsim-logic4"
+      ],
+      "public_types": [
+        "mulib_dsim_bitvec_t",
+        "mulib_dsim_logic4_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 110,
+          "text": "return width == 64 ? UINT64_MAX : (UINT64_C(1) << width) - 1;"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_cpp_link.cpp",
+        "tests/test_dsim_bitvec.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/dsim-bitvec.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "dsim-logic4",
+      "owner": "dsim",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-dsim-logic4.h",
+      "source_sha256": "0571659273ea58a69369d427bba8cb5aecbdc83ac90908707d1575e7064ec677",
+      "manual": "manual/mulib-dsim-logic4.md",
+      "documented_profile": "Scalar 4-state 0/1/X/Z Boolean truth tables and simple two-driver resolution without drive strengths. Does not implement full IEEE net-type strengths or event scheduling.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_dsim_logic4_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_cpp_link.cpp",
+        "tests/test_dsim_logic4.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/dsim-logic4.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "dsim-scheduler",
+      "owner": "dsim",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-dsim-scheduler.h",
+      "source_sha256": "528d859b5bb9734f233118ed2068435c16f4e83722d113bcbb413dbb9e988c9e",
+      "manual": "manual/mulib-dsim-scheduler.md",
+      "documented_profile": "Stable min-heap event ordering by time, delta, region and insertion order, with peek and cancellation by signal. Cancellation preserves the original order keys. No process execution or complete HDL event-region semantics.",
+      "dependencies": [
+        "dsim-logic4"
+      ],
+      "public_types": [
+        "mulib_dsim_event_t",
+        "mulib_dsim_logic4_t",
+        "mulib_dsim_scheduler_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 65,
+          "text": "s->next_order == UINT64_MAX)"
+        },
+        {
+          "line": 69,
+          "text": "if (n <= s->cap || n > SIZE_MAX / sizeof *s->heap)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_dsim_scheduler.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/dsim-scheduler.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "ecad-connect",
+      "owner": "ecad",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-ecad-connect.h",
+      "source_sha256": "37b3489b3a34c14b9b838be847f59c721ac4873554d6979b0ca79c9e7bd400d8",
+      "manual": "manual/mulib-ecad-connect.md",
+      "documented_profile": "Name-based connectivity count for flat two-terminal schematic, with literal ground name 0. No geometric junction inference or bus/harness matching.",
+      "dependencies": [
+        "ecad-schematic"
+      ],
+      "public_types": [
+        "mulib_ecad_schematic_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 34,
+          "text": "char names[512][32];"
+        },
+        {
+          "line": 37,
+          "text": "const char *p[2] = {s->parts[i].a, s->parts[i].b};"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_ecad_connect.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/ecad-connect.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "ecad-erc",
+      "owner": "ecad",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-ecad-erc.h",
+      "source_sha256": "8c69bd4a2c00fd60f68ea15c4c6fe4af2f0ff8a6b013690ca0c7740e9d68feff",
+      "manual": "manual/mulib-ecad-erc.md",
+      "documented_profile": "Flat schematic ERC diagnostics: self-shorted components, single-use (dangling) named terminals, and missing ground node. No powered pin type matrix, output-output contention or hidden power pins.",
+      "dependencies": [
+        "ecad-schematic"
+      ],
+      "public_types": [
+        "mulib_ecad_erc_result_t",
+        "mulib_ecad_schematic_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_ecad_erc.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/ecad-erc.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "ecad-netlist",
+      "owner": "ecad",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-ecad-netlist.h",
+      "source_sha256": "d2e1b6b974d402492a50dae0e1e2595a85481e620073cef66af90ca801aeca02",
+      "manual": "manual/mulib-ecad-netlist.md",
+      "documented_profile": "Deterministic SPICE-card export from supported flat R/C/I/V schematic, retaining names and double values, with bounded caller buffer. No subcircuit hierarchical flattening or model export.",
+      "dependencies": [
+        "ecad-schematic"
+      ],
+      "public_types": [
+        "mulib_ecad_schematic_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 40,
+          "text": "if (k < 0 || (size_t)k > SIZE_MAX - total)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_ecad_netlist.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/ecad-netlist.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "ecad-pcb-sync",
+      "owner": "ecad",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-ecad-pcb-sync.h",
+      "source_sha256": "df912f238633e200ff79cd4e0e5f2ae436a6ddc5403bac5cbd5055fa4408ce07",
+      "manual": "manual/mulib-ecad-pcb-sync.md",
+      "documented_profile": "Stable bijective object-ID lookup between 256 schematic and PCB objects; no object model introspection, reconciliation or automatic synchronization.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_ecad_pcb_link_t",
+        "mulib_ecad_pcb_sync_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 19,
+          "text": "mulib_ecad_pcb_link_t links[256];"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_ecad_pcb_sync.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/ecad-pcb-sync.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "ecad-schematic",
+      "owner": "ecad",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-ecad-schematic.h",
+      "source_sha256": "6fe7ed646e657ad6179c031f9f5d7f78d410e3a33618bf2fa7e90b86b994c7f6",
+      "manual": "manual/mulib-ecad-schematic.md",
+      "documented_profile": "Bounded 256-component flat schematic for R/C/I/V 2-terminal devices, duplicate reference detection and fixed 32-byte names. Graphical wires, multi-sheet hierarchy and bus semantics are future work.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_ecad_component_t",
+        "mulib_ecad_schematic_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 16,
+          "text": "char ref[32];"
+        },
+        {
+          "line": 18,
+          "text": "char a[32], b[32];"
+        },
+        {
+          "line": 22,
+          "text": "mulib_ecad_component_t parts[256];"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_ecad_schematic.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/ecad-schematic.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "ecad-symbol",
+      "owner": "ecad",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-ecad-symbol.h",
+      "source_sha256": "18a2e0306573df8f8b20dfa76de1d80ad999eb615ef2dc5efb28ee86488cb53f",
+      "manual": "manual/mulib-ecad-symbol.md",
+      "documented_profile": "Bounded symbol metadata with 32 typed pins and integer drawing-space anchor positions. No SVG geometry, rotations, or font rendering.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_ecad_pin_kind_t",
+        "mulib_ecad_pin_t",
+        "mulib_ecad_symbol_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 22,
+          "text": "char name[32];"
+        },
+        {
+          "line": 27,
+          "text": "char name[48];"
+        },
+        {
+          "line": 29,
+          "text": "mulib_ecad_pin_t pin[32];"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_ecad_symbol.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/ecad-symbol.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-attributes",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-attributes.h",
+      "source_sha256": "d1fe574bb9296b0729caad3b7379397f74b927a4b647e9dd2ae6dc8f807afb25",
+      "manual": "manual/mulib-eda-attributes.md",
+      "documented_profile": "Owned typed attribute table with integer, finite real and bounded byte-string values, replacement, lookup and removal. No inheritance or schema-level validation.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_eda_attr_t",
+        "mulib_eda_attr_type_t",
+        "mulib_eda_attrs_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 22,
+          "text": "char key[48];"
+        },
+        {
+          "line": 26,
+          "text": "char text[128];"
+        },
+        {
+          "line": 80,
+          "text": "if (n <= a->cap || n > SIZE_MAX / sizeof *a->data)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_attributes.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/eda-attributes.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-constraints",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-constraints.h",
+      "source_sha256": "23f767399894bff1c488b7c5cbd80c14a6e99fab2bc28e8405cf16e519eabb52",
+      "manual": "manual/mulib-eda-constraints.md",
+      "documented_profile": "Evaluates equality, minimum and maximum scalar constraints with absolute tolerance, returning nonnegative violation magnitudes. A full versioned constraint graph is future work.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_eda_constraint_relation_t",
+        "mulib_eda_constraint_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_constraints.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/eda-constraints.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-design-db",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-design-db.h",
+      "source_sha256": "21114548317b8ad750d3a7718cd9c1c27f68ad9fa63f818798a348f51abb7cd2",
+      "manual": "manual/mulib-eda-design-db.md",
+      "documented_profile": "Flat revisioned design store keyed by nonzero external IDs, with typed finite scalar values and independent owned snapshot cloning. Transactions are provided by eda-transaction. No persistent serialization, locking or hierarchical object graph.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_eda_db_record_t",
+        "mulib_eda_design_db_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 64,
+          "text": "if (!db || !rec.id || !rec.type || !isfinite(rec.value) || db->epoch == UINT64_MAX)"
+        },
+        {
+          "line": 74,
+          "text": "if (n <= db->capacity || n > SIZE_MAX / sizeof *db->items)"
+        },
+        {
+          "line": 87,
+          "text": "if (!db || !id || db->epoch == UINT64_MAX)"
+        },
+        {
+          "line": 100,
+          "text": "src->count > src->capacity || src->count > SIZE_MAX / sizeof *src->items ||"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_design_db.c",
+        "tests/test_eda_extended.c"
+      ],
+      "example": "examples/modules/eda-design-db.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-hierarchy",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-hierarchy.h",
+      "source_sha256": "3d7433b8eba4bebbcf723607013b23b70ecdafd050f5c76321a60b11a1efe5bb",
+      "manual": "manual/mulib-eda-hierarchy.md",
+      "documented_profile": "Append-only hierarchy with unique sibling names and slash-separated paths. Path construction supports any depth allowed by the index type and available storage, detects cycles and preserves the destination on failure. Parameterized elaboration is outside this profile.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_eda_hierarchy_t",
+        "mulib_eda_hnode_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 16,
+          "text": "char name[48];"
+        },
+        {
+          "line": 50,
+          "text": "h->count >= UINT32_MAX || ((parent != UINT32_MAX) && parent >= h->count))"
+        },
+        {
+          "line": 57,
+          "text": "if (n <= h->capacity || n > SIZE_MAX / sizeof *h->nodes)"
+        },
+        {
+          "line": 77,
+          "text": "while (at != UINT32_MAX) {"
+        },
+        {
+          "line": 85,
+          "text": "if (k >= SIZE_MAX - length)"
+        },
+        {
+          "line": 95,
+          "text": "while (at != UINT32_MAX) {"
+        },
+        {
+          "line": 100,
+          "text": "if (at != UINT32_MAX)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_eda_hierarchy.c"
+      ],
+      "example": "examples/modules/eda-hierarchy.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-ids",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-ids.h",
+      "source_sha256": "5d7b109235058381acb4df2357fc67f58601dedf71bc38b6c85d4591653130b4",
+      "manual": "manual/mulib-eda-ids.md",
+      "documented_profile": "Typed 64-bit IDs: 8-bit kind, 24-bit generation and 32-bit index plus one; stale generations are rejected. No persistent serialization protocol.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_eda_id_pool_t",
+        "mulib_eda_id_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 36,
+          "text": "* Generations 1..0xffffff are usable; a slot is retired after removing its"
+        },
+        {
+          "line": 50,
+          "text": "/** Decode the zero-based slot, or UINT32_MAX for a zero low word."
+        },
+        {
+          "line": 71,
+          "text": "return n ? n - 1 : UINT32_MAX;"
+        },
+        {
+          "line": 74,
+          "text": "if (!p || c > UINT32_MAX || c > SIZE_MAX / sizeof(uint32_t))"
+        },
+        {
+          "line": 103,
+          "text": "if (!p->active[i] && p->generation[i] <= 0xffffffu)"
+        },
+        {
+          "line": 106,
+          "text": "if (i == UINT32_MAX)"
+        },
+        {
+          "line": 110,
+          "text": "if (n <= p->capacity || n > UINT32_MAX)"
+        },
+        {
+          "line": 111,
+          "text": "n = UINT32_MAX;"
+        },
+        {
+          "line": 112,
+          "text": "if (n <= i || n > SIZE_MAX / sizeof(uint32_t))"
+        },
+        {
+          "line": 150,
+          "text": "uint32_t gen = (uint32_t)((id >> 32) & 0xffffffu);"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_cpp_link.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_eda_ids.c"
+      ],
+      "example": "examples/modules/eda-ids.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-incremental",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-incremental.h",
+      "source_sha256": "45b8ad89b1ebad97b4bb89493ca45cf84793c7e4d0be1082bb0c74af66ed5fbf",
+      "manual": "manual/mulib-eda-incremental.md",
+      "documented_profile": "Dense adjacency invalidation propagation including cyclic dependencies; intended for small incremental graphs (O(n²) memory), not the final million-node build graph.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_eda_incremental_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 40,
+          "text": "if (!g || (n && n > SIZE_MAX / n))"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_eda_incremental.c"
+      ],
+      "example": "examples/modules/eda-incremental.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-library",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-library.h",
+      "source_sha256": "57f73de00761bac7efa07b3ed8d4e033caff5200f72d1221046ca27802e3cd8b",
+      "manual": "manual/mulib-eda-library.md",
+      "documented_profile": "In-memory part definition catalog with immutable key, description and pin count. Symbol geometry, footprints, PDKs and model families require separately versioned registries.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_eda_library_t",
+        "mulib_eda_partdef_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 15,
+          "text": "char key[48], description[96];"
+        },
+        {
+          "line": 61,
+          "text": "if (n <= l->cap || n > SIZE_MAX / sizeof *l->parts)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_eda_library.c"
+      ],
+      "example": "examples/modules/eda-library.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-netgraph",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-netgraph.h",
+      "source_sha256": "e3b33d144c40cf25a9f2144275169ededfd66938d729b1af85b715e4de009870",
+      "manual": "manual/mulib-eda-netgraph.md",
+      "documented_profile": "Append-only connectivity hypergraph with indexed nets, terminals, explicit disconnection, net merging and deterministic degrees. Merging moves terminals to the target net and leaves the source net allocated but empty.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_eda_netgraph_t",
+        "mulib_eda_terminal_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 53,
+          "text": "if (!g || g->nets == UINT32_MAX)"
+        },
+        {
+          "line": 61,
+          "text": "if (!g || !kind || g->count >= UINT32_MAX)"
+        },
+        {
+          "line": 65,
+          "text": "if (n <= g->capacity || n > SIZE_MAX / sizeof *g->term)"
+        },
+        {
+          "line": 75,
+          "text": "g->term[k].net = UINT32_MAX;"
+        },
+        {
+          "line": 81,
+          "text": "if (!g || t >= g->count || (n != UINT32_MAX && n >= g->nets))"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_eda_netgraph.c"
+      ],
+      "example": "examples/modules/eda-netgraph.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-object",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-object.h",
+      "source_sha256": "d75a44610b216023e5d843260bd4807d0cfa34d5d3a075e0b6beebea9570b60c",
+      "manual": "manual/mulib-eda-object.md",
+      "documented_profile": "Small immutable-ID object header with checked type/name, monotonic revision on rename; object persistence and schema registry are outside scope.",
+      "dependencies": [
+        "eda-ids"
+      ],
+      "public_types": [
+        "mulib_eda_id_t",
+        "mulib_eda_object_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 19,
+          "text": "char name[64];"
+        },
+        {
+          "line": 51,
+          "text": "if (!o || !name || strlen(name) >= 64 || o->revision == UINT32_MAX)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_eda_object.c"
+      ],
+      "example": "examples/modules/eda-object.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-project",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-project.h",
+      "source_sha256": "ebbe8efb9737dba749820f33dcb7c1133e483535011396e1e1c13e30e0e99bcd",
+      "manual": "manual/mulib-eda-project.md",
+      "documented_profile": "Validated in-memory project identity, revision, variant count and reproducible seed. Persisted project schema and configuration imports are out of scope.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_eda_project_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 15,
+          "text": "char name[80], revision[32];"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_eda_project.c"
+      ],
+      "example": "examples/modules/eda-project.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-quantity",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-quantity.h",
+      "source_sha256": "70b8ef1de950da79854a2b0ffdb2cc41f25c93a3e357bb9c1ca30f61047aea60",
+      "manual": "manual/mulib-eda-quantity.md",
+      "documented_profile": "First-order uncertainty propagation for independent unit-tagged quantities with addition, multiplication and division. Dimension overflow, nonfinite values, negative uncertainties and division by zero are rejected. Correlated errors and affine temperature arithmetic are outside this profile.",
+      "dependencies": [
+        "eda-units"
+      ],
+      "public_types": [
+        "mulib_eda_dimension_t",
+        "mulib_eda_quantity_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_eda_quantity.c"
+      ],
+      "example": "examples/modules/eda-quantity.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-status",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-status.h",
+      "source_sha256": "d86849fbbd4e7f8df74b0a0d49ef62fd36c785c8152b4a9141833b1c52dcdcd8",
+      "manual": "manual/mulib-eda-status.md",
+      "documented_profile": "Shared status names and bounded diagnostic record with line/column context. No dynamic allocation, no global state.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_eda_code_t",
+        "mulib_eda_diagnostic_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 27,
+          "text": "char message[192];"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_cpp_link.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_eda_status.c"
+      ],
+      "example": "examples/modules/eda-status.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-transaction",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-transaction.h",
+      "source_sha256": "130b8de46a5e0b583b56fe69400943f1055d67ad81bc8be28a052d4a9d52fef5",
+      "manual": "manual/mulib-eda-transaction.md",
+      "documented_profile": "Optimistic owned-snapshot transaction over eda-design-db. Every commit advances the target epoch, including commits with no edits, so concurrent stale snapshots conflict. Commit publishes the staged store under caller serialization. No thread locks or nested transactions.",
+      "dependencies": [
+        "eda-design-db"
+      ],
+      "public_types": [
+        "mulib_eda_design_db_t",
+        "mulib_eda_transaction_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 81,
+          "text": "t->expected_epoch == UINT64_MAX)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_cpp_link.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_eda_transaction.c"
+      ],
+      "example": "examples/modules/eda-transaction.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-undo",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-undo.h",
+      "source_sha256": "26f566713f883ae37aff3c4bc2da9d23fbc923d1f0503158332d91c5b33dd246",
+      "manual": "manual/mulib-eda-undo.md",
+      "documented_profile": "Bounded 256-command reversible scalar-field journal over eda-design-db. Refuses history replay if an external edit changes the expected value. Not a universal undo journal for geometry or object allocation.",
+      "dependencies": [
+        "eda-design-db"
+      ],
+      "public_types": [
+        "mulib_eda_design_db_t",
+        "mulib_eda_undo_entry_t",
+        "mulib_eda_undo_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 19,
+          "text": "mulib_eda_undo_entry_t entries[256];"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_eda_undo.c"
+      ],
+      "example": "examples/modules/eda-undo.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "eda-units",
+      "owner": "eda",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-eda-units.h",
+      "source_sha256": "8a38dd0888c2bc5f9081f452f595fcf586102e88e5dd912670c357e90e288242",
+      "manual": "manual/mulib-eda-units.md",
+      "documented_profile": "SI base dimensions and a deliberately scoped engineering unit set (m, kg, s, A, K, mol, cd, Hz, V, Ohm, F, H, W, C, degC, rad, deg). Supports T/G/M/k/m/u/n/p/f SI prefixes (case-sensitive) and Celsius temperature offset. Not a complete dimensional expression parser.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_eda_dimension_t",
+        "mulib_eda_unit_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 16,
+          "text": "int8_t exp[7];"
+        },
+        {
+          "line": 44,
+          "text": "int8_t e[7];"
+        },
+        {
+          "line": 107,
+          "text": "if (!s || !s[0] || !s[1])"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_eda_units.c"
+      ],
+      "example": "examples/modules/eda-units.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "field-poisson",
+      "owner": "field",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-field-poisson.h",
+      "source_sha256": "83e7e40af68c476a7c298020b9db7a4c8c0f04cbec03531b41c60ce647e79336",
+      "manual": "manual/mulib-field-poisson.md",
+      "documented_profile": "Closed-form homogeneous 1D electrostatic potential and electric field with uniform free charge and fixed boundary potentials. No multidimensional mesh or capacitance extraction.",
+      "dependencies": [],
+      "public_types": [],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_field_poisson.c"
+      ],
+      "example": "examples/modules/field-poisson.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "field-thermal",
+      "owner": "field",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-field-thermal.h",
+      "source_sha256": "2e5d0dde6d01bae98d7b5181d4c7e56535be8187fc648476fd214c4af826bedb",
+      "manual": "manual/mulib-field-thermal.md",
+      "documented_profile": "Closed-form homogeneous 1D steady conduction with uniform heat generation and fixed boundary temperatures, plus heat flux. No mesh, convection or transient heat equation.",
+      "dependencies": [],
+      "public_types": [],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_field_thermal.c"
+      ],
+      "example": "examples/modules/field-thermal.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "flow-graph",
+      "owner": "flow",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-flow-graph.h",
+      "source_sha256": "f01582d2b3ecd318b659abd130f08ad6ada4d955c22d9bfdd32a9842d4155597",
+      "manual": "manual/mulib-flow-graph.md",
+      "documented_profile": "Deterministic topological sort and cycle detection on up to 64 jobs with dense adjacency. Execution, content hashes, hermeticity and retries are separate subsystems.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_flow_graph_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 16,
+          "text": "uint8_t edges[64][64];"
+        },
+        {
+          "line": 20,
+          "text": "int mulib_flow_graph_toposort(const mulib_flow_graph_t *g, uint8_t order[64]);"
+        },
+        {
+          "line": 49,
+          "text": "int mulib_flow_graph_toposort(const mulib_flow_graph_t *g, uint8_t order[64]) {"
+        },
+        {
+          "line": 52,
+          "text": "uint8_t chosen[64] = {0};"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_flow_graph.c"
+      ],
+      "example": "examples/modules/flow-graph.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "fmt-aiger",
+      "owner": "fmt",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-fmt-aiger.h",
+      "source_sha256": "b00d2fb626e72d905064edbbe5fd66867dc1b4cd1ff54f22b1b1be90d6c6969d",
+      "manual": "manual/mulib-fmt-aiger.md",
+      "documented_profile": "ASCII AIGER AAG writer for a single-output combinational AIG where primary inputs occur before all AND nodes; sequential and symbol extensions are excluded.",
+      "dependencies": [
+        "synth-aig"
+      ],
+      "public_types": [
+        "mulib_synth_aig_lit_t",
+        "mulib_synth_aig_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_fmt_aiger.c"
+      ],
+      "example": "examples/modules/fmt-aiger.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "fmt-sv",
+      "owner": "fmt",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-fmt-sv.h",
+      "source_sha256": "661bc7bada0039f55fd4f2a05044c8bebfa4d0a486598331947ac2dd8dc25297",
+      "manual": "manual/mulib-fmt-sv.md",
+      "documented_profile": "Structural synthesizable Verilog module emitter for one-bit HWIL combinational nodes, one output and generated port names. No source-level SystemVerilog, signedness, hierarchy or register support.",
+      "dependencies": [
+        "hwil-module"
+      ],
+      "public_types": [
+        "mulib_hwil_module_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 54,
+          "text": "char expr[120];"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_fmt_sv.c"
+      ],
+      "example": "examples/modules/fmt-sv.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "formal-cec",
+      "owner": "formal",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-formal-cec.h",
+      "source_sha256": "19a75901bdd8a885040776fbcc39af96b5a742ec71daeef5fe5386bd96bcc4fc",
+      "manual": "manual/mulib-formal-cec.md",
+      "documented_profile": "Exact combinational equivalence for explicit truth tables with at most six inputs. Not sequential equivalence, miter conversion or SAT-based CEC.",
+      "dependencies": [
+        "synth-truthtable"
+      ],
+      "public_types": [
+        "mulib_synth_truth_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 33,
+          "text": "uint64_t mask = a.variables == 6 ? UINT64_MAX : ((UINT64_C(1) << (1u << a.variables)) - 1);"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_formal_cec.c"
+      ],
+      "example": "examples/modules/formal-cec.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "formal-cnf",
+      "owner": "formal",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-formal-cnf.h",
+      "source_sha256": "765c1e8b4946efa5ba3a013e0000f27becaeab7e00006ced077f0cdb751666b6",
+      "manual": "manual/mulib-formal-cnf.md",
+      "documented_profile": "Bounded CNF storage for 32 variables, 512 clauses and 16 literals per clause, with structural validation and an AND-gate Tseitin encoder. Empty clauses encode contradiction. Failed additions preserve both clauses and variable count. The gate encoder requires three distinct positive variables.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_formal_clause_t",
+        "mulib_formal_cnf_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 15,
+          "text": "#define MULIB_FORMAL_MAX_VARS 32"
+        },
+        {
+          "line": 16,
+          "text": "#define MULIB_FORMAL_MAX_CLAUSES 512"
+        },
+        {
+          "line": 17,
+          "text": "#define MULIB_FORMAL_MAX_LITERALS 16"
+        },
+        {
+          "line": 89,
+          "text": "int8_t x[2] = {(int8_t)-output, a}, y[2] = {(int8_t)-output, b},"
+        },
+        {
+          "line": 90,
+          "text": "z[3] = {output, (int8_t)-a, (int8_t)-b};"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_formal_cnf.c"
+      ],
+      "example": "examples/modules/formal-cnf.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "formal-sat",
+      "owner": "formal",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-formal-sat.h",
+      "source_sha256": "6220afab147114f238d9fe3f2a258e187e8e3d784d83f9df66ababf712e0687f",
+      "manual": "manual/mulib-formal-sat.md",
+      "documented_profile": "Correct bounded DPLL SAT solver with repeated unit propagation, chronological branching and branch-budget UNKNOWN. No CDCL, clause learning, assumptions, proofs, incremental context, or industrial performance.",
+      "dependencies": [
+        "formal-cnf"
+      ],
+      "public_types": [
+        "mulib_formal_cnf_t",
+        "mulib_formal_sat_result_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 21,
+          "text": "int8_t assignment[33], size_t max_branches);"
+        },
+        {
+          "line": 37,
+          "text": "static int mulib_formal_propagate_(const mulib_formal_cnf_t *c, int8_t v[33]) {"
+        },
+        {
+          "line": 69,
+          "text": "static int mulib_formal_dpll_(const mulib_formal_cnf_t *c, int8_t v[33], size_t *budget) {"
+        },
+        {
+          "line": 85,
+          "text": "int8_t copy[33];"
+        },
+        {
+          "line": 98,
+          "text": "mulib_formal_sat_result_t mulib_formal_sat_solve(const mulib_formal_cnf_t *c, int8_t assignment[33],"
+        },
+        {
+          "line": 102,
+          "text": "int8_t v[33] = {0};"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_formal_sat.c"
+      ],
+      "example": "examples/modules/formal-sat.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "fpga-lut",
+      "owner": "fpga",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-fpga-lut.h",
+      "source_sha256": "982f3890f1470e21884f0b7b580cbb3b6fbed521e79f39a722aa2176621f9974",
+      "manual": "manual/mulib-fpga-lut.md",
+      "documented_profile": "Pure combinational lookup-table element evaluator and truth-table mapping for up to six inputs. Does not implement FPGA packing, vendor LUT INIT bit ordering or bitstreams.",
+      "dependencies": [
+        "synth-truthtable"
+      ],
+      "public_types": [
+        "mulib_fpga_lut_t",
+        "mulib_synth_truth_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_fpga_lut.c"
+      ],
+      "example": "examples/modules/fpga-lut.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "fpga-route",
+      "owner": "fpga",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-fpga-route.h",
+      "source_sha256": "7889d441b1d7e85202e62c2515c47a761ff21d820d67d1661b8a7d36db0ca461",
+      "manual": "manual/mulib-fpga-route.md",
+      "documented_profile": "Shortest Manhattan four-neighbour path on a rectangular 2D obstacle grid, BFS with deterministic neighbour ordering. Intended as an FPGA routing primitive; no negotiated congestion, switch boxes or timing models.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_fpga_grid_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 49,
+          "text": "prev[i] = UINT32_MAX;"
+        },
+        {
+          "line": 55,
+          "text": "while (head < tail && prev[goal] == UINT32_MAX) {"
+        },
+        {
+          "line": 57,
+          "text": "size_t cand[4] = {x ? at - 1 : at, x + 1 < g.width ? at + 1 : at, y ? at - g.width : at,"
+        },
+        {
+          "line": 61,
+          "text": "if (b != at && !g.blocked[b] && prev[b] == UINT32_MAX) {"
+        },
+        {
+          "line": 67,
+          "text": "if (prev[goal] != UINT32_MAX) {"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_fpga_route.c"
+      ],
+      "example": "examples/modules/fpga-route.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "hdl-source",
+      "owner": "hdl",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-hdl-source.h",
+      "source_sha256": "1931e9505505856c3dbc085f559a818df6ea6eaea8ca1794e0ad80c353cab94c",
+      "manual": "manual/mulib-hdl-source.md",
+      "documented_profile": "Borrowed HDL source bytes and byte-offset to 1-based line/column mapping. O(offset) scan; columns count bytes, not Unicode grapheme clusters.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_hdl_source_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_hdl_source.c"
+      ],
+      "example": "examples/modules/hdl-source.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "hdl-verilog-lex",
+      "owner": "hdl",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-hdl-verilog-lex.h",
+      "source_sha256": "68a1aef462bf3fbd757e8a69aeed3436dc345802321fc0147cf7e1e559d29a5e",
+      "manual": "manual/mulib-hdl-verilog-lex.md",
+      "documented_profile": "Source-offset tokens for identifiers, escaped identifiers, decimal/based-number-like spans, punctuation and line/block comments. Unterminated block comments return ERROR without reading past the source. No full SystemVerilog preprocessing, string grammar or keyword classification.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_hdl_lexer_t",
+        "mulib_hdl_token_t",
+        "mulib_hdl_tokkind_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_hdl_verilog_lex.c"
+      ],
+      "example": "examples/modules/hdl-verilog-lex.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "hls-schedule",
+      "owner": "hls",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-hls-schedule.h",
+      "source_sha256": "350998929ec1adb0badd21ab7fa124d6736db7ea7c6272b7bd316b3d993f2e44",
+      "manual": "manual/mulib-hls-schedule.md",
+      "documented_profile": "Resource-unconstrained ASAP scheduling of a topologically sorted operation DAG with integral cycle latencies and up to eight dependencies. No modulo scheduling, binding or port constraints.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_hls_operation_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 17,
+          "text": "uint16_t deps[8];"
+        },
+        {
+          "line": 38,
+          "text": "if ((!ops && count) || !makespan || count > UINT16_MAX)"
+        },
+        {
+          "line": 61,
+          "text": "if (!ok || at + ops[i].latency > UINT32_MAX) {"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_hls_schedule.c"
+      ],
+      "example": "examples/modules/hls-schedule.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "hwil-module",
+      "owner": "hwil",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-hwil-module.h",
+      "source_sha256": "d231aefa2ca759192a2b88b650f220831c90f2187b00cd4fa80e34112c7532a0",
+      "manual": "manual/mulib-hwil-module.md",
+      "documented_profile": "Append-only combinational, single-bit HWIL netlist with forward-referenced DAG disallowed by construction; 512-node bound. Evaluates 4-state primitives, ordered input nodes. No registers, hierarchy, source spans or elaborated HDL.",
+      "dependencies": [
+        "dsim-logic4"
+      ],
+      "public_types": [
+        "mulib_dsim_logic4_t",
+        "mulib_hwil_gate_t",
+        "mulib_hwil_module_t",
+        "mulib_hwil_node_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 31,
+          "text": "mulib_hwil_node_t nodes[512];"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_cpp_link.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_hwil_module.c"
+      ],
+      "example": "examples/modules/hwil-module.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "hwil-types",
+      "owner": "hwil",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-hwil-types.h",
+      "source_sha256": "10cd810ac6a14cadecb1c3c6f3a1c650232b850770ca183cccae9db214a7162a",
+      "manual": "manual/mulib-hwil-types.md",
+      "documented_profile": "Validation and exact matching of bit-vector and single-bit clock types. MEMORY enum is reserved and deliberately rejected until memory shape semantics exist.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_hwil_kind_t",
+        "mulib_hwil_type_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_hwil_types.c"
+      ],
+      "example": "examples/modules/hwil-types.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "hwil-verify",
+      "owner": "hwil",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-hwil-verify.h",
+      "source_sha256": "6005846451e3705d1efb5dfe87db0a027d82eaa05d325d6a48a827b04dd00fd4",
+      "manual": "manual/mulib-hwil-verify.md",
+      "documented_profile": "Deterministic structural verification for bounded combinational HWIL modules; checks opcode validity, input references and topological order. No type inference or formal property proving.",
+      "dependencies": [
+        "hwil-module"
+      ],
+      "public_types": [
+        "mulib_hwil_module_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_hwil_verify.c"
+      ],
+      "example": "examples/modules/hwil-verify.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "immgtk",
+      "owner": "immgtk",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-immgtk.h",
+      "source_sha256": "8e1f646092b12f48eb6aa6366a784f74ce951a8451557a31a86883abe25eaf29",
+      "manual": "manual/mulib-immgtk.md",
+      "documented_profile": "See host manual; not part of the 83-module slice.",
+      "dependencies": [
+        "glx",
+        "mune"
+      ],
+      "public_types": [
+        "mulib_glx_t",
+        "mulib_immgtk_input_t",
+        "mulib_immgtk_t",
+        "mulib_mune_error_t",
+        "mulib_mune_state_t",
+        "mulib_mune_status_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 87,
+          "text": "uint64_t hot, active, focus, ids[256];"
+        },
+        {
+          "line": 129,
+          "text": "double v[5];"
+        },
+        {
+          "line": 133,
+          "text": "|| !mulib_immgtk_geometry_ (v[0], v[1], v[2], v[3]) || v[4] < 0"
+        },
+        {
+          "line": 134,
+          "text": "|| v[4] > UINT32_MAX || v[4] != floor (v[4]))"
+        },
+        {
+          "line": 136,
+          "text": "mulib_glx_fill_rect (g->surface, (int)floor (v[0]), (int)floor (v[1]),"
+        },
+        {
+          "line": 137,
+          "text": "(int)ceil (v[2]), (int)ceil (v[3]), (uint32_t)v[4]);"
+        },
+        {
+          "line": 145,
+          "text": "double v[3];"
+        },
+        {
+          "line": 151,
+          "text": "|| fabs (v[0]) > 1000000 || fabs (v[1]) > 1000000 || v[2] < 0"
+        },
+        {
+          "line": 152,
+          "text": "|| v[2] > UINT32_MAX || v[2] != floor (v[2]))"
+        },
+        {
+          "line": 156,
+          "text": "|| !g->text (g->surface, (float)v[0], (float)v[1], text, length,"
+        },
+        {
+          "line": 157,
+          "text": "(uint32_t)v[2], g->user))"
+        },
+        {
+          "line": 184,
+          "text": "double v[5];"
+        },
+        {
+          "line": 190,
+          "text": "|| !mulib_immgtk_geometry_ (v[1], v[2], v[3], v[4]) || v[3] == 0"
+        },
+        {
+          "line": 191,
+          "text": "|| v[4] == 0 || g->count == 256)"
+        },
+        {
+          "line": 198,
+          "text": "hover = g->input.mouse_x >= v[1] && g->input.mouse_x < v[1] + v[3]"
+        },
+        {
+          "line": 199,
+          "text": "&& g->input.mouse_y >= v[2] && g->input.mouse_y < v[2] + v[4]"
+        }
+      ],
+      "test_sources": [
+        "tests/test_immgtk.c"
+      ],
+      "example": "examples/modules/immgtk.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "immgtk-canvas",
+      "owner": "immgtk",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-immgtk-canvas.h",
+      "source_sha256": "8be97359b09f951c4f130c3a673cfdc92976b47ede256ab2c91cebafa2e0f770",
+      "manual": "manual/mulib-immgtk-canvas.md",
+      "documented_profile": "GUI-backend-neutral 2D pan/zoom transforms with cursor-centered zoom and reciprocal coordinate mapping. Does not create a native window or invoke ImGTK; intended as its reusable canvas math layer.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_immgtk_canvas_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_immgtk_canvas.c"
+      ],
+      "example": "examples/modules/immgtk-canvas.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "immgtk-drawlist",
+      "owner": "immgtk",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-immgtk-drawlist.h",
+      "source_sha256": "66e78f8f8d7e65e44bdb58f9e17633452b6056b331ff5e80a69eb996a4e135b4",
+      "manual": "manual/mulib-immgtk-drawlist.md",
+      "documented_profile": "Backend-neutral owned draw-command array for lines, rectangles and circles; renderer retains clipping and rasterization responsibilities. Can be consumed by native MuLIB GLX or software renderer.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_immgtk_drawcmd_t",
+        "mulib_immgtk_drawlist_t",
+        "mulib_immgtk_primitive_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 53,
+          "text": "if (n <= d->cap || n > SIZE_MAX / sizeof *d->cmds)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_immgtk_drawlist.c"
+      ],
+      "example": "examples/modules/immgtk-drawlist.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "immgtk-plot",
+      "owner": "immgtk",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-immgtk-plot.h",
+      "source_sha256": "1e60c3c9425c212e3512cc7a69e999dd202f4f2aa8b27b8607fa5c1d11b0069c",
+      "manual": "manual/mulib-immgtk-plot.md",
+      "documented_profile": "Engineering plot autoscaling bounds and logarithmic axis transformation helpers. Drawing, tick generation, linked cursors and virtualized multitrace plots are future work.",
+      "dependencies": [],
+      "public_types": [],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_immgtk_plot.c"
+      ],
+      "example": "examples/modules/immgtk-plot.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "num-csc",
+      "owner": "num",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-num-csc.h",
+      "source_sha256": "1f22d5f9f2890b4bfb70ee38db56fd481b7a106aedbdb40295c82e6f7930809d",
+      "manual": "manual/mulib-num-csc.md",
+      "documented_profile": "Compressed sparse column conversion, validation and matvec. Rows within each column are sorted; duplicate coordinates remain additive unless the COO input is canonicalized first. Matvec permits aliased input/output and preserves output on failure.",
+      "dependencies": [
+        "num-sparse"
+      ],
+      "public_types": [
+        "mulib_num_csc_t",
+        "mulib_num_sparse_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 48,
+          "text": "if (!mulib_num_sparse_validate(s) || !out || s->count > SIZE_MAX / sizeof(double) ||"
+        },
+        {
+          "line": 49,
+          "text": "s->cols == SIZE_MAX || s->count > SIZE_MAX / sizeof(size_t) ||"
+        },
+        {
+          "line": 50,
+          "text": "s->cols > SIZE_MAX / sizeof(size_t) - 1)"
+        },
+        {
+          "line": 100,
+          "text": "if (!mulib_num_csc_validate(s) || !x || !y || s->rows > SIZE_MAX / sizeof(double))"
+        },
+        {
+          "line": 121,
+          "text": "if (!s || !s->offset || s->cols == SIZE_MAX || (s->nnz && (!s->row || !s->values)) ||"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_num_csc.c"
+      ],
+      "example": "examples/modules/num-csc.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "num-csr",
+      "owner": "num",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-num-csr.h",
+      "source_sha256": "39d92a9e3b4e02285d8b141d14eb9b3901ab410543b8844ec3f15dc492c09670",
+      "manual": "manual/mulib-num-csr.md",
+      "documented_profile": "Compressed sparse row conversion, validation, matvec and transpose. Columns within each row are sorted; duplicate coordinates remain additive unless the COO input is canonicalized first. Matvec permits aliased input/output and preserves output on failure.",
+      "dependencies": [
+        "num-sparse"
+      ],
+      "public_types": [
+        "mulib_num_csr_t",
+        "mulib_num_sparse_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 50,
+          "text": "if (!mulib_num_sparse_validate(s) || !out || s->count > SIZE_MAX / sizeof(double) ||"
+        },
+        {
+          "line": 51,
+          "text": "s->rows == SIZE_MAX || s->count > SIZE_MAX / sizeof(size_t) ||"
+        },
+        {
+          "line": 52,
+          "text": "s->rows > SIZE_MAX / sizeof(size_t) - 1)"
+        },
+        {
+          "line": 102,
+          "text": "if (!mulib_num_csr_validate(s) || !x || !y || s->rows > SIZE_MAX / sizeof(double))"
+        },
+        {
+          "line": 123,
+          "text": "if (!s || !s->offset || s->rows == SIZE_MAX || (s->nnz && (!s->column || !s->values)) ||"
+        },
+        {
+          "line": 136,
+          "text": "if (!out || s == out || !mulib_num_csr_validate(s) || s->cols > SIZE_MAX / sizeof(size_t) - 1 ||"
+        },
+        {
+          "line": 137,
+          "text": "s->nnz > SIZE_MAX / sizeof(double) || s->nnz > SIZE_MAX / sizeof(size_t))"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_cpp_link.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_num_csr.c"
+      ],
+      "example": "examples/modules/num-csr.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "num-dense",
+      "owner": "num",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-num-dense.h",
+      "source_sha256": "a296f131e6626f363846033bc7c880aea9f24399a77fb06487042fba7eeb7f8e",
+      "manual": "manual/mulib-num-dense.md",
+      "documented_profile": "Dense double matrices and Gaussian elimination with partial row pivoting. No iterative refinement, sparse symbolic analysis or complete rank-revealing factorization. Failed solve preserves output.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_num_dense_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 37,
+          "text": "if (!m || (r && r > SIZE_MAX / sizeof(double)) || (r && c > SIZE_MAX / (r * sizeof(double))))"
+        },
+        {
+          "line": 56,
+          "text": "if (!n || n > SIZE_MAX / n || n * n > SIZE_MAX / sizeof(double) || !a || !b || !sol ||"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_num_dense.c"
+      ],
+      "example": "examples/modules/num-dense.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "num-integration",
+      "owner": "num",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-num-integration.h",
+      "source_sha256": "071a2876b8758ff2e8d72836cd22b014b9d39a896efcaf461670de261e27697f",
+      "manual": "manual/mulib-num-integration.md",
+      "documented_profile": "Composite trapezoid and Simpson quadrature, plus adaptive trapezoids using a Richardson error estimate and at most 30 refinement rounds. Callbacks must be finite over the interval. The estimate is not a rigorous error bound and can miss unresolved oscillations or singularities.",
+      "dependencies": [],
+      "public_types": [],
+      "resource_limit_source": [
+        {
+          "line": 42,
+          "text": "if (!f || !out || !n || n == SIZE_MAX || !isfinite(a) || !isfinite(b))"
+        },
+        {
+          "line": 61,
+          "text": "if (!f || !out || !n || n == SIZE_MAX || (n & 1) || !isfinite(a) || !isfinite(b))"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_num_integration.c"
+      ],
+      "example": "examples/modules/num-integration.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "num-rootfind",
+      "owner": "num",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-num-rootfind.h",
+      "source_sha256": "c68fac8782b73af6da9dbfb1ce9911550913fb611c828126e1c4629cac4c8c44",
+      "manual": "manual/mulib-num-rootfind.md",
+      "documented_profile": "Bracketed scalar bisection and damped Newton iteration with bounded residual-decreasing backtracking. Explicit iteration budgets and finite-value checks; failed computations preserve output. Bisection uses an overflow-safe midpoint.",
+      "dependencies": [],
+      "public_types": [],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_num_rootfind.c"
+      ],
+      "example": "examples/modules/num-rootfind.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "num-sparse",
+      "owner": "num",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-num-sparse.h",
+      "source_sha256": "e6b9ffa0c3255b2f4a9e6662310ac424b943566a5e95bf5eadc7fd7cc64efbb9",
+      "manual": "manual/mulib-num-sparse.md",
+      "documented_profile": "Owned coordinate-list sparse double matrix with checked assembly, repeated-coordinate accumulation and explicit canonicalization. Canonicalization sorts by row and column, coalesces duplicates and removes exact zeros. Matvec permits aliased input/output and preserves output on failure.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_num_sparse_t",
+        "mulib_num_triplet_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 75,
+          "text": "if (n <= s->capacity || n > SIZE_MAX / sizeof *s->triplets)"
+        },
+        {
+          "line": 87,
+          "text": "if (!mulib_num_sparse_validate(s) || !x || !y || s->rows > SIZE_MAX / sizeof(double))"
+        },
+        {
+          "line": 122,
+          "text": "if (!mulib_num_sparse_validate(s) || s->count > SIZE_MAX / sizeof *s->triplets)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_cpp_link.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_num_sparse.c"
+      ],
+      "example": "examples/modules/num-sparse.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "num-statistics",
+      "owner": "num",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-num-statistics.h",
+      "source_sha256": "f464bcd7542c1ee440e0619ceeebdfac5d3009e8bd760e7feb3dc2cad2eebe22",
+      "manual": "manual/mulib-num-statistics.md",
+      "documented_profile": "Streaming Welford mean, sample variance and extrema, with checked count growth and merging of independent summaries. No confidence interval or distribution estimation.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_num_stat_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 39,
+          "text": "if (!s || !isfinite(x) || s->n == SIZE_MAX)"
+        },
+        {
+          "line": 72,
+          "text": "if (!s || !other || other->n > SIZE_MAX - s->n)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_num_statistics.c"
+      ],
+      "example": "examples/modules/num-statistics.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "pcb-board",
+      "owner": "pcb",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-pcb-board.h",
+      "source_sha256": "4dfec1c7c032c61019638010c253e3e36b39087b2588cbf7158fb4859d0f99e8",
+      "manual": "manual/mulib-pcb-board.md",
+      "documented_profile": "Owned flat straight-track PCB container with 1..64 declared copper layers and validated real geometry. Track layer assignment, footprints and vias not yet represented.",
+      "dependencies": [
+        "pcb-geometry"
+      ],
+      "public_types": [
+        "mulib_pcb_board_t",
+        "mulib_pcb_segment_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 51,
+          "text": "if (n <= b->cap || n > SIZE_MAX / sizeof *b->tracks)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_pcb_board.c"
+      ],
+      "example": "examples/modules/pcb-board.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "pcb-bom",
+      "owner": "pcb",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-pcb-bom.h",
+      "source_sha256": "77c0aef0126c5ed1144cd863f66710731df7b947744263b4619e643a15fa0d1d",
+      "manual": "manual/mulib-pcb-bom.md",
+      "documented_profile": "Deterministic fixed-size BOM aggregator by manufacturer and exact part number, with checked size_t quantity accumulation. No inventory, sourcing, DNP variants or CSV export.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_pcb_bom_line_t",
+        "mulib_pcb_bom_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 16,
+          "text": "char mfr[48], part_number[48];"
+        },
+        {
+          "line": 20,
+          "text": "mulib_pcb_bom_line_t lines[256];"
+        },
+        {
+          "line": 46,
+          "text": "if (q > SIZE_MAX - b->lines[i].quantity)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_pcb_bom.c"
+      ],
+      "example": "examples/modules/pcb-bom.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "pcb-drc",
+      "owner": "pcb",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-pcb-drc.h",
+      "source_sha256": "fd7aa4329ba745a648ed737051754d8efdb04d84cf252b397f3c1acbadbbe80b",
+      "manual": "manual/mulib-pcb-drc.md",
+      "documented_profile": "All-pairs straight-segment copper clearance checks for distinct nets. O(n²), reports violations up to caller capacity, always returns full hit count. No layers, pads, vias, zones or mask geometry.",
+      "dependencies": [
+        "pcb-geometry"
+      ],
+      "public_types": [
+        "mulib_pcb_drc_violation_t",
+        "mulib_pcb_segment_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 38,
+          "text": "return SIZE_MAX;"
+        },
+        {
+          "line": 42,
+          "text": "return SIZE_MAX;"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_pcb_drc.c"
+      ],
+      "example": "examples/modules/pcb-drc.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "pcb-excellon",
+      "owner": "pcb",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-pcb-excellon.h",
+      "source_sha256": "9924eecb351f0646851e625ad44647b164a48f046d4f19422ed7c29ef851f97d",
+      "manual": "manual/mulib-pcb-excellon.md",
+      "documented_profile": "Minimal Excellon-style metric coordinate drill output, one tool number per hole. No plated/unplated grouping, slot, route commands or board-fab job attributes. Verify compatibility with target CAM software.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_pcb_drill_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_pcb_excellon.c"
+      ],
+      "example": "examples/modules/pcb-excellon.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "pcb-geometry",
+      "owner": "pcb",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-pcb-geometry.h",
+      "source_sha256": "c82ef9c59c50e08d58cd12e55c4476b2d6dd3759702ca785f03b8516aa0dbe8c",
+      "manual": "manual/mulib-pcb-geometry.md",
+      "documented_profile": "2D Euclidean point-to-segment and segment-to-segment distances and centerline clearance for straight copper tracks with width and net IDs. Double-precision simple predicates; not exact robust polygon clipping or full DRC.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_pcb_point_t",
+        "mulib_pcb_segment_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_pcb_geometry.c"
+      ],
+      "example": "examples/modules/pcb-geometry.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "pcb-gerber",
+      "owner": "pcb",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-pcb-gerber.h",
+      "source_sha256": "e4c133f340e1e5ea63e183abda22455e6cdd13dd07557a2722329eec166b6bec",
+      "manual": "manual/mulib-pcb-gerber.md",
+      "documented_profile": "Restricted RS-274X Gerber trace layer output: millimetres, leading-absolute 4.6 coordinates, circular D-code apertures, straight tracks only. No X2 file functions, polarity/regions, arc interpolation, macros, drill files or soldermask. Output must be validated by a Gerber viewer before manufacture.",
+      "dependencies": [
+        "pcb-geometry"
+      ],
+      "public_types": [
+        "mulib_pcb_segment_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_pcb_gerber.c"
+      ],
+      "example": "examples/modules/pcb-gerber.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "pcb-impedance",
+      "owner": "pcb",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-pcb-impedance.h",
+      "source_sha256": "a4231540a47ca99a795bd5264ac5de2f0bf5ae0799e26e34088c1b8825e2955a",
+      "manual": "manual/mulib-pcb-impedance.md",
+      "documented_profile": "PCB convenience API for approximate zero-thickness quasi-static microstrip impedance. Not an IPC field solver or controlled-impedance manufacturing guarantee.",
+      "dependencies": [
+        "rf-microstrip"
+      ],
+      "public_types": [],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_pcb_impedance.c"
+      ],
+      "example": "examples/modules/pcb-impedance.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "pcb-pnp",
+      "owner": "pcb",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-pcb-pnp.h",
+      "source_sha256": "3e7e1a9a956386461dbf364c109693b3f2ca998d5c9f7ee3d383cb9f2c4838b2",
+      "manual": "manual/mulib-pcb-pnp.md",
+      "documented_profile": "CSV pick-and-place placement export with millimetre XY, degrees and top/bottom side; no footprint origins/centroid correction, assembly variant or machine-specific profile.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_pcb_placement_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 18,
+          "text": "char reference[48];"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_pcb_pnp.c"
+      ],
+      "example": "examples/modules/pcb-pnp.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "qa-corpus",
+      "owner": "qa",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-qa-corpus.h",
+      "source_sha256": "972265045a268b669f0077f75dcaed908a411b92ba00606fe88bde291d6fbcbc",
+      "manual": "manual/mulib-qa-corpus.md",
+      "documented_profile": "Bounded 256-entry registry of golden fixture identifiers, input fingerprints and expected statuses. Fixture data storage, differential execution and cryptographic hash verification are outside scope.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_qa_case_t",
+        "mulib_qa_corpus_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 16,
+          "text": "char id[48];"
+        },
+        {
+          "line": 21,
+          "text": "mulib_qa_case_t cases[256];"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_qa_corpus.c"
+      ],
+      "example": "examples/modules/qa-corpus.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "qa-repro",
+      "owner": "qa",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-qa-repro.h",
+      "source_sha256": "6d54120cc467e80700b0a600b261a620f368359a264b7d9f63d8a9418aa957ac",
+      "manual": "manual/mulib-qa-repro.md",
+      "documented_profile": "Platform-independent FNV-1a fingerprint for a reproducibility record (seed, feature mask, compiler and target strings). Hash is not cryptographic authentication and does not include all build artifacts.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_qa_repro_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 18,
+          "text": "char compiler[64], target[64];"
+        },
+        {
+          "line": 58,
+          "text": "v[2] = {r->seed, ((uint64_t)r->version << 32) | r->features};"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_qa_repro.c"
+      ],
+      "example": "examples/modules/qa-repro.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "rf-microstrip",
+      "owner": "rf",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-rf-microstrip.h",
+      "source_sha256": "2ff05b3ada932384d137ff510dd217f17afffb140e7ca412eea15c6f0800e353",
+      "manual": "manual/mulib-rf-microstrip.md",
+      "documented_profile": "Quasi-static zero-thickness microstrip impedance estimate for width/substrate thickness ratio and dielectric constant. Approximate closed-form model only: no conductor thickness, dispersion, roughness or full-wave analysis.",
+      "dependencies": [],
+      "public_types": [],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_rf_microstrip.c"
+      ],
+      "example": "examples/modules/rf-microstrip.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "rf-smith",
+      "owner": "rf",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-rf-smith.h",
+      "source_sha256": "98796e4ab33e0f3bb03c5a1dc2b8aaff699872328ede5c23cdbe1e1b3d0b138d",
+      "manual": "manual/mulib-rf-smith.md",
+      "documented_profile": "Smith chart Cartesian coordinates from normalized single-port impedance using the S11 transform. Does not draw curves or support admittance chart overlays.",
+      "dependencies": [
+        "rf-sparams"
+      ],
+      "public_types": [
+        "mulib_rf_complex_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_rf_smith.c"
+      ],
+      "example": "examples/modules/rf-smith.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "rf-sparams",
+      "owner": "rf",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-rf-sparams.h",
+      "source_sha256": "8677fd9ef31ed7e7d986d2decb63e00ef06ee79057ea26890638ce9f059d4e57",
+      "manual": "manual/mulib-rf-sparams.md",
+      "documented_profile": "Single-port complex impedance/S11 conversion with scaled arithmetic and VSWR for reflection magnitude below one. Real positive reference impedance is required. No multiport matrices or Touchstone codec.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_rf_complex_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_cpp_link.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_rf_sparams.c"
+      ],
+      "example": "examples/modules/rf-sparams.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "soc-memorymap",
+      "owner": "soc",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-soc-memorymap.h",
+      "source_sha256": "7fb6325e96e44999d2eb0530a203b195dc857d39b45a106e634d0a47237dd2e5",
+      "manual": "manual/mulib-soc-memorymap.md",
+      "documented_profile": "Bounded 128-entry nonoverlapping physical address map with overflow-checked half-open regions, device IDs and offset lookup. No actual bus arbitration or memory-mapped peripheral execution.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_soc_memorymap_t",
+        "mulib_soc_range_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 20,
+          "text": "mulib_soc_range_t ranges[128];"
+        },
+        {
+          "line": 44,
+          "text": "if (!m || !len || !device || m->count >= 128 || start > UINT64_MAX - (len - 1))"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_soc_memorymap.c"
+      ],
+      "example": "examples/modules/soc-memorymap.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "spice-ac",
+      "owner": "spice",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-spice-ac.h",
+      "source_sha256": "586171fb8037131a58f90a2b1c5b4f82a17e0e59141ed053c0c71a910c040843",
+      "manual": "manual/mulib-spice-ac.md",
+      "documented_profile": "Frequency-domain complex MNA for linear R/C/I/V circuits at one nonnegative frequency, interpreting independent DC source magnitudes as AC phasor amplitudes of zero phase for this narrow profile. No source AC metadata, inductor, BJT/MOS small-signal, noise, or sweep. Uses C11 complex arithmetic.",
+      "dependencies": [
+        "spice-netlist"
+      ],
+      "public_types": [
+        "mulib_spice_complex_t",
+        "mulib_spice_netlist_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 46,
+          "text": "if (!n || n > SIZE_MAX / n || n * n > SIZE_MAX / sizeof(double complex))"
+        },
+        {
+          "line": 59,
+          "text": "size_t x = p->a ? (size_t)p->a - 1 : SIZE_MAX, y = p->b ? (size_t)p->b - 1 : SIZE_MAX;"
+        },
+        {
+          "line": 69,
+          "text": "if (x != SIZE_MAX)"
+        },
+        {
+          "line": 71,
+          "text": "if (y != SIZE_MAX)"
+        },
+        {
+          "line": 76,
+          "text": "if (x != SIZE_MAX) {"
+        },
+        {
+          "line": 80,
+          "text": "if (y != SIZE_MAX) {"
+        },
+        {
+          "line": 91,
+          "text": "if (x != SIZE_MAX)"
+        },
+        {
+          "line": 93,
+          "text": "if (y != SIZE_MAX)"
+        },
+        {
+          "line": 95,
+          "text": "if (x != SIZE_MAX && y != SIZE_MAX) {"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_spice_ac.c"
+      ],
+      "example": "examples/modules/spice-ac.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "spice-c",
+      "owner": "spice",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-spice-c.h",
+      "source_sha256": "227a08ccd1e5660b2eab07b4b2b3095993c44a8c6a6c9c92096d2a17729b1255",
+      "manual": "manual/mulib-spice-c.md",
+      "documented_profile": "Backward-Euler companion for an ideal linear capacitor: conductance C/dt and equivalent history current. Fixed step; no charge-dependent capacitance or LTE control.",
+      "dependencies": [
+        "spice-stamp"
+      ],
+      "public_types": [
+        "mulib_spice_stamp_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_spice_c.c"
+      ],
+      "example": "examples/modules/spice-c.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "spice-dc",
+      "owner": "spice",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-spice-dc.h",
+      "source_sha256": "814467271730120542b4434a2262f7c64317ba0322e3a17de77bb0482265283b",
+      "manual": "manual/mulib-spice-dc.md",
+      "documented_profile": "Linear DC source sweep over a named independent voltage/current source. Equally spaced points (including endpoints), stacked node-voltage arrays, transactional output. No nested sweeps, temperature variation or nonlinear models.",
+      "dependencies": [
+        "spice-op"
+      ],
+      "public_types": [
+        "mulib_spice_netlist_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 34,
+          "text": "!isfinite(end) || !net->nodes || steps > SIZE_MAX / net->nodes ||"
+        },
+        {
+          "line": 35,
+          "text": "cap < steps * net->nodes || steps > SIZE_MAX / (net->nodes * sizeof(double)))"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_spice_dc.c"
+      ],
+      "example": "examples/modules/spice-dc.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "spice-independent",
+      "owner": "spice",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-spice-independent.h",
+      "source_sha256": "0e317c1889a27e80f2ec64e30e71cac7425b88308f101842f9660b27f3354277",
+      "manual": "manual/mulib-spice-independent.md",
+      "documented_profile": "Time-independent DC current and voltage MNA source stamps. Source waveforms and AC phasors are not implemented in this module.",
+      "dependencies": [
+        "spice-stamp"
+      ],
+      "public_types": [
+        "mulib_spice_stamp_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_spice_independent.c"
+      ],
+      "example": "examples/modules/spice-independent.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "spice-lexer",
+      "owner": "spice",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-spice-lexer.h",
+      "source_sha256": "b0f1acd9ab05f99b20b11d45a6ce44b6485faf60b57b9c07c5c9b193758a4780",
+      "manual": "manual/mulib-spice-lexer.md",
+      "documented_profile": "SPICE engineering numeric suffixes (T,G,MEG,K,M,U,N,P,F) and bounded whitespace-line tokenization for basic component records. No quoted strings, continuation lines, expressions, or full SPICE grammar.",
+      "dependencies": [],
+      "public_types": [],
+      "resource_limit_source": [
+        {
+          "line": 16,
+          "text": "int mulib_spice_split_line(const char *line, char fields[][64], size_t max_fields,"
+        },
+        {
+          "line": 42,
+          "text": "char suff[16] = {0};"
+        },
+        {
+          "line": 76,
+          "text": "int mulib_spice_split_line(const char *s, char fields[][64], size_t cap, size_t *out) {"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_spice_lexer.c"
+      ],
+      "example": "examples/modules/spice-lexer.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "spice-measure",
+      "owner": "spice",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-spice-measure.h",
+      "source_sha256": "6a8bf884717acb5c3a1c9346e111c11981db1d05f994c1cb6bcf1ed82ec57f5e",
+      "manual": "manual/mulib-spice-measure.md",
+      "documented_profile": "SPICE-facing sample-domain RMS and extrema helpers delegated to the existing wave-measure primitive. No continuous-time integrals or rise/fall-time interpolation.",
+      "dependencies": [
+        "wave-measure"
+      ],
+      "public_types": [
+        "mulib_wave_signal_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_spice_measure.c"
+      ],
+      "example": "examples/modules/spice-measure.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "spice-netlist",
+      "owner": "spice",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-spice-netlist.h",
+      "source_sha256": "e3668183b861800a31f1c30898f738e962a375837b76caa00a3f9afb1ca7fccd",
+      "manual": "manual/mulib-spice-netlist.md",
+      "documented_profile": "Transactional parser for four passive/independent-device card types: R, C, V, I with 2 nodes and one numeric DC value. Comments, .end, SPICE number suffixes. Maximum 128 non-ground nodes, 1024 components, line length 511. No subcircuits, model cards, continuation, AC, PULSE, or behavioral expressions.",
+      "dependencies": [
+        "spice-lexer"
+      ],
+      "public_types": [
+        "mulib_spice_netlist_t",
+        "mulib_spice_part_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 15,
+          "text": "#define MULIB_SPICE_MAX_NODES 128"
+        },
+        {
+          "line": 16,
+          "text": "#define MULIB_SPICE_MAX_PARTS 1024"
+        },
+        {
+          "line": 18,
+          "text": "char name[32];"
+        },
+        {
+          "line": 25,
+          "text": "char node_names[MULIB_SPICE_MAX_NODES][32];"
+        },
+        {
+          "line": 77,
+          "text": "char s[512];"
+        },
+        {
+          "line": 90,
+          "text": "char f[8][64];"
+        },
+        {
+          "line": 117,
+          "text": "int a = mulib_spice_node_get_(t, f[1]), b = mulib_spice_node_get_(t, f[2]);"
+        },
+        {
+          "line": 118,
+          "text": "if (a < 0 || b < 0 || !mulib_spice_parse_number(f[3], &val) || (kind == 'R' && val <= 0) ||"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_spice_netlist.c"
+      ],
+      "example": "examples/modules/spice-netlist.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "spice-op",
+      "owner": "spice",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-spice-op.h",
+      "source_sha256": "33db32f9f0b47b82ae15a7fe07db15fba3f2d1e1a2af64ff13c7b27e08ba1ffe",
+      "manual": "manual/mulib-spice-op.md",
+      "documented_profile": "DC operating-point solver for linear R/I/V circuits with open capacitors; dense MNA and partial-pivot Gaussian elimination. Rejects singular/floating systems. This is not nonlinear SPICE operating-point analysis, gmin stepping, or model-based DC simulation.",
+      "dependencies": [
+        "num-dense",
+        "spice-independent",
+        "spice-netlist",
+        "spice-r",
+        "spice-stamp"
+      ],
+      "public_types": [
+        "mulib_spice_netlist_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_spice_op.c"
+      ],
+      "example": "examples/modules/spice-op.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "spice-r",
+      "owner": "spice",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-spice-r.h",
+      "source_sha256": "49c9c837655455d80f7fd77b100b154621d27629f3b5e681b7caf99cbba282b3",
+      "manual": "manual/mulib-spice-r.md",
+      "documented_profile": "Linear DC resistor MNA stamp with strictly positive finite resistance. No thermal noise or temperature coefficient.",
+      "dependencies": [
+        "spice-stamp"
+      ],
+      "public_types": [
+        "mulib_spice_stamp_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_spice_r.c"
+      ],
+      "example": "examples/modules/spice-r.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "spice-stamp",
+      "owner": "spice",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-spice-stamp.h",
+      "source_sha256": "60e7045a04c628d63ef38c962e208642a5934b8e70e243433851ac470b284427",
+      "manual": "manual/mulib-spice-stamp.md",
+      "documented_profile": "MNA matrix and RHS allocation and linear conductance/independent current/ideal voltage-source stamps. Nodes: ground=0, unknown nodes indexed 1..N. Voltage-source branch index is zero-based MNA unknown index. Nodes must not alias branch positions as physical node IDs.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_spice_stamp_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 41,
+          "text": "if (!s || n == 0 || n > SIZE_MAX / n || n * n > SIZE_MAX / sizeof(double))"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_spice_stamp.c"
+      ],
+      "example": "examples/modules/spice-stamp.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "spice-tran",
+      "owner": "spice",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-spice-tran.h",
+      "source_sha256": "e722ad02bd4baf7e6a24310b992a3ac56494df28431659fbc3dfd366737356f1",
+      "manual": "manual/mulib-spice-tran.md",
+      "documented_profile": "Fixed-timestep backward-Euler transient for linear R/C/I/V networks, zero initial capacitor voltages, time-invariant DC sources, no inductors. Not adaptive, no source breakpoints, no nonlinear devices. Result is transactionally committed after all steps.",
+      "dependencies": [
+        "num-dense",
+        "spice-c",
+        "spice-independent",
+        "spice-netlist",
+        "spice-r",
+        "spice-stamp"
+      ],
+      "public_types": [
+        "mulib_spice_netlist_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 39,
+          "text": "if (!mulib_spice_netlist_valid(net) || !samples || steps > SIZE_MAX / sizeof(double) ||"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_spice_tran.c"
+      ],
+      "example": "examples/modules/spice-tran.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "synth-aig",
+      "owner": "synth",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-synth-aig.h",
+      "source_sha256": "82e4ba08a8bd05073dc941d80a9218064fe724b53eee3afa49248f5eb2f18f08",
+      "manual": "manual/mulib-synth-aig.md",
+      "documented_profile": "Bounded AIG with constant 0/1, complemented edges, structural hashing and simple constant/identity simplification. Maximum 1023 nodes, no deletion. No sequential latches or technology mapping.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_synth_aig_lit_t",
+        "mulib_synth_aig_node_t",
+        "mulib_synth_aig_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 22,
+          "text": "mulib_synth_aig_node_t nodes[1024];"
+        },
+        {
+          "line": 96,
+          "text": "uint8_t values[1024] = {0};"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_synth_aig.c"
+      ],
+      "example": "examples/modules/synth-aig.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "synth-truthtable",
+      "owner": "synth",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-synth-truthtable.h",
+      "source_sha256": "e7e62949ee9671ca8ee1553dffa3345e2d51da1f15844c90c7564537a9c3e8d5",
+      "manual": "manual/mulib-synth-truthtable.md",
+      "documented_profile": "Packed truth tables for zero to six inputs with variable generation, Boolean operations, evaluation and variable-removing cofactors. Bit zero corresponds to the all-zero input assignment. No NPN canonicalization or sequential synthesis.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_synth_truth_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_synth_truthtable.c"
+      ],
+      "example": "examples/modules/synth-truthtable.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "wave-decimate",
+      "owner": "wave",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-wave-decimate.h",
+      "source_sha256": "5289c09c297cce4d0edd4ba11c4ea5dda72db093691033e497d885c24bb50180",
+      "manual": "manual/mulib-wave-decimate.md",
+      "documented_profile": "Min/max display decimation in index-aligned buckets, preserving extrema. Requires bucket count <= sample count; does not perform time-uniform resampling.",
+      "dependencies": [
+        "wave-signal"
+      ],
+      "public_types": [
+        "mulib_wave_sample_t",
+        "mulib_wave_signal_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_wave_decimate.c"
+      ],
+      "example": "examples/modules/wave-decimate.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "wave-measure",
+      "owner": "wave",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-wave-measure.h",
+      "source_sha256": "2c4f71b4c5b35ad922b9758075038a78311a38ef516b68f8ff244de57e17434f",
+      "manual": "manual/mulib-wave-measure.md",
+      "documented_profile": "Sample-weighted RMS, extrema, threshold crossing counts and time-domain integration. Integration uses trapezoids for analog samples and left holds for digital samples. Tied timestamps contribute zero area.",
+      "dependencies": [
+        "wave-signal"
+      ],
+      "public_types": [
+        "mulib_wave_signal_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_wave_measure.c"
+      ],
+      "example": "examples/modules/wave-measure.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "wave-signal",
+      "owner": "wave",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-wave-signal.h",
+      "source_sha256": "e6ba981eaa3291adb11a9dde1160764af30832564292f2fe6ae88b9ccbd85624",
+      "manual": "manual/mulib-wave-signal.md",
+      "documented_profile": "Owned finite time-value sample series with nondecreasing timestamps, validation and interpolation. Analog interpolation is linear; digital interpolation holds the previous sample. Repeated timestamps select the last sample at that time. Out-of-range queries fail without changing output.",
+      "dependencies": [],
+      "public_types": [
+        "mulib_wave_kind_t",
+        "mulib_wave_sample_t",
+        "mulib_wave_signal_t"
+      ],
+      "resource_limit_source": [
+        {
+          "line": 50,
+          "text": "if (n <= s->cap || n > SIZE_MAX / sizeof *s->samples)"
+        }
+      ],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_amb3r_vertical.c",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_wave_signal.c"
+      ],
+      "example": "examples/modules/wave-signal.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    },
+    {
+      "module": "wave-vcd",
+      "owner": "wave",
+      "state": "existing-limited",
+      "presence": "present",
+      "capability": "partial",
+      "header": "include/mulib-wave-vcd.h",
+      "source_sha256": "1331adbc62380b91bdbcf7fcc86a2fb50297f84c7d79c17361766cd332336877",
+      "manual": "manual/mulib-wave-vcd.md",
+      "documented_profile": "VCD writer for one scalar four-state signal with a fixed identifier (!) and 1ns timescale. Multiple signals, scopes, and variable-width vectors not supported. FILE is caller-owned.",
+      "dependencies": [
+        "dsim-logic4"
+      ],
+      "public_types": [
+        "mulib_dsim_logic4_t",
+        "mulib_wave_vcd_t"
+      ],
+      "resource_limit_source": [],
+      "test_sources": [
+        "tests/test_all_headers.c",
+        "tests/test_all_headers_cpp.cpp",
+        "tests/test_eda_alloc.c",
+        "tests/test_eda_extended.c",
+        "tests/test_wave_vcd.c"
+      ],
+      "example": "examples/modules/wave-vcd.c",
+      "acceptance_gate": "M0 baseline smoke only; see amb3r-status.md",
+      "unverified_behavior": "Full roadmap profile; source references are not runtime evidence",
+      "next_dependency": "Complete M0 behavioral audit; see reviewed owner map in amb3r-status.md"
+    }
+  ]
+}

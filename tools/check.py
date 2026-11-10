@@ -194,9 +194,15 @@ def main():
         def check(label, sources=None, source_text=None, language='c', execute=True, extra_flags=None):
             with tempfile.TemporaryDirectory(prefix='case-', dir=tmp) as work:
                 binary = Path(work) / 'test'
+                source_name = sources[0].name if sources and len(sources) == 1 else ''
+                compile_only = source_name == 'test_mune_compile.c'
                 command = (compiler if language == 'c' else cxx) + [
                     '-std=c11' if language == 'c' else '-std=c++17'] + flags
                 command += extra_flags or []
+                # Match CMake's shell-test profile; test_mune_compile deliberately
+                # checks real API declarations without linking Mune implementations.
+                if os.name == 'posix' and re.match(r'^test_(parallel|shebang|sh_|mune_compile)', source_name):
+                    command += ['-D_POSIX_C_SOURCE=200809L']
                 if sources and len(sources) == 1 and sources[0].name == 'test_android_sdk.c':
                     command += ['-I' + str(root / 'tests/fixtures/android-sdk')]
                 if sources and len(sources) == 1 and sources[0].name == 'test_mune_runtime.c' and sys.platform.startswith(('linux', 'freebsd')):
@@ -207,16 +213,25 @@ def main():
                     if language != 'c':
                         command += ['-x', language]
                     command += [str(p) for p in sources]
-                command += links + ['-o', str(binary)]
+                command += (['-c'] if compile_only else links) + ['-o', str(binary)]
                 try:
                     build = subprocess.run(command, input=source_text, cwd=work,
                                            capture_output=True, text=True, timeout=90)
                     if build.returncode:
                         failures.append((label, build.stderr or build.stdout))
                         return False
-                    if execute:
+                    if execute and not compile_only:
                         arguments = ([str(root / 'library')] if sources and len(sources) == 1
                                       and sources[0].name in ('immgtk.c', 'test_immgtk.c') else [])
+                        expected_output = None
+                        if sources == [root / 'examples/parallel.c']:
+                            arguments = ['-k', "printf '%s\\n' {}", ':::', 'alpha', 'beta']
+                            expected_output = 'alpha\nbeta\n'
+                        elif sources == [root / 'examples/shebang.c']:
+                            script = Path(work) / 'input.txt'
+                            script.write_text('hello ${1}\n')
+                            arguments = [str(script), 'world']
+                            expected_output = 'hello world\n'
                         if sources and len(sources) == 1 and sources[0].name == 'build-publication.c':
                             arguments = ['.']
                         test = subprocess.run([str(binary)] + arguments, cwd=work, capture_output=True,
@@ -224,6 +239,9 @@ def main():
                         if test.returncode:
                             failures.append((label, test.stderr or test.stdout or
                                               'exit status ' + str(test.returncode)))
+                            return False
+                        if expected_output is not None and test.stdout != expected_output:
+                            failures.append((label, 'unexpected CLI output: ' + repr(test.stdout)))
                             return False
                         if sources and len(sources) == 1 and sources[0].name == 'build-publication.c':
                             formats = subprocess.run(
@@ -357,13 +375,16 @@ def main():
         all_switches = set(switches.values())
         for values in extra_switches.values():
             all_switches.update(values)
+        # The shell modules require this before any system header, including in
+        # the declaration-first and reverse-order combined implementation tests.
+        posix_source = '#ifndef _POSIX_C_SOURCE\n#define _POSIX_C_SOURCE 200809L\n#endif\n'
         defines = ''.join('#define ' + switch + '\n' for switch in sorted(all_switches))
         includes = ''.join('#include "' + header.name + '"\n' for header in reversed(headers))
         main_source = 'int main(void) { return 0; }\n'
         cases.append(dict(label='reverse-order implementations',
-                          source_text=defines + includes + main_source))
+                          source_text=posix_source + defines + includes + main_source))
         cases.append(dict(label='implementations after declarations',
-                          source_text=includes + defines + includes + main_source))
+                          source_text=posix_source + includes + defines + includes + main_source))
         if os.name == 'posix':
             cases.append(dict(label='POSIX shell', sources=[root / 'tests/test_runtime.c'],
                               extra_flags=['-DMULIB_MINISH_ENABLE_POSIX']))
@@ -391,6 +412,8 @@ def main():
                         enabled.add(switches[dependency])
                         enabled.update(extra_switches.get(dependency, []))
                 defines = ''.join('#define ' + switch + '\n' for switch in sorted(enabled))
+                if enabled & {'MULIB_IMPL_PARALLEL_SH', 'MULIB_IMPL_SHEBANG_SH'}:
+                    defines = posix_source + defines
                 cases.append(dict(label='isolated implementation: ' + name,
                                   source_text=defines + declaration))
             print(f'MuLIB checking {len(cases)} isolated header builds', flush=True)

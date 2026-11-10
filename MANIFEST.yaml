@@ -11590,3 +11590,141 @@ project_files:
   purpose: "Standalone checked usage example for sha."
 - file: tests/test-hashes.c
   purpose: "Focused regression suite for test-hashes."
+- file: examples/modules/branch-layout.c
+  purpose: "Standalone checked usage example for branch-layout."
+- file: examples/modules/bytecode-builder.c
+  purpose: "Standalone checked usage example for bytecode-builder."
+- file: examples/modules/bytecode-disasm.c
+  purpose: "Standalone checked usage example for bytecode-disasm."
+- file: examples/modules/bytecode-eval.c
+  purpose: "Standalone checked usage example for bytecode-eval."
+- file: examples/modules/bytecode-opt.c
+  purpose: "Standalone checked usage example for bytecode-opt."
+- file: examples/modules/bytecode-serialize.c
+  purpose: "Standalone checked usage example for bytecode-serialize."
+- file: examples/modules/bytecode-verify.c
+  purpose: "Standalone checked usage example for bytecode-verify."
+- file: examples/modules/bytecode.c
+  purpose: "Standalone checked usage example for bytecode."
+- file: examples/modules/callconv.c
+  purpose: "Standalone checked usage example for callconv."
+- file: examples/modules/cfg.c
+  purpose: "Standalone checked usage example for cfg."
+- file: examples/modules/compiler-cache.c
+  purpose: "Standalone checked usage example for compiler-cache."
+- file: examples/modules/compiler-driver.c
+  purpose: "Standalone checked usage example for compiler-driver."
+- file: examples/modules/compiler-scope.c
+  purpose: "Standalone checked usage example for compiler-scope."
+- file: examples/modules/compiler-test.c
+  purpose: "Standalone checked usage example for compiler-test."
+- file: examples/modules/consteval.c
+  purpose: "Standalone checked usage example for consteval."
+- file: examples/modules/constraints.c
+  purpose: "Standalone checked usage example for constraints."
+- file: examples/modules/dce.c
+  purpose: "Standalone checked usage example for dce."
+- file: examples/modules/defuse.c
+  purpose: "Standalone checked usage example for defuse."
+- file: examples/modules/diagnostic.c
+  purpose: "Standalone checked usage example for diagnostic."
+- file: examples/modules/dominance.c
+  purpose: "Standalone checked usage example for dominance."
+- file: examples/modules/frame-layout.c
+  purpose: "Standalone checked usage example for frame-layout."
+- file: examples/modules/gc-roots.c
+  purpose: "Standalone checked usage example for gc-roots."
+- file: examples/modules/gc.c
+  purpose: "Standalone checked usage example for gc."
+- file: examples/modules/gvn.c
+  purpose: "Standalone checked usage example for gvn."
+- file: examples/modules/importgraph.c
+  purpose: "Standalone checked usage example for importgraph."
+- file: examples/modules/ir-print.c
+  purpose: "Standalone checked usage example for ir-print."
+- file: examples/modules/ir-verify.c
+  purpose: "Standalone checked usage example for ir-verify."
+- file: examples/modules/lexer.c
+  purpose: "Standalone checked usage example for lexer."
+- file: examples/modules/lexgen.c
+  purpose: "Standalone checked usage example for lexgen."
+- file: examples/modules/lexical-token.c
+  purpose: "Standalone checked usage example for lexical-token."
+- file: examples/modules/liveintervals.c
+  purpose: "Standalone checked usage example for liveintervals."
+- file: examples/modules/liveness.c
+  purpose: "Standalone checked usage example for liveness."
+- file: examples/modules/loops.c
+  purpose: "Standalone checked usage example for loops."
+- file: examples/modules/module-resolver.c
+  purpose: "Standalone checked usage example for module-resolver."
+- file: examples/modules/name-resolution.c
+  purpose: "Standalone checked usage example for name-resolution."
+- file: examples/modules/parser-pratt.c
+  purpose: "Standalone checked usage example for parser-pratt."
+- file: examples/modules/passmanager.c
+  purpose: "Standalone checked usage example for passmanager."
+- file: examples/modules/physreg.c
+  purpose: "Standalone checked usage example for physreg."
+- file: examples/modules/postdominance.c
+  purpose: "Standalone checked usage example for postdominance."
+- file: examples/modules/range-analysis.c
+  purpose: "Standalone checked usage example for range-analysis."
+- file: examples/modules/regalloc-graph.c
+  purpose: "Standalone checked usage example for regalloc-graph."
+- file: examples/modules/regalloc-linear.c
+  purpose: "Standalone checked usage example for regalloc-linear."
+- file: examples/modules/regalloc.c
+  purpose: "Standalone checked usage example for regalloc."
+- file: examples/modules/regpressure.c
+  purpose: "Standalone checked usage example for regpressure."
+- file: examples/modules/source-manager.c
+  purpose: "Standalone checked usage example for source-manager."
+- file: examples/modules/source-map.c
+  purpose: "Standalone checked usage example for source-map."
+- file: examples/modules/stackmap.c
+  purpose: "Standalone checked usage example for stackmap."
+- file: examples/modules/symboltable.c
+  purpose: "Standalone checked usage example for symboltable."
+- file: examples/modules/syntax-tree.c
+  purpose: "Standalone checked usage example for syntax-tree."
+- file: examples/modules/typecheck.c
+  purpose: "Standalone checked usage example for typecheck."
+- file: examples/modules/typesystem.c
+  purpose: "Standalone checked usage example for typesystem."
+- file: examples/modules/vm-host.c
+  purpose: "Standalone checked usage example for vm-host."
+- file: examples/modules/vm-module.c
+  purpose: "Standalone checked usage example for vm-module."
+- file: examples/modules/vm-value.c
+  purpose: "Standalone checked usage example for vm-value."
+- file: tests/test-compiler-allocation.c
+  purpose: "Focused regression suite for test-compiler-allocation."
+- file: tests/test-compiler-backend.c
+  purpose: "Focused regression suite for test-compiler-backend."
+- file: tests/test-compiler-bytecode.c
+  purpose: "Focused regression suite for test-compiler-bytecode."
+- file: tests/test-compiler-flow.c
+  purpose: "Focused regression suite for test-compiler-flow."
+- file: tests/test-compiler-frontend.c
+  purpose: "Focused regression suite for test-compiler-frontend."
+- file: tests/test-compiler-patched.c
+  purpose: "Focused regression suite for test-compiler-patched."
+- file: tests/test-compiler-runtime.c
+  purpose: "Focused regression suite for test-compiler-runtime."
+- file: tests/test-compiler-services.c
+  purpose: "Focused regression suite for test-compiler-services."
+- file: tools/audit_amb3r.py
+  purpose: "Reproducible Amb3r source profile, dependency, type and test inventory."
+- file: manual/amb3r-inventory.json
+  purpose: "Generated source-level inventory of the existing Amb3r slice and ImGTK host."
+- file: manual/amb3r-status.md
+  purpose: "Bounded M0 repair handoff, evidence, owner map and remaining acceptance gaps."
+- file: mudsl/tests/mull/mulib/eda-ids.mull
+  purpose: "Shared MuLL host fixture for EDA ID lifetime and stale-handle rejection."
+- file: mudsl/tests/mull/mulib/eda-ids.expected
+  purpose: "Expected output for the EDA ID MuLL fixture."
+- file: mudsl/tests/mull/mulib/eda-transaction.mull
+  purpose: "Shared MuLL host fixture for EDA snapshot rollback, publication and conflicts."
+- file: mudsl/tests/mull/mulib/eda-transaction.expected
+  purpose: "Expected output for the EDA snapshot transaction MuLL fixture."

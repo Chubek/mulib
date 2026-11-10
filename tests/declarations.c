@@ -1081,4 +1081,6 @@
 #include "mulib-crc.h"
 #include "mulib-cryptohash.h"
 #include "mulib-sha.h"
+#include "mulib-parallel-sh.h"
+#include "mulib-shebang-sh.h"
 int main(void) { return 0; }
