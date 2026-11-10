@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1024 headers, 1056 direct dependency edges.
+Inventory: 1029 headers, 1057 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (345 modules)
+## Stratum 0 (349 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -29,6 +29,7 @@ Compatibility group: `parsec`, `peg`.
 | [asic-sta](mulib-asic-sta.md) | none |
 | [authcrypto](mulib-authcrypto.md) | none |
 | [automata-levenshtein](mulib-automata-levenshtein.md) | none |
+| [auxhash](mulib-auxhash.md) | none |
 | [avl](mulib-avl.md) | none |
 | [b+tree](mulib-b+tree.md) | none |
 | [base64](mulib-base64.md) | none |
@@ -55,6 +56,7 @@ Compatibility group: `parsec`, `peg`.
 | [bycutils](mulib-bycutils.md) | none |
 | [cassowary-solver](mulib-cassowary-solver.md) | none |
 | [charset](mulib-charset.md) | none |
+| [checksum](mulib-checksum.md) | none |
 | [clamp](mulib-clamp.md) | none |
 | [classic-bpf](mulib-classic-bpf.md) | none |
 | [color](mulib-color.md) | none |
@@ -70,6 +72,7 @@ Compatibility group: `parsec`, `peg`.
 | [countmin](mulib-countmin.md) | none |
 | [cpio](mulib-cpio.md) | none |
 | [crawlqueue](mulib-crawlqueue.md) | none |
+| [crc](mulib-crc.md) | none |
 | [crc32](mulib-crc32.md) | none |
 | [cron](mulib-cron.md) | none |
 | [csv](mulib-csv.md) | none |
@@ -287,6 +290,7 @@ Compatibility group: `parsec`, `peg`.
 | [set](mulib-set.md) | none |
 | [seurity](mulib-seurity.md) | none |
 | [sexpr](mulib-sexpr.md) | none |
+| [sha](mulib-sha.md) | none |
 | [shadowsocks](mulib-shadowsocks.md) | none |
 | [shm](mulib-shm.md) | none |
 | [shoebox-contract](mulib-shoebox-contract.md) | none |
@@ -365,7 +369,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (352 modules)
+## Stratum 1 (353 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -410,6 +414,7 @@ Compatibility group: `parsec`, `peg`.
 | [corpus](mulib-corpus.md) | `trie` |
 | [cowb+tree](mulib-cowb+tree.md) | `b+tree` |
 | [crossref](mulib-crossref.md) | `typecore` |
+| [cryptohash](mulib-cryptohash.md) | `sha` |
 | [csl](mulib-csl.md) | `typecore` |
 | [csswriter](mulib-csswriter.md) | `typecore` |
 | [datagram](mulib-datagram.md) | `filectl` |

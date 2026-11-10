@@ -31,6 +31,7 @@
 #define MULIB_IMPL_AUTHCRYPTO
 #define MULIB_IMPL_AUTOMATA_LEVENSHTEIN
 #define MULIB_IMPL_AUTONUMBER
+#define MULIB_IMPL_AUXHASH
 #define MULIB_IMPL_AVL
 #define MULIB_IMPL_AVR32
 #define MULIB_IMPL_AZW3
@@ -88,6 +89,7 @@
 #define MULIB_IMPL_CHANNEL
 #define MULIB_IMPL_CHARSET
 #define MULIB_IMPL_CHART
+#define MULIB_IMPL_CHECKSUM
 #define MULIB_IMPL_CHEM
 #define MULIB_IMPL_CHEMICAL
 #define MULIB_IMPL_CLAMP
@@ -153,9 +155,11 @@
 #define MULIB_IMPL_COWBPTREE
 #define MULIB_IMPL_CPIO
 #define MULIB_IMPL_CRAWLQUEUE
+#define MULIB_IMPL_CRC
 #define MULIB_IMPL_CRC32
 #define MULIB_IMPL_CRON
 #define MULIB_IMPL_CROSSREF
+#define MULIB_IMPL_CRYPTOHASH
 #define MULIB_IMPL_CSL
 #define MULIB_IMPL_CSS
 #define MULIB_IMPL_CSSWRITER
@@ -759,6 +763,7 @@
 #define MULIB_IMPL_SEURITY
 #define MULIB_IMPL_SEXPR
 #define MULIB_IMPL_SFNT
+#define MULIB_IMPL_SHA
 #define MULIB_IMPL_SHADERX
 #define MULIB_IMPL_SHADOWSOCKS
 #define MULIB_IMPL_SHIRAZ
@@ -1055,6 +1060,7 @@
 #include "mulib-authcrypto.h"
 #include "mulib-automata-levenshtein.h"
 #include "mulib-autonumber.h"
+#include "mulib-auxhash.h"
 #include "mulib-avl.h"
 #include "mulib-avr32.h"
 #include "mulib-azw3.h"
@@ -1112,6 +1118,7 @@
 #include "mulib-channel.h"
 #include "mulib-charset.h"
 #include "mulib-chart.h"
+#include "mulib-checksum.h"
 #include "mulib-chem.h"
 #include "mulib-chemical.h"
 #include "mulib-clamp.h"
@@ -1178,9 +1185,11 @@
 #include "mulib-cowb+tree.h"
 #include "mulib-cpio.h"
 #include "mulib-crawlqueue.h"
+#include "mulib-crc.h"
 #include "mulib-crc32.h"
 #include "mulib-cron.h"
 #include "mulib-crossref.h"
+#include "mulib-cryptohash.h"
 #include "mulib-csl.h"
 #include "mulib-css.h"
 #include "mulib-csswriter.h"
@@ -1783,6 +1792,7 @@
 #include "mulib-seurity.h"
 #include "mulib-sexpr.h"
 #include "mulib-sfnt.h"
+#include "mulib-sha.h"
 #include "mulib-shaderx.h"
 #include "mulib-shadowsocks.h"
 #include "mulib-shiraz.h"

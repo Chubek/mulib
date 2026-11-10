@@ -199,6 +199,12 @@ if(MULIB_BUILD_TESTS)
   check_language(CXX)
   if(CMAKE_CXX_COMPILER)
     enable_language(CXX)
+    add_executable(mulib_test_hash_cpp tests/test_hash_cpp.cpp tests/hash_implementations.c)
+    set_target_properties(mulib_test_hash_cpp PROPERTIES
+      CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS NO)
+    mulib_test_executable(mulib_test_hash_cpp)
+    mulib_register_test(mulib_test_hash_cpp)
+
     add_library(mulib_network_implementation OBJECT tests/cpp_impl.c)
     mulib_test_executable(mulib_network_implementation)
     add_executable(mulib_test_network_cpp tests/cpp_consumer.cpp

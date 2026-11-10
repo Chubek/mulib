@@ -1,3 +1,8 @@
+#define MULIB_IMPL_AUXHASH
+#define MULIB_IMPL_CHECKSUM
+#define MULIB_IMPL_CRC
+#define MULIB_IMPL_CRYPTOHASH
+#define MULIB_IMPL_SHA
 #define MULIB_IMPL_BITPACK
 #define MULIB_IMPL_BLOCKDEV
 #define MULIB_IMPL_BM25
@@ -2046,3 +2051,8 @@
 #include "mulib-vectorindex.h"
 #include "mulib-zoneindex.h"
 #include "mulib-zorder.h"
+#include "mulib-auxhash.h"
+#include "mulib-checksum.h"
+#include "mulib-crc.h"
+#include "mulib-cryptohash.h"
+#include "mulib-sha.h"

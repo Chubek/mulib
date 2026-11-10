@@ -1022,4 +1022,9 @@
 #include "mulib-vectorindex.h"
 #include "mulib-zoneindex.h"
 #include "mulib-zorder.h"
+#include "mulib-auxhash.h"
+#include "mulib-checksum.h"
+#include "mulib-crc.h"
+#include "mulib-cryptohash.h"
+#include "mulib-sha.h"
 int main(void) { return 0; }

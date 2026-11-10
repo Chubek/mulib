@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1021
-implemented_module_count: 1021
+module_count: 1026
+implemented_module_count: 1026
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -7330,6 +7330,41 @@ modules:
   purpose: Morton Z-order encoding/decoding for 2D unsigned 32-bit coordinates
   dependencies: []
   status: implemented
+- name: auxhash
+  header: include/mulib-auxhash.h
+  manual: manual/mulib-auxhash.md
+  macro: MULIB_IMPL_AUXHASH
+  purpose: "Portable noncryptographic byte, integer and rolling hashes."
+  dependencies: []
+  status: implemented
+- name: checksum
+  header: include/mulib-checksum.h
+  manual: manual/mulib-checksum.md
+  macro: MULIB_IMPL_CHECKSUM
+  purpose: "Streaming Adler, Fletcher, Internet, BSD, System V, sum and XOR checksums."
+  dependencies: []
+  status: implemented
+- name: crc
+  header: include/mulib-crc.h
+  manual: manual/mulib-crc.md
+  macro: MULIB_IMPL_CRC
+  purpose: "Parameterized 1..128-bit CRCs and all 113 CRC RevEng presets."
+  dependencies: []
+  status: implemented
+- name: cryptohash
+  header: include/mulib-cryptohash.h
+  manual: manual/mulib-cryptohash.md
+  macro: MULIB_IMPL_CRYPTOHASH
+  purpose: "BLAKE2, BLAKE3, KMAC, SipHash and AES-PMAC with intrinsic alternatives."
+  dependencies: [sha]
+  status: implemented
+- name: sha
+  header: include/mulib-sha.h
+  manual: manual/mulib-sha.md
+  macro: MULIB_IMPL_SHA
+  purpose: "SHA-0/1/2/3 and SHAKE with streaming contexts and SIMD alternatives."
+  dependencies: []
+  status: implemented
 project_files:
 - file: manual/data-search.md
   purpose: Ownership, integration and validation guide for data, search and formal-concept modules.
@@ -11113,3 +11148,15 @@ project_files:
   purpose: "Focused regression suite for test_data_sketches."
 - file: tests/test_data_text.c
   purpose: "Focused regression suite for test_data_text."
+- file: examples/modules/auxhash.c
+  purpose: "Standalone checked usage example for auxhash."
+- file: examples/modules/checksum.c
+  purpose: "Standalone checked usage example for checksum."
+- file: examples/modules/crc.c
+  purpose: "Standalone checked usage example for crc."
+- file: examples/modules/cryptohash.c
+  purpose: "Standalone checked usage example for cryptohash."
+- file: examples/modules/sha.c
+  purpose: "Standalone checked usage example for sha."
+- file: tests/test-hashes.c
+  purpose: "Focused regression suite for test-hashes."

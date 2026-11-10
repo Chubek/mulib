@@ -1,0 +1,10 @@
+#define MULIB_IMPL_SHA
+#define MULIB_IMPL_CRYPTOHASH
+#define MULIB_IMPL_AUXHASH
+#define MULIB_IMPL_CRC
+#define MULIB_IMPL_CHECKSUM
+#include "mulib-sha.h"
+#include "mulib-cryptohash.h"
+#include "mulib-auxhash.h"
+#include "mulib-crc.h"
+#include "mulib-checksum.h"
