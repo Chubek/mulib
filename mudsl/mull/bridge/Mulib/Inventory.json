@@ -31,6 +31,7 @@
     "mulib-auth.h",
     "mulib-authcrypto.h",
     "mulib-automata-levenshtein.h",
+    "mulib-autonumber.h",
     "mulib-avl.h",
     "mulib-avr32.h",
     "mulib-azw3.h",
@@ -40,6 +41,8 @@
     "mulib-baysian_ranking.h",
     "mulib-bcj.h",
     "mulib-beam_search.h",
+    "mulib-bibstyle.h",
+    "mulib-bibtex.h",
     "mulib-bidi.h",
     "mulib-binfile.h",
     "mulib-binfilebuilder.h",
@@ -55,6 +58,7 @@
     "mulib-blockcache.h",
     "mulib-blockidx.h",
     "mulib-bloom.h",
+    "mulib-booknav.h",
     "mulib-bootmgr.h",
     "mulib-bounds.h",
     "mulib-bpf-kernel.h",
@@ -75,11 +79,14 @@
     "mulib-cassowary-solver.h",
     "mulib-cbor.h",
     "mulib-ccweave.h",
+    "mulib-cff.h",
+    "mulib-cff2.h",
     "mulib-cgeom.h",
     "mulib-channel.h",
     "mulib-charset.h",
     "mulib-chart.h",
     "mulib-chem.h",
+    "mulib-chemical.h",
     "mulib-clamp.h",
     "mulib-classic-bpf.h",
     "mulib-clickir.h",
@@ -91,6 +98,9 @@
     "mulib-coffutils.h",
     "mulib-collision.h",
     "mulib-color.h",
+    "mulib-colorconvert.h",
+    "mulib-colormodel.h",
+    "mulib-colorprofile.h",
     "mulib-column-rdbms.h",
     "mulib-competprice.h",
     "mulib-complex.h",
@@ -138,7 +148,10 @@
     "mulib-crawlqueue.h",
     "mulib-crc32.h",
     "mulib-cron.h",
+    "mulib-crossref.h",
+    "mulib-csl.h",
     "mulib-css.h",
+    "mulib-csswriter.h",
     "mulib-csv.h",
     "mulib-curses.h",
     "mulib-daemon.h",
@@ -167,6 +180,7 @@
     "mulib-dhcp4-client.h",
     "mulib-dhcp6-client.h",
     "mulib-diag.h",
+    "mulib-diagram.h",
     "mulib-distfield.h",
     "mulib-distribcluster.h",
     "mulib-distribcomp.h",
@@ -177,8 +191,22 @@
     "mulib-dnsclient.h",
     "mulib-dnsnmeserver.h",
     "mulib-dnsresolver.h",
+    "mulib-docdiff.h",
+    "mulib-docincremental.h",
+    "mulib-docir.h",
+    "mulib-doclength.h",
+    "mulib-docmetadata.h",
+    "mulib-docnode.h",
+    "mulib-docnormalize.h",
+    "mulib-docquery.h",
+    "mulib-docresource.h",
+    "mulib-docsemantic.h",
+    "mulib-docserialize.h",
+    "mulib-docsource.h",
     "mulib-docstring.h",
+    "mulib-docstyle.h",
     "mulib-documentdb.h",
+    "mulib-docvalidate.h",
     "mulib-dom.h",
     "mulib-domserialize.h",
     "mulib-drm.h",
@@ -188,6 +216,9 @@
     "mulib-dsim-scheduler.h",
     "mulib-dsu.h",
     "mulib-dsymspec.h",
+    "mulib-dvi.h",
+    "mulib-dvifont.h",
+    "mulib-dviread.h",
     "mulib-dyegram.h",
     "mulib-dynbox.h",
     "mulib-dyncall.h",
@@ -228,6 +259,8 @@
     "mulib-env.h",
     "mulib-epoll.h",
     "mulib-epub.h",
+    "mulib-epubcheck.h",
+    "mulib-epubwriter.h",
     "mulib-eqn.h",
     "mulib-escape.h",
     "mulib-ethtool-features.h",
@@ -246,14 +279,28 @@
     "mulib-fiber.h",
     "mulib-field-poisson.h",
     "mulib-field-thermal.h",
+    "mulib-figurelayout.h",
     "mulib-filectl.h",
     "mulib-fileserver.h",
     "mulib-flatbuffers.h",
+    "mulib-floatgraphics.h",
     "mulib-flow-graph.h",
     "mulib-fmt-aiger.h",
     "mulib-fmt-sv.h",
+    "mulib-fontcatalog.h",
+    "mulib-fontcmap.h",
     "mulib-fontdraw.h",
+    "mulib-fontembed.h",
+    "mulib-fontfallback.h",
+    "mulib-fontgdef.h",
+    "mulib-fontgpos.h",
+    "mulib-fontgsub.h",
+    "mulib-fontkern.h",
+    "mulib-fontmetrics.h",
+    "mulib-fontraster.h",
     "mulib-fontshape.h",
+    "mulib-fontsubset.h",
+    "mulib-fontvar.h",
     "mulib-formal-cec.h",
     "mulib-formal-cnf.h",
     "mulib-formal-sat.h",
@@ -272,6 +319,7 @@
     "mulib-getaddr.h",
     "mulib-git.h",
     "mulib-glob.h",
+    "mulib-glossary.h",
     "mulib-glr.h",
     "mulib-glx.h",
     "mulib-glyph.h",
@@ -299,6 +347,7 @@
     "mulib-histprice.h",
     "mulib-hls-schedule.h",
     "mulib-html.h",
+    "mulib-htmlwriter.h",
     "mulib-http.h",
     "mulib-http1.h",
     "mulib-http2.h",
@@ -315,6 +364,10 @@
     "mulib-icmp.h",
     "mulib-ifft.h",
     "mulib-image2container.h",
+    "mulib-imageconvert.h",
+    "mulib-imagejpeg.h",
+    "mulib-imagepng.h",
+    "mulib-imagewebp.h",
     "mulib-imapserver.h",
     "mulib-imgbuilder.h",
     "mulib-imgbuildspec.h",
@@ -326,6 +379,7 @@
     "mulib-immgtk.h",
     "mulib-impaclient.h",
     "mulib-index.h",
+    "mulib-indexer.h",
     "mulib-inet-diag.h",
     "mulib-inet4.h",
     "mulib-inet6.h",
@@ -349,11 +403,13 @@
     "mulib-json.h",
     "mulib-jvm.h",
     "mulib-keyremap.h",
+    "mulib-kf8write.h",
     "mulib-kmm.h",
     "mulib-kvdb.h",
     "mulib-kvm.h",
     "mulib-kvmcontainer.h",
     "mulib-latex.h",
+    "mulib-latexwriter.h",
     "mulib-layout.h",
     "mulib-layoutml.h",
     "mulib-lazystream.h",
@@ -369,6 +425,7 @@
     "mulib-listener.h",
     "mulib-lldp.h",
     "mulib-load_balancer.h",
+    "mulib-locale.h",
     "mulib-logger.h",
     "mulib-lowopt.h",
     "mulib-lprowse.h",
@@ -391,7 +448,22 @@
     "mulib-markdown.h",
     "mulib-markov_chain.h",
     "mulib-math.h",
+    "mulib-mathaccent.h",
+    "mulib-mathatom.h",
+    "mulib-mathdelimiter.h",
+    "mulib-mathfont.h",
+    "mulib-mathfraction.h",
+    "mulib-mathir.h",
+    "mulib-mathlayout.h",
+    "mulib-mathmatrix.h",
     "mulib-mathml.h",
+    "mulib-mathnumber.h",
+    "mulib-mathoperator.h",
+    "mulib-mathparse.h",
+    "mulib-mathradical.h",
+    "mulib-mathscript.h",
+    "mulib-mathspacing.h",
+    "mulib-mathspeech.h",
     "mulib-matrix.h",
     "mulib-mcu.h",
     "mulib-mempool.h",
@@ -405,6 +477,7 @@
     "mulib-microcc.h",
     "mulib-microjs.h",
     "mulib-microtcl.h",
+    "mulib-microtype.h",
     "mulib-midi.h",
     "mulib-mime.h",
     "mulib-minicurl.h",
@@ -420,6 +493,7 @@
     "mulib-mmdiff.h",
     "mulib-mmfile.h",
     "mulib-mobi.h",
+    "mulib-mobiwrite.h",
     "mulib-mop.h",
     "mulib-movingavg.h",
     "mulib-mpu.h",
@@ -433,6 +507,7 @@
     "mulib-mumq-subscriber.h",
     "mulib-mumq.h",
     "mulib-mune.h",
+    "mulib-musicnotation.h",
     "mulib-n-grams.h",
     "mulib-nameserver.h",
     "mulib-net-cap.h",
@@ -499,6 +574,7 @@
     "mulib-ociimagebuilder.h",
     "mulib-oix.h",
     "mulib-openvpn.h",
+    "mulib-opticalmargin.h",
     "mulib-optml.h",
     "mulib-orhoconv.h",
     "mulib-orthographic_rules.h",
@@ -510,8 +586,23 @@
     "mulib-packetrules.h",
     "mulib-packetstream.h",
     "mulib-packetvm.h",
+    "mulib-pagebalance.h",
+    "mulib-pagebib.h",
+    "mulib-pagecolumns.h",
+    "mulib-pagefloat.h",
+    "mulib-pagefootnote.h",
+    "mulib-pageframe.h",
+    "mulib-pagegrid.h",
+    "mulib-pageindex.h",
+    "mulib-pagekeep.h",
+    "mulib-pagemargin.h",
+    "mulib-pageref.h",
+    "mulib-pagetemplate.h",
+    "mulib-pagetoc.h",
+    "mulib-pagewidow.h",
     "mulib-paging.h",
     "mulib-paleography.h",
+    "mulib-palmdb.h",
     "mulib-pandocast.h",
     "mulib-parallel.h",
     "mulib-parsec.h",
@@ -528,6 +619,13 @@
     "mulib-pcb-pnp.h",
     "mulib-pci.h",
     "mulib-pdf.h",
+    "mulib-pdfannot.h",
+    "mulib-pdfcanvas.h",
+    "mulib-pdffont.h",
+    "mulib-pdfimage.h",
+    "mulib-pdfmetadata.h",
+    "mulib-pdfoutline.h",
+    "mulib-pdfstructure.h",
     "mulib-pe-objdump.h",
     "mulib-pe.h",
     "mulib-pearson_similarity.h",
@@ -540,6 +638,7 @@
     "mulib-pglayout.h",
     "mulib-phonetic_utils.h",
     "mulib-pipeline.h",
+    "mulib-plot2d.h",
     "mulib-polkit-client.h",
     "mulib-polytask.h",
     "mulib-popcount.h",
@@ -617,6 +716,7 @@
     "mulib-set.h",
     "mulib-seurity.h",
     "mulib-sexpr.h",
+    "mulib-sfnt.h",
     "mulib-shaderx.h",
     "mulib-shadowsocks.h",
     "mulib-shiraz.h",
@@ -666,12 +766,15 @@
     "mulib-superblocks.h",
     "mulib-superinstr.h",
     "mulib-svg.h",
+    "mulib-svgpaint.h",
     "mulib-symbol.h",
     "mulib-synth-aig.h",
     "mulib-synth-truthtable.h",
     "mulib-syscall.h",
     "mulib-sysfonts.h",
     "mulib-sysfs.h",
+    "mulib-tablelayout.h",
+    "mulib-tablepaginate.h",
     "mulib-tas.h",
     "mulib-task.h",
     "mulib-taskdag.h",
@@ -685,19 +788,71 @@
     "mulib-termsyn.h",
     "mulib-termutils.h",
     "mulib-tex.h",
+    "mulib-texalign.h",
+    "mulib-texbox.h",
+    "mulib-texbreak.h",
+    "mulib-texbytecode.h",
+    "mulib-texcatcode.h",
+    "mulib-texclosure.h",
+    "mulib-texdebug.h",
+    "mulib-texdim.h",
+    "mulib-texexpand.h",
+    "mulib-texexpr.h",
+    "mulib-texffi.h",
+    "mulib-texfunction.h",
+    "mulib-texglue.h",
+    "mulib-texhlist.h",
+    "mulib-texinsert.h",
+    "mulib-texleaders.h",
+    "mulib-texmark.h",
+    "mulib-texmodule.h",
+    "mulib-texmouth.h",
+    "mulib-texnode.h",
+    "mulib-texoutput.h",
+    "mulib-texpack.h",
+    "mulib-texpage.h",
+    "mulib-texpar.h",
+    "mulib-texpattern.h",
+    "mulib-texpatternlib.h",
+    "mulib-texpenalty.h",
+    "mulib-texreflection.h",
+    "mulib-texregister.h",
+    "mulib-texruntime.h",
+    "mulib-texscope.h",
+    "mulib-texshipout.h",
     "mulib-text.h",
+    "mulib-textitemize.h",
+    "mulib-textrace.h",
+    "mulib-texvalue.h",
+    "mulib-texvlist.h",
     "mulib-timer.h",
     "mulib-timerfd.h",
+    "mulib-toc.h",
     "mulib-toml.h",
     "mulib-tracepath.h",
     "mulib-tree_parsing.h",
     "mulib-trie.h",
     "mulib-trie_traversal.h",
     "mulib-tsl.h",
+    "mulib-ttf.h",
     "mulib-tui.h",
     "mulib-tunnel.h",
     "mulib-tuntap.h",
     "mulib-txtdiff.h",
+    "mulib-typecache.h",
+    "mulib-typeconformance.h",
+    "mulib-typecontext.h",
+    "mulib-typecore.h",
+    "mulib-typefuzz.h",
+    "mulib-typeincremental.h",
+    "mulib-typeinspect.h",
+    "mulib-typeparallel.h",
+    "mulib-typeplugin.h",
+    "mulib-typeprofile.h",
+    "mulib-typesandbox.h",
+    "mulib-typesrc.h",
+    "mulib-typestatus.h",
+    "mulib-typography.h",
     "mulib-udev.h",
     "mulib-uefi.h",
     "mulib-uefiutils.h",
@@ -717,6 +872,13 @@
     "mulib-uip-timer.h",
     "mulib-uip-udp.h",
     "mulib-unibreak.h",
+    "mulib-unicodebidi.h",
+    "mulib-unicodebreak.h",
+    "mulib-unicodecase.h",
+    "mulib-unicodegrapheme.h",
+    "mulib-unicodenorm.h",
+    "mulib-unicodeprops.h",
+    "mulib-unicodescript.h",
     "mulib-uniname.h",
     "mulib-uniproc.h",
     "mulib-unit.h",
@@ -740,6 +902,8 @@
     "mulib-vec.h",
     "mulib-vectgfx.h",
     "mulib-vector.h",
+    "mulib-vectorpath.h",
+    "mulib-verttext.h",
     "mulib-vfs.h",
     "mulib-vgabuffer.h",
     "mulib-vhpst.h",
@@ -788,6 +952,8 @@
     "mulib-wit.h",
     "mulib-wlroots.h",
     "mulib-wmfunc.h",
+    "mulib-woff.h",
+    "mulib-woff2.h",
     "mulib-wpa-ctrl.h",
     "mulib-xatomics.h",
     "mulib-xlib.h",
@@ -806,10 +972,10 @@
     "mulib-zip.h",
     "mulib-zstd.h"
   ],
-  "libraries": 805,
-  "functions": 3763,
-  "types": 6231,
-  "constants": 2167,
+  "libraries": 971,
+  "functions": 4355,
+  "types": 7348,
+  "constants": 2250,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -851,7 +1017,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "cbd60dae6b597c43a0c9439ee954c28d731c0e7714b8d383489e0984fbe48bc7",
+  "fingerprint": "00040ebc5c81933a650c38d6b86d220f823c1680dbf9d362ba792c2ae75642fe",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -1226,6 +1392,12 @@
         "mulib_levenshtein_automaton_destroy"
       ]
     },
+    "autonumber": {
+      "header": "mulib-autonumber.h",
+      "functions": [
+        "mulib_autonumber_next"
+      ]
+    },
     "avl": {
       "header": "mulib-avl.h",
       "functions": [
@@ -1297,6 +1469,21 @@
       "header": "mulib-beam_search.h",
       "functions": [
         "mulib_beam_search"
+      ]
+    },
+    "bibstyle": {
+      "header": "mulib-bibstyle.h",
+      "functions": [
+        "mulib_bibstyle_destroy",
+        "mulib_bibstyle_set",
+        "mulib_bibstyle_get",
+        "mulib_bibstyle_erase"
+      ]
+    },
+    "bibtex": {
+      "header": "mulib-bibtex.h",
+      "functions": [
+        "mulib_bibtex_entry"
       ]
     },
     "bidi": {
@@ -1433,6 +1620,15 @@
         "mulib_bloom_add",
         "mulib_bloom_test",
         "mulib_bloom_free"
+      ]
+    },
+    "booknav": {
+      "header": "mulib-booknav.h",
+      "functions": [
+        "mulib_booknav_destroy",
+        "mulib_booknav_set",
+        "mulib_booknav_get",
+        "mulib_booknav_erase"
       ]
     },
     "bootmgr": {
@@ -1626,6 +1822,24 @@
         "mulib_ccweave_generate"
       ]
     },
+    "cff": {
+      "header": "mulib-cff.h",
+      "functions": [
+        "mulib_cff_open",
+        "mulib_cff_read_u16",
+        "mulib_cff_read_u32",
+        "mulib_cff_slice"
+      ]
+    },
+    "cff2": {
+      "header": "mulib-cff2.h",
+      "functions": [
+        "mulib_cff2_open",
+        "mulib_cff2_read_u16",
+        "mulib_cff2_read_u32",
+        "mulib_cff2_slice"
+      ]
+    },
     "cgeom": {
       "header": "mulib-cgeom.h",
       "functions": [
@@ -1690,6 +1904,15 @@
         "mulib_chem_mathml",
         "mulib_chem_latex",
         "mulib_chem_balance"
+      ]
+    },
+    "chemical": {
+      "header": "mulib-chemical.h",
+      "functions": [
+        "mulib_chemical_push",
+        "mulib_chemical_remove",
+        "mulib_chemical_bounds",
+        "mulib_chemical_destroy"
       ]
     },
     "clamp": {
@@ -1801,6 +2024,29 @@
       "functions": [
         "mulib_color_to_hsv",
         "mulib_color_from_hsv"
+      ]
+    },
+    "colorconvert": {
+      "header": "mulib-colorconvert.h",
+      "functions": [
+        "mulib_colorconvert_compute",
+        "mulib_colorconvert_clamp"
+      ]
+    },
+    "colormodel": {
+      "header": "mulib-colormodel.h",
+      "functions": [
+        "mulib_colormodel_compute",
+        "mulib_colormodel_clamp"
+      ]
+    },
+    "colorprofile": {
+      "header": "mulib-colorprofile.h",
+      "functions": [
+        "mulib_colorprofile_destroy",
+        "mulib_colorprofile_set",
+        "mulib_colorprofile_get",
+        "mulib_colorprofile_erase"
       ]
     },
     "column-rdbms": {
@@ -2269,6 +2515,24 @@
         "mulib_cron_dispatch"
       ]
     },
+    "crossref": {
+      "header": "mulib-crossref.h",
+      "functions": [
+        "mulib_crossref_destroy",
+        "mulib_crossref_set",
+        "mulib_crossref_get",
+        "mulib_crossref_erase"
+      ]
+    },
+    "csl": {
+      "header": "mulib-csl.h",
+      "functions": [
+        "mulib_csl_destroy",
+        "mulib_csl_set",
+        "mulib_csl_get",
+        "mulib_csl_erase"
+      ]
+    },
     "css": {
       "header": "mulib-css.h",
       "functions": [
@@ -2290,6 +2554,13 @@
         "mulib_css_serialize_declarations",
         "mulib_css_parse_length",
         "mulib_css_length_pixels"
+      ]
+    },
+    "csswriter": {
+      "header": "mulib-csswriter.h",
+      "functions": [
+        "mulib_csswriter_write",
+        "mulib_csswriter_write_cstr"
       ]
     },
     "csv": {
@@ -2561,6 +2832,15 @@
         "mulib_diag_message"
       ]
     },
+    "diagram": {
+      "header": "mulib-diagram.h",
+      "functions": [
+        "mulib_diagram_push",
+        "mulib_diagram_remove",
+        "mulib_diagram_bounds",
+        "mulib_diagram_destroy"
+      ]
+    },
     "distfield": {
       "header": "mulib-distfield.h",
       "functions": [
@@ -2666,6 +2946,129 @@
         "mulib_dnsresolver_resolve"
       ]
     },
+    "docdiff": {
+      "header": "mulib-docdiff.h",
+      "functions": [
+        "mulib_docdiff_push",
+        "mulib_docdiff_remove",
+        "mulib_docdiff_bounds",
+        "mulib_docdiff_destroy"
+      ]
+    },
+    "docincremental": {
+      "header": "mulib-docincremental.h",
+      "functions": [
+        "mulib_docincremental_init",
+        "mulib_docincremental_charge",
+        "mulib_docincremental_reset",
+        "mulib_docincremental_remaining"
+      ]
+    },
+    "docir": {
+      "header": "mulib-docir.h",
+      "functions": [
+        "mulib_docir_new",
+        "mulib_docir_append",
+        "mulib_docir_detach",
+        "mulib_docir_parent",
+        "mulib_docir_owner",
+        "mulib_docir_set_text",
+        "mulib_docir_text_append",
+        "mulib_docir_set_id",
+        "mulib_docir_set_target",
+        "mulib_docir_set_style",
+        "mulib_docir_set_level",
+        "mulib_docir_set_source",
+        "mulib_docir_snapshot_make",
+        "mulib_docir_snapshot_string",
+        "mulib_docir_snapshot_validate",
+        "mulib_docir_snapshot_destroy",
+        "mulib_docir_build",
+        "mulib_docir_clone",
+        "mulib_docir_html",
+        "mulib_docir_latex",
+        "mulib_docir_render_snapshot",
+        "mulib_docir_destroy"
+      ]
+    },
+    "doclength": {
+      "header": "mulib-doclength.h",
+      "functions": [
+        "mulib_doclength_convert"
+      ]
+    },
+    "docmetadata": {
+      "header": "mulib-docmetadata.h",
+      "functions": [
+        "mulib_docmetadata_destroy",
+        "mulib_docmetadata_set",
+        "mulib_docmetadata_get",
+        "mulib_docmetadata_erase"
+      ]
+    },
+    "docnode": {
+      "header": "mulib-docnode.h",
+      "functions": [
+        "mulib_docnode_push",
+        "mulib_docnode_remove",
+        "mulib_docnode_bounds",
+        "mulib_docnode_destroy"
+      ]
+    },
+    "docnormalize": {
+      "header": "mulib-docnormalize.h",
+      "functions": [
+        "mulib_docnormalize_write",
+        "mulib_docnormalize_write_cstr",
+        "mulib_docnormalize_tree"
+      ]
+    },
+    "docquery": {
+      "header": "mulib-docquery.h",
+      "functions": [
+        "mulib_docquery_destroy",
+        "mulib_docquery_set",
+        "mulib_docquery_get",
+        "mulib_docquery_erase"
+      ]
+    },
+    "docresource": {
+      "header": "mulib-docresource.h",
+      "functions": [
+        "mulib_docresource_destroy",
+        "mulib_docresource_set",
+        "mulib_docresource_get",
+        "mulib_docresource_erase"
+      ]
+    },
+    "docsemantic": {
+      "header": "mulib-docsemantic.h",
+      "functions": [
+        "mulib_docsemantic_destroy",
+        "mulib_docsemantic_set",
+        "mulib_docsemantic_get",
+        "mulib_docsemantic_erase"
+      ]
+    },
+    "docserialize": {
+      "header": "mulib-docserialize.h",
+      "functions": [
+        "mulib_docserialize_write",
+        "mulib_docserialize_write_cstr",
+        "mulib_docserialize_tree",
+        "mulib_docserialize_read"
+      ]
+    },
+    "docsource": {
+      "header": "mulib-docsource.h",
+      "functions": [
+        "mulib_docsource_destroy",
+        "mulib_docsource_set",
+        "mulib_docsource_get",
+        "mulib_docsource_erase",
+        "mulib_docsource_bind"
+      ]
+    },
     "docstring": {
       "header": "mulib-docstring.h",
       "functions": [
@@ -2681,6 +3084,15 @@
         "mulib_docstrings_render"
       ]
     },
+    "docstyle": {
+      "header": "mulib-docstyle.h",
+      "functions": [
+        "mulib_docstyle_destroy",
+        "mulib_docstyle_set",
+        "mulib_docstyle_get",
+        "mulib_docstyle_erase"
+      ]
+    },
     "documentdb": {
       "header": "mulib-documentdb.h",
       "functions": [
@@ -2688,6 +3100,16 @@
         "mulib_documentdb_get",
         "mulib_documentdb_delete",
         "mulib_documentdb_free"
+      ]
+    },
+    "docvalidate": {
+      "header": "mulib-docvalidate.h",
+      "functions": [
+        "mulib_docvalidate_init",
+        "mulib_docvalidate_charge",
+        "mulib_docvalidate_reset",
+        "mulib_docvalidate_remaining",
+        "mulib_docvalidate_tree"
       ]
     },
     "dom": {
@@ -2856,6 +3278,30 @@
         "mulib_dsymspec_record",
         "mulib_dsymspec_find",
         "mulib_dsymspec_encodings"
+      ]
+    },
+    "dvi": {
+      "header": "mulib-dvi.h",
+      "functions": [
+        "mulib_dvi_write_rules"
+      ]
+    },
+    "dvifont": {
+      "header": "mulib-dvifont.h",
+      "functions": [
+        "mulib_dvifont_open",
+        "mulib_dvifont_read_u16",
+        "mulib_dvifont_read_u32",
+        "mulib_dvifont_slice"
+      ]
+    },
+    "dviread": {
+      "header": "mulib-dviread.h",
+      "functions": [
+        "mulib_dviread_open",
+        "mulib_dviread_read_u16",
+        "mulib_dviread_read_u32",
+        "mulib_dviread_slice"
       ]
     },
     "dyegram": {
@@ -3227,7 +3673,23 @@
         "mulib_epub_open",
         "mulib_epub_read",
         "mulib_epub_find",
-        "mulib_epub_close"
+        "mulib_epub_close",
+        "mulib_epub_write_docir"
+      ]
+    },
+    "epubcheck": {
+      "header": "mulib-epubcheck.h",
+      "functions": [
+        "mulib_epubcheck_open",
+        "mulib_epubcheck_read_u16",
+        "mulib_epubcheck_read_u32",
+        "mulib_epubcheck_slice"
+      ]
+    },
+    "epubwriter": {
+      "header": "mulib-epubwriter.h",
+      "functions": [
+        "mulib_epubwriter_book"
       ]
     },
     "eqn": {
@@ -3406,6 +3868,15 @@
         "mulib_field_thermal_flux_1d"
       ]
     },
+    "figurelayout": {
+      "header": "mulib-figurelayout.h",
+      "functions": [
+        "mulib_figurelayout_push",
+        "mulib_figurelayout_remove",
+        "mulib_figurelayout_bounds",
+        "mulib_figurelayout_destroy"
+      ]
+    },
     "filectl": {
       "header": "mulib-filectl.h",
       "functions": [
@@ -3430,6 +3901,15 @@
         "mulib_flatbuffers_string"
       ]
     },
+    "floatgraphics": {
+      "header": "mulib-floatgraphics.h",
+      "functions": [
+        "mulib_floatgraphics_push",
+        "mulib_floatgraphics_remove",
+        "mulib_floatgraphics_bounds",
+        "mulib_floatgraphics_destroy"
+      ]
+    },
     "flow-graph": {
       "header": "mulib-flow-graph.h",
       "functions": [
@@ -3450,6 +3930,25 @@
         "mulib_fmt_sv_emit"
       ]
     },
+    "fontcatalog": {
+      "header": "mulib-fontcatalog.h",
+      "functions": [
+        "mulib_fontcatalog_destroy",
+        "mulib_fontcatalog_set",
+        "mulib_fontcatalog_get",
+        "mulib_fontcatalog_erase"
+      ]
+    },
+    "fontcmap": {
+      "header": "mulib-fontcmap.h",
+      "functions": [
+        "mulib_fontcmap_open_format12",
+        "mulib_fontcmap_open_subtable",
+        "mulib_fontcmap_open",
+        "mulib_fontcmap_glyph",
+        "mulib_fontcmap_variation"
+      ]
+    },
     "fontdraw": {
       "header": "mulib-fontdraw.h",
       "functions": [
@@ -3466,10 +3965,82 @@
         "mulib_fontdraw_metrics"
       ]
     },
+    "fontembed": {
+      "header": "mulib-fontembed.h",
+      "functions": [
+        "mulib_fontembed_open",
+        "mulib_fontembed_read_u16",
+        "mulib_fontembed_read_u32",
+        "mulib_fontembed_slice"
+      ]
+    },
+    "fontfallback": {
+      "header": "mulib-fontfallback.h",
+      "functions": [
+        "mulib_fontfallback_destroy",
+        "mulib_fontfallback_set",
+        "mulib_fontfallback_get",
+        "mulib_fontfallback_erase"
+      ]
+    },
+    "fontgdef": {
+      "header": "mulib-fontgdef.h",
+      "functions": [
+        "mulib_fontgdef_open",
+        "mulib_fontgdef_read_u16",
+        "mulib_fontgdef_read_u32",
+        "mulib_fontgdef_slice",
+        "mulib_fontgdef_glyph_class"
+      ]
+    },
+    "fontgpos": {
+      "header": "mulib-fontgpos.h",
+      "functions": [
+        "mulib_fontgpos_open",
+        "mulib_fontgpos_read_u16",
+        "mulib_fontgpos_read_u32",
+        "mulib_fontgpos_slice",
+        "mulib_fontgpos_pair"
+      ]
+    },
+    "fontgsub": {
+      "header": "mulib-fontgsub.h",
+      "functions": [
+        "mulib_fontgsub_open",
+        "mulib_fontgsub_read_u16",
+        "mulib_fontgsub_read_u32",
+        "mulib_fontgsub_slice",
+        "mulib_fontgsub_substitute"
+      ]
+    },
+    "fontkern": {
+      "header": "mulib-fontkern.h",
+      "functions": [
+        "mulib_fontkern_pair"
+      ]
+    },
+    "fontmetrics": {
+      "header": "mulib-fontmetrics.h",
+      "functions": [
+        "mulib_fontmetrics_advance",
+        "mulib_fontmetrics_signed"
+      ]
+    },
+    "fontraster": {
+      "header": "mulib-fontraster.h",
+      "functions": [
+        "mulib_fontraster_open",
+        "mulib_fontraster_read_u16",
+        "mulib_fontraster_read_u32",
+        "mulib_fontraster_slice"
+      ]
+    },
     "fontshape": {
       "header": "mulib-fontshape.h",
       "functions": [
         "mulib_fontshape_open",
+        "mulib_fontshape_open_native",
+        "mulib_fontshape_open_memory",
         "mulib_fontshape_close",
         "mulib_fontshape_variations",
         "mulib_fontshape_shape",
@@ -3479,7 +4050,26 @@
         "mulib_fontshape_metrics",
         "mulib_fontshape_extents",
         "mulib_fontshape_scale",
-        "mulib_fontshape_carets"
+        "mulib_fontshape_carets",
+        "mulib_fontshape_carets_destroy"
+      ]
+    },
+    "fontsubset": {
+      "header": "mulib-fontsubset.h",
+      "functions": [
+        "mulib_fontsubset_push",
+        "mulib_fontsubset_remove",
+        "mulib_fontsubset_bounds",
+        "mulib_fontsubset_destroy"
+      ]
+    },
+    "fontvar": {
+      "header": "mulib-fontvar.h",
+      "functions": [
+        "mulib_fontvar_open",
+        "mulib_fontvar_read_u16",
+        "mulib_fontvar_read_u32",
+        "mulib_fontvar_slice"
       ]
     },
     "formal-cec": {
@@ -3655,6 +4245,15 @@
       "header": "mulib-glob.h",
       "functions": [
         "mulib_glob_match"
+      ]
+    },
+    "glossary": {
+      "header": "mulib-glossary.h",
+      "functions": [
+        "mulib_glossary_destroy",
+        "mulib_glossary_set",
+        "mulib_glossary_get",
+        "mulib_glossary_erase"
       ]
     },
     "glr": {
@@ -3924,7 +4523,14 @@
         "mulib_html_escape",
         "mulib_html_serialize",
         "mulib_html_parse",
-        "mulib_html_text"
+        "mulib_html_text",
+        "mulib_html_docir"
+      ]
+    },
+    "htmlwriter": {
+      "header": "mulib-htmlwriter.h",
+      "functions": [
+        "mulib_htmlwriter_document"
       ]
     },
     "http": {
@@ -4051,6 +4657,36 @@
         "mulib_image2container_free"
       ]
     },
+    "imageconvert": {
+      "header": "mulib-imageconvert.h",
+      "functions": [
+        "mulib_imageconvert_open",
+        "mulib_imageconvert_read_u16",
+        "mulib_imageconvert_read_u32",
+        "mulib_imageconvert_slice"
+      ]
+    },
+    "imagejpeg": {
+      "header": "mulib-imagejpeg.h",
+      "functions": [
+        "mulib_imagejpeg_dimensions"
+      ]
+    },
+    "imagepng": {
+      "header": "mulib-imagepng.h",
+      "functions": [
+        "mulib_imagepng_encode_rgb"
+      ]
+    },
+    "imagewebp": {
+      "header": "mulib-imagewebp.h",
+      "functions": [
+        "mulib_imagewebp_open",
+        "mulib_imagewebp_read_u16",
+        "mulib_imagewebp_read_u32",
+        "mulib_imagewebp_slice"
+      ]
+    },
     "imapserver": {
       "header": "mulib-imapserver.h",
       "functions": [
@@ -4142,6 +4778,15 @@
         "mulib_index_find",
         "mulib_index_remove",
         "mulib_index_free"
+      ]
+    },
+    "indexer": {
+      "header": "mulib-indexer.h",
+      "functions": [
+        "mulib_indexer_destroy",
+        "mulib_indexer_set",
+        "mulib_indexer_get",
+        "mulib_indexer_erase"
       ]
     },
     "inet-diag": {
@@ -4366,6 +5011,12 @@
         "mulib_keyremap_apply"
       ]
     },
+    "kf8write": {
+      "header": "mulib-kf8write.h",
+      "functions": [
+        "mulib_kf8write_fdst"
+      ]
+    },
     "kmm": {
       "header": "mulib-kmm.h",
       "functions": [
@@ -4419,7 +5070,14 @@
         "mulib_latex_section",
         "mulib_latex_paragraph",
         "mulib_latex_finish",
-        "mulib_latex_free"
+        "mulib_latex_free",
+        "mulib_latex_from_docir"
+      ]
+    },
+    "latexwriter": {
+      "header": "mulib-latexwriter.h",
+      "functions": [
+        "mulib_latexwriter_document"
       ]
     },
     "layout": {
@@ -4582,6 +5240,15 @@
       "header": "mulib-load_balancer.h",
       "functions": [
         "mulib_load_balancer_select"
+      ]
+    },
+    "locale": {
+      "header": "mulib-locale.h",
+      "functions": [
+        "mulib_locale_destroy",
+        "mulib_locale_set",
+        "mulib_locale_get",
+        "mulib_locale_erase"
       ]
     },
     "logger": {
@@ -4769,6 +5436,75 @@
         "mulib_math_pow_u64"
       ]
     },
+    "mathaccent": {
+      "header": "mulib-mathaccent.h",
+      "functions": [
+        "mulib_mathaccent_push",
+        "mulib_mathaccent_remove",
+        "mulib_mathaccent_bounds",
+        "mulib_mathaccent_destroy"
+      ]
+    },
+    "mathatom": {
+      "header": "mulib-mathatom.h",
+      "functions": [
+        "mulib_mathatom_push",
+        "mulib_mathatom_remove",
+        "mulib_mathatom_bounds",
+        "mulib_mathatom_destroy"
+      ]
+    },
+    "mathdelimiter": {
+      "header": "mulib-mathdelimiter.h",
+      "functions": [
+        "mulib_mathdelimiter_push",
+        "mulib_mathdelimiter_remove",
+        "mulib_mathdelimiter_bounds",
+        "mulib_mathdelimiter_destroy"
+      ]
+    },
+    "mathfont": {
+      "header": "mulib-mathfont.h",
+      "functions": [
+        "mulib_mathfont_destroy",
+        "mulib_mathfont_set",
+        "mulib_mathfont_get",
+        "mulib_mathfont_erase"
+      ]
+    },
+    "mathfraction": {
+      "header": "mulib-mathfraction.h",
+      "functions": [
+        "mulib_mathfraction_stack"
+      ]
+    },
+    "mathir": {
+      "header": "mulib-mathir.h",
+      "functions": [
+        "mulib_mathir_push",
+        "mulib_mathir_remove",
+        "mulib_mathir_bounds",
+        "mulib_mathir_destroy"
+      ]
+    },
+    "mathlayout": {
+      "header": "mulib-mathlayout.h",
+      "functions": [
+        "mulib_mathlayout_push",
+        "mulib_mathlayout_remove",
+        "mulib_mathlayout_bounds",
+        "mulib_mathlayout_destroy"
+      ]
+    },
+    "mathmatrix": {
+      "header": "mulib-mathmatrix.h",
+      "functions": [
+        "mulib_mathmatrix_push",
+        "mulib_mathmatrix_remove",
+        "mulib_mathmatrix_bounds",
+        "mulib_mathmatrix_destroy"
+      ]
+    },
     "mathml": {
       "header": "mulib-mathml.h",
       "functions": [
@@ -4778,6 +5514,56 @@
         "mulib_mathml_validate",
         "mulib_mathml_parse",
         "mulib_mathml_serialize"
+      ]
+    },
+    "mathnumber": {
+      "header": "mulib-mathnumber.h",
+      "functions": [
+        "mulib_mathnumber_destroy",
+        "mulib_mathnumber_set",
+        "mulib_mathnumber_get",
+        "mulib_mathnumber_erase"
+      ]
+    },
+    "mathoperator": {
+      "header": "mulib-mathoperator.h",
+      "functions": [
+        "mulib_mathoperator_destroy",
+        "mulib_mathoperator_set",
+        "mulib_mathoperator_get",
+        "mulib_mathoperator_erase"
+      ]
+    },
+    "mathparse": {
+      "header": "mulib-mathparse.h",
+      "functions": [
+        "mulib_mathparse_validate"
+      ]
+    },
+    "mathradical": {
+      "header": "mulib-mathradical.h",
+      "functions": [
+        "mulib_mathradical_ascent"
+      ]
+    },
+    "mathscript": {
+      "header": "mulib-mathscript.h",
+      "functions": [
+        "mulib_mathscript_offset"
+      ]
+    },
+    "mathspacing": {
+      "header": "mulib-mathspacing.h",
+      "functions": [
+        "mulib_mathspacing_compute",
+        "mulib_mathspacing_clamp"
+      ]
+    },
+    "mathspeech": {
+      "header": "mulib-mathspeech.h",
+      "functions": [
+        "mulib_mathspeech_write",
+        "mulib_mathspeech_write_cstr"
       ]
     },
     "matrix": {
@@ -4919,6 +5705,13 @@
         "mulib_microtcl_result",
         "mulib_microtcl_get",
         "mulib_microtcl_destroy"
+      ]
+    },
+    "microtype": {
+      "header": "mulib-microtype.h",
+      "functions": [
+        "mulib_microtype_compute",
+        "mulib_microtype_clamp"
       ]
     },
     "midi": {
@@ -5069,6 +5862,12 @@
         "mulib_mobi_metadata",
         "mulib_mobi_palmdoc_decode",
         "mulib_mobi_text"
+      ]
+    },
+    "mobiwrite": {
+      "header": "mulib-mobiwrite.h",
+      "functions": [
+        "mulib_mobiwrite_palmdoc"
       ]
     },
     "mop": {
@@ -5225,6 +6024,15 @@
         "mulib_mune_bundle_write",
         "mulib_mune_load_bundle",
         "mulib_mune_load_bundle_file"
+      ]
+    },
+    "musicnotation": {
+      "header": "mulib-musicnotation.h",
+      "functions": [
+        "mulib_musicnotation_push",
+        "mulib_musicnotation_remove",
+        "mulib_musicnotation_bounds",
+        "mulib_musicnotation_destroy"
       ]
     },
     "n-grams": {
@@ -5681,6 +6489,13 @@
         "mulib_openvpn_replay_accept"
       ]
     },
+    "opticalmargin": {
+      "header": "mulib-opticalmargin.h",
+      "functions": [
+        "mulib_opticalmargin_compute",
+        "mulib_opticalmargin_clamp"
+      ]
+    },
     "optml": {
       "header": "mulib-optml.h",
       "functions": [
@@ -5778,6 +6593,124 @@
         "mulib_packetvm_run"
       ]
     },
+    "pagebalance": {
+      "header": "mulib-pagebalance.h",
+      "functions": [
+        "mulib_pagebalance_push",
+        "mulib_pagebalance_remove",
+        "mulib_pagebalance_bounds",
+        "mulib_pagebalance_destroy"
+      ]
+    },
+    "pagebib": {
+      "header": "mulib-pagebib.h",
+      "functions": [
+        "mulib_pagebib_destroy",
+        "mulib_pagebib_set",
+        "mulib_pagebib_get",
+        "mulib_pagebib_erase"
+      ]
+    },
+    "pagecolumns": {
+      "header": "mulib-pagecolumns.h",
+      "functions": [
+        "mulib_pagecolumns_divide"
+      ]
+    },
+    "pagefloat": {
+      "header": "mulib-pagefloat.h",
+      "functions": [
+        "mulib_pagefloat_push",
+        "mulib_pagefloat_remove",
+        "mulib_pagefloat_bounds",
+        "mulib_pagefloat_destroy"
+      ]
+    },
+    "pagefootnote": {
+      "header": "mulib-pagefootnote.h",
+      "functions": [
+        "mulib_pagefootnote_push",
+        "mulib_pagefootnote_remove",
+        "mulib_pagefootnote_bounds",
+        "mulib_pagefootnote_destroy"
+      ]
+    },
+    "pageframe": {
+      "header": "mulib-pageframe.h",
+      "functions": [
+        "mulib_pageframe_inner"
+      ]
+    },
+    "pagegrid": {
+      "header": "mulib-pagegrid.h",
+      "functions": [
+        "mulib_pagegrid_compute",
+        "mulib_pagegrid_clamp"
+      ]
+    },
+    "pageindex": {
+      "header": "mulib-pageindex.h",
+      "functions": [
+        "mulib_pageindex_destroy",
+        "mulib_pageindex_set",
+        "mulib_pageindex_get",
+        "mulib_pageindex_erase"
+      ]
+    },
+    "pagekeep": {
+      "header": "mulib-pagekeep.h",
+      "functions": [
+        "mulib_pagekeep_push",
+        "mulib_pagekeep_remove",
+        "mulib_pagekeep_bounds",
+        "mulib_pagekeep_destroy"
+      ]
+    },
+    "pagemargin": {
+      "header": "mulib-pagemargin.h",
+      "functions": [
+        "mulib_pagemargin_push",
+        "mulib_pagemargin_remove",
+        "mulib_pagemargin_bounds",
+        "mulib_pagemargin_destroy"
+      ]
+    },
+    "pageref": {
+      "header": "mulib-pageref.h",
+      "functions": [
+        "mulib_pageref_destroy",
+        "mulib_pageref_set",
+        "mulib_pageref_get",
+        "mulib_pageref_erase"
+      ]
+    },
+    "pagetemplate": {
+      "header": "mulib-pagetemplate.h",
+      "functions": [
+        "mulib_pagetemplate_destroy",
+        "mulib_pagetemplate_set",
+        "mulib_pagetemplate_get",
+        "mulib_pagetemplate_erase"
+      ]
+    },
+    "pagetoc": {
+      "header": "mulib-pagetoc.h",
+      "functions": [
+        "mulib_pagetoc_destroy",
+        "mulib_pagetoc_set",
+        "mulib_pagetoc_get",
+        "mulib_pagetoc_erase"
+      ]
+    },
+    "pagewidow": {
+      "header": "mulib-pagewidow.h",
+      "functions": [
+        "mulib_pagewidow_push",
+        "mulib_pagewidow_remove",
+        "mulib_pagewidow_bounds",
+        "mulib_pagewidow_destroy"
+      ]
+    },
     "paging": {
       "header": "mulib-paging.h",
       "functions": [
@@ -5804,6 +6737,12 @@
         "mulib_paleography_package",
         "mulib_paleography_encoding",
         "mulib_paleography_latex"
+      ]
+    },
+    "palmdb": {
+      "header": "mulib-palmdb.h",
+      "functions": [
+        "mulib_palmdb_write"
       ]
     },
     "pandocast": {
@@ -5950,6 +6889,66 @@
         "mulib_pdf_free"
       ]
     },
+    "pdfannot": {
+      "header": "mulib-pdfannot.h",
+      "functions": [
+        "mulib_pdfannot_destroy",
+        "mulib_pdfannot_set",
+        "mulib_pdfannot_get",
+        "mulib_pdfannot_erase"
+      ]
+    },
+    "pdfcanvas": {
+      "header": "mulib-pdfcanvas.h",
+      "functions": [
+        "mulib_pdfcanvas_write_text"
+      ]
+    },
+    "pdffont": {
+      "header": "mulib-pdffont.h",
+      "functions": [
+        "mulib_pdffont_open",
+        "mulib_pdffont_read_u16",
+        "mulib_pdffont_read_u32",
+        "mulib_pdffont_slice"
+      ]
+    },
+    "pdfimage": {
+      "header": "mulib-pdfimage.h",
+      "functions": [
+        "mulib_pdfimage_open",
+        "mulib_pdfimage_read_u16",
+        "mulib_pdfimage_read_u32",
+        "mulib_pdfimage_slice"
+      ]
+    },
+    "pdfmetadata": {
+      "header": "mulib-pdfmetadata.h",
+      "functions": [
+        "mulib_pdfmetadata_destroy",
+        "mulib_pdfmetadata_set",
+        "mulib_pdfmetadata_get",
+        "mulib_pdfmetadata_erase"
+      ]
+    },
+    "pdfoutline": {
+      "header": "mulib-pdfoutline.h",
+      "functions": [
+        "mulib_pdfoutline_destroy",
+        "mulib_pdfoutline_set",
+        "mulib_pdfoutline_get",
+        "mulib_pdfoutline_erase"
+      ]
+    },
+    "pdfstructure": {
+      "header": "mulib-pdfstructure.h",
+      "functions": [
+        "mulib_pdfstructure_destroy",
+        "mulib_pdfstructure_set",
+        "mulib_pdfstructure_get",
+        "mulib_pdfstructure_erase"
+      ]
+    },
     "pe": {
       "header": "mulib-pe.h",
       "functions": [
@@ -6066,6 +7065,15 @@
       "header": "mulib-pipeline.h",
       "functions": [
         "mulib_pipeline_run"
+      ]
+    },
+    "plot2d": {
+      "header": "mulib-plot2d.h",
+      "functions": [
+        "mulib_plot2d_push",
+        "mulib_plot2d_remove",
+        "mulib_plot2d_bounds",
+        "mulib_plot2d_destroy"
       ]
     },
     "polkit-client": {
@@ -6692,6 +7700,16 @@
         "mulib_sexpr_destroy"
       ]
     },
+    "sfnt": {
+      "header": "mulib-sfnt.h",
+      "functions": [
+        "mulib_sfnt_open",
+        "mulib_sfnt_table",
+        "mulib_sfnt_units_per_em",
+        "mulib_sfnt_open_face",
+        "mulib_sfnt_face_table"
+      ]
+    },
     "shaderx": {
       "header": "mulib-shaderx.h",
       "functions": [
@@ -7189,6 +8207,15 @@
         "mulib_svg_serialize"
       ]
     },
+    "svgpaint": {
+      "header": "mulib-svgpaint.h",
+      "functions": [
+        "mulib_svgpaint_push",
+        "mulib_svgpaint_remove",
+        "mulib_svgpaint_bounds",
+        "mulib_svgpaint_destroy"
+      ]
+    },
     "symbol": {
       "header": "mulib-symbol.h",
       "functions": [
@@ -7257,6 +8284,24 @@
         "mulib_sysfs_write_i64",
         "mulib_sysfs_write_u64",
         "mulib_sysfs_write_bool"
+      ]
+    },
+    "tablelayout": {
+      "header": "mulib-tablelayout.h",
+      "functions": [
+        "mulib_tablelayout_push",
+        "mulib_tablelayout_remove",
+        "mulib_tablelayout_bounds",
+        "mulib_tablelayout_destroy"
+      ]
+    },
+    "tablepaginate": {
+      "header": "mulib-tablepaginate.h",
+      "functions": [
+        "mulib_tablepaginate_push",
+        "mulib_tablepaginate_remove",
+        "mulib_tablepaginate_bounds",
+        "mulib_tablepaginate_destroy"
       ]
     },
     "tas": {
@@ -7410,12 +8455,310 @@
         "mulib_tex_escape"
       ]
     },
+    "texalign": {
+      "header": "mulib-texalign.h",
+      "functions": [
+        "mulib_texalign_push",
+        "mulib_texalign_remove",
+        "mulib_texalign_bounds",
+        "mulib_texalign_destroy"
+      ]
+    },
+    "texbox": {
+      "header": "mulib-texbox.h",
+      "functions": [
+        "mulib_texbox_hpack",
+        "mulib_texbox_vpack"
+      ]
+    },
+    "texbreak": {
+      "header": "mulib-texbreak.h",
+      "functions": [
+        "mulib_texbreak_solve",
+        "mulib_texbreak_destroy"
+      ]
+    },
+    "texbytecode": {
+      "header": "mulib-texbytecode.h",
+      "functions": [
+        "mulib_texbytecode_run"
+      ]
+    },
+    "texcatcode": {
+      "header": "mulib-texcatcode.h",
+      "functions": [
+        "mulib_texcatcode_init",
+        "mulib_texcatcode_set",
+        "mulib_texcatcode_get"
+      ]
+    },
+    "texclosure": {
+      "header": "mulib-texclosure.h",
+      "functions": [
+        "mulib_texclosure_destroy",
+        "mulib_texclosure_set",
+        "mulib_texclosure_get",
+        "mulib_texclosure_erase"
+      ]
+    },
+    "texdebug": {
+      "header": "mulib-texdebug.h",
+      "functions": [
+        "mulib_texdebug_destroy",
+        "mulib_texdebug_set",
+        "mulib_texdebug_get",
+        "mulib_texdebug_erase"
+      ]
+    },
+    "texdim": {
+      "header": "mulib-texdim.h",
+      "functions": [
+        "mulib_texdim_from_pt",
+        "mulib_texdim_to_pt",
+        "mulib_texdim_add"
+      ]
+    },
+    "texexpand": {
+      "header": "mulib-texexpand.h",
+      "functions": [
+        "mulib_texexpand_define",
+        "mulib_texexpand_once",
+        "mulib_texexpand_destroy"
+      ]
+    },
+    "texexpr": {
+      "header": "mulib-texexpr.h",
+      "functions": [
+        "mulib_texexpr_evaluate"
+      ]
+    },
+    "texffi": {
+      "header": "mulib-texffi.h",
+      "functions": [
+        "mulib_texffi_destroy",
+        "mulib_texffi_set",
+        "mulib_texffi_get",
+        "mulib_texffi_erase"
+      ]
+    },
+    "texfunction": {
+      "header": "mulib-texfunction.h",
+      "functions": [
+        "mulib_texfunction_destroy",
+        "mulib_texfunction_set",
+        "mulib_texfunction_get",
+        "mulib_texfunction_erase"
+      ]
+    },
+    "texglue": {
+      "header": "mulib-texglue.h",
+      "functions": [
+        "mulib_texglue_adjust",
+        "mulib_texglue_sum"
+      ]
+    },
+    "texhlist": {
+      "header": "mulib-texhlist.h",
+      "functions": [
+        "mulib_texhlist_push",
+        "mulib_texhlist_remove",
+        "mulib_texhlist_bounds",
+        "mulib_texhlist_destroy"
+      ]
+    },
+    "texinsert": {
+      "header": "mulib-texinsert.h",
+      "functions": [
+        "mulib_texinsert_destroy",
+        "mulib_texinsert_set",
+        "mulib_texinsert_get",
+        "mulib_texinsert_erase"
+      ]
+    },
+    "texleaders": {
+      "header": "mulib-texleaders.h",
+      "functions": [
+        "mulib_texleaders_push",
+        "mulib_texleaders_remove",
+        "mulib_texleaders_bounds",
+        "mulib_texleaders_destroy"
+      ]
+    },
+    "texmark": {
+      "header": "mulib-texmark.h",
+      "functions": [
+        "mulib_texmark_destroy",
+        "mulib_texmark_set",
+        "mulib_texmark_get",
+        "mulib_texmark_erase"
+      ]
+    },
+    "texmodule": {
+      "header": "mulib-texmodule.h",
+      "functions": [
+        "mulib_texmodule_destroy",
+        "mulib_texmodule_set",
+        "mulib_texmodule_get",
+        "mulib_texmodule_erase"
+      ]
+    },
+    "texmouth": {
+      "header": "mulib-texmouth.h",
+      "functions": [
+        "mulib_texmouth_init",
+        "mulib_texmouth_next"
+      ]
+    },
+    "texnode": {
+      "header": "mulib-texnode.h",
+      "functions": [
+        "mulib_texnode_push",
+        "mulib_texnode_remove",
+        "mulib_texnode_bounds",
+        "mulib_texnode_destroy"
+      ]
+    },
+    "texoutput": {
+      "header": "mulib-texoutput.h",
+      "functions": [
+        "mulib_texoutput_destroy",
+        "mulib_texoutput_set",
+        "mulib_texoutput_get",
+        "mulib_texoutput_erase"
+      ]
+    },
+    "texpack": {
+      "header": "mulib-texpack.h",
+      "functions": [
+        "mulib_texpack_compute",
+        "mulib_texpack_clamp"
+      ]
+    },
+    "texpage": {
+      "header": "mulib-texpage.h",
+      "functions": [
+        "mulib_texpage_paginate",
+        "mulib_texpage_destroy"
+      ]
+    },
+    "texpar": {
+      "header": "mulib-texpar.h",
+      "functions": [
+        "mulib_texpar_push",
+        "mulib_texpar_remove",
+        "mulib_texpar_bounds",
+        "mulib_texpar_destroy"
+      ]
+    },
+    "texpattern": {
+      "header": "mulib-texpattern.h",
+      "functions": [
+        "mulib_texpattern_destroy",
+        "mulib_texpattern_set",
+        "mulib_texpattern_get",
+        "mulib_texpattern_erase"
+      ]
+    },
+    "texpatternlib": {
+      "header": "mulib-texpatternlib.h",
+      "functions": [
+        "mulib_texpatternlib_destroy",
+        "mulib_texpatternlib_set",
+        "mulib_texpatternlib_get",
+        "mulib_texpatternlib_erase"
+      ]
+    },
+    "texpenalty": {
+      "header": "mulib-texpenalty.h",
+      "functions": [
+        "mulib_texpenalty_compute",
+        "mulib_texpenalty_clamp"
+      ]
+    },
+    "texreflection": {
+      "header": "mulib-texreflection.h",
+      "functions": [
+        "mulib_texreflection_destroy",
+        "mulib_texreflection_set",
+        "mulib_texreflection_get",
+        "mulib_texreflection_erase"
+      ]
+    },
+    "texregister": {
+      "header": "mulib-texregister.h",
+      "functions": [
+        "mulib_texregister_destroy",
+        "mulib_texregister_set",
+        "mulib_texregister_get",
+        "mulib_texregister_erase"
+      ]
+    },
+    "texruntime": {
+      "header": "mulib-texruntime.h",
+      "functions": [
+        "mulib_texruntime_eval"
+      ]
+    },
+    "texscope": {
+      "header": "mulib-texscope.h",
+      "functions": [
+        "mulib_texscope_destroy",
+        "mulib_texscope_set",
+        "mulib_texscope_get",
+        "mulib_texscope_erase"
+      ]
+    },
+    "texshipout": {
+      "header": "mulib-texshipout.h",
+      "functions": [
+        "mulib_texshipout_push",
+        "mulib_texshipout_remove",
+        "mulib_texshipout_bounds",
+        "mulib_texshipout_destroy"
+      ]
+    },
     "text": {
       "header": "mulib-text.h",
       "functions": [
         "mulib_text_trim",
         "mulib_text_ascii_lower",
         "mulib_text_ascii_upper"
+      ]
+    },
+    "textitemize": {
+      "header": "mulib-textitemize.h",
+      "functions": [
+        "mulib_textitemize_open",
+        "mulib_textitemize_read_u16",
+        "mulib_textitemize_read_u32",
+        "mulib_textitemize_slice"
+      ]
+    },
+    "textrace": {
+      "header": "mulib-textrace.h",
+      "functions": [
+        "mulib_textrace_destroy",
+        "mulib_textrace_set",
+        "mulib_textrace_get",
+        "mulib_textrace_erase"
+      ]
+    },
+    "texvalue": {
+      "header": "mulib-texvalue.h",
+      "functions": [
+        "mulib_texvalue_string",
+        "mulib_texvalue_number",
+        "mulib_texvalue_copy",
+        "mulib_texvalue_destroy"
+      ]
+    },
+    "texvlist": {
+      "header": "mulib-texvlist.h",
+      "functions": [
+        "mulib_texvlist_push",
+        "mulib_texvlist_remove",
+        "mulib_texvlist_bounds",
+        "mulib_texvlist_destroy"
       ]
     },
     "timer": {
@@ -7432,6 +8775,15 @@
         "mulib_timerfd_set",
         "mulib_timerfd_read",
         "mulib_timerfd_close"
+      ]
+    },
+    "toc": {
+      "header": "mulib-toc.h",
+      "functions": [
+        "mulib_toc_destroy",
+        "mulib_toc_set",
+        "mulib_toc_get",
+        "mulib_toc_erase"
       ]
     },
     "toml": {
@@ -7481,6 +8833,15 @@
         "mulib_tsl_close"
       ]
     },
+    "ttf": {
+      "header": "mulib-ttf.h",
+      "functions": [
+        "mulib_ttf_open",
+        "mulib_ttf_read_u16",
+        "mulib_ttf_read_u32",
+        "mulib_ttf_slice"
+      ]
+    },
     "tui": {
       "header": "mulib-tui.h",
       "functions": [
@@ -7523,6 +8884,144 @@
         "mulib_txtdiff_free",
         "mulib_txtdiff_make",
         "mulib_txtdiff_apply"
+      ]
+    },
+    "typecache": {
+      "header": "mulib-typecache.h",
+      "functions": [
+        "mulib_typecache_destroy",
+        "mulib_typecache_set",
+        "mulib_typecache_get",
+        "mulib_typecache_erase"
+      ]
+    },
+    "typeconformance": {
+      "header": "mulib-typeconformance.h",
+      "functions": [
+        "mulib_typeconformance_destroy",
+        "mulib_typeconformance_set",
+        "mulib_typeconformance_get",
+        "mulib_typeconformance_erase"
+      ]
+    },
+    "typecontext": {
+      "header": "mulib-typecontext.h",
+      "functions": [
+        "mulib_typecontext_init",
+        "mulib_typecontext_append",
+        "mulib_typecontext_reset",
+        "mulib_typecontext_destroy"
+      ]
+    },
+    "typecore": {
+      "header": "mulib-typecore.h",
+      "functions": [
+        "mulib_typecore_free",
+        "mulib_typecore_reserve",
+        "mulib_typecore_append",
+        "mulib_typecore_text",
+        "mulib_typecore_byte",
+        "mulib_typecore_u16be",
+        "mulib_typecore_u16le",
+        "mulib_typecore_u32be",
+        "mulib_typecore_u32le",
+        "mulib_typecore_read16be",
+        "mulib_typecore_read32be",
+        "mulib_typecore_read32le",
+        "mulib_typecore_crc32",
+        "mulib_typecore_adler32",
+        "mulib_typecore_utf8",
+        "mulib_typecore_html",
+        "mulib_typecore_latex",
+        "mulib_typecore_json",
+        "mulib_typecore_ends"
+      ]
+    },
+    "typefuzz": {
+      "header": "mulib-typefuzz.h",
+      "functions": [
+        "mulib_typefuzz_init",
+        "mulib_typefuzz_charge",
+        "mulib_typefuzz_reset",
+        "mulib_typefuzz_remaining"
+      ]
+    },
+    "typeincremental": {
+      "header": "mulib-typeincremental.h",
+      "functions": [
+        "mulib_typeincremental_init",
+        "mulib_typeincremental_charge",
+        "mulib_typeincremental_reset",
+        "mulib_typeincremental_remaining"
+      ]
+    },
+    "typeinspect": {
+      "header": "mulib-typeinspect.h",
+      "functions": [
+        "mulib_typeinspect_destroy",
+        "mulib_typeinspect_set",
+        "mulib_typeinspect_get",
+        "mulib_typeinspect_erase"
+      ]
+    },
+    "typeparallel": {
+      "header": "mulib-typeparallel.h",
+      "functions": [
+        "mulib_typeparallel_init",
+        "mulib_typeparallel_charge",
+        "mulib_typeparallel_reset",
+        "mulib_typeparallel_remaining"
+      ]
+    },
+    "typeplugin": {
+      "header": "mulib-typeplugin.h",
+      "functions": [
+        "mulib_typeplugin_destroy",
+        "mulib_typeplugin_set",
+        "mulib_typeplugin_get",
+        "mulib_typeplugin_erase"
+      ]
+    },
+    "typeprofile": {
+      "header": "mulib-typeprofile.h",
+      "functions": [
+        "mulib_typeprofile_init",
+        "mulib_typeprofile_charge",
+        "mulib_typeprofile_reset",
+        "mulib_typeprofile_remaining"
+      ]
+    },
+    "typesandbox": {
+      "header": "mulib-typesandbox.h",
+      "functions": [
+        "mulib_typesandbox_init",
+        "mulib_typesandbox_charge",
+        "mulib_typesandbox_reset",
+        "mulib_typesandbox_remaining"
+      ]
+    },
+    "typesrc": {
+      "header": "mulib-typesrc.h",
+      "functions": [
+        "mulib_typesrc_init",
+        "mulib_typesrc_assign",
+        "mulib_typesrc_locate",
+        "mulib_typesrc_destroy"
+      ]
+    },
+    "typestatus": {
+      "header": "mulib-typestatus.h",
+      "functions": [
+        "mulib_typestatus_name"
+      ]
+    },
+    "typography": {
+      "header": "mulib-typography.h",
+      "functions": [
+        "mulib_typography_destroy",
+        "mulib_typography_set",
+        "mulib_typography_get",
+        "mulib_typography_erase"
       ]
     },
     "udev": {
@@ -7679,6 +9178,59 @@
       "header": "mulib-unibreak.h",
       "functions": [
         "mulib_unibreak_find"
+      ]
+    },
+    "unicodebidi": {
+      "header": "mulib-unicodebidi.h",
+      "functions": [
+        "mulib_unicodebidi_base"
+      ]
+    },
+    "unicodebreak": {
+      "header": "mulib-unicodebreak.h",
+      "functions": [
+        "mulib_unicodebreak_possible"
+      ]
+    },
+    "unicodecase": {
+      "header": "mulib-unicodecase.h",
+      "functions": [
+        "mulib_unicodecase_push",
+        "mulib_unicodecase_remove",
+        "mulib_unicodecase_bounds",
+        "mulib_unicodecase_destroy"
+      ]
+    },
+    "unicodegrapheme": {
+      "header": "mulib-unicodegrapheme.h",
+      "functions": [
+        "mulib_unicodegrapheme_next"
+      ]
+    },
+    "unicodenorm": {
+      "header": "mulib-unicodenorm.h",
+      "functions": [
+        "mulib_unicodenorm_open",
+        "mulib_unicodenorm_read_u16",
+        "mulib_unicodenorm_read_u32",
+        "mulib_unicodenorm_slice"
+      ]
+    },
+    "unicodeprops": {
+      "header": "mulib-unicodeprops.h",
+      "functions": [
+        "mulib_unicodeprops_valid",
+        "mulib_unicodeprops_class",
+        "mulib_unicodeprops_rtl"
+      ]
+    },
+    "unicodescript": {
+      "header": "mulib-unicodescript.h",
+      "functions": [
+        "mulib_unicodescript_open",
+        "mulib_unicodescript_read_u16",
+        "mulib_unicodescript_read_u32",
+        "mulib_unicodescript_slice"
       ]
     },
     "uniname": {
@@ -7897,6 +9449,24 @@
         "mulib_vector_norm",
         "mulib_vector_normalize",
         "mulib_vector_cross"
+      ]
+    },
+    "vectorpath": {
+      "header": "mulib-vectorpath.h",
+      "functions": [
+        "mulib_vectorpath_push",
+        "mulib_vectorpath_remove",
+        "mulib_vectorpath_bounds",
+        "mulib_vectorpath_destroy"
+      ]
+    },
+    "verttext": {
+      "header": "mulib-verttext.h",
+      "functions": [
+        "mulib_verttext_push",
+        "mulib_verttext_remove",
+        "mulib_verttext_bounds",
+        "mulib_verttext_destroy"
       ]
     },
     "vfs": {
@@ -8379,6 +9949,24 @@
         "mulib_wmfunc_apply"
       ]
     },
+    "woff": {
+      "header": "mulib-woff.h",
+      "functions": [
+        "mulib_woff_open",
+        "mulib_woff_read_u16",
+        "mulib_woff_read_u32",
+        "mulib_woff_slice"
+      ]
+    },
+    "woff2": {
+      "header": "mulib-woff2.h",
+      "functions": [
+        "mulib_woff2_open",
+        "mulib_woff2_read_u16",
+        "mulib_woff2_read_u32",
+        "mulib_woff2_slice"
+      ]
+    },
     "wpa-ctrl": {
       "header": "mulib-wpa-ctrl.h",
       "functions": [
@@ -8631,7 +10219,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "78fa02edaff812d1a4d72344caf5404423b64a5b3c003a98568b68baa2cca8b2",
-    "Implementation.c": "7874b9b3ca66040147aef42925911939a1315a8d010984a08ef5980c30877875"
+    "Generated.inc": "482fa5b0bdaf78b0001c1370bce942ccdde539db68f5897068c9ddbe4518b8c5",
+    "Implementation.c": "cfaf3ee36c8153d8c8c2c9a6f8a296f2e28b29d4c729965dbde971c0f81e73a0"
   }
 }

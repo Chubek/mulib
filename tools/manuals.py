@@ -68,7 +68,8 @@ def inventory():
         switch = IMPLEMENTATION.search(text)
         if fields and (not switch or fields.get('macro') != switch.group(1)):
             raise ValueError('manifest switch differs from header: ' + header.name)
-        example = ROOT / 'examples/modules' / (AUXILIARY.get(stem, stem[6:]) + '.c')
+        example = ROOT / fields.get('example', 'examples/modules/' +
+                                    AUXILIARY.get(stem, stem[6:]) + '.c')
         manual = ROOT / 'manual' / (stem + '.md')
         if fields and fields.get('manual') != manual.relative_to(ROOT).as_posix():
             raise ValueError('manifest manual differs from header: ' + header.name)

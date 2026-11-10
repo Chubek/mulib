@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 802
-implemented_module_count: 802
+module_count: 968
+implemented_module_count: 968
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -842,8 +842,8 @@ modules:
   header: include/mulib-html.h
   manual: manual/mulib-html.md
   macro: MULIB_IMPL_HTML
-  purpose: Bounded explicit-tag HTML parsing and escaped construction using the shared DOM.
-  dependencies: [xml]
+  purpose: Bounded HTML parsing/DOM construction plus opt-in safe semantic DocIR HTML/MathML export.
+  dependencies: [docir, xml]
   status: implemented
 - name: css
   header: include/mulib-css.h
@@ -1584,8 +1584,8 @@ modules:
   header: include/mulib-latex.h
   manual: manual/mulib-latex.md
   macro: MULIB_IMPL_LATEX
-  purpose: "Escaped LaTeX article generation with an explicit document lifecycle."
-  dependencies: [tex]
+  purpose: "Escaped LaTeX article lifecycle and opt-in semantic DocIR article export."
+  dependencies: [docir, tex]
   status: implemented
 - name: layout
   header: include/mulib-layout.h
@@ -2893,8 +2893,8 @@ modules:
   header: include/mulib-fontshape.h
   manual: manual/mulib-fontshape.md
   macro: MULIB_IMPL_FONTSHAPE
-  purpose: Runtime HarfBuzz OpenType shaping, clusters, features and variations.
-  dependencies: [dynload, utf8]
+  purpose: HarfBuzz shaping plus opt-in bounded native Latin GSUB/GPOS execution with byte clusters.
+  dependencies: [dynload, fontcmap, fontgdef, fontgpos, fontgsub, fontkern, fontmetrics, sfnt, utf8]
   status: implemented
 - name: pglayout
   header: include/mulib-pglayout.h
@@ -3867,8 +3867,8 @@ modules:
   header: include/mulib-epub.h
   manual: manual/mulib-epub.md
   macro: MULIB_IMPL_EPUB
-  purpose: "EPUB 3 package generation and checked in-memory publication access."
-  dependencies: [xml, zip]
+  purpose: "EPUB 3 packaging/read access with opt-in semantic DocIR chapter adaptation."
+  dependencies: [html, xml, zip]
   status: implemented
 - name: mathml
   header: include/mulib-mathml.h
@@ -5627,7 +5627,1383 @@ modules:
   purpose: "Dependency-free Zstandard LZ/FSE/Huffman codec and raw/RLE helpers."
   dependencies: [codec-core]
   status: implemented
+- name: typecore
+  header: include/mulib-typecore.h
+  manual: manual/mulib-typecore.md
+  macro: MULIB_IMPL_TYPECORE
+  purpose: Allocation-checked owned buffers, endian conversion, UTF-8 decoding, CRC32 and escaping.
+  dependencies: []
+  status: implemented
+  example: examples/mulib-typecore.c
+- name: typesrc
+  header: include/mulib-typesrc.h
+  manual: manual/mulib-typesrc.md
+  macro: MULIB_IMPL_TYPESRC
+  purpose: Owned source text with location-aware line and column lookup.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-typesrc.c
+- name: texcatcode
+  header: include/mulib-texcatcode.h
+  manual: manual/mulib-texcatcode.md
+  macro: MULIB_IMPL_TEXCATCODE
+  purpose: Configurable ASCII TeX-like category codes (initialization and assignment).
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texcatcode.c
+- name: texmouth
+  header: include/mulib-texmouth.h
+  manual: manual/mulib-texmouth.md
+  macro: MULIB_IMPL_TEXMOUTH
+  purpose: 'TeX-like borrowed token scanning: control words, braces, spaces and comments.'
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texmouth.c
+- name: texexpand
+  header: include/mulib-texexpand.h
+  manual: manual/mulib-texexpand.md
+  macro: MULIB_IMPL_TEXEXPAND
+  purpose: Simple bounded macro-name substitution with single-pass escaped backslash commands.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texexpand.c
+- name: texscope
+  header: include/mulib-texscope.h
+  manual: manual/mulib-texscope.md
+  macro: MULIB_IMPL_TEXSCOPE
+  purpose: Owned bounded registry of lexical scope bindings; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texscope.c
+- name: texregister
+  header: include/mulib-texregister.h
+  manual: manual/mulib-texregister.md
+  macro: MULIB_IMPL_TEXREGISTER
+  purpose: Owned bounded registry of named TeX register values; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texregister.c
+- name: texexpr
+  header: include/mulib-texexpr.h
+  manual: manual/mulib-texexpr.md
+  macro: MULIB_IMPL_TEXEXPR
+  purpose: Bounded recursive-descent arithmetic expressions with +,-,*,/,unary signs, parentheses.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texexpr.c
+- name: texfunction
+  header: include/mulib-texfunction.h
+  manual: manual/mulib-texfunction.md
+  macro: MULIB_IMPL_TEXFUNCTION
+  purpose: Owned bounded registry of named user function declarations; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texfunction.c
+- name: texvalue
+  header: include/mulib-texvalue.h
+  manual: manual/mulib-texvalue.md
+  macro: MULIB_IMPL_TEXVALUE
+  purpose: Owned number/string value container with safe copy and destruction.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texvalue.c
+- name: texclosure
+  header: include/mulib-texclosure.h
+  manual: manual/mulib-texclosure.md
+  macro: MULIB_IMPL_TEXCLOSURE
+  purpose: Owned bounded registry of closure capture bindings; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texclosure.c
+- name: texruntime
+  header: include/mulib-texruntime.h
+  manual: manual/mulib-texruntime.md
+  macro: MULIB_IMPL_TEXRUNTIME
+  purpose: Bounded interpreted numeric expressions, user-defined recursive functions, comparisons and lazy ternaries.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texruntime.c
+- name: texbytecode
+  header: include/mulib-texbytecode.h
+  manual: manual/mulib-texbytecode.md
+  macro: MULIB_IMPL_TEXBYTECODE
+  purpose: Safe stack-bytecode arithmetic interpreter with bounded instruction steps.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texbytecode.c
+- name: texmodule
+  header: include/mulib-texmodule.h
+  manual: manual/mulib-texmodule.md
+  macro: MULIB_IMPL_TEXMODULE
+  purpose: Owned bounded registry of module names and loaded paths; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texmodule.c
+- name: texpattern
+  header: include/mulib-texpattern.h
+  manual: manual/mulib-texpattern.md
+  macro: MULIB_IMPL_TEXPATTERN
+  purpose: Owned bounded registry of pattern/replacement mappings; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texpattern.c
+- name: texreflection
+  header: include/mulib-texreflection.h
+  manual: manual/mulib-texreflection.md
+  macro: MULIB_IMPL_TEXREFLECTION
+  purpose: Owned bounded registry of document reflection properties; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texreflection.c
+- name: texffi
+  header: include/mulib-texffi.h
+  manual: manual/mulib-texffi.md
+  macro: MULIB_IMPL_TEXFFI
+  purpose: Owned bounded registry of foreign callable symbol registry; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texffi.c
+- name: texdebug
+  header: include/mulib-texdebug.h
+  manual: manual/mulib-texdebug.md
+  macro: MULIB_IMPL_TEXDEBUG
+  purpose: Owned bounded registry of breakpoints and diagnostic labels; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texdebug.c
+- name: docir
+  header: include/mulib-docir.h
+  manual: manual/mulib-docir.md
+  macro: MULIB_IMPL_DOCIR
+  purpose: ABI-preserving owned semantic trees, source/style snapshots, checked math and atomic HTML/LaTeX export.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-docir.c
+- name: docnode
+  header: include/mulib-docnode.h
+  manual: manual/mulib-docnode.md
+  macro: MULIB_IMPL_DOCNODE
+  purpose: Owned ordered collection for document ir docnode rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-docnode.c
+- name: docstyle
+  header: include/mulib-docstyle.h
+  manual: manual/mulib-docstyle.md
+  macro: MULIB_IMPL_DOCSTYLE
+  purpose: Owned bounded registry of document style properties; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-docstyle.c
+- name: doclength
+  header: include/mulib-doclength.h
+  manual: manual/mulib-doclength.md
+  macro: MULIB_IMPL_DOCLENGTH
+  purpose: Convert document lengths among CSS px, PDF pt, inch and mm.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-doclength.c
+- name: docresource
+  header: include/mulib-docresource.h
+  manual: manual/mulib-docresource.md
+  macro: MULIB_IMPL_DOCRESOURCE
+  purpose: Owned bounded registry of assets and resource identifiers; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-docresource.c
+- name: docmetadata
+  header: include/mulib-docmetadata.h
+  manual: manual/mulib-docmetadata.md
+  macro: MULIB_IMPL_DOCMETADATA
+  purpose: Owned bounded registry of document metadata properties; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-docmetadata.c
+- name: docnormalize
+  header: include/mulib-docnormalize.h
+  manual: manual/mulib-docnormalize.md
+  macro: MULIB_IMPL_DOCNORMALIZE
+  purpose: Legacy byte emission and opt-in owned DocIR text-node normalization.
+  dependencies: [docir, typecore]
+  status: implemented
+  example: examples/mulib-docnormalize.c
+- name: docquery
+  header: include/mulib-docquery.h
+  manual: manual/mulib-docquery.md
+  macro: MULIB_IMPL_DOCQUERY
+  purpose: Owned bounded registry of saved semantic queries; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-docquery.c
+- name: docdiff
+  header: include/mulib-docdiff.h
+  manual: manual/mulib-docdiff.md
+  macro: MULIB_IMPL_DOCDIFF
+  purpose: Owned ordered collection for document ir docdiff rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-docdiff.c
+- name: docsource
+  header: include/mulib-docsource.h
+  manual: manual/mulib-docsource.md
+  macro: MULIB_IMPL_DOCSOURCE
+  purpose: Source-origin registry and opt-in checked DocIR byte-span annotations.
+  dependencies: [docir, typecore, typesrc]
+  status: implemented
+  example: examples/mulib-docsource.c
+- name: docserialize
+  header: include/mulib-docserialize.h
+  manual: manual/mulib-docserialize.md
+  macro: MULIB_IMPL_DOCSERIALIZE
+  purpose: Legacy JSON escaping and opt-in versioned semantic DocIR serialization.
+  dependencies: [docir, typecore]
+  status: implemented
+  example: examples/mulib-docserialize.c
+- name: docvalidate
+  header: include/mulib-docvalidate.h
+  manual: manual/mulib-docvalidate.md
+  macro: MULIB_IMPL_DOCVALIDATE
+  purpose: Legacy budget accounting and opt-in complete semantic DocIR validation.
+  dependencies: [docir, typecore]
+  status: implemented
+  example: examples/mulib-docvalidate.c
+- name: docsemantic
+  header: include/mulib-docsemantic.h
+  manual: manual/mulib-docsemantic.md
+  macro: MULIB_IMPL_DOCSEMANTIC
+  purpose: Owned bounded registry of accessible semantic role names; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-docsemantic.c
+- name: docincremental
+  header: include/mulib-docincremental.h
+  manual: manual/mulib-docincremental.md
+  macro: MULIB_IMPL_DOCINCREMENTAL
+  purpose: Configurable execution policy and accounting for document ir docincremental.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-docincremental.c
+- name: texdim
+  header: include/mulib-texdim.h
+  manual: manual/mulib-texdim.md
+  macro: MULIB_IMPL_TEXDIM
+  purpose: TeX-compatible scaled-point integer representation and overflow-checked arithmetic.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texdim.c
+- name: texglue
+  header: include/mulib-texglue.h
+  manual: manual/mulib-texglue.md
+  macro: MULIB_IMPL_TEXGLUE
+  purpose: TeX-like natural size, stretch and shrink plus proportional adjustment.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texglue.c
+- name: texpenalty
+  header: include/mulib-texpenalty.h
+  manual: manual/mulib-texpenalty.md
+  macro: MULIB_IMPL_TEXPENALTY
+  purpose: Clamp page-break penalties to configured window. Finite numeric inputs and documented scalar result.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texpenalty.c
+- name: texbox
+  header: include/mulib-texbox.h
+  manual: manual/mulib-texbox.md
+  macro: MULIB_IMPL_TEXBOX
+  purpose: TeX-style horizontal/vertical box dimensions with checked packing.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texbox.c
+- name: texnode
+  header: include/mulib-texnode.h
+  manual: manual/mulib-texnode.md
+  macro: MULIB_IMPL_TEXNODE
+  purpose: Owned ordered collection for typesetting texnode rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texnode.c
+- name: texhlist
+  header: include/mulib-texhlist.h
+  manual: manual/mulib-texhlist.md
+  macro: MULIB_IMPL_TEXHLIST
+  purpose: Owned ordered collection for typesetting texhlist rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texhlist.c
+- name: texvlist
+  header: include/mulib-texvlist.h
+  manual: manual/mulib-texvlist.md
+  macro: MULIB_IMPL_TEXVLIST
+  purpose: Owned ordered collection for typesetting texvlist rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texvlist.c
+- name: texpack
+  header: include/mulib-texpack.h
+  manual: manual/mulib-texpack.md
+  macro: MULIB_IMPL_TEXPACK
+  purpose: Baseline packed box surplus calculation. Finite numeric inputs and documented scalar result.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texpack.c
+- name: texpar
+  header: include/mulib-texpar.h
+  manual: manual/mulib-texpar.md
+  macro: MULIB_IMPL_TEXPAR
+  purpose: Owned ordered collection for typesetting texpar rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texpar.c
+- name: texbreak
+  header: include/mulib-texbreak.h
+  manual: manual/mulib-texbreak.md
+  macro: MULIB_IMPL_TEXBREAK
+  purpose: Optimal dynamic-programming line breaks over fixed widths and penalties.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texbreak.c
+- name: texpage
+  header: include/mulib-texpage.h
+  manual: manual/mulib-texpage.md
+  macro: MULIB_IMPL_TEXPAGE
+  purpose: Greedy bounded vertical page segmentation over box heights.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texpage.c
+- name: texinsert
+  header: include/mulib-texinsert.h
+  manual: manual/mulib-texinsert.md
+  macro: MULIB_IMPL_TEXINSERT
+  purpose: Owned bounded registry of insertion and footnote buckets; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texinsert.c
+- name: texmark
+  header: include/mulib-texmark.h
+  manual: manual/mulib-texmark.md
+  macro: MULIB_IMPL_TEXMARK
+  purpose: Owned bounded registry of running header and mark values; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texmark.c
+- name: texalign
+  header: include/mulib-texalign.h
+  manual: manual/mulib-texalign.md
+  macro: MULIB_IMPL_TEXALIGN
+  purpose: Owned ordered collection for typesetting texalign rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texalign.c
+- name: texleaders
+  header: include/mulib-texleaders.h
+  manual: manual/mulib-texleaders.md
+  macro: MULIB_IMPL_TEXLEADERS
+  purpose: Owned ordered collection for typesetting texleaders rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texleaders.c
+- name: texshipout
+  header: include/mulib-texshipout.h
+  manual: manual/mulib-texshipout.md
+  macro: MULIB_IMPL_TEXSHIPOUT
+  purpose: Owned ordered collection for typesetting texshipout rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texshipout.c
+- name: texoutput
+  header: include/mulib-texoutput.h
+  manual: manual/mulib-texoutput.md
+  macro: MULIB_IMPL_TEXOUTPUT
+  purpose: Owned bounded registry of output callback names; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texoutput.c
+- name: textrace
+  header: include/mulib-textrace.h
+  manual: manual/mulib-textrace.md
+  macro: MULIB_IMPL_TEXTRACE
+  purpose: Owned bounded registry of diagnostic trace messages; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-textrace.c
+- name: pageframe
+  header: include/mulib-pageframe.h
+  manual: manual/mulib-pageframe.md
+  macro: MULIB_IMPL_PAGEFRAME
+  purpose: Page margins and usable frame calculation.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pageframe.c
+- name: pagecolumns
+  header: include/mulib-pagecolumns.h
+  manual: manual/mulib-pagecolumns.md
+  macro: MULIB_IMPL_PAGECOLUMNS
+  purpose: Even column rectangles with configurable width and gap.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pagecolumns.c
+- name: pagefloat
+  header: include/mulib-pagefloat.h
+  manual: manual/mulib-pagefloat.md
+  macro: MULIB_IMPL_PAGEFLOAT
+  purpose: Owned ordered collection for page composition pagefloat rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pagefloat.c
+- name: pagefootnote
+  header: include/mulib-pagefootnote.h
+  manual: manual/mulib-pagefootnote.md
+  macro: MULIB_IMPL_PAGEFOOTNOTE
+  purpose: Owned ordered collection for page composition pagefootnote rectangles and records; insertion, indexing,
+    removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pagefootnote.c
+- name: pagemargin
+  header: include/mulib-pagemargin.h
+  manual: manual/mulib-pagemargin.md
+  macro: MULIB_IMPL_PAGEMARGIN
+  purpose: Owned ordered collection for page composition pagemargin rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pagemargin.c
+- name: pagegrid
+  header: include/mulib-pagegrid.h
+  manual: manual/mulib-pagegrid.md
+  macro: MULIB_IMPL_PAGEGRID
+  purpose: Snap a coordinate to the closest grid increment. Finite numeric inputs and documented scalar result.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pagegrid.c
+- name: pagewidow
+  header: include/mulib-pagewidow.h
+  manual: manual/mulib-pagewidow.md
+  macro: MULIB_IMPL_PAGEWIDOW
+  purpose: Owned ordered collection for page composition pagewidow rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pagewidow.c
+- name: pagekeep
+  header: include/mulib-pagekeep.h
+  manual: manual/mulib-pagekeep.md
+  macro: MULIB_IMPL_PAGEKEEP
+  purpose: Owned ordered collection for page composition pagekeep rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pagekeep.c
+- name: pagebalance
+  header: include/mulib-pagebalance.h
+  manual: manual/mulib-pagebalance.md
+  macro: MULIB_IMPL_PAGEBALANCE
+  purpose: Owned ordered collection for page composition pagebalance rectangles and records; insertion, indexing,
+    removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pagebalance.c
+- name: pagetemplate
+  header: include/mulib-pagetemplate.h
+  manual: manual/mulib-pagetemplate.md
+  macro: MULIB_IMPL_PAGETEMPLATE
+  purpose: Owned bounded registry of page templates and named sizes; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pagetemplate.c
+- name: pagetoc
+  header: include/mulib-pagetoc.h
+  manual: manual/mulib-pagetoc.md
+  macro: MULIB_IMPL_PAGETOC
+  purpose: Owned bounded registry of table-of-contents title/target mappings; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pagetoc.c
+- name: pageref
+  header: include/mulib-pageref.h
+  manual: manual/mulib-pageref.md
+  macro: MULIB_IMPL_PAGEREF
+  purpose: Owned bounded registry of reference targets; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pageref.c
+- name: pageindex
+  header: include/mulib-pageindex.h
+  manual: manual/mulib-pageindex.md
+  macro: MULIB_IMPL_PAGEINDEX
+  purpose: Owned bounded registry of indexed terms; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pageindex.c
+- name: pagebib
+  header: include/mulib-pagebib.h
+  manual: manual/mulib-pagebib.md
+  macro: MULIB_IMPL_PAGEBIB
+  purpose: Owned bounded registry of bibliography entry names; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pagebib.c
+- name: sfnt
+  header: include/mulib-sfnt.h
+  manual: manual/mulib-sfnt.md
+  macro: MULIB_IMPL_SFNT
+  purpose: Checked SFNT/TTC face directories, table ranges and overlap defense.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-sfnt.c
+- name: ttf
+  header: include/mulib-ttf.h
+  manual: manual/mulib-ttf.md
+  macro: MULIB_IMPL_TTF
+  purpose: Bounds-checked font and unicode ttf structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-ttf.c
+- name: cff
+  header: include/mulib-cff.h
+  manual: manual/mulib-cff.md
+  macro: MULIB_IMPL_CFF
+  purpose: Bounds-checked font and unicode cff structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-cff.c
+- name: cff2
+  header: include/mulib-cff2.h
+  manual: manual/mulib-cff2.md
+  macro: MULIB_IMPL_CFF2
+  purpose: Bounds-checked font and unicode cff2 structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-cff2.c
+- name: fontcmap
+  header: include/mulib-fontcmap.h
+  manual: manual/mulib-fontcmap.md
+  macro: MULIB_IMPL_FONTCMAP
+  purpose: Checked Unicode cmap formats 4, 6, 10, 12, 13 and format 14 variation sequences.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-fontcmap.c
+- name: fontmetrics
+  header: include/mulib-fontmetrics.h
+  manual: manual/mulib-fontmetrics.md
+  macro: MULIB_IMPL_FONTMETRICS
+  purpose: HMetrics width lookup from caller-extracted hmtx table and hhea count.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-fontmetrics.c
+- name: fontvar
+  header: include/mulib-fontvar.h
+  manual: manual/mulib-fontvar.md
+  macro: MULIB_IMPL_FONTVAR
+  purpose: Bounds-checked font and unicode fontvar structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-fontvar.c
+- name: fontgsub
+  header: include/mulib-fontgsub.h
+  manual: manual/mulib-fontgsub.md
+  macro: MULIB_IMPL_FONTGSUB
+  purpose: Checked GSUB views and bounded single/ligature lookup execution.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-fontgsub.c
+- name: fontgpos
+  header: include/mulib-fontgpos.h
+  manual: manual/mulib-fontgpos.md
+  macro: MULIB_IMPL_FONTGPOS
+  purpose: Checked GPOS views and explicit/class pair positioning execution.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-fontgpos.c
+- name: fontgdef
+  header: include/mulib-fontgdef.h
+  manual: manual/mulib-fontgdef.md
+  macro: MULIB_IMPL_FONTGDEF
+  purpose: Checked GDEF views and glyph class definition lookup.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-fontgdef.c
+- name: fontkern
+  header: include/mulib-fontkern.h
+  manual: manual/mulib-fontkern.md
+  macro: MULIB_IMPL_FONTKERN
+  purpose: Simple legacy TrueType kern format 0 pair lookup.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-fontkern.c
+- name: fontsubset
+  header: include/mulib-fontsubset.h
+  manual: manual/mulib-fontsubset.md
+  macro: MULIB_IMPL_FONTSUBSET
+  purpose: Owned ordered collection for font and unicode fontsubset rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-fontsubset.c
+- name: fontembed
+  header: include/mulib-fontembed.h
+  manual: manual/mulib-fontembed.md
+  macro: MULIB_IMPL_FONTEMBED
+  purpose: Bounds-checked font and unicode fontembed structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-fontembed.c
+- name: fontraster
+  header: include/mulib-fontraster.h
+  manual: manual/mulib-fontraster.md
+  macro: MULIB_IMPL_FONTRASTER
+  purpose: Bounds-checked font and unicode fontraster structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-fontraster.c
+- name: fontfallback
+  header: include/mulib-fontfallback.h
+  manual: manual/mulib-fontfallback.md
+  macro: MULIB_IMPL_FONTFALLBACK
+  purpose: Owned bounded registry of font family fallback chains; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-fontfallback.c
+- name: fontcatalog
+  header: include/mulib-fontcatalog.h
+  manual: manual/mulib-fontcatalog.md
+  macro: MULIB_IMPL_FONTCATALOG
+  purpose: Owned bounded registry of font discovery metadata; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-fontcatalog.c
+- name: woff
+  header: include/mulib-woff.h
+  manual: manual/mulib-woff.md
+  macro: MULIB_IMPL_WOFF
+  purpose: Bounds-checked font and unicode woff structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-woff.c
+- name: woff2
+  header: include/mulib-woff2.h
+  manual: manual/mulib-woff2.md
+  macro: MULIB_IMPL_WOFF2
+  purpose: Bounds-checked font and unicode woff2 structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-woff2.c
+- name: unicodeprops
+  header: include/mulib-unicodeprops.h
+  manual: manual/mulib-unicodeprops.md
+  macro: MULIB_IMPL_UNICODEPROPS
+  purpose: Unicode scalar validity and conservative text class classification.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-unicodeprops.c
+- name: unicodebidi
+  header: include/mulib-unicodebidi.h
+  manual: manual/mulib-unicodebidi.md
+  macro: MULIB_IMPL_UNICODEBIDI
+  purpose: Conservative base-direction detection from Hebrew/Arabic and ASCII letters.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-unicodebidi.c
+- name: unicodebreak
+  header: include/mulib-unicodebreak.h
+  manual: manual/mulib-unicodebreak.md
+  macro: MULIB_IMPL_UNICODEBREAK
+  purpose: Line-break opportunity discovery after ASCII whitespace and common separators.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-unicodebreak.c
+- name: unicodegrapheme
+  header: include/mulib-unicodegrapheme.h
+  manual: manual/mulib-unicodegrapheme.md
+  macro: MULIB_IMPL_UNICODEGRAPHEME
+  purpose: UTF-8 grapheme iterator with combining-mark continuation baseline.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-unicodegrapheme.c
+- name: unicodenorm
+  header: include/mulib-unicodenorm.h
+  manual: manual/mulib-unicodenorm.md
+  macro: MULIB_IMPL_UNICODENORM
+  purpose: Bounds-checked font and unicode unicodenorm structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-unicodenorm.c
+- name: unicodescript
+  header: include/mulib-unicodescript.h
+  manual: manual/mulib-unicodescript.md
+  macro: MULIB_IMPL_UNICODESCRIPT
+  purpose: Bounds-checked font and unicode unicodescript structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-unicodescript.c
+- name: unicodecase
+  header: include/mulib-unicodecase.h
+  manual: manual/mulib-unicodecase.md
+  macro: MULIB_IMPL_UNICODECASE
+  purpose: Owned ordered collection for font and unicode unicodecase layout records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-unicodecase.c
+- name: textitemize
+  header: include/mulib-textitemize.h
+  manual: manual/mulib-textitemize.md
+  macro: MULIB_IMPL_TEXTITEMIZE
+  purpose: Bounds-checked font and unicode textitemize structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-textitemize.c
+- name: mathir
+  header: include/mulib-mathir.h
+  manual: manual/mulib-mathir.md
+  macro: MULIB_IMPL_MATHIR
+  purpose: Owned ordered collection for math mathir rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathir.c
+- name: mathparse
+  header: include/mulib-mathparse.h
+  manual: manual/mulib-mathparse.md
+  macro: MULIB_IMPL_MATHPARSE
+  purpose: Math-brace and superscript/subscript token validation.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathparse.c
+- name: mathlayout
+  header: include/mulib-mathlayout.h
+  manual: manual/mulib-mathlayout.md
+  macro: MULIB_IMPL_MATHLAYOUT
+  purpose: Owned ordered collection for math mathlayout rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathlayout.c
+- name: mathfont
+  header: include/mulib-mathfont.h
+  manual: manual/mulib-mathfont.md
+  macro: MULIB_IMPL_MATHFONT
+  purpose: Owned bounded registry of math font parameters; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathfont.c
+- name: mathatom
+  header: include/mulib-mathatom.h
+  manual: manual/mulib-mathatom.md
+  macro: MULIB_IMPL_MATHATOM
+  purpose: Owned ordered collection for math mathatom rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathatom.c
+- name: mathscript
+  header: include/mulib-mathscript.h
+  manual: manual/mulib-mathscript.md
+  macro: MULIB_IMPL_MATHSCRIPT
+  purpose: Scripted baseline offset calculations.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathscript.c
+- name: mathfraction
+  header: include/mulib-mathfraction.h
+  manual: manual/mulib-mathfraction.md
+  macro: MULIB_IMPL_MATHFRACTION
+  purpose: Compute stacked fraction baseline metrics from numerator and denominator boxes.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathfraction.c
+- name: mathradical
+  header: include/mulib-mathradical.h
+  manual: manual/mulib-mathradical.md
+  macro: MULIB_IMPL_MATHRADICAL
+  purpose: Calculate radical clearance and total ascent.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathradical.c
+- name: mathdelimiter
+  header: include/mulib-mathdelimiter.h
+  manual: manual/mulib-mathdelimiter.md
+  macro: MULIB_IMPL_MATHDELIMITER
+  purpose: Owned ordered collection for math mathdelimiter rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathdelimiter.c
+- name: mathaccent
+  header: include/mulib-mathaccent.h
+  manual: manual/mulib-mathaccent.md
+  macro: MULIB_IMPL_MATHACCENT
+  purpose: Owned ordered collection for math mathaccent rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathaccent.c
+- name: mathmatrix
+  header: include/mulib-mathmatrix.h
+  manual: manual/mulib-mathmatrix.md
+  macro: MULIB_IMPL_MATHMATRIX
+  purpose: Owned ordered collection for math mathmatrix rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathmatrix.c
+- name: mathoperator
+  header: include/mulib-mathoperator.h
+  manual: manual/mulib-mathoperator.md
+  macro: MULIB_IMPL_MATHOPERATOR
+  purpose: Owned bounded registry of operator classification tables; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathoperator.c
+- name: mathspacing
+  header: include/mulib-mathspacing.h
+  manual: manual/mulib-mathspacing.md
+  macro: MULIB_IMPL_MATHSPACING
+  purpose: Add mathematical spacing to a measured advance. Finite numeric inputs and documented scalar result.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathspacing.c
+- name: mathnumber
+  header: include/mulib-mathnumber.h
+  manual: manual/mulib-mathnumber.md
+  macro: MULIB_IMPL_MATHNUMBER
+  purpose: Owned bounded registry of named equation numbers; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathnumber.c
+- name: mathspeech
+  header: include/mulib-mathspeech.h
+  manual: manual/mulib-mathspeech.md
+  macro: MULIB_IMPL_MATHSPEECH
+  purpose: Checked math mathspeech text emission into an owned byte buffer.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mathspeech.c
+- name: dvi
+  header: include/mulib-dvi.h
+  manual: manual/mulib-dvi.md
+  macro: MULIB_IMPL_DVI
+  purpose: DVI ID=2 file writer for empty pages and rectangular rules.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-dvi.c
+- name: dvifont
+  header: include/mulib-dvifont.h
+  manual: manual/mulib-dvifont.md
+  macro: MULIB_IMPL_DVIFONT
+  purpose: Bounds-checked output dvifont structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-dvifont.c
+- name: dviread
+  header: include/mulib-dviread.h
+  manual: manual/mulib-dviread.md
+  macro: MULIB_IMPL_DVIREAD
+  purpose: Bounds-checked output dviread structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-dviread.c
+- name: pdfcanvas
+  header: include/mulib-pdfcanvas.h
+  manual: manual/mulib-pdfcanvas.md
+  macro: MULIB_IMPL_PDFCANVAS
+  purpose: Single-page PDF 1.4 document writer with Helvetica ASCII text.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pdfcanvas.c
+- name: pdffont
+  header: include/mulib-pdffont.h
+  manual: manual/mulib-pdffont.md
+  macro: MULIB_IMPL_PDFFONT
+  purpose: Bounds-checked output pdffont structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pdffont.c
+- name: pdfimage
+  header: include/mulib-pdfimage.h
+  manual: manual/mulib-pdfimage.md
+  macro: MULIB_IMPL_PDFIMAGE
+  purpose: Bounds-checked output pdfimage structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pdfimage.c
+- name: pdfannot
+  header: include/mulib-pdfannot.h
+  manual: manual/mulib-pdfannot.md
+  macro: MULIB_IMPL_PDFANNOT
+  purpose: Owned bounded registry of annotations and destinations; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pdfannot.c
+- name: pdfoutline
+  header: include/mulib-pdfoutline.h
+  manual: manual/mulib-pdfoutline.md
+  macro: MULIB_IMPL_PDFOUTLINE
+  purpose: Owned bounded registry of bookmark titles and destinations; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pdfoutline.c
+- name: pdfstructure
+  header: include/mulib-pdfstructure.h
+  manual: manual/mulib-pdfstructure.md
+  macro: MULIB_IMPL_PDFSTRUCTURE
+  purpose: Owned bounded registry of structural role tags; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pdfstructure.c
+- name: pdfmetadata
+  header: include/mulib-pdfmetadata.h
+  manual: manual/mulib-pdfmetadata.md
+  macro: MULIB_IMPL_PDFMETADATA
+  purpose: Owned bounded registry of PDF metadata entries; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-pdfmetadata.c
+- name: htmlwriter
+  header: include/mulib-htmlwriter.h
+  manual: manual/mulib-htmlwriter.md
+  macro: MULIB_IMPL_HTMLWRITER
+  purpose: Self-contained semantic HTML5 document writer.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-htmlwriter.c
+- name: csswriter
+  header: include/mulib-csswriter.h
+  manual: manual/mulib-csswriter.md
+  macro: MULIB_IMPL_CSSWRITER
+  purpose: Checked output csswriter text emission into an owned byte buffer.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-csswriter.c
+- name: latexwriter
+  header: include/mulib-latexwriter.h
+  manual: manual/mulib-latexwriter.md
+  macro: MULIB_IMPL_LATEXWRITER
+  purpose: Escaped LaTeX article source generator.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-latexwriter.c
+- name: epubwriter
+  header: include/mulib-epubwriter.h
+  manual: manual/mulib-epubwriter.md
+  macro: MULIB_IMPL_EPUBWRITER
+  purpose: 'Minimal EPUB 3.0 writer: valid stored ZIP, mimetype, container, package, nav and one XHTML chapter.'
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-epubwriter.c
+- name: mobiwrite
+  header: include/mulib-mobiwrite.h
+  manual: manual/mulib-mobiwrite.md
+  macro: MULIB_IMPL_MOBIWRITE
+  purpose: PalmDOC type TEXt/REAd writer with uncompressed text record, via palmdb.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-mobiwrite.c
+- name: kf8write
+  header: include/mulib-kf8write.h
+  manual: manual/mulib-kf8write.md
+  macro: MULIB_IMPL_KF8WRITE
+  purpose: KF8 FDST flow table construction (building block, not an AZW3 ebook writer).
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-kf8write.c
+- name: palmdb
+  header: include/mulib-palmdb.h
+  manual: manual/mulib-palmdb.md
+  macro: MULIB_IMPL_PALMDB
+  purpose: Palm database container writer for fixed records.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-palmdb.c
+- name: epubcheck
+  header: include/mulib-epubcheck.h
+  manual: manual/mulib-epubcheck.md
+  macro: MULIB_IMPL_EPUBCHECK
+  purpose: Bounds-checked output epubcheck structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-epubcheck.c
+- name: booknav
+  header: include/mulib-booknav.h
+  manual: manual/mulib-booknav.md
+  macro: MULIB_IMPL_BOOKNAV
+  purpose: Owned bounded registry of ebook navigation labels; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-booknav.c
+- name: tablelayout
+  header: include/mulib-tablelayout.h
+  manual: manual/mulib-tablelayout.md
+  macro: MULIB_IMPL_TABLELAYOUT
+  purpose: Owned ordered collection for graphics tablelayout rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-tablelayout.c
+- name: tablepaginate
+  header: include/mulib-tablepaginate.h
+  manual: manual/mulib-tablepaginate.md
+  macro: MULIB_IMPL_TABLEPAGINATE
+  purpose: Owned ordered collection for graphics tablepaginate rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-tablepaginate.c
+- name: figurelayout
+  header: include/mulib-figurelayout.h
+  manual: manual/mulib-figurelayout.md
+  macro: MULIB_IMPL_FIGURELAYOUT
+  purpose: Owned ordered collection for graphics figurelayout rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-figurelayout.c
+- name: svgpaint
+  header: include/mulib-svgpaint.h
+  manual: manual/mulib-svgpaint.md
+  macro: MULIB_IMPL_SVGPAINT
+  purpose: Owned ordered collection for graphics svgpaint rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-svgpaint.c
+- name: vectorpath
+  header: include/mulib-vectorpath.h
+  manual: manual/mulib-vectorpath.md
+  macro: MULIB_IMPL_VECTORPATH
+  purpose: Owned ordered collection for graphics vectorpath rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-vectorpath.c
+- name: imagepng
+  header: include/mulib-imagepng.h
+  manual: manual/mulib-imagepng.md
+  macro: MULIB_IMPL_IMAGEPNG
+  purpose: Encode 8-bit RGB PNG using uncompressed DEFLATE blocks and CRC-checked chunks.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-imagepng.c
+- name: imagejpeg
+  header: include/mulib-imagejpeg.h
+  manual: manual/mulib-imagejpeg.md
+  macro: MULIB_IMPL_IMAGEJPEG
+  purpose: Bounds-checked baseline JPEG marker inspection and image dimensions from SOF segments.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-imagejpeg.c
+- name: imagewebp
+  header: include/mulib-imagewebp.h
+  manual: manual/mulib-imagewebp.md
+  macro: MULIB_IMPL_IMAGEWEBP
+  purpose: Bounds-checked graphics imagewebp structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-imagewebp.c
+- name: imageconvert
+  header: include/mulib-imageconvert.h
+  manual: manual/mulib-imageconvert.md
+  macro: MULIB_IMPL_IMAGECONVERT
+  purpose: Bounds-checked graphics imageconvert structures binary inspection and record access.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-imageconvert.c
+- name: colorprofile
+  header: include/mulib-colorprofile.h
+  manual: manual/mulib-colorprofile.md
+  macro: MULIB_IMPL_COLORPROFILE
+  purpose: Owned bounded registry of ICC profile names and identifiers; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-colorprofile.c
+- name: colorconvert
+  header: include/mulib-colorconvert.h
+  manual: manual/mulib-colorconvert.md
+  macro: MULIB_IMPL_COLORCONVERT
+  purpose: Convert normalized linear intensity to gamma-adjusted intensity. Finite numeric inputs and documented scalar
+    result.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-colorconvert.c
+- name: colormodel
+  header: include/mulib-colormodel.h
+  manual: manual/mulib-colormodel.md
+  macro: MULIB_IMPL_COLORMODEL
+  purpose: Blend numeric color-channel values using supplied opacity. Finite numeric inputs and documented scalar
+    result.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-colormodel.c
+- name: floatgraphics
+  header: include/mulib-floatgraphics.h
+  manual: manual/mulib-floatgraphics.md
+  macro: MULIB_IMPL_FLOATGRAPHICS
+  purpose: Owned ordered collection for graphics floatgraphics rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-floatgraphics.c
+- name: plot2d
+  header: include/mulib-plot2d.h
+  manual: manual/mulib-plot2d.md
+  macro: MULIB_IMPL_PLOT2D
+  purpose: Owned ordered collection for graphics plot2d rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-plot2d.c
+- name: diagram
+  header: include/mulib-diagram.h
+  manual: manual/mulib-diagram.md
+  macro: MULIB_IMPL_DIAGRAM
+  purpose: Owned ordered collection for graphics diagram rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-diagram.c
+- name: chemical
+  header: include/mulib-chemical.h
+  manual: manual/mulib-chemical.md
+  macro: MULIB_IMPL_CHEMICAL
+  purpose: Owned ordered collection for graphics chemical rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-chemical.c
+- name: musicnotation
+  header: include/mulib-musicnotation.h
+  manual: manual/mulib-musicnotation.md
+  macro: MULIB_IMPL_MUSICNOTATION
+  purpose: Owned ordered collection for graphics musicnotation rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-musicnotation.c
+- name: bibtex
+  header: include/mulib-bibtex.h
+  manual: manual/mulib-bibtex.md
+  macro: MULIB_IMPL_BIBTEX
+  purpose: Simple BibTeX entry type and citation-key extraction.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-bibtex.c
+- name: bibstyle
+  header: include/mulib-bibstyle.h
+  manual: manual/mulib-bibstyle.md
+  macro: MULIB_IMPL_BIBSTYLE
+  purpose: Owned bounded registry of bibliography style overrides; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-bibstyle.c
+- name: csl
+  header: include/mulib-csl.h
+  manual: manual/mulib-csl.md
+  macro: MULIB_IMPL_CSL
+  purpose: Owned bounded registry of CSL-like formatting properties; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-csl.c
+- name: crossref
+  header: include/mulib-crossref.h
+  manual: manual/mulib-crossref.md
+  macro: MULIB_IMPL_CROSSREF
+  purpose: Owned bounded registry of named cross-references; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-crossref.c
+- name: autonumber
+  header: include/mulib-autonumber.h
+  manual: manual/mulib-autonumber.md
+  macro: MULIB_IMPL_AUTONUMBER
+  purpose: Monotonic hierarchical document numbering.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-autonumber.c
+- name: toc
+  header: include/mulib-toc.h
+  manual: manual/mulib-toc.md
+  macro: MULIB_IMPL_TOC
+  purpose: Owned bounded registry of table of contents labels; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-toc.c
+- name: indexer
+  header: include/mulib-indexer.h
+  manual: manual/mulib-indexer.md
+  macro: MULIB_IMPL_INDEXER
+  purpose: Owned bounded registry of term-to-location mappings; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-indexer.c
+- name: glossary
+  header: include/mulib-glossary.h
+  manual: manual/mulib-glossary.md
+  macro: MULIB_IMPL_GLOSSARY
+  purpose: Owned bounded registry of glossary terms and definitions; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-glossary.c
+- name: locale
+  header: include/mulib-locale.h
+  manual: manual/mulib-locale.md
+  macro: MULIB_IMPL_LOCALE
+  purpose: Owned bounded registry of localized terminology; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-locale.c
+- name: typography
+  header: include/mulib-typography.h
+  manual: manual/mulib-typography.md
+  macro: MULIB_IMPL_TYPOGRAPHY
+  purpose: Owned bounded registry of typographic rule preferences; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-typography.c
+- name: microtype
+  header: include/mulib-microtype.h
+  manual: manual/mulib-microtype.md
+  macro: MULIB_IMPL_MICROTYPE
+  purpose: Apply bounded protrusion offset to an advance. Finite numeric inputs and documented scalar result.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-microtype.c
+- name: opticalmargin
+  header: include/mulib-opticalmargin.h
+  manual: manual/mulib-opticalmargin.md
+  macro: MULIB_IMPL_OPTICALMARGIN
+  purpose: Calculate optical margin inset. Finite numeric inputs and documented scalar result.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-opticalmargin.c
+- name: verttext
+  header: include/mulib-verttext.h
+  manual: manual/mulib-verttext.md
+  macro: MULIB_IMPL_VERTTEXT
+  purpose: Owned ordered collection for references verttext rectangles and records; insertion, indexing, removal.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-verttext.c
+- name: texpatternlib
+  header: include/mulib-texpatternlib.h
+  manual: manual/mulib-texpatternlib.md
+  macro: MULIB_IMPL_TEXPATTERNLIB
+  purpose: Owned bounded registry of hyphenation pattern identifiers; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-texpatternlib.c
+- name: typestatus
+  header: include/mulib-typestatus.h
+  manual: manual/mulib-typestatus.md
+  macro: MULIB_IMPL_TYPESTATUS
+  purpose: Stable error codes and human-readable diagnostics for publishing modules.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-typestatus.c
+- name: typecontext
+  header: include/mulib-typecontext.h
+  manual: manual/mulib-typecontext.md
+  macro: MULIB_IMPL_TYPECONTEXT
+  purpose: Reusable context owning a document working byte arena.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-typecontext.c
+- name: typeplugin
+  header: include/mulib-typeplugin.h
+  manual: manual/mulib-typeplugin.md
+  macro: MULIB_IMPL_TYPEPLUGIN
+  purpose: Owned bounded registry of registered extension names; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-typeplugin.c
+- name: typecache
+  header: include/mulib-typecache.h
+  manual: manual/mulib-typecache.md
+  macro: MULIB_IMPL_TYPECACHE
+  purpose: Owned bounded registry of cached resource keys; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-typecache.c
+- name: typeprofile
+  header: include/mulib-typeprofile.h
+  manual: manual/mulib-typeprofile.md
+  macro: MULIB_IMPL_TYPEPROFILE
+  purpose: Configurable execution policy and accounting for infrastructure typeprofile.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-typeprofile.c
+- name: typeincremental
+  header: include/mulib-typeincremental.h
+  manual: manual/mulib-typeincremental.md
+  macro: MULIB_IMPL_TYPEINCREMENTAL
+  purpose: Configurable execution policy and accounting for infrastructure typeincremental.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-typeincremental.c
+- name: typeparallel
+  header: include/mulib-typeparallel.h
+  manual: manual/mulib-typeparallel.md
+  macro: MULIB_IMPL_TYPEPARALLEL
+  purpose: Configurable execution policy and accounting for infrastructure typeparallel.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-typeparallel.c
+- name: typeinspect
+  header: include/mulib-typeinspect.h
+  manual: manual/mulib-typeinspect.md
+  macro: MULIB_IMPL_TYPEINSPECT
+  purpose: Owned bounded registry of inspection labels; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-typeinspect.c
+- name: typeconformance
+  header: include/mulib-typeconformance.h
+  manual: manual/mulib-typeconformance.md
+  macro: MULIB_IMPL_TYPECONFORMANCE
+  purpose: Owned bounded registry of conformance checks and labels; replace, lookup and remove by name.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-typeconformance.c
+- name: typefuzz
+  header: include/mulib-typefuzz.h
+  manual: manual/mulib-typefuzz.md
+  macro: MULIB_IMPL_TYPEFUZZ
+  purpose: Configurable execution policy and accounting for infrastructure typefuzz.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-typefuzz.c
+- name: typesandbox
+  header: include/mulib-typesandbox.h
+  manual: manual/mulib-typesandbox.md
+  macro: MULIB_IMPL_TYPESANDBOX
+  purpose: Configurable execution policy and accounting for infrastructure typesandbox.
+  dependencies: [typecore]
+  status: implemented
+  example: examples/mulib-typesandbox.c
 project_files:
+- file: include/detail/mulib-docir-core.h
+  purpose: Managed node provenance, single-owner links, iterative destruction and immutable snapshots.
+- file: include/detail/mulib-docir-validate.h
+  purpose: Bounded semantic grammar, duplicate ID and internal-reference validation plus normalized cloning.
+- file: include/detail/mulib-docir-render.h
+  purpose: Safe iterative HTML/MathML and LaTeX rendering with scaled-point typography styles.
+- file: include/detail/mulib-docserialize-tree.h
+  purpose: Versioned endian-independent MuDocIR v1 tree serialization and transactional decoding.
+- file: include/detail/mulib-epub-docir.h
+  purpose: DocIR chapter adaptation through the existing EPUB writer and metadata/resource contracts.
+- file: examples/docir-publication.c
+  purpose: End-to-end normalized DocIR, HTML/MathML, LaTeX and two-chapter EPUB demonstration.
+- file: tests/fixtures/docir-document.h
+  purpose: Shared semantic document fixture covering math, links, figures, notes, citations and source styles.
+- file: tests/verify-docir-publication.py
+  purpose: Independent binary/XML/EPUB readers and optional real LaTeX/PDF/link validation.
+- file: tests/fuzz_docir.c
+  purpose: Bounded DocIR decoder, ownership-corruption and failure-atomic export fuzz harness.
+- file: manual/docir-publishing.md
+  purpose: Complete owned DocIR subset, binary version 1, format adapters, limits and verification contracts.
+- file: include/detail/mulib-otlayout.h
+  purpose: Shared bounded OpenType coverage, class, lookup and default-feature readers.
+- file: include/detail/mulib-fontshape-native.h
+  purpose: Opt-in native Latin shaping, font ownership, scaling and work-budget implementation.
+- file: examples/fontshape-native.c
+  purpose: Runnable native-only Latin font shaping example with no HarfBuzz or libdl dependency.
+- file: tests/fixtures/publishing-font.h
+  purpose: Independently constructed SFNT, GSUB, GPOS and GDEF regression fixtures.
+- file: tests/fuzz_publishing_fonts.c
+  purpose: Native-only malformed font and shaping determinism libFuzzer harness.
+- file: Makefile
+  purpose: Strict C11 publishing API, example and cross-format fixture checks.
+- file: examples/build-publication.c
+  purpose: Bounded multi-format publishing demonstration, not a complete typesetter.
+- file: tests/verify-formats.py
+  purpose: Independent structural checks of publishing output with Python standard-library readers.
+- file: manual/publishing-integration.md
+  purpose: Publishing integration recipes, documented subset status and deferred conformance work.
+- file: mudsl/mull/bridge/Mulib/Generated.inc
+  purpose: Compiler-typed MuLL bindings regenerated to include the publishing APIs.
+- file: mudsl/mull/bridge/Mulib/Implementation.c
+  purpose: Generated single implementation translation unit for all public MuLIB headers.
+- file: mudsl/mull/bridge/Mulib/Inventory.json
+  purpose: Complete MuLL bridge registration inventory and generated-artifact fingerprints.
 - file: include/detail/mulib-webscan.h
   purpose: Internal allocation-free HTML subset scanner shared by web extractors.
 - file: tests/run-all.sh
@@ -8558,3 +9934,683 @@ project_files:
   purpose: MuLL compression and bounded ZIP native bridge integration fixture.
 - file: mudsl/tests/mull/mulib/compression.expected
   purpose: Expected MuLL compression integration output.
+- file: examples/mulib-autonumber.c
+  purpose: "Standalone checked usage example for mulib-autonumber."
+- file: examples/mulib-bibstyle.c
+  purpose: "Standalone checked usage example for mulib-bibstyle."
+- file: examples/mulib-bibtex.c
+  purpose: "Standalone checked usage example for mulib-bibtex."
+- file: examples/mulib-booknav.c
+  purpose: "Standalone checked usage example for mulib-booknav."
+- file: examples/mulib-cff.c
+  purpose: "Standalone checked usage example for mulib-cff."
+- file: examples/mulib-cff2.c
+  purpose: "Standalone checked usage example for mulib-cff2."
+- file: examples/mulib-chemical.c
+  purpose: "Standalone checked usage example for mulib-chemical."
+- file: examples/mulib-colorconvert.c
+  purpose: "Standalone checked usage example for mulib-colorconvert."
+- file: examples/mulib-colormodel.c
+  purpose: "Standalone checked usage example for mulib-colormodel."
+- file: examples/mulib-colorprofile.c
+  purpose: "Standalone checked usage example for mulib-colorprofile."
+- file: examples/mulib-crossref.c
+  purpose: "Standalone checked usage example for mulib-crossref."
+- file: examples/mulib-csl.c
+  purpose: "Standalone checked usage example for mulib-csl."
+- file: examples/mulib-csswriter.c
+  purpose: "Standalone checked usage example for mulib-csswriter."
+- file: examples/mulib-diagram.c
+  purpose: "Standalone checked usage example for mulib-diagram."
+- file: examples/mulib-docdiff.c
+  purpose: "Standalone checked usage example for mulib-docdiff."
+- file: examples/mulib-docincremental.c
+  purpose: "Standalone checked usage example for mulib-docincremental."
+- file: examples/mulib-docir.c
+  purpose: "Standalone checked usage example for mulib-docir."
+- file: examples/mulib-doclength.c
+  purpose: "Standalone checked usage example for mulib-doclength."
+- file: examples/mulib-docmetadata.c
+  purpose: "Standalone checked usage example for mulib-docmetadata."
+- file: examples/mulib-docnode.c
+  purpose: "Standalone checked usage example for mulib-docnode."
+- file: examples/mulib-docnormalize.c
+  purpose: "Standalone checked usage example for mulib-docnormalize."
+- file: examples/mulib-docquery.c
+  purpose: "Standalone checked usage example for mulib-docquery."
+- file: examples/mulib-docresource.c
+  purpose: "Standalone checked usage example for mulib-docresource."
+- file: examples/mulib-docsemantic.c
+  purpose: "Standalone checked usage example for mulib-docsemantic."
+- file: examples/mulib-docserialize.c
+  purpose: "Standalone checked usage example for mulib-docserialize."
+- file: examples/mulib-docsource.c
+  purpose: "Standalone checked usage example for mulib-docsource."
+- file: examples/mulib-docstyle.c
+  purpose: "Standalone checked usage example for mulib-docstyle."
+- file: examples/mulib-docvalidate.c
+  purpose: "Standalone checked usage example for mulib-docvalidate."
+- file: examples/mulib-dvi.c
+  purpose: "Standalone checked usage example for mulib-dvi."
+- file: examples/mulib-dvifont.c
+  purpose: "Standalone checked usage example for mulib-dvifont."
+- file: examples/mulib-dviread.c
+  purpose: "Standalone checked usage example for mulib-dviread."
+- file: examples/mulib-epubcheck.c
+  purpose: "Standalone checked usage example for mulib-epubcheck."
+- file: examples/mulib-epubwriter.c
+  purpose: "Standalone checked usage example for mulib-epubwriter."
+- file: examples/mulib-figurelayout.c
+  purpose: "Standalone checked usage example for mulib-figurelayout."
+- file: examples/mulib-floatgraphics.c
+  purpose: "Standalone checked usage example for mulib-floatgraphics."
+- file: examples/mulib-fontcatalog.c
+  purpose: "Standalone checked usage example for mulib-fontcatalog."
+- file: examples/mulib-fontcmap.c
+  purpose: "Standalone checked usage example for mulib-fontcmap."
+- file: examples/mulib-fontembed.c
+  purpose: "Standalone checked usage example for mulib-fontembed."
+- file: examples/mulib-fontfallback.c
+  purpose: "Standalone checked usage example for mulib-fontfallback."
+- file: examples/mulib-fontgdef.c
+  purpose: "Standalone checked usage example for mulib-fontgdef."
+- file: examples/mulib-fontgpos.c
+  purpose: "Standalone checked usage example for mulib-fontgpos."
+- file: examples/mulib-fontgsub.c
+  purpose: "Standalone checked usage example for mulib-fontgsub."
+- file: examples/mulib-fontkern.c
+  purpose: "Standalone checked usage example for mulib-fontkern."
+- file: examples/mulib-fontmetrics.c
+  purpose: "Standalone checked usage example for mulib-fontmetrics."
+- file: examples/mulib-fontraster.c
+  purpose: "Standalone checked usage example for mulib-fontraster."
+- file: examples/mulib-fontsubset.c
+  purpose: "Standalone checked usage example for mulib-fontsubset."
+- file: examples/mulib-fontvar.c
+  purpose: "Standalone checked usage example for mulib-fontvar."
+- file: examples/mulib-glossary.c
+  purpose: "Standalone checked usage example for mulib-glossary."
+- file: examples/mulib-htmlwriter.c
+  purpose: "Standalone checked usage example for mulib-htmlwriter."
+- file: examples/mulib-imageconvert.c
+  purpose: "Standalone checked usage example for mulib-imageconvert."
+- file: examples/mulib-imagejpeg.c
+  purpose: "Standalone checked usage example for mulib-imagejpeg."
+- file: examples/mulib-imagepng.c
+  purpose: "Standalone checked usage example for mulib-imagepng."
+- file: examples/mulib-imagewebp.c
+  purpose: "Standalone checked usage example for mulib-imagewebp."
+- file: examples/mulib-indexer.c
+  purpose: "Standalone checked usage example for mulib-indexer."
+- file: examples/mulib-kf8write.c
+  purpose: "Standalone checked usage example for mulib-kf8write."
+- file: examples/mulib-latexwriter.c
+  purpose: "Standalone checked usage example for mulib-latexwriter."
+- file: examples/mulib-locale.c
+  purpose: "Standalone checked usage example for mulib-locale."
+- file: examples/mulib-mathaccent.c
+  purpose: "Standalone checked usage example for mulib-mathaccent."
+- file: examples/mulib-mathatom.c
+  purpose: "Standalone checked usage example for mulib-mathatom."
+- file: examples/mulib-mathdelimiter.c
+  purpose: "Standalone checked usage example for mulib-mathdelimiter."
+- file: examples/mulib-mathfont.c
+  purpose: "Standalone checked usage example for mulib-mathfont."
+- file: examples/mulib-mathfraction.c
+  purpose: "Standalone checked usage example for mulib-mathfraction."
+- file: examples/mulib-mathir.c
+  purpose: "Standalone checked usage example for mulib-mathir."
+- file: examples/mulib-mathlayout.c
+  purpose: "Standalone checked usage example for mulib-mathlayout."
+- file: examples/mulib-mathmatrix.c
+  purpose: "Standalone checked usage example for mulib-mathmatrix."
+- file: examples/mulib-mathnumber.c
+  purpose: "Standalone checked usage example for mulib-mathnumber."
+- file: examples/mulib-mathoperator.c
+  purpose: "Standalone checked usage example for mulib-mathoperator."
+- file: examples/mulib-mathparse.c
+  purpose: "Standalone checked usage example for mulib-mathparse."
+- file: examples/mulib-mathradical.c
+  purpose: "Standalone checked usage example for mulib-mathradical."
+- file: examples/mulib-mathscript.c
+  purpose: "Standalone checked usage example for mulib-mathscript."
+- file: examples/mulib-mathspacing.c
+  purpose: "Standalone checked usage example for mulib-mathspacing."
+- file: examples/mulib-mathspeech.c
+  purpose: "Standalone checked usage example for mulib-mathspeech."
+- file: examples/mulib-microtype.c
+  purpose: "Standalone checked usage example for mulib-microtype."
+- file: examples/mulib-mobiwrite.c
+  purpose: "Standalone checked usage example for mulib-mobiwrite."
+- file: examples/mulib-musicnotation.c
+  purpose: "Standalone checked usage example for mulib-musicnotation."
+- file: examples/mulib-opticalmargin.c
+  purpose: "Standalone checked usage example for mulib-opticalmargin."
+- file: examples/mulib-pagebalance.c
+  purpose: "Standalone checked usage example for mulib-pagebalance."
+- file: examples/mulib-pagebib.c
+  purpose: "Standalone checked usage example for mulib-pagebib."
+- file: examples/mulib-pagecolumns.c
+  purpose: "Standalone checked usage example for mulib-pagecolumns."
+- file: examples/mulib-pagefloat.c
+  purpose: "Standalone checked usage example for mulib-pagefloat."
+- file: examples/mulib-pagefootnote.c
+  purpose: "Standalone checked usage example for mulib-pagefootnote."
+- file: examples/mulib-pageframe.c
+  purpose: "Standalone checked usage example for mulib-pageframe."
+- file: examples/mulib-pagegrid.c
+  purpose: "Standalone checked usage example for mulib-pagegrid."
+- file: examples/mulib-pageindex.c
+  purpose: "Standalone checked usage example for mulib-pageindex."
+- file: examples/mulib-pagekeep.c
+  purpose: "Standalone checked usage example for mulib-pagekeep."
+- file: examples/mulib-pagemargin.c
+  purpose: "Standalone checked usage example for mulib-pagemargin."
+- file: examples/mulib-pageref.c
+  purpose: "Standalone checked usage example for mulib-pageref."
+- file: examples/mulib-pagetemplate.c
+  purpose: "Standalone checked usage example for mulib-pagetemplate."
+- file: examples/mulib-pagetoc.c
+  purpose: "Standalone checked usage example for mulib-pagetoc."
+- file: examples/mulib-pagewidow.c
+  purpose: "Standalone checked usage example for mulib-pagewidow."
+- file: examples/mulib-palmdb.c
+  purpose: "Standalone checked usage example for mulib-palmdb."
+- file: examples/mulib-pdfannot.c
+  purpose: "Standalone checked usage example for mulib-pdfannot."
+- file: examples/mulib-pdfcanvas.c
+  purpose: "Standalone checked usage example for mulib-pdfcanvas."
+- file: examples/mulib-pdffont.c
+  purpose: "Standalone checked usage example for mulib-pdffont."
+- file: examples/mulib-pdfimage.c
+  purpose: "Standalone checked usage example for mulib-pdfimage."
+- file: examples/mulib-pdfmetadata.c
+  purpose: "Standalone checked usage example for mulib-pdfmetadata."
+- file: examples/mulib-pdfoutline.c
+  purpose: "Standalone checked usage example for mulib-pdfoutline."
+- file: examples/mulib-pdfstructure.c
+  purpose: "Standalone checked usage example for mulib-pdfstructure."
+- file: examples/mulib-plot2d.c
+  purpose: "Standalone checked usage example for mulib-plot2d."
+- file: examples/mulib-sfnt.c
+  purpose: "Standalone checked usage example for mulib-sfnt."
+- file: examples/mulib-svgpaint.c
+  purpose: "Standalone checked usage example for mulib-svgpaint."
+- file: examples/mulib-tablelayout.c
+  purpose: "Standalone checked usage example for mulib-tablelayout."
+- file: examples/mulib-tablepaginate.c
+  purpose: "Standalone checked usage example for mulib-tablepaginate."
+- file: examples/mulib-texalign.c
+  purpose: "Standalone checked usage example for mulib-texalign."
+- file: examples/mulib-texbox.c
+  purpose: "Standalone checked usage example for mulib-texbox."
+- file: examples/mulib-texbreak.c
+  purpose: "Standalone checked usage example for mulib-texbreak."
+- file: examples/mulib-texbytecode.c
+  purpose: "Standalone checked usage example for mulib-texbytecode."
+- file: examples/mulib-texcatcode.c
+  purpose: "Standalone checked usage example for mulib-texcatcode."
+- file: examples/mulib-texclosure.c
+  purpose: "Standalone checked usage example for mulib-texclosure."
+- file: examples/mulib-texdebug.c
+  purpose: "Standalone checked usage example for mulib-texdebug."
+- file: examples/mulib-texdim.c
+  purpose: "Standalone checked usage example for mulib-texdim."
+- file: examples/mulib-texexpand.c
+  purpose: "Standalone checked usage example for mulib-texexpand."
+- file: examples/mulib-texexpr.c
+  purpose: "Standalone checked usage example for mulib-texexpr."
+- file: examples/mulib-texffi.c
+  purpose: "Standalone checked usage example for mulib-texffi."
+- file: examples/mulib-texfunction.c
+  purpose: "Standalone checked usage example for mulib-texfunction."
+- file: examples/mulib-texglue.c
+  purpose: "Standalone checked usage example for mulib-texglue."
+- file: examples/mulib-texhlist.c
+  purpose: "Standalone checked usage example for mulib-texhlist."
+- file: examples/mulib-texinsert.c
+  purpose: "Standalone checked usage example for mulib-texinsert."
+- file: examples/mulib-texleaders.c
+  purpose: "Standalone checked usage example for mulib-texleaders."
+- file: examples/mulib-texmark.c
+  purpose: "Standalone checked usage example for mulib-texmark."
+- file: examples/mulib-texmodule.c
+  purpose: "Standalone checked usage example for mulib-texmodule."
+- file: examples/mulib-texmouth.c
+  purpose: "Standalone checked usage example for mulib-texmouth."
+- file: examples/mulib-texnode.c
+  purpose: "Standalone checked usage example for mulib-texnode."
+- file: examples/mulib-texoutput.c
+  purpose: "Standalone checked usage example for mulib-texoutput."
+- file: examples/mulib-texpack.c
+  purpose: "Standalone checked usage example for mulib-texpack."
+- file: examples/mulib-texpage.c
+  purpose: "Standalone checked usage example for mulib-texpage."
+- file: examples/mulib-texpar.c
+  purpose: "Standalone checked usage example for mulib-texpar."
+- file: examples/mulib-texpattern.c
+  purpose: "Standalone checked usage example for mulib-texpattern."
+- file: examples/mulib-texpatternlib.c
+  purpose: "Standalone checked usage example for mulib-texpatternlib."
+- file: examples/mulib-texpenalty.c
+  purpose: "Standalone checked usage example for mulib-texpenalty."
+- file: examples/mulib-texreflection.c
+  purpose: "Standalone checked usage example for mulib-texreflection."
+- file: examples/mulib-texregister.c
+  purpose: "Standalone checked usage example for mulib-texregister."
+- file: examples/mulib-texruntime.c
+  purpose: "Standalone checked usage example for mulib-texruntime."
+- file: examples/mulib-texscope.c
+  purpose: "Standalone checked usage example for mulib-texscope."
+- file: examples/mulib-texshipout.c
+  purpose: "Standalone checked usage example for mulib-texshipout."
+- file: examples/mulib-textitemize.c
+  purpose: "Standalone checked usage example for mulib-textitemize."
+- file: examples/mulib-textrace.c
+  purpose: "Standalone checked usage example for mulib-textrace."
+- file: examples/mulib-texvalue.c
+  purpose: "Standalone checked usage example for mulib-texvalue."
+- file: examples/mulib-texvlist.c
+  purpose: "Standalone checked usage example for mulib-texvlist."
+- file: examples/mulib-toc.c
+  purpose: "Standalone checked usage example for mulib-toc."
+- file: examples/mulib-ttf.c
+  purpose: "Standalone checked usage example for mulib-ttf."
+- file: examples/mulib-typecache.c
+  purpose: "Standalone checked usage example for mulib-typecache."
+- file: examples/mulib-typeconformance.c
+  purpose: "Standalone checked usage example for mulib-typeconformance."
+- file: examples/mulib-typecontext.c
+  purpose: "Standalone checked usage example for mulib-typecontext."
+- file: examples/mulib-typecore.c
+  purpose: "Standalone checked usage example for mulib-typecore."
+- file: examples/mulib-typefuzz.c
+  purpose: "Standalone checked usage example for mulib-typefuzz."
+- file: examples/mulib-typeincremental.c
+  purpose: "Standalone checked usage example for mulib-typeincremental."
+- file: examples/mulib-typeinspect.c
+  purpose: "Standalone checked usage example for mulib-typeinspect."
+- file: examples/mulib-typeparallel.c
+  purpose: "Standalone checked usage example for mulib-typeparallel."
+- file: examples/mulib-typeplugin.c
+  purpose: "Standalone checked usage example for mulib-typeplugin."
+- file: examples/mulib-typeprofile.c
+  purpose: "Standalone checked usage example for mulib-typeprofile."
+- file: examples/mulib-typesandbox.c
+  purpose: "Standalone checked usage example for mulib-typesandbox."
+- file: examples/mulib-typesrc.c
+  purpose: "Standalone checked usage example for mulib-typesrc."
+- file: examples/mulib-typestatus.c
+  purpose: "Standalone checked usage example for mulib-typestatus."
+- file: examples/mulib-typography.c
+  purpose: "Standalone checked usage example for mulib-typography."
+- file: examples/mulib-unicodebidi.c
+  purpose: "Standalone checked usage example for mulib-unicodebidi."
+- file: examples/mulib-unicodebreak.c
+  purpose: "Standalone checked usage example for mulib-unicodebreak."
+- file: examples/mulib-unicodecase.c
+  purpose: "Standalone checked usage example for mulib-unicodecase."
+- file: examples/mulib-unicodegrapheme.c
+  purpose: "Standalone checked usage example for mulib-unicodegrapheme."
+- file: examples/mulib-unicodenorm.c
+  purpose: "Standalone checked usage example for mulib-unicodenorm."
+- file: examples/mulib-unicodeprops.c
+  purpose: "Standalone checked usage example for mulib-unicodeprops."
+- file: examples/mulib-unicodescript.c
+  purpose: "Standalone checked usage example for mulib-unicodescript."
+- file: examples/mulib-vectorpath.c
+  purpose: "Standalone checked usage example for mulib-vectorpath."
+- file: examples/mulib-verttext.c
+  purpose: "Standalone checked usage example for mulib-verttext."
+- file: examples/mulib-woff.c
+  purpose: "Standalone checked usage example for mulib-woff."
+- file: examples/mulib-woff2.c
+  purpose: "Standalone checked usage example for mulib-woff2."
+- file: tests/test-autonumber.c
+  purpose: "Focused regression suite for test-autonumber."
+- file: tests/test-bibstyle.c
+  purpose: "Focused regression suite for test-bibstyle."
+- file: tests/test-bibtex.c
+  purpose: "Focused regression suite for test-bibtex."
+- file: tests/test-booknav.c
+  purpose: "Focused regression suite for test-booknav."
+- file: tests/test-cff.c
+  purpose: "Focused regression suite for test-cff."
+- file: tests/test-cff2.c
+  purpose: "Focused regression suite for test-cff2."
+- file: tests/test-chemical.c
+  purpose: "Focused regression suite for test-chemical."
+- file: tests/test-colorconvert.c
+  purpose: "Focused regression suite for test-colorconvert."
+- file: tests/test-colormodel.c
+  purpose: "Focused regression suite for test-colormodel."
+- file: tests/test-colorprofile.c
+  purpose: "Focused regression suite for test-colorprofile."
+- file: tests/test-cross-target.c
+  purpose: "Focused regression suite for test-cross-target."
+- file: tests/test-crossref.c
+  purpose: "Focused regression suite for test-crossref."
+- file: tests/test-csl.c
+  purpose: "Focused regression suite for test-csl."
+- file: tests/test-csswriter.c
+  purpose: "Focused regression suite for test-csswriter."
+- file: tests/test-diagram.c
+  purpose: "Focused regression suite for test-diagram."
+- file: tests/test-docdiff.c
+  purpose: "Focused regression suite for test-docdiff."
+- file: tests/test-docincremental.c
+  purpose: "Focused regression suite for test-docincremental."
+- file: tests/test-docir.c
+  purpose: "Focused regression suite for test-docir."
+- file: tests/test-doclength.c
+  purpose: "Focused regression suite for test-doclength."
+- file: tests/test-docmetadata.c
+  purpose: "Focused regression suite for test-docmetadata."
+- file: tests/test-docnode.c
+  purpose: "Focused regression suite for test-docnode."
+- file: tests/test-docnormalize.c
+  purpose: "Focused regression suite for test-docnormalize."
+- file: tests/test-docquery.c
+  purpose: "Focused regression suite for test-docquery."
+- file: tests/test-docresource.c
+  purpose: "Focused regression suite for test-docresource."
+- file: tests/test-docsemantic.c
+  purpose: "Focused regression suite for test-docsemantic."
+- file: tests/test-docserialize.c
+  purpose: "Focused regression suite for test-docserialize."
+- file: tests/test-docsource.c
+  purpose: "Focused regression suite for test-docsource."
+- file: tests/test-docstyle.c
+  purpose: "Focused regression suite for test-docstyle."
+- file: tests/test-docvalidate.c
+  purpose: "Focused regression suite for test-docvalidate."
+- file: tests/test-dvi.c
+  purpose: "Focused regression suite for test-dvi."
+- file: tests/test-dvifont.c
+  purpose: "Focused regression suite for test-dvifont."
+- file: tests/test-dviread.c
+  purpose: "Focused regression suite for test-dviread."
+- file: tests/test-epubcheck.c
+  purpose: "Focused regression suite for test-epubcheck."
+- file: tests/test-epubwriter.c
+  purpose: "Focused regression suite for test-epubwriter."
+- file: tests/test-figurelayout.c
+  purpose: "Focused regression suite for test-figurelayout."
+- file: tests/test-floatgraphics.c
+  purpose: "Focused regression suite for test-floatgraphics."
+- file: tests/test-fontcatalog.c
+  purpose: "Focused regression suite for test-fontcatalog."
+- file: tests/test-fontcmap.c
+  purpose: "Focused regression suite for test-fontcmap."
+- file: tests/test-fontembed.c
+  purpose: "Focused regression suite for test-fontembed."
+- file: tests/test-fontfallback.c
+  purpose: "Focused regression suite for test-fontfallback."
+- file: tests/test-fontgdef.c
+  purpose: "Focused regression suite for test-fontgdef."
+- file: tests/test-fontgpos.c
+  purpose: "Focused regression suite for test-fontgpos."
+- file: tests/test-fontgsub.c
+  purpose: "Focused regression suite for test-fontgsub."
+- file: tests/test-fontkern.c
+  purpose: "Focused regression suite for test-fontkern."
+- file: tests/test-fontmetrics.c
+  purpose: "Focused regression suite for test-fontmetrics."
+- file: tests/test-fontraster.c
+  purpose: "Focused regression suite for test-fontraster."
+- file: tests/test-fontsubset.c
+  purpose: "Focused regression suite for test-fontsubset."
+- file: tests/test-fontvar.c
+  purpose: "Focused regression suite for test-fontvar."
+- file: tests/test-glossary.c
+  purpose: "Focused regression suite for test-glossary."
+- file: tests/test-htmlwriter.c
+  purpose: "Focused regression suite for test-htmlwriter."
+- file: tests/test-imageconvert.c
+  purpose: "Focused regression suite for test-imageconvert."
+- file: tests/test-imagejpeg.c
+  purpose: "Focused regression suite for test-imagejpeg."
+- file: tests/test-imagepng.c
+  purpose: "Focused regression suite for test-imagepng."
+- file: tests/test-imagewebp.c
+  purpose: "Focused regression suite for test-imagewebp."
+- file: tests/test-indexer.c
+  purpose: "Focused regression suite for test-indexer."
+- file: tests/test-kf8write.c
+  purpose: "Focused regression suite for test-kf8write."
+- file: tests/test-latexwriter.c
+  purpose: "Focused regression suite for test-latexwriter."
+- file: tests/test-locale.c
+  purpose: "Focused regression suite for test-locale."
+- file: tests/test-mathaccent.c
+  purpose: "Focused regression suite for test-mathaccent."
+- file: tests/test-mathatom.c
+  purpose: "Focused regression suite for test-mathatom."
+- file: tests/test-mathdelimiter.c
+  purpose: "Focused regression suite for test-mathdelimiter."
+- file: tests/test-mathfont.c
+  purpose: "Focused regression suite for test-mathfont."
+- file: tests/test-mathfraction.c
+  purpose: "Focused regression suite for test-mathfraction."
+- file: tests/test-mathir.c
+  purpose: "Focused regression suite for test-mathir."
+- file: tests/test-mathlayout.c
+  purpose: "Focused regression suite for test-mathlayout."
+- file: tests/test-mathmatrix.c
+  purpose: "Focused regression suite for test-mathmatrix."
+- file: tests/test-mathnumber.c
+  purpose: "Focused regression suite for test-mathnumber."
+- file: tests/test-mathoperator.c
+  purpose: "Focused regression suite for test-mathoperator."
+- file: tests/test-mathparse.c
+  purpose: "Focused regression suite for test-mathparse."
+- file: tests/test-mathradical.c
+  purpose: "Focused regression suite for test-mathradical."
+- file: tests/test-mathscript.c
+  purpose: "Focused regression suite for test-mathscript."
+- file: tests/test-mathspacing.c
+  purpose: "Focused regression suite for test-mathspacing."
+- file: tests/test-mathspeech.c
+  purpose: "Focused regression suite for test-mathspeech."
+- file: tests/test-microtype.c
+  purpose: "Focused regression suite for test-microtype."
+- file: tests/test-mobiwrite.c
+  purpose: "Focused regression suite for test-mobiwrite."
+- file: tests/test-musicnotation.c
+  purpose: "Focused regression suite for test-musicnotation."
+- file: tests/test-opticalmargin.c
+  purpose: "Focused regression suite for test-opticalmargin."
+- file: tests/test-pagebalance.c
+  purpose: "Focused regression suite for test-pagebalance."
+- file: tests/test-pagebib.c
+  purpose: "Focused regression suite for test-pagebib."
+- file: tests/test-pagecolumns.c
+  purpose: "Focused regression suite for test-pagecolumns."
+- file: tests/test-pagefloat.c
+  purpose: "Focused regression suite for test-pagefloat."
+- file: tests/test-pagefootnote.c
+  purpose: "Focused regression suite for test-pagefootnote."
+- file: tests/test-pageframe.c
+  purpose: "Focused regression suite for test-pageframe."
+- file: tests/test-pagegrid.c
+  purpose: "Focused regression suite for test-pagegrid."
+- file: tests/test-pageindex.c
+  purpose: "Focused regression suite for test-pageindex."
+- file: tests/test-pagekeep.c
+  purpose: "Focused regression suite for test-pagekeep."
+- file: tests/test-pagemargin.c
+  purpose: "Focused regression suite for test-pagemargin."
+- file: tests/test-pageref.c
+  purpose: "Focused regression suite for test-pageref."
+- file: tests/test-pagetemplate.c
+  purpose: "Focused regression suite for test-pagetemplate."
+- file: tests/test-pagetoc.c
+  purpose: "Focused regression suite for test-pagetoc."
+- file: tests/test-pagewidow.c
+  purpose: "Focused regression suite for test-pagewidow."
+- file: tests/test-palmdb.c
+  purpose: "Focused regression suite for test-palmdb."
+- file: tests/test-pdfannot.c
+  purpose: "Focused regression suite for test-pdfannot."
+- file: tests/test-pdfcanvas.c
+  purpose: "Focused regression suite for test-pdfcanvas."
+- file: tests/test-pdffont.c
+  purpose: "Focused regression suite for test-pdffont."
+- file: tests/test-pdfimage.c
+  purpose: "Focused regression suite for test-pdfimage."
+- file: tests/test-pdfmetadata.c
+  purpose: "Focused regression suite for test-pdfmetadata."
+- file: tests/test-pdfoutline.c
+  purpose: "Focused regression suite for test-pdfoutline."
+- file: tests/test-pdfstructure.c
+  purpose: "Focused regression suite for test-pdfstructure."
+- file: tests/test-plot2d.c
+  purpose: "Focused regression suite for test-plot2d."
+- file: tests/test-sfnt.c
+  purpose: "Focused regression suite for test-sfnt."
+- file: tests/test-svgpaint.c
+  purpose: "Focused regression suite for test-svgpaint."
+- file: tests/test-tablelayout.c
+  purpose: "Focused regression suite for test-tablelayout."
+- file: tests/test-tablepaginate.c
+  purpose: "Focused regression suite for test-tablepaginate."
+- file: tests/test-texalign.c
+  purpose: "Focused regression suite for test-texalign."
+- file: tests/test-texbox.c
+  purpose: "Focused regression suite for test-texbox."
+- file: tests/test-texbreak.c
+  purpose: "Focused regression suite for test-texbreak."
+- file: tests/test-texbytecode.c
+  purpose: "Focused regression suite for test-texbytecode."
+- file: tests/test-texcatcode.c
+  purpose: "Focused regression suite for test-texcatcode."
+- file: tests/test-texclosure.c
+  purpose: "Focused regression suite for test-texclosure."
+- file: tests/test-texdebug.c
+  purpose: "Focused regression suite for test-texdebug."
+- file: tests/test-texdim.c
+  purpose: "Focused regression suite for test-texdim."
+- file: tests/test-texexpand.c
+  purpose: "Focused regression suite for test-texexpand."
+- file: tests/test-texexpr.c
+  purpose: "Focused regression suite for test-texexpr."
+- file: tests/test-texffi.c
+  purpose: "Focused regression suite for test-texffi."
+- file: tests/test-texfunction.c
+  purpose: "Focused regression suite for test-texfunction."
+- file: tests/test-texglue.c
+  purpose: "Focused regression suite for test-texglue."
+- file: tests/test-texhlist.c
+  purpose: "Focused regression suite for test-texhlist."
+- file: tests/test-texinsert.c
+  purpose: "Focused regression suite for test-texinsert."
+- file: tests/test-texleaders.c
+  purpose: "Focused regression suite for test-texleaders."
+- file: tests/test-texmark.c
+  purpose: "Focused regression suite for test-texmark."
+- file: tests/test-texmodule.c
+  purpose: "Focused regression suite for test-texmodule."
+- file: tests/test-texmouth.c
+  purpose: "Focused regression suite for test-texmouth."
+- file: tests/test-texnode.c
+  purpose: "Focused regression suite for test-texnode."
+- file: tests/test-texoutput.c
+  purpose: "Focused regression suite for test-texoutput."
+- file: tests/test-texpack.c
+  purpose: "Focused regression suite for test-texpack."
+- file: tests/test-texpage.c
+  purpose: "Focused regression suite for test-texpage."
+- file: tests/test-texpar.c
+  purpose: "Focused regression suite for test-texpar."
+- file: tests/test-texpattern.c
+  purpose: "Focused regression suite for test-texpattern."
+- file: tests/test-texpatternlib.c
+  purpose: "Focused regression suite for test-texpatternlib."
+- file: tests/test-texpenalty.c
+  purpose: "Focused regression suite for test-texpenalty."
+- file: tests/test-texreflection.c
+  purpose: "Focused regression suite for test-texreflection."
+- file: tests/test-texregister.c
+  purpose: "Focused regression suite for test-texregister."
+- file: tests/test-texruntime.c
+  purpose: "Focused regression suite for test-texruntime."
+- file: tests/test-texscope.c
+  purpose: "Focused regression suite for test-texscope."
+- file: tests/test-texshipout.c
+  purpose: "Focused regression suite for test-texshipout."
+- file: tests/test-textitemize.c
+  purpose: "Focused regression suite for test-textitemize."
+- file: tests/test-textrace.c
+  purpose: "Focused regression suite for test-textrace."
+- file: tests/test-texvalue.c
+  purpose: "Focused regression suite for test-texvalue."
+- file: tests/test-texvlist.c
+  purpose: "Focused regression suite for test-texvlist."
+- file: tests/test-toc.c
+  purpose: "Focused regression suite for test-toc."
+- file: tests/test-ttf.c
+  purpose: "Focused regression suite for test-ttf."
+- file: tests/test-typecache.c
+  purpose: "Focused regression suite for test-typecache."
+- file: tests/test-typeconformance.c
+  purpose: "Focused regression suite for test-typeconformance."
+- file: tests/test-typecontext.c
+  purpose: "Focused regression suite for test-typecontext."
+- file: tests/test-typecore.c
+  purpose: "Focused regression suite for test-typecore."
+- file: tests/test-typefuzz.c
+  purpose: "Focused regression suite for test-typefuzz."
+- file: tests/test-typeincremental.c
+  purpose: "Focused regression suite for test-typeincremental."
+- file: tests/test-typeinspect.c
+  purpose: "Focused regression suite for test-typeinspect."
+- file: tests/test-typeparallel.c
+  purpose: "Focused regression suite for test-typeparallel."
+- file: tests/test-typeplugin.c
+  purpose: "Focused regression suite for test-typeplugin."
+- file: tests/test-typeprofile.c
+  purpose: "Focused regression suite for test-typeprofile."
+- file: tests/test-typesandbox.c
+  purpose: "Focused regression suite for test-typesandbox."
+- file: tests/test-typesrc.c
+  purpose: "Focused regression suite for test-typesrc."
+- file: tests/test-typestatus.c
+  purpose: "Focused regression suite for test-typestatus."
+- file: tests/test-typography.c
+  purpose: "Focused regression suite for test-typography."
+- file: tests/test-unicodebidi.c
+  purpose: "Focused regression suite for test-unicodebidi."
+- file: tests/test-unicodebreak.c
+  purpose: "Focused regression suite for test-unicodebreak."
+- file: tests/test-unicodecase.c
+  purpose: "Focused regression suite for test-unicodecase."
+- file: tests/test-unicodegrapheme.c
+  purpose: "Focused regression suite for test-unicodegrapheme."
+- file: tests/test-unicodenorm.c
+  purpose: "Focused regression suite for test-unicodenorm."
+- file: tests/test-unicodeprops.c
+  purpose: "Focused regression suite for test-unicodeprops."
+- file: tests/test-unicodescript.c
+  purpose: "Focused regression suite for test-unicodescript."
+- file: tests/test-vectorpath.c
+  purpose: "Focused regression suite for test-vectorpath."
+- file: tests/test-verttext.c
+  purpose: "Focused regression suite for test-verttext."
+- file: tests/test-woff.c
+  purpose: "Focused regression suite for test-woff."
+- file: tests/test-woff2.c
+  purpose: "Focused regression suite for test-woff2."
+- file: tests/test_fontshape_differential.c
+  purpose: "Focused regression suite for test_fontshape_differential."
+- file: tests/test-font-allocations.c
+  purpose: "Focused regression suite for test-font-allocations."
+- file: tests/test-font-layout.c
+  purpose: "Focused regression suite for test-font-layout."
+- file: tests/test-fontshape-native.c
+  purpose: "Focused regression suite for test-fontshape-native."
+- file: tests/test_docir_threads.c
+  purpose: "Focused regression suite for test_docir_threads."
+- file: tests/test-docir-allocations.c
+  purpose: "Focused regression suite for test-docir-allocations."
+- file: tests/test-docir-pipeline.c
+  purpose: "Focused regression suite for test-docir-pipeline."

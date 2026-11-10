@@ -10,6 +10,7 @@
 #ifndef MULIB_HTML_H
 #define MULIB_HTML_H
 #include "mulib-xml.h"
+#include "mulib-docir.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -45,6 +46,9 @@ extern "C"
   /** @brief Concatenate descendant text/CDATA, translating br to LF. No CSS
    * whitespace collapse or hidden-element filtering. Owned UTF-8 or NULL. */
   char *mulib_html_text(const mulib_xml_node_t *node, size_t *length);
+  /** @brief Atomic HTML/XHTML document export of validated semantic DocIR.
+   * Requires MULIB_ENABLE_DOCIR. Language is a bounded ASCII BCP-47-style tag. */
+  int mulib_html_docir(const mulib_docir_node_t *root,const char *title,const char *language,mulib_strbuf_t *out);
 #ifdef __cplusplus
 }
 #endif
@@ -463,6 +467,30 @@ extern "C"
     if (length) *length = out.length;
     return out.data;
   }
+int mulib_html_docir(const mulib_docir_node_t *root,const char *title,const char *language,mulib_strbuf_t *out) {
+#ifdef MULIB_ENABLE_DOCIR
+    mulib_docir_snapshot_t snapshot={0};mulib_typecore_buf_t body={0};mulib_strbuf_t result={0};int ok=0;
+    if(!language)language="und";
+    size_t n=strlen(language);
+    if(!out||!n||n>63)return 0;
+    for(size_t i=0;i<n;i++)if(!((language[i]>='A'&&language[i]<='Z')||(language[i]>='a'&&language[i]<='z')||
+       (i&&((language[i]>='0'&&language[i]<='9')||language[i]=='-'))))return 0;
+    if(!mulib_docir_snapshot_make(root,NULL,&snapshot,NULL))return 0;
+    if(!mulib_docir_snapshot_validate(&snapshot,mulib_docir_CHECK_DOCUMENT|mulib_docir_CHECK_REFERENCES,NULL)||
+       !mulib_docir_render_snapshot(&snapshot,mulib_docir_FORMAT_HTML,&body))goto done;
+    if(!mulib_strbuf_append(&result,"<!DOCTYPE html>\n<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"")||
+       !mulib_strbuf_append(&result,language)||!mulib_strbuf_append(&result,"\" xml:lang=\"")||
+       !mulib_strbuf_append(&result,language)||!mulib_strbuf_append(&result,"\"><head><meta charset=\"utf-8\" /><title>")||
+       !mulib_html_escape(&result,title?title:"",title?strlen(title):0,0)||
+       !mulib_strbuf_append(&result,"</title></head><body>")||
+       !mulib_strbuf_append_n(&result,(const char*)body.data,body.size)||
+       !mulib_strbuf_append(&result,"</body></html>\n")||!mulib_strbuf_append_n(out,result.data,result.length))goto done;
+    ok=1;
+done:mulib_strbuf_free(&result);mulib_typecore_free(&body);mulib_docir_snapshot_destroy(&snapshot);return ok;
+#else
+    (void)root;(void)title;(void)language;(void)out;return 0;
+#endif
+}
 #ifdef __cplusplus
 }
 #endif

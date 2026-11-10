@@ -113,6 +113,75 @@ class Tools(unittest.TestCase):
                 inventory.sync(root)
             self.assertEqual(before, {p: p.read_text() for p in before})
 
+    def test_inventory_additions(self):
+        for filename in ('MANIFEST.yaml.additions', 'MANIFESTS.yaml.additions'):
+            with self.subTest(filename=filename), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                for name in ('include', 'tests', 'examples'):
+                    (root / name).mkdir()
+                manifest = root / 'MANIFEST.yaml'
+                manifest.write_text('name: MuLIB\nmodule_count: 0\n'
+                                    'implemented_module_count: 0\nmodules:\nproject_files:\n')
+                (root / 'tests/implementation.c').write_text('/* existing client */\n')
+                (root / 'tests/declarations.c').write_text('int main(void) { return 0; }\n')
+                (root / 'include/mulib-core.h').write_text(
+                    '#if defined(MULIB_IMPL_CORE)\n#endif\n')
+                (root / 'include/mulib-new.h').write_text(
+                    '#include "mulib-core.h"\n#if defined(MULIB_IMPL_NEW)\n#endif\n')
+                (root / 'examples/mulib-new.c').write_text('int main(void) { return 0; }\n')
+                inventory.sync(root)
+                # Keep a pre-existing module and handwritten project-file entry.
+                original = manifest.read_text()
+                existing = original.split('modules:\n', 1)[1].split('project_files:')[0]
+                new_block = existing[existing.index('- name: new\n'):]
+                manifest.write_text(original.replace(new_block, '').replace(
+                    'project_files:\n', 'project_files:\n- file: USER\n  purpose: Keep me.\n'))
+                additions = root / filename
+                additions.write_text(
+                    'name: Additions\nmodule_count: 999\nimplemented_module_count: 999\nmodules:\n'
+                    '- name: new\n  header: include/mulib-new.h\n'
+                    '  manual: manual/mulib-new.md\n  macro: MULIB_IMPL_NEW\n'
+                    '  purpose: Checked table view only, not a complete shaper.\n'
+                    '  dependencies:\n  - core\n  status: implemented\n'
+                    'license: Do not copy this root key\n'
+                    'project_files:\n- file: ADDITIONS-ONLY\n  purpose: Not a module.\n')
+                inventory.sync(root)
+                merged = manifest.read_text()
+                self.assertTrue(merged.startswith('name: MuLIB\n'))
+                self.assertEqual(merged.count('\nmodules:\n'), 1)
+                self.assertNotIn('Do not copy', merged)
+                self.assertNotIn('ADDITIONS-ONLY', merged)
+                self.assertIn('module_count: 2\nimplemented_module_count: 2\n', merged)
+                self.assertIn('dependencies: [core]\n', merged)
+                self.assertNotIn('\n  - core\n', merged)
+                self.assertIn('not a complete shaper.', merged)
+                self.assertIn('- file: USER\n  purpose: Keep me.\n', merged)
+                self.assertIn('  example: examples/mulib-new.c\n', merged)
+                self.assertLess(merged.index('- name: core'), merged.index('- name: new'))
+                self.assertLess(merged.index('- name: new'), merged.index('project_files:'))
+                self.assertFalse(additions.exists())
+                before = {p: p.read_text() for p in (manifest, root / 'tests/implementation.c',
+                                                    root / 'tests/declarations.c')}
+                inventory.sync(root)
+                self.assertEqual(before, {p: p.read_text() for p in before})
+                self.assertEqual(before[root / 'tests/implementation.c'].count(
+                    '#define MULIB_IMPL_CORE\n'), 1)
+                # Every collision must fail before changing files or deleting the additions.
+                for field, value in (('name', 'core'), ('header', 'include/mulib-core.h'),
+                                     ('macro', 'MULIB_IMPL_CORE')):
+                    block = ('- name: other\n  header: include/mulib-other.h\n'
+                             '  macro: MULIB_IMPL_OTHER\n  status: implemented\n')
+                    old = {'name': '- name: other', 'header': '  header: include/mulib-other.h',
+                           'macro': '  macro: MULIB_IMPL_OTHER'}[field]
+                    prefix = '- ' if field == 'name' else '  '
+                    additions.write_text('modules:\n' + block.replace(old, prefix + field + ': ' + value))
+                    (root / 'include/mulib-other.h').write_text(
+                        '#if defined(MULIB_IMPL_OTHER)\n#endif\n')
+                    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'collision'):
+                        inventory.sync(root)
+                    self.assertTrue(additions.exists())
+                    self.assertEqual(before, {p: p.read_text() for p in before})
+
     def test_snapshot(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

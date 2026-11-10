@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 805 headers, 863 direct dependency edges.
+Inventory: 971 headers, 1043 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (303 modules)
+## Stratum 0 (304 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -284,6 +284,7 @@ Compatibility group: `parsec`, `peg`.
 | [tracepath](mulib-tracepath.md) | none |
 | [trie](mulib-trie.md) | none |
 | [tsl](mulib-tsl.md) | none |
+| [typecore](mulib-typecore.md) | none |
 | [uefi](mulib-uefi.md) | none |
 | [uip-arp-cache](mulib-uip-arp-cache.md) | none |
 | [uip-arp](mulib-uip-arp.md) | none |
@@ -323,7 +324,7 @@ Compatibility group: `parsec`, `peg`.
 | [xthreads](mulib-xthreads.md) | none |
 | [xtks](mulib-xtks.md) | none |
 
-## Stratum 1 (185 modules)
+## Stratum 1 (345 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -336,17 +337,27 @@ Compatibility group: `parsec`, `peg`.
 | [atn](mulib-atn.md) | `bitset`, `vec` |
 | [audio](mulib-audio.md) | `xsimd` |
 | [auth](mulib-auth.md) | `base64`, `seurity` |
+| [autonumber](mulib-autonumber.md) | `typecore` |
 | [bayesian_methods](mulib-bayesian_methods.md) | `probability` |
+| [bibstyle](mulib-bibstyle.md) | `typecore` |
+| [bibtex](mulib-bibtex.md) | `typecore` |
 | [binfilereader](mulib-binfilereader.md) | `binfile`, `bycutils` |
 | [binfileschema](mulib-binfileschema.md) | `bycutils` |
 | [binfilewriter](mulib-binfilewriter.md) | `buffer`, `bycutils` |
 | [bk-trees](mulib-bk-trees.md) | `levenshtein` |
 | [blockidx](mulib-blockidx.md) | `bycutils`, `memtable` |
+| [booknav](mulib-booknav.md) | `typecore` |
 | [buildgraph](mulib-buildgraph.md) | `artifact` |
 | [ccweave](mulib-ccweave.md) | `mir`, `strbuf` |
+| [cff](mulib-cff.md) | `typecore` |
+| [cff2](mulib-cff2.md) | `typecore` |
+| [chemical](mulib-chemical.md) | `typecore` |
 | [cmachine](mulib-cmachine.md) | `minivm`, `mir` |
 | [codec-core](mulib-codec-core.md) | `buffer` |
 | [coff](mulib-coff.md) | `endian` |
+| [colorconvert](mulib-colorconvert.md) | `typecore` |
+| [colormodel](mulib-colormodel.md) | `typecore` |
+| [colorprofile](mulib-colorprofile.md) | `typecore` |
 | [competprice](mulib-competprice.md) | `statsproc` |
 | [compression](mulib-compression.md) | `buffer`, `rle` |
 | [container-ipc](mulib-container-ipc.md) | `container-core`, `crc32` |
@@ -356,6 +367,9 @@ Compatibility group: `parsec`, `peg`.
 | [container2daemonproto](mulib-container2daemonproto.md) | `buffer`, `bycutils`, `crc32` |
 | [corpus](mulib-corpus.md) | `trie` |
 | [cowb+tree](mulib-cowb+tree.md) | `b+tree` |
+| [crossref](mulib-crossref.md) | `typecore` |
+| [csl](mulib-csl.md) | `typecore` |
+| [csswriter](mulib-csswriter.md) | `typecore` |
 | [datagram](mulib-datagram.md) | `filectl` |
 | [dbindex](mulib-dbindex.md) | `bycutils`, `memtable` |
 | [dbquery](mulib-dbquery.md) | `memtable` |
@@ -365,11 +379,25 @@ Compatibility group: `parsec`, `peg`.
 | [dbus](mulib-dbus.md) | `buffer`, `endian`, `strbuf`, `utf8` |
 | [deflate](mulib-deflate.md) | `buffer` |
 | [dexcc](mulib-dexcc.md) | `adler32`, `authcrypto`, `buffer` |
+| [diagram](mulib-diagram.md) | `typecore` |
 | [dnscache](mulib-dnscache.md) | `dns` |
 | [dnsclient](mulib-dnsclient.md) | `dns` |
+| [docdiff](mulib-docdiff.md) | `typecore` |
+| [docincremental](mulib-docincremental.md) | `typecore` |
+| [docir](mulib-docir.md) | `typecore` |
+| [doclength](mulib-doclength.md) | `typecore` |
+| [docmetadata](mulib-docmetadata.md) | `typecore` |
+| [docnode](mulib-docnode.md) | `typecore` |
+| [docquery](mulib-docquery.md) | `typecore` |
+| [docresource](mulib-docresource.md) | `typecore` |
+| [docsemantic](mulib-docsemantic.md) | `typecore` |
+| [docstyle](mulib-docstyle.md) | `typecore` |
 | [dom](mulib-dom.md) | `buffer`, `utf8` |
 | [dsim-bitvec](mulib-dsim-bitvec.md) | `dsim-logic4` |
 | [dsim-scheduler](mulib-dsim-scheduler.md) | `dsim-logic4` |
+| [dvi](mulib-dvi.md) | `typecore` |
+| [dvifont](mulib-dvifont.md) | `typecore` |
+| [dviread](mulib-dviread.md) | `typecore` |
 | [ecad-connect](mulib-ecad-connect.md) | `ecad-schematic` |
 | [ecad-erc](mulib-ecad-erc.md) | `ecad-schematic` |
 | [ecad-netlist](mulib-ecad-netlist.md) | `ecad-schematic` |
@@ -379,18 +407,34 @@ Compatibility group: `parsec`, `peg`.
 | [eda-undo](mulib-eda-undo.md) | `eda-design-db` |
 | [edit_distance](mulib-edit_distance.md) | `levenshtein` |
 | [elf](mulib-elf.md) | `endian` |
+| [epubcheck](mulib-epubcheck.md) | `typecore` |
+| [epubwriter](mulib-epubwriter.md) | `typecore` |
 | [ezndk](mulib-ezndk.md) | `buffer` |
 | [fft](mulib-fft.md) | `complex` |
 | [fiber](mulib-fiber.md) | `xthreads` |
+| [figurelayout](mulib-figurelayout.md) | `typecore` |
 | [flatbuffers](mulib-flatbuffers.md) | `binfile`, `bycutils` |
+| [floatgraphics](mulib-floatgraphics.md) | `typecore` |
 | [fmt-aiger](mulib-fmt-aiger.md) | `synth-aig` |
+| [fontcatalog](mulib-fontcatalog.md) | `typecore` |
+| [fontcmap](mulib-fontcmap.md) | `typecore` |
 | [fontdraw](mulib-fontdraw.md) | `dynload` |
-| [fontshape](mulib-fontshape.md) | `dynload`, `utf8` |
+| [fontembed](mulib-fontembed.md) | `typecore` |
+| [fontfallback](mulib-fontfallback.md) | `typecore` |
+| [fontgdef](mulib-fontgdef.md) | `typecore` |
+| [fontgpos](mulib-fontgpos.md) | `typecore` |
+| [fontgsub](mulib-fontgsub.md) | `typecore` |
+| [fontkern](mulib-fontkern.md) | `typecore` |
+| [fontmetrics](mulib-fontmetrics.md) | `typecore` |
+| [fontraster](mulib-fontraster.md) | `typecore` |
+| [fontsubset](mulib-fontsubset.md) | `typecore` |
+| [fontvar](mulib-fontvar.md) | `typecore` |
 | [formal-cec](mulib-formal-cec.md) | `synth-truthtable` |
 | [formal-sat](mulib-formal-sat.md) | `formal-cnf` |
 | [fpga-lut](mulib-fpga-lut.md) | `synth-truthtable` |
 | [fst](mulib-fst.md) | `buffer`, `crc32`, `endian`, `vec` |
 | [fuse](mulib-fuse.md) | `container-core`, `vfs` |
+| [glossary](mulib-glossary.md) | `typecore` |
 | [glx](mulib-glx.md) | `drm`, `linalg` |
 | [graphdb](mulib-graphdb.md) | `memtable` |
 | [graphviz](mulib-graphviz.md) | `graph`, `strbuf`, `utf8` |
@@ -400,29 +444,56 @@ Compatibility group: `parsec`, `peg`.
 | [health_checker](mulib-health_checker.md) | `upstream` |
 | [heaptable](mulib-heaptable.md) | `memtable` |
 | [histprice](mulib-histprice.md) | `statsproc` |
+| [htmlwriter](mulib-htmlwriter.md) | `typecore` |
 | [http2](mulib-http2.md) | `buffer` |
 | [hwil-module](mulib-hwil-module.md) | `dsim-logic4` |
+| [imageconvert](mulib-imageconvert.md) | `typecore` |
+| [imagejpeg](mulib-imagejpeg.md) | `typecore` |
+| [imagepng](mulib-imagepng.md) | `typecore` |
+| [imagewebp](mulib-imagewebp.md) | `typecore` |
 | [impaclient](mulib-impaclient.md) | `imapserver` |
 | [index](mulib-index.md) | `b+tree` |
+| [indexer](mulib-indexer.md) | `typecore` |
 | [initsysutils](mulib-initsysutils.md) | `cpio` |
 | [invindex](mulib-invindex.md) | `buffer`, `bycutils`, `memtable` |
 | [ipfs](mulib-ipfs.md) | `varint` |
 | [keyremap](mulib-keyremap.md) | `input` |
+| [kf8write](mulib-kf8write.md) | `typecore` |
 | [kvdb](mulib-kvdb.md) | `buffer`, `crc32`, `endian`, `varint` |
 | [kvmcontainer](mulib-kvmcontainer.md) | `kvm` |
+| [latexwriter](mulib-latexwriter.md) | `typecore` |
 | [linker](mulib-linker.md) | `emitter` |
 | [load_balancer](mulib-load_balancer.md) | `upstream` |
+| [locale](mulib-locale.md) | `typecore` |
 | [lowopt](mulib-lowopt.md) | `mir` |
 | [machine](mulib-machine.md) | `mir`, `muburg` |
 | [macho](mulib-macho.md) | `endian` |
 | [machobuidler](mulib-machobuidler.md) | `buffer`, `bycutils` |
 | [marionette](mulib-marionette.md) | `input`, `vec` |
 | [markov_chain](mulib-markov_chain.md) | `probability` |
+| [mathaccent](mulib-mathaccent.md) | `typecore` |
+| [mathatom](mulib-mathatom.md) | `typecore` |
+| [mathdelimiter](mulib-mathdelimiter.md) | `typecore` |
+| [mathfont](mulib-mathfont.md) | `typecore` |
+| [mathfraction](mulib-mathfraction.md) | `typecore` |
+| [mathir](mulib-mathir.md) | `typecore` |
+| [mathlayout](mulib-mathlayout.md) | `typecore` |
+| [mathmatrix](mulib-mathmatrix.md) | `typecore` |
+| [mathnumber](mulib-mathnumber.md) | `typecore` |
+| [mathoperator](mulib-mathoperator.md) | `typecore` |
+| [mathparse](mulib-mathparse.md) | `typecore` |
+| [mathradical](mulib-mathradical.md) | `typecore` |
+| [mathscript](mulib-mathscript.md) | `typecore` |
+| [mathspacing](mulib-mathspacing.md) | `typecore` |
+| [mathspeech](mulib-mathspeech.md) | `typecore` |
+| [microtype](mulib-microtype.md) | `typecore` |
 | [mime](mulib-mime.md) | `seurity` |
 | [minish](mulib-minish.md) | `map`, `strbuf`, `vec` |
 | [mmdiff](mulib-mmdiff.md) | `buffer`, `vec` |
 | [mobi](mulib-mobi.md) | `buffer` |
+| [mobiwrite](mulib-mobiwrite.md) | `typecore` |
 | [mulib](mulib-mulib.md) | `buffer`, `strbuf` |
+| [musicnotation](mulib-musicnotation.md) | `typecore` |
 | [net-monitor](mulib-net-monitor.md) | `netlink` |
 | [net-reconcile](mulib-net-reconcile.md) | `net-profile`, `net-state` |
 | [netlink-async](mulib-netlink-async.md) | `netlink` |
@@ -441,10 +512,26 @@ Compatibility group: `parsec`, `peg`.
 | [obs4](mulib-obs4.md) | `xtks` |
 | [ocicontainerruntime](mulib-ocicontainerruntime.md) | `ocicontainer` |
 | [ocicontainervolume](mulib-ocicontainervolume.md) | `vfs` |
+| [opticalmargin](mulib-opticalmargin.md) | `typecore` |
 | [otpauth](mulib-otpauth.md) | `authcrypto`, `seurity` |
 | [p2pproto](mulib-p2pproto.md) | `varint` |
 | [packetrules](mulib-packetrules.md) | `packetfiter` |
 | [packetstream](mulib-packetstream.md) | `endian` |
+| [pagebalance](mulib-pagebalance.md) | `typecore` |
+| [pagebib](mulib-pagebib.md) | `typecore` |
+| [pagecolumns](mulib-pagecolumns.md) | `typecore` |
+| [pagefloat](mulib-pagefloat.md) | `typecore` |
+| [pagefootnote](mulib-pagefootnote.md) | `typecore` |
+| [pageframe](mulib-pageframe.md) | `typecore` |
+| [pagegrid](mulib-pagegrid.md) | `typecore` |
+| [pageindex](mulib-pageindex.md) | `typecore` |
+| [pagekeep](mulib-pagekeep.md) | `typecore` |
+| [pagemargin](mulib-pagemargin.md) | `typecore` |
+| [pageref](mulib-pageref.md) | `typecore` |
+| [pagetemplate](mulib-pagetemplate.md) | `typecore` |
+| [pagetoc](mulib-pagetoc.md) | `typecore` |
+| [pagewidow](mulib-pagewidow.md) | `typecore` |
+| [palmdb](mulib-palmdb.md) | `typecore` |
 | [parallel](mulib-parallel.md) | `taskpool` |
 | [pathdb](mulib-pathdb.md) | `vfs` |
 | [pcb-board](mulib-pcb-board.md) | `pcb-geometry` |
@@ -452,7 +539,15 @@ Compatibility group: `parsec`, `peg`.
 | [pcb-gerber](mulib-pcb-gerber.md) | `pcb-geometry` |
 | [pcb-impedance](mulib-pcb-impedance.md) | `rf-microstrip` |
 | [pdf](mulib-pdf.md) | `buffer`, `strbuf` |
+| [pdfannot](mulib-pdfannot.md) | `typecore` |
+| [pdfcanvas](mulib-pdfcanvas.md) | `typecore` |
+| [pdffont](mulib-pdffont.md) | `typecore` |
+| [pdfimage](mulib-pdfimage.md) | `typecore` |
+| [pdfmetadata](mulib-pdfmetadata.md) | `typecore` |
+| [pdfoutline](mulib-pdfoutline.md) | `typecore` |
+| [pdfstructure](mulib-pdfstructure.md) | `typecore` |
 | [perlpod](mulib-perlpod.md) | `strbuf`, `utf8` |
+| [plot2d](mulib-plot2d.md) | `typecore` |
 | [procfs](mulib-procfs.md) | `vfs` |
 | [protobuf](mulib-protobuf.md) | `buffer`, `varint` |
 | [pwdauth](mulib-pwdauth.md) | `authcrypto`, `seurity` |
@@ -464,6 +559,7 @@ Compatibility group: `parsec`, `peg`.
 | [rf-smith](mulib-rf-smith.md) | `rf-sparams` |
 | [rtnl](mulib-rtnl.md) | `netlink` |
 | [scrape](mulib-scrape.md) | `scrape-readable` |
+| [sfnt](mulib-sfnt.md) | `typecore` |
 | [simdmath](mulib-simdmath.md) | `linalg` |
 | [smt](mulib-smt.md) | `sat` |
 | [smtpclient](mulib-smtpclient.md) | `smtpserver` |
@@ -479,25 +575,88 @@ Compatibility group: `parsec`, `peg`.
 | [sshserver](mulib-sshserver.md) | `endian` |
 | [statsprice](mulib-statsprice.md) | `statsproc` |
 | [superinstr](mulib-superinstr.md) | `mir`, `strbuf` |
+| [svgpaint](mulib-svgpaint.md) | `typecore` |
 | [sysfonts](mulib-sysfonts.md) | `dynload` |
 | [sysfs](mulib-sysfs.md) | `vfs` |
+| [tablelayout](mulib-tablelayout.md) | `typecore` |
+| [tablepaginate](mulib-tablepaginate.md) | `typecore` |
 | [taskdag](mulib-taskdag.md) | `taskpool` |
 | [terminfo](mulib-terminfo.md) | `strbuf` |
 | [termkey](mulib-termkey.md) | `utf8` |
 | [tex](mulib-tex.md) | `strbuf`, `utf8` |
+| [texalign](mulib-texalign.md) | `typecore` |
+| [texbox](mulib-texbox.md) | `typecore` |
+| [texbreak](mulib-texbreak.md) | `typecore` |
+| [texbytecode](mulib-texbytecode.md) | `typecore` |
+| [texcatcode](mulib-texcatcode.md) | `typecore` |
+| [texclosure](mulib-texclosure.md) | `typecore` |
+| [texdebug](mulib-texdebug.md) | `typecore` |
+| [texdim](mulib-texdim.md) | `typecore` |
+| [texexpand](mulib-texexpand.md) | `typecore` |
+| [texexpr](mulib-texexpr.md) | `typecore` |
+| [texffi](mulib-texffi.md) | `typecore` |
+| [texfunction](mulib-texfunction.md) | `typecore` |
+| [texglue](mulib-texglue.md) | `typecore` |
+| [texhlist](mulib-texhlist.md) | `typecore` |
+| [texinsert](mulib-texinsert.md) | `typecore` |
+| [texleaders](mulib-texleaders.md) | `typecore` |
+| [texmark](mulib-texmark.md) | `typecore` |
+| [texmodule](mulib-texmodule.md) | `typecore` |
+| [texmouth](mulib-texmouth.md) | `typecore` |
+| [texnode](mulib-texnode.md) | `typecore` |
+| [texoutput](mulib-texoutput.md) | `typecore` |
+| [texpack](mulib-texpack.md) | `typecore` |
+| [texpage](mulib-texpage.md) | `typecore` |
+| [texpar](mulib-texpar.md) | `typecore` |
+| [texpattern](mulib-texpattern.md) | `typecore` |
+| [texpatternlib](mulib-texpatternlib.md) | `typecore` |
+| [texpenalty](mulib-texpenalty.md) | `typecore` |
+| [texreflection](mulib-texreflection.md) | `typecore` |
+| [texregister](mulib-texregister.md) | `typecore` |
+| [texruntime](mulib-texruntime.md) | `typecore` |
+| [texscope](mulib-texscope.md) | `typecore` |
+| [texshipout](mulib-texshipout.md) | `typecore` |
+| [textitemize](mulib-textitemize.md) | `typecore` |
+| [textrace](mulib-textrace.md) | `typecore` |
+| [texvalue](mulib-texvalue.md) | `typecore` |
+| [texvlist](mulib-texvlist.md) | `typecore` |
+| [toc](mulib-toc.md) | `typecore` |
 | [trie_traversal](mulib-trie_traversal.md) | `trie` |
+| [ttf](mulib-ttf.md) | `typecore` |
 | [tunnel](mulib-tunnel.md) | `xtks` |
 | [tuntap](mulib-tuntap.md) | `abstun`, `filectl` |
 | [txtdiff](mulib-txtdiff.md) | `buffer`, `vec` |
+| [typecache](mulib-typecache.md) | `typecore` |
+| [typeconformance](mulib-typeconformance.md) | `typecore` |
+| [typecontext](mulib-typecontext.md) | `typecore` |
+| [typefuzz](mulib-typefuzz.md) | `typecore` |
+| [typeincremental](mulib-typeincremental.md) | `typecore` |
+| [typeinspect](mulib-typeinspect.md) | `typecore` |
+| [typeparallel](mulib-typeparallel.md) | `typecore` |
+| [typeplugin](mulib-typeplugin.md) | `typecore` |
+| [typeprofile](mulib-typeprofile.md) | `typecore` |
+| [typesandbox](mulib-typesandbox.md) | `typecore` |
+| [typesrc](mulib-typesrc.md) | `typecore` |
+| [typestatus](mulib-typestatus.md) | `typecore` |
+| [typography](mulib-typography.md) | `typecore` |
 | [uefiutils](mulib-uefiutils.md) | `uefi` |
 | [uip-icmp](mulib-uip-icmp.md) | `uip-checksum` |
 | [uip-ipv4](mulib-uip-ipv4.md) | `uip-checksum` |
 | [uip-tcp](mulib-uip-tcp.md) | `uip-checksum` |
 | [uip-udp](mulib-uip-udp.md) | `uip-checksum` |
+| [unicodebidi](mulib-unicodebidi.md) | `typecore` |
+| [unicodebreak](mulib-unicodebreak.md) | `typecore` |
+| [unicodecase](mulib-unicodecase.md) | `typecore` |
+| [unicodegrapheme](mulib-unicodegrapheme.md) | `typecore` |
+| [unicodenorm](mulib-unicodenorm.md) | `typecore` |
+| [unicodeprops](mulib-unicodeprops.md) | `typecore` |
+| [unicodescript](mulib-unicodescript.md) | `typecore` |
 | [uniproc](mulib-uniproc.md) | `dynload`, `utf8` |
 | [v2rayproto](mulib-v2rayproto.md) | `socks5` |
 | [vdev](mulib-vdev.md) | `input` |
 | [vector](mulib-vector.md) | `vec` |
+| [vectorpath](mulib-vectorpath.md) | `typecore` |
+| [verttext](mulib-verttext.md) | `typecore` |
 | [vhpst](mulib-vhpst.md) | `seurity` |
 | [vmmdev](mulib-vmmdev.md) | `endian` |
 | [vterm](mulib-vterm.md) | `grid`, `utf8` |
@@ -510,10 +669,12 @@ Compatibility group: `parsec`, `peg`.
 | [weighted-edit-distance](mulib-weighted-edit-distance.md) | `weighed_edit_distane` |
 | [wifi-monitor](mulib-wifi-monitor.md) | `netlink` |
 | [wlroots](mulib-wlroots.md) | `vec` |
+| [woff](mulib-woff.md) | `typecore` |
+| [woff2](mulib-woff2.md) | `typecore` |
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (108 modules)
+## Stratum 2 (112 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -540,23 +701,27 @@ Compatibility group: `parsec`, `peg`.
 | [devlink](mulib-devlink.md) | `netlink-genl` |
 | [dfa](mulib-dfa.md) | `crc32`, `endian`, `fst` |
 | [dnsresolver](mulib-dnsresolver.md) | `dnscache`, `dnsclient` |
+| [docnormalize](mulib-docnormalize.md) | `docir`, `typecore` |
+| [docserialize](mulib-docserialize.md) | `docir`, `typecore` |
+| [docsource](mulib-docsource.md) | `docir`, `typecore`, `typesrc` |
+| [docvalidate](mulib-docvalidate.md) | `docir`, `typecore` |
 | [dsdom](mulib-dsdom.md) | `xml` |
 | [elfutils](mulib-elfutils.md) | `elf` |
 | [ethtool-netlink](mulib-ethtool-netlink.md) | `netlink-genl` |
 | [evtstream](mulib-evtstream.md) | `ast` |
 | [fmt-sv](mulib-fmt-sv.md) | `hwil-module` |
+| [fontshape](mulib-fontshape.md) | `dynload`, `fontcmap`, `fontgdef`, `fontgpos`, `fontgsub`, `fontkern`, `fontmetrics`, `sfnt`, `utf8` |
 | [glr](mulib-glr.md) | `atn`, `gss`, `sppf` |
 | [gzip](mulib-gzip.md) | `codec-core`, `crc32`, `deflate` |
 | [hidden_markov_chain](mulib-hidden_markov_chain.md) | `markov_chain` |
-| [html](mulib-html.md) | `xml` |
+| [html](mulib-html.md) | `docir`, `xml` |
 | [http3](mulib-http3.md) | `quic` |
 | [hwil-verify](mulib-hwil-verify.md) | `hwil-module` |
 | [ifft](mulib-ifft.md) | `fft` |
 | [imgformat](mulib-imgformat.md) | `container`, `crc32` |
 | [inet-diag](mulib-inet-diag.md) | `sock-diag` |
 | [initsys](mulib-initsys.md) | `process`, `taskdag` |
-| [latex](mulib-latex.md) | `tex` |
-| [ligature](mulib-ligature.md) | `fontshape` |
+| [latex](mulib-latex.md) | `docir`, `tex` |
 | [lir](mulib-lir.md) | `lowopt`, `machine` |
 | [lzf](mulib-lzf.md) | `codec-core` |
 | [lzma](mulib-lzma.md) | `codec-core` |
@@ -626,7 +791,7 @@ Compatibility group: `parsec`, `peg`.
 | [zip](mulib-zip.md) | `crc32`, `deflate`, `utf8` |
 | [zstd](mulib-zstd.md) | `codec-core`, `container-core` |
 
-## Stratum 3 (82 modules)
+## Stratum 3 (83 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -651,7 +816,7 @@ Compatibility group: `parsec`, `peg`.
 | [depir](mulib-depir.md) | `anfir`, `clickir`, `superblocks` |
 | [dnsnmeserver](mulib-dnsnmeserver.md) | `nameserver` |
 | [efi](mulib-efi.md) | `pe` |
-| [epub](mulib-epub.md) | `xml`, `zip` |
+| [epub](mulib-epub.md) | `html`, `xml`, `zip` |
 | [evtlistener](mulib-evtlistener.md) | `evtstream` |
 | [geosolve](mulib-geosolve.md) | `alloc`, `cgeom`, `geometry` |
 | [gvizz](mulib-gvizz.md) | `dsdom` |
@@ -661,6 +826,7 @@ Compatibility group: `parsec`, `peg`.
 | [iwd-client](mulib-iwd-client.md) | `dbus-client` |
 | [jit](mulib-jit.md) | `dyncall`, `vmweave` |
 | [json](mulib-json.md) | `parsec`, `strbuf`, `utf8` |
+| [ligature](mulib-ligature.md) | `fontshape` |
 | [linebreak](mulib-linebreak.md) | `unibreak` |
 | [listener](mulib-listener.md) | `evtstream` |
 | [lsmtree](mulib-lsmtree.md) | `sstfile`, `wal` |

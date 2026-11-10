@@ -132,8 +132,9 @@ def main():
         dependencies[name] = [d for d in re.findall(r'^\s*#\s*include\s*["<]'
                                         r'(mulib-[^">]+\.h)[">]', text, re.M) if d not in SUPPORT_HEADERS]
         module = name[len('mulib-'):-len('.h')]
+        example = re.search(r'^  example: (.+)$', block, re.M)
         for expected in ['manual/mulib-' + module + '.md',
-                         'examples/modules/' + module + '.c']:
+                         example.group(1) if example else 'examples/modules/' + module + '.c']:
             if not (root / expected).is_file():
                 failures.append((name, 'missing ' + expected))
         if name not in entries:
@@ -215,13 +216,22 @@ def main():
                         return False
                     if execute:
                         arguments = ([str(root / 'library')] if sources and len(sources) == 1
-                                     and sources[0].name in ('immgtk.c', 'test_immgtk.c') else [])
+                                      and sources[0].name in ('immgtk.c', 'test_immgtk.c') else [])
+                        if sources and len(sources) == 1 and sources[0].name == 'build-publication.c':
+                            arguments = ['.']
                         test = subprocess.run([str(binary)] + arguments, cwd=work, capture_output=True,
                                               text=True, timeout=60)
                         if test.returncode:
                             failures.append((label, test.stderr or test.stdout or
                                               'exit status ' + str(test.returncode)))
                             return False
+                        if sources and len(sources) == 1 and sources[0].name == 'build-publication.c':
+                            formats = subprocess.run(
+                                [sys.executable, str(root / 'tests/verify-formats.py'), work],
+                                cwd=work, capture_output=True, text=True, timeout=60)
+                            if formats.returncode:
+                                failures.append((label + ' formats', formats.stderr or formats.stdout))
+                                return False
                         if sources and len(sources) == 1 and sources[0].name in (
                                 'test_mir_flow.c', 'test_compiler_ir.c'):
                             aot = subprocess.run(

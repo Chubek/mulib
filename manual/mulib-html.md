@@ -130,6 +130,16 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/html.c -
 parsing/serialization, malformed inputs, cascade integration and injected
 allocation failures.
 
+## Safe semantic DocIR adapter
+
+`mulib_html_docir(root,title,language,out)` enables a distinct safe path with
+`MULIB_ENABLE_DOCIR` and docir/typecore implementations. It atomically emits a
+complete HTML/XHTML document, namespace-correct structural MathML, escaped text,
+restricted link schemes, scoped print-unit styles and checked local references.
+Language tags are bounded ASCII tags, not a full BCP 47 implementation. The
+general DOM/parser APIs retain their existing contracts and are not silently
+replaced by this adapter. See [the pipeline contract](docir-publishing.md).
+
 <!-- manual-reference -->
 ## Source and build reference
 
@@ -139,7 +149,7 @@ allocation failures.
 | --- | --- |
 | Header | [`include/mulib-html.h`](../include/mulib-html.h) |
 | Implementation switch | `MULIB_IMPL_HTML` |
-| Repository-local includes | [mulib-xml](mulib-xml.md) |
+| Repository-local includes | [mulib-docir](mulib-docir.md), [mulib-xml](mulib-xml.md) |
 | Complete example | [`examples/modules/html.c`](../examples/modules/html.c) |
 
 The include list includes conditional and implementation-only includes;

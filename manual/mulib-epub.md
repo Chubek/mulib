@@ -106,6 +106,18 @@ checks ZIP integrity with Python `zipfile`, inspects namespaced OPF/XML and read
 an EPUB repacked with zlib-generated DEFLATE streams. It also checks rejection
 of duplicate ids, missing spine references, wrong namespaces and unsafe hrefs.
 
+## Semantic DocIR chapters
+
+`mulib_epub_write_docir(metadata,chapters,count,out)` adapts validated trees through
+the existing EPUB writer with `MULIB_ENABLE_DOCIR` and the documented DocIR/HTML
+implementation switches. It retains required caller metadata and existing media,
+adds ordered XHTML chapters, and sets `mathml` properties where needed. The
+fixed HTML doctype is removed before the existing DTD-rejecting XML validation.
+Duplicate paths, bad trees and allocation failures do not append partial archives.
+No second full EPUB backend, generated fixed production identifier, complete
+accessibility profile or EpubCheck certification is claimed. See [the example and
+independent verification](docir-publishing.md).
+
 <!-- manual-reference -->
 ## Source and build reference
 
@@ -115,7 +127,7 @@ of duplicate ids, missing spine references, wrong namespaces and unsafe hrefs.
 | --- | --- |
 | Header | [`include/mulib-epub.h`](../include/mulib-epub.h) |
 | Implementation switch | `MULIB_IMPL_EPUB` |
-| Repository-local includes | [mulib-xml](mulib-xml.md), [mulib-zip](mulib-zip.md) |
+| Repository-local includes | [`include/detail/mulib-epub-docir.h`](../include/detail/mulib-epub-docir.h), [mulib-html](mulib-html.md), [mulib-xml](mulib-xml.md), [mulib-zip](mulib-zip.md) |
 | Complete example | [`examples/modules/epub.c`](../examples/modules/epub.c) |
 
 The include list includes conditional and implementation-only includes;

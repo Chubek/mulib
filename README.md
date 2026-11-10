@@ -1,6 +1,6 @@
 # MuLIB
 
-MuLIB is a modular C11 utility library with **582 implemented modules**, from
+MuLIB is a modular C11 utility library with **968 registered modules**, from
 containers and parsers to compiler tooling, graphics, networking, and virtual
 machines. Choose the modules you need and compile their implementations into
 your application.
@@ -70,6 +70,8 @@ the [usage guide](GUIDE.md) for a complete multi-file application.
 | Networking and automation | [HTTP](manual/mulib-http.md), [DNS](manual/mulib-dns.md), [authentication](manual/mulib-auth.md), [Prowse browser automation](manual/mulib-prowse-control.md) |
 | Terminals and editors | [Readline](manual/mulib-readline.md), [editing buffers](manual/mulib-edbuf.md), [syntax highlighting](manual/mulib-termsyn.md), [terminal UI](manual/mulib-tui.md) |
 | Graphics, text and layout | [Linear algebra](manual/mulib-linalg.md), [vector graphics](manual/mulib-vectgfx.md), [ShaderX](manual/mulib-shaderx.md), [font shaping](manual/mulib-fontshape.md), [page layout](manual/mulib-pglayout.md) |
+| Publishing baselines | [Integration and limitations](manual/publishing-integration.md), [shared primitives](manual/mulib-typecore.md), [document IR](manual/mulib-docir.md), [cross-target example](examples/build-publication.c) |
+| Semantic publishing | [Owned DocIR pipeline](manual/docir-publishing.md), [end-to-end example](examples/docir-publication.c), [source-to-LaTeX/HTML/EPUB contracts](manual/docir-publishing.md#format-contracts-and-tests) |
 | Documentation | [Docstrings and DocstrIL](manual/mulib-docstring.md), [Lua extensions/filters](library/ldocstr/README.md), [Pandoc AST](manual/mulib-pandocast.md), [graphs](manual/mulib-gvizz.md), [sequence diagrams](manual/mulib-dyegram.md) |
 | Notation and visualization | [Tables](manual/mulib-tbl.md), [symbols](manual/mulib-symbol.md), [math/logic equations](manual/mulib-eqn.md), [chemistry](manual/mulib-chem.md), [Lua-extensible charts](manual/mulib-chart.md), [paleography and script fonts](manual/mulib-paleography.md) |
 | Algorithms and numerical methods | [Statistics](manual/mulib-stats.md), [pricing and SAT/SMT](manual/mulib-pricing-suite.md), [geometry constraints](manual/mulib-geosolve.md), [Cassowary](manual/mulib-cassowary-solver.md), [statistical/text fixtures](library/statistical-text/) |
@@ -79,7 +81,9 @@ The [module guide](manual/modules.md) groups related APIs, the
 [dependency strata](manual/strata.md) describe their composition, and
 [`MANIFEST.yaml`](MANIFEST.yaml) records module names, switches, and dependencies.
 Each implemented module has a manual and a runnable example in
-[`examples/modules/`](examples/modules/).
+[`examples/modules/`](examples/modules/) or, for the publishing additions,
+`examples/mulib-*.c` as recorded in its manifest entry. These additions implement
+documented subsets, not a complete TeX/LaTeX engine or every named standard.
 
 ## Supported profiles
 

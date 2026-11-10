@@ -9,12 +9,24 @@ creates an immutable binding and checks the initializer's type. A semicolon is
 optional at the declaration's end-of-line, closing brace, or end-of-source.
 Native data referenced by the binding can still be mutated by library calls.
 
-The checked-in generated bridge covers **586 public headers**, **586 library
-names**, **3,310 functions**, **5,573 native type descriptors**, and **2,083
+The checked-in generated bridge covers **971 public headers**, **971 library
+names**, **4,355 functions**, **7,348 native type descriptors**, and **2,250
 constants** from MuLIB. `virtio.h` and `mulib-virtio.h` name the same library.
 `Inventory.json` records the complete header/function inventory and fingerprint.
 Functions are real compiler-typed C calls, including struct/union returns,
 static-inline APIs, and callbacks. Both hosts use the same compiled bridge.
+
+The CMake bridge enables `MULL_MULIB_NATIVE_FONTSHAPE` by default, making the
+explicit native fontshape constructors available alongside the unchanged
+HarfBuzz default. Set this option OFF to omit that implementation. The native
+backend is a [bounded ASCII/Latin profile](../../../../manual/mulib-fontshape.md#native-latin-implementation),
+not complex-script shaping or a general replacement for the runtime backend.
+
+`MULL_MULIB_DOCIR` defaults ON for the owned tree/validation/normalization/
+serialization/source-span and LaTeX/HTML/EPUB adapters. It enables
+`MULIB_ENABLE_DOCIR` in the implementation TU; disabling it preserves the legacy
+APIs while tree adapter calls report unsupported. See the
+[DocIR ownership and publication contract](../../../../manual/docir-publishing.md).
 
 ## Build and install
 

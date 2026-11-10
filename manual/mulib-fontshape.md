@@ -2,9 +2,13 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-Real OpenType shaping through HarfBuzz, rather than a cmap/kerning approximation.
+The default backend provides OpenType shaping through HarfBuzz.
 Features, contextual substitutions/positioning, script shaping and variable-font
 coordinates use the native HarfBuzz engine and the selected font's tables.
+
+An explicit, external-runtime-free backend now executes a **bounded Latin subset**
+using the new SFNT, cmap, GSUB, GPOS, GDEF, and metrics modules. It is not a
+complex-script shaper or a replacement for HarfBuzz's full coverage.
 
 ## Integration
 
@@ -94,6 +98,77 @@ with `free`. Outputs are unchanged on failure. `mulib-ligature` adds explicit
 optional-feature controls and source cluster mapping; `mulib-glyph` pairs shaped
 IDs with the same font face for FreeType rendering.
 
+## Native Latin implementation
+
+Reference: the stable table layouts in **OpenType 1.9.1**. No complete OpenType
+shaping conformance profile is claimed. See [the native example](../examples/fontshape-native.c)
+for the complete implementation-switch recipe. Define
+`MULIB_FONTSHAPE_ENABLE_NATIVE` alongside the dependency implementation switches to
+compile both backends. Existing callers need no changes and `open` still selects
+HarfBuzz. `open_native(path,index,scale)` and `open_memory(data,size,index,scale)`
+explicitly select the native backend; memory input is copied and owned until close.
+Without native enablement these new constructors return NULL.
+
+`MULIB_FONTSHAPE_NATIVE_ONLY` enables the native backend and excludes all dynamic
+loader calls. In that configuration `open(...,NULL)` also selects the native
+backend; a non-NULL runtime-library path is rejected. This standalone build needs
+neither HarfBuzz nor libdl:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/fontshape-native.c -o native-font
+./native-font /path/to/static-font.ttf
+```
+
+The native profile is deliberately explicit:
+
+- Static SFNT/TrueType/OpenType and TTC v1/v2 faces; no WOFF/WOFF2 decoding, named
+  instances, or variable fonts. Font files are limited to 64 MiB.
+- Input is printable ASCII plus embedded NUL; direction is LTR, script `Latn`,
+  and language is `und` or `en`. Unsupported Unicode/scripts/options fail; there
+  is no fake Arabic, Indic, combining-mark, bidi, or emoji shaping.
+- The default Latin LangSys (or DFLT fallback) selects only `liga` and `kern`.
+  These features default on; `liga`, `kern`, `liga=0/1`, and `kern=0/1` are the
+  only accepted feature strings. Ranged features and language-specific LangSys
+  selection are not implemented. Other default features are not executed.
+- GSUB single substitution formats 1/2 (lookup 1), ligature format 1 (lookup 4),
+  and non-recursive extension lookup 7 to those types. Ligatures retain the first
+  component's original byte cluster and never turn glyph IDs back into Unicode.
+- GPOS pair formats 1/2 (lookup 2), including class pairs, and non-recursive
+  extension lookup 9. Scalar x/y placement and advance fields are scaled with
+  checked arithmetic. Device/variation adjustments are rejected.
+- Lookup flags 0 and IgnoreMarks only. GDEF glyph classes are checked and runs
+  containing mark-class glyphs are rejected; this is not mark positioning.
+- Without a GPOS kern feature, legacy horizontal format-0 kern pairs adjust the
+  first glyph's advance. Other kern subtable profiles are rejected. This legacy
+  record representation need not equal HarfBuzz's distributed kern adjustments.
+- Horizontal metrics come from hhea/hmtx. Ink extents use TrueType loca/glyf header
+  bounds, not outline interpretation or rasterization; CFF extents fail. GDEF
+  caret lists are not interpreted: absent caret data succeeds with zero carets,
+  present data reports failure instead of inventing positions. `native()` is NULL.
+
+Runs are limited to 65,536 input bytes and 128 lookups per selected feature.
+A 32-MiB byte-weighted lookup-work budget bounds adversarial processing; budget
+exhaustion returns failure without publishing a partial run. Output ownership and
+0/-1 failure-atomic conventions are identical to the default backend.
+
+### Allocation and verification
+
+Define compatible `MULIB_FONTSHAPE_MALLOC`, `MULIB_FONTSHAPE_CALLOC`, and
+`MULIB_FONTSHAPE_FREE` hooks in the implementation TU to replace libc allocation.
+Native file/staging buffers additionally use the typecore allocator hooks.
+`run_destroy`, `close`, and the new `carets_destroy` use the configured deallocator;
+existing callers may still `free` carets with the default allocator.
+
+`tests/test-fontshape-native.c` uses an independently constructed synthetic font
+for deterministic glyph, ligature, kerning, scaling, TTC, ownership, malformed
+input, and unsupported-script checks. `tests/test-font-layout.c` checks lookup
+execution; `tests/test-font-allocations.c` injects failure at every allocation in
+the tested construction/shaping/escaping paths. `tests/test_fontshape_differential.c`
+compares Latin glyph IDs, byte clusters, advances, and offsets against HarfBuzz
+with features outside this profile disabled. It explicitly skips when test fonts
+or HarfBuzz are unavailable; it is not a complex-script conformance suite.
+`tests/fuzz_publishing_fonts.c` is the bounded native-only libFuzzer target.
+
 <!-- manual-reference -->
 ## Source and build reference
 
@@ -103,7 +178,7 @@ IDs with the same font face for FreeType rendering.
 | --- | --- |
 | Header | [`include/mulib-fontshape.h`](../include/mulib-fontshape.h) |
 | Implementation switch | `MULIB_IMPL_FONTSHAPE` |
-| Repository-local includes | [mulib-dynload](mulib-dynload.md), [mulib-utf8](mulib-utf8.md) |
+| Repository-local includes | [`include/detail/mulib-fontshape-native.h`](../include/detail/mulib-fontshape-native.h), [mulib-dynload](mulib-dynload.md), [mulib-fontcmap](mulib-fontcmap.md), [mulib-fontgdef](mulib-fontgdef.md), [mulib-fontgpos](mulib-fontgpos.md), [mulib-fontgsub](mulib-fontgsub.md), [mulib-fontkern](mulib-fontkern.md), [mulib-fontmetrics](mulib-fontmetrics.md), [mulib-sfnt](mulib-sfnt.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/fontshape.c`](../examples/modules/fontshape.c) |
 
 The include list includes conditional and implementation-only includes;

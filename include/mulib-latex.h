@@ -5,6 +5,7 @@
 #ifndef MULIB_LATEX_H
 #define MULIB_LATEX_H
 #include "mulib-tex.h"
+#include "mulib-docir.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -28,6 +29,9 @@ extern "C"
   int mulib_latex_finish (mulib_latex_t *document);
   /** @brief Release source/reset; accepting NULL. */
   void mulib_latex_free (mulib_latex_t *document);
+  /** @brief Complete escaped DocIR article with amsmath/hyperref package contract.
+   * Requires MULIB_ENABLE_DOCIR; fresh output only, unchanged on failure. */
+  int mulib_latex_from_docir(mulib_latex_t *document,const char *title,const mulib_docir_node_t *root);
 #ifdef __cplusplus
 }
 #endif
@@ -103,5 +107,23 @@ mulib_latex_free (mulib_latex_t *d)
       mulib_strbuf_free (&d->source);
       d->state = 0;
     }
+}
+int mulib_latex_from_docir(mulib_latex_t *out,const char *title,const mulib_docir_node_t *root) {
+#ifdef MULIB_ENABLE_DOCIR
+    mulib_docir_snapshot_t snapshot={0};mulib_typecore_buf_t body={0};mulib_latex_t result={0};int ok=0;
+    if(!out||out->state||out->source.data||out->source.length||out->source.capacity||!title||
+       !mulib_docir_snapshot_make(root,NULL,&snapshot,NULL))return 0;
+    if(!mulib_docir_snapshot_validate(&snapshot,mulib_docir_CHECK_DOCUMENT|mulib_docir_CHECK_REFERENCES,NULL)||
+       !mulib_docir_render_snapshot(&snapshot,mulib_docir_FORMAT_LATEX,&body))goto done;
+    if(!mulib_strbuf_append(&result.source,"\\documentclass{article}\n\\usepackage{amsmath}\n\\usepackage{hyperref}\n\\title{")||
+       !mulib_tex_escape(&result.source,title,strlen(title))||
+       !mulib_strbuf_append(&result.source,"}\n\\begin{document}\n\\maketitle\n")||
+       !mulib_strbuf_append_n(&result.source,(const char*)body.data,body.size)||
+       !mulib_strbuf_append(&result.source,"\n\\end{document}\n"))goto done;
+    result.state=2;*out=result;memset(&result,0,sizeof(result));ok=1;
+done:mulib_latex_free(&result);mulib_typecore_free(&body);mulib_docir_snapshot_destroy(&snapshot);return ok;
+#else
+    (void)out;(void)title;(void)root;return 0;
+#endif
 }
 #endif

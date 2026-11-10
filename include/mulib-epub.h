@@ -6,6 +6,7 @@
 #define MULIB_EPUB_H
 #include "mulib-xml.h"
 #include "mulib-zip.h"
+#include "mulib-html.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -70,6 +71,13 @@ extern "C"
   size_t mulib_epub_find (const mulib_epub_reader_t *reader, const char *id);
   /** @brief Free owned state/reset; does not release input archive. */
   void mulib_epub_close (mulib_epub_reader_t *reader);
+  typedef struct mulib_epub_docir_chapter {
+    const char *path,*title;const mulib_docir_node_t *root;
+  } mulib_epub_docir_chapter_t;
+  /** @brief Adapt DocIR chapters through the existing EPUB writer. Existing
+   * metadata/resources are retained; identifiers/dates remain caller supplied. */
+  int mulib_epub_write_docir(const mulib_epub_book_t *metadata,const mulib_epub_docir_chapter_t *chapters,
+                             size_t count,mulib_buffer_t *out);
 #ifdef __cplusplus
 }
 #endif
@@ -776,4 +784,5 @@ mulib_epub_read (const mulib_epub_reader_t *r, size_t item, size_t limit,
   return mulib_epub_zip_result_ (
       mulib_zip_extract (&r->zip, r->items[item].zip_index, limit, out));
 }
+#include "detail/mulib-epub-docir.h"
 #endif

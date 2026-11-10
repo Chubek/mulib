@@ -30,6 +30,7 @@ Include the header in application code; dependency types come from its includes.
 #ifndef MULIB_LATEX_H
 #define MULIB_LATEX_H
 #include "mulib-tex.h"
+#include "mulib-docir.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -53,6 +54,9 @@ extern "C"
   int mulib_latex_finish (mulib_latex_t *document);
   /** @brief Release source/reset; accepting NULL. */
   void mulib_latex_free (mulib_latex_t *document);
+  /** @brief Complete escaped DocIR article with amsmath/hyperref package contract.
+   * Requires MULIB_ENABLE_DOCIR; fresh output only, unchanged on failure. */
+  int mulib_latex_from_docir(mulib_latex_t *document,const char *title,const mulib_docir_node_t *root);
 #ifdef __cplusplus
 }
 #endif
@@ -61,6 +65,17 @@ extern "C"
 
 </details>
 <!-- /manual-interface -->
+
+## DocIR article export
+
+`mulib_latex_from_docir(document,title,root)` requires `MULIB_ENABLE_DOCIR` plus
+docir/typecore and the normal latex/tex/strbuf/utf8 implementations. It validates
+one complete tree and publishes a finished article into fresh output only.
+The explicit package contract is `article`, `amsmath`, and `hyperref`; headings,
+lists, structural math, references, text figures/captions, inline footnotes, and
+bibliography items/citations are emitted with safe text escaping. There is no
+raw-TeX input API or claim of native TeX compatibility. Existing article functions
+and ABI are unchanged. See [the full scope and tested engine](docir-publishing.md).
 
 <!-- manual-reference -->
 ## Source and build reference
@@ -71,7 +86,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-latex.h`](../include/mulib-latex.h) |
 | Implementation switch | `MULIB_IMPL_LATEX` |
-| Repository-local includes | [mulib-tex](mulib-tex.md) |
+| Repository-local includes | [mulib-docir](mulib-docir.md), [mulib-tex](mulib-tex.md) |
 | Complete example | [`examples/modules/latex.c`](../examples/modules/latex.c) |
 
 The include list includes conditional and implementation-only includes;
