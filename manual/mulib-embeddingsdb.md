@@ -25,6 +25,18 @@ Free releases all vectors and zeros the structure, including dimension. Reset
 dimension before reuse. Keep internal vector pointers out of later mutations;
 state has no persistence or internal concurrency control.
 
+## Metric-aware top-k
+
+`knn` returns min(k,count) hits sorted by ascending distance then ascending ID.
+Metrics are Euclidean distance, cosine distance `1-cosine`, and negative dot
+product. Cosine normalizes vector components before accumulation, supporting
+very large/tiny finite vectors; zero vectors make the query invalid. Distances
+are clamped to [0,2] for cosine. Invalid input, unrepresentable metrics or
+allocation failure returns SIZE_MAX without modifying output. Provide k slots;
+NULL output is permitted only for k=0. Even k=0 validates stored metrics.
+Query scratch is O(min(k,count)); time is O(count × (dimension + k)).
+Regression: `tests/test_data_indexes.c`.
+
 <!-- manual-interface -->
 ## Public header reference
 
@@ -35,11 +47,8 @@ Include the header in application code; dependency types come from its includes.
 <summary>Types, constants, and declarations</summary>
 
 ```c
-/** @file mulib-embeddingsdb.h
- * @brief Exact linear Euclidean nearest-neighbor search over owned vectors.
- * Define MULIB_IMPL_EMBEDDINGSDB. Zero initialize and set dimension >0 before
- * use. Stable uint64 ids; replace copies before releasing old vector. No ANN,
- * persistence or concurrent access. Distances may be infinity on overflow. */
+/* MuLIB embeddingsdb: patched exact metric-aware k-nearest search.
+ * Existing struct and public API preserved. */
 #ifndef MULIB_EMBEDDINGSDB_H
 #define MULIB_EMBEDDINGSDB_H
 #include <stddef.h>
@@ -61,11 +70,25 @@ extern "C"
   int mulib_embeddingsdb_put (mulib_embeddingsdb_t *db, uint64_t id,
                               const double *vector, size_t dimension);
   int mulib_embeddingsdb_delete (mulib_embeddingsdb_t *db, uint64_t id);
-  /** Output unchanged if empty/invalid. Ties choose smallest id. */
-  int mulib_embeddingsdb_nearest (const mulib_embeddingsdb_t *db,
-                                  const double *query, size_t dimension,
-                                  uint64_t *id, double *distance);
+  int mulib_embeddingsdb_nearest (const mulib_embeddingsdb_t *db, const double *query,
+                                  size_t dimension, uint64_t *id, double *distance);
   void mulib_embeddingsdb_free (mulib_embeddingsdb_t *db);
+  typedef enum
+  {
+    MULIB_EMBEDDINGS_EUCLIDEAN,
+    MULIB_EMBEDDINGS_COSINE,
+    MULIB_EMBEDDINGS_DOT
+  } mulib_embeddings_metric_t;
+  typedef struct
+  {
+    uint64_t id;
+    double distance;
+  } mulib_embeddings_hit_t;
+  /* Ascending distance; cosine distance = 1-cosine; dot distance = -dot.
+   * Invalid input returns SIZE_MAX; on failure outputs remain unchanged. */
+  size_t mulib_embeddingsdb_knn (const mulib_embeddingsdb_t *db, const double *query,
+                                 size_t dimension, mulib_embeddings_metric_t metric,
+                                 size_t k, mulib_embeddings_hit_t *hits);
 #ifdef __cplusplus
 }
 #endif

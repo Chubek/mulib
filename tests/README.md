@@ -14,3 +14,19 @@ For Clang and sanitizers:
 C++17 consumer; CTest also includes that case. `python3 tools/check.py` adds
 isolated-header and inventory checks. These checks are not a substitute for
 fuzzing, privileged namespace integration, or real-service compatibility tests.
+
+## Data, search, and formal-concept modules
+
+The ten `test_data_*.c` suites cover the 59 data/search additions and patched
+modules. CMake/CTest and `tools/check.py` discover them automatically. Coverage
+includes exhaustive small FCA contexts, an independent Levenshtein oracle,
+codec boundaries, sorted-set operations, numeric extremes, ownership, and
+1,152 individually injected allocation failures. Each affected module also has
+a checked standalone example in `examples/modules/`.
+
+See [data/search integration and contracts](../manual/data-search.md) for build
+commands and links to module manuals. To select just these tests after building:
+
+```sh
+ctest --test-dir tests/build -R '^mulib_test_data_' --output-on-failure
+```

@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 968
-implemented_module_count: 968
+module_count: 1021
+implemented_module_count: 1021
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -1500,7 +1500,7 @@ modules:
   header: include/mulib-dbquery.h
   manual: manual/mulib-dbquery.md
   macro: MULIB_IMPL_DBQUERY
-  purpose: "Ordered half-open binary key scans over live memtable records."
+  purpose: "Ordered half-open binary key scans with optional predicate filtering over live memtable records."
   dependencies: [memtable]
   status: implemented
 - name: dbsummary
@@ -1570,7 +1570,7 @@ modules:
   header: include/mulib-invindex.h
   manual: manual/mulib-invindex.md
   macro: MULIB_IMPL_INVINDEX
-  purpose: "Binary term to sorted unique uint64 posting lists over memtable storage."
+  purpose: "Owned sorted unique document postings with counts and capacity-checked term intersections."
   dependencies: [buffer, bycutils, memtable]
   status: implemented
 - name: kvmcontainer
@@ -2284,7 +2284,7 @@ modules:
   header: include/mulib-embeddingsdb.h
   manual: manual/mulib-embeddingsdb.md
   macro: MULIB_IMPL_EMBEDDINGSDB
-  purpose: Exact Euclidean nearest-neighbor search over owned vectors.
+  purpose: Exact Euclidean nearest neighbor and metric-aware cosine/dot-product top-k over owned vectors.
   dependencies: []
   status: implemented
 - name: documentdb
@@ -5379,7 +5379,7 @@ modules:
   header: include/mulib-crawlqueue.h
   manual: manual/mulib-crawlqueue.md
   macro: MULIB_IMPL_CRAWLQUEUE
-  purpose: "Owned bounded FIFO frontier with URL deduplication."
+  purpose: "Owned bounded FIFO frontier with URL deduplication and resumable cursor controls."
   dependencies: []
   status: implemented
 - name: domserialize
@@ -5442,7 +5442,7 @@ modules:
   header: include/mulib-scrape-schema.h
   manual: manual/mulib-scrape-schema.md
   macro: MULIB_IMPL_SCRAPE_SCHEMA
-  purpose: "Schema-level required string validation for extracted fields."
+  purpose: "Required string and bounded integer, real and boolean validation for extracted fields."
   dependencies: []
   status: implemented
 - name: scrape-table
@@ -5470,7 +5470,7 @@ modules:
   header: include/mulib-search-rank.h
   manual: manual/mulib-search-rank.md
   macro: MULIB_IMPL_SEARCH_RANK
-  purpose: "Deterministic lexical score for ranking title/description matches."
+  purpose: "ASCII lexical substring and whole-word matching with checked weighted field scoring."
   dependencies: []
   status: implemented
 - name: search-serp
@@ -6959,7 +6959,380 @@ modules:
   dependencies: [typecore]
   status: implemented
   example: examples/mulib-typesandbox.c
+- name: bitpack
+  header: include/mulib-bitpack.h
+  manual: manual/mulib-bitpack.md
+  macro: MULIB_IMPL_BITPACK
+  purpose: Pack/unpack unsigned fixed-width values 1..32 bits with explicit byte bounds
+  dependencies: []
+  status: implemented
+- name: blockdev
+  header: include/mulib-blockdev.h
+  manual: manual/mulib-blockdev.md
+  macro: MULIB_IMPL_BLOCKDEV
+  purpose: Application-supplied fixed-size block device with checked I/O callbacks
+  dependencies: []
+  status: implemented
+- name: bm25
+  header: include/mulib-bm25.h
+  manual: manual/mulib-bm25.md
+  macro: MULIB_IMPL_BM25
+  purpose: Okapi BM25 and BM25F field scoring; finite checked inputs
+  dependencies: []
+  status: implemented
+- name: booleanquery
+  header: include/mulib-booleanquery.h
+  manual: manual/mulib-booleanquery.md
+  macro: MULIB_IMPL_BOOLEANQUERY
+  purpose: Linear-time postings intersection/union/difference on sorted documents
+  dependencies: [postings]
+  status: implemented
+- name: closeditemset
+  header: include/mulib-closeditemset.h
+  manual: manual/mulib-closeditemset.md
+  macro: MULIB_IMPL_CLOSEDITEMSET
+  purpose: Frequent closed intents of an FCA context with minimum support
+  dependencies: [nextclosure]
+  status: implemented
+- name: columnar
+  header: include/mulib-columnar.h
+  manual: manual/mulib-columnar.md
+  macro: MULIB_IMPL_COLUMNAR
+  purpose: Nullable column-major finite double vectors with atomic append
+  dependencies: []
+  status: implemented
+- name: columnstats
+  header: include/mulib-columnstats.h
+  manual: manual/mulib-columnstats.md
+  macro: MULIB_IMPL_COLUMNSTATS
+  purpose: Min/max/null statistics for numeric column pruning
+  dependencies: []
+  status: implemented
+- name: conceptlattice
+  header: include/mulib-conceptlattice.h
+  manual: manual/mulib-conceptlattice.md
+  macro: MULIB_IMPL_CONCEPTLATTICE
+  purpose: Enumerate exact FCA concept intent/extent pairs with bounded capacity
+  dependencies: [nextclosure]
+  status: implemented
+- name: countmin
+  header: include/mulib-countmin.h
+  manual: manual/mulib-countmin.md
+  macro: MULIB_IMPL_COUNTMIN
+  purpose: Deterministic Count-Min Sketch for estimated frequencies
+  dependencies: []
+  status: implemented
+- name: datum
+  header: include/mulib-datum.h
+  manual: manual/mulib-datum.md
+  macro: MULIB_IMPL_DATUM
+  purpose: Owned typed scalar values with binary-safe strings, deep-copy semantics and NULL
+  dependencies: []
+  status: implemented
+- name: deltacodec
+  header: include/mulib-deltacodec.h
+  manual: manual/mulib-deltacodec.md
+  macro: MULIB_IMPL_DELTACODEC
+  purpose: Monotone uint64 delta encoding and decoding with overflow checks
+  dependencies: []
+  status: implemented
+- name: docid
+  header: include/mulib-docid.h
+  manual: manual/mulib-docid.md
+  macro: MULIB_IMPL_DOCID
+  purpose: Stable unsigned 64-bit document IDs and order-preserving big-endian serialization
+  dependencies: []
+  status: implemented
+- name: encoding
+  header: include/mulib-encoding.h
+  manual: manual/mulib-encoding.md
+  macro: MULIB_IMPL_ENCODING
+  purpose: Checked ULEB128 and ZigZag codecs for portable signed/unsigned record storage
+  dependencies: []
+  status: implemented
+- name: etl-transform
+  header: include/mulib-etl-transform.h
+  manual: manual/mulib-etl-transform.md
+  macro: MULIB_IMPL_ETL_TRANSFORM
+  purpose: Composable pull-based ETL record filtering and transformation callbacks
+  dependencies: [record]
+  status: implemented
+- name: fca
+  header: include/mulib-fca.h
+  manual: manual/mulib-fca.md
+  macro: MULIB_IMPL_FCA
+  purpose: Formal Concept Analysis binary contexts up to 64 objects and 64 attributes
+  dependencies: []
+  status: implemented
+- name: fuzzyquery
+  header: include/mulib-fuzzyquery.h
+  manual: manual/mulib-fuzzyquery.md
+  macro: MULIB_IMPL_FUZZYQUERY
+  purpose: Levenshtein bounded byte edit-distance with O(min(n,m)) memory
+  dependencies: []
+  status: implemented
+- name: galois
+  header: include/mulib-galois.h
+  manual: manual/mulib-galois.md
+  macro: MULIB_IMPL_GALOIS
+  purpose: FCA Galois derivation aliases with extent and intent closure
+  dependencies: [fca]
+  status: implemented
+- name: geoindex
+  header: include/mulib-geoindex.h
+  manual: manual/mulib-geoindex.md
+  macro: MULIB_IMPL_GEOINDEX
+  purpose: Exact spherical great-circle distance and radius search over owned geographic points
+  dependencies: []
+  status: implemented
+- name: hll
+  header: include/mulib-hll.h
+  manual: manual/mulib-hll.md
+  macro: MULIB_IMPL_HLL
+  purpose: HyperLogLog cardinality sketch with 64-bit hashing and small-range correction
+  dependencies: []
+  status: implemented
+- name: hybridsearch
+  header: include/mulib-hybridsearch.h
+  manual: manual/mulib-hybridsearch.md
+  macro: MULIB_IMPL_HYBRIDSEARCH
+  purpose: Reciprocal rank fusion of two ranked ID arrays
+  dependencies: []
+  status: implemented
+- name: ingest-stream
+  header: include/mulib-ingest-stream.h
+  manual: manual/mulib-ingest-stream.md
+  macro: MULIB_IMPL_INGEST_STREAM
+  purpose: Bounded chunk accumulation and newline record streaming with callback
+  dependencies: []
+  status: implemented
+- name: iterator
+  header: include/mulib-iterator.h
+  manual: manual/mulib-iterator.md
+  macro: MULIB_IMPL_ITERATOR
+  purpose: Opaque cursor protocol with explicit error and borrowed-item semantics
+  dependencies: []
+  status: implemented
+- name: joinfilter
+  header: include/mulib-joinfilter.h
+  manual: manual/mulib-joinfilter.md
+  macro: MULIB_IMPL_JOINFILTER
+  purpose: Bounded Bloom join filter with no false negatives for inserted keys
+  dependencies: []
+  status: implemented
+- name: lattice
+  header: include/mulib-lattice.h
+  manual: manual/mulib-lattice.md
+  macro: MULIB_IMPL_LATTICE
+  purpose: Finite 64-attribute implication closure lattice with join/meet of closed sets
+  dependencies: []
+  status: implemented
+- name: latticequery
+  header: include/mulib-latticequery.h
+  manual: manual/mulib-latticequery.md
+  macro: MULIB_IMPL_LATTICEQUERY
+  purpose: Attribute/extent predicate enumeration over concept-lattice results
+  dependencies: [conceptlattice]
+  status: implemented
+- name: lsh
+  header: include/mulib-lsh.h
+  manual: manual/mulib-lsh.md
+  macro: MULIB_IMPL_LSH
+  purpose: Band-key construction for locality-sensitive MinHash candidate retrieval
+  dependencies: []
+  status: implemented
+- name: matview
+  header: include/mulib-matview.h
+  manual: manual/mulib-matview.md
+  macro: MULIB_IMPL_MATVIEW
+  purpose: Incrementally maintained count/sum materialized numeric aggregate view
+  dependencies: []
+  status: implemented
+- name: minhash
+  header: include/mulib-minhash.h
+  manual: manual/mulib-minhash.md
+  macro: MULIB_IMPL_MINHASH
+  purpose: Seeded MinHash signatures for Jaccard similarity estimation
+  dependencies: []
+  status: implemented
+- name: ndjson
+  header: include/mulib-ndjson.h
+  manual: manual/mulib-ndjson.md
+  macro: MULIB_IMPL_NDJSON
+  purpose: Bounded borrowed line iteration over newline-delimited JSON source bytes
+  dependencies: []
+  status: implemented
+- name: nextclosure
+  header: include/mulib-nextclosure.h
+  manual: manual/mulib-nextclosure.md
+  macro: MULIB_IMPL_NEXTCLOSURE
+  purpose: Ganter NextClosure canonical enumeration of closed formal concepts
+  dependencies: [fca]
+  status: implemented
+- name: phrasequery
+  header: include/mulib-phrasequery.h
+  manual: manual/mulib-phrasequery.md
+  macro: MULIB_IMPL_PHRASEQUERY
+  purpose: Ordered phrase matching over positional posting arrays
+  dependencies: [positions]
+  status: implemented
+- name: positions
+  header: include/mulib-positions.h
+  manual: manual/mulib-positions.md
+  macro: MULIB_IMPL_POSITIONS
+  purpose: Owned sorted per-document token positions for phrase matching
+  dependencies: []
+  status: implemented
+- name: postings
+  header: include/mulib-postings.h
+  manual: manual/mulib-postings.md
+  macro: MULIB_IMPL_POSTINGS
+  purpose: Sorted document postings with term frequency, binary search and set-safe updates
+  dependencies: []
+  status: implemented
+- name: queryaggregate
+  header: include/mulib-queryaggregate.h
+  manual: manual/mulib-queryaggregate.md
+  macro: MULIB_IMPL_QUERYAGGREGATE
+  purpose: Streaming count/sum/min/max/mean aggregates on finite double inputs
+  dependencies: []
+  status: implemented
+- name: queryexpr
+  header: include/mulib-queryexpr.h
+  manual: manual/mulib-queryexpr.md
+  macro: MULIB_IMPL_QUERYEXPR
+  purpose: Typed equality and ordering of MuLIB datum scalar values
+  dependencies: [datum]
+  status: implemented
+- name: queryjoin
+  header: include/mulib-queryjoin.h
+  manual: manual/mulib-queryjoin.md
+  macro: MULIB_IMPL_QUERYJOIN
+  purpose: Sorted equi-join pairs over uint64 keys and original row IDs
+  dependencies: []
+  status: implemented
+- name: rangeindex
+  header: include/mulib-rangeindex.h
+  manual: manual/mulib-rangeindex.md
+  macro: MULIB_IMPL_RANGEINDEX
+  purpose: Mutable interval index with exact inclusive point and overlap queries
+  dependencies: []
+  status: implemented
+- name: record
+  header: include/mulib-record.h
+  manual: manual/mulib-record.md
+  macro: MULIB_IMPL_RECORD
+  purpose: Owned named record fields with deep-copied datum values
+  dependencies: [datum]
+  status: implemented
+- name: recordbatch
+  header: include/mulib-recordbatch.h
+  manual: manual/mulib-recordbatch.md
+  macro: MULIB_IMPL_RECORDBATCH
+  purpose: Owned growable batch of deep-copied records
+  dependencies: [record]
+  status: implemented
+- name: rlecol
+  header: include/mulib-rlecol.h
+  manual: manual/mulib-rlecol.md
+  macro: MULIB_IMPL_RLECOL
+  purpose: Run-length encoding of unsigned 64-bit column values
+  dependencies: []
+  status: implemented
+- name: scanvec
+  header: include/mulib-scanvec.h
+  manual: manual/mulib-scanvec.md
+  macro: MULIB_IMPL_SCANVEC
+  purpose: Selection-vector numeric predicates with explicit per-call capacity
+  dependencies: []
+  status: implemented
+- name: semilattice
+  header: include/mulib-semilattice.h
+  manual: manual/mulib-semilattice.md
+  macro: MULIB_IMPL_SEMILATTICE
+  purpose: Grow-only 64-bit-set join/meet semilattice and partial-order tests
+  dependencies: []
+  status: implemented
+- name: semiring
+  header: include/mulib-semiring.h
+  manual: manual/mulib-semiring.md
+  macro: MULIB_IMPL_SEMIRING
+  purpose: Boolean, natural-number and tropical semiring operations
+  dependencies: []
+  status: implemented
+- name: simhash
+  header: include/mulib-simhash.h
+  manual: manual/mulib-simhash.md
+  macro: MULIB_IMPL_SIMHASH
+  purpose: 64-bit weighted SimHash fingerprints and Hamming distance
+  dependencies: []
+  status: implemented
+- name: stopwords
+  header: include/mulib-stopwords.h
+  manual: manual/mulib-stopwords.md
+  macro: MULIB_IMPL_STOPWORDS
+  purpose: Sorted static stopword set lookup for normalized tokens
+  dependencies: []
+  status: implemented
+- name: textanalyzer
+  header: include/mulib-textanalyzer.h
+  manual: manual/mulib-textanalyzer.md
+  macro: MULIB_IMPL_TEXTANALYZER
+  purpose: Chained tokenization with optional stopword removal
+  dependencies: [tokenizer, stopwords]
+  status: implemented
+- name: tfidf
+  header: include/mulib-tfidf.h
+  manual: manual/mulib-tfidf.md
+  macro: MULIB_IMPL_TFIDF
+  purpose: TF-IDF classic and sublinear formulas with log-smoothed IDF
+  dependencies: []
+  status: implemented
+- name: tokenizer
+  header: include/mulib-tokenizer.h
+  manual: manual/mulib-tokenizer.md
+  macro: MULIB_IMPL_TOKENIZER
+  purpose: Length-aware byte tokenizer with ASCII lowercasing into caller-owned buffers
+  dependencies: []
+  status: implemented
+- name: topk
+  header: include/mulib-topk.h
+  manual: manual/mulib-topk.md
+  macro: MULIB_IMPL_TOPK
+  purpose: Stable deterministic top-k selection of scored identifiers
+  dependencies: []
+  status: implemented
+- name: tsv
+  header: include/mulib-tsv.h
+  manual: manual/mulib-tsv.md
+  macro: MULIB_IMPL_TSV
+  purpose: Borrowed tab-separated field iterator preserving empty fields
+  dependencies: []
+  status: implemented
+- name: vectorindex
+  header: include/mulib-vectorindex.h
+  manual: manual/mulib-vectorindex.md
+  macro: MULIB_IMPL_VECTORINDEX
+  purpose: Owned exact Euclidean single-nearest-neighbor index with replaceable finite double vectors
+  dependencies: []
+  status: implemented
+- name: zoneindex
+  header: include/mulib-zoneindex.h
+  manual: manual/mulib-zoneindex.md
+  macro: MULIB_IMPL_ZONEINDEX
+  purpose: Capacity-checked zone-map range pruning over finite per-block numeric min/max
+  dependencies: []
+  status: implemented
+- name: zorder
+  header: include/mulib-zorder.h
+  manual: manual/mulib-zorder.md
+  macro: MULIB_IMPL_ZORDER
+  purpose: Morton Z-order encoding/decoding for 2D unsigned 32-bit coordinates
+  dependencies: []
+  status: implemented
 project_files:
+- file: manual/data-search.md
+  purpose: Ownership, integration and validation guide for data, search and formal-concept modules.
 - file: include/detail/mulib-docir-core.h
   purpose: Managed node provenance, single-owner links, iterative destruction and immutable snapshots.
 - file: include/detail/mulib-docir-validate.h
@@ -10614,3 +10987,129 @@ project_files:
   purpose: "Focused regression suite for test-docir-allocations."
 - file: tests/test-docir-pipeline.c
   purpose: "Focused regression suite for test-docir-pipeline."
+- file: examples/modules/bitpack.c
+  purpose: "Standalone checked usage example for bitpack."
+- file: examples/modules/blockdev.c
+  purpose: "Standalone checked usage example for blockdev."
+- file: examples/modules/bm25.c
+  purpose: "Standalone checked usage example for bm25."
+- file: examples/modules/booleanquery.c
+  purpose: "Standalone checked usage example for booleanquery."
+- file: examples/modules/closeditemset.c
+  purpose: "Standalone checked usage example for closeditemset."
+- file: examples/modules/columnar.c
+  purpose: "Standalone checked usage example for columnar."
+- file: examples/modules/columnstats.c
+  purpose: "Standalone checked usage example for columnstats."
+- file: examples/modules/conceptlattice.c
+  purpose: "Standalone checked usage example for conceptlattice."
+- file: examples/modules/countmin.c
+  purpose: "Standalone checked usage example for countmin."
+- file: examples/modules/datum.c
+  purpose: "Standalone checked usage example for datum."
+- file: examples/modules/deltacodec.c
+  purpose: "Standalone checked usage example for deltacodec."
+- file: examples/modules/docid.c
+  purpose: "Standalone checked usage example for docid."
+- file: examples/modules/encoding.c
+  purpose: "Standalone checked usage example for encoding."
+- file: examples/modules/etl-transform.c
+  purpose: "Standalone checked usage example for etl-transform."
+- file: examples/modules/fca.c
+  purpose: "Standalone checked usage example for fca."
+- file: examples/modules/fuzzyquery.c
+  purpose: "Standalone checked usage example for fuzzyquery."
+- file: examples/modules/galois.c
+  purpose: "Standalone checked usage example for galois."
+- file: examples/modules/geoindex.c
+  purpose: "Standalone checked usage example for geoindex."
+- file: examples/modules/hll.c
+  purpose: "Standalone checked usage example for hll."
+- file: examples/modules/hybridsearch.c
+  purpose: "Standalone checked usage example for hybridsearch."
+- file: examples/modules/ingest-stream.c
+  purpose: "Standalone checked usage example for ingest-stream."
+- file: examples/modules/iterator.c
+  purpose: "Standalone checked usage example for iterator."
+- file: examples/modules/joinfilter.c
+  purpose: "Standalone checked usage example for joinfilter."
+- file: examples/modules/lattice.c
+  purpose: "Standalone checked usage example for lattice."
+- file: examples/modules/latticequery.c
+  purpose: "Standalone checked usage example for latticequery."
+- file: examples/modules/lsh.c
+  purpose: "Standalone checked usage example for lsh."
+- file: examples/modules/matview.c
+  purpose: "Standalone checked usage example for matview."
+- file: examples/modules/minhash.c
+  purpose: "Standalone checked usage example for minhash."
+- file: examples/modules/ndjson.c
+  purpose: "Standalone checked usage example for ndjson."
+- file: examples/modules/nextclosure.c
+  purpose: "Standalone checked usage example for nextclosure."
+- file: examples/modules/phrasequery.c
+  purpose: "Standalone checked usage example for phrasequery."
+- file: examples/modules/positions.c
+  purpose: "Standalone checked usage example for positions."
+- file: examples/modules/postings.c
+  purpose: "Standalone checked usage example for postings."
+- file: examples/modules/queryaggregate.c
+  purpose: "Standalone checked usage example for queryaggregate."
+- file: examples/modules/queryexpr.c
+  purpose: "Standalone checked usage example for queryexpr."
+- file: examples/modules/queryjoin.c
+  purpose: "Standalone checked usage example for queryjoin."
+- file: examples/modules/rangeindex.c
+  purpose: "Standalone checked usage example for rangeindex."
+- file: examples/modules/record.c
+  purpose: "Standalone checked usage example for record."
+- file: examples/modules/recordbatch.c
+  purpose: "Standalone checked usage example for recordbatch."
+- file: examples/modules/rlecol.c
+  purpose: "Standalone checked usage example for rlecol."
+- file: examples/modules/scanvec.c
+  purpose: "Standalone checked usage example for scanvec."
+- file: examples/modules/semilattice.c
+  purpose: "Standalone checked usage example for semilattice."
+- file: examples/modules/semiring.c
+  purpose: "Standalone checked usage example for semiring."
+- file: examples/modules/simhash.c
+  purpose: "Standalone checked usage example for simhash."
+- file: examples/modules/stopwords.c
+  purpose: "Standalone checked usage example for stopwords."
+- file: examples/modules/textanalyzer.c
+  purpose: "Standalone checked usage example for textanalyzer."
+- file: examples/modules/tfidf.c
+  purpose: "Standalone checked usage example for tfidf."
+- file: examples/modules/tokenizer.c
+  purpose: "Standalone checked usage example for tokenizer."
+- file: examples/modules/topk.c
+  purpose: "Standalone checked usage example for topk."
+- file: examples/modules/tsv.c
+  purpose: "Standalone checked usage example for tsv."
+- file: examples/modules/vectorindex.c
+  purpose: "Standalone checked usage example for vectorindex."
+- file: examples/modules/zoneindex.c
+  purpose: "Standalone checked usage example for zoneindex."
+- file: examples/modules/zorder.c
+  purpose: "Standalone checked usage example for zorder."
+- file: tests/test_data_alloc.c
+  purpose: "Focused regression suite for test_data_alloc."
+- file: tests/test_data_codecs.c
+  purpose: "Focused regression suite for test_data_codecs."
+- file: tests/test_data_columns.c
+  purpose: "Focused regression suite for test_data_columns."
+- file: tests/test_data_indexes.c
+  purpose: "Focused regression suite for test_data_indexes."
+- file: tests/test_data_lattices.c
+  purpose: "Focused regression suite for test_data_lattices."
+- file: tests/test_data_patches.c
+  purpose: "Focused regression suite for test_data_patches."
+- file: tests/test_data_records.c
+  purpose: "Focused regression suite for test_data_records."
+- file: tests/test_data_search.c
+  purpose: "Focused regression suite for test_data_search."
+- file: tests/test_data_sketches.c
+  purpose: "Focused regression suite for test_data_sketches."
+- file: tests/test_data_text.c
+  purpose: "Focused regression suite for test_data_text."

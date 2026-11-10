@@ -1,6 +1,6 @@
 # MuLIB
 
-MuLIB is a modular C11 utility library with **968 registered modules**, from
+MuLIB is a modular C11 utility library with **1021 registered modules**, from
 containers and parsers to compiler tooling, graphics, networking, and virtual
 machines. Choose the modules you need and compile their implementations into
 your application.

@@ -1,10 +1,10 @@
-# mulib-scrape-schema: Schema-level required string validation for extracted fields.
+# mulib-scrape-schema: String, integer, real and boolean field validation.
 
 [MuLIB repository](https://github.com/Chubek/mulib)
 
 ## Scope
 
-Schema-level required string validation for extracted fields. The implementation is deliberately bounded and is not a replacement for a complete browser standards implementation. The provided functions are implemented, not placeholders. This module does not silently provide unrelated browser services.
+Validate extracted scalar fields without allocating storage.
 
 ## Integration
 
@@ -28,6 +28,49 @@ int mulib_scrape_schema_string(const char *value,int required,size_t max_bytes);
 ## Safety and ownership
 
 Returns 1 when byte length excluding NUL fits `max_bytes` and a required string is nonempty. Optional NULL is valid; required NULL/empty is invalid. Empty optional strings fit a zero limit. Whitespace-only strings are nonempty; no trimming, Unicode/code-point counting, type coercion or schema traversal occurs. No allocation or output mutation.
+
+Integer parses decimal with `strtoll`; real parses with `strtod`. Both require
+complete consumption and inclusive ordered bounds, reject ERANGE, and return
+1 on success or 0 on failure without changing optional output. Real bounds and
+results must be finite. Leading C-locale whitespace/signs are accepted; trailing
+whitespace/junk is rejected. Real syntax and decimal separator follow the active
+C locale (including hexadecimal float syntax). Boolean accepts exactly `true`,
+`false`, `1`, or `0`. Inputs are NUL-terminated. Regression:
+`tests/test_data_patches.c`.
+
+<!-- manual-interface -->
+## Public header reference
+
+Verbatim declaration section from [`include/mulib-scrape-schema.h`](../include/mulib-scrape-schema.h).
+Include the header in application code; dependency types come from its includes.
+
+<details>
+<summary>Types, constants, and declarations</summary>
+
+```c
+/* MuLIB scrape-schema: patched string, integer, real and boolean validation. */
+#ifndef MULIB_SCRAPE_SCHEMA_H
+#define MULIB_SCRAPE_SCHEMA_H
+#include <stddef.h>
+#include <stdint.h>
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+  int mulib_scrape_schema_string (const char *value, int required, size_t max_bytes);
+  int mulib_scrape_schema_integer (const char *value, int64_t min_value,
+                                   int64_t max_value, int64_t *parsed);
+  int mulib_scrape_schema_real (const char *value, double min_value, double max_value,
+                                double *parsed);
+  int mulib_scrape_schema_boolean (const char *value, int *parsed);
+#ifdef __cplusplus
+}
+#endif
+#endif
+```
+
+</details>
+<!-- /manual-interface -->
 
 ## Limitations
 

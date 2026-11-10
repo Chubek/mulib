@@ -5,13 +5,20 @@
 Binary terms map to unique ascending uint64 document-ID postings. Zero initialize.
 `add` copies a posting idempotently; `at` decodes by sorted position; `remove`
 removes a single posting. Empty/NUL terms and document ID zero are supported.
-No tokenization, normalization, ranking, position lists or automatic intersection.
+No tokenization, normalization, ranking or position lists are performed.
 
 Returns 0 success, 1 absent/out-of-range, negative invalid/allocation errors.
 Edits copy posting bytes before publication, so failure preserves the index.
 Empty posting lists remain interned. `free` releases/reset all owned data.
 Switches: `MULIB_IMPL_INVINDEX`, `MULIB_IMPL_MEMTABLE`, `MULIB_IMPL_BUFFER`,
 `MULIB_IMPL_BYCUTILS`. Example: `examples/modules/invindex.c`.
+
+`count` returns posting count, zero for absent terms, SIZE_MAX for invalid input
+or malformed posting bytes. `intersect` emits ascending unique IDs shared by
+two terms. Capacity must hold all matches; invalid input/insufficient capacity
+returns SIZE_MAX without output mutation. Both inputs may name the same term.
+Output storage must not overlap index storage. Two merge passes perform term
+lookups while walking postings. Regression: `tests/test_data_patches.c`.
 
 <!-- manual-interface -->
 ## Public header reference
@@ -24,8 +31,8 @@ Include the header in application code; dependency types come from its includes.
 
 ```c
 /** @file mulib-invindex.h
- * @brief Binary term to sorted unique uint64 posting lists over memtable
- * storage. Define MULIB_IMPL_INVINDEX plus MEMTABLE, BUFFER and BYCUTILS. */
+ * @brief Patched owned sorted document postings with count and AND-intersection.
+ * Define MULIB_IMPL_INVINDEX plus MEMTABLE, BUFFER, BYCUTILS. */
 #ifndef MULIB_INVINDEX_H
 #define MULIB_INVINDEX_H
 #include "mulib-memtable.h"
@@ -37,19 +44,21 @@ extern "C"
   {
     mulib_memtable_t terms;
   } mulib_invindex_t;
-  /** @brief Zero init. Add a posting idempotently; 0 success, negative error.
-   */
   int mulib_invindex_add (mulib_invindex_t *t, const void *term, size_t size,
-                          uint64_t document);
-  /** @brief Enumerate one posting by ascending index; 0 found, 1
-   * absent/out-of-range. */
-  int mulib_invindex_at (const mulib_invindex_t *t, const void *term,
-                         size_t size, size_t index, uint64_t *document);
-  /** @brief Remove posting; 0 removed, 1 absent, negative error. */
-  int mulib_invindex_remove (mulib_invindex_t *t, const void *term,
-                             size_t size, uint64_t document);
-  /** @brief Release/reset all terms/postings. */
+                          uint64_t doc);
+  int mulib_invindex_at (const mulib_invindex_t *t, const void *term, size_t size,
+                         size_t index, uint64_t *doc);
+  int mulib_invindex_remove (mulib_invindex_t *t, const void *term, size_t size,
+                             uint64_t doc);
   void mulib_invindex_free (mulib_invindex_t *t);
+  /* New: number of postings; returns SIZE_MAX on error, zero when absent. */
+  size_t mulib_invindex_count (const mulib_invindex_t *t, const void *term,
+                               size_t size);
+  /* New: document-ID intersection of two terms; returns SIZE_MAX on error or
+   * inadequate capacity. On success out is ascending unique IDs. */
+  size_t mulib_invindex_intersect (const mulib_invindex_t *t, const void *a, size_t an,
+                                   const void *b, size_t bn, uint64_t *out,
+                                   size_t capacity);
 #ifdef __cplusplus
 }
 #endif

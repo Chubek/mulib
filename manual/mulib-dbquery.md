@@ -13,6 +13,12 @@ means invalid arguments. No expression planner or secondary-index selection.
 Switches: `MULIB_IMPL_DBQUERY`, `MULIB_IMPL_MEMTABLE`.
 Example: `examples/modules/dbquery.c`.
 
+`scan_where` additionally accepts a predicate and separate predicate/visit
+contexts. NULL predicate accepts all live records; zero skips, nonzero accepts.
+The limit counts accepted visits, not examined records. Tombstones never reach
+either callback. Predicates must not mutate the table. Work is O(log n + scanned
+records), with no allocation. Regression: `tests/test_data_patches.c`.
+
 <!-- manual-interface -->
 ## Public header reference
 
@@ -24,8 +30,8 @@ Include the header in application code; dependency types come from its includes.
 
 ```c
 /** @file mulib-dbquery.h
- * @brief Ordered half-open binary key scans over live memtable records.
- * Define MULIB_IMPL_DBQUERY and MULIB_IMPL_MEMTABLE. */
+ * @brief Patched ordered binary key scans with optional predicate pushdown.
+ * Define MULIB_IMPL_DBQUERY and MULIB_IMPL_MEMTABLE in one translation unit. */
 #ifndef MULIB_DBQUERY_H
 #define MULIB_DBQUERY_H
 #include "mulib-memtable.h"
@@ -33,17 +39,19 @@ Include the header in application code; dependency types come from its includes.
 extern "C"
 {
 #endif
-  /** @brief Callback borrows record; nonzero continues, zero stops. Never
-   * mutate table. */
-  typedef int (*mulib_dbquery_visit_fn) (const mulib_memtable_record_t *,
-                                         void *);
-  /** @brief Scan [low,high), skipping tombstones. NULL high means no upper
-   * bound; NULL low with size zero is the empty key. limit=0 visits none.
-   * Count includes the stopping callback. Invalid input returns SIZE_MAX. */
-  size_t mulib_dbquery_scan (const mulib_memtable_t *t, const void *low,
-                             size_t ln, const void *high, size_t hn,
-                             size_t limit, mulib_dbquery_visit_fn visit,
-                             void *context);
+  typedef int (*mulib_dbquery_visit_fn) (const mulib_memtable_record_t *, void *);
+  typedef int (*mulib_dbquery_predicate_fn) (const mulib_memtable_record_t *, void *);
+  size_t mulib_dbquery_scan (const mulib_memtable_t *table, const void *low,
+                             size_t low_bytes, const void *high, size_t high_bytes,
+                             size_t limit, mulib_dbquery_visit_fn visit, void *context);
+  /* Predicate skips when it returns zero; NULL predicate accepts all nondeleted.
+   * Count includes stopping visit. Does not mutate table. */
+  size_t mulib_dbquery_scan_where (const mulib_memtable_t *table, const void *low,
+                                   size_t low_bytes, const void *high,
+                                   size_t high_bytes, size_t limit,
+                                   mulib_dbquery_predicate_fn predicate,
+                                   void *pred_context, mulib_dbquery_visit_fn visit,
+                                   void *visit_context);
 #ifdef __cplusplus
 }
 #endif

@@ -3,6 +3,12 @@
 #include "mulib-dbquery.h"
 #include <assert.h>
 static int
+accept (const mulib_memtable_record_t *r, void *ctx)
+{
+  (void)ctx;
+  return r->value_size == 1 && r->value[0] == 'v';
+}
+static int
 visit (const mulib_memtable_record_t *r, void *ctx)
 {
   (void)r;
@@ -17,6 +23,10 @@ main (void)
   assert (!mulib_memtable_put (&t, "k", 1, "v", 1, 1, 0));
   assert (mulib_dbquery_scan (&t, NULL, 0, NULL, 0, 10, visit, &count) == 1
           && count == 1);
+  assert (
+      mulib_dbquery_scan_where (&t, NULL, 0, NULL, 0, 10, accept, NULL, visit, &count)
+          == 1
+      && count == 2);
   mulib_memtable_free (&t);
   return 0;
 }

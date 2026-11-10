@@ -49,14 +49,18 @@
 #define MULIB_IMPL_BINFILEWRITER
 #define MULIB_IMPL_BIOS
 #define MULIB_IMPL_BITMAP
+#define MULIB_IMPL_BITPACK
 #define MULIB_IMPL_BITSET
 #define MULIB_IMPL_BITTORRENT
 #define MULIB_IMPL_BKTREE
 #define MULIB_IMPL_BK_TREES
 #define MULIB_IMPL_BLOCKCACHE
+#define MULIB_IMPL_BLOCKDEV
 #define MULIB_IMPL_BLOCKIDX
 #define MULIB_IMPL_BLOOM
+#define MULIB_IMPL_BM25
 #define MULIB_IMPL_BOOKNAV
+#define MULIB_IMPL_BOOLEANQUERY
 #define MULIB_IMPL_BOOTMGR
 #define MULIB_IMPL_BOUNDS
 #define MULIB_IMPL_BPF_KERNEL
@@ -89,6 +93,7 @@
 #define MULIB_IMPL_CLAMP
 #define MULIB_IMPL_CLASSIC_BPF
 #define MULIB_IMPL_CLICKIR
+#define MULIB_IMPL_CLOSEDITEMSET
 #define MULIB_IMPL_CMACHINE
 #define MULIB_IMPL_CODEC_CORE
 #define MULIB_IMPL_COFF
@@ -100,11 +105,14 @@
 #define MULIB_IMPL_COLORCONVERT
 #define MULIB_IMPL_COLORMODEL
 #define MULIB_IMPL_COLORPROFILE
+#define MULIB_IMPL_COLUMNAR
+#define MULIB_IMPL_COLUMNSTATS
 #define MULIB_IMPL_COLUMN_RDBMS
 #define MULIB_IMPL_COMPETPRICE
 #define MULIB_IMPL_COMPLEX
 #define MULIB_IMPL_COMPRESSION
 #define MULIB_IMPL_CONAINERD_IPC
+#define MULIB_IMPL_CONCEPTLATTICE
 #define MULIB_IMPL_CONCURRENCY_PRIM
 #define MULIB_IMPL_CONDITIONAL_PROBABLITY
 #define MULIB_IMPL_CONFUSE
@@ -141,6 +149,7 @@
 #define MULIB_IMPL_COOKIEJAR
 #define MULIB_IMPL_CORPUS
 #define MULIB_IMPL_COSINE_SIMILARITY
+#define MULIB_IMPL_COUNTMIN
 #define MULIB_IMPL_COWBPTREE
 #define MULIB_IMPL_CPIO
 #define MULIB_IMPL_CRAWLQUEUE
@@ -156,6 +165,7 @@
 #define MULIB_IMPL_DATAGRAM
 #define MULIB_IMPL_DATALOG
 #define MULIB_IMPL_DATE
+#define MULIB_IMPL_DATUM
 #define MULIB_IMPL_DBDESIALIZER
 #define MULIB_IMPL_DBINDEX
 #define MULIB_IMPL_DBQUERY
@@ -169,6 +179,7 @@
 #define MULIB_IMPL_DBUS_PROPERTIES
 #define MULIB_IMPL_DBUS_TRANSPORT
 #define MULIB_IMPL_DEFLATE
+#define MULIB_IMPL_DELTACODEC
 #define MULIB_IMPL_DEPIR
 #define MULIB_IMPL_DEQUE
 #define MULIB_IMPL_DESCRITORS
@@ -190,6 +201,7 @@
 #define MULIB_IMPL_DNSRESOLVER
 #define MULIB_IMPL_DNS_MANAGER
 #define MULIB_IMPL_DOCDIFF
+#define MULIB_IMPL_DOCID
 #define MULIB_IMPL_DOCINCREMENTAL
 #define MULIB_IMPL_DOCIR
 #define MULIB_IMPL_DOCLENGTH
@@ -253,6 +265,7 @@
 #define MULIB_IMPL_ELF_OBJDUMP
 #define MULIB_IMPL_EMBEDDINGSDB
 #define MULIB_IMPL_EMITTER
+#define MULIB_IMPL_ENCODING
 #define MULIB_IMPL_ENDIAN
 #define MULIB_IMPL_ENV
 #define MULIB_IMPL_EPOLL
@@ -265,6 +278,7 @@
 #define MULIB_IMPL_ETHTOOL_MODULE
 #define MULIB_IMPL_ETHTOOL_NETLINK
 #define MULIB_IMPL_ETHTOOL_STATS
+#define MULIB_IMPL_ETL_TRANSFORM
 #define MULIB_IMPL_EUCLIDEAN_DISTANCE
 #define MULIB_IMPL_EVENTFD
 #define MULIB_IMPL_EVTLISTENER
@@ -273,6 +287,7 @@
 #define MULIB_IMPL_EXEC
 #define MULIB_IMPL_EZJNI
 #define MULIB_IMPL_EZNDK
+#define MULIB_IMPL_FCA
 #define MULIB_IMPL_FFT
 #define MULIB_IMPL_FIBER
 #define MULIB_IMPL_FIELD_POISSON
@@ -313,6 +328,9 @@
 #define MULIB_IMPL_FTPCLIENT
 #define MULIB_IMPL_FTPSERVER
 #define MULIB_IMPL_FUSE
+#define MULIB_IMPL_FUZZYQUERY
+#define MULIB_IMPL_GALOIS
+#define MULIB_IMPL_GEOINDEX
 #define MULIB_IMPL_GEOMETRY
 #define MULIB_IMPL_GEOSOLVE
 #define MULIB_IMPL_GETADDR
@@ -344,6 +362,7 @@
 #define MULIB_IMPL_HIDDEN_MARKOV_CHAIN
 #define MULIB_IMPL_HISTOGRAM
 #define MULIB_IMPL_HISTPRICE
+#define MULIB_IMPL_HLL
 #define MULIB_IMPL_HLS_SCHEDULE
 #define MULIB_IMPL_HTML
 #define MULIB_IMPL_HTMLWRITER
@@ -359,6 +378,7 @@
 #define MULIB_IMPL_HWIL_TYPES
 #define MULIB_IMPL_HWIL_VERIFY
 #define MULIB_IMPL_HWINFO
+#define MULIB_IMPL_HYBRIDSEARCH
 #define MULIB_IMPL_HYPHEN
 #define MULIB_IMPL_ICMP
 #define MULIB_IMPL_IFFT
@@ -382,6 +402,7 @@
 #define MULIB_IMPL_INET4
 #define MULIB_IMPL_INET6
 #define MULIB_IMPL_INET_DIAG
+#define MULIB_IMPL_INGEST_STREAM
 #define MULIB_IMPL_INI
 #define MULIB_IMPL_INITPROC
 #define MULIB_IMPL_INITSYS
@@ -396,9 +417,11 @@
 #define MULIB_IMPL_IPV6_RA
 #define MULIB_IMPL_ISCHED
 #define MULIB_IMPL_ISEL
+#define MULIB_IMPL_ITERATOR
 #define MULIB_IMPL_IWD_CLIENT
 #define MULIB_IMPL_JACCARD_SIMILARITY
 #define MULIB_IMPL_JIT
+#define MULIB_IMPL_JOINFILTER
 #define MULIB_IMPL_JSON
 #define MULIB_IMPL_JVM
 #define MULIB_IMPL_KEYREMAP
@@ -409,6 +432,8 @@
 #define MULIB_IMPL_KVMCONTAINER
 #define MULIB_IMPL_LATEX
 #define MULIB_IMPL_LATEXWRITER
+#define MULIB_IMPL_LATTICE
+#define MULIB_IMPL_LATTICEQUERY
 #define MULIB_IMPL_LAYOUT
 #define MULIB_IMPL_LAYOUTML
 #define MULIB_IMPL_LAZYSTREAM
@@ -427,6 +452,7 @@
 #define MULIB_IMPL_LOCALE
 #define MULIB_IMPL_LOGGER
 #define MULIB_IMPL_LOWOPT
+#define MULIB_IMPL_LSH
 #define MULIB_IMPL_LSMTREE
 #define MULIB_IMPL_LZF
 #define MULIB_IMPL_LZIP
@@ -463,6 +489,7 @@
 #define MULIB_IMPL_MATHSPACING
 #define MULIB_IMPL_MATHSPEECH
 #define MULIB_IMPL_MATRIX
+#define MULIB_IMPL_MATVIEW
 #define MULIB_IMPL_MCU
 #define MULIB_IMPL_MEMPOOL
 #define MULIB_IMPL_MEMTABLE
@@ -478,6 +505,7 @@
 #define MULIB_IMPL_MICROTYPE
 #define MULIB_IMPL_MIDI
 #define MULIB_IMPL_MIME
+#define MULIB_IMPL_MINHASH
 #define MULIB_IMPL_MINICURL
 #define MULIB_IMPL_MINIFLAC
 #define MULIB_IMPL_MINIMPEG
@@ -507,6 +535,7 @@
 #define MULIB_IMPL_MUNE
 #define MULIB_IMPL_MUSICNOTATION
 #define MULIB_IMPL_NAMESERVER
+#define MULIB_IMPL_NDJSON
 #define MULIB_IMPL_NETDEVICE
 #define MULIB_IMPL_NETFILTER_LOG
 #define MULIB_IMPL_NETFILTER_QUEUE
@@ -527,6 +556,7 @@
 #define MULIB_IMPL_NET_RECONCILE
 #define MULIB_IMPL_NET_STATE
 #define MULIB_IMPL_NET_STATS
+#define MULIB_IMPL_NEXTCLOSURE
 #define MULIB_IMPL_NFNETLINK
 #define MULIB_IMPL_NFTABLES
 #define MULIB_IMPL_NL80211
@@ -636,12 +666,15 @@
 #define MULIB_IMPL_PE_OBJDUMP
 #define MULIB_IMPL_PGLAYOUT
 #define MULIB_IMPL_PHONETIC_UTILS
+#define MULIB_IMPL_PHRASEQUERY
 #define MULIB_IMPL_PIPELINE
 #define MULIB_IMPL_PLOT2D
 #define MULIB_IMPL_POLKIT_CLIENT
 #define MULIB_IMPL_POLYTASK
 #define MULIB_IMPL_POPCOUNT
 #define MULIB_IMPL_PORT
+#define MULIB_IMPL_POSITIONS
+#define MULIB_IMPL_POSTINGS
 #define MULIB_IMPL_PRICEOPT
 #define MULIB_IMPL_PRIME
 #define MULIB_IMPL_PROBABILITY
@@ -654,11 +687,17 @@
 #define MULIB_IMPL_PYBIND
 #define MULIB_IMPL_QA_CORPUS
 #define MULIB_IMPL_QA_REPRO
+#define MULIB_IMPL_QUERYAGGREGATE
+#define MULIB_IMPL_QUERYEXPR
+#define MULIB_IMPL_QUERYJOIN
 #define MULIB_IMPL_QUEUE
 #define MULIB_IMPL_QUIC
+#define MULIB_IMPL_RANGEINDEX
 #define MULIB_IMPL_RATE_LIMIT
 #define MULIB_IMPL_RAYTRACING
 #define MULIB_IMPL_READLINE
+#define MULIB_IMPL_RECORD
+#define MULIB_IMPL_RECORDBATCH
 #define MULIB_IMPL_REDIRECT
 #define MULIB_IMPL_REGEX
 #define MULIB_IMPL_REPLACE
@@ -672,6 +711,7 @@
 #define MULIB_IMPL_RING
 #define MULIB_IMPL_RISCV64
 #define MULIB_IMPL_RLE
+#define MULIB_IMPL_RLECOL
 #define MULIB_IMPL_RNG
 #define MULIB_IMPL_ROBOTS
 #define MULIB_IMPL_ROMAN
@@ -697,6 +737,7 @@
 #define MULIB_IMPL_RTNL_VRF
 #define MULIB_IMPL_RUBYBIND
 #define MULIB_IMPL_SAT
+#define MULIB_IMPL_SCANVEC
 #define MULIB_IMPL_SCHEDUTILS
 #define MULIB_IMPL_SCRAPE
 #define MULIB_IMPL_SCRAPE_METADATA
@@ -711,6 +752,8 @@
 #define MULIB_IMPL_SEARCH_SESSION
 #define MULIB_IMPL_SECURITY
 #define MULIB_IMPL_SELECT
+#define MULIB_IMPL_SEMILATTICE
+#define MULIB_IMPL_SEMIRING
 #define MULIB_IMPL_SEMVER
 #define MULIB_IMPL_SET
 #define MULIB_IMPL_SEURITY
@@ -723,6 +766,7 @@
 #define MULIB_IMPL_SHOEBOX_CONTRACT
 #define MULIB_IMPL_SIGNAL
 #define MULIB_IMPL_SIMDMATH
+#define MULIB_IMPL_SIMHASH
 #define MULIB_IMPL_SITEMAP
 #define MULIB_IMPL_SMT
 #define MULIB_IMPL_SMTPCLIENT
@@ -759,6 +803,7 @@
 #define MULIB_IMPL_STATS
 #define MULIB_IMPL_STATSPRICE
 #define MULIB_IMPL_STATSPROC
+#define MULIB_IMPL_STOPWORDS
 #define MULIB_IMPL_STRBUF
 #define MULIB_IMPL_STRPOOL
 #define MULIB_IMPL_STYLESHEET
@@ -820,19 +865,24 @@
 #define MULIB_IMPL_TEXSCOPE
 #define MULIB_IMPL_TEXSHIPOUT
 #define MULIB_IMPL_TEXT
+#define MULIB_IMPL_TEXTANALYZER
 #define MULIB_IMPL_TEXTITEMIZE
 #define MULIB_IMPL_TEXTRACE
 #define MULIB_IMPL_TEXVALUE
 #define MULIB_IMPL_TEXVLIST
+#define MULIB_IMPL_TFIDF
 #define MULIB_IMPL_TIMER
 #define MULIB_IMPL_TIMERFD
 #define MULIB_IMPL_TOC
+#define MULIB_IMPL_TOKENIZER
 #define MULIB_IMPL_TOML
+#define MULIB_IMPL_TOPK
 #define MULIB_IMPL_TRACEPATH
 #define MULIB_IMPL_TREE_PARSING
 #define MULIB_IMPL_TRIE
 #define MULIB_IMPL_TRIE_TRAVERSAL
 #define MULIB_IMPL_TSL
+#define MULIB_IMPL_TSV
 #define MULIB_IMPL_TTF
 #define MULIB_IMPL_TUI
 #define MULIB_IMPL_TUNNEL
@@ -901,6 +951,7 @@
 #define MULIB_IMPL_VEC
 #define MULIB_IMPL_VECTGFX
 #define MULIB_IMPL_VECTOR
+#define MULIB_IMPL_VECTORINDEX
 #define MULIB_IMPL_VECTORPATH
 #define MULIB_IMPL_VERTTEXT
 #define MULIB_IMPL_VFS
@@ -969,6 +1020,8 @@
 #define MULIB_IMPL_YAML
 #define MULIB_IMPL_YANTLR
 #define MULIB_IMPL_ZIP
+#define MULIB_IMPL_ZONEINDEX
+#define MULIB_IMPL_ZORDER
 #define MULIB_IMPL_ZSTD
 #include "mulib-2dgeom.h"
 #include "mulib-aarch64.h"
@@ -1021,14 +1074,18 @@
 #include "mulib-binfilewriter.h"
 #include "mulib-bios.h"
 #include "mulib-bitmap.h"
+#include "mulib-bitpack.h"
 #include "mulib-bitset.h"
 #include "mulib-bittorrent.h"
 #include "mulib-bk-trees.h"
 #include "mulib-bktree.h"
 #include "mulib-blockcache.h"
+#include "mulib-blockdev.h"
 #include "mulib-blockidx.h"
 #include "mulib-bloom.h"
+#include "mulib-bm25.h"
 #include "mulib-booknav.h"
+#include "mulib-booleanquery.h"
 #include "mulib-bootmgr.h"
 #include "mulib-bounds.h"
 #include "mulib-bpf-kernel.h"
@@ -1060,6 +1117,7 @@
 #include "mulib-clamp.h"
 #include "mulib-classic-bpf.h"
 #include "mulib-clickir.h"
+#include "mulib-closeditemset.h"
 #include "mulib-cmachine.h"
 #include "mulib-codec-core.h"
 #include "mulib-coff-objdump.h"
@@ -1072,10 +1130,13 @@
 #include "mulib-colormodel.h"
 #include "mulib-colorprofile.h"
 #include "mulib-column-rdbms.h"
+#include "mulib-columnar.h"
+#include "mulib-columnstats.h"
 #include "mulib-competprice.h"
 #include "mulib-complex.h"
 #include "mulib-compression.h"
 #include "mulib-conainerd-ipc.h"
+#include "mulib-conceptlattice.h"
 #include "mulib-concurrency-prim.h"
 #include "mulib-conditional_probablity.h"
 #include "mulib-confuse.h"
@@ -1113,6 +1174,7 @@
 #include "mulib-cookiejar.h"
 #include "mulib-corpus.h"
 #include "mulib-cosine_similarity.h"
+#include "mulib-countmin.h"
 #include "mulib-cowb+tree.h"
 #include "mulib-cpio.h"
 #include "mulib-crawlqueue.h"
@@ -1128,6 +1190,7 @@
 #include "mulib-datagram.h"
 #include "mulib-datalog.h"
 #include "mulib-date.h"
+#include "mulib-datum.h"
 #include "mulib-dbdesializer.h"
 #include "mulib-dbindex.h"
 #include "mulib-dbquery.h"
@@ -1141,6 +1204,7 @@
 #include "mulib-dbus-transport.h"
 #include "mulib-dbus.h"
 #include "mulib-deflate.h"
+#include "mulib-deltacodec.h"
 #include "mulib-depir.h"
 #include "mulib-deque.h"
 #include "mulib-descritors.h"
@@ -1162,6 +1226,7 @@
 #include "mulib-dnsnmeserver.h"
 #include "mulib-dnsresolver.h"
 #include "mulib-docdiff.h"
+#include "mulib-docid.h"
 #include "mulib-docincremental.h"
 #include "mulib-docir.h"
 #include "mulib-doclength.h"
@@ -1225,6 +1290,7 @@
 #include "mulib-elfutils.h"
 #include "mulib-embeddingsdb.h"
 #include "mulib-emitter.h"
+#include "mulib-encoding.h"
 #include "mulib-endian.h"
 #include "mulib-env.h"
 #include "mulib-epoll.h"
@@ -1237,6 +1303,7 @@
 #include "mulib-ethtool-module.h"
 #include "mulib-ethtool-netlink.h"
 #include "mulib-ethtool-stats.h"
+#include "mulib-etl-transform.h"
 #include "mulib-euclidean_distance.h"
 #include "mulib-eventfd.h"
 #include "mulib-evtlistener.h"
@@ -1245,6 +1312,7 @@
 #include "mulib-exec.h"
 #include "mulib-ezjni.h"
 #include "mulib-ezndk.h"
+#include "mulib-fca.h"
 #include "mulib-fft.h"
 #include "mulib-fiber.h"
 #include "mulib-field-poisson.h"
@@ -1284,6 +1352,9 @@
 #include "mulib-ftpclient.h"
 #include "mulib-ftpserver.h"
 #include "mulib-fuse.h"
+#include "mulib-fuzzyquery.h"
+#include "mulib-galois.h"
+#include "mulib-geoindex.h"
 #include "mulib-geometry.h"
 #include "mulib-geosolve.h"
 #include "mulib-getaddr.h"
@@ -1315,6 +1386,7 @@
 #include "mulib-hidden_markov_chain.h"
 #include "mulib-histogram.h"
 #include "mulib-histprice.h"
+#include "mulib-hll.h"
 #include "mulib-hls-schedule.h"
 #include "mulib-html.h"
 #include "mulib-htmlwriter.h"
@@ -1330,6 +1402,7 @@
 #include "mulib-hwil-types.h"
 #include "mulib-hwil-verify.h"
 #include "mulib-hwinfo.h"
+#include "mulib-hybridsearch.h"
 #include "mulib-hyphen.h"
 #include "mulib-icmp.h"
 #include "mulib-ifft.h"
@@ -1353,6 +1426,7 @@
 #include "mulib-inet-diag.h"
 #include "mulib-inet4.h"
 #include "mulib-inet6.h"
+#include "mulib-ingest-stream.h"
 #include "mulib-ini.h"
 #include "mulib-initproc.h"
 #include "mulib-initsys.h"
@@ -1367,9 +1441,11 @@
 #include "mulib-ipv6-ra.h"
 #include "mulib-isched.h"
 #include "mulib-isel.h"
+#include "mulib-iterator.h"
 #include "mulib-iwd-client.h"
 #include "mulib-jaccard_similarity.h"
 #include "mulib-jit.h"
+#include "mulib-joinfilter.h"
 #include "mulib-json.h"
 #include "mulib-jvm.h"
 #include "mulib-keyremap.h"
@@ -1380,6 +1456,8 @@
 #include "mulib-kvmcontainer.h"
 #include "mulib-latex.h"
 #include "mulib-latexwriter.h"
+#include "mulib-lattice.h"
+#include "mulib-latticequery.h"
 #include "mulib-layout.h"
 #include "mulib-layoutml.h"
 #include "mulib-lazystream.h"
@@ -1399,6 +1477,7 @@
 #include "mulib-logger.h"
 #include "mulib-lowopt.h"
 #include "mulib-lprowse.h"
+#include "mulib-lsh.h"
 #include "mulib-lsmtree.h"
 #include "mulib-lzf.h"
 #include "mulib-lzip.h"
@@ -1435,6 +1514,7 @@
 #include "mulib-mathspacing.h"
 #include "mulib-mathspeech.h"
 #include "mulib-matrix.h"
+#include "mulib-matview.h"
 #include "mulib-mcu.h"
 #include "mulib-mempool.h"
 #include "mulib-memtable.h"
@@ -1450,6 +1530,7 @@
 #include "mulib-microtype.h"
 #include "mulib-midi.h"
 #include "mulib-mime.h"
+#include "mulib-minhash.h"
 #include "mulib-minicurl.h"
 #include "mulib-miniflac.h"
 #include "mulib-minimpeg.h"
@@ -1480,6 +1561,7 @@
 #include "mulib-musicnotation.h"
 #include "mulib-n-grams.h"
 #include "mulib-nameserver.h"
+#include "mulib-ndjson.h"
 #include "mulib-net-cap.h"
 #include "mulib-net-cli-format.h"
 #include "mulib-net-monitor.h"
@@ -1500,6 +1582,7 @@
 #include "mulib-netns.h"
 #include "mulib-netpolicy.h"
 #include "mulib-networkd-client.h"
+#include "mulib-nextclosure.h"
 #include "mulib-nfnetlink.h"
 #include "mulib-nftables.h"
 #include "mulib-nl80211.h"
@@ -1607,12 +1690,15 @@
 #include "mulib-peutils.h"
 #include "mulib-pglayout.h"
 #include "mulib-phonetic_utils.h"
+#include "mulib-phrasequery.h"
 #include "mulib-pipeline.h"
 #include "mulib-plot2d.h"
 #include "mulib-polkit-client.h"
 #include "mulib-polytask.h"
 #include "mulib-popcount.h"
 #include "mulib-port.h"
+#include "mulib-positions.h"
+#include "mulib-postings.h"
 #include "mulib-priceopt.h"
 #include "mulib-prime.h"
 #include "mulib-probability.h"
@@ -1625,12 +1711,18 @@
 #include "mulib-pybind.h"
 #include "mulib-qa-corpus.h"
 #include "mulib-qa-repro.h"
+#include "mulib-queryaggregate.h"
+#include "mulib-queryexpr.h"
+#include "mulib-queryjoin.h"
 #include "mulib-queue.h"
 #include "mulib-quic.h"
 #include "mulib-qvm.h"
+#include "mulib-rangeindex.h"
 #include "mulib-rate_limit.h"
 #include "mulib-raytracing.h"
 #include "mulib-readline.h"
+#include "mulib-record.h"
+#include "mulib-recordbatch.h"
 #include "mulib-redirect.h"
 #include "mulib-regex.h"
 #include "mulib-replace.h"
@@ -1644,6 +1736,7 @@
 #include "mulib-ring.h"
 #include "mulib-riscv64.h"
 #include "mulib-rle.h"
+#include "mulib-rlecol.h"
 #include "mulib-rng.h"
 #include "mulib-robots.h"
 #include "mulib-roman.h"
@@ -1669,6 +1762,7 @@
 #include "mulib-rtnl.h"
 #include "mulib-rubybind.h"
 #include "mulib-sat.h"
+#include "mulib-scanvec.h"
 #include "mulib-schedutils.h"
 #include "mulib-scrape-metadata.h"
 #include "mulib-scrape-readable.h"
@@ -1682,6 +1776,8 @@
 #include "mulib-search-session.h"
 #include "mulib-search.h"
 #include "mulib-select.h"
+#include "mulib-semilattice.h"
+#include "mulib-semiring.h"
 #include "mulib-semver.h"
 #include "mulib-set.h"
 #include "mulib-seurity.h"
@@ -1694,6 +1790,7 @@
 #include "mulib-shoebox-contract.h"
 #include "mulib-signal.h"
 #include "mulib-simdmath.h"
+#include "mulib-simhash.h"
 #include "mulib-sitemap.h"
 #include "mulib-smt.h"
 #include "mulib-smtpclient.h"
@@ -1730,6 +1827,7 @@
 #include "mulib-stats.h"
 #include "mulib-statsprice.h"
 #include "mulib-statsproc.h"
+#include "mulib-stopwords.h"
 #include "mulib-strbuf.h"
 #include "mulib-strpool.h"
 #include "mulib-stylesheet.h"
@@ -1791,19 +1889,24 @@
 #include "mulib-texscope.h"
 #include "mulib-texshipout.h"
 #include "mulib-text.h"
+#include "mulib-textanalyzer.h"
 #include "mulib-textitemize.h"
 #include "mulib-textrace.h"
 #include "mulib-texvalue.h"
 #include "mulib-texvlist.h"
+#include "mulib-tfidf.h"
 #include "mulib-timer.h"
 #include "mulib-timerfd.h"
 #include "mulib-toc.h"
+#include "mulib-tokenizer.h"
 #include "mulib-toml.h"
+#include "mulib-topk.h"
 #include "mulib-tracepath.h"
 #include "mulib-tree_parsing.h"
 #include "mulib-trie.h"
 #include "mulib-trie_traversal.h"
 #include "mulib-tsl.h"
+#include "mulib-tsv.h"
 #include "mulib-ttf.h"
 #include "mulib-tui.h"
 #include "mulib-tunnel.h"
@@ -1872,6 +1975,7 @@
 #include "mulib-vec.h"
 #include "mulib-vectgfx.h"
 #include "mulib-vector.h"
+#include "mulib-vectorindex.h"
 #include "mulib-vectorpath.h"
 #include "mulib-verttext.h"
 #include "mulib-vfs.h"
@@ -1940,4 +2044,6 @@
 #include "mulib-yaml.h"
 #include "mulib-yantlr.h"
 #include "mulib-zip.h"
+#include "mulib-zoneindex.h"
+#include "mulib-zorder.h"
 #include "mulib-zstd.h"

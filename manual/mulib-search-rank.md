@@ -27,7 +27,53 @@ size_t mulib_search_rank_count(const char *text,const char *query);
 
 ## Safety and ownership
 
-Counts overlapping case-insensitive ASCII substring matches, not word tokens: `aaa` with query `aa` yields 2. NULL text/query or an empty query yields zero. Non-ASCII bytes compare literally; no Unicode folding, stemming, tokenization, weighting or search relevance model is provided. Allocation-free, worst-case O(text length × query length); count saturates at SIZE_MAX.
+`count` counts overlapping case-insensitive ASCII substring matches: `aaa` with
+query `aa` yields 2. NULL text/query or an empty query yields zero. Non-ASCII
+bytes compare literally. Allocation-free, worst-case O(text length × query
+length); count saturates at SIZE_MAX.
+
+`words` requires non-word boundaries on both sides; word bytes are ASCII
+letters, digits and underscore. Query must start/end in a word byte but may
+contain internal separators. `fields` sums whole-word title and description
+counts with finite nonnegative weights. Invalid weights or score overflow
+yield NaN. No Unicode folding or stemming occurs. Regression:
+`tests/test_data_patches.c`.
+
+<!-- manual-interface -->
+## Public header reference
+
+Verbatim declaration section from [`include/mulib-search-rank.h`](../include/mulib-search-rank.h).
+Include the header in application code; dependency types come from its includes.
+
+<details>
+<summary>Types, constants, and declarations</summary>
+
+```c
+/* MuLIB search-rank: patched lexical counts, token-boundary and weighted fields.
+ * Preserves mulib_search_rank_count byte-level ASCII semantics. */
+#ifndef MULIB_SEARCH_RANK_H
+#define MULIB_SEARCH_RANK_H
+#include <stddef.h>
+#include <stdint.h>
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+  size_t mulib_search_rank_count (const char *text, const char *query);
+  /* Count whole ASCII word matches without overlapping non-word characters. */
+  size_t mulib_search_rank_words (const char *text, const char *query);
+  /* Finite nonnegative weights; exact match counts may overlap. */
+  double mulib_search_rank_fields (const char *title, const char *description,
+                                   const char *query, double title_weight,
+                                   double description_weight);
+#ifdef __cplusplus
+}
+#endif
+#endif
+```
+
+</details>
+<!-- /manual-interface -->
 
 ## Limitations
 
