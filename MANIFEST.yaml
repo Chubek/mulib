@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1080
-implemented_module_count: 1080
+module_count: 1082
+implemented_module_count: 1082
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -1215,6 +1215,22 @@ modules:
   macro: MULIB_IMPL_PARALLEL
   purpose: Bounded parallel work distribution over the shared task pool.
   dependencies: [taskpool]
+  status: implemented
+- name: parallel-sh
+  header: include/mulib-parallel-sh.h
+  manual: manual/mulib-parallel-sh.md
+  macro: MULIB_IMPL_PARALLEL_SH
+  purpose: Bounded POSIX shell jobs with grouped output, retries, channels and optional Mune programming.
+  dependencies: [mune]
+  example: examples/parallel.c
+  status: implemented
+- name: shebang-sh
+  header: include/mulib-shebang-sh.h
+  manual: manual/mulib-shebang-sh.md
+  macro: MULIB_IMPL_SHEBANG_SH
+  purpose: Bounded line processing with macros, ordered filters, optional Mune callbacks and POSIX shebang execution.
+  dependencies: [mune]
+  example: examples/shebang.c
   status: implemented
 - name: pathdb
   header: include/mulib-pathdb.h
@@ -7744,6 +7760,42 @@ modules:
   dependencies: []
   status: implemented
 project_files:
+- file: tests/run_tests.sh
+  purpose: Standalone strict-C11 shell module runner, CLI checks and real Mune integration.
+- file: tests/parallel.c
+  purpose: Standalone parallel-sh command-line test driver without Mune.
+- file: tests/shebang.c
+  purpose: Standalone shebang-sh command-line test driver without Mune.
+- file: tests/test_parallel.c
+  purpose: Parallel shell expansion, channels and ordered output smoke tests.
+- file: tests/test_parallel_extended.c
+  purpose: Threaded channel receive, retries and halt behavior regression tests.
+- file: tests/test_parallel_hardening.c
+  purpose: Parallel lifecycle, signals, child ownership, bounded channels and quoting regression tests.
+- file: tests/test_parallel_failures.c
+  purpose: Capture, fork, wait and output failure injection plus closed-descriptor regression tests.
+- file: tests/test_shebang.c
+  purpose: Shebang macros, filters and stream processing smoke tests.
+- file: tests/test_shebang_hardening.c
+  purpose: Text boundaries, built-in filters, macro lifetime, binary input and stream failure tests.
+- file: tests/test_sh_alloc.c
+  purpose: Allocation-failure sweeps and ownership accounting for both shell modules.
+- file: tests/test_sh_mune.c
+  purpose: Real Mune scheduler, isolated Lua jobs, callback and failure-status integration tests.
+- file: tests/test_mune_compile.c
+  purpose: Compile-only shell adapter verification against the public Mune API.
+- file: tests/test_sh_cli.sh
+  purpose: Command-line parsing, input formats, limits, interpreter execution and kernel shebang regressions.
+- file: examples/parallel.c
+  purpose: Complete Mune-enabled parallel-sh command-line program.
+- file: examples/parallel.lua
+  purpose: Lua-driven shell scheduler example.
+- file: examples/shebang.c
+  purpose: Complete Mune-enabled shebang-sh command-line program.
+- file: examples/shebang.lua
+  purpose: Lua macro and line-filter example.
+- file: examples/script.template
+  purpose: Shebang text-processing example input.
 - file: manual/data-search.md
   purpose: Ownership, integration and validation guide for data, search and formal-concept modules.
 - file: include/detail/mulib-docir-core.h

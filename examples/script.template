@@ -1,0 +1,4 @@
+#!/absolute/path/shebang-sh --lua=/absolute/path/examples/shebang.lua
+Welcome to ${PROJECT}! Year: {{YEAR}}
+Script path: ${0}
+First argument: ${1}
