@@ -1,90 +1,77 @@
-/**
- * @file mulib-search.h
- * @brief Substring finding via Knuth-Morris-Pratt with explicit byte lengths.
- * @defgroup mulib_search MuLIB search
- * @{
- * @details Returns SIZE_MAX when no match is found or allocation fails, and 0
- * for an empty needle. Runs in O(haystack length + needle length) time.
- * @par Integration
- * In exactly one translation unit define MULIB_IMPL_SEARCH before including
- * this file. Other translation units may include it without the implementation
- * switch.
- * @par Portability
- * ISO C11, C++17 compatible C linkage. All allocations use the C standard
- * library.
- * @}
+/* MuLIB compiler tools: Patched byte KMP search with callback-driven enumeration of overlapping occurrences.
+ * ISO C11 single-header module. Define MULIB_IMPL_SEARCH in ONE translation unit.
+ * Bounded operations report failure instead of silently truncating data.
  */
 #ifndef MULIB_SEARCH_H
 #define MULIB_SEARCH_H
-#include <ctype.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <limits.h>
-#include <math.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <limits.h>
+
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
-
-  /** @brief mulib search kmp; see manual/mulib-search.md for contracts and
-   * examples. */
-  size_t mulib_search_kmp (const void *haystack, size_t hay_len,
-                           const void *needle, size_t needle_len);
-
+size_t mulib_search_kmp(const void *haystack,size_t hay_len,const void *needle,size_t needle_len);
+typedef int (*mulib_search_match_fn)(size_t offset,void *user);
+/* Counts emitted matches; SIZE_MAX invalid or OOM. Empty needle emits offset 0. */
+size_t mulib_search_all(const void *haystack,size_t hay_len,const void *needle,size_t needle_len,mulib_search_match_fn visitor,void *user);
 #ifdef __cplusplus
 }
 #endif
 #endif /* MULIB_SEARCH_H */
-
 #if defined(MULIB_IMPL_SEARCH) && !defined(MULIB_SEARCH_IMPLEMENTED)
 #define MULIB_SEARCH_IMPLEMENTED
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
+#include <math.h>
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
-  size_t
-  mulib_search_kmp (const void *hay, size_t hn, const void *needle, size_t nn)
-  {
-    if (!nn)
-      return 0;
-    if (!hay || !needle || nn > hn || nn > SIZE_MAX / sizeof (size_t))
-      return SIZE_MAX;
-    const unsigned char *h = hay, *p = needle;
-    size_t *fail = calloc (nn, sizeof (size_t));
-    if (!fail)
-      return SIZE_MAX;
-    for (size_t i = 1, j = 0; i < nn; i++)
-      {
-        while (j && p[i] != p[j])
-          j = fail[j - 1];
-        if (p[i] == p[j])
-          j++;
-        fail[i] = j;
-      }
-    size_t res = SIZE_MAX;
-    for (size_t i = 0, j = 0; i < hn; i++)
-      {
-        while (j && h[i] != p[j])
-          j = fail[j - 1];
-        if (h[i] == p[j])
-          j++;
-        if (j == nn)
-          {
-            res = i + 1 - nn;
-            break;
-          }
-      }
-    free (fail);
-    return res;
-  }
+static size_t *mulib_search_failure_(const unsigned char *p,size_t n){if(n>SIZE_MAX/sizeof(size_t))return NULL;
+size_t *fail=(size_t*)calloc(n?n:1,sizeof(size_t));
+if(!fail)return NULL;
+ for(size_t i=1,j=0;i<n;i++){while(j&&p[i]!=p[j])j=fail[j-1];
+if(p[i]==p[j])j++;
+fail[i]=j;
+}return fail;
+}
+size_t mulib_search_kmp(const void *hay,size_t hn,const void *needle,size_t nn){
+ if(!nn)return 0;
+if(!hay||!needle||nn>hn)return SIZE_MAX;
+ const unsigned char *h=(const unsigned char*)hay,*p=(const unsigned char*)needle;
+size_t *fail=mulib_search_failure_(p,nn);
+if(!fail)return SIZE_MAX;
+ size_t found=SIZE_MAX;
+for(size_t i=0,j=0;i<hn;i++){while(j&&h[i]!=p[j])j=fail[j-1];
+if(h[i]==p[j])j++;
+if(j==nn){found=i+1-nn;
+break;
+}}
+ free(fail);
+return found;
+}
+size_t mulib_search_all(const void *hay,size_t hn,const void *needle,size_t nn,mulib_search_match_fn visit,void *user){
+ if(!visit||(!hay&&hn)||(!needle&&nn))return SIZE_MAX;
+if(!nn){visit(0,user);
+return 1;
+}if(nn>hn)return 0;
+ const unsigned char *h=(const unsigned char*)hay,*p=(const unsigned char*)needle;
+size_t *fail=mulib_search_failure_(p,nn);
+if(!fail)return SIZE_MAX;
+ size_t total=0;
+for(size_t i=0,j=0;i<hn;i++){while(j&&h[i]!=p[j])j=fail[j-1];
+if(h[i]==p[j])j++;
+if(j==nn){total++;
+int keep=visit(i+1-nn,user);
+if(!keep)break;
+j=fail[j-1];
+}}
+ free(fail);
+return total;
+}
 #ifdef __cplusplus
 }
 #endif
-#endif /* implementation */
+#endif

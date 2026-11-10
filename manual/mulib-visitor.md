@@ -1,5 +1,15 @@
 # mulib-visitor
 
+## Node-bounded traversal
+
+`mulib_visitor_walk_bounded` calls the preorder visitor at most `max_nodes` times.
+Returns 1 complete, 0 callback STOP, -1 invalid input/result, or -2 exhausted.
+SKIP counts the current node but excludes its descendants. An exact budget
+succeeds if traversal finishes; zero invokes no callbacks. Earlier callbacks
+retain their effects on failure: traversal is not failure-atomic. The original
+walk is the unlimited wrapper. Input must be a valid borrowed AST, unmodified
+during traversal. Traversal stops at the specified root's subtree boundary.
+
 [Manuals](README.md) · [Library index](index.md)
 
 Define `MULIB_IMPL_VISITOR`. Traversal itself requires only AST declarations.
@@ -23,31 +33,32 @@ Include the header in application code; dependency types come from its includes.
 <summary>Types, constants, and declarations</summary>
 
 ```c
-/** @file mulib-visitor.h
- * @brief Controllable preorder AST traversal. Define MULIB_IMPL_VISITOR.
+/* MuLIB compiler tools: Preorder AST visitor with bounded traversal.
+ * ISO C11 single-header module. Define MULIB_IMPL_VISITOR in ONE translation unit.
+ * Bounded operations report failure instead of silently truncating data.
  */
 #ifndef MULIB_VISITOR_H
 #define MULIB_VISITOR_H
+#include <stddef.h>
+#include <stdint.h>
+#include <limits.h>
 #include "mulib-ast.h"
+
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
-  typedef enum mulib_visit_result
-  {
-    MULIB_VISIT_STOP,
-    MULIB_VISIT_DESCEND,
-    MULIB_VISIT_SKIP
-  } mulib_visit_result_t;
-  typedef mulib_visit_result_t (*mulib_visitor_fn) (const mulib_ast_t *node,
-                                                    void *user);
-  /** Returns 1 complete, 0 stopped, -1 invalid callback/result. */
-  int mulib_visitor_walk (const mulib_ast_t *root, mulib_visitor_fn visit,
-                          void *user);
+#include "mulib-ast.h"
+typedef enum mulib_visit_result {MULIB_VISIT_STOP,MULIB_VISIT_DESCEND,MULIB_VISIT_SKIP} mulib_visit_result_t;
+typedef mulib_visit_result_t (*mulib_visitor_fn)(const mulib_ast_t *,void *);
+/* Original API, 1 complete, 0 stopped, -1 invalid. */
+int mulib_visitor_walk(const mulib_ast_t *root,mulib_visitor_fn visit,void *user);
+/* Additional API: -2 when node budget is exhausted. Prior callbacks are retained.
+ * Trees are borrowed, valid ASTs and must not be mutated during traversal. */
+int mulib_visitor_walk_bounded(const mulib_ast_t *root,mulib_visitor_fn visit,void *user,size_t max_nodes);
 #ifdef __cplusplus
 }
 #endif
-#endif
+#endif /* MULIB_VISITOR_H */
 ```
 
 </details>

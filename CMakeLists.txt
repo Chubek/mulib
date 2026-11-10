@@ -135,6 +135,14 @@ if(MULIB_BUILD_TESTS)
     set_tests_properties(mulib_dsymspec_snapshot PROPERTIES TIMEOUT 60)
     add_test(NAME mulib_tool_regressions
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_tools.py)
+    set(compiler_check_options)
+    if(MULIB_SANITIZERS)
+      list(APPEND compiler_check_options --sanitizers)
+    endif()
+    add_test(NAME mulib_compiler_integration
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_compiler.py
+        --cc ${CMAKE_C_COMPILER} ${compiler_check_options})
+    set_tests_properties(mulib_compiler_integration PROPERTIES TIMEOUT 300)
     add_test(NAME mulib_dependency_strata
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/stratify.py --check)
     add_test(NAME mulib_mull_inventory

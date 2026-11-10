@@ -10,5 +10,7 @@ int main(void) {
     mulib_ast_t *root = mulib_ast_create("root", "", 0);
     mulib_listener_t listener = {"root", count, count, &calls};
     assert(root && mulib_listener_walk(root, &listener, 1) == 1 && calls == 2);
+    calls = 0;
+    assert(mulib_listener_walk_bounded(root, &listener, 1, 1) == -2 && calls == 1);
     mulib_ast_destroy(root); return 0;
 }

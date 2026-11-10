@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1026
-implemented_module_count: 1026
+module_count: 1080
+implemented_module_count: 1080
 modules:
 - name: ast
   header: include/mulib-ast.h
@@ -29,21 +29,21 @@ modules:
   header: include/mulib-evtstream.h
   manual: manual/mulib-evtstream.md
   macro: MULIB_IMPL_EVTSTREAM
-  purpose: Allocation-free pull streams of balanced AST enter and leave events.
+  purpose: Allocation-free balanced AST event streams with retryable depth bounds.
   dependencies: [ast]
   status: implemented
 - name: listener
   header: include/mulib-listener.h
   manual: manual/mulib-listener.md
   macro: MULIB_IMPL_LISTENER
-  purpose: Production-specific AST enter and leave callbacks.
+  purpose: Production-specific AST enter and leave callbacks with event budgets.
   dependencies: [evtstream]
   status: implemented
 - name: visitor
   header: include/mulib-visitor.h
   manual: manual/mulib-visitor.md
   macro: MULIB_IMPL_VISITOR
-  purpose: Controllable preorder traversal of ASTs.
+  purpose: Controllable preorder AST traversal with explicit node budgets.
   dependencies: [ast]
   status: implemented
 - name: lazystream
@@ -155,7 +155,7 @@ modules:
   header: include/mulib-graph.h
   manual: manual/mulib-graph.md
   macro: MULIB_IMPL_GRAPH
-  purpose: Directed graph with dense adjacency matrix and breadth-first search.
+  purpose: Dense directed graphs with BFS, deterministic topological sorting and reversal.
   dependencies: []
   status: implemented
 - name: rng
@@ -274,14 +274,14 @@ modules:
   header: include/mulib-sort.h
   manual: manual/mulib-sort.md
   macro: MULIB_IMPL_SORT
-  purpose: Standard-library-backed generic sorting and binary lookup.
+  purpose: Generic sorting, stable merge sort, binary lookup and heterogeneous lower bounds.
   dependencies: []
   status: implemented
 - name: search
   header: include/mulib-search.h
   manual: manual/mulib-search.md
   macro: MULIB_IMPL_SEARCH
-  purpose: Substring finding via Knuth-Morris-Pratt with explicit byte lengths.
+  purpose: Byte KMP search and callback enumeration of overlapping matches.
   dependencies: []
   status: implemented
 - name: rle
@@ -7363,6 +7363,384 @@ modules:
   manual: manual/mulib-sha.md
   macro: MULIB_IMPL_SHA
   purpose: "SHA-0/1/2/3 and SHAKE with streaming contexts and SIMD alternatives."
+  dependencies: []
+  status: implemented
+- name: branch-layout
+  header: include/mulib-branch-layout.h
+  manual: manual/mulib-branch-layout.md
+  macro: MULIB_IMPL_BRANCH_LAYOUT
+  purpose: Fixed-point short/near branch relaxation with checked signed displacements.
+  dependencies: []
+  status: implemented
+- name: bytecode
+  header: include/mulib-bytecode.h
+  manual: manual/mulib-bytecode.md
+  macro: MULIB_IMPL_BYTECODE
+  purpose: Checked signed-64 stack interpreter with local, stack and instruction budgets.
+  dependencies: []
+  status: implemented
+- name: bytecode-builder
+  header: include/mulib-bytecode-builder.h
+  manual: manual/mulib-bytecode-builder.md
+  macro: MULIB_IMPL_BYTECODE_BUILDER
+  purpose: Owned append and operand-patch builder for stack bytecode.
+  dependencies: [bytecode]
+  status: implemented
+- name: bytecode-disasm
+  header: include/mulib-bytecode-disasm.h
+  manual: manual/mulib-bytecode-disasm.md
+  macro: MULIB_IMPL_BYTECODE_DISASM
+  purpose: Bounded textual disassembly of stack bytecode.
+  dependencies: [bytecode]
+  status: implemented
+- name: bytecode-eval
+  header: include/mulib-bytecode-eval.h
+  manual: manual/mulib-bytecode-eval.md
+  macro: MULIB_IMPL_BYTECODE_EVAL
+  purpose: Verify and execute stack bytecode with explicit execution results and budgets.
+  dependencies: [bytecode-verify]
+  status: implemented
+- name: bytecode-opt
+  header: include/mulib-bytecode-opt.h
+  manual: manual/mulib-bytecode-opt.md
+  macro: MULIB_IMPL_BYTECODE_OPT
+  purpose: Jump-free constant folding preserving checked signed arithmetic faults.
+  dependencies: [bytecode]
+  status: implemented
+- name: bytecode-serialize
+  header: include/mulib-bytecode-serialize.h
+  manual: manual/mulib-bytecode-serialize.md
+  macro: MULIB_IMPL_BYTECODE_SERIALIZE
+  purpose: Exact portable MBC1 bytecode encoding with little-endian operands and FNV checksum.
+  dependencies: [bytecode]
+  status: implemented
+- name: bytecode-verify
+  header: include/mulib-bytecode-verify.h
+  manual: manual/mulib-bytecode-verify.md
+  macro: MULIB_IMPL_BYTECODE_VERIFY
+  purpose: Full instruction validation and reachable stack-height analysis with branch-join checks.
+  dependencies: [bytecode]
+  status: implemented
+- name: callconv
+  header: include/mulib-callconv.h
+  manual: manual/mulib-callconv.md
+  macro: MULIB_IMPL_CALLCONV
+  purpose: Eight-byte integer/pointer argument placement for AMD64 SysV and RV64 LP64.
+  dependencies: []
+  status: implemented
+- name: cfg
+  header: include/mulib-cfg.h
+  manual: manual/mulib-cfg.md
+  macro: MULIB_IMPL_CFG
+  purpose: Owned control-flow edges with validation, 64-block reachability and atomic postorder.
+  dependencies: []
+  status: implemented
+- name: compiler-cache
+  header: include/mulib-compiler-cache.h
+  manual: manual/mulib-compiler-cache.md
+  macro: MULIB_IMPL_COMPILER_CACHE
+  purpose: Binary-safe owned artifact cache keyed by caller-provided fingerprints.
+  dependencies: []
+  status: implemented
+- name: compiler-driver
+  header: include/mulib-compiler-driver.h
+  manual: manual/mulib-compiler-driver.md
+  macro: MULIB_IMPL_COMPILER_DRIVER
+  purpose: Ordered named compiler-stage pipeline with stop-on-error dispatch.
+  dependencies: []
+  status: implemented
+- name: compiler-scope
+  header: include/mulib-compiler-scope.h
+  manual: manual/mulib-compiler-scope.md
+  macro: MULIB_IMPL_COMPILER_SCOPE
+  purpose: Scope-oriented binding and resolution facade for lexical symbol tables.
+  dependencies: [symboltable]
+  status: implemented
+- name: compiler-test
+  header: include/mulib-compiler-test.h
+  manual: manual/mulib-compiler-test.md
+  macro: MULIB_IMPL_COMPILER_TEST
+  purpose: Named compiler-test checks with bounded counters and last-failure tracking.
+  dependencies: []
+  status: implemented
+- name: consteval
+  header: include/mulib-consteval.h
+  manual: manual/mulib-consteval.md
+  macro: MULIB_IMPL_CONSTEVAL
+  purpose: Checked signed-64 Pratt expression evaluation with lexical symbol values.
+  dependencies: [parser-pratt, symboltable]
+  status: implemented
+- name: constraints
+  header: include/mulib-constraints.h
+  manual: manual/mulib-constraints.md
+  macro: MULIB_IMPL_CONSTRAINTS
+  purpose: Union-find type constraints with conflict-preserving concrete bindings.
+  dependencies: []
+  status: implemented
+- name: dce
+  header: include/mulib-dce.h
+  manual: manual/mulib-dce.md
+  macro: MULIB_IMPL_DCE
+  purpose: Failure-atomic effect-aware linear dead-code marking for 64 registers.
+  dependencies: [defuse]
+  status: implemented
+- name: defuse
+  header: include/mulib-defuse.h
+  manual: manual/mulib-defuse.md
+  macro: MULIB_IMPL_DEFUSE
+  purpose: First-definition and use-occurrence counting for linear register instructions.
+  dependencies: []
+  status: implemented
+- name: diagnostic
+  header: include/mulib-diagnostic.h
+  manual: manual/mulib-diagnostic.md
+  macro: MULIB_IMPL_DIAGNOSTIC
+  purpose: Owned ordered compiler diagnostics with checked spans, severities and error counts.
+  dependencies: []
+  status: implemented
+- name: dominance
+  header: include/mulib-dominance.h
+  manual: manual/mulib-dominance.md
+  macro: MULIB_IMPL_DOMINANCE
+  purpose: Reachable dominance sets and immediate dominators for up to 64 CFG blocks.
+  dependencies: [cfg]
+  status: implemented
+- name: frame-layout
+  header: include/mulib-frame-layout.h
+  manual: manual/mulib-frame-layout.md
+  macro: MULIB_IMPL_FRAME_LAYOUT
+  purpose: Checked power-of-two aligned frame slots and final frame size rounding.
+  dependencies: []
+  status: implemented
+- name: gc
+  header: include/mulib-gc.h
+  manual: manual/mulib-gc.md
+  macro: MULIB_IMPL_GC
+  purpose: Explicit stop-the-world mark-and-sweep reference heap with iterative tracing.
+  dependencies: []
+  status: implemented
+- name: gc-roots
+  header: include/mulib-gc-roots.h
+  manual: manual/mulib-gc-roots.md
+  macro: MULIB_IMPL_GC_ROOTS
+  purpose: Deduplicated borrowed GC root set and explicit collection adapter.
+  dependencies: [gc]
+  status: implemented
+- name: gvn
+  header: include/mulib-gvn.h
+  manual: manual/mulib-gvn.md
+  macro: MULIB_IMPL_GVN
+  purpose: Pure expression key interning with optional commutative canonicalization.
+  dependencies: []
+  status: implemented
+- name: importgraph
+  header: include/mulib-importgraph.h
+  manual: manual/mulib-importgraph.md
+  macro: MULIB_IMPL_IMPORTGRAPH
+  purpose: Dependency-first deterministic topological ordering with cycle detection.
+  dependencies: []
+  status: implemented
+- name: ir-print
+  header: include/mulib-ir-print.h
+  manual: manual/mulib-ir-print.md
+  macro: MULIB_IMPL_IR_PRINT
+  purpose: Bounded textual rendering of compact register IR instructions.
+  dependencies: [ir-verify]
+  status: implemented
+- name: ir-verify
+  header: include/mulib-ir-verify.h
+  manual: manual/mulib-ir-verify.md
+  macro: MULIB_IMPL_IR_VERIFY
+  purpose: Linear single-assignment register IR verification with definition ordering.
+  dependencies: []
+  status: implemented
+- name: lexer
+  header: include/mulib-lexer.h
+  manual: manual/mulib-lexer.md
+  macro: MULIB_IMPL_LEXER
+  purpose: Byte-offset ASCII lexer for identifiers, decimal integers, strings and comments.
+  dependencies: [lexical-token]
+  status: implemented
+- name: lexgen
+  header: include/mulib-lexgen.h
+  manual: manual/mulib-lexgen.md
+  macro: MULIB_IMPL_LEXGEN
+  purpose: Ordered longest-match literal and ASCII byte-class lexer rules.
+  dependencies: []
+  status: implemented
+- name: lexical-token
+  header: include/mulib-lexical-token.h
+  manual: manual/mulib-lexical-token.md
+  macro: MULIB_IMPL_LEXICAL_TOKEN
+  purpose: Explicit-length borrowed tokens and exact lexeme comparisons.
+  dependencies: []
+  status: implemented
+- name: liveintervals
+  header: include/mulib-liveintervals.h
+  manual: manual/mulib-liveintervals.md
+  macro: MULIB_IMPL_LIVEINTERVALS
+  purpose: Inclusive live-interval validation and overlap predicates.
+  dependencies: []
+  status: implemented
+- name: liveness
+  header: include/mulib-liveness.h
+  manual: manual/mulib-liveness.md
+  macro: MULIB_IMPL_LIVENESS
+  purpose: Fixed-point backward liveness for 64 CFG blocks and 64 register bits.
+  dependencies: [cfg]
+  status: implemented
+- name: loops
+  header: include/mulib-loops.h
+  manual: manual/mulib-loops.md
+  macro: MULIB_IMPL_LOOPS
+  purpose: Reachability-aware natural-loop membership per dominance backedge.
+  dependencies: [dominance]
+  status: implemented
+- name: module-resolver
+  header: include/mulib-module-resolver.h
+  manual: manual/mulib-module-resolver.md
+  macro: MULIB_IMPL_MODULE_RESOLVER
+  purpose: Owned exact module-name to source-path registry.
+  dependencies: []
+  status: implemented
+- name: name-resolution
+  header: include/mulib-name-resolution.h
+  manual: manual/mulib-name-resolution.md
+  macro: MULIB_IMPL_NAME_RESOLUTION
+  purpose: Atomic Pratt identifier resolution to caller-provided lexical symbol IDs.
+  dependencies: [parser-pratt, symboltable]
+  status: implemented
+- name: parser-pratt
+  header: include/mulib-parser-pratt.h
+  manual: manual/mulib-parser-pratt.md
+  macro: MULIB_IMPL_PARSER_PRATT
+  purpose: Bounded owned Pratt expressions with unary signs, arithmetic and comparisons.
+  dependencies: [lexer]
+  status: implemented
+- name: passmanager
+  header: include/mulib-passmanager.h
+  manual: manual/mulib-passmanager.md
+  macro: MULIB_IMPL_PASSMANAGER
+  purpose: Ordered compiler passes with failure-aware analysis invalidation masks.
+  dependencies: []
+  status: implemented
+- name: physreg
+  header: include/mulib-physreg.h
+  manual: manual/mulib-physreg.md
+  macro: MULIB_IMPL_PHYSREG
+  purpose: Physical-register mask validation and deterministic lowest-free selection.
+  dependencies: []
+  status: implemented
+- name: postdominance
+  header: include/mulib-postdominance.h
+  manual: manual/mulib-postdominance.md
+  macro: MULIB_IMPL_POSTDOMINANCE
+  purpose: Exit-relative postdominance via reversed validated control-flow graphs.
+  dependencies: [dominance]
+  status: implemented
+- name: range-analysis
+  header: include/mulib-range-analysis.h
+  manual: manual/mulib-range-analysis.md
+  macro: MULIB_IMPL_RANGE_ANALYSIS
+  purpose: Conservative checked signed-64 interval joins, addition, subtraction and multiplication.
+  dependencies: []
+  status: implemented
+- name: regalloc
+  header: include/mulib-regalloc.h
+  manual: manual/mulib-regalloc.md
+  macro: MULIB_IMPL_REGALLOC
+  purpose: Unified linear-scan and interference-graph allocation with explicit spill locations.
+  dependencies: [regalloc-linear, regalloc-graph]
+  status: implemented
+- name: regalloc-graph
+  header: include/mulib-regalloc-graph.h
+  manual: manual/mulib-regalloc-graph.md
+  macro: MULIB_IMPL_REGALLOC_GRAPH
+  purpose: Deterministic degree-first greedy coloring of validated 64-node interference graphs.
+  dependencies: []
+  status: implemented
+- name: regalloc-linear
+  header: include/mulib-regalloc-linear.h
+  manual: manual/mulib-regalloc-linear.md
+  macro: MULIB_IMPL_REGALLOC_LINEAR
+  purpose: Inclusive linear-scan allocation with longest-end eviction and stable spill slots.
+  dependencies: [physreg, liveintervals]
+  status: implemented
+- name: regpressure
+  header: include/mulib-regpressure.h
+  manual: manual/mulib-regpressure.md
+  macro: MULIB_IMPL_REGPRESSURE
+  purpose: Exact peak simultaneous inclusive live-interval count.
+  dependencies: [liveintervals]
+  status: implemented
+- name: source-manager
+  header: include/mulib-source-manager.h
+  manual: manual/mulib-source-manager.md
+  macro: MULIB_IMPL_SOURCE_MANAGER
+  purpose: Owned binary-safe source bytes with logarithmic byte-offset line/column lookup.
+  dependencies: []
+  status: implemented
+- name: source-map
+  header: include/mulib-source-map.h
+  manual: manual/mulib-source-map.md
+  macro: MULIB_IMPL_SOURCE_MAP
+  purpose: Ordered nonoverlapping generated-to-original byte-span mappings.
+  dependencies: []
+  status: implemented
+- name: stackmap
+  header: include/mulib-stackmap.h
+  manual: manual/mulib-stackmap.md
+  macro: MULIB_IMPL_STACKMAP
+  purpose: Exact native-PC safepoint maps of pointer register and spill-slot masks.
+  dependencies: []
+  status: implemented
+- name: symboltable
+  header: include/mulib-symboltable.h
+  manual: manual/mulib-symboltable.md
+  macro: MULIB_IMPL_SYMBOLTABLE
+  purpose: Owned lexical bindings with nested shadowing and scope rollback.
+  dependencies: []
+  status: implemented
+- name: syntax-tree
+  header: include/mulib-syntax-tree.h
+  manual: manual/mulib-syntax-tree.md
+  macro: MULIB_IMPL_SYNTAX_TREE
+  purpose: Owned token-span syntax forests with validated parent/child/sibling links.
+  dependencies: []
+  status: implemented
+- name: typecheck
+  header: include/mulib-typecheck.h
+  manual: manual/mulib-typecheck.md
+  macro: MULIB_IMPL_TYPECHECK
+  purpose: Pratt integer arithmetic and comparison typing against interned lexical types.
+  dependencies: [parser-pratt, typesystem, symboltable]
+  status: implemented
+- name: typesystem
+  header: include/mulib-typesystem.h
+  manual: manual/mulib-typesystem.md
+  macro: MULIB_IMPL_TYPESYSTEM
+  purpose: Canonical primitive, pointer, array and homogeneous-function type interning.
+  dependencies: []
+  status: implemented
+- name: vm-host
+  header: include/mulib-vm-host.h
+  manual: manual/mulib-vm-host.md
+  macro: MULIB_IMPL_VM_HOST
+  purpose: Explicit signed-64 host-call registry with checked arity and atomic result writes.
+  dependencies: []
+  status: implemented
+- name: vm-module
+  header: include/mulib-vm-module.h
+  manual: manual/mulib-vm-module.md
+  macro: MULIB_IMPL_VM_MODULE
+  purpose: Owned named bytecode registry with structural verification before insertion.
+  dependencies: [bytecode-verify, bytecode]
+  status: implemented
+- name: vm-value
+  header: include/mulib-vm-value.h
+  manual: manual/mulib-vm-value.md
+  macro: MULIB_IMPL_VM_VALUE
+  purpose: Tagged VM scalars and owned binary byte strings with alias-safe deep copying.
   dependencies: []
   status: implemented
 project_files:

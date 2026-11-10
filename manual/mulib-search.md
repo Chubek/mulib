@@ -1,5 +1,15 @@
 # MuLIB search
 
+## Overlapping match enumeration
+
+`mulib_search_all` uses byte KMP and calls `visitor(offset,user)` for every match,
+including overlapping occurrences, in ascending offset order. A zero callback
+return stops after counting that match. Return value is the number emitted, or
+SIZE_MAX for invalid arguments/allocation failure. The callback is required;
+NULL buffers are accepted only for zero corresponding lengths. An empty needle
+emits exactly offset 0, even in an empty haystack. Callbacks must not modify the
+borrowed input buffers. Time O(haystack + needle + callback work), scratch O(needle).
+
 [Manuals](README.md) · [Library index](index.md)
 
 Substring finding via Knuth-Morris-Pratt with explicit byte lengths. Returns SIZE_MAX when no match is found or allocation fails, and 0 for an empty needle. Runs in O(haystack length + needle length) time.
@@ -37,46 +47,23 @@ Include the header in application code; dependency types come from its includes.
 <summary>Types, constants, and declarations</summary>
 
 ```c
-/**
- * @file mulib-search.h
- * @brief Substring finding via Knuth-Morris-Pratt with explicit byte lengths.
- * @defgroup mulib_search MuLIB search
- * @{
- * @details Returns SIZE_MAX when no match is found or allocation fails, and 0
- * for an empty needle. Runs in O(haystack length + needle length) time.
- * @par Integration
- * In exactly one translation unit define MULIB_IMPL_SEARCH before including
- * this file. Other translation units may include it without the implementation
- * switch.
- * @par Portability
- * ISO C11, C++17 compatible C linkage. All allocations use the C standard
- * library.
- * @}
+/* MuLIB compiler tools: Patched byte KMP search with callback-driven enumeration of overlapping occurrences.
+ * ISO C11 single-header module. Define MULIB_IMPL_SEARCH in ONE translation unit.
+ * Bounded operations report failure instead of silently truncating data.
  */
 #ifndef MULIB_SEARCH_H
 #define MULIB_SEARCH_H
-#include <ctype.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <limits.h>
-#include <math.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <limits.h>
+
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
-
-  /** @brief mulib search kmp; see manual/mulib-search.md for contracts and
-   * examples. */
-  size_t mulib_search_kmp (const void *haystack, size_t hay_len,
-                           const void *needle, size_t needle_len);
-
+size_t mulib_search_kmp(const void *haystack,size_t hay_len,const void *needle,size_t needle_len);
+typedef int (*mulib_search_match_fn)(size_t offset,void *user);
+/* Counts emitted matches; SIZE_MAX invalid or OOM. Empty needle emits offset 0. */
+size_t mulib_search_all(const void *haystack,size_t hay_len,const void *needle,size_t needle_len,mulib_search_match_fn visitor,void *user);
 #ifdef __cplusplus
 }
 #endif

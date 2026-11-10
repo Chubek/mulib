@@ -6,8 +6,10 @@ TESTS := $(patsubst tests/%.c,build/%,$(wildcard tests/test-*.c))
 HEADERS := $(wildcard include/*.h include/detail/*.h)
 TEST_FIXTURES := $(wildcard tests/fixtures/*.h)
 EXAMPLES := $(patsubst examples/%.c,build/%,$(wildcard examples/mulib-*.c)) build/fontshape-native build/docir-publication
-.PHONY: all check check-examples demo formats docir-formats clean
+.PHONY: all check check-examples check-compiler demo formats docir-formats clean
 all: check
+check-compiler:
+	python3 tools/check_compiler.py --cc "$(CC)"
 build:
 	mkdir -p build
 build/test-%: tests/test-%.c $(HEADERS) $(TEST_FIXTURES) | build

@@ -1,5 +1,16 @@
 # mulib-listener
 
+## Event-bounded callbacks
+
+`mulib_listener_walk_bounded` limits AST events, not callback invocations. Each
+ENTER/LEAVE consumes one event even if no listener matches. Returns 1 complete,
+0 callback stop, -1 invalid arguments/traversal, or -2 budget exhausted. A zero
+budget invokes nothing. An exact event budget succeeds if traversal completes.
+Earlier callback effects remain on stop/error; there is no rollback. NULL
+production matches every node; otherwise matching is exact and case-sensitive.
+Listener descriptors, contexts, and tree are borrowed and must remain valid
+without structural mutation for the walk. The original walk has no event bound.
+
 [Manuals](README.md) · [Library index](index.md)
 
 Define `MULIB_IMPL_LISTENER` and `MULIB_IMPL_EVTSTREAM` in one translation unit.
@@ -24,30 +35,31 @@ Include the header in application code; dependency types come from its includes.
 <summary>Types, constants, and declarations</summary>
 
 ```c
-/** @file mulib-listener.h
- * @brief Production-specific enter/exit AST callbacks. Define
- * MULIB_IMPL_LISTENER; explicitly implement EVTSTREAM too. Return zero from a
- * callback to stop.
+/* MuLIB compiler tools: Patched production-specific AST listeners with explicit event budget.
+ * ISO C11 single-header module. Define MULIB_IMPL_LISTENER in ONE translation unit.
+ * Bounded operations report failure instead of silently truncating data.
  */
 #ifndef MULIB_LISTENER_H
 #define MULIB_LISTENER_H
+#include <stddef.h>
+#include <stdint.h>
+#include <limits.h>
 #include "mulib-evtstream.h"
+
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
-  typedef struct mulib_listener
-  {
-    const char *production; /* NULL matches every production. */
-    mulib_ast_action_fn enter, leave;
-    void *user;
-  } mulib_listener_t;
-  int mulib_listener_walk (const mulib_ast_t *root,
-                           const mulib_listener_t *listeners, size_t count);
+#include "mulib-evtstream.h"
+typedef struct mulib_listener {const char *production;
+mulib_ast_action_fn enter,leave;
+void *user;
+} mulib_listener_t;
+int mulib_listener_walk(const mulib_ast_t *root,const mulib_listener_t *listeners,size_t count);
+int mulib_listener_walk_bounded(const mulib_ast_t *root,const mulib_listener_t *listeners,size_t count,size_t max_events);
 #ifdef __cplusplus
 }
 #endif
-#endif
+#endif /* MULIB_LISTENER_H */
 ```
 
 </details>

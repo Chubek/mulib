@@ -67,6 +67,7 @@
     "mulib-bootmgr.h",
     "mulib-bounds.h",
     "mulib-bpf-kernel.h",
+    "mulib-branch-layout.h",
     "mulib-browsercontext.h",
     "mulib-browserlocator.h",
     "mulib-browserscreenshot.h",
@@ -79,13 +80,22 @@
     "mulib-buildgraph.h",
     "mulib-buildvm.h",
     "mulib-bycutils.h",
+    "mulib-bytecode-builder.h",
+    "mulib-bytecode-disasm.h",
+    "mulib-bytecode-eval.h",
+    "mulib-bytecode-opt.h",
+    "mulib-bytecode-serialize.h",
+    "mulib-bytecode-verify.h",
+    "mulib-bytecode.h",
     "mulib-bzip2.h",
     "mulib-cache.h",
+    "mulib-callconv.h",
     "mulib-cassowary-solver.h",
     "mulib-cbor.h",
     "mulib-ccweave.h",
     "mulib-cff.h",
     "mulib-cff2.h",
+    "mulib-cfg.h",
     "mulib-cgeom.h",
     "mulib-channel.h",
     "mulib-charset.h",
@@ -112,6 +122,10 @@
     "mulib-columnar.h",
     "mulib-columnstats.h",
     "mulib-competprice.h",
+    "mulib-compiler-cache.h",
+    "mulib-compiler-driver.h",
+    "mulib-compiler-scope.h",
+    "mulib-compiler-test.h",
     "mulib-complex.h",
     "mulib-compression.h",
     "mulib-conainerd-ipc.h",
@@ -120,6 +134,8 @@
     "mulib-conditional_probablity.h",
     "mulib-confuse.h",
     "mulib-conntrack.h",
+    "mulib-consteval.h",
+    "mulib-constraints.h",
     "mulib-container-core.h",
     "mulib-container-ipc.h",
     "mulib-container-jitboost.h",
@@ -184,7 +200,9 @@
     "mulib-dbus-properties.h",
     "mulib-dbus-transport.h",
     "mulib-dbus.h",
+    "mulib-dce.h",
     "mulib-deflate.h",
+    "mulib-defuse.h",
     "mulib-deltacodec.h",
     "mulib-depir.h",
     "mulib-deque.h",
@@ -195,6 +213,7 @@
     "mulib-dhcp4-client.h",
     "mulib-dhcp6-client.h",
     "mulib-diag.h",
+    "mulib-diagnostic.h",
     "mulib-diagram.h",
     "mulib-distfield.h",
     "mulib-distribcluster.h",
@@ -224,6 +243,7 @@
     "mulib-documentdb.h",
     "mulib-docvalidate.h",
     "mulib-dom.h",
+    "mulib-dominance.h",
     "mulib-domserialize.h",
     "mulib-drm.h",
     "mulib-dsdom.h",
@@ -326,6 +346,7 @@
     "mulib-fpga-lut.h",
     "mulib-fpga-route.h",
     "mulib-fraction.h",
+    "mulib-frame-layout.h",
     "mulib-framebuffer.h",
     "mulib-fs.h",
     "mulib-fst.h",
@@ -335,6 +356,8 @@
     "mulib-fuse.h",
     "mulib-fuzzyquery.h",
     "mulib-galois.h",
+    "mulib-gc-roots.h",
+    "mulib-gc.h",
     "mulib-geoindex.h",
     "mulib-geometry.h",
     "mulib-geosolve.h",
@@ -354,6 +377,7 @@
     "mulib-gss.h",
     "mulib-gssair.h",
     "mulib-gvizz.h",
+    "mulib-gvn.h",
     "mulib-gzip.h",
     "mulib-hamming_distance.h",
     "mulib-hash.h",
@@ -402,6 +426,7 @@
     "mulib-immgtk-plot.h",
     "mulib-immgtk.h",
     "mulib-impaclient.h",
+    "mulib-importgraph.h",
     "mulib-index.h",
     "mulib-indexer.h",
     "mulib-inet-diag.h",
@@ -420,6 +445,8 @@
     "mulib-ipfs.h",
     "mulib-ipv6-ndp.h",
     "mulib-ipv6-ra.h",
+    "mulib-ir-print.h",
+    "mulib-ir-verify.h",
     "mulib-isched.h",
     "mulib-isel.h",
     "mulib-iterator.h",
@@ -443,6 +470,9 @@
     "mulib-layoutml.h",
     "mulib-lazystream.h",
     "mulib-levenshtein.h",
+    "mulib-lexer.h",
+    "mulib-lexgen.h",
+    "mulib-lexical-token.h",
     "mulib-lexographic_sort.h",
     "mulib-ligature.h",
     "mulib-linalg.h",
@@ -452,10 +482,13 @@
     "mulib-lir.h",
     "mulib-list.h",
     "mulib-listener.h",
+    "mulib-liveintervals.h",
+    "mulib-liveness.h",
     "mulib-lldp.h",
     "mulib-load_balancer.h",
     "mulib-locale.h",
     "mulib-logger.h",
+    "mulib-loops.h",
     "mulib-lowopt.h",
     "mulib-lprowse.h",
     "mulib-lsh.h",
@@ -526,6 +559,7 @@
     "mulib-mmfile.h",
     "mulib-mobi.h",
     "mulib-mobiwrite.h",
+    "mulib-module-resolver.h",
     "mulib-mop.h",
     "mulib-movingavg.h",
     "mulib-mpu.h",
@@ -541,6 +575,7 @@
     "mulib-mune.h",
     "mulib-musicnotation.h",
     "mulib-n-grams.h",
+    "mulib-name-resolution.h",
     "mulib-nameserver.h",
     "mulib-ndjson.h",
     "mulib-net-cap.h",
@@ -640,6 +675,8 @@
     "mulib-pandocast.h",
     "mulib-parallel.h",
     "mulib-parsec.h",
+    "mulib-parser-pratt.h",
+    "mulib-passmanager.h",
     "mulib-path.h",
     "mulib-pathdb.h",
     "mulib-pcap.h",
@@ -672,6 +709,7 @@
     "mulib-pglayout.h",
     "mulib-phonetic_utils.h",
     "mulib-phrasequery.h",
+    "mulib-physreg.h",
     "mulib-pipeline.h",
     "mulib-plot2d.h",
     "mulib-polkit-client.h",
@@ -679,6 +717,7 @@
     "mulib-popcount.h",
     "mulib-port.h",
     "mulib-positions.h",
+    "mulib-postdominance.h",
     "mulib-postings.h",
     "mulib-priceopt.h",
     "mulib-prime.h",
@@ -698,6 +737,7 @@
     "mulib-queue.h",
     "mulib-quic.h",
     "mulib-qvm.h",
+    "mulib-range-analysis.h",
     "mulib-rangeindex.h",
     "mulib-rate_limit.h",
     "mulib-raytracing.h",
@@ -705,7 +745,11 @@
     "mulib-record.h",
     "mulib-recordbatch.h",
     "mulib-redirect.h",
+    "mulib-regalloc-graph.h",
+    "mulib-regalloc-linear.h",
+    "mulib-regalloc.h",
     "mulib-regex.h",
+    "mulib-regpressure.h",
     "mulib-replace.h",
     "mulib-resolved-client.h",
     "mulib-revproxy.h",
@@ -782,6 +826,8 @@
     "mulib-socket.h",
     "mulib-socks5.h",
     "mulib-sort.h",
+    "mulib-source-manager.h",
+    "mulib-source-map.h",
     "mulib-spatialtree.h",
     "mulib-spellcheck.h",
     "mulib-spice-ac.h",
@@ -805,6 +851,7 @@
     "mulib-sshserver.h",
     "mulib-sstfile.h",
     "mulib-stack.h",
+    "mulib-stackmap.h",
     "mulib-static_file.h",
     "mulib-stats.h",
     "mulib-statsprice.h",
@@ -818,6 +865,8 @@
     "mulib-svg.h",
     "mulib-svgpaint.h",
     "mulib-symbol.h",
+    "mulib-symboltable.h",
+    "mulib-syntax-tree.h",
     "mulib-synth-aig.h",
     "mulib-synth-truthtable.h",
     "mulib-syscall.h",
@@ -895,6 +944,7 @@
     "mulib-tuntap.h",
     "mulib-txtdiff.h",
     "mulib-typecache.h",
+    "mulib-typecheck.h",
     "mulib-typeconformance.h",
     "mulib-typecontext.h",
     "mulib-typecore.h",
@@ -907,6 +957,7 @@
     "mulib-typesandbox.h",
     "mulib-typesrc.h",
     "mulib-typestatus.h",
+    "mulib-typesystem.h",
     "mulib-typography.h",
     "mulib-udev.h",
     "mulib-uefi.h",
@@ -969,6 +1020,9 @@
     "mulib-visitor.h",
     "mulib-viterbi_decoding.h",
     "mulib-vizigen.h",
+    "mulib-vm-host.h",
+    "mulib-vm-module.h",
+    "mulib-vm-value.h",
     "mulib-vmm-host.h",
     "mulib-vmm-kvm.h",
     "mulib-vmm-memory.h",
@@ -1030,10 +1084,10 @@
     "mulib-zorder.h",
     "mulib-zstd.h"
   ],
-  "libraries": 1029,
-  "functions": 4716,
-  "types": 7639,
-  "constants": 2412,
+  "libraries": 1083,
+  "functions": 4841,
+  "types": 7916,
+  "constants": 2478,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -1075,7 +1129,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "fafe80a12cbeb6859af66ca5baeb7d261dd1d5576687994d2c172ad0c5f6de7e",
+  "fingerprint": "bd324a6f2090cdc8e2e3245e002b3125ba5c952633386ada45a7beab2e078c32",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -1775,6 +1829,12 @@
         "mulib_bpf_kernel_array_map"
       ]
     },
+    "branch-layout": {
+      "header": "mulib-branch-layout.h",
+      "functions": [
+        "mulib_branch_layout"
+      ]
+    },
     "browsercontext": {
       "header": "mulib-browsercontext.h",
       "functions": [
@@ -1886,6 +1946,51 @@
         "mulib_bycutils_store"
       ]
     },
+    "bytecode": {
+      "header": "mulib-bytecode.h",
+      "functions": [
+        "mulib_bytecode_run"
+      ]
+    },
+    "bytecode-builder": {
+      "header": "mulib-bytecode-builder.h",
+      "functions": [
+        "mulib_bytecode_builder_add",
+        "mulib_bytecode_builder_patch",
+        "mulib_bytecode_builder_free"
+      ]
+    },
+    "bytecode-disasm": {
+      "header": "mulib-bytecode-disasm.h",
+      "functions": [
+        "mulib_bytecode_disassemble"
+      ]
+    },
+    "bytecode-eval": {
+      "header": "mulib-bytecode-eval.h",
+      "functions": [
+        "mulib_bytecode_eval"
+      ]
+    },
+    "bytecode-opt": {
+      "header": "mulib-bytecode-opt.h",
+      "functions": [
+        "mulib_bytecode_optimize"
+      ]
+    },
+    "bytecode-serialize": {
+      "header": "mulib-bytecode-serialize.h",
+      "functions": [
+        "mulib_bytecode_encode",
+        "mulib_bytecode_decode"
+      ]
+    },
+    "bytecode-verify": {
+      "header": "mulib-bytecode-verify.h",
+      "functions": [
+        "mulib_bytecode_verify"
+      ]
+    },
     "bzip2": {
       "header": "mulib-bzip2.h",
       "functions": [
@@ -1908,6 +2013,12 @@
         "mulib_cache_save",
         "mulib_cache_serialize",
         "mulib_cache_deserialize"
+      ]
+    },
+    "callconv": {
+      "header": "mulib-callconv.h",
+      "functions": [
+        "mulib_callconv_arguments"
       ]
     },
     "cassowary-solver": {
@@ -1956,6 +2067,17 @@
         "mulib_cff2_read_u16",
         "mulib_cff2_read_u32",
         "mulib_cff2_slice"
+      ]
+    },
+    "cfg": {
+      "header": "mulib-cfg.h",
+      "functions": [
+        "mulib_cfg_add",
+        "mulib_cfg_has",
+        "mulib_cfg_validate",
+        "mulib_cfg_reachable",
+        "mulib_cfg_postorder",
+        "mulib_cfg_free"
       ]
     },
     "cgeom": {
@@ -2225,6 +2347,36 @@
         "mulib_competprice_recommend"
       ]
     },
+    "compiler-cache": {
+      "header": "mulib-compiler-cache.h",
+      "functions": [
+        "mulib_compiler_cache_put",
+        "mulib_compiler_cache_get",
+        "mulib_compiler_cache_free"
+      ]
+    },
+    "compiler-driver": {
+      "header": "mulib-compiler-driver.h",
+      "functions": [
+        "mulib_compiler_driver_add",
+        "mulib_compiler_driver_run",
+        "mulib_compiler_driver_free"
+      ]
+    },
+    "compiler-scope": {
+      "header": "mulib-compiler-scope.h",
+      "functions": [
+        "mulib_compiler_scope_bind",
+        "mulib_compiler_scope_resolve"
+      ]
+    },
+    "compiler-test": {
+      "header": "mulib-compiler-test.h",
+      "functions": [
+        "mulib_compiler_test_check",
+        "mulib_compiler_test_ok"
+      ]
+    },
     "complex": {
       "header": "mulib-complex.h",
       "functions": [
@@ -2309,6 +2461,22 @@
       "header": "mulib-conntrack.h",
       "functions": [
         "mulib_conntrack_dump"
+      ]
+    },
+    "consteval": {
+      "header": "mulib-consteval.h",
+      "functions": [
+        "mulib_consteval_eval"
+      ]
+    },
+    "constraints": {
+      "header": "mulib-constraints.h",
+      "functions": [
+        "mulib_constraints_new",
+        "mulib_constraints_unify",
+        "mulib_constraints_bind",
+        "mulib_constraints_type",
+        "mulib_constraints_free"
       ]
     },
     "container": {
@@ -3093,12 +3261,24 @@
         "mulib_dbus_transport_read"
       ]
     },
+    "dce": {
+      "header": "mulib-dce.h",
+      "functions": [
+        "mulib_dce_mark"
+      ]
+    },
     "deflate": {
       "header": "mulib-deflate.h",
       "functions": [
         "mulib_deflate_encode",
         "mulib_deflate_decode",
         "mulib_deflate_decode_prefix"
+      ]
+    },
+    "defuse": {
+      "header": "mulib-defuse.h",
+      "functions": [
+        "mulib_defuse_analyze"
       ]
     },
     "deltacodec": {
@@ -3195,6 +3375,13 @@
       "header": "mulib-diag.h",
       "functions": [
         "mulib_diag_message"
+      ]
+    },
+    "diagnostic": {
+      "header": "mulib-diagnostic.h",
+      "functions": [
+        "mulib_diagnostic_add",
+        "mulib_diagnostic_free"
       ]
     },
     "diagram": {
@@ -3561,6 +3748,13 @@
         "mulib_dom_add_event_listener",
         "mulib_dom_remove_event_listener",
         "mulib_dom_dispatch_event"
+      ]
+    },
+    "dominance": {
+      "header": "mulib-dominance.h",
+      "functions": [
+        "mulib_dominance_compute",
+        "mulib_dominance_test"
       ]
     },
     "domserialize": {
@@ -4161,7 +4355,8 @@
       "header": "mulib-evtstream.h",
       "functions": [
         "mulib_evtstream_from_ast",
-        "mulib_evtstream_next"
+        "mulib_evtstream_next",
+        "mulib_evtstream_next_bounded"
       ]
     },
     "exec": {
@@ -4510,6 +4705,14 @@
         "mulib_fraction_add"
       ]
     },
+    "frame-layout": {
+      "header": "mulib-frame-layout.h",
+      "functions": [
+        "mulib_frame_layout_add",
+        "mulib_frame_layout_finish",
+        "mulib_frame_layout_free"
+      ]
+    },
     "framebuffer": {
       "header": "mulib-framebuffer.h",
       "functions": [
@@ -4606,6 +4809,24 @@
         "mulib_galois_objects",
         "mulib_galois_attributes",
         "mulib_galois_object_closure"
+      ]
+    },
+    "gc": {
+      "header": "mulib-gc.h",
+      "functions": [
+        "mulib_gc_alloc",
+        "mulib_gc_set",
+        "mulib_gc_collect",
+        "mulib_gc_heap_free"
+      ]
+    },
+    "gc-roots": {
+      "header": "mulib-gc-roots.h",
+      "functions": [
+        "mulib_gc_roots_add",
+        "mulib_gc_roots_remove",
+        "mulib_gc_roots_collect",
+        "mulib_gc_roots_free"
       ]
     },
     "geoindex": {
@@ -4758,7 +4979,9 @@
         "mulib_graph_init",
         "mulib_graph_edge",
         "mulib_graph_bfs",
-        "mulib_graph_free"
+        "mulib_graph_free",
+        "mulib_graph_toposort",
+        "mulib_graph_reverse"
       ]
     },
     "graphdb": {
@@ -4823,6 +5046,13 @@
         "mulib_gvizz_edge_at",
         "mulib_gvizz_parse",
         "mulib_gvizz_svg"
+      ]
+    },
+    "gvn": {
+      "header": "mulib-gvn.h",
+      "functions": [
+        "mulib_gvn_intern",
+        "mulib_gvn_free"
       ]
     },
     "gzip": {
@@ -5206,6 +5436,14 @@
         "mulib_impaclient_request"
       ]
     },
+    "importgraph": {
+      "header": "mulib-importgraph.h",
+      "functions": [
+        "mulib_importgraph_add",
+        "mulib_importgraph_order",
+        "mulib_importgraph_free"
+      ]
+    },
     "index": {
       "header": "mulib-index.h",
       "functions": [
@@ -5361,6 +5599,18 @@
       "functions": [
         "mulib_ipv6_ra_parse",
         "mulib_ipv6_ra_prefix"
+      ]
+    },
+    "ir-print": {
+      "header": "mulib-ir-print.h",
+      "functions": [
+        "mulib_ir_print"
+      ]
+    },
+    "ir-verify": {
+      "header": "mulib-ir-verify.h",
+      "functions": [
+        "mulib_ir_verify"
       ]
     },
     "isched": {
@@ -5599,6 +5849,25 @@
         "mulib_levenshtein_distance"
       ]
     },
+    "lexer": {
+      "header": "mulib-lexer.h",
+      "functions": [
+        "mulib_lexer_init",
+        "mulib_lexer_next"
+      ]
+    },
+    "lexgen": {
+      "header": "mulib-lexgen.h",
+      "functions": [
+        "mulib_lexgen_match"
+      ]
+    },
+    "lexical-token": {
+      "header": "mulib-lexical-token.h",
+      "functions": [
+        "mulib_lexical_token_is"
+      ]
+    },
     "lexographic_sort": {
       "header": "mulib-lexographic_sort.h",
       "functions": [
@@ -5705,7 +5974,21 @@
     "listener": {
       "header": "mulib-listener.h",
       "functions": [
-        "mulib_listener_walk"
+        "mulib_listener_walk",
+        "mulib_listener_walk_bounded"
+      ]
+    },
+    "liveintervals": {
+      "header": "mulib-liveintervals.h",
+      "functions": [
+        "mulib_liveinterval_valid",
+        "mulib_liveinterval_overlap"
+      ]
+    },
+    "liveness": {
+      "header": "mulib-liveness.h",
+      "functions": [
+        "mulib_liveness_compute"
       ]
     },
     "lldp": {
@@ -5734,6 +6017,12 @@
       "functions": [
         "mulib_logger_init",
         "mulib_logger_write"
+      ]
+    },
+    "loops": {
+      "header": "mulib-loops.h",
+      "functions": [
+        "mulib_loops_find"
       ]
     },
     "lowopt": {
@@ -6370,6 +6659,14 @@
         "mulib_mobiwrite_palmdoc"
       ]
     },
+    "module-resolver": {
+      "header": "mulib-module-resolver.h",
+      "functions": [
+        "mulib_module_resolver_add",
+        "mulib_module_resolver_get",
+        "mulib_module_resolver_free"
+      ]
+    },
     "mop": {
       "header": "mulib-mop.h",
       "functions": [
@@ -6539,6 +6836,12 @@
       "header": "mulib-n-grams.h",
       "functions": [
         "mulib_ngrams"
+      ]
+    },
+    "name-resolution": {
+      "header": "mulib-name-resolution.h",
+      "functions": [
+        "mulib_name_resolution_run"
       ]
     },
     "nameserver": {
@@ -7303,6 +7606,21 @@
         "mulib_parser_parse_to_walker"
       ]
     },
+    "parser-pratt": {
+      "header": "mulib-parser-pratt.h",
+      "functions": [
+        "mulib_parser_pratt_parse",
+        "mulib_parser_pratt_free"
+      ]
+    },
+    "passmanager": {
+      "header": "mulib-passmanager.h",
+      "functions": [
+        "mulib_passmanager_add",
+        "mulib_passmanager_run",
+        "mulib_passmanager_free"
+      ]
+    },
     "path": {
       "header": "mulib-path.h",
       "functions": [
@@ -7581,6 +7899,13 @@
         "mulib_phrasequery_match"
       ]
     },
+    "physreg": {
+      "header": "mulib-physreg.h",
+      "functions": [
+        "mulib_physreg_validate",
+        "mulib_physreg_pick"
+      ]
+    },
     "pipeline": {
       "header": "mulib-pipeline.h",
       "functions": [
@@ -7640,6 +7965,12 @@
       "functions": [
         "mulib_positions_add",
         "mulib_positions_free"
+      ]
+    },
+    "postdominance": {
+      "header": "mulib-postdominance.h",
+      "functions": [
+        "mulib_postdominance_compute"
       ]
     },
     "postings": {
@@ -7822,6 +8153,16 @@
         "mulib_qvm_run"
       ]
     },
+    "range-analysis": {
+      "header": "mulib-range-analysis.h",
+      "functions": [
+        "mulib_range_const",
+        "mulib_range_join",
+        "mulib_range_add",
+        "mulib_range_sub",
+        "mulib_range_mul"
+      ]
+    },
     "rangeindex": {
       "header": "mulib-rangeindex.h",
       "functions": [
@@ -7892,6 +8233,24 @@
         "mulib_redirect_post_to_get"
       ]
     },
+    "regalloc": {
+      "header": "mulib-regalloc.h",
+      "functions": [
+        "mulib_regalloc_allocate"
+      ]
+    },
+    "regalloc-graph": {
+      "header": "mulib-regalloc-graph.h",
+      "functions": [
+        "mulib_regalloc_graph"
+      ]
+    },
+    "regalloc-linear": {
+      "header": "mulib-regalloc-linear.h",
+      "functions": [
+        "mulib_regalloc_linear"
+      ]
+    },
     "regex": {
       "header": "mulib-regex.h",
       "functions": [
@@ -7899,6 +8258,12 @@
         "mulib_regex_destroy",
         "mulib_regex_search",
         "mulib_regex_full_match"
+      ]
+    },
+    "regpressure": {
+      "header": "mulib-regpressure.h",
+      "functions": [
+        "mulib_regpressure_peak"
       ]
     },
     "replace": {
@@ -8224,7 +8589,8 @@
     "search": {
       "header": "mulib-search.h",
       "functions": [
-        "mulib_search_kmp"
+        "mulib_search_kmp",
+        "mulib_search_all"
       ]
     },
     "search-query": {
@@ -8532,7 +8898,25 @@
       "header": "mulib-sort.h",
       "functions": [
         "mulib_sort_array",
-        "mulib_sort_binary"
+        "mulib_sort_binary",
+        "mulib_sort_stable",
+        "mulib_sort_lower_bound"
+      ]
+    },
+    "source-manager": {
+      "header": "mulib-source-manager.h",
+      "functions": [
+        "mulib_source_manager_set",
+        "mulib_source_manager_position",
+        "mulib_source_manager_free"
+      ]
+    },
+    "source-map": {
+      "header": "mulib-source-map.h",
+      "functions": [
+        "mulib_source_map_add",
+        "mulib_source_map_find",
+        "mulib_source_map_free"
       ]
     },
     "spatialtree": {
@@ -8754,6 +9138,14 @@
         "mulib_stack_destroy"
       ]
     },
+    "stackmap": {
+      "header": "mulib-stackmap.h",
+      "functions": [
+        "mulib_stackmap_add",
+        "mulib_stackmap_find",
+        "mulib_stackmap_free"
+      ]
+    },
     "static_file": {
       "header": "mulib-static_file.h",
       "functions": [
@@ -8882,6 +9274,24 @@
         "mulib_symbol_count",
         "mulib_symbol_at",
         "mulib_symbol_mathml"
+      ]
+    },
+    "symboltable": {
+      "header": "mulib-symboltable.h",
+      "functions": [
+        "mulib_symboltable_enter",
+        "mulib_symboltable_leave",
+        "mulib_symboltable_define",
+        "mulib_symboltable_lookup",
+        "mulib_symboltable_free"
+      ]
+    },
+    "syntax-tree": {
+      "header": "mulib-syntax-tree.h",
+      "functions": [
+        "mulib_syntax_tree_add",
+        "mulib_syntax_tree_validate",
+        "mulib_syntax_tree_free"
       ]
     },
     "synth-aig": {
@@ -9583,6 +9993,12 @@
         "mulib_typecache_erase"
       ]
     },
+    "typecheck": {
+      "header": "mulib-typecheck.h",
+      "functions": [
+        "mulib_typecheck_expr"
+      ]
+    },
     "typeconformance": {
       "header": "mulib-typeconformance.h",
       "functions": [
@@ -9701,6 +10117,14 @@
       "header": "mulib-typestatus.h",
       "functions": [
         "mulib_typestatus_name"
+      ]
+    },
+    "typesystem": {
+      "header": "mulib-typesystem.h",
+      "functions": [
+        "mulib_typesystem_intern",
+        "mulib_typesystem_get",
+        "mulib_typesystem_free"
       ]
     },
     "typography": {
@@ -10290,7 +10714,8 @@
     "visitor": {
       "header": "mulib-visitor.h",
       "functions": [
-        "mulib_visitor_walk"
+        "mulib_visitor_walk",
+        "mulib_visitor_walk_bounded"
       ]
     },
     "viterbi_decoding": {
@@ -10313,6 +10738,30 @@
         "mulib_vizigen_dispatch",
         "mulib_vizigen_listener",
         "mulib_vizigen_walk"
+      ]
+    },
+    "vm-host": {
+      "header": "mulib-vm-host.h",
+      "functions": [
+        "mulib_vm_host_register",
+        "mulib_vm_host_call",
+        "mulib_vm_host_free"
+      ]
+    },
+    "vm-module": {
+      "header": "mulib-vm-module.h",
+      "functions": [
+        "mulib_vm_module_add",
+        "mulib_vm_module_find",
+        "mulib_vm_modules_free"
+      ]
+    },
+    "vm-value": {
+      "header": "mulib-vm-value.h",
+      "functions": [
+        "mulib_vm_value_free",
+        "mulib_vm_value_copy",
+        "mulib_vm_value_bytes"
       ]
     },
     "vmm": {
@@ -10928,7 +11377,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "253143c35a2fb370dbd7dc8474a4f2db6680a3e22a708722513f3b53d1787af5",
-    "Implementation.c": "b7a5186806455f88bb7bd67c7f6cde3df309fad9c1e58cfdc85ddcc7d8d58bb4"
+    "Generated.inc": "ca07d9d2a716324434bc880519f47a00fbd9eb1eeb9a4d0c06fab8c3efed7d38",
+    "Implementation.c": "f34580368bd00b817e05788327fd08c937a4bcf57b7f8a25c23c556558b1dd72"
   }
 }

@@ -10,5 +10,10 @@ int main(void) {
     assert(root && mulib_evtstream_next(&stream, &event) == 1 && event.kind == MULIB_EVENT_ENTER);
     assert(mulib_evtstream_next(&stream, &event) == 1 && event.kind == MULIB_EVENT_LEAVE);
     assert(mulib_evtstream_next(&stream, &event) == 0);
+    mulib_ast_t *child = mulib_ast_create("child", "", 0);
+    assert(child && mulib_ast_append(root, child));
+    stream = mulib_evtstream_from_ast(root);
+    assert(mulib_evtstream_next_bounded(&stream, &event, 0) == -2);
+    assert(mulib_evtstream_next_bounded(&stream, &event, 1) == 1);
     mulib_ast_destroy(root); return 0;
 }

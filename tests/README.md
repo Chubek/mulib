@@ -1,5 +1,19 @@
 # Testing the MuLIB networking add-on
 
+## Compiler and VM modules
+
+The eight `test-compiler-*.c` suites cover all 60 compiler/VM additions and patched
+modules, including allocation failures, arithmetic boundaries, corrupted bytecode,
+exhaustive small-graph dominance, and AST traversal budgets. They are discovered
+by Make and CMake. Run `make check-compiler` for separate-translation-unit checks,
+C++ linkage, all regression suites, and all 60 standalone examples.
+
+```sh
+python3 tools/check_compiler.py --cc clang --cxx clang++ --sanitizers
+```
+
+See [compiler integration and contracts](../manual/compiler-tools.md).
+
 `CC=cc ./tests/run.sh` builds and runs the repository's CMake/CTest suites,
 including the networking tests. `BUILD_DIR` and `JOBS` select the build directory
 and parallelism. Use a separate build directory when changing compilers.

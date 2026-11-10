@@ -10,5 +10,8 @@ int main(void) {
     int calls = 0;
     mulib_ast_t *root = mulib_ast_create("root", "", 0);
     assert(root && mulib_visitor_walk(root, count, &calls) == 1 && calls == 1);
+    calls = 0;
+    assert(mulib_visitor_walk_bounded(root, count, &calls, 0) == -2 && calls == 0);
+    assert(mulib_visitor_walk_bounded(root, count, &calls, 1) == 1 && calls == 1);
     mulib_ast_destroy(root); return 0;
 }

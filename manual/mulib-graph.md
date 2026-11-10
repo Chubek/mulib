@@ -6,6 +6,16 @@ Directed graph with dense adjacency matrix and breadth-first search. Dense repre
 
 ## Contract and behavior
 
+`toposort()` emits all vertices in dependency order, choosing the smallest
+zero-indegree vertex at each step. It returns 1 on success, 0 for cycles,
+insufficient capacity, invalid arguments, or allocation failure. Output is
+unchanged on failure. An initialized zero-vertex graph accepts NULL output.
+Time is O(V²), temporary storage O(V).
+
+`reverse()` creates an independent transposed adjacency matrix. Its output must
+be zero-initialized and distinct from the source. Failure leaves output unchanged;
+free both graphs independently. Time and storage are O(V²).
+
 `init()` allocates a zeroed directed adjacency matrix with one byte
 per vertex pair, requiring O(n²) storage. `edge(a,b,on)` changes only a→b;
 set both directions for an undirected graph. Init/edge return 1 on success,
@@ -46,62 +56,30 @@ Include the header in application code; dependency types come from its includes.
 <summary>Types, constants, and declarations</summary>
 
 ```c
-/**
- * @file mulib-graph.h
- * @brief Directed graph with dense adjacency matrix and breadth-first search.
- * @defgroup mulib_graph MuLIB graph
- * @{
- * @details Dense representation uses O(V²) space; BFS discovers each reachable
- * vertex once, visiting adjacency rows in ascending vertex order.
- * @par Integration
- * In exactly one translation unit define MULIB_IMPL_GRAPH before including
- * this file. Other translation units may include it without the implementation
- * switch.
- * @par Portability
- * ISO C11, C++17 compatible C linkage. All allocations use the C standard
- * library.
- * @}
+/* MuLIB compiler tools: Patched dense directed graph with BFS, deterministic topological ordering and reversed edges.
+ * ISO C11 single-header module. Define MULIB_IMPL_GRAPH in ONE translation unit.
+ * Bounded operations report failure instead of silently truncating data.
  */
 #ifndef MULIB_GRAPH_H
 #define MULIB_GRAPH_H
-#include <ctype.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <limits.h>
-#include <math.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <limits.h>
+
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
-
-  /** @brief Directed graph with dense adjacency matrix and breadth-first
-   * search. */
-  typedef struct mulib_graph
-  {
-    unsigned char *edges;
-    size_t n;
-  } mulib_graph_t;
-  /** @brief mulib graph init; see manual/mulib-graph.md for contracts and
-   * examples. */
-  int mulib_graph_init (mulib_graph_t *g, size_t vertices);
-  /** @brief mulib graph edge; see manual/mulib-graph.md for contracts and
-   * examples. */
-  int mulib_graph_edge (mulib_graph_t *g, size_t src, size_t dst, int enabled);
-  /** @brief mulib graph bfs; see manual/mulib-graph.md for contracts and
-   * examples. */
-  int mulib_graph_bfs (const mulib_graph_t *g, size_t start, size_t *order,
-                       size_t capacity);
-  /** @brief mulib graph free; see manual/mulib-graph.md for contracts and
-   * examples. */
-  void mulib_graph_free (mulib_graph_t *g);
-
+typedef struct mulib_graph {unsigned char *edges;
+size_t n;
+} mulib_graph_t;
+int mulib_graph_init(mulib_graph_t *g,size_t vertices);
+int mulib_graph_edge(mulib_graph_t *g,size_t src,size_t dst,int enabled);
+int mulib_graph_bfs(const mulib_graph_t *g,size_t start,size_t *order,size_t capacity);
+void mulib_graph_free(mulib_graph_t *g);
+/* Returns 1 for DAG; 0 for cycles/invalid/OOM; output unchanged on failure. */
+int mulib_graph_toposort(const mulib_graph_t *g,size_t *order,size_t capacity);
+/* Creates deep-copy reversal; out must be zero initialized. */
+int mulib_graph_reverse(const mulib_graph_t *g,mulib_graph_t *out);
 #ifdef __cplusplus
 }
 #endif
