@@ -1,4 +1,5 @@
-/* Standalone numeric regressions; no transitive implementation dependencies. */
+/* Standalone ECMAScript numeric regressions over the MiniVM backend. */
+#define MULIB_IMPL_MINIVM
 #define MULIB_IMPL_MICROJS
 #include "mulib-microjs.h"
 #include <assert.h>
@@ -15,6 +16,7 @@ static void number(mulib_microjs_t *js, const char *source, double expected)
     assert(mulib_microjs_eval(js, source, strlen(source), &value, &error) == MULIB_MICROJS_OK);
     assert(!error.code && !error.message && value.type == MULIB_MICROJS_NUMBER);
     if (expected == 0) assert(value.number == 0);
+    else if (isinf(expected)) assert(value.number == expected);
     else assert(fabs(value.number - expected) <= fabs(expected) * (4 * DBL_EPSILON));
     mulib_microjs_value_free(&value);
 }
@@ -37,7 +39,7 @@ int main(void)
     mulib_microjs_t *js = mulib_microjs_create(NULL);
     mulib_microjs_value_t value = {0};
     mulib_microjs_error_t error;
-    const char *failure = "let stable=7; stable=1e999999999999999999999999999999999999999";
+    const char *overflow = "let stable=7; stable=1e999999999999999999999999999999999999999";
     assert(js);
     number(js, "12.5e-1", 1.25);
     number(js, "00000125e-2", 1.25);
@@ -46,9 +48,10 @@ int main(void)
     number(js, "0.000e-999999999999999999999999999999999999999", 0);
     compensated(js, 400);
     compensated(js, 120000);
-    assert(mulib_microjs_eval(js, failure, strlen(failure), &value, &error) == MULIB_MICROJS_ARITHMETIC);
-    assert(value.type == MULIB_MICROJS_NULL && !value.string && error.message);
-    number(js, "stable", 7);
+    assert(mulib_microjs_eval(js, overflow, strlen(overflow), &value, &error) == MULIB_MICROJS_OK);
+    assert(value.type == MULIB_MICROJS_NUMBER && isinf(value.number) && !error.message);
+    mulib_microjs_value_free(&value);
+    number(js, "stable", INFINITY);
     if (DBL_MAX_10_EXP == 308 && DBL_MANT_DIG == 53) {
         number(js, "1.7976931348623157e308", DBL_MAX);
         number(js, "2.2250738585072014e-308", DBL_MIN);

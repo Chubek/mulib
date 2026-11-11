@@ -1,3 +1,15 @@
+#define MULIB_IMPL_AES_GCM
+#define MULIB_IMPL_DER
+#define MULIB_IMPL_ENTROPY
+#define MULIB_IMPL_HKDF
+#define MULIB_IMPL_OPENAI_CLIENT
+#define MULIB_IMPL_OPENAI_SERVER
+#define MULIB_IMPL_OPENAI
+#define MULIB_IMPL_SIGNATURE
+#define MULIB_IMPL_SSE
+#define MULIB_IMPL_TLS
+#define MULIB_IMPL_X25519
+#define MULIB_IMPL_X509
 /* Required before system headers by the POSIX shell implementation profile. */
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
@@ -2177,3 +2189,17 @@
 #include "mulib-sha.h"
 #include "mulib-parallel-sh.h"
 #include "mulib-shebang-sh.h"
+#include "mulib-aes-gcm.h"
+#include "mulib-der.h"
+#include "mulib-entropy.h"
+#include "mulib-hkdf.h"
+#include "mulib-microchan.h"
+#include "mulib-muw3.h"
+#include "mulib-openai-client.h"
+#include "mulib-openai-server.h"
+#include "mulib-openai.h"
+#include "mulib-signature.h"
+#include "mulib-sse.h"
+#include "mulib-tls.h"
+#include "mulib-x25519.h"
+#include "mulib-x509.h"

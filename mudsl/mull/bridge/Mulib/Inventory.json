@@ -1102,9 +1102,9 @@
     "mulib-zstd.h"
   ],
   "libraries": 1100,
-  "functions": 4971,
-  "types": 8125,
-  "constants": 2516,
+  "functions": 4981,
+  "types": 8140,
+  "constants": 2520,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -1146,7 +1146,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "73bb15caa3d9c70f68761eb4bca645962b7bea7b8c404c6a06a8b329d95a3783",
+  "fingerprint": "473df7bde9c7318b7cf396421917e70bae4fbb9357b9c939f05438f16cc75caa",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -6548,9 +6548,19 @@
       "functions": [
         "mulib_microjs_default_limits",
         "mulib_microjs_create",
+        "mulib_microjs_create_with_heap",
         "mulib_microjs_destroy",
         "mulib_microjs_value_free",
-        "mulib_microjs_eval"
+        "mulib_microjs_value_copy",
+        "mulib_microjs_make_object",
+        "mulib_microjs_eval",
+        "mulib_microjs_get_global",
+        "mulib_microjs_set_global",
+        "mulib_microjs_bind",
+        "mulib_microjs_call",
+        "mulib_microjs_get_property",
+        "mulib_microjs_set_property",
+        "mulib_microjs_collect"
       ]
     },
     "microtcl": {
@@ -11609,7 +11619,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "6a88cbb53f75f70f82c7068f168aa1284607a72c3ec5b0e21ee2f4f35421f4d5",
+    "Generated.inc": "eec61de0c833acb2dfe33c85b58760ea54d7b9ef99162f73374b567d2ce8ad47",
     "Implementation.c": "c879a216160087d8fc9c579ab1989a0a66d34e032e5b296e3c8ba8be9e01a6a4"
   }
 }

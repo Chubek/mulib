@@ -1269,8 +1269,8 @@ modules:
   header: include/mulib-microjs.h
   manual: manual/mulib-microjs.md
   macro: MULIB_IMPL_MICROJS
-  purpose: Resource-bounded JavaScript-like expression and variable interpreter.
-  dependencies: []
+  purpose: Embeddable JavaScript core with MiniVM bytecode, closures, UTF-16 strings, host callbacks, and traced garbage collection; partial ECMAScript 2025.
+  dependencies: [minivm]
   status: implemented
 - name: minicurl
   header: include/mulib-minicurl.h
@@ -11923,3 +11923,9 @@ project_files:
   purpose: "Shared MuLL host fixture for EDA snapshot rollback, publication and conflicts."
 - file: mudsl/tests/mull/mulib/eda-transaction.expected
   purpose: "Expected output for the EDA snapshot transaction MuLL fixture."
+- file: tests/test_microjs_engine.c
+  purpose: "Focused regression suite for test_microjs_engine."
+- file: mudsl/tests/mull/mulib/microjs.mull
+  purpose: "MuLL embedding fixture for MicroJS closures and rooted values."
+- file: mudsl/tests/mull/mulib/microjs.expected
+  purpose: "Expected result of the MicroJS MuLL embedding fixture."

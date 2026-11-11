@@ -1,7 +1,8 @@
 /* cc -std=c11 -Iinclude examples/calculator.c -lm -o calculator
  * ./calculator 'let subtotal = 7 * 6; subtotal / 2'
- * This demonstrates the documented MicroJS subset, not a JavaScript runtime.
+ * This demonstrates the numeric subset of the MiniVM-backed MicroJS engine.
  */
+#define MULIB_IMPL_MINIVM
 #define MULIB_IMPL_MICROJS
 #include "mulib-microjs.h"
 #include <assert.h>

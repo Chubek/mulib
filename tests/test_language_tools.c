@@ -21,6 +21,7 @@ static void *language_realloc(void *p, size_t n) { return language_allow() ? rea
 #define MULIB_IMPL_UTF8
 #define MULIB_IMPL_JSON
 #define MULIB_IMPL_MICROJS
+#define MULIB_IMPL_MINIVM
 #define MULIB_IMPL_DATALOG
 #define MULIB_IMPL_PERLPOD
 #define MULIB_IMPL_MICROAUDIO
@@ -44,10 +45,11 @@ static mulib_microjs_status_t js_eval(mulib_microjs_t *v, const char *s, mulib_m
 static void test_microjs(void) {
     mulib_microjs_t *v = mulib_microjs_create(NULL);
     mulib_microjs_value_t r = {0}; mulib_microjs_limits_t l;
-    const char *bad[] = {"let", "let x", "let true=1", "(1", "1+", "1 2", "1 == 1", "'x", "'\\u0041'", "while (true) {}", "1e+", "1.", "[1]", "/* comment */", "true && (1+)", "true ? 1 : 2"};
+    const char *bad[] = {"let", "let true=1", "(1", "1+", "1 2", "'x", "'\\u00xx'", "1e+", "[1", "/* comment", "true && (1+)", "true ? 1"};
     size_t i;
     assert(v);
-    assert(js_eval(v, "", &r) == MULIB_MICROJS_OK && r.type == MULIB_MICROJS_NULL);
+    assert(js_eval(v, "", &r) == MULIB_MICROJS_OK && r.type == MULIB_MICROJS_UNDEFINED);
+    mulib_microjs_value_free(&r);
     assert(js_eval(v, "let x = 2 + 3 * 4; x = x / 2; x + 1", &r) == MULIB_MICROJS_OK && r.number == 8);
     mulib_microjs_value_free(&r);
     assert(js_eval(v, "let s = 'hi'; s = s + \"!\\n\"; s", &r) == MULIB_MICROJS_OK && !strcmp(r.string, "hi!\n"));
@@ -62,24 +64,25 @@ static void test_microjs(void) {
     mulib_microjs_value_free(&r);
     assert(js_eval(v, "1.25e2 + 1e-2", &r) == MULIB_MICROJS_OK && fabs(r.number - 125.01) < 1e-9);
     mulib_microjs_value_free(&r);
-    assert(js_eval(v, "x=1/0", &r) == MULIB_MICROJS_ARITHMETIC);
-    assert(js_eval(v, "x", &r) == MULIB_MICROJS_OK && r.number == 7); mulib_microjs_value_free(&r);
-    assert(js_eval(v, "let x=1", &r) == MULIB_MICROJS_NAME);
+    assert(js_eval(v, "x=1/0", &r) == MULIB_MICROJS_OK && isinf(r.number)); mulib_microjs_value_free(&r);
+    assert(js_eval(v, "x", &r) == MULIB_MICROJS_OK && isinf(r.number)); mulib_microjs_value_free(&r);
+    assert(js_eval(v, "let x=1", &r) == MULIB_MICROJS_SYNTAX);
     assert(js_eval(v, "absent=1", &r) == MULIB_MICROJS_NAME);
-    assert(js_eval(v, "'a'+1", &r) == MULIB_MICROJS_TYPE);
-    assert(js_eval(v, "1 && true", &r) == MULIB_MICROJS_TYPE);
-    assert(js_eval(v, "true && 1", &r) == MULIB_MICROJS_TYPE);
-    assert(js_eval(v, "!1", &r) == MULIB_MICROJS_TYPE);
-    assert(js_eval(v, "1e999", &r) == MULIB_MICROJS_ARITHMETIC);
-    assert(js_eval(v, "1e308 * 10", &r) == MULIB_MICROJS_ARITHMETIC);
+    assert(js_eval(v, "'a'+1", &r) == MULIB_MICROJS_OK && !strcmp(r.string,"a1")); mulib_microjs_value_free(&r);
+    assert(js_eval(v, "1 && true", &r) == MULIB_MICROJS_OK && r.boolean); mulib_microjs_value_free(&r);
+    assert(js_eval(v, "true && 1", &r) == MULIB_MICROJS_OK && r.number == 1); mulib_microjs_value_free(&r);
+    assert(js_eval(v, "!1", &r) == MULIB_MICROJS_OK && !r.boolean); mulib_microjs_value_free(&r);
+    assert(js_eval(v, "1e999", &r) == MULIB_MICROJS_OK && isinf(r.number)); mulib_microjs_value_free(&r);
+    assert(js_eval(v, "1e308 * 10", &r) == MULIB_MICROJS_OK && isinf(r.number)); mulib_microjs_value_free(&r);
     for (i = 0; i < sizeof bad / sizeof *bad; ++i) assert(js_eval(v, bad[i], &r) != MULIB_MICROJS_OK);
     { const char nul[] = {'1', 0, '+', '2'}; assert(mulib_microjs_eval(v, nul, sizeof nul, &r, NULL) == MULIB_MICROJS_SYNTAX); }
     assert(mulib_microjs_eval(v, NULL, 0, &r, NULL) == MULIB_MICROJS_OK);
+    mulib_microjs_value_free(&r);
     assert(mulib_microjs_eval(v, NULL, 1, &r, NULL) == MULIB_MICROJS_INVALID);
     assert(js_eval(v, "s", &r) == MULIB_MICROJS_OK);
     mulib_microjs_destroy(v);
     assert(r.type == MULIB_MICROJS_STRING && !strcmp(r.string,"hi!\n")); mulib_microjs_value_free(&r);
-    l = mulib_microjs_default_limits(); l.variables = 1; l.string_bytes = 3;
+    l = mulib_microjs_default_limits(); l.variables = 1; l.string_bytes = 6;
     v = mulib_microjs_create(&l); assert(v);
     assert(js_eval(v, "let a='abc'", &r) == MULIB_MICROJS_OK); mulib_microjs_value_free(&r);
     assert(js_eval(v, "a+'d'", &r) == MULIB_MICROJS_LIMIT);

@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1100 headers, 1128 direct dependency edges.
+Inventory: 1100 headers, 1129 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (381 modules)
+## Stratum 0 (380 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -218,7 +218,6 @@ Compatibility group: `parsec`, `peg`.
 | [memtest](mulib-memtest.md) | none |
 | [metrics](mulib-metrics.md) | none |
 | [microaudio](mulib-microaudio.md) | none |
-| [microjs](mulib-microjs.md) | none |
 | [microtcl](mulib-microtcl.md) | none |
 | [minhash](mulib-minhash.md) | none |
 | [minincat](mulib-minincat.md) | none |
@@ -401,7 +400,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (373 modules)
+## Stratum 1 (374 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -580,6 +579,7 @@ Compatibility group: `parsec`, `peg`.
 | [mathscript](mulib-mathscript.md) | `typecore` |
 | [mathspacing](mulib-mathspacing.md) | `typecore` |
 | [mathspeech](mulib-mathspeech.md) | `typecore` |
+| [microjs](mulib-microjs.md) | `minivm` |
 | [microtype](mulib-microtype.md) | `typecore` |
 | [mime](mulib-mime.md) | `seurity` |
 | [minish](mulib-minish.md) | `map`, `strbuf`, `vec` |

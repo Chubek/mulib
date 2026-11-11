@@ -624,7 +624,7 @@ entry point documented by [mulib-virtio](mulib-virtio.md).
 | [microaudio](mulib-microaudio.md) | Portable bounded PCM and WAV audio utilities. | [header](../include/mulib-microaudio.h) · [example](../examples/modules/microaudio.c) |
 | [microcc](mulib-microcc.md) | High-level IR to native MIR, optimization, selection, scheduling and assembly pipeline. | [header](../include/mulib-microcc.h) · [example](../examples/modules/microcc.c) |
 | [microchan](mulib-microchan.md) | Checksummed local publish/subscribe protocol, client and bounded broker. | [header](../include/mulib-microchan.h) · [example](../examples/modules/microchan.c) |
-| [microjs](mulib-microjs.md) | Resource-bounded JavaScript-like expression and variable interpreter. | [header](../include/mulib-microjs.h) · [example](../examples/modules/microjs.c) |
+| [microjs](mulib-microjs.md) | Embeddable JavaScript core with MiniVM bytecode, closures, UTF-16 strings, host callbacks, and traced garbage collection; partial ECMAScript 2025. | [header](../include/mulib-microjs.h) · [example](../examples/modules/microjs.c) |
 | [microtcl](mulib-microtcl.md) | An embeddable Tcl-inspired command interpreter with a documented small builtin set. | [header](../include/mulib-microtcl.h) · [example](../examples/modules/microtcl.c) |
 | [microtype](mulib-microtype.md) | Apply bounded protrusion offset to an advance. Finite numeric inputs and documented scalar result. | [header](../include/mulib-microtype.h) · [example](../examples/mulib-microtype.c) |
 | [midi](mulib-midi.md) | Owned MIDI events and Standard MIDI File type 0/1 IO. | [header](../include/mulib-midi.h) · [example](../examples/modules/midi.c) |

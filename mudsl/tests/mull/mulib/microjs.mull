@@ -1,0 +1,17 @@
+mulib JS <- G:MulibWrap("microjs");
+val limits <- JS:mulib_microjs_default_limits();
+val state <- JS:mulib_microjs_create(limits);
+val result <- JS:New("mulib_microjs_value_t");
+val error <- JS:New("mulib_microjs_error_t");
+val source <- "function add(x){return function(y){return x+y;};} const f=add(40); f(2)";
+G:Assert(JS:mulib_microjs_eval(state, source, G:Len(source), result, error) == JS:MULIB_MICROJS_OK);
+G:Assert(result:type == JS:MULIB_MICROJS_NUMBER);
+G:Assert(result:number == 42);
+JS:mulib_microjs_value_free(result);
+G:Assert(JS:mulib_microjs_make_object(state, 0, result) == JS:MULIB_MICROJS_OK);
+val copy <- JS:New("mulib_microjs_value_t");
+G:Assert(JS:mulib_microjs_value_copy(state, result, copy) == JS:MULIB_MICROJS_OK);
+JS:mulib_microjs_value_free(result);
+JS:mulib_microjs_destroy(state);
+JS:mulib_microjs_value_free(copy);
+"microjs embedding ok";
