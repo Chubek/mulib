@@ -9,12 +9,18 @@ creates an immutable binding and checks the initializer's type. A semicolon is
 optional at the declaration's end-of-line, closing brace, or end-of-source.
 Native data referenced by the binding can still be mutated by library calls.
 
-The checked-in generated bridge covers **1,024 public headers**, **1,024 library
-names**, **4,496 functions**, **7,582 native type descriptors**, and **2,271
+The checked-in generated bridge covers **1,096 public headers**, **1,096 library
+names**, **4,922 functions**, **8,042 native type descriptors**, and **2,507
 constants** from MuLIB. `virtio.h` and `mulib-virtio.h` name the same library.
 `Inventory.json` records the complete header/function inventory and fingerprint.
 Functions are real compiler-typed C calls, including struct/union returns,
 static-inline APIs, and callbacks. Both hosts use the same compiled bridge.
+
+MuW3, its Mune Weblet engine, and MicroChan are registered as `muw3`, `muw3-mune`
+and `microchan`. Their complete C APIs, option records and callback types are
+available through the same wrappers; see the MuLIB module manuals for ownership.
+Native TLS and its dependencies are registered as `tls`, `x509`, `signature`,
+`der`, `x25519`, `aes-gcm`, `hkdf`, and `entropy`.
 
 The CMake bridge enables `MULL_MULIB_NATIVE_FONTSHAPE` by default, making the
 explicit native fontshape constructors available alongside the unchanged

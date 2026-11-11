@@ -1,0 +1,9 @@
+-- MicroChan namespace and resource profile for MuW3 Weblets.
+-- Applications use muw3/<weblet>/request, reply/<correlation>, and events topics.
+return {
+  topic_prefix = 'muw3/',
+  max_payload = 1048576,
+  max_queue_bytes = 4194304,
+  max_clients = 64,
+  max_subscriptions = 32,
+}

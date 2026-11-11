@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Complete alphabetical index](index.md) · [Integration](integration.md)
 
-MuLIB has 537 implemented single-header C11 modules. Every implemented module has a corresponding
+MuLIB has 1093 implemented C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -38,6 +38,8 @@ consult each manual's exact supported syntax, errors, and limits.
 | Indexes and differences | [avl](mulib-avl.md), [b+tree](mulib-b+tree.md), [hattrie](mulib-hattrie.md), [txtdiff](mulib-txtdiff.md), [mmdiff](mulib-mmdiff.md) |
 | DNS | [wire format](mulib-dns.md), [client](mulib-dnsclient.md), [cache](mulib-dnscache.md), [resolver](mulib-dnsresolver.md), [nameserver](mulib-nameserver.md), [historical dnsnmeserver facade](mulib-dnsnmeserver.md) |
 | HTTP applications | [webclient](mulib-webclient.md), [webframework](mulib-webframework.md), [fileserver](mulib-fileserver.md), [reverse proxy](mulib-revproxy.md), [minicurl](mulib-minicurl.md), [miniwget](mulib-miniwget.md), [minincat](mulib-minincat.md) |
+| Weblets and messaging | [MuW3 client](mulib-muw3.md), [Mune/lmuw3 engine](mulib-muw3-mune.md), [MicroChan protocol and daemon](mulib-microchan.md) |
+| Native TLS and cryptography | [TLS 1.3](mulib-tls.md), [X.509](mulib-x509.md), [signatures](mulib-signature.md), [X25519](mulib-x25519.md), [AES-GCM](mulib-aes-gcm.md), [HKDF](mulib-hkdf.md), [entropy](mulib-entropy.md), [DER](mulib-der.md) |
 | Mail and file transfer | [FTP client](mulib-ftpclient.md), [FTP server](mulib-ftpserver.md), [SMTP client](mulib-smtpclient.md), [SMTP server](mulib-smtpserver.md), [IMAP server](mulib-imapserver.md), [IMAP client (impaclient)](mulib-impaclient.md) |
 | Events and native OS | [asyncio](mulib-asyncio.md), [epoll](mulib-epoll.md), [select](mulib-select.md), [eventfd](mulib-eventfd.md), [timerfd](mulib-timerfd.md), [perf](mulib-perf.md), [signal](mulib-signal.md), [syscall](mulib-syscall.md), [fswatch](mulib-fswatch.md) |
 | Tasks and services | [taskpool](mulib-taskpool.md), [taskdag](mulib-taskdag.md), [parallel](mulib-parallel.md), [pipeline](mulib-pipeline.md), [process](mulib-process.md), [cron](mulib-cron.md), [initsys](mulib-initsys.md) |

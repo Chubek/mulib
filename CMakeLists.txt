@@ -7,6 +7,8 @@ target_include_directories(mulib INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(mulib INTERFACE c_std_11)
 target_link_libraries(mulib INTERFACE Threads::Threads)
 
+option(MULIB_BUILD_MUW3 "Build MuW3 Weblet runtime and MicroChan daemon" ON)
+
 option(MULIB_BUILD_SHIRAZ "Build the Linux Shiraz runtime libraries and tools" ${CMAKE_HOST_UNIX})
 if(MULIB_BUILD_SHIRAZ AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_subdirectory(library/shiraz)
@@ -86,6 +88,10 @@ if(MULIB_BUILD_VIRTIO)
   endforeach()
 endif()
 
+if(MULIB_BUILD_MUW3)
+  add_subdirectory(library/lmuw3)
+endif()
+
 if(MULIB_BUILD_TESTS)
   enable_testing()
   if(MULIB_BUILD_VIRTIO)
@@ -150,6 +156,22 @@ if(MULIB_BUILD_TESTS)
         --include ${CMAKE_CURRENT_SOURCE_DIR}/include)
     add_test(NAME mulib_lprowse_embedded
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed_lprowse.py --check)
+    add_test(NAME mulib_lmuw3_embedded
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed_lmuw3.py --check)
+    if(MULIB_BUILD_MUW3 AND UNIX)
+      add_test(NAME mulib_muw3_integration
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_muw3_integration.py
+          --muw3 $<TARGET_FILE:muw3> --microchand $<TARGET_FILE:microchand>)
+      set_tests_properties(mulib_muw3_integration PROPERTIES TIMEOUT 60)
+      find_program(MULIB_OPENSSL_ORACLE openssl)
+      if(MULIB_OPENSSL_ORACLE)
+        add_test(NAME mulib_tls_interoperability
+          COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_tls_integration.py
+            --muw3 $<TARGET_FILE:muw3> --x509 $<TARGET_FILE:mulib_test-x509>
+            --signature $<TARGET_FILE:mulib_test-signature>)
+        set_tests_properties(mulib_tls_interoperability PROPERTIES TIMEOUT 180)
+      endif()
+    endif()
     add_test(NAME mulib_readline_profiles_generated
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_librl.py --check)
     add_test(NAME mulib_archml_profiles_generated

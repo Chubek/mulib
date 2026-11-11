@@ -1,7 +1,7 @@
 /** @file mulib-socket.h
  * @brief POSIX connected stream descriptor ownership and bounded I/O
- * primitives and numeric IPv4 TCP setup. Define MULIB_IMPL_SOCKET once. No DNS or implicit
- * security. */
+ * primitives, TCP/DNS connection setup and filesystem Unix sockets.
+ * Define MULIB_IMPL_SOCKET once. No implicit transport security. */
 #ifndef MULIB_SOCKET_H
 #define MULIB_SOCKET_H
 #include <stddef.h>
@@ -30,6 +30,19 @@ extern "C"
   /** @brief Blocking TCP connect to a numeric IPv4 address; output must be
    * invalid. Close-on-exec, no DNS. Returns 0, EINVAL/EIO/ENOTSUP below. */
   int mulib_socket_connect (mulib_socket_t *out, const char *address, unsigned port);
+  /** Resolve a host (IPv4/IPv6) and connect, with a per-address millisecond
+   * timeout. DNS uses the system resolver and its timeout policy. Requires
+   * POSIX.1-2001 declarations enabled before system headers. Output nonblocking. */
+  int mulib_socket_connect_host (mulib_socket_t *out, const char *host,
+                                 unsigned port, unsigned timeout_ms);
+  /** Filesystem Unix stream endpoints. Listen never removes an existing path;
+   * caller owns unlink after close. Both outputs are nonblocking, close-on-exec. */
+  int mulib_socket_local_listen (mulib_socket_t *out, const char *path);
+  int mulib_socket_local_connect (mulib_socket_t *out, const char *path,
+                                  unsigned timeout_ms);
+  /** Wait for read (writing=0) or write (1) readiness; AGAIN means timeout.
+   * Hangup is readable so receive can distinguish EOF. No signal policy changes. */
+  int mulib_socket_wait (const mulib_socket_t *s, int writing, unsigned timeout_ms);
   /** @brief Nonblocking numeric IPv4 listener. Port zero requests an ephemeral
    * port, returned through bound_port. No implicit wildcard binding. */
   int mulib_socket_listen (mulib_socket_t *out, const char *address, unsigned port,
@@ -63,9 +76,115 @@ extern "C"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/un.h>
+#include <poll.h>
+#include <limits.h>
+#include <string.h>
+#include <stdio.h>
+#if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200112L) || defined(_GNU_SOURCE)
+#include <netdb.h>
+#define MULIB_SOCKET_RESOLVER_ 1
+#endif
 #include <unistd.h>
 #define MULIB_SOCKET_POSIX_ 1
 #endif
+int
+mulib_socket_wait (const mulib_socket_t *s, int writing, unsigned ms)
+{
+  if (!s || s->fd < 0 || (writing != 0 && writing != 1)) return -1;
+#ifdef MULIB_SOCKET_POSIX_
+  {
+    struct pollfd p;
+    int rc;
+    p.fd = s->fd; p.events = writing ? POLLOUT : POLLIN; p.revents = 0;
+    do { rc = poll (&p, 1, ms > INT_MAX ? INT_MAX : (int)ms); }
+    while (rc < 0 && errno == EINTR);
+    if (rc < 0 || (p.revents & POLLNVAL)) return -2;
+    return rc ? 0 : 1;
+  }
+#else
+  (void)ms; return -3;
+#endif
+}
+#ifdef MULIB_SOCKET_POSIX_
+static int
+mulib_socket_dial_ (int fd, const struct sockaddr *address, socklen_t length, unsigned ms)
+{
+  mulib_socket_t s;
+  int error = 0, rc;
+  socklen_t n = sizeof error;
+  s.fd = fd;
+  if (fcntl (fd, F_SETFD, FD_CLOEXEC) < 0 || mulib_socket_nonblocking (&s, 1)) return -2;
+  rc = connect (fd, address, length);
+  if (!rc) return 0;
+  /* Unix EAGAIN means the listener backlog is full, not an asynchronous
+   * connection. SO_ERROR may be zero on that still-unconnected descriptor. */
+  if (errno == EAGAIN) return 1;
+  if (errno != EINPROGRESS && errno != EINTR) return -2;
+  rc = mulib_socket_wait (&s, 1, ms);
+  if (rc) return rc;
+  return getsockopt (fd, SOL_SOCKET, SO_ERROR, &error, &n) < 0 || error ? -2 : 0;
+}
+#endif
+int
+mulib_socket_connect_host (mulib_socket_t *out, const char *host, unsigned port, unsigned ms)
+{
+  if (!out || out->fd != -1 || !host || !*host || !port || port > 65535) return -1;
+#if defined(MULIB_SOCKET_POSIX_) && defined(MULIB_SOCKET_RESOLVER_)
+  {
+    struct addrinfo hints, *list = NULL, *p;
+    char service[6];
+    int rc = -2;
+    memset (&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC; hints.ai_socktype = SOCK_STREAM;
+    (void)snprintf (service, sizeof service, "%u", port);
+    if (getaddrinfo (host, service, &hints, &list)) return -2;
+    for (p = list; p; p = p->ai_next) {
+      int fd = socket (p->ai_family, p->ai_socktype, p->ai_protocol);
+      if (fd < 0) continue;
+      rc = mulib_socket_dial_ (fd, p->ai_addr, p->ai_addrlen, ms);
+      if (!rc) { out->fd = fd; break; }
+      close (fd);
+    }
+    freeaddrinfo (list); return rc;
+  }
+#else
+  (void)ms; return -3;
+#endif
+}
+static int
+mulib_socket_local_ (mulib_socket_t *out, const char *path, int server, unsigned ms)
+{
+  if (!out || out->fd != -1 || !path || !*path) return -1;
+#ifdef MULIB_SOCKET_POSIX_
+  {
+    struct sockaddr_un a;
+    int fd, rc;
+    size_t n = strlen (path);
+    if (n >= sizeof a.sun_path) return -1;
+    memset (&a, 0, sizeof a); a.sun_family = AF_UNIX;
+    memcpy (a.sun_path, path, n + 1);
+    fd = socket (AF_UNIX, SOCK_STREAM, 0);
+    if (fd < 0) return -2;
+    if (server) {
+      if (fcntl (fd, F_SETFD, FD_CLOEXEC) < 0 || fcntl (fd, F_SETFL, O_NONBLOCK) < 0
+          || bind (fd, (struct sockaddr *)&a, sizeof a) < 0) { close (fd); return -2; }
+      rc = listen (fd, 32);
+      if (rc < 0) { close (fd); unlink (path); return -2; }
+    } else {
+      rc = mulib_socket_dial_ (fd, (struct sockaddr *)&a, sizeof a, ms);
+      if (rc) { close (fd); return rc; }
+    }
+    out->fd = fd; return 0;
+  }
+#else
+  (void)server; (void)ms; return -3;
+#endif
+}
+int mulib_socket_local_listen (mulib_socket_t *s, const char *path)
+{ return mulib_socket_local_ (s, path, 1, 0); }
+int mulib_socket_local_connect (mulib_socket_t *s, const char *path, unsigned ms)
+{ return mulib_socket_local_ (s, path, 0, ms); }
 int
 mulib_socket_connect (mulib_socket_t *out, const char *address, unsigned port)
 {
@@ -257,4 +376,5 @@ mulib_socket_close (mulib_socket_t *s)
 #endif
 }
 #undef MULIB_SOCKET_POSIX_
+#undef MULIB_SOCKET_RESOLVER_
 #endif

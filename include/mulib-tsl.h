@@ -1,8 +1,8 @@
 /** @file mulib-tsl.h
  * @brief Transport-security lifecycle adapter for an application-supplied TLS
- * backend. Define MULIB_IMPL_TSL once. Historical spelling TSL; no
- * cryptographic implementation or insecure plaintext fallback is supplied.
- * Backend must implement authenticated TLS. */
+ * backend. Define MULIB_IMPL_TSL once. Historical spelling TSL; this header
+ * supplies the lifecycle interface. mulib-tls.h supplies MuLIB's native TLS 1.3
+ * backend. Backends must implement authenticated TLS. */
 #ifndef MULIB_TSL_H
 #define MULIB_TSL_H
 #include <stddef.h>

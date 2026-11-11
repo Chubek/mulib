@@ -30,7 +30,9 @@ extern "C"
   {
     MULIB_HTTP_EOF = 1,
     MULIB_HTTP_HEAD_RESPONSE = 2,
-    MULIB_HTTP_CONNECT_RESPONSE = 4
+    MULIB_HTTP_CONNECT_RESPONSE = 4,
+    /** Accept validated chunk extensions and separate trailer fields. */
+    MULIB_HTTP_CHUNK_METADATA = 8
   };
   /** @brief Zero limits select 32768 header bytes, 100 headers, 16 MiB body.
    */
@@ -57,6 +59,8 @@ extern "C"
     unsigned char *body; /* decoded chunk data, binary-safe */
     size_t body_length;
     int chunked, close_delimited;
+    mulib_http_header_t *trailers; /* never merged into routing/framing headers */
+    size_t trailer_count;
   } mulib_http_message_t;
   /** @brief Free a parsed message; zero-initialized messages and NULL are
    * safe. */
@@ -64,6 +68,9 @@ extern "C"
   /** @brief Borrow the first case-insensitive matching header, or NULL. */
   const char *mulib_http_header (const mulib_http_message_t *message,
                                  const char *name);
+  /** Iterate duplicate fields (e.g. Set-Cookie). Initialize *cursor=0. */
+  const char *mulib_http_header_next (const mulib_http_message_t *message,
+                                      const char *name, size_t *cursor);
   /** @brief Parse one message. response is 0 for requests, 1 for responses.
    * On OK, out owns allocations and consumed identifies the exact frame
    * boundary. On failure/MORE, out is unchanged and consumed is zero. EOF
@@ -193,7 +200,7 @@ extern "C"
   mulib_http_flags_ (int response, unsigned flags)
   {
     unsigned context = flags & (MULIB_HTTP_HEAD_RESPONSE | MULIB_HTTP_CONNECT_RESPONSE);
-    return !(flags & ~7u)
+    return !(flags & ~15u)
            && context != (MULIB_HTTP_HEAD_RESPONSE | MULIB_HTTP_CONNECT_RESPONSE)
            && (response || !context);
   }
@@ -341,17 +348,89 @@ extern "C"
         free (m->headers[i].value);
       }
     free (m->headers);
+    for (size_t i = 0; i < m->trailer_count; ++i)
+      { free (m->trailers[i].name); free (m->trailers[i].value); }
+    free (m->trailers);
     memset (m, 0, sizeof (*m));
   }
   const char *
   mulib_http_header (const mulib_http_message_t *m, const char *name)
   {
-    if (!m || !name || (!m->headers && m->header_count))
+    size_t cursor = 0;
+    return mulib_http_header_next (m, name, &cursor);
+  }
+  const char *
+  mulib_http_header_next (const mulib_http_message_t *m, const char *name, size_t *cursor)
+  {
+    if (!m || !name || !cursor || (!m->headers && m->header_count))
       return NULL;
-    for (size_t i = 0; i < m->header_count; ++i)
-      if (mulib_http_equal_ (m->headers[i].name, name))
-        return m->headers[i].value;
+    while (*cursor < m->header_count) {
+      size_t i = (*cursor)++;
+      if (mulib_http_equal_ (m->headers[i].name, name)) return m->headers[i].value;
+    }
     return NULL;
+  }
+  /* RFC 9112 chunk-ext: token names, optional token/quoted-string values.
+   * Metadata is validated then discarded; it cannot change body framing. */
+  static int
+  mulib_http_extensions_ (const char *s, size_t n)
+  {
+    size_t i = 0, start;
+    while (i < n) {
+      while (i < n && (s[i] == ' ' || s[i] == '\t')) ++i;
+      if (i == n || s[i++] != ';') return 0;
+      while (i < n && (s[i] == ' ' || s[i] == '\t')) ++i;
+      start = i;
+      while (i < n && mulib_http_token_byte_ ((unsigned char)s[i], NULL)) ++i;
+      if (i == start) return 0;
+      start = i;
+      while (i < n && (s[i] == ' ' || s[i] == '\t')) ++i;
+      if (i < n && s[i] == '=') {
+        ++i;
+        while (i < n && (s[i] == ' ' || s[i] == '\t')) ++i;
+        if (i < n && s[i] == '"') {
+          ++i;
+          while (i < n && s[i] != '"') {
+            unsigned char c = (unsigned char)s[i++];
+            if (c == '\\') { if (i == n) return 0; c = (unsigned char)s[i++]; }
+            if (!mulib_http_value_byte_ (c, NULL)) return 0;
+          }
+          if (i == n) return 0;
+          ++i;
+        } else {
+          start = i;
+          while (i < n && mulib_http_token_byte_ ((unsigned char)s[i], NULL)) ++i;
+          if (start == i) return 0;
+        }
+      } else i = start;
+    }
+    return 1;
+  }
+  static int
+  mulib_http_trailer_allowed_ (const mulib_http_message_t *m, const char *name)
+  {
+    static const char *const forbidden[] = { "Host", "Content-Length", "Transfer-Encoding",
+      "Connection", "Trailer", "TE", "Upgrade", "Authorization", "Proxy-Authorization",
+      "Proxy-Authenticate", "WWW-Authenticate", "Cookie", "Set-Cookie", "Content-Type",
+      "Content-Encoding", "Content-Range", "Location", "Cache-Control", "Vary",
+      "Content-Location", "Content-Language", "Content-Disposition", "Range",
+      "Expect", "Max-Forwards", "Age", "Expires", "Date", "Retry-After" };
+    for (size_t i = 0; i < sizeof forbidden / sizeof *forbidden; ++i)
+      if (mulib_http_equal_ (name, forbidden[i])) return 0;
+    for (size_t i = 0; i < m->header_count; ++i) {
+      const char *p = m->headers[i].value;
+      if (!mulib_http_equal_ (m->headers[i].name, "Connection") || !p) continue;
+      while (*p) {
+        const char *start, *end;
+        while (*p == ' ' || *p == '\t' || *p == ',') ++p;
+        start = p;
+        while (*p && *p != ',') ++p;
+        end = p;
+        while (end > start && (end[-1] == ' ' || end[-1] == '\t')) --end;
+        if (mulib_http_equal_n_ (start, (size_t)(end - start), name, strlen (name))) return 0;
+      }
+    }
+    return 1;
   }
   /* limit is an absolute end offset, not a limit on the whole supplied
    * pipeline. */
@@ -640,17 +719,21 @@ extern "C"
       {
         for (;;)
           {
-            size_t chunk = 0,
+            size_t chunk = 0, hex_end,
                    line_limit = pos > SIZE_MAX - 128 ? SIZE_MAX : pos + 128;
             r = mulib_http_line_ (s, n, pos, line_limit, &end);
             if (r != MULIB_HTTP_OK)
               goto fail;
-            if (!mulib_http_hex_ (s + pos, end - pos))
+            hex_end = pos;
+            while (hex_end < end && mulib_http_hex_ (s + hex_end, 1)) ++hex_end;
+            if (hex_end == pos || (hex_end != end
+                && (!(o.flags & MULIB_HTTP_CHUNK_METADATA)
+                    || !mulib_http_extensions_ (s + hex_end, end - hex_end))))
               {
                 r = MULIB_HTTP_INVALID;
                 goto fail;
               }
-            for (size_t i = pos; i < end; ++i)
+            for (size_t i = pos; i < hex_end; ++i)
               {
                 unsigned char c = (unsigned char)s[i];
                 unsigned d;
@@ -670,6 +753,31 @@ extern "C"
             pos = end + 2;
             if (!chunk)
               {
+                if (o.flags & MULIB_HTTP_CHUNK_METADATA) {
+                  size_t trailer_limit = o.max_header_bytes > SIZE_MAX - pos
+                      ? SIZE_MAX : pos + o.max_header_bytes;
+                  for (;;) {
+                    mulib_http_header_t h, *next;
+                    r = mulib_http_line_ (s, n, pos, trailer_limit, &end);
+                    if (r != MULIB_HTTP_OK) goto fail;
+                    if (end == pos) { pos += 2; break; }
+                    if (m.trailer_count >= o.max_headers - m.header_count
+                        || m.trailer_count >= SIZE_MAX / sizeof (*next)) {
+                      r = MULIB_HTTP_LIMIT; goto fail;
+                    }
+                    r = mulib_http_field_ (s + pos, end - pos, &h);
+                    if (r != MULIB_HTTP_OK) goto fail;
+                    if (!mulib_http_trailer_allowed_ (&m, h.name)) {
+                      free (h.name); free (h.value); r = MULIB_HTTP_INVALID; goto fail;
+                    }
+                    next = (mulib_http_header_t *)realloc (m.trailers,
+                        (m.trailer_count + 1) * sizeof (*next));
+                    if (!next) { free (h.name); free (h.value); r = MULIB_HTTP_NOMEM; goto fail; }
+                    m.trailers = next; m.trailers[m.trailer_count++] = h;
+                    pos = end + 2;
+                  }
+                  break;
+                }
                 if (n - pos < 2)
                   {
                     r = MULIB_HTTP_MORE;
@@ -783,10 +891,13 @@ extern "C"
     int no_body;
     if (!m || !bytes || !length || (m->is_response != 0 && m->is_response != 1)
         || (!m->body && m->body_length) || (!m->headers && m->header_count)
+        || (!m->trailers && m->trailer_count)
+        || (m->trailer_count && (!m->chunked || !(o.flags & MULIB_HTTP_CHUNK_METADATA)))
         || !mulib_http_flags_ (m->is_response, o.flags))
       return MULIB_HTTP_INVALID;
     if (m->body_length > o.max_body_bytes || m->header_count > o.max_headers)
       return MULIB_HTTP_LIMIT;
+    if (m->trailer_count > o.max_headers - m->header_count) return MULIB_HTTP_LIMIT;
     /* Preflight the entire header block before allocating the wire buffer or
      * invoking the URI parser. Individual and aggregate limits both matter. */
     no_body = mulib_http_no_body_ (m, o.flags);
@@ -831,11 +942,28 @@ extern "C"
         if (mulib_http_equal_ (name, "Content-Length")) ++has_cl;
         if (mulib_http_equal_ (name, "Transfer-Encoding")) ++has_te;
       }
+    /* Check Connection-nominated trailer fields only after all source header
+     * strings have been bounded and validated. */
+    {
+      size_t trailer_bytes = 2;
+      for (size_t i = 0; i < m->trailer_count; ++i) {
+        const char *name = m->trailers[i].name, *value = m->trailers[i].value;
+        r = mulib_http_length_ (name, o.max_header_bytes, &a);
+        if (r != MULIB_HTTP_OK) return r;
+        r = mulib_http_length_ (value, o.max_header_bytes, &z);
+        if (r != MULIB_HTTP_OK) return r;
+        if (!mulib_http_token_ (name, a) || !mulib_http_value_ (value, z)
+            || !mulib_http_trailer_allowed_ (m, name)) return MULIB_HTTP_INVALID;
+        if (!mulib_http_budget_ (&trailer_bytes, 4, o.max_header_bytes)
+            || !mulib_http_budget_ (&trailer_bytes, a, o.max_header_bytes)
+            || !mulib_http_budget_ (&trailer_bytes, z, o.max_header_bytes)) return MULIB_HTTP_LIMIT;
+      }
+    }
     if (has_cl > 1 || has_te > 1 || (has_te && !m->chunked) || (has_cl && m->chunked))
       return MULIB_HTTP_INVALID;
     if (!has_cl && !has_te && !no_body)
       {
-        if (m->header_count == o.max_headers) return MULIB_HTTP_LIMIT;
+        if (m->header_count + m->trailer_count == o.max_headers) return MULIB_HTTP_LIMIT;
         if (m->chunked) a = sizeof ("Transfer-Encoding: chunked\r\n") - 1;
         else a = (size_t)snprintf (number, sizeof (number), "Content-Length: %zu\r\n", m->body_length);
         if (!mulib_http_budget_ (&header_bytes, a, o.max_header_bytes)) return MULIB_HTTP_LIMIT;
@@ -910,8 +1038,14 @@ extern "C"
                 || !mulib_strbuf_append (&b, "\r\n"))
               goto fail;
           }
-        if (!mulib_strbuf_append (&b, "0\r\n\r\n"))
+        if (!mulib_strbuf_append (&b, "0\r\n"))
           goto fail;
+        for (size_t i = 0; i < m->trailer_count; ++i)
+          if (!mulib_strbuf_append (&b, m->trailers[i].name)
+              || !mulib_strbuf_append (&b, ": ")
+              || !mulib_strbuf_append (&b, m->trailers[i].value)
+              || !mulib_strbuf_append (&b, "\r\n")) goto fail;
+        if (!mulib_strbuf_append (&b, "\r\n")) goto fail;
       }
     else if (!no_body
              && !mulib_strbuf_append_n (&b, (const char *)m->body,

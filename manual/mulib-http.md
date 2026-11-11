@@ -4,8 +4,9 @@
 
 A strict HTTP/1.1 **wire-format utility**, not a socket client/server. Requests,
 responses, binary bodies, content-length framing, chunked framing and
-close-delimited responses are supported. HTTP/1.0, HTTP/2, upgrade protocols,
-decompression, chunk extensions and trailers are outside this focused API.
+close-delimited responses are supported. Validated chunk extensions and separately
+owned trailers are available with `MULIB_HTTP_CHUNK_METADATA`. HTTP/1.0, HTTP/2,
+upgrade protocols and decompression are outside this focused API.
 
 ## Integration
 
@@ -46,6 +47,8 @@ fields, and 16 MiB decoded body. Limits apply before body allocation; chunk size
 lines additionally have a fixed 128-byte bound. Unknown option flags are invalid.
 `mulib_http_header` borrows the first case-insensitive matching value. Header
 values have surrounding spaces/tabs removed; names preserve original case.
+`mulib_http_header_next(message,name,&cursor)` iterates matching values including
+duplicates; initialize cursor to zero. This preserves separate Set-Cookie fields.
 
 ## Strict framing/security policy
 
@@ -55,9 +58,22 @@ fields, duplicate Host, duplicate Content-Length **even when equal**, comma-list
 Content-Length, signed/overflowing lengths, duplicate Transfer-Encoding, and
 Transfer-Encoding plus Content-Length. The sole supported transfer coding is
 exactly `chunked` (case-insensitive, outer whitespace trimmed). Every chunk
-requires hexadecimal size, exact data length and CRLF; chunk extensions and
-nonempty trailers are rejected, not silently ignored. This conservative subset
+requires hexadecimal size, exact data length and CRLF; by default chunk extensions
+and nonempty trailers are rejected. This conservative subset
 reduces cross-parser ambiguities but does not replace careful proxy policy.
+
+With `MULIB_HTTP_CHUNK_METADATA`, extensions use token names and optional
+token/quoted-string values (including quoted-pair escapes); malformed syntax and
+controls still fail. Valid extensions are discarded, never interpreted as framing.
+The 128-byte chunk-line bound still applies. Trailers populate `message.trailers`
+and `trailer_count`, separately from `headers`; `message_free` releases both.
+Trailer bytes have their own `max_header_bytes` budget (including final CRLF), and
+header+trailer field counts share `max_headers`. Framing, routing, authentication,
+cookie, content-processing, cache-control fields and fields nominated by Connection
+are forbidden in trailers. The exact prohibited-name list is in the header.
+Allowed fields such as Digest can be examined explicitly by applications.
+Serialization requires the flag and chunked encoding for nonempty trailers,
+validates them before writing and emits canonical trailer lines after the zero chunk.
 
 Every request requires one nonempty Host authority with a numeric port <=65535
 if present, without userinfo. Origin form, http/https absolute form, CONNECT

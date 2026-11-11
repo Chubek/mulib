@@ -7,6 +7,11 @@ Implementation switches: `MULIB_IMPL_STRBUF`, `MULIB_IMPL_BUFFER`,
 `MULIB_IMPL_HTTP`, `MULIB_IMPL_WEBCLIENT`, `MULIB_IMPL_TSL`, `MULIB_IMPL_HTTPS`.
 See [`examples/modules/https.c`](../examples/modules/https.c).
 
+For native cryptographic TLS, pass `mulib_tls_connect` and an optional
+`mulib_tls_options_t` as the connector/context. Select its implementation
+dependencies as described in [TLS 1.3](mulib-tls.md). [MuW3](mulib-muw3.md)
+selects this connector by default.
+
 `request` accepts an absolute https URL and the same method/header/body/options
 model as webclient. Userinfo and fragments are rejected. The effective port is
 443 when omitted. A caller connect callback receives the original HTTPS
@@ -16,6 +21,8 @@ or equivalent protocol selection. It returns 1 when initialization succeeds.
 Explicit ports must be nonempty decimal values in 1..65535. Invalid arguments,
 ports and response-context flags are rejected before connecting. Failure to
 allocate the internal routing URI is NOMEM, rather than invalid input.
+`options.http.flags` may contain `MULIB_HTTP_CHUNK_METADATA` to accept validated
+extensions and separate trailer fields, as documented by the shared HTTP parser.
 
 Every transaction creates a new TLS session, completes the verified handshake,
 writes the full HTTP request with short-write handling, feeds response chunks
@@ -28,9 +35,10 @@ for message construction; bytes are sent exclusively through TLS operations.
 This API is synchronous: backend callbacks must block or fail; AGAIN aborts
 the transaction. Backend code owns timeout/cancellation policy. Results and
 response ownership are `mulib_webclient_result` and `mulib_http_message_t`;
-response is unchanged on failure and must be freed on success. Tests use TLS
-interface fixtures, not a real cryptographic implementation, and cover failed
-verification, no-progress writes, short I/O and closure on every path.
+response is unchanged on failure and must be freed on success. Adapter tests
+cover failed verification, no-progress writes, short I/O and closure on every
+path. `tests/test_tls_integration.py` additionally exercises real TLS 1.3 through
+MuW3 against an independent local TLS server.
 
 Backend EOF must represent authenticated TLS shutdown (`close_notify`), not an
 unexplained underlying socket EOF. Report abrupt closure as a backend error so

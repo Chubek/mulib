@@ -7,9 +7,86 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1082
-implemented_module_count: 1082
+module_count: 1093
+implemented_module_count: 1093
 modules:
+- name: entropy
+  header: include/mulib-entropy.h
+  manual: manual/mulib-entropy.md
+  macro: MULIB_IMPL_ENTROPY
+  purpose: Operating-system cryptographic entropy, secret wiping and comparison.
+  dependencies: []
+  status: implemented
+- name: hkdf
+  header: include/mulib-hkdf.h
+  manual: manual/mulib-hkdf.md
+  macro: MULIB_IMPL_HKDF
+  purpose: HMAC and HKDF SHA256/384/512 with TLS 1.3 Expand-Label.
+  dependencies: [sha, entropy]
+  status: implemented
+- name: x25519
+  header: include/mulib-x25519.h
+  manual: manual/mulib-x25519.md
+  macro: MULIB_IMPL_X25519
+  purpose: RFC 7748 X25519 public keys and shared secrets.
+  dependencies: [entropy]
+  status: implemented
+- name: aes-gcm
+  header: include/mulib-aes-gcm.h
+  manual: manual/mulib-aes-gcm.md
+  macro: MULIB_IMPL_AES_GCM
+  purpose: AES-128-GCM authenticated encryption with portable and AES-NI paths.
+  dependencies: [entropy]
+  status: implemented
+- name: der
+  header: include/mulib-der.h
+  manual: manual/mulib-der.md
+  macro: MULIB_IMPL_DER
+  purpose: Bounded canonical ASN.1 DER TLV and unsigned INTEGER decoding.
+  dependencies: []
+  status: implemented
+- name: signature
+  header: include/mulib-signature.h
+  manual: manual/mulib-signature.md
+  macro: MULIB_IMPL_SIGNATURE
+  purpose: RSA PKCS1/PSS and ECDSA P-256/P-384 public-key signature verification.
+  dependencies: [der, sha, entropy]
+  status: implemented
+- name: x509
+  header: include/mulib-x509.h
+  manual: manual/mulib-x509.md
+  macro: MULIB_IMPL_X509
+  purpose: X.509 server certificate chains, SAN identities and PEM trust stores.
+  dependencies: [signature, base64, inet6]
+  status: implemented
+- name: tls
+  header: include/mulib-tls.h
+  manual: manual/mulib-tls.md
+  macro: MULIB_IMPL_TLS
+  purpose: Native authenticated TLS 1.3 client and HTTPS connector.
+  dependencies: [tsl, uri, socket, x509, x25519, hkdf, aes-gcm]
+  status: implemented
+- name: muw3
+  header: include/mulib-muw3.h
+  manual: manual/mulib-muw3.md
+  macro: MULIB_IMPL_MUW3
+  purpose: Bounded HTTP/HTTPS client with native TLS 1.3, redirects and forms.
+  dependencies: [https, socket, tls]
+  status: implemented
+- name: microchan
+  header: include/mulib-microchan.h
+  manual: manual/mulib-microchan.md
+  macro: MULIB_IMPL_MICROCHAN
+  purpose: Checksummed local publish/subscribe protocol, client and bounded broker.
+  dependencies: [container-ipc, socket]
+  status: implemented
+- name: muw3-mune
+  header: include/mulib-muw3-mune.h
+  manual: manual/mulib-muw3-mune.md
+  macro: MULIB_IMPL_MUW3_MUNE
+  purpose: Embedded Mune Weblet engine with lmuw3 workflows, JSON/YAML and MicroChan.
+  dependencies: [muw3, mune, microchan, yaml]
+  status: implemented
 - name: ast
   header: include/mulib-ast.h
   manual: manual/mulib-ast.md
@@ -7760,6 +7837,68 @@ modules:
   dependencies: []
   status: implemented
 project_files:
+- file: include/detail/mulib-tls-implementation.h
+  purpose: Explicit convenience switches for the native TLS cryptographic closure.
+- file: tests/fixtures/tls-setup.h
+  purpose: Cryptographic and X.509 test implementation dependencies.
+- file: tests/test-tls-crypto.c
+  purpose: RFC X25519/HKDF/HMAC and NIST AES-GCM vectors and DER failures.
+- file: tests/test-signature.c
+  purpose: Independent RSA/ECDSA signature oracle driver and mutation rejection.
+- file: tests/test-x509.c
+  purpose: Certificate-chain verification oracle driver.
+- file: tests/test-tls.c
+  purpose: Record authentication, fragmented tickets, KeyUpdate and shutdown checks.
+- file: tests/test_tls_integration.py
+  purpose: Offline independent TLS 1.3 and HTTPS interoperability and rejection tests.
+- file: examples/tls-setup.h
+  purpose: Complete native TLS implementation setup for examples.
+- file: examples/muw3-https.c
+  purpose: Native verified HTTPS client with optional explicit trust bundle.
+- file: library/lmuw3/lmuw3.lua
+  purpose: Lua request workflows, structured data, sessions and IPC channels.
+- file: library/lmuw3/runtime.c
+  purpose: Separately compiled Mune Weblet implementation and dependency switches.
+- file: library/lmuw3/main.c
+  purpose: CURL-like HTTP and Weblet command-line runner.
+- file: library/lmuw3/CMakeLists.txt
+  purpose: MuW3 and MicroChan runtime, tool and installation targets.
+- file: library/lmuw3/README.md
+  purpose: Weblet runtime build and integration guide.
+- file: library/lmuw3/examples/request.lua
+  purpose: HTTP Weblet example.
+- file: library/lmuw3/examples/worker.lua
+  purpose: IPC-controlled HTTP worker Weblet.
+- file: library/lmuw3/examples/client.lua
+  purpose: MicroChan request/reply client Weblet.
+- file: library/microchan/runtime.c
+  purpose: Separately compiled MicroChan codec, socket client and broker.
+- file: library/microchan/main.c
+  purpose: Mune-profiled MicroChan daemon using MuLIB daemon/process tools.
+- file: library/microchan/profiles/muw3.prof
+  purpose: MuW3 topic namespace and bounded broker resource profile.
+- file: library/microchan/README.md
+  purpose: MicroChan daemon invocation and profile guide.
+- file: include/detail/mulib-lmuw3.inc
+  purpose: Generated embedded lmuw3 Lua source.
+- file: tools/embed_lmuw3.py
+  purpose: Generate and verify embedded Weblet library source.
+- file: tests/test-muw3.c
+  purpose: HTTP redirect, metadata, binary body and bounds regressions.
+- file: tests/test-microchan.c
+  purpose: Protocol, multiclient fanout, profile and lifecycle regressions.
+- file: tests/test-muw3-mune.c
+  purpose: Mune binding, workflow, data and persistent-state regressions.
+- file: tests/test_muw3_integration.py
+  purpose: Offline native HTTP and two-process Weblet/daemon integration.
+- file: tests/fixtures/muw3-setup.h
+  purpose: Explicit HTTP client test implementation switches.
+- file: examples/modules/muw3.c
+  purpose: Offline C HTTP client with a supplied transport.
+- file: examples/modules/microchan.c
+  purpose: Binary MicroChan frame encoding and decoding.
+- file: examples/modules/muw3-mune.c
+  purpose: Standalone C embedding of the lmuw3 Weblet engine.
 - file: tests/run_tests.sh
   purpose: Standalone strict-C11 shell module runner, CLI checks and real Mune integration.
 - file: tests/parallel.c

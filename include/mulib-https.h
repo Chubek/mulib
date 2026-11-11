@@ -98,7 +98,7 @@ mulib_https_request (const char *url, const char *method,
   unsigned port = 0;
   if (!url || !method || !response || !connect || (!headers && count)
       || (!body && length) || !strcmp (method, "CONNECT")
-      || (options && options->http.flags)
+      || (options && (options->http.flags & ~MULIB_HTTP_CHUNK_METADATA))
       || !mulib_uri_parse (url, strlen (url), &ctx.endpoint)
       || ctx.endpoint.scheme.length != 5 || !ctx.endpoint.has_authority
       || !ctx.endpoint.host.length || ctx.endpoint.has_userinfo

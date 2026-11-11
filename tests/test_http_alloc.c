@@ -42,7 +42,10 @@ static void fail_on (size_t n) { calls = 0; fail_at = n; }
 static int operation (int mode)
 {
   const char request[] = "POST / HTTP/1.1\r\nHost: example.test\r\nTransfer-Encoding: chunked\r\n\r\n3\r\na\0b\r\n0\r\n\r\n";
+  const char metadata[] = "POST / HTTP/1.1\r\nHost: example.test\r\nTransfer-Encoding: chunked\r\n\r\n3;x=y\r\na\0b\r\n0\r\nDigest: abc\r\n\r\n";
   mulib_http_header_t headers[] = {{"Host","example.test"},{"Transfer-Encoding","chunked"}};
+  mulib_http_header_t trailer = {"Digest","abc"};
+  mulib_http_options_t options = {0,0,0,MULIB_HTTP_CHUNK_METADATA};
   mulib_http_message_t source = {0}, out = {0}, before = {0};
   unsigned char marker, *wire = &marker;
   size_t length = 99, used = 99;
@@ -55,14 +58,18 @@ static int operation (int mode)
   case 0: rc = mulib_http_parse (request,sizeof (request)-1,0,NULL,&out,&used); break;
   case 1: rc = mulib_http_serialize (&source,NULL,&wire,&length); break;
   case 2: rc = mulib_http_request_create (&out,"POST","/",headers,2,"a\0b",3); break;
+  case 4: rc = mulib_http_parse (metadata,sizeof (metadata)-1,0,&options,&out,&used); break;
+  case 5:
+    source.trailers = &trailer; source.trailer_count = 1;
+    rc = mulib_http_serialize (&source,&options,&wire,&length); break;
   default: rc = mulib_http_response_create (&out,200,"application/octet-stream","a\0b",3); break;
   }
   if (rc == MULIB_HTTP_OK) {
-    if (mode == 1) http_free (wire);
+    if (mode == 1 || mode == 5) http_free (wire);
     else mulib_http_message_free (&out);
   } else {
     assert (rc == MULIB_HTTP_NOMEM);
-    assert (wire == &marker && length == 99 && used == (mode ? 99u : 0u));
+    assert (wire == &marker && length == 99 && used == ((mode == 0 || mode == 4) ? 0u : 99u));
     assert (!memcmp (&out,&before,sizeof (out)));
   }
   return rc;
@@ -139,7 +146,7 @@ int main (void)
 {
   /* This TU only overrides the allocation functions that these headers use. */
   (void)http_calloc;
-  for (int mode = 0; mode < 4; ++mode) {
+  for (int mode = 0; mode < 6; ++mode) {
     size_t allocations;
     fail_on (SIZE_MAX); assert (operation (mode) == MULIB_HTTP_OK);
     allocations = calls; assert (!live);

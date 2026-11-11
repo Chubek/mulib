@@ -6,6 +6,7 @@
 #define MULIB_IMPL_ACPI
 #define MULIB_IMPL_ADLER32
 #define MULIB_IMPL_AES
+#define MULIB_IMPL_AES_GCM
 #define MULIB_IMPL_ALLOC
 #define MULIB_IMPL_AMD64
 #define MULIB_IMPL_AMDGPU
@@ -204,6 +205,7 @@
 #define MULIB_IMPL_DELTACODEC
 #define MULIB_IMPL_DEPIR
 #define MULIB_IMPL_DEQUE
+#define MULIB_IMPL_DER
 #define MULIB_IMPL_DESCRITORS
 #define MULIB_IMPL_DEVLINK
 #define MULIB_IMPL_DEXCC
@@ -291,6 +293,7 @@
 #define MULIB_IMPL_EMITTER
 #define MULIB_IMPL_ENCODING
 #define MULIB_IMPL_ENDIAN
+#define MULIB_IMPL_ENTROPY
 #define MULIB_IMPL_ENV
 #define MULIB_IMPL_EPOLL
 #define MULIB_IMPL_EPUB
@@ -390,6 +393,7 @@
 #define MULIB_IMPL_HIDDEN_MARKOV_CHAIN
 #define MULIB_IMPL_HISTOGRAM
 #define MULIB_IMPL_HISTPRICE
+#define MULIB_IMPL_HKDF
 #define MULIB_IMPL_HLL
 #define MULIB_IMPL_HLS_SCHEDULE
 #define MULIB_IMPL_HTML
@@ -537,6 +541,7 @@
 #define MULIB_IMPL_METRICS
 #define MULIB_IMPL_MICROAUDIO
 #define MULIB_IMPL_MICROCC
+#define MULIB_IMPL_MICROCHAN
 #define MULIB_IMPL_MICROJS
 #define MULIB_IMPL_MICROTCL
 #define MULIB_IMPL_MICROTYPE
@@ -572,6 +577,8 @@
 #define MULIB_IMPL_MUMQ_SUBSCRIBER
 #define MULIB_IMPL_MUNE
 #define MULIB_IMPL_MUSICNOTATION
+#define MULIB_IMPL_MUW3
+#define MULIB_IMPL_MUW3_MUNE
 #define MULIB_IMPL_NAMESERVER
 #define MULIB_IMPL_NAME_RESOLUTION
 #define MULIB_IMPL_NDJSON
@@ -816,6 +823,7 @@
 #define MULIB_IMPL_SHM
 #define MULIB_IMPL_SHOEBOX_CONTRACT
 #define MULIB_IMPL_SIGNAL
+#define MULIB_IMPL_SIGNATURE
 #define MULIB_IMPL_SIMDMATH
 #define MULIB_IMPL_SIMHASH
 #define MULIB_IMPL_SITEMAP
@@ -929,6 +937,7 @@
 #define MULIB_IMPL_TFIDF
 #define MULIB_IMPL_TIMER
 #define MULIB_IMPL_TIMERFD
+#define MULIB_IMPL_TLS
 #define MULIB_IMPL_TOC
 #define MULIB_IMPL_TOKENIZER
 #define MULIB_IMPL_TOML
@@ -1066,6 +1075,8 @@
 #define MULIB_IMPL_WOFF
 #define MULIB_IMPL_WOFF2
 #define MULIB_IMPL_WPA_CTRL
+#define MULIB_IMPL_X25519
+#define MULIB_IMPL_X509
 #define MULIB_IMPL_XATOMICS
 #define MULIB_IMPL_XLIB
 #define MULIB_IMPL_XLL
@@ -1090,6 +1101,7 @@
 #include "mulib-acl.h"
 #include "mulib-acpi.h"
 #include "mulib-adler32.h"
+#include "mulib-aes-gcm.h"
 #include "mulib-aes.h"
 #include "mulib-alloc.h"
 #include "mulib-amd64.h"
@@ -1290,6 +1302,7 @@
 #include "mulib-deltacodec.h"
 #include "mulib-depir.h"
 #include "mulib-deque.h"
+#include "mulib-der.h"
 #include "mulib-descritors.h"
 #include "mulib-devlink.h"
 #include "mulib-dexcc.h"
@@ -1377,6 +1390,7 @@
 #include "mulib-emitter.h"
 #include "mulib-encoding.h"
 #include "mulib-endian.h"
+#include "mulib-entropy.h"
 #include "mulib-env.h"
 #include "mulib-epoll.h"
 #include "mulib-epub.h"
@@ -1475,6 +1489,7 @@
 #include "mulib-hidden_markov_chain.h"
 #include "mulib-histogram.h"
 #include "mulib-histprice.h"
+#include "mulib-hkdf.h"
 #include "mulib-hll.h"
 #include "mulib-hls-schedule.h"
 #include "mulib-html.h"
@@ -1623,6 +1638,7 @@
 #include "mulib-metrics.h"
 #include "mulib-microaudio.h"
 #include "mulib-microcc.h"
+#include "mulib-microchan.h"
 #include "mulib-microjs.h"
 #include "mulib-microtcl.h"
 #include "mulib-microtype.h"
@@ -1658,6 +1674,8 @@
 #include "mulib-mumq.h"
 #include "mulib-mune.h"
 #include "mulib-musicnotation.h"
+#include "mulib-muw3-mune.h"
+#include "mulib-muw3.h"
 #include "mulib-n-grams.h"
 #include "mulib-name-resolution.h"
 #include "mulib-nameserver.h"
@@ -1901,6 +1919,7 @@
 #include "mulib-shm.h"
 #include "mulib-shoebox-contract.h"
 #include "mulib-signal.h"
+#include "mulib-signature.h"
 #include "mulib-simdmath.h"
 #include "mulib-simhash.h"
 #include "mulib-sitemap.h"
@@ -2014,6 +2033,7 @@
 #include "mulib-tfidf.h"
 #include "mulib-timer.h"
 #include "mulib-timerfd.h"
+#include "mulib-tls.h"
 #include "mulib-toc.h"
 #include "mulib-tokenizer.h"
 #include "mulib-toml.h"
@@ -2151,6 +2171,8 @@
 #include "mulib-woff.h"
 #include "mulib-woff2.h"
 #include "mulib-wpa-ctrl.h"
+#include "mulib-x25519.h"
+#include "mulib-x509.h"
 #include "mulib-xatomics.h"
 #include "mulib-xlib.h"
 #include "mulib-xll.h"

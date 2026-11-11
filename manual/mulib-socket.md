@@ -11,7 +11,7 @@ Counts are zero on error; zero-capacity receive succeeds without implying EOF.
 Results: OK 0, AGAIN 1, EOF 2, negative invalid/I/O/unsupported. Send suppresses
 SIGPIPE using MSG_NOSIGNAL/SO_NOSIGPIPE, or returns unsupported rather than
 silently changing global signal policy. `close` resets, is idempotent, and never
-retries close after EINTR. No DNS, TLS, authentication or threads.
+retries close after EINTR. No TLS, authentication or threads.
 Switch: `MULIB_IMPL_SOCKET`. Example: `examples/modules/socket.c`.
 
 `connect(out, numeric_ipv4, port)` creates a close-on-exec TCP connection with
@@ -26,6 +26,25 @@ IPv4 socket interface, not a third-party networking library. There is no timeout
 for blocking connect or name resolution. TCP roundtrip setup is tested in
 `tests/test_mumq.c`.
 
+`connect_host(out,host,port,timeout_ms)` resolves IPv4/IPv6 using the system resolver
+and tries nonblocking connections with a per-address timeout. System DNS uses its
+own timeout policy. Enable POSIX.1-2001 declarations (`_POSIX_C_SOURCE=200809L`)
+before all system headers; otherwise this entry point returns ENOTSUP. Hostnames
+and numeric IPs are accepted; IPv6 addresses have no URI brackets at this layer.
+
+`local_listen(out,path)` and `local_connect(out,path,timeout_ms)` create filesystem
+Unix streams. Both produce nonblocking close-on-exec descriptors. Listen never
+removes an existing path; the caller owns unlink after closing its listener. Paths
+must fit the platform's `sockaddr_un.sun_path` and cannot be empty. Put local
+endpoints in an application-owned private directory; socket mode policy belongs
+to the caller (MicroChan applies 0600).
+
+`wait(socket,writing,timeout_ms)` polls read or write readiness, returning AGAIN on
+timeout. Zero polls immediately; hangup is readable so receive reports EOF. A
+readiness notification can race another operation, so callers must still handle
+AGAIN on send/receive. These extensions are tested by MuW3's local integration and
+MicroChan's multiclient/fragmentation tests.
+
 <!-- manual-interface -->
 ## Public header reference
 
@@ -38,8 +57,8 @@ Include the header in application code; dependency types come from its includes.
 ```c
 /** @file mulib-socket.h
  * @brief POSIX connected stream descriptor ownership and bounded I/O
- * primitives and numeric IPv4 TCP setup. Define MULIB_IMPL_SOCKET once. No DNS or implicit
- * security. */
+ * primitives, TCP/DNS connection setup and filesystem Unix sockets.
+ * Define MULIB_IMPL_SOCKET once. No implicit transport security. */
 #ifndef MULIB_SOCKET_H
 #define MULIB_SOCKET_H
 #include <stddef.h>
@@ -68,6 +87,19 @@ extern "C"
   /** @brief Blocking TCP connect to a numeric IPv4 address; output must be
    * invalid. Close-on-exec, no DNS. Returns 0, EINVAL/EIO/ENOTSUP below. */
   int mulib_socket_connect (mulib_socket_t *out, const char *address, unsigned port);
+  /** Resolve a host (IPv4/IPv6) and connect, with a per-address millisecond
+   * timeout. DNS uses the system resolver and its timeout policy. Requires
+   * POSIX.1-2001 declarations enabled before system headers. Output nonblocking. */
+  int mulib_socket_connect_host (mulib_socket_t *out, const char *host,
+                                 unsigned port, unsigned timeout_ms);
+  /** Filesystem Unix stream endpoints. Listen never removes an existing path;
+   * caller owns unlink after close. Both outputs are nonblocking, close-on-exec. */
+  int mulib_socket_local_listen (mulib_socket_t *out, const char *path);
+  int mulib_socket_local_connect (mulib_socket_t *out, const char *path,
+                                  unsigned timeout_ms);
+  /** Wait for read (writing=0) or write (1) readiness; AGAIN means timeout.
+   * Hangup is readable so receive can distinguish EOF. No signal policy changes. */
+  int mulib_socket_wait (const mulib_socket_t *s, int writing, unsigned timeout_ms);
   /** @brief Nonblocking numeric IPv4 listener. Port zero requests an ephemeral
    * port, returned through bound_port. No implicit wildcard binding. */
   int mulib_socket_listen (mulib_socket_t *out, const char *address, unsigned port,

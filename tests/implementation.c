@@ -814,6 +814,9 @@
 #define MULIB_IMPL_OIX
 #define MULIB_IMPL_MOP
 #define MULIB_IMPL_MUNE
+#define MULIB_IMPL_MUW3
+#define MULIB_IMPL_MUW3_MUNE
+#define MULIB_IMPL_MICROCHAN
 #define MULIB_IMPL_WASK
 #define MULIB_IMPL_WMFUNC
 /* All implementation switches precede every include, including dependencies. */
@@ -1303,6 +1306,8 @@
 #define MULIB_IMPL_MIDI
 #define MULIB_IMPL_AUDREY
 #include "mulib-mune.h"
+#include "detail/mulib-tls-implementation.h"
+#include "mulib-muw3-mune.h"
 #include "mulib-xsimd.h"
 #include "mulib-audio.h"
 #include "mulib-miniwav.h"

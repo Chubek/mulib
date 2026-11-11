@@ -1,0 +1,32 @@
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#define MULIB_IMPL_BUFFER
+#define MULIB_IMPL_STRBUF
+#define MULIB_IMPL_PARSEC
+#define MULIB_IMPL_INET4
+#define MULIB_IMPL_INET6
+#define MULIB_IMPL_URI
+#define MULIB_IMPL_HTTP
+#define MULIB_IMPL_WEBCLIENT
+#define MULIB_IMPL_TSL
+#define MULIB_IMPL_HTTPS
+#define MULIB_IMPL_MUW3
+#define MULIB_IMPL_JSON
+#define MULIB_IMPL_YAML
+#define MULIB_IMPL_UTF8
+#define MULIB_IMPL_MUNE
+#define MULIB_IMPL_DYNLOAD
+#define MULIB_IMPL_MIR
+#define MULIB_IMPL_VMWEAVE
+#define MULIB_IMPL_EGRAPH
+#define MULIB_IMPL_REWRITE
+#define MULIB_IMPL_DYNCALL
+#define MULIB_IMPL_JIT
+#define MULIB_IMPL_PARSER
+#define MULIB_IMPL_PEG
+#define MULIB_IMPL_AST
+#define MULIB_IMPL_GLOB
+#define MULIB_IMPL_MUW3_MUNE
+#include "detail/mulib-tls-implementation.h"
+#include "mulib-muw3-mune.h"

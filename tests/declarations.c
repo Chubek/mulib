@@ -1,4 +1,5 @@
 /* Declaration-only C11 and C++17 inclusion check. */
+#include "mulib-muw3-mune.h"
 #include "mulib-branch-layout.h"
 #include "mulib-bytecode.h"
 #include "mulib-bytecode-builder.h"

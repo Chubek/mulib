@@ -32,7 +32,7 @@ extern "C"
       void *user, const mulib_uri_t *endpoint, const void *request,
       size_t length, mulib_webclient_receive_fn receive, void *receiver);
   /** @brief Zero fields select HTTP defaults and a 32 MiB raw response limit.
-   * http.flags must be zero; response HEAD/EOF context is supplied internally.
+   * http.flags may contain CHUNK_METADATA; HEAD/EOF context is supplied internally.
    */
   typedef struct mulib_webclient_options
   {
@@ -127,7 +127,7 @@ extern "C"
       return result;
     if (options)
       limits = options->http;
-    if (limits.flags || !mulib_uri_parse (url, strlen (url), &uri)
+    if ((limits.flags & ~MULIB_HTTP_CHUNK_METADATA) || !mulib_uri_parse (url, strlen (url), &uri)
         || uri.scheme.length != 4 || !uri.has_authority || !uri.host.length
         || uri.has_userinfo || uri.has_fragment)
       return result;
@@ -203,6 +203,7 @@ extern "C"
     request.header_count = count + 2;
     request.body = (unsigned char *)body;
     request.body_length = body_length;
+    request.chunked = mulib_http_header (&request, "Transfer-Encoding") != NULL;
     result = (mulib_webclient_result)mulib_http_serialize (
         &request, &limits, &wire, &wire_length);
     if (result != MULIB_WEBCLIENT_OK)
@@ -221,7 +222,7 @@ extern "C"
           goto done;
         }
     }
-    limits.flags = MULIB_HTTP_EOF;
+    limits.flags |= MULIB_HTTP_EOF;
     if (!strcmp (method, "HEAD"))
       limits.flags |= MULIB_HTTP_HEAD_RESPONSE;
     for (;;)

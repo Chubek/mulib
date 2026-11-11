@@ -31,7 +31,8 @@ method, and header strings must be valid NUL-terminated strings. It generates
 an origin-form target, `Host` (including an explicit port), `Connection: close`,
 and HTTP framing. User `Host` or `Connection` headers are rejected, even if
 their values match. Content-Length, if supplied, must match the body; a supplied
-Transfer-Encoding is rejected because this API emits non-chunked requests.
+Transfer-Encoding: chunked selects canonical chunked serialization. Other codings
+and conflicts with Content-Length are rejected.
 
 URLs must be absolute `http://` URLs with a nonempty host, no credentials or
 fragment, and a numeric port in 1..65535 if present. Scheme comparison is
@@ -76,12 +77,13 @@ or receive-allocation error takes precedence over the callback's failure code.
 | Decoded body bytes | 16 MiB, for both request and response |
 | Raw response bytes | 32 MiB, including interim responses/chunk framing |
 
-`options.http.flags` must be zero. EOF and HEAD response context are applied
+`options.http.flags` may be zero or `MULIB_HTTP_CHUNK_METADATA`. EOF and HEAD response context are applied
 internally. Up to eight informational responses are skipped; 101 is rejected.
 Exactly one final response must exhaust the supplied bytes: unsolicited extra
 frames/bytes are errors. Framed and EOF-delimited responses are accepted; HEAD
 responses retain representation Content-Length but have no body. The strict
-HTTP parser rejects ambiguous framing, trailers and chunk extensions; see
+HTTP parser rejects ambiguous framing; trailers and chunk extensions require the
+metadata flag, with trailers kept separate from ordinary headers. See
 [mulib-http](mulib-http.md).
 
 The entire raw response is buffered before parsing, not streamed to the caller.

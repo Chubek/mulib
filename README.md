@@ -1,6 +1,6 @@
 # MuLIB
 
-MuLIB is a modular C11 utility library with **1080 registered modules**, from
+MuLIB is a modular C11 utility library with **1093 registered modules**, from
 containers and parsers to compiler tooling, graphics, networking, and virtual
 machines. Choose the modules you need and compile their implementations into
 your application.
@@ -71,6 +71,7 @@ the [usage guide](GUIDE.md) for a complete multi-file application.
 | Files, storage and binary formats | [VFS](manual/mulib-vfs.md), [SQLite-file engine](manual/mulib-sqlite.md), [binary formats](manual/binary-formats.md), [storage/server guide](manual/storage-server.md) |
 | Processes and task execution | [Exec](manual/mulib-exec.md), [Git](manual/mulib-git.md), [PolyTask](manual/mulib-polytask.md), [BuildGraph](manual/mulib-buildgraph.md), [distributed computing](manual/mulib-distribcomp.md) |
 | Networking and automation | [HTTP](manual/mulib-http.md), [DNS](manual/mulib-dns.md), [authentication](manual/mulib-auth.md), [Prowse browser automation](manual/mulib-prowse-control.md) |
+| HTTP applications and IPC | [MuW3](manual/mulib-muw3.md), [Mune Weblets/lmuw3](library/lmuw3/README.md), [MicroChan daemon](library/microchan/README.md) |
 | Terminals and editors | [Readline](manual/mulib-readline.md), [editing buffers](manual/mulib-edbuf.md), [syntax highlighting](manual/mulib-termsyn.md), [terminal UI](manual/mulib-tui.md) |
 | Graphics, text and layout | [Linear algebra](manual/mulib-linalg.md), [vector graphics](manual/mulib-vectgfx.md), [ShaderX](manual/mulib-shaderx.md), [font shaping](manual/mulib-fontshape.md), [page layout](manual/mulib-pglayout.md) |
 | Publishing baselines | [Integration and limitations](manual/publishing-integration.md), [shared primitives](manual/mulib-typecore.md), [document IR](manual/mulib-docir.md), [cross-target example](examples/build-publication.c) |
@@ -89,6 +90,11 @@ Each implemented module has a manual and a runnable example in
 documented subsets, not a complete TeX/LaTeX engine or every named standard.
 
 ## Supported profiles
+
+Build the MuW3 HTTP/Weblet runner and MicroChan messaging daemon with `make muw3`;
+run their offline API and two-Weblet integration suite with `make check-muw3`.
+The [Weblet manual](manual/mulib-muw3-mune.md) covers C embedding, Lua workflows,
+JSON/YAML and IPC. These runtimes depend only on MuLIB and the platform C/POSIX APIs.
 
 Each manual defines the module's supported syntax, platforms, ownership rules,
 and limits. Format and protocol names describe the area of functionality;

@@ -6,6 +6,7 @@
     "mulib-acl.h",
     "mulib-acpi.h",
     "mulib-adler32.h",
+    "mulib-aes-gcm.h",
     "mulib-aes.h",
     "mulib-alloc.h",
     "mulib-amd64.h",
@@ -206,6 +207,7 @@
     "mulib-deltacodec.h",
     "mulib-depir.h",
     "mulib-deque.h",
+    "mulib-der.h",
     "mulib-descritors.h",
     "mulib-devlink.h",
     "mulib-dexcc.h",
@@ -293,6 +295,7 @@
     "mulib-emitter.h",
     "mulib-encoding.h",
     "mulib-endian.h",
+    "mulib-entropy.h",
     "mulib-env.h",
     "mulib-epoll.h",
     "mulib-epub.h",
@@ -391,6 +394,7 @@
     "mulib-hidden_markov_chain.h",
     "mulib-histogram.h",
     "mulib-histprice.h",
+    "mulib-hkdf.h",
     "mulib-hll.h",
     "mulib-hls-schedule.h",
     "mulib-html.h",
@@ -539,6 +543,7 @@
     "mulib-metrics.h",
     "mulib-microaudio.h",
     "mulib-microcc.h",
+    "mulib-microchan.h",
     "mulib-microjs.h",
     "mulib-microtcl.h",
     "mulib-microtype.h",
@@ -574,6 +579,8 @@
     "mulib-mumq.h",
     "mulib-mune.h",
     "mulib-musicnotation.h",
+    "mulib-muw3-mune.h",
+    "mulib-muw3.h",
     "mulib-n-grams.h",
     "mulib-name-resolution.h",
     "mulib-nameserver.h",
@@ -817,6 +824,7 @@
     "mulib-shm.h",
     "mulib-shoebox-contract.h",
     "mulib-signal.h",
+    "mulib-signature.h",
     "mulib-simdmath.h",
     "mulib-simhash.h",
     "mulib-sitemap.h",
@@ -930,6 +938,7 @@
     "mulib-tfidf.h",
     "mulib-timer.h",
     "mulib-timerfd.h",
+    "mulib-tls.h",
     "mulib-toc.h",
     "mulib-tokenizer.h",
     "mulib-toml.h",
@@ -1067,6 +1076,8 @@
     "mulib-woff.h",
     "mulib-woff2.h",
     "mulib-wpa-ctrl.h",
+    "mulib-x25519.h",
+    "mulib-x509.h",
     "mulib-xatomics.h",
     "mulib-xlib.h",
     "mulib-xll.h",
@@ -1086,10 +1097,10 @@
     "mulib-zorder.h",
     "mulib-zstd.h"
   ],
-  "libraries": 1085,
-  "functions": 4869,
-  "types": 7954,
-  "constants": 2494,
+  "libraries": 1096,
+  "functions": 4922,
+  "types": 8042,
+  "constants": 2507,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -1131,7 +1142,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "d3bdc8e81c9bf47a9b29e612801e603bca22bf69e0e107d478910230d83d2f69",
+  "fingerprint": "36eb4489ee49c934c245bb7e7a24e80b11f92f2aa902c3f5ad2d9cbb77bb08f2",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -1207,6 +1218,15 @@
         "mulib_aes256_ctr",
         "mulib_aes_seal",
         "mulib_aes_open"
+      ]
+    },
+    "aes-gcm": {
+      "header": "mulib-aes-gcm.h",
+      "functions": [
+        "mulib_aes_gcm_init",
+        "mulib_aes_gcm_seal",
+        "mulib_aes_gcm_open",
+        "mulib_aes_gcm_clear"
       ]
     },
     "alloc": {
@@ -3314,6 +3334,16 @@
         "mulib_deque_free"
       ]
     },
+    "der": {
+      "header": "mulib-der.h",
+      "functions": [
+        "mulib_der_next",
+        "mulib_der_take",
+        "mulib_der_contents",
+        "mulib_der_unsigned",
+        "mulib_der_u32"
+      ]
+    },
     "descritors": {
       "header": "mulib-descritors.h",
       "functions": [
@@ -4224,6 +4254,14 @@
         "mulib_endian_load_be64",
         "mulib_endian_store_le64",
         "mulib_endian_store_be64"
+      ]
+    },
+    "entropy": {
+      "header": "mulib-entropy.h",
+      "functions": [
+        "mulib_entropy",
+        "mulib_secret_wipe",
+        "mulib_secret_equal"
       ]
     },
     "env": {
@@ -5161,6 +5199,15 @@
         "mulib_histprice_ema_mae"
       ]
     },
+    "hkdf": {
+      "header": "mulib-hkdf.h",
+      "functions": [
+        "mulib_hmac",
+        "mulib_hkdf_extract",
+        "mulib_hkdf_expand",
+        "mulib_hkdf_tls13"
+      ]
+    },
     "hll": {
       "header": "mulib-hll.h",
       "functions": [
@@ -5199,6 +5246,7 @@
       "functions": [
         "mulib_http_message_free",
         "mulib_http_header",
+        "mulib_http_header_next",
         "mulib_http_parse",
         "mulib_http_serialize"
       ]
@@ -6470,6 +6518,22 @@
         "mulib_microcc_stage_string"
       ]
     },
+    "microchan": {
+      "header": "mulib-microchan.h",
+      "functions": [
+        "mulib_microchan_encode",
+        "mulib_microchan_decode",
+        "mulib_microchan_open",
+        "mulib_microchan_close",
+        "mulib_microchan_send",
+        "mulib_microchan_receive",
+        "mulib_microchan_broker_create",
+        "mulib_microchan_broker_listen",
+        "mulib_microchan_broker_step",
+        "mulib_microchan_broker_clients",
+        "mulib_microchan_broker_destroy"
+      ]
+    },
     "microjs": {
       "header": "mulib-microjs.h",
       "functions": [
@@ -6832,6 +6896,27 @@
         "mulib_musicnotation_remove",
         "mulib_musicnotation_bounds",
         "mulib_musicnotation_destroy"
+      ]
+    },
+    "muw3": {
+      "header": "mulib-muw3.h",
+      "functions": [
+        "mulib_muw3_client_default",
+        "mulib_muw3_perform",
+        "mulib_muw3_response_free",
+        "mulib_muw3_strerror",
+        "mulib_muw3_form",
+        "mulib_muw3_transport"
+      ]
+    },
+    "muw3-mune": {
+      "header": "mulib-muw3-mune.h",
+      "functions": [
+        "mulib_muw3_engine_create",
+        "mulib_muw3_engine_destroy",
+        "mulib_muw3_engine_lua",
+        "mulib_muw3_engine_run",
+        "mulib_muw3_engine_run_file"
       ]
     },
     "n-grams": {
@@ -8837,6 +8922,12 @@
         "mulib_signal_restore"
       ]
     },
+    "signature": {
+      "header": "mulib-signature.h",
+      "functions": [
+        "mulib_signature_verify"
+      ]
+    },
     "simdmath": {
       "header": "mulib-simdmath.h",
       "functions": [
@@ -8916,6 +9007,10 @@
       "functions": [
         "mulib_socket_pair",
         "mulib_socket_connect",
+        "mulib_socket_connect_host",
+        "mulib_socket_local_listen",
+        "mulib_socket_local_connect",
+        "mulib_socket_wait",
         "mulib_socket_listen",
         "mulib_socket_accept",
         "mulib_socket_nonblocking",
@@ -9893,6 +9988,12 @@
         "mulib_timerfd_set",
         "mulib_timerfd_read",
         "mulib_timerfd_close"
+      ]
+    },
+    "tls": {
+      "header": "mulib-tls.h",
+      "functions": [
+        "mulib_tls_connect"
       ]
     },
     "toc": {
@@ -11158,6 +11259,24 @@
         "mulib_wpa_ctrl_request"
       ]
     },
+    "x25519": {
+      "header": "mulib-x25519.h",
+      "functions": [
+        "mulib_x25519",
+        "mulib_x25519_public"
+      ]
+    },
+    "x509": {
+      "header": "mulib-x509.h",
+      "functions": [
+        "mulib_x509_parse",
+        "mulib_x509_hostname",
+        "mulib_x509_store_file",
+        "mulib_x509_store_system",
+        "mulib_x509_store_free",
+        "mulib_x509_verify"
+      ]
+    },
     "xatomics": {
       "header": "mulib-xatomics.h",
       "functions": [
@@ -11417,7 +11536,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "78e7137e9a3f319719f8e4116e6cac303733817b28421c29402455c4e64c421a",
-    "Implementation.c": "f9f069373a1322660b941b64b329d4557d802eb2682390851314175c526dcecd"
+    "Generated.inc": "17c463885ae03cea539c4be00c977538b129d03205fa0a16f173133bc9d55704",
+    "Implementation.c": "ee41a21b8225d2b1098fa9a8824a90c1a8cb8d796d116fb60227d66f708db686"
   }
 }

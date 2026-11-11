@@ -6,7 +6,9 @@ Historical TSL spelling for an explicit **TLS backend adapter**, not encryption.
 Zero initialize; `init` requires borrowed handshake/read/write/close callbacks
 and context. Handshake returns OK only after actual hostname/chain verification
 with verified=1. AGAIN permits retry; failed/unverified handshake is sticky and
-prevents I/O. There is no plaintext fallback or built-in cryptographic backend.
+prevents I/O. This interface has no plaintext fallback. The separate
+[mulib-tls](mulib-tls.md) module supplies MuLIB's native TLS 1.3 backend and can
+initialize an adapter with `mulib_tls_connect`.
 
 Read/write require an authenticated state. Backend counts must fit capacity;
 error/AGAIN/EOF must have zero count, and invalid results fail closed. Read may
@@ -37,9 +39,9 @@ Include the header in application code; dependency types come from its includes.
 ```c
 /** @file mulib-tsl.h
  * @brief Transport-security lifecycle adapter for an application-supplied TLS
- * backend. Define MULIB_IMPL_TSL once. Historical spelling TSL; no
- * cryptographic implementation or insecure plaintext fallback is supplied.
- * Backend must implement authenticated TLS. */
+ * backend. Define MULIB_IMPL_TSL once. Historical spelling TSL; this header
+ * supplies the lifecycle interface. mulib-tls.h supplies MuLIB's native TLS 1.3
+ * backend. Backends must implement authenticated TLS. */
 #ifndef MULIB_TSL_H
 #define MULIB_TSL_H
 #include <stddef.h>
