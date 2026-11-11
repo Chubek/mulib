@@ -46,6 +46,13 @@ close-delimited HTTP responses cannot silently accept truncated content. This
 adapter deliberately requires successful transport EOF even if a Content-Length
 frame appeared complete; a later TLS failure makes the transaction fail.
 
+`mulib_https_stream_request` adds a `mulib_http_body_fn` callback/context before
+the output argument, forwarding live decoded body slices without retaining them.
+It otherwise uses the same verified TLS lifecycle, framing, cumulative limits and
+ownership as `request` and `mulib_webclient_stream_request`. Successful output
+owns headers/trailers only. Callbacks can precede a later framing or TLS failure;
+the transaction is verified only when the API returns success.
+
 `tests/test_http_hardening.c` additionally checks invalid ports, failed connect
 after session initialization, handshake AGAIN, backend overreported write counts,
 authentication failures, informational responses, raw response limits and exact

@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1096 headers, 1115 direct dependency edges.
+Inventory: 1100 headers, 1128 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (382 modules)
+## Stratum 0 (381 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -230,7 +230,6 @@ Compatibility group: `parsec`, `peg`.
 | [movingavg](mulib-movingavg.md) | none |
 | [mqueue](mulib-mqueue.md) | none |
 | [muburg](mulib-muburg.md) | none |
-| [multipart](mulib-multipart.md) | none |
 | [n-grams](mulib-n-grams.md) | none |
 | [ndjson](mulib-ndjson.md) | none |
 | [net-cap](mulib-net-cap.md) | none |
@@ -402,7 +401,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (371 modules)
+## Stratum 1 (373 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -588,6 +587,7 @@ Compatibility group: `parsec`, `peg`.
 | [mobi](mulib-mobi.md) | `buffer` |
 | [mobiwrite](mulib-mobiwrite.md) | `typecore` |
 | [mulib](mulib-mulib.md) | `buffer`, `strbuf` |
+| [multipart](mulib-multipart.md) | `strbuf` |
 | [musicnotation](mulib-musicnotation.md) | `typecore` |
 | [net-monitor](mulib-net-monitor.md) | `netlink` |
 | [net-reconcile](mulib-net-reconcile.md) | `net-profile`, `net-state` |
@@ -673,6 +673,7 @@ Compatibility group: `parsec`, `peg`.
 | [sppf](mulib-sppf.md) | `vec` |
 | [sql](mulib-sql.md) | `buffer`, `memtable`, `strbuf` |
 | [sqlite-format](mulib-sqlite-format.md) | `buffer`, `endian` |
+| [sse](mulib-sse.md) | `strbuf`, `utf8` |
 | [sshclient](mulib-sshclient.md) | `endian` |
 | [sshserver](mulib-sshserver.md) | `endian` |
 | [statsprice](mulib-statsprice.md) | `statsproc` |
@@ -1128,7 +1129,7 @@ Compatibility group: `parsec`, `peg`.
 | [vcspack](mulib-vcspack.md) | `adler32`, `endian`, `git` |
 | [vcsrepo](mulib-vcsrepo.md) | `git` |
 
-## Stratum 8 (11 modules)
+## Stratum 8 (12 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1137,6 +1138,7 @@ Compatibility group: `parsec`, `peg`.
 | [http_request](mulib-http_request.md) | `http` |
 | [httpserver_config](mulib-httpserver_config.md) | `http` |
 | [layoutml](mulib-layoutml.md) | `layout`, `xml` |
+| [openai](mulib-openai.md) | `http`, `json`, `utf8` |
 | [prowse-protocol](mulib-prowse-protocol.md) | `base64`, `git`, `http`, `json`, `socket`, `utf8` |
 | [vcscommit](mulib-vcscommit.md) | `strbuf`, `vcsrepo` |
 | [waf](mulib-waf.md) | `http`, `seurity` |
@@ -1144,7 +1146,7 @@ Compatibility group: `parsec`, `peg`.
 | [webframework](mulib-webframework.md) | `http` |
 | [xll](mulib-xll.md) | `json`, `layout`, `strbuf` |
 
-## Stratum 9 (9 modules)
+## Stratum 9 (10 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1153,6 +1155,7 @@ Compatibility group: `parsec`, `peg`.
 | [https](mulib-https.md) | `tsl`, `webclient` |
 | [minicurl](mulib-minicurl.md) | `webclient` |
 | [miniwget](mulib-miniwget.md) | `webclient` |
+| [openai-server](mulib-openai-server.md) | `multipart`, `openai`, `sse` |
 | [prowse-control](mulib-prowse-control.md) | `lprowse`, `mune`, `prowse-protocol`, `readline`, `strbuf` |
 | [revproxy](mulib-revproxy.md) | `webclient` |
 | [vcscomitt](mulib-vcscomitt.md) | `vcscommit` |
@@ -1165,8 +1168,9 @@ Compatibility group: `parsec`, `peg`.
 | [muw3](mulib-muw3.md) | `https`, `socket`, `tls` |
 | [static_file](mulib-static_file.md) | `http_response`, `mime`, `vfs` |
 
-## Stratum 11 (1 modules)
+## Stratum 11 (2 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [muw3-mune](mulib-muw3-mune.md) | `microchan`, `mune`, `muw3`, `yaml` |
+| [openai-client](mulib-openai-client.md) | `multipart`, `muw3`, `openai`, `sse` |

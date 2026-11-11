@@ -9,8 +9,8 @@ creates an immutable binding and checks the initializer's type. A semicolon is
 optional at the declaration's end-of-line, closing brace, or end-of-source.
 Native data referenced by the binding can still be mutated by library calls.
 
-The checked-in generated bridge covers **1,096 public headers**, **1,096 library
-names**, **4,922 functions**, **8,042 native type descriptors**, and **2,507
+The checked-in generated bridge covers **1,100 public headers**, **1,100 library
+names**, **4,971 functions**, **8,125 native type descriptors**, and **2,516
 constants** from MuLIB. `virtio.h` and `mulib-virtio.h` name the same library.
 `Inventory.json` records the complete header/function inventory and fingerprint.
 Functions are real compiler-typed C calls, including struct/union returns,
@@ -21,6 +21,14 @@ and `microchan`. Their complete C APIs, option records and callback types are
 available through the same wrappers; see the MuLIB module manuals for ownership.
 Native TLS and its dependencies are registered as `tls`, `x509`, `signature`,
 `der`, `x25519`, `aes-gcm`, `hkdf`, and `entropy`.
+
+OpenAI protocol support is registered as `openai`, `openai-client`, and
+`openai-server`, with the incremental event codec as `sse`. The wrappers expose
+all operation metadata, client/server records, multipart and live-streaming
+callbacks, pagination and tool-workflow APIs. See the
+[client](../../../../manual/mulib-openai-client.md) and
+[server](../../../../manual/mulib-openai-server.md) manuals and the shared
+`tests/mull/mulib/openai.mull` fixture for ownership and examples.
 
 The CMake bridge enables `MULL_MULIB_NATIVE_FONTSHAPE` by default, making the
 explicit native fontshape constructors available alongside the unchanged

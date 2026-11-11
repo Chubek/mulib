@@ -1,3 +1,4 @@
+#define MULIB_IMPL_STRBUF
 #define MULIB_IMPL_MULTIPART
 #include "mulib-multipart.h"
 #include <assert.h>

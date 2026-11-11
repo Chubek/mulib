@@ -28,7 +28,11 @@ extern "C"
   mulib_https_request (const char *url, const char *method,
                        const mulib_http_header_t *, size_t, const void *,
                        size_t, const mulib_webclient_options_t *,
-                       mulib_https_connect_fn, void *, mulib_http_message_t *);
+                        mulib_https_connect_fn, void *, mulib_http_message_t *);
+  mulib_webclient_result mulib_https_stream_request (const char *, const char *,
+      const mulib_http_header_t *, size_t, const void *, size_t,
+      const mulib_webclient_options_t *, mulib_https_connect_fn, void *,
+      mulib_http_body_fn, void *, mulib_http_message_t *);
 #ifdef __cplusplus
 }
 #endif
@@ -83,13 +87,14 @@ done:
   mulib_tsl_close (&s);
   return ok;
 }
-mulib_webclient_result
-mulib_https_request (const char *url, const char *method,
+static mulib_webclient_result
+mulib_https_request_ (const char *url, const char *method,
                      const mulib_http_header_t *headers, size_t count,
                      const void *body, size_t length,
                      const mulib_webclient_options_t *options,
                      mulib_https_connect_fn connect, void *user,
-                     mulib_http_message_t *response)
+                      mulib_http_message_t *response,
+                      mulib_http_body_fn callback, void *callback_user)
 {
   mulib_https_context_ ctx;
   mulib_uri_t clear;
@@ -136,10 +141,28 @@ mulib_https_request (const char *url, const char *method,
     return MULIB_WEBCLIENT_NOMEM;
   ctx.connect = connect;
   ctx.user = user;
-  r = mulib_webclient_request (routing, method, headers, count, body, length,
+  if (callback)
+    r = mulib_webclient_stream_request (routing, method, headers, count, body, length,
+        options, mulib_https_transport_, &ctx, callback, callback_user, response);
+  else r = mulib_webclient_request (routing, method, headers, count, body, length,
                                options, mulib_https_transport_, &ctx,
                                response);
   free (routing);
   return r;
+}
+mulib_webclient_result mulib_https_request (const char *url, const char *method,
+    const mulib_http_header_t *headers, size_t count, const void *body, size_t length,
+    const mulib_webclient_options_t *options, mulib_https_connect_fn connect, void *user,
+    mulib_http_message_t *out)
+{ return mulib_https_request_ (url, method, headers, count, body, length, options,
+    connect, user, out, NULL, NULL); }
+mulib_webclient_result mulib_https_stream_request (const char *url, const char *method,
+    const mulib_http_header_t *headers, size_t count, const void *body, size_t length,
+    const mulib_webclient_options_t *options, mulib_https_connect_fn connect, void *user,
+    mulib_http_body_fn callback, void *callback_user, mulib_http_message_t *out)
+{
+  if (!callback) return MULIB_WEBCLIENT_INVALID;
+  return mulib_https_request_ (url, method, headers, count, body, length, options,
+    connect, user, out, callback, callback_user);
 }
 #endif

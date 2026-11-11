@@ -647,6 +647,9 @@
 #define MULIB_IMPL_OCIIMAGE
 #define MULIB_IMPL_OCIIMAGEBUILDER
 #define MULIB_IMPL_OIX
+#define MULIB_IMPL_OPENAI
+#define MULIB_IMPL_OPENAI_CLIENT
+#define MULIB_IMPL_OPENAI_SERVER
 #define MULIB_IMPL_OPENVPN
 #define MULIB_IMPL_OPTICALMARGIN
 #define MULIB_IMPL_OPTML
@@ -856,6 +859,7 @@
 #define MULIB_IMPL_SQLITE
 #define MULIB_IMPL_SQLITE_FORMAT
 #define MULIB_IMPL_SQLITE_PAGER
+#define MULIB_IMPL_SSE
 #define MULIB_IMPL_SSHCLIENT
 #define MULIB_IMPL_SSHSERVER
 #define MULIB_IMPL_SSTFILE
@@ -1744,6 +1748,9 @@
 #include "mulib-ociimage.h"
 #include "mulib-ociimagebuilder.h"
 #include "mulib-oix.h"
+#include "mulib-openai-client.h"
+#include "mulib-openai-server.h"
+#include "mulib-openai.h"
 #include "mulib-openvpn.h"
 #include "mulib-opticalmargin.h"
 #include "mulib-optml.h"
@@ -1952,6 +1959,7 @@
 #include "mulib-sqlite-format.h"
 #include "mulib-sqlite-pager.h"
 #include "mulib-sqlite.h"
+#include "mulib-sse.h"
 #include "mulib-sshclient.h"
 #include "mulib-sshserver.h"
 #include "mulib-sstfile.h"

@@ -1,0 +1,10 @@
+#define MULIB_IMPL_JSON
+#define MULIB_IMPL_UTF8
+#define MULIB_IMPL_SSE
+#define MULIB_IMPL_MULTIPART
+#define MULIB_IMPL_OPENAI
+#define MULIB_IMPL_OPENAI_CLIENT
+#define MULIB_IMPL_OPENAI_SERVER
+#include "muw3-setup.h"
+#include "mulib-openai-client.h"
+#include "mulib-openai-server.h"

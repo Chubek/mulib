@@ -649,6 +649,9 @@
     "mulib-ociimage.h",
     "mulib-ociimagebuilder.h",
     "mulib-oix.h",
+    "mulib-openai-client.h",
+    "mulib-openai-server.h",
+    "mulib-openai.h",
     "mulib-openvpn.h",
     "mulib-opticalmargin.h",
     "mulib-optml.h",
@@ -857,6 +860,7 @@
     "mulib-sqlite-format.h",
     "mulib-sqlite-pager.h",
     "mulib-sqlite.h",
+    "mulib-sse.h",
     "mulib-sshclient.h",
     "mulib-sshserver.h",
     "mulib-sstfile.h",
@@ -1097,10 +1101,10 @@
     "mulib-zorder.h",
     "mulib-zstd.h"
   ],
-  "libraries": 1096,
-  "functions": 4922,
-  "types": 8042,
-  "constants": 2507,
+  "libraries": 1100,
+  "functions": 4971,
+  "types": 8125,
+  "constants": 2516,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -1142,7 +1146,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "36eb4489ee49c934c245bb7e7a24e80b11f92f2aa902c3f5ad2d9cbb77bb08f2",
+  "fingerprint": "73bb15caa3d9c70f68761eb4bca645962b7bea7b8c404c6a06a8b329d95a3783",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -5248,7 +5252,11 @@
         "mulib_http_header",
         "mulib_http_header_next",
         "mulib_http_parse",
-        "mulib_http_serialize"
+        "mulib_http_serialize",
+        "mulib_http_stream_create",
+        "mulib_http_stream_feed",
+        "mulib_http_stream_finish",
+        "mulib_http_stream_destroy"
       ]
     },
     "http1": {
@@ -5287,7 +5295,8 @@
     "https": {
       "header": "mulib-https.h",
       "functions": [
-        "mulib_https_request"
+        "mulib_https_request",
+        "mulib_https_stream_request"
       ]
     },
     "httpserver_config": {
@@ -6793,7 +6802,10 @@
     "multipart": {
       "header": "mulib-multipart.h",
       "functions": [
-        "mulib_multipart_field"
+        "mulib_multipart_field",
+        "mulib_multipart_encode",
+        "mulib_multipart_next",
+        "mulib_multipart_part_free"
       ]
     },
     "mumq": {
@@ -6903,6 +6915,7 @@
       "functions": [
         "mulib_muw3_client_default",
         "mulib_muw3_perform",
+        "mulib_muw3_stream",
         "mulib_muw3_response_free",
         "mulib_muw3_strerror",
         "mulib_muw3_form",
@@ -7383,6 +7396,55 @@
         "mulib_oix_vm_feed",
         "mulib_oix_vm_step",
         "mulib_oix_vm_run"
+      ]
+    },
+    "openai": {
+      "header": "mulib-openai.h",
+      "functions": [
+        "mulib_openai_operation_count",
+        "mulib_openai_operation_at",
+        "mulib_openai_operation",
+        "mulib_openai_match",
+        "mulib_openai_target",
+        "mulib_openai_path_parameter",
+        "mulib_openai_query",
+        "mulib_openai_media_type",
+        "mulib_openai_accepts",
+        "mulib_openai_clone",
+        "mulib_openai_error",
+        "mulib_openai_output_text",
+        "mulib_openai_strerror"
+      ]
+    },
+    "openai-client": {
+      "header": "mulib-openai-client.h",
+      "functions": [
+        "mulib_openai_client_default",
+        "mulib_openai_client_request",
+        "mulib_openai_response_free",
+        "mulib_openai_client_json",
+        "mulib_openai_client_multipart",
+        "mulib_openai_responses_request",
+        "mulib_openai_chat_request",
+        "mulib_openai_embeddings_request",
+        "mulib_openai_client_pages",
+        "mulib_openai_client_run"
+      ]
+    },
+    "openai-server": {
+      "header": "mulib-openai-server.h",
+      "functions": [
+        "mulib_openai_server_default",
+        "mulib_openai_server_dispatch",
+        "mulib_openai_server_process",
+        "mulib_openai_server_reply",
+        "mulib_openai_server_json",
+        "mulib_openai_server_error",
+        "mulib_openai_server_begin",
+        "mulib_openai_server_chunk",
+        "mulib_openai_server_event",
+        "mulib_openai_server_done",
+        "mulib_openai_server_part"
       ]
     },
     "openvpn": {
@@ -9237,6 +9299,16 @@
         "mulib_sqlite_pager_close"
       ]
     },
+    "sse": {
+      "header": "mulib-sse.h",
+      "functions": [
+        "mulib_sse_create",
+        "mulib_sse_feed",
+        "mulib_sse_finish",
+        "mulib_sse_destroy",
+        "mulib_sse_encode"
+      ]
+    },
     "sshclient": {
       "header": "mulib-sshclient.h",
       "functions": [
@@ -11087,7 +11159,8 @@
     "webclient": {
       "header": "mulib-webclient.h",
       "functions": [
-        "mulib_webclient_request"
+        "mulib_webclient_request",
+        "mulib_webclient_stream_request"
       ]
     },
     "webextract": {
@@ -11536,7 +11609,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "17c463885ae03cea539c4be00c977538b129d03205fa0a16f173133bc9d55704",
-    "Implementation.c": "ee41a21b8225d2b1098fa9a8824a90c1a8cb8d796d116fb60227d66f708db686"
+    "Generated.inc": "6a88cbb53f75f70f82c7068f168aa1284607a72c3ec5b0e21ee2f4f35421f4d5",
+    "Implementation.c": "c879a216160087d8fc9c579ab1989a0a66d34e032e5b296e3c8ba8be9e01a6a4"
   }
 }

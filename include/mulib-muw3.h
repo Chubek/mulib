@@ -52,6 +52,11 @@ mulib_muw3_client_t mulib_muw3_client_default (void);
  * rewrite POST on 301/302 and non-HEAD on 303, and bound every hop. */
 mulib_muw3_result mulib_muw3_perform (const mulib_muw3_client_t *,
     const mulib_muw3_request_t *, mulib_muw3_response_t *);
+/** Live decoded response callbacks; no body retention, no redirect following.
+ * On success out owns final URL, headers and trailers. Limits are cumulative.
+ * Callback sees headers once (NULL,0), then body bytes; return 1 to continue. */
+mulib_muw3_result mulib_muw3_stream (const mulib_muw3_client_t *,
+    const mulib_muw3_request_t *, mulib_http_body_fn, void *, mulib_muw3_response_t *);
 void mulib_muw3_response_free (mulib_muw3_response_t *);
 const char *mulib_muw3_strerror (int result);
 /** application/x-www-form-urlencoded text; output malloc-owned on success.
@@ -173,8 +178,9 @@ int mulib_muw3_transport (void *user, const mulib_uri_t *u, const void *wire, si
 done:
   (void)mulib_socket_close (&s); return ok;
 }
-mulib_muw3_result mulib_muw3_perform (const mulib_muw3_client_t *client,
-    const mulib_muw3_request_t *request, mulib_muw3_response_t *out)
+static mulib_muw3_result mulib_muw3_perform_ (const mulib_muw3_client_t *client,
+    const mulib_muw3_request_t *request, mulib_muw3_response_t *out,
+    mulib_http_body_fn callback, void *callback_user)
 {
   mulib_muw3_client_t defaults = mulib_muw3_client_default ();
   const mulib_muw3_client_t *c = client ? client : &defaults;
@@ -213,15 +219,24 @@ mulib_muw3_result mulib_muw3_perform (const mulib_muw3_client_t *client,
       mulib_tls_options_t tls_options;
       tls_options.trust = c->options.trust; tls_options.ca_file = c->options.ca_file;
       tls_options.timeout_ms = c->options.timeout_ms;
-      rc = (mulib_muw3_result)mulib_https_request (r.url, method, headers, count, body, length,
+      if (callback) rc = (mulib_muw3_result)mulib_https_stream_request (r.url, method,
+          headers, count, body, length, &c->options.web,
+          c->tls ? c->tls : mulib_tls_connect, c->tls ? c->tls_user : &tls_options,
+          callback, callback_user, &r.message);
+      else rc = (mulib_muw3_result)mulib_https_request (r.url, method, headers, count, body, length,
           &c->options.web, c->tls ? c->tls : mulib_tls_connect,
           c->tls ? c->tls_user : &tls_options, &r.message);
-    } else rc = (mulib_muw3_result)mulib_webclient_request (r.url, method, headers, count, body,
+    } else if (callback) rc = (mulib_muw3_result)mulib_webclient_stream_request (r.url, method,
+        headers, count, body, length, &c->options.web,
+        c->http ? c->http : mulib_muw3_transport,
+        c->http ? c->http_user : (void *)&c->options.timeout_ms,
+        callback, callback_user, &r.message);
+    else rc = (mulib_muw3_result)mulib_webclient_request (r.url, method, headers, count, body,
         length, &c->options.web, c->http ? c->http : mulib_muw3_transport,
         c->http ? c->http_user : (void *)&c->options.timeout_ms, &r.message);
     if (rc != MULIB_MUW3_OK) break;
     location = mulib_http_header (&r.message, "Location");
-    if (!c->options.max_redirects || !location || (r.message.status != 301 && r.message.status != 302
+    if (callback || !c->options.max_redirects || !location || (r.message.status != 301 && r.message.status != 302
         && r.message.status != 303 && r.message.status != 307 && r.message.status != 308)) {
       *out = r; free (headers); return MULIB_MUW3_OK;
     }
@@ -257,6 +272,15 @@ mulib_muw3_result mulib_muw3_perform (const mulib_muw3_client_t *client,
     free (r.url); r.url = url; ++r.redirects; mulib_http_message_free (&r.message);
   }
   free (headers); mulib_muw3_response_free (&r); return rc;
+}
+mulib_muw3_result mulib_muw3_perform (const mulib_muw3_client_t *c,
+    const mulib_muw3_request_t *q, mulib_muw3_response_t *r)
+{ return mulib_muw3_perform_ (c, q, r, NULL, NULL); }
+mulib_muw3_result mulib_muw3_stream (const mulib_muw3_client_t *c,
+    const mulib_muw3_request_t *q, mulib_http_body_fn cb, void *u, mulib_muw3_response_t *r)
+{
+  if (!cb) return MULIB_MUW3_INVALID;
+  return mulib_muw3_perform_ (c, q, r, cb, u);
 }
 mulib_muw3_result mulib_muw3_form (const mulib_http_header_t *fields, size_t count,
     size_t limit, char **out)

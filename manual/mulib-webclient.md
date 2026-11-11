@@ -60,6 +60,16 @@ timeouts, cancellation and cleanup. A local in-memory application is also a
 valid transport. Callback code must obey its buffer contracts; the library
 cannot prevent a callback from reading beyond a borrowed request.
 
+## Incremental response API
+
+`mulib_webclient_stream_request` adds a body callback and its context before the
+output argument. It uses the same request construction and transport contract,
+but runs the [incremental HTTP response decoder](mulib-http.md) as chunks arrive.
+The callback sees final headers once (NULL/0), then decoded body slices. A return
+other than 1 aborts with INVALID. Successful output owns headers/trailers and has
+no retained body. Raw/decoded byte limits are cumulative, and transport EOF is
+still required. Output is unchanged on failure even if earlier callbacks ran.
+
 ## Response, limits and errors
 
 Success is `MULIB_WEBCLIENT_OK` (1), regardless of HTTP status. `response`

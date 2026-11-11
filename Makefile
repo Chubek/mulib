@@ -8,6 +8,15 @@ TEST_FIXTURES := $(wildcard tests/fixtures/*.h)
 EXAMPLES := $(patsubst examples/%.c,build/%,$(wildcard examples/mulib-*.c)) build/fontshape-native build/docir-publication
 .PHONY: all check check-shell check-examples check-compiler demo formats docir-formats clean
 .PHONY: muw3 check-muw3 check-tls
+.PHONY: check-openai
+check-openai: build/test-openai build/test-openai-alloc build/test-http-stream build/test-sse build/test-multipart
+	./build/test-openai
+	./build/test-openai-alloc
+	./build/test-http-stream
+	./build/test-sse
+	./build/test-multipart
+	python3 tools/generate_openai.py --check
+	python3 tests/test_openai_integration.py --cc "$(CC)"
 muw3: build/muw3 build/microchand
 build/microchan-runtime.o: library/microchan/runtime.c $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@

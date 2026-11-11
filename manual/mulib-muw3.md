@@ -97,6 +97,20 @@ connection pooling and a cookie jar are not provided by this client version.
 Set-Cookie duplicates can be read with `mulib_http_header_next`; application code
 can maintain cookie/authentication state explicitly.
 
+## Incremental response API
+
+`mulib_muw3_stream(client, request, callback, user, response)` streams decoded
+body bytes live over the same native/custom HTTP and verified TLS transports.
+The `mulib_http_body_fn` callback sees final headers once with NULL/0 and then
+body slices. Return 1 to continue; 0 aborts with INVALID. This API does not follow
+redirects, regardless of `max_redirects`. Every HTTP status is delivered normally.
+Successful output owns the URL, headers and trailers, with an empty body. Byte
+limits are cumulative; body bytes are not retained. Output is unchanged on error,
+although callbacks may already have run. The final result still requires
+successful transport EOF/TLS authenticated shutdown. The buffered `perform` API
+keeps its existing behavior. The [OpenAI client](mulib-openai-client.md) builds
+live JSON/SSE events and explicit cancellation results on this API.
+
 ## Command-line host
 
 `make muw3` builds `build/muw3` and `build/microchand`. CMake builds `lmuw3`,

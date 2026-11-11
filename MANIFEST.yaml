@@ -7,9 +7,37 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1093
-implemented_module_count: 1093
+module_count: 1097
+implemented_module_count: 1097
 modules:
+- name: openai
+  header: include/mulib-openai.h
+  manual: manual/mulib-openai.md
+  macro: MULIB_IMPL_OPENAI
+  purpose: OpenAI REST operation catalog, safe routing, JSON envelopes and text extraction.
+  dependencies: [http, json, utf8]
+  status: implemented
+- name: openai-client
+  header: include/mulib-openai-client.h
+  manual: manual/mulib-openai-client.md
+  macro: MULIB_IMPL_OPENAI_CLIENT
+  purpose: MuW3 OpenAI REST client with live SSE, multipart, pagination and tool workflows.
+  dependencies: [muw3, openai, sse, multipart]
+  status: implemented
+- name: openai-server
+  header: include/mulib-openai-server.h
+  manual: manual/mulib-openai-server.md
+  macro: MULIB_IMPL_OPENAI_SERVER
+  purpose: OpenAI REST dispatch, authentication hooks, JSON errors and live HTTP/SSE output.
+  dependencies: [openai, sse, multipart]
+  status: implemented
+- name: sse
+  header: include/mulib-sse.h
+  manual: manual/mulib-sse.md
+  macro: MULIB_IMPL_SSE
+  purpose: Bounded incremental UTF-8 server-sent event parsing and encoding.
+  dependencies: [strbuf, utf8]
+  status: implemented
 - name: entropy
   header: include/mulib-entropy.h
   manual: manual/mulib-entropy.md
@@ -5486,8 +5514,8 @@ modules:
   header: include/mulib-multipart.h
   manual: manual/mulib-multipart.md
   macro: MULIB_IMPL_MULTIPART
-  purpose: "Multipart/form-data boundary and field formatting for simple text fields."
-  dependencies: []
+  purpose: "Binary-safe multipart/form-data encoding, bounded part parsing and text fields."
+  dependencies: [strbuf]
   status: implemented
 - name: netpolicy
   header: include/mulib-netpolicy.h
@@ -7837,6 +7865,34 @@ modules:
   dependencies: []
   status: implemented
 project_files:
+- file: mudsl/tests/mull/mulib/openai.mull
+  purpose: MuLL OpenAI catalog, configuration, JSON and live callback binding smoke test.
+- file: mudsl/tests/mull/mulib/openai.expected
+  purpose: Expected result for the shared MuLL OpenAI binding fixture.
+- file: tools/generate_openai.py
+  purpose: Reproducible standard-library-only OpenAI catalog generator and freshness check.
+- file: include/detail/mulib-openai-operations.inc
+  purpose: Generated OpenAI REST operation metadata with source specification digest.
+- file: tests/fixtures/openai-setup.h
+  purpose: Explicit implementation dependency closure for OpenAI tests.
+- file: tests/test-openai.c
+  purpose: All-operation routing and client/server streaming, multipart and workflow tests.
+- file: tests/test-openai-alloc.c
+  purpose: Allocation-failure cleanup tests for OpenAI and supporting protocols.
+- file: tests/test-http-stream.c
+  purpose: Incremental HTTP response framing, fragmentation and hostile input tests.
+- file: tests/test-sse.c
+  purpose: Fragmented UTF-8 SSE parsing, encoding and resource limit tests.
+- file: tests/test_openai_integration.py
+  purpose: Offline TCP OpenAI client/server interoperability against Python HTTP.
+- file: examples/modules/openai.c
+  purpose: Safe catalog-based OpenAI path construction.
+- file: examples/modules/openai-client.c
+  purpose: Offline and live MuW3 Responses client with environment configuration.
+- file: examples/modules/openai-server.c
+  purpose: OpenAI HTTP server adapter and loopback socket example.
+- file: examples/modules/sse.c
+  purpose: Standalone incremental server-sent event consumer.
 - file: include/detail/mulib-tls-implementation.h
   purpose: Explicit convenience switches for the native TLS cryptographic closure.
 - file: tests/fixtures/tls-setup.h

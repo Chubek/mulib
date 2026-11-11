@@ -158,6 +158,13 @@ if(MULIB_BUILD_TESTS)
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed_lprowse.py --check)
     add_test(NAME mulib_lmuw3_embedded
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed_lmuw3.py --check)
+    add_test(NAME mulib_openai_catalog
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_openai.py --check)
+    if(UNIX)
+      add_test(NAME mulib_openai_integration
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_openai_integration.py --cc ${CMAKE_C_COMPILER})
+      set_tests_properties(mulib_openai_integration PROPERTIES TIMEOUT 120)
+    endif()
     if(MULIB_BUILD_MUW3 AND UNIX)
       add_test(NAME mulib_muw3_integration
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_muw3_integration.py

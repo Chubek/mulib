@@ -92,6 +92,21 @@ extern "C"
                                           const mulib_http_options_t *options,
                                           unsigned char **bytes,
                                           size_t *length);
+  /** Incremental response decoder. Callback receives final headers once with
+   * bytes=NULL,length=0, then decoded body slices. Return 1 to continue, 0 to
+   * abort (INVALID). No body retention; cumulative body and metadata are bounded.
+   * Callbacks precede final framing validation; commit side effects after finish.
+   * Informational responses, fixed/EOF/chunked framing and trailers supported. */
+  typedef int (*mulib_http_body_fn) (void *, const mulib_http_message_t *,
+                                    const void *, size_t);
+  typedef struct mulib_http_stream mulib_http_stream_t;
+  mulib_http_stream_t *mulib_http_stream_create (const mulib_http_options_t *,
+                                                mulib_http_body_fn, void *);
+  int mulib_http_stream_feed (mulib_http_stream_t *, const void *, size_t);
+  /** At transport EOF, transfer owned headers/trailers (empty body) on OK.
+   * Output unchanged on error. Feed/finish errors are sticky. */
+  int mulib_http_stream_finish (mulib_http_stream_t *, mulib_http_message_t *);
+  void mulib_http_stream_destroy (mulib_http_stream_t *);
 #ifdef __cplusplus
 }
 #endif
@@ -1078,4 +1093,159 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+struct mulib_http_stream {
+  mulib_http_options_t options;
+  mulib_http_message_t message;
+  mulib_strbuf_t line;
+  mulib_http_body_fn callback;
+  void *user;
+  size_t metadata, total, remaining;
+  unsigned informational;
+  int state, error, first, cr, finished;
+};
+mulib_http_stream_t *mulib_http_stream_create (const mulib_http_options_t *o,
+    mulib_http_body_fn callback, void *user)
+{
+  mulib_http_stream_t *s;
+  if (!callback || (o && !mulib_http_flags_ (1, o->flags))) return NULL;
+  s = (mulib_http_stream_t *)calloc (1, sizeof *s);
+  if (s) { s->options = mulib_http_options_ (o); s->callback = callback;
+    s->user = user; s->first = 1; s->message.is_response = 1; }
+  return s;
+}
+static int mulib_http_stream_headers_ (mulib_http_stream_t *s)
+{
+  size_t cl = 0, te = 0, hosts = 0, length = 0;
+  mulib_http_message_t *m = &s->message;
+  for (size_t i = 0; i < m->header_count; ++i) {
+    const mulib_http_header_t *h = &m->headers[i];
+    if (mulib_http_equal_ (h->name, "Content-Length")) {
+      if (++cl != 1 || !mulib_http_decimal_ (h->value, &length)) return -1;
+    } else if (mulib_http_equal_ (h->name, "Transfer-Encoding")) {
+      if (++te != 1 || !mulib_http_equal_ (h->value, "chunked")) return -1;
+    } else if (mulib_http_equal_ (h->name, "Host") && ++hosts > 1) return -1;
+  }
+  if ((cl && te) || (m->status == 205 && length)) return -1;
+  m->chunked = te != 0;
+  if (mulib_http_no_body_ (m, s->options.flags)) {
+    if (te || ((m->status < 200 || m->status == 204
+        || ((s->options.flags & MULIB_HTTP_CONNECT_RESPONSE) && m->status < 300)) && cl)) return -1;
+    s->state = 7;
+  } else if (te) s->state = 3;
+  else if (cl) {
+    if (length > s->options.max_body_bytes) return -2;
+    s->remaining = length; s->state = length ? 1 : 7;
+  } else { s->state = 2; m->close_delimited = 1; }
+  if (m->status < 200) {
+    if (m->status == 101 || ++s->informational > 8) return -1;
+    mulib_http_message_free (m); m->is_response = 1;
+    s->state = 0; s->first = 1; s->metadata = 0; return 1;
+  }
+  return s->callback (s->user, m, NULL, 0) == 1 ? 1 : -1;
+}
+static int mulib_http_stream_line_ (mulib_http_stream_t *s)
+{
+  const char *p = s->line.data ? s->line.data : "";
+  size_t n = s->line.length;
+  if (!s->state || s->state == 6) {
+    mulib_http_header_t h, *fields;
+    size_t count;
+    int rc;
+    if (!s->state && s->first) {
+      s->first = 0;
+      return mulib_http_start_ (p, n, &s->message);
+    }
+    if (!n) {
+      if (s->state == 6) { s->state = 7; return 1; }
+      return mulib_http_stream_headers_ (s);
+    }
+    if (s->message.header_count + s->message.trailer_count >= s->options.max_headers) return -2;
+    if (s->state == 6 && !(s->options.flags & MULIB_HTTP_CHUNK_METADATA)) return -1;
+    rc = mulib_http_field_ (p, n, &h);
+    if (rc != 1) return rc;
+    if (s->state == 6 && !mulib_http_trailer_allowed_ (&s->message, h.name)) {
+      free (h.name); free (h.value); return -1;
+    }
+    count = s->state == 6 ? s->message.trailer_count : s->message.header_count;
+    fields = s->state == 6 ? s->message.trailers : s->message.headers;
+    if (count >= SIZE_MAX / sizeof *fields) { free (h.name); free (h.value); return -2; }
+    fields = (mulib_http_header_t *)realloc (fields, (count + 1) * sizeof *fields);
+    if (!fields) { free (h.name); free (h.value); return -3; }
+    fields[count] = h;
+    if (s->state == 6) { s->message.trailers = fields; ++s->message.trailer_count; }
+    else { s->message.headers = fields; ++s->message.header_count; }
+    return 1;
+  }
+  if (s->state == 5) {
+    if (n) return -1;
+    s->state = 3; return 1;
+  }
+  if (s->state == 3) {
+    size_t k = 0, chunk = 0;
+    while (k < n && mulib_http_hex_ (p + k, 1)) ++k;
+    if (!k || (k != n && (!(s->options.flags & MULIB_HTTP_CHUNK_METADATA)
+        || !mulib_http_extensions_ (p + k, n - k)))) return -1;
+    for (size_t i = 0; i < k; ++i) {
+      unsigned char c = (unsigned char)p[i];
+      unsigned d = c <= '9' ? c - '0' : (c <= 'F' ? c - 'A' + 10 : c - 'a' + 10);
+      if (chunk > (SIZE_MAX - d) / 16) return -2;
+      chunk = chunk * 16 + d;
+    }
+    if (chunk > s->options.max_body_bytes - s->total) return -2;
+    if (chunk && s->message.status == 205) return -1;
+    s->remaining = chunk; s->state = chunk ? 4 : 6;
+    if (!chunk) s->metadata = 0;
+    return 1;
+  }
+  return -1;
+}
+int mulib_http_stream_feed (mulib_http_stream_t *s, const void *bytes, size_t n)
+{
+  const unsigned char *p = (const unsigned char *)bytes;
+  if (!s || (!p && n) || s->finished) return -1;
+  if (s->error) return s->error;
+  while (n) {
+    if (s->state == 7) return s->error = -1;
+    if (s->state == 1 || s->state == 2 || s->state == 4) {
+      size_t take = s->state == 2 || n < s->remaining ? n : s->remaining;
+      if (take > s->options.max_body_bytes - s->total) return s->error = -2;
+      if (take && s->message.status == 205) return s->error = -1;
+      if (s->callback (s->user, &s->message, p, take) != 1) return s->error = -1;
+      s->total += take; p += take; n -= take;
+      if (s->state != 2) {
+        s->remaining -= take;
+        if (!s->remaining) s->state = s->state == 1 ? 7 : 5;
+      }
+    } else {
+      unsigned char c = *p++; --n;
+      size_t limit = s->state == 0 || s->state == 6 ? s->options.max_header_bytes : 128;
+      if ((s->state == 0 || s->state == 6) && ++s->metadata > limit) return s->error = -2;
+      if (s->cr) {
+        int rc;
+        if (c != '\n') return s->error = -1;
+        s->cr = 0; rc = mulib_http_stream_line_ (s);
+        if (rc != 1) return s->error = rc;
+        s->line.length = 0; if (s->line.data) s->line.data[0] = 0;
+      } else if (c == '\r') s->cr = 1;
+      else {
+        if (c == '\n' || !c) return s->error = -1;
+        if (s->line.length >= limit) return s->error = -2;
+        if (!mulib_strbuf_putc (&s->line, (char)c)) return s->error = -3;
+      }
+    }
+  }
+  return 1;
+}
+int mulib_http_stream_finish (mulib_http_stream_t *s, mulib_http_message_t *out)
+{
+  if (!s || !out || s->finished) return -1;
+  if (s->error) return s->error;
+  if (s->state != 2 && s->state != 7) return s->error = -1;
+  *out = s->message; memset (&s->message, 0, sizeof s->message); s->finished = 1;
+  return 1;
+}
+void mulib_http_stream_destroy (mulib_http_stream_t *s)
+{
+  if (s) { mulib_http_message_free (&s->message); mulib_strbuf_free (&s->line); free (s); }
+}
 #endif /* implementation */

@@ -53,6 +53,13 @@ extern "C"
       const mulib_webclient_options_t *options,
       mulib_webclient_transport_fn transport, void *user,
       mulib_http_message_t *response);
+  /** Incremental variant; returns owned headers/trailers without retaining body.
+   * Callback contract is mulib_http_body_fn. Wire/body limits are cumulative. */
+  mulib_webclient_result mulib_webclient_stream_request (
+      const char *, const char *, const mulib_http_header_t *, size_t,
+      const void *, size_t, const mulib_webclient_options_t *,
+      mulib_webclient_transport_fn, void *, mulib_http_body_fn, void *,
+      mulib_http_message_t *);
 #ifdef __cplusplus
 }
 #endif
@@ -88,6 +95,8 @@ extern "C"
   {
     mulib_buffer_t bytes;
     size_t limit;
+    size_t received;
+    mulib_http_stream_t *stream;
     mulib_webclient_result error;
   } mulib_webclient_sink_;
   static int
@@ -98,19 +107,23 @@ extern "C"
       return 0;
     if (!bytes && length)
       s->error = MULIB_WEBCLIENT_INVALID;
-    else if (length > s->limit - s->bytes.length)
+    else if (length > s->limit - s->received)
       s->error = MULIB_WEBCLIENT_LIMIT;
+    else if (s->stream)
+      s->error = (mulib_webclient_result)mulib_http_stream_feed (s->stream, bytes, length);
     else if (!mulib_buffer_append (&s->bytes, bytes, length))
       s->error = MULIB_WEBCLIENT_NOMEM;
+    if (s->error == MULIB_WEBCLIENT_OK) s->received += length;
     return s->error == MULIB_WEBCLIENT_OK;
   }
-  mulib_webclient_result
-  mulib_webclient_request (const char *url, const char *method,
+  static mulib_webclient_result
+  mulib_webclient_request_ (const char *url, const char *method,
                            const mulib_http_header_t *headers, size_t count,
                            const void *body, size_t body_length,
                            const mulib_webclient_options_t *options,
                            mulib_webclient_transport_fn transport, void *user,
-                           mulib_http_message_t *response)
+                            mulib_http_message_t *response,
+                            mulib_http_body_fn callback, void *callback_user)
   {
     mulib_uri_t uri;
     mulib_strbuf_t host, target;
@@ -171,6 +184,7 @@ extern "C"
     memset (&parsed, 0, sizeof (parsed));
     mulib_buffer_init (&sink.bytes);
     sink.error = MULIB_WEBCLIENT_OK;
+    sink.received = 0; sink.stream = NULL;
     sink.limit = options && options->max_response_bytes
                      ? options->max_response_bytes
                      : 32u * 1024u * 1024u;
@@ -208,6 +222,12 @@ extern "C"
         &request, &limits, &wire, &wire_length);
     if (result != MULIB_WEBCLIENT_OK)
       goto done;
+    if (callback) {
+      mulib_http_options_t stream_limits = limits;
+      if (!strcmp (method, "HEAD")) stream_limits.flags |= MULIB_HTTP_HEAD_RESPONSE;
+      sink.stream = mulib_http_stream_create (&stream_limits, callback, callback_user);
+      if (!sink.stream) { result = MULIB_WEBCLIENT_NOMEM; goto done; }
+    }
     {
       int ok = transport (user, &uri, wire, wire_length,
                           mulib_webclient_receive_, &sink);
@@ -221,6 +241,11 @@ extern "C"
           result = MULIB_WEBCLIENT_TRANSPORT;
           goto done;
         }
+    }
+    if (sink.stream) {
+      result = (mulib_webclient_result)mulib_http_stream_finish (sink.stream, &parsed);
+      if (result != MULIB_WEBCLIENT_OK) goto done;
+      *response = parsed; memset (&parsed, 0, sizeof parsed); goto done;
     }
     limits.flags |= MULIB_HTTP_EOF;
     if (!strcmp (method, "HEAD"))
@@ -256,7 +281,23 @@ extern "C"
     mulib_strbuf_free (&host);
     mulib_strbuf_free (&target);
     mulib_buffer_free (&sink.bytes);
+    mulib_http_stream_destroy (sink.stream);
     return result;
+  }
+  mulib_webclient_result mulib_webclient_request (const char *url, const char *method,
+      const mulib_http_header_t *headers, size_t count, const void *body, size_t length,
+      const mulib_webclient_options_t *options, mulib_webclient_transport_fn transport,
+      void *user, mulib_http_message_t *out)
+  { return mulib_webclient_request_ (url, method, headers, count, body, length,
+      options, transport, user, out, NULL, NULL); }
+  mulib_webclient_result mulib_webclient_stream_request (const char *url, const char *method,
+      const mulib_http_header_t *headers, size_t count, const void *body, size_t length,
+      const mulib_webclient_options_t *options, mulib_webclient_transport_fn transport,
+      void *user, mulib_http_body_fn callback, void *callback_user, mulib_http_message_t *out)
+  {
+    if (!callback) return MULIB_WEBCLIENT_INVALID;
+    return mulib_webclient_request_ (url, method, headers, count, body, length,
+      options, transport, user, out, callback, callback_user);
   }
 #ifdef __cplusplus
 }

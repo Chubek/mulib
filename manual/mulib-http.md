@@ -50,6 +50,25 @@ values have surrounding spaces/tabs removed; names preserve original case.
 `mulib_http_header_next(message,name,&cursor)` iterates matching values including
 duplicates; initialize cursor to zero. This preserves separate Set-Cookie fields.
 
+## Incremental response decoding
+
+`mulib_http_stream_create(options, callback, user)` creates a response-only
+incremental decoder. `feed` accepts arbitrary fragments; `finish` is called at
+transport EOF and transfers owned final headers/trailers on success. `destroy`
+releases decoder storage. The callback receives final headers once with NULL/0,
+then binary decoded body slices. Return 1 to accept or 0 to abort. The decoder
+retains no body. It handles up to eight informational responses, fixed-length,
+chunked and close-delimited bodies, extensions and trailers under the same flags
+and validation rules as the buffered parser. It rejects extra bytes after a
+complete frame and truncated fixed/chunked bodies at EOF.
+
+Body limits are cumulative; metadata and chunk lines are bounded independently.
+Feed/finish return OK or INVALID/LIMIT/NOMEM; failures are sticky. Outputs remain
+unchanged on failure. Callbacks can occur before a later framing/transport error;
+applications must not treat intermediate delivery as final verification. Do not
+recursively feed, finish or destroy the decoder inside a callback. See
+`tests/test-http-stream.c` for exhaustive fragment-boundary and truncation tests.
+
 ## Strict framing/security policy
 
 The parser requires CRLF and exactly `HTTP/1.1`. It rejects bare line endings,
