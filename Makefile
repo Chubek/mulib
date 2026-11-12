@@ -9,6 +9,15 @@ EXAMPLES := $(patsubst examples/%.c,build/%,$(wildcard examples/mulib-*.c)) buil
 .PHONY: all check check-shell check-examples check-compiler demo formats docir-formats clean
 .PHONY: muw3 check-muw3 check-tls
 .PHONY: check-openai
+.PHONY: check-web-primitives
+WEB_PRIMITIVES_TESTS := pricing extraction browser css alloc hostile
+TESTS += $(addprefix build/test_web_,$(WEB_PRIMITIVES_TESTS))
+build/test_web_%: tests/test_web_%.c $(HEADERS) $(TEST_FIXTURES) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
+check-web-primitives: $(addprefix build/test_web_,$(WEB_PRIMITIVES_TESTS))
+	@set -eu; for name in $(WEB_PRIMITIVES_TESTS); do ./build/test_web_$$name; done
+	python3 tests/test_money_reference.py --cc "$(CC)"
+	@echo "All 6 web/pricing primitive suites passed."
 check-openai: build/test-openai build/test-openai-alloc build/test-http-stream build/test-sse build/test-multipart
 	./build/test-openai
 	./build/test-openai-alloc

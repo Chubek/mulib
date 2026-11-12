@@ -3,6 +3,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -26,6 +27,19 @@ manuals = module('manuals')
 
 
 class Tools(unittest.TestCase):
+    def test_checker_compile_budget(self):
+        for value in ('0', '-1', 'invalid'):
+            with self.subTest(value=value):
+                result = subprocess.run(
+                    [sys.executable, str(ROOT / 'tools/check.py'),
+                     '--compile-timeout', value], capture_output=True, text=True)
+                self.assertEqual(result.returncode, 2)
+                self.assertIn('--compile-timeout', result.stderr)
+        result = subprocess.run(
+            [sys.executable, str(ROOT / 'tools/check.py'),
+             '--compile-timeout', '300', '--help'], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0)
+
     def test_manual_sections_preserve_prose(self):
         before = ('# User title\n\nContract written by a maintainer.\n\n'
                   '<!-- manual-interface -->\nold\n<!-- /manual-interface -->\n'

@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1100 headers, 1129 direct dependency edges.
+Inventory: 1167 headers, 1201 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (380 modules)
+## Stratum 0 (396 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -47,6 +47,9 @@ Compatibility group: `parsec`, `peg`.
 | [bounds](mulib-bounds.md) | none |
 | [bpf-kernel](mulib-bpf-kernel.md) | none |
 | [branch-layout](mulib-branch-layout.md) | none |
+| [browser-limits](mulib-browser-limits.md) | none |
+| [browser-permissions](mulib-browser-permissions.md) | none |
+| [browser-stream](mulib-browser-stream.md) | none |
 | [browsercontext](mulib-browsercontext.md) | none |
 | [browserlocator](mulib-browserlocator.md) | none |
 | [browserscreenshot](mulib-browserscreenshot.md) | none |
@@ -83,6 +86,8 @@ Compatibility group: `parsec`, `peg`.
 | [crc](mulib-crc.md) | none |
 | [crc32](mulib-crc32.md) | none |
 | [cron](mulib-cron.md) | none |
+| [css-box](mulib-css-box.md) | none |
+| [css-tokenizer](mulib-css-tokenizer.md) | none |
 | [csv](mulib-csv.md) | none |
 | [datalog](mulib-datalog.md) | none |
 | [date](mulib-date.md) | none |
@@ -101,6 +106,8 @@ Compatibility group: `parsec`, `peg`.
 | [dns-manager](mulib-dns-manager.md) | none |
 | [dns](mulib-dns.md) | none |
 | [docid](mulib-docid.md) | none |
+| [dom-mutation](mulib-dom-mutation.md) | none |
+| [dom-range](mulib-dom-range.md) | none |
 | [domserialize](mulib-domserialize.md) | none |
 | [drm](mulib-drm.md) | none |
 | [dsim-logic4](mulib-dsim-logic4.md) | none |
@@ -171,6 +178,7 @@ Compatibility group: `parsec`, `peg`.
 | [histogram](mulib-histogram.md) | none |
 | [hll](mulib-hll.md) | none |
 | [hls-schedule](mulib-hls-schedule.md) | none |
+| [html-textstream](mulib-html-textstream.md) | none |
 | [hwil-types](mulib-hwil-types.md) | none |
 | [hwinfo](mulib-hwinfo.md) | none |
 | [hybridsearch](mulib-hybridsearch.md) | none |
@@ -193,6 +201,7 @@ Compatibility group: `parsec`, `peg`.
 | [iterator](mulib-iterator.md) | none |
 | [jaccard_similarity](mulib-jaccard_similarity.md) | none |
 | [joinfilter](mulib-joinfilter.md) | none |
+| [jsdom](mulib-jsdom.md) | none |
 | [kmm](mulib-kmm.md) | none |
 | [kvm](mulib-kvm.md) | none |
 | [lattice](mulib-lattice.md) | none |
@@ -218,6 +227,7 @@ Compatibility group: `parsec`, `peg`.
 | [memtest](mulib-memtest.md) | none |
 | [metrics](mulib-metrics.md) | none |
 | [microaudio](mulib-microaudio.md) | none |
+| [microjs-promise](mulib-microjs-promise.md) | none |
 | [microtcl](mulib-microtcl.md) | none |
 | [minhash](mulib-minhash.md) | none |
 | [minincat](mulib-minincat.md) | none |
@@ -225,6 +235,7 @@ Compatibility group: `parsec`, `peg`.
 | [mir](mulib-mir.md) | none |
 | [mmfile](mulib-mmfile.md) | none |
 | [module-resolver](mulib-module-resolver.md) | none |
+| [money](mulib-money.md) | none |
 | [mop](mulib-mop.md) | none |
 | [movingavg](mulib-movingavg.md) | none |
 | [mqueue](mulib-mqueue.md) | none |
@@ -269,6 +280,10 @@ Compatibility group: `parsec`, `peg`.
 | [port](mulib-port.md) | none |
 | [positions](mulib-positions.md) | none |
 | [postings](mulib-postings.md) | none |
+| [price-causal](mulib-price-causal.md) | none |
+| [price-confidence](mulib-price-confidence.md) | none |
+| [price-demand](mulib-price-demand.md) | none |
+| [price-ensemble](mulib-price-ensemble.md) | none |
 | [priceopt](mulib-priceopt.md) | none |
 | [prime](mulib-prime.md) | none |
 | [probability](mulib-probability.md) | none |
@@ -384,6 +399,7 @@ Compatibility group: `parsec`, `peg`.
 | [vm-value](mulib-vm-value.md) | none |
 | [wave-signal](mulib-wave-signal.md) | none |
 | [webarchive](mulib-webarchive.md) | none |
+| [webextract-reconcile](mulib-webextract-reconcile.md) | none |
 | [webextract](mulib-webextract.md) | none |
 | [webratelimit](mulib-webratelimit.md) | none |
 | [websearch](mulib-websearch.md) | none |
@@ -400,7 +416,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (374 modules)
+## Stratum 1 (388 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -425,6 +441,13 @@ Compatibility group: `parsec`, `peg`.
 | [blockidx](mulib-blockidx.md) | `bycutils`, `memtable` |
 | [booknav](mulib-booknav.md) | `typecore` |
 | [booleanquery](mulib-booleanquery.md) | `postings` |
+| [browser-domstream](mulib-browser-domstream.md) | `browser-stream` |
+| [browser-eventloop](mulib-browser-eventloop.md) | `microjs-promise` |
+| [browser-executionstream](mulib-browser-executionstream.md) | `browser-stream` |
+| [browser-layoutstream](mulib-browser-layoutstream.md) | `browser-stream` |
+| [browser-networkstream](mulib-browser-networkstream.md) | `browser-stream` |
+| [browser-sandbox](mulib-browser-sandbox.md) | `browser-limits` |
+| [browser-tokenstream](mulib-browser-tokenstream.md) | `browser-stream` |
 | [buildgraph](mulib-buildgraph.md) | `artifact` |
 | [bytecode-builder](mulib-bytecode-builder.md) | `bytecode` |
 | [bytecode-disasm](mulib-bytecode-disasm.md) | `bytecode` |
@@ -454,6 +477,9 @@ Compatibility group: `parsec`, `peg`.
 | [crossref](mulib-crossref.md) | `typecore` |
 | [cryptohash](mulib-cryptohash.md) | `sha` |
 | [csl](mulib-csl.md) | `typecore` |
+| [css-flex](mulib-css-flex.md) | `css-box` |
+| [css-grid](mulib-css-grid.md) | `css-box` |
+| [css-layoutstream](mulib-css-layoutstream.md) | `css-box` |
 | [csswriter](mulib-csswriter.md) | `typecore` |
 | [datagram](mulib-datagram.md) | `filectl` |
 | [dbindex](mulib-dbindex.md) | `bycutils`, `memtable` |
@@ -534,6 +560,7 @@ Compatibility group: `parsec`, `peg`.
 | [heaptable](mulib-heaptable.md) | `memtable` |
 | [histprice](mulib-histprice.md) | `statsproc` |
 | [hkdf](mulib-hkdf.md) | `entropy`, `sha` |
+| [html-tokenizer](mulib-html-tokenizer.md) | `html-textstream` |
 | [htmlwriter](mulib-htmlwriter.md) | `typecore` |
 | [http2](mulib-http2.md) | `buffer` |
 | [hwil-module](mulib-hwil-module.md) | `dsim-logic4` |
@@ -645,6 +672,8 @@ Compatibility group: `parsec`, `peg`.
 | [perlpod](mulib-perlpod.md) | `strbuf`, `utf8` |
 | [phrasequery](mulib-phrasequery.md) | `positions` |
 | [plot2d](mulib-plot2d.md) | `typecore` |
+| [price-normalize](mulib-price-normalize.md) | `money` |
+| [price-observation](mulib-price-observation.md) | `money` |
 | [procfs](mulib-procfs.md) | `vfs` |
 | [protobuf](mulib-protobuf.md) | `buffer`, `varint` |
 | [pwdauth](mulib-pwdauth.md) | `authcrypto`, `seurity` |
@@ -661,6 +690,7 @@ Compatibility group: `parsec`, `peg`.
 | [rtnl](mulib-rtnl.md) | `netlink` |
 | [scrape](mulib-scrape.md) | `scrape-readable` |
 | [sfnt](mulib-sfnt.md) | `typecore` |
+| [shylock-core](mulib-shylock-core.md) | `utf8` |
 | [signature](mulib-signature.md) | `der`, `entropy`, `sha` |
 | [simdmath](mulib-simdmath.md) | `linalg` |
 | [smt](mulib-smt.md) | `sat` |
@@ -779,7 +809,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (123 modules)
+## Stratum 2 (141 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -789,6 +819,11 @@ Compatibility group: `parsec`, `peg`.
 | [bidi](mulib-bidi.md) | `uniproc` |
 | [binfilebuilder](mulib-binfilebuilder.md) | `binfileschema`, `buffer`, `bycutils` |
 | [bktree](mulib-bktree.md) | `bk-trees` |
+| [browser-cache](mulib-browser-cache.md) | `shylock-core` |
+| [browser-cookiejar](mulib-browser-cookiejar.md) | `shylock-core` |
+| [browser-navigation](mulib-browser-navigation.md) | `shylock-core` |
+| [browser-resource](mulib-browser-resource.md) | `shylock-core` |
+| [browser-snapshot](mulib-browser-snapshot.md) | `shylock-core` |
 | [buildvm](mulib-buildvm.md) | `buildgraph`, `vcdiff` |
 | [bytecode-eval](mulib-bytecode-eval.md) | `bytecode-verify` |
 | [bzip2](mulib-bzip2.md) | `codec-core` |
@@ -804,6 +839,9 @@ Compatibility group: `parsec`, `peg`.
 | [conntrack](mulib-conntrack.md) | `nfnetlink` |
 | [container-network](mulib-container-network.md) | `container-netdev`, `packetrules` |
 | [containerstub](mulib-containerstub.md) | `container2daemonproto`, `ocicontainer` |
+| [crawlarchive](mulib-crawlarchive.md) | `shylock-core` |
+| [css-computed](mulib-css-computed.md) | `shylock-core` |
+| [css-parser](mulib-css-parser.md) | `shylock-core` |
 | [css](mulib-css.md) | `xml` |
 | [dbus-client](mulib-dbus-client.md) | `dbus-transport` |
 | [devlink](mulib-devlink.md) | `netlink-genl` |
@@ -823,6 +861,8 @@ Compatibility group: `parsec`, `peg`.
 | [glr](mulib-glr.md) | `atn`, `gss`, `sppf` |
 | [gzip](mulib-gzip.md) | `codec-core`, `crc32`, `deflate` |
 | [hidden_markov_chain](mulib-hidden_markov_chain.md) | `markov_chain` |
+| [html-jsonld](mulib-html-jsonld.md) | `html-tokenizer`, `shylock-core` |
+| [html-treebuilder](mulib-html-treebuilder.md) | `html-tokenizer`, `shylock-core` |
 | [html](mulib-html.md) | `docir`, `xml` |
 | [http3](mulib-http3.md) | `quic` |
 | [hwil-verify](mulib-hwil-verify.md) | `hwil-module` |
@@ -843,6 +883,7 @@ Compatibility group: `parsec`, `peg`.
 | [memtkx](mulib-memtkx.md) | `alloc` |
 | [metapp](mulib-metapp.md) | `arena`, `dsu`, `elf`, `endian`, `linker`, `strbuf`, `utf8` |
 | [microchan](mulib-microchan.md) | `container-ipc`, `socket` |
+| [microjs-module](mulib-microjs-module.md) | `shylock-core` |
 | [midi](mulib-midi.md) | `audio` |
 | [miniflac](mulib-miniflac.md) | `audio` |
 | [minimpeg](mulib-minimpeg.md) | `audio` |
@@ -868,6 +909,10 @@ Compatibility group: `parsec`, `peg`.
 | [peg](mulib-peg.md) | `parsec`, `strbuf` |
 | [pipeline](mulib-pipeline.md) | `parallel` |
 | [postdominance](mulib-postdominance.md) | `dominance` |
+| [price-history](mulib-price-history.md) | `price-observation` |
+| [price-match](mulib-price-match.md) | `shylock-core` |
+| [price-monitor](mulib-price-monitor.md) | `price-observation` |
+| [readability](mulib-readability.md) | `html-textstream`, `shylock-core` |
 | [recordbatch](mulib-recordbatch.md) | `record` |
 | [regalloc](mulib-regalloc.md) | `regalloc-graph`, `regalloc-linear` |
 | [rootfs](mulib-rootfs.md) | `archive`, `vfs` |
@@ -901,13 +946,16 @@ Compatibility group: `parsec`, `peg`.
 | [vm-module](mulib-vm-module.md) | `bytecode`, `bytecode-verify` |
 | [vmm-memory](mulib-vmm-memory.md) | `vmmdev` |
 | [vmweave](mulib-vmweave.md) | `mir`, `rewrite` |
+| [webextract-evidence](mulib-webextract-evidence.md) | `shylock-core` |
+| [webidl-bindgen](mulib-webidl-bindgen.md) | `shylock-core` |
+| [webidl-runtime](mulib-webidl-runtime.md) | `shylock-core`, `utf8` |
 | [wmfunc](mulib-wmfunc.md) | `wlroots` |
 | [xpath](mulib-xpath.md) | `xml` |
 | [xtbb](mulib-xtbb.md) | `parallel` |
 | [zip](mulib-zip.md) | `crc32`, `deflate`, `utf8` |
 | [zstd](mulib-zstd.md) | `codec-core`, `container-core` |
 
-## Stratum 3 (87 modules)
+## Stratum 3 (90 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -932,11 +980,13 @@ Compatibility group: `parsec`, `peg`.
 | [dbus-properties](mulib-dbus-properties.md) | `dbus-client` |
 | [depir](mulib-depir.md) | `anfir`, `clickir`, `superblocks` |
 | [dnsnmeserver](mulib-dnsnmeserver.md) | `nameserver` |
+| [dom-query](mulib-dom-query.md) | `html-treebuilder` |
 | [efi](mulib-efi.md) | `pe` |
 | [epub](mulib-epub.md) | `html`, `xml`, `zip` |
 | [evtlistener](mulib-evtlistener.md) | `evtstream` |
 | [geosolve](mulib-geosolve.md) | `alloc`, `cgeom`, `geometry` |
 | [gvizz](mulib-gvizz.md) | `dsdom` |
+| [html-dombridge](mulib-html-dombridge.md) | `html-treebuilder` |
 | [hyphen](mulib-hyphen.md) | `cache`, `dfa`, `orhoconv` |
 | [image2container](mulib-image2container.md) | `imgformat`, `rootfs` |
 | [inet4](mulib-inet4.md) | `parsec` |
@@ -967,6 +1017,7 @@ Compatibility group: `parsec`, `peg`.
 | [ocicontainervfs](mulib-ocicontainervfs.md) | `rootfs` |
 | [peutils](mulib-peutils.md) | `coffutils`, `pe` |
 | [polkit-client](mulib-polkit-client.md) | `dbus-client` |
+| [price-timeseries](mulib-price-timeseries.md) | `price-history` |
 | [resolved-client](mulib-resolved-client.md) | `dbus-client` |
 | [rootfs-buildspec](mulib-rootfs-buildspec.md) | `container-core`, `rootfs` |
 | [rootfsbuilder](mulib-rootfsbuilder.md) | `archive`, `buffer`, `rootfs` |
@@ -999,7 +1050,7 @@ Compatibility group: `parsec`, `peg`.
 | [xtas](mulib-xtas.md) | `dsdom` |
 | [xz](mulib-xz.md) | `authcrypto`, `bcj`, `crc32`, `lzma` |
 
-## Stratum 4 (42 modules)
+## Stratum 4 (47 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1012,6 +1063,7 @@ Compatibility group: `parsec`, `peg`.
 | [coffbuilder](mulib-coffbuilder.md) | `binfilewriter`, `buffer`, `bycutils`, `objfilebuilder` |
 | [containerboost](mulib-containerboost.md) | `container-runtime`, `imgformat` |
 | [containerd-mount](mulib-containerd-mount.md) | `container-vfs`, `fuse` |
+| [css-selector](mulib-css-selector.md) | `dom-query`, `html-treebuilder` |
 | [dbschema](mulib-dbschema.md) | `json` |
 | [documentdb](mulib-documentdb.md) | `json`, `memtable` |
 | [dsymspec](mulib-dsymspec.md) | `json` |
@@ -1033,9 +1085,11 @@ Compatibility group: `parsec`, `peg`.
 | [ociimage](mulib-ociimage.md) | `json` |
 | [pandocast](mulib-pandocast.md) | `dsdom`, `json` |
 | [pebuilder](mulib-pebuilder.md) | `binfilewriter`, `bycutils`, `objfilebuilder` |
+| [price-forecast](mulib-price-forecast.md) | `price-timeseries` |
 | [raytracing](mulib-raytracing.md) | `collision`, `glx` |
 | [readline](mulib-readline.md) | `json`, `strbuf`, `terminfo`, `termkey`, `termutils` |
 | [rpc](mulib-rpc.md) | `json` |
+| [schemaorg](mulib-schemaorg.md) | `json`, `shylock-core` |
 | [tas](mulib-tas.md) | `xtas` |
 | [template](mulib-template.md) | `json`, `strbuf`, `utf8` |
 | [termsyn](mulib-termsyn.md) | `edbuf`, `termstyle` |
@@ -1043,10 +1097,12 @@ Compatibility group: `parsec`, `peg`.
 | [unit](mulib-unit.md) | `archml`, `emitter` |
 | [vmm](mulib-vmm.md) | `virtio-os`, `vmm-memory` |
 | [walker](mulib-walker.md) | `evtlistener` |
+| [webextract-llm](mulib-webextract-llm.md) | `json`, `shylock-core` |
+| [webextract-rules](mulib-webextract-rules.md) | `dom-query`, `html-textstream`, `shylock-core` |
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (42 modules)
+## Stratum 5 (43 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1060,6 +1116,7 @@ Compatibility group: `parsec`, `peg`.
 | [container-qvmboost](mulib-container-qvmboost.md) | `containerboost`, `qvm` |
 | [containerserverd](mulib-containerserverd.md) | `container2daemonproto`, `ocicontainermetadata`, `ocicontainerruntime` |
 | [containterpool](mulib-containterpool.md) | `containerboost`, `image2container` |
+| [css-cascade](mulib-css-cascade.md) | `css-computed`, `css-parser`, `css-selector` |
 | [daemon](mulib-daemon.md) | `mune`, `process`, `strbuf` |
 | [dbserializer](mulib-dbserializer.md) | `bson`, `cbor`, `messagepack` |
 | [distribtask](mulib-distribtask.md) | `mune`, `utf8`, `yaml` |
@@ -1115,11 +1172,12 @@ Compatibility group: `parsec`, `peg`.
 | [uri](mulib-uri.md) | `inte6`, `strbuf` |
 | [xtensa](mulib-xtensa.md) | `mcu` |
 
-## Stratum 7 (9 modules)
+## Stratum 7 (10 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [bittorrent](mulib-bittorrent.md) | `endian`, `git` |
+| [browser-origin](mulib-browser-origin.md) | `uri` |
 | [containerd-ctrlbridge](mulib-containerd-ctrlbridge.md) | `containerd`, `containerd-accessstub` |
 | [distribcluster](mulib-distribcluster.md) | `container-runtime`, `distribcomp`, `ocicontainer`, `vmm` |
 | [http](mulib-http.md) | `buffer`, `parsec`, `uri` |
@@ -1129,11 +1187,14 @@ Compatibility group: `parsec`, `peg`.
 | [vcspack](mulib-vcspack.md) | `adler32`, `endian`, `git` |
 | [vcsrepo](mulib-vcsrepo.md) | `git` |
 
-## Stratum 8 (12 modules)
+## Stratum 8 (17 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
+| [browser-realm](mulib-browser-realm.md) | `browser-origin` |
 | [browsertools](mulib-browsertools.md) | `http`, `json`, `utf8` |
+| [crawler](mulib-crawler.md) | `browser-origin`, `shylock-core` |
+| [fetch-policy](mulib-fetch-policy.md) | `browser-origin` |
 | [http1](mulib-http1.md) | `http` |
 | [http_request](mulib-http_request.md) | `http` |
 | [httpserver_config](mulib-httpserver_config.md) | `http` |
@@ -1144,12 +1205,15 @@ Compatibility group: `parsec`, `peg`.
 | [waf](mulib-waf.md) | `http`, `seurity` |
 | [webclient](mulib-webclient.md) | `http` |
 | [webframework](mulib-webframework.md) | `http` |
+| [websearch-engine](mulib-websearch-engine.md) | `browser-origin`, `shylock-core` |
+| [websearch-provider](mulib-websearch-provider.md) | `browser-origin`, `shylock-core` |
 | [xll](mulib-xll.md) | `json`, `layout`, `strbuf` |
 
-## Stratum 9 (10 modules)
+## Stratum 9 (11 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
+| [fetch](mulib-fetch.md) | `fetch-policy`, `shylock-core` |
 | [fileserver](mulib-fileserver.md) | `webframework` |
 | [http_response](mulib-http_response.md) | `webframework` |
 | [https](mulib-https.md) | `tsl`, `webclient` |
@@ -1161,16 +1225,24 @@ Compatibility group: `parsec`, `peg`.
 | [vcscomitt](mulib-vcscomitt.md) | `vcscommit` |
 | [web_conntection](mulib-web_conntection.md) | `http1` |
 
-## Stratum 10 (2 modules)
+## Stratum 10 (3 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
+| [browser-fetch](mulib-browser-fetch.md) | `browser-origin`, `fetch` |
 | [muw3](mulib-muw3.md) | `https`, `socket`, `tls` |
 | [static_file](mulib-static_file.md) | `http_response`, `mime`, `vfs` |
 
-## Stratum 11 (2 modules)
+## Stratum 11 (3 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
+| [browser-documentload](mulib-browser-documentload.md) | `browser-fetch`, `html-treebuilder` |
 | [muw3-mune](mulib-muw3-mune.md) | `microchan`, `mune`, `muw3`, `yaml` |
 | [openai-client](mulib-openai-client.md) | `multipart`, `muw3`, `openai`, `sse` |
+
+## Stratum 12 (1 modules)
+
+| Module | Direct dependencies |
+| --- | --- |
+| [browser-engine](mulib-browser-engine.md) | `browser-documentload`, `browser-fetch`, `browser-limits`, `browser-navigation`, `browser-stream` |

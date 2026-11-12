@@ -26,9 +26,13 @@ def main():
                         help='skip per-header compilation, keeping combined checks')
     parser.add_argument('-j', '--jobs', type=int, default=min(4, os.cpu_count() or 1),
                         help='number of independent compiler/test jobs (default: up to 4)')
+    parser.add_argument('--compile-timeout', type=int, default=90,
+                        help='compiler timeout per build in seconds; increase for large combined TUs')
     args = parser.parse_args()
     if args.jobs < 1:
         parser.error('--jobs must be positive')
+    if args.compile_timeout < 1:
+        parser.error('--compile-timeout must be positive')
     compiler = shlex.split(os.environ.get('CC', 'cc'))
     cxx = shlex.split(os.environ.get('CXX', 'c++'))
     if not compiler or not shutil.which(compiler[0]):
@@ -216,7 +220,7 @@ def main():
                 command += (['-c'] if compile_only else links) + ['-o', str(binary)]
                 try:
                     build = subprocess.run(command, input=source_text, cwd=work,
-                                           capture_output=True, text=True, timeout=90)
+                                           capture_output=True, text=True, timeout=args.compile_timeout)
                     if build.returncode:
                         failures.append((label, build.stderr or build.stdout))
                         return False

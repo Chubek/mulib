@@ -69,6 +69,26 @@
     "mulib-bounds.h",
     "mulib-bpf-kernel.h",
     "mulib-branch-layout.h",
+    "mulib-browser-cache.h",
+    "mulib-browser-cookiejar.h",
+    "mulib-browser-documentload.h",
+    "mulib-browser-domstream.h",
+    "mulib-browser-engine.h",
+    "mulib-browser-eventloop.h",
+    "mulib-browser-executionstream.h",
+    "mulib-browser-fetch.h",
+    "mulib-browser-layoutstream.h",
+    "mulib-browser-limits.h",
+    "mulib-browser-navigation.h",
+    "mulib-browser-networkstream.h",
+    "mulib-browser-origin.h",
+    "mulib-browser-permissions.h",
+    "mulib-browser-realm.h",
+    "mulib-browser-resource.h",
+    "mulib-browser-sandbox.h",
+    "mulib-browser-snapshot.h",
+    "mulib-browser-stream.h",
+    "mulib-browser-tokenstream.h",
     "mulib-browsercontext.h",
     "mulib-browserlocator.h",
     "mulib-browserscreenshot.h",
@@ -173,6 +193,8 @@
     "mulib-countmin.h",
     "mulib-cowb+tree.h",
     "mulib-cpio.h",
+    "mulib-crawlarchive.h",
+    "mulib-crawler.h",
     "mulib-crawlqueue.h",
     "mulib-crc.h",
     "mulib-crc32.h",
@@ -180,6 +202,15 @@
     "mulib-crossref.h",
     "mulib-cryptohash.h",
     "mulib-csl.h",
+    "mulib-css-box.h",
+    "mulib-css-cascade.h",
+    "mulib-css-computed.h",
+    "mulib-css-flex.h",
+    "mulib-css-grid.h",
+    "mulib-css-layoutstream.h",
+    "mulib-css-parser.h",
+    "mulib-css-selector.h",
+    "mulib-css-tokenizer.h",
     "mulib-css.h",
     "mulib-csswriter.h",
     "mulib-csv.h",
@@ -244,6 +275,9 @@
     "mulib-docstyle.h",
     "mulib-documentdb.h",
     "mulib-docvalidate.h",
+    "mulib-dom-mutation.h",
+    "mulib-dom-query.h",
+    "mulib-dom-range.h",
     "mulib-dom.h",
     "mulib-dominance.h",
     "mulib-domserialize.h",
@@ -317,6 +351,8 @@
     "mulib-ezjni.h",
     "mulib-ezndk.h",
     "mulib-fca.h",
+    "mulib-fetch-policy.h",
+    "mulib-fetch.h",
     "mulib-fft.h",
     "mulib-fiber.h",
     "mulib-field-poisson.h",
@@ -397,6 +433,11 @@
     "mulib-hkdf.h",
     "mulib-hll.h",
     "mulib-hls-schedule.h",
+    "mulib-html-dombridge.h",
+    "mulib-html-jsonld.h",
+    "mulib-html-textstream.h",
+    "mulib-html-tokenizer.h",
+    "mulib-html-treebuilder.h",
     "mulib-html.h",
     "mulib-htmlwriter.h",
     "mulib-http.h",
@@ -458,6 +499,7 @@
     "mulib-jaccard_similarity.h",
     "mulib-jit.h",
     "mulib-joinfilter.h",
+    "mulib-jsdom.h",
     "mulib-json.h",
     "mulib-jvm.h",
     "mulib-keyremap.h",
@@ -544,6 +586,8 @@
     "mulib-microaudio.h",
     "mulib-microcc.h",
     "mulib-microchan.h",
+    "mulib-microjs-module.h",
+    "mulib-microjs-promise.h",
     "mulib-microjs.h",
     "mulib-microtcl.h",
     "mulib-microtype.h",
@@ -565,6 +609,7 @@
     "mulib-mobi.h",
     "mulib-mobiwrite.h",
     "mulib-module-resolver.h",
+    "mulib-money.h",
     "mulib-mop.h",
     "mulib-movingavg.h",
     "mulib-mpu.h",
@@ -730,6 +775,17 @@
     "mulib-positions.h",
     "mulib-postdominance.h",
     "mulib-postings.h",
+    "mulib-price-causal.h",
+    "mulib-price-confidence.h",
+    "mulib-price-demand.h",
+    "mulib-price-ensemble.h",
+    "mulib-price-forecast.h",
+    "mulib-price-history.h",
+    "mulib-price-match.h",
+    "mulib-price-monitor.h",
+    "mulib-price-normalize.h",
+    "mulib-price-observation.h",
+    "mulib-price-timeseries.h",
     "mulib-priceopt.h",
     "mulib-prime.h",
     "mulib-probability.h",
@@ -752,6 +808,7 @@
     "mulib-rangeindex.h",
     "mulib-rate_limit.h",
     "mulib-raytracing.h",
+    "mulib-readability.h",
     "mulib-readline.h",
     "mulib-record.h",
     "mulib-recordbatch.h",
@@ -800,6 +857,7 @@
     "mulib-sat.h",
     "mulib-scanvec.h",
     "mulib-schedutils.h",
+    "mulib-schemaorg.h",
     "mulib-scrape-metadata.h",
     "mulib-scrape-readable.h",
     "mulib-scrape-rule.h",
@@ -826,6 +884,7 @@
     "mulib-shiraz.h",
     "mulib-shm.h",
     "mulib-shoebox-contract.h",
+    "mulib-shylock-core.h",
     "mulib-signal.h",
     "mulib-signature.h",
     "mulib-simdmath.h",
@@ -1057,11 +1116,19 @@
     "mulib-web_conntection.h",
     "mulib-webarchive.h",
     "mulib-webclient.h",
+    "mulib-webextract-evidence.h",
+    "mulib-webextract-llm.h",
+    "mulib-webextract-reconcile.h",
+    "mulib-webextract-rules.h",
     "mulib-webextract.h",
     "mulib-webframework.h",
+    "mulib-webidl-bindgen.h",
+    "mulib-webidl-runtime.h",
     "mulib-webidl.h",
     "mulib-weblocation.h",
     "mulib-webratelimit.h",
+    "mulib-websearch-engine.h",
+    "mulib-websearch-provider.h",
     "mulib-websearch.h",
     "mulib-webstorage.h",
     "mulib-webtimers.h",
@@ -1101,10 +1168,10 @@
     "mulib-zorder.h",
     "mulib-zstd.h"
   ],
-  "libraries": 1100,
-  "functions": 4981,
-  "types": 8140,
-  "constants": 2520,
+  "libraries": 1167,
+  "functions": 5127,
+  "types": 8445,
+  "constants": 2556,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -1146,7 +1213,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "473df7bde9c7318b7cf396421917e70bae4fbb9357b9c939f05438f16cc75caa",
+  "fingerprint": "e2d010d7dab79536f1d7cc49b5919b3c53205712cbffa53d9e55d49ab07eebab",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -1859,6 +1926,151 @@
       "header": "mulib-branch-layout.h",
       "functions": [
         "mulib_branch_layout"
+      ]
+    },
+    "browser-cache": {
+      "header": "mulib-browser-cache.h",
+      "functions": [
+        "mulib_browser_cache_put",
+        "mulib_browser_cache_get",
+        "mulib_browser_cache_prune",
+        "mulib_browser_cache_free"
+      ]
+    },
+    "browser-cookiejar": {
+      "header": "mulib-browser-cookiejar.h",
+      "functions": [
+        "mulib_browser_cookiejar_put",
+        "mulib_browser_cookiejar_header",
+        "mulib_browser_cookiejar_free"
+      ]
+    },
+    "browser-documentload": {
+      "header": "mulib-browser-documentload.h",
+      "functions": [
+        "mulib_browser_documentload",
+        "mulib_browser_documentload_bounded"
+      ]
+    },
+    "browser-domstream": {
+      "header": "mulib-browser-domstream.h",
+      "functions": [
+        "mulib_browser_domstream_emit"
+      ]
+    },
+    "browser-engine": {
+      "header": "mulib-browser-engine.h",
+      "functions": [
+        "mulib_browser_engine_init",
+        "mulib_browser_engine_navigate",
+        "mulib_browser_engine_destroy"
+      ]
+    },
+    "browser-eventloop": {
+      "header": "mulib-browser-eventloop.h",
+      "functions": [
+        "mulib_browser_eventloop_post",
+        "mulib_browser_eventloop_step",
+        "mulib_browser_eventloop_free"
+      ]
+    },
+    "browser-executionstream": {
+      "header": "mulib-browser-executionstream.h",
+      "functions": [
+        "mulib_browser_executionstream_emit"
+      ]
+    },
+    "browser-fetch": {
+      "header": "mulib-browser-fetch.h",
+      "functions": [
+        "mulib_browser_fetch_get"
+      ]
+    },
+    "browser-layoutstream": {
+      "header": "mulib-browser-layoutstream.h",
+      "functions": [
+        "mulib_browser_layoutstream_emit"
+      ]
+    },
+    "browser-limits": {
+      "header": "mulib-browser-limits.h",
+      "functions": [
+        "mulib_browser_limits_default",
+        "mulib_browser_limits_valid"
+      ]
+    },
+    "browser-navigation": {
+      "header": "mulib-browser-navigation.h",
+      "functions": [
+        "mulib_browser_navigation_visit",
+        "mulib_browser_navigation_move",
+        "mulib_browser_navigation_free"
+      ]
+    },
+    "browser-networkstream": {
+      "header": "mulib-browser-networkstream.h",
+      "functions": [
+        "mulib_browser_networkstream_emit"
+      ]
+    },
+    "browser-origin": {
+      "header": "mulib-browser-origin.h",
+      "functions": [
+        "mulib_browser_origin_parse",
+        "mulib_browser_origin_equal"
+      ]
+    },
+    "browser-permissions": {
+      "header": "mulib-browser-permissions.h",
+      "functions": [
+        "mulib_browser_permissions_check",
+        "mulib_browser_permissions_grant",
+        "mulib_browser_permissions_revoke"
+      ]
+    },
+    "browser-realm": {
+      "header": "mulib-browser-realm.h",
+      "functions": [
+        "mulib_browser_realm_init",
+        "mulib_browser_realm_same_origin"
+      ]
+    },
+    "browser-resource": {
+      "header": "mulib-browser-resource.h",
+      "functions": [
+        "mulib_browser_resource_register",
+        "mulib_browser_resource_complete",
+        "mulib_browser_resources_free"
+      ]
+    },
+    "browser-sandbox": {
+      "header": "mulib-browser-sandbox.h",
+      "functions": [
+        "mulib_browser_sandbox_init",
+        "mulib_browser_sandbox_charge",
+        "mulib_browser_sandbox_cancel"
+      ]
+    },
+    "browser-snapshot": {
+      "header": "mulib-browser-snapshot.h",
+      "functions": [
+        "mulib_browser_snapshot_make",
+        "mulib_browser_snapshot_equal",
+        "mulib_browser_snapshot_free"
+      ]
+    },
+    "browser-stream": {
+      "header": "mulib-browser-stream.h",
+      "functions": [
+        "mulib_browser_stream_subscribe",
+        "mulib_browser_stream_emit",
+        "mulib_browser_stream_free"
+      ]
+    },
+    "browser-tokenstream": {
+      "header": "mulib-browser-tokenstream.h",
+      "functions": [
+        "mulib_browser_tokenstream_emit"
       ]
     },
     "browsercontext": {
@@ -2864,6 +3076,23 @@
         "mulib_cpio_finish"
       ]
     },
+    "crawlarchive": {
+      "header": "mulib-crawlarchive.h",
+      "functions": [
+        "mulib_crawlarchive_add",
+        "mulib_crawlarchive_find",
+        "mulib_crawlarchive_free"
+      ]
+    },
+    "crawler": {
+      "header": "mulib-crawler.h",
+      "functions": [
+        "mulib_crawler_enqueue",
+        "mulib_crawler_next",
+        "mulib_crawler_finish",
+        "mulib_crawler_free"
+      ]
+    },
     "crawlqueue": {
       "header": "mulib-crawlqueue.h",
       "functions": [
@@ -3094,6 +3323,65 @@
         "mulib_css_serialize_declarations",
         "mulib_css_parse_length",
         "mulib_css_length_pixels"
+      ]
+    },
+    "css-box": {
+      "header": "mulib-css-box.h",
+      "functions": [
+        "mulib_css_box_valid",
+        "mulib_css_box_vertical",
+        "mulib_css_box_contains"
+      ]
+    },
+    "css-cascade": {
+      "header": "mulib-css-cascade.h",
+      "functions": [
+        "mulib_css_cascade_compute"
+      ]
+    },
+    "css-computed": {
+      "header": "mulib-css-computed.h",
+      "functions": [
+        "mulib_css_computed_defaults",
+        "mulib_css_computed_apply"
+      ]
+    },
+    "css-flex": {
+      "header": "mulib-css-flex.h",
+      "functions": [
+        "mulib_css_flex_distribute"
+      ]
+    },
+    "css-grid": {
+      "header": "mulib-css-grid.h",
+      "functions": [
+        "mulib_css_grid_cells"
+      ]
+    },
+    "css-layoutstream": {
+      "header": "mulib-css-layoutstream.h",
+      "functions": [
+        "mulib_css_layoutstream_emit"
+      ]
+    },
+    "css-parser": {
+      "header": "mulib-css-parser.h",
+      "functions": [
+        "mulib_css_parse_sheet",
+        "mulib_css_sheet_free"
+      ]
+    },
+    "css-selector": {
+      "header": "mulib-css-selector.h",
+      "functions": [
+        "mulib_css_selector_matches",
+        "mulib_css_selector_specificity"
+      ]
+    },
+    "css-tokenizer": {
+      "header": "mulib-css-tokenizer.h",
+      "functions": [
+        "mulib_css_tokenizer_scan"
       ]
     },
     "csswriter": {
@@ -3786,6 +4074,29 @@
         "mulib_dom_dispatch_event"
       ]
     },
+    "dom-mutation": {
+      "header": "mulib-dom-mutation.h",
+      "functions": [
+        "mulib_dom_mutation_push",
+        "mulib_dom_mutation_clear"
+      ]
+    },
+    "dom-query": {
+      "header": "mulib-dom-query.h",
+      "functions": [
+        "mulib_dom_query_first",
+        "mulib_dom_query_matches",
+        "mulib_dom_query_all"
+      ]
+    },
+    "dom-range": {
+      "header": "mulib-dom-range.h",
+      "functions": [
+        "mulib_dom_range_make",
+        "mulib_dom_range_intersect",
+        "mulib_dom_range_shift"
+      ]
+    },
     "dominance": {
       "header": "mulib-dominance.h",
       "functions": [
@@ -4467,6 +4778,18 @@
         "mulib_fca_extent",
         "mulib_fca_intent",
         "mulib_fca_closure"
+      ]
+    },
+    "fetch": {
+      "header": "mulib-fetch.h",
+      "functions": [
+        "mulib_fetch_get"
+      ]
+    },
+    "fetch-policy": {
+      "header": "mulib-fetch-policy.h",
+      "functions": [
+        "mulib_fetch_policy_check"
       ]
     },
     "fft": {
@@ -5239,6 +5562,38 @@
         "mulib_html_docir"
       ]
     },
+    "html-dombridge": {
+      "header": "mulib-html-dombridge.h",
+      "functions": [
+        "mulib_html_dombridge_walk"
+      ]
+    },
+    "html-jsonld": {
+      "header": "mulib-html-jsonld.h",
+      "functions": [
+        "mulib_html_jsonld_scan"
+      ]
+    },
+    "html-textstream": {
+      "header": "mulib-html-textstream.h",
+      "functions": [
+        "mulib_html_textstream_scan"
+      ]
+    },
+    "html-tokenizer": {
+      "header": "mulib-html-tokenizer.h",
+      "functions": [
+        "mulib_html_tokenizer_scan",
+        "mulib_html_attribute"
+      ]
+    },
+    "html-treebuilder": {
+      "header": "mulib-html-treebuilder.h",
+      "functions": [
+        "mulib_html_tree_parse",
+        "mulib_html_tree_free"
+      ]
+    },
     "htmlwriter": {
       "header": "mulib-htmlwriter.h",
       "functions": [
@@ -5733,6 +6088,12 @@
         "mulib_joinfilter_add",
         "mulib_joinfilter_maybe",
         "mulib_joinfilter_free"
+      ]
+    },
+    "jsdom": {
+      "header": "mulib-jsdom.h",
+      "functions": [
+        "mulib_jsdom_invoke"
       ]
     },
     "json": {
@@ -6563,6 +6924,23 @@
         "mulib_microjs_collect"
       ]
     },
+    "microjs-module": {
+      "header": "mulib-microjs-module.h",
+      "functions": [
+        "mulib_microjs_module_register",
+        "mulib_microjs_module_find",
+        "mulib_microjs_modules_free"
+      ]
+    },
+    "microjs-promise": {
+      "header": "mulib-microjs-promise.h",
+      "functions": [
+        "mulib_microjs_promise_settle",
+        "mulib_microjs_microtask_post",
+        "mulib_microjs_microtask_drain",
+        "mulib_microjs_microtask_free"
+      ]
+    },
     "microtcl": {
       "header": "mulib-microtcl.h",
       "functions": [
@@ -6750,6 +7128,17 @@
         "mulib_module_resolver_add",
         "mulib_module_resolver_get",
         "mulib_module_resolver_free"
+      ]
+    },
+    "money": {
+      "header": "mulib-money.h",
+      "functions": [
+        "mulib_money_valid",
+        "mulib_money_make",
+        "mulib_money_add",
+        "mulib_money_sub",
+        "mulib_money_scale",
+        "mulib_money_parse"
       ]
     },
     "mop": {
@@ -8163,6 +8552,80 @@
         "mulib_postings_free"
       ]
     },
+    "price-causal": {
+      "header": "mulib-price-causal.h",
+      "functions": [
+        "mulib_price_causal_did"
+      ]
+    },
+    "price-confidence": {
+      "header": "mulib-price-confidence.h",
+      "functions": [
+        "mulib_price_confidence_combine",
+        "mulib_price_confidence_deviation"
+      ]
+    },
+    "price-demand": {
+      "header": "mulib-price-demand.h",
+      "functions": [
+        "mulib_price_demand_fit",
+        "mulib_price_demand_predict"
+      ]
+    },
+    "price-ensemble": {
+      "header": "mulib-price-ensemble.h",
+      "functions": [
+        "mulib_price_ensemble_blend"
+      ]
+    },
+    "price-forecast": {
+      "header": "mulib-price-forecast.h",
+      "functions": [
+        "mulib_price_forecast",
+        "mulib_price_forecast_mae"
+      ]
+    },
+    "price-history": {
+      "header": "mulib-price-history.h",
+      "functions": [
+        "mulib_price_history_add",
+        "mulib_price_history_range",
+        "mulib_price_history_free"
+      ]
+    },
+    "price-match": {
+      "header": "mulib-price-match.h",
+      "functions": [
+        "mulib_price_match_gtin",
+        "mulib_price_match_score"
+      ]
+    },
+    "price-monitor": {
+      "header": "mulib-price-monitor.h",
+      "functions": [
+        "mulib_price_monitor_compare"
+      ]
+    },
+    "price-normalize": {
+      "header": "mulib-price-normalize.h",
+      "functions": [
+        "mulib_price_normalize"
+      ]
+    },
+    "price-observation": {
+      "header": "mulib-price-observation.h",
+      "functions": [
+        "mulib_price_observation_validate",
+        "mulib_price_observation_same_offer"
+      ]
+    },
+    "price-timeseries": {
+      "header": "mulib-price-timeseries.h",
+      "functions": [
+        "mulib_price_timeseries_build",
+        "mulib_price_timeseries_interpolate"
+      ]
+    },
     "priceopt": {
       "header": "mulib-priceopt.h",
       "functions": [
@@ -8366,6 +8829,12 @@
         "mulib_raytracing_intersect",
         "mulib_raytracing_sample",
         "mulib_raytracing_render"
+      ]
+    },
+    "readability": {
+      "header": "mulib-readability.h",
+      "functions": [
+        "mulib_readability_extract"
       ]
     },
     "readline": {
@@ -8727,6 +9196,12 @@
         "mulib_schedutils_next"
       ]
     },
+    "schemaorg": {
+      "header": "mulib-schemaorg.h",
+      "functions": [
+        "mulib_schemaorg_offer_parse"
+      ]
+    },
     "scrape": {
       "header": "mulib-scrape.h",
       "functions": [
@@ -8985,6 +9460,23 @@
         "mulib_shoebox_dispatch",
         "mulib_shoebox_write_all",
         "mulib_shoebox_getenv"
+      ]
+    },
+    "shylock-core": {
+      "header": "mulib-shylock-core.h",
+      "functions": [
+        "mulib_shylock_reserve",
+        "mulib_shylock_append",
+        "mulib_shylock_text",
+        "mulib_shylock_json_string",
+        "mulib_shylock_buffer_free",
+        "mulib_shylock_dup",
+        "mulib_shylock_copy",
+        "mulib_shylock_hash",
+        "mulib_shylock_equal_ci",
+        "mulib_shylock_contains_ci",
+        "mulib_shylock_contains_span_ci",
+        "mulib_shylock_parse_decimal"
       ]
     },
     "signal": {
@@ -11179,6 +11671,32 @@
         "mulib_webextract_jsonld"
       ]
     },
+    "webextract-evidence": {
+      "header": "mulib-webextract-evidence.h",
+      "functions": [
+        "mulib_webextract_evidence_make",
+        "mulib_webextract_evidence_verify"
+      ]
+    },
+    "webextract-llm": {
+      "header": "mulib-webextract-llm.h",
+      "functions": [
+        "mulib_webextract_llm_request",
+        "mulib_webextract_llm_call"
+      ]
+    },
+    "webextract-reconcile": {
+      "header": "mulib-webextract-reconcile.h",
+      "functions": [
+        "mulib_webextract_reconcile"
+      ]
+    },
+    "webextract-rules": {
+      "header": "mulib-webextract-rules.h",
+      "functions": [
+        "mulib_webextract_rules_text"
+      ]
+    },
     "webframework": {
       "header": "mulib-webframework.h",
       "functions": [
@@ -11194,6 +11712,21 @@
       "functions": [
         "mulib_webidl_generate",
         "mulib_webidl_compile"
+      ]
+    },
+    "webidl-bindgen": {
+      "header": "mulib-webidl-bindgen.h",
+      "functions": [
+        "mulib_webidl_bindgen_interfaces"
+      ]
+    },
+    "webidl-runtime": {
+      "header": "mulib-webidl-runtime.h",
+      "functions": [
+        "mulib_webidl_to_int32",
+        "mulib_webidl_to_uint32",
+        "mulib_webidl_to_boolean",
+        "mulib_webidl_domstring_utf8"
       ]
     },
     "weblocation": {
@@ -11215,6 +11748,21 @@
       "functions": [
         "mulib_websearch_provider_name",
         "mulib_websearch_known"
+      ]
+    },
+    "websearch-engine": {
+      "header": "mulib-websearch-engine.h",
+      "functions": [
+        "mulib_websearch_engine_add",
+        "mulib_websearch_engine_sort",
+        "mulib_websearch_engine_free"
+      ]
+    },
+    "websearch-provider": {
+      "header": "mulib-websearch-provider.h",
+      "functions": [
+        "mulib_websearch_provider_init",
+        "mulib_websearch_provider_url"
       ]
     },
     "webstorage": {
@@ -11619,7 +12167,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "eec61de0c833acb2dfe33c85b58760ea54d7b9ef99162f73374b567d2ce8ad47",
-    "Implementation.c": "c879a216160087d8fc9c579ab1989a0a66d34e032e5b296e3c8ba8be9e01a6a4"
+    "Generated.inc": "b5643c56f63aa5e8c7b01494e907454502a71bfc63e25d4887300a3c262c924c",
+    "Implementation.c": "21732b463941ce8cce9206a96d9329950c157e4499d6361d232c6f496dcdea3f"
   }
 }

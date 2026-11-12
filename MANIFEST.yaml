@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1097
-implemented_module_count: 1097
+module_count: 1164
+implemented_module_count: 1164
 modules:
 - name: openai
   header: include/mulib-openai.h
@@ -7864,7 +7864,486 @@ modules:
   purpose: Tagged VM scalars and owned binary byte strings with alias-safe deep copying.
   dependencies: []
   status: implemented
+- name: shylock-core
+  header: include/mulib-shylock-core.h
+  manual: manual/mulib-shylock-core.md
+  macro: MULIB_IMPL_SHYLOCK_CORE
+  purpose: Bounded owned byte buffers, slices, validated parsing, hashing and serialization helpers.
+  dependencies: [utf8]
+  status: implemented
+- name: money
+  header: include/mulib-money.h
+  manual: manual/mulib-money.md
+  macro: MULIB_IMPL_MONEY
+  purpose: Checked integer-minor-unit monetary arithmetic and rational conversions.
+  dependencies: []
+  status: implemented
+- name: price-observation
+  header: include/mulib-price-observation.h
+  manual: manual/mulib-price-observation.md
+  macro: MULIB_IMPL_PRICE_OBSERVATION
+  purpose: Validated price, product, merchant, market, time and evidence record.
+  dependencies: [money]
+  status: implemented
+- name: price-normalize
+  header: include/mulib-price-normalize.h
+  manual: manual/mulib-price-normalize.md
+  macro: MULIB_IMPL_PRICE_NORMALIZE
+  purpose: Checked tax, discount, shipping and per-unit offer normalization.
+  dependencies: [money]
+  status: implemented
+- name: price-match
+  header: include/mulib-price-match.h
+  manual: manual/mulib-price-match.md
+  macro: MULIB_IMPL_PRICE_MATCH
+  purpose: ASCII-normalized product matching, identifiers and bounded edit similarity.
+  dependencies: [shylock-core]
+  status: implemented
+- name: price-history
+  header: include/mulib-price-history.h
+  manual: manual/mulib-price-history.md
+  macro: MULIB_IMPL_PRICE_HISTORY
+  purpose: Owned ordered and deduplicated price observation history.
+  dependencies: [price-observation]
+  status: implemented
+- name: price-confidence
+  header: include/mulib-price-confidence.h
+  manual: manual/mulib-price-confidence.md
+  macro: MULIB_IMPL_PRICE_CONFIDENCE
+  purpose: Overflow-aware weighted confidence primitives and median/MAD deviation scores.
+  dependencies: []
+  status: implemented
+- name: price-timeseries
+  header: include/mulib-price-timeseries.h
+  manual: manual/mulib-price-timeseries.md
+  macro: MULIB_IMPL_PRICE_TIMESERIES
+  purpose: Time-bucketed price series with missing-value flags and gap handling.
+  dependencies: [price-history]
+  status: implemented
+- name: price-forecast
+  header: include/mulib-price-forecast.h
+  manual: manual/mulib-price-forecast.md
+  macro: MULIB_IMPL_PRICE_FORECAST
+  purpose: Uniform forecasting API with naive, EMA, drift and seasonal baselines.
+  dependencies: [price-timeseries]
+  status: implemented
+- name: price-demand
+  header: include/mulib-price-demand.h
+  manual: manual/mulib-price-demand.md
+  macro: MULIB_IMPL_PRICE_DEMAND
+  purpose: Bounded linear demand estimation with closed-form ridge regularization.
+  dependencies: []
+  status: implemented
+- name: price-monitor
+  header: include/mulib-price-monitor.h
+  manual: manual/mulib-price-monitor.md
+  macro: MULIB_IMPL_PRICE_MONITOR
+  purpose: Thresholded price change and availability event detection.
+  dependencies: [price-observation]
+  status: implemented
+- name: price-ensemble
+  header: include/mulib-price-ensemble.h
+  manual: manual/mulib-price-ensemble.md
+  macro: MULIB_IMPL_PRICE_ENSEMBLE
+  purpose: Error-weighted forecast blending with intermodel dispersion.
+  dependencies: []
+  status: implemented
+- name: price-causal
+  header: include/mulib-price-causal.h
+  manual: manual/mulib-price-causal.md
+  macro: MULIB_IMPL_PRICE_CAUSAL
+  purpose: Difference-in-differences average treatment effect diagnostic.
+  dependencies: []
+  status: implemented
+- name: websearch-provider
+  header: include/mulib-websearch-provider.h
+  manual: manual/mulib-websearch-provider.md
+  macro: MULIB_IMPL_WEBSEARCH_PROVIDER
+  purpose: Registered search providers with encoded query-URL generation.
+  dependencies: [browser-origin, shylock-core]
+  status: implemented
+- name: websearch-engine
+  header: include/mulib-websearch-engine.h
+  manual: manual/mulib-websearch-engine.md
+  macro: MULIB_IMPL_WEBSEARCH_ENGINE
+  purpose: Deduplicated bounded ranked web search result collection.
+  dependencies: [browser-origin, shylock-core]
+  status: implemented
+- name: crawler
+  header: include/mulib-crawler.h
+  manual: manual/mulib-crawler.md
+  macro: MULIB_IMPL_CRAWLER
+  purpose: Bounded crawl frontier with retry scheduling and URL deduplication.
+  dependencies: [browser-origin, shylock-core]
+  status: implemented
+- name: fetch-policy
+  header: include/mulib-fetch-policy.h
+  manual: manual/mulib-fetch-policy.md
+  macro: MULIB_IMPL_FETCH_POLICY
+  purpose: Conservative outbound URL security checks and restricted fetch policy.
+  dependencies: [browser-origin]
+  status: implemented
+- name: fetch
+  header: include/mulib-fetch.h
+  manual: manual/mulib-fetch.md
+  macro: MULIB_IMPL_FETCH
+  purpose: Transport-agnostic bounded HTTP retrieval with explicit policy enforcement.
+  dependencies: [fetch-policy, shylock-core]
+  status: implemented
+- name: html-textstream
+  header: include/mulib-html-textstream.h
+  manual: manual/mulib-html-textstream.md
+  macro: MULIB_IMPL_HTML_TEXTSTREAM
+  purpose: Length-aware tokenizer-style HTML tag/text/comment callbacks with source offsets.
+  dependencies: []
+  status: implemented
+- name: readability
+  header: include/mulib-readability.h
+  manual: manual/mulib-readability.md
+  macro: MULIB_IMPL_READABILITY
+  purpose: Bounded semantic plain-text extraction from HTML with basic entity decoding.
+  dependencies: [html-textstream, shylock-core]
+  status: implemented
+- name: html-jsonld
+  header: include/mulib-html-jsonld.h
+  manual: manual/mulib-html-jsonld.md
+  macro: MULIB_IMPL_HTML_JSONLD
+  purpose: Locate multiple application/ld+json script bodies as borrowed spans.
+  dependencies: [html-tokenizer, shylock-core]
+  status: implemented
+- name: schemaorg
+  header: include/mulib-schemaorg.h
+  manual: manual/mulib-schemaorg.md
+  macro: MULIB_IMPL_SCHEMAORG
+  purpose: Bounded extraction of plain Product/Offer JSON-LD scalar fields.
+  dependencies: [json, shylock-core]
+  status: implemented
+- name: webextract-rules
+  header: include/mulib-webextract-rules.h
+  manual: manual/mulib-webextract-rules.md
+  macro: MULIB_IMPL_WEBEXTRACT_RULES
+  purpose: Executable bounded HTML element/tag/class/id text extraction rules.
+  dependencies: [dom-query, html-textstream, shylock-core]
+  status: implemented
+- name: webextract-evidence
+  header: include/mulib-webextract-evidence.h
+  manual: manual/mulib-webextract-evidence.md
+  macro: MULIB_IMPL_WEBEXTRACT_EVIDENCE
+  purpose: Source-span anchored extraction evidence records and integrity hashes.
+  dependencies: [shylock-core]
+  status: implemented
+- name: webextract-reconcile
+  header: include/mulib-webextract-reconcile.h
+  manual: manual/mulib-webextract-reconcile.md
+  macro: MULIB_IMPL_WEBEXTRACT_RECONCILE
+  purpose: Evidence-aware consensus of candidate numeric price extractions.
+  dependencies: []
+  status: implemented
+- name: webextract-llm
+  header: include/mulib-webextract-llm.h
+  manual: manual/mulib-webextract-llm.md
+  macro: MULIB_IMPL_WEBEXTRACT_LLM
+  purpose: OpenAI-compatible JSON extraction request builder and pluggable response transport.
+  dependencies: [json, shylock-core]
+  status: implemented
+- name: crawlarchive
+  header: include/mulib-crawlarchive.h
+  manual: manual/mulib-crawlarchive.md
+  macro: MULIB_IMPL_CRAWLARCHIVE
+  purpose: Owned replayable crawl records with content hashes and bounded payloads.
+  dependencies: [shylock-core]
+  status: implemented
+- name: html-tokenizer
+  header: include/mulib-html-tokenizer.h
+  manual: manual/mulib-html-tokenizer.md
+  macro: MULIB_IMPL_HTML_TOKENIZER
+  purpose: Length-aware HTML lexical tokens with tag-name and attribute spans.
+  dependencies: [html-textstream]
+  status: implemented
+- name: html-treebuilder
+  header: include/mulib-html-treebuilder.h
+  manual: manual/mulib-html-treebuilder.md
+  macro: MULIB_IMPL_HTML_TREEBUILDER
+  purpose: Owned bounded HTML element/text tree with basic optional-end-tag recovery.
+  dependencies: [html-tokenizer, shylock-core]
+  status: implemented
+- name: html-dombridge
+  header: include/mulib-html-dombridge.h
+  manual: manual/mulib-html-dombridge.md
+  macro: MULIB_IMPL_HTML_DOMBRIDGE
+  purpose: Tree walker with caller-provided native DOM construction callbacks.
+  dependencies: [html-treebuilder]
+  status: implemented
+- name: dom-query
+  header: include/mulib-dom-query.h
+  manual: manual/mulib-dom-query.md
+  macro: MULIB_IMPL_DOM_QUERY
+  purpose: Bounded tag, ID, and class lookups over owned HTML tree nodes.
+  dependencies: [html-treebuilder]
+  status: implemented
+- name: dom-mutation
+  header: include/mulib-dom-mutation.h
+  manual: manual/mulib-dom-mutation.md
+  macro: MULIB_IMPL_DOM_MUTATION
+  purpose: Bounded record journal for DOM mutation events.
+  dependencies: []
+  status: implemented
+- name: dom-range
+  header: include/mulib-dom-range.h
+  manual: manual/mulib-dom-range.md
+  macro: MULIB_IMPL_DOM_RANGE
+  purpose: Validated immutable text/document offsets and range intersections.
+  dependencies: []
+  status: implemented
+- name: webidl-bindgen
+  header: include/mulib-webidl-bindgen.h
+  manual: manual/mulib-webidl-bindgen.md
+  macro: MULIB_IMPL_WEBIDL_BINDGEN
+  purpose: C header declaration generation from a bounded interface-name WebIDL subset.
+  dependencies: [shylock-core]
+  status: implemented
+- name: webidl-runtime
+  header: include/mulib-webidl-runtime.h
+  manual: manual/mulib-webidl-runtime.md
+  macro: MULIB_IMPL_WEBIDL_RUNTIME
+  purpose: Strict primitive WebIDL conversion utilities with range validation.
+  dependencies: [shylock-core, utf8]
+  status: implemented
+- name: microjs-promise
+  header: include/mulib-microjs-promise.h
+  manual: manual/mulib-microjs-promise.md
+  macro: MULIB_IMPL_MICROJS_PROMISE
+  purpose: Native deferred-job queues and one-shot promise-like settlement.
+  dependencies: []
+  status: implemented
+- name: microjs-module
+  header: include/mulib-microjs-module.h
+  manual: manual/mulib-microjs-module.md
+  macro: MULIB_IMPL_MICROJS_MODULE
+  purpose: Owned source-module registry with immutable lookup by specifier.
+  dependencies: [shylock-core]
+  status: implemented
+- name: jsdom
+  header: include/mulib-jsdom.h
+  manual: manual/mulib-jsdom.md
+  macro: MULIB_IMPL_JSDOM
+  purpose: Native callback bridge for script-visible DOM object/property operations.
+  dependencies: []
+  status: implemented
+- name: browser-realm
+  header: include/mulib-browser-realm.h
+  manual: manual/mulib-browser-realm.md
+  macro: MULIB_IMPL_BROWSER_REALM
+  purpose: Browser realm IDs with immutable origin metadata and isolation keys.
+  dependencies: [browser-origin]
+  status: implemented
+- name: browser-eventloop
+  header: include/mulib-browser-eventloop.h
+  manual: manual/mulib-browser-eventloop.md
+  macro: MULIB_IMPL_BROWSER_EVENTLOOP
+  purpose: Deterministic bounded FIFO tasks and run-to-completion microtask checkpoints.
+  dependencies: [microjs-promise]
+  status: implemented
+- name: browser-origin
+  header: include/mulib-browser-origin.h
+  manual: manual/mulib-browser-origin.md
+  macro: MULIB_IMPL_BROWSER_ORIGIN
+  purpose: Normalized HTTP(S) origin parsing and same-origin checks.
+  dependencies: [uri]
+  status: implemented
+- name: browser-fetch
+  header: include/mulib-browser-fetch.h
+  manual: manual/mulib-browser-fetch.md
+  macro: MULIB_IMPL_BROWSER_FETCH
+  purpose: Browser fetch request adapter with origin and security policy checks.
+  dependencies: [fetch, browser-origin]
+  status: implemented
+- name: browser-resource
+  header: include/mulib-browser-resource.h
+  manual: manual/mulib-browser-resource.md
+  macro: MULIB_IMPL_BROWSER_RESOURCE
+  purpose: Deduplicated resource registry with load state and content type.
+  dependencies: [shylock-core]
+  status: implemented
+- name: browser-navigation
+  header: include/mulib-browser-navigation.h
+  manual: manual/mulib-browser-navigation.md
+  macro: MULIB_IMPL_BROWSER_NAVIGATION
+  purpose: Owned bounded navigation history and back/forward traversal.
+  dependencies: [shylock-core]
+  status: implemented
+- name: browser-cookiejar
+  header: include/mulib-browser-cookiejar.h
+  manual: manual/mulib-browser-cookiejar.md
+  macro: MULIB_IMPL_BROWSER_COOKIEJAR
+  purpose: Validated host/domain/path/secure-aware pre-parsed cookie storage.
+  dependencies: [shylock-core]
+  status: implemented
+- name: browser-cache
+  header: include/mulib-browser-cache.h
+  manual: manual/mulib-browser-cache.md
+  macro: MULIB_IMPL_BROWSER_CACHE
+  purpose: Aggregate-byte-bounded URL response cache with expiry pruning and ETag metadata.
+  dependencies: [shylock-core]
+  status: implemented
+- name: browser-documentload
+  header: include/mulib-browser-documentload.h
+  manual: manual/mulib-browser-documentload.md
+  macro: MULIB_IMPL_BROWSER_DOCUMENTLOAD
+  purpose: Synchronous document fetch and HTML tree creation orchestration.
+  dependencies: [browser-fetch, html-treebuilder]
+  status: implemented
+- name: css-tokenizer
+  header: include/mulib-css-tokenizer.h
+  manual: manual/mulib-css-tokenizer.md
+  macro: MULIB_IMPL_CSS_TOKENIZER
+  purpose: Length-aware CSS identifiers, signed numbers, strings and symbols with comment skipping.
+  dependencies: []
+  status: implemented
+- name: css-parser
+  header: include/mulib-css-parser.h
+  manual: manual/mulib-css-parser.md
+  macro: MULIB_IMPL_CSS_PARSER
+  purpose: Owned bounded CSS stylesheet rules with selector/declaration spans.
+  dependencies: [shylock-core]
+  status: implemented
+- name: css-computed
+  header: include/mulib-css-computed.h
+  manual: manual/mulib-css-computed.md
+  macro: MULIB_IMPL_CSS_COMPUTED
+  purpose: Selected CSS declaration lookup with inherited color and font-size fields.
+  dependencies: [shylock-core]
+  status: implemented
+- name: css-selector
+  header: include/mulib-css-selector.h
+  manual: manual/mulib-css-selector.md
+  macro: MULIB_IMPL_CSS_SELECTOR
+  purpose: Simple type, ID, class and universal selector matching for HTML tree nodes.
+  dependencies: [dom-query, html-treebuilder]
+  status: implemented
+- name: css-cascade
+  header: include/mulib-css-cascade.h
+  manual: manual/mulib-css-cascade.md
+  macro: MULIB_IMPL_CSS_CASCADE
+  purpose: Deterministic selected-property cascade with basic specificity and source ordering.
+  dependencies: [css-parser, css-selector, css-computed]
+  status: implemented
+- name: css-box
+  header: include/mulib-css-box.h
+  manual: manual/mulib-css-box.md
+  macro: MULIB_IMPL_CSS_BOX
+  purpose: Backend-neutral block box geometry and vertical flow placement.
+  dependencies: []
+  status: implemented
+- name: css-flex
+  header: include/mulib-css-flex.h
+  manual: manual/mulib-css-flex.md
+  macro: MULIB_IMPL_CSS_FLEX
+  purpose: Checked weighted one-axis flex distribution with gaps.
+  dependencies: [css-box]
+  status: implemented
+- name: css-grid
+  header: include/mulib-css-grid.h
+  manual: manual/mulib-css-grid.md
+  macro: MULIB_IMPL_CSS_GRID
+  purpose: Checked uniform grid cell geometry generator.
+  dependencies: [css-box]
+  status: implemented
+- name: css-layoutstream
+  header: include/mulib-css-layoutstream.h
+  manual: manual/mulib-css-layoutstream.md
+  macro: MULIB_IMPL_CSS_LAYOUTSTREAM
+  purpose: Callback emission of calculated box geometry with stable node indexes.
+  dependencies: [css-box]
+  status: implemented
+- name: browser-stream
+  header: include/mulib-browser-stream.h
+  manual: manual/mulib-browser-stream.md
+  macro: MULIB_IMPL_BROWSER_STREAM
+  purpose: Typed bounded event stream with channel-based observer dispatch.
+  dependencies: []
+  status: implemented
+- name: browser-tokenstream
+  header: include/mulib-browser-tokenstream.h
+  manual: manual/mulib-browser-tokenstream.md
+  macro: MULIB_IMPL_BROWSER_TOKENSTREAM
+  purpose: HTML and CSS token event publishing.
+  dependencies: [browser-stream]
+  status: implemented
+- name: browser-domstream
+  header: include/mulib-browser-domstream.h
+  manual: manual/mulib-browser-domstream.md
+  macro: MULIB_IMPL_BROWSER_DOMSTREAM
+  purpose: DOM mutation and node event publishing.
+  dependencies: [browser-stream]
+  status: implemented
+- name: browser-layoutstream
+  header: include/mulib-browser-layoutstream.h
+  manual: manual/mulib-browser-layoutstream.md
+  macro: MULIB_IMPL_BROWSER_LAYOUTSTREAM
+  purpose: Box geometry layout event publishing.
+  dependencies: [browser-stream]
+  status: implemented
+- name: browser-networkstream
+  header: include/mulib-browser-networkstream.h
+  manual: manual/mulib-browser-networkstream.md
+  macro: MULIB_IMPL_BROWSER_NETWORKSTREAM
+  purpose: Resource request and response event publishing.
+  dependencies: [browser-stream]
+  status: implemented
+- name: browser-executionstream
+  header: include/mulib-browser-executionstream.h
+  manual: manual/mulib-browser-executionstream.md
+  macro: MULIB_IMPL_BROWSER_EXECUTIONSTREAM
+  purpose: Script execution and lifecycle diagnostic event publishing.
+  dependencies: [browser-stream]
+  status: implemented
+- name: browser-snapshot
+  header: include/mulib-browser-snapshot.h
+  manual: manual/mulib-browser-snapshot.md
+  macro: MULIB_IMPL_BROWSER_SNAPSHOT
+  purpose: Owned immutable byte snapshots with content fingerprint and document version.
+  dependencies: [shylock-core]
+  status: implemented
+- name: browser-limits
+  header: include/mulib-browser-limits.h
+  manual: manual/mulib-browser-limits.md
+  macro: MULIB_IMPL_BROWSER_LIMITS
+  purpose: Validated resource limits for untrusted document execution.
+  dependencies: []
+  status: implemented
+- name: browser-permissions
+  header: include/mulib-browser-permissions.h
+  manual: manual/mulib-browser-permissions.md
+  macro: MULIB_IMPL_BROWSER_PERMISSIONS
+  purpose: Explicit bitmask permissions for browser capabilities.
+  dependencies: []
+  status: implemented
+- name: browser-sandbox
+  header: include/mulib-browser-sandbox.h
+  manual: manual/mulib-browser-sandbox.md
+  macro: MULIB_IMPL_BROWSER_SANDBOX
+  purpose: Deterministic resource-budget accounting and abort flags for browser tasks.
+  dependencies: [browser-limits]
+  status: implemented
+- name: browser-engine
+  header: include/mulib-browser-engine.h
+  manual: manual/mulib-browser-engine.md
+  macro: MULIB_IMPL_BROWSER_ENGINE
+  purpose: Transactional static-HTML document loading with enforced byte/tree/history limits and events.
+  dependencies: [browser-fetch, browser-documentload, browser-navigation, browser-stream, browser-limits]
+  status: implemented
 project_files:
+- file: manual/web-primitives.md
+  purpose: Shared composition, lifecycle, security and verification contracts for web and pricing primitives.
+- file: tests/fixtures/web_primitives_impl.h
+  purpose: Complete implementation placement for focused web and pricing regression suites.
+- file: tests/test_money_reference.py
+  purpose: Exact integer oracle for full-width money scaling and overflow rejection.
+- file: mudsl/tests/mull/mulib/web-primitives.mull
+  purpose: MuLL native integration of money, forecasts, origins, cache, ranges and event callbacks.
+- file: mudsl/tests/mull/mulib/web-primitives.expected
+  purpose: Expected output of the MuLL web and pricing integration fixture.
 - file: mudsl/tests/mull/mulib/openai.mull
   purpose: MuLL OpenAI catalog, configuration, JSON and live callback binding smoke test.
 - file: mudsl/tests/mull/mulib/openai.expected
@@ -11929,3 +12408,165 @@ project_files:
   purpose: "MuLL embedding fixture for MicroJS closures and rooted values."
 - file: mudsl/tests/mull/mulib/microjs.expected
   purpose: "Expected result of the MicroJS MuLL embedding fixture."
+- file: examples/modules/aes-gcm.c
+  purpose: "Standalone checked usage example for aes-gcm."
+- file: examples/modules/browser-cache.c
+  purpose: "Standalone checked usage example for browser-cache."
+- file: examples/modules/browser-cookiejar.c
+  purpose: "Standalone checked usage example for browser-cookiejar."
+- file: examples/modules/browser-documentload.c
+  purpose: "Standalone checked usage example for browser-documentload."
+- file: examples/modules/browser-domstream.c
+  purpose: "Standalone checked usage example for browser-domstream."
+- file: examples/modules/browser-engine.c
+  purpose: "Standalone checked usage example for browser-engine."
+- file: examples/modules/browser-eventloop.c
+  purpose: "Standalone checked usage example for browser-eventloop."
+- file: examples/modules/browser-executionstream.c
+  purpose: "Standalone checked usage example for browser-executionstream."
+- file: examples/modules/browser-fetch.c
+  purpose: "Standalone checked usage example for browser-fetch."
+- file: examples/modules/browser-layoutstream.c
+  purpose: "Standalone checked usage example for browser-layoutstream."
+- file: examples/modules/browser-limits.c
+  purpose: "Standalone checked usage example for browser-limits."
+- file: examples/modules/browser-navigation.c
+  purpose: "Standalone checked usage example for browser-navigation."
+- file: examples/modules/browser-networkstream.c
+  purpose: "Standalone checked usage example for browser-networkstream."
+- file: examples/modules/browser-origin.c
+  purpose: "Standalone checked usage example for browser-origin."
+- file: examples/modules/browser-permissions.c
+  purpose: "Standalone checked usage example for browser-permissions."
+- file: examples/modules/browser-realm.c
+  purpose: "Standalone checked usage example for browser-realm."
+- file: examples/modules/browser-resource.c
+  purpose: "Standalone checked usage example for browser-resource."
+- file: examples/modules/browser-sandbox.c
+  purpose: "Standalone checked usage example for browser-sandbox."
+- file: examples/modules/browser-snapshot.c
+  purpose: "Standalone checked usage example for browser-snapshot."
+- file: examples/modules/browser-stream.c
+  purpose: "Standalone checked usage example for browser-stream."
+- file: examples/modules/browser-tokenstream.c
+  purpose: "Standalone checked usage example for browser-tokenstream."
+- file: examples/modules/crawlarchive.c
+  purpose: "Standalone checked usage example for crawlarchive."
+- file: examples/modules/crawler.c
+  purpose: "Standalone checked usage example for crawler."
+- file: examples/modules/css-box.c
+  purpose: "Standalone checked usage example for css-box."
+- file: examples/modules/css-cascade.c
+  purpose: "Standalone checked usage example for css-cascade."
+- file: examples/modules/css-computed.c
+  purpose: "Standalone checked usage example for css-computed."
+- file: examples/modules/css-flex.c
+  purpose: "Standalone checked usage example for css-flex."
+- file: examples/modules/css-grid.c
+  purpose: "Standalone checked usage example for css-grid."
+- file: examples/modules/css-layoutstream.c
+  purpose: "Standalone checked usage example for css-layoutstream."
+- file: examples/modules/css-parser.c
+  purpose: "Standalone checked usage example for css-parser."
+- file: examples/modules/css-selector.c
+  purpose: "Standalone checked usage example for css-selector."
+- file: examples/modules/css-tokenizer.c
+  purpose: "Standalone checked usage example for css-tokenizer."
+- file: examples/modules/der.c
+  purpose: "Standalone checked usage example for der."
+- file: examples/modules/dom-mutation.c
+  purpose: "Standalone checked usage example for dom-mutation."
+- file: examples/modules/dom-query.c
+  purpose: "Standalone checked usage example for dom-query."
+- file: examples/modules/dom-range.c
+  purpose: "Standalone checked usage example for dom-range."
+- file: examples/modules/entropy.c
+  purpose: "Standalone checked usage example for entropy."
+- file: examples/modules/fetch-policy.c
+  purpose: "Standalone checked usage example for fetch-policy."
+- file: examples/modules/fetch.c
+  purpose: "Standalone checked usage example for fetch."
+- file: examples/modules/hkdf.c
+  purpose: "Standalone checked usage example for hkdf."
+- file: examples/modules/html-dombridge.c
+  purpose: "Standalone checked usage example for html-dombridge."
+- file: examples/modules/html-jsonld.c
+  purpose: "Standalone checked usage example for html-jsonld."
+- file: examples/modules/html-textstream.c
+  purpose: "Standalone checked usage example for html-textstream."
+- file: examples/modules/html-tokenizer.c
+  purpose: "Standalone checked usage example for html-tokenizer."
+- file: examples/modules/html-treebuilder.c
+  purpose: "Standalone checked usage example for html-treebuilder."
+- file: examples/modules/jsdom.c
+  purpose: "Standalone checked usage example for jsdom."
+- file: examples/modules/microjs-module.c
+  purpose: "Standalone checked usage example for microjs-module."
+- file: examples/modules/microjs-promise.c
+  purpose: "Standalone checked usage example for microjs-promise."
+- file: examples/modules/money.c
+  purpose: "Standalone checked usage example for money."
+- file: examples/modules/price-causal.c
+  purpose: "Standalone checked usage example for price-causal."
+- file: examples/modules/price-confidence.c
+  purpose: "Standalone checked usage example for price-confidence."
+- file: examples/modules/price-demand.c
+  purpose: "Standalone checked usage example for price-demand."
+- file: examples/modules/price-ensemble.c
+  purpose: "Standalone checked usage example for price-ensemble."
+- file: examples/modules/price-forecast.c
+  purpose: "Standalone checked usage example for price-forecast."
+- file: examples/modules/price-history.c
+  purpose: "Standalone checked usage example for price-history."
+- file: examples/modules/price-match.c
+  purpose: "Standalone checked usage example for price-match."
+- file: examples/modules/price-monitor.c
+  purpose: "Standalone checked usage example for price-monitor."
+- file: examples/modules/price-normalize.c
+  purpose: "Standalone checked usage example for price-normalize."
+- file: examples/modules/price-observation.c
+  purpose: "Standalone checked usage example for price-observation."
+- file: examples/modules/price-timeseries.c
+  purpose: "Standalone checked usage example for price-timeseries."
+- file: examples/modules/readability.c
+  purpose: "Standalone checked usage example for readability."
+- file: examples/modules/schemaorg.c
+  purpose: "Standalone checked usage example for schemaorg."
+- file: examples/modules/shylock-core.c
+  purpose: "Standalone checked usage example for shylock-core."
+- file: examples/modules/signature.c
+  purpose: "Standalone checked usage example for signature."
+- file: examples/modules/tls.c
+  purpose: "Standalone checked usage example for tls."
+- file: examples/modules/webextract-evidence.c
+  purpose: "Standalone checked usage example for webextract-evidence."
+- file: examples/modules/webextract-llm.c
+  purpose: "Standalone checked usage example for webextract-llm."
+- file: examples/modules/webextract-reconcile.c
+  purpose: "Standalone checked usage example for webextract-reconcile."
+- file: examples/modules/webextract-rules.c
+  purpose: "Standalone checked usage example for webextract-rules."
+- file: examples/modules/webidl-bindgen.c
+  purpose: "Standalone checked usage example for webidl-bindgen."
+- file: examples/modules/webidl-runtime.c
+  purpose: "Standalone checked usage example for webidl-runtime."
+- file: examples/modules/websearch-engine.c
+  purpose: "Standalone checked usage example for websearch-engine."
+- file: examples/modules/websearch-provider.c
+  purpose: "Standalone checked usage example for websearch-provider."
+- file: examples/modules/x25519.c
+  purpose: "Standalone checked usage example for x25519."
+- file: examples/modules/x509.c
+  purpose: "Standalone checked usage example for x509."
+- file: tests/test_web_alloc.c
+  purpose: "Focused regression suite for test_web_alloc."
+- file: tests/test_web_browser.c
+  purpose: "Focused regression suite for test_web_browser."
+- file: tests/test_web_css.c
+  purpose: "Focused regression suite for test_web_css."
+- file: tests/test_web_extraction.c
+  purpose: "Focused regression suite for test_web_extraction."
+- file: tests/test_web_hostile.c
+  purpose: "Focused regression suite for test_web_hostile."
+- file: tests/test_web_pricing.c
+  purpose: "Focused regression suite for test_web_pricing."

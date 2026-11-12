@@ -141,6 +141,12 @@ if(MULIB_BUILD_TESTS)
     set_tests_properties(mulib_dsymspec_snapshot PROPERTIES TIMEOUT 60)
     add_test(NAME mulib_tool_regressions
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_tools.py)
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+      add_test(NAME mulib_money_integer_reference
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_money_reference.py
+          --cc ${CMAKE_C_COMPILER})
+      set_tests_properties(mulib_money_integer_reference PROPERTIES TIMEOUT 60)
+    endif()
     set(compiler_check_options)
     if(MULIB_SANITIZERS)
       list(APPEND compiler_check_options --sanitizers)

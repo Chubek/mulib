@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Complete alphabetical index](index.md) · [Integration](integration.md)
 
-MuLIB has 1093 implemented C11 modules. Every implemented module has a corresponding
+MuLIB has 1164 implemented C11 modules. Every implemented module has a corresponding
 `manual/mulib-<name>.md` and `examples/modules/<name>.c`. The machine-readable
 inventory is `MANIFEST.yaml`. Names are not promises of full external standards;
 consult each manual's exact supported syntax, errors, and limits.
@@ -50,6 +50,7 @@ consult each manual's exact supported syntax, errors, and limits.
 | Machine code | [dsymspec](mulib-dsymspec.md), [assembler](mulib-assembler.md), [emitter](mulib-emitter.md), [linker](mulib-linker.md), [JIT](mulib-jit.md), [dynamic calls](mulib-dyncall.md) |
 | Embedded languages and tools | [MicroJS](mulib-microjs.md), [Datalog](mulib-datalog.md), [Perl POD](mulib-perlpod.md), [microaudio](mulib-microaudio.md), [browser tools](mulib-browsertools.md) |
 | Browser automation | [Prowse protocols](mulib-prowse-protocol.md), [Prowse control and lprowse Lua DSL](mulib-prowse-control.md), [15-language editor profiles](../library/librl/README.md) |
+| Granular web and pricing | [67-module composition guide](web-primitives.md): money/history/forecast baselines, extraction, bounded HTML/CSS, browser storage/events and static document loading |
 
 The [YANTLR core](mulib-yantlr.md) implements the `.y1` host language, explicit
 provider linking and artifact generation. An opt-in
