@@ -2,6 +2,21 @@
 
 ## Phases
 
+An opt-in backend-neutral [scalar MIR v1](backend-mir.md) now branches from checked
+HIR into verified blocks/SSA values, function-local scalar slots and effect
+chains. It has deterministic round-trip serialization, a bounded reference
+evaluator and C11 lowering. The direct HIR-to-C11 path below remains the default.
+MIR rejects types/operations outside its documented subset rather than using
+unchecked foreign or closure representations.
+
+The optional [relational analysis layer](backend-analysis.md) projects verified
+MIR into a versioned metadata dialect. Novostone's public Datalog frontend parses
+the embedded `src/backend/Analysis.dl` catalog; CCDB publishes verified fact deltas
+with exact snapshot identity and dependency-aware caches. Queries compute CFG
+reachability, call/effect closure and edge-aware block liveness. MIR remains the
+semantic authority; these facts do not use Novostone's wrapping-i32 IR or authorize
+rewrites. Source and installed-package providers are independently selectable.
+
 ```
      .on1x source
          │

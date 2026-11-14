@@ -1,0 +1,14 @@
+# Scalar MIR example: direct calls, checked arithmetic, loops and short circuit.
+fn factorial(n: i64) -> i64 {
+  if n <= 1 { return 1; }
+  else { return n * factorial(n - 1); }
+}
+fn main() {
+  var n = 0;
+  while n < 6 {
+    println(factorial(n));
+    n = n + 1;
+  }
+  assert(n == 6 && factorial(5) == 120);
+  println(false && 1 / 0 == 0);
+}

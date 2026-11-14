@@ -20,6 +20,7 @@ def main():
     cli.add_argument('--on1xc', default=str(ROOT / 'build' / 'on1xc'))
     cli.add_argument('--cc', default=os.environ.get('CC', 'cc'))
     cli.add_argument('--emit-only', action='store_true')
+    cli.add_argument('--via-mir', action='store_true', help='use the verified scalar MIR-to-C11 path')
     cli.add_argument('--extra-c', action='append', default=[], help='extra C translation unit to compile/link')
     cli.add_argument('--cflag', action='append', default=[], help='explicit extra C compiler option')
     cli.add_argument('--ppx', nargs=2, action='append', default=[], metavar=('LABEL', 'PROGRAM'))
@@ -29,7 +30,7 @@ def main():
     args = cli.parse_args()
     with tempfile.TemporaryDirectory(prefix='on1x-build-') as temp:
         generated = Path(temp) / 'main.c'
-        compiler = [args.on1xc, '--emit-c', str(args.input), '-o', str(generated),
+        compiler = [args.on1xc, '--emit-ir-c' if args.via_mir else '--emit-c', str(args.input), '-o', str(generated),
                     '--ppx-timeout-ms', str(args.ppx_timeout_ms)]
         if args.allow_source_ppx:
             compiler.append('--allow-source-ppx')

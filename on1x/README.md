@@ -2,8 +2,9 @@
 
 On1x compiles a deliberately small **statically checked** language to ISO C11,
 linking directly to MuLIB kernels. The C++20 compiler lives in this directory;
-LibStone is a user-supplied *source dependency*, discovered by default at
-`<mulib>/third_party/libstone`. Other checkout locations use `ON1X_LIBSTONE_ROOT`.
+LibStone is a user-supplied *source dependency*. CMake prefers the supplied
+`on1x/third_party/libstone` checkout when present, then the legacy
+`<mulib>/third_party/libstone` location. Other locations use `ON1X_LIBSTONE_ROOT`.
 
 **This is an executable milestone, not a complete ML compiler or safe binding
 framework.** First-class monomorphic functions, immutable lexical closures, tuples
@@ -19,11 +20,24 @@ codegen, and complete MuLIB binding generation remain work in progress.
 
 ## Layout and dependencies
 
+The optional [scalar Core/MIR path](docs/backend-mir.md) now provides checked
+`i64`/`bool` control flow, direct calls, ordered effects, deterministic serialized
+IR/CFG dumps, a bounded reference evaluator and MIR-to-C11 emission. Use
+`--emit-ir`, `--ir-cfg`, `--run-ir`, or `--emit-ir-c`; `--ir-input` consumes a saved
+MIR artifact, and `on1x-build.py --via-mir` builds through this path. The default
+`--emit-c` retains the broader existing language support. This is B1 partial.
+
+Optional [Novostone MIR analyses](docs/backend-analysis.md) add typed fact export,
+CFG reachability, transitive call/effect queries and block liveness with bounded,
+revision-checked CCDB snapshots. Configure `-DON1X_WITH_NOVOSTONE=ON`, then use
+`--emit-ir-facts` or `--analyze-ir`. An installed SDK is supported with
+`-DON1X_NOVOSTONE_PROVIDER=PACKAGE`; the default provider uses the source checkout.
+
 ```text
 mulib/
   include/mulib-*.h
   on1x/                    <- put this ZIP's on1x directory here
-  third_party/libstone/     <- clone separately; user supplies
+   on1x/third_party/libstone/ <- supplied checkout; legacy parent path also supported
     scripts/asdl.pl
     scripts/aurocks.pl
     moonstone/exoml/...

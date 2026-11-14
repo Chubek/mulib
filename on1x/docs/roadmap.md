@@ -15,6 +15,9 @@
 | Anonymous functions / lexical closures | P1 immutable subset | Escaping scalar/function/tuple captures, transitive capture, reference-counted C11 environments; no mutable/resource captures or recursive let |
 | Tuples / destructuring | P1 product subset | Structural products, nested immutable local/function/lambda patterns, leaf schemes and function/universal-field ownership; no JSON elements or aggregate extern ABI |
 | C11 AOT code generation | Verified subset | Strict GCC/Clang compile/run tests; ASan/UBSan also cover generated C |
+| Core/MIR v1 | B1 scalar subset | Stable unit-local IDs, source points, SSA block arguments, direct calls, local slots, explicit effect chains, bounded verifier and deterministic round-trip; see [manual](backend-mir.md) |
+| MIR reference execution / C11 | Implemented scalar subset | Three-way HIR-C11/MIR-C11/evaluator tests; malformed CFG/phi/use/effect/initialization rejections; optional CLI and build-helper path |
+| Novostone MIR analyses | B3 scalar metadata subset | Opt-in Datalog/CCDB, exact fact checks, transactional publication, revision-bound queries, call/effect closure and block liveness; [manual](backend-analysis.md) |
 | Signed i64 checking | Implemented | Overflow/invalid division tests |
 | Native ABI externs | Explicit raw subset | Exact scalar ABI; explicit nested parameter patterns flatten left-to-right, no aggregate layout inference |
 | Typed hygienic macros | Recursive patterns and lexical syntax bindings | Context marks, typed recursive captures/ellipses, `let_syntax`/`letrec_syntax`, definition-site value/syntax identities and bounded transactional expansion; not the full Scheme language |
@@ -33,6 +36,12 @@
 | Plaid/Prolific integration | Not implemented | Future concurrency and profiling features |
 
 ## Immediate next iterations
+
+The backend continuation provides scalar B1 and opt-in B3 relational analyses.
+Next backend increments include transactional pass management and verified scalar
+transformations, followed by restricted Sequent integration and broader MIR
+aggregate/closure support. Full B1 resource/error-edge support, general B3
+contract dependencies and B5 VM/native lowering remain open.
 
 1. **P0 baseline verified** — Generator-backed and independent fallback builds,
    exact scanner parity, bounded parsing, strict generated C11 and real MuLIB

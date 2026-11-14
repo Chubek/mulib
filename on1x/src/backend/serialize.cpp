@@ -1,0 +1,83 @@
+#include <on1x/backend/mir.hpp>
+#include <on1x/meta.hpp>
+#include <charconv>
+#include <sstream>
+
+namespace on1x::mir {
+namespace {
+using meta::SExpr;using meta::list;using meta::symbol;using meta::string;
+template<class T>SExpr number(T n){return symbol(std::to_string(n));}
+SExpr location(const Location& at){return list({symbol("at"),string(at.file),number(at.offset),number(at.line),number(at.column)});}
+SExpr value(const Value& v){return list({symbol("value"),number(v.id),symbol(type_name(v.type)),location(v.where)});}
+template<class T,class F>SExpr sequence(const std::vector<T>& values,F encode){std::vector<SExpr> out;for(const auto& v:values)out.push_back(encode(v));return list(std::move(out));}
+SExpr ids(const std::vector<Id>& values){return sequence(values,[](Id id){return number(id);});}
+std::string_view exit_name(Exit kind){return kind==Exit::Return?"return":kind==Exit::Jump?"jump":"branch";}
+SExpr instruction(const Instruction& i){return list({symbol("instruction"),number(i.id),symbol(std::string(op_name(i.op))),symbol(type_name(i.type)),ids(i.operands),number(i.immediate),number(i.target),number(i.effect_in),number(i.effect_out),location(i.where)});}
+SExpr block(const Block& b){
+ const auto& t=b.exit;
+ auto edges=sequence(t.edges,[](const Edge& e){return list({symbol("edge"),number(e.block),ids(e.arguments)});});
+ return list({symbol("block"),number(b.id),number(b.effect),location(b.where),sequence(b.parameters,value),sequence(b.instructions,instruction),
+  list({symbol("exit"),number(t.id),symbol(std::string(exit_name(t.kind))),number(t.value),number(t.effect),std::move(edges),location(t.where)})});
+}
+[[noreturn]] void bad(const SExpr& n,const std::string& why){throw Error(n.where,"ON1X-MIR-DECODE: "+why);}
+const std::vector<SExpr>& items(const SExpr& n){if(n.kind!=SExpr::Kind::List)bad(n,"expected list");return n.items;}
+const std::string& atom(const SExpr& n){if(n.kind!=SExpr::Kind::Symbol)bad(n,"expected symbol");return n.text;}
+const std::string& text(const SExpr& n){if(n.kind!=SExpr::Kind::String)bad(n,"expected string");return n.text;}
+void shape(const SExpr& n,std::string_view tag,std::size_t count){if(items(n).size()!=count||atom(n.items[0])!=tag)bad(n,"expected "+std::string(tag)+" with "+std::to_string(count-1)+" fields");}
+template<class T>T integer(const SExpr& n){
+ const auto& s=atom(n);T result{};auto [p,ec]=std::from_chars(s.data(),s.data()+s.size(),result);
+ if(ec!=std::errc{}||p!=s.data()+s.size())bad(n,"invalid/out-of-range integer");
+ return result;
+}
+Type type(const SExpr& n){auto s=atom(n);if(s=="i64")return Type::I64;if(s=="bool")return Type::Bool;if(s=="void")return Type::Void;bad(n,"unsupported type: "+s);}
+Location decode_location(const SExpr& n){shape(n,"at",5);return {text(n.items[1]),integer<std::size_t>(n.items[2]),integer<std::size_t>(n.items[3]),integer<std::size_t>(n.items[4])};}
+Value decode_value(const SExpr& n){shape(n,"value",4);return {integer<Id>(n.items[1]),type(n.items[2]),decode_location(n.items[3])};}
+std::vector<Id> decode_ids(const SExpr& n){std::vector<Id> out;for(const auto& v:items(n))out.push_back(integer<Id>(v));return out;}
+Instruction decode_instruction(const SExpr& n){
+ shape(n,"instruction",10);Instruction i;i.id=integer<Id>(n.items[1]);
+ bool found=false;for(unsigned k=0;k<=static_cast<unsigned>(Op::Assert);++k)if(atom(n.items[2])==op_name(static_cast<Op>(k))){i.op=static_cast<Op>(k);found=true;break;}
+ if(!found)bad(n,"unknown opcode");
+ i.type=type(n.items[3]);i.operands=decode_ids(n.items[4]);i.immediate=integer<std::int64_t>(n.items[5]);
+ i.target=integer<Id>(n.items[6]);i.effect_in=integer<Id>(n.items[7]);i.effect_out=integer<Id>(n.items[8]);i.where=decode_location(n.items[9]);return i;
+}
+Block decode_block(const SExpr& n){
+ shape(n,"block",7);Block b;b.id=integer<Id>(n.items[1]);b.effect=integer<Id>(n.items[2]);b.where=decode_location(n.items[3]);
+ for(const auto& p:items(n.items[4]))b.parameters.push_back(decode_value(p));
+ for(const auto& i:items(n.items[5]))b.instructions.push_back(decode_instruction(i));
+ const auto& t=n.items[6];shape(t,"exit",7);b.exit.id=integer<Id>(t.items[1]);auto k=atom(t.items[2]);
+ if(k=="return")b.exit.kind=Exit::Return;else if(k=="jump")b.exit.kind=Exit::Jump;else if(k=="branch")b.exit.kind=Exit::Branch;else bad(t,"unknown terminator");
+ b.exit.value=integer<Id>(t.items[3]);b.exit.effect=integer<Id>(t.items[4]);b.exit.where=decode_location(t.items[6]);
+ for(const auto& e:items(t.items[5])){shape(e,"edge",3);b.exit.edges.push_back({integer<Id>(e.items[1]),decode_ids(e.items[2])});}
+ return b;
+}
+}
+std::string serialize(const Module& module){
+ verify(module);
+ auto functions=sequence(module.functions,[](const Function& f){return list({symbol("function"),number(f.id),string(f.name),symbol(type_name(f.result)),location(f.where),sequence(f.slots,value),sequence(f.blocks,block)});});
+ return meta::write_sexpr(list({symbol("on1x.mir"),number(module.version),number(module.id),std::move(functions)}));
+}
+Module deserialize(std::string_view text,const std::string& filename){
+ auto tree=meta::read_sexpr(text,filename);shape(tree,"on1x.mir",4);Module m;m.version=integer<unsigned>(tree.items[1]);m.id=integer<Id>(tree.items[2]);
+ if(m.version!=format_version)bad(tree,"unsupported format version");
+ for(const auto& n:items(tree.items[3])){
+  shape(n,"function",7);Function f;f.id=integer<Id>(n.items[1]);f.name=::on1x::mir::text(n.items[2]);f.result=type(n.items[3]);f.where=decode_location(n.items[4]);
+  for(const auto& s:items(n.items[5]))f.slots.push_back(decode_value(s));
+  for(const auto& b:items(n.items[6]))f.blocks.push_back(decode_block(b));
+  m.functions.push_back(std::move(f));
+ }
+ verify(m);return m;
+}
+bool structurally_equal(const Module& a,const Module& b){return serialize(a)==serialize(b);}
+std::string cfg_dot(const Module& module){
+ verify(module);std::ostringstream out;out<<"digraph on1x_mir {\n";
+ for(const auto& f:module.functions){
+  out<<"  subgraph cluster_"<<f.id<<" {\n    label=\"function "<<f.id<<"\";\n";
+  for(const auto& b:f.blocks){
+   out<<"    b"<<b.id<<" [label=\"b"<<b.id<<"("<<b.parameters.size()<<")\\n"<<exit_name(b.exit.kind)<<"\"];\n";
+   for(std::size_t n=0;n<b.exit.edges.size();++n)out<<"    b"<<b.id<<" -> b"<<b.exit.edges[n].block<<" [label=\""<<n<<"\"];\n";
+  }
+  out<<"  }\n";
+ }
+ return out.str()+"}\n";
+}
+}

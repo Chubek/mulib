@@ -2,6 +2,22 @@
 
 CTest registers independent tests with separate artifact directories:
 
+- `on1x.relational_hir` (Novostone enabled): seven Datalog queries against
+  independent MIR graph/liveness algorithms and the upstream naive evaluator,
+  40 seeded CFGs, recursive calls, loop phis, parallel edges, full-width IDs and
+  constants, fact/catalog tampering, revision isolation, deletion/cache invalidation,
+  snapshot lifetime, transactional failure and bounded queries.
+- `on1x.relational`: opt-in CLI, deterministic source/saved-MIR artifacts and exact
+  provenance, query exhaustion and output preservation. Disabled builds check
+  explicit rejection. See [analysis builds/API](../docs/backend-analysis.md).
+- `on1x.mir_hir`: typed scalar MIR verification, malformed CFG/SSA/phi/effect/slot
+  negatives, canonical round-trip, source identity, independent evaluator budgets,
+  simultaneous loop-phi transfers and transactional lowering failure.
+- `on1x.mir`: HIR-C11/MIR-C11/reference-evaluator differentials; source and saved-IR
+  execution, 120 seeded arithmetic cases, boundary traps, ordered effects,
+  branches/loops/recursion, imports/macros/PPX, unsupported-subset rejection and
+  independent build-helper execution. Generated artifacts include SHA-256 digests.
+
 - `on1x.scanner`: bounded C buffers, copied token lifetime, exact byte locations,
   source limits, repeated failures/successes and concurrent serialized scans.
 - `on1x.compiler`: native strict C11 lowering, imports, recursion, shadowing,

@@ -1,0 +1,50 @@
+// on1x.mir-facts/v1. IDs and source coordinates are canonical unsigned decimal
+// symbols (MIR permits all 64 bits); ordinals and constants are signed integers.
+// This is a metadata dialect, not Novostone's wrapping i32 executable IR.
+.decl Module(symbol, integer, integer).
+.decl Function(symbol, integer, symbol, symbol).
+.decl Entry(symbol, symbol).
+.decl Block(symbol, symbol, integer).
+.decl Slot(symbol, symbol, integer, symbol).
+.decl Parameter(symbol, symbol, integer, symbol).
+.decl Instruction(symbol, symbol, integer, symbol, symbol).
+.decl Constant(symbol, integer).
+.decl Operand(symbol, integer, symbol).
+.decl Call(symbol, symbol, symbol).
+.decl SlotAccess(symbol, symbol).
+.decl Terminator(symbol, symbol, symbol).
+.decl ExitValue(symbol, symbol).
+.decl Edge(symbol, integer, symbol, symbol).
+.decl Argument(symbol, integer, integer, symbol).
+.decl BlockEffect(symbol, symbol).
+.decl EffectStep(symbol, symbol, symbol, symbol).
+.decl ExitEffect(symbol, symbol).
+.decl EffectEdge(symbol, integer, symbol, symbol).
+.decl Location(symbol, symbol, symbol, symbol, symbol).
+
+.decl Reachable(symbol, symbol) derived.
+.decl Calls(symbol, symbol) derived.
+.decl MayEffect(symbol, symbol) derived.
+.decl Definition(symbol, symbol) derived.
+.decl UseAt(symbol, symbol) derived.
+.decl LiveIn(symbol, symbol) derived.
+.decl LiveOut(symbol, symbol) derived.
+
+Reachable(f, b) :- Entry(f, b).
+Reachable(f, to) :- Reachable(f, from), Edge(_, _, from, to).
+Calls(f, g) :- Call(_, f, g).
+Calls(f, h) :- Calls(f, g), Call(_, g, h).
+MayEffect(f, kind) :- Block(b, f, _), Instruction(i, b, _, _, _), EffectStep(i, _, _, kind).
+MayEffect(f, kind) :- Calls(f, g), MayEffect(g, kind).
+
+// Block parameters define values on entry. Arguments use values on the selected
+// predecessor edge, never in the destination block. All CFG edges are possible.
+Definition(b, v) :- Parameter(v, b, _, _).
+Definition(b, v) :- Instruction(v, b, _, _, "i64").
+Definition(b, v) :- Instruction(v, b, _, _, "bool").
+UseAt(b, v) :- Instruction(i, b, _, _, _), Operand(i, _, v).
+UseAt(b, v) :- Terminator(t, b, _), ExitValue(t, v).
+LiveIn(b, v) :- UseAt(b, v), !Definition(b, v).
+LiveIn(b, v) :- LiveOut(b, v), !Definition(b, v).
+LiveOut(b, v) :- Edge(_, _, b, s), LiveIn(s, v).
+LiveOut(b, v) :- Edge(t, edge, b, _), Argument(t, edge, _, v).

@@ -1,5 +1,271 @@
 # On1x P0 / P1 verification report — 2026-11-14
 
+## Current continuation: Novostone MIR analyses — 2026-11-14
+
+Implemented the opt-in B3 scalar metadata increment in
+`include/on1x/backend/relational.hpp`, `src/backend/{relational.cpp,Analysis.dl}`,
+and `cmake/Novostone.cmake`. The real Novostone Datalog source frontend and CCDB
+provide typed metadata queries, transactional delta publication, immutable
+snapshots, revision checks and dependency-aware caches. CLI modes are
+`--emit-ir-facts` and `--analyze-ir`, including saved MIR input. The
+[analysis manual](docs/backend-analysis.md) specifies all 20 base relations,
+seven queries, exact identity encoding and budgets.
+
+### Measured results
+
+LibStone source HEAD and index gitlink remain
+`91293264a531603dfd2319e64b3c1aa40a609783`; `git -C
+on1x/third_party/libstone status --short` is empty. The existing scalar baseline
+passed 25/25 before these edits. Final complete On1x suites:
+
+| Build directory under `/tmp/opencode/` | Configuration | Result |
+|---|---|---|
+| `on1x-novo-gcc` | Fresh GCC generated, Novostone source provider | 27/27 PASS |
+| `on1x-novo-sanitize` | Fresh Clang generated, source provider, ASan+UBSan | 27/27 PASS |
+| `on1x-novo-package` | Fresh Clang fallback, relocated installed Novostone SDK | 26/26 PASS |
+| `on1x-contracts-gcc-generated` | GCC generated + Novostone + ExoML/libclang | 28/28 PASS |
+| `on1x-mir-fallback` | GCC fallback, Novostone disabled | 25/25 PASS |
+| `on1x-mir-clang` | Clang generated, Novostone disabled | 26/26 PASS |
+| `on1x-mir-sanitize-fallback` | Clang fallback, Novostone disabled, ASan+UBSan | 25/25 PASS |
+
+**184/184 On1x CTest results pass, without failures or skips.** GCC 16.2.1 and
+Clang 22.1.8 on Linux x86_64; strict warnings are errors. Sanitized source-provider
+build instruments On1x, Novostone Datalog/CCDB, both generated frontends and emitted
+C/runtime tests. The installed SDK is a separate unsanitized GCC static build;
+its On1x consumer uses Clang. ExoML/libclang is exercised in the unsanitized GCC
+profile, not claimed to be sanitizer-instrumented.
+
+`on1x.relational_hir` compares seven queries with independent graph/set algorithms
+over MIR, plus the upstream naive evaluator. It covers 40 seeded multi-function
+CFGs, recursion, loops, independently authored cyclic phis, parallel branch edges,
+wide IDs and exact `INT64_MIN`/`INT64_MAX`. Negative tests cover altered catalogs,
+missing/extra/mistyped facts, invalid MIR, stale/foreign snapshots (including equal
+revision numbers), lowered fact/byte/verifier/query budgets and cumulative report
+exhaustion. Cache retention on unrelated edits, call retargeting/deletion,
+transaction rollback, audit events and snapshot survival are exercised.
+CLI tests verify exact MIR/rule provenance, source/saved-MIR parity, deterministic
+output, status 75 on exhaustion, preservation of existing output files, and
+explicit disabled-feature diagnostics.
+
+A separate upstream build at `on1x-novo-sdk` passes **30/30 Novostone CTests**.
+It was installed at `on1x-novo-prefix`, then moved to `on1x-novo-relocated`.
+The On1x package consumer configured with a nonexistent `ON1X_LIBSTONE_ROOT` and
+the fallback scanner. Its compile commands use only the relocated SDK include
+directory, with no original-prefix or LibStone source include path. The relocated
+CLI successfully queries installed `examples/reachability.dl`, parses installed
+`grammar/Analysis.dl`, and queries On1x's emitted `example.dl` for all six expected
+recursive-call pairs. This verifies a static installed SDK consumer on this host.
+Missing-source and invalid-provider configurations reject with the expected
+diagnostics.
+
+The public build helper builds `examples/analysis.on1x --via-mir` with both GCC
+and Clang. Both executables print `true, false, true, false` on separate lines;
+`ldd` on the GCC binary lists only libc and the system loader.
+
+### Reproducibility
+
+HIR C11, MIR, MIR C11 and CFG artifacts for both `examples/mir.on1x` and
+`examples/analysis.on1x` are byte-identical across all seven builds. The previous
+scalar example's four hashes below remain exact. For absolute source path
+`/mnt/nvme/mulib/on1x/examples/analysis.on1x`, the two new artifacts match across
+all four enabled builds:
+
+| Artifact | Bytes | SHA-256 |
+|---|---:|---|
+| Fact/rule `.dl` | 11639 | `e409bf08053ddd03cce0343915116cbcbc3084159db62607757d6b70a7e9ab21` |
+| Analysis S-expression | 8483 | `22036ec4a74c338ad9364336804b0767f4ccdb5669b5e70823e0e1ccd86dbc3a` |
+| MIR | 5012 | `98469d70828472530ce2d0897dc2da6d9aca74c272a2fc9fe3fe807cfb2cce24` |
+
+The rule-file SHA-256 is
+`1d000c858cdffec6ee36d030cf2fe54821139d2b51c9277db6d48671a704b277`.
+Each build records compiler, provider and rule identity in `on1x-build-info.txt`.
+Package mode reports version `0.1.0` and its relocated package path; upstream
+commit provenance comes from the separately recorded SDK build, not guessed
+package metadata.
+
+### Reproduction command log
+
+From the MuLIB root:
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-novo-gcc \
+  -DON1X_REQUIRE_LIBSTONE=ON -DON1X_WITH_NOVOSTONE=ON -DBUILD_TESTING=ON \
+  -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+  -DCMAKE_C_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wpedantic -Werror'
+cmake --build /tmp/opencode/on1x-novo-gcc --parallel 4
+ctest --test-dir /tmp/opencode/on1x-novo-gcc --output-on-failure --parallel 4
+
+cmake -S on1x/third_party/libstone/novostone -B /tmp/opencode/on1x-novo-sdk \
+  -DCMAKE_BUILD_TYPE=Debug -DNOVOSTONE_BUILD_TESTS=ON -DNOVOSTONE_BUILD_TOOLS=ON \
+  -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+  -DCMAKE_C_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wpedantic -Werror'
+cmake --build /tmp/opencode/on1x-novo-sdk --parallel 4
+ctest --test-dir /tmp/opencode/on1x-novo-sdk --output-on-failure --parallel 4
+cmake --install /tmp/opencode/on1x-novo-sdk --prefix /tmp/opencode/on1x-novo-prefix
+mv /tmp/opencode/on1x-novo-prefix /tmp/opencode/on1x-novo-relocated
+
+cmake -S on1x -B /tmp/opencode/on1x-novo-package \
+  -DON1X_WITH_NOVOSTONE=ON -DON1X_NOVOSTONE_PROVIDER=PACKAGE \
+  -DCMAKE_PREFIX_PATH=/tmp/opencode/on1x-novo-relocated \
+  -DON1X_LIBSTONE_ROOT=/tmp/opencode/no-libstone-checkout \
+  -DON1X_USE_FALLBACK_SCANNER=ON -DBUILD_TESTING=ON \
+  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_C_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wpedantic -Werror'
+cmake --build /tmp/opencode/on1x-novo-package --parallel 4
+ctest --test-dir /tmp/opencode/on1x-novo-package --output-on-failure --parallel 4
+
+python3 on1x/tools/on1x-build.py on1x/examples/analysis.on1x --via-mir \
+  --on1xc /tmp/opencode/on1x-novo-gcc/on1xc --cc gcc \
+  -o /tmp/opencode/on1x-analysis-example
+/tmp/opencode/on1x-analysis-example
+```
+
+For `on1x-novo-sanitize`, use the first configuration with `clang`/`clang++`,
+append `-g -fsanitize=address,undefined -fno-omit-frame-pointer
+-fno-sanitize-recover=all` to both compiler flag variables, and set
+`ON1X_TEST_C_FLAGS=-g;-fsanitize=address,undefined;-fno-omit-frame-pointer;-fno-sanitize-recover=all`.
+Use the scalar continuation below's disabled-provider configurations for the three
+`on1x-mir-*` profiles. The existing ExoML/libclang profile was reconfigured with
+`-DON1X_WITH_NOVOSTONE=ON`, rebuilt, and its complete suite rerun. All seven suites
+use `ctest --test-dir BUILD --output-on-failure --parallel 4`.
+
+### Remaining backend scope
+
+B3 is partial: this increment covers scalar metadata and conservative analyses.
+It does not yet provide resource/contract relations or an optimizing pass manager.
+No query currently authorizes an executable rewrite. Sequent integration,
+aggregate/closure MIR, VM/native lowering and cross-target execution remain open.
+TSan, shared-library SDK relocation and an installed On1x distribution were not
+verified in this increment. The preceding reports retain their historical pins,
+hashes and scope statements.
+
+## Previous continuation: scalar Core/MIR v1 — 2026-11-14
+
+Implemented `include/on1x/backend/mir.hpp` and `src/backend/{mir,lower,serialize,
+evaluate,emit_c}.cpp`: source-located scalar MIR, bounded CFG/SSA/phi/effect and
+definite-initialization verification, deterministic readback, reference evaluation
+and independent MIR-to-C11 emission. CLI modes and `on1x-build.py --via-mir` are
+documented in [the MIR manual](docs/backend-mir.md). Existing HIR-to-C11 semantics,
+scanner grammar and foreign admission remain in place.
+
+### Measured identity and results
+
+Parent baseline `ce5bf41e1b08ca9d9e5ce23d37952fadc5826b5b`; supplied LibStone HEAD
+and index gitlink `91293264a531603dfd2319e64b3c1aa40a609783`, clean and read-only.
+The missing `.gitmodules` mapping prevents `git submodule status`; identities
+were obtained with `git -C on1x/third_party/libstone rev-parse HEAD` and
+`git ls-files --stage on1x/third_party/libstone`. No dependency update was made.
+Host: Linux x86_64; GCC 16.2.1 and Clang 22.1.8. CMake reports compiler versions,
+system, scanner, checkout path/revision and capability flags in each build's
+`on1x-build-info.txt` (configure-time evidence, not a contract lock).
+
+Before edits, the existing generated GCC+SDK suite passed 24/24 and GCC fallback
+passed 22/22. After implementation, the **complete** suites passed:
+
+| Build directory under `/tmp/opencode/` | Configuration | Result |
+|---|---|---|
+| `on1x-mir-gcc` | Fresh GCC generated, SDK off | 25/25 PASS |
+| `on1x-contracts-gcc-generated` | Rebuilt GCC generated + ExoML/libclang | 26/26 PASS |
+| `on1x-mir-fallback` | Fresh GCC independent fallback | 24/24 PASS |
+| `on1x-mir-clang` | Fresh Clang generated | 25/25 PASS |
+| `on1x-mir-sanitize` | Fresh Clang generated, compiler/emitted C ASan+UBSan | 25/25 PASS |
+| `on1x-mir-sanitize-fallback` | Fresh Clang fallback, compiler/emitted C ASan+UBSan | 24/24 PASS |
+
+Total: **149 passing CTest results, no failures or skips** in the final matrix.
+All compiler and emitted C builds use `-Wall -Wextra -Wpedantic -Werror`.
+Sanitizers cover the compiler, new verifier/evaluator, existing runtime and
+generated test executables. ExoML/libclang itself is covered by the unsanitized
+GCC SDK configuration; no new sanitized SDK-source or cross-target claim follows.
+
+`on1x.mir` compares **21 source programs** through HIR-C11, MIR-C11 and reference
+evaluation, including saved-MIR readback, nine arithmetic traps plus assertion
+failure, 120 seeded arithmetic/comparison expressions, recursion, loops, early
+returns, source/import/macro/PPX composition, scalar generic specializations,
+strict argument/effect ordering and short-circuiting. Seven unsupported source
+families are rejected in all four MIR modes without overwriting existing output.
+`on1x.mir_hir` adds malformed identity/type/CFG/phi/use/effect/call/slot/source
+tests, independent budgets, transactional lowering and a hand-authored loop-phi
+permutation. The latter's emitted C executes with the expected `20, 10` output.
+
+The build helper independently builds/runs `examples/mir.on1x` in each profile.
+`ldd` on the GCC helper-built binary lists only libc and the system loader,
+with no C++/LibStone/ExoML application dependency. Contract lint still reports
+45 JSON/Vec/Parsec annotations, `gate_b: false`, `safe_export: false`; the separate
+SDK suite exercises real discovery/admission. No pricing contract is certified.
+
+For the absolute source path `/mnt/nvme/mulib/on1x/examples/mir.on1x`, all six
+compiler configurations produce identical bytes:
+
+| Artifact | Bytes | SHA-256 |
+|---|---:|---|
+| HIR C11 | 2918 | `c671be3f10ca333d8b2a9f62ed1d4fd24568ad2240143e221b8669a23fc06a2c` |
+| MIR | 5584 | `b9f3e9331a8d5de545d04784141546d0cb9428f18c06ef3426188653db9ad2a8` |
+| MIR C11 | 2495 | `1243afd6bc41703533030b3821928af9fc699d2cb1030442f75264fe9a6b1664` |
+| CFG DOT | 818 | `02838994fda44c02f1e0feefea6630000c5ded2fbbbecb30c0d18172c6c8de7f` |
+
+MIR includes source paths, so relocation changes its hash. Tests also write
+per-fixture artifacts/digests under each build's `test-artifacts/mir/`.
+
+### Reproduction command log
+
+From the MuLIB root:
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-mir-gcc \
+  -DON1X_REQUIRE_LIBSTONE=ON \
+  -DON1X_LIBSTONE_ROOT="$PWD/on1x/third_party/libstone" \
+  -DBUILD_TESTING=ON -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+  -DCMAKE_C_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wpedantic -Werror'
+cmake --build /tmp/opencode/on1x-mir-gcc --parallel 4
+ctest --test-dir /tmp/opencode/on1x-mir-gcc --output-on-failure --parallel 4
+```
+
+For `on1x-mir-fallback`, replace `ON1X_REQUIRE_LIBSTONE` with
+`-DON1X_USE_FALLBACK_SCANNER=ON`. For `on1x-mir-clang`, use `clang`/`clang++`.
+The two sanitizer profiles use those same generated/fallback configurations with:
+
+```text
+CMAKE_C_FLAGS and CMAKE_CXX_FLAGS:
+  -Wall -Wextra -Wpedantic -Werror -g -fsanitize=address,undefined
+  -fno-omit-frame-pointer -fno-sanitize-recover=all
+ON1X_TEST_C_FLAGS:
+  -g;-fsanitize=address,undefined;-fno-omit-frame-pointer;-fno-sanitize-recover=all
+```
+
+The existing SDK profile was rebuilt and tested with:
+
+```sh
+cmake --build /tmp/opencode/on1x-contracts-gcc-generated --parallel 4
+ctest --test-dir /tmp/opencode/on1x-contracts-gcc-generated --output-on-failure --parallel 4
+python3 on1x/tools/on1x-contracts.py lint
+python3 on1x/tools/on1x-build.py on1x/examples/mir.on1x --via-mir \
+  --on1xc /tmp/opencode/on1x-mir-gcc/on1xc --cc gcc -o /tmp/opencode/mir-example
+/tmp/opencode/mir-example
+```
+
+A fresh SDK configuration uses the GCC generated command above with
+`-DON1X_WITH_EXOML=ON -DON1X_WITH_EXOML_EXTRACT=ON` and its declared development
+dependencies. The exact helper invocation in CTest uses its own artifact output
+path rather than `/tmp/opencode/mir-example`.
+
+### Scope and remaining gates
+
+B1 is **partial**: only the scalar/effect subset in `docs/backend-mir.md` is
+implemented. This reference evaluator is not B5 native/VM completion. No
+Nerotypical/Novostone optimization, general MIR ownership/FFI, Syren/SARIF bridge,
+pricing numeric ABI, resource cleanup, or Shylock application is implemented by
+this change. Cross-target execution, installed-package integration and TSan are
+**NOT VERIFIED** in this continuation (no native/packaging/concurrency adapter
+was implemented). `SHYLOCK-EXECUTABLE-READY: NO` and
+`SHYLOCK-SAFE-FFI-READY: NO`; see [the capability matrix](docs/shylock-readiness.md).
+
+The earlier reports below retain their original dependency pins and results.
+
 ## Environment and dependency identity
 
 - Linux x86_64, glibc 2.44; compiler target `x86_64-pc-linux-gnu`.
