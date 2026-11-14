@@ -1,0 +1,6 @@
+# Only for explicitly ABI-compatible C11 functions. No implicit ABI adaptation.
+extern fn on1x_external_double(x: i64) -> i64;
+fn main() -> i64 {
+  println(on1x_external_double(21));
+  return 0;
+}

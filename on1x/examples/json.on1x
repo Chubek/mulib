@@ -1,0 +1,10 @@
+# Experimental checked facade: aborts on failures and automatically drops root.
+fn main() -> i64 {
+  let doc = json_parse_or_die("{\"items\":[1,2,3],\"ok\":true}");
+  let items = json_get_or_die(doc, "items");
+  let count = json_size(items);
+  println(count);
+  json_print(doc);
+  assert(count == 3);
+  return 0;
+}

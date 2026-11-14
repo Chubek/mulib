@@ -1,0 +1,11 @@
+# Arithmetic is left-associative; logical operators short circuit.
+fn main() {
+  println(1 + 2 * 3);
+  println(20 / 2 / 2);
+  println(20 - 3 - 2);
+  println(-5 * 2 + 13 % 5);
+  println(!false && 1 < 2 || false);
+  println(false && 1 / 0 == 0);
+  println(true || 1 / 0 == 0);
+  assert(3 * 4 == 12 && "same" == "same");
+}

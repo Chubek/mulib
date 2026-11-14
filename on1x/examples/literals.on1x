@@ -1,0 +1,10 @@
+# Leading zeroes are decimal; strings must not inherit C trigraph semantics.
+fn main() {
+  println(0010);
+  println(09);
+  println(000);
+  println("\\0");
+  println("C trigraph: ??/");
+  println("雪7");
+  println("quote: \" tab:\t");
+}

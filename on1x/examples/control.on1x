@@ -1,0 +1,11 @@
+fn main() -> i64 {
+  var i = 0;
+  var sum: i64 = 0;
+  while i < 10 {
+    sum = sum + i;
+    i = i + 1;
+  }
+  println(sum);
+  assert(sum == 45);
+  return 0;
+}

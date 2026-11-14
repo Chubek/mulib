@@ -1,0 +1,5 @@
+import "library.on1x";
+fn main() -> i64 {
+  println(square(7));
+  return 0;
+}

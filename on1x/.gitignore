@@ -1,0 +1,13 @@
+build/
+build-*/
+.build/
+CMakeFiles/
+CMakeCache.txt
+Testing/
+*.o
+*.a
+*.so
+*.exe
+__pycache__/
+*.pyc
+*.cdecl.json

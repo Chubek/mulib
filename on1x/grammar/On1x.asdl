@@ -1,0 +1,7 @@
+%prefix on1x
+%option enums no-line-directives
+%%
+-- Aurocks owns a temporary arena of these tokens, then reports copies to C++.
+-- The checked and lowered language AST lives in the C++ frontend.
+token = Tok(string text, usize offset, token? previous)
+unit = (token? last)

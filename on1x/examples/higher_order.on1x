@@ -1,0 +1,29 @@
+fn increment(x: i64) -> i64 { return x + 1; }
+fn double(x: i64) -> i64 { return x * 2; }
+
+fn twice(operation: fn(i64) -> i64, x: i64) -> i64 {
+  return operation(operation(x));
+}
+
+fn select(increasing: bool) -> fn(i64) -> i64 {
+  if increasing { return increment; }
+  else { return double; }
+}
+
+fn preserve(operation: fn(i64) -> i64) -> fn(i64) -> i64 {
+  return operation;
+}
+
+fn main() {
+  let step = increment;
+  println(step(40));
+  println(twice(step, 40));
+  var operation: fn(i64) -> i64 = step;
+  operation = double;
+  println(operation(7));
+  println(select(true)(9));
+  println(select(false)(9));
+  let apply = twice;
+  println(apply(double, 3));
+  println(preserve(select(true))(20));
+}

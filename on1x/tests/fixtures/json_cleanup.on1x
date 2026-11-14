@@ -1,0 +1,36 @@
+# Paired with the counting resource runtime, not the real JSON kernel.
+extern fn live_roots() -> i64;
+
+fn fallthrough() { let unused = json_parse_or_die("{}"); }
+fn early(stop: bool) -> i64 {
+  let outer = json_parse_or_die("{}");
+  {
+    let inner = json_parse_or_die("{}");
+    if stop {
+      let nested = json_parse_or_die("{}");
+      return 1;
+    } else {
+      let other = json_parse_or_die("{}");
+    }
+  }
+  return 2;
+}
+fn explicit_return() {
+  let outer = json_parse_or_die("{}");
+  return;
+}
+fn main() {
+  fallthrough();
+  println(live_roots());
+  early(true);
+  println(live_roots());
+  early(false);
+  println(live_roots());
+  explicit_return();
+  var i = 0;
+  while i < 5 {
+    let scoped = json_parse_or_die("{}");
+    i = i + 1;
+  }
+  println(live_roots());
+}

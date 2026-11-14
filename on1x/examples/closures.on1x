@@ -1,0 +1,21 @@
+# Immutable value captures survive the defining scope.
+fn add_by(amount) -> _ {
+  return fn(value) -> _ { return value + amount; };
+}
+
+# A closure can retain other closures, including through nested factories.
+fn compose(first, second) -> _ {
+  return fn(value) -> _ { return first(second(value)); };
+}
+
+fn main() {
+  let add_one = add_by(1);
+  let add_ten = add_by(10);
+  let combined = compose(add_one, add_ten);
+  println(combined(31));
+  println(add_by(2)(40));
+
+  let message = "hello from a closure";
+  let greet = fn() { println(message); };
+  greet();
+}

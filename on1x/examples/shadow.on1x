@@ -1,0 +1,9 @@
+fn main() -> i64 {
+  let n = 21;
+  {
+    let n = n * 2;
+    println(n);
+  }
+  println(n);
+  return 0;
+}

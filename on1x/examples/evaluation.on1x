@@ -1,0 +1,10 @@
+extern fn on1x_external_record(value: i64) -> i64;
+extern fn on1x_external_add(a: i64, b: i64) -> i64;
+extern fn on1x_external_condition() -> bool;
+fn main() -> i64 {
+  println(on1x_external_add(on1x_external_record(1), on1x_external_record(2)));
+  while on1x_external_condition() {
+    println(99);
+  }
+  return 0;
+}

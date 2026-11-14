@@ -1,0 +1,16 @@
+# Parameters may omit annotations; -> _ opts into return-type inference.
+fn increment(x) -> _ { return x + 1; }
+fn decrement(x) -> _ { return x - 1; }
+fn apply(operation, value) -> _ { return operation(value); }
+fn same(left, right) -> _ { return left == right; }
+fn choose(increasing) -> _ {
+  if increasing { return increment; }
+  else { return decrement; }
+}
+
+fn main() {
+  let operation: fn(_) -> _ = choose(true);
+  println(apply(operation, 41));
+  println(same("on1x", "on1x"));
+  println(choose(false)(43));
+}
