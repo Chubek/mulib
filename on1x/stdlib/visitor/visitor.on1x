@@ -1,0 +1,39 @@
+import "../sexpr/sexpr.on1x";
+
+fn visitor_tag(node: sexpr) -> string {
+  if sx_kind(node) == 3 && sx_kind(sx_head(node)) == 1 { return sx_text(sx_head(node)); }
+  return "";
+}
+# Paths are proper lists of zero-based natural-number symbols.
+fn visitor_child_path(reversed_path: sexpr, index: i64) -> sexpr {
+  return sx_cons(sx_symbol(sexpr_nat(index)), reversed_path);
+}
+fn visitor_rewrite_at(node: sexpr, transform: fn(sexpr, sexpr) -> sexpr, path: sexpr, depth: i64, count: i64) -> (sexpr, i64) {
+  if depth >= 256 || count >= 262144 { tool_fail("visitor tree limit exceeded"); }
+  var nodes = count + 1; var result = node;
+  if sexpr_list(node) {
+    var rest = node; var reversed = sx_nil(); var index = 0;
+    while sx_kind(rest) == 3 {
+      let (child, used) = visitor_rewrite_at(sx_head(rest), transform, visitor_child_path(path, index), depth + 1, nodes);
+      reversed = sx_cons(child, reversed); nodes = used; index = index + 1; rest = sx_tail(rest);
+    }
+    result = sexpr_reverse(reversed);
+  }
+  return (transform(result, sexpr_reverse(path)), nodes);
+}
+fn visitor_rewrite(tree: sexpr, transform: fn(sexpr, sexpr) -> sexpr) -> sexpr {
+  let (result, count) = visitor_rewrite_at(tree, transform, sx_nil(), 0, 0); return result;
+}
+fn visitor_walk_at(node: sexpr, visit: fn(sexpr, sexpr) -> void, path: sexpr, depth: i64, count: i64) -> i64 {
+  if depth >= 256 || count >= 262144 { tool_fail("visitor tree limit exceeded"); }
+  visit(node, sexpr_reverse(path)); var nodes = count + 1;
+  if sexpr_list(node) {
+    var rest = node; var index = 0;
+    while sx_kind(rest) == 3 {
+      nodes = visitor_walk_at(sx_head(rest), visit, visitor_child_path(path, index), depth + 1, nodes);
+      rest = sx_tail(rest); index = index + 1;
+    }
+  }
+  return nodes;
+}
+fn visitor_walk(tree: sexpr, visit: fn(sexpr, sexpr) -> void) { visitor_walk_at(tree, visit, sx_nil(), 0, 0); }

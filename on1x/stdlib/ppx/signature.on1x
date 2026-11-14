@@ -1,0 +1,31 @@
+import "numbers.on1x";
+fn ppx_write_type(type: sexpr, out: buffer, depth: i64) {
+  if depth >= 256 { tool_fail("signature type depth limit exceeded"); } let tag = visitor_tag(type);
+  if tag == "I64Type" { buffer_append(out, "i64"); return; }
+  if tag == "BoolType" { buffer_append(out, "bool"); return; }
+  if tag == "StringType" { buffer_append(out, "string"); return; }
+  if tag == "VoidType" { buffer_append(out, "void"); return; }
+  if tag == "JsonType" { buffer_append(out, "json"); return; }
+  if tag == "JsonViewType" { buffer_append(out, "json_view"); return; }
+  if tag == "SExprType" { buffer_append(out, "sexpr"); return; }
+  if tag == "BufferType" { buffer_append(out, "buffer"); return; }
+  if tag == "HoleType" || tag == "Inferred" { buffer_append(out, "_"); return; }
+  if tag == "BoundType" { buffer_append(out, "a"); buffer_append(out, sx_text(sexpr_nth(type, 1))); return; }
+  if tag == "CodeType" { buffer_append(out, "code<"); ppx_write_type(sexpr_nth(type, 1), out, depth + 1); buffer_append(out, ">"); return; }
+  if tag == "ForallType" {
+    let count_text = sx_text(sexpr_nth(type, 1)); let (valid, count) = ppx_literal_i64(ppx_integer(count_text, sx_nil()));
+    if !valid || count > 1024 { tool_fail("signature forall binder limit exceeded"); }
+    buffer_append(out, "forall("); var i = 0;
+    while i < count { if i > 0 { buffer_append(out, ", "); } buffer_append(out, "a"); buffer_append(out, sexpr_nat(i)); i = i + 1; }
+    buffer_append(out, ") "); ppx_write_type(sexpr_nth(type, 2), out, depth + 1); return;
+  }
+  if tag != "TupleType" && tag != "FunctionType" { tool_fail("unknown signature type"); }
+  if tag == "FunctionType" { buffer_append(out, "fn"); } buffer_append(out, "("); var rest = sexpr_nth(type, 1); var first = true;
+  while sx_kind(rest) == 3 { if !first { buffer_append(out, ", "); } first = false; ppx_write_type(sx_head(rest), out, depth + 1); rest = sx_tail(rest); }
+  buffer_append(out, ")"); if tag == "FunctionType" { buffer_append(out, " -> "); ppx_write_type(sexpr_nth(type, 2), out, depth + 1); }
+}
+fn ppx_signature(function: sexpr) -> string {
+  let out = buffer_new(); buffer_append(out, "fn("); var rest = sexpr_nth(function, 2); var first = true;
+  while sx_kind(rest) == 3 { if !first { buffer_append(out, ", "); } first = false; ppx_write_type(sexpr_nth(sx_head(rest), 2), out, 0); rest = sx_tail(rest); }
+  buffer_append(out, ") -> "); ppx_write_type(sexpr_nth(function, 3), out, 0); return buffer_text(out);
+}

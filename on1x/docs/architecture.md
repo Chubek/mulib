@@ -9,15 +9,21 @@
          │       └─ ASDL token AST (generated C11, temporary arena)
          │                  OR portable scanner fallback
          ▼
-     C++ token collector → precedence parser / typed HIR
-          │
-     optional monotype constraint solving / grounding
+      C++ token collector → precedence parser / typed HIR
+           │
+      typed hygienic AST expansion (syntax contexts → lexical names)
+           │
+      optional authorized PPX chain: S-expression AST → process → validated AST
+           │
+      quotation-world checks / AOT staging factories
+           │
+      optional constraint solving / universal elaboration / grounding
           │
      static checker: types, scopes, immutable variables,
      resource escape restrictions, simple definite returns
          │
          ▼
-     C11 backend → generated program translation unit
+      C11 backend → generated program translation unit
          │                 ├─ on1x_runtime.c
          │                 ├─ optional on1x_json.c
          │                 └─ on1x_mulib_impl.c
@@ -30,6 +36,36 @@ The ASDL and Aurocks scripts are external; CMake invokes them from
 The Aurocks parser's global parser state is serialized by the C++ scanner.
 Temporary ASDL arena allocations are destroyed after token callback delivery.
 The C++ typed HIR owns its own tokens and tree nodes.
+
+The metaprogramming pass runs before type inference. `grammar/PPX.schema.json`
+is embedded by CMake; generated builds additionally use the real ASDL-generated
+`PPX.asdl` wire tree for arena-backed structural checks. Macro syntax marks are
+not backend identifiers: caller and introduced contexts resolve by lexical
+binding before PPX serialization. External output cannot inject checked HIR,
+execution registrations or compiler proofs. It must lower all extension nodes
+and pass the ordinary checker. PPX execution is authorized, bounded and shell-free,
+but not sandboxed; AST rollback does not roll back process side effects.
+See [the protocol, hygiene and trust manual](metaprogramming.md).
+
+`src/macro_rules.cpp` matches recursive structural patterns using ranked capture
+paths and repetition widths, including empty dimensions. Template expansion
+checks ranks and equal driver widths. Matching/backtracking and copied metadata
+have independent budgets; caller/introduced syntax contexts remain distinct.
+
+`src/staging.cpp` runs only after PPX source reconstruction. Lexical bindings
+carry quotation-world identity as well as depth, preventing scope extrusion when
+a splice re-enters a different quotation at the same depth. Quotes become typed
+factories/thunks; splice/lift operands become factory arguments. `Type::Code`
+remains distinct through inference/checking but uses exact zero-argument closure
+structs in C11. No runtime compiler or AST evaluator is linked. See [MSP](staging.md).
+
+Native authoring libraries in `stdlib` implement codec, JSON/schema, visitor and
+processor logic in On1x. `src/primitives.cpp` declares the small byte-buffer,
+persistent S-expression and process-I/O substrate; semantic/codegen support
+retains/releases managed references through the existing iterative environment
+queue. Dynamic strings preserve the C-string ABI with a bounded normal-exit
+snapshot pool, not unchecked borrowed buffer pointers. Managed foreign ABIs are
+rejected. See [the self-hosting/data contract](selfhosting.md).
 
 The internal C scanner receives an explicit byte length, not an unbounded
 NUL-terminated source. Its C++ entry point enforces the per-file 2 MiB limit and

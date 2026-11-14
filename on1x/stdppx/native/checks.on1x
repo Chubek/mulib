@@ -1,0 +1,22 @@
+import "../../stdlib/ppx/ppx.on1x";
+fn checks_node(node: sexpr, label: string, wrapper: string) -> sexpr {
+  if visitor_tag(node) != "ExtensionExpr" || sx_text(sexpr_nth(node, 1)) != label { return node; }
+  let name = sx_text(sexpr_nth(node, 2)); let args = sexpr_nth(node, 3); let location = sexpr_nth(node, 4);
+  if name != "assert_eq" && name != "assert_ne" || sexpr_size(args) != 2 { tool_fail("checks: expected assert_eq/assert_ne with two expressions"); }
+  var op = "=="; if name == "assert_ne" { op = "!="; }
+  let comparison = ppx_node("Binary", ppx_list4(sx_symbol(op), sx_head(args), sexpr_nth(args, 1), location));
+  return ppx_call(wrapper, ppx_list1(comparison), location);
+}
+fn transform(tree: sexpr, label: string) -> sexpr {
+  let (wrapper, serial) = ppx_fresh(tree, 0); let (argument, next) = ppx_fresh(tree, serial);
+  let rewritten = visitor_rewrite(tree, fn(node: sexpr, path: sexpr) -> sexpr { return checks_node(node, label, wrapper); });
+  let functions = sexpr_nth(rewritten, 2);
+  if sx_kind(functions) == 0 { tool_fail("checks: empty unit"); }
+  let first = sx_head(functions); let location = sexpr_nth(first, sexpr_size(first) - 1);
+  let parameter = ppx_node("Parameter", ppx_list3(sx_string(argument), ppx_node("BoolType", sx_nil()), location));
+  let body = ppx_node("Block", ppx_list2(ppx_list1(ppx_node("Do", ppx_list2(ppx_call("assert", ppx_list1(ppx_ident(argument, location)), location), location))), location));
+  let fields = sx_cons(sx_string(wrapper), sx_cons(ppx_list1(parameter), sx_cons(ppx_node("VoidType", sx_nil()), ppx_list3(body, sx_nil(), location))));
+  let definition = ppx_node("Function", fields);
+  return ppx_node("Unit", ppx_list2(sx_symbol("1"), sx_cons(definition, functions)));
+}
+fn main() { ppx_serve(ppx_schema_env(), transform); }

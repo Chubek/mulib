@@ -22,10 +22,22 @@ def main():
     cli.add_argument('--emit-only', action='store_true')
     cli.add_argument('--extra-c', action='append', default=[], help='extra C translation unit to compile/link')
     cli.add_argument('--cflag', action='append', default=[], help='explicit extra C compiler option')
+    cli.add_argument('--ppx', nargs=2, action='append', default=[], metavar=('LABEL', 'PROGRAM'))
+    cli.add_argument('--ppx-schema', nargs=2, action='append', default=[], metavar=('LABEL', 'FILE'))
+    cli.add_argument('--allow-source-ppx', action='store_true')
+    cli.add_argument('--ppx-timeout-ms', type=int, default=5000)
     args = cli.parse_args()
     with tempfile.TemporaryDirectory(prefix='on1x-build-') as temp:
         generated = Path(temp) / 'main.c'
-        subprocess.run([args.on1xc, '--emit-c', str(args.input), '-o', str(generated)], check=True)
+        compiler = [args.on1xc, '--emit-c', str(args.input), '-o', str(generated),
+                    '--ppx-timeout-ms', str(args.ppx_timeout_ms)]
+        if args.allow_source_ppx:
+            compiler.append('--allow-source-ppx')
+        for label, program in args.ppx:
+            compiler += ['--ppx', label, program]
+        for label, schema in args.ppx_schema:
+            compiler += ['--ppx-schema', label, schema]
+        subprocess.run(compiler, check=True)
         code = generated.read_text()
         if args.emit_only:
             args.output.parent.mkdir(parents=True, exist_ok=True)

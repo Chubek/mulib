@@ -1,0 +1,9 @@
+import "../stdlib/visitor/visitor.on1x";
+fn rename(node: sexpr, path: sexpr) -> sexpr {
+  if sx_kind(node) == 1 && sx_text(node) == "before" { return sx_symbol("after"); }
+  return node;
+}
+fn main() {
+  let tree = sexpr_parse(io_stdin());
+  io_stdout(sexpr_print(visitor_rewrite(tree, rename)));
+}

@@ -7,7 +7,7 @@ namespace on1x {
 struct TypeShape { std::vector<Type> children; Type result; bool holes, functions, generics, foralls; };
 
 Type::Type(Kind kind):kind_(kind) {
- if(kind == Function || kind == Tuple || kind == Forall) throw std::logic_error("composite type requires a shape");
+ if(kind == Function || kind == Tuple || kind == Forall || kind == Code) throw std::logic_error("composite type requires a shape");
 }
 Type::Type(Kind kind, std::shared_ptr<const TypeShape> shape)
   :kind_(kind),shape_(std::move(shape)) {}
@@ -20,6 +20,11 @@ Type Type::for_all(std::size_t variables,Type body){
  type.variable_=variables;return type;
 }
 const Type& Type::body() const{if(!is_forall())throw std::logic_error("non-forall type has no body");return shape_->result;}
+Type Type::code(Type body){
+ auto holes=body.has_holes(),generics=body.has_generics(),foralls=body.has_foralls();
+ return Type(Code,std::make_shared<const TypeShape>(TypeShape{{},std::move(body),holes,true,generics,foralls}));
+}
+const Type& Type::code_result() const{if(!is_code())throw std::logic_error("non-code type has no code result");return shape_->result;}
 Type Type::function(std::vector<Type> parameters, Type result) {
  bool holes=result.has_holes(),generics=result.has_generics(),foralls=result.has_foralls();
  for(const auto& parameter:parameters){holes=holes||parameter.has_holes();generics=generics||parameter.has_generics();foralls=foralls||parameter.has_foralls();}
@@ -34,7 +39,7 @@ Type Type::tuple(std::vector<Type> elements) {
 bool Type::has_foralls() const{return shape_&&shape_->foralls;}
 bool Type::has_generics() const{return kind_==Generic||(shape_&&shape_->generics);}
 bool Type::has_holes() const { return kind_==Hole||(shape_&&shape_->holes); }
-bool Type::has_functions() const { return shape_&&shape_->functions; }
+bool Type::has_functions() const { return is_reference()||(shape_&&shape_->functions); }
 const std::vector<Type>& Type::parameters() const {
  if(!is_function()) throw std::logic_error("non-function type has no parameters");
  return shape_->children;
@@ -53,6 +58,7 @@ std::strong_ordering Type::operator<=>(const Type& other) const {
  if(!shape_ || shape_ == other.shape_) return std::strong_ordering::equal;
  if(auto order = shape_->children <=> other.shape_->children; order != 0) return order;
  if(is_forall())return body() <=> other.body();
+ if(is_code())return code_result() <=> other.code_result();
  return is_function()?result() <=> other.result():std::strong_ordering::equal;
 }
 bool Type::operator==(const Type& other) const { return (*this <=> other) == 0; }
@@ -65,6 +71,8 @@ std::string type_name(const Type& type) {
  case Type::Void:return "void";
  case Type::Json:return "json";
  case Type::JsonView:return "json_view";
+ case Type::SExpr:return "sexpr";case Type::Buffer:return "buffer";
+ case Type::Code:return "code<"+type_name(type.code_result())+">";
  case Type::Hole:return "_";
  case Type::Generic:return "'a"+std::to_string(type.generic_identity());
  case Type::Bound:return "a"+std::to_string(type.generic_identity());
@@ -109,7 +117,8 @@ bool match_forall(const Type& schema,const Type& instance,bool rigid){
    auto [found,inserted]=substitutions.emplace(pattern.generic_identity(),actual);
    return inserted||found->second==actual;
   }
-  if(pattern.kind()!=actual.kind())return false;
+   if(pattern.kind()!=actual.kind())return false;
+   if(pattern.is_code())return self(self,pattern.code_result(),actual.code_result());
   if(pattern.is_function()){
    if(pattern.parameters().size()!=actual.parameters().size()||!self(self,pattern.result(),actual.result()))return false;
    for(std::size_t i=0;i<pattern.parameters().size();++i)if(!self(self,pattern.parameters()[i],actual.parameters()[i]))return false;

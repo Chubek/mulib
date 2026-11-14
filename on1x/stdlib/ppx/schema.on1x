@@ -1,0 +1,131 @@
+import "json.on1x";
+import "../visitor/visitor.on1x";
+
+fn ppx_alpha(c: i64) -> bool { return c >= 65 && c <= 90 || c >= 97 && c <= 122 || c == 95; }
+fn ppx_digit(c: i64) -> bool { return c >= 48 && c <= 57; }
+fn ppx_name(text: string) -> bool {
+  if text_len(text) == 0 || !ppx_alpha(text_byte(text, 0)) { return false; }
+  var i = 1;
+  while i < text_len(text) { let c = text_byte(text, i); if !ppx_alpha(c) && !ppx_digit(c) { return false; } i = i + 1; }
+  return text != "fn" && text != "let" && text != "var" && text != "if" && text != "else" && text != "while" && text != "return" && text != "true" && text != "false" && text != "extern" && text != "import" && text != "forall" && text != "macro" && text != "rule" && text != "quote" && text != "splice" && text != "lift";
+}
+fn ppx_scalar_type(name: string) -> bool {
+  return name == "Bytes" || name == "File" || name == "Name" || name == "Version" || name == "Nat" || name == "Positive" || name == "Boolean" || name == "UnaryOperator" || name == "BinaryOperator" || name == "DecimalSpelling" || name == "HexSpelling";
+}
+fn ppx_lookup(pairs: sexpr, name: string) -> sexpr { return ppx_json_find(pairs, name); }
+fn ppx_subtype(categories: sexpr, child: string, parent: string) -> bool {
+  var current = child; var count = 0;
+  while count <= sexpr_size(categories) {
+    if current == parent { return true; }
+    let found = ppx_lookup(categories, current); if sx_kind(found) == 0 { return false; }
+    current = ppx_json_string(sx_head(found)); if current == "" { return false; } count = count + 1;
+  }
+  return false;
+}
+fn ppx_schema_nodes(categories: sexpr, previous: sexpr, extra: sexpr, owner: string) -> sexpr {
+  var nodes = previous; var rest = extra; var size = sexpr_size(previous);
+  while sx_kind(rest) == 3 {
+    let pair = sx_head(rest); let tag = sx_text(sx_head(pair)); let definition = sexpr_nth(pair, 1);
+    size = size + 1;
+    if size > 1024 || text_len(tag) == 0 || text_len(tag) > 128 { tool_fail("PPX schema: constructor limit/name exceeded"); }
+    var i = 0;
+    while i < text_len(tag) { let c = text_byte(tag, i); if !ppx_alpha(c) && !ppx_digit(c) && c != 58 { tool_fail("PPX schema: invalid constructor name"); } i = i + 1; }
+    let prefix = text_concat(owner, ":");
+    if owner != "" && (text_len(tag) < text_len(prefix) || text_slice(tag, 0, text_len(prefix)) != prefix) { tool_fail("PPX schema: extension constructor needs owner prefix"); }
+    if sx_kind(ppx_lookup(nodes, tag)) != 0 { tool_fail("PPX schema: constructor cannot be redefined"); }
+    let category = ppx_json_string(ppx_json_get(definition, "category"));
+    if sx_kind(ppx_lookup(categories, category)) == 0 { tool_fail("PPX schema: unknown category"); }
+    let fields = ppx_json_items(ppx_json_get(definition, "fields"), "array");
+    if sexpr_size(fields) > 32 { tool_fail("PPX schema: field limit exceeded"); }
+    var remaining = fields; var used = sx_nil();
+    while sx_kind(remaining) == 3 {
+      let field = ppx_json_items(sx_head(remaining), "array");
+      if sexpr_size(field) != 2 { tool_fail("PPX schema: field must be [name, type]"); }
+      let name = ppx_json_string(sx_head(field)); var kind = ppx_json_string(sexpr_nth(field, 1));
+      if text_len(name) > 128 || !ppx_name(name) || sx_kind(ppx_lookup(used, name)) != 0 { tool_fail("PPX schema: invalid/duplicate field name"); }
+      used = sx_cons(sx_cons(sx_string(name), sx_cons(sx_symbol("1"), sx_nil())), used);
+      if text_len(kind) > 0 && text_byte(kind, text_len(kind) - 1) == 42 { kind = text_slice(kind, 0, text_len(kind) - 1); }
+      if !ppx_scalar_type(kind) && sx_kind(ppx_lookup(categories, kind)) == 0 { tool_fail("PPX schema: unknown field type"); }
+      remaining = sx_tail(remaining);
+    }
+    nodes = sx_cons(pair, nodes); rest = sx_tail(rest);
+  }
+  return nodes;
+}
+fn ppx_schema_version(json: sexpr) {
+  let version = ppx_json_get(json, "version");
+  if sx_kind(version) != 1 || sx_text(version) != "1" { tool_fail("unsupported PPX schema version"); }
+}
+fn ppx_schema_load(path: string) -> sexpr {
+  let json = ppx_json_parse(tool_read_file(path)); ppx_schema_version(json);
+  if ppx_json_string(ppx_json_get(json, "schema_format")) != "on1x.sexpr-ast/v1" { tool_fail("unsupported PPX schema format"); }
+  let categories = ppx_json_items(ppx_json_get(json, "categories"), "object"); var rest = categories;
+  while sx_kind(rest) == 3 { let pair = sx_head(rest); if !ppx_subtype(categories, sx_text(sx_head(pair)), "Syntax") { tool_fail("PPX schema: cyclic/unknown category"); } rest = sx_tail(rest); }
+  let nodes = ppx_schema_nodes(categories, sx_nil(), ppx_json_items(ppx_json_get(json, "nodes"), "object"), "");
+  return sx_cons(categories, sx_cons(nodes, sx_nil()));
+}
+fn ppx_schema_extend(schema: sexpr, owner: string, path: string) -> sexpr {
+  if !ppx_name(owner) || text_len(owner) > 128 { tool_fail("PPX schema: invalid extension owner"); }
+  let json = ppx_json_parse(tool_read_file(path)); ppx_schema_version(json);
+  let categories = sx_head(schema);
+  let nodes = ppx_schema_nodes(categories, sexpr_nth(schema, 1), ppx_json_items(ppx_json_get(json, "nodes"), "object"), owner);
+  return sx_cons(categories, sx_cons(nodes, sx_nil()));
+}
+fn ppx_natural(text: string, positive: bool) -> bool {
+  if text_len(text) == 0 { return false; } var i = 0;
+  while i < text_len(text) { if !ppx_digit(text_byte(text, i)) { return false; } i = i + 1; }
+  var start = 0; while start < text_len(text) && text_byte(text, start) == 48 { start = start + 1; }
+  let digits = text_len(text) - start; if positive && digits == 0 { return false; }
+  if digits < 20 { return true; } if digits > 20 { return false; }
+  let maximum = "18446744073709551615"; i = 0;
+  while i < 20 { let a = text_byte(text, start + i); let b = text_byte(maximum, i); if a < b { return true; } if a > b { return false; } i = i + 1; }
+  return true;
+}
+fn ppx_scalar(value: sexpr, kind: string) -> bool {
+  if sx_kind(value) != 1 && sx_kind(value) != 2 { return false; }
+  let quoted = sx_kind(value) == 2; let text = sx_text(value);
+  if kind == "Bytes" { return quoted; }
+  if kind == "Name" { return quoted && ppx_name(text); }
+  if kind == "File" {
+    if !quoted || text_len(text) > 4096 { return false; } var i = 0;
+    while i < text_len(text) { let c = text_byte(text, i); if c < 32 || c == 127 { return false; } i = i + 1; } return true;
+  }
+  if kind == "Version" { return !quoted && text == "1"; }
+  if kind == "Nat" || kind == "Positive" { return !quoted && ppx_natural(text, kind == "Positive"); }
+  if kind == "Boolean" { return !quoted && (text == "true" || text == "false"); }
+  if kind == "UnaryOperator" { return !quoted && (text == "!" || text == "-"); }
+  if kind == "BinaryOperator" { return !quoted && (text == "+" || text == "-" || text == "*" || text == "/" || text == "%" || text == "<" || text == ">" || text == "<=" || text == ">=" || text == "==" || text == "!=" || text == "&&" || text == "||"); }
+  if kind == "DecimalSpelling" {
+    if !quoted || text_len(text) == 0 { return false; } var i = 0; if text_byte(text, 0) == 45 { i = 1; } if i == text_len(text) { return false; }
+    while i < text_len(text) { if !ppx_digit(text_byte(text, i)) { return false; } i = i + 1; } return true;
+  }
+  if kind == "HexSpelling" {
+    if !quoted || text_len(text) <= 2 || text_byte(text, 0) != 48 || (text_byte(text, 1) != 120 && text_byte(text, 1) != 88) { return false; } var i = 2;
+    while i < text_len(text) { let c = text_byte(text, i); if !ppx_digit(c) && !(c >= 65 && c <= 70) && !(c >= 97 && c <= 102) { return false; } i = i + 1; } return true;
+  }
+  return false;
+}
+fn ppx_validate_at(schema: sexpr, value: sexpr, kind: string, path: string, depth: i64, count: i64) -> i64 {
+  if depth >= 256 || count >= 262144 { tool_fail("PPX schema: tree limit exceeded"); }
+  var nodes = count + 1;
+  if text_len(kind) > 0 && text_byte(kind, text_len(kind) - 1) == 42 {
+    if !sexpr_list(value) { tool_fail(text_concat(path, ": expected list")); }
+    let child_kind = text_slice(kind, 0, text_len(kind) - 1); var rest = value; var i = 0;
+    while sx_kind(rest) == 3 { nodes = ppx_validate_at(schema, sx_head(rest), child_kind, text_concat(path, text_concat("[", text_concat(sexpr_nat(i), "]"))), depth + 1, nodes); rest = sx_tail(rest); i = i + 1; } return nodes;
+  }
+  if ppx_scalar_type(kind) { if !ppx_scalar(value, kind) { tool_fail(text_concat(path, text_concat(": expected ", kind))); } return nodes; }
+  let tag = visitor_tag(value); let found = ppx_lookup(sexpr_nth(schema, 1), tag);
+  if sx_kind(found) == 0 { tool_fail(text_concat(path, text_concat(": unknown constructor ", tag))); }
+  let definition = sx_head(found); let category = ppx_json_string(ppx_json_get(definition, "category"));
+  if !ppx_subtype(sx_head(schema), category, kind) { tool_fail(text_concat(path, text_concat(": wrong category, expected ", kind))); }
+  let fields = ppx_json_items(ppx_json_get(definition, "fields"), "array");
+  if sexpr_size(value) != sexpr_size(fields) + 1 { tool_fail(text_concat(path, ": wrong field count")); }
+  var rest = sx_tail(value); var remaining = fields;
+  while sx_kind(remaining) == 3 {
+    let field = ppx_json_items(sx_head(remaining), "array");
+    nodes = ppx_validate_at(schema, sx_head(rest), ppx_json_string(sexpr_nth(field, 1)), text_concat(path, text_concat(".", ppx_json_string(sx_head(field)))), depth + 1, nodes);
+    remaining = sx_tail(remaining); rest = sx_tail(rest);
+  }
+  return nodes;
+}
+fn ppx_validate(schema: sexpr, tree: sexpr) { ppx_validate_at(schema, tree, "Unit", "$", 0, 0); }

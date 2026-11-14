@@ -1,0 +1,16 @@
+fn sample(value: i64) -> i64 {
+  println(value);
+  return value;
+}
+fn add(left: code<i64>, right: code<i64>) -> code<i64> {
+  return quote { splice(left) + splice(right) };
+}
+fn main() {
+  let delayed = quote { sample(40) };
+  let combined = add(delayed, quote { lift(sample(2)) });
+  println("constructed");
+  println(run(combined));
+  println(run(combined));
+  let nested = quote { quote { lift(lift(42)) } };
+  println(run(run(nested)));
+}

@@ -1,0 +1,121 @@
+import "../sexpr/sexpr.on1x";
+
+# Schema JSON subset: objects, arrays, strings, and the version scalar 1.
+# Duplicate keys, invalid escapes/surrogates and resource excess fail closed.
+fn ppx_json_object(value: sexpr) -> bool {
+  return sx_kind(value) == 3 && sx_kind(sx_head(value)) == 1 && sx_text(sx_head(value)) == "object";
+}
+fn ppx_json_items(value: sexpr, kind: string) -> sexpr {
+  if sx_kind(value) != 3 || sx_kind(sx_head(value)) != 1 || sx_text(sx_head(value)) != kind { tool_fail(text_concat("schema JSON: expected ", kind)); }
+  return sexpr_nth(value, 1);
+}
+fn ppx_json_find(pairs: sexpr, key: string) -> sexpr {
+  var rest = pairs;
+  while sx_kind(rest) == 3 {
+    let pair = sx_head(rest); if sx_text(sx_head(pair)) == key { return sx_tail(pair); } rest = sx_tail(rest);
+  }
+  return sx_nil();
+}
+fn ppx_json_get(value: sexpr, key: string) -> sexpr {
+  let found = ppx_json_find(ppx_json_items(value, "object"), key);
+  if sx_kind(found) == 0 { tool_fail(text_concat("schema JSON: missing key ", key)); }
+  return sx_head(found);
+}
+fn ppx_json_string(value: sexpr) -> string {
+  if sx_kind(value) != 2 { tool_fail("schema JSON: expected string"); } return sx_text(value);
+}
+fn ppx_json_code(text: string, pos: i64) -> i64 {
+  if pos + 4 > text_len(text) { tool_fail("schema JSON: truncated unicode escape"); }
+  return sexpr_hex(text_byte(text, pos)) * 4096 + sexpr_hex(text_byte(text, pos + 1)) * 256 + sexpr_hex(text_byte(text, pos + 2)) * 16 + sexpr_hex(text_byte(text, pos + 3));
+}
+fn ppx_json_utf8(out: buffer, code: i64) {
+  if code == 0 { tool_fail("schema JSON: NUL is unsupported by the text ABI"); }
+  if code < 128 { buffer_byte(out, code); } else {
+    if code < 2048 { buffer_byte(out, 192 + code / 64); buffer_byte(out, 128 + code % 64); } else {
+      if code < 65536 { buffer_byte(out, 224 + code / 4096); buffer_byte(out, 128 + code / 64 % 64); buffer_byte(out, 128 + code % 64); } else {
+        buffer_byte(out, 240 + code / 262144); buffer_byte(out, 128 + code / 4096 % 64); buffer_byte(out, 128 + code / 64 % 64); buffer_byte(out, 128 + code % 64);
+      }
+    }
+  }
+}
+fn ppx_json_quoted(text: string, start: i64) -> (string, i64) {
+  if start >= text_len(text) || text_byte(text, start) != 34 { tool_fail("schema JSON: expected quoted string"); }
+  let out = buffer_new(); var pos = start + 1;
+  while pos < text_len(text) {
+    var c = text_byte(text, pos); pos = pos + 1;
+    if c == 34 { return (buffer_text(out), pos); }
+    if c < 32 { tool_fail("schema JSON: control byte in string"); }
+    if c == 92 {
+      if pos == text_len(text) { tool_fail("schema JSON: truncated escape"); }
+      c = text_byte(text, pos); pos = pos + 1;
+      if c == 117 {
+        var code = ppx_json_code(text, pos); pos = pos + 4;
+        if code >= 55296 && code <= 56319 {
+          if pos + 6 > text_len(text) || text_byte(text, pos) != 92 || text_byte(text, pos + 1) != 117 { tool_fail("schema JSON: missing low surrogate"); }
+          let low = ppx_json_code(text, pos + 2); pos = pos + 6;
+          if low < 56320 || low > 57343 { tool_fail("schema JSON: invalid low surrogate"); }
+          code = 65536 + (code - 55296) * 1024 + low - 56320;
+        } else { if code >= 56320 && code <= 57343 { tool_fail("schema JSON: unpaired low surrogate"); } }
+        ppx_json_utf8(out, code);
+      } else {
+        if c == 110 { c = 10; } else {
+          if c == 114 { c = 13; } else {
+            if c == 116 { c = 9; } else {
+              if c == 98 { c = 8; } else {
+                if c == 102 { c = 12; } else {
+                  if c != 34 && c != 92 && c != 47 { tool_fail("schema JSON: invalid escape"); }
+                }
+              }
+            }
+          }
+        }
+        buffer_byte(out, c);
+      }
+    } else { buffer_byte(out, c); }
+  }
+  tool_fail("schema JSON: unterminated string"); return ("", pos);
+}
+fn ppx_json_read(text: string, start: i64, depth: i64, count: i64, work: i64) -> (sexpr, i64, i64, i64) {
+  var pos = sexpr_skip(text, start); var nodes = count + 1; var ticks = work + 1;
+  if depth >= 64 || nodes > 65536 || ticks > 4194304 { tool_fail("schema JSON: tree/work limit exceeded"); }
+  if pos == text_len(text) { tool_fail("schema JSON: unexpected end"); }
+  let c = text_byte(text, pos);
+  if c == 34 { let (value, end) = ppx_json_quoted(text, pos); return (sx_string(value), end, nodes, ticks); }
+  if c == 123 || c == 91 {
+    var reversed = sx_nil(); pos = sexpr_skip(text, pos + 1); let close = c + 2;
+    if pos < text_len(text) && text_byte(text, pos) == close {
+      var kind = "array"; if c == 123 { kind = "object"; }
+      return (sx_cons(sx_symbol(kind), sx_cons(sx_nil(), sx_nil())), pos + 1, nodes, ticks);
+    }
+    while true {
+      var key = "";
+      if c == 123 {
+        let (name, end) = ppx_json_quoted(text, pos); key = name; pos = sexpr_skip(text, end);
+        if pos == text_len(text) || text_byte(text, pos) != 58 { tool_fail("schema JSON: expected colon"); }
+        var pairs = reversed;
+        while sx_kind(pairs) == 3 {
+          ticks = ticks + 1; if ticks > 4194304 { tool_fail("schema JSON: work limit exceeded"); }
+          if sx_text(sx_head(sx_head(pairs))) == key { tool_fail("schema JSON: duplicate object key"); } pairs = sx_tail(pairs);
+        }
+        pos = pos + 1;
+      }
+      let (value, end, used, steps) = ppx_json_read(text, pos, depth + 1, nodes, ticks);
+      nodes = used; ticks = steps;
+      if c == 123 { reversed = sx_cons(sx_cons(sx_string(key), sx_cons(value, sx_nil())), reversed); } else { reversed = sx_cons(value, reversed); }
+      pos = sexpr_skip(text, end);
+      if pos == text_len(text) { tool_fail("schema JSON: unterminated container"); }
+      if text_byte(text, pos) == close {
+        var kind = "array"; if c == 123 { kind = "object"; }
+        return (sx_cons(sx_symbol(kind), sx_cons(sexpr_reverse(reversed), sx_nil())), pos + 1, nodes, ticks);
+      }
+      if text_byte(text, pos) != 44 { tool_fail("schema JSON: expected comma"); } pos = sexpr_skip(text, pos + 1);
+    }
+  }
+  if c == 49 { return (sx_symbol("1"), pos + 1, nodes, ticks); }
+  tool_fail("schema JSON: only version scalar 1 is supported"); return (sx_nil(), pos, nodes, ticks);
+}
+fn ppx_json_parse(text: string) -> sexpr {
+  if text_len(text) > 2097152 { tool_fail("schema JSON: byte limit exceeded"); }
+  let (value, pos, nodes, work) = ppx_json_read(text, 0, 0, 0, 0);
+  if sexpr_skip(text, pos) != text_len(text) { tool_fail("schema JSON: trailing input"); } return value;
+}

@@ -33,7 +33,7 @@ void rejects(const std::string& source, std::size_t offset, std::string_view mes
 
 void repeated_scans() {
     for (int i = 0; i < 32; ++i) {
-        rejects("# comment\r\n \t@", 13, "invalid token");
+        rejects("# comment\r\n \t`", 13, "invalid token");
         rejects("abc \"bad\\q\"", 4, "invalid token");
         auto tokens = on1x::scan("# comment\nabc->123 /", "scanner-test");
         require(tokens.size() == 5, "stale parser state or lost tokens");
@@ -49,7 +49,7 @@ int main() {
     try {
         // The internal C scanner must honor its explicit length, even without
         // a trailing NUL. The last invalid byte is outside the requested range.
-        const char input[] = {'a', '+', '1', '@'};
+        const char input[] = {'a', '+', '1', '`'};
         struct Capture { std::size_t count = 0; bool valid = true; } capture;
         auto collect = [](void* context, const char* text, std::size_t offset) noexcept {
             auto& out = *static_cast<Capture*>(context);

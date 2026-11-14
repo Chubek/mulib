@@ -1,0 +1,14 @@
+@ppx checks "../stdppx/checks.py"
+@ppx control "../stdppx/control.py"
+@ppx unroll "../stdppx/unroll.py"
+@ppx derive "../stdppx/derive.py"
+@ppx fold "../stdppx/fold.py"
+
+@derive("derive", "arity", "signature")
+fn add(a: i64, b: i64) -> i64 { return a + b; }
+fn main() {
+  @checks("assert_eq", add(40, 2), 42);
+  @control("unless", false, { println(40 + 2); });
+  @unroll("repeat", 2, { println(true); });
+  println(add_arity()); println(add_signature());
+}

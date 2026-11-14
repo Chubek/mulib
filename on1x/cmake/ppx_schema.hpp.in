@@ -1,0 +1,4 @@
+#pragma once
+namespace on1x::meta {
+inline constexpr char embedded_schema[] = R"ON1X_SCHEMA(@ON1X_SCHEMA_TEXT@)ON1X_SCHEMA";
+}

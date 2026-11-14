@@ -32,9 +32,9 @@ pieces: %empty { $$ = NULL; }
 piece:
     /"([^"\\\r\n]|\\["\\nrt0])*"/ { $$ = on1x_lexeme($1, save); }
   | /[A-Za-z_][A-Za-z0-9_]*/ { $$ = on1x_lexeme($1, save); }
-  | /[0-9]+/ { $$ = on1x_lexeme($1, save); }
-  | /==|!=|<=|>=|&&|\|\||->/ { $$ = on1x_lexeme($1, save); }
-  | /[+*%<>=!;:,(){}\[\]-]/ { $$ = on1x_lexeme($1, save); }
+  | /0[xX][0-9a-fA-F]+|[0-9]+/ { $$ = on1x_lexeme($1, save); }
+  | /\.\.\.|==|!=|<=|>=|&&|\|\||->|=>/ { $$ = on1x_lexeme($1, save); }
+  | /[+*%<>=!;:,(){}\[\]@$.\-]/ { $$ = on1x_lexeme($1, save); }
   | '/' { $$ = on1x_lexeme($1, save); }
 ;
 %%

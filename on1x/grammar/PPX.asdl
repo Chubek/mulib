@@ -1,0 +1,6 @@
+%prefix on1xppx
+%option enums no-line-directives
+%%
+-- The portable concrete S-expression tree. PPX.schema.json refines List into
+-- versioned, category-checked AST constructors; C++ owns all retained strings.
+wire = Symbol(string value) | Text(string value) | List(wire* elements)

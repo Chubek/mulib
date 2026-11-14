@@ -1,0 +1,32 @@
+import "ppx.on1x";
+
+# Parse without trapping on an invalid/out-of-range literal that must survive
+# folding for the compiler's ordinary literal diagnostic.
+fn ppx_literal_i64(node: sexpr) -> (bool, i64) {
+  let tag = visitor_tag(node);
+  if tag != "DecimalLiteral" && tag != "HexLiteral" { return (false, 0); }
+  let text = sx_text(sexpr_nth(node, 1)); var pos = 0; var negative = false; var base = 10;
+  if tag == "HexLiteral" { base = 16; pos = 2; } else {
+    if text_len(text) > 0 && text_byte(text, 0) == 45 { negative = true; pos = 1; }
+  }
+  if pos >= text_len(text) { return (false, 0); }
+  var value = 0; var limit = -9223372036854775807;
+  if negative { limit = -9223372036854775808; }
+  while pos < text_len(text) {
+    let c = text_byte(text, pos); var digit = -1;
+    if c >= 48 && c <= 57 { digit = c - 48; }
+    if c >= 65 && c <= 70 { digit = c - 55; }
+    if c >= 97 && c <= 102 { digit = c - 87; }
+    if digit < 0 || digit >= base || value < limit / base { return (false, 0); }
+    value = value * base; if value < limit + digit { return (false, 0); } value = value - digit; pos = pos + 1;
+  }
+  if negative { return (true, value); } return (true, -value);
+}
+fn ppx_i64_text(value: i64) -> string {
+  let reversed = buffer_new(); var n = value;
+  if n > 0 { n = -n; }
+  while n <= -10 { buffer_byte(reversed, 48 - n % 10); n = n / 10; }
+  buffer_byte(reversed, 48 - n); let digits = buffer_text(reversed); let out = buffer_new();
+  if value < 0 { buffer_byte(out, 45); } var i = text_len(digits);
+  while i > 0 { i = i - 1; buffer_byte(out, text_byte(digits, i)); } return buffer_text(out);
+}

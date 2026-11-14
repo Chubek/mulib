@@ -1,0 +1,37 @@
+import "schema.on1x";
+
+fn ppx_list1(a: sexpr) -> sexpr { return sx_cons(a, sx_nil()); }
+fn ppx_list2(a: sexpr, b: sexpr) -> sexpr { return sx_cons(a, ppx_list1(b)); }
+fn ppx_list3(a: sexpr, b: sexpr, c: sexpr) -> sexpr { return sx_cons(a, ppx_list2(b, c)); }
+fn ppx_list4(a: sexpr, b: sexpr, c: sexpr, d: sexpr) -> sexpr { return sx_cons(a, ppx_list3(b, c, d)); }
+fn ppx_node(tag: string, fields: sexpr) -> sexpr { return sx_cons(sx_symbol(tag), fields); }
+fn ppx_integer(spelling: string, location: sexpr) -> sexpr { return ppx_node("DecimalLiteral", ppx_list2(sx_string(spelling), location)); }
+fn ppx_ident(name: string, location: sexpr) -> sexpr { return ppx_node("Identifier", ppx_list2(sx_string(name), location)); }
+fn ppx_call(name: string, arguments: sexpr, location: sexpr) -> sexpr { return ppx_node("Call", ppx_list3(ppx_ident(name, location), arguments, location)); }
+fn ppx_find_text(node: sexpr, text: string, depth: i64, work: i64) -> (bool, i64) {
+  if depth >= 256 || work >= 4194304 { tool_fail("fresh-name search limit exceeded"); } var count = work + 1;
+  if !sexpr_list(node) { return (sx_text(node) == text, count); }
+  var rest = node;
+  while sx_kind(rest) == 3 { let (found, used) = ppx_find_text(sx_head(rest), text, depth + 1, count); count = used; if found { return (true, count); } rest = sx_tail(rest); }
+  return (false, count);
+}
+fn ppx_fresh(tree: sexpr, start: i64) -> (string, i64) {
+  var serial = start; var work = 0;
+  while true {
+    serial = serial + 1; let name = text_concat("on1x_ppx_", sexpr_nat(serial)); let (found, used) = ppx_find_text(tree, name, 0, work); work = used;
+    if !found { return (name, serial); }
+  }
+  return ("", serial);
+}
+fn ppx_schema_env() -> sexpr {
+  let path = tool_env("ON1X_PPX_SCHEMA");
+  if path == "" { tool_fail("set ON1X_PPX_SCHEMA to grammar/PPX.schema.json"); }
+  return ppx_schema_load(path);
+}
+fn ppx_serve(schema: sexpr, transform: fn(sexpr, string) -> sexpr) {
+  if tool_env("ON1X_PPX_PROTOCOL") != "1" { tool_fail("unsupported/missing ON1X_PPX_PROTOCOL"); }
+  let label = tool_env("ON1X_PPX_LABEL"); if !ppx_name(label) || text_len(label) > 128 { tool_fail("invalid/missing ON1X_PPX_LABEL"); }
+  let tree = sexpr_parse(io_stdin()); ppx_validate(schema, tree);
+  let result = transform(tree, label); ppx_validate(schema, result);
+  io_stdout(sexpr_print(result));
+}

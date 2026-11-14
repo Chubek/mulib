@@ -21,6 +21,14 @@ unit (including imports) to 16,384 entries and 2 MiB of copied capture names.
 
 ## Grammar (readable subset)
 
+The core below is supplemented by [typed macros and PPX syntax](metaprogramming.md):
+top-level `macro name { rule (...) => expression {...}; }` / `block {...}`, typed
+`$capture: SyntaxCategory`, recursive structural patterns and nested `...`, `name!(...)`,
+source `@ppx label "path"` registrations, and labeled `@label("name", ...)`
+expression/Block payloads and function attributes. Expansion happens after
+parsing and before inference. PPX output must become valid core syntax. Typed
+[MSP](staging.md) runs stage checks/AOT lowering after PPX and before inference.
+
 ```ebnf
 unit    = { import | function | extern } ;
 import  = 'import' STRING ';' ;
@@ -28,6 +36,7 @@ extern  = 'extern' 'fn' ID '(' [ params ] ')' ['->' type] ';' ;
 function= 'fn' ID '(' [ params ] ')' ['->' type] block ;
 params  = pattern [ ':' type ] { ',' pattern [ ':' type ] } ;
 type    = 'i64' | 'bool' | 'string' | 'void' | 'json' | 'json_view'
+         | 'sexpr' | 'buffer' | 'code' '<' type '>'
          | '_' | 'fn' '(' [ type { ',' type } ] ')' '->' type
          | 'forall' '(' ID { ',' ID } ')' type | bound_type_variable
         | '(' type ')' | '(' type ',' type { ',' type } ')' ;
@@ -42,7 +51,8 @@ expr    = prefix { binary_operator expr } ;
 prefix  = ('!'|'-') prefix | postfix ;
 postfix = atom { '(' [ expr { ',' expr } ] ')' } ;
 atom    = '(' expr ')' | '(' expr ',' expr { ',' expr } ')'
-        | literal | ID | lambda ;
+        | literal | ID | lambda | 'quote' '{' expr '}'
+        | ('splice' | 'lift') '(' expr ')' ;
 lambda  = 'fn' '(' [ params ] ')' [ '->' type ] block ;
 pattern = ID | tuple_pattern ;
 tuple_pattern = '(' pattern ',' pattern { ',' pattern } ')' ;
@@ -88,7 +98,7 @@ numeric coercion. Immutable nonexpansive lets, including destructuring, generali
 as described in [the scheme manual](polymorphism.md). Functions are not implicitly curried: partial application
 is an arity error. Only `var` bindings can be reassigned, and their monotype
 cannot change. Arguments/results may be functions, tuples, `i64`, `bool`, `string`, or
-`void` results; `void` parameters and JSON resources/views at any signature depth
+`code<T>`, `sexpr`, `buffer`, or `void` results; `void` parameters and JSON resources/views at any signature depth
 are rejected. Function equality, ordering, arithmetic and printing are rejected.
 
 Postfix call syntax accepts an expression callee: `f(x)`, `(f)(x)`, and
@@ -138,8 +148,9 @@ return snapshot; };`. Ordinary mutable locals **inside** a lambda are allowed.
 Capturing JSON owners or views is rejected regardless of whether the closure
 escapes. A lambda may create/use/drop its own JSON locals normally; no borrowed
 owner escapes in that case. Strings still use the existing C-string ABI:
-literal-derived strings have static storage, while raw foreign strings retain
-all caller-side lifetime obligations. Capturing a pointer does not own its text.
+literal-derived strings have static storage and native-tool dynamic text uses a
+bounded process-lifetime snapshot pool. Raw foreign strings retain all caller-side
+lifetime obligations. Capturing a foreign pointer does not own its text.
 
 Noncapturing functions need no environment allocation. Capturing literals
 allocate reference-counted environments. Locals release their references on

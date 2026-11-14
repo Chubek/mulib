@@ -27,13 +27,13 @@ if(NOT ON1X_USE_FALLBACK_SCANNER AND EXISTS "${_asdl}" AND EXISTS "${_aurocks}")
   set(_generated "${CMAKE_CURRENT_BINARY_DIR}/generated")
   file(MAKE_DIRECTORY "${_generated}")
   add_custom_command(
-    OUTPUT "${_generated}/on1x_ast.h" "${_generated}/on1x_ast.c" "${_generated}/on1x_parser.c"
+    OUTPUT "${_generated}/on1x_ast.h" "${_generated}/on1x_ast.c" "${_generated}/on1x_parser.c" "${_generated}/ppx_ast.h" "${_generated}/ppx_ast.c"
     COMMAND "${CMAKE_COMMAND}" "-DPERL=${PERL_EXECUTABLE}" "-DSCRIPTS=${ON1X_LIBSTONE_ROOT}/scripts"
       "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DOUTPUT=${_generated}"
       -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateScanner.cmake"
-    DEPENDS "${_asdl}" "${_aurocks}" grammar/On1x.asdl grammar/On1x.g
+    DEPENDS "${_asdl}" "${_aurocks}" grammar/On1x.asdl grammar/On1x.g grammar/PPX.asdl
       cmake/GenerateScanner.cmake VERBATIM)
-  add_library(on1x_scanner STATIC "${_generated}/on1x_parser.c" "${_generated}/on1x_ast.c")
+  add_library(on1x_scanner STATIC "${_generated}/on1x_parser.c" "${_generated}/on1x_ast.c" "${_generated}/ppx_ast.c" src/ppx_asdl.c)
   target_include_directories(on1x_scanner PRIVATE "${_generated}" include)
   set(ON1X_SCANNER_DESCRIPTION "LibStone ASDL+Aurocks generated frontend")
   set(ON1X_GENERATED_FRONTEND TRUE)
@@ -46,13 +46,36 @@ else()
 endif()
 message(STATUS "On1x scanner: ${ON1X_SCANNER_DESCRIPTION}")
 
-add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/parser.cpp src/infer.cpp src/sema.cpp src/codegen.cpp)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS grammar/PPX.schema.json)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/grammar/PPX.schema.json" ON1X_SCHEMA_TEXT)
+configure_file(cmake/ppx_schema.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/ppx_schema.hpp" @ONLY)
+add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/parser.cpp src/infer.cpp src/sema.cpp src/codegen.cpp
+  src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp)
 target_include_directories(on1x_frontend PUBLIC include)
+target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+if(ON1X_GENERATED_FRONTEND)
+  target_compile_definitions(on1x_frontend PRIVATE ON1X_ASDL_PPX=1)
+endif()
 target_link_libraries(on1x_frontend PUBLIC on1x_scanner)
 add_executable(on1xc src/cli.cpp)
 target_link_libraries(on1xc PRIVATE on1x_frontend)
 add_library(on1x_runtime STATIC runtime/on1x_runtime.c)
 target_include_directories(on1x_runtime PUBLIC runtime)
+option(ON1X_BUILD_NATIVE_PPX "Build the self-hosted On1x PPX processors" ON)
+if(ON1X_BUILD_NATIVE_PPX)
+  file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/stdppx")
+  file(GLOB_RECURSE _native_stdlib CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/*.on1x")
+  foreach(_processor identity checks control unroll derive fold)
+    set(_native_input "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/native/${_processor}.on1x")
+    set(_native_c "${CMAKE_CURRENT_BINARY_DIR}/stdppx/${_processor}.c")
+    add_custom_command(OUTPUT "${_native_c}"
+      COMMAND "$<TARGET_FILE:on1xc>" --emit-c "${_native_input}" -o "${_native_c}"
+      DEPENDS on1xc "${_native_input}" ${_native_stdlib} VERBATIM)
+    add_executable(on1x_ppx_${_processor} "${_native_c}")
+    target_link_libraries(on1x_ppx_${_processor} PRIVATE on1x_runtime)
+    set_target_properties(on1x_ppx_${_processor} PROPERTIES OUTPUT_NAME "on1x-ppx-${_processor}" RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/stdppx")
+  endforeach()
+endif()
 
 if(ON1X_WITH_EXOML)
   if(NOT EXISTS "${ON1X_LIBSTONE_ROOT}/moonstone/CMakeLists.txt")
@@ -151,6 +174,15 @@ if(BUILD_TESTING)
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_poly_extended.py" "$<TARGET_FILE:on1xc>"
     "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/poly-extended" "${CMAKE_C_COMPILER}" ${_test_c_flags})
   set_tests_properties(on1x.poly_extended PROPERTIES TIMEOUT 120)
+  add_executable(on1x_meta_tests tests/test_meta.cpp)
+  target_link_libraries(on1x_meta_tests PRIVATE on1x_frontend)
+  add_test(NAME on1x.meta_hir COMMAND on1x_meta_tests)
+  foreach(_meta_test macros ppx staging selfhost)
+    add_test(NAME on1x.${_meta_test} COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_${_meta_test}.py" "$<TARGET_FILE:on1xc>"
+      "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/${_meta_test}" "${CMAKE_C_COMPILER}" ${_test_c_flags})
+    set_tests_properties(on1x.${_meta_test} PROPERTIES TIMEOUT 180)
+  endforeach()
   if(ON1X_GENERATED_FRONTEND)
     add_test(NAME on1x.scanner_parity COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/scanner_parity.py"

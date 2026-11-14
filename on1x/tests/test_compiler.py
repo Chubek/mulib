@@ -29,7 +29,7 @@ cases = [
     ('integer out of range', 'fn main() -> i64 { return 9223372036854775808; }', 'out of i64 range'),
     ('missing return', 'fn main() -> i64 { println(12); }', 'not all paths return'),
     ('unterminated', 'fn main() -> i64 { return 0;', 'unterminated block'),
-    ('invalid character', 'fn main() -> i64 { @ }', 'invalid token'),
+    ('invalid character', 'fn main() -> i64 { ` }', 'invalid token'),
     ('resource alias', 'fn main() -> i64 { let a = json_parse_or_die("{}"); let b = a; return 0; }', 'resource aliases'),
     ('resource temporary', 'fn main() -> i64 { let a = json_get_or_die(json_parse_or_die("{}"), "a"); return 0; }', 'named live owner'),
     ('resource expression', 'fn main() -> i64 { json_parse_or_die("{}"); return 0; }', 'discarding an owned'),

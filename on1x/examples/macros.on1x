@@ -1,0 +1,32 @@
+macro unless {
+  rule ($condition: Expression, $body: Block) => block {
+    if !$condition { $body; }
+  };
+}
+macro bind_once {
+  rule ($name: Identifier, $value: Expression, $body: Block) => block {
+    let temporary = $value;
+    let $name = temporary;
+    $body;
+  };
+}
+macro number_kind {
+  rule ($n: HexLiteral) => expression { "hex" };
+  rule ($n: NumericLiteral) => expression { "number" };
+}
+macro print_all {
+  rule ($values: Expression ...) => block { println_all!($values...); };
+}
+macro println_all {
+  rule () => block {};
+  rule ($first: Expression, $rest: Expression ...) => block {
+    println($first); println_all!($rest...);
+  };
+}
+fn main() {
+  let temporary = 99;
+  unless!(false, { println(42); });
+  bind_once!(answer, 42, { println(answer); });
+  println(temporary);
+  print_all!(number_kind!(0x2a), number_kind!(42));
+}

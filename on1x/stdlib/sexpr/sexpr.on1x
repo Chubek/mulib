@@ -1,0 +1,142 @@
+# Native, NUL-free PPX byte strings. Kind: nil=0, symbol=1, string=2, cons=3.
+fn sexpr_list(value: sexpr) -> bool { return sx_kind(value) == 0 || sx_kind(value) == 3; }
+fn sexpr_reverse(values: sexpr) -> sexpr {
+  var rest = values;
+  var result = sx_nil();
+  while sx_kind(rest) == 3 { result = sx_cons(sx_head(rest), result); rest = sx_tail(rest); }
+  return result;
+}
+fn sexpr_size(values: sexpr) -> i64 {
+  var rest = values;
+  var count = 0;
+  while sx_kind(rest) == 3 {
+    count = count + 1;
+    if count > 262144 { tool_fail("S-expression list limit exceeded"); }
+    rest = sx_tail(rest);
+  }
+  if sx_kind(rest) != 0 { tool_fail("expected a proper list"); }
+  return count;
+}
+fn sexpr_nth(values: sexpr, index: i64) -> sexpr {
+  if index < 0 { tool_fail("negative S-expression index"); }
+  var rest = values;
+  var i = 0;
+  while i < index { rest = sx_tail(rest); i = i + 1; }
+  return sx_head(rest);
+}
+fn sexpr_nat(value: i64) -> string {
+  if value < 0 { tool_fail("expected a natural number"); }
+  let reversed = buffer_new();
+  var n = value;
+  while n >= 10 { buffer_byte(reversed, 48 + n % 10); n = n / 10; }
+  buffer_byte(reversed, 48 + n);
+  let digits = buffer_text(reversed);
+  let out = buffer_new();
+  var i = text_len(digits);
+  while i > 0 { i = i - 1; buffer_byte(out, text_byte(digits, i)); }
+  return buffer_text(out);
+}
+fn sexpr_space(c: i64) -> bool { return c == 32 || c == 9 || c == 10 || c == 13; }
+fn sexpr_skip(text: string, start: i64) -> i64 {
+  var pos = start;
+  while pos < text_len(text) && sexpr_space(text_byte(text, pos)) { pos = pos + 1; }
+  return pos;
+}
+fn sexpr_hex(c: i64) -> i64 {
+  if c >= 48 && c <= 57 { return c - 48; }
+  if c >= 65 && c <= 70 { return c - 55; }
+  if c >= 97 && c <= 102 { return c - 87; }
+  tool_fail("expected a hex digit"); return 0;
+}
+fn sexpr_error(pos: i64, message: string) {
+  tool_fail(text_concat(text_concat("S-expression at byte ", sexpr_nat(pos)), text_concat(": ", message)));
+}
+fn sexpr_read(text: string, start: i64, depth: i64, count: i64) -> (sexpr, i64, i64) {
+  var pos = sexpr_skip(text, start);
+  if depth >= 256 || count >= 262144 { sexpr_error(pos, "tree limit exceeded"); }
+  if pos == text_len(text) { sexpr_error(pos, "unexpected end"); }
+  let c = text_byte(text, pos);
+  pos = pos + 1;
+  var nodes = count + 1;
+  if c == 40 {
+    var children = sx_nil();
+    while true {
+      pos = sexpr_skip(text, pos);
+      if pos == text_len(text) { sexpr_error(pos, "unterminated list"); }
+      if text_byte(text, pos) == 41 { return (sexpr_reverse(children), pos + 1, nodes); }
+      let (child, end, used) = sexpr_read(text, pos, depth + 1, nodes);
+      children = sx_cons(child, children); pos = end; nodes = used;
+    }
+  }
+  if c == 41 { sexpr_error(pos - 1, "unexpected closing parenthesis"); }
+  if c == 34 {
+    let out = buffer_new();
+    while pos < text_len(text) {
+      var byte = text_byte(text, pos); pos = pos + 1;
+      if byte == 34 { return (sx_string(buffer_text(out)), pos, nodes); }
+      if byte == 92 {
+        if pos == text_len(text) { sexpr_error(pos, "unterminated escape"); }
+        byte = text_byte(text, pos); pos = pos + 1;
+        if byte == 120 {
+          if pos + 2 > text_len(text) { sexpr_error(pos, "truncated hex escape"); }
+          byte = sexpr_hex(text_byte(text, pos)) * 16 + sexpr_hex(text_byte(text, pos + 1)); pos = pos + 2;
+        } else {
+          if byte == 110 { byte = 10; } else {
+            if byte == 114 { byte = 13; } else {
+              if byte == 116 { byte = 9; } else {
+                if byte != 34 && byte != 92 { sexpr_error(pos, "unknown escape"); }
+              }
+            }
+          }
+        }
+      } else { if byte < 32 || byte > 126 { sexpr_error(pos, "control/non-ASCII bytes must be escaped"); } }
+      if byte == 0 { sexpr_error(pos, "NUL is unsupported by the text ABI"); }
+      buffer_byte(out, byte);
+    }
+    sexpr_error(pos, "unterminated string");
+  }
+  let begin = pos - 1;
+  var end = begin;
+  while end < text_len(text) {
+    let byte = text_byte(text, end);
+    if byte == 40 || byte == 41 || sexpr_space(byte) { return (sx_symbol(text_slice(text, begin, end)), end, nodes); }
+    if byte < 33 || byte > 126 || byte == 34 { sexpr_error(end, "invalid symbol byte"); }
+    end = end + 1;
+  }
+  return (sx_symbol(text_slice(text, begin, end)), end, nodes);
+}
+fn sexpr_parse(text: string) -> sexpr {
+  let (tree, pos, count) = sexpr_read(text, 0, 0, 0);
+  if sexpr_skip(text, pos) != text_len(text) { sexpr_error(pos, "trailing input"); }
+  return tree;
+}
+fn sexpr_write(node: sexpr, out: buffer, depth: i64, count: i64) -> i64 {
+  if depth >= 256 || count >= 262144 { tool_fail("S-expression output tree limit exceeded"); }
+  var nodes = count + 1;
+  if sexpr_list(node) {
+    buffer_byte(out, 40); var rest = node; var first = true;
+    while sx_kind(rest) == 3 {
+      if !first { buffer_byte(out, 32); } first = false;
+      nodes = sexpr_write(sx_head(rest), out, depth + 1, nodes); rest = sx_tail(rest);
+    }
+    buffer_byte(out, 41);
+  } else {
+    let value = sx_text(node);
+    if sx_kind(node) == 1 { buffer_append(out, value); } else {
+      buffer_byte(out, 34); var i = 0;
+      while i < text_len(value) {
+        let c = text_byte(value, i); i = i + 1;
+        if c == 34 || c == 92 { buffer_byte(out, 92); buffer_byte(out, c); } else {
+          if c >= 32 && c <= 126 { buffer_byte(out, c); } else {
+            buffer_append(out, "\\x"); buffer_byte(out, text_byte("0123456789abcdef", c / 16)); buffer_byte(out, text_byte("0123456789abcdef", c % 16));
+          }
+        }
+      }
+      buffer_byte(out, 34);
+    }
+  }
+  return nodes;
+}
+fn sexpr_print(tree: sexpr) -> string {
+  let out = buffer_new(); sexpr_write(tree, out, 0, 0); buffer_byte(out, 10); return buffer_text(out);
+}

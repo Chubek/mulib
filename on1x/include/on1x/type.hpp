@@ -12,13 +12,17 @@ struct TypeShape;
 // nothing refers to the scanner arena or foreign CDecl type IDs.
 class Type {
 public:
- enum Kind { Invalid, I64, Bool, String, Void, Json, JsonView, Function, Hole, Tuple, Generic, Bound, Forall };
+ enum Kind { Invalid, I64, Bool, String, Void, Json, JsonView, Function, Hole, Tuple, Generic, Bound, Forall, Code, SExpr, Buffer };
  Type(Kind kind = Invalid);
  static Type function(std::vector<Type> parameters, Type result);
  static Type tuple(std::vector<Type> elements);
  static Type generic(std::size_t identity);
  static Type bound(std::size_t index);
  static Type for_all(std::size_t variables, Type body);
+ static Type code(Type body);
+ bool is_code() const { return kind_==Code; }
+ bool is_reference() const { return kind_==SExpr||kind_==Buffer; }
+ const Type& code_result() const;
  std::size_t generic_identity() const { return variable_; }
  Kind kind() const { return kind_; }
  bool is_function() const { return kind_ == Function; }
@@ -28,7 +32,7 @@ public:
  bool has_holes() const;
  bool has_generics() const;
  bool has_foralls() const;
- // Whether copying a value requires retaining closure environments.
+ // Whether copying a value requires retaining runtime reference-counted storage.
  bool has_functions() const;
  const std::vector<Type>& parameters() const;
  const std::vector<Type>& elements() const;

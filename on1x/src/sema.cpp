@@ -1,5 +1,7 @@
 #include <on1x/ast.hpp>
 #include <on1x/infer.hpp>
+#include <on1x/meta.hpp>
+#include <on1x/primitives.hpp>
 #include <charconv>
 #include <climits>
 #include <map>
@@ -33,7 +35,7 @@ std::vector<Type> extern_parameter_types(const Function& function){
 }
 bool is_intrinsic_name(const std::string& name){
  static const std::set<std::string> names={"println","assert","json_parse_or_die","json_get_or_die","json_size","json_number","json_print"};
- return names.contains(name);
+  return names.contains(name)||data_primitive(name).has_value();
 }
 namespace {
 struct Binding { Type type; bool is_mutable; std::size_t scope; };
@@ -75,7 +77,11 @@ class Checker {
  void equal(Type actual,Type expected,const Location& loc){if(actual!=expected)fail(loc,std::string("expected ")+type_name(expected)+", got "+type_name(actual));}
   void validate_type(const Type& type,const Location& loc){
    if(type.has_holes())fail(loc,"unresolved inference hole in checked type");
-   if(type.is_forall()){validate_type(type.body(),loc);return;}
+    if(type.is_forall()){validate_type(type.body(),loc);return;}
+    if(type.is_code()){
+     if(resource(type.code_result()))fail(loc,"code values cannot return JSON resources or views");
+     validate_type(type.code_result(),loc);return;
+    }
   if(!type.is_function()&&!type.is_tuple())return;
   if(checked_types.contains(type))return;
   if(type.is_tuple()){
@@ -120,7 +126,11 @@ class Checker {
  }
  Type check_intrinsic(Expr& e,const std::vector<Type>& arg){
   const auto& n=e.callee->text;
-  auto arity=[&](std::size_t k){if(arg.size()!=k)fail(e.where,"wrong arity for "+n);};
+   auto arity=[&](std::size_t k){if(arg.size()!=k)fail(e.where,"wrong arity for "+n);};
+   if(auto primitive=data_primitive(n)){
+    arity(primitive->parameters().size());for(std::size_t i=0;i<arg.size();++i)equal(arg[i],primitive->parameters()[i],e.where);
+    return e.type=primitive->result();
+   }
   if(n=="println"){arity(1);if(arg[0]!=Type::I64&&arg[0]!=Type::Bool&&arg[0]!=Type::String)fail(e.where,"println accepts i64, bool or string");return e.type=Type::Void;}
   if(n=="assert"){arity(1);equal(arg[0],Type::Bool,e.where);return e.type=Type::Void;}
   if(n=="json_parse_or_die"){arity(1);equal(arg[0],Type::String,e.where);return e.type=Type::Json;}
@@ -143,7 +153,19 @@ class Checker {
  }
  Type check_expr(Expr& e){
   auto child=[&](std::size_t i){return check_expr(*e.children.at(i));};
-   switch(e.kind){
+     switch(e.kind){
+     case Expr::Kind::Splice:case Expr::Kind::Lift:fail(e.where,"MSP stage lowering required before checking");
+     case Expr::Kind::Quote:{
+      if(!unit.stages_lowered)fail(e.where,"MSP quotation requires stage lowering");
+      auto type=child(0);if(!type.is_function()||!type.parameters().empty())fail(e.where,"invalid lowered quotation");
+      auto code=Type::code(type.result());validate_type(code,e.where);return e.type=std::move(code);
+     }
+     case Expr::Kind::Run:{
+      auto type=child(0);if(!type.is_code())fail(e.where,"run requires code<T>, got "+type_name(type));
+      return e.type=type.code_result();
+     }
+    case Expr::Kind::MacroCall:case Expr::Kind::SyntaxHole:case Expr::Kind::SyntaxBlock:case Expr::Kind::Extension:case Expr::Kind::SyntaxList:case Expr::Kind::SyntaxVector:case Expr::Kind::SyntaxKeyword:
+     fail(e.where,"unexpanded metaprogramming syntax before type checking");
     case Expr::Kind::PolyProjection:{
      auto schema=child(0);
      if(!forall_instance(schema,e.type))fail(e.where,"invalid forall projection");
@@ -166,7 +188,9 @@ class Checker {
      }
      return e.type;
     }
-    case Expr::Kind::Integer:{std::int64_t v=0;auto [p,err]=std::from_chars(e.text.data(),e.text.data()+e.text.size(),v);
+     case Expr::Kind::Integer:{std::int64_t v=0;auto begin=e.text.data();int base=10;
+      if(e.text.size()>2&&e.text[0]=='0'&&(e.text[1]=='x'||e.text[1]=='X')){begin+=2;base=16;}
+      auto [p,err]=std::from_chars(begin,e.text.data()+e.text.size(),v,base);
      if(err!=std::errc{}||p!=e.text.data()+e.text.size())fail(e.where,"integer literal out of i64 range");
      e.text=std::to_string(v); // Decimal source spelling must not become C octal.
      return e.type=Type::I64;}
@@ -269,7 +293,8 @@ class Checker {
  }
  public:
  explicit Checker(Unit& u):unit(u){}
- void run(){
+  void run(){
+   if(unit.functions.empty())fail({"<unit>"},"missing main function");
     for(auto& f:unit.functions){
      if(f.result.has_generics()&&!f.prototype)fail(f.where,"quantified types require a checked prototype");
      for(const auto& parameter:f.params)if(parameter.type.has_generics()&&!f.prototype)
@@ -279,7 +304,8 @@ class Checker {
     static const std::set<std::string> c_keywords={"auto","break","case","char","const","continue","default","do","double","else","enum","extern","float","for","goto","if","inline","int","long","register","restrict","return","short","signed","sizeof","static","struct","switch","typedef","union","unsigned","void","volatile","while","_Alignas","_Alignof","_Atomic","_Bool","_Complex","_Generic","_Imaginary","_Noreturn","_Static_assert","_Thread_local"};
      if(c_keywords.contains(f.name))fail(f.where,"C keyword cannot be a raw extern name: "+f.name);
       if(f.result.is_function()||f.result.has_foralls())fail(f.where,"function-valued extern ABI is unsupported; callbacks require reviewed contracts");
-     if(f.result.is_tuple())fail(f.where,"tuple-valued extern ABI is unsupported; aggregates require reviewed adapters");
+       if(f.result.is_tuple())fail(f.where,"tuple-valued extern ABI is unsupported; aggregates require reviewed adapters");
+       if(f.result.is_code()||f.result.is_reference())fail(f.where,"runtime-managed extern ABI requires reviewed adapters");
    }
    if(!funcs.emplace(f.name,&f).second)fail(f.where,"duplicate function: "+f.name);
     if(f.result==Type::Json||f.result==Type::JsonView)fail(f.where,"resource returns not supported in the initial ABI");
@@ -287,7 +313,8 @@ class Checker {
     std::vector<Type> parameters;
      std::set<std::string> names;for(auto& p:f.params){if(!names.insert(p.name).second)fail(p.where,"duplicate parameter: "+p.name);
      if(p.type==Type::Void||p.type==Type::Json||p.type==Type::JsonView)fail(p.where,"unsupported parameter type in this milestone");
-     if(f.external&&p.type.is_function())fail(p.where,"function-valued extern ABI is unsupported; callbacks require reviewed contracts");
+      if(f.external&&p.type.is_function())fail(p.where,"function-valued extern ABI is unsupported; callbacks require reviewed contracts");
+      if(f.external&&(p.type.is_code()||p.type.is_reference()))fail(p.where,"runtime-managed extern ABI requires reviewed adapters");
      if(f.external&&p.type.is_tuple()&&!p.pattern)fail(p.where,"tuple-valued extern ABI requires an explicit flattening pattern");
      validate_type(p.type,p.where);parameters.push_back(p.type);
     }
@@ -304,5 +331,5 @@ class Checker {
  }
 };
 }
-void check(Unit&u){infer_types(u);Checker(u).run();}
+void check(Unit&u){expand_macros(u);meta::require_core(u);infer_types(u);Checker(u).run();}
 }

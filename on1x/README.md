@@ -46,6 +46,36 @@ closures, product types and bounded inference/specialization with value-restrict
 named local lets, not general
 captured-resource lifetimes.
 
+## Metaprogramming and multi-stage programming
+
+Typed, hygienic AST macros use `macro`, ordered `rule` clauses and `name!(...)`.
+Syntax categories form a hierarchy such as `Expression → Literal → NumericLiteral
+→ IntegerLiteral → HexLiteral`; this is separate from ordinary value typing.
+Recursive list/vector/tuple/AST patterns, wildcards, literal keywords, dotted
+tails and arbitrary/nested ellipses preserve hygiene and repetition shape.
+
+External AST transformers use `@ppx label "path"` (requires
+`--allow-source-ppx`) or explicit `--ppx LABEL PROGRAM` options. The compiler
+validates their S-expression output against `grammar/PPX.schema.json`, then
+performs normal type/ownership checking. Labeled extension nodes and namespaced
+schema extensions must lower completely before code generation.
+
+The S-expression/visitor/PPX authoring libraries and all six standard processors
+now have **native On1x implementations**, alongside the Python bootstrap versions.
+CMake builds native tools in `BUILD/stdppx`; set `ON1X_PPX_SCHEMA` to the absolute
+`grammar/PPX.schema.json` path when running them. The compiler remains C++20.
+See [native APIs, ownership and limits](docs/selfhosting.md).
+
+MSP adds `code<T>`, `quote { ... }`, `splice(...)`, `lift(...)` and contextual
+`run(...)`. Code is typed, closed and ahead-of-time compiled C11: generation-time
+operands execute at construction; quoted effects wait for run. No JIT or unchecked
+eval is involved. See [MSP semantics](docs/staging.md).
+
+Examples: `examples/{macros,structural_macros,ppx,sexpr,staging}.on1x`.
+See the [metaprogramming manual](docs/metaprogramming.md). Local syntax bindings,
+complete R7RS language support, IPC, inline C/assembly, ArchML and thirty processors
+are not claimed.
+
 Build **with** LibStone:
 
 ```sh
@@ -134,7 +164,8 @@ fn main() -> i64 {
 
 - Top level: `import "relative-file.on1x";`, `fn`, `extern fn`.
 - Types: `i64`, `bool`, `string`, `void`, `json`, `json_view`, structural
-  function types such as `fn(i64) -> i64`, and tuples such as `(i64, bool)`.
+  function types such as `fn(i64) -> i64`, tuples such as `(i64, bool)`,
+  `code<T>`, `sexpr` and `buffer`.
 - Local inference for `let`/`var`, optional ordinary-function parameter types,
   and `_` type holes. Omitted return annotations still mean `void`; `-> _`
   opts into return inference. Extern signatures must be concrete and explicit.
@@ -155,9 +186,10 @@ fn main() -> i64 {
 - Integers are signed i64; arithmetic operations detect overflow and invalid
   division/modulo and exit with code 70 rather than causing signed overflow UB.
   Integer literals exceeding `INT64_MAX` are rejected at compilation.
-- Strings currently use NUL-terminated C literals; embedded NUL is rejected. This milestone's string
-  manipulation is limited to equality and printing; no general owning String
-  allocation or Unicode abstraction yet.
+- Strings retain the NUL-terminated C-string ABI; embedded NUL is rejected.
+  Byte operations, bounded immutable snapshots and buffers support native tools;
+  dynamic text snapshots have a 64 MiB process-lifetime budget, not a general
+  owning String or Unicode abstraction. See [the data manual](docs/selfhosting.md).
 - External function declarations are a *raw*, explicitly ABI-exact escape
   hatch: the user must supply a matching C symbol and signature. They are not
   subject to generalized effects/ownership safety checks. Resource arguments

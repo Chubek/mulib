@@ -1,0 +1,35 @@
+import "../../stdlib/ppx/signature.on1x";
+fn transform(tree: sexpr, label: string) -> sexpr {
+  var rest = sexpr_nth(tree, 2); var result = sx_nil(); var names = sx_nil();
+  while sx_kind(rest) == 3 { names = sx_cons(sx_cons(sexpr_nth(sx_head(rest), 1), ppx_list1(sx_symbol("1"))), names); rest = sx_tail(rest); }
+  rest = sexpr_nth(tree, 2);
+  while sx_kind(rest) == 3 {
+    let function = sx_head(rest); let external = visitor_tag(function) == "Extern"; var attr_index = 5; if external { attr_index = 4; }
+    var attributes = sexpr_nth(function, attr_index); var keep = sx_nil();
+    while sx_kind(attributes) == 3 {
+      let attribute = sx_head(attributes); attributes = sx_tail(attributes);
+      if sx_text(sexpr_nth(attribute, 1)) != label || sx_text(sexpr_nth(attribute, 2)) != "derive" { keep = sx_cons(attribute, keep); } else {
+        var requests = sexpr_nth(attribute, 3); let location = sexpr_nth(attribute, 4);
+        while sx_kind(requests) == 3 {
+          let request = sx_head(requests); requests = sx_tail(requests);
+          if visitor_tag(request) != "StringLiteral" { tool_fail("derive: expected string request"); }
+          let kind = sx_text(sexpr_nth(request, 1)); if kind != "arity" && kind != "signature" { tool_fail("derive: expected arity/signature"); }
+          let name = text_concat(sx_text(sexpr_nth(function, 1)), text_concat("_", kind));
+          if sx_kind(ppx_lookup(names, name)) != 0 { tool_fail("derived function name collision"); }
+          names = sx_cons(sx_cons(sx_string(name), ppx_list1(sx_symbol("1"))), names);
+          var type = ppx_node("I64Type", sx_nil()); var value = ppx_integer(sexpr_nat(sexpr_size(sexpr_nth(function, 2))), location);
+          if kind == "signature" { type = ppx_node("StringType", sx_nil()); value = ppx_node("StringLiteral", ppx_list2(sx_string(ppx_signature(function)), location)); }
+          let body = ppx_node("Block", ppx_list2(ppx_list1(ppx_node("Return", ppx_list2(value, location))), location));
+          result = sx_cons(ppx_node("Function", sx_cons(sx_string(name), sx_cons(sx_nil(), sx_cons(type, ppx_list3(body, sx_nil(), location))))), result);
+        }
+      }
+    }
+    var fields = sx_nil(); var index = 0; var pieces = function;
+    while sx_kind(pieces) == 3 {
+      var value = sx_head(pieces); if index == attr_index { value = sexpr_reverse(keep); } fields = sx_cons(value, fields); pieces = sx_tail(pieces); index = index + 1;
+    }
+    result = sx_cons(sexpr_reverse(fields), result); rest = sx_tail(rest);
+  }
+  return ppx_node("Unit", ppx_list2(sx_symbol("1"), sexpr_reverse(result)));
+}
+fn main() { ppx_serve(ppx_schema_env(), transform); }

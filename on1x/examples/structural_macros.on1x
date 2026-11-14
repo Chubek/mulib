@@ -1,0 +1,27 @@
+macro rows {
+  rule ([$x: Expression ...] ...) => block { println($x)... ...; };
+}
+macro prefix {
+  rule ($items: IntegerLiteral ..., end) => block { println($items)...; };
+}
+macro improper {
+  rule ([$head: Expression . $tail: Expression]) => expression { $head + $tail };
+}
+macro vector_first {
+  rule (vector[$x: Expression, _ ...]) => expression { $x };
+}
+macro keyword literals(else) ellipsis dots {
+  rule (else, $items: Expression dots) => block { println($items) dots; };
+}
+macro datum {
+  rule (42) => expression { true };
+  rule (_) => expression { false };
+}
+fn main() {
+  rows!([1, 2], [], [3]);
+  prefix!(4, 5, end);
+  println(improper!([40 . 2]));
+  println(vector_first!(vector[42, false, "ignored"]));
+  keyword!(else, true);
+  println(datum!(0x2a));
+}

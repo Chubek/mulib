@@ -42,7 +42,12 @@ int main() {
   require(Type::tuple({Type::Hole,pair}).has_holes(),"tuple inference hole was missed");
   require(!product.has_holes(),"concrete tuple has an inference hole");
   require(Type::generic(1)!=Type::generic(2),"quantified type identities were erased");
-  require(Type::function({Type::generic(1)},Type::I64).has_generics(),"generic type metadata was missed");
+   require(Type::function({Type::generic(1)},Type::I64).has_generics(),"generic type metadata was missed");
+   auto code=Type::code(Type::I64);
+   require(code!=Type::function({},Type::I64)&&code!=Type::code(Type::Bool),"code type constructor/result was erased");
+   require(on1x::type_name(Type::code(code))=="code<code<i64>>"&&code.has_functions(),"code type shape/ownership metadata was missed");
+   require(Type::code(Type::Hole).has_holes()&&Type::code(Type::generic(2)).has_generics(),"code result variables were missed");
+   require(Type(Type::SExpr).has_functions()&&Type::tuple({Type::SExpr,Type::Buffer}).has_functions(),"managed data ownership was missed");
   auto universal=Type::for_all(1,Type::function({Type::bound(0)},Type::bound(0)));
   require(universal.has_functions()&&universal.has_foralls()&&!universal.has_holes(),"forall metadata was missed");
    require(on1x::forall_instance(universal,first)&&!on1x::forall_proof(universal,first),"monomorphic implementation passed as a universal proof");
@@ -54,7 +59,7 @@ int main() {
                           Type::Json,Type::JsonView,first,same,different,nested,
                            Type::function({},Type::Void),Type::function({first},Type::Bool),pair,product,
                             Type::tuple({Type::I64,Type::String}),Type::function({pair},product),
-                            universal,Type::bound(0),Type::bound(1),Type::generic(1),Type::generic(2)};
+                             universal,Type::bound(0),Type::bound(1),Type::generic(1),Type::generic(2),code,Type::code(code),Type::SExpr,Type::Buffer};
   for(const auto& a:types)for(const auto& b:types) {
    require((a==b)==((a<=>b)==0),"inconsistent type equality/ordering");
    require((a<b)==(b>a),"asymmetric type ordering");

@@ -58,6 +58,9 @@ valid_cases = [
     b'', b'#', b' \t\r\n# comment\r\n# final',
     b'abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 00019',
     b'== != <= >= && || -> + - * / % < > = ! ; : , ( ) { } [ ]',
+    b'@ppx foo "path" macro rule $name ... => 0x2a 0XFF 0x 0xG 0x1z ...',
+    b'macro m literals(else,_) ellipsis dots { rule ([$x:Syntax dots . $rest:Syntax]) => block { f($x) dots; }; }',
+    b'quote { splice(code) + lift(value) } run(code) code<code<i64>>=value vector[1,2] . .. ... ....',
     b'===!==<==>==&&||- ->> ///',
     b'"# not a comment"# comment\n"snow: \xe9\x9b\xaa" name',
     b'"\\\\ \\" \\n \\r \\t \\0"',
@@ -72,7 +75,7 @@ for i, data in enumerate(valid_cases):
     check(f'valid_{i}', data, valid=True)
 
 prefix = b'# layout\r\n\t"snow: \xe9\x9b\xaa" ; '
-for i, bad in enumerate([b'@', b'&', b'|', b'\v', b'\f', b'\xff', b'"unclosed',
+for i, bad in enumerate([b'`', b'&', b'|', b'\v', b'\f', b'\xff', b'"unclosed',
                          b'"bad\\q"', b'"bad\\', b'"raw\nnewline"', b'"raw\rnewline"']):
     check(f'invalid_{i}', prefix + bad, invalid_at=len(prefix))
 for i, data in enumerate([b'\0', b'# comment\0', b'"string\0"', b'@\n\0']):

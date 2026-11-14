@@ -75,7 +75,38 @@ CTest registers independent tests with separate artifact directories:
   are checked separately. HIR tests also check forall idempotence and transactional
   failure of demand elaboration. Old monomorphic-global/destructuring negatives
   now exercise mutable/weak cases or are replaced by positive scheme tests.
-- `on1x.scanner_parity` (generated builds only): 250 deterministic cases comparing
+- `on1x.meta_hir`: canonical C++/ASDL-backed S-expression round trips, source AST
+   reconstruction/C11 equivalence, syntax subtyping, idempotent checking and
+   transactional macro/staging/inference failure. Typed code shapes and staged
+   wire round trips are checked. Malformed wire input fails before reconstruction.
+- `on1x.macros`: native macro examples, context-mark hygiene across lambdas,
+  definition-site globals/intrinsics, caller-owned identifier binders, lexical
+  literal matching, syntax subtyping, zero/recursive variadics, imports, hex i64
+   boundaries and closure cleanup. Recursive list/vector/tuple/AST patterns,
+   wildcards, dotted forwarding, keyword/custom/escaped ellipses, nested/empty
+   repetition shapes, repeated binding templates and numeric datum equivalence
+   are covered. Twenty-eight negative cases distinguish static
+  template-category/ellipsis errors, expansion limits and ordinary value errors.
+- `on1x.ppx`: native/shebang execution, ordered chains, label forwarding, all six
+  standard processors, schema extensions, byte/Unicode round trips, permission
+  gates (also through imports), process/size/time failures, early stdin closure,
+  descendant process-group cleanup, bounded labels/registrations, preservation of
+  existing output on failure, no shell fallback, complete extension lowering and
+  post-rewrite semantic errors.
+  Standard assertion generation resists caller shadowing; constant folding keeps
+  overflow/division traps. Every example without a source PPX chain round-trips
+  through the Python toolkit with identical C11 (or the same missing-main error).
+- `on1x.staging`: native code construction/run timing, splice vs lift, nested
+  quotations, function-valued/polymorphic code, explicit snapshots, void code,
+  managed-field ownership, loop cleanup, contextual run shadowing and macro
+  composition/universal parameters; sixteen semantic rejections plus quotation limits. HIR tests
+  separately verify idempotent checking and transactional failure.
+- `on1x.selfhost`: all six processors compiled from On1x, native chain and own
+  identity bootstrap, canonical byte/codec parity, visitor paths/fresh names,
+  schema JSON/extensions and failure cases, 160 differential arithmetic folds,
+  data allocation/bounds limits and 100,000-node iterative destruction. Normal
+  leak checks remain enabled; fatal non-unwinding paths are tested separately.
+- `on1x.scanner_parity` (generated builds only): deterministic cases comparing
   exact token bytes, offsets, line/column positions and errors. The test probes
   both scanners with hex-encoded token text, including comments, CRLF, escaped
   strings, UTF-8, invalid bytes, NUL, dense input and the source-size boundary.

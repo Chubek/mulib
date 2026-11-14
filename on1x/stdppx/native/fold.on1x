@@ -1,0 +1,33 @@
+import "../../stdlib/ppx/numbers.on1x";
+fn fold_node(node: sexpr, path: sexpr) -> sexpr {
+  if visitor_tag(node) != "Binary" { return node; }
+  let (left_valid, a) = ppx_literal_i64(sexpr_nth(node, 2)); let (right_valid, b) = ppx_literal_i64(sexpr_nth(node, 3));
+  if !left_valid || !right_valid { return node; }
+  let op = sx_text(sexpr_nth(node, 1)); let low = -9223372036854775808; let high = 9223372036854775807; var result = 0;
+  if op == "+" {
+    if b > 0 && a > high - b || b < 0 && a < low - b { return node; } result = a + b;
+  } else {
+    if op == "-" {
+      if b > 0 && a < low + b || b < 0 && a > high + b { return node; } result = a - b;
+    } else {
+      if op == "*" {
+        if a == 0 || b == 0 { result = 0; } else {
+          if a == -1 && b == low || b == -1 && a == low { return node; }
+          if a > 0 {
+            if b > 0 { if a > high / b { return node; } } else { if b < low / a { return node; } }
+          } else {
+            if b > 0 { if a < low / b { return node; } } else { if a < high / b { return node; } }
+          }
+          result = a * b;
+        }
+      } else {
+        if op != "/" && op != "%" { return node; }
+        if b == 0 || a == low && b == -1 { return node; }
+        if op == "/" { result = a / b; } else { result = a % b; }
+      }
+    }
+  }
+  return ppx_integer(ppx_i64_text(result), sexpr_nth(node, 4));
+}
+fn transform(tree: sexpr, label: string) -> sexpr { return visitor_rewrite(tree, fold_node); }
+fn main() { ppx_serve(ppx_schema_env(), transform); }

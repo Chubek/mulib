@@ -1,0 +1,18 @@
+import "../../stdlib/ppx/ppx.on1x";
+fn control_node(node: sexpr, label: string) -> sexpr {
+  if visitor_tag(node) != "Do" { return node; }
+  let expression = sexpr_nth(node, 1);
+  if visitor_tag(expression) != "ExtensionExpr" || sx_text(sexpr_nth(expression, 1)) != label { return node; }
+  let name = sx_text(sexpr_nth(expression, 2));
+  if name != "when" && name != "unless" { tool_fail("control: expected when/unless"); }
+  let args = sexpr_nth(expression, 3); let location = sexpr_nth(expression, 4);
+  if sexpr_size(args) != 2 || visitor_tag(sexpr_nth(args, 1)) != "Block" { tool_fail("control: expected condition and Block"); }
+  var condition = sx_head(args);
+  if name == "unless" { condition = ppx_node("Unary", ppx_list3(sx_symbol("!"), condition, location)); }
+  let empty = ppx_node("Block", ppx_list2(sx_nil(), location));
+  return ppx_node("If", ppx_list4(condition, sexpr_nth(args, 1), empty, location));
+}
+fn transform(tree: sexpr, label: string) -> sexpr {
+  return visitor_rewrite(tree, fn(node: sexpr, path: sexpr) -> sexpr { return control_node(node, label); });
+}
+fn main() { ppx_serve(ppx_schema_env(), transform); }

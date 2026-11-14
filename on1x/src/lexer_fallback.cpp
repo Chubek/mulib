@@ -4,6 +4,7 @@
 namespace {
 bool alpha(unsigned char c){return (c>='a'&&c<='z')||(c>='A'&&c<='Z');}
 bool digit(unsigned char c){return c>='0'&&c<='9';}
+bool hex(unsigned char c){return digit(c)||(c>='a'&&c<='f')||(c>='A'&&c<='F');}
 }
 extern "C" int on1x_generated_scan(const char* source,size_t n,on1x_token_callback cb,void* ctx,size_t*error){
  size_t pos=0;
@@ -13,7 +14,11 @@ extern "C" int on1x_generated_scan(const char* source,size_t n,on1x_token_callba
   if(c=='#'){while(pos<n&&source[pos]!='\n')++pos;continue;}
   size_t start=pos;
    if(alpha(c)||c=='_'){++pos;while(pos<n&&(alpha((unsigned char)source[pos])||digit((unsigned char)source[pos])||source[pos]=='_'))++pos;}
-   else if(digit(c)){++pos;while(pos<n&&digit((unsigned char)source[pos]))++pos;}
+    else if(digit(c)){
+     if(c=='0'&&pos+2<n&&(source[pos+1]=='x'||source[pos+1]=='X')&&hex((unsigned char)source[pos+2])){
+      pos+=3;while(pos<n&&hex((unsigned char)source[pos]))++pos;
+     }else{++pos;while(pos<n&&digit((unsigned char)source[pos]))++pos;}
+    }
   else if(c=='"'){
    ++pos;bool done=false;
    while(pos<n){if(source[pos]=='"'){++pos;done=true;break;}
@@ -23,8 +28,9 @@ extern "C" int on1x_generated_scan(const char* source,size_t n,on1x_token_callba
    }
    if(!done){if(error)*error=start;return 1;}
   }
-  else if(pos+1<n && (std::strncmp(source+pos,"==",2)==0||std::strncmp(source+pos,"!=",2)==0||std::strncmp(source+pos,"<=",2)==0||std::strncmp(source+pos,">=",2)==0||std::strncmp(source+pos,"&&",2)==0||std::strncmp(source+pos,"||",2)==0||std::strncmp(source+pos,"->",2)==0))pos+=2;
-  else if(std::strchr("+*-/%<>=!;:,(){}[]",c))++pos;
+   else if(pos+2<n&&std::strncmp(source+pos,"...",3)==0)pos+=3;
+   else if(pos+1<n && (std::strncmp(source+pos,"==",2)==0||std::strncmp(source+pos,"!=",2)==0||std::strncmp(source+pos,"<=",2)==0||std::strncmp(source+pos,">=",2)==0||std::strncmp(source+pos,"&&",2)==0||std::strncmp(source+pos,"||",2)==0||std::strncmp(source+pos,"->",2)==0||std::strncmp(source+pos,"=>",2)==0))pos+=2;
+   else if(std::strchr("+*-/%<>=!;:,(){}[]@$.",c))++pos;
   else {if(error)*error=start;return 1;}
   std::string token(source+start,pos-start);cb(ctx,token.c_str(),start);
  }
