@@ -1,0 +1,8 @@
+fn use(identity: forall(a) fn(a) -> a) {
+  println(identity(42)); println(identity(true));
+}
+fn identity(x) -> _ { return x; }
+fn main() {
+  use(identity);
+  use(fn(x) -> _ { return x; });
+}

@@ -3,6 +3,7 @@
 #include <cctype>
 #include <algorithm>
 #include <set>
+#include <map>
 namespace on1x {
 namespace {
 class Parser {
@@ -10,6 +11,7 @@ class Parser {
  std::size_t pos=0;
  std::size_t nesting=0;
  std::size_t lambdas=0;
+ std::map<std::string,std::size_t> bound_types;
  // Bound both syntactic recursion and the resulting expression tree. A flat
  // left-associative chain has shallow parser recursion but deep HIR traversal
  // (and recursive unique_ptr destruction) in all later frontend phases.
@@ -49,17 +51,33 @@ class Parser {
   for(char c:s)if(!(std::isalnum((unsigned char)c)||c=='_'))return false;
   return true;}
  std::string ident(){auto t=peek();if(!is_ident(t.text))throw Error(t.where,"expected identifier");++pos;
-  static const std::set<std::string> reserved={"fn","let","var","if","else","while","return","true","false","extern","import"};
+   static const std::set<std::string> reserved={"fn","let","var","if","else","while","return","true","false","extern","import","forall"};
   if(reserved.count(t.text))throw Error(t.where,"reserved keyword used as identifier: "+t.text);
   return t.text;}
- Type type(){Nesting guard(*this);auto t=peek();
+   Type type(){Nesting guard(*this);auto t=peek();
+    if(accept("forall")){
+     if(!bound_types.empty())throw Error(t.where,"nested forall binders are not supported");
+     consume("(");std::size_t count=0;
+     do{auto at=peek().where;auto name=ident();if(!bound_types.emplace(name,count++).second)throw Error(at,"duplicate quantified type variable: "+name);}while(accept(","));
+     consume(")");auto body=type();bound_types.clear();
+     if(!body.is_function()||body.has_foralls()||body.has_holes())throw Error(t.where,"forall requires a fully specified function body");
+     return Type::for_all(count,std::move(body));
+    }
+   if(accept("(")){
+    auto first=type();
+    if(!accept(",")){consume(")");return first;}
+    std::vector<Type> elements;elements.push_back(std::move(first));
+    do{elements.push_back(type());}while(accept(","));
+    consume(")");return Type::tuple(std::move(elements));
+   }
   if(accept("fn")){
    consume("(");std::vector<Type> parameters;
    if(!at(")"))do{parameters.push_back(type());}while(accept(","));
    consume(")");consume("->");auto result=type();
    return Type::function(std::move(parameters),std::move(result));
   }
-   ++pos;
+    ++pos;
+    if(auto found=bound_types.find(t.text);found!=bound_types.end())return Type::bound(found->second);
    if(t.text=="_")return Type::Hole;
   for(auto x:{Type::I64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView})if(t.text==type_name(x))return x;
   throw Error(t.where,"unknown type: "+t.text);
@@ -77,13 +95,20 @@ class Parser {
     auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Lambda;e->where=t.where;
     consume("(");
     if(!at(")"))do{
-     Param p;p.where=peek().where;p.name=ident();p.type=accept(":")?type():Type(Type::Hole);
+      auto p=parameter(e->parameters.size());
      e->parameters.push_back(std::move(p));
     }while(accept(","));
     consume(")");if(accept("->"))e->result=type();e->body=block();
     auto depth=body_expression_depth(e->body)+1;return bounded(std::move(e),depth);
    }
-  if(accept("(")){auto e=expr();consume(")");return e;}
+   if(accept("(")){
+    auto first=expr();
+    if(!accept(",")){consume(")");return first;}
+    auto tuple=std::make_unique<Expr>();tuple->kind=Expr::Kind::Tuple;tuple->where=t.where;
+    auto depth=first.depth+1;tuple->children.push_back(std::move(first.node));
+    do{auto element=expr();depth=std::max(depth,element.depth+1);tuple->children.push_back(std::move(element.node));}while(accept(","));
+    consume(")");return bounded(std::move(tuple),depth);
+   }
   if(accept("true")||accept("false")){auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Boolean;e->where=t.where;e->text=t.text;return {std::move(e)};}
   if(!t.text.empty()&&t.text[0]=='"'){
    ++pos;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::String;e->where=t.where;e->text=t.text;return {std::move(e)};
@@ -127,15 +152,32 @@ class Parser {
    e->children.push_back(std::move(lhs.node));e->children.push_back(std::move(rhs.node));lhs=bounded(std::move(e),depth);
   }return lhs;
  }
- std::vector<Stmt> block(){Nesting guard(*this);consume("{");std::vector<Stmt> result;
+  std::vector<Stmt> block(){Nesting guard(*this);consume("{");std::vector<Stmt> result;
   while(!at("}")){if(at("<eof>"))throw Error(peek().where,"unterminated block");
    result.push_back(statement());if(result.size()>100000)throw Error(peek().where,"too many statements");}
-  consume("}");return result;
- }
+   consume("}");return result;
+  }
+  Pattern pattern(){
+   Nesting guard(*this);Pattern result;result.where=peek().where;
+   if(accept("(")){
+    result.elements.push_back(pattern());consume(",");
+    do{result.elements.push_back(pattern());}while(accept(","));
+    consume(")");
+   }else result.name=ident();
+   return result;
+  }
+  Param parameter(std::size_t index){
+   Param result;result.where=peek().where;
+   if(at("(")){result.pattern=pattern();result.name="@argument_"+std::to_string(index);}
+   else result.name=ident();
+   result.type=accept(":")?type():Type(Type::Hole);return result;
+  }
  Stmt statement(){Stmt s; s.where=peek().where;
   if(accept("let")||accept("var")){
    s.kind=Stmt::Kind::Let;s.mutable_binding=ts[pos-1].text=="var";
-   s.name=ident();if(accept(":"))s.declared=type();consume("=");s.value=expr().node;consume(";");return s;
+    if(at("("))s.pattern=pattern();else s.name=ident();
+    if(accept(":"))s.declared=type();
+    consume("=");s.value=expr().node;consume(";");return s;
   }
    if(accept("return")){s.kind=Stmt::Kind::Return;if(!at(";"))s.value=expr().node;consume(";");return s;}
    if(accept("if")){s.kind=Stmt::Kind::If;s.value=expr().node;s.body=block();if(accept("else"))s.otherwise=block();return s;}
@@ -160,7 +202,7 @@ class Parser {
     ++pos;consume(";");continue;
    }
    Function f;f.where=peek().where;f.external=accept("extern");consume("fn");f.name=ident();consume("(");
-   if(!at(")"))do{Param p;p.where=peek().where;p.name=ident();p.type=accept(":")?type():Type(Type::Hole);f.params.push_back(std::move(p));}while(accept(","));
+    if(!at(")"))do{f.params.push_back(parameter(f.params.size()));}while(accept(","));
    consume(")");if(accept("->"))f.result=type();
    if(f.external)consume(";");else f.body=block();
    u.functions.push_back(std::move(f));

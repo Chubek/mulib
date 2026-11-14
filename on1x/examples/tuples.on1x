@@ -1,0 +1,24 @@
+# Product types and nested local destructuring share monomorphic inference.
+fn swap(pair) -> _ {
+  let (first, second) = pair;
+  return (second, first);
+}
+
+fn operations(amount) -> _ {
+  let add = fn(value) -> _ { return value + amount; };
+  let subtract = fn(value) -> _ { return value - amount; };
+  return (add, subtract);
+}
+
+fn main() {
+  let (flag, answer): (bool, i64) = swap((42, true));
+  println(answer); println(flag);
+
+  let pair = operations(2);
+  let use = fn(value) -> _ {
+    let (add, subtract) = pair;
+    return (add(value), subtract(value));
+  };
+  let (higher, lower) = use(40);
+  println(higher); println(lower);
+}

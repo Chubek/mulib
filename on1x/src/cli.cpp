@@ -2,6 +2,7 @@
 #include <fstream>
 #include <filesystem>
 #include <set>
+#include <map>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -58,10 +59,32 @@ int main(int argc,char**argv){
    if(mode=="--check"){std::cout<<"OK: "<<unit.functions.size()<<" functions\n";return 0;}
    if(mode=="--types"){
     std::ostringstream listing;
-    for(const auto& function:unit.functions){
-     std::vector<on1x::Type> parameters;for(const auto& parameter:function.params)parameters.push_back(parameter.type);
-     listing<<(function.external?"extern ":"")<<function.name<<" : "
-      <<on1x::type_name(on1x::Type::function(std::move(parameters),function.result))<<"\n";
+     for(const auto& function:unit.functions){
+      if(function.name.starts_with("@"))continue;
+      std::vector<on1x::Type> parameters;for(const auto& parameter:function.params)parameters.push_back(parameter.type);
+      auto signature=on1x::Type::function(std::move(parameters),function.result);
+      std::map<std::size_t,std::size_t> variables;
+      auto normalize=[&](auto&& self,const on1x::Type& type)->on1x::Type{
+       if(type.kind()==on1x::Type::Generic){
+        auto [variable,inserted]=variables.emplace(type.generic_identity(),variables.size());(void)inserted;
+        return on1x::Type::bound(variable->second);
+       }
+       if(type.is_function()){
+        std::vector<on1x::Type> args;for(const auto& p:type.parameters())args.push_back(self(self,p));
+        return on1x::Type::function(std::move(args),self(self,type.result()));
+       }
+       if(type.is_tuple()){
+        std::vector<on1x::Type> elements;for(const auto& p:type.elements())elements.push_back(self(self,p));
+        return on1x::Type::tuple(std::move(elements));
+       }
+       return type;
+      };
+      signature=normalize(normalize,signature);
+      listing<<(function.external?"extern ":"")<<function.name<<" : ";
+      if(!variables.empty()){
+       listing<<"forall(";for(std::size_t i=0;i<variables.size();++i){if(i)listing<<", ";listing<<"a"<<i;}listing<<") ";
+      }
+      listing<<on1x::type_name(signature)<<"\n";
     }
     write_all(out,listing.str());return 0;
    }

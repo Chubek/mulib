@@ -6,13 +6,14 @@ LibStone is a user-supplied *source dependency*, discovered by default at
 `<mulib>/third_party/libstone`. Other checkout locations use `ON1X_LIBSTONE_ROOT`.
 
 **This is an executable milestone, not a complete ML compiler or safe binding
-framework.** First-class monomorphic functions, immutable lexical closures,
+framework.** First-class monomorphic functions, immutable lexical closures, tuples
+and local destructuring,
 higher-order calls, unification of parameter/result type holes, local inference,
 recursion, structural function types, control flow, imports, error
 diagnostics, ordered C11 emission, checked i64 arithmetic, externally linked
 native functions, and an experimental JSON resource facade are implemented and
 tested. Mutable/resource captures, generalized Hindley–Milner inference, type classes,
-ADTs, pattern matching, polymorphic modules/functors, exceptions, non-lexical
+ADTs, refutable/exhaustive pattern matching, polymorphic modules/functors, exceptions, non-lexical
 lifetimes, effect inference, callbacks, generalized FFI ownership, native/VM
 codegen, and complete MuLIB binding generation remain work in progress.
 
@@ -41,7 +42,8 @@ ASan/UBSan against the canonical parent MuLIB headers. Exact token bytes,
 byte offsets and error locations are compared on a deterministic corpus. See
 [verification results and tool versions](VERIFICATION.md); this does not extend
 the foreign safety guarantees. P1 adds monomorphic functions, immutable lexical
-closures and bounded whole-unit type inference, not let-polymorphism or general
+closures, product types and bounded inference/specialization with value-restricted
+named local lets, not general
 captured-resource lifetimes.
 
 Build **with** LibStone:
@@ -131,21 +133,23 @@ fn main() -> i64 {
 ```
 
 - Top level: `import "relative-file.on1x";`, `fn`, `extern fn`.
-- Types: `i64`, `bool`, `string`, `void`, `json`, `json_view`, and structural
-  function types such as `fn(i64) -> i64` and `fn() -> void`.
+- Types: `i64`, `bool`, `string`, `void`, `json`, `json_view`, structural
+  function types such as `fn(i64) -> i64`, and tuples such as `(i64, bool)`.
 - Local inference for `let`/`var`, optional ordinary-function parameter types,
   and `_` type holes. Omitted return annotations still mean `void`; `-> _`
   opts into return inference. Extern signatures must be concrete and explicit.
 - `let` is immutable; `var` supports simple assignment.
+- Local `let (a, (b, c)) = value;` and function/lambda parameter patterns support
+  immutable tuple destructuring.
 - Statements: `let`, `var`, assignment, return, if/else, while, nested blocks,
   and expression statements.
 - Expressions: literals, function/local names, anonymous `fn(params) { ... }`
   expressions, postfix calls, `!`, unary minus, arithmetic, numeric
-  ordering, equality, short-circuit logical operators, parentheses.
+  ordering, equality, short-circuit logical operators, tuples and parentheses.
 - `println` and `assert` are checked intrinsics.
 - Lexical scopes and source locations. Import cycles and duplicated functions
   are errors. No function overloading or generics yet.
-- Source files are limited to 2 MiB each. Active block/expression/type parsing
+- Source files are limited to 2 MiB each. Active block/expression/type/pattern parsing
   nesting and expression-tree depth are limited to 256 levels; excessive
   nesting is a located compile-time error, not a compiler stack overflow.
 - Integers are signed i64; arithmetic operations detect overflow and invalid
@@ -185,7 +189,8 @@ left to right; logical operators still short circuit.
 
 Function values use typed C11 invocation pointers with optional reference-counted
 environments; code always has static lifetime. Function signatures are concrete and
-monomorphic after inference; `let` does not generalize a function. Equality, ordering
+concrete after specialization; nonexpansive named immutable lets can generalize.
+Equality, ordering
 and printing are not defined for function values. JSON resources/views are
 forbidden anywhere inside function signatures. Raw `extern fn` names and
 intrinsics are direct-call-only: wrap them in an ordinary On1x function when a
@@ -207,14 +212,16 @@ The compiler allocates one monotype per declaration, gathers constraints from
 all bodies/call sites (including imports and mutual recursion), performs an
 occurs check, and grounds every type before ordinary semantic checking and C11
 emission. `_` can also appear inside function types or local annotations, such
-as `let action: fn(_) -> _ = increment;`. Each hole is fresh at its declaration,
-not fresh at each use. `--types` prints the resolved function signatures.
+as `let action: fn(_) -> _ = increment;`. Holes are fresh at declarations;
+generalized schemes additionally instantiate fresh variables at uses.
+`--types` prints public global signatures with normalized quantified binders.
 
-Unconstrained types are errors: unused `fn identity(x) -> _ { return x; }` needs
-an annotation or a concrete use. The same identity function cannot be called
-at both `i64` and `bool`, even through different aliases. There are no type
-schemes, let-generalization, subtyping, effect inference or guessed numeric/ABI
-defaults. Literals and arithmetic already have fixed `i64` types.
+Eligible global variables now generalize: `fn identity(x) -> _ { return x; }`
+can be called at both `i64` and `bool`, including through aliases. Recursive
+components infer shared monotypes before generalizing; recursive calls within
+each instance stay monomorphic. Unconstrained weak/mutable variables remain
+errors. There is no subtyping, effect inference or guessed numeric/ABI default.
+Literals and arithmetic already have fixed `i64` types.
 
 Default inference budgets are 65,536 graph nodes, 4,194,304 work steps, 257
 resolved type levels (including the declaration signature), and 16,384 expanded
@@ -233,7 +240,7 @@ fn add_by(amount) -> _ {
 fn main() { let add_two = add_by(2); println(add_two(40)); }
 ```
 
-Lambdas capture free immutable values, including other functions. Environments
+Lambdas capture free immutable values, including tuples and other functions. Environments
 survive their defining scopes and release automatically on normal lexical
 exit/return. Nested functions forward transitive captures; calls preserve the
 same callee-first, left-to-right order. Noncapturing functions do not allocate.
@@ -242,10 +249,11 @@ temporary environments release per expression/condition rather than accumulating
 through loops. Long capture chains are destroyed iteratively.
 
 Capturing a `var` or JSON owner/view is rejected. Take an explicit immutable
-scalar/function snapshot when needed. Lambdas may mutate their own local
+scalar/function/tuple snapshot when needed. Lambdas may mutate their own local
 variables or create/drop local JSON roots without capturing them. There is no
 recursive `let`, capture mutation, tracing GC, thread-safe reference counting,
-foreign callback interface or let-polymorphism. Literal-derived strings are
+foreign callback interface or unrestricted higher-rank inference. Explicit
+`forall` parameters/values are supported as described below. Literal-derived strings are
 static C strings; capturing a raw foreign string does not own its buffer or
 verify its lifetime.
 
@@ -259,6 +267,69 @@ See `examples/closures.on1x`, [language semantics](docs/language.md), and the
 [closure runtime/ownership manual](docs/closures.md). Capture metadata is bounded
 to 16,384 entries and 2 MiB of copied names per unit; the per-file anonymous-
 function count is bounded at 2,048 in addition to existing parser/type limits.
+
+## Tuples and local destructuring
+
+```on1x
+fn swap(pair) -> _ { let (a, b) = pair; return (b, a); }
+fn main() {
+  let (flag, answer): (bool, i64) = swap((42, true));
+  assert(flag); println(answer);
+}
+```
+
+Tuples are ordered, exact structural products of at least two elements.
+Construction evaluates left-to-right; nested local `let` patterns evaluate the
+initializer once and bind immutable copies. Tuple types and patterns participate
+in monomorphic inference, including `_` holes and occurs checks. `(value)` and
+`(type)` are grouping, not singleton tuples; empty tuples and trailing commas
+are unsupported. `_` remains an ordinary name, not a wildcard. A `var` may hold
+and replace a whole tuple, but mutable patterns/fields are unsupported.
+
+C11 records store tuples by value without a separate allocation. Nested function
+fields retain/release their environments on copies, returns, pattern bindings
+and closure captures. Scalar-only products need no drops. JSON/void elements and
+raw tuple-valued extern ABIs are rejected; no foreign aggregate layout is guessed.
+Tuple equality/ordering/printing, field projections and
+general pattern matching are not implemented. Extract fields with local `let`.
+
+See `examples/tuples.on1x`, [language semantics](docs/language.md), and the
+[tuple ownership/lowering manual](docs/tuples.md).
+`examples/parameter_patterns.on1x` demonstrates inferred/nested function and
+lambda parameters, including escaping captured fields. Raw extern parameter
+patterns require explicit scalar flattening; tuple results and foreign aggregate
+layouts remain unsupported.
+
+## Polymorphism and flattened extern patterns
+
+`let id = fn(x) -> _ { return x; }; id(42); id(true);` now uses a generalized
+local scheme with fresh instantiations. Immutable nonexpansive names, lambdas
+and tuples can generalize, including immutable destructuring leaves.
+Mutable/effectful bindings do not infer schemes. Globals (including recursive
+components/imports) also generalize; parameters vary between instances.
+Unused generic definitions are still checked. Concrete C11 specializations are
+created at the original binding point under explicit compiler budgets.
+
+For multiple types **within one body**, annotate a universal parameter:
+
+```on1x
+fn use(id: forall(a) fn(a) -> a) { println(id(42)); println(id(true)); }
+fn main() { use(fn(x) -> _ { return x; }); }
+```
+
+Universal arguments undergo rigid checking, not just checking observed calls.
+The bounded predicative C11 implementation uses typed closure bundles with
+normal field ownership, not erased values or function-pointer casts. Nested
+`forall` binders and inferred polymorphic recursion remain unsupported.
+
+`extern fn raw((x, flag): (i64, bool)) -> i64;` explicitly flattens to the raw C
+ABI `int64_t raw(int64_t, bool)`. Arguments evaluate once, nested patterns
+flatten left-to-right, and all annotations/leaves must be concrete scalars.
+This does not guess a struct ABI or make the foreign function safe.
+
+See `examples/global_polymorphism.on1x`, `examples/destructuring_polymorphism.on1x`,
+`examples/polymorphic_parameters.on1x` and the
+[scheme/specialization and extern-pattern manual](docs/polymorphism.md).
 
 ## JSON ownership pilot
 
@@ -329,7 +400,7 @@ On1x safe-export gate described in `AGENTS.md`.
 ## Testing and current limitations
 
 `ctest` registers scanner API, structural types, higher-order functions, inference,
-closure HIR/native runtime,
+closure HIR/native runtime, tuple HIR/native ownership,
 compiler, input-limit and live MuLIB JSON tests,
 plus differential scanner tests in generator-backed builds. Scanner tests cover
 arena-independent token storage and repeated/concurrent calls. JSON tests use

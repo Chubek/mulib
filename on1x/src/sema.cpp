@@ -6,6 +6,31 @@
 #include <system_error>
 #include <set>
 namespace on1x {
+namespace {
+void extern_leaves(const Pattern& pattern,const Type& type,std::vector<Type>& types,std::set<std::string>& names){
+ if(pattern.is_tuple()){
+  if(!type.is_tuple()||type.elements().size()!=pattern.elements.size())throw Error(pattern.where,"extern pattern must match its concrete tuple annotation");
+  for(std::size_t i=0;i<pattern.elements.size();++i)extern_leaves(pattern.elements[i],type.elements()[i],types,names);
+ }else{
+  if(!names.insert(pattern.name).second)throw Error(pattern.where,"duplicate extern parameter: "+pattern.name);
+  if(type!=Type::I64&&type!=Type::Bool&&type!=Type::String)throw Error(pattern.where,"flattened extern leaves must be i64, bool or string");
+  types.push_back(type);
+ }
+}
+}
+std::vector<Type> extern_parameter_types(const Function& function){
+ std::vector<Type> types;std::set<std::string> names;
+ for(const auto& p:function.params){
+   if(has_type_holes(p.type)||p.type.has_foralls())throw Error(p.where,"extern signatures require concrete monotypes; inference is not ABI evidence");
+  if(p.pattern)extern_leaves(*p.pattern,p.type,types,names);
+  else{
+   if(!names.insert(p.name).second)throw Error(p.where,"duplicate extern parameter: "+p.name);
+   if(p.type.is_tuple())throw Error(p.where,"tuple-valued extern ABI requires an explicit flattening pattern");
+   types.push_back(p.type);
+  }
+ }
+ return types;
+}
 bool is_intrinsic_name(const std::string& name){
  static const std::set<std::string> names={"println","assert","json_parse_or_die","json_get_or_die","json_size","json_number","json_print"};
  return names.contains(name);
@@ -16,7 +41,7 @@ class Checker {
  Unit& unit;
  std::map<std::string,const Function*> funcs;
  std::map<std::string,Type> signatures;
- std::set<Type> checked_function_types;
+ std::set<Type> checked_types;
  std::vector<std::map<std::string,Binding>> scopes;
  struct LambdaFrame { Expr* expression; std::size_t scope_begin; std::set<std::string> names; };
  std::vector<LambdaFrame> lambdas;
@@ -48,17 +73,33 @@ class Checker {
  }
  static bool resource(Type t){return t==Type::Json||t==Type::JsonView;}
  void equal(Type actual,Type expected,const Location& loc){if(actual!=expected)fail(loc,std::string("expected ")+type_name(expected)+", got "+type_name(actual));}
- void validate_function_type(const Type& type,const Location& loc){
-  if(!type.is_function())return;
-  if(checked_function_types.contains(type))return;
-  for(const auto& parameter:type.parameters()){
-   if(parameter==Type::Void)fail(loc,"function parameter type cannot be void");
-   if(resource(parameter))fail(loc,"function types cannot contain resource parameters");
-   validate_function_type(parameter,loc);
+  void validate_type(const Type& type,const Location& loc){
+   if(type.has_holes())fail(loc,"unresolved inference hole in checked type");
+   if(type.is_forall()){validate_type(type.body(),loc);return;}
+  if(!type.is_function()&&!type.is_tuple())return;
+  if(checked_types.contains(type))return;
+  if(type.is_tuple()){
+   for(const auto& element:type.elements()){
+    if(element==Type::Void)fail(loc,"tuple elements cannot be void");
+    if(resource(element))fail(loc,"tuple elements cannot contain JSON resources or views");
+    validate_type(element,loc);
+   }
+  }else{
+   for(const auto& parameter:type.parameters()){
+    if(parameter==Type::Void)fail(loc,"function parameter type cannot be void");
+    if(resource(parameter))fail(loc,"function types cannot contain resource parameters");
+    validate_type(parameter,loc);
+   }
+   if(resource(type.result()))fail(loc,"function types cannot contain resource returns");
+   validate_type(type.result(),loc);
   }
-  if(resource(type.result()))fail(loc,"function types cannot contain resource returns");
-  validate_function_type(type.result(),loc);
-  checked_function_types.insert(type);
+  checked_types.insert(type);
+ }
+ void bind_pattern(const Pattern& pattern,const Type& type){
+  if(!pattern.is_tuple()){define(pattern.name,type,false,pattern.where);return;}
+  if(!type.is_tuple())fail(pattern.where,"tuple binding pattern requires a tuple, got "+type_name(type));
+  if(pattern.elements.size()!=type.elements().size())fail(pattern.where,"tuple binding pattern has wrong arity");
+  for(std::size_t i=0;i<pattern.elements.size();++i)bind_pattern(pattern.elements[i],type.elements()[i]);
  }
  Type resolve_name(Expr& e,bool call_position=false){
   if(auto binding=lookup(e.text)){
@@ -102,7 +143,29 @@ class Checker {
  }
  Type check_expr(Expr& e){
   auto child=[&](std::size_t i){return check_expr(*e.children.at(i));};
-  switch(e.kind){
+   switch(e.kind){
+    case Expr::Kind::PolyProjection:{
+     auto schema=child(0);
+     if(!forall_instance(schema,e.type))fail(e.where,"invalid forall projection");
+     if(!e.prototype){
+      auto found=unit.forall_layouts.find(schema);
+      if(found==unit.forall_layouts.end()||e.projection>=found->second.size()||found->second[e.projection]!=e.type)
+       fail(e.where,"invalid forall projection layout");
+     }
+     validate_type(e.type,e.where);return e.type;
+    }
+    case Expr::Kind::PolyPack:{
+     if(!e.type.is_forall()||e.proofs.size()!=1||!forall_proof(e.type,check_expr(*e.proofs.front())))
+      fail(e.where,"universal value requires a rigid forall proof");
+     validate_type(e.type,e.where);
+     if(!e.prototype){
+      const auto found=unit.forall_layouts.find(e.type);
+      const std::vector<Type> empty;const auto& layout=found==unit.forall_layouts.end()?empty:found->second;
+      if(e.children.size()!=layout.size())fail(e.where,"invalid forall pack layout");
+      for(std::size_t i=0;i<layout.size();++i)equal(child(i),layout[i],e.where);
+     }
+     return e.type;
+    }
     case Expr::Kind::Integer:{std::int64_t v=0;auto [p,err]=std::from_chars(e.text.data(),e.text.data()+e.text.size(),v);
      if(err!=std::errc{}||p!=e.text.data()+e.text.size())fail(e.where,"integer literal out of i64 range");
      e.text=std::to_string(v); // Decimal source spelling must not become C octal.
@@ -115,16 +178,23 @@ class Checker {
      }
     return e.type=Type::String;
     case Expr::Kind::Variable:return resolve_name(e);
+    case Expr::Kind::Tuple:{
+     std::vector<Type> elements;for(auto& element:e.children)elements.push_back(check_expr(*element));
+     auto type=Type::tuple(std::move(elements));validate_type(type,e.where);return e.type=std::move(type);
+    }
     case Expr::Kind::Lambda:{
      std::vector<Type> parameters;std::set<std::string> names;
      for(const auto& parameter:e.parameters){
       if(!names.insert(parameter.name).second)fail(parameter.where,"duplicate parameter: "+parameter.name);
       parameters.push_back(parameter.type);
      }
-     auto type=Type::function(std::move(parameters),e.result);validate_function_type(type,e.where);
+     auto type=Type::function(std::move(parameters),e.result);validate_type(type,e.where);
      e.captures.clear();auto previous_returns=returns;
       lambdas.push_back({&e,scopes.size(),{}});push();returns=e.result;
-     for(const auto& parameter:e.parameters)define(parameter.name,parameter.type,false,parameter.where);
+      for(const auto& parameter:e.parameters){
+       if(parameter.pattern)bind_pattern(*parameter.pattern,parameter.type);
+       else define(parameter.name,parameter.type,false,parameter.where);
+      }
      bool complete=check_block(e.body,false);pop();lambdas.pop_back();returns=previous_returns;
      if(e.result!=Type::Void&&!complete)fail(e.where,"not all paths return in anonymous function");
      return e.type=std::move(type);
@@ -137,7 +207,7 @@ class Checker {
     if(op=="<"||op==">"||op=="<="||op==">="){
      equal(a,Type::I64,e.where);equal(b,Type::I64,e.where);return e.type=Type::Bool;}
     if(op=="=="||op=="!="){
-     if(a!=b||a==Type::Void||resource(a)||a.is_function())fail(e.where,"incompatible or non-scalar equality operands");
+     if(a!=b||(a!=Type::I64&&a!=Type::Bool&&a!=Type::String))fail(e.where,"incompatible or non-scalar equality operands");
      return e.type=Type::Bool;}
     fail(e.where,"unknown operator: "+op);}
     case Expr::Kind::Call:{
@@ -158,8 +228,15 @@ class Checker {
  bool check_block(std::vector<Stmt>& body,bool owns_scope=true){if(owns_scope)push();bool guarantees=false;
   for(auto& s:body){if(guarantees)fail(s.where,"unreachable statement after return");
    switch(s.kind){
+    case Stmt::Kind::Template:{
+     check_block(s.body,false);
+     auto type=check_expr(*s.value);validate_type(type,s.where);
+     if(s.declared!=Type::Invalid)equal(type,s.declared,s.where);
+     if(s.pattern)bind_pattern(*s.pattern,type);else define(s.name,type,false,s.where);
+     break;
+    }
      case Stmt::Kind::Let:{auto t=check_expr(*s.value);
-      validate_function_type(s.declared,s.where);
+      validate_type(s.declared,s.where);
      if(t==Type::Void)fail(s.where,"cannot bind a void expression");
      if(s.declared!=Type::Invalid)equal(t,s.declared,s.where);
      // Every JSON owner is unique. A name cannot be copied into another owner.
@@ -167,7 +244,11 @@ class Checker {
      if(t==Type::Json&&s.value->kind!=Expr::Kind::Call)fail(s.where,"json owners must originate from a constructor");
      if(t==Type::JsonView&&s.value->kind!=Expr::Kind::Call)fail(s.where,"json views may only come from borrowed operations");
      if(t==Type::Json||t==Type::JsonView){if(s.mutable_binding)fail(s.where,"mutable resources not yet supported");}
-     define(s.name,t,s.mutable_binding,s.where);break;
+     if(s.pattern){
+      if(s.mutable_binding)fail(s.where,"mutable destructuring is unsupported; use let");
+      bind_pattern(*s.pattern,t);
+     }else define(s.name,t,s.mutable_binding,s.where);
+     break;
     }
     case Stmt::Kind::Assign:{const auto& binding=find(s.name,s.where);if(!binding.is_mutable)fail(s.where,"assignment to immutable binding: "+s.name);
      if(resource(binding.type))fail(s.where,"resource reassignment not supported");
@@ -189,28 +270,34 @@ class Checker {
  public:
  explicit Checker(Unit& u):unit(u){}
  void run(){
-   for(auto& f:unit.functions){
+    for(auto& f:unit.functions){
+     if(f.result.has_generics()&&!f.prototype)fail(f.where,"quantified types require a checked prototype");
+     for(const auto& parameter:f.params)if(parameter.type.has_generics()&&!f.prototype)
+      fail(parameter.where,"quantified types are only valid in local let prototypes");
     if(is_intrinsic_name(f.name))fail(f.where,"intrinsic name cannot be redefined: "+f.name);
     if(f.external) {
     static const std::set<std::string> c_keywords={"auto","break","case","char","const","continue","default","do","double","else","enum","extern","float","for","goto","if","inline","int","long","register","restrict","return","short","signed","sizeof","static","struct","switch","typedef","union","unsigned","void","volatile","while","_Alignas","_Alignof","_Atomic","_Bool","_Complex","_Generic","_Imaginary","_Noreturn","_Static_assert","_Thread_local"};
      if(c_keywords.contains(f.name))fail(f.where,"C keyword cannot be a raw extern name: "+f.name);
-     if(f.result.is_function())fail(f.where,"function-valued extern ABI is unsupported; callbacks require reviewed contracts");
+      if(f.result.is_function()||f.result.has_foralls())fail(f.where,"function-valued extern ABI is unsupported; callbacks require reviewed contracts");
+     if(f.result.is_tuple())fail(f.where,"tuple-valued extern ABI is unsupported; aggregates require reviewed adapters");
    }
    if(!funcs.emplace(f.name,&f).second)fail(f.where,"duplicate function: "+f.name);
     if(f.result==Type::Json||f.result==Type::JsonView)fail(f.where,"resource returns not supported in the initial ABI");
-    validate_function_type(f.result,f.where);
+    validate_type(f.result,f.where);
     std::vector<Type> parameters;
-    std::set<std::string> names;for(auto& p:f.params){if(!names.insert(p.name).second)fail(p.where,"duplicate parameter: "+p.name);
+     std::set<std::string> names;for(auto& p:f.params){if(!names.insert(p.name).second)fail(p.where,"duplicate parameter: "+p.name);
      if(p.type==Type::Void||p.type==Type::Json||p.type==Type::JsonView)fail(p.where,"unsupported parameter type in this milestone");
      if(f.external&&p.type.is_function())fail(p.where,"function-valued extern ABI is unsupported; callbacks require reviewed contracts");
-     validate_function_type(p.type,p.where);parameters.push_back(p.type);
+     if(f.external&&p.type.is_tuple()&&!p.pattern)fail(p.where,"tuple-valued extern ABI requires an explicit flattening pattern");
+     validate_type(p.type,p.where);parameters.push_back(p.type);
     }
-    signatures.emplace(f.name,Type::function(std::move(parameters),f.result));
+     signatures.emplace(f.name,Type::function(std::move(parameters),f.result));
+     if(f.external)(void)extern_parameter_types(f);
   }
   if(!funcs.contains("main"))fail(unit.functions.front().where,"missing main function");
   auto main=funcs.at("main");if(main->external||!main->params.empty()||(main->result!=Type::I64&&main->result!=Type::Void))fail(main->where,"main must be fn main() -> i64 or void");
   for(auto& f:unit.functions){if(f.external)continue;returns=f.result;push();
-   for(auto& p:f.params)define(p.name,p.type,false,p.where);
+    for(auto& p:f.params){if(p.pattern)bind_pattern(*p.pattern,p.type);else define(p.name,p.type,false,p.where);}
    bool complete=check_block(f.body,false);pop();
    if(f.result!=Type::Void&&!complete)fail(f.where,"not all paths return in function: "+f.name);
   }

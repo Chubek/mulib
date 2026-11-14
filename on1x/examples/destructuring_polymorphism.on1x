@@ -1,0 +1,12 @@
+fn main() {
+  let (identity, flag) = (fn(x) -> _ { return x; }, true);
+  println(identity(42)); println(identity(flag));
+  let number = 42;
+  let pair = (fn(x) -> _ { return (number, x); }, true);
+  {
+    let number = 0;
+    let (keep, enabled) = pair;
+    let (n, text) = keep("text"); println(n); println(text); assert(enabled);
+    let (m, b) = keep(false); assert(m == 42); assert(!b); assert(number == 0);
+  }
+}

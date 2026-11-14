@@ -89,6 +89,10 @@ if(BUILD_TESTING)
   target_link_libraries(on1x_closure_hir_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.closure_hir COMMAND on1x_closure_hir_tests)
   set_tests_properties(on1x.closure_hir PROPERTIES TIMEOUT 40)
+  add_executable(on1x_tuple_hir_tests tests/test_tuples.cpp)
+  target_link_libraries(on1x_tuple_hir_tests PRIVATE on1x_frontend)
+  add_test(NAME on1x.tuple_hir COMMAND on1x_tuple_hir_tests)
+  set_tests_properties(on1x.tuple_hir PROPERTIES TIMEOUT 40)
   if(ON1X_GENERATED_FRONTEND)
     # Differential scanner regression: the generated Aurocks scanner must
     # match independent fallback tokenization, including byte offsets.
@@ -129,8 +133,24 @@ if(BUILD_TESTING)
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_closures.py" "$<TARGET_FILE:on1xc>"
     "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/closures" "${CMAKE_C_COMPILER}"
     ${_test_c_flags})
-  set_tests_properties(on1x.compiler on1x.limits on1x.functions on1x.json on1x.inference on1x.closures PROPERTIES TIMEOUT 120)
+  add_test(NAME on1x.tuples COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_tuples.py" "$<TARGET_FILE:on1xc>"
+    "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/tuples" "${CMAKE_C_COMPILER}"
+    ${_test_c_flags})
+  add_test(NAME on1x.parameter_patterns COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_parameter_patterns.py" "$<TARGET_FILE:on1xc>"
+    "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/parameter-patterns" "${CMAKE_C_COMPILER}"
+    ${_test_c_flags})
+  set_tests_properties(on1x.compiler on1x.limits on1x.functions on1x.json on1x.inference on1x.closures on1x.tuples on1x.parameter_patterns PROPERTIES TIMEOUT 120)
   set_tests_properties(on1x.json PROPERTIES SKIP_RETURN_CODE 77)
+  add_test(NAME on1x.poly COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_poly.py" "$<TARGET_FILE:on1xc>"
+    "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/poly" "${CMAKE_C_COMPILER}" ${_test_c_flags})
+  set_tests_properties(on1x.poly PROPERTIES TIMEOUT 120)
+  add_test(NAME on1x.poly_extended COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_poly_extended.py" "$<TARGET_FILE:on1xc>"
+    "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/poly-extended" "${CMAKE_C_COMPILER}" ${_test_c_flags})
+  set_tests_properties(on1x.poly_extended PROPERTIES TIMEOUT 120)
   if(ON1X_GENERATED_FRONTEND)
     add_test(NAME on1x.scanner_parity COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/scanner_parity.py"

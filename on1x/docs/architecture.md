@@ -38,7 +38,7 @@ copied into C++ storage before arena destruction. API tests exercise bounded
 non-terminated buffers, retained tokens, error recovery across calls, and
 concurrent entry through the serialized wrapper.
 
-The recursive-descent parser bounds active block/expression/type nesting and HIR
+The recursive-descent parser bounds active block/expression/type/pattern nesting and HIR
 expression depth at 256 levels. Tracking expression depth while constructing
 the tree also bounds later checker/backend traversal and unique_ptr destruction
 for flat left-associative chains; a source-size limit alone does not do that.
@@ -51,7 +51,7 @@ callback API, not the default when the LibStone generator scripts exist.
 ## P1 function-value representation and closure conversion
 
 `include/on1x/type.hpp` / `src/type.cpp` provide immutable structural monotypes.
-Function parameter/result graphs share owned C++ storage, with structural
+Function parameter/result and tuple-element graphs share owned C++ storage, with structural
 comparison and diagnostic rendering; they are not foreign CDecl IDs or a
 generalized inference engine. The semantic AST stores an explicit callee for
 every call and records whether each name resolves to a local, ordinary
@@ -79,7 +79,7 @@ Generated factories copy captures and retain any captured function environments.
 Generated field destructors release those references. The small C11 runtime
 reference-counts environments and drains zero-count cascades through an
 iterative queue. Call arguments borrow; results own references. The backend
-tracks owned function temporaries separately from lexical JSON/function locals,
+tracks owned function/tuple temporaries separately from lexical JSON/value locals,
 keeping the callee and earlier arguments alive across nested logical operands.
 Return values acquire a reference before lexical cleanup. Assignment acquires
 the replacement before releasing the previous value. Tests count environments,
@@ -99,7 +99,7 @@ together. It is single-threaded and does not provide error unwinding. See
 `include/on1x/infer.hpp` / `src/infer.cpp` implement a compiler-local term graph.
 Anonymous holes are fresh at declarations, while calls/aliases share monotypes.
 The graph uses ranked variable unions, path compression, structural function
-constraints and an iterative occurs check. Function roots are not prematurely
+and tuple constraints and an iterative occurs check. Composite roots are not prematurely
 merged: doing so could introduce cycles before child constraints are checked.
 Term IDs never escape the pass and are not foreign CDecl IDs or type schemes.
 
@@ -124,8 +124,47 @@ bypass the constraint pass.
 Compiler clients should call `check(unit)` for admission. `infer_types(unit)`
 is an isolated type-solving phase, not an ownership/FFI proof or complete
 semantic validation. Extern annotations must already be concrete before
-inference. No let-generalization, value-restricted polymorphism or effect
-inference is claimed.
+inference. Immutable nonexpansive lets, including pattern leaves, have bounded
+local schemes. Globals generalize after shared strongly connected component
+inference and recursive components specialize together. Ordinary parameters are
+monomorphic per instance; explicit universal annotations use rigid introduction
+checking and predicative demand bundles. Effect inference is not implemented.
+Generic prototypes are checked
+with scoped quantified identities but not emitted. Weak environment/domain
+variables are shared across instances. See [the elaboration contract](polymorphism.md).
+
+## P1 product types and irrefutable local patterns
+
+`Type::Tuple` is distinct from `Type::Function`: shape/arity, structural equality,
+canonical inference keys and diagnostics preserve that distinction. Immutable
+type shapes cache hole presence and whether values contain closure references.
+Unification/occurs checks traverse both constructors, and iterative grounding
+checks depth/expanded size including tuple elements and declaration signatures.
+
+Tuple expressions evaluate fields left-to-right. Local `let` patterns are
+C++-owned name/tuple trees with located leaves; the existing parser nesting
+budget bounds them. An initializer is checked before introducing any leaf
+bindings. A pattern constrains an unknown monotype to its exact tuple shape;
+it neither matches dynamically nor generalizes field types. Ordinary function
+and lambda parameters accept the same patterns, projecting borrowed arguments
+into owned immutable locals in the entry prologue. Unlexable internal argument
+names avoid collisions and are mapped to valid unique C names. Extern parameter
+patterns explicitly flatten scalar leaves, not aggregate layouts. Mutable patterns,
+resource/void elements and raw aggregate extern signatures are rejected.
+
+The C11 backend emits deduplicated, dependency-ordered record typedefs. Function
+and tuple records can nest in either direction, but type cycles are rejected.
+Tuples are copied by value without separate allocation. Only tuples containing
+functions need generated retain/release operations, which operate through const
+pointers and call child helpers rather than expanding shared types inline.
+Intermediate pattern projections also use borrowed typed pointers: access paths
+are linear in pattern size, not copied in full into every leaf. Each resulting
+local retains any nested environments before the initializer temporary drops.
+Parameters borrow, returns own references, and assignment acquires the new
+product before releasing the old one. Closure factories/destructors apply the
+same operations to tuple capture fields. The environment runtime ABI stays at
+version 1; aggregate foreign interoperability is **not** enabled. See the
+[tuple ownership/lowering manual](tuples.md).
 
 ## Kernel discovery
 
@@ -149,6 +188,7 @@ interop in the current frontend. It is not permissible to represent an unowned
 - `json` and `json_view` cannot be declared as function arguments/returns.
 - Resource assignment, copying, or reinitialization is prohibited.
 - JSON owners/views cannot be captured, even by a nonescaping lambda.
+- JSON owners/views cannot be tuple elements, at any nesting depth.
 - Borrowed views originate only from a named live owner/view.
 - No mutating operations on JSON trees are exposed, so existing views do not
   suffer mutation-driven invalidation.

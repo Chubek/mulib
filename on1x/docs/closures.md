@@ -9,11 +9,16 @@ calls. An omitted result annotation is `void`. See [language semantics](language
 and the runnable `examples/closures.on1x`.
 
 Free immutable locals/parameters are captured by value. Nested functions forward
-transitive captures, preserving lexical shadowing. Captured function values keep
+transitive captures, preserving lexical shadowing. Captured function values and
+functions nested in captured tuples keep
 their environments alive. Mutable bindings and JSON owners/views cannot be
-captured; make an explicit immutable scalar/function snapshot where appropriate.
+captured; make an explicit immutable scalar/function/tuple snapshot where appropriate.
 There is no implicit partial application, local `let rec`, capture mutation,
-weak reference, polymorphism, tracing collector or cross-thread handoff.
+weak reference, unrestricted higher-rank inference, tracing collector or cross-thread handoff.
+Named immutable value bindings can use [local let schemes](polymorphism.md),
+with concrete closure specializations at the original declaration point.
+Explicit `forall` values/parameters use typed bundles with recursive field
+ownership; immutable closures can retain these bundles without runtime type erasure.
 
 ## Internal C11 representation (version 1)
 
@@ -54,6 +59,7 @@ runtime together after upgrading the compiler.
 | Reading a function expression | Retained temporary, or newly owned call/factory result |
 | Function assignment | Retains replacement before releasing old reference |
 | Discarded/full-expression temporary | Releases when no longer needed |
+| Tuple value containing functions | Applies the same ownership rules recursively to its fields |
 
 The callee is materialized before arguments. Arguments evaluate left-to-right;
 their owned function temporaries survive until invocation finishes. Short-
@@ -61,6 +67,10 @@ circuit operands and completed conditions clean up only their own temporaries,
 not previously evaluated enclosing operands. Loop-condition temporaries release
 on **each** test, including the final false one. Return values retain before
 local cleanup; function parameters themselves are not dropped by the callee.
+Tuple locals/results/captures follow the same contract recursively; the tuple
+record itself needs no allocation. Generated pointer-based field helpers avoid
+aggregate copies while retaining/releasing nested environments. See the
+[tuple manual](tuples.md) for destructuring and product-type details.
 
 Environments contain only immutable values and references to existing function
 values. Since bindings are nonrecursive and captured fields cannot be changed,

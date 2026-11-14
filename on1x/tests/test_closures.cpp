@@ -37,7 +37,7 @@ int main() {
   require(parent.captures.size()==1&&parent.captures[0].name=="x","outer lexical capture was lost");
   require(shadow.captures.size()==1&&shadow.captures[0].name=="x","shadowed local capture was lost");
 
-  auto ambiguous=parse("fn main() { let f = fn(x) -> _ { return x; }; }");
+  auto ambiguous=parse("fn main() { var f = fn(x) -> _ { return x; }; }");
   bool rejected=false;
   try { on1x::infer_types(ambiguous); } catch(const on1x::Error& error) {
    rejected=std::string(error.what()).find("cannot infer anonymous-function parameter x")!=std::string::npos;

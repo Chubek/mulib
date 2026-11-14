@@ -10,7 +10,7 @@ token bytes, byte offsets and diagnostics. Lines advance on LF; columns count
 bytes, not Unicode code points. CR and tabs are whitespace, not column expansion.
 
 Each source file is limited to 2 MiB (inclusive). The parser permits at most
-256 simultaneously active block/expression/type parsing levels and
+256 simultaneously active block/expression/type/pattern parsing levels and
 expression-tree levels, including anonymous-function bodies. Function bodies count as blocks; parentheses count
 toward parsing nesting even though they do not add HIR nodes. Flat binary and
 postfix-call chains also obey the tree-depth limit. Excesses are located
@@ -26,11 +26,14 @@ unit    = { import | function | extern } ;
 import  = 'import' STRING ';' ;
 extern  = 'extern' 'fn' ID '(' [ params ] ')' ['->' type] ';' ;
 function= 'fn' ID '(' [ params ] ')' ['->' type] block ;
-params  = ID [ ':' type ] { ',' ID [ ':' type ] } ;
+params  = pattern [ ':' type ] { ',' pattern [ ':' type ] } ;
 type    = 'i64' | 'bool' | 'string' | 'void' | 'json' | 'json_view'
-        | '_' | 'fn' '(' [ type { ',' type } ] ')' '->' type ;
+         | '_' | 'fn' '(' [ type { ',' type } ] ')' '->' type
+         | 'forall' '(' ID { ',' ID } ')' type | bound_type_variable
+        | '(' type ')' | '(' type ',' type { ',' type } ')' ;
 block   = '{' { statement } '}' ;
 statement = ('let'|'var') ID [ ':' type ] '=' expr ';'
+          | 'let' tuple_pattern [ ':' type ] '=' expr ';'
           | ID '=' expr ';'
           | 'return' [ expr ] ';'
           | 'if' expr block [ 'else' block ]
@@ -38,8 +41,11 @@ statement = ('let'|'var') ID [ ':' type ] '=' expr ';'
 expr    = prefix { binary_operator expr } ;
 prefix  = ('!'|'-') prefix | postfix ;
 postfix = atom { '(' [ expr { ',' expr } ] ')' } ;
-atom    = '(' expr ')' | literal | ID | lambda ;
+atom    = '(' expr ')' | '(' expr ',' expr { ',' expr } ')'
+        | literal | ID | lambda ;
 lambda  = 'fn' '(' [ params ] ')' [ '->' type ] block ;
+pattern = ID | tuple_pattern ;
+tuple_pattern = '(' pattern ',' pattern { ',' pattern } ')' ;
 ```
 
 Binary operators, low to high precedence: `||`, `&&`, `== !=`,
@@ -49,7 +55,8 @@ short circuit. The callee is evaluated first, then its arguments left-to-right.
 Other expression operands also evaluate **left-to-right**; the C11 backend sequences calls
 into temporaries rather than relying on C argument-evaluation order.
 
-Functions are monomorphic; ordinary parameters may omit annotations, and `_`
+Global functions generalize at recursive-component boundaries. Ordinary
+parameters have one monotype per instance unless explicitly universal, may omit annotations, and `_`
 opts into inference in a type position. A resolved `fn main() -> i64` or
 `fn main() -> void` must exist. An omitted return annotation still defaults to
 `void`, not inference. `let` and `var` types are inferred from their
@@ -75,10 +82,12 @@ fn main() {
 ```
 
 Local and ordinary-function parameter annotations are optional; returns may
-use `-> _` for inference. There are no user-named type variables, type schemes,
-subtyping, implicit coercions or let-polymorphism yet. Functions are not implicitly curried: partial application
+use `-> _` for inference. Explicit `forall(a) fn(a) -> a` annotations bind named
+type variables for universal parameters/values. There is no subtyping or implicit
+numeric coercion. Immutable nonexpansive lets, including destructuring, generalize
+as described in [the scheme manual](polymorphism.md). Functions are not implicitly curried: partial application
 is an arity error. Only `var` bindings can be reassigned, and their monotype
-cannot change. Arguments/results may be functions, `i64`, `bool`, `string`, or
+cannot change. Arguments/results may be functions, tuples, `i64`, `bool`, `string`, or
 `void` results; `void` parameters and JSON resources/views at any signature depth
 are rejected. Function equality, ordering, arithmetic and printing are rejected.
 
@@ -111,13 +120,13 @@ Anonymous functions use `fn(params) [-> type] { statements }`. The body uses
 explicit `return`, just like top-level functions. Omitted parameter annotations
 and `_` holes participate in the same monomorphic inference; an omitted return
 annotation still means `void`. Creating a function does not execute its body.
-Each literal has one monotype, not a polymorphic scheme, even when evaluated
-many times. There are no named local function declarations or recursive `let`
+Unbound literals and unannotated parameters are monomorphic per instance;
+immutable value bindings can introduce local schemes. There are no named local function declarations or recursive `let`
 bindings; a new binding is not visible in its own initializer. Calls to existing
 top-level recursive functions remain supported.
 
 Free local names capture **immutable values at creation**, including scalar
-parameters, strings and other function values. Copies/returns keep environments
+parameters, strings, tuples and other function values. Copies/returns keep environments
 alive beyond the defining scope. Nested closures forward transitive captures;
 ordinary local/parameter shadowing still applies. Only names actually used by
 the body or its nested functions are captured, in deterministic first-use order.
@@ -150,6 +159,68 @@ Rebuild emitted C and runtime together: the versioned closure representation
 is an internal ABI, not a stable C extension ABI. See [closure runtime and
 ownership](closures.md) for the precise lowering contract.
 
+## Tuples and local destructuring
+
+```on1x
+fn swap(pair) -> _ {
+  let (a, b) = pair;
+  return (b, a);
+}
+fn main() {
+  let (flag, (n, text)): (bool, (i64, string)) = swap(((42, "text"), true));
+  println(n); println(text); assert(flag);
+}
+```
+
+A tuple is a fixed-size ordered product of **at least two** values. `(i64,
+bool)` and `(bool, i64)` are distinct types; arity and every element type must
+match exactly. Elements can be scalar values, functions or nested tuples.
+`(value)` / `(type)` are grouping, not one-element products. Empty tuples/unit
+and trailing commas are not supported. `f(a, b)` passes two arguments;
+`f((a, b))` passes one tuple argument.
+
+Tuple elements evaluate left-to-right. `let (name, (other, last)) = expr;`
+evaluates the initializer **once**, then copies its fields into immutable local
+bindings. Pattern shape/arity must match the inferred tuple type. Patterns can
+constrain an otherwise unknown parameter type; holes also work in whole-pattern
+annotations such as `let (a, b): (_, bool) = value;`. Eligible variables in
+nonexpansive immutable initializers generalize independently per leaf:
+destructuring does not generalize extracted functions. Duplicate names, including
+repeated `_`, are errors. `_` remains an ordinary identifier, **not** a wildcard.
+
+All new names become visible after the initializer, so it can reference shadowed
+outer bindings but not the bindings being introduced. Patterns are supported
+in local `let` bindings and ordinary function/lambda parameters, not assignments
+or `var` bindings. For example, `fn sum((a, b): (i64, i64)) -> i64 { return a + b; }`
+accepts one tuple argument, called as `sum((20, 22))`. An omitted parameter
+annotation is inferred from the pattern/body/call sites. All parameter names and
+pattern leaves share the body scope; duplicate leaves or body redefinitions are
+errors. Pattern leaves are immutable and can be captured or returned normally.
+Call arguments borrow their fields, while extracted function/tuple bindings
+retain independent references and release them on every normal exit/return.
+Raw extern parameters require concrete annotations. Tuple patterns explicitly
+flatten to scalar C parameters, with no foreign aggregate layout inferred;
+see [the extern-pattern ABI contract](polymorphism.md).
+There is no refutable matching, constructor/literal pattern, wildcard pattern,
+field/index projection or exhaustive `match` yet.
+
+Tuple fields are immutable. A `var` holding a whole tuple may be reassigned to a
+value of the same structural type, including self-assignment. Equality,
+ordering, arithmetic and printing are not defined for tuples; destructure and
+operate on the scalar fields explicitly. JSON owners/views and `void` cannot
+be elements, even when nested or only present in an annotation. A function
+inside a tuple must still satisfy all function-signature/resource restrictions.
+
+Tuples use C11 records by value, without separate tuple allocation. Copies,
+results, temporary values, local bindings and closure captures retain/release
+every nested function environment. Destructured function/tuple names own their
+references independently of the original tuple. Function parameters borrow
+their fields for the call; returns acquire references before lexical cleanup.
+An immutable tuple may be captured; a mutable tuple binding may not. String
+fields retain the existing raw C-string lifetime obligations. Raw extern
+tuple parameters/results are rejected: compiler-owned records do not establish
+a foreign aggregate ABI. See the [tuple manual](tuples.md).
+
 ## Type holes and unification
 
 ```on1x
@@ -171,6 +242,15 @@ decide which declarations can be referenced. There is no fresh instantiation
 at a `let` or call: `identity(1)` and `identity(true)` cannot use one inferred
 identity function at two types. An unconstrained parameter/result is an error,
 even in an unused function. Add a concrete annotation or constraining use.
+
+Global declarations now generalize after shared recursive-component inference.
+Immutable nonexpansive local lets (named or destructured) generalize free
+variables not shared with the environment
+or weak overloaded operands generalize, and uses receive fresh instances. Mutable
+and expansive bindings do not infer schemes. Parameters vary between instances;
+explicit `forall` annotations additionally permit multiple types inside one
+body. See [schemes and specialization](polymorphism.md) for the value restriction,
+rigid universal checking, recursion rules and bounded predicative subset.
 
 Use `-> _` to infer a return type. A function with no return statements has
 an implicit `void` result; otherwise return expressions are unified and the
@@ -224,7 +304,7 @@ conservative definite-return analysis. `break`, `continue`, `for`, and
 
 ## Explicitly absent language facilities
 
-No pattern matching, algebraic data types, generics, higher-kinded types,
+No refutable/exhaustive pattern matching, algebraic data types, generics, higher-kinded types,
 modules/functors, mutable/resource captures, native coroutines, async,
 macro system, polymorphic numeric literals, foreign callbacks, struct/record
 literals, `Option` or `Result`, structured error propagation, or production

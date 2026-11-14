@@ -233,12 +233,12 @@ fn main() { let root = json_parse_or_die("{}"); let f = fn() -> fn() -> void {
     ('resource_parameter', 'fn main() { let f = fn(root: json) {}; }', 'resource parameters'),
     ('resource_result', 'fn main() { let f = fn() -> _ { return json_parse_or_die("{}"); }; }', 'resource returns'),
     ('void_parameter', 'fn main() { let f = fn(x: void) {}; }', 'parameter type cannot be void'),
-    ('ambiguous_parameter', 'fn main() { let f = fn(x) -> _ { return x; }; }', 'cannot infer anonymous-function parameter x'),
+    ('ambiguous_parameter', 'fn main() { var f = fn(x) -> _ { return x; }; }', 'cannot infer anonymous-function parameter x'),
     ('monomorphic_lambda', '''
-fn main() { let f = fn(x) -> _ { return x; }; f(1); f(true); }
+fn main() { var f = fn(x) -> _ { return x; }; f(1); f(true); }
 ''', 'expected i64, got bool'),
     ('monomorphic_alias', '''
-fn main() { let f = fn(x) -> _ { return x; }; let g = f; f(1); g(true); }
+fn main() { var f = fn(x) -> _ { return x; }; let g = f; f(1); g(true); }
 ''', 'expected i64, got bool'),
     ('occurs_check', 'fn main() { let f = fn(x) -> _ { return x(x); }; }', 'infinite type'),
     ('omitted_return_void', 'fn main() { let f = fn(x: i64) { return x; }; }', 'expected void'),
@@ -302,7 +302,7 @@ assert p.returncode != 0 and 'incompatible On1x closure runtime ABI' in p.stderr
 types = run([tests.compiler, '--types', source])
 assert types.returncode == 0 and types.stdout == (
     'add_by : fn(i64) -> fn(i64) -> i64\n'
-    'compose : fn(fn(i64) -> i64, fn(i64) -> i64) -> fn(i64) -> i64\n'
+    'compose : forall(a0, a1, a2) fn(fn(a0) -> a1, fn(a2) -> a0) -> fn(a2) -> a1\n'
     'main : fn() -> void\n'), types.stderr
 
 # Fatal paths are distinct from lexical cleanup; they terminate, not unwind.

@@ -1,0 +1,7 @@
+fn identity(x) -> _ { return x; }
+fn apply(operation, value) -> _ { return operation(value); }
+fn main() {
+  println(identity(42)); println(identity(true));
+  println(apply(fn(x: i64) -> i64 { return x + 1; }, 41));
+  println(apply(fn(x: bool) -> bool { return !x; }, false));
+}

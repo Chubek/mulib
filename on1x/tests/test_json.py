@@ -29,6 +29,17 @@ fn reader(text) -> _ {
 }
 fn main() { let read = reader("{\\"items\\":[1,2,3]}"); println(read()); }
 ''')
+tests.valid('json_tuple_results', '3\n', extra=extra, text='''
+fn inspect(text) -> _ {
+  let root = json_parse_or_die(text);
+  let items = json_get_or_die(root, "items");
+  return (json_size(items), true);
+}
+fn reader(text) -> _ { return fn() -> _ { return inspect(text); }; }
+fn main() {
+  let (count, ok) = reader("{\\"items\\":[1,2,3]}")(); assert(ok); println(count);
+}
+''')
 tests.valid('json_lifetimes', '2\n1\n3\n3\n3\n', extra=extra, text='''
 fn scoped() { let unused = json_parse_or_die("{}"); }
 fn early(stop: bool) -> i64 {

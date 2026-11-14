@@ -82,17 +82,8 @@ fn main() { let operation = alias(imported); println(operation(21)); }
 ''')
 
 semantic_cases = [
-    ('unconstrained_parameter', 'fn unused(x) {} fn main() {}', 'cannot infer parameter x'),
-    ('no_generalization', 'fn identity(x) -> _ { return x; } fn main() {}', 'cannot infer parameter x'),
     ('ambiguous_print', 'fn show(x) { println(x); } fn main() {}', 'cannot infer parameter x'),
     ('ambiguous_equality', 'fn same(x, y) -> _ { return x == y; } fn main() {}', 'cannot infer parameter x'),
-    ('conflicting_calls', '''
-fn identity(x) -> _ { return x; } fn main() { identity(1); identity(true); }
-''', 'expected i64, got bool'),
-    ('monomorphic_aliases', '''
-fn identity(x) -> _ { return x; }
-fn main() { let a = identity; let b = identity; a(1); b(false); }
-''', 'expected i64, got bool'),
     ('mutable_monomorphism', '''
 fn identity(x) -> _ { return x; }
 fn boolean(x: bool) -> bool { return x; }
@@ -103,7 +94,6 @@ fn main() { var f = identity; f(1); f = boolean; }
     ('indirect_cycle', '''
 fn first() -> _ { return second; } fn second() -> _ { return first; } fn main() {}
 ''', 'infinite type'),
-    ('unconstrained_recursive_result', 'fn recurse() -> _ { return recurse(); } fn main() {}', 'cannot infer return type'),
     ('implicit_void_preserved', 'fn increment(x) { return x + 1; } fn main() { increment(1); }', 'expected void'),
     ('inferred_missing_return', 'fn bad(x) -> _ { if x { return 1; } } fn main() { bad(true); }', 'not all paths return'),
     ('extern_parameter', 'extern fn raw(x); fn main() { raw(1); }', 'extern signatures require concrete types'),
@@ -164,8 +154,8 @@ for name, text, diagnostic in syntax_cases:
     p = run([tests.compiler, '--check', path])
     assert p.returncode == 1 and diagnostic in p.stderr, (name, p.returncode, p.stderr)
 
-# Inspect concrete types, not just a successful native result. Extern evidence
-# remains labelled explicitly; no inference variables appear in this output.
+# Inspect public schemes/concrete types. Synthetic specializations are hidden;
+# binder names are normalized rather than exposing inference IDs.
 path = tests.source('types', '''
 extern fn raw(x: i64) -> i64;
 fn apply(f, x) -> _ { return f(x); }
@@ -174,7 +164,7 @@ fn unreferenced(x) -> _ { return x * 2; }
 fn main() { println(apply(increment, 41)); }
 ''')
 expected = ('extern raw : fn(i64) -> i64\n'
-            'apply : fn(fn(i64) -> i64, i64) -> i64\n'
+            'apply : forall(a0, a1) fn(fn(a0) -> a1, a0) -> a1\n'
             'increment : fn(i64) -> i64\nunreferenced : fn(i64) -> i64\nmain : fn() -> void\n')
 first = run([tests.compiler, '--types', path])
 second = run([tests.compiler, '--types', path])
@@ -186,7 +176,7 @@ assert p.returncode == 0 and not p.stdout and output.read_text() == expected, p.
 # A long function identifier must not be copied into every parameter's
 # diagnostic metadata (quadratic amplification), or into this simple error.
 path = tests.source('long_function_name', 'fn ' + 'x' * 8192 + '(' +
-                    ','.join(f'parameter_{i}' for i in range(256)) + ') {} fn main() {}')
+                    ','.join(f'parameter_{i}' for i in range(256)) + ') { println(parameter_0); } fn main() {}')
 p = run([tests.compiler, '--check', path])
 assert p.returncode == 1 and 'cannot infer parameter parameter_0' in p.stderr, p.stderr
 assert len(p.stderr) < 512, len(p.stderr)
@@ -199,7 +189,7 @@ for i in range(300):
     chain.append(f'fn chain_{i}() -> _ {{ return {previous}; }}')
 path = tests.source('deep_inferred_type', '\n'.join(chain) + '\nfn main() {}')
 p = run([tests.compiler, '--check', path])
-assert p.returncode == 1 and '257-level limit' in p.stderr, (p.returncode, p.stderr)
+assert p.returncode == 1 and any(d in p.stderr for d in ['257-level limit', 'inference work limit', 'dependency nesting limit']), (p.returncode, p.stderr)
 
 growth = ['fn base() -> i64 { return 0; }']
 for i in range(12):

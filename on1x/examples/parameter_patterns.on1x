@@ -1,0 +1,12 @@
+fn swap((first, second)) -> _ { return (second, first); }
+fn make((operation, value)) -> _ {
+  return fn() -> _ { return operation(value); };
+}
+fn main() {
+  let (flag, number) = swap((42, true));
+  assert(flag); println(number);
+  let amount = 2;
+  let add = fn(value: i64) -> i64 { return value + amount; };
+  println(make((add, 40))());
+  println(fn((left, right): (i64, i64)) -> i64 { return left + right; }((20, 22)));
+}

@@ -27,6 +27,8 @@ deep_cases = {
     'calls': 'println(' + 'id(' * 20000 + '1' + ')' * 20000 + ');',
     'postfix_calls': 'id' + '()' * 20000 + ';',
     'lambdas': 'fn() -> i64 { return ' * 20000 + '1' + '; }()' * 20000 + ';',
+    'tuple_values': '(0,' * 20000 + '0' + ')' * 20000 + ';',
+    'tuple_patterns': 'let ' + '(' * 20000 + 'x' + ',y)' * 20000 + ' = (1, 2);',
 }
 for name, body in deep_cases.items():
     source = tests.source('deep_' + name, 'fn id(x: i64) -> i64 { return x; }\nfn main() { ' + body + ' }')
@@ -37,6 +39,27 @@ for name, body in deep_cases.items():
 source = tests.source('deep_function_type', 'fn reject(f: ' + 'fn() -> ' * 20000 + 'i64) {} fn main() {}')
 p = run([tests.compiler, '--check', source])
 assert p.returncode == 1 and 'syntax nesting exceeds 256-level' in p.stderr, (p.returncode, p.stderr)
+
+source = tests.source('deep_tuple_type', 'fn reject(p: ' + '(' * 20000 + 'i64' + ', bool)' * 20000 + ') {} fn main() {}')
+p = run([tests.compiler, '--check', source])
+assert p.returncode == 1 and 'syntax nesting exceeds 256-level' in p.stderr, (p.returncode, p.stderr)
+for levels, accepted in ((255, True), (256, False)):
+    source = tests.source(f'tuple_type_depth_{levels}', 'fn use(p: ' + '(' * levels + 'i64' + ', bool)' * levels + ') {} fn main() {}')
+    p = run([tests.compiler, '--check', source])
+    assert p.returncode == (0 if accepted else 1), (levels, p.returncode, p.stderr)
+    if not accepted:
+        assert '256-level' in p.stderr, p.stderr
+for levels, accepted in ((254, True), (255, False)):
+    pattern = 'x'
+    value = '0'
+    for i in range(levels):
+        pattern = f'({pattern}, y{i})'
+        value = f'({value}, 0)'
+    source = tests.source(f'tuple_pattern_depth_{levels}', f'fn main() {{ let {pattern} = {value}; }}')
+    p = run([tests.compiler, '--check', source])
+    assert p.returncode == (0 if accepted else 1), (levels, p.returncode, p.stderr)
+    if not accepted:
+        assert '256-level' in p.stderr, p.stderr
 
 source = tests.source('bounded_function_type', 'fn accept(f: ' + 'fn() -> ' * 64 + 'i64) {} fn main() {}')
 tests.valid('bounded_function_type_native', '', source=source)
