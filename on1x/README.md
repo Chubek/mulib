@@ -165,7 +165,8 @@ fn main() -> i64 {
 }
 ```
 
-- Top level: `import "relative-file.on1x";`, `fn`, `extern fn`.
+- Top level: `import "relative-file.on1x";`, `fn`, `extern fn`, `macro` and
+  opt-in `@ppx` registrations.
 - Types: `i64`, `bool`, `string`, `void`, `json`, `json_view`, structural
   function types such as `fn(i64) -> i64`, tuples such as `(i64, bool)`,
   `code<T>`, `sexpr` and `buffer`.
@@ -176,10 +177,11 @@ fn main() -> i64 {
 - Local `let (a, (b, c)) = value;` and function/lambda parameter patterns support
   immutable tuple destructuring.
 - Statements: `let`, `var`, assignment, return, if/else, while, nested blocks,
-  and expression statements.
+  scoped syntax `block` bodies, and expression statements.
 - Expressions: literals, function/local names, anonymous `fn(params) { ... }`
   expressions, postfix calls, `!`, unary minus, arithmetic, numeric
-  ordering, equality, short-circuit logical operators, tuples and parentheses.
+  ordering, equality, short-circuit logical operators, tuples, parentheses,
+  scoped syntax expression bodies and the metaprogramming/MSP forms above.
 - `println` and `assert` are checked intrinsics.
 - Lexical scopes and source locations. Import cycles and duplicated functions
   are errors. No function overloading or generics yet.

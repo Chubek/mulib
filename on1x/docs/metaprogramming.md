@@ -335,7 +335,7 @@ See [the MSP semantics/lowering manual](staging.md) and `examples/staging.on1x`.
 
 - Macro passes: 512 top-level definitions/file, 512 definitions/local group,
   4,096 instantiated lexical definitions/unit, 256 rules/definition, 1,024 expansions, 64 active
-  expansions, 256 syntax levels, 262,144 cloned expression/statement nodes per
+  expansions, 256 syntax levels, 262,144 cloned syntax nodes per
    cloning phase, and 8 MiB of copied expansion text/metadata accounting.
 - Pattern matching: 256 active matching frames, 4 MiB cumulative capture metadata,
   and 4,194,304 matching/validation work units. Repetition ranks are at most 256.

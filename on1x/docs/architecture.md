@@ -52,6 +52,14 @@ paths and repetition widths, including empty dimensions. Template expansion
 checks ranks and equal driver widths. Matching/backtracking and copied metadata
 have independent budgets; caller/introduced syntax contexts remain distinct.
 
+`src/macros.cpp` also owns lexical `let_syntax`/`letrec_syntax` groups. Definition
+records retain immutable value/syntax environment snapshots; recursive syntax
+references use stable pool indices, not shared ownership cycles. Context marks
+identify the defining transformer, while source and introduced value binders
+become distinct collision-checked names. Nonrecursive groups see outer syntax;
+recursive groups see the whole group. `SyntaxLet` and its definitions are erased
+transactionally before the wire boundary, with no runtime environment or ABI change.
+
 `src/staging.cpp` runs only after PPX source reconstruction. Lexical bindings
 carry quotation-world identity as well as depth, preventing scope extrusion when
 a splice re-enters a different quotation at the same depth. Quotes become typed
@@ -205,14 +213,21 @@ version 1; aggregate foreign interoperability is **not** enabled. See the
 ## Kernel discovery
 
 - Gate A: ExoML CDecl scanner and ABI/target evidence.
-- Gate B: ExoML reviewed semantic contract and drift check.
+- Gate B: strict full ExoML contract validation and drift check. Independent
+  accountable review is an additional requirement, not a flag-derived proof.
 - Gate C (not yet implemented): C11 ABI adapters for pointers, callbacks,
   error conventions, records, strings, conditional ownership transfers.
 - Gate D (not yet implemented): Chisel proof obligations, Wetstone call models,
   borrowed lifetimes and invalidations, and effect summaries.
 - Gate E (not yet implemented): idiomatic On1x `Option`/`Result`/`Owned` facades.
 
-The `on1x-bind` prototype can emit raw signed-integer C adapters, **not**
+The optional `on1x-bind` tool performs real extraction, lossless public-CDecl
+transport, pin/check/explain and reviewed-metadata raw scalar adapters. The
+source-backed JSON/Vec/Parsec profiles remain annotated/unreviewed; their locked
+workflow checks source/toolchain/artifact identities and full contracts without
+using the lossy legacy ownership projection. See [contracts](contracts.md).
+
+The scalar emitter provides exact C11 signature/width/signedness/range checks, **not**
 Gate C/D/E safe imports. Functions outside that scalar subset fail closed by
 being skipped. Every file that uses an `extern fn` is treated as untrusted raw
 interop in the current frontend. It is not permissible to represent an unowned
@@ -244,3 +259,6 @@ from MuLIB documentation. Arbitrary kernel build plans should be synthesized
 from MANIFEST.yaml plus the module's actual examples/manuals, respecting
 implementation-only dependencies, platform/runtime profiles and transitive
 linkage. No globally defined `MULIB_IMPL_*` macros are allowed.
+The contract tool now implements explicit manual-backed JSON, Vec and core
+Parsec plans; optional owned-parser switches are never silently added. It is
+not a general resolver for every MuLIB profile.

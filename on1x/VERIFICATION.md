@@ -13,34 +13,110 @@
 
 ## Executed checks
 
-The table covers the current patterns/self-hosting/MSP continuation. Subsequent
+The table covers the local-syntax/source-contract continuation. Subsequent
 milestone sections record earlier increments; their former feature limitations
 and fingerprint snapshot are historical, not current feature claims.
 
 | Configuration | Result |
 |---|---|
-| GCC generated ASDL/Aurocks frontend (fresh continuation build) | 21/21 CTest tests PASS |
-| GCC independent fallback frontend | 20/20 PASS |
-| Clang generated ASDL/Aurocks frontend | 21/21 PASS |
-| Clang independent fallback frontend | 20/20 PASS |
-| Clang ASan+UBSan generated frontend and generated C11 programs | 21/21 PASS |
-| Clang ASan+UBSan independent fallback and generated C11 programs | 20/20 PASS |
-| Standalone GCC fallback without LibStone or parent MuLIB headers | 19 PASS; JSON SKIP |
+| GCC generated ASDL/Aurocks + ExoML SDK/libclang (fresh build) | 24/24 CTest tests PASS |
+| GCC independent fallback frontend, SDK disabled | 22/22 PASS |
+| GCC fallback + SDK-only artifact tooling (discovery disabled) | 23/23 PASS |
+| Clang generated ASDL/Aurocks frontend, SDK disabled | 23/23 PASS |
+| Clang independent fallback frontend, SDK disabled | 22/22 PASS |
+| Clang ASan+UBSan generated frontend and generated C11 programs | 23/23 PASS |
+| Clang ASan+UBSan independent fallback and generated C11 programs | 22/22 PASS |
+| Standalone GCC fallback without LibStone or parent MuLIB headers | 20 PASS; JSON and contract semantics SKIP |
+| Clang ASan+UBSan On1x binding tool + unchanged GCC-built ExoML SDK | SDK/real-discovery suite PASS, also with `-O2` emitted C; SDK itself not sanitizer-instrumented |
+| Full ExoML SDK source build with Clang 22 / libstdc++ 16 | BLOCKED in upstream private `JsonReader.hpp` incomplete `std::pair<..., JsonValue>` instantiation; checkout not patched |
 
 Compiler builds and emitted C11 programs use
 `-Wall -Wextra -Wpedantic -Werror`. Sanitized configurations additionally use
 `-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all`,
 including the real MuLIB kernel implementation TUs. No test was skipped in the
-six parent-MuLIB configurations. A separately staged standalone source copy
-verified that absent canonical headers produce an explicit CTest JSON SKIP.
+seven successful parent-MuLIB configurations. A separately staged standalone source copy
+verified that absent canonical headers produce explicit JSON and contract-semantics SKIPs.
 
 Generator builds visibly generated and compiled `on1x_ast.c`,
-`on1x_parser.c` and `ppx_ast.c`. The differential corpus compares **258** exact token/error
+`on1x_parser.c` and `ppx_ast.c`. The differential corpus compares **260** exact token/error
 cases, including byte offsets, invalid strings, comments, NUL and source limits.
 Scanner API tests cover non-terminated bounded buffers, copied arena-owned
 tokens, repeated scans after failures and serialized concurrent calls.
 
-### Current continuation: recursive patterns, native authoring and typed MSP
+### Current continuation: local syntax and source-backed contracts
+
+Fresh required-generator/SDK build:
+`/tmp/opencode/on1x-contracts-gcc-generated`. SDK-only fallback build:
+`/tmp/opencode/on1x-contracts-gcc-sdk-fallback`. The other five configurations
+retain the `on1x-{gcc-fallback,clang-generated,clang-fallback,clang-sanitize-generated,clang-sanitize-fallback}`
+names under `/tmp/opencode`. Full-matrix logs are in
+`/tmp/opencode/on1x-local-contracts-final-tests`. The standalone stage is
+`/tmp/opencode/on1x-local-contracts-standalone-65bf8t2r`; `3-final.log` records
+the final 20 passes and two explicit skips.
+
+Local syntax tests execute parallel/nonrecursive and self/mutually recursive
+groups, lexical shadowing, definition-site value/syntax and literal identities,
+mutable binding updates, argument-context forwarding, local group captures,
+scheme inference, staged code and escaping closure cleanup. Thirteen ordinary
+rejections and four separate resource-limit regressions cover future/scope
+escape, duplicates, invalid unused templates, mutable/JSON captures, generated
+local definitions, recursive count, group/unit definition counts, environment
+snapshots and copied-definition text budgets. HIR tests check transactional
+failure and full erasure before PPX. This is not procedural Scheme macro support.
+
+All **45** source contract annotations (JSON 20, Vec 7, Parsec combinators 18)
+pass the actual public ExoML validator against complete libclang discoveries.
+Pinning preserves full transfers, borrows, invalidations, errors, callbacks,
+IO/unknown effects, concurrency and destructor metadata and does not grant
+review. Real tests reject stale hashes/identity, incomplete/invalid CDecl,
+unknown nested keys, wrong scalar types, invalid lifetime/index/length/allocator
+metadata, retained callbacks without unregister, malformed UTF-8/surrogates,
+overlong C tokens and JSON-depth limits. Fake review flags on clearly labeled
+test fixtures never permit safe export. Actual kernel annotations stay unreviewed.
+
+Strict native ABI tests compile/run signed scalar and inline adapters through
+On1x, exercise narrowing traps, and require the C compiler to reject return-type,
+typedef-size and signedness drift. Manifests retain full IO/ownership data; no
+pointer, aggregate, callback or generalized safe facade is emitted. Canonical
+C11 semantics tests use counted allocator failures for partial JSON parse/print
+cleanup, conditional transfer/replacement and borrows, Vec failure/self-alias/
+logical removal/reuse/no nested drops, and Parsec descriptor/capture lifetimes.
+The standalone contract C example also compiles/runs under both native compilers
+and Clang sanitizers. Implementation switches occur in exactly one TU.
+
+Discovery tests include macro-option fingerprint changes, i386 declaration
+discovery (not a cross-target executable test), hostile compile-command rejection,
+lossless full CDecl transport, equal-byte duplicate snapshots, artifact/source/
+manifest drift, and no-replace publication. Persistent current evidence is in
+`/tmp/opencode/on1x-local-contracts-evidence-final`; recheck reports Gate B true,
+inputs unchanged and **safe_export false**. Earlier probe snapshots are not
+current tool-identity evidence.
+
+The Clang SDK source-build failure is confined to the supplied dependency; no
+source there was changed. On1x's binding tool itself additionally compiles with
+Clang ASan/UBSan and passes the complete real-discovery/ABI suite by linking the
+unchanged GCC-built public SDK. The standalone binary is
+`/tmp/opencode/on1x-contracts-clang-bridge-sanitize`; this does **not** mean the
+SDK's C++ objects or system libclang were sanitizer-instrumented.
+
+C11 and public type listings for **30** examples/native processors match byte
+for byte across six frontend configurations; all five generated artifacts match
+across the three generator builds. Reproduction artifacts and fingerprints are
+under `/tmp/opencode/on1x-local-contracts-reproducibility`. The independent build
+helper additionally builds/runs hello, JSON, local syntax and MSP with both GCC
+and Clang at `-O2`, with matching outputs and no C++/Python/LibStone/libclang
+application linkage. Five suites (macros, local syntax, contract semantics,
+staging, self-hosting) also run with `-O2` emitted C under GCC, Clang and Clang
+ASan/UBSan; logs are in `/tmp/opencode/on1x-local-contracts-optimized`.
+
+The new tool can be reproduced with the SDK build/snapshot commands in
+[the contract manual](docs/contracts.md). SDK-only builds omit
+`ON1X_WITH_EXOML_EXTRACT`; ordinary frontend builds omit both SDK options.
+No general Chisel/Wetstone proof, safe import, runtime ABI change or compiler
+self-hosting is claimed. This agent did not run commit or push commands; the
+implementation is now present in externally created commit `f305198`.
+
+### Previous continuation: recursive patterns, native authoring and typed MSP (historical)
 
 Fresh required-generator build: `/tmp/opencode/on1x-stages-gcc-generated`.
 The other final build directories are `on1x-gcc-fallback`,
