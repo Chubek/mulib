@@ -185,7 +185,7 @@ class Generator {
     case Expr::Kind::Splice:case Expr::Kind::Lift:throw Error(e.where,"MSP stage lowering required before code generation");
     case Expr::Kind::Quote:return expr(*e.children.at(0));
     case Expr::Kind::Run:{auto code=expr(*e.children.at(0));return temp(e.type,code+".invoke("+code+".environment)");}
-   case Expr::Kind::MacroCall:case Expr::Kind::SyntaxHole:case Expr::Kind::SyntaxBlock:case Expr::Kind::Extension:case Expr::Kind::SyntaxList:case Expr::Kind::SyntaxVector:case Expr::Kind::SyntaxKeyword:
+    case Expr::Kind::MacroCall:case Expr::Kind::SyntaxHole:case Expr::Kind::SyntaxBlock:case Expr::Kind::Extension:case Expr::Kind::SyntaxList:case Expr::Kind::SyntaxVector:case Expr::Kind::SyntaxKeyword:case Expr::Kind::SyntaxLet:
     throw Error(e.where,"unexpanded metaprogramming syntax before code generation");
    case Expr::Kind::PolyPack:{
     std::vector<std::string> elements;for(const auto& child:e.children)elements.push_back(expr(*child));

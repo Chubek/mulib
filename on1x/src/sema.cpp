@@ -164,7 +164,7 @@ class Checker {
       auto type=child(0);if(!type.is_code())fail(e.where,"run requires code<T>, got "+type_name(type));
       return e.type=type.code_result();
      }
-    case Expr::Kind::MacroCall:case Expr::Kind::SyntaxHole:case Expr::Kind::SyntaxBlock:case Expr::Kind::Extension:case Expr::Kind::SyntaxList:case Expr::Kind::SyntaxVector:case Expr::Kind::SyntaxKeyword:
+    case Expr::Kind::MacroCall:case Expr::Kind::SyntaxHole:case Expr::Kind::SyntaxBlock:case Expr::Kind::Extension:case Expr::Kind::SyntaxList:case Expr::Kind::SyntaxVector:case Expr::Kind::SyntaxKeyword:case Expr::Kind::SyntaxLet:
      fail(e.where,"unexpanded metaprogramming syntax before type checking");
     case Expr::Kind::PolyProjection:{
      auto schema=child(0);

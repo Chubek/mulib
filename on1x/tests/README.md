@@ -106,12 +106,29 @@ CTest registers independent tests with separate artifact directories:
   schema JSON/extensions and failure cases, 160 differential arithmetic folds,
   data allocation/bounds limits and 100,000-node iterative destruction. Normal
   leak checks remain enabled; fatal non-unwinding paths are tested separately.
+- `on1x.local_syntax`: nonrecursive/recursive groups, mutual calls, shadowing,
+  definition-site value/syntax and literal identity, captured groups, schemes,
+  closures/cleanup, staging and deterministic expansion. Negative cases cover
+  scope/future-binding escapes, unused invalid templates, duplicate/undefined
+  macros, recursive limits, mutable captures and generated local definitions.
+- `on1x.contracts`: canonical header/manual hashes and complete profile inventories,
+  explicit exactly-once implementation plans, no-replace snapshot publication,
+  actual JSON transfer/replacement/borrows, Vec realloc/self-alias/reuse, Parsec
+  borrowed descriptors/captures and counted partial-allocation failure cleanup.
+- `on1x.contracts_sdk` (opt-in `ON1X_WITH_EXOML`): public v2 CDecl/contract transport,
+  strict malformed/unknown metadata rejection, all review/safe-export gates,
+  native scalar adapters and narrowing failures, compiler-rejected ABI drift and
+  full IO/ownership metadata retention. With `ON1X_WITH_EXOML_EXTRACT`, also tests
+  real libclang discovery, macro/target fingerprints, i386 declaration discovery,
+  hostile compile-command rejection, all 45 canonical functions, reproducible
+  snapshots and artifact/source/manifest drift. SDK-only builds explicitly use
+  synthetic metadata fixtures, not fabricated discovery or semantic review.
 - `on1x.scanner_parity` (generated builds only): deterministic cases comparing
   exact token bytes, offsets, line/column positions and errors. The test probes
   both scanners with hex-encoded token text, including comments, CRLF, escaped
   strings, UTF-8, invalid bytes, NUL, dense input and the source-size boundary.
 
-`on1x.json` exits 77 when canonical `../include/mulib-json.h` is absent; CTest
+`on1x.json` and `on1x.contracts` exit 77 when their canonical parent headers are absent; CTest
 reports **SKIP**, not PASS. The counting JSON fixture in `on1x.compiler` is only
 a codegen test double, not a substitute for real-kernel integration. The same
 fixture in `on1x.functions` checks owner cleanup through indirect calls and
@@ -140,6 +157,6 @@ cmake --build on1x/build-sanitize --parallel 4
 ctest --test-dir on1x/build-sanitize --output-on-failure
 ```
 
-The optional ExoML `on1x-bind` tool is not covered by this P0/P1 suite. No
-generalized safe FFI, Chisel/Wetstone proof or cross-target ABI coverage is
+The optional ExoML tool has its own SDK test above. No
+generalized safe FFI, Chisel/Wetstone proof or cross-target executable ABI coverage is
 implied. See [verification](../VERIFICATION.md) for executed configurations.

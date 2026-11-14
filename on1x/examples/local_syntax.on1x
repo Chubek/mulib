@@ -1,0 +1,21 @@
+macro helper { rule () => expression { 1 }; }
+fn main() {
+  let base = 40;
+  let_syntax {
+    macro answer { rule ($x: Expression) => expression { base + $x }; }
+    macro outer_helper { rule () => expression { helper!() }; }
+  } block {
+    let base = 0;
+    println(answer!(2));
+    let_syntax {
+      macro helper { rule () => expression { 99 }; }
+    } block {
+      println(outer_helper!());
+      println(helper!());
+    }
+  }
+  println(letrec_syntax {
+    macro first { rule ($x: Expression) => expression { second!($x) }; }
+    macro second { rule ($x: Expression) => expression { $x + 2 }; }
+  } expression { first!(40) });
+}

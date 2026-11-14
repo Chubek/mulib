@@ -16,7 +16,7 @@ struct MacroCaptures {
 };
 class MacroRules {
  const Schema& schema;
- std::function<bool(const Expr&)> locally_bound;
+ std::function<bool(const Expr&,const Expr&)> same_binding;
  std::function<ExprPtr(const Expr&)> clone;
  std::function<std::vector<Stmt>(const std::vector<Stmt>&)> clone_body;
  std::map<const MacroRule*,MacroCaptures> declarations;
@@ -34,8 +34,8 @@ class MacroRules {
  void pattern(Pattern&,const MacroCaptures&,const RepetitionPath&,std::size_t);
  void element(const Expr&,const MacroCaptures&,RepetitionPath&,std::size_t,std::size_t,std::vector<ExprPtr>&);
 public:
- MacroRules(const Schema& s,std::function<bool(const Expr&)> bound,std::function<ExprPtr(const Expr&)> copy,std::function<std::vector<Stmt>(const std::vector<Stmt>&)> bodies)
-  :schema(s),locally_bound(std::move(bound)),clone(std::move(copy)),clone_body(std::move(bodies)){}
+ MacroRules(const Schema& s,std::function<bool(const Expr&,const Expr&)> binding,std::function<ExprPtr(const Expr&)> copy,std::function<std::vector<Stmt>(const std::vector<Stmt>&)> bodies)
+  :schema(s),same_binding(std::move(binding)),clone(std::move(copy)),clone_body(std::move(bodies)){}
  std::string category(const Expr&)const;
  void validate(const MacroRule&);
  bool match(const MacroRule&,const Expr&,MacroCaptures&);

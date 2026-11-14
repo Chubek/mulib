@@ -177,7 +177,7 @@ void require_core(const Unit& unit){
  if(!unit.macros.empty())throw Error(unit.macros.front().where,"unexpanded macro definitions");
  if(!unit.ppx.empty())throw Error(unit.ppx.front().where,"source PPX registrations require --allow-source-ppx in the compiler driver");
  auto expr=[&](auto&& self,const Expr& e)->void{
- if(e.kind==K::MacroCall||e.kind==K::SyntaxHole||e.kind==K::SyntaxBlock||e.kind==K::Extension||e.kind==K::SyntaxList||e.kind==K::SyntaxVector||e.kind==K::SyntaxKeyword||e.syntax_tail)throw Error(e.where,"unhandled metaprogramming syntax"+(e.text.empty()?"":": "+e.text));
+ if(e.kind==K::MacroCall||e.kind==K::SyntaxHole||e.kind==K::SyntaxBlock||e.kind==K::Extension||e.kind==K::SyntaxList||e.kind==K::SyntaxVector||e.kind==K::SyntaxKeyword||e.kind==K::SyntaxLet||!e.syntax_definitions.empty()||e.syntax_tail)throw Error(e.where,"unhandled metaprogramming syntax"+(e.text.empty()?"":": "+e.text));
   if(e.callee)self(self,*e.callee);
   for(const auto& c:e.children)self(self,*c);
   auto stmts=[&](auto&& visit,const std::vector<Stmt>& body)->void{for(const auto& s:body){if(s.value)self(self,*s.value);visit(visit,s.body);visit(visit,s.otherwise);}};

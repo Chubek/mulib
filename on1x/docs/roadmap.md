@@ -17,14 +17,15 @@
 | C11 AOT code generation | Verified subset | Strict GCC/Clang compile/run tests; ASan/UBSan also cover generated C |
 | Signed i64 checking | Implemented | Overflow/invalid division tests |
 | Native ABI externs | Explicit raw subset | Exact scalar ABI; explicit nested parameter patterns flatten left-to-right, no aggregate layout inference |
-| Typed hygienic macros | Recursive R7RS-style pattern/template family | Context marks, typed captures, wildcard/literal keywords, list/vector/tuple/AST patterns, dotted tails, arbitrary/nested ellipses and template escapes; top-level definitions, not a full Scheme macro binding system |
+| Typed hygienic macros | Recursive patterns and lexical syntax bindings | Context marks, typed recursive captures/ellipses, `let_syntax`/`letrec_syntax`, definition-site value/syntax identities and bounded transactional expansion; not the full Scheme language |
 | External AST PPX | Core implemented | Source opt-in / CLI registration, bounded shell-free POSIX transport, S-expression schema validation, labeled carriers and namespaced AST extensions |
 | PPX authoring / standard processors | Native self-hosted libraries/tools | On1x codec/visitor/schema/PPX libraries and six C11-native processors, with Python bootstrap references; compiler remains C++ |
 | Multi-stage programming (MSP) | Typed closed-code AOT | `code<T>`, quote/splice/lift/contextual run, quotation-world checks, reference-counted factories/thunks; no JIT or runtime source eval |
 | Native authoring data/I/O | Bounded C11 substrate | Persistent managed `sexpr`, shared `buffer`, byte operations/I/O; process-lifetime bounded text snapshots, not a general String/ADT/module library |
 | JSON resource facade | Experimental, real-kernel tested | Nested views, lexical drops, numeric bounds and injected allocation failures; errors still terminate |
-| ExoML contract verifier | Optional tool source | SDK integration needs supplied LibStone checkout |
-| ExoML raw scalar adapter emitter | Optional, narrow subset | Signed integers/void only; no semantic-safety claims |
+| ExoML contract tooling | Optional public SDK integration | Real libclang extraction, lossless v2 CDecl transport, strict sidecars, pin/check/explain and locked source/toolchain/build-plan evidence |
+| JSON/Vec/Parsec contract inventory | 45 unreviewed source annotations | All 20/7/18 core declarations covered; conditional transfers, borrows, errors, effects, callbacks/unknown obligations retained; not safe imports |
+| ExoML raw scalar adapter emitter | Optional, narrow tested subset | Signed integers/void, exact C11 signature/size/signedness/range checks and full manifests; safe emission always blocked pending remaining gates |
 | General C FFI adapters | Not implemented | Needs ABI/error/ownership model and tests |
 | Chisel/Wetstone integration | Not implemented | Current checker only ad hoc ownership restrictions |
 | Flintstone/Firestone native lowering | Not implemented | C11 is the sole backend |
@@ -49,10 +50,11 @@
     The semantic HIR remains C++-owned, not a new generated ASDL semantic AST.
     The metaprogramming core runs after parsing and before inference, with a real
     ASDL-generated wire tree in integrated builds. Follow-up metaprogramming work
-    includes local syntax bindings, general modules/ADTs, IPC and reviewed processor
+    includes generated transformer definitions, general modules/ADTs, IPC and reviewed processor
     integrations. Recursive patterns, native authoring tools and typed AOT MSP
     now have executable implementations; see [the manual](metaprogramming.md).
-3. **P2** — Generate exact target-checked C11 wrapper adapters for reviewed
+3. **P2** — Independently review the implemented [source contract profiles](contracts.md),
+   then generate exact target-checked C11 wrapper adapters for reviewed
    pointer-based MuLIB JSON/Vec/Parsec contracts; add `Result`/`Option`
    safeties and explicit success/failure transfers.
 4. **P3** — Integrate Chisel region/ownership analysis, Wetstone foreign

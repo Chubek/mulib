@@ -31,11 +31,12 @@ struct Param {
 };
 struct Stmt;
 struct Expr;
+struct Macro;
 using ExprPtr = std::unique_ptr<Expr>;
 struct Expr {
   enum class Kind { Integer, Boolean, String, Variable, Unary, Binary, Call, Lambda, Tuple, PolyPack, PolyProjection,
                     MacroCall, SyntaxHole, SyntaxBlock, Extension, SyntaxList, SyntaxVector, SyntaxKeyword,
-                    Quote, Splice, Lift, Run } kind;
+                    Quote, Splice, Lift, Run, SyntaxLet } kind;
  enum class Reference { Unresolved, Local, Function, Extern, Intrinsic } reference = Reference::Unresolved;
  Location where;
  std::string text;
@@ -46,6 +47,7 @@ struct Expr {
  bool prototype = false;
  std::size_t syntax_repeat = 0;
  ExprPtr syntax_tail; // Dotted syntax, never an ordinary expression operand.
+ std::vector<Macro> syntax_definitions; // Lexical let_syntax/letrec_syntax; erased before PPX.
  ExprPtr callee; // Call operands: callee first, followed by children (arguments).
  Type type = Type::Invalid;
  std::vector<Param> parameters;

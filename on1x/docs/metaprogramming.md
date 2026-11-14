@@ -1,6 +1,7 @@
 # Typed hygienic macros, PPX and staging
 
 The core-first increment now includes recursive R7RS-style patterns/templates,
+lexical `let_syntax`/`letrec_syntax` bindings,
 self-hosted On1x authoring libraries and six native processors, and typed AOT
 multi-stage programming (MSP). These are separate facilities: macros rewrite
 source syntax, PPX transforms validated external ASTs, and MSP constructs typed
@@ -38,9 +39,9 @@ fn main() {
 }
 ```
 
-Macros live at module top level, including imported modules, and use a distinct
-`name!(...)` namespace. All definitions are available throughout the merged
-unit. Rules are tried in declaration order. Each capture **must** declare a
+Module macros, including imported definitions, use a distinct `name!(...)`
+namespace and are available throughout the merged unit. Local syntax groups
+below introduce lexically scoped definitions. Rules are tried in declaration order. Each capture **must** declare a
 syntax category, separate from ordinary value types such as `i64`:
 
 ```
@@ -145,16 +146,58 @@ Introduced syntax receives a fresh context mark per expansion. Captured syntax
 retains the caller's context. Bindings resolve by `(name, context)` within real
 lexical scopes, then become deterministic collision-checked internal names.
 Thus introduced temporaries cannot capture caller expressions, and free template
-identifiers resolve at the definition site (module globals/intrinsics), not to
+identifiers resolve at the definition site (visible locals, module globals/intrinsics), not to
 same-spelled caller locals. Nested expansions preserve these distinctions.
 Identifier captures deliberately used as binders carry the caller's context;
 normal scope/duplicate-binding rules apply to references in that context.
 
-This implements the recursive R7RS-style **pattern/template** family over On1x
-syntax, not the entire R7RS macro binding system. Definitions remain top-level;
-`let-syntax`/`letrec-syntax`, procedural macros, Scheme reader data types absent
-from On1x, and intentional-capture escape hatches are not implemented. Examples:
-`examples/macros.on1x`, `examples/structural_macros.on1x`; tests: `tests/test_macros.py`.
+### Local syntax bindings
+
+```on1x
+fn main() {
+  let base = 40;
+  let_syntax {
+    macro answer { rule ($x: Expression) => expression { base + $x }; }
+  } block {
+    let base = 0;
+    println(answer!(2));  # 42: definition-site base
+  }
+  println(letrec_syntax {
+    macro first { rule () => expression { second!() }; }
+    macro second { rule () => expression { 42 }; }
+  } expression { first!() });
+}
+```
+
+Both forms contain zero or more ordinary `macro` definitions, followed by
+`expression { expr }` or `block { statements }`. They can nest and shadow outer
+macros, without shadowing the separate ordinary value/function namespace.
+
+- `let_syntax` resolves each transformer's lexical references in the **outer**
+  syntax environment: neither itself nor siblings are in scope in its templates
+  or literal patterns. All new names are available in the body.
+- `letrec_syntax` includes the **whole group** in every transformer's definition
+  environment. Self/mutual references work, subject to ordinary expansion limits.
+- Free value references and literal identifiers capture **binding identity** at
+  definition, not the same-spelled name at invocation. Free macro calls likewise
+  retain their definition-site syntax environment. Captured arguments retain
+  caller contexts and are not eagerly expanded before rule matching.
+- A `block` body is a new ordinary lexical block, unlike a block macro's spliced
+  statement sequence. Its value bindings do not escape. An expression body has
+  its expression's type/value restriction and no runtime syntax environment.
+- Groups disappear completely before PPX and staging. `Expression`/`Block`
+  captures may carry a matching group; scoped macros can construct closures or
+  staged code, but cannot bypass mutable/resource captures or quotation worlds.
+
+Definitions are declarative, not runtime functions. Local definitions cannot
+currently be **generated inside a macro template**; pass a source-written group
+as captured syntax instead. There is no procedural `syntax-case`, `define-syntax`
+inside arbitrary blocks, first-class transformer value, or intentional-capture
+escape hatch. These forms implement On1x's lexical adaptation of R7RS local
+syntax, not the complete Scheme language/reader system.
+
+Examples: `examples/{macros,structural_macros,local_syntax}.on1x`; tests:
+`tests/test_macros.py`, `tests/test_local_syntax.py`, and transactional HIR tests.
 
 ## Registering external PPX
 
@@ -290,7 +333,8 @@ See [the MSP semantics/lowering manual](staging.md) and `examples/staging.on1x`.
 
 ## Limits, trust and remaining work
 
-- Macro passes: 512 definitions, 256 rules/definition, 1,024 expansions, 64 active
+- Macro passes: 512 top-level definitions/file, 512 definitions/local group,
+  4,096 instantiated lexical definitions/unit, 256 rules/definition, 1,024 expansions, 64 active
   expansions, 256 syntax levels, 262,144 cloned expression/statement nodes per
    cloning phase, and 8 MiB of copied expansion text/metadata accounting.
 - Pattern matching: 256 active matching frames, 4 MiB cumulative capture metadata,
@@ -310,7 +354,7 @@ compiler dependency or closure ABI version change. Native authoring adds the
 versioned data primitives documented in `selfhosting.md`; emitted C/runtime must
 be rebuilt together.
 
-Deferred work: local syntax bindings, general modules/ADTs and safe MuLIB modules,
+Deferred work: generated local transformer definitions, general modules/ADTs and safe MuLIB modules,
 the missing IPC foundation and
 transport, the larger (~30) processor catalog, reviewed inline C/assembly
 facilities, and a real ArchML integration. No placeholders are counted as these

@@ -43,6 +43,13 @@ int main(){
    auto stage_budget=parse("fn main(){let c=quote{42};println(run(c));}");auto limits=on1x::InferenceLimits{};limits.nodes=0;rejected=false;
    try{on1x::infer_types(stage_budget,limits);}catch(const on1x::Error&){rejected=true;}
    require(rejected&&!stage_budget.stages_lowered&&stage_budget.functions[0].body[0].value->children[0]->kind==on1x::Expr::Kind::Integer,"post-staging inference failure changed the source tree");
+   auto local=parse("fn main(){let x=40;println(letrec_syntax{macro a{rule()=>expression{b!()};}macro b{rule()=>expression{x+2};}}expression{a!()});}");
+   on1x::expand_macros(local);auto local_wire=on1x::meta::write_sexpr(on1x::meta::encode(local));
+   auto local_copy=on1x::meta::decode(on1x::meta::read_sexpr(local_wire,"local"));on1x::check(local);on1x::check(local_copy);
+   require(on1x::emit_c(local,"a")==on1x::emit_c(local_copy,"b"),"local syntax did not lower before PPX");
+   auto local_bad=parse("fn main(){letrec_syntax{macro m{rule()=>expression{m!()};}}block{m!();}}");rejected=false;
+   try{on1x::expand_macros(local_bad);}catch(const on1x::Error&){rejected=true;}
+   require(rejected&&local_bad.functions[0].body[0].value->kind==on1x::Expr::Kind::SyntaxLet&&local_bad.functions[0].body[0].value->syntax_definitions.size()==1,"local syntax failure was not transactional");
   std::cout<<"Metaprogramming HIR, schema and codec: PASS\n";
  }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
 }

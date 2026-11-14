@@ -53,6 +53,9 @@ Syntax categories form a hierarchy such as `Expression → Literal → NumericLi
 → IntegerLiteral → HexLiteral`; this is separate from ordinary value typing.
 Recursive list/vector/tuple/AST patterns, wildcards, literal keywords, dotted
 tails and arbitrary/nested ellipses preserve hygiene and repetition shape.
+Lexical `let_syntax { macro ... } expression { ... }` / `block { ... }` groups
+capture definition-site value/syntax bindings. `letrec_syntax` additionally
+permits self/mutual transformer references. They erase before PPX and inference.
 
 External AST transformers use `@ppx label "path"` (requires
 `--allow-source-ppx`) or explicit `--ppx LABEL PROGRAM` options. The compiler
@@ -71,9 +74,9 @@ MSP adds `code<T>`, `quote { ... }`, `splice(...)`, `lift(...)` and contextual
 operands execute at construction; quoted effects wait for run. No JIT or unchecked
 eval is involved. See [MSP semantics](docs/staging.md).
 
-Examples: `examples/{macros,structural_macros,ppx,sexpr,staging}.on1x`.
-See the [metaprogramming manual](docs/metaprogramming.md). Local syntax bindings,
-complete R7RS language support, IPC, inline C/assembly, ArchML and thirty processors
+Examples: `examples/{macros,structural_macros,local_syntax,ppx,sexpr,staging}.on1x`.
+See the [metaprogramming manual](docs/metaprogramming.md). Generated local macro
+definitions, complete R7RS language support, IPC, inline C/assembly, ArchML and thirty processors
 are not claimed.
 
 Build **with** LibStone:
@@ -386,48 +389,52 @@ Chisel-backed ownership and effect system. See `docs/roadmap.md`.
 
 ## ExoML integration (opt-in)
 
-ExoML's `cdecl::extract_c11` and `contract::validate_contract` are implemented
-in LibStone. Use `exoml-bind extract` and `exoml-bind validate` to obtain a
-versioned C declaration inventory and reviewed semantic sidecar. To build the
-On1x binding assistant with LibStone's `Moonstone::ExoML` SDK:
+`contracts/` now contains **45 source-backed, unreviewed annotations** for JSON,
+Vec and Parsec's borrowed combinators, with pinned header/manual evidence,
+semantic obligations, allocation-failure tests and reproducible build plans.
+They are not safe On1x imports. ExoML owns CDecl/FunctionContract; no second C
+type universe or lossy legacy ownership projection is used.
+
+Build the optional binding tool with the supplied SDK and libclang discovery:
 
 ```sh
 cmake -S on1x -B on1x/build-exoml \
-  -DON1X_REQUIRE_LIBSTONE=ON -DON1X_WITH_EXOML=ON
+  -DON1X_REQUIRE_LIBSTONE=ON -DON1X_WITH_EXOML=ON \
+  -DON1X_WITH_EXOML_EXTRACT=ON
 cmake --build on1x/build-exoml -j4
-on1x/build-exoml/on1x-bind verify file.cdecl.json file.exocontract.json
+python3 on1x/tools/on1x-contracts.py snapshot /tmp/opencode/contracts-example \
+  --bind on1x/build-exoml/on1x-bind --resource-dir "$(clang -print-resource-dir)"
+python3 on1x/tools/on1x-contracts.py check /tmp/opencode/contracts-example \
+  --bind on1x/build-exoml/on1x-bind
 ```
 
-`on1x-bind emit DECL CONTRACT OUT_PREFIX` generates `OUT_PREFIX.on1x` and
-`OUT_PREFIX.c` for a **restricted** subset: reviewed contracts on signed-integer
-C ABI functions with no ownership/callback/error contracts, whose parameters
-and return are fixed-size signed scalar integers or `void`. Each generated C11
-adapter checks input integer ranges, result/parameter sizes, and includes the
-real C header. It is still an **unsafe raw extern import**, not an automatically
-safe foreign value. All pointer, vector, aggregate, varargs, callback, and
-ownership-bearing signatures are explicitly skipped with a count. The entire
-MuLIB API cannot be generated this way today.
+For the supplied non-default checkout, add
+`-DON1X_LIBSTONE_ROOT="$PWD/on1x/third_party/libstone"`. Omit
+`ON1X_WITH_EXOML_EXTRACT` for SDK-only artifact validation without libclang.
+`on1x-contracts.py lint` and `build-plan` do not need either SDK or libclang.
 
-Example integration:
+`on1x-bind` implements `extract`, `normalize-decl`, `pin`, `check`, `explain`,
+`verify`, and `emit-raw` (`emit` is an alias). Pinning **never** grants review;
+check validates Gate B independently of review metadata. The raw emitter still
+requires reviewed metadata and supports only signed-integer/void scalar ABIs.
+Generated C11 checks include exact function-pointer compatibility, signedness,
+width and narrowing ranges. Output also includes a full-contract provenance
+manifest. Existing outputs are never overwritten.
 
-```on1x
-import "generated/SomeKernel.on1x";
-fn main() -> i64 {
-  println(on1x_ffi_example_i64(42));
-  return 0;
-}
-```
-
-You must link the generated C adapter and the corresponding MuLIB implementation
-sources, e.g. `--extra-c generated/SomeKernel.c` and an implementation TU with
-correct `MULIB_IMPL_*` macros. The existing build helper only automatically
-selects the documented JSON implementation recipe, not arbitrary modules.
+Pointers, output buffers, aggregates, varargs, callbacks and ownership/error
+obligations are retained in metadata but not silently adapted. The existing
+build helper still automatically selects only the restricted JSON pilot recipe,
+not arbitrary modules; raw adapters and kernel implementation TUs must be linked
+explicitly. Neither compiler nor ExoML is linked into those applications.
 
 **Do not** interpret a reviewed contract as a formal proof of the C body's
 behavior. ABI matching and ownership claims require native build verification,
 tests, and eventual Chisel/Wetstone usage checks. The ExoML gate in this tool
 checks basic reviewed-state/revision/fingerprint consistency; it is not the full
-On1x safe-export gate described in `AGENTS.md`.
+On1x safe-export gate described in `AGENTS.md`. **`emit-safe` fails closed even
+when all review flags are set**: general ownership/effect lowering and
+Chisel/Wetstone usage checks are still missing. See [the contract manual](docs/contracts.md)
+and [profiles/workflow](contracts/README.md).
 
 ## Testing and current limitations
 
@@ -439,6 +446,9 @@ arena-independent token storage and repeated/concurrent calls. JSON tests use
 the real kernel for nested lifetimes, numeric bounds, malformed inputs and
 injected allocation failures. Without canonical `../include/mulib-json.h`, the
 separate `on1x.json` test is reported **SKIP**, not PASS.
+`on1x.contracts` likewise skips when canonical contract headers are absent;
+optional `on1x.contracts_sdk` tests metadata/ABI transport and, when enabled,
+real libclang extraction and source/toolchain drift.
 
 Generated programs always compile with `-Wall -Wextra -Wpedantic -Werror`.
 `ON1X_TEST_C_FLAGS` supplies extra compiler/linker options as a CMake

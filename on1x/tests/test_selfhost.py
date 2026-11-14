@@ -101,7 +101,8 @@ p = run([t.compiler, '--emit-c', identity_source, '--ppx', 'native', processors[
 assert p.returncode == 0 and p.stdout == (t.work/'native_identity.c').read_text(), p.stderr
 
 minimal = '(Unit 1 ((Function "main" () (VoidType) (Block () (Loc "test" 0 1 1)) () (Loc "test" 0 1 1))))'
-for bad in [minimal.replace('Unit 1', 'Unit 2'), minimal.replace('"main"', '"if"'), minimal.replace('(VoidType)', '(PrivateHIR)'),
+for bad in [minimal.replace('Unit 1', 'Unit 2'), minimal.replace('"main"', '"if"'),
+            minimal.replace('"main"', '"let_syntax"'), minimal.replace('"main"', '"letrec_syntax"'), minimal.replace('(VoidType)', '(PrivateHIR)'),
             minimal.replace('"test" 0', '"test" 18446744073709551616'), minimal+' ()']:
     p = run([processors['identity']], input=bad, env=environment)
     assert p.returncode == 73 and not p.stdout, p.stderr

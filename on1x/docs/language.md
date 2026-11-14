@@ -24,6 +24,7 @@ unit (including imports) to 16,384 entries and 2 MiB of copied capture names.
 The core below is supplemented by [typed macros and PPX syntax](metaprogramming.md):
 top-level `macro name { rule (...) => expression {...}; }` / `block {...}`, typed
 `$capture: SyntaxCategory`, recursive structural patterns and nested `...`, `name!(...)`,
+lexical `let_syntax`/`letrec_syntax` groups,
 source `@ppx label "path"` registrations, and labeled `@label("name", ...)`
 expression/Block payloads and function attributes. Expansion happens after
 parsing and before inference. PPX output must become valid core syntax. Typed
@@ -46,13 +47,16 @@ statement = ('let'|'var') ID [ ':' type ] '=' expr ';'
           | ID '=' expr ';'
           | 'return' [ expr ] ';'
           | 'if' expr block [ 'else' block ]
-          | 'while' expr block | block | expr ';' ;
+          | 'while' expr block | block | local_syntax_block [';'] | expr ';' ;
 expr    = prefix { binary_operator expr } ;
 prefix  = ('!'|'-') prefix | postfix ;
 postfix = atom { '(' [ expr { ',' expr } ] ')' } ;
 atom    = '(' expr ')' | '(' expr ',' expr { ',' expr } ')'
         | literal | ID | lambda | 'quote' '{' expr '}'
-        | ('splice' | 'lift') '(' expr ')' ;
+        | ('splice' | 'lift') '(' expr ')' | local_syntax_expr ;
+local_syntax_expr = syntax_group 'expression' '{' expr '}' ;
+local_syntax_block = syntax_group 'block' block ;
+syntax_group = ('let_syntax' | 'letrec_syntax') '{' { macro_definition } '}' ;
 lambda  = 'fn' '(' [ params ] ')' [ '->' type ] block ;
 pattern = ID | tuple_pattern ;
 tuple_pattern = '(' pattern ',' pattern { ',' pattern } ')' ;

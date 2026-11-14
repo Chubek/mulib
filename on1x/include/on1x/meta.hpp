@@ -39,5 +39,6 @@ void rewrite(Unit& unit,const PpxOptions& options);
 }
 namespace on1x {
 // A syntax-rules-style, typed AST pass. No transformer executes runtime On1x.
+bool needs_macro_expansion(const Unit& unit);
 void expand_macros(Unit& unit);
 }

@@ -673,7 +673,7 @@ class Inference {
    case Expr::Kind::Run:{
     auto code=expression(*e.children.at(0));result=fresh(at);unify(code,add(Type::Code,{},result,at),at);break;
    }
-   case Expr::Kind::MacroCall:case Expr::Kind::SyntaxHole:case Expr::Kind::SyntaxBlock:case Expr::Kind::Extension:case Expr::Kind::SyntaxList:case Expr::Kind::SyntaxVector:case Expr::Kind::SyntaxKeyword:
+    case Expr::Kind::MacroCall:case Expr::Kind::SyntaxHole:case Expr::Kind::SyntaxBlock:case Expr::Kind::Extension:case Expr::Kind::SyntaxList:case Expr::Kind::SyntaxVector:case Expr::Kind::SyntaxKeyword:case Expr::Kind::SyntaxLet:
     fail(at,"unexpanded metaprogramming syntax before inference");
    case Expr::Kind::PolyPack:case Expr::Kind::PolyProjection:
     fail(at,"cannot reinfer an elaborated polymorphic expression");

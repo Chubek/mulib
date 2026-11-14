@@ -61,6 +61,7 @@ valid_cases = [
     b'@ppx foo "path" macro rule $name ... => 0x2a 0XFF 0x 0xG 0x1z ...',
     b'macro m literals(else,_) ellipsis dots { rule ([$x:Syntax dots . $rest:Syntax]) => block { f($x) dots; }; }',
     b'quote { splice(code) + lift(value) } run(code) code<code<i64>>=value vector[1,2] . .. ... ....',
+    b'let_syntax { macro m { rule () => expression { 42 }; } } expression { m!() } letrec_syntax {} block {}',
     b'===!==<==>==&&||- ->> ///',
     b'"# not a comment"# comment\n"snow: \xe9\x9b\xaa" name',
     b'"\\\\ \\" \\n \\r \\t \\0"',

@@ -6,6 +6,7 @@ inline void clone_tick(std::size_t& budget,const Location& at){
  --budget;
 }
 ExprPtr clone_expression(const Expr&,std::size_t&);
+Macro clone_macro(const Macro&,std::size_t&);
 inline Stmt clone_statement(const Stmt& s,std::size_t& budget){
  clone_tick(budget,s.where);Stmt out;
  out.kind=s.kind;out.where=s.where;out.name=s.name;out.pattern=s.pattern;
@@ -25,6 +26,7 @@ inline ExprPtr clone_expression(const Expr& e,std::size_t& budget){
  out->syntax_repeat=e.syntax_repeat;
  out->context=e.context;
  if(e.syntax_tail)out->syntax_tail=clone_expression(*e.syntax_tail,budget);
+ for(const auto& m:e.syntax_definitions)out->syntax_definitions.push_back(clone_macro(m,budget));
  for(const auto& proof:e.proofs)out->proofs.push_back(clone_expression(*proof,budget));
  if(e.callee)out->callee=clone_expression(*e.callee,budget);
  for(const auto& child:e.children)out->children.push_back(clone_expression(*child,budget));
@@ -38,9 +40,8 @@ inline MacroParameter clone_macro_pattern(const MacroParameter& p,std::size_t& b
  if(p.tail)out.tail=std::make_unique<MacroParameter>(clone_macro_pattern(*p.tail,budget));
  return out;
 }
-inline Unit clone_unit(const Unit& unit,std::size_t& budget){
- Unit out;out.imports=unit.imports;out.forall_layouts=unit.forall_layouts;out.forall_elaborated=unit.forall_elaborated;out.ppx=unit.ppx;out.stages_lowered=unit.stages_lowered;
- for(const auto& m:unit.macros){
+inline Macro clone_macro(const Macro& m,std::size_t& budget){
+  clone_tick(budget,m.where);
   Macro copy;copy.name=m.name;copy.where=m.where;copy.ellipsis=m.ellipsis;copy.literals=m.literals;
   for(const auto& r:m.rules){
    MacroRule rule;rule.where=r.where;rule.block=r.block;
@@ -49,8 +50,11 @@ inline Unit clone_unit(const Unit& unit,std::size_t& budget){
    if(r.expression)rule.expression=clone_expression(*r.expression,budget);
    for(const auto& s:r.body)rule.body.push_back(clone_statement(s,budget));
    copy.rules.push_back(std::move(rule));
-  }out.macros.push_back(std::move(copy));
- }
+  }return copy;
+}
+inline Unit clone_unit(const Unit& unit,std::size_t& budget){
+ Unit out;out.imports=unit.imports;out.forall_layouts=unit.forall_layouts;out.forall_elaborated=unit.forall_elaborated;out.ppx=unit.ppx;out.stages_lowered=unit.stages_lowered;
+ for(const auto& m:unit.macros)out.macros.push_back(clone_macro(m,budget));
  for(const auto& f:unit.functions){
   Function copy;copy.name=f.name;copy.where=f.where;copy.params=f.params;copy.result=f.result;copy.external=f.external;copy.prototype=f.prototype;
   for(const auto& statement:f.body)copy.body.push_back(clone_statement(statement,budget));

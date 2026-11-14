@@ -7,7 +7,7 @@ fn ppx_name(text: string) -> bool {
   if text_len(text) == 0 || !ppx_alpha(text_byte(text, 0)) { return false; }
   var i = 1;
   while i < text_len(text) { let c = text_byte(text, i); if !ppx_alpha(c) && !ppx_digit(c) { return false; } i = i + 1; }
-  return text != "fn" && text != "let" && text != "var" && text != "if" && text != "else" && text != "while" && text != "return" && text != "true" && text != "false" && text != "extern" && text != "import" && text != "forall" && text != "macro" && text != "rule" && text != "quote" && text != "splice" && text != "lift";
+  return text != "fn" && text != "let" && text != "var" && text != "if" && text != "else" && text != "while" && text != "return" && text != "true" && text != "false" && text != "extern" && text != "import" && text != "forall" && text != "macro" && text != "rule" && text != "quote" && text != "splice" && text != "lift" && text != "let_syntax" && text != "letrec_syntax";
 }
 fn ppx_scalar_type(name: string) -> bool {
   return name == "Bytes" || name == "File" || name == "Name" || name == "Version" || name == "Nat" || name == "Positive" || name == "Boolean" || name == "UnaryOperator" || name == "BinaryOperator" || name == "DecimalSpelling" || name == "HexSpelling";

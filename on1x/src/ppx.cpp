@@ -99,7 +99,7 @@ std::string run_transformer(const std::string& program,std::string_view input,un
 #endif
 }
 void rewrite(Unit& unit,const PpxOptions& options){
- if(unit.macros.empty()&&unit.ppx.empty()&&options.programs.empty()&&options.schemas.empty()){require_core(unit);return;}
+ if(!needs_macro_expansion(unit)&&unit.ppx.empty()&&options.programs.empty()&&options.schemas.empty()){require_core(unit);return;}
  std::size_t budget=262144;auto working=clone_unit(unit,budget);
  if(!working.ppx.empty()&&!options.allow_source)throw Error(working.ppx.front().where,"source PPX execution requires --allow-source-ppx (not a sandbox)");
  std::vector<PpxRegistration> programs=working.ppx;
