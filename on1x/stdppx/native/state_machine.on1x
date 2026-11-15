@@ -1,0 +1,39 @@
+import "common.on1x";
+import "../../stdlib/ppx/numbers.on1x";
+fn transition(node:sexpr,label:string,state:string,event:string)->sexpr {
+ if visitor_tag(node)!="ExtensionExpr"||sx_text(sexpr_nth(node,1))!=label{return node;}
+ let op=sx_text(sexpr_nth(node,2));let args=sexpr_nth(node,3);let at=sexpr_nth(node,4);let n=sexpr_size(args);
+ if op!="transition"||n<5||(n-2)%3!=0||n>194{tool_fail("state_machine expects at most 64 transition triples");}
+ var i=2;var arms=sx_nil();var keys=sx_nil();
+ while i<n{
+  let (a,source)=ppx_literal_i64(sexpr_nth(args,i));let (b,input)=ppx_literal_i64(sexpr_nth(args,i+1));let (c,target)=ppx_literal_i64(sexpr_nth(args,i+2));
+  if !a||!b||!c{tool_fail("state_machine transition keys/targets must be i64 literals");}
+  let key=text_concat(ppx_i64_text(source),text_concat(":",ppx_i64_text(input)));
+  var rest=keys;while sx_kind(rest)==3{if sx_text(sx_head(rest))==key{tool_fail("duplicate state/event transition");}rest=sx_tail(rest);}
+  keys=sx_cons(sx_string(key),keys);
+  let test=native_binary("&&",native_binary("==",ppx_ident(state,at),ppx_integer(ppx_i64_text(source),at),at),native_binary("==",ppx_ident(event,at),ppx_integer(ppx_i64_text(input),at),at),at);
+  let result=ppx_node("Return",ppx_list2(ppx_integer(ppx_i64_text(target),at),at));
+  arms=sx_cons(ppx_node("If",ppx_list4(test,native_block(ppx_list1(result),at),native_block(sx_nil(),at),at)),arms);i=i+3;
+ }
+ let end=ppx_node("Return",ppx_list2(ppx_ident(state,at),at));let i64=ppx_node("I64Type",sx_nil());
+ let params=ppx_list2(native_parameter(state,i64,at),native_parameter(event,i64,at));
+ let worker=native_lambda(params,i64,native_block(native_append(sexpr_reverse(arms),ppx_list1(end)),at),at);
+ return ppx_node("Call",ppx_list3(worker,ppx_list2(sx_head(args),sexpr_nth(args,1)),at));
+}
+fn transform(tree:sexpr,label:string)->sexpr {
+ let (state,serial)=ppx_fresh(tree,0);let (event,next)=ppx_fresh(tree,serial);
+ return visitor_rewrite(tree,fn(node:sexpr,path:sexpr)->sexpr {
+  if visitor_tag(node)=="Do"{
+   let expr=sexpr_nth(node,1);
+   if visitor_tag(expr)=="ExtensionExpr"&&sx_text(sexpr_nth(expr,1))==label&&sx_text(sexpr_nth(expr,2))=="set"{
+    let args=sexpr_nth(expr,3);let at=sexpr_nth(expr,4);
+    if sexpr_size(args)!=2||visitor_tag(sx_head(args))!="Identifier"{tool_fail("state_machine set expects identifier,expression");}
+    return ppx_node("Assign",ppx_list3(sexpr_nth(sx_head(args),1),sexpr_nth(args,1),at));
+   }
+  }
+  # Preserve the statement-only set carrier until its parent Do is rewritten.
+  if visitor_tag(node)=="ExtensionExpr"&&sx_text(sexpr_nth(node,2))=="set"{return node;}
+  return transition(node,label,state,event);
+ });
+}
+fn main(){native_serve(transform);}

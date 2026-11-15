@@ -9,6 +9,8 @@
 | Fallback lexer | Implemented and tested | Bootstraps without LibStone |
 | Scanner parity and token lifetime | Verified P0 subset | Deterministic byte/offset/error corpus, including macro/PPX/staging/dotted syntax; repeated and concurrent scan tests |
 | Parser / typed AST | Implemented functional subset | Functions, tuples/patterns, explicit universal types, scopes, control flow, imports |
+| Module loader / pervasive environment | Implemented compile-time namespaces | Named/selective/relative imports, aliases, packages, canonical deduplication, bounded cycles, demand-loaded prelude and relocatable installation; [manual](modules.md) |
+| MuLIB native housekeeping | Implemented bounded kernel/fixture planning | `std.mulib` metadata/byte access and size checks; shared one-TU planning, fixture/provider/native companion linkage, fingerprints and relocatable bundles; [manual](../std/mulib/README.md) |
 | Frontend input limits | Implemented and tested | 2 MiB per file; 256-level parsing/HIR limits including lambdas; bounded capture metadata |
 | Type inference | P1 schemes and explicit universals | Global recursive-component and value-restricted immutable let/pattern generalization, rigid `forall` parameters, bounded C11 specialization/bundles; no defaulting or inferred polymorphic recursion |
 | Structural function types / values | P1 subset | Monomorphic aliases, parameters/results, indirect/postfix calls and lexical resolution; no foreign callbacks |
@@ -23,7 +25,8 @@
 | Native ABI externs | Explicit raw subset | Exact scalar ABI; explicit nested parameter patterns flatten left-to-right, no aggregate layout inference |
 | Typed hygienic macros | Recursive patterns and lexical syntax bindings | Context marks, typed recursive captures/ellipses, `let_syntax`/`letrec_syntax`, definition-site value/syntax identities and bounded transactional expansion; not the full Scheme language |
 | External AST PPX | Core implemented | Source opt-in / CLI registration, bounded shell-free POSIX transport, S-expression schema validation, labeled carriers and namespaced AST extensions |
-| PPX authoring / standard processors | Native self-hosted libraries/tools | On1x codec/visitor/schema/PPX libraries and six C11-native processors, with Python bootstrap references; compiler remains C++ |
+| PPX authoring / standard processors | Native self-hosted libraries/tools | On1x codec/visitor/schema/PPX libraries, fifteen C11-native processors and 24 Python processors with compiler execution tests; compiler remains C++ |
+| Extension standard libraries | Executed raw/persistent subset | Validated map/Option/Result/graph helpers, signed scanner, bounded canonical MuLIB serialization/hash/socket adapters with automatic linkage, status tuples, allocation/loopback tests; no general ownership or f64 ABI proof |
 | Multi-stage programming (MSP) | Typed closed-code AOT | `code<T>`, quote/splice/lift/contextual run, quotation-world checks, reference-counted factories/thunks; no JIT or runtime source eval |
 | Native authoring data/I/O | Bounded C11 substrate | Persistent managed `sexpr`, shared `buffer`, byte operations/I/O; process-lifetime bounded text snapshots, not a general String/ADT/module library |
 | JSON resource facade | Experimental, real-kernel tested | Nested views, lexical drops, numeric bounds and injected allocation failures; errors still terminate |
@@ -33,7 +36,7 @@
 | General C FFI adapters | Not implemented | Needs ABI/error/ownership model and tests |
 | Chisel resource checking | Opt-in scalar/JSON usage subset | Real solver plus conservative joins, token-use and exit/reinitialization checks; generic external resource CFG API; [manual](memory-safety.md) |
 | Nerotypical structural verification | Opt-in concrete HIR checker | Real TypeGraph/Satie EUF obligations for calls, closures, tuples, staging and resources; explicit universals reject; separate patched source SDK; [manual](type-safety.md) |
-| Exotract static bindings | MANIFEST-backed profiles and one-TU archive generation | Typed CDecl/import metadata; executable JSON/Vec/Parsec and MicroJS C clients plus On1x JSON archive linkage; [manual](../contracts-exotract/README.md) |
+| Exotract static bindings | MANIFEST-backed kernel and companion archives | Typed CDecl/import metadata; executable JSON/Vec/Parsec and MicroJS C clients, On1x JSON/YANTLR/Shiraz archive linkage, fixture provenance and one kernel implementation TU; [manual](../contracts-exotract/README.md) |
 | Wetstone / general foreign ownership lowering | Not implemented | Contract-driven external handle types, ABI, alias/extent and effect proofs remain open |
 | Flintstone/Firestone native lowering | Not implemented | C11 is the sole backend |
 | ADTs, match, functors | Not implemented | Future language features |

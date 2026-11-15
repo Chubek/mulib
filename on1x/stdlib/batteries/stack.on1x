@@ -1,0 +1,7 @@
+fn batteries_stack_empty() -> sexpr { return sx_nil(); }
+fn batteries_stack_push(stack: sexpr,value: sexpr) -> sexpr { return sx_cons(value,stack); }
+fn batteries_stack_pop(stack: sexpr) -> (sexpr,sexpr) {
+ if sx_kind(stack) != 3 { tool_fail("stack underflow"); }
+ return (sx_head(stack),sx_tail(stack));
+}
+fn batteries_stack_is_empty(stack: sexpr) -> bool { return sx_kind(stack) == 0; }

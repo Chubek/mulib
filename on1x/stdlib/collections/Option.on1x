@@ -1,0 +1,34 @@
+# Structural tagged tuples until full ADT/Option support is implemented.
+# Explicit success tag: a valid payload may be sx_nil().
+fn basis_option_some(value) -> _ { return (true,value); }
+# A typed default is necessary until On1x has payload-free ADT constructors.
+fn basis_option_none(default) -> _ { return (false,default); }
+fn basis_option_is_some(option) -> bool { let (present,value)=option; return present; }
+fn basis_option_get_or(option,default) -> _ {
+  let (present,value)=option; if present { return value; } return default;
+}
+fn basis_option_map(option,f,default) -> _ {
+  let (present,value)=option; if present { return (true,f(value)); } return (false,default);
+}
+fn basis_option_and_then(option,f,default) -> _ {
+  let (present,value)=option; if present { return f(value); } return (false,default);
+}
+fn basis_option_some_i64(v:i64)->(bool,i64) { return (true,v); }
+fn basis_option_none_i64()->(bool,i64) { return (false,0); }
+fn basis_option_is_some_i64(o:(bool,i64))->bool { let (present,v)=o; return present; }
+fn basis_option_get_opt_i64(o:(bool,i64),default:i64)->i64 {
+  let (present,value)=o; if present { return value; } return default;
+}
+fn basis_option_map_i64(o:(bool,i64),f:fn(i64)->i64)->(bool,i64) {
+  let (present,value)=o; if present { return (true,f(value)); } return (false,0);
+}
+fn basis_option_some_text(v:string)->(bool,string) { return (true,v); }
+fn basis_option_none_text()->(bool,string) { return (false,""); }
+fn basis_option_get_opt_text(o:(bool,string),default:string)->string {
+  let (present,value)=o; if present { return value; } return default;
+}
+fn basis_option_some_sexpr(v:sexpr)->(bool,sexpr) { return (true,v); }
+fn basis_option_none_sexpr()->(bool,sexpr) { return (false,sx_nil()); }
+fn basis_option_get_opt_sexpr(o:(bool,sexpr),default:sexpr)->sexpr {
+  let (present,value)=o; if present { return value; } return default;
+}

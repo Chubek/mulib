@@ -1,5 +1,6 @@
 #include <on1x/ast.hpp>
 #include <on1x/meta.hpp>
+#include <on1x/loader.hpp>
 #include <on1x/backend/mir.hpp>
 #include <on1x/backend/passes.hpp>
 #ifdef ON1X_WITH_NEROTYPICAL
@@ -63,34 +64,13 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
  }
  write_all(out,mode=="--emit-ir"?on1x::mir::serialize(module):mode=="--ir-cfg"?on1x::mir::cfg_dot(module):on1x::mir::emit_c(module));return 0;
 }
-on1x::Unit parse_with_imports(const std::filesystem::path& filename,
-                              std::set<std::filesystem::path>& active,
-                              std::set<std::filesystem::path>& visited,
-                              int depth){
- if(depth>64)throw std::runtime_error("import recursion limit exceeded");
- auto resolved=std::filesystem::absolute(filename).lexically_normal();
- if(active.contains(resolved))throw std::runtime_error("import cycle: "+resolved.string());
- if(visited.contains(resolved))return {};
- active.insert(resolved);
- auto tokens=on1x::scan(on1x::read_source_file(resolved.string()),resolved.string());
- auto current=on1x::parse(tokens);
- on1x::Unit out;
- for(const auto& name:current.imports){
-  auto child=parse_with_imports(resolved.parent_path()/name,active,visited,depth+1);
-   for(auto& fn:child.functions)out.functions.push_back(std::move(fn));
-   for(auto& macro:child.macros)out.macros.push_back(std::move(macro));
-   for(auto& ppx:child.ppx)out.ppx.push_back(std::move(ppx));
- }
-  for(auto& fn:current.functions)out.functions.push_back(std::move(fn));
-  for(auto& macro:current.macros)out.macros.push_back(std::move(macro));
-  for(auto& ppx:current.ppx)out.ppx.push_back(std::move(ppx));
- active.erase(resolved);visited.insert(resolved);
- return out;
-}
 void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO C11\n"
  "usage: on1xc [--check | --emit-c | --tokens | --types | --emit-ast] INPUT.on1x [-o OUTPUT]\n"
  "       [--ppx LABEL PROGRAM] [--ppx-schema LABEL FILE] [--allow-source-ppx]\n"
   "       [--ppx-timeout-ms MILLISECONDS]\n"
+  "       [-I DIRECTORY | --module-path DIRECTORY] [--stdlib DIRECTORY]\n"
+  "       [--no-prelude] [--prelude FILE] [--stdppx PROCESSOR]\n"
+  "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
   "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
   "       on1xc [--emit-ir-facts | --analyze-ir] INPUT [-o OUTPUT] [--ir-input]\n"
   "       [--analysis-work UNITS] (Novostone opt-in build; --analyze-ir only)\n"
@@ -114,14 +94,25 @@ int main(int argc,char**argv){
       on1x::mir::passes::Options optimization;bool optimize=false,opt_limit=false;
       bool memory=false;
       bool type_safety=false;
-   on1x::meta::PpxOptions ppx;
+    on1x::meta::PpxOptions ppx;
+    auto loader=on1x::default_loader_options(argv[0]);
+    std::vector<std::filesystem::path> import_paths;
   for(int i=1;i<argc;++i){std::string arg=argv[i];
     if(arg=="--help"||arg=="-h"){usage();return 0;}
     if(arg=="--memory-check"){memory=true;continue;}
     if(arg=="--check-memory"){mode=arg;continue;}
     if(arg=="--verify-types"){type_safety=true;continue;}
     if(arg=="--check-types"){mode=arg;continue;}
-     if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes")mode=arg;
+     if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes")mode=arg;
+      else if(arg=="--no-prelude")loader.prelude=false;
+      else if(arg=="-I"||arg=="--module-path"||arg=="--stdlib"||arg=="--prelude"||arg=="--stdppx"){
+       if(++i>=argc||!argv[i][0])throw std::runtime_error(arg+" requires a nonempty path or name");
+       if(arg=="--stdlib")loader.stdlib=argv[i];
+       else if(arg=="--prelude")loader.preludes.emplace_back(argv[i]);
+       else if(arg=="--stdppx")ppx.programs.push_back({{"<standard-ppx>"},argv[i],argv[i]});
+       else import_paths.emplace_back(argv[i]);
+      }
+      else if(arg.starts_with("-I")&&arg.size()>2)import_paths.emplace_back(arg.substr(2));
       else if(arg=="--ir-input")ir_input=true;
       else if(arg=="--optimize-ir")optimize=true;
       else if(arg=="--opt-work"||arg=="--opt-rewrites"){
@@ -152,7 +143,17 @@ int main(int argc,char**argv){
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
    else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
   }
-     if(source.empty()){usage();return 2;}
+      if(source.empty()){usage();return 2;}
+      loader.paths.insert(loader.paths.begin(),import_paths.begin(),import_paths.end());
+      for(auto& registration:ppx.programs){
+       if(registration.where.file!="<standard-ppx>")continue;
+       const auto& processor=registration.label;
+       if(processor.empty()||processor.size()>128||processor.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_")!=std::string::npos)
+        throw std::runtime_error("invalid standard PPX name: "+processor);
+       auto program=std::filesystem::absolute(loader.stdlib).parent_path()/"stdppx"/(processor+".py");
+       if(!std::filesystem::is_regular_file(program))throw std::runtime_error("standard PPX not found: "+processor);
+       registration.program=std::filesystem::absolute(program).string();
+      }
      memory=memory||mode=="--check-memory";
      type_safety=type_safety||mode=="--check-types";
 #ifndef ON1X_WITH_NEROTYPICAL
@@ -182,8 +183,12 @@ int main(int argc,char**argv){
    std::ostringstream listing;for(auto& t:tokens)listing<<t.where.line<<":"<<t.where.column<<"  "<<t.text<<"\n";
    write_all(out,listing.str());return 0;
   }
-  std::set<std::filesystem::path> active,visited;
-   auto unit=parse_with_imports(source,active,visited,0);
+    auto loaded=on1x::load_unit(source,loader);
+    if(mode=="--deps"){
+     std::ostringstream paths;for(const auto& path:loaded.dependencies)paths<<path.string()<<"\n";
+     write_all(out,paths.str());return 0;
+    }
+    auto& unit=loaded.unit;
    if(mode=="--emit-ast"){
     on1x::expand_macros(unit);auto tree=on1x::meta::encode(unit);on1x::meta::base_schema().validate(tree);
     write_all(out,on1x::meta::write_sexpr(tree));return 0;
@@ -203,7 +208,7 @@ int main(int argc,char**argv){
    if(mode=="--types"){
     std::ostringstream listing;
      for(const auto& function:unit.functions){
-      if(function.name.starts_with("@"))continue;
+       if(function.name.starts_with("@")||loaded.internal_functions.contains(function.name))continue;
       std::vector<on1x::Type> parameters;for(const auto& parameter:function.params)parameters.push_back(parameter.type);
       auto signature=on1x::Type::function(std::move(parameters),function.result);
       std::map<std::size_t,std::size_t> variables;

@@ -56,6 +56,15 @@ At the time this specification was authored (2026-11-14), repository documentati
 
 ### Known high-priority gaps
 
+**Standard-library continuation (2026-11-15):** bounded raw scalar adapters for
+JSON/YAML/TOML/INI, BLAKE2s/BLAKE3, POSIX process helpers and numeric-IPv4 sockets
+now have automatic one-TU kernel linkage, status tuples, binary-hex reception,
+allocation-failure tests and real Exotract archive consumers. Persistent helpers
+and fifteen native PPXs have executable regressions. These are the documented
+trusted-adapter subset, **not** Gate C review or general safe foreign admission;
+f64/records/slices, foreign-owner lowering and Shylock's numerical gates below
+remain open. See `stdlib/_bridge/README.md` and `VERIFICATION.md`.
+
 - No general safe On1x foreign-import backend: `on1x-bind emit-safe` currently fails closed.
 - `emit-raw` currently handles only narrow signed-integer/void signatures; it rejects floating-point arguments/results, unsigned integers, pointer/length arguments, aggregates, enums, output buffers, callbacks, and important ownership/error semantics.
 - No integrated general `Result`/`Option` and resource-safe MuLIB API, beyond the limited fail-fast JSON facade.

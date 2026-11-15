@@ -1,0 +1,5 @@
+import "OS_Path.on1x";
+import "OS_FileSys.on1x";
+import "OS_Process.on1x";
+import "OS_IO.on1x";
+fn basis_os_name()->string { return "POSIX-compatible"; }

@@ -1,0 +1,4 @@
+# NNG-style request/reply message envelope only. Not a binding to libnng.
+fn nng_request(topic: string, body: sexpr) -> sexpr { return sx_cons(sx_string(topic),sx_cons(body,sx_nil())); }
+fn nng_topic(message: sexpr) -> string { return sx_text(sx_head(message)); }
+fn nng_body(message: sexpr) -> sexpr { return sx_head(sx_tail(message)); }

@@ -117,10 +117,12 @@ def catalog(root):
     return data
 
 
-def module_info(root, name):
+def module_info(root, name, manifest=None):
     # This repository's selected MANIFEST entries are a flat, inline-list subset
     # of YAML. Reject other layouts rather than guessing a general YAML parser.
-    manifest = read(root/'MANIFEST.yaml', 8*1024*1024).decode('utf-8')
+    if manifest is None:
+        manifest = read(root/'MANIFEST.yaml', 8*1024*1024).decode('utf-8')
+    manifest = manifest.split('\nproject_files:', 1)[0]
     match = re.search(r'^- name: '+re.escape(name)+r'\n(.*?)(?=^- name:|\Z)', manifest, re.M|re.S)
     if not match:
         reject('module missing from MANIFEST: ' + name)
@@ -134,6 +136,10 @@ def module_info(root, name):
     if not deps:
         reject('unsupported MANIFEST dependency layout')
     fields['manifest_dependencies'] = [d.strip() for d in deps[1].split(',') if d.strip()]
+    extra = re.search(r'^  extra_macros: \[([^\]]*)\]$', match[1], re.M)
+    if not extra and re.search(r'^  extra_macros:', match[1], re.M):
+        reject('unsupported MANIFEST extra macro layout')
+    fields['extra_macros'] = [m.strip() for m in extra[1].split(',') if m.strip()] if extra else []
     return fields
 
 

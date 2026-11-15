@@ -1,0 +1,3 @@
+# Automatically opened by the loader. Explicit imports and declarations win.
+from .core.Pervasive import basis_identity as identity, basis_ignore as ignore,
+    basis_fst as fst, basis_snd as snd, basis_const as const;

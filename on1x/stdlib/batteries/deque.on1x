@@ -1,0 +1,15 @@
+import "queue.on1x";
+# Double-ended persistent queue as pair(front-list, back-list); normalization is explicit.
+fn batteries_deque_empty() -> (sexpr,sexpr) { return (sx_nil(),sx_nil()); }
+fn batteries_deque_push_front(deque: (sexpr,sexpr),v: sexpr) -> (sexpr,sexpr) {
+ let (front,back) = deque; return (sx_cons(v,front),back);
+}
+fn batteries_deque_push_back(deque: (sexpr,sexpr),v: sexpr) -> (sexpr,sexpr) {
+ let (front,back) = deque; return (front,sx_cons(v,back));
+}
+fn batteries_deque_pop_front(deque: (sexpr,sexpr)) -> (sexpr,(sexpr,sexpr)) {
+ let (first,second) = deque; var front = first; var back = second;
+ if sx_kind(front) == 0 { front = batteries_queue_reverse(back); back = sx_nil(); }
+ if sx_kind(front) != 3 { tool_fail("deque empty"); }
+ return (sx_head(front),(sx_tail(front),back));
+}

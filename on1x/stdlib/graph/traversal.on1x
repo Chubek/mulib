@@ -1,0 +1,44 @@
+import "graph.on1x";
+# Bounded BFS with explicit queue and visited set, vertex identities are strings.
+fn graph_string_member(items: sexpr,value: string) -> bool {
+ basis_shape_list(items);
+ var rest = items;
+ while sx_kind(rest) == 3 { basis_shape_text(sx_head(rest));if sx_text(sx_head(rest)) == value { return true; } rest = sx_tail(rest); }
+ return false;
+}
+fn basis_graph_member(items:sexpr,value:string,work:i64)->(bool,i64) {
+ var rest=items;var used=work;
+ while sx_kind(rest)==3{
+  used=used+1;if used>262144{tool_fail("graph BFS work bound exceeded");}
+  if sx_text(sx_head(rest))==value{return (true,used);}rest=sx_tail(rest);
+ }
+ return (false,used);
+}
+fn graph_reverse_list(items: sexpr) -> sexpr {
+ basis_shape_list(items);
+ var rest = items;var out = sx_nil();
+ while sx_kind(rest) == 3 { out = sx_cons(sx_head(rest),out);rest = sx_tail(rest); }
+ return out;
+}
+fn graph_bfs(edges: sexpr,start: string) -> sexpr {
+ basis_graph_validate(edges);
+ var queue = sx_cons(sx_string(start),sx_nil()); var pending = sx_nil(); var visited = queue; var output = sx_nil();var steps = 0;
+ while sx_kind(queue) == 3 || sx_kind(pending) == 3 {
+  if sx_kind(queue) == 0 { queue = graph_reverse_list(pending); pending = sx_nil(); }
+  let head = sx_head(queue);queue = sx_tail(queue);let name = sx_text(head);
+   output = sx_cons(head,output);
+   var rest = edges;
+    while sx_kind(rest) == 3 {
+     steps=steps+1;if steps>262144{tool_fail("graph BFS work bound exceeded");}
+    let edge = sx_head(rest);
+    if sx_text(sx_head(edge)) == name {
+     let dest = sx_head(sx_tail(edge));
+      let (found,used)=basis_graph_member(visited,sx_text(dest),steps);steps=used;
+      if !found { pending = sx_cons(dest,pending);visited=sx_cons(dest,visited); }
+    }
+    rest = sx_tail(rest);
+   }
+   steps = steps + 1; if steps > 262144 { tool_fail("graph BFS work bound exceeded"); }
+ }
+ return graph_reverse_list(output);
+}

@@ -1,0 +1,25 @@
+import "../core/Bool.on1x";
+import "../numeric/Int.on1x";
+import "../numeric/Word8.on1x";
+import "../text/String.on1x";
+import "../text/Char.on1x";
+import "../text/Substring.on1x";
+import "../text/StringCvt.on1x";
+import "../collections/Option.on1x";
+import "../numeric/IntInf.on1x";
+fn main() {
+  assert(basis_int_div(-7,3)==-3);
+  assert(basis_int_mod(-7,3)==2);
+  assert(basis_int_div(7,-3)==-3);
+  assert(basis_int_mod(7,-3)==-2);
+  assert(basis_word8_xor(255,15)==240);
+  assert(basis_char_to_upper(97)==65);
+  assert(basis_string_contains("abcdef","cde"));
+  assert(basis_substring_string(basis_substring_slice("abcdef",2,3))=="cde");
+  let (good,val)=basis_cvt_int_from_string("  -42more");
+  assert(good && val==-42);
+  assert(basis_cvt_int_to_string(-42)=="-42");
+  assert(basis_intinf_add_nat("999999999999999999999","1")=="1000000000000000000000");
+  assert(basis_option_get_opt_i64(basis_option_some_i64(3),10)==3);
+  println("basis core OK");
+}

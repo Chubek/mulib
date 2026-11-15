@@ -1,0 +1,3 @@
+fn basis_assert_equal_i64(a:i64,b:i64) { assert(a==b); }
+fn basis_assert_equal_string(a:string,b:string) { assert(a==b); }
+fn basis_assert_true(x:bool) { assert(x); }

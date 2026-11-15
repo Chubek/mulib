@@ -1,0 +1,12 @@
+import std.Int as Int;
+from std import String, List, Option, Functional;
+
+fn twice(x:i64)->i64 { return x*2; }
+fn increment(x:i64)->i64 { return x+1; }
+fn main() {
+  let operation=Functional.compose(increment,twice);
+  println(identity(operation(20)));
+  println(Int.div(-7,3));
+  println(String.join(", ",List.cons(sx_string("On1x"),List.cons(sx_string("modules"),List.nil()))));
+  println(Option.get_or(Option.map(Option.some(21),twice,0),0));
+}

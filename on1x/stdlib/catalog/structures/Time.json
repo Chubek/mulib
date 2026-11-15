@@ -1,0 +1,14 @@
+{
+  "name": "Time",
+  "kind": "structure",
+  "required": true,
+  "domain": "time",
+  "sml_signature": "TIME",
+  "status": "partial_executable_adapter",
+  "on1x_module": "on1x/stdlib/time/Time.on1x",
+  "support": "experimental On1x subset, not SML Basis conformance",
+  "prerequisites": [
+    "precise duration/date types and overflow semantics"
+  ],
+  "source": "https://smlfamily.github.io/Basis/overview.html"
+}

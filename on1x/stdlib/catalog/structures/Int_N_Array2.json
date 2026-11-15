@@ -1,0 +1,18 @@
+{
+  "name": "Int<N>Array2",
+  "kind": "structure",
+  "required": false,
+  "domain": "numeric",
+  "sml_signature": "MONO_ARRAY2",
+  "status": "catalog_only",
+  "on1x_module": null,
+  "support": "no executable On1x module yet",
+  "prerequisites": [],
+  "source": "https://smlfamily.github.io/Basis/overview.html",
+  "common_concrete_width_examples": [
+    "Int8Array2",
+    "Int16Array2",
+    "Int32Array2",
+    "Int64Array2"
+  ]
+}

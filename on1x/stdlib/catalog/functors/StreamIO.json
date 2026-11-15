@@ -1,0 +1,14 @@
+{
+  "name": "StreamIO",
+  "kind": "functor",
+  "required": false,
+  "domain": "io",
+  "sml_signature": null,
+  "status": "requires_functor_language_support",
+  "on1x_module": null,
+  "support": "no executable On1x module yet",
+  "prerequisites": [
+    "typed streams, I/O errors and stream lifecycle"
+  ],
+  "source": "https://smlfamily.github.io/Basis/overview.html"
+}

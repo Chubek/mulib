@@ -1,0 +1,30 @@
+import "String.on1x";
+# Slice descriptor: (source text, start byte, byte length) as a tuple.
+fn basis_substring_full(s: string) -> (string,i64,i64) { return (s,0,text_len(s)); }
+fn basis_substring_slice(s: string,start: i64,length: i64) -> (string,i64,i64) {
+  if length<0 || start<0 || start>text_len(s) || length>text_len(s)-start { tool_fail("substring slice bounds"); }
+  return (s,start,length);
+}
+fn basis_substring_string(slice: (string,i64,i64)) -> string {
+  let (s,start,length)=slice; return text_slice(s,start,start+length);
+}
+fn basis_substring_size(slice: (string,i64,i64)) -> i64 {
+  let (s,start,length)=slice; return length;
+}
+fn basis_substring_sub(slice: (string,i64,i64),offset: i64) -> i64 {
+  let (s,start,length)=slice;
+  if offset<0 || offset>=length { tool_fail("substring sub bounds"); }
+  return text_byte(s,start+offset);
+}
+fn basis_substring_triml(slice: (string,i64,i64),n:i64)->(string,i64,i64) {
+  let (s,start,length)=slice;
+  if n<0 { tool_fail("negative trim"); }
+  if n>length { return (s,start+length,0); }
+  return (s,start+n,length-n);
+}
+fn basis_substring_trimr(slice:(string,i64,i64),n:i64)->(string,i64,i64) {
+  let (s,start,length)=slice;
+  if n<0 { tool_fail("negative trim"); }
+  if n>length { return (s,start,0); }
+  return (s,start,length-n);
+}

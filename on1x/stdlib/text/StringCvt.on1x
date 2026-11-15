@@ -1,0 +1,38 @@
+import "Char.on1x";
+# Decimal scanner: returns (success, value, nextByteIndex); does not trap on overflow.
+fn basis_cvt_scan_int(s:string,start:i64)->(bool,i64,i64) {
+  let total=text_len(s); var i=start;
+  if i<0 || i>total { return (false,0,start); }
+  while i<total && basis_char_is_space(text_byte(s,i)) { i=i+1; }
+  var neg=false;
+  if i<total && (text_byte(s,i)==45 || text_byte(s,i)==43) {
+    neg=text_byte(s,i)==45; i=i+1;
+  }
+  let begin=i; var acc=0;
+  # Keep a negative accumulator to admit INT64_MIN.
+  var limit=-9223372036854775807;
+  if neg { limit=-9223372036854775807-1; }
+  while i<total && basis_char_is_digit(text_byte(s,i)) {
+    let d=text_byte(s,i)-48;
+    if acc<limit/10 { return (false,0,start); }
+    acc=acc*10;
+    if acc<limit+d { return (false,0,start); }
+    acc=acc-d; i=i+1;
+  }
+  if i==begin { return (false,0,start); }
+  if neg { return (true,acc,i); }
+  return (true,-acc,i);
+}
+fn basis_cvt_int_from_string(s:string)->(bool,i64) {
+  let (ok,value,next)=basis_cvt_scan_int(s,0);
+  return (ok,value);
+}
+fn basis_cvt_int_to_string(x:i64)->string {
+  let backwards=buffer_new(); var n=x;
+  if n>0 { n=-n; }
+  while n<=-10 { buffer_byte(backwards,48-n%10); n=n/10; }
+  buffer_byte(backwards,48-n); let digits=buffer_text(backwards); let out=buffer_new();
+  if x<0 { buffer_byte(out,45); }
+  var i=text_len(digits); while i>0 { i=i-1; buffer_byte(out,text_byte(digits,i)); }
+  return buffer_text(out);
+}

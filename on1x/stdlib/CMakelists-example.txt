@@ -1,0 +1,13 @@
+# Optional CMake fragment: integrate from your existing On1x CMake project.
+# Do not add existing on1x_runtime.c here: generated programs already use it.
+add_library(on1x_basis_native STATIC
+  "${CMAKE_CURRENT_LIST_DIR}/runtime/basis_native.c"
+  "${CMAKE_CURRENT_LIST_DIR}/runtime/basis_real.c")
+target_compile_features(on1x_basis_native PUBLIC c_std_11)
+target_include_directories(on1x_basis_native PUBLIC
+  "${CMAKE_CURRENT_LIST_DIR}/runtime")
+if(NOT WIN32)
+  target_link_libraries(on1x_basis_native PUBLIC m)
+endif()
+# The integrated On1x CMake project registers compiler/native adapter tests.
+# Non-POSIX platforms require filesystem/time adapter implementations.

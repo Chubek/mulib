@@ -1,0 +1,12 @@
+{
+  "name": "TEXT_IO",
+  "kind": "signature",
+  "required": true,
+  "domain": "io",
+  "sml_signature": "TEXT_IO",
+  "status": "specified_only",
+  "on1x_module": null,
+  "support": "no executable On1x module yet",
+  "prerequisites": [],
+  "source": "https://smlfamily.github.io/Basis/overview.html"
+}

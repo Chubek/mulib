@@ -1,0 +1,6 @@
+# Immutable range iterator represented as (current,end) tuple.
+fn batteries_enum_range(start: i64,stop: i64) -> (i64,i64) { return (start,stop); }
+fn batteries_enum_has_next(state: (i64,i64)) -> bool { let (i,end) = state; return i < end; }
+fn batteries_enum_next(state: (i64,i64)) -> (i64,(i64,i64)) {
+ let (i,end) = state; assert(i < end); return (i,(i+1,end));
+}

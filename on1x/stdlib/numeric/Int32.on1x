@@ -1,0 +1,8 @@
+# Fixed-width 32-bit INTEGER range adapter, not a distinct On1x type.
+fn basis_int32_max()->i64 { return 2147483647; }
+fn basis_int32_min()->i64 { return -2147483647-1; }
+fn basis_int32_in_range(x:i64)->bool { return x>=basis_int32_min() && x<=basis_int32_max(); }
+fn basis_int32_checked(x:i64)->i64 {
+  if !basis_int32_in_range(x) { tool_fail("int32 range error"); }
+  return x;
+}

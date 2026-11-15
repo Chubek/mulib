@@ -1,0 +1,2 @@
+import "Word.on1x";
+fn basis_large_word_low8(x: i64) -> i64 { return basis_word_to_byte(x); }

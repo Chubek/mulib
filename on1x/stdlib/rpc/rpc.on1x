@@ -1,0 +1,25 @@
+# JSON-RPC request builder. General dispatcher requires an actual callback FFI.
+fn rpc_escape(text: string) -> string {
+ let out = buffer_new(); var i = 0;
+ while i < text_len(text) {
+  let c = text_byte(text,i);
+  if c == 34 || c == 92 { buffer_byte(out,92); buffer_byte(out,c); }
+  else {
+   if c == 10 { buffer_append(out,"\\n"); }
+   else {
+    if c == 13 { buffer_append(out,"\\r"); }
+    else {
+     if c == 9 { buffer_append(out,"\\t"); }
+     else { if c < 32 { tool_fail("unsupported JSON control byte"); } buffer_byte(out,c); }
+    }
+   }
+  }
+  i = i + 1;
+ }
+ return buffer_text(out);
+}
+fn rpc_notification(method: string, raw_params: string) -> string {
+ let prefix = "{\"jsonrpc\":\"2.0\",\"method\":\"";
+ let middle = "\",\"params\":";
+ return text_concat(text_concat(prefix,rpc_escape(method)),text_concat(middle,text_concat(raw_params,"}")));
+}

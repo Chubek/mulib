@@ -141,8 +141,9 @@ assert p.returncode==1 and 'prefix constructors' in p.stderr,p.stderr
 for example in sorted((root/'examples').glob('*.on1x')):
     if example.name=='ppx.on1x':
         continue
-    plain=run([t.compiler,'--emit-c',example])
-    echoed=run([t.compiler,'--emit-c',example,'--ppx','identity',root/'stdppx/identity.py'])
+    selected=['--stdppx','pipe','--stdppx','checks'] if example.name=='standard_ppx.on1x' else []
+    plain=run([t.compiler,'--emit-c',example,*selected])
+    echoed=run([t.compiler,'--emit-c',example,*selected,'--ppx','identity',root/'stdppx/identity.py'])
     assert plain.returncode==echoed.returncode and plain.stdout==echoed.stdout,(example,plain.stderr,echoed.stderr)
     if plain.returncode:
         assert plain.returncode==1 and 'missing main function' in plain.stderr and 'missing main function' in echoed.stderr,(example,plain.stderr,echoed.stderr)

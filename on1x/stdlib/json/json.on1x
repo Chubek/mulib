@@ -1,0 +1,8 @@
+# Scalar, recoverable JSON operations. Resource owners/views must stay in the
+# caller's lexical scope using the built-in json_* intrinsics, not cross a raw ABI.
+import "normalize.on1x";
+extern fn on1x_mulib_json_array_length(text:string)->i64;
+fn basis_json_array_length(text:string)->(bool,i64) {
+  let count=on1x_mulib_json_array_length(text);
+  if count<0{return (false,0);}return (true,count);
+}

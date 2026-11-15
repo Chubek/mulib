@@ -1,0 +1,13 @@
+# BLAKE3 and BLAKE2s use MuLIB cryptohash; lowercase ASCII hexadecimal output.
+# No plaintext/key logging; bridge handles NUL-free text only.
+extern fn on1x_mulib_blake3_hex(text: string) -> string;
+extern fn on1x_mulib_blake2s_hex(text: string) -> string;
+fn crypto_blake3(text: string) -> string { return on1x_mulib_blake3_hex(text); }
+fn crypto_blake2s(text: string) -> string { return on1x_mulib_blake2s_hex(text); }
+fn basis_crypto_blake3(text:string)->(i64,string) {
+ let value=on1x_mulib_blake3_hex(text);return (on1x_mulib_bridge_status(),value);
+}
+fn basis_crypto_blake2s(text:string)->(i64,string) {
+ let value=on1x_mulib_blake2s_hex(text);return (on1x_mulib_bridge_status(),value);
+}
+import "../_bridge/status.on1x";

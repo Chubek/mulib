@@ -13,7 +13,7 @@ profiles:
 The separate [Exotract static binding workflow](../contracts-exotract/README.md)
 uses this catalog's core implementation recipes and MANIFEST-backed profiles for
 the remaining MuLIB modules. It produces typed import metadata and a compiled
-one-TU static archive.
+static archive with one kernel implementation TU and any native companion objects.
 
 All shipped contracts are **AI-authored, annotated and unreviewed**. Header and
 manual SHA-256 pins identify what was audited; they do not certify behavior.

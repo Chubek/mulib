@@ -1,0 +1,20 @@
+{
+  "name": "PackWord<N>Little",
+  "kind": "structure",
+  "required": false,
+  "domain": "numeric",
+  "sml_signature": "PACK_WORD",
+  "status": "catalog_only",
+  "on1x_module": null,
+  "support": "no executable On1x module yet",
+  "prerequisites": [
+    "native unsigned words and bitwise operations"
+  ],
+  "source": "https://smlfamily.github.io/Basis/overview.html",
+  "common_concrete_width_examples": [
+    "PackWord8Little",
+    "PackWord16Little",
+    "PackWord32Little",
+    "PackWord64Little"
+  ]
+}

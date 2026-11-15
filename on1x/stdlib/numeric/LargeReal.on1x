@@ -1,0 +1,4 @@
+import "Real.on1x";
+# Host `double` bridge; no support for wider real type yet.
+fn basis_large_real_add(a:string,b:string)->string { return basis_real_add(a,b); }
+fn basis_large_real_mul(a:string,b:string)->string { return basis_real_mul(a,b); }

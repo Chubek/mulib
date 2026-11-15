@@ -1,0 +1,14 @@
+{
+  "name": "TextIO",
+  "kind": "structure",
+  "required": true,
+  "domain": "io",
+  "sml_signature": "TEXT_IO",
+  "status": "partial_executable_adapter",
+  "on1x_module": "on1x/stdlib/io/TextIO.on1x",
+  "support": "experimental On1x subset, not SML Basis conformance",
+  "prerequisites": [
+    "typed streams, I/O errors and stream lifecycle"
+  ],
+  "source": "https://smlfamily.github.io/Basis/overview.html"
+}

@@ -1,0 +1,16 @@
+# Pure two-stack functional queue: pair(front,rear), both proper S-expr lists.
+fn batteries_queue_empty() -> (sexpr,sexpr) { return (sx_nil(),sx_nil()); }
+fn batteries_queue_push(queue: (sexpr,sexpr),item: sexpr) -> (sexpr,sexpr) {
+ let (front,rear) = queue; return (front,sx_cons(item,rear));
+}
+fn batteries_queue_reverse(list: sexpr) -> sexpr {
+ var rest = list;var out = sx_nil();
+ while sx_kind(rest) == 3 { out = sx_cons(sx_head(rest),out); rest = sx_tail(rest); }
+ return out;
+}
+fn batteries_queue_pop(queue: (sexpr,sexpr)) -> (sexpr,(sexpr,sexpr)) {
+ let (front,rear) = queue; var actual = front; var leftover = rear;
+ if sx_kind(actual) == 0 { actual = batteries_queue_reverse(rear); leftover = sx_nil(); }
+ if sx_kind(actual) != 3 { tool_fail("queue underflow"); }
+ return (sx_head(actual),(sx_tail(actual),leftover));
+}

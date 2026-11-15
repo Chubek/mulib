@@ -1,0 +1,39 @@
+# IntInf is not possible with the current only-numeric-type i64.
+# This module intentionally offers a checked decimal-string adapter for
+# arbitrary precision nonnegative comparison and addition, not a claim of full IntInf.
+fn basis_intinf_is_nat(s:string)->bool {
+  if text_len(s)==0 { return false; }
+  var i=0; while i<text_len(s) {
+    let c=text_byte(s,i); if c<48 || c>57 { return false; }
+    i=i+1;
+  }
+  return true;
+}
+fn basis_intinf_normalize_nat(s:string)->string {
+  if !basis_intinf_is_nat(s) { tool_fail("bad natural decimal string"); }
+  var i=0; while i+1<text_len(s) && text_byte(s,i)==48 { i=i+1; }
+  return text_slice(s,i,text_len(s));
+}
+fn basis_intinf_compare_nat(a:string,b:string)->i64 {
+  let x=basis_intinf_normalize_nat(a); let y=basis_intinf_normalize_nat(b);
+  if text_len(x)<text_len(y) { return -1; }
+  if text_len(x)>text_len(y) { return 1; }
+  var i=0;
+  while i<text_len(x) { let u=text_byte(x,i); let v=text_byte(y,i);
+    if u<v { return -1; } if u>v { return 1; } i=i+1;
+  }
+  return 0;
+}
+fn basis_intinf_add_nat(a:string,b:string)->string {
+  let x=basis_intinf_normalize_nat(a); let y=basis_intinf_normalize_nat(b);
+  let out=buffer_new(); var i=text_len(x); var j=text_len(y); var carry=0;
+  while i>0 || j>0 || carry>0 {
+    var sum=carry;
+    if i>0 { i=i-1; sum=sum+text_byte(x,i)-48; }
+    if j>0 { j=j-1; sum=sum+text_byte(y,j)-48; }
+    buffer_byte(out,48+sum%10); carry=sum/10;
+  }
+  let reversed=buffer_text(out); let normal=buffer_new(); var k=text_len(reversed);
+  while k>0 { k=k-1; buffer_byte(normal,text_byte(reversed,k)); }
+  return buffer_text(normal);
+}

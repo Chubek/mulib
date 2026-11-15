@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'stdlib'))
-from ppx import serve
-from passes import unroll
-serve(unroll)
+"""Standalone On1x unroll PPX (source-compatible AST v1)."""
+from _support.driver import serve
+
+if __name__ == '__main__':
+    serve('unroll')

@@ -1,0 +1,6 @@
+from .text.String import basis_string_size as size, basis_string_sub as sub,
+    basis_string_concat as concat, basis_string_substring as substring,
+    basis_string_extract as extract, basis_string_is_prefix as is_prefix,
+    basis_string_is_suffix as is_suffix, basis_string_contains as contains,
+    basis_string_compare as compare, basis_string_translate as translate,
+    basis_string_find as find, basis_string_join as join;

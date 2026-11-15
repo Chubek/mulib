@@ -1,0 +1,11 @@
+# Link runtime/on1x_ppx_timing.c when using @timing.
+@ppx timing "../timing.py"
+@ppx trace "../trace.py"
+@ppx contract "../contract.py"
+@ppx return_guard "../return_guard.py"
+@trace("entry", "computing square")
+@contract("requires", x >= 0)
+@return_guard("nonnegative")
+@timing("elapsed")
+fn square(x: i64) -> i64 { return x * x; }
+fn main() { println(square(5)); }

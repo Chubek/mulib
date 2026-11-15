@@ -94,8 +94,17 @@ struct MacroRule {
 };
 struct Macro {Location where;std::string name;std::vector<MacroRule> rules;std::string ellipsis="...";std::vector<std::string> literals;};
 struct PpxRegistration {Location where;std::string label,program;};
+struct ImportName { std::string name,alias; };
+struct Import {
+ Location where;
+ std::string module,alias;
+ std::vector<ImportName> names;
+ std::size_t relative=0;
+ bool quoted=false,selective=false;
+};
 struct Unit {
- std::vector<std::string> imports; std::vector<Function> functions;
+  std::vector<std::string> imports; std::vector<Function> functions;
+  std::vector<Import> module_imports;
  std::map<Type,std::vector<Type>> forall_layouts; // Internal whole-unit demand ABI.
  bool forall_elaborated=false;
  bool stages_lowered=false;

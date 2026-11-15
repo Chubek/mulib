@@ -1,0 +1,12 @@
+{
+  "name": "OS",
+  "kind": "signature",
+  "required": true,
+  "domain": "system",
+  "sml_signature": "OS",
+  "status": "specified_only",
+  "on1x_module": "on1x/stdlib/os/OS.on1x",
+  "support": "experimental On1x subset, not SML Basis conformance",
+  "prerequisites": [],
+  "source": "https://smlfamily.github.io/Basis/overview.html"
+}

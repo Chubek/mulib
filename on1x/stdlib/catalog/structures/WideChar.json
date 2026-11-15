@@ -1,0 +1,12 @@
+{
+  "name": "WideChar",
+  "kind": "structure",
+  "required": false,
+  "domain": "text",
+  "sml_signature": "CHAR",
+  "status": "catalog_only",
+  "on1x_module": null,
+  "support": "no executable On1x module yet",
+  "prerequisites": [],
+  "source": "https://smlfamily.github.io/Basis/overview.html"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "NET_PROT_DB",
+  "kind": "signature",
+  "required": false,
+  "domain": "core",
+  "sml_signature": "NET_PROT_DB",
+  "status": "specified_only",
+  "on1x_module": null,
+  "support": "no executable On1x module yet",
+  "prerequisites": [],
+  "source": "https://smlfamily.github.io/Basis/overview.html"
+}

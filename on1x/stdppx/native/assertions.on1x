@@ -1,0 +1,30 @@
+import "common.on1x";
+fn transform(tree:sexpr,label:string)->sexpr {
+ let (wrapper,s1)=ppx_fresh(tree,0);let (value,s2)=ppx_fresh(tree,s1);
+ let (low,s3)=ppx_fresh(tree,s2);let (high,s4)=ppx_fresh(tree,s3);
+ let rewritten=visitor_rewrite(tree,fn(node:sexpr,path:sexpr)->sexpr {
+  if visitor_tag(node)!="ExtensionExpr"||sx_text(sexpr_nth(node,1))!=label{return node;}
+  let op=sx_text(sexpr_nth(node,2));let args=sexpr_nth(node,3);let at=sexpr_nth(node,4);
+  var check=sx_nil();let n=sexpr_size(args);
+  if op=="assert_true"&&n==1{check=sx_head(args);}
+  else {if op=="assert_false"&&n==1{check=ppx_node("Unary",ppx_list3(sx_symbol("!"),sx_head(args),at));}
+  else {if (op=="assert_eq"||op=="assert_ne")&&n==2{
+   var compare="==";if op=="assert_ne"{compare="!=";}
+   check=native_binary(compare,sx_head(args),sexpr_nth(args,1),at);
+  } else {if op=="between"&&n==3{
+   let i64=ppx_node("I64Type",sx_nil());let x=ppx_ident(value,at);
+   let params=ppx_list3(native_parameter(value,i64,at),native_parameter(low,i64,at),native_parameter(high,i64,at));
+   let test=native_binary("&&",native_binary(">=",x,ppx_ident(low,at),at),native_binary("<=",x,ppx_ident(high,at),at),at);
+   let body=native_block(ppx_list1(ppx_node("Return",ppx_list2(test,at))),at);
+   check=ppx_node("Call",ppx_list3(native_lambda(params,ppx_node("BoolType",sx_nil()),body,at),args,at));
+  }else{tool_fail("assertions accepts assert_true/false, assert_eq/ne, between");}}}}
+  return ppx_call(wrapper,ppx_list1(check),at);
+ });
+ let (used,work)=ppx_find_text(rewritten,wrapper,0,0);if !used{return rewritten;}
+ let functions=sexpr_nth(rewritten,2);let first=sx_head(functions);let at=sexpr_nth(first,sexpr_size(first)-1);
+ let params=ppx_list1(native_parameter(value,ppx_node("BoolType",sx_nil()),at));
+ let body=native_block(ppx_list1(native_do(ppx_call("assert",ppx_list1(ppx_ident(value,at)),at),at)),at);
+ let definition=ppx_node("Function",sx_cons(sx_string(wrapper),sx_cons(params,sx_cons(ppx_node("VoidType",sx_nil()),ppx_list3(body,sx_nil(),at)))));
+ return ppx_node("Unit",ppx_list2(sx_symbol("1"),native_append(functions,ppx_list1(definition))));
+}
+fn main(){native_serve(transform);}

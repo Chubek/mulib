@@ -1,0 +1,3 @@
+import "BinIO.on1x";
+fn basis_bin_prim_read_hex(path:string)->string { return basis_bin_io_read_hex(path); }
+fn basis_bin_prim_write_hex(path:string,hex_text:string)->bool { return basis_bin_io_write_hex(path,hex_text); }

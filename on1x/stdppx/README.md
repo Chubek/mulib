@@ -1,28 +1,96 @@
-# Standard PPX core
+# On1x standard PPXs
 
-Six processors have both native On1x (`native/NAME.on1x`) and Python bootstrap
-(`NAME.py`) implementations, invoked by `on1xc --ppx LABEL FILE`:
+**24 Python processors and 15 native On1x processors** implement bounded,
+schema-v1 source transformations. CMake builds/installs all native executables;
+the compiler always runs its normal inference, type, staging and ownership checks
+after reconstruction. This is not a typed deriving or safe-FFI framework.
 
-| Program | Input / behavior |
+```sh
+cmake --build build/on1x --parallel 4
+build/on1x/on1xc --emit-c client.on1x --stdppx assertions -o client.c
+# Use the equivalent native processor explicitly:
+build/on1x/on1xc --emit-c client.on1x \
+  --ppx assertions build/on1x/stdppx/on1x-ppx-assertions -o client.c
+```
+
+`--stdppx NAME` resolves the Python implementation beside the standard library.
+`--ppx LABEL PROGRAM` accepts native executables too; LABEL must match the source
+carrier. For standalone native protocol runs, set `ON1X_PPX_SCHEMA` to the absolute
+`grammar/PPX.schema.json` path, `ON1X_PPX_PROTOCOL=1`, and `ON1X_PPX_LABEL=LABEL`.
+Source `@ppx` registrations require `--allow-source-ppx`.
+
+## Implemented native/Python operations
+
+All fifteen native processors import the original `stdlib/ppx` authoring library.
+`native/common.on1x` is a shared helper, not a sixteenth executable.
+
+| Processor | Source API |
 |---|---|
-| `identity.py` | Validate and round-trip the AST |
-| `checks.py` | `@label("assert_eq", a, b)` / `assert_ne`; hygienic intrinsic wrappers |
-| `control.py` | Statement `@label("when", condition, {body})` / `unless` |
-| `unroll.py` | Statement `@label("repeat", literal_count, {body})`, count 0..256 |
-| `derive.py` | Function attribute `@label("derive", "arity", "signature")` |
-| `fold.py` | Fold representable literal arithmetic without hiding runtime traps |
+| `identity` | Wire/schema roundtrip |
+| `checks` | `@checks("assert_eq", a, b)` / `assert_ne` |
+| `control` | `when`, `unless`, `while`, `until(condition, {body})` statements |
+| `unroll` | `repeat(integer, {body})`, count 0..256 and expansion budget |
+| `derive` | Function attribute `derive("arity", "signature")`; metadata only |
+| `fold` | Trap-preserving literal `i64` arithmetic folding |
+| `pipe` | `apply(value, f, g, ...)`, left-to-right calls |
+| `compose` | `apply(value, outer, inner, ...)`, right-to-left calls |
+| `assertions` | `assert_true`, `assert_false`, `assert_eq`, `assert_ne`, `between(value,low,high)` |
+| `cond` | `branches(condition,{body},...,{fallback})`; compatibility `choose(condition,{yes},{no})` |
+| `format` | `string("{0}+{1}={{literal braces}}", a, b)`; compatibility `concat(a,b)` |
+| `logging` | `debug`, `info`, `warn`, `error(string)` to stderr; compatibility `print(value)` to stdout |
+| `state_machine` | `transition(state,event,from,on,to,...)`; compatibility statement `set(identifier,value)` |
+| `tap` | `call(value,callback_identifier)`; compatibility `identity(value)` |
+| `trace` | Function attribute `entry` with zero or one literal message; stderr `TRACE message` |
 
-The assigned label comes from `ON1X_PPX_LABEL`, not a hard-coded name.
-`examples/ppx.on1x` composes five of these using source registrations; it needs
-`--allow-source-ppx`. No chmod is required for these shebang scripts.
+`tap` evaluates the value then the callback exactly once, invokes the callback,
+and returns the value. A mutable callback is passed as an argument rather than
+captured. Assertion operands evaluate once in source order, and introduced names
+are collision-checked; a local `assert` cannot hijack the generated assertion.
+`between` is inclusive and i64-only. Format arguments are strings, occur once,
+and must use consecutive `{0}`, `{1}`, ... slots in source order. State transitions
+use at most 64 unique i64 `(from,event)` pairs; unmatched inputs preserve state.
+Conditions short-circuit, branch blocks retain lexical scope, and tracing never
+pretends to instrument exits. Malformed/unconsumed carriers fail with no stdout.
 
-The default CMake build emits `BUILD/stdppx/on1x-ppx-NAME`. Native executables
-require `ON1X_PPX_SCHEMA` to name the absolute `grammar/PPX.schema.json` path;
-no Python/compiler/LibStone is linked or executed at runtime. Native checks adds
-a fresh global wrapper even when unused. The C++ compiler itself is not self-hosted.
+## Other Python processors
 
-`passes.py` contains the bootstrap transformations; `stdlib/{sexpr,visitor,ppx}`
-now also contain reusable `.on1x` libraries. See [native APIs](../docs/selfhosting.md)
-and [the manual](../docs/metaprogramming.md) for
-the byte-string protocol, schema, security model, bounds and deferred work.
-This is six implementations, not a placeholder catalog of thirty processors.
+- `embed`: explicit compile-time confined text reads, authorized with
+  `ON1X_PPX_EMBED_ROOT`; no absolute/escaping paths, NUL or files above 1 MiB.
+- `regex`: **literal** full/prefix/suffix matching, not a regular-expression engine.
+- `contract`: checked `requires(condition)` function preconditions.
+- `match_int`: single-evaluation literal dispatch with a default block.
+- `cfg`: enabled/disabled function declarations using `ON1X_PPX_FEATURES`.
+- `test`: explicit zero-argument void test-case runner generation.
+- `return_guard`: nonnegative explicit i64 return postconditions.
+- `timing`: scalar function timing; the build helper links
+  `runtime/on1x_ppx_timing.c` automatically. Early returns are instrumented once.
+- `ffi_bind`: validates explicit **raw** scalar metadata from
+  `ON1X_PPX_FFI_MANIFEST` against `ON1X_PPX_FFI_TARGET`. Duplicate/unknown fields,
+  mismatched signatures/targets and absent review flags reject. The metadata's
+  review boolean is a caller claim, **not** independent C implementation review,
+  CDecl discovery, target layout probing, or safe-import admission.
+
+The [catalog](docs/CATALOG.md) lists all operations and seventeen **design-only**
+processors. Records/ADTs, typed derivation, async and `ffi_safe` remain unavailable.
+No C/C++ algorithm or semantic-contract parser is invented by these processors.
+
+## Protocol, installation and tests
+
+Canonical v1 schema: [`../grammar/PPX.schema.json`](../grammar/PPX.schema.json).
+Python support bounds input/output to 4 MiB, depth to 256, and syntax nodes to
+262,144. Native processors additionally use bounded managed S-expression and
+snapshot storage. The compiler imposes subprocess timeout/output limits.
+Processor authorization is not an OS sandbox.
+
+```sh
+python3 -m unittest discover -s on1x/stdppx/tests -v
+ctest --test-dir build/on1x -R 'stdppx|selfhost|ppx' --output-on-failure
+python3 on1x/stdppx/make_catalog.py
+```
+
+Catalog regeneration preserves design documents unless `--refresh-designs` is
+explicitly supplied. Native programs install under `libexec/on1x`; Python sources,
+schemas and authoring resources install under `share/on1x`. Tests execute emitted
+C11 with GCC, Clang and ASan/UBSan, compare native/Python behavior, and reject bad
+protocol input, unconsumed carriers, collisions and post-PPX type errors.
+See [`VERIFICATION.md`](VERIFICATION.md) for measured results and historical scope.

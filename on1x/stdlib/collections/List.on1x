@@ -1,0 +1,107 @@
+# Polymorphic, immutable list interface backed by native managed sexpr cons.
+# Unlike SML lists, elements have the On1x `sexpr` type.
+fn basis_list_nil()->sexpr { return sx_nil(); }
+fn basis_list_cons(item:sexpr,rest:sexpr)->sexpr { return sx_cons(item,rest); }
+fn basis_list_is_empty(xs:sexpr)->bool { return sx_kind(xs)==0; }
+fn basis_list_hd(xs:sexpr)->sexpr { return sx_head(xs); }
+fn basis_list_tl(xs:sexpr)->sexpr { return sx_tail(xs); }
+fn basis_list_length(xs:sexpr)->i64 {
+  var rest=xs; var count=0;
+  while sx_kind(rest)==3 { count=count+1; if count>262144 { tool_fail("list too long"); } rest=sx_tail(rest); }
+  if sx_kind(rest)!=0 { tool_fail("list is not proper"); } return count;
+}
+fn basis_list_rev(xs:sexpr)->sexpr {
+  var result=sx_nil(); var rest=xs;
+  while sx_kind(rest)==3 { result=sx_cons(sx_head(rest),result); rest=sx_tail(rest); }
+  if sx_kind(rest)!=0 { tool_fail("list is not proper"); } return result;
+}
+fn basis_list_nth(xs:sexpr,index:i64)->sexpr {
+  if index<0 { tool_fail("negative list index"); }
+  var i=0; var rest=xs;
+  while sx_kind(rest)==3 {
+    if i==index { return sx_head(rest); }
+    rest=sx_tail(rest); i=i+1;
+  }
+  tool_fail("list subscript"); return sx_nil();
+}
+fn basis_list_append(a:sexpr,b:sexpr)->sexpr {
+  var rest=b; var xs=basis_list_rev(a);
+  while sx_kind(xs)==3 { rest=sx_cons(sx_head(xs),rest); xs=sx_tail(xs); }
+  return rest;
+}
+fn basis_list_take(xs:sexpr,n:i64)->sexpr {
+  if n<0 { tool_fail("negative take"); }
+  var rest=xs; var out=sx_nil(); var i=0;
+  while i<n {
+    if sx_kind(rest)!=3 { tool_fail("list take beyond end"); }
+    out=sx_cons(sx_head(rest),out); rest=sx_tail(rest); i=i+1;
+  }
+  return basis_list_rev(out);
+}
+fn basis_list_drop(xs:sexpr,n:i64)->sexpr {
+  if n<0 { tool_fail("negative drop"); }
+  var rest=xs; var i=0;
+  while i<n {
+    if sx_kind(rest)!=3 { tool_fail("list drop beyond end"); }
+    rest=sx_tail(rest); i=i+1;
+  }
+  return rest;
+}
+fn basis_list_map(xs:sexpr,f:fn(sexpr)->sexpr)->sexpr {
+  var rev=sx_nil(); var rest=xs;
+  while sx_kind(rest)==3 { rev=sx_cons(f(sx_head(rest)),rev); rest=sx_tail(rest); }
+  if sx_kind(rest)!=0 { tool_fail("list is not proper"); }
+  return basis_list_rev(rev);
+}
+fn basis_list_filter(xs:sexpr,p:fn(sexpr)->bool)->sexpr {
+  var rev=sx_nil(); var rest=xs;
+  while sx_kind(rest)==3 { let item=sx_head(rest); if p(item) { rev=sx_cons(item,rev); } rest=sx_tail(rest); }
+  if sx_kind(rest)!=0 { tool_fail("list is not proper"); }
+  return basis_list_rev(rev);
+}
+fn basis_list_foldl(xs:sexpr,initial:sexpr,f:fn(sexpr,sexpr)->sexpr)->sexpr {
+  var result=initial; var rest=xs;
+  while sx_kind(rest)==3 { result=f(sx_head(rest),result); rest=sx_tail(rest); }
+  if sx_kind(rest)!=0 { tool_fail("list is not proper"); }
+  return result;
+}
+fn basis_list_exists(xs:sexpr,p:fn(sexpr)->bool)->bool {
+  var rest=xs; while sx_kind(rest)==3 { if p(sx_head(rest)) { return true; } rest=sx_tail(rest); }
+  if sx_kind(rest)!=0 { tool_fail("list is not proper"); }
+  return false;
+}
+fn basis_list_all(xs:sexpr,p:fn(sexpr)->bool)->bool {
+  var rest=xs; while sx_kind(rest)==3 { if !p(sx_head(rest)) { return false; } rest=sx_tail(rest); }
+  if sx_kind(rest)!=0 { tool_fail("list is not proper"); }
+  return true;
+}
+fn basis_list_find(xs:sexpr,p:fn(sexpr)->bool)->(bool,sexpr) {
+  var rest=xs;
+  while sx_kind(rest)==3 { let value=sx_head(rest); if p(value) { return (true,value); } rest=sx_tail(rest); }
+  if sx_kind(rest)!=0 { tool_fail("list is not proper"); }
+  return (false,sx_nil());
+}
+fn basis_list_tabulate(n:i64,f:fn(i64)->sexpr)->sexpr {
+  if n<0 || n>262144 { tool_fail("invalid tabulate length"); }
+  var result=sx_nil(); var i=0;
+  while i<n { result=sx_cons(f(i),result); i=i+1; }
+  return basis_list_rev(result);
+}
+fn basis_list_app(xs:sexpr,f:fn(sexpr)->void) {
+  var rest=xs;
+  while sx_kind(rest)==3 { f(sx_head(rest)); rest=sx_tail(rest); }
+  if sx_kind(rest)!=0 { tool_fail("list is not proper"); }
+}
+fn basis_list_foldr(xs:sexpr,initial:sexpr,f:fn(sexpr,sexpr)->sexpr)->sexpr {
+  return basis_list_foldl(basis_list_rev(xs),initial,f);
+}
+fn basis_list_partition(xs:sexpr,p:fn(sexpr)->bool)->(sexpr,sexpr) {
+  var yes=sx_nil(); var no=sx_nil(); var rest=xs;
+  while sx_kind(rest)==3 {
+    let item=sx_head(rest);
+    if p(item) { yes=sx_cons(item,yes); } else { no=sx_cons(item,no); }
+    rest=sx_tail(rest);
+  }
+  if sx_kind(rest)!=0 { tool_fail("list is not proper"); }
+  return (basis_list_rev(yes),basis_list_rev(no));
+}

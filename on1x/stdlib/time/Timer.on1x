@@ -1,0 +1,8 @@
+import "Time.on1x";
+# Timer reads monotonic time when the host supplies it.
+fn basis_timer_start()->i64 { return basis_time_monotonic_ns(); }
+fn basis_timer_elapsed_ns(start:i64)->i64 {
+  let now=basis_time_monotonic_ns();
+  if now<start { tool_fail("monotonic clock moved backwards"); }
+  return now-start;
+}

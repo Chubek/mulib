@@ -1,0 +1,20 @@
+# Native On1x implementation of @compose("apply", value, outer_fn, inner_fn, ...).
+# Built by CMake; compiler execution and Python parity are tested by CTest.
+import "../../stdlib/ppx/ppx.on1x";
+fn compose_node(node: sexpr, label: string) -> sexpr {
+  if visitor_tag(node) != "ExtensionExpr" || sx_text(sexpr_nth(node, 1)) != label { return node; }
+  let op = sx_text(sexpr_nth(node, 2)); let args = sexpr_nth(node, 3); let at = sexpr_nth(node, 4);
+  if op != "apply" || sexpr_size(args) < 2 { tool_fail("compose: expected apply(value, outer_fn, inner_fn, ...)"); }
+  var result = sx_head(args); var rest = sexpr_reverse(sx_tail(args));
+  while sx_kind(rest) == 3 {
+    let callee = sx_head(rest);
+    if visitor_tag(callee) != "Identifier" { tool_fail("compose: functions must be identifiers"); }
+    result = ppx_node("Call", ppx_list3(callee, ppx_list1(result), at));
+    rest = sx_tail(rest);
+  }
+  return result;
+}
+fn transform(tree: sexpr, label: string) -> sexpr {
+  return visitor_rewrite(tree, fn(node: sexpr, path: sexpr) -> sexpr { return compose_node(node, label); });
+}
+fn main() { ppx_serve(ppx_schema_env(), transform); }

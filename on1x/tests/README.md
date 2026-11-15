@@ -2,6 +2,35 @@
 
 CTest registers independent tests with separate artifact directories:
 
+- `on1x.stdlib_extensions`: validated persistent Option/Result/maps/graphs, signed
+  scanning and no-snapshot searches, canonical MuLIB data/hash adapters with
+  recoverable errors, per-group C compilation, counted allocation/budget failure
+  cleanup, numeric-IPv4 loopback binary reception, EOF and reused/stale handles.
+- `on1x.mulib`: kernel/fixture inventory, real YANTLR provider execution, OptML's
+  shipped policy, separate Shiraz runtime/registry linkage, embedded lmuw3, shared
+  JSON, native
+  metadata and host-size bounds, binary fixtures, relocation, bundle fingerprints,
+  stale embedding/missing-file/symlink rejection and preserved outputs on failure.
+- `on1x.loader_api`: module/depth/source budgets, deterministic dependencies and
+  invocation-local caches that observe edited files.
+- `on1x.modules`: named/selective/relative/quoted imports, isolated namespaces,
+  package initializers and re-exports, canonical symlink/diamond identity, cycles,
+  search roots, automatic/custom preludes, shadowing, compatible raw externs,
+  macros/staging, PPX ordering/authorization, adapter linking and output preservation.
+- `on1x.libraries`: compiler admission of all library modules, four Basis On1x
+  programs, native adapters, Python arithmetic oracle, generic helpers, callback
+  ordering, malformed-list/bounds errors, snapshot budgets and allocation failures.
+- `on1x.stdppx`: all 24 Python processors through compiler-generated C11 execution,
+  all fifteen native processors, seven new native/Python behavior comparisons,
+  compatibility forms and composed examples, bounded unroll, mutable
+  callbacks, early-return timing, injected clock boundaries/failures and
+  post-transform type failures.
+- `on1x.stdppx_protocol`: Python unittest suite for all standard processors,
+  subprocess protocol, canonical schema parity and rejected malformed transforms.
+- `on1x.install`: install into a temporary prefix, relocate it, resolve installed
+  dependencies and compile/run clients with the installed helper, PPX, MuLIB
+  housekeeping, a standard-library INI consumer and an external MuLIB kernel/fixture checkout.
+
 - `on1x.relational_hir` (Novostone enabled): seven Datalog queries against
   independent MIR graph/liveness algorithms and the upstream naive evaluator,
   40 seeded CFGs, recursive calls, loop phis, parallel edges, full-width IDs and

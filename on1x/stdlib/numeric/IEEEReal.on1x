@@ -1,0 +1,3 @@
+# Finite-only host double bridge; full NaN/rounding model deferred.
+extern fn basis_native_ieee_isfinite(x:string)->bool;
+fn basis_ieee_is_finite(x:string)->bool { return basis_native_ieee_isfinite(x); }

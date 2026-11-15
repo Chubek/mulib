@@ -1,0 +1,14 @@
+{
+  "name": "NetHostDB",
+  "kind": "structure",
+  "required": false,
+  "domain": "network",
+  "sml_signature": "NET_HOST_DB",
+  "status": "catalog_only",
+  "on1x_module": null,
+  "support": "no executable On1x module yet",
+  "prerequisites": [
+    "typed socket descriptors, address data types, and ownership"
+  ],
+  "source": "https://smlfamily.github.io/Basis/overview.html"
+}

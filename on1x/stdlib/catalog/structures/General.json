@@ -1,0 +1,14 @@
+{
+  "name": "General",
+  "kind": "structure",
+  "required": true,
+  "domain": "core",
+  "sml_signature": "GENERAL",
+  "status": "partial_executable_adapter",
+  "on1x_module": "on1x/stdlib/core/General.on1x",
+  "support": "experimental On1x subset, not SML Basis conformance",
+  "prerequisites": [
+    "exceptions and reference types"
+  ],
+  "source": "https://smlfamily.github.io/Basis/overview.html"
+}

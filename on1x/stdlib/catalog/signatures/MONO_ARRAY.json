@@ -1,0 +1,12 @@
+{
+  "name": "MONO_ARRAY",
+  "kind": "signature",
+  "required": true,
+  "domain": "core",
+  "sml_signature": "MONO_ARRAY",
+  "status": "specified_only",
+  "on1x_module": null,
+  "support": "no executable On1x module yet",
+  "prerequisites": [],
+  "source": "https://smlfamily.github.io/Basis/overview.html"
+}

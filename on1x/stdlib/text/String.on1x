@@ -1,0 +1,73 @@
+# Byte-oriented string operations, matching current NUL-free On1x string ABI.
+fn basis_string_size(s: string) -> i64 { return text_len(s); }
+fn basis_string_sub(s: string, i: i64) -> i64 { return text_byte(s,i); }
+fn basis_string_concat(a: string,b: string) -> string { return text_concat(a,b); }
+fn basis_string_substring(s: string,start: i64,length: i64) -> string {
+  if start<0 || start>text_len(s) || length<0 || length>text_len(s)-start { tool_fail("substring bounds"); }
+  return text_slice(s,start,start+length);
+}
+fn basis_string_extract(s: string,start: i64) -> string { return text_slice(s,start,text_len(s)); }
+fn basis_string_is_prefix(prefix: string,s: string) -> bool {
+  return basis_string_match_at(s,prefix,0);
+}
+fn basis_string_is_suffix(suffix: string,s: string) -> bool {
+  let n=text_len(suffix); let total=text_len(s);
+  return n<=total && basis_string_match_at(s,suffix,total-n);
+}
+fn basis_string_match_at(s:string,needle:string,start:i64)->bool {
+  let n=text_len(needle); let size=text_len(s);
+  if start<0 || start>size || n>size-start { return false; }
+  var i=0;
+  while i<n { if text_byte(s,start+i)!=text_byte(needle,i) { return false; } i=i+1; }
+  return true;
+}
+fn basis_string_find(s:string,needle:string,start:i64)->i64 {
+  let n=text_len(needle); let size=text_len(s);
+  if start<0 || start>size { tool_fail("string find start out of bounds"); }
+  var pos=start;
+  while pos<=size-n { if basis_string_match_at(s,needle,pos) { return pos; } pos=pos+1; }
+  return -1;
+}
+fn basis_string_contains(s: string,needle: string) -> bool {
+  return basis_string_find(s,needle,0)>=0;
+}
+fn basis_string_compare(a: string,b: string) -> i64 {
+  let al=text_len(a); let bl=text_len(b); var i=0;
+  while i<al && i<bl {
+    let aa=text_byte(a,i); let bb=text_byte(b,i);
+    if aa<bb { return -1; } if aa>bb { return 1; } i=i+1;
+  }
+  if al<bl { return -1; } if al>bl { return 1; } return 0;
+}
+fn basis_string_implode_ascii(xs: sexpr) -> string {
+  let out=buffer_new(); var rest=xs;
+  while sx_kind(rest)==3 {
+    let item=sx_head(rest);
+    if sx_kind(item)!=1 { tool_fail("expected decimal ASCII character code symbol"); }
+    let code=sx_text(item); var value=0; var i=0;
+    while i<text_len(code) {
+      let c=text_byte(code,i); if c<48 || c>57 { tool_fail("bad ASCII code"); }
+      value=value*10+c-48; i=i+1;
+    }
+    if value<1 || value>127 { tool_fail("ASCII char must be 1..127"); }
+    buffer_byte(out,value); rest=sx_tail(rest);
+  }
+  if sx_kind(rest)!=0 { tool_fail("improper ASCII list"); }
+  return buffer_text(out);
+}
+fn basis_string_translate(s: string, f: fn(i64)->string) -> string {
+  let out=buffer_new(); var i=0;
+  while i<text_len(s) { buffer_append(out,f(text_byte(s,i))); i=i+1; }
+  return buffer_text(out);
+}
+fn basis_string_join(separator:string,strings:sexpr)->string {
+  let out=buffer_new(); var rest=strings; var first=true;
+  while sx_kind(rest)==3 {
+    let item=sx_head(rest);
+    if sx_kind(item)!=2 { tool_fail("join requires string atoms"); }
+    if !first { buffer_append(out,separator); }
+    buffer_append(out,sx_text(item)); first=false; rest=sx_tail(rest);
+  }
+  if sx_kind(rest)!=0 { tool_fail("join requires a proper list"); }
+  return buffer_text(out);
+}

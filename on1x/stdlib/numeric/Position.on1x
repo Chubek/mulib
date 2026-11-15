@@ -1,0 +1,9 @@
+# I/O position is represented as signed i64; nonnegative values only.
+fn basis_position_valid(n: i64) -> bool { return n >= 0; }
+fn basis_position_compare(a: i64,b: i64) -> i64 {
+  if a < b { return -1; } if a > b { return 1; } return 0;
+}
+fn basis_position_add(a: i64,b: i64) -> i64 {
+  if a < 0 || b < 0 { tool_fail("position must be nonnegative"); }
+  return a + b;
+}

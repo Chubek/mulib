@@ -7,7 +7,7 @@ ExoML/libclang declaration extractor to produce:
 - Compiler-derived CDecl v2 files and Exotract On1x import manifests.
 - A declaration-only `mulib.h` including the selected canonical headers.
 - One Exotract-generated `mulib.c` containing all implementation switches.
-- `mulib.o` and `libmulib.a`, compiled as C11 with the selected compiler.
+- `mulib.o`, optional native companion objects, and `libmulib.a`, compiled as C11.
 - A build plan and an input/artifact SHA-256 lock file.
 - `symbols.json`, separating actual archive exports from declaration-only APIs.
 
@@ -75,13 +75,20 @@ inline functions may also be declaration-only in the archive symbol inventory.
 JSON, Vec and core Parsec reuse the source-pinned implementation recipes in
 [`../contracts-exoml/catalog.json`](../contracts-exoml/catalog.json). This avoids
 silently enabling Parsec's separate owned grammar API. Other module recipes
-follow MANIFEST dependency order, with cycle/unknown-module detection. Multiple
+follow MANIFEST dependency closure, recording cycles and rejecting unknown modules. Multiple
 selected modules share one deduplicated implementation TU. The generated header
 does not define implementation macros. **Do not combine this archive with a
 second TU defining the same MuLIB implementations.**
 
-The plan includes declared link requirements for the explicit profiles (`m` for
-JSON and MicroJS). For other modules, consult their canonical manuals for final
+The shared [`std.mulib` planner](../std/mulib/README.md) also matches native
+companions and resource fixtures under `library/`. `--fixture yantlr` opts into
+its provider header, implementation and typed Exotract metadata; selecting
+Shiraz includes its separate runtime/registry objects and KVDB kernels.
+Copied fixtures and implementation-only include files participate in the lock.
+Use `on1x-build.py --mulib-archive DIRECTORY` for verified archive consumption.
+
+The plan includes the profiles' and fixture registry's declared link requirements
+(`m` for JSON and MicroJS, for example). For other modules, consult their manuals for final
 platform/system-library link flags. Compilation failures and missing configured
 features are reported; the tool never substitutes declarations for a failed
 implementation build.
@@ -113,7 +120,7 @@ libclang or C++ compiler support library.
 
 Discovery runs with implementation macros disabled and requires complete typed
 declarations plus C11 syntax validation. Core profiles additionally require known
-symbols. Implementation macros are emitted only by Exotract into the sole C TU;
+symbols. Implementation macros are emitted only by Exotract into the kernel C TU;
 passing them via `--cflag` rejects. Compiler options are explicit trusted build
 inputs, not a restricted execution sandbox.
 
@@ -126,8 +133,15 @@ The lock is evidence, not a safe-import certificate or an executable instruction
 file. Generated artifacts belong in build directories rather than this source
 catalog.
 
-`on1x.exotract` tests real extraction, complete metadata, one archive member,
-separate-TU C and On1x execution, MicroJS, unknown modules, missing declarations,
-implementation-macro rejection and rollback. Existing `on1x.contracts` and
+`on1x.exotract` tests real extraction, complete metadata, one kernel archive member,
+separate-TU C and On1x execution, MicroJS, YANTLR provider discovery/execution,
+Shiraz's multi-object archive, fixture drift, mismatched compiler options, unknown
+modules, missing declarations, implementation-macro rejection and rollback.
+Existing `on1x.contracts` and
 `on1x.contracts_sdk` tests exercise the renamed ExoML workflow. Measured builds
 and dependency revisions are in [`../VERIFICATION.md`](../VERIFICATION.md).
+
+The standard-library bridge test also extracts/builds JSON/YAML/TOML/INI,
+cryptohash and socket kernels into a shared archive and executes an On1x consumer
+through `--mulib-archive`, with no manually specified bridge TU or duplicate
+implementation switches. This verifies raw linkage, not general foreign safety.

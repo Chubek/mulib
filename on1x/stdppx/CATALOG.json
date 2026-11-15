@@ -1,0 +1,341 @@
+{
+  "package": "on1x/stdppx",
+  "protocol": "on1x.sexpr-ast/v1",
+  "status_note": "All 24 Python processors and 15 native processors have compiler-generated C11 execution tests. See VERIFICATION.md for measured configurations. Design-only entries are not implementations.",
+  "counts": {
+    "existing_python": 6,
+    "new_python": 18,
+    "design_only": 17,
+    "native_sources": 15
+  },
+  "processors": [
+    {
+      "name": "checks",
+      "status": "existing",
+      "description": "assert_eq/assert_ne intrinsic wrappers",
+      "prerequisites": "none",
+      "entrypoint": "checks.py",
+      "native": "native/checks.on1x"
+    },
+    {
+      "name": "control",
+      "status": "existing",
+      "description": "when/unless/while/until statement expansion",
+      "prerequisites": "none",
+      "entrypoint": "control.py",
+      "native": "native/control.on1x"
+    },
+    {
+      "name": "derive",
+      "status": "existing",
+      "description": "function arity/signature metadata only",
+      "prerequisites": "none",
+      "entrypoint": "derive.py",
+      "native": "native/derive.on1x"
+    },
+    {
+      "name": "fold",
+      "status": "existing",
+      "description": "trap-preserving integer literal folding",
+      "prerequisites": "none",
+      "entrypoint": "fold.py",
+      "native": "native/fold.on1x"
+    },
+    {
+      "name": "identity",
+      "status": "existing",
+      "description": "AST identity and schema round-trip",
+      "prerequisites": "none",
+      "entrypoint": "identity.py",
+      "native": "native/identity.on1x"
+    },
+    {
+      "name": "unroll",
+      "status": "existing",
+      "description": "bounded repeat() expansion",
+      "prerequisites": "none",
+      "entrypoint": "unroll.py",
+      "native": "native/unroll.on1x"
+    },
+    {
+      "name": "assertions",
+      "status": "implemented-python",
+      "description": "assert_true/false, assert_eq/ne, single-evaluation between",
+      "prerequisites": "none",
+      "entrypoint": "assertions.py",
+      "native": "native/assertions.on1x"
+    },
+    {
+      "name": "cfg",
+      "status": "implemented-python",
+      "description": "enabled/disabled(feature) conditional function declarations",
+      "prerequisites": "ON1X_PPX_FEATURES",
+      "entrypoint": "cfg.py",
+      "native": null
+    },
+    {
+      "name": "compose",
+      "status": "implemented-python",
+      "description": "apply(value,outer,inner,...) right-to-left unary calls",
+      "prerequisites": "none",
+      "entrypoint": "compose.py",
+      "native": "native/compose.on1x"
+    },
+    {
+      "name": "cond",
+      "status": "implemented-python",
+      "description": "branches(condition,Block,...,fallbackBlock)",
+      "prerequisites": "none",
+      "entrypoint": "cond.py",
+      "native": "native/cond.on1x"
+    },
+    {
+      "name": "contract",
+      "status": "implemented-python",
+      "description": "requires(condition) function preconditions",
+      "prerequisites": "checked bool/intrinsic assert",
+      "entrypoint": "contract.py",
+      "native": null
+    },
+    {
+      "name": "embed",
+      "status": "implemented-python",
+      "description": "text(relative_filename) compile-time resource embed",
+      "prerequisites": "ON1X_PPX_EMBED_ROOT",
+      "entrypoint": "embed.py",
+      "native": null
+    },
+    {
+      "name": "ffi_bind",
+      "status": "implemented-python",
+      "description": "raw_scalar metadata admission for exact simple raw C ABI",
+      "prerequisites": "ON1X_PPX_FFI_MANIFEST and target",
+      "entrypoint": "ffi_bind.py",
+      "native": null
+    },
+    {
+      "name": "format",
+      "status": "implemented-python",
+      "description": "string(template,{0},{1},...) string-only formatting",
+      "prerequisites": "text_concat",
+      "entrypoint": "format.py",
+      "native": "native/format.on1x"
+    },
+    {
+      "name": "logging",
+      "status": "implemented-python",
+      "description": "debug/info/warn/error string statements",
+      "prerequisites": "io_stderr and text_concat",
+      "entrypoint": "logging.py",
+      "native": "native/logging.on1x"
+    },
+    {
+      "name": "match_int",
+      "status": "implemented-python",
+      "description": "cases(state,integer,Block,...,defaultBlock)",
+      "prerequisites": "i64",
+      "entrypoint": "match_int.py",
+      "native": null
+    },
+    {
+      "name": "pipe",
+      "status": "implemented-python",
+      "description": "apply(value,f,g,...) left-to-right unary calls",
+      "prerequisites": "none",
+      "entrypoint": "pipe.py",
+      "native": "native/pipe.on1x"
+    },
+    {
+      "name": "regex",
+      "status": "implemented-python",
+      "description": "full/prefix/suffix literal string matcher; no regex metacharacters",
+      "prerequisites": "text_len and text_slice",
+      "entrypoint": "regex.py",
+      "native": null
+    },
+    {
+      "name": "return_guard",
+      "status": "implemented-python",
+      "description": "nonnegative postcondition on i64 returns",
+      "prerequisites": "none",
+      "entrypoint": "return_guard.py",
+      "native": null
+    },
+    {
+      "name": "state_machine",
+      "status": "implemented-python",
+      "description": "transition(state,event,from,on,to,...) for i64",
+      "prerequisites": "i64",
+      "entrypoint": "state_machine.py",
+      "native": "native/state_machine.on1x"
+    },
+    {
+      "name": "tap",
+      "status": "implemented-python",
+      "description": "call(value,callback) with single evaluation",
+      "prerequisites": "type inference for fresh parameter",
+      "entrypoint": "tap.py",
+      "native": "native/tap.on1x"
+    },
+    {
+      "name": "test",
+      "status": "implemented-python",
+      "description": "case() zero-arg void test runner generation",
+      "prerequisites": "none",
+      "entrypoint": "test.py",
+      "native": null
+    },
+    {
+      "name": "timing",
+      "status": "implemented-python",
+      "description": "elapsed() instrumentation of scalar functions",
+      "prerequisites": "link runtime/on1x_ppx_timing.c",
+      "entrypoint": "timing.py",
+      "native": null
+    },
+    {
+      "name": "trace",
+      "status": "implemented-python",
+      "description": "entry([message]) function entry logs",
+      "prerequisites": "io_stderr",
+      "entrypoint": "trace.py",
+      "native": "native/trace.on1x"
+    },
+    {
+      "name": "actor",
+      "status": "design-only",
+      "description": "Actor/message-processing syntax",
+      "prerequisites": "ADTs, async channels, ownership and Plaid",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "async",
+      "status": "design-only",
+      "description": "Async/await syntax lowering",
+      "prerequisites": "Typed continuation/CPS pass, scheduler and Plaid",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "derive_arbitrary",
+      "status": "design-only",
+      "description": "Property-testing generator",
+      "prerequisites": "ADTs, PRNG, sized recursive generators",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "derive_binary",
+      "status": "design-only",
+      "description": "Binary codec and versioned schemas",
+      "prerequisites": "ADTs, byte arrays and serialization invariants",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "derive_builder",
+      "status": "design-only",
+      "description": "Named-field builders",
+      "prerequisites": "Records, defaults, field validation, ownership",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "derive_clone",
+      "status": "design-only",
+      "description": "Safe resource cloning",
+      "prerequisites": "Ownership/borrow semantics, fallible cloning contracts",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "derive_debug",
+      "status": "design-only",
+      "description": "Debug-formatted structured values",
+      "prerequisites": "ADTs, field metadata and privacy rules",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "derive_eq",
+      "status": "design-only",
+      "description": "Structural equality derivation",
+      "prerequisites": "Record/variant declaration constructors, typed trait coherence",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "derive_fold",
+      "status": "design-only",
+      "description": "Typed catamorphism and recursion schemes",
+      "prerequisites": "ADTs and type-level recursion mapping",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "derive_hash",
+      "status": "design-only",
+      "description": "Stable hashing derivation",
+      "prerequisites": "ADTs and hash seed/ordering policy",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "derive_json",
+      "status": "design-only",
+      "description": "JSON encoders and decoders",
+      "prerequisites": "ADTs, Result errors, ownership-safe JSON bindings",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "derive_lens",
+      "status": "design-only",
+      "description": "Record-field lenses",
+      "prerequisites": "Records and generated field types",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "derive_ord",
+      "status": "design-only",
+      "description": "Total ordering derivation",
+      "prerequisites": "ADTs and exhaustive field ordering semantics",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "derive_show",
+      "status": "design-only",
+      "description": "Readable structured formatting",
+      "prerequisites": "ADTs, recursive display and cycle policy",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "derive_visitor",
+      "status": "design-only",
+      "description": "Per-ADT visitor dispatch",
+      "prerequisites": "Variant constructors and typed recursion",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "ffi_safe",
+      "status": "design-only",
+      "description": "Verified ownership-safe MuLIB wrappers",
+      "prerequisites": "ExoML reviewed contracts, Exotract ABI, Chisel/Wetstone gates",
+      "entrypoint": null,
+      "native": null
+    },
+    {
+      "name": "letops",
+      "status": "design-only",
+      "description": "Monadic/applicative binding expansion",
+      "prerequisites": "Option/Result ADTs, typed lowering and appropriate effects",
+      "entrypoint": null,
+      "native": null
+    }
+  ]
+}

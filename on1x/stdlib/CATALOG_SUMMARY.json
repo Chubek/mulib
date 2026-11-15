@@ -1,0 +1,13 @@
+{
+  "required_signatures": 40,
+  "required_structures": 43,
+  "optional_signatures": 24,
+  "optional_structures": 64,
+  "optional_functors": 3,
+  "nested_structures": 12,
+  "partial_executable_structure_bindings": 60,
+  "total_catalog_entries": 186,
+  "actual_on1x_modules": 124,
+  "actual_on1x_library_modules": 118,
+  "on1x_test_sources": 6
+}

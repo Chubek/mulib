@@ -34,7 +34,9 @@ source snapshot, with cache invalidation through actual fact deltas.
          │                  OR portable scanner fallback
          ▼
       C++ token collector → precedence parser / typed HIR
-           │
+            │
+      canonical module graph / prelude / lexical namespace lowering
+            │
       typed hygienic AST expansion (syntax contexts → lexical names)
            │
       optional authorized PPX chain: S-expression AST → process → validated AST
@@ -50,7 +52,7 @@ source snapshot, with cache invalidation through actual fact deltas.
       C11 backend → generated program translation unit
          │                 ├─ on1x_runtime.c
          │                 ├─ optional on1x_json.c
-         │                 └─ on1x_mulib_impl.c
+         │                 └─ planned MuLIB implementation TU + native companions
          ▼
      ISO C11 compiler → native binary with MuLIB kernels
 ```
@@ -60,6 +62,27 @@ The ASDL and Aurocks scripts are external; CMake invokes them from
 The Aurocks parser's global parser state is serialized by the C++ scanner.
 Temporary ASDL arena allocations are destroyed after token callback delivery.
 The C++ typed HIR owns its own tokens and tree nodes.
+
+`src/loader.cpp` owns per-invocation canonical-path caches, bounded dependency
+loading, explicit import bindings and deterministic identifier lowering. The
+automatic prelude is demand-loaded; explicit imports retain their definitions.
+Namespaces disappear before the v1 PPX wire boundary, preserving the existing
+type, ownership and C11 pipeline. See [the module contract](modules.md).
+
+`std/mulib/housekeeping.py` is shared by the native build helper and Exotract.
+It joins MANIFEST kernel dependencies with explicit `library/` fixture recipes,
+separates kernel implementation placement from companion C translation units,
+and obtains include provenance from the C compiler. `std.mulib` reads generated
+immutable metadata and byte tables through an exact scalar C ABI. Typed header
+discovery remains Exotract/ExoML; build recipes do not admit general foreign
+pointer, record or ownership types.
+
+The standard-library `_bridge/mulib_bridge.c` is a declaration/direct-call
+adapter TU, not a second kernel implementation. The helper enables only the
+required `ON1X_BRIDGE_*` groups and adds their kernels to the shared plan.
+Operation-local scalar status and immutable bounded snapshots support source
+tuples without exporting foreign pointers/resources through the raw ABI.
+Usage remains outside general ExoML/Chisel safe admission.
 
 The metaprogramming pass runs before type inference. `grammar/PPX.schema.json`
 is embedded by CMake; generated builds additionally use the real ASDL-generated

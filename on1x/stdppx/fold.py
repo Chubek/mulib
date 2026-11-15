@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'stdlib'))
-from ppx import serve
-from passes import fold
-serve(fold)
+"""Standalone On1x fold PPX (source-compatible AST v1)."""
+from _support.driver import serve
+
+if __name__ == '__main__':
+    serve('fold')

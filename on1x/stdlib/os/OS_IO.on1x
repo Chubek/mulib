@@ -1,0 +1,7 @@
+fn basis_os_io_readable_mask()->i64 { return 1; }
+fn basis_os_io_writable_mask()->i64 { return 2; }
+fn basis_os_io_priority_mask()->i64 { return 4; }
+fn basis_os_io_has_flag(flags:i64,mask:i64)->bool {
+  if mask<=0 || flags<0 { return false; }
+  return (flags/mask)%2==1;
+}

@@ -1,0 +1,15 @@
+# Option encoding: nil=None, (some value)=Some; a managed sexpr payload.
+fn base_none() -> sexpr { return sx_nil(); }
+fn base_some(value: sexpr) -> sexpr { return sx_cons(sx_symbol("some"),sx_cons(value,sx_nil())); }
+fn base_is_some(value: sexpr) -> bool {
+ if sx_kind(value)==0{return false;}basis_shape_pair(value);
+ let tag=sx_head(value);if sx_kind(tag)!=1||sx_text(tag)!="some"{tool_fail("invalid option tag");}return true;
+}
+fn base_option_get(value: sexpr) -> sexpr {
+ if !base_is_some(value) { tool_fail("option: None"); }
+ return sx_head(sx_tail(value));
+}
+fn basis_base_option_map(value:sexpr,f:fn(sexpr)->sexpr)->sexpr {
+ if !base_is_some(value){return base_none();}return base_some(f(base_option_get(value)));
+}
+import "shape.on1x";

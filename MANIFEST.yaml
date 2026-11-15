@@ -8334,6 +8334,54 @@ modules:
   dependencies: [browser-fetch, browser-documentload, browser-navigation, browser-stream, browser-limits]
   status: implemented
 project_files:
+- file: on1x/stdlib/_bridge/mulib_bridge.c
+  purpose: Bounded raw scalar standard-library adapters calling canonical MuLIB kernels.
+- file: on1x/stdlib/_bridge/mulib_bridge.h
+  purpose: Exact C11 standard-library adapter ABI with explicit operation status.
+- file: on1x/stdlib/_bridge/status.on1x
+  purpose: Shared raw adapter status declaration and named status constants.
+- file: on1x/stdlib/_bridge/README.md
+  purpose: Native standard-library linkage, bounds, statuses and trust-boundary manual.
+- file: on1x/stdlib/base/shape.on1x
+  purpose: Bounded structural checks for persistent extension-library values.
+- file: on1x/tests/test_stdlib_extensions.py
+  purpose: Executed pure libraries, canonical native adapters and loopback binary transport tests.
+- file: on1x/tests/test_stdlib_bridge_allocation.c
+  purpose: Deterministic native adapter allocation and budget failure cleanup tests.
+- file: on1x/examples/stdlib_extensions.on1x
+  purpose: Recoverable INI and JSON standard-library example.
+- file: on1x/stdppx/native/common.on1x
+  purpose: Shared syntactic constructors and checked output for native standard processors.
+- file: on1x/stdppx/examples/native_extensions.on1x
+  purpose: Equivalent Python/native standard processor composition example.
+- file: on1x/std/mulib/__init__.on1x
+  purpose: On1x MuLIB housekeeping namespace and checked fixture access.
+- file: on1x/std/mulib/Native.on1x
+  purpose: Exact scalar native metadata ABI and host allocation-size checks.
+- file: on1x/std/mulib/runtime.h
+  purpose: C11 ABI for immutable selected-kernel and binary fixture metadata.
+- file: on1x/std/mulib/runtime.c
+  purpose: Allocation-free native housekeeping implementation.
+- file: on1x/std/mulib/catalog.json
+  purpose: Explicit kernel-to-library fixture associations and native companion recipes.
+- file: on1x/std/mulib/housekeeping.py
+  purpose: Shared dependency closure, fixture matching, fingerprinting and implementation placement.
+- file: on1x/std/mulib/README.md
+  purpose: MuLIB interoperability housekeeping manual and supported boundary.
+- file: on1x/tools/on1x-mulib.py
+  purpose: Native fixture inventory, audit, relocatable bundling and verification.
+- file: on1x/examples/mulib.on1x
+  purpose: On1x kernel and fixture housekeeping example.
+- file: on1x/tests/test_mulib.py
+  purpose: Executed kernel/fixture interoperability and packaging regressions.
+- file: on1x/tests/mulib/yantlr.c
+  purpose: Exact scalar test adapter executing the real YANTLR standard provider.
+- file: on1x/tests/mulib/optml.c
+  purpose: Exact scalar test adapter parsing the shipped optimization policy.
+- file: on1x/tests/mulib/shiraz.c
+  purpose: Exact scalar test adapter exercising the separate Shiraz registry runtime.
+- file: on1x/tests/mulib/lmuw3.c
+  purpose: Exact scalar test adapter executing the canonical MuW3 engine and embedded lmuw3 offline.
 - file: manual/web-primitives.md
   purpose: Shared composition, lifecycle, security and verification contracts for web and pricing primitives.
 - file: tests/fixtures/web_primitives_impl.h

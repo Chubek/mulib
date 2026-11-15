@@ -1,0 +1,8 @@
+import "Array2.on1x";
+fn basis_bool_array2_new(rows:i64,columns:i64,initial:bool)->(i64,i64,i64) {
+  if initial { return basis_array2_new(rows,columns,1); }
+  return basis_array2_new(rows,columns,0);
+}
+fn basis_bool_array2_sub(view:(i64,i64,i64),row:i64,column:i64)->bool {
+  return basis_array2_sub(view,row,column)!=0;
+}

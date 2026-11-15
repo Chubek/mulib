@@ -1,0 +1,13 @@
+# Interchange helpers for LibStone ASDL/PPX serialized trees.
+# Full C++ LibStone integration needs an explicitly versioned C ABI shim.
+fn libstone_node(tag: string, children: sexpr) -> sexpr { basis_shape_list(children);return sx_cons(sx_symbol(tag),children); }
+fn libstone_tag(node: sexpr) -> string {
+ basis_shape_list(node);let tag=sx_head(node);if sx_kind(tag)!=1{tool_fail("expected symbol node tag");}return sx_text(tag);
+}
+fn libstone_child(node: sexpr, index: i64) -> sexpr {
+ libstone_tag(node);if index < 0 || index>=basis_shape_list(sx_tail(node)) { tool_fail("child index outside node"); }
+ var tail = sx_tail(node); var i = 0;
+ while i < index { tail = sx_tail(tail); i = i + 1; }
+ return sx_head(tail);
+}
+import "../base/shape.on1x";

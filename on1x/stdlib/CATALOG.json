@@ -1,0 +1,2809 @@
+{
+  "schema": "on1x.sml-basis-catalog/v1",
+  "intent": "Complete name inventory for the published SML Basis 2004 required/optional component overview; partial executable On1x adaptation",
+  "official_sources": [
+    "https://smlfamily.github.io/Basis/overview.html",
+    "https://smlfamily.github.io/Basis/manpages.html"
+  ],
+  "required_signatures": [
+    "ARRAY",
+    "ARRAY_SLICE",
+    "BIN_IO",
+    "BOOL",
+    "BYTE",
+    "CHAR",
+    "COMMAND_LINE",
+    "DATE",
+    "GENERAL",
+    "IEEE_REAL",
+    "IMPERATIVE_IO",
+    "INTEGER",
+    "IO",
+    "LIST",
+    "LIST_PAIR",
+    "MATH",
+    "MONO_ARRAY",
+    "MONO_ARRAY_SLICE",
+    "MONO_VECTOR",
+    "MONO_VECTOR_SLICE",
+    "OPTION",
+    "OS",
+    "OS_FILE_SYS",
+    "OS_IO",
+    "OS_PATH",
+    "OS_PROCESS",
+    "PRIM_IO",
+    "REAL",
+    "STREAM_IO",
+    "STRING",
+    "STRING_CVT",
+    "SUBSTRING",
+    "TEXT",
+    "TEXT_IO",
+    "TEXT_STREAM_IO",
+    "TIME",
+    "TIMER",
+    "VECTOR",
+    "VECTOR_SLICE",
+    "WORD"
+  ],
+  "required_structures": [
+    "Array",
+    "ArraySlice",
+    "BinIO",
+    "BinPrimIO",
+    "Bool",
+    "Byte",
+    "CharArray",
+    "CharArraySlice",
+    "Char",
+    "CharVector",
+    "CharVectorSlice",
+    "CommandLine",
+    "Date",
+    "General",
+    "IEEEReal",
+    "Int",
+    "IO",
+    "LargeInt",
+    "LargeReal",
+    "LargeWord",
+    "List",
+    "ListPair",
+    "Math",
+    "Option",
+    "OS",
+    "Position",
+    "Real",
+    "StringCvt",
+    "String",
+    "Substring",
+    "TextIO",
+    "TextPrimIO",
+    "Text",
+    "Timer",
+    "Time",
+    "VectorSlice",
+    "Vector",
+    "Word8Array",
+    "Word8ArraySlice",
+    "Word8Vector",
+    "Word8VectorSlice",
+    "Word8",
+    "Word"
+  ],
+  "optional_signatures": [
+    "ARRAY2",
+    "BIT_FLAGS",
+    "GENERIC_SOCK",
+    "INET_SOCK",
+    "INT_INF",
+    "MONO_ARRAY2",
+    "NET_HOST_DB",
+    "NET_PROT_DB",
+    "NET_SERV_DB",
+    "PACK_REAL",
+    "PACK_WORD",
+    "POSIX",
+    "POSIX_ERROR",
+    "POSIX_FILE_SYS",
+    "POSIX_IO",
+    "POSIX_PROC_ENV",
+    "POSIX_PROCESS",
+    "POSIX_SIGNAL",
+    "POSIX_SYS_DB",
+    "POSIX_TTY",
+    "SOCKET",
+    "UNIX",
+    "UNIX_SOCK",
+    "WINDOWS"
+  ],
+  "optional_structures": [
+    "Array2",
+    "BoolArray",
+    "BoolArray2",
+    "BoolArraySlice",
+    "BoolVector",
+    "BoolVectorSlice",
+    "CharArray2",
+    "FixedInt",
+    "GenericSock",
+    "INetSock",
+    "IntArray",
+    "IntArray2",
+    "IntArraySlice",
+    "IntVector",
+    "IntVectorSlice",
+    "Int<N>Array",
+    "Int<N>Array2",
+    "Int<N>ArraySlice",
+    "Int<N>",
+    "Int<N>Vector",
+    "Int<N>VectorSlice",
+    "IntInf",
+    "NetHostDB",
+    "NetProtDB",
+    "NetServDB",
+    "PackWord<N>Big",
+    "PackWord<N>Little",
+    "PackRealBig",
+    "PackRealLittle",
+    "PackReal<N>Big",
+    "PackReal<N>Little",
+    "Posix",
+    "RealArray2",
+    "RealArray",
+    "RealArraySlice",
+    "RealVector",
+    "RealVectorSlice",
+    "Real<N>Array",
+    "Real<N>Array2",
+    "Real<N>ArraySlice",
+    "Real<N>",
+    "Real<N>Vector",
+    "Real<N>VectorSlice",
+    "Socket",
+    "SysWord",
+    "UnixSock",
+    "Unix",
+    "WideCharArray",
+    "WideCharArray2",
+    "WideCharArraySlice",
+    "WideChar",
+    "WideCharVector",
+    "WideCharVectorSlice",
+    "WideString",
+    "WideSubstring",
+    "WideTextPrimIO",
+    "WideText",
+    "Windows",
+    "Word<N>Array",
+    "Word<N>Array2",
+    "Word<N>ArraySlice",
+    "Word<N>Vector",
+    "Word<N>VectorSlice",
+    "Word<N>"
+  ],
+  "optional_functors": [
+    "ImperativeIO",
+    "PrimIO",
+    "StreamIO"
+  ],
+  "nested_structures": [
+    "OS.FileSys",
+    "OS.IO",
+    "OS.Path",
+    "OS.Process",
+    "Posix.Error",
+    "Posix.FileSys",
+    "Posix.IO",
+    "Posix.ProcEnv",
+    "Posix.Process",
+    "Posix.Signal",
+    "Posix.SysDB",
+    "Posix.TTY"
+  ],
+  "components": [
+    {
+      "name": "ARRAY",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "ARRAY",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "ARRAY_SLICE",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "ARRAY_SLICE",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "BIN_IO",
+      "kind": "signature",
+      "required": true,
+      "domain": "io",
+      "sml_signature": "BIN_IO",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "BOOL",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "BOOL",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "BYTE",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "BYTE",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "CHAR",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "CHAR",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "COMMAND_LINE",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "COMMAND_LINE",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "DATE",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "DATE",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "GENERAL",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "GENERAL",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "IEEE_REAL",
+      "kind": "signature",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "IEEE_REAL",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "IMPERATIVE_IO",
+      "kind": "signature",
+      "required": true,
+      "domain": "io",
+      "sml_signature": "IMPERATIVE_IO",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "INTEGER",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "INTEGER",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "IO",
+      "kind": "signature",
+      "required": true,
+      "domain": "io",
+      "sml_signature": "IO",
+      "status": "specified_only",
+      "on1x_module": "on1x/stdlib/io/IO.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "typed streams, I/O errors and stream lifecycle"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "LIST",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "LIST",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "LIST_PAIR",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "LIST_PAIR",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "MATH",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "MATH",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "MONO_ARRAY",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "MONO_ARRAY",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "MONO_ARRAY_SLICE",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "MONO_ARRAY_SLICE",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "MONO_VECTOR",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "MONO_VECTOR",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "MONO_VECTOR_SLICE",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "MONO_VECTOR_SLICE",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "OPTION",
+      "kind": "signature",
+      "required": true,
+      "domain": "io",
+      "sml_signature": "OPTION",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "OS",
+      "kind": "signature",
+      "required": true,
+      "domain": "system",
+      "sml_signature": "OS",
+      "status": "specified_only",
+      "on1x_module": "on1x/stdlib/os/OS.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "OS_FILE_SYS",
+      "kind": "signature",
+      "required": true,
+      "domain": "system",
+      "sml_signature": "OS_FILE_SYS",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "OS_IO",
+      "kind": "signature",
+      "required": true,
+      "domain": "system",
+      "sml_signature": "OS_IO",
+      "status": "specified_only",
+      "on1x_module": "on1x/stdlib/os/OS_IO.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "OS_PATH",
+      "kind": "signature",
+      "required": true,
+      "domain": "system",
+      "sml_signature": "OS_PATH",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "OS_PROCESS",
+      "kind": "signature",
+      "required": true,
+      "domain": "system",
+      "sml_signature": "OS_PROCESS",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "PRIM_IO",
+      "kind": "signature",
+      "required": true,
+      "domain": "io",
+      "sml_signature": "PRIM_IO",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "REAL",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "REAL",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "STREAM_IO",
+      "kind": "signature",
+      "required": true,
+      "domain": "io",
+      "sml_signature": "STREAM_IO",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "STRING",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "STRING",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "STRING_CVT",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "STRING_CVT",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "SUBSTRING",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "SUBSTRING",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "TEXT",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "TEXT",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "TEXT_IO",
+      "kind": "signature",
+      "required": true,
+      "domain": "io",
+      "sml_signature": "TEXT_IO",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "TEXT_STREAM_IO",
+      "kind": "signature",
+      "required": true,
+      "domain": "io",
+      "sml_signature": "TEXT_STREAM_IO",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "TIME",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "TIME",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "TIMER",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "TIMER",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "VECTOR",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "VECTOR",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "VECTOR_SLICE",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "VECTOR_SLICE",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "WORD",
+      "kind": "signature",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "WORD",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Array",
+      "kind": "structure",
+      "required": true,
+      "domain": "collections",
+      "sml_signature": "ARRAY",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/Array.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "full SML semantics, error model and signatures"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "ArraySlice",
+      "kind": "structure",
+      "required": true,
+      "domain": "collections",
+      "sml_signature": "ARRAY_SLICE",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/ArraySlice.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "BinIO",
+      "kind": "structure",
+      "required": true,
+      "domain": "io",
+      "sml_signature": "BIN_IO",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/io/BinIO.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "typed streams, I/O errors and stream lifecycle"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "BinPrimIO",
+      "kind": "structure",
+      "required": true,
+      "domain": "io",
+      "sml_signature": "PRIM_IO",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/io/BinPrimIO.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "typed streams, I/O errors and stream lifecycle"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Bool",
+      "kind": "structure",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "BOOL",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/core/Bool.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Byte",
+      "kind": "structure",
+      "required": true,
+      "domain": "text",
+      "sml_signature": "BYTE",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/text/Byte.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "CharArray",
+      "kind": "structure",
+      "required": true,
+      "domain": "collections",
+      "sml_signature": "MONO_ARRAY",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/CharArray.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "CharArraySlice",
+      "kind": "structure",
+      "required": true,
+      "domain": "collections",
+      "sml_signature": "MONO_ARRAY_SLICE",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/CharArraySlice.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Char",
+      "kind": "structure",
+      "required": true,
+      "domain": "text",
+      "sml_signature": "CHAR",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/text/Char.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "CharVector",
+      "kind": "structure",
+      "required": true,
+      "domain": "collections",
+      "sml_signature": "MONO_VECTOR",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/CharVector.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "CharVectorSlice",
+      "kind": "structure",
+      "required": true,
+      "domain": "collections",
+      "sml_signature": "MONO_VECTOR_SLICE",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/CharVectorSlice.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "CommandLine",
+      "kind": "structure",
+      "required": true,
+      "domain": "system",
+      "sml_signature": "COMMAND_LINE",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/os/CommandLine.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "compiler/runtime argv plumbing"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Date",
+      "kind": "structure",
+      "required": true,
+      "domain": "time",
+      "sml_signature": "DATE",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/time/Date.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "precise duration/date types and overflow semantics"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "General",
+      "kind": "structure",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "GENERAL",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/core/General.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "exceptions and reference types"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "IEEEReal",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "IEEE_REAL",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/numeric/IEEEReal.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Int",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "INTEGER",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/numeric/Int.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "IO",
+      "kind": "structure",
+      "required": true,
+      "domain": "io",
+      "sml_signature": "IO",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/io/IO.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "typed streams, I/O errors and stream lifecycle"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "LargeInt",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "INTEGER",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/numeric/LargeInt.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "LargeReal",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "REAL",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/numeric/LargeReal.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "LargeWord",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "WORD",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/numeric/LargeWord.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "List",
+      "kind": "structure",
+      "required": true,
+      "domain": "collections",
+      "sml_signature": "LIST",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/List.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "full SML semantics, error model and signatures"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "ListPair",
+      "kind": "structure",
+      "required": true,
+      "domain": "collections",
+      "sml_signature": "LIST_PAIR",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/ListPair.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Math",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "MATH",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/numeric/Math.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Option",
+      "kind": "structure",
+      "required": true,
+      "domain": "core",
+      "sml_signature": "OPTION",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/Option.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "full SML semantics, error model and signatures"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "OS",
+      "kind": "structure",
+      "required": true,
+      "domain": "system",
+      "sml_signature": "OS",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/os/OS.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Position",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "INTEGER",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/numeric/Position.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Real",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "REAL",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/numeric/Real.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "StringCvt",
+      "kind": "structure",
+      "required": true,
+      "domain": "text",
+      "sml_signature": "STRING_CVT",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/text/StringCvt.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "String",
+      "kind": "structure",
+      "required": true,
+      "domain": "text",
+      "sml_signature": "STRING",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/text/String.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "full SML semantics, error model and signatures"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Substring",
+      "kind": "structure",
+      "required": true,
+      "domain": "text",
+      "sml_signature": "SUBSTRING",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/text/Substring.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "TextIO",
+      "kind": "structure",
+      "required": true,
+      "domain": "io",
+      "sml_signature": "TEXT_IO",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/io/TextIO.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "typed streams, I/O errors and stream lifecycle"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "TextPrimIO",
+      "kind": "structure",
+      "required": true,
+      "domain": "io",
+      "sml_signature": "PRIM_IO",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/io/TextPrimIO.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "typed streams, I/O errors and stream lifecycle"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Text",
+      "kind": "structure",
+      "required": true,
+      "domain": "text",
+      "sml_signature": "TEXT",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/text/Text.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Timer",
+      "kind": "structure",
+      "required": true,
+      "domain": "time",
+      "sml_signature": "TIMER",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/time/Timer.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "precise duration/date types and overflow semantics"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Time",
+      "kind": "structure",
+      "required": true,
+      "domain": "time",
+      "sml_signature": "TIME",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/time/Time.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "precise duration/date types and overflow semantics"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "VectorSlice",
+      "kind": "structure",
+      "required": true,
+      "domain": "collections",
+      "sml_signature": "VECTOR_SLICE",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/VectorSlice.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Vector",
+      "kind": "structure",
+      "required": true,
+      "domain": "collections",
+      "sml_signature": "VECTOR",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/Vector.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "full SML semantics, error model and signatures"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Word8Array",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/Word8Array.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Word8ArraySlice",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY_SLICE",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/Word8ArraySlice.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Word8Vector",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "MONO_VECTOR",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/Word8Vector.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Word8VectorSlice",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "MONO_VECTOR_SLICE",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/Word8VectorSlice.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Word8",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "WORD",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/numeric/Word8.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Word",
+      "kind": "structure",
+      "required": true,
+      "domain": "numeric",
+      "sml_signature": "WORD",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/numeric/Word.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "ARRAY2",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "ARRAY2",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "BIT_FLAGS",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "BIT_FLAGS",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "GENERIC_SOCK",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "GENERIC_SOCK",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "INET_SOCK",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "INET_SOCK",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "INT_INF",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "INT_INF",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "MONO_ARRAY2",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "MONO_ARRAY2",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "NET_HOST_DB",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "NET_HOST_DB",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "NET_PROT_DB",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "NET_PROT_DB",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "NET_SERV_DB",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "NET_SERV_DB",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "PACK_REAL",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "PACK_REAL",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "PACK_WORD",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "PACK_WORD",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "POSIX",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "POSIX",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "POSIX_ERROR",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "POSIX_ERROR",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "POSIX_FILE_SYS",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "POSIX_FILE_SYS",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "POSIX_IO",
+      "kind": "signature",
+      "required": false,
+      "domain": "io",
+      "sml_signature": "POSIX_IO",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "POSIX_PROC_ENV",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "POSIX_PROC_ENV",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "POSIX_PROCESS",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "POSIX_PROCESS",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "POSIX_SIGNAL",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "POSIX_SIGNAL",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "POSIX_SYS_DB",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "POSIX_SYS_DB",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "POSIX_TTY",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "POSIX_TTY",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "SOCKET",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "SOCKET",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "UNIX",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "UNIX",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "UNIX_SOCK",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "UNIX_SOCK",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "WINDOWS",
+      "kind": "signature",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "WINDOWS",
+      "status": "specified_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Array2",
+      "kind": "structure",
+      "required": false,
+      "domain": "collections",
+      "sml_signature": "ARRAY2",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/Array2.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "BoolArray",
+      "kind": "structure",
+      "required": false,
+      "domain": "collections",
+      "sml_signature": "MONO_ARRAY",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/BoolArray.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "BoolArray2",
+      "kind": "structure",
+      "required": false,
+      "domain": "collections",
+      "sml_signature": "MONO_ARRAY2",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/BoolArray2.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "BoolArraySlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "collections",
+      "sml_signature": "MONO_ARRAY_SLICE",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/BoolArraySlice.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "BoolVector",
+      "kind": "structure",
+      "required": false,
+      "domain": "collections",
+      "sml_signature": "MONO_VECTOR",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/BoolVector.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "BoolVectorSlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "collections",
+      "sml_signature": "MONO_VECTOR_SLICE",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/BoolVectorSlice.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "CharArray2",
+      "kind": "structure",
+      "required": false,
+      "domain": "collections",
+      "sml_signature": "MONO_ARRAY2",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "FixedInt",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "INTEGER",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/numeric/FixedInt.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "GenericSock",
+      "kind": "structure",
+      "required": false,
+      "domain": "network",
+      "sml_signature": "GENERIC_SOCK",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed socket descriptors, address data types, and ownership"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "INetSock",
+      "kind": "structure",
+      "required": false,
+      "domain": "network",
+      "sml_signature": "INET_SOCK",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed socket descriptors, address data types, and ownership"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "IntArray",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/IntArray.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "IntArray2",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY2",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/IntArray2.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "IntArraySlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY_SLICE",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/IntArraySlice.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "IntVector",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_VECTOR",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/IntVector.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "IntVectorSlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_VECTOR_SLICE",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/collections/IntVectorSlice.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Int<N>Array",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Int8Array",
+        "Int16Array",
+        "Int32Array",
+        "Int64Array"
+      ]
+    },
+    {
+      "name": "Int<N>Array2",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY2",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Int8Array2",
+        "Int16Array2",
+        "Int32Array2",
+        "Int64Array2"
+      ]
+    },
+    {
+      "name": "Int<N>ArraySlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY_SLICE",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Int8ArraySlice",
+        "Int16ArraySlice",
+        "Int32ArraySlice",
+        "Int64ArraySlice"
+      ]
+    },
+    {
+      "name": "Int<N>",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "INTEGER",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Int8",
+        "Int16",
+        "Int32",
+        "Int64"
+      ]
+    },
+    {
+      "name": "Int<N>Vector",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_VECTOR",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Int8Vector",
+        "Int16Vector",
+        "Int32Vector",
+        "Int64Vector"
+      ]
+    },
+    {
+      "name": "Int<N>VectorSlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_VECTOR_SLICE",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Int8VectorSlice",
+        "Int16VectorSlice",
+        "Int32VectorSlice",
+        "Int64VectorSlice"
+      ]
+    },
+    {
+      "name": "IntInf",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "INT_INF",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/numeric/IntInf.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "NetHostDB",
+      "kind": "structure",
+      "required": false,
+      "domain": "network",
+      "sml_signature": "NET_HOST_DB",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed socket descriptors, address data types, and ownership"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "NetProtDB",
+      "kind": "structure",
+      "required": false,
+      "domain": "network",
+      "sml_signature": "NET_PROT_DB",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed socket descriptors, address data types, and ownership"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "NetServDB",
+      "kind": "structure",
+      "required": false,
+      "domain": "network",
+      "sml_signature": "NET_SERV_DB",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed socket descriptors, address data types, and ownership"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "PackWord<N>Big",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "PACK_WORD",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "PackWord8Big",
+        "PackWord16Big",
+        "PackWord32Big",
+        "PackWord64Big"
+      ]
+    },
+    {
+      "name": "PackWord<N>Little",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "PACK_WORD",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "PackWord8Little",
+        "PackWord16Little",
+        "PackWord32Little",
+        "PackWord64Little"
+      ]
+    },
+    {
+      "name": "PackRealBig",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "PACK_REAL",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "native real/floating-point numeric type",
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "PackRealLittle",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "PACK_REAL",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "native real/floating-point numeric type",
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "PackReal<N>Big",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "PACK_REAL",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "native real/floating-point numeric type",
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "PackReal32Big",
+        "PackReal64Big"
+      ]
+    },
+    {
+      "name": "PackReal<N>Little",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "PACK_REAL",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "native real/floating-point numeric type",
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "PackReal32Little",
+        "PackReal64Little"
+      ]
+    },
+    {
+      "name": "Posix",
+      "kind": "structure",
+      "required": false,
+      "domain": "system",
+      "sml_signature": "POSIX",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed platform-specific OS handles and error types"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "RealArray2",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY2",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "RealArray",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "RealArraySlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY_SLICE",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "RealVector",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_VECTOR",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "RealVectorSlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_VECTOR_SLICE",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Real<N>Array",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Real32Array",
+        "Real64Array"
+      ]
+    },
+    {
+      "name": "Real<N>Array2",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY2",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Real32Array2",
+        "Real64Array2"
+      ]
+    },
+    {
+      "name": "Real<N>ArraySlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY_SLICE",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Real32ArraySlice",
+        "Real64ArraySlice"
+      ]
+    },
+    {
+      "name": "Real<N>",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "REAL",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Real32",
+        "Real64"
+      ]
+    },
+    {
+      "name": "Real<N>Vector",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_VECTOR",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Real32Vector",
+        "Real64Vector"
+      ]
+    },
+    {
+      "name": "Real<N>VectorSlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_VECTOR_SLICE",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native real/floating-point numeric type"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Real32VectorSlice",
+        "Real64VectorSlice"
+      ]
+    },
+    {
+      "name": "Socket",
+      "kind": "structure",
+      "required": false,
+      "domain": "network",
+      "sml_signature": "SOCKET",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed socket descriptors, address data types, and ownership"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "SysWord",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "WORD",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "UnixSock",
+      "kind": "structure",
+      "required": false,
+      "domain": "network",
+      "sml_signature": "UNIX_SOCK",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed socket descriptors, address data types, and ownership"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Unix",
+      "kind": "structure",
+      "required": false,
+      "domain": "system",
+      "sml_signature": "UNIX",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed platform-specific OS handles and error types"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "WideCharArray",
+      "kind": "structure",
+      "required": false,
+      "domain": "collections",
+      "sml_signature": "MONO_ARRAY",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "WideCharArray2",
+      "kind": "structure",
+      "required": false,
+      "domain": "collections",
+      "sml_signature": "MONO_ARRAY2",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "WideCharArraySlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "collections",
+      "sml_signature": "MONO_ARRAY_SLICE",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "WideChar",
+      "kind": "structure",
+      "required": false,
+      "domain": "text",
+      "sml_signature": "CHAR",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "WideCharVector",
+      "kind": "structure",
+      "required": false,
+      "domain": "collections",
+      "sml_signature": "MONO_VECTOR",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "WideCharVectorSlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "collections",
+      "sml_signature": "MONO_VECTOR_SLICE",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "WideString",
+      "kind": "structure",
+      "required": false,
+      "domain": "text",
+      "sml_signature": "STRING",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "WideSubstring",
+      "kind": "structure",
+      "required": false,
+      "domain": "core",
+      "sml_signature": "SUBSTRING",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "WideTextPrimIO",
+      "kind": "structure",
+      "required": false,
+      "domain": "io",
+      "sml_signature": "PRIM_IO",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "WideText",
+      "kind": "structure",
+      "required": false,
+      "domain": "text",
+      "sml_signature": "TEXT",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Windows",
+      "kind": "structure",
+      "required": false,
+      "domain": "system",
+      "sml_signature": "WINDOWS",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed platform-specific OS handles and error types"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Word<N>Array",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Word8Array",
+        "Word16Array",
+        "Word32Array",
+        "Word64Array"
+      ]
+    },
+    {
+      "name": "Word<N>Array2",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY2",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Word8Array2",
+        "Word16Array2",
+        "Word32Array2",
+        "Word64Array2"
+      ]
+    },
+    {
+      "name": "Word<N>ArraySlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_ARRAY_SLICE",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Word8ArraySlice",
+        "Word16ArraySlice",
+        "Word32ArraySlice",
+        "Word64ArraySlice"
+      ]
+    },
+    {
+      "name": "Word<N>Vector",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_VECTOR",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Word8Vector",
+        "Word16Vector",
+        "Word32Vector",
+        "Word64Vector"
+      ]
+    },
+    {
+      "name": "Word<N>VectorSlice",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "MONO_VECTOR_SLICE",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "parameterized algebraic data types",
+        "language-level modules",
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Word8VectorSlice",
+        "Word16VectorSlice",
+        "Word32VectorSlice",
+        "Word64VectorSlice"
+      ]
+    },
+    {
+      "name": "Word<N>",
+      "kind": "structure",
+      "required": false,
+      "domain": "numeric",
+      "sml_signature": "WORD",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "native unsigned words and bitwise operations"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html",
+      "common_concrete_width_examples": [
+        "Word8",
+        "Word16",
+        "Word32",
+        "Word64"
+      ]
+    },
+    {
+      "name": "ImperativeIO",
+      "kind": "functor",
+      "required": false,
+      "domain": "io",
+      "sml_signature": null,
+      "status": "requires_functor_language_support",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed streams, I/O errors and stream lifecycle"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "PrimIO",
+      "kind": "functor",
+      "required": false,
+      "domain": "io",
+      "sml_signature": null,
+      "status": "requires_functor_language_support",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed streams, I/O errors and stream lifecycle"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "StreamIO",
+      "kind": "functor",
+      "required": false,
+      "domain": "io",
+      "sml_signature": null,
+      "status": "requires_functor_language_support",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed streams, I/O errors and stream lifecycle"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "OS.FileSys",
+      "kind": "substructure",
+      "required": true,
+      "domain": "system",
+      "sml_signature": "OS_FILE_SYS",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/os/OS_FileSys.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "OS.IO",
+      "kind": "substructure",
+      "required": true,
+      "domain": "system",
+      "sml_signature": "OS_IO",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/os/OS_IO.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "OS.Path",
+      "kind": "substructure",
+      "required": true,
+      "domain": "system",
+      "sml_signature": "OS_PATH",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/os/OS_Path.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "OS.Process",
+      "kind": "substructure",
+      "required": true,
+      "domain": "system",
+      "sml_signature": "OS_PROCESS",
+      "status": "partial_executable_adapter",
+      "on1x_module": "on1x/stdlib/os/OS_Process.on1x",
+      "support": "experimental On1x subset, not SML Basis conformance",
+      "prerequisites": [],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Posix.Error",
+      "kind": "substructure",
+      "required": false,
+      "domain": "system",
+      "sml_signature": "POSIX_ERROR",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed platform-specific OS handles and error types"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Posix.FileSys",
+      "kind": "substructure",
+      "required": false,
+      "domain": "system",
+      "sml_signature": "POSIX_FILE_SYS",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed platform-specific OS handles and error types"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Posix.IO",
+      "kind": "substructure",
+      "required": false,
+      "domain": "system",
+      "sml_signature": "POSIX_IO",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed platform-specific OS handles and error types"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Posix.ProcEnv",
+      "kind": "substructure",
+      "required": false,
+      "domain": "system",
+      "sml_signature": "POSIX_PROC_ENV",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed platform-specific OS handles and error types"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Posix.Process",
+      "kind": "substructure",
+      "required": false,
+      "domain": "system",
+      "sml_signature": "POSIX_PROCESS",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed platform-specific OS handles and error types"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Posix.Signal",
+      "kind": "substructure",
+      "required": false,
+      "domain": "system",
+      "sml_signature": "POSIX_SIGNAL",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed platform-specific OS handles and error types"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Posix.SysDB",
+      "kind": "substructure",
+      "required": false,
+      "domain": "system",
+      "sml_signature": "POSIX_SYS_DB",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed platform-specific OS handles and error types"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    },
+    {
+      "name": "Posix.TTY",
+      "kind": "substructure",
+      "required": false,
+      "domain": "system",
+      "sml_signature": "POSIX_TTY",
+      "status": "catalog_only",
+      "on1x_module": null,
+      "support": "no executable On1x module yet",
+      "prerequisites": [
+        "typed platform-specific OS handles and error types"
+      ],
+      "source": "https://smlfamily.github.io/Basis/overview.html"
+    }
+  ]
+}

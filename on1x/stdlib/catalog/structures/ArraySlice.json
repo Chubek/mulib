@@ -1,0 +1,15 @@
+{
+  "name": "ArraySlice",
+  "kind": "structure",
+  "required": true,
+  "domain": "collections",
+  "sml_signature": "ARRAY_SLICE",
+  "status": "partial_executable_adapter",
+  "on1x_module": "on1x/stdlib/collections/ArraySlice.on1x",
+  "support": "experimental On1x subset, not SML Basis conformance",
+  "prerequisites": [
+    "parameterized algebraic data types",
+    "language-level modules"
+  ],
+  "source": "https://smlfamily.github.io/Basis/overview.html"
+}

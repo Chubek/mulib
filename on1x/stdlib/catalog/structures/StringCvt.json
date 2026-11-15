@@ -1,0 +1,12 @@
+{
+  "name": "StringCvt",
+  "kind": "structure",
+  "required": true,
+  "domain": "text",
+  "sml_signature": "STRING_CVT",
+  "status": "partial_executable_adapter",
+  "on1x_module": "on1x/stdlib/text/StringCvt.on1x",
+  "support": "experimental On1x subset, not SML Basis conformance",
+  "prerequisites": [],
+  "source": "https://smlfamily.github.io/Basis/overview.html"
+}

@@ -1,0 +1,9 @@
+import "Vector.on1x";
+# Each element is expected to be the symbol `true` or `false`.
+fn basis_bool_vector_length(xs:sexpr)->i64 { return basis_vector_length(xs); }
+fn basis_bool_vector_sub(xs:sexpr,index:i64)->bool {
+  let atom=basis_vector_sub(xs,index); let spelling=sx_text(atom);
+  if spelling=="true" { return true; }
+  if spelling=="false" { return false; }
+  tool_fail("malformed boolean vector"); return false;
+}

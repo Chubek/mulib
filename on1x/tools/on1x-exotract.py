@@ -7,7 +7,6 @@ the generated static archive; On1x clients still require an admitted ABI adapter
 import argparse
 import importlib.util
 import json
-import re
 import shutil
 import subprocess
 import sys
@@ -19,70 +18,20 @@ CATALOG = HOME/'contracts-exotract/catalog.json'
 spec = importlib.util.spec_from_file_location('contracts', HOME/'tools/on1x-contracts.py')
 contracts = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(contracts)
+spec = importlib.util.spec_from_file_location('mulib_housekeeping', HOME/'std/mulib/housekeeping.py')
+housekeeping = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(housekeeping)
 
 
 def inventory(root):
-    text = contracts.read(root/'MANIFEST.yaml').decode()
-    names = re.findall(r'^- name: ([a-z0-9][a-z0-9_+-]*)$', text, re.M)
-    if not names or len(names) != len(set(names)):
-        raise ValueError('missing/duplicate MANIFEST module names')
-    result = {}
-    for name in names:
-        item = contracts.module_info(root, name)
-        header = Path(item['header'])
-        if header != Path('include')/('mulib-'+name+'.h') or not (root/header).is_file():
-            raise ValueError('missing/noncanonical module header: '+name)
-        if not re.fullmatch(r'MULIB_IMPL_[A-Z0-9_]+', item['macro']):
-            raise ValueError('invalid implementation macro: '+name)
-        result[name] = item
-    for item in result.values():
-        if any(dep not in result for dep in item['manifest_dependencies']):
-            raise ValueError('unknown MANIFEST dependency')
-    return result
+    return housekeeping.inventory(root)
 
 
-def plan(root, libraries):
-    config = contracts.load(CATALOG)
-    if config['schema'] != 'on1x.exotract-catalog/v1' or config['safe_export'] is not False:
-        raise ValueError('unsupported Exotract catalog')
-    modules = inventory(root)
-    if not libraries or len(libraries) != len(set(libraries)) or any(n not in modules for n in libraries):
-        raise ValueError('select unique known MuLIB modules')
-    ordered, active, links, requirements = [], set(), set(), {}
-    def visit(name):
-        if name in active:
-            raise ValueError('MANIFEST dependency cycle: '+name)
-        if name in ordered:
-            return
-        active.add(name)
-        if len(active)>128:
-            raise ValueError('dependency depth limit')
-        for dep in modules[name]['manifest_dependencies']:
-            visit(dep)
-        active.remove(name)
-        ordered.append(name)
-    for name in libraries:
-        profile = config['profiles'].get(name, {'recipe': config['default_recipe']})
-        if profile['recipe'] == 'exoml-core':
-            exoml = contracts.catalog(root)
-            core = exoml['profiles'][name]
-            for dep in core['implementation_modules']:
-                if dep not in ordered:
-                    ordered.append(dep)
-            links.update(core['link_libraries'])
-        elif profile['recipe'] == 'manifest':
-            visit(name)
-        else:
-            raise ValueError('unknown recipe')
-        links.update(profile.get('link_libraries', []))
-        requirements[name] = profile.get('required_symbols', [])
-    entries = [dict(name=n, **modules[n]) for n in ordered]
-    macros = [m['macro'] for m in entries]
-    if len(macros) != len(set(macros)):
-        raise ValueError('duplicate implementation switch')
-    return dict(schema='on1x.exotract-plan/v1', libraries=libraries, modules=entries,
-                implementation_macros=macros, implementation_translation_units=1,
-                required_symbols=requirements, link_libraries=sorted(links), safe_export=False)
+def plan(root, libraries, fixtures=()):
+    if not libraries:raise ValueError('select MuLIB modules for typed extraction')
+    recipe=housekeeping.plan(root,libraries,fixtures)
+    recipe['schema']='on1x.exotract-plan/v1'
+    return recipe
 
 
 def invoke(argv):
@@ -102,7 +51,8 @@ def executable(value):
 
 
 def build(args, root):
-    recipe = plan(root, args.libraries)
+    recipe = plan(root, args.libraries, args.fixture)
+    housekeeping.check_generated(root, recipe)
     output = args.output.absolute()
     if output.exists() or output.is_symlink():
         raise ValueError('output already exists')
@@ -131,11 +81,13 @@ def build(args, root):
         if expected and digest != expected or path in observed and observed[path] != digest:
             raise ValueError('input drift: '+path)
         observed[path] = digest
-    for path in [CATALOG, root/'MANIFEST.yaml', Path(__file__), HOME/'tools/on1x-contracts.py', exotract, compiler, ar, nm]:
+    for path in [CATALOG, housekeeping.CATALOG, Path(housekeeping.__file__), root/'MANIFEST.yaml', Path(__file__), HOME/'tools/on1x-contracts.py', exotract, compiler, ar, nm]:
         observe(path)
+    for path,digest in recipe['inputs'].items():observe(path,digest)
     for entry in recipe['modules']:
-        observe(root/entry['header'])
-        observe(root/entry['manual'])
+        observe(root/entry['header'], entry['header_sha256'])
+        observe(root/entry['manual'], entry['manual_sha256'])
+    for record in recipe['files']:observe(root/record['path'], record['sha256'])
     for name in args.libraries:
         if name in contracts.load(CATALOG)['profiles'] and contracts.load(CATALOG)['profiles'][name]['recipe']=='exoml-core':
             for path in contracts.CONTRACTS.iterdir():
@@ -143,15 +95,17 @@ def build(args, root):
     output.parent.mkdir(parents=True, exist_ok=True)
     stage = Path(tempfile.mkdtemp(prefix='.exotract-', dir=output.parent))
     try:
+        housekeeping.materialize(root, recipe, stage)
         imports={}
-        for name in args.libraries:
-            header=root/'include'/('mulib-'+name+'.h')
+        requests=[(name,root/'include'/('mulib-'+name+'.h')) for name in args.libraries]
+        requests += [('fixture-'+Path(path).parent.name+'-'+Path(path).stem,root/path) for path in recipe['include_headers']]
+        for name,header in requests:
             common=[exotract, '--name', name, '--header', header, '--include', root/'include',
                     '--compiler', compiler, '--resource-dir', resource, '--preprocessor', 'compiler',
                     '--revision', 'sha256:'+contracts.digest(header), '--provenance', root/'MANIFEST.yaml',
                     '--provenance', CATALOG]
             common += discovery
-            for symbol in recipe['required_symbols'][name]:common += ['--require-symbol', symbol]
+            for symbol in recipe['required_symbols'].get(name,[]):common += ['--require-symbol', symbol]
             try:
                 wire=invoke([common[0], 'on1x', *common[1:]])
             except ValueError as error:
@@ -175,15 +129,24 @@ def build(args, root):
         command=[exotract,'emit-source','--name','MuLIB','--header',root/last['header']]
         for macro in recipe['implementation_macros']:command += ['--impl-define',macro]
         for entry in recipe['modules'][:-1]:command += ['--dependency',root/entry['header']]
-        (stage/'mulib.c').write_bytes(invoke(command))
+        for header in recipe['include_headers']:command += ['--dependency',root/header]
+        definitions=''.join('#define '+item.replace('=', ' ', 1)+'\n' for item in recipe['compile_definitions'])
+        (stage/'mulib.c').write_bytes(definitions.encode()+invoke(command))
         (stage/'mulib.h').write_text('/* Declaration-only static binding surface. */\n#pragma once\n'+
-            ''.join('#include <mulib-'+name+'.h>\n' for name in args.libraries))
-        invoke([compiler,'-std=c11',*args.cflag,'-I',root/'include','-c',stage/'mulib.c','-o',stage/'mulib.o'])
-        invoke([ar,'rcsD',stage/'libmulib.a',stage/'mulib.o'])
+            ''.join('#include <mulib-'+name+'.h>\n' for name in args.libraries)+
+            ''.join('#include '+json.dumps(path)+'\n' for path in recipe['include_headers']))
+        flags=[*args.cflag,'-I',str(root/'include'),*['-D'+item for item in recipe['compile_definitions']]]
+        objects=[]
+        for i,source in enumerate([stage/'mulib.c',*[root/path for path in recipe['native_sources']]]):
+            obj=stage/('mulib.o' if i==0 else 'fixture_'+str(i)+'.o')
+            for path,digest in housekeeping.compile_inputs(compiler,flags,source).items():
+                if not Path(path).is_relative_to(stage):observe(path,digest)
+            invoke([compiler,'-std=c11',*flags,'-c',source,'-o',obj]);objects.append(obj)
+        invoke([ar,'rcsD',stage/'libmulib.a',*objects])
         # Header declarations can include optional APIs whose implementation
         # switch is not in this recipe. Record actual linker exports separately
         # while preserving Exotract's complete upstream metadata unmodified.
-        symbols=invoke([nm,'--extern-only','--defined-only','--format=posix',stage/'mulib.o']).decode()
+        symbols=''.join(invoke([nm,'--extern-only','--defined-only','--format=posix',obj]).decode() for obj in objects)
         exports=set()
         for line in symbols.splitlines():
             fields=line.split()
@@ -200,10 +163,11 @@ def build(args, root):
         (stage/'build-plan.json').write_text(contracts.dumps(recipe))
         for path,digest in observed.items():
             if contracts.digest(path)!=digest:raise ValueError('input changed before publication: '+path)
-        artifacts={p.name:contracts.digest(p) for p in sorted(stage.iterdir())}
+        artifacts={p.relative_to(stage).as_posix():contracts.digest(p) for p in sorted(stage.rglob('*')) if p.is_file()}
         (stage/'lock.json').write_text(contracts.dumps(dict(schema='on1x.exotract-lock/v1',
             safe_export=False, inputs=observed, artifacts=artifacts, compiler=str(compiler),
             compiler_version=invoke([compiler,'--version']).decode(), cflags=args.cflag,
+            compiler_target=invoke([compiler,'-dumpmachine']).decode().strip(),
             declaration_options=discovery,
             resource_directory=resource)))
         contracts.publish_new(stage,output)
@@ -216,10 +180,11 @@ def main():
     cli.add_argument('--root',type=Path,default=HOME.parent)
     sub=cli.add_subparsers(dest='mode',required=True)
     sub.add_parser('list')
-    p=sub.add_parser('plan');p.add_argument('libraries',nargs='+')
+    p=sub.add_parser('plan');p.add_argument('libraries',nargs='+');p.add_argument('--fixture',action='append',default=[])
     b=sub.add_parser('build');b.add_argument('libraries',nargs='+');b.add_argument('--output',type=Path,required=True)
     b.add_argument('--exotract',required=True);b.add_argument('--compiler',default='clang');b.add_argument('--ar',default='ar');b.add_argument('--nm',default='nm')
     b.add_argument('--resource-dir');b.add_argument('--cflag',action='append',default=[])
+    b.add_argument('--fixture',action='append',default=[])
     args=cli.parse_args();root=args.root.resolve()
     try:
         if args.mode=='list':
@@ -227,7 +192,7 @@ def main():
             known={m['header'] for m in modules.values()}
             auxiliary=sorted(str(p.relative_to(root)) for p in (root/'include').glob('mulib-*.h') if str(p.relative_to(root)) not in known)
             print(contracts.dumps(dict(schema='on1x.exotract-inventory/v1',modules=modules,auxiliary_headers=auxiliary)),end='')
-        elif args.mode=='plan':print(contracts.dumps(plan(root,args.libraries)),end='')
+        elif args.mode=='plan':print(contracts.dumps(plan(root,args.libraries,args.fixture)),end='')
         else:build(args,root);print(args.output)
     except (ValueError,OSError,KeyError,subprocess.TimeoutExpired) as error:
         print('on1x-exotract: '+str(error),file=sys.stderr);return 1

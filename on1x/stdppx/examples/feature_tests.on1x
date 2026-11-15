@@ -1,0 +1,10 @@
+# ON1X_PPX_FEATURES=test_suite chooses the optional test function.
+@ppx cfg "../cfg.py"
+@ppx test "../test.py"
+@cfg("enabled", "test_suite")
+@test("case")
+fn check_arithmetic() { assert(40 + 2 == 42); }
+fn main() {
+  # If check_arithmetic is excluded, this example's generated runner is absent.
+  println("build succeeded");
+}

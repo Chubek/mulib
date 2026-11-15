@@ -1,0 +1,14 @@
+{
+  "name": "Posix.ProcEnv",
+  "kind": "substructure",
+  "required": false,
+  "domain": "system",
+  "sml_signature": "POSIX_PROC_ENV",
+  "status": "catalog_only",
+  "on1x_module": null,
+  "support": "no executable On1x module yet",
+  "prerequisites": [
+    "typed platform-specific OS handles and error types"
+  ],
+  "source": "https://smlfamily.github.io/Basis/overview.html"
+}

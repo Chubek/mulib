@@ -1,0 +1,2 @@
+import "../text/Substring.on1x";
+fn basis_char_vector_slice_create(s:string,start:i64,n:i64)->(string,i64,i64) { return basis_substring_slice(s,start,n); }

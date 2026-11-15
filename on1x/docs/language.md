@@ -32,7 +32,12 @@ parsing and before inference. PPX output must become valid core syntax. Typed
 
 ```ebnf
 unit    = { import | function | extern } ;
-import  = 'import' STRING ';' ;
+import  = 'import' STRING ';'
+        | 'import' module ['as' ID] { ',' module ['as' ID] } ';'
+        | 'from' { '.' } [module] 'import' import_names ';' ;
+module  = ID { '.' ID } ;
+import_names = ID ['as' ID] { ',' ID ['as' ID] }
+             | '(' ID ['as' ID] { ',' ID ['as' ID] } [','] ')' ;
 extern  = 'extern' 'fn' ID '(' [ params ] ')' ['->' type] ';' ;
 function= 'fn' ID '(' [ params ] ')' ['->' type] block ;
 params  = pattern [ ':' type ] { ',' pattern [ ':' type ] } ;
@@ -52,7 +57,7 @@ expr    = prefix { binary_operator expr } ;
 prefix  = ('!'|'-') prefix | postfix ;
 postfix = atom { '(' [ expr { ',' expr } ] ')' } ;
 atom    = '(' expr ')' | '(' expr ',' expr { ',' expr } ')'
-        | literal | ID | lambda | 'quote' '{' expr '}'
+        | literal | module | lambda | 'quote' '{' expr '}'
         | ('splice' | 'lift') '(' expr ')' | local_syntax_expr ;
 local_syntax_expr = syntax_group 'expression' '{' expr '}' ;
 local_syntax_block = syntax_group 'block' block ;
@@ -68,6 +73,9 @@ type-checked. Postfix calls bind tighter than unary operators. Logical operators
 short circuit. The callee is evaluated first, then its arguments left-to-right.
 Other expression operands also evaluate **left-to-right**; the C11 backend sequences calls
 into temporaries rather than relying on C argument-evaluation order.
+
+See [module loading](modules.md) for namespace isolation, packages, search roots,
+relative imports, compatibility flat imports and the automatic pervasive environment.
 
 Global functions generalize at recursive-component boundaries. Ordinary
 parameters have one monotype per instance unless explicitly universal, may omit annotations, and `_`

@@ -1,0 +1,6 @@
+# Small, pure, polymorphic functions; unused definitions emit no C11 bodies.
+fn basis_identity(value) -> _ { return value; }
+fn basis_ignore(value) { }
+fn basis_fst(pair) -> _ { let (first, second) = pair; return first; }
+fn basis_snd(pair) -> _ { let (first, second) = pair; return second; }
+fn basis_const(value, ignored) -> _ { return value; }

@@ -1,0 +1,11 @@
+# Pure persistent string set; no pointer identity, no global mutation.
+fn batteries_set_empty() -> sexpr { return sx_nil(); }
+fn batteries_set_has(set: sexpr,key: string) -> bool {
+ var rest = set;
+ while sx_kind(rest) == 3 { if sx_text(sx_head(rest)) == key { return true; } rest = sx_tail(rest); }
+ return false;
+}
+fn batteries_set_add(set: sexpr,key: string) -> sexpr {
+ if batteries_set_has(set,key) { return set; }
+ return sx_cons(sx_string(key),set);
+}

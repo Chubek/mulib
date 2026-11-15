@@ -1,0 +1,2 @@
+# Arguments require compiler bootstrap support; environment is available now.
+fn basis_command_line_get_env(name:string)->string { return tool_env(name); }

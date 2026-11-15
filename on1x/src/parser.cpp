@@ -157,7 +157,14 @@ class Parser {
   if(!t.text.empty()&&std::isdigit((unsigned char)t.text[0])){
    ++pos;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Integer;e->where=t.where;e->text=t.text;return {std::move(e)};
   }
-   std::string name=ident();
+    std::string name=ident();
+    // A qualified module reference is lowered to a lexical global by the loader.
+    // A spaced dot in macro syntax remains a dotted-list tail.
+    while(at(".")&&peek().where.offset==ts[pos-1].where.offset+ts[pos-1].text.size()&&
+          peek(1).where.offset==peek().where.offset+1){
+     ++pos;name+="."+ident();
+     if(name.size()>4096)throw Error(t.where,"qualified name exceeds 4096 bytes");
+    }
    auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Variable;e->where=t.where;e->text=name;
     if(accept("!")){
      e->kind=Expr::Kind::MacroCall;consume("(");
@@ -335,9 +342,14 @@ class Parser {
   }
    s.kind=Stmt::Kind::Expr;s.value=expr().node;consume(";");return s;
  }
- public:
- explicit Parser(const std::vector<Token>&t):ts(t){}
- Unit parse(){Unit u;
+  public:
+  explicit Parser(const std::vector<Token>&t):ts(t){}
+  std::string module_name(){
+   auto where=peek().where;std::string name=ident();
+   while(accept(".")){name+="."+ident();if(name.size()>4096)throw Error(where,"module name exceeds 4096 bytes");}
+   return name;
+  }
+  Unit parse(){Unit u;
    while(!at("<eof>")){
     if(accept("macro")){u.macros.push_back(macro_definition());if(u.macros.size()>512)throw Error(peek().where,"macro definition limit exceeded");continue;}
     if(at("@")&&peek(1).text=="ppx"){
@@ -348,14 +360,31 @@ class Parser {
      if(u.ppx.size()>=32)throw Error(where,"PPX program count limit exceeded");
      ++pos;u.ppx.push_back({where,std::move(label),token.text.substr(1,token.text.size()-2)});accept(";");continue;
     }
-   if(accept("import")){
-    auto token=peek();
-    if(token.text.size()<2||token.text.front()!='"'||token.text.back()!='"')
-      throw Error(token.where,"import expects a quoted path");
-    if(token.text.find('\\')!=std::string::npos)
-      throw Error(token.where,"import paths cannot contain string escapes");
-    u.imports.push_back(token.text.substr(1,token.text.size()-2));
-    ++pos;consume(";");continue;
+    if(at("import")||at("from")){
+     Import declaration;declaration.where=peek().where;declaration.selective=accept("from");
+     if(declaration.selective){
+      while(at(".")||at("...")){declaration.relative+=at("...")?3:1;++pos;}
+      if(!at("import"))declaration.module=module_name();
+      if(declaration.module.empty()&&!declaration.relative)throw Error(peek().where,"expected module name");
+      consume("import");bool parens=accept("(");
+      do{ImportName name;name.name=ident();if(accept("as"))name.alias=ident();declaration.names.push_back(std::move(name));}while(accept(",")&&!(parens&&at(")")));
+      if(parens)consume(")");
+      u.module_imports.push_back(std::move(declaration));
+     }else{
+      consume("import");
+      if(!peek().text.empty()&&peek().text.front()=='"'){
+       auto token=peek();
+       if(token.text.find('\\')!=std::string::npos)throw Error(token.where,"import paths cannot contain string escapes");
+       if(token.text.size()<=2||token.text.size()>4098)throw Error(token.where,"import path must be 1..4096 bytes");
+       declaration.quoted=true;declaration.module=token.text.substr(1,token.text.size()-2);
+       u.imports.push_back(declaration.module);u.module_imports.push_back(std::move(declaration));++pos;
+      }else do{
+       Import item;item.where=peek().where;item.module=module_name();if(accept("as"))item.alias=ident();
+       u.module_imports.push_back(std::move(item));
+      }while(accept(","));
+     }
+     if(u.module_imports.size()>1024)throw Error(peek().where,"import count limit exceeded");
+     consume(";");continue;
    }
     Function f;f.where=peek().where;
     while(accept("@"))f.attributes.push_back(extension(ts[pos-1].where).node);
@@ -366,7 +395,7 @@ class Parser {
    u.functions.push_back(std::move(f));
    if(u.functions.size()>2048)throw Error(peek().where,"too many functions");
   }
-   if(u.functions.empty()&&u.imports.empty()&&u.macros.empty())throw Error(peek().where,"empty module");
+    // Empty files are valid package initializers; the checker still requires main.
   return u;
  }
 };

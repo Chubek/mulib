@@ -1,0 +1,7 @@
+# Compile with --stdppx pipe --stdppx checks.
+import std.Int as Int;
+fn main() {
+  let answer=@pipe("apply",-42,Int.abs);
+  @checks("assert_eq",answer,42);
+  println(answer);
+}

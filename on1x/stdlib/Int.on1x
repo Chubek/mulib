@@ -1,0 +1,8 @@
+# Short, explicit exports over the prefixed Basis implementation.
+from .numeric.Int import basis_int_min as min_value, basis_int_max as max_value,
+    basis_int_compare as compare, basis_int_min2 as min, basis_int_max2 as max,
+    basis_int_sign as sign, basis_int_same_sign as same_sign, basis_int_abs as abs,
+    basis_int_quot as quot, basis_int_rem as rem, basis_int_div as div,
+    basis_int_mod as mod, basis_int_divmod as divmod;
+from .text.StringCvt import basis_cvt_int_from_string as from_string,
+    basis_cvt_int_to_string as to_string, basis_cvt_scan_int as scan;

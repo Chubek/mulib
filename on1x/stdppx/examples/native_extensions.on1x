@@ -1,0 +1,13 @@
+# Works with either Python --stdppx or the corresponding native --ppx tools.
+# See README: source registers no execution capabilities implicitly.
+fn increment(x:i64)->i64 { return x+1; }
+fn report(x:i64) { println(x); }
+@trace("entry","example")
+fn main() {
+  let answer=@tap("call",increment(41),report);
+  @assertions("between",answer,40,44);
+  @cond("branches",answer==42,{
+    println(@format("string","{0}: {1}","answer","42"));
+  },{println("unexpected");});
+  @logging("info","done");
+}

@@ -1,0 +1,3 @@
+extern fn basis_native_process_exit(code:i64);
+fn basis_process_is_success(status:i64)->bool { return status==0; }
+fn basis_process_exit(code:i64) { basis_native_process_exit(code); }
