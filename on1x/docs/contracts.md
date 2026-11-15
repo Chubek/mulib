@@ -10,6 +10,7 @@ profiles:
 | Vec | 7 | initialized byte-stride storage, realloc invalidation, self-aliasing push, no nested element destructors |
 | Parsec combinators | 18 | borrowed value descriptors, transitive referents, pure indirect predicates, capture ownership and failure cleanup |
 | ElviScrape | 6 | bounded caller-owned buffers, conditional status outputs, policy intersection, verified TLS peer callbacks and unknown transport effects |
+| Mune | 52 | legacy/state/chunk/result ownership, same-state GC roots, binary strings, retained coroutine-thread callbacks, AOT entry lifetimes and arbitrary Lua/OS effects |
 
 The separate [Exotract static binding workflow](../contracts-exotract/README.md)
 uses this catalog's core implementation recipes and MANIFEST-backed profiles for
@@ -21,6 +22,11 @@ manual SHA-256 pins identify what was audited; they do not certify behavior.
 `obligations.json` records preconditions, branch semantics, field-level limits
 and missing lowering. The optional owned `MULIB_IMPL_PARSER` grammar/AST API is
 outside this Parsec profile.
+Mune explicitly opts into that owned parser through `active_optional_macros`;
+combined plans deduplicate the switch and do not report it as inactive. Its
+`evidence_sha256` inventory also pins `tests/test_mune_runtime.c`,
+`tests/test_mune_runtime_alloc.c` and `tools/check_mune_runtime.py`, binding all
+five changed kernel/manual/test/tool files without treating test evidence as review.
 
 ## Inspect without LibStone
 
@@ -36,7 +42,8 @@ it explicitly reports **`gate_b: false`**. The build plan consults `MANIFEST.yam
 for real module names, headers, macros and dependencies, and combines the
 manual-backed core recipes. Define each listed implementation switch in
 **one C11 translation unit**, not once per includer. Optional Parsec dependencies
-and its extra `PARSER` switch are recorded but never implicitly enabled.
+and its extra `PARSER` switch are recorded but never implicitly enabled;
+Mune's complete runtime recipe activates the switch explicitly.
 
 The [C example](../examples/contracts/contract_usage.c) demonstrates actual kernel
 ownership/cleanup. It is a C example, not an On1x safe-import facade.
@@ -135,7 +142,7 @@ size/signedness assertions and checked i64 narrowing. Full IO, callback,
 ownership and concurrency information remains in the manifest; raw externs do
 not become purity or lifetime proofs.
 
-All 51 shipped kernel functions are intentionally ineligible for this scalar
+All 103 shipped kernel functions are intentionally ineligible for this scalar
 emitter, because their true ABIs/contracts require richer lowering. In
 particular, Parsec's borrow-bearing structs are not guessed to be ordinary
 scalars, and its descriptor-retained callback is not assigned a fictitious
@@ -148,6 +155,12 @@ adapters. No `Mulib.Safe.*`, `Owned`, `Option`/`Result` wrappers, Wetstone effec
 proof or generalized foreign callback ABI is claimed. A reviewed flag alone
 cannot unlock `emit-safe`. The JSON `or_die` pilot remains a trusted handwritten
 facade whose client lifetimes can additionally be checked by Chisel.
+
+Mune's C aggregate/GC/callback interface is represented by exact, compiler-derived
+CDecl and unreviewed field/lifetime obligations, not guessed On1x pointer handles.
+The archive-backed C and raw-i64 On1x acceptance clients execute its legacy
+environment, rooted results/userdata/native callbacks, bundle loader and Lua
+standard-library regression cases. They do not establish a general safe Lua FFI.
 
 ## Bounds and tests
 

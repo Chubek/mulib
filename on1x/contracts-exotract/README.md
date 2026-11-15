@@ -72,13 +72,35 @@ the seven optional `mulib_parser_*` functions are recorded as declaration-only.
 Always consult `symbols.json` when selecting archive entry points. Header-only
 inline functions may also be declaration-only in the archive symbol inventory.
 
-ElviScrape, JSON, Vec and core Parsec reuse the source-pinned implementation recipes in
+Mune, ElviScrape, JSON, Vec and core Parsec reuse the source-pinned implementation recipes in
 [`../contracts-exoml/catalog.json`](../contracts-exoml/catalog.json). This avoids
 silently enabling Parsec's separate owned grammar API. Other module recipes
 follow MANIFEST dependency closure, recording cycles and rejecting unknown modules. Multiple
 selected modules share one deduplicated implementation TU. The generated header
 does not define implementation macros. **Do not combine this archive with a
 second TU defining the same MuLIB implementations.**
+
+Mune's full recipe explicitly enables `MULIB_IMPL_PARSER` and requires all 52
+public Mune symbols to be exported, with no declaration-only fallback. It pins
+the updated header/manual and the runtime, allocation and differential test
+sources in its ExoML profile. Those five source/evidence files participate in
+declaration provenance and the archive lock; drift invalidates rebinding.
+
+```sh
+python3 on1x/tools/on1x-exotract.py build mune \
+  --exotract /tmp/opencode/on1x-exotract/libstone-moonstone/exotract/exotract \
+  --compiler clang --output /tmp/opencode/mune-static
+clang -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+  on1x/contracts-exotract/examples/mune.c /tmp/opencode/mune-static/libmulib.a \
+  -pthread -lm -ldl -o /tmp/opencode/mune-client
+/tmp/opencode/mune-client
+```
+
+This separate caller TU prints `mune: archive OK` after exercising actual Lua
+libraries, same-state/GC rooting, binary strings, native callbacks, retained
+chunks, error-output preservation and module bundles in tree/VM/JIT modes.
+The matching On1x acceptance client uses an ABI-exact raw `int64_t` test adapter;
+it does not synthesize safe pointer/union/callback On1x declarations.
 
 The shared [`std.mulib` planner](../std/mulib/README.md) also matches native
 companions and resource fixtures under `library/`. `--fixture yantlr` opts into
@@ -135,7 +157,8 @@ catalog.
 
 `on1x.exotract` tests real extraction, complete metadata, one kernel archive member,
 separate-TU C and On1x execution, MicroJS, YANTLR provider discovery/execution,
-Shiraz's multi-object archive, fixture drift, mismatched compiler options, unknown
+Shiraz's multi-object archive, Mune's complete C and On1x archive consumers,
+fixture drift, mismatched compiler options, unknown
 modules, missing declarations, implementation-macro rejection and rollback.
 Existing `on1x.contracts` and
 `on1x.contracts_sdk` tests exercise the renamed ExoML workflow. Measured builds

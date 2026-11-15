@@ -81,6 +81,41 @@
       "Owned MULIB_IMPL_PARSER grammar/AST APIs are outside this combinator-only profile; MANIFEST extra macros are not enabled implicitly."
     ]
   },
+  "mune": {
+    "source_ranges": [
+      "include/mulib-mune.h: public declarations, runtime C API, native callback path, GC roots and standard-library implementations",
+      "manual/mulib-mune.md: ownership, limits, standard-library behavior, modes and module formats",
+      "tests/test_mune_runtime.c, tests/test_mune_runtime_alloc.c and tools/check_mune_runtime.py: source-pinned execution/allocation/differential evidence",
+      "on1x/tests/fixtures/mune_semantics.c: separate-TU archive/C ABI ownership and Lua-library acceptance"
+    ],
+    "preconditions": [
+      "Do not confuse mulib_mune_t (legacy transactional numeric environment), mulib_mune_chunk_t, mulib_mune_state_t and mulib_mune_result_t ownership/destructors.",
+      "Tagged values are real C enum/union aggregates. Scalars copy; object fields borrow live same-state GC storage. Never fabricate tags, dereference stale object pointers, mix states or narrow double/size_t to i64 by guessing.",
+      "Keep object values in a global/table or owned result root before execution/collection. A copied tagged struct, string pointer, userdata byte pointer or upvalue identity does not itself keep an object alive.",
+      "Execution/call result slots start as NULL; success transfers an owned root. Destroy results before their state. Callback argument arrays, state and output builders are borrowed and must not be destroyed by the callback.",
+      "Serialize access to each state/chunk/environment. Do not destroy or select modes on an executing state. Native callbacks may reenter mulib_mune_call and execute on a coroutine's C11 worker, not necessarily the initiating host thread.",
+      "Retained native callback code and external user context must outlive their closures; conservatively keep them until state destruction. The recorded unregister endpoint is whole-state destruction, not a nonexistent per-closure unregister API. function_owner can instead retain state-owned userdata through GC tracing.",
+      "AOT entry arrays, production-name strings and native program/execute pointers must outlive all closures retaining the generated chunk. Writer callbacks/context are synchronous borrows; do not mutate their input chunk or throw across the C callback ABI.",
+      "Source/binary input pointers denote their exact extents; NULL is permitted only where documented at zero length/count. Names/paths are NUL-terminated. Runtime strings are arbitrary binary bytes and are not On1x NUL-free strings.",
+      "Lua execution is not a sandbox: io/os/debug/package, native modules, finalizers and callbacks may do I/O, change host locale, exit the process or suspend. Application-wide locale/environment/standard streams require separate synchronization. JIT is host-dependent."
+    ],
+    "postconditions": [
+      "Legacy eval commits environment/output together only on success. Runtime run/call/metamethod APIs preserve preceding Lua side effects on failure; diagnostic and value out-parameter validity are separate conditions.",
+      "Parse owns copied source/AST and never executes it. Parse diagnostic text is static. Execution diagnostic text borrows state until its next execution; some invalid-argument branches leave diagnostics unchanged.",
+      "Constructors/accessors return state-borrowing tagged outputs, not independently destroyable GC objects. make_userdata returns zeroed state-owned byte storage and a traced user-value table, not malloc ownership.",
+      "result_destroy removes the root/list but does not directly free its contained GC objects. chunk_destroy consumes one reference; retained closures can keep the AST and compiler caches alive.",
+      "Raw global/table/uservalue APIs and table_next do not invoke Lua. get_index/get_field/set_index/set_field can invoke arbitrary metamethods, while rooting their inputs; failed getters preserve C output storage.",
+      "The updated library keeps package registry aliases and retained package closures, installs four searchers, handles independent Mune dump/load metadata/stripping and uses xoshiro256** random generation. Native module ABI and bytecode containers remain independent of PUC Lua.",
+      "load_bundle verifies checked source/helper images before registration and does not execute modules; a failure while updating _PRELOAD can leave earlier registrations. Writer callback failures can leave partially written C/bundle output.",
+      "Explicit active_optional_macros enables MULIB_IMPL_PARSER only for Mune's complete runtime recipe; Parsec's standalone combinator profile remains narrow. The archive contains one kernel implementation TU."
+    ],
+    "unlowered": [
+      "GC root regions, cross-state identity, aggregate enum/union ABI and nested borrowed object fields require field-sensitive ownership/ABI lowering.",
+      "Conditional owned result outputs, runtime-vs-static diagnostic lifetimes, reference-counted chunks and finalizer resurrection are not ordinary scalar error/ownership protocols.",
+      "Retained/reentrant coroutine-thread callbacks, AOT function-pointer arrays and arbitrary Lua/native/OS effects need reviewed adapters and usage/effect proofs.",
+      "All 52 functions remain raw/unreviewed metadata and are ineligible for the current signed-integer/void scalar emitter; passing Gate B is not safe export."
+    ]
+  },
   "elvi-scrape": {
     "source_ranges": [
       "include/mulib-elvi-scrape.h (public API and MULIB_IMPL_ELVI_SCRAPE implementation)"

@@ -59,6 +59,37 @@ int main(void)
     }
     mulib_mune_chunk_destroy(chunk); assert(!live);
     {
+        const char libraries[]=
+            "local text,n=string.gsub('a1 b2','(%a)(%d)',function(a,b) return a..b end); "
+            "assert(n==2 and text=='a1 b2'); local packed=string.pack('>i2zs1',-12,'a','b'); "
+            "local a,b,c=string.unpack('>i2zs1',packed); assert(a==-12 and b=='a' and c=='b'); "
+            "local f=assert(load('return function(a) return a end','=allocation')); "
+            "local g=assert(load(string.dump(f(),true))); assert(g(42)==42); "
+            "local s=utf8.char(0x7ff,0x10ffff); assert(utf8.len(s)==2); "
+            "local t=table.pack(3,1,2); table.sort(t); assert(table.concat(t)== '123'); "
+            "package.preload.alloc_module=function() return {answer=42} end; "
+            "assert(require('alloc_module').answer==42); "
+            "assert(os.date('!%Y-%m-%d',0)=='1970-01-01'); "
+            "local file=assert(io.tmpfile()); file:write('abc'); file:seek('set'); "
+            "assert(file:read('a')=='abc'); file:close()";
+        mulib_mune_result_t *r=NULL;
+        fail_at=0; chunk=mulib_mune_parse(libraries,sizeof(libraries)-1,NULL,&error); assert(chunk);
+        baseline=live;
+        s=mulib_mune_state_create(NULL); assert(s); calls=0;
+        assert(mulib_mune_run(s,chunk,&r,&error)==MULIB_MUNE_OK); allocations=calls;
+        mulib_mune_result_destroy(r); mulib_mune_state_destroy(s); assert(live==baseline);
+        for(k=1;k<=allocations;++k) {
+            mulib_mune_status_t status;
+            fail_at=0; r=NULL; s=mulib_mune_state_create(NULL); assert(s);
+            calls=0; fail_at=k;
+            status=mulib_mune_run(s,chunk,&r,&error);
+            assert(status==MULIB_MUNE_OK || status==MULIB_MUNE_MEMORY);
+            if(status!=MULIB_MUNE_OK) assert(!r);
+            fail_at=0; mulib_mune_result_destroy(r); mulib_mune_state_destroy(s); assert(live==baseline);
+        }
+        mulib_mune_chunk_destroy(chunk); assert(!live);
+    }
+    {
         int mode;
         const char compiled[]="local a=4; if a>2 then return a+1,{a,2} end";
         for(mode=MULIB_MUNE_VM;mode<=MULIB_MUNE_JIT;++mode) {

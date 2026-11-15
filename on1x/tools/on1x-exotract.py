@@ -105,6 +105,11 @@ def build(args, root):
                     '--revision', 'sha256:'+contracts.digest(header), '--provenance', root/'MANIFEST.yaml',
                     '--provenance', CATALOG]
             common += discovery
+            profile = contracts.load(CATALOG)['profiles'].get(name, {})
+            if profile.get('recipe') == 'exoml-core':
+                core = contracts.catalog(root)['profiles'][name]
+                for path in core.get('evidence_sha256', {}):
+                    common += ['--provenance', root/path]
             for symbol in recipe['required_symbols'].get(name,[]):common += ['--require-symbol', symbol]
             try:
                 wire=invoke([common[0], 'on1x', *common[1:]])

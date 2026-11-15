@@ -1,5 +1,54 @@
 # On1x verification — 2026-11-15
 
+## Mune contract rebinding
+
+The Lua standard-library continuation is rebound in both contract catalogs:
+
+- `contracts-exoml/mune.exocontract.json` covers all **52** compiler-discovered
+  public Mune declarations, with exact anonymous parameter names preserved.
+  Gate B passes; review metadata and `safe_export` remain **false**. This is an
+  AI-authored source audit, not independent review or generalized safe FFI.
+- The source pin covers `include/mulib-mune.h` and `manual/mulib-mune.md`; the
+  evidence pins cover `tests/test_mune_runtime.c`,
+  `tests/test_mune_runtime_alloc.c` and `tools/check_mune_runtime.py`. All five
+  files enter extraction provenance and archive locks, with negative drift tests.
+- The full recipe explicitly opts into `MULIB_IMPL_PARSER`, deduplicated with
+  other selected profiles, without widening standalone core Parsec. Real
+  Exotract discovery/build reports **52 archive exports, zero declaration-only
+  Mune APIs, and one `mulib.o` implementation member**.
+- `tests/test_contracts.py` passes with GCC and with Clang ASan/UBSan;
+  `tests/test_contracts_sdk.py --extract` passes real libclang discovery,
+  pin/check/recheck, deterministic snapshots, denied unsafe promotion and drift
+  tests for all five profiles.
+- The complete `tests/test_exotract.py` suite passes with GCC and Clang ASan/UBSan,
+  including Mune's separate-TU C and generated On1x consumers, existing
+  core/MicroJS/ElviScrape/YANTLR/Shiraz/stdlib-bridge consumers and rollback tests.
+  Mune acceptance exercises tree/VM/JIT library execution, rooted binary strings,
+  native userdata/context ownership through coroutine callbacks, retained chunks,
+  bundle validation and unchanged outputs on errors.
+
+Artifacts are under `/tmp/opencode/on1x-mune-exotract-tests/mune` and the
+corresponding `mune-app` executable. The source/SDK test directories are
+`/tmp/opencode/on1x-mune-contract-tests{,-sanitize}` and
+`/tmp/opencode/on1x-mune-sdk-tests`; the independently regenerated/rechecked
+Mune contract snapshot is `/tmp/opencode/on1x-mune-rebound-contracts`. The GCC
+archive matrix is `/tmp/opencode/on1x-mune-exotract-tests-gcc`.
+Reproduce the archive suite with:
+
+```sh
+python3 on1x/tests/test_exotract.py \
+  /tmp/opencode/on1x-final-gcc/libstone-moonstone/exotract/exotract \
+  /tmp/opencode/on1x-loader-gcc/on1xc "$PWD/on1x" \
+  /tmp/opencode/on1x-mune-exotract-tests-new clang \
+  --cflag=-g --cflag=-fsanitize=address,undefined \
+  --cflag=-fno-omit-frame-pointer --cflag=-fno-sanitize-recover=all
+```
+
+The broader `tests/test_mulib.py` remains blocked at its existing line-30
+inventory assertion: `library/elvi-scrape` is absent from the fixture registry.
+This rebinding does not repair or suppress that unrelated failure (also recorded
+in the Syren continuation below).
+
 ## Syren diagnostics and repair continuation
 
 The optional `ON1X_WITH_SYREN=ON` compiler adapter is implemented and tested;

@@ -114,6 +114,21 @@ State creation installs the base functions and `math`, `string`, `table`,
 patterns/captures/frontiers/balanced matches, gsub/gmatch, binary packing,
 function dump/load, reader-based loading, file/pipe I/O, process/date/locale
 facilities, registry/uservalues, upvalue manipulation, locals, hooks and traces.
+All Lua 5.4 library entry points and file methods are installed. In particular:
+
+| Library | Facilities |
+| --- | --- |
+| Base | Conversion, raw access, metatables, iteration, protected calls, loading, warnings, GC control |
+| `coroutine` | Create/resume/yield/wrap, status/running/isyieldable, close and lexical cleanup |
+| `package` | Require/cache/preload, four configurable searchers, searchpath and native loadlib |
+| `string` | Byte operations, formatting (including `%p`/`%q`), Lua patterns, binary pack/unpack, dump |
+| `utf8` | Char/codepoint, strict/lax validation and iteration, byte offsets, charpattern |
+| `table` | Concat/insert/remove/move/pack/unpack and bounded in-place sort; table-like metamethods |
+| `math` | Integer/float operations, transcendental functions/constants, xoshiro256** random generation |
+| `io` | Default/named/temporary/pipe streams, all seven file methods, closing line iterators |
+| `os` | Clock/time/date, locale/environment, file operations, process status/exit, temporary names |
+| `debug` | Registry/metatables/uservalues, Lua/native upvalues, locals/varargs, hooks, function information, traces and console |
+
 System facilities use the host C/OS APIs. Native module entry points use the
 Mune callback ABI described below. Debug frame descriptions, temporary-local
 visibility, instruction-hook counts, trace wording and collector scheduling
@@ -122,6 +137,19 @@ reflect this implementation rather than a particular upstream VM's internals.
 invalid source returns nil plus a diagnostic. `debug.getmetatable` requires one
 argument (which may be nil), and `debug.setmetatable` requires the explicit second
 argument, including nil when clearing a metatable.
+`string.dump(f, true)` strips exposed source names, parameter/local names,
+upvalue names and active-line information; executable source remains in the
+independent Mune image. Unstripped dumps preserve explicit chunk names. The
+loader accepts the original version-1 images and the version-2 metadata format,
+and rejects truncated, malformed or trailing image data. File loading and
+`require` accept these same function images.
+
+Native closure upvalues have empty names and may be inspected/replaced through
+`debug.getupvalue/setupvalue`; `debug.upvaluejoin` remains Lua-closure-only.
+The deprecated `debug.setcstacklimit` compatibility entry adjusts Mune's call
+limit and returns the previous limit, or false for unsupported changes. It
+cannot exceed the application's original `call_depth` ceiling. Work in native
+library loops and temporary byte buffers also consumes the execution step budget.
 
 The collector is tracing mark/sweep with weak keys/values, ephemeron convergence,
 resurrection and `__gc`. Incremental cycles perform an atomic tracing/finalizer
@@ -209,6 +237,20 @@ and `muneopen_<module>` symbols with dots replaced by underscores. A native
 entry has the `mulib_mune_native_fn` signature and returns its module value in
 the supplied result builder. `package.loadlib` accepts an explicit symbol.
 Loaded shared libraries remain open until state destruction.
+The fourth searcher supports all-in-one native libraries: `require('a.b')`
+can load `a.so` and resolve `muneopen_a_b`. Hyphenated native names try the
+prefix before the hyphen, then its suffix, matching Lua's symbol search rule.
+`package.loadlib(path, '*')` requests global symbol visibility through MuLIB's
+dynamic-loader policy. Library handles are cached per path.
+
+`LUA_PATH_5_4`/`LUA_CPATH_5_4` override the unversioned `LUA_PATH`/`LUA_CPATH`
+environment variables; `;;` inserts the corresponding default path. Windows
+defaults use backslashes and `.dll`. Search-path failures list the attempted
+files, and `require` includes diagnostics returned by custom searchers.
+The registry exposes `_LOADED`, `_PRELOAD`, `FILE*`, the main thread (index 1)
+and global environment (index 2). As in Lua, reassigning `package.loaded` or
+`package.preload` does not replace the registry tables used by the loaders;
+reassigning the global `package` does not invalidate retained library closures.
 Native modules can call the public Mune C API exported by their host. Link
 Linux/FreeBSD hosts with `-rdynamic` (or use a shared Mune implementation) so
 those symbols are visible to the native loader. CMake's runtime test target
@@ -254,7 +296,12 @@ generated C, loads native/file/bundle modules, checks pipe I/O and process-exit
 cleanup, and compares the shared corpus and deterministic generated
 numeric/library cases against `lua5.4` when available.
 The differential corpus includes missing arguments, numeric source loading,
-empty-pattern boundary positions, UTF-8 ranges and binary-pack boundary cases.
+empty-pattern boundary positions, randomized malformed patterns/captures,
+all UTF-8 encoding-width boundaries, numeric read limits, binary-pack boundary
+cases, seeded random sequences and native module search conventions. The
+assertion corpus checks every standard-library entry and file method, registry
+aliases, source-name/stripping behavior, and hook transfer information. Allocation
+injection also covers library buffers, pack/unpack, dump/load, modules and files.
 These are regression/reference checks, not a claim that every Lua program or
 all upstream implementation-specific behavior has been exhaustively tested.
 

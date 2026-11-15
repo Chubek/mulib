@@ -89,15 +89,31 @@ def catalog(root):
     if obligations['schema'] != 'on1x.contract-obligations/v1' or obligations['safe_export'] is not False:
         reject('unsupported/unsafe obligations')
     for name, profile in data['profiles'].items():
-        keys(profile, ['contract', 'header', 'header_sha256', 'manual', 'manual_sha256', 'function_prefix', 'function_count', 'implementation_modules', 'inactive_optional_macros', 'link_libraries'])
+        keys(profile, ['contract', 'header', 'header_sha256', 'manual', 'manual_sha256', 'evidence_sha256', 'function_prefix', 'function_count', 'implementation_modules', 'active_optional_macros', 'inactive_optional_macros', 'link_libraries'])
         if not re.fullmatch('[a-z][a-z0-9_-]*', name):
             reject('invalid profile name')
         for field in ['header', 'manual']:
             path = Path(profile[field])
             if path.is_absolute() or '..' in path.parts or digest(root/path) != profile[field+'_sha256']:
                 reject(f'{name}: source/manual fingerprint drift: {path}; audit before refreshing')
+        evidence = profile.get('evidence_sha256', {})
+        if not isinstance(evidence, dict) or len(evidence) > 64:
+            reject(f'{name}: invalid source evidence inventory')
+        for filename, expected in evidence.items():
+            path = Path(filename)
+            if (path.is_absolute() or '..' in path.parts or not path.parts
+                    or not (root/path).resolve().is_relative_to(root.resolve())
+                    or digest(root/path) != expected):
+                reject(f'{name}: evidence fingerprint drift: {path}; audit before refreshing')
         if Path(profile['contract']).name != profile['contract']:
             reject('contract path must be local to contracts-exoml/')
+        active = profile.get('active_optional_macros', [])
+        optional = {macro for module in profile['implementation_modules']
+                    for macro in module_info(root, module)['extra_macros']}
+        if (not isinstance(active, list) or not all(isinstance(m, str) for m in active)
+                or len(active) != len(set(active))
+                or set(active) - optional or set(active) & set(profile['inactive_optional_macros'])):
+            reject(f'{name}: invalid/conflicting explicit optional implementation macros')
         bundle = load(CONTRACTS/profile['contract'], 2*1024*1024)
         if bundle['schema_version'] != 2 or bundle['state'] != 'annotated' or bundle['library'] != name:
             reject('seed must be an annotated ExoML v2 profile')
@@ -151,15 +167,20 @@ def plan(root, data, libraries):
                 modules.append(module)
     entries = [dict(name=name, **module_info(root, name)) for name in modules]
     macros = [m['macro'] for m in entries]
+    active = {macro for name in libraries for macro in data['profiles'][name].get('active_optional_macros', [])}
+    for name in libraries:
+        for macro in data['profiles'][name].get('active_optional_macros', []):
+            if macro not in macros:
+                macros.append(macro)
     if len(macros) != len(set(macros)):
         reject('duplicate implementation switch')
     links = sorted({link for n in libraries for link in data['profiles'][n]['link_libraries']})
-    inactive = sorted({m for n in libraries for m in data['profiles'][n]['inactive_optional_macros']})
+    inactive = sorted({m for n in libraries for m in data['profiles'][n]['inactive_optional_macros']} - active)
     return {'schema': 'on1x.contract-build-plan/v1', 'safe_export': False,
             'libraries': libraries, 'modules': entries, 'implementation_macros': macros,
             'implementation_translation_units': 1, 'include_directory': str(root/'include'),
             'link_libraries': links, 'inactive_optional_macros': inactive,
-            'note': 'Explicit manual-backed core profiles. Parsec MANIFEST dependencies/extra PARSER switch also cover optional owned grammar APIs; those are not implicitly enabled.'}
+            'note': 'Explicit manual-backed profiles. Optional MANIFEST switches require active_optional_macros in the selected profile; core Parsec alone does not enable its owned PARSER API.'}
 
 
 def invoke(bind, *args):
@@ -208,12 +229,15 @@ def snapshot(root, data, libraries, bind, output, resource, target):
             profile = data['profiles'][name]
             seed = CONTRACTS/profile['contract']
             observe(seed); observe(root/profile['manual']); observe(root/profile['header'], profile['header_sha256'])
+            evidence = [root/path for path in profile.get('evidence_sha256', {})]
+            for path, expected in profile.get('evidence_sha256', {}).items():
+                observe(root/path, expected)
             args = ['extract', root/profile['header'], '--revision', 'sha256:'+profile['header_sha256'], '--include', root/'include']
             if resource:
                 args += ['--resource-dir', resource]
             if target:
                 args += ['--target', target]
-            for provenance in [root/'MANIFEST.yaml', root/profile['manual'], seed, CONTRACTS/'catalog.json', CONTRACTS/'obligations.json']:
+            for provenance in [root/'MANIFEST.yaml', root/profile['manual'], seed, CONTRACTS/'catalog.json', CONTRACTS/'obligations.json', *evidence]:
                 args += ['--provenance', provenance]
             wire = invoke(bind, *args); unit = loads(wire)
             if unit['schema_version'] != 2 or not unit['complete'] or not unit['fingerprint'] or unit['header'] != str((root/profile['header']).resolve()):

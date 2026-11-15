@@ -642,6 +642,7 @@ extern "C"
     size_t aot_count;
     mulib_mune_prototype_ *prototypes;
     char *source_name;
+    int stripped;
   };
   typedef struct mulib_mune_frontend_
   {
@@ -1437,6 +1438,8 @@ extern "C"
   {
     struct mulib_mune_library_ *next;
     mulib_dynload_t handle;
+    size_t bytes;
+    int global;
   } mulib_mune_library_;
   struct mulib_mune_object
   {
@@ -1458,6 +1461,7 @@ extern "C"
         mulib_mune_value_t context[3];
         size_t cursor, last_match;
         int method;
+        unsigned native_upvalues;
       } function;
       struct
       {
@@ -1484,9 +1488,11 @@ extern "C"
     struct mulib_mune_frame_ *previous;
     mulib_mune_object_t *environment;
     mulib_mune_value_t function;
-    mulib_mune_result_t *varargs;
+    mulib_mune_result_t *varargs, *arguments;
     mulib_mune_chunk_t *chunk;
-    size_t location;
+    size_t location, transfer_first, transfer_count;
+    const mulib_ast_t *call_name;
+    const char *namewhat;
     int tail_call;
   } mulib_mune_frame_;
   struct mulib_mune_coroutine_
@@ -1521,10 +1527,10 @@ extern "C"
     mulib_mune_protected_ *protected_call;
     mulib_mune_value_t error_value;
     mulib_mune_value_t input, output;
-    size_t bytes, threshold, steps, depth, location;
+    size_t bytes, threshold, steps, depth, location, call_ceiling;
     mulib_mune_object_t **gc_sweep;
     size_t gc_major_bytes;
-    uint64_t random_state;
+    uint64_t random_state[4];
     mulib_mune_status_t status;
     char message[512];
     int running, collecting, gc_stopped, has_error, warnings, gc_pause, gc_stepmul, gc_generation;
@@ -1571,7 +1577,7 @@ extern "C"
   static void
   mulib_mune_rt_short_source_ (const mulib_mune_chunk_t *chunk, char text[80])
   {
-    const char *source = chunk->source_name ? chunk->source_name : chunk->walker->root->text;
+    const char *source = chunk->stripped ? "=?" : chunk->source_name ? chunk->source_name : chunk->walker->root->text;
     size_t length = strlen (source);
     if (*source == '=' || *source == '@')
       {
@@ -2179,6 +2185,7 @@ extern "C"
     return mulib_mune_rt_exact_integer_ (v.as.number, out);
   }
   static mulib_mune_result_t *mulib_mune_rt_call_ (mulib_mune_state_t *, mulib_mune_value_t, mulib_mune_result_t *);
+  static mulib_mune_result_t *mulib_mune_rt_call_at_ (mulib_mune_state_t *, mulib_mune_value_t, mulib_mune_result_t *, const mulib_ast_t *);
   static mulib_mune_result_t *mulib_mune_rt_expression_ (mulib_mune_state_t *, const mulib_ast_t *);
   static mulib_mune_value_t
   mulib_mune_rt_meta_ (mulib_mune_state_t *s, mulib_mune_value_t v, const char *name)
@@ -2299,7 +2306,8 @@ extern "C"
             mulib_mune_result_t *r = mulib_mune_rt_metacall_ (s, method, v, v, v, 1);
             if (!r) return 0;
             *out = mulib_mune_result_get (r, 0); mulib_mune_result_destroy (r);
-            return out->type == MULIB_MUNE_STRING || mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "__tostring must return a string");
+            return mulib_mune_rt_text_ (s, *out, 0, out)
+                   || mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "__tostring must return a string");
           }
       }
     if (v.type == MULIB_MUNE_STRING) { *out = v; return 1; }
@@ -2314,7 +2322,12 @@ extern "C"
     else if (!metamethod) return 0;
     else if (v.type == MULIB_MUNE_NIL) n = snprintf (text, sizeof (text), "nil");
     else if (v.type == MULIB_MUNE_BOOLEAN) n = snprintf (text, sizeof (text), "%s", v.as.boolean ? "true" : "false");
-    else n = snprintf (text, sizeof (text), "%s: %p", mulib_mune_rt_typename_ (v), (void *)v.as.object);
+    else
+      {
+        mulib_mune_value_t name = mulib_mune_rt_meta_ (s, v, "__name");
+        const char *kind = name.type == MULIB_MUNE_STRING ? (const char *)(name.as.object + 1) : mulib_mune_rt_typename_ (v);
+        n = snprintf (text, sizeof (text), "%s: %p", kind, (void *)v.as.object);
+      }
     if (n < 0 || (size_t)n >= sizeof (text)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "number formatting failed");
     *out = mulib_mune_rt_string_ (s, text, (size_t)n); return !s->status;
   }
@@ -2566,7 +2579,7 @@ extern "C"
                 if (value < 128) out[used++] = (unsigned char)value;
                 else
                   {
-                    uint32_t limit = 0x1f;
+                    uint32_t limit = 0x3f;
                     do { bytes[count++] = (unsigned char)(0x80 | (value & 63)); value >>= 6; limit >>= 1; } while (value > limit);
                     out[used++] = (unsigned char)((0xffu << (7 - count)) | value);
                     for (j = count; j; --j) out[used++] = bytes[j - 1];
@@ -2692,7 +2705,7 @@ extern "C"
             if (tail && !c->next)
               { *tail_function = fn; mulib_mune_result_destroy (r); return args; }
             s->location = s->frame->location = part->offset;
-            next = mulib_mune_rt_call_ (s, fn, args); mulib_mune_result_destroy (args);
+            next = mulib_mune_rt_call_at_ (s, fn, args, part); mulib_mune_result_destroy (args);
           }
         else
           {
@@ -2867,17 +2880,49 @@ extern "C"
   static mulib_mune_result_t *
   mulib_mune_rt_call_ (mulib_mune_state_t *s, mulib_mune_value_t fn, mulib_mune_result_t *args)
   {
+    return mulib_mune_rt_call_at_ (s, fn, args, NULL);
+  }
+  static mulib_mune_result_t *
+  mulib_mune_rt_call_at_ (mulib_mune_state_t *s, mulib_mune_value_t fn, mulib_mune_result_t *args, const mulib_ast_t *call)
+  {
     mulib_mune_frame_ frame;
     mulib_mune_result_t *owned = NULL, *result = NULL;
     unsigned chain = 0;
     if (s->status) return NULL;
-    if (s->depth == s->limits.call_depth) { mulib_mune_rt_error_ (s, MULIB_MUNE_LIMIT, "Lua call depth limit"); return NULL; }
+    if (s->depth >= s->limits.call_depth) { mulib_mune_rt_error_ (s, MULIB_MUNE_LIMIT, "Lua call depth limit"); return NULL; }
     memset (&frame, 0, sizeof (frame)); frame.previous = s->frame; s->frame = &frame; ++s->depth;
+    frame.namewhat = "";
+    if (call && frame.previous)
+      {
+        const mulib_ast_t *method = mulib_mune_child_ (call, "method_name"), *previous;
+        if (method) { frame.call_name = method->child; frame.namewhat = "method"; }
+        else if (call->parent && mulib_mune_is_ (call->parent->parent, "prefix"))
+          {
+            for (previous = call->parent->parent->child; previous && previous->next != call->parent; previous = previous->next) {}
+            if (mulib_mune_is_ (previous, "name"))
+              {
+                mulib_mune_object_t *e, *base = frame.previous->function.type == MULIB_MUNE_FUNCTION
+                    ? frame.previous->function.as.object->as.function.environment : NULL;
+                frame.call_name = previous; frame.namewhat = "global";
+                for (e = frame.previous->environment; e; e = e->as.environment.parent)
+                  if (e->as.environment.length == previous->length && !memcmp (e + 1, previous->text, previous->length))
+                    {
+                      mulib_mune_object_t *local;
+                      frame.namewhat = "upvalue";
+                      for (local = frame.previous->environment; local && local != base; local = local->as.environment.parent)
+                        if (local == e) { frame.namewhat = "local"; break; }
+                      break;
+                    }
+              }
+            else if (mulib_mune_is_ (previous, "suffix") && mulib_mune_is_ (previous->child, "field_name"))
+              { frame.call_name = previous->child->child; frame.namewhat = "field"; }
+          }
+      }
     for (;;)
       {
         mulib_mune_object_t *closure;
         mulib_mune_control_ control;
-        frame.function = fn;
+        frame.function = fn; frame.arguments = args;
         if (fn.type != MULIB_MUNE_FUNCTION)
           {
             mulib_mune_value_t meta = mulib_mune_rt_meta_ (s, fn, "__call");
@@ -2892,7 +2937,9 @@ extern "C"
         if (closure->as.function.native)
           {
             mulib_mune_status_t status;
+            frame.transfer_first = 1; frame.transfer_count = args->count;
             if (!mulib_mune_rt_hook_ (s, frame.tail_call ? "tail call" : "call", 0)) break;
+            frame.transfer_first = frame.transfer_count = 0;
             result = mulib_mune_rt_results_ (s); if (!result) break;
             status = closure->as.function.native (s, args->values, args->count, result, closure->as.function.user);
             if (status && !s->status) mulib_mune_rt_error_ (s, status, "native function failed");
@@ -2913,7 +2960,9 @@ extern "C"
             if (s->status) break;
             frame.varargs = mulib_mune_rt_results_ (s); if (!frame.varargs) break;
             if (!mulib_mune_rt_append_ (frame.varargs, args, at)) break;
+            frame.transfer_first = 1; frame.transfer_count = at;
             if (!mulib_mune_rt_hook_ (s, frame.tail_call ? "tail call" : "call", 0)) break;
+            frame.transfer_first = frame.transfer_count = 0;
             memset (&control, 0, sizeof (control));
             mulib_mune_rt_block_ (s, mulib_mune_is_ (body, "chunk") ? body->child : mulib_mune_child_ (body, "block"), 0, &control);
             mulib_mune_rt_close_ (s, closure->as.function.environment);
@@ -2922,12 +2971,13 @@ extern "C"
             if (control.kind == MULIB_MUNE_TAIL_)
               {
                 fn = control.function; mulib_mune_result_destroy (owned); owned = args = control.values;
-                frame.environment = NULL; frame.tail_call = 1; continue;
+                frame.environment = NULL; frame.tail_call = 1; frame.call_name = NULL; frame.namewhat = ""; continue;
               }
             result = control.values ? control.values : mulib_mune_rt_results_ (s); break;
           }
       }
-    if (!s->status) (void)mulib_mune_rt_hook_ (s, "return", 0);
+    if (!s->status)
+      { frame.transfer_first = 1; frame.transfer_count = result ? result->count : 0; (void)mulib_mune_rt_hook_ (s, "return", 0); }
     else mulib_mune_rt_handle_error_ (s);
     mulib_mune_result_destroy (frame.varargs); mulib_mune_result_destroy (owned);
     s->frame = frame.previous; --s->depth;
@@ -3219,6 +3269,7 @@ extern "C"
     if (!s->limits.memory_bytes) s->limits.memory_bytes = 64 * 1024 * 1024;
     if (!s->limits.steps) s->limits.steps = 10000000;
     if (!s->limits.call_depth) s->limits.call_depth = 200;
+    s->call_ceiling = s->limits.call_depth;
     if (!s->limits.results) s->limits.results = 100000;
     s->threshold = 65536;
     s->gc_pause = 200; s->gc_stepmul = 100; s->gc_stepsize = 13; s->gc_minor = 20; s->gc_major = 100;
@@ -3240,7 +3291,7 @@ extern "C"
     while (s->libraries)
       {
         mulib_mune_library_ *library = s->libraries; s->libraries = library->next;
-        (void)mulib_dynload_close (&library->handle, NULL, 0); (void)mulib_mune_rt_memory_ (s, library, sizeof (*library), 0);
+        (void)mulib_dynload_close (&library->handle, NULL, 0); (void)mulib_mune_rt_memory_ (s, library, library->bytes, 0);
       }
     free (s);
   }
@@ -3319,6 +3370,13 @@ extern "C"
     return i < n ? args[i] : mulib_mune_rt_nil_ ();
   }
   static int
+  mulib_mune_rt_work_ (mulib_mune_state_t *s, uint64_t count)
+  {
+    if (s->status) return 0;
+    if (count > s->limits.steps - s->steps) return mulib_mune_rt_error_ (s, MULIB_MUNE_LIMIT, "standard library work limit");
+    s->steps += (size_t)count; return 1;
+  }
+  static int
   mulib_mune_rt_need_ (mulib_mune_state_t *s, mulib_mune_value_t v, mulib_mune_type_t type, size_t i)
   {
     return v.type == type || mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "bad argument #%zu (%s expected)", i, mulib_mune_rt_typename_ ((mulib_mune_value_t){type, {0}}));
@@ -3390,8 +3448,18 @@ extern "C"
   static uint64_t
   mulib_mune_rt_random_ (mulib_mune_state_t *s)
   {
-    uint64_t z = (s->random_state += UINT64_C (0x9e3779b97f4a7c15));
-    z = (z ^ (z >> 30)) * UINT64_C (0xbf58476d1ce4e5b9); z = (z ^ (z >> 27)) * UINT64_C (0x94d049bb133111eb); return z ^ (z >> 31);
+    /* xoshiro256**, using unsigned arithmetic for the specified wrapping. */
+    uint64_t *v = s->random_state, result = v[1] * 5, shift = v[1] << 17;
+    result = ((result << 7) | (result >> 57)) * 9;
+    v[2] ^= v[0]; v[3] ^= v[1]; v[1] ^= v[2]; v[0] ^= v[3]; v[2] ^= shift;
+    v[3] = (v[3] << 45) | (v[3] >> 19); return result;
+  }
+  static void
+  mulib_mune_rt_seed_ (mulib_mune_state_t *s, uint64_t first, uint64_t second)
+  {
+    unsigned k;
+    s->random_state[0] = first; s->random_state[1] = 0xff; s->random_state[2] = second; s->random_state[3] = 0;
+    for (k = 0; k < 16; ++k) (void)mulib_mune_rt_random_ (s);
   }
   static int
   mulib_mune_rt_math_ (mulib_mune_state_t *s, const char *op, const mulib_mune_value_t *args, size_t n, mulib_mune_result_t *out)
@@ -3408,22 +3476,30 @@ extern "C"
       { int64_t i, j; return mulib_mune_rt_need_int_ (s, a, &i, 1) && mulib_mune_rt_need_int_ (s, b, &j, 2) && mulib_mune_result_push (out, mulib_mune_rt_boolean_ ((uint64_t)i < (uint64_t)j)); }
     if (!strcmp (op, "randomseed"))
       {
-        int64_t i = (int64_t)time (NULL), j = 0;
-        if ((a.type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, a, &i, 1)) || (b.type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, b, &j, 2))) return 0;
-        s->random_state = (uint64_t)i ^ ((uint64_t)j * UINT64_C (0x9e3779b97f4a7c15));
+        int64_t i = (int64_t)time (NULL), j = !n ? mulib_mune_rt_signed_ ((uint64_t)(uintptr_t)s) : 0;
+        if ((n && !mulib_mune_rt_need_int_ (s, a, &i, 1)) || (b.type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, b, &j, 2))) return 0;
+        mulib_mune_rt_seed_ (s, (uint64_t)i, (uint64_t)j);
         return mulib_mune_result_push (out, mulib_mune_rt_integer_ (i)) && mulib_mune_result_push (out, mulib_mune_rt_integer_ (j));
       }
     if (!strcmp (op, "random"))
       {
         int64_t lo = 1, hi;
-        uint64_t range, z, threshold;
-        if (!n) return mulib_mune_result_push (out, mulib_mune_rt_number_ ((double)(mulib_mune_rt_random_ (s) >> 11) * 0x1p-53));
+        uint64_t range, z, mask;
+        if (n > 2) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "wrong number of random arguments");
+        z = mulib_mune_rt_random_ (s);
+        if (!n) return mulib_mune_result_push (out, mulib_mune_rt_number_ ((double)(z >> 11) * 0x1p-53));
         if (!mulib_mune_rt_need_int_ (s, a, &hi, 1) || (n > 1 && (!mulib_mune_rt_need_int_ (s, a, &lo, 1) || !mulib_mune_rt_need_int_ (s, b, &hi, 2)))) return 0;
-        if (n == 1 && hi == 0) return mulib_mune_result_push (out, mulib_mune_rt_integer_ (mulib_mune_rt_signed_ (mulib_mune_rt_random_ (s))));
+        if (n == 1 && hi == 0) return mulib_mune_result_push (out, mulib_mune_rt_integer_ (mulib_mune_rt_signed_ (z)));
         if (lo > hi) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "empty random interval");
-        range = (uint64_t)hi - (uint64_t)lo + 1; threshold = range ? (UINT64_C (0) - range) % range : 0;
-        do { z = mulib_mune_rt_random_ (s); } while (z < threshold);
-        return mulib_mune_result_push (out, mulib_mune_rt_integer_ (mulib_mune_rt_signed_ ((uint64_t)lo + (range ? z % range : z))));
+        range = (uint64_t)hi - (uint64_t)lo; mask = range;
+        mask |= mask >> 1; mask |= mask >> 2; mask |= mask >> 4; mask |= mask >> 8; mask |= mask >> 16; mask |= mask >> 32;
+        z &= mask;
+        while (z > range)
+          {
+            if (s->steps == s->limits.steps) return mulib_mune_rt_error_ (s, MULIB_MUNE_LIMIT, "random work limit");
+            ++s->steps; z = mulib_mune_rt_random_ (s) & mask;
+          }
+        return mulib_mune_result_push (out, mulib_mune_rt_integer_ (mulib_mune_rt_signed_ ((uint64_t)lo + z)));
       }
     if (!strcmp (op, "min") || !strcmp (op, "max"))
       {
@@ -3436,16 +3512,18 @@ extern "C"
           }
         return mulib_mune_result_push (out, a);
       }
+    if (a.type == MULIB_MUNE_STRING)
+      { if (!mulib_mune_rt_numeric_ (a, &a)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "number expected"); a = mulib_mune_rt_number_ (mulib_mune_rt_double_ (a)); }
     if (!mulib_mune_rt_numeric_ (a, &a)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "number expected");
     x = mulib_mune_rt_double_ (a);
     if (n > 1 && b.type != MULIB_MUNE_NIL && (!strcmp (op, "atan") || !strcmp (op, "log") || !strcmp (op, "fmod")))
-      { if (!mulib_mune_rt_numeric_ (b, &b)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "number expected"); y = mulib_mune_rt_double_ (b); }
+      { int string = b.type == MULIB_MUNE_STRING; if (!mulib_mune_rt_numeric_ (b, &b)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "number expected"); y = mulib_mune_rt_double_ (b); if (string) b = mulib_mune_rt_number_ (y); }
     if (!strcmp (op, "abs")) v = a.type == MULIB_MUNE_INTEGER ? mulib_mune_rt_integer_ (a.as.integer < 0 ? mulib_mune_rt_signed_ (UINT64_C (0) - (uint64_t)a.as.integer) : a.as.integer) : mulib_mune_rt_number_ (fabs (x));
     else if (!strcmp (op, "floor") || !strcmp (op, "ceil"))
       { int64_t i; x = !strcmp (op, "floor") ? floor (x) : ceil (x); v = a.type == MULIB_MUNE_INTEGER ? a : mulib_mune_rt_exact_integer_ (x, &i) ? mulib_mune_rt_integer_ (i) : mulib_mune_rt_number_ (x); }
     else if (!strcmp (op, "modf"))
       {
-        int64_t i; double fraction = isinf (x) ? copysign (0.0, x) : modf (x, &y);
+        int64_t i; double fraction = isinf (x) ? 0.0 : modf (x, &y);
         if (isinf (x)) y = x;
         v = a.type == MULIB_MUNE_INTEGER ? a : mulib_mune_rt_exact_integer_ (y, &i) ? mulib_mune_rt_integer_ (i) : mulib_mune_rt_number_ (y);
         return mulib_mune_result_push (out, v) && mulib_mune_result_push (out, mulib_mune_rt_number_ (a.type == MULIB_MUNE_INTEGER ? 0.0 : fraction));
@@ -3499,6 +3577,9 @@ extern "C"
         at = 1; end = len;
         if ((n > 1 && args[1].type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, args[1], &at, 2))
             || (n > 2 && args[2].type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, args[2], &end, 3))) return 0;
+        if (end >= at && (uint64_t)end - (uint64_t)at >= s->limits.results)
+          return mulib_mune_rt_error_ (s, MULIB_MUNE_LIMIT, "unpack result limit");
+        if (end >= at && !mulib_mune_rt_work_ (s, (uint64_t)end - (uint64_t)at + 1)) return 0;
         for (; at <= end; ++at)
           { if (!mulib_mune_rt_index_ (s, t, mulib_mune_rt_integer_ (at), &v) || !mulib_mune_result_push (out, v)) return 0; if (at == INT64_MAX) break; }
         return 1;
@@ -3508,6 +3589,7 @@ extern "C"
         at = len == INT64_MAX ? len : len + 1;
         if (n < 2 || n > 3 || (n == 3 && !mulib_mune_rt_need_int_ (s, args[1], &at, 2))) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid table.insert arguments");
         if (len == INT64_MAX || at < 1 || at > len + 1) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "insert position out of bounds");
+        if (!mulib_mune_rt_work_ (s, (uint64_t)(len - at + 1))) return 0;
         for (end = len; end >= at; --end)
           if (!mulib_mune_rt_index_ (s, t, mulib_mune_rt_integer_ (end), &v) || !mulib_mune_rt_newindex_ (s, t, mulib_mune_rt_integer_ (end + 1), v)) return 0;
         return mulib_mune_rt_newindex_ (s, t, mulib_mune_rt_integer_ (at), args[n - 1]);
@@ -3516,6 +3598,7 @@ extern "C"
       {
         at = len; if (n > 1 && args[1].type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, args[1], &at, 2)) return 0;
         if (at != len && (at < 1 || (at > len && (len == INT64_MAX || at != len + 1)))) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "remove position out of bounds");
+        if (len > at && !mulib_mune_rt_work_ (s, (uint64_t)len - (uint64_t)at)) return 0;
         if (!mulib_mune_rt_index_ (s, t, mulib_mune_rt_integer_ (at), &v) || !mulib_mune_result_push (out, v)) return 0;
         for (end = at; end < len; ++end)
           if (!mulib_mune_rt_index_ (s, t, mulib_mune_rt_integer_ (end + 1), &v) || !mulib_mune_rt_newindex_ (s, t, mulib_mune_rt_integer_ (end), v)) return 0;
@@ -3525,11 +3608,13 @@ extern "C"
       {
         int64_t target; uint64_t count, k;
         mulib_mune_value_t dst = n > 4 && args[4].type != MULIB_MUNE_NIL ? args[4] : t;
-        if (n < 4 || !mulib_mune_rt_need_int_ (s, args[1], &at, 2) || !mulib_mune_rt_need_int_ (s, args[2], &end, 3)
+        if (n < 4) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "four table.move arguments expected");
+        if (!mulib_mune_rt_need_int_ (s, args[1], &at, 2) || !mulib_mune_rt_need_int_ (s, args[2], &end, 3)
             || !mulib_mune_rt_need_int_ (s, args[3], &target, 4) || !mulib_mune_rt_tablelike_ (s, dst, 2)) return 0;
         count = end < at ? 0 : (uint64_t)end - (uint64_t)at + 1;
         if (end >= at && (!count || count > s->limits.results || count - 1 > (uint64_t)INT64_MAX - (uint64_t)target))
           return mulib_mune_rt_error_ (s, MULIB_MUNE_LIMIT, "table.move range too large");
+        if (!mulib_mune_rt_work_ (s, count)) return 0;
         for (k = 0; k < count; ++k)
           {
             uint64_t index = mulib_mune_rt_equal_ (dst, t) && target > at ? count - k - 1 : k;
@@ -3562,6 +3647,7 @@ extern "C"
             while (root < size / 2)
               {
                 int64_t child = root * 2 + 1; mulib_mune_value_t left, right, less;
+                if (!mulib_mune_rt_work_ (s, 1)) return 0;
                 if (!mulib_mune_rt_index_ (s, t, mulib_mune_rt_integer_ (child + 1), &left)) return 0;
                 out->count = 1; if (!mulib_mune_result_push (out, left)) return 0;
                 if (child + 1 < size)
@@ -3587,6 +3673,7 @@ extern "C"
   static int mulib_mune_rt_pack_ (mulib_mune_state_t *, const char *, const mulib_mune_value_t *, size_t, mulib_mune_result_t *);
   static int mulib_mune_rt_loadlib_ (mulib_mune_state_t *, const char *, const mulib_mune_value_t *, size_t, mulib_mune_result_t *);
   static int mulib_mune_rt_package_ (mulib_mune_state_t *, const char *, const mulib_mune_value_t *, size_t, mulib_mune_result_t *);
+  static int mulib_mune_rt_package_paths_ (mulib_mune_state_t *, mulib_mune_object_t *);
   static int mulib_mune_rt_utf8_ (mulib_mune_state_t *, const char *, const mulib_mune_value_t *, size_t, mulib_mune_result_t *);
   static int mulib_mune_rt_os_ (mulib_mune_state_t *, const char *, const mulib_mune_value_t *, size_t, mulib_mune_result_t *);
   static int mulib_mune_rt_io_ (mulib_mune_state_t *, const char *, const mulib_mune_value_t *, size_t, mulib_mune_result_t *);
@@ -3627,6 +3714,7 @@ extern "C"
     if (!strncmp (op, "debug.", 6)) { (void)mulib_mune_rt_debug_ (s, op + 6, args, n, out); return s->status; }
     if (!strcmp (op, "assert"))
       {
+        if (!n) return (mulib_mune_status_t)(mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "value expected"), s->status);
         if (!mulib_mune_rt_truth_ (a)) (void)mulib_mune_rt_raise_level_ (s, n > 1 ? b : mulib_mune_rt_string_ (s, "assertion failed!", 17), 1);
         else for (k = 0; k < n; ++k) if (!mulib_mune_result_push (out, args[k])) break;
       }
@@ -3661,7 +3749,7 @@ extern "C"
     else if (!strcmp (op, "select"))
       {
         int64_t at;
-        if (a.type == MULIB_MUNE_STRING && a.as.object->as.length == 1 && *(const char *)(a.as.object + 1) == '#')
+        if (a.type == MULIB_MUNE_STRING && a.as.object->as.length && *(const char *)(a.as.object + 1) == '#')
           (void)mulib_mune_result_push (out, mulib_mune_rt_integer_ (n ? (int64_t)n - 1 : 0));
         else if (mulib_mune_rt_need_int_ (s, a, &at, 1))
           {
@@ -3713,19 +3801,18 @@ extern "C"
     else if (!strcmp (op, "next")) (void)mulib_mune_rt_next_ (s, a, b, out);
     else if (!strcmp (op, "pairs"))
       {
+        if (!n) return (mulib_mune_status_t)(mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "value expected"), s->status);
         v = mulib_mune_rt_meta_ (s, a, "__pairs");
         if (v.type != MULIB_MUNE_NIL)
           { mulib_mune_result_t *r = mulib_mune_rt_metacall_ (s, v, a, a, a, 1); if (r) { for (k = 0; k < 3; ++k) (void)mulib_mune_result_push (out, mulib_mune_result_get (r, k)); mulib_mune_result_destroy (r); } }
-        else if (mulib_mune_rt_need_ (s, a, MULIB_MUNE_TABLE, 1))
-          { (void)mulib_mune_result_push (out, mulib_mune_rt_field_ (s->globals, "next", 4)); (void)mulib_mune_result_push (out, a); (void)mulib_mune_result_push (out, mulib_mune_rt_nil_ ()); }
+        else
+          { (void)mulib_mune_result_push (out, s->frame->function.as.object->as.function.context[0]); (void)mulib_mune_result_push (out, a); (void)mulib_mune_result_push (out, mulib_mune_rt_nil_ ()); }
       }
     else if (!strcmp (op, "ipairs"))
       {
-        mulib_mune_object_t *f;
         if (!n) return (mulib_mune_status_t)(mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "value expected"), s->status);
-        f = mulib_mune_rt_allocate_ (s, MULIB_MUNE_FUNCTION, 0);
-        if (f) { f->as.function.native = mulib_mune_rt_builtin_; f->as.function.user = (void *)"ipairs.iterator";
-          (void)mulib_mune_result_push (out, mulib_mune_rt_object_ (f)); (void)mulib_mune_result_push (out, a); (void)mulib_mune_result_push (out, mulib_mune_rt_integer_ (0)); }
+        (void)mulib_mune_result_push (out, s->frame->function.as.object->as.function.context[0]);
+        (void)mulib_mune_result_push (out, a); (void)mulib_mune_result_push (out, mulib_mune_rt_integer_ (0));
       }
     else if (!strcmp (op, "ipairs.iterator"))
       {
@@ -3767,18 +3854,21 @@ extern "C"
         if (file == stderr)
           {
             if (!n) return (mulib_mune_status_t)(mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "warning string expected"), s->status);
-            for (k = 0; k < n; ++k) if (!mulib_mune_rt_need_ (s, args[k], MULIB_MUNE_STRING, k + 1)) return s->status;
-            if (n == 1 && a.as.object->as.length && *(const char *)(a.as.object + 1) == '@')
+            for (k = 0; k < n; ++k)
+              if (args[k].type != MULIB_MUNE_STRING && args[k].type != MULIB_MUNE_INTEGER && args[k].type != MULIB_MUNE_NUMBER)
+                return (mulib_mune_status_t)(mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "warning string expected"), s->status);
+            if (n == 1 && a.type == MULIB_MUNE_STRING && a.as.object->as.length && *(const char *)(a.as.object + 1) == '@')
               {
                 if (a.as.object->as.length == 3 && !memcmp (a.as.object + 1, "@on", 3)) s->warnings = 1;
                 if (a.as.object->as.length == 4 && !memcmp (a.as.object + 1, "@off", 4)) s->warnings = 0;
                 return s->status;
               }
             if (!s->warnings) return s->status;
+            if (fputs ("Lua warning: ", file) == EOF) return (mulib_mune_status_t)(mulib_mune_rt_error_ (s, MULIB_MUNE_IO, "output failed"), s->status);
           }
         for (k = 0; k < n; ++k)
           {
-            if (!mulib_mune_rt_text_ (s, args[k], 1, &v)) break;
+            if (!mulib_mune_rt_text_ (s, args[k], file == stdout, &v)) break;
             if (k && file == stdout) fputc ('\t', file);
             if (fwrite (v.as.object + 1, 1, v.as.object->as.length, file) != v.as.object->as.length) { mulib_mune_rt_error_ (s, MULIB_MUNE_IO, "output failed"); break; }
           }
@@ -3849,10 +3939,18 @@ extern "C"
       "os.clock", "os.date", "os.difftime", "os.execute", "os.exit", "os.getenv", "os.remove", "os.rename", "os.setlocale", "os.time", "os.tmpname",
       "io.open", "io.close", "io.flush", "io.input", "io.output", "io.lines", "io.read", "io.write", "io.tmpfile", "io.type", "io.popen",
       "coroutine.create", "coroutine.resume", "coroutine.yield", "coroutine.status", "coroutine.running", "coroutine.isyieldable", "coroutine.close", "coroutine.wrap",
-      "debug.debug", "debug.gethook", "debug.sethook", "debug.getinfo", "debug.getlocal", "debug.setlocal", "debug.getregistry", "debug.getmetatable", "debug.setmetatable", "debug.getupvalue", "debug.setupvalue", "debug.upvalueid", "debug.upvaluejoin", "debug.getuservalue", "debug.setuservalue", "debug.traceback"
+      "debug.debug", "debug.gethook", "debug.sethook", "debug.getinfo", "debug.getlocal", "debug.setlocal", "debug.getregistry", "debug.getmetatable", "debug.setmetatable", "debug.getupvalue", "debug.setupvalue", "debug.upvalueid", "debug.upvaluejoin", "debug.getuservalue", "debug.setuservalue", "debug.traceback", "debug.setcstacklimit"
     };
     size_t k;
+    mulib_mune_rt_seed_ (s, (uint64_t)time (NULL), (uint64_t)(uintptr_t)s);
     for (k = 0; k < sizeof (base) / sizeof (*base); ++k) if (!mulib_mune_rt_install_ (s, s->globals, base[k], base[k])) return 0;
+    {
+      mulib_mune_value_t pairs = mulib_mune_rt_field_ (s->globals, "pairs", 5), ipairs = mulib_mune_rt_field_ (s->globals, "ipairs", 6);
+      mulib_mune_object_t *iterator = mulib_mune_rt_allocate_ (s, MULIB_MUNE_FUNCTION, 0); if (!iterator) return 0;
+      iterator->as.function.native = mulib_mune_rt_builtin_; iterator->as.function.user = (void *)"ipairs.iterator";
+      pairs.as.object->as.function.context[0] = mulib_mune_rt_field_ (s->globals, "next", 4);
+      ipairs.as.object->as.function.context[0] = mulib_mune_rt_object_ (iterator);
+    }
     for (k = 0; k < sizeof (methods) / sizeof (*methods); ++k)
       {
         const char *dot = strchr (methods[k], '.'); size_t length = (size_t)(dot - methods[k]);
@@ -3892,15 +3990,39 @@ extern "C"
           || !mulib_mune_rt_setfield_ (s, package.as.object, "config", 6, mulib_mune_rt_string_ (s, "/\n;\n?\n!\n-\n", 10))
           || !mulib_mune_rt_install_ (s, package.as.object, "_preload_searcher", "package.preload_searcher")
           || !mulib_mune_rt_install_ (s, package.as.object, "_file_searcher", "package.file_searcher")
-          || !mulib_mune_rt_install_ (s, package.as.object, "_native_searcher", "package.native_searcher")
+           || !mulib_mune_rt_install_ (s, package.as.object, "_native_searcher", "package.native_searcher")
+           || !mulib_mune_rt_install_ (s, package.as.object, "_root_searcher", "package.root_searcher")
           || !mulib_mune_rt_install_ (s, s->globals, "require", "require")
           || !mulib_mune_rt_setfield_ (s, utf8.as.object, "charpattern", 11, mulib_mune_rt_string_ (s, charpattern, sizeof (charpattern) - 1))) return 0;
       loader = mulib_mune_rt_field_ (package.as.object, "_preload_searcher", 17);
+      loader.as.object->as.function.native_upvalues = 1;
       if (!mulib_mune_rt_rawset_ (s, searchers, mulib_mune_rt_integer_ (1), loader)) return 0;
       loader = mulib_mune_rt_field_ (package.as.object, "_file_searcher", 14);
+      loader.as.object->as.function.native_upvalues = 1;
       if (!mulib_mune_rt_rawset_ (s, searchers, mulib_mune_rt_integer_ (2), loader)) return 0;
       loader = mulib_mune_rt_field_ (package.as.object, "_native_searcher", 16);
+      loader.as.object->as.function.native_upvalues = 1;
       if (!mulib_mune_rt_rawset_ (s, searchers, mulib_mune_rt_integer_ (3), loader)) return 0;
+      loader = mulib_mune_rt_field_ (package.as.object, "_root_searcher", 14);
+      loader.as.object->as.function.native_upvalues = 1;
+      if (!mulib_mune_rt_rawset_ (s, searchers, mulib_mune_rt_integer_ (4), loader)) return 0;
+      /* Like Lua's library closures, require/searchers retain their package
+       * table; reassigning _G.package or package.loaded does not replace it. */
+      for (k = 0; k < package.as.object->as.table.capacity; ++k)
+        {
+          mulib_mune_entry_ *e = &package.as.object->as.table.entries[k];
+          if (e->used == 1 && e->value.type == MULIB_MUNE_FUNCTION)
+            e->value.as.object->as.function.context[0] = package;
+        }
+      loader = mulib_mune_rt_field_ (s->globals, "require", 7); loader.as.object->as.function.context[0] = package;
+      loader.as.object->as.function.native_upvalues = 1;
+      s->registry = mulib_mune_rt_allocate_ (s, MULIB_MUNE_TABLE, 0);
+      if (!s->registry
+          || !mulib_mune_rt_rawset_ (s, s->registry, mulib_mune_rt_integer_ (1), mulib_mune_rt_object_ (s->main_thread))
+          || !mulib_mune_rt_rawset_ (s, s->registry, mulib_mune_rt_integer_ (2), mulib_mune_rt_object_ (s->globals))
+           || !mulib_mune_rt_setfield_ (s, s->registry, "_LOADED", 7, mulib_mune_rt_object_ (loaded))
+           || !mulib_mune_rt_setfield_ (s, s->registry, "_PRELOAD", 8, mulib_mune_rt_object_ (preload))) return 0;
+      if (!mulib_mune_rt_package_paths_ (s, package.as.object)) return 0;
       for (k = 0; k < s->globals->as.table.capacity; ++k)
         {
           const mulib_mune_entry_ *e = &s->globals->as.table.entries[k];
@@ -3917,6 +4039,7 @@ extern "C"
   static int
   mulib_mune_rt_bytes_ (mulib_mune_state_t *s, mulib_mune_bytes_ *b, const char *text, size_t n)
   {
+    if (s->running && !mulib_mune_rt_work_ (s, n)) return 0;
     if (n > SIZE_MAX - b->length - 1) return mulib_mune_rt_error_ (s, MULIB_MUNE_MEMORY, "string size overflow");
     if (b->length + n + 1 > b->capacity)
       {
@@ -3946,7 +4069,7 @@ extern "C"
       {
         if (value.type == MULIB_MUNE_NUMBER)
           n = isnan (value.as.number) ? snprintf (text, sizeof (text), "(0/0)")
-              : isinf (value.as.number) ? snprintf (text, sizeof (text), "(%s1/0)", signbit (value.as.number) ? "-" : "")
+              : isinf (value.as.number) ? snprintf (text, sizeof (text), "%s1e9999", signbit (value.as.number) ? "-" : "")
               : snprintf (text, sizeof (text), "%a", value.as.number);
         else if (value.type == MULIB_MUNE_INTEGER)
           n = value.as.integer == INT64_MIN ? snprintf (text, sizeof (text), "0x8000000000000000") : snprintf (text, sizeof (text), "%" PRId64, value.as.integer);
@@ -3994,7 +4117,7 @@ extern "C"
         code = fmt[at++]; used = at - begin - 1; memcpy (spec, fmt + begin, used); spec[used] = 0; v = args[argument++];
         {
           size_t k;
-          const char *allowed = code == 's' || code == 'c' ? "-" : code == 'd' || code == 'i' ? "-+ 0" : code == 'u' ? "-0" : code == 'o' || code == 'x' || code == 'X' ? "-#0" : "-+ #0";
+          const char *allowed = code == 's' || code == 'c' || code == 'p' ? "-" : code == 'd' || code == 'i' ? "-+ 0" : code == 'u' ? "-0" : code == 'o' || code == 'x' || code == 'X' ? "-#0" : "-+ #0";
           for (k = begin + 1; k < flags_end; ++k) if (!strchr (allowed, fmt[k])) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid conversion flags");
           if (code == 'c' && precision_start < at - 1) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "precision is invalid for c");
         }
@@ -4011,6 +4134,14 @@ extern "C"
           }
         else if (code == 'c')
           { if (!mulib_mune_rt_need_int_ (s, v, &integer, argument)) return 0; spec[used++] = code; spec[used] = 0; written = snprintf (buffer, sizeof (buffer), spec, (int)(unsigned char)integer); }
+        else if (code == 'p')
+          {
+            void *pointer = v.type < MULIB_MUNE_STRING ? NULL : v.type == MULIB_MUNE_USERDATA && v.as.object->userdata_tag == 3
+                  ? (void *)v.as.object->as.userdata.identity : (void *)v.as.object;
+            if (precision_start < at - 1) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "precision is invalid for p");
+            spec[used++] = pointer ? 'p' : 's'; spec[used] = 0;
+            written = pointer ? snprintf (buffer, sizeof (buffer), spec, pointer) : snprintf (buffer, sizeof (buffer), spec, "(null)");
+          }
         else if (code && strchr ("diouxX", code))
           {
             if (!mulib_mune_rt_need_int_ (s, v, &integer, argument)) return 0;
@@ -4138,7 +4269,10 @@ extern "C"
                 if (at == m->length || m->text[at] != m->pattern[p + 2]) return SIZE_MAX;
                 for (++at; at < m->length; ++at)
                   {
-                    if (m->text[at] == m->pattern[p + 3] && !--depth) break;
+                    if (m->state->steps == m->state->limits.steps)
+                      { mulib_mune_rt_error_ (m->state, MULIB_MUNE_LIMIT, "pattern work limit"); return SIZE_MAX; }
+                    ++m->state->steps;
+                    if (m->text[at] == m->pattern[p + 3]) { if (!--depth) break; }
                     else if (m->text[at] == m->pattern[p + 2]) ++depth;
                   }
                 if (at == m->length) return SIZE_MAX;
@@ -4153,12 +4287,13 @@ extern "C"
                     || !mulib_mune_rt_class_match_ (m, at < m->length ? m->text[at] : 0, p, end)) return SIZE_MAX;
                 p = end; continue;
               }
-            if (special >= '1' && special <= '9')
+            if (special >= '0' && special <= '9')
               {
-                size_t index = special - '1', size;
-                if (index >= m->captures || m->capture[index].length >= SIZE_MAX - 1)
+                size_t index = (size_t)(special - '0') - 1, size;
+                if (index >= m->captures || m->capture[index].length == SIZE_MAX)
                   { mulib_mune_rt_error_ (m->state, MULIB_MUNE_RUNTIME, "invalid capture reference"); return SIZE_MAX; }
                 size = m->capture[index].length;
+                if (size == SIZE_MAX - 1) return SIZE_MAX; /* Position captures are not strings. */
                 if (size > m->length - at || memcmp (m->text + at, m->text + m->capture[index].start, size)) return SIZE_MAX;
                 at += size; p += 2; continue;
               }
@@ -4184,7 +4319,12 @@ extern "C"
                   }
               }
             maximum = minimum;
-            while (maximum < m->length && mulib_mune_rt_class_match_ (m, m->text[maximum], p, end)) ++maximum;
+            while (maximum < m->length && mulib_mune_rt_class_match_ (m, m->text[maximum], p, end))
+              {
+                if (m->state->steps == m->state->limits.steps)
+                  { mulib_mune_rt_error_ (m->state, MULIB_MUNE_LIMIT, "pattern work limit"); return SIZE_MAX; }
+                ++m->state->steps; ++maximum;
+              }
             do
               {
                 next = mulib_mune_rt_match_ (m, maximum, end + 1); if (next != SIZE_MAX || m->state->status) return next;
@@ -4232,12 +4372,22 @@ extern "C"
     mulib_mune_bytes_ bytes = { NULL, 0, 0 };
     size_t at, end, last = SIZE_MAX, total = 0;
     int64_t initial = 1, limit = INT64_MAX;
-    int iterator = !strcmp (op, "iterator"), substitute = !strcmp (op, "gsub"), find = !strcmp (op, "find"), anchored;
+    int iterator = !strcmp (op, "iterator"), substitute = !strcmp (op, "gsub"), find = !strcmp (op, "find"), anchored, plain = 0;
     mulib_mune_object_t *closure = s->frame->function.as.object;
     if (iterator) { a = closure->as.function.context[0]; b = closure->as.function.context[1]; initial = (int64_t)closure->as.function.cursor + 1; last = closure->as.function.last_match; }
     if (!mulib_mune_rt_text_ (s, a, 0, &a) || !mulib_mune_rt_text_ (s, b, 0, &b)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "string and pattern expected");
     memset (&m, 0, sizeof (m)); m.state = s; m.text = (const unsigned char *)(a.as.object + 1); m.length = a.as.object->as.length;
     m.pattern = (const unsigned char *)(b.as.object + 1); m.pattern_length = b.as.object->as.length;
+    if (substitute && replacement.type != MULIB_MUNE_FUNCTION && replacement.type != MULIB_MUNE_TABLE
+        && replacement.type != MULIB_MUNE_STRING && replacement.type != MULIB_MUNE_INTEGER && replacement.type != MULIB_MUNE_NUMBER)
+      return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "string/function/table replacement expected");
+    if (find)
+      {
+        size_t k; plain = n > 3 && mulib_mune_rt_truth_ (args[3]);
+        for (k = 0; !plain && k < m.pattern_length; ++k)
+          if (m.pattern[k] && strchr ("^$*+?.([%-", m.pattern[k])) break;
+        if (k == m.pattern_length) plain = 1;
+      }
     /* Input coercions and captures remain roots during replacement callbacks. */
     if (!mulib_mune_result_push (out, a) || !mulib_mune_result_push (out, b)) return 0;
     if (!iterator && !substitute && n > 2 && args[2].type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, args[2], &initial, 3)) return 0;
@@ -4247,15 +4397,20 @@ extern "C"
       {
         mulib_mune_object_t *f = mulib_mune_rt_allocate_ (s, MULIB_MUNE_FUNCTION, 0); if (!f) return 0;
         f->as.function.native = mulib_mune_rt_builtin_; f->as.function.user = (void *)"string.iterator";
+        f->as.function.native_upvalues = 2;
         f->as.function.context[0] = a; f->as.function.context[1] = b; f->as.function.cursor = at; f->as.function.last_match = SIZE_MAX;
         out->count = 0; return mulib_mune_result_push (out, mulib_mune_rt_object_ (f));
       }
     anchored = !iterator && m.pattern_length && m.pattern[0] == '^';
     while (at <= m.length && !s->status && (!substitute || (limit > 0 && total < (uint64_t)limit)))
       {
+        if (!mulib_mune_rt_work_ (s, 1)) break;
         m.captures = 0;
-        if (find && n > 3 && mulib_mune_rt_truth_ (args[3]))
-          end = m.pattern_length <= m.length - at && !memcmp (m.text + at, m.pattern, m.pattern_length) ? at + m.pattern_length : SIZE_MAX;
+        if (plain)
+          {
+            if (m.pattern_length <= m.length - at && !mulib_mune_rt_work_ (s, m.pattern_length)) break;
+            end = m.pattern_length <= m.length - at && !memcmp (m.text + at, m.pattern, m.pattern_length) ? at + m.pattern_length : SIZE_MAX;
+          }
         else end = mulib_mune_rt_match_ (&m, at, anchored ? 1 : 0);
         if (s->status) break;
         if (end != SIZE_MAX && end != last)
@@ -4272,7 +4427,8 @@ extern "C"
                 mulib_mune_result_t *captures = mulib_mune_rt_results_ (s), *r = NULL;
                 mulib_mune_value_t v = replacement;
                 if (!captures) break;
-                if (!mulib_mune_rt_captures_ (&m, at, end, 1, captures)) { mulib_mune_result_destroy (captures); break; }
+                if ((v.type == MULIB_MUNE_FUNCTION || v.type == MULIB_MUNE_TABLE)
+                    && !mulib_mune_rt_captures_ (&m, at, end, 1, captures)) { mulib_mune_result_destroy (captures); break; }
                 if (v.type == MULIB_MUNE_FUNCTION)
                   { r = mulib_mune_rt_call_ (s, v, captures); if (r) v = mulib_mune_result_get (r, 0); }
                 else if (v.type == MULIB_MUNE_TABLE) (void)mulib_mune_rt_index_ (s, v, mulib_mune_result_get (captures, 0), &v);
@@ -4288,13 +4444,16 @@ extern "C"
                             if (replacement.type != MULIB_MUNE_FUNCTION && replacement.type != MULIB_MUNE_TABLE && text[k] == '%')
                               {
                                 unsigned char code = k + 1 < length ? (unsigned char)text[++k] : 0;
-                                mulib_mune_value_t capture;
-                                if (code == '%') (void)mulib_mune_rt_bytes_ (s, &bytes, "%", 1);
-                                else if (code == '0') (void)mulib_mune_rt_bytes_ (s, &bytes, (const char *)m.text + at, end - at);
-                                else if (code >= '1' && code <= '9' && (size_t)(code - '1') < captures->count)
-                                  {
-                                    capture = captures->values[code - '1'];
-                                    if (mulib_mune_rt_text_ (s, capture, 0, &capture)) (void)mulib_mune_rt_bytes_ (s, &bytes, (const char *)(capture.as.object + 1), capture.as.object->as.length);
+                                 if (code == '%') (void)mulib_mune_rt_bytes_ (s, &bytes, "%", 1);
+                                 else if (code == '0') (void)mulib_mune_rt_bytes_ (s, &bytes, (const char *)m.text + at, end - at);
+                                 else if (code == '1' && !m.captures) (void)mulib_mune_rt_bytes_ (s, &bytes, (const char *)m.text + at, end - at);
+                                 else if (code >= '1' && code <= '9' && (size_t)(code - '1') < m.captures)
+                                   {
+                                     mulib_mune_capture_ *capture = &m.capture[code - '1'];
+                                     if (capture->length == SIZE_MAX) mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "unfinished capture");
+                                     else if (capture->length == SIZE_MAX - 1)
+                                       { char position[32]; int count = snprintf (position, sizeof (position), "%zu", capture->start + 1); if (count > 0) (void)mulib_mune_rt_bytes_ (s, &bytes, position, (size_t)count); }
+                                     else (void)mulib_mune_rt_bytes_ (s, &bytes, (const char *)m.text + capture->start, capture->length);
                                   }
                                 else mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid replacement escape");
                               }
@@ -4308,7 +4467,7 @@ extern "C"
                 continue;
               }
           }
-        if (anchored && !(find && n > 3 && mulib_mune_rt_truth_ (args[3]))) break;
+        if (anchored && !plain) break;
         if (at == m.length) { ++at; break; }
         if (substitute && !mulib_mune_rt_bytes_ (s, &bytes, (const char *)m.text + at, 1)) break;
         ++at;
@@ -4347,6 +4506,7 @@ extern "C"
             || (n > 3 && args[3].type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, args[3], &end, 4))) return 0;
         for (; begin <= end; ++begin)
           {
+            if (!mulib_mune_rt_work_ (s, 1)) break;
             if (!mulib_mune_rt_index_ (s, a, mulib_mune_rt_integer_ (begin), &v) || !mulib_mune_rt_text_ (s, v, 0, &v))
               { if (!s->status) mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid value in table.concat"); break; }
             text = mulib_mune_value_string (v, &length);
@@ -4386,6 +4546,7 @@ extern "C"
         begin = mulib_mune_rt_relative_ (begin, length); end = mulib_mune_rt_relative_ (end, length);
         if (begin < 1) begin = 1;
         if (end > (int64_t)length) end = (int64_t)length;
+        if (end >= begin && !mulib_mune_rt_work_ (s, (uint64_t)(end - begin + 1))) return 0;
         if (!strcmp (op, "byte"))
           { for (; begin <= end; ++begin) if (!mulib_mune_result_push (out, mulib_mune_rt_integer_ ((unsigned char)text[begin - 1]))) return 0; return 1; }
         return mulib_mune_result_push (out, mulib_mune_rt_string_ (s, begin <= end ? text + begin - 1 : "", begin <= end ? (size_t)(end - begin + 1) : 0));
@@ -4830,7 +4991,7 @@ extern "C"
         if (e->immediate) (void)mulib_mune_result_push (values[e->destination], a);
         else (void)mulib_mune_rt_append_ (values[e->destination], values[e->a], 0);
         break;
-      case MULIB_MUNE_E_CALL_: r = mulib_mune_rt_call_ (s, a, values[e->b]); break;
+      case MULIB_MUNE_E_CALL_: r = mulib_mune_rt_call_at_ (s, a, values[e->b], e->node); break;
       case MULIB_MUNE_E_TABLE_: r = mulib_mune_rt_single_ (s, mulib_mune_rt_object_ (mulib_mune_rt_allocate_ (s, MULIB_MUNE_TABLE, 0))); break;
       case MULIB_MUNE_E_SET_:
         v = mulib_mune_result_get (values[e->destination], 0);
@@ -5056,12 +5217,13 @@ extern "C"
   }
   static int
   mulib_mune_rt_searchpath_ (mulib_mune_state_t *s, mulib_mune_value_t name, mulib_mune_value_t path,
-                           const char *separator, const char *replacement, mulib_mune_value_t *out)
+                            const char *separator, const char *replacement, mulib_mune_value_t *out)
   {
-    mulib_mune_bytes_ module = { NULL, 0, 0 }, candidate = { NULL, 0, 0 };
+    mulib_mune_bytes_ module = { NULL, 0, 0 }, candidate = { NULL, 0, 0 }, errors = { NULL, 0, 0 };
     const char *text, *paths; size_t n, p, at, i, seplen = strlen (separator), replen = strlen (replacement), length;
     int found = 0;
-    if (!mulib_mune_rt_text_ (s, name, 0, &name) || !mulib_mune_rt_need_ (s, path, MULIB_MUNE_STRING, 2)) return 0;
+    if (!mulib_mune_rt_text_ (s, name, 0, &name) || !mulib_mune_rt_text_ (s, path, 0, &path))
+      return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "module name and path strings expected");
     text = mulib_mune_value_string (name, &n); paths = mulib_mune_value_string (path, &length);
     if (memchr (text, 0, n) || memchr (paths, 0, length)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "zero byte in module path");
     for (at = 0; at < n && !s->status;)
@@ -5080,32 +5242,90 @@ extern "C"
           else (void)mulib_mune_rt_bytes_ (s, &candidate, paths + i, 1);
         if (!s->status && candidate.length && (file = fopen (candidate.data, "rb")) != NULL)
           { (void)fclose (file); *out = mulib_mune_rt_string_ (s, candidate.data, candidate.length); found = !s->status; break; }
+        if (p) (void)mulib_mune_rt_bytes_ (s, &errors, "\n\t", 2);
+        (void)mulib_mune_rt_bytes_ (s, &errors, "no file '", 9);
+        (void)mulib_mune_rt_bytes_ (s, &errors, candidate.data, candidate.length);
+        (void)mulib_mune_rt_bytes_ (s, &errors, "'", 1);
         if (at == length) break;
         p = at + 1;
       }
+    if (!found && !s->status) *out = mulib_mune_rt_string_ (s, errors.data, errors.length);
+    (void)mulib_mune_rt_memory_ (s, errors.data, errors.capacity, 0);
     (void)mulib_mune_rt_memory_ (s, module.data, module.capacity, 0); (void)mulib_mune_rt_memory_ (s, candidate.data, candidate.capacity, 0);
     return found;
+  }
+  static int
+  mulib_mune_rt_package_paths_ (mulib_mune_state_t *s, mulib_mune_object_t *package)
+  {
+    static const char *const names[] = { "path", "cpath" };
+    static const char *const versioned[] = { "LUA_PATH_5_4", "LUA_CPATH_5_4" };
+    static const char *const unversioned[] = { "LUA_PATH", "LUA_CPATH" };
+#if defined(_WIN32)
+    static const char *const defaults[] = { ".\\?.lua;.\\?\\init.lua;.\\?.luac", ".\\?.dll" };
+    const char *config = "\\\n;\n?\n!\n-\n";
+#else
+    static const char *const defaults[] = { "./?.lua;./?/init.lua;./?.luac", "./?.so" };
+    const char *config = "/\n;\n?\n!\n-\n";
+#endif
+    size_t k;
+    for (k = 0; k < 2; ++k)
+      {
+        const char *value = getenv (versioned[k]), *marker;
+        mulib_mune_bytes_ bytes = { NULL, 0, 0 };
+        if (!value) value = getenv (unversioned[k]);
+        if (!value) value = defaults[k];
+        marker = strstr (value, ";;");
+        if (marker)
+          {
+            (void)mulib_mune_rt_bytes_ (s, &bytes, value, (size_t)(marker - value) + 1);
+            (void)mulib_mune_rt_bytes_ (s, &bytes, defaults[k], strlen (defaults[k]));
+            (void)mulib_mune_rt_bytes_ (s, &bytes, marker + 1, strlen (marker + 1));
+          }
+        else (void)mulib_mune_rt_bytes_ (s, &bytes, value, strlen (value));
+        if (!s->status) (void)mulib_mune_rt_setfield_ (s, package, names[k], strlen (names[k]), mulib_mune_rt_string_ (s, bytes.data, bytes.length));
+        (void)mulib_mune_rt_memory_ (s, bytes.data, bytes.capacity, 0); if (s->status) return 0;
+      }
+    return mulib_mune_rt_setfield_ (s, package, "config", 6, mulib_mune_rt_string_ (s, config, 10));
   }
   static const char *mulib_mune_rt_cstring_ (mulib_mune_state_t *, mulib_mune_value_t, size_t);
   static int
   mulib_mune_rt_loadnative_ (mulib_mune_state_t *s, const char *path, const char *symbol, mulib_mune_result_t *out)
   {
-    mulib_mune_library_ *library = (mulib_mune_library_ *)mulib_mune_rt_memory_ (s, NULL, 0, sizeof (*library));
+    mulib_mune_library_ *library;
     char message[512]; void *address = NULL; mulib_mune_object_t *fn;
-    int status;
-    if (!library) return 0;
-    memset (library, 0, sizeof (*library));
-    status = mulib_dynload_open (&library->handle, path, message, sizeof (message));
-    if (!status && strcmp (symbol, "*")) status = mulib_dynload_symbol (&library->handle, symbol, &address, message, sizeof (message));
+    int status = 0, global = *symbol == '*';
+    for (library = s->libraries; library; library = library->next)
+      if (!strcmp ((const char *)(library + 1), path)) break;
+    if (!library)
+      {
+        size_t size = strlen (path);
+        if (size > SIZE_MAX - sizeof (*library) - 1) return mulib_mune_rt_error_ (s, MULIB_MUNE_MEMORY, "native path size overflow");
+        library = (mulib_mune_library_ *)mulib_mune_rt_memory_ (s, NULL, 0, sizeof (*library) + size + 1);
+        if (!library) return 0;
+        memset (library, 0, sizeof (*library)); library->bytes = sizeof (*library) + size + 1;
+        memcpy (library + 1, path, size + 1);
+        status = mulib_dynload_open_ex (&library->handle, path, global ? MULIB_DYNLOAD_GLOBAL : 0, message, sizeof (message));
+        if (status)
+          {
+            (void)mulib_mune_rt_memory_ (s, library, library->bytes, 0);
+            return mulib_mune_result_push (out, mulib_mune_rt_nil_ ()) && mulib_mune_result_push (out, mulib_mune_rt_string_ (s, message, strlen (message)))
+                   && mulib_mune_result_push (out, mulib_mune_rt_string_ (s, "open", 4));
+          }
+        library->global = global; library->next = s->libraries; s->libraries = library;
+      }
+    if (global && !library->global)
+      {
+        mulib_dynload_t promoted = MULIB_DYNLOAD_INIT;
+        status = mulib_dynload_open_ex (&promoted, path, MULIB_DYNLOAD_GLOBAL, message, sizeof (message));
+        if (!status) { (void)mulib_dynload_close (&library->handle, NULL, 0); library->handle = promoted; library->global = 1; }
+      }
+    if (!status && !global) status = mulib_dynload_symbol (&library->handle, symbol, &address, message, sizeof (message));
     if (status)
       {
-        const char *kind = library->handle.handle ? "init" : "open";
-        (void)mulib_dynload_close (&library->handle, NULL, 0); (void)mulib_mune_rt_memory_ (s, library, sizeof (*library), 0);
         return mulib_mune_result_push (out, mulib_mune_rt_nil_ ()) && mulib_mune_result_push (out, mulib_mune_rt_string_ (s, message, strlen (message)))
-               && mulib_mune_result_push (out, mulib_mune_rt_string_ (s, kind, 4));
+               && mulib_mune_result_push (out, mulib_mune_rt_string_ (s, global ? "open" : "init", 4));
       }
-    library->next = s->libraries; s->libraries = library;
-    if (!strcmp (symbol, "*")) return mulib_mune_result_push (out, mulib_mune_rt_boolean_ (1));
+    if (global) return mulib_mune_result_push (out, mulib_mune_rt_boolean_ (1));
     if (!address || sizeof (address) != sizeof (mulib_mune_native_fn)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "native symbol ABI unsupported");
     fn = mulib_mune_rt_allocate_ (s, MULIB_MUNE_FUNCTION, 0); if (!fn) return 0;
     memcpy (&fn->as.function.native, &address, sizeof (address)); return mulib_mune_result_push (out, mulib_mune_rt_object_ (fn));
@@ -5113,7 +5333,7 @@ extern "C"
   static int
   mulib_mune_rt_package_ (mulib_mune_state_t *s, const char *op, const mulib_mune_value_t *args, size_t n, mulib_mune_result_t *out)
   {
-    mulib_mune_value_t name = mulib_mune_rt_arg_ (args, n, 0), package = mulib_mune_rt_field_ (s->globals, "package", 7), table, loader, path;
+    mulib_mune_value_t name = mulib_mune_rt_arg_ (args, n, 0), package = s->frame->function.as.object->as.function.context[0], table, loader, path;
     if (!mulib_mune_rt_text_ (s, name, 0, &name) || !mulib_mune_rt_need_ (s, package, MULIB_MUNE_TABLE, 1)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "module name and package table required");
     if (!mulib_mune_rt_pin_ (s, name) || !mulib_mune_rt_pin_ (s, package)) return 0;
     if (!strcmp (op, "package.loadlib"))
@@ -5121,47 +5341,71 @@ extern "C"
         const char *file = mulib_mune_rt_cstring_ (s, name, 1), *symbol = mulib_mune_rt_cstring_ (s, mulib_mune_rt_arg_ (args, n, 1), 2);
         return file && symbol && mulib_mune_rt_loadnative_ (s, file, symbol, out);
       }
-    if (!strcmp (op, "package.native_searcher"))
+    if (!strcmp (op, "package.native_searcher") || !strcmp (op, "package.root_searcher"))
       {
         mulib_mune_bytes_ symbol = { NULL, 0, 0 };
-        const char *text; size_t k, size;
+        const char *text, *dash, *dot; size_t k, size, prefix;
+        int root = !strcmp (op, "package.root_searcher");
+        mulib_mune_value_t module = name;
+        text = mulib_mune_rt_cstring_ (s, name, 1); if (!text) return 0;
+        dot = strchr (text, '.');
+        if (root)
+          {
+            if (!dot) return 1;
+            module = mulib_mune_rt_string_ (s, text, (size_t)(dot - text)); if (s->status) return 0;
+          }
         table = mulib_mune_rt_field_ (package.as.object, "cpath", 5);
-        if (!mulib_mune_rt_searchpath_ (s, name, table, ".", "/", &path))
-          return !s->status && mulib_mune_result_push (out, mulib_mune_rt_string_ (s, "native module not found", 23));
+        if (!mulib_mune_rt_searchpath_ (s, module, table, ".", "/", &path))
+          return !s->status && mulib_mune_result_push (out, path);
         if (!mulib_mune_result_push (out, path)) return 0;
         text = mulib_mune_value_string (name, &size);
+        dash = strchr (text, '-'); prefix = dash ? (size_t)(dash - text) : size;
         (void)mulib_mune_rt_bytes_ (s, &symbol, "muneopen_", 9);
-        for (k = 0; k < size && !s->status; ++k)
+        for (k = 0; k < prefix && !s->status; ++k)
           { char c = text[k] == '.' ? '_' : text[k]; (void)mulib_mune_rt_bytes_ (s, &symbol, &c, 1); }
         if (!s->status) (void)mulib_mune_rt_loadnative_ (s, mulib_mune_value_string (path, NULL), symbol.data, out);
+        if (!s->status && dash && mulib_mune_result_get (out, 1).type == MULIB_MUNE_NIL
+            && mulib_mune_rt_equal_ (mulib_mune_result_get (out, 3), mulib_mune_rt_string_ (s, "init", 4)))
+          {
+            symbol.length = 9; out->count = 1;
+            for (k = prefix + 1; k < size && !s->status; ++k)
+              { char c = text[k] == '.' ? '_' : text[k]; (void)mulib_mune_rt_bytes_ (s, &symbol, &c, 1); }
+            if (!s->status) (void)mulib_mune_rt_loadnative_ (s, mulib_mune_value_string (path, NULL), symbol.data, out);
+          }
         (void)mulib_mune_rt_memory_ (s, symbol.data, symbol.capacity, 0);
         if (s->status) return 0;
         loader = mulib_mune_result_get (out, 1);
-        if (loader.type != MULIB_MUNE_FUNCTION) return mulib_mune_rt_raise_ (s, mulib_mune_result_get (out, 2));
+        if (loader.type != MULIB_MUNE_FUNCTION)
+          {
+            if (root && mulib_mune_rt_equal_ (mulib_mune_result_get (out, 3), mulib_mune_rt_string_ (s, "init", 4)))
+              { out->values[0] = mulib_mune_result_get (out, 2); out->count = 1; return !s->status; }
+            return mulib_mune_rt_raise_ (s, mulib_mune_result_get (out, 2));
+          }
         out->values[0] = loader; out->values[1] = path; out->count = 2; return 1;
       }
     if (!strcmp (op, "package.searchpath"))
       {
-        const char *sep = n > 2 && args[2].type == MULIB_MUNE_STRING ? mulib_mune_value_string (args[2], NULL) : ".";
-        const char *rep = n > 3 && args[3].type == MULIB_MUNE_STRING ? mulib_mune_value_string (args[3], NULL) : "/";
+        const char *sep = n > 2 && args[2].type != MULIB_MUNE_NIL ? mulib_mune_rt_cstring_ (s, args[2], 3) : ".";
+        const char *rep = n > 3 && args[3].type != MULIB_MUNE_NIL ? mulib_mune_rt_cstring_ (s, args[3], 4) : "/";
+        if (!sep || !rep) return 0;
         if (mulib_mune_rt_searchpath_ (s, name, mulib_mune_rt_arg_ (args, n, 1), sep, rep, &path)) return mulib_mune_result_push (out, path);
         if (s->status) return 0;
-        return mulib_mune_result_push (out, mulib_mune_rt_nil_ ()) && mulib_mune_result_push (out, mulib_mune_rt_string_ (s, "module file not found", 21));
+        return mulib_mune_result_push (out, mulib_mune_rt_nil_ ()) && mulib_mune_result_push (out, path);
       }
     if (!strcmp (op, "package.preload_searcher"))
       {
-        table = mulib_mune_rt_field_ (package.as.object, "preload", 7);
+        table = mulib_mune_rt_field_ (s->registry, "_PRELOAD", 8);
         if (!mulib_mune_rt_need_ (s, table, MULIB_MUNE_TABLE, 1)) return 0;
-        loader = mulib_mune_rt_rawget_ (table.as.object, name);
+        if (!mulib_mune_rt_index_ (s, table, name, &loader)) return 0;
         if (loader.type == MULIB_MUNE_NIL) return mulib_mune_result_push (out, mulib_mune_rt_string_ (s, "no preloaded module", 19));
         return mulib_mune_result_push (out, loader) && mulib_mune_result_push (out, mulib_mune_rt_string_ (s, ":preload:", 9));
       }
     if (!strcmp (op, "package.file_searcher"))
       {
-        mulib_mune_chunk_t *chunk; mulib_mune_error_t error;
+        mulib_mune_error_t error;
         table = mulib_mune_rt_field_ (package.as.object, "path", 4);
         if (!mulib_mune_rt_searchpath_ (s, name, table, ".", "/", &path))
-          return !s->status && mulib_mune_result_push (out, mulib_mune_rt_string_ (s, "module file not found", 21));
+          return !s->status && mulib_mune_result_push (out, path);
         if (!mulib_mune_result_push (out, path)) return 0;
         {
           FILE *file = fopen (mulib_mune_value_string (path, NULL), "rb"); unsigned char magic[8]; size_t got = 0;
@@ -5169,45 +5413,68 @@ extern "C"
           if (got == 8 && !memcmp (magic, "MUNEBC\0", 7) && (magic[7] == 1 || magic[7] == 2))
             {
               if (mulib_mune_load_bundle_file (s, mulib_mune_value_string (path, NULL), &error) != MULIB_MUNE_OK) return 0;
-              table = mulib_mune_rt_field_ (package.as.object, "preload", 7); loader = mulib_mune_rt_rawget_ (table.as.object, name);
+              table = mulib_mune_rt_field_ (s->registry, "_PRELOAD", 8);
+              if (!mulib_mune_rt_need_ (s, table, MULIB_MUNE_TABLE, 1)) return 0;
+              loader = mulib_mune_rt_rawget_ (table.as.object, name);
               if (loader.type == MULIB_MUNE_NIL) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "bundle does not contain requested module");
               out->values[0] = loader; return mulib_mune_result_push (out, path);
             }
         }
-        chunk = mulib_mune_parse_file (mulib_mune_value_string (path, NULL), NULL, &error);
-        if (!chunk) return mulib_mune_rt_error_ (s, error.code, "%s", error.message);
-        loader = mulib_mune_rt_loaded_ (s, chunk, mulib_mune_rt_object_ (s->globals));
-        out->values[0] = loader; return !s->status && mulib_mune_result_push (out, path);
+        if (!mulib_mune_rt_loadlib_ (s, "loadfile", &path, 1, out)) return 0;
+        loader = mulib_mune_result_get (out, 1);
+        if (loader.type != MULIB_MUNE_FUNCTION) return mulib_mune_rt_raise_ (s, mulib_mune_result_get (out, 2));
+        out->values[0] = loader; out->values[1] = path; out->count = 2; return 1;
       }
     if (!strcmp (op, "require"))
       {
-        mulib_mune_value_t loaded = mulib_mune_rt_field_ (package.as.object, "loaded", 6), searchers = mulib_mune_rt_field_ (package.as.object, "searchers", 9);
+        mulib_mune_value_t loaded = mulib_mune_rt_field_ (s->registry, "_LOADED", 7), searchers = mulib_mune_rt_field_ (package.as.object, "searchers", 9);
+        mulib_mune_bytes_ errors = { NULL, 0, 0 };
         int64_t index;
-        if (!mulib_mune_rt_need_ (s, loaded, MULIB_MUNE_TABLE, 1) || !mulib_mune_rt_need_ (s, searchers, MULIB_MUNE_TABLE, 1)) return 0;
-        if (!mulib_mune_rt_pin_ (s, loaded) || !mulib_mune_rt_pin_ (s, searchers)) return 0;
-        loader = mulib_mune_rt_rawget_ (loaded.as.object, name);
+        if (!mulib_mune_rt_need_ (s, loaded, MULIB_MUNE_TABLE, 1)) return 0;
+        if (!mulib_mune_rt_pin_ (s, loaded)) return 0;
+        if (!mulib_mune_rt_index_ (s, loaded, name, &loader)) return 0;
         if (mulib_mune_rt_truth_ (loader)) return mulib_mune_result_push (out, loader);
+        if (!mulib_mune_rt_need_ (s, searchers, MULIB_MUNE_TABLE, 1) || !mulib_mune_rt_pin_ (s, searchers)) return 0;
         for (index = 1; index < 10000; ++index)
           {
             mulib_mune_result_t *found, *value;
-            loader = mulib_mune_rt_rawget_ (searchers.as.object, mulib_mune_rt_integer_ (index));
+            if (!mulib_mune_rt_index_ (s, searchers, mulib_mune_rt_integer_ (index), &loader)) goto require_done;
             if (loader.type == MULIB_MUNE_NIL) break;
-            found = mulib_mune_rt_metacall_ (s, loader, name, name, name, 1); if (!found) return 0;
+            found = mulib_mune_rt_metacall_ (s, loader, name, name, name, 1); if (!found) goto require_done;
             loader = mulib_mune_result_get (found, 0); path = mulib_mune_result_get (found, 1);
-            if (loader.type != MULIB_MUNE_FUNCTION) { mulib_mune_result_destroy (found); continue; }
+            if (loader.type != MULIB_MUNE_FUNCTION)
+              {
+                if (mulib_mune_rt_text_ (s, loader, 0, &loader))
+                  {
+                    (void)mulib_mune_rt_bytes_ (s, &errors, "\n\t", 2);
+                    (void)mulib_mune_rt_bytes_ (s, &errors, (const char *)(loader.as.object + 1), loader.as.object->as.length);
+                  }
+                mulib_mune_result_destroy (found); if (s->status) goto require_done; continue;
+              }
             value = mulib_mune_rt_metacall_ (s, loader, name, path, path, 2);
-            if (!value) { mulib_mune_result_destroy (found); return 0; }
+            if (!value) { mulib_mune_result_destroy (found); goto require_done; }
             loader = mulib_mune_result_get (value, 0);
-            if (loader.type != MULIB_MUNE_NIL) (void)mulib_mune_rt_rawset_ (s, loaded.as.object, name, loader);
+            if (loader.type != MULIB_MUNE_NIL) (void)mulib_mune_rt_newindex_ (s, loaded, name, loader);
             else
               {
-                loader = mulib_mune_rt_rawget_ (loaded.as.object, name);
-                if (loader.type == MULIB_MUNE_NIL) { loader = mulib_mune_rt_boolean_ (1); (void)mulib_mune_rt_rawset_ (s, loaded.as.object, name, loader); }
+                if (!mulib_mune_rt_index_ (s, loaded, name, &loader)) { mulib_mune_result_destroy (value); mulib_mune_result_destroy (found); goto require_done; }
+                if (loader.type == MULIB_MUNE_NIL) { loader = mulib_mune_rt_boolean_ (1); (void)mulib_mune_rt_newindex_ (s, loaded, name, loader); }
               }
             (void)mulib_mune_result_push (out, loader); (void)mulib_mune_result_push (out, path);
-            mulib_mune_result_destroy (value); mulib_mune_result_destroy (found); return !s->status;
+            mulib_mune_result_destroy (value); mulib_mune_result_destroy (found); goto require_done;
           }
-        return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "module '%s' not found", mulib_mune_value_string (name, NULL));
+        if (!s->status)
+          {
+            mulib_mune_bytes_ message = { NULL, 0, 0 };
+            (void)mulib_mune_rt_bytes_ (s, &message, "module '", 8);
+            (void)mulib_mune_rt_bytes_ (s, &message, (const char *)(name.as.object + 1), name.as.object->as.length);
+            (void)mulib_mune_rt_bytes_ (s, &message, "' not found:", 12);
+            (void)mulib_mune_rt_bytes_ (s, &message, errors.data, errors.length);
+            if (!s->status) (void)mulib_mune_rt_raise_level_ (s, mulib_mune_rt_string_ (s, message.data, message.length), 1);
+            (void)mulib_mune_rt_memory_ (s, message.data, message.capacity, 0);
+          }
+      require_done:
+        (void)mulib_mune_rt_memory_ (s, errors.data, errors.capacity, 0); return !s->status;
       }
     return mulib_mune_rt_error_ (s, MULIB_MUNE_INVALID, "unknown package operation");
   }
@@ -5342,7 +5609,7 @@ extern "C"
     const unsigned char *bytes = (const unsigned char *)data;
     size_t at = 12, k, count;
     mulib_mune_result_t *roots = NULL;
-    mulib_mune_value_t package, preload;
+    mulib_mune_value_t preload;
     if (!s || !bytes || length < 12 || memcmp (bytes, "MUNEBC\0", 7) || (bytes[7] != 1 && bytes[7] != 2))
       { if (error) { error->code = MULIB_MUNE_INVALID; error->offset = 0; error->message = "invalid bundle header"; } return MULIB_MUNE_INVALID; }
     if (!s->running) s->status = MULIB_MUNE_OK;
@@ -5373,9 +5640,7 @@ extern "C"
         if (s->status || !mulib_mune_result_push (roots, name) || !mulib_mune_result_push (roots, fn)) goto done;
       }
     if (at != length) goto malformed;
-    package = mulib_mune_rt_field_ (s->globals, "package", 7);
-    if (!mulib_mune_rt_need_ (s, package, MULIB_MUNE_TABLE, 1)) goto done;
-    preload = mulib_mune_rt_field_ (package.as.object, "preload", 7);
+    preload = mulib_mune_rt_field_ (s->registry, "_PRELOAD", 8);
     if (!mulib_mune_rt_need_ (s, preload, MULIB_MUNE_TABLE, 1)) goto done;
     for (k = 0; k < roots->count; k += 2) if (!mulib_mune_rt_rawset_ (s, preload.as.object, roots->values[k], roots->values[k + 1])) goto done;
     goto done;
@@ -5432,7 +5697,7 @@ extern "C"
             if (value < 128) { encoded[0] = (unsigned char)value; used = 1; }
             else
               {
-                unsigned char reverse[6]; limit = 31;
+                unsigned char reverse[6]; limit = 63;
                 do { reverse[used++] = (unsigned char)(0x80 | (value & 63)); value >>= 6; limit >>= 1; } while (value > limit);
                 encoded[0] = (unsigned char)((0xffu << (7 - used)) | value);
                 for (j = 0; j < used; ++j) encoded[j + 1] = reverse[used - j - 1];
@@ -5449,17 +5714,22 @@ extern "C"
       {
         mulib_mune_object_t *f = mulib_mune_rt_allocate_ (s, MULIB_MUNE_FUNCTION, 0); if (!f) return 0;
         f->as.function.native = mulib_mune_rt_builtin_; f->as.function.user = (void *)"utf8.iterator";
+        f->as.function.native_upvalues = 1;
         f->as.function.context[0] = n > 1 ? args[1] : mulib_mune_rt_boolean_ (0);
         return mulib_mune_result_push (out, mulib_mune_rt_object_ (f)) && mulib_mune_result_push (out, a) && mulib_mune_result_push (out, mulib_mune_rt_integer_ (0));
       }
     if (!strcmp (op, "iterator"))
       {
-        if (!mulib_mune_rt_need_int_ (s, mulib_mune_rt_arg_ (args, n, 1), &begin, 2) || begin < 0) return 0;
+        if (!mulib_mune_rt_need_int_ (s, mulib_mune_rt_arg_ (args, n, 1), &begin, 2)) return 0;
+        if (begin < 0) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid UTF-8 iterator position");
         at = (size_t)begin;
-        if (at) while (at < length && (text[at] & 0xc0) == 0x80) ++at;
+        if (at) while (at < length && (text[at] & 0xc0) == 0x80) { if (!mulib_mune_rt_work_ (s, 1)) return 0; ++at; }
         if (at >= length) return 1;
         lax = mulib_mune_rt_truth_ (s->frame->function.as.object->as.function.context[0]);
-        if (!mulib_mune_rt_utfdecode_ (text + at, length - at, &code, lax)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid UTF-8 code");
+        size = mulib_mune_rt_utfdecode_ (text + at, length - at, &code, lax);
+        if (!size || (at + size < length && (text[at + size] & 0xc0) == 0x80))
+          return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid UTF-8 code");
+        if (!mulib_mune_rt_work_ (s, size)) return 0;
         return mulib_mune_result_push (out, mulib_mune_rt_integer_ ((int64_t)at + 1)) && mulib_mune_result_push (out, mulib_mune_rt_integer_ (code));
       }
     if (!strcmp (op, "offset"))
@@ -5470,13 +5740,13 @@ extern "C"
         begin = mulib_mune_rt_relative_ (begin, length);
         if (begin < 1 || (uint64_t)begin > length + 1) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "initial position out of range");
         at = (size_t)begin - 1;
-        if (!amount) { while (at && at < length && (text[at] & 0xc0) == 0x80) --at; }
+        if (!amount) { while (at && at < length && (text[at] & 0xc0) == 0x80) { if (!mulib_mune_rt_work_ (s, 1)) return 0; --at; } }
         else
           {
             if (at < length && (text[at] & 0xc0) == 0x80) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "initial position is a continuation byte");
             if (amount > 0)
-              { --amount; while (amount > 0 && at < length) { do { ++at; } while (at < length && (text[at] & 0xc0) == 0x80); --amount; } }
-            else while (amount < 0 && at) { do { --at; } while (at && (text[at] & 0xc0) == 0x80); ++amount; }
+              { --amount; while (amount > 0 && at < length) { do { if (!mulib_mune_rt_work_ (s, 1)) return 0; ++at; } while (at < length && (text[at] & 0xc0) == 0x80); --amount; } }
+            else while (amount < 0 && at) { do { if (!mulib_mune_rt_work_ (s, 1)) return 0; --at; } while (at && (text[at] & 0xc0) == 0x80); ++amount; }
           }
         return mulib_mune_result_push (out, amount ? mulib_mune_rt_nil_ () : mulib_mune_rt_integer_ ((int64_t)at + 1));
       }
@@ -5485,7 +5755,9 @@ extern "C"
     if (n > 2 && args[2].type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, args[2], &end, 3)) return 0;
     if (n > 3) lax = mulib_mune_rt_truth_ (args[3]);
     begin = mulib_mune_rt_relative_ (begin, length); end = mulib_mune_rt_relative_ (end, length);
-    if (begin < 1 || (uint64_t)begin > length + 1 || end > (int64_t)length) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "UTF-8 range out of bounds");
+    if (begin < 1 || (!strcmp (op, "len") && (uint64_t)begin > length + 1) || end > (int64_t)length)
+      return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "UTF-8 range out of bounds");
+    if (end >= begin && !mulib_mune_rt_work_ (s, (uint64_t)(end - begin + 1))) return 0;
     for (at = (size_t)begin - 1; end > 0 && at < (size_t)end; at += size)
       {
         size = mulib_mune_rt_utfdecode_ (text + at, length - at, &code, lax);
@@ -5521,23 +5793,33 @@ extern "C"
            && mulib_mune_result_push (out, mulib_mune_rt_integer_ (error));
   }
   static int
-  mulib_mune_rt_tmfield_ (mulib_mune_state_t *s, mulib_mune_object_t *table, const char *name, int default_value, int required, int *out)
+  mulib_mune_rt_tmfield_ (mulib_mune_state_t *s, mulib_mune_object_t *table, const char *name, int default_value, int required, int delta, int *out)
   {
-    mulib_mune_value_t v = mulib_mune_rt_field_ (table, name, strlen (name)); int64_t i;
+    mulib_mune_value_t v, key = mulib_mune_rt_string_ (s, name, strlen (name)); int64_t i;
+    if (s->status || !mulib_mune_rt_index_ (s, mulib_mune_rt_object_ (table), key, &v)) return 0;
     if (v.type == MULIB_MUNE_NIL && !required) { *out = default_value; return 1; }
     if (!mulib_mune_rt_need_int_ (s, v, &i, 1)) return 0;
-    if (i < INT_MIN / 2 || i > INT_MAX / 2) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "date field out of range");
-    *out = (int)i; return 1;
+    if (i < (int64_t)INT_MIN + delta || i > (int64_t)INT_MAX + delta) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "date field out of range");
+    *out = (int)(i - delta); return 1;
   }
   static int
   mulib_mune_rt_date_table_ (mulib_mune_state_t *s, mulib_mune_object_t *t, const struct tm *tm)
   {
     static const char *const fields[] = {"year","month","day","hour","min","sec","wday","yday"};
-    int values[8]; size_t k;
-    values[0] = tm->tm_year + 1900; values[1] = tm->tm_mon + 1; values[2] = tm->tm_mday; values[3] = tm->tm_hour;
+    int64_t values[8]; size_t k;
+    values[0] = (int64_t)tm->tm_year + 1900; values[1] = tm->tm_mon + 1; values[2] = tm->tm_mday; values[3] = tm->tm_hour;
     values[4] = tm->tm_min; values[5] = tm->tm_sec; values[6] = tm->tm_wday + 1; values[7] = tm->tm_yday + 1;
-    for (k = 0; k < 8; ++k) if (!mulib_mune_rt_setfield_ (s, t, fields[k], strlen (fields[k]), mulib_mune_rt_integer_ (values[k]))) return 0;
-    return tm->tm_isdst < 0 || mulib_mune_rt_setfield_ (s, t, "isdst", 5, mulib_mune_rt_boolean_ (tm->tm_isdst));
+    for (k = 0; k < 8; ++k)
+      {
+        mulib_mune_value_t key = mulib_mune_rt_string_ (s, fields[k], strlen (fields[k]));
+        if (s->status || !mulib_mune_rt_newindex_ (s, mulib_mune_rt_object_ (t), key, mulib_mune_rt_integer_ (values[k]))) return 0;
+      }
+    if (tm->tm_isdst >= 0)
+      {
+        mulib_mune_value_t key = mulib_mune_rt_string_ (s, "isdst", 5);
+        if (s->status || !mulib_mune_rt_newindex_ (s, mulib_mune_rt_object_ (t), key, mulib_mune_rt_boolean_ (tm->tm_isdst))) return 0;
+      }
+    return 1;
   }
   static int
   mulib_mune_rt_os_ (mulib_mune_state_t *s, const char *op, const mulib_mune_value_t *args, size_t n, mulib_mune_result_t *out)
@@ -5554,13 +5836,16 @@ extern "C"
             struct tm tm; mulib_mune_value_t dst;
             if (!mulib_mune_rt_need_ (s, a, MULIB_MUNE_TABLE, 1)) return 0;
             memset (&tm, 0, sizeof (tm));
-            if (!mulib_mune_rt_tmfield_ (s, a.as.object, "year", 0, 1, &tm.tm_year)
-                || !mulib_mune_rt_tmfield_ (s, a.as.object, "month", 0, 1, &tm.tm_mon)
-                || !mulib_mune_rt_tmfield_ (s, a.as.object, "day", 0, 1, &tm.tm_mday)
-                || !mulib_mune_rt_tmfield_ (s, a.as.object, "hour", 12, 0, &tm.tm_hour)
-                || !mulib_mune_rt_tmfield_ (s, a.as.object, "min", 0, 0, &tm.tm_min)
-                || !mulib_mune_rt_tmfield_ (s, a.as.object, "sec", 0, 0, &tm.tm_sec)) return 0;
-            tm.tm_year -= 1900; --tm.tm_mon; dst = mulib_mune_rt_field_ (a.as.object, "isdst", 5);
+            if (!mulib_mune_rt_tmfield_ (s, a.as.object, "year", 0, 1, 1900, &tm.tm_year)
+                || !mulib_mune_rt_tmfield_ (s, a.as.object, "month", 0, 1, 1, &tm.tm_mon)
+                || !mulib_mune_rt_tmfield_ (s, a.as.object, "day", 0, 1, 0, &tm.tm_mday)
+                || !mulib_mune_rt_tmfield_ (s, a.as.object, "hour", 12, 0, 0, &tm.tm_hour)
+                || !mulib_mune_rt_tmfield_ (s, a.as.object, "min", 0, 0, 0, &tm.tm_min)
+                || !mulib_mune_rt_tmfield_ (s, a.as.object, "sec", 0, 0, 0, &tm.tm_sec)) return 0;
+            {
+              mulib_mune_value_t key = mulib_mune_rt_string_ (s, "isdst", 5);
+              if (s->status || !mulib_mune_rt_index_ (s, a, key, &dst)) return 0;
+            }
             tm.tm_isdst = dst.type == MULIB_MUNE_NIL ? -1 : mulib_mune_rt_truth_ (dst);
             value = mktime (&tm); if (!mulib_mune_rt_date_table_ (s, a.as.object, &tm)) return 0;
           }
@@ -5570,21 +5855,40 @@ extern "C"
     if (!strcmp (op, "date"))
       {
         struct tm *value, copy; time_t timestamp = time (NULL); int64_t number;
-        const char *format = a.type == MULIB_MUNE_NIL ? "%c" : mulib_mune_rt_cstring_ (s, a, 1);
-        if (!format) return 0;
+        const char *format = "%c"; size_t format_length = 2;
+        if (a.type != MULIB_MUNE_NIL)
+          {
+            if (!mulib_mune_rt_text_ (s, a, 0, &a)) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "date format string expected");
+            if (!mulib_mune_rt_pin_ (s, a)) return 0;
+            format = mulib_mune_value_string (a, &format_length);
+          }
         if (b.type != MULIB_MUNE_NIL) { if (!mulib_mune_rt_need_int_ (s, b, &number, 2)) return 0; timestamp = (time_t)number; }
-        if (*format == '!') { ++format; value = gmtime (&timestamp); } else value = localtime (&timestamp);
+        if (format_length && *format == '!') { ++format; --format_length; value = gmtime (&timestamp); } else value = localtime (&timestamp);
         if (!value) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "date outside supported range");
         copy = *value;
-        if (!strcmp (format, "*t"))
+        if (format_length == 2 && !memcmp (format, "*t", 2))
           { mulib_mune_object_t *t = mulib_mune_rt_allocate_ (s, MULIB_MUNE_TABLE, 0); return t && mulib_mune_rt_date_table_ (s, t, &copy) && mulib_mune_result_push (out, mulib_mune_rt_object_ (t)); }
         else
           {
-            char buffer[4096]; size_t length;
-            if (!*format) return mulib_mune_result_push (out, mulib_mune_rt_string_ (s, "", 0));
-            length = strftime (buffer, sizeof (buffer), format, &copy);
-            if (!length) return mulib_mune_rt_error_ (s, MULIB_MUNE_LIMIT, "formatted date too long");
-            return mulib_mune_result_push (out, mulib_mune_rt_string_ (s, buffer, length));
+            mulib_mune_bytes_ bytes = { NULL, 0, 0 }; size_t at;
+            for (at = 0; at < format_length && !s->status; ++at)
+              {
+                char spec[5] = { 'x', '%', 0, 0, 0 }, buffer[4096]; size_t used = 2, length;
+                const char *allowed = "aAbBcCdDeFgGhHIjmMnprRStTuUVwWxXyYzZ%";
+                if (format[at] != '%') { (void)mulib_mune_rt_bytes_ (s, &bytes, format + at, 1); continue; }
+                if (++at < format_length && (format[at] == 'E' || format[at] == 'O'))
+                  { allowed = format[at] == 'E' ? "cCxXyY" : "deHImMSuUVwWy"; spec[used++] = format[at++]; }
+                if (at == format_length || !format[at] || !strchr (allowed, format[at]))
+                  { mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid date conversion specifier"); break; }
+                spec[used] = format[at];
+                /* A sentinel distinguishes a valid empty conversion (e.g. Z)
+                 * from strftime's insufficient-capacity return value. */
+                length = strftime (buffer, sizeof (buffer), spec, &copy);
+                if (!length) { mulib_mune_rt_error_ (s, MULIB_MUNE_LIMIT, "formatted date conversion too long"); break; }
+                (void)mulib_mune_rt_bytes_ (s, &bytes, buffer + 1, length - 1);
+              }
+            if (!s->status) (void)mulib_mune_result_push (out, mulib_mune_rt_string_ (s, bytes.data, bytes.length));
+            (void)mulib_mune_rt_memory_ (s, bytes.data, bytes.capacity, 0); return !s->status;
           }
       }
     if (!strcmp (op, "difftime"))
@@ -5706,7 +6010,8 @@ extern "C"
     mulib_mune_value_t io = mulib_mune_rt_field_ (s->globals, "io", 2); size_t k;
     if (!meta) return 0;
     s->file_metatable = meta;
-    if (!mulib_mune_rt_setfield_ (s, meta, "__index", 7, mulib_mune_rt_object_ (meta))
+    if (!mulib_mune_rt_setfield_ (s, s->registry, "FILE*", 5, mulib_mune_rt_object_ (meta))
+        || !mulib_mune_rt_setfield_ (s, meta, "__index", 7, mulib_mune_rt_object_ (meta))
         || !mulib_mune_rt_setfield_ (s, meta, "__name", 6, mulib_mune_rt_string_ (s, "FILE*", 5))
         || !mulib_mune_rt_install_ (s, meta, "__close", "file.finalize")
         || !mulib_mune_rt_install_ (s, meta, "__gc", "file.finalize")
@@ -5722,9 +6027,9 @@ extern "C"
   {
     mulib_mune_bytes_ bytes = { NULL, 0, 0 };
     mulib_mune_value_t value;
-    int c, hex = 0;
+    int c, hex = 0, too_long = 0;
     do { c = fgetc (file); } while (c != EOF && mulib_mune_space_ ((unsigned char)c));
-#define MULIB_MUNE_READ_DIGIT_() do { char byte = (char)c; if (!mulib_mune_rt_bytes_ (s, &bytes, &byte, 1)) goto done; c = fgetc (file); } while (0)
+#define MULIB_MUNE_READ_DIGIT_() do { char byte = (char)c; if (bytes.length == 200) { too_long = 1; goto number_finished; } if (!mulib_mune_rt_bytes_ (s, &bytes, &byte, 1)) goto done; c = fgetc (file); } while (0)
     if (c == '-' || c == '+') MULIB_MUNE_READ_DIGIT_ ();
     if (c == '0') { MULIB_MUNE_READ_DIGIT_ (); if (c == 'x' || c == 'X') { hex = 1; MULIB_MUNE_READ_DIGIT_ (); } }
     while (c != EOF && (hex ? mulib_mune_hex_ ((unsigned char)c) >= 0 : mulib_mune_digit_ ((unsigned char)c))) MULIB_MUNE_READ_DIGIT_ ();
@@ -5738,8 +6043,9 @@ extern "C"
         MULIB_MUNE_READ_DIGIT_ (); if (c == '-' || c == '+') MULIB_MUNE_READ_DIGIT_ ();
         while (c != EOF && mulib_mune_digit_ ((unsigned char)c)) MULIB_MUNE_READ_DIGIT_ ();
       }
+  number_finished:
     if (c != EOF) (void)ungetc (c, file);
-    if (!bytes.length || !mulib_mune_rt_parse_number_ (bytes.data, bytes.length, &value)) value = mulib_mune_rt_nil_ ();
+    if (too_long || !bytes.length || !mulib_mune_rt_parse_number_ (bytes.data, bytes.length, &value)) value = mulib_mune_rt_nil_ ();
     (void)mulib_mune_result_push (out, value);
   done:
     (void)mulib_mune_rt_memory_ (s, bytes.data, bytes.capacity, 0); return !s->status;
@@ -5749,14 +6055,14 @@ extern "C"
   mulib_mune_rt_read_ (mulib_mune_state_t *s, FILE *file, mulib_mune_value_t format, mulib_mune_result_t *out)
   {
     mulib_mune_bytes_ bytes = { NULL, 0, 0 }; int c = EOF, eof = 0;
-    int64_t amount = INT64_MAX; const char *what = "l";
+    int64_t amount = INT64_MAX; const char *what = "l"; int count = 0;
     if (format.type == MULIB_MUNE_INTEGER || format.type == MULIB_MUNE_NUMBER)
-      { if (!mulib_mune_rt_need_int_ (s, format, &amount, 1) || amount < 0) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid read count"); what = "bytes"; }
+      { if (!mulib_mune_rt_need_int_ (s, format, &amount, 1) || amount < 0) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid read count"); count = 1; }
     else if (format.type != MULIB_MUNE_NIL)
       { what = mulib_mune_rt_cstring_ (s, format, 1); if (!what) return 0; if (*what == '*') ++what; }
-    if (strcmp (what, "l") && strcmp (what, "L") && strcmp (what, "a") && strcmp (what, "n") && strcmp (what, "bytes"))
+    if (!count && (!*what || !strchr ("lLan", *what)))
       return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid read format");
-    if (!strcmp (what, "n")) return mulib_mune_rt_read_number_ (s, file, out);
+    if (!count && *what == 'n') return mulib_mune_rt_read_number_ (s, file, out);
     if (!amount)
       {
         c = fgetc (file); eof = c == EOF; if (!eof) (void)ungetc (c, file);
@@ -5766,11 +6072,11 @@ extern "C"
         while ((uint64_t)amount > bytes.length && (c = fgetc (file)) != EOF)
           {
             char byte = (char)c;
-            if (c == '\n' && !strcmp (what, "l")) break;
+            if (c == '\n' && !count && *what == 'l') break;
             if (!mulib_mune_rt_bytes_ (s, &bytes, &byte, 1)) break;
-            if (c == '\n' && !strcmp (what, "L")) break;
+            if (c == '\n' && !count && *what == 'L') break;
           }
-        eof = c == EOF && !bytes.length && strcmp (what, "a");
+        eof = c == EOF && !bytes.length && (count || *what != 'a');
       }
     if (!s->status)
       {
@@ -5789,7 +6095,7 @@ extern "C"
     FILE *stream;
     size_t start = method ? 1 : 0, k;
     if (!strcmp (op, "type"))
-      return mulib_mune_result_push (out, a.type != MULIB_MUNE_USERDATA || a.as.object->userdata_tag != 1 ? mulib_mune_rt_nil_ () : mulib_mune_rt_string_ (s, a.as.object->as.file.closed ? "closed file" : "file", a.as.object->as.file.closed ? 11 : 4));
+      { if (!n) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "value expected"); return mulib_mune_result_push (out, a.type != MULIB_MUNE_USERDATA || a.as.object->userdata_tag != 1 ? mulib_mune_rt_nil_ () : mulib_mune_rt_string_ (s, a.as.object->as.file.closed ? "closed file" : "file", a.as.object->as.file.closed ? 11 : 4)); }
     if (!strcmp (op, "popen"))
       {
         const char *command = mulib_mune_rt_cstring_ (s, a, 1), *mode = n > 1 && args[1].type != MULIB_MUNE_NIL ? mulib_mune_rt_cstring_ (s, args[1], 2) : "r";
@@ -5852,13 +6158,14 @@ extern "C"
         if (n <= 1 && !mulib_mune_rt_rawset_ (s, formats, mulib_mune_rt_integer_ (1), mulib_mune_rt_string_ (s, "l", 1))) return 0;
         for (k = 1; k < n; ++k) if (!mulib_mune_rt_rawset_ (s, formats, mulib_mune_rt_integer_ ((int64_t)k), args[k])) return 0;
         closure->as.function.native = mulib_mune_rt_builtin_; closure->as.function.user = (void *)"io.iterator";
+        closure->as.function.native_upvalues = 3;
         closure->as.function.context[0] = file; closure->as.function.context[1] = mulib_mune_rt_object_ (formats); closure->as.function.context[2] = mulib_mune_rt_boolean_ (owned);
         closure->as.function.cursor = n > 1 ? n - 1 : 1;
         if (!mulib_mune_result_push (out, mulib_mune_rt_object_ (closure))) return 0;
         return !owned || (mulib_mune_result_push (out, mulib_mune_rt_nil_ ()) && mulib_mune_result_push (out, mulib_mune_rt_nil_ ()) && mulib_mune_result_push (out, file));
       }
     if (!strcmp (op, "iterator")) file = s->frame->function.as.object->as.function.context[0];
-    else file = method || (!strcmp (op, "close") && a.type != MULIB_MUNE_NIL) ? a
+    else file = method || (!strcmp (op, "close") && n) ? a
                 : !strcmp (op, "read") ? s->input : s->output;
     if (!mulib_mune_rt_need_ (s, file, MULIB_MUNE_USERDATA, 1)) return 0;
     if (file.as.object->userdata_tag != 1) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "file expected");
@@ -5907,7 +6214,7 @@ extern "C"
         if (!mode || (n > 2 && args[2].type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, args[2], &size, 3))) return 0;
         how = !strcmp (mode, "no") ? _IONBF : !strcmp (mode, "full") ? _IOFBF : !strcmp (mode, "line") ? _IOLBF : -1;
         if (how == -1 || size < 0 || (uint64_t)size > s->limits.memory_bytes) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "invalid buffering arguments");
-        return mulib_mune_rt_file_result_ (s, out, setvbuf (stream, NULL, how, (size_t)size) == 0, errno);
+        { int result = setvbuf (stream, NULL, how, (size_t)size); return mulib_mune_rt_file_result_ (s, out, result == 0, errno); }
       }
     if (!strcmp (op, "write"))
       {
@@ -5923,6 +6230,7 @@ extern "C"
       {
         mulib_mune_object_t *closure = s->frame->function.as.object;
         size_t formats = !strcmp (op, "iterator") ? closure->as.function.cursor : n > start ? n - start : 1;
+        if (!strcmp (op, "iterator") && !mulib_mune_rt_need_ (s, closure->as.function.context[1], MULIB_MUNE_TABLE, 1)) return 0;
         for (k = 0; k < formats; ++k)
           {
             mulib_mune_value_t format = !strcmp (op, "iterator") ? mulib_mune_rt_rawget_ (closure->as.function.context[1].as.object, mulib_mune_rt_integer_ ((int64_t)k + 1)) : mulib_mune_rt_arg_ (args, n, start + k);
@@ -5931,7 +6239,11 @@ extern "C"
             if (!mulib_mune_rt_read_ (s, stream, format, out)) return 0;
             if (mulib_mune_result_get (out, out->count - 1).type == MULIB_MUNE_NIL) break;
           }
-        if (ferror (stream)) { out->count = 0; return mulib_mune_rt_file_result_ (s, out, 0, errno); }
+        if (ferror (stream))
+          {
+            if (!strcmp (op, "iterator")) return mulib_mune_rt_error_ (s, MULIB_MUNE_IO, "%s", strerror (errno));
+            out->count = 0; return mulib_mune_rt_file_result_ (s, out, 0, errno);
+          }
         if (!strcmp (op, "iterator") && mulib_mune_result_get (out, 0).type == MULIB_MUNE_NIL && mulib_mune_rt_truth_ (closure->as.function.context[2]))
           { (void)fclose (stream); file.as.object->as.file.stream = NULL; file.as.object->as.file.closed = 1; }
         return 1;
@@ -6068,14 +6380,15 @@ extern "C"
         if (!strcmp (op, "create")) return mulib_mune_result_push (out, mulib_mune_rt_object_ (o));
         wrapper = mulib_mune_rt_allocate_ (s, MULIB_MUNE_FUNCTION, 0); if (!wrapper) return 0;
         wrapper->as.function.native = mulib_mune_rt_builtin_; wrapper->as.function.user = (void *)"coroutine.wrapped";
+        wrapper->as.function.native_upvalues = 1;
         wrapper->as.function.context[0] = mulib_mune_rt_object_ (o); return mulib_mune_result_push (out, mulib_mune_rt_object_ (wrapper));
       }
     if (!strcmp (op, "running"))
       return mulib_mune_result_push (out, mulib_mune_rt_object_ (s->current_thread)) && mulib_mune_result_push (out, mulib_mune_rt_boolean_ (s->current_thread == s->main_thread));
     if (!strcmp (op, "isyieldable"))
       {
-        if (a.type == MULIB_MUNE_NIL) a = mulib_mune_rt_object_ (s->current_thread);
-        return mulib_mune_rt_need_ (s, a, MULIB_MUNE_THREAD, 1) && mulib_mune_result_push (out, mulib_mune_rt_boolean_ (a.as.object != s->main_thread && !s->collecting));
+        if (!n) a = mulib_mune_rt_object_ (s->current_thread);
+        return mulib_mune_rt_need_ (s, a, MULIB_MUNE_THREAD, 1) && mulib_mune_result_push (out, mulib_mune_rt_boolean_ (a.as.object != s->main_thread && !s->collecting && !a.as.object->as.thread->in_hook));
       }
     if (!strcmp (op, "yield"))
       {
@@ -6363,24 +6676,30 @@ extern "C"
     mulib_mune_value_t a = mulib_mune_rt_arg_ (args, n, 0), fn = mulib_mune_rt_nil_ ();
     mulib_mune_chunk_t *chunk = NULL;
     mulib_mune_error_t error = { MULIB_MUNE_OK, 0, "ok" };
-    const char *source = NULL, *mode = "bt", *name = NULL;
-    size_t length = 0;
+    const char *source = NULL, *mode = "bt", *name = NULL, *image_name = NULL;
+    size_t length = 0, image_name_length = 0;
     uint64_t offset = UINT64_MAX;
     unsigned method = 0;
-    int file = strcmp (op, "load") != 0, dump = !strcmp (op, "dump"), execute = !strcmp (op, "dofile");
+    int file = strcmp (op, "load") != 0, dump = !strcmp (op, "dump"), execute = !strcmp (op, "dofile"), binary = 0, stripped = 0;
     mulib_mune_value_t env = n > (file ? 2u : 3u) ? args[file ? 2 : 3] : mulib_mune_rt_object_ (s->globals);
     if (dump)
       {
         mulib_mune_write_context_ context = { s, &bytes };
         const mulib_ast_t *body, *root;
+        const mulib_mune_chunk_t *owner;
         if (!mulib_mune_rt_need_ (s, a, MULIB_MUNE_FUNCTION, 1)) return 0;
         if (a.as.object->as.function.native) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "cannot dump a native function");
-        body = a.as.object->as.function.body; root = a.as.object->as.function.chunk->walker->root;
+        owner = a.as.object->as.function.chunk; body = a.as.object->as.function.body; root = owner->walker->root;
         method = (unsigned)a.as.object->as.function.method;
-        if (mulib_mune_rt_bytes_ (s, &bytes, "\033MUNE\0\1\0", 8)
+        stripped = owner->stripped || (n > 1 && mulib_mune_rt_truth_ (args[1]));
+        image_name = !stripped && owner->source_name ? owner->source_name : ""; image_name_length = strlen (image_name);
+        if (mulib_mune_rt_bytes_ (s, &bytes, "\033MUNE\0\2\0", 8)
             && mulib_mune_bundle_uint_ (mulib_mune_rt_buffer_write_, &context, body == root ? UINT64_MAX : body->offset, 8)
             && mulib_mune_bundle_uint_ (mulib_mune_rt_buffer_write_, &context, root->length, 8)
             && mulib_mune_bundle_uint_ (mulib_mune_rt_buffer_write_, &context, method, 1)
+            && mulib_mune_bundle_uint_ (mulib_mune_rt_buffer_write_, &context, (unsigned)stripped, 1)
+            && mulib_mune_bundle_uint_ (mulib_mune_rt_buffer_write_, &context, image_name_length, 8)
+            && mulib_mune_rt_bytes_ (s, &bytes, image_name, image_name_length)
             && mulib_mune_rt_bytes_ (s, &bytes, root->text, root->length))
           (void)mulib_mune_result_push (out, mulib_mune_rt_string_ (s, bytes.data, bytes.length));
         goto done;
@@ -6448,22 +6767,38 @@ extern "C"
       }
     if (length && (unsigned char)source[0] == 27)
       {
+        size_t header = 25;
+        uint64_t size;
+        binary = 1;
         if (!strchr (mode, 'b')) { error.code = MULIB_MUNE_SYNTAX; error.message = "binary chunk prohibited by mode"; goto failed; }
-        if (length < 25 || memcmp (source, "\033MUNE\0\1\0", 8)
-            || mulib_mune_bundle_readuint_ ((const unsigned char *)source + 16, 8) != length - 25 || (unsigned char)source[24] > 1)
+        if (length < 25 || memcmp (source, "\033MUNE\0", 6) || (source[6] != 1 && source[6] != 2) || source[7] || (unsigned char)source[24] > 1)
           { error.code = MULIB_MUNE_SYNTAX; error.message = "invalid Mune function image"; goto failed; }
         offset = mulib_mune_bundle_readuint_ ((const unsigned char *)source + 8, 8); method = (unsigned char)source[24];
-        source += 25; length -= 25;
+        size = mulib_mune_bundle_readuint_ ((const unsigned char *)source + 16, 8);
+        if (source[6] == 2)
+          {
+            uint64_t namesize;
+            if (length < 34 || (unsigned char)source[25] > 1)
+              { error.code = MULIB_MUNE_SYNTAX; error.message = "invalid function metadata"; goto failed; }
+            stripped = (unsigned char)source[25]; namesize = mulib_mune_bundle_readuint_ ((const unsigned char *)source + 26, 8);
+            if (namesize > length - 34 || memchr (source + 34, 0, (size_t)namesize))
+              { error.code = MULIB_MUNE_SYNTAX; error.message = "invalid function source name"; goto failed; }
+            image_name = source + 34; image_name_length = (size_t)namesize; header = 34 + image_name_length;
+          }
+        if (size != length - header) { error.code = MULIB_MUNE_SYNTAX; error.message = "invalid function source size"; goto failed; }
+        source += header; length -= header;
       }
     else if (!strchr (mode, 't')) { error.code = MULIB_MUNE_SYNTAX; error.message = "text chunk prohibited by mode"; goto failed; }
     chunk = mulib_mune_parse (source, length, NULL, &error); if (!chunk) goto failed;
+    chunk->stripped = stripped;
+    if (binary) { name = image_name_length ? image_name : NULL; file = 0; }
     if (name)
       {
-        size_t size = strlen (name);
+        size_t size = binary ? image_name_length : strlen (name);
         chunk->source_name = (char *)malloc (size + 2);
         if (!chunk->source_name) { mulib_mune_rt_error_ (s, MULIB_MUNE_MEMORY, "source name allocation failed"); goto done; }
         if (file) { chunk->source_name[0] = '@'; memcpy (chunk->source_name + 1, name, size + 1); }
-        else memcpy (chunk->source_name, name, size + 1);
+        else { memcpy (chunk->source_name, name, size); chunk->source_name[size] = 0; }
       }
     if (offset == UINT64_MAX) { fn = mulib_mune_rt_loaded_ (s, chunk, env); chunk = NULL; }
     else
@@ -6727,7 +7062,7 @@ extern "C"
   static const char *
   mulib_mune_rt_source_name_ (const mulib_mune_chunk_t *chunk)
   {
-    return !chunk ? "=[C]" : chunk->source_name ? chunk->source_name : chunk->walker->root->text;
+    return !chunk ? "=[C]" : chunk->stripped ? "=?" : chunk->source_name ? chunk->source_name : chunk->walker->root->text;
   }
   static int
   mulib_mune_rt_active_lines_ (mulib_mune_state_t *s, const mulib_ast_t *n, mulib_mune_chunk_t *chunk, mulib_mune_object_t *table)
@@ -6748,6 +7083,17 @@ extern "C"
         || !strcmp (op, "gethook") || !strcmp (op, "sethook") || !strcmp (op, "traceback")))
       { thread = a.as.object; ++args; --n; a = mulib_mune_rt_arg_ (args, n, 0); }
     b = mulib_mune_rt_arg_ (args, n, 1); c = mulib_mune_rt_arg_ (args, n, 2);
+    if (!strcmp (op, "setcstacklimit"))
+      {
+        int64_t limit; size_t old = s->limits.call_depth;
+        if (!mulib_mune_rt_need_int_ (s, a, &limit, 1)) return 0;
+        /* Retain the deprecated 5.4 compatibility entry without permitting a
+         * script to exceed the embedding application's call-depth ceiling. */
+        if (s->current_thread != s->main_thread || limit <= 0 || (uint64_t)limit <= s->depth || (uint64_t)limit > s->call_ceiling)
+          return mulib_mune_result_push (out, mulib_mune_rt_boolean_ (0));
+        s->limits.call_depth = (size_t)limit;
+        return mulib_mune_result_push (out, mulib_mune_rt_integer_ ((int64_t)old));
+      }
     if (!strcmp (op, "getregistry"))
       {
         if (!s->registry)
@@ -6776,6 +7122,7 @@ extern "C"
       {
         int set = !strcmp (op, "setuservalue"); int64_t index = 1;
         mulib_mune_value_t v = set ? c : b;
+        if (set && (n < 2 || !mulib_mune_rt_need_ (s, a, MULIB_MUNE_USERDATA, 1))) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "userdata and value expected");
         if (v.type != MULIB_MUNE_NIL && !mulib_mune_rt_need_int_ (s, v, &index, set ? 3 : 2)) return 0;
         if (a.type != MULIB_MUNE_USERDATA || a.as.object->userdata_tag != 2 || index < 1)
           return mulib_mune_result_push (out, mulib_mune_rt_nil_ ());
@@ -6787,7 +7134,21 @@ extern "C"
     if (!strcmp (op, "getupvalue") || !strcmp (op, "setupvalue") || !strcmp (op, "upvalueid") || !strcmp (op, "upvaluejoin"))
       {
         int64_t index; mulib_mune_object_t *e, *cell;
+        if (!strcmp (op, "setupvalue") && n < 3) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "third value expected");
         if (!mulib_mune_rt_need_ (s, a, MULIB_MUNE_FUNCTION, 1) || !mulib_mune_rt_need_int_ (s, b, &index, 2)) return 0;
+        if (a.as.object->as.function.native && strcmp (op, "upvaluejoin") && index > 0 && (uint64_t)index <= a.as.object->as.function.native_upvalues)
+          {
+            mulib_mune_value_t *slot = &a.as.object->as.function.context[index - 1];
+            if (!strcmp (op, "upvalueid"))
+              {
+                mulib_mune_object_t *id = mulib_mune_rt_allocate_ (s, MULIB_MUNE_USERDATA, 0); if (!id) return 0;
+                id->userdata_tag = 3; id->as.userdata.identity = (uintptr_t)slot;
+                return mulib_mune_result_push (out, mulib_mune_rt_object_ (id));
+              }
+            if (!strcmp (op, "setupvalue")) *slot = c;
+            return mulib_mune_result_push (out, mulib_mune_rt_string_ (s, "", 0))
+                && (strcmp (op, "getupvalue") || mulib_mune_result_push (out, *slot));
+          }
         e = mulib_mune_rt_upvalue_ (a, index);
         if (!e)
           {
@@ -6810,18 +7171,20 @@ extern "C"
             id->userdata_tag = 3; id->as.userdata.identity = (uintptr_t)cell; return mulib_mune_result_push (out, mulib_mune_rt_object_ (id));
           }
         if (!strcmp (op, "setupvalue")) cell->as.environment.value = c;
-        if (!mulib_mune_result_push (out, mulib_mune_rt_string_ (s, (const char *)(e + 1), e->as.environment.length))) return 0;
+        if (!mulib_mune_result_push (out, a.as.object->as.function.chunk->stripped ? mulib_mune_rt_string_ (s, "(no name)", 9)
+            : mulib_mune_rt_string_ (s, (const char *)(e + 1), e->as.environment.length))) return 0;
         return strcmp (op, "getupvalue") || mulib_mune_result_push (out, cell->as.environment.value);
       }
     if (!strcmp (op, "getlocal") || !strcmp (op, "setlocal"))
       {
         int64_t level, index; mulib_mune_frame_ *f;
         mulib_mune_object_t *e, *base; size_t count = 0;
+        if (!strcmp (op, "setlocal") && n < 3) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "third value expected");
         if (!mulib_mune_rt_need_int_ (s, b, &index, 2)) return 0;
         if (a.type == MULIB_MUNE_FUNCTION && !strcmp (op, "getlocal"))
           {
             const mulib_ast_t *params = mulib_mune_child_ (a.as.object->as.function.body, "parameters"), *names = mulib_mune_child_ (params, "names"), *name;
-            if (index < 1 || a.as.object->as.function.native) return 1;
+            if (index < 1 || a.as.object->as.function.native || a.as.object->as.function.chunk->stripped) return 1;
             if (a.as.object->as.function.method && !--index) return mulib_mune_result_push (out, mulib_mune_rt_string_ (s, "self", 4));
             for (name = names ? names->child : NULL; name && --index; name = name->next) {}
             return !name || mulib_mune_result_push (out, mulib_mune_rt_string_ (s, name->text, name->length));
@@ -6829,6 +7192,13 @@ extern "C"
         if (!mulib_mune_rt_need_int_ (s, a, &level, 1)) return 0;
         f = mulib_mune_rt_debug_frame_ (s, thread, level);
         if (!f) return mulib_mune_rt_error_ (s, MULIB_MUNE_RUNTIME, "stack level out of range");
+        if (f->function.type == MULIB_MUNE_FUNCTION && f->function.as.object->as.function.native)
+          {
+            if (index < 1 || !f->arguments || (uint64_t)index > f->arguments->count) return 1;
+            if (!strcmp (op, "setlocal")) f->arguments->values[index - 1] = c;
+            return mulib_mune_result_push (out, mulib_mune_rt_string_ (s, "(C temporary)", 13))
+                && (!strcmp (op, "setlocal") || mulib_mune_result_push (out, f->arguments->values[index - 1]));
+          }
         if (index < 0)
           {
             uint64_t at = UINT64_C (0) - (uint64_t)index - 1;
@@ -6842,7 +7212,8 @@ extern "C"
         if (index < 1 || (uint64_t)index > count) return 1;
         for (e = f->environment, count -= (size_t)index; count; --count) e = e->as.environment.parent;
         if (!strcmp (op, "setlocal")) e->as.environment.value = c;
-        return mulib_mune_result_push (out, mulib_mune_rt_string_ (s, (const char *)(e + 1), e->as.environment.length))
+        return mulib_mune_result_push (out, f->chunk && f->chunk->stripped ? mulib_mune_rt_string_ (s, "(temporary)", 11)
+            : mulib_mune_rt_string_ (s, (const char *)(e + 1), e->as.environment.length))
                && (!strcmp (op, "setlocal") || mulib_mune_result_push (out, e->as.environment.value));
       }
     if (!strcmp (op, "gethook") || !strcmp (op, "sethook"))
@@ -6861,6 +7232,7 @@ extern "C"
         else
           {
             char mask[3]; size_t k = 0;
+            if (co->hook.type == MULIB_MUNE_NIL) return mulib_mune_result_push (out, co->hook);
             if (co->hook_mask & 1) mask[k++] = 'c';
             if (co->hook_mask & 2) mask[k++] = 'r';
             if (co->hook_mask & 4) mask[k++] = 'l';
@@ -6893,11 +7265,13 @@ extern "C"
         if (!what) return 0;
         if (a.type != MULIB_MUNE_FUNCTION)
           { int64_t level; if (!mulib_mune_rt_need_int_ (s, a, &level, 1)) return 0; f = mulib_mune_rt_debug_frame_ (s, thread, level); if (!f) return mulib_mune_result_push (out, mulib_mune_rt_nil_ ()); a = f->function; }
+        if (a.type != MULIB_MUNE_FUNCTION) return mulib_mune_result_push (out, mulib_mune_rt_nil_ ());
         fn = a.as.object; body = fn->as.function.body;
         params = mulib_mune_child_ (body, "parameters"); names = mulib_mune_child_ (params, "names");
         for (name = names ? names->child : NULL; name; name = name->next) ++parameters;
         if (fn->as.function.method) ++parameters;
         for (e = fn->as.function.environment; e; e = e->as.environment.parent) ++upvalues;
+        if (fn->as.function.native) upvalues = fn->as.function.native_upvalues;
         info = mulib_mune_rt_allocate_ (s, MULIB_MUNE_TABLE, 0); if (!info) return 0;
         if (!mulib_mune_result_push (out, mulib_mune_rt_object_ (info))) return 0;
 #define MULIB_MUNE_INFO_(key,value) do { if (!mulib_mune_rt_setfield_ (s, info, key, sizeof (key)-1, value)) return 0; } while (0)
@@ -6905,8 +7279,11 @@ extern "C"
           switch (what[k])
             {
             case 'f': MULIB_MUNE_INFO_ ("func", a); break;
-            case 'l': MULIB_MUNE_INFO_ ("currentline", mulib_mune_rt_integer_ (f && f->chunk ? (int64_t)mulib_mune_rt_line_ (f->chunk, f->location) : -1)); break;
-            case 'n': MULIB_MUNE_INFO_ ("namewhat", mulib_mune_rt_string_ (s, "", 0)); break;
+            case 'l': MULIB_MUNE_INFO_ ("currentline", mulib_mune_rt_integer_ (f && f->chunk && !f->chunk->stripped ? (int64_t)mulib_mune_rt_line_ (f->chunk, f->location) : -1)); break;
+            case 'n':
+              MULIB_MUNE_INFO_ ("namewhat", mulib_mune_rt_string_ (s, f ? f->namewhat : "", f ? strlen (f->namewhat) : 0));
+              if (f && f->call_name) MULIB_MUNE_INFO_ ("name", mulib_mune_rt_string_ (s, f->call_name->text, f->call_name->length));
+              break;
             case 'S':
               source = mulib_mune_rt_source_name_ (fn->as.function.chunk);
               MULIB_MUNE_INFO_ ("source", mulib_mune_rt_string_ (s, source, strlen (source)));
@@ -6920,12 +7297,12 @@ extern "C"
               MULIB_MUNE_INFO_ ("nups", mulib_mune_rt_integer_ ((int64_t)upvalues)); MULIB_MUNE_INFO_ ("nparams", mulib_mune_rt_integer_ ((int64_t)parameters));
               MULIB_MUNE_INFO_ ("isvararg", mulib_mune_rt_boolean_ (!body || mulib_mune_is_ (body, "chunk") || mulib_mune_child_ (params, "vararg") != NULL)); break;
             case 't': MULIB_MUNE_INFO_ ("istailcall", mulib_mune_rt_boolean_ (f && f->tail_call)); break;
-            case 'r': MULIB_MUNE_INFO_ ("ftransfer", mulib_mune_rt_integer_ (0)); MULIB_MUNE_INFO_ ("ntransfer", mulib_mune_rt_integer_ (0)); break;
+            case 'r': MULIB_MUNE_INFO_ ("ftransfer", mulib_mune_rt_integer_ (f ? (int64_t)f->transfer_first : 0)); MULIB_MUNE_INFO_ ("ntransfer", mulib_mune_rt_integer_ (f ? (int64_t)f->transfer_count : 0)); break;
             case 'L':
               if (body)
                 {
                   mulib_mune_object_t *lines = mulib_mune_rt_allocate_ (s, MULIB_MUNE_TABLE, 0); if (!lines) return 0;
-                  if (!mulib_mune_rt_active_lines_ (s, mulib_mune_is_ (body, "chunk") ? body : mulib_mune_child_ (body, "block"), fn->as.function.chunk, lines)) return 0;
+                  if (!fn->as.function.chunk->stripped && !mulib_mune_rt_active_lines_ (s, mulib_mune_is_ (body, "chunk") ? body : mulib_mune_child_ (body, "block"), fn->as.function.chunk, lines)) return 0;
                   MULIB_MUNE_INFO_ ("activelines", mulib_mune_rt_object_ (lines));
                 }
               break;

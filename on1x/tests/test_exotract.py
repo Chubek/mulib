@@ -42,6 +42,7 @@ assert plan['safe_export'] is False and plan['implementation_translation_units']
 for name,libraries,source,expected in [
     ('core',['json','vec','parsec'],'client.c','[42]\n'),
     ('microjs',['microjs'],'microjs.c','42\n'),
+    ('mune',['mune'],'mune.c','mune: archive OK\n'),
     ('elvi-scrape',['elvi-scrape'],'elvi-scrape.c','elvi-scrape: archive OK\n'),
 ]:
     dest=a.work/name
@@ -62,8 +63,15 @@ for name,libraries,source,expected in [
         assert 'mulib_parser_from_peg' in symbols['parsec']['declaration_only']
     elif name=='elvi-scrape':
         assert len(symbols['elvi-scrape']['archive_exports'])==6
+    elif name=='mune':
+        assert len(symbols['mune']['archive_exports'])==52 and not symbols['mune']['declaration_only']
+        recipe=json.loads((dest/'build-plan.json').read_text())
+        assert recipe['implementation_macros'].count('MULIB_IMPL_PARSER')==1
+        for path in ['include/mulib-mune.h','manual/mulib-mune.md','tests/test_mune_runtime.c',
+                     'tests/test_mune_runtime_alloc.c','tools/check_mune_runtime.py']:
+            assert lock['inputs'][str((a.root.parent/path).resolve())]==hashlib.sha256((a.root.parent/path).read_bytes()).hexdigest()
     else:assert len(symbols['microjs']['archive_exports'])==15
-    client(a.root/'contracts-exotract/examples'/source,dest,expected)
+    client(a.root/'contracts-exotract/examples'/source,dest,expected,['-pthread','-ldl'] if name=='mune' else [])
     keep=(dest/'lock.json').read_bytes();p=build(libraries,dest)
     assert p.returncode!=0 and (dest/'lock.json').read_bytes()==keep
 # Actual On1x JSON facade links the same archive; no duplicate implementation TU.
@@ -89,6 +97,16 @@ p=run([exe]);assert p.returncode==0 and p.stdout=='3\n{"items":[1,2,3],"ok":true
 p=run([sys.executable,helper,a.root/'examples/json.on1x','--on1xc',a.on1xc,'--cc',a.cc,
        '--mulib-archive',a.work/'core','-o',exe,*['--cflag='+f for f in a.cflag],'--cflag=-fshort-enums'])
 assert p.returncode!=0 and 'flags/target differ' in p.stderr,p.stderr
+source=a.work/'mune.on1x'
+source.write_text('''import std.mulib as M;
+extern fn on1x_mune_contract_semantics()->i64;
+fn main(){assert(M.has_kernel("mune")&&M.has_kernel("jit"));
+assert(on1x_mune_contract_semantics()==1);println("mune On1x OK");}''')
+exe=a.work/'mune-app'
+p=run([sys.executable,helper,source,'--on1xc',a.on1xc,'--cc',a.cc,'--mulib-archive',a.work/'mune',
+       '--extra-c',a.root/'tests/mulib/mune.c','-o',exe,*['--cflag='+f for f in a.cflag]])
+assert p.returncode==0,p.stderr
+p=run([exe]);assert p.returncode==0 and p.stdout=='mune On1x OK\n',(p.stdout,p.stderr)
 for kernel,fixtures,adapter,text,expected in [
  ('yantlr',['yantlr'],'yantlr.c','''import std.mulib as M;
  extern fn fixture_yantlr_artifacts(source:string)->i64;

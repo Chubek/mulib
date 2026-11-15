@@ -129,6 +129,9 @@ def plan(root, libraries, fixtures=()):
             for path in contracts.CONTRACTS.glob('*.json'):inputs[str(path)]=contracts.digest(path)
             core = contracts.catalog(root)['profiles'][name]
             for dep in core['implementation_modules']:add(dep)
+            extra.extend(core.get('active_optional_macros', []))
+            for path, expected in core.get('evidence_sha256', {}).items():
+                inputs[str(local(root, path))] = expected
             links.update(core['link_libraries'])
         elif profile['recipe']=='manifest':visit(name)
         else:raise ValueError('unknown kernel recipe')

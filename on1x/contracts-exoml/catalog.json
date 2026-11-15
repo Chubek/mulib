@@ -53,6 +53,27 @@
       ],
       "link_libraries": []
     },
+    "mune": {
+      "contract": "mune.exocontract.json",
+      "header": "include/mulib-mune.h",
+      "header_sha256": "de1ec25f294edf20c11fa6359382711aa287c62a2942efbefe577641b93e456d",
+      "manual": "manual/mulib-mune.md",
+      "manual_sha256": "860ba0228338a81fa7e93dc37d02fcf1a0f5dd0acf9024d22d628b154cea2e24",
+      "evidence_sha256": {
+        "tests/test_mune_runtime.c": "7f211038c40ddeff24a7cdaa6049c4cb79c6569ccc1a189e7517b253e573604a",
+        "tests/test_mune_runtime_alloc.c": "7528ea59e13270c829f11af6290ccab1832792e8f1e78fada5be5d7697fad35d",
+        "tools/check_mune_runtime.py": "162a34b537543e9ce57ec8453079468f42504e2ee0fc67e7014318a5bfd98655"
+      },
+      "function_prefix": "mulib_mune_",
+      "function_count": 52,
+      "implementation_modules": [
+        "dynload", "dyncall", "mir", "egraph", "rewrite", "vmweave", "jit",
+        "strbuf", "ast", "peg", "glob", "parsec", "mune"
+      ],
+      "active_optional_macros": ["MULIB_IMPL_PARSER"],
+      "inactive_optional_macros": [],
+      "link_libraries": ["dl", "m", "pthread"]
+    },
     "elvi-scrape": {
       "contract": "elvi-scrape.exocontract.json",
       "header": "include/mulib-elvi-scrape.h",

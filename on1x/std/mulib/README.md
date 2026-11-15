@@ -92,6 +92,10 @@ its primary kernel, not every associated consumer. Generic dependency cycles
 are recorded and deduplicated: Parsec/PEG genuinely depend on each other and
 share one implementation TU. All switches precede inclusion. Direct requests
 for JSON/Vec/core-Parsec retain their narrower source-pinned ExoML recipes.
+Mune also uses a source-pinned recipe, explicitly activating the owned parser's
+`MULIB_IMPL_PARSER` switch and checking all 52 public exports. Its header, manual
+and three Lua-runtime regression/evidence files are locked build inputs; this
+does not broaden the standalone Parsec profile or confer safe-import status.
 
 Known link libraries and native companions are explicit registry entries. A
 recipe does not establish that every kernel/platform has been executed; missing

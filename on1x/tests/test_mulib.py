@@ -41,6 +41,11 @@ for args,message in [(('plan','absent'),'known MuLIB modules'),
 
 core=house.plan(root,['json','vec','parsec'])
 assert core['implementation_macros']==['MULIB_IMPL_PARSEC','MULIB_IMPL_STRBUF','MULIB_IMPL_UTF8','MULIB_IMPL_JSON','MULIB_IMPL_VEC']
+mune=house.plan(root,['mune'])
+assert mune['implementation_macros'].count('MULIB_IMPL_PARSER')==1
+assert len(mune['required_symbols']['mune'])==52 and mune['implementation_translation_units']==1
+for path in ['tests/test_mune_runtime.c','tests/test_mune_runtime_alloc.c','tools/check_mune_runtime.py']:
+    assert mune['inputs'][str((root/path).resolve())]==hashlib.sha256((root/path).read_bytes()).hexdigest()
 provider=house.plan(root,['yantlr'],['yantlr'])
 assert ['parsec','peg','parsec'] in provider['dependency_cycles']
 assert 'MULIB_IMPL_PARSER' in provider['implementation_macros']

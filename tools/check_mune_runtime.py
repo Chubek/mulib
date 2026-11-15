@@ -75,6 +75,64 @@ def differential():
         "table.remove({},0)", "table.remove({},1)", "table.remove({},2)",
         "(pcall(load,42))",
     ]
+    # Library semantics, including coercions, lazy captures, invalid UTF-8,
+    # null pointer formatting, and deterministic Lua 5.4 random generation.
+    expressions += [
+        "math.abs('3')", "math.fmod('3','2')", "math.modf(-math.huge)",
+        "math.random(1,2,3)", "math.randomseed(nil)", "table.move({})",
+        "io.type()", "io.close(nil)", "coroutine.isyieldable(nil)",
+        "debug.setuservalue(nil,nil)", "debug.setupvalue(function() end,1)",
+        "debug.setlocal(1,1)", "select('#rest',1,nil,3)",
+        "string.find(')',')')", "string.find('abc',')')",
+        "string.match('abc','%0')", "string.gsub('abc','x',false,0)",
+        "string.gsub('abc','x',nil)", "string.gsub('abc','(','x')",
+        "string.gsub('abc','(a)(','%1')", "string.gsub('abc','()','%1')",
+        "string.match('xx','%bxx')", "utf8.codepoint('abc',5,1)",
+        "string.format('%p',nil)", "string.format('%10p',false)",
+        "string.format('%+p',nil)", "string.format('%.2p',nil)",
+        "string.format('%q',math.huge)", "string.format('%q',-math.huge)",
+        "os.date('%Q',0)", "os.date('%',0)", "os.date('%E',0)",
+        "os.date('a\\0b',0)", "os.date('!%Y-%m-%d',0)",
+        "package.searchpath('x','first/?.lua;second/?.lua')",
+        "package.searchpath('x',42)", "package.searchpath('x','')",
+        "package.searchpath('x',';;')", "package.searchpath('x','?.lua',false)",
+        "package.searchpath('x','?.lua',nil,{})", "select('#',debug.gethook())",
+        "string.match('a','()%1')",
+    ]
+    for seed in ((0, 0), (1, 2), (-1, -2), (9223372036854775807, -9223372036854775808)):
+        for call in ('math.random()', 'math.random(0)', 'math.random(3)',
+                     'math.random(-10,10)', 'math.random(math.mininteger,math.maxinteger)'):
+            expressions.append(f'(function() math.randomseed({seed[0]},{seed[1]}); '
+                               f'local a,b,c={call},{call},{call}; return a,b,c end)()')
+    for point in (0, 0x7f, 0x80, 0x3ff, 0x400, 0x7ff, 0x800, 0x3fff, 0x4000, 0x7fff,
+                  0x8000, 0xd800, 0xffff, 0x10000, 0x10ffff, 0x110000, 0x1fffff,
+                  0x200000, 0x3ffffff, 0x4000000, 0x7fffffff):
+        expressions.append(f'utf8.char({point})')
+        expressions.append(f"'\\u{{{point:x}}}'")
+        expressions.append(f'utf8.codepoint(utf8.char({point}),1,-1,true)')
+    for text in ("'a\\128b'", "'\\194\\162\\128'", "'\\192\\128'", "'\\255'", "'\\237\\160\\128'"):
+        for lax in ('false', 'true'):
+            expressions.append(f'(function() local t={{}}; for p,c in utf8.codes({text},{lax}) '
+                               "do t[#t+1]=p..':'..c end; return table.concat(t,',') end)()")
+    for pattern in ("')'", "'%0'", "'%bxx'", "'%f[%z]'", "'a?'", "'a*'", "'.*'", "''", "'^'", "'$'", "'()'", "'x'"):
+        for text in ("''", "'abc'", "'xxx'", "'a\\0b'"):
+            for replacement in ('false', 'nil', '42', "'%1'", "'%0'", "'%%'", '{}'):
+                expressions.append(f'string.gsub({text},{pattern},{replacement})')
+    pattern_rng = random.Random(5412)
+    tokens = ['a', 'b', '.', '[a-c]', '[^a]', '[z-a]', '%a', '%d', '%z', '%b()', '%bxx',
+              '%f[%w]', '()', '(a)', '(', '(%a*)', '(%a+)', '(%a?)(%a*)', '%1', '%0',
+              '%', '[', ')', '^', '$', '*', '?', '-', '+', '\0']
+    def quote(text):
+        return '"' + ''.join(f'\\x{ord(c):02x}' for c in text) + '"'
+    for i in range(180):
+        text = quote(''.join(pattern_rng.choices('abc()012\0\n', k=pattern_rng.randrange(12))))
+        pattern = quote(''.join(pattern_rng.choices(tokens, k=pattern_rng.randrange(1, 6))))
+        if i % 3 == 2:
+            replacement = quote(pattern_rng.choice(['x', '%0', '%1', '%2', '%%']))
+            expressions.append(f'string.gsub({text},{pattern},{replacement})')
+        else:
+            name = 'find' if i % 3 == 0 else 'match'
+            expressions.append(f'string.{name}({text},{pattern})')
     preamble = '''local function value(v)
       if type(v)=='number' then
         if v~=v then return 'number:nan' end
@@ -128,6 +186,7 @@ def main():
           local a=false; assert((a and error('bad') or 42)==42)
           local x={}; function x:m(a) return a+2 end; assert(x:m(40)==42)
           local g=assert(load('return 42')); assert(g()==42)
+          package.path='./?.luac;'..package.path
           assert(require('test_bundle').answer==42)
           print('Mune AOT passed')''')
         generated.write_text(run([runtime, '--emit', str(source)], work).stdout)
@@ -154,19 +213,40 @@ mulib_mune_status_t muneopen_probe(mulib_mune_state_t *s,const mulib_mune_value_
     || mulib_mune_make_string(s,"answer",6,&key)!=MULIB_MUNE_OK
     || mulib_mune_raw_set(s,table,key,value)!=MULIB_MUNE_OK) return MULIB_MUNE_MEMORY;
  mulib_mune_collect(s); return MULIB_MUNE_OK;
-}\n''')
+}
+mulib_mune_status_t muneopen_probe_sub(mulib_mune_state_t *s,const mulib_mune_value_t *a,
+ size_t n,mulib_mune_result_t *r,void *u) { return muneopen_probe(s,a,n,r,u); }
+mulib_mune_status_t muneopen_fallback(mulib_mune_state_t *s,const mulib_mune_value_t *a,
+ size_t n,mulib_mune_result_t *r,void *u) { return muneopen_probe(s,a,n,r,u); }
+\n''')
             run(shlex.split(args.compiler) + (['-undefined', 'dynamic_lookup'] if sys.platform == 'darwin' else [])
                 + ['-std=c11', '-shared', '-fPIC', '-I' + str(ROOT / 'include'),
-                                              str(plugin), '-o', str(work / 'probe.so')], work)
+                                               str(plugin), '-o', str(work / 'probe.so')], work)
+            shutil.copyfile(work / 'probe.so', work / 'probe-v2.so')
+            shutil.copyfile(work / 'probe.so', work / 'ignored-fallback.so')
             (work / 'filemodule.lua').write_text('local name,path=...; assert(name=="filemodule"); return {value=42}')
             source.write_text('''local p,path=require('probe'); assert(p.answer==42 and path=='./probe.so')
+              local sub,subpath=require('probe.sub'); assert(sub.answer==42 and subpath=='./probe.so')
+              assert(require('probe-v2').answer==42 and require('ignored-fallback').answer==42)
+              assert(not pcall(require,'probe.absent'))
               assert(type(package.loadlib('./probe.so','muneopen_probe'))=='function')
+              assert(package.loadlib('./probe.so','*')==true)
               local f,message,where=package.loadlib('./probe.so','missing'); assert(f==nil and type(message)=='string' and where=='init')
               assert(require('filemodule').value==42)
               local pipe=assert(io.popen('printf hello','r')); assert(pipe:read('a')=='hello');
               local ok,how,code=pipe:close(); assert(ok and how=='exit' and code==0)''')
             for mode in modes:
                 run([runtime, mode, str(source)], work)
+        # Version-specific environment variables take precedence; a double
+        # separator splices in the implementation's documented default path.
+        source.write_text('''assert(package.path=='first;./?.lua;./?/init.lua;./?.luac;last')
+          assert(package.cpath=='native/?.so')''')
+        env = dict(os.environ, LUA_PATH='ignored', LUA_PATH_5_4='first;;last',
+                   LUA_CPATH='ignored', LUA_CPATH_5_4='native/?.so')
+        for mode in modes:
+            result = subprocess.run([runtime, mode, str(source)], cwd=work, env=env,
+                                    capture_output=True, text=True, timeout=60)
+            assert result.returncode == 0, result.stderr
         source.write_text('''local t=setmetatable({}, {__gc=function() print('finalized') end})
           local x<close> =setmetatable({}, {__close=function() print('closed') end})
           local co=coroutine.create(function()
@@ -181,13 +261,22 @@ mulib_mune_status_t muneopen_probe(mulib_mune_state_t *s,const mulib_mune_value_
         checked = 0
         if args.lua:
             text, expressions = differential()
-            source.write_text(text)
-            expected = run([args.lua, str(source)], work).stdout.splitlines()
-            for mode in modes:
-                actual = run([runtime, mode, str(source)], work).stdout.splitlines()
-                if actual != expected:
-                    mismatch = [(i, expressions[i], a, b) for i, (a, b) in enumerate(zip(expected, actual)) if a != b]
-                    raise RuntimeError(f'{mode} differential mismatch ({len(expected)} / {len(actual)} lines):\n' + '\n'.join(map(str, mismatch[:20])))
+            preamble = text[:text.index('check(0,')]
+            # Bound parser/AST usage independently of the corpus size. Each
+            # expression is isolated; explicitly seeded RNG cases are repeatable.
+            for start in range(0, len(expressions), 128):
+                batch = expressions[start:start + 128]
+                source.write_text(preamble + '\n'.join(
+                    f'check({i},function() return {expr} end)'
+                    for i, expr in enumerate(batch, start)))
+                expected = run([args.lua, str(source)], work).stdout.splitlines()
+                for mode in modes:
+                    actual = run([runtime, mode, str(source)], work).stdout.splitlines()
+                    if actual != expected:
+                        mismatch = [(i, expressions[i], a, b)
+                                    for i, (a, b) in enumerate(zip(expected, actual), start) if a != b]
+                        raise RuntimeError(f'{mode} differential mismatch ({len(expected)} / {len(actual)} lines):\n'
+                                           + '\n'.join(map(str, mismatch[:20])))
             checked = len(expressions)
         print(f'Mune: {count} assertion groups in {len(modes)} modes; generated C; {checked} Lua 5.4 differential cases')
 

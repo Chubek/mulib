@@ -6,6 +6,8 @@ Implemented source annotations and verification tooling:
 - `vec.exocontract.json`: all 7 byte-vector functions;
 - `parsec.exocontract.json`: all 18 borrowed combinator functions;
 - `elvi-scrape.exocontract.json`: all 6 provider/extraction/HTTPS functions;
+- `mune.exocontract.json`: all 52 Lua runtime/frontend/C integration functions,
+  including GC roots, retained coroutine-thread callbacks and AOT entry lifetimes;
 - `catalog.json`: exact canonical header/manual pins and implementation recipes;
 - `obligations.json`: source evidence, branch/lifetime preconditions and missing
   field-sensitive/ownership/error/callback lowering.
@@ -17,7 +19,7 @@ reviewed metadata.
 
 ```sh
 python3 on1x/tools/on1x-contracts.py lint
-python3 on1x/tools/on1x-contracts.py build-plan json vec parsec elvi-scrape
+python3 on1x/tools/on1x-contracts.py build-plan json vec parsec elvi-scrape mune
 ```
 
 Real Gate B acceptance requires compiler-generated ExoML CDecl artifacts, not
@@ -27,6 +29,13 @@ lossless public-IR transport, pin/check/explain and narrow raw scalar adapters;
 See [the manual](../docs/contracts.md) for commands, provenance, bounds and
 remaining safe-import gates; [the C example](../examples/contracts/README.md)
 shows actual ownership and exactly-once implementation switches.
+
+Mune pins the changed header/manual plus its runtime, allocation-failure and
+Lua differential test sources through `evidence_sha256`. Snapshot CDecl provenance
+and Exotract archive locks include these evidence inputs; drift requires another
+semantic audit, not an automatic hash refresh. Its explicit
+`active_optional_macros` enables `MULIB_IMPL_PARSER`, required by the full runtime.
+This does not enable the owned parser for the standalone Parsec profile.
 
 The canonical versioned schema and model are in the separately supplied
 LibStone checkout's `moonstone/exoml/contracts/schema.exocontract.json` and

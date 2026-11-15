@@ -35,6 +35,24 @@
         "m"
       ]
     },
+    "mune": {
+      "recipe": "exoml-core",
+      "required_symbols": [
+        "mulib_mune_version", "mulib_mune_create", "mulib_mune_destroy", "mulib_mune_eval", "mulib_mune_get",
+        "mulib_mune_parse", "mulib_mune_parse_file", "mulib_mune_chunk_ast", "mulib_mune_chunk_destroy",
+        "mulib_mune_set_mode", "mulib_mune_emit_c", "mulib_mune_run_aot",
+        "mulib_mune_state_create", "mulib_mune_state_destroy", "mulib_mune_run", "mulib_mune_run_source", "mulib_mune_run_file",
+        "mulib_mune_result_count", "mulib_mune_result_get", "mulib_mune_result_push", "mulib_mune_result_destroy",
+        "mulib_mune_value_string", "mulib_mune_make_string", "mulib_mune_get_global", "mulib_mune_set_global",
+        "mulib_mune_bind", "mulib_mune_result_create", "mulib_mune_call", "mulib_mune_make_table",
+        "mulib_mune_raw_get", "mulib_mune_raw_set", "mulib_mune_set_metatable",
+        "mulib_mune_nil", "mulib_mune_boolean", "mulib_mune_integer", "mulib_mune_number",
+        "mulib_mune_make_function", "mulib_mune_get_index", "mulib_mune_set_index", "mulib_mune_get_field", "mulib_mune_set_field",
+        "mulib_mune_get_metatable", "mulib_mune_table_next", "mulib_mune_function_owner",
+        "mulib_mune_get_uservalue", "mulib_mune_set_uservalue", "mulib_mune_make_userdata", "mulib_mune_value_userdata",
+        "mulib_mune_collect", "mulib_mune_bundle_write", "mulib_mune_load_bundle", "mulib_mune_load_bundle_file"
+      ]
+    },
     "elvi-scrape": {
       "recipe": "exoml-core",
       "required_symbols": [
