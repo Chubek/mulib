@@ -140,7 +140,8 @@ class Loader {
   m->implicit=implicit;
   modules.emplace(path,std::move(storage));stack.push_back(m);
   if(regular(path)){
-   auto source=read_source_file(path.string());
+    auto replacement=options.source_overrides.find(path);
+    auto source=replacement==options.source_overrides.end()?read_source_file(path.string()):replacement->second;
    if(source.size()>options.max_bytes-bytes)throw Error(at,"total imported source byte limit exceeded");
    bytes+=source.size();auto scanned=scan(source,path.string());
    for(const auto& t:scanned)tokens.insert(t.text);

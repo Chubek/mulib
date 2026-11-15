@@ -1,5 +1,36 @@
 # On1x verification — 2026-11-15
 
+## Syren diagnostics and repair continuation
+
+The optional `ON1X_WITH_SYREN=ON` compiler adapter is implemented and tested;
+see [diagnostics.md](docs/diagnostics.md). No grammar or runtime changes, SDK
+patches, or new stdlib modules are part of this continuation. The actual supplied
+LibStone revision is `55755485acaded7c4ed804c0946bc8c7363f6763`, with a clean SDK
+working tree.
+
+- `/tmp/opencode/on1x-syren`: GCC 16.2.1 Debug, generated scanner,
+  `ON1X_BUILD_NATIVE_PPX=OFF`; **37/38 CTests pass**. The sole failure is
+  `on1x.mulib`, `tests/test_mulib.py:30`, the existing fixture-inventory assertion.
+  It also fails at the identical assertion in `/tmp/opencode/on1x-no-syren`
+  (Syren OFF, fallback scanner); it is not repaired by this compiler-tooling task.
+- `/tmp/opencode/on1x-syren-asan`: GCC Debug, fallback scanner, ASan/UBSan,
+  non-PIE compiler and generated C11 executables; **35/35 selected CTests pass**
+  with `ctest -j 8 -E '^on1x.(mulib|install)$' --output-on-failure`.
+  Inventory and installation were excluded from this sanitizer run.
+- Both profiles pass `on1x.diagnostics_api` and `on1x.diagnostics`, including
+  1,000 deterministic malformed inputs, Unicode/invalid UTF-8 reporting,
+  source edits/statuses, whole-import-graph checking, PPX refusal and
+  overwrite/symlink protection. A repaired proposal is C11-compiled and executed
+  (exit value 42), with sanitizer flags in the sanitizer profile.
+- All **36** `examples/**/*.on1x` inputs have identical exit codes and emitted C
+  with the generated-scanner Syren build and fallback-scanner non-Syren build.
+- `src/diagnostics.cpp` passes an independent
+  `-std=c++20 -Wall -Wextra -Wpedantic -Werror -fsyntax-only` check.
+
+These are compiler-valid **proposals**, not proofs of intended behavior, safe FFI
+admission, runtime error recovery or automatic adoption of an edited program.
+Normal compilation still rejects invalid input; repair writes only a new file.
+
 ## Standard-library and native PPX extension integration
 
 **PASS: 107/107 final CTests, with no failures, disabled or skipped tests.**

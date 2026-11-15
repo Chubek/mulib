@@ -22,8 +22,8 @@ Location pos_at(const std::string& input,const std::string& file,std::size_t pos
 }
 }
 std::vector<Token> scan(const std::string& source,const std::string& filename){
-  if(source.size()>max_source_bytes) throw Error({filename,0,1,1},"source exceeds 2 MiB limit");
- auto bad=source.find('\0'); if(bad!=std::string::npos)throw Error(pos_at(source,filename,bad),"NUL in source");
+   if(source.size()>max_source_bytes) throw Error({filename,0,1,1},"source exceeds 2 MiB limit","ON1X-LEX-LIMIT");
+  auto bad=source.find('\0'); if(bad!=std::string::npos)throw Error(pos_at(source,filename,bad),"NUL in source","ON1X-LEX-NUL");
   // Callbacks from Aurocks arrive backwards. Index lines once rather than
   // rescanning the whole source for every token (quadratic on dense input).
   std::vector<std::size_t> lines{0};
@@ -32,7 +32,7 @@ std::vector<Token> scan(const std::string& source,const std::string& filename){
  {static std::mutex mutex;std::lock_guard guard(mutex);
    int status=on1x_generated_scan(source.data(),source.size(),collect,&c,&error);
   if(c.error)std::rethrow_exception(c.error);
-  if(status)throw Error(pos_at(source,filename,error),status==2?"scanner allocation failure":"invalid token");}
+   if(status)throw Error(pos_at(source,filename,error),status==2?"scanner allocation failure":"invalid token",status==2?"ON1X-LEX-ALLOCATION":"ON1X-LEX-TOKEN");}
   // Fallback callbacks are forwards; the ASDL linked list is traversed backwards.
  if(!std::is_sorted(c.tokens.begin(),c.tokens.end(),[](const Token& a,const Token& b){return a.where.offset<b.where.offset;}))
    std::reverse(c.tokens.begin(),c.tokens.end());

@@ -3,6 +3,9 @@
 #include <on1x/loader.hpp>
 #include <on1x/backend/mir.hpp>
 #include <on1x/backend/passes.hpp>
+#ifdef ON1X_WITH_SYREN
+#include <on1x/diagnostics.hpp>
+#endif
 #ifdef ON1X_WITH_NEROTYPICAL
 #include <on1x/type_safety.hpp>
 #endif
@@ -13,6 +16,7 @@
 #include <on1x/backend/relational.hpp>
 #endif
 #include <charconv>
+#include <cstdio>
 #include <fstream>
 #include <filesystem>
 #include <set>
@@ -22,6 +26,60 @@
 #include <string>
 #include <string_view>
 namespace {
+#ifdef ON1X_WITH_SYREN
+void report_error(const on1x::Error& error,const std::string& format){
+ std::optional<std::string> snapshot;
+ try{snapshot=on1x::read_source_file(error.where.file);}catch(const std::exception&){}
+ auto report=on1x::diagnostics::describe(error,std::move(snapshot));
+ std::cerr<<(format=="json"?on1x::diagnostics::json(report):format=="sarif"?on1x::diagnostics::sarif(report):on1x::diagnostics::text(report));
+}
+int repair_source(const std::string& source,const std::string& out,const on1x::LoaderOptions& options,const std::string& format){
+ namespace fs=std::filesystem;
+ if(out.empty()||out=="-")throw std::runtime_error("--repair requires -o NEW_FILE (never edits input files)");
+ // Refuse all existing destinations, including symlinks and imported sources.
+ if(fs::symlink_status(out).type()!=fs::file_type::not_found)throw std::runtime_error("repair output must not already exist");
+ auto path=fs::canonical(source);
+ auto original=on1x::read_source_file(path.string());
+ auto compile=[&](std::string_view text){
+  auto overlay=options;overlay.source_overrides[path]=std::string(text);
+  auto loaded=on1x::load_unit(path,overlay);
+  if(!loaded.unit.ppx.empty())throw std::runtime_error("repair validation never executes source PPX programs");
+  on1x::check(loaded.unit);
+  (void)on1x::emit_c(loaded.unit,path.string());
+ };
+ try{compile(original);std::cerr<<"on1xc: source is already valid; no repair output written\n";return 0;}
+ catch(const on1x::Error& error){
+  if(error.where.file!=path.string())throw; // Do not misapply imported-file offsets.
+  auto report=on1x::diagnostics::describe(error,original);
+  on1x::diagnostics::validate(report,[&](std::string_view changed){
+   using namespace moonstone;
+   try{compile(changed);return ProofResult{Status::Proven,"reloaded, parsed, type checked and C-emitted; intended behavior is not proven",{},1};}
+   catch(const on1x::Error& e){
+    // Existing frontend limits are exhaustion, not evidence against a repair.
+    auto message=std::string(e.what());
+    auto status=message.find("limit")!=std::string::npos||message.find("too many")!=std::string::npos?Status::BudgetExhausted:Status::Refuted;
+    return ProofResult{status,e.where.file+":"+std::to_string(e.where.line)+": "+message,{},1};
+   }catch(const std::exception& e){return ProofResult{Status::Unknown,e.what(),{},1};}
+  });
+  std::cerr<<(format=="json"?on1x::diagnostics::json(report):format=="sarif"?on1x::diagnostics::sarif(report):on1x::diagnostics::text(report));
+  std::optional<std::string> proposal;
+  for(const auto& candidate:report.repairs)if(candidate.status==moonstone::syren::RepairStatus::Validated){
+   auto changed=moonstone::apply_edits(original,candidate.edits);
+   if(proposal&&proposal!=changed){std::cerr<<"on1xc: ambiguous repairs; no output written\n";return 1;}
+   proposal=std::move(changed);
+  }
+  if(!proposal)return 1;
+  // Recheck before publication; compilation and validation never write sources.
+  if(fs::symlink_status(out).type()!=fs::file_type::not_found)throw std::runtime_error("repair output must not already exist");
+  auto* output=std::fopen(out.c_str(),"wbx"); // C11 exclusive creation, including against symlink races.
+  if(!output)throw std::runtime_error("cannot exclusively create repair proposal "+out);
+  bool written=std::fwrite(proposal->data(),1,proposal->size(),output)==proposal->size();
+  if(std::fclose(output)!=0)written=false;
+  if(!written)throw std::runtime_error("cannot write repair proposal "+out);
+  return 0;
+ }
+}
+#endif
 void write_all(const std::string& name,const std::string& text){
  if(name.empty()||name=="-"){std::cout<<text;return;}
  std::ofstream out(name,std::ios::binary);if(!out||(out<<text).fail())throw std::runtime_error("cannot write "+name);
@@ -79,7 +137,9 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       on1xc --check-memory INPUT [-o OUTPUT] (Chisel opt-in build)\n"
   "       [--memory-check] (check resource usage before source compilation)\n"
   "       on1xc --check-types INPUT [-o OUTPUT] (Nerotypical opt-in build)\n"
-  "       [--verify-types] (require independent structural HIR type verification)\n"
+   "       [--verify-types] (require independent structural HIR type verification)\n"
+   "       [--diagnostics text|json|sarif] (Syren opt-in build; errors on stderr)\n"
+   "       on1xc --repair INPUT.on1x -o NEW_FILE (Syren; reviewable proposal only)\n"
  "       on1xc --help\n"
   "--emit-ast expands macros and exports pre-PPX AST; it never executes programs.\n"
   "MIR modes support i64/bool/void, direct On1x calls, control flow and scalar print/assert.\n"
@@ -88,6 +148,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
  "Output defaults to stdout. Use tools/on1x-build.py to link a native executable.\n";}
 }
 int main(int argc,char**argv){
+ std::string diagnostic_format="text";
  try{
      std::string mode="--emit-c",source,out;bool ir_input=false;
      std::size_t analysis_work=10000000;bool analysis_limit=false;
@@ -98,7 +159,17 @@ int main(int argc,char**argv){
     auto loader=on1x::default_loader_options(argv[0]);
     std::vector<std::filesystem::path> import_paths;
   for(int i=1;i<argc;++i){std::string arg=argv[i];
-    if(arg=="--help"||arg=="-h"){usage();return 0;}
+     if(arg=="--help"||arg=="-h"){usage();return 0;}
+     if(arg=="--repair"){mode=arg;continue;}
+     if(arg=="--diagnostics"){
+      if(++i>=argc)throw std::runtime_error("--diagnostics requires text, json or sarif");
+      diagnostic_format=argv[i];
+      if(diagnostic_format!="text"&&diagnostic_format!="json"&&diagnostic_format!="sarif")throw std::runtime_error("unknown diagnostic format "+diagnostic_format);
+#ifndef ON1X_WITH_SYREN
+      throw std::runtime_error("Syren diagnostics unavailable: configure with ON1X_WITH_SYREN=ON");
+#endif
+      continue;
+     }
     if(arg=="--memory-check"){memory=true;continue;}
     if(arg=="--check-memory"){mode=arg;continue;}
     if(arg=="--verify-types"){type_safety=true;continue;}
@@ -144,7 +215,16 @@ int main(int argc,char**argv){
    else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
   }
       if(source.empty()){usage();return 2;}
-      loader.paths.insert(loader.paths.begin(),import_paths.begin(),import_paths.end());
+       loader.paths.insert(loader.paths.begin(),import_paths.begin(),import_paths.end());
+       if(mode=="--repair"){
+#ifdef ON1X_WITH_SYREN
+        if(ir_input||memory||type_safety||optimize||opt_limit||analysis_limit||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source)
+         throw std::runtime_error("--repair requires plain source without PPX, analysis or optimization options");
+        return repair_source(source,out,loader,diagnostic_format);
+#else
+        throw std::runtime_error("repair unavailable: configure with ON1X_WITH_SYREN=ON");
+#endif
+       }
       for(auto& registration:ppx.programs){
        if(registration.where.file!="<standard-ppx>")continue;
        const auto& processor=registration.label;
@@ -250,7 +330,12 @@ int main(int argc,char**argv){
   }catch(const on1x::type_safety::Inconclusive& e){
    std::cerr<<e.where.file<<":"<<e.where.line<<":"<<e.where.column<<": "<<e.what()<<"\n";return 75;
 #endif
-  }catch(const on1x::Error& e){
-  std::cerr<<e.where.file<<":"<<e.where.line<<":"<<e.where.column<<": error: "<<e.what()<<"\n";return 1;
+   }catch(const on1x::Error& e){
+#ifdef ON1X_WITH_SYREN
+   try{report_error(e,diagnostic_format);}catch(const std::exception&){std::cerr<<e.where.file<<":"<<e.where.line<<":"<<e.where.column<<": error: "<<e.what()<<"\n";}
+   return 1;
+#else
+   std::cerr<<e.where.file<<":"<<e.where.line<<":"<<e.where.column<<": error: "<<e.what()<<"\n";return 1;
+#endif
  }catch(const std::exception&e){std::cerr<<"on1xc: "<<e.what()<<"\n";return 2;}
 }

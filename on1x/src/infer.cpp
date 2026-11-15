@@ -97,7 +97,7 @@ class Inference {
  std::size_t next_identity = Type::Buffer + 1;
 
  [[noreturn]] static void fail(const Location& where,const std::string& message) {
-  throw Error(where,message);
+   throw Error(where,message,"ON1X-TYPE");
  }
  void tick(const Location& where) {
   if(work>=limits.work)fail(where,"type inference work limit exceeded");

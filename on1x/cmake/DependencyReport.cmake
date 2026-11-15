@@ -16,5 +16,5 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/on1x-build-info.txt"
   "system=${CMAKE_SYSTEM_NAME}\nprocessor=${CMAKE_SYSTEM_PROCESSOR}\n"
   "exoml=${ON1X_WITH_EXOML}\nexoml_extract=${ON1X_WITH_EXOML_EXTRACT}\n"
   "exotract=${ON1X_WITH_EXOTRACT}\n"
-  "novostone=${ON1X_WITH_NOVOSTONE}\nchisel=${ON1X_WITH_CHISEL}\nnerotypical=${ON1X_WITH_NEROTYPICAL}\n"
+   "novostone=${ON1X_WITH_NOVOSTONE}\nchisel=${ON1X_WITH_CHISEL}\nnerotypical=${ON1X_WITH_NEROTYPICAL}\nsyren=${ON1X_WITH_SYREN}\n"
   "backend=c11\nmir=scalar-v1\nmir_passes=builtin-v1-opt-in\nnative=unimplemented\nsafe_ffi=unimplemented\n")

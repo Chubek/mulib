@@ -13,7 +13,14 @@ namespace on1x {
 inline constexpr std::size_t max_source_bytes = 2 * 1024 * 1024;
 inline constexpr std::size_t max_syntax_depth = 256;
 struct Location { std::string file; std::size_t offset = 0, line = 1, column = 1; };
-struct Error : std::runtime_error { Location where; Error(Location at, std::string message) : std::runtime_error(std::move(message)), where(std::move(at)) {} };
+struct Error : std::runtime_error {
+ Location where;
+ // Reporting metadata only: never used to recover or accept an invalid program.
+ std::string diagnostic_id,expected,found;
+ Error(Location at, std::string message, std::string id="ON1X-SOURCE", std::string want={}, std::string got={})
+  : std::runtime_error(std::move(message)), where(std::move(at)), diagnostic_id(std::move(id)),
+    expected(std::move(want)), found(std::move(got)) {}
+};
 struct Token { std::string text; Location where; };
 struct Capture { std::string name; Type type; };
 struct Pattern {

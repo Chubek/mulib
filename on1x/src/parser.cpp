@@ -51,7 +51,7 @@ class Parser {
  const Token& peek(std::size_t offset=0)const{if(!offset&&split_angle==pos)return assignment_token;return ts.at(std::min(pos+offset,ts.size()-1));}
  bool at(std::string_view s)const{return peek().text==s;}
  bool accept(std::string_view s){if(at(s)){++pos;return true;}return false;}
- const Token& consume(std::string_view s){if(!at(s))throw Error(peek().where,"expected '"+std::string(s)+"', found '"+peek().text+"'");const auto& token=peek();++pos;return token;}
+  const Token& consume(std::string_view s){if(!at(s))throw Error(peek().where,"expected '"+std::string(s)+"', found '"+peek().text+"'","ON1X-PARSE-EXPECTED",std::string(s),peek().text);const auto& token=peek();++pos;return token;}
  static bool is_ident(const std::string& s){if(s.empty()||!(std::isalpha((unsigned char)s[0])||s[0]=='_'))return false;
   for(char c:s)if(!(std::isalnum((unsigned char)c)||c=='_'))return false;
   return true;}
@@ -90,7 +90,7 @@ class Parser {
     if(auto found=bound_types.find(t.text);found!=bound_types.end())return Type::bound(found->second);
    if(t.text=="_")return Type::Hole;
    for(auto x:{Type::I64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(t.text==type_name(x))return x;
-  throw Error(t.where,"unknown type: "+t.text);
+   throw Error(t.where,"unknown type: "+t.text,"ON1X-PARSE-TYPE",{},t.text);
  }
  static int precedence(const std::string& op){if(op=="||")return 1;if(op=="&&")return 2;
   if(op=="=="||op=="!=")return 3;

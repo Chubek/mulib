@@ -44,3 +44,9 @@ distinguish missing/error/EOF/empty outcomes, but remain trusted raw adapters.
 General f64/record/slice ABI and ExoML/Chisel safe-import gates remain open.
 Read [the bridge manual](stdlib/_bridge/README.md), [PPX manual](stdppx/README.md)
 and `AGENTS.md` before production use.
+## Error reporting and repair proposals
+
+Optional Syren integration (`-DON1X_WITH_SYREN=ON`) adds text/JSON/SARIF source
+diagnostics and `on1xc --repair INPUT -o NEW_FILE`. Repairs are independently
+compiler-checked proposals, never in-place edits or changes to ON1X's syntax or
+semantics. See [diagnostics and repair](docs/diagnostics.md).

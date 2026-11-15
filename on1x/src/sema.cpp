@@ -49,7 +49,7 @@ class Checker {
  std::vector<LambdaFrame> lambdas;
  std::size_t capture_count=0,capture_bytes=0;
  Type returns=Type::Void;
- [[noreturn]] void fail(const Location& loc,const std::string& msg){throw Error(loc,msg);}
+ [[noreturn]] void fail(const Location& loc,const std::string& msg){throw Error(loc,msg,"ON1X-SEMA");}
  void push(){scopes.emplace_back();}void pop(){scopes.pop_back();}
  const Binding* lookup(const std::string& name)const{
   for(auto it=scopes.rbegin();it!=scopes.rend();++it){auto hit=it->find(name);if(hit!=it->end())return &hit->second;}
@@ -74,7 +74,7 @@ class Checker {
   }
  }
  static bool resource(Type t){return t==Type::Json||t==Type::JsonView;}
- void equal(Type actual,Type expected,const Location& loc){if(actual!=expected)fail(loc,std::string("expected ")+type_name(expected)+", got "+type_name(actual));}
+ void equal(Type actual,Type expected,const Location& loc){if(actual!=expected)throw Error(loc,std::string("expected ")+type_name(expected)+", got "+type_name(actual),"ON1X-TYPE");}
   void validate_type(const Type& type,const Location& loc){
    if(type.has_holes())fail(loc,"unresolved inference hole in checked type");
     if(type.is_forall()){validate_type(type.body(),loc);return;}

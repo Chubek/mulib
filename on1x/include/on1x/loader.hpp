@@ -10,6 +10,9 @@ struct LoaderOptions {
  bool prelude=true;
  std::vector<std::filesystem::path> preludes;
  std::size_t max_modules=1024,max_depth=64,max_bytes=16*1024*1024;
+ // Tooling-only overlays, keyed by canonical paths. The ordinary compiler uses
+ // an empty map. All normal parsing, import and byte limits still apply.
+ std::map<std::filesystem::path,std::string> source_overrides;
 };
 struct LoadedUnit {
  Unit unit;
