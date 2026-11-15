@@ -32,3 +32,8 @@ LibStone checkout's `moonstone/exoml/contracts/schema.exocontract.json` and
 `moonstone/exoml/include/exoml/Contract.hpp`. On1x preserves the full model rather
 than projecting into the lossy legacy ownership contract. LibStone and MuLIB
 kernels are read-only inputs to this workflow.
+## Directory binding
+
+This workflow lives in `on1x/contracts-exoml`; `on1x-contracts.py` resolves its
+catalog and sidecars here. Exotract static build profiles and archive generation
+are documented in [`../contracts-exotract/README.md`](../contracts-exotract/README.md).

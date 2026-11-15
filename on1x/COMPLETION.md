@@ -38,6 +38,14 @@ At the time this specification was authored (2026-11-14), repository documentati
 
 ### Preserve working subsystems
 
+- Optional Nerotypical/Satie structural verification of concrete HIR, with
+  independent type obligations and closed rejection on unsupported/unknown cases;
+  see `docs/type-safety.md` for the source SDK patch and supported subset.
+- Optional Chisel scalar/JSON ownership CFG checks and a compiler-side external
+  resource protocol API; see `docs/memory-safety.md` for the supported boundary.
+- Backend continuation (2026-11-15): opt-in B3 scalar Datalog/CCDB analyses and
+  transactional B4 checked folding, CFG cleanup and dead pure-value/phi passes;
+  see `docs/backend-analysis.md`, `docs/backend-passes.md` and `VERIFICATION.md`.
 - ASDL/Aurocks-generated scanning, independent bootstrap fallback, scanner parity, bounded token/source handling.
 - Parser and typed C++ HIR for the implemented core; imports, first-class functions, immutable closures, tuples/patterns, recursion, control flow, checked `i64` arithmetic.
 - Value-restricted polymorphism and explicit universals in the documented implemented subset.
@@ -55,7 +63,7 @@ At the time this specification was authored (2026-11-14), repository documentati
 - No completed ADTs, general pattern matching, records/modules/functors, full callbacks, effect inference, or Plaid concurrency lowering.
 - The C11 backend works for the supported subset; native and VM backends are not required for this task and must not block it.
 
-**Read first:** `README.md`, `VERIFICATION.md`, `docs/roadmap.md`, `docs/contracts.md`, `docs/architecture.md`, `docs/language.md`, `docs/closures.md`, `docs/tuples.md`, `docs/staging.md`, `contracts/catalog.json`, `contracts/obligations.json`, `tools/on1x-bind.cpp`, `tools/on1x-contracts.py`, `src/{parser,type,infer,sema,codegen,primitives}.cpp`, `runtime/`, `tests/`, and the canonical ExoML `Contract.hpp`, `CDecl.hpp`, `Extract.hpp`, `StaticFFI.hpp` and schema in LibStone.
+**Read first:** `README.md`, `VERIFICATION.md`, `docs/roadmap.md`, `docs/contracts.md`, `docs/architecture.md`, `docs/language.md`, `docs/closures.md`, `docs/tuples.md`, `docs/staging.md`, `contracts-exoml/catalog.json`, `contracts-exoml/obligations.json`, `tools/on1x-bind.cpp`, `tools/on1x-contracts.py`, `src/{parser,type,infer,sema,codegen,primitives}.cpp`, `runtime/`, `tests/`, and the canonical ExoML `Contract.hpp`, `CDecl.hpp`, `Extract.hpp`, `StaticFFI.hpp` and schema in LibStone.
 
 ## 2. Required application capability: what Shylock needs
 
@@ -354,7 +362,7 @@ Execute in this order, with incremental green builds and committed evidence afte
 2. Numeric/ABI types (`src/type.cpp`, `src/infer.cpp`, `src/sema.cpp`, `src/codegen.cpp`, runtime, grammar/lexer only as required without compatibility break).
 3. ExoML interface generator and tested C adapters (`tools/on1x-bind.cpp`, related admission helpers, generated-module lowering).
 4. Ownership, effects, error types and cleanup (`src/`, `include/on1x/`, `runtime/`, and compatible LibStone analyzer integration).
-5. Pricing contract profiles (`contracts/`, catalog, obligations, review evidence and tests).
+5. Pricing contract profiles (`contracts-exoml/`, catalog, obligations, review evidence and tests).
 6. Reproducible implementation-unit generation and build workflow (CMake, `tools/on1x-build.py`, generated output/manifest tests).
 7. Multi-module Shylock reference application and golden/differential tests (under `examples/shylock/` and/or `tests/shylock/`; keep a separate production `../shylock/` project optional).
 8. Full GCC/Clang, generated/fallback, ExoML-enabled, sanitizer, failure-injection and reproducibility verification.

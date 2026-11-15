@@ -1,6 +1,6 @@
 {
  "schema_version":2,"library":"vec","headers":["mulib-vec.h"],"state":"annotated",
- "bundle_provenance":{"header":"mulib-vec.h","revision":"sha256:b2576214db977f01ef73d07059c2877082b57bcb14e5773fb7bc98af591e2a0e","author":"OpenCode (AI-authored)","review_status":"unreviewed","evidence_method":"Source/manual audit; contracts/obligations.json; tests/fixtures/contract_semantics.c. Elements are bytes, never implicitly owned objects."},
+  "bundle_provenance":{"header":"mulib-vec.h","revision":"sha256:b2576214db977f01ef73d07059c2877082b57bcb14e5773fb7bc98af591e2a0e","author":"OpenCode (AI-authored)","review_status":"unreviewed","evidence_method":"Source/manual audit; contracts-exoml/obligations.json; tests/fixtures/contract_semantics.c. Elements are bytes, never implicitly owned objects."},
  "functions":[
   {"c_name":"mulib_vec_init","return":{"kind":"value","nullable":false},"parameters":[{"index":0,"name":"v","ownership":"out","nullable":true},{"index":1,"name":"element_size","ownership":"scalar","nullable":false}],"errors":{"kind":"none"},"effects":{"effects":["write"],"unknown":false},
    "concurrency":{"thread_safety":"single_thread","blocking_behavior":"synchronous struct initialization; no allocation","suspension_safe":false},

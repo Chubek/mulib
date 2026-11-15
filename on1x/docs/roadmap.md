@@ -16,8 +16,9 @@
 | Tuples / destructuring | P1 product subset | Structural products, nested immutable local/function/lambda patterns, leaf schemes and function/universal-field ownership; no JSON elements or aggregate extern ABI |
 | C11 AOT code generation | Verified subset | Strict GCC/Clang compile/run tests; ASan/UBSan also cover generated C |
 | Core/MIR v1 | B1 scalar subset | Stable unit-local IDs, source points, SSA block arguments, direct calls, local slots, explicit effect chains, bounded verifier and deterministic round-trip; see [manual](backend-mir.md) |
-| MIR reference execution / C11 | Implemented scalar subset | Three-way HIR-C11/MIR-C11/evaluator tests; malformed CFG/phi/use/effect/initialization rejections; optional CLI and build-helper path |
+| MIR reference execution / C11 | Implemented scalar subset | Five-way HIR-C11, plain/optimized MIR-C11 and evaluator tests; malformed CFG/phi/use/effect/initialization rejections; optional CLI and build-helper path |
 | Novostone MIR analyses | B3 scalar metadata subset | Opt-in Datalog/CCDB, exact fact checks, transactional publication, revision-bound queries, call/effect closure and block liveness; [manual](backend-analysis.md) |
+| Transactional MIR passes | B4 scalar subset | Opt-in checked constant folding, constant-branch cleanup, local-slot forwarding/overwritten-store removal, dead pure-value/phi elimination; checked preservation, bounded rollback/fallback, deterministic provenance and exact-revision fact publication; [manual](backend-passes.md) |
 | Signed i64 checking | Implemented | Overflow/invalid division tests |
 | Native ABI externs | Explicit raw subset | Exact scalar ABI; explicit nested parameter patterns flatten left-to-right, no aggregate layout inference |
 | Typed hygienic macros | Recursive patterns and lexical syntax bindings | Context marks, typed recursive captures/ellipses, `let_syntax`/`letrec_syntax`, definition-site value/syntax identities and bounded transactional expansion; not the full Scheme language |
@@ -30,18 +31,21 @@
 | JSON/Vec/Parsec contract inventory | 45 unreviewed source annotations | All 20/7/18 core declarations covered; conditional transfers, borrows, errors, effects, callbacks/unknown obligations retained; not safe imports |
 | ExoML raw scalar adapter emitter | Optional, narrow tested subset | Signed integers/void, exact C11 signature/size/signedness/range checks and full manifests; safe emission always blocked pending remaining gates |
 | General C FFI adapters | Not implemented | Needs ABI/error/ownership model and tests |
-| Chisel/Wetstone integration | Not implemented | Current checker only ad hoc ownership restrictions |
+| Chisel resource checking | Opt-in scalar/JSON usage subset | Real solver plus conservative joins, token-use and exit/reinitialization checks; generic external resource CFG API; [manual](memory-safety.md) |
+| Nerotypical structural verification | Opt-in concrete HIR checker | Real TypeGraph/Satie EUF obligations for calls, closures, tuples, staging and resources; explicit universals reject; separate patched source SDK; [manual](type-safety.md) |
+| Exotract static bindings | MANIFEST-backed profiles and one-TU archive generation | Typed CDecl/import metadata; executable JSON/Vec/Parsec and MicroJS C clients plus On1x JSON archive linkage; [manual](../contracts-exotract/README.md) |
+| Wetstone / general foreign ownership lowering | Not implemented | Contract-driven external handle types, ABI, alias/extent and effect proofs remain open |
 | Flintstone/Firestone native lowering | Not implemented | C11 is the sole backend |
 | ADTs, match, functors | Not implemented | Future language features |
 | Plaid/Prolific integration | Not implemented | Future concurrency and profiling features |
 
 ## Immediate next iterations
 
-The backend continuation provides scalar B1 and opt-in B3 relational analyses.
-Next backend increments include transactional pass management and verified scalar
-transformations, followed by restricted Sequent integration and broader MIR
-aggregate/closure support. Full B1 resource/error-edge support, general B3
-contract dependencies and B5 VM/native lowering remain open.
+The backend continuation provides scalar B1, opt-in B3 relational analyses and
+transactional B4 scalar transformations. Next backend increments include
+restricted Sequent integration and broader MIR aggregate/closure support. Full B1
+resource/error-edge support, general B3 contract dependencies, ownership-aware B4
+transforms and B5 VM/native lowering remain open.
 
 1. **P0 baseline verified** — Generator-backed and independent fallback builds,
    exact scanner parity, bounded parsing, strict generated C11 and real MuLIB

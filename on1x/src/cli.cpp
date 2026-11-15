@@ -1,6 +1,13 @@
 #include <on1x/ast.hpp>
 #include <on1x/meta.hpp>
 #include <on1x/backend/mir.hpp>
+#include <on1x/backend/passes.hpp>
+#ifdef ON1X_WITH_NEROTYPICAL
+#include <on1x/type_safety.hpp>
+#endif
+#ifdef ON1X_WITH_CHISEL
+#include <on1x/safety.hpp>
+#endif
 #ifdef ON1X_WITH_NOVOSTONE
 #include <on1x/backend/relational.hpp>
 #endif
@@ -28,7 +35,15 @@ std::string read_ir(const std::string& name){
  if(!in.eof())throw std::runtime_error("cannot read "+name);
  return text;
 }
-int mir_output(const on1x::mir::Module& module,const std::string& mode,const std::string& out,std::size_t analysis_work){
+int mir_output(const on1x::mir::Module& input,const std::string& mode,const std::string& out,std::size_t analysis_work,const on1x::mir::passes::Options* optimization){
+ std::optional<on1x::mir::passes::Result> optimized;
+ if(optimization){
+  optimized=on1x::mir::passes::run(input,*optimization);
+  if(optimized->status()==on1x::mir::passes::Status::BudgetExhausted)
+   std::cerr<<"on1xc: ON1X-MIR-PASS: "<<optimized->diagnostic()<<"; using last verified MIR prefix\n";
+ }
+ if(mode=="--dump-passes"){write_all(out,on1x::mir::passes::report(*optimized));return 0;}
+ const auto& module=optimized?optimized->module():input;
 #ifdef ON1X_WITH_NOVOSTONE
  if(mode=="--emit-ir-facts"||mode=="--analyze-ir"){
   namespace r=on1x::mir::relational;r::Store store(module);
@@ -79,6 +94,12 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
   "       on1xc [--emit-ir-facts | --analyze-ir] INPUT [-o OUTPUT] [--ir-input]\n"
   "       [--analysis-work UNITS] (Novostone opt-in build; --analyze-ir only)\n"
+  "       [--optimize-ir] [--opt-work UNITS] [--opt-rewrites COUNT] (MIR modes only)\n"
+  "       on1xc --dump-passes INPUT [-o OUTPUT] [--ir-input]\n"
+  "       on1xc --check-memory INPUT [-o OUTPUT] (Chisel opt-in build)\n"
+  "       [--memory-check] (check resource usage before source compilation)\n"
+  "       on1xc --check-types INPUT [-o OUTPUT] (Nerotypical opt-in build)\n"
+  "       [--verify-types] (require independent structural HIR type verification)\n"
  "       on1xc --help\n"
   "--emit-ast expands macros and exports pre-PPX AST; it never executes programs.\n"
   "MIR modes support i64/bool/void, direct On1x calls, control flow and scalar print/assert.\n"
@@ -90,11 +111,26 @@ int main(int argc,char**argv){
  try{
      std::string mode="--emit-c",source,out;bool ir_input=false;
      std::size_t analysis_work=10000000;bool analysis_limit=false;
+      on1x::mir::passes::Options optimization;bool optimize=false,opt_limit=false;
+      bool memory=false;
+      bool type_safety=false;
    on1x::meta::PpxOptions ppx;
   for(int i=1;i<argc;++i){std::string arg=argv[i];
-   if(arg=="--help"||arg=="-h"){usage();return 0;}
-     if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-ir-facts"||arg=="--analyze-ir")mode=arg;
+    if(arg=="--help"||arg=="-h"){usage();return 0;}
+    if(arg=="--memory-check"){memory=true;continue;}
+    if(arg=="--check-memory"){mode=arg;continue;}
+    if(arg=="--verify-types"){type_safety=true;continue;}
+    if(arg=="--check-types"){mode=arg;continue;}
+     if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes")mode=arg;
       else if(arg=="--ir-input")ir_input=true;
+      else if(arg=="--optimize-ir")optimize=true;
+      else if(arg=="--opt-work"||arg=="--opt-rewrites"){
+       if(++i>=argc)throw std::runtime_error(arg+" requires a value");
+       auto& limit=arg=="--opt-work"?optimization.work:optimization.rewrites;
+       std::string value=argv[i];auto [end,ec]=std::from_chars(value.data(),value.data()+value.size(),limit);
+       if(ec!=std::errc{}||end!=value.data()+value.size())throw std::runtime_error("invalid optimization budget");
+       opt_limit=true;
+      }
       else if(arg=="--analysis-work"){
        if(++i>=argc)throw std::runtime_error("--analysis-work requires a value");
        std::string value=argv[i];auto [end,ec]=std::from_chars(value.data(),value.data()+value.size(),analysis_work);
@@ -116,16 +152,29 @@ int main(int argc,char**argv){
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
    else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
   }
-    if(source.empty()){usage();return 2;}
+     if(source.empty()){usage();return 2;}
+     memory=memory||mode=="--check-memory";
+     type_safety=type_safety||mode=="--check-types";
+#ifndef ON1X_WITH_NEROTYPICAL
+     if(type_safety)throw std::runtime_error("structural type checking unavailable: configure with ON1X_WITH_NEROTYPICAL=ON");
+#endif
+     if(type_safety&&(ir_input||mode=="--tokens"||mode=="--emit-ast"))throw std::runtime_error("structural type checking requires elaborated source HIR");
+#ifndef ON1X_WITH_CHISEL
+     if(memory)throw std::runtime_error("memory checking unavailable: configure with ON1X_WITH_CHISEL=ON");
+#endif
+     if(memory&&(ir_input||mode=="--tokens"||mode=="--emit-ast"))throw std::runtime_error("memory checking requires checked source HIR");
      bool analysis_mode=mode=="--emit-ir-facts"||mode=="--analyze-ir";
      if(analysis_limit&&mode!="--analyze-ir")throw std::runtime_error("--analysis-work requires --analyze-ir");
 #ifndef ON1X_WITH_NOVOSTONE
      if(analysis_mode)throw std::runtime_error("MIR analysis unavailable: configure with ON1X_WITH_NOVOSTONE=ON");
 #endif
-     bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||mode=="--run-ir"||analysis_mode;
+     bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||mode=="--run-ir"||mode=="--dump-passes"||analysis_mode;
+     optimize=optimize||mode=="--dump-passes";
+     if(optimize&&!mir_mode)throw std::runtime_error("--optimize-ir requires a MIR mode");
+     if(opt_limit&&!optimize)throw std::runtime_error("optimization budgets require --optimize-ir or --dump-passes");
     if(ir_input){
      if(!mir_mode||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source)throw std::runtime_error("--ir-input requires a MIR mode without PPX options");
-      return mir_output(on1x::mir::deserialize(read_ir(source),source),mode,out,analysis_work);
+      return mir_output(on1x::mir::deserialize(read_ir(source),source),mode,out,analysis_work,optimize?&optimization:nullptr);
     }
    if((mode=="--tokens"||mode=="--emit-ast")&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
    if(mode=="--tokens"){
@@ -140,9 +189,17 @@ int main(int argc,char**argv){
     write_all(out,on1x::meta::write_sexpr(tree));return 0;
    }
    on1x::meta::rewrite(unit,ppx);
-   on1x::check(unit);
-    if(mode=="--check"){std::cout<<"OK: "<<unit.functions.size()<<" functions\n";return 0;}
-     if(mir_mode)return mir_output(on1x::mir::lower(unit),mode,out,analysis_work);
+    on1x::check(unit);
+    std::string type_evidence;
+#ifdef ON1X_WITH_NEROTYPICAL
+    if(type_safety)type_evidence=on1x::type_safety::verify(unit);
+#endif
+#ifdef ON1X_WITH_CHISEL
+    if(memory){auto evidence=on1x::safety::check(unit);if(mode=="--check-memory"){write_all(out,evidence);return 0;}}
+#endif
+    if(mode=="--check-types"){write_all(out,type_evidence);return 0;}
+     if(mode=="--check"){std::cout<<"OK: "<<unit.functions.size()<<" functions\n";return 0;}
+     if(mir_mode)return mir_output(on1x::mir::lower(unit),mode,out,analysis_work,optimize?&optimization:nullptr);
    if(mode=="--types"){
     std::ostringstream listing;
      for(const auto& function:unit.functions){
@@ -180,7 +237,15 @@ int main(int argc,char**argv){
  }catch(const on1x::mir::relational::BudgetExceeded& e){
   std::cerr<<e.where.file<<":"<<e.where.line<<":"<<e.where.column<<": error: "<<e.what()<<"\n";return 75;
 #endif
- }catch(const on1x::Error& e){
+#ifdef ON1X_WITH_CHISEL
+  }catch(const on1x::safety::BudgetExceeded& e){
+   std::cerr<<e.where.file<<":"<<e.where.line<<":"<<e.where.column<<": "<<e.what()<<"\n";return 75;
+#endif
+#ifdef ON1X_WITH_NEROTYPICAL
+  }catch(const on1x::type_safety::Inconclusive& e){
+   std::cerr<<e.where.file<<":"<<e.where.line<<":"<<e.where.column<<": "<<e.what()<<"\n";return 75;
+#endif
+  }catch(const on1x::Error& e){
   std::cerr<<e.where.file<<":"<<e.where.line<<":"<<e.where.column<<": error: "<<e.what()<<"\n";return 1;
  }catch(const std::exception&e){std::cerr<<"on1xc: "<<e.what()<<"\n";return 2;}
 }

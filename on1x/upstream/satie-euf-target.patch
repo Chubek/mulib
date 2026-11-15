@@ -1,0 +1,26 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -5,6 +5,22 @@ project(Satie
+   LANGUAGES C CXX
+   DESCRIPTION "Multi-algorithm SAT/SMT solver")
+ 
++# Minimal public target for the header-based EUF solver and its allocator.
++# Does not configure parsers, CLI, plugins or D-language frontends.
++option(SATIE_EUF_ONLY "Build only the EUF consumer support target" OFF)
++if(SATIE_EUF_ONLY)
++  find_package(Threads REQUIRED)
++  add_library(satie_euf STATIC src/SatieMemory.cpp)
++  add_library(satie::euf ALIAS satie_euf)
++  target_compile_features(satie_euf PUBLIC cxx_std_20)
++  target_include_directories(satie_euf SYSTEM PUBLIC
++    "${CMAKE_CURRENT_SOURCE_DIR}/include")
++  target_include_directories(satie_euf SYSTEM PRIVATE
++    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/memtkx/include")
++  target_link_libraries(satie_euf PUBLIC Threads::Threads)
++  return()
++endif()
++
+ # ------------------------------------------------------------
+ # Global settings
+ # ------------------------------------------------------------

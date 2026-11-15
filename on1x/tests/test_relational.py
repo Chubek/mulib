@@ -76,4 +76,9 @@ for mode in ['--emit-ir-facts', '--analyze-ir']:
 
 p = run([args.compiler, '--run-ir', source])
 assert p.returncode == 0 and p.stdout == 'true\nfalse\ntrue\nfalse\n', p.stderr
+# CLI analyses must describe the selected optimized artifact, not the pre-pass IR.
+optimized = run([args.compiler, '--emit-ir', '--optimize-ir', args.root/'examples/optimize.on1x'])
+p = run([args.compiler, '--analyze-ir', '--optimize-ir', args.root/'examples/optimize.on1x'])
+assert optimized.returncode == p.returncode == 0, p.stderr
+assert sexpr.loads(p.stdout)[3] == ['source', optimized.stdout]
 print('Novostone CLI, source identity, saved artifacts, rejection and budgets PASS')

@@ -1,6 +1,6 @@
 {
  "schema_version":2,"library":"json","headers":["mulib-json.h"],"state":"annotated",
- "bundle_provenance":{"header":"mulib-json.h","revision":"sha256:e9e233759cfa04eed6f5d05e98ca619118c42b6dc71e1f94a1d0aa882a5585e0","author":"OpenCode (AI-authored)","review_status":"unreviewed","evidence_method":"Source/manual audit; contracts/obligations.json; tests/fixtures/contract_semantics.c. Not an independent safety review."},
+  "bundle_provenance":{"header":"mulib-json.h","revision":"sha256:e9e233759cfa04eed6f5d05e98ca619118c42b6dc71e1f94a1d0aa882a5585e0","author":"OpenCode (AI-authored)","review_status":"unreviewed","evidence_method":"Source/manual audit; contracts-exoml/obligations.json; tests/fixtures/contract_semantics.c. Not an independent safety review."},
  "functions":[
   {"c_name":"mulib_json_new","return":{"kind":"owned","nullable":true,"destroy_with":"mulib_json_destroy","allocation_source":"calloc/malloc","deallocator_family":"malloc"},
    "parameters":[{"index":0,"name":"type","ownership":"scalar","nullable":false}],"errors":{"kind":"null_on_failure"},"effects":{"effects":["allocate","free","write"],"unknown":false},

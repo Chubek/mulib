@@ -1,4 +1,5 @@
 #include <on1x/backend/mir.hpp>
+#include "checked.hpp"
 #include <algorithm>
 #include <limits>
 #include <map>
@@ -17,26 +18,9 @@ class Evaluator {
   --remaining;++result.steps;
  }
  [[noreturn]] void trap(const Location& at,const char* message){throw Halt{Status::Trapped,at,message};}
- std::int64_t arithmetic(Op op,std::int64_t a,std::int64_t b,const Location& at){
-  constexpr auto lo=std::numeric_limits<std::int64_t>::min(),hi=std::numeric_limits<std::int64_t>::max();
-  switch(op){
-  case Op::Add:if((b>0&&a>hi-b)||(b<0&&a<lo-b))trap(at,"addition overflow");return a+b;
-  case Op::Sub:if((b<0&&a>hi+b)||(b>0&&a<lo+b))trap(at,"subtraction overflow");return a-b;
-  case Op::Mul:{
-   // Unsigned magnitudes avoid both signed overflow and abs(INT64_MIN).
-   auto magnitude=[](std::int64_t n){return n<0?std::uint64_t(-(n+1))+1:std::uint64_t(n);};
-   auto x=magnitude(a),y=magnitude(b);bool negative=(a<0)!=(b<0);
-   auto bound=std::uint64_t(hi)+(negative?1:0);
-   if(y&&x>bound/y)trap(at,"multiplication overflow");
-   auto product=x*y;if(negative&&product==std::uint64_t(hi)+1)return lo;
-   return negative?-static_cast<std::int64_t>(product):static_cast<std::int64_t>(product);
+  std::int64_t arithmetic(Op op,std::int64_t a,std::int64_t b,const Location& at){
+   auto value=detail::arithmetic(op,a,b);if(value.trap)trap(at,value.trap);return value.value;
   }
-  case Op::Div:if(!b||(a==lo&&b==-1))trap(at,"invalid division");return a/b;
-  case Op::Mod:if(!b||(a==lo&&b==-1))trap(at,"invalid modulo");return a%b;
-  case Op::Neg:if(a==lo)trap(at,"negation overflow");return -a;
-  default:throw std::logic_error("invalid checked arithmetic opcode");
-  }
- }
  std::int64_t call(const Function& f,const std::vector<std::int64_t>& args,std::size_t depth){
   if(depth>=depth_limit)throw Halt{Status::BudgetExhausted,f.where,"evaluation call-depth budget exhausted"};
   const auto& index=indices.at(f.id);const auto& blocks=index.blocks;const auto& types=index.types;

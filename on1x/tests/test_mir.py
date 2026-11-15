@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Three-way execution oracle: reference HIR C11, verified MIR C11, MIR evaluator."""
+"""Five-way execution oracle: HIR C11, plain/optimized MIR C11 and evaluators."""
 import hashlib
 import random
 from support import NativeTests, run
@@ -18,20 +18,25 @@ def native(path, exe):
 def compare(name, text=None, source=None, expected=None, status=0, diagnostic=None, options=()):
     source = source or tests.source(name, text)
     outputs = []
-    for mode in ['--emit-c', '--emit-ir-c']:
-        path = tests.work/(name+mode+'.c')
-        p = run([tests.compiler, mode, source, *options, '-o', path])
+    for mode, optimization, label in [('--emit-c', [], '--emit-c'), ('--emit-ir-c', [], '--emit-ir-c'),
+                                      ('--emit-ir-c', ['--optimize-ir'], '--optimized-c')]:
+        path = tests.work/(name+label+'.c')
+        p = run([tests.compiler, mode, source, *options, *optimization, '-o', path])
         assert p.returncode == 0, (name, p.stderr)
-        again = run([tests.compiler, mode, source, *options])
+        again = run([tests.compiler, mode, source, *options, *optimization])
         assert again.returncode == 0 and path.read_text() == again.stdout
-        p = native(path, tests.work/(name+mode))
+        p = native(path, tests.work/(name+label))
         outputs.append((p.returncode, p.stdout))
         assert p.returncode == status, (name, mode, p.returncode, p.stderr)
         if diagnostic:
             assert diagnostic in p.stderr, (name, mode, p.stderr)
-    p = run([tests.compiler, '--run-ir', source, *options])
-    outputs.append((p.returncode, p.stdout))
-    assert outputs[0] == outputs[1] == outputs[2], (name, outputs, p.stderr)
+    diagnostics = []
+    for optimization in [[], ['--optimize-ir']]:
+        p = run([tests.compiler, '--run-ir', source, *options, *optimization])
+        outputs.append((p.returncode, p.stdout))
+        diagnostics.append(p.stderr)
+    assert all(output == outputs[0] for output in outputs), (name, outputs, p.stderr)
+    assert diagnostics[0] == diagnostics[1], (name, diagnostics)
     if expected is not None:
         assert p.stdout == expected, (name, p.stdout, expected)
     if diagnostic:
@@ -168,4 +173,4 @@ p = run([sys.executable, tests.root/'tools/on1x-build.py', tests.root/'examples/
 assert p.returncode == 0, p.stderr
 p = run([exe])
 assert p.returncode == 0 and p.stdout == '1\n1\n2\n6\n24\n120\nfalse\n'
-print('MIR three-way execution, malformed input, limits and deterministic artifacts PASS')
+print('MIR five-way execution, malformed input, limits and deterministic artifacts PASS')

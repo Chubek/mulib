@@ -1,5 +1,6 @@
 #pragma once
 #include <on1x/backend/mir.hpp>
+#include <on1x/backend/passes.hpp>
 #include <novostone/CCDB/CCDB.hpp>
 
 namespace on1x::mir::relational {
@@ -53,12 +54,17 @@ private:
 };
 // Store mutation is single-threaded. Immutable snapshots/queries may outlive it.
 // Publication stages a verified complete projection and commits only fact deltas.
+struct Optimization { Snapshot snapshot; passes::Result result; };
 class Store {
 public:
  explicit Store(const Module& module, ImportLimits limits={});
  Snapshot snapshot() const { return head_; }
- Snapshot publish(const Snapshot& expected, const Module& module, ImportLimits limits={});
+ Snapshot publish(const Snapshot& expected, const Module& module, ImportLimits limits={},
+                  std::string reason="on1x.mir-facts/v1 publication");
  Snapshot replace_function(const Snapshot& expected, const Function& function, ImportLimits limits={});
+ // Runs built-in verified passes and publishes their completed prefix against
+ // this exact snapshot. No-op/exhausted-without-progress keeps the same revision.
+ Optimization optimize(const Snapshot& expected, passes::Options options={}, ImportLimits limits={});
  std::vector<novostone::ccdb::Event> events() const { return database_.events(); }
 private:
  novostone::ccdb::Database database_;

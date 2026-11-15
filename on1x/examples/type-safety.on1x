@@ -1,0 +1,10 @@
+fn apply(f: fn(i64)->i64, x: i64)->i64 { return f(x); }
+fn main() {
+  let n = 40;
+  let add = fn(x: i64)->i64 { return n+x; };
+  let (answer, ok) = (apply(add, 2), true);
+  println(answer);
+  println(ok);
+  let later = quote { lift(answer) };
+  println(run(later));
+}

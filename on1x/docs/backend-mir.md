@@ -54,7 +54,10 @@ through `--emit-ir-facts` / `--analyze-ir` in an enabled build.
 This does not complete B1's closure/resource/foreign descriptors, source spans
 and expansion stacks, cleanup/error edges or full type/layout catalog. It does
 not implement Moonstone diagnostic/Syren adapters, Sequent optimization,
-a pass manager, or a native ABI.
+general ownership-aware passes, or a native ABI. The optional
+[scalar pass pipeline](backend-passes.md) implements checked folding, CFG cleanup,
+local-slot forwarding/overwritten-store removal and dead pure-value elimination
+with transactional verification.
 
 ## Representation and invariants
 
@@ -86,8 +89,9 @@ This validates ordering dependencies, not equivalence of arbitrary rewrites.
 
 `verify` runs after lowering and deserialization and before serialization,
 evaluation, graph emission and C11 emission. Lowering builds a separate candidate;
-failure leaves HIR and an existing CLI output file intact. There are no optimizer
-passes yet. Checked arithmetic traps are terminal, matching current C11 behavior;
+failure leaves HIR and an existing CLI output file intact. Opt-in scalar passes
+also verify each transition and its preserved analyses. Checked arithmetic traps
+are terminal, matching current C11 behavior;
 no cleanup or recoverable error semantics are claimed for this scalar subset.
 
 ## Format, budgets and testing
@@ -110,7 +114,8 @@ Exhaustion never reports successful evaluation or verification.
 
 `on1x.mir_hir` tests malformed IR, phi loops, round-trips, deterministic IDs,
 source preservation and independent budgets. `on1x.mir` executes the same corpus
-through HIR C11, MIR C11 and the evaluator, including saved artifacts, 120 seeded
+through HIR C11, ordinary/optimized MIR C11 and both evaluator modes, including
+saved artifacts, 120 seeded
 arithmetic/comparison cases, ten trap programs, ordered effects, early exits,
 imports, macros, PPX, specializations and unsupported-operation rejection. An
 independently authored phi permutation is compiled and executed as C11.

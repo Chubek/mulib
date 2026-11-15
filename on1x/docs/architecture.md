@@ -17,6 +17,15 @@ reachability, call/effect closure and edge-aware block liveness. MIR remains the
 semantic authority; these facts do not use Novostone's wrapping-i32 IR or authorize
 rewrites. Source and installed-package providers are independently selectable.
 
+The opt-in [scalar pass manager](backend-passes.md) runs checked constant folding,
+constant-branch cleanup, local-slot forwarding/overwritten-store removal and dead
+pure-value/phi elimination. Each pass edits a
+separate candidate and commits after MIR and preservation verification. Shared
+budgets bound attempts; exhaustion returns the last verified prefix with explicit
+status. Exact input/output MIR, options and versioned pass events form deterministic
+provenance. Optional `Store::optimize` publishes that result against the exact CCDB
+source snapshot, with cache invalidation through actual fact deltas.
+
 ```
      .on1x source
          │
@@ -249,6 +258,25 @@ interop in the current frontend. It is not permissible to represent an unowned
 `void*` as a safe owning `json` value.
 
 ## Resource model in vertical slice
+
+Static MuLIB build profiles now live in `contracts-exotract`, backed by the
+canonical MANIFEST and real Exotract/ExoML declaration discovery. The generator
+produces typed import metadata and a single implementation-TU archive; existing
+JSON C11 facade calls can link that archive. Semantic sidecars and their audit
+workflow live in `contracts-exoml`. General foreign-handle ABI lowering remains
+an independent compiler obligation.
+
+An optional [Nerotypical structural checker](type-safety.md) independently
+validates concrete HIR type obligations after elaboration and before emission.
+It uses the public structural solver with a separately prepared Satie source SDK,
+including an explicitly identified upstream CMake patch. It does not replace
+inference or the resource analyses below.
+
+The opt-in [Chisel adapter](memory-safety.md) lowers the scalar/JSON HIR subset to
+resource CFGs and checks ownership, loans and lexical exit cleanup with the actual
+Moonstone solver. It adds all-path loan and may-live checks around the upstream
+checker. Its public event API supports modeled external protocols; general
+contract-driven foreign-handle lowering remains open.
 
 - `json` can only originate from `json_parse_or_die` bound to `let`.
 - `json` and `json_view` cannot be declared as function arguments/returns.

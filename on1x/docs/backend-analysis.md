@@ -155,6 +155,13 @@ revision counters alone is insufficient, including across two different stores.
 Queries cannot be constructed from arbitrary rows. Store mutation is single-threaded;
 the underlying immutable CCDB snapshots support independent readers.
 
+`Store::optimize(expected, options, import_limits)` runs the
+[verified scalar pass pipeline](backend-passes.md) and publishes its verified
+result against the exact source snapshot. Changed publications invalidate queries
+through actual fact deltas. No-op results preserve the current revision; failed
+projection leaves it intact. The returned pass result records complete versus
+budget-limited progress and detailed transformation provenance.
+
 `project` exports a typed Datalog module. `check_projection(mir, parsed_facts)`
 requires the exact current rule catalog and verifies all base facts against the
 given MIR; missing, extra, changed, mistyped, unknown or derived facts reject.
@@ -185,6 +192,7 @@ deletion retraction, failed publication and independent budgets.
 `on1x.relational` tests the CLI and deterministic source/saved-MIR artifacts,
 located rejection, exhaustion, output preservation, and disabled-feature errors.
 
-This is a scalar B3 increment. General resource/contract facts, incremental pass
-invalidation, optimization transforms, Sequent integration, and VM/native lowering
-remain future backend work. No facts authorize a compiler transformation yet.
+This is a scalar B3 increment with B4 built-in-pass publication. General
+resource/contract facts, external analysis-driven transforms, Sequent integration,
+and VM/native lowering remain future backend work. The built-in transforms use
+verified MIR directly; fact rows are not rewrite authority.

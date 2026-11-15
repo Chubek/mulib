@@ -18,7 +18,7 @@ import sys
 import tempfile
 
 HOME = Path(__file__).resolve().parents[1]
-CONTRACTS = HOME/'contracts'
+CONTRACTS = HOME/'contracts-exoml'
 MAX_BYTES = 64 * 1024 * 1024
 
 
@@ -97,7 +97,7 @@ def catalog(root):
             if path.is_absolute() or '..' in path.parts or digest(root/path) != profile[field+'_sha256']:
                 reject(f'{name}: source/manual fingerprint drift: {path}; audit before refreshing')
         if Path(profile['contract']).name != profile['contract']:
-            reject('contract path must be local to contracts/')
+            reject('contract path must be local to contracts-exoml/')
         bundle = load(CONTRACTS/profile['contract'], 2*1024*1024)
         if bundle['schema_version'] != 2 or bundle['state'] != 'annotated' or bundle['library'] != name:
             reject('seed must be an annotated ExoML v2 profile')
@@ -126,7 +126,7 @@ def module_info(root, name):
         reject('module missing from MANIFEST: ' + name)
     fields = {}
     for key in ['header', 'manual', 'macro']:
-        field = re.search(r'^  '+key+r': ([A-Za-z0-9_./-]+)$', match[1], re.M)
+        field = re.search(r'^  '+key+r': ([A-Za-z0-9_./+-]+)$', match[1], re.M)
         if not field:
             reject('unsupported MANIFEST field: ' + key)
         fields[key] = field[1]

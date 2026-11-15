@@ -179,6 +179,31 @@ int main(){
   require(max_found,"i64 maximum narrowed");oracle(wide_store.snapshot());
 
   std::mt19937 rng(728);
+  // Built-in optimization publishes only against its exact source snapshot;
+  // CCDB retracts call/effect consequences and retains unaffected analyses.
+  auto optimizable=lower("fn leaf(x:i64)->i64{return x;}fn main(){if true{println(2+3);}else{println(leaf(1));}}");
+  r::Store optimized_store(optimizable);auto opt_source=optimized_store.snapshot();
+  auto old_calls=opt_source.query("Calls");require(old_calls.result().rows.size()==1,"optimization fixture lacks call");
+  m::passes::Options no_work;no_work.work=0;
+  auto unchanged=optimized_store.optimize(opt_source,no_work);
+  require(!unchanged.result.changed()&&unchanged.snapshot.revision()==opt_source.revision(),"empty optimization advanced revision");
+  unchanged.snapshot.require_current(old_calls);
+  r::ImportLimits no_facts;no_facts.facts=0;
+  rejected<r::BudgetExceeded>([&]{optimized_store.optimize(opt_source,{},no_facts);},"fact budget");
+  require(optimized_store.events().size()==1,"failed optimized projection published");
+  auto optimized=optimized_store.optimize(opt_source);
+  require(optimized.result.changed()&&optimized.result.status()==m::passes::Status::Complete,"optimization did not complete");
+  require(optimized.snapshot.source()==optimized.result.output(),"optimized facts have wrong source");
+  auto new_calls=optimized.snapshot.query("Calls");
+  require(!new_calls.result().cached&&new_calls.result().rows.empty(),"optimization retained stale call consequences");
+  oracle(optimized.snapshot);
+  rejected<novostone::ccdb::Conflict>([&]{optimized.snapshot.require_current(old_calls);},"stale or foreign");
+  rejected<novostone::ccdb::Conflict>([&]{optimized_store.optimize(opt_source);},"stale or foreign");
+  rejected<novostone::ccdb::Conflict>([&]{optimized_store.optimize(foreign.snapshot());},"stale or foreign");
+  auto stable=optimized_store.optimize(optimized.snapshot);
+  require(!stable.result.changed()&&stable.snapshot.revision()==optimized.snapshot.revision(),"fixed point advanced revision");
+  stable.snapshot.require_current(new_calls);
+  require(optimized_store.events().back().reason=="on1x.mir-passes/v1 complete","pass provenance missing from audit");
   for(unsigned sample=0;sample<40;++sample){
    std::string source;
    for(unsigned f=0;f<4;++f){

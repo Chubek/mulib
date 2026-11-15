@@ -76,7 +76,7 @@ Use the real `moonstone::v1` Core facilities as building blocks for compiler too
 
 The public ExoML SDK already includes a generated `.g`/`.asdl` DSL frontend, in-memory StaticFFI services, checked C++ native binding, compiler-generated C++ wrapper/ABI-probe facilities and opt-in C11 source discovery via libclang. ExoML v2 semantic contracts describe ownership, lifetimes, errors, effects, callbacks, destructors, invalidations and concurrency. Its `Contract.hpp` / `schema.exocontract.json` are canonical.
 
-On1x's `tools/on1x-bind.cpp` currently implements real extraction, lossless CDecl transport, pin/check/explain, verification metadata and a **narrow** `emit-raw` subset for signed-integer/void scalar prototypes. It intentionally **fails closed** for `emit-safe`; current `contracts/` sidecars for JSON, Vec and Parsec are annotated/unreviewed, not certified. An ExoML Gate B pass or a reviewed flag does not prove sound client-side use.
+On1x's `tools/on1x-bind.cpp` currently implements real extraction, lossless CDecl transport, pin/check/explain, verification metadata and a **narrow** `emit-raw` subset for signed-integer/void scalar prototypes. It intentionally **fails closed** for `emit-safe`; current `contracts-exoml/` sidecars for JSON, Vec and Parsec are annotated/unreviewed, not certified. An ExoML Gate B pass or a reviewed flag does not prove sound client-side use.
 
 ### Implement these gates in order
 
@@ -265,7 +265,7 @@ on1x/
   include/on1x/moonstone/   # typed public adapter APIs as actually implemented
   src/moonstone/            # core/ExoML/Chisel/Syren/Supersonic/Plaid/
                             # Prolific/Nerotypical adapters
-  contracts/                # existing source-reviewed v2 sidecars & evidence
+  contracts-exoml/           # existing source-reviewed v2 sidecars & evidence
   tests/moonstone/          # unit + negative + end-to-end component suites
   tests/foreign/            # C11 ABI/probe/mutating/error/failure fixtures
   examples/moonstone/       # actually compiling On1x examples

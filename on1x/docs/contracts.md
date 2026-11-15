@@ -1,6 +1,6 @@
 # Source-backed foreign contracts
 
-`on1x/contracts` implements an **annotation and verification workflow**, not a
+`on1x/contracts-exoml` implements an **annotation and verification workflow**, not a
 general safe FFI. Its ExoML v2 sidecars cover every core declaration in these
 profiles:
 
@@ -9,6 +9,11 @@ profiles:
 | JSON | 20 | owned roots, borrowed children/keys/text, conditional insertion, destructive replacement, independent serialized text |
 | Vec | 7 | initialized byte-stride storage, realloc invalidation, self-aliasing push, no nested element destructors |
 | Parsec combinators | 18 | borrowed value descriptors, transitive referents, pure indirect predicates, capture ownership and failure cleanup |
+
+The separate [Exotract static binding workflow](../contracts-exotract/README.md)
+uses this catalog's core implementation recipes and MANIFEST-backed profiles for
+the remaining MuLIB modules. It produces typed import metadata and a compiled
+one-TU static archive.
 
 All shipped contracts are **AI-authored, annotated and unreviewed**. Header and
 manual SHA-256 pins identify what was audited; they do not certify behavior.
@@ -135,10 +140,13 @@ particular, Parsec's borrow-bearing structs are not guessed to be ordinary
 scalars, and its descriptor-retained callback is not assigned a fictitious
 unregister API. Indirect predicates keep unknown effects.
 
-No `Mulib.Safe.*`, `Owned`, `Option`/`Result` wrappers, Chisel ownership CFG,
-Wetstone usage/effect proof or generalized resource/foreign callback ABI is
-claimed. A reviewed flag alone cannot unlock `emit-safe`. The existing JSON
-`or_die` pilot remains a separate restricted handwritten facade.
+The optional [Chisel ownership CFG integration](memory-safety.md) now checks
+scalar/JSON HIR usage and exposes a library-independent resource protocol checker.
+It does not yet translate these ExoML sidecars into general foreign-handle ABI
+adapters. No `Mulib.Safe.*`, `Owned`, `Option`/`Result` wrappers, Wetstone effect
+proof or generalized foreign callback ABI is claimed. A reviewed flag alone
+cannot unlock `emit-safe`. The JSON `or_die` pilot remains a trusted handwritten
+facade whose client lifetimes can additionally be checked by Chisel.
 
 ## Bounds and tests
 

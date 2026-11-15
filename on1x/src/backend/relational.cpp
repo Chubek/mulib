@@ -104,7 +104,7 @@ void Snapshot::require_current(const Query& query) const {
 }
 Store::Store(const Module& module,ImportLimits limits)
  : database_(program()),head_(database_.snapshot(),nullptr,nullptr){publish(head_,module,limits);}
-Snapshot Store::publish(const Snapshot& expected,const Module& module,ImportLimits limits){
+Snapshot Store::publish(const Snapshot& expected,const Module& module,ImportLimits limits,std::string reason){
  auto tx=database_.begin(expected.data_); // Identity check precedes any analysis.
  auto projected=project(module,limits);auto facts=normalized(projected.facts);
  auto owned=std::make_shared<const Module>(module);
@@ -114,7 +114,7 @@ Snapshot Store::publish(const Snapshot& expected,const Module& module,ImportLimi
   if(!facts.at(name).contains(row))tx.erase(name,row);
  for(const auto& [name,rows]:facts)for(const auto& row:rows)
   if(!expected.facts().at(name).contains(row))tx.insert(name,row);
- candidate.data_=tx.commit("on1x.mir-facts/v1 publication",[&](const auto& staged){
+ candidate.data_=tx.commit(std::move(reason),[&](const auto& staged){
   if(staged.facts()!=facts)fail("transaction projection mismatch");
  });
  head_=candidate;return candidate;
@@ -126,6 +126,14 @@ Snapshot Store::replace_function(const Snapshot& expected,const Function& functi
  for(auto& f:module.functions)if(f.id==function.id){f=function;found=true;break;}
  if(!found)fail("replacement function identity not found");
  return publish(expected,module,limits);
+}
+Optimization Store::optimize(const Snapshot& expected,passes::Options options,ImportLimits limits){
+ auto guard=database_.begin(expected.data_);guard.abort();
+ auto result=passes::run(expected.module(),std::move(options));
+ if(result.source()!=expected.source())fail("pass source identity mismatch");
+ auto next=result.changed()?publish(expected,result.module(),limits,
+  result.status()==passes::Status::Complete?"on1x.mir-passes/v1 complete":"on1x.mir-passes/v1 verified budget prefix"):expected;
+ return {std::move(next),std::move(result)};
 }
 std::string dump_facts(const Snapshot& snapshot){return dl::dump({program(),snapshot.facts()});}
 std::string report(const Snapshot& snapshot,dl::Limits limits){

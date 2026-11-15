@@ -33,6 +33,13 @@ revision-checked CCDB snapshots. Configure `-DON1X_WITH_NOVOSTONE=ON`, then use
 `--emit-ir-facts` or `--analyze-ir`. An installed SDK is supported with
 `-DON1X_NOVOSTONE_PROVIDER=PACKAGE`; the default provider uses the source checkout.
 
+The [verified scalar pass pipeline](docs/backend-passes.md) adds checked constant
+folding, constant-branch cleanup, local-slot forwarding/overwritten-store removal
+and dead pure-value/phi elimination. Use
+`--optimize-ir` with a MIR mode, `--dump-passes` for provenance, or
+`on1x-build.py --via-mir --optimize-ir`. It is available independently of Novostone
+and commits each candidate only after verification and preservation checks.
+
 ```text
 mulib/
   include/mulib-*.h
@@ -59,6 +66,22 @@ the foreign safety guarantees. P1 adds monomorphic functions, immutable lexical
 closures, product types and bounded inference/specialization with value-restricted
 named local lets, not general
 captured-resource lifetimes.
+
+## Independent type checking
+
+Optional [Nerotypical structural verification](docs/type-safety.md) checks
+elaborated HIR with Satie EUF: calls, closures, tuples, staged code, locals and
+returns. Enable `ON1X_WITH_NEROTYPICAL`, then use `--check-types` or
+`--verify-types`. The manual includes the required separate SDK preparation and
+explicit upstream CMake patch; the pinned dependency remains intact.
+
+## Memory checking
+
+Optional [Chisel resource checking](docs/memory-safety.md) is enabled with
+`-DON1X_WITH_CHISEL=ON`. Use `--check-memory` to inspect admission or
+`--memory-check` to require it before compilation. The current executable subset
+covers scalar code and JSON owner/view lifetimes; a compiler-side resource CFG API
+supports modeled external protocols. Unmodeled externs reject in checked mode.
 
 ## Metaprogramming and multi-stage programming
 
@@ -405,7 +428,7 @@ Chisel-backed ownership and effect system. See `docs/roadmap.md`.
 
 ## ExoML integration (opt-in)
 
-`contracts/` now contains **45 source-backed, unreviewed annotations** for JSON,
+`contracts-exoml/` now contains **45 source-backed, unreviewed annotations** for JSON,
 Vec and Parsec's borrowed combinators, with pinned header/manual evidence,
 semantic obligations, allocation-failure tests and reproducible build plans.
 They are not safe On1x imports. ExoML owns CDecl/FunctionContract; no second C
@@ -450,7 +473,13 @@ checks basic reviewed-state/revision/fingerprint consistency; it is not the full
 On1x safe-export gate described in `AGENTS.md`. **`emit-safe` fails closed even
 when all review flags are set**: general ownership/effect lowering and
 Chisel/Wetstone usage checks are still missing. See [the contract manual](docs/contracts.md)
-and [profiles/workflow](contracts/README.md).
+and [profiles/workflow](contracts-exoml/README.md).
+
+[Exotract static bindings](contracts-exotract/README.md) add MANIFEST-backed module
+profiles, compiler-derived import metadata and one-TU `libmulib.a` generation.
+Enable `ON1X_WITH_EXOTRACT` with ExoML extraction, then use
+`tools/on1x-exotract.py list`, `plan` or `build`. The JSON facade can link the
+generated archive directly; generalized On1x foreign ABI lowering remains open.
 
 ## Testing and current limitations
 

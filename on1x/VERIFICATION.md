@@ -1,6 +1,448 @@
-# On1x P0 / P1 verification report — 2026-11-14
+# On1x verification report — 2026-11-15
 
-## Current continuation: Novostone MIR analyses — 2026-11-14
+## Current continuation: ExoML relocation and Exotract static bindings — 2026-11-15
+
+Rebound `tools/on1x-contracts.py` to `contracts-exoml` and updated documentation,
+sidecar evidence paths and workflow references. Existing C examples remain in
+`examples/contracts`; they are not the renamed annotation directory. The relocated
+45-function lint and real extraction/pin/check/snapshot suites pass.
+
+Added `contracts-exotract/catalog.json`, its manual and native C clients,
+`tools/on1x-exotract.py`, `ON1X_WITH_EXOTRACT`, and `on1x.exotract` integration
+tests. The new option configures the real Moonstone Exotract CLI with linked
+ExoML/libclang; Lua/LMDB/ucpp/CParser are disabled for this workflow. The supplied
+LibStone checkout is now `55755485acaded7c4ed804c0946bc8c7363f6763` and remains
+unmodified by this work. Earlier sections retain their historical dependency pins.
+
+### Executable coverage
+
+Final status: **89/89 passing tests** across the three configurations below.
+The full suites ran once; after correcting sanitizer flag routing and adding
+archive-symbol checks, the affected `on1x.exotract` test was rerun in all three.
+
+| Build under `/tmp/opencode/` | Configuration | Final status |
+|---|---|---|
+| `on1x-exotract` | Clang 22.1.8, generated scanner | 30/30 |
+| `on1x-exotract-gcc` | GCC 16.2.1, fallback scanner | 29/29 |
+| `on1x-exotract-sanitize` | Clang 22.1.8, generated scanner, ASan/UBSan | 30/30 |
+
+The registry reads all **1,164 MANIFEST modules**, including the literal `b+tree`
+module name, and reports three additional auxiliary headers. Core JSON/Vec/Parsec
+recipes use the relocated pinned ExoML catalog; generic recipes follow MANIFEST
+dependencies. Tests compile selected libraries into one Exotract-generated C11
+implementation TU and one-member static archive, then link separate clients:
+
+- JSON + Vec + Parsec: C client prints `[42]`, exercises vector storage and parser
+  execution/cleanup; the On1x JSON facade links the same archive and prints `3`
+  followed by `{"items":[1,2,3],"ok":true}`.
+- MicroJS + MiniVM: C client evaluates `6*7`, prints `42`, releases the value and
+  destroys the interpreter.
+- `symbols.json` compares the archive's actual global definitions with Exotract
+  import names. JSON exports 20 functions, Vec 7, core Parsec 18 and MicroJS 15.
+  Parsec's seven optional `mulib_parser_*` declarations are explicitly
+  declaration-only, rather than represented as linkable core exports.
+
+All discovery uses implementation-disabled headers; Exotract preserves complete
+CDecl v2 in its import manifests. The output contains the declaration umbrella,
+generated C, object/archive, CDecl/import files, build plan, symbol inventory and
+input/artifact hash lock. Existing destinations, unknown modules, implementation
+macros on the command line, missing required declarations and failed builds
+reject without publishing a partial directory.
+
+Exotract restricts `compiler_arguments` to ABI switches. The first sanitizer
+integration attempt rejected `-g`. The wrapper now routes defines/undefines
+through their dedicated Exotract options and records tested debug/ASan/UBSan
+code-generation flags separately from declaration options. ABI switches remain
+shared between discovery and compilation; no upstream source was patched.
+
+### Reproduction and logs
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-exotract \
+  -DON1X_WITH_EXOML=ON -DON1X_WITH_EXOML_EXTRACT=ON \
+  -DON1X_WITH_EXOTRACT=ON -DBUILD_TESTING=ON \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_C_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wpedantic -Werror'
+cmake --build /tmp/opencode/on1x-exotract --parallel 4
+ctest --test-dir /tmp/opencode/on1x-exotract --output-on-failure --parallel 3
+python3 on1x/tools/on1x-exotract.py build json vec parsec \
+  --exotract /tmp/opencode/on1x-exotract/libstone-moonstone/exotract/exotract \
+  --output /tmp/opencode/mulib-static-fresh
+```
+
+The GCC build uses `ON1X_USE_FALLBACK_SCANNER=ON`. The Clang sanitizer build uses
+`-g -fsanitize=address,undefined -fno-omit-frame-pointer
+-fno-sanitize-recover=all` in C/C++ flags and `ON1X_TEST_C_FLAGS`. Instrumentation
+covers the compiler, Exotract/ExoML code built from source, generated archives and
+clients; system libclang itself is not rebuilt with sanitizers.
+
+The generated implementation source and declaration umbrella match byte-for-byte
+across the three builds. For canonical root `/mnt/nvme/mulib`, SHA-256 values:
+
+| Artifact | SHA-256 |
+|---|---|
+| Core `mulib.c` | `7979019030e573375f4ebdd96aee3c5de94bc40537530f803925c7bb92a99397` |
+| Core `mulib.h` | `b802806ec4249003101c1307f1a10575e3fc747a31ec4241a099841d50e2dc4c` |
+| MicroJS `mulib.c` | `fe6d3c5adab9a6c602eb2be26daa96fe10ec9d77be1e1d3ad53dcd99aeaf2973` |
+| MicroJS `mulib.h` | `c38328ed0dfbe926ccf4f60e12b356faac7f348685c1bd94cf1dde8c02ef4772` |
+
+`ldd` on the ordinary On1x JSON static-archive client lists only libc, libm and
+the loader. A path-reference audit found no stale annotation-directory links;
+`git diff --check` passes and the supplied LibStone worktree remains clean.
+
+Full-suite logs are `/tmp/opencode/<profile>/bindings-verification.log`; final
+affected-test reruns are `bindings-final.log`. Sources and evidence are in each
+build's `test-artifacts/exotract/{core,microjs}`. Generated files embed the
+canonical source checkout path; byte-identical artifacts across relocated roots
+are not claimed.
+
+The Exotract import files are typed metadata, not executable On1x source. General
+foreign pointer/record/callback ABI and ownership lowering remain open. The
+module inventory is broader than the four modules with executed clients in this
+increment; platform-specific modules still require their manual's build options.
+
+## Previous continuation: Nerotypical structural type safety — 2026-11-15
+
+Added independent concrete-HIR verification with the actual
+`moonstone::nerotypical::structural::TypeGraph` and Satie EUF. The public API is
+`include/on1x/type_safety.hpp`; the implementation constructs obligations for
+calls, closures, tuples, locals, returns, conditions, nominal resources and
+stage-lowered code. `ON1X_WITH_NEROTYPICAL`, `--check-types`, `--verify-types`
+and build-helper support expose the opt-in check. See the
+[manual and supported boundary](docs/type-safety.md).
+
+**157/157 tests PASS** across five complete suites, with no failures or skips:
+
+| Build under `/tmp/opencode/` | Configuration | Result |
+|---|---|---|
+| `on1x-chisel-gcc` | GCC generated, Nerotypical + Chisel | 33/33 |
+| `on1x-chisel-sanitize` | Clang fallback, Nerotypical + Chisel, ASan/UBSan | 32/32 |
+| `on1x-contracts-gcc-generated` | GCC generated, Nerotypical + Chisel + ExoML/libclang + Novostone | 35/35 |
+| `on1x-mir-clang` | Clang generated, Nerotypical, Chisel disabled | 30/30 |
+| `on1x-mir-fallback` | GCC fallback, Nerotypical and Chisel disabled | 27/27 |
+
+Logs: each build's `type-verification.log`. Toolchains remain GCC 16.2.1 and
+Clang 22.1.8. The sanitizer profile instruments the adapter, solver headers,
+Satie allocator implementation, generated programs and C runtime. Its compiler
+flags are `-Wall -Wextra -Wpedantic -Werror -g -fsanitize=address,undefined
+-fno-omit-frame-pointer -fno-sanitize-recover=all`; generated-C tests use the same
+sanitizer flags through `ON1X_TEST_C_FLAGS`. Strict warnings remain enabled.
+
+### Actual dependency issue and explicit upstream patch
+
+LibStone remains clean at `91293264a531603dfd2319e64b3c1aa40a609783`. The pinned
+Satie EUF headers reference compiled `MemoryResource` methods; treating the API
+as header-only initially failed linking. The full Satie CMake project also failed
+configuration because it unconditionally copies absent `frontends/{Common,CNF,
+IPASIR,OPB,SatieLisp,SMT-LIB2,WCNF}.d` files. Neither failure was hidden by a mock
+solver or changes to the pinned dependency.
+
+`upstream/satie-euf-target.patch` adds an explicit minimal public `satie::euf`
+target. This is a proposed upstream build-system patch, **not an upstream
+release or modification committed inside the submodule**. It compiles actual
+`SatieMemory.cpp` against actual bundled MemTKX headers. The tested separate
+SDK `/tmp/opencode/on1x-type-sdk-v1` was prepared with
+`tools/prepare-type-sdk.py`; all 64 copied-source fingerprints were compared
+against the supplied checkout. Only the copied root CMake file differs.
+
+- Patch SHA-256: `78d6af779f1c9b6ffdd8b6c96c1d8c95bdd8f21507dbbbe0cd1493d097fdc5d7`
+- Patched CMake SHA-256: `6eb8c80a1c5c42efbacaf89e2839bf679517dc4947b2ffce7e59df82e3c6462b`
+- Full copied-source manifest: SDK `on1x-sdk-provenance.json`.
+- Per-build roots/revision/solver header hashes: `on1x-build-info.txt`.
+
+Unpatched SDK configuration rejects with preparation instructions. Existing SDK
+destinations reject rather than overwrite. No network fetch or solver source
+replacement occurs. Installed Satie package consumption is **not verified**;
+the provided upstream patch exports a source-build target only.
+
+### Evidence and reproduction
+
+Tests mutate HIR **after** ordinary semantic checking: wrong literal/local/tuple
+types, returns, higher-order signatures, conditions and closure capture metadata
+reject in the independent checker. An independent 8-by-8 structural equality
+oracle covers 64 ground/nested-arrow/product cases. Term, equality, construction
+work and unification-round limits reject, including CLI exit 75 without replacing
+existing output. Explicit forall packages/projections reject in this adapter.
+
+Nine example programs pass checked C11 emission and native execution, including
+closures, tuples, specialization, staging, JSON and MIR examples. The helper is
+executed; macro expansion, nested capture, shadowing and raw extern signature
+checking are exercised. Ordinary frontend and backend suites remain passing.
+Additional checks confirm composition with Chisel and optimized MIR execution,
+as well as clear rejection when the optional type checker is disabled.
+
+Using `/mnt/nvme/mulib/on1x/examples/type-safety.on1x`, artifacts are identical
+across all four enabled builds:
+
+| Artifact | Bytes | SHA-256 |
+|---|---:|---|
+| Type report | 118 | `9ca33cbfdb971526d7a77733d4f5119deac5797d0788e043803bb676ef0af791` |
+| C11 | 6594 | `e232623374367fe4f6205ebe0af898a862869bfd6f6781d2567f352152b97f64` |
+
+The report contains two concrete functions, ten terms, 35 equalities and one
+unification round. The executable prints `42`, `true`, `42`; `ldd` on the ordinary
+GCC binary lists only libc and the loader. The generated C11 is also byte-identical
+with verification disabled.
+
+Reproduce in fresh paths:
+
+```sh
+python3 on1x/tools/prepare-type-sdk.py --output /tmp/opencode/on1x-type-sdk-fresh
+cmake -S on1x -B /tmp/opencode/on1x-types-fresh \
+  -DON1X_WITH_NEROTYPICAL=ON -DBUILD_TESTING=ON \
+  -DON1X_SATIE_ROOT=/tmp/opencode/on1x-type-sdk-fresh \
+  -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+  -DCMAKE_C_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wpedantic -Werror'
+cmake --build /tmp/opencode/on1x-types-fresh --parallel 3
+ctest --test-dir /tmp/opencode/on1x-types-fresh --output-on-failure --parallel 3
+/tmp/opencode/on1x-types-fresh/on1xc --check-types on1x/examples/type-safety.on1x
+```
+
+This is structural validation of elaborated concrete HIR, not generalized type
+inference, a quantifier-aware proof checker, FFI ABI certification or ownership
+proof. Sequent optimization remains a separate open milestone.
+
+## Previous continuation: Chisel resource usage — 2026-11-15
+
+Added `include/on1x/safety.hpp`, `src/safety.cpp`, `ON1X_WITH_CHISEL`,
+`--check-memory` and `--memory-check`. CMake uses the real `Moonstone::Chisel`
+target; the adapter invokes `moonstone::chisel::analyze`. The source dependency
+remains clean at `91293264a531603dfd2319e64b3c1aa40a609783`.
+
+Final complete suites: **121/121 PASS**, with no failures or skips:
+
+| Build under `/tmp/opencode/` | Configuration | Result |
+|---|---|---|
+| `on1x-chisel-gcc` | GCC generated + Chisel | 31/31 |
+| `on1x-chisel-sanitize` | Clang fallback + Chisel, compiler/emitted C ASan+UBSan | 30/30 |
+| `on1x-contracts-gcc-generated` | GCC generated + Chisel + ExoML/libclang + Novostone | 33/33 |
+| `on1x-mir-fallback` | GCC fallback, Chisel disabled | 27/27 |
+
+GCC 16.2.1 and Clang 22.1.8; strict warnings are errors in On1x and emitted C.
+The sanitizer profile instruments the header-only Chisel analysis through the
+On1x adapter translation unit, as well as generated JSON/runtime execution.
+
+This checks the scalar/JSON HIR client protocol and provides a compiler-side
+external resource-event API. It models lexical owner/loan cleanup across blocks,
+branches, loops and early returns, and adds conservative all-path loan checks,
+active-token use checks, may-live reinitialization checks and normal-exit leak
+checks around the upstream solver. Unknown operations/externs reject in checked
+mode. [The manual](docs/memory-safety.md) states the exact supported boundary.
+
+The JSON execution test calls canonical MuLIB via the existing C11 facade and
+prints `2, 1, 3, 3, 3`. The compiler-side external protocol example is compiled
+and executed. Negative tests cover use-after-drop, double drop, borrowed
+move/drop, conflicting mutation, expired/exclusive loan use, conditional
+transfers/loans, reinitialization, leaks, malformed CFGs and budgets. The ordinary
+C11 output is byte-identical with/without memory admission. The generated JSON
+binary links only libc, libm and the loader; Chisel remains compiler-side.
+
+For source `/mnt/nvme/mulib/on1x/examples/memory.on1x`, both artifacts match across
+the generated GCC, fallback sanitized Clang and combined ExoML/Novostone GCC
+builds:
+
+| Artifact | Bytes | SHA-256 |
+|---|---:|---|
+| Memory admission report | 112 | `436eff52582876fc158adfef8ffa43b2a771ad68cb71cb24d1aafb9a50eb73a3` |
+| C11 | 3026 | `3c4cc1b3ace43adbb43eac7f2e70a51c2070bacd118229f524b0e98a7287177e` |
+
+Reproduction:
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-chisel-gcc -DON1X_WITH_CHISEL=ON \
+  -DBUILD_TESTING=ON -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+  -DCMAKE_C_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wpedantic -Werror'
+cmake --build /tmp/opencode/on1x-chisel-gcc --parallel 3
+ctest --test-dir /tmp/opencode/on1x-chisel-gcc --output-on-failure --parallel 3
+/tmp/opencode/on1x-chisel-gcc/on1xc --check-memory on1x/examples/memory.on1x
+```
+
+The sanitizer profile uses Clang, `ON1X_USE_FALLBACK_SCANNER=ON`, and the same
+ASan/UBSan compiler/generated-C flags specified below. The combined SDK profile
+was reconfigured with `ON1X_WITH_CHISEL=ON`; the disabled fallback profile uses
+`OFF` and explicitly rejects the new flags. The first parallel matrix exhausted
+the 16 GiB `/tmp` filesystem. Only regenerable ELF test executables from the two
+earlier backend sanitizer runs were removed (about 1.46 GB); their source/evidence
+files and dependency SDKs were retained. Affected suites were rerun afterward.
+
+This is a usage-checking subset, not certification of foreign C implementations.
+General ExoML-to-handle ABI lowering, destructor/extent/alias proofs, managed
+closures and recoverable foreign error cleanup remain open. `emit-safe` remains
+closed. No GC, MemTKX, installed Chisel package or cross-target execution claim
+is made by these checks.
+
+## Previous continuation: local-slot optimization — 2026-11-15
+
+Extended the opt-in scalar pipeline with `local-slots`: same-block SSA load
+forwarding, repeated-load elimination and overwritten-store removal. The default
+order is now `constant-fold`, `simplify-cfg`, `local-slots`, `dead-pure`. Pass
+report format v1 remains stable; the ordered descriptor list records the new pass.
+The preceding three-pass report hashes below are historical.
+
+The transformation retains each block's final stores and all slot declarations,
+and repairs all uses and effect chains transactionally. Transition checks also
+enforce slot types/identities and nonmemory barrier order/identities/targets.
+No state is inferred across block boundaries. This is valid only for verified
+function-local, non-addressable scalar slots; see [the rules](docs/backend-passes.md).
+
+New tests cover snapshots of subsequently mutated locals, recursive frame
+isolation, differing join inputs, loop-carried values, non-topological block
+listing, terminal traps, barrier tampering, budget sweeps and partial-edit rollback.
+Eight seeded mutation programs check 360 updates against an independent Python
+state-machine oracle, with HIR C11, plain/optimized MIR C11, both evaluators and
+saved optimized MIR. Existing overflow/trace/phi tests remain in the full suites.
+
+`examples/slots.on1x` prints `2, 1, 2, 5, 0, 1, 2`, on separate lines. Its MIR
+shrinks from seven loads/five stores to two loads/three stores. The one call and
+five print instructions remain. This is an IR-size observation, not a runtime
+performance measurement.
+
+All seven profiles were rebuilt and their complete suites rerun: **198/198 PASS**
+with no failures or skips. Results: `on1x-novo-gcc` 29/29,
+`on1x-novo-sanitize` 29/29, `on1x-novo-package` 28/28,
+`on1x-contracts-gcc-generated` 30/30, `on1x-mir-fallback` 27/27,
+`on1x-mir-clang` 28/28 and `on1x-mir-sanitize-fallback` 27/27. This includes both
+ASan/UBSan profiles and the relocated installed SDK consumer. Toolchain and
+dependency identities are those recorded below; LibStone remains at
+`91293264a531603dfd2319e64b3c1aa40a609783`.
+
+With absolute source `/mnt/nvme/mulib/on1x/examples/slots.on1x`, optimized MIR,
+C11, CFG and pass reports match across all seven builds. Optimized facts and
+analysis reports match across the four enabled builds:
+
+| Artifact | Bytes | SHA-256 |
+|---|---:|---|
+| MIR | 3202 | `b9370fd692e4d4ea542690a0345200dca7839852df045f1f16afe38e7b28dc40` |
+| C11 | 1257 | `89aed37b93aa8dc9c2ee57f85e7f9b1d2835dd7da62ca475fe8cbea8f0f67fdb` |
+| CFG | 399 | `fa49c1d958a24ebcb73c1724adc78ba2a29c028ff49be7c2f9e360e0ad4ae931` |
+| Pass report | 8997 | `43995ceb301fb63fa2f02879b71a11d20ac1a328c12d9bfd5a506d6d3b44f8c2` |
+| Facts | 8279 | `c0ade0da53ecaad27dac9629dfb2d4f6e0bb6af90eb01ed106083c3d3acc2250` |
+| Analysis | 6376 | `b26e50e39dbbb25796a88cb05cd97581d36e149592fc07eff9b2e69b6ae674ca` |
+
+Reproduction uses the seven build configurations and rebuild/CTest commands
+below, plus:
+
+```sh
+/tmp/opencode/on1x-novo-gcc/on1xc --run-ir --optimize-ir on1x/examples/slots.on1x
+/tmp/opencode/on1x-novo-gcc/on1xc --dump-passes on1x/examples/slots.on1x
+```
+
+## Previous continuation: transactional scalar passes — 2026-11-15
+
+Implemented the opt-in B4 scalar subset in `include/on1x/backend/passes.hpp`
+and `src/backend/passes.cpp`: checked constant folding, constant-branch cleanup
+and dead pure-value/phi elimination. Each candidate commits after MIR verification
+and checked preservation obligations. Shared work/rewrite/round limits discard an
+exhausted candidate and return the last verified prefix with explicit status.
+`--optimize-ir`, `--dump-passes`, the build helper and optional CCDB publication
+are documented in [the pass manual](docs/backend-passes.md).
+
+### Measured results
+
+Parent commit: `345aae537286471e0b3439b8b80961b17110aa5c`. LibStone source HEAD
+and index gitlink remain `91293264a531603dfd2319e64b3c1aa40a609783`; the dependency
+checkout is clean. The pre-edit Novostone-enabled baseline passed 27/27.
+The seven existing build profiles below were rebuilt with this continuation:
+
+| Build directory under `/tmp/opencode/` | Configuration | Result |
+|---|---|---|
+| `on1x-novo-gcc` | GCC generated, Novostone source provider | 29/29 PASS |
+| `on1x-novo-sanitize` | Clang generated, source provider, ASan+UBSan | 29/29 PASS |
+| `on1x-novo-package` | Clang fallback, relocated installed Novostone SDK | 28/28 PASS |
+| `on1x-contracts-gcc-generated` | GCC generated + Novostone + ExoML/libclang | 30/30 PASS |
+| `on1x-mir-fallback` | GCC fallback, Novostone disabled | 27/27 PASS |
+| `on1x-mir-clang` | Clang generated, Novostone disabled | 28/28 PASS |
+| `on1x-mir-sanitize-fallback` | Clang fallback, Novostone disabled, ASan+UBSan | 27/27 PASS |
+
+**198/198 On1x CTest results pass, without failures or skips.** GCC 16.2.1 and
+Clang 22.1.8 on Linux x86_64; compiler and emitted C warnings are errors. Both
+sanitizer profiles instrument the new pass implementation and emitted C/runtime;
+the source-provider profile also instruments Datalog/CCDB. The existing relocated
+SDK remains an unsanitized static GCC build consumed by Clang. Its upstream
+30/30 result below is from the previous continuation, not a new upstream test run.
+
+New `on1x.passes_hir` checks fixed points, alternate pass order, source identity,
+all integer trap families, effect roots, recursion/divergence, live/dead cyclic
+phis, unequal/identical parallel edges, uniform literals, malformed MIR and
+preservation violations. Work-budget sweeps, mid-candidate rewrite exhaustion,
+later-pass failure and round exhaustion check rollback and verified-prefix use.
+One initial test incorrectly expected path-sensitive propagation from `flag &&
+false`; its corrected authored-MIR fixture supplies two actual literal inputs,
+matching the documented conservative folding rule.
+
+New `on1x.passes` runs **2,316 wide arithmetic/comparison cases** against Python
+arbitrary-precision expected values and HIR C11, ordinary/optimized MIR C11,
+ordinary/optimized MIR evaluators and saved optimized MIR. It tests readable and
+deterministic provenance, idempotence, CLI fallback/rejection, preservation of
+existing output on compilation failure, a strict-C11 phi permutation and the
+public build helper. The existing `on1x.mir` corpus now compares five execution
+paths, including exact evaluator trap diagnostics and preceding output traces.
+Relational tests add exact-snapshot optimized publication, call-query retraction,
+stale/foreign rejection, no-op revision retention and projection-failure rollback.
+
+Every profile's helper-built `examples/optimize.on1x` executes and prints
+`1`, `43`, `42`. `ldd` on the GCC binary lists only libc and the system loader.
+
+### Reproducibility
+
+With source `/mnt/nvme/mulib/on1x/examples/optimize.on1x` and default pass options,
+MIR, C11, CFG and provenance are byte-identical across all seven compilers.
+Optimized facts/analysis match across all four Novostone-enabled builds.
+
+| Optimized artifact | Bytes | SHA-256 |
+|---|---:|---|
+| MIR | 1991 | `f6d224679af76aeadcb401510e7daefd185b128c70891bf578e8739c202cc0f8` |
+| C11 | 709 | `97b1f989f77ee319389be3f477a61eb835d2976a635cf4f31663b62ec84d638f` |
+| CFG DOT | 429 | `2468dcaf07730cd9be0f0946c46741c7ffa8c9e289806ab06222eac62ec99ad4` |
+| Pass report | 7344 | `227c0a87c615e6be399f9daf5968125ab0382d82003682270c2c3fbe5706a4ee` |
+| Fact/rule `.dl` | 5946 | `7c44db745404cd02874fc239ba41cb0bd641e78ad2ac5403806e8ebb95c52818` |
+| Analysis report | 5229 | `08015d8fc0c3dd5b84a168d5f139f242be4dd17d83aa84bc60c092380c37b90e` |
+
+Artifacts reside under each build's `test-artifacts/passes/`. Source paths are
+identity-bearing. The build report now records `mir_passes=builtin-v1-opt-in`.
+
+### Reproduction command log
+
+Use the seven configuration recipes from the preceding continuations below.
+From the MuLIB root, the rebuild/full-suite commands are:
+
+```sh
+for profile in on1x-novo-gcc on1x-novo-sanitize on1x-novo-package \
+  on1x-contracts-gcc-generated on1x-mir-fallback on1x-mir-clang \
+  on1x-mir-sanitize-fallback; do
+  cmake --build "/tmp/opencode/$profile" --parallel 4
+  ctest --test-dir "/tmp/opencode/$profile" --output-on-failure --parallel 4
+done
+
+/tmp/opencode/on1x-novo-gcc/on1xc --dump-passes on1x/examples/optimize.on1x \
+  -o /tmp/opencode/optimization.sexpr
+/tmp/opencode/on1x-novo-gcc/on1xc --run-ir --optimize-ir on1x/examples/optimize.on1x
+/tmp/opencode/on1x-novo-gcc/on1xc --run-ir --optimize-ir --opt-work 0 \
+  on1x/examples/optimize.on1x
+python3 on1x/tools/on1x-build.py on1x/examples/optimize.on1x --via-mir --optimize-ir \
+  --on1xc /tmp/opencode/on1x-novo-gcc/on1xc --cc gcc \
+  -o /tmp/opencode/optimized-example
+/tmp/opencode/optimized-example
+```
+
+For each hash above, invoke its CLI mode with `--optimize-ir` and the absolute
+source path. `--dump-passes` enables optimization implicitly. The zero-work
+command emits the expected fallback diagnostic and still executes the verified
+original program successfully.
+
+### Remaining backend scope
+
+B4 is partial: these are built-in scalar transforms with structural/preservation
+checks and finite differential evidence. General pass plugins, persistent
+optimizer caches, ownership/cleanup transforms, Syren diagnostics, Sequent,
+aggregate/closure MIR and VM/native lowering remain open. No performance claim
+or universal equivalence proof is made. The earlier reports below retain their
+historical pins, results and scope statements.
+
+## Previous continuation: Novostone MIR analyses — 2026-11-14
 
 Implemented the opt-in B3 scalar metadata increment in
 `include/on1x/backend/relational.hpp`, `src/backend/{relational.cpp,Analysis.dl}`,
