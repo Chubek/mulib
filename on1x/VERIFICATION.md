@@ -1,6 +1,123 @@
 # On1x verification report — 2026-11-15
 
-## Current continuation: ExoML relocation and Exotract static bindings — 2026-11-15
+## Final integrated verification — 2026-11-15
+
+**PASS: 162/162 On1x tests, 30/30 upstream Novostone tests, and 65 additional
+integration commands. No failed, disabled or skipped CTests.** All builds used
+fresh directories. No implementation changes were needed during this run.
+
+| Build under `/tmp/opencode/` | Configuration | Result |
+|---|---|---|
+| `on1x-final-gcc` | GCC 16.2.1, generated scanner, all optional integrations below | 36/36 |
+| `on1x-final-clang-fallback` | Clang 22.1.8, fallback scanner, all integrations | 35/35 |
+| `on1x-final-sanitize` | Clang 22.1.8, generated scanner, all integrations, ASan/UBSan | 36/36 |
+| `on1x-final-bootstrap` | GCC fallback, optional integrations OFF, nonexistent LibStone source root | 27/27 |
+| `on1x-final-package` | GCC fallback, relocated installed Novostone SDK, nonexistent LibStone source root | 28/28 |
+| `on1x-final-novo-sdk` | Independently built upstream SDK and CLI suite | 30/30 |
+
+The first three configurations enable **ExoML, libclang extraction, Exotract,
+Nerotypical, Chisel and Novostone together**. All are Debug builds with
+`-Wall -Wextra -Wpedantic -Werror`. The sanitizer build additionally uses
+`-g -fsanitize=address,undefined -fno-omit-frame-pointer
+-fno-sanitize-recover=all` for C/C++, and those sanitizer options in
+`ON1X_TEST_C_FLAGS` for generated executables and static binding archives.
+No ASan/UBSan failures occurred; ASAN_OPTIONS, UBSAN_OPTIONS and LSAN_OPTIONS were
+unset. System libclang is not rebuilt/instrumented by this matrix.
+
+### What was exercised
+
+- **Language:** generated/fallback scanner parity, parsing and bounds, inference,
+  polymorphic specialization, explicit forall frontend support, tuples and
+  parameter patterns, immutable closures and higher-order calls, macros/hygiene,
+  PPX, local syntax, staging and self-hosted processors.
+- **MuLIB interoperability:** JSON facade execution and allocation-failure paths;
+  relocated ExoML sidecar extraction/pinning/validation; Exotract archive
+  generation; separate C11 clients for JSON/Vec/Parsec and MicroJS/MiniVM; real
+  On1x JSON code linked against the generated static archive. The archive-symbol
+  test distinguishes core Parsec exports from its optional grammar declarations.
+- **Types:** independent Nerotypical verification, post-sema HIR mutation
+  rejection, nested function/product equality, 64 structural oracle cases,
+  incorrect capture metadata, incomplete returns and independent solver budgets.
+- **Memory:** Chisel owner/loan checks, use-after-drop/double-drop rejection,
+  conflicting borrows and mutation, expired loan use, conditional lifetime joins,
+  leaks, reinitialization, resource escape and budget rejection. Runtime suites
+  exercise closure and JSON allocation failures and observable cleanup.
+- **Backend:** MIR structural verification, readback, checked arithmetic,
+  execution/C11 differential comparisons, effect/trap ordering, transactional
+  optimization and rollback, local-slot behavior, independent arithmetic/mutation
+  oracles, Novostone analyses and exact-revision cache/publication rules.
+- **Build independence:** disabled-feature diagnostics, bootstrap operation
+  without a LibStone source checkout, and installed SDK consumption after moving
+  the installation to `on1x-final-novo-relocated`. The relocated CLI also executes
+  its installed `reachability.dl` fixture, returning `(3)` and `(4)` for `Sink`.
+
+### Combined-gate end-to-end check
+
+The additional script `/tmp/opencode/on1x-final-integration.py` records 65 command
+invocations in `on1x-final-integration/commands.json`. In all three full-feature
+builds it compiles `examples/memory.on1x` with **both** `--verify-types` and
+`--memory-check`, links the result against the Exotract-generated `libmulib.a`,
+and executes it. Output is `2, 1, 3, 3, 3` on separate lines, including under
+ASan/UBSan. C11 output is unchanged by admission checks.
+
+It also runs `examples/slots.on1x` through optimized MIR with both gates, checks
+type/memory reports and optimized backend artifacts, and verifies preserved
+output files on type errors, resource aliasing, expired lexical scope, unmodeled
+raw externs, unsupported quantified-type admission and budget exhaustion.
+Disabled-feature probes and bootstrap/package MIR execution pass as well.
+
+Nine artifact classes match byte-for-byte across GCC generated, Clang fallback
+and sanitized Clang generated builds. Source paths are the canonical checkout
+paths under `/mnt/nvme/mulib/on1x/examples/`:
+
+| Artifact | SHA-256 |
+|---|---|
+| Combined-gate memory C11 | `3c4cc1b3ace43adbb43eac7f2e70a51c2070bacd118229f524b0e98a7287177e` |
+| Type report | `0f38738848d30a4b9ff9b4d349553384423a8959c0f304cf4f733cdd1280fcff` |
+| Memory report | `436eff52582876fc158adfef8ffa43b2a771ad68cb71cb24d1aafb9a50eb73a3` |
+| Optimized slots MIR | `b9370fd692e4d4ea542690a0345200dca7839852df045f1f16afe38e7b28dc40` |
+| Optimized slots C11 | `89aed37b93aa8dc9c2ee57f85e7f9b1d2835dd7da62ca475fe8cbea8f0f67fdb` |
+| Pass report | `43995ceb301fb63fa2f02879b71a11d20ac1a328c12d9bfd5a506d6d3b44f8c2` |
+| CFG | `fa49c1d958a24ebcb73c1724adc78ba2a29c028ff49be7c2f9e360e0ad4ae931` |
+| Facts | `c0ade0da53ecaad27dac9629dfb2d4f6e0bb6af90eb01ed106083c3d3acc2250` |
+| Analysis | `b26e50e39dbbb25796a88cb05cd97581d36e149592fc07eff9b2e69b6ae674ca` |
+
+### Identity, logs and reproduction
+
+Tested MuLIB HEAD: `a3c6fdd94d4ffc29f4b9dfc3e39c19c902324701`, including the current
+uncommitted On1x changes. Supplied LibStone: `55755485acaded7c4ed804c0946bc8c7363f6763`,
+with a clean dependency worktree. The separate Satie SDK was freshly prepared at
+`/tmp/opencode/on1x-final-type-sdk` using the explicit upstream CMake patch already
+documented below; all 64 original-source fingerprints match the supplied checkout.
+
+`/tmp/opencode/on1x-final-inputs.json` records 214 On1x source-file hashes; all
+remained unchanged during testing. This report update follows that check.
+Each build retains `commands.json`, `verification.log`, `results.xml` and
+`on1x-build-info.txt`. Aggregate results are in
+`/tmp/opencode/on1x-final-results.json`; combined-gate artifact hashes are in
+`/tmp/opencode/on1x-final-integration/summary.json`.
+
+Example fresh full-feature reproduction (choose unused output paths):
+
+```sh
+python3 on1x/tools/prepare-type-sdk.py --output /tmp/opencode/final-type-sdk-new
+cmake -S on1x -B /tmp/opencode/final-on1x-new -DCMAKE_BUILD_TYPE=Debug \
+  -DBUILD_TESTING=ON -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+  -DCMAKE_C_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DON1X_WITH_EXOML=ON -DON1X_WITH_EXOML_EXTRACT=ON \
+  -DON1X_WITH_EXOTRACT=ON -DON1X_WITH_CHISEL=ON \
+  -DON1X_WITH_NEROTYPICAL=ON -DON1X_WITH_NOVOSTONE=ON \
+  -DON1X_SATIE_ROOT=/tmp/opencode/final-type-sdk-new
+cmake --build /tmp/opencode/final-on1x-new --parallel 4
+ctest --test-dir /tmp/opencode/final-on1x-new --output-on-failure --parallel 3
+```
+
+Safety coverage remains the documented concrete-HIR type subset and scalar/JSON
+resource protocols. General foreign ABI/ownership lowering, native/VM backends
+and exhaustive execution of all 1,164 MuLIB modules are outside this result.
+
+## Previous continuation: ExoML relocation and Exotract static bindings — 2026-11-15
 
 Rebound `tools/on1x-contracts.py` to `contracts-exoml` and updated documentation,
 sidecar evidence paths and workflow references. Existing C examples remain in
