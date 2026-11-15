@@ -1,9 +1,89 @@
 {
- "schema":"on1x.contract-catalog/v1",
- "safe_export":false,
- "profiles":{
-  "json":{"contract":"json.exocontract.json","header":"include/mulib-json.h","header_sha256":"e9e233759cfa04eed6f5d05e98ca619118c42b6dc71e1f94a1d0aa882a5585e0","manual":"manual/mulib-json.md","manual_sha256":"4f7dd0db0f57588e34cb3c3f3933a83aeb84c8691526d379070845d65ec104d7","function_prefix":"mulib_json_","function_count":20,"implementation_modules":["parsec","strbuf","utf8","json"],"inactive_optional_macros":["MULIB_IMPL_PARSER"],"link_libraries":["m"]},
-  "vec":{"contract":"vec.exocontract.json","header":"include/mulib-vec.h","header_sha256":"b2576214db977f01ef73d07059c2877082b57bcb14e5773fb7bc98af591e2a0e","manual":"manual/mulib-vec.md","manual_sha256":"278bca05c4ae8b8cadfc8e9468c42ce27fb79d084ce85840d05a906bdd397c3e","function_prefix":"mulib_vec_","function_count":7,"implementation_modules":["vec"],"inactive_optional_macros":[],"link_libraries":[]},
-  "parsec":{"contract":"parsec.exocontract.json","header":"include/mulib-parsec.h","header_sha256":"f697a7723bf797241a069a98f47d8adcc4f7d4742eb5c75713ed4b3d7dd40d42","manual":"manual/mulib-parsec.md","manual_sha256":"65c126026d7ddddd8f34c7f0ff4c5d485878598ec1187f84e9f43ac0f9464c6d","function_prefix":"mulib_parsec_","function_count":18,"implementation_modules":["parsec"],"inactive_optional_macros":["MULIB_IMPL_PARSER"],"link_libraries":[]}
- }
+  "schema": "on1x.contract-catalog/v1",
+  "safe_export": false,
+  "profiles": {
+    "json": {
+      "contract": "json.exocontract.json",
+      "header": "include/mulib-json.h",
+      "header_sha256": "e9e233759cfa04eed6f5d05e98ca619118c42b6dc71e1f94a1d0aa882a5585e0",
+      "manual": "manual/mulib-json.md",
+      "manual_sha256": "4f7dd0db0f57588e34cb3c3f3933a83aeb84c8691526d379070845d65ec104d7",
+      "function_prefix": "mulib_json_",
+      "function_count": 20,
+      "implementation_modules": [
+        "parsec",
+        "strbuf",
+        "utf8",
+        "json"
+      ],
+      "inactive_optional_macros": [
+        "MULIB_IMPL_PARSER"
+      ],
+      "link_libraries": [
+        "m"
+      ]
+    },
+    "vec": {
+      "contract": "vec.exocontract.json",
+      "header": "include/mulib-vec.h",
+      "header_sha256": "b2576214db977f01ef73d07059c2877082b57bcb14e5773fb7bc98af591e2a0e",
+      "manual": "manual/mulib-vec.md",
+      "manual_sha256": "278bca05c4ae8b8cadfc8e9468c42ce27fb79d084ce85840d05a906bdd397c3e",
+      "function_prefix": "mulib_vec_",
+      "function_count": 7,
+      "implementation_modules": [
+        "vec"
+      ],
+      "inactive_optional_macros": [],
+      "link_libraries": []
+    },
+    "parsec": {
+      "contract": "parsec.exocontract.json",
+      "header": "include/mulib-parsec.h",
+      "header_sha256": "f697a7723bf797241a069a98f47d8adcc4f7d4742eb5c75713ed4b3d7dd40d42",
+      "manual": "manual/mulib-parsec.md",
+      "manual_sha256": "65c126026d7ddddd8f34c7f0ff4c5d485878598ec1187f84e9f43ac0f9464c6d",
+      "function_prefix": "mulib_parsec_",
+      "function_count": 18,
+      "implementation_modules": [
+        "parsec"
+      ],
+      "inactive_optional_macros": [
+        "MULIB_IMPL_PARSER"
+      ],
+      "link_libraries": []
+    },
+    "elvi-scrape": {
+      "contract": "elvi-scrape.exocontract.json",
+      "header": "include/mulib-elvi-scrape.h",
+      "header_sha256": "d1e84246cd4d91c00481700bca94134e0491c04b24ca22e4b23cfa30cd49f853",
+      "manual": "manual/mulib-elvi-scrape.md",
+      "manual_sha256": "4343541adeeb5c9a69cd639f6d4820c471aa4d1454309e1f1c0159ede4484728",
+      "function_prefix": "mulib_elvi_scrape_",
+      "function_count": 6,
+      "implementation_modules": [
+        "parsec",
+        "strbuf",
+        "buffer",
+        "inet4",
+        "inet6",
+        "uri",
+        "utf8",
+        "shylock-core",
+        "browser-origin",
+        "fetch-policy",
+        "fetch",
+        "url",
+        "http",
+        "webclient",
+        "tsl",
+        "https",
+        "elvi-scrape"
+      ],
+      "inactive_optional_macros": [
+        "MULIB_IMPL_PARSER"
+      ],
+      "link_libraries": []
+    }
+  }
 }

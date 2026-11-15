@@ -1,0 +1,19 @@
+/* Exactly one implementation TU; exercise actual MuLIB kernels offline. */
+#define MULIB_IMPL_PARSEC
+#define MULIB_IMPL_STRBUF
+#define MULIB_IMPL_BUFFER
+#define MULIB_IMPL_INET4
+#define MULIB_IMPL_INET6
+#define MULIB_IMPL_URI
+#define MULIB_IMPL_UTF8
+#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BROWSER_ORIGIN
+#define MULIB_IMPL_FETCH_POLICY
+#define MULIB_IMPL_FETCH
+#define MULIB_IMPL_URL
+#define MULIB_IMPL_HTTP
+#define MULIB_IMPL_WEBCLIENT
+#define MULIB_IMPL_TSL
+#define MULIB_IMPL_HTTPS
+#define MULIB_IMPL_ELVI_SCRAPE
+#include "mulib-elvi-scrape.h"

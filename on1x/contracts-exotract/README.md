@@ -12,7 +12,7 @@ ExoML/libclang declaration extractor to produce:
 - `symbols.json`, separating actual archive exports from declaration-only APIs.
 
 The binding source is `include/mulib-*.h`. `catalog.json` uses `MANIFEST.yaml`
-as the module registry: **1,164 module profiles**, plus inventory reporting of
+as the module registry: **1,165 module profiles**, plus inventory reporting of
 the three auxiliary headers `mulib-container-core.h`, `mulib-qvm.h` and
 `mulib-lprowse.h`. Those helpers have no independent MANIFEST implementation
 recipe; they remain included by their owning kernels. This is a library-wide
@@ -72,7 +72,7 @@ the seven optional `mulib_parser_*` functions are recorded as declaration-only.
 Always consult `symbols.json` when selecting archive entry points. Header-only
 inline functions may also be declaration-only in the archive symbol inventory.
 
-JSON, Vec and core Parsec reuse the source-pinned implementation recipes in
+ElviScrape, JSON, Vec and core Parsec reuse the source-pinned implementation recipes in
 [`../contracts-exoml/catalog.json`](../contracts-exoml/catalog.json). This avoids
 silently enabling Parsec's separate owned grammar API. Other module recipes
 follow MANIFEST dependency closure, recording cycles and rejecting unknown modules. Multiple
@@ -145,3 +145,8 @@ The standard-library bridge test also extracts/builds JSON/YAML/TOML/INI,
 cryptohash and socket kernels into a shared archive and executes an On1x consumer
 through `--mulib-archive`, with no manually specified bridge TU or duplicate
 implementation switches. This verifies raw linkage, not general foreign safety.
+
+`plan elvi-scrape` and `build elvi-scrape` use the pinned complete one-TU
+recipe and require all six exported symbols. `examples/elvi-scrape.c` executes
+offline provider compilation, URL expansion and extraction against that archive.
+TLS session fixtures test the adapter independently; typed imports remain unsafe.

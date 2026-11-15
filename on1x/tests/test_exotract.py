@@ -42,6 +42,7 @@ assert plan['safe_export'] is False and plan['implementation_translation_units']
 for name,libraries,source,expected in [
     ('core',['json','vec','parsec'],'client.c','[42]\n'),
     ('microjs',['microjs'],'microjs.c','42\n'),
+    ('elvi-scrape',['elvi-scrape'],'elvi-scrape.c','elvi-scrape: archive OK\n'),
 ]:
     dest=a.work/name
     if dest.exists():shutil.rmtree(dest)
@@ -59,6 +60,8 @@ for name,libraries,source,expected in [
         assert len(symbols['vec']['archive_exports'])==7
         assert len(symbols['parsec']['archive_exports'])==18
         assert 'mulib_parser_from_peg' in symbols['parsec']['declaration_only']
+    elif name=='elvi-scrape':
+        assert len(symbols['elvi-scrape']['archive_exports'])==6
     else:assert len(symbols['microjs']['archive_exports'])==15
     client(a.root/'contracts-exotract/examples'/source,dest,expected)
     keep=(dest/'lock.json').read_bytes();p=build(libraries,dest)

@@ -307,7 +307,7 @@ with tempfile.TemporaryDirectory(prefix='sdk-', dir=t.work) as tmp:
         assert p.returncode == 0 and json.loads(p.stdout)['safe_export'] is False, p.stderr
         second = work/'snapshot_two'; p = workflow('snapshot', second, *options); assert p.returncode == 0, p.stderr
         for file in snapshot.iterdir(): assert file.read_bytes() == (second/file.name).read_bytes(), file.name
-        for library in ['json', 'vec', 'parsec']:
+        for library in ['json', 'vec', 'parsec', 'elvi-scrape']:
             cdecl_file = snapshot/(library+'.cdecl.json'); contracts = snapshot/(library+'.exocontract.json')
             assert json.loads(good('normalize-decl', cdecl_file)) == json.loads(cdecl_file.read_text())
             bad('emit-safe', cdecl_file, contracts, diagnostic='safe export unavailable')
@@ -319,7 +319,7 @@ with tempfile.TemporaryDirectory(prefix='sdk-', dir=t.work) as tmp:
         p = workflow('check', stale, '--bind', t.bind)
         assert p.returncode == 3 and 'artifact drift' in p.stderr, p.stderr
         fake = work/'canonical-copy'; (fake/'include').mkdir(parents=True); (fake/'manual').mkdir()
-        for library in ['json','vec','parsec']:
+        for library in ['json','vec','parsec','elvi-scrape']:
             for directory, suffix in [('include','.h'),('manual','.md')]:
                 shutil.copyfile(t.root.parent/directory/('mulib-'+library+suffix), fake/directory/('mulib-'+library+suffix))
         shutil.copyfile(t.root.parent/'MANIFEST.yaml', fake/'MANIFEST.yaml')

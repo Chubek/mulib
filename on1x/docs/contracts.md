@@ -9,6 +9,7 @@ profiles:
 | JSON | 20 | owned roots, borrowed children/keys/text, conditional insertion, destructive replacement, independent serialized text |
 | Vec | 7 | initialized byte-stride storage, realloc invalidation, self-aliasing push, no nested element destructors |
 | Parsec combinators | 18 | borrowed value descriptors, transitive referents, pure indirect predicates, capture ownership and failure cleanup |
+| ElviScrape | 6 | bounded caller-owned buffers, conditional status outputs, policy intersection, verified TLS peer callbacks and unknown transport effects |
 
 The separate [Exotract static binding workflow](../contracts-exotract/README.md)
 uses this catalog's core implementation recipes and MANIFEST-backed profiles for
@@ -134,7 +135,7 @@ size/signedness assertions and checked i64 narrowing. Full IO, callback,
 ownership and concurrency information remains in the manifest; raw externs do
 not become purity or lifetime proofs.
 
-All 45 shipped kernel functions are intentionally ineligible for this scalar
+All 51 shipped kernel functions are intentionally ineligible for this scalar
 emitter, because their true ABIs/contracts require richer lowering. In
 particular, Parsec's borrow-bearing structs are not guessed to be ordinary
 scalars, and its descriptor-retained callback is not assigned a fictitious

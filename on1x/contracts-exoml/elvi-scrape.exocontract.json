@@ -1,0 +1,443 @@
+{
+  "schema_version": 2,
+  "library": "elvi-scrape",
+  "headers": [
+    "mulib-elvi-scrape.h"
+  ],
+  "state": "annotated",
+  "bundle_provenance": {
+    "header": "mulib-elvi-scrape.h",
+    "revision": "sha256:d1e84246cd4d91c00481700bca94134e0491c04b24ca22e4b23cfa30cd49f853",
+    "author": "Codex (AI-authored)",
+    "review_status": "unreviewed",
+    "evidence_method": "Source/manual audit; contracts-exoml/obligations.json; real-kernel offline extraction and HTTPS adapter tests. Independent review pending."
+  },
+  "functions": [
+    {
+      "c_name": "mulib_elvi_scrape_compile",
+      "return": {
+        "kind": "value",
+        "nullable": false
+      },
+      "parameters": [
+        {
+          "name": "src",
+          "ownership": "borrowed_immutable",
+          "nullable": true,
+          "length_parameter": 1,
+          "encoding": "NUL-free DSL bytes, <=65536; NULL only at length zero",
+          "index": 0
+        },
+        {
+          "name": "len",
+          "ownership": "scalar",
+          "nullable": false,
+          "index": 1
+        },
+        {
+          "name": "out",
+          "ownership": "out",
+          "nullable": false,
+          "index": 2
+        },
+        {
+          "name": "error",
+          "ownership": "out",
+          "nullable": true,
+          "index": 3
+        }
+      ],
+      "errors": {
+        "kind": "boolean_return",
+        "out_valid_on_failure": false,
+        "cleanup_required_on_failure": false
+      },
+      "effects": {
+        "effects": [
+          "read",
+          "write",
+          "allocate",
+          "free"
+        ],
+        "unknown": false
+      },
+      "concurrency": {
+        "thread_safety": "single_thread",
+        "blocking_behavior": "Synchronous; bounded local processing",
+        "suspension_safe": false
+      },
+      "provenance": {
+        "header": "mulib-elvi-scrape.h",
+        "author": "Codex (AI-authored)",
+        "review_status": "unreviewed",
+        "evidence_method": "Source/manual and tests/test-elvi-scrape.c: output program unchanged on failure; optional diagnostic is written on both outcomes; no retained pointers."
+      }
+    },
+    {
+      "c_name": "mulib_elvi_scrape_load",
+      "return": {
+        "kind": "value",
+        "nullable": false
+      },
+      "parameters": [
+        {
+          "name": "path",
+          "ownership": "borrowed_immutable",
+          "nullable": false,
+          "encoding": "NUL-terminated trusted provider filename",
+          "index": 0
+        },
+        {
+          "name": "out",
+          "ownership": "out",
+          "nullable": false,
+          "index": 1
+        },
+        {
+          "name": "error",
+          "ownership": "out",
+          "nullable": true,
+          "index": 2
+        }
+      ],
+      "errors": {
+        "kind": "boolean_return",
+        "out_valid_on_failure": false,
+        "cleanup_required_on_failure": false
+      },
+      "effects": {
+        "effects": [
+          "read",
+          "write",
+          "allocate",
+          "free",
+          "io"
+        ],
+        "unknown": false
+      },
+      "concurrency": {
+        "thread_safety": "single_thread",
+        "blocking_behavior": "Synchronous; bounded file read",
+        "suspension_safe": false
+      },
+      "provenance": {
+        "header": "mulib-elvi-scrape.h",
+        "author": "Codex (AI-authored)",
+        "review_status": "unreviewed",
+        "evidence_method": "Source/manual and tests/test-elvi-scrape.c: reads <=65536 bytes, closes file/frees scratch on every path; compile is transactional. Trusted data only."
+      }
+    },
+    {
+      "c_name": "mulib_elvi_scrape_url",
+      "return": {
+        "kind": "value",
+        "nullable": false
+      },
+      "parameters": [
+        {
+          "name": "p",
+          "ownership": "borrowed_immutable",
+          "nullable": false,
+          "index": 0
+        },
+        {
+          "name": "query",
+          "ownership": "borrowed_immutable",
+          "nullable": false,
+          "encoding": "NUL-terminated query, <=2048 bytes",
+          "index": 1
+        },
+        {
+          "name": "limit",
+          "ownership": "scalar",
+          "nullable": false,
+          "index": 2
+        },
+        {
+          "name": "out",
+          "ownership": "out",
+          "nullable": false,
+          "length_parameter": 4,
+          "encoding": "Caller capacity includes terminating NUL",
+          "index": 3
+        },
+        {
+          "name": "capacity",
+          "ownership": "scalar",
+          "nullable": false,
+          "index": 4
+        }
+      ],
+      "errors": {
+        "kind": "boolean_return",
+        "out_valid_on_failure": false,
+        "cleanup_required_on_failure": false
+      },
+      "effects": {
+        "effects": [
+          "read",
+          "write",
+          "allocate",
+          "free"
+        ],
+        "unknown": false
+      },
+      "concurrency": {
+        "thread_safety": "single_thread",
+        "blocking_behavior": "Synchronous; bounded local processing",
+        "suspension_safe": false
+      },
+      "provenance": {
+        "header": "mulib-elvi-scrape.h",
+        "author": "Codex (AI-authored)",
+        "review_status": "unreviewed",
+        "evidence_method": "Source/manual and tests/test-elvi-scrape.c: percent-encoded expansion committed only after bounded URL/policy validation. Program must be compiled and inputs/output disjoint."
+      }
+    },
+    {
+      "c_name": "mulib_elvi_scrape_parse",
+      "return": {
+        "kind": "value",
+        "nullable": false
+      },
+      "parameters": [
+        {
+          "name": "p",
+          "ownership": "borrowed_immutable",
+          "nullable": false,
+          "index": 0
+        },
+        {
+          "name": "html",
+          "ownership": "borrowed_immutable",
+          "nullable": true,
+          "length_parameter": 2,
+          "encoding": "NUL-free HTML bytes, <=2097152; NULL only at zero length",
+          "index": 1
+        },
+        {
+          "name": "len",
+          "ownership": "scalar",
+          "nullable": false,
+          "index": 2
+        },
+        {
+          "name": "results",
+          "ownership": "out",
+          "nullable": true,
+          "length_parameter": 4,
+          "encoding": "cap result structs, NULL only when cap=0",
+          "index": 3
+        },
+        {
+          "name": "cap",
+          "ownership": "scalar",
+          "nullable": false,
+          "index": 4
+        },
+        {
+          "name": "count",
+          "ownership": "out",
+          "nullable": false,
+          "index": 5
+        }
+      ],
+      "errors": {
+        "kind": "boolean_return",
+        "out_valid_on_failure": false,
+        "cleanup_required_on_failure": false
+      },
+      "effects": {
+        "effects": [
+          "read",
+          "write",
+          "allocate",
+          "free"
+        ],
+        "unknown": false
+      },
+      "concurrency": {
+        "thread_safety": "single_thread",
+        "blocking_behavior": "Synchronous; bounded local processing",
+        "suspension_safe": false
+      },
+      "provenance": {
+        "header": "mulib-elvi-scrape.h",
+        "author": "Codex (AI-authored)",
+        "review_status": "unreviewed",
+        "evidence_method": "Source/manual and offline HTML fixtures: copies input, bounded results with inline owned bytes; no borrowed output strings. Zero results is success; failures preserve results/count."
+      }
+    },
+    {
+      "c_name": "mulib_elvi_scrape_search",
+      "return": {
+        "kind": "value",
+        "nullable": false
+      },
+      "parameters": [
+        {
+          "name": "p",
+          "ownership": "borrowed_immutable",
+          "nullable": false,
+          "index": 0
+        },
+        {
+          "name": "client",
+          "ownership": "borrowed_immutable",
+          "nullable": false,
+          "encoding": "Initialized fetch client; borrowed callbacks/context, verified HTTPS and no implicit redirects",
+          "index": 1
+        },
+        {
+          "name": "query",
+          "ownership": "borrowed_immutable",
+          "nullable": false,
+          "encoding": "NUL-terminated query <=2048 bytes",
+          "index": 2
+        },
+        {
+          "name": "limit",
+          "ownership": "scalar",
+          "nullable": false,
+          "index": 3
+        },
+        {
+          "name": "results",
+          "ownership": "out",
+          "nullable": true,
+          "length_parameter": 5,
+          "encoding": "cap result structs, NULL only when cap=0",
+          "index": 4
+        },
+        {
+          "name": "cap",
+          "ownership": "scalar",
+          "nullable": false,
+          "index": 5
+        },
+        {
+          "name": "count",
+          "ownership": "out",
+          "nullable": false,
+          "index": 6
+        },
+        {
+          "name": "http_status",
+          "ownership": "out",
+          "nullable": true,
+          "index": 7
+        }
+      ],
+      "errors": {
+        "kind": "boolean_return",
+        "out_valid_on_failure": false,
+        "cleanup_required_on_failure": false
+      },
+      "effects": {
+        "effects": [
+          "read",
+          "write",
+          "allocate",
+          "free",
+          "io",
+          "foreign_call"
+        ],
+        "unknown": true
+      },
+      "concurrency": {
+        "thread_safety": "single_thread",
+        "blocking_behavior": "Synchronous; application callbacks and I/O may block",
+        "suspension_safe": false
+      },
+      "provenance": {
+        "header": "mulib-elvi-scrape.h",
+        "author": "Codex (AI-authored)",
+        "review_status": "unreviewed",
+        "evidence_method": "Source/manual and real-fetch tests: policy intersected, temporary body freed; HTTP status committed after fetch even on non-200/media failure; results/count only on parse success. Indirect transport effects unknown."
+      }
+    },
+    {
+      "c_name": "mulib_elvi_scrape_https_transport",
+      "return": {
+        "kind": "value",
+        "nullable": false
+      },
+      "parameters": [
+        {
+          "name": "ctx",
+          "ownership": "borrowed_mutable",
+          "nullable": false,
+          "encoding": "Borrowed mulib_elvi_scrape_https_t and transitive callback context",
+          "index": 0
+        },
+        {
+          "name": "url",
+          "ownership": "borrowed_immutable",
+          "nullable": false,
+          "encoding": "NUL-terminated public HTTPS URL, no fragment",
+          "index": 1
+        },
+        {
+          "name": "body",
+          "ownership": "borrowed_mutable",
+          "nullable": false,
+          "encoding": "Initialized MuLIB buffer; append may reallocate, caller later frees via mulib_shylock_buffer_free",
+          "index": 2
+        },
+        {
+          "name": "status",
+          "ownership": "out",
+          "nullable": false,
+          "index": 3
+        },
+        {
+          "name": "type",
+          "ownership": "out",
+          "nullable": false,
+          "length_parameter": 5,
+          "encoding": "cap bytes including NUL",
+          "index": 4
+        },
+        {
+          "name": "cap",
+          "ownership": "scalar",
+          "nullable": false,
+          "index": 5
+        }
+      ],
+      "errors": {
+        "kind": "boolean_return",
+        "out_valid_on_failure": false,
+        "cleanup_required_on_failure": false
+      },
+      "effects": {
+        "effects": [
+          "read",
+          "write",
+          "allocate",
+          "free",
+          "io",
+          "foreign_call"
+        ],
+        "unknown": true
+      },
+      "concurrency": {
+        "thread_safety": "single_thread",
+        "blocking_behavior": "Synchronous; application callbacks and I/O may block",
+        "suspension_safe": false
+      },
+      "provenance": {
+        "header": "mulib-elvi-scrape.h",
+        "author": "Codex (AI-authored)",
+        "review_status": "unreviewed",
+        "evidence_method": "Source/manual and tests/test-elvi-scrape-https.c: HTTPS/TSL session closed on every path; authenticated peer inspection before HTTP writes; no redirects/retries. Body/status/type unchanged on failure. Callback effects unknown."
+      },
+      "invalidations": [
+        {
+          "kind": "reallocation",
+          "description": "Successful body append may invalidate pointers into body->data. The buffer itself remains caller-owned."
+        }
+      ]
+    }
+  ]
+}

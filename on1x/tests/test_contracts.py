@@ -16,7 +16,7 @@ tool = t.root/'tools/on1x-contracts.py'
 p = run([sys.executable, tool, 'lint'])
 assert p.returncode == 0, p.stderr
 lint = json.loads(p.stdout)
-assert lint['profiles'] == {'json':20, 'vec':7, 'parsec':18} and not lint['safe_export'] and not lint['gate_b']
+assert lint['profiles'] == {'json':20, 'vec':7, 'parsec':18, 'elvi-scrape':6} and not lint['safe_export'] and not lint['gate_b']
 p = run([sys.executable, tool, 'build-plan', 'json', 'vec', 'parsec'])
 assert p.returncode == 0, p.stderr
 plan = json.loads(p.stdout)
@@ -24,13 +24,20 @@ macros = ['MULIB_IMPL_PARSEC', 'MULIB_IMPL_STRBUF', 'MULIB_IMPL_UTF8', 'MULIB_IM
 assert plan['implementation_macros'] == macros
 assert plan['implementation_translation_units'] == 1 and plan['inactive_optional_macros'] == ['MULIB_IMPL_PARSER']
 assert plan['link_libraries'] == ['m'] and not plan['safe_export']
+p = run([sys.executable, tool, 'build-plan', 'elvi-scrape'])
+assert p.returncode == 0, p.stderr
+elvi = json.loads(p.stdout)
+assert elvi['implementation_translation_units'] == 1 and not elvi['safe_export']
+assert len(elvi['implementation_macros']) == len(set(elvi['implementation_macros']))
+assert elvi['implementation_macros'][-1] == 'MULIB_IMPL_ELVI_SCRAPE'
+assert 'MULIB_IMPL_PARSER' not in elvi['implementation_macros']
 for name in ['unknown', '../json', 'json;false']:
     p = run([sys.executable, tool, 'build-plan', name])
     assert p.returncode != 0 and not p.stdout, p.stderr
 with tempfile.TemporaryDirectory(prefix='contract-root-', dir=t.work) as tmp:
     fake = Path(tmp)
     (fake/'include').mkdir(); (fake/'manual').mkdir()
-    for n in ['json', 'vec', 'parsec']:
+    for n in ['json', 'vec', 'parsec', 'elvi-scrape']:
         for directory, suffix in [('include', '.h'), ('manual', '.md')]:
             shutil.copyfile(root/directory/('mulib-'+n+suffix), fake/directory/('mulib-'+n+suffix))
     shutil.copyfile(root/'MANIFEST.yaml', fake/'MANIFEST.yaml')

@@ -1,0 +1,11 @@
+# ElviScrape provider: Google's ordinary HTML SERP (best effort)
+elvi google
+host www.google.com
+home https://www.google.com/
+search "https://www.google.com/search?q={query}&num={limit}"
+# Google commonly nests a heading inside the result anchor
+anchor child h3
+rewrite google
+exclude_host google.com
+exclude_host googleusercontent.com
+max_results 30

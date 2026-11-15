@@ -7,9 +7,16 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1164
-implemented_module_count: 1164
+module_count: 1165
+implemented_module_count: 1165
 modules:
+- name: elvi-scrape
+  header: include/mulib-elvi-scrape.h
+  manual: manual/mulib-elvi-scrape.md
+  macro: MULIB_IMPL_ELVI_SCRAPE
+  purpose: Declarative Surfraw-inspired search URL generation and bounded HTML SERP title/link extraction from .elvs providers.
+  dependencies: [fetch, url, https, utf8]
+  status: implemented
 - name: openai
   header: include/mulib-openai.h
   manual: manual/mulib-openai.md

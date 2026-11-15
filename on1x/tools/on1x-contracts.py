@@ -90,7 +90,7 @@ def catalog(root):
         reject('unsupported/unsafe obligations')
     for name, profile in data['profiles'].items():
         keys(profile, ['contract', 'header', 'header_sha256', 'manual', 'manual_sha256', 'function_prefix', 'function_count', 'implementation_modules', 'inactive_optional_macros', 'link_libraries'])
-        if not re.fullmatch('[a-z][a-z0-9_]*', name):
+        if not re.fullmatch('[a-z][a-z0-9_-]*', name):
             reject('invalid profile name')
         for field in ['header', 'manual']:
             path = Path(profile[field])

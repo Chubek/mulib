@@ -472,3 +472,6 @@ Thumbs.db
 
 # LaTeX compiler cache
 *.cache
+
+# Offline ElviScrape regression fixtures
+!tests/fixtures/elvi-scrape/*.html

@@ -5,10 +5,47 @@
   "implementation_translation_units": 1,
   "safe_export": false,
   "profiles": {
-    "json": {"recipe": "exoml-core", "required_symbols": ["mulib_json_parse", "mulib_json_destroy"]},
-    "vec": {"recipe": "exoml-core", "required_symbols": ["mulib_vec_init", "mulib_vec_free"]},
-    "parsec": {"recipe": "exoml-core", "required_symbols": ["mulib_parsec_run"]},
-    "microjs": {"recipe": "manifest", "required_symbols": ["mulib_microjs_create", "mulib_microjs_destroy"], "link_libraries": ["m"]}
+    "json": {
+      "recipe": "exoml-core",
+      "required_symbols": [
+        "mulib_json_parse",
+        "mulib_json_destroy"
+      ]
+    },
+    "vec": {
+      "recipe": "exoml-core",
+      "required_symbols": [
+        "mulib_vec_init",
+        "mulib_vec_free"
+      ]
+    },
+    "parsec": {
+      "recipe": "exoml-core",
+      "required_symbols": [
+        "mulib_parsec_run"
+      ]
+    },
+    "microjs": {
+      "recipe": "manifest",
+      "required_symbols": [
+        "mulib_microjs_create",
+        "mulib_microjs_destroy"
+      ],
+      "link_libraries": [
+        "m"
+      ]
+    },
+    "elvi-scrape": {
+      "recipe": "exoml-core",
+      "required_symbols": [
+        "mulib_elvi_scrape_compile",
+        "mulib_elvi_scrape_load",
+        "mulib_elvi_scrape_url",
+        "mulib_elvi_scrape_parse",
+        "mulib_elvi_scrape_search",
+        "mulib_elvi_scrape_https_transport"
+      ]
+    }
   },
   "default_recipe": "manifest"
 }

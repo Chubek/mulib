@@ -1,30 +1,104 @@
 {
- "schema":"on1x.contract-obligations/v1",
- "safe_export":false,
- "status":"AI-authored source annotations; independent review and usage proofs pending",
- "global":[
-  "No reviewed/verified status is granted by extraction, pinning, checking, hashes or these tests.",
-  "No safe import exists until independent review, exact target ABI checks, ownership/error/effect lowering, Chisel/Wetstone usage checks and runtime acceptance all succeed.",
-  "All parameters require live, aligned, correctly sized C storage. Nullable flags do not waive length/count or initialized-storage conditions.",
-  "A generic pointer return must never become an owning On1x value by inference. Signedness, width, enum domains and aggregate layouts are separate obligations.",
-  "Full ExoML contracts are retained; the legacy ownership projection loses IO and conditional/field-level details and is not used by this workflow."
- ],
- "json":{
-  "source_ranges":["include/mulib-json.h:139-388 (construction, access, mutation)","include/mulib-json.h:676-850 (parse ownership/error cleanup)","include/mulib-json.h:989-end (stringify ownership)"],
-  "preconditions":["Destroy only an owned root, never a borrowed/transferred child.","Input strings/keys are live UTF-8 with the specified extent. NULL for length-delimited inputs is valid only at length zero; SIZE_MAX lengths are invalid.","Exclude concurrent mutation/destruction and concurrent LC_NUMERIC changes during numeric parse/serialization."],
-  "postconditions":["Failed append/set retains caller ownership and leaves existing members intact.","Successful set to an already-installed identical value is a no-op; other replacement destroys the old child.","Accessors borrow from the containing tree. Missing pointer and a non-NULL JSON-null value are distinct.","Stringify's text is independent malloc-owned storage released with free, not mulib_json_destroy.","Parse initializes optional diagnostics on success/failure; diagnostic messages are static and partial trees/captures are cleaned on failure."],
-  "unlowered":["Conditional ownership and same-value alias exception.","Borrow invalidation for replaced subtrees and multi-level owner relationships.","Double-to-exact-i64 range/finite/integral checks.","Length-delimited strings may contain NUL, unlike the current On1x string ABI."]
- },
- "vec":{
-  "source_ranges":["include/mulib-vec.h:77-169"],
-  "preconditions":["Initialize fresh/freed struct storage; init overwrites but does not free old storage.","Use nonzero stride and valid length/capacity/data invariants. Element/output storage must cover stride bytes.","Elements are trivially copied bytes. Resource-bearing pointers have no automatic clone/drop behavior."],
-  "postconditions":["Reserve/push return 1/0 and preserve existing state on failed growth.","Push can copy a live element across realloc by recording/rebasing its offset.","Growth can invalidate every buffer borrow; pop/clear also invalidate removed logical elements.","Pop with NULL output discards bytes; failure does not initialize an output object.","Clear does not free capacity or nested pointees. Free releases buffer storage, retains stride and permits reuse; it does not free the struct."],
-  "unlowered":["Borrow regions tied to realloc and logical vector length.","Stride-based buffer extents are not ordinary pointer+length argument pairs.","Owned element types cannot be admitted by raw memcpy."]
- },
- "parsec":{
-  "source_ranges":["include/mulib-parsec.h:233-348 (borrowed descriptors)","include/mulib-parsec.h:648-712 (result initialization/cleanup)"],
-  "preconditions":["Every descriptor's transitive child/literal/bitmap/reference-slot/user/label referent must outlive each run.","Do not mutate reference slots or grammar storage concurrently with a run.","Predicate callbacks must be pure and may run repeatedly under backtracking; no unregister function exists for these non-owning value descriptors.","Run output storage is fresh or result_free'd, and result_free only accepts initialized/zeroed storage."],
-  "postconditions":["Constructors return C structs by value; they neither allocate nor copy referenced buffers.","Run returns 1 match, 0 mismatch, -1 fatal/invalid/limit/allocation. Failure commits no captures and retains no capture allocation.","Successful result owns captures, not source bytes or diagnostic labels. result_free resets storage for reuse.","Run is prefix parsing; only an explicit end descriptor enforces whole-input parsing.","Bounded run additionally charges literal comparisons; zero max_work selects 16000000."],
-  "unlowered":["ReturnKind borrow can describe a borrow-bearing value, but field-sensitive aggregate lifetime lowering is absent.","satisfy/named have multiple borrowed field origins; these functions deliberately retain unknown/unsafe metadata.","Indirect grammar callbacks are not explicit function-pointer parameters to run. Their effects remain unknown until separately proved.","Owned MULIB_IMPL_PARSER grammar/AST APIs are outside this combinator-only profile; MANIFEST extra macros are not enabled implicitly."]
- }
+  "schema": "on1x.contract-obligations/v1",
+  "safe_export": false,
+  "status": "AI-authored source annotations; independent review and usage proofs pending",
+  "global": [
+    "No reviewed/verified status is granted by extraction, pinning, checking, hashes or these tests.",
+    "No safe import exists until independent review, exact target ABI checks, ownership/error/effect lowering, Chisel/Wetstone usage checks and runtime acceptance all succeed.",
+    "All parameters require live, aligned, correctly sized C storage. Nullable flags do not waive length/count or initialized-storage conditions.",
+    "A generic pointer return must never become an owning On1x value by inference. Signedness, width, enum domains and aggregate layouts are separate obligations.",
+    "Full ExoML contracts are retained; the legacy ownership projection loses IO and conditional/field-level details and is not used by this workflow."
+  ],
+  "json": {
+    "source_ranges": [
+      "include/mulib-json.h:139-388 (construction, access, mutation)",
+      "include/mulib-json.h:676-850 (parse ownership/error cleanup)",
+      "include/mulib-json.h:989-end (stringify ownership)"
+    ],
+    "preconditions": [
+      "Destroy only an owned root, never a borrowed/transferred child.",
+      "Input strings/keys are live UTF-8 with the specified extent. NULL for length-delimited inputs is valid only at length zero; SIZE_MAX lengths are invalid.",
+      "Exclude concurrent mutation/destruction and concurrent LC_NUMERIC changes during numeric parse/serialization."
+    ],
+    "postconditions": [
+      "Failed append/set retains caller ownership and leaves existing members intact.",
+      "Successful set to an already-installed identical value is a no-op; other replacement destroys the old child.",
+      "Accessors borrow from the containing tree. Missing pointer and a non-NULL JSON-null value are distinct.",
+      "Stringify's text is independent malloc-owned storage released with free, not mulib_json_destroy.",
+      "Parse initializes optional diagnostics on success/failure; diagnostic messages are static and partial trees/captures are cleaned on failure."
+    ],
+    "unlowered": [
+      "Conditional ownership and same-value alias exception.",
+      "Borrow invalidation for replaced subtrees and multi-level owner relationships.",
+      "Double-to-exact-i64 range/finite/integral checks.",
+      "Length-delimited strings may contain NUL, unlike the current On1x string ABI."
+    ]
+  },
+  "vec": {
+    "source_ranges": [
+      "include/mulib-vec.h:77-169"
+    ],
+    "preconditions": [
+      "Initialize fresh/freed struct storage; init overwrites but does not free old storage.",
+      "Use nonzero stride and valid length/capacity/data invariants. Element/output storage must cover stride bytes.",
+      "Elements are trivially copied bytes. Resource-bearing pointers have no automatic clone/drop behavior."
+    ],
+    "postconditions": [
+      "Reserve/push return 1/0 and preserve existing state on failed growth.",
+      "Push can copy a live element across realloc by recording/rebasing its offset.",
+      "Growth can invalidate every buffer borrow; pop/clear also invalidate removed logical elements.",
+      "Pop with NULL output discards bytes; failure does not initialize an output object.",
+      "Clear does not free capacity or nested pointees. Free releases buffer storage, retains stride and permits reuse; it does not free the struct."
+    ],
+    "unlowered": [
+      "Borrow regions tied to realloc and logical vector length.",
+      "Stride-based buffer extents are not ordinary pointer+length argument pairs.",
+      "Owned element types cannot be admitted by raw memcpy."
+    ]
+  },
+  "parsec": {
+    "source_ranges": [
+      "include/mulib-parsec.h:233-348 (borrowed descriptors)",
+      "include/mulib-parsec.h:648-712 (result initialization/cleanup)"
+    ],
+    "preconditions": [
+      "Every descriptor's transitive child/literal/bitmap/reference-slot/user/label referent must outlive each run.",
+      "Do not mutate reference slots or grammar storage concurrently with a run.",
+      "Predicate callbacks must be pure and may run repeatedly under backtracking; no unregister function exists for these non-owning value descriptors.",
+      "Run output storage is fresh or result_free'd, and result_free only accepts initialized/zeroed storage."
+    ],
+    "postconditions": [
+      "Constructors return C structs by value; they neither allocate nor copy referenced buffers.",
+      "Run returns 1 match, 0 mismatch, -1 fatal/invalid/limit/allocation. Failure commits no captures and retains no capture allocation.",
+      "Successful result owns captures, not source bytes or diagnostic labels. result_free resets storage for reuse.",
+      "Run is prefix parsing; only an explicit end descriptor enforces whole-input parsing.",
+      "Bounded run additionally charges literal comparisons; zero max_work selects 16000000."
+    ],
+    "unlowered": [
+      "ReturnKind borrow can describe a borrow-bearing value, but field-sensitive aggregate lifetime lowering is absent.",
+      "satisfy/named have multiple borrowed field origins; these functions deliberately retain unknown/unsafe metadata.",
+      "Indirect grammar callbacks are not explicit function-pointer parameters to run. Their effects remain unknown until separately proved.",
+      "Owned MULIB_IMPL_PARSER grammar/AST APIs are outside this combinator-only profile; MANIFEST extra macros are not enabled implicitly."
+    ]
+  },
+  "elvi-scrape": {
+    "source_ranges": [
+      "include/mulib-elvi-scrape.h (public API and MULIB_IMPL_ELVI_SCRAPE implementation)"
+    ],
+    "preconditions": [
+      "Programs originate from compile/load and remain unmodified during use. All C pointers and capacities denote live, correctly sized, nonoverlapping storage.",
+      "Load only trusted provider files. TLS callbacks report negotiated authenticated state, enforce public resolved addresses and never fabricate verification. Generic fetch transports must not implicitly follow redirects.",
+      "Buffer is initialized; callback/context lifetimes cover synchronous operations. No concurrent mutation of shared outputs or callback context."
+    ],
+    "postconditions": [
+      "Compile/url/parse preserve outputs on failure except compile diagnostics; search may report status on a later failure. Zero parse results is success.",
+      "HTTPS transport preserves caller outputs on failure; successful append may reallocate body. Every created session is closed and temporary allocations are freed.",
+      "HTTPS prohibition and tighter fetch limits are preserved. No redirect, pagination or rate-limit retry is performed."
+    ],
+    "unlowered": [
+      "Indirect callbacks and transitive context effects remain unknown; no safe export.",
+      "Struct array extents, fixed character arrays, conditional diagnostic/status outputs, and peer verification trust cannot be inferred from extraction.",
+      "Certificate/hostname/protocol failure tests use offline session fixtures; they do not prove a TLS backend or DNS rebinding defense."
+    ]
+  }
 }

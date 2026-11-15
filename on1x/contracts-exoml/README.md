@@ -5,6 +5,7 @@ Implemented source annotations and verification tooling:
 - `json.exocontract.json`: all 20 core JSON functions;
 - `vec.exocontract.json`: all 7 byte-vector functions;
 - `parsec.exocontract.json`: all 18 borrowed combinator functions;
+- `elvi-scrape.exocontract.json`: all 6 provider/extraction/HTTPS functions;
 - `catalog.json`: exact canonical header/manual pins and implementation recipes;
 - `obligations.json`: source evidence, branch/lifetime preconditions and missing
   field-sensitive/ownership/error/callback lowering.
@@ -16,7 +17,7 @@ reviewed metadata.
 
 ```sh
 python3 on1x/tools/on1x-contracts.py lint
-python3 on1x/tools/on1x-contracts.py build-plan json vec parsec
+python3 on1x/tools/on1x-contracts.py build-plan json vec parsec elvi-scrape
 ```
 
 Real Gate B acceptance requires compiler-generated ExoML CDecl artifacts, not
