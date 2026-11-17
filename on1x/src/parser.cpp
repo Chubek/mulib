@@ -633,7 +633,8 @@ class Parser {
       auto name=ident();if(!closed.insert(name).second)throw Error(site,"ON1X-CSP: duplicate poll closed arm: "+name);
       label="@closed:"+name;
      }else if(accept("default")){
-      if(has_default)throw Error(site,"ON1X-CSP: duplicate poll default arm");has_default=true;label="Default";
+      if(has_default)throw Error(site,"ON1X-CSP: duplicate poll default arm");
+      has_default=true;label="Default";
      }else if(at("after"))throw Error(site,"ON1X-CSP-UNSUPPORTED: monotonic poll deadlines unavailable");
      else throw Error(site,"expected recv, send, closed or default poll offer");
      consume("=>");auto arm=std::make_unique<Expr>();arm->kind=Expr::Kind::Case;arm->where=site;

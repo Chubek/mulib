@@ -1,6 +1,24 @@
 # On1x capability matrix
 
-Current G4 continuation: compiler-parsed backtick command literals and captured
+G4 stream-poll continuation (baseline `d4cc478df76bfe9b5b8e6485f42d56fde81e8a68`):
+atomic `poll` now accepts captured process byte endpoints, including mixed i64/u8
+offers. Configured LibStone remains `55755485acaded7c4ed804c0946bc8c7363f6763`.
+The example previously failed with `expected sender<i64>, got sender<u8>`.
+This task does not implement deadlines, cancellation unwinding or the full syntax
+specification. See [the exact profile](stream-poll.md) and `../VERIFICATION.md`
+for Linux x86_64/GCC/Clang commands and test results.
+Final full suites: fallback/GCC **51 passed, 1 failed, 1 skipped**;
+generated/GCC **52 passed, 1 failed, 1 skipped**. The unchanged failure is the
+stale `tools/embed_units.py` fingerprint; Category skips in native-PPX-off
+profiles. Clang ASan/UBSan focused **3/3**, strict GCC Release focused **2/2**,
+scanner parity **301 cases**, native identity PPX and standalone strict Clang
+C11 examples execute. These results do not complete G4 or the syntax specification.
+
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| Mixed i64/process-byte atomic poll | `src/{infer,sema,concurrency,codegen}.cpp` | Existing MuLIB atomic selection and private ABI v2; exact uint8_t staging in `runtime/on1x_concurrency.c`, explicit widening/narrowing | Existing source `poll`, exact i64/u8 payloads/binders; 1..16 named offers with mandatory close arms and optional default | `test_stream_poll.py`, `test_concurrency.cpp`, `fixtures/stream_poll_boundary.c`, compiled `examples/cooperative_stream_poll.on1x`; seeded full-byte-domain oracle, mixed offers, 0/1/7 capacity, losing offers, EOF/default/cancel, wire/PPX, C/C++ TU callers, malformed HIR, runtime range/direction/OOM, strict C11 and ASan/UBSan | EXECUTABLE | No general byte-channel constructor, deadlines, running cancellation, general ownership/effect MIR, other targets or full-spec conformance |
+
+Earlier G4/v3 evidence (before the stream-poll continuation above): compiler-parsed backtick command literals and captured
 process byte streams now execute as affine `sender<u8>`/`receiver<u8>`
 capabilities. They extend the existing bounded direct-exec external fibers and
 consuming process cancellation, plus internal cooperative fibers,

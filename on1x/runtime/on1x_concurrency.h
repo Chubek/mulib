@@ -15,8 +15,10 @@ typedef struct on1x_csp_channel on1x_csp_channel;
 typedef struct on1x_csp_process on1x_csp_process;
 typedef int64_t (*on1x_csp_callback)(on1x_env *);
 typedef struct {on1x_csp_channel *channel;int operation;int64_t payload;} on1x_csp_offer;
-/* One MuLIB atomic select: operation 1 sends, 2 receives. No deadline or
- * cancellation in this profile; selected==count denotes default. */
+/* One MuLIB atomic select: operation 1 sends, 2 receives. i64 channels and
+ * captured u8 process streams may be mixed; byte payloads widen exactly in this
+ * transport and are staged as uint8_t objects inside the adapter. No deadline
+ * or cancellation in this profile; selected==count denotes default. */
 void on1x_csp_select(on1x_csp_offer *,size_t,bool,int64_t *,size_t *,bool *,const char *,size_t,size_t);
 int64_t on1x_csp_run(on1x_csp_callback,on1x_env *,const char *,size_t,size_t);
 on1x_csp_group *on1x_csp_group_enter(const char *,size_t,size_t);

@@ -1,8 +1,42 @@
 # New Syntactic Additions to On1x
 
-**Status:** proposed, implementation-ready language design; **not** a report of completed compiler features.  
+**Status:** partially implemented specification; bounded C11 profiles execute, but the full specification is **not complete**.
 **Target:** `Chubek/mulib/on1x`, with optional facilities from `on1x/third_party/libstone`.  
 **Scope:** intrinsic On1x syntax and semantics, **not** `stdppx`, `stdlib/ppx`, macros, or PPX transforms.
+
+## Implementation ledger — 2026-11-18
+
+Re-inspected repository `d4cc478df76bfe9b5b8e6485f42d56fde81e8a68` and
+configured LibStone `55755485acaded7c4ed804c0946bc8c7363f6763`.
+The sections below specify the intended language, not blanket compiler support.
+The linked profile manuals define what is actually admitted today.
+**EXECUTABLE** means a bounded source→checked/canonical HIR→C11 program, not
+full-specification conformance or support in scalar MIR. No row is VERIFIED.
+
+| Section / capability | Current admitted status | Remaining specification gap |
+|---|---|---|
+| §1 structural match | EXECUTABLE bounded value profile; [manual](docs/core-syntax.md) | Owning lists/cons patterns, general recursive/resource patterns |
+| §2 internal fibers | EXECUTABLE cooperative i64 profile; [manual](docs/concurrency.md) | General results/captures, running cancellation, native-thread ownership |
+| §2 external fibers | EXECUTABLE bounded POSIX argv/backtick commands and byte streams | Full portable shell AST/operators/expansion, typed process outcomes, other targets |
+| §2 channels | EXECUTABLE 1:1 i64 uni channels and process-byte endpoints | General channel payloads, duplex, cardinality quotas/cloning, cancellation |
+| §2 atomic `poll` | EXECUTABLE i64 plus captured u8 streams, mixed choices; [increment](docs/stream-poll.md) | Monotonic `after`, cancellation, general endpoint expressions and effectful MIR |
+| §3 loops/exits/results | EXECUTABLE statement/range/for-C and value loops; [manual](docs/value-loops.md) | General iterator/drop protocol and destructuring iteration |
+| §4 cleanup | EXECUTABLE **different bounded profile**: [function-scoped Go-style `defer call;`](docs/defer-errors.md) | This is not the scope-exit `defer` specified below; `using`, scope cleanup, exception/cancel unwind remain unimplemented |
+| §5 typed errors | EXECUTABLE nominal Result postfix `?` and explicit match recovery | `try`/`catch`/`finally`/`throw`, Option propagation, general error effects |
+| §6 async/await | NOT IMPLEMENTED | Typed suspension IR, liveness, frames, scheduler/ownership/cleanup |
+| §7 generators | NOT IMPLEMENTED | Stream ownership, yield/frame/drop semantics and iterator protocol |
+| §8 taskgroups | EXECUTABLE bounded lexical scopes, explicit joins and immediate pre-dispatch internal / consuming external cancel | Automatic outstanding-child join, deadlines and running/blocked internal cancel |
+| §9 synchronization | NOT IMPLEMENTED as checked language constructs | Shared ownership/memory model, atomic/lock typing and suspension restrictions |
+| §10 owning-list comprehensions | NOT IMPLEMENTED | Owning list ABI, builder/drop protocol and allocation outcomes |
+| §11 nominal records/enums | EXECUTABLE nonrecursive trivial-value profile; [manual](docs/nominal-adts.md) | Boxed recursive/owning layouts and general constructor sugar |
+| §12 contracts/invariants | NOT IMPLEMENTED as intrinsic syntax | Pure contract typing, runtime checks, `old`, verifier obligations |
+| §13 canonical Core | LOWERED/checked for admitted control/value regions and CSP operations | Full effect/ownership/suspension Core and MIR; no general source-ASDL migration |
+
+This continuation adds real mixed-byte `poll` execution, tests and an example;
+it does not complete G1–G6 or M4. See [verification](VERIFICATION.md) for exact
+commands/results and [capability matrix](docs/capability-matrix.md) for source,
+ABI and blocker details. The configured LibStone checkout is read-only; MuLIB's
+existing channel/fiber kernels own this runtime, not Plaid.
 
 ## 0. Architecture, implementation boundaries, and language-wide invariants
 

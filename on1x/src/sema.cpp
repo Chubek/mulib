@@ -209,9 +209,12 @@ class Checker {
            if(offer.kind!=Expr::Kind::SourceCsp||(offer.text!="offer_recv"&&offer.text!="offer_send")||
               offer.children.size()!=(offer.text=="offer_recv"?1u:2u))fail(offer.where,"invalid poll offer");
            offer.type=Type::Void;
-           equal(check_expr(*offer.children[0]),offer.text=="offer_recv"?Type::Receiver:Type::Sender,offer.where);
-           if(offer.text=="offer_send")equal(check_expr(*offer.children[1]),Type::I64,offer.where);
-           fields.push_back(offer.text=="offer_recv"?Type{Type::I64}:Type::data(Type::Record,{}));
+            auto endpoint=check_expr(*offer.children[0]);bool receive=offer.text=="offer_recv";
+            if(receive?(endpoint!=Type::Receiver&&endpoint!=Type::ByteReceiver):(endpoint!=Type::Sender&&endpoint!=Type::ByteSender))
+             fail(offer.where,receive?"poll receive expects receiver<i64> or receiver<u8>":"poll send expects sender<i64> or sender<u8>");
+            Type payload=endpoint==Type::ByteReceiver||endpoint==Type::ByteSender?Type::U8:Type::I64;
+            if(!receive)equal(check_expr(*offer.children[1]),payload,offer.where);
+            fields.push_back(receive?payload:Type::data(Type::Record,{}));
            labels.push_back((offer.text=="offer_recv"?"Recv":"Sent")+std::to_string(i));
            fields.push_back(Type::data(Type::Record,{}));labels.push_back("Closed"+std::to_string(i));
           }

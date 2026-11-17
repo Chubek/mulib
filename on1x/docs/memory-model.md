@@ -1,12 +1,19 @@
 # Initial cooperative memory model
 
 The admitted G4 profile executes all On1x fibers on one native thread.
-Scheduling points are channel/stream send and receive, join and loop backedges;
+Scheduling points are channel/stream send and receive, blocking `poll`, join and loop backedges;
 the supervisor also yields while pumping process pipes. Ordinary
 expression operands still evaluate once, left-to-right; suspension does not
 reevaluate an operand. MuLIB's channel lock commits the communication and copies
 one i64 or process-stream byte before returning success. Rendezvous success
 acknowledges a receiver.
+
+An atomic `poll` may offer i64 channels and process u8 streams together.
+The same kernel lock commits exactly one communication; losing registrations
+are removed before its arm executes. A byte send/receive uses actual uint8
+storage, never an endian-dependent byte of an i64 object. Buffered process-stdin
+success acknowledges enqueueing, not OS child consumption. EOF/closed is
+distinct from a received zero byte. Default commits no channel operation.
 
 There is no shared mutable capture or cross-native-thread ownership transfer.
 An immutable scalar is copied; a scoped endpoint capability moves into one

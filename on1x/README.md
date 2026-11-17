@@ -28,6 +28,12 @@ pipelines, redirection and command lists reject. A newly launched
 internal fiber may also be cancelled by an immediately following standalone
 `cancel handle;` before it runs; blocked internal fibers cannot be cancelled.
 
+Atomic [`poll` now selects captured byte streams](docs/stream-poll.md), including
+mixed i64/u8 choices, exact receive binder types, send backpressure and distinct
+EOF arms. The [compiled example](examples/cooperative_stream_poll.on1x) combines
+process stdout and a normal channel. This does not add deadlines, async/await or
+general byte-channel construction.
+
 The M2 [immutable C-string FFI slice](docs/ffi-strings.md) extends existing
 review-gated admission with exact call-scoped inputs and immutable static
 results, directional Chisel evidence and null/byte-limit checks. It does not

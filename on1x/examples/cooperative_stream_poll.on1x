@@ -1,0 +1,45 @@
+# Poll captured process bytes and an ordinary i64 channel in one atomic choice.
+fn main() {
+    taskgroup {
+        let (process, input, output, error) = launch capture `/bin/cat`;
+        let channel = ->(1,1){payload:i64,capacity:1,mode:uni};
+        let (tx, rx) = split channel;
+        poll {
+            send input <- 255u8 => println(1),
+            closed input => assert(false)
+        };
+        close input;
+        let sent = tx <- -42;
+        match sent with { Ok(_) => assert(true), Err(_) => assert(false) };
+        var bytes_open = true;
+        var values_open = true;
+        var total = 0;
+        while bytes_open || values_open {
+            if bytes_open && values_open {
+                poll {
+                    recv output as byte => { total = total + u8_to_bits(byte); },
+                    closed output => { bytes_open = false; },
+                    recv rx as value => { total = total + value; values_open = false; },
+                    closed rx => assert(false)
+                };
+            } else {
+                if bytes_open {
+                    poll {
+                        recv output as byte => { total = total + u8_to_bits(byte); },
+                        closed output => { bytes_open = false; }
+                    };
+                } else {
+                    poll {
+                        recv rx as value => { total = total + value; values_open = false; },
+                        closed rx => assert(false)
+                    };
+                }
+            }
+        }
+        poll {
+            recv error as byte => assert(false),
+            closed error => println(total)
+        };
+        println(join process);
+    }
+}

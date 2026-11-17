@@ -152,7 +152,7 @@ class Verify {
    if(operation(e)){
     shape(e);
     if(e.text=="poll"){
-     if(e.children.empty()||e.children.size()>17)fail(e.where,"poll offer limit/arity mismatch");
+      if(e.children.empty()||e.children.size()>17)fail(e.where,"poll offer limit/arity mismatch");
      std::vector<Type> fields;std::vector<std::string> labels;std::set<std::size_t> seen;
      for(std::size_t i=0;i<e.children.size();++i){const auto& offer=*e.children[i];
       if(offer.kind==E::Boolean&&offer.text=="true"&&i+1==e.children.size()){
@@ -162,12 +162,16 @@ class Verify {
       shape(offer);
       if(offer.children.empty()||offer.children.size()!=(offer.text=="offer_recv"?1u:2u))fail(offer.where,"poll operand arity mismatch");
       const auto& endpoint=*offer.children[0];
-      capability(endpoint,offer.text=="offer_recv"?Type::Receiver:Type::Sender,state,false);
+       bool receive=offer.text=="offer_recv";
+       if(receive?(endpoint.type!=Type::Receiver&&endpoint.type!=Type::ByteReceiver):(endpoint.type!=Type::Sender&&endpoint.type!=Type::ByteSender))
+        fail(offer.where,"poll endpoint direction/type mismatch");
+       capability(endpoint,endpoint.type,state,false);
       const auto& binding=local(endpoint.text,endpoint.where);
       if(!seen.insert(binding.id).second)fail(offer.where,"duplicate poll endpoint");
-      if(offer.text=="offer_send"&&(!expression(*offer.children[1],state,depth+1)||offer.children[1]->type!=Type::I64))fail(offer.where,"poll send requires a completing i64 payload");
+       Type payload=endpoint.type==Type::ByteReceiver||endpoint.type==Type::ByteSender?Type::U8:Type::I64;
+       if(!receive&&(!expression(*offer.children[1],state,depth+1)||offer.children[1]->type!=payload))fail(offer.where,"poll send requires a completing exact endpoint payload");
       for(const auto id:seen)if(state.at(id)!=live)fail(offer.where,"poll payload moved an offered endpoint");
-      fields.push_back(offer.text=="offer_recv"?Type{Type::I64}:Type::data(Type::Record,{}));
+       fields.push_back(receive?payload:Type::data(Type::Record,{}));
       labels.push_back((offer.text=="offer_recv"?"Recv":"Sent")+std::to_string(i));
       fields.push_back(Type::data(Type::Record,{}));labels.push_back("Closed"+std::to_string(i));
      }

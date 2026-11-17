@@ -20,6 +20,8 @@ external path also admits compiler-parsed single/triple backtick command words
 and `launch capture`, whose affine stdin/stdout/stderr capabilities use bounded
 `u8` MuLIB channels and nonblocking POSIX pipes. It does not invoke a host shell;
 expansion, assignments, command lists, pipelines and redirection remain closed.
+The [stream-poll continuation](docs/stream-poll.md) adds exact u8 send/receive
+offers and mixed i64/u8 atomic choices through the same MuLIB kernel/C11 ABI.
 Running/blocked internal-fiber cancellation and `poll after` deadlines remain
 unsupported. None of these effects is represented by scalar MIR.
 

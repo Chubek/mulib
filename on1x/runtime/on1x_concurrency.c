@@ -480,14 +480,25 @@ bool on1x_csp_stream_close(on1x_csp_channel *value,const char *file,size_t line,
 }
 void on1x_csp_select(on1x_csp_offer *offers,size_t count,bool has_default,int64_t *payload,size_t *selected,bool *closed,const char *file,size_t line,size_t column){
  source_point at={file,line,column};on1x_csp_task *t=current(at);
- mulib_channel_case_t cases[16];size_t i,index=SIZE_MAX;int rc;
+  mulib_channel_case_t cases[16];uint8_t bytes[16]={0};bool byte_offer[16]={false};size_t i,index=SIZE_MAX;int rc;
  if(!offers||!payload||!selected||!closed||!count||count>16)failure(at,"invalid poll offers");
  tick(at);
  for(i=0;i<count;++i){
   on1x_csp_channel *c=channel(offers[i].channel,at);
-   if(c->role!=ON1X_CHANNEL_I64)failure(at,"i64 poll used with byte process stream");
-  if(offers[i].operation==MULIB_CHANNEL_SEND)cases[i]=mulib_channel_send_case(mulib_channel_sender(c->channel),&offers[i].payload);
-  else if(offers[i].operation==MULIB_CHANNEL_RECEIVE)cases[i]=mulib_channel_receive_case(mulib_channel_receiver(c->channel),&offers[i].payload);
+   byte_offer[i]=c->role!=ON1X_CHANNEL_I64;
+   if(offers[i].operation==MULIB_CHANNEL_SEND){
+    if(byte_offer[i]){
+     if(c->role!=ON1X_CHANNEL_PROCESS_INPUT)failure(at,"poll byte send requires captured stdin sender");
+     if(offers[i].payload<0||offers[i].payload>UINT8_MAX)failure(at,"poll byte payload outside u8 range");
+     bytes[i]=(uint8_t)offers[i].payload;
+    }
+    /* Never copy a byte from the representation of an int64_t: the kernel's
+     * element size must address an actual object of the matching C type. */
+    cases[i]=mulib_channel_send_case(mulib_channel_sender(c->channel),byte_offer[i]?(const void *)&bytes[i]:(const void *)&offers[i].payload);
+   }else if(offers[i].operation==MULIB_CHANNEL_RECEIVE){
+    if(byte_offer[i]&&c->role!=ON1X_CHANNEL_PROCESS_OUTPUT&&c->role!=ON1X_CHANNEL_PROCESS_ERROR)failure(at,"poll byte receive requires captured stdout/stderr receiver");
+    cases[i]=mulib_channel_receive_case(mulib_channel_receiver(c->channel),byte_offer[i]?(void *)&bytes[i]:(void *)&offers[i].payload);
+   }
   else failure(at,"invalid poll operation");
  }
  t->waiting=true;
@@ -495,7 +506,8 @@ void on1x_csp_select(on1x_csp_offer *offers,size_t count,bool has_default,int64_
  t->waiting=false;++current_execution->progress;
  if(rc==MULIB_CHANNEL_DEFAULT&&has_default){*selected=count;*payload=0;*closed=false;return;}
  if((rc!=MULIB_CHANNEL_OK&&rc!=MULIB_CHANNEL_CLOSED)||index>=count)failure(at,"poll allocation/protocol failure");
- *selected=index;*closed=rc==MULIB_CHANNEL_CLOSED;*payload=rc==MULIB_CHANNEL_OK?offers[index].payload:0;
+  *selected=index;*closed=rc==MULIB_CHANNEL_CLOSED;
+  *payload=rc==MULIB_CHANNEL_OK?(byte_offer[index]?(int64_t)bytes[index]:offers[index].payload):0;
 }
 void on1x_csp_yield(const char *file,size_t line,size_t column){
  source_point at={file,line,column};(void)current(at);tick(at);mulib_fiber_yield();

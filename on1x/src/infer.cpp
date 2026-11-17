@@ -778,9 +778,13 @@ class Inference {
          if(offer.kind!=Expr::Kind::SourceCsp||
             (offer.text!="offer_recv"&&offer.text!="offer_send")||offer.children.size()!=(offer.text=="offer_recv"?1u:2u))fail(offer.where,"invalid poll offer");
          offer.type=Type::Void;
-         auto endpoint=expression(*offer.children[0]);unify(endpoint,scalar(offer.text=="offer_recv"?Type::Receiver:Type::Sender,offer.where),offer.where);
-         if(offer.text=="offer_send")unify(expression(*offer.children[1]),scalar(Type::I64,offer.where),offer.where);
-         fields.push_back(offer.text=="offer_recv"?Type{Type::I64}:Type::data(Type::Record,{}));
+          auto endpoint=expression(*offer.children[0]);auto kind=nodes[head(endpoint,offer.where)].kind;
+          bool receive=offer.text=="offer_recv";
+          if(receive?(kind!=Type::Receiver&&kind!=Type::ByteReceiver):(kind!=Type::Sender&&kind!=Type::ByteSender))
+           fail(offer.where,receive?"poll receive expects receiver<i64> or receiver<u8>":"poll send expects sender<i64> or sender<u8>");
+          Type payload=kind==Type::ByteReceiver||kind==Type::ByteSender?Type::U8:Type::I64;
+          if(!receive)unify(expression(*offer.children[1]),scalar(payload.kind(),offer.where),offer.where);
+          fields.push_back(receive?payload:Type::data(Type::Record,{}));
          labels.push_back((offer.text=="offer_recv"?"Recv":"Sent")+std::to_string(i));
          fields.push_back(Type::data(Type::Record,{}));labels.push_back("Closed"+std::to_string(i));
         }

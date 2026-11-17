@@ -130,8 +130,10 @@ Type read_type(const SExpr& n,bool inferred=false,std::size_t bound=0){
    if(name=="xfiber"){if(payload!=Type::Void)invalid(n,"xfiber has no generic payload");return Type::ExternalFiber;}
    if(payload==Type::U8&&(name=="sender"||name=="receiver"))return name=="sender"?Type::ByteSender:Type::ByteReceiver;
    if(payload!=Type::I64)invalid(n,"ON1X-CSP-UNSUPPORTED: concurrency payload/result must be i64");
-  if(name=="ifiber")return Type::Fiber;if(name=="channel")return Type::Channel;
-  if(name=="sender")return Type::Sender;if(name=="receiver")return Type::Receiver;
+  if(name=="ifiber")return Type::Fiber;
+  if(name=="channel")return Type::Channel;
+  if(name=="sender")return Type::Sender;
+  if(name=="receiver")return Type::Receiver;
   invalid(n,"unknown concurrency type");
  }
  if(k=="NamedType"){

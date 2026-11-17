@@ -2,6 +2,7 @@
 #include <on1x/backend/mir.hpp>
 #include <on1x/clone.hpp>
 #include <on1x/meta.hpp>
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 
@@ -15,6 +16,21 @@ constexpr auto source = R"(fn main(){taskgroup{
  println(join worker);
 }})";
 on1x::Unit checked(){auto unit=on1x::parse(on1x::scan(source,"fiber-test"));on1x::check(unit);return unit;}
+on1x::Expr *find_poll(std::vector<on1x::Stmt>&);
+on1x::Expr *find_poll(on1x::Expr& e){
+ if(e.kind==on1x::Expr::Kind::Csp&&e.text=="poll")return &e;
+ if(e.callee)if(auto p=find_poll(*e.callee))return p;
+ for(auto& child:e.children)if(child)if(auto p=find_poll(*child))return p;
+ return find_poll(e.body);
+}
+on1x::Expr *find_poll(std::vector<on1x::Stmt>& body){
+ for(auto& s:body){
+  if(s.value)if(auto p=find_poll(*s.value))return p;
+  if(auto p=find_poll(s.body))return p;
+  if(auto p=find_poll(s.otherwise))return p;
+ }
+ return nullptr;
+}
 }
 int main(){try{
  auto unit=checked();on1x::csp::verify(unit,true);
@@ -49,7 +65,40 @@ int main(){try{
   auto poll_unit=on1x::meta::decode(poll_wire);on1x::check(poll_unit);
   on1x::csp::verify(poll_unit,true);
   require(on1x::emit_c(poll_unit,"poll-test").find("on1x_csp_select(")!=std::string::npos,"atomic poll not emitted");
-  reject([&]{(void)on1x::mir::lower(poll_unit);});
+   reject([&]{(void)on1x::mir::lower(poll_unit);});
+   constexpr auto mixed_source=R"(fn main(){taskgroup{
+    let (p,input,output,error)=launch capture `/bin/cat`;
+    let c=->(1,1){payload:i64,capacity:1,mode:uni};let (tx,rx)=split c;
+    poll{send input <- 255u8=>println(1),closed input=>println(-1),
+         recv output as byte=>println(u8_to_bits(byte)),closed output=>println(0),
+         recv rx as value=>println(value),closed rx=>println(-2),default=>println(2)};
+    cancel p;
+   }})";
+   auto mixed_wire=on1x::meta::encode(on1x::parse(on1x::scan(mixed_source,"mixed-poll")));
+   auto mixed_unit=on1x::meta::decode(mixed_wire);on1x::check(mixed_unit);
+   on1x::csp::verify(mixed_unit,true);
+   auto mixed_poll=find_poll(mixed_unit.functions[0].body);
+   require(mixed_poll&&mixed_poll->children.size()==4,"mixed poll lost offers");
+   auto recv=std::find(mixed_poll->type.labels().begin(),mixed_poll->type.labels().end(),"Recv1");
+   require(recv!=mixed_poll->type.labels().end(),"missing byte variant");
+   auto byte_index=static_cast<std::size_t>(recv-mixed_poll->type.labels().begin());
+   require(mixed_poll->type.elements()[byte_index]==on1x::Type::U8,"byte binder was widened");
+   require(on1x::emit_c(mixed_unit,"mixed-poll").find("on1x_csp_select(")!=std::string::npos,"mixed poll not emitted");
+   reject([&]{(void)on1x::mir::lower(mixed_unit);});
+   for(int mutation=0;mutation<5;++mutation){
+    std::size_t copy_budget=262144;
+    auto forged=on1x::clone_unit(mixed_unit,copy_budget);auto p=find_poll(forged.functions[0].body);
+    require(p!=nullptr,"missing mutation target");
+    if(mutation==0){
+     auto fields=p->type.elements();fields[byte_index]=on1x::Type::I64;
+     p->type=on1x::Type::data(on1x::Type::Sum,std::move(fields),p->type.labels());
+    }else if(mutation==1)p->children[0]->children[1]->type=on1x::Type::I64;
+    else if(mutation==2)p->children[1]->children[0]->type=on1x::Type::Receiver;
+    else if(mutation==3)p->children[1]->text="offer_send";
+    else p->children[0]->children[1].reset();
+    reject([&]{on1x::csp::verify(forged,true);});
+    reject([&]{(void)on1x::emit_c(forged,"forged-mixed-poll");});
+   }
   constexpr auto external_source=R"(fn main(){taskgroup{
    let child:xfiber=launch exec("/bin/true");println(join child);
    let stopped:xfiber=launch exec("/bin/sleep","10");println(cancel stopped);

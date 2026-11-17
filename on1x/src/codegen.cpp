@@ -268,7 +268,7 @@ class Generator {
            auto success=index((e.children[i]->text=="offer_recv"?"Recv":"Sent")+std::to_string(i));
            auto failure=index("Closed"+std::to_string(i));
            definitions<<pad()<<"if ("<<selected<<" == "<<i<<") "<<result<<".tag = "<<closed<<" ? "<<failure<<" : "<<success<<";\n";
-           if(e.children[i]->text=="offer_recv")definitions<<pad()<<"if ("<<selected<<" == "<<i<<" && !"<<closed<<") "<<result<<".payload.element_"<<success<<" = "<<payload<<";\n";
+            if(e.children[i]->text=="offer_recv")definitions<<pad()<<"if ("<<selected<<" == "<<i<<" && !"<<closed<<") "<<result<<".payload.element_"<<success<<" = ("<<ctype(e.type.elements()[success])<<")"<<payload<<";\n";
           }
           return result;
          }

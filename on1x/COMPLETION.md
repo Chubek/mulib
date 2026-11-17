@@ -15,7 +15,9 @@ without a host shell; this is not the full proposed portable shell grammar or
 typed exit-status/error model. Immediate pre-dispatch internal cancellation
 is also executable; deadlines, running/blocked cancellation, async, native workers,
 general resources and full concurrency/MIR semantics remain unsupported. This
-does not advance the application or general-safe-FFI gates below.
+does not advance the application or general-safe-FFI gates below. The later
+[stream-poll slice](docs/stream-poll.md) additionally admits atomic choices
+mixing captured u8 streams and i64 channels, not deadlines or effectful MIR.
 
 M2 continuation (2026-11-17): [function-scoped defer and nominal Result
 propagation](docs/defer-errors.md) now execute through C11. Defers snapshot

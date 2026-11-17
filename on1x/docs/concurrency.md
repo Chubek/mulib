@@ -59,7 +59,9 @@ The earlier Go-style function-scoped defer contract is unchanged.
   blocking the native scheduler thread. A program expecting more than the
   bounded capacity must drain stdout/stderr while the process runs—typically by
   moving each receiver into an internal fiber—before joining the process.
-  `poll` remains i64-only. Closing a stdout/stderr receiver and copying or
+   Atomic `poll` may mix these byte endpoints with i64 channels; each receive
+   binder retains its exact payload type (see [stream poll](stream-poll.md)).
+   Closing a stdout/stderr receiver and copying or
   reversing endpoint directions are rejected. Pipe `EPIPE` closes stdin, so a
   subsequent or still-blocked send yields checked failure instead of terminating
   the On1x process (an already enqueued buffered send may have returned `Ok`).
@@ -107,7 +109,8 @@ The earlier Go-style function-scoped defer contract is unchanged.
   yield cooperatively. No implicit blocking-I/O interception or preemption.
 - `poll { recv rx as n => expression, closed rx => expression, send tx <-
   value => expression, closed tx => expression, default => expression }`
-  selects among 1..16 distinct named endpoints. Statement arms may use blocks;
+   selects among 1..16 distinct named i64 or captured-process u8 endpoints,
+   including mixed choices. Statement arms may use blocks;
   expression arms must have a common result. Each offered endpoint has exactly
   one `closed` arm; at most one `default` is permitted. Send payloads evaluate
   left-to-right, exactly once, **before** selection; only the winning send
@@ -169,9 +172,9 @@ single-thread profile. ASan's fiber-switch hooks are used by the actual kernel.
 |---|---|---|
 | `taskgroup`, internal i64 `launch`/`join` and immediate pre-dispatch `cancel` | EXECUTABLE | Running/blocked cancellation, native-worker ownership, effectful MIR and independent cross-platform verification |
 | 1:1 i64 uni channels, bounded/zero-capacity send/receive | EXECUTABLE | General messages, endpoint quotas/duplex, cancellation and complete sanitizer/stress matrix |
-| `poll` / atomic select | EXECUTABLE bounded uni/i64 profile | Cancellation, monotonic deadline, general payloads and recoverable scheduler errors |
+| `poll` / atomic select | EXECUTABLE bounded i64/process-u8 profile | Cancellation, monotonic deadline, general payloads and recoverable scheduler errors |
 | Direct-exec external `xfiber` and consuming `cancel` | EXECUTABLE bounded POSIX profile | Typed exit-status record, recoverable spawn errors, broader targets and internal-fiber cancellation |
-| Backtick command literals and captured process streams | EXECUTABLE bounded POSIX profile | Full portable command AST/operators/expansion, byte `poll`, configurable language-level stream limits and effectful ownership MIR |
+| Backtick command literals and captured process streams | EXECUTABLE bounded POSIX profile | Full portable command AST/operators/expansion, configurable language-level stream limits and effectful ownership MIR |
 | Async/await, actors, native workers | Unsupported | Suspension frames, ownership/effects and memory model |
 
 Compatibility: `split!(...)` remains a macro call and `if close { ... }` uses

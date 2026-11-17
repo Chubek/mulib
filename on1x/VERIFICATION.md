@@ -1,5 +1,167 @@
 # On1x verification — 2026-11-18
 
+## G4 continuation — exact mixed i64/u8 atomic process-stream poll
+
+Re-inspected clean baseline MuLIB `d4cc478df76bfe9b5b8e6485f42d56fde81e8a68`
+and actual configured LibStone
+`55755485acaded7c4ed804c0946bc8c7363f6763` at
+`on1x/third_party/libstone` (unchanged/read-only). Linux 6.18.52-1-lts
+x86_64, glibc 2.44, GCC/g++ 16.2.1, Clang/clang++ 22.1.8,
+CMake 4.4.3, Python 3.14.7. No SDK revision, MuLIB kernel or FFI admission change.
+
+Scope: [atomic process-stream poll](docs/stream-poll.md), not completion of
+`ON1X_CORE_SYNTAX_ADDITIONS.md`. The specification now has an explicit
+per-feature implementation ledger, including the existing function-defer
+profile's difference from proposed scope-exit semantics. Baseline compilation
+of `examples/cooperative_stream_poll.on1x` failed at its byte send:
+`8:13: expected sender<i64>, got sender<u8>`. Baseline fallback/GCC full suite:
+**50 passed, 1 failed, 1 skipped** (52 registered); JUnit:
+`/tmp/opencode/on1x-csp-check/results-byte-poll-baseline.xml`.
+
+Inference, sema and independent affine/canonical admission now reconstruct each
+offer's exact direction/payload and sum result type. The C11 emitter explicitly
+converts the selected transport value to its checked receive type. Runtime
+private ABI v2 retains int64 transport, but each byte case points to a separate
+actual uint8_t object alive through the whole atomic selection; it does not
+alias an endian-dependent byte of the int64 representation. No allocation,
+second scheduler/channel, shell interpreter or new PPX wire format is added.
+One MuLIB lock still commits at most one offer and removes losers. Wrong
+runtime byte direction/range rejects before a copy. Existing kernel budgets,
+process ownership and fatal non-unwinding error behavior remain unchanged.
+
+Tests:
+
+- `tests/test_stream_poll.py`: seeded (`2026111801`) permutation of all 256
+  bytes twice, NUL/high-bit/255 round-trip at stream capacity 0/1/7, strict C11
+  `-O0`/`-O2`, mixed i64/u8 sends/receives, wide negative i64 preservation,
+  losing offers/payload once/order, endpoint reuse, default, FIFO, independent
+  stdout/stderr EOF, moved reader fibers and post-process-cancel close.
+- Source negatives reject wrong direction, wrong payload/binder/result type,
+  duplicate/missing close, moved endpoints and unsupported scalar MIR, preserving
+  existing outputs. Python identity PPX is compiled and executed.
+- `tests/test_concurrency.cpp`: source/wire/canonical round-trip, exact u8 result
+  type and private HIR mutations (wrong result/payload/direction, missing child)
+  rejected by verification and emission. Existing i64 concurrency tests remain.
+- `tests/fixtures/stream_poll_boundary.c`: separately compiled actual runtime/
+  kernel/C and C++ callers; malformed negative/256 byte values, direction errors
+  and injected selection-registration OOM reject with located exit-73 failures.
+  One fixture TU owns all three MuLIB implementation switches.
+
+Exact configurations/commands from the repository root:
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-csp-check -DBUILD_TESTING=ON \
+  -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_USE_FALLBACK_SCANNER=ON
+cmake --build /tmp/opencode/on1x-csp-check --parallel 4
+ctest --test-dir /tmp/opencode/on1x-csp-check --output-on-failure --parallel 4 \
+  --output-junit /tmp/opencode/on1x-csp-check/results-byte-poll-final.xml
+
+cmake -S on1x -B /tmp/opencode/on1x-csp-generated -DBUILD_TESTING=ON \
+  -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_USE_FALLBACK_SCANNER=OFF
+cmake --build /tmp/opencode/on1x-csp-generated --parallel 4
+ctest --test-dir /tmp/opencode/on1x-csp-generated --output-on-failure --parallel 4 \
+  --output-junit /tmp/opencode/on1x-csp-generated/results-byte-poll-final.xml
+
+cmake -S on1x -B /tmp/opencode/on1x-csp-sanitize -DBUILD_TESTING=ON \
+  -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_USE_FALLBACK_SCANNER=ON \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer'
+cmake --build /tmp/opencode/on1x-csp-sanitize --parallel 4 \
+  --target on1xc on1x_concurrency_hir_tests
+ctest --test-dir /tmp/opencode/on1x-csp-sanitize \
+  -R '^on1x.(concurrency_hir|stream_poll|concurrency)$' --output-on-failure \
+  --output-junit /tmp/opencode/on1x-csp-sanitize/results-byte-poll-final.xml
+```
+
+Additional strict GCC Debug/generated/native-PPX and Release/fallback trees
+retain the `on1x-values-{gcc,release}` configurations recorded below
+(`-Wall -Wextra -Wpedantic -Werror` for C/C++; Debug enables native PPX,
+Release disables it). Commands executed:
+
+```sh
+cmake --build /tmp/opencode/on1x-values-release --parallel 4 \
+  --target on1xc on1x_concurrency_hir_tests
+ctest --test-dir /tmp/opencode/on1x-values-release \
+  -R '^on1x.(stream_poll|concurrency_hir)$' --output-on-failure \
+  --output-junit /tmp/opencode/on1x-values-release/results-byte-poll-final.xml
+
+cmake --build /tmp/opencode/on1x-values-gcc --parallel 4 \
+  --target on1x_ppx_identity
+ON1X_PPX_SCHEMA="$PWD/on1x/grammar/PPX.schema.json" \
+  python3 on1x/tools/on1x-build.py on1x/examples/cooperative_stream_poll.on1x \
+  --on1xc /tmp/opencode/on1x-values-gcc/on1xc --cc gcc \
+  --ppx identity /tmp/opencode/on1x-values-gcc/stdppx/on1x-ppx-identity \
+  -o /tmp/opencode/on1x-byte-poll-native-ppx
+/tmp/opencode/on1x-byte-poll-native-ppx
+
+python3 on1x/tools/on1x-build.py on1x/examples/cooperative_stream_poll.on1x \
+  --on1xc /tmp/opencode/on1x-values-gcc/on1xc --cc clang \
+  -o /tmp/opencode/on1x-byte-poll-clang --cflag=-O2
+/tmp/opencode/on1x-byte-poll-clang
+ldd /tmp/opencode/on1x-byte-poll-clang
+python3 on1x/tools/on1x-build.py on1x/examples/hello.on1x \
+  --on1xc /tmp/opencode/on1x-values-gcc/on1xc --cc gcc \
+  -o /tmp/opencode/on1x-byte-poll-hello
+/tmp/opencode/on1x-byte-poll-hello
+```
+
+Strict Release/fallback focused: **2/2**. Native identity PPX/GCC and standalone
+Clang C11 both print `1`, `213`, `0`; the latter links only libc and the Linux
+loader, not LibStone, On1x, C++, Lua or a shell runtime. Hello retains output `21`.
+Clang ASan+UBSan focused: **3/3**, including instrumented compiler, generated
+programs, runtime/kernels and C/C++ consumers. Normal paths retain leak checking;
+only intentional terminal non-unwinding failures disable it. The known ASan
+makecontext/swapcontext support warning is not a sanitizer finding.
+Exact scanner parity: **301 cases**, including the new source example:
+
+```sh
+python3 on1x/tests/scanner_parity.py \
+  /tmp/opencode/on1x-csp-generated/on1x_generated_tokens \
+  /tmp/opencode/on1x-csp-generated/on1x_reference_tokens \
+  on1x/examples /tmp/opencode/on1x-byte-poll-parity
+python3 -m py_compile on1x/tests/test_stream_poll.py on1x/tests/test_concurrency.py
+git diff --check
+```
+
+Completed final suites (JUnit files are `results-byte-poll-final.xml` in the
+trees above):
+
+| Profile | Result |
+|---|---|
+| GCC / fallback, complete suite | **51 passed, 1 failed, 1 skipped** (53 registered) |
+| GCC / generated, complete suite | **52 passed, 1 failed, 1 skipped** (54 registered) |
+| Clang / fallback ASan+UBSan, focused concurrency/stream-poll | **3/3** |
+| Strict GCC Release / fallback, focused HIR/stream-poll | **2/2** |
+
+The sole complete-suite failure is unchanged from baseline:
+`on1x.mulib` rejects a stale `tools/embed_units.py` fixture fingerprint.
+`on1x.category` skips with native PPX disabled. No test was disabled to obtain
+these results. The first final build+suite commands exceeded their shell
+120-second timeout; the completed CTest-only reruns used a 600-second command
+timeout and supersede those interrupted attempts.
+An additional seed-`2026111802` truncation/single-byte-deletion corpus exercised
+101 variants of the stream-poll example with each final scanner/compiler:
+no crashes, located errors and preserved outputs on rejection. This is bounded
+robustness evidence, not general fuzzing or conformance proof.
+
+Development attempts: a Type/Type::Kind mismatch was caught by compilation and
+fixed. An unrolled full-byte corpus exhausted the canonical flow-state budget;
+the fixture now uses bounded source loops, without raising compiler limits.
+Two negative-test diagnostic expectations and the PID prefix on ASan's known
+makecontext warning were corrected; sanitizer errors remain failures. Strict
+compiler builds also exposed three existing misleading-indentation warnings
+in CSP parser/PPX decoding; statements were split without semantic changes.
+
+Unsupported: monotonic `after`, running/blocked internal cancellation and unwind,
+general byte-channel construction/duplex/cloning, owning payloads, full portable
+shell grammar, async/await/generators/actors/native threads, effectful MIR and
+independent SDK safety models. Optional SDK integrations are not exercised by
+this increment. TSAN is not applicable evidence for this single-native-thread
+profile (the underlying fiber runtime lacks TSAN fiber annotations).
+The bounded feature is **EXECUTABLE**, not full-specification VERIFIED.
+
 ## G4/v3 command literals and captured process streams — 2026-11-18
 
 This continuation uses MuLIB HEAD
