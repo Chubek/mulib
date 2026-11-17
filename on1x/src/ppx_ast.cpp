@@ -1,11 +1,18 @@
 #include <on1x/meta.hpp>
 #include <charconv>
+#include <set>
+#include <algorithm>
 namespace on1x::meta {
 namespace {
 using K=Expr::Kind;
 SExpr form(const std::string& tag,std::vector<SExpr> fields={}){fields.insert(fields.begin(),symbol(tag));return list(std::move(fields));}
 SExpr loc(const Location& at){return form("Loc",{string(at.file),symbol(std::to_string(at.offset)),symbol(std::to_string(at.line)),symbol(std::to_string(at.column))});}
 SExpr type(const Type& t){
+ if(t.is_data()){
+  std::vector<SExpr> labels,fields;for(const auto& label:t.labels())labels.push_back(string(label));for(const auto& field:t.elements())fields.push_back(type(field));
+  auto kind=t.kind()==Type::Record?"record":t.kind()==Type::Sum?"sum":t.kind()==Type::Array?"array":"slice";
+  return form("ValueDataType",{string(kind),list(std::move(labels)),list(std::move(fields)),symbol(std::to_string(t.extent()))});
+ }
  switch(t.kind()){
  case Type::Invalid:return form("Inferred");case Type::Hole:return form("HoleType");
   case Type::I64:return form("I64Type");case Type::Bool:return form("BoolType");case Type::String:return form("StringType");
@@ -34,7 +41,14 @@ SExpr extension(const Expr& e,bool attribute){
  return form(attribute?"Attribute":"ExtensionExpr",{string(e.text),string(literal_value(e.children.at(0)->text)),list(std::move(args)),loc(e.where)});
 }
 SExpr expression(const Expr& e){
- auto at=loc(e.where);
+  auto at=loc(e.where);
+ if(e.kind>=K::Record){
+  static const char* names[]={"record","variant","match","array","field","index","slice","length"};
+  auto index=static_cast<std::size_t>(e.kind)-static_cast<std::size_t>(K::Record);
+  if(index>=std::size(names))throw Error(e.where,"unknown data expression");
+  std::vector<SExpr> labels,children;for(const auto& label:e.labels)labels.push_back(string(label));for(const auto& c:e.children)children.push_back(expression(*c));
+  return form("ValueData",{string(names[index]),string(e.text),list(std::move(labels)),type(e.result),list(std::move(children)),std::move(at)});
+ }
  switch(e.kind){
   case K::Integer:return form(e.text.starts_with("0x")||e.text.starts_with("0X")?"HexLiteral":"DecimalLiteral",{string(e.text),std::move(at)});
   case K::Float:return form("FloatLiteral",{string(e.text),std::move(at)});
@@ -77,7 +91,18 @@ std::size_t number(const SExpr& n){std::size_t v=0;std::from_chars(n.text.data()
 Location location(const SExpr& n){return {field(n,0).text,number(field(n,1)),number(field(n,2)),number(field(n,3))};}
 [[noreturn]] void invalid(const SExpr& n,const std::string& message){throw Error(n.where,"PPX AST reconstruction: "+message);}
 Type read_type(const SExpr& n,bool inferred=false,std::size_t bound=0){
- const auto& k=tag(n);
+  const auto& k=tag(n);
+ if(k=="ValueDataType"){
+  auto name=field(n,0).text;auto kind=name=="record"?Type::Record:name=="sum"?Type::Sum:name=="array"?Type::Array:name=="slice"?Type::Slice:Type::Invalid;
+  std::vector<std::string> labels;std::set<std::string> unique;std::vector<Type> fields;
+  for(const auto& label:field(n,1).items){if(!unique.insert(label.text).second)invalid(n,"duplicate data label");labels.push_back(label.text);}
+  for(const auto& child:field(n,2).items)fields.push_back(read_type(child,false,bound));
+  auto extent=number(field(n,3));
+  if(kind==Type::Invalid||fields.size()>256||extent>256)invalid(n,"invalid data kind/extent/field count");
+  if(kind==Type::Record||kind==Type::Sum){if(labels.size()!=fields.size()||extent||(kind==Type::Sum&&fields.empty()))invalid(n,"invalid labeled data shape");}
+  else if(fields.size()!=1||!labels.empty())invalid(n,"invalid array/slice shape");
+  return Type::data(kind,std::move(fields),std::move(labels),extent);
+ }
  if(k=="Inferred"){if(!inferred)invalid(n,"Inferred is only valid for a local annotation");return Type::Invalid;}
  if(k=="HoleType")return Type::Hole;
    for(auto kind:{Type::I64,Type::F64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(tag(type(Type(kind)))==k)return kind;
@@ -116,7 +141,23 @@ std::vector<Param> read_parameters(const SExpr& n){
 std::vector<Stmt> read_block(const SExpr& n);
 ExprPtr read_expression(const SExpr& n){
  const auto& k=tag(n);auto e=std::make_unique<Expr>();e->where=location(n.items.back());
-  if(k=="DecimalLiteral"||k=="HexLiteral"){e->kind=K::Integer;e->text=field(n,0).text;}
+   if(k=="ValueData"){
+    static const std::vector<std::string> names={"record","variant","match","array","field","index","slice","length"};
+    auto found=std::find(names.begin(),names.end(),field(n,0).text);if(found==names.end())invalid(n,"unknown data expression kind");
+    e->kind=static_cast<K>(static_cast<std::size_t>(K::Record)+static_cast<std::size_t>(found-names.begin()));e->text=field(n,1).text;
+    for(const auto& label:field(n,2).items)e->labels.push_back(label.text);
+    e->result=read_type(field(n,3));for(const auto& c:field(n,4).items)e->children.push_back(read_expression(c));
+    std::size_t arity=e->children.size();
+    if(e->labels.size()>256||arity>257)invalid(n,"data expression width limit exceeded");
+    if(e->kind==K::Record&&arity!=e->labels.size())invalid(n,"record field/label arity mismatch");
+    if(e->kind==K::Match&&arity!=e->labels.size()+1)invalid(n,"match arm arity mismatch");
+    if((e->kind==K::Variant||e->kind==K::Field||e->kind==K::Length)&&arity!=1)invalid(n,"data projection/constructor arity mismatch");
+    if(e->kind==K::Index&&arity!=2)invalid(n,"index arity mismatch");
+    if(e->kind==K::Slice&&arity!=3)invalid(n,"slice arity mismatch");
+    if(e->kind==K::Array&&arity>256)invalid(n,"array extent limit exceeded");
+    if(e->kind!=K::Record&&e->kind!=K::Match&&!e->labels.empty())invalid(n,"unexpected data labels");
+   }
+   else if(k=="DecimalLiteral"||k=="HexLiteral"){e->kind=K::Integer;e->text=field(n,0).text;}
   else if(k=="FloatLiteral"){e->kind=K::Float;e->text=field(n,0).text;}
  else if(k=="StringLiteral"){e->kind=K::String;e->text=source_literal(field(n,0).text);}
  else if(k=="BooleanLiteral"){e->kind=K::Boolean;e->text=field(n,0).text;}

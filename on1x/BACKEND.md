@@ -10,7 +10,11 @@
 
 **M1 language continuation:** the restricted [`f64` profile](docs/numerics.md)
 now includes decimal literals and MIR v2 execution/round-trip/C11 for floats and
-trivial tuples. Existing scalar source/artifacts retain v1. Float arithmetic
+trivial tuples. A second M1 slice adds the [bounded value data model](docs/data-model.md):
+structural records, closed sums with exhaustive `match`, fixed arrays and owning
+snapshot slices as by-value C11 with bounds-checked access; scalar MIR and the
+independent adapters reject these kinds instead of approximating them. Existing
+scalar source/artifacts retain v1. Float arithmetic
 folding, managed aggregate/ownership/effect lowering, VM/native backends and
 safe foreign adapters remain unsupported; v1 relational mapping rejects v2.
 

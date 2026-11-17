@@ -304,10 +304,14 @@ int main(int argc,char**argv){
         std::vector<on1x::Type> args;for(const auto& p:type.parameters())args.push_back(self(self,p));
         return on1x::Type::function(std::move(args),self(self,type.result()));
        }
-       if(type.is_tuple()){
+        if(type.is_tuple()){
         std::vector<on1x::Type> elements;for(const auto& p:type.elements())elements.push_back(self(self,p));
         return on1x::Type::tuple(std::move(elements));
-       }
+        }
+        if(type.is_data()){
+         std::vector<on1x::Type> elements;for(const auto& p:type.elements())elements.push_back(self(self,p));
+         return on1x::Type::data(type.kind(),std::move(elements),type.labels(),type.extent());
+        }
        return type;
       };
       signature=normalize(normalize,signature);

@@ -8,6 +8,7 @@
 #include <map>
 #include <system_error>
 #include <set>
+#include <algorithm>
 namespace on1x {
 namespace {
 void extern_leaves(const Pattern& pattern,const Type& type,std::vector<Type>& types,std::set<std::string>& names){
@@ -74,7 +75,22 @@ class Checker {
    ++capture_count;capture_bytes+=name.size();captures.push_back({name,binding.type});
   }
  }
- static bool resource(Type t){return t==Type::Json||t==Type::JsonView;}
+  static bool resource(Type t){return t==Type::Json||t==Type::JsonView;}
+  std::size_t value_width(const Type& t,const Location& at,std::size_t depth=0){
+   if(depth>32)fail(at,"data value nesting exceeds 32-level limit");
+   if(t==Type::I64||t==Type::F64||t==Type::Bool||t.kind()==Type::Generic)return 1;
+   if(!t.is_tuple()&&!t.is_data())fail(at,"value data fields and match results require trivially copied types");
+   std::size_t width=1;
+   if(t.kind()==Type::Array||t.kind()==Type::Slice){
+    auto child=value_width(t.elements()[0],at,depth+1);auto count=std::max<std::size_t>(1,t.extent());
+    if(child>4096/count)fail(at,"expanded data value exceeds 4096 storage-unit limit");
+    width+=child*count+(t.kind()==Type::Slice?2:0);
+   }else for(const auto& field:t.elements()){
+    auto child=value_width(field,at,depth+1);if(child>4096-width)fail(at,"expanded data value exceeds 4096 storage-unit limit");width+=child;
+   }
+   if(width>4096)fail(at,"expanded data value exceeds 4096 storage-unit limit");
+   return width;
+  }
  void equal(Type actual,Type expected,const Location& loc){if(actual!=expected)throw Error(loc,std::string("expected ")+type_name(expected)+", got "+type_name(actual),"ON1X-TYPE");}
   void validate_type(const Type& type,const Location& loc){
    if(type.has_holes())fail(loc,"unresolved inference hole in checked type");
@@ -83,7 +99,11 @@ class Checker {
      if(resource(type.code_result()))fail(loc,"code values cannot return JSON resources or views");
      validate_type(type.code_result(),loc);return;
     }
-  if(!type.is_function()&&!type.is_tuple())return;
+   if(type.is_data()){
+    if(checked_types.contains(type))return;
+    (void)value_width(type,loc);checked_types.insert(type);return;
+   }
+   if(!type.is_function()&&!type.is_tuple())return;
   if(checked_types.contains(type))return;
   if(type.is_tuple()){
    for(const auto& element:type.elements()){
@@ -204,7 +224,7 @@ class Checker {
      }
     return e.type=Type::String;
     case Expr::Kind::Variable:return resolve_name(e);
-    case Expr::Kind::Tuple:{
+     case Expr::Kind::Tuple:{
      std::vector<Type> elements;for(auto& element:e.children)elements.push_back(check_expr(*element));
      auto type=Type::tuple(std::move(elements));validate_type(type,e.where);return e.type=std::move(type);
     }
@@ -225,6 +245,48 @@ class Checker {
      if(e.result!=Type::Void&&!complete)fail(e.where,"not all paths return in anonymous function");
      return e.type=std::move(type);
     }
+     case Expr::Kind::Record:{
+      std::vector<Type> fields;for(auto& c:e.children)fields.push_back(check_expr(*c));
+      if(fields.size()!=e.labels.size())fail(e.where,"record field/label arity mismatch");
+      std::set<std::string> names;for(const auto& label:e.labels)if(!names.insert(label).second)fail(e.where,"duplicate record field: "+label);
+      auto t=Type::data(Type::Record,std::move(fields),e.labels);validate_type(t,e.where);return e.type=t;
+     }
+     case Expr::Kind::Array:{
+      if(e.type.kind()!=Type::Array||e.type.extent()!=e.children.size())fail(e.where,"array requires an inferred fixed element type and extent");
+      for(auto& c:e.children)equal(check_expr(*c),e.type.elements()[0],c->where);
+      validate_type(e.type,e.where);return e.type;
+     }
+     case Expr::Kind::Variant:{
+      if(e.result.kind()!=Type::Sum||e.children.size()!=1)fail(e.where,"variant requires a closed sum and one payload");
+      validate_type(e.result,e.where);auto pos=std::find(e.result.labels().begin(),e.result.labels().end(),e.text);
+      if(pos==e.result.labels().end())fail(e.where,"unknown sum constructor: "+e.text);
+      e.projection=static_cast<std::size_t>(pos-e.result.labels().begin());equal(child(0),e.result.elements()[e.projection],e.where);return e.type=e.result;
+     }
+     case Expr::Kind::Field:{
+      auto t=child(0);if(t.kind()!=Type::Record)fail(e.where,"field projection requires a record");
+      auto pos=std::find(t.labels().begin(),t.labels().end(),e.text);if(pos==t.labels().end())fail(e.where,"unknown record field: "+e.text);
+      e.projection=static_cast<std::size_t>(pos-t.labels().begin());return e.type=t.elements()[e.projection];
+     }
+     case Expr::Kind::Index:case Expr::Kind::Slice:case Expr::Kind::Length:{
+      auto t=child(0);if(t.kind()!=Type::Array&&t.kind()!=Type::Slice)fail(e.where,"index/slice/length requires an array or slice");
+      for(std::size_t i=1;i<e.children.size();++i)equal(child(i),Type::I64,e.where);
+      return e.type=e.kind==Expr::Kind::Length?Type::I64:e.kind==Expr::Kind::Slice?Type::data(Type::Slice,t.elements(),{},t.extent()):t.elements()[0];
+     }
+     case Expr::Kind::Match:{
+      auto t=child(0);if(t.kind()!=Type::Sum)fail(e.where,"match requires a closed sum");
+      if(e.children.size()!=e.labels.size()+1)fail(e.where,"match arm shape mismatch");
+      std::set<std::string> seen;Type result=Type::Invalid;
+      for(std::size_t i=0;i<e.labels.size();++i){
+       auto pos=std::find(t.labels().begin(),t.labels().end(),e.labels[i]);
+       if(pos==t.labels().end())fail(e.where,"unknown match constructor: "+e.labels[i]);
+       if(!seen.insert(e.labels[i]).second)fail(e.where,"duplicate match constructor: "+e.labels[i]);
+       auto& arm=*e.children[i+1];if(arm.kind!=Expr::Kind::Lambda||arm.parameters.size()!=1)fail(arm.where,"match arm requires one payload pattern");
+       auto a=check_expr(arm);equal(a.parameters()[0],t.elements()[static_cast<std::size_t>(pos-t.labels().begin())],arm.where);
+       if(result==Type::Invalid)result=a.result();else equal(a.result(),result,arm.where);
+      }
+      if(seen.size()!=t.labels().size())fail(e.where,"non-exhaustive match: every constructor needs an arm");
+      (void)value_width(result,e.where);return e.type=result;
+     }
     case Expr::Kind::Unary:{auto x=child(0);
      if(e.text=="!")equal(x,Type::Bool,e.where);
      else if(x!=Type::F64)equal(x,Type::I64,e.where);
@@ -308,7 +370,8 @@ class Checker {
      for(const auto& parameter:f.params)if(parameter.type.has_generics()&&!f.prototype)
       fail(parameter.where,"quantified types are only valid in local let prototypes");
     if(is_intrinsic_name(f.name))fail(f.where,"intrinsic name cannot be redefined: "+f.name);
-    if(f.external) {
+     if(f.external) {
+     if(f.result.is_data())fail(f.where,"data-valued extern ABI requires reviewed aggregate adapters");
     static const std::set<std::string> c_keywords={"auto","break","case","char","const","continue","default","do","double","else","enum","extern","float","for","goto","if","inline","int","long","register","restrict","return","short","signed","sizeof","static","struct","switch","typedef","union","unsigned","void","volatile","while","_Alignas","_Alignof","_Atomic","_Bool","_Complex","_Generic","_Imaginary","_Noreturn","_Static_assert","_Thread_local"};
      if(c_keywords.contains(f.name))fail(f.where,"C keyword cannot be a raw extern name: "+f.name);
       if(f.result.is_function()||f.result.has_foralls())fail(f.where,"function-valued extern ABI is unsupported; callbacks require reviewed contracts");
@@ -319,7 +382,8 @@ class Checker {
     if(f.result==Type::Json||f.result==Type::JsonView)fail(f.where,"resource returns not supported in the initial ABI");
     validate_type(f.result,f.where);
     std::vector<Type> parameters;
-     std::set<std::string> names;for(auto& p:f.params){if(!names.insert(p.name).second)fail(p.where,"duplicate parameter: "+p.name);
+      std::set<std::string> names;for(auto& p:f.params){if(!names.insert(p.name).second)fail(p.where,"duplicate parameter: "+p.name);
+      if(f.external&&p.type.is_data())fail(p.where,"data-valued extern ABI requires reviewed aggregate adapters");
      if(p.type==Type::Void||p.type==Type::Json||p.type==Type::JsonView)fail(p.where,"unsupported parameter type in this milestone");
       if(f.external&&p.type.is_function())fail(p.where,"function-valued extern ABI is unsupported; callbacks require reviewed contracts");
       if(f.external&&(p.type.is_code()||p.type.is_reference()))fail(p.where,"runtime-managed extern ABI requires reviewed adapters");

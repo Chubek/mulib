@@ -43,10 +43,11 @@ using ExprPtr = std::unique_ptr<Expr>;
 struct Expr {
   enum class Kind { Integer, Float, Boolean, String, Variable, Unary, Binary, Call, Lambda, Tuple, PolyPack, PolyProjection,
                     MacroCall, SyntaxHole, SyntaxBlock, Extension, SyntaxList, SyntaxVector, SyntaxKeyword,
-                    Quote, Splice, Lift, Run, SyntaxLet } kind;
+                     Quote, Splice, Lift, Run, SyntaxLet, Record, Variant, Match, Array, Field, Index, Slice, Length } kind;
  enum class Reference { Unresolved, Local, Function, Extern, Intrinsic } reference = Reference::Unresolved;
  Location where;
  std::string text;
+ std::vector<std::string> labels;
  std::size_t context=0;
  std::vector<ExprPtr> children;
  std::vector<ExprPtr> proofs; // Universality checks only; never runtime operands.

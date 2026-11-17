@@ -48,7 +48,8 @@ class Generator {
  std::vector<Owner> temporary_values;
  std::uint64_t serial=0,type_serial=0,helper_serial=0;
   int indent=0;
-  bool uses_f64=false;
+   bool uses_f64=false;
+   bool uses_value_data=false;
 
  std::string reserve(const std::string& preferred){
   std::string name=preferred;std::size_t suffix=0;
@@ -57,8 +58,25 @@ class Generator {
  }
  std::string unique(const std::string& name){return reserve("on1x_v"+std::to_string(++serial)+"_"+name);}
  std::string pad()const{return std::string(indent*2,' ');}
- std::string ctype(const Type& type){
-  switch(type.kind()){
+  std::string ctype(const Type& type){
+   if(type.is_data()){
+    uses_value_data=true;
+    if(auto found=tuple_types.find(type);found!=tuple_types.end())return found->second;
+    std::vector<std::string> elements;for(const auto& field:type.elements())elements.push_back(ctype(field));
+    std::string backing;if(type.kind()==Type::Slice)backing=ctype(Type::data(Type::Array,type.elements(),{},type.extent()));
+    auto name=reserve("on1x_data_type_"+std::to_string(++type_serial));tuple_types.emplace(type,name);
+    types<<"typedef struct "<<name<<" {\n";
+    if(type.kind()==Type::Array)types<<"  "<<elements[0]<<" elements["<<std::max<std::size_t>(1,type.extent())<<"];\n";
+    else if(type.kind()==Type::Slice)types<<"  "<<backing<<" backing;\n  int64_t start, length;\n";
+    else{
+     if(type.kind()==Type::Sum)types<<"  int64_t tag;\n  union {\n";
+     if(elements.empty())types<<"  unsigned char unused;\n";
+     for(std::size_t i=0;i<elements.size();++i)types<<"  "<<elements[i]<<" element_"<<i<<";\n";
+     if(type.kind()==Type::Sum)types<<"  } payload;\n";
+    }
+    types<<"} "<<name<<";\n";return name;
+   }
+   switch(type.kind()){
    case Type::I64:return "int64_t";case Type::Bool:return "bool";
    case Type::F64:uses_f64=true;return "double";
   case Type::String:return "const char *";case Type::Void:return "void";
@@ -217,7 +235,7 @@ class Generator {
    for(std::size_t i=0;i<e.captures.size();++i){if(i)call+=", ";call+=ref(e.captures[i].name);}
    return temp(e.type,call+")");
   }
-  case Expr::Kind::Tuple:{
+   case Expr::Kind::Tuple:{
    std::vector<std::string> elements;
    for(const auto& child:e.children){
     auto value=expr(*child);elements.push_back(child->type.has_functions()?value:temp(child->type,value));
@@ -226,8 +244,55 @@ class Generator {
    for(std::size_t i=0;i<elements.size();++i){if(i)value+=", ";value+=elements[i];}
    // Aggregate initialization copies fields; acquire references before any
    // child temporary is released at the enclosing full-expression boundary.
-   return temp(e.type,value+"}",true);
-  }
+    return temp(e.type,value+"}",true);
+   }
+   case Expr::Kind::Record:case Expr::Kind::Array:{
+    std::vector<std::string> values;for(const auto& c:e.children)values.push_back(temp(c->type,expr(*c)));
+    std::string result="("+ctype(e.type)+"){";
+    if(e.kind==Expr::Kind::Array)result+="{";
+    if(values.empty())result+="0";
+    for(std::size_t i=0;i<values.size();++i){
+     if(i)result+=", ";
+     if(e.kind==Expr::Kind::Record){auto pos=std::find(e.type.labels().begin(),e.type.labels().end(),e.labels[i]);result+=".element_"+std::to_string(pos-e.type.labels().begin())+" = ";}
+     result+=values[i];
+    }
+    if(e.kind==Expr::Kind::Array)result+="}";
+    return temp(e.type,result+"}");
+   }
+   case Expr::Kind::Variant:{
+    auto value=temp(e.children[0]->type,expr(*e.children[0]));
+    return temp(e.type,"("+ctype(e.type)+"){.tag = INT64_C("+std::to_string(e.projection)+"), .payload = {.element_"+std::to_string(e.projection)+" = "+value+"}}");
+   }
+   case Expr::Kind::Field:{auto root=temp(e.children[0]->type,expr(*e.children[0]));return temp(e.type,root+".element_"+std::to_string(e.projection));}
+   case Expr::Kind::Index:case Expr::Kind::Slice:case Expr::Kind::Length:{
+    auto t=e.children[0]->type;bool slice=t.kind()==Type::Slice;
+    // Fixed arrays are rvalue-safe value structs; only slices need a materialized
+    // owner copy for chained slicing. Evaluation order stays left-to-right.
+    auto root=slice?temp(t,expr(*e.children[0])):expr(*e.children[0]);
+    auto length=slice?root+".length":"INT64_C("+std::to_string(t.extent())+")";
+    if(e.kind==Expr::Kind::Length)return temp(Type::I64,length);
+    auto lo=temp(Type::I64,expr(*e.children[1]));
+    auto at=c_string(meta::source_literal(e.where.file))+", "+std::to_string(e.where.line);
+    if(e.kind==Expr::Kind::Index){
+     definitions<<pad()<<"on1x_bounds_index("<<lo<<", "<<length<<", "<<at<<");\n";
+     return temp(e.type,slice?root+".backing.elements["+root+".start + "+lo+"]":root+".elements["+lo+"]");
+    }
+    auto hi=temp(Type::I64,expr(*e.children[2]));
+    definitions<<pad()<<"on1x_bounds_slice("<<lo<<", "<<hi<<", "<<length<<", "<<at<<");\n";
+    return temp(e.type,"("+ctype(e.type)+"){"+(slice?root+".backing":root)+", "+(slice?root+".start + ":"")+lo+", "+hi+" - "+lo+"}");
+   }
+   case Expr::Kind::Match:{
+    auto t=e.children[0]->type;auto root=temp(t,expr(*e.children[0]));auto result=unique("match_result");
+    definitions<<pad()<<ctype(e.type)<<" "<<result<<" = {0};\n"<<pad()<<"switch ("<<root<<".tag) {\n";
+    for(std::size_t i=0;i<e.labels.size();++i){
+     auto pos=std::find(t.labels().begin(),t.labels().end(),e.labels[i]);auto index=static_cast<std::size_t>(pos-t.labels().begin());
+     definitions<<pad()<<"case "<<index<<": {\n";++indent;auto mark=temporary_values.size();auto arm=expr(*e.children[i+1]);
+     definitions<<pad()<<result<<" = "<<arm<<".invoke("<<arm<<".environment, "<<root<<".payload.element_"<<index<<");\n";
+     finish(mark);definitions<<pad()<<"break;\n";--indent;definitions<<pad()<<"}\n";
+    }
+    definitions<<pad()<<"default: on1x_invalid_tag("<<c_string(meta::source_literal(e.where.file))<<", "<<e.where.line<<"); break;\n"<<pad()<<"}\n";
+    return result;
+   }
    case Expr::Kind::Unary:{
     auto value=expr(*e.children[0]);
     if(e.type==Type::F64)return temp(e.type,"on1x_neg_f64("+value+")");
@@ -468,7 +533,8 @@ public:
    return "/* Generated by on1xc. Do not edit. */\n#include <on1x_runtime.h>\n#include <stdint.h>\n#include <stdbool.h>\n#include <string.h>\n"
     "#if !defined(ON1X_CLOSURE_ABI_VERSION) || ON1X_CLOSURE_ABI_VERSION != 1\n#error \"incompatible On1x closure runtime ABI\"\n#endif\n\n"
     "#if !defined(ON1X_DATA_ABI_VERSION) || ON1X_DATA_ABI_VERSION != 1\n#error \"incompatible On1x data runtime ABI\"\n#endif\n\n"
-    +float_guard+types.str()+"\n"+prototypes.str()+"\n"+value_helpers.str()+helpers.str()+definitions.str();
+     +(uses_value_data?std::string("#if !defined(ON1X_VALUE_DATA_ABI_VERSION) || ON1X_VALUE_DATA_ABI_VERSION != 1\n#error \"incompatible On1x value data runtime ABI\"\n#endif\n\n"):std::string{})
+     +float_guard+types.str()+"\n"+prototypes.str()+"\n"+value_helpers.str()+helpers.str()+definitions.str();
  }
 };
 }

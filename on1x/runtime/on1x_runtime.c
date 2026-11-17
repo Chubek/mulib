@@ -79,6 +79,16 @@ void on1x_print_i64(int64_t a){printf("%" PRId64 "\n",a);}
 void on1x_print_bool(bool a){puts(a?"true":"false");}
 void on1x_print_string(const char *a){puts(a?a:"");}
 void on1x_assert(bool a){if(!a){fputs("On1x assertion failed\n",stderr);exit(70);}}
+static void value_error(const char *message,const char *file,size_t line){
+  fprintf(stderr,"%s:%zu: On1x value error: %s\n",file,line,message);exit(70);
+}
+void on1x_bounds_index(int64_t index,int64_t length,const char *file,size_t line){
+  if(length<0||index<0||index>=length)value_error("index out of bounds",file,line);
+}
+void on1x_bounds_slice(int64_t lo,int64_t hi,int64_t length,const char *file,size_t line){
+  if(length<0||lo<0||hi<lo||hi>length)value_error("slice bounds out of range",file,line);
+}
+void on1x_invalid_tag(const char *file,size_t line){value_error("invalid sum discriminant",file,line);}
 
 #ifdef ON1X_F64_ABI_VERSION
 #if defined(__FAST_MATH__) || (defined(__FINITE_MATH_ONLY__) && __FINITE_MATH_ONLY__ > 0) || defined(__NO_SIGNED_ZEROS__) || defined(__ASSOCIATIVE_MATH__) || defined(__RECIPROCAL_MATH__)

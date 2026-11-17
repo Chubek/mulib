@@ -20,7 +20,8 @@ inline Stmt clone_statement(const Stmt& s,std::size_t& budget){
 }
 inline ExprPtr clone_expression(const Expr& e,std::size_t& budget){
  clone_tick(budget,e.where);auto out=std::make_unique<Expr>();
- out->kind=e.kind;out->reference=e.reference;out->where=e.where;out->text=e.text;out->type=e.type;
+  out->kind=e.kind;out->reference=e.reference;out->where=e.where;out->text=e.text;out->type=e.type;
+  out->labels=e.labels;
  out->parameters=e.parameters;out->result=e.result;out->captures=e.captures;out->syntax_depth=e.syntax_depth;
  out->projection=e.projection;out->prototype=e.prototype;
  out->syntax_repeat=e.syntax_repeat;

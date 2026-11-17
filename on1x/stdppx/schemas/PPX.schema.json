@@ -2,7 +2,7 @@
   "schema_format": "on1x.sexpr-ast/v1", "version": 1, "root": "Unit",
   "categories": {
     "Syntax":"", "Unit":"Syntax", "Location":"Syntax", "Function":"Syntax", "Parameter":"Syntax", "Pattern":"Syntax", "Type":"Syntax", "Attribute":"Syntax", "Statement":"Syntax", "Block":"Syntax", "ListSyntax":"Syntax", "VectorSyntax":"Syntax", "KeywordSyntax":"Syntax", "Expression":"Syntax",
-    "Identifier":"Expression", "Literal":"Expression", "NumericLiteral":"Literal", "IntegerLiteral":"NumericLiteral", "DecimalLiteral":"IntegerLiteral", "HexLiteral":"IntegerLiteral", "FloatLiteral":"NumericLiteral", "StringLiteral":"Literal", "BooleanLiteral":"Literal", "UnaryExpression":"Expression", "BinaryExpression":"Expression", "CallExpression":"Expression", "TupleExpression":"Expression", "LambdaExpression":"Expression", "ExtensionExpression":"Expression", "StagedExpression":"Expression"
+    "Identifier":"Expression", "Literal":"Expression", "NumericLiteral":"Literal", "IntegerLiteral":"NumericLiteral", "DecimalLiteral":"IntegerLiteral", "HexLiteral":"IntegerLiteral", "FloatLiteral":"NumericLiteral", "StringLiteral":"Literal", "BooleanLiteral":"Literal", "UnaryExpression":"Expression", "BinaryExpression":"Expression", "CallExpression":"Expression", "TupleExpression":"Expression", "LambdaExpression":"Expression", "ExtensionExpression":"Expression", "StagedExpression":"Expression", "DataExpression":"Expression"
   },
   "nodes": {
     "Unit":{"category":"Unit","fields":[["version","Version"],["functions","Function*"]]},
@@ -21,6 +21,7 @@
     "SExprType":{"category":"Type","fields":[]},"BufferType":{"category":"Type","fields":[]},
     "CodeType":{"category":"Type","fields":[["result","Type"]]},
     "TupleType":{"category":"Type","fields":[["elements","Type*"]]},
+    "ValueDataType":{"category":"Type","fields":[["kind","Bytes"],["labels","Name*"],["elements","Type*"],["extent","Nat"]]},
     "FunctionType":{"category":"Type","fields":[["parameters","Type*"],["result","Type"]]},
     "BoundType":{"category":"Type","fields":[["index","Nat"]]},
     "ForallType":{"category":"Type","fields":[["variables","Positive"],["body","Type"]]},
@@ -45,6 +46,7 @@
     "Binary":{"category":"BinaryExpression","fields":[["operator","BinaryOperator"],["left","Expression"],["right","Expression"],["location","Location"]]},
     "Call":{"category":"CallExpression","fields":[["callee","Expression"],["arguments","Expression*"],["location","Location"]]},
     "Tuple":{"category":"TupleExpression","fields":[["elements","Expression*"],["location","Location"]]},
+    "ValueData":{"category":"DataExpression","fields":[["kind","Bytes"],["name","Bytes"],["labels","Name*"],["annotation","Type"],["operands","Expression*"],["location","Location"]]},
     "Lambda":{"category":"LambdaExpression","fields":[["parameters","Parameter*"],["result","Type"],["body","Block"],["location","Location"]]},
     "Quote":{"category":"StagedExpression","fields":[["expression","Expression"],["location","Location"]]},
     "Splice":{"category":"StagedExpression","fields":[["expression","Expression"],["location","Location"]]},

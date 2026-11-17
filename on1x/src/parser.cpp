@@ -61,7 +61,25 @@ class Parser {
     static const std::set<std::string> reserved={"fn","let","var","if","else","while","return","true","false","extern","import","forall","macro","rule","quote","splice","lift","let_syntax","letrec_syntax"};
   if(reserved.count(t.text))throw Error(t.where,"reserved keyword used as identifier: "+t.text);
   return t.text;}
-    Type type(){Nesting guard(*this);auto t=peek();
+     Type type(){Nesting guard(*this);auto t=peek();
+    if((at("record")||at("sum"))&&peek(1).text=="{"){
+     bool sum=accept("sum");if(!sum)consume("record");consume("{");
+     std::vector<std::string> labels;std::vector<Type> elements;std::set<std::string> names;
+     if(!at("}"))do{
+      auto label=ident();if(!names.insert(label).second)throw Error(t.where,"duplicate data label: "+label);
+      if(labels.size()>=256)throw Error(t.where,"data field limit exceeded");
+      labels.push_back(label);consume(":");elements.push_back(type());
+     }while(accept(","));
+     consume("}");if(sum&&elements.empty())throw Error(t.where,"sum requires at least one constructor");
+     return Type::data(sum?Type::Sum:Type::Record,std::move(elements),std::move(labels));
+    }
+    if((at("array")||at("slice"))&&peek(1).text=="<"){
+     bool slice=accept("slice");if(!slice)consume("array");consume("<");auto element=type();consume(",");auto count=peek();++pos;
+     std::size_t extent=0;auto [end,ec]=std::from_chars(count.text.data(),count.text.data()+count.text.size(),extent);
+     if(ec!=std::errc{}||end!=count.text.data()+count.text.size()||extent>256)throw Error(count.where,"array/slice extent must be a decimal integer in 0..256");
+     if(at(">=")){assignment_token=peek();assignment_token.text="=";++assignment_token.where.offset;++assignment_token.where.column;split_angle=pos;}else consume(">");
+     return Type::data(slice?Type::Slice:Type::Array,{std::move(element)},{},extent);
+    }
     if(accept("code")){consume("<");auto body=type();
      if(at(">=")){assignment_token=peek();assignment_token.text="=";++assignment_token.where.offset;++assignment_token.where.column;split_angle=pos;}
      else consume(">");
@@ -99,8 +117,34 @@ class Parser {
   if(op=="+"||op=="-")return 5;
   if(op=="*"||op=="/"||op=="%")return 6;
   return -1;}
-   Expression atom(){
-    const Token t=peek();
+    Expression atom(){
+     const Token t=peek();
+    if(at("record")&&peek(1).text=="{"){
+     ++pos;consume("{");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Record;e->where=t.where;std::set<std::string> names;
+     if(!at("}"))do{
+      auto label=ident();if(!names.insert(label).second)throw Error(t.where,"duplicate record field: "+label);
+      if(e->labels.size()>=256){throw Error(t.where,"data field limit exceeded");}e->labels.push_back(label);consume(":");e->children.push_back(expr().node);
+     }while(accept(","));
+     consume("}");return syntax_bounded(std::move(e));
+    }
+    if(at("array")&&peek(1).text=="["){
+     ++pos;consume("[");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Array;e->where=t.where;
+     if(!at("]"))do{if(e->children.size()>=256)throw Error(t.where,"array extent limit exceeded");e->children.push_back(expr().node);}while(accept(","));
+     consume("]");return syntax_bounded(std::move(e));
+    }
+    if(at("variant")&&peek(1).text=="<"&&peek(2).text=="sum"&&peek(3).text=="{"){
+     ++pos;consume("<");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Variant;e->where=t.where;e->result=type();consume(">");consume("(");e->text=ident();consume(",");e->children.push_back(expr().node);consume(")");return syntax_bounded(std::move(e));
+    }
+    if(at("match")&&peek(1).text=="("){
+     ++pos;consume("(");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Match;e->where=t.where;e->children.push_back(expr().node);consume(")");consume("{");
+     if(!at("}"))do{
+      if(e->labels.size()>=256){throw Error(t.where,"match arm limit exceeded");}e->labels.push_back(ident());consume("(");
+      auto arm=std::make_unique<Expr>();arm->kind=Expr::Kind::Lambda;arm->where=peek().where;arm->result=Type::Hole;arm->parameters.push_back(parameter(0));consume(")");consume("=>");
+      Stmt returns;returns.kind=Stmt::Kind::Return;returns.where=peek().where;returns.value=expr().node;arm->body.push_back(std::move(returns));
+      auto depth=body_expression_depth(arm->body)+1;auto checked=bounded(std::move(arm),depth);e->children.push_back(std::move(checked.node));
+     }while(accept(","));
+     consume("}");return syntax_bounded(std::move(e));
+    }
     if(at("let_syntax")||at("letrec_syntax"))return syntax_scope();
     if(accept("quote")){
      consume("{");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Quote;e->where=t.where;e->children.push_back(expr().node);consume("}");return syntax_bounded(std::move(e));
@@ -189,7 +233,20 @@ class Parser {
    e->children.push_back(std::move(child.node));return bounded(std::move(e),child.depth+1);
   }
    auto value=atom();
-   while(true){
+    while(true){
+    if(accept("[")){
+     auto e=std::make_unique<Expr>();e->where=value.node->where;e->children.push_back(std::move(value.node));
+     if(accept("]")){e->kind=Expr::Kind::Length;value=syntax_bounded(std::move(e));continue;}
+     if(!peek().text.empty()&&peek().text.front()=='"'&&peek(1).text=="]"){
+      auto field=peek();++pos;consume("]");e->kind=Expr::Kind::Field;e->text=field.text.substr(1,field.text.size()-2);
+      if(!is_ident(e->text))throw Error(field.where,"record projection requires an identifier label");
+     }else{
+      e->children.push_back(expr().node);
+      if(accept(":")){e->kind=Expr::Kind::Slice;e->children.push_back(expr().node);}else e->kind=Expr::Kind::Index;
+      consume("]");
+     }
+     value=syntax_bounded(std::move(e));continue;
+    }
     if(templating&&!literal_ellipsis&&accept(ellipsis)){if(++value.node->syntax_repeat>256)throw Error(value.node->where,"template ellipsis depth limit exceeded");continue;}
     if(!accept("("))break;
    auto call=std::make_unique<Expr>();call->kind=Expr::Kind::Call;call->where=value.node->where;

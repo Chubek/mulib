@@ -45,6 +45,9 @@ type    = 'i64' | 'f64' | 'bool' | 'string' | 'void' | 'json' | 'json_view'
          | 'sexpr' | 'buffer' | 'code' '<' type '>'
          | '_' | 'fn' '(' [ type { ',' type } ] ')' '->' type
          | 'forall' '(' ID { ',' ID } ')' type | bound_type_variable
+         | 'record' '{' [ ID ':' type { ',' ID ':' type } ] '}'
+         | 'sum' '{' ID ':' type { ',' ID ':' type } '}'
+         | ('array' | 'slice') '<' type ',' decimal_nat '>'
         | '(' type ')' | '(' type ',' type { ',' type } ')' ;
 block   = '{' { statement } '}' ;
 statement = ('let'|'var') ID [ ':' type ] '=' expr ';'
@@ -55,10 +58,15 @@ statement = ('let'|'var') ID [ ':' type ] '=' expr ';'
           | 'while' expr block | block | local_syntax_block [';'] | expr ';' ;
 expr    = prefix { binary_operator expr } ;
 prefix  = ('!'|'-') prefix | postfix ;
-postfix = atom { '(' [ expr { ',' expr } ] ')' } ;
+postfix = atom { '(' [ expr { ',' expr } ] ')' | '[' ( ID | expr [ ':' expr ] ) ']' } ;
 atom    = '(' expr ')' | '(' expr ',' expr { ',' expr } ')'
         | literal | module | lambda | 'quote' '{' expr '}'
+        | 'record' '{' [ ID ':' expr { ',' ID ':' expr } ] '}'
+        | 'array' '[' [ expr { ',' expr } ] ']'
+        | 'variant' '<' sum_type '>' '(' ID ',' expr ')'
+        | 'match' '(' expr ')' '{' arms '}'
         | ('splice' | 'lift') '(' expr ')' | local_syntax_expr ;
+arms    = ID '(' pattern ')' '=>' expr { ',' ID '(' pattern ')' '=>' expr } ;
 local_syntax_expr = syntax_group 'expression' '{' expr '}' ;
 local_syntax_block = syntax_group 'block' block ;
 syntax_group = ('let_syntax' | 'letrec_syntax') '{' { macro_definition } '}' ;
@@ -246,6 +254,54 @@ fields retain the existing raw C-string lifetime obligations. Raw extern
 tuple parameters/results are rejected: compiler-owned records do not establish
 a foreign aggregate ABI. See the [tuple manual](tuples.md).
 
+## Value records, sums, arrays and slices
+
+```on1x
+fn classify(s: sum{None:record{},Point:record{x:f64,y:f64}}) -> f64 {
+  return match(s){None(unit)=>0.0, Point(p)=>p["x"]*p["x"] + p["y"]*p["y"]};
+}
+fn main() {
+  let v = record{x:3.0,y:4.0};
+  println(v["x"]);
+  println(classify(variant<sum{None:record{},Point:record{x:f64,y:f64}}>(Point, v)));
+  let a = array[10,20,30];
+  println(a[1]); println(a[]); println(a[0:2][1]);
+}
+```
+
+Structural labeled products, closed tagged sums, fixed arrays and **owning
+snapshot slices** are value types with by-value C11 layout and no heap
+allocation, refcounting or destructor. `record{...}` labels canonicalize
+lexicographically for type identity, so field order in an annotation or
+constructor never changes the type or layout, while constructor operands still
+evaluate left-to-right in source order. `sum{...}` has one payload per
+constructor; the empty record `record{}` is the unit payload.
+`variant<sum{...}>(Tag, payload)` constructs and `match(expr){Tag(pattern)=>arm,
+...}` eliminates: the scrutinee evaluates once, exactly one arm runs, every
+constructor needs exactly one arm, and duplicate or unknown arms are compile
+errors. `array<T,N>` has a fixed extent `N <= 256`; `array[...]` infers both
+the element type and extent. `a[i]` is bounds-checked indexing and `a[]` is
+the length. `a[lo:hi]` requires `0 <= lo <= hi <= length` and yields a
+`slice<T,N>` that **owns a copy** of the backing array plus offset/length, so
+slices may escape, be returned or captured without dangling; slicing a slice
+composes offsets within the same backing capacity. Field, index, slice and
+length operations evaluate their container expression first, then the
+operands left-to-right, and bounds violations terminate with a located value
+error (exit status 70) exactly like checked arithmetic.
+
+Fields, elements, payloads and match results must be **trivially copied**:
+`i64`, `f64`, `bool`, tuples and other value-data types. Function, string,
+JSON, sexpr and buffer owners are rejected in value-data positions, so this
+profile needs no new allocation or drop path. Expanded value width is bounded
+(256 fields/extent per level, 32 nesting levels, 4096 storage units) with
+deterministic diagnostics. Records/sums do not yet support equality, ordering,
+printing, mutation of fields or elements, pattern guards, recursive nominal
+ADTs, type-parameterized data constructors or row polymorphism. `--emit-ir`
+(scalar MIR), raw extern aggregates and the independent structural/Chisel
+adapters reject value-data kinds instead of approximating them. Generated C11
+uses private compiler-owned structs with a compile-time runtime ABI guard; see
+[the data-model contract](data-model.md).
+
 ## Type holes and unification
 
 ```on1x
@@ -336,9 +392,12 @@ conservative definite-return analysis. `break`, `continue`, `for`, and
 
 ## Explicitly absent language facilities
 
-No refutable/exhaustive pattern matching, algebraic data types, generics, higher-kinded types,
-modules/functors, mutable/resource captures, native coroutines, async,
-macro system, polymorphic numeric literals, foreign callbacks, struct/record
-literals, `Option` or `Result`, structured error propagation, or production
-borrow checker yet. Do not add their names to public supported-feature lists
-until they are implemented with tests.
+Records, closed sums, fixed arrays and owning snapshot slices exist only in the
+bounded value profile described above: no refutable/guarded pattern matching,
+recursive nominal ADTs, data type parameters, field/element mutation, data
+equality or printing, generic higher-kinded types, modules/functors,
+mutable/resource captures, native coroutines, async, polymorphic numeric
+literals, foreign callbacks, foreign aggregate ABI, `Option` or `Result`,
+structured error propagation, or production borrow checker yet. Do not add
+their names to public supported-feature lists until they are implemented with
+tests.

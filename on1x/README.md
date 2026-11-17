@@ -11,10 +11,14 @@ arithmetic/comparisons, explicit checked conversions, exact bit transport and he
 printing, closures/tuples/staging, and raw C `double` leaves/results. The initial
 profile is Linux x86_64 GCC/Clang. Decimal literals and MIR v2 now execute floats
 and nested trivial tuples, with checked serialization, an evaluator and C11
-emission; legacy scalar MIR remains v1. Run `examples/float_tuples.on1x` with the
-normal build helper, optionally `--via-mir --optimize-ir`. See the
-[numeric contract](docs/numerics.md), [capability matrix](docs/capability-matrix.md)
-and [verification record](VERIFICATION.md). This does not complete M1 or On1x.
+emission; legacy scalar MIR remains v1. A further M1 slice adds the bounded value
+data model: structural records, closed tagged sums with exhaustive `match`,
+fixed arrays and owning snapshot slices — all by-value C11 with bounds-checked
+access and terminal located value errors (`examples/data_model.on1x`). General
+ownership, safe FFI and concurrency are still not admitted. See the
+[numeric contract](docs/numerics.md), [data-model contract](docs/data-model.md),
+[capability matrix](docs/capability-matrix.md) and
+[verification record](VERIFICATION.md). This does not complete M1 or On1x.
 
 The repository accessed through the GitHub connection exposed the prior PPX-v1 schema and Exotract/ExoML contract catalogs. The `on1x/std/ppx` path in the request appears to refer to the actual `on1x/stdlib/ppx` path, whose `ppx.on1x` is used by all newly added native PPXs.
 

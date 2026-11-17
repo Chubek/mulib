@@ -68,6 +68,12 @@ def _render_type(t):
     if k=='ForallType':return 'forall('+', '.join('a'+str(i) for i in range(int(t[1])))+') '+_render_type(t[2])
     if k=='TupleType':return '('+', '.join(map(_render_type,t[1]))+')'
     if k=='FunctionType':return 'fn('+', '.join(map(_render_type,t[1]))+') -> '+_render_type(t[2])
+    if k=='ValueDataType':
+        kind=string(t[1])
+        head={'record':'record{','sum':'sum{','array':'array<','slice':'slice<'}[kind]
+        labels=[string(l) for l in t[2]];fields=[_render_type(f) for f in t[3]]
+        if kind in ('record','sum'):return head+', '.join(l+':'+f for l,f in zip(labels,fields))+'}'
+        return head+_render_type(t[3][0])+', '+str(int(t[4]))+'>'
     raise ValueError('unknown type: '+str(k))
 
 

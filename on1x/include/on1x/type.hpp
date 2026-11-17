@@ -12,10 +12,14 @@ struct TypeShape;
 // nothing refers to the scanner arena or foreign CDecl type IDs.
 class Type {
 public:
- enum Kind { Invalid, I64, Bool, String, Void, Json, JsonView, Function, Hole, Tuple, Generic, Bound, Forall, Code, SExpr, Buffer, F64 };
+ enum Kind { Invalid, I64, Bool, String, Void, Json, JsonView, Function, Hole, Tuple, Generic, Bound, Forall, Code, SExpr, Buffer, F64, Record, Sum, Array, Slice };
  Type(Kind kind = Invalid);
  static Type function(std::vector<Type> parameters, Type result);
  static Type tuple(std::vector<Type> elements);
+ static Type data(Kind kind,std::vector<Type> elements,std::vector<std::string> labels={},std::size_t extent=0);
+ bool is_data() const { return kind_==Record||kind_==Sum||kind_==Array||kind_==Slice; }
+ const std::vector<std::string>& labels() const;
+ std::size_t extent() const;
  static Type generic(std::size_t identity);
  static Type bound(std::size_t index);
  static Type for_all(std::size_t variables, Type body);

@@ -83,6 +83,14 @@ def _type(t):
         return '(' + ', '.join(map(_type, t[1])) + ')'
     if k == 'FunctionType':
         return 'fn(' + ', '.join(map(_type, t[1])) + ') -> ' + _type(t[2])
+    if k == 'ValueDataType':
+        kind = t[1][1]
+        head = {'record': 'record{', 'sum': 'sum{', 'array': 'array<', 'slice': 'slice<'}[kind]
+        labels = [label[1] for label in t[2]]
+        fields = [_type(f) for f in t[3]]
+        if kind in ('record', 'sum'):
+            return head + ', '.join(l + ':' + f for l, f in zip(labels, fields)) + '}'
+        return head + _type(t[3][0]) + ', ' + str(int(t[4][1])) + '>'
     raise ValueError('unhandled signature type: ' + str(k))
 
 

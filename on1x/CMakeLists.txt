@@ -287,7 +287,11 @@ if(BUILD_TESTING)
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_parameter_patterns.py" "$<TARGET_FILE:on1xc>"
     "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/parameter-patterns" "${CMAKE_C_COMPILER}"
     ${_test_c_flags})
-  set_tests_properties(on1x.compiler on1x.limits on1x.functions on1x.json on1x.inference on1x.closures on1x.tuples on1x.parameter_patterns PROPERTIES TIMEOUT 120)
+  add_test(NAME on1x.data COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_data.py" "$<TARGET_FILE:on1xc>"
+    "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/data" "${CMAKE_C_COMPILER}"
+    ${_test_c_flags})
+  set_tests_properties(on1x.compiler on1x.limits on1x.functions on1x.json on1x.inference on1x.closures on1x.tuples on1x.parameter_patterns on1x.data PROPERTIES TIMEOUT 120)
   set_tests_properties(on1x.json PROPERTIES SKIP_RETURN_CODE 77)
   add_test(NAME on1x.poly COMMAND "${Python3_EXECUTABLE}"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_poly.py" "$<TARGET_FILE:on1xc>"

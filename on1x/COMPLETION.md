@@ -29,7 +29,10 @@ This file is an **execution specification**, not an invitation to produce a new 
 **Language-only M1 continuation:** `f64` values now have a real HIR/C11 path,
 including checked conversions and user-declared raw C `double` calls. See
 `docs/numerics.md` and `docs/capability-matrix.md`. Decimal literals and MIR v2 for
-float/trivial-tuple values are now executable; numeric buffers/records, managed
+float/trivial-tuple values are now executable. A second M1 slice adds the bounded
+value data model: structural records, closed sums with exhaustive `match`, fixed
+arrays and owning snapshot slices as by-value C11 ([contract](docs/data-model.md));
+numeric buffers/records, managed
 aggregate MIR, generated adapters and safe-import admission remain open. This
 does not satisfy the full numeric work package or promote any acceptance gate
 below; historical reports and application-specific requirements are unchanged.
@@ -77,7 +80,7 @@ remain open. See `stdlib/_bridge/README.md` and `VERIFICATION.md`.
 - `emit-raw` currently handles only narrow signed-integer/void signatures; it rejects floating-point arguments/results, unsigned integers, pointer/length arguments, aggregates, enums, output buffers, callbacks, and important ownership/error semantics.
 - No integrated general `Result`/`Option` and resource-safe MuLIB API, beyond the limited fail-fast JSON facade.
 - No general foreign-owned buffer/handle lifecycle, interprocedural borrow checking, or Chisel/Wetstone usage/effect proof.
-- No completed ADTs, general pattern matching, records/modules/functors, full callbacks, effect inference, or Plaid concurrency lowering.
+- No completed nominal ADTs, guarded/refutable pattern matching, type-parameterized data types, modules/functors, full callbacks, effect inference, or Plaid concurrency lowering. (Closed structural sums with exhaustive `match` and by-value records/arrays/slices exist in the bounded value profile; `docs/data-model.md`.)
 - The C11 backend works for the supported subset; native and VM backends are not required for this task and must not block it.
 
 **Read first:** `README.md`, `VERIFICATION.md`, `docs/roadmap.md`, `docs/contracts.md`, `docs/architecture.md`, `docs/language.md`, `docs/closures.md`, `docs/tuples.md`, `docs/staging.md`, `contracts-exoml/catalog.json`, `contracts-exoml/obligations.json`, `tools/on1x-bind.cpp`, `tools/on1x-contracts.py`, `src/{parser,type,infer,sema,codegen,primitives}.cpp`, `runtime/`, `tests/`, and the canonical ExoML `Contract.hpp`, `CDecl.hpp`, `Extract.hpp`, `StaticFFI.hpp` and schema in LibStone.

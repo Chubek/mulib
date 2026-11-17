@@ -2,12 +2,13 @@
 #include <stdexcept>
 #include <utility>
 #include <map>
+#include <algorithm>
 
 namespace on1x {
-struct TypeShape { std::vector<Type> children; Type result; bool holes, functions, generics, foralls; };
+struct TypeShape { std::vector<Type> children; Type result; bool holes, functions, generics, foralls; std::vector<std::string> labels{}; std::size_t extent=0; };
 
 Type::Type(Kind kind):kind_(kind) {
- if(kind == Function || kind == Tuple || kind == Forall || kind == Code) throw std::logic_error("composite type requires a shape");
+ if(kind == Function || kind == Tuple || kind == Forall || kind == Code || is_data()) throw std::logic_error("composite type requires a shape");
 }
 Type::Type(Kind kind, std::shared_ptr<const TypeShape> shape)
   :kind_(kind),shape_(std::move(shape)) {}
@@ -36,6 +37,21 @@ Type Type::tuple(std::vector<Type> elements) {
  for(const auto& element:elements){holes=holes||element.has_holes();functions=functions||element.has_functions();generics=generics||element.has_generics();foralls=foralls||element.has_foralls();}
  return Type(Tuple,std::make_shared<const TypeShape>(TypeShape{std::move(elements),Type::Invalid,holes,functions,generics,foralls}));
 }
+Type Type::data(Kind kind,std::vector<Type> elements,std::vector<std::string> labels,std::size_t extent){
+ if(kind!=Record&&kind!=Sum&&kind!=Array&&kind!=Slice)throw std::logic_error("invalid data type kind");
+ if(kind==Record||kind==Sum){
+  if(labels.size()!=elements.size()||labels.size()>256||(kind==Sum&&labels.empty()))throw std::logic_error("invalid labeled data shape");
+  std::map<std::string,Type> ordered;
+  for(std::size_t i=0;i<labels.size();++i)if(labels[i].empty()||!ordered.emplace(labels[i],elements[i]).second)throw std::logic_error("duplicate/empty data label");
+  elements.clear();labels.clear();for(auto& [label,type]:ordered){labels.push_back(label);elements.push_back(type);}
+  extent=0;
+ }else if(elements.size()!=1||!labels.empty()||extent>256)throw std::logic_error("invalid array/slice extent or element arity");
+ bool holes=false,functions=false,generics=false,foralls=false;
+ for(const auto& element:elements){holes|=element.has_holes();functions|=element.has_functions();generics|=element.has_generics();foralls|=element.has_foralls();}
+ return Type(kind,std::make_shared<const TypeShape>(TypeShape{std::move(elements),Type::Invalid,holes,functions,generics,foralls,std::move(labels),extent}));
+}
+const std::vector<std::string>& Type::labels() const{if(!is_data())throw std::logic_error("non-data type has no labels");return shape_->labels;}
+std::size_t Type::extent() const{if(!is_data())throw std::logic_error("non-data type has no extent");return shape_->extent;}
 bool Type::has_foralls() const{return shape_&&shape_->foralls;}
 bool Type::has_generics() const{return kind_==Generic||(shape_&&shape_->generics);}
 bool Type::has_holes() const { return kind_==Hole||(shape_&&shape_->holes); }
@@ -45,7 +61,7 @@ const std::vector<Type>& Type::parameters() const {
  return shape_->children;
 }
 const std::vector<Type>& Type::elements() const {
- if(!is_tuple()) throw std::logic_error("non-tuple type has no elements");
+ if(!is_tuple()&&!is_data()) throw std::logic_error("non-product/data type has no elements");
  return shape_->children;
 }
 const Type& Type::result() const {
@@ -56,6 +72,10 @@ std::strong_ordering Type::operator<=>(const Type& other) const {
  if(auto order = kind_ <=> other.kind_; order != 0) return order;
  if(kind_==Generic||kind_==Bound||kind_==Forall){if(auto order=variable_ <=> other.variable_;order!=0)return order;}
  if(!shape_ || shape_ == other.shape_) return std::strong_ordering::equal;
+ if(is_data()){
+  if(auto order=extent()<=>other.extent();order!=0)return order;
+  if(auto order=labels()<=>other.labels();order!=0)return order;
+ }
  if(auto order = shape_->children <=> other.shape_->children; order != 0) return order;
  if(is_forall())return body() <=> other.body();
  if(is_code())return code_result() <=> other.code_result();
@@ -82,15 +102,21 @@ std::string type_name(const Type& type) {
   for(std::size_t i=0;i<type.generic_identity();++i){if(i)name+=", ";name+="a"+std::to_string(i);}
   return name+") "+type_name(type.body());
  }
- case Type::Tuple:{
+  case Type::Tuple:{
   std::string name="(";
   for(std::size_t i=0;i<type.elements().size();++i){
    if(i)name+=", ";
    name+=type_name(type.elements()[i]);
   }
-  return name+")";
- }
- case Type::Function:{
+   return name+")";
+  }
+   case Type::Array:case Type::Slice:return std::string(type.kind()==Type::Array?"array<":"slice<")+type_name(type.elements()[0])+", "+std::to_string(type.extent())+">";
+  case Type::Record:case Type::Sum:{
+   std::string name=type.kind()==Type::Record?"record{":"sum{";
+   for(std::size_t i=0;i<type.elements().size();++i){if(i)name+=", ";name+=type.labels()[i]+":"+type_name(type.elements()[i]);}
+   return name+"}";
+  }
+  case Type::Function:{
   std::string name = "fn(";
   for(std::size_t i=0;i<type.parameters().size();++i) {
    if(i) name += ", ";
@@ -125,7 +151,8 @@ bool match_forall(const Type& schema,const Type& instance,bool rigid){
    for(std::size_t i=0;i<pattern.parameters().size();++i)if(!self(self,pattern.parameters()[i],actual.parameters()[i]))return false;
    return true;
   }
-  if(pattern.is_tuple()){
+   if(pattern.is_tuple()||pattern.is_data()){
+    if(pattern.is_data()&&(pattern.labels()!=actual.labels()||pattern.extent()!=actual.extent()))return false;
    if(pattern.elements().size()!=actual.elements().size())return false;
    for(std::size_t i=0;i<pattern.elements().size();++i)if(!self(self,pattern.elements()[i],actual.elements()[i]))return false;
    return true;

@@ -31,6 +31,10 @@ void on1x_print_i64(int64_t a);
 void on1x_print_bool(bool a);
 void on1x_print_string(const char *a);
 void on1x_assert(bool a);
+#define ON1X_VALUE_DATA_ABI_VERSION 1
+void on1x_bounds_index(int64_t index,int64_t length,const char *file,size_t line);
+void on1x_bounds_slice(int64_t lo,int64_t hi,int64_t length,const char *file,size_t line);
+void on1x_invalid_tag(const char *file,size_t line);
 /* Initial binary64 target profile; other targets keep the existing runtime but
  * cannot compile generated f64 programs. This is not a general foreign ABI. */
 #if defined(__linux__) && defined(__x86_64__) && defined(__SSE2__) && (defined(__GNUC__) || defined(__clang__)) && FLT_RADIX == 2 && DBL_MANT_DIG == 53 && DBL_MAX_EXP == 1024 && DBL_MIN_EXP == -1021 && FLT_EVAL_METHOD == 0

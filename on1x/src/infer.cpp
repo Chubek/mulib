@@ -11,7 +11,8 @@
 
 namespace on1x {
 namespace {
-bool compound(Type::Kind kind){return kind==Type::Function||kind==Type::Tuple||kind==Type::Code;}
+bool data_kind(Type::Kind kind){return kind==Type::Record||kind==Type::Sum||kind==Type::Array||kind==Type::Slice;}
+bool compound(Type::Kind kind){return kind==Type::Function||kind==Type::Tuple||kind==Type::Code||data_kind(kind);}
 bool has_result(Type::Kind kind){return kind==Type::Function||kind==Type::Code;}
 bool holes_in(const Expr& expression);
 bool holes_in(const std::vector<Stmt>& body) {
@@ -21,6 +22,7 @@ bool holes_in(const std::vector<Stmt>& body) {
  return false;
 }
 bool holes_in(const Expr& expression) {
+  if(expression.kind>=Expr::Kind::Record)return true;
  if(expression.kind==Expr::Kind::Lambda){
    if(has_type_holes(expression.result)||expression.result.has_foralls()||holes_in(expression.body))return true;
    for(const auto& parameter:expression.parameters)if(has_type_holes(parameter.type)||parameter.type.has_foralls())return true;
@@ -45,7 +47,9 @@ class Inference {
   Term parent;
   unsigned rank = 0;
   std::vector<Term> parameters;
-  Term result = 0;
+   Term result = 0;
+   std::vector<std::string> labels{};
+   std::size_t extent=0;
  };
  struct Scheme;
  struct Global {
@@ -95,7 +99,8 @@ class Inference {
  std::vector<std::optional<Ground>> ground;
  std::vector<unsigned char> state;
  std::map<std::vector<std::size_t>,Ground> canonical;
- std::size_t next_identity = Type::F64 + 1;
+  std::size_t next_identity = Type::Slice + 1;
+  std::map<std::vector<std::string>,std::size_t> label_identities;
 
  [[noreturn]] static void fail(const Location& where,const std::string& message) {
    throw Error(where,message,"ON1X-TYPE");
@@ -114,9 +119,18 @@ class Inference {
   if(auto found=scalars.find(kind);found!=scalars.end())return found->second;
   auto id=add(kind,{},0,where);scalars.emplace(kind,id);return id;
  }
- Term function(std::vector<Term> parameters,Term result,const Location& where) {
-  return add(Type::Function,std::move(parameters),result,where);
- }
+  Term function(std::vector<Term> parameters,Term result,const Location& where) {
+   return add(Type::Function,std::move(parameters),result,where);
+  }
+  Term data(Type::Kind kind,std::vector<Term> fields,std::vector<std::string> labels,std::size_t extent,const Location& at){
+   if(kind==Type::Record||kind==Type::Sum){
+    if(fields.size()!=labels.size()||fields.size()>256||(kind==Type::Sum&&fields.empty()))fail(at,"invalid labeled data shape");
+    std::map<std::string,Term> ordered;
+    for(std::size_t i=0;i<labels.size();++i){tick(at);if(!ordered.emplace(labels[i],fields[i]).second)fail(at,"duplicate data label: "+labels[i]);}
+    labels.clear();fields.clear();for(auto& [label,term]:ordered){labels.push_back(label);fields.push_back(term);}
+   }else if(fields.size()!=1||extent>256)fail(at,"invalid array/slice shape");
+   auto id=add(kind,std::move(fields),0,at);nodes[id].labels=std::move(labels);nodes[id].extent=extent;return id;
+  }
  Term annotation(const Type& type,const Location& where) {
   tick(where);
    if(type==Type::Hole)return fresh(where);
@@ -130,7 +144,11 @@ class Inference {
    std::vector<Term> elements;for(const auto& element:type.elements())elements.push_back(annotation(element,where));
    return add(Type::Tuple,std::move(elements),0,where);
   }
-  if(!type.is_function())return scalar(type.kind(),where);
+   if(type.is_data()){
+    std::vector<Term> elements;for(const auto& element:type.elements())elements.push_back(annotation(element,where));
+    return data(type.kind(),std::move(elements),type.labels(),type.extent(),where);
+   }
+   if(!type.is_function())return scalar(type.kind(),where);
   std::vector<Term> parameters;
   for(const auto& parameter:type.parameters())parameters.push_back(annotation(parameter,where));
   auto result=annotation(type.result(),where);
@@ -164,14 +182,15 @@ class Inference {
    if(nodes[id].kind==Type::Code)return "code<"+describe(nodes[id].result,where,budget,depth+1)+">";
    if(auto atom=atoms.find(id);atom!=atoms.end())return type_name(atom->second);
   bool tuple=nodes[id].kind==Type::Tuple;
-  if(nodes[id].kind!=Type::Function&&!tuple)return type_name(Type(nodes[id].kind));
-  std::string text=tuple?"(":"fn(";
+   bool aggregate=data_kind(nodes[id].kind);
+   if(nodes[id].kind!=Type::Function&&!tuple&&!aggregate)return type_name(Type(nodes[id].kind));
+   std::string text=aggregate?"data("+std::to_string(nodes[id].extent)+"; ":tuple?"(":"fn(";
   for(std::size_t i=0;i<nodes[id].parameters.size();++i) {
    if(i)text+=", ";
    if(!budget){text+="...";break;}
    text+=describe(nodes[id].parameters[i],where,budget,depth+1);
   }
-  return tuple?text+")":text+") -> "+describe(nodes[id].result,where,budget,depth+1);
+   return tuple||aggregate?text+")":text+") -> "+describe(nodes[id].result,where,budget,depth+1);
  }
  std::string describe(Term id,const Location& where) {
   std::size_t budget=64;return describe(id,where,budget);
@@ -200,7 +219,9 @@ class Inference {
       fail(where,"incompatible quantified types: expected "+describe(b,where)+", got "+describe(a,where));
      continue;
     }
-   if(!compound(nodes[a].kind))continue;
+    if(!compound(nodes[a].kind))continue;
+    if(data_kind(nodes[a].kind)&&(nodes[a].labels!=nodes[b].labels||nodes[a].extent!=nodes[b].extent))
+     fail(where,"incompatible data labels or array/slice extent");
    if(nodes[a].parameters.size()!=nodes[b].parameters.size())
     fail(where,std::string("incompatible ")+(nodes[a].kind==Type::Tuple?"tuple":"function")+" arity: expected "+describe(b,where)+", got "+describe(a,where));
    auto pair=std::minmax(a,b);
@@ -230,7 +251,7 @@ class Inference {
  static bool value(const Expr& e){
   if(e.kind==Expr::Kind::Quote)return e.children.size()==1&&e.children[0]->kind==Expr::Kind::Call&&e.children[0]->children.empty();
   if(e.kind==Expr::Kind::Lambda||e.kind==Expr::Kind::Variable||e.kind==Expr::Kind::Integer||e.kind==Expr::Kind::Float||e.kind==Expr::Kind::Boolean||e.kind==Expr::Kind::String)return true;
-  if(e.kind!=Expr::Kind::Tuple)return false;
+   if(e.kind!=Expr::Kind::Tuple&&e.kind!=Expr::Kind::Record&&e.kind!=Expr::Kind::Array&&e.kind!=Expr::Kind::Variant)return false;
   for(const auto& child:e.children)if(!value(*child))return false;
   return true;
  }
@@ -353,10 +374,11 @@ class Inference {
   if(auto found=copies.find(term);found!=copies.end())return found->second;
   if(variables.contains(term)){auto result=fresh(at);copies.emplace(term,result);return result;}
   if(!compound(nodes[term].kind))return term;
-  auto kind=nodes[term].kind;auto children=nodes[term].parameters;auto result=nodes[term].result;
+   auto kind=nodes[term].kind;auto children=nodes[term].parameters;auto result=nodes[term].result;
+   auto labels=nodes[term].labels;auto extent=nodes[term].extent;
   for(auto& child:children)child=copy_signature(child,variables,copies,at,depth+1);
   if(has_result(kind))result=copy_signature(result,variables,copies,at,depth+1);
-  auto id=add(kind,std::move(children),result,at);copies.emplace(term,id);return id;
+   auto id=data_kind(kind)?data(kind,std::move(children),std::move(labels),extent,at):add(kind,std::move(children),result,at);copies.emplace(term,id);return id;
  }
  void bind_pattern(const Pattern& pattern,Term value){
   tick(pattern.where);
@@ -548,7 +570,11 @@ class Inference {
     std::vector<Term> elements;for(const auto& p:type.elements())elements.push_back(self(self,p));
     return add(Type::Tuple,std::move(elements),0,at);
    }
-   return annotation(type,at);
+    if(type.is_data()){
+     std::vector<Term> elements;for(const auto& p:type.elements())elements.push_back(self(self,p));
+     return data(type.kind(),std::move(elements),type.labels(),type.extent(),at);
+    }
+    return annotation(type,at);
   };
   return build(build,schema.body());
  }
@@ -618,7 +644,7 @@ class Inference {
   unify(actual,expectation,e.where);return expectation;
  }
  void reset_ground(){
-   ground.assign(nodes.size(),{});state.assign(nodes.size(),0);canonical.clear();next_identity=Type::F64+1;
+    ground.assign(nodes.size(),{});state.assign(nodes.size(),0);canonical.clear();next_identity=Type::Slice+1;
   }
   void numeric_operand(Term term,const Location& at){
    // Do not quantify numeric overloading. Delay the old i64 choice until all
@@ -696,10 +722,54 @@ class Inference {
   case Expr::Kind::Boolean:result=scalar(Type::Bool,at);break;
   case Expr::Kind::String:result=scalar(Type::String,at);break;
   case Expr::Kind::Variable:return name(e);
-  case Expr::Kind::Tuple:{
-   std::vector<Term> elements;for(auto& element:e.children)elements.push_back(expression(*element));
-   result=add(Type::Tuple,std::move(elements),0,at);break;
-  }
+   case Expr::Kind::Tuple:{
+    std::vector<Term> elements;for(auto& element:e.children)elements.push_back(expression(*element));
+    result=add(Type::Tuple,std::move(elements),0,at);break;
+   }
+   case Expr::Kind::Record:{
+    std::vector<Term> fields;for(auto& child:e.children)fields.push_back(expression(*child));
+    result=data(Type::Record,std::move(fields),e.labels,0,at);break;
+   }
+   case Expr::Kind::Array:{
+    auto element=fresh(at);for(auto& child:e.children)unify(expression(*child),element,child->where);
+    result=data(Type::Array,{element},{},e.children.size(),at);break;
+   }
+   case Expr::Kind::Variant:{
+    if(e.result.kind()!=Type::Sum)fail(at,"variant requires a closed sum annotation");
+    result=annotation(e.result,at);auto tags=nodes[result].labels;auto fields=nodes[result].parameters;
+    auto tag=std::find(tags.begin(),tags.end(),e.text);if(tag==tags.end())fail(at,"unknown sum constructor: "+e.text);
+    if(e.children.size()!=1)fail(at,"variant requires one payload");
+    expected(*e.children[0],fields[static_cast<std::size_t>(tag-tags.begin())]);
+    slots.push_back({&e.result,result,at,"variant schema"});break;
+   }
+   case Expr::Kind::Field:case Expr::Kind::Index:case Expr::Kind::Slice:case Expr::Kind::Length:{
+    auto container=head(expression(*e.children.at(0)),at);auto kind=nodes[container].kind;
+    if(e.kind==Expr::Kind::Field){
+     if(kind!=Type::Record)fail(at,"field projection requires a known record shape; annotate the parameter");
+     auto tags=nodes[container].labels;auto tag=std::find(tags.begin(),tags.end(),e.text);
+     if(tag==tags.end())fail(at,"unknown record field: "+e.text);
+     result=nodes[container].parameters[static_cast<std::size_t>(tag-tags.begin())];break;
+    }
+    if(kind!=Type::Array&&kind!=Type::Slice)fail(at,"index/slice/length requires a known array or slice shape; annotate the parameter");
+    auto element=nodes[container].parameters[0];auto extent=nodes[container].extent;
+    for(std::size_t i=1;i<e.children.size();++i)unify(expression(*e.children[i]),scalar(Type::I64,at),at);
+    result=e.kind==Expr::Kind::Length?scalar(Type::I64,at):e.kind==Expr::Kind::Slice?data(Type::Slice,{element},{},extent,at):element;break;
+   }
+   case Expr::Kind::Match:{
+    auto scrutinee=head(expression(*e.children.at(0)),at);
+    if(nodes[scrutinee].kind!=Type::Sum)fail(at,"match requires a known closed sum shape; annotate the parameter");
+    auto tags=nodes[scrutinee].labels;auto fields=nodes[scrutinee].parameters;std::set<std::string> seen;result=fresh(at);
+    if(e.children.size()!=e.labels.size()+1)fail(at,"invalid match arm shape");
+    for(std::size_t i=0;i<e.labels.size();++i){
+     auto tag=std::find(tags.begin(),tags.end(),e.labels[i]);
+     if(tag==tags.end())fail(at,"unknown match constructor: "+e.labels[i]);
+     if(!seen.insert(e.labels[i]).second)fail(at,"duplicate match constructor: "+e.labels[i]);
+     if(e.children[i+1]->kind!=Expr::Kind::Lambda||e.children[i+1]->parameters.size()!=1)fail(at,"match arm requires one shared payload pattern");
+     auto arm=function({fields[static_cast<std::size_t>(tag-tags.begin())]},result,at);expected(*e.children[i+1],arm);
+    }
+    if(seen.size()!=tags.size())fail(at,"non-exhaustive match: every constructor needs an arm");
+    break;
+   }
   case Expr::Kind::Lambda:{
    std::vector<Term> parameters;std::set<std::string> names;
    for(auto& parameter:e.parameters){
@@ -836,7 +906,11 @@ class Inference {
     continue;
    }
    std::size_t depth=1,size=1;
-   std::vector<Type> parameters;std::vector<std::size_t> key{static_cast<std::size_t>(node.kind)};
+    std::vector<Type> parameters;std::vector<std::size_t> key{static_cast<std::size_t>(node.kind)};
+    if(data_kind(node.kind)){
+     auto [layout,inserted]=label_identities.emplace(node.labels,label_identities.size()+1);(void)inserted;
+     key.push_back(layout->second);key.push_back(node.extent);
+    }
    Type result_type=Type::Invalid;
    if(has_result(node.kind)){
     const auto& result=*ground[head(node.result,at)];depth=result.depth+1;size=result.size+1;
@@ -852,7 +926,7 @@ class Inference {
    if(size>limits.type_nodes)fail(at,"inferred type exceeds expanded-size limit");
    if(auto found=canonical.find(key);found!=canonical.end())ground[id]=found->second;
    else {
-    auto type=node.kind==Type::Tuple?Type::tuple(std::move(parameters)):node.kind==Type::Code?Type::code(std::move(result_type)):Type::function(std::move(parameters),std::move(result_type));
+     auto type=data_kind(node.kind)?Type::data(node.kind,std::move(parameters),node.labels,node.extent):node.kind==Type::Tuple?Type::tuple(std::move(parameters)):node.kind==Type::Code?Type::code(std::move(result_type)):Type::function(std::move(parameters),std::move(result_type));
     Ground value{std::move(type),next_identity++,depth,size};
     canonical.emplace(std::move(key),value);ground[id]=std::move(value);
    }

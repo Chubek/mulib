@@ -1,5 +1,133 @@
 # On1x verification — 2026-11-17
 
+## Language continuation — bounded value data model (records, sums, arrays, slices)
+
+Scoped implementation task: executable structural records, closed tagged sums
+with exhaustive `match`, fixed arrays and **owning snapshot slices** in the
+canonical frontend and by-value C11 backend. This is an M1 slice; MIR lowering,
+mutable/borrowed arrays, nominal/parametric ADTs, derives, ownership and safe
+FFI remain open. The value-data contract is documented in
+`docs/data-model.md`; syntax/semantics in `docs/language.md`.
+
+Re-inspected base: MuLIB `eeb6de585303e1ea0dfd8bf2260328289b04587c`, configured
+LibStone `55755485acaded7c4ed804c0946bc8c7363f6763` at
+`on1x/third_party/libstone`, unchanged. Linux `7.2.6-arch2-1` x86_64 GNU/Linux;
+GCC/g++ 16.2.1 (20260810), Clang/clang++ 22.1.8, CMake 4.4.3, Python 3.14.7.
+
+### Pre-change baselines (recorded before the slice)
+
+- `TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-loader-gcc
+  --output-on-failure --output-junit baseline-data.xml` → 37/37
+  (GCC/generated scanner).
+- `TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-loader-clang
+  --output-on-failure --output-junit baseline-data.xml` → 36/36
+  (Clang/fallback scanner; no scanner-parity test in the fallback tree).
+- `git diff --check` clean; LibStone checkout unchanged.
+
+### Implementation
+
+- New syntax, both scanners: `record{label:type,...}` (labels canonicalized
+  lexicographically for type identity; constructor operands stay in source
+  order), `sum{Tag:type,...}`, `variant<sum{...}>(Tag, payload)`,
+  `match(expr){Tag(pattern)=>arm,...}` (exhaustive, one arm per constructor),
+  `array<T,N>`/`slice<T,N>` (extent ≤ 256), `array[...]`, checked `a[i]`,
+  length `a[]` and bounds-checked `a[lo:hi]` slice construction. No lexical
+  changes; the fallback scanner accepts identical text.
+- New structural types `Record`/`Sum`/`Array`/`Slice` in `include/on1x/type.hpp`
+  with label/extent shape data, canonical `Type::data` construction and
+  `type_name` printing; inference (`src/infer.cpp`) builds canonical data
+  terms, unifies labels/extent, infers array element types/extents, checks
+  variant payloads and exhaustive duplicate-free match arms against known sum
+  shapes.
+- Frontend checks (`src/sema.cpp`): value-data positions require trivially
+  copied types (i64/f64/bool/tuples/value-data; functions/strings/JSON/sexpr/
+  buffer rejected), bounded expansion (256 fields/extent per level, 32 nesting
+  levels, 4096-unit width budget), data-valued extern ABI rejected, record
+  field/label arity, unknown labels/constructors, duplicate arms/fields, arm
+  payload and result agreement, match-result width. The tuple-annotation
+  `record{a:i64}` ordering is shape-canonical.
+- C11 codegen (`src/codegen.cpp`): private compiler-owned structs
+  (`on1x_data_type_N`), sums as `int64_t tag` + payload union, arrays as fixed
+  element storage, slices as backing copy + `start`/`length`; field/index/
+  slice/length/match/variant lowering with source-located bounds checks
+  (`on1x_bounds_index`, `on1x_bounds_slice`) and discriminant validation
+  (`on1x_invalid_tag`); `ON1X_VALUE_DATA_ABI_VERSION` guard emitted when used;
+  slices avoid intermediate aggregate temps so generated code compiles with
+  `-Wall -Wextra -Wpedantic -Werror` for both host compilers.
+- Runtime (`runtime/on1x_runtime.[ch]`): located value errors, exit 70
+  (bounds) — same terminal-failure policy as checked arithmetic; no new
+  allocation, refcounting or destructor paths.
+- Fail-closed adapters: `--emit-ir` rejects value data with
+  `ON1X-MIR-UNSUPPORTED ... scalar MIR cannot lower record{...}`;
+  `src/type_safety.cpp`, `src/safety.cpp`, `src/backend/lower.cpp` and
+  `src/staging.cpp` reject the new kinds rather than approximating them.
+  PPX round-trip support added instead: `ValueDataType`/`ValueData` nodes in
+  `PPX.schema.json` (canonical, standalone and stdlib copies), `src/ppx_ast.cpp`
+  read/emit, `DataExpression` macro category, signature writers
+  (`stdlib/ppx/signature.on1x`, `stdppx/{passes.py,_support/passes.py}`), and
+  `--types` listing.
+- Not implemented: MIR for value data, data equality/ordering/printing, field
+  or element mutation, zero-copy borrows, dynamic arrays, guards or refutable
+  patterns, recursive/nominal/parametric data types, derives, foreign
+  aggregate ABI.
+
+### Verification evidence
+
+- `TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-loader-gcc
+  --output-on-failure --parallel 3 --output-junit results-data.xml` →
+  **38/38**, including the new `on1x.data` suite.
+- `TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-loader-clang
+  --output-on-failure --parallel 3 --output-junit results-data.xml` →
+  **37/37** after reconfiguration (fallback-scanner profile).
+- `on1x.data` covers: record projection/nesting/canonical labels, sums with
+  record/tuple/record payloads, arrays/slices of records, slice-of-slice
+  composition, evaluation order, value passthrough; runtime bounds
+  rejections (index high/negative, slice end/reversed/negative → exit 70,
+  located message); static rejections (non-exhaustive, duplicate/unknown
+  arms, arm arity/payload/result mismatch, unknown field, field on sum,
+  duplicate fields, managed fields/results, data extern ABI, wrong variant
+  payload/unknown tag, index on record, mixed array elements); MIR and
+  structural-adapter fail-closed paths; deterministic `--emit-c`; and an
+  end-to-end `tools/on1x-build.py` run.
+- `examples/data_model.on1x` executes via the build helper with expected
+  output (`0x1.9000000000000p+4`, `0x1.9000000000000p+4`,
+  `0x0.0000000000000p+0`, `50`, `4`, `40`) on both compiler configurations,
+  and identically under GCC `-O3` and Clang `-O2`.
+- Sanitizers: fresh ASan/UBSan tree (`cmake -S on1x -B
+  /tmp/opencode/on1x-data-sanitize -DCMAKE_C_COMPILER=clang
+  -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fsanitize=address,undefined
+  -fno-omit-frame-pointer" -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined
+  -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+  -DBUILD_TESTING=ON`); full suite `TMPDIR=/tmp/opencode ctest --test-dir
+  /tmp/opencode/on1x-data-sanitize --output-on-failure --parallel 3
+  --output-junit results-data.xml` → **38/38**, including `on1x.data` (the
+  compiler and generated code run under ASan/UBSan; no leak/UB findings).
+- Optional-SDK profile (ExoML/Exotract/Chisel/Nerotypical/Novostone enabled,
+  `ON1X_SATIE_ROOT=/tmp/opencode/on1x-final-type-sdk`, configuration mirroring
+  the historical SDK tree): independent checkers fail closed on data programs
+  with located diagnostics — `--check-memory` →
+  `ON1X-MEMORY: expression memory model unavailable`, `--check-types` →
+  `ON1X-TYPE-SAFETY: ... outside the structural adapter`, `--emit-ir` and
+  `--analyze-ir` → `ON1X-MIR-UNSUPPORTED: scalar MIR cannot lower sum{...}`;
+  full SDK suite `TMPDIR=/tmp/opencode ctest --test-dir
+  /tmp/opencode/on1x-data-sdk --output-on-failure --parallel 3
+  --output-junit results-data.xml` → **46/46**, including `on1x.data` and the
+  SDK-specific suites (`type_safety`, `safety`, `external_memory_model`,
+  `relational_hir`, `exotract`, `contracts_sdk`).
+- PPX/AST wire compatibility: `--emit-ast` serializes value data as
+  `ValueData`/`ValueDataType`; an external Python identity PPX round-trips
+  `data_smoke.on1x` through `--ppx` and the rebuilt program reproduces the
+  direct-compile output byte for byte. `--types` prints canonical data shapes
+  (e.g. `take : fn(record{a:i64, b:i64}) -> i64`).
+- Staged code over value data works: `quote { record{x:1} }` yields
+  `code<record{x:i64}>` whose `run` returns the record; projections after
+  `run` behave like ordinary values.
+
+### Remaining blockers
+
+MIR v2 for value data, mutation/borrowing, nominal/parametric ADTs, derives,
+ownership resources, recoverable errors, safe FFI, concurrency.
+
 ## Language continuation — decimal literals and numeric/product MIR v2
 
 Scoped implementation task: extend the existing frontend and MIR with decimal

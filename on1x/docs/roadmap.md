@@ -40,17 +40,24 @@
 | Exotract static bindings | MANIFEST-backed kernel and companion archives | Typed CDecl/import metadata; executable JSON/Vec/Parsec and MicroJS C clients, On1x JSON/YANTLR/Shiraz archive linkage, fixture provenance and one kernel implementation TU; [manual](../contracts-exotract/README.md) |
 | Wetstone / general foreign ownership lowering | Not implemented | Contract-driven external handle types, ABI, alias/extent and effect proofs remain open |
 | Flintstone/Firestone native lowering | Not implemented | C11 is the sole backend |
-| ADTs, match, functors | Not implemented | Future language features |
+| Value data model (M1 slice) | Executable by-value C11 subset | Structural records with canonical labels, closed sums with exhaustive `match`, `array<T,N>` and owning `slice` snapshots, bounds-checked access with exit-70 errors; no MIR lowering, mutation, borrowed/dynamic arrays, derives or foreign aggregate ABI; [contract](data-model.md) |
+| ADTs, match, functors | Value-data subset only | Closed structural sums with exhaustive elimination exist; recursive nominal ADTs, type parameters, guarded/refutable patterns and functors remain future features |
 | Plaid/Prolific integration | Not implemented | Future concurrency and profiling features |
 
 ## Immediate next iterations
 
 The language-only M1 continuation adds decimal f64 literals with scanner/PPX
 parity and a versioned float/trivial-tuple MIR execution path, without opening
-safe-import gates or adding product-specific kernels. Its next numeric/data
-blockers are f32 and fixed-width integers, records/ADTs and arrays/slices. General
-foreign ownership, cleanup/effect descriptors, independent checker support and
-async lowering remain open; trivial tuple copies do not establish these.
+safe-import gates or adding product-specific kernels.
+
+A second M1 slice adds the bounded value data model: structural records, closed
+tagged sums with exhaustive `match`, fixed arrays and owning snapshot slices,
+all by-value C11 with bounds-checked access and terminal located value errors
+([contract](data-model.md)). Its remaining blockers are MIR lowering for value
+data, nominal/parametric/recursively shaped ADTs, data derives (equality,
+ordering, printing) and mutable or borrowed arrays. General foreign ownership,
+cleanup/effect descriptors, independent checker support and async lowering
+remain open; value snapshots do not establish these.
 No general numeric/data or concurrency milestone is marked complete.
 
 The backend continuation provides scalar B1, opt-in B3 relational analyses and

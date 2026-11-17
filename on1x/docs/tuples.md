@@ -41,10 +41,13 @@ Parentheses without a comma group an expression/type: `(x)` / `(i64)` are not
 tuples. A two-element tuple passed to a one-parameter function needs the extra
 parentheses: `function((a, b))`; `function(a, b)` still passes two arguments.
 There are no unit/empty or singleton tuples, trailing commas,
-mutable destructuring, tuple assignment patterns, field/index projections or
-refutable/exhaustive matching in this increment. Extern tuple patterns explicitly
+mutable destructuring, tuple assignment patterns or
+refutable/guarded matching in this increment. Extern tuple patterns explicitly
 flatten concrete scalar leaves into ordered C parameters; they do not declare
-a C struct ABI. See [the flattening contract](polymorphism.md).
+a C struct ABI. See [the flattening contract](polymorphism.md). Field/index
+projection, exhaustive `match` over closed sums and by-value records/arrays/slices
+now exist as a separate value-data profile; see
+[value records, sums, arrays and slices](language.md#value-records-sums-arrays-and-slices).
 `var pair = (a, b); pair = ...;`
 is allowed for whole-value replacement of the same monotype. Tuple fields
 themselves cannot be mutated. Tuple equality, ordering, arithmetic and printing

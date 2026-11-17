@@ -9,9 +9,13 @@ The two fresh pre-change baseline suites passed (GCC/generated 36/36,
 Clang/fallback 35/35). Final continuation commands/results are recorded in
 `../VERIFICATION.md`; the full-language mandate is not complete.
 
-The next continuation implements decimal f64 literals and MIR v2 for floats and
-trivially copied tuples. Existing scalar artifacts remain v1. General aggregate
-data types, foreign ownership and concurrency are not admitted by this slice.
+The next continuation implemented decimal f64 literals and MIR v2 for floats and
+trivially copied tuples. Existing scalar artifacts remain v1. Foreign ownership
+and concurrency are not admitted by these slices.
+
+Data-model continuation implemented: structural records, closed tagged sums with
+exhaustive elimination, bounded fixed arrays and owning snapshot slices. These
+are a by-value C11 profile, not general borrowed/dynamic buffers or foreign ABI.
 
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
 |---|---|---|---|---|---|---|
@@ -23,8 +27,8 @@ data types, foreign ownership and concurrency are not admitted by this slice.
 | Functions / closures | `src/{infer,sema,codegen}.cpp` | Single-thread RC environments | Structural functions, immutable captures | `test_functions.py`, `test_closures.py` | EXECUTABLE | Mutable/resource capture lifetimes |
 | Tuples / irrefutable patterns | `src/{parser,infer,sema,codegen}.cpp` | Internal C11 by-value records | Shared name/tuple patterns | `test_tuples.py`, `test_parameter_patterns.py` | EXECUTABLE | Foreign aggregate ABI; refutable patterns |
 | Polymorphism | `src/infer.cpp` | Bounded whole-unit specializations/bundles | Restricted schemes / forall | `test_poly*.py` | PARTIAL | General parameterized data types |
-| Records / ADTs / exhaustive matching | `grammar/On1x.g` | None | None | None | ABSENT | Specify and implement typed data model |
-| Arrays / slices | `include/on1x/type.hpp` | No general array ABI | None | None | ABSENT | Ownership, extent and layout model |
+| Records / ADTs / exhaustive matching | `src/{parser,infer,sema,codegen}.cpp`, `src/{type,type_safety}.cpp` | Private versioned C11 structs; `ON1X_VALUE_DATA_ABI_VERSION` guard | Structural labeled records; closed sums with `variant`/exhaustive `match`; unit record payload; no guards/recursive/nominal/parametric forms | `test_data.py`, `examples/data_model.on1x` | EXECUTABLE | Nominal recursion, type parameters, derives, data equality/printing, MIR lowering |
+| Arrays / slices | `src/{parser,infer,sema,codegen}.cpp`, `runtime/on1x_runtime.*` | By-value fixed arrays; owning snapshot slices with composed offsets; bounds runtime with located exit-70 errors | `array<T,N>`/`slice<T,N>` (extent <= 256), `array[...]`, `a[i]`, `a[]`, `a[lo:hi]`, slice-of-slice; no mutation/borrowing | `test_data.py`, `examples/data_model.on1x` | EXECUTABLE | Mutable arrays, zero-copy borrows, dynamic buffers, foreign ABI |
 | Modules | `src/loader.cpp` | Whole-unit C11 | Namespaces, imports, aliases | `test_modules.py`, `test_loader.cpp` | PARTIAL | Interfaces, separate compilation, signatures/functors |
 | Macros / PPX | `src/{macros,macro_rules,ppx,ppx_ast}.cpp` | Build-time processes; bounded wire format | Hygienic macros, external PPX | `test_macros.py`, `test_ppx.py`, `test_local_syntax.py` | EXECUTABLE | Process sandboxing; richer data derives |
 | Staging | `src/staging.cpp` | AOT closure thunks | Closed code, quote/splice/lift/run | `test_staging.py` | EXECUTABLE | Broader staged data types |
