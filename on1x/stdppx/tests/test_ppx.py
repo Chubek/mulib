@@ -62,7 +62,7 @@ class PPXTests(unittest.TestCase):
                 if name=='derive':self.assertEqual(got[2][-1][1],'main_arity')
                 if name=='fold':self.assertEqual(got[2][0][4][1][0][1][1],'42')
     def test_float_literal_migration(self):
-        for spelling in ('0.0','1e3','1.25E-3','0e99999'):
+        for spelling in ('0.0','1e3','1.25E-3','0e99999','1f32','1.25f32','1.0f64'):
             u=unit(do(mk('FloatLiteral',spelling,AT),AT))
             self.schema.validate(u)
             for processor in ('identity','fold'):
@@ -75,6 +75,17 @@ class PPXTests(unittest.TestCase):
             c=run('identity',u)
             self.assertNotEqual(c.returncode,0)
             self.assertEqual(c.stdout,b'')
+    def test_unsigned_literal_migration(self):
+        for spelling in ('255u8','65535u16','4294967295u32','18446744073709551615u64','0xffu8'):
+            u=unit(do(mk('UnsignedLiteral',spelling,AT),AT))
+            self.schema.validate(u)
+            for processor in ('identity','fold'):
+                c=run(processor,u)
+                self.assertEqual(c.returncode,0,c.stderr.decode())
+                self.assertEqual(loads(c.stdout),u)
+        for spelling in ('-1u8','1.5u8','1u128','u8','0xu8','1'*1024+'u64'):
+            u=unit(do(mk('UnsignedLiteral',spelling,AT),AT))
+            with self.assertRaises(ValueError):self.schema.validate(u)
     def test_pipe(self):
         u=unit(do(ext('pipe','apply',integer(1,AT),ident('f',AT),ident('g',AT)),AT))
         t=self.transformed('pipe',u);self.assertEqual(t[2][0][4][1][0][1][1][1],'g')

@@ -33,7 +33,12 @@ float/trivial-tuple values are now executable. A second M1 slice adds the bounde
 value data model: structural records, closed sums with exhaustive `match`, fixed
 arrays and owning snapshot slices as by-value C11 ([contract](docs/data-model.md));
 numeric buffers/records, managed
-aggregate MIR, generated adapters and safe-import admission remain open. This
+aggregate MIR and general safe-import admission remain open. Reviewed scalar
+adapters now cover signed/unsigned integers, `_Bool`, binary32 `float` and
+binary64 `double`. Distinct u8/u16/u32/u64/f32 values now execute through
+HIR-to-C11 with explicit conversions and suffixed literals; numeric scalar MIR v3
+and independent type checking now execute as well. Broader targets and full
+resource/aggregate/closure MIR remain open. This
 does not satisfy the full numeric work package or promote any acceptance gate
 below; historical reports and application-specific requirements are unchanged.
 
@@ -62,7 +67,9 @@ At the time this specification was authored (2026-11-14), repository documentati
 - Value-restricted polymorphism and explicit universals in the documented implemented subset.
 - Hygienic syntax macros, PPX, their native On1x-authored tooling, and typed closed-code AOT staging.
 - Deterministic C11 emission, runtime/linking, and existing real MuLIB JSON demonstration.
-- ExoML CDecl extraction, lossless transport, v2 contract parsing/checking/pinning, evidence snapshots, and narrow raw signed-scalar adapter emission.
+- ExoML CDecl extraction, lossless transport, v2 contract parsing/checking/pinning,
+  evidence snapshots, narrow raw typed-scalar adapters, and the executable
+  reviewed scalar-only four-gate admission profile.
 - Existing tests and their published verification matrix in `VERIFICATION.md`.
 
 ### Known high-priority gaps
@@ -76,8 +83,11 @@ trusted-adapter subset, **not** Gate C review or general safe foreign admission;
 f64/records/slices, foreign-owner lowering and Shylock's numerical gates below
 remain open. See `stdlib/_bridge/README.md` and `VERIFICATION.md`.
 
-- No general safe On1x foreign-import backend: `on1x-bind emit-safe` currently fails closed.
-- `emit-raw` currently handles only narrow signed-integer/void signatures; it rejects floating-point arguments/results, unsigned integers, pointer/length arguments, aggregates, enums, output buffers, callbacks, and important ownership/error semantics.
+- No general safe On1x foreign-import backend: `on1x-bind emit-safe` now admits
+  only complete reviewed signed/unsigned-integer/`_Bool`/binary32-`float`/binary64-`double`/void-result bundles after profile, Chisel and
+  executable target gates; every pointer/resource/error/callback profile still
+  fails closed.
+- `emit-raw` handles signed/unsigned integers, `_Bool`, binary32 `float`, binary64 `double` and void results; it rejects other floating formats, pointer/length arguments, aggregates, enums, output buffers, callbacks, and important ownership/error semantics.
 - No integrated general `Result`/`Option` and resource-safe MuLIB API, beyond the limited fail-fast JSON facade.
 - No general foreign-owned buffer/handle lifecycle, interprocedural borrow checking, or Chisel/Wetstone usage/effect proof.
 - No completed nominal ADTs, guarded/refutable pattern matching, type-parameterized data types, modules/functors, full callbacks, effect inference, or Plaid concurrency lowering. (Closed structural sums with exhaustive `match` and by-value records/arrays/slices exist in the bounded value profile; `docs/data-model.md`.)

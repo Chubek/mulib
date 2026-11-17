@@ -23,7 +23,8 @@ int main(){try{
  u.functions[0].body[1].value->children[0]->type=Type::String;
  rejects([&]{type_safety::verify(u);},"nerotypical");
  u=checked("fn main(){if true {println(1);}}");
- u.functions[0].body[0].value->kind=Expr::Kind::Integer;u.functions[0].body[0].value->type=Type::I64;
+  u.functions[0].body[0].value->kind=Expr::Kind::Integer;u.functions[0].body[0].value->type=Type::I64;
+  u.functions[0].body[0].value->text="1";
  rejects([&]{type_safety::verify(u);},"nerotypical");
  u=checked("fn main(){let n=40;let f=fn(x:i64)->i64{return n+x;};println(f(2));}");
  type_safety::verify(u);
@@ -41,7 +42,16 @@ int main(){try{
  u=checked("fn main(){var x=1;x=2;}");u.functions[0].body[0].mutable_binding=false;
  rejects([&]{type_safety::verify(u);},"immutable local");
  u=checked("fn f()->i64{return 1;}fn main(){println(f());}");u.functions[0].body.clear();
- rejects([&]{type_safety::verify(u);},"return path");
+  rejects([&]{type_safety::verify(u);},"return path");
+  u=checked("fn main(){println(1.5f32);}");type_safety::verify(u);
+  u.functions[0].body[0].value->children[0]->type=Type::F64;
+  rejects([&]{type_safety::verify(u);},"nerotypical");
+  u=checked("fn main(){println(255u8);}");type_safety::verify(u);
+  u.functions[0].body[0].value->children[0]->type=Type::U64;
+  rejects([&]{type_safety::verify(u);},"nerotypical");
+  u=checked("fn main(){println(-1.5f32);}");
+  u.functions[0].body[0].value->children[0]->children[0].reset();
+  rejects([&]{type_safety::verify(u);},"missing expression child");
  u=checked("fn main(){println(42);}");
  rejects([&]{type_safety::verify(u,{0,4096,262144,64});},"term budget");
  rejects([&]{type_safety::verify(u,{1024,0,262144,64});},"equality budget");
@@ -49,7 +59,7 @@ int main(){try{
  rejects([&]{type_safety::verify(u,{1024,4096,262144,0});},"did not decide");
  // Ground constructor equality oracle, independent of the solver. Include
  // nested arrows/tuples so mere outer-constructor comparison cannot suffice.
- std::vector<Type> types={Type::I64,Type::Bool,Type::String,
+  std::vector<Type> types={Type::I64,Type::Bool,Type::String,Type::F32,Type::F64,Type::U8,Type::U16,Type::U32,Type::U64,
   Type::tuple({Type::I64,Type::Bool}),Type::tuple({Type::Bool,Type::I64}),
   Type::function({Type::I64},Type::Bool),Type::function({Type::Bool},Type::I64),
   Type::function({Type::tuple({Type::I64,Type::Bool})},Type::String)};

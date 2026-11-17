@@ -181,7 +181,7 @@ fn main() {
   let s = variant<sum{None:record{},Some:i64}>(Some, 1);
   println(s);
 }
-''', 'println accepts i64, f64, bool or string'),
+''', 'println accepts numeric scalars, bool or string'),
     ('index_on_record', '''
 fn main() {
   let p: record{a:i64} = record{a:1};

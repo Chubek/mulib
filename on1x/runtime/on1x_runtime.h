@@ -30,6 +30,22 @@ int64_t on1x_neg_i64(int64_t a);
 void on1x_print_i64(int64_t a);
 void on1x_print_bool(bool a);
 void on1x_print_string(const char *a);
+#define ON1X_UNSIGNED_ABI_VERSION 1
+#define ON1X_UNSIGNED_DECL(N,T) \
+ T on1x_add_##N(T a,T b); T on1x_sub_##N(T a,T b); T on1x_mul_##N(T a,T b); \
+ T on1x_div_##N(T a,T b); T on1x_mod_##N(T a,T b); void on1x_print_##N(T a); \
+ T on1x_##N##_from_i64(int64_t a); int64_t on1x_##N##_to_i64(T a); \
+ T on1x_##N##_from_bits(int64_t a); int64_t on1x_##N##_to_bits(T a); \
+ T on1x_##N##_wrapping_add(T a,T b); T on1x_##N##_wrapping_sub(T a,T b); T on1x_##N##_wrapping_mul(T a,T b); \
+ T on1x_##N##_and(T a,T b); T on1x_##N##_or(T a,T b); T on1x_##N##_xor(T a,T b); T on1x_##N##_not(T a); \
+ T on1x_##N##_shl(T a,int64_t n); T on1x_##N##_shr(T a,int64_t n); \
+ T on1x_##N##_from_u8(uint8_t a); T on1x_##N##_from_u16(uint16_t a); \
+ T on1x_##N##_from_u32(uint32_t a); T on1x_##N##_from_u64(uint64_t a);
+ON1X_UNSIGNED_DECL(u8,uint8_t)
+ON1X_UNSIGNED_DECL(u16,uint16_t)
+ON1X_UNSIGNED_DECL(u32,uint32_t)
+ON1X_UNSIGNED_DECL(u64,uint64_t)
+#undef ON1X_UNSIGNED_DECL
 void on1x_assert(bool a);
 #define ON1X_VALUE_DATA_ABI_VERSION 1
 void on1x_bounds_index(int64_t index,int64_t length,const char *file,size_t line);
@@ -58,6 +74,27 @@ bool on1x_f64_is_nan(double a);
 bool on1x_f64_is_finite(double a);
 bool on1x_f64_signbit(double a);
 void on1x_print_f64(double a);
+#if FLT_MANT_DIG == 24 && FLT_MAX_EXP == 128 && FLT_MIN_EXP == -125
+#define ON1X_F32_ABI_VERSION 1
+float on1x_add_f32(float a,float b); float on1x_sub_f32(float a,float b);
+float on1x_mul_f32(float a,float b); float on1x_div_f32(float a,float b); float on1x_neg_f32(float a);
+bool on1x_eq_f32(float a,float b); bool on1x_ne_f32(float a,float b);
+bool on1x_lt_f32(float a,float b); bool on1x_le_f32(float a,float b);
+bool on1x_gt_f32(float a,float b); bool on1x_ge_f32(float a,float b);
+float on1x_f32_from_i64(int64_t a); int64_t on1x_f32_to_i64(float a);
+float on1x_f32_from_bits(int64_t bits); int64_t on1x_f32_to_bits(float a);
+float on1x_f32_from_f64(double a); double on1x_f64_from_f32(float a);
+bool on1x_f32_is_nan(float a); bool on1x_f32_is_finite(float a); bool on1x_f32_signbit(float a);
+void on1x_print_f32(float a);
+#define ON1X_UFLOAT_DECL(N,T) \
+ T on1x_##N##_from_f32(float a); T on1x_##N##_from_f64(double a); \
+ float on1x_f32_from_##N(T a); double on1x_f64_from_##N(T a);
+ON1X_UFLOAT_DECL(u8,uint8_t)
+ON1X_UFLOAT_DECL(u16,uint16_t)
+ON1X_UFLOAT_DECL(u32,uint32_t)
+ON1X_UFLOAT_DECL(u64,uint64_t)
+#undef ON1X_UFLOAT_DECL
+#endif
 #endif
 #define ON1X_DATA_ABI_VERSION 1
 typedef struct on1x_sexpr on1x_sexpr;

@@ -1,5 +1,6 @@
 #include <on1x/ast.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/numeric.hpp>
 #include <charconv>
 #include <cctype>
 #include <algorithm>
@@ -108,7 +109,7 @@ class Parser {
     ++pos;
     if(auto found=bound_types.find(t.text);found!=bound_types.end())return Type::bound(found->second);
    if(t.text=="_")return Type::Hole;
-    for(auto x:{Type::I64,Type::F64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(t.text==type_name(x))return x;
+     for(auto x:{Type::I64,Type::F64,Type::F32,Type::U8,Type::U16,Type::U32,Type::U64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(t.text==type_name(x))return x;
    throw Error(t.where,"unknown type: "+t.text,"ON1X-PARSE-TYPE",{},t.text);
  }
  static int precedence(const std::string& op){if(op=="||")return 1;if(op=="&&")return 2;
@@ -202,7 +203,7 @@ class Parser {
   if(!t.text.empty()&&std::isdigit((unsigned char)t.text[0])){
    ++pos;auto e=std::make_unique<Expr>();
    bool hexadecimal=t.text.starts_with("0x")||t.text.starts_with("0X");
-   e->kind=!hexadecimal&&t.text.find_first_of(".eE")!=std::string::npos?Expr::Kind::Float:Expr::Kind::Integer;
+    e->kind=(!hexadecimal&&numeric_literal_type(t.text).is_float())?Expr::Kind::Float:Expr::Kind::Integer;
    e->where=t.where;e->text=t.text;return {std::move(e)};
   }
     std::string name=ident();

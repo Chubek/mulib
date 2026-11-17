@@ -10,7 +10,7 @@ fn ppx_name(text: string) -> bool {
   return text != "fn" && text != "let" && text != "var" && text != "if" && text != "else" && text != "while" && text != "return" && text != "true" && text != "false" && text != "extern" && text != "import" && text != "forall" && text != "macro" && text != "rule" && text != "quote" && text != "splice" && text != "lift" && text != "let_syntax" && text != "letrec_syntax";
 }
 fn ppx_scalar_type(name: string) -> bool {
-  return name == "Bytes" || name == "File" || name == "Name" || name == "Version" || name == "Nat" || name == "Positive" || name == "Boolean" || name == "UnaryOperator" || name == "BinaryOperator" || name == "DecimalSpelling" || name == "HexSpelling" || name == "FloatSpelling";
+  return name == "Bytes" || name == "File" || name == "Name" || name == "Version" || name == "Nat" || name == "Positive" || name == "Boolean" || name == "UnaryOperator" || name == "BinaryOperator" || name == "DecimalSpelling" || name == "HexSpelling" || name == "FloatSpelling" || name == "UnsignedSpelling";
 }
 fn ppx_lookup(pairs: sexpr, name: string) -> sexpr { return ppx_json_find(pairs, name); }
 fn ppx_subtype(categories: sexpr, child: string, parent: string) -> bool {
@@ -100,7 +100,9 @@ fn ppx_scalar(value: sexpr, kind: string) -> bool {
     while i < text_len(text) { if !ppx_digit(text_byte(text, i)) { return false; } i = i + 1; } return true;
   }
   if kind == "FloatSpelling" {
-    let n = text_len(text); if !quoted || n == 0 || n > 1024 { return false; }
+    var n = text_len(text); if !quoted || n == 0 || n > 1024 { return false; }
+    var suffix = false;
+    if n >= 3 { let tail = text_slice(text,n-3,n); if tail == "f32" || tail == "f64" { suffix = true; n = n-3; } }
     var i = 0;
     let first = i; while i < n && ppx_digit(text_byte(text, i)) { i = i + 1; }
     if i == first { return false; } var fraction = false; var exponent = false;
@@ -115,7 +117,18 @@ fn ppx_scalar(value: sexpr, kind: string) -> bool {
       let start = i; while i < n && ppx_digit(text_byte(text, i)) { i = i + 1; }
       if i == start { return false; }
     }
-    return i == n && (fraction || exponent);
+    return i == n && (fraction || exponent || suffix);
+  }
+  if kind == "UnsignedSpelling" {
+    var n = text_len(text); if !quoted || n == 0 || n > 1024 { return false; }
+    var suffix = 0;
+    if n >= 2 { if text_slice(text,n-2,n) == "u8" { suffix = 2; } }
+    if n >= 3 { let tail = text_slice(text,n-3,n); if tail == "u16" || tail == "u32" || tail == "u64" { suffix = 3; } }
+    if suffix == 0 { return false; } n = n-suffix; var i = 0; var hexadecimal = false;
+    if n >= 2 { if text_byte(text,0) == 48 && (text_byte(text,1) == 120 || text_byte(text,1) == 88) { hexadecimal = true; i = 2; } }
+    let start = i;
+    while i < n { let c = text_byte(text,i); if !ppx_digit(c) && !(hexadecimal && ((c >= 65 && c <= 70) || (c >= 97 && c <= 102))) { return false; } i = i+1; }
+    return i > start;
   }
   if kind == "HexSpelling" {
     if !quoted || text_len(text) <= 2 || text_byte(text, 0) != 48 || (text_byte(text, 1) != 120 && text_byte(text, 1) != 88) { return false; } var i = 2;

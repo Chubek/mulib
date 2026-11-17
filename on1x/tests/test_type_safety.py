@@ -7,7 +7,7 @@ example=t.root/'examples/type-safety.on1x'
 p=run([t.compiler,'--check-types',example])
 assert p.returncode==0 and 'well_typed concrete HIR' in p.stdout,p.stderr
 assert p.stdout==run([t.compiler,'--check-types',example]).stdout
-for name in ['type-safety','closures','tuples','polymorphism','staging','json','memory','mir','slots']:
+for name in ['type-safety','closures','tuples','polymorphism','staging','json','memory','mir','slots','f64','unsigned_f32','numeric_literals']:
     path=t.root/'examples'/(name+'.on1x')
     checked=run([t.compiler,'--emit-c','--verify-types',path])
     plain=run([t.compiler,'--emit-c',path])
@@ -42,7 +42,6 @@ assert p.returncode==75 and 'ON1X-TYPE-UNKNOWN' in p.stderr and out.read_text()=
 # have a separate admission boundary until quantifier-aware checking is added.
 for name,text in [
  ('mismatch','fn main(){let x:i64=true;}'),
- ('f64','fn main(){println(f64_from_i64(42));}'),
  ('forall','fn use(f:forall(a)fn(a)->a){println(f(42));println(f(true));}fn main(){use(fn(x)->_{return x;});}'),
 ]:
     path=t.source(name,text);out=t.work/'sentinel.c';out.write_text('keep')

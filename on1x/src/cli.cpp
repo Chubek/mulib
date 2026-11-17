@@ -137,6 +137,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       [--optimize-ir] [--opt-work UNITS] [--opt-rewrites COUNT] (MIR modes only)\n"
   "       on1xc --dump-passes INPUT [-o OUTPUT] [--ir-input]\n"
   "       on1xc --check-memory INPUT [-o OUTPUT] (Chisel opt-in build)\n"
+  "       [--admitted-extern FILE] (reviewed scalar-only extern evidence; memory modes only)\n"
   "       [--memory-check] (check resource usage before source compilation)\n"
   "       on1xc --check-types INPUT [-o OUTPUT] (Nerotypical opt-in build)\n"
    "       [--verify-types] (require independent structural HIR type verification)\n"
@@ -160,6 +161,7 @@ int main(int argc,char**argv){
     on1x::meta::PpxOptions ppx;
     auto loader=on1x::default_loader_options(argv[0]);
     std::vector<std::filesystem::path> import_paths;
+    std::vector<std::string> admission_files;
   for(int i=1;i<argc;++i){std::string arg=argv[i];
      if(arg=="--help"||arg=="-h"){usage();return 0;}
      if(arg=="--repair"){mode=arg;continue;}
@@ -174,6 +176,10 @@ int main(int argc,char**argv){
      }
     if(arg=="--memory-check"){memory=true;continue;}
     if(arg=="--check-memory"){mode=arg;continue;}
+    if(arg=="--admitted-extern"){
+     if(++i>=argc||!argv[i][0])throw std::runtime_error("--admitted-extern requires a nonempty path");
+     admission_files.emplace_back(argv[i]);continue;
+    }
     if(arg=="--verify-types"){type_safety=true;continue;}
     if(arg=="--check-types"){mode=arg;continue;}
      if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes")mode=arg;
@@ -246,6 +252,21 @@ int main(int argc,char**argv){
      if(memory)throw std::runtime_error("memory checking unavailable: configure with ON1X_WITH_CHISEL=ON");
 #endif
      if(memory&&(ir_input||mode=="--tokens"||mode=="--emit-ast"))throw std::runtime_error("memory checking requires checked source HIR");
+     if(!admission_files.empty()&&!memory)throw std::runtime_error("--admitted-extern requires --check-memory or --memory-check");
+#ifdef ON1X_WITH_CHISEL
+     std::map<std::string,on1x::safety::AdmittedExtern> admitted;
+     if(memory)for(const auto& file:admission_files){
+      std::ifstream in(file,std::ios::binary);if(!in)throw std::runtime_error("cannot read admitted-extern evidence: "+file);
+      std::string text;char chunk[8192];
+      while(in){in.read(chunk,sizeof chunk);auto n=static_cast<std::size_t>(in.gcount());
+       if(n>4*1024*1024-text.size())throw std::runtime_error("admitted-extern evidence byte limit exceeded: "+file);
+       text.append(chunk,n);
+      }
+      if(!in.eof())throw std::runtime_error("cannot read admitted-extern evidence: "+file);
+      for(auto& [name,entry]:on1x::safety::parse_admission(text))
+       if(!admitted.emplace(name,std::move(entry)).second)throw std::runtime_error("duplicate admitted extern across evidence files: "+name);
+     }
+#endif
      bool analysis_mode=mode=="--emit-ir-facts"||mode=="--analyze-ir";
      if(analysis_limit&&mode!="--analyze-ir")throw std::runtime_error("--analysis-work requires --analyze-ir");
 #ifndef ON1X_WITH_NOVOSTONE
@@ -282,7 +303,7 @@ int main(int argc,char**argv){
     if(type_safety)type_evidence=on1x::type_safety::verify(unit);
 #endif
 #ifdef ON1X_WITH_CHISEL
-    if(memory){auto evidence=on1x::safety::check(unit);if(mode=="--check-memory"){write_all(out,evidence);return 0;}}
+    if(memory){auto evidence=on1x::safety::check(unit,{},admitted);if(mode=="--check-memory"){write_all(out,evidence);return 0;}}
 #endif
     if(mode=="--check-types"){write_all(out,type_evidence);return 0;}
      if(mode=="--check"){std::cout<<"OK: "<<unit.functions.size()<<" functions\n";return 0;}

@@ -17,7 +17,11 @@ SExpr value(const Value& v){return list({symbol("value"),number(v.id),encode_typ
 template<class T,class F>SExpr sequence(const std::vector<T>& values,F encode){std::vector<SExpr> out;for(const auto& v:values)out.push_back(encode(v));return list(std::move(out));}
 SExpr ids(const std::vector<Id>& values){return sequence(values,[](Id id){return number(id);});}
 std::string_view exit_name(Exit kind){return kind==Exit::Return?"return":kind==Exit::Jump?"jump":"branch";}
-SExpr instruction(const Instruction& i){return list({symbol("instruction"),number(i.id),symbol(std::string(op_name(i.op))),encode_type(i.type),ids(i.operands),number(i.immediate),number(i.target),number(i.effect_in),number(i.effect_out),location(i.where)});}
+SExpr instruction(const Instruction& i){
+ auto out=list({symbol("instruction"),number(i.id),symbol(std::string(op_name(i.op))),encode_type(i.type),ids(i.operands),number(i.immediate),number(i.target),number(i.effect_in),number(i.effect_out),location(i.where)});
+ if(i.op==Op::Numeric)out.items.push_back(string(i.primitive));
+ return out;
+}
 SExpr block(const Block& b){
  const auto& t=b.exit;
  auto edges=sequence(t.edges,[](const Edge& e){return list({symbol("edge"),number(e.block),ids(e.arguments)});});
@@ -42,15 +46,18 @@ Type type(const SExpr& n,std::size_t depth=0){
   if(elements.size()<2)bad(n,"tuple type requires at least two fields");
   return Type::tuple(std::move(elements));
  }
- auto s=atom(n);if(s=="i64")return Type::I64;if(s=="bool")return Type::Bool;if(s=="void")return Type::Void;if(s=="f64")return Type::F64;bad(n,"unsupported type: "+s);
+  auto s=atom(n);for(auto kind:{Type::I64,Type::Bool,Type::Void,Type::F64,Type::F32,Type::U8,Type::U16,Type::U32,Type::U64})if(s==type_name(kind))return kind;bad(n,"unsupported type: "+s);
 }
 Location decode_location(const SExpr& n){shape(n,"at",5);return {text(n.items[1]),integer<std::size_t>(n.items[2]),integer<std::size_t>(n.items[3]),integer<std::size_t>(n.items[4])};}
 Value decode_value(const SExpr& n){shape(n,"value",4);return {integer<Id>(n.items[1]),type(n.items[2]),decode_location(n.items[3])};}
 std::vector<Id> decode_ids(const SExpr& n){std::vector<Id> out;for(const auto& v:items(n))out.push_back(integer<Id>(v));return out;}
 Instruction decode_instruction(const SExpr& n){
- shape(n,"instruction",10);Instruction i;i.id=integer<Id>(n.items[1]);
- bool found=false;for(unsigned k=0;k<=static_cast<unsigned>(Op::Extract);++k)if(atom(n.items[2])==op_name(static_cast<Op>(k))){i.op=static_cast<Op>(k);found=true;break;}
- if(!found)bad(n,"unknown opcode");
+  if(items(n).size()!=10&&items(n).size()!=11)bad(n,"invalid instruction shape");
+  Instruction i;shape(n,"instruction",n.items.size());i.id=integer<Id>(n.items[1]);
+  bool found=false;for(unsigned k=0;k<=static_cast<unsigned>(Op::Numeric);++k)if(atom(n.items[2])==op_name(static_cast<Op>(k))){i.op=static_cast<Op>(k);found=true;break;}
+  if(!found)bad(n,"unknown opcode");
+  if(n.items.size()!=(i.op==Op::Numeric?11u:10u))bad(n,"numeric descriptor field mismatch");
+  if(i.op==Op::Numeric)i.primitive=text(n.items[10]);
  i.type=type(n.items[3]);i.operands=decode_ids(n.items[4]);i.immediate=integer<std::int64_t>(n.items[5]);
  i.target=integer<Id>(n.items[6]);i.effect_in=integer<Id>(n.items[7]);i.effect_out=integer<Id>(n.items[8]);i.where=decode_location(n.items[9]);return i;
 }
@@ -72,7 +79,7 @@ std::string serialize(const Module& module){
 }
 Module deserialize(std::string_view text,const std::string& filename){
  auto tree=meta::read_sexpr(text,filename);shape(tree,"on1x.mir",4);Module m;m.version=integer<unsigned>(tree.items[1]);m.id=integer<Id>(tree.items[2]);
- if(m.version!=legacy_format_version&&m.version!=format_version)bad(tree,"unsupported format version");
+  if(m.version!=legacy_format_version&&m.version!=format_version&&m.version!=numeric_format_version)bad(tree,"unsupported format version");
  for(const auto& n:items(tree.items[3])){
   shape(n,"function",7);Function f;f.id=integer<Id>(n.items[1]);f.name=::on1x::mir::text(n.items[2]);f.result=type(n.items[3]);f.where=decode_location(n.items[4]);
   for(const auto& s:items(n.items[5]))f.slots.push_back(decode_value(s));

@@ -1,5 +1,398 @@
 # On1x verification — 2026-11-17
 
+## Numeric-limit continuation — literals, scalar MIR v3 and independent typing
+
+Implemented the numeric syntax, MIR and independent-checker gaps from the
+preceding slice. This does **not** claim every listed limit is removed:
+floating execution remains guarded to the tested Linux x86_64 profile; other
+targets need actual toolchains, execution and ABI/environment evidence.
+
+Re-inspected base: MuLIB `cbdb2e290a41e39a8e6447f39426b1407c3e73b0`, configured
+LibStone `55755485acaded7c4ed804c0946bc8c7363f6763` at
+`on1x/third_party/libstone`, unchanged. Platform/toolchains remain Linux
+`7.2.6-arch2-1` x86_64, GCC/g++ 16.2.1, Clang/clang++ 22.1.8, CMake 4.4.3,
+Python 3.14.7. All changes remain uncommitted.
+
+### Executable changes and compatibility
+
+- Both canonical generated grammar and fallback scanner recognize
+  `u8/u16/u32/u64` integer suffixes (decimal or hex) and decimal `f32/f64`
+  suffixes. Width overflow/invalid suffixes reject before publication. Unsuffixed
+  i64/f64 semantics and hex digits ending in f32/f64 are preserved. f32 decimal
+  literals round directly via `from_chars<float>`; the halfway-plus-epsilon
+  regression distinguishes this from double rounding. Typed literals are bounded
+  to 1,024 bytes including the suffix.
+- PPX adds a distinct `UnsignedLiteral` under `NumericLiteral`, not the legacy
+  signed-i64 `IntegerLiteral` category. C++, canonical/standalone Python and native
+  On1x validators accept the same bounded spellings. Native/Python identity and
+  fold processors preserve typed literals and locations. Scanner parity includes
+  valid/malformed suffix boundaries; old schema-pinned processors must reject
+  new constructors rather than treating a full-range unsigned value as i64.
+  Typed macros use the same categories, and unsigned literal matching compares
+  both value and suffix type (decimal/hex equivalents match, mixed types do not).
+- Existing MIR gains version 3, not a replacement IR. New typed scalar operations
+  use bounded fixed-allowlist descriptors with exact signatures and conservative
+  effect tokens. Constants/arguments validate unsigned widths and canonical IEEE
+  payloads. Independent C++ evaluation, C11 emission, serialization and the
+  transactional pass pipeline execute unsigned/f32 arithmetic, wrapping/bit/
+  shift operations, all conversions, calls, slots, branches and numeric tuples.
+  Legacy scalar v1 and f64/product v2 keep their old formats and lowering version.
+  v3 is explicitly outside the existing Novostone relational mapping v1.
+- Nerotypical constructs independent numeric/literal/operator/call type
+  obligations, including concrete f64/f32/unsigned constructors. Post-sema
+  corruption and 196 ground/structural oracle cases reject invalid type claims.
+  This is typing evidence, not proof of IEEE arithmetic or foreign implementation
+  semantics. Chisel additionally admits recursively trivial numeric/bool tuples
+  and shared destructuring patterns, while rejecting other tuple field kinds.
+- Positive/negative tests exercise malformed MIR descriptors, signature/effect
+  drift, oversized descriptors, out-of-width constants/API arguments,
+  noncanonical f32 NaNs, range errors and output preservation. Existing Python
+  integer/binary32 oracles now execute HIR C11, plain/optimized MIR C11 and plain/
+  optimized reference evaluation. Failure cases compare exit class, output and
+  diagnostics between the C runtime and MIR execution.
+- Initial full runs caught a changed x87 unsupported diagnostic and missing
+  Chisel tuple lowering. The legacy diagnostic was restored, and real trivial
+  tuple checking (with negative field tests) was added; no test was disabled.
+- Review regressions reproduced legacy macro misclassification of unsigned
+  literals and omitted v3 descriptors in optimizer preservation records. Both
+  were fixed and covered by executable macro/mutated-MIR rejection tests.
+  Malformed unary HIR with a missing numeric operand now diagnoses rather than
+  dereferencing a null child. Literal-budget tests cover the exact 1,024-byte
+  acceptance/rejection boundary.
+
+### Commands and final results
+
+Build configurations are the preceding generated/fallback and optional SDK
+profiles. The sanitizer tree retains explicit
+`ON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer` so Python-
+built applications and positive admission boundaries are instrumented too.
+
+```sh
+cmake --build /tmp/opencode/on1x-loader-gcc --parallel 2
+ctest --test-dir /tmp/opencode/on1x-loader-gcc --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-loader-gcc/results-numeric-limits.xml
+cmake --build /tmp/opencode/on1x-loader-clang --parallel 2
+ctest --test-dir /tmp/opencode/on1x-loader-clang --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-loader-clang/results-numeric-limits.xml
+cmake --build /tmp/opencode/on1x-data-sdk --parallel 2
+ctest --test-dir /tmp/opencode/on1x-data-sdk --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-data-sdk/results-numeric-limits.xml
+cmake --build /tmp/opencode/on1x-safe-ffi-sanitize --parallel 2
+ctest --test-dir /tmp/opencode/on1x-safe-ffi-sanitize --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-safe-ffi-sanitize/results-numeric-limits.xml
+```
+
+Final: GCC/generated **40/40**, Clang/fallback **39/39**, optional GCC SDK
+**48/48**, optional Clang SDK ASan/UBSan **48/48**, no sanitizer findings.
+
+Integrated acceptance:
+`python3 on1x/tools/on1x-build.py on1x/examples/numeric_literals.on1x --on1xc
+/tmp/opencode/on1x-data-sdk/on1xc --cc gcc --via-mir --optimize-ir --verify-types
+--memory-check -o /tmp/opencode/on1x-numeric-limits-example`, then execute it.
+Output: `18446744073709551615`, `255`, `0x1.800000p+1`, `0`, `1`, `2`,
+`1065353217` on separate lines. This uses the real MIR/C11 backend and both
+independent checkers, without compiler/LibStone dependencies in the application.
+`readelf -d /tmp/opencode/on1x-numeric-limits-example` reports only `libc.so.6`
+as a `NEEDED` library. `git diff --check`, changed Python AST parsing and changed
+JSON schema decoding also pass.
+
+### Remaining limits / unavailable certification
+
+`command -v qemu-aarch64 aarch64-linux-gnu-gcc qemu-x86_64
+x86_64-w64-mingw32-gcc` found no tools. No ARM/Windows/macOS target execution,
+alternative floating ABI, FP exception-mask restoration or new native backend
+was verified; platform/environment guards remain intact. General aggregate/
+closure/resource/foreign-call MIR, quantified/data-model independent checking,
+narrow signed/pointer-sized types, hex float syntax, ownership/concurrency and
+general safe FFI are still separate work. Finite safety budgets are intentional,
+not limitations to remove. Status remains **EXECUTABLE** for the admitted numeric
+subset, not full-language or cross-platform **VERIFIED**.
+
+## M1/M2 numeric continuation — unsigned widths and binary32
+
+Implemented distinct `u8/u16/u32/u64/f32` values in the canonical parser, types,
+inference, semantic checker, HIR-to-C11 emitter, runtime and PPX type transport.
+Actual source: `examples/unsigned_f32.on1x`; semantics and unsupported cases:
+`docs/numerics.md`. These are executable C11 value/scalar-FFI slices, not a
+completed numeric MIR, signed-width family, Basis conformance or general FFI.
+
+Base remains MuLIB `cbdb2e290a41e39a8e6447f39426b1407c3e73b0`, LibStone
+`55755485acaded7c4ed804c0946bc8c7363f6763` at `on1x/third_party/libstone`,
+unchanged. Linux `7.2.6-arch2-1` x86_64, glibc 2.44; GCC/g++ 16.2.1
+(20260810), Clang/clang++ 22.1.8, CMake 4.4.3, Python 3.14.7.
+
+### Implementation evidence
+
+- Unsigned arithmetic checks overflow/underflow/divisors before C operations.
+  Widened operands avoid signed C integer-promotion overflow for u8/u16;
+  explicit wrapping arithmetic is modulo 2^N. Bitwise/checked shift intrinsics,
+  every unsigned-width conversion, checked signed/float conversion, exact
+  bit construction/transport and full-range decimal printing execute normally.
+- Binary32 uses actual C float, not widened double storage or signed handles.
+  Volatile single-precision operations round once, preserve IEEE special values
+  and canonicalize NaNs. Conversion checks handle double-to-float overflow
+  *before* any out-of-range C cast, including the FLT_MAX/Inf rounding midpoint.
+  Direct u64-to-f32 rounding avoids the tested double-rounding cases. The
+  floating environment guard and relaxed-mode restrictions are retained.
+- Runtime ABI additions are version 1 (`ON1X_UNSIGNED_ABI_VERSION`,
+  `ON1X_F32_ABI_VERSION`); old headers fail generated-code guards. Extern scalar
+  parameters/results and explicit flattening use exact C types. Raw and reviewed
+  generated adapters support unsigned/f32 with strict prototype, scalar layout,
+  signedness/range and float format checks. A regression exposed Clang's unused
+  helper error for bool-/unsigned-only bundles; narrowing support is now emitted
+  only when required, and dedicated bundles test the fix.
+- Safe profile/evidence v3 adds unsigned/f32 without widening v1/v2.
+  Chisel models numeric primitives as scalar operations and checks exact typed
+  evidence. MIR/Nerotypical fail closed on the new types. Unsuffixed literals
+  remain i64/f64; explicit constructors avoid changing existing source meaning.
+  PPX v1 type constructors are additive; canonical and standalone schemas and
+  native/Python signature writers agree. Scanner rules are unchanged, and both
+  scanners scan the new acceptance example.
+- `test_unsigned_f32.py` executes independent seeded Python integer and binary32
+  bit oracles, exact integer-to-f32 rounding, conversions, special-value printing,
+  O0/O2 agreement, aggregate/closure/staging composition and PPX identity
+  round-trips. Negatives cover implicit mixing, unsigned negation, overflow,
+  underflow, zero divisors, negative/oversized/lossy shifts, narrowing, NaN/Inf
+  and signed/unsigned conversion boundaries, invalid bit imports, environment
+  changes, old runtime headers and unsupported MIR/checkers. Separate strict
+  C11/C++20 implementations execute full-range unsigned and f32 raw ABI calls.
+- `test_contracts_sdk.py` adds real extracted unsigned/f32 functions, full-range
+  C/C++/On1x consumers, a binary32 FFI bit oracle, type/layout/signedness drift,
+  typed-evidence drift, and compatibility of v1/v2 bundles. No production
+  contract review is claimed; fixture review flags remain synthetic gate tests.
+
+### Reproducible validation
+
+The optional SDK configuration and pinned Satie checkout remain as recorded
+below. Ordinary profiles exercise generated GCC and fallback Clang scanning.
+All generated C is compiled with `-std=c11 -Wall -Wextra -Wpedantic -Werror`.
+
+**Sanitizer scope correction:** inspection found that the earlier
+`on1x-safe-ffi-sanitize` tree instrumented CMake-built compiler/runtime/PPX
+targets, but its empty `ON1X_TEST_C_FLAGS` did not instrument most executables
+compiled by Python tests. Earlier 46/46 runs remain historical results, not
+proof of sanitizer execution for those generated programs. This continuation
+explicitly configures the missing flags; the full 47/47 run now instruments
+compiler tools, generated applications and positive FFI admission boundaries.
+
+```sh
+cmake --build /tmp/opencode/on1x-loader-gcc --parallel 4
+ctest --test-dir /tmp/opencode/on1x-loader-gcc --output-on-failure --parallel 3 \
+  --output-junit /tmp/opencode/on1x-loader-gcc/results-unsigned-f32.xml
+cmake --build /tmp/opencode/on1x-loader-clang --parallel 4
+ctest --test-dir /tmp/opencode/on1x-loader-clang --output-on-failure --parallel 3 \
+  --output-junit /tmp/opencode/on1x-loader-clang/results-unsigned-f32.xml
+cmake --build /tmp/opencode/on1x-data-sdk --parallel 4
+ctest --test-dir /tmp/opencode/on1x-data-sdk --output-on-failure --parallel 3 \
+  --output-junit /tmp/opencode/on1x-data-sdk/results-unsigned-f32.xml
+cmake -S on1x -B /tmp/opencode/on1x-safe-ffi-sanitize \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer'
+cmake --build /tmp/opencode/on1x-safe-ffi-sanitize --parallel 4
+ctest --test-dir /tmp/opencode/on1x-safe-ffi-sanitize --output-on-failure --parallel 3 \
+  --output-junit /tmp/opencode/on1x-safe-ffi-sanitize/results-unsigned-f32.xml
+```
+
+Results: GCC/generated **39/39**, Clang/fallback **38/38**, optional GCC SDK
+**47/47**, Clang SDK ASan/UBSan **47/47**. No sanitizer findings. Tests initially
+caught diagnostic regressions for old invalid operator expressions; historical
+rejection diagnostics were restored rather than disabling tests.
+
+Build-helper acceptance also ran:
+`python3 on1x/tools/on1x-build.py on1x/examples/unsigned_f32.on1x --on1xc
+/tmp/opencode/on1x-loader-gcc/on1xc --cc gcc -o
+/tmp/opencode/on1x-unsigned-f32-example` followed by the executable. Output:
+`18446744073709551615`, `0`, `42`, `0x1.800000p+1`, `2`,
+`0x1.000000p+64` on separate lines. `git diff --check` and Python syntax
+compilation of the changed test/PPX drivers pass.
+
+Not certified: other targets, TSAN, direct f32/unsigned literal suffixes,
+pointer-sized/narrow signed integers, numeric MIR/Nerotypical, compiler float
+folding, borrowed buffers/foreign aggregates/resources/callbacks, full foreign
+effects or standard-library numeric API migration. Existing Basis word/real
+facades retain their compatibility encodings. No commits or pushes were made.
+
+## M2 continuation — exact boolean/binary64 foreign scalars
+
+Scoped task: extend the reviewed scalar-only boundary, not general safe FFI.
+`tools/on1x-bind.cpp` now emits exact C `_Bool`/On1x `bool` and binary64 C
+`double`/On1x `f64` parameters/results, including typedefs and mixed signatures.
+This closes the generated float-scalar adapter gap; buffers/resources/callbacks
+and arbitrary C implementation verification remain unsupported.
+
+Re-inspected repository `cbdb2e290a41e39a8e6447f39426b1407c3e73b0`; configured
+LibStone `55755485acaded7c4ed804c0946bc8c7363f6763` at
+`on1x/third_party/libstone`, unchanged. Linux `7.2.6-arch2-1` x86_64,
+glibc 2.44; GCC/g++ 16.2.1 (20260810), Clang/clang++ 22.1.8, CMake 4.4.3,
+Python 3.14.7. All changes in this continuation are uncommitted.
+
+### Implementation and compatibility
+
+- Scalar descriptors preserve the exact extracted C spelling, width and u64
+  alignment. Generated `_Generic` checks validate the actual function pointer
+  and `_Bool`/`double` identity, not just a same-sized substitute. Static
+  assertions check width/alignment and binary64 format. Double adapters match
+  the runtime's Linux x86_64 GCC/Clang/SSE2 profile and reject exposed relaxed
+  IEEE modes. Integer adapters retain checked narrowing and existing raw names.
+- Integer-only bundles retain `reviewed-scalar/v1` and
+  `on1x.admitted-extern/v1`; bundles using bool/f64 select profile/evidence v2.
+  v1 parsing still rejects bool/f64. The JSON manifest remains
+  `on1x.safe-ffi/v1` because its structure is unchanged. See `docs/contracts.md`
+  for the additive migration contract; old compilers reject v2 evidence.
+- `src/safety.cpp` models f64 literals, parameters and explicit numeric/bit/
+  classification intrinsics as trivially copied scalar values. Evidence checks
+  match every parameter and result at both declarations and calls. The C++ API
+  rejects resource/non-scalar entries even if supplied without the wire parser.
+  Trailing commas and unsupported scalar types fail closed.
+- `tests/fixtures/contract_scalars.on1x` is an actual compiled consumer of the
+  generated facade; it checks both booleans, mixed signatures, evaluation order,
+  negative zero, subnormals, infinities and NaNs. The SDK test compares a seeded
+  44-value bit corpus against an independent Python binary64 oracle through
+  separate C and C++20 `extern "C"` implementation objects, at C `-O0`/`-O2`.
+- Negative cases cover declaration/callsite parameter/result drift, malformed
+  and legacy evidence, wrong source argument types, bool-as-byte and
+  double-as-integer typedef substitutions, width/alignment drift (including
+  alignment greater than `UINT_MAX`), unsupported floating formats, relaxed
+  math modes, and scalar MIR's explicit foreign-call rejection. Existing
+  review/effect/compile/runtime/failure-publication tests are retained.
+- The interrupted integration initially failed on unsupported f64 HIR and a
+  missing boolean harness declaration; the new tests reproduce these paths and
+  now pass. No failure was disabled. Gate observations remain representative
+  boundary execution, not proofs of foreign arithmetic or semantic claims.
+
+### Executed commands and results
+
+The SDK configuration enables ExoML extraction, Exotract, Chisel, Nerotypical
+and Novostone, using `ON1X_SATIE_ROOT=/tmp/opencode/on1x-final-type-sdk`.
+The ASan/UBSan configuration is the one recorded in the earlier scalar-only
+slice below. Its generated-program instrumentation claim is superseded by the
+scope correction in the unsigned/binary32 continuation above.
+
+```sh
+cmake --build /tmp/opencode/on1x-data-sdk --parallel 4
+ctest --test-dir /tmp/opencode/on1x-data-sdk --output-on-failure --parallel 3 \
+  --output-junit /tmp/opencode/on1x-data-sdk/results-scalar-v2.xml
+cmake --build /tmp/opencode/on1x-safe-ffi-sanitize --parallel 4
+ctest --test-dir /tmp/opencode/on1x-safe-ffi-sanitize --output-on-failure --parallel 3 \
+  --output-junit /tmp/opencode/on1x-safe-ffi-sanitize/results-scalar-v2.xml
+cmake --build /tmp/opencode/on1x-loader-gcc --parallel 4
+ctest --test-dir /tmp/opencode/on1x-loader-gcc --output-on-failure --parallel 3 \
+  --output-junit /tmp/opencode/on1x-loader-gcc/results-scalar-v2.xml
+cmake --build /tmp/opencode/on1x-loader-clang --parallel 4
+ctest --test-dir /tmp/opencode/on1x-loader-clang --output-on-failure --parallel 3 \
+  --output-junit /tmp/opencode/on1x-loader-clang/results-scalar-v2.xml
+```
+
+Results: optional GCC/generated SDK **46/46**; Clang/generated SDK ASan/UBSan
+**46/46**; ordinary GCC/generated **38/38**; ordinary Clang/fallback **37/37**.
+No sanitizer findings. SDK tests exercise real libclang extraction; the ordinary
+profiles do not claim to exercise unavailable SDK integrations.
+
+### Still unsupported
+
+Unsigned/f32/enums and pointer-sized numeric language types, foreign aggregate
+ABI, nullable pointers/buffers, owned/borrowed foreign resources, recoverable
+foreign errors, callbacks, thread affinity and full foreign effects. No
+production contract is independently reviewed by this change. No 32-bit,
+non-Linux or non-x86_64 execution, TSAN/concurrency, foreign floating-environment
+restoration, or native/VM backend certification is claimed. This is an
+**EXECUTABLE** subset, not a completed M2 or general safe FFI.
+
+## M2 prerequisite — reviewed scalar-only safe FFI admission
+
+Scoped implementation task: open `emit-safe` only for a complete reviewed
+signed-integer/void bundle with no pointer, aggregate, ownership, lifetime,
+error, callback, destructor, invalidation or concurrency-lowering obligation.
+This is `reviewed-scalar/v1`, not general safe FFI and not proof of arbitrary C
+implementation behavior.
+
+Re-inspected base: MuLIB `cbdb2e290a41e39a8e6447f39426b1407c3e73b0`,
+configured LibStone `55755485acaded7c4ed804c0946bc8c7363f6763` at
+`on1x/third_party/libstone`, unchanged. Linux `7.2.6-arch2-1` x86_64 GNU/Linux;
+GCC/g++ 16.2.1
+(20260810), Clang/clang++ 22.1.8, CMake 4.4.3, Python 3.14.7.
+
+### Implementation
+
+- `tools/on1x-bind.cpp`: `emit-safe DECL CONTRACT PREFIX --on1xc PATH --cc
+  PATH --workdir DIR [--cflag ARG] [--impl FILE]` now runs four mandatory
+  gates. Review metadata must cover the full bundle; profile eligibility is
+  all-or-nothing; generated use is checked by the real Chisel-enabled compiler;
+  and a strict C11 adapter/harness is compiled and run with bounded outputs and
+  timeouts. Any missing tool input, unreviewed/unknown-effect function,
+  resource/error/callback obligation, compile failure, timeout or nonzero
+  boundary exit rejects without publishing partial outputs.
+- Successful emission exclusively creates `PREFIX.on1x`, `PREFIX.c`,
+  `PREFIX.admitted-extern.txt` and `PREFIX.manifest.json`. The manifest records
+  source/header hashes, target/compiler identity, contract provenance and
+  effects, flags/implementation TUs, Chisel report and one observed
+  representative boundary result per function. Observations are evidence that
+  the target call boundary executed, not semantic expected-value proofs.
+- Generated adapters retain the raw emitter's `_Generic` function-pointer
+  check and checked narrowing, and now assert extracted `_Alignof` as well as
+  size, signedness and range. Safe modules expose ordinary `on1x_safe_*`
+  wrappers while keeping their raw declarations explicit and full-fingerprint-scoped
+  so stale admission companions cannot authorize a regenerated module identity.
+- `src/{cli,safety}.cpp` and `include/on1x/safety.hpp`: Chisel memory modes accept
+  bounded `--admitted-extern FILE` companions. The parser rejects unknown
+  schema, malformed identity/signatures, NUL/oversize input, duplicate names,
+  unsupported types and limits; checked HIR rejects absent declarations and
+  arity/result drift. Raw externs without exact evidence remain rejected.
+- Safe eligibility allows declared `read`, `write`, `io` and `foreign_call`
+  effects because no resource crosses this scalar boundary. It rejects
+  `allocate`, `free`, `escape`, `thread` and `suspend`; the emitted evidence
+  does not call this profile pure.
+- Test contracts deliberately install synthetic review flags only to exercise
+  the machinery. No shipped JSON/Vec/Parsec/Mune contract has received an
+  independent production review through this change.
+
+### Verification evidence
+
+- Optional SDK build (ExoML extraction, Chisel, Nerotypical and Novostone):
+  `cmake --build /tmp/opencode/on1x-data-sdk --parallel 4` followed by
+  `ctest --test-dir /tmp/opencode/on1x-data-sdk --output-on-failure --parallel
+  3 --output-junit /tmp/opencode/on1x-data-sdk/results-safe-ffi.xml` →
+  **46/46**.
+- Ordinary regression profiles after the CLI gained optional admission input:
+  `cmake --build /tmp/opencode/on1x-loader-gcc --parallel 4 && ctest
+  --test-dir /tmp/opencode/on1x-loader-gcc --output-on-failure --parallel 3
+  --output-junit /tmp/opencode/on1x-loader-gcc/results-safe-ffi.xml` → **38/38**
+  (GCC/generated scanner); equivalent `/tmp/opencode/on1x-loader-clang`
+  command → **37/37** (Clang/fallback scanner). The no-Chisel builds compile
+  the CLI and reject memory-checking options rather than referencing unavailable
+  admission code.
+- Fresh optional-SDK ASan/UBSan configuration:
+  `cmake -S on1x -B /tmp/opencode/on1x-safe-ffi-sanitize
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+  -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer'
+  -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer'
+  -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined' -DBUILD_TESTING=ON
+  -DON1X_WITH_EXOML=ON -DON1X_WITH_EXOML_EXTRACT=ON
+  -DON1X_WITH_EXOTRACT=ON -DON1X_WITH_CHISEL=ON
+  -DON1X_WITH_NEROTYPICAL=ON -DON1X_WITH_NOVOSTONE=ON
+  -DON1X_SATIE_ROOT=/tmp/opencode/on1x-final-type-sdk`, build, then `ctest
+  --test-dir /tmp/opencode/on1x-safe-ffi-sanitize --output-on-failure
+  --parallel 3 --output-junit
+  /tmp/opencode/on1x-safe-ffi-sanitize/results-safe-ffi.xml` → **46/46**.
+- `on1x.contracts_sdk` executes real libclang extraction and covers successful
+  four-gate emission, manifest/evidence contents, strict native boundary calls,
+  a separately compiled On1x consumer, explicit Chisel admission, omission and
+  arity drift, unreviewed/full mixed bundles, disallowed effects, absent gate
+  tools, forced Chisel failure, target compiler and target runtime failures with
+  no partial publication, existing-output/workdir protection, integer range
+  failure, signature/size/alignment/signedness drift, and a separately compiled
+  C++20 `extern "C"` implementation object consumed by the strict C11 adapter.
+- `on1x.safety` independently covers admitted evidence parsing, use without
+  memory checking, schema/result/absent-declaration failures and preservation of
+  the default raw-extern rejection.
+
+### Remaining blockers
+
+Accountable reviews of production contracts; unsigned/f32/f64/enums and
+pointer-sized ABI; nullable pointers, buffers/slices and aggregate layout;
+owned/borrowed resources and cleanup; recoverable C errors; callback trampolines;
+thread affinity and Wetstone effect checking; cross-target and sanitizer
+certification. This slice does not complete M2.
+
 ## Language continuation — bounded value data model (records, sums, arrays, slices)
 
 Scoped implementation task: executable structural records, closed tagged sums

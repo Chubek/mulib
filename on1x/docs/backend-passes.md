@@ -8,13 +8,18 @@ the independent fallback build. Public API:
 The v2 numeric/product extension retains the same four algorithms, with version-2
 pass descriptors. Reports select `portable-scalar-v1` for legacy modules and
 `portable-numeric-product-v2` for MIR v2 (including a default API target request).
+MIR v3 selects `portable-numeric-v3`; its typed numeric descriptors retain
+conservative trap effects and are not signed-folded. Existing value/slot/CFG
+transformations remain verified before/after and compare typed payloads exactly.
+Preserved effect/barrier identities include the numeric descriptor, so changing
+`add_u8` to same-signature `sub_u8` cannot pass a claimed preservation check.
 The report envelope remains `on1x.mir-passes` version 1. Float arithmetic,
 comparisons and conversions are **not folded**; environment/range-check effects
 remain roots. Constant float phi propagation compares exact bit payloads, so
 opposite signed zeros cannot be merged. Trivial tuple loads/stores can forward,
 but no managed/unique resources, foreign aliasing or ownership events are admitted.
 CFG cleanup and dead-pure elimination apply only under the existing verified
-rules. Novostone publication remains v1-only and rejects v2 before publication.
+rules. Novostone publication remains v1-only and rejects v2/v3 before publication.
 
 ## Use
 

@@ -1,6 +1,6 @@
 # On1x capability matrix
 
-Inspection baseline: MuLIB `eeb6de585303e1ea0dfd8bf2260328289b04587c`,
+Inspection baseline for this continuation: MuLIB `cbdb2e290a41e39a8e6447f39426b1407c3e73b0`,
 LibStone `55755485acaded7c4ed804c0946bc8c7363f6763` at
 `on1x/third_party/libstone` (read-only). Linux x86_64; GCC 16.2.1,
 Clang 22.1.8. This matrix distinguishes executable subsets from completion of
@@ -17,13 +17,43 @@ Data-model continuation implemented: structural records, closed tagged sums with
 exhaustive elimination, bounded fixed arrays and owning snapshot slices. These
 are a by-value C11 profile, not general borrowed/dynamic buffers or foreign ABI.
 
+Safe-FFI continuation implemented reviewed scalar-only profiles: exact signed
+integer, `_Bool` and binary64 `double` C ABI (void result), reviewed ExoML claims, all-or-nothing profile admission,
+Chisel-checked generated usage, strict target compilation/execution and a
+machine-readable evidence manifest. It is not general resource-safe FFI.
+Post-change suites: GCC/generated **38/38**, Clang/fallback **37/37**, optional
+SDK **46/46**, optional-SDK ASan/UBSan **46/46**.
+
+M2 typed-scalar continuation: exact `_Bool`/binary64 `double` adapters, typed
+Chisel admission and v2 evidence now execute C/C++/On1x boundary programs and a
+seeded bit oracle. Integer-only v1 evidence is preserved without widening.
+Post-continuation profiles and exact commands are recorded in `../VERIFICATION.md`.
+
+Numeric continuation implemented `u8/u16/u32/u64` and IEEE binary32 `f32` through
+the canonical HIR/C11 path, with explicit conversions/bit constructors (existing
+unsuffixed literals remain i64/f64). Numeric semantics are specified in
+`numerics.md`; at that stage MIR and independent structural verification still
+rejected the new types (superseded by the v3 continuation below). Post-change profiles:
+GCC/generated **39/39**, Clang/fallback **38/38**, optional SDK **47/47**,
+SDK ASan/UBSan **47/47** (explicit generated-program sanitizer flags; see the
+correction of earlier sanitizer scope in `../VERIFICATION.md`).
+
+Numeric-limit continuation implemented scalar MIR v3 execution (unsigned/f32
+operations and conversions), independent numeric HIR type obligations and
+suffixed literals, preserving legacy MIR/evidence formats. Post-change suites:
+GCC/generated **40/40**, Clang/fallback **39/39**, SDK **48/48**, SDK ASan/UBSan
+**48/48**. Other-target floating support remains blocked on actual toolchains
+and execution evidence, not deletion of platform/environment guards.
+
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
 |---|---|---|---|---|---|---|
-| Generated/fallback scanning | `grammar/On1x.g`, `src/lexer*.cpp` | Bounded token callback | Functional syntax plus complete decimal float tokens | `test_scanner.cpp`, `scanner_parity.py` | EXECUTABLE | Broader malformed-input/target certification |
+| Generated/fallback scanning | `grammar/On1x.g`, `src/lexer*.cpp` | Bounded token callback | Functional syntax, decimal floats and typed numeric suffixes | `test_scanner.cpp`, `scanner_parity.py` | EXECUTABLE | Broader malformed-input/target certification |
 | Checked i64 | `src/{parser,infer,sema,codegen}.cpp` | Checked C11 runtime operations | i64 literals/operators | `test_compiler.py`, `test_mir.py` | EXECUTABLE | Broader target conformance |
-| f64 values | `src/{type,parser,infer,sema,codegen,primitives}.cpp`, `runtime/on1x_runtime.*` | Linux x86_64 binary64; guarded raw double ABI; bit transport/hex output | Monomorphic arithmetic/comparisons, explicit conversions, tuples/closures/staging | `test_f64.py`, `test_meta.cpp`, `test_types.cpp` | EXECUTABLE | f32, independent checkers, generated FFI adapters and other targets |
-| Float source literals | `src/{numeric,parser,lexer_fallback,ppx_ast,ppx_schema}.cpp`, `grammar/` | Exact binary64 bit emission; 1024-byte literals | Decimal fractions/exponents, additive FloatLiteral AST/PPX | `test_f64.py`, `test_meta.cpp`, `scanner_parity.py` | EXECUTABLE | Hex floats, suffixes, broader compiler/host certification |
-| f32 / fixed-width words / pointer-sized integers | `include/on1x/type.hpp` | None | None | None | ABSENT | Exact numeric semantics and ABI |
+| f64 values | `src/{type,parser,infer,sema,codegen,primitives,safety,type_safety}.cpp`, `runtime/on1x_runtime.*` | Linux x86_64 binary64; guarded raw/generated double ABI; bit transport/hex output | Arithmetic/comparisons, explicit conversions, tuples/closures/staging; Chisel and independent numeric typing | `test_f64.py`, `test_meta.cpp`, `test_types.cpp`, `test_type_safety.*`, `test_contracts_sdk.py` | EXECUTABLE | Other targets and full IEEE conformance certification |
+| Numeric source literals | `src/{numeric,parser,lexer_fallback,macro_rules,ppx_ast,ppx_schema}.cpp`, `grammar/` | Exact integer and direct binary32/64 bit emission; 1024-byte typed literals | Decimal/hex unsigned suffixes; decimal f32/f64 suffixes; backward-compatible unsuffixed i64/f64; shared macro/PPX categories | `test_numeric_limits.py`, `test_f64.py`, `scanner_parity.py`, native/Python PPX tests | EXECUTABLE | Hex float syntax and broader compiler/host certification |
+| Unsigned fixed-width words | `src/{type,parser,infer,sema,codegen,primitives,type_safety}.cpp`, `src/backend/`, `runtime/on1x_runtime.*` | Exact uint8/16/32/64 C11 ABI; checked arithmetic, wrapping/bits/conversions; scalar MIR v3 verifier/evaluator/emitter | Distinct u8/u16/u32/u64, suffixed literals; independent numeric typing; functions/tuples/value data/closures/staging (last kinds remain HIR-only) | `test_unsigned_f32.py`, `test_numeric_limits.py`, `test_contracts_sdk.py`; Python oracle, strict C/C++ and ASan/UBSan | EXECUTABLE | Broader targets; Basis word facades retain legacy encodings; general aggregate/closure MIR |
+| f32 values | `src/{type,parser,infer,sema,codegen,primitives,safety,type_safety}.cpp`, `src/backend/`, `runtime/on1x_runtime.*`, PPX schemas | Linux x86_64 IEEE binary32; exact bits/hex/C float ABI; scalar MIR v3 independent evaluation and emission | Distinct f32 with directly rounded decimal literals and explicit conversions; no implicit promotion; independent typing | `test_unsigned_f32.py`, `test_numeric_limits.py`, `test_type_safety.*`, `test_contracts_sdk.py`; bit/rounding/failure oracles and ASan/UBSan | EXECUTABLE | Other targets and full IEEE conformance certification |
+| Narrow signed / pointer-sized integers | `include/on1x/type.hpp` | None | None | None | ABSENT | Exact semantics and ABI for i8/i16/i32/isize/usize |
 | Functions / closures | `src/{infer,sema,codegen}.cpp` | Single-thread RC environments | Structural functions, immutable captures | `test_functions.py`, `test_closures.py` | EXECUTABLE | Mutable/resource capture lifetimes |
 | Tuples / irrefutable patterns | `src/{parser,infer,sema,codegen}.cpp` | Internal C11 by-value records | Shared name/tuple patterns | `test_tuples.py`, `test_parameter_patterns.py` | EXECUTABLE | Foreign aggregate ABI; refutable patterns |
 | Polymorphism | `src/infer.cpp` | Bounded whole-unit specializations/bundles | Restricted schemes / forall | `test_poly*.py` | PARTIAL | General parameterized data types |
@@ -36,12 +66,13 @@ are a by-value C11 profile, not general borrowed/dynamic buffers or foreign ABI.
 | Ownership / recoverable errors | `src/{sema,safety}.cpp`, `runtime/` | Lexical JSON/RC cleanup; terminal failures | Restricted resource flows | `test_json.py`, `test_safety.*` | PARTIAL | General moves/borrows, Result/Option, cleanup edges |
 | Generic Option / Result | `stdlib/base/{option,result}.on1x` | Existing facade encodings only | No native tagged generic data types | Existing library tests | PARTIAL | Native parameterized ADTs, construction/matching/drop |
 | Exceptions / effect system | `src/backend/mir.cpp`, `runtime/` | Scalar effect chains; no unwind edges | No recoverable exceptions or inferred effect summaries | Scalar MIR tests only | PARTIAL | Typed failure/control-flow/cleanup model |
-| Raw C FFI | `src/codegen.cpp`, `tools/on1x-bind.cpp` | Exact declared scalar escape hatch | extern; explicit parameter flattening | `test_contracts*.py`, `test_parameter_patterns.py` | PARTIAL | Rich ABI, callbacks and resources |
-| Safe foreign admission | `tools/on1x-bind.cpp`, `contracts-exoml/` | Deliberately closed | No admitted safe imports | `test_contracts_sdk.py` | PARTIAL | Independent review plus ABI/use-site/runtime gates |
+| Raw C FFI | `src/codegen.cpp`, `tools/on1x-bind.cpp` | Exact declared scalar escape hatch; generated signed/unsigned integer, boolean and binary32/64 adapters assert signature/type/size/alignment/format/range | extern; explicit parameter flattening | `test_contracts*.py`, `test_parameter_patterns.py`, `test_unsigned_f32.py` | PARTIAL | Enums, aggregates, callbacks and resources |
+| Safe foreign admission | `tools/on1x-bind.cpp`, `src/{cli,safety}.cpp`, `include/on1x/safety.hpp` | `reviewed-scalar/v1`: signed integer/void; v2 adds bool/f64; v3 adds unsigned/f32. Generated C11 facade, strict target boundary run, `on1x.safe-ffi/v1` manifest and bounded versioned admitted-extern evidence | Ordinary `on1x_safe_*` functions; raw declarations remain explicit and Chisel requires exact declaration/callsite parameter/result evidence | `test_contracts_sdk.py`, `test_safety.*` | EXECUTABLE | Accountable real reviews for production bundles; pointers/resources/errors/aggregates/callbacks, Wetstone effects and broader targets |
+| Boolean/binary64 foreign admission (M2 continuation) | `tools/on1x-bind.cpp`, `src/safety.cpp` | Exact C11 `_Bool`/`double` and typedefs; separate-TU C/C++ boundary, binary64 target/format/relaxed-mode guards | Typed `bool`/`f64` extern evidence, scalar Chisel lowering | `test_contracts_sdk.py`, `test_safety.*`, `tests/fixtures/contract_scalars.on1x`; Python oracle, ASan/UBSan | EXECUTABLE | Other floating formats/targets, floating environment effects and broader contract verification |
 | Native kernel planning | `std/mulib/`, `tools/on1x-exotract.py` | One implementation TU plus companions | Metadata, raw adapters | `test_mulib.py`, `test_exotract.py` | EXECUTABLE | Not general safe language bindings |
-| MIR / reference evaluator | `src/backend/{mir,lower,serialize,evaluate,emit_c}.cpp`, `floating.hpp` | Scalar v1 plus numeric/product v2; exact bits, typed values and private C11 tuples | Optional source/saved MIR, float operations, trivial tuple destructuring/calls/slots/phis | `test_mir.*`, `test_f64.py` | PARTIAL | Managed aggregates, records/ADTs/arrays, ownership, cleanup and async effects |
-| Trivial tuple MIR | `src/backend/{mir,lower,serialize,evaluate,emit_c}.cpp` | By-value copies; no owned/borrowed fields; bounded recursive evaluator storage | Nested tuples with i64/bool/f64 leaves; shared source patterns | `test_mir.*` | EXECUTABLE | Resource-bearing aggregates, foreign layouts, separate compilation |
-| MIR passes / relational analyses | `src/backend/{passes,relational}.cpp` | Conservative v1/v2 passes; no float folding; Novostone v1 only | Explicit opt-in, versioned pass descriptors | `test_passes.*`, `test_relational.*`, `test_mir.py` | PARTIAL | v2 relational mapping, full-language legality and ownership descriptors |
+| MIR / reference evaluator | `src/backend/{mir,lower,serialize,evaluate,emit_c}.cpp`, `floating.hpp`, `numeric*.hpp` | Legacy v1/v2 plus complete scalar numeric v3; allowlisted descriptors, exact typed payloads and independent C++ evaluation | Source/saved numeric MIR, trivial tuple destructuring/calls/slots/phis, checked optimizations | `test_mir.*`, `test_f64.py`, `test_unsigned_f32.py`, `test_numeric_limits.py` | PARTIAL | Managed aggregates, records/ADTs/arrays, closures, ownership, cleanup and async effects |
+| Trivial tuple MIR | `src/backend/{mir,lower,serialize,evaluate,emit_c}.cpp` | By-value copies; no owned/borrowed fields; bounded recursive evaluator storage | Nested bool and all admitted numeric leaves (v2/v3); shared source patterns | `test_mir.*`, `test_numeric_limits.py` | EXECUTABLE | Resource-bearing aggregates, foreign layouts, separate compilation |
+| MIR passes / relational analyses | `src/backend/{passes,relational}.cpp` | Conservative v1/v2/v3 passes; no float/v3 numeric folding; Novostone v1 only | Explicit opt-in, versioned pass descriptors and numeric-v3 target | `test_passes.*`, `test_relational.*`, `test_mir.py`, `test_numeric_limits.py` | PARTIAL | v2/v3 relational mapping, full-language legality and ownership descriptors |
 | C11 AOT | `src/codegen.cpp`, `runtime/` | Standalone C11 for admitted subset | Default backend | Compiler/native suite | EXECUTABLE | Broader language/runtime representation |
 | Native / VM backend | `BACKEND.md` | None | None | None | DESIGNED | Real equivalent code generator |
 | Async / structured concurrency | `AGENTS.md` | No On1x runtime/lowering | None | None | DESIGNED | Effectful MIR, task ownership/state machines |

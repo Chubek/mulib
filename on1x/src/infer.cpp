@@ -2,6 +2,7 @@
 #include <on1x/clone.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/staging.hpp>
+#include <on1x/numeric.hpp>
 #include <deque>
 #include <algorithm>
 #include <map>
@@ -99,7 +100,7 @@ class Inference {
  std::vector<std::optional<Ground>> ground;
  std::vector<unsigned char> state;
  std::map<std::vector<std::size_t>,Ground> canonical;
-  std::size_t next_identity = Type::Slice + 1;
+   std::size_t next_identity = Type::U64 + 1;
   std::map<std::vector<std::string>,std::size_t> label_identities;
 
  [[noreturn]] static void fail(const Location& where,const std::string& message) {
@@ -644,7 +645,7 @@ class Inference {
   unify(actual,expectation,e.where);return expectation;
  }
  void reset_ground(){
-    ground.assign(nodes.size(),{});state.assign(nodes.size(),0);canonical.clear();next_identity=Type::Slice+1;
+     ground.assign(nodes.size(),{});state.assign(nodes.size(),0);canonical.clear();next_identity=Type::U64+1;
   }
   void numeric_operand(Term term,const Location& at){
    // Do not quantify numeric overloading. Delay the old i64 choice until all
@@ -655,7 +656,7 @@ class Inference {
    for(const auto& [term,at]:numeric){
     tick(at);auto kind=nodes[head(term,at)].kind;
     if(kind==Type::Hole)unify(term,scalar(Type::I64,at),at);
-    else if(kind!=Type::I64&&kind!=Type::F64)fail(at,"numeric operand requires i64 or f64, got "+describe(term,at));
+     else if(!Type(kind).is_numeric())fail(at,"numeric operand requires a numeric scalar, got "+describe(term,at));
    }
   }
  void elaborate_foralls(){
@@ -717,8 +718,7 @@ class Inference {
     fail(at,"unexpanded metaprogramming syntax before inference");
    case Expr::Kind::PolyPack:case Expr::Kind::PolyProjection:
     fail(at,"cannot reinfer an elaborated polymorphic expression");
-   case Expr::Kind::Integer:result=scalar(Type::I64,at);break;
-   case Expr::Kind::Float:result=scalar(Type::F64,at);break;
+    case Expr::Kind::Integer:case Expr::Kind::Float:result=scalar(numeric_literal_type(e.text).kind(),at);break;
   case Expr::Kind::Boolean:result=scalar(Type::Bool,at);break;
   case Expr::Kind::String:result=scalar(Type::String,at);break;
   case Expr::Kind::Variable:return name(e);
@@ -799,8 +799,8 @@ class Inference {
   case Expr::Kind::Binary:{
    auto left=expression(*e.children[0]),right=expression(*e.children[1]);
    if(e.text=="=="||e.text=="!="){unify(left,right,at);weak.push_back(left);}
-    else if(e.text=="&&"||e.text=="||"||e.text=="%"){
-     auto operand=scalar(e.text=="%"?Type::I64:Type::Bool,at);
+     else if(e.text=="&&"||e.text=="||"){
+      auto operand=scalar(Type::Bool,at);
      unify(left,operand,at);unify(right,operand,at);
     }else{unify(left,right,at);numeric_operand(left,at);}
     bool arithmetic=e.text=="+"||e.text=="-"||e.text=="*"||e.text=="/"||e.text=="%";

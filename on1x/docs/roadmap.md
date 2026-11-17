@@ -17,12 +17,13 @@
 | Anonymous functions / lexical closures | P1 immutable subset | Escaping scalar/function/tuple captures, transitive capture, reference-counted C11 environments; no mutable/resource captures or recursive let |
 | Tuples / destructuring | P1 product subset | Structural products, nested immutable local/function/lambda patterns, leaf schemes and function/universal-field ownership; no JSON elements or aggregate extern ABI |
 | C11 AOT code generation | Verified subset | Strict GCC/Clang compile/run tests; ASan/UBSan also cover generated C |
-| Core/MIR v1/v2 | B1 scalar/trivial-product subset | Legacy v1 preserved; v2 adds typed f64 operations, exact-bit constants, nested trivial tuples, destructuring, aggregate slots/calls/phis; bounded verifier and deterministic round-trip; see [manual](backend-mir.md) |
+| Core/MIR v1/v2/v3 | B1 scalar/trivial-product subset | Legacy formats preserved; v2 f64/products; v3 unsigned/f32 operations/conversions and numeric tuples with allowlisted descriptors, independent evaluation and C11 emission; bounded verification/round-trip; see [manual](backend-mir.md) |
 | MIR reference execution / C11 | Implemented scalar subset | Five-way HIR-C11, plain/optimized MIR-C11 and evaluator tests; malformed CFG/phi/use/effect/initialization rejections; optional CLI and build-helper path |
 | Novostone MIR analyses | B3 v1 scalar metadata subset | Opt-in Datalog/CCDB, exact fact checks, transactional publication, revision-bound queries, call/effect closure and block liveness; v2 fails closed pending complete descriptor mapping; [manual](backend-analysis.md) |
 | Transactional MIR passes | B4 scalar subset | Opt-in checked constant folding, constant-branch cleanup, local-slot forwarding/overwritten-store removal, dead pure-value/phi elimination; checked preservation, bounded rollback/fallback, deterministic provenance and exact-revision fact publication; [manual](backend-passes.md) |
 | Signed i64 checking | Implemented | Overflow/invalid division tests |
-| f64 values/literals (M1 slice) | Executable HIR/MIR/C11 subset | Decimal literals, binary64 operators/conversions, bit transport, hex print and raw double ABI; Linux x86_64 GCC/Clang only; no f32, float folding, independent checker support or generated safe adapters; [contract](numerics.md), [matrix](capability-matrix.md) |
+| f64 values/literals (M1 slice) | Executable HIR/MIR/C11 subset | Decimal literals, binary64 operators/conversions, bit transport, hex print, raw double ABI and reviewed scalar adapters; Chisel and independent numeric typing; Linux x86_64 GCC/Clang only; no float folding or other-target certification; [contract](numerics.md), [matrix](capability-matrix.md) |
+| Unsigned widths / f32 (M1 slice) | Executable HIR/MIR-v3/C11 scalar subset | Distinct u8/u16/u32/u64/f32; suffixed literals, checked arithmetic, explicit wrapping/bit/conversions, numeric tuple MIR/evaluator/emitter, independent Nerotypical type obligations and Chisel admission. No signed narrow/pointer-sized types or verified alternative floating targets; [contract](numerics.md) |
 | Native ABI externs | Explicit raw subset | Exact scalar ABI; explicit nested parameter patterns flatten left-to-right, no aggregate layout inference |
 | Typed hygienic macros | Recursive patterns and lexical syntax bindings | Context marks, typed recursive captures/ellipses, `let_syntax`/`letrec_syntax`, definition-site value/syntax identities and bounded transactional expansion; not the full Scheme language |
 | External AST PPX | Core implemented | Source opt-in / CLI registration, bounded shell-free POSIX transport, S-expression schema validation, labeled carriers and namespaced AST extensions |
@@ -33,8 +34,9 @@
 | JSON resource facade | Experimental, real-kernel tested | Nested views, lexical drops, numeric bounds and injected allocation failures; errors still terminate |
 | ExoML contract tooling | Optional public SDK integration | Real libclang extraction, lossless v2 CDecl transport, strict sidecars, pin/check/explain and locked source/toolchain/build-plan evidence |
 | JSON/Vec/Parsec contract inventory | 45 unreviewed source annotations | All 20/7/18 core declarations covered; conditional transfers, borrows, errors, effects, callbacks/unknown obligations retained; not safe imports |
-| ExoML raw scalar adapter emitter | Optional, narrow tested subset | Signed integers/void, exact C11 signature/size/signedness/range checks and full manifests; safe emission always blocked pending remaining gates |
-| General C FFI adapters | Not implemented | Needs ABI/error/ownership model and tests |
+| ExoML raw scalar adapter emitter | Optional, narrow tested subset | Signed/unsigned integers, `_Bool`, binary32 `float`, binary64 `double`, void result; exact C11 signature/type/size/alignment/format/range checks and full manifests; explicitly unsafe |
+| Reviewed scalar-only safe admission | Executable optional M2 prerequisite | v1 signed-integer compatibility; v2 bool/f64; v3 unsigned/f32. All-or-nothing reviewed ExoML profile, generated facade/evidence, Chisel use-site admission and strict executable target boundary gate; no pointers/resources/errors/callbacks/aggregates; [manual](contracts.md) |
+| General C FFI adapters | Not implemented | Needs pointer/buffer/aggregate ABI, recoverable errors, ownership/lifetime lowering, callbacks and target matrix |
 | Chisel resource checking | Opt-in scalar/JSON usage subset | Real solver plus conservative joins, token-use and exit/reinitialization checks; generic external resource CFG API; [manual](memory-safety.md) |
 | Nerotypical structural verification | Opt-in concrete HIR checker | Real TypeGraph/Satie EUF obligations for calls, closures, tuples, staging and resources; explicit universals reject; separate patched source SDK; [manual](type-safety.md) |
 | Exotract static bindings | MANIFEST-backed kernel and companion archives | Typed CDecl/import metadata; executable JSON/Vec/Parsec and MicroJS C clients, On1x JSON/YANTLR/Shiraz archive linkage, fixture provenance and one kernel implementation TU; [manual](../contracts-exotract/README.md) |
@@ -47,8 +49,11 @@
 ## Immediate next iterations
 
 The language-only M1 continuation adds decimal f64 literals with scanner/PPX
-parity and a versioned float/trivial-tuple MIR execution path, without opening
-safe-import gates or adding product-specific kernels.
+parity and a versioned float/trivial-tuple MIR execution path. A later M2
+prerequisite opens only the reviewed scalar safe-import profiles (signed/unsigned
+integers, `_Bool`, binary32 `float`, binary64 `double`); it adds no product-specific kernel and
+does not admit resources. v1 evidence remains signed-integer-only; v2 adds bool/f64
+and v3 adds unsigned/f32, checking parameter and result types at declarations and callsites.
 
 A second M1 slice adds the bounded value data model: structural records, closed
 tagged sums with exhaustive `match`, fixed arrays and owning snapshot slices,
@@ -85,10 +90,11 @@ transforms and B5 VM/native lowering remain open.
     includes generated transformer definitions, general modules/ADTs, IPC and reviewed processor
     integrations. Recursive patterns, native authoring tools and typed AOT MSP
     now have executable implementations; see [the manual](metaprogramming.md).
-3. **P2** — Independently review the implemented [source contract profiles](contracts.md),
-   then generate exact target-checked C11 wrapper adapters for reviewed
-   pointer-based MuLIB JSON/Vec/Parsec contracts; add `Result`/`Option`
-   safeties and explicit success/failure transfers.
+3. **P2** — The reviewed scalar-only gate pipeline is executable. Next,
+   independently review production [source contract profiles](contracts.md),
+   then extend exact target-checked C11 wrappers to pointer-based MuLIB
+   JSON/Vec/Parsec contracts; add `Result`/`Option`, borrow regions and explicit
+   success/failure transfers.
 4. **P3** — Integrate Chisel region/ownership analysis, Wetstone foreign
    function effects and Flintstone high-level dialect. Generate checked
    cleanup on more than return paths.

@@ -68,7 +68,7 @@ Nerotypical, MemTKX or the compiler's C++ runtime.
 
 | HIR feature | Structural obligation |
 |---|---|
-| `i64`, `bool`, strings, void results | Distinct nominal ground constructors |
+| `i64/u8/u16/u32/u64/f32/f64`, `bool`, strings, void results | Distinct nominal ground constructors; no numeric coercion |
 | Locals, mutable assignment | Lexical lookup, annotation agreement, mutability |
 | Operators and conditions | Exact operand/result constructors |
 | Functions and direct/indirect calls | Arity-indexed arrows and parameter/result equality |
@@ -79,7 +79,7 @@ Nerotypical, MemTKX or the compiler's C++ runtime.
 | Monomorphized generic functions/lets | Check concrete executable instances; skip non-emitted prototypes |
 | Raw externs | Check declared On1x call types only; C implementation/ABI remains unchecked |
 | Explicit forall packages/projections or unlowered syntax | Reject until a quantifier-aware adapter exists |
-| f64 values | Explicitly reject until independent floating-point typing obligations are implemented |
+| Numeric literals/intrinsics/operators | Derive suffix/literal types; exact numeric operand/result constraints; reject unsigned negation, float remainder and mixed widths |
 
 The API expects HIR elaborated by `on1x::check`. It independently reconstructs
 typing obligations from expressions, lexical bindings, signatures and statement
@@ -111,7 +111,8 @@ never upgraded to well-typedness. API callers may lower the limits.
 
 `on1x.type_safety_hir` checks post-sema corruptions of literals, locals, returns,
 conditions, function signatures, tuples and closure metadata; malformed control
-flow; independent budgets; and 64 ground/nested-constructor oracle cases.
+flow; independent budgets; and 196 ground/nested-constructor oracle cases,
+including distinct numeric constructors and post-check float/unsigned mutations.
 `on1x.type_safety` checks deterministic output, executable closure/tuple/staging/
 JSON/scalar examples, the build helper, macro expansion, raw extern signatures,
 unsupported universals and output preservation on rejection/exhaustion.

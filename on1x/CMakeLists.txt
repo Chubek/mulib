@@ -304,7 +304,7 @@ if(BUILD_TESTING)
   add_executable(on1x_meta_tests tests/test_meta.cpp)
   target_link_libraries(on1x_meta_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.meta_hir COMMAND on1x_meta_tests)
-  set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules libraries stdppx install mulib stdlib_extensions f64)
+  set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules libraries stdppx install mulib stdlib_extensions f64 unsigned_f32 numeric_limits)
   add_test(NAME on1x.stdppx_protocol COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/tests" -v)
   if(ON1X_WITH_EXOTRACT)
     add_test(NAME on1x.exotract COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exotract.py"

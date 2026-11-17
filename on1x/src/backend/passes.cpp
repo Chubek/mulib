@@ -25,7 +25,7 @@ void charge_copy(const Module& m,Budget& budget){
   budget.tick(f.where,1+f.name.size()+f.slots.size());
   for(const auto& b:f.blocks){
    budget.tick(b.where,1+b.parameters.size());
-   for(const auto& i:b.instructions)budget.tick(i.where,1+i.operands.size()+i.where.file.size());
+    for(const auto& i:b.instructions)budget.tick(i.where,1+i.operands.size()+i.where.file.size()+i.primitive.size());
    budget.tick(b.exit.where);for(const auto& e:b.exit.edges)budget.tick(b.exit.where,1+e.arguments.size());
   }
  }
@@ -217,10 +217,10 @@ struct Views {
  std::vector<Signature> signatures;
  std::vector<std::tuple<Id,Id,Exit,std::vector<Id>>> cfg;
  std::vector<std::tuple<Id,Id,Id,Id,Type,std::vector<Id>>> calls;
- std::vector<std::tuple<Id,Id,Id,Op,Id,Id,Id,std::vector<Id>>> effects;
+  std::vector<std::tuple<Id,Id,Id,Op,Id,Id,Id,std::vector<Id>,std::string>> effects;
  std::map<Id,Location> locations;
  std::vector<std::tuple<Id,Id,Type>> slots;
- std::vector<std::tuple<Id,Id,Id,Op,Id,Type>> barriers;
+  std::vector<std::tuple<Id,Id,Id,Op,Id,Type,std::string>> barriers;
 };
 Views views(const Module& m){
  Views v;
@@ -234,12 +234,12 @@ Views views(const Module& m){
    std::vector<Id> edges;for(const auto& e:b.exit.edges)edges.push_back(e.block);
    v.cfg.emplace_back(f.id,b.id,b.exit.kind,std::move(edges));
    // Boundary records also cover empty effect chains. Op is a fixed sentinel.
-   v.effects.emplace_back(f.id,b.id,0,Op::Constant,0,b.effect,b.exit.effect,std::vector<Id>{});
+    v.effects.emplace_back(f.id,b.id,0,Op::Constant,0,b.effect,b.exit.effect,std::vector<Id>{},std::string{});
    for(const auto& i:b.instructions){
     v.locations.emplace(i.id,i.where);if(i.effect_out)v.locations.emplace(i.effect_out,i.where);
     if(i.op==Op::Call)v.calls.emplace_back(f.id,b.id,i.id,i.target,i.type,i.operands);
-    if(effect(i.op)!=Effect::Pure)v.effects.emplace_back(f.id,b.id,i.id,i.op,i.target,i.effect_in,i.effect_out,i.operands);
-    if(effect(i.op)!=Effect::Pure&&effect(i.op)!=Effect::Memory)v.barriers.emplace_back(f.id,b.id,i.id,i.op,i.target,i.type);
+     if(effect(i.op)!=Effect::Pure)v.effects.emplace_back(f.id,b.id,i.id,i.op,i.target,i.effect_in,i.effect_out,i.operands,i.primitive);
+     if(effect(i.op)!=Effect::Pure&&effect(i.op)!=Effect::Memory)v.barriers.emplace_back(f.id,b.id,i.id,i.op,i.target,i.type,i.primitive);
    }
    v.locations.emplace(b.exit.id,b.exit.where);
   }
@@ -250,13 +250,13 @@ Views views(const Module& m){
 const Descriptor& descriptor(Pass pass){
  static const Descriptor descriptors[]={
   {Pass::ConstantFold,"constant-fold",2,{"verified-mir"},{Analysis::Signatures,Analysis::CFG,Analysis::Calls},
-   {Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only proven nontrapping integer arithmetic effects","portable-scalar-v1 / portable-numeric-product-v2","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
+    {Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only proven nontrapping integer arithmetic effects","portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
   {Pass::SimplifyCFG,"simplify-cfg",2,{"verified-mir"},{Analysis::Signatures},
-   {Analysis::CFG,Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only statically unreachable paths","portable-scalar-v1 / portable-numeric-product-v2","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
+    {Analysis::CFG,Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only statically unreachable paths","portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
   {Pass::DeadPure,"dead-pure",2,{"verified-mir"},{Analysis::Signatures,Analysis::CFG,Analysis::Calls,Analysis::Effects},
-   {Analysis::Values,Analysis::Liveness},"retain all effect roots and control flow","portable-scalar-v1 / portable-numeric-product-v2","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
+    {Analysis::Values,Analysis::Liveness},"retain all effect roots and control flow","portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
   {Pass::LocalSlots,"local-slots",2,{"verified-mir"},{Analysis::Signatures,Analysis::CFG},
-   {Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"forward local loads; remove same-block overwritten stores","portable-scalar-v1 / portable-numeric-product-v2","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations + slots/nonmemory barriers"}
+    {Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"forward local loads; remove same-block overwritten stores","portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations + slots/nonmemory barriers"}
  };
  auto index=static_cast<std::size_t>(pass);if(index>=std::size(descriptors))fail({"<mir-pass>"},"unknown pass");return descriptors[index];
 }
@@ -288,8 +288,9 @@ void verify_transition(const Module& before,const Module& after,Pass pass,mir::L
  }
 }
 Result run(const Module& module,Options options){
- if(options.target!="portable-scalar-v1"&&options.target!="portable-numeric-product-v2")fail({"<mir-pass>"},"unsupported pass target: "+options.target);
- if(module.version==format_version)options.target="portable-numeric-product-v2";
+  if(options.target!="portable-scalar-v1"&&options.target!="portable-numeric-product-v2"&&options.target!="portable-numeric-v3")fail({"<mir-pass>"},"unsupported pass target: "+options.target);
+  if(module.version==format_version)options.target="portable-numeric-product-v2";
+  if(module.version==numeric_format_version)options.target="portable-numeric-v3";
  if(options.pipeline.empty()||options.pipeline.size()>16||!options.rounds||options.rounds>64)fail({"<mir-pass>"},"pipeline requires 1..16 passes and 1..64 rounds");
  for(auto pass:options.pipeline)(void)descriptor(pass);
  verify(module,options.verification);Result result(module,serialize(module),options);

@@ -1,4 +1,5 @@
 #include "macro_rules.hpp"
+#include <on1x/numeric.hpp>
 #include <algorithm>
 #include <optional>
 namespace on1x::meta {
@@ -29,7 +30,7 @@ MacroCaptures MacroRules::duplicate(const MacroCaptures& source,const Location& 
 std::string MacroRules::category(const Expr& e)const{
  if(e.kind>=K::Record)return "DataExpression";
  switch(e.kind){
-  case K::Integer:return e.text.starts_with("0x")||e.text.starts_with("0X")?"HexLiteral":"DecimalLiteral";
+   case K::Integer:return numeric_literal_type(e.text).is_unsigned()?"UnsignedLiteral":e.text.starts_with("0x")||e.text.starts_with("0X")?"HexLiteral":"DecimalLiteral";
   case K::Float:return "FloatLiteral";
  case K::String:return "StringLiteral";case K::Boolean:return "BooleanLiteral";case K::Variable:return "Identifier";
  case K::Unary:return "UnaryExpression";case K::Binary:return "BinaryExpression";case K::Call:return "CallExpression";
@@ -103,7 +104,10 @@ bool MacroRules::literal(const Expr& pattern,const Expr& actual){
   const Expr* p=&e;bool negative=false;
   if(p->kind==K::Unary&&p->text=="-"&&p->children.size()==1){negative=true;p=p->children[0].get();}
   if(p->kind!=K::Integer)return {};
-  std::string digits=p->text;if(digits.starts_with('-')){negative=!negative;digits.erase(0,1);}
+   auto type=numeric_literal_type(p->text);
+   std::string digits=p->text;
+   if(type.is_unsigned())digits.resize(digits.size()-type_name(type).size());
+   if(digits.starts_with('-')){negative=!negative;digits.erase(0,1);}
   bool hexadecimal=digits.starts_with("0x")||digits.starts_with("0X");if(hexadecimal)digits.erase(0,2);
   std::vector<unsigned char> decimal(1,0);
   for(char c:digits){tick(e.where);unsigned value=c>='0'&&c<='9'?static_cast<unsigned>(c-'0'):c>='a'&&c<='f'?static_cast<unsigned>(c-'a'+10):c>='A'&&c<='F'?static_cast<unsigned>(c-'A'+10):99;
@@ -113,7 +117,8 @@ bool MacroRules::literal(const Expr& pattern,const Expr& actual){
   while(decimal.size()>1&&decimal.back()==0)decimal.pop_back();
   std::string result;
   if(negative&&(decimal.size()!=1||decimal[0]))result+='-';
-  for(auto it=decimal.rbegin();it!=decimal.rend();++it)result+=static_cast<char>('0'+*it);
+   for(auto it=decimal.rbegin();it!=decimal.rend();++it)result+=static_cast<char>('0'+*it);
+   if(type.is_unsigned())result+=':'+type_name(type);
   return result;
  };
  if(auto a=number(pattern)){auto b=number(actual);return b&&*a==*b;}

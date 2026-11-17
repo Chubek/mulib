@@ -16,7 +16,14 @@ snapshot slices as by-value C11 with bounds-checked access; scalar MIR and the
 independent adapters reject these kinds instead of approximating them. Existing
 scalar source/artifacts retain v1. Float arithmetic
 folding, managed aggregate/ownership/effect lowering, VM/native backends and
-safe foreign adapters remain unsupported; v1 relational mapping rejects v2.
+general safe foreign adapters remain unsupported; the reviewed scalar-only
+four-gate profiles (signed-integer v1, bool/binary64 v2, unsigned/binary32 v3) are the sole
+safe-admitted exception. Foreign calls still reject in scalar MIR; these
+adapters execute through the reference HIR-to-C11 path. Unsigned/f32 scalar
+values now have a typed numeric MIR v3, independent evaluation and C11 emission,
+and Nerotypical numeric HIR obligations. Resource/closure/data-model MIR is still
+incomplete. v1 relational mapping
+rejects v2.
 
 Read these sources **before changing code**:
 

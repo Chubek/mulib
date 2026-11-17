@@ -3,6 +3,11 @@ fn ppx_write_type(type: sexpr, out: buffer, depth: i64) {
   if depth >= 256 { tool_fail("signature type depth limit exceeded"); } let tag = visitor_tag(type);
   if tag == "I64Type" { buffer_append(out, "i64"); return; }
   if tag == "F64Type" { buffer_append(out, "f64"); return; }
+  if tag == "F32Type" { buffer_append(out, "f32"); return; }
+  if tag == "U8Type" { buffer_append(out, "u8"); return; }
+  if tag == "U16Type" { buffer_append(out, "u16"); return; }
+  if tag == "U32Type" { buffer_append(out, "u32"); return; }
+  if tag == "U64Type" { buffer_append(out, "u64"); return; }
   if tag == "BoolType" { buffer_append(out, "bool"); return; }
   if tag == "StringType" { buffer_append(out, "string"); return; }
   if tag == "VoidType" { buffer_append(out, "void"); return; }

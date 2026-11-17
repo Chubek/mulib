@@ -9,6 +9,7 @@
 #include <system_error>
 #include <set>
 #include <algorithm>
+#include <bit>
 namespace on1x {
 namespace {
 void extern_leaves(const Pattern& pattern,const Type& type,std::vector<Type>& types,std::set<std::string>& names){
@@ -17,7 +18,7 @@ void extern_leaves(const Pattern& pattern,const Type& type,std::vector<Type>& ty
   for(std::size_t i=0;i<pattern.elements.size();++i)extern_leaves(pattern.elements[i],type.elements()[i],types,names);
  }else{
   if(!names.insert(pattern.name).second)throw Error(pattern.where,"duplicate extern parameter: "+pattern.name);
-   if(type!=Type::I64&&type!=Type::F64&&type!=Type::Bool&&type!=Type::String)throw Error(pattern.where,"flattened extern leaves must be i64, f64, bool or string");
+    if(!type.is_numeric()&&type!=Type::Bool&&type!=Type::String)throw Error(pattern.where,"flattened extern leaves must be numeric, bool or string");
   types.push_back(type);
  }
 }
@@ -78,7 +79,7 @@ class Checker {
   static bool resource(Type t){return t==Type::Json||t==Type::JsonView;}
   std::size_t value_width(const Type& t,const Location& at,std::size_t depth=0){
    if(depth>32)fail(at,"data value nesting exceeds 32-level limit");
-   if(t==Type::I64||t==Type::F64||t==Type::Bool||t.kind()==Type::Generic)return 1;
+    if(t.is_numeric()||t==Type::Bool||t.kind()==Type::Generic)return 1;
    if(!t.is_tuple()&&!t.is_data())fail(at,"value data fields and match results require trivially copied types");
    std::size_t width=1;
    if(t.kind()==Type::Array||t.kind()==Type::Slice){
@@ -152,7 +153,7 @@ class Checker {
     arity(primitive->parameters().size());for(std::size_t i=0;i<arg.size();++i)equal(arg[i],primitive->parameters()[i],e.where);
     return e.type=primitive->result();
    }
-   if(n=="println"){arity(1);if(arg[0]!=Type::I64&&arg[0]!=Type::F64&&arg[0]!=Type::Bool&&arg[0]!=Type::String)fail(e.where,"println accepts i64, f64, bool or string");return e.type=Type::Void;}
+    if(n=="println"){arity(1);if(!arg[0].is_numeric()&&arg[0]!=Type::Bool&&arg[0]!=Type::String)fail(e.where,"println accepts numeric scalars, bool or string");return e.type=Type::Void;}
   if(n=="assert"){arity(1);equal(arg[0],Type::Bool,e.where);return e.type=Type::Void;}
   if(n=="json_parse_or_die"){arity(1);equal(arg[0],Type::String,e.where);return e.type=Type::Json;}
   if(n=="json_get_or_die"){arity(2);
@@ -209,13 +210,10 @@ class Checker {
      }
      return e.type;
     }
-     case Expr::Kind::Integer:{std::int64_t v=0;auto begin=e.text.data();int base=10;
-      if(e.text.size()>2&&e.text[0]=='0'&&(e.text[1]=='x'||e.text[1]=='X')){begin+=2;base=16;}
-      auto [p,err]=std::from_chars(begin,e.text.data()+e.text.size(),v,base);
-     if(err!=std::errc{}||p!=e.text.data()+e.text.size())fail(e.where,"integer literal out of i64 range");
-     e.text=std::to_string(v); // Decimal source spelling must not become C octal.
-     return e.type=Type::I64;}
-    case Expr::Kind::Float:(void)float_literal_bits(e.text,e.where);return e.type=Type::F64;
+      case Expr::Kind::Integer:{auto t=numeric_literal_type(e.text);auto v=integer_literal_bits(e.text,e.where);
+       e.text=t.is_unsigned()?std::to_string(std::bit_cast<std::uint64_t>(v))+type_name(t):std::to_string(v);
+       return e.type=t;}
+     case Expr::Kind::Float:(void)float_literal_bits(e.text,e.where);return e.type=numeric_literal_type(e.text);
     case Expr::Kind::Boolean:return e.type=Type::Bool;
    case Expr::Kind::String:
     // Current string ABI is const char*: do not imply support for binary NUL.
@@ -289,19 +287,18 @@ class Checker {
      }
     case Expr::Kind::Unary:{auto x=child(0);
      if(e.text=="!")equal(x,Type::Bool,e.where);
-     else if(x!=Type::F64)equal(x,Type::I64,e.where);
+      else if(!x.is_float())equal(x,Type::I64,e.where);
      return e.type=x;}
    case Expr::Kind::Binary:{Type a=child(0),b=child(1);const auto&op=e.text;
     if(op=="+"||op=="-"||op=="*"||op=="/"||op=="%"){
-      if(op=="%")equal(a,Type::I64,e.where);
-      else if(a!=Type::F64)equal(a,Type::I64,e.where);
+       if(!a.is_numeric()||(op=="%"&&a.is_float()))equal(a,Type::I64,e.where);
       equal(b,a,e.where);return e.type=a;}
     if(op=="&&"||op=="||"){equal(a,Type::Bool,e.where);equal(b,Type::Bool,e.where);return e.type=Type::Bool;}
     if(op=="<"||op==">"||op=="<="||op==">="){
-      if(a!=Type::F64)equal(a,Type::I64,e.where);
+       if(!a.is_numeric())equal(a,Type::I64,e.where);
       equal(b,a,e.where);return e.type=Type::Bool;}
     if(op=="=="||op=="!="){
-      if(a!=b||(a!=Type::I64&&a!=Type::F64&&a!=Type::Bool&&a!=Type::String))fail(e.where,"incompatible or non-scalar equality operands");
+       if(a!=b||(!a.is_numeric()&&a!=Type::Bool&&a!=Type::String))fail(e.where,"incompatible or non-scalar equality operands");
      return e.type=Type::Bool;}
     fail(e.where,"unknown operator: "+op);}
     case Expr::Kind::Call:{

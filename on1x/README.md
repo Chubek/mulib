@@ -14,8 +14,23 @@ and nested trivial tuples, with checked serialization, an evaluator and C11
 emission; legacy scalar MIR remains v1. A further M1 slice adds the bounded value
 data model: structural records, closed tagged sums with exhaustive `match`,
 fixed arrays and owning snapshot slices — all by-value C11 with bounds-checked
-access and terminal located value errors (`examples/data_model.on1x`). General
-ownership, safe FFI and concurrency are still not admitted. See the
+access and terminal located value errors (`examples/data_model.on1x`). One M2
+prerequisite now admits reviewed **scalar-only** C imports after exact ABI,
+ExoML-review-metadata, Chisel-use and executable target gates; this is not
+general ownership/resource-safe FFI. The v2 profile adds exact C `_Bool`/binary64
+`double` adapters and typed `bool`/`f64` admission alongside signed integers.
+The numeric continuation adds distinct `u8/u16/u32/u64` and IEEE `f32` values,
+checked arithmetic, explicit wrapping/bit operations, conversions and exact
+scalar FFI. Scalar numeric MIR v3 now verifies, round-trips, evaluates and emits
+C11 for these types, including tuples, calls, branches and slots. Nerotypical
+checks their HIR type obligations; Chisel additionally models numeric tuples.
+Suffixed literals include `255u8`, `18446744073709551615u64` and `1.5f32`;
+unsuffixed literals retain i64/f64 semantics. See
+[`examples/numeric_literals.on1x`](examples/numeric_literals.on1x) and
+[`examples/unsigned_f32.on1x`](examples/unsigned_f32.on1x). Floating execution
+is still supported only for the tested, guarded Linux x86_64 GCC/Clang profile.
+General ownership, foreign resources and
+concurrency are still not admitted. See the
 [numeric contract](docs/numerics.md), [data-model contract](docs/data-model.md),
 [capability matrix](docs/capability-matrix.md) and
 [verification record](VERIFICATION.md). This does not complete M1 or On1x.
@@ -57,8 +72,11 @@ These are **not** complete Jane Street Base, Batteries or SML Basis ports.
 mailbox helper and LibStone interchange does not wrap C++ APIs. Scalar text is
 NUL-free; socket hex reception preserves binary bytes. Tuple-returning wrappers
 distinguish missing/error/EOF/empty outcomes, but remain trusted raw adapters.
-Generated f64 bindings, record/slice ABI and ExoML/Chisel safe-import gates remain
-open; the new user-declared raw `double` ABI is not safe foreign admission.
+Record/slice/resource ABI and general ExoML/Chisel safe-import lowering remain
+open. `on1x-bind emit-safe` is limited to reviewed signed/unsigned-integer, `_Bool`,
+binary32 `float`, binary64 `double` and void-result functions with no ownership, error, callback
+or concurrency obligations; a user-declared raw `double` ABI alone is not safe
+foreign admission. See [admission profiles and versioning](docs/contracts.md#reviewed-scalar-only-safe-admission).
 Read [the bridge manual](stdlib/_bridge/README.md), [PPX manual](stdppx/README.md)
 and `AGENTS.md` before production use.
 ## Error reporting and repair proposals

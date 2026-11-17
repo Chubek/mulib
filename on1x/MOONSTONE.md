@@ -76,7 +76,15 @@ Use the real `moonstone::v1` Core facilities as building blocks for compiler too
 
 The public ExoML SDK already includes a generated `.g`/`.asdl` DSL frontend, in-memory StaticFFI services, checked C++ native binding, compiler-generated C++ wrapper/ABI-probe facilities and opt-in C11 source discovery via libclang. ExoML v2 semantic contracts describe ownership, lifetimes, errors, effects, callbacks, destructors, invalidations and concurrency. Its `Contract.hpp` / `schema.exocontract.json` are canonical.
 
-On1x's `tools/on1x-bind.cpp` currently implements real extraction, lossless CDecl transport, pin/check/explain, verification metadata and a **narrow** `emit-raw` subset for signed-integer/void scalar prototypes. It intentionally **fails closed** for `emit-safe`; current `contracts-exoml/` sidecars for JSON, Vec and Parsec are annotated/unreviewed, not certified. An ExoML Gate B pass or a reviewed flag does not prove sound client-side use.
+On1x's `tools/on1x-bind.cpp` implements real extraction, lossless CDecl transport,
+pin/check/explain, verification metadata and narrow scalar adapters (signed
+and unsigned integers, `_Bool`, binary32 `float`, binary64 `double`, void result). `emit-safe` admits only the
+reviewed scalar-only profiles after review metadata, complete profile eligibility,
+real Chisel use checking and executable target gates. Integer-only v1 evidence
+remains compatible; typed bool/f64 uses v2 and unsigned/f32 uses v3. General ownership/resource-safe
+admission remains closed; current `contracts-exoml/` sidecars for JSON, Vec and
+Parsec are annotated/unreviewed, not certified. An ExoML Gate B pass or a reviewed
+flag does not prove sound client-side use. See [the implemented boundary](docs/contracts.md).
 
 ### Implement these gates in order
 

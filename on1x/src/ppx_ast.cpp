@@ -1,4 +1,5 @@
 #include <on1x/meta.hpp>
+#include <on1x/numeric.hpp>
 #include <charconv>
 #include <set>
 #include <algorithm>
@@ -16,7 +17,10 @@ SExpr type(const Type& t){
  switch(t.kind()){
  case Type::Invalid:return form("Inferred");case Type::Hole:return form("HoleType");
   case Type::I64:return form("I64Type");case Type::Bool:return form("BoolType");case Type::String:return form("StringType");
-  case Type::F64:return form("F64Type");
+   case Type::F64:return form("F64Type");
+   case Type::F32:return form("F32Type");
+   case Type::U8:return form("U8Type");case Type::U16:return form("U16Type");
+   case Type::U32:return form("U32Type");case Type::U64:return form("U64Type");
   case Type::Void:return form("VoidType");case Type::Json:return form("JsonType");case Type::JsonView:return form("JsonViewType");
   case Type::SExpr:return form("SExprType");case Type::Buffer:return form("BufferType");
   case Type::Code:return form("CodeType",{type(t.code_result())});
@@ -50,7 +54,7 @@ SExpr expression(const Expr& e){
   return form("ValueData",{string(names[index]),string(e.text),list(std::move(labels)),type(e.result),list(std::move(children)),std::move(at)});
  }
  switch(e.kind){
-  case K::Integer:return form(e.text.starts_with("0x")||e.text.starts_with("0X")?"HexLiteral":"DecimalLiteral",{string(e.text),std::move(at)});
+   case K::Integer:return form(numeric_literal_type(e.text).is_unsigned()?"UnsignedLiteral":e.text.starts_with("0x")||e.text.starts_with("0X")?"HexLiteral":"DecimalLiteral",{string(e.text),std::move(at)});
   case K::Float:return form("FloatLiteral",{string(e.text),std::move(at)});
  case K::String:return form("StringLiteral",{string(literal_value(e.text)),std::move(at)});
  case K::Boolean:return form("BooleanLiteral",{symbol(e.text),std::move(at)});
@@ -105,7 +109,7 @@ Type read_type(const SExpr& n,bool inferred=false,std::size_t bound=0){
  }
  if(k=="Inferred"){if(!inferred)invalid(n,"Inferred is only valid for a local annotation");return Type::Invalid;}
  if(k=="HoleType")return Type::Hole;
-   for(auto kind:{Type::I64,Type::F64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(tag(type(Type(kind)))==k)return kind;
+    for(auto kind:{Type::I64,Type::F64,Type::F32,Type::U8,Type::U16,Type::U32,Type::U64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(tag(type(Type(kind)))==k)return kind;
   if(k=="CodeType")return Type::code(read_type(field(n,0),false,bound));
  if(k=="BoundType"){auto index=number(field(n,0));if(index>=bound)invalid(n,"unbound quantified type variable");return Type::bound(index);}
  if(k=="ForallType"){
@@ -157,7 +161,7 @@ ExprPtr read_expression(const SExpr& n){
     if(e->kind==K::Array&&arity>256)invalid(n,"array extent limit exceeded");
     if(e->kind!=K::Record&&e->kind!=K::Match&&!e->labels.empty())invalid(n,"unexpected data labels");
    }
-   else if(k=="DecimalLiteral"||k=="HexLiteral"){e->kind=K::Integer;e->text=field(n,0).text;}
+    else if(k=="DecimalLiteral"||k=="HexLiteral"||k=="UnsignedLiteral"){e->kind=K::Integer;e->text=field(n,0).text;}
   else if(k=="FloatLiteral"){e->kind=K::Float;e->text=field(n,0).text;}
  else if(k=="StringLiteral"){e->kind=K::String;e->text=source_literal(field(n,0).text);}
  else if(k=="BooleanLiteral"){e->kind=K::Boolean;e->text=field(n,0).text;}

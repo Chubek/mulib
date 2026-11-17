@@ -37,6 +37,18 @@ int main(){try{
  rejects([&]{s::verify(loop,{4096,200});},"Chisel");
  auto unit=on1x::parse(on1x::scan("fn main(){let r=json_parse_or_die(\"{}\");println(json_size(r));}","source.on1x"));on1x::check(unit);
  auto before=on1x::emit_c(unit,"source.on1x");auto report=s::check(unit);
- if(report!=s::check(unit)||before!=on1x::emit_c(unit,"source.on1x"))throw std::runtime_error("nondeterministic/mutating admission");
+  if(report!=s::check(unit)||before!=on1x::emit_c(unit,"source.on1x"))throw std::runtime_error("nondeterministic/mutating admission");
+ auto foreign=on1x::parse(on1x::scan("extern fn typed(x:bool,y:f64)->f64;fn main(){println(typed(true,1.5));}","typed.on1x"));on1x::check(foreign);
+ std::map<std::string,s::AdmittedExtern> admitted{{"typed",{{on1x::Type::Bool,on1x::Type::F64},on1x::Type::F64}}};
+ s::check(foreign,{},admitted);
+ auto bad=admitted;bad.at("typed").parameters[1]=on1x::Type::String;
+ rejects([&]{s::check(foreign,{},bad);},"outside the scalar profile");
+ bad=admitted;bad.at("typed").result=on1x::Type::Json;
+ rejects([&]{s::check(foreign,{},bad);},"outside the scalar profile");
+ auto& call=*foreign.functions.back().body.front().value->children.front();
+ call.children[1]->type=on1x::Type::I64;
+ rejects([&]{s::check(foreign,{},admitted);},"call parameter type drift");
+ call.children[1]->type=on1x::Type::F64;call.type=on1x::Type::Bool;
+ rejects([&]{s::check(foreign,{},admitted);},"call result drift");
  std::cout<<"Chisel resource lifetimes, external protocol models, joins, loops, cleanup and budgets PASS\n";
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

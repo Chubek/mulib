@@ -33,6 +33,8 @@ def main():
     cli.add_argument('--emit-only', action='store_true')
     cli.add_argument('--via-mir', action='store_true', help='use the verified scalar MIR-to-C11 path')
     cli.add_argument('--memory-check', action='store_true', help='require Chisel resource-usage admission')
+    cli.add_argument('--admitted-extern', type=Path, action='append', default=[],
+                     help='reviewed scalar-only extern evidence (requires --memory-check)')
     cli.add_argument('--verify-types', action='store_true', help='require Nerotypical structural HIR type verification')
     cli.add_argument('--optimize-ir', action='store_true', help='enable verified scalar passes (requires --via-mir)')
     cli.add_argument('--extra-c', action='append', default=[], help='extra C translation unit to compile/link')
@@ -54,6 +56,8 @@ def main():
     args = cli.parse_args()
     if args.optimize_ir and not args.via_mir:
         cli.error('--optimize-ir requires --via-mir')
+    if args.admitted_extern and not args.memory_check:
+        cli.error('--admitted-extern requires --memory-check')
     if args.mulib_plan and args.mulib_plan.resolve() in (args.input.resolve(),args.output.resolve()):
         cli.error('--mulib-plan must be separate from the input and executable')
     with tempfile.TemporaryDirectory(prefix='on1x-build-') as temp:
@@ -66,6 +70,8 @@ def main():
             compiler.append('--optimize-ir')
         if args.memory_check:
             compiler.append('--memory-check')
+        for evidence in args.admitted_extern:
+            compiler += ['--admitted-extern', str(evidence)]
         if args.verify_types:
             compiler.append('--verify-types')
         if args.no_prelude:

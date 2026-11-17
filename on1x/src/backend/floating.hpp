@@ -20,14 +20,17 @@ inline std::int64_t encoded_float(double value){return std::bit_cast<std::int64_
 inline double decoded_float(std::int64_t bits){return std::bit_cast<double>(bits);}
 inline bool floating_op(Op op){return op>=Op::FloatAdd&&op<=Op::FloatSignbit;}
 struct FloatResult { std::int64_t value=0; const char* trap=nullptr; };
-inline FloatResult floating(Op op,std::int64_t a,std::int64_t b,const Location& at){
- if(effect(op)!=Effect::Pure){
+inline const char* float_environment(const Location& at){
 #if defined(__linux__) && defined(__x86_64__) && defined(__SSE2__) && (defined(__GNUC__) || defined(__clang__)) && FLT_RADIX == 2 && DBL_MANT_DIG == 53 && DBL_MAX_EXP == 1024 && DBL_MIN_EXP == -1021 && FLT_EVAL_METHOD == 0
-  (void)at;
-  if((_mm_getcsr()&0xffc0u)!=0x1f80u)return {0,"unsupported f64 environment"};
+ (void)at;
+ return (_mm_getcsr()&0xffc0u)!=0x1f80u?"unsupported f64 environment":nullptr;
 #else
-  throw Error(at,"ON1X-MIR-UNSUPPORTED: f64 evaluation requires Linux x86_64 SSE2 binary64 evaluation");
+ throw Error(at,"ON1X-MIR-UNSUPPORTED: f64 evaluation requires Linux x86_64 SSE2 binary64 evaluation");
 #endif
+}
+inline FloatResult floating(Op op,std::int64_t a,std::int64_t b,const Location& at){
+  if(effect(op)!=Effect::Pure){
+   if(auto error=float_environment(at))return {0,error};
  }
  auto bits=canonical_float(std::bit_cast<std::uint64_t>(a));
  if(op==Op::FloatFromBits||op==Op::FloatToBits)return {std::bit_cast<std::int64_t>(bits)};

@@ -297,7 +297,7 @@ negative = [
     ('mutable_capture', 'var x=f64_from_i64(1); let f=fn()->f64{return x;};'),
     ('float_overflow', 'let x=1e309;'),
     ('float_underflow', 'let x=1e-9999;'),
-    ('float_suffix', 'let x=1.0f64;'),
+    ('unknown_float_suffix', 'let x=1.0f16;'),
     ('float_oversized', 'let x=' + '1'*1024 + '.0;'),
 ]
 for name, body in negative:

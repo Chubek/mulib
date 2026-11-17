@@ -4,6 +4,8 @@
 #include <charconv>
 #include <map>
 #include <limits>
+#include <algorithm>
+#include "numeric.hpp"
 
 namespace on1x::mir {
 namespace {
@@ -17,9 +19,10 @@ class Lowering {
  [[noreturn]] void unsupported(const Location& at,const std::string& why){throw Error(at,"ON1X-MIR-UNSUPPORTED: "+why);}
  Id fresh(const Location& at){if(serial>=limits.nodes)throw Error(at,"ON1X-MIR-LOWER: node budget exhausted");return ++serial;}
   void scalar(const Type& t,const Location& at,bool allow_void=false){
-   if(t==Type::F64){module.version=format_version;return;}
+    if(t==Type::F32||t.is_unsigned()){module.version=numeric_format_version;return;}
+    if(t==Type::F64){module.version=std::max(module.version,format_version);return;}
    if(t.is_tuple()){
-    module.version=format_version;
+     module.version=std::max(module.version,format_version);
     for(const auto& element:t.elements())scalar(element,at);
     return;
    }
@@ -40,25 +43,28 @@ class Lowering {
  }
  Edge edge(std::size_t index,std::vector<Id> arguments={}){return {fn().blocks.at(index).id,std::move(arguments)};}
  void jump(std::size_t index,const Location& at,std::vector<Id> args={}){terminate(Exit::Jump,0,{edge(index,std::move(args))},at);}
- Id emit(Op op,Type type,std::vector<Id> args,const Location& at,Id target=0,std::int64_t immediate=0){
+  Id emit(Op op,Type type,std::vector<Id> args,const Location& at,Id target=0,std::int64_t immediate=0){
   scalar(type,at,true);Instruction i;i.id=fresh(at);i.type=type;i.op=op;i.operands=std::move(args);i.where=at;i.target=target;i.immediate=immediate;
   if(effect(op)!=Effect::Pure){i.effect_in=token();i.effect_out=fresh(at);}
   auto result=type==Type::Void?0:i.id;block().instructions.push_back(std::move(i));return result;
  }
- Binding binding(const std::string& name,const Location& at){
+  Id numeric(const std::string& name,Type type,std::vector<Id> args,const Location& at){
+   if(!detail::numeric_signature(name))unsupported(at,"unknown numeric operation: "+name);
+   module.version=numeric_format_version;
+   auto result=emit(Op::Numeric,type,std::move(args),at);block().instructions.back().primitive=name;return result;
+  }
+  Binding binding(const std::string& name,const Location& at){
   for(auto it=scopes.rbegin();it!=scopes.rend();++it)if(auto found=it->find(name);found!=it->end())return found->second;
   unsupported(at,"unresolved local "+name);
  }
  Id expression(const Expr& e){
   scalar(e.type,e.where,true);
   switch(e.kind){
-  case Expr::Kind::Integer:{
-   std::int64_t value=0;auto [p,ec]=std::from_chars(e.text.data(),e.text.data()+e.text.size(),value);
-   if(ec!=std::errc{}||p!=e.text.data()+e.text.size())unsupported(e.where,"integer requires checked decimal HIR");
-   return emit(Op::Constant,Type::I64,{},e.where,0,value);
+   case Expr::Kind::Integer:{
+    return emit(Op::Constant,e.type,{},e.where,0,integer_literal_bits(e.text,e.where));
   }
    case Expr::Kind::Boolean:return emit(Op::Constant,Type::Bool,{},e.where,0,e.text=="true");
-   case Expr::Kind::Float:return emit(Op::Constant,Type::F64,{},e.where,0,float_literal_bits(e.text,e.where));
+    case Expr::Kind::Float:return emit(Op::Constant,e.type,{},e.where,0,float_literal_bits(e.text,e.where));
    case Expr::Kind::Tuple:{
     std::vector<Id> fields;for(const auto& child:e.children)fields.push_back(expression(*child));
     return emit(Op::Tuple,e.type,std::move(fields),e.where);
@@ -67,7 +73,9 @@ class Lowering {
    if(e.reference!=Expr::Reference::Local)unsupported(e.where,"first-class function values");
    auto b=binding(e.text,e.where);return b.slot?emit(Op::Load,b.type,{},e.where,b.id):b.id;
   }
-   case Expr::Kind::Unary:{auto operand=expression(*e.children.at(0));return emit(e.type==Type::F64?Op::FloatNeg:e.text=="-"?Op::Neg:Op::Not,e.type,{operand},e.where);}
+   case Expr::Kind::Unary:{auto operand=expression(*e.children.at(0));
+    if(e.type==Type::F32)return numeric("neg_f32",e.type,{operand},e.where);
+    return emit(e.type==Type::F64?Op::FloatNeg:e.text=="-"?Op::Neg:Op::Not,e.type,{operand},e.where);}
   case Expr::Kind::Binary:{
    auto left=expression(*e.children.at(0));
    if(e.text=="&&"||e.text=="||"){
@@ -78,7 +86,12 @@ class Lowering {
     terminate(Exit::Branch,left,{yes,no},e.where);
     current=rhs;auto right=expression(*e.children.at(1));jump(merge,e.where,{right});current=merge;return result;
    }
-    auto right=expression(*e.children.at(1));
+     auto right=expression(*e.children.at(1));
+     if(e.children[0]->type==Type::F32||e.children[0]->type.is_unsigned()){
+      static const std::map<std::string,std::string> names={{"+","add"},{"-","sub"},{"*","mul"},{"/","div"},{"%","mod"},
+       {"==","eq"},{"!=","ne"},{"<","lt"},{"<=","le"},{">","gt"},{">=","ge"}};
+      return numeric(names.at(e.text)+"_"+type_name(e.children[0]->type),e.type,{left,right},e.where);
+     }
     if(e.children[0]->type==Type::F64){
      static const std::map<std::string,Op> floats={{"+",Op::FloatAdd},{"-",Op::FloatSub},{"*",Op::FloatMul},{"/",Op::FloatDiv},
       {"==",Op::FloatEq},{"!=",Op::FloatNe},{"<",Op::FloatLt},{"<=",Op::FloatLe},{">",Op::FloatGt},{">=",Op::FloatGe}};
@@ -104,8 +117,9 @@ class Lowering {
      {"f64_from_bits",Op::FloatFromBits},{"f64_to_bits",Op::FloatToBits},{"f64_is_nan",Op::FloatIsNaN},
      {"f64_is_finite",Op::FloatIsFinite},{"f64_signbit",Op::FloatSignbit}};
     if(auto op=floats.find(c.text);op!=floats.end()){
-     module.version=format_version;return emit(op->second,e.type,std::move(args),e.where);
-    }
+      module.version=std::max(module.version,format_version);return emit(op->second,e.type,std::move(args),e.where);
+     }
+    if(numeric_primitive(c.text))return numeric(c.text,e.type,std::move(args),e.where);
    unsupported(e.where,"intrinsic needs an explicit effect/resource descriptor: "+c.text);
   }
    default:unsupported(e.where,"expression requires aggregate, closure, resource or stage lowering");

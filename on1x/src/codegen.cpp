@@ -7,6 +7,7 @@
 #include <set>
 #include <sstream>
 #include <unordered_map>
+#include <bit>
 
 namespace on1x {
 namespace {
@@ -48,7 +49,7 @@ class Generator {
  std::vector<Owner> temporary_values;
  std::uint64_t serial=0,type_serial=0,helper_serial=0;
   int indent=0;
-   bool uses_f64=false;
+   bool uses_f64=false,uses_f32=false,uses_unsigned=false;
    bool uses_value_data=false;
 
  std::string reserve(const std::string& preferred){
@@ -78,7 +79,10 @@ class Generator {
    }
    switch(type.kind()){
    case Type::I64:return "int64_t";case Type::Bool:return "bool";
-   case Type::F64:uses_f64=true;return "double";
+    case Type::F64:uses_f64=true;return "double";
+    case Type::F32:uses_f64=true;uses_f32=true;return "float";
+    case Type::U8:case Type::U16:case Type::U32:case Type::U64:
+     uses_unsigned=true;return "uint"+type_name(type).substr(1)+"_t";
   case Type::String:return "const char *";case Type::Void:return "void";
    case Type::Json:return "on1x_json *";case Type::JsonView:return "const on1x_json *";
    case Type::SExpr:return "on1x_sexpr *";case Type::Buffer:return "on1x_buffer *";
@@ -218,11 +222,13 @@ class Generator {
    case Expr::Kind::PolyProjection:{
     auto value=expr(*e.children[0]);return temp(e.type,value+".element_"+std::to_string(e.projection),true);
    }
-   case Expr::Kind::Integer:return e.text=="-9223372036854775808"?"(-INT64_C(9223372036854775807)-INT64_C(1))":"INT64_C("+e.text+")";
+   case Expr::Kind::Integer:
+    if(e.type.is_unsigned()){uses_unsigned=true;return "UINT64_C("+std::to_string(std::bit_cast<std::uint64_t>(integer_literal_bits(e.text,e.where)))+")";}
+    return e.text=="-9223372036854775808"?"(-INT64_C(9223372036854775807)-INT64_C(1))":"INT64_C("+e.text+")";
    case Expr::Kind::Float:{
     auto bits=float_literal_bits(e.text,e.where);
     auto payload=bits==INT64_MIN?"(-INT64_C(9223372036854775807)-INT64_C(1))":"INT64_C("+std::to_string(bits)+")";
-    return temp(Type::F64,"on1x_f64_from_bits("+payload+")");
+    return temp(e.type,"on1x_"+type_name(e.type)+"_from_bits("+payload+")");
    }
   case Expr::Kind::Boolean:return e.text;
   case Expr::Kind::String:return c_string(e.text);
@@ -295,7 +301,7 @@ class Generator {
    }
    case Expr::Kind::Unary:{
     auto value=expr(*e.children[0]);
-    if(e.type==Type::F64)return temp(e.type,"on1x_neg_f64("+value+")");
+     if(e.type.is_float())return temp(e.type,"on1x_neg_"+type_name(e.type)+"("+value+")");
     return temp(e.type,e.text=="-"?"on1x_neg_i64("+value+")":"(!"+value+")");
   }
   case Expr::Kind::Binary:{
@@ -310,15 +316,15 @@ class Generator {
     --indent;definitions<<pad()<<"}\n";return result;
    }
     auto right=expr(*e.children[1]);
-    if(e.children[0]->type==Type::F64){
+     if(e.children[0]->type.is_float()){
      uses_f64=true;
      static const std::map<std::string,std::string> methods={{"+","add"},{"-","sub"},{"*","mul"},{"/","div"},
       {"==","eq"},{"!=","ne"},{"<","lt"},{"<=","le"},{">","gt"},{">=","ge"}};
-     return temp(e.type,"on1x_"+methods.at(op)+"_f64("+left+", "+right+")");
+      return temp(e.type,"on1x_"+methods.at(op)+"_"+type_name(e.children[0]->type)+"("+left+", "+right+")");
     }
    if(op=="+"||op=="-"||op=="*"||op=="/"||op=="%"){
     std::string method=op=="+"?"add":op=="-"?"sub":op=="*"?"mul":op=="/"?"div":"mod";
-    return temp(e.type,"on1x_"+method+"_i64("+left+", "+right+")");
+     return temp(e.type,"on1x_"+method+"_"+type_name(e.type)+"("+left+", "+right+")");
    }
    if((op=="=="||op=="!=")&&e.children[0]->type==Type::String)
     return temp(e.type,"(strcmp("+left+", "+right+") "+op+" 0)");
@@ -338,7 +344,7 @@ class Generator {
    if(builtin){
     const auto& name=callee.text;
     if(name=="println"){
-     auto type=e.children[0]->type;target="on1x_print_"+std::string(type==Type::I64?"i64":type==Type::F64?"f64":type==Type::Bool?"bool":"string");
+      auto type=e.children[0]->type;target="on1x_print_"+type_name(type);
     }else if(name=="assert")target="on1x_assert";
     else if(name=="json_parse_or_die")target="on1x_json_parse_or_die";
     else if(name=="json_get_or_die")target="on1x_json_get_or_die";
@@ -534,7 +540,9 @@ public:
     "#if !defined(ON1X_CLOSURE_ABI_VERSION) || ON1X_CLOSURE_ABI_VERSION != 1\n#error \"incompatible On1x closure runtime ABI\"\n#endif\n\n"
     "#if !defined(ON1X_DATA_ABI_VERSION) || ON1X_DATA_ABI_VERSION != 1\n#error \"incompatible On1x data runtime ABI\"\n#endif\n\n"
      +(uses_value_data?std::string("#if !defined(ON1X_VALUE_DATA_ABI_VERSION) || ON1X_VALUE_DATA_ABI_VERSION != 1\n#error \"incompatible On1x value data runtime ABI\"\n#endif\n\n"):std::string{})
-     +float_guard+types.str()+"\n"+prototypes.str()+"\n"+value_helpers.str()+helpers.str()+definitions.str();
+      +(uses_f32?std::string("#if !defined(ON1X_F32_ABI_VERSION) || ON1X_F32_ABI_VERSION != 1\n#error \"unsupported On1x f32 target or runtime ABI\"\n#endif\n"):std::string{})
+      +(uses_unsigned?std::string("#if !defined(ON1X_UNSIGNED_ABI_VERSION) || ON1X_UNSIGNED_ABI_VERSION != 1\n#error \"incompatible On1x unsigned runtime ABI\"\n#endif\n"):std::string{})
+      +float_guard+types.str()+"\n"+prototypes.str()+"\n"+value_helpers.str()+helpers.str()+definitions.str();
  }
 };
 }

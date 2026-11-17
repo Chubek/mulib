@@ -1,4 +1,4 @@
-# Core/MIR: scalar v1 and numeric/product v2
+# Core/MIR: scalar v1, numeric/product v2 and complete scalar numeric v3
 
 This is the first executable **B1 subset** from `BACKEND.md`. The implementation
 is in `include/on1x/backend/mir.hpp` and `src/backend/`. It consumes the existing
@@ -10,6 +10,10 @@ Existing scalar source still lowers to v1, and existing v1 artifacts continue to
 decode and round-trip as v1. Lowering selects v2 only when extended types/opcodes
 are needed. This does not add managed aggregates, general records, foreign
 ownership or concurrency effects.
+
+v3 adds u8/u16/u32/u64/f32, nested numeric tuples, every numeric conversion and
+wrapping/bit/shift operation. It uses the existing MIR, verifier, evaluator and
+C11 emitter, not a second IR. Old v1/v2 lowering and wire shapes are preserved.
 
 ## Use
 
@@ -39,8 +43,8 @@ An ordinary `i64` main result follows the existing C11 main exit convention.
 
 | Feature | Admitted profile |
 |---|---|
-| Values | v1: i64/bool/void results; v2 additionally: f64 and nested tuples of i64/bool/f64 |
-| Arithmetic | Checked i64 operations; dedicated IEEE f64 operations/conversions/classification in v2 |
+| Values | v1: i64/bool/void results; v2 adds f64/numeric tuples; v3 adds u8/u16/u32/u64/f32 and tuples containing them |
+| Arithmetic | Checked i64; dedicated f64 operations in v2; all remaining typed numeric operations/conversions in v3 |
 | Control | If/else, while, early return, nested lexical scopes, short-circuit logic |
 | Calls | Direct ordinary On1x calls, recursion, concrete admitted specializations; tuple arguments/results and parameter destructuring in v2 |
 | Observable effects | Scalar `println`, `assert`, checked arithmetic failure, local loads/stores, conservative call barriers |
@@ -57,7 +61,7 @@ specified in [numeric semantics](numerics.md).
 Optional [Novostone relational analyses](backend-analysis.md) now expose MIR
 metadata, CFG reachability, transitive calls, conservative effects and liveness
 through `--emit-ir-facts` / `--analyze-ir` in an enabled build.
-That mapping remains **v1-only**: v2 artifacts reject explicitly until the new
+That mapping remains **v1-only**: v2/v3 artifacts reject explicitly until the new
 descriptors have a complete relational mapping. No float payload is narrowed to
 Novostone's i32 execution dialect.
 
@@ -99,6 +103,31 @@ with transactional verification.
 Run `examples/float_tuples.on1x` with `--run-ir`, `--emit-ir-c` or the build helper
 with `--via-mir` (optionally `--optimize-ir`). It prints 0.5, 0.125 and 4, with
 the floats in exact hexadecimal notation.
+
+## Complete scalar numeric v3 contract
+
+- Run `examples/numeric_literals.on1x` through `--run-ir`, `--emit-ir-c`, or
+  `on1x-build.py --via-mir` (optionally `--optimize-ir`). Unsigned results retain
+  all bits, including u64 values above INT64_MAX; binary32 results retain actual
+  single-precision behavior, including special values and signed zero.
+- A `numeric` instruction adds one quoted descriptor field after its location.
+  Descriptors are fixed allowlisted names (at most 64 bytes), such as `add_u8`,
+  `u64_wrapping_mul`, `f32_from_f64`; they are not arbitrary C/foreign symbols.
+  The verifier requires the descriptor's exact parameter/result signature,
+  canonical payloads, SSA/dominance/CFG invariants and a complete effect chain.
+  Other instructions retain their v1/v2 field count and reject descriptor fields.
+- v3 numeric instructions conservatively carry trap effects, even for pure
+  wrapping/bit operations. No pass may erase/reorder them as pure arithmetic.
+  Existing load/slot/phi/CFG passes operate transactionally; new numeric
+  arithmetic is not host-folded or guessed to obey signed-i64 rules.
+- `RuntimeValue.scalar` is a typed 64-bit storage payload. u64 uses all bits;
+  f32 uses only the low 32 bits and canonical NaNs; smaller unsigned types reject
+  high bits. The evaluator decodes unsigned values before arithmetic, never
+  treats a high-bit u64 as a negative integer, and implements binary32 independently
+  from the C11 runtime. External evaluator arguments receive the same validation.
+- Scalar-type support does not add records/ADTs/arrays, closure/staging values,
+  resources, foreign calls or concurrency to MIR. Floating execution retains
+  the guarded, tested Linux x86_64 environment profile, not cross-target certification.
 
 ## Representation and invariants
 

@@ -2,7 +2,7 @@
   "schema_format": "on1x.sexpr-ast/v1", "version": 1, "root": "Unit",
   "categories": {
     "Syntax":"", "Unit":"Syntax", "Location":"Syntax", "Function":"Syntax", "Parameter":"Syntax", "Pattern":"Syntax", "Type":"Syntax", "Attribute":"Syntax", "Statement":"Syntax", "Block":"Syntax", "ListSyntax":"Syntax", "VectorSyntax":"Syntax", "KeywordSyntax":"Syntax", "Expression":"Syntax",
-    "Identifier":"Expression", "Literal":"Expression", "NumericLiteral":"Literal", "IntegerLiteral":"NumericLiteral", "DecimalLiteral":"IntegerLiteral", "HexLiteral":"IntegerLiteral", "FloatLiteral":"NumericLiteral", "StringLiteral":"Literal", "BooleanLiteral":"Literal", "UnaryExpression":"Expression", "BinaryExpression":"Expression", "CallExpression":"Expression", "TupleExpression":"Expression", "LambdaExpression":"Expression", "ExtensionExpression":"Expression", "StagedExpression":"Expression", "DataExpression":"Expression"
+    "Identifier":"Expression", "Literal":"Expression", "NumericLiteral":"Literal", "IntegerLiteral":"NumericLiteral", "DecimalLiteral":"IntegerLiteral", "HexLiteral":"IntegerLiteral", "FloatLiteral":"NumericLiteral", "UnsignedLiteral":"NumericLiteral", "StringLiteral":"Literal", "BooleanLiteral":"Literal", "UnaryExpression":"Expression", "BinaryExpression":"Expression", "CallExpression":"Expression", "TupleExpression":"Expression", "LambdaExpression":"Expression", "ExtensionExpression":"Expression", "StagedExpression":"Expression", "DataExpression":"Expression"
   },
   "nodes": {
     "Unit":{"category":"Unit","fields":[["version","Version"],["functions","Function*"]]},
@@ -16,6 +16,11 @@
     "Inferred":{"category":"Type","fields":[]},"HoleType":{"category":"Type","fields":[]},
     "I64Type":{"category":"Type","fields":[]},"BoolType":{"category":"Type","fields":[]},
     "F64Type":{"category":"Type","fields":[]},
+    "F32Type":{"category":"Type","fields":[]},
+    "U8Type":{"category":"Type","fields":[]},
+    "U16Type":{"category":"Type","fields":[]},
+    "U32Type":{"category":"Type","fields":[]},
+    "U64Type":{"category":"Type","fields":[]},
     "StringType":{"category":"Type","fields":[]},"VoidType":{"category":"Type","fields":[]},
     "JsonType":{"category":"Type","fields":[]},"JsonViewType":{"category":"Type","fields":[]},
     "SExprType":{"category":"Type","fields":[]},"BufferType":{"category":"Type","fields":[]},
@@ -38,6 +43,7 @@
     "Do":{"category":"Statement","fields":[["expression","Expression"],["location","Location"]]},
     "DecimalLiteral":{"category":"DecimalLiteral","fields":[["spelling","DecimalSpelling"],["location","Location"]]},
     "FloatLiteral":{"category":"FloatLiteral","fields":[["spelling","FloatSpelling"],["location","Location"]]},
+    "UnsignedLiteral":{"category":"UnsignedLiteral","fields":[["spelling","UnsignedSpelling"],["location","Location"]]},
     "HexLiteral":{"category":"HexLiteral","fields":[["spelling","HexSpelling"],["location","Location"]]},
     "StringLiteral":{"category":"StringLiteral","fields":[["value","Bytes"],["location","Location"]]},
     "BooleanLiteral":{"category":"BooleanLiteral","fields":[["value","Boolean"],["location","Location"]]},

@@ -81,7 +81,13 @@ int main(int argc,char** argv){
   mutant=roots;mutant.functions[0].name="renamed";
   rejected([&]{p::verify_transition(roots,mutant,p::Pass::ConstantFold);},"preservation of signatures");
   mutant=roots;mutant.functions[0].blocks[0].instructions[0].where.line++;
-  rejected([&]{p::verify_transition(roots,mutant,p::Pass::DeadPure);},"source location");
+   rejected([&]{p::verify_transition(roots,mutant,p::Pass::DeadPure);},"source location");
+   auto numeric=lower("fn main(){println(3u8+2u8);}");auto numeric_mutant=numeric;
+   for(auto& f:numeric_mutant.functions)for(auto& block:f.blocks)for(auto& i:block.instructions)
+    if(i.op==m::Op::Numeric)i.primitive="sub_u8";
+   m::verify(numeric_mutant); // Same signature/effect chain, different semantics.
+   rejected([&]{p::verify_transition(numeric,numeric_mutant,p::Pass::DeadPure);},"preservation of effects");
+   rejected([&]{p::verify_transition(numeric,numeric_mutant,p::Pass::LocalSlots);},"slots/nonmemory barriers");
   auto graph=lower("fn main(){if true{println(1);}else{println(2);}}");
   p::Options cfg;cfg.pipeline={p::Pass::SimplifyCFG};auto simplified=p::run(graph,cfg);
   rejected([&]{p::verify_transition(graph,simplified.module(),p::Pass::ConstantFold);},"preservation of cfg");

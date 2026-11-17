@@ -1,4 +1,6 @@
 #include <on1x/safety.hpp>
+#include <on1x/primitives.hpp>
+#include <algorithm>
 #include <deque>
 #include <limits>
 #include <sstream>
@@ -8,6 +10,84 @@ namespace c=moonstone::chisel;
 namespace {
 Location location(const moonstone::SourceSpan& s){return {s.file,0,s.line,s.column};}
 [[noreturn]] void fail(const Location& at,const std::string& message){throw Error(at,"ON1X-MEMORY: "+message);}
+// Strict reader for the versioned line-based admitted-extern companion artifact.
+// Structure:
+//   on1x.admitted-extern/v1|v2|v3  (v1 i64/void, v2 adds bool/f64, v3 adds unsigned/f32)
+//   identity <64 lowercase hex digits>
+//   extern <name> (<admitted-scalar>,...) -> <admitted-scalar>|void
+// Everything unknown, oversized, duplicated or out of profile is rejected.
+std::map<std::string,AdmittedExtern> parse_admission_text(const std::string& text){
+ constexpr std::size_t max_externs=4096,max_line=512,max_name=256,max_params=256;
+ auto reject=[&](std::size_t line,const std::string& why)->Error{
+  return Error({"<admitted-extern>",0,line,0},"ON1X-ADMISSION: "+why);
+ };
+ auto expect=[&](bool condition,std::size_t line,const std::string& why){
+  if(!condition)throw reject(line,why);
+ };
+ if(text.size()>4*1024*1024)throw reject(1,"admission artifact exceeds 4 MiB");
+ expect(!text.empty()&&text.back()=='\n',1,"admission artifact must end with a newline");
+ std::map<std::string,AdmittedExtern> out;std::string identity;unsigned version=1;
+ for(std::size_t begin=0,line=1;begin<text.size();++line){
+  auto end=text.find('\n',begin);
+  expect(end!=std::string::npos,line,"unterminated admission line");
+  auto body=std::string_view(text).substr(begin,end-begin);
+  expect(body.size()<=max_line&&body.find('\0')==std::string_view::npos,line,"admission line too long or contains NUL");
+  begin=end+1;
+  if(line==1){
+   expect(body=="on1x.admitted-extern/v1"||body=="on1x.admitted-extern/v2"||body=="on1x.admitted-extern/v3",line,"unknown admission schema");
+   version=body=="on1x.admitted-extern/v3"?3:body=="on1x.admitted-extern/v2"?2:1;
+  }else if(line==2){
+   expect(body.starts_with("identity "),line,"missing admission identity");
+   auto digest=body.substr(9);
+   expect(digest.size()==64&&std::all_of(digest.begin(),digest.end(),[](char c){return (c>='0'&&c<='9')||(c>='a'&&c<='f');}),line,"admission identity must be 64 lowercase hex digits");
+   identity=std::string(digest);
+  }else{
+   expect(out.size()<max_externs,line,"too many admitted externs");
+   expect(body.starts_with("extern "),line,"unexpected admission line");
+   auto rest=body.substr(7);
+   auto open=rest.find(" (");
+   expect(open!=std::string_view::npos&&open>0&&open<=max_name,line,"malformed extern name");
+   auto name=rest.substr(0,open);
+   auto first=[](char c){return c=='_'||(c>='a'&&c<='z')||(c>='A'&&c<='Z');};
+   expect(first(name.front()),line,"invalid extern name");
+   expect(std::all_of(name.begin(),name.end(),[&](char c){return first(c)||(c>='0'&&c<='9');}),line,"invalid extern name");
+   expect(name.starts_with("on1x_ffi_"+identity+"_"),line,"extern name is not scoped to the admission identity");
+   rest=rest.substr(open+1);
+   expect(rest.starts_with("("),line,"malformed extern parameter list");
+   auto arrow=rest.find(") -> ");
+   expect(arrow!=std::string_view::npos,line,"malformed extern parameter list");
+   auto inside=rest.substr(1,arrow-1);
+   auto result=rest.substr(arrow+5);
+   auto admitted_type=[&](std::string_view token,bool result_position){
+    if(token=="i64")return Type{Type::I64};
+    if(version>=2&&token=="bool")return Type{Type::Bool};
+    if(version>=2&&token=="f64")return Type{Type::F64};
+    if(version>=3)for(auto kind:{Type::F32,Type::U8,Type::U16,Type::U32,Type::U64})
+     if(token==type_name(kind))return Type{kind};
+    if(result_position&&token=="void")return Type{Type::Void};
+    throw reject(line,"extern "+std::string(result_position?"result":"parameter")+" has unsupported scalar type");
+   };
+   AdmittedExtern admitted;admitted.result=admitted_type(result,true);
+   std::vector<std::string_view> params;
+   for(std::size_t at=0;at<inside.size();){
+    auto comma=inside.find(',',at);
+    auto token=inside.substr(at,comma==std::string_view::npos?inside.size():comma-at);
+    params.push_back(token);
+    if(comma==std::string_view::npos)break;
+    at=comma+1;
+    expect(at<inside.size(),line,"trailing comma in extern parameters");
+   }
+   if(inside.empty())params.clear();
+   expect(params.size()<=max_params,line,"too many extern parameters");
+   for(const auto& token:params)admitted.parameters.push_back(admitted_type(token,false));
+   expect(out.emplace(std::string(name),std::move(admitted)).second,line,"duplicate admitted extern: "+std::string(name));
+  }
+ }
+ expect(!identity.empty(),2,"missing admission identity");
+ expect(!out.empty(),3,"admission artifact contains no externs");
+ return out;
+}
+
 struct Budget {
  Limits left;
  void tick(const Location& at,std::size_t n=1){if(n>left.work)throw BudgetExceeded(at,"ON1X-MEMORY-BUDGET: work exhausted");left.work-=n;}
@@ -95,19 +175,33 @@ void verify_impl(const c::Function& input,Budget& budget){
 }
 struct Binding {c::Id owner=0,loan=0;};
 class Lower {
- Budget& budget;c::Function flow;c::Id current=0,next_place=1,next_loan=1;
+ Budget& budget;const std::map<std::string,AdmittedExtern>& admitted;c::Function flow;c::Id current=0,next_place=1,next_loan=1;
  struct Scope {std::map<std::string,Binding> names;std::vector<Binding> cleanup;};
  std::vector<Scope> scopes;
  c::Id block(){budget.node({"<memory-hir>"});auto id=static_cast<c::Id>(flow.blocks.size());flow.blocks.push_back({id,{},{}});return id;}
  void event(c::Op op,Binding b,const Location& at){budget.node(at);flow.blocks[current].instructions.push_back({op,b.owner,b.loan,span(at)});}
  void cleanup(std::size_t index,const Location& at){for(auto it=scopes[index].cleanup.rbegin();it!=scopes[index].cleanup.rend();++it)event(it->loan?c::Op::EndBorrow:c::Op::Drop,*it,at);}
  Binding lookup(const std::string& name,const Location& at){for(auto s=scopes.rbegin();s!=scopes.rend();++s)if(auto b=s->names.find(name);b!=s->names.end())return b->second;fail(at,"unknown local: "+name);}
- void bind(const Pattern& p){if(p.is_tuple())fail(p.where,"tuple patterns not modeled");scopes.back().names[p.name]={};}
+  bool trivial(const Type& type,const Location& at,std::size_t depth=0){
+   budget.node(at);if(depth>64)fail(at,"scalar tuple memory model nesting limit exceeded");
+   if(type.is_numeric()||type==Type::Bool)return true;
+   if(!type.is_tuple())return false;
+   for(const auto& field:type.elements())if(!trivial(field,at,depth+1))return false;
+   return true;
+  }
+  void bind(const Pattern& p){
+   budget.node(p.where);
+   if(p.is_tuple()){for(const auto& child:p.elements)bind(child);return;}
+   scopes.back().names[p.name]={};
+  }
  Binding expression(const Expr& e){
   budget.node(e.where);
   switch(e.kind){
-   case Expr::Kind::Integer:case Expr::Kind::Boolean:case Expr::Kind::String:return {};
-   case Expr::Kind::Float:fail(e.where,"f64 memory model unavailable");
+   case Expr::Kind::Integer:case Expr::Kind::Boolean:case Expr::Kind::Float:case Expr::Kind::String:return {};
+   case Expr::Kind::Tuple:
+    if(!trivial(e.type,e.where))fail(e.where,"tuple memory model requires trivially copied numeric/bool fields");
+    for(const auto& child:e.children)if(expression(*child).owner)fail(child->where,"resource in scalar tuple");
+    return {};
   case Expr::Kind::Variable:{
    if(e.reference!=Expr::Reference::Local)fail(e.where,"first-class callable not modeled");
    auto b=lookup(e.text,e.where);if(b.owner)event(c::Op::Use,b,e.where);return b;
@@ -120,8 +214,17 @@ class Lower {
   case Expr::Kind::Call:{
    if(!e.callee||e.callee->kind!=Expr::Kind::Variable)fail(e.where,"indirect call not modeled");
    const auto& callee=*e.callee;auto name=callee.text;
-   if(callee.reference==Expr::Reference::Extern)fail(e.where,"raw external call lacks a checked memory model: "+name);
-   if(callee.reference!=Expr::Reference::Function&&callee.reference!=Expr::Reference::Intrinsic)fail(e.where,"indirect call not modeled");
+   if(callee.reference==Expr::Reference::Extern){
+    // Admitted externs are reviewed scalar-only calls: no resources cross the
+    // boundary, so the ordinary scalar-argument rules below suffice.
+    auto found=admitted.find(name);
+    if(found==admitted.end())fail(e.where,"raw external call lacks a checked memory model: "+name);
+    if(e.children.size()!=found->second.parameters.size())fail(e.where,"admitted extern call arity drift: "+name);
+    for(std::size_t i=0;i<e.children.size();++i)
+     if(e.children[i]->type!=found->second.parameters[i])fail(e.children[i]->where,"admitted extern call parameter type drift: "+name);
+    if(e.type!=found->second.result)fail(e.where,"admitted extern call result drift: "+name);
+   }
+   if(callee.reference!=Expr::Reference::Function&&callee.reference!=Expr::Reference::Intrinsic&&callee.reference!=Expr::Reference::Extern)fail(e.where,"indirect call not modeled");
    std::vector<Binding> args;for(const auto& arg:e.children){auto b=expression(*arg);
     if(b.owner&&arg->kind!=Expr::Kind::Variable)fail(arg->where,"temporary resource argument not modeled");
     args.push_back(b);}
@@ -131,7 +234,8 @@ class Lower {
      if(args.empty()||!args[0].owner)fail(e.where,"borrow has no owner");
      return {args[0].owner,next_loan++};
     }
-    if(name!="json_size"&&name!="json_number"&&name!="json_print"&&name!="println"&&name!="assert")fail(e.where,"intrinsic memory model unavailable: "+name);
+    if(name!="json_size"&&name!="json_number"&&name!="json_print"&&name!="println"&&name!="assert"&&
+       !numeric_primitive(name))fail(e.where,"intrinsic memory model unavailable: "+name);
    }else for(auto b:args)if(b.owner)fail(e.where,"ordinary resource parameter not modeled");
    return {};
   }
@@ -177,26 +281,46 @@ class Lower {
   return returned;
  }
 public:
- explicit Lower(Budget& b):budget(b){}
+ explicit Lower(Budget& b,const std::map<std::string,AdmittedExtern>& a):budget(b),admitted(a){}
  c::Function run(const Function& f){
   current=block();flow.entry=current;scopes.push_back({});
-  for(const auto& p:f.params){budget.node(p.where);if(p.type!=Type::I64&&p.type!=Type::Bool&&p.type!=Type::String)fail(p.where,"parameter memory model unavailable");if(p.pattern)bind(*p.pattern);else scopes.back().names[p.name]={};}
+   for(const auto& p:f.params){budget.node(p.where);if(p.type!=Type::String&&!trivial(p.type,p.where))fail(p.where,"parameter memory model unavailable");if(p.pattern)bind(*p.pattern);else scopes.back().names[p.name]={};}
   if(!statements(f.body,false))cleanup(0,f.where);
   return std::move(flow);
  }
 };
 }
 void verify(const c::Function& function,Limits limits){Budget budget{limits};verify_impl(function,budget);}
-std::string check(const Unit& unit,Limits limits){
+std::string check(const Unit& unit,Limits limits,const std::map<std::string,AdmittedExtern>& admitted){
  Budget lowering{limits};std::ostringstream report;report<<"on1x.memory/v1 chisel JSON/scalar usage\n";
+ std::set<std::string> external_names;
+ for(const auto& f:unit.functions)if(f.external)external_names.insert(f.name);
+ for(const auto& [name,entry]:admitted){
+  auto scalar=[](const Type& t){return t.is_numeric()||t==Type::Bool;};
+  for(const auto& type:entry.parameters)
+   if(!scalar(type))fail({"<admitted-extern>"},"admitted extern parameter outside the scalar profile: "+name);
+  if(entry.result!=Type::Void&&!scalar(entry.result))fail({"<admitted-extern>"},"admitted extern result outside the scalar profile: "+name);
+  if(!external_names.contains(name))fail({"<admitted-extern>"},"admission evidence names an absent external declaration: "+name);
+ }
  for(const auto& f:unit.functions){
   lowering.tick(f.where,f.name.size());
   if(f.prototype)continue;
-  if(f.external)fail(f.where,"raw external declaration lacks a checked memory model: "+f.name);
-  auto flow=Lower(lowering).run(f);verify(flow,limits);
+  if(f.external){
+   auto found=admitted.find(f.name);
+   if(found==admitted.end())fail(f.where,"raw external declaration lacks a checked memory model: "+f.name+" (not covered by admitted-extern evidence)");
+   const auto& entry=found->second;
+   if(f.params.size()!=entry.parameters.size())fail(f.where,"admitted extern arity drift: "+f.name);
+   for(std::size_t i=0;i<f.params.size();++i)
+    if(f.params[i].type!=entry.parameters[i])fail(f.params[i].where,"admitted extern parameter type drift: "+f.name);
+   if(f.result!=entry.result)fail(f.where,"admitted extern result drift: "+f.name);
+   report<<f.name<<": admitted raw extern (reviewed scalar-only evidence)\n";
+   continue;
+  }
+  auto flow=Lower(lowering,admitted).run(f);verify(flow,limits);
   std::size_t events=0;for(const auto& b:flow.blocks)events+=b.instructions.size();
   report<<f.name<<": "<<flow.blocks.size()<<" blocks, "<<events<<" resource events\n";
  }
  return report.str();
 }
+std::map<std::string,AdmittedExtern> parse_admission(const std::string& text){return parse_admission_text(text);}
 }

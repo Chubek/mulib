@@ -28,8 +28,15 @@ extern "C" int on1x_generated_scan(const char* source,size_t n,on1x_token_callba
         pos=end+1;while(pos<n&&digit((unsigned char)source[pos]))++pos;
        }
       }
+      }
+      bool hexadecimal=pos-start>=2&&source[start]=='0'&&(source[start+1]=='x'||source[start+1]=='X');
+      bool floating=!hexadecimal&&std::string(source+start,pos-start).find_first_of(".eE")!=std::string::npos;
+      for(const char* suffix:{"u8","u16","u32","u64","f32","f64"}){
+       if((hexadecimal&&suffix[0]=='f')||(floating&&suffix[0]=='u'))continue;
+       auto length=std::strlen(suffix);
+       if(pos+length<=n&&std::strncmp(source+pos,suffix,length)==0){pos+=length;break;}
+      }
      }
-    }
   else if(c=='"'){
    ++pos;bool done=false;
    while(pos<n){if(source[pos]=='"'){++pos;done=true;break;}

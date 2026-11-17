@@ -1,6 +1,7 @@
 #include <on1x/backend/mir.hpp>
 #include "checked.hpp"
 #include "floating.hpp"
+#include "numeric_eval.hpp"
 #include <algorithm>
 #include <limits>
 #include <map>
@@ -54,7 +55,7 @@ class Evaluator {
      value=call(*functions.at(i.target),parameters,depth+1);break;
     }
     case Op::Print:{
-     auto type=types.at(i.operands[0]);auto line=type==Type::Bool?std::string(a?"true":"false"):type==Type::F64?detail::float_text(a):std::to_string(a);line+='\n';
+      auto type=types.at(i.operands[0]);auto line=type==Type::Bool?std::string(a?"true":"false"):type==Type::F64?detail::float_text(a):type==Type::F32?detail::single_text(a):type.is_unsigned()?std::to_string(std::bit_cast<std::uint64_t>(a)):std::to_string(a);line+='\n';
      if(result.output.size()+line.size()>4*1024*1024)throw Halt{Status::BudgetExhausted,i.where,"evaluation output budget exhausted"};
      result.output+=line;break;
     }
@@ -62,7 +63,10 @@ class Evaluator {
     case Op::Tuple:
      for(auto id:i.operands)value.elements.push_back(copy(values.at(id),i.where));
      break;
-    case Op::Extract:value=copy(first.elements.at(static_cast<std::size_t>(i.immediate)),i.where);break;
+     case Op::Extract:value=copy(first.elements.at(static_cast<std::size_t>(i.immediate)),i.where);break;
+     case Op::Numeric:{
+      auto computed=detail::numeric(i.primitive,a,c,i.where);if(computed.trap)trap(i.where,computed.trap);value.scalar=computed.value;break;
+     }
     default:{
      if(!detail::floating_op(i.op))throw std::logic_error("unmodeled MIR opcode");
      auto computed=detail::floating(i.op,a,c,i.where);if(computed.trap)trap(i.where,computed.trap);value.scalar=computed.value;break;
@@ -102,7 +106,10 @@ public:
    }else{
     if(!value.elements.empty())throw Error(at,"ON1X-MIR-EVAL: scalar argument has elements");
     if(type==Type::Bool&&value.scalar!=0&&value.scalar!=1)throw Error(at,"ON1X-MIR-EVAL: bool argument must be 0 or 1");
-    if(type==Type::F64&&detail::canonical_float(std::bit_cast<std::uint64_t>(value.scalar))!=std::bit_cast<std::uint64_t>(value.scalar))throw Error(at,"ON1X-MIR-EVAL: noncanonical f64 NaN argument");
+     if(type==Type::F64&&detail::canonical_float(std::bit_cast<std::uint64_t>(value.scalar))!=std::bit_cast<std::uint64_t>(value.scalar))throw Error(at,"ON1X-MIR-EVAL: noncanonical f64 NaN argument");
+     auto bits=std::bit_cast<std::uint64_t>(value.scalar);
+     if(type==Type::F32&&(bits>UINT32_MAX||detail::canonical_single(static_cast<std::uint32_t>(bits))!=bits))throw Error(at,"ON1X-MIR-EVAL: invalid binary32 argument payload");
+     if(type.is_unsigned()&&bits>detail::unsigned_max(type))throw Error(at,"ON1X-MIR-EVAL: unsigned argument out of range");
    }
   };
   for(std::size_t n=0;n<args.size();++n)validate(validate,args[n],params[n].type,params[n].where);

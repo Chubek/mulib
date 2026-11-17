@@ -2,5 +2,6 @@
 #include <on1x/type.hpp>
 #include <optional>
 namespace on1x {
+std::optional<Type> numeric_primitive(const std::string& name);
 std::optional<Type> data_primitive(const std::string& name);
 }

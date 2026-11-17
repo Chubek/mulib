@@ -41,7 +41,7 @@ import_names = ID ['as' ID] { ',' ID ['as' ID] }
 extern  = 'extern' 'fn' ID '(' [ params ] ')' ['->' type] ';' ;
 function= 'fn' ID '(' [ params ] ')' ['->' type] block ;
 params  = pattern [ ':' type ] { ',' pattern [ ':' type ] } ;
-type    = 'i64' | 'f64' | 'bool' | 'string' | 'void' | 'json' | 'json_view'
+type    = 'i64' | 'u8' | 'u16' | 'u32' | 'u64' | 'f32' | 'f64' | 'bool' | 'string' | 'void' | 'json' | 'json_view'
          | 'sexpr' | 'buffer' | 'code' '<' type '>'
          | '_' | 'fn' '(' [ type { ',' type } ] ')' '->' type
          | 'forall' '(' ID { ',' ID } ')' type | bound_type_variable
@@ -114,12 +114,13 @@ fn main() {
 Local and ordinary-function parameter annotations are optional; returns may
 use `-> _` for inference. Explicit `forall(a) fn(a) -> a` annotations bind named
 type variables for universal parameters/values. There is no subtyping or implicit
-numeric coercion. See [the initial f64 value profile](numerics.md) for explicit
+numeric coercion. See [the numeric profiles](numerics.md) for explicit
 conversions, operators, IEEE edge behavior and its restricted target/ABI.
 Immutable nonexpansive lets, including destructuring, generalize
 as described in [the scheme manual](polymorphism.md). Functions are not implicitly curried: partial application
 is an arity error. Only `var` bindings can be reassigned, and their monotype
-cannot change. Arguments/results may be functions, tuples, `i64`, `f64`, `bool`, `string`, or
+cannot change. Arguments/results may be functions, tuples, numeric scalars
+(`i64/u8/u16/u32/u64/f32/f64`), `bool`, `string`, or
 `code<T>`, `sexpr`, `buffer`, or `void` results; `void` parameters and JSON resources/views at any signature depth
 are rejected. Function equality, ordering, arithmetic and printing are rejected.
 
@@ -336,11 +337,13 @@ rigid universal checking, recursion rules and bounded predicative subset.
 Use `-> _` to infer a return type. A function with no return statements has
 an implicit `void` result; otherwise return expressions are unified and the
 ordinary definite-return check still applies. A missing return annotation
-always means `void`, preserving the earlier language behavior. Integer literals
-remain `i64`; decimal floating literals such as `1.25` and `1e3` have type `f64`
+always means `void`, preserving the earlier language behavior. Unsuffixed integer literals
+remain `i64`; unsuffixed decimal floating literals such as `1.25` and `1e3` have type `f64`.
+Explicit suffixes select `u8/u16/u32/u64/f32/f64` (for example `255u8`,
+`0xffffu16`, `18446744073709551615u64`, `1.5f32`)
 (see [literal grammar, rounding and limits](numerics.md)). Numeric operands unify to one
-monotype (`i64` or `f64`), with the historical i64 choice retained for otherwise
-unconstrained numeric operators; `%` is i64-only. There are no numeric type
+monotype (`i64/u8/u16/u32/u64/f32/f64`), with the historical i64 choice retained for otherwise
+unconstrained numeric operators; `%` is integer-only. There are no numeric type
 classes or polymorphic numeric literals. Overloaded intrinsics such as `println` do not choose a default type
 for an unconstrained argument.
 
@@ -365,7 +368,8 @@ and bindings, not a wildcard pattern.
 ## Raw foreign calls and control flow
 
 The `extern fn` syntax is deliberately an *unsafe, raw ABI escape hatch*.
-Its `i64` type maps to C `int64_t`, `f64` to C `double` in the
+Its `i64` type maps to C `int64_t`, unsigned types to exact `uint8_t/uint16_t/uint32_t/uint64_t`,
+and `f32/f64` to C `float/double` in the
 [supported float target profile](numerics.md), `bool` to C `bool`, and `string` to
 `const char *`. The definition must exist in separately linked C code with
 an exact compatible C ABI, including compatible calling convention. No
@@ -377,15 +381,19 @@ foreign function-pointer ABI. An On1x wrapper around a raw call is first-class
 but retains the call's unsafe foreign behavior.
 
 Control flow includes `if/else`, `while`, and explicit `return`, with
-conservative definite-return analysis. `break`, `continue`, `for`, and
-`match` are reserved for future milestones.
+conservative definite-return analysis. `match` is limited to the closed-sum value
+profile described above. `break`, `continue` and `for` remain unsupported.
 
 ## Current intrinsics
 
-- `println` prints a `bool`, `i64`, `f64`, or `string`, plus a line break. f64
-  uses exact locale-independent hex, not decimal formatting.
+- `println` prints a `bool`, numeric scalar or `string`, plus a line break.
+  Unsigned values print their full decimal range; f32/f64 use exact
+  locale-independent hex, not decimal formatting.
 - `f64_from_i64`, `f64_to_i64`, `f64_from_bits`, `f64_to_bits`, `f64_is_nan`,
   `f64_is_finite`, `f64_signbit`: see [numeric semantics and failures](numerics.md).
+- The unsigned and f32 intrinsics provide explicit checked numeric conversions,
+  wrapping arithmetic, bit operations and IEEE classification; see the same
+  [numeric contract](numerics.md) for exact signatures and limits.
 - `assert` terminates with exit status 70 on a false condition.
 - `json_parse_or_die`, `json_get_or_die`, `json_size`, `json_number`,
   `json_print` are the temporary MuLIB JSON facade.
@@ -395,7 +403,7 @@ conservative definite-return analysis. `break`, `continue`, `for`, and
 Records, closed sums, fixed arrays and owning snapshot slices exist only in the
 bounded value profile described above: no refutable/guarded pattern matching,
 recursive nominal ADTs, data type parameters, field/element mutation, data
-equality or printing, generic higher-kinded types, modules/functors,
+equality or printing, generic higher-kinded types, module signatures/functors,
 mutable/resource captures, native coroutines, async, polymorphic numeric
 literals, foreign callbacks, foreign aggregate ABI, `Option` or `Result`,
 structured error propagation, or production borrow checker yet. Do not add

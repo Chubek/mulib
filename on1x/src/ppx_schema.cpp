@@ -78,10 +78,11 @@ bool scalar(const SExpr& n,const std::string& expected){
   return true;
  }
   if(expected=="HexSpelling")return quoted&&s.size()>2&&s[0]=='0'&&(s[1]=='x'||s[1]=='X')&&std::all_of(s.begin()+2,s.end(),[](char c){return (c>='0'&&c<='9')||(c>='a'&&c<='f')||(c>='A'&&c<='F');});
-  if(expected=="FloatSpelling")return quoted&&float_spelling(s);
+   if(expected=="FloatSpelling")return quoted&&float_spelling(s);
+   if(expected=="UnsignedSpelling")return quoted&&unsigned_spelling(s);
  return false;
 }
-const std::set<std::string> scalars={"Bytes","File","Name","Version","Nat","Positive","Boolean","UnaryOperator","BinaryOperator","DecimalSpelling","HexSpelling","FloatSpelling"};
+const std::set<std::string> scalars={"Bytes","File","Name","Version","Nat","Positive","Boolean","UnaryOperator","BinaryOperator","DecimalSpelling","HexSpelling","FloatSpelling","UnsignedSpelling"};
 void add_nodes(Schema& schema,const Json& input,const std::string& owner){
  if(input.kind!='o')throw std::runtime_error("PPX schema: nodes must be an object");
  for(const auto& [tag,definition]:input.object){

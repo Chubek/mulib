@@ -1,5 +1,6 @@
 #include <on1x/type_safety.hpp>
 #include <on1x/primitives.hpp>
+#include <on1x/numeric.hpp>
 #include <nerotypical/StructuralTyping.hpp>
 #include <set>
 #include <sstream>
@@ -48,7 +49,8 @@ class Verify {
   budget.tick(at);if(depth>32)exhausted(at,"structural type depth limit");
   std::vector<Term> args;std::string name;
    switch(t.kind()){
-   case Type::F64:fail(at,"f64 is outside the structural adapter");
+     case Type::F64:case Type::F32:case Type::U8:case Type::U16:case Type::U32:case Type::U64:
+      name=type_name(t);break;
   case Type::I64:name="i64";break;case Type::Bool:name="bool";break;case Type::String:name="string";break;case Type::Void:name="void";break;
   case Type::Json:name="json";break;case Type::JsonView:name="json_view";break;case Type::SExpr:name="sexpr";break;case Type::Buffer:name="buffer";break;
   case Type::Function:
@@ -101,7 +103,7 @@ class Verify {
    arity(p->parameters().size());for(std::size_t i=0;i<args.size();++i)equal(args[i],p->parameters()[i],at);return type(p->result(),at);
   }
   if(n=="println"){
-   arity(1);auto t=e.children[0]->type;if(t!=Type::I64&&t!=Type::Bool&&t!=Type::String)fail(at,"invalid println operand");return type(Type::Void,at);
+    arity(1);auto t=e.children[0]->type;if(!t.is_numeric()&&t!=Type::Bool&&t!=Type::String)fail(at,"invalid println operand");return type(Type::Void,at);
   }
   if(n=="assert"){arity(1);equal(args[0],Type::Bool,at);return type(Type::Void,at);}
   if(n=="json_parse_or_die"){arity(1);equal(args[0],Type::String,at);return type(Type::Json,at);}
@@ -120,21 +122,29 @@ class Verify {
   auto child=[&](std::size_t n){if(n>=e.children.size()||!e.children[n])fail(e.where,"missing expression child");return expr(*e.children[n],depth+1);};
   auto arity=[&](std::size_t n){if(e.children.size()!=n)fail(e.where,"expression arity mismatch");};
   switch(e.kind){
-   case Expr::Kind::Integer:arity(0);equal(result,Type::I64,e.where);break;
-   case Expr::Kind::Float:fail(e.where,"f64 is outside the structural adapter");
+    case Expr::Kind::Integer:arity(0);(void)integer_literal_bits(e.text,e.where);equal(result,numeric_literal_type(e.text),e.where);break;
+    case Expr::Kind::Float:arity(0);(void)float_literal_bits(e.text,e.where);equal(result,numeric_literal_type(e.text),e.where);break;
   case Expr::Kind::Boolean:arity(0);equal(result,Type::Bool,e.where);break;
   case Expr::Kind::String:arity(0);equal(result,Type::String,e.where);break;
   case Expr::Kind::Variable:arity(0);return variable(e,false);
-  case Expr::Kind::Unary:{arity(1);if(e.text!="!"&&e.text!="-")fail(e.where,"unknown unary operator");auto t=e.text=="!"?Type::Bool:Type::I64;equal(child(0),t,e.where);equal(result,t,e.where);break;}
+    case Expr::Kind::Unary:{
+     arity(1);if(e.text!="!"&&e.text!="-")fail(e.where,"unknown unary operator");
+     auto operand=child(0);
+     auto t=e.text=="!"?Type{Type::Bool}:e.children[0]->type;
+     if(e.text=="-"&&(!t.is_numeric()||t.is_unsigned()))fail(e.where,"invalid unary numeric operand");
+     equal(operand,t,e.where);equal(result,t,e.where);break;
+   }
   case Expr::Kind::Binary:{
    arity(2);auto a=child(0),b=child(1);auto op=e.text;
    if(op=="=="||op=="!="){
-    auto t=e.children[0]->type;if(t!=Type::I64&&t!=Type::Bool&&t!=Type::String)fail(e.where,"invalid equality operand");equal(a,b,e.where);equal(result,Type::Bool,e.where);
+     auto t=e.children[0]->type;if(!t.is_numeric()&&t!=Type::Bool&&t!=Type::String)fail(e.where,"invalid equality operand");equal(a,b,e.where);equal(result,Type::Bool,e.where);
    }else if(op=="&&"||op=="||"){equal(a,Type::Bool,e.where);equal(b,Type::Bool,e.where);equal(result,Type::Bool,e.where);}
    else{
     bool compare=op=="<"||op==">"||op=="<="||op==">=";
     if(!compare&&op!="+"&&op!="-"&&op!="*"&&op!="/"&&op!="%")fail(e.where,"unknown binary operator");
-    equal(a,Type::I64,e.where);equal(b,Type::I64,e.where);equal(result,compare?Type::Bool:Type::I64,e.where);
+     auto t=e.children[0]->type;
+     if(!t.is_numeric()||(op=="%"&&t.is_float()))fail(e.where,"invalid numeric operand type");
+     equal(a,t,e.where);equal(b,t,e.where);equal(result,compare?Type{Type::Bool}:t,e.where);
    }break;
   }
   case Expr::Kind::Tuple:{std::vector<Term> es;for(std::size_t n=0;n<e.children.size();++n)es.push_back(child(n));if(es.size()<2)fail(e.where,"invalid tuple arity");equal(result,app("tuple"+std::to_string(es.size()),es,e.where),e.where);break;}

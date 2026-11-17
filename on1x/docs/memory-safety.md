@@ -37,6 +37,8 @@ No Chisel, GC, MemTKX or C++ dependency is added to those programs.
 | Supported | Model |
 |---|---|
 | Scalar/string literals, locals, operators | No ownership transfer |
+| Numeric scalar literals, parameters, arithmetic and numeric/bit/classification intrinsics | Trivially copied i64/u8/u16/u32/u64/f32/f64; no resource events; checked numeric runtime semantics |
+| Nested numeric/bool tuples and shared destructuring patterns | Trivially copied fields only; no owner/loan crosses the aggregate; bounded 64-level memory-model traversal |
 | Direct ordinary calls, including recursion | All concrete function bodies checked; no resource arguments/results |
 | Blocks, branches, loops, early returns | Explicit CFG and lexical cleanup on each normal exit |
 | `json_parse_or_die` in an immutable local | Unique owner creation on successful continuation |
@@ -52,11 +54,42 @@ and arithmetic failures terminate the process; general error unwinding/cleanup
 is not claimed. Short-circuit operands cannot change admitted ownership state;
 both possible resource-use paths are checked conservatively.
 
-Raw external declarations/calls, indirect calls, closures, tuples, staged/managed
-values and unmodeled intrinsics reject in checked mode. Existing frontend rules
+Raw external declarations/calls reject unless they have exact reviewed
+scalar-only admission evidence as described below. Indirect calls, closures,
+non-numeric tuples, staged/managed values and unmodeled intrinsics reject in checked mode. Existing frontend rules
 also reject copying/reassigning resources, resource capture/return, and dangling
 temporary borrows. Checking is additional admission, not permission to bypass
 those rules. Syntax and the default compiler path are preserved.
+
+## Reviewed scalar-only external evidence
+
+`on1x-bind emit-safe` emits a bounded `on1x.admitted-extern/v1`, `/v2` or `/v3` companion after
+all four [safe-admission gates](contracts.md#reviewed-scalar-only-safe-admission)
+pass. Checked consumers opt into that exact evidence:
+
+```sh
+on1xc --check-memory --admitted-extern bindings.admitted-extern.txt app.on1x
+on1xc --emit-c --memory-check \
+  --admitted-extern bindings.admitted-extern.txt app.on1x -o app.c
+```
+
+Each entry names an external function and its exact scalar shape. v1 allows
+only `i64` parameters and `i64`/`void` results. v2 additionally allows `bool` and
+`f64` parameters/results; v3 additionally allows `u8/u16/u32/u64/f32`.
+`void` parameters and all other types reject. Chisel treats
+such calls as scalar operations because no pointer or owned/borrowed resource can
+cross this profile. Source declarations and callsites must agree in name, arity,
+each parameter type and result;
+unused/absent entries, malformed/duplicate evidence and every external omitted
+from evidence reject. `--admitted-extern` is invalid without a memory-checking
+mode. It is contract-derived build evidence, not a signature, proof of a C body,
+or permission to admit a pointer/resource API.
+
+For example, a v2 entry may read `extern on1x_ffi_<fingerprint>_scale
+(bool,f64,i64) -> f64` on one line, following the schema and `identity` lines.
+The full 64-hex-digit CDecl fingerprint replaces `<fingerprint>` in both the
+identity and symbol. Integer-only v1 evidence retains its original meaning;
+changing only its schema does not authorize differently typed source calls.
 
 ## Other external libraries: resource protocol API
 
@@ -83,7 +116,8 @@ extent, pointer arithmetic or truth of a supplied contract. External adapters
 must derive these events from the full admitted ExoML descriptor and actual
 callsite; an independently supplied event trace cannot certify an On1x program.
 There is no CLI that imports arbitrary traces as proof. General external-handle
-types and their On1x ABI lowering remain future work; `emit-safe` stays closed.
+types and their On1x ABI lowering remain future work; `emit-safe` rejects them
+and admits only the scalar-only profile above.
 
 The event API is library-independent: modeled MuLIB growth/invalidation and
 non-MuLIB acquire/borrow/transfer/release follow the same rules. It supports

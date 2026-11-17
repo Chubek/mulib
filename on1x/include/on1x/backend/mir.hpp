@@ -7,12 +7,13 @@ namespace on1x::mir {
 using Id = std::uint64_t;
 inline constexpr unsigned format_version = 2;
 inline constexpr unsigned legacy_format_version = 1;
+inline constexpr unsigned numeric_format_version = 3;
 enum class Op { Constant, Add, Sub, Mul, Div, Mod, Neg, Not, Eq, Ne, Lt, Le, Gt, Ge,
                 Load, Store, Call, Print, Assert,
                 FloatAdd, FloatSub, FloatMul, FloatDiv, FloatNeg,
                 FloatEq, FloatNe, FloatLt, FloatLe, FloatGt, FloatGe,
                 FloatFromI64, FloatToI64, FloatFromBits, FloatToBits,
-                FloatIsNaN, FloatIsFinite, FloatSignbit, Tuple, Extract };
+                 FloatIsNaN, FloatIsFinite, FloatSignbit, Tuple, Extract, Numeric };
 enum class Exit { Invalid, Return, Jump, Branch };
 enum class Effect { Pure, Trap, Memory, Call, IO };
 struct Value { Id id=0; Type type=Type::Invalid; Location where; };
@@ -22,6 +23,8 @@ struct Instruction {
  std::int64_t immediate=0;
  Id target=0, effect_in=0, effect_out=0;
  Location where;
+ // v3-only allowlisted scalar numeric operation. Never a foreign symbol.
+ std::string primitive={};
 };
 struct Edge { Id block=0; std::vector<Id> arguments; };
 struct Terminator {
@@ -55,7 +58,9 @@ std::string cfg_dot(const Module& module);
 std::string emit_c(const Module& module);
 
 enum class Status { Returned, Trapped, BudgetExhausted };
-// Scalar storage is an i64 number, bool 0/1, or typed f64 IEEE bit payload.
+// Scalar storage is an i64 number, bool 0/1, or exact typed unsigned/IEEE bit
+// payload (u64 uses all 64 bits, f32 only the low 32). No signed arithmetic is
+// performed on unsigned payloads. Decoders validate widths and canonical NaNs.
 // Tuple storage has only elements, in type order. This is not a foreign ABI.
 struct RuntimeValue { std::int64_t scalar=0; std::vector<RuntimeValue> elements; };
 struct Evaluation {

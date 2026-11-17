@@ -108,7 +108,7 @@ rewrites both inputs and evidence; this is not a signed attestation or sandbox.
 | `explain DECL CONTRACT` | same machine-readable report with per-function unsupported reasons |
 | `verify DECL CONTRACT` | Gate B plus reviewed-state metadata, explicitly not a semantic proof |
 | `emit-raw DECL CONTRACT PREFIX` | reviewed-metadata-only narrow raw C11 adapters, On1x signatures and provenance manifest |
-| `emit-safe DECL CONTRACT` | fail closed: remaining safe-import gates are not implemented |
+| `emit-safe DECL CONTRACT PREFIX --on1xc PATH --cc PATH --workdir DIR [--cflag ARG] [--impl FILE]` | admit the reviewed scalar-only profile only after review-metadata, profile, Chisel-use and executable target gates pass |
 
 `emit` is the compatibility alias for `emit-raw`. Contract/discovery outputs are
 new files only; no existing file, symlink or hard link is overwritten. Pin and
@@ -133,14 +133,80 @@ is used; LibStone is not patched.
 
 ## ABI, ownership and honest boundaries
 
-Raw emission supports only nonvariadic C prototypes returning signed integer or
-void, with signed integer parameters. It rejects pointers, unsigned/enum/floating
-types, aggregates, callbacks, unknown effects, unsupported conventions and
+Raw emission supports nonvariadic C prototypes over signed/unsigned integers,
+C `_Bool`, binary32 `float` and binary64 `double` (including typedefs), with
+`void` allowed only as a result.
+It rejects pointers, enums, `long double`/other floating formats, aggregates,
+callbacks, unknown effects, unsupported conventions and
 ownership/error/invalidation obligations. Inline scalar APIs can be included
 directly. Adapters use `_Generic` on the **actual function pointer**, C11 static
-size/signedness assertions and checked i64 narrowing. Full IO, callback,
+size/alignment assertions, exact `_Bool`/`float`/`double` type checks, floating format
+checks, integer range/signedness checks and checked i64 narrowing. Unsigned
+adapters use exact `uint8_t/uint16_t/uint32_t/uint64_t` carriers, not signed i64;
+binary32 adapters use actual C `float`, not double. Floating adapters
+match the runtime's Linux x86_64 GCC/Clang/SSE2, `FLT_EVAL_METHOD == 0` profile
+and reject exposed fast/finite-only/relaxed IEEE math modes. These checks do not
+verify the foreign implementation's arithmetic or floating environment behavior.
+Full IO, callback,
 ownership and concurrency information remains in the manifest; raw externs do
 not become purity or lifetime proofs.
+
+### Reviewed scalar-only safe admission
+
+`emit-safe` implements deliberately narrow versioned profiles. Signed-integer-only
+bundles retain `reviewed-scalar/v1`; bundles adding `_Bool` or binary64 `double`
+select `reviewed-scalar/v2`; any unsigned integer or binary32 `float` selects v3.
+Their On1x parameters/results are exactly `i64`, `u8/u16/u32/u64`, `bool`, `f32`
+or `f64`, never approximate integer encodings of floats or booleans.
+It accepts a bundle only when **every** function has an exact
+nonvariadic admitted scalar ABI, scalar parameters, value return, known
+effects, no error classification, and no pointer, aggregate, callback,
+ownership-transfer, destructor, lifetime or invalidation obligation. Effects
+that require ownership or concurrency lowering (`allocate`, `free`, `escape`,
+`thread`, `suspend`) reject. Declared `read`, `write`, `io` and `foreign_call`
+effects remain visible in evidence; “scalar-only” does not mean pure.
+
+Admission runs four gates rather than trusting a reviewed flag alone:
+
+1. ExoML bundle/function provenance must record reviewed or verified status.
+   These fields are accountable claims, not proofs of the C body.
+2. The complete bundle must fit the scalar-only ownership/effect profile; safe
+   emission is all-or-nothing, never a silently skipped subset.
+3. The supplied real `on1xc` runs `--check-memory` over a generated On1x caller
+   and the generated `on1x.admitted-extern/v1`, `/v2` or `/v3` companion. Chisel continues to
+   reject every raw extern not named by matching admission evidence.
+4. The supplied C compiler builds the adapter and boundary harness with strict
+   C11 warnings, supplied implementation TUs and caller flags, then the bounded
+   harness executes one representative call per function. Observed values are
+   recorded but are **not** interpreted as semantic proofs.
+
+The evidence wire format is versioned independently from the manifest's JSON
+shape (`on1x.safe-ffi/v1`). v1 continues to admit only `i64` parameters and
+`i64`/`void` results; v2 adds `bool` and `f64`; v3 adds `u8/u16/u32/u64/f32`.
+Older evidence schemas never widen implicitly. Older compilers reject an unknown
+schema rather than interpreting a new signature as an integer call. Existing signed-integer-only
+modules need no source or evidence migration. New typed-scalar modules require
+a compiler with the corresponding admission version and freshly executed gates.
+
+Successful publication creates `PREFIX.on1x` (ordinary `on1x_safe_*` facade
+functions over private raw declarations whose symbols include the complete
+CDecl fingerprint), `PREFIX.c`,
+`PREFIX.admitted-extern.txt`, and `PREFIX.manifest.json` with target/header/input
+identity, contract provenance, effects, compiler flags, implementation paths,
+Chisel report and runtime observations. Consumers requesting Chisel checks pass
+the companion with `on1xc --memory-check --admitted-extern FILE ...`; omitting,
+malforming, duplicating or drifting the evidence fails closed. Output files are
+exclusive-create only and are preflighted before any gate runs. The gate
+workdir must be new and is retained for audit.
+`tools/on1x-build.py --memory-check --admitted-extern FILE --extra-c PREFIX.c`
+forwards the same evidence while compiling the generated adapter as an ordinary
+separate C translation unit.
+
+This profile is safe admission at the On1x/C scalar boundary **conditional on
+the reviewed semantic claims**. It does not verify arbitrary C implementation
+bodies, provide signed attestations, or admit resources, pointers, buffers,
+aggregates, errors, callbacks or thread-affine APIs. General safe FFI remains
+open; `emit-raw` remains explicitly unsafe.
 
 All 103 shipped kernel functions are intentionally ineligible for this scalar
 emitter, because their true ABIs/contracts require richer lowering. In
@@ -150,11 +216,12 @@ unregister API. Indirect predicates keep unknown effects.
 
 The optional [Chisel ownership CFG integration](memory-safety.md) now checks
 scalar/JSON HIR usage and exposes a library-independent resource protocol checker.
-It does not yet translate these ExoML sidecars into general foreign-handle ABI
-adapters. No `Mulib.Safe.*`, `Owned`, `Option`/`Result` wrappers, Wetstone effect
-proof or generalized foreign callback ABI is claimed. A reviewed flag alone
-cannot unlock `emit-safe`. The JSON `or_die` pilot remains a trusted handwritten
-facade whose client lifetimes can additionally be checked by Chisel.
+It admits the generated reviewed scalar-only evidence but does not yet translate
+ExoML sidecars into general foreign-handle ABI adapters. No `Mulib.Safe.*`,
+`Owned`, `Option`/`Result` wrappers, Wetstone effect proof or generalized foreign
+callback ABI is claimed. A reviewed flag alone cannot unlock `emit-safe`. The
+JSON `or_die` pilot remains a trusted handwritten facade whose client lifetimes
+can additionally be checked by Chisel.
 
 Mune's C aggregate/GC/callback interface is represented by exact, compiler-derived
 CDecl and unreviewed field/lifetime obligations, not guessed On1x pointer handles.
@@ -171,7 +238,10 @@ own work/input limits. Raw C names, type spellings and header basenames are
 limited to 256 bytes and scanned iteratively, not through recursive regexes.
 Python tooling uses bounded reads, 90-second child
 timeouts and temporary private publication directories; it is developer tooling,
-not hostile-process isolation. File-writing binding commands require POSIX;
+not hostile-process isolation. Safe gate stdout and stderr are each capped at 8 MiB;
+compiler/build gates time out after 120 seconds and boundary execution after 30
+seconds. Admission companions are capped at 4 MiB, 4,096 externs, 256 parameters
+and 512 bytes per line. File-writing binding commands require POSIX;
 snapshot publication currently requires Linux.
 
 CTest registers always-available `on1x.contracts` semantics/source tests and

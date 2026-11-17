@@ -8,11 +8,20 @@ after reconstruction. This is not a typed deriving or safe-FFI framework.
 The M1 numeric increments add `F64Type` and unsigned decimal `FloatLiteral`
 spelling to the canonical and standalone v1 schemas, and f64 to native/Python
 signature rendering. All existing constructors and
-protocol framing are unchanged. Rebuild native processors with the new schema;
+protocol framing are unchanged. The unsigned/binary32 extension also adds
+`U8Type`, `U16Type`, `U32Type`, `U64Type` and `F32Type` to both schemas and
+native/Python signature rendering, without changing literal token syntax. Existing
+processors must be rebuilt with the new schema;
 older schema-pinned processors may reject the new constructors. `FloatLiteral`
 is a `NumericLiteral`, not an `IntegerLiteral`; signs use `Unary`, and integer
 folders must leave floats untouched. See `../docs/numerics.md` for grammar and
 limits. This additive migration does not add float folding or safe FFI metadata.
+The literal continuation adds suffixed decimal f32/f64 spellings and a separate
+`UnsignedLiteral`/`UnsignedSpelling` constructor under `NumericLiteral`, not the
+legacy i64-only `IntegerLiteral` category. Canonical, standalone and native
+validators preserve spelling/location and bound it to 1,024 bytes. Existing
+integer folders leave these typed literals unchanged; old schema-pinned tools
+must reject unknown constructors rather than reinterpret their values.
 
 ```sh
 cmake --build build/on1x --parallel 4
