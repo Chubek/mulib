@@ -23,8 +23,13 @@ void on1x_env_retain(on1x_env *environment);
 void on1x_env_release(on1x_env *environment);
 #define ON1X_DEFER_ABI_VERSION 1
 typedef struct on1x_defer_record on1x_defer_record;
-typedef struct { on1x_defer_record *head; size_t count; } on1x_defer_stack;
-void on1x_defer_push(on1x_defer_stack *,void (*)(on1x_env *),on1x_env *);
+/* Per-invocation, single-threaded. Registration owns its typed environment;
+ * invoke borrows it, destroy only releases its fields. Rebuild C/runtime together.
+ * Bytes include records and immediate captures, not shared referent storage. */
+typedef struct { on1x_defer_record *head; size_t count, bytes; } on1x_defer_stack;
+on1x_env *on1x_defer_register(on1x_defer_stack *,size_t,
+    void (*invoke)(on1x_env *),void (*destroy)(on1x_env *),
+    const char *file,size_t line,size_t column);
 void on1x_defer_run(on1x_defer_stack *);
 int64_t on1x_add_i64(int64_t a,int64_t b);
 int64_t on1x_sub_i64(int64_t a,int64_t b);

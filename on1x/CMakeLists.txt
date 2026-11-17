@@ -68,7 +68,7 @@ configure_file(cmake/ppx_schema.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/ppx_schema.h
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS stdppx/category/features.sexpr)
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/category/features.sexpr" ON1X_EXTENSION_REGISTRY)
 configure_file(cmake/extensions_registry.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/extensions_registry.hpp" @ONLY)
-add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/infer.cpp src/sema.cpp src/codegen.cpp
+add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/infer.cpp src/sema.cpp src/concurrency.cpp src/codegen.cpp
   src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp src/extensions.cpp src/extensions_hash.c src/canonical/control.cpp src/patterns.cpp src/canonical/values.cpp src/canonical/verify_values.cpp
   src/backend/mir.cpp src/backend/lower.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp)
 target_include_directories(on1x_frontend PUBLIC include)
@@ -333,8 +333,14 @@ if(BUILD_TESTING)
    add_executable(on1x_nominal_tests tests/test_nominal_adts.cpp)
    target_link_libraries(on1x_nominal_tests PRIVATE on1x_frontend)
    add_test(NAME on1x.nominal_hir COMMAND on1x_nominal_tests)
+    add_executable(on1x_defer_error_tests tests/test_defer_errors.cpp)
+    target_link_libraries(on1x_defer_error_tests PRIVATE on1x_frontend)
+    add_test(NAME on1x.defer_error_hir COMMAND on1x_defer_error_tests)
+    add_executable(on1x_concurrency_hir_tests tests/test_concurrency.cpp)
+    target_link_libraries(on1x_concurrency_hir_tests PRIVATE on1x_frontend)
+    add_test(NAME on1x.concurrency_hir COMMAND on1x_concurrency_hir_tests)
   set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules libraries stdppx install mulib stdlib_extensions f64 unsigned_f32 numeric_limits)
-   list(APPEND _meta_tests category control patterns value_loops nominal_adts)
+    list(APPEND _meta_tests category control patterns value_loops nominal_adts defer_errors concurrency)
   add_test(NAME on1x.stdppx_protocol COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/tests" -v)
   if(ON1X_WITH_EXOTRACT)
     add_test(NAME on1x.exotract COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exotract.py"

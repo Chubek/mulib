@@ -112,7 +112,10 @@ std::string type_name(const Type& type) {
   if(!type.arguments().empty()){name+="<";for(std::size_t i=0;i<type.arguments().size();++i){if(i)name+=", ";name+=type_name(type.arguments()[i]);}name+=">";}
   return name;
  }
- switch(type.kind()) {
+  switch(type.kind()) {
+  case Type::Fiber:return "ifiber<i64>";case Type::Channel:return "channel<i64>";
+  case Type::Sender:return "sender<i64>";case Type::Receiver:return "receiver<i64>";
+   case Type::CspGroup:return "<taskgroup>";case Type::ExternalFiber:return "xfiber";
   case Type::I64:return "i64";
    case Type::F64:return "f64";
    case Type::F32:return "f32";

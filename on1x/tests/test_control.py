@@ -165,7 +165,7 @@ negative=[
  ('iteration','fn main(){for i in array[1,2]{} }','general iterators'),
  ('value_break','fn main(){loop{break with 1;}}','expression loop target'),
  ('label_value_break','fn main(){a:loop{break a with 1;}}','expression loop target'),
- ('cleanup_unsupported','fn main(){loop{defer println(1);break;}}',"expected ';'"),
+ ('cleanup_resource_unsupported','fn main(){loop{let r=json_parse_or_die("{}");defer json_print(r);break;}}',"defer cannot retain JSON"),
  ('async_unsupported','async fn main(){}',"expected 'fn'"),
  ('no_drop_iter','fn main(){for (x,y) in array[(1,2)]{}}','expected'),
 ]

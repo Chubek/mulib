@@ -6,6 +6,7 @@
 #include <on1x/canonical/control.hpp>
 #include <on1x/patterns.hpp>
 #include <on1x/nominal.hpp>
+#include <on1x/concurrency.hpp>
 #include <deque>
 #include <algorithm>
 #include <map>
@@ -27,7 +28,7 @@ bool holes_in(const std::vector<Stmt>& body) {
  return false;
 }
 bool holes_in(const Expr& expression) {
- if(expression.kind==Expr::Kind::Propagate)return true;
+  if(expression.kind==Expr::Kind::Propagate||expression.kind==Expr::Kind::SourceCsp)return true;
   if((expression.kind>=Expr::Kind::Record&&expression.kind<=Expr::Kind::Length)||expression.kind==Expr::Kind::PatternMatch||expression.kind==Expr::Kind::Loop)return true;
  if(expression.kind==Expr::Kind::Lambda){
    if(has_type_holes(expression.result)||expression.result.has_foralls()||holes_in(expression.body))return true;
@@ -111,7 +112,7 @@ class Inference {
  std::vector<std::optional<Ground>> ground;
  std::vector<unsigned char> state;
  std::map<std::vector<std::size_t>,Ground> canonical;
-    std::size_t next_identity = Type::Named + 1;
+     std::size_t next_identity = Type::ExternalFiber + 1;
    std::map<std::vector<std::string>,std::size_t> label_identities;
    std::map<std::string,std::size_t> nominal_identities;
 
@@ -764,7 +765,60 @@ class Inference {
   Term expression(Expr& e,std::optional<Term> hint={}) {
   Term result=0;const auto& at=e.where;
   tick(at);
-    switch(e.kind) {
+     switch(e.kind) {
+      case Expr::Kind::SourceCsp:{
+       auto operand=[&](std::size_t i){if(i>=e.children.size()||!e.children[i])fail(at,"missing concurrency operand");return expression(*e.children[i]);};
+       if(e.text=="poll"){
+        if(e.children.empty()||e.children.size()>17)fail(at,"poll offer limit/arity mismatch");
+        std::vector<Type> fields;std::vector<std::string> labels;
+        for(std::size_t i=0;i<e.children.size();++i){auto& offer=*e.children[i];
+         if(offer.kind==Expr::Kind::Boolean&&offer.text=="true"&&i+1==e.children.size()){
+          fields.push_back(Type::data(Type::Record,{}));labels.push_back("Default");break;
+         }
+         if(offer.kind!=Expr::Kind::SourceCsp||
+            (offer.text!="offer_recv"&&offer.text!="offer_send")||offer.children.size()!=(offer.text=="offer_recv"?1u:2u))fail(offer.where,"invalid poll offer");
+         offer.type=Type::Void;
+         auto endpoint=expression(*offer.children[0]);unify(endpoint,scalar(offer.text=="offer_recv"?Type::Receiver:Type::Sender,offer.where),offer.where);
+         if(offer.text=="offer_send")unify(expression(*offer.children[1]),scalar(Type::I64,offer.where),offer.where);
+         fields.push_back(offer.text=="offer_recv"?Type{Type::I64}:Type::data(Type::Record,{}));
+         labels.push_back((offer.text=="offer_recv"?"Recv":"Sent")+std::to_string(i));
+         fields.push_back(Type::data(Type::Record,{}));labels.push_back("Closed"+std::to_string(i));
+        }
+        result=annotation(Type::data(Type::Sum,std::move(fields),std::move(labels)),at);break;
+       }
+      if(e.text=="send"){
+       auto left=operand(0);auto k=nodes[head(left,at)].kind;
+       if(k!=Type::Sender&&k!=Type::Receiver&&k!=Type::Channel&&k!=Type::Fiber){
+        // `<-` used to tokenize as `<` then unary `-`. Keep existing numeric
+        // comparisons, including source without whitespace, byte-for-byte.
+        auto neg=std::make_unique<Expr>();neg->kind=Expr::Kind::Unary;neg->where=at;neg->text="-";neg->children.push_back(std::move(e.children.at(1)));e.children[1]=std::move(neg);e.kind=Expr::Kind::Binary;e.text="<";
+        auto right=operand(1);unify(left,right,at);numeric_operand(left,at);result=scalar(Type::Bool,at);break;
+       }
+       unify(left,scalar(Type::Sender,at),at);unify(operand(1),scalar(Type::I64,at),at);result=annotation(csp::send_result(),at);
+       }else if(e.text=="launch"){unify(operand(0),function({},scalar(Type::I64,at),at),at);result=scalar(Type::Fiber,at);}
+       else if(e.text=="launch_exec"){
+        if(e.children.empty()||e.children.size()>9)fail(at,"external argv limit/arity mismatch");
+        for(std::size_t i=0;i<e.children.size();++i)unify(operand(i),scalar(Type::String,at),at);
+        result=scalar(Type::ExternalFiber,at);
+       }
+      else if(e.text=="channel"){for(std::size_t i=0;i<e.children.size();++i)unify(operand(i),scalar(Type::I64,at),at);result=scalar(Type::Channel,at);}
+      else if(e.text=="split"){unify(operand(0),scalar(Type::Channel,at),at);result=add(Type::Tuple,{scalar(Type::Sender,at),scalar(Type::Receiver,at)},0,at);}
+       else if(e.text=="join"){
+        auto t=nodes[head(operand(0),at)].kind;
+        if(t!=Type::Fiber&&t!=Type::ExternalFiber)fail(at,"join expects an internal or external fiber");
+        result=scalar(Type::I64,at);
+       }
+       else if(e.text=="cancel"){
+        auto t=operand(0);auto kind=nodes[head(t,at)].kind;
+        if(kind!=Type::Fiber&&kind!=Type::ExternalFiber)fail(at,"cancel requires an internal or external fiber");
+        result=scalar(Type::Bool,at);
+       }
+      else if(e.text=="recv"){unify(operand(0),scalar(Type::Receiver,at),at);result=annotation(csp::receive_result(),at);}
+      else if(e.text=="close"){unify(operand(0),scalar(Type::Sender,at),at);result=scalar(Type::Bool,at);}
+      else fail(at,"unknown source concurrency operation");
+      break;
+     }
+     case Expr::Kind::Csp:fail(at,"private concurrency operation before inference");
     case Expr::Kind::Propagate:{
      if(e.children.size()!=1)fail(at,"propagation requires one operand");
      auto input=head(expression(*e.children[0]),at);
@@ -938,7 +992,9 @@ class Inference {
   for(auto& statement:body) {
    const auto& at=statement.where;
    tick(at);
-    switch(statement.kind) {
+     switch(statement.kind) {
+     case Stmt::Kind::TaskGroup:block(statement.body);break;
+     case Stmt::Kind::CspScope:fail(at,"private task scope before inference");
     case Stmt::Kind::Defer:expression(*statement.value);break;
     case Stmt::Kind::PushDefer:fail(at,"private defer registration before inference");
    case Stmt::Kind::Let:{

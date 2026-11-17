@@ -1,5 +1,366 @@
 # On1x verification — 2026-11-17
 
+## G4/v2 external process fibers and process cancellation — 2026-11-18
+
+This continuation uses MuLIB HEAD `aa36e9042d06cf85006b4f27c363b2226a1119e2`
+and configured, unchanged LibStone `55755485acaded7c4ed804c0946bc8c7363f6763`.
+Linux/glibc x86_64; GCC 16.2.1 and Clang 22.1.8. Existing uncommitted
+concurrency/defer and unrelated MuLIB work was preserved. No submodule update.
+
+`examples/cooperative_external.on1x` cancels a never-dispatched internal fiber,
+runs `/bin/true`, cancels `/bin/sleep` and observes `/bin/false` via generated
+C11, with no C++ or LibStone runtime.
+This is a **bounded POSIX direct-exec** path: literal argv, absolute executable,
+inherited environment and stdout/stderr, fresh process group, nonblocking
+`waitpid` supervisor, consuming join/cancel with reaping, SIGTERM then SIGKILL
+after 250 monotonic milliseconds. Source-positive, source-negative, parent
+ownership, double-consumption, literal argument preservation, repeated reap,
+spawn/budget failures, terminal-failure child termination, and an independently
+compiled child that ignores SIGTERM
+exercise the boundary. PPX wire round-trip and canonical C11 emission are
+covered. The additional immediately following standalone `cancel ifiber;`
+consumes and joins a not-yet-dispatched child without running its body;
+repeated cancellation and nonadjacent/expression forms reject. Running or
+blocked internal-fiber cancellation, portable shell literals, captured typed
+streams, recoverable spawn errors and effectful MIR remain unsupported.
+
+Commands from the repository root (the build directories were configured as
+recorded in the original G4 section below):
+
+```sh
+cmake --build /tmp/opencode/on1x-csp-check --parallel 4
+ctest --test-dir /tmp/opencode/on1x-csp-check --output-on-failure --parallel 4
+cmake --build /tmp/opencode/on1x-csp-generated --parallel 4 \
+  --target on1xc on1x_concurrency_hir_tests
+ctest --test-dir /tmp/opencode/on1x-csp-generated \
+  -R 'on1x.(concurrency|scanner_parity)' --output-on-failure
+cmake --build /tmp/opencode/on1x-csp-sanitize --parallel 4 \
+  --target on1xc on1x_concurrency_hir_tests
+ctest --test-dir /tmp/opencode/on1x-csp-sanitize \
+  -R 'on1x.concurrency' --output-on-failure
+python3 on1x/tools/on1x-build.py on1x/examples/cooperative_external.on1x \
+  --on1xc /tmp/opencode/on1x-csp-check/on1xc --cc clang \
+  -o /tmp/opencode/on1x-external-strict --cflag=-std=c11 \
+  --cflag=-Wall --cflag=-Wextra --cflag=-Werror
+/tmp/opencode/on1x-external-strict
+ldd /tmp/opencode/on1x-external-strict
+```
+
+Results: fallback/GCC full suite **50 passed, 1 failed, 1 skipped**
+(52 registered); generated/GCC focused **3/3**; fallback/Clang ASan+UBSan
+focused **2/2** including generated executables and the SIGKILL escalation
+fixture. The full-suite `on1x.mulib` failure remains the pre-existing stale
+`tools/embed_units.py` fixture fingerprint; `on1x.category` skips in the
+native-PPX-off configuration. Strict GCC and Clang C11 were exercised by the
+focused programs. TSAN is not applicable to the one-native-thread On1x
+profile; external processes have separate address spaces. These results do
+not make the full concurrency or external shell specification VERIFIED. The
+strict example prints `0`, `true`, `1`; `ldd` lists libc and the Linux loader,
+not LibStone, On1x compiler libraries or a Lua/C++ runtime.
+
+## G4 cooperative fibers/channels — bounded source/C11 continuation
+
+Follow-up (same HEAD and configured SDK): bounded `poll` now lowers to one
+atomic MuLIB multi-case selection with mandatory close arms, optional default,
+and checked i64/uni send/receive offers. `tests/test_concurrency.py` adds
+compiled buffered, rendezvous, closed-send/receive, evaluation-order and
+negative diagnostics; `tests/test_concurrency.cpp` adds source-wire and C11
+emission checks. From the repository root:
+
+```sh
+cmake --build /tmp/opencode/on1x-csp-check --parallel 4 --target on1xc on1x_concurrency_hir_tests
+ctest --test-dir /tmp/opencode/on1x-csp-check -R 'on1x.concurrency' --output-on-failure
+cmake --build /tmp/opencode/on1x-csp-generated --parallel 4 --target on1xc on1x_concurrency_hir_tests
+ctest --test-dir /tmp/opencode/on1x-csp-generated -R 'on1x.(concurrency|scanner_parity)' --output-on-failure
+cmake --build /tmp/opencode/on1x-csp-sanitize --parallel 4 --target on1xc on1x_concurrency_hir_tests
+ctest --test-dir /tmp/opencode/on1x-csp-sanitize -R 'on1x.concurrency' --output-on-failure
+python3 on1x/tools/on1x-build.py on1x/examples/cooperative_poll.on1x \
+  --on1xc /tmp/opencode/on1x-csp-check/on1xc --cc clang \
+  -o /tmp/opencode/on1x-poll-example --cflag=-std=c11 --cflag=-Wall \
+  --cflag=-Wextra --cflag=-Werror
+/tmp/opencode/on1x-poll-example
+```
+
+Follow-up results: fallback/GCC full suite **50 passed, 1 failed, 1 skipped**
+(52 registered); generated/GCC focused **3/3**; fallback/Clang ASan/UBSan
+focused **2/2**, including the new poll programs; strict Clang C11 example
+compiled and ran (`42`, `1`). The sole full-suite failure remains the
+pre-existing stale `tools/embed_units.py` profile fingerprint in `on1x.mulib`;
+`on1x.category` skips without native PPX. No poll deadlines or cancellation
+protocol is implemented. External
+processes still need a portable shell grammar, process ownership/streams and
+safe scheduler integration; neither is represented as an `ifiber<i64>`.
+
+Scope: preserve and validate the existing uncommitted cooperative-fiber/channel
+implementation, fix contextual syntax regressions, and add executable source,
+canonical-HIR and failure-path coverage. This does **not** complete
+`ON1X_CORE_SYNTAX_ADDITIONS.md` or the M4 concurrency milestone. Re-inspected
+MuLIB HEAD `aa36e9042d06cf85006b4f27c363b2226a1119e2`, configured read-only
+LibStone `55755485acaded7c4ed804c0946bc8c7363f6763`; the working tree
+already contained uncommitted concurrency/defer and unrelated MuLIB work, which
+was preserved. Linux x86_64, GCC 16.2.1, Clang 22.1.8, Python 3.14.7.
+
+The admitted `taskgroup`, eager `launch`/consuming `join` and i64 1:1 uni channel
+path uses the canonical parser/inference/checker, explicit checked CSP HIR,
+the C11 emitter and the existing MuLIB fiber/channel/xthreads kernels in a
+single implementation TU. The build helper links the adapter automatically.
+`examples/cooperative_channels.on1x` executes a zero-capacity acknowledged
+rendezvous and receives a drained close. `tests/test_concurrency.py` exercises
+strict generated C11 with GCC and Clang, `-O2`, buffered close and closed send,
+64 repeated rendezvous, nested group, function return and fiber defer cleanup,
+runtime deadlock/task-budget failures, compile-time affine/capture/arity/quota/
+effect/unsupported-profile negatives and failed-output preservation.
+`tests/test_concurrency.cpp` tests source-wire round-trip, canonical erasure,
+malformed HIR rejection before emission, invalid provenance and MIR refusal.
+The real ASDL/Aurocks and fallback scanners agree. Parser compatibility fixes
+preserve `split!(...)` macros and variable `close` in `if close { ... }`, while
+admitting `match <-rx with`. Additive PPX-v1 source constructors were synchronized
+with the standalone schema; they convey no semantic authority.
+
+From the repository root, exact focused validation commands:
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-csp-check -DBUILD_TESTING=ON \
+  -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_USE_FALLBACK_SCANNER=ON
+cmake --build /tmp/opencode/on1x-csp-check --parallel 4
+ctest --test-dir /tmp/opencode/on1x-csp-check --output-on-failure --parallel 4 \
+  --output-junit /tmp/opencode/on1x-csp-check/results-csp-final.xml
+cmake -S on1x -B /tmp/opencode/on1x-csp-generated -DBUILD_TESTING=ON \
+  -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_REQUIRE_LIBSTONE=ON
+cmake --build /tmp/opencode/on1x-csp-generated --parallel 4
+ctest --test-dir /tmp/opencode/on1x-csp-generated --output-on-failure \
+  -R '^on1x.(concurrency|concurrency_hir|scanner_parity|ppx|macros)$'
+cmake -S on1x -B /tmp/opencode/on1x-csp-sanitize -DBUILD_TESTING=ON \
+  -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_USE_FALLBACK_SCANNER=ON \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined' \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer'
+cmake --build /tmp/opencode/on1x-csp-sanitize --parallel 4 \
+  --target on1xc on1x_concurrency_hir_tests
+ctest --test-dir /tmp/opencode/on1x-csp-sanitize --output-on-failure \
+  -R '^on1x.concurrency(_hir)?$'
+```
+
+Results: generated/GCC focused **5/5**; fallback/GCC complete **50 passed,
+1 failed, 1 skipped** (52 registered); fallback/Clang ASan+UBSan focused
+**2/2**, including generated applications and MuLIB kernels. ASan prints its
+known `makecontext/swapcontext` support warning; no sanitizer findings in
+the exercised normal paths. Terminal deadlock and budget tests disable leak
+reporting because `exit(73)` does not unwind. The pre-change shared-tree
+baseline was **41 passed, 8 failed, 1 skipped** of 50; fixing the two
+contextual parser regressions and standalone PPX schema resolves seven of
+the eight baseline failures. `on1x.mulib` still fails with a *pre-existing*
+stale `tools/embed_units.py` fixture fingerprint; it was not regenerated or
+called a green suite. The `on1x.category` test skips in the native-PPX-off
+configuration. The full generated-scanner suite after the final fixes was
+not rerun; its focused parity/PPX/macros/concurrency checks passed.
+
+Unsupported at the time of the original baseline below: `poll`, cancellation/deadlines, `xfiber`/shell command grammar,
+duplex/MPMC and arbitrary payloads, native workers/actors, stackless async,
+effectful ownership MIR, other platforms and cross-target ABI. TSAN is not
+evidence for this one-native-thread profile. Fatal runtime errors do not
+unwind; this is EXECUTABLE, not VERIFIED, full general-purpose concurrency.
+
+## M2 continuation — finish function-scoped defer and typed Result propagation
+
+Scope: complete the committed WIP contract in [defer-errors.md](docs/defer-errors.md),
+not general exceptions, foreign owners or concurrency. Re-inspected clean MuLIB
+`604db67c3160e7958345a3c1fefe757e5f499b95` and actual configured LibStone
+`55755485acaded7c4ed804c0946bc8c7363f6763` at `on1x/third_party/libstone`.
+LibStone remains unchanged/read-only. Linux `6.18.52-1-lts` x86_64, glibc 2.44,
+GCC/g++ 16.2.1 (`20260810`), Clang/clang++ 22.1.8, CMake 4.4.3, Python 3.14.7.
+No commit, push, SDK/submodule update or unrelated MuLIB kernel change.
+
+### Behavior and implementation boundary
+
+- `defer call;` snapshots the callable and arguments once, left-to-right, at
+  registration. Reached registrations belong to the function/lambda invocation,
+  survive block/break/continue exits, accumulate in loops and execute LIFO on
+  explicit/implicit and typed-error returns. Return operands are saved first;
+  defers run before remaining temporary/local cleanup. Managed call results are
+  discarded/released, and deferred `Err` results do not mask the pending outcome.
+- Postfix `?` admits only a nominal two-parameter enum with exactly Ok(T)/Err(E).
+  Error returns use the same declaration and exact error type, allowing a different
+  success type. Existing canonical regions/tag tests/projections/initialization/
+  returns preserve early-operand cleanup and skip later operands. Explicit `match`
+  supplies recovery. Generic, imported and equivalently defined alternate-name
+  protocols work; module identities and error types are not coerced.
+- The WIP omitted defer/propagation discovery in `needs_values`. It is completed,
+  with checked-source lowering guards and independent thunk/return/variant checks.
+  Private registration cannot enter through PPX source wire. Existing canonical
+  source grammar, inference, nominal protocols, hygienic transforms and source
+  PPX constructors are reused rather than replaced.
+- C11 emits typed invocation/destruction helpers and a stack only in functions
+  that actually register defers. Runtime records and immediate capture environments
+  share the existing environment allocator; both count (4,096) and byte (8 MiB)
+  budgets are checked before allocation, including size overflow. Record/capture
+  OOM has a located exit-72 diagnostic; a failed capture allocation frees its
+  pending record. No erased function-pointer ABI, longjmp or runtime compiler.
+- Source changes: `src/canonical/{values,verify_values}.cpp`,
+  `src/{parser,codegen,type_safety}.cpp`, `runtime/on1x_runtime.{c,h}` and CMake.
+  Tests: `tests/test_defer_errors.{cpp,py}`, `tests/test_defer_runtime.c`,
+  `tests/fixtures/defer_{foreign,json_allocator}.c`, allocator live-count test hook,
+  scanner parity and the formerly unsupported-defer control negative. Example:
+  `examples/defer_errors.on1x`. Linked manuals/matrix/roadmap are updated.
+
+### Baseline and regression evidence
+
+Before implementation, rebuilding the existing generated/GCC and fallback/Clang
+trees and running the complete suites gave **47/49** and **47/48**. These are
+recorded in `results-defer-baseline.xml` / `ctest-defer-baseline.log` in each tree.
+Failures were the old `cleanup_unsupported` test's parser-error expectation and
+the generated build's lexical-invalid `?` fixture. A standalone
+`fn main(){defer println(42);}` reproduced `ON1X-VALUES-VERIFY: unlowered defer`.
+Tests now validate the implemented syntax and retain negative resource captures;
+no test is disabled to obtain green results.
+
+The new suites cover actual C11 execution, seeded independent outcome/LIFO
+oracles at `-O0/-O2`, saved return values, per-call/recursive stacks, loop exits,
+partial registration, short-circuiting, nested control regions and exact aggregate
+error types. They exercise ordinary functions/closures/intrinsics and exact raw
+flattened C calls, generic specialization, hygiene/macros, imports, staging and
+both native/Python identity PPX. RC and canonical JSON counters check normal and
+propagated-error cleanup, including abandoned operands, deferred reference
+lifetime, shared-buffer reference semantics and discarded managed results.
+Registration OOM is injected at every record/capture allocation in a two-action
+fixture. Count/byte exhaustion and body/return/deferred traps are separate tests.
+The fatal-path allocator hook also checks the exact surviving allocation count:
+capture OOM must free the pending record while earlier committed registrations
+retain their documented terminal-failure lifetime.
+
+Independent C runtime callers test stack isolation/reuse, nested invocation,
+destruction and malformed allocation sizes. Separate-TU C/C++ callers share the
+actual generated interface and execute success/error/defer paths: this does not
+establish separate On1x compilation or a foreign aggregate ABI. HIR/wire mutations
+reject missing captures, invalid thunks, surviving source operations, wrong tags,
+payloads, initializations, returns and cross-function outcomes. Existing output
+files survive source/unsupported-profile errors.
+
+The first full post-change runs passed all behavioral/legacy tests but failed
+the new HIR suite's located-error assertion: its hand-built malformed wire lacked
+a wire filename. The fixture now round-trips through the real wire reader with
+`bad-wire` provenance before testing rejection, without relaxing the assertion.
+The earlier results remain `results-defer.xml`. A stale Release makefile initially
+did not know the new target; explicit CMake configuration fixed that build setup.
+
+### Exact configurations and commands
+
+The five existing trees retain the exact configurations from the earlier
+value-loop/nominal sections below. GCC Debug uses the generated scanner; Clang
+Debug uses fallback. The SDK tree uses generated scanning plus real
+ExoML/Exotract/Chisel/Nerotypical/Novostone and the separately prepared Satie SDK.
+The sanitizer tree has the same SDKs and instruments compiler/runtime/processors
+and generated C/C++/foreign fixtures with `-fsanitize=address,undefined
+-fno-omit-frame-pointer`, including explicit
+`ON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer`.
+Only intentional fatal non-unwinding subprocesses disable leak reporting;
+ASan/UBSan remain active and normal/error-return leak checks remain enabled.
+
+For each `<tree>` in `/tmp/opencode/on1x-values-{gcc,clang,sdk,sanitize}`:
+
+```sh
+cmake --build <tree> --parallel 2
+ctest --test-dir <tree> --output-on-failure --parallel 2 \
+  --output-junit <tree>/results-defer-final.xml
+```
+
+Completed builds never overlap a relink or another CTest run in that same tree.
+| Final profile | Result |
+|---|---|
+| GCC/generated Debug, native processors | 51/51 |
+| Clang/fallback Debug, native processors | 50/50 |
+| Clang/generated Debug + ExoML/Exotract/Chisel/Nerotypical/Novostone | 60/60 |
+| Same SDK + compiler/runtime/generated-program ASan/UBSan | 60/60, no sanitizer findings |
+| GCC Release/fallback/native-off, focused control/matching/value/nominal/defer suites | 10/10 |
+
+JUnit artifacts are `results-defer-final.xml` in each tree.
+
+After the final exact-live-allocation assertion was added to the fault fixture,
+the affected defer/closure/tuple/staging/value-loop suites were rerun in all five
+trees above: **5/5 each**, including ASan/UBSan, with no findings:
+
+```sh
+ctest --test-dir <tree> --output-on-failure --parallel 2 \
+  -R '^on1x.(defer_errors|closures|tuples|staging|value_loops)$' \
+  --output-junit <tree>/results-defer-allocation-final.xml
+```
+
+Release/fallback/native-off focused profile:
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-values-release
+cmake --build /tmp/opencode/on1x-values-release --parallel 2 --target \
+  on1xc on1x_defer_error_tests on1x_control_tests on1x_pattern_tests \
+  on1x_value_loop_tests on1x_nominal_tests
+ctest --test-dir /tmp/opencode/on1x-values-release --output-on-failure \
+  --parallel 2 -R '^on1x.(control|pattern|patterns|value_loop|value_loops|nominal|nominal_adts|defer_error|defer_errors)' \
+  --output-junit /tmp/opencode/on1x-values-release/results-defer-final.xml
+```
+
+Standalone acceptance and prior hello regression:
+
+```sh
+python3 on1x/tools/on1x-build.py on1x/examples/defer_errors.on1x \
+  --on1xc /tmp/opencode/on1x-values-gcc/on1xc --cc gcc \
+  -o /tmp/opencode/on1x-defer-errors-example
+/tmp/opencode/on1x-defer-errors-example
+readelf -d /tmp/opencode/on1x-defer-errors-example
+python3 on1x/tools/on1x-build.py on1x/examples/hello.on1x \
+  --on1xc /tmp/opencode/on1x-values-clang/on1xc --cc clang \
+  -o /tmp/opencode/on1x-defer-baseline-hello
+/tmp/opencode/on1x-defer-baseline-hello
+```
+
+Defer example output: `21`, `99`, `42`, `-1`, `99`, `7`, `2`, `1`, `0` on separate
+lines; only `libc.so.6` is dynamically required. Hello prints `21` as before.
+The same emitted program also passed strict GCC static-archive and shared-runtime
+links, using artifacts under `/tmp/opencode/on1x-defer-link`:
+
+```sh
+/tmp/opencode/on1x-values-gcc/on1xc --emit-c on1x/examples/defer_errors.on1x \
+  -o /tmp/opencode/on1x-defer-link/program.c
+gcc -std=c11 -Wall -Wextra -Wpedantic -Werror -I on1x/runtime -fPIC -shared \
+  on1x/runtime/on1x_runtime.c -o /tmp/opencode/on1x-defer-link/libon1x-defer.so
+gcc -std=c11 -Wall -Wextra -Wpedantic -Werror -I on1x/runtime \
+  /tmp/opencode/on1x-defer-link/program.c -L /tmp/opencode/on1x-defer-link \
+  -lon1x-defer -Wl,-rpath,/tmp/opencode/on1x-defer-link \
+  -o /tmp/opencode/on1x-defer-link/shared
+gcc -std=c11 -Wall -Wextra -Wpedantic -Werror -I on1x/runtime \
+  /tmp/opencode/on1x-defer-link/program.c \
+  /tmp/opencode/on1x-values-gcc/libon1x_runtime.a \
+  -o /tmp/opencode/on1x-defer-link/static
+/tmp/opencode/on1x-defer-link/shared
+/tmp/opencode/on1x-defer-link/static
+```
+
+Changing the copied header's `ON1X_DEFER_ABI_VERSION` to 99 and compiling with
+`gcc -std=c11 -I /tmp/opencode/on1x-defer-link/bad-abi -fsyntax-only
+/tmp/opencode/on1x-defer-link/program.c` rejects with the explicit incompatible
+defer runtime ABI diagnostic. Python syntax, canonical/native PPX schema equality
+and `git diff --check` also pass.
+
+Two fresh emissions of the same example agree byte-for-byte in both scanner
+builds (including equal SHA-256
+`65524b324e57c67bc6c89ab2d0ad323e0a77eee2c8b9c596322a71ce307b8c23`
+for invocation from this repository root). A separate seeded truncation/token
+mutation check (seed `2026111704`) of that example tested 183 inputs with each compiler, without
+crashes or unlocated source failures; an empty unit retains its existing
+`<unit>:1:1: missing main function` diagnostic. This is bounded robustness
+evidence, not a general fuzzing-conformance claim.
+
+Unsupported: using, block-defer shorthand, exceptions/handlers/finally,
+panic/recover, trap/cancellation unwind, JSON owner/view capture, owning/managed
+Result fields, Option propagation, implicit error conversion, general foreign
+error/ownership admission and dynamic defer/aggregate-result MIR/SDK models.
+Raw foreign pointer/text lifetimes remain unsafe caller obligations. Legacy
+payload-lambda match arms retain their old function boundary; use `match ... with`
+to propagate from an arm into its surrounding function. Only Linux x86_64 was
+executed; no 32-bit/non-Linux/native-machine-backend or full-language claim.
+TSAN is not applicable evidence for this single-threaded increment. Optional
+Exotract Lua remains disabled; the real native SDK integrations are exercised.
+
 ## M1 continuation — nonrecursive nominal records and parameterized enums
 
 Scoped dependency slice of the request for owning lists, defer/typed errors,

@@ -9,7 +9,8 @@
 | Fallback lexer | Implemented and tested | Bootstraps without LibStone |
 | Scanner parity and token lifetime | Verified P0 subset | Deterministic byte/offset/error corpus, including macro/PPX/staging/dotted syntax; repeated and concurrent scan tests |
 | Parser / typed AST | Implemented functional subset | Functions, tuples/patterns, explicit universal types, scopes, control flow, imports |
-| Intrinsic core additions G1/G2 | Executable control/matching/value-loop slice | Loop/for-C/i64 ranges, labels/exits, guarded structural matches and typed value-loop joins/initialization verification; C11 plus scalar/tuple MIR; nominal-data continuation below; no owning lists/iterators, defer/error propagation or concurrency; [manual](core-syntax.md), [value loops](value-loops.md) |
+| Intrinsic core additions G1/G2 | Executable control/matching/value-loop slice | Loop/for-C/i64 ranges, labels/exits, guarded structural matches and typed value-loop joins/initialization verification; C11 plus scalar/tuple MIR; nominal-data and G3 continuations below; no owning lists/iterators or concurrency; [manual](core-syntax.md), [value loops](value-loops.md) |
+| G3 function defer / typed errors | Executable bounded C11 profile | Go-style function-scoped `defer call;`, registration-time snapshots, function-owned LIFO records, exact nominal `Result` postfix `?`, typed return/cleanup edges; no using, exceptions, terminal-trap/cancellation unwind, managed Result fields or MIR/SDK defer admission; [contract](defer-errors.md) |
 | Module loader / pervasive environment | Implemented compile-time namespaces | Named/selective/relative imports, aliases, packages, canonical deduplication, bounded cycles, demand-loaded prelude and relocatable installation; [manual](modules.md) |
 | MuLIB native housekeeping | Implemented bounded kernel/fixture planning | `std.mulib` metadata/byte access and size checks; shared one-TU planning, fixture/provider/native companion linkage, fingerprints and relocatable bundles; [manual](../std/mulib/README.md) |
 | Frontend input limits | Implemented and tested | 2 MiB per file; 256-level parsing/HIR limits including lambdas; bounded capture metadata |
@@ -48,9 +49,19 @@
 | Value data model (M1 slice) | Executable by-value C11 subset | Structural records with canonical labels, closed sums with exhaustive `match`, `array<T,N>` and owning `slice` snapshots, bounds-checked access with exit-70 errors; no MIR lowering, mutation, borrowed/dynamic arrays, derives or foreign aggregate ABI; [contract](data-model.md) |
 | Nonrecursive nominal records/enums | Executable bounded C11 profile | Invariant parameters (including phantoms), inferred arguments, generic specialization/forall, constructor catalogs, exhaustive structural matching and imported type identity; independently reconstructed layouts; [manual](nominal-adts.md) |
 | Recursive/owning ADTs, functors | Not implemented | Boxing, resource-bearing fields, ownership/drop analysis, recursive layouts and signatures/functors remain absent |
-| Plaid/Prolific integration | Not implemented | Future concurrency and profiling features |
+| Cooperative fiber / channel G4 slice | Executable bounded C11 profile | `taskgroup`, eager `launch`/`join`, immediate pre-dispatch internal `cancel`, 1:1 i64 uni channels with bounded FIFO/rendezvous, checked outcomes and atomic `poll` offers with mandatory close arms; limited POSIX `xfiber` direct exec/join/cancel with reaping; MuLIB stackful fibers/channels through one implementation TU; no Plaid integration, poll deadlines, running/blocked internal cancellation, shell streams, async or native workers; [contract](concurrency.md) |
+| Plaid/Prolific integration | Not implemented | The cooperative G4 adapter uses MuLIB, not Plaid; profiling and broader concurrency remain open |
 
 ## Immediate next iterations
+
+The M2/G3 continuation finishes the already-designed function-scoped defer and
+nominal result propagation contract. Dynamic registrations persist across block
+and loop exits, retain copied RC operands, and run before remaining lexical
+cleanup on explicit/implicit/error returns. The existing value-region verifier
+checks tag domination, initialized payload joins and exact return types across
+function boundaries. Next error/resource work remains owning Result fields,
+general foreign error adapters, effectful cleanup MIR and independent SDK models;
+this is not general exception or cancellation support.
 
 The language-only M1 continuation adds decimal f64 literals with scanner/PPX
 parity and a versioned float/trivial-tuple MIR execution path. A later M2

@@ -286,9 +286,12 @@ its canonical status vocabulary. No incomplete feature is marked VERIFIED.
 | Loop values / `break with` | EXECUTABLE bounded profile | Expression-loop targets, by-value/RC results; no unique-resource transfer or general bottom type; managed/aggregate MIR remains unsupported |
 | Iterable loops/comprehensions/list patterns | Not implemented | Owning lists, iterator/result/drop protocol |
 | General `match with` / structural patterns | EXECUTABLE bounded profile | Includes declared nonrecursive enum catalogs; no owning lists or foreign resources; aggregate/managed MIR and SDK support remain closed |
-| Defer/using/try/?/throw/finally | Not implemented | Recoverable outcomes and typed cleanup/error edges |
-| Fibers/channels/poll/taskgroups/cancellation | Not implemented | Ownership, scheduler and atomic choice semantics |
-| Portable process/shell fibers | Not implemented | Command AST and reviewed process/stream ABI |
+| Function-scoped defer / nominal Result `?` | EXECUTABLE bounded C11 profile | [Go-style contract](defer-errors.md) supersedes the old lexical-defer proposal; no resource-bearing results, MIR/SDK defer models or trap/cancellation unwind |
+| Using/try/catch/throw/finally | Not implemented | General owned-resource/effect/handler semantics |
+| Cooperative fibers/channels/taskgroups and bounded atomic `poll` | EXECUTABLE bounded C11 profile | [Contract](concurrency.md): i64 uni channels, mandatory closed arms, no deadline; effectful ownership MIR and broader scheduling are missing |
+| External process cancellation | EXECUTABLE bounded POSIX profile | Consuming `cancel xfiber` sends SIGTERM, escalates to SIGKILL and reaps; no typed cancellation result or internal-fiber unwind; [contract](concurrency.md) |
+| Portable process/shell fibers | PARTIAL | Direct absolute-path exec and scoped join are executable; portable command AST and typed process streams still absent |
+| Internal-fiber cancellation | EXECUTABLE pre-dispatch only | Immediately following standalone `cancel handle;` consumes and joins an unstarted fiber; running/blocked cancellation requires interruptible channel waits and generated cleanup/unwind edges |
 | Async/generators/atomics/lock/shared | Not implemented | Frames, ownership and memory model |
 | Named records/parameterized enums | EXECUTABLE bounded C11 profile | Explicit typed constructors, exact nominal/argument identity; no managed/recursive fields or aggregate MIR |
 | Recursive ADTs/native contracts | Not implemented | Boxed ownership/drop and purity/contracts |

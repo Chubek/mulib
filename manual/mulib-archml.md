@@ -309,7 +309,7 @@ All views expire with the document. Do not mutate public node fields.
 * `tests/fuzz_headers.c`: bounded hostile-input loading and ownership checks.
 
 Edit `tools/generate_archml.py`, `tools/archml_extra.py` or
-`tools/archml_targets.py`, run the generator to regenerate the sixteen checked-in
+`tools/archml_targets.py`, run the generator to regenerate the twenty-three checked-in
 `.aml`/`.am` assets, then run `--check` to verify reproducibility. File extensions
 are a deployment convention, not a parser restriction. Generator tables are reviewed
 source data, not claims that complete ISA references have been mechanically

@@ -5,6 +5,24 @@
 > **Primary deliverable:** an honestly verified, statically compiled, safe-by-default On1x capable of writing **Shylock**, a price prediction, demand estimation, and pricing optimization engine built by composing MuLIB C11 kernels through LibStone ExoML semantic contracts.
 > **Repository:** `https://github.com/Chubek/mulib` (`on1x/`, `include/`, `library/`, `MANIFEST.yaml`); LibStone: `https://github.com/Chubek/libstone` (`moonstone/exoml/`, related analyzers).
 
+G4 continuation (2026-11-17): the bounded [cooperative fiber/channel
+profile](docs/concurrency.md) compiles and runs real On1x `taskgroup`, internal
+`ifiber<i64>` launch/join, i64 1:1 uni channels and bounded atomic `poll`
+through C11 and existing MuLIB kernels. A bounded POSIX direct-exec `xfiber`
+with process-group cancellation is executable; it is not the proposed portable
+shell or typed process-stream model. Immediate pre-dispatch internal cancellation
+is also executable; deadlines, running/blocked cancellation, async, native workers,
+general resources and full concurrency/MIR semantics remain unsupported. This
+does not advance the application or general-safe-FFI gates below.
+
+M2 continuation (2026-11-17): [function-scoped defer and nominal Result
+propagation](docs/defer-errors.md) now execute through C11. Defers snapshot
+operands and run LIFO at function return, including typed `Err` returns; bounded
+records/captures reuse existing RC cleanup. This supersedes older absence claims
+below only for that profile. Using, general exceptions/effects, resource-bearing
+results, trap/cancellation unwinding and general foreign error adapters remain
+unsupported; no application/general-FFI gate is promoted.
+
 Category continuation (2026-11-17): a native On1x-authored processor now expands
 explicit, module-local scalar protocols/witnesses into ordinary checked selectors.
 See [the exact profile](docs/category.md). This does not implement constrained

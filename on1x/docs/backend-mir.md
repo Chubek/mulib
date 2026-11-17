@@ -1,5 +1,10 @@
 # Core/MIR: scalar v1, numeric/product v2 and complete scalar numeric v3
 
+The [defer/Result C11 profile](defer-errors.md) does not widen MIR. Dynamic
+registrations require cleanup/effect descriptors; nominal results require
+aggregate descriptors. Requested MIR emission/evaluation rejects both rather
+than dropping deferred effects or approximating an error value as a scalar.
+
 The later [nonrecursive nominal-data profile](nominal-adts.md) retains nominal
 identity on the existing bounded record/sum HIR representation. It executes only
 through HIR→C11. MIR ingress validates catalog/layout consistency, then rejects

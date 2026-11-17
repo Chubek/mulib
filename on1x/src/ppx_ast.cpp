@@ -17,7 +17,10 @@ SExpr type(const Type& t){
   auto kind=t.kind()==Type::Record?"record":t.kind()==Type::Sum?"sum":t.kind()==Type::Array?"array":"slice";
   return form("ValueDataType",{string(kind),list(std::move(labels)),list(std::move(fields)),symbol(std::to_string(t.extent()))});
  }
- switch(t.kind()){
+  switch(t.kind()){
+   case Type::Fiber:case Type::Channel:case Type::Sender:case Type::Receiver:
+    return form("CspType",{string(t.kind()==Type::Fiber?"ifiber":t.kind()==Type::Channel?"channel":t.kind()==Type::Sender?"sender":"receiver"),form("I64Type")});
+   case Type::ExternalFiber:return form("CspType",{string("xfiber"),form("VoidType")});
  case Type::Invalid:return form("Inferred");case Type::Hole:return form("HoleType");
   case Type::I64:return form("I64Type");case Type::Bool:return form("BoolType");case Type::String:return form("StringType");
    case Type::F64:return form("F64Type");
@@ -53,6 +56,10 @@ SExpr extension(const Expr& e,bool attribute){
  return form(attribute?"Attribute":"ExtensionExpr",{string(e.text),string(literal_value(e.children.at(0)->text)),list(std::move(args)),loc(e.where)});
 }
 SExpr expression(const Expr& e){
+ if(e.kind==K::SourceCsp){
+  std::vector<SExpr> args;for(const auto& c:e.children)args.push_back(expression(*c));
+  return form("SourceCsp",{string(e.text),type(e.result),list(std::move(args)),loc(e.where)});
+ }
  if(e.kind==K::Propagate)return form("Propagate",{expression(*e.children.at(0)),loc(e.where)});
   auto at=loc(e.where);
  if(e.kind==K::PatternMatch){std::vector<SExpr> arms;for(std::size_t i=1;i<e.children.size();++i){const auto& arm=*e.children[i];arms.push_back(form("MatchArm",{pattern(arm.patterns.at(0)),expression(*arm.children.at(0)),block(arm.body,arm.where),expression(*arm.children.at(1)),loc(arm.where)}));}return form("SourceMatch",{string(e.text),expression(*e.children.at(0)),list(std::move(arms)),symbol(e.statement_match?"true":"false"),std::move(at)});}
@@ -88,7 +95,8 @@ SExpr expression(const Expr& e){
 }
 SExpr statement(const Stmt& s){
  auto at=loc(s.where);
- switch(s.kind){
+  switch(s.kind){
+  case Stmt::Kind::TaskGroup:return form("TaskGroup",{block(s.body,s.where),at});
  case Stmt::Kind::Defer:return form("Defer",{expression(*s.value),at});
  case Stmt::Kind::Let:
   return s.pattern?form("LetPattern",{pattern(*s.pattern),type(s.declared),expression(*s.value),std::move(at)}):form(s.mutable_binding?"Var":"Let",{string(s.name),type(s.declared),expression(*s.value),std::move(at)});
@@ -114,7 +122,15 @@ std::size_t number(const SExpr& n){std::size_t v=0;std::from_chars(n.text.data()
 Location location(const SExpr& n){return {field(n,0).text,number(field(n,1)),number(field(n,2)),number(field(n,3))};}
 [[noreturn]] void invalid(const SExpr& n,const std::string& message){throw Error(n.where,"PPX AST reconstruction: "+message);}
 Type read_type(const SExpr& n,bool inferred=false,std::size_t bound=0){
-  const auto& k=tag(n);
+   const auto& k=tag(n);
+  if(k=="CspType"){
+   auto name=field(n,0).text;auto payload=read_type(field(n,1),false,bound);
+   if(name=="xfiber"){if(payload!=Type::Void)invalid(n,"xfiber has no generic payload");return Type::ExternalFiber;}
+   if(payload!=Type::I64)invalid(n,"ON1X-CSP-UNSUPPORTED: concurrency payload/result must be i64");
+  if(name=="ifiber")return Type::Fiber;if(name=="channel")return Type::Channel;
+  if(name=="sender")return Type::Sender;if(name=="receiver")return Type::Receiver;
+  invalid(n,"unknown concurrency type");
+ }
  if(k=="NamedType"){
   std::vector<Type> args;for(const auto& a:field(n,1).items)args.push_back(read_type(a,false,bound));
   if(args.size()>32)invalid(n,"nominal type argument limit exceeded");
@@ -176,8 +192,21 @@ std::vector<Param> read_parameters(const SExpr& n){
 }
 std::vector<Stmt> read_block(const SExpr& n);
 ExprPtr read_expression(const SExpr& n){
-  const auto& k=tag(n);auto e=std::make_unique<Expr>();e->where=location(n.items.back());
-     if(k=="UnitValue")e->kind=K::Unit;
+   const auto& k=tag(n);auto e=std::make_unique<Expr>();e->where=location(n.items.back());
+      if(k=="SourceCsp"){
+       e->kind=K::SourceCsp;e->text=field(n,0).text;e->result=read_type(field(n,1));
+        static const std::set<std::string> ops={"launch","launch_exec","channel","split","join","cancel","send","recv","close","poll","offer_recv","offer_send"};
+       if(!ops.contains(e->text))invalid(n,"unknown concurrency operation");
+       for(const auto& arg:field(n,2).items)e->children.push_back(read_expression(arg));
+        auto count=e->text=="channel"?3:e->text=="send"||e->text=="offer_send"?2:1;
+        if(e->text=="poll")count=static_cast<int>(e->children.size());
+        if(e->text=="launch_exec")count=static_cast<int>(e->children.size());
+        if(e->children.size()!=static_cast<std::size_t>(count)||e->result!=(e->text=="channel"?Type{Type::I64}:Type{Type::Void}))invalid(n,"concurrency operand/payload shape mismatch");
+        if(e->text=="poll"&&(e->children.empty()||e->children.size()>17))invalid(n,"poll offer limit exceeded");
+        if(e->text=="launch_exec"&&(e->children.empty()||e->children.size()>9))invalid(n,"external argv limit exceeded");
+       if(e->text=="launch"&&(e->children[0]->kind!=K::Lambda||!e->children[0]->parameters.empty()||e->children[0]->result!=Type::I64))invalid(n,"launch requires an i64 source block");
+      }
+      else if(k=="UnitValue")e->kind=K::Unit;
      else if(k=="Propagate"){e->kind=K::Propagate;e->children.push_back(read_expression(field(n,0)));}
     else if(k=="LoopValue"){e->kind=K::Loop;e->text=field(n,0).text;e->context=number(field(n,1));e->body=read_block(field(n,2));if(!e->text.empty())base_schema().validate(string(e->text),"Name","$.loop_label");}
    else if(k=="SourceMatch"){
@@ -228,7 +257,8 @@ std::vector<Stmt> read_block(const SExpr& n){
  if(tag(n)!="Block")invalid(n,"unhandled block constructor "+tag(n));
  std::vector<Stmt> body;
  for(const auto& c:field(n,0).items){Stmt s;s.where=location(c.items.back());const auto& k=tag(c);
-  if(k=="Let"||k=="Var"||k=="LetPattern"){
+   if(k=="TaskGroup"){s.kind=Stmt::Kind::TaskGroup;s.body=read_block(field(c,0));}
+   else if(k=="Let"||k=="Var"||k=="LetPattern"){
    s.kind=Stmt::Kind::Let;s.mutable_binding=k=="Var";if(k=="LetPattern"){s.pattern=read_pattern(field(c,0));patterns::require_binding(*s.pattern);}else s.name=field(c,0).text;
    s.declared=read_type(field(c,1),true);s.value=read_expression(field(c,2));
    }else if(k=="Assign"){s.kind=Stmt::Kind::Assign;s.name=field(c,0).text;s.value=read_expression(field(c,1));}

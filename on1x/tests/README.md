@@ -2,6 +2,23 @@
 
 CTest registers independent tests with separate artifact directories:
 
+- `on1x.concurrency_hir`: source-wire round-trip, canonical CSP admission,
+  mutation/provenance rejection, C11 emission and explicit MIR refusal.
+- `on1x.concurrency`: compiled taskgroup/fiber and 1:1 i64 channel programs,
+  rendezvous/FIFO/close, repeated lifecycle, defer/return cleanup, negative
+  affine/capture/syntax profiles and located deadlock/budget failures. Both
+  scanner modes and Clang ASan/UBSan focused runs are recorded in
+  [verification](../VERIFICATION.md); `poll` and cancellation remain unsupported.
+
+- `on1x.defer_error_hir`: source-wire round-trip, transactional lowering,
+  idempotence, private thunk shape/capture mutations, tag/initialization and
+  exact-return/function-boundary checks, rejected private wire nodes.
+- `on1x.defer_errors`: Go-style function-scoped LIFO registration and nominal
+  Result propagation through strict C11, seeded outcome/LIFO oracles at O0/O2,
+  captures/loops/recursion, modules/generics/macros/PPX/staging, counted RC/JSON
+  cleanup, C/C++ separate-TU callers, runtime/fault/budget/trap boundaries and
+  explicit unsupported MIR/SDK rejections. See [the contract](../docs/defer-errors.md).
+
 - `on1x.nominal_hir`: named declaration/type-reference wire round-trips,
   nominal/phantom/forall identity, layout/catalog tampering, malformed binders,
   transactional rejection and deterministic rechecking.

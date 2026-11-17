@@ -6,6 +6,24 @@ original native processors and contracts are preserved.
 
 ## Language implementation continuation
 
+An initial [cooperative fiber/channel profile](docs/concurrency.md) now executes
+`taskgroup`, `launch { ... }`/`join`, 1:1 `i64` unidirectional bounded and
+rendezvous channels, and bounded atomic `poll` through generated C11 and existing MuLIB kernels. The real
+source [channel example](examples/cooperative_channels.on1x) covers checked send/receive,
+close and scoped cleanup; the [poll example](examples/cooperative_poll.on1x)
+selects a rendezvous receive. This is **not** completion of the core-syntax
+specification: `poll after` deadlines, running/blocked internal-fiber cancellation, portable
+shell literals/streams, async/await, duplex,
+general payloads and native worker threads remain unsupported. See the
+[verification record](VERIFICATION.md) for commands and current suite failures.
+
+A separate bounded [direct-exec external-fiber profile](docs/concurrency.md)
+admits `launch exec("/absolute/program", "literal-arg")`, consuming `join`,
+and process-group `cancel` through [compiled C11](examples/cooperative_external.on1x).
+It does not interpret shell text or capture typed streams. A newly launched
+internal fiber may also be cancelled by an immediately following standalone
+`cancel handle;` before it runs; blocked internal fibers cannot be cancelled.
+
 The M2 [immutable C-string FFI slice](docs/ffi-strings.md) extends existing
 review-gated admission with exact call-scoped inputs and immutable static
 results, directional Chisel evidence and null/byte-limit checks. It does not
@@ -21,8 +39,16 @@ add `loop` expressions and typed `break [label] with value` joins, including
 existing lexical cleanup. The next [nominal-data slice](docs/nominal-adts.md)
 adds nonrecursive named records and parameterized enums, with exact module/type
 argument identity and C11 execution (`examples/nominal_adts.on1x`). Recursive or
-owning ADTs, owning lists, defer/error propagation and concurrency remain
-unsupported; the specification is not complete.
+owning ADTs, owning lists and general concurrency remain unsupported; the specification
+is not complete.
+
+The M2 [defer/typed-error profile](docs/defer-errors.md) completes Go-style
+`defer call;` and postfix nominal `Result<T,E>?` through C11. Calls snapshot their
+callee/arguments at registration and run LIFO at **function return**, including
+propagated errors; loop exits do not drain them. Registration has finite count/
+capture-byte budgets. Use `match` for recovery; fatal traps still do not unwind.
+See [`examples/defer_errors.on1x`](examples/defer_errors.on1x). General exceptions,
+resource-bearing results, cancellation and MIR/SDK defer models remain unsupported.
 
 Category now has an executable **M0/M1 local scalar slice**: `@enable Protocols`
 invokes a bundled native On1x-authored processor for `@extension Protocols { ... }`
@@ -54,8 +80,8 @@ unsuffixed literals retain i64/f64 semantics. See
 [`examples/numeric_literals.on1x`](examples/numeric_literals.on1x) and
 [`examples/unsigned_f32.on1x`](examples/unsigned_f32.on1x). Floating execution
 is still supported only for the tested, guarded Linux x86_64 GCC/Clang profile.
-General ownership, foreign resources and
-concurrency are still not admitted. See the
+General ownership, foreign resources and multithreaded/async concurrency are
+still not admitted. See the
 [numeric contract](docs/numerics.md), [data-model contract](docs/data-model.md),
 [capability matrix](docs/capability-matrix.md) and
 [verification record](VERIFICATION.md). This does not complete M1 or On1x.

@@ -7,6 +7,7 @@
 #include <on1x/nominal.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/concurrency.hpp>
 #include <charconv>
 #include <climits>
 #include <map>
@@ -58,7 +59,9 @@ class Checker {
  struct LambdaFrame { Expr* expression; std::size_t scope_begin; std::set<std::string> names; };
  std::vector<LambdaFrame> lambdas;
  std::size_t capture_count=0,capture_bytes=0;
- Type returns=Type::Void;
+  Type returns=Type::Void;
+  std::size_t taskgroups=0;
+  const Expr* launch_body=nullptr;
  [[noreturn]] void fail(const Location& loc,const std::string& msg){throw Error(loc,msg,"ON1X-SEMA");}
  void push(){scopes.emplace_back();}void pop(){scopes.pop_back();}
  const Binding* lookup(const std::string& name)const{
@@ -75,6 +78,7 @@ class Checker {
    if(binding.scope>=frame->scope_begin)break;
    if(binding.is_mutable)fail(loc,"capturing mutable binding is unsupported; use an immutable let: "+name);
    if(resource(binding.type))fail(loc,"capturing JSON resources or views requires lifetime analysis: "+name);
+   if(binding.type.is_csp()&&(frame->expression!=launch_body||(binding.type!=Type::Sender&&binding.type!=Type::Receiver)))fail(loc,"concurrency capabilities may only move into a launch body: "+name);
    auto& captures=frame->expression->captures;
    if(frame->names.contains(name))continue;
    if(capture_count>=16384||name.size()>max_source_bytes-capture_bytes)
@@ -124,7 +128,9 @@ class Checker {
     if(resource(element))fail(loc,"tuple elements cannot contain JSON resources or views");
     validate_type(element,loc);
    }
-  }else{
+   }else{
+    for(const auto& p:type.parameters())if(csp::contains(p))fail(loc,"concurrency handles cannot cross ordinary function signatures");
+    if(csp::contains(type.result()))fail(loc,"concurrency handles cannot escape through function results");
    for(const auto& parameter:type.parameters()){
     if(parameter==Type::Void)fail(loc,"function parameter type cannot be void");
     if(resource(parameter))fail(loc,"function types cannot contain resource parameters");
@@ -188,7 +194,60 @@ class Checker {
  }
  Type check_expr(Expr& e){
   auto child=[&](std::size_t i){return check_expr(*e.children.at(i));};
-      switch(e.kind){
+       switch(e.kind){
+        case Expr::Kind::SourceCsp:case Expr::Kind::Csp:{
+         auto arity=[&](std::size_t n){if(e.children.size()!=n)fail(e.where,"concurrency operand arity mismatch");};
+         if(e.text=="poll"){
+          if(e.children.empty()||e.children.size()>17)fail(e.where,"poll offer limit/arity mismatch");
+          std::vector<Type> fields;std::vector<std::string> labels;
+          for(std::size_t i=0;i<e.children.size();++i){auto& offer=*e.children[i];
+           if(offer.kind==Expr::Kind::Boolean&&offer.text=="true"&&i+1==e.children.size()){
+            fields.push_back(Type::data(Type::Record,{}));labels.push_back("Default");break;
+           }
+           if(offer.kind!=Expr::Kind::SourceCsp||(offer.text!="offer_recv"&&offer.text!="offer_send")||
+              offer.children.size()!=(offer.text=="offer_recv"?1u:2u))fail(offer.where,"invalid poll offer");
+           offer.type=Type::Void;
+           equal(check_expr(*offer.children[0]),offer.text=="offer_recv"?Type::Receiver:Type::Sender,offer.where);
+           if(offer.text=="offer_send")equal(check_expr(*offer.children[1]),Type::I64,offer.where);
+           fields.push_back(offer.text=="offer_recv"?Type{Type::I64}:Type::data(Type::Record,{}));
+           labels.push_back((offer.text=="offer_recv"?"Recv":"Sent")+std::to_string(i));
+           fields.push_back(Type::data(Type::Record,{}));labels.push_back("Closed"+std::to_string(i));
+          }
+          return e.type=Type::data(Type::Sum,std::move(fields),std::move(labels));
+         }
+         if(e.text=="launch"){
+         arity(1);if(!taskgroups||e.children[0]->kind!=Expr::Kind::Lambda)fail(e.where,"launch requires an enclosing taskgroup and a source block");
+         auto saved=launch_body;launch_body=e.children[0].get();equal(child(0),Type::function({},Type::I64),e.where);launch_body=saved;
+         for(const auto& c:e.children[0]->captures)if(c.type!=Type::I64&&c.type!=Type::Sender&&c.type!=Type::Receiver)fail(e.where,"launch captures support only immutable i64 or scoped endpoints");
+          return e.type=Type::Fiber;
+         }
+         if(e.text=="launch_exec"){
+          if(!taskgroups||e.children.empty()||e.children.size()>9)fail(e.where,"external launch requires a taskgroup and 1..9 literal argv items");
+          for(auto& arg:e.children){if(arg->kind!=Expr::Kind::String)fail(arg->where,"external argv must be constant strings");equal(check_expr(*arg),Type::String,arg->where);}
+          return e.type=Type::ExternalFiber;
+         }
+        if(e.text=="channel"){
+         arity(3);if(!taskgroups||e.result!=Type::I64)fail(e.where,"channel requires a taskgroup and i64 payload");
+         for(std::size_t i=0;i<3;++i){equal(child(i),Type::I64,e.where);if(e.children[i]->kind!=Expr::Kind::Integer)fail(e.where,"channel cardinality/capacity must be decimal literals");}
+         if(integer_literal_bits(e.children[0]->text,e.where)!=1||integer_literal_bits(e.children[1]->text,e.where)!=1)fail(e.where,"ON1X-CSP-UNSUPPORTED: initial endpoint cardinalities must be (1,1)");
+         auto capacity=integer_literal_bits(e.children[2]->text,e.where);if(capacity<0||capacity>256)fail(e.where,"channel capacity must be in 0..256");
+         return e.type=Type::Channel;
+        }
+        arity(e.text=="send"?2:1);
+        if(e.text=="split"){equal(child(0),Type::Channel,e.where);return e.type=Type::tuple({Type::Sender,Type::Receiver});}
+         if(e.text=="join"){
+          auto t=child(0);if(t!=Type::Fiber&&t!=Type::ExternalFiber)fail(e.where,"join requires an internal or external fiber");
+          return e.type=Type::I64;
+         }
+         if(e.text=="cancel"){
+          auto t=child(0);if(t!=Type::Fiber&&t!=Type::ExternalFiber)fail(e.where,"cancel requires an internal or external fiber");
+          return e.type=Type::Bool;
+         }
+        if(e.text=="recv"){equal(child(0),Type::Receiver,e.where);return e.type=csp::receive_result();}
+        if(e.text=="close"){equal(child(0),Type::Sender,e.where);return e.type=Type::Bool;}
+        if(e.text=="send"){equal(child(0),Type::Sender,e.where);equal(child(1),Type::I64,e.where);return e.type=csp::send_result();}
+        fail(e.where,"unknown concurrency operation");
+       }
       case Expr::Kind::Propagate:{
        if(e.children.size()!=1)fail(e.where,"propagation requires one operand");
        auto input=child(0);if(input.kind()!=Type::Sum||input.nominal().empty())fail(e.where,"propagation requires a nominal Result");
@@ -290,13 +349,13 @@ class Checker {
       parameters.push_back(parameter.type);
      }
      auto type=Type::function(std::move(parameters),e.result);validate_type(type,e.where);
-      e.captures.clear();auto previous_returns=returns;auto previous_loops=std::move(loop_values);loop_values.clear();
+      e.captures.clear();auto previous_returns=returns;auto previous_loops=std::move(loop_values);loop_values.clear();auto saved_groups=taskgroups;taskgroups=&e==launch_body?1:0;
       lambdas.push_back({&e,scopes.size(),{}});push();returns=e.result;
       for(const auto& parameter:e.parameters){
        if(parameter.pattern)bind_pattern(*parameter.pattern,parameter.type);
        else define(parameter.name,parameter.type,false,parameter.where);
       }
-      bool complete=check_block(e.body,false);pop();lambdas.pop_back();returns=previous_returns;loop_values=std::move(previous_loops);
+      bool complete=check_block(e.body,false);pop();lambdas.pop_back();returns=previous_returns;loop_values=std::move(previous_loops);taskgroups=saved_groups;
      if(e.result!=Type::Void&&!complete)fail(e.where,"not all paths return in anonymous function");
      return e.type=std::move(type);
     }
@@ -380,12 +439,15 @@ class Checker {
  }
  bool check_block(std::vector<Stmt>& body,bool owns_scope=true){if(owns_scope)push();bool guarantees=false;
   for(auto& s:body){if(guarantees)fail(s.where,"unreachable statement after return or loop exit");
-    switch(s.kind){
+     switch(s.kind){
+     case Stmt::Kind::TaskGroup:case Stmt::Kind::CspScope:++taskgroups;guarantees=check_block(s.body);--taskgroups;break;
      case Stmt::Kind::PushDefer:equal(check_expr(*s.value),Type::function({},Type::Void),s.where);break;
      case Stmt::Kind::Defer:{
       if(!s.value||s.value->kind!=Expr::Kind::Call)fail(s.where,"defer requires a call expression");
-      auto t=check_expr(*s.value);if(resource(t))fail(s.where,"defer cannot discard a JSON owner/view");
-      for(const auto& a:s.value->children)if(resource(a->type))fail(a->where,"defer cannot retain JSON owners/views");
+       auto t=check_expr(*s.value);if(resource(t))fail(s.where,"defer cannot discard a JSON owner/view");
+       if(csp::contains(t))fail(s.where,"defer cannot retain concurrency handles");
+       for(const auto& a:s.value->children)if(resource(a->type))fail(a->where,"defer cannot retain JSON owners/views");
+       for(const auto& a:s.value->children)if(csp::contains(a->type))fail(a->where,"defer cannot retain concurrency handles");
       break;
      }
     case Stmt::Kind::Template:{
@@ -463,12 +525,14 @@ class Checker {
        if(f.result.is_code()||f.result.is_reference())fail(f.where,"runtime-managed extern ABI requires reviewed adapters");
    }
    if(!funcs.emplace(f.name,&f).second)fail(f.where,"duplicate function: "+f.name);
-    if(f.result==Type::Json||f.result==Type::JsonView)fail(f.where,"resource returns not supported in the initial ABI");
+     if(f.result==Type::Json||f.result==Type::JsonView)fail(f.where,"resource returns not supported in the initial ABI");
+     if(csp::contains(f.result))fail(f.where,"concurrency handles cannot escape through function results");
     validate_type(f.result,f.where);
     std::vector<Type> parameters;
       std::set<std::string> names;for(auto& p:f.params){if(!names.insert(p.name).second)fail(p.where,"duplicate parameter: "+p.name);
       if(f.external&&p.type.is_data())fail(p.where,"data-valued extern ABI requires reviewed aggregate adapters");
-     if(p.type==Type::Void||p.type==Type::Json||p.type==Type::JsonView)fail(p.where,"unsupported parameter type in this milestone");
+      if(p.type==Type::Void||p.type==Type::Json||p.type==Type::JsonView)fail(p.where,"unsupported parameter type in this milestone");
+      if(csp::contains(p.type))fail(p.where,"concurrency handles cannot cross ordinary function signatures");
       if(f.external&&p.type.is_function())fail(p.where,"function-valued extern ABI is unsupported; callbacks require reviewed contracts");
       if(f.external&&(p.type.is_code()||p.type.is_reference()))fail(p.where,"runtime-managed extern ABI requires reviewed adapters");
      if(f.external&&p.type.is_tuple()&&!p.pattern)fail(p.where,"tuple-valued extern ABI requires an explicit flattening pattern");
@@ -487,5 +551,5 @@ class Checker {
  }
 };
 }
-void check(Unit&u){expand_macros(u);meta::require_core(u);infer_types(u);canonical::lower_control(u);Checker(u).run();if(canonical::needs_values(u)){canonical::lower_values(u);Checker(u).run();}canonical::verify_control(u);canonical::verify_values(u);}
+void check(Unit&u){expand_macros(u);meta::require_core(u);infer_types(u);canonical::lower_control(u);Checker(u).run();if(canonical::needs_values(u)){canonical::lower_values(u);Checker(u).run();}csp::lower(u);canonical::verify_control(u);canonical::verify_values(u);csp::verify(u,true);}
 }

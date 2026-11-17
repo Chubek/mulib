@@ -39,7 +39,12 @@ static on1x_token_t on1x_lexeme(char *text, GLRParser start) {
  *   propagation := postfix_expression '?'     (nominal typed Result return)
  * Loop/match words are contextual. '::' is recognized so owning-list patterns
  * can diagnose their unsupported profile; array tails are never invented.
-  * Ellipsis keeps its longest-match macro meaning. No concurrency is enabled. */
+  * Intrinsic cooperative profile: taskgroup block, launch block, join/split/
+   * close prefix, <-receive and <-send, ->(1,1){payload,capacity,mode:uni},
+   * and contextual poll {recv/send/closed/default => arm}.
+   * POSIX bounded profile: launch exec("/absolute/path", "literal-arg", ...)
+   * yields xfiber, joined or cancelled within its taskgroup; no shell lexer.
+  * Ellipsis keeps its longest-match macro meaning. */
 %start on1x_scan_unit
 %skip /([ \t\r\n]+|#[^\n]*)+/
 on1x_scan_unit: pieces {
@@ -57,7 +62,7 @@ piece:
   | /[A-Za-z_][A-Za-z0-9_]*/ { $$ = on1x_lexeme($1, save); }
   | /([0-9]+\.[0-9]+([eE][+\-]?[0-9]+)?|[0-9]+[eE][+\-]?[0-9]+)(f32|f64)?|[0-9]+(f32|f64)/ { $$ = on1x_lexeme($1, save); }
   | /(0[xX][0-9a-fA-F]+|[0-9]+)(u8|u16|u32|u64)?/ { $$ = on1x_lexeme($1, save); }
-  | /\.\.\.|\.\.=|\.\.|::|==|!=|<=|>=|&&|\|\||->|=>/ { $$ = on1x_lexeme($1, save); }
+  | /\.\.\.|\.\.=|\.\.|::|==|!=|<=|>=|&&|\|\||<-|->|=>/ { $$ = on1x_lexeme($1, save); }
   | /[+*%<>=!;:,(){}\[\]@$.|?\-]/ { $$ = on1x_lexeme($1, save); }
   | '/' { $$ = on1x_lexeme($1, save); }
 ;

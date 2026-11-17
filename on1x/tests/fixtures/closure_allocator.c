@@ -1,9 +1,15 @@
-/* Counts only closure environments, not JSON or compiler allocations. */
+/* Counts the environment allocator domain (closures and defer records/captures),
+ * not JSON or compiler allocations. */
 #include "on1x_runtime.h"
 #include <stdlib.h>
 
 static int64_t live, peak, allocations;
 static void verify_empty(void) {
+    const char *expected = getenv("ON1X_TEST_ENV_EXPECT_LIVE");
+    if (expected) {
+        if (live != strtoll(expected, NULL, 10)) abort();
+        return;
+    }
     /* Fatal allocation errors deliberately terminate without unwinding. */
     if (live && !getenv("ON1X_TEST_ENV_FAIL_AFTER")) abort();
 }

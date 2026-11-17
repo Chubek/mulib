@@ -12,6 +12,27 @@ empty payloads are `record{}` and multi-field payloads are tuples. Type argument
 and nominal identities remain exact through inference, imports and C11. Only
 nonrecursive, bounded, trivially copied fields are admitted.
 
+## Function-scoped defer and recoverable results
+
+`defer f(args);` evaluates the callable and arguments once, left-to-right, when
+registered. Saved calls run LIFO when the current function/lambda returns, not
+when a block/loop exits. Returned values are saved before defers; remaining
+lexical owners drop afterwards. RC operands retain independent references.
+`defer fn(){ ... }();` provides an action body with ordinary immutable captures.
+
+For a nominal `enum Result<T,E>{Ok(T),Err(E)}`, `value?` evaluates once and yields
+the `Ok` payload or returns `Err` from the current function/lambda, running its
+defers and early-return cleanup. The return must use the same nominal declaration
+and exact error type; its success type may differ. This protocol also admits an
+equivalently defined enum under another name. Recover explicitly with `match`.
+Result fields retain the bounded trivial-value restrictions of nominal data.
+
+These are intrinsic C11 features, not macros or C++ exceptions. Fatal arithmetic,
+assertion, bounds and allocation failures remain terminal and do not promise
+cleanup. `defer { ... }`, using, exception handlers, Option propagation and task
+cancellation are unsupported. MIR/SDK requests reject unsupported defer/result
+profiles. See [the exact syntax, limits and migration contract](defer-errors.md).
+
 ## Lexical conventions
 
 Source files use ASCII identifier spelling `[A-Za-z_][A-Za-z0-9_]*` and
@@ -440,11 +461,11 @@ profile described above. `break`, `continue` and `for` remain unsupported.
 ## Explicitly absent language facilities
 
 Records, closed sums, fixed arrays and owning snapshot slices exist only in the
-bounded value profile described above: no refutable/guarded pattern matching,
-recursive nominal ADTs, data type parameters, field/element mutation, data
+bounded value profile described above: no recursive/owning nominal ADTs,
+managed data fields, field/element mutation, data
 equality or printing, generic higher-kinded types, module signatures/functors,
 mutable/resource captures, native coroutines, async, polymorphic numeric
-literals, foreign callbacks, foreign aggregate ABI, `Option` or `Result`,
-structured error propagation, or production borrow checker yet. Do not add
+literals, foreign callbacks, foreign aggregate ABI, Option propagation,
+general exception/error effects, or production borrow checker yet. Do not add
 their names to public supported-feature lists until they are implemented with
 tests.

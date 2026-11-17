@@ -59,7 +59,7 @@ struct Expr {
   enum class Kind { Integer, Float, Boolean, String, Variable, Unary, Binary, Call, Lambda, Tuple, PolyPack, PolyProjection,
                     MacroCall, SyntaxHole, SyntaxBlock, Extension, SyntaxList, SyntaxVector, SyntaxKeyword,
                      Quote, Splice, Lift, Run, SyntaxLet, Record, Variant, Match, Array, Field, Index, Slice, Length,
-                       PatternMatch, Case, Unit, Region, TagTest, Payload, Project, Loop, Propagate } kind;
+                       PatternMatch, Case, Unit, Region, TagTest, Payload, Project, Loop, Propagate, SourceCsp, Csp } kind;
  enum class Reference { Unresolved, Local, Function, Extern, Intrinsic } reference = Reference::Unresolved;
  Location where;
  std::string text;
@@ -87,7 +87,7 @@ struct Expr {
 };
 struct Stmt {
   enum class Kind { Let, Assign, Return, If, While, Expr, Block, Template, Range, Break, Continue,
-                     Storage, Initialize, Region, Leave, Trap, Defer, PushDefer } kind;
+                     Storage, Initialize, Region, Leave, Trap, Defer, PushDefer, TaskGroup, CspScope } kind;
  Location where;
  std::string name;
   std::size_t context=0;

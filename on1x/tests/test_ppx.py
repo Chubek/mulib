@@ -79,7 +79,7 @@ if Path('/proc/self/stat').exists():
     stat=Path('/proc')/pidfile.read_text()/'stat'
     for _ in range(100):
         try:state=stat.read_text().split(') ')[1][0]
-        except FileNotFoundError:break
+        except (FileNotFoundError, ProcessLookupError):break
         if state=='Z':break
         time.sleep(0.01)
     else:raise AssertionError('PPX process group was not terminated')

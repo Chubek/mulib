@@ -1,5 +1,10 @@
 # Nerotypical structural type verification
 
+The [defer/Result C11 continuation](defer-errors.md) retains fail-closed SDK
+admission: deferred captures/effects and nominal aggregate results are outside
+this adapter. Ordinary frontend/value verification and executable C11 tests are
+not relabeled as independent Nerotypical certification.
+
 On1x can independently check elaborated HIR with the real
 `moonstone::nerotypical::structural::TypeGraph`. It generates constructor/equality
 constraints and calls `TypeGraph::solve`, using Satie EUF and Nerotypical's

@@ -5,6 +5,7 @@
 #include <on1x/nominal.hpp>
 #include <on1x/canonical/control.hpp>
 #include <on1x/canonical/values.hpp>
+#include <on1x/concurrency.hpp>
 #include <algorithm>
 #include <map>
 #include <set>
@@ -34,7 +35,7 @@ std::string c_string(const std::string& source){
 
 class Generator {
  struct Owner { Type type; std::string name; };
- struct Lambda { const Expr* expression; std::string invoke,make,environment,destroy; };
+ struct Lambda { const Expr* expression; std::string invoke,make,environment,destroy; bool deferred; };
  const Unit& unit;
  std::ostringstream types,prototypes,helpers,value_helpers,definitions;
  std::map<Type,std::string> function_types;
@@ -59,7 +60,9 @@ class Generator {
  std::uint64_t serial=0,type_serial=0,helper_serial=0;
   int indent=0;
    bool uses_f64=false,uses_f32=false,uses_unsigned=false;
-   bool uses_value_data=false;
+    bool uses_value_data=false,uses_defer=false;
+    bool uses_csp=false;
+   std::string location(const Location& at)const{return c_string(meta::source_literal(at.file))+", "+std::to_string(at.line)+", "+std::to_string(at.column);}
 
  std::string reserve(const std::string& preferred){
   std::string name=preferred;std::size_t suffix=0;
@@ -86,7 +89,11 @@ class Generator {
     }
     types<<"} "<<name<<";\n";return name;
    }
-   switch(type.kind()){
+    switch(type.kind()){
+     case Type::Fiber:return "on1x_csp_task *";
+     case Type::ExternalFiber:return "on1x_csp_process *";
+    case Type::Channel:case Type::Sender:case Type::Receiver:return "on1x_csp_channel *";
+    case Type::CspGroup:return "on1x_csp_group *";
    case Type::I64:return "int64_t";case Type::Bool:return "bool";
     case Type::F64:uses_f64=true;return "double";
     case Type::F32:uses_f64=true;uses_f32=true;return "float";
@@ -151,13 +158,13 @@ class Generator {
    value_helpers<<"}\n\n";
   }
  }
- void collect(const Expr& expression){
+ void collect(const Expr& expression,bool deferred=false){
   if(expression.prototype)return;
    if(expression.kind==Expr::Kind::Lambda){
    auto index=lambdas.size();auto suffix=std::to_string(index+1);
    lambda_index.emplace(&expression,index);
    lambdas.push_back({&expression,reserve("on1x_lambda_"+suffix),reserve("on1x_make_lambda_"+suffix),
-                      reserve("on1x_lambda_env_"+suffix),reserve("on1x_drop_lambda_"+suffix)});
+                      reserve("on1x_lambda_env_"+suffix),reserve("on1x_drop_lambda_"+suffix),deferred});
     collect(expression.body);
    }
    if(expression.kind==Expr::Kind::Region)collect(expression.body);
@@ -170,13 +177,14 @@ class Generator {
     if(statement.kind==Stmt::Kind::Break)break_targets.insert(statement.control_target);
     if(statement.kind==Stmt::Kind::Continue)continue_targets.insert(statement.control_target);
     if(statement.kind==Stmt::Kind::Leave)region_exit_targets.insert(statement.control_target);
-   if(statement.value&&statement.kind!=Stmt::Kind::Template)collect(*statement.value);
+   if(statement.value&&statement.kind!=Stmt::Kind::Template)collect(*statement.value,statement.kind==Stmt::Kind::PushDefer);
    collect(statement.body);collect(statement.otherwise);
   }
  }
  void push(){scopes.emplace_back();owners.emplace_back();++indent;}
- void release(const Owner& owner){
-  if(owner.type==Type::Json)definitions<<pad()<<"on1x_json_drop("<<owner.name<<");\n";
+  void release(const Owner& owner){
+   if(owner.type==Type::CspGroup)definitions<<pad()<<"on1x_csp_group_finish("<<owner.name<<");\n";
+   else if(owner.type==Type::Json)definitions<<pad()<<"on1x_json_drop("<<owner.name<<");\n";
   else adjust(definitions,owner.type,owner.name,false,pad());
  }
  void drops(){
@@ -192,7 +200,20 @@ class Generator {
    if(auto found=scope->find(name);found!=scope->end())return found->second;
   throw std::runtime_error("internal codegen: missing symbol "+name);
  }
- void retain(const Type& type,const std::string& name){adjust(definitions,type,name,true,pad());}
+  void retain(const Type& type,const std::string& name){adjust(definitions,type,name,true,pad());}
+  bool has_defer(const Expr& e)const{
+   if(e.prototype||e.kind==Expr::Kind::Lambda)return false;
+   if(e.callee&&has_defer(*e.callee))return true;
+   for(const auto& c:e.children)if(has_defer(*c))return true;
+   return has_defer(e.body);
+  }
+  bool has_defer(const std::vector<Stmt>& b)const{
+   for(const auto& s:b)if(!s.prototype&&(s.kind==Stmt::Kind::PushDefer||
+      (s.value&&s.kind!=Stmt::Kind::Template&&has_defer(*s.value))||has_defer(s.body)||has_defer(s.otherwise)))return true;
+   return false;
+  }
+   void run_defers(){if(!defer_stack.empty())definitions<<pad()<<"on1x_defer_run(&"<<defer_stack<<");\n";}
+   void leave_call(){if(uses_csp)definitions<<pad()<<"on1x_csp_call_leave();\n";}
  void finish(std::size_t keep=0){
   for(std::size_t i=temporary_values.size();i>keep;--i)release(temporary_values[i-1]);
   temporary_values.resize(keep);
@@ -219,7 +240,72 @@ class Generator {
    flatten(pattern.elements[i],type.elements()[i],root+"->element_"+std::to_string(i),args);
  }
   std::string expr(const Expr& e){
-      switch(e.kind){
+       switch(e.kind){
+       case Expr::Kind::SourceCsp:throw Error(e.where,"unlowered concurrency operation");
+        case Expr::Kind::Csp:{
+         const auto& op=e.text;auto at=location(e.where);
+         if(op=="poll"){
+          std::size_t n=e.children.size();bool fallback=e.children.back()->kind==Expr::Kind::Boolean;
+          if(fallback)--n;
+          auto offers=unique("poll_offers");definitions<<pad()<<"on1x_csp_offer "<<offers<<"["<<n<<"] = {0};\n";
+          for(std::size_t i=0;i<n;++i){const auto& offer=*e.children[i];
+           auto endpoint=expr(*offer.children[0]);
+           definitions<<pad()<<offers<<"["<<i<<"].channel = "<<endpoint<<";\n";
+           definitions<<pad()<<offers<<"["<<i<<"].operation = "<<(offer.text=="offer_send"?1:2)<<";\n";
+           if(offer.text=="offer_send"){
+            auto value=expr(*offer.children[1]);definitions<<pad()<<offers<<"["<<i<<"].payload = "<<value<<";\n";
+           }
+          }
+          auto payload=unique("poll_payload"),selected=unique("poll_selected"),closed=unique("poll_closed");
+          definitions<<pad()<<"int64_t "<<payload<<" = 0;\n"<<pad()<<"size_t "<<selected<<" = 0;\n"<<pad()<<"bool "<<closed<<" = false;\n";
+          definitions<<pad()<<"on1x_csp_select("<<offers<<", "<<n<<", "<<(fallback?"true":"false")<<", &"<<payload<<", &"<<selected<<", &"<<closed<<", "<<at<<");\n";
+          auto result=temp(e.type,"{0}");
+          auto index=[&](const std::string& label){auto it=std::find(e.type.labels().begin(),e.type.labels().end(),label);
+           if(it==e.type.labels().end())throw Error(e.where,"missing checked poll result variant");
+           return static_cast<std::size_t>(it-e.type.labels().begin());};
+          if(fallback)definitions<<pad()<<"if ("<<selected<<" == "<<n<<") "<<result<<".tag = "<<index("Default")<<";\n";
+          for(std::size_t i=0;i<n;++i){
+           auto success=index((e.children[i]->text=="offer_recv"?"Recv":"Sent")+std::to_string(i));
+           auto failure=index("Closed"+std::to_string(i));
+           definitions<<pad()<<"if ("<<selected<<" == "<<i<<") "<<result<<".tag = "<<closed<<" ? "<<failure<<" : "<<success<<";\n";
+           if(e.children[i]->text=="offer_recv")definitions<<pad()<<"if ("<<selected<<" == "<<i<<" && !"<<closed<<") "<<result<<".payload.element_"<<success<<" = "<<payload<<";\n";
+          }
+          return result;
+         }
+         if(op=="launch"){
+          auto fn=expr(*e.children.at(0));
+          return temp(e.type,"on1x_csp_launch("+fn+".invoke, "+fn+".environment, "+at+")");
+         }
+         if(op=="launch_exec"){
+          auto args=unique("external_argv");definitions<<pad()<<"const char *"<<args<<"["<<(e.children.size()+1)<<"] = {";
+          for(const auto& arg:e.children)definitions<<expr(*arg)<<", ";
+          definitions<<"NULL};\n";
+          return temp(e.type,"on1x_csp_launch_exec("+args+", "+std::to_string(e.children.size())+", "+at+")");
+         }
+        if(op=="channel")return temp(e.type,"on1x_csp_channel_create("+expr(*e.children.at(2))+", "+at+")");
+        auto handle=expr(*e.children.at(0));
+        if(op=="split")return temp(e.type,"("+ctype(e.type)+"){"+handle+", "+handle+"}");
+         if(op=="join")return temp(e.type,std::string(e.children[0]->type==Type::ExternalFiber?"on1x_csp_process_join(":"on1x_csp_join(")+handle+", "+at+")");
+         if(op=="cancel")return temp(e.type,std::string(e.children[0]->type==Type::Fiber?"on1x_csp_cancel_ready(":"on1x_csp_process_cancel(")+handle+", "+at+")");
+        if(op=="close")return temp(e.type,"on1x_csp_close("+handle+", "+at+")");
+        if(op=="send"){
+         auto payload=expr(*e.children.at(1));
+         auto status=temp(Type::I64,"on1x_csp_send("+handle+", "+payload+", "+at+")");
+         auto result=temp(e.type,"{0}");
+         definitions<<pad()<<result<<".tag = "<<status<<" == 0 ? 1 : 0;\n"
+                    <<pad()<<"if ("<<status<<" != 0) "<<result<<".payload.element_0 = "<<status<<";\n";
+         return result;
+        }
+        if(op=="recv"){
+         auto payload=temp(Type::I64,"0");
+         auto status=temp(Type::Bool,"on1x_csp_receive("+handle+", &"+payload+", "+at+")");
+         auto result=temp(e.type,"{0}");
+         definitions<<pad()<<result<<".tag = "<<status<<" ? 1 : 0;\n"
+                    <<pad()<<"if ("<<status<<") "<<result<<".payload.element_1 = "<<payload<<";\n";
+         return result;
+        }
+        throw Error(e.where,"unknown canonical concurrency operation");
+       }
       case Expr::Kind::Propagate:throw Error(e.where,"unlowered propagation");
      case Expr::Kind::Unit:return {};
       case Expr::Kind::PatternMatch:case Expr::Kind::Case:case Expr::Kind::Loop:throw Error(e.where,"surface value construct must be canonicalized");
@@ -399,9 +485,31 @@ class Generator {
  }
  bool stmt(const Stmt& s){
   if(s.prototype)return false;
-   switch(s.kind){
+    switch(s.kind){
+    case Stmt::Kind::TaskGroup:throw Error(s.where,"unlowered taskgroup");
+    case Stmt::Kind::CspScope:{
+     definitions<<pad()<<"{\n";push();
+     auto owner=unique("taskgroup");
+     definitions<<pad()<<"on1x_csp_group *"<<owner<<" = on1x_csp_group_enter("<<location(s.where)<<");\n";
+     owners.back().push_back({Type::CspGroup,owner});
+     bool terminated=false;for(const auto& child:s.body)terminated=stmt(child);
+     pop(!terminated);definitions<<pad()<<"}\n";return terminated;
+    }
    case Stmt::Kind::Defer:throw Error(s.where,"unlowered defer");
-   case Stmt::Kind::PushDefer:{auto f=expr(*s.value);definitions<<pad()<<"on1x_defer_push(&"<<defer_stack<<", "<<f<<".invoke, "<<f<<".environment);\n";finish();return false;}
+   case Stmt::Kind::PushDefer:{
+    const auto& e=*s.value;const auto& lambda=lambdas.at(lambda_index.at(&e));
+    auto at=c_string(meta::source_literal(s.where.file))+", "+std::to_string(s.where.line)+", "+std::to_string(s.where.column);
+    auto call="on1x_defer_register(&"+defer_stack+", "+(e.captures.empty()?"0":"sizeof(struct "+lambda.environment+")")+", "+lambda.invoke+", "+(e.captures.empty()?"NULL":lambda.destroy)+", "+at+")";
+    if(e.captures.empty())definitions<<pad()<<"(void)"<<call<<";\n";
+    else{
+     auto capture=unique("deferred_captures");definitions<<pad()<<"struct "<<lambda.environment<<" *"<<capture<<" = (struct "<<lambda.environment<<" *)"<<call<<";\n";
+     for(std::size_t i=0;i<e.captures.size();++i){
+      auto field=capture+"->capture_"+std::to_string(i);definitions<<pad()<<field<<" = "<<ref(e.captures[i].name)<<";\n";
+      retain(e.captures[i].type,field);
+     }
+    }
+    finish();return false;
+   }
   case Stmt::Kind::Template:{for(const auto& instance:s.body)stmt(instance);return false;}
    case Stmt::Kind::Let:{
    auto value=expr(*s.value);
@@ -428,9 +536,9 @@ class Generator {
     if(s.value->type!=Type::Void){
      auto result=unique("return");definitions<<pad()<<ctype(s.value->type)<<" "<<result<<" = "<<value<<";\n";
      retain(s.value->type,result);
-     definitions<<pad()<<"on1x_defer_run(&"<<defer_stack<<");\n";finish();drops();definitions<<pad()<<"return "<<result<<";\n";
-     }else{definitions<<pad()<<"on1x_defer_run(&"<<defer_stack<<");\n";finish();drops();definitions<<pad()<<"return;\n";}
-    }else{definitions<<pad()<<"on1x_defer_run(&"<<defer_stack<<");\n";finish();drops();definitions<<pad()<<"return;\n";}
+      run_defers();finish();drops();leave_call();definitions<<pad()<<"return "<<result<<";\n";
+      }else{run_defers();finish();drops();leave_call();definitions<<pad()<<"return;\n";}
+     }else{run_defers();finish();drops();leave_call();definitions<<pad()<<"return;\n";}
    return true;
   }
    case Stmt::Kind::Expr:{
@@ -450,7 +558,8 @@ class Generator {
    auto condition=expr(*s.value);finish();definitions<<pad()<<"if (!("<<condition<<")) break;\n";
     definitions<<pad()<<"{\n";body(s.body);definitions<<pad()<<"}\n";
     if(continue_targets.contains(s.control_target))definitions<<pad()<<latch<<": ;\n";
-    if(!s.otherwise.empty()){definitions<<pad()<<"{\n";body(s.otherwise);definitions<<pad()<<"}\n";}
+     if(!s.otherwise.empty()){definitions<<pad()<<"{\n";body(s.otherwise);definitions<<pad()<<"}\n";}
+     if(uses_csp)definitions<<pad()<<"on1x_csp_yield("<<location(s.where)<<");\n";
     --indent;definitions<<pad()<<"}\n";
     if(break_targets.contains(s.control_target))definitions<<pad()<<done<<": ;\n";
     loop_targets.pop_back();return false;
@@ -495,7 +604,7 @@ class Generator {
  void lambda_support(const Lambda& lambda){
   const auto& e=*lambda.expression;
   prototypes<<"static "<<ctype(e.result)<<" "<<lambda.invoke<<"(";parameter_types(prototypes,e.parameters,true);prototypes<<");\n";
-  prototypes<<"static "<<ctype(e.type)<<" "<<lambda.make<<"(";capture_types(prototypes,e);prototypes<<");\n";
+  if(!lambda.deferred){prototypes<<"static "<<ctype(e.type)<<" "<<lambda.make<<"(";capture_types(prototypes,e);prototypes<<");\n";}
   if(!e.captures.empty()){
    helpers<<"struct "<<lambda.environment<<" {\n  on1x_env header;\n";
    for(std::size_t i=0;i<e.captures.size();++i)helpers<<"  "<<ctype(e.captures[i].type)<<" capture_"<<i<<";\n";
@@ -507,6 +616,7 @@ class Generator {
     adjust(helpers,e.captures[i-1].type,"on1x_capture->capture_"+std::to_string(i-1),false,"  ");
    helpers<<"}\n";
   }
+  if(lambda.deferred)return;
   helpers<<"static "<<ctype(e.type)<<" "<<lambda.make<<"(";capture_types(helpers,e,true);helpers<<") {\n";
   if(e.captures.empty())helpers<<"  return ("<<ctype(e.type)<<"){"<<lambda.invoke<<", NULL};\n";
   else{
@@ -520,8 +630,8 @@ class Generator {
   }
   helpers<<"}\n\n";
  }
- void definition(const std::string& name,const Type& result,const std::vector<Param>& parameters,
-                 const std::vector<Stmt>& statements,const Lambda* lambda=nullptr){
+  void definition(const std::string& name,const Type& result,const std::vector<Param>& parameters,
+                  const std::vector<Stmt>& statements,const Location& at,const Lambda* lambda=nullptr){
   scopes.clear();owners.clear();temporary_values.clear();indent=0;
   if(lambda){scopes.emplace_back();owners.emplace_back();}
   push();definitions<<(lambda?"static ":"")<<ctype(result)<<" "<<name<<"(";
@@ -533,8 +643,9 @@ class Generator {
    auto symbol=unique(parameters[i].pattern?"pattern_argument":parameters[i].name);
    scopes.back()[parameters[i].name]=symbol;definitions<<ctype(parameters[i].type)<<" "<<symbol;
   }
-   definitions<<") {\n";
-   defer_stack=unique("defers");definitions<<pad()<<"on1x_defer_stack "<<defer_stack<<" = {0};\n(void)"<<defer_stack<<";\n";
+    definitions<<") {\n";
+    if(uses_csp)definitions<<pad()<<"on1x_csp_call_enter("<<location(at)<<");\n";
+   defer_stack.clear();if(has_defer(statements)){uses_defer=true;defer_stack=unique("defers");definitions<<pad()<<"on1x_defer_stack "<<defer_stack<<" = {0};\n";}
   if(lambda){
    definitions<<pad()<<"(void)"<<context<<";\n";
    if(!lambda->expression->captures.empty()){
@@ -547,8 +658,8 @@ class Generator {
   for(const auto& parameter:parameters)if(parameter.pattern)
    bind_pattern(*parameter.pattern,parameter.type,ref(parameter.name));
   bool terminated=false;for(const auto& statement:statements)terminated=stmt(statement);
-   if(!terminated)definitions<<pad()<<"on1x_defer_run(&"<<defer_stack<<");\n";
-   pop(!terminated);if(result==Type::Void&&!terminated)definitions<<"  return;\n";
+   if(!terminated)run_defers();
+    pop(!terminated);if(!terminated)leave_call();if(result==Type::Void&&!terminated)definitions<<"  return;\n";
   definitions<<"}\n\n";scopes.clear();owners.clear();
  }
  void adapter(const Function& f,const std::string& name){
@@ -561,7 +672,8 @@ class Generator {
   helpers<<");\n";if(f.result==Type::Void)helpers<<"  return;\n";helpers<<"}\n\n";
  }
 public:
- explicit Generator(const Unit& source):unit(source){
+  explicit Generator(const Unit& source):unit(source){
+   uses_csp=csp::present(unit);
   for(const auto& f:unit.functions)if(f.external)identifiers.insert(f.name);
   for(const auto& f:unit.functions)if(f.external)externs.emplace(f.name,&f);
    for(const auto& f:unit.functions)functions.emplace(f.name,f.external?f.name:reserve("on1x_fn_"+(f.name.starts_with("@")?f.name.substr(1):f.name)));
@@ -578,12 +690,19 @@ public:
    prototypes<<");\n";
   }
   for(const auto& lambda:lambdas)lambda_support(lambda);
-   for(const auto& f:unit.functions)if(!f.external&&!f.prototype)definition(functions.at(f.name),f.result,f.params,f.body);
-  for(const auto& lambda:lambdas){const auto& e=*lambda.expression;definition(lambda.invoke,e.result,e.parameters,e.body,&lambda);}
+    for(const auto& f:unit.functions)if(!f.external&&!f.prototype)definition(functions.at(f.name),f.result,f.params,f.body,f.where);
+   for(const auto& lambda:lambdas){const auto& e=*lambda.expression;definition(lambda.invoke,e.result,e.parameters,e.body,e.where,&lambda);}
   for(const auto& f:unit.functions)if(auto found=adapters.find(f.name);found!=adapters.end())adapter(f,found->second);
   emit_ownership_helpers();
   const auto& main=*std::find_if(unit.functions.begin(),unit.functions.end(),[](const auto& f){return f.name=="main";});
-  if(main.result==Type::Void)definitions<<"int main(void) { "<<functions.at("main")<<"(); return 0; }\n";
+   if(uses_csp){
+    auto entry=reserve("on1x_csp_entry");
+    definitions<<"static int64_t "<<entry<<"(on1x_env *context) { (void)context; ";
+    if(main.result==Type::Void)definitions<<functions.at("main")<<"(); return 0;";
+    else definitions<<"return "<<functions.at("main")<<"();";
+    definitions<<" }\nint main(void) { return (int)on1x_csp_run("<<entry<<", NULL, "<<location(main.where)<<"); }\n";
+   }
+   else if(main.result==Type::Void)definitions<<"int main(void) { "<<functions.at("main")<<"(); return 0; }\n";
   else definitions<<"int main(void) { return (int)"<<functions.at("main")<<"(); }\n";
    const std::string float_guard=uses_f64?
     "#if !defined(ON1X_F64_ABI_VERSION) || ON1X_F64_ABI_VERSION != 1\n#error \"unsupported On1x f64 target or runtime ABI\"\n#endif\n"
@@ -594,9 +713,11 @@ public:
      +(uses_value_data?std::string("#if !defined(ON1X_VALUE_DATA_ABI_VERSION) || ON1X_VALUE_DATA_ABI_VERSION != 1\n#error \"incompatible On1x value data runtime ABI\"\n#endif\n\n"):std::string{})
       +(uses_f32?std::string("#if !defined(ON1X_F32_ABI_VERSION) || ON1X_F32_ABI_VERSION != 1\n#error \"unsupported On1x f32 target or runtime ABI\"\n#endif\n"):std::string{})
       +(uses_unsigned?std::string("#if !defined(ON1X_UNSIGNED_ABI_VERSION) || ON1X_UNSIGNED_ABI_VERSION != 1\n#error \"incompatible On1x unsigned runtime ABI\"\n#endif\n"):std::string{})
+       +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
+       +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 1\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
       +float_guard+types.str()+"\n"+prototypes.str()+"\n"+value_helpers.str()+helpers.str()+definitions.str();
  }
 };
 }
-std::string emit_c(const Unit& unit,const std::string& source_name){(void)source_name;canonical::verify_control(unit);meta::require_core(unit);canonical::verify_values(unit);verify_nominals(unit);return Generator(unit).run();}
+std::string emit_c(const Unit& unit,const std::string& source_name){(void)source_name;canonical::verify_control(unit);meta::require_core(unit);canonical::verify_values(unit);verify_nominals(unit);csp::verify(unit,true);return Generator(unit).run();}
 }

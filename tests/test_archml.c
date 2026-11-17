@@ -181,7 +181,23 @@ static void all_forms (mulib_archml_t *a)
       assert (mulib_archml_u64(mulib_archml_child(mulib_archml_property(op,"bits"),1),&bits));
       assert (mulib_archml_u64(mulib_archml_child(mulib_archml_property(op,"scale"),1),&scale));
       values[count] = (bits > 3 ? 5 : 0) * scale;
-      if (cls) values[count] = 1;
+      if (cls) {
+        const mulib_archml_node_t *class_ref = mulib_archml_child(cls,1);
+        const mulib_archml_node_t *class_node = mulib_archml_find(
+          a,"regclass",mulib_archml_child(class_ref,2)->text);
+        const mulib_archml_node_t *member = mulib_archml_child(
+          mulib_archml_property(class_node,"members"),1);
+        uint64_t first = 0; int have_first = 0, have_one = 0;
+        for (; member; member=member->next) {
+          mulib_archml_register_t info;
+          const char *reg = mulib_archml_child(member,2)->text;
+          assert(mulib_archml_register_info(a,reg,&info));
+          if (!have_first) { first=info.encoding; have_first=1; }
+          if (info.encoding==1) { have_one=1; break; }
+        }
+        assert(have_first);
+        values[count] = have_one ? 1 : first;
+      }
       ++count;
     }
     assert (mulib_archml_encode(a,name,values,count,bytes,sizeof(bytes),&used) == MULIB_ARCHML_OK);
@@ -197,8 +213,10 @@ static void all_forms (mulib_archml_t *a)
 int main (int argc, char **argv)
 {
   const char *names[] = {"amd64", "arm64", "riscv64", "ppc64", "mips", "avr32", "wasm",
-    "amdgpu", "arm", "nvptx", "spirv", "xtensa", "bpf", "directx", "m68k", "hexagon", "dex"};
-  const size_t concrete[] = {124,80,92,23,29,9,36,8,19,0,12,20,57,0,20,7,98};
+    "amdgpu", "arm", "nvptx", "spirv", "xtensa", "bpf", "directx", "m68k", "hexagon", "dex",
+    "loongarch64", "avr8", "msp430", "sparc", "systemz", "evm"};
+  const size_t concrete[] = {124,80,92,23,29,9,36,8,19,0,12,20,57,0,20,7,98,
+    20,11,9,13,8,69};
   char directory[4096], path[4096];
   /* Machine-readable encoder for the independent LLVM MC fixture check. */
   if (argc >= 4 && !strcmp(argv[1],"--encode")) {
@@ -430,6 +448,82 @@ int main (int argc, char **argv)
       golden(a,"return-void",NULL,0,"0e00");
       assert(mulib_archml_count(a,"register")==0);
       assert(mulib_archml_find(a,"abi","dex-frame") && mulib_archml_find(a,"extension","art-gc"));
+    } else if (i == 17) {
+      const uint64_t rr[] = {4,5,6}, imm[] = {4,5,(uint64_t)-8};
+      const uint64_t load[] = {4,3,(uint64_t)-8}, branch[] = {4,5,8};
+      const uint64_t direct[] = {16}, indirect[] = {1,4,4};
+      golden(a,"add.d",rr,3,"a4981000");
+      golden(a,"sub.d",rr,3,"a4981100");
+      golden(a,"sll.d",rr,3,"a4981800");
+      golden(a,"addi.d",imm,3,"a4e0ff02");
+      golden(a,"ld.d",load,3,"64e0ff28");
+      golden(a,"st.d",load,3,"64e0ff29");
+      golden(a,"beq",branch,3,"85080058");
+      golden(a,"b",direct,1,"00100050");
+      golden(a,"bl",direct,1,"00100054");
+      golden(a,"jirl",indirect,3,"8104004c");
+      assert(mulib_archml_register_overlap(a,"zero","r0")==1);
+      assert(!strcmp(mulib_archml_child(mulib_archml_property(mulib_archml_find(a,"register","r0"),"write"),1)->text,"discard"));
+    } else if (i == 18) {
+      const uint64_t rr[] = {31,30}, high[] = {15,171};
+      golden(a,"add",rr,2,"fe0f");
+      golden(a,"sub",rr,2,"fe1b");
+      golden(a,"eor",rr,2,"fe27");
+      golden(a,"mov",rr,2,"fe2f");
+      golden(a,"ldi",high,2,"fbea");
+      golden(a,"subi",high,2,"fb5a");
+      golden(a,"nop",NULL,0,"0000");
+      assert(mulib_archml_register_overlap(a,"r31","r31h")==1);
+      unsigned char out[32]; size_t used=99; uint64_t low[] = {16,1};
+      assert(mulib_archml_encode(a,"ldi",low,2,out,sizeof(out),&used)==MULIB_ARCHML_RANGE && used==99);
+    } else if (i == 19) {
+      const uint64_t rr[] = {4,5}, jump[] = {8};
+      golden(a,"mov",rr,2,"0445");
+      golden(a,"add",rr,2,"0455");
+      golden(a,"sub",rr,2,"0485");
+      golden(a,"xor",rr,2,"04e5");
+      golden(a,"jmp",jump,1,"043c");
+      golden(a,"nop",NULL,0,"0343");
+      assert(mulib_archml_register_overlap(a,"pc","r0")==1);
+      unsigned char out[32]; size_t used=99; uint64_t special[] = {3,5};
+      assert(mulib_archml_encode(a,"add",special,2,out,sizeof(out),&used)==MULIB_ARCHML_RANGE && used==99);
+    } else if (i == 20) {
+      const uint64_t rr[] = {3,1,2}, imm[] = {3,1,(uint64_t)-4};
+      const uint64_t upper[] = {3,0x12345}, branch[] = {64};
+      golden(a,"add-rr",rr,3,"86004002");
+      golden(a,"add-ri",imm,3,"86007ffc");
+      golden(a,"sub-rr",rr,3,"86204002");
+      golden(a,"sethi",upper,2,"07012345");
+      golden(a,"ba",branch,1,"10800010");
+      golden(a,"nop",NULL,0,"01000000");
+      assert(mulib_archml_register_overlap(a,"sp","r14")==1);
+      assert(mulib_archml_register_overlap(a,"g0","r0")==1);
+    } else if (i == 21) {
+      const uint64_t rr[] = {3,4}, immediate[] = {3,(uint64_t)-8};
+      const uint64_t nopr[] = {0};
+      golden(a,"lgr",rr,2,"b9040034");
+      golden(a,"agr",rr,2,"b9080034");
+      golden(a,"sgr",rr,2,"b9090034");
+      golden(a,"ngr",rr,2,"b9800034");
+      golden(a,"xgr",rr,2,"b9820034");
+      golden(a,"lghi",immediate,2,"a739fff8");
+      golden(a,"nopr",nopr,1,"0700");
+    } else if (i == 22) {
+      const uint64_t byte[] = {0xab}, half[] = {0xabcd};
+      const uint64_t wide[] = {UINT64_C(0x1122334455667788)};
+      golden(a,"stop",NULL,0,"00");
+      golden(a,"add",NULL,0,"01");
+      golden(a,"sub",NULL,0,"03");
+      golden(a,"shl",NULL,0,"1b");
+      golden(a,"push0",NULL,0,"5f");
+      golden(a,"push1",byte,1,"60ab");
+      golden(a,"push2",half,1,"61abcd");
+      golden(a,"push8",wide,1,"671122334455667788");
+      golden(a,"dup16",NULL,0,"8f");
+      golden(a,"swap16",NULL,0,"9f");
+      assert(mulib_archml_count(a,"register")==0);
+      unsigned char out[32]; size_t used=99; uint64_t too_large[] = {256};
+      assert(mulib_archml_encode(a,"push1",too_large,1,out,sizeof(out),&used)==MULIB_ARCHML_RANGE && used==99);
     }
     mulib_archml_destroy(a);
   }

@@ -7,6 +7,9 @@
     "Identifier":"Expression", "Literal":"Expression", "NumericLiteral":"Literal", "IntegerLiteral":"NumericLiteral", "DecimalLiteral":"IntegerLiteral", "HexLiteral":"IntegerLiteral", "FloatLiteral":"NumericLiteral", "UnsignedLiteral":"NumericLiteral", "StringLiteral":"Literal", "BooleanLiteral":"Literal", "UnaryExpression":"Expression", "BinaryExpression":"Expression", "CallExpression":"Expression", "TupleExpression":"Expression", "LambdaExpression":"Expression", "ExtensionExpression":"Expression", "StagedExpression":"Expression", "DataExpression":"Expression"
   },
   "nodes": {
+    "CspType":{"category":"Type","fields":[["kind","Bytes"],["payload","Type"]]},
+    "SourceCsp":{"category":"Expression","fields":[["operation","Bytes"],["payload","Type"],["operands","Expression*"],["location","Location"]]},
+    "TaskGroup":{"category":"Statement","fields":[["body","Block"],["location","Location"]]},
     "Defer":{"category":"Statement","fields":[["call","Expression"],["location","Location"]]},
     "Propagate":{"category":"Expression","fields":[["value","Expression"],["location","Location"]]},
     "StructuralPattern":{"category":"Pattern","fields":[["kind","Bytes"],["name","Bytes"],["labels","Name*"],["parts","Pattern*"],["open","Boolean"],["location","Location"]]},

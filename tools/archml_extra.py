@@ -181,7 +181,7 @@ def avr32():
 
 def wasm():
     p=base('wasm',32,'little',
-           'ArchTk/infobank/Capstone-Arch/WASM/WASMDisassembler.c opcode table; Binaryen-WASM/wasm-stack.cpp and wasm-validator.cpp for stack typing and binary emission.',
+            'ArchTk/infobank/Capstone-Arch/WASM/WASMDisassembler.c opcode table; Binaryen-WASM/wasm-stack.cpp and wasm-validator.cpp for stack typing and binary emission; Binaryen-WASM/wasm.cpp feature names.',
            'WebAssembly MVP wasm32 stack machine. Selected no-immediate integer operations and canonical single-byte LEB constants only. Not a register ISA. No general LEB128, structured control, module serialization, SIMD or threads encoder.')
     op(p,'wasm-bin',2,'Arguments operation,width: pop b then a from typed operand stack, push width-bit modular a op b. add/sub/mul/and/or/xor wrap; shl/shr_s/shr_u mask b by width-1; rotates mask count and rotate width bits. Validation requires two operands of the stated type; stack underflow/type mismatch is invalid code, not a runtime trap.')
     op(p,'wasm-unary',2,'Arguments operation,width: pop one width-bit integer, push clz/ctz/popcnt at same width, or eqz as i32 0/1. clz(0)=ctz(0)=width.')
@@ -201,6 +201,16 @@ def wasm():
     for n,byte,code in [('unreachable','00','(trap unreachable)'),('nop','01','(nop)'),('drop','1a','(wasm-drop)'),('select','1b','(wasm-select)')]:
         p.instruction(n,byte,[],[],code,n,effects='control' if n=='unreachable' else 'operand-stack')
     p.add('exception','trap',prop('rules',q('unreachable always traps. Validation and module/function context are required separately; an encodable instruction stream is not necessarily a valid WebAssembly module.')))
+    for extension, description in [
+        ('bulk-memory', 'Bulk memory/table operations use prefixed variable-length opcodes and module index operands not supplied by this MVP subset.'),
+        ('simd128', 'SIMD introduces v128 values and 0xfd-prefixed variable-length opcode/immediate forms; no concrete SIMD form is supplied.'),
+        ('threads', 'Threads require shared memories and atomic 0xfe-prefixed operations with alignment and memory-order semantics not supplied here.'),
+        ('memory64', 'Memory64 changes memory index/address typing to i64 and must not be inferred from this wasm32 profile.'),
+        ('multimemory', 'Multiple memories add explicit memory indices to operations whose MVP encodings assume the default memory.'),
+    ]:
+        p.feature(extension, description, ['base'])
+        p.add('extension', extension, prop('requires', ref('feature', extension)),
+              prop('coverage', 'metadata-only'), prop('semantics', q(description)))
     return p
 
 

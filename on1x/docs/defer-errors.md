@@ -45,6 +45,10 @@ fn twice(n:i64)->Result<i64,u8> {
   unwinding and task cancellation are not introduced. JSON owners/views cannot
   be saved as deferred arguments/results or captured, even if apparently local.
   Raw foreign pointer/text lifetimes remain the caller's unsafe obligation.
+- `defer` is contextual. Existing calls/values/assignments named `defer` remain
+  valid, including `defer (arg)` as an ordinary call. Consequently a deferred
+  callee must not start with grouping parentheses: use `defer f(args);`,
+  `defer factory()(args);` or the immediately invoked lambda spelling above.
 - Arithmetic/assert/bounds/OOM errors, foreign termination and stack exhaustion
   remain terminal. No defer or remaining local cleanup is guaranteed on a trap,
   including a trap while evaluating a return/registration or invoking a defer.
@@ -53,6 +57,10 @@ fn twice(n:i64)->Result<i64,u8> {
   located defer error (72), never silently dropping registrations. Records use
   the existing environment allocator domain and typed compiler-generated
   capture/invoke/drop helpers. No erased function-pointer or foreign ABI cast.
+  Bytes include each record and its immediate typed capture environment, not
+  transitively shared objects. `ON1X_DEFER_MAX_RECORDS` / `ON1X_DEFER_MAX_BYTES`
+  are runtime-build test/configuration hooks; exhaustion reports the registration
+  file, line and byte column. All operands finish before registration allocation.
 
 ## Typed `?` contract
 
@@ -66,6 +74,8 @@ fn twice(n:i64)->Result<i64,u8> {
   and exact error type; its success type may differ. No implicit error conversion,
   name-based module conflation, structural-sum coercion or `Option` propagation.
   Existing generic inference applies; annotate ambiguous result inputs/returns.
+  Payloads retain nominal data's trivial-value restrictions; use `record{}` as
+  a unit success payload, not `void` (which is not a data field).
 - Use explicit `match` for recovery. This is a typed-result alternative to
   exceptions, not `try`/`catch`/`throw`/`finally`. Foreign statuses must be explicitly
   converted to checked result values by existing raw wrappers. No foreign
@@ -75,5 +85,35 @@ fn twice(n:i64)->Result<i64,u8> {
   initialization, function boundaries and exact return types are verified; no
   new scalar MIR encoding is invented for results or dynamic defer effects.
   Unsupported MIR/SDK effect/aggregate profiles reject explicitly.
+- Legacy `match(value){Tag(payload)=>expr,...}` retains its existing implicit
+  payload-lambda semantics; `?` there cannot escape to the surrounding function.
+  Use `match value with {...}` for propagation from an arm/guard into that function.
+
+## Implementation and validation
+
+`src/canonical/values.cpp` erases source propagation into existing value regions,
+tag tests, projections, storage initialization and returns. A defer becomes an
+ordered block of immutable operand snapshots and a private `PushDefer` of a typed
+zero-argument thunk. Ordinary checking recomputes closure captures. The source
+PPX wire transports only `Defer` / `Propagate`, not private registration or proof
+nodes. Both scanner modes recognize `?` and have parity coverage.
+
+`src/codegen.cpp` emits a stack only for functions actually registering defers.
+Compiler-generated invocation/destruction helpers use exact capture types and
+the existing RC rules; the runtime allocates records/captures in the environment
+allocator domain. It checks count, byte and size-overflow bounds before allocation
+and frees the pending record if capture allocation fails. Every successful
+invocation destroys/releases its saved values, including discarded managed call
+results. No `longjmp`, foreign function-pointer cast, LibStone application runtime
+or new execution IR is introduced. Rebuild generated C/runtime together:
+`ON1X_DEFER_ABI_VERSION=1` is internal, not a stable embedding ABI.
+
+Tests: `on1x.defer_error_hir` and `on1x.defer_errors`, plus scanner/control and the
+existing language suites. They cover LIFO/outcome Python oracles at C `-O0/-O2`,
+registration/return order, loops/recursion/closures, modules/generics/macros/PPX/
+staging, abandoned operands, counted RC/JSON cleanup, C/C++ separate-TU callers,
+record/capture allocation failures, both budgets, fatal paths, source-wire/HIR
+mutations and explicit MIR/SDK rejections. Separate-TU tests use a shared generated
+interface: they do not claim separate On1x compilation or aggregate foreign ABI.
 
 Implementation/validation status: `capability-matrix.md` and `../VERIFICATION.md`.

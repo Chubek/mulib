@@ -104,6 +104,7 @@ def main():
                '-I', str(ROOT / 'runtime'), '-I', str(mulib_root / 'include'),
                 str(generated), str(ROOT / 'runtime/on1x_runtime.c')]
         has_json = 'on1x_json_' in code
+        has_csp = '#include <on1x_concurrency.h>' in code
         externs=set(re.findall(r'\bextern\s+[^;\n]*\b(on1x_mulib_\w+)\(',code))
         has_mulib = any(re.fullmatch(r'on1x_mulib_(abi_version|pointer_bits|max_size|(?:kernel|fixture)_\w+|has_kernel|has_fixture)',name) for name in externs)
         bridge_groups={
@@ -117,7 +118,7 @@ def main():
         }
         groups={group for group,(_,symbols) in bridge_groups.items() if any('on1x_mulib_'+s in externs for s in symbols)}
         has_bridge=bool(groups) or 'on1x_mulib_bridge_status' in externs
-        native = has_json or has_mulib or has_bridge or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan
+        native = has_json or has_csp or has_mulib or has_bridge or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan
         recipe, fingerprints, native_links = None, {}, []
         if native:
             spec = importlib.util.spec_from_file_location('mulib_housekeeping', ROOT/'std/mulib/housekeeping.py')
@@ -129,6 +130,9 @@ def main():
             compiler_target=subprocess.check_output([str(cc),'-dumpmachine'],text=True,timeout=30).strip()
             for path in [cc,Path(__file__).resolve(),Path(house.__file__)]:fingerprints[str(path)]=house.contracts.digest(path)
             kernels = list(args.mulib)
+            if has_csp:
+                kernels += [name for name in ('channel', 'fiber', 'xthreads') if name not in kernels]
+                cmd.append(str(ROOT/'runtime/on1x_concurrency.c'))
             for group in sorted(groups):
                 for kernel in bridge_groups[group][0]:
                     if kernel not in kernels:kernels.append(kernel)

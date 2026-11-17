@@ -1,5 +1,10 @@
 # Chisel resource-usage checking
 
+The [C11 defer/Result profile](defer-errors.md) adds tested normal/error-return
+cleanup, not Chisel proof of dynamic deferred effects. This adapter explicitly
+rejects deferred registrations and retains its aggregate Result restrictions.
+Terminal traps remain non-unwinding. General safe FFI admission is not widened.
+
 The additional [immutable string FFI profile](ffi-strings.md) uses directional
 v4 admission evidence for call-scoped immutable inputs and process-lifetime
 immutable results. Legacy evidence cannot authorize strings. This extends

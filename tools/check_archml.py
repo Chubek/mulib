@@ -161,6 +161,37 @@ def fixtures():
         add('bpf', name+'-ri', [9, -1, 16], f'if r9 {symbol} -1 goto +2')
     add('bpf', 'ja', [-8], 'goto -1')
     add('bpf', 'exit', [], 'exit')
+    for name in ['add.d', 'sub.d', 'and', 'or', 'xor', 'sll.d', 'srl.d', 'sra.d']:
+        add('loongarch64', name, [4, 5, 6], f'{name} $a0, $a1, $a2')
+    for name, value in [('addi.d', -8), ('andi', 255), ('ori', 255), ('xori', 255)]:
+        add('loongarch64', name, [4, 5, value], f'{name} $a0, $a1, {value}')
+    for name in ['ld.d', 'st.d']:
+        add('loongarch64', name, [4, 3, -8], f'{name} $a0, $sp, -8')
+    for name in ['beq', 'bne']:
+        add('loongarch64', name, [4, 5, 8], f'{name} $a0, $a1, 8')
+    for name in ['b', 'bl']:
+        add('loongarch64', name, [16], f'{name} 16')
+    add('loongarch64', 'jirl', [1, 4, 4], 'jirl $ra, $a0, 4')
+    add('loongarch64', 'nop', [], 'nop')
+    for name in ['add', 'sub', 'and', 'or', 'eor', 'mov']:
+        add('avr8', name, [31, 30], f'{name} r31, r30')
+    for name in ['ldi', 'subi', 'andi', 'ori']:
+        add('avr8', name, [15, 171], f'{name} r31, 171')
+    add('avr8', 'nop', [], 'nop')
+    for name in ['mov', 'add', 'sub', 'and', 'bis', 'bic', 'xor']:
+        add('msp430', name, [4, 5], f'{name} r5, r4')
+    add('msp430', 'jmp', [8], 'jmp 4')
+    add('msp430', 'nop', [], 'nop')
+    for name in ['add', 'sub', 'and', 'or', 'xor']:
+        add('sparc', name+'-rr', [3, 1, 2], f'{name} %g1, %g2, %g3')
+        add('sparc', name+'-ri', [3, 1, -4], f'{name} %g1, -4, %g3')
+    add('sparc', 'sethi', [3, 0x12345], 'sethi 0x12345, %g3')
+    add('sparc', 'ba', [64], 'ba 16')
+    add('sparc', 'nop', [], 'nop')
+    for name in ['lgr', 'agr', 'sgr', 'ngr', 'ogr', 'xgr']:
+        add('systemz', name, [3, 4], f'{name} %r3, %r4')
+    add('systemz', 'lghi', [3, -8], 'lghi %r3, -8')
+    add('systemz', 'nopr', [0], 'nopr %r0')
     return cases
 
 
@@ -217,8 +248,12 @@ def main():
     args = parser.parse_args()
     cases = fixtures()
     for arch, form, values, assembly in cases:
-        target = {'amd64': 'x86_64', 'arm64': 'aarch64', 'riscv64': 'riscv64', 'ppc64': 'powerpc64', 'mips': 'mips',
-                  'arm': 'armv7', 'amdgpu': 'amdgcn', 'hexagon': 'hexagon', 'bpf': 'bpfel'}[arch]
+        target = {'amd64': 'x86_64', 'arm64': 'aarch64', 'riscv64': 'riscv64',
+                  'ppc64': 'powerpc64', 'mips': 'mips', 'arm': 'armv7',
+                  'amdgpu': 'amdgcn', 'hexagon': 'hexagon', 'bpf': 'bpfel',
+                  'loongarch64': 'loongarch64', 'avr8': 'avr',
+                  'msp430': 'msp430', 'sparc': 'sparc',
+                  'systemz': 'systemz'}[arch]
         preamble = '.intel_syntax noprefix\n' if arch == 'amd64' else '.option norvc\n' if arch == 'riscv64' else '.set noreorder\n' if arch == 'mips' else ''
         flags = {'riscv64': ['-mattr=+m,+a,+f,+d,+zifencei'], 'mips': ['-mcpu=mips32r2'],
                  'amdgpu': ['-mcpu=gfx600'], 'hexagon': ['-mcpu=hexagonv60']}.get(arch, [])
@@ -228,7 +263,9 @@ def main():
         if not match or not all(re.fullmatch(r'0x[0-9a-fA-F]{2}', b.strip()) for b in match[1].split(',')):
             raise RuntimeError(f'non-concrete oracle encoding: {assembly}: {assembled.stdout}')
         expected = ''.join(b.strip()[2:] for b in match[1].split(',')).lower()
-        suffix = 'am' if arch in ['arm', 'amdgpu', 'hexagon', 'bpf'] else 'aml'
+        suffix = ('aml' if arch in
+                  ['amd64', 'arm64', 'riscv64', 'ppc64', 'mips', 'avr32', 'wasm']
+                  else 'am')
         actual = subprocess.check_output([args.encoder, '--encode', str(ROOT/'library/archml'/f'{arch}.{suffix}'),
                                           form, *map(str, values)], text=True).strip()
         if actual != expected:

@@ -4,6 +4,7 @@
 #include <on1x/numeric.hpp>
 #include <on1x/canonical/control.hpp>
 #include <on1x/canonical/values.hpp>
+#include <on1x/concurrency.hpp>
 #include <charconv>
 #include <map>
 #include <set>
@@ -149,7 +150,8 @@ class Lowering {
    if(s.prototype)continue;
    if(current==ended)unsupported(s.where,"unreachable HIR statement");
     switch(s.kind){
-    case Stmt::Kind::Defer:case Stmt::Kind::PushDefer:unsupported(s.where,"dynamic defer effects require cleanup MIR descriptors");
+     case Stmt::Kind::Defer:case Stmt::Kind::PushDefer:unsupported(s.where,"dynamic defer effects require cleanup MIR descriptors");
+     case Stmt::Kind::TaskGroup:case Stmt::Kind::CspScope:unsupported(s.where,"cooperative concurrency requires effectful/ownership MIR descriptors");
    case Stmt::Kind::Let:{
     auto value=expression(*s.value);scalar(s.value->type,s.where);
     if(s.pattern){bind_pattern(*s.pattern,s.value->type,value);break;}
@@ -208,6 +210,8 @@ class Lowering {
 public:
  Lowering(const Unit& u,Limits l):unit(u),limits(l){}
   Module run(){
+    csp::verify(unit,true);
+    if(csp::present(unit))unsupported(unit.functions.front().where,"cooperative concurrency requires effectful/ownership MIR descriptors (C11 HIR backend only)");
     canonical::verify_control(unit);
     meta::require_core(unit);
     canonical::verify_values(unit);

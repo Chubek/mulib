@@ -1,6 +1,7 @@
 #include <on1x/type_safety.hpp>
 #include <on1x/canonical/control.hpp>
 #include <on1x/canonical/values.hpp>
+#include <on1x/concurrency.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/numeric.hpp>
 #include <nerotypical/StructuralTyping.hpp>
@@ -193,6 +194,7 @@ class Verify {
    budget.tick(s.where);if(s.prototype)continue;if(complete)fail(s.where,"unreachable HIR statement");
    auto value=[&](){if(!s.value)fail(s.where,"missing statement value");return expr(*s.value);};
    switch(s.kind){
+    case Stmt::Kind::Defer:case Stmt::Kind::PushDefer:fail(s.where,"deferred capture/effect model is outside the structural adapter");
    case Stmt::Kind::Let:{auto t=value();if(s.declared!=Type::Invalid)equal(t,s.declared,s.where);if(s.pattern)pattern(*s.pattern,s.value->type);else bind(s.name,s.value->type,s.mutable_binding,s.where);break;}
    case Stmt::Kind::Assign:{auto b=lookup(s.name);if(!b||!b->mut)fail(s.where,"assignment to missing/immutable local");equal(value(),b->type,s.where);break;}
    case Stmt::Kind::Return:equal(s.value?value():type(Type::Void,s.where),returns,s.where);complete=true;break;
@@ -239,5 +241,5 @@ public:
  }
 };
 }
-std::string verify(const Unit& unit,Limits limits){Budget budget{limits};return Verify(unit,budget).run();}
+std::string verify(const Unit& unit,Limits limits){csp::verify(unit,true);if(csp::present(unit))fail(unit.functions.front().where,"ON1X-CSP-UNSUPPORTED: concurrency is outside the independent structural adapter");Budget budget{limits};return Verify(unit,budget).run();}
 }

@@ -8,6 +8,24 @@
 
 ## 0. Source baseline, revisions and the exact newly added work
 
+**G4 cooperative fiber/channel slice:** `taskgroup`, internal i64 fibers and
+1:1 uni i64 channels and bounded atomic `poll` execute through the canonical HIR→C11 path and the
+existing MuLIB stackful fiber/channel kernels (see [contract](docs/concurrency.md)).
+The scalar MIR verifier rejects this profile; it has no effectful ownership/
+suspension descriptors. This is neither `async/await` nor a native-thread/VM
+backend. A limited POSIX `xfiber` direct-exec path and consuming process
+`cancel` also execute through C11. A newly launched internal fiber can be
+consumed by an immediately following `cancel handle;` before dispatch; shell
+literals/streams, running/blocked internal-fiber cancellation and `poll after`
+deadlines remain unsupported.
+
+**M2 function defer / typed errors:** [the C11 profile](docs/defer-errors.md)
+executes function-owned bounded LIFO registrations and exact nominal Result `?`
+returns through existing canonical regions/cleanup. Return types and tag facts
+are independently checked. There is no new MIR format or general effect/exception
+IR: aggregate results and dynamic defer still reject MIR/SDK requests. Fatal
+traps and cancellation do not gain unwinding guarantees.
+
 **Nonrecursive nominal data:** [named records/parameterized enums](docs/nominal-adts.md)
 now retain exact module/type-argument identities while reusing bounded C11 value
 layouts. The checker and emission ingress reconstruct layouts from declarations,

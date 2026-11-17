@@ -82,7 +82,8 @@ for i, data in enumerate(valid_cases):
     check(f'valid_{i}', data, valid=True)
 
 prefix = b'# layout\r\n\t"snow: \xe9\x9b\xaa" ; '
-for i, bad in enumerate([b'`', b'&', b'?', b'\v', b'\f', b'\xff', b'"unclosed',
+check('defer_result', b'enum Result<T,E>{Ok(T),Err(E)} fn f(){defer println(1); read()??[0];}', valid=True)
+for i, bad in enumerate([b'`', b'&', b'\v', b'\f', b'\xff', b'"unclosed',
                          b'"bad\\q"', b'"bad\\', b'"raw\nnewline"', b'"raw\rnewline"']):
     check(f'invalid_{i}', prefix + bad, invalid_at=len(prefix))
 for i, data in enumerate([b'\0', b'# comment\0', b'"string\0"', b'@\n\0']):

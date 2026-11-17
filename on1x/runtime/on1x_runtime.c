@@ -44,16 +44,40 @@ void on1x_env_release(on1x_env *environment){
  draining=false;
 }
 static void arithmetic_error(const char *what){fprintf(stderr,"On1x arithmetic error: %s\n",what);exit(70);}
-struct on1x_defer_record {on1x_defer_record *next;void (*invoke)(on1x_env *);on1x_env *environment;};
-void on1x_defer_push(on1x_defer_stack *stack,void (*invoke)(on1x_env *),on1x_env *environment){
- on1x_defer_record *record;
- if(stack->count>=4096)environment_error("defer registration limit exceeded");
+#ifndef ON1X_DEFER_MAX_RECORDS
+#define ON1X_DEFER_MAX_RECORDS 4096
+#endif
+#ifndef ON1X_DEFER_MAX_BYTES
+#define ON1X_DEFER_MAX_BYTES (8 * 1024 * 1024)
+#endif
+struct on1x_defer_record {on1x_defer_record *next;void (*invoke)(on1x_env *);on1x_env *environment;size_t bytes;};
+static void defer_error(const char *what,const char *file,size_t line,size_t column){
+ fprintf(stderr,"%s:%zu:%zu: On1x defer error: %s\n",file,line,column,what);exit(72);
+}
+on1x_env *on1x_defer_register(on1x_defer_stack *stack,size_t size,
+    void (*invoke)(on1x_env *),void (*destroy)(on1x_env *),
+    const char *file,size_t line,size_t column){
+ on1x_defer_record *record;on1x_env *environment=NULL;size_t bytes;
+ if(!invoke||(size&&size<sizeof(on1x_env)))defer_error("invalid registration",file,line,column);
+ if(stack->count>=ON1X_DEFER_MAX_RECORDS)defer_error("registration limit exceeded",file,line,column);
+ if(size>SIZE_MAX-sizeof(*record))defer_error("capture byte limit exceeded",file,line,column);
+ bytes=sizeof(*record)+size;
+ if(bytes>ON1X_DEFER_MAX_BYTES||stack->bytes>ON1X_DEFER_MAX_BYTES-bytes)
+  defer_error("capture byte limit exceeded",file,line,column);
  record=(on1x_defer_record *)ON1X_ENV_MALLOC(sizeof(*record));
- if(!record)environment_error("defer allocation failure");
- on1x_env_retain(environment);record->invoke=invoke;record->environment=environment;record->next=stack->head;stack->head=record;++stack->count;
+ if(!record)defer_error("record allocation failure",file,line,column);
+ if(size){
+  environment=(on1x_env *)ON1X_ENV_MALLOC(size);
+  if(!environment){ON1X_ENV_FREE(record);defer_error("capture allocation failure",file,line,column);}
+  environment->references=1;environment->destroy=destroy;environment->next=NULL;
+ }
+ record->invoke=invoke;record->environment=environment;record->bytes=bytes;
+ record->next=stack->head;stack->head=record;++stack->count;stack->bytes+=bytes;
+ return environment;
 }
 void on1x_defer_run(on1x_defer_stack *stack){
  while(stack->head){on1x_defer_record *record=stack->head;stack->head=record->next;--stack->count;
+  stack->bytes-=record->bytes;
   record->invoke(record->environment);on1x_env_release(record->environment);ON1X_ENV_FREE(record);
  }
 }

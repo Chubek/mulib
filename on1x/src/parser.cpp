@@ -82,7 +82,13 @@ class Parser {
    }
    return false;
   }
-     Type type(){Nesting guard(*this);auto t=peek();
+      Type type(){Nesting guard(*this);auto t=peek();
+      if((at("ifiber")||at("channel")||at("sender")||at("receiver"))&&peek(1).text=="<"){
+      ++pos;consume("<");auto payload=type();close_angle();
+      if(payload!=Type::I64)throw Error(t.where,"ON1X-CSP-UNSUPPORTED: initial concurrency payload/result must be i64");
+       return t.text=="ifiber"?Type::Fiber:t.text=="channel"?Type::Channel:t.text=="sender"?Type::Sender:Type::Receiver;
+      }
+      if(at("xfiber")&&peek(1).text!="<"){++pos;return Type::ExternalFiber;}
     if((at("record")||at("sum"))&&peek(1).text=="{"){
      bool sum=accept("sum");if(!sum)consume("record");consume("{");
      std::vector<std::string> labels;std::vector<Type> elements;std::set<std::string> names;
@@ -142,14 +148,16 @@ class Parser {
  }
   static int precedence(const std::string& op){if(op=="||")return 1;if(op=="&&")return 2;
   if(op=="=="||op=="!=")return 3;
-  if(op=="<"||op==">"||op=="<="||op==">=")return 4;
+   if(op=="<"||op==">"||op=="<="||op==">="||op=="<-")return 4;
   if(op=="+"||op=="-")return 5;
   if(op=="*"||op=="/"||op=="%")return 6;
    return -1;}
   bool match_header()const{
    if(!at("match"))return false;
    if(peek(1).text=="let")return true;
-   if(precedence(peek(1).text)>=0&&peek(1).text!="-")return false;
+    // `<-` is a receive prefix at the start of a discriminant, but a send
+    // operator after a value. Do not classify the former as an infix header.
+    if(precedence(peek(1).text)>=0&&peek(1).text!="-"&&peek(1).text!="<-")return false;
    // Existing keyword-spelled values remain ordinary operands/callees unless
    // a complete discriminant is followed by the match delimiter.
    std::size_t parens=0,brackets=0,braces=0;
@@ -165,8 +173,39 @@ class Parser {
    }
    return false;
   }
-    Expression atom(){
-      const Token t=peek();
+     Expression atom(){
+       const Token t=peek();
+        if(at("launch")&&peek(1).text=="{"){
+        ++pos;Expr arm;arm.where=t.where;match_arm_block(arm);
+        auto thunk=std::make_unique<Expr>();thunk->kind=Expr::Kind::Lambda;thunk->where=t.where;thunk->result=Type::I64;thunk->body=std::move(arm.body);
+        if(arm.children[0]->kind!=Expr::Kind::Unit){Stmt ret;ret.kind=Stmt::Kind::Return;ret.where=arm.children[0]->where;ret.value=std::move(arm.children[0]);thunk->body.push_back(std::move(ret));}
+         auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;e->where=t.where;e->text="launch";thunk->syntax_depth=body_expression_depth(thunk->body)+1;e->children.push_back(std::move(thunk));return syntax_bounded(std::move(e));
+         }
+         if(at("launch")&&peek(1).text=="exec"&&peek(2).text=="("){
+          pos+=3;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;e->where=t.where;e->text="launch_exec";
+          if(!at(")"))do{
+           if(e->children.size()>=9)throw Error(t.where,"ON1X-CSP-LIMIT: external argv limit exceeded");
+           auto argument=expr().node;
+           if(argument->kind!=Expr::Kind::String)throw Error(argument->where,"ON1X-CSP-UNSUPPORTED: external argv requires constant string literals");
+           e->children.push_back(std::move(argument));
+          }while(accept(","));
+          consume(")");if(e->children.empty())throw Error(t.where,"external launch requires an absolute executable path");
+          return syntax_bounded(std::move(e));
+         }
+        if(at("poll")&&peek(1).text=="{")return polling(false);
+       if(at("->")&&peek(1).text=="("){
+        ++pos;consume("(");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;e->text="channel";e->where=t.where;
+        e->children.push_back(expr().node);consume(",");e->children.push_back(expr().node);consume(")");consume("{");
+        std::set<std::string> fields;bool payload=false,mode=false;
+        do{auto name=ident();if(!fields.insert(name).second)throw Error(t.where,"duplicate channel field: "+name);consume(":");
+         if(name=="payload"){e->result=type();payload=true;}
+         else if(name=="capacity")e->children.push_back(expr().node);
+         else if(name=="mode"){auto value=ident();if(value!="uni")throw Error(t.where,"ON1X-CSP-UNSUPPORTED: duplex channel profile unavailable");mode=true;}
+         else throw Error(t.where,"ON1X-CSP-UNSUPPORTED: unknown channel field: "+name);
+        }while(accept(",")&&!at("}"));consume("}");
+        if(!payload||!mode||e->children.size()!=3)throw Error(t.where,"channel requires payload, capacity and mode");
+        return syntax_bounded(std::move(e));
+       }
       if((at("loop")&&peek(1).text=="{")||(is_ident(peek().text)&&peek(1).text==":"&&peek(2).text=="loop"&&peek(3).text=="{")){
        auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Loop;e->where=t.where;
        if(!at("loop")||peek(1).text!= "{"){e->text=ident();consume(":");}
@@ -266,9 +305,16 @@ class Parser {
    }
   return {std::move(e)};
  }
- Expression primary(){
+  Expression primary(){
   Nesting guard(*this);
-  const Token t=peek();
+   const Token t=peek();
+    // Prefix operations in this profile take a named endpoint/handle. In
+    // particular, `if close { ... }` and `split!(...)` remain ordinary value
+    // and macro syntax, not an attempt to consume the following block.
+     if(at("<-")||((at("join")||at("split")||at("close")||at("cancel"))&&is_ident(peek(1).text)&&peek(1).text!="with")){
+    ++pos;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;e->where=t.where;e->text=t.text=="<-"?"recv":t.text;
+    auto operand=primary();e->children.push_back(std::move(operand.node));return bounded(std::move(e),operand.depth+1);
+   }
   if(accept("!")||accept("-")){
    if(t.text=="-" && (peek().text=="9223372036854775808"||peek().text=="0x8000000000000000"||peek().text=="0X8000000000000000") && peek(1).text!="(") {
     ++pos;auto literal=std::make_unique<Expr>();literal->kind=Expr::Kind::Integer;
@@ -407,7 +453,7 @@ class Parser {
  Expression expr(int minprec=1){auto lhs=primary();
   while(true){std::string op=peek().text;int prec=precedence(op);if(prec<minprec)break;
    auto where=peek().where;++pos;auto rhs=expr(prec+1);
-   auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Binary;e->where=where;e->text=op;
+    auto e=std::make_unique<Expr>();e->kind=op=="<-"?Expr::Kind::SourceCsp:Expr::Kind::Binary;e->where=where;e->text=op=="<-"?"send":op;
    auto depth=std::max(lhs.depth,rhs.depth)+1;
    e->children.push_back(std::move(lhs.node));e->children.push_back(std::move(rhs.node));lhs=bounded(std::move(e),depth);
   }return lhs;
@@ -471,7 +517,7 @@ class Parser {
   void match_arm_block(Expr& arm){
    Nesting guard(*this);consume("{");
    while(!at("}")){
-     bool structured=at("let")||at("var")||at("return")||at("if")||at("while")||at("{")||at("let_syntax")||at("letrec_syntax")||defer_header()||for_header()||
+     bool structured=at("let")||at("var")||at("return")||at("if")||at("while")||at("{")||at("let_syntax")||at("letrec_syntax")||(at("taskgroup")&&peek(1).text=="{")||defer_header()||for_header()||
      (at("loop")&&peek(1).text=="{")||((at("break")||at("continue"))&&peek(1).text!="(")||
      (is_ident(peek().text)&&peek(1).text==":"&&(peek(2).text=="loop"||peek(2).text=="while"||peek(2).text=="for"))||peek(1).text=="=";
     if(structured){arm.body.push_back(statement());continue;}
@@ -482,7 +528,7 @@ class Parser {
    }
    consume("}");auto unit=std::make_unique<Expr>();unit->kind=Expr::Kind::Unit;unit->where=arm.where;arm.children.push_back(std::move(unit));
   }
-  Expression matching(bool statement_mode){
+   Expression matching(bool statement_mode){
    auto where=peek().where;consume("match");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::PatternMatch;e->where=where;e->statement_match=statement_mode;
    bool old_parens=at("(");
    if(accept("let")){e->text=ident();consume("=");old_parens=false;}
@@ -497,7 +543,7 @@ class Parser {
     }while(accept(","));}
     consume("}");return syntax_bounded(std::move(e));
    }
-   consume("{");
+    consume("{");
    if(!at("}")){do{
     auto arm=std::make_unique<Expr>();arm->kind=Expr::Kind::Case;arm->where=peek().where;arm->patterns.push_back(match_pattern());
     if(accept("if"))arm->children.push_back(expr().node);else arm->children.push_back(truth(arm->where));
@@ -505,8 +551,52 @@ class Parser {
     auto depth=std::max(body_expression_depth(arm->body)+1,arm->children.back()->syntax_depth+1);auto checked=bounded(std::move(arm),depth);e->children.push_back(std::move(checked.node));
     if(e->children.size()>257)throw Error(where,"match arm limit exceeded");
    }while(accept(",")&&!at("}"));}
-   consume("}");return syntax_bounded(std::move(e));
-  }
+    consume("}");return syntax_bounded(std::move(e));
+   }
+   Expression polling(bool statement_mode){
+    auto where=peek().where;consume("poll");consume("{");
+    auto choice=std::make_unique<Expr>();choice->kind=Expr::Kind::SourceCsp;choice->where=where;choice->text="poll";
+    auto match=std::make_unique<Expr>();match->kind=Expr::Kind::PatternMatch;match->where=where;match->statement_match=statement_mode;
+    std::vector<std::string> endpoints;std::set<std::string> closed;bool has_default=false;
+    do{
+     if(at("}"))break;
+     auto site=peek().where;std::string label,binder;
+     if(at("recv")||at("send")){
+      bool send=accept("send");if(!send)consume("recv");auto name=ident();
+      if(std::find(endpoints.begin(),endpoints.end(),name)!=endpoints.end())throw Error(site,"ON1X-CSP: duplicate poll endpoint: "+name);
+      if(endpoints.size()>=16)throw Error(site,"ON1X-CSP-LIMIT: poll offer limit exceeded");
+      auto offer=std::make_unique<Expr>();offer->kind=Expr::Kind::SourceCsp;offer->where=site;offer->text=send?"offer_send":"offer_recv";
+      auto endpoint=std::make_unique<Expr>();endpoint->kind=Expr::Kind::Variable;endpoint->where=site;endpoint->text=name;offer->children.push_back(std::move(endpoint));
+      if(send){consume("<-");offer->children.push_back(expr().node);}else{consume("as");binder=ident();}
+      label=(send?"Sent":"Recv")+std::to_string(endpoints.size());
+      endpoints.push_back(name);choice->children.push_back(std::move(offer));
+     }else if(accept("closed")){
+      auto name=ident();if(!closed.insert(name).second)throw Error(site,"ON1X-CSP: duplicate poll closed arm: "+name);
+      label="@closed:"+name;
+     }else if(accept("default")){
+      if(has_default)throw Error(site,"ON1X-CSP: duplicate poll default arm");has_default=true;label="Default";
+     }else if(at("after"))throw Error(site,"ON1X-CSP-UNSUPPORTED: monotonic poll deadlines unavailable");
+     else throw Error(site,"expected recv, send, closed or default poll offer");
+     consume("=>");auto arm=std::make_unique<Expr>();arm->kind=Expr::Kind::Case;arm->where=site;
+     Pattern pattern;pattern.kind=Pattern::Kind::Variant;pattern.where=site;pattern.name=label;
+     if(!binder.empty()){Pattern p;p.kind=Pattern::Kind::Name;p.where=site;p.name=binder;pattern.elements.push_back(std::move(p));}
+     arm->patterns.push_back(std::move(pattern));arm->children.push_back(truth(site));
+     if(at("{"))match_arm_block(*arm);else arm->children.push_back(expr().node);
+     match->children.push_back(std::move(arm));
+    }while(accept(",")&&!at("}"));consume("}");
+    if(endpoints.empty())throw Error(where,"ON1X-CSP: poll requires a channel offer");
+    for(auto& arm:match->children){auto& name=arm->patterns[0].name;
+     if(name.starts_with("@closed:")){
+      auto found=std::find(endpoints.begin(),endpoints.end(),name.substr(8));
+      if(found==endpoints.end())throw Error(arm->where,"ON1X-CSP: closed arm has no channel offer");
+      name="Closed"+std::to_string(found-endpoints.begin());
+     }
+    }
+    for(const auto& name:endpoints)if(!closed.contains(name))throw Error(where,"ON1X-CSP: poll requires a closed arm for "+name);
+    if(has_default){auto marker=std::make_unique<Expr>();marker->kind=Expr::Kind::Boolean;marker->text="true";marker->where=where;choice->children.push_back(std::move(marker));}
+    match->children.insert(match->children.begin(),std::move(choice));
+    return syntax_bounded(std::move(match));
+   }
   Param parameter(std::size_t index){
    Param result;result.where=peek().where;
    if(at("(")){result.pattern=pattern();result.name="@argument_"+std::to_string(index);}
@@ -559,10 +649,16 @@ class Parser {
    bool defer_header()const{
     if(!at("defer"))return false;
     // Preserve ordinary `defer(...)`, `defer;`, assignments and operators.
-    auto next=peek(1).text;return is_ident(next)||next=="@";
+    auto next=peek(1).text;return is_ident(next)||next=="@"||next=="{"||(!next.empty()&&(std::isdigit(static_cast<unsigned char>(next[0]))||next[0]=='"'));
    }
-   Stmt statement(){Stmt s; s.where=peek().where;
+    Stmt statement(){Stmt s; s.where=peek().where;
+    if(at("taskgroup")&&(peek(1).text=="{"||peek(1).text=="within")){
+     ++pos;if(at("within"))throw Error(s.where,"ON1X-CSP-UNSUPPORTED: monotonic taskgroup deadlines unavailable");
+     s.kind=Stmt::Kind::TaskGroup;s.body=block();return s;
+    }
+     if(at("poll")&&peek(1).text=="{"){s.kind=Stmt::Kind::Expr;s.value=polling(true).node;accept(";");return s;}
     if(defer_header()){
+     if(peek(1).text=="{")throw Error(s.where,"defer block syntax is unsupported; use defer fn(){ ... }();","ON1X-DEFER");
      ++pos;s.kind=Stmt::Kind::Defer;s.value=expr().node;consume(";");
      if(s.value->kind!=Expr::Kind::Call&&s.value->kind!=Expr::Kind::MacroCall&&s.value->kind!=Expr::Kind::Extension)throw Error(s.where,"defer requires a call expression","ON1X-DEFER");
      return s;
@@ -616,7 +712,7 @@ class Parser {
    }
    NominalDeclaration nominal_declaration(){
      NominalDeclaration d;d.where=peek().where;bool sum=accept("enum");if(!sum)consume("record");d.kind=sum?Type::Sum:Type::Record;d.name=ident();
-     static const std::set<std::string> builtins={"i64","f64","f32","u8","u16","u32","u64","bool","string","void","json","json_view","sexpr","buffer","record","sum","array","slice","code","forall","fn","_"};
+      static const std::set<std::string> builtins={"i64","f64","f32","u8","u16","u32","u64","bool","string","void","json","json_view","sexpr","buffer","record","sum","array","slice","code","forall","fn","xfiber","_"};
      if(builtins.contains(d.name))throw Error(d.where,"built-in type name cannot be redeclared: "+d.name,"ON1X-NOMINAL");
     if(accept("<")){
      do{auto at=peek().where;auto name=ident();if(d.parameters.size()>=32)throw Error(at,"nominal parameter limit exceeded");

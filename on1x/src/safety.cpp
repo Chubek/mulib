@@ -1,6 +1,7 @@
 #include <on1x/safety.hpp>
 #include <on1x/canonical/control.hpp>
 #include <on1x/canonical/values.hpp>
+#include <on1x/concurrency.hpp>
 #include <on1x/primitives.hpp>
 #include <algorithm>
 #include <deque>
@@ -339,6 +340,8 @@ public:
 }
 void verify(const c::Function& function,Limits limits){Budget budget{limits};verify_impl(function,budget);}
 std::string check(const Unit& unit,Limits limits,const std::map<std::string,AdmittedExtern>& admitted){
+ csp::verify(unit,true);
+ if(csp::present(unit))fail(unit.functions.front().where,"ON1X-CSP-UNSUPPORTED: concurrency is outside the Chisel resource adapter");
  canonical::verify_control(unit);
  canonical::verify_values(unit);
  Budget lowering{limits};std::ostringstream report;report<<"on1x.memory/v1 chisel JSON/scalar usage\n";

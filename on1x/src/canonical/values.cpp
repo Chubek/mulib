@@ -2,6 +2,7 @@
 #include <on1x/canonical/control.hpp>
 #include <on1x/clone.hpp>
 #include <on1x/patterns.hpp>
+#include <on1x/nominal.hpp>
 #include <algorithm>
 #include <functional>
 #include <iterator>
@@ -17,7 +18,7 @@ ExprPtr integer(std::size_t n,const Location& at){return value(E::Integer,Type::
 ExprPtr equal(ExprPtr a,ExprPtr b,const Location& at){auto e=value(E::Binary,Type::Bool,at,"==");e->children.push_back(std::move(a));e->children.push_back(std::move(b));return e;}
 Stmt leave(std::size_t target,const Location& at){Stmt s;s.kind=S::Leave;s.control_target=target;s.where=at;return s;}
 class Lower {
-  Unit& unit;std::size_t serial=0,budget=262144,copy_budget=262144,bytes=8*1024*1024;
+  Unit& unit;NominalCatalog catalog;std::size_t serial=0,budget=262144,copy_budget=262144,bytes=8*1024*1024;
   struct LoopValue {std::size_t target,done;std::string result;Type type;};
   std::vector<LoopValue> loops;
  void tick(const Location& at){if(!budget--)throw Error(at,"canonical value expansion budget exhausted","ON1X-VALUES-LIMIT");}
@@ -74,8 +75,13 @@ class Lower {
  }
   void expression(Expr& e){
    tick(e.where);if(e.prototype)return;
-   if(e.kind==E::Propagate){
-    expression(*e.children.at(0));auto at=e.where;auto input=e.children[0]->type;auto root=fresh();auto result=fresh();
+    if(e.kind==E::Propagate){
+     if(e.children.size()!=1||!e.children[0])fail(e.where,"propagation requires one checked operand");
+     auto t=e.children[0]->type;catalog.verify(t,e.where);catalog.verify(e.result,e.where);
+     if(t.kind()!=Type::Sum||t.nominal().empty())fail(e.where,"propagation requires a checked nominal Result");
+     (void)catalog.result(t.nominal(),e.where);
+     if(e.result.kind()!=Type::Sum||e.result.nominal()!=t.nominal()||t.arguments().size()!=2||e.result.arguments().size()!=2||t.arguments()[1]!=e.result.arguments()[1]||e.type!=t.arguments()[0])fail(e.where,"propagation result/error type mismatch");
+     expression(*e.children.at(0));auto at=e.where;auto input=e.children[0]->type;auto root=fresh();auto result=fresh();
     Expr region;region.kind=E::Region;region.type=e.type;region.where=at;
     region.body.push_back(bind(root,std::move(e.children[0]),at));
     Stmt slot;slot.kind=S::Storage;slot.name=result;slot.declared=e.type;slot.where=at;region.body.push_back(std::move(slot));
@@ -137,8 +143,9 @@ class Lower {
  }
   void body(std::vector<Stmt>& b){for(auto& s:b){
    tick(s.where);if(s.prototype)continue;
-   if(s.kind==S::Defer){
-    auto at=s.where;auto call=std::move(s.value);Stmt scope;scope.kind=S::Block;scope.where=at;
+    if(s.kind==S::Defer){
+     if(!s.value||s.value->kind!=E::Call||!s.value->callee||(s.value->callee->kind==E::Variable&&s.value->callee->reference==Expr::Reference::Unresolved)||s.value->type==Type::Invalid||s.value->type.has_holes()||s.value->type.has_generics())fail(s.where,"defer requires a checked call expression");
+     auto at=s.where;auto call=std::move(s.value);Stmt scope;scope.kind=S::Block;scope.where=at;
     if(call->callee->reference!=Expr::Reference::Intrinsic&&call->callee->reference!=Expr::Reference::Extern){auto t=call->callee->type;auto n=fresh();scope.body.push_back(bind(n,std::move(call->callee),at));call->callee=local(n,t,at);}
     for(auto& a:call->children){auto t=a->type;auto n=fresh();scope.body.push_back(bind(n,std::move(a),at));a=local(n,t,at);}
     auto thunk=value(E::Lambda,Type::function({},Type::Void),at);thunk->result=Type::Void;
@@ -161,7 +168,7 @@ class Lower {
    body(s.body);body(s.otherwise);
   }}
 public:
- explicit Lower(Unit& u):unit(u){
+  explicit Lower(Unit& u):unit(u),catalog(u){
    auto scan=[&](auto&& self,const Expr& e)->void{serial=std::max(serial,e.control_target);if(e.callee)self(self,*e.callee);for(const auto& c:e.children)self(self,*c);auto visit=[&](auto&& walk,const std::vector<Stmt>& b)->void{for(const auto& s:b){serial=std::max(serial,s.control_target);if(s.value)self(self,*s.value);walk(walk,s.body);walk(walk,s.otherwise);}};visit(visit,e.body);};
   for(const auto& f:u.functions){auto visit=[&](auto&& walk,const std::vector<Stmt>& b)->void{for(const auto& s:b){serial=std::max(serial,s.control_target);if(s.value)scan(scan,*s.value);walk(walk,s.body);walk(walk,s.otherwise);}};visit(visit,f.body);}
  }
@@ -169,8 +176,8 @@ public:
 };
 }
 bool needs_values(const Unit& unit){
-  auto expression=[&](auto&& self,const Expr& e)->bool{if(e.kind==E::PatternMatch||e.kind==E::Match||e.kind==E::Loop)return true;if(e.callee&&self(self,*e.callee))return true;for(const auto& c:e.children)if(self(self,*c))return true;auto body=[&](auto&& walk,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if(!s.prototype&&((s.value&&s.kind!=S::Template&&self(self,*s.value))||walk(walk,s.body)||walk(walk,s.otherwise)))return true;return false;};return body(body,e.body);};
- for(const auto& f:unit.functions)if(!f.prototype){auto body=[&](auto&& walk,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if(!s.prototype&&((s.value&&s.kind!=S::Template&&expression(expression,*s.value))||walk(walk,s.body)||walk(walk,s.otherwise)))return true;return false;};if(body(body,f.body))return true;}
+  auto expression=[&](auto&& self,const Expr& e)->bool{if(e.kind==E::PatternMatch||e.kind==E::Match||e.kind==E::Loop||e.kind==E::Propagate)return true;if(e.callee&&self(self,*e.callee))return true;for(const auto& c:e.children)if(self(self,*c))return true;auto body=[&](auto&& walk,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if(!s.prototype&&(s.kind==S::Defer||(s.value&&s.kind!=S::Template&&self(self,*s.value))||walk(walk,s.body)||walk(walk,s.otherwise)))return true;return false;};return body(body,e.body);};
+ for(const auto& f:unit.functions)if(!f.prototype){auto body=[&](auto&& walk,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if(!s.prototype&&(s.kind==S::Defer||(s.value&&s.kind!=S::Template&&expression(expression,*s.value))||walk(walk,s.body)||walk(walk,s.otherwise)))return true;return false;};if(body(body,f.body))return true;}
  return false;
 }
 std::set<std::size_t> exit_targets(const Function& function,Stmt::Kind kind){
