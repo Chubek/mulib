@@ -1,5 +1,11 @@
 # M1 bounded value data model
 
+Continuation: [nonrecursive nominal declarations](nominal-adts.md) now reuse
+these bounded trivial record/sum layouts while preserving distinct declaration
+and invariant parameter identities. The original structural spellings and
+restrictions below remain unchanged. Recursive/managed fields and general
+ownership/aggregate MIR still remain unsupported.
+
 Scoped task: executable structural records, closed algebraic sums, fixed arrays
 and **owning snapshot slices** in the canonical frontend and C11 backend.
 This deliberately precedes general borrowed/mutable storage and nominal recursive

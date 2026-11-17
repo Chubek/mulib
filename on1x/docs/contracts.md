@@ -153,6 +153,13 @@ not become purity or lifetime proofs.
 
 ### Reviewed scalar-only safe admission
 
+**M2 continuation:** the additional
+[`reviewed-immutable-string/v4` profile](ffi-strings.md) admits exact immutable
+call-scoped `const char *` inputs and non-null immutable static results through
+the same four gates. It does not promote shipped bridge contracts to reviewed,
+add owned buffers or certify foreign C bodies. The v1/v2/v3 scalar profiles
+described below are unchanged.
+
 `emit-safe` implements deliberately narrow versioned profiles. Signed-integer-only
 bundles retain `reviewed-scalar/v1`; bundles adding `_Bool` or binary64 `double`
 select `reviewed-scalar/v2`; any unsigned integer or binary32 `float` selects v3.

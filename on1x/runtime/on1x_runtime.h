@@ -21,6 +21,11 @@ struct on1x_env {
 on1x_env *on1x_env_alloc(size_t size, void (*destroy)(on1x_env *));
 void on1x_env_retain(on1x_env *environment);
 void on1x_env_release(on1x_env *environment);
+#define ON1X_DEFER_ABI_VERSION 1
+typedef struct on1x_defer_record on1x_defer_record;
+typedef struct { on1x_defer_record *head; size_t count; } on1x_defer_stack;
+void on1x_defer_push(on1x_defer_stack *,void (*)(on1x_env *),on1x_env *);
+void on1x_defer_run(on1x_defer_stack *);
 int64_t on1x_add_i64(int64_t a,int64_t b);
 int64_t on1x_sub_i64(int64_t a,int64_t b);
 int64_t on1x_mul_i64(int64_t a,int64_t b);

@@ -35,7 +35,8 @@ inline ExprPtr clone_expression(const Expr& e,std::size_t& budget){
  out->parameters=e.parameters;out->result=e.result;out->captures=e.captures;out->syntax_depth=e.syntax_depth;
  out->projection=e.projection;out->prototype=e.prototype;
  out->syntax_repeat=e.syntax_repeat;
- out->context=e.context;
+  out->context=e.context;
+  out->control_target=e.control_target;
  if(e.syntax_tail)out->syntax_tail=clone_expression(*e.syntax_tail,budget);
  for(const auto& m:e.syntax_definitions)out->syntax_definitions.push_back(clone_macro(m,budget));
  for(const auto& proof:e.proofs)out->proofs.push_back(clone_expression(*proof,budget));
@@ -66,7 +67,7 @@ inline Macro clone_macro(const Macro& m,std::size_t& budget){
 inline Unit clone_unit(const Unit& unit,std::size_t& budget){
   Unit out;out.imports=unit.imports;out.forall_layouts=unit.forall_layouts;out.forall_elaborated=unit.forall_elaborated;out.ppx=unit.ppx;out.stages_lowered=unit.stages_lowered;
    out.module_imports=unit.module_imports;
-   out.features=unit.features;out.extensions=unit.extensions;
+    out.features=unit.features;out.extensions=unit.extensions;out.nominals=unit.nominals;
  for(const auto& m:unit.macros)out.macros.push_back(clone_macro(m,budget));
  for(const auto& f:unit.functions){
    Function copy;copy.name=f.name;copy.where=f.where;copy.params=f.params;copy.result=f.result;copy.external=f.external;copy.prototype=f.prototype;

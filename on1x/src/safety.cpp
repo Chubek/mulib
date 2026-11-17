@@ -14,7 +14,7 @@ Location location(const moonstone::SourceSpan& s){return {s.file,0,s.line,s.colu
 [[noreturn]] void fail(const Location& at,const std::string& message){throw Error(at,"ON1X-MEMORY: "+message);}
 // Strict reader for the versioned line-based admitted-extern companion artifact.
 // Structure:
-//   on1x.admitted-extern/v1|v2|v3  (v1 i64/void, v2 adds bool/f64, v3 adds unsigned/f32)
+//   on1x.admitted-extern/v1|v2|v3|v4 (v4 adds directional immutable strings)
 //   identity <64 lowercase hex digits>
 //   extern <name> (<admitted-scalar>,...) -> <admitted-scalar>|void
 // Everything unknown, oversized, duplicated or out of profile is rejected.
@@ -36,8 +36,8 @@ std::map<std::string,AdmittedExtern> parse_admission_text(const std::string& tex
   expect(body.size()<=max_line&&body.find('\0')==std::string_view::npos,line,"admission line too long or contains NUL");
   begin=end+1;
   if(line==1){
-   expect(body=="on1x.admitted-extern/v1"||body=="on1x.admitted-extern/v2"||body=="on1x.admitted-extern/v3",line,"unknown admission schema");
-   version=body=="on1x.admitted-extern/v3"?3:body=="on1x.admitted-extern/v2"?2:1;
+   expect(body=="on1x.admitted-extern/v1"||body=="on1x.admitted-extern/v2"||body=="on1x.admitted-extern/v3"||body=="on1x.admitted-extern/v4",line,"unknown admission schema");
+   version=static_cast<unsigned>(body.back()-'0');
   }else if(line==2){
    expect(body.starts_with("identity "),line,"missing admission identity");
    auto digest=body.substr(9);
@@ -66,10 +66,11 @@ std::map<std::string,AdmittedExtern> parse_admission_text(const std::string& tex
     if(version>=2&&token=="f64")return Type{Type::F64};
     if(version>=3)for(auto kind:{Type::F32,Type::U8,Type::U16,Type::U32,Type::U64})
      if(token==type_name(kind))return Type{kind};
+    if(version>=4&&token==(result_position?"static_string":"borrowed_string"))return Type{Type::String};
     if(result_position&&token=="void")return Type{Type::Void};
     throw reject(line,"extern "+std::string(result_position?"result":"parameter")+" has unsupported scalar type");
    };
-   AdmittedExtern admitted;admitted.result=admitted_type(result,true);
+   AdmittedExtern admitted;admitted.result=admitted_type(result,true);admitted.immutable_strings=version>=4;
    std::vector<std::string_view> params;
    for(std::size_t at=0;at<inside.size();){
     auto comma=inside.find(',',at);
@@ -209,7 +210,7 @@ class Lower {
    }
    case Expr::Kind::Project:if(!trivial(e.type,e.where)||expression(*e.children.at(0)).owner)fail(e.where,"nontrivial tuple projection memory model");return {};
    case Expr::Kind::TagTest:case Expr::Kind::Payload:fail(e.where,"closed-sum memory model unavailable");
-   case Expr::Kind::PatternMatch:case Expr::Kind::Case:fail(e.where,"unlowered source match");
+    case Expr::Kind::PatternMatch:case Expr::Kind::Case:case Expr::Kind::Loop:fail(e.where,"unlowered source value construct");
    case Expr::Kind::Integer:case Expr::Kind::Boolean:case Expr::Kind::Float:case Expr::Kind::String:return {};
    case Expr::Kind::Tuple:
     if(!trivial(e.type,e.where))fail(e.where,"tuple memory model requires trivially copied numeric/bool fields");
@@ -232,8 +233,9 @@ class Lower {
    if(!e.callee||e.callee->kind!=Expr::Kind::Variable)fail(e.where,"indirect call not modeled");
    const auto& callee=*e.callee;auto name=callee.text;
    if(callee.reference==Expr::Reference::Extern){
-    // Admitted externs are reviewed scalar-only calls: no resources cross the
-    // boundary, so the ordinary scalar-argument rules below suffice.
+    // Admitted externs carry scalars or immutable strings only. Strings have
+    // process-lifetime storage in the admitted HIR; parameters cannot escape
+    // the foreign call, and results cannot alias caller-owned storage.
     auto found=admitted.find(name);
     if(found==admitted.end())fail(e.where,"raw external call lacks a checked memory model: "+name);
     if(e.children.size()!=found->second.parameters.size())fail(e.where,"admitted extern call arity drift: "+name);
@@ -265,7 +267,8 @@ class Lower {
   for(const auto& s:body){
    budget.node(s.where);if(s.prototype)continue;if(returned)fail(s.where,"unreachable HIR");
    if(s.kind==Stmt::Kind::Template){returned=statements(s.body,false);continue;}
-   switch(s.kind){
+    switch(s.kind){
+    case Stmt::Kind::Defer:case Stmt::Kind::PushDefer:fail(s.where,"deferred capture memory model unavailable");
    case Stmt::Kind::Let:{auto b=expression(*s.value);if(b.owner){
      if(s.value->kind!=Expr::Kind::Call||s.mutable_binding||s.pattern)fail(s.where,"resource copy/mutation not modeled");
      event(b.loan?c::Op::BorrowShared:c::Op::Create,b,s.where);scopes.back().cleanup.push_back(b);
@@ -342,7 +345,7 @@ std::string check(const Unit& unit,Limits limits,const std::map<std::string,Admi
  std::set<std::string> external_names;
  for(const auto& f:unit.functions)if(f.external)external_names.insert(f.name);
  for(const auto& [name,entry]:admitted){
-  auto scalar=[](const Type& t){return t.is_numeric()||t==Type::Bool;};
+  auto scalar=[&](const Type& t){return t.is_numeric()||t==Type::Bool||(entry.immutable_strings&&t==Type::String);};
   for(const auto& type:entry.parameters)
    if(!scalar(type))fail({"<admitted-extern>"},"admitted extern parameter outside the scalar profile: "+name);
   if(entry.result!=Type::Void&&!scalar(entry.result))fail({"<admitted-extern>"},"admitted extern result outside the scalar profile: "+name);
@@ -359,7 +362,7 @@ std::string check(const Unit& unit,Limits limits,const std::map<std::string,Admi
    for(std::size_t i=0;i<f.params.size();++i)
     if(f.params[i].type!=entry.parameters[i])fail(f.params[i].where,"admitted extern parameter type drift: "+f.name);
    if(f.result!=entry.result)fail(f.where,"admitted extern result drift: "+f.name);
-   report<<f.name<<": admitted raw extern (reviewed scalar-only evidence)\n";
+   report<<f.name<<": admitted raw extern (reviewed "<<(entry.immutable_strings?"scalar/immutable-string":"scalar-only")<<" evidence)\n";
    continue;
   }
   auto flow=Lower(lowering,admitted).run(f);verify(flow,limits);

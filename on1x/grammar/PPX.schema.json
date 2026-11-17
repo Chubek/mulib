@@ -3,7 +3,7 @@
   "version": 1,
   "root": "Unit",
   "categories": {
-    "Syntax": "", "Unit": "Syntax", "Location": "Syntax", "Function": "Syntax",
+    "Syntax": "", "Unit": "Syntax", "Location": "Syntax", "Declaration":"Syntax", "Function": "Declaration",
     "ExtensionInput":"Syntax", "ExtensionOutput":"Syntax", "DeclarationCarrier":"Syntax", "SourceToken":"Syntax", "ExtensionFact":"Syntax",
     "Parameter": "Syntax", "Pattern": "Syntax", "Type": "Syntax", "Attribute": "Syntax",
     "MatchArm":"Syntax",
@@ -17,7 +17,11 @@
     "LambdaExpression": "Expression", "ExtensionExpression": "Expression", "StagedExpression": "Expression", "DataExpression": "Expression"
   },
   "nodes": {
-    "Unit": {"category":"Unit", "fields":[["version","Version"],["functions","Function*"]]},
+    "Defer":{"category":"Statement","fields":[["call","Expression"],["location","Location"]]},
+    "Propagate":{"category":"Expression","fields":[["value","Expression"],["location","Location"]]},
+    "Unit": {"category":"Unit", "fields":[["version","Version"],["functions","Declaration*"]]},
+    "NominalDeclaration":{"category":"Declaration","fields":[["kind","Bytes"],["name","Name"],["parameters","Name*"],["labels","Name*"],["fields","Type*"],["location","Location"]]},
+    "NamedType":{"category":"Type","fields":[["name","Name"],["arguments","Type*"]]},
     "ModuleSyntax":{"category":"ExtensionInput","fields":[["version","Version"],["origin","File"],["names","Name*"],["carriers","DeclarationCarrier*"],["module_key","Bytes"]]},
     "DeclarationCarrier":{"category":"DeclarationCarrier","fields":[["owner","Name"],["source","Bytes"],["start","Location"],["end","Location"],["tokens","SourceToken*"]]},
     "SourceToken":{"category":"SourceToken","fields":[["spelling","Bytes"],["location","Location"]]},
@@ -62,7 +66,9 @@
     "While": {"category":"Statement", "fields":[["condition","Expression"],["body","Block"],["location","Location"]]},
     "ControlWhile": {"category":"Statement", "fields":[["label","Bytes"],["context","Nat"],["condition","Expression"],["body","Block"],["latch","Block"],["location","Location"]]},
     "RangeLoop": {"category":"Statement", "fields":[["name","Name"],["bounds","Expression"],["inclusive","Boolean"],["label","Bytes"],["context","Nat"],["body","Block"],["location","Location"]]},
-    "LoopExit": {"category":"Statement", "fields":[["operation","Bytes"],["label","Bytes"],["context","Nat"],["location","Location"]]},
+     "LoopExit": {"category":"Statement", "fields":[["operation","Bytes"],["label","Bytes"],["context","Nat"],["location","Location"]]},
+     "LoopValue": {"category":"DataExpression", "fields":[["label","Bytes"],["context","Nat"],["body","Block"],["location","Location"]]},
+     "ValueBreak": {"category":"Statement", "fields":[["label","Bytes"],["context","Nat"],["value","Expression"],["location","Location"]]},
     "Scope": {"category":"Statement", "fields":[["body","Block"],["location","Location"]]},
     "Do": {"category":"Statement", "fields":[["expression","Expression"],["location","Location"]]},
     "DecimalLiteral": {"category":"DecimalLiteral", "fields":[["spelling","DecimalSpelling"],["location","Location"]]},

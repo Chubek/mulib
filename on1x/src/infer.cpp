@@ -5,6 +5,7 @@
 #include <on1x/numeric.hpp>
 #include <on1x/canonical/control.hpp>
 #include <on1x/patterns.hpp>
+#include <on1x/nominal.hpp>
 #include <deque>
 #include <algorithm>
 #include <map>
@@ -19,13 +20,15 @@ bool compound(Type::Kind kind){return kind==Type::Function||kind==Type::Tuple||k
 bool has_result(Type::Kind kind){return kind==Type::Function||kind==Type::Code;}
 bool holes_in(const Expr& expression);
 bool holes_in(const std::vector<Stmt>& body) {
+ for(const auto& s:body)if(s.kind==Stmt::Kind::Defer)return true;
  for(const auto& statement:body)
    if(has_type_holes(statement.declared)||statement.declared.has_foralls()||(statement.value&&holes_in(*statement.value))||
      holes_in(statement.body)||holes_in(statement.otherwise))return true;
  return false;
 }
 bool holes_in(const Expr& expression) {
-  if((expression.kind>=Expr::Kind::Record&&expression.kind<=Expr::Kind::Length)||expression.kind==Expr::Kind::PatternMatch)return true;
+ if(expression.kind==Expr::Kind::Propagate)return true;
+  if((expression.kind>=Expr::Kind::Record&&expression.kind<=Expr::Kind::Length)||expression.kind==Expr::Kind::PatternMatch||expression.kind==Expr::Kind::Loop)return true;
  if(expression.kind==Expr::Kind::Lambda){
    if(has_type_holes(expression.result)||expression.result.has_foralls()||holes_in(expression.body))return true;
    for(const auto& parameter:expression.parameters)if(has_type_holes(parameter.type)||parameter.type.has_foralls())return true;
@@ -36,9 +39,10 @@ bool holes_in(const Expr& expression) {
 }
 bool needs_inference(const Unit& unit) {
  if(unit.forall_elaborated)return false;
+ if(!unit.nominals.empty())return true;
  for(const auto& function:unit.functions) {
-   if(has_type_holes(function.result)||function.result.has_foralls()||holes_in(function.body))return true;
-   for(const auto& parameter:function.params)if(has_type_holes(parameter.type)||parameter.type.has_foralls())return true;
+    if(has_type_holes(function.result)||function.result.has_foralls()||function.result.has_names()||holes_in(function.body))return true;
+    for(const auto& parameter:function.params)if(has_type_holes(parameter.type)||parameter.type.has_foralls()||parameter.type.has_names())return true;
  }
  return false;
 }
@@ -52,7 +56,9 @@ class Inference {
   std::vector<Term> parameters;
    Term result = 0;
    std::vector<std::string> labels{};
-   std::size_t extent=0;
+    std::size_t extent=0;
+    std::string nominal{};
+    std::size_t arguments=0; // Trailing parameters, never representation fields.
  };
  struct Scheme;
  struct Global {
@@ -63,7 +69,8 @@ class Inference {
  };
  struct Slot { Type* output; Term term; Location where; std::string description; bool generic=false; };
  struct Ground { Type type; std::size_t identity, depth, size; };
- Unit& unit;
+  Unit& unit;
+  NominalCatalog catalog;
  const InferenceLimits& limits;
  std::size_t work = 0;
  std::vector<Node> nodes;
@@ -98,12 +105,15 @@ class Inference {
  std::deque<Pack> packs;
  std::vector<Slot> slots;
  Term returns = 0;
- bool saw_return = false;
+  bool saw_return = false;
+  struct LoopValue {std::size_t target;Term type;bool bare=false,valued=false;};
+  std::vector<LoopValue> loop_values;
  std::vector<std::optional<Ground>> ground;
  std::vector<unsigned char> state;
  std::map<std::vector<std::size_t>,Ground> canonical;
-   std::size_t next_identity = Type::U64 + 1;
-  std::map<std::vector<std::string>,std::size_t> label_identities;
+    std::size_t next_identity = Type::Named + 1;
+   std::map<std::vector<std::string>,std::size_t> label_identities;
+   std::map<std::string,std::size_t> nominal_identities;
 
  [[noreturn]] static void fail(const Location& where,const std::string& message) {
    throw Error(where,message,"ON1X-TYPE");
@@ -125,36 +135,50 @@ class Inference {
   Term function(std::vector<Term> parameters,Term result,const Location& where) {
    return add(Type::Function,std::move(parameters),result,where);
   }
-  Term data(Type::Kind kind,std::vector<Term> fields,std::vector<std::string> labels,std::size_t extent,const Location& at){
+   Term data(Type::Kind kind,std::vector<Term> fields,std::vector<std::string> labels,std::size_t extent,const Location& at,std::string nominal={},std::size_t arguments=0){
+    if(fields.size()<arguments)fail(at,"invalid nominal inference shape");
+    std::vector<Term> args(fields.end()-arguments,fields.end());fields.resize(fields.size()-arguments);
    if(kind==Type::Record||kind==Type::Sum){
     if(fields.size()!=labels.size()||fields.size()>256||(kind==Type::Sum&&fields.empty()))fail(at,"invalid labeled data shape");
     std::map<std::string,Term> ordered;
     for(std::size_t i=0;i<labels.size();++i){tick(at);if(!ordered.emplace(labels[i],fields[i]).second)fail(at,"duplicate data label: "+labels[i]);}
     labels.clear();fields.clear();for(auto& [label,term]:ordered){labels.push_back(label);fields.push_back(term);}
    }else if(fields.size()!=1||extent>256)fail(at,"invalid array/slice shape");
-   auto id=add(kind,std::move(fields),0,at);nodes[id].labels=std::move(labels);nodes[id].extent=extent;return id;
-  }
- Term annotation(const Type& type,const Location& where) {
-  tick(where);
-   if(type==Type::Hole)return fresh(where);
-   if(type.is_code())return add(Type::Code,{},annotation(type.code_result(),where),where);
-   if(type.is_forall()||type.kind()==Type::Generic){
-    if(auto found=atom_terms.find(type);found!=atom_terms.end())return found->second;
-    auto id=add(type.kind(),{},0,where);atoms.emplace(id,type);atom_terms.emplace(type,id);return id;
+    fields.insert(fields.end(),args.begin(),args.end());
+    auto id=add(kind,std::move(fields),0,at);nodes[id].labels=std::move(labels);nodes[id].extent=extent;nodes[id].nominal=std::move(nominal);nodes[id].arguments=arguments;return id;
    }
-   if(type.kind()==Type::Bound)fail(where,"quantified type variable outside forall");
-  if(type.is_tuple()){
-   std::vector<Term> elements;for(const auto& element:type.elements())elements.push_back(annotation(element,where));
+  Term annotation(const Type& type,const Location& where,const std::vector<Term>* variables=nullptr,std::size_t depth=0) {
+   tick(where);
+    if(depth>limits.depth)fail(where,"nominal/type annotation depth limit exceeded");
+    if(type==Type::Hole)return fresh(where);
+    if(type.kind()==Type::Bound){if(!variables||type.generic_identity()>=variables->size())fail(where,"quantified type variable outside forall/declaration");return (*variables)[type.generic_identity()];}
+    if(type.kind()==Type::Named||!type.nominal().empty()){
+     const auto& d=catalog.find(type.nominal(),where);
+     if(d.parameters.size()!=type.arguments().size())fail(where,"wrong type argument arity for "+d.name);
+     std::vector<Term> args,fields;
+     for(const auto& a:type.arguments())args.push_back(annotation(a,where,variables,depth+1));
+     for(const auto& f:d.fields)fields.push_back(annotation(f,where,&args,depth+1));
+     fields.insert(fields.end(),args.begin(),args.end());
+     return data(d.kind,std::move(fields),d.labels,0,where,d.name,args.size());
+    }
+    if(type.is_code())return add(Type::Code,{},annotation(type.code_result(),where,variables,depth+1),where);
+    if(type.is_forall()||type.kind()==Type::Generic){
+     auto resolved=type.is_forall()?catalog.resolve(type,where):type;
+     if(auto found=atom_terms.find(resolved);found!=atom_terms.end())return found->second;
+     auto id=add(type.kind(),{},0,where);atoms.emplace(id,resolved);atom_terms.emplace(std::move(resolved),id);return id;
+   }
+   if(type.is_tuple()){
+    std::vector<Term> elements;for(const auto& element:type.elements())elements.push_back(annotation(element,where,variables,depth+1));
    return add(Type::Tuple,std::move(elements),0,where);
   }
    if(type.is_data()){
-    std::vector<Term> elements;for(const auto& element:type.elements())elements.push_back(annotation(element,where));
+     std::vector<Term> elements;for(const auto& element:type.elements())elements.push_back(annotation(element,where,variables,depth+1));
     return data(type.kind(),std::move(elements),type.labels(),type.extent(),where);
    }
    if(!type.is_function())return scalar(type.kind(),where);
   std::vector<Term> parameters;
-  for(const auto& parameter:type.parameters())parameters.push_back(annotation(parameter,where));
-  auto result=annotation(type.result(),where);
+   for(const auto& parameter:type.parameters())parameters.push_back(annotation(parameter,where,variables,depth+1));
+   auto result=annotation(type.result(),where,variables,depth+1);
   return function(std::move(parameters),result,where);
  }
  Term head(Term id,const Location& where) {
@@ -222,7 +246,8 @@ class Inference {
       fail(where,"incompatible quantified types: expected "+describe(b,where)+", got "+describe(a,where));
      continue;
     }
-    if(!compound(nodes[a].kind))continue;
+     if(!compound(nodes[a].kind))continue;
+     if(nodes[a].nominal!=nodes[b].nominal||nodes[a].arguments!=nodes[b].arguments)fail(where,"incompatible nominal types: expected "+nodes[b].nominal+", got "+nodes[a].nominal);
     if(data_kind(nodes[a].kind)&&(nodes[a].labels!=nodes[b].labels||nodes[a].extent!=nodes[b].extent))
      fail(where,"incompatible data labels or array/slice extent");
    if(nodes[a].parameters.size()!=nodes[b].parameters.size())
@@ -378,10 +403,10 @@ class Inference {
   if(variables.contains(term)){auto result=fresh(at);copies.emplace(term,result);return result;}
   if(!compound(nodes[term].kind))return term;
    auto kind=nodes[term].kind;auto children=nodes[term].parameters;auto result=nodes[term].result;
-   auto labels=nodes[term].labels;auto extent=nodes[term].extent;
+    auto labels=nodes[term].labels;auto extent=nodes[term].extent;auto nominal=nodes[term].nominal;auto arguments=nodes[term].arguments;
   for(auto& child:children)child=copy_signature(child,variables,copies,at,depth+1);
   if(has_result(kind))result=copy_signature(result,variables,copies,at,depth+1);
-   auto id=data_kind(kind)?data(kind,std::move(children),std::move(labels),extent,at):add(kind,std::move(children),result,at);copies.emplace(term,id);return id;
+    auto id=data_kind(kind)?data(kind,std::move(children),std::move(labels),extent,at,std::move(nominal),arguments):add(kind,std::move(children),result,at);copies.emplace(term,id);return id;
  }
  void bind_pattern(const Pattern& pattern,Term value){
   tick(pattern.where);
@@ -417,7 +442,7 @@ class Inference {
   for(const auto& s:f.body)lambda->body.push_back(clone_statement(s,ast_budget));
   source->value=std::move(lambda);
   global.source=source.get();global_sources.push_back(std::move(source));
-  auto saved_scopes=std::move(scopes);auto saved_returns=returns;bool saved_saw=saw_return;
+   auto saved_scopes=std::move(scopes);auto saved_returns=returns;bool saved_saw=saw_return;auto saved_loops=std::move(loop_values);loop_values.clear();
   scopes.emplace_back();auto signature=global.signature;
   for(std::size_t i=0;i<f.params.size();++i){
    const auto& p=f.params[i];auto type=nodes[signature].parameters[i];
@@ -448,7 +473,7 @@ class Inference {
     generalizing_globals.clear();
    }
   }
-  scopes=std::move(saved_scopes);returns=saved_returns;saw_return=saved_saw;
+   scopes=std::move(saved_scopes);returns=saved_returns;saw_return=saved_saw;loop_values=std::move(saved_loops);
   global.state=2;global_stack.pop_back();
   if(!global_stack.empty()){
    auto& caller=globals.at(global_stack.back());caller.low=std::min(caller.low,global.low);
@@ -557,29 +582,10 @@ class Inference {
  }
  Term instantiate(const Type& schema,bool rigid,const Location& at){
   std::vector<Term> variables;
-  for(std::size_t i=0;i<schema.generic_identity();++i)
-   variables.push_back(rigid?annotation(Type::generic(limits.nodes+(++rigid_serial)),at):fresh(at));
-  auto build=[&](auto&& self,const Type& type)->Term{
-    if(type.is_code())return add(Type::Code,{},self(self,type.code_result()),at);
-   if(type.kind()==Type::Bound){
-    if(type.generic_identity()>=variables.size())fail(at,"unbound forall type variable");
-    return variables[type.generic_identity()];
+   for(std::size_t i=0;i<schema.generic_identity();++i){
+    variables.push_back(rigid?annotation(Type::generic(limits.nodes+(++rigid_serial)),at):fresh(at));
    }
-   if(type.is_function()){
-    std::vector<Term> parameters;for(const auto& p:type.parameters())parameters.push_back(self(self,p));
-    return function(std::move(parameters),self(self,type.result()),at);
-   }
-   if(type.is_tuple()){
-    std::vector<Term> elements;for(const auto& p:type.elements())elements.push_back(self(self,p));
-    return add(Type::Tuple,std::move(elements),0,at);
-   }
-    if(type.is_data()){
-     std::vector<Term> elements;for(const auto& p:type.elements())elements.push_back(self(self,p));
-     return data(type.kind(),std::move(elements),type.labels(),type.extent(),at);
-    }
-    return annotation(type,at);
-  };
-  return build(build,schema.body());
+   return annotation(schema.body(),at,&variables);
  }
  ExprPtr wrap(Expr& e,Expr::Kind kind){
   // Inference stores pointers to output fields and stable expression identities.
@@ -647,7 +653,7 @@ class Inference {
   unify(actual,expectation,e.where);return expectation;
  }
  void reset_ground(){
-     ground.assign(nodes.size(),{});state.assign(nodes.size(),0);canonical.clear();next_identity=Type::U64+1;
+      ground.assign(nodes.size(),{});state.assign(nodes.size(),0);canonical.clear();next_identity=Type::Named+1;
   }
   void numeric_operand(Term term,const Location& at){
    // Do not quantify numeric overloading. Delay the old i64 choice until all
@@ -658,7 +664,7 @@ class Inference {
    for(const auto& [term,at]:numeric){
     tick(at);auto kind=nodes[head(term,at)].kind;
     if(kind==Type::Hole)unify(term,scalar(Type::I64,at),at);
-     else if(!Type(kind).is_numeric())fail(at,"numeric operand requires a numeric scalar, got "+describe(term,at));
+      else if(kind!=Type::I64&&kind!=Type::F64&&kind!=Type::F32&&!(kind>=Type::U8&&kind<=Type::U64))fail(at,"numeric operand requires a numeric scalar, got "+describe(term,at));
    }
   }
  void elaborate_foralls(){
@@ -758,7 +764,21 @@ class Inference {
   Term expression(Expr& e,std::optional<Term> hint={}) {
   Term result=0;const auto& at=e.where;
   tick(at);
-   switch(e.kind) {
+    switch(e.kind) {
+    case Expr::Kind::Propagate:{
+     if(e.children.size()!=1)fail(at,"propagation requires one operand");
+     auto input=head(expression(*e.children[0]),at);
+     if(nodes[input].kind!=Type::Sum||nodes[input].nominal.empty())fail(at,"propagation requires a known nominal Result");
+     auto identity=nodes[input].nominal;catalog.result(identity,at);
+     auto fields=nodes[input].parameters;auto labels=nodes[input].labels;
+     auto error=fields[static_cast<std::size_t>(std::find(labels.begin(),labels.end(),"Err")-labels.begin())];
+     result=fields[static_cast<std::size_t>(std::find(labels.begin(),labels.end(),"Ok")-labels.begin())];
+     auto output=head(returns,at);
+     if(nodes[output].kind!=Type::Sum||nodes[output].nominal!=identity)fail(at,"propagation requires the same nominal Result return declaration; annotate the return type");
+     auto out_labels=nodes[output].labels;
+     unify(error,nodes[output].parameters[static_cast<std::size_t>(std::find(out_labels.begin(),out_labels.end(),"Err")-out_labels.begin())],at);
+     slots.push_back({&e.result,returns,at,"propagation return type"});break;
+    }
    case Expr::Kind::Splice:case Expr::Kind::Lift:fail(at,"MSP stage lowering required before inference");
    case Expr::Kind::Quote:{
     auto callable=expression(*e.children.at(0));auto result_type=fresh(at);unify(callable,function({},result_type,at),at);result=add(Type::Code,{},result_type,at);break;
@@ -774,7 +794,11 @@ class Inference {
   case Expr::Kind::Boolean:result=scalar(Type::Bool,at);break;
   case Expr::Kind::String:result=scalar(Type::String,at);break;
    case Expr::Kind::Variable:return name(e);
-   case Expr::Kind::Unit:result=scalar(Type::Void,at);break;
+    case Expr::Kind::Unit:result=scalar(Type::Void,at);break;
+    case Expr::Kind::Loop:{
+     result=fresh(at);loop_values.push_back({e.control_target,result});block(e.body);
+     auto exits=loop_values.back();loop_values.pop_back();if(exits.bare||!exits.valued)result=scalar(Type::Void,at);break;
+    }
    case Expr::Kind::PatternMatch:{
     auto scrutinee=expression(*e.children.at(0));result=fresh(at);bool fallthrough=false;scopes.emplace_back();
     if(!e.text.empty())define(e.text,scrutinee,at);
@@ -790,17 +814,24 @@ class Inference {
     std::vector<Term> elements;for(auto& element:e.children)elements.push_back(expression(*element));
     result=add(Type::Tuple,std::move(elements),0,at);break;
    }
-   case Expr::Kind::Record:{
-    std::vector<Term> fields;for(auto& child:e.children)fields.push_back(expression(*child));
-    result=data(Type::Record,std::move(fields),e.labels,0,at);break;
+    case Expr::Kind::Record:{
+     std::vector<Term> fields;for(auto& child:e.children)fields.push_back(expression(*child));
+     auto actual=data(Type::Record,std::move(fields),e.labels,0,at);
+     if(e.result!=Type::Void){
+      result=annotation(e.result,at);if(nodes[result].kind!=Type::Record||nodes[result].nominal.empty())fail(at,"named record constructor requires a declared record");
+      auto expected_fields=nodes[result].parameters;expected_fields.resize(nodes[result].labels.size());
+      unify(actual,data(Type::Record,std::move(expected_fields),nodes[result].labels,0,at),at);
+      slots.push_back({&e.result,result,at,"named record schema"});
+     }else result=actual;
+     break;
    }
    case Expr::Kind::Array:{
     auto element=fresh(at);for(auto& child:e.children)unify(expression(*child),element,child->where);
     result=data(Type::Array,{element},{},e.children.size(),at);break;
    }
    case Expr::Kind::Variant:{
-    if(e.result.kind()!=Type::Sum)fail(at,"variant requires a closed sum annotation");
-    result=annotation(e.result,at);auto tags=nodes[result].labels;auto fields=nodes[result].parameters;
+     result=annotation(e.result,at);if(nodes[result].kind!=Type::Sum)fail(at,"variant requires a closed sum annotation");
+     auto tags=nodes[result].labels;auto fields=nodes[result].parameters;
     auto tag=std::find(tags.begin(),tags.end(),e.text);if(tag==tags.end())fail(at,"unknown sum constructor: "+e.text);
     if(e.children.size()!=1)fail(at,"variant requires one payload");
     expected(*e.children[0],fields[static_cast<std::size_t>(tag-tags.begin())]);
@@ -845,7 +876,7 @@ class Inference {
    slots.push_back({&e.result,result_type,at,"anonymous-function return type"});
     result=function(parameters,result_type,at);
     if(hint)unify(result,*hint,at);
-   auto previous_returns=returns;bool previous_saw_return=saw_return;
+    auto previous_returns=returns;bool previous_saw_return=saw_return;auto previous_loops=std::move(loop_values);loop_values.clear();
    scopes.emplace_back();
     for(std::size_t i=0;i<e.parameters.size();++i){
      const auto& p=e.parameters[i];
@@ -853,7 +884,7 @@ class Inference {
     }
    returns=result_type;saw_return=false;block(e.body,false);scopes.pop_back();
    if(!saw_return)unify(result_type,scalar(Type::Void,at),at);
-   returns=previous_returns;saw_return=previous_saw_return;break;
+    returns=previous_returns;saw_return=previous_saw_return;loop_values=std::move(previous_loops);break;
   }
    case Expr::Kind::Unary:{
     result=expression(*e.children[0]);
@@ -907,7 +938,9 @@ class Inference {
   for(auto& statement:body) {
    const auto& at=statement.where;
    tick(at);
-   switch(statement.kind) {
+    switch(statement.kind) {
+    case Stmt::Kind::Defer:expression(*statement.value);break;
+    case Stmt::Kind::PushDefer:fail(at,"private defer registration before inference");
    case Stmt::Kind::Let:{
     auto first=slots.size();
     Term value;
@@ -936,7 +969,15 @@ class Inference {
    }
    case Stmt::Kind::Block:block(statement.body);break;
    case Stmt::Kind::Expr:expression(*statement.value);break;
-   case Stmt::Kind::Break:case Stmt::Kind::Continue:break;
+    case Stmt::Kind::Break:{
+     auto target=std::find_if(loop_values.rbegin(),loop_values.rend(),[&](const auto& l){return l.target==statement.control_target;});
+     if(target==loop_values.rend()){if(statement.value)fail(at,"value-carrying exit requires an expression loop target");break;}
+     auto index=static_cast<std::size_t>(target.base()-loop_values.begin()-1);
+     if(statement.value){auto value=expression(*statement.value);if(!patterns::terminates(*statement.value)){unify(value,loop_values[index].type,at);loop_values[index].valued=true;}}
+     else loop_values[index].bare=true;
+     break;
+    }
+    case Stmt::Kind::Continue:break;
     case Stmt::Kind::Range:fail(at,"range was not canonicalized");
     case Stmt::Kind::Storage:case Stmt::Kind::Initialize:case Stmt::Kind::Region:case Stmt::Kind::Leave:case Stmt::Kind::Trap:fail(at,"private region statement before inference");
    case Stmt::Kind::Template:fail(at,"cannot reinfer an elaborated template");
@@ -976,7 +1017,9 @@ class Inference {
     std::vector<Type> parameters;std::vector<std::size_t> key{static_cast<std::size_t>(node.kind)};
     if(data_kind(node.kind)){
      auto [layout,inserted]=label_identities.emplace(node.labels,label_identities.size()+1);(void)inserted;
-     key.push_back(layout->second);key.push_back(node.extent);
+      key.push_back(layout->second);key.push_back(node.extent);
+      auto [nominal,added]=nominal_identities.emplace(node.nominal,nominal_identities.size()+1);(void)added;
+      key.push_back(nominal->second);key.push_back(node.arguments);
     }
    Type result_type=Type::Invalid;
    if(has_result(node.kind)){
@@ -993,7 +1036,10 @@ class Inference {
    if(size>limits.type_nodes)fail(at,"inferred type exceeds expanded-size limit");
    if(auto found=canonical.find(key);found!=canonical.end())ground[id]=found->second;
    else {
-     auto type=data_kind(node.kind)?Type::data(node.kind,std::move(parameters),node.labels,node.extent):node.kind==Type::Tuple?Type::tuple(std::move(parameters)):node.kind==Type::Code?Type::code(std::move(result_type)):Type::function(std::move(parameters),std::move(result_type));
+      std::vector<Type> arguments;
+      if(!node.nominal.empty()){arguments.assign(parameters.end()-node.arguments,parameters.end());parameters.resize(parameters.size()-node.arguments);}
+      auto type=data_kind(node.kind)?Type::data(node.kind,std::move(parameters),node.labels,node.extent):node.kind==Type::Tuple?Type::tuple(std::move(parameters)):node.kind==Type::Code?Type::code(std::move(result_type)):Type::function(std::move(parameters),std::move(result_type));
+      if(!node.nominal.empty())type=type.with_nominal(node.nominal,std::move(arguments));
     Ground value{std::move(type),next_identity++,depth,size};
     canonical.emplace(std::move(key),value);ground[id]=std::move(value);
    }
@@ -1001,7 +1047,7 @@ class Inference {
   return *ground[head(term,at)];
  }
 public:
- Inference(Unit& source,const InferenceLimits& budget):unit(source),limits(budget),ast_budget(budget.expanded_ast) {}
+  Inference(Unit& source,const InferenceLimits& budget):unit(source),catalog(source),limits(budget),ast_budget(budget.expanded_ast) {}
  void run() {
   // Allocate all declaration variables first: calls, mutual recursion and
   // imported functions constrain the same monotype regardless of body order.

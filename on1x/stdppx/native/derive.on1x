@@ -1,10 +1,12 @@
 import "../../stdlib/ppx/signature.on1x";
 fn transform(tree: sexpr, label: string) -> sexpr {
   var rest = sexpr_nth(tree, 2); var result = sx_nil(); var names = sx_nil();
-  while sx_kind(rest) == 3 { names = sx_cons(sx_cons(sexpr_nth(sx_head(rest), 1), ppx_list1(sx_symbol("1"))), names); rest = sx_tail(rest); }
+  while sx_kind(rest) == 3 { if visitor_tag(sx_head(rest)) != "NominalDeclaration" { names = sx_cons(sx_cons(sexpr_nth(sx_head(rest), 1), ppx_list1(sx_symbol("1"))), names); } rest = sx_tail(rest); }
   rest = sexpr_nth(tree, 2);
   while sx_kind(rest) == 3 {
-    let function = sx_head(rest); let external = visitor_tag(function) == "Extern"; var attr_index = 5; if external { attr_index = 4; }
+    let function = sx_head(rest);
+    if visitor_tag(function) == "NominalDeclaration" { result = sx_cons(function, result); rest = sx_tail(rest); continue; }
+    let external = visitor_tag(function) == "Extern"; var attr_index = 5; if external { attr_index = 4; }
     var attributes = sexpr_nth(function, attr_index); var keep = sx_nil();
     while sx_kind(attributes) == 3 {
       let attribute = sx_head(attributes); attributes = sx_tail(attributes);

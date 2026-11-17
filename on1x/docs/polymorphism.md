@@ -1,5 +1,13 @@
 # Polymorphism, specialization and flattened extern patterns
 
+The [nominal-data profile](nominal-adts.md) admits invariant type constructors
+in existing function inference and explicit universals. For example,
+`fn unwrap(x:Box<_>)->_ { return x["value"]; }` specializes through ordinary
+whole-unit inference. Phantom arguments still participate in unification,
+generalization, forall proofs and specialization; field-layout equality does
+not erase their identity. No higher-kinded or polymorphically recursive types
+are added. Resource/managed nominal arguments and fields remain rejected.
+
 ## Value-restricted lets and destructuring
 
 ```on1x

@@ -22,16 +22,24 @@ static on1x_token_t on1x_lexeme(char *text, GLRParser start) {
  *   loop_stmt := [identifier ':'] ('loop' block | 'while' expr block
  *              | 'for' '(' [clause] ';' [expr] ';' [step] ')' block
  *              | 'for' identifier 'in' expr ('..' | '..=') expr block)
- *   loop_exit := ('break' | 'continue') [identifier] ';'
+ *   loop_value := [identifier ':'] 'loop' block
+ *   loop_exit := 'break' [identifier] ['with' expr] ';'
+ *              | 'continue' [identifier] ';'
  *   match := 'match' (expr | 'let' identifier '=' expr) 'with' '{' arms '}'
  *   arm := pattern ['if' expr] '=>' (expr | arm_block)
  *   pattern := identifier | '_' | 'rest' | literal | constructor(parts)
  *            | (parts) | [parts] | record{fields[,..]} | pattern '|' pattern
  *            | pattern 'as' identifier
+ *   nominal := ('record' | 'enum') identifier ['<' parameters '>'] '{' fields '}'
+ *   named_type := qualified_identifier ['<' type_arguments '>']
+ *   named_record := 'record' '<' named_type '>' '{' initializers '}'
+ *   named_variant := 'variant' '<' named_type '>' '(' tag ',' payload ')'
+ * Nonrecursive nominal declarations use existing bounded by-value data layouts.
+ *   defer_stmt := 'defer' call_expression ';'  (function-scoped, Go-style)
+ *   propagation := postfix_expression '?'     (nominal typed Result return)
  * Loop/match words are contextual. '::' is recognized so owning-list patterns
  * can diagnose their unsupported profile; array tails are never invented.
- * Ellipsis keeps its longest-match macro meaning. No concurrency or cleanup
- * tokens are enabled by this pure-control slice. */
+  * Ellipsis keeps its longest-match macro meaning. No concurrency is enabled. */
 %start on1x_scan_unit
 %skip /([ \t\r\n]+|#[^\n]*)+/
 on1x_scan_unit: pieces {
@@ -50,7 +58,7 @@ piece:
   | /([0-9]+\.[0-9]+([eE][+\-]?[0-9]+)?|[0-9]+[eE][+\-]?[0-9]+)(f32|f64)?|[0-9]+(f32|f64)/ { $$ = on1x_lexeme($1, save); }
   | /(0[xX][0-9a-fA-F]+|[0-9]+)(u8|u16|u32|u64)?/ { $$ = on1x_lexeme($1, save); }
   | /\.\.\.|\.\.=|\.\.|::|==|!=|<=|>=|&&|\|\||->|=>/ { $$ = on1x_lexeme($1, save); }
-  | /[+*%<>=!;:,(){}\[\]@$.|\-]/ { $$ = on1x_lexeme($1, save); }
+  | /[+*%<>=!;:,(){}\[\]@$.|?\-]/ { $$ = on1x_lexeme($1, save); }
   | '/' { $$ = on1x_lexeme($1, save); }
 ;
 %%

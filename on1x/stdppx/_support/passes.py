@@ -64,22 +64,24 @@ def _render_type(t):
     fixed={'I64Type':'i64','F64Type':'f64','F32Type':'f32','U8Type':'u8','U16Type':'u16','U32Type':'u32','U64Type':'u64','BoolType':'bool','StringType':'string','VoidType':'void','JsonType':'json','JsonViewType':'json_view','SExprType':'sexpr','BufferType':'buffer','HoleType':'_','Inferred':'_'}
     if k in fixed:return fixed[k]
     if k=='BoundType':return 'a'+str(t[1])
+    if k=='NamedType':return t[1]+('<'+', '.join(map(_render_type,t[2]))+'>' if t[2] else '')
     if k=='CodeType':return 'code<'+_render_type(t[1])+'>'
     if k=='ForallType':return 'forall('+', '.join('a'+str(i) for i in range(int(t[1])))+') '+_render_type(t[2])
     if k=='TupleType':return '('+', '.join(map(_render_type,t[1]))+')'
     if k=='FunctionType':return 'fn('+', '.join(map(_render_type,t[1]))+') -> '+_render_type(t[2])
     if k=='ValueDataType':
-        kind=string(t[1])
+        kind=t[1]
         head={'record':'record{','sum':'sum{','array':'array<','slice':'slice<'}[kind]
-        labels=[string(l) for l in t[2]];fields=[_render_type(f) for f in t[3]]
+        labels=t[2];fields=[_render_type(f) for f in t[3]]
         if kind in ('record','sum'):return head+', '.join(l+':'+f for l,f in zip(labels,fields))+'}'
         return head+_render_type(t[3][0])+', '+str(int(t[4]))+'>'
     raise ValueError('unknown type: '+str(k))
 
 
 def derive(tree,label):
-    extra=[]; used={entry[1] for entry in tree[2]}
+    extra=[]; used={entry[1] for entry in tree[2] if tag(entry) in ('Function','Extern')}
     for entry in tree[2]:
+        if tag(entry) not in ('Function','Extern'):continue
         attrs_idx=4 if tag(entry)=='Extern' else 5
         rest=[]
         for a in entry[attrs_idx]:
@@ -377,6 +379,9 @@ def cfg(tree,label):
     features={x.strip() for x in os.environ.get('ON1X_PPX_FEATURES','').split(',') if x.strip()}
     result=[]
     for f in tree[2]:
+        if tag(f) not in ('Function','Extern'):
+            result.append(f)
+            continue
         keep=[];enabled=True
         i=4 if tag(f)=='Extern' else 5
         for a in f[i]:
@@ -502,6 +507,7 @@ def ffi_bind(tree,label):
     target=os.environ.get('ON1X_PPX_FFI_TARGET','')
     required=[]
     for f in tree[2]:
+        if tag(f) not in ('Function','Extern'):continue
         i=4 if tag(f)=='Extern' else 5
         if not any(attribute(a,label) for a in f[i]):continue
         if tag(f)!='Extern':raise ValueError('ffi_bind attributes apply only to extern fn declarations')

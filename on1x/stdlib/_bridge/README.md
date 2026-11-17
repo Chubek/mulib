@@ -1,5 +1,10 @@
 # MuLIB standard-library bridge — raw scalar ABI
 
+The compiler now has a separate [review-gated immutable string import
+profile](../../docs/ffi-strings.md). It does **not** automatically admit this
+bridge: independently reviewed pinned contracts and allocation/ownership/effect
+lowering remain necessary. These existing exports retain their raw status.
+
 `mulib_bridge.c` calls canonical MuLIB kernels through their actual public
 headers. It defines **no** `MULIB_IMPL_*` switches. `on1x-build.py` discovers the
 bridge extern declarations, selects required kernel groups, links this adapter

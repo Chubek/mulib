@@ -1,5 +1,12 @@
 # Modules, pervasive bindings and library loading
 
+The [nominal-data profile](nominal-adts.md) adds a separate type namespace to
+these existing import/re-export rules. Type annotations and explicit constructors
+resolve to the declaring module, including through aliases; equally shaped
+declarations in different modules are not interchangeable. Unknown/unimported
+types reject. This is still whole-unit loading, not separate compilation or a
+persisted module interface ABI.
+
 The opt-in [Category declaration gateway](category.md) expands native, local
 scalar declarations before export binding. Generated selectors are ordinary
 checked exports; protocol/witness metadata is not yet an imported interface.

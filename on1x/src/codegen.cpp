@@ -2,6 +2,7 @@
 #include <on1x/meta.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/nominal.hpp>
 #include <on1x/canonical/control.hpp>
 #include <on1x/canonical/values.hpp>
 #include <algorithm>
@@ -53,7 +54,8 @@ class Generator {
   std::set<std::size_t> region_exit_targets;
  // Function values and tuples containing them own temporary references, released
  // at the end of the full expression rather than at an enclosing loop exit.
- std::vector<Owner> temporary_values;
+  std::vector<Owner> temporary_values;
+  std::string defer_stack;
  std::uint64_t serial=0,type_serial=0,helper_serial=0;
   int indent=0;
    bool uses_f64=false,uses_f32=false,uses_unsigned=false;
@@ -217,9 +219,10 @@ class Generator {
    flatten(pattern.elements[i],type.elements()[i],root+"->element_"+std::to_string(i),args);
  }
   std::string expr(const Expr& e){
-     switch(e.kind){
+      switch(e.kind){
+      case Expr::Kind::Propagate:throw Error(e.where,"unlowered propagation");
      case Expr::Kind::Unit:return {};
-     case Expr::Kind::PatternMatch:case Expr::Kind::Case:throw Error(e.where,"surface match must be canonicalized");
+      case Expr::Kind::PatternMatch:case Expr::Kind::Case:case Expr::Kind::Loop:throw Error(e.where,"surface value construct must be canonicalized");
      case Expr::Kind::Region:{
       auto output=e.type==Type::Void?std::string{}:unique("region_value");if(!output.empty())definitions<<pad()<<ctype(e.type)<<" "<<output<<" = {0};\n";
       auto outer=std::move(temporary_values);temporary_values.clear();definitions<<pad()<<"{\n";push();owners.back()=outer;definitions<<pad()<<"{\n";push();
@@ -396,7 +399,9 @@ class Generator {
  }
  bool stmt(const Stmt& s){
   if(s.prototype)return false;
-  switch(s.kind){
+   switch(s.kind){
+   case Stmt::Kind::Defer:throw Error(s.where,"unlowered defer");
+   case Stmt::Kind::PushDefer:{auto f=expr(*s.value);definitions<<pad()<<"on1x_defer_push(&"<<defer_stack<<", "<<f<<".invoke, "<<f<<".environment);\n";finish();return false;}
   case Stmt::Kind::Template:{for(const auto& instance:s.body)stmt(instance);return false;}
    case Stmt::Kind::Let:{
    auto value=expr(*s.value);
@@ -423,9 +428,9 @@ class Generator {
     if(s.value->type!=Type::Void){
      auto result=unique("return");definitions<<pad()<<ctype(s.value->type)<<" "<<result<<" = "<<value<<";\n";
      retain(s.value->type,result);
-     finish();drops();definitions<<pad()<<"return "<<result<<";\n";
-    }else{finish();drops();definitions<<pad()<<"return;\n";}
-   }else{finish();drops();definitions<<pad()<<"return;\n";}
+     definitions<<pad()<<"on1x_defer_run(&"<<defer_stack<<");\n";finish();drops();definitions<<pad()<<"return "<<result<<";\n";
+     }else{definitions<<pad()<<"on1x_defer_run(&"<<defer_stack<<");\n";finish();drops();definitions<<pad()<<"return;\n";}
+    }else{definitions<<pad()<<"on1x_defer_run(&"<<defer_stack<<");\n";finish();drops();definitions<<pad()<<"return;\n";}
    return true;
   }
    case Stmt::Kind::Expr:{
@@ -528,7 +533,8 @@ class Generator {
    auto symbol=unique(parameters[i].pattern?"pattern_argument":parameters[i].name);
    scopes.back()[parameters[i].name]=symbol;definitions<<ctype(parameters[i].type)<<" "<<symbol;
   }
-  definitions<<") {\n";
+   definitions<<") {\n";
+   defer_stack=unique("defers");definitions<<pad()<<"on1x_defer_stack "<<defer_stack<<" = {0};\n(void)"<<defer_stack<<";\n";
   if(lambda){
    definitions<<pad()<<"(void)"<<context<<";\n";
    if(!lambda->expression->captures.empty()){
@@ -541,7 +547,8 @@ class Generator {
   for(const auto& parameter:parameters)if(parameter.pattern)
    bind_pattern(*parameter.pattern,parameter.type,ref(parameter.name));
   bool terminated=false;for(const auto& statement:statements)terminated=stmt(statement);
-  pop(!terminated);if(result==Type::Void&&!terminated)definitions<<"  return;\n";
+   if(!terminated)definitions<<pad()<<"on1x_defer_run(&"<<defer_stack<<");\n";
+   pop(!terminated);if(result==Type::Void&&!terminated)definitions<<"  return;\n";
   definitions<<"}\n\n";scopes.clear();owners.clear();
  }
  void adapter(const Function& f,const std::string& name){
@@ -591,5 +598,5 @@ public:
  }
 };
 }
-std::string emit_c(const Unit& unit,const std::string& source_name){(void)source_name;canonical::verify_control(unit);meta::require_core(unit);canonical::verify_values(unit);return Generator(unit).run();}
+std::string emit_c(const Unit& unit,const std::string& source_name){(void)source_name;canonical::verify_control(unit);meta::require_core(unit);canonical::verify_values(unit);verify_nominals(unit);return Generator(unit).run();}
 }

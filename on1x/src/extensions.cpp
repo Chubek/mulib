@@ -117,7 +117,8 @@ void expand(Unit& unit,const Options& options,const std::string& origin){
   if(hash(resolved.program)!=resolved.binary_hash||hash(resolved.schema)!=resolved.schema_hash)fail({origin},"bundled artifact changed during expansion");
   const auto& tree=result.items[3];
   if(!tree.items[2].items.empty()){
-   auto generated=decode(tree);
+    auto generated=decode(tree);
+    if(!generated.nominals.empty())fail({origin},"native declaration profile cannot generate nominal types");
    if(unit.functions.size()+generated_functions.size()+generated.functions.size()>2048)fail({origin},"generated function budget exhausted");
     for(auto& f:generated.functions){if(f.external||!f.attributes.empty())fail(f.where,"generated extern/attribute not admitted");f.extension_generated=true;generated_functions.push_back(std::move(f));}
   }

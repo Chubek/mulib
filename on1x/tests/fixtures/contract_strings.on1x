@@ -1,0 +1,11 @@
+# test_contract_strings.py prepends the generated reviewed-import module.
+fn main(){
+  println(on1x_safe_contract_text_size(""));
+  println(on1x_safe_contract_text_size("abc"));
+  let old=on1x_safe_contract_static_text(1);
+  println(on1x_safe_contract_static_text(0));
+  on1x_safe_contract_text_note(old, "static text");
+  println(old);
+  println(on1x_safe_contract_static_text(2));
+  println(on1x_safe_contract_text_size(on1x_safe_contract_static_text(1)));
+}

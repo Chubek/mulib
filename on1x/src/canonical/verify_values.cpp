@@ -10,12 +10,14 @@ namespace {
 using E=Expr::Kind;using S=Stmt::Kind;
 [[noreturn]] void fail(const Location& at,const std::string& text){throw Error(at,"ON1X-VALUES-VERIFY: "+text,"ON1X-VALUES-VERIFY");}
 struct State {
- std::set<const Stmt*> initialized;
+  std::set<const Stmt*> initialized;
+  std::set<const Stmt*> maybe_initialized;
  std::set<std::pair<std::size_t,std::string>> tags;
 };
 using Flow=std::optional<State>;
 State meet(const State& a,const State& b){
- State out;std::set_intersection(a.initialized.begin(),a.initialized.end(),b.initialized.begin(),b.initialized.end(),std::inserter(out.initialized,out.initialized.end()));
+  State out;std::set_intersection(a.initialized.begin(),a.initialized.end(),b.initialized.begin(),b.initialized.end(),std::inserter(out.initialized,out.initialized.end()));
+  std::set_union(a.maybe_initialized.begin(),a.maybe_initialized.end(),b.maybe_initialized.begin(),b.maybe_initialized.end(),std::inserter(out.maybe_initialized,out.maybe_initialized.end()));
  std::set_intersection(a.tags.begin(),a.tags.end(),b.tags.begin(),b.tags.end(),std::inserter(out.tags,out.tags.end()));return out;
 }
 Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b);}
@@ -26,7 +28,7 @@ class Verify {
  std::vector<Target> regions,loops;
  std::size_t serial=0,budget=262144,state_work=4*1024*1024;
  void tick(const Location& at,std::size_t depth){if(depth>520||!budget--)throw Error(at,"canonical value verification budget exhausted","ON1X-VALUES-LIMIT");}
- void charge(const State& state,const Location& at){auto size=state.initialized.size()+state.tags.size();if(size>state_work)throw Error(at,"canonical value flow-state budget exhausted","ON1X-VALUES-LIMIT");state_work-=size;}
+  void charge(const State& state,const Location& at){auto size=state.initialized.size()+state.maybe_initialized.size()+state.tags.size();if(size>state_work)throw Error(at,"canonical value flow-state budget exhausted","ON1X-VALUES-LIMIT");state_work-=size;}
  void source(const Location& at){if(at.file.empty()||at.file.size()>4096||!at.line||!at.column||at.offset>max_source_bytes||at.line>max_source_bytes+1||at.column>max_source_bytes+1)fail(at,"invalid canonical value source point");}
  const Local* find(const std::string& name)const{for(auto it=scopes.rbegin();it!=scopes.rend();++it)if(auto found=it->find(name);found!=it->end())return &found->second;return nullptr;}
  void bind(const std::string& name,Type type,bool mut,const Stmt* storage=nullptr){if(name.empty()||scopes.back().contains(name))fail(storage?storage->where:Location{"<canonical-values>"},"empty/duplicate canonical local");scopes.back()[name]={type,mut,storage,++serial};}
@@ -40,7 +42,7 @@ class Verify {
  }
  bool expression(const Expr& e,State& state,std::size_t depth){
   tick(e.where,depth);if(e.prototype)return true;
-  if(e.kind==E::PatternMatch||e.kind==E::Match||e.kind==E::Case)fail(e.where,"surface match reached the canonical verifier");
+   if(e.kind==E::PatternMatch||e.kind==E::Match||e.kind==E::Case||e.kind==E::Loop)fail(e.where,"surface value construct reached the canonical verifier");
   if(e.noreturn&&e.kind!=E::Region)fail(e.where,"non-returning metadata on an ordinary expression");
   if(e.kind==E::Region||e.kind==E::TagTest||e.kind==E::Payload||e.kind==E::Project||e.kind==E::Unit){source(e.where);if(e.callee||!e.parameters.empty()||!e.patterns.empty()||!e.labels.empty())fail(e.where,"extraneous canonical expression fields");}
   if(e.kind==E::Variable){auto binding=find(e.text);if(binding||e.reference==Expr::Reference::Local){if(!binding||e.reference!=Expr::Reference::Local||binding->type!=e.type)fail(e.where,"canonical local binding/type mismatch: "+e.text);if(binding->storage&&!state.initialized.contains(binding->storage))fail(e.where,"read of uninitialized canonical storage: "+e.text);}return true;}
@@ -84,14 +86,17 @@ class Verify {
     if(s.kind!=S::Region&&!s.body.empty())fail(s.where,"body on a canonical non-region statement");
     if((s.kind==S::Region||s.kind==S::Leave||s.kind==S::Trap)&&(!s.name.empty()||s.value||s.declared!=Type::Invalid))fail(s.where,"invalid canonical transfer/region shape");
    }
-   if(s.kind==S::Template){state=body(s.body,*state,depth+1,false);continue;}
+    if(s.kind==S::Template){state=body(s.body,*state,depth+1,false);continue;}
+    auto header_entry=s.kind==S::While?state:Flow{};
    if(s.value&&!expression(*s.value,*state,depth+1)){state.reset();continue;}
-   switch(s.kind){
+    switch(s.kind){
+    case S::Defer:fail(s.where,"unlowered defer");
+    case S::PushDefer:if(!s.value||s.value->type!=Type::function({},Type::Void))fail(s.where,"invalid deferred thunk");break;
    case S::Let:if(!s.value)fail(s.where,"missing binding value");if(s.pattern)pattern(*s.pattern,s.value->type);else bind(s.name,s.value->type,s.mutable_binding);break;
    case S::Storage:
     if(s.value||s.pattern||s.declared==Type::Invalid||s.declared==Type::Void||s.declared==Type::Json||s.declared==Type::JsonView||s.declared.has_holes()||s.declared.has_generics())fail(s.where,"invalid canonical storage declaration");
-    bind(s.name,s.declared,false,&s);state->initialized.erase(&s);break;
-   case S::Initialize:{auto b=find(s.name);if(!b||!b->storage||!s.value||b->type!=s.value->type||state->initialized.contains(b->storage))fail(s.where,"invalid or repeated canonical initialization");state->initialized.insert(b->storage);break;}
+     bind(s.name,s.declared,false,&s);state->initialized.erase(&s);state->maybe_initialized.erase(&s);break;
+    case S::Initialize:{auto b=find(s.name);if(!b||!b->storage||!s.value||b->type!=s.value->type||state->maybe_initialized.contains(b->storage))fail(s.where,"invalid or repeated canonical initialization");state->initialized.insert(b->storage);state->maybe_initialized.insert(b->storage);break;}
    case S::Assign:{auto b=find(s.name);if(!b||!b->mut)fail(s.where,"canonical assignment to missing/immutable binding");for(auto it=state->tags.begin();it!=state->tags.end();)if(it->first==b->id)it=state->tags.erase(it);else ++it;break;}
    case S::Expr:break;
    case S::Return:case S::Trap:state.reset();break;
@@ -105,12 +110,13 @@ class Verify {
     regions.push_back({s.control_target,{},{}});auto after=body(s.body,*state,depth+1);auto exits=std::move(regions.back().exits);regions.pop_back();for(const auto& exit:exits)after=merge(std::move(after),exit);state=std::move(after);break;
    }
    case S::Leave:{auto target=std::find_if(regions.rbegin(),regions.rend(),[&](const auto& r){return r.id==s.control_target;});if(target==regions.rend())fail(s.where,"region exit target missing");target->exits.push_back(*state);state.reset();break;}
-   case S::While:{
-    loops.push_back({s.control_target,{},{}});auto normal=body(s.body,*state,depth+1);for(const auto& c:loops.back().continues)normal=merge(std::move(normal),c);
-    if(normal)(void)body(s.otherwise,*normal,depth+1);
+    case S::While:{
+     std::set<const Stmt*> enclosing;for(const auto& scope:scopes)for(const auto& [name,local]:scope){(void)name;if(local.storage)enclosing.insert(local.storage);}
+     loops.push_back({s.control_target,{},{}});auto normal=body(s.body,*state,depth+1);for(const auto& c:loops.back().continues)normal=merge(std::move(normal),c);
+     if(normal){auto backedge=body(s.otherwise,*normal,depth+1);if(backedge)for(auto storage:enclosing)if(!header_entry->maybe_initialized.contains(storage)&&backedge->maybe_initialized.contains(storage))fail(s.where,"canonical storage initialized on a repeatable loop backedge");}
     auto exits=std::move(loops.back().exits);loops.pop_back();for(const auto& exit:exits)state=merge(std::move(state),exit);state->tags.clear();break;
    }
-   case S::Break:case S::Continue:{auto target=std::find_if(loops.rbegin(),loops.rend(),[&](const auto& r){return r.id==s.control_target;});if(target==loops.rend())fail(s.where,"loop target missing");(s.kind==S::Break?target->exits:target->continues).push_back(*state);state.reset();break;}
+    case S::Break:case S::Continue:{if(s.value)fail(s.where,"surface value exit reached the canonical verifier");auto target=std::find_if(loops.rbegin(),loops.rend(),[&](const auto& r){return r.id==s.control_target;});if(target==loops.rend())fail(s.where,"loop target missing");(s.kind==S::Break?target->exits:target->continues).push_back(*state);state.reset();break;}
    case S::Range:fail(s.where,"surface range in canonical values");
    case S::Template:break;
    }

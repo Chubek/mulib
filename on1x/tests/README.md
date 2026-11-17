@@ -2,6 +2,35 @@
 
 CTest registers independent tests with separate artifact directories:
 
+- `on1x.nominal_hir`: named declaration/type-reference wire round-trips,
+  nominal/phantom/forall identity, layout/catalog tampering, malformed binders,
+  transactional rejection and deterministic rechecking.
+- `on1x.nominal_adts`: actual nonrecursive records/parameterized enums through
+  strict C11, C/C++ separate translation units sharing a generated interface,
+  seeded Python result oracles, generic/forall/import identity, source-order
+  constructors, guarded/exhaustive matching, macros/staging/native and Python
+  PPX, closure capture cleanup/OOM and ownership/layout/budget/ABI negatives.
+  Not recursive ownership, separate On1x compilation or aggregate foreign ABI.
+
+- `on1x.nominal_hir`: declaration/type source-wire round-trip, nominal and phantom
+  identity, forall argument sharing, malformed wire/layout/catalog mutations,
+  transactional failure and deterministic rechecking.
+- `on1x.nominal_adts`: strict C11 execution of named records and parameterized
+  enums, generics/forall/imports, matching, value loops, macro hygiene/staging,
+  closure cleanup/OOM, C/C++ separate-TU aggregate calls using one generated
+  interface, seeded value oracles, output preservation, bounded layout failures
+  and MIR rejection. This is not recursive ownership or error propagation.
+
+- `on1x.value_loop_hir`: additive loop/value-break source-wire round-trip,
+  deterministic rechecking, result initialization, conditional/repeatable writes,
+  header/backedge mutations, nearest lexical targets and function boundaries.
+- `on1x.value_loops`: actual intrinsic expression loops through strict C11 and
+  plain/optimized MIR C11/evaluation/serialization; ten independent seeded search
+  oracles, nested/labeled exits, for latches, numeric/aggregate/closure results,
+  cleanup/fault injection/JSON, macros/identity PPX/staging/generics/imports,
+  raw separate-TU calls and unsupported profiles. This is not owning lists,
+  defer/typed errors, concurrency or nominal ADTs. See [value loops](../docs/value-loops.md).
+
 - `on1x.stdlib_extensions`: validated persistent Option/Result/maps/graphs, signed
   scanning and no-snapshot searches, canonical MuLIB data/hash adapters with
   recoverable errors, per-group C compilation, counted allocation/budget failure
@@ -168,6 +197,13 @@ CTest registers independent tests with separate artifact directories:
   hostile compile-command rejection, all 45 canonical functions, reproducible
   snapshots and artifact/source/manifest drift. SDK-only builds explicitly use
   synthetic metadata fixtures, not fabricated discovery or semantic review.
+- `on1x.contract_strings` (requires `ON1X_WITH_EXOML_EXTRACT` and
+  `ON1X_WITH_CHISEL`): real extracted immutable-string ABI, directional v4
+  evidence, checked On1x/C11 and separate-TU C/C++ execution, seeded byte-length
+  oracle, strict pointer signature/layout drift, review/lifetime/effect rejection,
+  null/byte-limit failures, multiline observations, checked build-helper use and
+  unsupported-MIR diagnostics. Review flags are synthetic test inputs only;
+  production standard-library adapters are not certified by these tests.
 - `on1x.scanner_parity` (generated builds only): deterministic cases comparing
   exact token bytes, offsets, line/column positions and errors. The test probes
   both scanners with hex-encoded token text, including comments, CRLF, escaped

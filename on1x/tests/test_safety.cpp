@@ -49,6 +49,16 @@ int main(){try{
  call.children[1]->type=on1x::Type::I64;
  rejects([&]{s::check(foreign,{},admitted);},"call parameter type drift");
  call.children[1]->type=on1x::Type::F64;call.type=on1x::Type::Bool;
- rejects([&]{s::check(foreign,{},admitted);},"call result drift");
+  rejects([&]{s::check(foreign,{},admitted);},"call result drift");
+  auto identity=std::string(64,'a'),name="on1x_ffi_"+identity+"_text";
+  auto evidence="on1x.admitted-extern/v4\nidentity "+identity+"\nextern "+name+" (borrowed_string) -> static_string\n";
+  auto text_admission=s::parse_admission(evidence);
+  if(!text_admission.at(name).immutable_strings)throw std::runtime_error("missing immutable string profile");
+  auto text_unit=on1x::parse(on1x::scan("extern fn "+name+"(x:string)->string;fn main(){println("+name+"(\"text\"));}","strings.on1x"));on1x::check(text_unit);
+  s::check(text_unit,{},text_admission);
+  auto legacy=text_admission;legacy.at(name).immutable_strings=false;
+  rejects([&]{s::check(text_unit,{},legacy);},"outside the scalar profile");
+  text_admission.at(name).result=on1x::Type::I64;
+  rejects([&]{s::check(text_unit,{},text_admission);},"admitted extern result drift");
  std::cout<<"Chisel resource lifetimes, external protocol models, joins, loops, cleanup and budgets PASS\n";
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

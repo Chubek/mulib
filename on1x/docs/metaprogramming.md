@@ -1,5 +1,12 @@
 # Typed hygienic macros, PPX and staging
 
+Nonrecursive [nominal declarations](nominal-adts.md) are intrinsic syntax.
+PPX v1 transports additive `NamedType` references and `NominalDeclaration`
+catalog entries under the `Declaration` superclass, never checked layouts.
+Both schemas and native/Python signature renderers agree; the compiler validates
+all reconstructed declarations/types after transforms. Category's pinned local
+scalar gateway still rejects nominal declaration output from its native processor.
+
 Category's opt-in native declaration gateway is an additive, syntax-only phase
 before loader export binding; it does not change ordinary v1 PPXs or macro
 hygiene. See [Category](category.md) for the explicit scalar subset, native
@@ -7,6 +14,10 @@ On1x libraries, transport, checking boundary and unsupported advanced features.
 
 Intrinsic [structural matching](core-syntax.md) crosses the v1 wire as additive
 source constructors `SourceMatch`, `MatchArm`, `StructuralPattern`, `UnitValue`.
+Intrinsic value loops additionally use `LoopValue` and `ValueBreak`, carrying
+source blocks/operands and lexical naming contexts, not checked target/result
+identities. Both canonical and standalone v1 schemas include these additive
+constructors; rebuild native processors rather than reinterpreting old schemas.
 Macros preserve pattern/arm lexical identities, including equal binder sets for
 or-pattern alternatives. PPX may transform source syntax, never inject canonical
 regions, initialization facts, tag-dominance proofs or resolved exit targets.

@@ -1,5 +1,55 @@
 # On1x capability matrix
 
+Current M2 task: Go-style function-scoped defer and typed `Result` propagation.
+Re-inspected MuLIB `7391d9e9d58e987ea234c64dbfd352c31f220537`; existing nominal,
+value-loop and immutable-string FFI edits are preserved. Baseline reruns and new
+acceptance evidence are pending. See `defer-errors.md` for the selected semantics;
+this does not authorize concurrency, general foreign owners or trap unwinding.
+
+Current M1 task: nonrecursive nominal records and parameterized enums, through
+the canonical frontend and C11 value representation. Baselines at the revisions
+below: GCC/generated 47/47, Clang/fallback 46/46 (`results-adts-baseline.xml`).
+The nonrecursive nominal slice now executes real source programs through C11;
+its final combined-tree validation is recorded in `../VERIFICATION.md`.
+Recursive/owning ADTs, lists, defer/error propagation and concurrency are not
+admitted by this task.
+
+Nominal-data final combined-tree suites: GCC/generated **49/49**, Clang/fallback
+**48/48**, SDK **58/58**, SDK ASan/UBSan **58/58** (including generated programs;
+no findings). Focused Release/fallback/native-off **8/8**. Commands, historical
+failures and unsupported profiles are preserved in `../VERIFICATION.md`.
+
+Earlier value-loop continuation: re-inspected MuLIB
+`7391d9e9d58e987ea234c64dbfd352c31f220537` and unchanged LibStone
+`55755485acaded7c4ed804c0946bc8c7363f6763`. Scope: intrinsic expression
+`loop`, typed `break with`, lexical targets and existing cleanup/C11/MIR paths.
+Owning lists, defer/typed errors, concurrency and nominal ADTs remain pending;
+this slice does not add syntax-only implementations or broader safety claims.
+
+Value-loop combined-tree validation: GCC/generated **47/47**, Clang/fallback **46/46**,
+SDK **56/56**, SDK ASan/UBSan **56/56** (generated programs instrumented; no
+findings), focused GCC Release/fallback/native-off **6/6**. Exact configurations,
+commands and historical failed attempts are preserved in `../VERIFICATION.md`.
+
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| Nonrecursive nominal declarations (M1 slice) | `src/{parser,type,nominal,infer,sema,loader,ppx_ast}.cpp`, `include/on1x/{ast,type,nominal}.hpp` | Existing bounded by-value C11 structs/tags; exact catalog/layout validation at backend ingress; no new runtime/foreign ABI | Named records/parameterized enums, inferred invariant arguments/phantoms, generic/forall functions, declared-catalog matching, imported type identity | `test_nominal_adts.{cpp,py}`, `examples/nominal_adts.on1x`; strict C11/C++ cross-TU, seeded oracles, hygiene/staging/PPX/imports, capture/OOM, malformed-HIR/wire and resource/budget negatives; exact results in `../VERIFICATION.md` | EXECUTABLE | Recursive/managed fields, owning/drop semantics, aggregate MIR/SDK models, separate compilation and other targets |
+| Value-producing loops | `src/{parser,infer,sema}.cpp`, `src/canonical/{control,values,verify_values}.cpp`, source transforms | Existing C11 lexical RC/JSON cleanup and scalar/numeric tuple MIR slots/edges; no ABI change | `loop` expressions, labeled/typed `break with` joins; void on bare break; possible/definite initialization and backedge verification | `test_value_loops.{cpp,py}`, `examples/value_loops.on1x`; C11/MIR oracles, mutation/wire/import/generic/macro/PPX/staging/closure/JSON/fault tests; exact matrix in `../VERIFICATION.md` | EXECUTABLE | General bottom type, unique-resource transfer, aggregate/managed MIR and broader SDK models |
+| Owning lists / iterator drop protocol | Existing persistent `sexpr` facades only | No native typed owning-list ABI/drop protocol | No intrinsic list type/construction/cons patterns | Existing unsupported-profile fixtures | ABSENT | Parametric/recursive layout and ownership/drop semantics; not implemented in this slice |
+| Go-style defer / typed recoverable propagation (M2 task) | `src/{parser,infer,sema,codegen}.cpp`, canonical values, runtime | Planned bounded function-owned LIFO stack and explicit typed error-return edges | `defer call;` and `Result` postfix `?`; specification in `defer-errors.md` | Baselines/new acceptance pending | DESIGNED | Implement capture/lifecycle/error paths and C11 validation; general owners/exception/cancellation semantics remain unsupported |
+| Recursive / owning nominal ADTs | Nonrecursive declaration catalog only | No box/recursive allocation/drop ABI | Recursive declarations reject, including indirect/phantom cycles | `test_nominal_adts.{cpp,py}` recursive/managed rejection cases | ABSENT | Boxing, ownership/drop semantics and recursive layout/lifetime evidence |
+
+## M2 continuation: immutable C-string admission
+
+Baseline: MuLIB `7391d9e9d58e987ea234c64dbfd352c31f220537`, configured
+LibStone `55755485acaded7c4ed804c0946bc8c7363f6763`. This slice extends the
+existing reviewed scalar admission, not the general ownership/FFI profile.
+
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| Reviewed immutable C strings | `tools/on1x-bind.cpp`, `src/safety.cpp`, `include/on1x/safety.hpp` | Exact `const char *`, bounded call-scoped inputs and non-null immutable static results; exit 72 on null/limit failure | Existing `string`; directional v4 admission evidence | `test_contract_strings.py`, `test_safety.cpp`; isolated GCC/generated 50/50, Clang/fallback 49/49, Clang/generated ASan/UBSan 50/50; commands in `../VERIFICATION.md` | EXECUTABLE | No independently reviewed standard bridge contracts; owned/retained buffers, allocation/error/effect lowering unsupported |
+| General standard bridge safe exports | `stdlib/_bridge/`, `contracts-exoml/` | Existing bounded raw adapters | Existing raw externs/status tuples | Historical bridge tests below | PARTIAL | Reviewed contracts, owned-resource/effect lowering; not promoted by this slice |
+
 Structural-match continuation: MuLIB
 `9090e643e11051e000b3bcc68ebc777dfe07776a`, pinned LibStone
 `55755485acaded7c4ed804c0946bc8c7363f6763` unchanged. Shared structural patterns,
@@ -79,7 +129,7 @@ and execution evidence, not deletion of platform/environment guards.
 |---|---|---|---|---|---|---|
 | Generalized structural matching (G2 bounded profile) | `src/{parser,patterns,infer,sema}.cpp`, `src/canonical/{values,verify_values}.cpp`, loader/macro/PPX/staging adapters | Existing by-value/RC C11 and lexical cleanup; scalar/numeric tuple MIR | Guards, or/as, wildcard/rest, tuples, closed sums, records, exact arrays/snapshot slices; finite coverage/redundancy | `test_patterns.{cpp,py}`, source example, seeded MIR/C11 oracle, wire/mutation/fault/JSON tests | EXECUTABLE | Owning lists, refutable let/parameters, nominal/parametric/recursive constructors, aggregate/managed MIR and broader SDK models |
 | Typed decision/initialization regions | `src/canonical/{values,verify_values}.cpp`, `src/{codegen,safety,type_safety}.cpp`, `src/backend/lower.cpp` | Existing C11 scopes/cleanup and MIR slots/branches/jumps; no runtime/ABI addition | Surface matches erased; independent initialized-local/type/tag-domination/region checks; private nodes not PPX constructors | HIR mutation rejection, transactional lowering, idempotence, guard traps, nested return/break/continue and for-latch regression | EXECUTABLE | Full effect/ownership/error/suspension Core; no general bottom type |
-| Intrinsic statement loop control (G1/G2) | `src/{parser,sema,infer,codegen}.cpp`, `src/canonical/control.cpp`, `src/backend/lower.cpp`, SDK adapters | Existing C11 lexical ownership cleanup; explicit MIR branches/jumps | Statement loop/for-C, lexical labels/exits; checked targets/latches across macros/PPX/staging | `test_control.{cpp,py}`, closure allocator/JSON cleanup, MIR/oracles/wire/HIR negatives | EXECUTABLE | Value loops, general iterator protocol, full effect/cleanup Core |
+| Intrinsic statement loop control (G1/G2) | `src/{parser,sema,infer,codegen}.cpp`, `src/canonical/control.cpp`, `src/backend/lower.cpp`, SDK adapters | Existing C11 lexical ownership cleanup; explicit MIR branches/jumps | Statement loop/for-C, lexical labels/exits; checked targets/latches across macros/PPX/staging | `test_control.{cpp,py}`, closure allocator/JSON cleanup, MIR/oracles/wire/HIR negatives | EXECUTABLE | General iterator protocol and full effect/cleanup Core; expression-loop values are a subsequent slice above |
 | Intrinsic i64 ranges | `grammar/On1x.g`, `src/lexer_fallback.cpp`, `src/{parser,canonical/control}.cpp` | Checked C11 i64; inclusive completion before increment | Once-evaluated ascending `..`/`..=` bounds; immutable iteration binding | Scanner parity, extrema/reversed/zero bounds, MIR/C11 seeded oracle | EXECUTABLE | Other scalar ranges, custom steps and general iterator/drop protocol |
 | Category native protocols (M0/M1) | `src/extensions.cpp`, `src/{parser,loader,cli}.cpp`, `stdppx/native/protocols.on1x`, `stdlib/ppx/category/` | Native bootstrap processor, trusted registry/SHA256 pinning, ordinary HIR/MIR/C11 selectors | Module-local concrete scalar protocols/witnesses; generic balanced carriers; normal post-expansion typing | `test_category.py`, actual Eq/ordering clients, malformed packet/type/coherence/import/relocation tests | EXECUTABLE | Typed feedback, qualified generics, imported evidence/interfaces, associated types, functors/sealing and ownership auto protocols |
 | Generated/fallback scanning | `grammar/On1x.g`, `src/lexer*.cpp` | Bounded token callback | Functional syntax, decimal floats and typed numeric suffixes | `test_scanner.cpp`, `scanner_parity.py` | EXECUTABLE | Broader malformed-input/target certification |

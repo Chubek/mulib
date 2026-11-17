@@ -16,7 +16,7 @@ struct Symbol {
  }
 };
 struct Names {
- std::map<std::string,Symbol> values,syntax;
+ std::map<std::string,Symbol> values,syntax,types;
  std::map<std::string,Module*> modules;
 };
 struct Module {
@@ -43,7 +43,7 @@ class Loader {
  fs::path entry_directory;
  std::map<fs::path,std::unique_ptr<Module>> modules;
  std::vector<Module*> order,stack,preludes;
- std::set<std::string> tokens,globals;
+  std::set<std::string> tokens,globals,type_globals;
  std::string prefix="on1x_module_";
  std::size_t bytes=0,bindings=0,edges=0;
  bool implicit=false;
@@ -66,7 +66,8 @@ class Loader {
  }
  void merge(Names& into,const Names& from,const Location& at){
   for(const auto& [name,symbol]:from.values){value_alias(into,name,at);insert(into.values,name,symbol,at);}
-  for(const auto& [name,symbol]:from.syntax){value_alias(into,name,at);insert(into.syntax,name,symbol,at);}
+   for(const auto& [name,symbol]:from.syntax){value_alias(into,name,at);insert(into.syntax,name,symbol,at);}
+   for(const auto& [name,symbol]:from.types){value_alias(into,name,at);insert(into.types,name,symbol,at);}
   for(const auto& [name,m]:from.modules)bind_module(into,name,m,at);
  }
   fs::path candidate(const fs::path& base,const Location& at){
@@ -115,7 +116,7 @@ class Loader {
  }
  void bind_module(Names& names,const std::string& alias,Module* target,const Location& at){
   auto first=alias.substr(0,alias.find('.'));
-  if(names.values.contains(first)||names.syntax.contains(first))throw Error(at,"module alias conflicts with declaration: "+first);
+   if(names.values.contains(first)||names.syntax.contains(first)||names.types.contains(first))throw Error(at,"module alias conflicts with declaration: "+first);
   for(const auto& [other,m]:names.modules){
    (void)m;
    if(other!=alias&&(alias.starts_with(other+".")||other.starts_with(alias+".")))
@@ -152,7 +153,8 @@ class Loader {
     }
     extensions::expand(m->unit,options.extensions,path.string());
   }
-  for(const auto& f:m->unit.functions){
+   for(const auto& d:m->unit.nominals)insert(m->names.types,d.name,Symbol{m,d.name},d.where);
+   for(const auto& f:m->unit.functions){
    if(is_intrinsic_name(f.name))throw Error(f.where,"intrinsic name cannot be redefined: "+f.name);
    // PPX cfg may select between declarations with the same name. Retain both
    // AST declarations; the normal post-PPX checker rejects remaining duplicates.
@@ -177,7 +179,8 @@ class Loader {
     bool found=false;
     if(!self_package){
      if(auto it=target->names.values.find(name);it!=target->names.values.end()){value_alias(m->names,alias,imp.where);insert(m->names.values,alias,it->second,imp.where);found=true;}
-     if(auto it=target->names.syntax.find(name);it!=target->names.syntax.end()){value_alias(m->names,alias,imp.where);insert(m->names.syntax,alias,it->second,imp.where);found=true;}
+      if(auto it=target->names.syntax.find(name);it!=target->names.syntax.end()){value_alias(m->names,alias,imp.where);insert(m->names.syntax,alias,it->second,imp.where);found=true;}
+      if(auto it=target->names.types.find(name);it!=target->names.types.end()){value_alias(m->names,alias,imp.where);insert(m->names.types,alias,it->second,imp.where);found=true;}
      if(auto it=target->names.modules.find(name);it!=target->names.modules.end()){bind_module(m->names,alias,it->second,imp.where);found=true;}
     }
     if(found)continue;
@@ -196,13 +199,13 @@ class Loader {
  using Scope=std::set<std::string>;
  void bind(Scope& scope,const Pattern& p){pattern_bindings(p,[&](const Pattern& name){scope.insert(name.name);});}
  void parameters(Scope& scope,const std::vector<Param>& ps){for(const auto& p:ps){if(p.pattern)bind(scope,*p.pattern);else scope.insert(p.name);}}
- void reference(std::string& text,const Location& at,const Names& names,const Scope& locals,bool syntax){
+  void reference(std::string& text,const Location& at,const Names& names,const Scope& locals,bool syntax,bool type=false){
   auto dot=text.find('.');auto first=text.substr(0,dot);
   if(locals.contains(first)){
    if(dot!=std::string::npos)throw Error(at,"qualified reference is shadowed by local binding: "+first);
    return;
   }
-  const auto& symbols=syntax?names.syntax:names.values;
+   const auto& symbols=type?names.types:syntax?names.syntax:names.values;
   if(auto it=symbols.find(text);it!=symbols.end()){text=name(it->second);return;}
   if(dot!=std::string::npos){
    // Longest bound prefix, followed by explicitly imported/re-exported modules.
@@ -210,7 +213,7 @@ class Loader {
     auto it=names.modules.find(text.substr(0,cut));if(it==names.modules.end())continue;
     std::string member=text.substr(cut+1);auto* module=it->second;
     while(true){
-     const auto& exports=syntax?module->names.syntax:module->names.values;
+     const auto& exports=type?module->names.types:syntax?module->names.syntax:module->names.values;
      if(auto symbol=exports.find(member);symbol!=exports.end()){text=name(symbol->second);return;}
      bool descended=false;
      for(auto split=member.rfind('.');split!=std::string::npos;split=split?member.rfind('.',split-1):std::string::npos){
@@ -224,10 +227,26 @@ class Loader {
    throw Error(at,"unknown module qualifier: "+text);
   }
   if(names.modules.contains(text))throw Error(at,"module is not a first-class value: "+text);
-  if(globals.contains(text)&&!is_intrinsic_name(text))throw Error(at,"name is not imported in this module: "+text);
+   if(!type&&globals.contains(text)&&!is_intrinsic_name(text))throw Error(at,"name is not imported in this module: "+text);
+   if(type&&type_globals.contains(text))throw Error(at,"type is not imported in this module: "+text);
   // Unknown unqualified names remain for the ordinary checker, or a PPX which
   // generates globals (derive/test). The loader never infers types or effects.
- }
+  }
+  Type type_reference(const Type& t,const Location& at,const Names& names){
+   if(t.kind()==Type::Named){
+    auto text=t.nominal();reference(text,at,names,{},false,true);
+    std::vector<Type> args;for(const auto& a:t.arguments())args.push_back(type_reference(a,at,names));
+    return Type::named(std::move(text),std::move(args));
+   }
+   if(t.is_forall())return Type::for_all(t.generic_identity(),type_reference(t.body(),at,names));
+   if(t.is_code())return Type::code(type_reference(t.code_result(),at,names));
+   if(t.is_function()){std::vector<Type> args;for(const auto& p:t.parameters())args.push_back(type_reference(p,at,names));return Type::function(std::move(args),type_reference(t.result(),at,names));}
+   if(t.is_tuple()||t.is_data()){
+    std::vector<Type> fields;for(const auto& f:t.elements())fields.push_back(type_reference(f,at,names));
+    return t.is_tuple()?Type::tuple(std::move(fields)):Type::data(t.kind(),std::move(fields),t.labels(),t.extent());
+   }
+   return t;
+  }
  void macro(Macro& m,const Names& names,const Scope& values,const Scope& syntax){
   auto pattern=[&](auto&& self,MacroParameter& p)->void{
    if(p.literal)expression(*p.literal,names,values,syntax);
@@ -241,7 +260,9 @@ class Loader {
    body(rule.body,names,values,syntax);
   }
  }
- void expression(Expr& e,const Names& names,const Scope& values,const Scope& syntax){
+  void expression(Expr& e,const Names& names,const Scope& values,const Scope& syntax){
+   e.result=type_reference(e.result,e.where,names);
+   for(auto& p:e.parameters)p.type=type_reference(p.type,p.where,names);
   if(e.kind==Expr::Kind::Variable)reference(e.text,e.where,names,values,false);
   if(e.kind==Expr::Kind::MacroCall){
    auto dot=e.text.find('.');
@@ -269,8 +290,9 @@ class Loader {
  void body(std::vector<Stmt>& statements,const Names& names,const Scope& outer,const Scope& syntax){
   if(statements.empty())return;
   auto values=outer;
-   for(auto& s:statements){
-    if((s.kind==Stmt::Kind::Break||s.kind==Stmt::Kind::Continue)&&s.label.empty()){
+    for(auto& s:statements){
+     s.declared=type_reference(s.declared,s.where,names);
+     if((s.kind==Stmt::Kind::Break||s.kind==Stmt::Kind::Continue)&&!s.value&&s.label.empty()){
      std::string spelling=s.kind==Stmt::Kind::Break?"break":"continue";
      if(values.contains(spelling)||names.values.contains(spelling)){
       s.kind=Stmt::Kind::Expr;s.value=std::make_unique<Expr>();s.value->kind=Expr::Kind::Variable;s.value->text=spelling;s.value->where=s.where;
@@ -296,7 +318,8 @@ public:
   // Pick an identifier prefix absent from every token, including local binders.
   while(std::any_of(tokens.begin(),tokens.end(),[&](const auto& t){return t.starts_with(prefix);}))prefix+="m_";
   Names flat;for(auto* m:order)if(m->legacy)merge(flat,m->names,{m->path.string()});
-  for(auto* m:order)for(const auto& f:m->unit.functions)globals.insert(name({m,f.name,f.external}));
+   for(auto* m:order)for(const auto& f:m->unit.functions)globals.insert(name({m,f.name,f.external}));
+   for(auto* m:order)for(const auto& d:m->unit.nominals)type_globals.insert(name({m,d.name}));
   LoadedUnit result;std::map<std::string,const Function*> externs;std::set<std::string> lazy;
   // Reserve storage so pointers used for identical raw-extern admission stay valid.
   std::size_t count=0;for(auto* m:order)count+=m->unit.functions.size();
@@ -307,9 +330,15 @@ public:
    for(auto it=preludes.rbegin();it!=preludes.rend();++it){
     auto* prelude=*it;
     for(const auto& [key,symbol]:prelude->names.values)if(!names.values.contains(key)&&!module_bound(names,key))insert(names.values,key,symbol,{m->path.string()});
-    for(const auto& [key,symbol]:prelude->names.syntax)if(!names.syntax.contains(key)&&!module_bound(names,key))insert(names.syntax,key,symbol,{m->path.string()});
+     for(const auto& [key,symbol]:prelude->names.syntax)if(!names.syntax.contains(key)&&!module_bound(names,key))insert(names.syntax,key,symbol,{m->path.string()});
+     for(const auto& [key,symbol]:prelude->names.types)if(!names.types.contains(key)&&!module_bound(names,key))insert(names.types,key,symbol,{m->path.string()});
    }
-   for(auto& f:m->unit.functions){
+    for(auto& d:m->unit.nominals){
+     for(auto& field:d.fields)field=type_reference(field,d.where,names);
+     d.name=name({m,d.name});result.unit.nominals.push_back(std::move(d));
+    }
+    for(auto& f:m->unit.functions){
+     f.result=type_reference(f.result,f.where,names);for(auto& p:f.params)p.type=type_reference(p.type,p.where,names);
     Scope locals;parameters(locals,f.params);body(f.body,names,locals,{});
     for(auto& attr:f.attributes)expression(*attr,names,locals,{});
     f.name=name({m,f.name,f.external});

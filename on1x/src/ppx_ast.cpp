@@ -10,6 +10,8 @@ using K=Expr::Kind;
 SExpr form(const std::string& tag,std::vector<SExpr> fields={}){fields.insert(fields.begin(),symbol(tag));return list(std::move(fields));}
 SExpr loc(const Location& at){return form("Loc",{string(at.file),symbol(std::to_string(at.offset)),symbol(std::to_string(at.line)),symbol(std::to_string(at.column))});}
 SExpr type(const Type& t){
+ if(t.kind()==Type::Named){std::vector<SExpr> args;for(const auto& a:t.arguments())args.push_back(type(a));return form("NamedType",{string(t.nominal()),list(std::move(args))});}
+ if(!t.nominal().empty())throw std::runtime_error("PPX cannot transport checked nominal layouts");
  if(t.is_data()){
   std::vector<SExpr> labels,fields;for(const auto& label:t.labels())labels.push_back(string(label));for(const auto& field:t.elements())fields.push_back(type(field));
   auto kind=t.kind()==Type::Record?"record":t.kind()==Type::Sum?"sum":t.kind()==Type::Array?"array":"slice";
@@ -51,9 +53,11 @@ SExpr extension(const Expr& e,bool attribute){
  return form(attribute?"Attribute":"ExtensionExpr",{string(e.text),string(literal_value(e.children.at(0)->text)),list(std::move(args)),loc(e.where)});
 }
 SExpr expression(const Expr& e){
+ if(e.kind==K::Propagate)return form("Propagate",{expression(*e.children.at(0)),loc(e.where)});
   auto at=loc(e.where);
  if(e.kind==K::PatternMatch){std::vector<SExpr> arms;for(std::size_t i=1;i<e.children.size();++i){const auto& arm=*e.children[i];arms.push_back(form("MatchArm",{pattern(arm.patterns.at(0)),expression(*arm.children.at(0)),block(arm.body,arm.where),expression(*arm.children.at(1)),loc(arm.where)}));}return form("SourceMatch",{string(e.text),expression(*e.children.at(0)),list(std::move(arms)),symbol(e.statement_match?"true":"false"),std::move(at)});}
- if(e.kind==K::Unit)return form("UnitValue",{std::move(at)});
+  if(e.kind==K::Unit)return form("UnitValue",{std::move(at)});
+  if(e.kind==K::Loop)return form("LoopValue",{string(e.text),symbol(std::to_string(e.context)),block(e.body,e.where),std::move(at)});
  if(e.kind>=K::Record&&e.kind<=K::Length){
   static const char* names[]={"record","variant","match","array","field","index","slice","length"};
   auto index=static_cast<std::size_t>(e.kind)-static_cast<std::size_t>(K::Record);
@@ -85,6 +89,7 @@ SExpr expression(const Expr& e){
 SExpr statement(const Stmt& s){
  auto at=loc(s.where);
  switch(s.kind){
+ case Stmt::Kind::Defer:return form("Defer",{expression(*s.value),at});
  case Stmt::Kind::Let:
   return s.pattern?form("LetPattern",{pattern(*s.pattern),type(s.declared),expression(*s.value),std::move(at)}):form(s.mutable_binding?"Var":"Let",{string(s.name),type(s.declared),expression(*s.value),std::move(at)});
  case Stmt::Kind::Assign:return form("Assign",{string(s.name),expression(*s.value),std::move(at)});
@@ -94,7 +99,9 @@ SExpr statement(const Stmt& s){
    if(!s.label.empty()||s.label_context||!s.otherwise.empty())return form("ControlWhile",{string(s.label),symbol(std::to_string(s.label_context)),expression(*s.value),block(s.body,s.where),block(s.otherwise,s.where),std::move(at)});
    return form("While",{expression(*s.value),block(s.body,s.where),std::move(at)});
   case Stmt::Kind::Range:return form("RangeLoop",{string(s.name),expression(*s.value),symbol(s.inclusive?"true":"false"),string(s.label),symbol(std::to_string(s.label_context)),block(s.body,s.where),std::move(at)});
-  case Stmt::Kind::Break:case Stmt::Kind::Continue:return form("LoopExit",{string(s.kind==Stmt::Kind::Break?"break":"continue"),string(s.label),symbol(std::to_string(s.label_context)),std::move(at)});
+   case Stmt::Kind::Break:case Stmt::Kind::Continue:
+    if(s.value){if(s.kind!=Stmt::Kind::Break)throw Error(s.where,"continue cannot carry a value");return form("ValueBreak",{string(s.label),symbol(std::to_string(s.label_context)),expression(*s.value),std::move(at)});}
+    return form("LoopExit",{string(s.kind==Stmt::Kind::Break?"break":"continue"),string(s.label),symbol(std::to_string(s.label_context)),std::move(at)});
  case Stmt::Kind::Block:return form("Scope",{block(s.body,s.where),std::move(at)});
  case Stmt::Kind::Expr:return form("Do",{expression(*s.value),std::move(at)});
  default:throw Error(s.where,"inferred templates cannot be sent to PPX");
@@ -108,6 +115,11 @@ Location location(const SExpr& n){return {field(n,0).text,number(field(n,1)),num
 [[noreturn]] void invalid(const SExpr& n,const std::string& message){throw Error(n.where,"PPX AST reconstruction: "+message);}
 Type read_type(const SExpr& n,bool inferred=false,std::size_t bound=0){
   const auto& k=tag(n);
+ if(k=="NamedType"){
+  std::vector<Type> args;for(const auto& a:field(n,1).items)args.push_back(read_type(a,false,bound));
+  if(args.size()>32)invalid(n,"nominal type argument limit exceeded");
+  return Type::named(field(n,0).text,std::move(args));
+ }
  if(k=="ValueDataType"){
   auto name=field(n,0).text;auto kind=name=="record"?Type::Record:name=="sum"?Type::Sum:name=="array"?Type::Array:name=="slice"?Type::Slice:Type::Invalid;
   std::vector<std::string> labels;std::set<std::string> unique;std::vector<Type> fields;
@@ -165,7 +177,9 @@ std::vector<Param> read_parameters(const SExpr& n){
 std::vector<Stmt> read_block(const SExpr& n);
 ExprPtr read_expression(const SExpr& n){
   const auto& k=tag(n);auto e=std::make_unique<Expr>();e->where=location(n.items.back());
-   if(k=="UnitValue")e->kind=K::Unit;
+     if(k=="UnitValue")e->kind=K::Unit;
+     else if(k=="Propagate"){e->kind=K::Propagate;e->children.push_back(read_expression(field(n,0)));}
+    else if(k=="LoopValue"){e->kind=K::Loop;e->text=field(n,0).text;e->context=number(field(n,1));e->body=read_block(field(n,2));if(!e->text.empty())base_schema().validate(string(e->text),"Name","$.loop_label");}
    else if(k=="SourceMatch"){
     e->kind=K::PatternMatch;e->text=field(n,0).text;e->statement_match=field(n,3).text=="true";if(!e->text.empty())base_schema().validate(string(e->text),"Name","$.match_binding");e->children.push_back(read_expression(field(n,1)));
     if(field(n,2).items.size()>256)invalid(n,"match arm limit exceeded");
@@ -176,7 +190,9 @@ ExprPtr read_expression(const SExpr& n){
     auto found=std::find(names.begin(),names.end(),field(n,0).text);if(found==names.end())invalid(n,"unknown data expression kind");
     e->kind=static_cast<K>(static_cast<std::size_t>(K::Record)+static_cast<std::size_t>(found-names.begin()));e->text=field(n,1).text;
     for(const auto& label:field(n,2).items)e->labels.push_back(label.text);
-    e->result=read_type(field(n,3));for(const auto& c:field(n,4).items)e->children.push_back(read_expression(c));
+     e->result=read_type(field(n,3));for(const auto& c:field(n,4).items)e->children.push_back(read_expression(c));
+     if(e->kind==K::Record&&e->result!=Type::Void&&e->result.kind()!=Type::Named)invalid(n,"named record annotation must be a named reference");
+     if(e->kind!=K::Record&&e->kind!=K::Variant&&e->result!=Type::Void)invalid(n,"unexpected data expression annotation");
     std::size_t arity=e->children.size();
     if(e->labels.size()>256||arity>257)invalid(n,"data expression width limit exceeded");
     if(e->kind==K::Record&&arity!=e->labels.size())invalid(n,"record field/label arity mismatch");
@@ -221,15 +237,17 @@ std::vector<Stmt> read_block(const SExpr& n){
    }else if(k=="RangeLoop"){
     s.kind=Stmt::Kind::Range;s.name=field(c,0).text;s.value=read_expression(field(c,1));s.inclusive=field(c,2).text=="true";s.label=field(c,3).text;s.label_context=number(field(c,4));s.body=read_block(field(c,5));
     if(s.value->kind!=K::Tuple||s.value->children.size()!=2)invalid(c,"range requires exactly two bounds");
-   }else if(k=="LoopExit"){
+    }else if(k=="LoopExit"){
     auto operation=field(c,0).text;if(operation!="break"&&operation!="continue")invalid(c,"unknown loop exit operation");
-    s.kind=operation=="break"?Stmt::Kind::Break:Stmt::Kind::Continue;s.label=field(c,1).text;s.label_context=number(field(c,2));
+     s.kind=operation=="break"?Stmt::Kind::Break:Stmt::Kind::Continue;s.label=field(c,1).text;s.label_context=number(field(c,2));
+    }else if(k=="ValueBreak"){
+     s.kind=Stmt::Kind::Break;s.label=field(c,0).text;s.label_context=number(field(c,1));s.value=read_expression(field(c,2));
    }
   else if(k=="Return"||k=="ReturnVoid"){s.kind=Stmt::Kind::Return;if(k=="Return")s.value=read_expression(field(c,0));}
   else if(k=="If"||k=="While"){
    s.kind=k=="If"?Stmt::Kind::If:Stmt::Kind::While;s.value=read_expression(field(c,0));s.body=read_block(field(c,1));if(k=="If")s.otherwise=read_block(field(c,2));
   }else if(k=="Scope"){s.kind=Stmt::Kind::Block;s.body=read_block(field(c,0));}
-  else if(k=="Do"){s.kind=Stmt::Kind::Expr;s.value=read_expression(field(c,0));}
+   else if(k=="Do"||k=="Defer"){s.kind=k=="Do"?Stmt::Kind::Expr:Stmt::Kind::Defer;s.value=read_expression(field(c,0));}
   else invalid(c,"unhandled statement extension "+k);
    if(!s.label.empty())base_schema().validate(string(s.label),"Name","$.loop_label");
    body.push_back(std::move(s));
@@ -240,6 +258,10 @@ SExpr encode(const Unit& unit){
  if(!unit.extensions.empty())throw Error(unit.extensions.front().where,"ON1X-CAT-PPX: declaration carriers require native expansion (inspection does not execute processors)","ON1X-CAT-PPX");
  if(!unit.macros.empty())throw Error(unit.macros.front().where,"expand macros before PPX encoding");
  std::vector<SExpr> functions;
+ for(const auto& d:unit.nominals){
+  std::vector<SExpr> params,labels,fields;for(const auto& p:d.parameters)params.push_back(string(p));for(const auto& l:d.labels)labels.push_back(string(l));for(const auto& f:d.fields)fields.push_back(type(f));
+  functions.push_back(form("NominalDeclaration",{string(d.kind==Type::Record?"record":"enum"),string(d.name),list(std::move(params)),list(std::move(labels)),list(std::move(fields)),loc(d.where)}));
+ }
  for(const auto& f:unit.functions){
   std::vector<SExpr> attributes;for(const auto& a:f.attributes)attributes.push_back(extension(*a,true));
   if(f.external)functions.push_back(form("Extern",{string(f.name),parameters(f.params),type(f.result),list(std::move(attributes)),loc(f.where)}));
@@ -248,7 +270,16 @@ SExpr encode(const Unit& unit){
 }
 Unit decode(const SExpr& tree){
  base_schema().validate(tree);
- Unit unit;for(const auto& n:field(tree,1).items){Function f;f.where=location(n.items.back());
+ Unit unit;for(const auto& n:field(tree,1).items){
+  if(tag(n)=="NominalDeclaration"){
+   NominalDeclaration d;d.where=location(n.items.back());auto kind=field(n,0).text;d.kind=kind=="record"?Type::Record:kind=="enum"?Type::Sum:Type::Invalid;d.name=field(n,1).text;
+   for(const auto& p:field(n,2).items)d.parameters.push_back(p.text);
+   for(const auto& l:field(n,3).items)d.labels.push_back(l.text);
+   if(d.parameters.size()>32||field(n,4).items.size()>256||unit.nominals.size()>=4096)invalid(n,"nominal declaration budget exceeded");
+   for(const auto& f:field(n,4).items)d.fields.push_back(read_type(f,false,d.parameters.size()));
+   unit.nominals.push_back(std::move(d));continue;
+  }
+  Function f;f.where=location(n.items.back());
   f.external=tag(n)=="Extern";if(!f.external&&tag(n)!="Function")invalid(n,"unhandled declaration extension "+tag(n));
   f.name=field(n,0).text;f.params=read_parameters(field(n,1));f.result=read_type(field(n,2));
   if(!f.external)f.body=read_block(field(n,3));

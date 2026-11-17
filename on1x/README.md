@@ -6,12 +6,23 @@ original native processors and contracts are preserved.
 
 ## Language implementation continuation
 
+The M2 [immutable C-string FFI slice](docs/ffi-strings.md) extends existing
+review-gated admission with exact call-scoped inputs and immutable static
+results, directional Chisel evidence and null/byte-limit checks. It does not
+certify or relabel the shipped raw MuLIB adapters; independent contract review
+and general ownership/effect lowering remain blockers.
+
 Intrinsic [core control and matching](docs/core-syntax.md) implements a G1/G2
 slice of `ON1X_CORE_SYNTAX_ADDITIONS.md`: statement loops, checked i64 ranges,
 lexical exits, and guarded structural `match ... with` statements/expressions.
 Typed decision regions execute through C11; scalar/numeric tuple matches also
-execute through existing MIR. Loop values, owning lists, cleanup/error syntax
-and concurrency remain unsupported; the specification is not complete.
+execute through existing MIR. Intrinsic [value loops](docs/value-loops.md) now
+add `loop` expressions and typed `break [label] with value` joins, including
+existing lexical cleanup. The next [nominal-data slice](docs/nominal-adts.md)
+adds nonrecursive named records and parameterized enums, with exact module/type
+argument identity and C11 execution (`examples/nominal_adts.on1x`). Recursive or
+owning ADTs, owning lists, defer/error propagation and concurrency remain
+unsupported; the specification is not complete.
 
 Category now has an executable **M0/M1 local scalar slice**: `@enable Protocols`
 invokes a bundled native On1x-authored processor for `@extension Protocols { ... }`

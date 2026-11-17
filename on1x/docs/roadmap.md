@@ -9,7 +9,7 @@
 | Fallback lexer | Implemented and tested | Bootstraps without LibStone |
 | Scanner parity and token lifetime | Verified P0 subset | Deterministic byte/offset/error corpus, including macro/PPX/staging/dotted syntax; repeated and concurrent scan tests |
 | Parser / typed AST | Implemented functional subset | Functions, tuples/patterns, explicit universal types, scopes, control flow, imports |
-| Intrinsic core additions G1/G2 | Executable control/matching slice | Loop/for-C/i64 ranges, labels/exits, guarded structural matches and typed decision/initialization verification; C11 plus scalar/tuple MIR; no loop values, owning lists/iterators, defer/errors or concurrency; [manual](core-syntax.md) |
+| Intrinsic core additions G1/G2 | Executable control/matching/value-loop slice | Loop/for-C/i64 ranges, labels/exits, guarded structural matches and typed value-loop joins/initialization verification; C11 plus scalar/tuple MIR; nominal-data continuation below; no owning lists/iterators, defer/error propagation or concurrency; [manual](core-syntax.md), [value loops](value-loops.md) |
 | Module loader / pervasive environment | Implemented compile-time namespaces | Named/selective/relative imports, aliases, packages, canonical deduplication, bounded cycles, demand-loaded prelude and relocatable installation; [manual](modules.md) |
 | MuLIB native housekeeping | Implemented bounded kernel/fixture planning | `std.mulib` metadata/byte access and size checks; shared one-TU planning, fixture/provider/native companion linkage, fingerprints and relocatable bundles; [manual](../std/mulib/README.md) |
 | Frontend input limits | Implemented and tested | 2 MiB per file; 256-level parsing/HIR limits including lambdas; bounded capture metadata |
@@ -38,6 +38,7 @@
 | JSON/Vec/Parsec contract inventory | 45 unreviewed source annotations | All 20/7/18 core declarations covered; conditional transfers, borrows, errors, effects, callbacks/unknown obligations retained; not safe imports |
 | ExoML raw scalar adapter emitter | Optional, narrow tested subset | Signed/unsigned integers, `_Bool`, binary32 `float`, binary64 `double`, void result; exact C11 signature/type/size/alignment/format/range checks and full manifests; explicitly unsafe |
 | Reviewed scalar-only safe admission | Executable optional M2 prerequisite | v1 signed-integer compatibility; v2 bool/f64; v3 unsigned/f32. All-or-nothing reviewed ExoML profile, generated facade/evidence, Chisel use-site admission and strict executable target boundary gate; no pointers/resources/errors/callbacks/aggregates; [manual](contracts.md) |
+| Reviewed immutable C-string admission | Executable optional M2 slice | v4 direct `const char *`, immutable call borrows/static results, directional use-site evidence and bounded boundary checks; no owned/retained buffers or promoted bridge contracts; [manual](ffi-strings.md) |
 | General C FFI adapters | Not implemented | Needs pointer/buffer/aggregate ABI, recoverable errors, ownership/lifetime lowering, callbacks and target matrix |
 | Chisel resource checking | Opt-in scalar/JSON usage subset | Real solver plus conservative joins, token-use and exit/reinitialization checks; generic external resource CFG API; [manual](memory-safety.md) |
 | Nerotypical structural verification | Opt-in concrete HIR checker | Real TypeGraph/Satie EUF obligations for calls, closures, tuples, staging and resources; explicit universals reject; separate patched source SDK; [manual](type-safety.md) |
@@ -45,7 +46,8 @@
 | Wetstone / general foreign ownership lowering | Not implemented | Contract-driven external handle types, ABI, alias/extent and effect proofs remain open |
 | Flintstone/Firestone native lowering | Not implemented | C11 is the sole backend |
 | Value data model (M1 slice) | Executable by-value C11 subset | Structural records with canonical labels, closed sums with exhaustive `match`, `array<T,N>` and owning `slice` snapshots, bounds-checked access with exit-70 errors; no MIR lowering, mutation, borrowed/dynamic arrays, derives or foreign aggregate ABI; [contract](data-model.md) |
-| ADTs, match, functors | Value-data subset only | Closed structural sums with exhaustive elimination exist; recursive nominal ADTs, type parameters, guarded/refutable patterns and functors remain future features |
+| Nonrecursive nominal records/enums | Executable bounded C11 profile | Invariant parameters (including phantoms), inferred arguments, generic specialization/forall, constructor catalogs, exhaustive structural matching and imported type identity; independently reconstructed layouts; [manual](nominal-adts.md) |
+| Recursive/owning ADTs, functors | Not implemented | Boxing, resource-bearing fields, ownership/drop analysis, recursive layouts and signatures/functors remain absent |
 | Plaid/Prolific integration | Not implemented | Future concurrency and profiling features |
 
 ## Immediate next iterations

@@ -12,11 +12,18 @@ struct TypeShape;
 // nothing refers to the scanner arena or foreign CDecl type IDs.
 class Type {
 public:
- enum Kind { Invalid, I64, Bool, String, Void, Json, JsonView, Function, Hole, Tuple, Generic, Bound, Forall, Code, SExpr, Buffer, F64, Record, Sum, Array, Slice, F32, U8, U16, U32, U64 };
+ enum Kind { Invalid, I64, Bool, String, Void, Json, JsonView, Function, Hole, Tuple, Generic, Bound, Forall, Code, SExpr, Buffer, F64, Record, Sum, Array, Slice, F32, U8, U16, U32, U64, Named };
  Type(Kind kind = Invalid);
  static Type function(std::vector<Type> parameters, Type result);
  static Type tuple(std::vector<Type> elements);
  static Type data(Kind kind,std::vector<Type> elements,std::vector<std::string> labels={},std::size_t extent=0);
+ // Named is a source reference. Checked nominal values retain their ordinary
+ // Record/Sum representation plus invariant identity/arguments.
+ static Type named(std::string name,std::vector<Type> arguments={});
+ Type with_nominal(std::string name,std::vector<Type> arguments) const;
+ const std::string& nominal() const;
+ const std::vector<Type>& arguments() const;
+ bool has_names() const;
  bool is_data() const { return kind_==Record||kind_==Sum||kind_==Array||kind_==Slice; }
  bool is_unsigned() const { return kind_>=U8&&kind_<=U64; }
  bool is_float() const { return kind_==F32||kind_==F64; }

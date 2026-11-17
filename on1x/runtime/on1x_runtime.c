@@ -44,6 +44,19 @@ void on1x_env_release(on1x_env *environment){
  draining=false;
 }
 static void arithmetic_error(const char *what){fprintf(stderr,"On1x arithmetic error: %s\n",what);exit(70);}
+struct on1x_defer_record {on1x_defer_record *next;void (*invoke)(on1x_env *);on1x_env *environment;};
+void on1x_defer_push(on1x_defer_stack *stack,void (*invoke)(on1x_env *),on1x_env *environment){
+ on1x_defer_record *record;
+ if(stack->count>=4096)environment_error("defer registration limit exceeded");
+ record=(on1x_defer_record *)ON1X_ENV_MALLOC(sizeof(*record));
+ if(!record)environment_error("defer allocation failure");
+ on1x_env_retain(environment);record->invoke=invoke;record->environment=environment;record->next=stack->head;stack->head=record;++stack->count;
+}
+void on1x_defer_run(on1x_defer_stack *stack){
+ while(stack->head){on1x_defer_record *record=stack->head;stack->head=record->next;--stack->count;
+  record->invoke(record->environment);on1x_env_release(record->environment);ON1X_ENV_FREE(record);
+ }
+}
 int64_t on1x_add_i64(int64_t a,int64_t b){
 #if defined(__GNUC__) || defined(__clang__)
  int64_t c;if(__builtin_add_overflow(a,b,&c))arithmetic_error("addition overflow");return c;

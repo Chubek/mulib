@@ -1,10 +1,22 @@
 # On1x architecture and trust boundaries
 
+`src/nominal.cpp` validates the source declaration graph before layout expansion
+and reconstructs nonrecursive nominal record/sum representations independently
+of inference. Names/arguments remain invariant metadata on existing value-data
+types; source `Named` references are never an admitted backend type. C11/MIR
+ingress verifies catalog/layout consistency. See [the profile](nominal-adts.md).
+
 The [intrinsic control bridge](core-syntax.md) canonicalizes statement ranges
 after source transforms/staging and resolves loop exits before type checking.
 It reassigns identities after specialization and independently verifies targets,
 source points and function boundaries before C11/MIR or SDK admission. This is
 not the full cleanup/effect/suspension Core proposed by the broader specification.
+
+Value-loop expressions now use this same pipeline: control normalization resolves
+their lexical targets, ordinary inference/checking joins break operands, and
+value lowering erases them to while/region/initialize/leave operations. Definite
+and possible initialization checks protect result joins and repeatable backedges.
+No separate execution IR or runtime was introduced; see [value loops](value-loops.md).
 
 `src/patterns.cpp` extends the shared name/tuple pattern model with structural
 matching and bounded finite-constructor coverage. After inference/sema,

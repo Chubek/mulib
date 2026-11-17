@@ -5,10 +5,10 @@
 #include <algorithm>
 
 namespace on1x {
-struct TypeShape { std::vector<Type> children; Type result; bool holes, functions, generics, foralls; std::vector<std::string> labels{}; std::size_t extent=0; };
+struct TypeShape { std::vector<Type> children; Type result; bool holes, functions, generics, foralls; std::vector<std::string> labels{}; std::size_t extent=0; std::string nominal{}; std::vector<Type> arguments{}; };
 
 Type::Type(Kind kind):kind_(kind) {
- if(kind == Function || kind == Tuple || kind == Forall || kind == Code || is_data()) throw std::logic_error("composite type requires a shape");
+ if(kind == Function || kind == Tuple || kind == Forall || kind == Code || kind==Named || is_data()) throw std::logic_error("composite type requires a shape");
 }
 Type::Type(Kind kind, std::shared_ptr<const TypeShape> shape)
   :kind_(kind),shape_(std::move(shape)) {}
@@ -51,6 +51,27 @@ Type Type::data(Kind kind,std::vector<Type> elements,std::vector<std::string> la
  return Type(kind,std::make_shared<const TypeShape>(TypeShape{std::move(elements),Type::Invalid,holes,functions,generics,foralls,std::move(labels),extent}));
 }
 const std::vector<std::string>& Type::labels() const{if(!is_data())throw std::logic_error("non-data type has no labels");return shape_->labels;}
+Type Type::named(std::string name,std::vector<Type> arguments){
+ if(name.empty())throw std::logic_error("empty named type reference");
+ bool holes=false,functions=false,generics=false,foralls=false;
+ for(const auto& a:arguments){holes|=a.has_holes();functions|=a.has_functions();generics|=a.has_generics();foralls|=a.has_foralls();}
+ return Type(Named,std::make_shared<const TypeShape>(TypeShape{{},Type::Invalid,holes,functions,generics,foralls,{},0,std::move(name),std::move(arguments)}));
+}
+Type Type::with_nominal(std::string name,std::vector<Type> arguments) const{
+ if((kind_!=Record&&kind_!=Sum)||name.empty())throw std::logic_error("nominal identity requires a record/sum");
+ auto shape=std::make_shared<TypeShape>(*shape_);shape->nominal=std::move(name);shape->arguments=std::move(arguments);
+ for(const auto& a:shape->arguments){shape->holes|=a.has_holes();shape->generics|=a.has_generics();shape->foralls|=a.has_foralls();}
+ return Type(kind_,std::move(shape));
+}
+const std::string& Type::nominal() const{static const std::string empty;return shape_?shape_->nominal:empty;}
+const std::vector<Type>& Type::arguments() const{static const std::vector<Type> empty;return shape_?shape_->arguments:empty;}
+bool Type::has_names() const{
+ if(kind_==Named)return true;
+ if(!shape_)return false;
+ for(const auto& c:shape_->children)if(c.has_names())return true;
+ for(const auto& a:shape_->arguments)if(a.has_names())return true;
+ return shape_->result.has_names();
+}
 std::size_t Type::extent() const{if(!is_data())throw std::logic_error("non-data type has no extent");return shape_->extent;}
 bool Type::has_foralls() const{return shape_&&shape_->foralls;}
 bool Type::has_generics() const{return kind_==Generic||(shape_&&shape_->generics);}
@@ -72,6 +93,8 @@ std::strong_ordering Type::operator<=>(const Type& other) const {
  if(auto order = kind_ <=> other.kind_; order != 0) return order;
  if(kind_==Generic||kind_==Bound||kind_==Forall){if(auto order=variable_ <=> other.variable_;order!=0)return order;}
  if(!shape_ || shape_ == other.shape_) return std::strong_ordering::equal;
+ if(auto order=nominal()<=>other.nominal();order!=0)return order;
+ if(auto order=arguments()<=>other.arguments();order!=0)return order;
  if(is_data()){
   if(auto order=extent()<=>other.extent();order!=0)return order;
   if(auto order=labels()<=>other.labels();order!=0)return order;
@@ -84,6 +107,11 @@ std::strong_ordering Type::operator<=>(const Type& other) const {
 bool Type::operator==(const Type& other) const { return (*this <=> other) == 0; }
 
 std::string type_name(const Type& type) {
+ if(!type.nominal().empty()){
+  std::string name=type.nominal();
+  if(!type.arguments().empty()){name+="<";for(std::size_t i=0;i<type.arguments().size();++i){if(i)name+=", ";name+=type_name(type.arguments()[i]);}name+=">";}
+  return name;
+ }
  switch(type.kind()) {
   case Type::I64:return "i64";
    case Type::F64:return "f64";
@@ -147,7 +175,8 @@ bool match_forall(const Type& schema,const Type& instance,bool rigid){
    auto [found,inserted]=substitutions.emplace(pattern.generic_identity(),actual);
    return inserted||found->second==actual;
   }
-   if(pattern.kind()!=actual.kind())return false;
+    if(pattern.kind()!=actual.kind()||pattern.nominal()!=actual.nominal()||pattern.arguments().size()!=actual.arguments().size())return false;
+    for(std::size_t i=0;i<pattern.arguments().size();++i)if(!self(self,pattern.arguments()[i],actual.arguments()[i]))return false;
    if(pattern.is_code())return self(self,pattern.code_result(),actual.code_result());
   if(pattern.is_function()){
    if(pattern.parameters().size()!=actual.parameters().size()||!self(self,pattern.result(),actual.result()))return false;

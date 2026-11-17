@@ -28,8 +28,9 @@ MacroCaptures MacroRules::duplicate(const MacroCaptures& source,const Location& 
  }return source;
 }
 std::string MacroRules::category(const Expr& e)const{
+ if(e.kind==K::Propagate)return "Expression";
  if(e.kind>=K::Record&&e.kind<=K::Length)return "DataExpression";
- if(e.kind==K::PatternMatch)return "DataExpression";
+  if(e.kind==K::PatternMatch||e.kind==K::Loop)return "DataExpression";
  if(e.kind==K::Case)return "MatchArm";
  if(e.kind==K::Unit)return "Literal";
  switch(e.kind){
@@ -76,7 +77,7 @@ void MacroRules::validate(const MacroRule& rule){
   auto name_driver=[&](const std::string& name){auto found=declarations_for_rule.variables.find(name);return found!=declarations_for_rule.variables.end()&&found->second.rank>depth;};
   auto pattern_driver=[&](auto&& visit,const Pattern& p)->bool{if(name_driver(p.name))return true;for(const auto& c:p.elements)if(visit(visit,c))return true;return false;};
    for(const auto& p:e.parameters)if(name_driver(p.name)||(p.pattern&&pattern_driver(pattern_driver,*p.pattern)))return true;
-   if(e.kind==K::PatternMatch&&name_driver(e.text))return true;
+    if((e.kind==K::PatternMatch||e.kind==K::Loop)&&name_driver(e.text))return true;
    for(const auto& p:e.patterns)if(pattern_driver(pattern_driver,p))return true;
   auto body=[&](auto&& visit,const std::vector<Stmt>& b)->bool{for(const auto& s:b){if(s.value&&self(self,*s.value,depth))return true;if(name_driver(s.name)||(s.pattern&&pattern_driver(pattern_driver,*s.pattern)))return true;if(visit(visit,s.body)||visit(visit,s.otherwise))return true;}return false;};
   return body(body,e.body);
@@ -93,7 +94,7 @@ void MacroRules::validate(const MacroRule& rule){
    if(!schema.subtype(found->second.declaration->category,expected))fail(e.where,"template variable "+e.text+" has category "+found->second.declaration->category+", expected "+expected);
   }else if(!schema.subtype(category(e),expected))fail(e.where,"template construct has category "+category(e)+", expected "+expected);
    for(const auto& p:e.parameters){if(p.pattern)pat(pat,*p.pattern,depth);else binding(p.name,depth,p.where);}
-   if(e.kind==K::PatternMatch)binding(e.text,depth,e.where);
+    if(e.kind==K::PatternMatch||e.kind==K::Loop)binding(e.text,depth,e.where);
    for(const auto& p:e.patterns)pat(pat,p,depth);
   if(e.callee)self(self,*e.callee,depth,"Expression",false);
   bool list=e.kind==K::Tuple||e.kind==K::Call||e.kind==K::MacroCall||e.kind==K::Extension||e.kind==K::SyntaxList||e.kind==K::SyntaxVector;
@@ -217,7 +218,8 @@ void MacroRules::substitute(Expr& e,const MacroCaptures& captures,std::size_t ma
  tick(e.where);
  if(e.kind==K::SyntaxHole){auto replacement=clone(value(e.text,captures,path,e.where));e=std::move(*replacement);return;}
   if(e.kind==K::Variable)name(e.text,e.context,captures,path,mark,e.where);
-  if(e.kind==K::PatternMatch&&!e.text.empty())name(e.text,e.context,captures,path,mark,e.where);
+   if(e.kind==K::PatternMatch&&!e.text.empty())name(e.text,e.context,captures,path,mark,e.where);
+   if(e.kind==K::Loop){if(e.text.empty())e.context=mark;else name(e.text,e.context,captures,path,mark,e.where);}
    for(auto& p:e.patterns)pattern(p,captures,path,mark);
  if(e.kind==K::MacroCall)e.context=mark;
  for(auto& p:e.parameters){if(p.pattern)pattern(*p.pattern,captures,path,mark);else name(p.name,p.context,captures,path,mark,p.where);}

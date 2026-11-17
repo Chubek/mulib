@@ -1,8 +1,16 @@
 # On1x language reference — implemented milestone
 
 The intrinsic [control/matching increment](core-syntax.md) adds statement loops,
-ascending i64 ranges, lexical loop exits, and guarded structural match statements
-and expressions. It does not complete the core-syntax specification.
+ascending i64 ranges, lexical loop exits, guarded structural match statements
+and expressions, and [value loops](value-loops.md) with typed `break with`
+results. It does not complete the core-syntax specification.
+
+Intrinsic [nominal declarations](nominal-adts.md) add module-level
+`record Point { x:i64, y:i64 }` and `enum Option<T> { None, Some(T) }`.
+Use `record<Point>{x:40,y:2}` or `variant<Option<i64>>(Some,42)`;
+empty payloads are `record{}` and multi-field payloads are tuples. Type arguments
+and nominal identities remain exact through inference, imports and C11. Only
+nonrecursive, bounded, trivially copied fields are admitted.
 
 ## Lexical conventions
 

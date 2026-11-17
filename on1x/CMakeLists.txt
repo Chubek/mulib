@@ -68,7 +68,7 @@ configure_file(cmake/ppx_schema.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/ppx_schema.h
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS stdppx/category/features.sexpr)
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/category/features.sexpr" ON1X_EXTENSION_REGISTRY)
 configure_file(cmake/extensions_registry.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/extensions_registry.hpp" @ONLY)
-add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/infer.cpp src/sema.cpp src/codegen.cpp
+add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/infer.cpp src/sema.cpp src/codegen.cpp
   src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp src/extensions.cpp src/extensions_hash.c src/canonical/control.cpp src/patterns.cpp src/canonical/values.cpp src/canonical/verify_values.cpp
   src/backend/mir.cpp src/backend/lower.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp)
 target_include_directories(on1x_frontend PUBLIC include)
@@ -327,8 +327,14 @@ if(BUILD_TESTING)
   add_executable(on1x_pattern_tests tests/test_patterns.cpp)
   target_link_libraries(on1x_pattern_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.pattern_hir COMMAND on1x_pattern_tests)
+  add_executable(on1x_value_loop_tests tests/test_value_loops.cpp)
+  target_link_libraries(on1x_value_loop_tests PRIVATE on1x_frontend)
+   add_test(NAME on1x.value_loop_hir COMMAND on1x_value_loop_tests)
+   add_executable(on1x_nominal_tests tests/test_nominal_adts.cpp)
+   target_link_libraries(on1x_nominal_tests PRIVATE on1x_frontend)
+   add_test(NAME on1x.nominal_hir COMMAND on1x_nominal_tests)
   set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules libraries stdppx install mulib stdlib_extensions f64 unsigned_f32 numeric_limits)
-  list(APPEND _meta_tests category control patterns)
+   list(APPEND _meta_tests category control patterns value_loops nominal_adts)
   add_test(NAME on1x.stdppx_protocol COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/tests" -v)
   if(ON1X_WITH_EXOTRACT)
     add_test(NAME on1x.exotract COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exotract.py"
@@ -360,6 +366,13 @@ if(BUILD_TESTING)
       "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/contracts-sdk" "${CMAKE_C_COMPILER}"
       "$<TARGET_FILE:on1x-bind>" ${_contract_extract_test} ${_test_c_flags})
     set_tests_properties(on1x.contracts_sdk PROPERTIES TIMEOUT 240)
+    if(ON1X_WITH_EXOML_EXTRACT AND ON1X_WITH_CHISEL)
+      add_test(NAME on1x.contract_strings COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_contract_strings.py" "$<TARGET_FILE:on1xc>"
+        "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/contract-strings" "${CMAKE_C_COMPILER}"
+        "$<TARGET_FILE:on1x-bind>" ${_test_c_flags})
+      set_tests_properties(on1x.contract_strings PROPERTIES TIMEOUT 180)
+    endif()
   endif()
   if(ON1X_GENERATED_FRONTEND)
     add_test(NAME on1x.scanner_parity COMMAND "${Python3_EXECUTABLE}"

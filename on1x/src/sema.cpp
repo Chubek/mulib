@@ -4,6 +4,7 @@
 #include <on1x/canonical/control.hpp>
 #include <on1x/canonical/values.hpp>
 #include <on1x/patterns.hpp>
+#include <on1x/nominal.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/numeric.hpp>
 #include <charconv>
@@ -48,7 +49,8 @@ namespace {
 struct Binding { Type type; bool is_mutable; std::size_t scope; };
 class Checker {
  std::vector<std::pair<std::size_t,bool>> regions;
- Unit& unit;
+  Unit& unit;
+  NominalCatalog catalog;
  std::map<std::string,const Function*> funcs;
  std::map<std::string,Type> signatures;
  std::set<Type> checked_types;
@@ -82,10 +84,14 @@ class Checker {
   }
  }
   static bool resource(Type t){return t==Type::Json||t==Type::JsonView;}
-  std::size_t value_width(const Type& t,const Location& at,std::size_t depth=0){
-   if(depth>32)fail(at,"data value nesting exceeds 32-level limit");
-    if(t.is_numeric()||t==Type::Bool||t.kind()==Type::Generic)return 1;
+  struct LoopValue {std::size_t target;Type type=Type::Invalid;bool bare=false;};
+  std::vector<LoopValue> loop_values;
+   std::size_t value_width(const Type& t,const Location& at,std::size_t depth=0){
+    catalog.verify(t,at);
+    if(depth>32)fail(at,"data value nesting exceeds 32-level limit");
+     if(t.is_numeric()||t==Type::Bool||t.kind()==Type::Generic||t.kind()==Type::Bound)return 1;
    if(!t.is_tuple()&&!t.is_data())fail(at,"value data fields and match results require trivially copied types");
+   for(const auto& a:t.arguments())(void)value_width(a,at,depth+1);
    std::size_t width=1;
    if(t.kind()==Type::Array||t.kind()==Type::Slice){
     auto child=value_width(t.elements()[0],at,depth+1);auto count=std::max<std::size_t>(1,t.extent());
@@ -98,7 +104,8 @@ class Checker {
    return width;
   }
  void equal(Type actual,Type expected,const Location& loc){if(actual!=expected)throw Error(loc,std::string("expected ")+type_name(expected)+", got "+type_name(actual),"ON1X-TYPE");}
-  void validate_type(const Type& type,const Location& loc){
+   void validate_type(const Type& type,const Location& loc){
+    catalog.verify(type,loc);
    if(type.has_holes())fail(loc,"unresolved inference hole in checked type");
     if(type.is_forall()){validate_type(type.body(),loc);return;}
     if(type.is_code()){
@@ -181,7 +188,15 @@ class Checker {
  }
  Type check_expr(Expr& e){
   auto child=[&](std::size_t i){return check_expr(*e.children.at(i));};
-     switch(e.kind){
+      switch(e.kind){
+      case Expr::Kind::Propagate:{
+       if(e.children.size()!=1)fail(e.where,"propagation requires one operand");
+       auto input=child(0);if(input.kind()!=Type::Sum||input.nominal().empty())fail(e.where,"propagation requires a nominal Result");
+       catalog.result(input.nominal(),e.where);
+       if(returns.kind()!=Type::Sum||returns.nominal()!=input.nominal())fail(e.where,"propagation requires the same nominal Result return declaration");
+       equal(input.arguments().at(1),returns.arguments().at(1),e.where);e.result=returns;
+       return e.type=input.arguments().at(0);
+      }
      case Expr::Kind::Splice:case Expr::Kind::Lift:fail(e.where,"MSP stage lowering required before checking");
      case Expr::Kind::Quote:{
       if(!unit.stages_lowered)fail(e.where,"MSP quotation requires stage lowering");
@@ -228,7 +243,11 @@ class Checker {
      }
     return e.type=Type::String;
      case Expr::Kind::Variable:return resolve_name(e);
-     case Expr::Kind::Unit:if(!e.children.empty()||!e.body.empty())fail(e.where,"malformed unit value");return e.type=Type::Void;
+      case Expr::Kind::Unit:if(!e.children.empty()||!e.body.empty())fail(e.where,"malformed unit value");return e.type=Type::Void;
+      case Expr::Kind::Loop:{
+       loop_values.push_back({e.control_target});(void)check_block(e.body);auto exits=loop_values.back();loop_values.pop_back();
+       e.noreturn=false;auto result=exits.bare||exits.type==Type::Invalid?Type{Type::Void}:exits.type;validate_type(result,e.where);return e.type=result;
+      }
      case Expr::Kind::PatternMatch:{
       if(e.children.size()<2)fail(e.where,"empty match is not exhaustive");
       auto t=check_expr(*e.children[0]);if(t==Type::Void)fail(e.where,"match scrutinee cannot be void");push();if(!e.text.empty())define(e.text,t,false,e.where);
@@ -271,13 +290,13 @@ class Checker {
       parameters.push_back(parameter.type);
      }
      auto type=Type::function(std::move(parameters),e.result);validate_type(type,e.where);
-     e.captures.clear();auto previous_returns=returns;
+      e.captures.clear();auto previous_returns=returns;auto previous_loops=std::move(loop_values);loop_values.clear();
       lambdas.push_back({&e,scopes.size(),{}});push();returns=e.result;
       for(const auto& parameter:e.parameters){
        if(parameter.pattern)bind_pattern(*parameter.pattern,parameter.type);
        else define(parameter.name,parameter.type,false,parameter.where);
       }
-     bool complete=check_block(e.body,false);pop();lambdas.pop_back();returns=previous_returns;
+      bool complete=check_block(e.body,false);pop();lambdas.pop_back();returns=previous_returns;loop_values=std::move(previous_loops);
      if(e.result!=Type::Void&&!complete)fail(e.where,"not all paths return in anonymous function");
      return e.type=std::move(type);
     }
@@ -285,7 +304,12 @@ class Checker {
       std::vector<Type> fields;for(auto& c:e.children)fields.push_back(check_expr(*c));
       if(fields.size()!=e.labels.size())fail(e.where,"record field/label arity mismatch");
       std::set<std::string> names;for(const auto& label:e.labels)if(!names.insert(label).second)fail(e.where,"duplicate record field: "+label);
-      auto t=Type::data(Type::Record,std::move(fields),e.labels);validate_type(t,e.where);return e.type=t;
+       auto t=Type::data(Type::Record,std::move(fields),e.labels);
+       if(e.result!=Type::Void){
+        catalog.verify(e.result,e.where);if(e.result.kind()!=Type::Record||e.result.nominal().empty())fail(e.where,"named record constructor requires a declared record");
+        equal(t,Type::data(Type::Record,e.result.elements(),e.result.labels()),e.where);t=e.result;
+       }
+       validate_type(t,e.where);return e.type=t;
      }
      case Expr::Kind::Array:{
       if(e.type.kind()!=Type::Array||e.type.extent()!=e.children.size())fail(e.where,"array requires an inferred fixed element type and extent");
@@ -356,7 +380,14 @@ class Checker {
  }
  bool check_block(std::vector<Stmt>& body,bool owns_scope=true){if(owns_scope)push();bool guarantees=false;
   for(auto& s:body){if(guarantees)fail(s.where,"unreachable statement after return or loop exit");
-   switch(s.kind){
+    switch(s.kind){
+     case Stmt::Kind::PushDefer:equal(check_expr(*s.value),Type::function({},Type::Void),s.where);break;
+     case Stmt::Kind::Defer:{
+      if(!s.value||s.value->kind!=Expr::Kind::Call)fail(s.where,"defer requires a call expression");
+      auto t=check_expr(*s.value);if(resource(t))fail(s.where,"defer cannot discard a JSON owner/view");
+      for(const auto& a:s.value->children)if(resource(a->type))fail(a->where,"defer cannot retain JSON owners/views");
+      break;
+     }
     case Stmt::Kind::Template:{
      check_block(s.body,false);
      auto type=check_expr(*s.value);validate_type(type,s.where);
@@ -387,7 +418,17 @@ class Checker {
      guarantees=true;break;}
     case Stmt::Kind::If:{equal(check_expr(*s.value),Type::Bool,s.where);bool yes=check_block(s.body),no=check_block(s.otherwise);guarantees=yes&&!s.otherwise.empty()&&no;break;}
      case Stmt::Kind::While:{equal(check_expr(*s.value),Type::Bool,s.where);(void)check_block(s.body);(void)check_block(s.otherwise);break;}
-     case Stmt::Kind::Break:case Stmt::Kind::Continue:guarantees=true;break;
+      case Stmt::Kind::Break:{
+       auto target=std::find_if(loop_values.rbegin(),loop_values.rend(),[&](const auto& l){return l.target==s.control_target;});
+       if(target==loop_values.rend()){if(s.value)fail(s.where,"value-carrying exit requires an expression loop target");}
+       else{
+        auto index=static_cast<std::size_t>(target.base()-loop_values.begin()-1);
+        if(s.value){auto type=check_expr(*s.value);if(resource(type))fail(s.where,"loop exits cannot transfer or discard unique JSON resources/views");if(!s.value->noreturn){if(loop_values[index].type==Type::Invalid)loop_values[index].type=type;else equal(type,loop_values[index].type,s.where);}}
+        else loop_values[index].bare=true;
+       }
+       guarantees=true;break;
+      }
+      case Stmt::Kind::Continue:guarantees=true;break;
      case Stmt::Kind::Range:fail(s.where,"range was not canonicalized");
      case Stmt::Kind::Storage:validate_type(s.declared,s.where);if(s.declared==Type::Void||resource(s.declared))fail(s.where,"invalid canonical storage type");define(s.name,s.declared,false,s.where);break;
      case Stmt::Kind::Initialize:equal(check_expr(*s.value),find(s.name,s.where).type,s.where);break;
@@ -405,7 +446,7 @@ class Checker {
   return guarantees;
  }
  public:
- explicit Checker(Unit& u):unit(u){}
+ explicit Checker(Unit& u):unit(u),catalog(u){}
   void run(){
    if(unit.functions.empty())fail({"<unit>"},"missing main function");
     for(auto& f:unit.functions){

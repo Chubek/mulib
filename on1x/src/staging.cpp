@@ -58,7 +58,8 @@ class Lowering {
   }
   if(e.callee)expression(*e.callee,level);
   for(auto& c:e.children)expression(*c,level);
-  if(e.kind==K::Lambda){scopes.emplace_back();for(const auto& p:e.parameters){if(p.pattern)bind(*p.pattern,level);else bind(p.name,level);}body(e.body,level,false);scopes.pop_back();}
+   if(e.kind==K::Lambda){scopes.emplace_back();for(const auto& p:e.parameters){if(p.pattern)bind(*p.pattern,level);else bind(p.name,level);}body(e.body,level,false);scopes.pop_back();}
+   else if(e.kind==K::Loop)body(e.body,level);
  }
 public:
  explicit Lowering(Unit& u):unit(u){}

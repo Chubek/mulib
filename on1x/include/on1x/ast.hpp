@@ -59,7 +59,7 @@ struct Expr {
   enum class Kind { Integer, Float, Boolean, String, Variable, Unary, Binary, Call, Lambda, Tuple, PolyPack, PolyProjection,
                     MacroCall, SyntaxHole, SyntaxBlock, Extension, SyntaxList, SyntaxVector, SyntaxKeyword,
                      Quote, Splice, Lift, Run, SyntaxLet, Record, Variant, Match, Array, Field, Index, Slice, Length,
-                     PatternMatch, Case, Unit, Region, TagTest, Payload, Project } kind;
+                       PatternMatch, Case, Unit, Region, TagTest, Payload, Project, Loop, Propagate } kind;
  enum class Reference { Unresolved, Local, Function, Extern, Intrinsic } reference = Reference::Unresolved;
  Location where;
  std::string text;
@@ -67,7 +67,8 @@ struct Expr {
   std::vector<Pattern> patterns;
   bool statement_match=false;
   bool noreturn=false; // Checked control result, never source/PPX authority.
- std::size_t context=0;
+  std::size_t context=0;
+  std::size_t control_target=0; // Source Loop only; recomputed after transforms.
  std::vector<ExprPtr> children;
  std::vector<ExprPtr> proofs; // Universality checks only; never runtime operands.
  std::size_t projection = 0;
@@ -86,7 +87,7 @@ struct Expr {
 };
 struct Stmt {
   enum class Kind { Let, Assign, Return, If, While, Expr, Block, Template, Range, Break, Continue,
-                    Storage, Initialize, Region, Leave, Trap } kind;
+                     Storage, Initialize, Region, Leave, Trap, Defer, PushDefer } kind;
  Location where;
  std::string name;
   std::size_t context=0;
@@ -141,11 +142,19 @@ struct Import {
  std::size_t relative=0;
  bool quoted=false,selective=false;
 };
+struct NominalDeclaration {
+ Location where;
+ std::string name;
+ Type::Kind kind=Type::Record;
+ std::vector<std::string> parameters,labels;
+ std::vector<Type> fields; // Bound indices refer to parameters; no inferred layout.
+};
 struct Unit {
   std::vector<std::string> imports; std::vector<Function> functions;
   std::vector<Import> module_imports;
   std::vector<FeatureActivation> features;
   std::vector<ModuleExtension> extensions;
+  std::vector<NominalDeclaration> nominals;
  std::map<Type,std::vector<Type>> forall_layouts; // Internal whole-unit demand ABI.
  bool forall_elaborated=false;
  bool stages_lowered=false;

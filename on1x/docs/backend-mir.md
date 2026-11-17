@@ -1,5 +1,11 @@
 # Core/MIR: scalar v1, numeric/product v2 and complete scalar numeric v3
 
+The later [nonrecursive nominal-data profile](nominal-adts.md) retains nominal
+identity on the existing bounded record/sum HIR representation. It executes only
+through HIR→C11. MIR ingress validates catalog/layout consistency, then rejects
+unsupported aggregate values rather than erasing identity to a scalar. There is
+no new opcode, serialization version or native backend in this increment.
+
 This is the first executable **B1 subset** from `BACKEND.md`. The implementation
 is in `include/on1x/backend/mir.hpp` and `src/backend/`. It consumes the existing
 checked, specialized HIR after imports, macros, PPX and staging admission.
@@ -11,6 +17,12 @@ once-evaluated i64 ranges. No new MIR opcodes/format version are needed. CFG,
 effect, slot-initialization and dominance verification remain mandatory; the
 reference evaluator/round-trips/transactional passes execute the same edges.
 Resource-bearing loops stay on HIR→C11 and are not approximated as scalar MIR.
+
+[Value loops](value-loops.md) additionally use the existing region/slot bridge:
+typed break operands store a result and leave a checked join. Numeric/scalar
+tuples run through ordinary MIR slots/edges and optimization/serialization without
+a new format. Managed/aggregate loop results remain HIR→C11-only. No bottom type,
+resource transfer, exception unwind or concurrency opcode is implied.
 
 Guarded [structural matches](core-syntax.md) lower to verified typed decision
 regions before MIR. Numeric/bool values and trivial tuples use existing slots,

@@ -59,7 +59,7 @@ class Expander {
  }
   void collect(const Expr& e){
    for(const auto& p:e.patterns)collect_pattern(p);
-   if(e.kind==K::PatternMatch)remember(e.text,e.where);
+    if(e.kind==K::PatternMatch||e.kind==K::Loop)remember(e.text,e.where);
   if(e.kind==K::Variable||e.kind==K::MacroCall)remember(e.text,e.where);
   for(const auto& p:e.parameters){remember(p.name,p.where);if(p.pattern)collect_pattern(*p.pattern);}
   for(const auto& m:e.syntax_definitions)collect_macro(m);
@@ -158,7 +158,7 @@ class Expander {
   for(auto& child:e.children)expression(*child,depth+1);
   if(e.kind==K::Tuple&&e.children.size()<2)fail(e.where,"expanded tuple requires at least two elements");
   if(e.kind==K::Lambda){scopes.emplace_back();for(auto& p:e.parameters){if(p.pattern)bind(*p.pattern);else bind(p.name,p.context,p.where);}body(e.body,false,depth+1);scopes.pop_back();}
-  else if(e.kind==K::SyntaxBlock)body(e.body,true,depth+1);
+   else if(e.kind==K::SyntaxBlock||e.kind==K::Loop)body(e.body,true,depth+1);
  }
  void body(std::vector<Stmt>& b,bool scope,unsigned depth){
   if(depth>=max_syntax_depth)fail(b.empty()?Location{}:b.front().where,"expanded syntax depth limit exceeded");
@@ -175,7 +175,7 @@ class Expander {
    }else if(s.value)expression(*s.value,depth+1);
    if(s.kind==Stmt::Kind::Let){if(s.pattern)bind(*s.pattern);else bind(s.name,s.context,s.where);}
     else if(s.kind==Stmt::Kind::Assign)read(s.name,s.context);
-    if((s.kind==Stmt::Kind::Break||s.kind==Stmt::Kind::Continue)&&s.label.empty()){
+     if((s.kind==Stmt::Kind::Break||s.kind==Stmt::Kind::Continue)&&!s.value&&s.label.empty()){
      auto name=s.kind==Stmt::Kind::Break?"break":"continue";auto binding=value(name,s.label_context);
      if(binding||globals.contains(name)){
       auto e=std::make_unique<Expr>();e->kind=K::Variable;e->text=binding?*binding:name;e->where=s.where;

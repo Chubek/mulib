@@ -62,10 +62,11 @@ bool spelling(std::string_view value){
  return true;
 }
 struct Scalar {
- enum Kind { SignedInteger, UnsignedInteger, Boolean, Binary32, Binary64, Void } kind=Void;
+ enum Kind { SignedInteger, UnsignedInteger, Boolean, Binary32, Binary64, Void, CString } kind=Void;
  std::string spelling;unsigned bits=0;std::uint64_t alignment=0;
- std::string on1x()const{return kind==SignedInteger?"i64":kind==UnsignedInteger?"u"+std::to_string(bits):kind==Boolean?"bool":kind==Binary32?"f32":kind==Binary64?"f64":"void";}
- std::string adapter()const{return kind==SignedInteger?"int64_t":kind==UnsignedInteger?"uint"+std::to_string(bits)+"_t":kind==Boolean?"bool":kind==Binary32?"float":kind==Binary64?"double":"void";}
+ std::string on1x()const{return kind==CString?"string":kind==SignedInteger?"i64":kind==UnsignedInteger?"u"+std::to_string(bits):kind==Boolean?"bool":kind==Binary32?"f32":kind==Binary64?"f64":"void";}
+ std::string adapter()const{return kind==CString?"const char *":kind==SignedInteger?"int64_t":kind==UnsignedInteger?"uint"+std::to_string(bits)+"_t":kind==Boolean?"bool":kind==Binary32?"float":kind==Binary64?"double":"void";}
+ std::string admission(bool result)const{return kind==CString?(result?"static_string":"borrowed_string"):on1x();}
  bool floating()const{return kind==Binary32||kind==Binary64;}
 };
 std::optional<Scalar> scalar(const TranslationUnit& unit,const std::string& id){
@@ -85,20 +86,50 @@ std::optional<Scalar> scalar(const TranslationUnit& unit,const std::string& id){
     (*base->size!=1&&*base->size!=2&&*base->size!=4&&*base->size!=8))return {};
  return Scalar{*base->is_signed?Scalar::SignedInteger:Scalar::UnsignedInteger,named->spelling,static_cast<unsigned>(*base->size*8),alignment};
 }
-std::string unsupported(const TranslationUnit& unit,const Declaration& decl,const FunctionContract& fn){
+// The string profile deliberately admits only an extracted direct pointer to
+// const plain char. No void*, signed/unsigned char*, wide text or alias guessing.
+std::optional<Scalar> foreign_type(const TranslationUnit& unit,const std::string& id,bool strings=true){
+ if(auto s=scalar(unit,id))return s;
+ if(!strings)return {};
+ const auto* pointer=lookup(unit,id);
+ if(!pointer||pointer->kind!=TypeKind::Pointer||!pointer->unsupported_reason.empty()||!pointer->attributes.empty()||
+    pointer->qualifiers.is_volatile||pointer->qualifiers.is_restrict||!pointer->size||!pointer->alignment||!*pointer->alignment||
+    unit.target.pointer_bits%8||*pointer->size!=unit.target.pointer_bits/8)return {};
+ const auto* element=lookup(unit,pointer->element);
+ if(!element||element->kind!=TypeKind::Integer||!element->qualifiers.is_const||element->qualifiers.is_volatile||
+    element->qualifiers.is_restrict||!element->attributes.empty()||!element->unsupported_reason.empty()||
+    element->spelling!="const char"||element->size!=1)return {};
+ return Scalar{Scalar::CString,"const char *",unit.target.pointer_bits,*pointer->alignment};
+}
+bool lifetime(const std::optional<contract::LifetimeSpec>& value,contract::LifetimeOrigin origin,const std::string& region={}){
+ return value&&value->origin==origin&&value->region_name==region&&value->parameter_index==0;
+}
+std::string unsupported(const TranslationUnit& unit,const Declaration& decl,const FunctionContract& fn,bool strings=false){
  const auto* type=lookup(unit,decl.type);
  if(!type||type->kind!=TypeKind::Function||!type->prototype||type->variadic||type->arguments.size()!=decl.parameters.size())return "requires a complete non-variadic C prototype";
  if(type->calling_convention>1||!type->attributes.empty()||!type->unsupported_reason.empty()||!decl.unsupported_reason.empty()||decl.parameters.size()>12)return "unsupported calling convention/attributes/arity";
  if(fn.effects.unknown)return "unknown effects (including grammar callbacks)";
  if(!fn.transfers.empty()||!fn.callbacks.empty()||!fn.destructors.empty()||!fn.invalidations.empty())return "ownership/callback/destructor/invalidation obligations need a reviewed adapter";
- if(fn.return_contract.kind!=contract::ReturnKind::Value||fn.return_contract.nullable||fn.return_contract.lifetime||!fn.return_contract.destroy_with.empty()||!fn.return_contract.alias_of.empty()||!fn.return_contract.allocation_source.empty()||!fn.return_contract.deallocator_family.empty())return "nontrivial return ownership/lifetime";
+ auto result=foreign_type(unit,type->result,strings);
+ const auto& ret=fn.return_contract;
+ bool static_text=result&&result->kind==Scalar::CString;
+ if(ret.nullable||ret.nullable_means_success||!ret.destroy_with.empty()||!ret.alias_of.empty()||!ret.allocation_source.empty()||!ret.deallocator_family.empty()||
+    (static_text?(ret.kind!=contract::ReturnKind::Borrow||!lifetime(ret.lifetime,contract::LifetimeOrigin::GlobalStatic)):
+                 (ret.kind!=contract::ReturnKind::Value||ret.lifetime)))return "nontrivial return ownership/lifetime (string results require non-null global_static borrow)";
  if(fn.error_contract.kind!=contract::ErrorKind::None||fn.error_contract.cleanup_required_on_failure||!fn.error_contract.sentinel_value.empty()||!fn.error_contract.error_parameter.empty())return "error classification/cleanup is not lowered";
- if(!scalar(unit,type->result))return "unsupported return ABI (only exact integers, _Bool, binary32/64 or void)";
+ if(!result)return "unsupported return ABI (only exact scalars or reviewed immutable C strings)";
+ bool text=static_text;
  for(std::size_t i=0;i<decl.parameters.size();++i){
-  auto arg=scalar(unit,decl.parameters[i].type);if(!arg||arg->kind==Scalar::Void)return "unsupported parameter ABI (pointers/aggregates/callbacks are not scalars)";
+  auto arg=foreign_type(unit,decl.parameters[i].type,strings);if(!arg||arg->kind==Scalar::Void)return "unsupported parameter ABI (pointers/aggregates/callbacks are not scalars)";
   auto p=std::find_if(fn.parameters.begin(),fn.parameters.end(),[&](const auto& p){return p.index==i;});
-  if(p==fn.parameters.end()||p->ownership!=contract::OwnershipKind::Scalar||p->nullable||p->lifetime||p->length_parameter||p->count_parameter||p->alignment||p->transfer_branch||!p->transfer_predicate.empty()||!p->encoding.empty())return "nontrivial parameter contract";
+  if(p==fn.parameters.end()||p->nullable||p->length_parameter||p->count_parameter||p->alignment||p->transfer_branch||!p->transfer_predicate.empty())return "nontrivial parameter contract";
+  if(arg->kind==Scalar::CString){
+   text=true;
+   if(p->ownership!=contract::OwnershipKind::BorrowedImmutable||p->encoding!="nul_terminated_bytes"||
+      !lifetime(p->lifetime,contract::LifetimeOrigin::ExplicitRegion,"call"))return "string parameter requires immutable call-scoped nul_terminated_bytes borrow";
+  }else if(p->ownership!=contract::OwnershipKind::Scalar||p->lifetime||!p->encoding.empty())return "nontrivial parameter contract";
  }
+ if(text&&(fn.concurrency.thread_safety!=contract::ThreadSafety::SingleThread||fn.concurrency.suspension_safe))return "immutable string profile requires single_thread, non-suspending calls";
  if(!identifier(decl.name))return "invalid/oversized C function name";
  return {};
 }
@@ -106,8 +137,9 @@ std::string safe_unsupported(const TranslationUnit&,const Declaration&,const Fun
 unsigned profile_version(const TranslationUnit& unit,const contract::ContractBundle& bundle){
  auto declarations=cx::declarations(unit);
  unsigned version=1;
- auto typed=[&](const std::string& id){auto s=scalar(unit,id);if(!s)return;
-  if(s->kind==Scalar::Binary32||s->kind==Scalar::UnsignedInteger)version=3;
+ auto typed=[&](const std::string& id){auto s=foreign_type(unit,id);if(!s)return;
+  if(s->kind==Scalar::CString)version=4;
+  else if(s->kind==Scalar::Binary32||s->kind==Scalar::UnsignedInteger)version=std::max(version,3u);
   else if(s->kind==Scalar::Boolean||s->kind==Scalar::Binary64)version=std::max(version,2u);
  };
  for(const auto& fn:bundle.functions){
@@ -118,20 +150,23 @@ unsigned profile_version(const TranslationUnit& unit,const contract::ContractBun
  return version;
 }
 std::string profile(const TranslationUnit& unit,const contract::ContractBundle& bundle){
- return "reviewed-scalar/v"+std::to_string(profile_version(unit,bundle));
+ auto version=profile_version(unit,bundle);
+ return version==4?"reviewed-immutable-string/v4":"reviewed-scalar/v"+std::to_string(version);
 }
 std::string report(const TranslationUnit& unit,const contract::ContractBundle& bundle){
  auto declarations=cx::declarations(unit);std::string out="{\"schema\":\"on1x.contract-check/v1\",\"gate_b\":true,\"review_metadata\":";
  auto bundle_reviewed=bundle.bundle_provenance.review_status==contract::ReviewStatus::Reviewed||
                       bundle.bundle_provenance.review_status==contract::ReviewStatus::Verified;
  out+=bundle_reviewed&&contract::is_safe_for_export(bundle)?"true":"false";
- out+=",\"safe_export\":false,\"safe_profile\":"+json::quote(profile(unit,bundle))+",\"safe_export_reason\":\"check/explain do not execute Chisel or target runtime gates\",\"missing_safe_gates\":[\"complete reviewed scalar-only profile eligibility\",\"Chisel usage check\",\"target adapter/runtime acceptance\"],\"library\":"+json::quote(bundle.library)+",\"fingerprint\":"+json::quote(unit.fingerprint)+",\"functions\":[";
+ out+=",\"safe_export\":false,\"safe_profile\":"+json::quote(profile(unit,bundle))+",\"safe_export_reason\":\"check/explain do not execute Chisel or target runtime gates\",\"missing_safe_gates\":[\"complete reviewed profile eligibility\",\"Chisel usage check\",\"target adapter/runtime acceptance\"],\"library\":"+json::quote(bundle.library)+",\"fingerprint\":"+json::quote(unit.fingerprint)+",\"functions\":[";
  bool first=true;for(const auto& fn:bundle.functions){
-  if(!first)out+=',';first=false;const auto& decl=*declarations.at(fn.c_name);
+  if(!first)out+=',';
+  first=false;const auto& decl=*declarations.at(fn.c_name);
   auto raw_why=unsupported(unit,decl,fn),safe_why=safe_unsupported(unit,decl,fn);
   out+="{\"name\":"+json::quote(fn.c_name)+",\"raw_scalar_abi_supported\":"+(raw_why.empty()?"true":"false")+
        ",\"reason\":"+json::quote(raw_why)+",\"raw_reason\":"+json::quote(raw_why)+
-       ",\"safe_scalar_profile_supported\":"+(safe_why.empty()?"true":"false")+
+       ",\"safe_scalar_profile_supported\":"+(safe_why.empty()&&raw_why.empty()?"true":"false")+
+       ",\"safe_profile_supported\":"+(safe_why.empty()?"true":"false")+
        ",\"safe_reason\":"+json::quote(safe_why)+"}";
  }
  return out+"]}\n";
@@ -154,10 +189,14 @@ Emission emit(const TranslationUnit& unit,const contract::ContractBundle& bundle
  auto declarations=cx::declarations(unit);Emission out;
  out.language=language_banner;
  out.native=native_banner+"#include <stdint.h>\n#include <stdbool.h>\n#include <float.h>\n#include <limits.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <"+header+">\n_Static_assert(CHAR_BIT == 8, \"On1x requires 8-bit bytes\");\n";
- bool range_support=false;
+ bool range_support=false,text_support=false;
  for(const auto& fn:bundle.functions){
-  const auto& decl=*declarations.at(fn.c_name);if(!unsupported(unit,decl,fn).empty()){++out.skipped;continue;}
-  const auto& type=*lookup(unit,decl.type);auto result=*scalar(unit,type.result);std::vector<Scalar> args;for(const auto& p:decl.parameters)args.push_back(*scalar(unit,p.type));
+  const auto& decl=*declarations.at(fn.c_name);if(!unsupported(unit,decl,fn,wrappers).empty()){++out.skipped;continue;}
+  const auto& type=*lookup(unit,decl.type);auto result=*foreign_type(unit,type.result,wrappers);std::vector<Scalar> args;for(const auto& p:decl.parameters)args.push_back(*foreign_type(unit,p.type,wrappers));
+  if(!text_support&&(result.kind==Scalar::CString||std::any_of(args.begin(),args.end(),[](const auto& s){return s.kind==Scalar::CString;}))){
+   out.native+="static void on1x_bind_check_text(const char *text, size_t limit){\n  if(text){for(size_t i=0;i<=limit;++i)if(text[i]=='\\0')return;}\n  fputs(\"On1x foreign string null or byte limit exceeded\\n\",stderr);exit(72);\n}\n";
+   text_support=true;
+  }
   if(!range_support&&std::any_of(args.begin(),args.end(),[](const auto& s){return s.kind==Scalar::SignedInteger&&s.bits<64;})){
    out.native+="static void on1x_bind_range_error(void){fputs(\"On1x foreign integer out of range\\n\",stderr);exit(72);}\n";
    range_support=true;
@@ -183,6 +222,7 @@ Emission emit(const TranslationUnit& unit,const contract::ContractBundle& bundle
   out.native+="): 1, default: 0), \"native signature drift\");\n";
   auto abi=[&](const Scalar& scalar){
    auto common="  _Static_assert(sizeof("+scalar.spelling+") == "+std::to_string(scalar.bits/8)+", \"scalar size drift\");\n  _Static_assert(_Alignof("+scalar.spelling+") == "+std::to_string(scalar.alignment)+", \"scalar alignment drift\");\n";
+   if(scalar.kind==Scalar::CString)return common+"  _Static_assert(_Generic(("+scalar.spelling+")0, const char *: 1, default: 0), \"string pointer type drift\");\n";
    if(scalar.kind==Scalar::Boolean)return common+"  _Static_assert(_Generic(("+scalar.spelling+")0, _Bool: 1, default: 0), \"boolean type drift\");\n";
    if(scalar.kind==Scalar::Binary32)return common+"  _Static_assert(_Generic(("+scalar.spelling+")0, float: 1, default: 0), \"binary32 type drift\");\n  _Static_assert(FLT_RADIX == 2 && FLT_MANT_DIG == 24 && FLT_MAX_EXP == 128 && FLT_MIN_EXP == -125, \"binary32 format drift\");\n";
    if(scalar.kind==Scalar::Binary64)return common+"  _Static_assert(_Generic(("+scalar.spelling+")0, double: 1, default: 0), \"binary64 type drift\");\n  _Static_assert(FLT_RADIX == 2 && DBL_MANT_DIG == 53 && DBL_MAX_EXP == 1024 && DBL_MIN_EXP == -1021, \"binary64 format drift\");\n";
@@ -191,17 +231,21 @@ Emission emit(const TranslationUnit& unit,const contract::ContractBundle& bundle
    auto name="INT"+std::to_string(scalar.bits);return common+"  _Static_assert(("+scalar.spelling+")-1 < ("+scalar.spelling+")0, \"integer signedness drift\");\n  _Static_assert(("+scalar.spelling+")"+name+"_MIN == "+name+"_MIN && ("+scalar.spelling+")"+name+"_MAX == "+name+"_MAX, \"integer range drift\");\n";
   };
   if(result.kind!=Scalar::Void)out.native+=abi(result);
-  for(std::size_t i=0;i<args.size();++i){out.native+=abi(args[i]);if(args[i].kind==Scalar::SignedInteger&&args[i].bits<64){auto arg="a"+std::to_string(i);out.native+="  if("+arg+" < INT"+std::to_string(args[i].bits)+"_MIN || "+arg+" > INT"+std::to_string(args[i].bits)+"_MAX) on1x_bind_range_error();\n";}}
-  out.native+="  ";if(result.kind!=Scalar::Void)out.native+="return ("+result.adapter()+")";out.native+=decl.name+"(";
-  for(std::size_t i=0;i<args.size();++i){if(i)out.native+=", ";out.native+="("+args[i].spelling+")a"+std::to_string(i);}out.native+=");\n}\n";++out.generated;
+  for(std::size_t i=0;i<args.size();++i){out.native+=abi(args[i]);if(args[i].kind==Scalar::SignedInteger&&args[i].bits<64){auto arg="a"+std::to_string(i);out.native+="  if("+arg+" < INT"+std::to_string(args[i].bits)+"_MIN || "+arg+" > INT"+std::to_string(args[i].bits)+"_MAX) on1x_bind_range_error();\n";}
+   if(args[i].kind==Scalar::CString)out.native+="  on1x_bind_check_text(a"+std::to_string(i)+", 2097152u);\n";
+  }
+  out.native+="  ";if(result.kind==Scalar::CString)out.native+="const char *result = ";else if(result.kind!=Scalar::Void)out.native+="return ("+result.adapter()+")";out.native+=decl.name+"(";
+  for(std::size_t i=0;i<args.size();++i){if(i)out.native+=", ";out.native+="("+args[i].spelling+")a"+std::to_string(i);}out.native+=");\n";
+  if(result.kind==Scalar::CString)out.native+="  on1x_bind_check_text(result, 4194304u);\n  return result;\n";
+  out.native+="}\n";++out.generated;
  }return out;
 }
-// ---- reviewed scalar-only safe admission (on1x.safe-ffi/v1) ---------------
+// ---- reviewed scalar/immutable-string admission (on1x.safe-ffi/v1) --------
 // Gate R: reviewed contract provenance (claims, recorded as evidence).
-// Gate E: every function admits under the raw scalar ABI and declares only
+// Gate E: every function admits under the scalar/immutable-string ABI and declares only
 //         effects whose ownership/concurrency obligations need no lowering.
 // Gate C: the real on1xc Chisel checker admits the emitted module with the
-//         versioned reviewed-extern evidence (on1x.admitted-extern/v1/v2/v3).
+//         versioned reviewed-extern evidence (on1x.admitted-extern/v1/v2/v3/v4).
 // Gate T: the adapter plus a boundary harness compile under strict C11 flags
 //         and execute on the target; results are recorded, not interpreted.
 std::string effect_name(contract::EffectKind kind){
@@ -212,13 +256,13 @@ std::string effect_name(contract::EffectKind kind){
  }return "unknown";
 }
 std::string safe_unsupported(const TranslationUnit& unit,const Declaration& decl,const FunctionContract& fn){
- auto raw=unsupported(unit,decl,fn);if(!raw.empty())return raw;
+ auto raw=unsupported(unit,decl,fn,true);if(!raw.empty())return raw;
  if(adapter_name(unit,decl.name,true).size()>256)return "identity-scoped adapter name exceeds 256 bytes";
  static const std::set<contract::EffectKind> allowed{
   contract::EffectKind::Read,contract::EffectKind::Write,contract::EffectKind::IO,contract::EffectKind::ForeignCall};
  for(auto effect:fn.effects.effects)
   if(!allowed.contains(effect))
-   return "declared effect '"+effect_name(effect)+"' needs ownership/concurrency lowering outside the reviewed scalar-only profile";
+   return "declared effect '"+effect_name(effect)+"' needs ownership/concurrency lowering outside the reviewed scalar/immutable-string profiles";
  return {};
 }
 std::string excerpt(const std::string& text){
@@ -307,11 +351,11 @@ void emit_safe(const TranslationUnit& unit,const contract::ContractBundle& bundl
   auto why=safe_unsupported(unit,*declarations.at(fn.c_name),fn);
   if(!why.empty())reasons+="\n  "+fn.c_name+": "+why;
  }
- cx::require(reasons.empty(),"safe export refused: functions outside the reviewed scalar-only profile:"+reasons);
  auto selected_profile=profile(unit,bundle);
+ cx::require(reasons.empty(),"safe export refused: functions outside the reviewed "+std::string(profile_version(unit,bundle)==4?"immutable-string":"scalar-only")+" profile:"+reasons);
  auto output=emit(unit,bundle,
-   "# Auto-generated SAFE-ADMITTED On1x scalar import ("+selected_profile+"). Admission evidence accompanies this module.\n",
-   "/* SAFE-ADMITTED scalar ABI adapters ("+selected_profile+"). Rebuild with the recorded inputs. */\n",true);
+   "# Auto-generated SAFE-ADMITTED On1x import ("+selected_profile+"). Admission evidence accompanies this module.\n",
+   "/* SAFE-ADMITTED ABI adapters ("+selected_profile+"). Rebuild with the recorded inputs. */\n",true);
  cx::require(output.generated==bundle.functions.size()&&output.skipped==0,"safe export refused: unsupported functions reached emission");
  for(const auto& suffix:{".on1x",".c",".manifest.json",".admitted-extern.txt"}){
   auto path=prefix+suffix;
@@ -328,36 +372,38 @@ void emit_safe(const TranslationUnit& unit,const contract::ContractBundle& bundl
  for(const auto& fn:bundle.functions){
   const auto& decl=*declarations.at(fn.c_name);const auto& type=*lookup(unit,decl.type);
   admission+="extern "+adapter_name(unit,fn.c_name,true)+" (";
-  for(std::size_t i=0;i<decl.parameters.size();++i){if(i)admission+=",";admission+=scalar(unit,decl.parameters[i].type)->on1x();}
-  admission+=") -> "+scalar(unit,type.result)->on1x()+"\n";
+  for(std::size_t i=0;i<decl.parameters.size();++i){if(i)admission+=",";admission+=foreign_type(unit,decl.parameters[i].type)->admission(false);}
+  admission+=") -> "+foreign_type(unit,type.result)->admission(true)+"\n";
  }
- std::string fixture="# Chisel usage check for the reviewed scalar-only import.\nimport \""+module_path+"\";\nfn main(){\n";
+ std::string fixture="# Chisel usage check for the reviewed import.\nimport \""+module_path+"\";\nfn main(){\n";
  for(const auto& fn:bundle.functions){
   const auto& decl=*declarations.at(fn.c_name);const auto& type=*lookup(unit,decl.type);
-  auto result=*scalar(unit,type.result);auto safe="on1x_safe_"+fn.c_name;fixture+="  ";
+  auto result=*foreign_type(unit,type.result);auto safe="on1x_safe_"+fn.c_name;fixture+="  ";
   if(result.kind==Scalar::Void)fixture+=safe+"(";else fixture+="println("+safe+"(";
-  for(std::size_t i=0;i<decl.parameters.size();++i){if(i)fixture+=", ";auto arg=*scalar(unit,decl.parameters[i].type);
-   fixture+=arg.kind==Scalar::Boolean?"true":arg.kind==Scalar::Binary64?"1.0":arg.kind==Scalar::SignedInteger?"1":arg.on1x()+"_from_i64(1)";}
+  for(std::size_t i=0;i<decl.parameters.size();++i){if(i)fixture+=", ";auto arg=*foreign_type(unit,decl.parameters[i].type);
+   fixture+=arg.kind==Scalar::CString?"\"\"":arg.kind==Scalar::Boolean?"true":arg.kind==Scalar::Binary64?"1.0":arg.kind==Scalar::SignedInteger?"1":arg.on1x()+"_from_i64(1)";}
   fixture+=result.kind==Scalar::Void?");\n":"));\n";
  }
  fixture+="}\n";
- std::string harness="#include <stdio.h>\n#include <stdint.h>\n#include <stdbool.h>\n";
+ std::string harness="#include <stdio.h>\n#include <stdint.h>\n#include <stdbool.h>\n#include <string.h>\n";
  for(const auto& fn:bundle.functions){
   const auto& decl=*declarations.at(fn.c_name);const auto& type=*lookup(unit,decl.type);
-  auto result=*scalar(unit,type.result);auto name=adapter_name(unit,fn.c_name,true);
+  auto result=*foreign_type(unit,type.result);auto name=adapter_name(unit,fn.c_name,true);
   harness+=result.adapter()+" "+name+"(";
   if(decl.parameters.empty())harness+="void";
-  else for(std::size_t i=0;i<decl.parameters.size();++i){if(i)harness+=", ";harness+=scalar(unit,decl.parameters[i].type)->adapter();}
+  else for(std::size_t i=0;i<decl.parameters.size();++i){if(i)harness+=", ";harness+=foreign_type(unit,decl.parameters[i].type)->adapter();}
   harness+=");\n";
  }
  harness+="int main(void){\n";
  for(const auto& fn:bundle.functions){
   const auto& decl=*declarations.at(fn.c_name);const auto& type=*lookup(unit,decl.type);
-  auto result=*scalar(unit,type.result);auto name=adapter_name(unit,fn.c_name,true);
-  auto arguments=[&](){std::string value;for(std::size_t i=0;i<decl.parameters.size();++i){if(i)value+=", ";auto arg=*scalar(unit,decl.parameters[i].type);value+=arg.kind==Scalar::Boolean?"true":arg.kind==Scalar::Binary64?"0x1p+0":"1";}return value;};
+  auto result=*foreign_type(unit,type.result);auto name=adapter_name(unit,fn.c_name,true);
+  auto arguments=[&](){std::string value;for(std::size_t i=0;i<decl.parameters.size();++i){if(i)value+=", ";auto arg=*foreign_type(unit,decl.parameters[i].type);value+=arg.kind==Scalar::CString?"\"\"":arg.kind==Scalar::Boolean?"true":arg.kind==Scalar::Binary64?"0x1p+0":"1";}return value;};
   if(result.kind==Scalar::Void){
    harness+="  "+name+"("+arguments();
    harness+=");\n  printf(\""+fn.c_name+"=void\\n\");\n";
+  }else if(result.kind==Scalar::CString){
+   harness+="  printf(\""+fn.c_name+"=%zu\\n\",strlen("+name+"("+arguments()+")));\n";
   }else if(result.kind==Scalar::SignedInteger){
    harness+="  printf(\""+fn.c_name+"=%lld\\n\",(long long)"+name+"(";
    harness+=arguments()+"));\n";
@@ -398,7 +444,8 @@ void emit_safe(const TranslationUnit& unit,const contract::ContractBundle& bundl
  for(std::size_t i=0;i<lines.size();++i){
   const auto& fn=bundle.functions[i];
   cx::require(lines[i]==fn.c_name+"=void"||lines[i].starts_with(fn.c_name+"="),"boundary observation drift: "+excerpt(lines[i]));
-  if(i)observed+=',';observed+="{\"name\":"+json::quote(fn.c_name)+",\"value\":"+json::quote(lines[i].substr(fn.c_name.size()+1))+"}";
+  if(i)observed+=',';
+  observed+="{\"name\":"+json::quote(fn.c_name)+",\"value\":"+json::quote(lines[i].substr(fn.c_name.size()+1))+"}";
  }
  std::string flags;
  for(auto flag:{"-std=c11","-Wall","-Wextra","-Wpedantic","-Werror"}){if(!flags.empty())flags+=',';flags+=json::quote(flag);}
@@ -411,10 +458,11 @@ void emit_safe(const TranslationUnit& unit,const contract::ContractBundle& bundl
  manifest+=",\"eligibility\":{\"allowed_effects\":[\"read\",\"write\",\"io\",\"foreign_call\"],\"functions\":[";
  bool first_entry=true;
  for(const auto& fn:bundle.functions){
-  if(!first_entry)manifest+=',';first_entry=false;
+  if(!first_entry)manifest+=',';
+  first_entry=false;
   manifest+="{\"name\":"+json::quote(fn.c_name)+",\"effects\":[";
   bool first_effect=true;for(auto effect:fn.effects.effects){if(!first_effect)manifest+=',';first_effect=false;manifest+=json::quote(effect_name(effect));}
-  manifest+="],\"safe_scalar_abi_supported\":true}";
+  manifest+="],\"safe_scalar_abi_supported\":"+std::string(unsupported(unit,*declarations.at(fn.c_name),fn).empty()?"true":"false")+",\"safe_profile_abi_supported\":true}";
  }
  manifest+="]},\"gates\":{";
  manifest+="\"review_metadata\":{\"result\":\"pass\",\"note\":\"review flags are provenance claims recorded in contracts, not an independent semantic proof\"},";
@@ -423,9 +471,10 @@ void emit_safe(const TranslationUnit& unit,const contract::ContractBundle& bundl
  manifest+="\"runtime_acceptance\":{\"cc\":"+json::quote(cc)+",\"flags\":["+flags+"],\"implementations\":["+implementations+"],\"exit\":0,\"observed\":["+observed+"]}";
  manifest+="},\"admitted_extern\":{\"path\":"+json::quote(prefix+".admitted-extern.txt")+",\"content\":"+json::quote(admission);
  manifest+="},\"limitations\":[";
- manifest+="\"Boundary observations use fixed representative scalar arguments (1 per parameter) and are recorded, never interpreted as semantic proofs.\",";
+ manifest+="\"Boundary observations use fixed representative arguments (1 for scalars, empty immutable strings) and are recorded, never interpreted as semantic proofs.\",";
  manifest+="\"Foreign effects, ownership and error behavior are admitted as declared by the reviewed contract; the C implementation itself is not verified.\",";
- manifest+="\"Pointer, aggregate, callback, transfer and error contracts remain outside the safe profile; emit-raw remains the explicit escape hatch.\",";
+ manifest+="\"Only v4 admits pointers: exact const char * with immutable call-scoped inputs and non-null immutable global_static results; other pointers, aggregates, callbacks, transfers and error contracts remain unsupported.\",";
+ if(profile_version(unit,bundle)==4)manifest+="\"String input/output byte limits are 2097152/4194304, excluding NUL; null/limit failure terminates with exit 72. Review must establish valid NUL termination, no retained inputs and immutable result storage until process exit. These checks do not validate arbitrary pointer provenance or UTF-8.\",";
  manifest+="\"Gate artifacts live in the recorded workdir; the published module, adapter and admission file are byte-identical copies.\"";
  manifest+="]}\n";
  std::vector<std::pair<std::string,std::string>> files={
@@ -435,13 +484,13 @@ void emit_safe(const TranslationUnit& unit,const contract::ContractBundle& bundl
  std::vector<std::string> written;
  try{for(const auto& [path,contents]:files){write(path,contents);written.push_back(path);}}
  catch(...){for(const auto& path:written){std::error_code ignored;std::filesystem::remove(path,ignored);}throw;}
- std::cout<<"Emitted "<<output.generated<<" SAFE-ADMITTED reviewed scalar-only imports; all four gates passed (review metadata, profile eligibility, Chisel usage check, target runtime acceptance). Recorded claims are not proofs of foreign implementation behavior.\n";
+ std::cout<<"Emitted "<<output.generated<<" SAFE-ADMITTED imports ("<<selected_profile<<"); all four gates passed (review metadata, profile eligibility, Chisel usage check, target runtime acceptance). Recorded claims are not proofs of foreign implementation behavior.\n";
 }
 void usage(){std::cout<<"on1x-bind check|explain|pin|verify DECL.json CONTRACT.json\n"
  "on1x-bind normalize-decl DECL.json\n"
  "on1x-bind emit-raw|emit DECL.json CONTRACT.json OUT_PREFIX\n"
  "on1x-bind emit-safe DECL.json CONTRACT.json OUT_PREFIX --on1xc PATH --cc PATH --workdir DIR\n"
- "  [--cflag ARG] [--impl FILE] (reviewed-scalar admission; runs all four gates)\n"
+ "  [--cflag ARG] [--impl FILE] (reviewed scalar/immutable-string admission; runs all four gates)\n"
  "on1x-bind extract HEADER --revision REV [--include DIR] [--define NAME=VALUE]\n"
  "  [--undefine NAME] [--target TRIPLE] [--resource-dir DIR] [--provenance FILE]\n"
  "  [--compile-commands FILE --compile-file FILE] [--clang-arg ARG] [-o FILE]\n";}

@@ -17,7 +17,9 @@ ExprPtr integer(std::size_t n,const Location& at){return value(E::Integer,Type::
 ExprPtr equal(ExprPtr a,ExprPtr b,const Location& at){auto e=value(E::Binary,Type::Bool,at,"==");e->children.push_back(std::move(a));e->children.push_back(std::move(b));return e;}
 Stmt leave(std::size_t target,const Location& at){Stmt s;s.kind=S::Leave;s.control_target=target;s.where=at;return s;}
 class Lower {
- Unit& unit;std::size_t serial=0,budget=262144,copy_budget=262144,bytes=8*1024*1024;
+  Unit& unit;std::size_t serial=0,budget=262144,copy_budget=262144,bytes=8*1024*1024;
+  struct LoopValue {std::size_t target,done;std::string result;Type type;};
+  std::vector<LoopValue> loops;
  void tick(const Location& at){if(!budget--)throw Error(at,"canonical value expansion budget exhausted","ON1X-VALUES-LIMIT");}
  void charge(const Pattern& p){auto size=p.name.size()+p.where.file.size();for(const auto& label:p.labels){if(label.size()>bytes)throw Error(p.where,"pattern plan byte budget exhausted","ON1X-VALUES-LIMIT");bytes-=label.size();}if(size>bytes)throw Error(p.where,"pattern plan byte budget exhausted","ON1X-VALUES-LIMIT");bytes-=size;}
  Pattern copy_pattern(const Pattern& p){auto account=[&](auto&& self,const Pattern& part)->void{tick(part.where);charge(part);for(const auto& c:part.elements)self(self,c);};account(account,p);return clone_pattern(p,copy_budget);}
@@ -70,8 +72,36 @@ class Lower {
   }
   e.kind=E::PatternMatch;e.children=std::move(arms);e.labels.clear();e.statement_match=false;
  }
- void expression(Expr& e){
-  tick(e.where);if(e.prototype)return;
+  void expression(Expr& e){
+   tick(e.where);if(e.prototype)return;
+   if(e.kind==E::Propagate){
+    expression(*e.children.at(0));auto at=e.where;auto input=e.children[0]->type;auto root=fresh();auto result=fresh();
+    Expr region;region.kind=E::Region;region.type=e.type;region.where=at;
+    region.body.push_back(bind(root,std::move(e.children[0]),at));
+    Stmt slot;slot.kind=S::Storage;slot.name=result;slot.declared=e.type;slot.where=at;region.body.push_back(std::move(slot));
+    Stmt branch;branch.kind=S::If;branch.where=at;branch.value=value(E::TagTest,Type::Bool,at,"Ok");branch.value->projection=1;branch.value->children.push_back(local(root,input,at));
+    auto ok=value(E::Payload,e.type,at,"Ok");ok->projection=1;ok->children.push_back(local(root,input,at));branch.body.push_back(store(result,std::move(ok),at));
+    Stmt err;err.kind=S::If;err.where=at;err.value=value(E::TagTest,Type::Bool,at,"Err");err.value->projection=0;err.value->children.push_back(local(root,input,at));
+    auto payload=value(E::Payload,input.arguments()[1],at,"Err");payload->projection=0;payload->children.push_back(local(root,input,at));
+    Stmt ret;ret.kind=S::Return;ret.where=at;ret.value=value(E::Variant,e.result,at,"Err");ret.value->result=e.result;ret.value->projection=0;ret.value->children.push_back(std::move(payload));err.body.push_back(std::move(ret));
+    Stmt trap;trap.kind=S::Trap;trap.where=at;err.otherwise.push_back(std::move(trap));branch.otherwise.push_back(std::move(err));region.body.push_back(std::move(branch));
+    region.children.push_back(local(result,e.type,at));e=std::move(region);return;
+   }
+   if(e.kind==E::Loop){
+    if(!e.control_target||e.type==Type::Invalid||e.type.has_holes()||e.type.has_generics()||e.type==Type::Json||e.type==Type::JsonView)fail(e.where,"loop requires a checked concrete result type");
+    Expr region;region.kind=E::Region;region.type=e.type;region.where=e.where;
+    auto result=e.type==Type::Void?std::string{}:fresh();auto done=result.empty()?0:++serial;
+    if(!result.empty()){Stmt slot;slot.kind=S::Storage;slot.where=e.where;slot.name=result;slot.declared=e.type;region.body.push_back(std::move(slot));}
+    loops.push_back({e.control_target,done,result,e.type});body(e.body);loops.pop_back();
+    Stmt loop;loop.kind=S::While;loop.where=e.where;loop.label=e.text;loop.label_context=e.context;loop.control_target=e.control_target;loop.value=value(E::Boolean,Type::Bool,e.where,"true");loop.body=std::move(e.body);
+    if(done){
+     Stmt exit;exit.kind=S::Region;exit.where=e.where;exit.control_target=done;exit.body.push_back(std::move(loop));
+     // The condition is literal true. Keep the impossible normal edge explicit
+     // and fatal so no emitter/verifier can read an uninitialized result slot.
+     Stmt unreachable;unreachable.kind=S::Trap;unreachable.where=e.where;exit.body.push_back(std::move(unreachable));region.body.push_back(std::move(exit));
+    }else region.body.push_back(std::move(loop));
+    region.children.push_back(result.empty()?value(E::Unit,Type::Void,e.where):local(result,e.type,e.where));e=std::move(region);return;
+   }
   if(e.kind==E::Match)old_match(e);
   if(e.kind==E::PatternMatch){
    if(e.children.size()<2||e.children[0]->type==Type::Invalid||e.children[0]->type==Type::Void||e.type==Type::Invalid||e.type.has_holes()||e.type.has_generics())fail(e.where,"match requires checked concrete value/result types");
@@ -105,17 +135,41 @@ class Lower {
   for(auto& c:e.children)expression(*c);
   body(e.body);
  }
- void body(std::vector<Stmt>& b){for(auto& s:b){if(s.prototype)continue;if(s.value&&s.kind!=S::Template)expression(*s.value);body(s.body);body(s.otherwise);}}
+  void body(std::vector<Stmt>& b){for(auto& s:b){
+   tick(s.where);if(s.prototype)continue;
+   if(s.kind==S::Defer){
+    auto at=s.where;auto call=std::move(s.value);Stmt scope;scope.kind=S::Block;scope.where=at;
+    if(call->callee->reference!=Expr::Reference::Intrinsic&&call->callee->reference!=Expr::Reference::Extern){auto t=call->callee->type;auto n=fresh();scope.body.push_back(bind(n,std::move(call->callee),at));call->callee=local(n,t,at);}
+    for(auto& a:call->children){auto t=a->type;auto n=fresh();scope.body.push_back(bind(n,std::move(a),at));a=local(n,t,at);}
+    auto thunk=value(E::Lambda,Type::function({},Type::Void),at);thunk->result=Type::Void;
+    Stmt invoke;invoke.kind=S::Expr;invoke.where=at;invoke.value=std::move(call);thunk->body.push_back(std::move(invoke));
+    Stmt push;push.kind=S::PushDefer;push.where=at;push.value=std::move(thunk);scope.body.push_back(std::move(push));s=std::move(scope);
+   }
+   if(s.kind==S::Break){
+    auto target=std::find_if(loops.rbegin(),loops.rend(),[&](const auto& l){return l.target==s.control_target;});
+    if(target!=loops.rend()&&(s.value||target->done)){
+     auto plan=*target;if(!s.value)fail(s.where,"bare break in a value-producing loop");expression(*s.value);
+     Stmt block;block.kind=S::Block;block.where=s.where;
+     if(plan.type==Type::Void||s.value->noreturn){Stmt action;action.kind=S::Expr;action.where=s.where;action.value=std::move(s.value);block.body.push_back(std::move(action));}
+     else{if(s.value->type!=plan.type)fail(s.where,"loop result initialization type mismatch");block.body.push_back(store(plan.result,std::move(s.value),s.where));}
+     if(!patterns::terminates(block.body)){if(plan.done)block.body.push_back(leave(plan.done,s.where));else block.body.push_back(std::move(s));}
+     s=std::move(block);continue;
+    }
+    if(s.value)fail(s.where,"value exit missing its lexical loop plan");
+   }
+   if(s.value&&s.kind!=S::Template)expression(*s.value);
+   body(s.body);body(s.otherwise);
+  }}
 public:
  explicit Lower(Unit& u):unit(u){
-  auto scan=[&](auto&& self,const Expr& e)->void{if(e.callee)self(self,*e.callee);for(const auto& c:e.children)self(self,*c);auto visit=[&](auto&& walk,const std::vector<Stmt>& b)->void{for(const auto& s:b){serial=std::max(serial,s.control_target);if(s.value)self(self,*s.value);walk(walk,s.body);walk(walk,s.otherwise);}};visit(visit,e.body);};
+   auto scan=[&](auto&& self,const Expr& e)->void{serial=std::max(serial,e.control_target);if(e.callee)self(self,*e.callee);for(const auto& c:e.children)self(self,*c);auto visit=[&](auto&& walk,const std::vector<Stmt>& b)->void{for(const auto& s:b){serial=std::max(serial,s.control_target);if(s.value)self(self,*s.value);walk(walk,s.body);walk(walk,s.otherwise);}};visit(visit,e.body);};
   for(const auto& f:u.functions){auto visit=[&](auto&& walk,const std::vector<Stmt>& b)->void{for(const auto& s:b){serial=std::max(serial,s.control_target);if(s.value)scan(scan,*s.value);walk(walk,s.body);walk(walk,s.otherwise);}};visit(visit,f.body);}
  }
  void run(){for(auto& f:unit.functions)if(!f.prototype)body(f.body);}
 };
 }
 bool needs_values(const Unit& unit){
- auto expression=[&](auto&& self,const Expr& e)->bool{if(e.kind==E::PatternMatch||e.kind==E::Match)return true;if(e.callee&&self(self,*e.callee))return true;for(const auto& c:e.children)if(self(self,*c))return true;auto body=[&](auto&& walk,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if(!s.prototype&&((s.value&&s.kind!=S::Template&&self(self,*s.value))||walk(walk,s.body)||walk(walk,s.otherwise)))return true;return false;};return body(body,e.body);};
+  auto expression=[&](auto&& self,const Expr& e)->bool{if(e.kind==E::PatternMatch||e.kind==E::Match||e.kind==E::Loop)return true;if(e.callee&&self(self,*e.callee))return true;for(const auto& c:e.children)if(self(self,*c))return true;auto body=[&](auto&& walk,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if(!s.prototype&&((s.value&&s.kind!=S::Template&&self(self,*s.value))||walk(walk,s.body)||walk(walk,s.otherwise)))return true;return false;};return body(body,e.body);};
  for(const auto& f:unit.functions)if(!f.prototype){auto body=[&](auto&& walk,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if(!s.prototype&&((s.value&&s.kind!=S::Template&&expression(expression,*s.value))||walk(walk,s.body)||walk(walk,s.otherwise)))return true;return false;};if(body(body,f.body))return true;}
  return false;
 }
@@ -124,5 +178,5 @@ std::set<std::size_t> exit_targets(const Function& function,Stmt::Kind kind){
  auto expr=[&](auto&& self,const Expr& e)->void{if(e.prototype)return;if(e.callee)self(self,*e.callee);for(const auto& c:e.children)self(self,*c);auto visit=[&](auto&& walk,const std::vector<Stmt>& b)->void{for(const auto& s:b){if(s.prototype)continue;if(s.kind==kind)out.insert(s.control_target);if(s.value&&s.kind!=S::Template)self(self,*s.value);walk(walk,s.body);walk(walk,s.otherwise);}};visit(visit,e.body);};
  auto visit=[&](auto&& walk,const std::vector<Stmt>& b)->void{for(const auto& s:b){if(s.prototype)continue;if(s.kind==kind)out.insert(s.control_target);if(s.value&&s.kind!=S::Template)expr(expr,*s.value);walk(walk,s.body);walk(walk,s.otherwise);}};visit(visit,function.body);return out;
 }
-void lower_values(Unit& unit){verify_control(unit);std::size_t budget=262144;auto working=clone_unit(unit,budget);Lower(working).run();verify_control(working);verify_values(working);unit=std::move(working);}
+void lower_values(Unit& unit){verify_control(unit);std::size_t budget=262144;auto working=clone_unit(unit,budget);Lower(working).run();verify_control(working);unit=std::move(working);}
 }

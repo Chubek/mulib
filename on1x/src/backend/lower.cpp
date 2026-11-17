@@ -1,4 +1,5 @@
 #include <on1x/backend/mir.hpp>
+#include <on1x/nominal.hpp>
 #include <on1x/meta.hpp>
 #include <on1x/numeric.hpp>
 #include <on1x/canonical/control.hpp>
@@ -147,7 +148,8 @@ class Lowering {
   for(const auto& s:statements){
    if(s.prototype)continue;
    if(current==ended)unsupported(s.where,"unreachable HIR statement");
-   switch(s.kind){
+    switch(s.kind){
+    case Stmt::Kind::Defer:case Stmt::Kind::PushDefer:unsupported(s.where,"dynamic defer effects require cleanup MIR descriptors");
    case Stmt::Kind::Let:{
     auto value=expression(*s.value);scalar(s.value->type,s.where);
     if(s.pattern){bind_pattern(*s.pattern,s.value->type,value);break;}
@@ -205,10 +207,11 @@ class Lowering {
  }
 public:
  Lowering(const Unit& u,Limits l):unit(u),limits(l){}
- Module run(){
-   canonical::verify_control(unit);
-   meta::require_core(unit);
-   canonical::verify_values(unit);
+  Module run(){
+    canonical::verify_control(unit);
+    meta::require_core(unit);
+    canonical::verify_values(unit);
+    verify_nominals(unit);
    for(const auto& f:unit.functions){auto targets=canonical::exit_targets(f,Stmt::Kind::Leave);region_targets.insert(targets.begin(),targets.end());auto next=canonical::exit_targets(f,Stmt::Kind::Continue);continue_targets.insert(next.begin(),next.end());}
   for(const auto& f:unit.functions){
    if(f.prototype)continue;

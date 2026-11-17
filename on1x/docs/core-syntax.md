@@ -1,9 +1,13 @@
 # Intrinsic core-syntax additions: G1/G2 control and structural matching
 
-This implements **statement loops and bounded structural matching** from
+This implements **statement/value loops and bounded structural matching** from
 `../ON1X_CORE_SYNTAX_ADDITIONS.md`, not the entire specification. It is intrinsic
 compiler syntax, requiring no extension activation, macro, PPX, interpreter or
 new scheduler. Existing Category work is independent.
+
+The subsequent [nominal-data increment](nominal-adts.md) implements section 11's
+initial nonrecursive named-record/parameterized-enum profile through this same
+matching and C11 path. It is not recursive ownership or the remaining features.
 
 ## Statement loops
 
@@ -19,7 +23,8 @@ for i in 0..10 { println(i); }      # 0 through 9
 for i in 0..=10 { println(i); }     # 0 through 10
 ```
 
-- `loop` is statement-only and endless unless exited. `while` stays statement-only.
+- Statement `loop` is endless unless exited. Expression `loop` and typed value
+  exits are documented below. `while` and `for` stay statement-only.
 - Three-clause `for` has a lexical initializer scope covering condition, body
   and step. Initialization is one `let`/`var`, assignment or expression clause;
   the condition is `bool`; the step is one assignment or expression, not a
@@ -68,6 +73,44 @@ captures inside labeled macro loops are tested, including after identity PPX.
 generated Aurocks and fallback scanners agree on bytes/locations. Matching adds
 `|` and recognizes `::` to diagnose unsupported list-cons patterns. Shell
 literals and additional comment syntax remain unsupported.
+
+## Value-producing loops
+
+```on1x
+let answer = search: loop {
+  for n in 0..10 {
+    if n*n >= 40 { break search with n*n; }
+  }
+  break with -1;
+};
+println(answer);                         # 49
+(loop { break with println("done"); }); # discard a void result
+```
+
+`loop` expressions have intrinsic typing and lowering, not an implicit lambda
+or PPX. `break with expr;` and `break label with expr;` evaluate the operand once,
+before releasing the scopes being exited. Normally completing value operands
+must share an exact type. A bare break makes the loop result void; the other
+value operands are still checked and evaluated on their selected paths. No
+normally completing value exits also means void, not a general `never` type.
+Return/continue/outer exits retain the enclosing source function/loop target.
+
+Existing statement `loop`, `while` and `for` retain bare-exit semantics. Value
+exits must target an **expression** loop; use `(loop { ... });` to discard one.
+`break with;` still targets the legal label `with`, while `break with value;`
+is unambiguously a value exit even if an ordinary `break` binding exists.
+The delimiter `with` takes priority in payload syntax; use a different label
+spelling when an explicit labeled **value** exit is needed.
+Only lexical reachability is used; constant conditions do not exempt an arm
+from type checking. Return analysis for loops without value exits remains
+conservative. There is no loop-exhaustion `else` or bottom-type coercion.
+
+Existing bounded by-value and RC/shared types can be results, including closures
+and tuples of closures: result references are acquired before inner cleanup.
+Unique JSON owners/views cannot be transferred or discarded as value exits;
+arm/loop-local JSON operations keep existing lexical lifetime rules. Fatal
+arithmetic/allocation failures still do not unwind. See [the design boundary,
+example and tests](value-loops.md).
 
 ## Structural match statements and expressions
 
@@ -174,6 +217,16 @@ and the optional adapters invoke the verifiers again. PPX carries only additive
 canonical regions, slots, payload proofs and target IDs are not wire constructors.
 Structural patterns in old let/parameter positions reject during reconstruction.
 
+Expression loops and value breaks add v1 source constructors `LoopValue` and
+`ValueBreak`. Their syntax-context fields carry names, never resolved targets or
+result/ownership proofs. Control normalization assigns expression-loop identities
+and checks payload targets. After ordinary inference/checking, value lowering
+uses the same HIR regions/while/initialize/leave operations as matches. Nonvoid
+loops have a fatal impossible normal edge, so only initialized value exits reach
+the result. Void loops preserve the conservative existing while-flow model.
+The verifier also tracks possible initialization at joins and forbids initializing
+enclosing single-assignment storage on a repeatable backedge or condition.
+
 Scalar/numeric tuple matches execute through MIR v1–v3 without a format change.
 Records/sums/arrays/slices and managed values still explicitly reject scalar MIR
 and unimplemented independent adapters; their C11 support is not broader MIR or
@@ -230,14 +283,15 @@ its canonical status vocabulary. No incomplete feature is marked VERIFIED.
 |---|---|---|
 | Statement loop/for-C/labeled while/break/continue | EXECUTABLE | Conservative return analysis still requires a returning tail in value functions |
 | i64 half-open/inclusive ranges | EXECUTABLE | Ascending unit step only; no unsigned/float ranges or general iterators |
-| Loop values / `break with` | Not implemented | Typed value joins and reachability analysis |
+| Loop values / `break with` | EXECUTABLE bounded profile | Expression-loop targets, by-value/RC results; no unique-resource transfer or general bottom type; managed/aggregate MIR remains unsupported |
 | Iterable loops/comprehensions/list patterns | Not implemented | Owning lists, iterator/result/drop protocol |
-| General `match with` / structural patterns | EXECUTABLE bounded profile | No owning lists, nominal/generic constructors or foreign resources; aggregate/managed MIR and SDK support remain closed |
+| General `match with` / structural patterns | EXECUTABLE bounded profile | Includes declared nonrecursive enum catalogs; no owning lists or foreign resources; aggregate/managed MIR and SDK support remain closed |
 | Defer/using/try/?/throw/finally | Not implemented | Recoverable outcomes and typed cleanup/error edges |
 | Fibers/channels/poll/taskgroups/cancellation | Not implemented | Ownership, scheduler and atomic choice semantics |
 | Portable process/shell fibers | Not implemented | Command AST and reviewed process/stream ABI |
 | Async/generators/atomics/lock/shared | Not implemented | Frames, ownership and memory model |
-| Named/recursive ADTs/native contracts | Not implemented | Nominal identities, boxed ownership and purity/contracts |
+| Named records/parameterized enums | EXECUTABLE bounded C11 profile | Explicit typed constructors, exact nominal/argument identity; no managed/recursive fields or aggregate MIR |
+| Recursive ADTs/native contracts | Not implemented | Boxed ownership/drop and purity/contracts |
 
 Unsupported operations diagnose; none are silently discarded or replaced with a
 no-op. The full source-additions specification remains **incomplete**.

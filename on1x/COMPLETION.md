@@ -15,8 +15,12 @@ Core-syntax continuation (2026-11-17): intrinsic statement loops, for-C, ascendi
 i64 ranges and lexical exits execute through C11 and scalar MIR. Guarded
 structural matching now has typed decision regions and C11 execution, plus MIR
 for admitted scalar/tuple cases. The [profile](docs/core-syntax.md) preserves
-lexical cleanup; loop values, owning lists, defer/error unwinding and concurrency
-remain absent. This does not complete any application/general-language gate.
+lexical cleanup. The subsequent [value-loop slice](docs/value-loops.md) adds
+typed loop results through the same regions/C11 and scalar/tuple MIR. Owning
+lists, defer/error unwinding and concurrency remain absent. The later
+[nominal-data increment](docs/nominal-adts.md) admits nonrecursive named records
+and parameterized enums only; recursive owning layouts remain unsupported. This
+does not complete any application/general-language gate.
 
 ## 0. Instructions to the agent: implement, test, and report
 

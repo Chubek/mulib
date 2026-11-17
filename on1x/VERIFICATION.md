@@ -1,5 +1,409 @@
 # On1x verification — 2026-11-17
 
+## M1 continuation — nonrecursive nominal records and parameterized enums
+
+Scoped dependency slice of the request for owning lists, defer/typed errors,
+concurrency and nominal ADTs. **This increment implements nonrecursive nominal
+data only.** Named `Result<T,E>` values can be matched, but there is no implicit
+error propagation, unwinding, owning list, boxed recursion or task runtime.
+See [the exact source/ownership/ABI contract](docs/nominal-adts.md).
+
+Re-inspected MuLIB `7391d9e9d58e987ea234c64dbfd352c31f220537`; configured
+LibStone `55755485acaded7c4ed804c0946bc8c7363f6763` remains clean/read-only at
+`on1x/third_party/libstone`. Linux `6.18.52-1-lts` x86_64, glibc 2.44,
+GCC/g++ 16.2.1, Clang/clang++ 22.1.8, CMake 4.4.3 and Python 3.14.7.
+The existing uncommitted value-loop and immutable C-string FFI work is preserved.
+No commit, push, submodule update or new SDK/runtime dependency.
+
+### Implemented behavior and review boundaries
+
+- Intrinsic `record Name<T>{...}` / `enum Name<T,E>{...}`, source named-type
+  references and explicit typed record/variant constructors. Existing structural
+  syntax is unchanged. Module type namespaces, aliases/re-exports and canonical
+  identity preserve distinct declarations even with equal representations.
+- Argument sharing, invariant phantom parameters, generic specialization and
+  explicit forall proofs extend the existing inference graph. The checked type
+  retains its existing Record/Sum representation plus nominal identity/arguments;
+  C11 emits distinct internal structs without a runtime ABI change.
+- `src/nominal.cpp` validates all declaration catalogs (including unused ones),
+  rejects cycles/resources/unknown types, checks bounded layout width/height and
+  reconstructs checked layouts independently. Backend entry rejects tampered
+  representations, missing catalogs and null HIR children. Cached layout height
+  prevents shallow-cache reuse from bypassing depth exhaustion.
+- New source PPX constructors `NamedType`/`NominalDeclaration` retain source
+  declarations, not layout certificates. Both schemas are semantically equal;
+  native processors were rebuilt. Python/native derive preserve data declarations
+  and render named signatures; cfg/FFI processors do not misread them as functions.
+  Category remains its existing pinned native scalar profile.
+- Source files: `include/on1x/{ast,type,clone,nominal}.hpp`,
+  `src/{parser,type,nominal,infer,sema,loader,ppx_ast,cli,codegen,extensions}.cpp`,
+  `src/backend/lower.cpp`, grammar/schema inputs and `CMakeLists.txt`.
+  Tests: `tests/test_nominal_adts.{cpp,py}`, `examples/nominal_adts.on1x`.
+  PPX changes: `stdlib/ppx/signature.on1x`, `stdppx/{native/derive.on1x,
+  _support/passes.py,schemas/PPX.schema.json}`. `FILE_HASHES.json` refreshes the
+  changed signature helper and three pre-existing stale PPX source entries;
+  all 563 file hashes now match. Their source contents were not overwritten.
+- Executable evidence covers exact type isolation/phantoms, constructor order,
+  nested data/arrays/slices, generic/forall functions, source match/value loops,
+  macro hygiene/staging, imports/unimported-type rejection, source-wire/layout
+  mutations, six seeded Python result oracles, strict C11/O2, and actual aggregate
+  calls across C/C++ translation units sharing one generated interface. That
+  boundary test does **not** establish separate On1x compilation or aggregate FFI.
+- Closure capture tests count live environments and inject allocation failure;
+  no nominal value itself allocates or has a destructor. Existing terminal
+  failures still do not unwind. Negative cases reject recursive/managed/resource
+  fields, wrong constructors/arguments/payloads, layout budgets and foreign ABI.
+
+### Exact validation commands
+
+The four Debug build trees reuse the **exact configuration commands in the
+value-loop section below**, including generated versus fallback scanner flags,
+strict warnings, the real optional SDKs and the separately prepared Satie SDK.
+Both compiler/runtime and generated-program tests are instrumented in the
+sanitizer tree (`ON1X_TEST_C_FLAGS` includes ASan/UBSan).
+
+For each `<tree>` in `/tmp/opencode/on1x-values-{gcc,clang,sdk,sanitize}`:
+
+```sh
+cmake --build <tree> --parallel 2
+ctest --test-dir <tree> --output-on-failure --parallel 2 \
+  --output-junit <tree>/results-nominal-adts-final.xml
+```
+
+Completed-build tests never overlap a relink or another CTest run in that tree.
+Baseline reruns before nominal edits were GCC/generated 47/47 and
+Clang/fallback 46/46 (`results-adts-baseline.xml`). Before rebuilding the old
+Release compiler, `on1x-values-release/on1xc --check
+on1x/examples/nominal_adts.on1x` reproduced `1:1: expected 'fn', found 'record'`.
+
+Release/fallback/native-off configuration:
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-values-release -DBUILD_TESTING=ON \
+  -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_BUILD_NATIVE_PPX=OFF \
+  -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+  '-DCMAKE_C_FLAGS=-Wall -Wextra -Wpedantic -Werror' \
+  '-DCMAKE_CXX_FLAGS=-Wall -Wextra -Wpedantic -Werror'
+cmake --build /tmp/opencode/on1x-values-release --parallel 2 --target \
+  on1xc on1x_nominal_tests on1x_control_tests on1x_pattern_tests on1x_value_loop_tests
+ctest --test-dir /tmp/opencode/on1x-values-release --output-on-failure \
+  --parallel 2 -R 'on1x.(nominal|control|pattern|value_loop)' \
+  --output-junit /tmp/opencode/on1x-values-release/results-nominal-adts-final.xml
+```
+
+| Final profile | Result |
+|---|---|
+| GCC/generated Debug, native processors | 49/49 |
+| Clang/fallback Debug, native processors | 48/48 |
+| Clang/generated Debug + ExoML/Exotract/Chisel/Nerotypical/Novostone | 58/58 |
+| Same SDK + ASan/UBSan, including generated C/C++ programs | 58/58, no sanitizer findings |
+| GCC Release/fallback/native-off, focused control/matching/value/nominal suites | 8/8 |
+
+JUnit artifacts are `results-nominal-adts-final.xml` in those five trees.
+
+Standalone acceptance:
+
+```sh
+python3 on1x/tools/on1x-build.py on1x/examples/nominal_adts.on1x \
+  --on1xc /tmp/opencode/on1x-values-gcc/on1xc --cc gcc \
+  -o /tmp/opencode/on1x-nominal-adts-example
+/tmp/opencode/on1x-nominal-adts-example
+readelf -d /tmp/opencode/on1x-nominal-adts-example
+```
+
+Output: `42`, `true`, `-7`. The only dynamic dependency is `libc.so.6`.
+Strict GCC C11 static-archive and shared-runtime links of that generated program
+also execute with the same output:
+
+```sh
+/tmp/opencode/on1x-values-gcc/on1xc --emit-c on1x/examples/nominal_adts.on1x \
+  -o /tmp/opencode/on1x-nominal-link.c
+gcc -std=c11 -Wall -Wextra -Wpedantic -Werror -fPIC -shared -I on1x/runtime \
+  on1x/runtime/on1x_runtime.c -o /tmp/opencode/libon1x-nominal-runtime.so
+gcc -std=c11 -Wall -Wextra -Wpedantic -Werror -I on1x/runtime \
+  /tmp/opencode/on1x-nominal-link.c -L /tmp/opencode -lon1x-nominal-runtime \
+  -Wl,-rpath,/tmp/opencode -o /tmp/opencode/on1x-nominal-shared
+gcc -std=c11 -Wall -Wextra -Wpedantic -Werror -I on1x/runtime \
+  /tmp/opencode/on1x-nominal-link.c /tmp/opencode/on1x-values-gcc/libon1x_runtime.a \
+  -o /tmp/opencode/on1x-nominal-static
+/tmp/opencode/on1x-nominal-shared
+/tmp/opencode/on1x-nominal-static
+```
+
+Direct SDK boundary checks with `on1x-values-sdk/on1xc --check-memory` and
+`--check-types` on that source reject with `ON1X-MEMORY: parameter memory model
+unavailable` and `ON1X-TYPE-SAFETY: unresolved or quantified type is outside the
+structural adapter`. MIR emission/evaluation of aggregates remains unsupported.
+
+Historical attempts: strict compiler warnings caught two indentation issues and
+a parser-local name collision; new fixture setup initially used an omitted
+lambda return annotation and an invalid MIR CLI spelling. The first complete
+Debug runs then caught a changed legacy syntax diagnostic, null-child traversal
+ahead of canonical validation, and Python named-signature rendering. Those were
+fixed in the implementation, not by disabling/relabeling tests. The cross-TU
+fixture was also corrected to keep generated private adapters out of its shared
+interface. An added deep-layout regression exposed a shallow-cache depth bypass;
+cached height is now checked. Earlier failed logs remain `results-nominal-adts.xml`.
+Final compatibility review also added ordinary `record`/`variant` comparison
+bindings: complete-prefix lookahead avoids greedily reinterpreting their `<`
+operators as constructor syntax. All five final profiles were rebuilt/rerun
+after that parser regression fix (`build-nominal-compat.log` in each tree).
+
+Unsupported: recursive/owning nominal layouts, managed fields, field mutation,
+constructor-function sugar, general aggregate MIR/SDK models, foreign aggregate
+ABI, module interfaces/separate compilation, general resource transfer/errors,
+owning lists, defer/using/try/propagation and checked concurrency. No 32-bit,
+non-Linux or alternative-native-backend certification. TSAN is not evidence for
+this single-threaded by-value increment; Exotract's optional Lua layer remains
+unavailable, while its real native CLI is exercised in SDK suites.
+
+## G2 continuation — value-producing loops
+
+Scoped task: the next executable dependency slice of the request for value loops,
+owning lists, defer/typed errors, concurrency and nominal ADTs. **Only value loops
+are implemented by this slice.** The other capabilities remain unsupported; no
+syntax-only runtime, competing IR or guessed foreign ABI was added.
+
+Re-inspected MuLIB `7391d9e9d58e987ea234c64dbfd352c31f220537` and the configured,
+unchanged/read-only LibStone `55755485acaded7c4ed804c0946bc8c7363f6763` at
+`on1x/third_party/libstone`. Linux `6.18.52-1-lts` x86_64, glibc 2.44,
+GCC/g++ 16.2.1, Clang/clang++ 22.1.8, CMake 4.4.3, Python 3.14.7.
+The shared tree also contains concurrent C-string FFI work, which was preserved;
+these combined-tree suites include that work where its SDK is enabled. Its
+separate isolated evidence remains below. No commit, push or submodule update.
+
+### Behavior, regressions and changed areas
+
+- `loop` expressions and labeled `break with` infer a common exact result type;
+  a bare break yields void. Only expression-loop targets admit payloads. Existing
+  statement-loop/while/for behavior and ordinary keyword-spelled bindings remain
+  compatible. Parenthesize a loop expression to discard its result.
+- Operands execute once before lexical cleanup. Scalar/tuple/closure and bounded
+  by-value C11 results reuse existing representation and RC. JSON owners/views
+  cannot be transferred/discarded as value exits. Fatal failures do not unwind.
+- Control normalization resolves function-local expression targets, and the
+  independent verifier checks the nearest matching label/syntax context rather
+  than accepting any active target ID; value lowering
+  erases loops/break operands into existing while/region/initialize/leave nodes.
+  Independent possible/definite-initialization checks reject missing/repeated
+  writes and writes on repeatable backedges, including condition expressions.
+  A fatal impossible-normal-exit edge prevents uninitialized result reads.
+- Additive v1 PPX nodes `LoopValue`/`ValueBreak` carry source names/contexts,
+  never canonical targets or result/ownership proofs. Both JSON schemas are
+  semantically synchronized (their historical formatting/order differs).
+- Files: `include/on1x/{ast,clone}.hpp`, `src/{parser,infer,sema,loader,macros,
+  macro_rules,ppx_ast,staging}.cpp`, `src/canonical/{control,values,verify_values}.cpp`,
+  source-node rejection in `src/{codegen,safety,type_safety}.cpp`, grammar/schema
+  inputs, `CMakeLists.txt`, `tests/test_value_loops.{cpp,py}`, updated statement
+  control negatives, `examples/value_loops.on1x` and linked manuals/matrix.
+  Existing MIR lowering/runtime require no new opcode, format or ABI.
+- The example initially failed on the labeled expression (`expected ';', found
+  ':'`). It now compiles/links/runs and prints `49`, `42`, `8` through C11 and
+  scalar/numeric MIR. The standalone C11 executable needs only `libc.so.6`
+  (`readelf -d /tmp/opencode/on1x-value-loops-example`).
+- New tests cover plain/optimized MIR C11 and evaluator, deterministic MIR
+  round-trip, strict C11/O2, ten seeded search oracles, nested/outer exits and
+  for-latch behavior, exact numeric joins, bounded aggregate/closure results,
+  source return from payloads, macro hygiene, native/Python identity PPX, staging,
+  generics/imports, separate C translation-unit calls, JSON cleanup, closure
+  counting and allocation failure at three points, terminal division failure,
+  malformed HIR/wire, initialization mutations and output preservation.
+
+### Exact commands and profiles
+
+From the MuLIB root (SDK preparation copies the actual pinned headers/allocator
+to a separate source SDK and applies the existing explicit CMake-only patch):
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-values-gcc -DBUILD_TESTING=ON \
+  -DON1X_REQUIRE_LIBSTONE=ON -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+  '-DCMAKE_C_FLAGS=-Wall -Wextra -Wpedantic -Werror' \
+  '-DCMAKE_CXX_FLAGS=-Wall -Wextra -Wpedantic -Werror'
+cmake -S on1x -B /tmp/opencode/on1x-values-clang -DBUILD_TESTING=ON \
+  -DON1X_USE_FALLBACK_SCANNER=ON -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  '-DCMAKE_C_FLAGS=-Wall -Wextra -Wpedantic -Werror' \
+  '-DCMAKE_CXX_FLAGS=-Wall -Wextra -Wpedantic -Werror'
+python3 on1x/tools/prepare-type-sdk.py --output /tmp/opencode/on1x-values-type-sdk
+cmake -S on1x -B /tmp/opencode/on1x-values-sdk -DBUILD_TESTING=ON \
+  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DON1X_REQUIRE_LIBSTONE=ON -DON1X_WITH_EXOML=ON -DON1X_WITH_EXOML_EXTRACT=ON \
+  -DON1X_WITH_EXOTRACT=ON -DON1X_WITH_CHISEL=ON -DON1X_WITH_NEROTYPICAL=ON \
+  -DON1X_WITH_NOVOSTONE=ON -DON1X_SATIE_ROOT=/tmp/opencode/on1x-values-type-sdk \
+  '-DCMAKE_C_FLAGS=-Wall -Wextra -Wpedantic -Werror' \
+  '-DCMAKE_CXX_FLAGS=-Wall -Wextra -Wpedantic -Werror'
+cmake -S on1x -B /tmp/opencode/on1x-values-sanitize -DBUILD_TESTING=ON \
+  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DON1X_REQUIRE_LIBSTONE=ON -DON1X_WITH_EXOML=ON -DON1X_WITH_EXOML_EXTRACT=ON \
+  -DON1X_WITH_EXOTRACT=ON -DON1X_WITH_CHISEL=ON -DON1X_WITH_NEROTYPICAL=ON \
+  -DON1X_WITH_NOVOSTONE=ON -DON1X_SATIE_ROOT=/tmp/opencode/on1x-values-type-sdk \
+  '-DCMAKE_C_FLAGS=-Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DCMAKE_CXX_FLAGS=-Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined' \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer'
+```
+
+For each of those four trees, build first, then run tests without overlapping a
+relink or another CTest invocation in that same tree:
+
+```sh
+cmake --build <tree> --parallel 2
+ctest --test-dir <tree> --output-on-failure --parallel 2 \
+  --output-junit <tree>/results-value-loops.xml
+```
+
+| Profile | Result |
+|---|---|
+| Clang/fallback pre-change baseline | 44/44 |
+| GCC/generated Debug, native processors | 47/47 |
+| Clang/fallback Debug, native processors | 46/46, including clean final rerun |
+| Clang/generated Debug + ExoML/Exotract/Chisel/Nerotypical/Novostone | 56/56 |
+| Same SDK + ASan/UBSan, including generated-program test flags | 56/56, no sanitizer findings |
+| Focused control/matching/value-loop suites, GCC Debug and SDK Debug | 6/6 each, including final wire/header/backedge mutations |
+| GCC Release/fallback, native processors disabled | Focused 6/6 |
+
+Final complete-build reruns in all four main trees used the same command with
+`--output-junit <tree>/results-value-loops-final.xml` (after the final nearest-target
+verification regression). An additional clean Clang XML is
+`results-value-loops-clean.xml`; focused results are
+`results-value-loops-focused.xml` in GCC/SDK trees. GCC Release used the same
+strict flags with `-DCMAKE_BUILD_TYPE=Release -DON1X_USE_FALLBACK_SCANNER=ON
+-DON1X_BUILD_NATIVE_PPX=OFF`, built `on1xc on1x_control_tests on1x_pattern_tests
+on1x_value_loop_tests`, then `ctest -R 'on1x.(control|pattern|value_loop)'` with
+the same output/parallel/JUnit options (final Release XML:
+`results-value-loops-final.xml`).
+
+Final acceptance commands also ran the build helper twice using
+`/tmp/opencode/on1x-values-sdk/on1xc`: default HIR→C11 to
+`/tmp/opencode/on1x-value-loops-final` and `--via-mir --optimize-ir` to
+`/tmp/opencode/on1x-value-loops-mir-final`, both from
+`on1x/examples/value_loops.on1x`. Python syntax checks, semantic JSON-schema
+equality and `git diff --check` passed. LibStone stayed clean.
+
+Initial historical build directories were absent. An attempted reused GCC tree
+had missing artifacts and existing FFI-tool indentation warnings; it was not a
+green baseline. An intermediate Clang run overlapped a relink and reported four
+`PermissionError` process-launch failures; it was superseded by completed-build
+reruns. No tests were disabled or their assertions relaxed to obtain green runs.
+
+Limits: existing 2 MiB source/parser limits and bounded canonical traversal/
+flow-state budgets remain. No general bottom type, loop-exhaustion `else`, unique
+resource transfer, owning list, nominal ADT, defer, recoverable-error unwind or
+concurrency is admitted. Aggregates/managed results still reject scalar MIR and
+unsupported SDK models. No new ABI or native backend; no other-platform/32-bit,
+TSAN or repository-wide MuLIB conformance claim. TSAN is not relevant evidence
+for this single-threaded control increment. Exotract's optional Lua/Kaguya layer
+is unavailable; its actual native CLI/typed discovery was exercised.
+
+## M2 continuation — immutable C-string admission
+
+Baseline MuLIB `7391d9e9d58e987ea234c64dbfd352c31f220537`, actual configured
+LibStone `55755485acaded7c4ed804c0946bc8c7363f6763` (unchanged). Platform for
+this run: Linux `6.18.52-1-lts` x86_64, glibc 2.44; GCC/g++ 16.2.1,
+Clang/clang++ 22.1.8, CMake 4.4.3, Python 3.14.7.
+
+Scope: extend existing reviewed scalar FFI with exact immutable `const char *`
+call borrows and immutable process-lifetime results; directional v4 evidence,
+ABI assertions, null/byte-limit checks, unchanged review/Chisel/target gates.
+No production contract review status is changed. General bridge safety remains
+**PARTIAL**, not VERIFIED; see [the profile contract](docs/ffi-strings.md).
+
+### Reproduction and isolation
+
+The strict original-tree baseline first failed on three existing misleading
+indentation warnings in `tools/on1x-bind.cpp`; these are fixed. After the fixes,
+the existing generated/GCC suite passed **49/49**, excluding the new test. The
+new `on1x.contract_strings` test failed before implementation because string
+parameters/static borrowed results were outside the scalar-only profile.
+
+Concurrent value-loop edits then appeared in the shared source tree and
+temporarily introduced a duplicate `Stmt::control_target` field. Those changes
+were not overwritten. Final FFI-slice validation uses a detached HEAD worktree
+at `/tmp/opencode/on1x-cstring-source`, with only this slice's compiler/build/test
+changes copied in. The baseline canonical/control/parser files remain unchanged
+in that validation snapshot. This evidence does **not** certify the concurrent
+value-loop changes or the combined shared tree.
+
+Exact configuration/build commands (from the repository root):
+
+```sh
+git worktree add --detach /tmp/opencode/on1x-cstring-source HEAD
+# Apply this slice's changes to the snapshot, excluding concurrent value-loop work.
+cmake -S /tmp/opencode/on1x-cstring-source/on1x \
+  -B /tmp/opencode/on1x-cstring-isolated-gcc \
+  -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON \
+  -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+  -DCMAKE_C_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DON1X_LIBSTONE_ROOT=/mnt/nvme/mulib/on1x/third_party/libstone \
+  -DON1X_WITH_CHISEL=ON -DON1X_WITH_EXOML=ON -DON1X_WITH_EXOML_EXTRACT=ON
+cmake --build /tmp/opencode/on1x-cstring-isolated-gcc --parallel 4
+ctest --test-dir /tmp/opencode/on1x-cstring-isolated-gcc \
+  --output-on-failure --parallel 4 --output-junit results-cstrings.xml
+
+cmake -S /tmp/opencode/on1x-cstring-source/on1x \
+  -B /tmp/opencode/on1x-cstring-isolated-clang \
+  -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_C_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DON1X_LIBSTONE_ROOT=/mnt/nvme/mulib/on1x/third_party/libstone \
+  -DON1X_USE_FALLBACK_SCANNER=ON \
+  -DON1X_WITH_CHISEL=ON -DON1X_WITH_EXOML=ON -DON1X_WITH_EXOML_EXTRACT=ON
+cmake --build /tmp/opencode/on1x-cstring-isolated-clang --parallel 4
+ctest --test-dir /tmp/opencode/on1x-cstring-isolated-clang \
+  --output-on-failure --parallel 4 --output-junit results-cstrings.xml
+
+cmake -S /tmp/opencode/on1x-cstring-source/on1x \
+  -B /tmp/opencode/on1x-cstring-isolated-sanitize \
+  -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_C_FLAGS='-Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -fno-omit-frame-pointer' \
+  -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -fno-omit-frame-pointer' \
+  -DON1X_LIBSTONE_ROOT=/mnt/nvme/mulib/on1x/third_party/libstone \
+  -DON1X_WITH_CHISEL=ON -DON1X_WITH_EXOML=ON -DON1X_WITH_EXOML_EXTRACT=ON
+cmake --build /tmp/opencode/on1x-cstring-isolated-sanitize --parallel 4
+ctest --test-dir /tmp/opencode/on1x-cstring-isolated-sanitize \
+  --output-on-failure --parallel 4 --output-junit results-cstrings.xml
+```
+
+### Evidence and limits
+
+- GCC/generated: **50/50 passed**; standalone `contract_strings` rerun also
+  passed after moving the source program into `tests/fixtures/contract_strings.on1x`.
+- Clang/fallback: **49/49 passed**. Clang/generated ASan/UBSan: **50/50 passed**.
+  All three configurations also passed the final extended string regression
+  independently (pointer-layout drift, multiline gate observations, checked build
+  helper and deterministic MIR rejection included). Full-suite JUnit evidence is
+  `results-cstrings.xml` in each isolated build directory.
+  After the last diagnostic wording change and test additions, the focused
+  `contracts_sdk`, `contract_strings`, `safety_hir` suites passed **3/3** in
+  each configuration, recorded in `results-cstrings-final.xml`:
+
+  ```sh
+  ctest --test-dir /tmp/opencode/on1x-cstring-isolated-gcc -R '^on1x.(contract_strings|contracts_sdk|safety_hir)$' --output-on-failure --parallel 2 --output-junit results-cstrings-final.xml
+  ctest --test-dir /tmp/opencode/on1x-cstring-isolated-clang -R '^on1x.(contract_strings|contracts_sdk|safety_hir)$' --output-on-failure --parallel 2 --output-junit results-cstrings-final.xml
+  ctest --test-dir /tmp/opencode/on1x-cstring-isolated-sanitize -R '^on1x.(contract_strings|contracts_sdk|safety_hir)$' --output-on-failure --parallel 2 --output-junit results-cstrings-final.xml
+  ```
+- The string test exercises real libclang extraction, generated On1x facade,
+  Chisel use-site checks, strict C11 compilation, C/C++ separate-TU execution at
+  `-O0`/`-O2`, seeded Python byte-length comparisons, stable old results and nested
+  calls. Negative tests cover unreviewed metadata, borrowed/owned/nullability
+  errors, retained lifetimes, unknown/escape/allocation/invalidation effects,
+  source type errors, pointer signature drift, legacy/directional evidence,
+  null/oversized results, null inputs, exact/over-limit inputs, and nonpublication
+  after gate failure. Synthetic review flags are test inputs, not certification.
+- ASan/UBSan configuration instruments compiler, public SDK code built here,
+  runtime, native processors, adapters and generated C/C++ consumers. The system
+  libclang library is not instrumented. No new runtime allocations are introduced
+  by this profile. TSAN is not applicable to this single-threaded slice.
+- Other optional integrations, 32-bit execution, other targets/platforms, owned
+  buffers/resources, recoverable foreign errors, callbacks, async suspension,
+  MIR foreign calls, general effect proofs and independent standard-bridge review
+  are **not exercised or admitted** by this slice. Existing scalar v1/v2/v3
+  regressions remain green; no direct machine-code backend is claimed.
+
 ## Intrinsic G2 continuation — guarded structural matching and typed decisions
 
 Scoped task: implement generalized matching over the **existing bounded value

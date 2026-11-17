@@ -1,5 +1,10 @@
 # Chisel resource-usage checking
 
+The additional [immutable string FFI profile](ffi-strings.md) uses directional
+v4 admission evidence for call-scoped immutable inputs and process-lifetime
+immutable results. Legacy evidence cannot authorize strings. This extends
+use-site admission, not Chisel's ability to prove foreign implementations safe.
+
 On1x uses the real `Moonstone::Chisel` target and
 `moonstone::chisel::analyze` from the supplied LibStone checkout. The integration
 checks modeled client-side ownership and borrow lifetimes. It does not inspect

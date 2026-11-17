@@ -8,6 +8,12 @@
 
 ## 0. Source baseline, revisions and the exact newly added work
 
+**Nonrecursive nominal data:** [named records/parameterized enums](docs/nominal-adts.md)
+now retain exact module/type-argument identities while reusing bounded C11 value
+layouts. The checker and emission ingress reconstruct layouts from declarations,
+including phantom arguments. This does not add aggregate MIR, recursive owners,
+foreign aggregate ABI, cleanup effects or native machine code.
+
 **Core-syntax G1/G2 continuation:** [statement loops](docs/core-syntax.md) now
 execute in HIR→C11 and scalar MIR→C11/reference evaluation. Range canonicalization
 and checked lexical targets feed existing MIR branches/jumps, without changing
@@ -19,6 +25,14 @@ single-initialization storage, branches and lexical exits before either emitter.
 Scalar/numeric tuples execute in MIR v1–v3; sums/records/arrays/slices and managed
 values remain C11-only and reject unsupported MIR/SDK profiles. No new MIR
 serialization format, runtime dependency or native backend is implied.
+
+The subsequent [value-loop increment](docs/value-loops.md) uses these same
+regions, single-initialization slots and checked leave/continue edges. A value
+operand is acquired before lexical cleanup, and an impossible normal-exit path
+traps instead of reading an uninitialized result. Independent verification now
+tracks possible as well as definite initialization and rejects repeatable
+initialization on loop backedges (including condition expressions). No new MIR
+opcode/version, exception unwinding, suspension or foreign ABI is introduced.
 
 **M1 language continuation:** the restricted [`f64` profile](docs/numerics.md)
 now includes decimal literals and MIR v2 execution/round-trip/C11 for floats and
