@@ -79,6 +79,7 @@ Nerotypical, MemTKX or the compiler's C++ runtime.
 | Monomorphized generic functions/lets | Check concrete executable instances; skip non-emitted prototypes |
 | Raw externs | Check declared On1x call types only; C implementation/ABI remains unchecked |
 | Explicit forall packages/projections or unlowered syntax | Reject until a quantifier-aware adapter exists |
+| f64 values | Explicitly reject until independent floating-point typing obligations are implemented |
 
 The API expects HIR elaborated by `on1x::check`. It independently reconstructs
 typing obligations from expressions, lexical bindings, signatures and statement

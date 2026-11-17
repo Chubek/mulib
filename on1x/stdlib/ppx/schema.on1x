@@ -10,7 +10,7 @@ fn ppx_name(text: string) -> bool {
   return text != "fn" && text != "let" && text != "var" && text != "if" && text != "else" && text != "while" && text != "return" && text != "true" && text != "false" && text != "extern" && text != "import" && text != "forall" && text != "macro" && text != "rule" && text != "quote" && text != "splice" && text != "lift" && text != "let_syntax" && text != "letrec_syntax";
 }
 fn ppx_scalar_type(name: string) -> bool {
-  return name == "Bytes" || name == "File" || name == "Name" || name == "Version" || name == "Nat" || name == "Positive" || name == "Boolean" || name == "UnaryOperator" || name == "BinaryOperator" || name == "DecimalSpelling" || name == "HexSpelling";
+  return name == "Bytes" || name == "File" || name == "Name" || name == "Version" || name == "Nat" || name == "Positive" || name == "Boolean" || name == "UnaryOperator" || name == "BinaryOperator" || name == "DecimalSpelling" || name == "HexSpelling" || name == "FloatSpelling";
 }
 fn ppx_lookup(pairs: sexpr, name: string) -> sexpr { return ppx_json_find(pairs, name); }
 fn ppx_subtype(categories: sexpr, child: string, parent: string) -> bool {
@@ -98,6 +98,24 @@ fn ppx_scalar(value: sexpr, kind: string) -> bool {
   if kind == "DecimalSpelling" {
     if !quoted || text_len(text) == 0 { return false; } var i = 0; if text_byte(text, 0) == 45 { i = 1; } if i == text_len(text) { return false; }
     while i < text_len(text) { if !ppx_digit(text_byte(text, i)) { return false; } i = i + 1; } return true;
+  }
+  if kind == "FloatSpelling" {
+    let n = text_len(text); if !quoted || n == 0 || n > 1024 { return false; }
+    var i = 0;
+    let first = i; while i < n && ppx_digit(text_byte(text, i)) { i = i + 1; }
+    if i == first { return false; } var fraction = false; var exponent = false;
+    if i < n && text_byte(text, i) == 46 {
+      fraction = true; i = i + 1; let start = i;
+      while i < n && ppx_digit(text_byte(text, i)) { i = i + 1; }
+      if i == start { return false; }
+    }
+    if i < n && (text_byte(text, i) == 101 || text_byte(text, i) == 69) {
+      exponent = true; i = i + 1;
+      if i < n && (text_byte(text, i) == 43 || text_byte(text, i) == 45) { i = i + 1; }
+      let start = i; while i < n && ppx_digit(text_byte(text, i)) { i = i + 1; }
+      if i == start { return false; }
+    }
+    return i == n && (fraction || exponent);
   }
   if kind == "HexSpelling" {
     if !quoted || text_len(text) <= 2 || text_byte(text, 0) != 48 || (text_byte(text, 1) != 120 && text_byte(text, 1) != 88) { return false; } var i = 2;

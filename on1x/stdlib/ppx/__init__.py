@@ -78,6 +78,8 @@ class Schema:
                 return quoted and bool(re.fullmatch('-?[0-9]+', n))
             if kind == 'HexSpelling':
                 return quoted and bool(re.fullmatch('0[xX][0-9a-fA-F]+', n))
+            if kind == 'FloatSpelling':
+                return quoted and len(n) <= 1024 and bool(re.fullmatch(r'[0-9]+(?:\.[0-9]+(?:[eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)', n))
             return False
 
         def visit(n, kind, path, depth):

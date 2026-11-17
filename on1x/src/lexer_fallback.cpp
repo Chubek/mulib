@@ -17,7 +17,18 @@ extern "C" int on1x_generated_scan(const char* source,size_t n,on1x_token_callba
     else if(digit(c)){
      if(c=='0'&&pos+2<n&&(source[pos+1]=='x'||source[pos+1]=='X')&&hex((unsigned char)source[pos+2])){
       pos+=3;while(pos<n&&hex((unsigned char)source[pos]))++pos;
-     }else{++pos;while(pos<n&&digit((unsigned char)source[pos]))++pos;}
+     }else{
+      ++pos;while(pos<n&&digit((unsigned char)source[pos]))++pos;
+      if(pos+1<n&&source[pos]=='.'&&digit((unsigned char)source[pos+1])){
+       pos+=2;while(pos<n&&digit((unsigned char)source[pos]))++pos;
+      }
+      if(pos<n&&(source[pos]=='e'||source[pos]=='E')){
+       auto end=pos+1;if(end<n&&(source[end]=='+'||source[end]=='-'))++end;
+       if(end<n&&digit((unsigned char)source[end])){
+        pos=end+1;while(pos<n&&digit((unsigned char)source[pos]))++pos;
+       }
+      }
+     }
     }
   else if(c=='"'){
    ++pos;bool done=false;

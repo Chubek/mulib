@@ -68,7 +68,7 @@ def unroll(tree, label):
 
 def _type(t):
     k = tag(t)
-    scalars = {'I64Type': 'i64', 'BoolType': 'bool', 'StringType': 'string', 'VoidType': 'void',
+    scalars = {'I64Type': 'i64', 'F64Type': 'f64', 'BoolType': 'bool', 'StringType': 'string', 'VoidType': 'void',
                'JsonType': 'json', 'JsonViewType': 'json_view', 'SExprType': 'sexpr',
                'BufferType': 'buffer', 'HoleType': '_', 'Inferred': '_'}
     if k in scalars:

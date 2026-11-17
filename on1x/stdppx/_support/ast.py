@@ -90,6 +90,7 @@ class Schema:
             if k=='BinaryOperator':return not quoted and n in ('+','-','*','/','%','<','>','<=','>=','==','!=','&&','||')
             if k=='DecimalSpelling':return quoted and bool(re.fullmatch(r'-?[0-9]+',n))
             if k=='HexSpelling':return quoted and bool(re.fullmatch(r'0[xX][0-9a-fA-F]+',n))
+            if k=='FloatSpelling':return quoted and len(n)<=1024 and bool(re.fullmatch(r'[0-9]+(?:\.[0-9]+(?:[eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)',n))
             return False
         def check(obj,expected,depth,path):
             nonlocal nodes

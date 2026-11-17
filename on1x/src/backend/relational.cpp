@@ -39,6 +39,7 @@ const novostone::datalog::Program& program(){
 }
 novostone::datalog::Module project(const Module& module,ImportLimits limits){
  verify(module,limits.mir);
+ if(module.version!=legacy_format_version)fail("MIR v2 numeric/aggregate descriptors are outside relational mapping v1");
  dl::Module out{program(),{}};Budget budget{limits.facts,limits.bytes};
  auto add=[&](const std::string& name,dl::Tuple row){
   budget.charge(name,row);out.program.validate_fact(name,row);out.facts[name].insert(std::move(row));

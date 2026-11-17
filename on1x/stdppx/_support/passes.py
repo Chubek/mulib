@@ -61,7 +61,7 @@ def unroll(tree,label):
 
 def _render_type(t):
     k=tag(t)
-    fixed={'I64Type':'i64','BoolType':'bool','StringType':'string','VoidType':'void','JsonType':'json','JsonViewType':'json_view','SExprType':'sexpr','BufferType':'buffer','HoleType':'_','Inferred':'_'}
+    fixed={'I64Type':'i64','F64Type':'f64','BoolType':'bool','StringType':'string','VoidType':'void','JsonType':'json','JsonViewType':'json_view','SExprType':'sexpr','BufferType':'buffer','HoleType':'_','Inferred':'_'}
     if k in fixed:return fixed[k]
     if k=='BoundType':return 'a'+str(t[1])
     if k=='CodeType':return 'code<'+_render_type(t[1])+'>'

@@ -5,6 +5,12 @@ The opt-in B3 scalar analysis layer uses the real `Novostone::Datalog` and
 relations and computes CFG reachability, transitive calls, conservative effects,
 and block liveness. All executable semantics remain in [MIR](backend-mir.md).
 
+This mapping accepts **MIR v1 only**. Numeric/product MIR v2 has new type and
+opcode descriptors not yet represented by the relational schema; both source
+and saved-v2 analysis reject before publishing facts. The v2 execution paths
+remain usable without Novostone. No float bit payload is narrowed or treated
+as integer arithmetic to force admission to this mapping.
+
 ## Build and use
 
 From the MuLIB root:

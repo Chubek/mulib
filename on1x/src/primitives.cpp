@@ -2,7 +2,14 @@
 #include <map>
 namespace on1x {
 std::optional<Type> data_primitive(const std::string& name){
- static const std::map<std::string,Type> primitives={
+  static const std::map<std::string,Type> primitives={
+   {"f64_from_i64",Type::function({Type::I64},Type::F64)},
+   {"f64_to_i64",Type::function({Type::F64},Type::I64)},
+   {"f64_from_bits",Type::function({Type::I64},Type::F64)},
+   {"f64_to_bits",Type::function({Type::F64},Type::I64)},
+   {"f64_is_nan",Type::function({Type::F64},Type::Bool)},
+   {"f64_is_finite",Type::function({Type::F64},Type::Bool)},
+   {"f64_signbit",Type::function({Type::F64},Type::Bool)},
   {"sx_nil",Type::function({},Type::SExpr)},
   {"sx_symbol",Type::function({Type::String},Type::SExpr)},
   {"sx_string",Type::function({Type::String},Type::SExpr)},

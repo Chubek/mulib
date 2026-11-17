@@ -249,14 +249,14 @@ Views views(const Module& m){
 }
 const Descriptor& descriptor(Pass pass){
  static const Descriptor descriptors[]={
-  {Pass::ConstantFold,"constant-fold",1,{"verified-mir"},{Analysis::Signatures,Analysis::CFG,Analysis::Calls},
-   {Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only proven nontrapping arithmetic effects","portable-scalar-v1","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
-  {Pass::SimplifyCFG,"simplify-cfg",1,{"verified-mir"},{Analysis::Signatures},
-   {Analysis::CFG,Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only statically unreachable paths","portable-scalar-v1","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
-  {Pass::DeadPure,"dead-pure",1,{"verified-mir"},{Analysis::Signatures,Analysis::CFG,Analysis::Calls,Analysis::Effects},
-   {Analysis::Values,Analysis::Liveness},"retain all effect roots and control flow","portable-scalar-v1","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
-  {Pass::LocalSlots,"local-slots",1,{"verified-mir"},{Analysis::Signatures,Analysis::CFG},
-   {Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"forward local loads; remove same-block overwritten stores","portable-scalar-v1","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations + slots/nonmemory barriers"}
+  {Pass::ConstantFold,"constant-fold",2,{"verified-mir"},{Analysis::Signatures,Analysis::CFG,Analysis::Calls},
+   {Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only proven nontrapping integer arithmetic effects","portable-scalar-v1 / portable-numeric-product-v2","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
+  {Pass::SimplifyCFG,"simplify-cfg",2,{"verified-mir"},{Analysis::Signatures},
+   {Analysis::CFG,Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only statically unreachable paths","portable-scalar-v1 / portable-numeric-product-v2","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
+  {Pass::DeadPure,"dead-pure",2,{"verified-mir"},{Analysis::Signatures,Analysis::CFG,Analysis::Calls,Analysis::Effects},
+   {Analysis::Values,Analysis::Liveness},"retain all effect roots and control flow","portable-scalar-v1 / portable-numeric-product-v2","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
+  {Pass::LocalSlots,"local-slots",2,{"verified-mir"},{Analysis::Signatures,Analysis::CFG},
+   {Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"forward local loads; remove same-block overwritten stores","portable-scalar-v1 / portable-numeric-product-v2","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations + slots/nonmemory barriers"}
  };
  auto index=static_cast<std::size_t>(pass);if(index>=std::size(descriptors))fail({"<mir-pass>"},"unknown pass");return descriptors[index];
 }
@@ -288,7 +288,8 @@ void verify_transition(const Module& before,const Module& after,Pass pass,mir::L
  }
 }
 Result run(const Module& module,Options options){
- if(options.target!="portable-scalar-v1")fail({"<mir-pass>"},"unsupported pass target: "+options.target);
+ if(options.target!="portable-scalar-v1"&&options.target!="portable-numeric-product-v2")fail({"<mir-pass>"},"unsupported pass target: "+options.target);
+ if(module.version==format_version)options.target="portable-numeric-product-v2";
  if(options.pipeline.empty()||options.pipeline.size()>16||!options.rounds||options.rounds>64)fail({"<mir-pass>"},"pipeline requires 1..16 passes and 1..64 rounds");
  for(auto pass:options.pipeline)(void)descriptor(pass);
  verify(module,options.verification);Result result(module,serialize(module),options);

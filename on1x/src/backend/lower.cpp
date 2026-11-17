@@ -1,5 +1,6 @@
 #include <on1x/backend/mir.hpp>
 #include <on1x/meta.hpp>
+#include <on1x/numeric.hpp>
 #include <charconv>
 #include <map>
 #include <limits>
@@ -15,7 +16,13 @@ class Lowering {
  std::map<std::string,Id> functions;
  [[noreturn]] void unsupported(const Location& at,const std::string& why){throw Error(at,"ON1X-MIR-UNSUPPORTED: "+why);}
  Id fresh(const Location& at){if(serial>=limits.nodes)throw Error(at,"ON1X-MIR-LOWER: node budget exhausted");return ++serial;}
- void scalar(const Type& t,const Location& at,bool allow_void=false){
+  void scalar(const Type& t,const Location& at,bool allow_void=false){
+   if(t==Type::F64){module.version=format_version;return;}
+   if(t.is_tuple()){
+    module.version=format_version;
+    for(const auto& element:t.elements())scalar(element,at);
+    return;
+   }
   if(t!=Type::I64&&t!=Type::Bool&&!(allow_void&&t==Type::Void))unsupported(at,"scalar MIR cannot lower "+type_name(t));
  }
  Function& fn(){return module.functions.at(function);}
@@ -50,12 +57,17 @@ class Lowering {
    if(ec!=std::errc{}||p!=e.text.data()+e.text.size())unsupported(e.where,"integer requires checked decimal HIR");
    return emit(Op::Constant,Type::I64,{},e.where,0,value);
   }
-  case Expr::Kind::Boolean:return emit(Op::Constant,Type::Bool,{},e.where,0,e.text=="true");
+   case Expr::Kind::Boolean:return emit(Op::Constant,Type::Bool,{},e.where,0,e.text=="true");
+   case Expr::Kind::Float:return emit(Op::Constant,Type::F64,{},e.where,0,float_literal_bits(e.text,e.where));
+   case Expr::Kind::Tuple:{
+    std::vector<Id> fields;for(const auto& child:e.children)fields.push_back(expression(*child));
+    return emit(Op::Tuple,e.type,std::move(fields),e.where);
+   }
   case Expr::Kind::Variable:{
    if(e.reference!=Expr::Reference::Local)unsupported(e.where,"first-class function values");
    auto b=binding(e.text,e.where);return b.slot?emit(Op::Load,b.type,{},e.where,b.id):b.id;
   }
-  case Expr::Kind::Unary:{auto operand=expression(*e.children.at(0));return emit(e.text=="-"?Op::Neg:Op::Not,e.type,{operand},e.where);}
+   case Expr::Kind::Unary:{auto operand=expression(*e.children.at(0));return emit(e.type==Type::F64?Op::FloatNeg:e.text=="-"?Op::Neg:Op::Not,e.type,{operand},e.where);}
   case Expr::Kind::Binary:{
    auto left=expression(*e.children.at(0));
    if(e.text=="&&"||e.text=="||"){
@@ -66,7 +78,12 @@ class Lowering {
     terminate(Exit::Branch,left,{yes,no},e.where);
     current=rhs;auto right=expression(*e.children.at(1));jump(merge,e.where,{right});current=merge;return result;
    }
-   auto right=expression(*e.children.at(1));
+    auto right=expression(*e.children.at(1));
+    if(e.children[0]->type==Type::F64){
+     static const std::map<std::string,Op> floats={{"+",Op::FloatAdd},{"-",Op::FloatSub},{"*",Op::FloatMul},{"/",Op::FloatDiv},
+      {"==",Op::FloatEq},{"!=",Op::FloatNe},{"<",Op::FloatLt},{"<=",Op::FloatLe},{">",Op::FloatGt},{">=",Op::FloatGe}};
+     return emit(floats.at(e.text),e.type,{left,right},e.where);
+    }
    static const std::map<std::string,Op> ops={{"+",Op::Add},{"-",Op::Sub},{"*",Op::Mul},{"/",Op::Div},{"%",Op::Mod},
     {"==",Op::Eq},{"!=",Op::Ne},{"<",Op::Lt},{"<=",Op::Le},{">",Op::Gt},{">=",Op::Ge}};
    auto found=ops.find(e.text);if(found==ops.end())unsupported(e.where,"unknown binary operator");
@@ -82,12 +99,25 @@ class Lowering {
     return emit(Op::Call,e.type,std::move(args),e.where,functions.at(c.text));
    }
    if(c.text=="println")return emit(Op::Print,Type::Void,std::move(args),e.where);
-   if(c.text=="assert")return emit(Op::Assert,Type::Void,std::move(args),e.where);
+    if(c.text=="assert")return emit(Op::Assert,Type::Void,std::move(args),e.where);
+    static const std::map<std::string,Op> floats={{"f64_from_i64",Op::FloatFromI64},{"f64_to_i64",Op::FloatToI64},
+     {"f64_from_bits",Op::FloatFromBits},{"f64_to_bits",Op::FloatToBits},{"f64_is_nan",Op::FloatIsNaN},
+     {"f64_is_finite",Op::FloatIsFinite},{"f64_signbit",Op::FloatSignbit}};
+    if(auto op=floats.find(c.text);op!=floats.end()){
+     module.version=format_version;return emit(op->second,e.type,std::move(args),e.where);
+    }
    unsupported(e.where,"intrinsic needs an explicit effect/resource descriptor: "+c.text);
   }
-  default:unsupported(e.where,"expression requires aggregate, closure, resource or stage lowering");
+   default:unsupported(e.where,"expression requires aggregate, closure, resource or stage lowering");
+   }
   }
- }
+  void bind_pattern(const Pattern& pattern,Type type,Id value){
+   if(!pattern.is_tuple()){scopes.back().emplace(pattern.name,Binding{value,type,false});return;}
+   for(std::size_t i=0;i<pattern.elements.size();++i){
+    auto field=type.elements()[i];auto extracted=emit(Op::Extract,field,{value},pattern.elements[i].where,0,static_cast<std::int64_t>(i));
+    bind_pattern(pattern.elements[i],field,extracted);
+   }
+  }
  void body(const std::vector<Stmt>& statements,bool scope=true){
   if(scope)scopes.emplace_back();
   for(const auto& s:statements){
@@ -95,8 +125,8 @@ class Lowering {
    if(current==ended)unsupported(s.where,"unreachable HIR statement");
    switch(s.kind){
    case Stmt::Kind::Let:{
-    if(s.pattern)unsupported(s.where,"tuple destructuring");
     auto value=expression(*s.value);scalar(s.value->type,s.where);
+    if(s.pattern){bind_pattern(*s.pattern,s.value->type,value);break;}
     Binding b{value,s.value->type,false};
     if(s.mutable_binding){b.id=fresh(s.where);b.slot=true;fn().slots.push_back({b.id,b.type,s.where});emit(Op::Store,Type::Void,{value},s.where,b.id);}
     scopes.back().emplace(s.name,b);break;
@@ -143,8 +173,8 @@ public:
    if(f.prototype)continue;
    current=make_block(f.where);scopes.emplace_back();
    for(const auto& p:f.params){
-    if(p.pattern)unsupported(p.where,"parameter destructuring");
     scalar(p.type,p.where);auto id=fresh(p.where);block().parameters.push_back({id,p.type,p.where});scopes.back().emplace(p.name,Binding{id,p.type,false});
+    if(p.pattern)bind_pattern(*p.pattern,p.type,id);
    }
    body(f.body,false);
    if(current!=ended){if(f.result!=Type::Void)unsupported(f.where,"missing return in checked HIR");terminate(Exit::Return,0,{},f.where);}

@@ -2,6 +2,10 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <bit>
+#if defined(__linux__) && defined(__x86_64__) && defined(__SSE2__)
+#include <xmmintrin.h>
+#endif
 
 namespace {
 namespace m=on1x::mir;
@@ -40,7 +44,33 @@ int main(int argc,char** argv){
   rejected([&]{m::evaluate(module,"missing");},"not found");
   auto boolean=lower("fn flip(x:bool)->bool{return !x;} fn main(){}");
   rejected([&]{m::evaluate(boolean,"flip",{2});},"bool argument");
-  require(m::evaluate(module,"main",{},1).status==m::Status::BudgetExhausted,"step budget not enforced");
+   require(m::evaluate(module,"main",{},1).status==m::Status::BudgetExhausted,"step budget not enforced");
+   auto extended=lower("fn flip((x,b):(f64,bool))->(bool,f64){return(b,-x);}fn main(){let(x,y)=flip((1.5,true));println(x);println(y);}");
+   require(extended.version==2,"float/tuple MIR did not use version 2");
+   require(module.version==1,"existing scalar lowering changed its version");
+   require(m::structurally_equal(extended,m::deserialize(m::serialize(extended))),"extended MIR round-trip lost types/bits");
+   require(m::evaluate(extended).output=="true\n-0x1.8000000000000p+0\n","float/tuple execution mismatch");
+#if defined(__linux__) && defined(__x86_64__) && defined(__SSE2__)
+   for(unsigned mode:{0x2000u,0x8000u,0x0040u,0x0200u}){
+    auto saved=_mm_getcsr();_mm_setcsr(mode==0x0200u?saved&~mode:saved|mode);
+    auto failure=m::evaluate(extended);_mm_setcsr(saved);
+    require(failure.status==m::Status::Trapped&&failure.diagnostic=="unsupported f64 environment","evaluator ignored incompatible float environment");
+   }
+#endif
+   std::vector<m::RuntimeValue> typed{{0,{{std::bit_cast<std::int64_t>(1.5),{}},{1,{}}}}};
+   auto aggregate=m::evaluate_values(extended,"flip",typed);
+   require(aggregate.type==Type::tuple({Type::Bool,Type::F64})&&aggregate.data.elements.size()==2&&aggregate.data.elements[0].scalar==1&&aggregate.data.elements[1].scalar==std::bit_cast<std::int64_t>(-1.5),"typed aggregate API lost values");
+   auto bad_argument=typed;bad_argument[0].elements[1].scalar=2;
+   rejected([&]{m::evaluate_values(extended,"flip",bad_argument);},"bool argument");
+   rejected([&]{m::evaluate(extended,"flip",{0});},"tuple argument shape");
+   malformed(extended,[](auto& m){m.version=1;},"unsupported");
+   auto change_op=[](auto& m,m::Op op,auto change){for(auto& f:m.functions)for(auto& b:f.blocks)for(auto& i:b.instructions)if(i.op==op){change(i);return;}throw std::runtime_error("missing fixture opcode");};
+   malformed(extended,[&](auto& m){change_op(m,m::Op::Extract,[](auto& i){i.immediate=-1;});},"index out of bounds");
+   malformed(extended,[&](auto& m){change_op(m,m::Op::Extract,[](auto& i){i.type=Type::I64;});},"extract result type");
+   malformed(extended,[&](auto& m){change_op(m,m::Op::Tuple,[](auto& i){i.operands.pop_back();});},"tuple field type/arity");
+   malformed(extended,[&](auto& m){change_op(m,m::Op::FloatNeg,[](auto& i){i.op=m::Op::Neg;});},"opcode type/arity");
+   malformed(extended,[&](auto& m){change_op(m,m::Op::FloatNeg,[](auto& i){i.effect_in=0;});},"effect ordering");
+   malformed(extended,[](auto& m){for(auto& f:m.functions)for(auto& b:f.blocks)for(auto& i:b.instructions)if(i.op==m::Op::Constant&&i.type==Type::F64)i.immediate=INT64_C(0x7ff0000000000001);},"noncanonical f64 NaN");
   auto recursive=lower("fn again()->i64{return again();} fn main(){again();}");
   auto exhausted=m::evaluate(recursive,"main",{},100000,8);
   require(exhausted.status==m::Status::BudgetExhausted&&exhausted.diagnostic.find("call-depth")!=std::string::npos,"recursion budget not enforced");
@@ -49,8 +79,15 @@ int main(int argc,char** argv){
   std::string large="fn again()->i64{";
   for(int n=0;n<1100;++n)large+="let x"+std::to_string(n)+"=1;";
   large+="return again();}fn main(){again();}";
-  auto storage=m::evaluate(lower(large));
-  require(storage.status==m::Status::BudgetExhausted&&storage.diagnostic.find("frame-storage")!=std::string::npos,"frame-storage budget not enforced");
+   auto storage=m::evaluate(lower(large));
+   require(storage.status==m::Status::BudgetExhausted&&storage.diagnostic.find("frame-storage")!=std::string::npos,"frame-storage budget not enforced");
+   std::string tuple_type="(",tuple_value="(";
+   for(int n=0;n<1100;++n){if(n){tuple_type+=",";tuple_value+=",";}tuple_type+="i64";tuple_value+="0";}
+   tuple_type+=")";tuple_value+=")";
+   auto aggregate_storage=lower("fn again(x:"+tuple_type+"){again(x);}fn main(){again("+tuple_value+");}");
+   auto aggregate_exhausted=m::evaluate(aggregate_storage);
+   require(aggregate_exhausted.status==m::Status::BudgetExhausted&&aggregate_exhausted.diagnostic.find("frame-storage")!=std::string::npos,"aggregate storage counted only root values, not fields");
+   malformed(extended,[](auto& m){m.functions[0].result=Type::tuple({Type::Buffer,Type::F64});},"unsupported");
   rejected([&]{m::verify(module,{1,1000});},"node budget");
   rejected([&]{m::verify(module,{65536,1});},"analysis budget");
   auto u=on1x::parse(on1x::scan("fn main(){println(42);}","transaction.on1x"));on1x::check(u);
@@ -59,7 +96,7 @@ int main(int argc,char** argv){
   require(m::serialize(m::lower(u))==m::serialize(m::lower(u)),"unstable lowering IDs");
 
   auto simple=lower("fn main(){println(1+2);}");
-  malformed(simple,[](auto& m){m.version=2;},"version");
+  malformed(simple,[](auto& m){m.version=999;},"version");
   malformed(simple,[](auto& m){m.id=0;},"identity");
   malformed(simple,[](auto& m){m.functions[0].id=m.id;},"identity");
   malformed(simple,[](auto& m){m.functions[0].blocks.clear();},"entry");
@@ -123,6 +160,23 @@ int main(int argc,char** argv){
   done.exit={24,m::Exit::Return,0,23,{},at};f.blocks={entry,done,loop};phi.functions={f};
   m::verify(phi);require(m::evaluate(phi).output=="20\n10\n","parallel loop phi copy failed");
   if(argc==2){std::ofstream out(argv[1]);out<<m::emit_c(phi);require(bool(out),"cannot write phi C fixture");}
+  auto product=Type::tuple({Type::I64,Type::F64});phi.version=2;
+  auto& pe=phi.functions[0].blocks[0];
+  pe.instructions.push_back({25,Type::F64,m::Op::Constant,{},0,0,0,0,at});
+  pe.instructions.push_back({26,Type::F64,m::Op::Constant,{},INT64_MIN,0,0,0,at});
+  pe.instructions.push_back({27,product,m::Op::Tuple,{5,25},0,0,0,0,at});
+  pe.instructions.push_back({28,product,m::Op::Tuple,{6,26},0,0,0,0,at});
+  pe.exit.edges[0].arguments={27,28,7};
+  auto& pl=phi.functions[0].blocks[2];pl.parameters[0].type=pl.parameters[1].type=product;
+  auto& pd=phi.functions[0].blocks[1];pd.parameters[0].type=pd.parameters[1].type=product;
+  pd.instructions={{29,Type::I64,m::Op::Extract,{18},0,0,0,0,at},{30,Type::F64,m::Op::Extract,{18},1,0,0,0,at},
+   {31,Type::Void,m::Op::Print,{29},0,0,17,32,at},{33,Type::Void,m::Op::Print,{30},0,0,32,34,at},
+   {35,Type::I64,m::Op::Extract,{19},0,0,0,0,at},{36,Type::F64,m::Op::Extract,{19},1,0,0,0,at},
+   {37,Type::Void,m::Op::Print,{35},0,0,34,38,at},{39,Type::Void,m::Op::Print,{36},0,0,38,40,at}};
+  pd.exit.effect=40;
+  m::verify(phi);require(m::evaluate(phi).output=="20\n-0x0.0000000000000p+0\n10\n0x0.0000000000000p+0\n","aggregate parallel phi copy lost signed zero");
+  require(m::structurally_equal(phi,m::deserialize(m::serialize(phi))),"aggregate phi serialization failed");
+  if(argc==2){std::ofstream out(std::string(argv[1])+".v2.c");out<<m::emit_c(phi);require(bool(out),"cannot write v2 phi C fixture");}
   std::cout<<"MIR verifier, round-trip, evaluator, budgets and transactional lowering PASS\n";
  }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

@@ -69,6 +69,7 @@ valid_cases = [
     b'# \xff invalid UTF-8 in comment\r\nfn main() {}',
     b'x# inline\r\n +# more\n1',
     b'name+12;\n' * 4096,
+    b'0.0 1.25 1e3 1E+3 1.5e-12 0x1e3 1... 1. 1e+ 1.2e- 1.2.3 1e2e3',
     b'"' + b'x' * 65536 + b'"',
     b'#' + b'x' * (2 * 1024 * 1024 - 1),
 ]
@@ -85,12 +86,12 @@ check('oversized', b'#' * (2 * 1024 * 1024 + 1), invalid_at=0,
       diagnostic='source exceeds 2 MiB limit')
 
 rng = random.Random(20261114)
-spellings = [b'name', b'_1', b'019', b'"text#\\n"', b'"\xe9\x9b\xaa"', b'<=', b'->', b'/', b'[]', b'!=']
+spellings = [b'name', b'_1', b'019', b'1.25e-3', b'1e+9', b'0x1e3', b'"text#\\n"', b'"\xe9\x9b\xaa"', b'<=', b'->', b'/', b'[]', b'!=']
 layouts = [b' ', b'\t', b'\r\n', b'# comment\n']
 for i in range(40):
     data = b''.join(rng.choice(spellings) + rng.choice(layouts) for _ in range(32))
     check(f'random_valid_{i}', data, valid=True)
-alphabet = b'abc_01234 +-*/%!=<>&|#\\"\n\r\t@\x7f\x80'
+alphabet = b'abceE_01234. +-*/%!=<>&|#\\"\n\r\t@\x7f\x80'
 for i in range(160):
     data = bytes(rng.choice(alphabet) for _ in range(rng.randrange(150)))
     check(f'random_bytes_{i}', data)

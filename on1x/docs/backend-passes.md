@@ -5,6 +5,17 @@ The opt-in B4 increment adds a bounded, transactional pipeline over
 the independent fallback build. Public API:
 `include/on1x/backend/passes.hpp`; implementation: `src/backend/passes.cpp`.
 
+The v2 numeric/product extension retains the same four algorithms, with version-2
+pass descriptors. Reports select `portable-scalar-v1` for legacy modules and
+`portable-numeric-product-v2` for MIR v2 (including a default API target request).
+The report envelope remains `on1x.mir-passes` version 1. Float arithmetic,
+comparisons and conversions are **not folded**; environment/range-check effects
+remain roots. Constant float phi propagation compares exact bit payloads, so
+opposite signed zeros cannot be merged. Trivial tuple loads/stores can forward,
+but no managed/unique resources, foreign aliasing or ownership events are admitted.
+CFG cleanup and dead-pure elimination apply only under the existing verified
+rules. Novostone publication remains v1-only and rejects v2 before publication.
+
 ## Use
 
 ```sh
@@ -118,7 +129,7 @@ the control-flow loop containing it.
 
 Each descriptor records name, version, required admission, preserved/invalidated
 analyses, effect policy, target, budget policy and verifier. All current passes
-require `verified-mir` and target `portable-scalar-v1`.
+require `verified-mir` and one of the two target profiles described above.
 
 | Pass | Preserves | May invalidate |
 |---|---|---|

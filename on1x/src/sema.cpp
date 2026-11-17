@@ -2,6 +2,7 @@
 #include <on1x/infer.hpp>
 #include <on1x/meta.hpp>
 #include <on1x/primitives.hpp>
+#include <on1x/numeric.hpp>
 #include <charconv>
 #include <climits>
 #include <map>
@@ -15,7 +16,7 @@ void extern_leaves(const Pattern& pattern,const Type& type,std::vector<Type>& ty
   for(std::size_t i=0;i<pattern.elements.size();++i)extern_leaves(pattern.elements[i],type.elements()[i],types,names);
  }else{
   if(!names.insert(pattern.name).second)throw Error(pattern.where,"duplicate extern parameter: "+pattern.name);
-  if(type!=Type::I64&&type!=Type::Bool&&type!=Type::String)throw Error(pattern.where,"flattened extern leaves must be i64, bool or string");
+   if(type!=Type::I64&&type!=Type::F64&&type!=Type::Bool&&type!=Type::String)throw Error(pattern.where,"flattened extern leaves must be i64, f64, bool or string");
   types.push_back(type);
  }
 }
@@ -131,7 +132,7 @@ class Checker {
     arity(primitive->parameters().size());for(std::size_t i=0;i<arg.size();++i)equal(arg[i],primitive->parameters()[i],e.where);
     return e.type=primitive->result();
    }
-  if(n=="println"){arity(1);if(arg[0]!=Type::I64&&arg[0]!=Type::Bool&&arg[0]!=Type::String)fail(e.where,"println accepts i64, bool or string");return e.type=Type::Void;}
+   if(n=="println"){arity(1);if(arg[0]!=Type::I64&&arg[0]!=Type::F64&&arg[0]!=Type::Bool&&arg[0]!=Type::String)fail(e.where,"println accepts i64, f64, bool or string");return e.type=Type::Void;}
   if(n=="assert"){arity(1);equal(arg[0],Type::Bool,e.where);return e.type=Type::Void;}
   if(n=="json_parse_or_die"){arity(1);equal(arg[0],Type::String,e.where);return e.type=Type::Json;}
   if(n=="json_get_or_die"){arity(2);
@@ -194,7 +195,8 @@ class Checker {
      if(err!=std::errc{}||p!=e.text.data()+e.text.size())fail(e.where,"integer literal out of i64 range");
      e.text=std::to_string(v); // Decimal source spelling must not become C octal.
      return e.type=Type::I64;}
-   case Expr::Kind::Boolean:return e.type=Type::Bool;
+    case Expr::Kind::Float:(void)float_literal_bits(e.text,e.where);return e.type=Type::F64;
+    case Expr::Kind::Boolean:return e.type=Type::Bool;
    case Expr::Kind::String:
     // Current string ABI is const char*: do not imply support for binary NUL.
      for(std::size_t i=1;i+1<e.text.size();++i)if(e.text[i]=='\\'){
@@ -223,15 +225,21 @@ class Checker {
      if(e.result!=Type::Void&&!complete)fail(e.where,"not all paths return in anonymous function");
      return e.type=std::move(type);
     }
-   case Expr::Kind::Unary:{auto x=child(0);equal(x,e.text=="!"?Type::Bool:Type::I64,e.where);return e.type=x;}
+    case Expr::Kind::Unary:{auto x=child(0);
+     if(e.text=="!")equal(x,Type::Bool,e.where);
+     else if(x!=Type::F64)equal(x,Type::I64,e.where);
+     return e.type=x;}
    case Expr::Kind::Binary:{Type a=child(0),b=child(1);const auto&op=e.text;
     if(op=="+"||op=="-"||op=="*"||op=="/"||op=="%"){
-     equal(a,Type::I64,e.where);equal(b,Type::I64,e.where);return e.type=Type::I64;}
+      if(op=="%")equal(a,Type::I64,e.where);
+      else if(a!=Type::F64)equal(a,Type::I64,e.where);
+      equal(b,a,e.where);return e.type=a;}
     if(op=="&&"||op=="||"){equal(a,Type::Bool,e.where);equal(b,Type::Bool,e.where);return e.type=Type::Bool;}
     if(op=="<"||op==">"||op=="<="||op==">="){
-     equal(a,Type::I64,e.where);equal(b,Type::I64,e.where);return e.type=Type::Bool;}
+      if(a!=Type::F64)equal(a,Type::I64,e.where);
+      equal(b,a,e.where);return e.type=Type::Bool;}
     if(op=="=="||op=="!="){
-     if(a!=b||(a!=Type::I64&&a!=Type::Bool&&a!=Type::String))fail(e.where,"incompatible or non-scalar equality operands");
+      if(a!=b||(a!=Type::I64&&a!=Type::F64&&a!=Type::Bool&&a!=Type::String))fail(e.where,"incompatible or non-scalar equality operands");
      return e.type=Type::Bool;}
     fail(e.where,"unknown operator: "+op);}
     case Expr::Kind::Call:{

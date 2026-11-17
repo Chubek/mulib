@@ -65,7 +65,7 @@ include(cmake/DependencyReport.cmake)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS grammar/PPX.schema.json)
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/grammar/PPX.schema.json" ON1X_SCHEMA_TEXT)
 configure_file(cmake/ppx_schema.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/ppx_schema.hpp" @ONLY)
-add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/parser.cpp src/loader.cpp src/infer.cpp src/sema.cpp src/codegen.cpp
+add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/infer.cpp src/sema.cpp src/codegen.cpp
   src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp
   src/backend/mir.cpp src/backend/lower.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp)
 target_include_directories(on1x_frontend PUBLIC include)
@@ -300,7 +300,7 @@ if(BUILD_TESTING)
   add_executable(on1x_meta_tests tests/test_meta.cpp)
   target_link_libraries(on1x_meta_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.meta_hir COMMAND on1x_meta_tests)
-  set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules libraries stdppx install mulib stdlib_extensions)
+  set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules libraries stdppx install mulib stdlib_extensions f64)
   add_test(NAME on1x.stdppx_protocol COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/tests" -v)
   if(ON1X_WITH_EXOTRACT)
     add_test(NAME on1x.exotract COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exotract.py"

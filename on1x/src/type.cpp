@@ -65,7 +65,8 @@ bool Type::operator==(const Type& other) const { return (*this <=> other) == 0; 
 
 std::string type_name(const Type& type) {
  switch(type.kind()) {
- case Type::I64:return "i64";
+  case Type::I64:return "i64";
+  case Type::F64:return "f64";
  case Type::Bool:return "bool";
  case Type::String:return "string";
  case Type::Void:return "void";

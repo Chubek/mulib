@@ -8,7 +8,8 @@ SExpr loc(const Location& at){return form("Loc",{string(at.file),symbol(std::to_
 SExpr type(const Type& t){
  switch(t.kind()){
  case Type::Invalid:return form("Inferred");case Type::Hole:return form("HoleType");
- case Type::I64:return form("I64Type");case Type::Bool:return form("BoolType");case Type::String:return form("StringType");
+  case Type::I64:return form("I64Type");case Type::Bool:return form("BoolType");case Type::String:return form("StringType");
+  case Type::F64:return form("F64Type");
   case Type::Void:return form("VoidType");case Type::Json:return form("JsonType");case Type::JsonView:return form("JsonViewType");
   case Type::SExpr:return form("SExprType");case Type::Buffer:return form("BufferType");
   case Type::Code:return form("CodeType",{type(t.code_result())});
@@ -35,7 +36,8 @@ SExpr extension(const Expr& e,bool attribute){
 SExpr expression(const Expr& e){
  auto at=loc(e.where);
  switch(e.kind){
- case K::Integer:return form(e.text.starts_with("0x")||e.text.starts_with("0X")?"HexLiteral":"DecimalLiteral",{string(e.text),std::move(at)});
+  case K::Integer:return form(e.text.starts_with("0x")||e.text.starts_with("0X")?"HexLiteral":"DecimalLiteral",{string(e.text),std::move(at)});
+  case K::Float:return form("FloatLiteral",{string(e.text),std::move(at)});
  case K::String:return form("StringLiteral",{string(literal_value(e.text)),std::move(at)});
  case K::Boolean:return form("BooleanLiteral",{symbol(e.text),std::move(at)});
  case K::Variable:return form("Identifier",{string(e.text),std::move(at)});
@@ -78,7 +80,7 @@ Type read_type(const SExpr& n,bool inferred=false,std::size_t bound=0){
  const auto& k=tag(n);
  if(k=="Inferred"){if(!inferred)invalid(n,"Inferred is only valid for a local annotation");return Type::Invalid;}
  if(k=="HoleType")return Type::Hole;
-  for(auto kind:{Type::I64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(tag(type(Type(kind)))==k)return kind;
+   for(auto kind:{Type::I64,Type::F64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(tag(type(Type(kind)))==k)return kind;
   if(k=="CodeType")return Type::code(read_type(field(n,0),false,bound));
  if(k=="BoundType"){auto index=number(field(n,0));if(index>=bound)invalid(n,"unbound quantified type variable");return Type::bound(index);}
  if(k=="ForallType"){
@@ -114,7 +116,8 @@ std::vector<Param> read_parameters(const SExpr& n){
 std::vector<Stmt> read_block(const SExpr& n);
 ExprPtr read_expression(const SExpr& n){
  const auto& k=tag(n);auto e=std::make_unique<Expr>();e->where=location(n.items.back());
- if(k=="DecimalLiteral"||k=="HexLiteral"){e->kind=K::Integer;e->text=field(n,0).text;}
+  if(k=="DecimalLiteral"||k=="HexLiteral"){e->kind=K::Integer;e->text=field(n,0).text;}
+  else if(k=="FloatLiteral"){e->kind=K::Float;e->text=field(n,0).text;}
  else if(k=="StringLiteral"){e->kind=K::String;e->text=source_literal(field(n,0).text);}
  else if(k=="BooleanLiteral"){e->kind=K::Boolean;e->text=field(n,0).text;}
  else if(k=="Identifier"){e->kind=K::Variable;e->text=field(n,0).text;}

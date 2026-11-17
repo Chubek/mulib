@@ -25,7 +25,9 @@ int main() {
           "incorrect structural type diagnostic");
   require(on1x::type_name(Type::function({},Type::Void))=="fn() -> void",
           "incorrect zero-argument function type");
-  require(on1x::type_name(Type::Hole)=="_","incorrect inference-hole spelling");
+   require(on1x::type_name(Type::Hole)=="_","incorrect inference-hole spelling");
+   require(on1x::type_name(Type::F64)=="f64"&&Type(Type::F64)!=Type::I64,"f64 was conflated with i64");
+   require(!Type(Type::F64).has_functions()&&!Type(Type::F64).has_holes(),"f64 must be a trivial ground value");
   require(on1x::has_type_holes(Type::function({Type::Hole},Type::I64)),"parameter hole was missed");
   require(on1x::has_type_holes(Type::function({},Type::function({},Type::Hole))),"nested result hole was missed");
   require(!on1x::has_type_holes(nested),"concrete type incorrectly contains holes");
@@ -55,7 +57,7 @@ int main() {
   std::map<Type,int> unique;
   unique.emplace(first,1);unique.emplace(same,2);unique.emplace(different,3);
   require(unique.size()==2,"equivalent function types have different ordering identities");
-  std::vector<Type> types={Type::Invalid,Type::I64,Type::Bool,Type::String,Type::Void,
+   std::vector<Type> types={Type::Invalid,Type::I64,Type::F64,Type::Bool,Type::String,Type::Void,
                           Type::Json,Type::JsonView,first,same,different,nested,
                            Type::function({},Type::Void),Type::function({first},Type::Bool),pair,product,
                             Type::tuple({Type::I64,Type::String}),Type::function({pair},product),

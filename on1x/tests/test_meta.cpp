@@ -13,7 +13,17 @@ int main(){
   auto wire=on1x::meta::write_sexpr(tree);auto parsed=on1x::meta::read_sexpr(wire,"wire-test");schema.validate(parsed);
   require(on1x::meta::write_sexpr(parsed)==wire,"wire codec is not canonical");
   auto copy=on1x::meta::decode(parsed);on1x::check(unit);on1x::check(copy);
-  require(on1x::emit_c(unit,"a")==on1x::emit_c(copy,"b"),"AST round trip changed generated C");
+   require(on1x::emit_c(unit,"a")==on1x::emit_c(copy,"b"),"AST round trip changed generated C");
+   auto floats=parse("fn half(x:f64)->f64{return x/2.0;}fn main(){println(half(85.0));}");
+   auto float_wire=on1x::meta::encode(floats);schema.validate(float_wire);
+   auto float_copy=on1x::meta::decode(float_wire);on1x::check(floats);on1x::check(float_copy);
+   require(on1x::emit_c(floats,"a")==on1x::emit_c(float_copy,"b"),"f64 source AST round trip changed C");
+   for(const auto& spelling:{"-0.0","nan","1.",".5","1e+","0x1p0"}){
+    bool bad_float=false;
+    try{schema.validate(on1x::meta::read_sexpr(std::string("(FloatLiteral \"")+spelling+"\" (Loc \"bad\" 0 1 1))","wire"),"Expression");}
+    catch(const on1x::Error&){bad_float=true;}
+    require(bad_float,"invalid float wire spelling was admitted");
+   }
   on1x::check(copy);require(on1x::emit_c(unit,"a")==on1x::emit_c(copy,"b"),"metadata checking is not idempotent");
   auto bad=parse("macro m{rule()=>expression{m!()};} fn main(){m!();}");bool rejected=false;
   try{on1x::expand_macros(bad);}catch(const on1x::Error&){rejected=true;}

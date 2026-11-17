@@ -17,11 +17,12 @@
 | Anonymous functions / lexical closures | P1 immutable subset | Escaping scalar/function/tuple captures, transitive capture, reference-counted C11 environments; no mutable/resource captures or recursive let |
 | Tuples / destructuring | P1 product subset | Structural products, nested immutable local/function/lambda patterns, leaf schemes and function/universal-field ownership; no JSON elements or aggregate extern ABI |
 | C11 AOT code generation | Verified subset | Strict GCC/Clang compile/run tests; ASan/UBSan also cover generated C |
-| Core/MIR v1 | B1 scalar subset | Stable unit-local IDs, source points, SSA block arguments, direct calls, local slots, explicit effect chains, bounded verifier and deterministic round-trip; see [manual](backend-mir.md) |
+| Core/MIR v1/v2 | B1 scalar/trivial-product subset | Legacy v1 preserved; v2 adds typed f64 operations, exact-bit constants, nested trivial tuples, destructuring, aggregate slots/calls/phis; bounded verifier and deterministic round-trip; see [manual](backend-mir.md) |
 | MIR reference execution / C11 | Implemented scalar subset | Five-way HIR-C11, plain/optimized MIR-C11 and evaluator tests; malformed CFG/phi/use/effect/initialization rejections; optional CLI and build-helper path |
-| Novostone MIR analyses | B3 scalar metadata subset | Opt-in Datalog/CCDB, exact fact checks, transactional publication, revision-bound queries, call/effect closure and block liveness; [manual](backend-analysis.md) |
+| Novostone MIR analyses | B3 v1 scalar metadata subset | Opt-in Datalog/CCDB, exact fact checks, transactional publication, revision-bound queries, call/effect closure and block liveness; v2 fails closed pending complete descriptor mapping; [manual](backend-analysis.md) |
 | Transactional MIR passes | B4 scalar subset | Opt-in checked constant folding, constant-branch cleanup, local-slot forwarding/overwritten-store removal, dead pure-value/phi elimination; checked preservation, bounded rollback/fallback, deterministic provenance and exact-revision fact publication; [manual](backend-passes.md) |
 | Signed i64 checking | Implemented | Overflow/invalid division tests |
+| f64 values/literals (M1 slice) | Executable HIR/MIR/C11 subset | Decimal literals, binary64 operators/conversions, bit transport, hex print and raw double ABI; Linux x86_64 GCC/Clang only; no f32, float folding, independent checker support or generated safe adapters; [contract](numerics.md), [matrix](capability-matrix.md) |
 | Native ABI externs | Explicit raw subset | Exact scalar ABI; explicit nested parameter patterns flatten left-to-right, no aggregate layout inference |
 | Typed hygienic macros | Recursive patterns and lexical syntax bindings | Context marks, typed recursive captures/ellipses, `let_syntax`/`letrec_syntax`, definition-site value/syntax identities and bounded transactional expansion; not the full Scheme language |
 | External AST PPX | Core implemented | Source opt-in / CLI registration, bounded shell-free POSIX transport, S-expression schema validation, labeled carriers and namespaced AST extensions |
@@ -43,6 +44,14 @@
 | Plaid/Prolific integration | Not implemented | Future concurrency and profiling features |
 
 ## Immediate next iterations
+
+The language-only M1 continuation adds decimal f64 literals with scanner/PPX
+parity and a versioned float/trivial-tuple MIR execution path, without opening
+safe-import gates or adding product-specific kernels. Its next numeric/data
+blockers are f32 and fixed-width integers, records/ADTs and arrays/slices. General
+foreign ownership, cleanup/effect descriptors, independent checker support and
+async lowering remain open; trivial tuple copies do not establish these.
+No general numeric/data or concurrency milestone is marked complete.
 
 The backend continuation provides scalar B1, opt-in B3 relational analyses and
 transactional B4 scalar transformations. Next backend increments include

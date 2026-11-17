@@ -28,7 +28,8 @@ MacroCaptures MacroRules::duplicate(const MacroCaptures& source,const Location& 
 }
 std::string MacroRules::category(const Expr& e)const{
  switch(e.kind){
- case K::Integer:return e.text.starts_with("0x")||e.text.starts_with("0X")?"HexLiteral":"DecimalLiteral";
+  case K::Integer:return e.text.starts_with("0x")||e.text.starts_with("0X")?"HexLiteral":"DecimalLiteral";
+  case K::Float:return "FloatLiteral";
  case K::String:return "StringLiteral";case K::Boolean:return "BooleanLiteral";case K::Variable:return "Identifier";
  case K::Unary:return "UnaryExpression";case K::Binary:return "BinaryExpression";case K::Call:return "CallExpression";
  case K::Tuple:return "TupleExpression";case K::Lambda:return "LambdaExpression";case K::SyntaxBlock:return "Block";

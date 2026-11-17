@@ -1,5 +1,282 @@
 # On1x verification — 2026-11-17
 
+## Language continuation — decimal literals and numeric/product MIR v2
+
+Scoped implementation task: extend the existing frontend and MIR with decimal
+f64 literals, dedicated floating operations and **trivially copied** nested
+tuples. This is an M1/M3 prerequisite slice, not full aggregates, ownership,
+safe FFI or concurrency. The earlier value-only results below are historical;
+their float-literal/MIR exclusions are superseded only by this scoped profile.
+
+Re-inspected base: MuLIB `eeb6de585303e1ea0dfd8bf2260328289b04587c`, configured
+LibStone `55755485acaded7c4ed804c0946bc8c7363f6763` at
+`on1x/third_party/libstone`, unchanged. Linux `7.2.6-arch2-1` x86_64 GNU/Linux;
+GCC/g++ 16.2.1 (20260810), Clang/clang++ 22.1.8, CMake 4.4.3, Python 3.14.7.
+
+### Compatibility and implementation
+
+- Decimal fraction/exponent tokens work in both Aurocks and fallback scanners.
+  The bounded source decoder rejects overflow/underflow-to-zero and emits exact
+  binary64 bits. Existing i64 literals, including hexadecimal spellings with
+  `e` digits, are unchanged. Float signs remain unary operators.
+- The v1 PPX schema gains `FloatLiteral` under `NumericLiteral`, not
+  `IntegerLiteral`; all three validator implementations and the standalone
+  schema copy are synchronized. Native/Python identity, deriving, folding and
+  malformed-spelling protocol tests exercise the new node. Old pinned PPXs may
+  reject the additive constructor and must be rebuilt deliberately.
+- Existing scalar source still produces MIR v1; saved v1 modules continue to
+  round-trip. Numeric/product source selects v2, with explicit float opcodes,
+  canonical IEEE constant bits and nested structural tuple type descriptors.
+  Bad versions, types, tuple arities/indices, NaN constants, effects and entry
+  signatures reject rather than produce C or overwrite existing output.
+- Nested tuples admit only i64/bool/f64 leaves in MIR. Calls, returns, slots,
+  recursive functions, shared source destructuring patterns and simultaneous
+  phi transfers use value copies. The typed evaluator API exposes exact float
+  bits and ordered tuple elements; it validates incoming shapes and NaNs.
+  Frame budgets count nested fields and copies consume work. Type admission and
+  memoized structural equality share the verifier budget.
+- Floating arithmetic/conversions/comparisons retain environment/range-check
+  effects. No float arithmetic folding is added. Pass descriptors are version 2;
+  reports identify `portable-numeric-product-v2` while preserving the v1 report
+  envelope and the legacy scalar target name. Novostone mapping remains v1-only
+  and explicitly rejects v2; optional type/ownership adapters still reject f64.
+- A final review caught an evaluator guard that originally checked SSE2 presence
+  but not `FLT_EVAL_METHOD`. The GCC regression now recompiles the **actual**
+  evaluator translation unit with `-mfpmath=387`, links it with the canonical
+  frontend and requires a located unsupported error. This closes silent x87
+  double-rounding, without substituting a test evaluator or changing scalar code.
+
+### Validation commands
+
+Final full-suite results after the x87 guard regression: **155/155 CTests**,
+with no test exclusions, disabled tests or skips:
+
+| Build directory under `/tmp/opencode/` | Profile | Result |
+|---|---|---|
+| `on1x-loader-gcc` | Strict GCC Debug / generated scanner | 37/37 |
+| `on1x-loader-clang` | Strict Clang Debug / fallback scanner | 36/36 |
+| `on1x-loader-sanitize` | Clang / generated scanner / ASan+UBSan | 37/37 |
+| `on1x-final-gcc` | GCC / generated scanner / optional SDKs ON | 45/45 |
+
+The JUnit files are `results-v2-final.xml` in those four directories. Earlier
+`results-v2-first.xml` runs also passed before the additional boundary tests.
+
+The four existing strict Debug profiles are rebuilt and tested without excluding
+tests. The sanitizer cache instruments compiler, runtime and emitted C with
+ASan/UBSan and nonrecovering checks. Native PPXs are ON in all four. The optional
+SDK configuration uses ExoML extraction, Exotract, Chisel, Nerotypical and
+Novostone SOURCE with the existing prepared Satie SDK; Syren is OFF. SDK passing
+tests are regression/admission-rejection evidence, not numeric safety proofs.
+
+```sh
+cmake --build /tmp/opencode/on1x-loader-gcc --parallel 4
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-loader-gcc \
+  --output-on-failure --parallel 3 --output-junit results-v2-final.xml
+cmake --build /tmp/opencode/on1x-loader-clang --parallel 4
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-loader-clang \
+  --output-on-failure --parallel 3 --output-junit results-v2-final.xml
+cmake --build /tmp/opencode/on1x-loader-sanitize --parallel 4
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-loader-sanitize \
+  --output-on-failure --parallel 3 --output-junit results-v2-final.xml
+cmake --build /tmp/opencode/on1x-final-gcc --parallel 4
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-final-gcc \
+  --output-on-failure --parallel 3 --output-junit results-v2-final.xml
+```
+
+`test_mir.py` compares HIR C11, plain/optimized MIR C11 and plain/optimized
+reference evaluation. Fixtures include nested mutable tuple snapshots,
+destructured parameters, recursion, generic imported numeric tuples, output
+order/short-circuiting, NaNs/infinities, signed zero, subnormals, maximum finite
+values, conversion traps, saved-wire round-trips and independently authored
+aggregate phi permutations. `test_f64.py` now executes its independent Python
+bit/arithmetic oracle in **all five** paths, and adds decimal rounding cases
+including halfway ties. MIR tests also reject invalid floating environments and
+exhaust aggregate frame storage under sanitizers. Scanner parity includes
+complete/malformed exponent and dotted/ellipsis spellings plus seeded byte fuzz.
+
+Additional complete f64/MIR suite runs pass with emitted-code GCC LTO,
+Clang's individual precision-relaxation flags (the primitives restore precise
+semantics), and explicit float-cast-overflow sanitization:
+
+```sh
+python3 on1x/tests/test_f64.py /tmp/opencode/on1x-loader-gcc/on1xc \
+  "$PWD/on1x" /tmp/opencode/on1x-v2-lto-float gcc --cflag=-O3 --cflag=-flto
+python3 on1x/tests/test_mir.py /tmp/opencode/on1x-loader-gcc/on1xc \
+  "$PWD/on1x" /tmp/opencode/on1x-v2-lto-mir gcc --cflag=-O3 --cflag=-flto
+python3 on1x/tests/test_f64.py /tmp/opencode/on1x-loader-clang/on1xc \
+  "$PWD/on1x" /tmp/opencode/on1x-v2-precise clang \
+  --cflag=-fno-honor-nans --cflag=-fno-signed-zeros
+python3 on1x/tests/test_mir.py /tmp/opencode/on1x-loader-clang/on1xc \
+  "$PWD/on1x" /tmp/opencode/on1x-v2-precise-mir clang \
+  --cflag=-fno-honor-nans --cflag=-fno-signed-zeros
+python3 on1x/tests/test_f64.py /tmp/opencode/on1x-loader-sanitize/on1xc \
+  "$PWD/on1x" /tmp/opencode/on1x-v2-cast-sanitize clang \
+  --cflag=-fsanitize=address,undefined,float-cast-overflow \
+  --cflag=-fno-omit-frame-pointer --cflag=-fno-sanitize-recover=all
+```
+
+The real build-helper program also runs with both C compilers:
+
+```sh
+python3 on1x/tools/on1x-build.py on1x/examples/float_tuples.on1x \
+  --on1xc /tmp/opencode/on1x-loader-gcc/on1xc --cc gcc \
+  --via-mir --optimize-ir -o /tmp/opencode/on1x-float-tuples-gcc
+/tmp/opencode/on1x-float-tuples-gcc
+ldd /tmp/opencode/on1x-float-tuples-gcc
+python3 on1x/tools/on1x-build.py on1x/examples/float_tuples.on1x \
+  --on1xc /tmp/opencode/on1x-loader-gcc/on1xc --cc clang \
+  --via-mir --optimize-ir -o /tmp/opencode/on1x-float-tuples-clang
+/tmp/opencode/on1x-float-tuples-clang
+ldd /tmp/opencode/on1x-float-tuples-clang
+```
+
+Both executables print `0x1.0000000000000p-1`, `0x1.0000000000000p-3`, `4`
+on separate lines and depend only on libc/system loader, not LibStone, C++, Lua
+or the On1x compiler. This is C11 AOT, not direct native code generation.
+
+### Remaining unsupported profiles
+
+No records/ADTs/exhaustive matching, arrays/slices, f32/other integer widths,
+resource-bearing MIR aggregates, general moves/borrows, recoverable errors,
+safe-import admission, callbacks, async/await, tasks/channels/select/actors or
+native workers are added. Foreign calls remain unsupported in MIR. No new
+32-bit/Windows/macOS/other-architecture, shared-runtime ABI, TSAN or self-hosting
+claim is made. Follow `docs/capability-matrix.md`, `docs/numerics.md` and
+`docs/backend-mir.md` for exact accepted boundaries and next blockers.
+
+## Earlier M1 continuation — binary64 values (not complete M1)
+
+Inspection/patch base: MuLIB `eeb6de585303e1ea0dfd8bf2260328289b04587c`.
+The configured read-only LibStone is
+`on1x/third_party/libstone` at `55755485acaded7c4ed804c0946bc8c7363f6763`,
+with a clean working tree. Platform: x86_64 Linux `7.2.6-arch2-1`;
+GCC/g++ 16.2.1 (20260810), Clang/clang++ 22.1.8, both targeting
+`x86_64-pc-linux-gnu`; CMake 4.4.3, Python 3.14.7.
+
+Before implementation, rebuilding and running the complete existing suites gave
+**36/36 GCC/generated** and **35/35 Clang/fallback**. The old fallback compiler
+rejected `examples/f64.on1x:2:16` with `unknown type: f64`. New tests now execute
+that actual On1x program through the normal C11 backend and build helper.
+
+### Final results
+
+All four complete profiles pass; **155/155 CTests across configurations**, no
+excluded, disabled or skipped tests:
+
+| Build directory under `/tmp/opencode/` | Configuration | Result |
+|---|---|---|
+| `on1x-loader-gcc` | GCC Debug, generated scanner, optional analyzers OFF | 37/37 |
+| `on1x-loader-clang` | Clang Debug, fallback scanner, optional analyzers OFF | 36/36 |
+| `on1x-loader-sanitize` | Clang Debug, generated scanner, compiler/runtime/emitted C ASan/UBSan | 37/37 |
+| `on1x-final-gcc` | GCC Debug, generated scanner, ExoML extraction/Exotract/Chisel/Nerotypical/Novostone ON | 45/45 |
+
+These reused the documented strict `-Wall -Wextra -Wpedantic -Werror` C11/C++20
+builds. All native PPXs remain ON. Syren is OFF in these profiles. The SDK build
+retains the existing prepared Satie source SDK at
+`/tmp/opencode/on1x-final-type-sdk`, with Novostone's SOURCE provider. No LibStone
+or prepared-SDK source was modified. Optional checkers still **reject f64**;
+their green regression tests are not a float ownership/type proof. The SDK
+profile also runs actual extraction/archive regressions, not a mock SDK.
+
+Exact final build/test commands (from the MuLIB root):
+
+```sh
+cmake --build /tmp/opencode/on1x-loader-gcc --parallel 4
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-loader-gcc \
+  --output-on-failure --parallel 3 --output-junit results-numeric-final.xml
+cmake --build /tmp/opencode/on1x-loader-clang --parallel 4
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-loader-clang \
+  --output-on-failure --parallel 3 --output-junit results-numeric-final.xml
+cmake --build /tmp/opencode/on1x-loader-sanitize --parallel 4
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-loader-sanitize \
+  --output-on-failure --parallel 3 --output-junit results-numeric-final.xml
+cmake --build /tmp/opencode/on1x-final-gcc --parallel 4
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-final-gcc \
+  --output-on-failure --parallel 3 --output-junit results-numeric-final.xml
+```
+
+Baseline JUnit files are `baseline-numeric.xml` in the two loader build
+directories. Final JUnit files are `results-numeric-final.xml` in all four
+directories. The first post-patch runs exposed a stale standalone PPX schema
+copy, failing identity transport and the schema-equality test. The schema was
+synchronized with the additive `F64Type` constructor; **all four complete suites
+were rerun**, rather than suppressing those failures.
+
+For a fresh default GCC configuration equivalent to the loader profile:
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-numeric-new -DBUILD_TESTING=ON \
+  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+  -DON1X_LIBSTONE_ROOT="$PWD/on1x/third_party/libstone" \
+  -DCMAKE_C_FLAGS='-Wall -Wextra -Wpedantic -Werror' \
+  -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wpedantic -Werror'
+cmake --build /tmp/opencode/on1x-numeric-new --parallel 4
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-numeric-new --output-on-failure
+```
+
+For fallback select Clang/clang++ and `-DON1X_USE_FALLBACK_SCANNER=ON` in
+a separate directory. The measured sanitizer cache uses
+`-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all`
+in both C/C++ flags, plus the semicolon-separated equivalent in
+`ON1X_TEST_C_FLAGS`. SDK setup/options remain documented in
+`docs/{contracts,memory-safety,type-safety,backend-analysis}.md`.
+
+### New executed coverage and extra runs
+
+`tests/test_f64.py` compares 480 arithmetic results, 720 comparisons, 114 bit
+imports/exports (including signaling/negative NaN canonicalization), 228
+classification/sign checks, 72 integer-to-float conversions and seven valid
+float-to-integer boundary cases with an independent seeded Python oracle.
+It reruns the oracle under C `-O2` and `-O3`. Other tests cover:
+
+- Signed zero, gradual underflow, maximum finite values, overflow, infinities,
+  unordered NaNs and exact locale-independent hex output.
+- Imports, inference, monomorphic numeric constraints, forall instantiation,
+  tuple copies/destructuring, escaping closures, staging, counted lexical
+  cleanup and environment-allocation failure.
+- Real separately compiled C and C++ double definitions, flattened mixed
+  parameter patterns, `_Generic`/C++ prototype checks, deliberate incompatible
+  prototypes, observable operand order and short-circuit behavior.
+- Five rejected numeric casts, four rejected MXCSR modes, twelve located source
+  rejections with output preservation, four MIR-mode refusals, float ABI/version
+  guards, missing-SSE2 refusal, and fast/finite-math compile rejection.
+- Native/Python signature-PPX execution, source-AST round-trip, deterministic C,
+  build-helper execution, and no float guard added to ordinary i64 output.
+
+Additional complete numeric-suite commands also passed:
+
+```sh
+python3 on1x/tests/test_f64.py /tmp/opencode/on1x-loader-gcc/on1xc \
+  "$PWD/on1x" /tmp/opencode/on1x-f64-lto gcc --cflag=-O3 --cflag=-flto
+python3 on1x/tests/test_f64.py /tmp/opencode/on1x-loader-clang/on1xc \
+  "$PWD/on1x" /tmp/opencode/on1x-f64-precise clang \
+  --cflag=-fno-honor-nans --cflag=-fno-signed-zeros
+python3 on1x/tests/test_f64.py /tmp/opencode/on1x-loader-sanitize/on1xc \
+  "$PWD/on1x" /tmp/opencode/on1x-f64-cast-sanitize clang \
+  --cflag=-fsanitize=address,undefined,float-cast-overflow \
+  --cflag=-fno-omit-frame-pointer --cflag=-fno-sanitize-recover=all
+python3 on1x/tools/on1x-build.py on1x/examples/f64.on1x \
+  --on1xc /tmp/opencode/on1x-loader-gcc/on1xc --cc gcc \
+  -o /tmp/opencode/on1x-f64-example
+/tmp/opencode/on1x-f64-example
+ldd /tmp/opencode/on1x-f64-example
+```
+
+The example prints `0x1.5400000000000p+5` (42.5). Its dynamic dependencies are
+libc and the system loader only: no compiler, LibStone, Lua, libm or C++ runtime.
+The normal `examples/hello.on1x` build/run also passes (prints `21`).
+
+### Limits and next blockers
+
+This is the **executable f64 value profile**, not a complete numeric language
+or general FFI. See `docs/numerics.md` and `docs/capability-matrix.md`. Float
+literals, f32, other integer widths, float MIR/folding, arrays/slices, foreign
+records, generated float adapters, safe imports and recoverable conversion
+errors remain unsupported. Safe-export gates stay closed. Other architectures,
+32-bit targets, Windows/macOS, shared runtime ABI stability and TSAN are not
+verified by this slice. No new threading facility is added; TSAN is not a float
+value/ownership proof. The finite oracle corpus is not universal equivalence.
+
 ## ElviScrape hardening and fixture integration
 
 - ElviScrape retains its six-function C11 single-header API and offline `.elvs`

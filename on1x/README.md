@@ -4,6 +4,18 @@ These extensions are integrated with the existing C11 compiler and module loader
 The refined Basis modules, `stdlib/ppx/`, `stdlib/sexpr/`, `stdlib/visitor/`,
 original native processors and contracts are preserved.
 
+## Language implementation continuation
+
+The M1 numeric value slice adds real `f64` to the existing HIR/C11 compiler:
+arithmetic/comparisons, explicit checked conversions, exact bit transport and hex
+printing, closures/tuples/staging, and raw C `double` leaves/results. The initial
+profile is Linux x86_64 GCC/Clang. Decimal literals and MIR v2 now execute floats
+and nested trivial tuples, with checked serialization, an evaluator and C11
+emission; legacy scalar MIR remains v1. Run `examples/float_tuples.on1x` with the
+normal build helper, optionally `--via-mir --optimize-ir`. See the
+[numeric contract](docs/numerics.md), [capability matrix](docs/capability-matrix.md)
+and [verification record](VERIFICATION.md). This does not complete M1 or On1x.
+
 The repository accessed through the GitHub connection exposed the prior PPX-v1 schema and Exotract/ExoML contract catalogs. The `on1x/std/ppx` path in the request appears to refer to the actual `on1x/stdlib/ppx` path, whose `ppx.on1x` is used by all newly added native PPXs.
 
 ## Contents
@@ -41,7 +53,8 @@ These are **not** complete Jane Street Base, Batteries or SML Basis ports.
 mailbox helper and LibStone interchange does not wrap C++ APIs. Scalar text is
 NUL-free; socket hex reception preserves binary bytes. Tuple-returning wrappers
 distinguish missing/error/EOF/empty outcomes, but remain trusted raw adapters.
-General f64/record/slice ABI and ExoML/Chisel safe-import gates remain open.
+Generated f64 bindings, record/slice ABI and ExoML/Chisel safe-import gates remain
+open; the new user-declared raw `double` ABI is not safe foreign admission.
 Read [the bridge manual](stdlib/_bridge/README.md), [PPX manual](stdppx/README.md)
 and `AGENTS.md` before production use.
 ## Error reporting and repair proposals

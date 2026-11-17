@@ -70,7 +70,8 @@ class Inference {
  struct Scheme { Stmt* declaration; Scopes environment; Term type; std::set<Term> variables; bool global=false; Expr* source=nullptr; Type annotation=Type::Invalid; const std::vector<std::string>* group=nullptr; };
  Scopes scopes;
  std::deque<Scheme> schemes;
- std::vector<Term> weak;
+  std::vector<Term> weak;
+  std::vector<std::pair<Term,Location>> numeric;
  std::set<Term> quantified;
  struct Instance { Stmt* statement; std::size_t use_slot; };
  std::vector<Instance> instances;
@@ -94,7 +95,7 @@ class Inference {
  std::vector<std::optional<Ground>> ground;
  std::vector<unsigned char> state;
  std::map<std::vector<std::size_t>,Ground> canonical;
- std::size_t next_identity = Type::Buffer + 1;
+ std::size_t next_identity = Type::F64 + 1;
 
  [[noreturn]] static void fail(const Location& where,const std::string& message) {
    throw Error(where,message,"ON1X-TYPE");
@@ -228,7 +229,7 @@ class Inference {
  }
  static bool value(const Expr& e){
   if(e.kind==Expr::Kind::Quote)return e.children.size()==1&&e.children[0]->kind==Expr::Kind::Call&&e.children[0]->children.empty();
-  if(e.kind==Expr::Kind::Lambda||e.kind==Expr::Kind::Variable||e.kind==Expr::Kind::Integer||e.kind==Expr::Kind::Boolean||e.kind==Expr::Kind::String)return true;
+  if(e.kind==Expr::Kind::Lambda||e.kind==Expr::Kind::Variable||e.kind==Expr::Kind::Integer||e.kind==Expr::Kind::Float||e.kind==Expr::Kind::Boolean||e.kind==Expr::Kind::String)return true;
   if(e.kind!=Expr::Kind::Tuple)return false;
   for(const auto& child:e.children)if(!value(*child))return false;
   return true;
@@ -617,12 +618,25 @@ class Inference {
   unify(actual,expectation,e.where);return expectation;
  }
  void reset_ground(){
-  ground.assign(nodes.size(),{});state.assign(nodes.size(),0);canonical.clear();next_identity=Type::Buffer+1;
- }
+   ground.assign(nodes.size(),{});state.assign(nodes.size(),0);canonical.clear();next_identity=Type::F64+1;
+  }
+  void numeric_operand(Term term,const Location& at){
+   // Do not quantify numeric overloading. Delay the old i64 choice until all
+   // ordinary constraints have been collected, so annotated f64 uses can agree.
+   weak.push_back(term);numeric.emplace_back(term,at);
+  }
+  void default_numeric(){
+   for(const auto& [term,at]:numeric){
+    tick(at);auto kind=nodes[head(term,at)].kind;
+    if(kind==Type::Hole)unify(term,scalar(Type::I64,at),at);
+    else if(kind!=Type::I64&&kind!=Type::F64)fail(at,"numeric operand requires i64 or f64, got "+describe(term,at));
+   }
+  }
  void elaborate_foralls(){
   // A closed forall has one whole-unit bundle layout. Specialized lambda bodies
   // can introduce new demands, so discover layouts before freezing any types.
-  for(unsigned round=0;round<128;++round){
+   for(unsigned round=0;round<128;++round){
+    default_numeric();
    reset_ground();bool changed=false;
    for(auto& projection:projections){
     auto schema=atoms.at(head(projection.schema,projection.expression->where));
@@ -677,7 +691,8 @@ class Inference {
     fail(at,"unexpanded metaprogramming syntax before inference");
    case Expr::Kind::PolyPack:case Expr::Kind::PolyProjection:
     fail(at,"cannot reinfer an elaborated polymorphic expression");
-  case Expr::Kind::Integer:result=scalar(Type::I64,at);break;
+   case Expr::Kind::Integer:result=scalar(Type::I64,at);break;
+   case Expr::Kind::Float:result=scalar(Type::F64,at);break;
   case Expr::Kind::Boolean:result=scalar(Type::Bool,at);break;
   case Expr::Kind::String:result=scalar(Type::String,at);break;
   case Expr::Kind::Variable:return name(e);
@@ -706,19 +721,20 @@ class Inference {
    if(!saw_return)unify(result_type,scalar(Type::Void,at),at);
    returns=previous_returns;saw_return=previous_saw_return;break;
   }
-  case Expr::Kind::Unary:{
-   auto child=expression(*e.children[0]);result=scalar(e.text=="!"?Type::Bool:Type::I64,at);
-   unify(child,result,at);break;
+   case Expr::Kind::Unary:{
+    result=expression(*e.children[0]);
+    if(e.text=="!")unify(result,scalar(Type::Bool,at),at);else numeric_operand(result,at);
+    break;
   }
   case Expr::Kind::Binary:{
    auto left=expression(*e.children[0]),right=expression(*e.children[1]);
    if(e.text=="=="||e.text=="!="){unify(left,right,at);weak.push_back(left);}
-   else {
-    auto operand=scalar(e.text=="&&"||e.text=="||"?Type::Bool:Type::I64,at);
-    unify(left,operand,at);unify(right,operand,at);
-   }
-   bool arithmetic=e.text=="+"||e.text=="-"||e.text=="*"||e.text=="/"||e.text=="%";
-   result=scalar(arithmetic?Type::I64:Type::Bool,at);break;
+    else if(e.text=="&&"||e.text=="||"||e.text=="%"){
+     auto operand=scalar(e.text=="%"?Type::I64:Type::Bool,at);
+     unify(left,operand,at);unify(right,operand,at);
+    }else{unify(left,right,at);numeric_operand(left,at);}
+    bool arithmetic=e.text=="+"||e.text=="-"||e.text=="*"||e.text=="/"||e.text=="%";
+    result=arithmetic?left:scalar(Type::Bool,at);break;
   }
   case Expr::Kind::Call:{
    auto& callee=*e.callee;

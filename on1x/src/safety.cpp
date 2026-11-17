@@ -106,7 +106,8 @@ class Lower {
  Binding expression(const Expr& e){
   budget.node(e.where);
   switch(e.kind){
-  case Expr::Kind::Integer:case Expr::Kind::Boolean:case Expr::Kind::String:return {};
+   case Expr::Kind::Integer:case Expr::Kind::Boolean:case Expr::Kind::String:return {};
+   case Expr::Kind::Float:fail(e.where,"f64 memory model unavailable");
   case Expr::Kind::Variable:{
    if(e.reference!=Expr::Reference::Local)fail(e.where,"first-class callable not modeled");
    auto b=lookup(e.text,e.where);if(b.owner)event(c::Op::Use,b,e.where);return b;

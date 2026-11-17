@@ -8,6 +8,7 @@
     "Statement": "Syntax", "Block": "Syntax", "ListSyntax": "Syntax", "VectorSyntax": "Syntax", "KeywordSyntax": "Syntax", "Expression": "Syntax",
     "Identifier": "Expression", "Literal": "Expression", "NumericLiteral": "Literal",
     "IntegerLiteral": "NumericLiteral", "DecimalLiteral": "IntegerLiteral", "HexLiteral": "IntegerLiteral",
+    "FloatLiteral": "NumericLiteral",
     "StringLiteral": "Literal", "BooleanLiteral": "Literal", "UnaryExpression": "Expression",
     "BinaryExpression": "Expression", "CallExpression": "Expression", "TupleExpression": "Expression",
     "LambdaExpression": "Expression", "ExtensionExpression": "Expression", "StagedExpression": "Expression"
@@ -23,6 +24,7 @@
     "TuplePattern": {"category":"Pattern", "fields":[["elements","Pattern*"],["location","Location"]]},
     "Inferred": {"category":"Type", "fields":[]}, "HoleType": {"category":"Type", "fields":[]},
     "I64Type": {"category":"Type", "fields":[]}, "BoolType": {"category":"Type", "fields":[]},
+    "F64Type": {"category":"Type", "fields":[]},
     "StringType": {"category":"Type", "fields":[]}, "VoidType": {"category":"Type", "fields":[]},
     "JsonType": {"category":"Type", "fields":[]}, "JsonViewType": {"category":"Type", "fields":[]},
     "SExprType": {"category":"Type", "fields":[]}, "BufferType": {"category":"Type", "fields":[]},
@@ -43,6 +45,7 @@
     "Scope": {"category":"Statement", "fields":[["body","Block"],["location","Location"]]},
     "Do": {"category":"Statement", "fields":[["expression","Expression"],["location","Location"]]},
     "DecimalLiteral": {"category":"DecimalLiteral", "fields":[["spelling","DecimalSpelling"],["location","Location"]]},
+    "FloatLiteral": {"category":"FloatLiteral", "fields":[["spelling","FloatSpelling"],["location","Location"]]},
     "HexLiteral": {"category":"HexLiteral", "fields":[["spelling","HexSpelling"],["location","Location"]]},
     "StringLiteral": {"category":"StringLiteral", "fields":[["value","Bytes"],["location","Location"]]},
     "BooleanLiteral": {"category":"BooleanLiteral", "fields":[["value","Boolean"],["location","Location"]]},

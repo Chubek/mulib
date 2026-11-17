@@ -1,4 +1,5 @@
 #include <on1x/ast.hpp>
+#include <on1x/numeric.hpp>
 #include <charconv>
 #include <cctype>
 #include <algorithm>
@@ -89,7 +90,7 @@ class Parser {
     ++pos;
     if(auto found=bound_types.find(t.text);found!=bound_types.end())return Type::bound(found->second);
    if(t.text=="_")return Type::Hole;
-   for(auto x:{Type::I64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(t.text==type_name(x))return x;
+    for(auto x:{Type::I64,Type::F64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(t.text==type_name(x))return x;
    throw Error(t.where,"unknown type: "+t.text,"ON1X-PARSE-TYPE",{},t.text);
  }
  static int precedence(const std::string& op){if(op=="||")return 1;if(op=="&&")return 2;
@@ -155,7 +156,10 @@ class Parser {
    ++pos;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::String;e->where=t.where;e->text=t.text;return {std::move(e)};
   }
   if(!t.text.empty()&&std::isdigit((unsigned char)t.text[0])){
-   ++pos;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Integer;e->where=t.where;e->text=t.text;return {std::move(e)};
+   ++pos;auto e=std::make_unique<Expr>();
+   bool hexadecimal=t.text.starts_with("0x")||t.text.starts_with("0X");
+   e->kind=!hexadecimal&&t.text.find_first_of(".eE")!=std::string::npos?Expr::Kind::Float:Expr::Kind::Integer;
+   e->where=t.where;e->text=t.text;return {std::move(e)};
   }
     std::string name=ident();
     // A qualified module reference is lowered to a lexical global by the loader.
@@ -255,7 +259,7 @@ class Parser {
     if(accept("-")){auto value=atom();if(value.node->kind!=Expr::Kind::Integer)throw Error(p.where,"negative pattern datum requires an integer");value.node->text="-"+value.node->text;p.literal=std::move(value.node);}
     else p.literal=atom().node;
     syntax_atoms=saved;
-    if(p.literal->kind!=Expr::Kind::Variable&&p.literal->kind!=Expr::Kind::String&&p.literal->kind!=Expr::Kind::Integer&&p.literal->kind!=Expr::Kind::Boolean&&p.literal->kind!=Expr::Kind::SyntaxKeyword)
+     if(p.literal->kind!=Expr::Kind::Variable&&p.literal->kind!=Expr::Kind::String&&p.literal->kind!=Expr::Kind::Integer&&p.literal->kind!=Expr::Kind::Float&&p.literal->kind!=Expr::Kind::Boolean&&p.literal->kind!=Expr::Kind::SyntaxKeyword)
      throw Error(p.where,"expected literal datum, wildcard, typed variable or structural pattern");
    }
    p.repeated=accept(macro.ellipsis);return p;

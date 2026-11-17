@@ -8,11 +8,16 @@ namespace {
 using meta::SExpr;using meta::list;using meta::symbol;using meta::string;
 template<class T>SExpr number(T n){return symbol(std::to_string(n));}
 SExpr location(const Location& at){return list({symbol("at"),string(at.file),number(at.offset),number(at.line),number(at.column)});}
-SExpr value(const Value& v){return list({symbol("value"),number(v.id),symbol(type_name(v.type)),location(v.where)});}
+SExpr encode_type(const Type& t){
+ if(!t.is_tuple())return symbol(type_name(t));
+ std::vector<SExpr> fields;for(const auto& element:t.elements())fields.push_back(encode_type(element));
+ return list({symbol("tuple"),list(std::move(fields))});
+}
+SExpr value(const Value& v){return list({symbol("value"),number(v.id),encode_type(v.type),location(v.where)});}
 template<class T,class F>SExpr sequence(const std::vector<T>& values,F encode){std::vector<SExpr> out;for(const auto& v:values)out.push_back(encode(v));return list(std::move(out));}
 SExpr ids(const std::vector<Id>& values){return sequence(values,[](Id id){return number(id);});}
 std::string_view exit_name(Exit kind){return kind==Exit::Return?"return":kind==Exit::Jump?"jump":"branch";}
-SExpr instruction(const Instruction& i){return list({symbol("instruction"),number(i.id),symbol(std::string(op_name(i.op))),symbol(type_name(i.type)),ids(i.operands),number(i.immediate),number(i.target),number(i.effect_in),number(i.effect_out),location(i.where)});}
+SExpr instruction(const Instruction& i){return list({symbol("instruction"),number(i.id),symbol(std::string(op_name(i.op))),encode_type(i.type),ids(i.operands),number(i.immediate),number(i.target),number(i.effect_in),number(i.effect_out),location(i.where)});}
 SExpr block(const Block& b){
  const auto& t=b.exit;
  auto edges=sequence(t.edges,[](const Edge& e){return list({symbol("edge"),number(e.block),ids(e.arguments)});});
@@ -29,13 +34,22 @@ template<class T>T integer(const SExpr& n){
  if(ec!=std::errc{}||p!=s.data()+s.size())bad(n,"invalid/out-of-range integer");
  return result;
 }
-Type type(const SExpr& n){auto s=atom(n);if(s=="i64")return Type::I64;if(s=="bool")return Type::Bool;if(s=="void")return Type::Void;bad(n,"unsupported type: "+s);}
+Type type(const SExpr& n,std::size_t depth=0){
+ if(depth>32)bad(n,"type depth budget exhausted");
+ if(n.kind==SExpr::Kind::List){
+  shape(n,"tuple",2);std::vector<Type> elements;
+  for(const auto& child:items(n.items[1]))elements.push_back(type(child,depth+1));
+  if(elements.size()<2)bad(n,"tuple type requires at least two fields");
+  return Type::tuple(std::move(elements));
+ }
+ auto s=atom(n);if(s=="i64")return Type::I64;if(s=="bool")return Type::Bool;if(s=="void")return Type::Void;if(s=="f64")return Type::F64;bad(n,"unsupported type: "+s);
+}
 Location decode_location(const SExpr& n){shape(n,"at",5);return {text(n.items[1]),integer<std::size_t>(n.items[2]),integer<std::size_t>(n.items[3]),integer<std::size_t>(n.items[4])};}
 Value decode_value(const SExpr& n){shape(n,"value",4);return {integer<Id>(n.items[1]),type(n.items[2]),decode_location(n.items[3])};}
 std::vector<Id> decode_ids(const SExpr& n){std::vector<Id> out;for(const auto& v:items(n))out.push_back(integer<Id>(v));return out;}
 Instruction decode_instruction(const SExpr& n){
  shape(n,"instruction",10);Instruction i;i.id=integer<Id>(n.items[1]);
- bool found=false;for(unsigned k=0;k<=static_cast<unsigned>(Op::Assert);++k)if(atom(n.items[2])==op_name(static_cast<Op>(k))){i.op=static_cast<Op>(k);found=true;break;}
+ bool found=false;for(unsigned k=0;k<=static_cast<unsigned>(Op::Extract);++k)if(atom(n.items[2])==op_name(static_cast<Op>(k))){i.op=static_cast<Op>(k);found=true;break;}
  if(!found)bad(n,"unknown opcode");
  i.type=type(n.items[3]);i.operands=decode_ids(n.items[4]);i.immediate=integer<std::int64_t>(n.items[5]);
  i.target=integer<Id>(n.items[6]);i.effect_in=integer<Id>(n.items[7]);i.effect_out=integer<Id>(n.items[8]);i.where=decode_location(n.items[9]);return i;
@@ -53,12 +67,12 @@ Block decode_block(const SExpr& n){
 }
 std::string serialize(const Module& module){
  verify(module);
- auto functions=sequence(module.functions,[](const Function& f){return list({symbol("function"),number(f.id),string(f.name),symbol(type_name(f.result)),location(f.where),sequence(f.slots,value),sequence(f.blocks,block)});});
+ auto functions=sequence(module.functions,[](const Function& f){return list({symbol("function"),number(f.id),string(f.name),encode_type(f.result),location(f.where),sequence(f.slots,value),sequence(f.blocks,block)});});
  return meta::write_sexpr(list({symbol("on1x.mir"),number(module.version),number(module.id),std::move(functions)}));
 }
 Module deserialize(std::string_view text,const std::string& filename){
  auto tree=meta::read_sexpr(text,filename);shape(tree,"on1x.mir",4);Module m;m.version=integer<unsigned>(tree.items[1]);m.id=integer<Id>(tree.items[2]);
- if(m.version!=format_version)bad(tree,"unsupported format version");
+ if(m.version!=legacy_format_version&&m.version!=format_version)bad(tree,"unsupported format version");
  for(const auto& n:items(tree.items[3])){
   shape(n,"function",7);Function f;f.id=integer<Id>(n.items[1]);f.name=::on1x::mir::text(n.items[2]);f.result=type(n.items[3]);f.where=decode_location(n.items[4]);
   for(const auto& s:items(n.items[5]))f.slots.push_back(decode_value(s));

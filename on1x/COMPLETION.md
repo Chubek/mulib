@@ -26,6 +26,14 @@ This file is an **execution specification**, not an invitation to produce a new 
 
 ## 1. Baseline: what is already implemented, and what is not
 
+**Language-only M1 continuation:** `f64` values now have a real HIR/C11 path,
+including checked conversions and user-declared raw C `double` calls. See
+`docs/numerics.md` and `docs/capability-matrix.md`. Decimal literals and MIR v2 for
+float/trivial-tuple values are now executable; numeric buffers/records, managed
+aggregate MIR, generated adapters and safe-import admission remain open. This
+does not satisfy the full numeric work package or promote any acceptance gate
+below; historical reports and application-specific requirements are unchanged.
+
 **Implementation continuation (2026-11-14):** scalar Core/MIR v1 now supports
 verified round-trips, effect/CFG/initialization checks, reference evaluation and
 optional MIR-to-C11 emission. This is a partial B1 backend foundation, not the

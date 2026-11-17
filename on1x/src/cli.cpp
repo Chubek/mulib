@@ -112,7 +112,9 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
 #else
  (void)analysis_work;
 #endif
- if(mode=="--run-ir"){
+  if(mode=="--run-ir"){
+   for(const auto& f:module.functions)if(f.name=="main"&&(!f.blocks.front().parameters.empty()||(f.result!=on1x::Type::I64&&f.result!=on1x::Type::Void)))
+    throw on1x::Error(f.where,"ON1X-MIR-EVAL: main must have no parameters and return i64 or void");
   auto result=on1x::mir::evaluate(module);write_all(out,result.output);
   if(result.status!=on1x::mir::Status::Returned){
    std::cerr<<result.where.file<<":"<<result.where.line<<":"<<result.where.column<<": ON1X-MIR-EVAL: "<<result.diagnostic<<"\n";

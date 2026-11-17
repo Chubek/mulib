@@ -22,6 +22,7 @@ for name, text, diagnostic in [
     ('indirect', 'fn f()->i64{return 1;}fn main(){let g=f;println(g());}', 'first-class callable'),
     ('temporary', 'fn main(){println(json_size(json_parse_or_die("{}")));}', 'named live owner'),
     ('buffer', 'fn main(){let b=buffer_new();}', 'intrinsic memory model unavailable'),
+    ('f64', 'fn half(x:f64)->f64{return x/f64_from_i64(2);}fn main(){}', 'parameter memory model unavailable'),
 ]:
     path=t.source(name,text);code.write_text('keep')
     p=run([t.compiler,'--emit-c','--memory-check',path,'-o',code])

@@ -157,7 +157,8 @@ int64_t raw(int64_t number, bool enabled, const char *text, int64_t extra);
 
 The On1x call takes two logical arguments: `raw((40, (true, "ok")), 2)`.
 Patterns flatten depth-first, left-to-right. Every pattern node must match its
-concrete tuple annotation; a leaf must be `i64`, `bool` or `string`. Duplicate
+concrete tuple annotation; a leaf must be `i64`, `f64`, `bool` or `string`.
+f64 leaves use exact C `double` in the [initial float profile](numerics.md). Duplicate
 leaf/plain-parameter names are errors. Leaves cannot be tuples, functions, JSON
 owners/views, `void` or type holes. Nested tuples require nested patterns.
 Tuple parameters without patterns and tuple-valued results remain unsupported.

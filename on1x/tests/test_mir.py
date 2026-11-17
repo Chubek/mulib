@@ -80,8 +80,42 @@ fn main()->i64{nothing();println(choose(1));println(choose(2));println(choose(3)
 compare('specialization', '''
 fn identity(x)->_{return x;} fn main(){println(identity(42));println(identity(true));}
 ''', expected='42\ntrue\n')
+compare('float_tuples', source=tests.root/'examples/float_tuples.on1x',
+        expected='0x1.0000000000000p-1\n0x1.0000000000000p-3\n4\n')
+compare('tuple_copy', '''
+fn mark(x:i64)->i64 {println(x);return x;}
+fn swap((a,(flag,b)):(i64,(bool,f64)))->(f64,(bool,i64)){return(b,(flag,a));}
+fn recurse(x:(i64,f64),n:i64)->(i64,f64){if n==0{return x;}return recurse(x,n-1);}
+fn main(){var pair=(mark(1),(true,2.5));let snapshot=pair;
+pair=(mark(2),(false,-0.0));pair=pair;let(z,(flag,n))=swap(snapshot);
+println(z);println(flag);println(n);let(a,b)=recurse((42,0.125),3);println(a);println(b);}
+''', expected='1\n2\n0x1.4000000000000p+1\ntrue\n1\n42\n0x1.0000000000000p-3\n')
+compare('float_edge', '''
+fn number(n:i64)->f64{println(n);return f64_from_i64(n);}
+fn main(){println(1.0e+0/number(0));println(-1E0/0.0);println(0.0/0.0);
+let nan=0.0/0.0;println(nan==nan);println(nan!=nan);println(nan<0.0);
+println(f64_to_bits(-0.0));println(f64_to_bits(5e-324));
+println(f64_to_bits(1.7976931348623157e308));
+println(f64_to_i64(-9223372036854775808.0));
+println(number(1)+number(2));assert(true||number(99)==0.0);}
+''', expected='0\ninf\n-inf\nnan\nfalse\ntrue\nfalse\n-9223372036854775808\n1\n9218868437227405311\n-9223372036854775808\n1\n2\n0x1.8000000000000p+1\n')
+compare('float_cast_trap', 'fn main(){println(1);f64_to_i64(9223372036854775808.0);}',
+        expected='1\n', status=70, diagnostic='f64 to i64 out of range')
+compare('float_macro', '''
+macro twice{rule($x:FloatLiteral)=>expression{$x+$x};}
+fn main(){println(twice!(1.25));}
+''', expected='0x1.4000000000000p+1\n')
+compare('float_ppx_fold', 'fn main(){println((1.5+2.5)*2.0);}',
+        expected='0x1.0000000000000p+3\n', options=['--stdppx','fold'])
+passes = run([tests.compiler, '--dump-passes', tests.root/'examples/float_tuples.on1x'])
+assert passes.returncode == 0 and '(target "portable-numeric-product-v2")' in passes.stdout, passes.stderr
 tests.source('mir_import', 'fn add(x:i64)->i64{return x+1;}')
 compare('import', 'import "mir_import.on1x"; fn main(){println(add(41));}', expected='42\n')
+tests.source('mir_numeric_import', 'fn duplicate(x)->_{return(x,x);}fn identity(x)->_{return x;}')
+compare('numeric_import', '''
+import "mir_numeric_import.on1x";fn main(){let(a,b)=duplicate(identity((42,1.5)));
+let(x,y)=a;let(z,w)=b;println(x+z);println(y+w);}
+''', expected='84\n0x1.8000000000000p+1\n')
 compare('macro', '''
 macro twice {rule($x:Expression)=>expression{$x+$x};}
 fn main(){println(twice!(21));}
@@ -126,7 +160,7 @@ unsupported = [
     'extern fn foreign()->i64;fn main(){}',
     'fn main(){println("text");}',
     'fn main(){let f=fn(x:i64)->i64{return x;};println(f(1));}',
-    'fn main(){let (a,b)=(1,2);println(a+b);}',
+    'fn main(){let (a,b)=(1,buffer_new());println(a);}',
     'fn main(){let root=json_parse_or_die("{}");json_print(root);}',
     'fn main(){let code=quote{42};println(run(code));}',
     'fn main(){let b=buffer_new();buffer_append(b,"x");}',
@@ -154,6 +188,8 @@ p = run([tests.compiler.parent/'on1x_mir_tests', phi])
 assert p.returncode == 0, p.stderr
 p = native(phi, tests.work/'phi')
 assert p.returncode == 0 and p.stdout == '20\n10\n', (p.returncode, p.stdout, p.stderr)
+p = native(tests.work/'phi.c.v2.c', tests.work/'phi-v2')
+assert p.returncode == 0 and p.stdout == '20\n-0x0.0000000000000p+0\n10\n0x0.0000000000000p+0\n', p.stderr
 
 malformed = tests.work/'invalid.mir'
 malformed.write_text('(on1x.mir 999 1 ())')
@@ -161,6 +197,13 @@ out = tests.work/'preserved'
 out.write_text('keep me')
 p = run([tests.compiler, '--ir-input', '--emit-ir-c', malformed, '-o', out])
 assert p.returncode == 1 and 'version' in p.stderr and out.read_text() == 'keep me'
+entry_source=tests.source('aggregate_entry','fn value()->(i64,f64){return(1,2.0);}fn main(){}')
+p=run([tests.compiler,'--emit-ir',entry_source]);assert p.returncode==0,p.stderr
+bad_entry=tests.work/'aggregate-entry.mir'
+bad_entry.write_text(p.stdout.replace('"main"','"unused"').replace('"value"','"main"'))
+for mode in ['--run-ir','--emit-ir-c']:
+    p=run([tests.compiler,'--ir-input',mode,bad_entry,'-o',out])
+    assert p.returncode==1 and 'main must have no parameters and return i64 or void' in p.stderr and out.read_text()=='keep me',p.stderr
 p = run([tests.compiler, '--ir-input', '--emit-c', malformed])
 assert p.returncode == 2 and 'requires a MIR mode' in p.stderr
 

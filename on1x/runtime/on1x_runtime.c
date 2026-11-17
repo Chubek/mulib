@@ -80,6 +80,88 @@ void on1x_print_bool(bool a){puts(a?"true":"false");}
 void on1x_print_string(const char *a){puts(a?a:"");}
 void on1x_assert(bool a){if(!a){fputs("On1x assertion failed\n",stderr);exit(70);}}
 
+#ifdef ON1X_F64_ABI_VERSION
+#if defined(__FAST_MATH__) || (defined(__FINITE_MATH_ONLY__) && __FINITE_MATH_ONLY__ > 0) || defined(__NO_SIGNED_ZEROS__) || defined(__ASSOCIATIVE_MATH__) || defined(__RECIPROCAL_MATH__)
+#error "On1x f64 forbids fast/finite-only math and relaxed IEEE modes"
+#endif
+#ifdef __clang__
+/* Clang does not expose individual no-honor-NaN/no-signed-zero flags as macros.
+ * Restore precise semantics for the primitive implementations explicitly. */
+#pragma float_control(precise, on, push)
+#endif
+#include <xmmintrin.h>
+_Static_assert(CHAR_BIT==8 && sizeof(double)==sizeof(uint64_t),"On1x f64 requires binary64 storage");
+static void f64_environment(void){
+  /* RNE, gradual underflow, all exceptions masked. Do not silently inherit a
+   * foreign caller's rounding/FTZ mode or raise a native floating exception. */
+  if((_mm_getcsr() & 0xffc0u)!=0x1f80u)
+    arithmetic_error("unsupported f64 environment");
+}
+static uint64_t f64_bits(double a){
+  uint64_t bits;memcpy(&bits,&a,sizeof(bits));
+  if((bits & UINT64_C(0x7fffffffffffffff))>UINT64_C(0x7ff0000000000000))
+    bits=UINT64_C(0x7ff8000000000000);
+  return bits;
+}
+static double f64_value(uint64_t bits){double a;memcpy(&a,&bits,sizeof(a));return a;}
+double on1x_f64_from_bits(int64_t bits){return f64_value(f64_bits(f64_value((uint64_t)bits)));}
+int64_t on1x_f64_to_bits(double a){
+  uint64_t bits=f64_bits(a);
+  /* Avoid implementation-defined conversion of an out-of-range unsigned value. */
+  return bits<=INT64_MAX?(int64_t)bits:INT64_MIN+(int64_t)(bits-UINT64_C(0x8000000000000000));
+}
+bool on1x_f64_is_nan(double a){return (f64_bits(a)&UINT64_C(0x7fffffffffffffff))>UINT64_C(0x7ff0000000000000);}
+bool on1x_f64_is_finite(double a){return (f64_bits(a)&UINT64_C(0x7ff0000000000000))!=UINT64_C(0x7ff0000000000000);}
+bool on1x_f64_signbit(double a){return (f64_bits(a)>>63)!=0;}
+double on1x_f64_from_i64(int64_t a){
+  volatile int64_t input;volatile double result;
+  f64_environment();input=a;result=(double)input;return result;
+}
+int64_t on1x_f64_to_i64(double a){
+  volatile double input;
+  f64_environment();input=a;
+  if(!on1x_f64_is_finite(a)||input < -0x1p63||input >= 0x1p63)
+    arithmetic_error("f64 to i64 out of range");
+  return (int64_t)input;
+}
+/* Volatile binary64 operands/results prevent excess precision, contraction and
+ * moving the arithmetic ahead of the environment check, including under LTO. */
+#define ON1X_F64_BINARY(name,op) \
+double on1x_##name##_f64(double a,double b){ \
+  volatile double left,right,result;f64_environment();left=a;right=b; \
+  result=left op right;return f64_value(f64_bits(result)); \
+}
+ON1X_F64_BINARY(add,+)
+ON1X_F64_BINARY(sub,-)
+ON1X_F64_BINARY(mul,*)
+ON1X_F64_BINARY(div,/)
+#undef ON1X_F64_BINARY
+double on1x_neg_f64(double a){
+  f64_environment();return f64_value(f64_bits(f64_value(f64_bits(a)^UINT64_C(0x8000000000000000))));
+}
+#define ON1X_F64_COMPARE(name,op) \
+bool on1x_##name##_f64(double a,double b){ \
+  volatile double left,right;f64_environment();left=a;right=b;return left op right; \
+}
+ON1X_F64_COMPARE(eq,==)
+ON1X_F64_COMPARE(ne,!=)
+ON1X_F64_COMPARE(lt,<)
+ON1X_F64_COMPARE(le,<=)
+ON1X_F64_COMPARE(gt,>)
+ON1X_F64_COMPARE(ge,>=)
+#undef ON1X_F64_COMPARE
+void on1x_print_f64(double a){
+  uint64_t bits=f64_bits(a),fraction=bits&UINT64_C(0x000fffffffffffff);
+  unsigned exponent=(unsigned)((bits>>52)&0x7ffu);
+  if(exponent==0x7ffu){puts(fraction?"nan":(bits>>63)?"-inf":"inf");return;}
+  printf("%s0x%u.%013" PRIx64 "p%+d\n",(bits>>63)?"-":"",exponent?1u:0u,
+    fraction,exponent?(int)exponent-1023:fraction?-1022:0);
+}
+#ifdef __clang__
+#pragma float_control(pop)
+#endif
+#endif
+
 /* Small C11 data/I/O substrate. Parsing, walking, schema loading/validation and
  * transformations live in the On1x stdlib sources, not in this runtime. */
 #ifndef ON1X_DATA_MALLOC

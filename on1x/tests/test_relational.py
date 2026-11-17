@@ -73,6 +73,9 @@ for mode in ['--emit-ir-facts', '--analyze-ir']:
         out.write_text('keep me')
         p = run([args.compiler, mode, path, *options, '-o', out])
         assert p.returncode == 1 and diagnostic in p.stderr and out.read_text() == 'keep me', p.stderr
+    out.write_text('keep me')
+    p=run([args.compiler, mode, args.root/'examples/float_tuples.on1x', '-o', out])
+    assert p.returncode==1 and 'outside relational mapping v1' in p.stderr and out.read_text()=='keep me',p.stderr
 
 p = run([args.compiler, '--run-ir', source])
 assert p.returncode == 0 and p.stdout == 'true\nfalse\ntrue\nfalse\n', p.stderr

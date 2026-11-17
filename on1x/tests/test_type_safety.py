@@ -42,6 +42,7 @@ assert p.returncode==75 and 'ON1X-TYPE-UNKNOWN' in p.stderr and out.read_text()=
 # have a separate admission boundary until quantifier-aware checking is added.
 for name,text in [
  ('mismatch','fn main(){let x:i64=true;}'),
+ ('f64','fn main(){println(f64_from_i64(42));}'),
  ('forall','fn use(f:forall(a)fn(a)->a){println(f(42));println(f(true));}fn main(){use(fn(x)->_{return x;});}'),
 ]:
     path=t.source(name,text);out=t.work/'sentinel.c';out.write_text('keep')

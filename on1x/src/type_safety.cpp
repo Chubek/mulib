@@ -47,7 +47,8 @@ class Verify {
  Term type(const Type& t,const Location& at,std::size_t depth=0){
   budget.tick(at);if(depth>32)exhausted(at,"structural type depth limit");
   std::vector<Term> args;std::string name;
-  switch(t.kind()){
+   switch(t.kind()){
+   case Type::F64:fail(at,"f64 is outside the structural adapter");
   case Type::I64:name="i64";break;case Type::Bool:name="bool";break;case Type::String:name="string";break;case Type::Void:name="void";break;
   case Type::Json:name="json";break;case Type::JsonView:name="json_view";break;case Type::SExpr:name="sexpr";break;case Type::Buffer:name="buffer";break;
   case Type::Function:
@@ -119,7 +120,8 @@ class Verify {
   auto child=[&](std::size_t n){if(n>=e.children.size()||!e.children[n])fail(e.where,"missing expression child");return expr(*e.children[n],depth+1);};
   auto arity=[&](std::size_t n){if(e.children.size()!=n)fail(e.where,"expression arity mismatch");};
   switch(e.kind){
-  case Expr::Kind::Integer:arity(0);equal(result,Type::I64,e.where);break;
+   case Expr::Kind::Integer:arity(0);equal(result,Type::I64,e.where);break;
+   case Expr::Kind::Float:fail(e.where,"f64 is outside the structural adapter");
   case Expr::Kind::Boolean:arity(0);equal(result,Type::Bool,e.where);break;
   case Expr::Kind::String:arity(0);equal(result,Type::String,e.where);break;
   case Expr::Kind::Variable:arity(0);return variable(e,false);

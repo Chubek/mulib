@@ -5,9 +5,14 @@
 
 namespace on1x::mir {
 using Id = std::uint64_t;
-inline constexpr unsigned format_version = 1;
+inline constexpr unsigned format_version = 2;
+inline constexpr unsigned legacy_format_version = 1;
 enum class Op { Constant, Add, Sub, Mul, Div, Mod, Neg, Not, Eq, Ne, Lt, Le, Gt, Ge,
-                Load, Store, Call, Print, Assert };
+                Load, Store, Call, Print, Assert,
+                FloatAdd, FloatSub, FloatMul, FloatDiv, FloatNeg,
+                FloatEq, FloatNe, FloatLt, FloatLe, FloatGt, FloatGe,
+                FloatFromI64, FloatToI64, FloatFromBits, FloatToBits,
+                FloatIsNaN, FloatIsFinite, FloatSignbit, Tuple, Extract };
 enum class Exit { Invalid, Return, Jump, Branch };
 enum class Effect { Pure, Trap, Memory, Call, IO };
 struct Value { Id id=0; Type type=Type::Invalid; Location where; };
@@ -32,11 +37,11 @@ struct Block {
 struct Function {
  Id id=0; std::string name; Type result=Type::Void; Location where;
  // Entry block parameters are the function arguments. Slots are function-local,
- // non-addressable scalar storage; they cannot escape or alias another frame.
+ // non-addressable value storage; they cannot escape or alias another frame.
  std::vector<Value> slots;
  std::vector<Block> blocks;
 };
-struct Module { unsigned version=format_version; Id id=1; std::vector<Function> functions; };
+struct Module { unsigned version=legacy_format_version; Id id=1; std::vector<Function> functions; };
 struct Limits { std::size_t nodes=65536, work=4194304; };
 Effect effect(Op op);
 std::string_view op_name(Op op);
@@ -50,12 +55,19 @@ std::string cfg_dot(const Module& module);
 std::string emit_c(const Module& module);
 
 enum class Status { Returned, Trapped, BudgetExhausted };
+// Scalar storage is an i64 number, bool 0/1, or typed f64 IEEE bit payload.
+// Tuple storage has only elements, in type order. This is not a foreign ABI.
+struct RuntimeValue { std::int64_t scalar=0; std::vector<RuntimeValue> elements; };
 struct Evaluation {
  Status status=Status::Returned; Type type=Type::Void; std::int64_t value=0;
  std::string output, diagnostic; Location where; std::size_t steps=0;
+ RuntimeValue data;
 };
 // Reference interpreter only: no host FFI, no native/VM backend claim.
 Evaluation evaluate(const Module& module, std::string_view function="main",
                     const std::vector<std::int64_t>& arguments={},
                     std::size_t steps=1000000, std::size_t call_depth=256);
+Evaluation evaluate_values(const Module& module, std::string_view function,
+                          const std::vector<RuntimeValue>& arguments,
+                          std::size_t steps=1000000, std::size_t call_depth=256);
 }

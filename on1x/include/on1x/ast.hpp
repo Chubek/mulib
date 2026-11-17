@@ -41,7 +41,7 @@ struct Expr;
 struct Macro;
 using ExprPtr = std::unique_ptr<Expr>;
 struct Expr {
-  enum class Kind { Integer, Boolean, String, Variable, Unary, Binary, Call, Lambda, Tuple, PolyPack, PolyProjection,
+  enum class Kind { Integer, Float, Boolean, String, Variable, Unary, Binary, Call, Lambda, Tuple, PolyPack, PolyProjection,
                     MacroCall, SyntaxHole, SyntaxBlock, Extension, SyntaxList, SyntaxVector, SyntaxKeyword,
                     Quote, Splice, Lift, Run, SyntaxLet } kind;
  enum class Reference { Unresolved, Local, Function, Extern, Intrinsic } reference = Reference::Unresolved;

@@ -61,6 +61,20 @@ class PPXTests(unittest.TestCase):
                 if name=='unroll':self.assertEqual(count(got,'Scope'),4)
                 if name=='derive':self.assertEqual(got[2][-1][1],'main_arity')
                 if name=='fold':self.assertEqual(got[2][0][4][1][0][1][1],'42')
+    def test_float_literal_migration(self):
+        for spelling in ('0.0','1e3','1.25E-3','0e99999'):
+            u=unit(do(mk('FloatLiteral',spelling,AT),AT))
+            self.schema.validate(u)
+            for processor in ('identity','fold'):
+                c=run(processor,u)
+                self.assertEqual(c.returncode,0,c.stderr.decode())
+                self.assertEqual(loads(c.stdout),u)
+        for spelling in ('-0.0','nan','1.','.5','1e+','0x1p0','1'*1024+'.0'):
+            u=unit(do(mk('FloatLiteral',spelling,AT),AT))
+            with self.assertRaises(ValueError):self.schema.validate(u)
+            c=run('identity',u)
+            self.assertNotEqual(c.returncode,0)
+            self.assertEqual(c.stdout,b'')
     def test_pipe(self):
         u=unit(do(ext('pipe','apply',integer(1,AT),ident('f',AT),ident('g',AT)),AT))
         t=self.transformed('pipe',u);self.assertEqual(t[2][0][4][1][0][1][1][1],'g')

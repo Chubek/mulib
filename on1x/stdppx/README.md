@@ -5,6 +5,15 @@ schema-v1 source transformations. CMake builds/installs all native executables;
 the compiler always runs its normal inference, type, staging and ownership checks
 after reconstruction. This is not a typed deriving or safe-FFI framework.
 
+The M1 numeric increments add `F64Type` and unsigned decimal `FloatLiteral`
+spelling to the canonical and standalone v1 schemas, and f64 to native/Python
+signature rendering. All existing constructors and
+protocol framing are unchanged. Rebuild native processors with the new schema;
+older schema-pinned processors may reject the new constructors. `FloatLiteral`
+is a `NumericLiteral`, not an `IntegerLiteral`; signs use `Unary`, and integer
+folders must leave floats untouched. See `../docs/numerics.md` for grammar and
+limits. This additive migration does not add float folding or safe FFI metadata.
+
 ```sh
 cmake --build build/on1x --parallel 4
 build/on1x/on1xc --emit-c client.on1x --stdppx assertions -o client.c

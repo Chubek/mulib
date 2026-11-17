@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <float.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,6 +31,30 @@ void on1x_print_i64(int64_t a);
 void on1x_print_bool(bool a);
 void on1x_print_string(const char *a);
 void on1x_assert(bool a);
+/* Initial binary64 target profile; other targets keep the existing runtime but
+ * cannot compile generated f64 programs. This is not a general foreign ABI. */
+#if defined(__linux__) && defined(__x86_64__) && defined(__SSE2__) && (defined(__GNUC__) || defined(__clang__)) && FLT_RADIX == 2 && DBL_MANT_DIG == 53 && DBL_MAX_EXP == 1024 && DBL_MIN_EXP == -1021 && FLT_EVAL_METHOD == 0
+#define ON1X_F64_ABI_VERSION 1
+double on1x_add_f64(double a,double b);
+double on1x_sub_f64(double a,double b);
+double on1x_mul_f64(double a,double b);
+double on1x_div_f64(double a,double b);
+double on1x_neg_f64(double a);
+bool on1x_eq_f64(double a,double b);
+bool on1x_ne_f64(double a,double b);
+bool on1x_lt_f64(double a,double b);
+bool on1x_le_f64(double a,double b);
+bool on1x_gt_f64(double a,double b);
+bool on1x_ge_f64(double a,double b);
+double on1x_f64_from_i64(int64_t a);
+int64_t on1x_f64_to_i64(double a);
+double on1x_f64_from_bits(int64_t bits);
+int64_t on1x_f64_to_bits(double a);
+bool on1x_f64_is_nan(double a);
+bool on1x_f64_is_finite(double a);
+bool on1x_f64_signbit(double a);
+void on1x_print_f64(double a);
+#endif
 #define ON1X_DATA_ABI_VERSION 1
 typedef struct on1x_sexpr on1x_sexpr;
 typedef struct on1x_buffer on1x_buffer;
