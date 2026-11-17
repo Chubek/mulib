@@ -28,13 +28,17 @@ static void hardening(const char *root,const mulib_elvi_scrape_program_t *progra
     snprintf(html,sizeof html,"<a href='%s'><h3>Reject</h3></a>",bad[i]);
     assert(mulib_elvi_scrape_parse(&p,html,strlen(html),results,8,&count));assert(!count);
   }
-  const char *names[]={"layout.html","malformed.html","consent.html","bot.html","changed.html"};
-  const size_t expected[]={2,1,0,0,0};
-  for(size_t i=0;i<5;i++) {
+  const char *names[]={"layout.html","malformed.html","consent.html","bot.html","changed.html",
+    "inert.html","redirects.html"};
+  const size_t expected[]={2,1,0,0,0,2,1};
+  for(size_t i=0;i<sizeof names/sizeof *names;i++) {
     char *s=read_fixture(root,names[i]);
     assert(mulib_elvi_scrape_parse(&p,s,strlen(s),results,8,&count));if(count!=expected[i])fprintf(stderr,"fixture %s: %zu expected %zu\n",names[i],count,expected[i]);assert(count==expected[i]);
     if(!i) {assert(!strcmp(results[0].title,"C11 & \xf0\x9f\x9a\x80 caf\xc3\xa9"));
       assert(!strcmp(results[1].url,"https://example.net/guide"));}
+    if(i==5) {assert(!strcmp(results[0].title,"Visible \xf0\x9f\x9a\x80 guide"));
+      assert(!strcmp(results[1].title,"One two"));}
+    if(i==6)assert(!strcmp(results[0].url,"https://example.org/safe?x=1&y=2"));
     free(s);
   }
   before=p;
@@ -59,6 +63,40 @@ static void hardening(const char *root,const mulib_elvi_scrape_program_t *progra
   assert(mulib_elvi_scrape_parse(&p,html,strlen(html),results,8,&count));
   assert(count==1 && strlen(results[0].title)==510);
   assert(mulib_utf8_validate((unsigned char *)results[0].title,strlen(results[0].title)));
+  /* A request fragment is never sent as a query by any transport. */
+  strcpy(p.search_template,"https://www.google.com/#q={query}");
+  strcpy(url,"unchanged");assert(!mulib_elvi_scrape_url(&p,"test",1,url,sizeof url));
+  assert(!strcmp(url,"unchanged"));p=before;
+  /* Scan budget is explicit, including raw-text scanning and malformed tags. */
+  {const char *cursor="<a x='unterminated";mulib_webscan_tag_ tag;size_t work=4;
+    assert(mulib_webscan_next_work_(&cursor,&tag,&work)==-1 && !work);}
+  {const char *cursor="<script>lots of raw text</script>";mulib_webscan_tag_ tag;size_t work=20;
+    assert(mulib_webscan_next_work_(&cursor,&tag,&work)==-1 && !work);}
+  /* Length-delimited input, arbitrary capacity, invalid programs and NUL all
+   * leave caller storage untouched, including the count sentinel. */
+  memset(results,0x5a,sizeof results);count=123;
+  assert(!mulib_elvi_scrape_parse(&p,"\0",1,results,8,&count));assert(count==123);
+  for(size_t i=0;i<sizeof results;i++)assert(((unsigned char *)results)[i]==0x5a);
+  assert(mulib_elvi_scrape_parse(&p,NULL,0,NULL,0,&count) && count==0);
+  /* Raw NBSP and numeric entities have the same whitespace behavior. */
+  p.max_results=8;
+  strcpy(html,"<a href='https://example.org/'><h3>A\xc2\xa0 B&#160; C</h3></a>");
+  assert(mulib_elvi_scrape_parse(&p,html,strlen(html),results,SIZE_MAX,&count));
+  assert(count==1 && !strcmp(results[0].title,"A B C"));
+  p.anchor_mode=MULIB_ELVI_ANCHOR_PARENT;strcpy(p.anchor_tag,"h2");
+  {char *s=read_fixture(root,"headings.html");
+    assert(mulib_elvi_scrape_parse(&p,s,strlen(s),results,8,&count));assert(count==2);
+    assert(!strcmp(results[0].title,"First") && !strcmp(results[1].title,"Second"));free(s);}
+  /* No implicit following of pagination, including in all-anchor mode. */
+  p.anchor_mode=MULIB_ELVI_ANCHOR_ANY;
+  strcpy(html,"<a href='/search?q=x&amp;start=10'>Next</a><a href='https://example.org/'>Result</a>");
+  assert(mulib_elvi_scrape_parse(&p,html,strlen(html),results,8,&count) && count==1);
+  /* Exact maximum HTML extent and nonrecursive nesting remain offline/bounded. */
+  {size_t bytes=2097152;char *large=malloc(bytes+1);assert(large);
+    memset(large,' ',bytes);large[bytes]=0;
+    assert(mulib_elvi_scrape_parse(&p,large,bytes,results,8,&count) && count==0);
+    count=123;assert(!mulib_elvi_scrape_parse(&p,large,bytes+1,results,8,&count) && count==123);
+    free(large);}
 }
 static const char *fixture;
 static int mocked_transport(void*ctx,const char*url,mulib_shylock_buffer_t*b,

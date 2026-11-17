@@ -4,11 +4,12 @@
     "json": ["m"], "microjs": ["m"], "yantlr": ["m"],
     "archml": ["m"], "optml": ["m"], "mune": ["m", "pthread"],
     "dynload": ["dl"], "shiraz": ["m"], "readline": ["m"],
-    "hidden_markov_chain": ["m"], "corpus": ["m"]
+    "hidden_markov_chain": ["m"], "corpus": ["m"], "shylock-core": ["m"]
   },
   "fixtures": {
     "archml": {"kernels": ["archml", "unit", "isel"], "kind": "profiles", "files": ["library/archml/*.am", "library/archml/*.aml"], "checks": ["tools/embed_units.py"]},
     "dsymspec": {"kernels": ["dsymspec"], "kind": "profiles", "files": ["library/dsymspec/*.yaml"]},
+    "elvi-scrape": {"kernels": ["elvi-scrape"], "kind": "profiles", "files": ["library/elvi-scrape/*.elvs"]},
     "git": {"kernels": ["git"], "kind": "runtime", "files": ["library/git/*.lua"]},
     "immgtk": {"kernels": ["immgtk"], "kind": "runtime", "files": ["library/immgtk/*.lua"]},
     "immgtk-widgets": {"kernels": ["immgtk"], "kind": "empty", "files": []},

@@ -31,6 +31,7 @@ assert elvi['implementation_translation_units'] == 1 and not elvi['safe_export']
 assert len(elvi['implementation_macros']) == len(set(elvi['implementation_macros']))
 assert elvi['implementation_macros'][-1] == 'MULIB_IMPL_ELVI_SCRAPE'
 assert 'MULIB_IMPL_PARSER' not in elvi['implementation_macros']
+assert elvi['link_libraries']==['m']
 p = run([sys.executable, tool, 'build-plan', 'mune']); assert p.returncode == 0, p.stderr
 mune = json.loads(p.stdout)
 assert mune['implementation_translation_units'] == 1 and not mune['safe_export']
@@ -49,13 +50,15 @@ with tempfile.TemporaryDirectory(prefix='contract-root-', dir=t.work) as tmp:
     for n in ['json', 'vec', 'parsec', 'elvi-scrape', 'mune']:
         for directory, suffix in [('include', '.h'), ('manual', '.md')]:
             shutil.copyfile(root/directory/('mulib-'+n+suffix), fake/directory/('mulib-'+n+suffix))
-    evidence = json.loads((t.root/'contracts-exoml/catalog.json').read_text())['profiles']['mune']['evidence_sha256']
+    profiles = json.loads((t.root/'contracts-exoml/catalog.json').read_text())['profiles']
+    evidence = {path:digest for profile in profiles.values() for path,digest in profile.get('evidence_sha256',{}).items()}
     for path in evidence:
         (fake/path).parent.mkdir(parents=True,exist_ok=True)
         shutil.copyfile(root/path,fake/path)
     shutil.copyfile(root/'MANIFEST.yaml', fake/'MANIFEST.yaml')
     p = run([sys.executable, tool, '--root', fake, 'lint']); assert p.returncode == 0, p.stderr
-    for path in ['include/mulib-vec.h','include/mulib-mune.h','manual/mulib-mune.md',*evidence]:
+    for path in ['include/mulib-vec.h','include/mulib-mune.h','manual/mulib-mune.md',
+                 'include/mulib-elvi-scrape.h','manual/mulib-elvi-scrape.md',*evidence]:
         original = (fake/path).read_bytes(); (fake/path).write_bytes(original+b'\n')
         p = run([sys.executable, tool, '--root', fake, 'lint'])
         assert p.returncode == 3 and not p.stdout and 'fingerprint drift' in p.stderr, p.stderr

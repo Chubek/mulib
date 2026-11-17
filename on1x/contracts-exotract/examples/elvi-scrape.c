@@ -14,5 +14,11 @@ int main(void) {
   assert(!strcmp(url,"https://example.org/search?q=C11%20tools"));
   assert(mulib_elvi_scrape_parse(&p,html,strlen(html),&result,1,&count));
   assert(count==1 && !strcmp(result.title,"C11 & tools"));
+  html="<template><a href='https://decoy.example/'><h3>Hidden</h3></a></template>"
+    "<a href='http://example.net/'><h3>HTTP</h3></a>"
+    "<a href='https://example.net/%00'><h3>NUL</h3></a>"
+    "<a href='https://example.net/docs'><h3>Visible</h3></a>";
+  assert(mulib_elvi_scrape_parse(&p,html,strlen(html),&result,1,&count));
+  assert(count==1 && !strcmp(result.title,"Visible"));
   puts("elvi-scrape: archive OK");return 0;
 }

@@ -59,8 +59,8 @@ int mulib_elvi_scrape_load(const char *path,
 int mulib_elvi_scrape_url(const mulib_elvi_scrape_program_t *p,
                          const char *query, unsigned limit,
                          char *out, size_t capacity);
-/* Parse HTML (<=2 MiB) without fetching. Returns success even for zero hits.
- * Results must have room for cap objects; *count is set on success. */
+/* Parse HTML (<=2 MiB) without fetching, with bounded scanner work. Returns
+ * success even for zero hits. Results/count remain unchanged on failure. */
 int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *p,
                            const char *html, size_t len,
                            mulib_elvi_scrape_result_t *results, size_t cap,
@@ -134,16 +134,21 @@ static int melvi_hostname_(const char *s) {
   }
   return label && s[n-1]!='-';
 }
-static int melvi_host_(const char *url, char *host, size_t cap) {
-  const char *p, *end;
-  mulib_fetch_policy_t policy={8192,2097152,0,1,0};
-  unsigned char decoded[8192];size_t n=0;
-  if(strlen(url)>=sizeof decoded || strncmp(url,"https://",8))return 0;
+static int melvi_url_bytes_(const char *url) {
+  unsigned char decoded[8192];size_t n=0,len=0;
+  while(len<sizeof decoded && url[len])len++;
+  if(len==sizeof decoded)return 0;
   /* Validate every escape, including direct URLs; reject decoded controls and
    * backslashes without interpreting escaped delimiters as URL structure. */
-  if(!mulib_url_decode(url,strlen(url),decoded,sizeof decoded,&n))return 0;
+  if(!mulib_url_decode(url,len,decoded,sizeof decoded,&n))return 0;
   for(size_t i=0;i<n;i++)if(decoded[i]<32 || decoded[i]==127 || decoded[i]=='\\')return 0;
-  for(p=url;*p;p++)if((unsigned char)*p<=32 || *p=='\\')return 0;
+  for(size_t i=0;i<len;i++)if((unsigned char)url[i]<=32 || url[i]=='\\')return 0;
+  return 1;
+}
+static int melvi_host_(const char *url, char *host, size_t cap) {
+  const char *p, *end;size_t n;
+  mulib_fetch_policy_t policy={8192,2097152,0,1,0};
+  if(!melvi_url_bytes_(url) || strncmp(url,"https://",8))return 0;
   if(!mulib_fetch_policy_check(&policy,url))return 0;
   p=url+8;end=p;
   while(*end && *end!='/' && *end!='?' && *end!='#')end++;
@@ -274,7 +279,7 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
   if(!v.name[0] || !v.host[0] || !v.home[0] ||
      !v.search_template[0] || !v.anchor_mode ||
      !v.anchor_tag[0] || !strstr(v.search_template,"{query}") ||
-     !melvi_same_host_(v.home,v.host)) {
+     strchr(v.home,'#') || !melvi_same_host_(v.home,v.host)) {
     melvi_error_(error,line,"required directives missing or home/host mismatch");return 0;
   }
   { /* Render with an empty query to validate all placeholders and host. */
@@ -296,7 +301,7 @@ int mulib_elvi_scrape_load(const char *path,
   if(!buf) {fclose(f);melvi_error_(error,0,"out of memory");return 0;}
   n=fread(buf,1,65537,f);
   if(ferror(f)||n>65536) {free(buf);fclose(f);melvi_error_(error,0,"DSL file too large or unreadable");return 0;}
-  fclose(f);
+  if(fclose(f)) {free(buf);melvi_error_(error,0,"cannot close DSL file");return 0;}
   ok=mulib_elvi_scrape_compile(buf,n,out,error);
   free(buf);return ok;
 }
@@ -330,7 +335,7 @@ int mulib_elvi_scrape_url(const mulib_elvi_scrape_program_t *p,
     } else if (*fmt=='}') goto done;
     else if(!melvi_append_(tmp,cap,&used,fmt++,1)) goto done;
   }
-  if(!melvi_host_(tmp,host,sizeof host)||strcmp(host,p->host)) goto done;
+  if(strchr(tmp,'#')||!melvi_host_(tmp,host,sizeof host)||strcmp(host,p->host)) goto done;
   memcpy(out,tmp,used+1);ok=1;
  done:free(enc);free(tmp);return ok;
 }
@@ -369,18 +374,32 @@ static void melvi_text_(char *title,size_t cap,const char *src,size_t len) {
   for(size_t i=0;i<len&&j+1<cap;) {
     unsigned char chars[4]={0};size_t consumed=0;
     unsigned char c=(unsigned char)src[i];
-    /* The shared tag scanner skips comments, so do not leak their text. */
+    /* The shared tag scanner skips comments/declarations, not text spans. */
     if(c=='<' && len-i>=4 && !memcmp(src+i,"<!--",4)) {
       size_t k=i+4;
       while(k+3<=len && memcmp(src+k,"-->",3)) k++;
       if(k+3<=len) {i=k+3;continue;}
+      break;
+    }
+    if(c=='<' && i+1<len && (src[i+1]=='!' || src[i+1]=='?')) {
+      char quote=0;size_t k=i+2;
+      for(;k<len;k++) {
+        if(quote) {if(src[k]==quote)quote=0;}
+        else if(src[k]=='\'' || src[k]=='"')quote=src[k];
+        else if(src[k]=='>')break;
+      }
+      if(k==len)break;
+      i=k+1;continue;
     }
     if(c=='&') consumed=melvi_entity_(src+i,len-i,chars);
     if(consumed) {
       size_t n=chars[0]<128?1:(chars[0]<224?2:(chars[0]<240?3:4));
       if(chars[0]==' '||chars[0]=='\n'||chars[0]=='\r'||chars[0]=='\t'||chars[0]=='\f') {
         if(j&&title[j-1]!=' ')title[j++]=' ';
-      } else if(chars[0]>=32 && chars[0]!=127 && n<cap-j) {memcpy(title+j,chars,n);j+=n;}
+      } else if(chars[0]>=32 && chars[0]!=127) {
+        if(n>=cap-j)break;
+        memcpy(title+j,chars,n);j+=n;
+      }
       i+=consumed;continue;
     }
     if(c=='\r'||c=='\n'||c=='\t'||c==' '||c=='\f') {
@@ -390,6 +409,7 @@ static void melvi_text_(char *title,size_t cap,const char *src,size_t len) {
       if(!mulib_utf8_decode((const unsigned char *)src+i,len-i,&point,&width)) {
         i++;continue;
       }
+      if(point==160) {if(j&&title[j-1]!=' ')title[j++]=' ';i+=width;continue;}
       if(width>=cap-j)break;
       memcpy(title+j,src+i,width);j+=width;i+=width;continue;
     } else if(c>=32 && c!=127) title[j++]=(char)c;
@@ -399,10 +419,11 @@ static void melvi_text_(char *title,size_t cap,const char *src,size_t len) {
 }
 /* HTML attribute values are entity-encoded; decode before URL analysis. */
 static int melvi_attribute_(const char *raw, char *out, size_t cap) {
-  size_t j=0;
-  for(size_t i=0;raw[i];) {
+  size_t j=0,len=strlen(raw);
+  for(size_t i=0;i<len;) {
     unsigned char utf[4]={0};size_t consumed=0,n=1;
-    if(raw[i]=='&') consumed=melvi_entity_(raw+i,strlen(raw+i),utf);
+    if(raw[i]=='&') consumed=melvi_entity_(raw+i,len-i,utf);
+    if(!consumed && raw[i]=='&' && i+1<len && raw[i+1]=='#')return 0;
     if(consumed) {
       n=utf[0]<128?1:(utf[0]<224?2:(utf[0]<240?3:4));
       if(n>=cap-j)return 0;
@@ -426,14 +447,19 @@ static int melvi_redirect_(const mulib_elvi_scrape_program_t *p,
     else if(!strncmp(normalized,"https://www.google.com/url?",27)) path=normalized+27;
     if(path) {
       /* Recognize q= and url= regardless of their order in the query. */
+      const char *stop=path+strcspn(path,"#");
+      if(!melvi_url_bytes_(normalized))return 0;
       value=NULL;
-      while(*path) {
-        const char *end=strchr(path,'&');
-        size_t length=end?(size_t)(end-path):strlen(path);
-        if(length>2&&!memcmp(path,"q=",2)) {value=path+2;n=length-2;break;}
-        if(length>4&&!memcmp(path,"url=",4)) {value=path+4;n=length-4;break;}
-        if(!end)break;
-        path=end+1;
+      while(path<stop) {
+        const char *end=(const char *)memchr(path,'&',(size_t)(stop-path));
+        size_t length=end?(size_t)(end-path):(size_t)(stop-path),prefix=0;
+        if(length>=2&&!memcmp(path,"q=",2))prefix=2;
+        if(length>=4&&!memcmp(path,"url=",4))prefix=4;
+        if(prefix) {
+          if(value || length==prefix)return 0; /* ambiguous/empty target */
+          value=path+prefix;n=length-prefix;
+        }
+        path=end?end+1:stop;
       }
       if(!value||n>=sizeof dec||
          !mulib_url_decode(value,n,(unsigned char*)dec,sizeof dec-1,&n)||
@@ -448,22 +474,61 @@ static int melvi_redirect_(const mulib_elvi_scrape_program_t *p,
 static int melvi_tag_(const mulib_webscan_tag_ *tag,const char *name) {
   return mulib_webscan_equal_(tag->name,tag->length,name);
 }
+static int melvi_heading_(const mulib_webscan_tag_ *tag) {
+  return tag->length==2 && mulib_webscan_lower_((unsigned char)tag->name[0])=='h' &&
+    tag->name[1]>='1' && tag->name[1]<='6';
+}
+static const char *melvi_raw_(const mulib_webscan_tag_ *tag) {
+  static const char *const names[]={"script","style","textarea","title","xmp",
+    "iframe","noembed","noframes","noscript"};
+  for(size_t i=0;i<sizeof names/sizeof *names;i++)if(melvi_tag_(tag,names[i]))return names[i];
+  return NULL;
+}
 int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *p,
                             const char *html,size_t len,
                             mulib_elvi_scrape_result_t *results,size_t cap,
                             size_t *count) {
   char *copy;const char *scan,*prev;mulib_webscan_tag_ tag;
-  size_t used=0;unsigned parent=0,child=0;int active=0,seen_child=0;
+  mulib_elvi_scrape_result_t *pending;
+  size_t used=0,work,parent=0,child=0,inert=0;int active=0,seen_child=0,parsed=0;
   char href[4096],title[512];
   if(!melvi_program_(p)||(!html&&len)||!count||(!results&&cap)||len>2097152||(len&&memchr(html,0,len)))return 0;
-  copy=(char*)malloc(len+1);if(!copy)return 0;
+  if(cap>p->max_results)cap=p->max_results;
+  if(!cap) {*count=0;return 1;}
+  pending=(mulib_elvi_scrape_result_t *)calloc(cap,sizeof *pending);
+  if(!pending)return 0;
+  copy=(char*)malloc(len+1);if(!copy){free(pending);return 0;}
   if(len) memcpy(copy,html,len);
   copy[len]=0;
   scan=prev=copy;title[0]=href[0]=0;
-  while(used<cap&&used<p->max_results && mulib_webscan_next_(&scan,&tag)) {
+  work=len*16+1024;
+  while(used<cap && (parsed=mulib_webscan_next_work_(&scan,&tag,&work))==1) {
     const char *start=tag.name-(tag.closing?2:1);
-    if(active && start>=prev && ((p->anchor_mode!=MULIB_ELVI_ANCHOR_CHILD)||child))
+    const char *raw=melvi_raw_(&tag);
+    if(active && !inert && start>=prev && ((p->anchor_mode!=MULIB_ELVI_ANCHOR_CHILD)||child))
       melvi_text_(title,sizeof title,prev,(size_t)(start-prev));
+    if(!tag.closing && melvi_tag_(&tag,"plaintext"))break;
+    if(!tag.closing && raw) {
+      /* webscan already skipped script/style; opaque/RCDATA tags must never
+       * introduce anchors or headings, even with result-like literal markup. */
+      if(!melvi_tag_(&tag,"script") && !melvi_tag_(&tag,"style") &&
+         mulib_webscan_raw_skip_work_(scan,raw,&work,&scan)<0) {parsed=-1;break;}
+      prev=scan;continue;
+    }
+    if(melvi_tag_(&tag,"template")) {
+      if(!tag.closing)inert++;
+      else if(inert)inert--;
+      prev=tag.end+1;continue;
+    }
+    if(inert) {prev=scan;continue;}
+    /* HTML headings implicitly end prior headings. Do not let malformed
+     * provider context leak into later unrelated anchors or title text. */
+    if(melvi_heading_(&tag) && strlen(p->anchor_tag)==2 &&
+       p->anchor_tag[0]=='h' && p->anchor_tag[1]>='1' && p->anchor_tag[1]<='6') {
+      if(p->anchor_mode==MULIB_ELVI_ANCHOR_PARENT) {
+        parent=0;active=0;
+      } else if(p->anchor_mode==MULIB_ELVI_ANCHOR_CHILD)child=0;
+    }
     if(!tag.closing && melvi_tag_(&tag,p->anchor_tag) &&
        p->anchor_mode==MULIB_ELVI_ANCHOR_PARENT) parent++;
     if(!tag.closing && melvi_tag_(&tag,"a")) {
@@ -484,10 +549,10 @@ int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *p,
         char url[2048];
         if(melvi_redirect_(p,href,url,sizeof url)) {
           int dupe=0;
-          for(size_t k=0;k<used;k++)if(!strcmp(results[k].url,url)){dupe=1;break;}
+          for(size_t k=0;k<used;k++)if(!strcmp(pending[k].url,url)){dupe=1;break;}
           if(!dupe) {
-            melvi_copy_(results[used].url,sizeof(results[used].url),url);
-            melvi_copy_(results[used].title,sizeof(results[used].title),title);
+            melvi_copy_(pending[used].url,sizeof(pending[used].url),url);
+            melvi_copy_(pending[used].title,sizeof(pending[used].title),title);
             used++;
           }
         }
@@ -496,12 +561,12 @@ int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *p,
     }
     if(tag.closing && melvi_tag_(&tag,p->anchor_tag) &&
        p->anchor_mode==MULIB_ELVI_ANCHOR_PARENT && parent) parent--;
-    /* webscan returns a script/style opening tag but moves scan past its
-     * closing tag; never treat raw script/style content as title text. */
-    prev=(!tag.closing && (melvi_tag_(&tag,"script") ||
-                           melvi_tag_(&tag,"style"))) ? scan : tag.end+1;
+    prev=tag.end+1;
   }
-  free(copy);*count=used;return 1;
+  free(copy);
+  if(parsed<0) {free(pending);return 0;}
+  if(used)memcpy(results,pending,used*sizeof *pending);
+  free(pending);*count=used;return 1;
 }
 static int melvi_html_type_(const char *ct) {
   size_t n=0;while(ct[n] && ct[n]!=';' && ct[n]!=' ' && ct[n]!='\t')n++;
@@ -552,15 +617,22 @@ int mulib_elvi_scrape_https_transport(void *ctx,const char *url,
     mulib_shylock_buffer_t *body,unsigned *status,char *type,size_t cap) {
   mulib_elvi_scrape_https_t *tls=(mulib_elvi_scrape_https_t *)ctx;
   mulib_http_message_t message={0};mulib_webclient_options_t options={0};
-  char host[256];const char *ct;int ok=0;
+  char host[256];const char *ct,*encoding;size_t cursor=0,limit;int ok=0;
   if(!tls || !tls->connect || !tls->peer || !url || !body || !status || !type || !cap ||
-     !melvi_host_(url,host,sizeof host) || strchr(url,'#'))return 0;
-  options.http.max_body_bytes=body->limit && body->limit<2097152?body->limit:2097152;
+     !melvi_host_(url,host,sizeof host) || strchr(url,'#') ||
+     (body->cap && !body->data) || (body->len && body->len>=body->cap))return 0;
+  limit=body->limit && body->limit<2097152?body->limit:2097152;
+  if(body->len>=limit)return 0;
+  options.http.max_body_bytes=limit-body->len;
   options.http.max_header_bytes=32768;options.http.max_headers=100;
   options.max_response_bytes=options.http.max_body_bytes+65536;
   if(mulib_https_request(url,"GET",NULL,0,NULL,0,&options,
        melvi_connect_,tls,&message)!=MULIB_WEBCLIENT_OK)goto done;
-  ct=mulib_http_header(&message,"Content-Type");
+  ct=mulib_http_header_next(&message,"Content-Type",&cursor);
+  if(mulib_http_header_next(&message,"Content-Type",&cursor))goto done;
+  cursor=0;encoding=mulib_http_header_next(&message,"Content-Encoding",&cursor);
+  if(encoding && (!mulib_webscan_equal_(encoding,strlen(encoding),"identity") ||
+      mulib_http_header_next(&message,"Content-Encoding",&cursor)))goto done;
   if(!ct)ct="";
   if(strlen(ct)>=cap || !mulib_shylock_append(body,message.body,message.body_length))goto done;
   memcpy(type,ct,strlen(ct)+1);*status=message.status;ok=1;

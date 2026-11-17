@@ -1,4 +1,55 @@
-# On1x verification — 2026-11-15
+# On1x verification — 2026-11-17
+
+## ElviScrape hardening and fixture integration
+
+- ElviScrape retains its six-function C11 single-header API and offline `.elvs`
+  providers. Extraction now uses bounded iterative scanner work and staged
+  results, ignores inert/raw-text markup, and terminates stale heading context.
+  Ambiguous Google targets, malformed URL references and request fragments
+  reject without loosening HTTPS/private-network policy.
+- Independent HTTPS fixtures cover negotiated certificate/hostname/protocol/ALPN
+  checks before HTTP writes, partial I/O, fixed/chunked/authenticated-EOF framing,
+  malformed/duplicate metadata, unsupported content encoding, cumulative body
+  limits, cleanup and unchanged outputs on failure. Per-allocation injection
+  exercises compile/load/URL/parse/search/HTTPS paths with no outstanding tracked
+  allocations after each attempt.
+- **8/8 selected CTests pass with Clang ASan/UBSan**: three ElviScrape tests and
+  all five other shared-webscan consumers. The final sanitizer-backed fuzz
+  campaign executes **118,189 inputs** across DSL, HTML, all anchor modes and
+  URL/redirect invariants, without a sanitizer/assertion failure. This is bounded
+  testing, not a proof of complete HTML5 behavior or transport security.
+- Both trusted provider files are registered in `std/mulib/catalog.json`.
+  Explicit fixture selection now preserves source-pinned recipes, required
+  exports and evidence inputs. The complete archive's `shylock-core` C math
+  dependency is explicit, including GCC consumers without sanitizer-provided
+  link libraries. The optional owned parser remains off.
+- The complete `test_mulib.py` suite passes with GCC and Clang ASan/UBSan;
+  **the previously recorded ElviScrape fixture-inventory failure is resolved**.
+  Both embedded providers compile and drive offline extraction through a test-only,
+  ABI-exact scalar adapter in generated On1x clients. The complete
+  `test_exotract.py` suite also passes with GCC and Clang ASan/UBSan, including
+  separate-TU C and On1x consumers of the one-TU archive.
+- Header/manual and 16 scanner/provider/fixture/test evidence inputs are pinned.
+  Source semantics/drift tests and real ExoML SDK extraction tests pass.
+  `/tmp/opencode/elvi-solid-contracts-final` passes independent pin/check/recheck:
+  `gate_b=true`, unchanged inputs, **six actual exports**, and
+  `safe_export=false`. Annotations remain unreviewed; no safe FFI, independent
+  certificate/DNS validation or Chisel/Wetstone usage proof is implied.
+
+Artifacts: `/tmp/opencode/elvi-solid-build` (sanitizer CTests/fuzzer),
+`/tmp/opencode/elvi-solid-{on1x-mulib-final,exotract-final}` (Clang sanitizer
+consumers), `/tmp/opencode/elvi-solid-{on1x-mulib-gcc,exotract-gcc}` (GCC), and
+`/tmp/opencode/elvi-solid-fuzz-final.log`.
+The initial fuzzer launch hit its default RSS guard with the default sanitizer
+quarantine; the completed campaigns use a 16 MiB quarantine and finish below
+100 MiB reported peak RSS. The final fuzz command is:
+
+```sh
+ASAN_OPTIONS=quarantine_size_mb=16:thread_local_quarantine_size_kb=64 \
+  /tmp/opencode/elvi-solid-build/mulib_fuzz_elvi_scrape \
+  /tmp/opencode/elvi-solid-corpus -max_total_time=60 -max_len=65536 \
+  -timeout=5 -rss_limit_mb=8192 -print_final_stats=1 -verbosity=0
+```
 
 ## Mune contract rebinding
 

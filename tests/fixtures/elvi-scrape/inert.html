@@ -1,0 +1,15 @@
+<!doctype html>
+<template><a href="https://decoy.example/template"><h3>Not rendered</h3></a>
+  <template><h3><a href="https://decoy.example/nested">Nested template</a></h3></template>
+</template>
+<textarea><a href="https://decoy.example/textarea"><h3>Literal text</h3></a></textarea>
+<title><a href="https://decoy.example/title"><h3>Not a link</h3></a></title>
+<xmp><a href="https://decoy.example/xmp"><h3>Literal markup</h3></a></xmp>
+<iframe><a href="https://decoy.example/frame"><h3>Frame fallback</h3></a></iframe>
+<noembed><a href="https://decoy.example/embed"><h3>Embed fallback</h3></a></noembed>
+<noframes><a href="https://decoy.example/frames"><h3>Frame set fallback</h3></a></noframes>
+<noscript><a href="https://decoy.example/nojs"><h3>Alternate content</h3></a></noscript>
+<a href="https://example.org/visible"><h3>Visible<!-- hidden --> &#x1F680;<?opaque "quoted>"?> guide</h3></a>
+<a href="https://example.org/second"><h3>One<template><h3>Wrong</h3></template> two</h3></a>
+<plaintext>Everything after this is literal text, even after </plaintext>.
+<a href="https://decoy.example/plaintext"><h3>Still literal</h3></a>

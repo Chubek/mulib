@@ -1,0 +1,8 @@
+<a href="/url?sa=U&amp;url=https%3A%2F%2Fexample.org%2Fsafe%3Fx%3D1%26y%3D2#q=https://decoy.example/"><h3>Safe</h3></a>
+<a href="/url?q=https%3A%2F%2Fexample.org%2Fsafe%3Fx%3D1%26y%3D2"><h3>Duplicate</h3></a>
+<a href="/url?q=https%3A%2F%2Fexample.org%2Fone&amp;url=https%3A%2F%2Fexample.net%2Ftwo"><h3>Ambiguous</h3></a>
+<a href="/url?q=&amp;q=https%3A%2F%2Fexample.org%2Fempty"><h3>Empty target</h3></a>
+<a href="/url?q=https%3A%2F%2Fexample.org%2Fbad&amp;tracking=%GG"><h3>Malformed escape</h3></a>
+<a href="https://example.org/&#0;bad"><h3>NUL reference</h3></a>
+<a href="https://example.org/&#xD800;bad"><h3>Surrogate</h3></a>
+<nav><a href="/search?q=test&amp;start=10">Next page</a></nav>

@@ -122,7 +122,7 @@ def plan(root, libraries, fixtures=()):
         active.pop(); expanded.add(name); add(name)
         extra.extend(modules[name]['extra_macros'])
     required = {}
-    for name in libraries:
+    def select(name):
         profile = profiles['profiles'].get(name, {'recipe': profiles['default_recipe']})
         required[name] = profile.get('required_symbols', [])
         if profile['recipe']=='exoml-core':
@@ -136,12 +136,15 @@ def plan(root, libraries, fixtures=()):
         elif profile['recipe']=='manifest':visit(name)
         else:raise ValueError('unknown kernel recipe')
         links.update(profile.get('link_libraries', []))
+    for name in libraries:select(name)
     selected = set(fixtures)
     for name in fixtures:
         group = config['fixtures'][name]
         if group['kind']=='empty':raise ValueError('fixture directory is empty: '+name)
         # A multi-kernel association is not a demand to enable every consumer.
-        visit(group['kernels'][0])
+        # Explicit fixture selection is not an escape from a source-pinned
+        # implementation recipe or its required-symbol/evidence obligations.
+        select(group['kernels'][0])
     while True:
         previous = (len(ordered), len(selected))
         for name, group in config['fixtures'].items():

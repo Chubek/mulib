@@ -7,7 +7,7 @@
   "state": "annotated",
   "bundle_provenance": {
     "header": "mulib-elvi-scrape.h",
-    "revision": "sha256:d1e84246cd4d91c00481700bca94134e0491c04b24ca22e4b23cfa30cd49f853",
+    "revision": "sha256:f4bbea1fd252340246df226ff16274f4ecdda1cdecb26185fb8251b359417145",
     "author": "Codex (AI-authored)",
     "review_status": "unreviewed",
     "evidence_method": "Source/manual audit; contracts-exoml/obligations.json; real-kernel offline extraction and HTTPS adapter tests. Independent review pending."
@@ -265,7 +265,7 @@
         "header": "mulib-elvi-scrape.h",
         "author": "Codex (AI-authored)",
         "review_status": "unreviewed",
-        "evidence_method": "Source/manual and offline HTML fixtures: copies input, bounded results with inline owned bytes; no borrowed output strings. Zero results is success; failures preserve results/count."
+        "evidence_method": "Source/manual, offline fixtures, allocator injection and fuzz invariants: iterative scanner work <=16*len+1024, HTML copy and <=64 staged inline records; no borrowed output strings. Opaque/inert containers and stale headings excluded; zero results is success. Allocation/work failures preserve results/count."
       }
     },
     {
@@ -430,7 +430,7 @@
         "header": "mulib-elvi-scrape.h",
         "author": "Codex (AI-authored)",
         "review_status": "unreviewed",
-        "evidence_method": "Source/manual and tests/test-elvi-scrape-https.c: HTTPS/TSL session closed on every path; authenticated peer inspection before HTTP writes; no redirects/retries. Body/status/type unchanged on failure. Callback effects unknown."
+        "evidence_method": "Source/manual and tests/test-elvi-scrape-{https,alloc}.c: HTTPS/TSL sessions closed on all paths, authenticated negotiated peer inspection before HTTP writes, no redirects/retries. Partial I/O, framing failures, duplicate type/encoding, unsupported encoding, cumulative body limits and allocation failures tested. Body/status/type unchanged on failure. Callback effects unknown."
       },
       "invalidations": [
         {

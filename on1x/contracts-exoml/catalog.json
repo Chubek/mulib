@@ -77,9 +77,27 @@
     "elvi-scrape": {
       "contract": "elvi-scrape.exocontract.json",
       "header": "include/mulib-elvi-scrape.h",
-      "header_sha256": "d1e84246cd4d91c00481700bca94134e0491c04b24ca22e4b23cfa30cd49f853",
+      "header_sha256": "f4bbea1fd252340246df226ff16274f4ecdda1cdecb26185fb8251b359417145",
       "manual": "manual/mulib-elvi-scrape.md",
-      "manual_sha256": "4343541adeeb5c9a69cd639f6d4820c471aa4d1454309e1f1c0159ede4484728",
+      "manual_sha256": "73b5522bc73e36061642020c8ba2d5ee9d6c2416dd65a66f0adedf07b5bc5fef",
+      "evidence_sha256": {
+        "include/detail/mulib-webscan.h": "cd5a550fc9539757efa2743446ad388b61df1747d01551223bd1ac462fd9de42",
+        "tests/test-elvi-scrape.c": "948f4f8e5a33c1801b8ead6ab581fcbf008dfa8ff5fc3027d2c8ed6002fe4836",
+        "tests/test-elvi-scrape-https.c": "3f2512f7b7fca49e32a4894d939b4c1716a9801616ef759cfbff6a7cabd8303e",
+        "tests/test-elvi-scrape-alloc.c": "b944c98c763de1320ae5e0f9bd3deb9df98329f8984ea8bb2fe02f74a5630712",
+        "tests/fuzz_elvi_scrape.c": "cf31452100a9cf2038232c6f9bb0717ce5ac80283b9d90d62df5fc6c3fa3f7de",
+        "on1x/tests/mulib/elvi-scrape.c": "10ad2742376235bbf724cf9f39806ce10e28fcf7c5ced7ee53c01cf62fb6621a",
+        "library/elvi-scrape/bing.elvs": "73851061ed2d71e37212a565e7dcb7ec86ab03f35c71fc2b584d4e291e957efb",
+        "library/elvi-scrape/google.elvs": "4ce1428ee0c4cd0527c0d0d14ad99b03dcc5171f014de1e4d5de2fd34cd4bd45",
+        "tests/fixtures/elvi-scrape/bot.html": "29d638c06a0a3b3a86d7707525719d75666cfd808b80896b77f7344dcebb564a",
+        "tests/fixtures/elvi-scrape/changed.html": "49a9bafb6fca7f0fec3f98b240b7e5b5ac27b2ae62f379a2ed6cdcbcb520d813",
+        "tests/fixtures/elvi-scrape/consent.html": "54024b8a32479b1f0e2a97700bbd534c522eecf219002a5f1e5f49fbad43ab92",
+        "tests/fixtures/elvi-scrape/headings.html": "b91efc0b1b8f2ec178f171eb79433b034fb286cc7c2dffa16c7d5fcffaa4f52a",
+        "tests/fixtures/elvi-scrape/inert.html": "07be8b5cebf556a4be2d2700cd80f7161fe35de5879db0d7677a4064b86b8f4f",
+        "tests/fixtures/elvi-scrape/layout.html": "c7348d5ad8bfd76b0958bbabd2e23a6b41d590a84bc4fc8b22e7badd0151f132",
+        "tests/fixtures/elvi-scrape/malformed.html": "6c2f11efe4c1a2397b7fafc20f28683264c9b1899fc602a5a49f5f61c76200ee",
+        "tests/fixtures/elvi-scrape/redirects.html": "c13a59a846ecaeb9c8f6cb3df715366ec020ca7d4322ffe65e6de52379ae0ae8"
+      },
       "function_prefix": "mulib_elvi_scrape_",
       "function_count": 6,
       "implementation_modules": [
@@ -104,7 +122,7 @@
       "inactive_optional_macros": [
         "MULIB_IMPL_PARSER"
       ],
-      "link_libraries": []
+      "link_libraries": ["m"]
     }
   }
 }

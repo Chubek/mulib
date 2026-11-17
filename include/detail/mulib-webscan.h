@@ -31,10 +31,21 @@ mulib_webscan_equal_ (const char *s, size_t n, const char *key)
       return 0;
   return 1;
 }
+/* Optional work accounting for hostile input. Bounded scanners return -1 when
+ * exhausted; the original entry points retain their 1/0 behavior. */
+static inline int
+mulib_webscan_work_ (size_t *work)
+{
+  if (!work) return 1;
+  if (!*work) return 0;
+  --*work;
+  return 1;
+}
 /* p points to '<'. End points at '>'; quoted '>' bytes do not terminate. */
 static inline int
-mulib_webscan_tag_parse_ (const char *p, mulib_webscan_tag_ *t)
+mulib_webscan_tag_parse_work_ (const char *p, mulib_webscan_tag_ *t, size_t *work)
 {
+  if (!mulib_webscan_work_ (work)) return -1;
   if (*p != '<')
     return 0;
   ++p;
@@ -46,7 +57,10 @@ mulib_webscan_tag_parse_ (const char *p, mulib_webscan_tag_ *t)
     return 0;
   while ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')
          || (*p >= '0' && *p <= '9') || *p == '-' || *p == ':')
-    ++p;
+    {
+      if (!mulib_webscan_work_ (work)) return -1;
+      ++p;
+    }
   t->length = (size_t)(p - t->name);
   if (!t->length
       || !(*p == '>' || *p == '/' || mulib_webscan_space_ ((unsigned char)*p)))
@@ -55,6 +69,7 @@ mulib_webscan_tag_parse_ (const char *p, mulib_webscan_tag_ *t)
   char quote = 0;
   for (; *p; ++p)
     {
+      if (!mulib_webscan_work_ (work)) return -1;
       if (quote)
         {
           if (*p == quote)
@@ -71,6 +86,11 @@ mulib_webscan_tag_parse_ (const char *p, mulib_webscan_tag_ *t)
         }
     }
   return 0;
+}
+static inline int
+mulib_webscan_tag_parse_ (const char *p, mulib_webscan_tag_ *t)
+{
+  return mulib_webscan_tag_parse_work_ (p, t, NULL);
 }
 /* Exact attribute names, either quote style, arbitrary attribute order.
  * Boolean/unquoted attributes are skipped but never returned as values. */
@@ -158,30 +178,66 @@ mulib_webscan_declaration_end_ (const char *p)
     }
   return NULL;
 }
+/* Skip a raw/RCDATA element through its matching end tag (or EOF). The caller
+ * chooses which elements are opaque; this is not an HTML5 tree builder. */
+static inline int
+mulib_webscan_raw_skip_work_ (const char *p, const char *name, size_t *work,
+                             const char **after)
+{
+  while (*p)
+    {
+      mulib_webscan_tag_ tag;
+      int parsed;
+      if (!mulib_webscan_work_ (work)) return -1;
+      if (*p != '<') { ++p; continue; }
+      parsed = mulib_webscan_tag_parse_work_ (p, &tag, work);
+      if (parsed < 0) return -1;
+      if (parsed && tag.closing && mulib_webscan_equal_ (tag.name, tag.length, name))
+        { *after = tag.end + 1; return 1; }
+      ++p;
+    }
+  *after = p;
+  return 1;
+}
 /* Skip comments and script/style contents; return complete tags in order. */
 static inline int
-mulib_webscan_next_ (const char **cursor, mulib_webscan_tag_ *t)
+mulib_webscan_next_work_ (const char **cursor, mulib_webscan_tag_ *t, size_t *work)
 {
   const char *p = *cursor;
-  while ((p = strchr (p, '<')) != NULL)
+  while (*p)
     {
+      int parsed;
+      if (!mulib_webscan_work_ (work)) return -1;
+      if (*p != '<') { ++p; continue; }
       if (!strncmp (p, "<!--", 4))
         {
-          const char *end = strstr (p + 4, "-->");
-          if (!end)
+          const char *end = p + 4;
+          while (*end && strncmp (end, "-->", 3))
+            { if (!mulib_webscan_work_ (work)) return -1; ++end; }
+          if (!*end)
             return 0;
           p = end + 3;
           continue;
         }
       if (p[1] == '!' || p[1] == '?')
         {
-          const char *end = mulib_webscan_declaration_end_ (p + 2);
-          if (!end)
+          const char *end = p + 2;
+          char quote = 0;
+          for (; *end; ++end)
+            {
+              if (!mulib_webscan_work_ (work)) return -1;
+              if (quote) { if (*end == quote) quote = 0; }
+              else if (*end == '\'' || *end == '"') quote = *end;
+              else if (*end == '>') break;
+            }
+          if (!*end)
             return 0;
           p = end + 1;
           continue;
         }
-      if (!mulib_webscan_tag_parse_ (p, t))
+      parsed = mulib_webscan_tag_parse_work_ (p, t, work);
+      if (parsed < 0) return -1;
+      if (!parsed)
         {
           ++p;
           continue;
@@ -191,17 +247,17 @@ mulib_webscan_next_ (const char **cursor, mulib_webscan_tag_ *t)
           && (mulib_webscan_equal_ (t->name, t->length, "script")
               || mulib_webscan_equal_ (t->name, t->length, "style")))
         {
-          const char *end = mulib_webscan_raw_end_ (
-              *cursor, mulib_webscan_equal_ (t->name, t->length, "script")
-                           ? "script"
-                           : "style");
-          mulib_webscan_tag_ close;
-          *cursor = end && mulib_webscan_tag_parse_ (end, &close)
-                        ? close.end + 1
-                        : *cursor + strlen (*cursor);
+          if (mulib_webscan_raw_skip_work_ (*cursor,
+              mulib_webscan_equal_ (t->name, t->length, "script") ? "script" : "style",
+              work, cursor) < 0) return -1;
         }
       return 1;
     }
   return 0;
+}
+static inline int
+mulib_webscan_next_ (const char **cursor, mulib_webscan_tag_ *t)
+{
+  return mulib_webscan_next_work_ (cursor, t, NULL);
 }
 #endif

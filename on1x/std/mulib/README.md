@@ -72,7 +72,9 @@ directory with its owning kernels. Headers, manuals, dependency edges and
 implementation switches come from `MANIFEST.yaml`, including `extra_macros`.
 
 - **Runtime/profiles:** Git, ImmGTK, daemon/distributed profiles, Readline,
-  ArchML/DSymSpec, OptML and MicroChan are selected automatically for their owners.
+  ArchML/DSymSpec, OptML, MicroChan and ElviScrape are selected automatically for
+  their owners. `--mulib-fixture elvi-scrape` embeds both trusted `.elvs` provider
+  files for offline DSL compilation; they are never executed as code.
 - **Embedded/amalgamated sources:** lmuw3, lprowse, ldocstr, lcharts, lpaleo and
   Virtio retain source fixtures for provenance. Canonical generator `--check`
   commands verify their checked-in kernel representations. Standalone
@@ -92,6 +94,10 @@ its primary kernel, not every associated consumer. Generic dependency cycles
 are recorded and deduplicated: Parsec/PEG genuinely depend on each other and
 share one implementation TU. All switches precede inclusion. Direct requests
 for JSON/Vec/core-Parsec retain their narrower source-pinned ExoML recipes.
+Explicit fixture selection also retains a primary kernel's source-pinned recipe,
+required exports and evidence obligations. ElviScrape enables only its six-API
+profile and full HTTPS dependency closure, leaves the optional owned parser off,
+and records `shylock-core`'s C math-library link requirement.
 Mune also uses a source-pinned recipe, explicitly activating the owned parser's
 `MULIB_IMPL_PARSER` switch and checking all 52 public exports. Its header, manual
 and three Lua-runtime regression/evidence files are locked build inputs; this

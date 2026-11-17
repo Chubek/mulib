@@ -11,6 +11,8 @@ It neither embeds Surfraw nor executes shell scripts.
 - `library/elvi-scrape/google.elvs` — Google provider.
 - `library/elvi-scrape/bing.elvs` — Bing provider.
 - `tests/test-elvi-scrape.c` — deterministic offline behavior tests.
+- `tests/test-elvi-scrape-https.c` — independent authenticated-session/HTTP tests.
+- `tests/test-elvi-scrape-alloc.c` — exhaustive single-allocation failure injection.
 - `examples/elvi-scrape.c` — offline parse / URL construction example.
 
 ## Dependencies (MuLIB only)
@@ -23,6 +25,8 @@ corresponding `MULIB_IMPL_*` macros before including `mulib-elvi-scrape.h` in
 exactly one C11 translation unit. Other translation units include declarations
 only. No implementation switches are enabled implicitly, including the optional
 owned `MULIB_IMPL_PARSER` API.
+On platforms with a separate C math library, link `-lm`: the complete one-TU
+dependency closure includes `shylock-core`'s decimal conversion helpers.
 
 Offline compilation and extraction never open a connection. The HTTPS adapter
 composes MuLIB HTTPS, HTTP and TSL kernels with an application-supplied blocking
@@ -55,6 +59,11 @@ provider URL must use HTTPS, and its exact request hostname must match `host`.
 Host exclusions are enforced on **result URLs**, never just their display text.
 Only HTTPS result links are emitted; relative links and non-HTTPS links are
 ignored, except recognized Google redirect links, which are decoded to HTTPS.
+Google wrappers accept one nonempty `q=` **or** `url=` target before a fragment;
+repeated/ambiguous targets and malformed escapes anywhere in the wrapper are
+rejected. Invalid numeric character references in URL attributes are rejected,
+not silently passed through. Request `home` and rendered `search` URLs must not
+contain fragments: a fragment is not sent to the provider as a query.
 
 The DSL is **declarative and non-Turing-complete**: no commands, process execution,
 Lua, embedded JavaScript, or arbitrary memory access. A provider file can alter
@@ -98,6 +107,17 @@ must come from successful compilation and remain unmodified during calls.
 Queries are bounded to 2048 bytes. Titles are clipped on UTF-8 boundaries;
 invalid UTF-8 bytes in titles are skipped. The five XML entities, `nbsp`, and
 valid numeric Unicode references are decoded; this is not a full HTML entity table.
+Literal and decoded NBSP are collapsed like ASCII whitespace. Duplicate results
+are removed by exact destination URL bytes, without reinterpreting path escapes
+or changing query semantics.
+
+Extraction stages at most `min(capacity, max_results)` records (never more than
+64) and an HTML copy before committing caller outputs. The scanner is iterative
+and limited to `16 * length + 1024` work steps; exhausted work or allocation
+failure returns 0 without committing partial results. Scratch result storage is
+at most 64 times `sizeof(mulib_elvi_scrape_result_t)`, in addition to the bounded
+HTML copy and fixed-size URL/title buffers. Zero capacity succeeds with zero
+results after input/program validation.
 
 ## Example
 
@@ -142,6 +162,10 @@ The adapter returns HTTP responses without following `Location`; search accepts
 only status 200 and an exact HTML/XHTML media type (case-insensitive, optional
 parameters). HTTP redirects, 429 and 503 never trigger follow-up requests or
 retries. Rate scheduling and retry decisions belong to the application.
+The adapter rejects duplicate `Content-Type` fields, duplicate `Content-Encoding`
+fields, and encodings other than `identity`; it does not implement decompression.
+Body limits include bytes already in the initialized caller buffer. Failed
+framing, metadata, capacity or allocation checks preserve body/status/type.
 
 ## Important limitations
 
@@ -154,7 +178,12 @@ retries. Rate scheduling and retry decisions belong to the application.
 - This version extracts title and destination URL. It does not extract
   snippets, search ranking metadata, or pagination offsets.
 - Malformed HTML is best-effort; the shared MuLIB webscan scanner is intentionally
-  not a complete HTML5 parser.
+  not a complete HTML5 parser. Heading changes/closures terminate stale heading
+  context. Comments/declarations, nested templates, script/style, RCDATA and
+  fallback containers (`textarea`, `title`, `xmp`, `iframe`, `noembed`, `noframes`,
+  `noscript`) cannot introduce results or title markup. `plaintext` ends markup
+  scanning. This conservative subset does not implement CSS visibility or the
+  complete HTML5 tree-construction/namespace rules.
 - Content-type must be `text/html` or `application/xhtml+xml`, with optional
   parameters, and HTTP status must be 200. The supplied generic transport must
   not follow redirects implicitly; the provided HTTPS adapter never does.
@@ -171,9 +200,10 @@ Tests use actual URL/fetch/policy/HTTPS/TSL kernels with offline HTML and TLS
 session fixtures, never live search engines. From the repository root:
 
 ```sh
-make build/test-elvi-scrape build/test-elvi-scrape-https
+make build/test-elvi-scrape build/test-elvi-scrape-https build/test-elvi-scrape-alloc
 ./build/test-elvi-scrape
 ./build/test-elvi-scrape-https
+./build/test-elvi-scrape-alloc
 ```
 
 CTest supplies the source directory when running from an isolated work directory.
@@ -184,9 +214,16 @@ processing. Seed it with the providers and `tests/fixtures/elvi-scrape` files.
 `MANIFEST.yaml` and both On1x catalogs register `elvi-scrape`. The ExoML v2
 sidecar records all six exported functions, caller-owned outputs, transactional
 failure behavior, and unknown effects of indirect transport callbacks. Its
-header/manual hashes and one-TU dependency recipe are pinned. Annotations remain
+header/manual hashes and one-TU dependency recipe are pinned, together with the
+shared scanner, offline providers/HTML fixtures, allocator tests and fuzz harness
+as source evidence. Annotations remain
 **unreviewed**, and neither extraction nor successful tests imply safe On1x ABI
 lowering. Exotract requires the six symbols from the generated archive.
+`on1x/std/mulib/catalog.json` registers both `.elvs` files as the `elvi-scrape`
+fixture group. Explicit fixture selection preserves the same source-pinned
+recipe as kernel selection (including leaving optional `MULIB_IMPL_PARSER` off).
+The generated On1x acceptance client compiles the embedded provider data offline
+through a test-only scalar C adapter; no general safe FFI is claimed.
 
 Composable CSS selectors, provider pagination offsets and rate scheduling remain
 future work. The offline fixtures ensure pagination links are not mistaken for

@@ -323,9 +323,10 @@ with tempfile.TemporaryDirectory(prefix='sdk-', dir=t.work) as tmp:
             for directory, suffix in [('include','.h'),('manual','.md')]:
                 shutil.copyfile(t.root.parent/directory/('mulib-'+library+suffix), fake/directory/('mulib-'+library+suffix))
         catalog = json.loads((t.root/'contracts-exoml/catalog.json').read_text())
-        for path in catalog['profiles']['mune']['evidence_sha256']:
-            (fake/path).parent.mkdir(parents=True,exist_ok=True)
-            shutil.copyfile(t.root.parent/path,fake/path)
+        for profile in catalog['profiles'].values():
+            for path in profile.get('evidence_sha256',{}):
+                (fake/path).parent.mkdir(parents=True,exist_ok=True)
+                shutil.copyfile(t.root.parent/path,fake/path)
         shutil.copyfile(t.root.parent/'MANIFEST.yaml', fake/'MANIFEST.yaml')
         locked = work/'copy-snapshot'
         p = workflow('--root', fake, 'snapshot', locked, *options, '--library', 'vec'); assert p.returncode == 0, p.stderr

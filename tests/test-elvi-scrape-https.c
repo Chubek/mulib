@@ -9,7 +9,8 @@ typedef struct fixture {
   int mode;
 } fixture;
 static int handshake(void *ctx,int *verified) {
-  fixture *f=ctx;*verified=f->mode==1?0:1;return MULIB_TSL_OK;
+  fixture *f=ctx;*verified=f->mode==1?0:1;
+  return f->mode==13?MULIB_TSL_AGAIN:f->mode==14?MULIB_TSL_EBACKEND:MULIB_TSL_OK;
 }
 static int read_tls(void *ctx,void *out,size_t cap,size_t *n) {
   fixture *f=ctx;size_t left=strlen(f->wire)-f->offset;
@@ -31,18 +32,54 @@ static int peer_tls(void *ctx,const mulib_tsl_t *s,mulib_elvi_scrape_peer_t *pee
   fixture *f=ctx;assert(s->state==2);
   strcpy(peer->hostname,f->mode==3?"evil.example":"example.org");
   peer->certificate_verified=f->mode==2?0:1;peer->hostname_verified=f->mode==9?0:1;
-  peer->tls_version=f->mode==4?0x0302:0x0304;
-  strcpy(peer->alpn,f->mode==5?"h2":"http/1.1");return f->mode==6?0:1;
+  peer->tls_version=f->mode==4?0x0302:f->mode==12?0x7f1c:f->mode==15?0x0303:0x0304;
+  strcpy(peer->alpn,f->mode==5?"h2":f->mode==15?"":"http/1.1");
+  if(f->mode==10)memset(peer->hostname,'x',sizeof peer->hostname);
+  if(f->mode==11)memset(peer->alpn,'x',sizeof peer->alpn);
+  return f->mode==6?0:1;
+}
+static void responses(void) {
+  const char *invalid[]={
+    "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nOK",
+    "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Encoding: gzip\r\nContent-Length: 2\r\n\r\nOK",
+    "HTTP/1.1 200 OK\r\nContent-Encoding: identity\r\nContent-Encoding: identity\r\nContent-Length: 2\r\n\r\nOK",
+    "HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\nOK",
+    "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Length: 3\r\n\r\nOK",
+    "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n2\r\nO",
+    "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 2\r\n\r\nOKextra"
+  };
+  for(size_t i=0;i<sizeof invalid/sizeof *invalid;i++) {
+    fixture f={invalid[i],0,0,0,0,0};mulib_elvi_scrape_https_t tls={connect_tls,peer_tls,&f};
+    mulib_shylock_buffer_t body={0};char type[64]="unchanged";unsigned status=42;
+    assert(mulib_shylock_text(&body,"seed"));char *original=body.data;
+    assert(!mulib_elvi_scrape_https_transport(&tls,"https://example.org/",&body,&status,type,sizeof type));
+    assert(f.connects==1 && f.closes==1 && status==42 && !strcmp(type,"unchanged"));
+    assert(body.data==original && body.len==4 && !strcmp(body.data,"seed"));
+    mulib_shylock_buffer_free(&body);
+  }
+  const char *valid[]={
+    "HTTP/1.1 200 OK\r\nContent-Type: Text/HTML; charset=utf-8\r\nContent-Encoding: Identity\r\nContent-Length: 2\r\n\r\nOK",
+    "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nO\r\n1\r\nK\r\n0\r\n\r\n",
+    "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nOK"
+  };
+  for(size_t i=0;i<sizeof valid/sizeof *valid;i++) {
+    fixture f={valid[i],0,0,0,0,15};mulib_elvi_scrape_https_t tls={connect_tls,peer_tls,&f};
+    mulib_shylock_buffer_t body={0};char type[64];unsigned status=0;
+    assert(mulib_shylock_text(&body,"seed"));body.limit=6;
+    assert(mulib_elvi_scrape_https_transport(&tls,"https://example.org/",&body,&status,type,sizeof type));
+    assert(f.connects==1 && f.closes==1 && status==200 && !strcmp(body.data,"seedOK"));
+    mulib_shylock_buffer_free(&body);
+  }
 }
 int main(void) {
   const char *wire="HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 2\r\n\r\nOK";
-  for(int mode=0;mode<=9;mode++) {
+  for(int mode=0;mode<=15;mode++) {
     fixture f={wire,0,0,0,0,mode};
     mulib_elvi_scrape_https_t tls={connect_tls,peer_tls,&f};
     mulib_shylock_buffer_t body={0};char type[64]="unchanged";unsigned status=42;
     int ok=mulib_elvi_scrape_https_transport(&tls,"https://example.org/",&body,&status,type,sizeof type);
     assert(f.connects==1 && f.closes==1);
-    if(!mode)assert(ok && status==200 && body.len==2 && !strcmp(body.data,"OK"));
+    if(!mode || mode==15)assert(ok && status==200 && body.len==2 && !strcmp(body.data,"OK"));
     else {assert(!ok && status==42 && !strcmp(type,"unchanged") && !body.data);
       if(mode!=8)assert(!f.writes);}
     mulib_shylock_buffer_free(&body);
@@ -64,5 +101,6 @@ int main(void) {
   assert(!f.connects);body.limit=1;
   assert(!mulib_elvi_scrape_https_transport(&tls,"https://example.org/",&body,&status,type,sizeof type));
   assert(f.connects==1 && f.closes==1 && !body.data);
+  responses();
   puts("elvi-scrape HTTPS: OK");return 0;
 }

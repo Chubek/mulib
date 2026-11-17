@@ -37,6 +37,12 @@ semantic audit, not an automatic hash refresh. Its explicit
 `active_optional_macros` enables `MULIB_IMPL_PARSER`, required by the full runtime.
 This does not enable the owned parser for the standalone Parsec profile.
 
+ElviScrape additionally pins its shared scanner, provider data, HTML fixtures,
+allocation-failure tests, fuzz harness and raw test adapter as evidence. Its
+fixture-only plan uses the same narrow recipe and required exports; the C math
+library dependency of the complete one-TU archive is explicit. No independent
+TLS/DNS verification or safe ownership/effect lowering is inferred from tests.
+
 The canonical versioned schema and model are in the separately supplied
 LibStone checkout's `moonstone/exoml/contracts/schema.exocontract.json` and
 `moonstone/exoml/include/exoml/Contract.hpp`. On1x preserves the full model rather
