@@ -15,9 +15,13 @@ The scalar MIR verifier rejects this profile; it has no effectful ownership/
 suspension descriptors. This is neither `async/await` nor a native-thread/VM
 backend. A limited POSIX `xfiber` direct-exec path and consuming process
 `cancel` also execute through C11. A newly launched internal fiber can be
-consumed by an immediately following `cancel handle;` before dispatch; shell
-literals/streams, running/blocked internal-fiber cancellation and `poll after`
-deadlines remain unsupported.
+consumed by an immediately following `cancel handle;` before dispatch. The
+external path also admits compiler-parsed single/triple backtick command words
+and `launch capture`, whose affine stdin/stdout/stderr capabilities use bounded
+`u8` MuLIB channels and nonblocking POSIX pipes. It does not invoke a host shell;
+expansion, assignments, command lists, pipelines and redirection remain closed.
+Running/blocked internal-fiber cancellation and `poll after` deadlines remain
+unsupported. None of these effects is represented by scalar MIR.
 
 **M2 function defer / typed errors:** [the C11 profile](docs/defer-errors.md)
 executes function-owned bounded LIFO registrations and exact nominal Result `?`

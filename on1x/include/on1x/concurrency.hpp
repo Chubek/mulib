@@ -2,7 +2,7 @@
 #include <on1x/ast.hpp>
 namespace on1x::csp {
 Type send_result();
-Type receive_result();
+Type receive_result(Type payload=Type::I64);
 bool contains(const Type&);
 bool present(const Unit&);
 // Type/shape and affine lifetime verification. Both source and canonical mode

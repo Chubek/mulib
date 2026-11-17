@@ -92,7 +92,7 @@ class Generator {
     switch(type.kind()){
      case Type::Fiber:return "on1x_csp_task *";
      case Type::ExternalFiber:return "on1x_csp_process *";
-    case Type::Channel:case Type::Sender:case Type::Receiver:return "on1x_csp_channel *";
+     case Type::Channel:case Type::Sender:case Type::Receiver:case Type::ByteSender:case Type::ByteReceiver:return "on1x_csp_channel *";
     case Type::CspGroup:return "on1x_csp_group *";
    case Type::I64:return "int64_t";case Type::Bool:return "bool";
     case Type::F64:uses_f64=true;return "double";
@@ -282,23 +282,32 @@ class Generator {
           definitions<<"NULL};\n";
           return temp(e.type,"on1x_csp_launch_exec("+args+", "+std::to_string(e.children.size())+", "+at+")");
          }
+         if(op=="launch_capture"){
+          auto args=unique("shell_argv");definitions<<pad()<<"const char *"<<args<<"["<<(e.children.size()+1)<<"] = {";
+          for(const auto& arg:e.children)definitions<<expr(*arg)<<", ";
+          definitions<<"NULL};\n";
+          auto result=temp(e.type,"{0}");
+          definitions<<pad()<<"on1x_csp_launch_capture("<<args<<", "<<e.children.size()<<", &"<<result<<".element_0, &"<<result<<".element_1, &"<<result<<".element_2, &"<<result<<".element_3, "<<at<<");\n";
+          return result;
+         }
         if(op=="channel")return temp(e.type,"on1x_csp_channel_create("+expr(*e.children.at(2))+", "+at+")");
         auto handle=expr(*e.children.at(0));
         if(op=="split")return temp(e.type,"("+ctype(e.type)+"){"+handle+", "+handle+"}");
          if(op=="join")return temp(e.type,std::string(e.children[0]->type==Type::ExternalFiber?"on1x_csp_process_join(":"on1x_csp_join(")+handle+", "+at+")");
          if(op=="cancel")return temp(e.type,std::string(e.children[0]->type==Type::Fiber?"on1x_csp_cancel_ready(":"on1x_csp_process_cancel(")+handle+", "+at+")");
-        if(op=="close")return temp(e.type,"on1x_csp_close("+handle+", "+at+")");
-        if(op=="send"){
-         auto payload=expr(*e.children.at(1));
-         auto status=temp(Type::I64,"on1x_csp_send("+handle+", "+payload+", "+at+")");
+         if(op=="close")return temp(e.type,std::string(e.children[0]->type==Type::ByteSender?"on1x_csp_stream_close(":"on1x_csp_close(")+handle+", "+at+")");
+         if(op=="send"){
+          auto payload=expr(*e.children.at(1));
+          auto status=temp(Type::I64,std::string(e.children[0]->type==Type::ByteSender?"on1x_csp_stream_send(":"on1x_csp_send(")+handle+", "+payload+", "+at+")");
          auto result=temp(e.type,"{0}");
          definitions<<pad()<<result<<".tag = "<<status<<" == 0 ? 1 : 0;\n"
                     <<pad()<<"if ("<<status<<" != 0) "<<result<<".payload.element_0 = "<<status<<";\n";
          return result;
         }
-        if(op=="recv"){
-         auto payload=temp(Type::I64,"0");
-         auto status=temp(Type::Bool,"on1x_csp_receive("+handle+", &"+payload+", "+at+")");
+         if(op=="recv"){
+          auto byte=e.children[0]->type==Type::ByteReceiver;
+          auto payload=temp(byte?Type::U8:Type::I64,"0");
+          auto status=temp(Type::Bool,std::string(byte?"on1x_csp_stream_receive(":"on1x_csp_receive(")+handle+", &"+payload+", "+at+")");
          auto result=temp(e.type,"{0}");
          definitions<<pad()<<result<<".tag = "<<status<<" ? 1 : 0;\n"
                     <<pad()<<"if ("<<status<<") "<<result<<".payload.element_1 = "<<payload<<";\n";
@@ -714,7 +723,7 @@ public:
       +(uses_f32?std::string("#if !defined(ON1X_F32_ABI_VERSION) || ON1X_F32_ABI_VERSION != 1\n#error \"unsupported On1x f32 target or runtime ABI\"\n#endif\n"):std::string{})
       +(uses_unsigned?std::string("#if !defined(ON1X_UNSIGNED_ABI_VERSION) || ON1X_UNSIGNED_ABI_VERSION != 1\n#error \"incompatible On1x unsigned runtime ABI\"\n#endif\n"):std::string{})
        +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
-       +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 1\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
+        +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 2\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
       +float_guard+types.str()+"\n"+prototypes.str()+"\n"+value_helpers.str()+helpers.str()+definitions.str();
  }
 };

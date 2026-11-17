@@ -37,7 +37,23 @@ extern "C" int on1x_generated_scan(const char* source,size_t n,on1x_token_callba
        if(pos+length<=n&&std::strncmp(source+pos,suffix,length)==0){pos+=length;break;}
       }
      }
-  else if(c=='"'){
+   else if(c=='`'){
+    bool triple=pos+2<n&&source[pos+1]=='`'&&source[pos+2]=='`',done=false;
+    pos+=triple?3:1;
+    while(pos<n){
+     if(triple){
+      if(pos+2<n&&source[pos]=='`'&&source[pos+1]=='`'&&source[pos+2]=='`'){pos+=3;done=true;break;}
+      ++pos;
+     }else{
+      if(source[pos]=='`'){++pos;done=true;break;}
+      if(source[pos]=='\n'||source[pos]=='\r')break;
+      if(source[pos]=='\\'){++pos;if(pos==n||source[pos]=='\n'||source[pos]=='\r')break;}
+      ++pos;
+     }
+    }
+    if(!done){if(error)*error=start;return 1;}
+   }
+   else if(c=='"'){
    ++pos;bool done=false;
    while(pos<n){if(source[pos]=='"'){++pos;done=true;break;}
     if(source[pos]=='\\'){++pos;if(pos==n)break;if(!std::strchr("\\\"nrt0",source[pos]))break;}

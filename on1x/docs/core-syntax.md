@@ -290,7 +290,7 @@ its canonical status vocabulary. No incomplete feature is marked VERIFIED.
 | Using/try/catch/throw/finally | Not implemented | General owned-resource/effect/handler semantics |
 | Cooperative fibers/channels/taskgroups and bounded atomic `poll` | EXECUTABLE bounded C11 profile | [Contract](concurrency.md): i64 uni channels, mandatory closed arms, no deadline; effectful ownership MIR and broader scheduling are missing |
 | External process cancellation | EXECUTABLE bounded POSIX profile | Consuming `cancel xfiber` sends SIGTERM, escalates to SIGKILL and reaps; no typed cancellation result or internal-fiber unwind; [contract](concurrency.md) |
-| Portable process/shell fibers | PARTIAL | Direct absolute-path exec and scoped join are executable; portable command AST and typed process streams still absent |
+| Portable process/shell fibers | EXECUTABLE bounded POSIX subset | Single/triple backticks parse one absolute-path argv command; optional capture exposes affine bounded byte stdin/stdout/stderr channels without a host shell. Expansion, environment mutation, lists/pipelines/redirection, byte `poll`, typed exit status and recoverable spawn errors remain absent |
 | Internal-fiber cancellation | EXECUTABLE pre-dispatch only | Immediately following standalone `cancel handle;` consumes and joins an unstarted fiber; running/blocked cancellation requires interruptible channel waits and generated cleanup/unwind edges |
 | Async/generators/atomics/lock/shared | Not implemented | Frames, ownership and memory model |
 | Named records/parameterized enums | EXECUTABLE bounded C11 profile | Explicit typed constructors, exact nominal/argument identity; no managed/recursive fields or aggregate MIR |

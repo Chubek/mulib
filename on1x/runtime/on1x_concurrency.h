@@ -4,7 +4,7 @@
 /* Private generated-code ABI. These are NOT copyable foreign handles, an
  * embedding API, native-thread tasks, or an async/await implementation. */
 #if defined(__linux__) && defined(__GLIBC__) && defined(__x86_64__)
-#define ON1X_CSP_ABI_VERSION 1
+#define ON1X_CSP_ABI_VERSION 2
 #endif
 #ifdef __cplusplus
 extern "C" {
@@ -26,8 +26,15 @@ on1x_csp_task *on1x_csp_launch(on1x_csp_callback,on1x_env *,const char *,size_t,
  * guarantee the child has not started; consumes and joins without invoking it. */
 bool on1x_csp_cancel_ready(on1x_csp_task *,const char *,size_t,size_t);
 /* Direct absolute-path exec; at most nine constant argv entries (including
- * argv[0]). No host shell, interpolation, stream capture or detached process. */
+ * argv[0]), 4096 bytes each and 16384 bytes total including terminators. No host shell,
+ * interpolation, stream capture or detached process. */
 on1x_csp_process *on1x_csp_launch_exec(const char *const *,size_t,const char *,size_t,size_t);
+/* Captured command result: process, byte stdin sender, byte stdout receiver,
+ * byte stderr receiver. Streams are bounded MuLIB channels with pipe backpressure;
+ * argv has already been parsed by the compiler and is never host-shell text. */
+void on1x_csp_launch_capture(const char *const *,size_t,on1x_csp_process **,
+                            on1x_csp_channel **,on1x_csp_channel **,on1x_csp_channel **,
+                            const char *,size_t,size_t);
 /* Consume a scoped xfiber. Exit 0..255, signal termination -signum.
  * cancel returns true only if SIGTERM was requested; it always reaps. */
 int64_t on1x_csp_process_join(on1x_csp_process *,const char *,size_t,size_t);
@@ -40,6 +47,9 @@ on1x_csp_channel *on1x_csp_channel_create(int64_t,const char *,size_t,size_t);
 int64_t on1x_csp_send(on1x_csp_channel *,int64_t,const char *,size_t,size_t);
 bool on1x_csp_receive(on1x_csp_channel *,int64_t *,const char *,size_t,size_t);
 bool on1x_csp_close(on1x_csp_channel *,const char *,size_t,size_t);
+int64_t on1x_csp_stream_send(on1x_csp_channel *,uint8_t,const char *,size_t,size_t);
+bool on1x_csp_stream_receive(on1x_csp_channel *,uint8_t *,const char *,size_t,size_t);
+bool on1x_csp_stream_close(on1x_csp_channel *,const char *,size_t,size_t);
 void on1x_csp_yield(const char *,size_t,size_t);
 void on1x_csp_call_enter(const char *,size_t,size_t);
 void on1x_csp_call_leave(void);

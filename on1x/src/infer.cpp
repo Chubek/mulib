@@ -112,7 +112,7 @@ class Inference {
  std::vector<std::optional<Ground>> ground;
  std::vector<unsigned char> state;
  std::map<std::vector<std::size_t>,Ground> canonical;
-     std::size_t next_identity = Type::ExternalFiber + 1;
+     std::size_t next_identity = Type::ByteReceiver + 1;
    std::map<std::vector<std::string>,std::size_t> label_identities;
    std::map<std::string,std::size_t> nominal_identities;
 
@@ -788,18 +788,24 @@ class Inference {
        }
       if(e.text=="send"){
        auto left=operand(0);auto k=nodes[head(left,at)].kind;
-       if(k!=Type::Sender&&k!=Type::Receiver&&k!=Type::Channel&&k!=Type::Fiber){
+        if(k!=Type::Sender&&k!=Type::ByteSender&&k!=Type::Receiver&&k!=Type::ByteReceiver&&k!=Type::Channel&&k!=Type::Fiber&&k!=Type::ExternalFiber){
         // `<-` used to tokenize as `<` then unary `-`. Keep existing numeric
         // comparisons, including source without whitespace, byte-for-byte.
         auto neg=std::make_unique<Expr>();neg->kind=Expr::Kind::Unary;neg->where=at;neg->text="-";neg->children.push_back(std::move(e.children.at(1)));e.children[1]=std::move(neg);e.kind=Expr::Kind::Binary;e.text="<";
         auto right=operand(1);unify(left,right,at);numeric_operand(left,at);result=scalar(Type::Bool,at);break;
        }
-       unify(left,scalar(Type::Sender,at),at);unify(operand(1),scalar(Type::I64,at),at);result=annotation(csp::send_result(),at);
+        auto endpoint=k==Type::ByteSender?Type::ByteSender:Type::Sender;
+        unify(left,scalar(endpoint,at),at);unify(operand(1),scalar(endpoint==Type::ByteSender?Type::U8:Type::I64,at),at);result=annotation(csp::send_result(),at);
        }else if(e.text=="launch"){unify(operand(0),function({},scalar(Type::I64,at),at),at);result=scalar(Type::Fiber,at);}
        else if(e.text=="launch_exec"){
         if(e.children.empty()||e.children.size()>9)fail(at,"external argv limit/arity mismatch");
         for(std::size_t i=0;i<e.children.size();++i)unify(operand(i),scalar(Type::String,at),at);
         result=scalar(Type::ExternalFiber,at);
+       }
+       else if(e.text=="launch_capture"){
+        if(e.children.empty()||e.children.size()>9)fail(at,"captured shell argv limit/arity mismatch");
+        for(std::size_t i=0;i<e.children.size();++i)unify(operand(i),scalar(Type::String,at),at);
+        result=add(Type::Tuple,{scalar(Type::ExternalFiber,at),scalar(Type::ByteSender,at),scalar(Type::ByteReceiver,at),scalar(Type::ByteReceiver,at)},0,at);
        }
       else if(e.text=="channel"){for(std::size_t i=0;i<e.children.size();++i)unify(operand(i),scalar(Type::I64,at),at);result=scalar(Type::Channel,at);}
       else if(e.text=="split"){unify(operand(0),scalar(Type::Channel,at),at);result=add(Type::Tuple,{scalar(Type::Sender,at),scalar(Type::Receiver,at)},0,at);}
@@ -813,8 +819,16 @@ class Inference {
         if(kind!=Type::Fiber&&kind!=Type::ExternalFiber)fail(at,"cancel requires an internal or external fiber");
         result=scalar(Type::Bool,at);
        }
-      else if(e.text=="recv"){unify(operand(0),scalar(Type::Receiver,at),at);result=annotation(csp::receive_result(),at);}
-      else if(e.text=="close"){unify(operand(0),scalar(Type::Sender,at),at);result=scalar(Type::Bool,at);}
+       else if(e.text=="recv"){
+        auto endpoint=operand(0);auto kind=nodes[head(endpoint,at)].kind;
+        if(kind!=Type::Receiver&&kind!=Type::ByteReceiver)fail(at,"receive expects receiver<i64> or receiver<u8>");
+        result=annotation(csp::receive_result(kind==Type::ByteReceiver?Type::U8:Type::I64),at);
+       }
+       else if(e.text=="close"){
+        auto endpoint=operand(0);auto kind=nodes[head(endpoint,at)].kind;
+        if(kind!=Type::Sender&&kind!=Type::ByteSender)fail(at,"close expects sender<i64> or sender<u8>");
+        result=scalar(Type::Bool,at);
+       }
       else fail(at,"unknown source concurrency operation");
       break;
      }

@@ -78,7 +78,9 @@ class Checker {
    if(binding.scope>=frame->scope_begin)break;
    if(binding.is_mutable)fail(loc,"capturing mutable binding is unsupported; use an immutable let: "+name);
    if(resource(binding.type))fail(loc,"capturing JSON resources or views requires lifetime analysis: "+name);
-   if(binding.type.is_csp()&&(frame->expression!=launch_body||(binding.type!=Type::Sender&&binding.type!=Type::Receiver)))fail(loc,"concurrency capabilities may only move into a launch body: "+name);
+    if(binding.type.is_csp()&&(frame->expression!=launch_body||
+       (binding.type!=Type::Sender&&binding.type!=Type::Receiver&&binding.type!=Type::ByteSender&&binding.type!=Type::ByteReceiver)))
+     fail(loc,"concurrency capabilities may only move into a launch body: "+name);
    auto& captures=frame->expression->captures;
    if(frame->names.contains(name))continue;
    if(capture_count>=16384||name.size()>max_source_bytes-capture_bytes)
@@ -218,13 +220,18 @@ class Checker {
          if(e.text=="launch"){
          arity(1);if(!taskgroups||e.children[0]->kind!=Expr::Kind::Lambda)fail(e.where,"launch requires an enclosing taskgroup and a source block");
          auto saved=launch_body;launch_body=e.children[0].get();equal(child(0),Type::function({},Type::I64),e.where);launch_body=saved;
-         for(const auto& c:e.children[0]->captures)if(c.type!=Type::I64&&c.type!=Type::Sender&&c.type!=Type::Receiver)fail(e.where,"launch captures support only immutable i64 or scoped endpoints");
+          for(const auto& c:e.children[0]->captures)if(c.type!=Type::I64&&c.type!=Type::Sender&&c.type!=Type::Receiver&&c.type!=Type::ByteSender&&c.type!=Type::ByteReceiver)fail(e.where,"launch captures support only immutable i64 or scoped endpoints");
           return e.type=Type::Fiber;
          }
          if(e.text=="launch_exec"){
           if(!taskgroups||e.children.empty()||e.children.size()>9)fail(e.where,"external launch requires a taskgroup and 1..9 literal argv items");
           for(auto& arg:e.children){if(arg->kind!=Expr::Kind::String)fail(arg->where,"external argv must be constant strings");equal(check_expr(*arg),Type::String,arg->where);}
           return e.type=Type::ExternalFiber;
+         }
+         if(e.text=="launch_capture"){
+          if(!taskgroups||e.children.empty()||e.children.size()>9)fail(e.where,"captured shell launch requires a taskgroup and 1..9 literal argv items");
+          for(auto& arg:e.children){if(arg->kind!=Expr::Kind::String)fail(arg->where,"captured shell argv must be constant strings");equal(check_expr(*arg),Type::String,arg->where);}
+          return e.type=Type::tuple({Type::ExternalFiber,Type::ByteSender,Type::ByteReceiver,Type::ByteReceiver});
          }
         if(e.text=="channel"){
          arity(3);if(!taskgroups||e.result!=Type::I64)fail(e.where,"channel requires a taskgroup and i64 payload");
@@ -243,9 +250,18 @@ class Checker {
           auto t=child(0);if(t!=Type::Fiber&&t!=Type::ExternalFiber)fail(e.where,"cancel requires an internal or external fiber");
           return e.type=Type::Bool;
          }
-        if(e.text=="recv"){equal(child(0),Type::Receiver,e.where);return e.type=csp::receive_result();}
-        if(e.text=="close"){equal(child(0),Type::Sender,e.where);return e.type=Type::Bool;}
-        if(e.text=="send"){equal(child(0),Type::Sender,e.where);equal(child(1),Type::I64,e.where);return e.type=csp::send_result();}
+         if(e.text=="recv"){
+          auto endpoint=child(0);if(endpoint!=Type::Receiver&&endpoint!=Type::ByteReceiver)fail(e.where,"receive expects receiver<i64> or receiver<u8>");
+          return e.type=csp::receive_result(endpoint==Type::ByteReceiver?Type::U8:Type::I64);
+         }
+         if(e.text=="close"){
+          auto endpoint=child(0);if(endpoint!=Type::Sender&&endpoint!=Type::ByteSender)fail(e.where,"close expects sender<i64> or sender<u8>");
+          return e.type=Type::Bool;
+         }
+         if(e.text=="send"){
+          auto endpoint=child(0);if(endpoint!=Type::Sender&&endpoint!=Type::ByteSender)fail(e.where,"send expects sender<i64> or sender<u8>");
+          equal(child(1),endpoint==Type::ByteSender?Type::U8:Type::I64,e.where);return e.type=csp::send_result();
+         }
         fail(e.where,"unknown concurrency operation");
        }
       case Expr::Kind::Propagate:{

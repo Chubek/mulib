@@ -1,21 +1,28 @@
 # On1x capability matrix
 
-Current G4 continuation: bounded direct-exec external fibers and consuming
-process cancellation, plus internal cooperative fibers, unidirectional i64
-channels and bounded atomic `poll`, using canonical source/HIR/C11 and MuLIB
-kernels. Re-inspected HEAD `aa36e9042d06cf85006b4f27c363b2226a1119e2`, configured
-LibStone `55755485acaded7c4ed804c0946bc8c7363f6763` (read-only). Existing
-uncommitted defer/concurrency work was preserved. Linux x86_64, GCC 16.2.1,
-Clang 22.1.8; generated/fallback C11 and Clang ASan/UBSan focused tests passed.
-The first full-suite baseline was 41/50 passing, eight failing and one skipped; the final full
-suite and unsupported profiles are recorded in `../VERIFICATION.md`.
+Current G4 continuation: compiler-parsed backtick command literals and captured
+process byte streams now execute as affine `sender<u8>`/`receiver<u8>`
+capabilities. They extend the existing bounded direct-exec external fibers and
+consuming process cancellation, plus internal cooperative fibers,
+unidirectional i64 channels and bounded atomic `poll`, using canonical
+source/HIR/C11 and MuLIB kernels. Re-inspected HEAD
+`8996396506901f792c0b697ebbf8d6a2a233f0f6`, configured
+LibStone `55755485acaded7c4ed804c0946bc8c7363f6763` (read-only). Linux
+6.18.52 x86_64/glibc 2.44, GCC 16.2.1, Clang 22.1.8. Final fallback/GCC
+suite: **50 passed, 1 failed, 1 skipped**; generated/GCC suite:
+**51 passed, 1 failed, 1 skipped**;
+fallback/Clang ASan+UBSan focused: **2/2**; scanner parity: **300** exact
+cases. The sole full-suite failure is the pre-existing stale
+`tools/embed_units.py` fixture fingerprint. Exact commands and unsupported
+profiles are recorded in `../VERIFICATION.md`.
 
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
 |---|---|---|---|---|---|---|
 | Internal cooperative fibers / task scopes | `src/{parser,infer,sema,concurrency,codegen}.cpp`, `include/on1x/concurrency.hpp` | `runtime/on1x_concurrency.[ch]`, existing MuLIB N:1 fiber scheduler, compiler-generated C11; one native thread | `taskgroup`, eager `launch { ... }`, affine `ifiber<i64>`, consuming `join` or immediate same-block pre-dispatch `cancel`, immutable i64/scoped endpoint captures | `test_concurrency.{cpp,py}`, compiled `examples/cooperative_channels.on1x`, repeated ready cancellation, negative ownership/HIR/wire, strict GCC/Clang, ASan/UBSan | EXECUTABLE | No cancellation after scheduling, deadlines, async/await or native worker boundary; no complete effect/ownership MIR or TSAN evidence |
 | Typed uni channels | `src/{parser,infer,sema,concurrency,codegen}.cpp`, `grammar/On1x.g` | `runtime/on1x_concurrency.[ch]` and one-TU MuLIB channel/fiber/xthreads kernels; bounded FIFO/rendezvous | `->(1,1){payload:i64,capacity:0..256,mode:uni}`, consuming split, typed checked send/receive and close | `test_concurrency.{cpp,py}`, generated/fallback scanner parity, repeated rendezvous, buffered/drained close, closed-send result, deadlock/budget tests | EXECUTABLE | Only 1:1 i64 uni; no endpoint cloning/duplex, cancellation, monotonic deadline or general resource payload |
 | Atomic `poll` / select | `src/{parser,infer,sema,concurrency,codegen}.cpp` | `runtime/on1x_concurrency.[ch]` calls MuLIB atomic multi-case select; 1..16 named uni/i64 offers | `recv`/`send`/mandatory `closed` and optional `default`, typed expression or statement arms; `after` rejected | `test_concurrency.py` compiled choice, rendezvous, closure, evaluation order and rejection; generated/fallback and ASan/UBSan focused tests | EXECUTABLE | No monotonic deadline, cancellation, general endpoint expressions or recoverable allocation errors; no effectful ownership/suspension MIR |
-| External direct-exec `xfiber` / process cancellation | `src/{parser,infer,sema,concurrency,codegen,ppx_ast,type}.cpp`, `include/on1x/type.hpp` | `runtime/on1x_concurrency.[ch]` POSIX spawn, process group, nonblocking wait/reap, SIGTERM→SIGKILL escalation, 128 total launch budget; C11 generated program | `launch exec("/absolute/program", "literal-arg", ...)` with 1..9 bounded literals, affine `xfiber`, consuming `join` (signed POSIX status) or `cancel` (bool); process scoped to taskgroup | `examples/cooperative_external.on1x`, `test_concurrency.{cpp,py}`, cancellation ignoring SIGTERM fixture, positive/negative/failure/budget, generated/fallback and sanitizer tests | EXECUTABLE | No shell literal/portable command grammar, captured stdout/stderr, typed exit-status records or recoverable spawn errors; no internal-fiber cancellation or effectful MIR |
+| External direct-exec `xfiber` / process cancellation | `src/{parser,infer,sema,concurrency,codegen,ppx_ast,type}.cpp`, `include/on1x/type.hpp` | `runtime/on1x_concurrency.[ch]` POSIX spawn, process group, nonblocking wait/reap, SIGTERM→SIGKILL escalation, 128 total launch budget; C11 generated program | `launch exec(...)` or single/triple backtick direct argv command (1..9 bounded words), affine `xfiber`, consuming `join` (signed POSIX status) or `cancel` (bool); process scoped to taskgroup | `examples/cooperative_external.on1x`, `test_concurrency.{cpp,py}`, scanner parity, quote/escape/operator negatives, cancellation ignoring SIGTERM, failure/budget and sanitizer tests | EXECUTABLE | No full shell expansion/operators/builtins, typed exit-status records or recoverable spawn errors; no running internal-fiber cancellation or effectful MIR |
+| Captured process byte streams | `grammar/On1x.g`, `src/{lexer_fallback,parser,infer,sema,concurrency,codegen,ppx_ast,type}.cpp` | ABI v2 in `runtime/on1x_concurrency.[ch]`: three nonblocking POSIX pipes supervised through bounded MuLIB byte channels; per-write parent SIGPIPE mask restored; child SIGPIPE default | `launch capture` binds exactly `(xfiber,sender<u8>,receiver<u8>,receiver<u8>)`; checked stdin send/close and stdout/stderr `Option<u8>` receive; endpoints are affine and movable to reader fibers; byte `poll` rejects | `examples/cooperative_process_streams.on1x`, `tests/fixtures/process_stream_child.c`, `test_concurrency.{cpp,py}`; binary 0..255 round-trip, NUL, separate readers, capacity-0/1/7 backpressure, EOF/EPIPE, cancel/escalate/EOF cleanup, malformed HIR/wire/source, spawn/channel-budget failures | EXECUTABLE | Linux/glibc x86_64 only; no byte-channel constructor/select, deadline/cancellation-aware waits, typed stream/spawn errors, aggregate/effect MIR, full sanitizer/cross-platform matrix |
 | Async/await, running/blocked internal cancellation, actors, native workers | `AGENTS.md`, `ON1X_CORE_SYNTAX_ADDITIONS.md` | No interruptible MuLIB channel waits or On1x cleanup edges for running internal cancellation | `cancel ifiber` rejects unless it immediately follows the launch in the same block | `test_concurrency.py` delayed/expression cancellation negatives | ABSENT | Effectful/suspending MIR, lifetime/memory model, deterministic C11 async frames and worker isolation |
 
 M2 continuation: completed Go-style function-scoped defer and typed `Result` propagation
@@ -188,7 +195,7 @@ and execution evidence, not deletion of platform/environment guards.
 | C11 AOT | `src/codegen.cpp`, `runtime/` | Standalone C11 for admitted subset | Default backend | Compiler/native suite | EXECUTABLE | Broader language/runtime representation |
 | Native / VM backend | `BACKEND.md` | None | None | None | DESIGNED | Real equivalent code generator |
 | Async/await and native structured concurrency | `AGENTS.md`, `docs/concurrency.md` | Cooperative G4 runtime only; no async frame/native worker ABI | Taskgroup only in the initial stackful single-thread profile | `test_concurrency.{cpp,py}` tests its narrower profile | PARTIAL | Effectful MIR, async frames, cancellation/ownership and native worker isolation |
-| General channels / select / actors / workers | MuLIB headers; LibStone Plaid; `src/concurrency.cpp` | Bounded i64 1:1 uni channel C11 profile above; no On1x select/actor/worker adapter | Checked send/receive only in this profile | `test_concurrency.{cpp,py}`; general gate absent | PARTIAL | General message ownership, duplex/quota, atomic select, actors/workers |
+| General channels / select / actors / workers | MuLIB headers; LibStone Plaid; `src/concurrency.cpp` | Bounded i64 1:1 uni channels and atomic `poll`, plus role-checked process byte streams; no actor/worker adapter | Checked send/receive/close and bounded i64 offers only | `test_concurrency.{cpp,py}`; general gate absent | PARTIAL | General message ownership, byte/general `poll`, duplex/quota, deadlines/cancellation, actors/workers |
 | Diagnostics / repair | `src/diagnostics.cpp` | Optional Syren build-time adapter | Located errors; proposed edits only | `test_diagnostics.*` | PARTIAL | Full stable diagnostic taxonomy |
 | Formatter / LSP / linter / packages | `tools/` | Build helper only | None for these tools | Existing installation tests | ABSENT | Implement tools and protocol guarantees |
 | Standard library | `stdlib/`, `std/` | Persistent helpers, trusted scalar bridges | Partial functional modules | `test_libraries.py`, `test_stdlib_extensions.py` | PARTIAL | Coherent data/resource model and conformance |

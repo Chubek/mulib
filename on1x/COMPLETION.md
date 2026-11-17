@@ -5,12 +5,14 @@
 > **Primary deliverable:** an honestly verified, statically compiled, safe-by-default On1x capable of writing **Shylock**, a price prediction, demand estimation, and pricing optimization engine built by composing MuLIB C11 kernels through LibStone ExoML semantic contracts.
 > **Repository:** `https://github.com/Chubek/mulib` (`on1x/`, `include/`, `library/`, `MANIFEST.yaml`); LibStone: `https://github.com/Chubek/libstone` (`moonstone/exoml/`, related analyzers).
 
-G4 continuation (2026-11-17): the bounded [cooperative fiber/channel
+G4 continuation (2026-11-18): the bounded [cooperative fiber/channel
 profile](docs/concurrency.md) compiles and runs real On1x `taskgroup`, internal
 `ifiber<i64>` launch/join, i64 1:1 uni channels and bounded atomic `poll`
 through C11 and existing MuLIB kernels. A bounded POSIX direct-exec `xfiber`
-with process-group cancellation is executable; it is not the proposed portable
-shell or typed process-stream model. Immediate pre-dispatch internal cancellation
+with process-group cancellation is executable. Compiler-parsed backtick command
+words and affine, bounded byte-channel stdin/stdout/stderr capture now execute
+without a host shell; this is not the full proposed portable shell grammar or
+typed exit-status/error model. Immediate pre-dispatch internal cancellation
 is also executable; deadlines, running/blocked cancellation, async, native workers,
 general resources and full concurrency/MIR semantics remain unsupported. This
 does not advance the application or general-safe-FFI gates below.

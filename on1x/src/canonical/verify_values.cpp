@@ -33,7 +33,12 @@ class Verify {
  void source(const Location& at){if(at.file.empty()||at.file.size()>4096||!at.line||!at.column||at.offset>max_source_bytes||at.line>max_source_bytes+1||at.column>max_source_bytes+1)fail(at,"invalid canonical value source point");}
  const Local* find(const std::string& name)const{for(auto it=scopes.rbegin();it!=scopes.rend();++it)if(auto found=it->find(name);found!=it->end())return &found->second;return nullptr;}
  void bind(const std::string& name,Type type,bool mut,const Stmt* storage=nullptr){if(name.empty()||scopes.back().contains(name))fail(storage?storage->where:Location{"<canonical-values>"},"empty/duplicate canonical local");scopes.back()[name]={type,mut,storage,++serial};}
- void pattern(const Pattern& p,const Type& t){if(p.is_tuple()){for(std::size_t i=0;i<p.elements.size();++i)pattern(p.elements[i],t.elements().at(i));}else bind(p.name,t,false);}
+  void pattern(const Pattern& p,const Type& t){
+   if(p.is_tuple()){
+    if(!t.is_tuple()||p.elements.size()!=t.elements().size())fail(p.where,"canonical tuple binding pattern/type mismatch");
+    for(std::size_t i=0;i<p.elements.size();++i)pattern(p.elements[i],t.elements()[i]);
+   }else bind(p.name,t,false);
+  }
  void params(const std::vector<Param>& ps){for(const auto& p:ps)if(p.pattern)pattern(*p.pattern,p.type);else bind(p.name,p.type,false);}
  std::pair<std::size_t,std::string> tag(const Expr& e){
   if(e.children.size()!=1||!e.children[0]||e.children[0]->kind!=E::Variable)fail(e.where,"sum decision operand must be a named value");

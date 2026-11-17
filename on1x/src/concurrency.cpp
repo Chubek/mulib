@@ -2,6 +2,7 @@
 #include <on1x/clone.hpp>
 #include <on1x/numeric.hpp>
 #include <algorithm>
+#include <limits>
 #include <map>
 #include <optional>
 #include <set>
@@ -9,7 +10,7 @@
 
 namespace on1x::csp {
 Type send_result(){return Type::data(Type::Sum,{Type::I64,Type::data(Type::Record,{})},{"Err","Ok"});}
-Type receive_result(){return Type::data(Type::Sum,{Type::data(Type::Record,{}),Type::I64},{"None","Some"});}
+Type receive_result(Type payload){return Type::data(Type::Sum,{Type::data(Type::Record,{}),std::move(payload)},{"None","Some"});}
 bool contains(const Type& t){
  if(t.is_csp())return true;
  if(t.is_function()){if(contains(t.result()))return true;for(const auto& p:t.parameters())if(contains(p))return true;}
@@ -40,7 +41,7 @@ class Verify {
  std::vector<std::map<std::string,Local>> scopes;
  std::vector<Target> loops,regions;
  std::set<std::string> capture_uses;
- void source(const Location& at){
+  void source(const Location& at){
   if(at.file.empty()||at.file.size()>4096||at.file.find('\0')!=std::string::npos||!at.line||!at.column||
      at.offset>max_source_bytes||at.line>max_source_bytes+1||at.column>max_source_bytes+1)fail(at,"invalid concurrency source point");
  }
@@ -58,6 +59,24 @@ class Verify {
   }
   fail(at,"missing local/capture: "+name);
  }
+  std::string argument(const Expr& e){
+   const auto& text=e.text;std::string value;
+   if(text.size()<2||text.front()!='"'||text.back()!='"')fail(e.where,"malformed external argv string literal");
+   value.reserve(text.size()-2);
+   for(std::size_t i=1;i+1<text.size();++i){
+    unsigned char c=static_cast<unsigned char>(text[i]);
+    if(c=='"'||c=='\n'||c=='\r'||c=='\0')fail(e.where,"malformed external argv string literal");
+    if(c=='\\'){
+     if(++i+1>=text.size())fail(e.where,"malformed external argv string escape");
+     c=static_cast<unsigned char>(text[i]);
+     if(c=='n')c='\n';else if(c=='r')c='\r';else if(c=='t')c='\t';
+     else if(c=='0')fail(e.where,"external argv cannot contain NUL");
+     else if(c!='"'&&c!='\\')fail(e.where,"malformed external argv string escape");
+    }
+    value+=static_cast<char>(c);
+   }
+   return value;
+  }
  void bind(const std::string& name,Type type,bool mut,State& state,const Location& at,bool capture=false){
   if(name.empty()||scopes.back().contains(name))fail(at,"empty/duplicate concurrency local");
   auto id=++serial;scopes.back().emplace(name,Local{type,mut,capture,id});
@@ -90,9 +109,9 @@ class Verify {
    if(!names.insert(c.name).second)fail(e.where,"duplicate closure capture");
    const auto& b=local(c.name,e.where);
    if(b.type!=c.type||b.mut)fail(e.where,"invalid/mutable launch or closure capture");
-   if(launched&&c.type!=Type::I64&&c.type!=Type::Sender&&c.type!=Type::Receiver)fail(e.where,"launch captures support only immutable i64 or scoped endpoints");
-   if(contains(c.type)){
-    if(!launched||(c.type!=Type::Sender&&c.type!=Type::Receiver)||parent[b.id]!=live)fail(e.where,"invalid or moved endpoint capture: "+c.name);
+    if(launched&&c.type!=Type::I64&&c.type!=Type::Sender&&c.type!=Type::Receiver&&c.type!=Type::ByteSender&&c.type!=Type::ByteReceiver)fail(e.where,"launch captures support only immutable i64 or scoped endpoints");
+    if(contains(c.type)){
+     if(!launched||(c.type!=Type::Sender&&c.type!=Type::Receiver&&c.type!=Type::ByteSender&&c.type!=Type::ByteReceiver)||parent[b.id]!=live)fail(e.where,"invalid or moved endpoint capture: "+c.name);
     parent[b.id]=dead;
    }
   }
@@ -118,13 +137,14 @@ class Verify {
    fail(e.where,"invalid/private concurrency expression shape");
     auto count=e.text=="channel"?3:e.text=="send"||e.text=="offer_send"?2:1;
     if(e.text=="poll")count=static_cast<int>(e.children.size());
-    if(e.text=="launch_exec")count=static_cast<int>(e.children.size());
+     if(e.text=="launch_exec"||e.text=="launch_capture")count=static_cast<int>(e.children.size());
    if(e.children.size()!=static_cast<std::size_t>(count))fail(e.where,"concurrency operand arity mismatch");
   for(const auto& c:e.children)if(!c)fail(e.where,"missing concurrency operand");
   if(e.result!=(e.text=="channel"?Type{Type::I64}:Type{Type::Void}))fail(e.where,"invalid concurrency payload annotation");
-    Type result=e.text=="poll"?e.type:e.text=="offer_recv"||e.text=="offer_send"?Type{Type::Void}:e.text=="channel"?Type{Type::Channel}:e.text=="launch"?Type{Type::Fiber}:e.text=="launch_exec"?Type{Type::ExternalFiber}:
-    e.text=="join"?Type{Type::I64}:e.text=="split"?Type::tuple({Type::Sender,Type::Receiver}):
-    e.text=="close"||e.text=="cancel"?Type{Type::Bool}:e.text=="send"?send_result():e.text=="recv"?receive_result():Type{Type::Invalid};
+     Type result=e.text=="poll"?e.type:e.text=="offer_recv"||e.text=="offer_send"?Type{Type::Void}:e.text=="channel"?Type{Type::Channel}:e.text=="launch"?Type{Type::Fiber}:e.text=="launch_exec"?Type{Type::ExternalFiber}:
+     e.text=="launch_capture"?Type::tuple({Type::ExternalFiber,Type::ByteSender,Type::ByteReceiver,Type::ByteReceiver}):
+     e.text=="join"?Type{Type::I64}:e.text=="split"?Type::tuple({Type::Sender,Type::Receiver}):
+     e.text=="close"||e.text=="cancel"?Type{Type::Bool}:e.text=="send"?send_result():e.text=="recv"?receive_result(e.children.empty()||e.children[0]->type!=Type::ByteReceiver?Type::I64:Type::U8):Type{Type::Invalid};
    if(result==Type::Invalid||result!=e.type)fail(e.where,"unknown concurrency operation or result type");
   }
  bool expression(const Expr& e,State& state,std::size_t depth,bool acquire=false){
@@ -155,12 +175,20 @@ class Verify {
      return true;
     }
      if(e.text=="offer_recv"||e.text=="offer_send")fail(e.where,"poll offer outside a checked poll");
-     if(e.text=="launch_exec"){
-      if(!acquire||!groups||e.children.empty()||e.children.size()>9)fail(e.where,"external launch must bind an xfiber inside a taskgroup (1..9 literal argv items)");
-      for(const auto& a:e.children)if(a->kind!=E::String||a->type!=Type::String||a->text.size()>4098||a->text.find('\0')!=std::string::npos)fail(a->where,"external argv must be bounded constant strings");
-      if(e.children[0]->text.size()<3||e.children[0]->text[1]!='/')fail(e.children[0]->where,"external executable path must be absolute");
-      return true;
-     }
+      if(e.text=="launch_exec"||e.text=="launch_capture"){
+       if(!acquire||!groups||e.children.empty()||e.children.size()>9)fail(e.where,"external launch must bind its capabilities inside a taskgroup (1..9 literal argv items)");
+       std::vector<std::string> arguments;std::size_t total=0;
+       for(const auto& a:e.children){
+        if(a->kind!=E::String||a->type!=Type::String)fail(a->where,"external argv must be bounded constant strings");
+         auto value=argument(*a);
+         if(value.size()>4096)fail(a->where,"external argv must be bounded NUL-free constant strings");
+        if(value.size()+1>std::numeric_limits<std::size_t>::max()-total)fail(a->where,"external argv byte count overflow");
+        total+=value.size()+1;arguments.push_back(std::move(value));
+       }
+       if(arguments[0].empty()||arguments[0][0]!='/')fail(e.children[0]->where,"external executable path must be absolute");
+       if(total>16384)fail(e.where,"external command exceeds 16384 decoded bytes");
+       return true;
+      }
     const auto& operand=*e.children[0];
    if(e.text=="launch"){
     if(!acquire||!groups||operand.kind!=E::Lambda||!operand.parameters.empty()||operand.result!=Type::I64)fail(e.where,"launch must bind an ifiber<i64> inside a taskgroup");
@@ -177,13 +205,16 @@ class Verify {
     if(!acquire)fail(e.where,"split must bind exactly (sender,receiver)");
     capability(operand,Type::Channel,state,true);
    }else{
-     auto t=e.text=="join"||e.text=="cancel"?operand.type:e.text=="recv"?Type::Receiver:Type::Sender;
-     if(e.text=="join"&&t!=Type::Fiber&&t!=Type::ExternalFiber)fail(e.where,"join requires a fiber handle");
+      auto t=operand.type;
+      if(e.text=="join"&&t!=Type::Fiber&&t!=Type::ExternalFiber)fail(e.where,"join requires a fiber handle");
      if(e.text=="cancel"&&t==Type::Fiber&&!ready_cancel)fail(e.where,"ON1X-CSP-UNSUPPORTED: internal cancellation requires the immediately preceding launch and no scheduling point");
-     if(e.text=="cancel"&&t!=Type::Fiber&&t!=Type::ExternalFiber)fail(e.where,"cancel requires a fiber handle");
-     capability(operand,t,state,e.text=="join"||e.text=="cancel");
-    if(e.text=="send"){
-     if(!expression(*e.children[1],state,depth+1)||e.children[1]->type!=Type::I64)fail(e.where,"send requires a completing i64 operand");
+      if(e.text=="cancel"&&t!=Type::Fiber&&t!=Type::ExternalFiber)fail(e.where,"cancel requires a fiber handle");
+      if(e.text=="recv"&&t!=Type::Receiver&&t!=Type::ByteReceiver)fail(e.where,"receive requires a receiver capability");
+      if((e.text=="send"||e.text=="close")&&t!=Type::Sender&&t!=Type::ByteSender)fail(e.where,"send/close requires a sender capability");
+      capability(operand,t,state,e.text=="join"||e.text=="cancel");
+     if(e.text=="send"){
+      auto payload=t==Type::ByteSender?Type::U8:Type::I64;
+      if(!expression(*e.children[1],state,depth+1)||e.children[1]->type!=payload)fail(e.where,"send payload type mismatch");
      if(state.at(local(operand.text,operand.where).id)!=live)fail(e.where,"send payload moved its endpoint");
     }
    }
@@ -236,12 +267,15 @@ class Verify {
    }
    if(s.kind==S::Let&&s.value&&contains(s.value->type)){
     const auto& e=*s.value;
-    if(s.mutable_binding||!operation(e))fail(s.where,"affine bindings must originate from launch/channel/split, never an alias");
+     if(s.mutable_binding||!operation(e))fail(s.where,"affine bindings must originate from launch/channel/split, never an alias");
     if(s.declared!=Type::Invalid&&s.declared!=e.type)fail(s.where,"affine binding annotation mismatch");
-    if(e.text=="split"){
-     if(!s.pattern||!s.pattern->is_tuple()||s.pattern->elements.size()!=2)fail(s.where,"split requires exactly (sender,receiver)");
-     for(const auto& p:s.pattern->elements)if(p.kind!=Pattern::Kind::Name||!p.elements.empty())fail(p.where,"split endpoints require two simple names");
-     }else if((e.text!="channel"&&e.text!="launch"&&e.text!="launch_exec")||s.pattern)fail(s.where,"invalid affine acquisition binding");
+     if(e.text=="split"){
+      if(!s.pattern||!s.pattern->is_tuple()||s.pattern->elements.size()!=2)fail(s.where,"split requires exactly (sender,receiver)");
+      for(const auto& p:s.pattern->elements)if(p.kind!=Pattern::Kind::Name||!p.elements.empty())fail(p.where,"split endpoints require two simple names");
+      }else if(e.text=="launch_capture"){
+       if(!s.pattern||!s.pattern->is_tuple()||s.pattern->elements.size()!=4)fail(s.where,"captured shell launch requires exactly (process,stdin,stdout,stderr)");
+       for(const auto& p:s.pattern->elements)if(p.kind!=Pattern::Kind::Name||!p.elements.empty())fail(p.where,"captured process capabilities require four simple names");
+      }else if((e.text!="channel"&&e.text!="launch"&&e.text!="launch_exec")||s.pattern)fail(s.where,"invalid affine acquisition binding");
     (void)expression(e,*state,depth+1,true);
      if(s.pattern)pattern(*s.pattern,e.type,*state);else {bind(s.name,e.type,false,*state,s.where);if(e.text=="launch")ready=scopes.back().at(s.name).id;}
     continue;

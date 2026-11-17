@@ -1,0 +1,25 @@
+fn main() {
+  taskgroup {
+    let (process, input, output, error) = launch capture `/bin/cat`;
+
+    let first = input <- 79u8;
+    match first with { Ok(_) => assert(true), Err(_) => assert(false) };
+    let second = input <- 110u8;
+    match second with { Ok(_) => assert(true), Err(_) => assert(false) };
+    let third = input <- 49u8;
+    match third with { Ok(_) => assert(true), Err(_) => assert(false) };
+    let fourth = input <- 120u8;
+    match fourth with { Ok(_) => assert(true), Err(_) => assert(false) };
+    close input;
+
+    var open = true;
+    while open {
+      match <-output with {
+        Some(byte) => println(u8_to_bits(byte)),
+        None(_) => { open = false; }
+      };
+    }
+    match <-error with { Some(_) => assert(false), None(_) => assert(true) };
+    println(join process);
+  }
+}

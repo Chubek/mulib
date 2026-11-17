@@ -12,15 +12,19 @@ rendezvous channels, and bounded atomic `poll` through generated C11 and existin
 source [channel example](examples/cooperative_channels.on1x) covers checked send/receive,
 close and scoped cleanup; the [poll example](examples/cooperative_poll.on1x)
 selects a rendezvous receive. This is **not** completion of the core-syntax
-specification: `poll after` deadlines, running/blocked internal-fiber cancellation, portable
-shell literals/streams, async/await, duplex,
+specification: `poll after` deadlines, running/blocked internal-fiber cancellation,
+the full portable shell grammar, async/await, duplex,
 general payloads and native worker threads remain unsupported. See the
 [verification record](VERIFICATION.md) for commands and current suite failures.
 
-A separate bounded [direct-exec external-fiber profile](docs/concurrency.md)
-admits `launch exec("/absolute/program", "literal-arg")`, consuming `join`,
-and process-group `cancel` through [compiled C11](examples/cooperative_external.on1x).
-It does not interpret shell text or capture typed streams. A newly launched
+A separate bounded [external-process profile](docs/concurrency.md) admits
+`launch exec("/absolute/program", "literal-arg")`, compiler-parsed single/triple
+backtick command literals, consuming `join`, and process-group `cancel` through
+[compiled C11](examples/cooperative_external.on1x). `launch capture` returns an
+affine process/stdin/stdout/stderr tuple whose streams are bounded byte-channel
+endpoints; the [stream example](examples/cooperative_process_streams.on1x) writes
+stdin and drains stdout. No host shell is invoked: expansion, assignments,
+pipelines, redirection and command lists reject. A newly launched
 internal fiber may also be cancelled by an immediately following standalone
 `cancel handle;` before it runs; blocked internal fibers cannot be cancelled.
 

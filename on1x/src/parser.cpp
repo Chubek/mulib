@@ -85,7 +85,9 @@ class Parser {
       Type type(){Nesting guard(*this);auto t=peek();
       if((at("ifiber")||at("channel")||at("sender")||at("receiver"))&&peek(1).text=="<"){
       ++pos;consume("<");auto payload=type();close_angle();
-      if(payload!=Type::I64)throw Error(t.where,"ON1X-CSP-UNSUPPORTED: initial concurrency payload/result must be i64");
+      if((t.text=="sender"||t.text=="receiver")&&payload==Type::U8)
+       return t.text=="sender"?Type::ByteSender:Type::ByteReceiver;
+      if(payload!=Type::I64)throw Error(t.where,"ON1X-CSP-UNSUPPORTED: channel/fiber payload must be i64, except captured process streams use u8");
        return t.text=="ifiber"?Type::Fiber:t.text=="channel"?Type::Channel:t.text=="sender"?Type::Sender:Type::Receiver;
       }
       if(at("xfiber")&&peek(1).text!="<"){++pos;return Type::ExternalFiber;}
@@ -173,8 +175,65 @@ class Parser {
    }
    return false;
   }
-     Expression atom(){
-       const Token t=peek();
+   static std::string source_string(const std::string& value){
+    std::string out="\"";out.reserve(value.size()+2);
+    for(unsigned char c:value){
+     if(c=='"'||c=='\\'){out+='\\';out+=static_cast<char>(c);}
+     else if(c=='\n')out+="\\n";else if(c=='\r')out+="\\r";else if(c=='\t')out+="\\t";
+     else out+=static_cast<char>(c);
+    }
+    return out+'"';
+   }
+   static std::vector<std::string> shell_words(const Token& token){
+    const auto& raw=token.text;bool triple=raw.starts_with("```");
+    std::size_t begin=triple?3:1,end=raw.size()-(triple?3:1),total=0;
+    std::vector<std::string> words;std::string word;char quote=0;bool active=false;
+    auto finish=[&]{
+     if(!active)return;
+     if(word.size()>4096)throw Error(token.where,"ON1X-CSP-LIMIT: shell word exceeds 4096 bytes");
+     if(words.size()>=9)throw Error(token.where,"ON1X-CSP-LIMIT: shell argv limit exceeded");
+     total+=word.size()+1;if(total>16384)throw Error(token.where,"ON1X-CSP-LIMIT: shell command exceeds 16384 bytes");
+     words.push_back(std::move(word));word.clear();active=false;
+    };
+    for(std::size_t i=begin;i<end;++i){unsigned char c=static_cast<unsigned char>(raw[i]);
+     if(quote){
+       if(c==static_cast<unsigned char>(quote)){quote=0;active=true;continue;}
+       if(quote=='"'&&c=='\\'){
+        if(++i>=end||raw[i]=='\n'||raw[i]=='\r')throw Error(token.where,"shell escape cannot quote a newline","ON1X-CSP-SHELL");
+        word+=raw[i];active=true;continue;
+      }
+      if(quote=='"'&&c=='$')throw Error(token.where,"ON1X-CSP-UNSUPPORTED: shell environment expansion is not admitted");
+      word+=static_cast<char>(c);active=true;continue;
+     }
+     if(std::isspace(c)){finish();continue;}
+      if(c=='\''||c=='"'){quote=static_cast<char>(c);active=true;continue;}
+      if(c=='\\'){
+       if(++i>=end||raw[i]=='\n'||raw[i]=='\r')throw Error(token.where,"shell escape cannot quote a newline","ON1X-CSP-SHELL");
+       word+=raw[i];active=true;continue;
+     }
+     if(c=='$')throw Error(token.where,"ON1X-CSP-UNSUPPORTED: shell environment expansion is not admitted");
+     if(c==';'||c=='|'||c=='&'||c=='<'||c=='>')throw Error(token.where,"ON1X-CSP-UNSUPPORTED: shell operators, pipelines and redirections are not admitted");
+     word+=static_cast<char>(c);active=true;
+    }
+     if(quote)throw Error(token.where,"unterminated quote in shell literal","ON1X-CSP-SHELL");
+     finish();
+     if(words.empty())throw Error(token.where,"shell literal requires a command","ON1X-CSP-SHELL");
+     if(words[0]=="export"||(words[0].find('=')!=std::string::npos&&words[0].find('/')==std::string::npos))
+      throw Error(token.where,"ON1X-CSP-UNSUPPORTED: shell assignment/export is not admitted");
+     if(words[0].empty()||words[0][0]!='/')throw Error(token.where,"ON1X-CSP-UNSUPPORTED: shell executable path must be absolute");
+     return words;
+   }
+   Expression shell_launch(bool captured){
+    auto where=peek().where;consume("launch");if(captured)consume("capture");
+    auto token=peek();if(token.text.empty()||token.text[0]!='`')throw Error(token.where,"expected backtick shell literal");++pos;
+    auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;e->where=where;e->text=captured?"launch_capture":"launch_exec";
+    for(auto& word:shell_words(token)){auto arg=std::make_unique<Expr>();arg->kind=Expr::Kind::String;arg->where=token.where;arg->text=source_string(word);e->children.push_back(std::move(arg));}
+    return syntax_bounded(std::move(e));
+   }
+      Expression atom(){
+        const Token t=peek();
+         if(at("launch")&&peek(1).text=="capture"&&!peek(2).text.empty()&&peek(2).text[0]=='`')return shell_launch(true);
+         if(at("launch")&&!peek(1).text.empty()&&peek(1).text[0]=='`')return shell_launch(false);
         if(at("launch")&&peek(1).text=="{"){
         ++pos;Expr arm;arm.where=t.where;match_arm_block(arm);
         auto thunk=std::make_unique<Expr>();thunk->kind=Expr::Kind::Lambda;thunk->where=t.where;thunk->result=Type::I64;thunk->body=std::move(arm.body);

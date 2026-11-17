@@ -1,4 +1,94 @@
-# On1x verification — 2026-11-17
+# On1x verification — 2026-11-18
+
+## G4/v3 command literals and captured process streams — 2026-11-18
+
+This continuation uses MuLIB HEAD
+`8996396506901f792c0b697ebbf8d6a2a233f0f6` and configured, unchanged
+LibStone `55755485acaded7c4ed804c0946bc8c7363f6763`. Platform: Linux
+6.18.52 x86_64, glibc 2.44, GCC 16.2.1, Clang 22.1.8, CMake 4.4.3 and
+Python 3.14.7.
+
+The generated/fallback scanners now recognize bounded single- and
+triple-backtick command literals with exact token/diagnostic parity. The source
+parser decodes one absolute-path argv command (whitespace, single/double quotes
+and escapes) and rejects expansion, assignment, command lists, pipelines and
+redirection rather than delegating to a host shell. `launch capture` must bind
+exactly `(xfiber, sender<u8>, receiver<u8>, receiver<u8>)`. Runtime ABI v2 uses
+three nonblocking POSIX pipes and existing bounded MuLIB channels; stdin has
+checked send/close, stdout/stderr return `Some(u8)` then `None`, and endpoint
+capabilities may move into separate cooperative reader fibers. `join`/`cancel`
+close stdin. The adapter blocks SIGPIPE only around each parent pipe write,
+consumes the newly generated signal on `EPIPE`, and restores the previous thread
+mask before rescheduling; it does not replace the caller's process-wide
+disposition. Spawned children use the default SIGPIPE disposition, so a closed
+child stdin becomes checked channel closure rather than killing generated code.
+
+`tests/test_concurrency.py` executes all byte values (including NUL) twice,
+capacity-7 backpressure, capacity-zero rendezvous streams, separate stdout and
+stderr reader fibers, EOF and EPIPE, captured SIGTERM→SIGKILL cancellation and
+post-cancel stream closure, quote/escape preservation, direct inherited streams,
+spawn/channel-budget failures, affine direction/alias/join negatives, and
+explicit byte-`poll` rejection. `tests/test_concurrency.cpp` covers PPX wire
+round-trip, exact captured tuple types, canonical C11 calls, malformed-HIR
+rejection and MIR refusal. `tests/fixtures/process_stream_child.c` is compiled as
+a separate strict-C11 process boundary. The source example is
+`examples/cooperative_process_streams.on1x`.
+
+Fresh commands from the repository root:
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-csp-check -DBUILD_TESTING=ON \
+  -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_USE_FALLBACK_SCANNER=ON
+cmake --build /tmp/opencode/on1x-csp-check --parallel 4
+ctest --test-dir /tmp/opencode/on1x-csp-check --output-on-failure --parallel 4
+
+cmake -S on1x -B /tmp/opencode/on1x-csp-generated -DBUILD_TESTING=ON \
+  -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_USE_FALLBACK_SCANNER=OFF
+cmake --build /tmp/opencode/on1x-csp-generated --parallel 4
+ctest --test-dir /tmp/opencode/on1x-csp-generated \
+  --output-on-failure --parallel 4
+
+CC=clang CXX=clang++ cmake -S on1x -B /tmp/opencode/on1x-csp-sanitize \
+  -DBUILD_TESTING=ON -DON1X_BUILD_NATIVE_PPX=OFF \
+  -DON1X_USE_FALLBACK_SCANNER=ON \
+  -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer'
+cmake --build /tmp/opencode/on1x-csp-sanitize --parallel 4 \
+  --target on1xc on1x_concurrency_hir_tests
+ctest --test-dir /tmp/opencode/on1x-csp-sanitize \
+  -R 'on1x\.concurrency' --output-on-failure
+
+python3 on1x/tests/scanner_parity.py \
+  /tmp/opencode/on1x-csp-generated/on1x_generated_tokens \
+  /tmp/opencode/on1x-csp-generated/on1x_reference_tokens \
+  on1x/examples /tmp/opencode/on1x-final-parity
+python3 on1x/tools/on1x-build.py \
+  on1x/examples/cooperative_process_streams.on1x \
+  --on1xc /tmp/opencode/on1x-csp-generated/on1xc --cc clang \
+  -o /tmp/opencode/on1x-process-streams-clang --cflag=-O2
+/tmp/opencode/on1x-process-streams-clang
+ldd /tmp/opencode/on1x-process-streams-clang
+```
+
+Results: fallback/GCC full suite **50 passed, 1 failed, 1 skipped**
+(52 registered); generated/GCC full suite **51 passed, 1 failed, 1 skipped**
+(53 registered); fallback/Clang ASan+UBSan focused **2/2**, including generated
+process-stream executables; exact scanner parity **300 cases**. This includes
+adjacent empty/single/triple delimiters and rejects an unterminated triple opener
+at that opener rather than reinterpreting it as empty single-backtick tokens.
+The sole full-suite failure remains the pre-existing stale
+`tools/embed_units.py` fixture fingerprint in `on1x.mulib`; `on1x.category`
+skips with native PPX disabled. Strict GCC and Clang C11 examples both print
+`79`, `110`, `49`, `120`, `0`. `ldd` lists only libc and the Linux loader, not
+LibStone, On1x/compiler, Lua or C++ runtime libraries. TSAN is not applicable to
+this one-native-thread scheduler/process profile.
+
+Status remains **EXECUTABLE**, not VERIFIED or complete M4 concurrency. The
+full portable command grammar (environment expansion/mutation, command lists,
+pipelines, redirection and builtins), typed exit/spawn errors, byte `poll`,
+running/blocked internal cancellation, effectful ownership MIR, async/await,
+native workers and non-Linux targets remain unsupported and diagnose or are
+outside this profile.
 
 ## G4/v2 external process fibers and process cancellation — 2026-11-18
 

@@ -1,10 +1,12 @@
 # Initial cooperative memory model
 
 The admitted G4 profile executes all On1x fibers on one native thread.
-Scheduling points are channel send/receive, join and loop backedges. Ordinary
+Scheduling points are channel/stream send and receive, join and loop backedges;
+the supervisor also yields while pumping process pipes. Ordinary
 expression operands still evaluate once, left-to-right; suspension does not
 reevaluate an operand. MuLIB's channel lock commits the communication and copies
-one i64 before returning success. Rendezvous success acknowledges a receiver.
+one i64 or process-stream byte before returning success. Rendezvous success
+acknowledges a receiver.
 
 There is no shared mutable capture or cross-native-thread ownership transfer.
 An immutable scalar is copied; a scoped endpoint capability moves into one
@@ -18,11 +20,19 @@ implicitly made asynchronous. General Send/Sync, atomics, locks, shared mutable
 values and a multiworker happens-before model are not admitted by this profile.
 
 External `xfiber` execution uses a separate OS process, not another On1x
-worker thread. No On1x heap pointer, closure environment or borrowed endpoint
-crosses the process boundary; only checked constant argv strings are copied by
-`posix_spawn`. The supervisor observes process completion with `waitpid` and
-wakes the owning fiber before `join`/`cancel` returns. Inherited stdout/stderr
-may interleave with On1x output; no ordering is promised except that a joined
+worker thread. No On1x heap pointer, closure environment or endpoint pointer
+crosses the process boundary: `posix_spawn` copies checked constant argv and
+captured standard streams copy individual bytes through nonblocking POSIX pipes.
+The bounded stdin channel preserves accepted-byte FIFO order; closing it drains
+accepted bytes before pipe EOF unless the child has already closed its reader.
+Each stdout/stderr pipe preserves its own byte order through its receiver; no
+ordering is promised between the two pipes. A drained receiver observes `None`
+only after pipe EOF. The SIGPIPE mask used for one parent pipe write is restored
+before any fiber can run, so it adds no scheduling-visible signal-mask state.
+
+The supervisor observes process completion with `waitpid` and wakes the owning
+fiber before `join`/`cancel` returns. Direct-exec inherited stdout/stderr may
+interleave with On1x output; no ordering is promised except that a joined
 process has terminated and been reaped. Immediate pre-dispatch internal
 cancellation skips the body and releases its unstarted closure environment;
 running/blocked cancellation remains unsupported, including attempts to unwind

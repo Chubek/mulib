@@ -21,6 +21,8 @@ SExpr type(const Type& t){
    case Type::Fiber:case Type::Channel:case Type::Sender:case Type::Receiver:
     return form("CspType",{string(t.kind()==Type::Fiber?"ifiber":t.kind()==Type::Channel?"channel":t.kind()==Type::Sender?"sender":"receiver"),form("I64Type")});
    case Type::ExternalFiber:return form("CspType",{string("xfiber"),form("VoidType")});
+   case Type::ByteSender:case Type::ByteReceiver:
+    return form("CspType",{string(t.kind()==Type::ByteSender?"sender":"receiver"),form("U8Type")});
  case Type::Invalid:return form("Inferred");case Type::Hole:return form("HoleType");
   case Type::I64:return form("I64Type");case Type::Bool:return form("BoolType");case Type::String:return form("StringType");
    case Type::F64:return form("F64Type");
@@ -126,6 +128,7 @@ Type read_type(const SExpr& n,bool inferred=false,std::size_t bound=0){
   if(k=="CspType"){
    auto name=field(n,0).text;auto payload=read_type(field(n,1),false,bound);
    if(name=="xfiber"){if(payload!=Type::Void)invalid(n,"xfiber has no generic payload");return Type::ExternalFiber;}
+   if(payload==Type::U8&&(name=="sender"||name=="receiver"))return name=="sender"?Type::ByteSender:Type::ByteReceiver;
    if(payload!=Type::I64)invalid(n,"ON1X-CSP-UNSUPPORTED: concurrency payload/result must be i64");
   if(name=="ifiber")return Type::Fiber;if(name=="channel")return Type::Channel;
   if(name=="sender")return Type::Sender;if(name=="receiver")return Type::Receiver;
@@ -195,15 +198,15 @@ ExprPtr read_expression(const SExpr& n){
    const auto& k=tag(n);auto e=std::make_unique<Expr>();e->where=location(n.items.back());
       if(k=="SourceCsp"){
        e->kind=K::SourceCsp;e->text=field(n,0).text;e->result=read_type(field(n,1));
-        static const std::set<std::string> ops={"launch","launch_exec","channel","split","join","cancel","send","recv","close","poll","offer_recv","offer_send"};
+        static const std::set<std::string> ops={"launch","launch_exec","launch_capture","channel","split","join","cancel","send","recv","close","poll","offer_recv","offer_send"};
        if(!ops.contains(e->text))invalid(n,"unknown concurrency operation");
        for(const auto& arg:field(n,2).items)e->children.push_back(read_expression(arg));
         auto count=e->text=="channel"?3:e->text=="send"||e->text=="offer_send"?2:1;
         if(e->text=="poll")count=static_cast<int>(e->children.size());
-        if(e->text=="launch_exec")count=static_cast<int>(e->children.size());
+        if(e->text=="launch_exec"||e->text=="launch_capture")count=static_cast<int>(e->children.size());
         if(e->children.size()!=static_cast<std::size_t>(count)||e->result!=(e->text=="channel"?Type{Type::I64}:Type{Type::Void}))invalid(n,"concurrency operand/payload shape mismatch");
         if(e->text=="poll"&&(e->children.empty()||e->children.size()>17))invalid(n,"poll offer limit exceeded");
-        if(e->text=="launch_exec"&&(e->children.empty()||e->children.size()>9))invalid(n,"external argv limit exceeded");
+        if((e->text=="launch_exec"||e->text=="launch_capture")&&(e->children.empty()||e->children.size()>9))invalid(n,"external argv limit exceeded");
        if(e->text=="launch"&&(e->children[0]->kind!=K::Lambda||!e->children[0]->parameters.empty()||e->children[0]->result!=Type::I64))invalid(n,"launch requires an i64 source block");
       }
       else if(k=="UnitValue")e->kind=K::Unit;

@@ -12,7 +12,7 @@ struct TypeShape;
 // nothing refers to the scanner arena or foreign CDecl type IDs.
 class Type {
 public:
-  enum Kind { Invalid, I64, Bool, String, Void, Json, JsonView, Function, Hole, Tuple, Generic, Bound, Forall, Code, SExpr, Buffer, F64, Record, Sum, Array, Slice, F32, U8, U16, U32, U64, Named, Fiber, Channel, Sender, Receiver, CspGroup, ExternalFiber };
+  enum Kind { Invalid, I64, Bool, String, Void, Json, JsonView, Function, Hole, Tuple, Generic, Bound, Forall, Code, SExpr, Buffer, F64, Record, Sum, Array, Slice, F32, U8, U16, U32, U64, Named, Fiber, Channel, Sender, Receiver, CspGroup, ExternalFiber, ByteSender, ByteReceiver };
  Type(Kind kind = Invalid);
  static Type function(std::vector<Type> parameters, Type result);
  static Type tuple(std::vector<Type> elements);
@@ -28,7 +28,7 @@ public:
  bool is_unsigned() const { return kind_>=U8&&kind_<=U64; }
  bool is_float() const { return kind_==F32||kind_==F64; }
   bool is_numeric() const { return kind_==I64||is_float()||is_unsigned(); }
-  bool is_csp() const { return kind_>=Fiber&&kind_<=ExternalFiber; }
+   bool is_csp() const { return kind_>=Fiber&&kind_<=ByteReceiver; }
  const std::vector<std::string>& labels() const;
  std::size_t extent() const;
  static Type generic(std::size_t identity);

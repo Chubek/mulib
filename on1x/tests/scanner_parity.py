@@ -64,6 +64,10 @@ valid_cases = [
     b'let_syntax { macro m { rule () => expression { 42 }; } } expression { m!() } letrec_syntax {} block {}',
     b'===!==<==>==&&||- ->> ///',
     b'"# not a comment"# comment\n"snow: \xe9\x9b\xaa" name',
+    b'`/bin/echo one "two three" \'four\' escaped\\ word`',
+    b'`/bin/echo escaped\\`tick "" \'$literal\'`',
+    b'```/bin/echo\n"multiline word"\n```',
+    b'`` `left``right` `````` ```left``````right```',
     b'"\\\\ \\" \\n \\r \\t \\0"',
     b'"raw\tbyte\x01\xff"',
     b'# \xff invalid UTF-8 in comment\r\nfn main() {}',
@@ -83,9 +87,11 @@ for i, data in enumerate(valid_cases):
 
 prefix = b'# layout\r\n\t"snow: \xe9\x9b\xaa" ; '
 check('defer_result', b'enum Result<T,E>{Ok(T),Err(E)} fn f(){defer println(1); read()??[0];}', valid=True)
-for i, bad in enumerate([b'`', b'&', b'\v', b'\f', b'\xff', b'"unclosed',
+for i, bad in enumerate([b'`', b'`trailing\\', b'```unterminated', b'````', b'`closed``unterminated',
+                         b'```````', b'`line\nbreak`', b'&', b'\v', b'\f', b'\xff', b'"unclosed',
                          b'"bad\\q"', b'"bad\\', b'"raw\nnewline"', b'"raw\rnewline"']):
-    check(f'invalid_{i}', prefix + bad, invalid_at=len(prefix))
+    offset = 8 if bad == b'`closed``unterminated' else 6 if bad == b'```````' else 0
+    check(f'invalid_{i}', prefix + bad, invalid_at=len(prefix) + offset)
 for i, data in enumerate([b'\0', b'# comment\0', b'"string\0"', b'@\n\0']):
     check(f'nul_{i}', data, invalid_at=data.index(b'\0'), diagnostic='NUL in source')
 check('oversized', b'#' * (2 * 1024 * 1024 + 1), invalid_at=0,
@@ -97,7 +103,7 @@ layouts = [b' ', b'\t', b'\r\n', b'# comment\n']
 for i in range(40):
     data = b''.join(rng.choice(spellings) + rng.choice(layouts) for _ in range(32))
     check(f'random_valid_{i}', data, valid=True)
-alphabet = b'abceE_01234. +-*/%!=<>&|#\\"\n\r\t@\x7f\x80'
+alphabet = b'abceE_01234. +-*/%!=<>&|#\\"`\n\r\t@\x7f\x80'
 for i in range(160):
     data = bytes(rng.choice(alphabet) for _ in range(rng.randrange(150)))
     check(f'random_bytes_{i}', data)
