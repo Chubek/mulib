@@ -34,7 +34,8 @@ struct PpxOptions {
  bool allow_source=false;
  unsigned timeout_ms=5000;
 };
-std::string run_transformer(const std::string& program,std::string_view input,unsigned timeout_ms,const std::string& label);
+std::string run_transformer(const std::string& program,std::string_view input,unsigned timeout_ms,const std::string& label,
+ const std::map<std::string,std::string>& environment={});
 void rewrite(Unit& unit,const PpxOptions& options);
 }
 namespace on1x {

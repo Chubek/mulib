@@ -1,5 +1,6 @@
 #pragma once
 #include <on1x/ast.hpp>
+#include <on1x/extensions.hpp>
 #include <filesystem>
 #include <set>
 
@@ -12,7 +13,8 @@ struct LoaderOptions {
  std::size_t max_modules=1024,max_depth=64,max_bytes=16*1024*1024;
  // Tooling-only overlays, keyed by canonical paths. The ordinary compiler uses
  // an empty map. All normal parsing, import and byte limits still apply.
- std::map<std::filesystem::path,std::string> source_overrides;
+  std::map<std::filesystem::path,std::string> source_overrides;
+  extensions::Options extensions;
 };
 struct LoadedUnit {
  Unit unit;

@@ -2,6 +2,8 @@
 #include <on1x/meta.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/canonical/control.hpp>
+#include <on1x/canonical/values.hpp>
 #include <algorithm>
 #include <map>
 #include <set>
@@ -43,7 +45,12 @@ class Generator {
  std::vector<Lambda> lambdas;
  std::unordered_map<const Expr*,std::size_t> lambda_index;
  std::vector<std::unordered_map<std::string,std::string>> scopes;
- std::vector<std::vector<Owner>> owners;
+  std::vector<std::vector<Owner>> owners;
+  struct LoopTarget {std::size_t id,keep;std::string done,latch;};
+  std::vector<LoopTarget> loop_targets;
+  std::set<std::size_t> break_targets,continue_targets;
+  std::vector<LoopTarget> region_targets;
+  std::set<std::size_t> region_exit_targets;
  // Function values and tuples containing them own temporary references, released
  // at the end of the full expression rather than at an enclosing loop exit.
  std::vector<Owner> temporary_values;
@@ -144,19 +151,23 @@ class Generator {
  }
  void collect(const Expr& expression){
   if(expression.prototype)return;
-  if(expression.kind==Expr::Kind::Lambda){
+   if(expression.kind==Expr::Kind::Lambda){
    auto index=lambdas.size();auto suffix=std::to_string(index+1);
    lambda_index.emplace(&expression,index);
    lambdas.push_back({&expression,reserve("on1x_lambda_"+suffix),reserve("on1x_make_lambda_"+suffix),
                       reserve("on1x_lambda_env_"+suffix),reserve("on1x_drop_lambda_"+suffix)});
-   collect(expression.body);
-  }
+    collect(expression.body);
+   }
+   if(expression.kind==Expr::Kind::Region)collect(expression.body);
   if(expression.callee)collect(*expression.callee);
   for(const auto& child:expression.children)collect(*child);
  }
  void collect(const std::vector<Stmt>& body){
   for(const auto& statement:body){
-   if(statement.prototype)continue;
+    if(statement.prototype)continue;
+    if(statement.kind==Stmt::Kind::Break)break_targets.insert(statement.control_target);
+    if(statement.kind==Stmt::Kind::Continue)continue_targets.insert(statement.control_target);
+    if(statement.kind==Stmt::Kind::Leave)region_exit_targets.insert(statement.control_target);
    if(statement.value&&statement.kind!=Stmt::Kind::Template)collect(*statement.value);
    collect(statement.body);collect(statement.otherwise);
   }
@@ -205,8 +216,22 @@ class Generator {
   for(std::size_t i=0;i<pattern.elements.size();++i)
    flatten(pattern.elements[i],type.elements()[i],root+"->element_"+std::to_string(i),args);
  }
- std::string expr(const Expr& e){
-    switch(e.kind){
+  std::string expr(const Expr& e){
+     switch(e.kind){
+     case Expr::Kind::Unit:return {};
+     case Expr::Kind::PatternMatch:case Expr::Kind::Case:throw Error(e.where,"surface match must be canonicalized");
+     case Expr::Kind::Region:{
+      auto output=e.type==Type::Void?std::string{}:unique("region_value");if(!output.empty())definitions<<pad()<<ctype(e.type)<<" "<<output<<" = {0};\n";
+      auto outer=std::move(temporary_values);temporary_values.clear();definitions<<pad()<<"{\n";push();owners.back()=outer;definitions<<pad()<<"{\n";push();
+      bool terminated=false;for(const auto& s:e.body)terminated=stmt(s);
+      if(!terminated){auto result=expr(*e.children.at(0));if(!output.empty()){definitions<<pad()<<output<<" = "<<result<<";\n";retain(e.type,output);}finish();}
+      pop(!terminated);definitions<<pad()<<"}\n";pop(false);definitions<<pad()<<"}\n";temporary_values=std::move(outer);
+      if(!terminated&&e.type.has_functions())temporary_values.push_back({e.type,output});
+      return output;
+     }
+     case Expr::Kind::TagTest:{auto root=expr(*e.children.at(0));return temp(Type::Bool,"("+root+".tag == INT64_C("+std::to_string(e.projection)+"))");}
+     case Expr::Kind::Payload:{auto root=expr(*e.children.at(0));return temp(e.type,root+".payload.element_"+std::to_string(e.projection),true);}
+     case Expr::Kind::Project:{auto root=expr(*e.children.at(0));return temp(e.type,root+".element_"+std::to_string(e.projection),true);}
     case Expr::Kind::Splice:case Expr::Kind::Lift:throw Error(e.where,"MSP stage lowering required before code generation");
     case Expr::Kind::Quote:return expr(*e.children.at(0));
     case Expr::Kind::Run:{auto code=expr(*e.children.at(0));return temp(e.type,code+".invoke("+code+".environment)");}
@@ -287,18 +312,7 @@ class Generator {
     definitions<<pad()<<"on1x_bounds_slice("<<lo<<", "<<hi<<", "<<length<<", "<<at<<");\n";
     return temp(e.type,"("+ctype(e.type)+"){"+(slice?root+".backing":root)+", "+(slice?root+".start + ":"")+lo+", "+hi+" - "+lo+"}");
    }
-   case Expr::Kind::Match:{
-    auto t=e.children[0]->type;auto root=temp(t,expr(*e.children[0]));auto result=unique("match_result");
-    definitions<<pad()<<ctype(e.type)<<" "<<result<<" = {0};\n"<<pad()<<"switch ("<<root<<".tag) {\n";
-    for(std::size_t i=0;i<e.labels.size();++i){
-     auto pos=std::find(t.labels().begin(),t.labels().end(),e.labels[i]);auto index=static_cast<std::size_t>(pos-t.labels().begin());
-     definitions<<pad()<<"case "<<index<<": {\n";++indent;auto mark=temporary_values.size();auto arm=expr(*e.children[i+1]);
-     definitions<<pad()<<result<<" = "<<arm<<".invoke("<<arm<<".environment, "<<root<<".payload.element_"<<index<<");\n";
-     finish(mark);definitions<<pad()<<"break;\n";--indent;definitions<<pad()<<"}\n";
-    }
-    definitions<<pad()<<"default: on1x_invalid_tag("<<c_string(meta::source_literal(e.where.file))<<", "<<e.where.line<<"); break;\n"<<pad()<<"}\n";
-    return result;
-   }
+   case Expr::Kind::Match:throw Error(e.where,"surface match must be canonicalized");
    case Expr::Kind::Unary:{
     auto value=expr(*e.children[0]);
      if(e.type.is_float())return temp(e.type,"on1x_neg_"+type_name(e.type)+"("+value+")");
@@ -306,7 +320,7 @@ class Generator {
   }
   case Expr::Kind::Binary:{
    auto mark=temporary_values.size();
-   auto left=expr(*e.children[0]);const auto& op=e.text;
+    auto left=expr(*e.children[0]);const auto& op=e.text;
    if(op=="&&"||op=="||"){
     auto result=unique("logic");definitions<<pad()<<"bool "<<result<<" = "<<left<<";\n";
     // Left-operand temporaries must not be mixed with conditionally initialized
@@ -315,6 +329,7 @@ class Generator {
     auto right=expr(*e.children[1]);definitions<<pad()<<result<<" = "<<right<<";\n";finish(mark);
     --indent;definitions<<pad()<<"}\n";return result;
    }
+    if(!e.children[0]->type.has_functions())left=temp(e.children[0]->type,left);
     auto right=expr(*e.children[1]);
      if(e.children[0]->type.is_float()){
      uses_f64=true;
@@ -336,7 +351,7 @@ class Generator {
    auto target=direct?callee.text:expr(callee);std::vector<std::string> args;
    for(std::size_t i=0;i<e.children.size();++i){
     const auto& child=e.children[i];auto value=expr(*child);
-    if(!builtin&&!child->type.has_functions())value=temp(child->type,value);
+    if(!child->type.has_functions())value=temp(child->type,value);
     if(callee.reference==Expr::Reference::Extern&&externs.at(callee.text)->params[i].pattern)
      flatten(*externs.at(callee.text)->params[i].pattern,child->type,value,args);
     else args.push_back(value);
@@ -383,12 +398,17 @@ class Generator {
   if(s.prototype)return false;
   switch(s.kind){
   case Stmt::Kind::Template:{for(const auto& instance:s.body)stmt(instance);return false;}
-  case Stmt::Kind::Let:{
+   case Stmt::Kind::Let:{
    auto value=expr(*s.value);
    if(s.pattern)bind_pattern(*s.pattern,s.value->type,value);else bind_name(s.name,s.value->type,value);
-   finish();return false;
-  }
-  case Stmt::Kind::Assign:{
+    finish();return false;
+   }
+   case Stmt::Kind::Storage:{
+    auto name=unique("storage");scopes.back()[s.name]=name;definitions<<pad()<<ctype(s.declared)<<" "<<name<<" = {0};\n"<<pad()<<"(void)"<<name<<";\n";
+    if(s.declared.has_functions())owners.back().push_back({s.declared,name});
+    return false;
+   }
+   case Stmt::Kind::Initialize:case Stmt::Kind::Assign:{
    auto value=expr(*s.value),name=ref(s.name);
    // Snapshot even trivially copied values. Besides preserving assignment
    // sequencing, this avoids a C compiler self-assignment warning for x = x.
@@ -397,8 +417,9 @@ class Generator {
    definitions<<pad()<<name<<" = "<<value<<";\n";finish();return false;
   }
   case Stmt::Kind::Return:{
-   if(s.value){
-    auto value=expr(*s.value);
+    if(s.value){
+     auto value=expr(*s.value);
+     if(s.value->noreturn)return true;
     if(s.value->type!=Type::Void){
      auto result=unique("return");definitions<<pad()<<ctype(s.value->type)<<" "<<result<<" = "<<value<<";\n";
      retain(s.value->type,result);
@@ -407,8 +428,8 @@ class Generator {
    }else{finish();drops();definitions<<pad()<<"return;\n";}
    return true;
   }
-  case Stmt::Kind::Expr:{
-   auto value=expr(*s.value);if(!value.empty())definitions<<pad()<<"(void)"<<value<<";\n";
+   case Stmt::Kind::Expr:{
+    auto value=expr(*s.value);if(s.value->noreturn)return true;if(!value.empty())definitions<<pad()<<"(void)"<<value<<";\n";
    finish();return false;
   }
   case Stmt::Kind::If:{
@@ -417,12 +438,36 @@ class Generator {
    if(!s.otherwise.empty()){definitions<<" else {\n";no=body(s.otherwise);definitions<<pad()<<"}";}
    definitions<<"\n";return yes&&no;
   }
-  case Stmt::Kind::While:{
-   definitions<<pad()<<"while (true) {\n";++indent;
+   case Stmt::Kind::While:{
+    auto done=unique("break"),latch=unique("continue");
+    loop_targets.push_back({s.control_target,owners.size(),done,latch});
+    definitions<<pad()<<"while (true) {\n";++indent;
    auto condition=expr(*s.value);finish();definitions<<pad()<<"if (!("<<condition<<")) break;\n";
-   definitions<<pad()<<"{\n";body(s.body);definitions<<pad()<<"}\n";
-   --indent;definitions<<pad()<<"}\n";return false;
-  }
+    definitions<<pad()<<"{\n";body(s.body);definitions<<pad()<<"}\n";
+    if(continue_targets.contains(s.control_target))definitions<<pad()<<latch<<": ;\n";
+    if(!s.otherwise.empty()){definitions<<pad()<<"{\n";body(s.otherwise);definitions<<pad()<<"}\n";}
+    --indent;definitions<<pad()<<"}\n";
+    if(break_targets.contains(s.control_target))definitions<<pad()<<done<<": ;\n";
+    loop_targets.pop_back();return false;
+   }
+   case Stmt::Kind::Break:case Stmt::Kind::Continue:{
+    auto target=std::find_if(loop_targets.rbegin(),loop_targets.rend(),[&](const auto& t){return t.id==s.control_target;});
+    if(target==loop_targets.rend())throw Error(s.where,"ON1X-CONTROL: missing C11 loop target");
+    finish();
+    for(std::size_t i=owners.size();i>target->keep;--i)for(auto owner=owners[i-1].rbegin();owner!=owners[i-1].rend();++owner)release(*owner);
+    definitions<<pad()<<"goto "<<(s.kind==Stmt::Kind::Break?target->done:target->latch)<<";\n";return true;
+   }
+   case Stmt::Kind::Range:throw Error(s.where,"ON1X-CONTROL: unlowered range in C11 emitter");
+   case Stmt::Kind::Region:{
+    auto done=unique("region_exit");bool used=region_exit_targets.contains(s.control_target);region_targets.push_back({s.control_target,owners.size(),done,{}});
+    definitions<<pad()<<"{\n";bool terminated=body(s.body);definitions<<pad()<<"}\n";region_targets.pop_back();if(used)definitions<<pad()<<done<<": ;\n";return terminated&&!used;
+   }
+   case Stmt::Kind::Leave:{
+    auto target=std::find_if(region_targets.rbegin(),region_targets.rend(),[&](const auto& r){return r.id==s.control_target;});if(target==region_targets.rend())throw Error(s.where,"missing canonical region target");finish();
+    for(std::size_t i=owners.size();i>target->keep;--i)for(auto owner=owners[i-1].rbegin();owner!=owners[i-1].rend();++owner)release(*owner);
+    definitions<<pad()<<"goto "<<target->done<<";\n";return true;
+   }
+   case Stmt::Kind::Trap:definitions<<pad()<<"on1x_assert(false);\n"<<pad()<<"for (;;) {}\n";return true;
   case Stmt::Kind::Block:{
    definitions<<pad()<<"{\n";bool terminated=body(s.body);definitions<<pad()<<"}\n";return terminated;
   }
@@ -546,5 +591,5 @@ public:
  }
 };
 }
-std::string emit_c(const Unit& unit,const std::string& source_name){(void)source_name;meta::require_core(unit);return Generator(unit).run();}
+std::string emit_c(const Unit& unit,const std::string& source_name){(void)source_name;canonical::verify_control(unit);meta::require_core(unit);canonical::verify_values(unit);return Generator(unit).run();}
 }

@@ -1,4 +1,6 @@
 #include <on1x/safety.hpp>
+#include <on1x/canonical/control.hpp>
+#include <on1x/canonical/values.hpp>
 #include <on1x/primitives.hpp>
 #include <algorithm>
 #include <deque>
@@ -175,6 +177,10 @@ void verify_impl(const c::Function& input,Budget& budget){
 }
 struct Binding {c::Id owner=0,loan=0;};
 class Lower {
+ struct LoopTarget {std::size_t id; c::Id done,latch;std::size_t keep;};
+ std::vector<LoopTarget> loops;
+ std::vector<LoopTarget> regions;
+ std::set<std::size_t> region_targets,continue_targets;
  Budget& budget;const std::map<std::string,AdmittedExtern>& admitted;c::Function flow;c::Id current=0,next_place=1,next_loan=1;
  struct Scope {std::map<std::string,Binding> names;std::vector<Binding> cleanup;};
  std::vector<Scope> scopes;
@@ -196,7 +202,14 @@ class Lower {
   }
  Binding expression(const Expr& e){
   budget.node(e.where);
-  switch(e.kind){
+   switch(e.kind){
+   case Expr::Kind::Unit:return {};
+   case Expr::Kind::Region:{
+    scopes.push_back({});bool done=statements(e.body,false);Binding result;if(!done){result=expression(*e.children.at(0));if(result.owner)fail(e.where,"resource result from value region");cleanup(scopes.size()-1,e.where);}scopes.pop_back();return result;
+   }
+   case Expr::Kind::Project:if(!trivial(e.type,e.where)||expression(*e.children.at(0)).owner)fail(e.where,"nontrivial tuple projection memory model");return {};
+   case Expr::Kind::TagTest:case Expr::Kind::Payload:fail(e.where,"closed-sum memory model unavailable");
+   case Expr::Kind::PatternMatch:case Expr::Kind::Case:fail(e.where,"unlowered source match");
    case Expr::Kind::Integer:case Expr::Kind::Boolean:case Expr::Kind::Float:case Expr::Kind::String:return {};
    case Expr::Kind::Tuple:
     if(!trivial(e.type,e.where))fail(e.where,"tuple memory model requires trivially copied numeric/bool fields");
@@ -206,9 +219,13 @@ class Lower {
    if(e.reference!=Expr::Reference::Local)fail(e.where,"first-class callable not modeled");
    auto b=lookup(e.text,e.where);if(b.owner)event(c::Op::Use,b,e.where);return b;
   }
-  case Expr::Kind::Unary:case Expr::Kind::Binary:
-   // Only scalar expressions here; constructors/borrows cannot have scalar type.
-   // Both logical paths may use live resources, but cannot change ownership.
+   case Expr::Kind::Unary:case Expr::Kind::Binary:
+    if(e.kind==Expr::Kind::Binary&&(e.text=="&&"||e.text=="||")){
+     if(expression(*e.children.at(0)).owner)fail(e.where,"resource logical operand");
+     auto origin=current,right=block(),done=block();flow.blocks[origin].successors={right,done};current=right;
+     if(expression(*e.children.at(1)).owner)fail(e.where,"resource logical operand");
+     flow.blocks[current].successors={done};current=done;return {};
+    }
    for(const auto& child:e.children)if(expression(*child).owner)fail(e.where,"resource in scalar operator");
    return {};
   case Expr::Kind::Call:{
@@ -254,11 +271,13 @@ class Lower {
      event(b.loan?c::Op::BorrowShared:c::Op::Create,b,s.where);scopes.back().cleanup.push_back(b);
     }
     if(s.pattern)bind(*s.pattern);else scopes.back().names[s.name]=b;break;}
-   case Stmt::Kind::Assign:if(expression(*s.value).owner||lookup(s.name,s.where).owner)fail(s.where,"resource reassignment not modeled");break;
-   case Stmt::Kind::Expr:if(expression(*s.value).owner)fail(s.where,"discarded resource");break;
-   case Stmt::Kind::Return:
-    if(s.value&&expression(*s.value).owner)fail(s.where,"resource escape");
-    for(std::size_t n=scopes.size();n;--n)cleanup(n-1,s.where);
+    case Stmt::Kind::Assign:if(expression(*s.value).owner||lookup(s.name,s.where).owner)fail(s.where,"resource reassignment not modeled");break;
+    case Stmt::Kind::Storage:if(s.declared!=Type::String&&!trivial(s.declared,s.where))fail(s.where,"nontrivial canonical storage memory model");scopes.back().names[s.name]={};break;
+    case Stmt::Kind::Initialize:if(expression(*s.value).owner||lookup(s.name,s.where).owner)fail(s.where,"resource canonical storage not modeled");break;
+    case Stmt::Kind::Expr:if(expression(*s.value).owner)fail(s.where,"discarded resource");returned=s.value->noreturn;break;
+    case Stmt::Kind::Return:
+     if(s.value&&expression(*s.value).owner)fail(s.where,"resource escape");
+     if(!s.value||!s.value->noreturn)for(std::size_t n=scopes.size();n;--n)cleanup(n-1,s.where);
     returned=true;break;
    case Stmt::Kind::Block:returned=statements(s.body);break;
    case Stmt::Kind::If:{
@@ -268,12 +287,36 @@ class Lower {
     if(a&&b){returned=true;break;}
     current=block();if(!a)flow.blocks[a_end].successors={current};if(!b)flow.blocks[b_end].successors={current};break;
    }
-   case Stmt::Kind::While:{
-    auto origin=current,head=block();flow.blocks[origin].successors={head};current=head;expression(*s.value);
-    auto loop=block(),done=block();flow.blocks[head].successors={loop,done};current=loop;
-    if(!statements(s.body))flow.blocks[current].successors={head};
-    current=done;break;
-   }
+    case Stmt::Kind::While:{
+     auto origin=current,head=block();flow.blocks[origin].successors={head};current=head;expression(*s.value);
+     auto condition_tail=current,loop=block(),done=block();flow.blocks[condition_tail].successors={loop,done};current=loop;
+     auto latch=!s.otherwise.empty()&&continue_targets.contains(s.control_target)?block():head;
+     loops.push_back({s.control_target,done,latch,scopes.size()});bool terminated=statements(s.body);loops.pop_back();
+     if(!s.otherwise.empty()&&(!terminated||latch!=head)){
+      if(latch==head)latch=block();
+      if(!terminated)flow.blocks[current].successors={latch};
+      current=latch;
+      if(!statements(s.otherwise))flow.blocks[current].successors={head};
+     }else if(!terminated)flow.blocks[current].successors={head};
+     current=done;break;
+    }
+    case Stmt::Kind::Break:case Stmt::Kind::Continue:{
+     auto target=std::find_if(loops.rbegin(),loops.rend(),[&](const auto& t){return t.id==s.control_target;});
+     if(target==loops.rend())fail(s.where,"missing canonical loop target");
+     for(std::size_t n=scopes.size();n>target->keep;--n)cleanup(n-1,s.where);
+     flow.blocks[current].successors={s.kind==Stmt::Kind::Break?target->done:target->latch};returned=true;break;
+    }
+    case Stmt::Kind::Range:fail(s.where,"unlowered range");
+    case Stmt::Kind::Region:{
+     auto done=region_targets.contains(s.control_target)?block():std::numeric_limits<c::Id>::max();regions.push_back({s.control_target,done,0,scopes.size()});bool terminal=statements(s.body);regions.pop_back();
+     if(done!=std::numeric_limits<c::Id>::max()){if(!terminal)flow.blocks[current].successors={done};current=done;}else returned=terminal;break;
+    }
+    case Stmt::Kind::Leave:{auto target=std::find_if(regions.rbegin(),regions.rend(),[&](const auto& r){return r.id==s.control_target;});if(target==regions.rend())fail(s.where,"missing region join");for(std::size_t n=scopes.size();n>target->keep;--n)cleanup(n-1,s.where);flow.blocks[current].successors={target->done};returned=true;break;}
+    case Stmt::Kind::Trap:{
+     // The public CFG has no fatal terminator. A non-returning sink does not
+     // pretend that terminal failures unwind or clean up live owners.
+     auto origin=current,sink=block();flow.blocks[origin].successors={sink};flow.blocks[sink].successors={sink};current=sink;returned=true;break;
+    }
    case Stmt::Kind::Template:break;
    }
   }
@@ -282,7 +325,8 @@ class Lower {
  }
 public:
  explicit Lower(Budget& b,const std::map<std::string,AdmittedExtern>& a):budget(b),admitted(a){}
- c::Function run(const Function& f){
+  c::Function run(const Function& f){
+   region_targets=canonical::exit_targets(f,Stmt::Kind::Leave);continue_targets=canonical::exit_targets(f,Stmt::Kind::Continue);
   current=block();flow.entry=current;scopes.push_back({});
    for(const auto& p:f.params){budget.node(p.where);if(p.type!=Type::String&&!trivial(p.type,p.where))fail(p.where,"parameter memory model unavailable");if(p.pattern)bind(*p.pattern);else scopes.back().names[p.name]={};}
   if(!statements(f.body,false))cleanup(0,f.where);
@@ -292,6 +336,8 @@ public:
 }
 void verify(const c::Function& function,Limits limits){Budget budget{limits};verify_impl(function,budget);}
 std::string check(const Unit& unit,Limits limits,const std::map<std::string,AdmittedExtern>& admitted){
+ canonical::verify_control(unit);
+ canonical::verify_values(unit);
  Budget lowering{limits};std::ostringstream report;report<<"on1x.memory/v1 chisel JSON/scalar usage\n";
  std::set<std::string> external_names;
  for(const auto& f:unit.functions)if(f.external)external_names.insert(f.name);

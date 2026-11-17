@@ -1,4 +1,6 @@
 #include <on1x/type_safety.hpp>
+#include <on1x/canonical/control.hpp>
+#include <on1x/canonical/values.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/numeric.hpp>
 #include <nerotypical/StructuralTyping.hpp>
@@ -24,7 +26,8 @@ class Verify {
  std::vector<std::map<std::string,Binding>> scopes;
  struct Frame {std::size_t scope;std::map<std::string,Type> needed;};
  std::vector<Frame> frames;
- Type returns=Type::Void;std::size_t constraints=0;
+  Type returns=Type::Void;std::size_t constraints=0;
+  std::vector<std::pair<std::size_t,bool>> regions;
  std::size_t nesting=0;
  struct Depth {
   std::size_t& value;
@@ -121,7 +124,12 @@ class Verify {
   auto result=type(e.type,e.where);
   auto child=[&](std::size_t n){if(n>=e.children.size()||!e.children[n])fail(e.where,"missing expression child");return expr(*e.children[n],depth+1);};
   auto arity=[&](std::size_t n){if(e.children.size()!=n)fail(e.where,"expression arity mismatch");};
-  switch(e.kind){
+   switch(e.kind){
+   case Expr::Kind::Unit:arity(0);equal(result,Type::Void,e.where);break;
+   case Expr::Kind::Region:{if(e.children.size()!=1)fail(e.where,"invalid value region");scopes.push_back({});bool done=body(e.body,false,depth+1);equal(child(0),result,e.where);scopes.pop_back();if(done!=e.noreturn)fail(e.where,"incorrect value-region control");break;}
+   case Expr::Kind::Project:{arity(1);auto t=e.children[0]->type;if(!t.is_tuple()||e.projection>=t.elements().size())fail(e.where,"invalid tuple projection");(void)child(0);equal(result,t.elements()[e.projection],e.where);break;}
+   case Expr::Kind::TagTest:case Expr::Kind::Payload:fail(e.where,"closed-sum model is outside the structural adapter");
+   case Expr::Kind::PatternMatch:case Expr::Kind::Case:fail(e.where,"unlowered source match");
     case Expr::Kind::Integer:arity(0);(void)integer_literal_bits(e.text,e.where);equal(result,numeric_literal_type(e.text),e.where);break;
     case Expr::Kind::Float:arity(0);(void)float_literal_bits(e.text,e.where);equal(result,numeric_literal_type(e.text),e.where);break;
   case Expr::Kind::Boolean:arity(0);equal(result,Type::Bool,e.where);break;
@@ -188,11 +196,17 @@ class Verify {
    case Stmt::Kind::Let:{auto t=value();if(s.declared!=Type::Invalid)equal(t,s.declared,s.where);if(s.pattern)pattern(*s.pattern,s.value->type);else bind(s.name,s.value->type,s.mutable_binding,s.where);break;}
    case Stmt::Kind::Assign:{auto b=lookup(s.name);if(!b||!b->mut)fail(s.where,"assignment to missing/immutable local");equal(value(),b->type,s.where);break;}
    case Stmt::Kind::Return:equal(s.value?value():type(Type::Void,s.where),returns,s.where);complete=true;break;
-   case Stmt::Kind::Expr:(void)value();break;
+    case Stmt::Kind::Expr:(void)value();complete=s.value->noreturn;break;
+    case Stmt::Kind::Storage:bind(s.name,s.declared,false,s.where);break;
+    case Stmt::Kind::Initialize:{auto b=lookup(s.name);if(!b)fail(s.where,"missing canonical storage");equal(value(),b->type,s.where);break;}
+    case Stmt::Kind::Region:{regions.push_back({s.control_target,false});bool done=body(s.body,true,depth+1),joins=regions.back().second;regions.pop_back();complete=done&&!joins;break;}
+    case Stmt::Kind::Leave:{auto target=std::find_if(regions.rbegin(),regions.rend(),[&](const auto& r){return r.first==s.control_target;});if(target==regions.rend())fail(s.where,"missing region target");target->second=true;complete=true;break;}
+    case Stmt::Kind::Trap:complete=true;break;
    case Stmt::Kind::Block:complete=body(s.body,true,depth+1);break;
    case Stmt::Kind::Template:complete=body(s.body,false,depth+1);break;
    case Stmt::Kind::If:{equal(value(),Type::Bool,s.where);bool a=body(s.body,true,depth+1),b=body(s.otherwise,true,depth+1);complete=a&&b;break;}
-   case Stmt::Kind::While:equal(value(),Type::Bool,s.where);(void)body(s.body,true,depth+1);break;
+   case Stmt::Kind::While:equal(value(),Type::Bool,s.where);(void)body(s.body,true,depth+1);(void)body(s.otherwise,true,depth+1);break;
+   case Stmt::Kind::Break:case Stmt::Kind::Continue:complete=true;break;
    default:fail(s.where,"unknown statement");
    }
   }
@@ -201,7 +215,8 @@ class Verify {
  }
 public:
  Verify(const Unit& u,Budget& b):unit(u),budget(b){for(const auto& f:u.functions){budget.tick(f.where);if(!f.prototype)if(!functions.emplace(f.name,&f).second)fail(f.where,"duplicate function");}}
- std::string run(){
+  std::string run(){
+   canonical::verify_control(unit);
   if(functions.empty())fail({"<type-hir>"},"empty elaborated unit");
   for(const auto& [name,f]:functions){(void)name;(void)type(signature(*f),f->where);}
   for(const auto& f:unit.functions){
@@ -212,10 +227,14 @@ public:
   nt::AnalysisOptions options;options.max_type_terms=budget.limits.terms;options.max_unification_rounds=budget.limits.rounds;options.allow_recursive_types=false;
   auto answer=graph.solve(options);
   if(answer.base.status==nt::AnalysisStatus::Unknown)exhausted({"<type-hir>"},"Nerotypical unification did not decide");
-  if(!answer.base.well_typed()){
+   if(!answer.base.well_typed()){
    if(!answer.base.diagnostics.empty()){const auto& d=answer.base.diagnostics.front();fail({d.primary.file,0,d.primary.line,d.primary.column},d.id+": "+d.message);}
-   fail({"<type-hir>"},"Nerotypical rejected constraints");
-  }
+    fail({"<type-hir>"},"Nerotypical rejected constraints");
+   }
+   // Preserve the independent solver's existing type-obligation diagnostics.
+   // Region/initialization/tag checks are a separate mandatory admission gate,
+   // not a substitute for constructing and solving those obligations.
+   canonical::verify_values(unit);
   std::ostringstream report;report<<"on1x.type-safety/v1 nerotypical-structural-euf\nwell_typed concrete HIR\n"<<functions.size()<<" functions, "<<graph.term_count()<<" terms, "<<constraints<<" equalities, "<<answer.base.stats.unification_rounds<<" rounds\n";return report.str();
  }
 };

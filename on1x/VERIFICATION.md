@@ -1,5 +1,472 @@
 # On1x verification — 2026-11-17
 
+## Intrinsic G2 continuation — guarded structural matching and typed decisions
+
+Scoped task: implement generalized matching over the **existing bounded value
+model**, not all of `ON1X_CORE_SYNTAX_ADDITIONS.md`. Re-inspected MuLIB
+`9090e643e11051e000b3bcc68ebc777dfe07776a` and configured read-only LibStone
+`55755485acaded7c4ed804c0946bc8c7363f6763` at `on1x/third_party/libstone`.
+The submodule is clean. Previous uncommitted Category/loop work and the user's
+untracked specification remain intact; no commit, push or unrelated kernel work.
+
+Platform remains Linux `7.2.6-arch2-1` x86_64, glibc 2.44; GCC/g++ 16.2.1,
+Clang/clang++ 22.1.8, CMake 4.4.3 and Python 3.14.7. C11 is still the reference
+AOT backend, not direct machine-code generation.
+
+### Behavior and exact implementation boundary
+
+- `match expr with { ... }` statements/expressions and restricted `match let`
+  discriminants; guards, nested tuples/closed sums, exact arrays/snapshot slices,
+  record fields/rest, scalar/string literals, wildcard/final catch-all, or/as
+  patterns and arm blocks with final unterminated expression results.
+- Shared patterns in `include/on1x/ast.hpp`, canonical parser/inference/sema,
+  finite-constructor coverage/redundancy in `src/patterns.cpp`. Match names and
+  arms retain loader, hygienic macro, PPX and staging scope/identity behavior.
+  Existing name/tuple let/parameter patterns and legacy payload-lambda matches
+  remain compatible; old `_` bindings are not silently changed to wildcards.
+- `src/canonical/values.cpp` transactionally replaces both match spellings with
+  typed HIR decision regions, branches/projections, single-initialization storage
+  and lexical leave edges. Guards/bodies are shared across or-alternatives, not
+  duplicated effects. `verify_values.cpp` checks initialized reads/joins, repeat
+  initialization, tag domination, projection/result types, completion, source
+  points and private node shapes. No second parser, runtime interpreter or MIR.
+- Direct C11 cleanup handles managed results, arm-local owners/loans and outer
+  return/break/continue, including abandoned earlier operands. Scalar/numeric
+  tuple cases use the existing MIR slots/extracts/branches/jumps, reference
+  evaluator, serialization and transactional passes without a format change.
+- Additive source wire nodes are `SourceMatch`, `MatchArm`, `StructuralPattern`,
+  `UnitValue`. PPX cannot inject canonical regions, storage facts, payload proofs
+  or resolved targets. Canonical/native JSON schemas are equal. Generated scanner
+  files remain build artifacts; Aurocks/fallback recognize `|` and `::` identically.
+- Actual Chisel CFG/Nerotypical constraints support the admitted scalar/tuple
+  decision profile and tested arm-local JSON cleanup. Fatal decision fallbacks
+  have non-returning CFG sinks, not fictitious normal drops. Sum/record/array/
+  slice and managed/foreign profiles still reject unsupported SDK/MIR requests.
+
+Budgets: 256 arms/width, 4,096 expanded alternatives, 262,144 pattern-analysis and
+canonical traversal/copy work units, 8 MiB copied text per analysis/planning
+phase, 256 syntax-pattern levels, 520 decision/traversal levels and 4,194,304
+flow-state work units. Exhaustion rejects without output/coverage approximation.
+
+### Reproductions and tests
+
+`tests/test_patterns.py` compiles actual sources with strict
+`-std=c11 -Wall -Wextra -Wpedantic -Werror`, separately compiling the real runtime
+and allocator/foreign/JSON fixtures. It tests ordered/guarded matching, scrutinee
+once, guard once for overlapping alternatives, block scopes/results, or-binder
+equivalence, nested sums/empty payloads, record omission, exact array/slice lengths,
+numeric/string patterns and signed-zero redundancy. Scalar/tuple fixtures compare
+HIR→C11, MIR reference execution, unoptimized/optimized MIR→C11 and serialized
+round-trips against six seeded independent Python oracles.
+
+Other cases cover source imports, global specialization, macro/staging hygiene,
+Python/native identity PPX, original keyword-spelled values, closure allocation
+counts and allocation-failure injection, managed results and JSON return/loop
+cleanup. Guard division failure preserves the preceding trace and status 70.
+Negative programs cover non-exhaustive/redundant arms, guard/result types, rest
+placement, nonlinear and incompatible or-binders, arities/extents/fields/tags,
+scope escape, unsupported owning-list/unique-resource profiles, depth/expansion
+budgets and preservation of existing output on failure.
+
+`tests/test_patterns.cpp` checks source-wire round-trips, canonical erasure and
+idempotence, transactional rejection of unchecked source, missing/repeated
+initialization, projection corruption, missing tag domination, completion/target
+metadata, null children/values and private/refutable wire-node rejection.
+
+The new nested-match fixture initially reproduced a MIR infinite loop: continue
+discovery skipped expression-region bodies, so for-C continued at its header
+without executing the latch. MIR and Chisel now collect target exits through
+expression bodies, and the regression executes with its expected `2`/`4` trace.
+The first SDK suite also exposed a diagnostic regression: the new value verifier
+intercepted ordinary post-check type corruptions before Nerotypical. Its extra
+gate now runs after the real solver and before successful admission, preserving
+the unchanged independent-solver mutation/budget/oracle tests. No test was
+disabled or relaxed to bypass either regression. The scanner invalid-byte corpus
+was updated because `|` is now deliberately valid, and expanded with valid `|`/`::`
+and matching syntax rather than dropping parity checks.
+
+### Commands and results
+
+The four existing configured trees retain the documented scanner/SDK settings.
+The sanitizer tree instruments C/C++ with
+`-fsanitize=address,undefined -fno-omit-frame-pointer` **and** has
+`ON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer`; generated
+applications, runtime and extra fixture TUs are instrumented, not only on1xc.
+
+```sh
+cmake --build /tmp/opencode/on1x-loader-gcc --parallel 2
+ctest --test-dir /tmp/opencode/on1x-loader-gcc --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-loader-gcc/results-core-match.xml
+cmake --build /tmp/opencode/on1x-loader-clang --parallel 2
+ctest --test-dir /tmp/opencode/on1x-loader-clang --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-loader-clang/results-core-match.xml
+cmake --build /tmp/opencode/on1x-data-sdk --parallel 2
+ctest --test-dir /tmp/opencode/on1x-data-sdk --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-data-sdk/results-core-match.xml
+cmake --build /tmp/opencode/on1x-safe-ffi-sanitize --parallel 2
+ctest --test-dir /tmp/opencode/on1x-safe-ffi-sanitize --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-safe-ffi-sanitize/results-core-match.xml
+```
+
+Final runs: GCC/generated **45/45**, Clang/fallback **44/44**, optional SDK
+**53/53**, SDK ASan/UBSan **53/53**, with no sanitizer findings. These are full
+reruns after the solver-diagnostic fix; the earlier failed SDK runs are not
+counted as passes.
+
+Focused native-off Debug/Release configurations were refreshed without changing
+their cached compiler/build settings (Clang Debug and GCC Release, both fallback):
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-core-debug
+cmake --build /tmp/opencode/on1x-core-debug --target on1xc on1x_control_tests on1x_pattern_tests --parallel 2
+ctest --test-dir /tmp/opencode/on1x-core-debug -R 'on1x.(control|pattern)' --output-on-failure \
+  --output-junit /tmp/opencode/on1x-core-debug/results-core-match.xml
+cmake -S on1x -B /tmp/opencode/on1x-core-release
+cmake --build /tmp/opencode/on1x-core-release --target on1xc on1x_control_tests on1x_pattern_tests --parallel 2
+ctest --test-dir /tmp/opencode/on1x-core-release -R 'on1x.(control|pattern)' --output-on-failure \
+  --output-junit /tmp/opencode/on1x-core-release/results-core-match.xml
+python3 on1x/tools/on1x-build.py on1x/examples/structural_match.on1x \
+  --on1xc /tmp/opencode/on1x-core-release/on1xc --cc gcc \
+  -o /tmp/opencode/on1x-core-match-acceptance
+/tmp/opencode/on1x-core-match-acceptance
+readelf -d /tmp/opencode/on1x-core-match-acceptance
+```
+
+Both focused suites passed **4/4**. Native identity execution is intentionally
+absent from these native-off profiles, not counted as native PPX evidence.
+The acceptance executable prints `42`, `8`, `4` and needs only `libc.so.6`.
+Python syntax parsing, canonical/native schema equality and `git diff --check`
+pass. The unrelated repository-wide `tools/check.py` failures recorded below
+were not rerun or claimed green.
+
+### Not implemented / not certified
+
+This advances the G2 **bounded structural-match** capability to EXECUTABLE, not
+full generalized data/concurrency conformance. Owning lists/list-cons, refutable
+let/parameter bindings, loop values, general iterator/drop protocols, defer/using,
+recoverable errors, concurrency/processes, async/generators, synchronization,
+nominal/parametric/recursive ADTs and contracts still need vertical implementations.
+Aggregate/managed/foreign/concurrency MIR and broader independent SDK models
+remain closed. No general bottom type or cleanup on terminal traps is promised.
+No new thread facility was added; TSAN and non-Linux/cross-target execution were
+not run for this slice. General safe FFI and complete Category remain incomplete.
+
+Files changed by this matching continuation (prior Category/loop edits elsewhere
+are preserved, not attributed to this slice):
+
+- `CMakeLists.txt`, `grammar/{On1x.g,PPX.schema.json}`,
+  `stdppx/schemas/PPX.schema.json`.
+- `include/on1x/{ast,clone,patterns}.hpp`, `include/on1x/canonical/values.hpp`.
+- `src/{parser,lexer_fallback,loader,infer,sema,macros,macro_rules,ppx_ast,staging,codegen,safety,type_safety,patterns}.cpp`,
+  `src/canonical/{control,values,verify_values}.cpp`, `src/backend/lower.cpp`.
+- `tests/{test_patterns.cpp,test_patterns.py,scanner_parity.py}`,
+  `examples/structural_match.on1x`.
+- `README.md`, `BACKEND.md`, `COMPLETION.md`, `VERIFICATION.md`,
+  `docs/{architecture,backend-mir,capability-matrix,core-syntax,data-model,language,memory-safety,metaprogramming,roadmap,type-safety}.md`.
+
+## Intrinsic core-syntax G1/G2 — statement loops, ranges and lexical exits
+
+This implements a runnable **statement-control slice**, not all of
+`ON1X_CORE_SYNTAX_ADDITIONS.md`. Re-inspected MuLIB
+`9090e643e11051e000b3bcc68ebc777dfe07776a`, configured read-only LibStone
+`55755485acaded7c4ed804c0946bc8c7363f6763` at `on1x/third_party/libstone`.
+Existing uncommitted Category changes and the user's specification were preserved;
+no commit/push or unrelated kernel/inventory changes were made.
+
+Platform: Linux `7.2.6-arch2-1` x86_64, glibc 2.44. GCC/g++ 16.2.1
+(`20260810`), Clang/clang++ 22.1.8, CMake 4.4.3, Python 3.14.7.
+
+### Implemented boundary
+
+- Canonical parser and both scanners now admit statement `loop`, for-C, ascending
+  i64 `..`/`..=` ranges, loop labels and break/continue. Existing `...`, ordinary
+  keyword-spelled identifiers, macro hygiene, source locations and lexical scopes
+  are retained. Source grammar is summarized in `grammar/On1x.g`; the existing
+  token-arena ASDL/C++ source-tree bridge is extended rather than replaced.
+- `src/canonical/control.cpp` lowers source ranges into checked i64/bool
+  preheaders, conditions, bodies and latches; evaluates bounds once left-to-right;
+  avoids inclusive MAX+1; and recomputes lexical identities after specialization.
+  The independent verifier rejects absent/duplicate/nonlexical/cross-function
+  targets, malformed exits, invalid source points and surviving surface ranges.
+  Target IDs cannot be supplied by PPX. Normalization is bounded/transactional.
+- The additive PPX-v1 `ControlWhile`, `RangeLoop`, `LoopExit` constructors carry
+  source syntax only. Both schemas, reconstruction, macro substitution, loader
+  scopes and staging were updated. Ordinary post-expansion type/ownership checks
+  remain required. The native Category processor remains a separate feature.
+- C11 emits explicit jumps and existing lexical ownership cleanup for precisely
+  the exited scopes. Scalar MIR uses existing verified Jump/Branch CFG edges;
+  its serialization versions, evaluator and transactional optimizer are unchanged.
+  Optional Nerotypical validates generated HIR; Chisel models real cleanup/jump
+  edges, using the pinned SDK's actual `c::Id`/Function/block API. No new runtime
+  library, scheduler, safe-FFI permission or native machine-code backend is claimed.
+
+### Reproductions and executable coverage
+
+`tests/test_control.py` compiles actual On1x programs to strict ISO C11 with
+`-Wall -Wextra -Wpedantic -Werror`, separately compiling the existing runtime and
+applicable allocator/kernel fixtures. The same scalar programs execute through
+MIR reference evaluation, deterministic serialization round-trips and optimized
+MIR→C11. The example additionally runs with C `-O2`. Tests include:
+
+- Empty/reversed/inclusive/extreme ranges; left-to-right bound effects; snapshot
+  bounds despite later mutation; immutable iteration bindings; shadowing and scope.
+- For-C initializer/condition/step behavior, empty clauses, nested labeled exits,
+  exactly-once continue step and abandoned-step suppression; checked step overflow
+  agrees with MIR failure output/status. Eight deterministic seeded numeric oracles.
+- Existing identifiers/calls/discard statements, including an imported module;
+  macro-introduced label hygiene, captured exits and identity PPX (Python/native);
+  staging and distinct i64/bool generic specializations. Contextual labels named
+  `with` work for both exits; `break with value` still rejects. No Python transform
+  implements loop semantics.
+- Closure/tuple reference accounting over 100 iterations and nested return/break/
+  continue, using the existing allocation-count fixture. Real MuLIB JSON owner/loan
+  exits compile/run; SDK builds admit these same edges through Chisel.
+- Negative types, immutable assignment, loop/binder/initializer escape, duplicate
+  labels, missing/cross-lambda targets, implicit template capture, unreachable
+  statements, malformed headers/depth, unsupported value loops/general iteration
+  and output preservation after errors.
+
+`tests/test_control.cpp` mutates actual checked HIR: missing/duplicate/wrong-world
+targets, an exit into its own latch, invalid provenance, null bounds and surviving
+source ranges fail closed. It checks emitter/MIR rejection, source-wire round-trip,
+invalid wire operations and no partial publication after normalization failure.
+Scanner tests assert exact longest-match tokens; parity includes all examples,
+new lexical edge cases and the existing malformed/randomized corpus.
+
+The first regression run exposed three integration mistakes: a too-small combined
+traversal depth rejected a previously valid 255-term lambda tree; unconditional
+cloning invalidated checked-HIR references on recheck; and lowering staging before
+deciding whether to infer changed an established run-type diagnostic. They were
+corrected without changing the baseline tests or disabling checks. The existing
+limits, closure-HIR idempotence and staging tests reproduce/protect these cases.
+
+### Exact commands and results
+
+The existing four configured trees retain generated/fallback scanner and optional
+SDK coverage. The sanitizer tree sets both C/C++ flags to
+`-fsanitize=address,undefined -fno-omit-frame-pointer`, **and** explicitly sets
+`ON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer` so generated
+applications, runtime and extra fixtures are instrumented too.
+
+```sh
+cmake --build /tmp/opencode/on1x-loader-gcc --parallel 2
+ctest --test-dir /tmp/opencode/on1x-loader-gcc --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-loader-gcc/results-core-loops.xml
+cmake --build /tmp/opencode/on1x-loader-clang --parallel 2
+ctest --test-dir /tmp/opencode/on1x-loader-clang --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-loader-clang/results-core-loops.xml
+cmake --build /tmp/opencode/on1x-data-sdk --parallel 2
+ctest --test-dir /tmp/opencode/on1x-data-sdk --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-data-sdk/results-core-loops.xml
+cmake --build /tmp/opencode/on1x-safe-ffi-sanitize --parallel 2
+ctest --test-dir /tmp/opencode/on1x-safe-ffi-sanitize --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-safe-ffi-sanitize/results-core-loops.xml
+```
+
+Final runs passed GCC/generated **43/43**, Clang/fallback **42/42**, SDK **51/51**,
+and SDK ASan/UBSan **51/51**, with no sanitizer findings. These include the final
+provenance/null-bound/import regressions, contextual `with` labels and distinct
+generic specializations. Changed Python syntax/JSON schema checks and
+`git diff --check` also pass.
+
+Independent named build profiles (focused suite only, no native PPX execution):
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-core-release -DBUILD_TESTING=ON \
+  -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_USE_FALLBACK_SCANNER=ON \
+  -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+cmake --build /tmp/opencode/on1x-core-release --target on1xc on1x_control_tests --parallel 2
+ctest --test-dir /tmp/opencode/on1x-core-release -R 'on1x.control' --output-on-failure \
+  --output-junit /tmp/opencode/on1x-core-release/results-core-loops.xml
+cmake -S on1x -B /tmp/opencode/on1x-core-debug -DBUILD_TESTING=ON \
+  -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_USE_FALLBACK_SCANNER=ON \
+  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+cmake --build /tmp/opencode/on1x-core-debug --target on1xc on1x_control_tests --parallel 2
+ctest --test-dir /tmp/opencode/on1x-core-debug -R 'on1x.control' --output-on-failure \
+  --output-junit /tmp/opencode/on1x-core-debug/results-core-loops.xml
+```
+
+Both passed **2/2**; the native-identity subcase is unsupported/not run in these
+explicitly native-off configurations, not counted as native PPX evidence.
+
+```sh
+python3 on1x/tools/on1x-build.py on1x/examples/statement_loops.on1x \
+  --on1xc /tmp/opencode/on1x-core-release/on1xc --cc gcc --via-mir --optimize-ir \
+  -o /tmp/opencode/on1x-core-loops-acceptance
+/tmp/opencode/on1x-core-loops-acceptance
+readelf -d /tmp/opencode/on1x-core-loops-acceptance
+```
+
+Output: `8`, `3`, `9223372036854775807`, each on its own line. The sole NEEDED
+library is `libc.so.6`. No runtime compiler/LibStone/Python dependency is added.
+
+### Unsupported / not promoted
+
+The complete specification is **not implemented**. General iterator/drop
+protocols, unsigned/float/custom-step ranges, loop values, generalized pattern
+matching, owning lists/comprehensions, defer/using, typed errors, fibers/channels/
+poll/taskgroups, process literals, async/generators, synchronization, nominal
+recursive ADTs and native contracts remain closed. Conservative return analysis
+requires a returning tail in nonvoid functions even after an endless loop.
+The canonical bridge is not full cleanup/effect/suspension Core. Resource-bearing
+loops still reject scalar MIR. No threads were added; TSAN is not applicable.
+Only Linux x86_64 execution was measured. See `docs/core-syntax.md` for the exact
+per-feature status/migration limits. Historical repository-wide checker failures
+recorded below remain outside this task; that suite was not rerun or claimed green.
+
+## Category M0/M1 — bundled native activation and explicit local scalar protocols
+
+Implemented a real first slice of `CATEGORY.md`, **not** the complete Category
+system. Baseline re-inspected at MuLIB
+`9090e643e11051e000b3bcc68ebc777dfe07776a`, with LibStone unchanged at
+`55755485acaded7c4ed804c0946bc8c7363f6763`. Linux `7.2.6-arch2-1` x86_64,
+glibc 2.44, GCC/g++ 16.2.1, Clang/clang++ 22.1.8, CMake 4.4.3, Python 3.14.7.
+The working tree was clean before this task; no commit/push was made.
+
+### Implementation / trust boundary
+
+- `stdppx/native/protocols.on1x` is bootstrapped to a native C11 executable, using
+  `stdlib/ppx/category/{syntax,witness}.on1x` and shared native token, diagnostic,
+  source/fresh-name, schema, S-expression and visitor libraries. Protocol parsing,
+  scalar `Self` substitution, local canonical-head checks, named alternatives,
+  reporting identities and selector generation are On1x code, not Python/C++.
+- Generic compiler changes are in `src/{extensions,parser,loader,cli,ppx}.cpp`
+  and AST/clone/loader headers. They implement `@enable`, `--enable/--disable`,
+  registry introspection, bounded balanced carriers, module provenance, pinned
+  native execution, ordinary-function reconstruction and immutable generated
+  interfaces across later ordinary PPXs. No protocol/member names are special
+  typechecker intrinsics. Normal post-expansion typing/ownership/checking remains
+  authoritative; reporting facts are not proof tokens.
+- Registry `stdppx/category/features.sexpr` is checked in/embedded. Native/schema
+  SHA256 pins are built by CMake, installed under `libexec/on1x` and verified
+  before/after invocation. Linux discovery uses the actual `/proc/self/exe`, not
+  argv[0], CWD, PATH or schema/stdlib environment overrides. Existing MuLIB SHA256
+  is compiled in one compiler-only TU; applications and PPXs use the existing
+  On1x runtime without LibStone/compiler/Python runtime dependencies.
+- The explicit initial phase split expands declaration spans before export
+  binding; ordinary macro/PPX/staging/inference behavior is unchanged. Body macros
+  and generic/associated annotations reject rather than being dropped. Details,
+  grammar subset, bounds and stage statuses: `docs/category.md`.
+
+### Executable coverage
+
+`tests/test_category.py` compiles the actual Eq/ordering programs under
+`stdppx/examples/category/`, then compiles/runs strict C11. It covers source/CLI
+activation parity, repeated/disabled/unknown/late/nested directives, multiple
+named witnesses, extreme signed ordering, numeric/bool targets, MIR C11,
+ordinary PPX/macro coexistence, an independently compiled authoring-parser API,
+malformed native packets, token/source/coordinate binding, deterministic facts,
+declaration/token budgets and output preservation on failure.
+
+Negative cases include wrong member parameter/result/arity/body/call types,
+duplicate member/parameter/protocol/impl, orphan/foreign protocol, unsupported
+generic/inheritance/associated syntax, generated-name collisions, source-PPX
+authorization, conflicting ordinary PPX labels and attempted generated-interface
+erasure by an explicitly authorized test mutator. Optional SDK runs additionally
+check the generated HIR through real Nerotypical and Chisel.
+The C++ meta API regression also checks exact activation byte ranges, independent
+host rejection of inactive carrier owners, preservation after failure and
+non-executing inspection. Its missing rejection was reproduced before the host
+preflight guard was added.
+
+Import tests cover aliases, module-local activation, disabled imported features,
+unknown directives in unused imports and legacy quoted flat imports. The latter
+reproduced a real initial helper-name collision; origin-domain-separated fresh
+names fixed it without changing public selectors. Security tests cover spoofed
+argv[0], hostile PATH/schema/protocol variables, relocated installation without
+Python in PATH, binary/schema drift and missing native artifacts. No test was
+disabled to obtain passing results.
+
+### Commands / results
+
+Same configured generated/fallback and SDK trees as the preceding numeric
+verification. Sanitizer configuration retains explicit generated-program flags
+`ON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer`, in addition
+to compiler/runtime/native-PPX CMake instrumentation.
+
+```sh
+cmake --build /tmp/opencode/on1x-loader-gcc --parallel 2
+ctest --test-dir /tmp/opencode/on1x-loader-gcc --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-loader-gcc/results-category.xml
+cmake --build /tmp/opencode/on1x-loader-clang --parallel 2
+ctest --test-dir /tmp/opencode/on1x-loader-clang --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-loader-clang/results-category.xml
+cmake --build /tmp/opencode/on1x-data-sdk --parallel 2
+ctest --test-dir /tmp/opencode/on1x-data-sdk --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-data-sdk/results-category.xml
+cmake --build /tmp/opencode/on1x-safe-ffi-sanitize --parallel 2
+ctest --test-dir /tmp/opencode/on1x-safe-ffi-sanitize --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-safe-ffi-sanitize/results-category.xml
+```
+
+Final GCC/generated **41/41**, Clang/fallback **40/40**, optional GCC SDK **49/49**,
+and optional Clang SDK ASan/UBSan **49/49**, with no sanitizer findings. These
+final runs include the independent inactive-carrier host regression and ordinary
+PPX interface-erasure rejection.
+
+`python3 -m unittest discover -s on1x/stdppx/tests -v`: **30/30**. Changed Python
+AST parsing, JSON schema decoding and `git diff --check` pass. Repository-wide
+`TMPDIR=/tmp/opencode python3 tools/check.py --jobs 2` is an additional independent
+check and **failed (exit 1)** outside the changed On1x sources. Its results were:
+
+- Module examples **999/999**, compositions **188/189**, focused tests
+  **609/612**, combined builds **10/10**, isolated headers **3495/3495**.
+- MuLL registration is missing `mulib-elvi-scrape.h`; dependency strata are stale.
+- `examples/elvi-scrape.c` has unresolved load/url/parse symbols;
+  `tests/test-elvi-scrape.c` fails its load assertion.
+- Inventory/manual checks report an elvi-scrape dependency mismatch, missing
+  `examples/modules/elvi-scrape.c`, missing declaration/implementation header
+  registration and missing `MULIB_IMPL_ELVI_SCRAPE` registration.
+- Compilation of `tests/test_hardening.c` and `tests/test_hostile_inputs.c`
+  exceeded the checker's 90-second timeout. These timing failures were not
+  classified as semantic regressions.
+
+HEAD remained `9090e643e11051e000b3bcc68ebc777dfe07776a`; this task changed none of
+those root headers, inventory generators, examples or tests. No unrelated
+regeneration or kernel fixes were attempted. The repository-wide suite is **not
+green**, and its passing checks are not Category completion evidence. The On1x
+suite results above remain separate.
+
+Build-helper/optimized-MIR acceptance was also executed:
+
+```sh
+python3 on1x/tools/on1x-build.py \
+  /tmp/opencode/on1x-loader-gcc/test-artifacts/category/activation.on1x \
+  --on1xc /tmp/opencode/on1x-loader-gcc/on1xc --cc gcc --enable Protocols \
+  --via-mir --optimize-ir -o /tmp/opencode/on1x-category-acceptance
+/tmp/opencode/on1x-category-acceptance
+readelf -d /tmp/opencode/on1x-category-acceptance
+```
+
+The fixture is the Eq example without its source directive. Output is `true`,
+then `false`; the only `NEEDED` library is `libc.so.6`.
+
+Native-off profile:
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-category-disabled \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_BUILD_NATIVE_PPX=OFF -DBUILD_TESTING=OFF
+cmake --build /tmp/opencode/on1x-category-disabled --target on1xc --parallel 2
+```
+
+After copying an existing native binary, valid pin and schema into that build's
+`stdppx/` directory, `on1xc --check .../category/eq.on1x` still rejects with
+`ON1X_BUILD_NATIVE_PPX=OFF`; ordinary `--emit-c .../examples/hello.on1x` succeeds.
+This is an actual negative profile, not a green test pretending a PPX executed.
+
+### Unsupported / not promoted
+
+Only the generic gateway and explicit **module-local concrete scalar** witness
+selectors are executable. Bare direct syntax, first-class nominal witness types,
+qualified schemes, implicit/generic resolution, cross-module evidence/interfaces,
+package orphan authority, associated types/constants, signatures/functors,
+abstract sealing, derive/laws, auto ownership/concurrency protocols, higher kinds
+and dynamic dispatch remain unimplemented. Other-host native discovery and
+build-host/target cross compilation are closed. No thread runtime was added;
+TSAN is not applicable. This is neither full Category completion nor a self-hosted
+compiler. Exact phase split and limits remain documented and fail closed.
+
 ## Numeric-limit continuation — literals, scalar MIR v3 and independent typing
 
 Implemented the numeric syntax, MIR and independent-checker gaps from the

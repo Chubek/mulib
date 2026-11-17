@@ -1,12 +1,24 @@
 #include <on1x/meta.hpp>
 #include <on1x/infer.hpp>
+#include <on1x/extensions.hpp>
 #include <iostream>
 namespace {
 void require(bool okay,const char* message){if(!okay)throw std::runtime_error(message);}
 on1x::Unit parse(const std::string& text){return on1x::parse(on1x::scan(text,"meta-test"));}
 }
 int main(){
- try{
+  try{
+   {
+    auto carrier=on1x::parse(on1x::scan("@extension Protocols {}","carrier-test"),{"Protocols"});
+    on1x::extensions::Options authorization;authorization.execute=false;bool denied=false;
+    try{on1x::extensions::expand(carrier,authorization,"carrier-test");}
+    catch(const on1x::Error& error){denied=error.diagnostic_id=="ON1X-CAT-ENABLE";}
+    require(denied&&carrier.extensions.size()==1,"host failed to independently reject an inactive carrier");
+    authorization.enabled.insert("Protocols");on1x::extensions::expand(carrier,authorization,"carrier-test");
+    require(carrier.extensions.size()==1,"non-executing inspection consumed a carrier");
+    auto directive=parse("@enable Protocols;\n@extension Protocols {} fn main(){}");
+    require(directive.features.size()==1&&directive.features[0].where.offset==0&&directive.features[0].end.offset==18,"activation source byte range was not preserved");
+   }
   auto unit=parse("macro m{rule($x:Expression)=>expression{$x+1};} fn main(){println(m!(41));}");
   on1x::expand_macros(unit);require(unit.macros.empty(),"macro declarations survived expansion");
   auto schema=on1x::meta::base_schema();auto tree=on1x::meta::encode(unit);schema.validate(tree);

@@ -1,0 +1,24 @@
+# Intrinsic source syntax: no macro, PPX, interpreter or new runtime required.
+fn main() {
+  var total = 0;
+  for i in 0..=4 {
+    if i == 2 { continue; }
+    total = total + i;
+  }
+  println(total);                         # 8
+
+  var steps = 0;
+  outer: for (var i = 0; i < 3; i = i + 1) {
+    loop {
+      steps = steps + 1;
+      if i == 1 { continue outer; }       # executes outer step, not inner header
+      break;
+    }
+  }
+  println(steps);                         # 3
+
+  for i in 9223372036854775807..=9223372036854775807 {
+    println(i);                          # MAX exactly once; no MAX+1
+    continue;
+  }
+}

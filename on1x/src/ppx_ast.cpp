@@ -1,5 +1,6 @@
 #include <on1x/meta.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/patterns.hpp>
 #include <charconv>
 #include <set>
 #include <algorithm>
@@ -32,6 +33,11 @@ SExpr type(const Type& t){
  }
 }
 SExpr pattern(const Pattern& p){
+ if(!p.is_tuple()&&p.kind!=Pattern::Kind::Name){
+  static const std::vector<std::string> kinds={"name","tuple","wildcard","rest","literal","variant","array","record","or","as"};
+  std::vector<SExpr> fields,parts;for(const auto& label:p.labels)fields.push_back(string(label));for(const auto& c:p.elements)parts.push_back(pattern(c));
+  return form("StructuralPattern",{string(kinds.at(static_cast<std::size_t>(p.kind))),string(p.name),list(std::move(fields)),list(std::move(parts)),symbol(p.open?"true":"false"),loc(p.where)});
+ }
  if(!p.is_tuple())return form("NamePattern",{string(p.name),loc(p.where)});
  std::vector<SExpr> fields;for(const auto& e:p.elements)fields.push_back(pattern(e));return form("TuplePattern",{list(std::move(fields)),loc(p.where)});
 }
@@ -46,7 +52,9 @@ SExpr extension(const Expr& e,bool attribute){
 }
 SExpr expression(const Expr& e){
   auto at=loc(e.where);
- if(e.kind>=K::Record){
+ if(e.kind==K::PatternMatch){std::vector<SExpr> arms;for(std::size_t i=1;i<e.children.size();++i){const auto& arm=*e.children[i];arms.push_back(form("MatchArm",{pattern(arm.patterns.at(0)),expression(*arm.children.at(0)),block(arm.body,arm.where),expression(*arm.children.at(1)),loc(arm.where)}));}return form("SourceMatch",{string(e.text),expression(*e.children.at(0)),list(std::move(arms)),symbol(e.statement_match?"true":"false"),std::move(at)});}
+ if(e.kind==K::Unit)return form("UnitValue",{std::move(at)});
+ if(e.kind>=K::Record&&e.kind<=K::Length){
   static const char* names[]={"record","variant","match","array","field","index","slice","length"};
   auto index=static_cast<std::size_t>(e.kind)-static_cast<std::size_t>(K::Record);
   if(index>=std::size(names))throw Error(e.where,"unknown data expression");
@@ -82,7 +90,11 @@ SExpr statement(const Stmt& s){
  case Stmt::Kind::Assign:return form("Assign",{string(s.name),expression(*s.value),std::move(at)});
  case Stmt::Kind::Return:return s.value?form("Return",{expression(*s.value),std::move(at)}):form("ReturnVoid",{std::move(at)});
  case Stmt::Kind::If:return form("If",{expression(*s.value),block(s.body,s.where),block(s.otherwise,s.where),std::move(at)});
- case Stmt::Kind::While:return form("While",{expression(*s.value),block(s.body,s.where),std::move(at)});
+  case Stmt::Kind::While:
+   if(!s.label.empty()||s.label_context||!s.otherwise.empty())return form("ControlWhile",{string(s.label),symbol(std::to_string(s.label_context)),expression(*s.value),block(s.body,s.where),block(s.otherwise,s.where),std::move(at)});
+   return form("While",{expression(*s.value),block(s.body,s.where),std::move(at)});
+  case Stmt::Kind::Range:return form("RangeLoop",{string(s.name),expression(*s.value),symbol(s.inclusive?"true":"false"),string(s.label),symbol(std::to_string(s.label_context)),block(s.body,s.where),std::move(at)});
+  case Stmt::Kind::Break:case Stmt::Kind::Continue:return form("LoopExit",{string(s.kind==Stmt::Kind::Break?"break":"continue"),string(s.label),symbol(std::to_string(s.label_context)),std::move(at)});
  case Stmt::Kind::Block:return form("Scope",{block(s.body,s.where),std::move(at)});
  case Stmt::Kind::Expr:return form("Do",{expression(*s.value),std::move(at)});
  default:throw Error(s.where,"inferred templates cannot be sent to PPX");
@@ -129,23 +141,37 @@ Type read_type(const SExpr& n,bool inferred=false,std::size_t bound=0){
 Pattern read_pattern(const SExpr& n){
  Pattern p;p.where=location(n.items.back());
  if(tag(n)=="NamePattern")p.name=field(n,0).text;
- else if(tag(n)=="TuplePattern"){
+ else if(tag(n)=="TuplePattern"){p.kind=Pattern::Kind::Tuple;
   for(const auto& c:field(n,0).items)p.elements.push_back(read_pattern(c));
   if(p.elements.size()<2)invalid(n,"tuple pattern requires at least two elements");
+ }else if(tag(n)=="StructuralPattern"){
+  static const std::vector<std::string> kinds={"name","tuple","wildcard","rest","literal","variant","array","record","or","as"};
+  auto found=std::find(kinds.begin()+2,kinds.end(),field(n,0).text);if(found==kinds.end())invalid(n,"unknown structural pattern kind");p.kind=static_cast<Pattern::Kind>(found-kinds.begin());p.name=field(n,1).text;
+  for(const auto& label:field(n,2).items)p.labels.push_back(label.text);
+  for(const auto& c:field(n,3).items)p.elements.push_back(read_pattern(c));
+  p.open=field(n,4).text=="true";
+  if(p.elements.size()>256||p.labels.size()>256)invalid(n,"pattern width limit exceeded");
+  if(p.binds()&&!p.name.empty())base_schema().validate(string(p.name),"Name","$.pattern_binder");
  }else invalid(n,"unhandled pattern constructor "+tag(n));return p;
 }
 std::vector<Param> read_parameters(const SExpr& n){
  std::vector<Param> ps;for(const auto& c:n.items){Param p;p.where=location(c.items.back());p.type=read_type(field(c,1));
   if(tag(c)=="Parameter")p.name=field(c,0).text;
-  else if(tag(c)=="PatternParameter"){p.pattern=read_pattern(field(c,0));p.name="@argument_"+std::to_string(ps.size());}
+  else if(tag(c)=="PatternParameter"){p.pattern=read_pattern(field(c,0));patterns::require_binding(*p.pattern);p.name="@argument_"+std::to_string(ps.size());}
   else invalid(c,"unhandled parameter constructor "+tag(c));
   ps.push_back(std::move(p));
  }return ps;
 }
 std::vector<Stmt> read_block(const SExpr& n);
 ExprPtr read_expression(const SExpr& n){
- const auto& k=tag(n);auto e=std::make_unique<Expr>();e->where=location(n.items.back());
-   if(k=="ValueData"){
+  const auto& k=tag(n);auto e=std::make_unique<Expr>();e->where=location(n.items.back());
+   if(k=="UnitValue")e->kind=K::Unit;
+   else if(k=="SourceMatch"){
+    e->kind=K::PatternMatch;e->text=field(n,0).text;e->statement_match=field(n,3).text=="true";if(!e->text.empty())base_schema().validate(string(e->text),"Name","$.match_binding");e->children.push_back(read_expression(field(n,1)));
+    if(field(n,2).items.size()>256)invalid(n,"match arm limit exceeded");
+    for(const auto& arm:field(n,2).items){auto a=std::make_unique<Expr>();a->kind=K::Case;a->where=location(arm.items.back());a->patterns.push_back(read_pattern(field(arm,0)));a->children.push_back(read_expression(field(arm,1)));a->body=read_block(field(arm,2));a->children.push_back(read_expression(field(arm,3)));e->children.push_back(std::move(a));}
+   }
+   else if(k=="ValueData"){
     static const std::vector<std::string> names={"record","variant","match","array","field","index","slice","length"};
     auto found=std::find(names.begin(),names.end(),field(n,0).text);if(found==names.end())invalid(n,"unknown data expression kind");
     e->kind=static_cast<K>(static_cast<std::size_t>(K::Record)+static_cast<std::size_t>(found-names.begin()));e->text=field(n,1).text;
@@ -187,20 +213,31 @@ std::vector<Stmt> read_block(const SExpr& n){
  std::vector<Stmt> body;
  for(const auto& c:field(n,0).items){Stmt s;s.where=location(c.items.back());const auto& k=tag(c);
   if(k=="Let"||k=="Var"||k=="LetPattern"){
-   s.kind=Stmt::Kind::Let;s.mutable_binding=k=="Var";if(k=="LetPattern")s.pattern=read_pattern(field(c,0));else s.name=field(c,0).text;
+   s.kind=Stmt::Kind::Let;s.mutable_binding=k=="Var";if(k=="LetPattern"){s.pattern=read_pattern(field(c,0));patterns::require_binding(*s.pattern);}else s.name=field(c,0).text;
    s.declared=read_type(field(c,1),true);s.value=read_expression(field(c,2));
-  }else if(k=="Assign"){s.kind=Stmt::Kind::Assign;s.name=field(c,0).text;s.value=read_expression(field(c,1));}
+   }else if(k=="Assign"){s.kind=Stmt::Kind::Assign;s.name=field(c,0).text;s.value=read_expression(field(c,1));}
+   else if(k=="ControlWhile"){
+    s.kind=Stmt::Kind::While;s.label=field(c,0).text;s.label_context=number(field(c,1));s.value=read_expression(field(c,2));s.body=read_block(field(c,3));s.otherwise=read_block(field(c,4));
+   }else if(k=="RangeLoop"){
+    s.kind=Stmt::Kind::Range;s.name=field(c,0).text;s.value=read_expression(field(c,1));s.inclusive=field(c,2).text=="true";s.label=field(c,3).text;s.label_context=number(field(c,4));s.body=read_block(field(c,5));
+    if(s.value->kind!=K::Tuple||s.value->children.size()!=2)invalid(c,"range requires exactly two bounds");
+   }else if(k=="LoopExit"){
+    auto operation=field(c,0).text;if(operation!="break"&&operation!="continue")invalid(c,"unknown loop exit operation");
+    s.kind=operation=="break"?Stmt::Kind::Break:Stmt::Kind::Continue;s.label=field(c,1).text;s.label_context=number(field(c,2));
+   }
   else if(k=="Return"||k=="ReturnVoid"){s.kind=Stmt::Kind::Return;if(k=="Return")s.value=read_expression(field(c,0));}
   else if(k=="If"||k=="While"){
    s.kind=k=="If"?Stmt::Kind::If:Stmt::Kind::While;s.value=read_expression(field(c,0));s.body=read_block(field(c,1));if(k=="If")s.otherwise=read_block(field(c,2));
   }else if(k=="Scope"){s.kind=Stmt::Kind::Block;s.body=read_block(field(c,0));}
   else if(k=="Do"){s.kind=Stmt::Kind::Expr;s.value=read_expression(field(c,0));}
   else invalid(c,"unhandled statement extension "+k);
-  body.push_back(std::move(s));
+   if(!s.label.empty())base_schema().validate(string(s.label),"Name","$.loop_label");
+   body.push_back(std::move(s));
  }return body;
 }
 }
 SExpr encode(const Unit& unit){
+ if(!unit.extensions.empty())throw Error(unit.extensions.front().where,"ON1X-CAT-PPX: declaration carriers require native expansion (inspection does not execute processors)","ON1X-CAT-PPX");
  if(!unit.macros.empty())throw Error(unit.macros.front().where,"expand macros before PPX encoding");
  std::vector<SExpr> functions;
  for(const auto& f:unit.functions){
@@ -222,6 +259,7 @@ Unit decode(const SExpr& tree){
  return unit;
 }
 void require_core(const Unit& unit){
+ if(!unit.extensions.empty())throw Error(unit.extensions.front().where,"ON1X-CAT-PPX: unconsumed declaration carrier","ON1X-CAT-PPX");
  if(!unit.macros.empty())throw Error(unit.macros.front().where,"unexpanded macro definitions");
  if(!unit.ppx.empty())throw Error(unit.ppx.front().where,"source PPX registrations require --allow-source-ppx in the compiler driver");
  auto expr=[&](auto&& self,const Expr& e)->void{

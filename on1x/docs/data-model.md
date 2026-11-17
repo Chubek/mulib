@@ -5,6 +5,12 @@ and **owning snapshot slices** in the canonical frontend and C11 backend.
 This deliberately precedes general borrowed/mutable storage and nominal recursive
 ADTs. No foreign layout or ownership admission follows from these types.
 
+The later [intrinsic matching increment](core-syntax.md) adds guarded structural
+patterns and typed decision lowering over these existing value representations.
+The original spelling/profile below remains compatible. New matches can return
+ordinary shared/managed values, but do not add them to record/sum/array fields,
+admit unique-resource transfer, or widen aggregate MIR/SDK/foreign ABI support.
+
 ## Implemented contract (this slice)
 
 - `record{x:i64,y:f64}` is a structural labeled product, constructed with

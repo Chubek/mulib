@@ -9,6 +9,7 @@
 | Fallback lexer | Implemented and tested | Bootstraps without LibStone |
 | Scanner parity and token lifetime | Verified P0 subset | Deterministic byte/offset/error corpus, including macro/PPX/staging/dotted syntax; repeated and concurrent scan tests |
 | Parser / typed AST | Implemented functional subset | Functions, tuples/patterns, explicit universal types, scopes, control flow, imports |
+| Intrinsic core additions G1/G2 | Executable control/matching slice | Loop/for-C/i64 ranges, labels/exits, guarded structural matches and typed decision/initialization verification; C11 plus scalar/tuple MIR; no loop values, owning lists/iterators, defer/errors or concurrency; [manual](core-syntax.md) |
 | Module loader / pervasive environment | Implemented compile-time namespaces | Named/selective/relative imports, aliases, packages, canonical deduplication, bounded cycles, demand-loaded prelude and relocatable installation; [manual](modules.md) |
 | MuLIB native housekeeping | Implemented bounded kernel/fixture planning | `std.mulib` metadata/byte access and size checks; shared one-TU planning, fixture/provider/native companion linkage, fingerprints and relocatable bundles; [manual](../std/mulib/README.md) |
 | Frontend input limits | Implemented and tested | 2 MiB per file; 256-level parsing/HIR limits including lambdas; bounded capture metadata |
@@ -27,7 +28,8 @@
 | Native ABI externs | Explicit raw subset | Exact scalar ABI; explicit nested parameter patterns flatten left-to-right, no aggregate layout inference |
 | Typed hygienic macros | Recursive patterns and lexical syntax bindings | Context marks, typed recursive captures/ellipses, `let_syntax`/`letrec_syntax`, definition-site value/syntax identities and bounded transactional expansion; not the full Scheme language |
 | External AST PPX | Core implemented | Source opt-in / CLI registration, bounded shell-free POSIX transport, S-expression schema validation, labeled carriers and namespaced AST extensions |
-| PPX authoring / standard processors | Native self-hosted libraries/tools | On1x codec/visitor/schema/PPX libraries, fifteen C11-native processors and 24 Python processors with compiler execution tests; compiler remains C++ |
+| Category M0/M1 | Executable native/local scalar slice | `@enable`/`--enable`, pinned native registry, balanced module carriers, On1x protocol/witness parser and concrete checked selectors; no generics, imported evidence, associated types, functors/sealing or auto protocols; [manual](category.md) |
+| PPX authoring / standard processors | Native self-hosted libraries/tools | On1x codec/visitor/schema/PPX libraries, fifteen ordinary C11-native processors, the opt-in native Category processor and 24 Python processors; compiler remains C++ |
 | Extension standard libraries | Executed raw/persistent subset | Validated map/Option/Result/graph helpers, signed scanner, bounded canonical MuLIB serialization/hash/socket adapters with automatic linkage, status tuples, allocation/loopback tests; no general ownership or f64 ABI proof |
 | Multi-stage programming (MSP) | Typed closed-code AOT | `code<T>`, quote/splice/lift/contextual run, quotation-world checks, reference-counted factories/thunks; no JIT or runtime source eval |
 | Native authoring data/I/O | Bounded C11 substrate | Persistent managed `sexpr`, shared `buffer`, byte operations/I/O; process-lifetime bounded text snapshots, not a general String/ADT/module library |

@@ -81,6 +81,13 @@ Nerotypical, MemTKX or the compiler's C++ runtime.
 | Explicit forall packages/projections or unlowered syntax | Reject until a quantifier-aware adapter exists |
 | Numeric literals/intrinsics/operators | Derive suffix/literal types; exact numeric operand/result constraints; reject unsigned negation, float remainder and mixed widths |
 
+Canonical scalar/numeric-tuple match regions add exact storage/result equality,
+projection arity/types and checked completion/leave flow. The independent value
+verifier also checks definite initialization and region integrity before successful
+admission, separately from the real Nerotypical constraints and diagnostics.
+Record/sum/array/slice matches are still rejected;
+this does not add those structural constructors or general effect inference.
+
 The API expects HIR elaborated by `on1x::check`. It independently reconstructs
 typing obligations from expressions, lexical bindings, signatures and statement
 structure rather than merely comparing cached annotations with themselves.

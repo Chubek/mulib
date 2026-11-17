@@ -145,7 +145,12 @@ class Loader {
    if(source.size()>options.max_bytes-bytes)throw Error(at,"total imported source byte limit exceeded");
    bytes+=source.size();auto scanned=scan(source,path.string());
    for(const auto& t:scanned)tokens.insert(t.text);
-   m->unit=parse(scanned);
+    m->unit=parse(scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()});
+    for(auto& carrier:m->unit.extensions){
+     if(carrier.end.offset-carrier.where.offset>262144)throw Error(carrier.where,"ON1X-CAT-SYNTAX: carrier byte budget exhausted","ON1X-CAT-SYNTAX");
+     carrier.source=source.substr(carrier.where.offset,carrier.end.offset-carrier.where.offset);
+    }
+    extensions::expand(m->unit,options.extensions,path.string());
   }
   for(const auto& f:m->unit.functions){
    if(is_intrinsic_name(f.name))throw Error(f.where,"intrinsic name cannot be redefined: "+f.name);
@@ -189,7 +194,7 @@ class Loader {
  void legacy(Module* m){if(m->legacy)return;m->legacy=true;for(auto* child:m->quoted)legacy(child);}
  std::string name(const Symbol& s)const{return s.external||s.owner->legacy?s.name:prefix+std::to_string(s.owner->id)+"_"+s.name;}
  using Scope=std::set<std::string>;
- void bind(Scope& scope,const Pattern& p){if(p.is_tuple())for(const auto& child:p.elements)bind(scope,child);else scope.insert(p.name);}
+ void bind(Scope& scope,const Pattern& p){pattern_bindings(p,[&](const Pattern& name){scope.insert(name.name);});}
  void parameters(Scope& scope,const std::vector<Param>& ps){for(const auto& p:ps){if(p.pattern)bind(scope,*p.pattern);else scope.insert(p.name);}}
  void reference(std::string& text,const Location& at,const Names& names,const Scope& locals,bool syntax){
   auto dot=text.find('.');auto first=text.substr(0,dot);
@@ -251,7 +256,11 @@ class Loader {
    for(auto& child:e.children)expression(*child,names,values,inner);
    return;
   }
-  if(e.kind==Expr::Kind::Lambda){auto inner=values;parameters(inner,e.parameters);body(e.body,names,inner,syntax);return;}
+   if(e.kind==Expr::Kind::Lambda){auto inner=values;parameters(inner,e.parameters);body(e.body,names,inner,syntax);return;}
+   if(e.kind==Expr::Kind::PatternMatch){expression(*e.children.at(0),names,values,syntax);auto inner=values;if(!e.text.empty())inner.insert(e.text);for(std::size_t i=1;i<e.children.size();++i)expression(*e.children[i],names,inner,syntax);return;}
+   if(e.kind==Expr::Kind::Case){auto inner=values;for(const auto& p:e.patterns)bind(inner,p);expression(*e.children.at(0),names,inner,syntax);body(e.body,names,inner,syntax);
+    for(const auto& s:e.body)if(s.kind==Stmt::Kind::Let){if(s.pattern)bind(inner,*s.pattern);else inner.insert(s.name);}
+    expression(*e.children.at(1),names,inner,syntax);return;}
   if(e.callee)expression(*e.callee,names,values,syntax);
   if(e.syntax_tail)expression(*e.syntax_tail,names,values,syntax);
   for(auto& child:e.children)expression(*child,names,values,syntax);
@@ -260,11 +269,18 @@ class Loader {
  void body(std::vector<Stmt>& statements,const Names& names,const Scope& outer,const Scope& syntax){
   if(statements.empty())return;
   auto values=outer;
-  for(auto& s:statements){
-   if(s.value)expression(*s.value,names,values,syntax);
+   for(auto& s:statements){
+    if((s.kind==Stmt::Kind::Break||s.kind==Stmt::Kind::Continue)&&s.label.empty()){
+     std::string spelling=s.kind==Stmt::Kind::Break?"break":"continue";
+     if(values.contains(spelling)||names.values.contains(spelling)){
+      s.kind=Stmt::Kind::Expr;s.value=std::make_unique<Expr>();s.value->kind=Expr::Kind::Variable;s.value->text=spelling;s.value->where=s.where;
+     }
+    }
+    if(s.value)expression(*s.value,names,values,syntax);
    if(s.kind==Stmt::Kind::Let){if(s.pattern)bind(values,*s.pattern);else values.insert(s.name);}
-   if(s.kind==Stmt::Kind::Assign)reference(s.name,s.where,names,values,false);
-   body(s.body,names,values,syntax);body(s.otherwise,names,values,syntax);
+    if(s.kind==Stmt::Kind::Assign)reference(s.name,s.where,names,values,false);
+    auto inner=values;if(s.kind==Stmt::Kind::Range)inner.insert(s.name);
+    body(s.body,names,inner,syntax);body(s.otherwise,names,values,syntax);
   }
  }
 public:
@@ -276,7 +292,7 @@ public:
    implicit=true;preludes.push_back(visit(options.stdlib/"pervasive.on1x",{"<prelude>"},false));implicit=false;
   }
   for(const auto& path:options.preludes)preludes.push_back(visit(path,{"<prelude>"},false));
-  auto* entry=visit(input,{input.string()},false);legacy(entry);
+   auto* entry=visit(input,{input.string()},false);legacy(entry);
   // Pick an identifier prefix absent from every token, including local binders.
   while(std::any_of(tokens.begin(),tokens.end(),[&](const auto& t){return t.starts_with(prefix);}))prefix+="m_";
   Names flat;for(auto* m:order)if(m->legacy)merge(flat,m->names,{m->path.string()});
@@ -313,7 +329,9 @@ public:
     }else result.unit.functions.push_back(std::move(f));
    }
    for(auto& definition:m->unit.macros){macro(definition,names,{},{});definition.name=name({m,definition.name});result.unit.macros.push_back(std::move(definition));}
-   for(auto& registration:m->unit.ppx)result.unit.ppx.push_back(std::move(registration));
+    for(auto& registration:m->unit.ppx)result.unit.ppx.push_back(std::move(registration));
+    for(auto& carrier:m->unit.extensions)result.unit.extensions.push_back(std::move(carrier));
+    for(auto& feature:m->unit.features)result.unit.features.push_back(std::move(feature));
    if(regular(m->path))result.dependencies.push_back(m->path);
   }
   // Automatic pervasive bindings are demand-loaded. This preserves the existing
@@ -350,15 +368,24 @@ public:
 };
 }
 LoaderOptions default_loader_options(const std::string& executable){
- LoaderOptions options;
- if(const char* root=std::getenv("ON1X_STDLIB");root&&*root)options.stdlib=root;
- else{
-  fs::path binary=executable;
+  LoaderOptions options;
+   fs::path binary=executable;
   if(!binary.has_parent_path())if(const char* path=std::getenv("PATH")){
    std::istringstream search(path);std::string dir;
    while(std::getline(search,dir,':'))if(!dir.empty()&&regular(fs::path(dir)/binary)){binary=fs::path(dir)/binary;break;}
   }
-  std::error_code ec;auto resolved=fs::canonical(binary,ec);
+   std::error_code ec;auto resolved=fs::canonical(binary,ec);
+   // Native authorization must not inherit argv[0], PATH, ON1X_STDLIB or CWD.
+   // Other hosts need an audited executable-location API before auto-activation.
+#if defined(__linux__)
+   std::error_code self_error;auto self=fs::canonical("/proc/self/exe",self_error);
+   if(!self_error){
+    if(directory(self.parent_path()/"../share/on1x"))options.extensions.directory=self.parent_path()/"../libexec/on1x";
+    else options.extensions.directory=self.parent_path()/"stdppx";
+   }
+#endif
+  if(const char* root=std::getenv("ON1X_STDLIB");root&&*root)options.stdlib=root;
+  else{
   if(!ec&&directory(resolved.parent_path()/"../share/on1x/stdlib"))options.stdlib=resolved.parent_path()/"../share/on1x/stdlib";
 #ifdef ON1X_STDLIB_ROOT
   else options.stdlib=ON1X_STDLIB_ROOT;

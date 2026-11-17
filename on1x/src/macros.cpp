@@ -30,15 +30,16 @@ class Expander {
  [[noreturn]] void fail(const Location& at,const std::string& text){throw Error(at,"macro: "+text);}
  void charge(std::size_t size,const Location& at){if(size>bytes)fail(at,"expanded syntax byte limit exceeded");bytes-=size;}
  void charge(const std::string& text,const Location& at){charge(text.size(),at);}
- void account_pattern(const Pattern& p){charge(p.name,p.where);charge(p.where.file,p.where);for(const auto& c:p.elements)account_pattern(c);}
+ void account_pattern(const Pattern& p){charge(p.name,p.where);charge(p.where.file,p.where);for(const auto& label:p.labels)charge(label,p.where);for(const auto& c:p.elements)account_pattern(c);}
  void account_macro(const Macro& m){
   charge(m.name,m.where);charge(m.where.file,m.where);charge(m.ellipsis,m.where);for(const auto& literal:m.literals)charge(literal,m.where);
   auto pattern=[&](auto&& self,const MacroParameter& p)->void{charge(p.name,p.where);charge(p.category,p.where);charge(p.where.file,p.where);if(p.literal)account(*p.literal);for(const auto& c:p.elements)self(self,c);if(p.tail)self(self,*p.tail);};
   for(const auto& r:m.rules){charge(r.where.file,r.where);for(const auto& p:r.parameters)pattern(pattern,p);if(r.tail)pattern(pattern,*r.tail);if(r.expression)account(*r.expression);account_body(r.body);}
  }
- void account_body(const std::vector<Stmt>& body){for(const auto& s:body){charge(s.name,s.where);charge(s.where.file,s.where);if(s.pattern)account_pattern(*s.pattern);if(s.value)account(*s.value);account_body(s.body);account_body(s.otherwise);}}
+ void account_body(const std::vector<Stmt>& body){for(const auto& s:body){charge(s.name,s.where);charge(s.label,s.where);charge(s.where.file,s.where);if(s.pattern)account_pattern(*s.pattern);if(s.value)account(*s.value);account_body(s.body);account_body(s.otherwise);}}
  void account(const Expr& e){
-  charge(e.text,e.where);charge(e.where.file,e.where);
+   charge(e.text,e.where);charge(e.where.file,e.where);
+   for(const auto& p:e.patterns)account_pattern(p);
   for(const auto& p:e.parameters){charge(p.name,p.where);charge(p.where.file,p.where);if(p.pattern)account_pattern(*p.pattern);}
   for(const auto& m:e.syntax_definitions)account_macro(m);
   if(e.callee)account(*e.callee);
@@ -56,7 +57,9 @@ class Expander {
   auto pattern=[&](auto&& self,const MacroParameter& p)->void{if(p.literal)collect(*p.literal);for(const auto& c:p.elements)self(self,c);if(p.tail)self(self,*p.tail);};
   for(const auto& r:m.rules){for(const auto& p:r.parameters)pattern(pattern,p);if(r.tail)pattern(pattern,*r.tail);if(r.expression)collect(*r.expression);collect_body(r.body);}
  }
- void collect(const Expr& e){
+  void collect(const Expr& e){
+   for(const auto& p:e.patterns)collect_pattern(p);
+   if(e.kind==K::PatternMatch)remember(e.text,e.where);
   if(e.kind==K::Variable||e.kind==K::MacroCall)remember(e.text,e.where);
   for(const auto& p:e.parameters){remember(p.name,p.where);if(p.pattern)collect_pattern(*p.pattern);}
   for(const auto& m:e.syntax_definitions)collect_macro(m);
@@ -98,7 +101,10 @@ class Expander {
   std::string fresh;do{fresh="on1x_hygiene_"+std::to_string(++serial);}while(used.contains(fresh));remember(fresh,at);
   charge(name.size()+fresh.size()+64,at);scopes.back().emplace(std::move(key),fresh);name=std::move(fresh);context=0;
  }
- void bind(Pattern& p){if(p.is_tuple())for(auto& c:p.elements)bind(c);else bind(p.name,p.context,p.where);}
+ void bind(Pattern& p){
+  pattern_bindings(p,[&](Pattern& name){bind(name.name,name.context,name.where);});
+  auto mirror=[&](auto&& self,Pattern& part)->void{if(part.kind==Pattern::Kind::Or&&part.elements.size()==2){pattern_bindings(part.elements[1],[&](Pattern& name){read(name.name,name.context);});}for(auto& c:part.elements)self(self,c);};mirror(mirror,p);
+ }
  std::shared_ptr<const Values> snapshot(const Location& at){
   auto out=std::make_shared<Values>();
   for(const auto& scope:scopes)for(const auto& [key,name]:scope){if(!out->contains(key))charge(key.first.size()+name.size()+64,at);(*out)[key]=name;}
@@ -139,12 +145,14 @@ class Expander {
   auto saved=syntax;syntax=group(e.syntax_definitions,e.text=="letrec_syntax",e.where);
   auto replacement=std::move(e.children[0]);expression(*replacement,depth+1);syntax=std::move(saved);e=std::move(*replacement);
  }
- void expression(Expr& e,unsigned depth){
+  void expression(Expr& e,unsigned depth){
   if(depth>=max_syntax_depth)fail(e.where,"expanded syntax depth limit exceeded");
   if(e.kind==K::MacroCall){call(e,match(e),depth);return;}
   if(e.kind==K::SyntaxLet){local(e,depth,false);return;}
   if(e.kind==K::SyntaxHole)fail(e.where,"unexpanded template variable");
-  if(e.kind==K::Variable)read(e.text,e.context);
+   if(e.kind==K::Variable)read(e.text,e.context);
+   if(e.kind==K::PatternMatch){expression(*e.children.at(0),depth+1);scopes.emplace_back();if(!e.text.empty())bind(e.text,e.context,e.where);for(std::size_t i=1;i<e.children.size();++i)expression(*e.children[i],depth+1);scopes.pop_back();return;}
+   if(e.kind==K::Case){scopes.emplace_back();for(auto& p:e.patterns)bind(p);expression(*e.children.at(0),depth+1);scopes.emplace_back();body(e.body,false,depth+1);expression(*e.children.at(1),depth+1);scopes.pop_back();scopes.pop_back();return;}
   if(e.callee)expression(*e.callee,depth+1);
   if(e.syntax_tail)expression(*e.syntax_tail,depth+1);
   for(auto& child:e.children)expression(*child,depth+1);
@@ -166,8 +174,17 @@ class Expander {
     call(*s.value,std::move(selected),depth+1);
    }else if(s.value)expression(*s.value,depth+1);
    if(s.kind==Stmt::Kind::Let){if(s.pattern)bind(*s.pattern);else bind(s.name,s.context,s.where);}
-   else if(s.kind==Stmt::Kind::Assign)read(s.name,s.context);
-   body(s.body,true,depth+1);body(s.otherwise,true,depth+1);out.push_back(std::move(s));
+    else if(s.kind==Stmt::Kind::Assign)read(s.name,s.context);
+    if((s.kind==Stmt::Kind::Break||s.kind==Stmt::Kind::Continue)&&s.label.empty()){
+     auto name=s.kind==Stmt::Kind::Break?"break":"continue";auto binding=value(name,s.label_context);
+     if(binding||globals.contains(name)){
+      auto e=std::make_unique<Expr>();e->kind=K::Variable;e->text=binding?*binding:name;e->where=s.where;
+      s.kind=Stmt::Kind::Expr;s.value=std::move(e);s.label_context=0;
+     }
+    }
+    if(s.kind==Stmt::Kind::Range){scopes.emplace_back();bind(s.name,s.context,s.where);body(s.body,true,depth+1);scopes.pop_back();}
+    else body(s.body,true,depth+1);
+    body(s.otherwise,true,depth+1);out.push_back(std::move(s));
   }
   b=std::move(out);if(scope)scopes.pop_back();
  }

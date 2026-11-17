@@ -1,6 +1,9 @@
 #include <on1x/ast.hpp>
 #include <on1x/infer.hpp>
 #include <on1x/meta.hpp>
+#include <on1x/canonical/control.hpp>
+#include <on1x/canonical/values.hpp>
+#include <on1x/patterns.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/numeric.hpp>
 #include <charconv>
@@ -13,6 +16,7 @@
 namespace on1x {
 namespace {
 void extern_leaves(const Pattern& pattern,const Type& type,std::vector<Type>& types,std::set<std::string>& names){
+ patterns::require_binding(pattern);
  if(pattern.is_tuple()){
   if(!type.is_tuple()||type.elements().size()!=pattern.elements.size())throw Error(pattern.where,"extern pattern must match its concrete tuple annotation");
   for(std::size_t i=0;i<pattern.elements.size();++i)extern_leaves(pattern.elements[i],type.elements()[i],types,names);
@@ -43,6 +47,7 @@ bool is_intrinsic_name(const std::string& name){
 namespace {
 struct Binding { Type type; bool is_mutable; std::size_t scope; };
 class Checker {
+ std::vector<std::pair<std::size_t,bool>> regions;
  Unit& unit;
  std::map<std::string,const Function*> funcs;
  std::map<std::string,Type> signatures;
@@ -123,7 +128,8 @@ class Checker {
   }
   checked_types.insert(type);
  }
- void bind_pattern(const Pattern& pattern,const Type& type){
+  void bind_pattern(const Pattern& pattern,const Type& type){
+   patterns::require_binding(pattern);
   if(!pattern.is_tuple()){define(pattern.name,type,false,pattern.where);return;}
   if(!type.is_tuple())fail(pattern.where,"tuple binding pattern requires a tuple, got "+type_name(type));
   if(pattern.elements.size()!=type.elements().size())fail(pattern.where,"tuple binding pattern has wrong arity");
@@ -221,7 +227,39 @@ class Checker {
       if(e.text[++i]=='0')fail(e.where,"NUL escape is not supported by the C-string ABI");
      }
     return e.type=Type::String;
-    case Expr::Kind::Variable:return resolve_name(e);
+     case Expr::Kind::Variable:return resolve_name(e);
+     case Expr::Kind::Unit:if(!e.children.empty()||!e.body.empty())fail(e.where,"malformed unit value");return e.type=Type::Void;
+     case Expr::Kind::PatternMatch:{
+      if(e.children.size()<2)fail(e.where,"empty match is not exhaustive");
+      auto t=check_expr(*e.children[0]);if(t==Type::Void)fail(e.where,"match scrutinee cannot be void");push();if(!e.text.empty())define(e.text,t,false,e.where);
+      Type result=Type::Invalid;bool all_exit=true;
+      for(std::size_t i=1;i<e.children.size();++i){auto& arm=*e.children[i];if(arm.kind!=Expr::Kind::Case||arm.patterns.size()!=1||arm.children.size()!=2)fail(arm.where,"malformed match arm");
+       auto bindings=patterns::check(arm.patterns[0],t);push();for(const auto& [name,type]:bindings)define(name,type,false,arm.where);
+       equal(check_expr(*arm.children[0]),Type::Bool,arm.where);push();bool exits=check_block(arm.body,false);auto value=check_expr(*arm.children[1]);
+       if(exits&&arm.children[1]->kind!=Expr::Kind::Unit)fail(arm.where,"unreachable match arm result");
+       if(resource(value))fail(arm.where,"match results cannot transfer or discard unique JSON resources/views");
+       exits=exits||arm.children[1]->noreturn;
+       if(!exits){all_exit=false;if(!e.statement_match){if(result==Type::Invalid)result=value;else equal(value,result,arm.where);}}
+       pop();pop();
+      }
+      pop();patterns::coverage(e);e.noreturn=all_exit;return e.type=e.statement_match||result==Type::Invalid?Type{Type::Void}:result;
+     }
+     case Expr::Kind::Case:fail(e.where,"match arm outside a match");
+     case Expr::Kind::Region:{
+      if(e.children.size()!=1)fail(e.where,"canonical value region requires one result");
+      push();bool exits=check_block(e.body,false);auto result=check_expr(*e.children[0]);pop();
+      if(exits!=e.noreturn)fail(e.where,"canonical value region control mismatch");
+      equal(result,e.type,e.where);return e.type;
+     }
+     case Expr::Kind::TagTest:case Expr::Kind::Payload:{
+      if(e.children.size()!=1)fail(e.where,"sum control operation requires one operand");
+      auto t=child(0);if(t.kind()!=Type::Sum)fail(e.where,"sum control operation requires a closed sum");auto tag=std::find(t.labels().begin(),t.labels().end(),e.text);if(tag==t.labels().end())fail(e.where,"unknown sum control tag");e.projection=static_cast<std::size_t>(tag-t.labels().begin());
+      auto result=e.kind==Expr::Kind::TagTest?Type{Type::Bool}:t.elements()[e.projection];equal(e.type,result,e.where);return result;
+     }
+     case Expr::Kind::Project:{
+      if(e.children.size()!=1)fail(e.where,"tuple projection requires one operand");
+      auto t=child(0);if(!t.is_tuple()||e.projection>=t.elements().size())fail(e.where,"invalid canonical tuple projection");equal(e.type,t.elements()[e.projection],e.where);return e.type;
+     }
      case Expr::Kind::Tuple:{
      std::vector<Type> elements;for(auto& element:e.children)elements.push_back(check_expr(*element));
      auto type=Type::tuple(std::move(elements));validate_type(type,e.where);return e.type=std::move(type);
@@ -317,7 +355,7 @@ class Checker {
   }return Type::Invalid;
  }
  bool check_block(std::vector<Stmt>& body,bool owns_scope=true){if(owns_scope)push();bool guarantees=false;
-  for(auto& s:body){if(guarantees)fail(s.where,"unreachable statement after return");
+  for(auto& s:body){if(guarantees)fail(s.where,"unreachable statement after return or loop exit");
    switch(s.kind){
     case Stmt::Kind::Template:{
      check_block(s.body,false);
@@ -348,10 +386,18 @@ class Checker {
      if(resource(t))fail(s.where,"returning resources requires ownership/lifetime lowering");
      guarantees=true;break;}
     case Stmt::Kind::If:{equal(check_expr(*s.value),Type::Bool,s.where);bool yes=check_block(s.body),no=check_block(s.otherwise);guarantees=yes&&!s.otherwise.empty()&&no;break;}
-    case Stmt::Kind::While:{equal(check_expr(*s.value),Type::Bool,s.where);(void)check_block(s.body);break;}
+     case Stmt::Kind::While:{equal(check_expr(*s.value),Type::Bool,s.where);(void)check_block(s.body);(void)check_block(s.otherwise);break;}
+     case Stmt::Kind::Break:case Stmt::Kind::Continue:guarantees=true;break;
+     case Stmt::Kind::Range:fail(s.where,"range was not canonicalized");
+     case Stmt::Kind::Storage:validate_type(s.declared,s.where);if(s.declared==Type::Void||resource(s.declared))fail(s.where,"invalid canonical storage type");define(s.name,s.declared,false,s.where);break;
+     case Stmt::Kind::Initialize:equal(check_expr(*s.value),find(s.name,s.where).type,s.where);break;
+     case Stmt::Kind::Region:{regions.push_back({s.control_target,false});bool exits=check_block(s.body);bool joins=regions.back().second;regions.pop_back();guarantees=exits&&!joins;break;}
+     case Stmt::Kind::Leave:{auto target=std::find_if(regions.rbegin(),regions.rend(),[&](const auto& r){return r.first==s.control_target;});if(target==regions.rend())fail(s.where,"missing canonical region target");target->second=true;guarantees=true;break;}
+     case Stmt::Kind::Trap:guarantees=true;break;
     case Stmt::Kind::Block:{guarantees=check_block(s.body);break;}
     case Stmt::Kind::Expr:{Type t=check_expr(*s.value);
      if(resource(t))fail(s.where,"discarding an owned or borrowed resource is not allowed");
+     if(s.value->noreturn)guarantees=true;
      break;}
    }
   }
@@ -400,5 +446,5 @@ class Checker {
  }
 };
 }
-void check(Unit&u){expand_macros(u);meta::require_core(u);infer_types(u);Checker(u).run();}
+void check(Unit&u){expand_macros(u);meta::require_core(u);infer_types(u);canonical::lower_control(u);Checker(u).run();if(canonical::needs_values(u)){canonical::lower_values(u);Checker(u).run();}canonical::verify_control(u);canonical::verify_values(u);}
 }

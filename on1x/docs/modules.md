@@ -1,5 +1,11 @@
 # Modules, pervasive bindings and library loading
 
+The opt-in [Category declaration gateway](category.md) expands native, local
+scalar declarations before export binding. Generated selectors are ordinary
+checked exports; protocol/witness metadata is not yet an imported interface.
+Source feature activation is module-local, while CLI activation applies to the
+compilation unit. This does not add module signatures, functors or sealing.
+
 On1x resolves imports at compile time, before hygienic macros, PPX, staging,
 inference and ordinary checking. Generated programs contain C11 and the selected
 runtime adapters. Module objects do not exist at runtime.

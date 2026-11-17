@@ -5,6 +5,20 @@ is in `include/on1x/backend/mir.hpp` and `src/backend/`. It consumes the existin
 checked, specialized HIR after imports, macros, PPX and staging admission.
 The default `--emit-c` continues to use the established HIR emitter.
 
+Intrinsic [statement loops](core-syntax.md) now lower through explicit
+preheader/header/body/latch/exit edges, including labeled break/continue and
+once-evaluated i64 ranges. No new MIR opcodes/format version are needed. CFG,
+effect, slot-initialization and dominance verification remain mandatory; the
+reference evaluator/round-trips/transactional passes execute the same edges.
+Resource-bearing loops stay on HIR→C11 and are not approximated as scalar MIR.
+
+Guarded [structural matches](core-syntax.md) lower to verified typed decision
+regions before MIR. Numeric/bool values and trivial tuples use existing slots,
+extracts, branches and jumps in v1–v3, with mandatory initialization verification
+and differential tests. Continues nested in expression regions still execute the
+target latch. Records/sums/arrays/slices, strings and managed/foreign resources
+remain unsupported MIR profiles; C11 matching does not widen those boundaries.
+
 The v2 continuation adds f64 literals/operations and **trivially copied tuples**.
 Existing scalar source still lowers to v1, and existing v1 artifacts continue to
 decode and round-trip as v1. Lowering selects v2 only when extended types/opcodes

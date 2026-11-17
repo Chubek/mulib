@@ -47,6 +47,14 @@ No Chisel, GC, MemTKX or C++ dependency is added to those programs.
 | Scope exit / return | End loans and drop owners in reverse lexical order |
 | `println`, `assert`, checked arithmetic | Existing scalar/terminal-failure semantics |
 
+Intrinsic scalar/numeric-tuple matches now use checked decision/initialization
+regions and the same public Chisel CFG. Arm-local JSON creates/loans/cleanup and
+return/break/continue edges are modeled, including lexical exits nested inside
+value expressions and short-circuit paths. A fatal unmatched decision is a
+non-returning sink, not a normal exit with invented drops. Sum/record/array/slice
+and managed-value patterns remain outside this adapter; C11 support does not
+claim Chisel proof for them.
+
 The JSON operations are the existing **trusted handwritten facade** over canonical
 MuLIB. Its implementation and C11 cleanup are tested independently; Chisel checks
 the client protocol. JSON mutation is not exposed by this facade. Fatal `or_die`

@@ -48,6 +48,8 @@ def main():
     cli.add_argument('--no-prelude', action='store_true')
     cli.add_argument('--prelude', action='append', default=[])
     cli.add_argument('--stdppx', action=PpxAction, dest='ppx_chain', metavar='PROCESSOR')
+    cli.add_argument('--enable', action='append', default=[], metavar='FEATURES')
+    cli.add_argument('--disable', action='append', default=[], metavar='FEATURES')
     cli.add_argument('--mulib-root', type=Path, default=Path(os.environ.get('ON1X_MULIB_ROOT', MULIB)))
     cli.add_argument('--mulib', action='append', default=[], metavar='KERNEL')
     cli.add_argument('--mulib-fixture', action='append', default=[], metavar='GROUP')
@@ -84,6 +86,10 @@ def main():
             compiler += ['--prelude', path]
         for option, arguments in args.ppx_chain or []:
             compiler += [option, *arguments]
+        for name in args.enable:
+            compiler += ['--enable', name]
+        for name in args.disable:
+            compiler += ['--disable', name]
         for label, schema in args.ppx_schema:
             compiler += ['--ppx-schema', label, schema]
         subprocess.run(compiler, check=True)

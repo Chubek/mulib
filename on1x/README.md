@@ -6,6 +6,20 @@ original native processors and contracts are preserved.
 
 ## Language implementation continuation
 
+Intrinsic [core control and matching](docs/core-syntax.md) implements a G1/G2
+slice of `ON1X_CORE_SYNTAX_ADDITIONS.md`: statement loops, checked i64 ranges,
+lexical exits, and guarded structural `match ... with` statements/expressions.
+Typed decision regions execute through C11; scalar/numeric tuple matches also
+execute through existing MIR. Loop values, owning lists, cleanup/error syntax
+and concurrency remain unsupported; the specification is not complete.
+
+Category now has an executable **M0/M1 local scalar slice**: `@enable Protocols`
+invokes a bundled native On1x-authored processor for `@extension Protocols { ... }`
+declarations and generates explicit, normally typechecked witness selectors.
+[Category](docs/category.md) documents native pinning, activation and installation.
+Constrained generics, associated types, functors/sealing and auto protocols remain
+unsupported; `CATEGORY.md` is still the broader implementation specification.
+
 The M1 numeric value slice adds real `f64` to the existing HIR/C11 compiler:
 arithmetic/comparisons, explicit checked conversions, exact bit transport and hex
 printing, closures/tuples/staging, and raw C `double` leaves/results. The initial

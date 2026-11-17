@@ -46,9 +46,11 @@ extern "C" int on1x_generated_scan(const char* source,size_t n,on1x_token_callba
    }
    if(!done){if(error)*error=start;return 1;}
   }
-   else if(pos+2<n&&std::strncmp(source+pos,"...",3)==0)pos+=3;
+   else if(pos+2<n&&(std::strncmp(source+pos,"...",3)==0||std::strncmp(source+pos,"..=",3)==0))pos+=3;
+   else if(pos+1<n&&std::strncmp(source+pos,"..",2)==0)pos+=2;
    else if(pos+1<n && (std::strncmp(source+pos,"==",2)==0||std::strncmp(source+pos,"!=",2)==0||std::strncmp(source+pos,"<=",2)==0||std::strncmp(source+pos,">=",2)==0||std::strncmp(source+pos,"&&",2)==0||std::strncmp(source+pos,"||",2)==0||std::strncmp(source+pos,"->",2)==0||std::strncmp(source+pos,"=>",2)==0))pos+=2;
-   else if(std::strchr("+*-/%<>=!;:,(){}[]@$.",c))++pos;
+   else if(pos+1<n&&std::strncmp(source+pos,"::",2)==0)pos+=2;
+   else if(std::strchr("+*-/%<>=!;:,(){}[]@$.|",c))++pos;
   else {if(error)*error=start;return 1;}
   std::string token(source+start,pos-start);cb(ctx,token.c_str(),start);
  }

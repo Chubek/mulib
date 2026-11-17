@@ -1,5 +1,12 @@
 # On1x standard PPXs
 
+An additional **native On1x Category processor** is now built for opt-in
+`@enable Protocols` / `--enable Protocols`. It is separate from the ordinary v1
+processor catalog below: `--stdppx` still selects Python files. Its grammar and
+lowering live in On1x libraries, not Python/C++. See [Category](../docs/category.md)
+for the explicit local scalar profile, trusted native activation and remaining
+typed-metadata/generic/functor stages.
+
 **24 Python processors and 15 native On1x processors** implement bounded,
 schema-v1 source transformations. CMake builds/installs all native executables;
 the compiler always runs its normal inference, type, staging and ownership checks

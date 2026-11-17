@@ -3,6 +3,8 @@
 #include <on1x/primitives.hpp>
 #include <on1x/staging.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/canonical/control.hpp>
+#include <on1x/patterns.hpp>
 #include <deque>
 #include <algorithm>
 #include <map>
@@ -23,7 +25,7 @@ bool holes_in(const std::vector<Stmt>& body) {
  return false;
 }
 bool holes_in(const Expr& expression) {
-  if(expression.kind>=Expr::Kind::Record)return true;
+  if((expression.kind>=Expr::Kind::Record&&expression.kind<=Expr::Kind::Length)||expression.kind==Expr::Kind::PatternMatch)return true;
  if(expression.kind==Expr::Kind::Lambda){
    if(has_type_holes(expression.result)||expression.result.has_foralls()||holes_in(expression.body))return true;
    for(const auto& parameter:expression.parameters)if(has_type_holes(parameter.type)||parameter.type.has_foralls())return true;
@@ -703,7 +705,57 @@ class Inference {
   }
   fail(unit.functions.front().where,"forall demand expansion limit exceeded");
  }
- Term expression(Expr& e,std::optional<Term> hint={}) {
+  std::map<std::string,Term> match_pattern(Pattern& p,Term input,std::size_t depth=0){
+   tick(p.where);if(depth>=256)fail(p.where,"pattern inference depth limit exceeded");
+   using P=Pattern::Kind;std::map<std::string,Term> out;
+   slots.push_back({&p.type,input,p.where,"match pattern"});
+   auto put=[&](const std::string& name,Term t){if(name.empty()||!out.emplace(name,t).second)fail(p.where,"duplicate pattern binder: "+name);};
+   auto child=[&](std::size_t i,Term t){for(const auto& [name,type]:match_pattern(p.elements.at(i),t,depth+1))put(name,type);};
+   auto container=head(input,p.where);auto kind=nodes[container].kind;
+   if(p.is_tuple()){
+    if(kind==Type::Hole){std::vector<Term> fields;for(std::size_t i=0;i<p.elements.size();++i)fields.push_back(fresh(p.where));unify(input,add(Type::Tuple,fields,0,p.where),p.where);container=head(input,p.where);}
+    auto fields=nodes[container].parameters;if(nodes[container].kind!=Type::Tuple||fields.size()!=p.elements.size())fail(p.where,"tuple pattern arity/type mismatch");
+    for(std::size_t i=0;i<fields.size();++i)child(i,fields[i]);
+    return out;
+   }
+   switch(p.kind){
+   case P::Name:put(p.name,input);break;
+   case P::Wildcard:case P::Rest:break;
+   case P::Literal:{auto value=patterns::literal(p);unify(input,scalar(value.type.kind(),p.where),p.where);break;}
+   case P::As:if(p.elements.size()!=1)fail(p.where,"invalid as-pattern");child(0,input);put(p.name,input);break;
+   case P::Or:{
+    if(p.elements.size()!=2)fail(p.where,"invalid or-pattern");
+    auto a=match_pattern(p.elements[0],input,depth+1),b=match_pattern(p.elements[1],input,depth+1);
+    if(a.size()!=b.size())fail(p.where,"or-pattern alternatives must bind the same names");
+    for(const auto& [name,t]:a){auto found=b.find(name);if(found==b.end())fail(p.where,"or-pattern alternatives must bind the same names");unify(t,found->second,p.where);}out=std::move(a);break;
+   }
+   case P::Record:{
+    if(kind==Type::Hole&&!p.open){std::vector<Term> fields;for(std::size_t i=0;i<p.elements.size();++i)fields.push_back(fresh(p.where));unify(input,data(Type::Record,fields,p.labels,0,p.where),p.where);container=head(input,p.where);}
+    if(nodes[container].kind!=Type::Record)fail(p.where,"record pattern requires a known record shape");
+    auto labels=nodes[container].labels;auto fields=nodes[container].parameters;
+    if(p.labels.size()!=p.elements.size())fail(p.where,"record pattern field arity mismatch");
+    for(std::size_t i=0;i<p.labels.size();++i){auto f=std::find(labels.begin(),labels.end(),p.labels[i]);if(f==labels.end())fail(p.where,"unknown record pattern field: "+p.labels[i]);child(i,fields[static_cast<std::size_t>(f-labels.begin())]);}break;
+   }
+   case P::Array:{
+    if(kind==Type::Hole){unify(input,data(Type::Array,{fresh(p.where)},{},p.elements.size(),p.where),p.where);container=head(input,p.where);}
+    kind=nodes[container].kind;if(kind!=Type::Array&&kind!=Type::Slice)fail(p.where,"array pattern requires a known array or slice");
+    auto element=nodes[container].parameters[0];for(std::size_t i=0;i<p.elements.size();++i)child(i,element);break;
+   }
+   case P::Variant:{
+    if(kind!=Type::Sum)fail(p.where,"constructor pattern requires a known closed sum; annotate the parameter");
+    auto labels=nodes[container].labels;auto fields=nodes[container].parameters;auto tag=std::find(labels.begin(),labels.end(),p.name);if(tag==labels.end())fail(p.where,"unknown constructor: "+p.name);
+    auto payload=fields[static_cast<std::size_t>(tag-labels.begin())];
+     if(p.elements.size()==1)child(0,payload);else{
+     auto h=head(payload,p.where);auto parts=nodes[h].parameters;if(p.elements.empty()&&nodes[h].kind==Type::Record&&parts.empty())break;
+     if(nodes[h].kind!=Type::Tuple||parts.size()!=p.elements.size())fail(p.where,"constructor payload arity mismatch");
+     for(std::size_t i=0;i<parts.size();++i)child(i,parts[i]);
+    }break;
+   }
+   case P::Tuple:fail(p.where,"invalid tuple pattern");
+   }
+   return out;
+  }
+  Term expression(Expr& e,std::optional<Term> hint={}) {
   Term result=0;const auto& at=e.where;
   tick(at);
    switch(e.kind) {
@@ -721,7 +773,19 @@ class Inference {
     case Expr::Kind::Integer:case Expr::Kind::Float:result=scalar(numeric_literal_type(e.text).kind(),at);break;
   case Expr::Kind::Boolean:result=scalar(Type::Bool,at);break;
   case Expr::Kind::String:result=scalar(Type::String,at);break;
-  case Expr::Kind::Variable:return name(e);
+   case Expr::Kind::Variable:return name(e);
+   case Expr::Kind::Unit:result=scalar(Type::Void,at);break;
+   case Expr::Kind::PatternMatch:{
+    auto scrutinee=expression(*e.children.at(0));result=fresh(at);bool fallthrough=false;scopes.emplace_back();
+    if(!e.text.empty())define(e.text,scrutinee,at);
+    for(std::size_t i=1;i<e.children.size();++i){auto& arm=*e.children[i];if(arm.kind!=Expr::Kind::Case||arm.patterns.size()!=1||arm.children.size()!=2)fail(arm.where,"malformed match arm");
+     scopes.emplace_back();for(const auto& [name,t]:match_pattern(arm.patterns[0],scrutinee))define(name,t,arm.where);
+     unify(expression(*arm.children[0]),scalar(Type::Bool,arm.where),arm.where);scopes.emplace_back();block(arm.body,false);auto value=expression(*arm.children[1]);
+     if(!e.statement_match&&!patterns::terminates(arm.body)&&!patterns::terminates(*arm.children[1])){unify(value,result,arm.where);fallthrough=true;}scopes.pop_back();scopes.pop_back();
+    }
+    scopes.pop_back();if(e.statement_match||!fallthrough)result=scalar(Type::Void,at);break;
+   }
+   case Expr::Kind::Case:case Expr::Kind::Region:case Expr::Kind::TagTest:case Expr::Kind::Payload:case Expr::Kind::Project:fail(at,"private or misplaced expression before inference");
    case Expr::Kind::Tuple:{
     std::vector<Term> elements;for(auto& element:e.children)elements.push_back(expression(*element));
     result=add(Type::Tuple,std::move(elements),0,at);break;
@@ -872,6 +936,9 @@ class Inference {
    }
    case Stmt::Kind::Block:block(statement.body);break;
    case Stmt::Kind::Expr:expression(*statement.value);break;
+   case Stmt::Kind::Break:case Stmt::Kind::Continue:break;
+    case Stmt::Kind::Range:fail(at,"range was not canonicalized");
+    case Stmt::Kind::Storage:case Stmt::Kind::Initialize:case Stmt::Kind::Region:case Stmt::Kind::Leave:case Stmt::Kind::Trap:fail(at,"private region statement before inference");
    case Stmt::Kind::Template:fail(at,"cannot reinfer an elaborated template");
    }
   }
@@ -999,10 +1066,11 @@ public:
 }
 
 void infer_types(Unit& unit,const InferenceLimits& limits) {
-  if(needs_inference(unit)||needs_staging(unit)){
+  if(needs_inference(unit)||needs_staging(unit)||canonical::needs_control(unit)){
    auto budget=limits.expanded_ast;auto working=clone_unit(unit,budget);
-   lower_stages(working);
-  Inference(working,limits).run();unit=std::move(working);
+    lower_stages(working);
+    canonical::lower_control(working);
+   Inference(working,limits).run();canonical::lower_control(working);unit=std::move(working);
  }
 }
 }

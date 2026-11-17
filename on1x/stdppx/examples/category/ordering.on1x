@@ -1,0 +1,22 @@
+@enable Protocols;
+@extension Protocols {
+  protocol Ordering<Self> { fn compare(a: Self, b: Self) -> i64; }
+  witness Ascending: Ordering<i64> {
+    fn compare(a: i64, b: i64) -> i64 {
+      if a < b { return -1; }
+      if a > b { return 1; }
+      return 0;
+    }
+  }
+  witness Descending: Ordering<i64> {
+    fn compare(a: i64, b: i64) -> i64 {
+      if a < b { return 1; }
+      if a > b { return -1; }
+      return 0;
+    }
+  }
+}
+fn main() {
+  println(Ascending_compare(-9223372036854775808, 9223372036854775807));
+  println(Descending_compare(-9223372036854775808, 9223372036854775807));
+}

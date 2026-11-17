@@ -1,0 +1,8 @@
+(on1x.extensions 1
+ ((feature "Protocols" "on1x-ppx-protocols" "1" "explicit-local-scalar-v1" ())
+  (unavailable "Functors" "module interfaces and nominal sealing are not implemented")
+  (unavailable "Derive" "checked structural witness derivation is not implemented")
+  (unavailable "Laws" "Category law generation is not implemented")
+  (unavailable "AutoProtocols" "host ownership/effect evidence is not implemented")
+  (unavailable "DynamicProtocols" "existential resource ABI is not implemented")
+  (unavailable "HigherKinds" "kind-checked constructors are not implemented")))

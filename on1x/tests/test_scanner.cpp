@@ -82,6 +82,11 @@ int main() {
         }
         location(saved.back().where, source, source.size());
 
+        auto ranges=on1x::scan("0..10 0..=10 0...10 ..= ... .. .", "scanner-test");
+        std::vector<std::string> range_tokens={"0","..","10","0","..=","10","0","...","10","..=","...","..",".","<eof>"};
+        require(ranges.size()==range_tokens.size(),"range token count mismatch");
+        for(std::size_t i=0;i<ranges.size();++i)require(ranges[i].text==range_tokens[i],"range/ellipsis longest-match regression");
+
         // Returned tokens must not reference the destroyed ASDL arena or source.
         source.assign(source.size(), 'x');
         repeated_scans();

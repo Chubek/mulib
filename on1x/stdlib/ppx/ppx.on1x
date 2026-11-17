@@ -28,10 +28,11 @@ fn ppx_schema_env() -> sexpr {
   if path == "" { tool_fail("set ON1X_PPX_SCHEMA to grammar/PPX.schema.json"); }
   return ppx_schema_load(path);
 }
-fn ppx_serve(schema: sexpr, transform: fn(sexpr, string) -> sexpr) {
+fn ppx_serve_as(schema: sexpr, input: string, output: string, transform: fn(sexpr, string) -> sexpr) {
   if tool_env("ON1X_PPX_PROTOCOL") != "1" { tool_fail("unsupported/missing ON1X_PPX_PROTOCOL"); }
   let label = tool_env("ON1X_PPX_LABEL"); if !ppx_name(label) || text_len(label) > 128 { tool_fail("invalid/missing ON1X_PPX_LABEL"); }
-  let tree = sexpr_parse(io_stdin()); ppx_validate(schema, tree);
-  let result = transform(tree, label); ppx_validate(schema, result);
+  let tree = sexpr_parse(io_stdin()); ppx_validate_at(schema, tree, input, "$", 0, 0);
+  let result = transform(tree, label); ppx_validate_at(schema, result, output, "$", 0, 0);
   io_stdout(sexpr_print(result));
 }
+fn ppx_serve(schema: sexpr, transform: fn(sexpr, string) -> sexpr) { ppx_serve_as(schema,"Unit","Unit",transform); }

@@ -1,5 +1,20 @@
 # On1x architecture and trust boundaries
 
+The [intrinsic control bridge](core-syntax.md) canonicalizes statement ranges
+after source transforms/staging and resolves loop exits before type checking.
+It reassigns identities after specialization and independently verifies targets,
+source points and function boundaries before C11/MIR or SDK admission. This is
+not the full cleanup/effect/suspension Core proposed by the broader specification.
+
+`src/patterns.cpp` extends the shared name/tuple pattern model with structural
+matching and bounded finite-constructor coverage. After inference/sema,
+`src/canonical/values.cpp` transactionally replaces both match spellings with
+typed decision regions, single-initialization slots and branches/projections.
+`verify_values.cpp` independently checks initialization, tag domination,
+projection types and region transfers before emitters/SDKs. Source PPX cannot
+carry private regions or checked payload-access facts. This is an extension of
+the existing HIR/MIR bridge, not another parser or execution IR.
+
 ## Phases
 
 An opt-in backend-neutral [scalar MIR v1](backend-mir.md) now branches from checked

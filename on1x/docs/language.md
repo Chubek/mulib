@@ -1,5 +1,9 @@
 # On1x language reference — implemented milestone
 
+The intrinsic [control/matching increment](core-syntax.md) adds statement loops,
+ascending i64 ranges, lexical loop exits, and guarded structural match statements
+and expressions. It does not complete the core-syntax specification.
+
 ## Lexical conventions
 
 Source files use ASCII identifier spelling `[A-Za-z_][A-Za-z0-9_]*` and
@@ -55,7 +59,14 @@ statement = ('let'|'var') ID [ ':' type ] '=' expr ';'
           | ID '=' expr ';'
           | 'return' [ expr ] ';'
           | 'if' expr block [ 'else' block ]
-          | 'while' expr block | block | local_syntax_block [';'] | expr ';' ;
+          | [ ID ':' ] loop_statement
+          | ('break'|'continue') [ ID ] ';'
+          | match_expr [';'] | block | local_syntax_block [';'] | expr ';' ;
+loop_statement = 'while' expr block | 'loop' block
+          | 'for' '(' [ init ] ';' [ expr ] ';' [ step ] ')' block
+          | 'for' ID 'in' expr ('..'|'..=') expr block ;
+init      = ('let'|'var') pattern [ ':' type ] '=' expr | ID '=' expr | expr ;
+step      = ID '=' expr | expr ;
 expr    = prefix { binary_operator expr } ;
 prefix  = ('!'|'-') prefix | postfix ;
 postfix = atom { '(' [ expr { ',' expr } ] ')' | '[' ( ID | expr [ ':' expr ] ) ']' } ;
@@ -64,9 +75,18 @@ atom    = '(' expr ')' | '(' expr ',' expr { ',' expr } ')'
         | 'record' '{' [ ID ':' expr { ',' ID ':' expr } ] '}'
         | 'array' '[' [ expr { ',' expr } ] ']'
         | 'variant' '<' sum_type '>' '(' ID ',' expr ')'
-        | 'match' '(' expr ')' '{' arms '}'
+         | 'match' '(' expr ')' '{' arms '}' | match_expr
         | ('splice' | 'lift') '(' expr ')' | local_syntax_expr ;
 arms    = ID '(' pattern ')' '=>' expr { ',' ID '(' pattern ')' '=>' expr } ;
+match_expr = 'match' (expr | 'let' ID '=' expr) 'with' '{' match_arms '}' ;
+match_arms = match_arm { ',' match_arm } [','] ;
+match_arm = match_pattern ['if' expr] '=>' (expr | arm_block) ;
+arm_block = '{' { statement } [expr] '}' ;
+match_pattern = ID | '_' | 'rest' | literal | ID '(' [match_patterns] ')'
+          | '(' match_pattern ',' match_patterns ')' | '[' [match_patterns] ']'
+          | 'record' '{' [ID ':' match_pattern {',' ID ':' match_pattern}] [',' '..'] '}'
+          | match_pattern '|' match_pattern | match_pattern 'as' ID ;
+match_patterns = match_pattern {',' match_pattern} ;
 local_syntax_expr = syntax_group 'expression' '{' expr '}' ;
 local_syntax_block = syntax_group 'block' block ;
 syntax_group = ('let_syntax' | 'letrec_syntax') '{' { macro_definition } '}' ;
@@ -235,8 +255,9 @@ retain independent references and release them on every normal exit/return.
 Raw extern parameters require concrete annotations. Tuple patterns explicitly
 flatten to scalar C parameters, with no foreign aggregate layout inferred;
 see [the extern-pattern ABI contract](polymorphism.md).
-There is no refutable matching, constructor/literal pattern, wildcard pattern,
-field/index projection or exhaustive `match` yet.
+These let/parameter patterns remain irrefutable name/tuple bindings. New match
+patterns, wildcard semantics, guards and by-value field/index projections are
+separate additive forms; see [structural matching](core-syntax.md#structural-match-statements-and-expressions).
 
 Tuple fields are immutable. A `var` holding a whole tuple may be reassigned to a
 value of the same structural type, including self-assignment. Equality,
@@ -290,18 +311,28 @@ length operations evaluate their container expression first, then the
 operands left-to-right, and bounds violations terminate with a located value
 error (exit status 70) exactly like checked arithmetic.
 
-Fields, elements, payloads and match results must be **trivially copied**:
+Fields, elements, payloads and **legacy** match results must be **trivially copied**:
 `i64`, `f64`, `bool`, tuples and other value-data types. Function, string,
 JSON, sexpr and buffer owners are rejected in value-data positions, so this
 profile needs no new allocation or drop path. Expanded value width is bounded
 (256 fields/extent per level, 32 nesting levels, 4096 storage units) with
 deterministic diagnostics. Records/sums do not yet support equality, ordering,
-printing, mutation of fields or elements, pattern guards, recursive nominal
+printing, mutation of fields or elements, recursive nominal
 ADTs, type-parameterized data constructors or row polymorphism. `--emit-ir`
 (scalar MIR), raw extern aggregates and the independent structural/Chisel
 adapters reject value-data kinds instead of approximating them. Generated C11
 uses private compiler-owned structs with a compile-time runtime ABI guard; see
 [the data-model contract](data-model.md).
+
+`match value with { pattern [if guard] => arm, ... }` additionally supports
+nested structural patterns, exact arrays/snapshot slices, or/as patterns,
+scalar/string literals and arm blocks with final expression results. New matches
+can produce ordinary shared/managed results with existing RC cleanup, but cannot
+transfer unique JSON owners/views. Guards run after structural success; finite
+coverage and redundancy checks fail closed. Only scalar/numeric tuple matches
+are admitted to MIR; independent SDK adapters retain their documented limits.
+See [the exact semantics and
+limits](core-syntax.md#structural-match-statements-and-expressions).
 
 ## Type holes and unification
 

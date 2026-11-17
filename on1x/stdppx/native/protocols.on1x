@@ -1,0 +1,6 @@
+import "../../stdlib/ppx/category/witness.on1x";
+fn transform(packet: sexpr, label: string) -> sexpr {
+  if label!="Protocols" { tool_fail("ON1X-CAT-PPX: wrong feature owner"); }
+  return ppx_category_expand(packet);
+}
+fn main() { ppx_serve_as(ppx_schema_env(),"ExtensionInput","ExtensionOutput",transform); }

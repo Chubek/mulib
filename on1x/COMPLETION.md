@@ -5,6 +5,19 @@
 > **Primary deliverable:** an honestly verified, statically compiled, safe-by-default On1x capable of writing **Shylock**, a price prediction, demand estimation, and pricing optimization engine built by composing MuLIB C11 kernels through LibStone ExoML semantic contracts.
 > **Repository:** `https://github.com/Chubek/mulib` (`on1x/`, `include/`, `library/`, `MANIFEST.yaml`); LibStone: `https://github.com/Chubek/libstone` (`moonstone/exoml/`, related analyzers).
 
+Category continuation (2026-11-17): a native On1x-authored processor now expands
+explicit, module-local scalar protocols/witnesses into ordinary checked selectors.
+See [the exact profile](docs/category.md). This does not implement constrained
+generics, associated types, signatures/functors, sealing, ownership auto protocols
+or advance any general resource/FFI/application-completion gate below.
+
+Core-syntax continuation (2026-11-17): intrinsic statement loops, for-C, ascending
+i64 ranges and lexical exits execute through C11 and scalar MIR. Guarded
+structural matching now has typed decision regions and C11 execution, plus MIR
+for admitted scalar/tuple cases. The [profile](docs/core-syntax.md) preserves
+lexical cleanup; loop values, owning lists, defer/error unwinding and concurrency
+remain absent. This does not complete any application/general-language gate.
+
 ## 0. Instructions to the agent: implement, test, and report
 
 This file is an **execution specification**, not an invitation to produce a new roadmap in place of code. Inspect the current tree; implement the missing functionality in dependency order; add negative and integration tests for every new feature; run the relevant toolchains; and update the checked-in documentation with measured results. Do not stop after writing skeletons, interfaces, TODOs, mock backends, speculative contracts, or examples that cannot compile.
@@ -90,7 +103,7 @@ remain open. See `stdlib/_bridge/README.md` and `VERIFICATION.md`.
 - `emit-raw` handles signed/unsigned integers, `_Bool`, binary32 `float`, binary64 `double` and void results; it rejects other floating formats, pointer/length arguments, aggregates, enums, output buffers, callbacks, and important ownership/error semantics.
 - No integrated general `Result`/`Option` and resource-safe MuLIB API, beyond the limited fail-fast JSON facade.
 - No general foreign-owned buffer/handle lifecycle, interprocedural borrow checking, or Chisel/Wetstone usage/effect proof.
-- No completed nominal ADTs, guarded/refutable pattern matching, type-parameterized data types, modules/functors, full callbacks, effect inference, or Plaid concurrency lowering. (Closed structural sums with exhaustive `match` and by-value records/arrays/slices exist in the bounded value profile; `docs/data-model.md`.)
+- No completed nominal/parameterized ADTs, modules/functors, full callbacks, effect inference, or Plaid concurrency lowering. Guarded/refutable structural matching now executes in the bounded profile (`docs/core-syntax.md`); owning lists, recursive constructors and general resource matching remain closed. Existing by-value records/sums/arrays/slices retain the `docs/data-model.md` restrictions.
 - The C11 backend works for the supported subset; native and VM backends are not required for this task and must not block it.
 
 **Read first:** `README.md`, `VERIFICATION.md`, `docs/roadmap.md`, `docs/contracts.md`, `docs/architecture.md`, `docs/language.md`, `docs/closures.md`, `docs/tuples.md`, `docs/staging.md`, `contracts-exoml/catalog.json`, `contracts-exoml/obligations.json`, `tools/on1x-bind.cpp`, `tools/on1x-contracts.py`, `src/{parser,type,infer,sema,codegen,primitives}.cpp`, `runtime/`, `tests/`, and the canonical ExoML `Contract.hpp`, `CDecl.hpp`, `Extract.hpp`, `StaticFFI.hpp` and schema in LibStone.

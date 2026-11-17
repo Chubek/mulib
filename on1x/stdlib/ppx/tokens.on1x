@@ -1,0 +1,43 @@
+import "numbers.on1x";
+import "diagnostic.on1x";
+
+# Generic located token spans. No scanner or Category grammar is duplicated here.
+fn ppx_token_number(value: sexpr, at: sexpr) -> i64 {
+  let (ok,n)=ppx_literal_i64(ppx_integer(sx_text(value),at));
+  if !ok || n<0 { tool_fail("ON1X-CAT-PPX: invalid token coordinate"); } return n;
+}
+fn ppx_source_location(tokens: sexpr) -> sexpr {
+  if sx_kind(tokens)!=3 { tool_fail("ON1X-CAT-SYNTAX: unexpected end of token span"); }
+  return sexpr_nth(sx_head(tokens),2);
+}
+fn ppx_peek(tokens: sexpr) -> string {
+  if sx_kind(tokens)!=3 { return "<eof>"; } return sx_text(sexpr_nth(sx_head(tokens),1));
+}
+fn ppx_token_error(tokens: sexpr, code: string, message: string) {
+  ppx_diagnostic(ppx_source_location(tokens),code,message);
+}
+fn ppx_expect(tokens: sexpr, spelling: string) -> sexpr {
+  if ppx_peek(tokens)!=spelling { ppx_token_error(tokens,"ON1X-CAT-SYNTAX",text_concat("expected ",spelling)); }
+  return sx_tail(tokens);
+}
+fn ppx_read_tokens(carrier: sexpr) -> sexpr {
+  let source=sx_text(sexpr_nth(carrier,2));let start=sexpr_nth(carrier,3);let end=sexpr_nth(carrier,4);
+  let base=ppx_token_number(sexpr_nth(start,2),start);let finish=ppx_token_number(sexpr_nth(end,2),end);
+  if finish<base || finish>2097152 || finish-base!=text_len(source) || text_len(source)>262144 { tool_fail("ON1X-CAT-PPX: invalid carrier byte span"); }
+  var tokens=sexpr_nth(carrier,5);var rest=tokens;var previous=base;var count=0;
+  var line=ppx_token_number(sexpr_nth(start,3),start);var column=ppx_token_number(sexpr_nth(start,4),start);var cursor=base;
+  if line==0||column==0||line>2097153||column>2097153 { tool_fail("ON1X-CAT-PPX: invalid source coordinates"); }
+  while sx_kind(rest)==3 {
+    let token=sx_head(rest);let at=sexpr_nth(token,2);let text=sx_text(sexpr_nth(token,1));
+    let offset=ppx_token_number(sexpr_nth(at,2),at);count=count+1;
+    if count>16384 || text_len(text)==0 || sx_text(sexpr_nth(at,1))!=sx_text(sexpr_nth(start,1)) || offset<previous || offset+text_len(text)>finish { tool_fail("ON1X-CAT-PPX: invalid token provenance/budget"); }
+    while cursor<offset { if text_byte(source,cursor-base)==10 { line=line+1;column=1; }else { column=column+1; }cursor=cursor+1; }
+    if ppx_token_number(sexpr_nth(at,3),at)!=line||ppx_token_number(sexpr_nth(at,4),at)!=column { tool_fail("ON1X-CAT-PPX: token line/column mismatch"); }
+    if text_slice(source,offset-base,offset-base+text_len(text))!=text { tool_fail("ON1X-CAT-PPX: token/source mismatch"); }
+    previous=offset+text_len(text);rest=sx_tail(rest);
+  }
+  while cursor<finish { if text_byte(source,cursor-base)==10 { line=line+1;column=1; }else { column=column+1; }cursor=cursor+1; }
+  if sx_text(sexpr_nth(end,1))!=sx_text(sexpr_nth(start,1))||ppx_token_number(sexpr_nth(end,3),end)!=line||ppx_token_number(sexpr_nth(end,4),end)!=column { tool_fail("ON1X-CAT-PPX: end location mismatch"); }
+  var reversed=sexpr_reverse(tokens);var result=ppx_list1(ppx_node("SourceToken",ppx_list2(sx_string("<eof>"),end)));
+  while sx_kind(reversed)==3 { result=sx_cons(sx_head(reversed),result);reversed=sx_tail(reversed); }return result;
+}

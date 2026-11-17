@@ -1,6 +1,6 @@
 #include <on1x/ast.hpp>
 #include <on1x/numeric.hpp>
-#include <on1x/numeric.hpp>
+#include <on1x/extensions.hpp>
 #include <charconv>
 #include <cctype>
 #include <algorithm>
@@ -15,7 +15,8 @@ class Parser {
   Token assignment_token;
  std::size_t nesting=0;
  std::size_t lambdas=0;
- std::map<std::string,std::size_t> bound_types;
+  std::map<std::string,std::size_t> bound_types;
+  std::set<std::string> enabled_extensions,used_extensions;
  bool templating=false;
  bool syntax_atoms=false,literal_ellipsis=false;
  std::string ellipsis="...";
@@ -112,14 +113,34 @@ class Parser {
      for(auto x:{Type::I64,Type::F64,Type::F32,Type::U8,Type::U16,Type::U32,Type::U64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(t.text==type_name(x))return x;
    throw Error(t.where,"unknown type: "+t.text,"ON1X-PARSE-TYPE",{},t.text);
  }
- static int precedence(const std::string& op){if(op=="||")return 1;if(op=="&&")return 2;
+  static int precedence(const std::string& op){if(op=="||")return 1;if(op=="&&")return 2;
   if(op=="=="||op=="!=")return 3;
   if(op=="<"||op==">"||op=="<="||op==">=")return 4;
   if(op=="+"||op=="-")return 5;
   if(op=="*"||op=="/"||op=="%")return 6;
-  return -1;}
+   return -1;}
+  bool match_header()const{
+   if(!at("match"))return false;
+   if(peek(1).text=="let")return true;
+   if(precedence(peek(1).text)>=0&&peek(1).text!="-")return false;
+   // Existing keyword-spelled values remain ordinary operands/callees unless
+   // a complete discriminant is followed by the match delimiter.
+   std::size_t parens=0,brackets=0,braces=0;
+   for(std::size_t i=1;pos+i<ts.size();++i){const auto& text=peek(i).text;
+    if(!parens&&!brackets&&!braces){
+     if(text=="with"&&i>1&&precedence(peek(i-1).text)<0&&peek(i-1).text!="!"&&peek(i-1).text!=".")return true;
+     if(text=="{"&&peek(1).text=="("&&i>1&&peek(i-1).text==")")return true;
+     if(text==";"||text=="="||text==","||text==")"||text=="]"||text=="}"||text=="=>"||text=="<eof>")return false;
+    }
+    if(text=="(")++parens;else if(text==")"){if(!parens)return false;--parens;}
+    if(text=="[")++brackets;else if(text=="]"){if(!brackets)return false;--brackets;}
+    if(text=="{")++braces;else if(text=="}"){if(!braces)return false;--braces;}
+   }
+   return false;
+  }
     Expression atom(){
-     const Token t=peek();
+      const Token t=peek();
+     if(at("loop")&&peek(1).text=="{")throw Error(t.where,"ON1X-CONTROL-UNSUPPORTED: loop expressions are not implemented; use statement loop","ON1X-CONTROL-UNSUPPORTED");
     if(at("record")&&peek(1).text=="{"){
      ++pos;consume("{");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Record;e->where=t.where;std::set<std::string> names;
      if(!at("}"))do{
@@ -136,16 +157,7 @@ class Parser {
     if(at("variant")&&peek(1).text=="<"&&peek(2).text=="sum"&&peek(3).text=="{"){
      ++pos;consume("<");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Variant;e->where=t.where;e->result=type();consume(">");consume("(");e->text=ident();consume(",");e->children.push_back(expr().node);consume(")");return syntax_bounded(std::move(e));
     }
-    if(at("match")&&peek(1).text=="("){
-     ++pos;consume("(");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Match;e->where=t.where;e->children.push_back(expr().node);consume(")");consume("{");
-     if(!at("}"))do{
-      if(e->labels.size()>=256){throw Error(t.where,"match arm limit exceeded");}e->labels.push_back(ident());consume("(");
-      auto arm=std::make_unique<Expr>();arm->kind=Expr::Kind::Lambda;arm->where=peek().where;arm->result=Type::Hole;arm->parameters.push_back(parameter(0));consume(")");consume("=>");
-      Stmt returns;returns.kind=Stmt::Kind::Return;returns.where=peek().where;returns.value=expr().node;arm->body.push_back(std::move(returns));
-      auto depth=body_expression_depth(arm->body)+1;auto checked=bounded(std::move(arm),depth);e->children.push_back(std::move(checked.node));
-     }while(accept(","));
-     consume("}");return syntax_bounded(std::move(e));
-    }
+    if(match_header())return matching(false);
     if(at("let_syntax")||at("letrec_syntax"))return syntax_scope();
     if(accept("quote")){
      consume("{");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Quote;e->where=t.where;e->children.push_back(expr().node);consume("}");return syntax_bounded(std::move(e));
@@ -368,14 +380,95 @@ class Parser {
    result.push_back(statement());if(result.size()>100000)throw Error(peek().where,"too many statements");}
    consume("}");return result;
   }
-  Pattern pattern(){
+   Pattern pattern(){
    Nesting guard(*this);Pattern result;result.where=peek().where;
-   if(accept("(")){
+   if(accept("(")){result.kind=Pattern::Kind::Tuple;
     result.elements.push_back(pattern());consume(",");
     do{result.elements.push_back(pattern());}while(accept(","));
     consume(")");
    }else result.name=ident();
    return result;
+  }
+  Pattern match_pattern_atom(){
+   Nesting guard(*this);Pattern p;p.where=peek().where;using P=Pattern::Kind;
+   if(accept("_")){p.kind=P::Wildcard;return p;}
+   if(accept("rest")){p.kind=P::Rest;return p;}
+   if(accept("(")){
+    p=match_pattern();if(!accept(",")){consume(")");return p;}
+    Pattern tuple;tuple.kind=P::Tuple;tuple.where=p.where;tuple.elements.push_back(std::move(p));
+    do{tuple.elements.push_back(match_pattern());if(tuple.elements.size()>256)throw Error(tuple.where,"pattern width limit exceeded");}while(accept(",")&&!at(")"));
+    consume(")");return tuple;
+   }
+   if(accept("[")){
+    p.kind=P::Array;
+    if(!at("]")){do{p.elements.push_back(match_pattern());if(p.elements.size()>256)throw Error(p.where,"pattern width limit exceeded");
+     if(at("::"))throw Error(peek().where,"ON1X-PATTERN: list-cons patterns require an owning list runtime","ON1X-PATTERN");
+    }while(accept(",")&&!at("]"));}
+    consume("]");return p;
+   }
+   if(at("record")&&peek(1).text=="{"){
+    pos+=2;p.kind=P::Record;std::set<std::string> labels;
+    if(!at("}")){do{if(accept("..")){p.open=true;break;}
+     auto label=ident();if(!labels.insert(label).second)throw Error(p.where,"duplicate record pattern field: "+label);
+     p.labels.push_back(label);consume(":");p.elements.push_back(match_pattern());
+     if(p.elements.size()>256)throw Error(p.where,"pattern width limit exceeded");
+    }while(accept(",")&&!at("}"));}
+    consume("}");return p;
+   }
+   auto token=peek();bool negative=accept("-");if(negative)token=peek();
+   if(token.text=="true"||token.text=="false"||(!token.text.empty()&&(std::isdigit(static_cast<unsigned char>(token.text[0]))||token.text[0]=='"'))){
+    if(negative&&(token.text=="true"||token.text=="false"||token.text[0]=='"'))throw Error(p.where,"negative pattern literal must be numeric");
+    ++pos;p.kind=P::Literal;p.name=(negative?"-":"")+token.text;return p;
+   }
+   if(negative)throw Error(p.where,"expected a numeric pattern literal");
+   p.name=ident();
+   if(accept("(")){p.kind=P::Variant;if(!at(")"))do{p.elements.push_back(match_pattern());if(p.elements.size()>256)throw Error(p.where,"pattern width limit exceeded");}while(accept(",")&&!at(")"));consume(")");}
+   return p;
+  }
+  Pattern match_pattern(){
+   Nesting guard(*this);auto p=match_pattern_atom();
+   if(accept("as")){Pattern alias;alias.kind=Pattern::Kind::As;alias.where=p.where;alias.name=ident();alias.elements.push_back(std::move(p));p=std::move(alias);}
+   if(accept("|")){Pattern either;either.kind=Pattern::Kind::Or;either.where=p.where;either.elements.push_back(std::move(p));either.elements.push_back(match_pattern());return either;}
+   return p;
+  }
+  void match_arm_block(Expr& arm){
+   Nesting guard(*this);consume("{");
+   while(!at("}")){
+    bool structured=at("let")||at("var")||at("return")||at("if")||at("while")||at("{")||at("let_syntax")||at("letrec_syntax")||for_header()||
+     (at("loop")&&peek(1).text=="{")||((at("break")||at("continue"))&&peek(1).text!="(")||
+     (is_ident(peek().text)&&peek(1).text==":"&&(peek(2).text=="loop"||peek(2).text=="while"||peek(2).text=="for"))||peek(1).text=="=";
+    if(structured){arm.body.push_back(statement());continue;}
+    auto value=expr().node;
+    if(accept(";")){Stmt s;s.kind=Stmt::Kind::Expr;s.where=value->where;s.value=std::move(value);arm.body.push_back(std::move(s));}
+    else{arm.children.push_back(std::move(value));consume("}");return;}
+    if(arm.body.size()>100000)throw Error(arm.where,"too many match arm statements");
+   }
+   consume("}");auto unit=std::make_unique<Expr>();unit->kind=Expr::Kind::Unit;unit->where=arm.where;arm.children.push_back(std::move(unit));
+  }
+  Expression matching(bool statement_mode){
+   auto where=peek().where;consume("match");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::PatternMatch;e->where=where;e->statement_match=statement_mode;
+   bool old_parens=at("(");
+   if(accept("let")){e->text=ident();consume("=");old_parens=false;}
+   e->children.push_back(expr().node);
+   if(!accept("with")){
+    if(!old_parens||!e->text.empty())consume("with");
+    // Preserve the old spelling and its payload-lambda semantics exactly.
+    e->kind=Expr::Kind::Match;e->statement_match=false;consume("{");
+    if(!at("}")){do{e->labels.push_back(ident());consume("(");auto arm=std::make_unique<Expr>();arm->kind=Expr::Kind::Lambda;arm->where=peek().where;arm->result=Type::Hole;arm->parameters.push_back(parameter(0));consume(")");consume("=>");
+     Stmt s;s.kind=Stmt::Kind::Return;s.where=peek().where;s.value=expr().node;arm->body.push_back(std::move(s));auto depth=body_expression_depth(arm->body)+1;auto checked=bounded(std::move(arm),depth);e->children.push_back(std::move(checked.node));
+     if(e->labels.size()>256)throw Error(where,"match arm limit exceeded");
+    }while(accept(","));}
+    consume("}");return syntax_bounded(std::move(e));
+   }
+   consume("{");
+   if(!at("}")){do{
+    auto arm=std::make_unique<Expr>();arm->kind=Expr::Kind::Case;arm->where=peek().where;arm->patterns.push_back(match_pattern());
+    if(accept("if"))arm->children.push_back(expr().node);else arm->children.push_back(truth(arm->where));
+    consume("=>");if(at("{"))match_arm_block(*arm);else arm->children.push_back(expr().node);
+    auto depth=std::max(body_expression_depth(arm->body)+1,arm->children.back()->syntax_depth+1);auto checked=bounded(std::move(arm),depth);e->children.push_back(std::move(checked.node));
+    if(e->children.size()>257)throw Error(where,"match arm limit exceeded");
+   }while(accept(",")&&!at("}"));}
+   consume("}");return syntax_bounded(std::move(e));
   }
   Param parameter(std::size_t index){
    Param result;result.where=peek().where;
@@ -383,7 +476,66 @@ class Parser {
    else result.name=ident();
    result.type=accept(":")?type():Type(Type::Hole);return result;
   }
- Stmt statement(){Stmt s; s.where=peek().where;
+  bool for_header()const{
+   if(!at("for"))return false;
+   if(is_ident(peek(1).text)&&peek(2).text=="in")return true;
+   if(peek(1).text!="(")return false;
+   std::size_t depth=0;
+   for(std::size_t i=1;pos+i<ts.size();++i){
+    if(peek(i).text=="(")++depth;
+    if(peek(i).text==")"&&!--depth)return peek(i+1).text=="{";
+   }
+   return false;
+  }
+  Stmt clause(const std::string& end,bool binding=true){
+   Stmt s;s.where=peek().where;
+   if(binding&&(at("let")||at("var"))){
+    s.kind=Stmt::Kind::Let;s.mutable_binding=accept("var");if(!s.mutable_binding)consume("let");
+    if(at("("))s.pattern=pattern();else s.name=ident();
+    if(accept(":"))s.declared=type();
+    consume("=");s.value=expr().node;
+   }else if(peek(1).text=="="){
+    s.kind=Stmt::Kind::Assign;s.name=ident();consume("=");s.value=expr().node;
+   }else{s.kind=Stmt::Kind::Expr;s.value=expr().node;}
+   consume(end);return s;
+  }
+  ExprPtr truth(const Location& at){auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Boolean;e->text="true";e->where=at;return e;}
+  Stmt iteration(std::string label={}){
+   Stmt s;s.where=peek().where;s.label=std::move(label);s.kind=Stmt::Kind::While;
+   if(accept("loop")){s.value=truth(s.where);s.body=block();return s;}
+   if(accept("while")){s.value=expr().node;s.body=block();return s;}
+   consume("for");
+   if(accept("(")){
+    Stmt scope;scope.kind=Stmt::Kind::Block;scope.where=s.where;
+    if(!accept(";"))scope.body.push_back(clause(";"));
+    if(accept(";"))s.value=truth(s.where);else{s.value=expr().node;consume(";");}
+    if(!accept(")"))s.otherwise.push_back(clause(")",false));
+    s.body=block();scope.body.push_back(std::move(s));return scope;
+   }
+   s.kind=Stmt::Kind::Range;s.name=ident();consume("in");
+   auto bounds=std::make_unique<Expr>();bounds->kind=Expr::Kind::Tuple;bounds->where=peek().where;
+   bounds->children.push_back(expr().node);
+   if(!at("..")&&!at("..="))throw Error(peek().where,"ON1X-CONTROL-UNSUPPORTED: for-in requires an i64 range; general iterators are not implemented","ON1X-CONTROL-UNSUPPORTED");
+   s.inclusive=accept("..=");if(!s.inclusive)consume("..");bounds->children.push_back(expr().node);
+   s.value=syntax_bounded(std::move(bounds)).node;s.body=block();return s;
+  }
+  Stmt statement(){Stmt s; s.where=peek().where;
+   if(match_header()){
+    s.kind=Stmt::Kind::Expr;s.value=matching(true).node;if(s.value->kind==Expr::Kind::PatternMatch)accept(";");else consume(";");return s;
+   }
+   if(is_ident(peek().text)&&peek(1).text==":"&&
+      (peek(2).text=="loop"||peek(2).text=="while"||peek(2).text=="for")){
+    auto label=ident();consume(":");return iteration(std::move(label));
+   }
+   if((at("loop")&&peek(1).text=="{")||at("while")||for_header())return iteration();
+   if((at("break")||at("continue"))&&peek(1).text!="("&&peek(1).text!="="&&
+      (peek(1).text==";"||is_ident(peek(1).text))){
+    bool exits=accept("break");if(!exits)consume("continue");s.kind=exits?Stmt::Kind::Break:Stmt::Kind::Continue;
+    if(exits&&at("with")&&peek(1).text!=";")throw Error(peek().where,"ON1X-CONTROL-UNSUPPORTED: value-carrying loop exits are not implemented","ON1X-CONTROL-UNSUPPORTED");
+    if(!at(";"))s.label=ident();
+    if(exits&&at("with"))throw Error(peek().where,"ON1X-CONTROL-UNSUPPORTED: value-carrying loop exits are not implemented","ON1X-CONTROL-UNSUPPORTED");
+    consume(";");return s;
+   }
    if(at("let_syntax")||at("letrec_syntax")){
     s.kind=Stmt::Kind::Expr;s.value=syntax_scope().node;
     if(s.value->children[0]->kind==Expr::Kind::SyntaxBlock)accept(";");else consume(";");
@@ -397,7 +549,6 @@ class Parser {
   }
    if(accept("return")){s.kind=Stmt::Kind::Return;if(!at(";"))s.value=expr().node;consume(";");return s;}
    if(accept("if")){s.kind=Stmt::Kind::If;s.value=expr().node;s.body=block();if(accept("else"))s.otherwise=block();return s;}
-   if(accept("while")){s.kind=Stmt::Kind::While;s.value=expr().node;s.body=block();return s;}
   if(at("{")){s.kind=Stmt::Kind::Block;s.body=block();return s;}
   if(peek(1).text=="="){
     s.kind=Stmt::Kind::Assign;s.name=ident();consume("=");s.value=expr().node;consume(";");return s;
@@ -405,14 +556,43 @@ class Parser {
    s.kind=Stmt::Kind::Expr;s.value=expr().node;consume(";");return s;
  }
   public:
-  explicit Parser(const std::vector<Token>&t):ts(t){}
+  explicit Parser(const std::vector<Token>&t,const std::vector<std::string>& enabled):ts(t){
+   for(const auto& name:enabled)enabled_extensions.insert(extensions::canonical(name,{"<command-line>"}));
+  }
   std::string module_name(){
    auto where=peek().where;std::string name=ident();
    while(accept(".")){name+="."+ident();if(name.size()>4096)throw Error(where,"module name exceeds 4096 bytes");}
    return name;
   }
-  Unit parse(){Unit u;
-   while(!at("<eof>")){
+   Unit parse(){Unit u;
+    while(!at("<eof>")){
+     if(at("@")&&peek(1).text=="enable"){
+      auto where=peek().where;pos+=2;auto token=peek();auto name=extensions::canonical(ident(),where);
+      if(used_extensions.contains(name))throw Error(where,"ON1X-CAT-ENABLE: late @enable "+name,"ON1X-CAT-ENABLE");
+      auto end=token.where;end.offset+=token.text.size();end.column+=token.text.size();
+      if(at(";")){end=peek().where;++end.offset;++end.column;++pos;}enabled_extensions.insert(name);
+      if(std::none_of(u.features.begin(),u.features.end(),[&](const auto& f){return f.name==name;}))u.features.push_back({where,end,name});
+      continue;
+     }
+     if(at("@")&&peek(1).text=="extension"){
+      ModuleExtension carrier;carrier.where=peek().where;pos+=2;carrier.owner=extensions::canonical(ident(),carrier.where);
+      if(!enabled_extensions.contains(carrier.owner))throw Error(carrier.where,"ON1X-CAT-ENABLE: @extension requires @enable "+carrier.owner,"ON1X-CAT-ENABLE");
+      used_extensions.insert(carrier.owner);consume("{");std::vector<std::string> closing{"}"};
+      while(!closing.empty()){
+       auto t=peek();if(t.text=="<eof>")throw Error(t.where,"ON1X-CAT-SYNTAX: unterminated extension carrier","ON1X-CAT-SYNTAX");
+       if(t.text=="{"||t.text=="("||t.text=="["){
+        if(closing.size()>=max_syntax_depth)throw Error(t.where,"ON1X-CAT-SYNTAX: carrier depth budget exhausted","ON1X-CAT-SYNTAX");
+        closing.push_back(t.text=="{"?"}":t.text=="("?")":"]");
+       }else if(t.text=="}"||t.text==")"||t.text=="]"){
+        if(t.text!=closing.back())throw Error(t.where,"ON1X-CAT-SYNTAX: mismatched carrier delimiter","ON1X-CAT-SYNTAX");
+        closing.pop_back();if(closing.empty()){carrier.end=t.where;++carrier.end.offset;++carrier.end.column;++pos;break;}
+       }
+       if(carrier.tokens.size()>=16384)throw Error(t.where,"ON1X-CAT-SYNTAX: carrier token budget exhausted","ON1X-CAT-SYNTAX");
+       carrier.tokens.push_back(t);++pos;
+      }
+      if(u.extensions.size()>=32)throw Error(carrier.where,"ON1X-CAT-SYNTAX: carrier count budget exhausted","ON1X-CAT-SYNTAX");
+      u.extensions.push_back(std::move(carrier));accept(";");continue;
+     }
     if(accept("macro")){u.macros.push_back(macro_definition());if(u.macros.size()>512)throw Error(peek().where,"macro definition limit exceeded");continue;}
     if(at("@")&&peek(1).text=="ppx"){
      auto where=peek().where;consume("@");consume("ppx");auto label=ident();auto token=peek();
@@ -462,5 +642,5 @@ class Parser {
  }
 };
 }
-Unit parse(const std::vector<Token>&ts){return Parser(ts).parse();}
+Unit parse(const std::vector<Token>&ts,const std::vector<std::string>& enabled){return Parser(ts,enabled).parse();}
 }

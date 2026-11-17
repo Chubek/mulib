@@ -71,6 +71,9 @@ valid_cases = [
     b'name+12;\n' * 4096,
     b'0.0 1.25 1e3 1E+3 1.5e-12 0x1e3 1... 1. 1e+ 1.2e- 1.2.3 1e2e3',
     b'0u8 255u8 65535u16 4294967295u32 18446744073709551615u64 0xffu8 0x1f32 0xf64 0xffu64',
+    b'0..10 0..=10 0...10 ... ..= .. ....= 1.0..2.0 1u64..=2u64',
+    b'outer:for(var i=0;i<3;i=i+1){loop{continue outer;}} for x in -2..=2{break;}',
+    b'match let x=f() with { (1|2) as n if n>0 => n, rest => 0 }; :: :::: ||| | record{x:_,..}',
     b'1f32 1.5f32 1.5e-12f32 1e3f64 1u128 1.5u8 1f16 0x1.0f32 1u8x 1f32x 1u16f32',
     b'"' + b'x' * 65536 + b'"',
     b'#' + b'x' * (2 * 1024 * 1024 - 1),
@@ -79,7 +82,7 @@ for i, data in enumerate(valid_cases):
     check(f'valid_{i}', data, valid=True)
 
 prefix = b'# layout\r\n\t"snow: \xe9\x9b\xaa" ; '
-for i, bad in enumerate([b'`', b'&', b'|', b'\v', b'\f', b'\xff', b'"unclosed',
+for i, bad in enumerate([b'`', b'&', b'?', b'\v', b'\f', b'\xff', b'"unclosed',
                          b'"bad\\q"', b'"bad\\', b'"raw\nnewline"', b'"raw\rnewline"']):
     check(f'invalid_{i}', prefix + bad, invalid_at=len(prefix))
 for i, data in enumerate([b'\0', b'# comment\0', b'"string\0"', b'@\n\0']):
@@ -88,7 +91,7 @@ check('oversized', b'#' * (2 * 1024 * 1024 + 1), invalid_at=0,
       diagnostic='source exceeds 2 MiB limit')
 
 rng = random.Random(20261114)
-spellings = [b'name', b'_1', b'019', b'1.25e-3', b'1e+9', b'0x1e3', b'"text#\\n"', b'"\xe9\x9b\xaa"', b'<=', b'->', b'/', b'[]', b'!=']
+spellings = [b'name', b'_1', b'019', b'1.25e-3', b'1e+9', b'0x1e3', b'"text#\\n"', b'"\xe9\x9b\xaa"', b'<=', b'->', b'/', b'[]', b'!=', b'..', b'..=', b'...', b'::', b'|']
 layouts = [b' ', b'\t', b'\r\n', b'# comment\n']
 for i in range(40):
     data = b''.join(rng.choice(spellings) + rng.choice(layouts) for _ in range(32))

@@ -11,7 +11,7 @@ class Lowering {
  void tick(const Location& at){if(!budget--)throw Error(at,"staging AST limit exceeded");}
  std::string fresh(){std::string n;do{n="on1x_stage_"+std::to_string(++serial);}while(used.contains(n));used.insert(n);return n;}
  void bind(const std::string& name,std::size_t level){scopes.back()[name]={level,level?frames.at(level-1)->identity:0};}
- void bind(const Pattern& p,std::size_t level){if(p.is_tuple())for(const auto& c:p.elements)bind(c,level);else bind(p.name,level);}
+ void bind(const Pattern& p,std::size_t level){pattern_bindings(p,[&](const Pattern& name){bind(name.name,level);});}
  void reference(const Expr& e,std::size_t level){
   for(auto it=scopes.rbegin();it!=scopes.rend();++it){auto found=it->find(e.text);if(found==it->end())continue;
    const auto& binding=found->second;
@@ -22,11 +22,15 @@ class Lowering {
  }
  void body(std::vector<Stmt>& statements,std::size_t level,bool push=true){
   if(push)scopes.emplace_back();
-   for(auto& s:statements){tick(s.where);if(s.kind==Stmt::Kind::Assign){Expr id;id.text=s.name;id.where=s.where;reference(id,level);}if(s.value)expression(*s.value,level);if(s.kind==Stmt::Kind::Let){if(s.pattern)bind(*s.pattern,level);else bind(s.name,level);}body(s.body,level);body(s.otherwise,level);}
+    for(auto& s:statements){tick(s.where);if(s.kind==Stmt::Kind::Assign){Expr id;id.text=s.name;id.where=s.where;reference(id,level);}if(s.value)expression(*s.value,level);if(s.kind==Stmt::Kind::Let){if(s.pattern)bind(*s.pattern,level);else bind(s.name,level);}
+     if(s.kind==Stmt::Kind::Range){scopes.emplace_back();bind(s.name,level);body(s.body,level);scopes.pop_back();}else body(s.body,level);
+     body(s.otherwise,level);}
   if(push)scopes.pop_back();
  }
   void expression(Expr& e,std::size_t level){
    tick(e.where);
+   if(e.kind==K::PatternMatch){expression(*e.children.at(0),level);scopes.emplace_back();if(!e.text.empty())bind(e.text,level);for(std::size_t i=1;i<e.children.size();++i)expression(*e.children[i],level);scopes.pop_back();return;}
+   if(e.kind==K::Case){scopes.emplace_back();for(const auto& p:e.patterns)bind(p,level);expression(*e.children.at(0),level);scopes.emplace_back();body(e.body,level,false);expression(*e.children.at(1),level);scopes.pop_back();scopes.pop_back();return;}
    if(e.kind==K::Call&&e.callee->kind==K::Variable&&e.callee->text=="run"&&!globals.contains("run")){
     bool local=false;for(const auto& scope:scopes)local=local||scope.contains("run");
     if(!local){if(e.children.size()!=1)throw Error(e.where,"MSP: run requires one code<T> operand");e.kind=K::Run;e.callee.reset();}
@@ -60,7 +64,7 @@ public:
  explicit Lowering(Unit& u):unit(u){}
  void run(){
   auto pattern=[&](auto&& self,const Pattern& p)->void{used.insert(p.name);for(const auto& c:p.elements)self(self,c);};
-  auto collect=[&](auto&& self,const Expr& e)->void{if(e.kind==K::Variable)used.insert(e.text);for(const auto& p:e.parameters){used.insert(p.name);if(p.pattern)pattern(pattern,*p.pattern);}if(e.callee)self(self,*e.callee);for(const auto& c:e.children)self(self,*c);auto b=[&](auto&& visit,const std::vector<Stmt>& body)->void{for(const auto& s:body){used.insert(s.name);if(s.pattern)pattern(pattern,*s.pattern);if(s.value)self(self,*s.value);visit(visit,s.body);visit(visit,s.otherwise);}};b(b,e.body);};
+   auto collect=[&](auto&& self,const Expr& e)->void{if(e.kind==K::Variable||e.kind==K::PatternMatch)used.insert(e.text);for(const auto& p:e.patterns)pattern(pattern,p);for(const auto& p:e.parameters){used.insert(p.name);if(p.pattern)pattern(pattern,*p.pattern);}if(e.callee)self(self,*e.callee);for(const auto& c:e.children)self(self,*c);auto b=[&](auto&& visit,const std::vector<Stmt>& body)->void{for(const auto& s:body){used.insert(s.name);if(s.pattern)pattern(pattern,*s.pattern);if(s.value)self(self,*s.value);visit(visit,s.body);visit(visit,s.otherwise);}};b(b,e.body);};
   for(const auto& f:unit.functions){used.insert(f.name);for(const auto& p:f.params){used.insert(p.name);if(p.pattern)pattern(pattern,*p.pattern);}auto b=[&](auto&& self,const std::vector<Stmt>& body)->void{for(const auto& s:body){used.insert(s.name);if(s.pattern)pattern(pattern,*s.pattern);if(s.value)collect(collect,*s.value);self(self,s.body);self(self,s.otherwise);}};b(b,f.body);}
   for(const auto& f:unit.functions)globals.insert(f.name);
   for(auto& f:unit.functions){scopes.emplace_back();for(const auto& p:f.params){if(p.pattern)bind(*p.pattern,0);else bind(p.name,0);}body(f.body,0,false);scopes.pop_back();}

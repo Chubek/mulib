@@ -8,6 +8,18 @@
 
 ## 0. Source baseline, revisions and the exact newly added work
 
+**Core-syntax G1/G2 continuation:** [statement loops](docs/core-syntax.md) now
+execute in HIR→C11 and scalar MIR→C11/reference evaluation. Range canonicalization
+and checked lexical targets feed existing MIR branches/jumps, without changing
+MIR serialization. This does not add cleanup/effectful/concurrency MIR or native
+machine code, and does not complete the source-syntax specification.
+
+Guarded structural matches now canonicalize to checked decision regions,
+single-initialization storage, branches and lexical exits before either emitter.
+Scalar/numeric tuples execute in MIR v1–v3; sums/records/arrays/slices and managed
+values remain C11-only and reject unsupported MIR/SDK profiles. No new MIR
+serialization format, runtime dependency or native backend is implied.
+
 **M1 language continuation:** the restricted [`f64` profile](docs/numerics.md)
 now includes decimal literals and MIR v2 execution/round-trip/C11 for floats and
 trivial tuples. A second M1 slice adds the [bounded value data model](docs/data-model.md):

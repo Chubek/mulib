@@ -1,5 +1,35 @@
 # On1x capability matrix
 
+Structural-match continuation: MuLIB
+`9090e643e11051e000b3bcc68ebc777dfe07776a`, pinned LibStone
+`55755485acaded7c4ed804c0946bc8c7363f6763` unchanged. Shared structural patterns,
+guarded expression/statement matches and typed decision regions execute in C11,
+with scalar/numeric tuple MIR differential tests. Previous loop/Category changes
+remain intact. Full-specification concurrency/cleanup/list/value-loop capabilities
+are not admitted by this slice. Exact evidence: `../VERIFICATION.md`.
+Final matching suites: GCC/generated **45/45**, Clang/fallback **44/44**, SDK
+**53/53**, SDK ASan/UBSan **53/53**; focused native-off Debug/Release **4/4** each.
+
+Earlier statement-loop continuation: HEAD `9090e643e11051e000b3bcc68ebc777dfe07776a`,
+LibStone `55755485acaded7c4ed804c0946bc8c7363f6763`. Executable G1/G2 slice:
+intrinsic statement loops, i64 ranges and lexical exits; existing Category work
+is preserved. General match/iteration, value loops, cleanup and concurrency are
+not admitted by this slice.
+Final core-syntax suites: GCC/generated **43/43**, Clang/fallback **42/42**, SDK
+**51/51**, SDK ASan/UBSan **51/51**; focused Debug and Release profiles **2/2**
+each. Exact commands, instrumentation, migration limits and unsupported cases
+are recorded in `../VERIFICATION.md` and `core-syntax.md`.
+
+Category continuation baseline: MuLIB `9090e643e11051e000b3bcc68ebc777dfe07776a`,
+LibStone unchanged at `55755485acaded7c4ed804c0946bc8c7363f6763`. CATEGORY M0/M1
+now has a runnable local scalar profile: pinned native activation, balanced spans,
+On1x grammar/coherence/substitution and ordinarily checked explicit selectors.
+Constrained generics, cross-module evidence, associated types, functors/sealing
+and auto protocols remain unimplemented. See `category.md` and the exact tests
+in `../VERIFICATION.md`; this is not Category completion.
+Category final suites: GCC/generated **41/41**, Clang/fallback **40/40**, SDK
+**49/49**, SDK ASan/UBSan **49/49**. Standalone ordinary PPX suite: **30/30**.
+
 Inspection baseline for this continuation: MuLIB `cbdb2e290a41e39a8e6447f39426b1407c3e73b0`,
 LibStone `55755485acaded7c4ed804c0946bc8c7363f6763` at
 `on1x/third_party/libstone` (read-only). Linux x86_64; GCC 16.2.1,
@@ -47,6 +77,11 @@ and execution evidence, not deletion of platform/environment guards.
 
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
 |---|---|---|---|---|---|---|
+| Generalized structural matching (G2 bounded profile) | `src/{parser,patterns,infer,sema}.cpp`, `src/canonical/{values,verify_values}.cpp`, loader/macro/PPX/staging adapters | Existing by-value/RC C11 and lexical cleanup; scalar/numeric tuple MIR | Guards, or/as, wildcard/rest, tuples, closed sums, records, exact arrays/snapshot slices; finite coverage/redundancy | `test_patterns.{cpp,py}`, source example, seeded MIR/C11 oracle, wire/mutation/fault/JSON tests | EXECUTABLE | Owning lists, refutable let/parameters, nominal/parametric/recursive constructors, aggregate/managed MIR and broader SDK models |
+| Typed decision/initialization regions | `src/canonical/{values,verify_values}.cpp`, `src/{codegen,safety,type_safety}.cpp`, `src/backend/lower.cpp` | Existing C11 scopes/cleanup and MIR slots/branches/jumps; no runtime/ABI addition | Surface matches erased; independent initialized-local/type/tag-domination/region checks; private nodes not PPX constructors | HIR mutation rejection, transactional lowering, idempotence, guard traps, nested return/break/continue and for-latch regression | EXECUTABLE | Full effect/ownership/error/suspension Core; no general bottom type |
+| Intrinsic statement loop control (G1/G2) | `src/{parser,sema,infer,codegen}.cpp`, `src/canonical/control.cpp`, `src/backend/lower.cpp`, SDK adapters | Existing C11 lexical ownership cleanup; explicit MIR branches/jumps | Statement loop/for-C, lexical labels/exits; checked targets/latches across macros/PPX/staging | `test_control.{cpp,py}`, closure allocator/JSON cleanup, MIR/oracles/wire/HIR negatives | EXECUTABLE | Value loops, general iterator protocol, full effect/cleanup Core |
+| Intrinsic i64 ranges | `grammar/On1x.g`, `src/lexer_fallback.cpp`, `src/{parser,canonical/control}.cpp` | Checked C11 i64; inclusive completion before increment | Once-evaluated ascending `..`/`..=` bounds; immutable iteration binding | Scanner parity, extrema/reversed/zero bounds, MIR/C11 seeded oracle | EXECUTABLE | Other scalar ranges, custom steps and general iterator/drop protocol |
+| Category native protocols (M0/M1) | `src/extensions.cpp`, `src/{parser,loader,cli}.cpp`, `stdppx/native/protocols.on1x`, `stdlib/ppx/category/` | Native bootstrap processor, trusted registry/SHA256 pinning, ordinary HIR/MIR/C11 selectors | Module-local concrete scalar protocols/witnesses; generic balanced carriers; normal post-expansion typing | `test_category.py`, actual Eq/ordering clients, malformed packet/type/coherence/import/relocation tests | EXECUTABLE | Typed feedback, qualified generics, imported evidence/interfaces, associated types, functors/sealing and ownership auto protocols |
 | Generated/fallback scanning | `grammar/On1x.g`, `src/lexer*.cpp` | Bounded token callback | Functional syntax, decimal floats and typed numeric suffixes | `test_scanner.cpp`, `scanner_parity.py` | EXECUTABLE | Broader malformed-input/target certification |
 | Checked i64 | `src/{parser,infer,sema,codegen}.cpp` | Checked C11 runtime operations | i64 literals/operators | `test_compiler.py`, `test_mir.py` | EXECUTABLE | Broader target conformance |
 | f64 values | `src/{type,parser,infer,sema,codegen,primitives,safety,type_safety}.cpp`, `runtime/on1x_runtime.*` | Linux x86_64 binary64; guarded raw/generated double ABI; bit transport/hex output | Arithmetic/comparisons, explicit conversions, tuples/closures/staging; Chisel and independent numeric typing | `test_f64.py`, `test_meta.cpp`, `test_types.cpp`, `test_type_safety.*`, `test_contracts_sdk.py` | EXECUTABLE | Other targets and full IEEE conformance certification |
@@ -55,9 +90,9 @@ and execution evidence, not deletion of platform/environment guards.
 | f32 values | `src/{type,parser,infer,sema,codegen,primitives,safety,type_safety}.cpp`, `src/backend/`, `runtime/on1x_runtime.*`, PPX schemas | Linux x86_64 IEEE binary32; exact bits/hex/C float ABI; scalar MIR v3 independent evaluation and emission | Distinct f32 with directly rounded decimal literals and explicit conversions; no implicit promotion; independent typing | `test_unsigned_f32.py`, `test_numeric_limits.py`, `test_type_safety.*`, `test_contracts_sdk.py`; bit/rounding/failure oracles and ASan/UBSan | EXECUTABLE | Other targets and full IEEE conformance certification |
 | Narrow signed / pointer-sized integers | `include/on1x/type.hpp` | None | None | None | ABSENT | Exact semantics and ABI for i8/i16/i32/isize/usize |
 | Functions / closures | `src/{infer,sema,codegen}.cpp` | Single-thread RC environments | Structural functions, immutable captures | `test_functions.py`, `test_closures.py` | EXECUTABLE | Mutable/resource capture lifetimes |
-| Tuples / irrefutable patterns | `src/{parser,infer,sema,codegen}.cpp` | Internal C11 by-value records | Shared name/tuple patterns | `test_tuples.py`, `test_parameter_patterns.py` | EXECUTABLE | Foreign aggregate ABI; refutable patterns |
+| Tuples / irrefutable patterns | `src/{parser,infer,sema,codegen}.cpp` | Internal C11 by-value records | Shared name/tuple patterns; new matches add refutable patterns without changing `_` in old lets/parameters | `test_tuples.py`, `test_parameter_patterns.py`, `test_patterns.py` | EXECUTABLE | Foreign aggregate ABI; refutable let/parameter patterns |
 | Polymorphism | `src/infer.cpp` | Bounded whole-unit specializations/bundles | Restricted schemes / forall | `test_poly*.py` | PARTIAL | General parameterized data types |
-| Records / ADTs / exhaustive matching | `src/{parser,infer,sema,codegen}.cpp`, `src/{type,type_safety}.cpp` | Private versioned C11 structs; `ON1X_VALUE_DATA_ABI_VERSION` guard | Structural labeled records; closed sums with `variant`/exhaustive `match`; unit record payload; no guards/recursive/nominal/parametric forms | `test_data.py`, `examples/data_model.on1x` | EXECUTABLE | Nominal recursion, type parameters, derives, data equality/printing, MIR lowering |
+| Records / ADTs / exhaustive matching | `src/{parser,infer,sema,codegen,patterns}.cpp`, `src/canonical/`, `src/type.cpp` | Private versioned C11 structs; `ON1X_VALUE_DATA_ABI_VERSION` guard | Structural labeled records; closed sums with `variant`/exhaustive legacy or guarded structural `match`; unit record payload | `test_data.py`, `test_patterns.py`, `examples/{data_model,structural_match}.on1x` | EXECUTABLE | Nominal recursion, type parameters, derives, data equality/printing, aggregate MIR/SDK lowering |
 | Arrays / slices | `src/{parser,infer,sema,codegen}.cpp`, `runtime/on1x_runtime.*` | By-value fixed arrays; owning snapshot slices with composed offsets; bounds runtime with located exit-70 errors | `array<T,N>`/`slice<T,N>` (extent <= 256), `array[...]`, `a[i]`, `a[]`, `a[lo:hi]`, slice-of-slice; no mutation/borrowing | `test_data.py`, `examples/data_model.on1x` | EXECUTABLE | Mutable arrays, zero-copy borrows, dynamic buffers, foreign ABI |
 | Modules | `src/loader.cpp` | Whole-unit C11 | Namespaces, imports, aliases | `test_modules.py`, `test_loader.cpp` | PARTIAL | Interfaces, separate compilation, signatures/functors |
 | Macros / PPX | `src/{macros,macro_rules,ppx,ppx_ast}.cpp` | Build-time processes; bounded wire format | Hygienic macros, external PPX | `test_macros.py`, `test_ppx.py`, `test_local_syntax.py` | EXECUTABLE | Process sandboxing; richer data derives |

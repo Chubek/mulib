@@ -1,8 +1,11 @@
 #include <on1x/backend/mir.hpp>
 #include <on1x/meta.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/canonical/control.hpp>
+#include <on1x/canonical/values.hpp>
 #include <charconv>
 #include <map>
+#include <set>
 #include <limits>
 #include <algorithm>
 #include "numeric.hpp"
@@ -15,7 +18,11 @@ class Lowering {
  static constexpr auto ended=std::numeric_limits<std::size_t>::max();
  struct Binding {Id id;Type type;bool slot;};
  std::vector<std::map<std::string,Binding>> scopes;
- std::map<std::string,Id> functions;
+  std::map<std::string,Id> functions;
+  struct LoopTarget {std::size_t id,done,latch;};
+  std::vector<LoopTarget> loops;
+  std::vector<LoopTarget> regions;
+  std::set<std::size_t> region_targets,continue_targets;
  [[noreturn]] void unsupported(const Location& at,const std::string& why){throw Error(at,"ON1X-MIR-UNSUPPORTED: "+why);}
  Id fresh(const Location& at){if(serial>=limits.nodes)throw Error(at,"ON1X-MIR-LOWER: node budget exhausted");return ++serial;}
   void scalar(const Type& t,const Location& at,bool allow_void=false){
@@ -59,7 +66,10 @@ class Lowering {
  }
  Id expression(const Expr& e){
   scalar(e.type,e.where,true);
-  switch(e.kind){
+   switch(e.kind){
+   case Expr::Kind::Unit:return 0;
+   case Expr::Kind::Region:{scopes.emplace_back();body(e.body,false);auto result=current==ended?Id{0}:expression(*e.children.at(0));scopes.pop_back();return result;}
+   case Expr::Kind::Project:{auto root=expression(*e.children.at(0));return emit(Op::Extract,e.type,{root},e.where,0,static_cast<std::int64_t>(e.projection));}
    case Expr::Kind::Integer:{
     return emit(Op::Constant,e.type,{},e.where,0,integer_literal_bits(e.text,e.where));
   }
@@ -145,11 +155,12 @@ class Lowering {
     if(s.mutable_binding){b.id=fresh(s.where);b.slot=true;fn().slots.push_back({b.id,b.type,s.where});emit(Op::Store,Type::Void,{value},s.where,b.id);}
     scopes.back().emplace(s.name,b);break;
    }
-   case Stmt::Kind::Assign:{
+   case Stmt::Kind::Storage:{scalar(s.declared,s.where);auto id=fresh(s.where);fn().slots.push_back({id,s.declared,s.where});scopes.back().emplace(s.name,Binding{id,s.declared,true});break;}
+   case Stmt::Kind::Initialize:case Stmt::Kind::Assign:{
     auto b=binding(s.name,s.where);if(!b.slot)unsupported(s.where,"assignment to immutable HIR binding");
     auto value=expression(*s.value);emit(Op::Store,Type::Void,{value},s.where,b.id);break;
    }
-   case Stmt::Kind::Return:{auto value=s.value?expression(*s.value):0;terminate(Exit::Return,value,{},s.where);break;}
+   case Stmt::Kind::Return:{auto value=s.value?expression(*s.value):0;if(current!=ended)terminate(Exit::Return,value,{},s.where);break;}
    case Stmt::Kind::Expr:(void)expression(*s.value);break;
    case Stmt::Kind::Block:body(s.body);break;
    case Stmt::Kind::Template:body(s.body,false);break;
@@ -164,11 +175,30 @@ class Lowering {
     if(no_tail!=ended){current=no_tail;jump(merge,s.where);}
     current=merge;break;
    }
-   case Stmt::Kind::While:{
-    auto header=make_block(s.where),loop=make_block(s.where),done=make_block(s.where);jump(header,s.where);
-    current=header;auto condition=expression(*s.value);terminate(Exit::Branch,condition,{edge(loop),edge(done)},s.where);
-    current=loop;body(s.body);if(current!=ended)jump(header,s.where);current=done;break;
-   }
+    case Stmt::Kind::While:{
+     auto header=make_block(s.where),loop=make_block(s.where),done=make_block(s.where);jump(header,s.where);
+     current=header;auto condition=expression(*s.value);terminate(Exit::Branch,condition,{edge(loop),edge(done)},s.where);
+     auto latch=!s.otherwise.empty()&&continue_targets.contains(s.control_target)?make_block(s.where):header;
+     loops.push_back({s.control_target,done,latch});current=loop;body(s.body);loops.pop_back();
+     if(!s.otherwise.empty()&&(current!=ended||latch!=header)){
+      if(latch==header)latch=make_block(s.where);
+      if(current!=ended)jump(latch,s.where);
+      current=latch;body(s.otherwise);if(current!=ended)jump(header,s.where);
+     }else if(current!=ended)jump(header,s.where);
+     current=done;break;
+    }
+    case Stmt::Kind::Break:case Stmt::Kind::Continue:{
+     auto target=std::find_if(loops.rbegin(),loops.rend(),[&](const auto& t){return t.id==s.control_target;});
+     if(target==loops.rend())unsupported(s.where,"missing canonical loop target");
+     jump(s.kind==Stmt::Kind::Break?target->done:target->latch,s.where);break;
+    }
+    case Stmt::Kind::Range:unsupported(s.where,"unlowered range");
+    case Stmt::Kind::Region:{
+     auto done=region_targets.contains(s.control_target)?make_block(s.where):ended;regions.push_back({s.control_target,done,ended});body(s.body);regions.pop_back();
+     if(done!=ended){if(current!=ended)jump(done,s.where);current=done;}break;
+    }
+    case Stmt::Kind::Leave:{auto target=std::find_if(regions.rbegin(),regions.rend(),[&](const auto& t){return t.id==s.control_target;});if(target==regions.rend()||target->done==ended)unsupported(s.where,"missing region join");jump(target->done,s.where);break;}
+    case Stmt::Kind::Trap:{auto condition=emit(Op::Constant,Type::Bool,{},s.where,0,0);emit(Op::Assert,Type::Void,{condition},s.where);auto trap=current;jump(trap,s.where);break;}
    }
   }
   if(scope)scopes.pop_back();
@@ -176,7 +206,10 @@ class Lowering {
 public:
  Lowering(const Unit& u,Limits l):unit(u),limits(l){}
  Module run(){
-  meta::require_core(unit);
+   canonical::verify_control(unit);
+   meta::require_core(unit);
+   canonical::verify_values(unit);
+   for(const auto& f:unit.functions){auto targets=canonical::exit_targets(f,Stmt::Kind::Leave);region_targets.insert(targets.begin(),targets.end());auto next=canonical::exit_targets(f,Stmt::Kind::Continue);continue_targets.insert(next.begin(),next.end());}
   for(const auto& f:unit.functions){
    if(f.prototype)continue;
    if(f.external)unsupported(f.where,"raw extern declarations require typed foreign MIR descriptors");

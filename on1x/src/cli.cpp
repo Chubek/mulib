@@ -127,7 +127,9 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
 void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO C11\n"
  "usage: on1xc [--check | --emit-c | --tokens | --types | --emit-ast] INPUT.on1x [-o OUTPUT]\n"
  "       [--ppx LABEL PROGRAM] [--ppx-schema LABEL FILE] [--allow-source-ppx]\n"
-  "       [--ppx-timeout-ms MILLISECONDS]\n"
+ "       [--ppx-timeout-ms MILLISECONDS]\n"
+  "       [--enable NAME[,NAME]] [--disable NAME] (bundled native extensions only)\n"
+  "       on1xc --list-extensions | --explain-extension NAME\n"
   "       [-I DIRECTORY | --module-path DIRECTORY] [--stdlib DIRECTORY]\n"
   "       [--no-prelude] [--prelude FILE] [--stdppx PROCESSOR]\n"
   "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
@@ -153,7 +155,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 int main(int argc,char**argv){
  std::string diagnostic_format="text";
  try{
-     std::string mode="--emit-c",source,out;bool ir_input=false;
+      std::string mode="--emit-c",source,out,explain_extension;bool ir_input=false;
      std::size_t analysis_work=10000000;bool analysis_limit=false;
       on1x::mir::passes::Options optimization;bool optimize=false,opt_limit=false;
       bool memory=false;
@@ -163,7 +165,16 @@ int main(int argc,char**argv){
     std::vector<std::filesystem::path> import_paths;
     std::vector<std::string> admission_files;
   for(int i=1;i<argc;++i){std::string arg=argv[i];
-     if(arg=="--help"||arg=="-h"){usage();return 0;}
+      if(arg=="--help"||arg=="-h"){usage();return 0;}
+      if(arg=="--enable"||arg=="--disable"){
+       if(++i>=argc)throw std::runtime_error(arg+" requires registered feature names");
+       on1x::extensions::select(arg=="--enable"?loader.extensions.enabled:loader.extensions.disabled,argv[i],{"<command-line>"});continue;
+      }
+      if(arg=="--list-extensions"){mode=arg;continue;}
+      if(arg=="--explain-extension"){
+       if(++i>=argc)throw std::runtime_error("--explain-extension requires a feature name");
+       explain_extension=argv[i];mode=arg;continue;
+      }
      if(arg=="--repair"){mode=arg;continue;}
      if(arg=="--diagnostics"){
       if(++i>=argc)throw std::runtime_error("--diagnostics requires text, json or sarif");
@@ -222,7 +233,12 @@ int main(int argc,char**argv){
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
    else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
   }
-      if(source.empty()){usage();return 2;}
+       if(mode=="--list-extensions"){write_all(out,on1x::extensions::describe(loader.extensions));return 0;}
+       if(mode=="--explain-extension"){write_all(out,on1x::extensions::describe(loader.extensions,explain_extension));return 0;}
+       if(source.empty()){usage();return 2;}
+       loader.extensions.execute=mode!="--deps"&&mode!="--emit-ast"&&mode!="--repair";
+       loader.extensions.timeout_ms=ppx.timeout_ms;
+       for(const auto& name:loader.extensions.enabled)if(loader.extensions.disabled.contains(name))throw on1x::Error({"<command-line>"},"ON1X-CAT-ENABLE: enabled/disabled conflict: "+name,"ON1X-CAT-ENABLE");
        loader.paths.insert(loader.paths.begin(),import_paths.begin(),import_paths.end());
        if(mode=="--repair"){
 #ifdef ON1X_WITH_SYREN
@@ -276,7 +292,8 @@ int main(int argc,char**argv){
      optimize=optimize||mode=="--dump-passes";
      if(optimize&&!mir_mode)throw std::runtime_error("--optimize-ir requires a MIR mode");
      if(opt_limit&&!optimize)throw std::runtime_error("optimization budgets require --optimize-ir or --dump-passes");
-    if(ir_input){
+     if(ir_input){
+      if(!loader.extensions.enabled.empty()||!loader.extensions.disabled.empty())throw std::runtime_error("--ir-input cannot enable source extensions");
      if(!mir_mode||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source)throw std::runtime_error("--ir-input requires a MIR mode without PPX options");
       return mir_output(on1x::mir::deserialize(read_ir(source),source),mode,out,analysis_work,optimize?&optimization:nullptr);
     }
@@ -291,7 +308,13 @@ int main(int argc,char**argv){
      std::ostringstream paths;for(const auto& path:loaded.dependencies)paths<<path.string()<<"\n";
      write_all(out,paths.str());return 0;
     }
-    auto& unit=loaded.unit;
+     auto& unit=loaded.unit;
+     auto extension_names=loader.extensions.enabled;
+     for(const auto& activation:unit.features)extension_names.insert(activation.name);
+     for(const auto& registration:ppx.programs)if(extension_names.contains(registration.label))
+      throw on1x::Error(registration.where,"ON1X-CAT-ENABLE: ordinary PPX label conflicts with active bundled extension: "+registration.label,"ON1X-CAT-ENABLE");
+     for(const auto& registration:unit.ppx)if(extension_names.contains(registration.label))
+      throw on1x::Error(registration.where,"ON1X-CAT-ENABLE: source PPX label conflicts with active bundled extension: "+registration.label,"ON1X-CAT-ENABLE");
    if(mode=="--emit-ast"){
     on1x::expand_macros(unit);auto tree=on1x::meta::encode(unit);on1x::meta::base_schema().validate(tree);
     write_all(out,on1x::meta::write_sexpr(tree));return 0;

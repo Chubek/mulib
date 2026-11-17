@@ -17,6 +17,21 @@ static on1x_token_t on1x_lexeme(char *text, GLRParser start) {
 }
 %}
 %%
+/* The generated component is the token arena/scanner. Executable source
+ * productions live in src/parser.cpp and bridge to include/on1x/ast.hpp:
+ *   loop_stmt := [identifier ':'] ('loop' block | 'while' expr block
+ *              | 'for' '(' [clause] ';' [expr] ';' [step] ')' block
+ *              | 'for' identifier 'in' expr ('..' | '..=') expr block)
+ *   loop_exit := ('break' | 'continue') [identifier] ';'
+ *   match := 'match' (expr | 'let' identifier '=' expr) 'with' '{' arms '}'
+ *   arm := pattern ['if' expr] '=>' (expr | arm_block)
+ *   pattern := identifier | '_' | 'rest' | literal | constructor(parts)
+ *            | (parts) | [parts] | record{fields[,..]} | pattern '|' pattern
+ *            | pattern 'as' identifier
+ * Loop/match words are contextual. '::' is recognized so owning-list patterns
+ * can diagnose their unsupported profile; array tails are never invented.
+ * Ellipsis keeps its longest-match macro meaning. No concurrency or cleanup
+ * tokens are enabled by this pure-control slice. */
 %start on1x_scan_unit
 %skip /([ \t\r\n]+|#[^\n]*)+/
 on1x_scan_unit: pieces {
@@ -34,8 +49,8 @@ piece:
   | /[A-Za-z_][A-Za-z0-9_]*/ { $$ = on1x_lexeme($1, save); }
   | /([0-9]+\.[0-9]+([eE][+\-]?[0-9]+)?|[0-9]+[eE][+\-]?[0-9]+)(f32|f64)?|[0-9]+(f32|f64)/ { $$ = on1x_lexeme($1, save); }
   | /(0[xX][0-9a-fA-F]+|[0-9]+)(u8|u16|u32|u64)?/ { $$ = on1x_lexeme($1, save); }
-  | /\.\.\.|==|!=|<=|>=|&&|\|\||->|=>/ { $$ = on1x_lexeme($1, save); }
-  | /[+*%<>=!;:,(){}\[\]@$.\-]/ { $$ = on1x_lexeme($1, save); }
+  | /\.\.\.|\.\.=|\.\.|::|==|!=|<=|>=|&&|\|\||->|=>/ { $$ = on1x_lexeme($1, save); }
+  | /[+*%<>=!;:,(){}\[\]@$.|\-]/ { $$ = on1x_lexeme($1, save); }
   | '/' { $$ = on1x_lexeme($1, save); }
 ;
 %%

@@ -1,0 +1,5 @@
+import "ppx.on1x";
+
+fn ppx_diagnostic(at: sexpr, code: string, message: string) {
+  tool_fail(text_concat(sx_text(sexpr_nth(at,1)),text_concat(":",text_concat(sx_text(sexpr_nth(at,3)),text_concat(":",text_concat(sx_text(sexpr_nth(at,4)),text_concat(": ",text_concat(code,text_concat(": ",message)))))))));
+}

@@ -1,5 +1,18 @@
 # Typed hygienic macros, PPX and staging
 
+Category's opt-in native declaration gateway is an additive, syntax-only phase
+before loader export binding; it does not change ordinary v1 PPXs or macro
+hygiene. See [Category](category.md) for the explicit scalar subset, native
+On1x libraries, transport, checking boundary and unsupported advanced features.
+
+Intrinsic [structural matching](core-syntax.md) crosses the v1 wire as additive
+source constructors `SourceMatch`, `MatchArm`, `StructuralPattern`, `UnitValue`.
+Macros preserve pattern/arm lexical identities, including equal binder sets for
+or-pattern alternatives. PPX may transform source syntax, never inject canonical
+regions, initialization facts, tag-dominance proofs or resolved exit targets.
+Rebuild native processors with the updated canonical schema. Old let/parameter
+name/tuple pattern semantics, including ordinary `_` names, are unchanged.
+
 The core-first increment now includes recursive R7RS-style patterns/templates,
 lexical `let_syntax`/`letrec_syntax` bindings,
 self-hosted On1x authoring libraries and six native processors, and typed AOT
