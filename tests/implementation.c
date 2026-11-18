@@ -745,6 +745,10 @@
 #define MULIB_IMPL_METAPP
 #define MULIB_IMPL_ARTIFACT
 #define MULIB_IMPL_BUILDGRAPH
+#define MULIB_IMPL_BUILDPLAN
+#define MULIB_IMPL_DEPFILE
+#define MULIB_IMPL_BUILDPARSE
+#define MULIB_IMPL_BUILDSTATE
 #define MULIB_IMPL_DAEMON
 #define MULIB_IMPL_ANFIR
 #define MULIB_IMPL_CLICKIR
@@ -1629,6 +1633,10 @@
 #include "mulib-superblocks.h"
 #include "mulib-artifact.h"
 #include "mulib-buildgraph.h"
+#include "mulib-buildplan.h"
+#include "mulib-depfile.h"
+#include "mulib-buildparse.h"
+#include "mulib-buildstate.h"
 #include "mulib-daemon.h"
 #include "mulib-metapp.h"
 #include "mulib-efi.h"

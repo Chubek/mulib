@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1171 headers, 1207 direct dependency edges.
+Inventory: 1175 headers, 1209 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (396 modules)
+## Stratum 0 (398 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -57,6 +57,7 @@ Compatibility group: `parsec`, `peg`.
 | [browsertrace](mulib-browsertrace.md) | none |
 | [browserwait](mulib-browserwait.md) | none |
 | [buffer](mulib-buffer.md) | none |
+| [buildplan](mulib-buildplan.md) | none |
 | [bycutils](mulib-bycutils.md) | none |
 | [bytecode](mulib-bytecode.md) | none |
 | [callconv](mulib-callconv.md) | none |
@@ -95,6 +96,7 @@ Compatibility group: `parsec`, `peg`.
 | [dbus-auth](mulib-dbus-auth.md) | none |
 | [defuse](mulib-defuse.md) | none |
 | [deltacodec](mulib-deltacodec.md) | none |
+| [depfile](mulib-depfile.md) | none |
 | [deque](mulib-deque.md) | none |
 | [der](mulib-der.md) | none |
 | [descritors](mulib-descritors.md) | none |
@@ -416,7 +418,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (388 modules)
+## Stratum 1 (390 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -449,6 +451,8 @@ Compatibility group: `parsec`, `peg`.
 | [browser-sandbox](mulib-browser-sandbox.md) | `browser-limits` |
 | [browser-tokenstream](mulib-browser-tokenstream.md) | `browser-stream` |
 | [buildgraph](mulib-buildgraph.md) | `artifact` |
+| [buildparse](mulib-buildparse.md) | `buildplan` |
+| [buildstate](mulib-buildstate.md) | `sha` |
 | [bytecode-builder](mulib-bytecode-builder.md) | `bytecode` |
 | [bytecode-disasm](mulib-bytecode-disasm.md) | `bytecode` |
 | [bytecode-opt](mulib-bytecode-opt.md) | `bytecode` |

@@ -229,3 +229,27 @@ Composable CSS selectors, provider pagination offsets and rate scheduling remain
 future work. The offline fixtures ensure pagination links are not mistaken for
 results and no automatic pagination or retries occur. Keep the module together
 until reusable compiler/selector/runner APIs have stable tests.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-elvi-scrape.h`](../include/mulib-elvi-scrape.h) |
+| Implementation switch | `MULIB_IMPL_ELVI_SCRAPE` |
+| Repository-local includes | [`include/detail/mulib-webscan.h`](../include/detail/mulib-webscan.h), [mulib-fetch](mulib-fetch.md), [mulib-https](mulib-https.md), [mulib-url](mulib-url.md) |
+| Complete example | [`examples/elvi-scrape.c`](../examples/elvi-scrape.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/elvi-scrape.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

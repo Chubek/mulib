@@ -98,6 +98,9 @@
 #define MULIB_IMPL_BSON
 #define MULIB_IMPL_BUFFER
 #define MULIB_IMPL_BUILDGRAPH
+#define MULIB_IMPL_BUILDPARSE
+#define MULIB_IMPL_BUILDPLAN
+#define MULIB_IMPL_BUILDSTATE
 #define MULIB_IMPL_BUILDVM
 #define MULIB_IMPL_BYCUTILS
 #define MULIB_IMPL_BYTECODE
@@ -234,6 +237,7 @@
 #define MULIB_IMPL_DEFLATE
 #define MULIB_IMPL_DEFUSE
 #define MULIB_IMPL_DELTACODEC
+#define MULIB_IMPL_DEPFILE
 #define MULIB_IMPL_DEPIR
 #define MULIB_IMPL_DEQUE
 #define MULIB_IMPL_DER
@@ -1269,6 +1273,9 @@
 #include "mulib-bson.h"
 #include "mulib-buffer.h"
 #include "mulib-buildgraph.h"
+#include "mulib-buildparse.h"
+#include "mulib-buildplan.h"
+#include "mulib-buildstate.h"
 #include "mulib-buildvm.h"
 #include "mulib-bycutils.h"
 #include "mulib-bytecode-builder.h"
@@ -1406,6 +1413,7 @@
 #include "mulib-deflate.h"
 #include "mulib-defuse.h"
 #include "mulib-deltacodec.h"
+#include "mulib-depfile.h"
 #include "mulib-depir.h"
 #include "mulib-deque.h"
 #include "mulib-der.h"

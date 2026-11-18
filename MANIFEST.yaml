@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1168
-implemented_module_count: 1168
+module_count: 1172
+implemented_module_count: 1172
 modules:
 - name: elvi-scrape
   header: include/mulib-elvi-scrape.h
@@ -2899,6 +2899,38 @@ modules:
   purpose: Declared-input/output artifact and opaque Action DAG with execution and translation walkers.
   dependencies: [artifact]
   status: implemented
+- name: buildplan
+  header: include/mulib-buildplan.h
+  manual: manual/mulib-buildplan.md
+  macro: MULIB_IMPL_BUILDPLAN
+  purpose: Bounded owned target DAG resolution, resource waves and critical-path planning.
+  dependencies: []
+  status: implemented
+  example: examples/modules/buildplan.c
+- name: depfile
+  header: include/mulib-depfile.h
+  manual: manual/mulib-depfile.md
+  macro: MULIB_IMPL_DEPFILE
+  purpose: Bounded GCC and Ninja dependency-file parsing with streaming rule callbacks.
+  dependencies: []
+  status: implemented
+  example: examples/modules/depfile.c
+- name: buildparse
+  header: include/mulib-buildparse.h
+  manual: manual/mulib-buildparse.md
+  macro: MULIB_IMPL_BUILDPARSE
+  purpose: Bounded Make, Ninja, CMake, Meson and Bazel dependency extractors.
+  dependencies: [buildplan]
+  status: implemented
+  example: examples/modules/buildparse.c
+- name: buildstate
+  header: include/mulib-buildstate.h
+  manual: manual/mulib-buildstate.md
+  macro: MULIB_IMPL_BUILDSTATE
+  purpose: Canonical SHA-256 action provenance and injected invalidation policy.
+  dependencies: [sha]
+  status: implemented
+  example: examples/modules/buildstate.c
 - name: daemon
   header: include/mulib-daemon.h
   manual: manual/mulib-daemon.md

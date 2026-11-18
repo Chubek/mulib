@@ -99,6 +99,9 @@
     "mulib-bson.h",
     "mulib-buffer.h",
     "mulib-buildgraph.h",
+    "mulib-buildparse.h",
+    "mulib-buildplan.h",
+    "mulib-buildstate.h",
     "mulib-buildvm.h",
     "mulib-bycutils.h",
     "mulib-bytecode-builder.h",
@@ -236,6 +239,7 @@
     "mulib-deflate.h",
     "mulib-defuse.h",
     "mulib-deltacodec.h",
+    "mulib-depfile.h",
     "mulib-depir.h",
     "mulib-deque.h",
     "mulib-der.h",
@@ -1172,10 +1176,10 @@
     "mulib-zorder.h",
     "mulib-zstd.h"
   ],
-  "libraries": 1171,
-  "functions": 5163,
-  "types": 8517,
-  "constants": 2619,
+  "libraries": 1175,
+  "functions": 5192,
+  "types": 8581,
+  "constants": 2650,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -1217,7 +1221,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "8a6657092edf96ba794d4e63ed8bc50fa66bdbbc112a4c9df745c6f0a2db88e4",
+  "fingerprint": "f511565a4230821361677a106b6d9e6ebc20a35e5c51f7cdcddac6b135d73eb2",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -2169,6 +2173,48 @@
         "mulib_buildgraph_result",
         "mulib_buildgraph_value",
         "mulib_buildgraph_run_destroy"
+      ]
+    },
+    "buildparse": {
+      "header": "mulib-buildparse.h",
+      "functions": [
+        "mulib_buildparse",
+        "mulib_buildparse_file"
+      ]
+    },
+    "buildplan": {
+      "header": "mulib-buildplan.h",
+      "functions": [
+        "mulib_buildplan_create",
+        "mulib_buildplan_destroy",
+        "mulib_buildplan_target",
+        "mulib_buildplan_find",
+        "mulib_buildplan_depend",
+        "mulib_buildplan_depend_names",
+        "mulib_buildplan_set_tag",
+        "mulib_buildplan_set_action",
+        "mulib_buildplan_set_resources",
+        "mulib_buildplan_set_duration",
+        "mulib_buildplan_count",
+        "mulib_buildplan_dependency_count",
+        "mulib_buildplan_at",
+        "mulib_buildplan_dependency_at",
+        "mulib_buildplan_order",
+        "mulib_buildplan_validate",
+        "mulib_buildplan_cycle",
+        "mulib_buildplan_schedule",
+        "mulib_buildplan_critical_path"
+      ]
+    },
+    "buildstate": {
+      "header": "mulib-buildstate.h",
+      "functions": [
+        "mulib_buildstate_action_validate",
+        "mulib_buildstate_action_fingerprint",
+        "mulib_buildstate_file_fingerprint",
+        "mulib_buildstate_provenance_fingerprint",
+        "mulib_buildstate_hermetic",
+        "mulib_buildstate_is_dirty"
       ]
     },
     "buildvm": {
@@ -3604,6 +3650,13 @@
       "functions": [
         "mulib_deltacodec_encode",
         "mulib_deltacodec_decode"
+      ]
+    },
+    "depfile": {
+      "header": "mulib-depfile.h",
+      "functions": [
+        "mulib_depfile_parse",
+        "mulib_depfile_parse_file"
       ]
     },
     "depir": {
@@ -12227,7 +12280,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "dbc92b133c212ec32aaff790b093c3ff9fcc36a57cee2d5df5b831c698313565",
-    "Implementation.c": "d71867f7b5fb2331f668557c0150bd9dfe0cb288da6ae169b81cd96e496e1a6f"
+    "Generated.inc": "1033fb8bad67602b23726280ec991df3a622b79dc4ff8fb1f7878ba46a937500",
+    "Implementation.c": "f9fa88eee2026c496e9542ba5bb47ff166cf09a60d79b820909756367cbbdab5"
   }
 }

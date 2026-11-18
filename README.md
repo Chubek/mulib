@@ -1,6 +1,6 @@
 # MuLIB
 
-MuLIB is a modular C11 utility library with **1164 registered modules**, from
+MuLIB is a modular C11 utility library with **1172 registered modules**, from
 containers and parsers to compiler tooling, graphics, networking, and virtual
 machines. Choose the modules you need and compile their implementations into
 your application.
@@ -69,7 +69,7 @@ the [usage guide](GUIDE.md) for a complete multi-file application.
 | Parsing and configuration | [Parsec](manual/mulib-parsec.md), [ASTs](manual/mulib-ast.md), [JSON](manual/mulib-json.md), [YAML](manual/mulib-yaml.md), [TOML](manual/mulib-toml.md) |
 | Languages and compilers | [Mune](manual/mulib-mune.md), [MicroCC](manual/mulib-microcc.md), [MetaPP](manual/mulib-metapp.md), [ArchML](manual/mulib-archml.md), [YANTLR](manual/mulib-yantlr.md) |
 | Files, storage and binary formats | [VFS](manual/mulib-vfs.md), [SQLite-file engine](manual/mulib-sqlite.md), [binary formats](manual/binary-formats.md), [storage/server guide](manual/storage-server.md) |
-| Processes and task execution | [Exec](manual/mulib-exec.md), [Git](manual/mulib-git.md), [PolyTask](manual/mulib-polytask.md), [BuildGraph](manual/mulib-buildgraph.md), [distributed computing](manual/mulib-distribcomp.md) |
+| Processes and task execution | [Exec](manual/mulib-exec.md), [Git](manual/mulib-git.md), [PolyTask](manual/mulib-polytask.md), [BuildGraph](manual/mulib-buildgraph.md), [BuildPlan and build-file adapters](manual/mulib-buildplan.md), [distributed computing](manual/mulib-distribcomp.md) |
 | Networking and automation | [HTTP](manual/mulib-http.md), [DNS](manual/mulib-dns.md), [authentication](manual/mulib-auth.md), [Prowse browser automation](manual/mulib-prowse-control.md) |
 | HTTP applications and IPC | [MuW3](manual/mulib-muw3.md), [Mune Weblets/lmuw3](library/lmuw3/README.md), [MicroChan daemon](library/microchan/README.md) |
 | Web extraction and pricing | [67 granular web/pricing primitives](manual/web-primitives.md): bounded HTML/CSS, retrieval policy, static document orchestration and exact money arithmetic |
