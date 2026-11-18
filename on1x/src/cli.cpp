@@ -759,7 +759,15 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
       if(!variables.empty()){
        listing<<"forall(";for(std::size_t i=0;i<variables.size();++i){if(i)listing<<", ";listing<<"a"<<i;}listing<<") ";
       }
-      listing<<on1x::type_name(signature)<<"\n";
+      if(on1x::takes_exclusive(function)){
+       listing<<"fn(";
+       for(std::size_t i=0;i<function.params.size();++i){
+        if(i)listing<<", ";
+        if(function.params[i].exclusive)listing<<"ref ";
+        listing<<on1x::type_name(signature.parameters()[i]);
+       }
+       listing<<") -> "<<on1x::type_name(signature.result())<<"\n";
+      }else listing<<on1x::type_name(signature)<<"\n";
     }
      publish_diagnostics();write_all(out,listing.str());return 0;
     }

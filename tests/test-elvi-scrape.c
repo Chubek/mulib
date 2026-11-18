@@ -195,7 +195,7 @@ int main(int argc,char **argv) {
   provider_language();
   anchor_attributes();
   table_cell_context();
-  snprintf(path,sizeof path,"%s/library/elvi-scrape/google.elvs",root);
+  snprintf(path,sizeof path,"%s/library/elvis/Google.elvs",root);
   assert(mulib_elvi_scrape_load(path,&p,&err));
   hardening(root,&p);
   assert(!strcmp(p.name,"google"));
@@ -237,7 +237,7 @@ int main(int argc,char **argv) {
   assert(!mulib_elvi_scrape_search(&p,&client,"C11 compilers",1,out,10,&count,NULL));assert(old==calls);
   client.policy.max_url=0;client.policy.max_bytes=8;
   assert(!mulib_elvi_scrape_search(&p,&client,"C11 compilers",1,out,10,&count,NULL));
-  snprintf(path,sizeof path,"%s/library/elvi-scrape/bing.elvs",root);
+  snprintf(path,sizeof path,"%s/library/elvis/Bing.elvs",root);
   assert(mulib_elvi_scrape_load(path,&p,&err));
   fixture="<h2><a href='https://example.com/a'>Example <em>Bing</em> page</a></h2>"
     "<h2><a href='https://www.bing.com/account'>Internal</a></h2>"

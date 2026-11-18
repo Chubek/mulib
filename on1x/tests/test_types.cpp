@@ -50,10 +50,67 @@ int main() {
    require(on1x::type_name(Type::code(code))=="code<code<i64>>"&&code.has_functions(),"code type shape/ownership metadata was missed");
    require(Type::code(Type::Hole).has_holes()&&Type::code(Type::generic(2)).has_generics(),"code result variables were missed");
    require(Type(Type::SExpr).has_functions()&&Type::tuple({Type::SExpr,Type::Buffer}).has_functions(),"managed data ownership was missed");
-  auto universal=Type::for_all(1,Type::function({Type::bound(0)},Type::bound(0)));
-  require(universal.has_functions()&&universal.has_foralls()&&!universal.has_holes(),"forall metadata was missed");
-   require(on1x::forall_instance(universal,first)&&!on1x::forall_proof(universal,first),"monomorphic implementation passed as a universal proof");
-  require(on1x::forall_proof(universal,Type::function({Type::generic(7)},Type::generic(7))),"rigid universal proof was rejected");
+   auto universal=Type::for_all(1,Type::function({Type::bound(0)},Type::bound(0)));
+    require(universal.has_functions()&&universal.has_foralls()&&!universal.has_holes(),"forall metadata was missed");
+     require(on1x::forall_instance(universal,first)&&!on1x::forall_proof(universal,first),"monomorphic implementation passed as a universal proof");
+    require(on1x::forall_proof(universal,Type::function({Type::generic(7)},Type::generic(7))),"rigid universal proof was rejected");
+    auto open_argument=Type::named("Box",{Type::generic(9)});
+    auto open_instance=Type::function({open_argument},open_argument);
+    require(on1x::forall_open_instance(universal,open_instance)&&
+            !on1x::forall_instance(universal,open_instance)&&
+            !on1x::forall_proof(universal,open_instance),
+            "open predicative forall matching was not kept distinct");
+   using on1x::TypeFormOptions;
+   using on1x::TypeFormStatus;
+   auto form=on1x::check_type_form(Type::I64);
+   require(form.status==TypeFormStatus::Valid,"ground type form was rejected");
+   require(on1x::check_type_form(Type::Invalid).status==TypeFormStatus::Malformed,
+           "invalid type sentinel was admitted");
+   require(on1x::check_type_form(Type::function({Type::Invalid},Type::I64)).status==TypeFormStatus::Malformed,
+           "nested invalid type sentinel was admitted");
+   require(on1x::check_type_form(Type::Hole).status==TypeFormStatus::Malformed,
+           "unresolved type hole was admitted");
+   TypeFormOptions source_form;source_form.allow_holes=true;source_form.allow_named=true;
+   require(static_cast<bool>(on1x::check_type_form(
+             Type::function({Type::Hole},Type::named("T")),source_form)),
+           "source annotation form rejected holes or names");
+   require(on1x::check_type_form(Type::generic(4)).status==TypeFormStatus::Malformed,
+           "raw inferred generic was admitted");
+   TypeFormOptions prototype_form;prototype_form.allow_generics=true;
+   require(static_cast<bool>(on1x::check_type_form(Type::generic(4),prototype_form)),
+           "explicit prototype generic was rejected");
+   require(on1x::check_type_form(Type::bound(0)).status==TypeFormStatus::Malformed,
+           "free bound variable was admitted");
+   TypeFormOptions bound_form;bound_form.bound_variables=1;
+   require(on1x::check_type_form(Type::bound(0),bound_form)&&
+           on1x::check_type_form(Type::bound(1),bound_form).status==TypeFormStatus::Malformed,
+           "quantified-variable scope was not enforced");
+   require(static_cast<bool>(on1x::check_type_form(universal)),
+           "closed forall form was rejected");
+   TypeFormOptions one_node;one_node.max_nodes=1;
+   require(on1x::check_type_form(first,one_node).status==TypeFormStatus::Limit,
+           "type-form node budget was not enforced");
+   TypeFormOptions shallow;shallow.max_depth=0;
+   require(on1x::check_type_form(Type::code(Type::I64),shallow).status==TypeFormStatus::Limit,
+           "type-form depth budget was not enforced");
+   require(!on1x::forall_instance(universal,Type::function({Type::Invalid},Type::Invalid)),
+           "malformed forall instance was admitted");
+   bool malformed_forall=false;
+   try{(void)Type::for_all(1,Type::function({Type::bound(1)},Type::bound(0)));}
+   catch(const std::logic_error&){malformed_forall=true;}
+   require(malformed_forall,"out-of-range quantified variable was admitted");
+   malformed_forall=false;
+   try{(void)Type::for_all(1,Type::function({Type::generic(1)},Type::bound(0)));}
+   catch(const std::logic_error&){malformed_forall=true;}
+   require(malformed_forall,"free inferred generic in forall was admitted");
+   malformed_forall=false;
+   try{(void)Type::for_all(1,Type::function({Type::Invalid},Type::bound(0)));}
+   catch(const std::logic_error&){malformed_forall=true;}
+   require(malformed_forall,"nested invalid type in forall was admitted");
+   malformed_forall=false;
+   try{(void)Type::for_all(1,Type::function({universal},Type::bound(0)));}
+   catch(const std::logic_error&){malformed_forall=true;}
+   require(malformed_forall,"nested forall was admitted");
   std::map<Type,int> unique;
   unique.emplace(first,1);unique.emplace(same,2);unique.emplace(different,3);
   require(unique.size()==2,"equivalent function types have different ordering identities");

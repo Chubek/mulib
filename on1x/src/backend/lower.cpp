@@ -6,6 +6,8 @@
 #include <on1x/canonical/control.hpp>
 #include <on1x/canonical/values.hpp>
 #include <on1x/concurrency.hpp>
+#include <on1x/cliche.hpp>
+#include <on1x/inherent.hpp>
 #include <charconv>
 #include <map>
 #include <set>
@@ -26,9 +28,14 @@ class Lowering {
   std::vector<LoopTarget> loops;
   std::vector<LoopTarget> regions;
   std::set<std::size_t> region_targets,continue_targets;
- [[noreturn]] void unsupported(const Location& at,const std::string& why){throw Error(at,"ON1X-MIR-UNSUPPORTED: "+why);}
+ [[noreturn]] void unsupported(const Location& at,const std::string& why){
+  throw Error(at,"ON1X-MIR-UNSUPPORTED: "+why,"ON1X-MIR-UNSUPPORTED");
+ }
  Id fresh(const Location& at){if(serial>=limits.nodes)throw Error(at,"ON1X-MIR-LOWER: node budget exhausted");return ++serial;}
   void scalar(const Type& t,const Location& at,bool allow_void=false){
+    if(t.contains_unique()){
+     unsupported(at,"unique ownership requires typed move/drop and cleanup MIR events (direct C11 HIR backend only)");
+    }
     if(t==Type::F32||t.is_unsigned()){module.version=numeric_format_version;return;}
     if(t==Type::F64){module.version=std::max(module.version,format_version);return;}
    if(t.is_tuple()){
@@ -68,6 +75,8 @@ class Lowering {
   unsupported(at,"unresolved local "+name);
  }
  Id expression(const Expr& e){
+  if(e.kind==Expr::Kind::RegexLiteral||e.kind==Expr::Kind::RegexMatch||e.kind==Expr::Kind::RegexCapture)
+   unsupported(e.where,"core regex operations require the direct C11 backend");
   scalar(e.type,e.where,true);
    switch(e.kind){
    case Expr::Kind::Unit:return 0;
@@ -210,9 +219,14 @@ class Lowering {
  }
 public:
  Lowering(const Unit& u,Limits l):unit(u),limits(l){}
-  Module run(){
-    csp::verify(unit,true);
-    if(csp::present(unit))unsupported(unit.functions.front().where,"cooperative concurrency requires effectful/ownership MIR descriptors (C11 HIR backend only)");
+   Module run(){
+      inherent::verify_elaborated(unit);
+      cliches::verify_elaborated(unit);
+      csp::verify(unit,true);
+     for(const auto& declaration:unit.nominals)
+      for(const auto& field:declaration.fields)if(field.contains_unique())
+       unsupported(declaration.where,"unique ownership requires typed move/drop and cleanup MIR events (direct C11 HIR backend only)");
+     if(csp::present(unit))unsupported(unit.functions.front().where,"cooperative concurrency requires effectful/ownership MIR descriptors (C11 HIR backend only)");
     canonical::verify_control(unit);
     meta::require_core(unit);
     canonical::verify_values(unit);
@@ -220,6 +234,7 @@ public:
    for(const auto& f:unit.functions){auto targets=canonical::exit_targets(f,Stmt::Kind::Leave);region_targets.insert(targets.begin(),targets.end());auto next=canonical::exit_targets(f,Stmt::Kind::Continue);continue_targets.insert(next.begin(),next.end());}
   for(const auto& f:unit.functions){
    if(f.prototype)continue;
+   if(takes_exclusive(f))unsupported(f.where,"exclusive ref i64 requires addressable-place and borrow MIR descriptors (C11 HIR backend only)");
    if(f.external)unsupported(f.where,"raw extern declarations require typed foreign MIR descriptors");
    scalar(f.result,f.where,true);Function target;target.id=fresh(f.where);target.name=f.name;target.result=f.result;target.where=f.where;
    functions.emplace(f.name,target.id);module.functions.push_back(std::move(target));

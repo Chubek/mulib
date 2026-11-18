@@ -25,6 +25,11 @@ class Lower {
  void charge(const Pattern& p){auto size=p.name.size()+p.where.file.size();for(const auto& label:p.labels){if(label.size()>bytes)throw Error(p.where,"pattern plan byte budget exhausted","ON1X-VALUES-LIMIT");bytes-=label.size();}if(size>bytes)throw Error(p.where,"pattern plan byte budget exhausted","ON1X-VALUES-LIMIT");bytes-=size;}
  Pattern copy_pattern(const Pattern& p){auto account=[&](auto&& self,const Pattern& part)->void{tick(part.where);charge(part);for(const auto& c:part.elements)self(self,c);};account(account,p);return clone_pattern(p,copy_budget);}
  std::string fresh(){return "@decision_"+std::to_string(++serial);}
+ ExprPtr transfer_local(const std::string& name,Type type,const Location& at,bool consuming){
+  auto result=local(name,type,at);
+  if(consuming&&type.is_move_only())result->move_out=true;
+  return result;
+ }
  Stmt bind(const std::string& name,ExprPtr e,const Location& at){Stmt s;s.kind=S::Let;s.where=at;s.name=name;s.declared=e->type;s.value=std::move(e);return s;}
  Stmt store(const std::string& name,ExprPtr e,const Location& at){Stmt s;s.kind=S::Initialize;s.name=name;s.where=at;s.value=std::move(e);return s;}
  std::vector<Pattern> alternatives(const Pattern& p){
@@ -34,18 +39,18 @@ class Lower {
  }
  struct Binding {std::string name,root;Type type;};
  using Bindings=std::vector<Binding>;using Next=std::function<void(std::vector<Stmt>&,Bindings)>;
- void test(const Pattern& p,const std::string& root,std::vector<Stmt>& out,Bindings bindings,const Next& next){
-  tick(p.where);charge(p);auto t=p.type;auto at=p.where;
-  if(p.kind==P::As){bindings.push_back({p.name,root,t});test(p.elements.at(0),root,out,std::move(bindings),next);return;}
+  void test(const Pattern& p,const std::string& root,std::vector<Stmt>& out,Bindings bindings,const Next& next,bool consuming){
+   tick(p.where);charge(p);auto t=p.type;auto at=p.where;
+   if(p.kind==P::As){bindings.push_back({p.name,root,t});test(p.elements.at(0),root,out,std::move(bindings),next,consuming);return;}
   if(p.kind==P::Name&&!p.is_tuple()){bindings.push_back({p.name,root,t});next(out,std::move(bindings));return;}
   if(p.kind==P::Wildcard||p.kind==P::Rest){next(out,std::move(bindings));return;}
   if(p.kind==P::Literal){Stmt branch;branch.kind=S::If;branch.where=at;branch.value=equal(local(root,t,at),std::make_unique<Expr>(patterns::literal(p)),at);next(branch.body,std::move(bindings));out.push_back(std::move(branch));return;}
   if(p.kind==P::Variant){
    auto tag=std::find(t.labels().begin(),t.labels().end(),p.name);auto index=static_cast<std::size_t>(tag-t.labels().begin());auto payload=t.elements().at(index);
-   Stmt branch;branch.kind=S::If;branch.where=at;branch.value=value(E::TagTest,Type::Bool,at,p.name);branch.value->projection=index;branch.value->children.push_back(local(root,t,at));
-   auto name=fresh();auto get=value(E::Payload,payload,at,p.name);get->projection=index;get->children.push_back(local(root,t,at));branch.body.push_back(bind(name,std::move(get),at));
-   if(p.elements.size()==1)test(p.elements[0],name,branch.body,std::move(bindings),next);
-   else{Pattern tuple;tuple.kind=P::Tuple;tuple.where=at;tuple.type=payload;tuple.elements=p.elements;test(tuple,name,branch.body,std::move(bindings),next);}
+    Stmt branch;branch.kind=S::If;branch.where=at;branch.value=value(E::TagTest,Type::Bool,at,p.name);branch.value->projection=index;branch.value->children.push_back(local(root,t,at));
+    auto name=fresh();auto get=value(E::Payload,payload,at,p.name);get->projection=index;get->move_out=consuming&&payload.is_move_only();get->children.push_back(local(root,t,at));branch.body.push_back(bind(name,std::move(get),at));
+    if(p.elements.size()==1)test(p.elements[0],name,branch.body,std::move(bindings),next,consuming);
+    else{Pattern tuple;tuple.kind=P::Tuple;tuple.where=at;tuple.type=payload;tuple.elements=p.elements;test(tuple,name,branch.body,std::move(bindings),next,consuming);}
    out.push_back(std::move(branch));return;
   }
   std::vector<Stmt>* destination=&out;Stmt length_branch;
@@ -56,11 +61,11 @@ class Lower {
   fields=[&](std::size_t i,std::vector<Stmt>& into,Bindings bound){
    if(i==p.elements.size()){next(into,std::move(bound));return;}
    const auto& child=p.elements[i];ExprPtr get;
-   if(p.is_tuple()){get=value(E::Project,t.elements().at(i),child.where);get->projection=i;get->children.push_back(local(root,t,at));}
-   else if(p.kind==P::Record){auto tag=std::find(t.labels().begin(),t.labels().end(),p.labels.at(i));auto index=static_cast<std::size_t>(tag-t.labels().begin());get=value(E::Field,t.elements().at(index),child.where,p.labels[i]);get->projection=index;get->children.push_back(local(root,t,at));}
+    if(p.is_tuple()){get=value(E::Project,t.elements().at(i),child.where);get->projection=i;get->move_out=consuming&&get->type.is_move_only();get->children.push_back(local(root,t,at));}
+    else if(p.kind==P::Record){auto tag=std::find(t.labels().begin(),t.labels().end(),p.labels.at(i));auto index=static_cast<std::size_t>(tag-t.labels().begin());get=value(E::Field,t.elements().at(index),child.where,p.labels[i]);get->projection=index;get->move_out=consuming&&get->type.is_move_only();get->children.push_back(local(root,t,at));}
    else if(p.kind==P::Array){get=value(E::Index,t.elements().at(0),child.where);get->children.push_back(local(root,t,at));get->children.push_back(integer(i,child.where));}
    else fail(p.where,"unhandled structural decision");
-   auto name=fresh();into.push_back(bind(name,std::move(get),child.where));test(child,name,into,std::move(bound),[&](std::vector<Stmt>& continuation,Bindings b){fields(i+1,continuation,std::move(b));});
+    auto name=fresh();into.push_back(bind(name,std::move(get),child.where));test(child,name,into,std::move(bound),[&](std::vector<Stmt>& continuation,Bindings b){fields(i+1,continuation,std::move(b));},consuming);
   };
   fields(0,*destination,std::move(bindings));if(destination!=&out)out.push_back(std::move(length_branch));
  }
@@ -115,7 +120,7 @@ class Lower {
      // and fatal so no emitter/verifier can read an uninitialized result slot.
      Stmt unreachable;unreachable.kind=S::Trap;unreachable.where=e.where;exit.body.push_back(std::move(unreachable));region.body.push_back(std::move(exit));
     }else region.body.push_back(std::move(loop));
-    region.children.push_back(result.empty()?value(E::Unit,Type::Void,e.where):local(result,e.type,e.where));e=std::move(region);return;
+     region.children.push_back(result.empty()?value(E::Unit,Type::Void,e.where):transfer_local(result,e.type,e.where,e.type.is_move_only()));e=std::move(region);return;
    }
   if(e.kind==E::Match)old_match(e);
   if(e.kind==E::PatternMatch){
@@ -123,7 +128,9 @@ class Lower {
    for(std::size_t i=1;i<e.children.size();++i){auto& arm=*e.children[i];if(arm.kind!=E::Case||arm.patterns.size()!=1||arm.children.size()!=2||arm.children[0]->type!=Type::Bool)fail(arm.where,"malformed checked match arm");(void)patterns::check(arm.patterns[0],e.children[0]->type);}
    expression(*e.children.at(0));for(std::size_t i=1;i<e.children.size();++i){auto& arm=*e.children[i];expression(*arm.children.at(0));body(arm.body);expression(*arm.children.at(1));}
    Expr region;region.kind=E::Region;region.type=e.type;region.where=e.where;region.noreturn=e.noreturn;
-   auto root=e.text.empty()?fresh():e.text;auto input_type=e.children[0]->type;region.body.push_back(bind(root,std::move(e.children[0]),e.where));
+    auto root=e.text.empty()?fresh():e.text;auto input_type=e.children[0]->type;const bool consuming=input_type.is_move_only();
+    if(consuming&&e.children[0]->kind==E::Variable&&e.children[0]->reference==Expr::Reference::Local)e.children[0]->move_out=true;
+    region.body.push_back(bind(root,std::move(e.children[0]),e.where));
    auto result=fresh();if(e.type!=Type::Void){Stmt slot;slot.kind=S::Storage;slot.where=e.where;slot.name=result;slot.declared=e.type;region.body.push_back(std::move(slot));}
    Stmt decision;decision.kind=S::Region;decision.control_target=++serial;decision.where=e.where;auto done=decision.control_target;
    for(std::size_t i=1;i<e.children.size();++i){auto& arm=*e.children[i];auto& pattern=arm.patterns.at(0);Stmt skip;skip.kind=S::Region;skip.control_target=++serial;skip.where=arm.where;
@@ -131,7 +138,7 @@ class Lower {
     Stmt choose;choose.kind=S::Region;choose.control_target=++serial;choose.where=arm.where;auto selected=choose.control_target;
     for(const auto& alternative:alternatives(pattern)){
      if(patterns::terminates(choose.body))break;
-     test(alternative,root,choose.body,{},[&](std::vector<Stmt>& into,Bindings bindings){for(const auto& b:bindings)into.push_back(store(b.name,local(b.root,b.type,arm.where),arm.where));into.push_back(leave(selected,arm.where));});
+      test(alternative,root,choose.body,{},[&](std::vector<Stmt>& into,Bindings bindings){for(const auto& b:bindings)into.push_back(store(b.name,transfer_local(b.root,b.type,arm.where,consuming),arm.where));into.push_back(leave(selected,arm.where));},consuming);
     }
     if(!patterns::terminates(choose.body))choose.body.push_back(leave(skip.control_target,arm.where));
     skip.body.push_back(std::move(choose));
@@ -144,7 +151,7 @@ class Lower {
     guard.body.push_back(std::move(block));skip.body.push_back(std::move(guard));decision.body.push_back(std::move(skip));
    }
    Stmt unreachable;unreachable.kind=S::Trap;unreachable.where=e.where;decision.body.push_back(std::move(unreachable));region.body.push_back(std::move(decision));
-   region.children.push_back(e.type==Type::Void?value(E::Unit,Type::Void,e.where):local(result,e.type,e.where));e=std::move(region);return;
+    region.children.push_back(e.type==Type::Void?value(E::Unit,Type::Void,e.where):transfer_local(result,e.type,e.where,e.type.is_move_only()));e=std::move(region);return;
   }
   if(e.callee)expression(*e.callee);
   for(auto& c:e.children)expression(*c);

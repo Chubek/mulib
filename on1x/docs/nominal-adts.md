@@ -1,8 +1,13 @@
 # M1 nonrecursive nominal data
 
-This task implements section 11's initial, nonrecursive profile. It does not
-implement owning lists, boxed recursion, managed data fields, defer, typed error
-propagation or concurrency.
+This document records section 11's initial, nonrecursive profile. That increment
+did not implement owning lists, boxed recursion, managed data fields, defer,
+typed error propagation or concurrency.
+
+The later [shared-ownership profile](owning-adts.md) admits immutable `sexpr`
+fields in nonrecursive nominal declarations. The still later
+[finite unique-owner profile](recursive-owning-adts.md) admits recursive nominal
+layouts through `own<Named>` with explicit moves and C11 cleanup.
 
 ```on1x
 record Point { x: i64, y: i64 }
@@ -30,9 +35,10 @@ fn main() {
 - Parameters bind in declaration fields only; arguments are checked for arity.
   `_` arguments participate in existing inference/generalization. `forall`
   bounds and specialization retain nominal identity and argument sharing.
-- Only the existing bounded trivial by-value field profile is admitted. There
-  are no nominal heap allocations, unique moves, destructors, borrowed fields or
-  new effects.
+- In this initial profile, only the existing bounded trivial by-value field
+  profile is admitted. It has no nominal heap allocations, unique moves,
+  destructors, borrowed fields or new effects. Later ownership profiles are
+  additive and do not change these copy semantics for non-owning values.
   Construction evaluates operands once, left-to-right, before ordinary lexical
   cleanup. Aggregate projection/pattern inspection does not erase identity.
 - Declarations are validated even if unused. Direct/mutual recursion, unknown
@@ -80,7 +86,8 @@ occupy the loader's type namespace, not the value namespace; local variables do
 not capture macro-definition-site type references. Named/selective/relative
 imports and re-exports retain the declaring module's identity. Legacy quoted
 imports keep their existing flat conflict policy. There is no automatically
-generated bare constructor syntax, boxing or field mutation. The later
+generated bare constructor syntax or field mutation. Boxing is available only
+under the later explicit [unique-owner contract](recursive-owning-adts.md). The later
 pervasive-library increment automatically imports canonical `Option`/`Result`
 declarations and ordinary `option_*`/`result_*` constructor helpers. Local
 declarations such as this document's example retain precedence and their

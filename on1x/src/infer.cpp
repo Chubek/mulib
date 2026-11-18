@@ -4,10 +4,13 @@
 #include <on1x/primitives.hpp>
 #include <on1x/staging.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/literals.hpp>
 #include <on1x/canonical/control.hpp>
 #include <on1x/patterns.hpp>
 #include <on1x/nominal.hpp>
 #include <on1x/concurrency.hpp>
+#include <on1x/cliche.hpp>
+#include <on1x/inherent.hpp>
 #include <deque>
 #include <algorithm>
 #include <map>
@@ -18,38 +21,89 @@
 namespace on1x {
 namespace {
 bool data_kind(Type::Kind kind){return kind==Type::Record||kind==Type::Sum||kind==Type::Array||kind==Type::Slice;}
-bool compound(Type::Kind kind){return kind==Type::Function||kind==Type::Tuple||kind==Type::Code||data_kind(kind);}
+bool compound(Type::Kind kind){return kind==Type::Function||kind==Type::Tuple||kind==Type::Code||kind==Type::Own||data_kind(kind);}
 bool has_result(Type::Kind kind){return kind==Type::Function||kind==Type::Code;}
 bool numeric_kind(Type::Kind kind){
  return kind==Type::I64||kind==Type::F64||kind==Type::F32||(kind>=Type::U8&&kind<=Type::U64);
 }
-bool holes_in(const Expr& expression);
-bool holes_in(const std::vector<Stmt>& body) {
- for(const auto& s:body)if(s.kind==Stmt::Kind::Defer)return true;
- for(const auto& statement:body)
-   if(has_type_holes(statement.declared)||statement.declared.has_foralls()||(statement.value&&holes_in(*statement.value))||
-     holes_in(statement.body)||holes_in(statement.otherwise))return true;
- return false;
-}
-bool holes_in(const Expr& expression) {
-  if(expression.kind==Expr::Kind::Propagate||expression.kind==Expr::Kind::SourceCsp)return true;
-   if((expression.kind>=Expr::Kind::Record&&expression.kind<=Expr::Kind::Length)||expression.kind==Expr::Kind::PatternMatch||expression.kind==Expr::Kind::Loop||expression.kind==Expr::Kind::UnsafeBlock)return true;
- if(expression.kind==Expr::Kind::Lambda){
-   if(has_type_holes(expression.result)||expression.result.has_foralls()||holes_in(expression.body))return true;
-   for(const auto& parameter:expression.parameters)if(has_type_holes(parameter.type)||parameter.type.has_foralls())return true;
+struct InferenceScan {
+ std::size_t nodes=262144;
+ void tick(const Location& at,std::size_t depth){
+  if(depth>2*max_syntax_depth+8||!nodes--)
+   throw Error(at,"type-inference input scan depth/node budget exhausted",
+               "ON1X-TYPE-LIMIT");
  }
- if(expression.callee&&holes_in(*expression.callee))return true;
- for(const auto& child:expression.children)if(holes_in(*child))return true;
- return false;
+};
+bool holes_in(const Expr& expression,InferenceScan& scan,std::size_t depth);
+bool holes_in(const std::vector<Stmt>& body,InferenceScan& scan,std::size_t depth) {
+ bool found=false;
+ for(const auto& statement:body){
+  scan.tick(statement.where,depth);
+  if(statement.kind==Stmt::Kind::Defer)found=true;
+   if(has_type_holes(statement.declared)||statement.declared.has_foralls()||
+      statement.declared.has_names())found=true;
+  if(statement.value)found=holes_in(*statement.value,scan,depth+1)||found;
+  if(!statement.instances.empty())
+   throw Error(statement.where,
+               "stale specialization instances before type inference",
+               "ON1X-TYPE-FORM");
+  found=holes_in(statement.body,scan,depth+1)||found;
+  found=holes_in(statement.otherwise,scan,depth+1)||found;
+ }
+ return found;
+}
+bool holes_in(const Expr& expression,InferenceScan& scan,std::size_t depth) {
+ scan.tick(expression.where,depth);
+ bool found=expression.kind==Expr::Kind::ClicheMember||
+            expression.kind==Expr::Kind::InherentMember||
+            expression.kind==Expr::Kind::Propagate||
+            expression.kind==Expr::Kind::SourceCsp||
+            (expression.kind>=Expr::Kind::Record&&
+             expression.kind<=Expr::Kind::Length)||
+            expression.kind==Expr::Kind::PatternMatch||
+            expression.kind==Expr::Kind::Loop||
+            expression.kind==Expr::Kind::UnsafeBlock;
+ if(expression.kind==Expr::Kind::Lambda){
+  found=has_type_holes(expression.result)||expression.result.has_foralls()||
+        found;
+  for(const auto& parameter:expression.parameters)
+   found=has_type_holes(parameter.type)||parameter.type.has_foralls()||found;
+ }
+ if(expression.callee)
+  found=holes_in(*expression.callee,scan,depth+1)||found;
+ if(expression.syntax_tail)
+  found=holes_in(*expression.syntax_tail,scan,depth+1)||found;
+ for(const auto& child:expression.children){
+  if(!child)throw Error(expression.where,
+                        "null expression child before type inference",
+                        "ON1X-TYPE-FORM");
+  found=holes_in(*child,scan,depth+1)||found;
+ }
+ for(const auto& proof:expression.proofs){
+  if(!proof)throw Error(expression.where,
+                        "null universal proof before type inference",
+                        "ON1X-TYPE-FORM");
+  found=holes_in(*proof,scan,depth+1)||found;
+ }
+ return holes_in(expression.body,scan,depth+1)||found;
 }
 bool needs_inference(const Unit& unit) {
  if(unit.forall_elaborated)return false;
- if(!unit.nominals.empty())return true;
+ InferenceScan scan;
+ bool needed=!unit.nominals.empty()||cliches::present(unit)||
+             inherent::present(unit);
  for(const auto& function:unit.functions) {
-    if(has_type_holes(function.result)||function.result.has_foralls()||function.result.has_names()||holes_in(function.body))return true;
-    for(const auto& parameter:function.params)if(has_type_holes(parameter.type)||parameter.type.has_foralls()||parameter.type.has_names())return true;
+   scan.tick(function.where,0);
+   needed=!function.type_parameters.empty()||!function.constraints.empty()||
+          needed;
+   const bool body_needs=holes_in(function.body,scan,1);
+   needed=has_type_holes(function.result)||function.result.has_foralls()||
+          function.result.has_names()||body_needs||needed;
+   for(const auto& parameter:function.params)
+    needed=has_type_holes(parameter.type)||parameter.type.has_foralls()||
+           parameter.type.has_names()||needed;
  }
- return false;
+ return needed;
 }
 
 class Inference {
@@ -66,16 +120,21 @@ class Inference {
     std::size_t arguments=0; // Trailing parameters, never representation fields.
  };
  struct Scheme;
- struct Global {
-  Term signature;bool external;Function* definition;
+  struct Predicate {std::string name;std::vector<Term> arguments;Location where;};
+  struct Global {
+   Term signature;bool external;Function* definition;
   Scheme* scheme=nullptr;unsigned state=0;std::size_t index=0,low=0;bool on_stack=false;
-  Stmt* source=nullptr;std::size_t first_slot=0,last_slot=0;
-  std::vector<std::size_t> declaration_slots;
+   Stmt* source=nullptr;std::size_t first_slot=0,last_slot=0;
+   std::vector<std::size_t> declaration_slots;
+   std::vector<Term> variables;
+   std::vector<Predicate> constraints;
  };
  struct Slot { Type* output; Term term; Location where; std::string description; bool generic=false; };
  struct Ground { Type type; std::size_t identity, depth, size; };
-  Unit& unit;
-  NominalCatalog catalog;
+   Unit& unit;
+   NominalCatalog catalog;
+   inherent::Catalog inherent_members;
+   std::set<std::string> nominal_names,cliche_names;
  const InferenceLimits& limits;
  std::size_t work = 0;
  std::vector<Node> nodes;
@@ -103,7 +162,21 @@ class Inference {
  std::vector<std::string> component_stack;
  std::deque<std::vector<std::string>> global_groups;
  std::size_t discovery=0;
- std::vector<std::unique_ptr<Stmt>> global_sources;
+  std::vector<std::unique_ptr<Stmt>> global_sources;
+  struct Obligation {Predicate predicate;std::vector<Predicate> assumptions;Location where;};
+  std::vector<Obligation> obligations;
+  struct ReceiverCheck {Term target;Location where;};
+  std::vector<ReceiverCheck> receiver_checks;
+  struct ClicheUse {
+   Expr* expression;
+   std::string name,member;
+   std::vector<Term> arguments,member_arguments;
+   Term type;
+   std::size_t slot;
+   std::vector<Predicate> assumptions;
+   bool associated_value=false;
+  };
+  std::deque<ClicheUse> cliche_uses;
  struct Projection {Expr* expression;Term schema,instance;std::size_t slot;};
  std::vector<Projection> projections;
  struct Pack {Expr* expression;ExprPtr source;Scopes environment;Term schema;std::size_t slot;};
@@ -113,12 +186,14 @@ class Inference {
   bool saw_return = false;
   struct LoopValue {std::size_t target;Term type;bool bare=false,valued=false;};
   std::vector<LoopValue> loop_values;
- std::vector<std::optional<Ground>> ground;
+  std::vector<std::optional<Ground>> ground;
  std::vector<unsigned char> state;
  std::map<std::vector<std::size_t>,Ground> canonical;
-     std::size_t next_identity = Type::ByteReceiver + 1;
+      std::size_t next_identity = Type::Own + 1;
    std::map<std::vector<std::string>,std::size_t> label_identities;
-   std::map<std::string,std::size_t> nominal_identities;
+    std::map<std::string,std::size_t> nominal_identities;
+    const std::vector<Term>* active_type_variables=nullptr;
+    const std::vector<Predicate>* active_constraints=nullptr;
 
  [[noreturn]] static void fail(const Location& where,const std::string& message) {
    throw Error(where,message,"ON1X-TYPE");
@@ -137,9 +212,31 @@ class Inference {
   if(auto found=scalars.find(kind);found!=scalars.end())return found->second;
   auto id=add(kind,{},0,where);scalars.emplace(kind,id);return id;
  }
-  Term function(std::vector<Term> parameters,Term result,const Location& where) {
-   return add(Type::Function,std::move(parameters),result,where);
-  }
+   Term function(std::vector<Term> parameters,Term result,const Location& where) {
+    return add(Type::Function,std::move(parameters),result,where);
+   }
+   Term owning(std::string nominal,std::vector<Term> arguments,const Location& at){
+    if(nominal.empty())fail(at,"own<T> requires a nominal target");
+    auto id=add(Type::Own,std::move(arguments),0,at);
+    nodes[id].nominal=std::move(nominal);
+    nodes[id].arguments=nodes[id].parameters.size();
+    return id;
+   }
+   Term owned_value(Term owner,const Location& at){
+    auto root=head(owner,at);
+    if(nodes[root].kind!=Type::Own||nodes[root].nominal.empty())
+     fail(at,"owning operation requires own<Named>");
+    const auto& declaration=catalog.find(nodes[root].nominal,at);
+    if(nodes[root].parameters.size()!=declaration.parameters.size())
+     fail(at,"wrong type argument arity for "+declaration.name);
+    auto arguments=nodes[root].parameters;
+    std::vector<Term> fields;
+    for(const auto& field:declaration.fields)
+     fields.push_back(annotation(field,at,&arguments,1));
+    fields.insert(fields.end(),arguments.begin(),arguments.end());
+    return data(declaration.kind,std::move(fields),declaration.labels,0,at,
+                declaration.name,arguments.size());
+   }
    Term data(Type::Kind kind,std::vector<Term> fields,std::vector<std::string> labels,std::size_t extent,const Location& at,std::string nominal={},std::size_t arguments=0){
     if(fields.size()<arguments)fail(at,"invalid nominal inference shape");
     std::vector<Term> args(fields.end()-arguments,fields.end());fields.resize(fields.size()-arguments);
@@ -152,8 +249,23 @@ class Inference {
     fields.insert(fields.end(),args.begin(),args.end());
     auto id=add(kind,std::move(fields),0,at);nodes[id].labels=std::move(labels);nodes[id].extent=extent;nodes[id].nominal=std::move(nominal);nodes[id].arguments=arguments;return id;
    }
-   Term annotation(const Type& type,const Location& where,const std::vector<Term>* variables=nullptr,std::size_t depth=0) {
-    tick(where);
+     Term annotation(const Type& type,const Location& where,const std::vector<Term>* variables=nullptr,std::size_t depth=0) {
+      if(!variables)variables=active_type_variables;
+      if(!depth){
+       TypeFormOptions options;
+       options.bound_variables=variables?variables->size():0;
+       options.allow_holes=true;
+       options.allow_generics=true;
+       options.allow_named=true;
+       auto form=check_type_form(type,options);
+       if(form.status==TypeFormStatus::Limit)
+        throw Error(where,"type annotation form validation limit: "+form.message,
+                    "ON1X-TYPE-LIMIT");
+       if(!form)
+        throw Error(where,"malformed type annotation: "+form.message,
+                    "ON1X-TYPE-FORM");
+      }
+      tick(where);
      if(depth>limits.depth)fail(where,"nominal/type annotation depth limit exceeded");
      if(type.is_tuple())for(const auto& element:type.elements()){
       if(element==Type::Void)fail(where,"tuple elements cannot be void");
@@ -171,10 +283,22 @@ class Inference {
        fail(where,"function types cannot contain resource returns");
       if(csp::contains(type.result()))fail(where,"concurrency handles cannot escape through function results");
      }
-     if(type==Type::Hole)return fresh(where);
-    if(type.kind()==Type::Bound){if(!variables||type.generic_identity()>=variables->size())fail(where,"quantified type variable outside forall/declaration");return (*variables)[type.generic_identity()];}
-    if(type.kind()==Type::Named||!type.nominal().empty()){
-     const auto& d=catalog.find(type.nominal(),where);
+      if(type==Type::Hole)return fresh(where);
+     if(type.kind()==Type::Bound){if(!variables||type.generic_identity()>=variables->size())fail(where,"quantified type variable outside forall/declaration");return (*variables)[type.generic_identity()];}
+      if(type.is_own()){
+       const auto& target=type.owned();
+       if(target.kind()!=Type::Named)fail(where,"own<T> target is not nominal");
+       const auto& declaration=catalog.find(target.nominal(),where);
+       if(target.arguments().size()!=declaration.parameters.size())
+        fail(where,"wrong type argument arity for "+declaration.name);
+       std::vector<Term> arguments;
+       for(const auto& argument:target.arguments())
+        arguments.push_back(annotation(argument,where,variables,depth+1));
+       return owning(declaration.name,std::move(arguments),where);
+      }
+      if(type.kind()==Type::Named||!type.nominal().empty()){
+      if(auto builtin=catalog.regex_builtin(type);builtin!=Type::Invalid)return scalar(builtin.kind(),where);
+      const auto& d=catalog.find(type.nominal(),where);
      if(d.parameters.size()!=type.arguments().size())fail(where,"wrong type argument arity for "+d.name);
      std::vector<Term> args,fields;
      for(const auto& a:type.arguments())args.push_back(annotation(a,where,variables,depth+1));
@@ -199,9 +323,20 @@ class Inference {
    if(!type.is_function())return scalar(type.kind(),where);
   std::vector<Term> parameters;
    for(const auto& parameter:type.parameters())parameters.push_back(annotation(parameter,where,variables,depth+1));
-   auto result=annotation(type.result(),where,variables,depth+1);
-  return function(std::move(parameters),result,where);
- }
+    auto result=annotation(type.result(),where,variables,depth+1);
+   return function(std::move(parameters),result,where);
+  }
+  Predicate predicate(const ClicheConstraint& constraint,
+                      const std::vector<Term>& variables){
+   const auto& target=cliches::declaration(unit,constraint.name,constraint.where);
+   if(constraint.arguments.size()!=target.type_parameters.size()+1)
+    throw Error(constraint.where,"wrong cliche argument arity for "+constraint.name,
+                "ON1X-CLICHE-OBLIGATION");
+   Predicate result;result.name=constraint.name;result.where=constraint.where;
+   for(const auto& argument:constraint.arguments)
+    result.arguments.push_back(annotation(argument,constraint.where,&variables));
+   return result;
+  }
  Term head(Term id,const Location& where) {
   tick(where);auto root=id;
   while(nodes[root].parent!=root){tick(where);root=nodes[root].parent;}
@@ -226,8 +361,20 @@ class Inference {
   id=head(id,where);
   if(!budget||depth>=16)return "...";
   --budget;
-   if(nodes[id].kind==Type::Hole)return "?"+std::to_string(id);
-   if(nodes[id].kind==Type::Code)return "code<"+describe(nodes[id].result,where,budget,depth+1)+">";
+    if(nodes[id].kind==Type::Hole)return "?"+std::to_string(id);
+    if(nodes[id].kind==Type::Code)return "code<"+describe(nodes[id].result,where,budget,depth+1)+">";
+    if(nodes[id].kind==Type::Own){
+     std::string text="own<"+nodes[id].nominal;
+     if(!nodes[id].parameters.empty()){
+      text+="<";
+      for(std::size_t i=0;i<nodes[id].parameters.size();++i){
+       if(i)text+=", ";
+       text+=describe(nodes[id].parameters[i],where,budget,depth+1);
+      }
+      text+=">";
+     }
+     return text+">";
+    }
    if(auto atom=atoms.find(id);atom!=atoms.end())return type_name(atom->second);
   bool tuple=nodes[id].kind==Type::Tuple;
    bool aggregate=data_kind(nodes[id].kind);
@@ -303,16 +450,81 @@ class Inference {
   while(!pending.empty()){
    auto id=head(pending.back(),at);pending.pop_back();if(!seen.insert(id).second)continue;
    if(nodes[id].kind==Type::Hole)result.insert(id);
-  else if(compound(nodes[id].kind)){
-   if(has_result(nodes[id].kind))pending.push_back(nodes[id].result);
+   else if(compound(nodes[id].kind)){
+    if(has_result(nodes[id].kind))pending.push_back(nodes[id].result);
     for(auto child:nodes[id].parameters)pending.push_back(child);
    }
   }
   return result;
  }
+  bool same_term(Term left,Term right,const Location& at){
+   std::vector<std::pair<Term,Term>> pending{{left,right}};
+   std::set<std::pair<Term,Term>> seen;
+   while(!pending.empty()){
+    auto [a,b]=pending.back();pending.pop_back();a=head(a,at);b=head(b,at);
+    if(a==b)continue;
+    if(!seen.emplace(a,b).second)continue;
+    if(nodes[a].kind!=nodes[b].kind||nodes[a].nominal!=nodes[b].nominal||
+       nodes[a].arguments!=nodes[b].arguments||nodes[a].labels!=nodes[b].labels||
+       nodes[a].extent!=nodes[b].extent||nodes[a].parameters.size()!=nodes[b].parameters.size())
+     return false;
+    if(auto aa=atoms.find(a);aa!=atoms.end()){
+     auto bb=atoms.find(b);if(bb==atoms.end()||aa->second!=bb->second)return false;
+    }else if(atoms.contains(b))return false;
+    if(has_result(nodes[a].kind))pending.emplace_back(nodes[a].result,nodes[b].result);
+    for(std::size_t i=0;i<nodes[a].parameters.size();++i)
+     pending.emplace_back(nodes[a].parameters[i],nodes[b].parameters[i]);
+   }
+   return true;
+  }
+  bool concrete(Term term,const Location& at){
+   std::vector<Term> pending{term};std::set<Term> seen;
+   while(!pending.empty()){
+    auto id=head(pending.back(),at);pending.pop_back();if(!seen.insert(id).second)continue;
+    if(nodes[id].kind==Type::Hole)return false;
+    if(auto atom=atoms.find(id);atom!=atoms.end()&&atom->second.has_generics())return false;
+    if(has_result(nodes[id].kind))pending.push_back(nodes[id].result);
+    for(auto child:nodes[id].parameters)pending.push_back(child);
+   }
+   return true;
+  }
+  bool assumed(const Predicate& predicate,const std::vector<Predicate>* assumptions,
+               const Location& at){
+   if(!assumptions)return false;
+   for(const auto& candidate:*assumptions){
+    if(candidate.name!=predicate.name||candidate.arguments.size()!=predicate.arguments.size())continue;
+    bool equal=true;
+    for(std::size_t i=0;i<predicate.arguments.size();++i)
+     if(!same_term(predicate.arguments[i],candidate.arguments[i],at)){equal=false;break;}
+    if(equal)return true;
+   }
+   return false;
+  }
+  std::vector<Type> concrete_types(const std::vector<Term>& terms,const Location& at){
+   reset_ground();std::vector<Type> result;result.reserve(terms.size());
+   for(auto term:terms)result.push_back(resolve(term,at,"cliche obligation").type);
+   return result;
+  }
+  void discharge(const Predicate& predicate,const std::vector<Predicate>* assumptions,
+                 const Location& at){
+   bool closed=true;for(auto argument:predicate.arguments)closed=closed&&concrete(argument,at);
+   if(!closed){
+    if(!assumed(predicate,assumptions,at))
+     fail(at,"unsatisfied generic cliche bound "+predicate.name+
+          "; add it to the function's where clause");
+    return;
+   }
+   ClicheConstraint constraint;constraint.where=predicate.where;constraint.name=predicate.name;
+   constraint.arguments=concrete_types(predicate.arguments,at);
+   cliches::require(unit,constraint,at);
+  }
+  void require_later(Predicate predicate,const Location& at){
+   obligations.push_back({std::move(predicate),
+                          active_constraints?*active_constraints:std::vector<Predicate>{},at});
+  }
  static bool value(const Expr& e){
   if(e.kind==Expr::Kind::Quote)return e.children.size()==1&&e.children[0]->kind==Expr::Kind::Call&&e.children[0]->children.empty();
-  if(e.kind==Expr::Kind::Lambda||e.kind==Expr::Kind::Variable||e.kind==Expr::Kind::Integer||e.kind==Expr::Kind::Float||e.kind==Expr::Kind::Boolean||e.kind==Expr::Kind::String)return true;
+  if(e.kind==Expr::Kind::Lambda||e.kind==Expr::Kind::Variable||e.kind==Expr::Kind::Integer||e.kind==Expr::Kind::Float||e.kind==Expr::Kind::Boolean||e.kind==Expr::Kind::String||e.kind==Expr::Kind::Character)return true;
    if(e.kind!=Expr::Kind::Tuple&&e.kind!=Expr::Kind::Record&&e.kind!=Expr::Kind::Array&&e.kind!=Expr::Kind::Variant)return false;
   for(const auto& child:e.children)if(!value(*child))return false;
   return true;
@@ -422,9 +634,12 @@ class Inference {
   while(!pending.empty()){
    auto [a,b]=pending.back();pending.pop_back();a=head(a,at);b=head(b,at);
    if(!seen.emplace(a,b).second)continue;
-   if(nodes[a].kind==Type::Hole&&scheme.variables.contains(a))continue;
-   if(compound(nodes[a].kind)&&nodes[a].kind==nodes[b].kind){
-    if(nodes[a].parameters.size()!=nodes[b].parameters.size()){unify(b,a,at);continue;}
+    if(nodes[a].kind==Type::Hole&&scheme.variables.contains(a))continue;
+    if(compound(nodes[a].kind)&&nodes[a].kind==nodes[b].kind){
+     if(nodes[a].parameters.size()!=nodes[b].parameters.size()||
+        nodes[a].nominal!=nodes[b].nominal||nodes[a].arguments!=nodes[b].arguments){
+      unify(b,a,at);continue;
+     }
     if(has_result(nodes[a].kind))pending.emplace_back(nodes[a].result,nodes[b].result);
     for(std::size_t i=0;i<nodes[a].parameters.size();++i)pending.emplace_back(nodes[a].parameters[i],nodes[b].parameters[i]);
    }else unify(b,a,at);
@@ -440,7 +655,11 @@ class Inference {
     auto labels=nodes[term].labels;auto extent=nodes[term].extent;auto nominal=nodes[term].nominal;auto arguments=nodes[term].arguments;
   for(auto& child:children)child=copy_signature(child,variables,copies,at,depth+1);
   if(has_result(kind))result=copy_signature(result,variables,copies,at,depth+1);
-    auto id=data_kind(kind)?data(kind,std::move(children),std::move(labels),extent,at,std::move(nominal),arguments):add(kind,std::move(children),result,at);copies.emplace(term,id);return id;
+    Term id;
+    if(data_kind(kind))id=data(kind,std::move(children),std::move(labels),extent,at,std::move(nominal),arguments);
+    else if(kind==Type::Own)id=owning(std::move(nominal),std::move(children),at);
+    else id=add(kind,std::move(children),result,at);
+    copies.emplace(term,id);return id;
  }
   void bind_pattern(const Pattern& pattern,Term value){
    tick(pattern.where);
@@ -485,23 +704,43 @@ class Inference {
   for(const auto& s:f.body)lambda->body.push_back(clone_statement(s,ast_budget));
   source->value=std::move(lambda);
   global.source=source.get();global_sources.push_back(std::move(source));
-   auto saved_scopes=std::move(scopes);auto saved_returns=returns;bool saved_saw=saw_return;auto saved_loops=std::move(loop_values);loop_values.clear();
+    auto saved_scopes=std::move(scopes);auto saved_returns=returns;
+    bool saved_saw=saw_return;auto saved_loops=std::move(loop_values);
+    auto* saved_type_variables=active_type_variables;
+    auto* saved_constraints=active_constraints;
+    active_type_variables=&global.variables;active_constraints=&global.constraints;
+    loop_values.clear();
   scopes.emplace_back();auto signature=global.signature;
   for(std::size_t i=0;i<f.params.size();++i){
    const auto& p=f.params[i];auto type=nodes[signature].parameters[i];
    if(p.pattern)bind_pattern(*p.pattern,type);else define(p.name,type,p.where);
   }
-  returns=nodes[signature].result;saw_return=false;global.first_slot=slots.size();block(f.body,false);scopes.pop_back();global.last_slot=slots.size();
-   if(!saw_return&&nodes[head(returns,f.where)].kind==Type::Hole)
-    unify(returns,scalar(Type::Void,f.where),f.where);
+   returns=nodes[signature].result;saw_return=false;global.first_slot=slots.size();block(f.body,false);scopes.pop_back();global.last_slot=slots.size();
+    if(!saw_return&&nodes[head(returns,f.where)].kind==Type::Hole)
+     unify(returns,scalar(Type::Void,f.where),f.where);
+   std::set<Term> explicit_variables;
+   for(std::size_t i=0;i<global.variables.size();++i){
+    auto variable=head(global.variables[i],f.type_parameters[i].where);
+    if(nodes[variable].kind!=Type::Hole)
+     fail(f.type_parameters[i].where,"generic function body specializes type parameter "+
+          f.type_parameters[i].name);
+    if(!explicit_variables.insert(variable).second)
+     fail(f.type_parameters[i].where,"generic function body equates distinct type parameters");
+   }
   if(global.low==global.index){
    std::vector<std::string> group;
    do{group.push_back(component_stack.back());component_stack.pop_back();globals.at(group.back()).on_stack=false;}while(group.back()!=name);
    std::sort(group.begin(),group.end());
    if(std::find(group.begin(),group.end(),"main")==group.end()){
     returns=scalar(Type::Void,f.where);generalizing_globals={group.begin(),group.end()};
-    bool any=false;std::map<std::string,std::set<Term>> variables;
-    for(const auto& member:group){variables[member]=generalizable(globals.at(member).signature,f.where);any=any||!variables[member].empty();}
+     bool any=false;std::map<std::string,std::set<Term>> variables;
+     for(const auto& member:group){
+      auto& item=globals.at(member);
+      variables[member]=generalizable(item.signature,item.definition->where);
+      for(auto variable:item.variables)
+       variables[member].insert(head(variable,item.definition->where));
+      any=any||!variables[member].empty();
+     }
     if(any){
      global_groups.push_back(std::move(group));const auto& members=global_groups.back();
      for(const auto& member:members){
@@ -517,43 +756,89 @@ class Inference {
     generalizing_globals.clear();
    }
   }
-   scopes=std::move(saved_scopes);returns=saved_returns;saw_return=saved_saw;loop_values=std::move(saved_loops);
+    scopes=std::move(saved_scopes);returns=saved_returns;saw_return=saved_saw;
+    loop_values=std::move(saved_loops);active_type_variables=saved_type_variables;
+    active_constraints=saved_constraints;
   global.state=2;global_stack.pop_back();
   if(!global_stack.empty()){
    auto& caller=globals.at(global_stack.back());caller.low=std::min(caller.low,global.low);
   }
  }
- Term instantiate_global(Scheme& scheme,Expr& use){
+  Term instantiate_global(Scheme& scheme,Expr& use,
+                          const std::vector<Term>* forced_variables=nullptr){
   // Allocate every sibling signature before inferring any body. Recursive reads
   // resolve through these monomorphic overrides, not fresh scheme instances.
   auto saved=std::move(scopes);scopes.emplace_back();
-  struct Member {Global* global;std::unique_ptr<Stmt> instance;Term signature;};
-  std::vector<Member> members;
-  std::set<Term> variables;std::map<Term,Term> copies;
-  for(const auto& name:*scheme.group){const auto& member=*globals.at(name).scheme;variables.insert(member.variables.begin(),member.variables.end());}
-  for(const auto& name:*scheme.group){
-   auto& global=globals.at(name);
+   struct Member {
+    Global* global;std::unique_ptr<Stmt> instance;Term signature;
+    std::vector<Term> type_variables;
+    std::vector<Predicate> constraints;
+   };
+   std::vector<Member> members;
+   std::set<Term> variables;std::map<Term,Term> copies;
+   for(const auto& name:*scheme.group){
+    const auto& global=globals.at(name);
+    const auto& member=*global.scheme;
+    variables.insert(member.variables.begin(),member.variables.end());
+    for(auto variable:global.variables)variables.insert(head(variable,use.where));
+   }
+   if(forced_variables){
+    auto target=std::find_if(scheme.group->begin(),scheme.group->end(),
+     [&](const std::string& name){return globals.at(name).scheme==&scheme;});
+    if(target==scheme.group->end())fail(use.where,"invalid forced global specialization");
+    const auto& declaration=globals.at(*target);
+    if(forced_variables->size()!=declaration.variables.size())
+     fail(use.where,"wrong explicit type-argument count for generated specialization");
+    for(std::size_t i=0;i<forced_variables->size();++i){
+     auto key=head(declaration.variables[i],use.where);
+     auto [found,inserted]=copies.emplace(key,(*forced_variables)[i]);
+     if(!inserted&&!same_term(found->second,(*forced_variables)[i],use.where))
+      fail(use.where,"conflicting explicit type arguments for generated specialization");
+    }
+   }
+   for(const auto& name:*scheme.group){
+    auto& global=globals.at(name);
    if(instance_serial>=limits.specializations)fail(use.where,"global specialization limit exceeded");
    auto instance=std::make_unique<Stmt>();instance->kind=Stmt::Kind::Let;instance->where=use.where;
    instance->name="@let_"+std::to_string(++instance_serial);
-   instance->value=clone_expression(*global.scheme->source,ast_budget);source_expression(*instance->value);
-   auto signature=copy_signature(global.signature,variables,copies,use.where);
-   define(name,signature,use.where);scopes.back().at(name).runtime_name=instance->name;
-   members.push_back({&global,std::move(instance),signature});
-  }
-  for(auto& member:members){
-   auto type=expression(*member.instance->value,member.signature);unify(type,member.signature,use.where);
-   share_weak(member.global->signature,type,*member.global->scheme,use.where);
-  }
-  Term result=0;auto use_slot=slots.size();
-  for(auto& member:members){
-   if(member.global->scheme==&scheme){result=member.signature;renames.emplace_back(&use,member.instance->name);}
+    instance->value=clone_expression(*global.scheme->source,ast_budget);source_expression(*instance->value);
+    auto signature=copy_signature(global.signature,variables,copies,use.where);
+    define(name,signature,use.where);scopes.back().at(name).runtime_name=instance->name;
+    std::vector<Term> type_variables;
+    for(auto variable:global.variables)
+     type_variables.push_back(copy_signature(variable,variables,copies,use.where));
+    std::vector<Predicate> constraints;
+    for(const auto& source:global.constraints){
+     Predicate constraint;constraint.name=source.name;constraint.where=source.where;
+     for(auto argument:source.arguments)
+      constraint.arguments.push_back(copy_signature(argument,variables,copies,use.where));
+     constraints.push_back(std::move(constraint));
+    }
+    members.push_back({&global,std::move(instance),signature,
+                       std::move(type_variables),std::move(constraints)});
+   }
+   for(auto& member:members){
+    auto* saved_type_variables=active_type_variables;
+    auto* saved_constraints=active_constraints;
+    active_type_variables=&member.type_variables;
+    active_constraints=&member.constraints;
+    auto type=expression(*member.instance->value,member.signature);unify(type,member.signature,use.where);
+    share_weak(member.global->signature,type,*member.global->scheme,use.where);
+    active_type_variables=saved_type_variables;active_constraints=saved_constraints;
+   }
+   Term result=0;auto use_slot=slots.size();
+   for(auto& member:members){
+    if(member.global->scheme==&scheme){
+     result=member.signature;renames.emplace_back(&use,member.instance->name);
+     for(const auto& constraint:member.constraints)require_later(constraint,use.where);
+    }
    instances.push_back({member.instance.get(),use_slot});
    member.global->source->instances.push_back(std::move(member.instance));
   }
   scopes=std::move(saved);return result;
  }
- Term name(Expr& expression,bool call_position=false) {
+  Term name(Expr& expression,bool call_position=false,
+            const std::vector<Term>* forced_variables=nullptr) {
   Term type;
   auto found=local(expression.text);
   if(!found){
@@ -565,11 +850,13 @@ class Inference {
   if(found){
    type=found->type;
    if(found->scheme){
-     if(++specialization_depth>64)fail(expression.where,"let specialization nesting limit exceeded");
-     if(found->scheme->global){
-      type=instantiate_global(*found->scheme,expression);--specialization_depth;
-      slots.push_back({&expression.type,type,expression.where,"global instantiation"});return type;
-     }
+      if(++specialization_depth>64)fail(expression.where,"let specialization nesting limit exceeded");
+      if(found->scheme->global){
+       type=instantiate_global(*found->scheme,expression,forced_variables);--specialization_depth;
+       slots.push_back({&expression.type,type,expression.where,"global instantiation"});return type;
+      }
+      if(forced_variables)
+       fail(expression.where,"explicit generated specialization targeted a local scheme");
     if(instance_serial>=limits.specializations)fail(expression.where,"let specialization limit exceeded");
     auto& scheme=*found->scheme;auto instance=std::make_unique<Stmt>();
     instance->kind=Stmt::Kind::Let;instance->where=expression.where;
@@ -591,9 +878,15 @@ class Inference {
      scheme.declaration->instances.push_back(std::move(instance));
      --specialization_depth;
     }
-    else if(!found->runtime_name.empty())renames.emplace_back(&expression,found->runtime_name);
-  }
-  else if(auto found=globals.find(expression.text);found!=globals.end()) {
+     else{
+      if(forced_variables&&!forced_variables->empty())
+       fail(expression.where,"generated specialization target is not generic");
+      if(!found->runtime_name.empty())renames.emplace_back(&expression,found->runtime_name);
+     }
+   }
+   else if(auto found=globals.find(expression.text);found!=globals.end()) {
+    if(forced_variables&&!forced_variables->empty())
+     fail(expression.where,"generated specialization target is not generic");
    if(found->second.external&&!call_position)
     fail(expression.where,"raw extern functions cannot be used as values; write an On1x wrapper");
    type=found->second.signature;
@@ -602,16 +895,111 @@ class Inference {
     fail(expression.where,"intrinsic is not a first-class value; write an On1x wrapper: "+expression.text);
    fail(expression.where,(call_position?"unknown function: ":"undefined variable: ")+expression.text);
   }
-  slots.push_back({&expression.type,type,expression.where,"expression type"});return type;
- }
- Term builtin(Expr& expression,const std::vector<Term>& args) {
-  const auto& n=expression.callee->text;const auto& at=expression.where;
-   auto arity=[&](std::size_t count){if(args.size()!=count)fail(at,"wrong arity for "+n);};
-   if(auto primitive=data_primitive(n)){
+   slots.push_back({&expression.type,type,expression.where,"expression type"});return type;
+  }
+  void elaborate_cliche_uses(){
+   for(std::size_t index=0;index<cliche_uses.size();++index){
+    if(index>=limits.expanded_ast)
+     throw Error(cliche_uses[index].expression->where,
+                 "cliche elaboration work budget exhausted","ON1X-CLICHE-LIMIT");
+    auto use=cliche_uses[index];
+    Predicate obligation{use.name,use.arguments,use.expression->where};
+    bool closed=true;
+    for(auto argument:use.arguments)closed=closed&&concrete(argument,use.expression->where);
+    for(auto argument:use.member_arguments)
+     closed=closed&&concrete(argument,use.expression->where);
+    if(!closed){
+     discharge(obligation,&use.assumptions,use.expression->where);
+     if(use.slot>=slots.size()||!slots[use.slot].generic)
+      fail(use.expression->where,
+           "cannot resolve a concrete cliche specialization; add a type annotation");
+     use.expression->prototype=true;
+     continue;
+    }
+
+    auto arguments=concrete_types(use.arguments,use.expression->where);
+    auto member_arguments=concrete_types(use.member_arguments,use.expression->where);
+    auto selected=cliches::resolve(unit,use.name,arguments,use.member,
+                                   member_arguments,use.expression->where);
+    if(!selected.member||selected.member->runtime_name.empty())
+     throw Error(use.expression->where,
+                 "selected cliche member has no static implementation name",
+                 "ON1X-CLICHE-UNSUPPORTED");
+    std::vector<Term> forced;
+    forced.reserve(selected.implementation_arguments.size()+member_arguments.size());
+    for(const auto& argument:selected.implementation_arguments)
+     forced.push_back(annotation(argument,use.expression->where));
+    for(const auto& argument:member_arguments)
+     forced.push_back(annotation(argument,use.expression->where));
+
+    auto variable=[&](Expr& expression){
+     expression.kind=Expr::Kind::Variable;
+     expression.reference=Expr::Reference::Unresolved;
+     expression.text=selected.member->runtime_name;
+     expression.cliche_member.clear();
+     expression.cliche_arguments.clear();
+     expression.member_type_arguments.clear();
+     expression.children.clear();
+     expression.callee.reset();
+     expression.prototype=false;
+    };
+    if(!use.associated_value){
+     variable(*use.expression);
+     auto callable=name(*use.expression,false,&forced);
+     unify(callable,use.type,use.expression->where);
+     continue;
+    }
+
+    auto callee=std::make_unique<Expr>();
+    callee->where=use.expression->where;
+    callee->kind=Expr::Kind::Variable;
+    callee->text=selected.member->runtime_name;
+    auto callable=name(*callee,true,&forced);
+    auto root=head(callable,use.expression->where);
+    if(nodes[root].kind!=Type::Function||!nodes[root].parameters.empty())
+     throw Error(use.expression->where,
+                 "associated cliche value did not elaborate to a nullary function",
+                 "ON1X-CLICHE-SIGNATURE");
+    unify(nodes[root].result,use.type,use.expression->where);
+    auto& expression=*use.expression;
+    expression.kind=Expr::Kind::Call;
+    expression.reference=Expr::Reference::Unresolved;
+    expression.text.clear();
+    expression.cliche_member.clear();
+    expression.cliche_arguments.clear();
+    expression.member_type_arguments.clear();
+    expression.children.clear();
+    expression.callee=std::move(callee);
+    expression.prototype=false;
+   }
+  }
+  Term builtin(Expr& expression,const std::vector<Term>& args) {
+   const auto& n=expression.callee->text;const auto& at=expression.where;
+    auto arity=[&](std::size_t count){if(args.size()!=count)fail(at,"wrong arity for "+n);};
+    if(n=="box"){
+     arity(1);auto value=head(args[0],at);
+     if(!data_kind(nodes[value].kind)||nodes[value].nominal.empty())
+      fail(at,"box(value) requires a known nominal record or enum value");
+     if(nodes[value].arguments>nodes[value].parameters.size())
+      fail(at,"invalid nominal inference shape for box");
+     std::vector<Term> arguments(nodes[value].parameters.end()-nodes[value].arguments,
+                                 nodes[value].parameters.end());
+     return owning(nodes[value].nominal,std::move(arguments),at);
+    }
+    if(n=="move"){arity(1);return args[0];}
+    if(n=="take"){arity(1);return owned_value(args[0],at);}
+    if(n=="drop"){arity(1);return scalar(Type::Void,at);}
+    if(auto primitive=data_primitive(n)){
     arity(primitive->parameters().size());for(std::size_t i=0;i<args.size();++i)unify(args[i],annotation(primitive->parameters()[i],at),at);
     return annotation(primitive->result(),at);
    }
   if(n=="println"){arity(1);weak.push_back(args[0]);return scalar(Type::Void,at);}
+  if(n=="format"){
+   if(args.empty()||args.size()>literals::max_format_parts+1)fail(at,"format requires a pattern and at most 256 arguments");
+   unify(args[0],scalar(Type::String,at),at);
+   for(std::size_t i=1;i<args.size();++i)weak.push_back(args[i]);
+   return scalar(Type::String,at);
+  }
   if(n=="assert"){arity(1);unify(args[0],scalar(Type::Bool,at),at);return scalar(Type::Void,at);}
   if(n=="json_parse_or_die") {
    arity(1);unify(args[0],scalar(Type::String,at),at);return scalar(Type::Json,at);
@@ -635,18 +1023,108 @@ class Inference {
   // Inference stores pointers to output fields and stable expression identities.
   // Moving a node into a coercion must redirect those references to the child.
   auto old=std::make_unique<Expr>(std::move(e));
-  for(auto& slot:slots){if(slot.output==&e.type)slot.output=&old->type;if(slot.output==&e.result)slot.output=&old->result;}
-  for(auto& rename:renames)if(rename.first==&e)rename.first=old.get();
-  for(auto& projection:projections)if(projection.expression==&e)projection.expression=old.get();
-  for(auto& pack:packs)if(pack.expression==&e)pack.expression=old.get();
+   for(auto& slot:slots){if(slot.output==&e.type)slot.output=&old->type;if(slot.output==&e.result)slot.output=&old->result;}
+   for(auto& rename:renames)if(rename.first==&e)rename.first=old.get();
+   for(auto& projection:projections)if(projection.expression==&e)projection.expression=old.get();
+   for(auto& use:cliche_uses)if(use.expression==&e)use.expression=old.get();
+   for(auto& pack:packs)if(pack.expression==&e)pack.expression=old.get();
   e=Expr{};e.where=old->where;e.kind=kind;return old;
  }
- Term project(Expr& e,Term schema){
+  Term project(Expr& e,Term schema){
   auto type=atoms.at(head(schema,e.where));auto instance=instantiate(type,false,e.where);
   auto source=wrap(e,Expr::Kind::PolyProjection);e.children.push_back(std::move(source));
   projections.push_back({&e,schema,instance,slots.size()});
-  slots.push_back({&e.type,instance,e.where,"forall instantiation"});return instance;
- }
+   slots.push_back({&e.type,instance,e.where,"forall instantiation"});return instance;
+  }
+  struct InherentBinding {
+   const InherentMember* member;
+   Term callable;
+  };
+  [[noreturn]] static void inherent_error(const Location& at,
+                                          const std::string& message){
+   throw Error(at,"ON1X-IMPL: "+message,"ON1X-IMPL");
+  }
+  void normalize_inherent_owner(Expr& projection){
+   if(projection.kind==Expr::Kind::ClicheMember&&
+      nominal_names.contains(projection.text)){
+    if(cliche_names.contains(projection.text))
+     throw Error(projection.where,
+                 "ON1X-IMPL-AMBIGUOUS: '::' owner is both a cliche and nominal type: "+
+                 projection.text,"ON1X-IMPL-AMBIGUOUS");
+    if(!projection.member_type_arguments.empty())
+     inherent_error(projection.where,
+                    "explicit inherent member type arguments are not supported; infer them from the call");
+    auto owner=projection.text;
+    projection.kind=Expr::Kind::InherentMember;
+    projection.result=Type::named(std::move(owner),
+                                  std::move(projection.cliche_arguments));
+    projection.text=std::move(projection.cliche_member);
+    projection.cliche_arguments.clear();projection.cliche_member.clear();
+   }
+   if(projection.kind==Expr::Kind::InherentMember&&
+      projection.result==Type::Void&&projection.children.size()==1&&
+      projection.children[0]&&
+      projection.children[0]->kind==Expr::Kind::Variable){
+    const auto& owner=projection.children[0]->text;
+    if(!local(owner)&&!globals.contains(owner)&&nominal_names.contains(owner)){
+     projection.result=Type::named(owner);projection.children.clear();
+    }
+   }
+  }
+  InherentBinding bind_inherent(Expr& projection,std::optional<Term> receiver,
+                                bool call_position){
+   const auto at=projection.where;
+   std::string nominal;
+   Term owner=0;
+   if(receiver){
+    owner=*receiver;auto root=head(owner,at);
+    if(!data_kind(nodes[root].kind)||nodes[root].nominal.empty())
+     inherent_error(at,"receiver type is not a known nominal record or enum; add an annotation");
+    nominal=nodes[root].nominal;
+   }else{
+    if(projection.result.kind()!=Type::Named&&projection.result.nominal().empty())
+     inherent_error(at,"associated member owner is not a nominal type");
+    nominal=projection.result.nominal();
+    owner=annotation(projection.result,at);
+   }
+   auto selected=inherent_members.find(nominal,projection.text,at);
+   const auto& implementation=*selected.implementation;
+   const auto& member=*selected.member;
+   const bool takes_receiver=member.receiver!=InherentMember::Receiver::None;
+   if(receiver&&!takes_receiver)
+    inherent_error(at,"associated member '"+member.name+"' does not accept a receiver");
+   if(!receiver&&takes_receiver)
+    inherent_error(at,"member '"+member.name+"' requires a receiver");
+
+   std::vector<Term> variables;
+   variables.reserve(implementation.type_parameters.size()+member.type_parameters.size());
+   for(const auto& parameter:implementation.type_parameters)
+    variables.push_back(fresh(parameter.where));
+   for(const auto& parameter:member.type_parameters)
+    variables.push_back(fresh(parameter.where));
+   auto target=annotation(implementation.target,at,&variables);
+   unify(owner,target,at);
+   if(receiver&&member.receiver==InherentMember::Receiver::Value)
+    receiver_checks.push_back({owner,at});
+
+   std::vector<Term> parameters;
+   for(const auto& parameter:member.function.params)
+    parameters.push_back(annotation(parameter.type,parameter.where,&variables));
+   auto output=annotation(member.kind==InherentMember::Kind::Function?
+                          member.function.result:member.value_type,at,&variables);
+   auto expected_callable=function(std::move(parameters),output,at);
+
+   projection.kind=Expr::Kind::Variable;
+   projection.text=member.runtime_name;
+   projection.children.clear();
+   projection.result=Type::Void;
+   projection.cliche_arguments.clear();
+   projection.member_type_arguments.clear();
+   projection.cliche_member.clear();
+   auto actual_callable=name(projection,call_position);
+   unify(actual_callable,expected_callable,at);
+   return {&member,actual_callable};
+  }
  bool contains_rigid(Term term,const Location& at,std::set<Term>& seen){
   term=head(term,at);if(!seen.insert(term).second)return false;
   if(nodes[term].kind==Type::Generic)return true;
@@ -656,7 +1134,7 @@ class Inference {
   }
   return false;
  }
- Term expected(Expr& e,Term expectation){
+  Term expected(Expr& e,Term expectation){
   expectation=head(expectation,e.where);
   // Bidirectional checking avoids guessing universal types for parameters.
   if(e.kind==Expr::Kind::Tuple&&nodes[expectation].kind==Type::Tuple&&e.children.size()==nodes[expectation].parameters.size()){
@@ -700,12 +1178,91 @@ class Inference {
    packs.push_back({&e,std::move(source),scopes,expectation,slots.size()});
    slots.push_back({&e.type,expectation,e.where,"universal value"});return expectation;
   }
-  if(nodes[head(actual,e.where)].kind==Type::Forall&&nodes[expectation].kind!=Type::Forall&&nodes[expectation].kind!=Type::Hole)
-   actual=project(e,actual);
-  unify(actual,expectation,e.where);return expectation;
- }
- void reset_ground(){
-      ground.assign(nodes.size(),{});state.assign(nodes.size(),0);canonical.clear();next_identity=Type::Named+1;
+   if(nodes[head(actual,e.where)].kind==Type::Forall&&
+      nodes[expectation].kind!=Type::Forall&&
+      nodes[expectation].kind!=Type::Hole){
+    actual=project(e,actual);
+   }
+   unify(actual,expectation,e.where);return expectation;
+  }
+  Term call(Expr& e,std::optional<Term> callable_override={},
+            std::optional<Term> first_argument={}) {
+   auto& callee=*e.callee;
+   normalize_inherent_owner(callee);
+   if(!callable_override&&callee.kind==Expr::Kind::InherentMember){
+    ExprPtr receiver;
+    std::optional<Term> receiver_type;
+    if(!callee.children.empty()){
+     if(callee.children.size()!=1)
+      inherent_error(callee.where,"malformed receiver member projection");
+     receiver=std::move(callee.children.front());callee.children.clear();
+     receiver_type=expression(*receiver);
+    }
+    auto selected=bind_inherent(callee,receiver_type,true);
+    if(selected.member->kind==InherentMember::Kind::Value)
+     inherent_error(callee.where,"member value '"+selected.member->name+
+                    "' is not callable; remove the argument list");
+    callable_override=selected.callable;
+    if(receiver){
+     e.children.insert(e.children.begin(),std::move(receiver));
+     first_argument=receiver_type;
+    }
+   }
+
+   bool intrinsic=!callable_override&&callee.kind==Expr::Kind::Variable&&
+                  !local(callee.text)&&!globals.contains(callee.text)&&
+                  is_intrinsic_name(callee.text);
+   Term callable=0;
+   if(callable_override)callable=*callable_override;
+   else if(!intrinsic){
+    callable=callee.kind==Expr::Kind::Variable?name(callee,true):expression(callee);
+    if(nodes[head(callable,e.where)].kind==Type::Forall)callable=project(callee,callable);
+    auto kind=nodes[head(callable,e.where)].kind;
+    if(kind!=Type::Hole&&kind!=Type::Function)
+     fail(callee.where,"cannot call value of type "+describe(callable,e.where));
+   }
+
+   std::vector<Term> args;
+   auto target=intrinsic?Term{0}:head(callable,e.where);
+   const auto kernel=callee.kind==Expr::Kind::Variable&&
+                     callee.text.starts_with(kernel_reviewed_prefix)?
+     std::string_view(callee.text).substr(kernel_reviewed_prefix.size()):
+     std::string_view{};
+   for(std::size_t i=0;i<e.children.size();++i){
+    if(i==0&&first_argument){
+     args.push_back(*first_argument);
+     if(!intrinsic&&nodes[target].kind==Type::Function&&
+        i<nodes[target].parameters.size())
+      unify(*first_argument,nodes[target].parameters[i],e.children[i]->where);
+    }else if(kernel_span_argument(kernel,i))
+     args.push_back(expression(*e.children[i]));
+    else if(!intrinsic&&nodes[target].kind==Type::Function&&
+            i<nodes[target].parameters.size())
+     args.push_back(expected(*e.children[i],nodes[target].parameters[i]));
+    else args.push_back(expression(*e.children[i]));
+   }
+   if(intrinsic)return builtin(e,args);
+   auto root=head(callable,e.where);
+   if(nodes[root].kind==Type::Hole){
+    auto result=fresh(e.where);auto shape=function(args,result,e.where);
+    unify(callable,shape,e.where);return result;
+   }
+   if(nodes[root].parameters.size()!=args.size())
+    fail(e.where,"wrong number of arguments to function value");
+   for(std::size_t i=0;i<args.size();++i){
+    const auto& where=e.children[i]->where;
+    if(kernel_span_argument(kernel,i)){
+     auto actual=head(args[i],where);
+     if(nodes[actual].kind!=Type::Slice||nodes[actual].extent>256)
+      fail(where,"KernelBind requires a bounded slice<f64,N>");
+     auto shape=nodes[root].parameters[i];
+     unify(nodes[actual].parameters[0],nodes[shape].parameters[0],where);
+    }else unify(args[i],nodes[root].parameters[i],where);
+   }
+   return nodes[root].result;
+  }
+  void reset_ground(){
+      ground.assign(nodes.size(),{});state.assign(nodes.size(),0);canonical.clear();next_identity=Type::Own+1;
   }
   void numeric_operand(Term term,const Location& at){
    // Do not quantify numeric overloading. Delay the old i64 choice until all
@@ -813,19 +1370,20 @@ class Inference {
    }
    return out;
   }
-  Term expression(Expr& e,std::optional<Term> hint={}) {
-  Term result=0;const auto& at=e.where;
-  tick(at);
-     switch(e.kind) {
+   Term expression(Expr& e,std::optional<Term> hint={}) {
+   Term result=0;const auto& at=e.where;
+   tick(at);
+   normalize_inherent_owner(e);
+      switch(e.kind) {
       case Expr::Kind::SourceCsp:{
        auto operand=[&](std::size_t i){if(i>=e.children.size()||!e.children[i])fail(at,"missing concurrency operand");return expression(*e.children[i]);};
        if(e.text=="poll"){
         if(e.children.empty()||e.children.size()>18)fail(at,"poll offer limit/arity mismatch");
         std::vector<Type> fields;std::vector<std::string> labels;bool has_deadline=false;
-        for(std::size_t i=0;i<e.children.size();++i){auto& offer=*e.children[i];
-         if(offer.kind==Expr::Kind::Boolean&&offer.text=="true"&&i+1==e.children.size()){
-          fields.push_back(Type::data(Type::Record,{}));labels.push_back("Default");break;
-         }
+         for(std::size_t i=0;i<e.children.size();++i){auto& offer=*e.children[i];
+          if(offer.kind==Expr::Kind::Boolean&&offer.text=="true"&&i+1==e.children.size()){
+           fields.push_back(Type::data(Type::Record,{}));labels.push_back("Default");break;
+          }
          if(offer.kind==Expr::Kind::SourceCsp&&offer.text=="offer_after"){
           if(has_deadline||offer.children.size()!=1)fail(offer.where,"invalid or duplicate poll deadline");
           has_deadline=true;
@@ -922,7 +1480,76 @@ class Inference {
     case Expr::Kind::Integer:case Expr::Kind::Float:result=scalar(numeric_literal_type(e.text).kind(),at);break;
   case Expr::Kind::Boolean:result=scalar(Type::Bool,at);break;
   case Expr::Kind::String:result=scalar(Type::String,at);break;
-   case Expr::Kind::Variable:return name(e);
+  case Expr::Kind::Character:result=scalar(Type::Char,at);break;
+  case Expr::Kind::ByteBuffer:result=scalar(Type::Buffer,at);break;
+  case Expr::Kind::Interpolated:
+   for(auto& part:e.children)weak.push_back(expression(*part));
+   result=scalar(Type::String,at);break;
+  case Expr::Kind::RegexLiteral:result=scalar(Type::Regex,at);break;
+   case Expr::Kind::RegexMatch:case Expr::Kind::RegexCapture:{
+    if(e.children.size()!=2)fail(at,"regex operation needs a pattern and text");
+    unify(expression(*e.children[0]),scalar(Type::Regex,at),e.children[0]->where);
+    unify(expression(*e.children[1]),scalar(Type::String,at),e.children[1]->where);
+    result=scalar(e.kind==Expr::Kind::RegexMatch?Type::Bool:Type::RegexCaptures,at);break;
+   }
+    case Expr::Kind::ClicheMember:{
+     if(e.callee||!e.children.empty()||!e.body.empty()||e.text.empty()||
+        e.cliche_member.empty())
+      throw Error(at,"malformed cliche member projection","ON1X-CLICHE-OBLIGATION");
+     const auto& declaration=cliches::declaration(unit,e.text,at);
+     if(e.cliche_arguments.size()!=declaration.type_parameters.size()+1)
+      throw Error(at,"wrong cliche argument arity for "+e.text,
+                  "ON1X-CLICHE-OBLIGATION");
+     const auto& member=cliches::member(unit,e.text,e.cliche_member,at);
+     if(e.member_type_arguments.size()!=member.type_parameters.size())
+      throw Error(at,"wrong member type-argument arity for "+e.text+"::"+
+                  e.cliche_member,"ON1X-CLICHE-OBLIGATION");
+     std::vector<Term> arguments,member_arguments,variables;
+     for(const auto& argument:e.cliche_arguments)
+      arguments.push_back(annotation(argument,at));
+     for(const auto& argument:e.member_type_arguments)
+      member_arguments.push_back(annotation(argument,at));
+     variables=arguments;
+     variables.insert(variables.end(),member_arguments.begin(),member_arguments.end());
+     auto member_result=annotation(member.result,member.where,&variables);
+     if(member.kind==ClicheMember::Kind::Function){
+      std::vector<Term> parameters;
+      for(const auto& parameter:member.params)
+       parameters.push_back(annotation(parameter.type,parameter.where,&variables));
+      result=function(std::move(parameters),member_result,at);
+     }else result=member_result;
+     const auto slot=slots.size();
+     cliche_uses.push_back({&e,e.text,e.cliche_member,std::move(arguments),
+                            std::move(member_arguments),result,slot,
+                            active_constraints?*active_constraints:
+                             std::vector<Predicate>{},
+                            member.kind==ClicheMember::Kind::Value});
+     for(const auto& constraint:member.constraints)
+      require_later(predicate(constraint,variables),at);
+     break;
+    }
+     case Expr::Kind::InherentMember:{
+     ExprPtr receiver;
+     std::optional<Term> receiver_type;
+     if(!e.children.empty()){
+      if(e.children.size()!=1)inherent_error(at,"malformed receiver member projection");
+      receiver=std::move(e.children.front());e.children.clear();
+      receiver_type=expression(*receiver);
+     }
+     auto selected=bind_inherent(e,receiver_type,false);
+     if(selected.member->kind==InherentMember::Kind::Function){
+      if(receiver)
+       inherent_error(at,"receiver method '"+selected.member->name+
+                      "' must be called with an argument list");
+      result=selected.callable;
+     }else{
+      auto callee=wrap(e,Expr::Kind::Call);e.callee=std::move(callee);
+      if(receiver)e.children.push_back(std::move(receiver));
+      result=call(e,selected.callable,receiver_type);
+     }
+     break;
+    }
+    case Expr::Kind::Variable:return name(e);
      case Expr::Kind::Unit:result=scalar(Type::Void,at);break;
      case Expr::Kind::UnsafeBlock:
       if(e.children.size()!=1||!e.children[0])fail(at,"malformed unsafe expression");
@@ -934,8 +1561,11 @@ class Inference {
      result=fresh(at);loop_values.push_back({e.control_target,result});block(e.body);
      auto exits=loop_values.back();loop_values.pop_back();if(exits.bare||!exits.valued)result=scalar(Type::Void,at);break;
     }
-   case Expr::Kind::PatternMatch:{
-    auto scrutinee=expression(*e.children.at(0));result=fresh(at);bool fallthrough=false;scopes.emplace_back();
+    case Expr::Kind::PatternMatch:{
+     auto scrutinee=expression(*e.children.at(0));
+     if(e.sum_match&&nodes[head(scrutinee,at)].kind!=Type::Sum)
+      fail(at,"'~ { ... }' requires a known closed sum (enum) subject; annotate the subject if needed");
+     result=fresh(at);bool fallthrough=false;scopes.emplace_back();
     if(!e.text.empty())define(e.text,scrutinee,at);
     for(std::size_t i=1;i<e.children.size();++i){auto& arm=*e.children[i];if(arm.kind!=Expr::Kind::Case||arm.patterns.size()!=1||arm.children.size()!=2)fail(arm.where,"malformed match arm");
      scopes.emplace_back();for(const auto& [name,t]:match_pattern(arm.patterns[0],scrutinee))define(name,t,arm.where);
@@ -974,6 +1604,16 @@ class Inference {
    }
    case Expr::Kind::Field:case Expr::Kind::Index:case Expr::Kind::Slice:case Expr::Kind::Length:{
     auto container=head(expression(*e.children.at(0)),at);auto kind=nodes[container].kind;
+    if(e.kind==Expr::Kind::Index&&e.text==":"&&kind!=Type::RegexCaptures){
+     unify(container,scalar(Type::RegexCaptures,at),at);
+     kind=Type::RegexCaptures;
+    }
+    if(kind==Type::RegexCaptures){
+     if(e.kind==Expr::Kind::Length){result=scalar(Type::I64,at);break;}
+     if(e.kind!=Expr::Kind::Index)fail(at,"captures support only [] and [index]");
+     unify(expression(*e.children.at(1)),scalar(Type::I64,at),at);
+     result=scalar(Type::String,at);break;
+    }
     if(e.kind==Expr::Kind::Field){
      if(kind!=Type::Record)fail(at,"field projection requires a known record shape; annotate the parameter");
      auto tags=nodes[container].labels;auto tag=std::find(tags.begin(),tags.end(),e.text);
@@ -1046,47 +1686,7 @@ class Inference {
     bool arithmetic=e.text=="+"||e.text=="-"||e.text=="*"||e.text=="/"||e.text=="%";
     result=arithmetic?left:scalar(Type::Bool,at);break;
   }
-  case Expr::Kind::Call:{
-   auto& callee=*e.callee;
-   bool intrinsic=callee.kind==Expr::Kind::Variable&&!local(callee.text)&&is_intrinsic_name(callee.text);
-   Term callable=0;
-    if(!intrinsic) {
-     callable=callee.kind==Expr::Kind::Variable?name(callee,true):expression(callee);
-     if(nodes[head(callable,at)].kind==Type::Forall)callable=project(callee,callable);
-    auto kind=nodes[head(callable,at)].kind;
-    if(kind!=Type::Hole&&kind!=Type::Function)
-     fail(callee.where,"cannot call value of type "+describe(callable,at));
-   }
-     std::vector<Term> args;
-     auto target=intrinsic?Term{0}:head(callable,at);
-     const auto kernel=callee.kind==Expr::Kind::Variable&&callee.text.starts_with(kernel_reviewed_prefix)?
-       std::string_view(callee.text).substr(kernel_reviewed_prefix.size()):std::string_view{};
-     for(std::size_t i=0;i<e.children.size();++i){
-      if(kernel_span_argument(kernel,i))args.push_back(expression(*e.children[i]));
-      else if(!intrinsic&&nodes[target].kind==Type::Function&&i<nodes[target].parameters.size())
-      args.push_back(expected(*e.children[i],nodes[target].parameters[i]));
-     else args.push_back(expression(*e.children[i]));
-    }
-   if(intrinsic){result=builtin(e,args);break;}
-   auto root=head(callable,at);
-   if(nodes[root].kind==Type::Hole) {
-    result=fresh(at);auto shape=function(args,result,at);unify(callable,shape,at);
-   } else {
-    if(nodes[root].parameters.size()!=args.size())fail(at,"wrong number of arguments to function value");
-     for(std::size_t i=0;i<args.size();++i){
-      const auto& where=e.children[i]->where;
-      if(kernel_span_argument(kernel,i)){
-       auto actual=head(args[i],where);
-       if(nodes[actual].kind!=Type::Slice||nodes[actual].extent>256)
-        fail(where,"KernelBind requires a bounded slice<f64,N>");
-       auto shape=nodes[root].parameters[i];
-       unify(nodes[actual].parameters[0],nodes[shape].parameters[0],where);
-      }else unify(args[i],nodes[root].parameters[i],where);
-     }
-    result=nodes[root].result;
-   }
-   break;
-  }
+   case Expr::Kind::Call:result=call(e);break;
   }
   slots.push_back({&e.type,result,at,"expression type"});return result;
  }
@@ -1176,9 +1776,12 @@ class Inference {
    }
    std::size_t depth=1,size=1;
     std::vector<Type> parameters;std::vector<std::size_t> key{static_cast<std::size_t>(node.kind)};
-    if(data_kind(node.kind)){
-     auto [layout,inserted]=label_identities.emplace(node.labels,label_identities.size()+1);(void)inserted;
-      key.push_back(layout->second);key.push_back(node.extent);
+     if(data_kind(node.kind)){
+      auto [layout,inserted]=label_identities.emplace(node.labels,label_identities.size()+1);(void)inserted;
+       key.push_back(layout->second);key.push_back(node.extent);
+       auto [nominal,added]=nominal_identities.emplace(node.nominal,nominal_identities.size()+1);(void)added;
+       key.push_back(nominal->second);key.push_back(node.arguments);
+     }else if(node.kind==Type::Own){
       auto [nominal,added]=nominal_identities.emplace(node.nominal,nominal_identities.size()+1);(void)added;
       key.push_back(nominal->second);key.push_back(node.arguments);
     }
@@ -1197,10 +1800,17 @@ class Inference {
    if(size>limits.type_nodes)fail(at,"inferred type exceeds expanded-size limit");
    if(auto found=canonical.find(key);found!=canonical.end())ground[id]=found->second;
    else {
-      std::vector<Type> arguments;
-      if(!node.nominal.empty()){arguments.assign(parameters.end()-node.arguments,parameters.end());parameters.resize(parameters.size()-node.arguments);}
-      auto type=data_kind(node.kind)?Type::data(node.kind,std::move(parameters),node.labels,node.extent):node.kind==Type::Tuple?Type::tuple(std::move(parameters)):node.kind==Type::Code?Type::code(std::move(result_type)):Type::function(std::move(parameters),std::move(result_type));
-      if(!node.nominal.empty())type=type.with_nominal(node.nominal,std::move(arguments));
+       Type type;
+       if(node.kind==Type::Own){
+        if(node.nominal.empty()||node.arguments!=parameters.size())
+         fail(at,"invalid inferred own<Named> representation");
+        type=Type::own(Type::named(node.nominal,std::move(parameters)));
+       }else{
+        std::vector<Type> arguments;
+        if(!node.nominal.empty()){arguments.assign(parameters.end()-node.arguments,parameters.end());parameters.resize(parameters.size()-node.arguments);}
+        type=data_kind(node.kind)?Type::data(node.kind,std::move(parameters),node.labels,node.extent):node.kind==Type::Tuple?Type::tuple(std::move(parameters)):node.kind==Type::Code?Type::code(std::move(result_type)):Type::function(std::move(parameters),std::move(result_type));
+        if(!node.nominal.empty())type=type.with_nominal(node.nominal,std::move(arguments));
+       }
     Ground value{std::move(type),next_identity++,depth,size};
     canonical.emplace(std::move(key),value);ground[id]=std::move(value);
    }
@@ -1208,34 +1818,66 @@ class Inference {
   return *ground[head(term,at)];
  }
 public:
-  Inference(Unit& source,const InferenceLimits& budget):unit(source),catalog(source),limits(budget),ast_budget(budget.expanded_ast) {}
+   Inference(Unit& source,const InferenceLimits& budget)
+    :unit(source),catalog(source),inherent_members(source),limits(budget),
+     ast_budget(budget.expanded_ast) {
+    for(const auto& nominal:unit.nominals)nominal_names.insert(nominal.name);
+    for(const auto& cliche:unit.cliches)cliche_names.insert(cliche.name);
+   }
  void run() {
   // Allocate all declaration variables first: calls, mutual recursion and
   // imported functions constrain the same monotype regardless of body order.
   for(auto& f:unit.functions) {
-   if(is_intrinsic_name(f.name))fail(f.where,"intrinsic name cannot be redefined: "+f.name);
+   if(is_reserved_intrinsic_name(f.name))fail(f.where,"intrinsic name cannot be redefined: "+f.name);
    if(globals.contains(f.name))fail(f.where,"duplicate function: "+f.name);
+   if(f.name=="main"&&(!f.type_parameters.empty()||!f.constraints.empty()))
+    fail(f.where,"main cannot declare generic binders or cliche constraints");
    if(f.external) {
-    if(has_type_holes(f.result))fail(f.where,"extern signatures require concrete types; inference is not ABI evidence");
+     if(!f.type_parameters.empty()||!f.constraints.empty())
+      fail(f.where,"extern signatures cannot declare generic binders or cliche constraints");
+     if(has_type_holes(f.result))fail(f.where,"extern signatures require concrete types; inference is not ABI evidence");
      for(const auto& p:f.params)if(has_type_holes(p.type))
       fail(p.where,"extern signatures require concrete types; inference is not ABI evidence");
      (void)extern_parameter_types(f);
    }
-   std::vector<Term> parameters;std::set<std::string> names;
-   for(auto& p:f.params) {
-    if(!names.insert(p.name).second)fail(p.where,"duplicate parameter: "+p.name);
-    auto type=annotation(p.type,p.where);parameters.push_back(type);
-    slots.push_back({&p.type,type,p.where,p.pattern?"parameter pattern":"parameter "+p.name});
-   }
-   auto result=annotation(f.result,f.where);
-   slots.push_back({&f.result,result,f.where,"return type of function "+f.name});
-     Global global{function(std::move(parameters),result,f.where),f.external,&f,nullptr,0,0,0,false,nullptr,0,0,{}};
-    auto count=f.params.size()+1;
+    std::vector<Term> variables;
+    std::set<std::string> type_names;
+    for(const auto& parameter:f.type_parameters){
+     if(!type_names.insert(parameter.name).second)
+      fail(parameter.where,"duplicate function type parameter: "+parameter.name);
+     variables.push_back(fresh(parameter.where));
+    }
+    std::vector<Term> parameters;std::set<std::string> names;
+    for(auto& p:f.params) {
+     if(!names.insert(p.name).second)fail(p.where,"duplicate parameter: "+p.name);
+     auto type=annotation(p.type,p.where,&variables);parameters.push_back(type);
+     slots.push_back({&p.type,type,p.where,p.pattern?"parameter pattern":"parameter "+p.name});
+    }
+    auto result=annotation(f.result,f.where,&variables);
+    slots.push_back({&f.result,result,f.where,"return type of function "+f.name});
+     Global global;
+     global.signature=function(std::move(parameters),result,f.where);
+     global.external=f.external;global.definition=&f;global.variables=variables;
+     for(const auto& constraint:f.constraints)
+      global.constraints.push_back(predicate(constraint,variables));
+     auto count=f.params.size()+1;
     for(std::size_t i=slots.size()-count;i<slots.size();++i)global.declaration_slots.push_back(i);
     globals.emplace(f.name,std::move(global));
   }
-   for(auto& f:unit.functions)if(!f.external)ensure_global(f.name);
-   elaborate_foralls();reset_ground();
+    for(auto& f:unit.functions)if(!f.external)ensure_global(f.name);
+     elaborate_cliche_uses();
+    elaborate_foralls();
+    for(const auto& obligation:obligations)
+     discharge(obligation.predicate,&obligation.assumptions,obligation.where);
+    for(const auto& check:receiver_checks){
+     reset_ground();
+     auto target=resolve(check.target,check.where,"value receiver type",true).type;
+     if(!target.has_generics()&&!catalog.copy_safe(target,check.where))
+      throw Error(check.where,
+                  "ON1X-IMPL-RECEIVER: value receiver is not copy-safe",
+                  "ON1X-IMPL-RECEIVER");
+    }
+    reset_ground();
   // Freeze transactionally: errors must not leave a partially grounded unit.
   std::vector<Type> resolved;resolved.reserve(slots.size());
   for(const auto& slot:slots)resolved.push_back(resolve(slot.term,slot.where,slot.description,slot.generic).type);

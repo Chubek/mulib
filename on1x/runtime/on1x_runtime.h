@@ -21,6 +21,30 @@ struct on1x_env {
 on1x_env *on1x_env_alloc(size_t size, void (*destroy)(on1x_env *));
 void on1x_env_retain(on1x_env *environment);
 void on1x_env_release(on1x_env *environment);
+/* Finite unique owning indirection for recursive nominal values. The payload
+ * bytes have max_align_t alignment. Generated C transfers values by clearing
+ * the source slot; unique values are never retained or copied. Destruction is
+ * drained iteratively, so a long recursive chain does not consume C stack. */
+#define ON1X_UNIQUE_ABI_VERSION 1
+typedef struct on1x_unique on1x_unique;
+typedef void (*on1x_unique_destructor)(void *);
+typedef struct on1x_cleanup on1x_cleanup;
+struct on1x_cleanup {
+  on1x_cleanup *previous,*next;
+  void *value;
+  on1x_unique_destructor destroy;
+  bool active;
+};
+void on1x_cleanup_push(on1x_cleanup *record,void *value,
+    on1x_unique_destructor destroy);
+void on1x_cleanup_pop(on1x_cleanup *record);
+on1x_unique *on1x_unique_try_box(void *source,size_t size,
+    on1x_unique_destructor destroy);
+void on1x_unique_take(on1x_unique **owner,void *destination,size_t size,
+    const char *file,size_t line,size_t column);
+void on1x_unique_drop(on1x_unique *owner);
+void on1x_unique_allocation_fail(const char *file,size_t line,size_t column);
+int64_t on1x_unique_live_allocations(void);
 #define ON1X_DEFER_ABI_VERSION 1
 typedef struct on1x_defer_record on1x_defer_record;
 /* Per-invocation, single-threaded. Registration owns its typed environment;
@@ -40,6 +64,28 @@ int64_t on1x_neg_i64(int64_t a);
 void on1x_print_i64(int64_t a);
 void on1x_print_bool(bool a);
 void on1x_print_string(const char *a);
+
+/* Core regex: compiler-emitted immutable byte DFA, no LibStone dependency. */
+#define ON1X_REGEX_ABI_VERSION 1
+typedef struct on1x_regex_edge { uint8_t first,last; uint16_t target; } on1x_regex_edge;
+typedef struct on1x_regex_state { uint32_t first,end; bool accept; } on1x_regex_state;
+typedef struct on1x_regex_span { uint16_t begin,end; } on1x_regex_span;
+typedef struct on1x_regex {
+ const on1x_regex_state *states;
+ const on1x_regex_edge *edges;
+ const on1x_regex_span *groups;
+ size_t count;
+ bool capturable;
+} on1x_regex;
+typedef struct on1x_regex_captures {
+ const on1x_regex *regex;
+ const char *text;
+ size_t length;
+} on1x_regex_captures;
+bool on1x_regex_match_v1(const on1x_regex *regex,const char *text,const char *file,size_t line,size_t col);
+on1x_regex_captures on1x_regex_capture_v1(const on1x_regex *regex,const char *text,const char *file,size_t line,size_t col);
+int64_t on1x_regex_count_v1(on1x_regex_captures captures);
+const char *on1x_regex_index_v1(on1x_regex_captures captures,int64_t index,const char *file,size_t line,size_t col);
 #define ON1X_UNSIGNED_ABI_VERSION 1
 #define ON1X_UNSIGNED_DECL(N,T) \
  T on1x_add_##N(T a,T b); T on1x_sub_##N(T a,T b); T on1x_mul_##N(T a,T b); \
@@ -127,11 +173,24 @@ int64_t on1x_text_byte(const char *text,int64_t index);
 const char *on1x_text_slice(const char *text,int64_t begin,int64_t end);
 const char *on1x_text_concat(const char *left,const char *right);
 on1x_buffer *on1x_buffer_new(void);
+void on1x_buffer_append_hex(on1x_buffer *buffer,const char *digits);
 void on1x_buffer_append(on1x_buffer *buffer,const char *text);
 void on1x_buffer_byte(on1x_buffer *buffer,int64_t byte);
+void on1x_buffer_push(on1x_buffer *buffer,uint8_t byte);
+uint8_t on1x_buffer_at(const on1x_buffer *buffer,int64_t index);
 const char *on1x_buffer_text(on1x_buffer *buffer);
 int64_t on1x_buffer_len(on1x_buffer *buffer);
 void on1x_buffer_clear(on1x_buffer *buffer);
+int64_t on1x_char_codepoint(uint32_t value);
+void on1x_print_char(uint32_t value);
+typedef struct on1x_format_value {
+ enum { ON1X_FMT_TEXT, ON1X_FMT_BOOL, ON1X_FMT_I64, ON1X_FMT_U64,
+        ON1X_FMT_F32, ON1X_FMT_F64, ON1X_FMT_CHAR } kind;
+ union {const char *text; bool truth; int64_t i; uint64_t u; double f; uint32_t cp;} value;
+} on1x_format_value;
+/* A null pattern means concatenate interpolation parts; otherwise parse {}
+ * placeholders with {{ and }} for literal braces. */
+const char *on1x_format(const char *pattern,size_t count,const on1x_format_value *parts);
 const char *on1x_io_stdin(void);
 void on1x_io_stdout(const char *text);
 void on1x_io_stderr(const char *text);

@@ -14,10 +14,7 @@ MuLIB's and are tested with synthetic, representative markup.
 | [`Scholar.elvs`](Scholar.elvs) | `elvi/scholar:19–23` | HTTPS `/scholar?q=...`; extracts direct links inside H3 headings. Unlinked citations are not results. |
 | [`MDN.elvs`](MDN.elvs) | `elvi/mdn:18–22`, `surfraw.IN:504–518,535–543` | Selects Surfraw's Google custom-search backend and prefixes the query with `site:developer.mozilla.org`. This is a search-engine hint, **not** a destination allowlist. `home` is the Google backend's homepage because `home` and `search` must use the exact same HTTPS host. |
 
-The existing lowercase paths `library/elvi-scrape/google.elvs` and
-`library/elvi-scrape/bing.elvs` are byte-for-byte compatibility copies. Update
-each pair together. Provider filenames are case-sensitive; Bing uses `.elvs`,
-not `.evls`.
+Use the filenames above exactly as written; they are case-sensitive.
 
 `{query}` is encoded as a URL component. Every profile accepts limits from 1 to
 30 and caps local extraction at 30 entries; only templates containing `{limit}`

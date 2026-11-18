@@ -1,10 +1,31 @@
 %{
 #include "on1x_ast.h"
 #include "on1x/generated_scan.h"
+#include "on1x/literal_scan.h"
 #include <string.h>
 static on1x_arena *on1x_scanner_arena;
 static const char *on1x_backtick_error;
+static const char *on1x_literal_error;
 static void glr_skip(GLRParser *parser);
+static on1x_token_t on1x_complex_literal(GLRParser start, GLRParser *end, int kind) {
+  size_t available, length, prefix;
+  glr_skip(&start);
+  available = (size_t)(start.end - start.s);
+  prefix = start.s[0] == 'b' ? 2 : 0;
+  length = kind == 1 ? on1x_lit_character(start.s + prefix, available - prefix)
+                     : on1x_lit_string(start.s, available, 0);
+  if (!length) {
+    if (!on1x_literal_error) on1x_literal_error = start.s;
+    /* Stop on the first malformed complex token without publishing tokens. */
+    end->s = end->end;
+    return NULL;
+  }
+  if (kind == 1) length += prefix;
+  end->s = start.s + length;
+  return on1x_Tok(on1x_scanner_arena,
+      on1x_string_copy(on1x_scanner_arena, start.s, length),
+      (size_t)(start.s - start.begin), on1x_token_none());
+}
 static on1x_token_t on1x_lexeme(char *text, GLRParser start) {
   size_t length = strlen(text);
   /* Actions run after trailing layout has been skipped. save is the state
@@ -35,6 +56,10 @@ static on1x_token_t on1x_lexeme(char *text, GLRParser start) {
  *   loop_exit := 'break' [identifier] ['with' expr] ';'
  *              | 'continue' [identifier] ';'
  *   match := 'match' (expr | 'let' identifier '=' expr) 'with' '{' arms '}'
+ *   sum_match := expr '~' '{' arms '}'  (known closed sum; also admits '-')
+ *   regex_test := ('match' | 'capture') expr '~' postfix_expr
+ *   ref_parameter := identifier ':' 'ref' 'i64'
+ *   ref_store := identifier ':=' expr ';'
  *   arm := pattern ['if' expr] '=>' (expr | arm_block)
  *   pattern := identifier | '_' | 'rest' | literal | constructor(parts)
  *            | (parts) | [parts] | record{fields[,..]} | pattern '|' pattern
@@ -43,11 +68,23 @@ static on1x_token_t on1x_lexeme(char *text, GLRParser start) {
  *   named_type := qualified_identifier ['<' type_arguments '>']
  *   named_record := 'record' '<' named_type '>' '{' initializers '}'
  *   named_variant := 'variant' '<' named_type '>' '(' tag ',' payload ')'
+ *   inherent_impl := 'impl' ['<' type_parameters '>'] named_type
+ *                    '{' inherent_member+ '}'
+ *   inherent_member := 'fn' identifier ['<' type_parameters '>']
+ *                       '(' [receiver ','] parameters ')' ['->' type] block
+ *                    | 'value' identifier ['(' receiver ')'] [':' type]
+ *                       '=' expression ';'
+ *   receiver := 'self' [':' named_type]
+ *             | ('ref' | 'move') 'self' [':' named_type]
+ *   member_access := postfix_expression '::' identifier
+ *                  | named_type '::' identifier
+ * `ref self` and `move self` are parsed for stable diagnostics but are not
+ * admitted until place/lifetime and consuming-ownership lowering exists.
  * Nonrecursive nominal declarations use existing bounded by-value data layouts.
  *   defer_stmt := 'defer' call_expression ';'  (function-scoped, Go-style)
  *   propagation := postfix_expression '?'     (nominal typed Result return)
- * Loop/match words are contextual. '::' is recognized so owning-list patterns
- * can diagnose their unsupported profile; array tails are never invented.
+ * Loop/match/impl/value words are contextual. `::` is the inherent/cliche
+ * member operator; it does not replace record projection or list syntax.
  * Intrinsic cooperative profile: taskgroup ['within' expression ['ms'|'s']] block,
  * launch block, join/split/
  * close prefix, <-receive and <-send, ->(1,1){payload,capacity,mode:uni},
@@ -57,7 +94,7 @@ static on1x_token_t on1x_lexeme(char *text, GLRParser start) {
  * stdout/stderr capabilities. The parser, not a host shell, decodes words.
  * Ellipsis keeps its longest-match macro meaning. */
 %start on1x_scan_unit
-%skip /([ \t\r\n]+|#[^\n]*)+/
+%skip /[ \t\r\n]+/
 on1x_scan_unit: pieces {
   $$ = on1x_make_unit(on1x_scanner_arena,
       $1 ? on1x_token_some($1) : on1x_token_none());
@@ -66,17 +103,19 @@ pieces: %empty { $$ = NULL; }
   | pieces piece {
       on1x_token_t t = $2;
       if (t) t->v.Tok.previous = $1 ? on1x_token_some($1) : on1x_token_none();
-      $$ = t;
+       $$ = t ? t : $1;
     };
 piece:
     /```([^`]|`[^`]|``[^`])*```/ { $$ = on1x_lexeme($1, save); }
   | /`([^`\\\r\n]|\\[^\r\n])*`/ { $$ = on1x_lexeme($1, save); }
-  | /"([^"\\\r\n]|\\["\\nrt0])*"/ { $$ = on1x_lexeme($1, save); }
+  | /b!#\\|#\\/ { $$ = on1x_complex_literal(save, &attempt, 1); }
+  | /#[^\n]*/ { $$ = NULL; }
+  | /[br]!"|"/ { $$ = on1x_complex_literal(save, &attempt, 0); }
   | /[A-Za-z_][A-Za-z0-9_]*/ { $$ = on1x_lexeme($1, save); }
   | /([0-9]+\.[0-9]+([eE][+\-]?[0-9]+)?|[0-9]+[eE][+\-]?[0-9]+)(f32|f64)?|[0-9]+(f32|f64)/ { $$ = on1x_lexeme($1, save); }
-  | /(0[xX][0-9a-fA-F]+|[0-9]+)(u8|u16|u32|u64)?/ { $$ = on1x_lexeme($1, save); }
-  | /\.\.\.|\.\.=|\.\.|::|==|!=|<=|>=|&&|\|\||<-|->|=>/ { $$ = on1x_lexeme($1, save); }
-  | /[+*%<>=!;:,(){}\[\]@$.|?\-]/ { $$ = on1x_lexeme($1, save); }
+  | /(0[xX][0-9a-fA-F]+|0[bB][01]+|0[oO][0-7]+|[0-9]+)(u8|u16|u32|u64)?/ { $$ = on1x_lexeme($1, save); }
+  | /\.\.\.|\.\.=|\.\.|::|:=|==|!=|<=|>=|&&|\|\||<-|->|=>/ { $$ = on1x_lexeme($1, save); }
+  | /[+*%<>=!;:,(){}\[\]@$.|?~\-]/ { $$ = on1x_lexeme($1, save); }
   | '/' { $$ = on1x_lexeme($1, save); }
 ;
 %%
@@ -92,6 +131,7 @@ int on1x_generated_scan(const char *input, size_t length, on1x_token_callback cb
   on1x_arena_init(&arena);
   on1x_scanner_arena = &arena;
   on1x_backtick_error = NULL;
+  on1x_literal_error = NULL;
   parser.begin = input;
   parser.s = input;
   parser.end = input + length;
@@ -100,8 +140,9 @@ int on1x_generated_scan(const char *input, size_t length, on1x_token_callback cb
   glr_depth = 0;
   root = glr_on1x_scan_unit(&parser, &value) ? value : NULL;
   glr_skip(&parser);
-  if (!root || parser.s != parser.end || arena.error || on1x_backtick_error) {
+  if (!root || parser.s != parser.end || arena.error || on1x_backtick_error || on1x_literal_error) {
     const char *where = on1x_backtick_error;
+    if (on1x_literal_error && (!where || on1x_literal_error < where)) where = on1x_literal_error;
     if (!where) {
       where = parse_on1x_scan_unit_error();
       if (!where || (parser.s != parser.end && parser.s > where)) where = parser.s;
@@ -115,6 +156,7 @@ int on1x_generated_scan(const char *input, size_t length, on1x_token_callback cb
   }
   on1x_scanner_arena = NULL;
   on1x_backtick_error = NULL;
+  on1x_literal_error = NULL;
   on1x_arena_destroy(&arena);
   return result;
 }

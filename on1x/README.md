@@ -23,7 +23,22 @@ The [source formatter](docs/formatter.md) runs as `on1xc fmt`, reads
 `.on1xfmt`, and can also emit LaTeX or troff listings. Formatting itself does
 not run project scripts or PPX.
 
+See [editor addons](addons/README.md) for Vim/Neovim, VS Code, Sublime Text,
+`bat`, and the optional On1x language server.
+
 ## Language implementation continuation
+
+The [core literal forms](docs/core-literals.md) add UTF-8 `char`, `b!` byte/buffer literals, raw and
+triple-quoted strings, interpolation, and binary/octal integers. The
+[enum connective](docs/core-enum-connective.md) adds `value ~ { … }`, and
+[call-scoped references](docs/core-references.md) allow `ref i64` parameters
+to update a named caller binding with `:=`. [Core regexes](docs/core-regex.md)
+use Firestone at compile time and support UTF-8 matching and a bounded capture
+profile. [Nominal ADTs](docs/owning-adts.md) can share ownership of immutable
+`sexpr` fields. That shared-owner profile remains nonrecursive; the finite
+unique-owner profile below admits recursion only through `own<Named>`, while
+general resource fields still reject.
+None of these constructs require PPX.
 
 The [cancellation/deadline continuation](docs/cancellation-deadlines.md) now
 executes consuming cancellation of running or blocked internal fibers, explicit
@@ -43,7 +58,8 @@ close and scoped cleanup; the [poll example](examples/cooperative_poll.on1x)
 selects a rendezvous receive. This is **not** completion of the core-syntax
 specification: typed timeout recovery, the full portable shell grammar, async/await, duplex,
 general payloads and native worker threads remain unsupported. See the
-[verification record](VERIFICATION.md) for commands and current suite failures.
+[verification record](VERIFICATION.md) for commands, current suite results and
+the intentional optional-profile skip.
 
 A separate bounded [external-process profile](docs/concurrency.md) admits
 `launch exec("/absolute/program", "literal-arg")`, compiler-parsed single/triple
@@ -76,9 +92,19 @@ execute through existing MIR. Intrinsic [value loops](docs/value-loops.md) now
 add `loop` expressions and typed `break [label] with value` joins, including
 existing lexical cleanup. The next [nominal-data slice](docs/nominal-adts.md)
 adds nonrecursive named records and parameterized enums, with exact module/type
-argument identity and C11 execution (`examples/nominal_adts.on1x`). Recursive or
-owning ADTs, owning lists and general concurrency remain unsupported; the specification
-is not complete.
+argument identity and C11 execution (`examples/nominal_adts.on1x`). Nominal
+values may retain [immutable shared `sexpr`](docs/owning-adts.md), and the
+[finite unique-owner profile](docs/recursive-owning-adts.md) adds
+`own<Named>`, `box`, explicit `move`, consuming `take`/`drop`, and recursive
+layouts through strict C11. Unique ownership remains closed to MIR, PPX, raw
+FFI, captures, staging, defer, and concurrency; there is no intrinsic
+list/iterator protocol or general borrow system.
+
+The final type-checker hardening matrix covers ownership together with inherent
+`impl` and cliche admission, including forged HIR and generated-member metadata.
+Current results: generated GCC **97/97**, fallback **86 pass + 1 intentional
+skip**, focused Clang ASan/UBSan **15/15**. See
+[`VERIFICATION.md`](VERIFICATION.md) for exact commands and remaining limits.
 
 The M2 [defer/typed-error profile](docs/defer-errors.md) completes Go-style
 `defer call;` and postfix nominal `Result<T,E>?` through C11. Calls snapshot their
@@ -95,6 +121,24 @@ declarations, preserve explicit-import/local-shadow precedence, and add no ABI.
 Payloads are still limited to trivially copied nominal data; legacy tuple,
 scalar-pair and S-expression facades remain explicit compatibility APIs. See
 [`examples/pervasive_options.on1x`](examples/pervasive_options.on1x).
+
+Intrinsic [core cliches](docs/core-cliche.md) provide coherent constrained
+generics, generic members, associated values, exact-over-blanket selection, and
+compile-time qualified lookup such as `Show<T>::show(value)`. Executable
+projections lower to deterministic ordinary functions; there is no runtime
+implementation-name lookup. The orphan/overlap/decreasing-prerequisite rules and
+finite resolution budgets fail closed. This is separate from inherent
+`Type::member` lookup and from the legacy Category processor below.
+
+Intrinsic [nominal `impl` blocks](docs/core-impl.md) now provide associated
+functions/values and copy-safe by-value receiver members for records and enums,
+including generic targets and inferred polymorphic members. `value::member`
+lowers the receiver to the first ordinary argument, while `Type::member` performs
+associated lookup; dispatch is deterministic and has no runtime registry.
+`ref self`, `move self`, and managed/resource value receivers remain explicitly
+unsupported; owning values use ordinary or non-receiver functions with explicit
+consuming parameters. Unit-v1 PPX/interface transport and aggregate MIR also
+remain unsupported.
 
 Category now has an executable **M0/M1 plus concrete M2 slice**: `@enable Protocols`
 invokes a bundled native On1x-authored processor for `@extension Protocols { ... }`

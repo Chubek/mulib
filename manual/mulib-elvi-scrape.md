@@ -9,12 +9,10 @@ It neither embeds Surfraw nor executes shell scripts.
 
 - `include/mulib-elvi-scrape.h` — public API and implementation switch.
 - [`library/elvis/`](../library/elvis/README.md) — canonical profiles: `Google.elvs`,
-  `Bing.elvs`, `DuckDuckGo.elvs`, `Scholar.elvs`, and `MDN.elvs`. The lowercase
-  `library/elvi-scrape/google.elvs` and `library/elvi-scrape/bing.elvs` paths
-  remain compatible.
+  `Bing.elvs`, `DuckDuckGo.elvs`, `Scholar.elvs`, and `MDN.elvs`.
 - `tests/test-elvi-scrape.c` — deterministic offline behavior tests.
-- `tests/test-elvi-scrape-providers.c` — provider URL and extraction tests,
-  including the legacy paths.
+- `tests/test-elvi-scrape-providers.c` — provider URL and extraction tests for
+  all five profiles.
 - `tests/test-elvi-scrape-https.c` — independent authenticated-session/HTTP tests.
 - `tests/test-elvi-scrape-alloc.c` — exhaustive single-allocation failure injection.
 - `examples/elvi-scrape.c` — offline parse / URL construction example.
@@ -252,9 +250,9 @@ as source evidence. Annotations remain
 **unreviewed**, and neither extraction nor successful tests imply safe On1x ABI
 lowering. Exotract requires the six symbols from the generated archive.
 [`on1x/stdlib/mulib/catalog.json`](../on1x/stdlib/mulib/catalog.json) registers
-`elvis` for the canonical profiles and `elvi-scrape` for the legacy lowercase
-profiles. Explicit fixture selection preserves the same source-pinned recipe
-as kernel selection (including leaving optional `MULIB_IMPL_PARSER` off).
+`elvis` for the profiles in `library/elvis/`. Explicit fixture selection
+preserves the same source-pinned recipe as kernel selection (including leaving
+optional `MULIB_IMPL_PARSER` off).
 The generated On1x acceptance client compiles the embedded provider data offline
 through a test-only scalar C adapter; no general safe FFI is claimed.
 

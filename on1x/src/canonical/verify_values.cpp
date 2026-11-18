@@ -1,5 +1,10 @@
 #include <on1x/canonical/values.hpp>
+#include <on1x/concurrency.hpp>
+#include <on1x/literals.hpp>
+#include <on1x/numeric.hpp>
+#include <on1x/primitives.hpp>
 #include <algorithm>
+#include <cctype>
 #include <map>
 #include <iterator>
 #include <optional>
@@ -9,62 +14,735 @@ namespace on1x::canonical {
 namespace {
 using E=Expr::Kind;using S=Stmt::Kind;
 [[noreturn]] void fail(const Location& at,const std::string& text){throw Error(at,"ON1X-VALUES-VERIFY: "+text,"ON1X-VALUES-VERIFY");}
+[[noreturn]] void ref_error(const Location& at,const std::string& text){throw Error(at,text,"ON1X-REF");}
 struct State {
-  std::set<const Stmt*> initialized;
-  std::set<const Stmt*> maybe_initialized;
- std::set<std::pair<std::size_t,std::string>> tags;
+   std::set<const Stmt*> initialized;
+   std::set<const Stmt*> maybe_initialized;
+  std::set<std::pair<std::size_t,std::string>> tags;
+  std::set<std::size_t> moved;
+  std::set<std::pair<std::size_t,std::string>> moved_parts;
 };
 using Flow=std::optional<State>;
 State meet(const State& a,const State& b){
   State out;std::set_intersection(a.initialized.begin(),a.initialized.end(),b.initialized.begin(),b.initialized.end(),std::inserter(out.initialized,out.initialized.end()));
   std::set_union(a.maybe_initialized.begin(),a.maybe_initialized.end(),b.maybe_initialized.begin(),b.maybe_initialized.end(),std::inserter(out.maybe_initialized,out.maybe_initialized.end()));
- std::set_intersection(a.tags.begin(),a.tags.end(),b.tags.begin(),b.tags.end(),std::inserter(out.tags,out.tags.end()));return out;
+  std::set_intersection(a.tags.begin(),a.tags.end(),b.tags.begin(),b.tags.end(),std::inserter(out.tags,out.tags.end()));
+  std::set_union(a.moved.begin(),a.moved.end(),b.moved.begin(),b.moved.end(),std::inserter(out.moved,out.moved.end()));
+  std::set_union(a.moved_parts.begin(),a.moved_parts.end(),b.moved_parts.begin(),b.moved_parts.end(),std::inserter(out.moved_parts,out.moved_parts.end()));
+  return out;
 }
 Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b);}
  class Verify {
+  const Unit& unit;
   bool unsafe_context=false;
- struct Local {Type type;bool mut=false;const Stmt* storage=nullptr;std::size_t id=0;};
+  bool generic_context=false;
+  struct Local {
+   Type type;bool mut=false;const Stmt* storage=nullptr;std::size_t id=0;
+   bool exclusive=false,addressable=true,prototype=false;
+ };
  struct Target {std::size_t id;std::vector<State> exits,continues;};
- std::vector<std::map<std::string,Local>> scopes;
+  std::vector<std::map<std::string,Local>> scopes;
+  std::map<std::string,const Function*> functions;
+  std::map<std::string,const Function*> borrowers;
+  std::set<std::pair<Type,bool>> checked_types;
+ std::set<std::size_t> loaned; // Binding IDs, never textual names.
   std::vector<Target> regions,loops;
   Type returns=Type::Void;
- std::size_t serial=0,budget=262144,state_work=4*1024*1024;
- void tick(const Location& at,std::size_t depth){if(depth>520||!budget--)throw Error(at,"canonical value verification budget exhausted","ON1X-VALUES-LIMIT");}
-  void charge(const State& state,const Location& at){auto size=state.initialized.size()+state.maybe_initialized.size()+state.tags.size();if(size>state_work)throw Error(at,"canonical value flow-state budget exhausted","ON1X-VALUES-LIMIT");state_work-=size;}
- void source(const Location& at){if(at.file.empty()||at.file.size()>4096||!at.line||!at.column||at.offset>max_source_bytes||at.line>max_source_bytes+1||at.column>max_source_bytes+1)fail(at,"invalid canonical value source point");}
- const Local* find(const std::string& name)const{for(auto it=scopes.rbegin();it!=scopes.rend();++it)if(auto found=it->find(name);found!=it->end())return &found->second;return nullptr;}
- void bind(const std::string& name,Type type,bool mut,const Stmt* storage=nullptr){if(name.empty()||scopes.back().contains(name))fail(storage?storage->where:Location{"<canonical-values>"},"empty/duplicate canonical local");scopes.back()[name]={type,mut,storage,++serial};}
-  void pattern(const Pattern& p,const Type& t){
-   if(p.is_tuple()){
-    if(!t.is_tuple()||p.elements.size()!=t.elements().size())fail(p.where,"canonical tuple binding pattern/type mismatch");
-    for(std::size_t i=0;i<p.elements.size();++i)pattern(p.elements[i],t.elements()[i]);
-   }else bind(p.name,t,false);
+  std::size_t serial=0,budget=262144,state_work=4*1024*1024,type_work=262144;
+  void tick(const Location& at,std::size_t depth){if(depth>520||!budget--)throw Error(at,"canonical value verification budget exhausted","ON1X-VALUES-LIMIT");}
+   void charge(const State& state,const Location& at){auto size=state.initialized.size()+state.maybe_initialized.size()+state.tags.size()+state.moved.size()+state.moved_parts.size();if(size>state_work)throw Error(at,"canonical value flow-state budget exhausted","ON1X-VALUES-LIMIT");state_work-=size;}
+  void source(const Location& at){
+   if(at.file.empty()||at.file.size()>4096||at.file.find('\0')!=std::string::npos||
+      !at.line||!at.column||at.offset>max_source_bytes||
+      at.line>max_source_bytes+1||at.column>max_source_bytes+1)
+    fail(at,"invalid canonical value source point");
   }
- void params(const std::vector<Param>& ps){for(const auto& p:ps)if(p.pattern)pattern(*p.pattern,p.type);else bind(p.name,p.type,false);}
+   void checked_type(const Type& type,const Location& at,bool generics=false){
+   if(checked_types.contains({type,generics}))return;
+   if(!type_work)
+    throw Error(at,"canonical type-form work budget exhausted","ON1X-VALUES-LIMIT");
+   TypeFormOptions options;options.allow_generics=generics;
+   options.max_nodes=std::min(options.max_nodes,type_work);
+   auto form=check_type_form(type,options);
+   type_work-=std::min(type_work,std::max<std::size_t>(1,form.nodes));
+   if(form.status==TypeFormStatus::Limit)
+    throw Error(at,"canonical type-form validation limit: "+form.message,"ON1X-VALUES-LIMIT");
+   if(!form)fail(at,"malformed checked type: "+form.message);
+    checked_types.emplace(type,generics);
+   }
+   static bool identifier(const std::string& name){
+     if(name.empty()||
+        !(std::isalpha(static_cast<unsigned char>(name.front()))||
+          name.front()=='_'))return false;
+    return std::all_of(name.begin(),name.end(),[](unsigned char c){
+      return std::isalnum(c)||c=='_';
+     });
+    }
+    static bool move_place(E kind){
+     return kind==E::Variable||kind==E::Payload||kind==E::Project||
+            kind==E::Field||kind==E::Index;
+    }
+   static bool same_constraint(const ClicheConstraint& left,
+                               const ClicheConstraint& right){
+    return left.name==right.name&&left.arguments==right.arguments;
+   }
+   void metadata_type(const Type& type,const Location& at,
+                      std::size_t bound_variables){
+    if(!type_work)
+     throw Error(at,"canonical type-form work budget exhausted",
+                 "ON1X-VALUES-LIMIT");
+    TypeFormOptions options;options.bound_variables=bound_variables;
+    options.allow_named=true;options.allow_foralls=false;
+    options.max_nodes=std::min(options.max_nodes,type_work);
+    auto form=check_type_form(type,options);
+    type_work-=std::min(type_work,std::max<std::size_t>(1,form.nodes));
+    if(form.status==TypeFormStatus::Limit)
+     throw Error(at,"canonical generic-metadata type limit: "+form.message,
+                 "ON1X-VALUES-LIMIT");
+    if(!form)fail(at,"malformed generic metadata type: "+form.message);
+   }
+   void constraint(const ClicheConstraint& item,std::size_t variables){
+    tick(item.where,0);source(item.where);
+    if(item.name.empty()||item.name.size()>4096||
+       item.name.find('\0')!=std::string::npos)
+     fail(item.where,"invalid checked cliche constraint name");
+    auto declaration=std::find_if(
+     unit.cliches.begin(),unit.cliches.end(),
+     [&](const ClicheDeclaration& value){return value.name==item.name;});
+    if(declaration==unit.cliches.end())
+     fail(item.where,"unknown checked cliche constraint: "+item.name);
+    if(item.arguments.size()!=declaration->type_parameters.size()+1)
+     fail(item.where,"checked cliche constraint arity mismatch: "+item.name);
+    for(const auto& argument:item.arguments)
+     metadata_type(argument,item.where,variables);
+   }
+   void generic_metadata(const Function& function){
+    if(function.type_parameters.size()>4096||
+       function.constraints.size()>4096)
+     throw Error(function.where,
+                 "canonical generic-metadata budget exhausted",
+                 "ON1X-VALUES-LIMIT");
+    std::set<std::string> names;
+    for(std::size_t i=0;i<function.type_parameters.size();++i){
+     const auto& parameter=function.type_parameters[i];
+     source(parameter.where);
+     if(!identifier(parameter.name)||!names.insert(parameter.name).second)
+      fail(parameter.where,
+           "invalid or duplicate checked generic parameter: "+parameter.name);
+     for(const auto& bound:parameter.bounds){
+      constraint(bound,function.type_parameters.size());
+      if(bound.arguments.empty()||
+         bound.arguments.front()!=Type::bound(i))
+       fail(bound.where,"generic parameter bound has a forged Self argument");
+      if(std::none_of(
+          function.constraints.begin(),function.constraints.end(),
+          [&](const ClicheConstraint& item){
+           return same_constraint(item,bound);
+          }))
+       fail(bound.where,
+            "generic parameter bound is absent from function constraints");
+     }
+    }
+    for(const auto& item:function.constraints)
+     constraint(item,function.type_parameters.size());
+   }
+   struct RetainedControl {
+    struct Loop {std::size_t id;bool value;};
+    std::set<std::size_t> ids;
+    std::vector<Loop> loops;
+    std::vector<std::size_t> regions;
+   };
+   void retained_pattern(const Pattern& pattern,std::size_t depth){
+    tick(pattern.where,depth);source(pattern.where);
+    if(pattern.type!=Type::Invalid)
+     checked_type(pattern.type,pattern.where,true);
+    for(const auto& child:pattern.elements)
+     retained_pattern(child,depth+1);
+   }
+   void retained_body(const std::vector<Stmt>& statements,
+                      RetainedControl& control,std::size_t depth){
+    for(const auto& statement:statements){
+     tick(statement.where,depth);source(statement.where);
+     if(!statement.instances.empty())
+      fail(statement.where,
+           "unfrozen specialization instances in retained generic source");
+     if(statement.declared!=Type::Invalid)
+      checked_type(statement.declared,statement.where,true);
+     if(statement.pattern)
+      retained_pattern(*statement.pattern,depth+1);
+     auto value=[&]{
+      if(statement.value)
+       retained_expression(*statement.value,control,depth+1);
+     };
+     if(statement.kind==S::While){
+      if(!statement.value||!statement.control_target||
+         !control.ids.insert(statement.control_target).second)
+       fail(statement.where,
+            "missing or duplicate retained generic loop identity");
+      value();
+      control.loops.push_back({statement.control_target,false});
+      retained_body(statement.body,control,depth+1);
+      control.loops.pop_back();
+      retained_body(statement.otherwise,control,depth+1);
+      continue;
+     }
+     if(statement.kind==S::Region){
+      if(!statement.control_target||
+         !control.ids.insert(statement.control_target).second)
+       fail(statement.where,
+            "missing or duplicate retained generic region identity");
+      value();
+      control.regions.push_back(statement.control_target);
+      retained_body(statement.body,control,depth+1);
+      control.regions.pop_back();
+      retained_body(statement.otherwise,control,depth+1);
+      continue;
+     }
+     if(statement.kind==S::Leave){
+      if(!statement.control_target||
+         std::find(control.regions.rbegin(),control.regions.rend(),
+                   statement.control_target)==control.regions.rend())
+       fail(statement.where,
+            "retained generic region exit target is not active");
+     }else if(statement.kind==S::Break||statement.kind==S::Continue){
+      auto target=std::find_if(
+       control.loops.rbegin(),control.loops.rend(),
+       [&](const RetainedControl::Loop& loop){
+        return loop.id==statement.control_target;
+       });
+      if(!statement.control_target||target==control.loops.rend()||
+         (statement.kind==S::Continue&&statement.value)||
+         (statement.value&&!target->value))
+       fail(statement.where,
+            "retained generic loop exit target or value is invalid");
+     }else if(statement.control_target)
+      fail(statement.where,
+           "control identity on retained generic non-control statement");
+     value();
+     retained_body(statement.body,control,depth+1);
+     retained_body(statement.otherwise,control,depth+1);
+    }
+   }
+   void retained_expression(const Expr& expression,RetainedControl& control,
+                            std::size_t depth,bool callee_position=false){
+    tick(expression.where,depth);source(expression.where);
+    const bool intrinsic=callee_position&&expression.kind==E::Variable&&
+                         expression.reference==Expr::Reference::Intrinsic;
+    if(intrinsic){
+     if(expression.type!=Type::Invalid)
+      fail(expression.where,
+           "retained intrinsic callee carries a forged value type");
+    }else checked_type(expression.type,expression.where,true);
+    checked_type(expression.result,expression.where,true);
+    for(const auto& parameter:expression.parameters){
+     source(parameter.where);
+     checked_type(parameter.type,parameter.where,true);
+     if(parameter.pattern)
+      retained_pattern(*parameter.pattern,depth+1);
+    }
+    for(const auto& capture:expression.captures)
+     checked_type(capture.type,expression.where,true);
+    for(const auto& pattern:expression.patterns)
+     retained_pattern(pattern,depth+1);
+    if(expression.syntax_tail||!expression.syntax_definitions.empty()||
+       expression.syntax_repeat||!expression.type_parameters.empty()||
+       !expression.constraints.empty()||
+       !expression.cliche_arguments.empty()||
+       !expression.member_type_arguments.empty()||
+       !expression.cliche_member.empty())
+     fail(expression.where,
+          "source-only metadata in retained checked generic source");
+    if(expression.syntax_depth==0||
+       expression.syntax_depth>max_syntax_depth)
+     fail(expression.where,
+          "invalid retained generic expression syntax-depth metadata");
+    if(expression.kind==E::ClicheMember||
+       expression.kind==E::InherentMember)
+     fail(expression.where,
+          "unresolved member projection in retained generic source");
+    if(expression.move_out&&
+       (!move_place(expression.kind)||!expression.type.is_move_only()||
+        (expression.kind==E::Variable&&
+         expression.reference!=Expr::Reference::Local)))
+     fail(expression.where,
+          "invalid unique transfer metadata in retained generic source");
+    if(expression.move_out&&expression.kind==E::Index)
+     fail(expression.where,
+          "unique array-element move in retained generic source");
+    if(expression.kind==E::MacroCall||
+       expression.kind==E::SyntaxHole||
+       expression.kind==E::SyntaxBlock||
+       expression.kind==E::Extension||
+       expression.kind==E::SyntaxList||
+       expression.kind==E::SyntaxVector||
+       expression.kind==E::SyntaxKeyword||
+       expression.kind==E::SyntaxLet||
+       expression.kind==E::Splice||expression.kind==E::Lift)
+     fail(expression.where,
+          "unexpanded syntax in retained checked generic source");
+    if(expression.reference!=Expr::Reference::Unresolved&&
+       expression.kind!=E::Variable)
+     fail(expression.where,
+          "name-resolution metadata on retained non-variable expression");
+    if(expression.callee&&expression.kind!=E::Call)
+     fail(expression.where,
+          "callee on retained generic non-call expression");
+    if((!expression.parameters.empty()||!expression.captures.empty())&&
+       expression.kind!=E::Lambda)
+     fail(expression.where,
+          "closure metadata on retained generic non-lambda expression");
+    const bool body_allowed=expression.kind==E::Lambda||
+      expression.kind==E::Loop||expression.kind==E::Case||
+      expression.kind==E::Region||expression.kind==E::UnsafeBlock;
+    if(!expression.body.empty()&&!body_allowed)
+     fail(expression.where,
+          "body on unrelated retained generic expression");
+    if(expression.kind==E::Loop){
+     if(!expression.control_target||
+        !control.ids.insert(expression.control_target).second||
+        expression.callee||!expression.children.empty()||
+        !expression.parameters.empty()||!expression.patterns.empty()||
+        !expression.labels.empty()||!expression.captures.empty()||
+        !expression.proofs.empty()||expression.result!=Type::Void||
+        expression.reference!=Expr::Reference::Unresolved||
+        expression.projection||expression.statement_match||
+        expression.noreturn)
+      fail(expression.where,"malformed retained generic value loop");
+    }else if(expression.control_target)
+     fail(expression.where,
+          "control identity on retained generic non-loop expression");
+    if(expression.callee)
+     retained_expression(*expression.callee,control,depth+1,true);
+    for(const auto& child:expression.children){
+     if(!child)fail(expression.where,
+                    "missing retained generic expression child");
+     retained_expression(*child,control,depth+1);
+    }
+    for(const auto& proof:expression.proofs){
+     if(!proof)fail(expression.where,
+                    "missing retained generic universal proof");
+     retained_expression(*proof,control,depth+1);
+    }
+    if(expression.kind==E::Lambda){
+     auto loops=std::move(control.loops);
+     auto regions=std::move(control.regions);
+     control.loops.clear();control.regions.clear();
+     retained_body(expression.body,control,depth+1);
+     control.loops=std::move(loops);
+     control.regions=std::move(regions);
+    }else if(expression.kind==E::Loop){
+     control.loops.push_back({expression.control_target,true});
+     retained_body(expression.body,control,depth+1);
+     control.loops.pop_back();
+    }else retained_body(expression.body,control,depth+1);
+   }
+   static Type signature(const Function& function){
+   std::vector<Type> parameters;
+   for(const auto& parameter:function.params)parameters.push_back(parameter.type);
+   return Type::function(std::move(parameters),function.result);
+  }
+  static Expr::Reference function_reference(const Function& function){
+   if(function.kernel_link_only)return Expr::Reference::ScalarForeign;
+   if(!function.kernel_symbol.empty())return Expr::Reference::UnsafeForeign;
+   if(function.external)return Expr::Reference::Extern;
+   if(takes_exclusive(function))return Expr::Reference::BorrowFunction;
+   return Expr::Reference::Function;
+   }
+   void expression_header(const Expr& e,std::size_t depth,bool callee_position){
+    tick(e.where,depth);source(e.where);
+    if(e.prototype&&!generic_context&&borrowers.empty())
+     fail(e.where,"non-executable prototype marker in executable checked HIR");
+    const bool generics=generic_context||e.prototype;
+   const bool intrinsic=callee_position&&e.kind==E::Variable&&
+                        e.reference==Expr::Reference::Intrinsic;
+   if(intrinsic){
+    if(e.type!=Type::Invalid)fail(e.where,"intrinsic callee carries a forged value type");
+   }else checked_type(e.type,e.where,generics);
+   checked_type(e.result,e.where,generics);
+   for(const auto& parameter:e.parameters){
+    source(parameter.where);checked_type(parameter.type,parameter.where,generics);
+   }
+   for(const auto& capture:e.captures)checked_type(capture.type,e.where,generics);
+   for(const auto& child:e.children)if(!child)fail(e.where,"missing expression child");
+   for(const auto& proof:e.proofs)if(!proof)fail(e.where,"missing universal proof expression");
+   if(e.syntax_tail||!e.syntax_definitions.empty()||e.syntax_repeat||
+      !e.type_parameters.empty()||!e.constraints.empty()||
+      !e.cliche_arguments.empty()||!e.member_type_arguments.empty()||
+       !e.cliche_member.empty()){
+     fail(e.where,"source-only metadata reached checked executable HIR");
+    }
+    if(e.syntax_depth==0||e.syntax_depth>max_syntax_depth){
+     fail(e.where,"invalid checked expression syntax-depth metadata");
+    }
+     if(!generic_context){
+      if(e.context){
+       fail(e.where,"source syntax context reached checked executable HIR");
+      }
+      if(e.result!=Type::Void&&e.kind!=E::Lambda&&e.kind!=E::Record&&
+         e.kind!=E::Variant&&e.kind!=E::Csp)
+       fail(e.where,"auxiliary result type on an unrelated canonical expression");
+     const bool text_allowed=e.kind==E::Integer||e.kind==E::Float||
+       e.kind==E::Boolean||e.kind==E::String||e.kind==E::Variable||
+       e.kind==E::ClicheMember||e.kind==E::InherentMember||
+       e.kind==E::Unary||e.kind==E::Binary||e.kind==E::Variant||
+       e.kind==E::Field||e.kind==E::TagTest||e.kind==E::Payload||
+        e.kind==E::Csp||e.kind==E::Character||e.kind==E::ByteBuffer||
+        e.kind==E::RegexLiteral||
+        (e.kind==E::Index&&e.text==":");
+     if(!text_allowed&&!e.text.empty())
+       fail(e.where,"text metadata on an unrelated canonical expression");
+     }
+    if(e.kind==E::Csp&&
+       e.result!=(e.text=="channel"?Type{Type::I64}:Type{Type::Void}))
+     fail(e.where,"invalid canonical concurrency payload annotation");
+   if(!e.patterns.empty()||e.statement_match||e.sum_match){
+     fail(e.where,"surface pattern metadata reached canonical HIR");
+    }
+    if(e.move_out&&
+       (!move_place(e.kind)||!e.type.is_move_only()||
+        (e.kind==E::Variable&&e.reference!=Expr::Reference::Local)))
+     fail(e.where,"invalid unique transfer metadata on a canonical expression");
+    if(e.move_out&&e.kind==E::Index)
+     fail(e.where,"unique array-element moves are not admitted");
+   if(e.control_target)fail(e.where,"control identity on a canonical non-loop expression");
+   if(e.reference!=Expr::Reference::Unresolved&&e.kind!=E::Variable)
+    fail(e.where,"name-resolution metadata on a non-variable expression");
+   if(e.callee&&e.kind!=E::Call)fail(e.where,"callee on a non-call expression");
+   if((!e.parameters.empty()||!e.captures.empty())&&e.kind!=E::Lambda)
+    fail(e.where,"closure metadata on a non-lambda expression");
+   if(!e.body.empty()&&e.kind!=E::Lambda&&e.kind!=E::Region)
+    fail(e.where,"body on an ordinary canonical expression");
+   if(!e.labels.empty()&&e.kind!=E::Record)
+    fail(e.where,"labels on a non-record canonical expression");
+   if(!e.proofs.empty()&&e.kind!=E::PolyPack)
+    fail(e.where,"universal proof on a non-pack expression");
+   if(e.unsafe_region&&e.kind!=E::Region)
+    fail(e.where,"unsafe marker on a non-region expression");
+   if(e.noreturn&&e.kind!=E::Region)
+    fail(e.where,"non-returning metadata on an ordinary expression");
+   if(e.projection&&e.kind!=E::PolyProjection&&e.kind!=E::TagTest&&
+      e.kind!=E::Payload&&e.kind!=E::Project&&e.kind!=E::Variant&&
+      e.kind!=E::Field)
+    fail(e.where,"projection metadata on an unrelated expression");
+  }
+  void string_literal(const Expr& e){
+   if(e.text.size()<2||e.text.size()>max_source_bytes+2||
+      e.text.front()!='"'||e.text.back()!='"')
+    fail(e.where,"malformed canonical string literal");
+   for(std::size_t i=1;i+1<e.text.size();++i){
+    auto c=static_cast<unsigned char>(e.text[i]);
+    if(c=='"'||c=='\n'||c=='\r'||c=='\0')
+     fail(e.where,"malformed canonical string literal");
+    if(c!='\\')continue;
+    if(++i+1>=e.text.size())fail(e.where,"truncated canonical string escape");
+    c=static_cast<unsigned char>(e.text[i]);
+    if(c=='0')fail(e.where,"NUL escape is not supported by the C-string ABI");
+    if(c!='\\'&&c!='"'&&c!='$'&&c!='n'&&c!='r'&&c!='t')
+     fail(e.where,"unknown canonical string escape");
+   }
+  }
+  const Local* find(const std::string& name)const{for(auto it=scopes.rbegin();it!=scopes.rend();++it)if(auto found=it->find(name);found!=it->end())return &found->second;return nullptr;}
+   void bind(const std::string& name,Type type,bool mut,const Stmt* storage=nullptr,
+             bool exclusive=false,bool addressable=true,bool prototype=false){
+    if(name.empty()||scopes.back().contains(name))
+     fail(storage?storage->where:Location{"<canonical-values>"},
+          "empty/duplicate canonical local");
+    scopes.back()[name]={type,mut,storage,++serial,exclusive,addressable,prototype};
+   }
+   void pattern(const Pattern& p,const Type& t,std::size_t depth=0){
+     tick(p.where,depth);source(p.where);checked_type(t,p.where,generic_context);
+     if(p.context)fail(p.where,"source pattern context reached canonical HIR");
+    if(p.type!=Type::Invalid){
+     checked_type(p.type,p.where,generic_context);
+     if(p.type!=t)fail(p.where,"canonical binding pattern metadata/type mismatch");
+    }
+    if((p.kind!=Pattern::Kind::Name&&p.kind!=Pattern::Kind::Tuple)||
+       !p.labels.empty()||p.open)
+     fail(p.where,"refutable or labeled pattern in a canonical binding");
+    if(p.is_tuple()){
+     if(!t.is_tuple()||p.elements.size()<2||p.elements.size()!=t.elements().size())
+      fail(p.where,"canonical tuple binding pattern/type mismatch");
+     for(std::size_t i=0;i<p.elements.size();++i)
+      pattern(p.elements[i],t.elements()[i],depth+1);
+    }else{
+     if(!p.elements.empty()||p.name.empty())fail(p.where,"invalid canonical name binding");
+     bind(p.name,t,false);
+    }
+   }
+  void params(const std::vector<Param>& ps,std::size_t depth=0){
+   for(const auto& p:ps){
+     source(p.where);checked_type(p.type,p.where,generic_context);
+     if(p.context)fail(p.where,"source parameter context reached canonical HIR");
+    if(p.pattern){
+     if(p.exclusive)ref_error(p.where,"ref i64 parameters cannot use a pattern");
+     pattern(*p.pattern,p.type,depth+1);
+    }else bind(p.name,p.type,false,nullptr,p.exclusive);
+   }
+  }
+  void access(const Local* binding,const Location& at,const std::string& name){
+   if(binding&&loaned.contains(binding->id))ref_error(at,"cannot access '"+name+"' during its exclusive ref i64 borrow");
+  }
+  static bool has_moved_part(const State& state,std::size_t id){
+   return std::any_of(state.moved_parts.begin(),state.moved_parts.end(),
+                      [&](const auto& part){return part.first==id;});
+  }
+  static void clear_moves(State& state,std::size_t id){
+   state.moved.erase(id);
+   for(auto it=state.moved_parts.begin();it!=state.moved_parts.end();)
+    if(it->first==id)it=state.moved_parts.erase(it);else ++it;
+  }
+  static std::string part_name(const Expr& e){
+   const char prefix=e.kind==E::Payload?'s':e.kind==E::Project?'t':
+                     e.kind==E::Field?'r':'a';
+   return std::string(1,prefix)+std::to_string(e.projection);
+  }
+  void move_part(const Expr& e,State& state){
+   if(!e.type.is_move_only()||e.children.size()!=1||
+      e.children[0]->kind!=E::Variable)
+    fail(e.where,"unique projection transfer requires a direct named place");
+   const auto& root=*e.children[0];auto binding=find(root.text);
+   if(!binding||root.reference!=Expr::Reference::Local||
+      binding->type!=root.type)
+    fail(e.where,"unique projection transfer has no checked local root");
+   if(state.moved.contains(binding->id))
+    fail(e.where,"projection from moved local: "+root.text);
+   auto part=std::pair{binding->id,part_name(e)};
+   if(!state.moved_parts.insert(part).second)
+    fail(e.where,"unique field is moved more than once from local: "+root.text);
+   for(auto it=state.tags.begin();it!=state.tags.end();)
+    if(it->first==binding->id)it=state.tags.erase(it);else ++it;
+  }
+  const Function* borrower(const Expr& e){
+   if(e.kind!=E::Variable||find(e.text))return nullptr;
+   auto found=borrowers.find(e.text);return found==borrowers.end()?nullptr:found->second;
+  }
+  Type intrinsic(const Expr& call){
+   const auto& name=call.callee->text;
+   auto arity=[&](std::size_t count){
+    if(call.children.size()!=count)fail(call.where,"intrinsic arity mismatch: "+name);
+   };
+   if(auto primitive=data_primitive(name)){
+    arity(primitive->parameters().size());
+    for(std::size_t i=0;i<call.children.size();++i)
+     if(call.children[i]->type!=primitive->parameters()[i])
+      fail(call.children[i]->where,"intrinsic argument type mismatch: "+name);
+    return primitive->result();
+   }
+   if(name=="println"){
+    arity(1);
+    if(!literals::formattable(call.children[0]->type))
+     fail(call.children[0]->where,"invalid println operand");
+    return Type::Void;
+   }
+   if(name=="format"){
+    if(call.children.empty()||call.children.size()>literals::max_format_parts+1)
+     fail(call.where,"invalid format arity");
+    if(call.children[0]->type!=Type::String)
+     fail(call.children[0]->where,"format pattern must be string");
+    for(std::size_t i=1;i<call.children.size();++i)
+     if(!literals::formattable(call.children[i]->type))
+      fail(call.children[i]->where,"invalid format operand");
+    return Type::String;
+   }
+   if(name=="assert"){
+    arity(1);
+    if(call.children[0]->type!=Type::Bool)fail(call.where,"assert requires bool");
+     return Type::Void;
+    }
+    if(name=="box"){
+     arity(1);const auto& value=call.children[0]->type;
+     if((value.kind()!=Type::Record&&value.kind()!=Type::Sum)||
+        value.nominal().empty())
+      fail(call.children[0]->where,"box operand is not a checked nominal value");
+     auto expected=Type::own(Type::named(value.nominal(),value.arguments()));
+     if(call.type!=expected)fail(call.where,"box result does not match its nominal operand");
+     return expected;
+    }
+    if(name=="move"){
+     arity(1);const auto& operand=*call.children[0];
+     if(operand.kind!=E::Variable||operand.reference!=Expr::Reference::Local||
+        !operand.move_out||!operand.type.is_move_only())
+      fail(operand.where,"move requires one checked unique local transfer");
+     return operand.type;
+    }
+    if(name=="take"){
+     arity(1);const auto& owner=call.children[0]->type;
+     if(!owner.is_own())fail(call.children[0]->where,"take requires own<Named>");
+     const auto& target=owner.owned();
+     if((call.type.kind()!=Type::Record&&call.type.kind()!=Type::Sum)||
+        call.type.nominal()!=target.nominal()||
+        call.type.arguments()!=target.arguments())
+      fail(call.where,"take result does not match its owning target");
+     return call.type;
+    }
+    if(name=="drop"){
+     arity(1);
+     if(!call.children[0]->type.is_move_only())
+      fail(call.children[0]->where,"drop requires a unique owning value");
+     return Type::Void;
+    }
+   if(name=="json_parse_or_die"){
+    arity(1);
+    if(call.children[0]->type!=Type::String)
+     fail(call.where,"json_parse_or_die requires string");
+    return Type::Json;
+   }
+   if(name=="json_get_or_die"||name=="json_size"||
+      name=="json_number"||name=="json_print"){
+    arity(name=="json_get_or_die"?2:1);
+    const auto owner=call.children[0]->type;
+    if(owner!=Type::Json&&owner!=Type::JsonView)
+     fail(call.children[0]->where,"invalid JSON operand type");
+    if(call.children[0]->kind!=E::Variable)
+     fail(call.children[0]->where,"JSON operation requires a named owner or view");
+    if(call.children.size()==2&&call.children[1]->type!=Type::String)
+     fail(call.children[1]->where,"JSON key must be string");
+    if(name=="json_get_or_die")return Type::JsonView;
+    if(name=="json_print")return Type::Void;
+    return Type::I64;
+   }
+   fail(call.where,"unknown checked intrinsic: "+name);
+  }
+  bool borrow_call(const Expr& e,const Function& function,State& state,std::size_t depth){
+   const auto& callee=*e.callee;expression_header(callee,depth+1,true);
+   if(callee.reference!=Expr::Reference::BorrowFunction||callee.callee||!callee.children.empty()||
+      !callee.body.empty()||callee.text!=function.name||function.prototype||
+      e.children.size()!=function.params.size()||e.type!=function.result)
+    ref_error(e.where,"malformed checked call with ref i64 parameters");
+  std::vector<Type> parameter_types;
+  for(const auto& parameter:function.params)parameter_types.push_back(parameter.type);
+  if(callee.type!=Type::function(std::move(parameter_types),function.result))
+   ref_error(callee.where,"checked ref i64 callee signature mismatch");
+  std::vector<std::size_t> acquired;
+  bool live=true;
+  for(std::size_t i=0;i<e.children.size();++i){
+    if(!e.children[i])ref_error(e.where,"missing checked call argument");
+    const auto& arg=*e.children[i];const auto& param=function.params[i];
+    if(arg.type!=param.type)ref_error(arg.where,"checked ref i64 call argument type mismatch");
+    if(!param.exclusive){if(!expression(arg,state,depth+1)){live=false;break;}continue;}
+     auto* place=arg.kind==E::Variable?find(arg.text):nullptr;
+    if(!place||arg.reference!=Expr::Reference::Local||place->type!=Type::I64||!place->addressable||place->storage||
+       arg.callee||!arg.children.empty()||!arg.body.empty()||arg.prototype||arg.noreturn)
+     ref_error(arg.where,"ref i64 requires a named addressable local i64 or an incoming ref i64 parameter");
+    if(loaned.contains(place->id))
+     ref_error(arg.where,"overlapping exclusive ref i64 borrow of '"+arg.text+"'");
+    if(!expression(arg,state,depth+1)){live=false;break;}
+    loaned.insert(place->id);
+    acquired.push_back(place->id);
+  }
+  for(auto id:acquired)loaned.erase(id);
+  return live;
+ }
  std::pair<std::size_t,std::string> tag(const Expr& e){
   if(e.children.size()!=1||!e.children[0]||e.children[0]->kind!=E::Variable)fail(e.where,"sum decision operand must be a named value");
   const auto& root=*e.children[0];auto binding=find(root.text);if(!binding||binding->mut||binding->type!=root.type||root.type.kind()!=Type::Sum)fail(e.where,"sum decision requires an immutable closed-sum binding");
   auto found=std::find(root.type.labels().begin(),root.type.labels().end(),e.text);if(found==root.type.labels().end()||e.projection!=static_cast<std::size_t>(found-root.type.labels().begin()))fail(e.where,"sum decision tag/projection mismatch");
   return {binding->id,e.text};
  }
- bool expression(const Expr& e,State& state,std::size_t depth){
-  tick(e.where,depth);if(e.prototype)return true;
-     if(e.kind==E::PatternMatch||e.kind==E::Match||e.kind==E::Case||e.kind==E::Loop||e.kind==E::Propagate||e.kind==E::UnsafeBlock)fail(e.where,"surface value construct reached the canonical verifier");
-   if(e.unsafe_region&&e.kind!=E::Region)fail(e.where,"unsafe marker on a non-region expression");
-   if(e.reference==Expr::Reference::UnsafeForeign)
-    fail(e.where,"unsafe foreign reference must be the direct callee of an unsafe call");
-  if(e.noreturn&&e.kind!=E::Region)fail(e.where,"non-returning metadata on an ordinary expression");
-  if(e.kind==E::Region||e.kind==E::TagTest||e.kind==E::Payload||e.kind==E::Project||e.kind==E::Unit){source(e.where);if(e.callee||!e.parameters.empty()||!e.patterns.empty()||!e.labels.empty())fail(e.where,"extraneous canonical expression fields");}
-  if(e.kind==E::Variable){auto binding=find(e.text);if(binding||e.reference==Expr::Reference::Local){if(!binding||e.reference!=Expr::Reference::Local||binding->type!=e.type)fail(e.where,"canonical local binding/type mismatch: "+e.text);if(binding->storage&&!state.initialized.contains(binding->storage))fail(e.where,"read of uninitialized canonical storage: "+e.text);}return true;}
-  if(e.kind==E::Lambda){
-   for(const auto& capture:e.captures){auto b=find(capture.name);if(!b||b->mut||b->type!=capture.type||capture.type==Type::Json||capture.type==Type::JsonView||(b->storage&&!state.initialized.contains(b->storage)))fail(e.where,"uninitialized/invalid closure capture");}
-   auto saved_scopes=std::move(scopes);auto saved_regions=std::move(regions),saved_loops=std::move(loops);scopes.clear();regions.clear();loops.clear();scopes.emplace_back();
-   for(const auto& capture:e.captures)bind(capture.name,capture.type,false);
-    auto saved_returns=returns;returns=e.result;params(e.parameters);
-    auto saved_unsafe=unsafe_context;unsafe_context=false;
-    (void)body(e.body,State{},depth+1,false);returns=saved_returns;unsafe_context=saved_unsafe;
-   scopes=std::move(saved_scopes);regions=std::move(saved_regions);loops=std::move(saved_loops);return true;
-  }
+   bool expression(const Expr& e,State& state,std::size_t depth,
+                    bool callee_position=false,bool unsafe_direct=false,
+                    bool place_base=false){
+    expression_header(e,depth,callee_position);
+    if(e.prototype){
+     if(!borrowers.empty())ref_error(e.where,"non-executable prototype in a checked ref i64 expression");
+     return true;
+    }
+    if(e.kind==E::PatternMatch||e.kind==E::Match||e.kind==E::Case||
+       e.kind==E::Loop||e.kind==E::Propagate||e.kind==E::UnsafeBlock||
+       e.kind==E::SourceCsp)
+     fail(e.where,"surface value construct reached the canonical verifier");
+    if(e.kind==E::ClicheMember||e.kind==E::InherentMember)
+     fail(e.where,"unresolved member projection reached checked executable HIR");
+    if(e.kind==E::MacroCall||e.kind==E::SyntaxHole||e.kind==E::SyntaxBlock||
+       e.kind==E::Extension||e.kind==E::SyntaxList||e.kind==E::SyntaxVector||
+       e.kind==E::SyntaxKeyword||e.kind==E::SyntaxLet||
+       e.kind==E::Splice||e.kind==E::Lift)
+     fail(e.where,"unexpanded metaprogramming/staging syntax reached canonical HIR");
+   if(e.kind==E::Call&&e.callee)if(auto f=borrower(*e.callee))return borrow_call(e,*f,state,depth);
+   if(e.reference==Expr::Reference::BorrowFunction||borrower(e))
+    ref_error(e.where,"functions with ref i64 parameters require a direct named call");
+   if(e.kind==E::Variable){
+    if(e.text.empty()||e.callee||!e.children.empty()||!e.body.empty())
+     fail(e.where,"malformed canonical variable");
+    auto binding=find(e.text);
+     if(binding||e.reference==Expr::Reference::Local){
+      if(!binding||e.reference!=Expr::Reference::Local||binding->type!=e.type){
+       fail(e.where,"canonical local binding/type mismatch: "+e.text);
+      }
+      if(binding->prototype&&!generic_context)
+       fail(e.where,"non-executable prototype local reached executable HIR: "+e.text);
+      access(binding,e.where,e.text);
+      if(binding->storage&&!state.initialized.contains(binding->storage))
+       fail(e.where,"read of uninitialized canonical storage: "+e.text);
+      if(e.move_out){
+       if(!binding->type.is_move_only())
+        fail(e.where,"move metadata on a copyable local: "+e.text);
+       if(state.moved.contains(binding->id)||has_moved_part(state,binding->id))
+        fail(e.where,"use after move of local: "+e.text);
+       state.moved.insert(binding->id);
+       for(auto it=state.tags.begin();it!=state.tags.end();)
+        if(it->first==binding->id)it=state.tags.erase(it);else ++it;
+      }else if(binding->type.is_move_only()){
+       if(state.moved.contains(binding->id))
+        fail(e.where,"use after move of local: "+e.text);
+       if(has_moved_part(state,binding->id)&&!place_base)
+        fail(e.where,"whole-value use after partial move of local: "+e.text);
+       if(!place_base)
+        fail(e.where,"copy of unique local requires move(local): "+e.text);
+      }else if(e.move_out)fail(e.where,"move metadata on a copyable local");
+      return true;
+    }
+    if(e.reference==Expr::Reference::Intrinsic){
+     if(!callee_position||e.type!=Type::Invalid||functions.contains(e.text))
+      fail(e.where,"intrinsic is not a valid direct callee");
+     return true;
+    }
+    auto found=functions.find(e.text);
+    if(found==functions.end())fail(e.where,"unresolved canonical global: "+e.text);
+    const auto expected=function_reference(*found->second);
+    if(e.reference!=expected||e.type!=signature(*found->second))
+     fail(e.where,"canonical global reference/signature mismatch: "+e.text);
+    if(expected==Expr::Reference::BorrowFunction)
+     ref_error(e.where,"functions with ref i64 parameters require a direct named call");
+    if(expected==Expr::Reference::Extern||expected==Expr::Reference::ScalarForeign){
+     if(!callee_position)fail(e.where,"foreign function is not a first-class value");
+    }else if(expected==Expr::Reference::UnsafeForeign){
+     if(!callee_position||!unsafe_direct||!unsafe_context)
+      fail(e.where,"unsafe foreign reference must be a direct lexically unsafe call");
+    }
+    return true;
+   }
+   if(e.kind==E::Lambda){
+    std::vector<Type> parameter_types;std::set<std::string> names,captured;
+    for(const auto& p:e.parameters){
+     if(p.exclusive)ref_error(p.where,"anonymous functions cannot declare ref i64 parameters");
+     if(!names.insert(p.name).second)fail(p.where,"duplicate lambda parameter");
+     parameter_types.push_back(p.type);
+    }
+    if(e.type!=Type::function(std::move(parameter_types),e.result)||
+       e.callee||!e.children.empty()||!e.labels.empty()||!e.proofs.empty())
+     fail(e.where,"canonical lambda signature/shape mismatch");
+    for(const auto& capture:e.captures){
+     if(capture.name.empty()||!captured.insert(capture.name).second){
+      fail(e.where,"empty/duplicate closure capture");
+     }
+     auto b=find(capture.name);
+      if(!b||b->mut||b->type!=capture.type||capture.type==Type::Json||
+         capture.type==Type::JsonView||capture.type.contains_unique()||
+         (b->storage&&!state.initialized.contains(b->storage)))
+      fail(e.where,"uninitialized/invalid closure capture");
+     access(b,e.where,capture.name);
+     if(b->exclusive)ref_error(e.where,"closure cannot capture a ref i64 parameter");
+    }
+    auto saved_scopes=std::move(scopes);auto saved_regions=std::move(regions),saved_loops=std::move(loops);scopes.clear();regions.clear();loops.clear();scopes.emplace_back();
+    for(const auto& capture:e.captures)bind(capture.name,capture.type,false,nullptr,false,false);
+     auto saved_returns=returns;returns=e.result;params(e.parameters);
+     auto saved_unsafe=unsafe_context;unsafe_context=false;
+     auto after=body(e.body,State{},depth+1,false);
+     if(e.result!=Type::Void&&after)fail(e.where,"lambda lacks a complete return path");
+     returns=saved_returns;unsafe_context=saved_unsafe;
+    scopes=std::move(saved_scopes);regions=std::move(saved_regions);loops=std::move(saved_loops);return true;
+   }
    if(e.kind==E::Region){
     if(e.children.size()!=1||!e.children[0])fail(e.where,"value region requires one result");
     auto saved_unsafe=unsafe_context;unsafe_context=unsafe_context||e.unsafe_region;
@@ -74,52 +752,345 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
    else if(e.type!=Type::Void||e.children[0]->kind!=E::Unit)fail(e.where,"non-returning region must have no value");
     scopes.pop_back();unsafe_context=saved_unsafe;return after.has_value();
   }
-  if(e.kind==E::Binary&&(e.text=="&&"||e.text=="||")){
-   if(e.children.size()!=2)fail(e.where,"malformed logical expression");
-   if(!expression(*e.children[0],state,depth+1))return false;
-   charge(state,e.where);auto right=state;bool live=expression(*e.children[1],right,depth+1);if(live)state=meet(state,right);return true;
+   if(e.kind==E::Binary&&(e.text=="&&"||e.text=="||")){
+    if(e.children.size()!=2)fail(e.where,"malformed logical expression");
+    if(!expression(*e.children[0],state,depth+1))return false;
+    charge(state,e.where);auto right=state;
+    bool live=expression(*e.children[1],right,depth+1);
+    if(e.children[0]->type!=Type::Bool||e.children[1]->type!=Type::Bool||
+       e.type!=Type::Bool)
+     fail(e.where,"logical expression type mismatch");
+    if(live)state=meet(state,right);
+    return true;
+   }
+   if(e.kind==E::Call){
+    if(!e.callee)fail(e.where,"canonical call is missing its callee");
+    const bool unsafe=e.callee->reference==Expr::Reference::UnsafeForeign;
+    if(!expression(*e.callee,state,depth+1,true,unsafe))return false;
+     for(const auto& child:e.children)
+      if(!expression(*child,state,depth+1))return false;
+    Type result=Type::Invalid;
+    if(e.callee->reference==Expr::Reference::Intrinsic)result=intrinsic(e);
+    else{
+     const auto& callable=e.callee->type;
+     if(!callable.is_function()||callable.parameters().size()!=e.children.size())
+      fail(e.where,"canonical call target/arity mismatch");
+     for(std::size_t i=0;i<e.children.size();++i)
+      if(e.children[i]->type!=callable.parameters()[i])
+       fail(e.children[i]->where,"canonical call argument type mismatch");
+     result=callable.result();
+    }
+    if(e.type!=result)fail(e.where,"canonical call result type mismatch");
+    return true;
+   }
+    const bool place_operation=e.kind==E::TagTest||e.kind==E::Payload||
+      e.kind==E::Project||e.kind==E::Field||e.kind==E::Index||
+      e.kind==E::Slice||e.kind==E::Length;
+    if(place_operation&&!e.children.empty()){
+     if(!expression(*e.children[0],state,depth+1,false,false,true))return false;
+     for(std::size_t i=1;i<e.children.size();++i)
+      if(!expression(*e.children[i],state,depth+1))return false;
+    }else for(const auto& child:e.children)
+     if(!expression(*child,state,depth+1))return false;
+   if(e.kind==E::Integer){
+    if(!e.children.empty())fail(e.where,"integer literal has operands");
+    auto type=numeric_literal_type(e.text);
+    (void)integer_literal_bits(e.text,e.where);
+    if(e.type!=type)fail(e.where,"integer literal/type mismatch");
+   }
+   if(e.kind==E::Float){
+    if(!e.children.empty())fail(e.where,"float literal has operands");
+    auto type=numeric_literal_type(e.text);
+    (void)float_literal_bits(e.text,e.where);
+    if(!type.is_float()||e.type!=type)fail(e.where,"float literal/type mismatch");
+   }
+   if(e.kind==E::Boolean){
+    if(!e.children.empty()||(e.text!="true"&&e.text!="false")||e.type!=Type::Bool)
+     fail(e.where,"invalid canonical boolean literal");
+   }
+   if(e.kind==E::String){
+    if(!e.children.empty()||e.type!=Type::String)
+     fail(e.where,"invalid canonical string literal");
+    string_literal(e);
+   }
+   if(e.kind==E::Character){
+    if(!e.children.empty()||e.type!=Type::Char)
+     fail(e.where,"invalid canonical character literal");
+    (void)literals::character(e.text,e.where);
+   }
+   if(e.kind==E::ByteBuffer){
+    if(!e.children.empty()||e.type!=Type::Buffer||!literals::byte_payload(e.text))
+     fail(e.where,"invalid canonical byte-buffer literal");
+   }
+   if(e.kind==E::Interpolated){
+    if(e.children.empty()||e.children.size()>literals::max_format_parts||
+       e.type!=Type::String)
+     fail(e.where,"invalid canonical interpolation");
+    for(const auto& child:e.children)
+     if(!literals::formattable(child->type))
+      fail(child->where,"invalid canonical interpolation operand");
+   }
+   if(e.kind==E::Tuple){
+    if(e.children.size()<2)fail(e.where,"invalid canonical tuple arity");
+    std::vector<Type> elements;
+    for(const auto& child:e.children)elements.push_back(child->type);
+    if(e.type!=Type::tuple(std::move(elements)))
+     fail(e.where,"canonical tuple result type mismatch");
+   }
+   if(e.kind==E::Unary){
+    if(e.children.size()!=1||(e.text!="!"&&e.text!="-"))
+     fail(e.where,"invalid canonical unary operator/arity");
+    const auto operand=e.children[0]->type;
+    if(e.text=="!"){
+     if(operand!=Type::Bool||e.type!=Type::Bool)
+      fail(e.where,"logical negation type mismatch");
+    }else if((operand!=Type::I64&&!operand.is_float())||e.type!=operand)
+     fail(e.where,"numeric negation type mismatch");
+   }
+   if(e.kind==E::Binary&&e.text!="&&"&&e.text!="||"){
+    if(e.children.size()!=2)fail(e.where,"invalid canonical binary arity");
+    const auto left=e.children[0]->type,right=e.children[1]->type;
+    const bool arithmetic=e.text=="+"||e.text=="-"||e.text=="*"||
+                          e.text=="/"||e.text=="%";
+    const bool compare=e.text=="<"||e.text==">"||e.text=="<="||e.text==">=";
+    const bool equality=e.text=="=="||e.text=="!=";
+    if(!arithmetic&&!compare&&!equality)fail(e.where,"unknown canonical binary operator");
+    if(left!=right)fail(e.where,"canonical binary operand type mismatch");
+    if(arithmetic||compare){
+     if(!left.is_numeric()||(e.text=="%"&&left.is_float()))
+      fail(e.where,"invalid canonical numeric operand");
+    }else if(!literals::formattable(left))
+     fail(e.where,"invalid canonical equality operand");
+    const auto result=arithmetic?left:Type{Type::Bool};
+    if(e.type!=result)fail(e.where,"canonical binary result type mismatch");
+   }
+   if(e.kind==E::Array){
+    if(e.type.kind()!=Type::Array||e.type.extent()!=e.children.size())
+     fail(e.where,"invalid canonical array construction");
+    for(const auto& child:e.children)
+     if(child->type!=e.type.elements()[0])
+      fail(child->where,"canonical array element type mismatch");
+   }
+    if(e.kind==E::Index||e.kind==E::Slice||e.kind==E::Length){
+    const auto arity=e.kind==E::Length?1u:e.kind==E::Slice?3u:2u;
+    if(e.children.size()!=arity)fail(e.where,"canonical index/slice/length arity mismatch");
+     const auto subject=e.children[0]->type;
+     if(subject==Type::RegexCaptures){
+      if(e.kind==E::Index){
+       if((!e.text.empty()&&e.text!=":")||
+          e.children[1]->type!=Type::I64||e.type!=Type::String)
+        fail(e.where,"invalid canonical capture index");
+      }else if(e.kind==E::Length){
+       if(e.type!=Type::I64)fail(e.where,"invalid canonical capture count");
+      }else fail(e.where,"captures do not support slicing");
+     }else{
+      if(!e.text.empty())
+       fail(e.where,"capture index marker on a non-capture expression");
+      if(subject.kind()!=Type::Array&&subject.kind()!=Type::Slice)
+       fail(e.where,"canonical index/slice/length requires an array or slice");
+     for(std::size_t i=1;i<e.children.size();++i)
+      if(e.children[i]->type!=Type::I64)
+       fail(e.children[i]->where,"canonical index/slice bound is not i64");
+     const auto result=e.kind==E::Length?Type{Type::I64}:
+       e.kind==E::Slice?Type::data(Type::Slice,subject.elements(),{},subject.extent()):
+       subject.elements()[0];
+      if(e.type!=result)fail(e.where,"canonical index/slice/length result mismatch");
+     }
+     if(e.move_out)fail(e.where,"unique array-element moves are not admitted");
+    }
+   if(e.kind==E::Quote){
+    if(!unit.stages_lowered||e.children.size()!=1||
+       !e.children[0]->type.is_function()||
+       !e.children[0]->type.parameters().empty()||
+       e.type!=Type::code(e.children[0]->type.result()))
+     fail(e.where,"invalid canonical quotation");
+   }
+   if(e.kind==E::Run){
+    if(e.children.size()!=1||!e.children[0]->type.is_code()||
+       e.type!=e.children[0]->type.code_result())
+     fail(e.where,"invalid canonical run expression");
+   }
+   if(e.kind==E::PolyProjection){
+    if(e.children.size()!=1||!e.children[0]->type.is_forall()||
+       !forall_instance(e.children[0]->type,e.type))
+     fail(e.where,"invalid canonical forall projection");
+    auto layout=unit.forall_layouts.find(e.children[0]->type);
+    if(layout==unit.forall_layouts.end()||e.projection>=layout->second.size()||
+       layout->second[e.projection]!=e.type)
+     fail(e.where,"forall projection/layout mismatch");
+   }
+   if(e.kind==E::PolyPack){
+    if(!e.type.is_forall()||e.proofs.size()!=1)
+     fail(e.where,"invalid canonical forall pack proof shape");
+    auto proof_state=state;auto saved_generic=generic_context;generic_context=true;
+    bool proof_live=expression(*e.proofs[0],proof_state,depth+1);
+    generic_context=saved_generic;
+    if(!proof_live||!forall_proof(e.type,e.proofs[0]->type))
+     fail(e.where,"invalid canonical rigid forall proof");
+    auto layout=unit.forall_layouts.find(e.type);
+    const std::vector<Type> empty;
+    const auto& expected=layout==unit.forall_layouts.end()?empty:layout->second;
+    if(e.children.size()!=expected.size())
+     fail(e.where,"canonical forall pack/layout arity mismatch");
+    for(std::size_t i=0;i<expected.size();++i)
+     if(e.children[i]->type!=expected[i])
+      fail(e.children[i]->where,"canonical forall pack element type mismatch");
+   }
+   if(e.kind==E::RegexLiteral&&(e.type!=Type::Regex||!e.children.empty()||e.callee))
+    fail(e.where,"invalid canonical regex literal");
+  if(e.kind==E::RegexMatch||e.kind==E::RegexCapture){
+   if(e.children.size()!=2||e.callee||e.children[0]->type!=Type::Regex||e.children[1]->type!=Type::String||
+      e.type!=(e.kind==E::RegexMatch?Type::Bool:Type::RegexCaptures))
+    fail(e.where,"invalid canonical regex operation");
   }
-   if(e.callee&&e.callee->reference==Expr::Reference::UnsafeForeign){
-    tick(e.callee->where,depth+1);
-    if(!unsafe_context||e.kind!=E::Call||e.callee->kind!=E::Variable||
-       e.callee->callee||!e.callee->children.empty()||!e.callee->body.empty())
-     fail(e.callee->where,"unsafe foreign call outside its checked lexical scope");
-   }else if(e.callee&&!expression(*e.callee,state,depth+1))return false;
-  for(const auto& child:e.children){if(!child)fail(e.where,"missing expression child");if(!expression(*child,state,depth+1))return false;}
-  if(e.kind==E::TagTest){(void)tag(e);if(e.type!=Type::Bool)fail(e.where,"tag test result is not bool");}
-  if(e.kind==E::Payload){auto fact=tag(e);if(!state.tags.contains(fact))fail(e.where,"payload projection lacks a dominating tag test");if(e.type!=e.children[0]->type.elements().at(e.projection))fail(e.where,"payload result type mismatch");}
-   if(e.kind==E::Project){if(e.children.size()!=1||!e.children[0]->type.is_tuple()||e.projection>=e.children[0]->type.elements().size()||e.type!=e.children[0]->type.elements()[e.projection])fail(e.where,"invalid canonical tuple projection");}
+   if(e.kind==E::TagTest){(void)tag(e);if(e.move_out||e.type!=Type::Bool)fail(e.where,"tag test result is not bool");}
+   if(e.kind==E::Payload){
+    auto fact=tag(e);
+    if(!state.tags.contains(fact))fail(e.where,"payload projection lacks a dominating tag test");
+    if(e.type!=e.children[0]->type.elements().at(e.projection))fail(e.where,"payload result type mismatch");
+    if(e.move_out)move_part(e,state);
+    else if(e.type.is_move_only())fail(e.where,"copy of unique sum payload");
+   }
+    if(e.kind==E::Project){
+     if(e.children.size()!=1||!e.children[0]->type.is_tuple()||e.projection>=e.children[0]->type.elements().size()||e.type!=e.children[0]->type.elements()[e.projection])fail(e.where,"invalid canonical tuple projection");
+     if(e.move_out)move_part(e,state);
+     else if(e.type.is_move_only())fail(e.where,"copy of unique tuple field");
+    }
+    if(e.kind==E::Field){
+     if(e.children.size()!=1)fail(e.where,"invalid canonical field projection");
+     const auto& subject=e.children[0]->type;
+     if(subject.kind()!=Type::Record||e.projection>=subject.elements().size()||
+        subject.labels()[e.projection]!=e.text||e.type!=subject.elements()[e.projection])
+      fail(e.where,"invalid canonical field projection");
+     if(e.move_out)move_part(e,state);
+     else if(e.type.is_move_only())fail(e.where,"copy of unique record field");
+    }
+   if(e.kind==E::Record){
+    if(e.type.kind()!=Type::Record||e.children.size()!=e.type.elements().size()||e.children.size()!=e.labels.size())
+     fail(e.where,"invalid canonical record construction");
+    std::set<std::string_view> initialized;
+    for(std::size_t i=0;i<e.children.size();++i){
+     auto label=std::lower_bound(e.type.labels().begin(),e.type.labels().end(),e.labels[i]);
+     if(label==e.type.labels().end()||*label!=e.labels[i]||!initialized.insert(e.labels[i]).second||
+        e.children[i]->type!=e.type.elements()[static_cast<std::size_t>(label-e.type.labels().begin())])
+      fail(e.where,"invalid canonical record field");
+    }
+   }
    if(e.kind==E::Variant){if(e.type.kind()!=Type::Sum||e.result!=e.type||e.children.size()!=1||e.projection>=e.type.elements().size()||e.text!=e.type.labels()[e.projection]||e.children[0]->type!=e.type.elements()[e.projection])fail(e.where,"invalid variant construction");}
   if(e.kind==E::Unit&&(e.type!=Type::Void||!e.children.empty()||!e.body.empty()))fail(e.where,"invalid unit value");
   if(!e.body.empty())fail(e.where,"unexpected canonical expression body");
   return true;
  }
- Flow body(const std::vector<Stmt>& statements,State initial,std::size_t depth,bool scoped=true){
+  Flow body(const std::vector<Stmt>& statements,State initial,std::size_t depth,
+            bool scoped=true,bool prototype_scope=false){
   if(scoped)scopes.emplace_back();
   Flow state=std::move(initial);
-  for(const auto& s:statements){
-    tick(s.where,depth);if(s.prototype)continue;if(!state)fail(s.where,"unreachable canonical statement");
-    if(s.unsafe_block&&s.kind!=S::Block)fail(s.where,"unsafe marker on a non-block statement");
-   charge(*state,s.where);
+   for(const auto& s:statements){
+      tick(s.where,depth);source(s.where);
+      if(s.context)fail(s.where,"source statement context reached canonical HIR");
+      if(s.prototype&&!prototype_scope)
+       fail(s.where,"specialization prototype outside a generic template");
+     if(!s.instances.empty())fail(s.where,"unfrozen specialization instances in checked HIR");
+      if(s.declared!=Type::Invalid)
+       checked_type(s.declared,s.where,
+                    generic_context||s.prototype||s.kind==S::Template);
+      if(s.prototype){
+       if(s.kind!=S::Let||!s.value||s.mutable_binding||s.pattern||
+          !s.body.empty()||!s.otherwise.empty()||s.name.empty())
+        fail(s.where,"malformed non-executable specialization prototype");
+       auto prototype_state=*state;auto saved_generic=generic_context;
+       generic_context=true;
+       bool completes=expression(*s.value,prototype_state,depth+1);
+       generic_context=saved_generic;
+       if(!completes)fail(s.where,"non-completing specialization prototype");
+       if(s.value->type==Type::Void)
+        fail(s.where,"specialization prototype has void type");
+       if(s.declared!=Type::Invalid&&s.declared!=s.value->type)
+        fail(s.where,"specialization prototype annotation/type mismatch");
+       bind(s.name,s.value->type,false,nullptr,false,true,true);
+       continue;
+      }
+     if(!state)fail(s.where,"unreachable canonical statement");
+     if(s.ref_store&&s.kind!=S::Assign)ref_error(s.where,"reference store marker on a non-assignment");
+     if(s.unsafe_block&&s.kind!=S::Block)fail(s.where,"unsafe marker on a non-block statement");
+     if(s.mutable_binding&&s.kind!=S::Let&&s.kind!=S::Template)
+      fail(s.where,"mutable-binding metadata on a non-binding statement");
+     if(s.pattern&&s.kind!=S::Let&&s.kind!=S::Template)
+      fail(s.where,"binding pattern on a non-binding statement");
+     if(s.inclusive)fail(s.where,"surface range metadata reached canonical HIR");
+     if(!s.otherwise.empty()&&s.kind!=S::If&&s.kind!=S::While)
+      fail(s.where,"else/latch body on an unrelated canonical statement");
+     if(!s.body.empty()&&s.kind!=S::If&&s.kind!=S::While&&
+        s.kind!=S::Block&&s.kind!=S::Template&&s.kind!=S::Region&&
+        s.kind!=S::TaskGroup&&s.kind!=S::CspScope)
+      fail(s.where,"body on an unrelated canonical statement");
+     const bool value_allowed=s.kind==S::Let||s.kind==S::Template||
+       s.kind==S::Assign||s.kind==S::Return||s.kind==S::If||
+       s.kind==S::While||s.kind==S::Expr||s.kind==S::Initialize||
+       s.kind==S::PushDefer||s.kind==S::TaskGroup||s.kind==S::CspScope;
+     const bool value_required=s.kind==S::Let||s.kind==S::Template||
+       s.kind==S::Assign||s.kind==S::If||s.kind==S::While||
+       s.kind==S::Expr||s.kind==S::Initialize||s.kind==S::PushDefer;
+     if(s.value&&!value_allowed)fail(s.where,"value on an unrelated canonical statement");
+     if(!s.value&&value_required)fail(s.where,"missing canonical statement value");
+     if(s.declared!=Type::Invalid&&s.kind!=S::Let&&s.kind!=S::Template&&
+        s.kind!=S::Storage)
+      fail(s.where,"type annotation on an unrelated canonical statement");
+     if(!s.name.empty()&&s.kind!=S::Let&&s.kind!=S::Template&&
+        s.kind!=S::Assign&&s.kind!=S::Storage&&s.kind!=S::Initialize)
+      fail(s.where,"name on an unrelated canonical statement");
+     if((!s.label.empty()||s.label_context)&&s.kind!=S::While&&
+        s.kind!=S::Break&&s.kind!=S::Continue)
+      fail(s.where,"loop-label metadata on an unrelated statement");
+    charge(*state,s.where);
     if(s.kind==S::Storage||s.kind==S::Initialize||s.kind==S::Region||s.kind==S::Leave||s.kind==S::Trap||s.kind==S::PushDefer){
     source(s.where);if(s.pattern||s.mutable_binding||!s.label.empty()||s.label_context||s.context||s.inclusive||!s.otherwise.empty())fail(s.where,"extraneous canonical statement fields");
     if(s.kind!=S::Region&&!s.body.empty())fail(s.where,"body on a canonical non-region statement");
     if((s.kind==S::Region||s.kind==S::Leave||s.kind==S::Trap)&&(!s.name.empty()||s.value||s.declared!=Type::Invalid))fail(s.where,"invalid canonical transfer/region shape");
-   }
-    if(s.kind==S::Template){state=body(s.body,*state,depth+1,false);continue;}
+      }
+      if(s.kind==S::Template){
+       RetainedControl control;
+       retained_expression(*s.value,control,depth+1);
+       if(s.value->type==Type::Void)
+        fail(s.where,"generic template source has void type");
+       if(s.declared!=Type::Invalid&&s.declared!=s.value->type){
+        fail(s.where,"generic template annotation/type mismatch");
+       }
+       state=body(s.body,*state,depth+1,false,true);continue;
+       }
     auto header_entry=s.kind==S::While?state:Flow{};
    if(s.value&&!expression(*s.value,*state,depth+1)){state.reset();continue;}
      switch(s.kind){
-     case S::TaskGroup:case S::CspScope:state=body(s.body,*state,depth+1);break;
+      case S::TaskGroup:case S::CspScope:
+       if(s.value&&s.value->type!=Type::I64)
+        fail(s.value->where,"task-group duration is not i64");
+       state=body(s.body,*state,depth+1);break;
     case S::Defer:fail(s.where,"unlowered defer");
     case S::PushDefer:if(!s.name.empty()||s.declared!=Type::Invalid||!s.value||s.value->kind!=E::Lambda||s.value->type!=Type::function({},Type::Void)||!s.value->parameters.empty()||s.value->result!=Type::Void)fail(s.where,"invalid deferred thunk");break;
-   case S::Let:if(!s.value)fail(s.where,"missing binding value");if(s.pattern)pattern(*s.pattern,s.value->type);else bind(s.name,s.value->type,s.mutable_binding);break;
+    case S::Let:
+     if(s.value->type==Type::Void)fail(s.where,"canonical binding has void type");
+     if(s.declared!=Type::Invalid&&s.declared!=s.value->type)
+      fail(s.where,"canonical binding annotation/type mismatch");
+     if(s.pattern)pattern(*s.pattern,s.value->type);else bind(s.name,s.value->type,s.mutable_binding);
+     break;
    case S::Storage:
     if(s.value||s.pattern||s.declared==Type::Invalid||s.declared==Type::Void||s.declared==Type::Json||s.declared==Type::JsonView||s.declared.has_holes()||s.declared.has_generics())fail(s.where,"invalid canonical storage declaration");
      bind(s.name,s.declared,false,&s);state->initialized.erase(&s);state->maybe_initialized.erase(&s);break;
-    case S::Initialize:{auto b=find(s.name);if(!b||!b->storage||!s.value||b->type!=s.value->type||state->maybe_initialized.contains(b->storage))fail(s.where,"invalid or repeated canonical initialization");state->initialized.insert(b->storage);state->maybe_initialized.insert(b->storage);break;}
-   case S::Assign:{auto b=find(s.name);if(!b||!b->mut)fail(s.where,"canonical assignment to missing/immutable binding");for(auto it=state->tags.begin();it!=state->tags.end();)if(it->first==b->id)it=state->tags.erase(it);else ++it;break;}
-   case S::Expr:break;
+     case S::Initialize:{auto b=find(s.name);if(!b||!b->storage||!s.value||b->type!=s.value->type||state->maybe_initialized.contains(b->storage))fail(s.where,"invalid or repeated canonical initialization");state->initialized.insert(b->storage);state->maybe_initialized.insert(b->storage);clear_moves(*state,b->id);break;}
+   case S::Assign:{
+    auto b=find(s.name);access(b,s.where,s.name);
+    if(s.ref_store||(b&&b->exclusive)){
+     if(!s.ref_store||!b||!b->exclusive||b->type!=Type::I64||!s.value||s.value->type!=Type::I64)
+      ref_error(s.where,"invalid checked ref i64 store");
+     }else if(!b||!b->mut)fail(s.where,"canonical assignment to missing/immutable binding");
+     if(!b||b->type!=s.value->type)fail(s.where,"canonical assignment type mismatch");
+     for(auto it=state->tags.begin();it!=state->tags.end();){
+      if(it->first==b->id)it=state->tags.erase(it);else ++it;
+     }
+     clear_moves(*state,b->id);
+     break;
+   }
+    case S::Expr:break;
    case S::Return:if((s.value?s.value->type:Type{Type::Void})!=returns)fail(s.where,"canonical return type mismatch");state.reset();break;
    case S::Trap:state.reset();break;
     case S::Block:{auto saved=unsafe_context;unsafe_context=unsafe_context||s.unsafe_block;
@@ -133,10 +1104,27 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     regions.push_back({s.control_target,{},{}});auto after=body(s.body,*state,depth+1);auto exits=std::move(regions.back().exits);regions.pop_back();for(const auto& exit:exits)after=merge(std::move(after),exit);state=std::move(after);break;
    }
    case S::Leave:{auto target=std::find_if(regions.rbegin(),regions.rend(),[&](const auto& r){return r.id==s.control_target;});if(target==regions.rend())fail(s.where,"region exit target missing");target->exits.push_back(*state);state.reset();break;}
-    case S::While:{
-     std::set<const Stmt*> enclosing;for(const auto& scope:scopes)for(const auto& [name,local]:scope){(void)name;if(local.storage)enclosing.insert(local.storage);}
-     loops.push_back({s.control_target,{},{}});auto normal=body(s.body,*state,depth+1);for(const auto& c:loops.back().continues)normal=merge(std::move(normal),c);
-     if(normal){auto backedge=body(s.otherwise,*normal,depth+1);if(backedge)for(auto storage:enclosing)if(!header_entry->maybe_initialized.contains(storage)&&backedge->maybe_initialized.contains(storage))fail(s.where,"canonical storage initialized on a repeatable loop backedge");}
+      case S::While:{
+       if(s.value->type!=Type::Bool)fail(s.where,"canonical loop condition is not bool");
+       std::set<const Stmt*> enclosing;std::set<std::size_t> enclosing_ids;
+       for(const auto& scope:scopes)for(const auto& [name,local]:scope){
+        (void)name;enclosing_ids.insert(local.id);if(local.storage)enclosing.insert(local.storage);
+       }
+       auto newly_moved=[&](const State& before,const State& after){
+        for(auto id:enclosing_ids)
+         if(!before.moved.contains(id)&&after.moved.contains(id))return true;
+        for(const auto& part:after.moved_parts)
+         if(enclosing_ids.contains(part.first)&&!before.moved_parts.contains(part))return true;
+        return false;
+       };
+       if(newly_moved(*header_entry,*state))
+        fail(s.where,"unique local is moved by a repeatable loop condition");
+      loops.push_back({s.control_target,{},{}});auto normal=body(s.body,*state,depth+1);for(const auto& c:loops.back().continues)normal=merge(std::move(normal),c);
+      if(normal){auto backedge=body(s.otherwise,*normal,depth+1);if(backedge){
+       for(auto storage:enclosing)if(!header_entry->maybe_initialized.contains(storage)&&backedge->maybe_initialized.contains(storage))fail(s.where,"canonical storage initialized on a repeatable loop backedge");
+       if(newly_moved(*header_entry,*backedge))
+        fail(s.where,"unique local remains moved on a repeatable loop backedge");
+      }}
     auto exits=std::move(loops.back().exits);loops.pop_back();for(const auto& exit:exits)state=merge(std::move(state),exit);state->tags.clear();break;
    }
     case S::Break:case S::Continue:{if(s.value)fail(s.where,"surface value exit reached the canonical verifier");auto target=std::find_if(loops.rbegin(),loops.rend(),[&](const auto& r){return r.id==s.control_target;});if(target==loops.rend())fail(s.where,"loop target missing");(s.kind==S::Break?target->exits:target->continues).push_back(*state);state.reset();break;}
@@ -147,9 +1135,57 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
   if(scoped)scopes.pop_back();
   return state;
  }
-public:
- void run(const Unit& unit){for(const auto& f:unit.functions){if(f.prototype||f.external)continue;returns=f.result;scopes.emplace_back();params(f.params);(void)body(f.body,State{},0,false);scopes.pop_back();}}
+ public:
+  explicit Verify(const Unit& source):unit(source){}
+  void run(){
+   for(const auto& [schema,instances]:unit.forall_layouts){
+    checked_type(schema,{"<forall-layout>"});
+    if(!schema.is_forall())fail({"<forall-layout>"},"non-forall layout key");
+    std::set<Type> unique;
+    for(const auto& instance:instances){
+     checked_type(instance,{"<forall-layout>"});
+     if(!forall_instance(schema,instance)||!unique.insert(instance).second)
+      fail({"<forall-layout>"},"invalid/duplicate forall layout instance");
+    }
+   }
+    for(const auto& f:unit.functions){
+     source(f.where);
+     if(f.name.empty()||f.name.find('\0')!=std::string::npos){
+      fail(f.where,"empty/invalid checked function name");
+     }
+      generic_context=f.prototype;
+      if(!f.prototype&&
+         (!f.type_parameters.empty()||!f.constraints.empty()))
+       fail(f.where,"source generic metadata on an executable checked function");
+     if(f.prototype)generic_metadata(f);
+     checked_type(f.result,f.where,generic_context);
+    (void)signature(f);
+    if(!f.attributes.empty())fail(f.where,"unhandled function attribute in checked HIR");
+    if(f.external&&!f.body.empty())fail(f.where,"external function has an executable body");
+    scopes.emplace_back();params(f.params);scopes.pop_back();
+    if(!functions.emplace(f.name,&f).second)
+     fail(f.where,"duplicate checked function: "+f.name);
+   }
+   generic_context=false;
+   const Function* first=nullptr;
+  for(const auto& f:unit.functions)if(takes_exclusive(f)){
+   if(!first)first=&f;
+   if(f.external||f.extension_generated||!f.kernel_symbol.empty()||f.name=="main"||!borrowers.emplace(f.name,&f).second)
+    ref_error(f.where,"invalid checked ref i64 function declaration");
+   for(const auto& p:f.params)if(p.exclusive&&(p.pattern||p.type!=Type::I64))
+    ref_error(p.where,"ref i64 requires a named i64 parameter");
+  }
+   if(first&&csp::present(unit))
+    ref_error(first->where,"the ref i64 profile cannot be combined with cooperative concurrency");
+   for(const auto& f:unit.functions){
+    if(f.prototype||f.external)continue;
+    generic_context=false;returns=f.result;scopes.emplace_back();params(f.params);
+    auto after=body(f.body,State{},0,false);scopes.pop_back();
+    if(f.result!=Type::Void&&after)
+     fail(f.where,"function lacks a complete return path");
+   }
+  }
 };
 }
-void verify_values(const Unit& unit){Verify().run(unit);}
+void verify_values(const Unit& unit){Verify(unit).run();}
 }

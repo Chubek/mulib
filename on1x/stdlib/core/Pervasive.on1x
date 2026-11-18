@@ -1,4 +1,4 @@
-# Small, pure, polymorphic functions and the default nominal data vocabulary.
+# Small pervasive functions and the default nominal data vocabulary.
 # Nominal payloads retain the language's bounded, trivially copied profile.
 enum Option<T> { None, Some(T) }
 enum Result<T,E> { Ok(T), Err(E) }
@@ -11,6 +11,11 @@ fn basis_snd(pair) -> _ { let (first, second) = pair; return second; }
 fn basis_const(value, ignored) -> _ { return value; }
 
 fn basis_pervasive_apply(function, value) -> _ { return function(value); }
+
+fn basis_pervasive_errln(message: string) {
+  io_stderr(message);
+  io_stderr("\n");
+}
 
 fn basis_pervasive_option_some(value) -> Option<_> {
   return variant<Option<_>>(Some, value);

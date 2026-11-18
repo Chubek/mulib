@@ -8,14 +8,17 @@ namespace on1x {
 struct TypeShape { std::vector<Type> children; Type result; bool holes, functions, generics, foralls; std::vector<std::string> labels{}; std::size_t extent=0; std::string nominal{}; std::vector<Type> arguments{}; };
 
 Type::Type(Kind kind):kind_(kind) {
- if(kind == Function || kind == Tuple || kind == Forall || kind == Code || kind==Named || is_data()) throw std::logic_error("composite type requires a shape");
+  if(kind == Function || kind == Tuple || kind == Forall || kind == Code || kind==Named || kind==Own || is_data()) throw std::logic_error("composite type requires a shape");
 }
 Type::Type(Kind kind, std::shared_ptr<const TypeShape> shape)
   :kind_(kind),shape_(std::move(shape)) {}
 Type Type::generic(std::size_t identity){Type type(Generic);type.variable_=identity;return type;}
 Type Type::bound(std::size_t index){Type type(Bound);type.variable_=index;return type;}
 Type Type::for_all(std::size_t variables,Type body){
- if(!variables||!body.is_function()||body.has_foralls()||body.has_holes())throw std::logic_error("forall requires a closed function body");
+ TypeFormOptions options;options.bound_variables=variables;options.allow_named=true;options.allow_foralls=false;
+ auto form=check_type_form(body,options);
+ if(form.status==TypeFormStatus::Limit)throw std::length_error(form.message);
+ if(!variables||!body.is_function()||!form)throw std::logic_error("forall requires a closed, well-scoped function body");
  auto holes=body.has_holes(),generics=body.has_generics();
  Type type(Forall,std::make_shared<const TypeShape>(TypeShape{{},std::move(body),holes,true,generics,true}));
  type.variable_=variables;return type;
@@ -55,7 +58,14 @@ Type Type::named(std::string name,std::vector<Type> arguments){
  if(name.empty())throw std::logic_error("empty named type reference");
  bool holes=false,functions=false,generics=false,foralls=false;
  for(const auto& a:arguments){holes|=a.has_holes();functions|=a.has_functions();generics|=a.has_generics();foralls|=a.has_foralls();}
- return Type(Named,std::make_shared<const TypeShape>(TypeShape{{},Type::Invalid,holes,functions,generics,foralls,{},0,std::move(name),std::move(arguments)}));
+  return Type(Named,std::make_shared<const TypeShape>(TypeShape{{},Type::Invalid,holes,functions,generics,foralls,{},0,std::move(name),std::move(arguments)}));
+}
+Type Type::own(Type target){
+  if(target.kind()!=Named)throw std::logic_error("own target must be a named type reference");
+  auto holes=target.has_holes(),generics=target.has_generics(),foralls=target.has_foralls();
+  // The pointer itself is unique, not reference counted. Its target is dropped
+  // by the generated owning-box destructor.
+  return Type(Own,std::make_shared<const TypeShape>(TypeShape{{},std::move(target),holes,false,generics,foralls}));
 }
 Type Type::with_nominal(std::string name,std::vector<Type> arguments) const{
  if((kind_!=Record&&kind_!=Sum)||name.empty())throw std::logic_error("nominal identity requires a record/sum");
@@ -65,6 +75,7 @@ Type Type::with_nominal(std::string name,std::vector<Type> arguments) const{
 }
 const std::string& Type::nominal() const{static const std::string empty;return shape_?shape_->nominal:empty;}
 const std::vector<Type>& Type::arguments() const{static const std::vector<Type> empty;return shape_?shape_->arguments:empty;}
+const Type& Type::owned() const{if(!is_own())throw std::logic_error("non-own type has no target");return shape_->result;}
 bool Type::has_names() const{
  if(kind_==Named)return true;
  if(!shape_)return false;
@@ -77,6 +88,19 @@ bool Type::has_foralls() const{return shape_&&shape_->foralls;}
 bool Type::has_generics() const{return kind_==Generic||(shape_&&shape_->generics);}
 bool Type::has_holes() const { return kind_==Hole||(shape_&&shape_->holes); }
 bool Type::has_functions() const { return is_reference()||(shape_&&shape_->functions); }
+bool Type::is_move_only() const {
+ if(is_own())return true;
+ if(!is_tuple()&&!is_data())return false;
+ for(const auto& field:elements())if(field.is_move_only())return true;
+ return false;
+}
+bool Type::contains_unique() const {
+ if(is_own())return true;
+ if(!shape_)return false;
+ for(const auto& child:shape_->children)if(child.contains_unique())return true;
+ for(const auto& argument:shape_->arguments)if(argument.contains_unique())return true;
+ return shape_->result.contains_unique();
+}
 const std::vector<Type>& Type::parameters() const {
  if(!is_function()) throw std::logic_error("non-function type has no parameters");
  return shape_->children;
@@ -100,11 +124,89 @@ std::strong_ordering Type::operator<=>(const Type& other) const {
   if(auto order=labels()<=>other.labels();order!=0)return order;
  }
  if(auto order = shape_->children <=> other.shape_->children; order != 0) return order;
- if(is_forall())return body() <=> other.body();
- if(is_code())return code_result() <=> other.code_result();
- return is_function()?result() <=> other.result():std::strong_ordering::equal;
+  if(is_forall())return body() <=> other.body();
+  if(is_code())return code_result() <=> other.code_result();
+  if(is_own())return owned() <=> other.owned();
+  return is_function()?result() <=> other.result():std::strong_ordering::equal;
 }
 bool Type::operator==(const Type& other) const { return (*this <=> other) == 0; }
+
+TypeFormResult check_type_form(const Type& root,const TypeFormOptions& options){
+ struct Item {
+  const Type* type;
+  std::size_t bound,depth;
+  bool allow_generics,allow_foralls;
+ };
+ if(!options.max_nodes)
+  return {TypeFormStatus::Limit,"type-form node budget exhausted",0};
+ std::vector<Item> pending{{&root,options.bound_variables,0,
+                            options.allow_generics,options.allow_foralls}};
+ std::size_t nodes=0;
+ auto malformed=[&](std::string message){
+  return TypeFormResult{TypeFormStatus::Malformed,std::move(message),nodes};
+ };
+ auto limited=[&](std::string message){
+  return TypeFormResult{TypeFormStatus::Limit,std::move(message),nodes};
+ };
+ auto add=[&](const Type& child,const Item& parent,bool generics,bool foralls){
+  if(pending.size()>=options.max_nodes-nodes)return false;
+  pending.push_back({&child,parent.bound,parent.depth+1,generics,foralls});
+  return true;
+ };
+ while(!pending.empty()){
+  auto item=pending.back();pending.pop_back();
+  if(item.depth>options.max_depth)return limited("type-form depth budget exhausted");
+  if(nodes++>=options.max_nodes)return limited("type-form node budget exhausted");
+  const auto& type=*item.type;
+  if(type.kind()==Type::Invalid)return malformed("invalid type sentinel");
+  if(type.kind()==Type::Hole&&!options.allow_holes)return malformed("unresolved inference hole");
+  if(type.kind()==Type::Generic&&!item.allow_generics)return malformed("free inferred type variable");
+  if(type.kind()==Type::Bound){
+   if(type.generic_identity()>=item.bound)return malformed("unbound quantified type variable");
+   continue;
+  }
+   if(type.kind()==Type::Named&&!options.allow_named)return malformed("unresolved named type");
+   if(type.is_own()){
+    const auto& target=type.owned();
+    if(target.kind()!=Type::Named)return malformed("own target is not a named type");
+    // The nominal target identity is the finite checked representation of an
+    // owning edge. Its arguments are ordinary type forms and must still pass
+    // the current trust-boundary policy.
+     for(const auto& argument:target.arguments())
+      if(!add(argument,item,item.allow_generics,item.allow_foralls))
+       return limited("type-form node budget exhausted");
+    continue;
+   }
+   if(type.is_forall()){
+   if(!item.allow_foralls||!type.generic_identity()||!type.body().is_function())
+    return malformed("invalid or nested forall type");
+   if(type.generic_identity()>options.max_nodes)
+    return limited("type-form quantified-variable budget exhausted");
+   Item binder=item;binder.bound=type.generic_identity();
+   if(!add(type.body(),binder,false,false))
+    return limited("type-form node budget exhausted");
+   continue;
+  }
+  for(const auto& argument:type.arguments())
+   if(!add(argument,item,item.allow_generics,item.allow_foralls))
+    return limited("type-form node budget exhausted");
+  if(type.is_function()){
+   for(const auto& parameter:type.parameters())
+    if(!add(parameter,item,item.allow_generics,item.allow_foralls))
+     return limited("type-form node budget exhausted");
+   if(!add(type.result(),item,item.allow_generics,item.allow_foralls))
+    return limited("type-form node budget exhausted");
+  }else if(type.is_code()){
+   if(!add(type.code_result(),item,item.allow_generics,item.allow_foralls))
+    return limited("type-form node budget exhausted");
+   }else if(type.is_tuple()||type.is_data()){
+   for(const auto& element:type.elements())
+    if(!add(element,item,item.allow_generics,item.allow_foralls))
+     return limited("type-form node budget exhausted");
+  }
+ }
+ return {TypeFormStatus::Valid,{},nodes};
+}
 
 std::string type_name(const Type& type) {
  if(!type.nominal().empty()){
@@ -123,11 +225,14 @@ std::string type_name(const Type& type) {
    case Type::U8:return "u8";case Type::U16:return "u16";
    case Type::U32:return "u32";case Type::U64:return "u64";
  case Type::Bool:return "bool";
- case Type::String:return "string";
+ case Type::String:return "string";case Type::Char:return "char";
+ case Type::Regex:return "regex";
+ case Type::RegexCaptures:return "captures";
  case Type::Void:return "void";
  case Type::Json:return "json";
  case Type::JsonView:return "json_view";
- case Type::SExpr:return "sexpr";case Type::Buffer:return "buffer";
+  case Type::SExpr:return "sexpr";case Type::Buffer:return "buffer";
+  case Type::Own:return "own<"+type_name(type.owned())+">";
  case Type::Code:return "code<"+type_name(type.code_result())+">";
  case Type::Hole:return "_";
  case Type::Generic:return "'a"+std::to_string(type.generic_identity());
@@ -166,13 +271,20 @@ bool has_type_holes(const Type& type) {
  return type.has_holes();
 }
 namespace {
-bool match_forall(const Type& schema,const Type& instance,bool rigid){
+enum class ForallMatch { Concrete, Open, Rigid };
+bool match_forall(const Type& schema,const Type& instance,ForallMatch mode){
  if(!schema.is_forall())return false;
+ TypeFormOptions schema_options;schema_options.allow_named=true;
+ if(!check_type_form(schema,schema_options))return false;
+ TypeFormOptions instance_options;
+ instance_options.allow_generics=mode!=ForallMatch::Concrete;
+ instance_options.allow_named=true;instance_options.allow_foralls=false;
+ if(!check_type_form(instance,instance_options))return false;
  std::map<std::size_t,Type> substitutions;
  auto match=[&](auto&& self,const Type& pattern,const Type& actual)->bool{
   if(pattern.kind()==Type::Bound){
    if(pattern.generic_identity()>=schema.generic_identity()||actual.has_foralls()||actual.has_holes())return false;
-   if(rigid){
+   if(mode==ForallMatch::Rigid){
     if(actual.kind()!=Type::Generic)return false;
     for(const auto& [variable,type]:substitutions)if(variable!=pattern.generic_identity()&&type==actual)return false;
    }
@@ -181,7 +293,8 @@ bool match_forall(const Type& schema,const Type& instance,bool rigid){
   }
     if(pattern.kind()!=actual.kind()||pattern.nominal()!=actual.nominal()||pattern.arguments().size()!=actual.arguments().size())return false;
     for(std::size_t i=0;i<pattern.arguments().size();++i)if(!self(self,pattern.arguments()[i],actual.arguments()[i]))return false;
-   if(pattern.is_code())return self(self,pattern.code_result(),actual.code_result());
+    if(pattern.is_code())return self(self,pattern.code_result(),actual.code_result());
+    if(pattern.is_own())return self(self,pattern.owned(),actual.owned());
   if(pattern.is_function()){
    if(pattern.parameters().size()!=actual.parameters().size()||!self(self,pattern.result(),actual.result()))return false;
    for(std::size_t i=0;i<pattern.parameters().size();++i)if(!self(self,pattern.parameters()[i],actual.parameters()[i]))return false;
@@ -198,6 +311,13 @@ bool match_forall(const Type& schema,const Type& instance,bool rigid){
  return match(match,schema.body(),instance);
 }
 }
-bool forall_instance(const Type& schema,const Type& instance){return match_forall(schema,instance,false);}
-bool forall_proof(const Type& schema,const Type& instance){return match_forall(schema,instance,true);}
+bool forall_instance(const Type& schema,const Type& instance){
+ return match_forall(schema,instance,ForallMatch::Concrete);
+}
+bool forall_open_instance(const Type& schema,const Type& instance){
+ return match_forall(schema,instance,ForallMatch::Open);
+}
+bool forall_proof(const Type& schema,const Type& instance){
+ return match_forall(schema,instance,ForallMatch::Rigid);
+}
 }

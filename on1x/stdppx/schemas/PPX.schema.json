@@ -6,7 +6,7 @@
     "EvidenceContract":"Syntax", "EvidenceMember":"Syntax", "EvidenceImplementation":"Syntax", "EvidenceBinding":"Syntax",
     "EvidenceInput":"Syntax", "EvidenceOutput":"Syntax", "TypedFunction":"Syntax", "EvidenceChoice":"Syntax",
     "Syntax":"", "Unit":"Syntax", "Location":"Syntax", "Declaration":"Syntax", "Function":"Declaration", "Parameter":"Syntax", "Pattern":"Syntax", "Type":"Syntax", "Attribute":"Syntax", "Statement":"Syntax", "Block":"Syntax", "ListSyntax":"Syntax", "VectorSyntax":"Syntax", "KeywordSyntax":"Syntax", "Expression":"Syntax",
-    "Identifier":"Expression", "Literal":"Expression", "NumericLiteral":"Literal", "IntegerLiteral":"NumericLiteral", "DecimalLiteral":"IntegerLiteral", "HexLiteral":"IntegerLiteral", "FloatLiteral":"NumericLiteral", "UnsignedLiteral":"NumericLiteral", "StringLiteral":"Literal", "BooleanLiteral":"Literal", "UnaryExpression":"Expression", "BinaryExpression":"Expression", "CallExpression":"Expression", "TupleExpression":"Expression", "LambdaExpression":"Expression", "ExtensionExpression":"Expression", "StagedExpression":"Expression", "DataExpression":"Expression"
+    "Identifier":"Expression", "Literal":"Expression", "NumericLiteral":"Literal", "IntegerLiteral":"NumericLiteral", "DecimalLiteral":"IntegerLiteral", "HexLiteral":"IntegerLiteral", "FloatLiteral":"NumericLiteral", "UnsignedLiteral":"NumericLiteral", "StringLiteral":"Literal", "BooleanLiteral":"Literal", "CharacterLiteral":"Literal", "ByteBufferLiteral":"Literal", "UnaryExpression":"Expression", "BinaryExpression":"Expression", "CallExpression":"Expression", "TupleExpression":"Expression", "LambdaExpression":"Expression", "ExtensionExpression":"Expression", "StagedExpression":"Expression", "DataExpression":"Expression"
   },
   "nodes": {
     "CspType":{"category":"Type","fields":[["kind","Bytes"],["payload","Type"]]},
@@ -17,6 +17,7 @@
     "Propagate":{"category":"Expression","fields":[["value","Expression"],["location","Location"]]},
     "StructuralPattern":{"category":"Pattern","fields":[["kind","Bytes"],["name","Bytes"],["labels","Name*"],["parts","Pattern*"],["open","Boolean"],["location","Location"]]},
     "SourceMatch":{"category":"DataExpression","fields":[["binding","Bytes"],["scrutinee","Expression"],["arms","MatchArm*"],["statement","Boolean"],["location","Location"]]},
+    "SourceSumMatch":{"category":"DataExpression","fields":[["scrutinee","Expression"],["arms","MatchArm*"],["location","Location"]]},
     "MatchArm":{"category":"MatchArm","fields":[["pattern","Pattern"],["guard","Expression"],["body","Block"],["value","Expression"],["location","Location"]]},
     "UnitValue":{"category":"Literal","fields":[["location","Location"]]},
     "ModuleSyntax":{"category":"ExtensionInput","fields":[["version","Version"],["origin","File"],["names","Name*"],["carriers","DeclarationCarrier*"],["module_key","Bytes"]]},
@@ -51,7 +52,7 @@
     "U16Type":{"category":"Type","fields":[]},
     "U32Type":{"category":"Type","fields":[]},
     "U64Type":{"category":"Type","fields":[]},
-    "StringType":{"category":"Type","fields":[]},"VoidType":{"category":"Type","fields":[]},
+    "StringType":{"category":"Type","fields":[]},"CharType":{"category":"Type","fields":[]},"VoidType":{"category":"Type","fields":[]},
     "JsonType":{"category":"Type","fields":[]},"JsonViewType":{"category":"Type","fields":[]},
     "SExprType":{"category":"Type","fields":[]},"BufferType":{"category":"Type","fields":[]},
     "CodeType":{"category":"Type","fields":[["result","Type"]]},
@@ -81,6 +82,9 @@
     "UnsignedLiteral":{"category":"UnsignedLiteral","fields":[["spelling","UnsignedSpelling"],["location","Location"]]},
     "HexLiteral":{"category":"HexLiteral","fields":[["spelling","HexSpelling"],["location","Location"]]},
     "StringLiteral":{"category":"StringLiteral","fields":[["value","Bytes"],["location","Location"]]},
+    "CharacterLiteral":{"category":"CharacterLiteral","fields":[["spelling","Bytes"],["location","Location"]]},
+    "ByteBufferLiteral":{"category":"ByteBufferLiteral","fields":[["hex","Bytes"],["location","Location"]]},
+    "InterpolatedString":{"category":"Expression","fields":[["parts","Expression*"],["location","Location"]]},
     "BooleanLiteral":{"category":"BooleanLiteral","fields":[["value","Boolean"],["location","Location"]]},
     "Identifier":{"category":"Identifier","fields":[["name","Name"],["location","Location"]]},
     "Unary":{"category":"UnaryExpression","fields":[["operator","UnaryOperator"],["value","Expression"],["location","Location"]]},

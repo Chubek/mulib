@@ -1,0 +1,42 @@
+enum Result<T, E> { Ok(T), Err(E) }
+enum Outcome { Empty, Pair(i64, i64) }
+
+fn subject(tag: bool, value: i64) -> Result<i64, i64> {
+  println(value);
+  if tag { return variant<Result<i64, i64>>(Ok, value); }
+  return variant<Result<i64, i64>>(Err, value);
+}
+
+fn guard(value: i64) -> bool {
+  println(value + 100);
+  return value > 0;
+}
+
+fn classify(tag: bool, value: i64) -> i64 {
+  return subject(tag, value) ~ {
+    Ok(n) if guard(n) => n,
+    Ok(-) => 42,
+    Err(e) => { let result = e - 2; result },
+  };
+}
+
+macro extract {
+  rule($value:Expression) => expression { $value ~ { Empty() => 0, Pair(-, b) => b } };
+}
+
+fn main() {
+  println(classify(true, 3));
+  println(classify(true, -3));
+  println(classify(false, 9));
+
+  let pair = variant<Outcome>(Pair, (-2, 20));
+  println(2 + (pair ~ { Pair(-2, n) => n, - => 0 }));
+  println(extract!(pair));
+  println(extract!(variant<Outcome>(Empty, record{})));
+
+  let match = variant<sum{Absent:record{}, Present:i64}>(Present, 8);
+  println(match ~ { Present(n) => n, Absent() => 0 } + 1);
+  println(match ~ { - => pair ~ { Empty() => 0, Pair(-, b) => b } });
+  println(match -2 with { -2 => 2, _ => 0 });
+  assert(true || subject(false, 400) ~ { Ok(-) => true, Err(-) => false });
+}

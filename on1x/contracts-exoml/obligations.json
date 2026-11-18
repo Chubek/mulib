@@ -121,7 +121,7 @@
       "include/mulib-elvi-scrape.h (public API and MULIB_IMPL_ELVI_SCRAPE implementation)",
       "include/detail/mulib-webscan.h (iterative scanner and explicit work accounting)",
       "tests/test-elvi-scrape{,-providers,-https,-alloc}.c, tests/fuzz_elvi_scrape.c and tests/fixtures/elvi-scrape (offline/allocator/fuzzer evidence)",
-      "library/elvis/*.elvs, legacy library/elvi-scrape/*.elvs, and on1x/tests/mulib/elvi-scrape.{on1x,c} (trusted declarative providers, offline On1x acceptance)"
+      "library/elvis/*.elvs and on1x/tests/mulib/elvi-scrape.{on1x,c} (trusted declarative providers, offline On1x acceptance)"
     ],
     "preconditions": [
       "Programs originate from compile/load and remain unmodified during use. All C pointers and capacities denote live, correctly sized, nonoverlapping storage.",

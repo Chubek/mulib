@@ -66,8 +66,17 @@ class Expander {
   if(e.callee)collect(*e.callee);
   if(e.syntax_tail)collect(*e.syntax_tail);
   for(const auto& c:e.children)collect(*c);
-  collect_body(e.body);
- }
+   collect_body(e.body);
+  }
+  void collect_callable(const Function& function,const Expr* value=nullptr){
+   for(const auto& parameter:function.params){
+    remember(parameter.name,parameter.where);
+    if(parameter.pattern)collect_pattern(*parameter.pattern);
+   }
+   collect_body(function.body);
+   for(const auto& attribute:function.attributes)collect(*attribute);
+   if(value)collect(*value);
+  }
  std::optional<std::string> marked_value(const std::string& name,std::size_t context)const{
   auto mark=marks.find(context);if(mark==marks.end())return {};
   const auto& values=*definitions.at(mark->second)->values;
@@ -96,11 +105,15 @@ class Expander {
   return identity(pattern,value(pattern,*definition.values),*definition.syntax)==identity(actual,value(actual.text,actual.context),*syntax);
  }
  void read(std::string& name,std::size_t& context){if(auto binding=value(name,context))name=*binding;context=0;}
- void bind(std::string& name,std::size_t& context,const Location& at){
-  Key key{name,context};if(scopes.back().contains(key))throw Error(at,"duplicate local: "+name);
-  std::string fresh;do{fresh="on1x_hygiene_"+std::to_string(++serial);}while(used.contains(fresh));remember(fresh,at);
-  charge(name.size()+fresh.size()+64,at);scopes.back().emplace(std::move(key),fresh);name=std::move(fresh);context=0;
- }
+  void bind(std::string& name,std::size_t& context,const Location& at){
+   Key key{name,context};if(scopes.back().contains(key))throw Error(at,"duplicate local: "+name);
+   std::string fresh;do{fresh="on1x_hygiene_"+std::to_string(++serial);}while(used.contains(fresh));remember(fresh,at);
+   charge(name.size()+fresh.size()+64,at);scopes.back().emplace(std::move(key),fresh);name=std::move(fresh);context=0;
+  }
+  void bind_preserving(std::string& name,std::size_t& context,const Location& at){
+   Key key{name,context};if(scopes.back().contains(key))throw Error(at,"duplicate local: "+name);
+   charge(name.size()*2+64,at);scopes.back().emplace(std::move(key),name);context=0;
+  }
  void bind(Pattern& p){
   pattern_bindings(p,[&](Pattern& name){bind(name.name,name.context,name.where);});
   auto mirror=[&](auto&& self,Pattern& part)->void{if(part.kind==Pattern::Kind::Or&&part.elements.size()==2){pattern_bindings(part.elements[1],[&](Pattern& name){read(name.name,name.context);});}for(auto& c:part.elements)self(self,c);};mirror(mirror,p);
@@ -160,7 +173,7 @@ class Expander {
   if(e.kind==K::Lambda){scopes.emplace_back();for(auto& p:e.parameters){if(p.pattern)bind(*p.pattern);else bind(p.name,p.context,p.where);}body(e.body,false,depth+1);scopes.pop_back();}
    else if(e.kind==K::SyntaxBlock||e.kind==K::Loop)body(e.body,true,depth+1);
  }
- void body(std::vector<Stmt>& b,bool scope,unsigned depth){
+  void body(std::vector<Stmt>& b,bool scope,unsigned depth){
   if(depth>=max_syntax_depth)fail(b.empty()?Location{}:b.front().where,"expanded syntax depth limit exceeded");
   if(scope)scopes.emplace_back();
   std::vector<Stmt> out;
@@ -186,16 +199,44 @@ class Expander {
     else body(s.body,true,depth+1);
     body(s.otherwise,true,depth+1);out.push_back(std::move(s));
   }
-  b=std::move(out);if(scope)scopes.pop_back();
- }
+   b=std::move(out);if(scope)scopes.pop_back();
+  }
+  void callable(Function& function,Expr* value=nullptr,bool preserve_self=false){
+   scopes.emplace_back();
+   for(auto& parameter:function.params){
+    if(parameter.pattern)bind(*parameter.pattern);
+    else if(preserve_self&&parameter.name=="self")
+     bind_preserving(parameter.name,parameter.context,parameter.where);
+    else bind(parameter.name,parameter.context,parameter.where);
+   }
+   body(function.body,false,0);
+   for(auto& attribute:function.attributes)expression(*attribute,0);
+   if(value)expression(*value,0);
+   scopes.pop_back();
+  }
 public:
  explicit Expander(Unit& u):unit(u),rules(schema,[this](const Expr& a,const Expr& b){return same_binding(a,b);},[this](const Expr& e){return copy(e);},[this](const std::vector<Stmt>& b){return copy(b);}){}
- void run(){
-  for(const auto& m:unit.macros)collect_macro(m);
-  for(const auto& f:unit.functions){globals.insert(f.name);remember(f.name,f.where);for(const auto& p:f.params){remember(p.name,p.where);if(p.pattern)collect_pattern(*p.pattern);}collect_body(f.body);for(const auto& a:f.attributes)collect(*a);}
-  syntax=group(unit.macros,true,unit.macros.empty()?Location{}:unit.macros.front().where);
-  for(auto& f:unit.functions){scopes.emplace_back();for(auto& p:f.params){if(p.pattern)bind(*p.pattern);else bind(p.name,p.context,p.where);}body(f.body,false,0);for(auto& a:f.attributes)expression(*a,0);scopes.pop_back();}
- }
+  void run(){
+   for(const auto& m:unit.macros)collect_macro(m);
+   for(const auto& function:unit.functions){
+    globals.insert(function.name);remember(function.name,function.where);
+    collect_callable(function);
+   }
+   for(const auto& implementation:unit.cliche_implementations)
+    for(const auto& member:implementation.members)
+     collect_callable(member.function,member.value.get());
+   for(const auto& implementation:unit.inherent_implementations)
+    for(const auto& member:implementation.members)
+     collect_callable(member.function,member.value.get());
+   syntax=group(unit.macros,true,unit.macros.empty()?Location{}:unit.macros.front().where);
+   for(auto& function:unit.functions)callable(function);
+   for(auto& implementation:unit.cliche_implementations)
+    for(auto& member:implementation.members)
+     callable(member.function,member.value.get());
+   for(auto& implementation:unit.inherent_implementations)
+    for(auto& member:implementation.members)
+     callable(member.function,member.value.get(),true);
+  }
 };
 bool local_syntax(const Unit& unit){
  auto expression=[&](auto&& self,const Expr& e)->bool{
@@ -204,9 +245,28 @@ bool local_syntax(const Unit& unit){
   for(const auto& c:e.children)if(self(self,*c))return true;
   auto body=[&](auto&& visit,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if((s.value&&self(self,*s.value))||visit(visit,s.body)||visit(visit,s.otherwise))return true;return false;};return body(body,e.body);
  };
- for(const auto& f:unit.functions){auto body=[&](auto&& self,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if((s.value&&expression(expression,*s.value))||self(self,s.body)||self(self,s.otherwise))return true;return false;};if(body(body,f.body))return true;for(const auto& a:f.attributes)if(expression(expression,*a))return true;}
- return false;
-}
+  auto callable=[&](const Function& function,const Expr* value)->bool{
+   auto body=[&](auto&& self,const std::vector<Stmt>& statements)->bool{
+    for(const auto& statement:statements)
+     if((statement.value&&expression(expression,*statement.value))||
+        self(self,statement.body)||self(self,statement.otherwise))return true;
+    return false;
+   };
+   if(body(body,function.body))return true;
+   for(const auto& attribute:function.attributes)
+    if(expression(expression,*attribute))return true;
+   return value&&expression(expression,*value);
+  };
+  for(const auto& function:unit.functions)
+   if(callable(function,nullptr))return true;
+  for(const auto& implementation:unit.cliche_implementations)
+   for(const auto& member:implementation.members)
+    if(callable(member.function,member.value.get()))return true;
+  for(const auto& implementation:unit.inherent_implementations)
+   for(const auto& member:implementation.members)
+    if(callable(member.function,member.value.get()))return true;
+  return false;
+ }
 }
 bool needs_macro_expansion(const Unit& unit){return !unit.macros.empty()||local_syntax(unit);}
 void expand_macros(Unit& unit){if(!needs_macro_expansion(unit))return;std::size_t budget=262144;auto working=clone_unit(unit,budget);Expander(working).run();unit=std::move(working);}

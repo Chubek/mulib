@@ -48,25 +48,41 @@ template<class F> void pattern_bindings(const Pattern& p,F&& f){
 struct Param {
  std::string name; Type type; Location where;
  std::size_t context=0;
- // Pattern parameters have unlexable internal names, never emitted as C names.
- std::optional<Pattern> pattern;
+  // Pattern parameters have unlexable internal names, never emitted as C names.
+  std::optional<Pattern> pattern;
+  bool exclusive = false; // Named ref i64 parameter mode, not a reference-valued Type.
+};
+// Core cliche predicates are host-retained typed obligations. They are not
+// Category PPX evidence and never name a runtime implementation.
+struct ClicheConstraint {
+ Location where;
+ std::string name;
+ std::vector<Type> arguments; // Self first, followed by declared cliche parameters.
+};
+struct TypeParameter {
+ Location where;
+ std::string name;
+ std::vector<ClicheConstraint> bounds;
 };
 struct Stmt;
 struct Expr;
 struct Macro;
 using ExprPtr = std::unique_ptr<Expr>;
 struct Expr {
-  enum class Kind { Integer, Float, Boolean, String, Variable, Unary, Binary, Call, Lambda, Tuple, PolyPack, PolyProjection,
+  enum class Kind { Integer, Float, Boolean, String, Variable, ClicheMember, InherentMember, Unary, Binary, Call, Lambda, Tuple, PolyPack, PolyProjection,
                     MacroCall, SyntaxHole, SyntaxBlock, Extension, SyntaxList, SyntaxVector, SyntaxKeyword,
                      Quote, Splice, Lift, Run, SyntaxLet, Record, Variant, Match, Array, Field, Index, Slice, Length,
-                       PatternMatch, Case, Unit, Region, TagTest, Payload, Project, Loop, Propagate, SourceCsp, Csp, UnsafeBlock } kind;
- enum class Reference { Unresolved, Local, Function, Extern, Intrinsic, UnsafeForeign, ScalarForeign } reference = Reference::Unresolved;
+                        PatternMatch, Case, Unit, Region, TagTest, Payload, Project, Loop, Propagate, SourceCsp, Csp, UnsafeBlock,
+                        Character, ByteBuffer, Interpolated, RegexLiteral, RegexMatch, RegexCapture } kind;
+  enum class Reference { Unresolved, Local, Function, Extern, Intrinsic, UnsafeForeign, ScalarForeign, BorrowFunction } reference = Reference::Unresolved;
  bool unsafe_region = false; // Canonical region lowered from a lexical unsafe expression.
  Location where;
  std::string text;
   std::vector<std::string> labels;
   std::vector<Pattern> patterns;
-  bool statement_match=false;
+   bool statement_match=false;
+   bool sum_match=false; // The `~ { ... }` spelling requires a closed sum subject.
+   bool move_out=false; // Checked-HIR projection transfers and clears a unique field.
   bool noreturn=false; // Checked control result, never source/PPX authority.
   std::size_t context=0;
   std::size_t control_target=0; // Source Loop only; recomputed after transforms.
@@ -80,7 +96,11 @@ struct Expr {
  ExprPtr callee; // Call operands: callee first, followed by children (arguments).
  Type type = Type::Invalid;
  std::vector<Param> parameters;
- Type result = Type::Void;
+  std::vector<TypeParameter> type_parameters;
+  std::vector<ClicheConstraint> constraints;
+  std::vector<Type> cliche_arguments,member_type_arguments;
+  std::string cliche_member;
+  Type result = Type::Void;
  std::vector<Stmt> body;
  std::vector<Capture> captures; // Checked immutable value captures, in first-use order.
  std::size_t syntax_depth = 1; // Parser bound includes anonymous-function bodies.
@@ -99,7 +119,8 @@ struct Stmt {
    bool unsafe_block=false; // Lexical Block authority; retained through verification, never PPX data.
  std::optional<Pattern> pattern; // Local tuple destructuring only; names use name.
  Type declared = Type::Invalid;
- bool mutable_binding = false;
+  bool mutable_binding = false;
+  bool ref_store = false; // := writes through an exclusive parameter; never ordinary assignment.
  bool prototype = false; // Type-checked generic instance, never emitted.
  std::vector<std::unique_ptr<Stmt>> instances; // Stable storage during inference.
  ExprPtr value;
@@ -109,6 +130,8 @@ struct Function {
  std::string name;
  Location where;
  std::vector<Param> params;
+ std::vector<TypeParameter> type_parameters;
+ std::vector<ClicheConstraint> constraints;
  Type result = Type::Void;
  bool external = false;
  // Internal typed foreign declaration. An ordinary source extern has no symbol here.
@@ -117,7 +140,62 @@ struct Function {
  bool prototype = false; // Checked generalized declaration, not emitted.
  std::vector<Stmt> body;
   std::vector<ExprPtr> attributes;
-  bool extension_generated=false; // Host-only: explicit interface cannot be erased by a later PPX.
+   bool extension_generated=false; // Host-only: explicit interface cannot be erased by a later PPX.
+};
+inline bool takes_exclusive(const Function& function){
+ for(const auto& parameter:function.params)if(parameter.exclusive)return true;
+ return false;
+}
+struct ClicheMember {
+ enum class Kind { Function, Value } kind=Kind::Function;
+ Location where;
+ std::string name;
+ std::vector<TypeParameter> type_parameters;
+ std::vector<ClicheConstraint> constraints;
+ std::vector<Param> params;
+ Type result=Type::Void; // Function result or associated-value type.
+};
+struct ClicheDeclaration {
+ Location where;
+ std::string name;
+ std::vector<TypeParameter> type_parameters; // Excludes the implicit Self parameter.
+ std::vector<ClicheConstraint> constraints;
+ std::vector<ClicheMember> members;
+};
+struct ClicheImplementationMember {
+ ClicheMember::Kind kind=ClicheMember::Kind::Function;
+ Location where;
+ std::string name,runtime_name;
+ Function function;
+ Type value_type=Type::Invalid;
+ ExprPtr value;
+};
+struct ClicheImplementation {
+ Location where;
+ std::string name;
+ std::vector<TypeParameter> type_parameters;
+ std::vector<Type> arguments; // Self first, followed by declared cliche parameters.
+ std::vector<ClicheConstraint> constraints;
+ std::vector<ClicheImplementationMember> members;
+};
+// Intrinsic inherent implementations are retained by the host until inference
+// resolves every `::` projection to an ordinary statically named function.
+// They are separate from Category evidence and core cliche predicates.
+struct InherentMember {
+ enum class Kind { Function, Value } kind=Kind::Function;
+ enum class Receiver { None, Value, Borrow, Move } receiver=Receiver::None;
+ Location where;
+ std::string name,runtime_name;
+ std::vector<TypeParameter> type_parameters; // Member binders only.
+ Function function;
+ Type value_type=Type::Invalid;
+ ExprPtr value;
+};
+struct InherentImplementation {
+ Location where;
+ std::vector<TypeParameter> type_parameters;
+ Type target=Type::Invalid; // A source Named type until ordinary type inference.
+ std::vector<InherentMember> members;
 };
 // .on1xi declarations are not functions or PPX data. A loader obligation
 // records the original definition and its resolved name in this particular unit.
@@ -206,7 +284,12 @@ struct Unit {
   std::vector<FeatureActivation> features;
   std::vector<ScrutinyDirective> scrutiny;
   std::vector<ModuleExtension> extensions;
-  std::vector<NominalDeclaration> nominals;
+   std::vector<NominalDeclaration> nominals;
+   std::vector<ClicheDeclaration> cliches;
+   std::vector<ClicheImplementation> cliche_implementations;
+   bool cliches_prepared=false;
+   std::vector<InherentImplementation> inherent_implementations;
+   bool inherents_prepared=false;
   std::vector<ExtensionEvidence> extension_evidence;
   std::map<std::string,std::string> source_digests;
  std::map<Type,std::vector<Type>> forall_layouts; // Internal whole-unit demand ABI.
@@ -221,8 +304,9 @@ Unit parse(const std::vector<Token>& tokens,const std::vector<std::string>& enab
 std::vector<InterfaceMember> parse_interface(const std::vector<Token>& tokens);
 void require_no_kernel_imports(const Unit&);
 bool is_intrinsic_name(const std::string& name);
+bool is_reserved_intrinsic_name(const std::string& name);
 std::vector<Type> extern_parameter_types(const Function& function);
-void check(Unit& unit);
+ void check(Unit& unit);
 // Check a source graph with explicit interface obligations. Unlike check(),
 // this also accepts library units with no main. It does not authorize emission.
 void check_interfaces(Unit unit,const std::vector<InterfaceObligation>& interfaces);

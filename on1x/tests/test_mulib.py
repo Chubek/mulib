@@ -32,10 +32,10 @@ assert all((root/'library'/name).is_dir() for name,g in inventory['fixtures'].it
 assert inventory['fixtures']['immgtk-widgets']['kind']=='empty'
 assert len(inventory['fixtures']['webidl']['matched_files'])>=1000
 assert len(inventory['fixtures']['librl']['matched_files'])==45
-assert inventory['fixtures']['elvi-scrape']['matched_files']==[
-    'library/elvi-scrape/bing.elvs','library/elvi-scrape/google.elvs']
 elvis = inventory['fixtures']['elvis']['matched_files']
-assert {'library/elvis/Google.elvs', 'library/elvis/Bing.elvs'} < set(elvis)
+assert {
+    f'library/elvis/{name}.elvs' for name in ('Bing', 'DuckDuckGo', 'Google', 'MDN', 'Scholar')
+} <= set(elvis)
 for group in inventory['fixtures'].values():
     for path in group['matched_files']:assert (root/path).is_file()
 for args,message in [(('plan','absent'),'known MuLIB modules'),
@@ -55,14 +55,14 @@ assert ['parsec','peg','parsec'] in provider['dependency_cycles']
 assert 'MULIB_IMPL_PARSER' in provider['implementation_macros']
 assert 'MULIB_IMPL_YANTLR_STDLIB' in provider['implementation_macros']
 assert house.plan(root,['fst'])['implementation_macros'][-1]=='MULIB_IMPL_FST_SERIALIZE'
-elvi=house.plan(root,[],['elvi-scrape'])
-assert elvi['requested_fixtures']==['elvi-scrape'] and len(elvi['required_symbols']['elvi-scrape'])==6
+elvi=house.plan(root,[],['elvis'])
+assert elvi['requested_fixtures']==['elvis'] and len(elvi['required_symbols']['elvi-scrape'])==6
 assert elvi['implementation_translation_units']==1 and 'MULIB_IMPL_PARSER' not in elvi['implementation_macros']
 assert elvi['link_libraries']==['m']
-canonical_elvi=house.plan(root,[],['elvis'])
-assert canonical_elvi['requested_fixtures']==['elvis']
-assert canonical_elvi['implementation_macros']==elvi['implementation_macros']
-assert canonical_elvi['inputs']==elvi['inputs'] and canonical_elvi['files']==elvi['files']
+assert [f['path'] for f in elvi['files']]==elvis
+elvi_kernel=house.plan(root,['elvi-scrape'])
+assert elvi_kernel['implementation_macros']==elvi['implementation_macros']
+assert elvi_kernel['inputs']==elvi['inputs'] and elvi_kernel['files']==elvi['files']
 
 execute(build('housekeeping','''from std import mulib;
 fn main(){

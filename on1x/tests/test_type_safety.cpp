@@ -9,10 +9,14 @@ void rejects(const std::function<void()>& action,const std::string& expected){
  throw std::runtime_error("missing rejection: "+expected);
 }
 int main(){try{
- auto u=checked("fn main(){println(42);}");
- auto before=emit_c(u,"type-check.on1x"), report=type_safety::verify(u);
- if(report!=type_safety::verify(u)||before!=emit_c(u,"type-check.on1x"))throw std::runtime_error("verification mutated HIR or report");
- // Mutate HIR after On1x's ordinary checker. These must reach the independent
+  auto u=checked("fn main(){println(42);}");
+  auto before=emit_c(u,"type-check.on1x"), report=type_safety::verify(u);
+  if(report!=type_safety::verify(u)||before!=emit_c(u,"type-check.on1x"))throw std::runtime_error("verification mutated HIR or report");
+  auto owning=checked(
+   "enum N{Z}fn main(){let n=box(variant<N>(Z,record{}));drop(n);}");
+  rejects([&]{type_safety::verify(owning);},
+          "unique ownership is outside the independent structural adapter");
+  // Mutate HIR after On1x's ordinary checker. These must reach the independent
  // Nerotypical checker, rather than passing through sema again.
  auto& literal=*u.functions[0].body[0].value->children[0];literal.type=Type::Bool;
  rejects([&]{type_safety::verify(u);},"nerotypical");

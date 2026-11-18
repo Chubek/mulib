@@ -1,0 +1,45 @@
+# SYNTAX TEST "Packages/On1x/On1x.sublime-syntax"
+@ppx checks "../stdppx/checks.py"
+# <- punctuation.definition.annotation.on1x
+#^^^ keyword.control.directive.on1x
+macro identity {
+#     ^^^^^^^^ entity.name.function.preprocessor.on1x
+  rule ($value: Expression) => expression { $value };
+#        ^^^^^ variable.parameter.macro.on1x
+}
+record Point { x: i64 }
+#      ^^^^^ entity.name.type.on1x
+fn main() {
+#  ^^^^ entity.name.function.on1x
+  let range = 0x2au8;
+#             ^^^^^^ constant.numeric.integer.hexadecimal.on1x
+  let ratio = 1.5e-2f32;
+#             ^^^^^^^^^ constant.numeric.float.on1x
+  for i in 1..=4 { println(identity!(i)); }
+#           ^^^ keyword.operator.range.on1x
+#                          ^^^^^^^^ entity.name.function.preprocessor.on1x
+  let match = false; # "fn plain()" @ppx
+#     ^^^^^ - keyword.control.on1x
+#             ^^^^^ constant.language.boolean.on1x
+#                      ^^^^^^^^^^^^^^^^^ comment.line.number-sign.on1x
+  let s = "# \" \t";
+#          ^ string.quoted.double.on1x - comment.line.number-sign.on1x
+#            ^^ constant.character.escape.on1x
+  let command = launch `/bin/echo \`tick\``;
+#                                 ^^ constant.character.escape.on1x
+  let block_command = launch ```/bin/echo
+     # literal "text" \t```;
+#    ^^^^^^^^^^^^^^^^^^ string.quoted.other.command.block.on1x - comment.line.number-sign.on1x
+#                          ^ punctuation.separator.on1x
+  let invalid_escape = "\q";
+#                       ^^ invalid.illegal.escape.on1x
+  let unfinished = "one line
+  let after = `one line
+# ^^^ storage.type.on1x - string.quoted.double.on1x
+  return;
+# ^^^^^^ keyword.control.on1x - string.quoted.other.command.on1x
+}
+# Neither // nor /* */ opens a comment in On1x; single quotes aren't strings.
+// /* */ 'word'
+# <- keyword.operator.on1x - comment
+#         ^^^^ - string

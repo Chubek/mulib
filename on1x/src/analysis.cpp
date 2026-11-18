@@ -167,6 +167,7 @@ class LinearHIR {
    }
    case Expr::Kind::Call:{
     if(!expression.callee||expression.callee->kind!=Expr::Kind::Variable){valid_=false;return {};}
+    if(expression.callee->reference==Expr::Reference::BorrowFunction){complete_=false;return {};}
     std::vector<Operand> arguments;
      for(const auto& child:expression.children){
       auto value=this->expression(*child);if(!value){valid_=false;return {};}arguments.push_back(*value);
@@ -225,7 +226,7 @@ class LinearHIR {
 public:
  LinearHIR(const Function& source,std::size_t& work):source_(source),work_(work){}
  std::optional<Translation> run(){
-  if(source_.external||source_.prototype||!spend())return {};
+  if(source_.external||source_.prototype||takes_exclusive(source_)||!spend())return {};
   wetstone::ir::Function function;function.name=source_.name;function.entry=0;
   scopes_.emplace_back();
   for(const auto& parameter:source_.params){

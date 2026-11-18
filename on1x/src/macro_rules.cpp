@@ -1,5 +1,6 @@
 #include "macro_rules.hpp"
 #include <on1x/numeric.hpp>
+#include <on1x/literals.hpp>
 #include <algorithm>
 #include <optional>
 namespace on1x::meta {
@@ -37,6 +38,7 @@ std::string MacroRules::category(const Expr& e)const{
    case K::Integer:return numeric_literal_type(e.text).is_unsigned()?"UnsignedLiteral":e.text.starts_with("0x")||e.text.starts_with("0X")?"HexLiteral":"DecimalLiteral";
   case K::Float:return "FloatLiteral";
  case K::String:return "StringLiteral";case K::Boolean:return "BooleanLiteral";case K::Variable:return "Identifier";
+ case K::Character:return "CharacterLiteral";case K::ByteBuffer:return "ByteBufferLiteral";case K::Interpolated:return "Expression";
  case K::Unary:return "UnaryExpression";case K::Binary:return "BinaryExpression";case K::Call:return "CallExpression";
  case K::Tuple:return "TupleExpression";case K::Lambda:return "LambdaExpression";case K::SyntaxBlock:return "Block";
  case K::SyntaxList:return "ListSyntax";case K::SyntaxVector:return "VectorSyntax";case K::SyntaxKeyword:return "KeywordSyntax";
@@ -133,6 +135,7 @@ bool MacroRules::literal(const Expr& pattern,const Expr& actual){
  if(pattern.kind!=actual.kind)return false;
  if(pattern.kind==K::Variable)return same_binding(pattern,actual);
  if(pattern.kind==K::String)return literal_value(pattern.text)==literal_value(actual.text);
+ if(pattern.kind==K::Character)return literals::character(pattern.text,pattern.where)==literals::character(actual.text,actual.where);
  return pattern.text==actual.text;
 }
 void MacroRules::widths(const MacroParameter& p,MacroCaptures& captures,const RepetitionPath& path,std::size_t count){

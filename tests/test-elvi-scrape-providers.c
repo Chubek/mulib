@@ -1,7 +1,6 @@
 #include "fixtures/elvi-scrape-setup.h"
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /* Synthetic result pages exercise only the documented extraction rules. */
@@ -56,44 +55,21 @@ static const struct {
   }
 };
 
-static void provider_path(char *out, size_t cap, const char *root,
-                          const char *dir, const char *name) {
-  int n=snprintf(out,cap,"%s/library/%s/%s",root,dir,name);
+static void provider_path(char *out, size_t cap, const char *root, const char *name) {
+  int n=snprintf(out,cap,"%s/library/elvis/%s",root,name);
   assert(n>0 && (size_t)n<cap);
-}
-
-static void check_compatibility_pair(const char *root, const char *name,
-                                     const char *legacy) {
-  char a_path[4096],b_path[4096];
-  provider_path(a_path,sizeof a_path,root,"elvis",name);
-  provider_path(b_path,sizeof b_path,root,"elvi-scrape",legacy);
-  FILE *a=fopen(a_path,"rb"),*b=fopen(b_path,"rb");
-  assert(a && b);
-  int byte;
-  do {
-    byte=fgetc(a);
-    if(byte!=fgetc(b)) {
-      fprintf(stderr,"Provider bytes differ: %s and %s\n",a_path,b_path);
-      exit(EXIT_FAILURE);
-    }
-  } while(byte!=EOF);
-  assert(!ferror(a) && !ferror(b));
-  assert(!fclose(a));
-  assert(!fclose(b));
 }
 
 int main(int argc, char **argv) {
   const char *root=argc>1?argv[1]:".";
   const char query[]="caf\xc3\xa9 & C++/#?";
-  check_compatibility_pair(root,"Google.elvs","google.elvs");
-  check_compatibility_pair(root,"Bing.elvs","bing.elvs");
   for(size_t i=0;i<sizeof providers/sizeof *providers;i++) {
     char path[4096],url[8192];
     mulib_elvi_scrape_program_t p;
     mulib_elvi_scrape_error_t error;
     mulib_elvi_scrape_result_t results[4];
     size_t count;
-    provider_path(path,sizeof path,root,"elvis",providers[i].file);
+    provider_path(path,sizeof path,root,providers[i].file);
     if(!mulib_elvi_scrape_load(path,&p,&error)) {
       fprintf(stderr,"%s:%zu: %s\n",path,error.line,error.message);
       return 1;

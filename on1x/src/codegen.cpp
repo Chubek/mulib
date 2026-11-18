@@ -4,10 +4,14 @@
 #include <on1x/meta.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/literals.hpp>
 #include <on1x/nominal.hpp>
+#include <on1x/regex.hpp>
 #include <on1x/canonical/control.hpp>
 #include <on1x/canonical/values.hpp>
 #include <on1x/concurrency.hpp>
+#include <on1x/cliche.hpp>
+#include <on1x/inherent.hpp>
 #include <algorithm>
 #include <map>
 #include <set>
@@ -36,16 +40,26 @@ std::string c_string(const std::string& source){
 }
 
 class Generator {
- struct Owner { Type type; std::string name; };
+ struct Owner { Type type; std::string name,cleanup; };
  struct Lambda { const Expr* expression; std::string invoke,make,environment,destroy; bool deferred; };
  const Unit& unit;
+ NominalCatalog catalog;
  std::ostringstream types,prototypes,helpers,value_helpers,definitions;
+ regex::Cache regex_patterns;
+ std::map<std::string,std::string> regex_constants;
  std::map<Type,std::string> function_types;
  std::map<Type,std::string> tuple_types,tuple_retains,tuple_releases;
  std::vector<std::pair<Type,bool>> ownership_helpers;
+ struct UniqueDestructor {Type target;std::string name,release;};
+ std::map<Type,std::string> unique_destructor_names;
+ std::vector<UniqueDestructor> unique_destructors;
+ struct CleanupDestructor {Type type;std::string name,release;};
+ std::map<Type,std::string> cleanup_destructor_names;
+ std::vector<CleanupDestructor> cleanup_destructors;
  std::set<std::string> identifiers;
  std::map<std::string,std::string> functions,adapters;
  std::map<std::string,const Function*> externs;
+ std::map<std::string,const Function*> borrow_functions;
  std::vector<Lambda> lambdas;
  std::unordered_map<const Expr*,std::size_t> lambda_index;
  std::vector<std::unordered_map<std::string,std::string>> scopes;
@@ -62,10 +76,11 @@ class Generator {
  std::uint64_t serial=0,type_serial=0,helper_serial=0;
   int indent=0;
    bool uses_f64=false,uses_f32=false,uses_unsigned=false;
-    bool uses_value_data=false,uses_defer=false;
+    bool uses_value_data=false,uses_defer=false,uses_regex=false,uses_unique=false;
+    bool ownership_cleanup=false;
      bool uses_csp=false,uses_group_deadlines=false;
      Type current_result=Type::Void;
-     std::size_t cancellation_budget=262144;
+      std::size_t cancellation_budget=262144,ownership_cleanup_budget=262144;
    std::string location(const Location& at)const{return c_string(meta::source_literal(at.file))+", "+std::to_string(at.line)+", "+std::to_string(at.column);}
 
  std::string reserve(const std::string& preferred){
@@ -75,7 +90,37 @@ class Generator {
  }
  std::string unique(const std::string& name){return reserve("on1x_v"+std::to_string(++serial)+"_"+name);}
  std::string pad()const{return std::string(indent*2,' ');}
-  std::string ctype(const Type& type){
+ static bool needs_drop(const Type& type){return type.has_functions()||type.is_move_only();}
+ std::string regex_literal(const Expr& e){
+  if(auto found=regex_constants.find(e.text);found!=regex_constants.end())return "&"+found->second;
+  const auto& program=regex_patterns.get(e.text,e.where);
+  auto name=unique("regex");
+  regex_constants.emplace(e.text,name);
+  uses_regex=true;
+  helpers<<"static const on1x_regex_edge "<<name<<"_edges[] = {\n";
+  std::size_t edges=0;
+  for(const auto& state:program.states)for(const auto& edge:state.edges){
+   helpers<<"  {"<<edge.first<<", "<<edge.last<<", "<<edge.target<<"},\n";++edges;
+  }
+  if(!edges)helpers<<"  {0, 0, 0},\n";
+  helpers<<"};\nstatic const on1x_regex_state "<<name<<"_states[] = {\n";
+  edges=0;
+  for(const auto& state:program.states){
+   helpers<<"  {"<<edges<<", "<<edges+state.edges.size()<<", "<<(state.accepts?"true":"false")<<"},\n";
+   edges+=state.edges.size();
+  }
+  helpers<<"};\n";
+  if(!program.groups.empty()){
+   helpers<<"static const on1x_regex_span "<<name<<"_groups[] = {\n";
+   for(const auto& group:program.groups)helpers<<"  {"<<group.begin<<", "<<group.end<<"},\n";
+   helpers<<"};\n";
+  }
+  helpers<<"static const on1x_regex "<<name<<" = {"<<name<<"_states, "<<name<<"_edges, "
+         <<(program.groups.empty()?"NULL":name+"_groups")<<", "<<program.groups.size()<<", "
+         <<(program.capturable?"true":"false")<<"};\n";
+  return "&"+name;
+ }
+   std::string ctype(const Type& type){
    if(type.is_data()){
     uses_value_data=true;
     if(auto found=tuple_types.find(type);found!=tuple_types.end())return found->second;
@@ -93,17 +138,20 @@ class Generator {
     }
     types<<"} "<<name<<";\n";return name;
    }
-    switch(type.kind()){
+     switch(type.kind()){
+      case Type::Own:uses_unique=true;return "on1x_unique *";
      case Type::Fiber:return "on1x_csp_task *";
      case Type::ExternalFiber:return "on1x_csp_process *";
      case Type::Channel:case Type::Sender:case Type::Receiver:case Type::ByteSender:case Type::ByteReceiver:return "on1x_csp_channel *";
     case Type::CspGroup:return "on1x_csp_group *";
-   case Type::I64:return "int64_t";case Type::Bool:return "bool";
+   case Type::I64:return "int64_t";case Type::Bool:return "bool";case Type::Char:return "uint32_t";
     case Type::F64:uses_f64=true;return "double";
     case Type::F32:uses_f64=true;uses_f32=true;return "float";
     case Type::U8:case Type::U16:case Type::U32:case Type::U64:
      uses_unsigned=true;return "uint"+type_name(type).substr(1)+"_t";
   case Type::String:return "const char *";case Type::Void:return "void";
+   case Type::Regex:uses_regex=true;return "const on1x_regex *";
+   case Type::RegexCaptures:uses_regex=true;return "on1x_regex_captures";
    case Type::Json:return "on1x_json *";case Type::JsonView:return "const on1x_json *";
    case Type::SExpr:return "on1x_sexpr *";case Type::Buffer:return "on1x_buffer *";
    case Type::Code:return ctype(Type::function({},type.code_result()));
@@ -131,23 +179,55 @@ class Generator {
    }
   }
  const std::vector<Type>& fields(const Type& type)const{
-  if(type.is_tuple())return type.elements();
+  if(type.is_tuple()||type.is_data())return type.elements();
   auto found=unit.forall_layouts.find(type);static const std::vector<Type> empty;
   return found==unit.forall_layouts.end()?empty:found->second;
  }
- std::string ownership_helper(const Type& type,bool retaining){
+  std::string ownership_helper(const Type& type,bool retaining){
   auto& table=retaining?tuple_retains:tuple_releases;
   if(auto found=table.find(type);found!=table.end())return found->second;
   auto name=reserve(std::string("on1x_tuple_")+(retaining?"retain_":"release_")+std::to_string(++helper_serial));
   table.emplace(type,name);ownership_helpers.emplace_back(type,retaining);
   prototypes<<"static void "<<name<<"(const "<<ctype(type)<<" *);\n";return name;
- }
- void adjust(std::ostream& output,const Type& type,const std::string& value,bool retaining,const std::string& prefix){
-  if(!type.has_functions())return;
-   if(type.is_reference())output<<prefix<<(retaining?"on1x_data_retain(":"on1x_data_release(")<<value<<");\n";
-   else if(type.is_function()||type.is_code())output<<prefix<<(retaining?"on1x_env_retain(":"on1x_env_release(")<<value<<".environment);\n";
-  else output<<prefix<<ownership_helper(type,retaining)<<"(&("<<value<<"));\n";
- }
+  }
+  void adjust(std::ostream& output,const Type& type,const std::string& value,bool retaining,const std::string& prefix){
+   if(retaining&&type.is_move_only())
+    throw std::runtime_error("internal codegen: attempted to retain a unique value");
+   if(retaining?!type.has_functions():!needs_drop(type))return;
+    if(type.is_own())output<<prefix<<"on1x_unique_drop("<<value<<");\n";
+    else if(type.is_reference())output<<prefix<<(retaining?"on1x_data_retain(":"on1x_data_release(")<<value<<");\n";
+    else if(type.is_function()||type.is_code())output<<prefix<<(retaining?"on1x_env_retain(":"on1x_env_release(")<<value<<".environment);\n";
+   else output<<prefix<<ownership_helper(type,retaining)<<"(&("<<value<<"));\n";
+  }
+  std::string unique_destructor(const Type& owner,const Location& at){
+   if(!owner.is_own())throw std::runtime_error("internal codegen: destructor requested for non-owner");
+   if(auto found=unique_destructor_names.find(owner);found!=unique_destructor_names.end())
+    return found->second;
+   const auto& target=owner.owned();
+   auto value=catalog.instantiate(target.nominal(),target.arguments(),at);
+   auto name=reserve("on1x_unique_destroy_"+std::to_string(++helper_serial));
+   std::string release;
+   if(needs_drop(value))release=ownership_helper(value,false);
+   unique_destructor_names.emplace(owner,name);
+   unique_destructors.push_back({std::move(value),name,std::move(release)});
+   prototypes<<"static void "<<name<<"(void *);\n";
+   return name;
+  }
+  std::string cleanup_destructor(const Type& type){
+   if(!needs_drop(type))
+    throw std::runtime_error("internal codegen: cleanup requested for trivial value");
+   if(auto found=cleanup_destructor_names.find(type);found!=cleanup_destructor_names.end())
+    return found->second;
+   auto name=reserve("on1x_cleanup_destroy_"+std::to_string(++helper_serial));
+   std::string release;
+   if(!type.is_own()&&!type.is_reference()&&!type.is_function()&&!type.is_code())
+    release=ownership_helper(type,false);
+   cleanup_destructor_names.emplace(type,name);
+   cleanup_destructors.push_back({type,name,std::move(release)});
+   prototypes<<"static void "<<name<<"(void *);\n";
+   uses_unique=true;
+   return name;
+  }
  void emit_ownership_helpers(){
   // Generate only requested operations. Child requests may append to the list;
   // all prototypes precede all definitions, so dependency order remains valid.
@@ -155,15 +235,53 @@ class Generator {
    auto [type,retaining]=ownership_helpers[i];auto name=ownership_helper(type,retaining);
    value_helpers<<"static void "<<name<<"(const "<<ctype(type)<<" *on1x_value) {\n";
     value_helpers<<"  (void)on1x_value;\n";
+    if(type.kind()==Type::Sum){
+     value_helpers<<"  switch (on1x_value->tag) {\n";
+     for(std::size_t j=0;j<fields(type).size();++j){
+      const auto& payload=fields(type)[j];
+       if(retaining?!payload.has_functions():!needs_drop(payload))continue;
+      value_helpers<<"  case "<<j<<":\n";
+      adjust(value_helpers,payload,"on1x_value->payload.element_"+std::to_string(j),retaining,"    ");
+      value_helpers<<"    break;\n";
+     }
+     value_helpers<<"  default: break;\n  }\n}\n\n";
+     continue;
+    }
     for(std::size_t j=0;j<fields(type).size();++j){
      auto index=retaining?j:fields(type).size()-1-j;
      adjust(value_helpers,fields(type)[index],"on1x_value->element_"+std::to_string(index),retaining,"  ");
    }
    value_helpers<<"}\n\n";
+   }
   }
- }
- void collect(const Expr& expression,bool deferred=false){
-  if(expression.prototype)return;
+  void emit_unique_destructors(){
+   for(const auto& destructor:unique_destructors){
+    value_helpers<<"static void "<<destructor.name<<"(void *on1x_raw) {\n";
+    if(destructor.release.empty())value_helpers<<"  (void)on1x_raw;\n";
+    else value_helpers<<"  "<<destructor.release<<"((const "<<ctype(destructor.target)<<" *)on1x_raw);\n";
+    value_helpers<<"}\n\n";
+   }
+   for(const auto& destructor:cleanup_destructors){
+    value_helpers<<"static void "<<destructor.name<<"(void *on1x_raw) {\n"
+                 <<"  "<<ctype(destructor.type)<<" *on1x_value = ("<<ctype(destructor.type)<<" *)on1x_raw;\n";
+    if(destructor.type.is_own())
+     value_helpers<<"  on1x_unique_drop(*on1x_value);\n";
+    else if(destructor.type.is_reference())
+     value_helpers<<"  on1x_data_release(*on1x_value);\n";
+    else if(destructor.type.is_function()||destructor.type.is_code())
+     value_helpers<<"  on1x_env_release(on1x_value->environment);\n";
+    else value_helpers<<"  "<<destructor.release<<"(on1x_value);\n";
+    value_helpers<<"  memset(on1x_value, 0, sizeof(*on1x_value));\n}\n\n";
+   }
+  }
+  void collect(const Expr& expression,bool deferred=false){
+   if(expression.prototype)return;
+    if(expression.type.contains_unique()||expression.result.contains_unique())
+     uses_unique=true;
+    for(const auto& parameter:expression.parameters)
+     if(parameter.type.contains_unique())uses_unique=true;
+    for(const auto& capture:expression.captures)
+     if(capture.type.contains_unique())uses_unique=true;
    if(expression.kind==Expr::Kind::Lambda){
    auto index=lambdas.size();auto suffix=std::to_string(index+1);
    lambda_index.emplace(&expression,index);
@@ -175,9 +293,10 @@ class Generator {
   if(expression.callee)collect(*expression.callee);
   for(const auto& child:expression.children)collect(*child);
  }
- void collect(const std::vector<Stmt>& body){
-  for(const auto& statement:body){
-    if(statement.prototype)continue;
+  void collect(const std::vector<Stmt>& body){
+   for(const auto& statement:body){
+     if(statement.prototype)continue;
+     if(statement.declared.contains_unique())uses_unique=true;
     if(statement.kind==Stmt::Kind::CspScope&&statement.value)uses_group_deadlines=true;
     if(statement.kind==Stmt::Kind::Break)break_targets.insert(statement.control_target);
     if(statement.kind==Stmt::Kind::Continue)continue_targets.insert(statement.control_target);
@@ -186,9 +305,10 @@ class Generator {
    collect(statement.body);collect(statement.otherwise);
   }
  }
- void push(){scopes.emplace_back();owners.emplace_back();++indent;}
-  void release(const Owner& owner){
-   if(owner.type==Type::CspGroup)definitions<<pad()<<"on1x_csp_group_finish("<<owner.name<<");\n";
+  void push(){scopes.emplace_back();owners.emplace_back();++indent;}
+   void release(const Owner& owner){
+    if(!owner.cleanup.empty())definitions<<pad()<<"on1x_cleanup_pop(&"<<owner.cleanup<<");\n";
+    if(owner.type==Type::CspGroup)definitions<<pad()<<"on1x_csp_group_finish("<<owner.name<<");\n";
    else if(owner.type==Type::Json)definitions<<pad()<<"on1x_json_drop("<<owner.name<<");\n";
   else adjust(definitions,owner.type,owner.name,false,pad());
  }
@@ -239,19 +359,66 @@ class Generator {
      --indent;definitions<<pad()<<"}\n";
     }
     void cancellation_edge(const Location& at){cancellation_edge(at,owners.size());}
- void finish(std::size_t keep=0){
-  for(std::size_t i=temporary_values.size();i>keep;--i)release(temporary_values[i-1]);
-  temporary_values.resize(keep);
- }
- std::string temp(const Type& type,const std::string& rhs,bool borrowed=false){
-  if(type==Type::Void){definitions<<pad()<<rhs<<";\n";return {};}
-  auto name=unique("tmp");definitions<<pad()<<ctype(type)<<" "<<name<<" = "<<rhs<<";\n";
-  if(type.has_functions()){
-   if(borrowed)retain(type,name);
-   temporary_values.push_back({type,name});
+  void finish(std::size_t keep=0){
+   for(std::size_t i=temporary_values.size();i>keep;--i)release(temporary_values[i-1]);
+   temporary_values.resize(keep);
   }
-  return name;
- }
+  void clear_value(const Type& type,const std::string& value){
+   if(!needs_drop(type))return;
+   definitions<<pad()<<"memset(&("<<value<<"), 0, sizeof("<<value<<"));\n";
+  }
+  Owner track(const Type& type,const std::string& name){
+   Owner owner{type,name,{}};
+   // The emergency registry is needed only in units that can reach a unique
+   // allocation. Such units register every live managed value so terminal
+   // allocation failure also releases unrelated shared references in callers.
+   if(ownership_cleanup&&needs_drop(type)){
+    owner.cleanup=unique("cleanup");
+    definitions<<pad()<<"on1x_cleanup "<<owner.cleanup<<" = {0};\n"
+               <<pad()<<"on1x_cleanup_push(&"<<owner.cleanup<<", &("<<name<<"), "
+               <<cleanup_destructor(type)<<");\n";
+   }
+   return owner;
+  }
+  std::string temp(const Type& type,const std::string& rhs,bool borrowed=false){
+   if(type==Type::Void){definitions<<pad()<<rhs<<";\n";return {};}
+   auto name=unique("tmp");definitions<<pad()<<ctype(type)<<" "<<name<<" = "<<rhs<<";\n";
+   if(needs_drop(type)){
+    if(borrowed)retain(type,name);
+    temporary_values.push_back(track(type,name));
+   }
+   return name;
+  }
+  std::string transfer_temp(const Type& type,const std::string& source){
+   if(!needs_drop(type))return temp(type,source);
+   auto result=temp(type,source);
+   clear_value(type,source);
+   return result;
+  }
+  std::string move_source(const Type& type,const std::string& source){
+   return needs_drop(type)?transfer_temp(type,source):temp(type,source);
+  }
+  void disarm_temporary(const std::string& name){
+   auto found=std::find_if(temporary_values.rbegin(),temporary_values.rend(),
+                           [&](const Owner& owner){return owner.name==name;});
+   if(found==temporary_values.rend()||found->cleanup.empty())
+    throw std::runtime_error("internal codegen: missing unique argument cleanup");
+   definitions<<pad()<<"on1x_cleanup_pop(&"<<found->cleanup<<");\n";
+   found->cleanup.clear();
+  }
+  void allocation_failure(const std::string& owner,const Location& at){
+   std::size_t work=1+temporary_values.size();
+   for(const auto& scope:owners)work+=scope.size();
+   if(work>ownership_cleanup_budget)
+    throw Error(at,"ownership allocation cleanup expansion budget exhausted","ON1X-OWN-LIMIT");
+   ownership_cleanup_budget-=work;
+   definitions<<pad()<<"if (!"<<owner<<") {\n";++indent;
+   for(auto value=temporary_values.rbegin();value!=temporary_values.rend();++value)
+    release(*value);
+   drops();
+   definitions<<pad()<<"on1x_unique_allocation_fail("<<location(at)<<");\n";
+   --indent;definitions<<pad()<<"}\n";
+  }
  std::string global_value(const Expr& expression){
   auto found=adapters.find(expression.text);
    if(found==adapters.end())found=adapters.emplace(expression.text,reserve("on1x_adapter_"+(expression.text.starts_with("@")?expression.text.substr(1):expression.text))).first;
@@ -270,8 +437,14 @@ class Generator {
     return result;
    }
    std::string emit_expr(const Expr& e){
-       switch(e.kind){
-       case Expr::Kind::SourceCsp:throw Error(e.where,"unlowered concurrency operation");
+        switch(e.kind){
+        case Expr::Kind::ClicheMember:
+         throw Error(e.where,"unresolved cliche projection reached C11 lowering",
+                     "ON1X-CLICHE-UNSUPPORTED");
+        case Expr::Kind::InherentMember:
+         throw Error(e.where,"unresolved inherent projection reached C11 lowering",
+                     "ON1X-IMPL");
+        case Expr::Kind::SourceCsp:throw Error(e.where,"unlowered concurrency operation");
         case Expr::Kind::Csp:{
          if(uses_group_deadlines)cancellation_edge(e.where);
          const auto& op=e.text;auto at=location(e.where);
@@ -352,18 +525,29 @@ class Generator {
       case Expr::Kind::Propagate:throw Error(e.where,"unlowered propagation");
      case Expr::Kind::Unit:return {};
        case Expr::Kind::PatternMatch:case Expr::Kind::Case:case Expr::Kind::Loop:case Expr::Kind::UnsafeBlock:throw Error(e.where,"surface value construct must be canonicalized");
-     case Expr::Kind::Region:{
-      auto output=e.type==Type::Void?std::string{}:unique("region_value");if(!output.empty())definitions<<pad()<<ctype(e.type)<<" "<<output<<" = {0};\n";
-      auto outer=std::move(temporary_values);temporary_values.clear();definitions<<pad()<<"{\n";push();owners.back()=outer;definitions<<pad()<<"{\n";push();
-      bool terminated=false;for(const auto& s:e.body)terminated=stmt(s);
-      if(!terminated){auto result=expr(*e.children.at(0));if(!output.empty()){definitions<<pad()<<output<<" = "<<result<<";\n";retain(e.type,output);}finish();}
-      pop(!terminated);definitions<<pad()<<"}\n";pop(false);definitions<<pad()<<"}\n";temporary_values=std::move(outer);
-      if(!terminated&&e.type.has_functions())temporary_values.push_back({e.type,output});
-      return output;
-     }
-     case Expr::Kind::TagTest:{auto root=expr(*e.children.at(0));return temp(Type::Bool,"("+root+".tag == INT64_C("+std::to_string(e.projection)+"))");}
-     case Expr::Kind::Payload:{auto root=expr(*e.children.at(0));return temp(e.type,root+".payload.element_"+std::to_string(e.projection),true);}
-     case Expr::Kind::Project:{auto root=expr(*e.children.at(0));return temp(e.type,root+".element_"+std::to_string(e.projection),true);}
+      case Expr::Kind::Region:{
+       auto output=e.type==Type::Void?std::string{}:unique("region_value");if(!output.empty())definitions<<pad()<<ctype(e.type)<<" "<<output<<" = {0};\n";
+       auto outer=std::move(temporary_values);temporary_values.clear();definitions<<pad()<<"{\n";push();owners.back()=outer;definitions<<pad()<<"{\n";push();
+       bool terminated=false;for(const auto& s:e.body)terminated=stmt(s);
+       if(!terminated){auto result=expr(*e.children.at(0));if(!output.empty()){
+        definitions<<pad()<<output<<" = "<<result<<";\n";
+        if(e.type.is_move_only())clear_value(e.type,result);else retain(e.type,output);
+       }finish();}
+       pop(!terminated);definitions<<pad()<<"}\n";pop(false);definitions<<pad()<<"}\n";temporary_values=std::move(outer);
+       if(!terminated&&needs_drop(e.type))temporary_values.push_back(track(e.type,output));
+       return output;
+      }
+      case Expr::Kind::TagTest:{auto root=expr(*e.children.at(0));return temp(Type::Bool,"("+root+".tag == INT64_C("+std::to_string(e.projection)+"))");}
+      case Expr::Kind::Payload:{
+       auto root=expr(*e.children.at(0));
+       auto place=root+".payload.element_"+std::to_string(e.projection);
+       return e.move_out?transfer_temp(e.type,place):temp(e.type,place,e.type.has_functions());
+      }
+      case Expr::Kind::Project:{
+       auto root=expr(*e.children.at(0));
+       auto place=root+".element_"+std::to_string(e.projection);
+       return e.move_out?transfer_temp(e.type,place):temp(e.type,place,e.type.has_functions());
+      }
     case Expr::Kind::Splice:case Expr::Kind::Lift:throw Error(e.where,"MSP stage lowering required before code generation");
     case Expr::Kind::Quote:return expr(*e.children.at(0));
    case Expr::Kind::Run:{
@@ -393,46 +577,77 @@ class Generator {
    }
   case Expr::Kind::Boolean:return e.text;
   case Expr::Kind::String:return c_string(e.text);
-  case Expr::Kind::Variable:
-   if(e.reference==Expr::Reference::Function)return global_value(e);
-   if(e.reference==Expr::Reference::Local)return e.type.has_functions()?temp(e.type,ref(e.text),true):ref(e.text);
-   throw std::runtime_error("internal codegen: non-value name "+e.text);
+  case Expr::Kind::RegexLiteral:return regex_literal(e);
+  case Expr::Kind::RegexMatch:case Expr::Kind::RegexCapture:{
+   auto pattern=temp(Type::Regex,expr(*e.children[0]));
+   auto text=temp(Type::String,expr(*e.children[1]));
+   return temp(e.type,std::string(e.kind==Expr::Kind::RegexMatch?"on1x_regex_match_v1(":"on1x_regex_capture_v1(")+
+               pattern+", "+text+", "+location(e.where)+")");
+  }
+  case Expr::Kind::Character:return "UINT32_C("+std::to_string(literals::character(e.text,e.where))+")";
+  case Expr::Kind::ByteBuffer:{
+   // Split C tokens to stay below the C11 minimum character-string
+   // translation limit for individual buffer literal chunks.
+   auto buffer=temp(e.type,"on1x_buffer_new()");
+   for(std::size_t i=0;i<e.text.size();i+=2048)
+    definitions<<pad()<<"on1x_buffer_append_hex("<<buffer<<", \""<<e.text.substr(i,2048)<<"\");\n";
+   return buffer;
+  }
+  case Expr::Kind::Interpolated:return format_value(e,false);
+   case Expr::Kind::Variable:
+    if(e.reference==Expr::Reference::Function)return global_value(e);
+    if(e.reference==Expr::Reference::Local){
+     auto value=ref(e.text);
+     if(e.move_out)return transfer_temp(e.type,value);
+     if(e.type.is_move_only())return value;
+     return e.type.has_functions()?temp(e.type,value,true):value;
+    }
+    throw std::runtime_error("internal codegen: non-value name "+e.text);
   case Expr::Kind::Lambda:{
    const auto& lambda=lambdas.at(lambda_index.at(&e));std::string call=lambda.make+"(";
    for(std::size_t i=0;i<e.captures.size();++i){if(i)call+=", ";call+=ref(e.captures[i].name);}
    return temp(e.type,call+")");
   }
-   case Expr::Kind::Tuple:{
-   std::vector<std::string> elements;
-   for(const auto& child:e.children){
-    auto value=expr(*child);elements.push_back(child->type.has_functions()?value:temp(child->type,value));
-   }
-   std::string value="("+ctype(e.type)+"){";
-   for(std::size_t i=0;i<elements.size();++i){if(i)value+=", ";value+=elements[i];}
-   // Aggregate initialization copies fields; acquire references before any
-   // child temporary is released at the enclosing full-expression boundary.
-    return temp(e.type,value+"}",true);
-   }
-   case Expr::Kind::Record:case Expr::Kind::Array:{
-    std::vector<std::string> values;for(const auto& c:e.children)values.push_back(temp(c->type,expr(*c)));
-    std::string result="("+ctype(e.type)+"){";
-    if(e.kind==Expr::Kind::Array)result+="{";
-    if(values.empty())result+="0";
-    for(std::size_t i=0;i<values.size();++i){
-     if(i)result+=", ";
-     if(e.kind==Expr::Kind::Record){auto pos=std::find(e.type.labels().begin(),e.type.labels().end(),e.labels[i]);result+=".element_"+std::to_string(pos-e.type.labels().begin())+" = ";}
-     result+=values[i];
+    case Expr::Kind::Tuple:case Expr::Kind::Record:case Expr::Kind::Array:{
+     auto result=temp(e.type,"("+ctype(e.type)+"){0}");
+     for(std::size_t i=0;i<e.children.size();++i){
+      const auto& child=*e.children[i];
+      auto value=expr(child);
+      if(!needs_drop(child.type))value=temp(child.type,value);
+      std::string place;
+      if(e.kind==Expr::Kind::Array)place=result+".elements["+std::to_string(i)+"]";
+      else if(e.kind==Expr::Kind::Record){
+       auto pos=std::find(e.type.labels().begin(),e.type.labels().end(),e.labels[i]);
+       place=result+".element_"+std::to_string(pos-e.type.labels().begin());
+      }else place=result+".element_"+std::to_string(i);
+      definitions<<pad()<<place<<" = "<<value<<";\n";
+      clear_value(child.type,value);
+     }
+     return result;
     }
-    if(e.kind==Expr::Kind::Array)result+="}";
-    return temp(e.type,result+"}");
-   }
-   case Expr::Kind::Variant:{
-    auto value=temp(e.children[0]->type,expr(*e.children[0]));
-    return temp(e.type,"("+ctype(e.type)+"){.tag = INT64_C("+std::to_string(e.projection)+"), .payload = {.element_"+std::to_string(e.projection)+" = "+value+"}}");
-   }
-   case Expr::Kind::Field:{auto root=temp(e.children[0]->type,expr(*e.children[0]));return temp(e.type,root+".element_"+std::to_string(e.projection));}
+    case Expr::Kind::Variant:{
+     auto result=temp(e.type,"("+ctype(e.type)+"){0}");
+     const auto& child=*e.children[0];auto value=expr(child);
+     if(!needs_drop(child.type))value=temp(child.type,value);
+     definitions<<pad()<<result<<".payload.element_"<<e.projection<<" = "<<value<<";\n";
+     clear_value(child.type,value);
+     definitions<<pad()<<result<<".tag = INT64_C("<<e.projection<<");\n";
+     return result;
+    }
+    case Expr::Kind::Field:{
+     auto type=e.children[0]->type;auto root=expr(*e.children[0]);
+     if(!needs_drop(type))root=temp(type,root);
+     auto place=root+".element_"+std::to_string(e.projection);
+     return e.move_out?transfer_temp(e.type,place):temp(e.type,place,e.type.has_functions());
+    }
    case Expr::Kind::Index:case Expr::Kind::Slice:case Expr::Kind::Length:{
     auto t=e.children[0]->type;bool slice=t.kind()==Type::Slice;
+    if(t==Type::RegexCaptures){
+     auto root=temp(t,expr(*e.children[0]));
+     if(e.kind==Expr::Kind::Length)return temp(Type::I64,"on1x_regex_count_v1("+root+")");
+     auto index=temp(Type::I64,expr(*e.children[1]));
+     return temp(Type::String,"on1x_regex_index_v1("+root+", "+index+", "+location(e.where)+")");
+    }
     // Fixed arrays are rvalue-safe value structs; only slices need a materialized
     // owner copy for chained slicing. Evaluation order stays left-to-right.
     auto root=slice?temp(t,expr(*e.children[0])):expr(*e.children[0]);
@@ -480,20 +695,52 @@ class Generator {
    if((op=="=="||op=="!=")&&e.children[0]->type==Type::String)
     return temp(e.type,"(strcmp("+left+", "+right+") "+op+" 0)");
    return temp(e.type,"("+left+" "+op+" "+right+")");
-  }
-  case Expr::Kind::Call:{
-   const auto& callee=*e.callee;bool builtin=callee.reference==Expr::Reference::Intrinsic;
+   }
+   case Expr::Kind::Call:{
+    const auto& callee=*e.callee;bool builtin=callee.reference==Expr::Reference::Intrinsic;
+    if(builtin&&callee.text=="format")return format_value(e,true);
+    if(builtin&&callee.text=="move")return expr(*e.children.at(0));
+    if(builtin&&callee.text=="box"){
+     const auto& child=*e.children.at(0);
+     auto source=move_source(child.type,expr(child));
+     auto destroy=unique_destructor(e.type,e.where);
+     auto result=temp(e.type,"on1x_unique_try_box(&("+source+"), sizeof("+source+"), "+destroy+")");
+     allocation_failure(result,e.where);
+     return result;
+    }
+    if(builtin&&callee.text=="take"){
+     auto owner=expr(*e.children.at(0));
+     auto result=temp(e.type,"("+ctype(e.type)+"){0}");
+     definitions<<pad()<<"on1x_unique_take(&("<<owner<<"), &("<<result<<"), sizeof("<<result<<"), "<<location(e.where)<<");\n";
+     return result;
+    }
+    if(builtin&&callee.text=="drop"){
+     const auto& child=*e.children.at(0);auto value=expr(child);
+     adjust(definitions,child.type,value,false,pad());
+     clear_value(child.type,value);
+     return {};
+    }
+     const auto* borrower=callee.reference==Expr::Reference::BorrowFunction?borrow_functions.at(callee.text):nullptr;
     const bool foreign=callee.reference==Expr::Reference::Extern||callee.reference==Expr::Reference::UnsafeForeign||
                        callee.reference==Expr::Reference::ScalarForeign;
-    bool direct=builtin||foreign;
-    auto target=foreign?functions.at(callee.text):direct?callee.text:expr(callee);
-    std::vector<std::string> args;
-    for(std::size_t i=0;i<e.children.size();++i){
-    const auto& child=e.children[i];auto value=expr(*child);
-    if(!child->type.has_functions())value=temp(child->type,value);
-    if(callee.reference==Expr::Reference::Extern&&externs.at(callee.text)->params[i].pattern)
-     flatten(*externs.at(callee.text)->params[i].pattern,child->type,value,args);
-     else args.push_back(value);
+    bool direct=builtin||foreign||borrower;
+    auto target=(foreign||borrower)?functions.at(callee.text):direct?callee.text:expr(callee);
+     std::vector<std::string> args;
+     std::vector<Owner> moved_args;
+     for(std::size_t i=0;i<e.children.size();++i){
+    const auto& child=e.children[i];
+    if(borrower&&borrower->params[i].exclusive){
+     // The verifier proved this is an initialized lexical place, and that
+     // later arguments cannot access it. No scalar temporary or copy-back.
+     args.push_back("&("+ref(child->text)+")");continue;
+     }
+     auto value=expr(*child);
+     if(!needs_drop(child->type))value=temp(child->type,value);
+     if(callee.reference==Expr::Reference::Extern&&externs.at(callee.text)->params[i].pattern)
+      flatten(*externs.at(callee.text)->params[i].pattern,child->type,value,args);
+      else args.push_back(value);
+      if(child->type.is_move_only())
+       moved_args.push_back({child->type,value,{}});
     }
     if(uses_group_deadlines)cancellation_edge(e.where);
     if((callee.reference==Expr::Reference::ScalarForeign||callee.reference==Expr::Reference::UnsafeForeign)&&
@@ -559,22 +806,60 @@ class Generator {
      else if(name=="json_print")target="on1x_json_print";
      else if(data_primitive(name))target="on1x_"+name;
    }
-   std::string call=direct?target+"(":target+".invoke("+target+".environment";
-   for(std::size_t i=0;i<args.size();++i){if(i||!direct)call+=", ";call+=args[i];}
-   return temp(e.type,call+")");
-  }
+    std::string call=direct?target+"(":target+".invoke("+target+".environment";
+    for(std::size_t i=0;i<args.size();++i){if(i||!direct)call+=", ";call+=args[i];}
+    for(const auto& moved:moved_args)disarm_temporary(moved.name);
+    auto result=temp(e.type,call+")");
+    for(std::size_t i=moved_args.size();i>0;--i)
+     clear_value(moved_args[i-1].type,moved_args[i-1].name);
+    return result;
+   }
   }
   throw std::runtime_error("internal bad expression");
+ }
+ std::string format_value(const Expr& e,bool explicit_format){
+  // Evaluate each operand into an ordinary C statement, never a C argument
+  // list. Borrowed string values outlive all subsequent operand evaluations.
+  std::string pattern=explicit_format?temp(Type::String,expr(*e.children.at(0))):"NULL";
+  const std::size_t first=explicit_format?1:0,count=e.children.size()-first;
+  // Unary format is the identity on already-interpolated text. In particular,
+  // braces contributed by a $name substitution are not interpreted again.
+  if(explicit_format&&!count){
+   if(uses_group_deadlines)cancellation_edge(e.where);
+   return pattern;
+  }
+  std::string parts=count?unique("format_parts"):"NULL";
+  if(count)definitions<<pad()<<"on1x_format_value "<<parts<<"["<<count<<"];\n";
+  for(std::size_t i=first;i<e.children.size();++i){
+   const auto& child=*e.children[i];
+   const auto value=expr(child);
+   std::string kind,field;
+   switch(child.type.kind()){
+    case Type::String:kind="TEXT";field="text";break;
+    case Type::Bool:kind="BOOL";field="truth";break;
+    case Type::I64:kind="I64";field="i";break;
+    case Type::U8:case Type::U16:case Type::U32:case Type::U64:kind="U64";field="u";break;
+    case Type::F32:kind="F32";field="f";break;
+    case Type::F64:kind="F64";field="f";break;
+    case Type::Char:kind="CHAR";field="cp";break;
+    default:throw Error(child.where,"invalid C11 format operand");
+   }
+   definitions<<pad()<<parts<<"["<<(i-first)<<"] = (on1x_format_value){.kind=ON1X_FMT_"
+              <<kind<<", .value."<<field<<"="<<value<<"};\n";
+  }
+  if(uses_group_deadlines)cancellation_edge(e.where);
+  return temp(Type::String,"on1x_format("+pattern+", "+std::to_string(count)+", "+parts+")");
  }
  bool body(const std::vector<Stmt>& statements){
   push();bool terminated=false;for(const auto& statement:statements)terminated=stmt(statement);
   pop(!terminated);return terminated;
  }
  void bind_name(const std::string& binding,const Type& type,const std::string& value){
-  auto name=unique(binding.starts_with("@")?"specialization":binding);scopes.back()[binding]=name;
-  definitions<<pad()<<ctype(type)<<" "<<name<<" = "<<value<<";\n"<<pad()<<"(void)"<<name<<";\n";
-  retain(type,name);
-  if(type==Type::Json||type.has_functions())owners.back().push_back({type,name});
+   auto name=unique(binding.starts_with("@")?"specialization":binding);scopes.back()[binding]=name;
+   definitions<<pad()<<ctype(type)<<" "<<name<<" = "<<value<<";\n"<<pad()<<"(void)"<<name<<";\n";
+   if(type.is_move_only())clear_value(type,value);else retain(type,name);
+   if(type==Type::Json)owners.back().push_back({type,name,{}});
+   else if(needs_drop(type))owners.back().push_back(track(type,name));
  }
  void bind_pattern(const Pattern& pattern,const Type& type,const std::string& value){
   if(!pattern.is_tuple()){bind_name(pattern.name,type,value);return;}
@@ -602,7 +887,7 @@ class Generator {
      definitions<<pad()<<"on1x_csp_group *"<<owner<<" = "
                 <<(s.value?"on1x_csp_group_enter_within(":"on1x_csp_group_enter(")
                 <<(s.value?delay+", ":"")<<location(s.where)<<");\n";
-     owners.back().push_back({Type::CspGroup,owner});
+      owners.back().push_back({Type::CspGroup,owner,{}});
      if(s.value)cancellation_edge(s.where);
      bool terminated=false;for(const auto& child:s.body)terminated=stmt(child);
      if(!terminated&&uses_group_deadlines)cancellation_edge(s.where);
@@ -631,28 +916,34 @@ class Generator {
    if(s.pattern)bind_pattern(*s.pattern,s.value->type,value);else bind_name(s.name,s.value->type,value);
     finish();return false;
    }
-   case Stmt::Kind::Storage:{
-    auto name=unique("storage");scopes.back()[s.name]=name;definitions<<pad()<<ctype(s.declared)<<" "<<name<<" = {0};\n"<<pad()<<"(void)"<<name<<";\n";
-    if(s.declared.has_functions())owners.back().push_back({s.declared,name});
-    return false;
-   }
+    case Stmt::Kind::Storage:{
+     auto name=unique("storage");scopes.back()[s.name]=name;definitions<<pad()<<ctype(s.declared)<<" "<<name<<" = {0};\n"<<pad()<<"(void)"<<name<<";\n";
+     if(needs_drop(s.declared))owners.back().push_back(track(s.declared,name));
+     return false;
+    }
    case Stmt::Kind::Initialize:case Stmt::Kind::Assign:{
    auto value=expr(*s.value),name=ref(s.name);
    // Snapshot even trivially copied values. Besides preserving assignment
    // sequencing, this avoids a C compiler self-assignment warning for x = x.
-   if(!s.value->type.has_functions())value=temp(s.value->type,value);
-   if(s.value->type.has_functions()){retain(s.value->type,value);adjust(definitions,s.value->type,name,false,pad());}
-   definitions<<pad()<<name<<" = "<<value<<";\n";finish();return false;
+    if(!needs_drop(s.value->type))value=temp(s.value->type,value);
+    if(s.value->type.is_move_only()){
+     adjust(definitions,s.value->type,name,false,pad());
+    }else if(s.value->type.has_functions()){
+     retain(s.value->type,value);adjust(definitions,s.value->type,name,false,pad());
+    }
+    definitions<<pad()<<name<<" = "<<value<<";\n";
+    if(s.value->type.is_move_only())clear_value(s.value->type,value);
+    finish();return false;
   }
   case Stmt::Kind::Return:{
     if(s.value){
      auto value=expr(*s.value);
      if(s.value->noreturn)return true;
      if(uses_group_deadlines)cancellation_edge(s.where);
-    if(s.value->type!=Type::Void){
-     auto result=unique("return");definitions<<pad()<<ctype(s.value->type)<<" "<<result<<" = "<<value<<";\n";
-     retain(s.value->type,result);
-      run_defers();finish();drops();leave_call();definitions<<pad()<<"return "<<result<<";\n";
+     if(s.value->type!=Type::Void){
+      auto result=unique("return");definitions<<pad()<<ctype(s.value->type)<<" "<<result<<" = "<<value<<";\n";
+      if(s.value->type.is_move_only())clear_value(s.value->type,value);else retain(s.value->type,result);
+       run_defers();finish();drops();leave_call();definitions<<pad()<<"return "<<result<<";\n";
       }else{run_defers();finish();drops();leave_call();definitions<<pad()<<"return;\n";}
      }else{
       if(uses_group_deadlines)cancellation_edge(s.where);
@@ -714,7 +1005,10 @@ class Generator {
  void parameter_types(std::ostream& output,const std::vector<Param>& parameters,bool environment=false){
   if(environment)output<<"on1x_env *";
   if(parameters.empty()&&!environment)output<<"void";
-  for(std::size_t i=0;i<parameters.size();++i){if(i||environment)output<<", ";output<<ctype(parameters[i].type);}
+  for(std::size_t i=0;i<parameters.size();++i){
+   if(i||environment)output<<", ";
+   output<<ctype(parameters[i].type);if(parameters[i].exclusive)output<<" *";
+  }
  }
  void capture_types(std::ostream& output,const Expr& expression,bool names=false){
   if(expression.captures.empty())output<<"void";
@@ -754,17 +1048,19 @@ class Generator {
   helpers<<"}\n\n";
  }
   void definition(const std::string& name,const Type& result,const std::vector<Param>& parameters,
-                  const std::vector<Stmt>& statements,const Location& at,const Lambda* lambda=nullptr){
+                  const std::vector<Stmt>& statements,const Location& at,const Lambda* lambda=nullptr,bool private_function=false){
    scopes.clear();owners.clear();temporary_values.clear();indent=0;current_result=result;
   if(lambda){scopes.emplace_back();owners.emplace_back();}
-  push();definitions<<(lambda?"static ":"")<<ctype(result)<<" "<<name<<"(";
+  push();definitions<<((lambda||private_function)?"static ":"")<<ctype(result)<<" "<<name<<"(";
   std::string context;
   if(lambda){context=unique("context");definitions<<"on1x_env *"<<context;}
   if(parameters.empty()&&!lambda)definitions<<"void";
   for(std::size_t i=0;i<parameters.size();++i){
    if(i||lambda)definitions<<", ";
    auto symbol=unique(parameters[i].pattern?"pattern_argument":parameters[i].name);
-   scopes.back()[parameters[i].name]=symbol;definitions<<ctype(parameters[i].type)<<" "<<symbol;
+   const bool exclusive=parameters[i].exclusive;
+   scopes.back()[parameters[i].name]=exclusive?"(*"+symbol+")":symbol;
+   definitions<<ctype(parameters[i].type)<<(exclusive?" *":" ")<<symbol;
   }
     definitions<<") {\n";
     if(uses_csp)definitions<<pad()<<"on1x_csp_call_enter("<<location(at)<<");\n";
@@ -776,10 +1072,12 @@ class Generator {
     for(std::size_t i=0;i<lambda->expression->captures.size();++i)
      scopes.front()[lambda->expression->captures[i].name]=capture+"->capture_"+std::to_string(i);
    }
-  }
-  for(const auto& parameter:parameters)definitions<<pad()<<"(void)"<<ref(parameter.name)<<";\n";
-   for(const auto& parameter:parameters)if(parameter.pattern)
-    bind_pattern(*parameter.pattern,parameter.type,ref(parameter.name));
+   }
+   for(const auto& parameter:parameters)definitions<<pad()<<"(void)"<<ref(parameter.name)<<";\n";
+    for(const auto& parameter:parameters)
+     if(parameter.type.is_move_only())owners.back().push_back(track(parameter.type,ref(parameter.name)));
+    for(const auto& parameter:parameters)if(parameter.pattern)
+     bind_pattern(*parameter.pattern,parameter.type,ref(parameter.name));
    cancellation_edge(at);
   bool terminated=false;for(const auto& statement:statements)terminated=stmt(statement);
    if(!terminated)run_defers();
@@ -796,16 +1094,26 @@ class Generator {
   helpers<<");\n";if(f.result==Type::Void)helpers<<"  return;\n";helpers<<"}\n\n";
  }
  public:
-  explicit Generator(const Unit& source):unit(source){
+   explicit Generator(const Unit& source):unit(source),catalog(source){
    for(const auto& f:unit.functions)verify_kernel_shape(f);
    uses_csp=csp::present(unit);
     for(const auto& f:unit.functions)if(f.external&&f.kernel_symbol.empty())identifiers.insert(f.name);
     for(const auto& f:unit.functions)if(f.kernel_link_only)identifiers.insert("on1x_kernel_scalar_v1_"+f.kernel_symbol);
   for(const auto& f:unit.functions)if(f.external)externs.emplace(f.name,&f);
+  for(const auto& f:unit.functions)if(!f.prototype&&takes_exclusive(f))borrow_functions.emplace(f.name,&f);
      for(const auto& f:unit.functions)functions.emplace(f.name,f.kernel_link_only?"on1x_kernel_scalar_v1_"+f.kernel_symbol:
       f.kernel_symbol.empty()&&f.external?f.name:reserve("on1x_fn_"+(f.name.starts_with("@")?f.name.substr(1):f.name)));
-   for(const auto& f:unit.functions)if(!f.prototype)collect(f.body);
- }
+    for(const auto& declaration:unit.nominals)
+     for(const auto& field:declaration.fields)
+      if(field.contains_unique())uses_unique=true;
+    for(const auto& f:unit.functions){
+     if(f.result.contains_unique())uses_unique=true;
+     for(const auto& parameter:f.params)
+      if(parameter.type.contains_unique())uses_unique=true;
+     if(!f.prototype)collect(f.body);
+    }
+    ownership_cleanup=uses_unique;
+  }
   std::string run(){
     std::string kernel_headers;
     for(const auto& f:unit.functions){
@@ -840,7 +1148,7 @@ class Generator {
       <<") { return "<<symbol<<"(a, b"<<(interval?", c":"")<<"); }\n";
      continue;
     }
-   prototypes<<(f.external?"extern ":"")<<ctype(f.result)<<" "<<functions.at(f.name)<<"(";
+   prototypes<<(f.external?"extern ":takes_exclusive(f)?"static ":"")<<ctype(f.result)<<" "<<functions.at(f.name)<<"(";
    if(f.external){
     auto flattened=extern_parameter_types(f);if(flattened.empty())prototypes<<"void";
     for(std::size_t i=0;i<flattened.size();++i){if(i)prototypes<<", ";prototypes<<ctype(flattened[i]);}
@@ -848,10 +1156,11 @@ class Generator {
    prototypes<<");\n";
   }
   for(const auto& lambda:lambdas)lambda_support(lambda);
-    for(const auto& f:unit.functions)if(!f.external&&!f.prototype)definition(functions.at(f.name),f.result,f.params,f.body,f.where);
+    for(const auto& f:unit.functions)if(!f.external&&!f.prototype)definition(functions.at(f.name),f.result,f.params,f.body,f.where,nullptr,takes_exclusive(f));
    for(const auto& lambda:lambdas){const auto& e=*lambda.expression;definition(lambda.invoke,e.result,e.parameters,e.body,e.where,&lambda);}
   for(const auto& f:unit.functions)if(auto found=adapters.find(f.name);found!=adapters.end())adapter(f,found->second);
-  emit_ownership_helpers();
+   emit_ownership_helpers();
+   emit_unique_destructors();
   const auto& main=*std::find_if(unit.functions.begin(),unit.functions.end(),[](const auto& f){return f.name=="main";});
    if(uses_csp){
     auto entry=reserve("on1x_csp_entry");
@@ -860,15 +1169,23 @@ class Generator {
     else definitions<<"return "<<functions.at("main")<<"();";
     definitions<<" }\nint main(void) { return (int)on1x_csp_run_v4("<<entry<<", NULL, "<<location(main.where)<<"); }\n";
    }
-   else if(main.result==Type::Void)definitions<<"int main(void) { "<<functions.at("main")<<"(); return 0; }\n";
-  else definitions<<"int main(void) { return (int)"<<functions.at("main")<<"(); }\n";
+   else {
+    definitions<<"int main(void) { ";
+    // Keep even unused private definitions warning-clean without exporting
+    // an unverified C caller interface.
+    for(const auto& [name,unused]:borrow_functions){(void)unused;definitions<<"(void)"<<functions.at(name)<<"; ";}
+    if(main.result==Type::Void)definitions<<functions.at("main")<<"(); return 0; }\n";
+    else definitions<<"return (int)"<<functions.at("main")<<"(); }\n";
+   }
    const std::string float_guard=uses_f64?
     "#if !defined(ON1X_F64_ABI_VERSION) || ON1X_F64_ABI_VERSION != 1\n#error \"unsupported On1x f64 target or runtime ABI\"\n#endif\n"
     "#if defined(__FAST_MATH__) || (defined(__FINITE_MATH_ONLY__) && __FINITE_MATH_ONLY__ > 0) || defined(__NO_SIGNED_ZEROS__) || defined(__ASSOCIATIVE_MATH__) || defined(__RECIPROCAL_MATH__)\n#error \"On1x f64 forbids fast/finite-only math and relaxed IEEE modes\"\n#endif\n\n":"";
    return "/* Generated by on1xc. Do not edit. */\n#include <on1x_runtime.h>\n#include <stdint.h>\n#include <stdbool.h>\n#include <string.h>\n"
     "#if !defined(ON1X_CLOSURE_ABI_VERSION) || ON1X_CLOSURE_ABI_VERSION != 1\n#error \"incompatible On1x closure runtime ABI\"\n#endif\n\n"
     "#if !defined(ON1X_DATA_ABI_VERSION) || ON1X_DATA_ABI_VERSION != 1\n#error \"incompatible On1x data runtime ABI\"\n#endif\n\n"
-     +(uses_value_data?std::string("#if !defined(ON1X_VALUE_DATA_ABI_VERSION) || ON1X_VALUE_DATA_ABI_VERSION != 1\n#error \"incompatible On1x value data runtime ABI\"\n#endif\n\n"):std::string{})
+      +(uses_value_data?std::string("#if !defined(ON1X_VALUE_DATA_ABI_VERSION) || ON1X_VALUE_DATA_ABI_VERSION != 1\n#error \"incompatible On1x value data runtime ABI\"\n#endif\n\n"):std::string{})
+      +(uses_unique?std::string("#if !defined(ON1X_UNIQUE_ABI_VERSION) || ON1X_UNIQUE_ABI_VERSION != 1\n#error \"incompatible On1x unique ownership runtime ABI\"\n#endif\n\n"):std::string{})
+      +(uses_regex?std::string("#if !defined(ON1X_REGEX_ABI_VERSION) || ON1X_REGEX_ABI_VERSION != 1\n#error \"incompatible On1x regex runtime ABI\"\n#endif\n\n"):std::string{})
       +(uses_f32?std::string("#if !defined(ON1X_F32_ABI_VERSION) || ON1X_F32_ABI_VERSION != 1\n#error \"unsupported On1x f32 target or runtime ABI\"\n#endif\n"):std::string{})
       +(uses_unsigned?std::string("#if !defined(ON1X_UNSIGNED_ABI_VERSION) || ON1X_UNSIGNED_ABI_VERSION != 1\n#error \"incompatible On1x unsigned runtime ABI\"\n#endif\n"):std::string{})
        +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
@@ -877,5 +1194,5 @@ class Generator {
  }
 };
 }
-std::string emit_c(const Unit& unit,const std::string& source_name){(void)source_name;extensions::verify_evidence(unit);canonical::verify_control(unit);meta::require_core(unit);canonical::verify_values(unit);verify_nominals(unit);csp::verify(unit,true);return Generator(unit).run();}
+std::string emit_c(const Unit& unit,const std::string& source_name){(void)source_name;for(const auto& function:unit.functions)verify_kernel_shape(function);extensions::verify_evidence(unit);inherent::verify_elaborated(unit);cliches::verify_elaborated(unit);canonical::verify_control(unit);meta::require_core(unit);canonical::verify_values(unit);verify_nominals(unit);csp::verify(unit,true);return Generator(unit).run();}
 }

@@ -149,7 +149,9 @@ assert p.returncode==1 and 'prefix constructors' in p.stderr,p.stderr
 
 # Canonical cross-language round trips for every source example without a PPX registration.
 for example in sorted((root/'examples').glob('*.on1x')):
-    if example.name=='ppx.on1x':
+    # Intrinsic impl declarations are intentionally host-retained and have
+    # their fail-closed Unit-v1 boundary coverage in test_core_impl.py.
+    if example.name in ('ppx.on1x', 'core_impl.on1x'):
         continue
     selected=['--stdppx','pipe','--stdppx','checks'] if example.name=='standard_ppx.on1x' else []
     plain=run([t.compiler,'--emit-c',example,*selected])

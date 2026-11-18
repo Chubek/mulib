@@ -1,0 +1,85 @@
+*on1x.txt*           On1x editing support for Vim and Neovim
+
+INSTALLATION                                                 *on1x-install*
+
+From the MuLIB checkout, install the runtime as a native start package: >
+
+    sh on1x/addons/neovim/install.sh --nvim
+    sh on1x/addons/neovim/install.sh --vim
+<
+The defaults are `${XDG_CONFIG_HOME:-$HOME/.config}/nvim/pack/on1x/start/on1x`
+for Neovim (using `$NVIM_APPNAME` instead of `nvim` if set) and
+`$HOME/.vim/pack/on1x/start/on1x` for Vim. Pass a destination to install into
+a different runtime directory; make sure that directory is on 'runtimepath'
+or is a package on 'packpath'. If the selected editor is unavailable during
+installation, generate help tags yourself with `:helptags /path/to/runtime/doc`
+or `:helptags ALL`. Restart the editor after installing. Re-run the script to
+update, or remove the dedicated start package directory to uninstall.
+
+Alternatively, put `on1x/addons/neovim` on 'runtimepath' before enabling
+filetype detection, or add it as a local package with a plugin manager.
+Normal Vim/Neovim syntax and filetype settings apply: >
+
+    syntax enable
+    filetype plugin indent on
+<
+
+EDITING                                                      *on1x-editing*
+
+Both `.on1x` and `.on1xi` use filetype `on1x`. `On1xfile` and `On1xfile.i`
+are separate project formats and are not detected by this addon. The
+filetype plugin sets 'commentstring' to `# %s`, continues `#` line
+comments where enabled by 'formatoptions', and disables automatic wrapping
+of plain code. Indentation follows braces, parentheses and brackets using
+your 'shiftwidth'. With On1x syntax highlighting active, indentation ignores
+delimiters in literals/comments and leaves multiline backtick content alone.
+Without that syntax state, it falls back to ordinary autoindent.
+It is not a parser or a formatter; complex continuations and malformed
+source may need manual indentation. Contextual highlighting is approximate.
+
+NEOVIM LANGUAGE SERVER                                           *on1x-lsp*
+
+No compiler, project commands or PPX run merely by installing the runtime
+or editing a file. The optional helper uses Neovim 0.10+ built-in LSP;
+Vim gets editing support only, with no built-in On1x LSP integration.
+The helper attaches only to named `.on1x` source buffers, not `.on1xi`.
+
+To register a manual |:On1xLspStart| command in your trusted `init.lua`: >
+
+    require("on1x").setup({
+      server = "/absolute/path/to/mulib/on1x/addons/lsp/on1x-lsp.py",
+      on1xc = "/absolute/path/to/on1xc",
+    })
+<
+Open a trusted `.on1x` file and run `:On1xLspStart` in that buffer. The
+server is run with `python3`; the compiler defaults to `on1xc` on `$PATH`.
+The default server path is found only when using this addon in the source
+checkout, not when the installer copies the editor runtime alone.
+`root_dir` defaults to the buffer's directory; set it explicitly to use the
+same workspace folder for several source files. Identical commands reuse
+one client per root. The addon does not search for/evaluate project settings.
+
+You can instead supply `cmd`, a full argv list (no shell) that replaces the
+default command and arguments. To start the current buffer without registering
+the editor command, call `require("on1x").start(opts)` directly. It returns
+the Neovim client ID or `nil, message`. Example from trusted Lua: >
+
+    local id, err = require("on1x").start({
+      cmd = { "python3", "/path/to/on1x-lsp.py", "--on1xc", "/path/to/on1xc" },
+    })
+    assert(id, err)
+<
+Only start in workspaces you trust. The server may invoke the configured
+compiler after attachment; it is not a sandbox. This helper passes no
+options to enable PPX or build scripts. Review any alternative server or
+compiler configuration before using it. The bundled server offers explicit
+document formatting via `:lua vim.lsp.buf.format()` and syntax/import
+diagnostics on save when on1xc was built with `ON1X_WITH_SYREN=ON`.
+It does not offer type checking, completion, hover or go-to-definition.
+See |lsp| for Neovim client settings.
+
+                                                              *:On1xLspStart*
+:On1xLspStart   Explicitly start or attach the configured On1x LSP for the
+                current buffer. Only available after `require("on1x").setup()`.
+
+ vim:tw=78:ts=8:noet:ft=help:norl:

@@ -1,0 +1,127 @@
+{
+  "name": "On1x",
+  "scopeName": "source.on1x",
+  "patterns": [
+    {"include": "#comments"},
+    {"include": "#strings"},
+    {"include": "#declarations"},
+    {"include": "#metaprogramming"},
+    {"include": "#keywords"},
+    {"include": "#literals"},
+    {"include": "#punctuation"}
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.line.number-sign.on1x",
+      "begin": "#",
+      "beginCaptures": {"0": {"name": "punctuation.definition.comment.on1x"}},
+      "end": "$"
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.on1x",
+          "begin": "\"",
+          "beginCaptures": {"0": {"name": "punctuation.definition.string.begin.on1x"}},
+          "end": "(\")|(?=[\\r\\n]|$)",
+          "endCaptures": {"1": {"name": "punctuation.definition.string.end.on1x"}},
+          "patterns": [
+            {"match": "\\\\[\"\\\\nrt0]", "name": "constant.character.escape.on1x"},
+            {"match": "\\\\(?:[^\\r\\n]|(?=[\\r\\n]|$))", "name": "invalid.illegal.escape.on1x"}
+          ]
+        },
+        {
+          "name": "string.quoted.other.command.block.on1x",
+          "begin": "```",
+          "beginCaptures": {"0": {"name": "punctuation.definition.string.begin.on1x"}},
+          "end": "```",
+          "endCaptures": {"0": {"name": "punctuation.definition.string.end.on1x"}}
+        },
+        {
+          "name": "string.quoted.other.command.on1x",
+          "begin": "`(?!``)",
+          "beginCaptures": {"0": {"name": "punctuation.definition.string.begin.on1x"}},
+          "end": "(`)|(?=[\\r\\n]|$)",
+          "endCaptures": {"1": {"name": "punctuation.definition.string.end.on1x"}},
+          "patterns": [
+            {"match": "\\\\[^\\r\\n]", "name": "constant.character.escape.on1x"}
+          ]
+        }
+      ]
+    },
+    "declarations": {
+      "patterns": [
+        {
+          "match": "\\b(fn)[ \\t]+([A-Za-z_][A-Za-z0-9_]*)(?=[ \\t]*\\()",
+          "captures": {"1": {"name": "storage.type.function.on1x"}, "2": {"name": "entity.name.function.on1x"}}
+        },
+        {
+          "match": "\\b(record|enum)[ \\t]+([A-Za-z_][A-Za-z0-9_]*)(?=[ \\t]*[<{])",
+          "captures": {"1": {"name": "storage.type.on1x"}, "2": {"name": "entity.name.type.on1x"}}
+        },
+        {
+          "match": "^[ \\t]*(on1xi)(?=[ \\t]+[0-9])",
+          "captures": {"1": {"name": "keyword.control.directive.on1x"}}
+        }
+      ]
+    },
+    "metaprogramming": {
+      "patterns": [
+        {
+          "match": "\\b(macro)[ \\t]+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {"1": {"name": "storage.type.macro.on1x"}, "2": {"name": "entity.name.function.preprocessor.on1x"}}
+        },
+        {
+          "match": "\\b(?!(?:fn|let|var|if|else|while|return|true|false|extern|import|forall|macro|rule|quote|splice|lift|let_syntax|letrec_syntax)\\b)([A-Za-z_][A-Za-z0-9_]*)[ \\t]*(!)(?=[ \\t]*\\()",
+          "captures": {"1": {"name": "entity.name.function.preprocessor.on1x"}, "2": {"name": "punctuation.definition.macro.on1x"}}
+        },
+        {
+          "match": "(\\$)[ \\t]*([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {"1": {"name": "punctuation.definition.variable.on1x"}, "2": {"name": "variable.parameter.macro.on1x"}}
+        },
+        {
+          "match": "(@)[ \\t]*(ppx|scrutiny|enable|extension)\\b(?=[ \\t]+[A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {"1": {"name": "punctuation.definition.annotation.on1x"}, "2": {"name": "keyword.control.directive.on1x"}}
+        },
+        {
+          "match": "(@)[ \\t]*([A-Za-z_][A-Za-z0-9_]*)(?=[ \\t]*\\()",
+          "captures": {"1": {"name": "punctuation.definition.annotation.on1x"}, "2": {"name": "entity.name.function.preprocessor.on1x"}}
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {"match": "\\b(true|false)\\b", "name": "constant.language.boolean.on1x"},
+        {"match": "\\b(if|else|while|return|import)\\b", "name": "keyword.control.on1x"},
+        {"match": "\\b(let|var|extern|fn)\\b", "name": "storage.type.on1x"},
+        {"match": "\\b(forall|macro|rule|quote|splice|lift|let_syntax|letrec_syntax)\\b", "name": "keyword.other.metaprogramming.on1x"},
+        {"match": "\\b(block|expression|syntax_block)(?=[ \\t]*\\{)|\\b(syntax_literal)(?=[ \\t]*\\()|\\b(vector)(?=[ \\t]*\\[)", "name": "keyword.other.metaprogramming.on1x"},
+        {"match": "\\b(from)(?=[ \\t]+[.A-Za-z_])|\\b(as|in)(?=[ \\t]+[A-Za-z_0-9(])|\\b(kernel)(?=[ \\t]+(?!as\\b)[A-Za-z_][A-Za-z0-9_]*)", "name": "keyword.control.on1x"},
+        {"match": "\\b(unsafe)(?=[ \\t]*(?:\\{|import\\b))|\\b(loop|poll)(?=[ \\t]*\\{)|\\b(for)(?=[ \\t]*(?:\\([^)]*;|[A-Za-z_][A-Za-z0-9_]*[ \\t]+in\\b))", "name": "keyword.control.on1x"},
+        {"match": "\\b(match)(?=[ \\t]+(?=[A-Za-z_0-9(\"!@-]|<-)[^#;]*?[ \\t]+with\\b|[ \\t]*\\([^#;\\r\\n]*?\\)[ \\t]*\\{)|\\b(with)(?=[ \\t]*\\{)", "name": "keyword.control.on1x"},
+        {"match": "\\b(break|continue)(?=[ \\t]*(?:;|[ \\t]+[A-Za-z_][A-Za-z0-9_]*))|\\b(defer|join|split|close|cancel)(?=[ \\t]+(?!with\\b)[A-Za-z_][A-Za-z0-9_]*)", "name": "keyword.control.on1x"},
+        {"match": "\\b(taskgroup)[ \\t]+(within)\\b|\\b(launch)[ \\t]+(capture|exec)\\b(?=[ \\t]*[(`])", "name": "keyword.control.on1x"},
+        {"match": "\\b(taskgroup)(?=[ \\t]*\\{)|\\b(launch)(?=[ \\t]*[{`])", "name": "keyword.control.on1x"},
+        {"match": "\\b(recv)(?=[ \\t]+[A-Za-z_][A-Za-z0-9_]*[ \\t]+as\\b)|\\b(send)(?=[ \\t]+[A-Za-z_][A-Za-z0-9_]*[ \\t]*<-)|\\b(closed)(?=[ \\t]+[A-Za-z_][A-Za-z0-9_]*[ \\t]*=>)|\\b(default)(?=[ \\t]*=>)|\\b(after)(?=[ \\t]+[^#;]*?=>)", "name": "keyword.control.on1x"},
+        {"match": "\\b(i64|f32|f64|u8|u16|u32|u64|bool|string|void|json|json_view|sexpr|buffer|xfiber)\\b|\\b(array)(?=[ \\t]*[<\\[])|\\b(record|sum)(?=[ \\t]*[<{])|\\b(slice|variant|code|ifiber|channel|sender|receiver)(?=[ \\t]*<)", "name": "support.type.on1x"}
+      ]
+    },
+    "literals": {
+      "patterns": [
+        {"match": "(?<![A-Za-z0-9_])0[xX][0-9a-fA-F]+(?:u8|u16|u32|u64)?\\b", "name": "constant.numeric.integer.hexadecimal.on1x"},
+        {"match": "(?<![A-Za-z0-9_])(?:[0-9]+\\.[0-9]+(?:[eE][+-]?[0-9]+)?(?:f32|f64)?|[0-9]+[eE][+-]?[0-9]+(?:f32|f64)?|[0-9]+(?:f32|f64))\\b", "name": "constant.numeric.float.on1x"},
+        {"match": "(?<![A-Za-z0-9_])[0-9]+(?:u8|u16|u32|u64)?\\b", "name": "constant.numeric.integer.decimal.on1x"}
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {"match": "\\.\\.\\.", "name": "keyword.operator.ellipsis.on1x"},
+        {"match": "\\.\\.=|\\.\\.", "name": "keyword.operator.range.on1x"},
+        {"match": "<-|->|=>|==|!=|<=|>=|&&|\\|\\||[+*/%<>=!|?-]", "name": "keyword.operator.on1x"},
+        {"match": "::|[.,:;]", "name": "punctuation.separator.on1x"},
+        {"match": "[{(\\[]", "name": "punctuation.section.group.begin.on1x"},
+        {"match": "[})\\]]", "name": "punctuation.section.group.end.on1x"}
+      ]
+    }
+  }
+}

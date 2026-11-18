@@ -8,6 +8,8 @@ new scheduler. Existing Category work is independent.
 The subsequent [nominal-data increment](nominal-adts.md) implements section 11's
 initial nonrecursive named-record/parameterized-enum profile through this same
 matching and C11 path. It is not recursive ownership or the remaining features.
+The [enum connective](core-enum-connective.md) uses that same structural
+matcher for `value ~ { … }` on a known closed sum, with a `-` wildcard.
 
 ## Statement loops
 

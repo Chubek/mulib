@@ -17,6 +17,20 @@ tests.valid('unused', '', text='''
 fn ignore(unused: i64) { let unused_local = 42; }
 fn main() { ignore(12); var assigned_but_unused = 0; assigned_but_unused = 1; }
 ''')
+tests.valid('ownership_intrinsic_shadowing', '42\n43\n44\n45\n46\n', text='''
+fn take(value:i64)->i64{return value+1;}
+fn box(value:i64)->i64{return value+2;}
+fn move(value:i64)->i64{return value+3;}
+fn drop(value:i64)->i64{return value+4;}
+fn main(){
+  println(take(41));
+  println(box(41));
+  println(move(41));
+  println(drop(41));
+  let take=fn(value:i64)->i64{return value+5;};
+  println(take(41));
+}
+''')
 tests.valid('json_cleanup', '0\n0\n0\n0\n',
             source=root / 'tests/fixtures/json_cleanup.on1x',
             extra=[root / 'tests/fixtures/json_cleanup.c'])

@@ -1,5 +1,474 @@
 # On1x verification — 2026-11-18
 
+## Final type-checker and cross-feature hardening — 2026-11-19
+
+Validated MuLIB `b66da8f5150adca2a3416db747d91bf81a3fe138` plus
+the existing shared worktree, with configured LibStone
+`934b6ed029bfea28bbf23b5dc77c476154b0dd0d`, Linux x86-64,
+GCC/G++ 16.2.1 (`20260810`) and Clang/Clang++ 22.1.8.
+Work continued under GPT-6.1 Sol without restarting or discarding prior edits.
+
+The final audit reproduced three missing malformed-HIR checks before repair:
+forged transfer metadata on an intrinsic callee, and synchronized renaming of
+retained/generated cliche and inherent member identities. The regressions in
+`test_type_checker_hardening.cpp`, `test_cliche.cpp`, and `test_core_impl.cpp`
+failed against the prior implementation. Canonical verification now validates
+transfer kind/type/local provenance before prototype/callee shortcuts, including
+retained local generic sources. Cliche identities are reconstructed from the
+same deterministic implementation ordering used during preparation. Loaded
+inherent names now use flattened-unit implementation indices, permitting exact
+identity checks while retaining the `@inherent_` private-name family.
+No ownership syntax, operation, runtime ABI or admitted backend was added.
+
+| Final configuration | Result |
+|---|---|
+| GCC/generated scanner, complete rebuilt suite | **97/97 passed** |
+| GCC/fallback scanner, complete rebuilt suite | **86 passed, 1 intentional Category skip, 0 failed** (87 registered) |
+| Clang/generated ASan+UBSan, compiler and emitted C11/runtime, focused cross-feature selection | **15/15 passed**, no sanitizer findings |
+| Combined ownership/shared ownership, cliche, inherent and hardening selection in each of the three profiles | **9/9 passed** |
+| `python3 tools/embed_units.py --check` | **PASS**, embedded profiles current |
+
+The focused selection retains both `on1x.cliche_hir` and
+`on1x.core_impl_hir`. It checks generated signatures/binders/constraints,
+unresolved executable projections, ownership transfers and fail-closed C11/MIR
+admission. Additional source probes exercised branch restoration, loop-backedge
+restoration, break joins, consuming record patterns, and rejection of a whole
+value after a consuming match. These probes found no move-flow regression.
+
+Reproduction (existing configured build trees):
+
+```sh
+cmake --build /mnt/nvme/on1x-hardening-generated-gcc --parallel 4
+ctest --test-dir /mnt/nvme/on1x-hardening-generated-gcc --output-on-failure -j 4
+cmake --build build/core-literals-fallback --parallel 4
+ctest --test-dir build/core-literals-fallback --output-on-failure -j 4
+
+cmake --build /mnt/nvme/on1x-hardening-generated-clang-asan --parallel 2 \
+  --target on1xc on1x_type_checker_hardening_tests \
+  on1x_recursive_owning_adts_tests on1x_cliche_tests on1x_core_impl_tests \
+  on1x_nominal_tests on1x_pattern_tests on1x_value_loop_tests
+ctest --test-dir /mnt/nvme/on1x-hardening-generated-clang-asan \
+  --output-on-failure \
+  -R '^on1x\.(owning_adt|recursive_owning_adts(_hir)?|type_checker_hardening(_hir)?|cliche(_hir)?|core_impl(_hir)?|nominal(_hir|_adts)|patterns?|pattern_hir|value_loop(s|_hir))$'
+python3 tools/embed_units.py --check
+```
+
+The sanitizer tree uses strict warnings-as-errors, `-fsanitize=address,undefined`,
+`-fno-omit-frame-pointer` and `-fno-sanitize-recover=all` for the compiler;
+`ON1X_TEST_C_FLAGS` instruments emitted C/runtime too.
+This is not a new full-profile sanitizer certification: the previously observed
+64 MiB project/install executable-size limit, depth-254 `on1x.limits` sanitizer
+stack overflow, and 180-second Category timeout remain known limitations and
+were not repaired by this task. Unique ownership remains direct checked-HIR to
+C11 only; scalar MIR still rejects it pending typed move/drop/cleanup events.
+Earlier per-profile totals below are preserved as historical evidence.
+
+## Recursive nominal ADTs through finite unique ownership
+
+Current checkout identity: MuLIB
+`b66da8f5150adca2a3416db747d91bf81a3fe138` plus the shared uncommitted
+worktree, configured LibStone
+`934b6ed029bfea28bbf23b5dc77c476154b0dd0d`. Host: Linux
+6.18.52-1-lts x86-64, GCC/G++ 16.2.1 (`20260810`), Clang/Clang++ 22.1.8,
+Python 3.14.7 and CMake 4.4.3.
+
+This increment is **EXECUTABLE**, not a claim of general verified ownership or
+resource safety. The canonical parser, inference engine, nominal-layout
+checker, checked-HIR ownership verifier, direct C11 emitter and runtime admit
+recursive records/enums only when each layout cycle crosses `own<Named>`.
+`box`, `move`, `take` and `drop` are shadowable fallback intrinsics. Checked
+types retain exact finite nominal identity; transfers clear source storage and
+never copy unique values. Lexical cleanup covers parameters, temporaries,
+overwrites, partial construction, branches, loops and early returns. Generated
+sum destructors release only the active arm.
+
+The C11 ABI uses opaque `on1x_unique *` under
+`ON1X_UNIQUE_ABI_VERSION == 1`. Destruction uses a FIFO iterative queue rather
+than recursive C calls. Terminal owning-allocation failure drains the bounded
+cleanup registry and exits 72; the allocation budget is not interpreted as a
+timeout. Consuming matches require exhaustive unguarded constructors and
+closed irrefutable nested destructuring.
+
+### Current measured results
+
+| Configuration | Result |
+|---|---|
+| GCC, LibStone generated scanner, complete CTest suite | **90 passed, 1 intentionally skipped, 0 failed** (91 total) |
+| GCC, bootstrap fallback scanner, complete CTest suite | **89 passed, 1 intentionally skipped, 0 failed** (90 total) |
+| Clang, generated scanner, real Chisel + Nerotypical focused profile | **6/6 passed** |
+| GCC, fallback scanner, real Chisel + Nerotypical focused profile | **6/6 passed** |
+| Direct strict-Clang ownership runtime/ABI/module/fault/stress test | **PASS** |
+| Direct Clang emitted-C11 ASan/UBSan ownership test | **PASS**, no sanitizer findings |
+| Root embedded-profile and Elvis integration selection | **6/6 passed** |
+
+The sole skipped test in each complete suite is `on1x.category`, which reports
+`UNSUPPORTED (ON1X_BUILD_NATIVE_PPX=OFF)` and returns the configured skip code.
+No test failed or was disabled. `on1x.mulib` now passes in both suites after
+regenerating `include/mulib-unit-data.inc`;
+`python3 tools/embed_units.py --check` reports that the embedded profiles are
+current. Older dated sections below retain
+their original historical results, including then-current stale-profile
+failures, and are not descriptions of this final tree.
+
+The generated-scanner complete suite includes scanner parity. The dedicated
+ownership tests additionally cover:
+
+- generic recursive lists, cross-module nominal identity, left-to-right
+  effects, calls/returns and mutable reinitialization;
+- moved-from and double-move rejection, ownership state at joins/backedges,
+  consuming-match restrictions and forged checked-HIR metadata;
+- exactly-once block/loop/return/parameter/temporary cleanup, partial aggregate
+  construction and mixed shared-plus-unique active-arm destruction;
+- strict C11, C and C++ runtime callers, runtime ABI-version mismatch and
+  malformed raw ABI calls;
+- injected allocation failure at three construction points, with exit 72 and
+  emergency cleanup;
+- a generated 50,001-box chain and an independent C++ 20,000-box chain,
+  establishing iterative destruction without C-stack recursion; and
+- fail-closed MIR, Unit-v1 PPX, raw FFI, closure, defer, staging, concurrency,
+  array/unnamed-aggregate, Chisel and Nerotypical boundaries.
+
+The optional SDK profiles use the real pinned Chisel/Nerotypical headers and a
+separately prepared Satie EUF SDK; they reject unique ownership explicitly
+rather than approximating it. Build objects and compiler temporaries were kept
+on NVMe because the host `/tmp` filesystem was constrained.
+
+Reproduction from the MuLIB root:
+
+```sh
+export TMPDIR="$PWD/build/opencode-tmp/compiler"
+
+cmake --build build/elvis-on1x-generated --parallel 4
+ctest --test-dir build/elvis-on1x-generated --output-on-failure --parallel 2
+cmake --build build/elvis-on1x-fallback --parallel 4
+ctest --test-dir build/elvis-on1x-fallback --output-on-failure --parallel 2
+
+cmake -S on1x -B build/owning-sdk-generated -DBUILD_TESTING=ON \
+  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ -DON1X_REQUIRE_LIBSTONE=ON \
+  -DON1X_WITH_CHISEL=ON -DON1X_WITH_NEROTYPICAL=ON \
+  -DON1X_SATIE_ROOT=/tmp/opencode/satie-owning-sdk \
+  -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF \
+  -DON1X_BUILD_NATIVE_PPX=OFF
+cmake --build build/owning-sdk-generated --parallel 2 --target \
+  on1xc on1x_safety_tests on1x_type_safety_tests \
+  on1x_recursive_owning_adts_tests
+ctest --test-dir build/owning-sdk-generated --output-on-failure \
+  -R '^on1x\.(safety(_hir)?|type_safety(_hir)?|recursive_owning_adts(_hir)?)$'
+
+cmake -S on1x -B build/owning-sdk-fallback -DBUILD_TESTING=ON \
+  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc \
+  -DCMAKE_CXX_COMPILER=g++ -DON1X_USE_FALLBACK_SCANNER=ON \
+  -DON1X_WITH_CHISEL=ON -DON1X_WITH_NEROTYPICAL=ON \
+  -DON1X_SATIE_ROOT=/tmp/opencode/satie-owning-sdk \
+  -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF \
+  -DON1X_BUILD_NATIVE_PPX=OFF
+cmake --build build/owning-sdk-fallback --parallel 2 --target \
+  on1xc on1x_safety_tests on1x_type_safety_tests \
+  on1x_recursive_owning_adts_tests
+ctest --test-dir build/owning-sdk-fallback --output-on-failure \
+  -R '^on1x\.(safety(_hir)?|type_safety(_hir)?|recursive_owning_adts(_hir)?)$'
+
+python3 on1x/tests/test_recursive_owning_adts.py \
+  build/elvis-on1x-generated/on1xc "$PWD/on1x" \
+  build/recursive-owning-clang clang
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1:strict_string_checks=1 \
+UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+python3 on1x/tests/test_recursive_owning_adts.py \
+  build/elvis-on1x-generated/on1xc "$PWD/on1x" \
+  build/recursive-owning-clang-sanitize clang \
+  --cflag=-fsanitize=address,undefined \
+  --cflag=-fno-omit-frame-pointer --cflag=-fno-sanitize-recover=all
+
+ctest --test-dir build/cdd-root-gcc --output-on-failure \
+  -R '^(mulib_(archml_profiles_generated|unit_profiles_embedded)|mulib_test-elvi-scrape(-providers|-https|-alloc)?)$'
+```
+
+Ownership remains a checked-HIR-to-C11 profile until MIR gains typed
+move/drop/place/cleanup events. Unit-v1 PPX/interfaces, general borrows,
+foreign ownership, captures, staging/defer, cooperative concurrency,
+unsupported aggregates, recoverable OOM, user destructors, `Send`/`Sync`,
+other targets and separate-compilation ownership ABI remain closed. `ref self`
+and `move self` also remain rejected because receiver-place/lifetime lowering
+is not present. The exact contract is
+[`docs/recursive-owning-adts.md`](docs/recursive-owning-adts.md).
+
+## Intrinsic core cliches
+
+MuLIB `b66da8f5150adca2a3416db747d91bf81a3fe138` plus shared worktree
+changes; configured LibStone
+`934b6ed029bfea28bbf23b5dc77c476154b0dd0d`; Linux
+`6.18.52-1-lts` x86-64; GCC 16.2.1 and Clang 22.1.8.
+
+The canonical parser, loader, inference engine, checked HIR and direct C11
+backend implement intrinsic declarations such as `cliche Show { ... }`,
+generic implementations such as `impl<T> Show for Box<T> where Show<T>`, and
+explicit projections such as `Show<T>::show(value)`. `Self` is implicit
+cliche argument zero. Generic cliches, functions, implementations and members,
+associated values, bounds and imported declarations are covered. This path is
+separate from legacy Category `protocol`/`impl`, Unit-v1 PPX transport and
+inherent `Type::member` lookup.
+
+Selection is compile-time and deterministic. Duplicate exact heads,
+overlapping blanket heads and orphan implementations reject; one exact match
+overrides one matching blanket implementation. Recursive prerequisites must
+decrease structurally, and depth and work budgets remain distinct from
+semantic failure. Tests distinguish `ON1X-CLICHE-LIMIT`,
+`ON1X-CLICHE-UNSATISFIED`, `ON1X-CLICHE-AMBIGUOUS` and
+`ON1X-CLICHE-RECURSIVE`. Selected members lower to private ordinary functions;
+associated values lower to nullary functions. Repeated emission is
+byte-identical, and the generated C contains neither cliche source names nor a
+runtime string lookup. Unresolved executable cliche or inherent projections
+fail closed at checked-HIR, MIR and C11 admission.
+
+Final focused commands, run with `TMPDIR="$PWD/build/opencode-tmp"` because the
+host `/tmp` filesystem was full:
+
+```sh
+cmake --build build/core-enum-generated --parallel 4 --target \
+  on1xc on1x_cliche_tests on1x_type_tests on1x_inference_tests \
+  on1x_generated_tokens on1x_reference_tokens
+ctest --test-dir build/core-enum-generated --output-on-failure --parallel 3 \
+  -R '^on1x\.(cliche(_hir)?|types|inference_engine|inference|poly|poly_extended|scanner_parity)$'
+
+cmake --build build/core-enum-fallback --parallel 4 --target \
+  on1xc on1x_cliche_tests on1x_type_tests on1x_inference_tests
+ctest --test-dir build/core-enum-fallback --output-on-failure --parallel 3 \
+  -R '^on1x\.(cliche(_hir)?|types|inference_engine|inference|poly|poly_extended)$'
+
+cmake --build build/cliche-clang --parallel 4 --target on1xc on1x_cliche_tests
+ctest --test-dir build/cliche-clang --output-on-failure --parallel 3 \
+  -R '^on1x\.(cliche(_hir)?|types|inference_engine|inference|poly|poly_extended)$'
+
+cmake -S on1x -B build/cliche-sanitize -DBUILD_TESTING=ON \
+  -DON1X_USE_FALLBACK_SCANNER=ON -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined' \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer'
+cmake --build build/cliche-sanitize --parallel 4 --target \
+  on1xc on1x_cliche_tests on1x_type_tests on1x_inference_tests
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1:strict_string_checks=1 \
+UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+ctest --test-dir build/cliche-sanitize --output-on-failure --parallel 2 \
+  -R '^on1x\.(cliche(_hir)?|types|inference_engine|inference|poly|poly_extended)$'
+```
+
+| Configuration | Result |
+|---|---|
+| GCC, generated scanner, focused compiler/runtime plus scanner parity | **8/8 passed** |
+| GCC, fallback scanner, focused compiler/runtime | **7/7 passed** |
+| Clang, fallback scanner, focused compiler/runtime | **7/7 passed** |
+| Clang ASan/UBSan with leak detection, including emitted C11 runtime | **7/7 passed**, no findings |
+
+The runtime test compiles emitted applications as strict C11 with
+`-Wall -Wextra -Wpedantic -Werror` and covers exact-over-blanket selection,
+associated values, generic/member substitutions, left-to-right effects,
+qualified and selective imports, deterministic emission and 13 source
+rejections. HIR tests cover malformed declarations and signatures, cloning,
+orphan/coherence rules, all four resolution outcomes above and fail-closed
+backend boundaries.
+
+A broader generated-scanner check,
+`ctest --test-dir build/core-enum-generated --output-on-failure -R
+'^on1x\.(compiler|nominal_adts)$'`, remains **0/2** because of concurrent
+expectation drift outside cliche behavior. `on1x.compiler` now rejects the
+fixture's redefinition of intrinsic `take` before reaching its expected
+`resource returns` error. `on1x.nominal_adts` now reports
+`ON1X-NOMINAL: malformed declaration type: unresolved inference hole` for
+`hole_field` instead of its older expected text. Neither failure executes a
+cliche declaration.
+
+Unsupported cases remain associated types, negative implementations,
+specialization beyond exact-over-blanket selection, dynamic dictionaries,
+runtime reflection, separate compiled interface transport and recursive
+nominal layouts. Unit-v1 PPX rejects rather than silently dropping cliches.
+The scalar MIR accepts only programs that elaborate to its existing type and
+operation profile.
+
+## Intrinsic nominal implementation blocks
+
+Baseline: MuLIB `b66da8f5150adca2a3416db747d91bf81a3fe138` plus the shared
+worktree changes, configured LibStone
+`934b6ed029bfea28bbf23b5dc77c476154b0dd0d`, Linux
+`6.18.52-1-lts` x86-64, GCC 16.2.1 and Clang 22.1.8.
+
+The canonical parser, loader, inference engine, checked HIR and direct C11
+backend accept generic nominal blocks such as `impl<T> Box<T> { ... }`.
+`value::member` supplies an exactly-once first argument; `Type::member` selects
+an associated function or recomputed value. Generic targets and members,
+records and enums, imports/aliases/re-exports, first-class associated
+functions, hygienic macros in member bodies, and copy-safe value receivers are
+executable. Selection uses canonical nominal identity and a unique
+`(nominal, member)` key; no runtime registry or string dispatch is emitted.
+
+Inherent and cliche declarations share `TypeParameter`, `ClicheConstraint`,
+`Function`, and bound-index ordering, while retaining separate lookup and
+coherence rules. The parser distinguishes a cliche `impl ... for ...` head from
+a nominal `impl Target` head before building either carrier. A spelling that
+resolves as both a cliche and nominal owner fails deterministically with
+`ON1X-IMPL-AMBIGUOUS`. Positive coexistence and both loader and raw-HIR
+ambiguity paths are covered.
+
+The final combined focused commands used NVMe-backed build and temporary
+directories because the host `/tmp` tmpfs was full:
+
+```sh
+work=/mnt/nvme/opencode-tmp
+
+cmake -S on1x -B "$work/on1x-core-impl-generated" -DBUILD_TESTING=ON
+TMPDIR="$work/tmp" cmake --build "$work/on1x-core-impl-generated" \
+  --parallel 4 --target on1xc on1x_cliche_tests on1x_core_impl_tests
+ctest --test-dir "$work/on1x-core-impl-generated" --output-on-failure \
+  -R '^on1x\.(cliche(_hir)?|core_impl(_hir)?)$'
+
+cmake -S on1x -B "$work/on1x-core-impl-fallback" -DBUILD_TESTING=ON \
+  -DON1X_USE_FALLBACK_SCANNER=ON
+TMPDIR="$work/tmp" cmake --build "$work/on1x-core-impl-fallback" \
+  --parallel 2 --target on1xc on1x_cliche_tests on1x_core_impl_tests
+ctest --test-dir "$work/on1x-core-impl-fallback" --output-on-failure \
+  -R '^on1x\.(cliche(_hir)?|core_impl(_hir)?)$'
+
+CC=clang CXX=clang++ cmake -S on1x -B "$work/on1x-core-impl-clang" \
+  -DBUILD_TESTING=ON
+TMPDIR="$work/tmp" cmake --build "$work/on1x-core-impl-clang" \
+  --parallel 2 --target on1xc on1x_cliche_tests on1x_core_impl_tests
+ctest --test-dir "$work/on1x-core-impl-clang" --output-on-failure \
+  -R '^on1x\.(cliche(_hir)?|core_impl(_hir)?)$'
+
+CC=clang CXX=clang++ cmake -S on1x \
+  -B "$work/on1x-core-impl-sanitize" -DBUILD_TESTING=ON \
+  -DCMAKE_BUILD_TYPE=Debug \
+  '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  -DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer'
+TMPDIR="$work/tmp" cmake --build "$work/on1x-core-impl-sanitize" \
+  --parallel 2 --target on1xc on1x_cliche_tests on1x_core_impl_tests
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1:strict_string_checks=1 \
+UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+ctest --test-dir "$work/on1x-core-impl-sanitize" --output-on-failure \
+  -R '^on1x\.(cliche(_hir)?|core_impl(_hir)?)$'
+```
+
+| Configuration | Result |
+|---|---|
+| GCC, generated scanner, combined cliche/inherent source and HIR | **4/4 passed** |
+| GCC, fallback scanner, combined cliche/inherent source and HIR | **4/4 passed** |
+| Clang, generated scanner, strict emitted C11 | **4/4 passed** |
+| Clang ASan/UBSan, compiler plus emitted C11/runtime | **4/4 passed**, no findings |
+
+The generated-scanner regression selection for macro/local-syntax, cliche,
+nominal HIR, scalar MIR, scanner parity and both implementation suites passed
+**11/11**. Formatter, inference, extended polymorphism, module and stdppx
+protocol selections passed **6/6**. The broader `on1x.nominal_adts` test still
+expects older diagnostic text for `hole_field`; the ordinary PPX sweep reaches
+an unrelated concurrent canonical-value verifier failure in
+`cancellation_deadlines.on1x`. Neither failure contains an inherent or cliche
+implementation.
+
+`ref self` and `move self`, managed/resource value receivers, explicit inherent
+member type arguments, visibility modifiers, overloading/specialization,
+Unit-v1 PPX and `.on1xi` transport, and aggregate MIR remain unsupported and
+reject explicitly. Scalar-only elaborated members continue through the existing
+MIR evaluator/optimizer/C11 paths.
+
+## Core literal, regex, matching and ownership slices (historical baseline)
+
+MuLIB `b66da8f5150adca2a3416db747d91bf81a3fe138` plus worktree changes,
+LibStone `934b6ed029bfea28bbf23b5dc77c476154b0dd0d`, Linux x86-64,
+GCC 16.2.1 and Clang 22.1.8. At this recorded pre-unique-owner baseline, these
+features use the canonical compiler
+and direct C11 backend, not an extension activation or PPX. Capture support
+is a bounded exact subset, `ref i64` is call-scoped, and nominal ownership
+is limited to immutable shared `sexpr` fields. Recursive nominal layouts
+and general unique-resource fields still rejected. The current finite
+unique-owner profile and results are recorded above.
+
+```sh
+for mode in generated fallback; do
+  build="build/elvis-on1x-$mode"
+  cmake -S on1x -B "$build"
+  cmake --build "$build" --parallel 3
+  ctest --test-dir "$build" --output-on-failure \
+    -R '^on1x\.(core_.*|enum_connective|literals_core|owning_adt|scanner_parity|formatter|compiler|data|closures|concurrency)$'
+done
+compiler="$PWD/build/elvis-on1x-fallback/on1xc"
+for suite in core_ref enum_connective literals_core owning_adt core_syntax_integration; do
+  python3 "on1x/tests/test_$suite.py" "$compiler" "$PWD/on1x" \
+    "build/core-sanitized/$suite" clang --cflag=-fsanitize=address,undefined \
+    --cflag=-fno-sanitize-recover=all
+done
+python3 on1x/tests/test_core_regex.py "$compiler" clang \
+  -fsanitize=address,undefined -fno-sanitize-recover=all
+```
+
+The tests include scanner byte/offset parity, malformed literals and Unicode
+scalars, Python `re.fullmatch` differential tests on the shared regex subset,
+borrow-conflict and escape rejection (including malformed checked HIR),
+and RC copy/drop and allocation failure. The combined program is compiled
+again after formatting and its stdout/stderr are compared. Sanitization
+above applies to emitted C11 and the linked runtime.
+
+The full runs passed 81 of 83 tests with the generated scanner and 80 of 82
+with the fallback scanner (`ctest --test-dir "$build" --output-on-failure
+--parallel 4` in both). `on1x.category` was skipped and `on1x.mulib` reported
+the pre-existing stale OptML unit data.
+The native `on1x.luaembed` regression also passed after migrating its
+literal `$LuaEmbed` labels to raw strings.
+
+## On1x editor addons
+
+Baseline: MuLIB `b66da8f5150adca2a3416db747d91bf81a3fe138` plus worktree
+changes, configured LibStone `934b6ed029bfea28bbf23b5dc77c476154b0dd0d`,
+Linux x86-64, GCC 16.2.1, and Python 3.14.7. The addons change no compiler
+or application runtime code.
+
+The addon tests exercise Vim 9.2 and Neovim 0.12.5 with isolated installs,
+the `bat` 0.26.1 syntax cache and file detection, and the VS Code manifest
+and regexes with Node.js 26.9.0. All six addon tests passed in both scanner
+configurations. `vsce` 3.9.2 also built a local VSIX.
+VS Code/VSCodium and Sublime Text GUI hosts were unavailable; `bat` uses
+the shared Sublime grammar but is not Sublime's scope-test runner.
+
+The protocol tests cover actual compiler diagnostics and formatting as well
+as malformed input, Unicode positions, stale snapshots, subprocess limits,
+and non-execution of PPX. The headless Neovim test verifies manual LSP
+startup, save diagnostics, and buffer-only formatting. The server's child
+address-space limit is not compatible with shadow-memory sanitizers;
+`-DON1X_TEST_ADDONS_WITH_COMPILER=OFF` keeps the protocol fixtures and
+skips compiler-backed editor smoke tests in such configurations.
+
+```sh
+for mode in generated fallback; do
+  build="build/elvis-on1x-$mode"
+  cmake -S on1x -B "$build"
+  cmake --build "$build" --parallel 4
+  ctest --test-dir "$build" --output-on-failure -R '^on1x\.addon_'
+  ctest --test-dir "$build" --output-on-failure --parallel 4
+  python3 on1x/tools/on1x-build.py on1x/examples/hello.on1x \
+    --on1xc "$build/on1xc" -o "$build/addon-hello"
+  "$build/addon-hello" # 21 in both modes
+done
+```
+
+On the initial checkout `on1x.contracts` and `on1x.mulib` failed on obsolete
+`library/elvi-scrape` paths. The fixture cleanup removes both references,
+keeps all five profiles under `library/elvis`, and updates the tests to use
+the canonical `elvis` fixture group. `on1x.contracts` now passes in both
+scanner modes. `on1x.mulib` builds and runs the Elvis client but later fails
+on unrelated stale AMDGPU generated data (`tools/embed_units.py --check`).
+The existing `on1x.category` test is skipped in these compiler configurations.
+No other failures were observed in the full suite runs. All four native Elvis
+tests passed after rebuilding:
+
+```sh
+cmake --build build/cdd-root-gcc --parallel 4 --target \
+  test-elvi-scrape test-elvi-scrape-providers test-elvi-scrape-https test-elvi-scrape-alloc
+ctest --test-dir build/cdd-root-gcc --output-on-failure -R '^mulib_test-elvi-scrape'
+```
+
 ## Complete Clamp C11 binding (v2)
 
 MuLIB `17a4fdd7ea78c0350b39a01892f47adeb7e1f6ba` plus worktree changes;

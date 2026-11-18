@@ -87,4 +87,11 @@ for name,text in [('numeric_tuple','fn pair(x:u64)->(u64,f32){return(x,1.5f32);}
 mixed=t.source('unsupported_tuple_memory','fn main(){let mixed=(1u8,"text");}')
 p=run([t.compiler,'--check-memory',mixed])
 assert p.returncode==1 and 'tuple memory model' in p.stderr,p.stderr
+owning=t.source(
+    'unsupported_unique_memory',
+    'enum N{Z}fn main(){let n=box(variant<N>(Z,record{}));drop(n);}')
+p=run([t.compiler,'--check-memory',owning])
+assert p.returncode==1 and \
+       'unique ownership is outside the Chisel resource adapter' in p.stderr, \
+       p.stderr
 print('Chisel checked HIR, deterministic admission, output preservation and real MuLIB execution PASS')

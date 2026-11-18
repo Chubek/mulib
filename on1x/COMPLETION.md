@@ -54,11 +54,13 @@ i64 ranges and lexical exits execute through C11 and scalar MIR. Guarded
 structural matching now has typed decision regions and C11 execution, plus MIR
 for admitted scalar/tuple cases. The [profile](docs/core-syntax.md) preserves
 lexical cleanup. The subsequent [value-loop slice](docs/value-loops.md) adds
-typed loop results through the same regions/C11 and scalar/tuple MIR. Owning
-lists, defer/error unwinding and concurrency remain absent. The later
-[nominal-data increment](docs/nominal-adts.md) admits nonrecursive named records
-and parameterized enums only; recursive owning layouts remain unsupported. This
-does not complete any application/general-language gate.
+typed loop results through the same regions/C11 and scalar/tuple MIR. At that
+historical slice, owning lists, defer/error unwinding and concurrency were
+absent, and the next [nominal-data increment](docs/nominal-adts.md) admitted
+nonrecursive named records and parameterized enums only. The still later
+[finite unique-owner profile](docs/recursive-owning-adts.md) now admits
+recursive layouts only through `own<Named>`; it does not complete any
+application/general-language gate.
 
 ## 0. Instructions to the agent: implement, test, and report
 
@@ -153,7 +155,13 @@ remain open. See `stdlib/_bridge/README.md` and `VERIFICATION.md`.
 - `emit-raw` handles signed/unsigned integers, `_Bool`, binary32 `float`, binary64 `double` and void results; it rejects other floating formats, pointer/length arguments, aggregates, enums, output buffers, callbacks, and important ownership/error semantics.
 - No integrated general `Result`/`Option` and resource-safe MuLIB API, beyond the limited fail-fast JSON facade.
 - No general foreign-owned buffer/handle lifecycle, interprocedural borrow checking, or Chisel/Wetstone usage/effect proof.
-- No completed nominal/parameterized ADTs, modules/functors, full callbacks, effect inference, or Plaid concurrency lowering. Guarded/refutable structural matching now executes in the bounded profile (`docs/core-syntax.md`); owning lists, recursive constructors and general resource matching remain closed. Existing by-value records/sums/arrays/slices retain the `docs/data-model.md` restrictions.
+- No module signatures/functors, full callbacks, effect inference, or Plaid
+  concurrency lowering. Bounded nominal/parameterized ADTs now include a
+  direct-C11 `own<Named>` recursive profile with explicit moves
+  (`docs/recursive-owning-adts.md`), but there is no intrinsic list/iterator
+  protocol or general resource matching. Guarded/refutable structural matching
+  remains the copy-safe profile in `docs/core-syntax.md`; consuming unique
+  matches are deliberately exhaustive and unguarded.
 - The C11 backend works for the supported subset; native and VM backends are not required for this task and must not block it.
 
 **Read first:** `README.md`, `VERIFICATION.md`, `docs/roadmap.md`, `docs/contracts.md`, `docs/architecture.md`, `docs/language.md`, `docs/closures.md`, `docs/tuples.md`, `docs/staging.md`, `contracts-exoml/catalog.json`, `contracts-exoml/obligations.json`, `tools/on1x-bind.cpp`, `tools/on1x-contracts.py`, `src/{parser,type,infer,sema,codegen,primitives}.cpp`, `runtime/`, `tests/`, and the canonical ExoML `Contract.hpp`, `CDecl.hpp`, `Extract.hpp`, `StaticFFI.hpp` and schema in LibStone.

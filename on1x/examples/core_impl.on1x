@@ -1,0 +1,80 @@
+record Box<T> { value: T }
+record Counter { value: i64 }
+record Pair<A,B> { first: A, second: B }
+enum State { Idle, Busy(i64) }
+
+impl<T> Box<T> {
+  fn make(value: T) -> Box<T> {
+    return record<Box<T>> { value: value };
+  }
+  fn get(self) -> T { return self["value"]; }
+  fn pair<U>(left: T, right: U) -> (T,U) { return (left,right); }
+  value answer: i64 = 42;
+  value value(self): T = self["value"];
+}
+
+impl Counter {
+  fn add(self, extra: i64) -> i64 { return self["value"] + extra; }
+  value inner(self): i64 = self["value"];
+}
+
+# Target arguments determine implementation variables even when reordered.
+impl<A,B> Pair<B,A> {
+  fn flip(self) -> (A,B) { return (self["second"],self["first"]); }
+}
+
+impl State {
+  fn score(self) -> i64 {
+    return match self with { Idle() => 0, Busy(n) => n };
+  }
+}
+
+fn marked_counter() -> Counter {
+  println(1);
+  return record<Counter> { value: 40 };
+}
+
+fn marked_argument() -> i64 {
+  println(2);
+  return 2;
+}
+
+# `impl` and `value` remain ordinary identifiers outside declaration headers.
+fn impl(value: i64) -> i64 { return value + 1; }
+
+fn main() {
+  println(Box<i64>::answer);
+  let integer = Box<i64>::make(5);
+  let boolean = Box<bool>::make(true);
+  println(integer::get());
+  println(boolean::get());
+
+  let (left,right) = Box<i64>::pair(7,true);
+  println(left);
+  println(right);
+
+  # Receiver evaluation is the first ordinary call argument.
+  println(marked_counter()::add(marked_argument()));
+  println(marked_counter()::inner);
+
+  # Associated functions can be ordinary first-class values.
+  let make = Box<i64>::make;
+  println(make(11)::get());
+
+  let state = variant<State>(Busy,9);
+  println(state::score());
+
+  let pair = record<Pair<i64,bool>> { first: 8, second: true };
+  let (flag,number) = pair::flip();
+  println(flag);
+  println(number);
+
+  # Fields use `[]`; `::` is a distinct member namespace. The local named Box
+  # shadows static type lookup and is therefore a receiver here.
+  let Box = Box<i64>::make(6);
+  println(Box["value"]);
+  println(Box::value);
+
+  let value = 12;
+  println(impl(value));
+}

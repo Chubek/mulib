@@ -1,0 +1,67 @@
+fn checked_pattern() -> regex {
+    println(1);
+    return /ll([a-z])/;
+}
+
+fn checked_text() -> string {
+    println(2);
+    return "llk";
+}
+
+fn matched(p: regex, s: string) -> bool {
+    return match p ~ s;
+}
+
+fn group(c: captures, index: i64) -> string {
+    return c[index];
+}
+
+fn main() {
+    let match = 24;
+    let capture = 36;
+    assert(match / 2 / 3 == 4);
+    assert(capture / 3 / 4 == 3);
+    assert((12 / 3) / 2 == 2);
+    assert(match 2 with { 2 => true, _ => false });
+    let lo = 0;
+    let a = array[42, 99];
+    assert(a[lo:1][0] == 42);
+    assert(a[lo+0:1][0] == 42);
+
+    assert(match /foo+/ ~ "foo");
+    assert(!(match /foo+/ ~ "afoo"));
+    assert(match // ~ "");
+    assert(match /\//# slash at the end of the on1x token
+               ~ "/");
+    assert(match /[?#]+/ ~ "#?");
+    assert(match /[\/]+/ ~ "//");
+    assert(match /雪+/ ~ "雪雪");
+    assert(!(match /雪+/ ~ "a雪雪b"));
+    assert(match /.*雪+.*/ ~ "a雪雪b");
+    assert(match /./ ~ "😀");
+    assert(!(match /../ ~ "😀"));
+    assert(match /[a-z]雪?(\t|\n)/ ~ "x雪\t");
+    assert(match /\x61/ ~ "a");
+    assert(match /"/ ~ "\"");
+    assert(match /`/ ~ "`");
+
+    let p: regex = /雪(.)/;
+    let f = fn(s: string) -> bool { return matched(p, s); };
+    assert(f("雪😀"));
+    let c: captures = capture checked_pattern() ~ checked_text();
+    assert(c[] == 2);
+    {
+        let capture = capture /ll([a-z])/ ~ "llk";
+        assert(capture:1 == "k");
+        assert(capture : 0 == "llk");
+    }
+    println(group(c, 0));
+    println(group(c, 1));
+    println((capture /ll([a-z])/ ~ "llk")[1]);
+    println((capture p ~ "雪😀")[1]);
+    println((capture /(a|é)(.)()/ ~ "é雪")[2]);
+    assert((capture /(a|é)(.)()/ ~ "é雪")[3] == "");
+    assert((capture /x(a)/ ~ "xb")[] == 0);
+    assert((capture // ~ "")[] == 1);
+    assert((capture /é+/ ~ "éé")[0] == "éé");
+}

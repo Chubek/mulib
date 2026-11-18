@@ -16,11 +16,13 @@ class NominalCatalog {
  Type expand(const Type&,const std::vector<Type>&,const Location&,std::size_t) const;
 public:
  explicit NominalCatalog(const Unit&);
- const NominalDeclaration& find(const std::string&,const Location&) const;
+  const NominalDeclaration& find(const std::string&,const Location&) const;
+  Type regex_builtin(const Type&) const;
  const NominalDeclaration& result(const std::string&,const Location&) const;
  Type instantiate(const std::string&,const std::vector<Type>&,const Location&) const;
- Type resolve(const Type&,const Location&) const;
- void verify(const Type&,const Location&) const;
+  Type resolve(const Type&,const Location&) const;
+  void verify(const Type&,const Location&) const;
+  bool copy_safe(const Type&,const Location&) const;
 };
 void verify_nominals(const Unit&);
 }

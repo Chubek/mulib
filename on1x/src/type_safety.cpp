@@ -4,6 +4,7 @@
 #include <on1x/concurrency.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/literals.hpp>
 #include <nerotypical/StructuralTyping.hpp>
 #include <set>
 #include <sstream>
@@ -12,7 +13,9 @@ namespace on1x::type_safety {
 namespace nt=moonstone::nerotypical;
 namespace {
 using Term=nt::structural::TermId;
-[[noreturn]] void fail(const Location& at,const std::string& text){throw Error(at,"ON1X-TYPE-SAFETY: "+text);}
+[[noreturn]] void fail(const Location& at,const std::string& text){
+ throw Error(at,"ON1X-TYPE-SAFETY: "+text,"ON1X-SEMA");
+}
 [[noreturn]] void exhausted(const Location& at,const std::string& text){throw Inconclusive(at,"ON1X-TYPE-UNKNOWN: "+text);}
 struct Budget {
  Limits limits;std::size_t used=0;
@@ -24,6 +27,7 @@ class Verify {
  std::map<std::pair<std::string,std::vector<Term>>,Term> terms;
  std::map<Term,std::pair<std::size_t,std::size_t>> sizes;
  std::map<std::string,const Function*> functions;
+ std::set<Type> checked_forms;
  std::vector<std::map<std::string,Binding>> scopes;
  struct Frame {std::size_t scope;std::map<std::string,Type> needed;};
  std::vector<Frame> frames;
@@ -49,11 +53,19 @@ class Verify {
   if(!ctor){if(auto error=graph.add_constructor(name,static_cast<int>(args.size())))fail(at,*error);ctor=graph.find_constructor(name);}
   auto id=graph.apply(*ctor,std::move(args),span(at));terms.emplace(std::move(key),id);sizes[id]={depth,size};return id;
  }
- Term type(const Type& t,const Location& at,std::size_t depth=0){
-  budget.tick(at);if(depth>32)exhausted(at,"structural type depth limit");
+  Term type(const Type& t,const Location& at,std::size_t depth=0){
+    if(t.contains_unique())
+     fail(at,"unique ownership is outside the independent structural adapter");
+    if(!depth&&checked_forms.insert(t).second){
+    auto form=check_type_form(t);
+    if(form.status==TypeFormStatus::Limit)
+     exhausted(at,"checked type-form validation limit: "+form.message);
+    if(!form)fail(at,"malformed checked type: "+form.message);
+   }
+   budget.tick(at);if(depth>32)exhausted(at,"structural type depth limit");
   std::vector<Term> args;std::string name;
    switch(t.kind()){
-     case Type::F64:case Type::F32:case Type::U8:case Type::U16:case Type::U32:case Type::U64:
+     case Type::F64:case Type::F32:case Type::U8:case Type::U16:case Type::U32:case Type::U64:case Type::Char:
       name=type_name(t);break;
   case Type::I64:name="i64";break;case Type::Bool:name="bool";break;case Type::String:name="string";break;case Type::Void:name="void";break;
   case Type::Json:name="json";break;case Type::JsonView:name="json_view";break;case Type::SExpr:name="sexpr";break;case Type::Buffer:name="buffer";break;
@@ -107,7 +119,13 @@ class Verify {
    arity(p->parameters().size());for(std::size_t i=0;i<args.size();++i)equal(args[i],p->parameters()[i],at);return type(p->result(),at);
   }
   if(n=="println"){
-    arity(1);auto t=e.children[0]->type;if(!t.is_numeric()&&t!=Type::Bool&&t!=Type::String)fail(at,"invalid println operand");return type(Type::Void,at);
+    arity(1);if(!literals::formattable(e.children[0]->type))fail(at,"invalid println operand");return type(Type::Void,at);
+  }
+  if(n=="format"){
+   if(args.empty()||args.size()>literals::max_format_parts+1)fail(at,"invalid format arity");
+   equal(args.front(),Type::String,at);
+   for(std::size_t i=1;i<args.size();++i)if(!literals::formattable(e.children[i]->type))fail(at,"invalid format operand");
+   return type(Type::String,at);
   }
   if(n=="assert"){arity(1);equal(args[0],Type::Bool,at);return type(Type::Void,at);}
   if(n=="json_parse_or_die"){arity(1);equal(args[0],Type::String,at);return type(Type::Json,at);}
@@ -135,6 +153,13 @@ class Verify {
     case Expr::Kind::Float:arity(0);(void)float_literal_bits(e.text,e.where);equal(result,numeric_literal_type(e.text),e.where);break;
   case Expr::Kind::Boolean:arity(0);equal(result,Type::Bool,e.where);break;
   case Expr::Kind::String:arity(0);equal(result,Type::String,e.where);break;
+  case Expr::Kind::Character:arity(0);(void)literals::character(e.text,e.where);equal(result,Type::Char,e.where);break;
+  case Expr::Kind::ByteBuffer:
+   arity(0);if(!literals::byte_payload(e.text))fail(e.where,"invalid byte buffer literal");equal(result,Type::Buffer,e.where);break;
+  case Expr::Kind::Interpolated:
+   if(e.children.empty()||e.children.size()>literals::max_format_parts)fail(e.where,"invalid interpolation arity");
+   for(std::size_t i=0;i<e.children.size();++i){(void)child(i);if(!literals::formattable(e.children[i]->type))fail(e.where,"invalid interpolation operand");}
+   equal(result,Type::String,e.where);break;
   case Expr::Kind::Variable:arity(0);return variable(e,false);
     case Expr::Kind::Unary:{
      arity(1);if(e.text!="!"&&e.text!="-")fail(e.where,"unknown unary operator");
@@ -144,9 +169,11 @@ class Verify {
      equal(operand,t,e.where);equal(result,t,e.where);break;
    }
   case Expr::Kind::Binary:{
-   arity(2);auto a=child(0),b=child(1);auto op=e.text;
-   if(op=="=="||op=="!="){
-     auto t=e.children[0]->type;if(!t.is_numeric()&&t!=Type::Bool&&t!=Type::String)fail(e.where,"invalid equality operand");equal(a,b,e.where);equal(result,Type::Bool,e.where);
+    arity(2);auto a=child(0),b=child(1);auto op=e.text;
+    if(op=="=="||op=="!="){
+     if(!literals::formattable(e.children[0]->type))
+      fail(e.where,"invalid equality operand");
+     equal(a,b,e.where);equal(result,Type::Bool,e.where);
    }else if(op=="&&"||op=="||"){equal(a,Type::Bool,e.where);equal(b,Type::Bool,e.where);equal(result,Type::Bool,e.where);}
    else{
     bool compare=op=="<"||op==">"||op=="<="||op==">=";
@@ -220,7 +247,11 @@ public:
   std::string run(){
    canonical::verify_control(unit);
   if(functions.empty())fail({"<type-hir>"},"empty elaborated unit");
-  for(const auto& [name,f]:functions){(void)name;(void)type(signature(*f),f->where);}
+  for(const auto& [name,f]:functions){
+   (void)name;
+   if(takes_exclusive(*f))fail(f->where,"ref i64 is outside the independent structural adapter");
+   (void)type(signature(*f),f->where);
+  }
   for(const auto& f:unit.functions){
    if(f.prototype||f.external)continue;
    scopes.push_back({});returns=f.result;params(f.params);bool complete=body(f.body,false);scopes.pop_back();

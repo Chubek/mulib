@@ -49,4 +49,11 @@ for name,text in [
     assert p.returncode==1 and out.read_text()=='keep',(name,p.stderr)
 for mode in ['--tokens','--emit-ast']:
     p=run([t.compiler,mode,'--verify-types',example]);assert p.returncode==2,p.stderr
+owning=t.source(
+    'unsupported_unique_type_safety',
+    'enum N{Z}fn main(){let n=box(variant<N>(Z,record{}));drop(n);}')
+p=run([t.compiler,'--check-types',owning])
+assert p.returncode==1 and \
+       'unique ownership is outside the independent structural adapter' in p.stderr, \
+       p.stderr
 print('Nerotypical checked compilation, execution, helper and output preservation PASS')

@@ -1,5 +1,6 @@
 #include <on1x/patterns.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/literals.hpp>
 #include <on1x/meta.hpp>
 #include <algorithm>
 #include <bit>
@@ -16,7 +17,7 @@ struct Budget {
  void tick(const Location& at,std::size_t depth=0){if(depth>256)throw Error(at,"pattern analysis depth exhausted","ON1X-PATTERN-LIMIT");spend(at,1);}
  void text(const Location& at,std::size_t size){if(size>bytes)throw Error(at,"pattern analysis byte budget exhausted","ON1X-PATTERN-LIMIT");bytes-=size;}
 };
-Type literal_type(const Pattern& p){return p.name=="true"||p.name=="false"?Type::Bool:!p.name.empty()&&p.name[0]=='"'?Type::String:numeric_literal_type(p.name.starts_with('-')?std::string_view(p.name).substr(1):p.name);}
+Type literal_type(const Pattern& p){return p.name=="true"||p.name=="false"?Type::Bool:p.name.starts_with('"')?Type::String:p.name.starts_with("#\\")?Type::Char:numeric_literal_type(p.name.starts_with('-')?std::string_view(p.name).substr(1):p.name);}
 Bindings inspect(Pattern& p,const Type& type,Budget& budget,std::size_t depth,bool root){
  budget.tick(p.where,depth);p.type=type;Bindings out;
  if(p.elements.size()>256||p.labels.size()>256)fail(p.where,"pattern width exceeds 256");
@@ -91,6 +92,7 @@ std::vector<Constructor> signature(const Type& t,Budget& budget,const Location& 
 std::string key(const Pattern& p){
  auto t=literal_type(p);if(t==Type::Bool)return "b:"+p.name;
  if(t==Type::String)return "s:"+meta::literal_value(p.name);
+ if(t==Type::Char)return "c:"+std::to_string(literals::character(p.name,p.where));
  auto e=literal(p);bool neg=e.kind==Expr::Kind::Unary;auto& n=neg?*e.children[0]:e;
  auto bits=t.is_float()?float_literal_bits(n.text,n.where):integer_literal_bits(n.text,n.where);
  if(t.is_float()){
@@ -131,6 +133,7 @@ Expr literal(const Pattern& p){
  if(spelling.size()!=token+2||(token&&spelling[0].text!="-")||spelling[token].text!=(token?p.name.substr(1):p.name))fail(p.where,"pattern literal must be one complete literal token");
  Expr e;e.where=p.where;e.text=p.name;e.type=literal_type(p);
  if(e.type==Type::Bool)e.kind=Expr::Kind::Boolean;
+ else if(e.type==Type::Char){e.kind=Expr::Kind::Character;(void)literals::character(e.text,e.where);}
  else if(e.type==Type::String){e.kind=Expr::Kind::String;for(std::size_t i=1;i+1<e.text.size();++i)if(e.text[i]=='\\'&&e.text[++i]=='0')fail(p.where,"NUL pattern strings are unsupported");(void)meta::literal_value(e.text);}
  else if(e.type.is_float()){
   e.kind=Expr::Kind::Float;if(e.text.starts_with('-')){auto child=std::make_unique<Expr>();child->kind=e.kind;child->where=e.where;child->text=e.text.substr(1);child->type=e.type;(void)float_literal_bits(child->text,p.where);e.kind=Expr::Kind::Unary;e.text="-";e.children.push_back(std::move(child));}else(void)float_literal_bits(e.text,p.where);

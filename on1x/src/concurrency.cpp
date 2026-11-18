@@ -71,7 +71,7 @@ class Verify {
      c=static_cast<unsigned char>(text[i]);
      if(c=='n')c='\n';else if(c=='r')c='\r';else if(c=='t')c='\t';
      else if(c=='0')fail(e.where,"external argv cannot contain NUL");
-     else if(c!='"'&&c!='\\')fail(e.where,"malformed external argv string escape");
+     else if(c!='"'&&c!='\\'&&c!='$')fail(e.where,"malformed external argv string escape");
     }
     value+=static_cast<char>(c);
    }
@@ -156,7 +156,12 @@ class Verify {
       bool deadline=false;
      std::vector<Type> fields;std::vector<std::string> labels;std::set<std::size_t> seen;
      for(std::size_t i=0;i<e.children.size();++i){const auto& offer=*e.children[i];
-       if(offer.kind==E::Boolean&&offer.text=="true"&&i+1==e.children.size()){
+       if(offer.kind==E::Boolean&&offer.text=="true"&&
+          i+1==e.children.size()){
+        const bool source_type=offer.type==Type::Invalid||offer.type==Type::Bool;
+        if(!offer.children.empty()||offer.callee||offer.result!=Type::Void||
+           (canonical?offer.type!=Type::Bool:!source_type))
+         fail(offer.where,"invalid poll default marker");
         fields.push_back(Type::data(Type::Record,{}));labels.push_back("Default");break;
        }
        if(operation(offer)&&offer.text=="offer_after"){
@@ -363,6 +368,46 @@ template<class F>void walk(Unit& u,F apply){
  auto body=[&](auto&& visit,std::vector<Stmt>& b,std::size_t d)->void{for(auto& s:b){budget.tick(s.where,d);apply(s);if(s.value&&s.kind!=S::Template)expr(expr,*s.value,d+1);visit(visit,s.body,d+1);visit(visit,s.otherwise,d+1);}};
  for(auto& f:u.functions)if(!f.prototype)body(body,f.body,0);
 }
+std::optional<Location> unique_ownership(const Unit& unit){
+ Budget budget;std::optional<Location> found;
+ auto note=[&](const Type& type,const Location& at){
+  if(!found&&type.contains_unique())found=at;
+ };
+ auto pattern=[&](auto&& self,const Pattern& p,std::size_t depth)->void{
+  budget.tick(p.where,depth);note(p.type,p.where);
+  for(const auto& child:p.elements)self(self,child,depth+1);
+ };
+ auto expression=[&](auto&& self,const Expr& e,std::size_t depth)->void{
+  budget.tick(e.where,depth);note(e.type,e.where);note(e.result,e.where);
+  for(const auto& capture:e.captures)note(capture.type,e.where);
+  for(const auto& p:e.patterns)pattern(pattern,p,depth+1);
+  if(e.callee)self(self,*e.callee,depth+1);
+  for(const auto& child:e.children)if(child)self(self,*child,depth+1);
+  auto body=[&](auto&& visit,const std::vector<Stmt>& statements,std::size_t level)->void{
+   for(const auto& s:statements){
+    budget.tick(s.where,level);note(s.declared,s.where);
+    if(s.pattern)pattern(pattern,*s.pattern,level+1);
+    if(s.value&&s.kind!=S::Template)self(self,*s.value,level+1);
+    visit(visit,s.body,level+1);visit(visit,s.otherwise,level+1);
+   }
+  };
+  body(body,e.body,depth+1);
+ };
+ auto body=[&](auto&& visit,const std::vector<Stmt>& statements,std::size_t depth)->void{
+  for(const auto& s:statements){
+   budget.tick(s.where,depth);note(s.declared,s.where);
+   if(s.pattern)pattern(pattern,*s.pattern,depth+1);
+   if(s.value&&s.kind!=S::Template)expression(expression,*s.value,depth+1);
+   visit(visit,s.body,depth+1);visit(visit,s.otherwise,depth+1);
+  }
+ };
+ for(const auto& f:unit.functions)if(!f.prototype){
+  note(f.result,f.where);
+  for(const auto& p:f.params)note(p.type,p.where);
+  body(body,f.body,0);
+ }
+ return found;
+}
 }
 bool present(const Unit& u){
  Budget budget;bool found=false;
@@ -376,12 +421,24 @@ bool present(const Unit& u){
  for(const auto& f:u.functions)if(!f.prototype){if(contains(f.result))found=true;for(const auto& p:f.params)if(contains(p.type))found=true;body(body,f.body,0);}
  return found;
 }
-void verify(const Unit& u,bool canonical){if(present(u))Verify(canonical).run(u);}
+void verify(const Unit& u,bool canonical){
+ if(!present(u))return;
+ if(auto at=unique_ownership(u))
+  fail(*at,"unique ownership cannot cross cooperative concurrency until cleanup state is task-local");
+ Verify(canonical).run(u);
+}
 void lower(Unit& u){
  if(!present(u))return;
  verify(u,false);std::size_t budget=262144;auto copy=clone_unit(u,budget);
  walk(copy,[]<class T>(T& node){
-  if constexpr(std::is_same_v<T,Expr>){if(node.kind==E::SourceCsp)node.kind=E::Csp;}
+  if constexpr(std::is_same_v<T,Expr>){
+   if(node.kind==E::SourceCsp&&node.text=="poll"&&!node.children.empty()){
+    auto& marker=*node.children.back();
+    if(marker.kind==E::Boolean&&marker.text=="true")
+     marker.type=Type::Bool;
+   }
+   if(node.kind==E::SourceCsp)node.kind=E::Csp;
+  }
   else if(node.kind==S::TaskGroup)node.kind=S::CspScope;
  });
  verify(copy,true);u=std::move(copy);

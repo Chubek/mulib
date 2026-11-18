@@ -14,6 +14,15 @@
 #ifndef ON1X_ENV_FREE
 #define ON1X_ENV_FREE free
 #endif
+#ifndef ON1X_UNIQUE_MALLOC
+#define ON1X_UNIQUE_MALLOC malloc
+#endif
+#ifndef ON1X_UNIQUE_FREE
+#define ON1X_UNIQUE_FREE free
+#endif
+#ifndef ON1X_UNIQUE_MAX_PAYLOAD
+#define ON1X_UNIQUE_MAX_PAYLOAD (64u * 1024u * 1024u)
+#endif
 static void environment_error(const char *what){fprintf(stderr,"On1x closure error: %s\n",what);exit(72);}
 on1x_env *on1x_env_alloc(size_t size,void (*destroy)(on1x_env *)){
  on1x_env *environment;
@@ -47,6 +56,107 @@ void on1x_env_release(on1x_env *environment){
  }
  draining=false;
 }
+struct on1x_unique {
+ on1x_unique *next;
+ on1x_unique_destructor destroy;
+ size_t size;
+ max_align_t payload[];
+};
+static on1x_unique *on1x_unique_pending_head;
+static on1x_unique *on1x_unique_pending_tail;
+static bool on1x_unique_draining;
+static int64_t on1x_unique_live;
+static on1x_cleanup *on1x_cleanup_head;
+static on1x_cleanup *on1x_cleanup_tail;
+static size_t on1x_cleanup_count;
+#ifndef ON1X_UNIQUE_MAX_CLEANUPS
+#define ON1X_UNIQUE_MAX_CLEANUPS 262144u
+#endif
+static void unique_error(const char *what,const char *file,size_t line,size_t column){
+ fprintf(stderr,"%s:%zu:%zu: On1x ownership error: %s\n",
+         file?file:"<runtime>",line,column,what);
+ exit(72);
+}
+void on1x_cleanup_push(on1x_cleanup *record,void *value,
+    on1x_unique_destructor destroy){
+ if(!record||!value||!destroy||record->active)
+  unique_error("invalid cleanup registration","<runtime>",0,0);
+ if(on1x_cleanup_count>=ON1X_UNIQUE_MAX_CLEANUPS)
+  unique_error("cleanup registration limit exceeded","<runtime>",0,0);
+ record->previous=on1x_cleanup_tail;record->next=NULL;
+ record->value=value;record->destroy=destroy;record->active=true;
+ if(on1x_cleanup_tail)on1x_cleanup_tail->next=record;
+ else on1x_cleanup_head=record;
+ on1x_cleanup_tail=record;++on1x_cleanup_count;
+}
+void on1x_cleanup_pop(on1x_cleanup *record){
+ if(!record||!record->active)
+  unique_error("invalid cleanup removal","<runtime>",0,0);
+ if(record->previous)record->previous->next=record->next;
+ else on1x_cleanup_head=record->next;
+ if(record->next)record->next->previous=record->previous;
+ else on1x_cleanup_tail=record->previous;
+ record->previous=NULL;record->next=NULL;record->value=NULL;
+ record->destroy=NULL;record->active=false;--on1x_cleanup_count;
+}
+on1x_unique *on1x_unique_try_box(void *source,size_t size,
+    on1x_unique_destructor destroy){
+ on1x_unique *owner=NULL;
+ const size_t header=offsetof(on1x_unique,payload);
+ if(!source||!destroy||!size||size>ON1X_UNIQUE_MAX_PAYLOAD||
+    size>SIZE_MAX-header)
+  unique_error("invalid owning-box allocation","<runtime>",0,0);
+ if(on1x_unique_live==INT64_MAX)
+  unique_error("live owning-box limit exceeded","<runtime>",0,0);
+ owner=(on1x_unique *)ON1X_UNIQUE_MALLOC(header+size);
+ if(!owner)return NULL;
+ owner->next=NULL;owner->destroy=destroy;owner->size=size;
+ memcpy(owner->payload,source,size);
+ memset(source,0,size);
+ ++on1x_unique_live;
+ return owner;
+}
+void on1x_unique_take(on1x_unique **slot,void *destination,size_t size,
+    const char *file,size_t line,size_t column){
+ on1x_unique *owner=NULL;
+ if(!slot||!(owner=*slot)||!destination||!size||owner->size!=size)
+  unique_error("invalid take from owning box",file,line,column);
+ memcpy(destination,owner->payload,size);
+ memset(owner->payload,0,size);
+ *slot=NULL;
+ --on1x_unique_live;
+ ON1X_UNIQUE_FREE(owner);
+}
+void on1x_unique_drop(on1x_unique *owner){
+ if(!owner)return;
+ owner->next=NULL;
+ if(on1x_unique_pending_tail)on1x_unique_pending_tail->next=owner;
+ else on1x_unique_pending_head=owner;
+ on1x_unique_pending_tail=owner;
+ if(on1x_unique_draining)return;
+ on1x_unique_draining=true;
+ while(on1x_unique_pending_head){
+  on1x_unique *current=on1x_unique_pending_head;
+  on1x_unique_pending_head=current->next;
+  if(!on1x_unique_pending_head)on1x_unique_pending_tail=NULL;
+  current->next=NULL;
+  current->destroy(current->payload);
+  --on1x_unique_live;
+  ON1X_UNIQUE_FREE(current);
+ }
+ on1x_unique_draining=false;
+}
+void on1x_unique_allocation_fail(const char *file,size_t line,size_t column){
+ while(on1x_cleanup_tail){
+  on1x_cleanup *record=on1x_cleanup_tail;
+  void *value=record->value;
+  on1x_unique_destructor destroy=record->destroy;
+  on1x_cleanup_pop(record);
+  destroy(value);
+ }
+ unique_error("owning-box allocation failure",file,line,column);
+}
+int64_t on1x_unique_live_allocations(void){return on1x_unique_live;}
 static void arithmetic_error(const char *what){fprintf(stderr,"On1x arithmetic error: %s\n",what);exit(70);}
 #ifndef ON1X_DEFER_MAX_RECORDS
 #define ON1X_DEFER_MAX_RECORDS 4096
@@ -414,6 +524,70 @@ const char *on1x_text_concat(const char *left,const char *right){
   if(b>ON1X_DATA_MAX_TEXT-a)data_error("text byte limit exceeded");
   out=save_text(a+b);memcpy(out,left,a);memcpy(out+a,right,b);return out;
 }
+static _Noreturn void regex_error(const char *message,const char *file,size_t line,size_t col){
+ fprintf(stderr,"%s:%zu:%zu: On1x regex error: %s\n",file,line,col,message);
+ exit(73);
+}
+static size_t regex_text_size(const char *text,const char *file,size_t line,size_t col){
+ size_t size=0;
+ if(!text)regex_error("null text",file,line,col);
+ while(text[size]){
+  if(size==ON1X_DATA_MAX_TEXT)regex_error("regex text byte limit exceeded",file,line,col);
+  ++size;
+ }
+ return size;
+}
+static bool regex_accepts(const on1x_regex *regex,const char *text,size_t size){
+ unsigned state=0;
+ for(size_t i=0;i<size;++i){
+  const unsigned byte=(unsigned char)text[i];
+  uint32_t lo=regex->states[state].first,hi=regex->states[state].end;
+  /* Compiler emits sorted disjoint byte ranges. */
+  while(lo<hi){
+   const uint32_t mid=lo+(hi-lo)/2;
+   const on1x_regex_edge edge=regex->edges[mid];
+   if(byte<edge.first)hi=mid;
+   else if(byte>edge.last)lo=mid+1;
+   else {state=edge.target;break;}
+  }
+  if(lo==hi)return false;
+ }
+ return regex->states[state].accept;
+}
+bool on1x_regex_match_v1(const on1x_regex *regex,const char *text,const char *file,size_t line,size_t col){
+ return regex_accepts(regex,text,regex_text_size(text,file,line,col));
+}
+on1x_regex_captures on1x_regex_capture_v1(const on1x_regex *regex,const char *text,const char *file,size_t line,size_t col){
+ size_t size;
+ char *snapshot;
+ if(!regex->capturable)regex_error("pattern cannot produce exact captures in this profile",file,line,col);
+ size=regex_text_size(text,file,line,col);
+ if(!regex_accepts(regex,text,size))return (on1x_regex_captures){NULL,NULL,0};
+ if(!size)return (on1x_regex_captures){regex,"",0};
+ snapshot=save_text(size);memcpy(snapshot,text,size);
+ return (on1x_regex_captures){regex,snapshot,size};
+}
+int64_t on1x_regex_count_v1(on1x_regex_captures captures){
+ return captures.regex?(int64_t)captures.regex->count+1:0;
+}
+const char *on1x_regex_index_v1(on1x_regex_captures captures,int64_t index,const char *file,size_t line,size_t col){
+ size_t start=0,end=0;
+ if(index<0||index>=on1x_regex_count_v1(captures))regex_error("capture index out of range or no match",file,line,col);
+ if(index==0)return captures.text;
+ const on1x_regex_span span=captures.regex->groups[index-1];
+ /* Accepted input consists entirely of complete scalars. Advance whole
+  * scalars up to the statically established offsets, never split a scalar. */
+ for(unsigned scalar=0;scalar<span.end;++scalar){
+  if(scalar==span.begin)start=end;
+  if(end==captures.length)regex_error("inconsistent capture span",file,line,col);
+  ++end;
+  while(end<captures.length&&((unsigned char)captures.text[end]&0xc0)==0x80)++end;
+ }
+ if(span.begin==span.end)return "";
+ char *result=save_text(end-start);
+ memcpy(result,captures.text+start,end-start);
+ return result;
+}
 void on1x_data_retain(void *value){on1x_env_retain((on1x_env *)value);}
 void on1x_data_release(void *value){on1x_env_release((on1x_env *)value);}
 int64_t on1x_data_live_nodes(void){return (int64_t)on1x_live_data;}
@@ -463,10 +637,96 @@ static void buffer_reserve(on1x_buffer *buffer,size_t amount){
   ON1X_DATA_FREE(buffer->text);on1x_buffer_bytes+=capacity-buffer->capacity;buffer->text=data;buffer->capacity=capacity;data[buffer->length]='\0';
 }
 void on1x_buffer_append(on1x_buffer *buffer,const char *text){size_t n=text_size(text);buffer_reserve(buffer,n);memcpy(buffer->text+buffer->length,text,n);buffer->length+=n;buffer->text[buffer->length]='\0';}
-void on1x_buffer_byte(on1x_buffer *buffer,int64_t byte){if(byte<=0||byte>255)data_error("byte must be in 1..255 (NUL-free text ABI)");buffer_reserve(buffer,1);buffer->text[buffer->length++]=(char)byte;buffer->text[buffer->length]='\0';}
-const char *on1x_buffer_text(on1x_buffer *buffer){char *out;if(!buffer)data_error("null buffer");out=save_text(buffer->length);if(buffer->length)memcpy(out,buffer->text,buffer->length);return out;}
+void on1x_buffer_push(on1x_buffer *buffer,uint8_t byte){buffer_reserve(buffer,1);((unsigned char *)buffer->text)[buffer->length++]=byte;buffer->text[buffer->length]='\0';}
+void on1x_buffer_byte(on1x_buffer *buffer,int64_t byte){if(byte<=0||byte>255)data_error("byte must be in 1..255 (NUL-free text ABI)");on1x_buffer_push(buffer,(uint8_t)byte);}
+uint8_t on1x_buffer_at(const on1x_buffer *buffer,int64_t index){
+  if(!buffer||index<0||(uint64_t)index>=buffer->length)data_error("buffer index out of range");
+  return ((const unsigned char *)buffer->text)[(size_t)index];
+}
+static unsigned buffer_nibble(unsigned char c){
+  if(c>='0'&&c<='9')return c-'0';
+  if(c>='a'&&c<='f')return c-'a'+10;
+  if(c>='A'&&c<='F')return c-'A'+10;
+  data_error("invalid byte buffer literal");return 0;
+}
+void on1x_buffer_append_hex(on1x_buffer *buffer,const char *digits){
+  size_t n=text_size(digits),i;
+  if(n%2)data_error("invalid byte buffer literal");
+  buffer_reserve(buffer,n/2);
+  for(i=0;i<n;i+=2)((unsigned char *)buffer->text)[buffer->length+i/2]=(unsigned char)
+      (16*buffer_nibble((unsigned char)digits[i])+buffer_nibble((unsigned char)digits[i+1]));
+  buffer->length+=n/2;buffer->text[buffer->length]='\0';
+}
+const char *on1x_buffer_text(on1x_buffer *buffer){
+  char *out;if(!buffer)data_error("null buffer");
+  if(buffer->length&&memchr(buffer->text,0,buffer->length))data_error("buffer with NUL cannot be converted to string");
+  out=save_text(buffer->length);if(buffer->length)memcpy(out,buffer->text,buffer->length);return out;
+}
 int64_t on1x_buffer_len(on1x_buffer *buffer){if(!buffer)data_error("null buffer");return (int64_t)buffer->length;}
 void on1x_buffer_clear(on1x_buffer *buffer){if(!buffer)data_error("null buffer");buffer->length=0;if(buffer->text)buffer->text[0]='\0';}
+int64_t on1x_char_codepoint(uint32_t value){
+  if(value>0x10ffffu||(value>=0xd800u&&value<=0xdfffu))data_error("invalid Unicode scalar");
+  return (int64_t)value;
+}
+static size_t char_utf8(uint32_t cp,char *out){
+  unsigned char *p=(unsigned char *)out;
+  (void)on1x_char_codepoint(cp);
+  if(cp<0x80){p[0]=(unsigned char)cp;return 1;}
+  if(cp<0x800){p[0]=(unsigned char)(0xc0|(cp>>6));p[1]=(unsigned char)(0x80|(cp&63));return 2;}
+  if(cp<0x10000){p[0]=(unsigned char)(0xe0|(cp>>12));p[1]=(unsigned char)(0x80|((cp>>6)&63));p[2]=(unsigned char)(0x80|(cp&63));return 3;}
+  p[0]=(unsigned char)(0xf0|(cp>>18));p[1]=(unsigned char)(0x80|((cp>>12)&63));
+  p[2]=(unsigned char)(0x80|((cp>>6)&63));p[3]=(unsigned char)(0x80|(cp&63));return 4;
+}
+void on1x_print_char(uint32_t value){char bytes[4];size_t n=char_utf8(value,bytes);fwrite(bytes,1,n,stdout);fputc('\n',stdout);}
+static size_t format_piece(const on1x_format_value *part,char scratch[64],const char **text){
+  int size;
+  *text=scratch;
+  switch(part->kind){
+  case ON1X_FMT_TEXT:*text=part->value.text;return text_size(*text);
+  case ON1X_FMT_BOOL:*text=part->value.truth?"true":"false";return part->value.truth?4:5;
+  case ON1X_FMT_I64:size=snprintf(scratch,64,"%" PRId64,part->value.i);break;
+  case ON1X_FMT_U64:size=snprintf(scratch,64,"%" PRIu64,part->value.u);break;
+  case ON1X_FMT_F32:size=snprintf(scratch,64,"%.9g",part->value.f);break;
+  case ON1X_FMT_F64:size=snprintf(scratch,64,"%.17g",part->value.f);break;
+  case ON1X_FMT_CHAR:
+    if(!part->value.cp)data_error("NUL character cannot be formatted as string");
+    return char_utf8(part->value.cp,scratch);
+  default:data_error("invalid format value");return 0;
+  }
+  if(size<0||size>=64)data_error("numeric formatting failed");
+  return (size_t)size;
+}
+static size_t format_pass(const char *pattern,size_t size,size_t count,const on1x_format_value *parts,char *out){
+  size_t i=0,arg=0,used=0;
+  while(pattern?i<size:arg<count){
+    char scratch[64];
+    const char *text=scratch;
+    size_t n;
+    if(!pattern||(pattern[i]=='{'&&i+1<size&&pattern[i+1]=='}')){
+      if(arg==count)data_error("format has too few arguments");
+      n=format_piece(parts+arg++,scratch,&text);if(pattern)i+=2;
+    }else{
+      char c=pattern[i++];
+      if(c=='{'||c=='}'){
+        if(i==size||pattern[i]!=c)data_error("invalid brace in format pattern");
+        ++i;
+      }
+      scratch[0]=c;n=1;
+    }
+    if(n>ON1X_DATA_MAX_TEXT-used)data_error("formatted string exceeds text byte limit");
+    if(out)memcpy(out+used,text,n);
+    used+=n;
+  }
+  if(arg!=count)data_error("format has too many arguments");
+  return used;
+}
+const char *on1x_format(const char *pattern,size_t count,const on1x_format_value *parts){
+  size_t size=pattern?text_size(pattern):0,length;
+  char *out;
+  if(count>256||(count&&!parts))data_error("format argument limit exceeded");
+  length=format_pass(pattern,size,count,parts,NULL);out=save_text(length);
+  (void)format_pass(pattern,size,count,parts,out);return out;
+}
 static const char *read_stream(FILE *stream){
   on1x_buffer *buffer=on1x_buffer_new();const char *text;int c;
   while((c=fgetc(stream))!=EOF)on1x_buffer_byte(buffer,c);

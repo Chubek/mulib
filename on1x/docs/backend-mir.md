@@ -11,6 +11,10 @@ through HIR→C11. MIR ingress validates catalog/layout consistency, then reject
 unsupported aggregate values rather than erasing identity to a scalar. There is
 no new opcode, serialization version or native backend in this increment.
 
+The [recursive unique-owner profile](recursive-owning-adts.md) is also
+HIR→C11-only. MIR ingress explicitly rejects `own<Named>` and any containing
+type until the IR has typed move/drop/place operations and cleanup edges.
+
 This is the first executable **B1 subset** from `BACKEND.md`. The implementation
 is in `include/on1x/backend/mir.hpp` and `src/backend/`. It consumes the existing
 checked, specialized HIR after imports, macros, PPX and staging admission.

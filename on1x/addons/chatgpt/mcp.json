@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "on1x-knowledge": {
+      "type": "streamable-http",
+      "url": "https://on1x-knowledge.example.invalid/mcp",
+      "extensions": {
+        "com.openai": {
+          "auth": {"type": "none"}
+        }
+      }
+    }
+  }
+}

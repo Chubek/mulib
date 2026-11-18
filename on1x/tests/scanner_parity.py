@@ -79,6 +79,13 @@ valid_cases = [
     b'0..10 0..=10 0...10 ... ..= .. ....= 1.0..2.0 1u64..=2u64',
     b'outer:for(var i=0;i<3;i=i+1){loop{continue outer;}} for x in -2..=2{break;}',
     b'match let x=f() with { (1|2) as n if n>0 => n, rest => 0 }; :: :::: ||| | record{x:_,..}',
+    b'fn p(k:ref i64){k := 2;} foo() ~ { Ok(-) => println(1), Err(x) => println(x) };',
+    b'enum List<T>{Nil,Cons(T,own<List<T>>)} let x=box(v); let y=move(x); take(y); drop(y);',
+    b'cliche Show{fn show<T>(value:Self,x:T)->string;let fallback:Self;} impl<T> Show for Box<T> where Show<T>{let fallback:Box<T>=value;} Show<Box<i64>>::show<bool>(box,true);',
+    br'let c = #\newline; let b = b!#\a; let raw = r!"a\n"; let n = 0o77 + 0b101;',
+    br'println("value: ${text_len("abc")}"); println("""first'
+    b'\nsecond""");',
+    'let pattern = /雪+/; assert(match /[a-z]+/ ~ "élan"); let score = 24 / 6 / 2;'.encode(),
     b'fn main(){taskgroup within 25ms{taskgroup within duration() s{poll{after 0ms=>1};}}}',
     b'1f32 1.5f32 1.5e-12f32 1e3f64 1u128 1.5u8 1f16 0x1.0f32 1u8x 1f32x 1u16f32',
     b'"' + b'x' * 65536 + b'"',
@@ -100,7 +107,7 @@ check('oversized', b'#' * (2 * 1024 * 1024 + 1), invalid_at=0,
       diagnostic='source exceeds 2 MiB limit')
 
 rng = random.Random(20261114)
-spellings = [b'name', b'_1', b'019', b'1.25e-3', b'1e+9', b'0x1e3', b'"text#\\n"', b'"\xe9\x9b\xaa"', b'<=', b'->', b'/', b'[]', b'!=', b'..', b'..=', b'...', b'::', b'|']
+spellings = [b'name', b'_1', b'019', b'1.25e-3', b'1e+9', b'0x1e3', b'"text#\\n"', b'"\xe9\x9b\xaa"', b'<=', b'->', b'/', b'[]', b'!=', b'..', b'..=', b'...', b'::', b'|', b':=', b'~']
 layouts = [b' ', b'\t', b'\r\n', b'# comment\n']
 for i in range(40):
     data = b''.join(rng.choice(spellings) + rng.choice(layouts) for _ in range(32))

@@ -29,7 +29,7 @@ fn llembed_statements(schema:sexpr,text:string)->sexpr {
   var pos=sexpr_skip(text,0);var nodes=0;var out=sx_nil();
   while pos<text_len(text) {
     let (node,end,used)=sexpr_read(text,pos,0,nodes);
-    nodes=ppx_validate_at(schema,node,"Statement","$LuaEmbed",0,used);
+    nodes=ppx_validate_at(schema,node,"Statement",r!"$LuaEmbed",0,used);
     out=sx_cons(node,out);pos=sexpr_skip(text,end);
   }
   return sexpr_reverse(out);
@@ -94,7 +94,7 @@ fn transform(tree:sexpr,label:string)->sexpr {
       if op=="stdout" { return ppx_call(wrapper,ppx_list1(native_string(text,at)),at); }
       if op=="expr" {
         let expression=sexpr_parse(text);
-        ppx_validate_at(schema,expression,"Expression","$LuaEmbed",0,0);
+        ppx_validate_at(schema,expression,"Expression",r!"$LuaEmbed",0,0);
         return expression;
       }
       llembed_fail("operation");return node;

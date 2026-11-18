@@ -18,7 +18,7 @@ struct Symbol {
  }
 };
 struct Names {
- std::map<std::string,Symbol> values,syntax,types;
+ std::map<std::string,Symbol> values,syntax,types,cliches;
  std::map<std::string,Module*> modules;
 };
 struct Module {
@@ -48,7 +48,7 @@ class Loader {
  std::vector<fs::path> standard_roots;
  std::map<fs::path,std::unique_ptr<Module>> modules;
  std::vector<Module*> order,stack,preludes;
-  std::set<std::string> tokens,globals,type_globals;
+  std::set<std::string> tokens,globals,type_globals,cliche_globals;
  std::string prefix="on1x_module_";
  std::size_t bytes=0,bindings=0,edges=0;
  bool implicit=false;
@@ -113,10 +113,11 @@ class Loader {
  void value_alias(const Names& names,const std::string& alias,const Location& at){
   if(module_bound(names,alias))throw Error(at,"import alias conflicts with module: "+alias);
  }
- void merge(Names& into,const Names& from,const Location& at){
+  void merge(Names& into,const Names& from,const Location& at){
   for(const auto& [name,symbol]:from.values){value_alias(into,name,at);insert(into.values,name,symbol,at);}
    for(const auto& [name,symbol]:from.syntax){value_alias(into,name,at);insert(into.syntax,name,symbol,at);}
-   for(const auto& [name,symbol]:from.types){value_alias(into,name,at);insert(into.types,name,symbol,at);}
+    for(const auto& [name,symbol]:from.types){value_alias(into,name,at);insert(into.types,name,symbol,at);}
+    for(const auto& [name,symbol]:from.cliches){value_alias(into,name,at);insert(into.cliches,name,symbol,at);}
   for(const auto& [name,m]:from.modules)bind_module(into,name,m,at);
  }
   fs::path candidate(const fs::path& base,const Location& at){
@@ -170,9 +171,10 @@ class Loader {
   }
   throw Error(imp.where,"module not found: "+imp.module+" (searched "+searched+")");
  }
- void bind_module(Names& names,const std::string& alias,Module* target,const Location& at){
-  auto first=alias.substr(0,alias.find('.'));
-   if(names.values.contains(first)||names.syntax.contains(first)||names.types.contains(first))throw Error(at,"module alias conflicts with declaration: "+first);
+  void bind_module(Names& names,const std::string& alias,Module* target,const Location& at){
+   auto first=alias.substr(0,alias.find('.'));
+    if(names.values.contains(first)||names.syntax.contains(first)||names.types.contains(first)||
+       names.cliches.contains(first))throw Error(at,"module alias conflicts with declaration: "+first);
   for(const auto& [other,m]:names.modules){
    (void)m;
    if(other!=alias&&(alias.starts_with(other+".")||other.starts_with(alias+".")))
@@ -202,20 +204,38 @@ class Loader {
    if(source.size()>options.max_bytes-bytes)throw Error(at,"total imported source byte limit exceeded");
    bytes+=source.size();auto scanned=scan(source,path.string());
    for(const auto& t:scanned)tokens.insert(t.text);
-    m->unit=parse(scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()});
-      if(!options.interfaces.empty()){
+     m->unit=parse(scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()});
+       if((!m->unit.cliches.empty()||!m->unit.cliche_implementations.empty()||
+           !m->unit.inherent_implementations.empty())&&
+          (!m->unit.ppx.empty()||!m->unit.extensions.empty()||!m->unit.features.empty()))
+        throw Error(!m->unit.cliches.empty()?m->unit.cliches.front().where:
+                    !m->unit.cliche_implementations.empty()?
+                     m->unit.cliche_implementations.front().where:
+                     m->unit.inherent_implementations.front().where,
+                    "intrinsic cliche/impl declarations cannot cross legacy Category or Unit-v1 PPX expansion",
+                    !m->unit.inherent_implementations.empty()?"ON1X-IMPL-UNSUPPORTED":
+                                                               "ON1X-CLICHE-UNSUPPORTED");
+       if(!options.interfaces.empty()){
        const auto reject=[](const Location& where){
         throw Error(where,"interface verification does not execute PPX or declaration extensions",
                     "ON1X-INTERFACE-UNSUPPORTED");
        };
        if(!m->unit.ppx.empty())reject(m->unit.ppx.front().where);
        if(!m->unit.features.empty())reject(m->unit.features.front().where);
-       if(!m->unit.extensions.empty())reject(m->unit.extensions.front().where);
+        if(!m->unit.extensions.empty())reject(m->unit.extensions.front().where);
+         if(!m->unit.cliches.empty())reject(m->unit.cliches.front().where);
+         if(!m->unit.cliche_implementations.empty())reject(m->unit.cliche_implementations.front().where);
+         if(!m->unit.inherent_implementations.empty())
+          throw Error(m->unit.inherent_implementations.front().where,
+                      "interface verification does not transport intrinsic impl declarations",
+                      "ON1X-IMPL-UNSUPPORTED");
       }
      if(!inspection&&!options.kernel_c11)require_no_kernel_imports(m->unit);
      if(options.kernel_c11){
-      if(!m->unit.ppx.empty()||!m->unit.macros.empty()||!m->unit.extensions.empty()||!m->unit.features.empty())
-       throw Error(at,"ON1X-KERNEL-PROFILE: this C11 profile does not execute source macros, PPX or extensions","ON1X-KERNEL-PROFILE");
+       if(!m->unit.ppx.empty()||!m->unit.macros.empty()||!m->unit.extensions.empty()||
+          !m->unit.features.empty()||!m->unit.cliches.empty()||
+          !m->unit.cliche_implementations.empty()||!m->unit.inherent_implementations.empty())
+        throw Error(at,"ON1X-KERNEL-PROFILE: this C11 profile does not execute source macros, PPX or extensions","ON1X-KERNEL-PROFILE");
       for(const auto& request:m->unit.kernel_imports){
          const bool supported=request.is_unsafe?request.module=="mulib.clamp":
           options.kernel_stage&&(request.module=="mulib.clamp"||request.module=="mulib.histprice"||request.module=="mulib.priceopt");
@@ -238,8 +258,9 @@ class Loader {
     m->unit.source_digests.emplace(path.string(),extensions::digest(source));
   }
    for(const auto& d:m->unit.nominals)insert(m->names.types,d.name,Symbol{m,d.name},d.where);
+    for(const auto& c:m->unit.cliches)insert(m->names.cliches,c.name,Symbol{m,c.name},c.where);
    for(const auto& f:m->unit.functions){
-   if(is_intrinsic_name(f.name))throw Error(f.where,"intrinsic name cannot be redefined: "+f.name);
+   if(is_reserved_intrinsic_name(f.name))throw Error(f.where,"intrinsic name cannot be redefined: "+f.name);
    // PPX cfg may select between declarations with the same name. Retain both
    // AST declarations; the normal post-PPX checker rejects remaining duplicates.
    insert(m->names.values,f.name,Symbol{m,f.name,f.external},f.where);
@@ -263,8 +284,9 @@ class Loader {
     bool found=false;
     if(!self_package){
      if(auto it=target->names.values.find(name);it!=target->names.values.end()){value_alias(m->names,alias,imp.where);insert(m->names.values,alias,it->second,imp.where);found=true;}
-      if(auto it=target->names.syntax.find(name);it!=target->names.syntax.end()){value_alias(m->names,alias,imp.where);insert(m->names.syntax,alias,it->second,imp.where);found=true;}
-      if(auto it=target->names.types.find(name);it!=target->names.types.end()){value_alias(m->names,alias,imp.where);insert(m->names.types,alias,it->second,imp.where);found=true;}
+       if(auto it=target->names.syntax.find(name);it!=target->names.syntax.end()){value_alias(m->names,alias,imp.where);insert(m->names.syntax,alias,it->second,imp.where);found=true;}
+       if(auto it=target->names.types.find(name);it!=target->names.types.end()){value_alias(m->names,alias,imp.where);insert(m->names.types,alias,it->second,imp.where);found=true;}
+       if(auto it=target->names.cliches.find(name);it!=target->names.cliches.end()){value_alias(m->names,alias,imp.where);insert(m->names.cliches,alias,it->second,imp.where);found=true;}
      if(auto it=target->names.modules.find(name);it!=target->names.modules.end()){bind_module(m->names,alias,it->second,imp.where);found=true;}
     }
     if(found)continue;
@@ -283,8 +305,8 @@ class Loader {
      if(++edges>16384||++kernel_requests>1024)
      throw Error(request.where,"kernel import inspection limit exceeded");
      if(!aliases.insert(request.alias).second||module_bound(m->names,request.alias)||
-        m->names.values.contains(request.alias)||m->names.types.contains(request.alias)||
-        m->names.syntax.contains(request.alias)){
+       m->names.values.contains(request.alias)||m->names.types.contains(request.alias)||
+       m->names.syntax.contains(request.alias)||m->names.cliches.contains(request.alias)){
       throw Error(request.where,"conflicting kernel import alias: "+request.alias,"ON1X-KERNEL-ALIAS");
      }
      if(inspection)inspection->requests.push_back(std::move(request));
@@ -328,11 +350,71 @@ class Loader {
   if(names.modules.contains(text))throw Error(at,"module is not a first-class value: "+text);
    if(!type&&globals.contains(text)&&!is_intrinsic_name(text))throw Error(at,"name is not imported in this module: "+text);
    if(type&&type_globals.contains(text))throw Error(at,"type is not imported in this module: "+text);
-  // Unknown unqualified names remain for the ordinary checker, or a PPX which
-  // generates globals (derive/test). The loader never infers types or effects.
-  }
+   // Unknown unqualified names remain for the ordinary checker, or a PPX which
+   // generates globals (derive/test). The loader never infers types or effects.
+   }
+    void cliche_reference(std::string& text,const Location& at,const Names& names){
+    if(auto found=names.cliches.find(text);found!=names.cliches.end()){
+     text=name(found->second);return;
+    }
+    if(auto dot=text.find('.');dot!=std::string::npos){
+     for(auto cut=text.rfind('.');cut!=std::string::npos;
+         cut=cut?text.rfind('.',cut-1):std::string::npos){
+      auto module=names.modules.find(text.substr(0,cut));if(module==names.modules.end())continue;
+      std::string member=text.substr(cut+1);auto* owner=module->second;
+      while(true){
+       if(auto found=owner->names.cliches.find(member);found!=owner->names.cliches.end()){
+        text=name(found->second);return;
+       }
+       bool descended=false;
+       for(auto split=member.rfind('.');split!=std::string::npos;
+           split=split?member.rfind('.',split-1):std::string::npos){
+        auto child=owner->names.modules.find(member.substr(0,split));
+        if(child==owner->names.modules.end())continue;
+        owner=child->second;member=member.substr(split+1);descended=true;break;
+       }
+       if(!descended)break;
+      }
+      throw Error(at,"module has no cliche export: "+text,"ON1X-CLICHE-IMPORT");
+     }
+     throw Error(at,"unknown module qualifier in cliche: "+text,"ON1X-CLICHE-IMPORT");
+    }
+    if(cliche_globals.contains(text))
+     throw Error(at,"cliche is not imported in this module: "+text,"ON1X-CLICHE-IMPORT");
+     // Preserve a source-level unknown name for the located cliche diagnostic.
+    }
+    std::optional<std::string> named_reference(const std::string& text,const Names& names,
+                                               bool cliche)const{
+     const auto direct=[&](const Module* module,const std::string& key)
+       ->std::optional<std::string>{
+      const auto& symbols=cliche?module->names.cliches:module->names.types;
+      if(auto found=symbols.find(key);found!=symbols.end())return name(found->second);
+      return {};
+     };
+     const auto& local=cliche?names.cliches:names.types;
+     if(auto found=local.find(text);found!=local.end())return name(found->second);
+     if(text.find('.')==std::string::npos)return {};
+     for(auto cut=text.rfind('.');cut!=std::string::npos;
+         cut=cut?text.rfind('.',cut-1):std::string::npos){
+      auto module=names.modules.find(text.substr(0,cut));if(module==names.modules.end())continue;
+      auto* owner=module->second;std::string member=text.substr(cut+1);
+      while(true){
+       if(auto found=direct(owner,member))return found;
+       bool descended=false;
+       for(auto split=member.rfind('.');split!=std::string::npos;
+           split=split?member.rfind('.',split-1):std::string::npos){
+        auto child=owner->names.modules.find(member.substr(0,split));
+        if(child==owner->names.modules.end())continue;
+        owner=child->second;member=member.substr(split+1);descended=true;break;
+       }
+       if(!descended)break;
+      }
+     }
+     return {};
+    }
   Type type_reference(const Type& t,const Location& at,const Names& names){
-   if(t.kind()==Type::Named){
+    if(t.is_own())return Type::own(type_reference(t.owned(),at,names));
+    if(t.kind()==Type::Named){
      auto text=t.nominal();
      const auto dot=text.find('.');
      auto found=kernel_scope?kernel_scope->kernels.find(text.substr(0,dot)):std::map<std::string,KernelImport>::const_iterator{};
@@ -354,8 +436,15 @@ class Loader {
     std::vector<Type> fields;for(const auto& f:t.elements())fields.push_back(type_reference(f,at,names));
     return t.is_tuple()?Type::tuple(std::move(fields)):Type::data(t.kind(),std::move(fields),t.labels(),t.extent());
    }
-   return t;
-  }
+    return t;
+   }
+   void constraint(ClicheConstraint& item,const Names& names){
+    cliche_reference(item.name,item.where,names);
+    for(auto& argument:item.arguments)argument=type_reference(argument,item.where,names);
+   }
+   void constraints(std::vector<ClicheConstraint>& items,const Names& names){
+    for(auto& item:items)constraint(item,names);
+   }
  void macro(Macro& m,const Names& names,const Scope& values,const Scope& syntax){
   auto pattern=[&](auto&& self,MacroParameter& p)->void{
    if(p.literal)expression(*p.literal,names,values,syntax);
@@ -369,10 +458,39 @@ class Loader {
    body(rule.body,names,values,syntax);
   }
  }
-  void expression(Expr& e,const Names& names,const Scope& values,const Scope& syntax){
-   e.result=type_reference(e.result,e.where,names);
-   for(auto& p:e.parameters)p.type=type_reference(p.type,p.where,names);
-   if(e.kind==Expr::Kind::Variable){(void)kernel_reference(e,values,false);reference(e.text,e.where,names,values,false);}
+   void expression(Expr& e,const Names& names,const Scope& values,const Scope& syntax){
+    e.result=type_reference(e.result,e.where,names);
+    for(auto& p:e.parameters)p.type=type_reference(p.type,p.where,names);
+    for(auto& parameter:e.type_parameters)constraints(parameter.bounds,names);
+    constraints(e.constraints,names);
+    for(auto& argument:e.cliche_arguments)argument=type_reference(argument,e.where,names);
+    for(auto& argument:e.member_type_arguments)argument=type_reference(argument,e.where,names);
+     if(e.kind==Expr::Kind::ClicheMember){
+      auto cliche=named_reference(e.text,names,true);
+      auto nominal=named_reference(e.text,names,false);
+      if(cliche&&nominal)
+       throw Error(e.where,"ambiguous '::' owner is both a cliche and nominal type: "+e.text,
+                   "ON1X-IMPL-AMBIGUOUS");
+      if(nominal){
+       if(!e.member_type_arguments.empty())
+        throw Error(e.where,"explicit inherent member type arguments are not supported; infer them from the call",
+                    "ON1X-IMPL-UNSUPPORTED");
+       e.kind=Expr::Kind::InherentMember;
+       e.result=Type::named(*nominal,std::move(e.cliche_arguments));
+       e.text=std::move(e.cliche_member);
+       e.cliche_arguments.clear();e.cliche_member.clear();
+      }else cliche_reference(e.text,e.where,names);
+     }
+     if(e.kind==Expr::Kind::InherentMember&&e.result==Type::Void&&e.children.size()==1&&
+        e.children[0]&&e.children[0]->kind==Expr::Kind::Variable){
+      const auto& spelling=e.children[0]->text;
+      const auto first=spelling.substr(0,spelling.find('.'));
+      if(!values.contains(first)&&!names.values.contains(spelling))
+       if(auto nominal=named_reference(spelling,names,false)){
+       e.result=Type::named(*nominal);e.children.clear();
+      }
+     }
+    if(e.kind==Expr::Kind::Variable){(void)kernel_reference(e,values,false);reference(e.text,e.where,names,values,false);}
    if(options.kernel_c11&&(e.kind==Expr::Kind::SyntaxLet||e.kind==Expr::Kind::MacroCall||
       e.kind==Expr::Kind::Quote||e.kind==Expr::Kind::Run||e.kind==Expr::Kind::Splice||e.kind==Expr::Kind::Lift))
     throw Error(e.where,"ON1X-KERNEL-PROFILE: staging and local syntax are outside this C11 profile","ON1X-KERNEL-PROFILE");
@@ -498,12 +616,20 @@ public:
   // Pick an identifier prefix absent from every token, including local binders.
   while(std::any_of(tokens.begin(),tokens.end(),[&](const auto& t){return t.starts_with(prefix);}))prefix+="m_";
   Names flat;for(auto* m:order)if(m->legacy)merge(flat,m->names,{m->path.string()});
-   for(auto* m:order)for(const auto& f:m->unit.functions)globals.insert(name({m,f.name,f.external}));
-   for(auto* m:order)for(const auto& d:m->unit.nominals)type_globals.insert(name({m,d.name}));
+    for(auto* m:order)for(const auto& f:m->unit.functions)globals.insert(name({m,f.name,f.external}));
+    for(auto* m:order)for(const auto& d:m->unit.nominals)type_globals.insert(name({m,d.name}));
+    for(auto* m:order)for(const auto& c:m->unit.cliches)cliche_globals.insert(name({m,c.name}));
   LoadedUnit result;std::map<std::string,const Function*> externs;std::set<std::string> lazy;
    result.interfaces=bind_interfaces();
   // Reserve storage so pointers used for identical raw-extern admission stay valid.
-  std::size_t count=0;for(auto* m:order)count+=m->unit.functions.size();
+   std::size_t count=0;
+   for(auto* m:order){
+    count+=m->unit.functions.size();
+    for(const auto& implementation:m->unit.cliche_implementations)
+     count+=implementation.members.size();
+    for(const auto& implementation:m->unit.inherent_implementations)
+     count+=implementation.members.size();
+   }
     // In reviewed staging each clamp export can also have a distinct unsafe
     // spelling. Their call authorities are not interchangeable.
     std::size_t generated=options.kernel_c11?std::size(kernel_symbols):0;
@@ -514,21 +640,85 @@ public:
    for(auto* m:order){
     kernel_scope=m;
     auto names=m->legacy?flat:m->names;
-    for(const auto& [alias,request]:m->kernels)if(module_bound(names,alias)||names.values.contains(alias)||
-     names.syntax.contains(alias)||names.types.contains(alias))
+     for(const auto& [alias,request]:m->kernels)if(module_bound(names,alias)||names.values.contains(alias)||
+      names.syntax.contains(alias)||names.types.contains(alias)||names.cliches.contains(alias))
       throw Error(request.where,"conflicting kernel import alias: "+alias,"ON1X-KERNEL-ALIAS");
    for(auto it=preludes.rbegin();it!=preludes.rend();++it){
     auto* prelude=*it;
     for(const auto& [key,symbol]:prelude->names.values)if(!names.values.contains(key)&&!module_bound(names,key))insert(names.values,key,symbol,{m->path.string()});
      for(const auto& [key,symbol]:prelude->names.syntax)if(!names.syntax.contains(key)&&!module_bound(names,key))insert(names.syntax,key,symbol,{m->path.string()});
-     for(const auto& [key,symbol]:prelude->names.types)if(!names.types.contains(key)&&!module_bound(names,key))insert(names.types,key,symbol,{m->path.string()});
+      for(const auto& [key,symbol]:prelude->names.types)if(!names.types.contains(key)&&!module_bound(names,key))insert(names.types,key,symbol,{m->path.string()});
+      for(const auto& [key,symbol]:prelude->names.cliches)if(!names.cliches.contains(key)&&!module_bound(names,key))insert(names.cliches,key,symbol,{m->path.string()});
    }
-    for(auto& d:m->unit.nominals){
-     for(auto& field:d.fields)field=type_reference(field,d.where,names);
-     d.name=name({m,d.name});result.unit.nominals.push_back(std::move(d));
-    }
-    for(auto& f:m->unit.functions){
-     f.result=type_reference(f.result,f.where,names);for(auto& p:f.params)p.type=type_reference(p.type,p.where,names);
+     for(auto& d:m->unit.nominals){
+      for(auto& field:d.fields)field=type_reference(field,d.where,names);
+      d.name=name({m,d.name});result.unit.nominals.push_back(std::move(d));
+     }
+     for(auto& c:m->unit.cliches){
+      constraints(c.constraints,names);
+      for(auto& parameter:c.type_parameters)constraints(parameter.bounds,names);
+      for(auto& member:c.members){
+       for(auto& parameter:member.type_parameters)constraints(parameter.bounds,names);
+       constraints(member.constraints,names);
+       for(auto& parameter:member.params)parameter.type=type_reference(parameter.type,parameter.where,names);
+       member.result=type_reference(member.result,member.where,names);
+      }
+      c.name=name({m,c.name});result.unit.cliches.push_back(std::move(c));
+     }
+      for(auto& implementation:m->unit.cliche_implementations){
+      cliche_reference(implementation.name,implementation.where,names);
+      for(auto& parameter:implementation.type_parameters)constraints(parameter.bounds,names);
+      for(auto& argument:implementation.arguments)
+       argument=type_reference(argument,implementation.where,names);
+      constraints(implementation.constraints,names);
+      for(auto& member:implementation.members){
+       auto& function=member.function;
+       for(auto& parameter:function.type_parameters)constraints(parameter.bounds,names);
+       constraints(function.constraints,names);
+       for(auto& parameter:function.params)
+        parameter.type=type_reference(parameter.type,parameter.where,names);
+       function.result=type_reference(function.result,function.where,names);
+       member.value_type=type_reference(member.value_type,member.where,names);
+       Scope locals;parameters(locals,function.params);
+       body(function.body,names,locals,{});
+       if(member.value)expression(*member.value,names,{}, {});
+      }
+       result.unit.cliche_implementations.push_back(std::move(implementation));
+      }
+      for(std::size_t implementation_index=0;
+          implementation_index<m->unit.inherent_implementations.size();
+          ++implementation_index){
+       auto& implementation=m->unit.inherent_implementations[implementation_index];
+       for(auto& parameter:implementation.type_parameters)
+        constraints(parameter.bounds,names);
+       implementation.target=type_reference(implementation.target,
+                                             implementation.where,names);
+       for(std::size_t member_index=0;member_index<implementation.members.size();
+           ++member_index){
+        auto& member=implementation.members[member_index];
+         member.runtime_name="@inherent_"+
+                             std::to_string(result.unit.inherent_implementations.size())+"_"+
+                             std::to_string(member_index);
+        for(auto& parameter:member.type_parameters)
+         constraints(parameter.bounds,names);
+        auto& function=member.function;
+        for(auto& parameter:function.type_parameters)
+         constraints(parameter.bounds,names);
+        constraints(function.constraints,names);
+        for(auto& parameter:function.params)
+         parameter.type=type_reference(parameter.type,parameter.where,names);
+        function.result=type_reference(function.result,function.where,names);
+        member.value_type=type_reference(member.value_type,member.where,names);
+        Scope locals;parameters(locals,function.params);
+        body(function.body,names,locals,{});
+        if(member.value)expression(*member.value,names,locals,{});
+       }
+       result.unit.inherent_implementations.push_back(std::move(implementation));
+      }
+      for(auto& f:m->unit.functions){
+      f.result=type_reference(f.result,f.where,names);for(auto& p:f.params)p.type=type_reference(p.type,p.where,names);
+      for(auto& parameter:f.type_parameters)constraints(parameter.bounds,names);
+      constraints(f.constraints,names);
     Scope locals;parameters(locals,f.params);body(f.body,names,locals,{});
     for(auto& attr:f.attributes)expression(*attr,names,locals,{});
     f.name=name({m,f.name,f.external});
@@ -592,15 +782,26 @@ public:
   };
   std::set<std::string> needed;
    for(const auto& obligation:result.interfaces)needed.insert(obligation.resolved_name);
-  for(const auto& evidence:result.unit.extension_evidence)
-   for(const auto& implementation:evidence.implementations)for(const auto& binding:implementation.bindings){
-    needed.insert(binding.function);needed.insert(binding.selector);
+   for(const auto& evidence:result.unit.extension_evidence){
+    for(const auto& implementation:evidence.implementations)for(const auto& binding:implementation.bindings){
+     needed.insert(binding.function);needed.insert(binding.selector);
+    }
    }
-  for(const auto& f:result.unit.functions){
-   auto& refs=calls[f.name];statements(statements,f.body,refs);for(const auto& a:f.attributes)collect(collect,*a,refs);
-   if(!lazy.contains(f.name))needed.insert(f.name);
-  }
-  for(const auto& m:result.unit.macros)for(const auto& r:m.rules){if(r.expression)collect(collect,*r.expression,needed);statements(statements,r.body,needed);}
+   for(const auto& f:result.unit.functions){
+    auto& refs=calls[f.name];statements(statements,f.body,refs);for(const auto& a:f.attributes)collect(collect,*a,refs);
+    if(!lazy.contains(f.name))needed.insert(f.name);
+   }
+   for(const auto& implementation:result.unit.cliche_implementations)
+    for(const auto& member:implementation.members){
+     statements(statements,member.function.body,needed);
+     if(member.value)collect(collect,*member.value,needed);
+    }
+   for(const auto& implementation:result.unit.inherent_implementations)
+    for(const auto& member:implementation.members){
+     statements(statements,member.function.body,needed);
+     if(member.value)collect(collect,*member.value,needed);
+    }
+   for(const auto& m:result.unit.macros)for(const auto& r:m.rules){if(r.expression)collect(collect,*r.expression,needed);statements(statements,r.body,needed);}
   std::vector<std::string> pending(needed.begin(),needed.end());
   while(!pending.empty()){
    auto current=std::move(pending.back());pending.pop_back();

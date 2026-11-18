@@ -1,5 +1,6 @@
 #include <on1x/ast.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/literals.hpp>
 #include <on1x/extensions.hpp>
 #include <charconv>
 #include <cctype>
@@ -18,7 +19,7 @@ class Parser {
   std::map<std::string,std::size_t> bound_types;
   std::set<std::string> enabled_extensions,used_extensions;
  bool templating=false;
- bool syntax_atoms=false,literal_ellipsis=false;
+  bool syntax_atoms=false,literal_ellipsis=false,interpolate=true;
  std::string ellipsis="...";
  // Bound both syntactic recursion and the resulting expression tree. A flat
  // left-associative chain has shallow parser recursion but deep HIR traversal
@@ -82,7 +83,14 @@ class Parser {
    }
    return false;
   }
+   std::string qualified_identifier(){
+    auto where=peek().where;std::string name=ident();
+    while(accept(".")){name+="."+ident();if(name.size()>4096)throw Error(where,"qualified name exceeds 4096 bytes");}
+    return name;
+   }
       Type type(){Nesting guard(*this);auto t=peek();
+      if(at("ref")&&is_ident(peek(1).text))
+       throw Error(t.where,"ref i64 is only a named On1x function parameter mode","ON1X-REF");
       if((at("ifiber")||at("channel")||at("sender")||at("receiver"))&&peek(1).text=="<"){
       ++pos;consume("<");auto payload=type();close_angle();
       if((t.text=="sender"||t.text=="receiver")&&payload==Type::U8)
@@ -91,6 +99,11 @@ class Parser {
        return t.text=="ifiber"?Type::Fiber:t.text=="channel"?Type::Channel:t.text=="sender"?Type::Sender:Type::Receiver;
       }
       if(at("xfiber")&&peek(1).text!="<"){++pos;return Type::ExternalFiber;}
+      if(accept("own")){
+       consume("<");auto target=type();close_angle();
+       if(target.kind()!=Type::Named)throw Error(t.where,"own<T> requires a nominal record or enum type reference","ON1X-OWN");
+       return Type::own(std::move(target));
+      }
     if((at("record")||at("sum"))&&peek(1).text=="{"){
      bool sum=accept("sum");if(!sum)consume("record");consume("{");
      std::vector<std::string> labels;std::vector<Type> elements;std::set<std::string> names;
@@ -136,7 +149,7 @@ class Parser {
     ++pos;
     if(auto found=bound_types.find(t.text);found!=bound_types.end())return Type::bound(found->second);
    if(t.text=="_")return Type::Hole;
-     for(auto x:{Type::I64,Type::F64,Type::F32,Type::U8,Type::U16,Type::U32,Type::U64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(t.text==type_name(x))return x;
+     for(auto x:{Type::I64,Type::F64,Type::F32,Type::U8,Type::U16,Type::U32,Type::U64,Type::Bool,Type::String,Type::Char,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(t.text==type_name(x))return x;
     if(is_ident(t.text)){
      // Parameter names are not part of a function *type*. Preserve the prior
      // located diagnostic rather than interpreting `x: T` as a named type.
@@ -146,14 +159,109 @@ class Parser {
      if(accept("<")){if(!at(">"))do{arguments.push_back(type());if(arguments.size()>32)throw Error(t.where,"nominal type argument limit exceeded");}while(accept(","));close_angle();}
      return Type::named(std::move(name),std::move(arguments));
     }
-    throw Error(t.where,"unknown type: "+t.text,"ON1X-PARSE-TYPE",{},t.text);
- }
+     throw Error(t.where,"unknown type: "+t.text,"ON1X-PARSE-TYPE",{},t.text);
+  }
+   ClicheConstraint cliche_constraint(){
+    ClicheConstraint result;result.where=peek().where;result.name=qualified_identifier();
+    consume("<");
+    if(!at(">"))do{
+     result.arguments.push_back(type());
+     if(result.arguments.size()>32)throw Error(result.where,"cliche argument limit exceeded","ON1X-CLICHE-LIMIT");
+    }while(accept(","));
+    close_angle();
+    if(result.arguments.empty())
+     throw Error(result.where,"cliche constraints require an explicit Self argument","ON1X-CLICHE-SYNTAX");
+    return result;
+   }
+   std::vector<TypeParameter> generic_parameters(std::vector<ClicheConstraint>& constraints){
+    std::vector<TypeParameter> result;
+    if(!accept("<"))return result;
+    if(at(">"))throw Error(peek().where,"generic parameter list cannot be empty","ON1X-CLICHE-SYNTAX");
+    do{
+     TypeParameter parameter;parameter.where=peek().where;parameter.name=ident();
+     if(result.size()>=32)throw Error(parameter.where,"generic parameter limit exceeded","ON1X-CLICHE-LIMIT");
+     const auto index=bound_types.size();
+     if(!bound_types.emplace(parameter.name,index).second)
+      throw Error(parameter.where,"duplicate generic type parameter: "+parameter.name,"ON1X-CLICHE-SYNTAX");
+     if(accept(":"))do{
+      ClicheConstraint bound;bound.where=peek().where;bound.name=qualified_identifier();
+      bound.arguments.push_back(Type::bound(index));
+      if(accept("<")){
+       if(!at(">"))do{
+        bound.arguments.push_back(type());
+        if(bound.arguments.size()>32)throw Error(bound.where,"cliche bound argument limit exceeded","ON1X-CLICHE-LIMIT");
+       }while(accept(","));
+       close_angle();
+      }
+      parameter.bounds.push_back(bound);constraints.push_back(std::move(bound));
+     }while(accept("+"));
+     result.push_back(std::move(parameter));
+    }while(accept(","));
+    close_angle();return result;
+   }
+   void where_constraints(std::vector<ClicheConstraint>& constraints){
+    if(!accept("where"))return;
+    do{
+     constraints.push_back(cliche_constraint());
+     if(constraints.size()>128)throw Error(constraints.back().where,"constraint limit exceeded","ON1X-CLICHE-LIMIT");
+    }while(accept(","));
+   }
+   bool cliche_member_header()const{
+    if(!is_ident(peek().text))return false;
+    std::size_t i=1;
+    while(peek(i).text=="."){
+     if(!is_ident(peek(i+1).text))return false;
+     i+=2;
+    }
+    if(peek(i).text!="<")return false;
+    std::size_t angles=0,groups=0;
+    for(;pos+i<ts.size();++i){
+     const auto& token=peek(i).text;
+     if(token=="<")++angles;
+     else if(token==">"){
+      if(!angles||!--angles)return peek(i+1).text=="::"&&is_ident(peek(i+2).text);
+      }else if(token=="("||token=="["||token=="{")++groups;
+      else if(token==")"||token=="]"||token=="}"){
+       if(!groups)return false;
+       --groups;
+      }else if(token=="<eof>"||token==";")return false;
+    }
+    return false;
+   }
   static int precedence(const std::string& op){if(op=="||")return 1;if(op=="&&")return 2;
   if(op=="=="||op=="!=")return 3;
    if(op=="<"||op==">"||op=="<="||op==">="||op=="<-")return 4;
   if(op=="+"||op=="-")return 5;
   if(op=="*"||op=="/"||op=="%")return 6;
    return -1;}
+  bool regex_header()const{
+   if(!at("match")&&!at("capture"))return false;
+   if(precedence(peek(1).text)>=0&&peek(1).text!="-"&&peek(1).text!="/")return false;
+   std::size_t parens=0,brackets=0,braces=0;
+   for(std::size_t i=1;pos+i<ts.size();++i){
+    const auto& text=peek(i).text;
+    if(!parens&&!brackets&&!braces){
+     if(text=="~")return i>1&&peek(i+1).text!="{";
+     if((text=="with"&&i>1&&peek(i-1).text!=".")||text=="="||text==":="||text==";"||text==","||
+        text==")"||text=="]"||text=="}"||text=="=>"||text=="<eof>")return false;
+     if(text=="{"&&peek(1).text=="("&&i>1&&peek(i-1).text==")")return false;
+    }
+    if(text=="(")++parens;else if(text==")"){if(!parens)return false;--parens;}
+    if(text=="[")++brackets;else if(text=="]"){if(!brackets)return false;--brackets;}
+    if(text=="{")++braces;else if(text=="}"){if(!braces)return false;--braces;}
+   }
+   return false;
+  }
+  Expression regex_application(){
+   auto keyword=peek();++pos;
+   auto e=std::make_unique<Expr>();e->where=keyword.where;
+   e->kind=keyword.text=="match"?Expr::Kind::RegexMatch:Expr::Kind::RegexCapture;
+   e->children.push_back(expr().node);consume("~");
+   // One postfix operand. Parenthesize binary scrutinees, and parenthesize
+   // the whole capture expression when indexing its result.
+   e->children.push_back(primary().node);
+   return syntax_bounded(std::move(e));
+  }
   bool match_header()const{
    if(!at("match"))return false;
    if(peek(1).text=="let")return true;
@@ -178,11 +286,101 @@ class Parser {
    static std::string source_string(const std::string& value){
     std::string out="\"";out.reserve(value.size()+2);
     for(unsigned char c:value){
-     if(c=='"'||c=='\\'){out+='\\';out+=static_cast<char>(c);}
-     else if(c=='\n')out+="\\n";else if(c=='\r')out+="\\r";else if(c=='\t')out+="\\t";
+     if(c=='"'||c=='\\'||c=='$'){out+='\\';out+=static_cast<char>(c);}
+     else if(c=='\n')out+="\\n";else if(c=='\r')out+="\\r";else if(c=='\t')out+="\\t";else if(c=='\0')out+="\\0";
      else out+=static_cast<char>(c);
     }
     return out+'"';
+   }
+   static bool string_token(std::string_view s){
+    return s.starts_with('"')||s.starts_with("r!\"")||s.starts_with("b!\"");
+   }
+   static ExprPtr literal(Expr::Kind kind,const Location& at,std::string text={}){
+    auto e=std::make_unique<Expr>();e->kind=kind;e->where=at;e->text=std::move(text);return e;
+   }
+   Expression string_value(const Token& token){
+    const std::string_view s=token.text;
+    const bool raw=s.starts_with("r!"),bytes=s.starts_with("b!");
+    const auto prefix=raw||bytes?2u:0u;
+    const auto delim=s.substr(prefix).starts_with("\"\"\"")?3u:1u;
+    auto i=prefix+delim;
+    const auto end=s.size()-delim;
+    auto e=literal(bytes?Expr::Kind::ByteBuffer:Expr::Kind::String,token.where);
+    std::string chunk;
+    auto chunk_at=token.where;
+    auto at_index=token.where;
+    std::size_t advanced=0,depth=1;
+    auto location=[&](std::size_t index){
+     while(advanced<index){
+      if(s[advanced++]=='\n'){++at_index.line;at_index.column=1;}else ++at_index.column;
+      ++at_index.offset;
+     }
+     return at_index;
+    };
+    auto flush=[&]{
+     if(!chunk.empty()){
+      e->children.push_back(literal(Expr::Kind::String,chunk_at,source_string(chunk)));
+      chunk.clear();
+     }
+    };
+    auto rebase=[](Location& at,const Location& origin){
+     at.offset+=origin.offset;
+     if(at.line==1)at.column+=origin.column-1;
+     at.line+=origin.line-1;
+    };
+    while(i<end){
+     auto c=s[i++];
+     if(!raw&&c=='\\'){
+      c=s[i++];
+      if(bytes&&c=='x'){
+       c=static_cast<char>(on1x_lit_hex(static_cast<unsigned char>(s[i]))*16+
+                           on1x_lit_hex(static_cast<unsigned char>(s[i+1])));
+       i+=2;
+      }else c=literals::escape(c);
+     }else if(interpolate&&!raw&&!bytes&&c=='$'&&i<end){
+      if(s[i]=='$')++i;
+      else if(s[i]=='{'||on1x_lit_ident_start(static_cast<unsigned char>(s[i]))){
+       auto splice_at=location(i-1);flush();
+       if(e->children.size()>=literals::max_format_parts-1)
+        throw Error(splice_at,"too many string interpolation parts","ON1X-LITERAL-LIMIT");
+       e->kind=Expr::Kind::Interpolated;
+       if(s[i]=='{'){
+        ++i;auto begin=location(i);auto n=on1x_lit_interpolation(s.data()+i,end-i,0);
+        if(n==end-i)throw Error(splice_at,"unterminated string interpolation","ON1X-LITERAL-STRING");
+        std::vector<Token> embedded;
+        try{embedded=scan(std::string(s.substr(i,n)),token.where.file);}
+        catch(Error& error){rebase(error.where,begin);throw;}
+        for(auto& t:embedded)rebase(t.where,begin);
+        Parser sub(embedded,{});
+        sub.enabled_extensions=enabled_extensions;
+        sub.templating=templating;sub.syntax_atoms=syntax_atoms;
+        sub.literal_ellipsis=literal_ellipsis;sub.ellipsis=ellipsis;
+        sub.bound_types=bound_types;sub.nesting=nesting;sub.lambdas=lambdas;
+        auto value=sub.expr();sub.consume("<eof>");
+        lambdas=sub.lambdas;
+        used_extensions.insert(sub.used_extensions.begin(),sub.used_extensions.end());
+        depth=std::max(depth,value.depth+1);
+        e->children.push_back(std::move(value.node));
+        i+=n+1;
+       }else{
+        auto begin=i++;
+        while(i<end&&on1x_lit_ident(static_cast<unsigned char>(s[i])))++i;
+        e->children.push_back(literal(Expr::Kind::Variable,location(begin),std::string(s.substr(begin,i-begin))));
+        depth=std::max(depth,std::size_t{2});
+       }
+       chunk_at=location(i);
+       continue;
+      }
+     }
+     if(bytes){
+      constexpr const char* hex="0123456789abcdef";
+      const auto value=static_cast<unsigned char>(c);
+      e->text+=hex[value>>4];e->text+=hex[value&15];
+     }else chunk+=c;
+    }
+    if(e->kind==Expr::Kind::Interpolated)flush();
+    else if(!bytes)e->text=source_string(chunk);
+    return bounded(std::move(e),depth);
    }
    static std::vector<std::string> shell_words(const Token& token){
     const auto& raw=token.text;bool triple=raw.starts_with("```");
@@ -230,8 +428,8 @@ class Parser {
     for(auto& word:shell_words(token)){auto arg=std::make_unique<Expr>();arg->kind=Expr::Kind::String;arg->where=token.where;arg->text=source_string(word);e->children.push_back(std::move(arg));}
     return syntax_bounded(std::move(e));
    }
-       Expression atom(){
-         const Token t=peek();
+        Expression atom(){
+          const Token t=peek();
          if(at("unsafe")&&peek(1).text=="{"){
           ++pos;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::UnsafeBlock;e->where=t.where;
           value_block(*e);
@@ -250,7 +448,12 @@ class Parser {
           pos+=3;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;e->where=t.where;e->text="launch_exec";
           if(!at(")"))do{
            if(e->children.size()>=9)throw Error(t.where,"ON1X-CSP-LIMIT: external argv limit exceeded");
+           // `exec` is a constant argv profile, not a text evaluation
+           // context. In particular, neither shell nor On1x expands '$'.
+           const bool saved_interpolation=interpolate;
+           interpolate=false;
            auto argument=expr().node;
+           interpolate=saved_interpolation;
            if(argument->kind!=Expr::Kind::String)throw Error(argument->where,"ON1X-CSP-UNSUPPORTED: external argv requires constant string literals");
            e->children.push_back(std::move(argument));
           }while(accept(","));
@@ -294,6 +497,7 @@ class Parser {
      if(at("variant")&&peek(1).text=="<"&&((peek(2).text=="sum"&&peek(3).text=="{")||typed_data_header("("))){
      ++pos;consume("<");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Variant;e->where=t.where;e->result=type();consume(">");consume("(");e->text=ident();consume(",");e->children.push_back(expr().node);consume(")");return syntax_bounded(std::move(e));
     }
+    if(regex_header())return regex_application();
     if(match_header())return matching(false);
     if(at("let_syntax")||at("letrec_syntax"))return syntax_scope();
     if(accept("quote")){
@@ -345,17 +549,46 @@ class Parser {
     do{auto element=expr();depth=std::max(depth,element.depth+1);tuple->children.push_back(std::move(element.node));}while(accept(","));
     consume(")");return bounded(std::move(tuple),depth);
    }
+  if(t.text.size()>=2&&t.text.front()=='/'&&t.text.back()=='/'){
+   ++pos;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::RegexLiteral;e->where=t.where;e->text=t.text;return {std::move(e)};
+  }
+  if(at("/"))throw Error(t.where,"expected a closed /.../ regex literal","ON1X-PARSE-REGEX");
   if(accept("true")||accept("false")){auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Boolean;e->where=t.where;e->text=t.text;return {std::move(e)};}
-  if(!t.text.empty()&&t.text[0]=='"'){
-   ++pos;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::String;e->where=t.where;e->text=t.text;return {std::move(e)};
+  if(string_token(t.text)){++pos;return string_value(t);}
+  if(t.text.starts_with("#\\")||t.text.starts_with("b!#\\")){
+   ++pos;
+   if(t.text.starts_with("b!")){
+    auto value=literals::character(std::string_view(t.text).substr(2),t.where);
+    if(value>255)throw Error(t.where,"byte character literal is outside 0..255","ON1X-LITERAL-BYTE");
+    return {literal(Expr::Kind::Integer,t.where,std::to_string(value)+"u8")};
+   }
+   (void)literals::character(t.text,t.where);
+   return {literal(Expr::Kind::Character,t.where,t.text)};
   }
   if(!t.text.empty()&&std::isdigit((unsigned char)t.text[0])){
    ++pos;auto e=std::make_unique<Expr>();
    bool hexadecimal=t.text.starts_with("0x")||t.text.starts_with("0X");
-    e->kind=(!hexadecimal&&numeric_literal_type(t.text).is_float())?Expr::Kind::Float:Expr::Kind::Integer;
-   e->where=t.where;e->text=t.text;return {std::move(e)};
+   e->kind=(!hexadecimal&&numeric_literal_type(t.text).is_float())?Expr::Kind::Float:Expr::Kind::Integer;
+   e->where=t.where;e->text=literals::radix_integer(t.text,t.where);return {std::move(e)};
   }
-    std::string name=ident();
+    if(cliche_member_header()){
+     auto e=std::make_unique<Expr>();e->kind=Expr::Kind::ClicheMember;e->where=t.where;
+     e->text=qualified_identifier();consume("<");
+     do{
+      e->cliche_arguments.push_back(type());
+      if(e->cliche_arguments.size()>32)throw Error(t.where,"cliche use argument limit exceeded","ON1X-CLICHE-LIMIT");
+     }while(accept(","));
+     close_angle();consume("::");e->cliche_member=ident();
+     if(accept("<")){
+      if(!at(">"))do{
+       e->member_type_arguments.push_back(type());
+       if(e->member_type_arguments.size()>32)throw Error(t.where,"cliche member type-argument limit exceeded","ON1X-CLICHE-LIMIT");
+      }while(accept(","));
+      close_angle();
+     }
+     return {std::move(e)};
+    }
+     std::string name=ident();
     // A qualified module reference is lowered to a lexical global by the loader.
     // A spaced dot in macro syntax remains a dotted-list tail.
     while(at(".")&&peek().where.offset==ts[pos-1].where.offset+ts[pos-1].text.size()&&
@@ -370,7 +603,7 @@ class Parser {
    }
   return {std::move(e)};
  }
-  Expression primary(){
+  Expression primary(bool capture_colon=true){
   Nesting guard(*this);
    const Token t=peek();
     // Prefix operations in this profile take a named endpoint/handle. In
@@ -378,20 +611,44 @@ class Parser {
     // and macro syntax, not an attempt to consume the following block.
      if(at("<-")||((at("join")||at("split")||at("close")||at("cancel"))&&is_ident(peek(1).text)&&peek(1).text!="with")){
     ++pos;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;e->where=t.where;e->text=t.text=="<-"?"recv":t.text;
-    auto operand=primary();e->children.push_back(std::move(operand.node));return bounded(std::move(e),operand.depth+1);
+    auto operand=primary(capture_colon);e->children.push_back(std::move(operand.node));return bounded(std::move(e),operand.depth+1);
    }
   if(accept("!")||accept("-")){
+   if(t.text=="-"&&literals::radix(peek().text)&&!numeric_literal_type(peek().text).is_unsigned()&&peek(1).text!="("){
+    // Parse the magnitude with the negative i64 boundary before the ordinary
+    // positive literal check. Other minus expressions keep postfix precedence.
+    const auto& n=peek();
+    auto value=literals::radix_integer(n.text,n.where,true);
+    if(value=="-9223372036854775808"&&peek(1).text!="["&&peek(1).text!="?"&&peek(1).text!="."){
+     ++pos;return {literal(Expr::Kind::Integer,t.where,std::move(value))};
+    }
+   }
    if(t.text=="-" && (peek().text=="9223372036854775808"||peek().text=="0x8000000000000000"||peek().text=="0X8000000000000000") && peek(1).text!="(") {
     ++pos;auto literal=std::make_unique<Expr>();literal->kind=Expr::Kind::Integer;
     literal->where=t.where;literal->text="-9223372036854775808";return {std::move(literal)};
    }
-   auto child=primary();
+   auto child=primary(capture_colon);
    auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Unary;e->where=t.where;e->text=t.text;
    e->children.push_back(std::move(child.node));return bounded(std::move(e),child.depth+1);
   }
    auto value=atom();
      while(true){
-     if(accept("?")){
+     if(capture_colon&&value.node->kind==Expr::Kind::Variable&&at(":")){
+      const auto& spelling=peek(1).text;
+      if(!spelling.empty()&&std::all_of(spelling.begin(),spelling.end(),[](char c){return c>='0'&&c<='9';})){
+       auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Index;e->where=consume(":").where;e->text=":";
+       e->children.push_back(std::move(value.node));
+       e->children.push_back(literal(Expr::Kind::Integer,peek().where,spelling));++pos;
+       value=syntax_bounded(std::move(e));continue;
+      }
+     }
+      if(accept("::")){
+       auto e=std::make_unique<Expr>();e->kind=Expr::Kind::InherentMember;
+       e->where=ts[pos-1].where;e->text=ident();
+       e->children.push_back(std::move(value.node));
+       value=bounded(std::move(e),value.depth+1);continue;
+      }
+      if(accept("?")){
       auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Propagate;e->where=ts[pos-1].where;
       e->children.push_back(std::move(value.node));value=bounded(std::move(e),value.depth+1);continue;
      }
@@ -402,7 +659,9 @@ class Parser {
       auto field=peek();++pos;consume("]");e->kind=Expr::Kind::Field;e->text=field.text.substr(1,field.text.size()-2);
       if(!is_ident(e->text))throw Error(field.where,"record projection requires an identifier label");
      }else{
-      e->children.push_back(expr().node);
+      // At the top level of an index, ':' belongs to the existing slice
+      // grammar. A parenthesized expression may still use capture shorthand.
+      e->children.push_back(expr(1,false).node);
       if(accept(":")){e->kind=Expr::Kind::Slice;e->children.push_back(expr().node);}else e->kind=Expr::Kind::Index;
       consume("]");
      }
@@ -477,7 +736,7 @@ class Parser {
     if(accept("-")){auto value=atom();if(value.node->kind!=Expr::Kind::Integer)throw Error(p.where,"negative pattern datum requires an integer");value.node->text="-"+value.node->text;p.literal=std::move(value.node);}
     else p.literal=atom().node;
     syntax_atoms=saved;
-     if(p.literal->kind!=Expr::Kind::Variable&&p.literal->kind!=Expr::Kind::String&&p.literal->kind!=Expr::Kind::Integer&&p.literal->kind!=Expr::Kind::Float&&p.literal->kind!=Expr::Kind::Boolean&&p.literal->kind!=Expr::Kind::SyntaxKeyword)
+     if(p.literal->kind!=Expr::Kind::Variable&&p.literal->kind!=Expr::Kind::String&&p.literal->kind!=Expr::Kind::Integer&&p.literal->kind!=Expr::Kind::Float&&p.literal->kind!=Expr::Kind::Boolean&&p.literal->kind!=Expr::Kind::Character&&p.literal->kind!=Expr::Kind::SyntaxKeyword)
      throw Error(p.where,"expected literal datum, wildcard, typed variable or structural pattern");
    }
    p.repeated=accept(macro.ellipsis);return p;
@@ -515,9 +774,16 @@ class Parser {
    else{consume("block");auto child=std::make_unique<Expr>();child->kind=Expr::Kind::SyntaxBlock;child->where=peek().where;child->body=block();child->syntax_depth=body_expression_depth(child->body)+1;e->children.push_back(std::move(child));}
    return syntax_bounded(std::move(e));
   }
- Expression expr(int minprec=1){auto lhs=primary();
-  while(true){std::string op=peek().text;int prec=precedence(op);if(prec<minprec)break;
-   auto where=peek().where;++pos;auto rhs=expr(prec+1);
+  Expression expr(int minprec=1,bool capture_colon=true){auto lhs=primary(capture_colon);
+   while(true){
+    if(at("~")&&peek(1).text=="{"){
+     if(minprec>3)break; // Equality/regex precedence, even though the RHS is an arm list.
+     Nesting guard(*this);auto e=std::make_unique<Expr>();e->kind=Expr::Kind::PatternMatch;
+     e->where=consume("~").where;e->sum_match=true;e->children.push_back(std::move(lhs.node));
+     lhs=matching_arms(std::move(e));continue;
+    }
+    std::string op=peek().text;int prec=precedence(op);if(prec<minprec)break;
+   auto where=peek().where;++pos;auto rhs=expr(prec+1,capture_colon);
     auto e=std::make_unique<Expr>();e->kind=op=="<-"?Expr::Kind::SourceCsp:Expr::Kind::Binary;e->where=where;e->text=op=="<-"?"send":op;
    auto depth=std::max(lhs.depth,rhs.depth)+1;
    e->children.push_back(std::move(lhs.node));e->children.push_back(std::move(rhs.node));lhs=bounded(std::move(e),depth);
@@ -537,19 +803,27 @@ class Parser {
    }else result.name=ident();
    return result;
   }
-  Pattern match_pattern_atom(){
-   Nesting guard(*this);Pattern p;p.where=peek().where;using P=Pattern::Kind;
-   if(accept("_")){p.kind=P::Wildcard;return p;}
-   if(accept("rest")){p.kind=P::Rest;return p;}
-   if(accept("(")){
-    p=match_pattern();if(!accept(",")){consume(")");return p;}
-    Pattern tuple;tuple.kind=P::Tuple;tuple.where=p.where;tuple.elements.push_back(std::move(p));
-    do{tuple.elements.push_back(match_pattern());if(tuple.elements.size()>256)throw Error(tuple.where,"pattern width limit exceeded");}while(accept(",")&&!at(")"));
+   Pattern match_pattern_atom(bool dash_wildcard){
+    Nesting guard(*this);Pattern p;p.where=peek().where;using P=Pattern::Kind;
+    if(accept("_")){p.kind=P::Wildcard;return p;}
+    // The dash is a wildcard only at a complete pattern boundary. Keep the
+    // ordinary signed-literal parsing and diagnostics for every other dash.
+    if(dash_wildcard&&at("-")){
+     const auto& next=peek(1).text;
+     if(next==")"||next=="]"||next=="}"||next==","||next=="as"||next=="|"||next=="if"||next=="=>"){
+      ++pos;p.kind=P::Wildcard;return p;
+     }
+    }
+    if(accept("rest")){p.kind=P::Rest;return p;}
+    if(accept("(")){
+     p=match_pattern(dash_wildcard);if(!accept(",")){consume(")");return p;}
+     Pattern tuple;tuple.kind=P::Tuple;tuple.where=p.where;tuple.elements.push_back(std::move(p));
+     do{tuple.elements.push_back(match_pattern(dash_wildcard));if(tuple.elements.size()>256)throw Error(tuple.where,"pattern width limit exceeded");}while(accept(",")&&!at(")"));
     consume(")");return tuple;
    }
    if(accept("[")){
     p.kind=P::Array;
-    if(!at("]")){do{p.elements.push_back(match_pattern());if(p.elements.size()>256)throw Error(p.where,"pattern width limit exceeded");
+     if(!at("]")){do{p.elements.push_back(match_pattern(dash_wildcard));if(p.elements.size()>256)throw Error(p.where,"pattern width limit exceeded");
      if(at("::"))throw Error(peek().where,"ON1X-PATTERN: list-cons patterns require an owning list runtime","ON1X-PATTERN");
     }while(accept(",")&&!at("]"));}
     consume("]");return p;
@@ -558,25 +832,32 @@ class Parser {
     pos+=2;p.kind=P::Record;std::set<std::string> labels;
     if(!at("}")){do{if(accept("..")){p.open=true;break;}
      auto label=ident();if(!labels.insert(label).second)throw Error(p.where,"duplicate record pattern field: "+label);
-     p.labels.push_back(label);consume(":");p.elements.push_back(match_pattern());
+      p.labels.push_back(label);consume(":");p.elements.push_back(match_pattern(dash_wildcard));
      if(p.elements.size()>256)throw Error(p.where,"pattern width limit exceeded");
     }while(accept(",")&&!at("}"));}
     consume("}");return p;
    }
    auto token=peek();bool negative=accept("-");if(negative)token=peek();
-   if(token.text=="true"||token.text=="false"||(!token.text.empty()&&(std::isdigit(static_cast<unsigned char>(token.text[0]))||token.text[0]=='"'))){
-    if(negative&&(token.text=="true"||token.text=="false"||token.text[0]=='"'))throw Error(p.where,"negative pattern literal must be numeric");
-    ++pos;p.kind=P::Literal;p.name=(negative?"-":"")+token.text;return p;
+   if(token.text=="true"||token.text=="false"||(!token.text.empty()&&std::isdigit(static_cast<unsigned char>(token.text[0])))||
+      string_token(token.text)||token.text.starts_with("#\\")||token.text.starts_with("b!#\\")){
+    if(negative&&(token.text.empty()||!std::isdigit(static_cast<unsigned char>(token.text[0]))))throw Error(p.where,"negative pattern literal must be numeric");
+    if(string_token(token.text)||token.text.starts_with("b!#\\")||token.text.starts_with("#\\")){
+     auto value=atom();
+     if(value.node->kind==Expr::Kind::ByteBuffer||value.node->kind==Expr::Kind::Interpolated)
+      throw Error(p.where,"pattern requires constant scalar or string literal");
+     p.name=std::move(value.node->text);
+    }else{++pos;p.name=literals::radix_integer(token.text,token.where,negative);}
+    p.kind=P::Literal;return p;
    }
    if(negative)throw Error(p.where,"expected a numeric pattern literal");
    p.name=ident();
-   if(accept("(")){p.kind=P::Variant;if(!at(")"))do{p.elements.push_back(match_pattern());if(p.elements.size()>256)throw Error(p.where,"pattern width limit exceeded");}while(accept(",")&&!at(")"));consume(")");}
+    if(accept("(")){p.kind=P::Variant;if(!at(")"))do{p.elements.push_back(match_pattern(dash_wildcard));if(p.elements.size()>256)throw Error(p.where,"pattern width limit exceeded");}while(accept(",")&&!at(")"));consume(")");}
    return p;
   }
-  Pattern match_pattern(){
-   Nesting guard(*this);auto p=match_pattern_atom();
-   if(accept("as")){Pattern alias;alias.kind=Pattern::Kind::As;alias.where=p.where;alias.name=ident();alias.elements.push_back(std::move(p));p=std::move(alias);}
-   if(accept("|")){Pattern either;either.kind=Pattern::Kind::Or;either.where=p.where;either.elements.push_back(std::move(p));either.elements.push_back(match_pattern());return either;}
+   Pattern match_pattern(bool dash_wildcard){
+    Nesting guard(*this);auto p=match_pattern_atom(dash_wildcard);
+    if(accept("as")){Pattern alias;alias.kind=Pattern::Kind::As;alias.where=p.where;alias.name=ident();alias.elements.push_back(std::move(p));p=std::move(alias);}
+    if(accept("|")){Pattern either;either.kind=Pattern::Kind::Or;either.where=p.where;either.elements.push_back(std::move(p));either.elements.push_back(match_pattern(dash_wildcard));return either;}
    return p;
   }
    void value_block(Expr& arm){
@@ -586,7 +867,7 @@ class Parser {
       if(arm.body.size()>=100000)throw Error(arm.where,"too many value block statements");
      bool structured=at("let")||at("var")||at("return")||at("if")||at("while")||at("{")||at("let_syntax")||at("letrec_syntax")||taskgroup_header()||defer_header()||for_header()||
      (at("loop")&&peek(1).text=="{")||((at("break")||at("continue"))&&peek(1).text!="(")||
-     (is_ident(peek().text)&&peek(1).text==":"&&(peek(2).text=="loop"||peek(2).text=="while"||peek(2).text=="for"))||peek(1).text=="=";
+     (is_ident(peek().text)&&peek(1).text==":"&&(peek(2).text=="loop"||peek(2).text=="while"||peek(2).text=="for"))||peek(1).text=="="||peek(1).text==":=";
     if(structured){arm.body.push_back(statement());continue;}
     auto value=expr().node;
     if(accept(";")){Stmt s;s.kind=Stmt::Kind::Expr;s.where=value->where;s.value=std::move(value);arm.body.push_back(std::move(s));}
@@ -607,15 +888,20 @@ class Parser {
      Stmt s;s.kind=Stmt::Kind::Return;s.where=peek().where;s.value=expr().node;arm->body.push_back(std::move(s));auto depth=body_expression_depth(arm->body)+1;auto checked=bounded(std::move(arm),depth);e->children.push_back(std::move(checked.node));
      if(e->labels.size()>256)throw Error(where,"match arm limit exceeded");
     }while(accept(","));}
-    consume("}");return syntax_bounded(std::move(e));
+     consume("}");return syntax_bounded(std::move(e));
+    }
+    return matching_arms(std::move(e));
    }
-    consume("{");
-   if(!at("}")){do{
-    auto arm=std::make_unique<Expr>();arm->kind=Expr::Kind::Case;arm->where=peek().where;arm->patterns.push_back(match_pattern());
-    if(accept("if"))arm->children.push_back(expr().node);else arm->children.push_back(truth(arm->where));
-     consume("=>");if(at("{"))value_block(*arm);else arm->children.push_back(expr().node);
-    auto depth=std::max(body_expression_depth(arm->body)+1,arm->children.back()->syntax_depth+1);auto checked=bounded(std::move(arm),depth);e->children.push_back(std::move(checked.node));
-    if(e->children.size()>257)throw Error(where,"match arm limit exceeded");
+   Expression matching_arms(ExprPtr e){
+     consume("{");
+    if(!at("}")){do{
+     auto arm=std::make_unique<Expr>();arm->kind=Expr::Kind::Case;arm->where=peek().where;arm->patterns.push_back(match_pattern(e->sum_match));
+      if(accept("if")){arm->text="@guard";arm->children.push_back(expr().node);}
+      else arm->children.push_back(truth(arm->where));
+      consume("=>");if(at("{"))value_block(*arm);else arm->children.push_back(expr().node);
+     auto depth=std::max({body_expression_depth(arm->body),arm->children[0]->syntax_depth,arm->children[1]->syntax_depth})+1;
+     auto checked=bounded(std::move(arm),depth);e->children.push_back(std::move(checked.node));
+     if(e->children.size()>257)throw Error(e->where,"match arm limit exceeded");
    }while(accept(",")&&!at("}"));}
     consume("}");return syntax_bounded(std::move(e));
    }
@@ -677,11 +963,19 @@ class Parser {
     match->children.insert(match->children.begin(),std::move(choice));
     return syntax_bounded(std::move(match));
    }
-  Param parameter(std::size_t index){
+  Param parameter(std::size_t index,bool allow_ref=false){
    Param result;result.where=peek().where;
    if(at("(")){result.pattern=pattern();result.name="@argument_"+std::to_string(index);}
    else result.name=ident();
-   result.type=accept(":")?type():Type(Type::Hole);return result;
+   if(!accept(":")){result.type=Type::Hole;return result;}
+   if(at("ref")&&is_ident(peek(1).text)){
+    if(!allow_ref||result.pattern)
+     throw Error(peek().where,"ref i64 requires a simple parameter of a named, non-extern On1x function","ON1X-REF");
+    consume("ref");
+    if(!accept("i64"))throw Error(peek().where,"only ref i64 parameters are supported","ON1X-REF");
+    result.exclusive=true;result.type=Type::I64;
+   }else result.type=type();
+   return result;
   }
   bool for_header()const{
    if(!at("for"))return false;
@@ -701,8 +995,8 @@ class Parser {
     if(at("("))s.pattern=pattern();else s.name=ident();
     if(accept(":"))s.declared=type();
     consume("=");s.value=expr().node;
-   }else if(peek(1).text=="="){
-    s.kind=Stmt::Kind::Assign;s.name=ident();consume("=");s.value=expr().node;
+   }else if(peek(1).text=="="||peek(1).text==":="){
+    s.kind=Stmt::Kind::Assign;s.name=ident();s.ref_store=accept(":=");if(!s.ref_store)consume("=");s.value=expr().node;
    }else{s.kind=Stmt::Kind::Expr;s.value=expr().node;}
    consume(end);return s;
   }
@@ -748,7 +1042,7 @@ class Parser {
      if(s.value->kind!=Expr::Kind::Call&&s.value->kind!=Expr::Kind::MacroCall&&s.value->kind!=Expr::Kind::Extension)throw Error(s.where,"defer requires a call expression","ON1X-DEFER");
      return s;
     }
-   if(match_header()){
+   if(match_header()&&!regex_header()){
     s.kind=Stmt::Kind::Expr;s.value=matching(true).node;if(s.value->kind==Expr::Kind::PatternMatch)accept(";");else consume(";");return s;
    }
    if(is_ident(peek().text)&&peek(1).text==":"&&
@@ -781,8 +1075,8 @@ class Parser {
    if(accept("return")){s.kind=Stmt::Kind::Return;if(!at(";"))s.value=expr().node;consume(";");return s;}
    if(accept("if")){s.kind=Stmt::Kind::If;s.value=expr().node;s.body=block();if(accept("else"))s.otherwise=block();return s;}
   if(at("{")){s.kind=Stmt::Kind::Block;s.body=block();return s;}
-  if(peek(1).text=="="){
-    s.kind=Stmt::Kind::Assign;s.name=ident();consume("=");s.value=expr().node;consume(";");return s;
+  if(peek(1).text=="="||peek(1).text==":="){
+    s.kind=Stmt::Kind::Assign;s.name=ident();s.ref_store=accept(":=");if(!s.ref_store)consume("=");s.value=expr().node;consume(";");return s;
   }
    s.kind=Stmt::Kind::Expr;s.value=expr().node;consume(";");return s;
  }
@@ -841,7 +1135,7 @@ class Parser {
    while(accept(".")){name+="."+ident();if(name.size()>4096)throw Error(where,"module name exceeds 4096 bytes");}
     return name;
    }
-   NominalDeclaration nominal_declaration(){
+    NominalDeclaration nominal_declaration(){
      NominalDeclaration d;d.where=peek().where;bool sum=accept("enum");if(!sum)consume("record");d.kind=sum?Type::Sum:Type::Record;d.name=ident();
       static const std::set<std::string> builtins={"i64","f64","f32","u8","u16","u32","u64","bool","string","void","json","json_view","sexpr","buffer","record","sum","array","slice","code","forall","fn","xfiber","_"};
      if(builtins.contains(d.name))throw Error(d.where,"built-in type name cannot be redeclared: "+d.name,"ON1X-NOMINAL");
@@ -865,11 +1159,199 @@ class Parser {
     }while(accept(",")&&!at("}"));
     consume("}");accept(";");bound_types.clear();
     if(sum&&d.fields.empty())throw Error(d.where,"enum requires at least one constructor");
-    return d;
-   }
-    Unit parse(){Unit u;
-     while(!at("<eof>")){
-     if((at("record")||at("enum"))&&is_ident(peek(1).text)){
+     return d;
+    }
+     bool cliche_implementation_header()const{
+      if(!at("impl"))return false;
+      std::size_t angles=0,groups=0;
+      for(std::size_t i=1;pos+i<ts.size();++i){
+       const auto& token=peek(i).text;
+       if(token=="<"){++angles;continue;}
+       if(token==">"){if(angles)--angles;continue;}
+       if(token=="("||token=="["){++groups;continue;}
+       if(token==")"||token=="]"){if(groups)--groups;continue;}
+       if(!angles&&!groups&&token=="for")return true;
+       if(!angles&&!groups&&(token=="{"||token==";"||token=="<eof>"))return false;
+      }
+      return false;
+     }
+     InherentMember inherent_member(const Type& target,std::size_t implementation_index,
+                                     std::size_t member_index,
+                                     const std::map<std::string,std::size_t>& implementation_bindings){
+      InherentMember member;member.where=peek().where;
+      const bool function=accept("fn");
+      if(!function&&!accept("value"))
+       throw Error(peek().where,"inherent implementation expects 'fn' or 'value'","ON1X-IMPL");
+      member.kind=function?InherentMember::Kind::Function:InherentMember::Kind::Value;
+      member.name=ident();
+      member.runtime_name="@impl_"+std::to_string(implementation_index)+"_"+std::to_string(member_index);
+      member.function.where=member.where;member.function.name=member.name;
+      std::vector<ClicheConstraint> unsupported_constraints;
+      member.type_parameters=generic_parameters(unsupported_constraints);
+      if(!unsupported_constraints.empty())
+       throw Error(member.where,"bounded inherent members are not supported; use an unconstrained generic member","ON1X-IMPL-UNSUPPORTED");
+
+      auto receiver=[&](std::size_t parameter_index){
+       Param parameter;parameter.where=peek().where;
+       if(parameter_index==0&&(at("ref")||at("move"))&&peek(1).text=="self"){
+        const bool borrowed=accept("ref");if(!borrowed)consume("move");
+        parameter.name=ident();
+        member.receiver=borrowed?InherentMember::Receiver::Borrow:InherentMember::Receiver::Move;
+        parameter.type=accept(":")?type():target;
+        return parameter;
+       }
+       parameter=this->parameter(parameter_index);
+       if(parameter.name=="self"){
+        if(parameter_index)
+         throw Error(parameter.where,"self must be the first inherent member parameter","ON1X-IMPL-RECEIVER");
+        member.receiver=InherentMember::Receiver::Value;
+        if(parameter.type==Type::Hole)parameter.type=target;
+       }
+       return parameter;
+      };
+
+      if(function){
+       consume("(");
+       if(!at(")"))do{
+        member.function.params.push_back(receiver(member.function.params.size()));
+        if(member.function.params.size()>64)
+         throw Error(member.where,"inherent member parameter limit exceeded","ON1X-IMPL-LIMIT");
+       }while(accept(","));
+       consume(")");if(accept("->"))member.function.result=type();
+       if(at("where"))
+        throw Error(peek().where,"where constraints on inherent members are not supported","ON1X-IMPL-UNSUPPORTED");
+       member.function.body=block();
+      }else{
+       if(accept("(")){
+        if(at(")"))throw Error(peek().where,"member value receiver list cannot be empty","ON1X-IMPL-RECEIVER");
+        member.function.params.push_back(receiver(0));
+        if(accept(","))throw Error(peek().where,"member values accept only an optional self receiver","ON1X-IMPL-RECEIVER");
+        consume(")");
+       }
+       member.value_type=accept(":")?type():Type::Hole;
+       consume("=");member.value=expr().node;consume(";");
+      }
+      bound_types=implementation_bindings;
+      return member;
+     }
+     InherentImplementation inherent_implementation(std::size_t index){
+      InherentImplementation implementation;implementation.where=peek().where;
+      consume("impl");bound_types.clear();
+      std::vector<ClicheConstraint> unsupported_constraints;
+      implementation.type_parameters=generic_parameters(unsupported_constraints);
+      if(!unsupported_constraints.empty())
+       throw Error(implementation.where,"bounded inherent implementations are not supported","ON1X-IMPL-UNSUPPORTED");
+      const auto bindings=bound_types;
+      implementation.target=type();
+      if(implementation.target.kind()!=Type::Named)
+       throw Error(implementation.where,"inherent implementation target must be a named record or enum","ON1X-IMPL");
+      if(at("where"))
+       throw Error(peek().where,"where constraints on inherent implementations are not supported","ON1X-IMPL-UNSUPPORTED");
+      consume("{");
+      while(!at("}")){
+       if(at("<eof>"))throw Error(implementation.where,"unterminated inherent implementation","ON1X-IMPL");
+       if(implementation.members.size()>=256)
+        throw Error(peek().where,"inherent implementation member limit exceeded","ON1X-IMPL-LIMIT");
+       implementation.members.push_back(inherent_member(
+        implementation.target,index,implementation.members.size(),bindings));
+      }
+      consume("}");accept(";");bound_types.clear();
+      if(implementation.members.empty())
+       throw Error(implementation.where,"inherent implementation requires at least one member","ON1X-IMPL");
+      return implementation;
+     }
+     ClicheDeclaration cliche_declaration(){
+     ClicheDeclaration declaration;declaration.where=peek().where;consume("cliche");
+     declaration.name=ident();bound_types.clear();bound_types.emplace("Self",0);
+     declaration.type_parameters=generic_parameters(declaration.constraints);
+     where_constraints(declaration.constraints);consume("{");std::set<std::string> members;
+     const auto base=bound_types;
+     while(!accept("}")){
+      if(at("<eof>"))throw Error(declaration.where,"unterminated cliche declaration","ON1X-CLICHE-SYNTAX");
+      ClicheMember member;member.where=peek().where;
+      if(accept("fn"))member.kind=ClicheMember::Kind::Function;
+      else if(accept("let"))member.kind=ClicheMember::Kind::Value;
+      else throw Error(peek().where,"cliche members must start with 'fn' or 'let'","ON1X-CLICHE-SYNTAX");
+      member.name=ident();
+      if(!members.insert(member.name).second)
+       throw Error(member.where,"duplicate cliche member: "+member.name,"ON1X-CLICHE-SIGNATURE");
+      bound_types=base;member.type_parameters=generic_parameters(member.constraints);
+      if(member.kind==ClicheMember::Kind::Function){
+       consume("(");
+       if(!at(")"))do{
+        member.params.push_back(parameter(member.params.size()));
+        if(member.params.size()>64)throw Error(member.where,"cliche member parameter limit exceeded","ON1X-CLICHE-LIMIT");
+       }while(accept(","));
+       consume(")");if(accept("->"))member.result=type();
+      }else{
+       consume(":");member.result=type();
+      }
+      where_constraints(member.constraints);consume(";");
+      declaration.members.push_back(std::move(member));
+      if(declaration.members.size()>128)throw Error(declaration.where,"cliche member limit exceeded","ON1X-CLICHE-LIMIT");
+     }
+     accept(";");bound_types.clear();return declaration;
+    }
+    ClicheImplementation cliche_implementation(){
+     ClicheImplementation implementation;implementation.where=peek().where;consume("impl");
+     bound_types.clear();implementation.type_parameters=generic_parameters(implementation.constraints);
+     implementation.name=qualified_identifier();
+     std::vector<Type> arguments;
+     if(accept("<")){
+      if(!at(">"))do{
+       arguments.push_back(type());
+       if(arguments.size()>31)throw Error(implementation.where,"implementation argument limit exceeded","ON1X-CLICHE-LIMIT");
+      }while(accept(","));
+      close_angle();
+     }
+     consume("for");implementation.arguments.push_back(type());
+     implementation.arguments.insert(implementation.arguments.end(),arguments.begin(),arguments.end());
+     where_constraints(implementation.constraints);consume("{");std::set<std::string> members;
+     const auto base=bound_types;
+     while(!accept("}")){
+      if(at("<eof>"))throw Error(implementation.where,"unterminated cliche implementation","ON1X-CLICHE-SYNTAX");
+      ClicheImplementationMember member;member.where=peek().where;
+      if(accept("fn"))member.kind=ClicheMember::Kind::Function;
+      else if(accept("let"))member.kind=ClicheMember::Kind::Value;
+      else throw Error(peek().where,"implementation members must start with 'fn' or 'let'","ON1X-CLICHE-SYNTAX");
+      member.name=ident();member.function.name=member.name;member.function.where=member.where;
+      if(!members.insert(member.name).second)
+       throw Error(member.where,"duplicate implementation member: "+member.name,"ON1X-CLICHE-SIGNATURE");
+      bound_types=base;
+      member.function.type_parameters=generic_parameters(member.function.constraints);
+      if(member.kind==ClicheMember::Kind::Function){
+       consume("(");
+       if(!at(")"))do{
+        member.function.params.push_back(parameter(member.function.params.size(),true));
+        if(member.function.params.size()>64)throw Error(member.where,"implementation member parameter limit exceeded","ON1X-CLICHE-LIMIT");
+       }while(accept(","));
+       consume(")");if(accept("->"))member.function.result=type();
+       where_constraints(member.function.constraints);member.function.body=block();
+      }else{
+       consume(":");member.value_type=type();member.function.result=member.value_type;
+       where_constraints(member.function.constraints);consume("=");member.value=expr().node;consume(";");
+      }
+      implementation.members.push_back(std::move(member));
+      if(implementation.members.size()>128)throw Error(implementation.where,"implementation member limit exceeded","ON1X-CLICHE-LIMIT");
+     }
+     accept(";");bound_types.clear();return implementation;
+    }
+     Unit parse(){Unit u;
+      while(!at("<eof>")){
+      if(at("cliche")&&is_ident(peek(1).text)){
+       if(u.cliches.size()>=256)throw Error(peek().where,"cliche declaration limit exceeded","ON1X-CLICHE-LIMIT");
+       u.cliches.push_back(cliche_declaration());continue;
+      }
+       if(at("impl")&&!cliche_implementation_header()&&(peek(1).text=="<"||is_ident(peek(1).text))){
+        if(u.inherent_implementations.size()>=1024)
+         throw Error(peek().where,"inherent implementation limit exceeded","ON1X-IMPL-LIMIT");
+        u.inherent_implementations.push_back(inherent_implementation(u.inherent_implementations.size()));continue;
+       }
+       if(cliche_implementation_header()){
+        if(u.cliche_implementations.size()>=1024)throw Error(peek().where,"cliche implementation limit exceeded","ON1X-CLICHE-LIMIT");
+        u.cliche_implementations.push_back(cliche_implementation());continue;
+       }
+      if((at("record")||at("enum"))&&is_ident(peek(1).text)){
       if(u.nominals.size()>=512)throw Error(peek().where,"nominal declaration limit exceeded");
       u.nominals.push_back(nominal_declaration());continue;
      }
@@ -957,13 +1439,19 @@ class Parser {
      if(u.module_imports.size()+u.kernel_imports.size()>1024)throw Error(peek().where,"import count limit exceeded");
      consume(";");continue;
    }
-    Function f;f.where=peek().where;
-    while(accept("@"))f.attributes.push_back(extension(ts[pos-1].where).node);
-    f.external=accept("extern");consume("fn");f.name=ident();consume("(");
-    if(!at(")"))do{f.params.push_back(parameter(f.params.size()));}while(accept(","));
-   consume(")");if(accept("->"))f.result=type();
-   if(f.external)consume(";");else f.body=block();
-   u.functions.push_back(std::move(f));
+     Function f;f.where=peek().where;
+     while(accept("@"))f.attributes.push_back(extension(ts[pos-1].where).node);
+     f.external=accept("extern");consume("fn");f.name=ident();bound_types.clear();
+     f.type_parameters=generic_parameters(f.constraints);
+     if(f.external&&!f.type_parameters.empty())
+      throw Error(f.where,"extern functions cannot be generic","ON1X-CLICHE-UNSUPPORTED");
+     consume("(");
+     if(!at(")"))do{f.params.push_back(parameter(f.params.size(),!f.external));}while(accept(","));
+    consume(")");if(accept("->"))f.result=type();
+    where_constraints(f.constraints);
+    if(f.external)consume(";");else f.body=block();
+    bound_types.clear();
+    u.functions.push_back(std::move(f));
    if(u.functions.size()>2048)throw Error(peek().where,"too many functions");
   }
     // Empty files are valid package initializers; the checker still requires main.

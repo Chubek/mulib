@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "on1x-mulib-knowledge",
+  "version": "1.0.0",
+  "description": "Read-only, source-cited On1x language and canonical MuLIB kernel evidence. Not a binding or safety certificate.",
+  "homepage": "https://github.com/Chubek/mulib/tree/master/on1x",
+  "repository": "https://github.com/Chubek/mulib",
+  "license": "MIT",
+  "keywords": ["on1x", "mulib", "documentation"]
+}

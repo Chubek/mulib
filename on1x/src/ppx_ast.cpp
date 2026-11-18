@@ -1,5 +1,6 @@
 #include <on1x/meta.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/literals.hpp>
 #include <on1x/patterns.hpp>
 #include <charconv>
 #include <set>
@@ -24,13 +25,14 @@ SExpr type(const Type& t){
    case Type::ByteSender:case Type::ByteReceiver:
     return form("CspType",{string(t.kind()==Type::ByteSender?"sender":"receiver"),form("U8Type")});
  case Type::Invalid:return form("Inferred");case Type::Hole:return form("HoleType");
-  case Type::I64:return form("I64Type");case Type::Bool:return form("BoolType");case Type::String:return form("StringType");
+ case Type::I64:return form("I64Type");case Type::Bool:return form("BoolType");case Type::String:return form("StringType");case Type::Char:return form("CharType");
    case Type::F64:return form("F64Type");
    case Type::F32:return form("F32Type");
    case Type::U8:return form("U8Type");case Type::U16:return form("U16Type");
    case Type::U32:return form("U32Type");case Type::U64:return form("U64Type");
   case Type::Void:return form("VoidType");case Type::Json:return form("JsonType");case Type::JsonView:return form("JsonViewType");
-  case Type::SExpr:return form("SExprType");case Type::Buffer:return form("BufferType");
+   case Type::SExpr:return form("SExprType");case Type::Buffer:return form("BufferType");
+   case Type::Own:throw Error({"<ppx-type>"},"ON1X-OWN-PPX: Unit-v1 PPX does not transport unique ownership","ON1X-OWN-PPX");
   case Type::Code:return form("CodeType",{type(t.code_result())});
  case Type::Bound:return form("BoundType",{symbol(std::to_string(t.generic_identity()))});
  case Type::Forall:return form("ForallType",{symbol(std::to_string(t.generic_identity())),type(t.body())});
@@ -49,6 +51,7 @@ SExpr pattern(const Pattern& p){
  std::vector<SExpr> fields;for(const auto& e:p.elements)fields.push_back(pattern(e));return form("TuplePattern",{list(std::move(fields)),loc(p.where)});
 }
 SExpr parameters(const std::vector<Param>& ps){
+ for(const auto& p:ps)if(p.exclusive)throw Error(p.where,"ref i64 parameter modes are not part of PPX Unit v1","ON1X-REF");
  std::vector<SExpr> out;for(const auto& p:ps)out.push_back(p.pattern?form("PatternParameter",{pattern(*p.pattern),type(p.type),loc(p.where)}):form("Parameter",{string(p.name),type(p.type),loc(p.where)}));return list(std::move(out));
 }
 SExpr expression(const Expr& e);
@@ -66,7 +69,12 @@ SExpr expression(const Expr& e){
  }
  if(e.kind==K::Propagate)return form("Propagate",{expression(*e.children.at(0)),loc(e.where)});
   auto at=loc(e.where);
- if(e.kind==K::PatternMatch){std::vector<SExpr> arms;for(std::size_t i=1;i<e.children.size();++i){const auto& arm=*e.children[i];arms.push_back(form("MatchArm",{pattern(arm.patterns.at(0)),expression(*arm.children.at(0)),block(arm.body,arm.where),expression(*arm.children.at(1)),loc(arm.where)}));}return form("SourceMatch",{string(e.text),expression(*e.children.at(0)),list(std::move(arms)),symbol(e.statement_match?"true":"false"),std::move(at)});}
+  if(e.kind==K::PatternMatch){
+   std::vector<SExpr> arms;for(std::size_t i=1;i<e.children.size();++i){const auto& arm=*e.children[i];arms.push_back(form("MatchArm",{pattern(arm.patterns.at(0)),expression(*arm.children.at(0)),block(arm.body,arm.where),expression(*arm.children.at(1)),loc(arm.where)}));}
+   auto subject=expression(*e.children.at(0));
+   if(e.sum_match)return form("SourceSumMatch",{std::move(subject),list(std::move(arms)),std::move(at)});
+   return form("SourceMatch",{string(e.text),std::move(subject),list(std::move(arms)),symbol(e.statement_match?"true":"false"),std::move(at)});
+  }
   if(e.kind==K::Unit)return form("UnitValue",{std::move(at)});
   if(e.kind==K::Loop)return form("LoopValue",{string(e.text),symbol(std::to_string(e.context)),block(e.body,e.where),std::move(at)});
  if(e.kind>=K::Record&&e.kind<=K::Length){
@@ -80,6 +88,12 @@ SExpr expression(const Expr& e){
    case K::Integer:return form(numeric_literal_type(e.text).is_unsigned()?"UnsignedLiteral":e.text.starts_with("0x")||e.text.starts_with("0X")?"HexLiteral":"DecimalLiteral",{string(e.text),std::move(at)});
   case K::Float:return form("FloatLiteral",{string(e.text),std::move(at)});
  case K::String:return form("StringLiteral",{string(literal_value(e.text)),std::move(at)});
+ case K::Character:return form("CharacterLiteral",{string(e.text),std::move(at)});
+ case K::ByteBuffer:return form("ByteBufferLiteral",{string(e.text),std::move(at)});
+ case K::Interpolated:{
+  std::vector<SExpr> parts;for(const auto& c:e.children)parts.push_back(expression(*c));
+  return form("InterpolatedString",{list(std::move(parts)),std::move(at)});
+ }
  case K::Boolean:return form("BooleanLiteral",{symbol(e.text),std::move(at)});
  case K::Variable:return form("Identifier",{string(e.text),std::move(at)});
  case K::Unary:return form("Unary",{symbol(e.text),expression(*e.children.at(0)),std::move(at)});
@@ -98,6 +112,7 @@ SExpr expression(const Expr& e){
  }
 }
  SExpr statement(const Stmt& s){
+  if(s.ref_store)throw Error(s.where,"ref i64 stores are not part of PPX Unit v1","ON1X-REF");
   if(s.unsafe_block)throw Error(s.where,"ON1X-KERNEL-PPX: unsafe scopes are not PPX wire data","ON1X-KERNEL-PPX");
  auto at=loc(s.where);
   switch(s.kind){
@@ -159,7 +174,7 @@ Type read_type(const SExpr& n,bool inferred=false,std::size_t bound=0){
  }
  if(k=="Inferred"){if(!inferred)invalid(n,"Inferred is only valid for a local annotation");return Type::Invalid;}
  if(k=="HoleType")return Type::Hole;
-    for(auto kind:{Type::I64,Type::F64,Type::F32,Type::U8,Type::U16,Type::U32,Type::U64,Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(tag(type(Type(kind)))==k)return kind;
+    for(auto kind:{Type::I64,Type::F64,Type::F32,Type::U8,Type::U16,Type::U32,Type::U64,Type::Bool,Type::String,Type::Char,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})if(tag(type(Type(kind)))==k)return kind;
   if(k=="CodeType")return Type::code(read_type(field(n,0),false,bound));
  if(k=="BoundType"){auto index=number(field(n,0));if(index>=bound)invalid(n,"unbound quantified type variable");return Type::bound(index);}
  if(k=="ForallType"){
@@ -219,10 +234,16 @@ ExprPtr read_expression(const SExpr& n){
       else if(k=="UnitValue")e->kind=K::Unit;
      else if(k=="Propagate"){e->kind=K::Propagate;e->children.push_back(read_expression(field(n,0)));}
     else if(k=="LoopValue"){e->kind=K::Loop;e->text=field(n,0).text;e->context=number(field(n,1));e->body=read_block(field(n,2));if(!e->text.empty())base_schema().validate(string(e->text),"Name","$.loop_label");}
-   else if(k=="SourceMatch"){
-    e->kind=K::PatternMatch;e->text=field(n,0).text;e->statement_match=field(n,3).text=="true";if(!e->text.empty())base_schema().validate(string(e->text),"Name","$.match_binding");e->children.push_back(read_expression(field(n,1)));
-    if(field(n,2).items.size()>256)invalid(n,"match arm limit exceeded");
-    for(const auto& arm:field(n,2).items){auto a=std::make_unique<Expr>();a->kind=K::Case;a->where=location(arm.items.back());a->patterns.push_back(read_pattern(field(arm,0)));a->children.push_back(read_expression(field(arm,1)));a->body=read_block(field(arm,2));a->children.push_back(read_expression(field(arm,3)));e->children.push_back(std::move(a));}
+    else if(k=="SourceMatch"||k=="SourceSumMatch"){
+     e->kind=K::PatternMatch;e->sum_match=k=="SourceSumMatch";
+     if(!e->sum_match){
+      e->text=field(n,0).text;e->statement_match=field(n,3).text=="true";
+      if(!e->text.empty())base_schema().validate(string(e->text),"Name","$.match_binding");
+     }
+     e->children.push_back(read_expression(field(n,e->sum_match?0:1)));
+     const auto& arms=field(n,e->sum_match?1:2).items;
+     if(arms.size()>256)invalid(n,"match arm limit exceeded");
+     for(const auto& arm:arms){auto a=std::make_unique<Expr>();a->kind=K::Case;a->where=location(arm.items.back());a->patterns.push_back(read_pattern(field(arm,0)));a->children.push_back(read_expression(field(arm,1)));a->body=read_block(field(arm,2));a->children.push_back(read_expression(field(arm,3)));e->children.push_back(std::move(a));}
    }
    else if(k=="ValueData"){
     static const std::vector<std::string> names={"record","variant","match","array","field","index","slice","length"};
@@ -245,6 +266,19 @@ ExprPtr read_expression(const SExpr& n){
     else if(k=="DecimalLiteral"||k=="HexLiteral"||k=="UnsignedLiteral"){e->kind=K::Integer;e->text=field(n,0).text;}
   else if(k=="FloatLiteral"){e->kind=K::Float;e->text=field(n,0).text;}
  else if(k=="StringLiteral"){e->kind=K::String;e->text=source_literal(field(n,0).text);}
+ else if(k=="CharacterLiteral"){
+  e->kind=K::Character;e->text=field(n,0).text;(void)literals::character(e->text,e->where);
+ }
+ else if(k=="ByteBufferLiteral"){
+  e->kind=K::ByteBuffer;e->text=field(n,0).text;
+  if(!literals::byte_payload(e->text))invalid(n,"invalid byte buffer payload");
+ }
+ else if(k=="InterpolatedString"){
+  e->kind=K::Interpolated;
+  const auto& parts=field(n,0).items;
+  if(parts.empty()||parts.size()>literals::max_format_parts)invalid(n,"invalid interpolation part count");
+  for(const auto& part:parts)e->children.push_back(read_expression(part));
+ }
  else if(k=="BooleanLiteral"){e->kind=K::Boolean;e->text=field(n,0).text;}
  else if(k=="Identifier"){e->kind=K::Variable;e->text=field(n,0).text;}
  else if(k=="Unary"||k=="Binary"){
@@ -302,7 +336,50 @@ SExpr encode_type(const Type& value){return type(value);}
 Type decode_type(const SExpr& tree){base_schema().validate(tree,"Type");return read_type(tree);}
 Location decode_source_location(const SExpr& tree){base_schema().validate(tree,"Location");return location(tree);}
 SExpr encode(const Unit& unit){
- require_no_kernel_imports(unit);
+  require_no_kernel_imports(unit);
+  auto reject=[&](const Type& type,const Location& at){
+   if(type.contains_unique())
+    throw Error(at,"ON1X-OWN-PPX: Unit-v1 PPX does not transport unique ownership","ON1X-OWN-PPX");
+  };
+  auto pattern=[&](auto&& self,const Pattern& p)->void{
+   reject(p.type,p.where);for(const auto& child:p.elements)self(self,child);
+  };
+  auto expression=[&](auto&& self,const Expr& e)->void{
+   reject(e.type,e.where);reject(e.result,e.where);
+   for(const auto& p:e.parameters){reject(p.type,p.where);if(p.pattern)pattern(pattern,*p.pattern);}
+   for(const auto& p:e.patterns)pattern(pattern,p);
+   if(e.callee)self(self,*e.callee);
+   for(const auto& child:e.children)if(child)self(self,*child);
+    auto body=[&](auto&& visit,const std::vector<Stmt>& statements)->void{
+     for(const auto& s:statements){
+      reject(s.declared,s.where);if(s.pattern)pattern(pattern,*s.pattern);
+      if(s.value)self(self,*s.value);
+      visit(visit,s.body);visit(visit,s.otherwise);
+     }
+    };
+   body(body,e.body);
+  };
+   auto body=[&](auto&& visit,const std::vector<Stmt>& statements)->void{
+    for(const auto& s:statements){
+     reject(s.declared,s.where);if(s.pattern)pattern(pattern,*s.pattern);
+     if(s.value)expression(expression,*s.value);
+     visit(visit,s.body);visit(visit,s.otherwise);
+    }
+   };
+  for(const auto& d:unit.nominals)for(const auto& field:d.fields)reject(field,d.where);
+  for(const auto& f:unit.functions){
+   reject(f.result,f.where);for(const auto& p:f.params){reject(p.type,p.where);if(p.pattern)pattern(pattern,*p.pattern);}
+   body(body,f.body);
+  }
+ if(!unit.cliches.empty()||!unit.cliche_implementations.empty())
+  throw Error(!unit.cliches.empty()?unit.cliches.front().where:
+              unit.cliche_implementations.front().where,
+              "ON1X-CLICHE-UNSUPPORTED: Unit-v1 PPX does not transport intrinsic cliche declarations",
+              "ON1X-CLICHE-UNSUPPORTED");
+ if(!unit.inherent_implementations.empty())
+  throw Error(unit.inherent_implementations.front().where,
+              "ON1X-IMPL-UNSUPPORTED: Unit-v1 PPX does not transport intrinsic impl declarations",
+              "ON1X-IMPL-UNSUPPORTED");
  if(!unit.extensions.empty())throw Error(unit.extensions.front().where,"ON1X-CAT-PPX: declaration carriers require native expansion (inspection does not execute processors)","ON1X-CAT-PPX");
  if(!unit.macros.empty())throw Error(unit.macros.front().where,"expand macros before PPX encoding");
  std::vector<SExpr> functions;

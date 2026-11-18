@@ -2,7 +2,7 @@
 from .core.Pervasive import Option, Result,
     basis_identity as identity, basis_ignore as ignore,
     basis_fst as fst, basis_snd as snd, basis_const as const,
-    basis_pervasive_apply as apply,
+    basis_pervasive_apply as apply, basis_pervasive_errln as errln,
     basis_pervasive_option_some as option_some,
     basis_pervasive_option_none as option_none,
     basis_pervasive_option_is_some as option_is_some,

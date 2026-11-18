@@ -1,0 +1,29 @@
+{
+  "name": "on1x",
+  "displayName": "On1x",
+  "description": "Syntax highlighting and language configuration for On1x.",
+  "version": "0.1.0",
+  "publisher": "mulib",
+  "license": "MIT",
+  "repository": {"type": "git", "url": "https://github.com/Chubek/mulib.git", "directory": "on1x/addons/vscode"},
+  "engines": {"vscode": "^1.85.0"},
+  "categories": ["Programming Languages"],
+  "capabilities": {"untrustedWorkspaces": {"supported": true}},
+  "contributes": {
+    "languages": [
+      {
+        "id": "on1x",
+        "aliases": ["On1x", "on1x"],
+        "extensions": [".on1x", ".on1xi"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "on1x",
+        "scopeName": "source.on1x",
+        "path": "./syntaxes/on1x.tmLanguage.json"
+      }
+    ]
+  }
+}

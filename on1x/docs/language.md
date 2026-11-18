@@ -12,6 +12,19 @@ empty payloads are `record{}` and multi-field payloads are tuples. Type argument
 and nominal identities remain exact through inference, imports and C11. Only
 nonrecursive, bounded, trivially copied fields are admitted.
 
+Intrinsic [core cliches](core-cliche.md) declare statically selected functions
+and associated values with `cliche`, implement them with coherent `impl` heads,
+and use explicit `Cliche<Self, ...>::member` lookup. Generic function bounds are
+checked at each specialization. This is not the legacy Category/PPX protocol or
+the separate inherent-member lookup path.
+
+Intrinsic [nominal implementation blocks](core-impl.md) use
+`impl<T> Box<T> { ... }`, `value::member` and `Type::member` for deterministic
+static members on records and enums. Associated functions may be first-class;
+receiver methods require direct calls. By-value `self` is limited to copy-safe
+layouts, while `ref self` and `move self` currently reject. Field projection
+remains `value["field"]`.
+
 The default [pervasive environment](modules.md#the-pervasive-environment)
 supplies canonical `Option<T>` and `Result<T,E>` declarations plus constructor,
 query, map/chain, fallback, conversion and focused iteration helpers without an
@@ -43,10 +56,14 @@ profiles. See [the exact syntax, limits and migration contract](defer-errors.md)
 
 ## Lexical conventions
 
-Source files use ASCII identifier spelling `[A-Za-z_][A-Za-z0-9_]*` and
-UTF-8 text in string literals (embedded NUL and \0 are rejected in this C-string milestone). `#` introduces a line comment.
-Whitespace separates tokens. String escapes are `\\`, `\"`, `\n`, `\r`,
-`\t`; the lexer recognizes `\0` but semantic analysis rejects it until length-aware strings are implemented. Generated and fallback scanners are tested for identical
+Source files use ASCII identifier spelling `[A-Za-z_][A-Za-z0-9_]*`.
+`#` introduces a line comment except for `#\` character literals. Whitespace
+separates tokens. Ordinary strings support `\\`, `\"`, `\n`, `\r`, `\t` and
+`\$` but reject embedded NUL. See [core literals](core-literals.md) for
+raw/triple strings, interpolation, `char`, `b!` buffers and numeric spellings.
+In a string that used `$name` or `${...}` literally, escape the dollar
+or use `r!"..."`.
+Generated and fallback scanners are tested for identical
 token bytes, byte offsets and diagnostics. Lines advance on LF; columns count
 bytes, not Unicode code points. CR and tabs are whitespace, not column expansion.
 
@@ -355,13 +372,21 @@ Fields, elements, payloads and **legacy** match results must be **trivially copi
 JSON, sexpr and buffer owners are rejected in value-data positions, so this
 profile needs no new allocation or drop path. Expanded value width is bounded
 (256 fields/extent per level, 32 nesting levels, 4096 storage units) with
-deterministic diagnostics. Records/sums do not yet support equality, ordering,
-printing, mutation of fields or elements, recursive nominal
-ADTs, type-parameterized data constructors or row polymorphism. `--emit-ir`
+deterministic diagnostics. Structural records/sums do not yet support equality,
+ordering, printing, mutation of fields or elements, recursion,
+type-parameterized constructors or row polymorphism. `--emit-ir`
 (scalar MIR), raw extern aggregates and the independent structural/Chisel
 adapters reject value-data kinds instead of approximating them. Generated C11
 uses private compiler-owned structs with a compile-time runtime ABI guard; see
 [the data-model contract](data-model.md).
+
+The additive [nominal profile](nominal-adts.md) provides invariant parameterized
+records/enums. Such values may contain
+[immutable shared `sexpr`](owning-adts.md), while
+[finite `own<Named>` indirection](recursive-owning-adts.md) permits recursive
+layouts with explicit move/take/drop semantics. Unique owners execute only
+through checked HIR→C11 and do not widen structural aggregates, MIR or foreign
+ABI support.
 
 `match value with { pattern [if guard] => arm, ... }` additionally supports
 nested structural patterns, exact arrays/snapshot slices, or/as patterns,
@@ -456,7 +481,7 @@ profile described above. `break`, `continue` and `for` remain unsupported.
 
 ## Current intrinsics
 
-- `println` prints a `bool`, numeric scalar or `string`, plus a line break.
+- `println` prints a `bool`, numeric scalar, `char` or `string`, plus a line break.
   Unsigned values print their full decimal range; f32/f64 use exact
   locale-independent hex, not decimal formatting.
 - `f64_from_i64`, `f64_to_i64`, `f64_from_bits`, `f64_to_bits`, `f64_is_nan`,
@@ -465,6 +490,8 @@ profile described above. `break`, `continue` and `for` remain unsupported.
   wrapping arithmetic, bit operations and IEEE classification; see the same
   [numeric contract](numerics.md) for exact signatures and limits.
 - `assert` terminates with exit status 70 on a false condition.
+- `format` renders strings as described in the [literal contract](core-literals.md).
+  The default prelude's `errln(string)` writes a line to standard error.
 - `json_parse_or_die`, `json_get_or_die`, `json_size`, `json_number`,
   `json_print` are the temporary MuLIB JSON facade.
 
@@ -489,9 +516,13 @@ cancellation and examples are in the [concurrency contract](concurrency.md).
 
 ## Explicitly absent language facilities
 
-Records, closed sums, fixed arrays and owning snapshot slices exist only in the
-bounded value profile described above: no recursive/owning nominal ADTs,
-managed data fields, field/element mutation, data
+Records, closed sums, fixed arrays and owning snapshot slices remain bounded.
+[Nominal records and enums](owning-adts.md) can retain immutable `sexpr`
+fields. [Finite unique owners](recursive-owning-adts.md) permit recursive
+nominal layouts only through `own<Named>` and reject MIR, PPX, FFI, capture,
+defer, staging and concurrency boundaries. General managed data fields still
+reject. [Call-scoped `ref i64`](core-references.md) does not support first-class
+reference values or general ownership. There is no field/element mutation, aggregate
 equality or printing, generic higher-kinded types, module signatures/functors,
 mutable/resource captures, native coroutines, async, polymorphic numeric
 literals, foreign callbacks, foreign aggregate ABI, Option propagation,

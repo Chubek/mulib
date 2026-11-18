@@ -61,11 +61,23 @@ int main(){try{
    poll{recv rx as n=>println(n),closed rx=>println(-2)};
    println(choice);
   }})";
-  auto poll_wire=on1x::meta::encode(on1x::parse(on1x::scan(poll_source,"poll-test")));
-  auto poll_unit=on1x::meta::decode(poll_wire);on1x::check(poll_unit);
-  on1x::csp::verify(poll_unit,true);
-  require(on1x::emit_c(poll_unit,"poll-test").find("on1x_csp_select(")!=std::string::npos,"atomic poll not emitted");
-   reject([&]{(void)on1x::mir::lower(poll_unit);});
+   auto poll_wire=on1x::meta::encode(on1x::parse(on1x::scan(poll_source,"poll-test")));
+   auto poll_unit=on1x::meta::decode(poll_wire);on1x::check(poll_unit);
+   on1x::csp::verify(poll_unit,true);
+   auto poll=find_poll(poll_unit.functions[0].body);
+   require(poll&&!poll->children.empty()&&
+           poll->children.back()->kind==on1x::Expr::Kind::Boolean&&
+           poll->children.back()->type==on1x::Type::Bool,
+           "canonical poll default marker was not typed");
+   require(on1x::emit_c(poll_unit,"poll-test").find("on1x_csp_select(")!=std::string::npos,"atomic poll not emitted");
+    reject([&]{(void)on1x::mir::lower(poll_unit);});
+    std::size_t poll_budget=262144;
+    auto forged_poll=on1x::clone_unit(poll_unit,poll_budget);
+    auto forged_default=find_poll(forged_poll.functions[0].body);
+    require(forged_default!=nullptr,"missing poll default mutation target");
+    forged_default->children.back()->type=on1x::Type::Invalid;
+    reject([&]{on1x::csp::verify(forged_poll,true);});
+    reject([&]{(void)on1x::emit_c(forged_poll,"forged-default");});
    constexpr auto timed_source=R"(fn main(){taskgroup{
     let child=launch{defer println(8);for i in 0..1000{assert(i>=0);} 42};
     poll{after 1ms=>println(1),default=>println(2)};

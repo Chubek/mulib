@@ -12,7 +12,9 @@ namespace on1x::safety {
 namespace c=moonstone::chisel;
 namespace {
 Location location(const moonstone::SourceSpan& s){return {s.file,0,s.line,s.column};}
-[[noreturn]] void fail(const Location& at,const std::string& message){throw Error(at,"ON1X-MEMORY: "+message);}
+[[noreturn]] void fail(const Location& at,const std::string& message){
+ throw Error(at,"ON1X-MEMORY: "+message,"ON1X-SEMA");
+}
 // Strict reader for the versioned line-based admitted-extern companion artifact.
 // Structure:
 //   on1x.admitted-extern/v1|v2|v3|v4 (v4 adds directional immutable strings)
@@ -22,7 +24,8 @@ Location location(const moonstone::SourceSpan& s){return {s.file,0,s.line,s.colu
 std::map<std::string,AdmittedExtern> parse_admission_text(const std::string& text){
  constexpr std::size_t max_externs=4096,max_line=512,max_name=256,max_params=256;
  auto reject=[&](std::size_t line,const std::string& why)->Error{
-  return Error({"<admitted-extern>",0,line,0},"ON1X-ADMISSION: "+why);
+   return Error({"<admitted-extern>",0,line,1},"ON1X-ADMISSION: "+why,
+                "ON1X-SOURCE");
  };
  auto expect=[&](bool condition,std::size_t line,const std::string& why){
   if(!condition)throw reject(line,why);
@@ -202,8 +205,10 @@ class Lower {
    if(p.is_tuple()){for(const auto& child:p.elements)bind(child);return;}
    scopes.back().names[p.name]={};
   }
- Binding expression(const Expr& e){
-  budget.node(e.where);
+  Binding expression(const Expr& e){
+   budget.node(e.where);
+   if(e.type.contains_unique()||e.result.contains_unique())
+    fail(e.where,"unique ownership is outside the Chisel resource adapter");
    switch(e.kind){
    case Expr::Kind::Unit:return {};
    case Expr::Kind::Region:{
@@ -212,7 +217,10 @@ class Lower {
    case Expr::Kind::Project:if(!trivial(e.type,e.where)||expression(*e.children.at(0)).owner)fail(e.where,"nontrivial tuple projection memory model");return {};
    case Expr::Kind::TagTest:case Expr::Kind::Payload:fail(e.where,"closed-sum memory model unavailable");
      case Expr::Kind::PatternMatch:case Expr::Kind::Case:case Expr::Kind::Loop:case Expr::Kind::UnsafeBlock:fail(e.where,"unlowered source value construct");
-   case Expr::Kind::Integer:case Expr::Kind::Boolean:case Expr::Kind::Float:case Expr::Kind::String:return {};
+   case Expr::Kind::Integer:case Expr::Kind::Boolean:case Expr::Kind::Float:case Expr::Kind::String:case Expr::Kind::Character:return {};
+   case Expr::Kind::Interpolated:
+    for(const auto& part:e.children)if(expression(*part).owner)fail(part->where,"formatting a resource is unsupported");
+    return {};
    case Expr::Kind::Tuple:
     if(!trivial(e.type,e.where))fail(e.where,"tuple memory model requires trivially copied numeric/bool fields");
     for(const auto& child:e.children)if(expression(*child).owner)fail(child->where,"resource in scalar tuple");
@@ -256,7 +264,7 @@ class Lower {
      if(args.empty()||!args[0].owner)fail(e.where,"borrow has no owner");
      return {args[0].owner,next_loan++};
     }
-    if(name!="json_size"&&name!="json_number"&&name!="json_print"&&name!="println"&&name!="assert"&&
+    if(name!="json_size"&&name!="json_number"&&name!="json_print"&&name!="println"&&name!="format"&&name!="char_codepoint"&&name!="assert"&&
        !numeric_primitive(name))fail(e.where,"intrinsic memory model unavailable: "+name);
    }else for(auto b:args)if(b.owner)fail(e.where,"ordinary resource parameter not modeled");
    return {};
@@ -356,9 +364,15 @@ std::string check(const Unit& unit,Limits limits,const std::map<std::string,Admi
   if(entry.result!=Type::Void&&!scalar(entry.result))fail({"<admitted-extern>"},"admitted extern result outside the scalar profile: "+name);
   if(!external_names.contains(name))fail({"<admitted-extern>"},"admission evidence names an absent external declaration: "+name);
  }
- for(const auto& f:unit.functions){
-  lowering.tick(f.where,f.name.size());
-  if(f.prototype)continue;
+  for(const auto& f:unit.functions){
+   lowering.tick(f.where,f.name.size());
+   if(f.prototype)continue;
+   if(f.result.contains_unique())
+    fail(f.where,"unique ownership is outside the Chisel resource adapter");
+   for(const auto& parameter:f.params)
+    if(parameter.type.contains_unique())
+     fail(parameter.where,"unique ownership is outside the Chisel resource adapter");
+  if(takes_exclusive(f))fail(f.where,"ref i64 is outside the Chisel resource adapter");
   if(f.external){
    auto found=admitted.find(f.name);
    if(found==admitted.end())fail(f.where,"raw external declaration lacks a checked memory model: "+f.name+" (not covered by admitted-extern evidence)");

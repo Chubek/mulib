@@ -71,9 +71,10 @@ const diagnostic::Presentation& presentation(const Bundle& bundle){
  return bundle.diagnostics.empty()?bundle.presentation:bundle.diagnostics.front().presentation;
 }
 std::string edits_json(const std::vector<SourceEdit>& edits){
- std::string out="[";bool first=true;
- for(const auto& edit:edits){
-  if(!first)out+=',';first=false;
+  std::string out="[";bool first=true;
+  for(const auto& edit:edits){
+   if(!first)out+=',';
+   first=false;
   out+="{\"begin\":"+std::to_string(edit.begin)+",\"end\":"+std::to_string(edit.end)+",\"replacement\":"+quote(edit.replacement)+"}";
  }
  return out+"]";
@@ -99,9 +100,10 @@ std::string report_object(const Report& report){
   ",\"remediation\":"+quote(report.remediation)+",\"notes\":[";
  bool first=true;
  for(const auto& note:item.notes){if(!first)out+=',';first=false;out+=quote(note);}
- out+="],\"repairs\":[";first=true;
- for(const auto& candidate:report.repairs){
-  if(!first)out+=',';first=false;
+  out+="],\"repairs\":[";first=true;
+  for(const auto& candidate:report.repairs){
+   if(!first)out+=',';
+   first=false;
   out+="{\"id\":"+quote(candidate.id)+",\"status\":"+quote(status_name(candidate.status,report.presentation))+
    ",\"reason\":"+quote(candidate.reason)+",\"edits\":"+edits_json(candidate.edits)+"}";
  }
@@ -298,9 +300,10 @@ std::string sarif(const Bundle& bundle){
  const auto& labels=presentation(bundle);
  std::string out="{\"version\":\"2.1.0\",\"$schema\":\"https://json.schemastore.org/sarif-2.1.0.json\",\"runs\":[{\"tool\":{\"driver\":{\"name\":"+
   quote(labels.sarif_tool)+"}},\"columnKind\":\"utf16CodeUnits\",\"results\":[";
- bool first=true;
- for(const auto& report:bundle.diagnostics){
-  if(!first)out+=',';first=false;const auto& item=report.diagnostic;
+  bool first=true;
+  for(const auto& report:bundle.diagnostics){
+   if(!first)out+=',';
+   first=false;const auto& item=report.diagnostic;
   out+="{\"ruleId\":"+quote(item.id)+",\"level\":"+quote(report.level.sarif)+",\"message\":{\"text\":"+quote(item.message)+"}";
   if(!item.primary.file.empty()){
    out+=",\"locations\":[{\"physicalLocation\":{\"artifactLocation\":{\"uri\":"+quote(uri(item.primary.file))+

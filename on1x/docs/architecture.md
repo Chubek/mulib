@@ -9,10 +9,13 @@ thunk shapes. This is not general exceptions, fatal-trap/cancellation unwinding
 or a resource/effectful MIR extension; unsupported MIR/SDK profiles stay closed.
 
 `src/nominal.cpp` validates the source declaration graph before layout expansion
-and reconstructs nonrecursive nominal record/sum representations independently
-of inference. Names/arguments remain invariant metadata on existing value-data
-types; source `Named` references are never an admitted backend type. C11/MIR
-ingress verifies catalog/layout consistency. See [the profile](nominal-adts.md).
+and reconstructs nominal record/sum representations independently of inference.
+Names/arguments remain invariant metadata on existing value-data types; source
+`Named` references are never an admitted backend type. By-value cycles reject,
+while the later [unique-owner profile](recursive-owning-adts.md) permits a cycle
+only across finite `own<Named>` indirection. C11 ingress verifies catalog/layout
+consistency; MIR still rejects ownership-bearing layouts. See the
+[initial profile](nominal-adts.md).
 
 The [intrinsic control bridge](core-syntax.md) canonicalizes statement ranges
 after source transforms/staging and resolves loop exits before type checking.

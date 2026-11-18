@@ -90,12 +90,22 @@ execute_process(
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS stdppx/category/features.sexpr)
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/category/features.sexpr" ON1X_EXTENSION_REGISTRY)
 configure_file(cmake/extensions_registry.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/extensions_registry.hpp" @ONLY)
-add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/discovery.cpp src/infer.cpp src/sema.cpp src/analysis.cpp src/diagnostic.cpp src/concurrency.cpp src/codegen.cpp
+add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/inherent.cpp src/cliche.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/discovery.cpp src/infer.cpp src/sema.cpp src/analysis.cpp src/diagnostic.cpp src/concurrency.cpp src/codegen.cpp
   src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp src/extensions.cpp src/extension_evidence.cpp src/extensions_hash.c src/canonical/control.cpp src/patterns.cpp src/canonical/values.cpp src/canonical/verify_values.cpp
   src/backend/mir.cpp src/backend/lower.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp)
 target_include_directories(on1x_frontend PUBLIC include)
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../include")
+target_sources(on1x_frontend PRIVATE src/regex.cpp)
+if(EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/liblr/ThompsonConstruction.hpp" AND
+   EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/liblr/UTF8Automaton.hpp")
+  target_include_directories(on1x_frontend SYSTEM PRIVATE "${ON1X_LIBSTONE_ROOT}/firestone")
+  target_compile_definitions(on1x_frontend PRIVATE ON1X_WITH_FIRESTONE_REGEX=1)
+  set(ON1X_HAS_FIRESTONE_REGEX TRUE)
+  message(STATUS "On1x core regex: LibStone Firestone compiler SDK")
+else()
+  message(STATUS "On1x core regex: unavailable without LibStone Firestone headers")
+endif()
 target_compile_definitions(on1x_frontend PRIVATE ON1X_STDLIB_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/stdlib")
 if(ON1X_WITH_WETSTONE)
   if(EXISTS "${ON1X_LIBSTONE_ROOT}/wetstone/verification/AnalysisSuite.hpp")
@@ -296,6 +306,63 @@ if(UNIX)
 endif()
 
 if(BUILD_TESTING)
+  add_test(NAME on1x.addon_chatgpt COMMAND "${Python3_EXECUTABLE}" -B
+    "${CMAKE_CURRENT_SOURCE_DIR}/addons/chatgpt/test_chatgpt.py")
+  set_tests_properties(on1x.addon_chatgpt PROPERTIES TIMEOUT 60)
+  # Editor tests are optional; none of these tools are build dependencies.
+  add_test(NAME on1x.addon_bat COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/addons/bat/test_bat.py")
+  set_tests_properties(on1x.addon_bat PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
+  find_program(ON1X_ADDON_NODE node)
+  if(ON1X_ADDON_NODE)
+    add_test(NAME on1x.addon_vscode_syntax COMMAND "${ON1X_ADDON_NODE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/addons/vscode/test-syntax.cjs")
+    set_tests_properties(on1x.addon_vscode_syntax PROPERTIES TIMEOUT 15)
+  endif()
+  find_program(ON1X_ADDON_NVIM nvim)
+  if(UNIX)
+    # The server caps compiler address space below what shadow-memory
+    # sanitizers reserve. Always run the subprocess/protocol fixtures.
+    set(_on1x_addon_compiler_default ON)
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" _on1x_build_type)
+    if("${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_on1x_build_type}}"
+        MATCHES "-fsanitize=([^ ]*,)?(address|thread|memory|hwaddress)([, ]|$)")
+      set(_on1x_addon_compiler_default OFF)
+    endif()
+    option(ON1X_TEST_ADDONS_WITH_COMPILER "Run editor addon tests with the built on1xc"
+      ${_on1x_addon_compiler_default})
+    set(_on1x_lsp_test_args)
+    if(ON1X_TEST_ADDONS_WITH_COMPILER)
+      list(APPEND _on1x_lsp_test_args --on1xc "$<TARGET_FILE:on1xc>")
+      if(NOT ON1X_WITH_SYREN)
+        list(APPEND _on1x_lsp_test_args --no-syren)
+      endif()
+    endif()
+    add_test(NAME on1x.addon_lsp COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/addons/lsp/test_lsp.py" ${_on1x_lsp_test_args})
+    set_tests_properties(on1x.addon_lsp PROPERTIES TIMEOUT 60)
+    find_program(ON1X_ADDON_VIM vim)
+    foreach(_editor IN ITEMS VIM NVIM)
+      if(ON1X_ADDON_${_editor})
+        string(TOLOWER "${_editor}" _editor_name)
+        add_test(NAME on1x.addon_${_editor_name} COMMAND sh
+          "${CMAKE_CURRENT_SOURCE_DIR}/addons/neovim/tests/run.sh"
+          "${ON1X_ADDON_${_editor}}")
+        set_tests_properties(on1x.addon_${_editor_name} PROPERTIES TIMEOUT 30)
+      endif()
+    endforeach()
+    if(ON1X_TEST_ADDONS_WITH_COMPILER AND ON1X_WITH_SYREN AND ON1X_ADDON_NVIM)
+      execute_process(COMMAND "${ON1X_ADDON_NVIM}" --version
+        OUTPUT_VARIABLE _on1x_nvim_version ERROR_QUIET TIMEOUT 5)
+      if(_on1x_nvim_version MATCHES "^NVIM v([0-9]+\\.[0-9]+\\.[0-9]+)"
+          AND CMAKE_MATCH_1 VERSION_GREATER_EQUAL "0.10")
+        add_test(NAME on1x.addon_neovim_lsp COMMAND "${ON1X_ADDON_NVIM}"
+          --headless -u NONE -i NONE -l "${CMAKE_CURRENT_SOURCE_DIR}/addons/tests/neovim_lsp.lua"
+          "$<TARGET_FILE:on1xc>" "${Python3_EXECUTABLE}")
+        set_tests_properties(on1x.addon_neovim_lsp PROPERTIES TIMEOUT 30)
+      endif()
+    endif()
+  endif()
   if(TARGET on1x_grammarembed_bridge)
     add_executable(on1x_grammarembed_reference tests/grammarembed_reference.cpp)
     target_include_directories(on1x_grammarembed_reference SYSTEM PRIVATE "${ON1X_LIBSTONE_ROOT}/firestone")
@@ -384,6 +451,12 @@ if(BUILD_TESTING)
   target_link_libraries(on1x_inference_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.inference_engine COMMAND on1x_inference_tests)
   set_tests_properties(on1x.inference_engine PROPERTIES TIMEOUT 40)
+  add_executable(on1x_type_checker_hardening_tests
+    tests/test_type_checker_hardening.cpp)
+  target_link_libraries(on1x_type_checker_hardening_tests PRIVATE on1x_frontend)
+  add_test(NAME on1x.type_checker_hardening_hir
+    COMMAND on1x_type_checker_hardening_tests)
+  set_tests_properties(on1x.type_checker_hardening_hir PROPERTIES TIMEOUT 40)
   add_executable(on1x_closure_hir_tests tests/test_closures.cpp)
   target_link_libraries(on1x_closure_hir_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.closure_hir COMMAND on1x_closure_hir_tests)
@@ -514,9 +587,25 @@ if(BUILD_TESTING)
   add_executable(on1x_value_loop_tests tests/test_value_loops.cpp)
   target_link_libraries(on1x_value_loop_tests PRIVATE on1x_frontend)
    add_test(NAME on1x.value_loop_hir COMMAND on1x_value_loop_tests)
-   add_executable(on1x_nominal_tests tests/test_nominal_adts.cpp)
-   target_link_libraries(on1x_nominal_tests PRIVATE on1x_frontend)
-   add_test(NAME on1x.nominal_hir COMMAND on1x_nominal_tests)
+     add_executable(on1x_nominal_tests tests/test_nominal_adts.cpp)
+     target_link_libraries(on1x_nominal_tests PRIVATE on1x_frontend)
+     add_test(NAME on1x.nominal_hir COMMAND on1x_nominal_tests)
+     add_executable(on1x_recursive_owning_adts_tests
+       tests/test_recursive_owning_adts.cpp)
+     target_link_libraries(on1x_recursive_owning_adts_tests
+       PRIVATE on1x_frontend on1x_runtime)
+     add_test(NAME on1x.recursive_owning_adts_hir
+       COMMAND on1x_recursive_owning_adts_tests)
+     set_tests_properties(on1x.recursive_owning_adts_hir
+       PROPERTIES TIMEOUT 60)
+     add_executable(on1x_cliche_tests tests/test_cliche.cpp)
+     target_link_libraries(on1x_cliche_tests PRIVATE on1x_frontend)
+     add_test(NAME on1x.cliche_hir COMMAND on1x_cliche_tests)
+     set_tests_properties(on1x.cliche_hir PROPERTIES TIMEOUT 60)
+     add_executable(on1x_core_impl_tests tests/test_core_impl.cpp)
+     target_link_libraries(on1x_core_impl_tests PRIVATE on1x_frontend)
+     add_test(NAME on1x.core_impl_hir COMMAND on1x_core_impl_tests)
+     set_tests_properties(on1x.core_impl_hir PROPERTIES TIMEOUT 60)
     add_executable(on1x_defer_error_tests tests/test_defer_errors.cpp)
     target_link_libraries(on1x_defer_error_tests PRIVATE on1x_frontend)
     add_test(NAME on1x.defer_error_hir COMMAND on1x_defer_error_tests)
@@ -530,8 +619,19 @@ if(BUILD_TESTING)
       list(APPEND _meta_tests grammarembed)
     endif()
   endif()
-     list(APPEND _meta_tests category control patterns value_loops nominal_adts defer_errors concurrency stream_poll cancellation_deadlines taskgroup_within discovery)
-  list(APPEND _meta_tests kernel_imports project_driver)
+     list(APPEND _meta_tests category control patterns value_loops nominal_adts cliche core_impl defer_errors concurrency stream_poll cancellation_deadlines taskgroup_within discovery)
+    list(APPEND _meta_tests kernel_imports project_driver enum_connective core_ref
+      literals_core owning_adt recursive_owning_adts type_checker_hardening)
+   if(ON1X_HAS_FIRESTONE_REGEX)
+     list(APPEND _meta_tests core_syntax_integration)
+     add_test(NAME on1x.core_regex COMMAND "${Python3_EXECUTABLE}"
+       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_core_regex.py"
+       "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}" ${_test_c_flags})
+     set_tests_properties(on1x.core_regex PROPERTIES TIMEOUT 180)
+   endif()
+   add_executable(on1x_core_ref_tests tests/test_core_ref.cpp)
+   target_link_libraries(on1x_core_ref_tests PRIVATE on1x_frontend)
+   add_test(NAME on1x.core_ref_hir COMMAND on1x_core_ref_tests)
   add_test(NAME on1x.stdppx_protocol COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/tests" -v)
   if(ON1X_WITH_EXOTRACT)
     add_test(NAME on1x.exotract COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exotract.py"
@@ -571,12 +671,13 @@ if(BUILD_TESTING)
   if(ON1X_WITH_CHISEL)
     list(APPEND _meta_tests safety)
   endif()
-  foreach(_meta_test ${_meta_tests})
+   foreach(_meta_test ${_meta_tests})
     add_test(NAME on1x.${_meta_test} COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_${_meta_test}.py" "$<TARGET_FILE:on1xc>"
       "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/${_meta_test}" "${CMAKE_C_COMPILER}" ${_test_c_flags})
     set_tests_properties(on1x.${_meta_test} PROPERTIES TIMEOUT 180)
-  endforeach()
+   endforeach()
+   set_tests_properties(on1x.recursive_owning_adts PROPERTIES TIMEOUT 300)
   set_tests_properties(on1x.contracts PROPERTIES SKIP_RETURN_CODE 77)
   set_tests_properties(on1x.category PROPERTIES SKIP_RETURN_CODE 77)
   if(ON1X_WITH_EXOML)

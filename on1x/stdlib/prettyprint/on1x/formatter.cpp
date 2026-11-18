@@ -231,14 +231,14 @@ std::vector<Part> parts(const std::string& text, const std::vector<Token>& token
 // dot, even for uses where the current parser ignores that distinction.
 bool space_between(const Part& a, const Part& b) {
     if (a.text == "." || b.text == ".") return a.end != b.start;
-    if ((a.text == ":" && b.text == ":") || (a.text == ".." && b.text == "=")) return true;
+    if ((a.text == ":" && one_of(b.text, {":", "="})) || (a.text == ".." && b.text == "=")) return true;
     if (b.kind == Kind::comment) return true;
     if (one_of(b.text, {")", "]", ",", ";", ":", "?"})) return false;
     if (one_of(a.text, {"(", "[", "@", "$"})) return false;
     if (b.text == "}" && a.text == "{") return false;
     if (b.text == "(" && !one_of(a.text, {
-        "if", "while", "for", "return", "with", "=", "=>", "+", "-", "*", "/", "%",
-        "<", ">", "<=", ">=", "==", "!=", "&&", "||", "|", "<-", "in", ",", ":"
+        "if", "while", "for", "return", "with", "=", ":=", "=>", "+", "-", "*", "/", "%",
+        "<", ">", "<=", ">=", "==", "!=", "&&", "||", "|", "<-", "~", "in", ",", ":"
     })) return false;
     if (b.text == "[" && (a.end == b.start || a.text == "vector")) return false;
     if (b.text == "!" && a.end == b.start) return false;
@@ -256,7 +256,7 @@ bool line_between(const Part& a, const Part& b, View input) {
     if (a.text == ";" && !a.in_list) return true;
     if (a.text == "}" && !a.in_list && !one_of(b.text, {
         "else", ";", ",", ")", "]", "?", "(", "[", ".", "=>", "=", "->", ">", ">=",
-        "+", "-", "*", "/", "%", "==", "!=", "<", "<=", "&&", "||", "|", "with"
+        "+", "-", "*", "/", "%", "==", "!=", "<", "<=", "&&", "||", "|", "with", "~"
     })) return true;
     return false;
 }
@@ -265,7 +265,10 @@ mulib_pretty_style_t style(const Part& p) {
     if (p.kind == Kind::comment) return MULIB_PRETTY_COMMENT;
     if (p.kind != Kind::token) return MULIB_PRETTY_NORMAL;
     const auto first = p.text.front();
-    if (first == '"' || first == '`') return MULIB_PRETTY_STRING;
+    if (first == '"' || first == '`' || p.text.starts_with("#\\") ||
+        p.text.starts_with("b!\"") || p.text.starts_with("b!#\\") || p.text.starts_with("r!\"") ||
+        (first == '/' && p.text.size() >= 2 && p.text.back() == '/'))
+        return MULIB_PRETTY_STRING;
     if (first >= '0' && first <= '9') return MULIB_PRETTY_NUMBER;
     if (one_of(p.text, {
         "fn", "extern", "let", "var", "return", "if", "else", "while", "for", "loop",
