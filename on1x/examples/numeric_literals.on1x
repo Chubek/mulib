@@ -1,10 +1,18 @@
-fn pair(x: u64) -> (u64, f32) { return (x, 1.5f32); }
-fn main() {
-  let (word, real) = pair(18446744073709551615u64);
+fn pair(x: u64) ->(u64, f32)
+{
+  return (x, 1.5f32);
+}
+fn main()
+{
+  let(word, real) = pair(18446744073709551615u64);
   println(word);
   println(0xffu8);
   println(real * 2f32);
   var count = 0u16;
-  while count < 3u16 { println(count); count = count + 1u16; }
+  while count < 3u16
+  {
+    println(count);
+    count = count + 1u16;
+  }
   println(f32_to_bits(1.000000059604644775390625000000001f32));
 }

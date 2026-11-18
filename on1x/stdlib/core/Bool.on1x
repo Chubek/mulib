@@ -1,13 +1,45 @@
 # Boolean utilities: SML Bool.toString/fromString equivalents for exact spellings.
-fn basis_bool_not(x: bool) -> bool { return !x; }
-fn basis_bool_compare(a: bool, b: bool) -> i64 {
-  if a == b { return 0; } if a { return 1; } return -1;
+fn basis_bool_not(x: bool) -> bool
+{
+  return ! x;
 }
-fn basis_bool_to_string(x: bool) -> string { if x { return "true"; } return "false"; }
-fn basis_bool_from_string(x: string) -> (bool, bool) {
-  if x == "true" || x == "TRUE" || x == "True" { return (true, true); }
-  if x == "false" || x == "FALSE" || x == "False" { return (true, false); }
+fn basis_bool_compare(a: bool, b: bool) -> i64
+{
+  if a == b
+  {
+    return 0;
+  }
+  if a
+  {
+    return 1;
+  }
+  return - 1;
+}
+fn basis_bool_to_string(x: bool) -> string
+{
+  if x
+  {
+    return "true";
+  }
+  return "false";
+}
+fn basis_bool_from_string(x: string) ->(bool, bool)
+{
+  if x == "true" || x == "TRUE" || x == "True"
+  {
+    return (true, true);
+  }
+  if x == "false" || x == "FALSE" || x == "False"
+  {
+    return (true, false);
+  }
   return (false, false);
 }
-fn basis_bool_and(a: bool, b: bool) -> bool { return a && b; }
-fn basis_bool_or(a: bool, b: bool) -> bool { return a || b; }
+fn basis_bool_and(a: bool, b: bool) -> bool
+{
+  return a && b;
+}
+fn basis_bool_or(a: bool, b: bool) -> bool
+{
+  return a || b;
+}

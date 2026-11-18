@@ -1,2 +1,5 @@
-extern fn basis_native_date_utc(unix_seconds:i64)->string;
-fn basis_date_utc_iso(unix_seconds:i64)->string { return basis_native_date_utc(unix_seconds); }
+extern fn basis_native_date_utc(unix_seconds: i64) -> string;
+fn basis_date_utc_iso(unix_seconds: i64) -> string
+{
+  return basis_native_date_utc(unix_seconds);
+}

@@ -1,26 +1,65 @@
 # POSIX-style lexical path operations (not a filesystem canonicalization API).
-fn basis_path_is_absolute(path:string)->bool { return text_len(path)>0 && text_byte(path,0)==47; }
-fn basis_path_join(base:string,name:string)->string {
-  if basis_path_is_absolute(name) { return name; }
-  if text_len(base)==0 { return name; }
-  if text_byte(base,text_len(base)-1)==47 { return text_concat(base,name); }
-  return text_concat(text_concat(base,"/"),name);
+fn basis_path_is_absolute(path: string) -> bool
+{
+  return text_len(path) > 0 && text_byte(path, 0) == 47;
 }
-fn basis_path_dir(path:string)->string {
-  var i=text_len(path);
-  while i>0 { i=i-1; if text_byte(path,i)==47 {
-    if i==0 { return "/"; }
-    return text_slice(path,0,i);
-  } }
+fn basis_path_join(base: string, name: string) -> string
+{
+  if basis_path_is_absolute(name)
+  {
+    return name;
+  }
+  if text_len(base) == 0
+  {
+    return name;
+  }
+  if text_byte(base, text_len(base) - 1) == 47
+  {
+    return text_concat(base, name);
+  }
+  return text_concat(text_concat(base, "/"), name);
+}
+fn basis_path_dir(path: string) -> string
+{
+  var i = text_len(path);
+  while i > 0
+  {
+    i = i - 1;
+    if text_byte(path, i) == 47
+    {
+      if i == 0
+      {
+        return "/";
+      }
+      return text_slice(path, 0, i);
+    }
+  }
   return ".";
 }
-fn basis_path_base(path:string)->string {
-  var i=text_len(path);
-  while i>0 { i=i-1; if text_byte(path,i)==47 { return text_slice(path,i+1,text_len(path)); } }
+fn basis_path_base(path: string) -> string
+{
+  var i = text_len(path);
+  while i > 0
+  {
+    i = i - 1;
+    if text_byte(path, i) == 47
+    {
+      return text_slice(path, i + 1, text_len(path));
+    }
+  }
   return path;
 }
-fn basis_path_extension(path:string)->string {
-  let basename=basis_path_base(path); var i=text_len(basename);
-  while i>0 { i=i-1; if text_byte(basename,i)==46 && i>0 { return text_slice(basename,i+1,text_len(basename)); } }
+fn basis_path_extension(path: string) -> string
+{
+  let basename = basis_path_base(path);
+  var i = text_len(basename);
+  while i > 0
+  {
+    i = i - 1;
+    if text_byte(basename, i) == 46 && i > 0
+    {
+      return text_slice(basename, i + 1, text_len(basename));
+    }
+  }
   return "";
 }

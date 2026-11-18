@@ -1,5 +1,4 @@
-from .Native import (
-  on1x_mulib_abi_version as abi_version,
+from .Native import(on1x_mulib_abi_version as abi_version,
   on1x_mulib_pointer_bits as pointer_bits,
   on1x_mulib_max_size as max_size,
   on1x_mulib_kernel_count as kernel_count,
@@ -14,5 +13,7 @@ from .Native import (
   on1x_mulib_fixture_sha256 as fixture_sha256,
   on1x_mulib_fixture_size as fixture_size,
   on1x_mulib_fixture_byte as fixture_byte,
-  fits_size, fits_array, fixture_text, require_fixture,
-);
+  fits_size,
+  fits_array,
+  fixture_text,
+  require_fixture,);

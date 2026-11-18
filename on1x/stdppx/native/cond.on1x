@@ -1,21 +1,68 @@
 import "common.on1x";
-fn transform(tree:sexpr,label:string)->sexpr {
- return visitor_rewrite(tree,fn(node:sexpr,path:sexpr)->sexpr {
-  if visitor_tag(node)!="Do"{return node;}
-  let expr=sexpr_nth(node,1);
-  if visitor_tag(expr)!="ExtensionExpr"||sx_text(sexpr_nth(expr,1))!=label{return node;}
-  let op=sx_text(sexpr_nth(expr,2));let args=sexpr_nth(expr,3);let at=sexpr_nth(expr,4);let n=sexpr_size(args);
-  if op=="choose"&&n==3{
-   if visitor_tag(sexpr_nth(args,1))!="Block"||visitor_tag(sexpr_nth(args,2))!="Block"{tool_fail("cond requires Block arms");}
-   return ppx_node("If",ppx_list4(sx_head(args),sexpr_nth(args,1),sexpr_nth(args,2),at));
-  }
-  if op!="branches"||n<3||n%2!=1{tool_fail("cond expects branches(condition,Block,...,defaultBlock)");}
-  var result=sexpr_nth(args,n-1);if visitor_tag(result)!="Block"{tool_fail("cond default must be Block");}
-  var i=n-3;while i>=0{
-   let arm=sexpr_nth(args,i+1);if visitor_tag(arm)!="Block"{tool_fail("cond requires Block arms");}
-   result=native_block(ppx_list1(ppx_node("If",ppx_list4(sexpr_nth(args,i),arm,result,at))),at);i=i-2;
-  }
-  return ppx_node("Scope",ppx_list2(result,at));
- });
+fn transform(tree: sexpr, label: string) -> sexpr
+{
+  return visitor_rewrite(tree, fn(node: sexpr, path: sexpr) -> sexpr
+  {
+    if visitor_tag(node) != "Do"
+    {
+      return node;
+    }
+    let expr = sexpr_nth(node, 1);
+    if visitor_tag(expr) != "ExtensionExpr" || sx_text(sexpr_nth(expr,
+      1)) != label
+    {
+      return node;
+    }
+    let op = sx_text(sexpr_nth(expr, 2));
+    let args = sexpr_nth(expr, 3);
+    let at = sexpr_nth(expr, 4);
+    let n = sexpr_size(args);
+    if op == "choose" && n == 3
+    {
+      if visitor_tag(sexpr_nth(args,
+        1)) != "Block" || visitor_tag(sexpr_nth(args,
+        2)) != "Block"
+      {
+        tool_fail("cond requires Block arms");
+      }
+      return ppx_node("If",
+        ppx_list4(sx_head(args),
+        sexpr_nth(args,
+        1),
+        sexpr_nth(args,
+        2),
+        at));
+    }
+    if op != "branches" || n < 3 || n % 2 != 1
+    {
+      tool_fail("cond expects branches(condition,Block,...,defaultBlock)");
+    }
+    var result = sexpr_nth(args, n - 1);
+    if visitor_tag(result) != "Block"
+    {
+      tool_fail("cond default must be Block");
+    }
+    var i = n - 3;
+    while i >= 0
+    {
+      let arm = sexpr_nth(args, i + 1);
+      if visitor_tag(arm) != "Block"
+      {
+        tool_fail("cond requires Block arms");
+      }
+      result = native_block(ppx_list1(ppx_node("If",
+        ppx_list4(sexpr_nth(args,
+        i),
+        arm,
+        result,
+        at))),
+        at);
+      i = i - 2;
+    }
+    return ppx_node("Scope", ppx_list2(result, at));
+  });
 }
-fn main(){native_serve(transform);}
+fn main()
+{
+  native_serve(transform);
+}

@@ -1,19 +1,34 @@
 # Value exits retain their lexical target through nested range/match regions.
-fn first_square(limit:i64)->i64 {
-  return search: loop {
-    for n in 0..limit {
-      match n*n with {
-        x if x>=40 => { break search with x; },
-        _ => {}
+fn first_square(limit: i64) -> i64
+{
+  return search: loop
+  {
+    for n in 0 .. limit
+    {
+      match n * n with
+      {
+        x if x >= 40 =>
+        {
+          break search with x;
+        }, _ =>
+        {
+        }
       };
     }
-    break with -1;
+    break with - 1;
   };
 }
-fn main() {
+fn main()
+{
   println(first_square(10));
-  let (answer,flag)=loop { break with (42,true); };
+  let(answer, flag) = loop
+  {
+    break with (42, true);
+  };
   assert(flag);
   println(answer);
-  println(loop { break with 8u8; });
+  println(loop
+  {
+    break with 8u8;
+  });
 }

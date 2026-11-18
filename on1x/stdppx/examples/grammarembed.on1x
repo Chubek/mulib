@@ -1,12 +1,13 @@
 # --stdppx-path BUILD/stdppx --use-ppx GrammarEmbed
 @GrammarEmbed("grammar",
-  "grammar Calculator :lexer<dfa> :parser<lalr1> { token NUMBER { <[0-9]>+ } token SPACE :skip { \\s+ } rule TOP { <sum> } rule sum { <sum> '+' <term> | <term> } rule term { <NUMBER> | '(' <sum> ')' } }")
-fn calculator_grammar() {}
-
-fn main() {
+  "grammar Calculator :lexer<dfa> :parser<lalr1> { token NUMBER { <[0-9]>+ } token SPACE :skip { \\s+ } rule TOP { <sum> } rule sum { <sum> '+' <term> | <term> } rule term { <NUMBER> | '(' <sum> ')' } }") fn calculator_grammar()
+{
+}
+fn main()
+{
   println(Calculator_matches("12 + (30 + 4)"));
   println(Calculator_matches("12 + )"));
-  let (status, tree, offset) = Calculator_parse("12 + 30");
+  let(status, tree, offset) = Calculator_parse("12 + 30");
   println(status);
   println(sx_text(sx_head(tree)));
   println(offset);

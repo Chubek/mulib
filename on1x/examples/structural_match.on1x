@@ -1,21 +1,43 @@
 # Generalized matching is intrinsic syntax, with one typed result join.
-fn score(input: sum{Pair:(i64,bool), Empty:record{}}) -> i64 {
-  return match input with {
-    Pair(n, true) if n > 0 => { let doubled = n * 2; doubled },
-    Pair(n, _)            => n,
-    Empty(record{})       => 0
+fn score(input: sum
+{
+  Pair: (i64, bool), Empty: record
+  {
+  }
+}) -> i64
+{
+  return match input with
+  {
+    Pair(n, true) if n > 0 =>
+    {
+      let doubled = n * 2;
+      doubled
+    }, Pair(n, _) => n, Empty(record
+    {
+    }) => 0
   };
 }
-fn main() {
-  println(score(variant<sum{Pair:(i64,bool), Empty:record{}}>(Pair,(21,true))));
-  let array_value = array[3,5];
-  match let snapshot = array_value[0:2] with {
-    []    => println(0),
-    [n]   => println(n),
-    [a,b] => println(a + b)
+fn main()
+{
+  println(score(variant < sum
+  {
+    Pair: (i64, bool), Empty: record
+    {
+    }
+  } > (Pair, (21, true))));
+  let array_value = array[3, 5];
+  match let snapshot = array_value[0: 2] with
+  {
+    [] => println(0), [n] => println(n), [a, b] => println(a + b)
   };
-  println(match record{x:4,y:false} with {
-    record{x:(1 | 4) as number, ..} => number,
-    rest => -1
+  println(match record
+  {
+    x: 4, y: false
+  } with
+  {
+    record
+    {
+      x: (1 | 4) as number, ..
+    } => number, rest => - 1
   });
 }

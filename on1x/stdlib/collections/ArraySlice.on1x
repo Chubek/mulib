@@ -1,15 +1,33 @@
 import "Array.on1x";
 # Borrowing view: (array handle, start, length); caller owns lifetime of array.
-fn basis_array_slice(handle:i64,start:i64,length:i64)->(i64,i64,i64) {
-  if start<0 || length<0 || start>basis_array_length(handle) || length>basis_array_length(handle)-start { tool_fail("array slice bounds"); }
-  return (handle,start,length);
+fn basis_array_slice(handle: i64, start: i64, length: i64) ->(i64, i64, i64)
+{
+  if start < 0 || length < 0 || start > basis_array_length(handle) || length > basis_array_length(handle) - start
+  {
+    tool_fail("array slice bounds");
+  }
+  return (handle, start, length);
 }
-fn basis_array_slice_length(view:(i64,i64,i64))->i64 { let (a,s,n)=view; return n; }
-fn basis_array_slice_sub(view:(i64,i64,i64),i:i64)->i64 {
-  let (a,s,n)=view; if i<0 || i>=n { tool_fail("array slice sub bounds"); }
-  return basis_array_sub(a,s+i);
+fn basis_array_slice_length(view: (i64, i64, i64)) -> i64
+{
+  let(a, s, n) = view;
+  return n;
 }
-fn basis_array_slice_update(view:(i64,i64,i64),i:i64,value:i64) {
-  let (a,s,n)=view; if i<0 || i>=n { tool_fail("array slice update bounds"); }
-  basis_array_update(a,s+i,value);
+fn basis_array_slice_sub(view: (i64, i64, i64), i: i64) -> i64
+{
+  let(a, s, n) = view;
+  if i < 0 || i >= n
+  {
+    tool_fail("array slice sub bounds");
+  }
+  return basis_array_sub(a, s + i);
+}
+fn basis_array_slice_update(view: (i64, i64, i64), i: i64, value: i64)
+{
+  let(a, s, n) = view;
+  if i < 0 || i >= n
+  {
+    tool_fail("array slice update bounds");
+  }
+  basis_array_update(a, s + i, value);
 }

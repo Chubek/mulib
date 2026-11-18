@@ -1,2 +1,5 @@
 import "ArraySlice.on1x";
-fn basis_int_array_slice(a:i64,start:i64,n:i64)->(i64,i64,i64) { return basis_array_slice(a,start,n); }
+fn basis_int_array_slice(a: i64, start: i64, n: i64) ->(i64, i64, i64)
+{
+  return basis_array_slice(a, start, n);
+}

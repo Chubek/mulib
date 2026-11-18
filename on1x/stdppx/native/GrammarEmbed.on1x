@@ -1,102 +1,230 @@
 import "common.on1x";
-extern fn on1x_grammar_compile(source:string)->bool;
-extern fn on1x_grammar_plan()->string;
-extern fn on1x_grammar_error()->string;
-extern fn on1x_grammar_template()->string;
-extern fn on1x_grammar_message(key:string)->string;
-
-fn grammar_fail(key:string){tool_fail(on1x_grammar_message(key));}
-fn grammar_owned(attribute:sexpr,label:string)->bool {
-  return visitor_tag(attribute)=="Attribute" && sx_text(sexpr_nth(attribute,1))==label;
+extern fn on1x_grammar_compile(source: string) -> bool;
+extern fn on1x_grammar_plan() -> string;
+extern fn on1x_grammar_error() -> string;
+extern fn on1x_grammar_template() -> string;
+extern fn on1x_grammar_message(key: string) -> string;
+fn grammar_fail(key: string)
+{
+  tool_fail(on1x_grammar_message(key));
 }
-fn grammar_string(text:string,at:sexpr)->sexpr {
-  if text_len(text)<=2048{return native_string(text,at);}
-  var statements=ppx_list1(ppx_node("Let",ppx_list4(sx_string("bytes"),
-    ppx_node("BufferType",sx_nil()),ppx_call("buffer_new",sx_nil(),at),at)));
-  var pos=0;
-  while pos<text_len(text) {
-    var end=pos+2048;if end>text_len(text){end=text_len(text);}
-    statements=sx_cons(native_do(ppx_call("buffer_append",
-      ppx_list2(ppx_ident("bytes",at),native_string(text_slice(text,pos,end),at)),at),at),statements);
-    pos=end;
+fn grammar_owned(attribute: sexpr, label: string) -> bool
+{
+  return visitor_tag(attribute) == "Attribute" && sx_text(sexpr_nth(attribute,
+    1)) == label;
+}
+fn grammar_string(text: string, at: sexpr) -> sexpr
+{
+  if text_len(text) <= 2048
+  {
+    return native_string(text, at);
   }
-  statements=sx_cons(ppx_node("Return",ppx_list2(ppx_call("buffer_text",
-    ppx_list1(ppx_ident("bytes",at)),at),at)),statements);
-  let lambda=native_lambda(sx_nil(),ppx_node("StringType",sx_nil()),native_block(sexpr_reverse(statements),at),at);
-  return ppx_node("Call",ppx_list3(lambda,sx_nil(),at));
+  var statements = ppx_list1(ppx_node("Let",
+    ppx_list4(sx_string("bytes"),
+    ppx_node("BufferType",
+    sx_nil()),
+    ppx_call("buffer_new",
+    sx_nil(),
+    at),
+    at)));
+  var pos = 0;
+  while pos < text_len(text)
+  {
+    var end = pos + 2048;
+    if end > text_len(text)
+    {
+      end = text_len(text);
+    }
+    statements = sx_cons(native_do(ppx_call("buffer_append",
+      ppx_list2(ppx_ident("bytes",
+      at),
+      native_string(text_slice(text,
+      pos,
+      end),
+      at)),
+      at),
+      at),
+      statements);
+    pos = end;
+  }
+  statements = sx_cons(ppx_node("Return",
+    ppx_list2(ppx_call("buffer_text",
+    ppx_list1(ppx_ident("bytes",
+    at)),
+    at),
+    at)),
+    statements);
+  let lambda = native_lambda(sx_nil(),
+    ppx_node("StringType",
+    sx_nil()),
+    native_block(sexpr_reverse(statements),
+    at),
+    at);
+  return ppx_node("Call", ppx_list3(lambda, sx_nil(), at));
 }
-fn grammar_emit(marker:sexpr,attribute:sexpr,world:sexpr,serial:i64)->(sexpr,i64) {
-  let args=sexpr_nth(attribute,3);let at=sexpr_nth(attribute,4);
-  if sx_text(sexpr_nth(attribute,2))!="grammar" || sexpr_size(args)!=1 ||
-    visitor_tag(sx_head(args))!="StringLiteral" {grammar_fail("argument");}
-  if visitor_tag(marker)!="Function" || sexpr_size(sexpr_nth(marker,2))!=0 ||
-    visitor_tag(sexpr_nth(marker,3))!="VoidType" ||
-    sexpr_size(sexpr_nth(marker,5))!=1 ||
-    sexpr_size(sexpr_nth(sexpr_nth(marker,4),1))!=0 {grammar_fail("marker");}
-  if !on1x_grammar_compile(sx_text(sexpr_nth(sx_head(args),1))) {
-    tool_fail(text_concat(sexpr_print(at),on1x_grammar_error()));
+fn grammar_emit(marker: sexpr,
+  attribute: sexpr,
+  world: sexpr,
+  serial: i64) ->(sexpr,
+  i64)
+{
+  let args = sexpr_nth(attribute, 3);
+  let at = sexpr_nth(attribute, 4);
+  if sx_text(sexpr_nth(attribute,
+    2)) != "grammar" || sexpr_size(args) != 1 || visitor_tag(sx_head(args)) != "StringLiteral"
+  {
+    grammar_fail("argument");
+  }
+  if visitor_tag(marker) != "Function" || sexpr_size(sexpr_nth(marker,
+    2)) != 0 || visitor_tag(sexpr_nth(marker,
+    3)) != "VoidType" || sexpr_size(sexpr_nth(marker,
+    5)) != 1 || sexpr_size(sexpr_nth(sexpr_nth(marker,
+    4),
+    1)) != 0
+  {
+    grammar_fail("marker");
+  }
+  if ! on1x_grammar_compile(sx_text(sexpr_nth(sx_head(args), 1)))
+  {
+    tool_fail(text_concat(sexpr_print(at), on1x_grammar_error()));
   }
   # Foreign/static strings need managed snapshots for indexed byte access.
-  let plan=sexpr_parse(text_concat("",on1x_grammar_plan()));let name=sx_text(sx_head(plan));
-  let template=sexpr_parse(text_concat("",on1x_grammar_template()));
-  var definitions=sexpr_nth(template,2);var renames=sx_nil();var next=serial;
-  while sx_kind(definitions)==3 {
-    let original=sx_text(sexpr_nth(sx_head(definitions),1));definitions=sx_tail(definitions);
-    var renamed="";
-    if original=="ge_lex" || original=="ge_parse" || original=="ge_matches" || original=="ge_name" {
-      renamed=text_concat(name,text_slice(original,2,text_len(original)));
-      if !ppx_name(renamed){grammar_fail("collision");}
-    } else {
-      let (fresh,used)=ppx_fresh(world,next);renamed=fresh;next=used;
+  let plan = sexpr_parse(text_concat("", on1x_grammar_plan()));
+  let name = sx_text(sx_head(plan));
+  let template = sexpr_parse(text_concat("", on1x_grammar_template()));
+  var definitions = sexpr_nth(template, 2);
+  var renames = sx_nil();
+  var next = serial;
+  while sx_kind(definitions) == 3
+  {
+    let original = sx_text(sexpr_nth(sx_head(definitions), 1));
+    definitions = sx_tail(definitions);
+    var renamed = "";
+    if original == "ge_lex" || original == "ge_parse" || original == "ge_matches" || original == "ge_name"
+    {
+      renamed = text_concat(name, text_slice(original, 2, text_len(original)));
+      if ! ppx_name(renamed)
+      {
+        grammar_fail("collision");
+      }
     }
-    renames=sx_cons(sx_cons(sx_string(original),ppx_list1(sx_string(renamed))),renames);
+    else
+    {
+      let(fresh, used) = ppx_fresh(world, next);
+      renamed = fresh;
+      next = used;
+    }
+    renames = sx_cons(sx_cons(sx_string(original),
+      ppx_list1(sx_string(renamed))),
+      renames);
   }
-  let bindings=renames;
-  let rewritten=visitor_rewrite(template,fn(node:sexpr,path:sexpr)->sexpr {
-    let tag=visitor_tag(node);
-    if tag=="Loc"{return at;}
-    if tag=="StringLiteral" {
-      let key=sx_text(sexpr_nth(node,1));let found=ppx_lookup(sx_tail(plan),key);
-      if sx_kind(found)!=0 {return grammar_string(sx_text(sx_head(found)),at);}
+  let bindings = renames;
+  let rewritten = visitor_rewrite(template,
+    fn(node: sexpr,
+    path: sexpr) -> sexpr
+  {
+    let tag = visitor_tag(node);
+    if tag == "Loc"
+    {
+      return at;
     }
-    if tag=="Function" || tag=="Identifier" {
-      let key=sx_text(sexpr_nth(node,1));let found=ppx_lookup(bindings,key);
-      if sx_kind(found)!=0 {
-        return sx_cons(sx_head(node),sx_cons(sx_head(found),sx_tail(sx_tail(node))));
+    if tag == "StringLiteral"
+    {
+      let key = sx_text(sexpr_nth(node, 1));
+      let found = ppx_lookup(sx_tail(plan), key);
+      if sx_kind(found) != 0
+      {
+        return grammar_string(sx_text(sx_head(found)), at);
+      }
+    }
+    if tag == "Function" || tag == "Identifier"
+    {
+      let key = sx_text(sexpr_nth(node, 1));
+      let found = ppx_lookup(bindings, key);
+      if sx_kind(found) != 0
+      {
+        return sx_cons(sx_head(node),
+          sx_cons(sx_head(found),
+          sx_tail(sx_tail(node))));
       }
     }
     return node;
   });
-  return (sexpr_nth(rewritten,2),next);
+  return (sexpr_nth(rewritten, 2), next);
 }
-fn transform(tree:sexpr,label:string)->sexpr {
-  var declarations=sexpr_nth(tree,2);var out=sx_nil();var serial=0;var world=tree;
-  while sx_kind(declarations)==3 {
-    let declaration=sx_head(declarations);declarations=sx_tail(declarations);
-    let tag=visitor_tag(declaration);var attributes=sx_nil();
-    if tag=="Function"{attributes=sexpr_nth(declaration,5);}
-    if tag=="Extern"{attributes=sexpr_nth(declaration,4);}
-    var attribute=sx_nil();
-    while sx_kind(attributes)==3 {
-      if grammar_owned(sx_head(attributes),label) {
-        if sx_kind(attribute)!=0 {grammar_fail("marker");}
-        attribute=sx_head(attributes);
-      }attributes=sx_tail(attributes);
+fn transform(tree: sexpr, label: string) -> sexpr
+{
+  var declarations = sexpr_nth(tree, 2);
+  var out = sx_nil();
+  var serial = 0;
+  var world = tree;
+  while sx_kind(declarations) == 3
+  {
+    let declaration = sx_head(declarations);
+    declarations = sx_tail(declarations);
+    let tag = visitor_tag(declaration);
+    var attributes = sx_nil();
+    if tag == "Function"
+    {
+      attributes = sexpr_nth(declaration, 5);
     }
-    if sx_kind(attribute)==0 {out=sx_cons(declaration,out);continue;}
-    let (generated,next)=grammar_emit(declaration,attribute,world,serial);serial=next;
-    var rest=generated;
-    while sx_kind(rest)==3{out=sx_cons(sx_head(rest),out);rest=sx_tail(rest);}
-    world=ppx_node("Unit",ppx_list2(sx_symbol("1"),native_append(sexpr_nth(world,2),generated)));
+    if tag == "Extern"
+    {
+      attributes = sexpr_nth(declaration, 4);
+    }
+    var attribute = sx_nil();
+    while sx_kind(attributes) == 3
+    {
+      if grammar_owned(sx_head(attributes), label)
+      {
+        if sx_kind(attribute) != 0
+        {
+          grammar_fail("marker");
+        }
+        attribute = sx_head(attributes);
+      }
+      attributes = sx_tail(attributes);
+    }
+    if sx_kind(attribute) == 0
+    {
+      out = sx_cons(declaration, out);
+      continue;
+    }
+    let(generated, next) = grammar_emit(declaration, attribute, world, serial);
+    serial = next;
+    var rest = generated;
+    while sx_kind(rest) == 3
+    {
+      out = sx_cons(sx_head(rest), out);
+      rest = sx_tail(rest);
+    }
+    world = ppx_node("Unit",
+      ppx_list2(sx_symbol("1"),
+      native_append(sexpr_nth(world,
+      2),
+      generated)));
   }
-  let functions=sexpr_reverse(out);var rest=functions;var names=sx_nil();
-  while sx_kind(rest)==3 {
-    let declaration=sx_head(rest);rest=sx_tail(rest);
-    if visitor_tag(declaration)=="NominalDeclaration"{continue;}
-    let name=sx_text(sexpr_nth(declaration,1));
-    if sx_kind(ppx_lookup(names,name))!=0{grammar_fail("collision");}
-    names=sx_cons(sx_cons(sx_string(name),ppx_list1(sx_symbol("1"))),names);
+  let functions = sexpr_reverse(out);
+  var rest = functions;
+  var names = sx_nil();
+  while sx_kind(rest) == 3
+  {
+    let declaration = sx_head(rest);
+    rest = sx_tail(rest);
+    if visitor_tag(declaration) == "NominalDeclaration"
+    {
+      continue;
+    }
+    let name = sx_text(sexpr_nth(declaration, 1));
+    if sx_kind(ppx_lookup(names, name)) != 0
+    {
+      grammar_fail("collision");
+    }
+    names = sx_cons(sx_cons(sx_string(name), ppx_list1(sx_symbol("1"))), names);
   }
-  return ppx_node("Unit",ppx_list2(sx_symbol("1"),functions));
+  return ppx_node("Unit", ppx_list2(sx_symbol("1"), functions));
 }
-fn main(){native_serve(transform);}
+fn main()
+{
+  native_serve(transform);
+}

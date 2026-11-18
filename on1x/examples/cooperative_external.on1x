@@ -1,13 +1,19 @@
 # Direct-exec, not a shell: absolute paths and literal argv only.
-fn main() {
-    taskgroup {
-        let never_started = launch { println(-1); 7 };
-        cancel never_started;
-        let ok: xfiber = launch exec("/bin/true");
-        println(join ok);
-        let sleeper: xfiber = launch exec("/bin/sleep", "10");
-        println(cancel sleeper);
-        let failed: xfiber = launch exec("/bin/false");
-        println(join failed);
-    }
+fn main()
+{
+  taskgroup
+  {
+    let never_started = launch
+    {
+      println(- 1);
+      7
+    };
+    cancel never_started;
+    let ok: xfiber = launch exec("/bin/true");
+    println(join ok);
+    let sleeper: xfiber = launch exec("/bin/sleep", "10");
+    println(cancel sleeper);
+    let failed: xfiber = launch exec("/bin/false");
+    println(join failed);
+  }
 }

@@ -1,6 +1,7 @@
 """On1x source formatting, round trips, and target escaping."""
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -27,6 +28,92 @@ def run_source(source, output):
     invoke(CC, "-std=c11", "-Wall", "-Wextra", "-pedantic", "-Werror", "-I",
            HOME / "runtime", c, HOME / "runtime/on1x_runtime.c", "-o", output)
     return invoke(output).stdout
+
+
+def test_inplace(work):
+    source = work / "inplace.on1x"
+    output = work / "other.on1x"
+    original = b"fn main(){println(42);}\n"
+    source.write_bytes(original)
+    source.chmod(0o640)
+    rendered = fmt(source, "-o", "-").stdout
+    assert rendered != original and source.read_bytes() == original
+
+    for args in ((source, "--inplace"), ("-i", "--target", "plain", source)):
+        source.write_bytes(original)
+        assert fmt(*args).stdout == b""
+        assert source.read_bytes() == rendered
+        assert stat.S_IMODE(source.stat().st_mode) == 0o640
+        fmt(source, "--check")
+
+    source.write_bytes(original)
+    for args in (("--inplace", "--check"), ("-o", output, "-i"),
+                 ("-i", "-o", "-"), ("-i", "--target", "latex"),
+                 ("--target", "troff", "--inplace")):
+        result = fmt(source, *args, expected=2)
+        assert not result.stdout and b"--inplace" in result.stderr
+        assert source.read_bytes() == original and not output.exists()
+    assert b"input file" in fmt("--inplace", expected=2).stderr
+    for args in (("--help",), ("fmt", "--help")):
+        help_text = invoke(ON1XC, *args).stdout
+        assert b"--inplace" in help_text and b"-i" in help_text
+
+    source.write_bytes(b"# on1xfmt: target = latex\n" + original)
+    assert fmt(source).stdout.startswith(b"\\documentclass")
+    plain = fmt(source, "--target", "plain").stdout
+    assert fmt(source, "-i").stdout == b""
+    assert source.read_bytes() == plain
+
+    dash = work / "-"
+    dash.write_bytes(original)
+    assert fmt("-i", "--", "-", cwd=work).stdout == b""
+    assert dash.read_bytes() == rendered
+
+    source.write_bytes(original)
+    assert fmt(source, "-o", source).stdout == b""
+    assert source.read_bytes() == rendered
+
+    link = work / "link.on1x"
+    source.write_bytes(original)
+    link.symlink_to(source.name)
+    assert b"regular file" in fmt(link, "-i", expected=2).stderr
+    assert link.is_symlink() and source.read_bytes() == original
+
+    malformed = b"fn malformed("
+    source.write_bytes(malformed)
+    err = fmt(source, "--inplace", expected=1)
+    assert not err.stdout and source.name.encode() in err.stderr
+    assert source.read_bytes() == malformed
+
+
+def test_repository_style(work):
+    root = work / "repository-style"
+    root.mkdir()
+    config = root / ".on1xfmt"
+    shutil.copyfile(HOME / ".on1xfmt", config)
+    source = root / "style.on1x"
+    source.write_bytes(b'fn empty(){} fn foo(x: bool)->i64{if x{return 42;}else{return 0;}}'
+                       b' fn main(){println(foo(true));}')
+    before = run_source(source, work / "style-before")
+    expected = (b"fn empty()\n{\n}\nfn foo(x: bool) -> i64\n{\n"
+                b"  if x\n  {\n    return 42;\n  }\n  else\n  {\n    return 0;\n  }\n}\n"
+                b"fn main()\n{\n  println(foo(true));\n}\n")
+    assert fmt(source, "--inplace", cwd=HOME).stdout == b""
+    assert source.read_bytes() == expected
+    fmt(source, "--check")
+    assert before == run_source(source, work / "style-after") == b"42\n"
+
+    protected = b"# on1xfmt: off\nfn preserved(){ }\n# on1xfmt: on\n"
+    source.write_bytes(protected + b'fn main(){println("{ literal }");}')
+    assert fmt(source).stdout == protected + b'fn main()\n{\n  println("{ literal }");\n}\n'
+
+    # At a very narrow width, continuation indent can cost more than keeping
+    # the entire call on one line. Search considers both group choices.
+    source.write_bytes(b"fn main(){println(g(1,2));}")
+    config.write_text("width = 1\nalgorithm = search\n")
+    assert b"println(g(1, 2));" in fmt(source).stdout
+    config.write_text("width = 1\nalgorithm = fits\nbrace_style = same-line\n")
+    assert b"fn main() {\n  println(g(1,\n    2));\n}\n" == fmt(source).stdout
 
 
 def run(work):
@@ -72,6 +159,8 @@ println("hash # inside string \\\\ \\\"");} # EOF'''
     assert b"\n   println(combine(100, 200, 300));\n" in different
     for value in (b"tabstop=0", b"width=-1", b"width=999999999999999999999",
                   b"tabstop=1\ntabstop=2", b"unknown=1", b"tabstop 3",
+                  b"algorithm=knuth-plass", b"brace_style=missing",
+                  b"algorithm=search\nalgorithm=fits", b"brace_style=allman\nbrace_style=same-line",
                   b"tabstop=4\0", b" " * 4097):
         config.write_bytes(value)
         err = fmt(p, "-o", q, expected=1)
@@ -175,5 +264,7 @@ println("hash # inside string \\\\ \\\"");} # EOF'''
 
 if __name__ == "__main__":
     with tempfile.TemporaryDirectory(prefix="on1x-fmt-") as directory:
+        test_inplace(Path(directory))
+        test_repository_style(Path(directory))
         run(Path(directory))
     print("On1x format configuration, round trips, C11 execution and markup passed")

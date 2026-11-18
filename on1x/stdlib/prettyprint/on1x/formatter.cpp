@@ -18,7 +18,11 @@ namespace {
 namespace fs = std::filesystem;
 using View = std::string_view;
 
-struct Config { std::size_t width = 80, tabstop = 2; };
+struct Config {
+    std::size_t width = 80, tabstop = 2;
+    mulib_pretty_algorithm_t algorithm = MULIB_PRETTY_FITS;
+    bool allman = false;
+};
 
 bool horizontal(char c) { return c == ' ' || c == '\t' || c == '\r'; }
 
@@ -48,25 +52,34 @@ Config read_config(const fs::path& input) {
                 fail(0, 1, "cannot read .on1xfmt or exceeds 4096 bytes");
             View text(bytes, static_cast<std::size_t>(in.gcount()));
             if (text.find('\0') != View::npos) fail(0, 1, "NUL in .on1xfmt");
-            bool width = false, tabstop = false;
+            std::set<View> keys;
             for (std::size_t offset = 0, line = 1; offset < text.size(); ++line) {
                 auto end = std::min(text.find('\n', offset), text.size());
                 auto s = text.substr(offset, end - offset);
                 s = trim(s.substr(0, s.find('#')));
                 if (!s.empty()) {
                     auto equal = s.find('=');
-                    if (equal == View::npos) fail(offset, line, "expected key = integer");
+                    if (equal == View::npos) fail(offset, line, "expected key = value");
                     auto key = trim(s.substr(0, equal));
                     auto val = trim(s.substr(equal + 1));
-                    if (key != "width" && key != "tabstop") fail(offset, line, "unknown .on1xfmt key");
-                    auto& seen = key == "width" ? width : tabstop;
-                    if (seen) fail(offset, line, "duplicate .on1xfmt key");
-                    seen = true;
-                    auto& setting = key == "width" ? result.width : result.tabstop;
-                    auto [ptr, err] = std::from_chars(val.data(), val.data() + val.size(), setting);
-                    if (err != std::errc() || ptr != val.data() + val.size() ||
-                        !setting || setting > (key == "width" ? 4096u : 16u))
-                        fail(offset, line, key == "width" ? "width must be 1..4096" : "tabstop must be 1..16");
+                    if (!keys.insert(key).second) fail(offset, line, "duplicate .on1xfmt key");
+                    if (key == "width" || key == "tabstop") {
+                        auto& setting = key == "width" ? result.width : result.tabstop;
+                        auto [ptr, err] = std::from_chars(val.data(), val.data() + val.size(), setting);
+                        if (err != std::errc() || ptr != val.data() + val.size() ||
+                            !setting || setting > (key == "width" ? 4096u : 16u))
+                            fail(offset, line, key == "width" ? "width must be 1..4096" : "tabstop must be 1..16");
+                    } else if (key == "algorithm") {
+                        if (val == "fits") result.algorithm = MULIB_PRETTY_FITS;
+                        else if (val == "search") result.algorithm = MULIB_PRETTY_SEARCH;
+                        else fail(offset, line, "algorithm must be fits or search");
+                    } else if (key == "brace_style") {
+                        if (val == "same-line") result.allman = false;
+                        else if (val == "allman") result.allman = true;
+                        else fail(offset, line, "brace_style must be same-line or allman");
+                    } else {
+                        fail(offset, line, "unknown .on1xfmt key");
+                    }
                 }
                 offset = end + 1;
             }
@@ -245,12 +258,17 @@ bool space_between(const Part& a, const Part& b) {
     return true;
 }
 
-bool line_between(const Part& a, const Part& b, View input) {
+bool line_between(const Part& a, const Part& b, View input, const Config& cfg) {
     if (a.kind == Kind::disabled || b.kind == Kind::disabled) return true;
     if (a.kind == Kind::comment) return true;
     if (b.kind == Kind::comment)
         return input.substr(a.end, b.start - a.end).find('\n') != View::npos;
     if (b.top) return true;
+    if (cfg.allman) {
+        if (b.text == "{" && (a.text != "." || a.end != b.start)) return true;
+        if (a.text == "{" && b.text == "}") return true;
+        if (a.text == "}" && b.text == "else") return true;
+    }
     if (a.text == "{" && b.text != "}") return true;
     if (b.text == "}" && a.text != "{") return true;
     if (a.text == ";" && !a.in_list) return true;
@@ -324,6 +342,7 @@ public:
         mulib_pretty_options_t options;
         mulib_pretty_options_init(&options);
         options.width = cfg.width;
+        options.algorithm = cfg.algorithm;
         options.max_output = max_source_bytes;
         return mulib_pretty_layout(doc.get(), root, &options, &result);
     }
@@ -334,7 +353,7 @@ Id make_document(Document& doc, const std::vector<Part>& input, View original, c
     for (std::size_t start = 0; start < input.size();) {
         const auto& first = input[start];
         auto end = start + 1;
-        while (end < input.size() && !line_between(input[end - 1], input[end], original)) ++end;
+        while (end < input.size() && !line_between(input[end - 1], input[end], original, cfg)) ++end;
         const std::size_t indent = first.kind == Kind::disabled ? 0 : first.level * cfg.tabstop;
         std::vector<Id> text{doc.literal(first)};
         bool can_wrap = false;

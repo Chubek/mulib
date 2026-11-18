@@ -88,7 +88,7 @@
         "tests/test-elvi-scrape-alloc.c": "b944c98c763de1320ae5e0f9bd3deb9df98329f8984ea8bb2fe02f74a5630712",
         "tests/fuzz_elvi_scrape.c": "cf31452100a9cf2038232c6f9bb0717ce5ac80283b9d90d62df5fc6c3fa3f7de",
         "on1x/tests/mulib/elvi-scrape.c": "e1c2b90fab8e73842873949b56661d9cf5736490e5b413db971e4c74772b2bb7",
-        "on1x/tests/mulib/elvi-scrape.on1x": "64f5f2c0f116db7128497f8b0212b7b37079d7ba6aa95d4365504c6632ad8c8e",
+        "on1x/tests/mulib/elvi-scrape.on1x": "fb8e492262067f27fe2eac10dd151f02fb858a7c6ebfe75699993f947a2459fb",
         "tests/fixtures/elvi-scrape/bot.html": "29d638c06a0a3b3a86d7707525719d75666cfd808b80896b77f7344dcebb564a",
         "tests/fixtures/elvi-scrape/changed.html": "49a9bafb6fca7f0fec3f98b240b7e5b5ac27b2ae62f379a2ed6cdcbcb520d813",
         "tests/fixtures/elvi-scrape/consent.html": "54024b8a32479b1f0e2a97700bbd534c522eecf219002a5f1e5f49fbad43ab92",

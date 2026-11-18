@@ -1,20 +1,35 @@
 # Defer belongs to the function, not to a loop iteration or nested block.
-enum Result<T,E> { Ok(T), Err(E) }
-
-fn read(n:i64)->Result<i64,u8> {
-  defer println(n);
-  if n < 0 { return variant<Result<i64,u8>>(Err,7u8); }
-  return variant<Result<i64,u8>>(Ok,n);
+enum Result < T, E >
+{
+  Ok(T), Err(E)
 }
-
-fn twice(n:i64)->Result<i64,u8> {
+fn read(n: i64) -> Result < i64, u8 >
+{
+  defer println(n);
+  if n < 0
+  {
+    return variant < Result < i64, u8 > > (Err, 7u8);
+  }
+  return variant < Result < i64, u8 > > (Ok, n);
+}
+fn twice(n: i64) -> Result < i64, u8 >
+{
   defer println(99);
   let value = read(n)?;
-  return variant<Result<i64,u8>>(Ok,value*2);
+  return variant < Result < i64, u8 > > (Ok, value * 2);
 }
-
-fn main() {
-  for i in 0..3 { defer println(i); }
-  println(match twice(21) with { Ok(n)=>n, Err(e)=>u8_to_i64(e) });
-  println(match twice(-1) with { Ok(n)=>n, Err(e)=>u8_to_i64(e) });
+fn main()
+{
+  for i in 0 .. 3
+  {
+    defer println(i);
+  }
+  println(match twice(21) with
+  {
+    Ok(n) => n, Err(e) => u8_to_i64(e)
+  });
+  println(match twice(- 1) with
+  {
+    Ok(n) => n, Err(e) => u8_to_i64(e)
+  });
 }

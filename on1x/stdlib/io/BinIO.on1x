@@ -1,6 +1,12 @@
 # Binary bytes travel through hex to avoid the current NUL-free On1x ABI.
 # The result is an ASCII hex representation of bytes, not raw binary text.
-extern fn basis_native_read_hex(path:string)->string;
-extern fn basis_native_write_hex(path:string,hex_text:string)->bool;
-fn basis_bin_io_read_hex(path:string)->string { return basis_native_read_hex(path); }
-fn basis_bin_io_write_hex(path:string,hex_text:string)->bool { return basis_native_write_hex(path,hex_text); }
+extern fn basis_native_read_hex(path: string) -> string;
+extern fn basis_native_write_hex(path: string, hex_text: string) -> bool;
+fn basis_bin_io_read_hex(path: string) -> string
+{
+  return basis_native_read_hex(path);
+}
+fn basis_bin_io_write_hex(path: string, hex_text: string) -> bool
+{
+  return basis_native_write_hex(path, hex_text);
+}

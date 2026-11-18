@@ -2,13 +2,14 @@ import "../io/TextIO.on1x";
 import "../io/BinIO.on1x";
 import "../os/OS.on1x";
 import "../time/Date.on1x";
-fn main() {
-  let path="on1x-basis-on1x-io-test.txt";
-  assert(basis_text_io_output(path,"abc"));
-  assert(basis_text_io_input_all(path)=="abc");
-  assert(basis_bin_io_read_hex(path)=="616263");
-  assert(basis_fs_file_size(path)==3);
+fn main()
+{
+  let path = "on1x-basis-on1x-io-test.txt";
+  assert(basis_text_io_output(path, "abc"));
+  assert(basis_text_io_input_all(path) == "abc");
+  assert(basis_bin_io_read_hex(path) == "616263");
+  assert(basis_fs_file_size(path) == 3);
   assert(basis_fs_remove(path));
-  assert(basis_date_utc_iso(0)=="1970-01-01T00:00:00Z");
+  assert(basis_date_utc_iso(0) == "1970-01-01T00:00:00Z");
   println("basis I/O OK");
 }

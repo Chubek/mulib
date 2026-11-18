@@ -6,5 +6,6 @@ import kernel mulib.cgroup2 as Groups;
 import kernel mulib.ipc_framed as IPC;
 import kernel mulib.capbroker as Broker;
 import kernel mulib.sandbox_process as Process;
-
-fn main() {}
+fn main()
+{
+}

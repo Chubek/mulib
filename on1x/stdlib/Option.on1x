@@ -1,3 +1,1 @@
-from .collections.Option import basis_option_some as some, basis_option_none as none,
-    basis_option_is_some as is_some, basis_option_get_or as get_or,
-    basis_option_map as map, basis_option_and_then as and_then;
+from .collections.Option import basis_option_some as some, basis_option_none as none, basis_option_is_some as is_some, basis_option_get_or as get_or, basis_option_map as map, basis_option_and_then as and_then;

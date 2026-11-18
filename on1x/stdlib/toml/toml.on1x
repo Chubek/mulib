@@ -1,7 +1,12 @@
 # MuLIB TOML subset (date/time types unsupported by kernel).
 extern fn on1x_mulib_toml_to_json(text: string) -> string;
-fn toml_as_json(text: string) -> string { return on1x_mulib_toml_to_json(text); }
-fn basis_toml_as_json(text:string)->(i64,string) {
- let value=on1x_mulib_toml_to_json(text);return (on1x_mulib_bridge_status(),value);
+fn toml_as_json(text: string) -> string
+{
+  return on1x_mulib_toml_to_json(text);
+}
+fn basis_toml_as_json(text: string) ->(i64, string)
+{
+  let value = on1x_mulib_toml_to_json(text);
+  return (on1x_mulib_bridge_status(), value);
 }
 import "../_bridge/status.on1x";

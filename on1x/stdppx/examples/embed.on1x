@@ -1,3 +1,6 @@
 # ON1X_PPX_EMBED_ROOT must point to the examples directory.
 @ppx embed "../embed.py"
-fn main() { println(@embed("text", "resource.txt")); }
+fn main()
+{
+  println(@embed("text", "resource.txt"));
+}

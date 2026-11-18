@@ -1,40 +1,85 @@
 # Immutable association map keyed by NUL-free text; first match wins.
-fn batteries_map_empty() -> sexpr { return sx_nil(); }
-fn batteries_map_put(map: sexpr,key: string,value: sexpr) -> sexpr {
- basis_map_validate(map);
- let pair = sx_cons(sx_string(key),sx_cons(value,sx_nil()));
- return sx_cons(pair,map);
+fn batteries_map_empty() -> sexpr
+{
+  return sx_nil();
 }
-fn batteries_map_has(map: sexpr,key: string) -> bool {
- basis_map_validate(map);
- var rest = map;
- while sx_kind(rest) == 3 {
-  let pair = sx_head(rest);
-  if sx_text(sx_head(pair)) == key { return true; }
-  rest = sx_tail(rest);
- }
- return false;
+fn batteries_map_put(map: sexpr, key: string, value: sexpr) -> sexpr
+{
+  basis_map_validate(map);
+  let pair = sx_cons(sx_string(key), sx_cons(value, sx_nil()));
+  return sx_cons(pair, map);
 }
-fn batteries_map_get(map: sexpr,key: string) -> sexpr {
- basis_map_validate(map);
- var rest = map;
- while sx_kind(rest) == 3 {
-  let pair = sx_head(rest);
-  if sx_text(sx_head(pair)) == key { return sx_head(sx_tail(pair)); }
-  rest = sx_tail(rest);
- }
- tool_fail("map: missing key"); return sx_nil();
+fn batteries_map_has(map: sexpr, key: string) -> bool
+{
+  basis_map_validate(map);
+  var rest = map;
+  while sx_kind(rest) == 3
+  {
+    let pair = sx_head(rest);
+    if sx_text(sx_head(pair)) == key
+    {
+      return true;
+    }
+    rest = sx_tail(rest);
+  }
+  return false;
 }
-fn basis_map_find(map:sexpr,key:string)->(bool,sexpr) {
- if !batteries_map_has(map,key){return (false,sx_nil());}return (true,batteries_map_get(map,key));
+fn batteries_map_get(map: sexpr, key: string) -> sexpr
+{
+  basis_map_validate(map);
+  var rest = map;
+  while sx_kind(rest) == 3
+  {
+    let pair = sx_head(rest);
+    if sx_text(sx_head(pair)) == key
+    {
+      return sx_head(sx_tail(pair));
+    }
+    rest = sx_tail(rest);
+  }
+  tool_fail("map: missing key");
+  return sx_nil();
 }
-fn basis_map_remove(map:sexpr,key:string)->sexpr {
- basis_map_validate(map);var rest=map;var out=sx_nil();
- while sx_kind(rest)==3{let pair=sx_head(rest);if sx_text(sx_head(pair))!=key{out=sx_cons(pair,out);}rest=sx_tail(rest);}
- var result=sx_nil();while sx_kind(out)==3{result=sx_cons(sx_head(out),result);out=sx_tail(out);}return result;
+fn basis_map_find(map: sexpr, key: string) ->(bool, sexpr)
+{
+  if ! batteries_map_has(map, key)
+  {
+    return (false, sx_nil());
+  }
+  return (true, batteries_map_get(map, key));
+}
+fn basis_map_remove(map: sexpr, key: string) -> sexpr
+{
+  basis_map_validate(map);
+  var rest = map;
+  var out = sx_nil();
+  while sx_kind(rest) == 3
+  {
+    let pair = sx_head(rest);
+    if sx_text(sx_head(pair)) != key
+    {
+      out = sx_cons(pair, out);
+    }
+    rest = sx_tail(rest);
+  }
+  var result = sx_nil();
+  while sx_kind(out) == 3
+  {
+    result = sx_cons(sx_head(out), result);
+    out = sx_tail(out);
+  }
+  return result;
 }
 import "../base/shape.on1x";
-fn basis_map_validate(map:sexpr) {
- basis_shape_list(map);var rest=map;
- while sx_kind(rest)==3{let pair=sx_head(rest);basis_shape_pair(pair);basis_shape_text(sx_head(pair));rest=sx_tail(rest);}
+fn basis_map_validate(map: sexpr)
+{
+  basis_shape_list(map);
+  var rest = map;
+  while sx_kind(rest) == 3
+  {
+    let pair = sx_head(rest);
+    basis_shape_pair(pair);
+    basis_shape_text(sx_head(pair));
+    rest = sx_tail(rest);
+  }
 }

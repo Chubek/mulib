@@ -6,14 +6,27 @@
 @ppx format "../format.py"
 @ppx assertions "../assertions.py"
 @ppx state_machine "../state_machine.py"
-fn double(x: i64) -> i64 { return x * 2; }
-fn increment(x: i64) -> i64 { return x + 1; }
-fn main() {
+fn double(x: i64) -> i64
+{
+  return x * 2;
+}
+fn increment(x: i64) -> i64
+{
+  return x + 1;
+}
+fn main()
+{
   let x = @pipe("apply", 20, double, increment);
   let y = @compose("apply", 20, double, increment);
   @assertions("assert_eq", x, 41);
   @assertions("assert_eq", y, 42);
-  @cond("branches", x == 41, { @logging("info", "pipe OK"); }, { @logging("error", "pipe wrong"); });
+  @cond("branches", x == 41,
+  {
+    @logging("info", "pipe OK");
+  },
+  {
+    @logging("error", "pipe wrong");
+  });
   println(@format("string", "Literal {0} {1}", "text", "expansion"));
   println(@state_machine("transition", 0, 1, 0, 1, 4));
 }

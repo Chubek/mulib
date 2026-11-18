@@ -1,134 +1,264 @@
 # Small pervasive functions and the default nominal data vocabulary.
 # Nominal payloads retain the language's bounded, trivially copied profile.
-enum Option<T> { None, Some(T) }
-enum Result<T,E> { Ok(T), Err(E) }
-
+enum Option < T >
+{
+  None, Some(T)
+}
+enum Result < T, E >
+{
+  Ok(T), Err(E)
+}
 # Retain these implementation names for explicit-import compatibility.
-fn basis_identity(value) -> _ { return value; }
-fn basis_ignore(value) { }
-fn basis_fst(pair) -> _ { let (first, second) = pair; return first; }
-fn basis_snd(pair) -> _ { let (first, second) = pair; return second; }
-fn basis_const(value, ignored) -> _ { return value; }
-
-fn basis_pervasive_apply(function, value) -> _ { return function(value); }
-
-fn basis_pervasive_errln(message: string) {
+fn basis_identity(value) -> _
+{
+  return value;
+}
+fn basis_ignore(value)
+{
+}
+fn basis_fst(pair) -> _
+{
+  let(first, second) = pair;
+  return first;
+}
+fn basis_snd(pair) -> _
+{
+  let(first, second) = pair;
+  return second;
+}
+fn basis_const(value, ignored) -> _
+{
+  return value;
+}
+fn basis_pervasive_apply(function, value) -> _
+{
+  return function(value);
+}
+fn basis_pervasive_errln(message: string)
+{
   io_stderr(message);
   io_stderr("\n");
 }
-
-fn basis_pervasive_option_some(value) -> Option<_> {
-  return variant<Option<_>>(Some, value);
+fn basis_pervasive_option_some(value) -> Option < _ >
+{
+  return variant < Option < _ > > (Some, value);
 }
-fn basis_pervasive_option_none() -> Option<_> {
-  return variant<Option<_>>(None, record{});
+fn basis_pervasive_option_none() -> Option < _ >
+{
+  return variant < Option < _ > > (None, record
+  {
+  });
 }
-fn basis_pervasive_option_is_some(value: Option<_>) -> bool {
-  return match value with { Some(_) => true, None() => false };
-}
-fn basis_pervasive_option_is_none(value: Option<_>) -> bool {
-  return match value with { Some(_) => false, None() => true };
-}
-fn basis_pervasive_option_map(value: Option<_>, function) -> Option<_> {
-  return match value with {
-    Some(item) => variant<Option<_>>(Some, function(item)),
-    None() => variant<Option<_>>(None, record{})
+fn basis_pervasive_option_is_some(value: Option < _ >) -> bool
+{
+  return match value with
+  {
+    Some(_) => true, None() => false
   };
 }
-fn basis_pervasive_option_and_then(value: Option<_>, function) -> Option<_> {
-  return match value with {
-    Some(item) => function(item),
-    None() => variant<Option<_>>(None, record{})
+fn basis_pervasive_option_is_none(value: Option < _ >) -> bool
+{
+  return match value with
+  {
+    Some(_) => false, None() => true
   };
 }
-fn basis_pervasive_option_filter(value: Option<_>, predicate) -> Option<_> {
-  return match value with {
-    Some(item) => match predicate(item) with {
-      true => variant<Option<_>>(Some, item),
-      false => variant<Option<_>>(None, record{})
-    },
-    None() => variant<Option<_>>(None, record{})
+fn basis_pervasive_option_map(value: Option < _ >, function) -> Option < _ >
+{
+  return match value with
+  {
+    Some(item) => variant < Option < _ > > (Some,
+      function(item)), None() => variant < Option < _ > > (None,
+      record
+    {
+    })
   };
 }
-fn basis_pervasive_option_unwrap_or(value: Option<_>, fallback: _) -> _ {
-  return match value with { Some(item) => item, None() => fallback };
-}
-fn basis_pervasive_option_unwrap_or_else(value: Option<_>, fallback) -> _ {
-  return match value with { Some(item) => item, None() => fallback() };
-}
-fn basis_pervasive_option_ok_or(value: Option<_>, error: _) -> Result<_,_> {
-  return match value with {
-    Some(item) => variant<Result<_,_>>(Ok, item),
-    None() => variant<Result<_,_>>(Err, error)
+fn basis_pervasive_option_and_then(value: Option < _ >,
+  function) -> Option < _ >
+{
+  return match value with
+  {
+    Some(item) => function(item), None() => variant < Option < _ > > (None,
+      record
+    {
+    })
   };
 }
-fn basis_pervasive_option_ok_or_else(value: Option<_>, error) -> Result<_,_> {
-  return match value with {
-    Some(item) => variant<Result<_,_>>(Ok, item),
-    None() => variant<Result<_,_>>(Err, error())
+fn basis_pervasive_option_filter(value: Option < _ >, predicate) -> Option < _ >
+{
+  return match value with
+  {
+    Some(item) => match predicate(item) with
+    {
+      true => variant < Option < _ > > (Some,
+        item), false => variant < Option < _ > > (None,
+        record
+      {
+      })
+    }, None() => variant < Option < _ > > (None, record
+    {
+    })
   };
 }
-fn basis_pervasive_option_iter(value: Option<_>, action: fn(_) -> void) {
-  match value with { Some(item) => action(item), None() => {} };
-}
-
-fn basis_pervasive_result_ok(value) -> Result<_,_> {
-  return variant<Result<_,_>>(Ok, value);
-}
-fn basis_pervasive_result_error(error) -> Result<_,_> {
-  return variant<Result<_,_>>(Err, error);
-}
-fn basis_pervasive_result_is_ok(value: Result<_,_>) -> bool {
-  return match value with { Ok(_) => true, Err(_) => false };
-}
-fn basis_pervasive_result_is_error(value: Result<_,_>) -> bool {
-  return match value with { Ok(_) => false, Err(_) => true };
-}
-fn basis_pervasive_result_map(value: Result<_,_>, function) -> Result<_,_> {
-  return match value with {
-    Ok(item) => variant<Result<_,_>>(Ok, function(item)),
-    Err(error) => variant<Result<_,_>>(Err, error)
+fn basis_pervasive_option_unwrap_or(value: Option < _ >, fallback: _) -> _
+{
+  return match value with
+  {
+    Some(item) => item, None() => fallback
   };
 }
-fn basis_pervasive_result_map_error(value: Result<_,_>, function) -> Result<_,_> {
-  return match value with {
-    Ok(item) => variant<Result<_,_>>(Ok, item),
-    Err(error) => variant<Result<_,_>>(Err, function(error))
+fn basis_pervasive_option_unwrap_or_else(value: Option < _ >, fallback) -> _
+{
+  return match value with
+  {
+    Some(item) => item, None() => fallback()
   };
 }
-fn basis_pervasive_result_and_then(value: Result<_,_>, function) -> Result<_,_> {
-  return match value with {
-    Ok(item) => function(item),
-    Err(error) => variant<Result<_,_>>(Err, error)
+fn basis_pervasive_option_ok_or(value: Option < _ >,
+  error: _) -> Result < _, _ >
+{
+  return match value with
+  {
+    Some(item) => variant < Result < _, _ > > (Ok,
+      item), None() => variant < Result < _, _ > > (Err,
+      error)
   };
 }
-fn basis_pervasive_result_or_else(value: Result<_,_>, function) -> Result<_,_> {
-  return match value with {
-    Ok(item) => variant<Result<_,_>>(Ok, item),
-    Err(error) => function(error)
+fn basis_pervasive_option_ok_or_else(value: Option < _ >,
+  error) -> Result < _, _ >
+{
+  return match value with
+  {
+    Some(item) => variant < Result < _, _ > > (Ok,
+      item), None() => variant < Result < _, _ > > (Err,
+      error())
   };
 }
-fn basis_pervasive_result_unwrap_or(value: Result<_,_>, fallback: _) -> _ {
-  return match value with { Ok(item) => item, Err(_) => fallback };
-}
-fn basis_pervasive_result_unwrap_or_else(value: Result<_,_>, fallback) -> _ {
-  return match value with { Ok(item) => item, Err(error) => fallback(error) };
-}
-fn basis_pervasive_result_ok_option(value: Result<_,_>) -> Option<_> {
-  return match value with {
-    Ok(item) => variant<Option<_>>(Some, item),
-    Err(_) => variant<Option<_>>(None, record{})
+fn basis_pervasive_option_iter(value: Option < _ >, action: fn(_) -> void)
+{
+  match value with
+  {
+    Some(item) => action(item), None() =>
+    {
+    }
   };
 }
-fn basis_pervasive_result_error_option(value: Result<_,_>) -> Option<_> {
-  return match value with {
-    Ok(_) => variant<Option<_>>(None, record{}),
-    Err(error) => variant<Option<_>>(Some, error)
+fn basis_pervasive_result_ok(value) -> Result < _, _ >
+{
+  return variant < Result < _, _ > > (Ok, value);
+}
+fn basis_pervasive_result_error(error) -> Result < _, _ >
+{
+  return variant < Result < _, _ > > (Err, error);
+}
+fn basis_pervasive_result_is_ok(value: Result < _, _ >) -> bool
+{
+  return match value with
+  {
+    Ok(_) => true, Err(_) => false
   };
 }
-fn basis_pervasive_result_iter(value: Result<_,_>, action: fn(_) -> void) {
-  match value with { Ok(item) => action(item), Err(_) => {} };
+fn basis_pervasive_result_is_error(value: Result < _, _ >) -> bool
+{
+  return match value with
+  {
+    Ok(_) => false, Err(_) => true
+  };
 }
-fn basis_pervasive_result_iter_error(value: Result<_,_>, action: fn(_) -> void) {
-  match value with { Ok(_) => {}, Err(error) => action(error) };
+fn basis_pervasive_result_map(value: Result < _,
+  _ >,
+  function) -> Result < _, _ >
+{
+  return match value with
+  {
+    Ok(item) => variant < Result < _, _ > > (Ok,
+      function(item)), Err(error) => variant < Result < _, _ > > (Err,
+      error)
+  };
+}
+fn basis_pervasive_result_map_error(value: Result < _,
+  _ >,
+  function) -> Result < _, _ >
+{
+  return match value with
+  {
+    Ok(item) => variant < Result < _, _ > > (Ok,
+      item), Err(error) => variant < Result < _, _ > > (Err,
+      function(error))
+  };
+}
+fn basis_pervasive_result_and_then(value: Result < _,
+  _ >,
+  function) -> Result < _, _ >
+{
+  return match value with
+  {
+    Ok(item) => function(item), Err(error) => variant < Result < _, _ > > (Err,
+      error)
+  };
+}
+fn basis_pervasive_result_or_else(value: Result < _,
+  _ >,
+  function) -> Result < _, _ >
+{
+  return match value with
+  {
+    Ok(item) => variant < Result < _, _ > > (Ok,
+      item), Err(error) => function(error)
+  };
+}
+fn basis_pervasive_result_unwrap_or(value: Result < _, _ >, fallback: _) -> _
+{
+  return match value with
+  {
+    Ok(item) => item, Err(_) => fallback
+  };
+}
+fn basis_pervasive_result_unwrap_or_else(value: Result < _, _ >, fallback) -> _
+{
+  return match value with
+  {
+    Ok(item) => item, Err(error) => fallback(error)
+  };
+}
+fn basis_pervasive_result_ok_option(value: Result < _, _ >) -> Option < _ >
+{
+  return match value with
+  {
+    Ok(item) => variant < Option < _ > > (Some,
+      item), Err(_) => variant < Option < _ > > (None,
+      record
+    {
+    })
+  };
+}
+fn basis_pervasive_result_error_option(value: Result < _, _ >) -> Option < _ >
+{
+  return match value with
+  {
+    Ok(_) => variant < Option < _ > > (None, record
+    {
+    }), Err(error) => variant < Option < _ > > (Some, error)
+  };
+}
+fn basis_pervasive_result_iter(value: Result < _, _ >, action: fn(_) -> void)
+{
+  match value with
+  {
+    Ok(item) => action(item), Err(_) =>
+    {
+    }
+  };
+}
+fn basis_pervasive_result_iter_error(value: Result < _,
+  _ >,
+  action: fn(_) -> void)
+{
+  match value with
+  {
+    Ok(_) =>
+    {
+    }, Err(error) => action(error)
+  };
 }

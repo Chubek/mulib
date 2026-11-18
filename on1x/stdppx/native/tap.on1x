@@ -1,15 +1,53 @@
 import "common.on1x";
-fn transform(tree:sexpr,label:string)->sexpr {
- let (value,serial)=ppx_fresh(tree,0);let (callback,next)=ppx_fresh(tree,serial);
- return visitor_rewrite(tree,fn(node:sexpr,path:sexpr)->sexpr {
-  if visitor_tag(node)!="ExtensionExpr"||sx_text(sexpr_nth(node,1))!=label{return node;}
-  let op=sx_text(sexpr_nth(node,2));let args=sexpr_nth(node,3);let at=sexpr_nth(node,4);
-  if op=="identity"&&sexpr_size(args)==1{return sx_head(args);}
-  if op!="call"||sexpr_size(args)!=2||visitor_tag(sexpr_nth(args,1))!="Identifier"{tool_fail("tap expects call(value, callback_identifier)");}
-  let hole=ppx_node("HoleType",sx_nil());let x=ppx_ident(value,at);
-  let params=ppx_list2(native_parameter(value,hole,at),native_parameter(callback,hole,at));
-  let body=native_block(ppx_list2(native_do(ppx_call(callback,ppx_list1(x),at),at),ppx_node("Return",ppx_list2(x,at))),at);
-  return ppx_node("Call",ppx_list3(native_lambda(params,hole,body,at),args,at));
- });
+fn transform(tree: sexpr, label: string) -> sexpr
+{
+  let(value, serial) = ppx_fresh(tree, 0);
+  let(callback, next) = ppx_fresh(tree, serial);
+  return visitor_rewrite(tree, fn(node: sexpr, path: sexpr) -> sexpr
+  {
+    if visitor_tag(node) != "ExtensionExpr" || sx_text(sexpr_nth(node,
+      1)) != label
+    {
+      return node;
+    }
+    let op = sx_text(sexpr_nth(node, 2));
+    let args = sexpr_nth(node, 3);
+    let at = sexpr_nth(node, 4);
+    if op == "identity" && sexpr_size(args) == 1
+    {
+      return sx_head(args);
+    }
+    if op != "call" || sexpr_size(args) != 2 || visitor_tag(sexpr_nth(args,
+      1)) != "Identifier"
+    {
+      tool_fail("tap expects call(value, callback_identifier)");
+    }
+    let hole = ppx_node("HoleType", sx_nil());
+    let x = ppx_ident(value, at);
+    let params = ppx_list2(native_parameter(value,
+      hole,
+      at),
+      native_parameter(callback,
+      hole,
+      at));
+    let body = native_block(ppx_list2(native_do(ppx_call(callback,
+      ppx_list1(x),
+      at),
+      at),
+      ppx_node("Return",
+      ppx_list2(x,
+      at))),
+      at);
+    return ppx_node("Call",
+      ppx_list3(native_lambda(params,
+      hole,
+      body,
+      at),
+      args,
+      at));
+  });
 }
-fn main(){native_serve(transform);}
+fn main()
+{
+  native_serve(transform);
+}

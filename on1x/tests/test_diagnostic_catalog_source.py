@@ -88,10 +88,10 @@ assert not re.search(r'std::string id\s*=\s*"', ast)
 stdlib_record = text('stdlib/diagnostics/diagnostics.on1x')
 stdlib_ppx = text('stdlib/diagnostics/ppx.on1x')
 native_ppx = text('stdppx/native/diagnostics.on1x')
-assert 'message:string' not in stdlib_record
-assert 'message:string' not in stdlib_ppx
-assert 'basis_diagnostics_ppx_declaration()' in native_ppx
-assert 'basis_diagnostics_ppx_emit(id,at)' in native_ppx
+assert not re.search(r'\bmessage\s*:\s*string\b', stdlib_record)
+assert not re.search(r'\bmessage\s*:\s*string\b', stdlib_ppx)
+assert re.search(r'\bbasis_diagnostics_ppx_declaration\s*\(\s*\)', native_ppx)
+assert re.search(r'\bbasis_diagnostics_ppx_emit\s*\(\s*id\s*,\s*at\s*\)', native_ppx)
 
 cmake = text('CMakeLists.txt')
 assert 'tools/generate-diagnostic-catalog.py' in cmake

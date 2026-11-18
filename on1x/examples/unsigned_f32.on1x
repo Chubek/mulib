@@ -1,11 +1,18 @@
-fn twice(x: u32) -> u32 { return x + x; }
-fn main() {
-  let full: u64 = u64_from_bits(-1);
+fn twice(x: u32) -> u32
+{
+  return x + x;
+}
+fn main()
+{
+  let full: u64 = u64_from_bits(- 1);
   println(full);
   println(u64_wrapping_add(full, u64_from_i64(1)));
   println(twice(u32_from_i64(21)));
   let single: f32 = f32_from_f64(1.5);
-  let capture = fn(x: f32) -> f32 { return x + single; };
+  let capture = fn(x: f32) -> f32
+  {
+    return x + single;
+  };
   println(capture(single));
   println(f32_to_bits(f32_from_bits(1) * f32_from_i64(2)));
   println(f32_from_u64(full));

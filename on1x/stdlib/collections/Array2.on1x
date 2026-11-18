@@ -1,20 +1,42 @@
 import "Array.on1x";
 # Two-dimensional mutable i64 array. Value is (handle,rows,columns).
-fn basis_array2_new(rows:i64,columns:i64,initial:i64)->(i64,i64,i64) {
-  if rows<0 || columns<0 { tool_fail("array2 negative size"); }
-  if rows>262144 || columns>262144 { tool_fail("array2 dimension too large"); }
-  if columns!=0 && rows>262144/columns { tool_fail("array2 element budget exceeded"); }
-  let a=basis_array_array(rows*columns,initial);
-  return (a,rows,columns);
+fn basis_array2_new(rows: i64, columns: i64, initial: i64) ->(i64, i64, i64)
+{
+  if rows < 0 || columns < 0
+  {
+    tool_fail("array2 negative size");
+  }
+  if rows > 262144 || columns > 262144
+  {
+    tool_fail("array2 dimension too large");
+  }
+  if columns != 0 && rows > 262144 / columns
+  {
+    tool_fail("array2 element budget exceeded");
+  }
+  let a = basis_array_array(rows * columns, initial);
+  return (a, rows, columns);
 }
-fn basis_array2_sub(view:(i64,i64,i64),row:i64,column:i64)->i64 {
-  let (h,rows,columns)=view;
-  if row<0 || column<0 || row>=rows || column>=columns { tool_fail("array2 subscript out of bounds"); }
-  return basis_array_sub(h,row*columns+column);
+fn basis_array2_sub(view: (i64, i64, i64), row: i64, column: i64) -> i64
+{
+  let(h, rows, columns) = view;
+  if row < 0 || column < 0 || row >= rows || column >= columns
+  {
+    tool_fail("array2 subscript out of bounds");
+  }
+  return basis_array_sub(h, row * columns + column);
 }
-fn basis_array2_update(view:(i64,i64,i64),row:i64,column:i64,value:i64) {
-  let (h,rows,columns)=view;
-  if row<0 || column<0 || row>=rows || column>=columns { tool_fail("array2 subscript out of bounds"); }
-  basis_array_update(h,row*columns+column,value);
+fn basis_array2_update(view: (i64, i64, i64), row: i64, column: i64, value: i64)
+{
+  let(h, rows, columns) = view;
+  if row < 0 || column < 0 || row >= rows || column >= columns
+  {
+    tool_fail("array2 subscript out of bounds");
+  }
+  basis_array_update(h, row * columns + column, value);
 }
-fn basis_array2_destroy(view:(i64,i64,i64)) { let (h,rows,columns)=view; basis_array_destroy(h); }
+fn basis_array2_destroy(view: (i64, i64, i64))
+{
+  let(h, rows, columns) = view;
+  basis_array_destroy(h);
+}

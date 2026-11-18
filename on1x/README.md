@@ -20,11 +20,16 @@ to resolve branch/tag intent to immutable commits and acquire a Git library
 over HTTPS. `On1xfile.lock` plus `build --frozen` keeps later builds offline.
 
 The [source formatter](docs/formatter.md) runs as `on1xc fmt`, reads
-`.on1xfmt`, and can also emit LaTeX or troff listings. Formatting itself does
-not run project scripts or PPX.
+`.on1xfmt`, and can also emit LaTeX or troff listings. Use `--inplace` (`-i`)
+to rewrite the input as formatted source. Formatting itself does not run
+project scripts or PPX.
 
-See [editor addons](addons/README.md) for Vim/Neovim, VS Code, Sublime Text,
-`bat`, and the optional On1x language server.
+See [editor and knowledge addons](addons/README.md) for Vim/Neovim, VS Code,
+Sublime Text, `bat`, the optional On1x language server, and the
+[read-only ChatGPT knowledge MCP](addons/chatgpt/README.md). The ChatGPT addon
+retrieves cited repository evidence; it does not compile code or admit safe
+bindings, and it requires a separately hosted HTTPS endpoint or Secure MCP
+Tunnel.
 
 ## Language implementation continuation
 
@@ -102,8 +107,8 @@ list/iterator protocol or general borrow system.
 
 The final type-checker hardening matrix covers ownership together with inherent
 `impl` and cliche admission, including forged HIR and generated-member metadata.
-Current results: generated GCC **97/97**, fallback **86 pass + 1 intentional
-skip**, focused Clang ASan/UBSan **15/15**. See
+Current final results: generated GCC **98/98**, fallback GCC **97/97**, and
+focused Clang ASan/UBSan **15/15**. See
 [`VERIFICATION.md`](VERIFICATION.md) for exact commands and remaining limits.
 
 The M2 [defer/typed-error profile](docs/defer-errors.md) completes Go-style

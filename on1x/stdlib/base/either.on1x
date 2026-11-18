@@ -1,4 +1,16 @@
-fn base_left(value: sexpr) -> sexpr { return sx_cons(sx_symbol("left"),sx_cons(value,sx_nil())); }
-fn base_right(value: sexpr) -> sexpr { return sx_cons(sx_symbol("right"),sx_cons(value,sx_nil())); }
-fn base_either_is_left(value: sexpr) -> bool { return sx_text(sx_head(value)) == "left"; }
-fn base_either_value(value: sexpr) -> sexpr { return sx_head(sx_tail(value)); }
+fn base_left(value: sexpr) -> sexpr
+{
+  return sx_cons(sx_symbol("left"), sx_cons(value, sx_nil()));
+}
+fn base_right(value: sexpr) -> sexpr
+{
+  return sx_cons(sx_symbol("right"), sx_cons(value, sx_nil()));
+}
+fn base_either_is_left(value: sexpr) -> bool
+{
+  return sx_text(sx_head(value)) == "left";
+}
+fn base_either_value(value: sexpr) -> sexpr
+{
+  return sx_head(sx_tail(value));
+}

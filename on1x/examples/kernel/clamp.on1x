@@ -1,20 +1,22 @@
 unsafe import kernel mulib.clamp as Clamp;
-
-fn main() {
-    let answer = unsafe {
-        let base = 40;
-        Clamp.add_i64(base, 2)
-    };
-    println(answer);
-    unsafe {
-        println(Clamp.add_i64(9223372036854775807, 1));
-        println(Clamp.sub_i64(-9223372036854775808, 1));
-        println(Clamp.sub_i64(9223372036854775807, -9223372036854775808));
-        println(Clamp.add_i64(-9223372036854775808, -1));
-        println(Clamp.sub_i64(4, -2));
-        println(Clamp.i64(-1, 0, 10));
-        println(Clamp.i64(20, 0, 10));
-        println(Clamp.i64(4, 0, 10));
-        println(Clamp.i64(20, -7, -7));
-    }
+fn main()
+{
+  let answer = unsafe
+  {
+    let base = 40;
+    Clamp.add_i64(base, 2)
+  };
+  println(answer);
+  unsafe
+  {
+    println(Clamp.add_i64(9223372036854775807, 1));
+    println(Clamp.sub_i64(- 9223372036854775808, 1));
+    println(Clamp.sub_i64(9223372036854775807, - 9223372036854775808));
+    println(Clamp.add_i64(- 9223372036854775808, - 1));
+    println(Clamp.sub_i64(4, - 2));
+    println(Clamp.i64(- 1, 0, 10));
+    println(Clamp.i64(20, 0, 10));
+    println(Clamp.i64(4, 0, 10));
+    println(Clamp.i64(20, - 7, - 7));
+  }
 }

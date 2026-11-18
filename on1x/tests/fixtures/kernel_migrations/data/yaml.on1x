@@ -1,20 +1,26 @@
 import kernel mulib.yaml as Yaml;
 import kernel mulib.json as Json;
-
-fn basis_yaml_as_json(text:string)->(i64,string) {
-  if text_len(text)>2097152 { return (-4,""); }
-  let (ok,doc)=Yaml.parse(text);
-  if !ok { return (-2,""); }
-  let result=Json.stringify_compact(doc);
+fn basis_yaml_as_json(text: string) ->(i64, string)
+{
+  if text_len(text) > 2097152
+  {
+    return (- 4, "");
+  }
+  let(ok, doc) = Yaml.parse(text);
+  if ! ok
+  {
+    return (- 2, "");
+  }
+  let result = Json.stringify_compact(doc);
   Json.destroy(doc);
   return result;
 }
-
-fn yaml_as_json(text:string)->string {
-  let (status,value)=basis_yaml_as_json(text);
+fn yaml_as_json(text: string) -> string
+{
+  let(status, value) = basis_yaml_as_json(text);
   return value;
 }
-
-fn main() {
-  assert(yaml_as_json("value: 42\n")=="{\"value\":42}");
+fn main()
+{
+  assert(yaml_as_json("value: 42\n") == "{\"value\":42}");
 }

@@ -87,10 +87,6 @@ namespace {
 #endif
  }
  void publish_format(const std::string& destination,const std::string& text){
-  if(destination.empty()||destination=="-"){
-   if(!(std::cout<<text).flush())throw std::runtime_error("cannot write formatted output");
-   return;
-  }
 #if defined(__unix__) || defined(__APPLE__)
   namespace fs=std::filesystem;
   const fs::path path=destination;
@@ -123,7 +119,7 @@ namespace {
   fmt::Options options;
   if(command=="--emit-latex")options.target=fmt::Target::latex;
   if(command=="--emit-troff")options.target=fmt::Target::troff;
-  bool check=false, options_done=false;
+  bool check=false, inplace=false, options_done=false;
   std::string source,out;
    auto usage_error=[](const std::string& message){
     std::cerr<<"on1xc: "<<terminal_text(message)<<'\n';
@@ -133,7 +129,8 @@ namespace {
    std::string_view arg=argv[i];
    if(!options_done&&arg=="--"){options_done=true;continue;}
    if(!options_done&&(arg=="--help"||arg=="-h")){
-    std::cout<<"usage: on1xc fmt INPUT [--target plain|latex|troff] [--check | -o OUTPUT]\n";
+    std::cout<<"usage: on1xc fmt INPUT [--target plain|latex|troff] [--check | --inplace | -i | -o OUTPUT]\n"
+     "  -i, --inplace  Replace INPUT atomically with plain formatted source.\n";
     return 0;
    }
    if(!options_done&&arg=="--target"){
@@ -144,6 +141,7 @@ namespace {
     else if(target=="troff")options.target=fmt::Target::troff;
      else return usage_error("unknown formatter target: "+std::string(target));
    }else if(!options_done&&arg=="--check")check=true;
+   else if(!options_done&&(arg=="--inplace"||arg=="-i"))inplace=true;
    else if(!options_done&&arg=="--enable"){
     if(++i==argc)return usage_error("--enable requires registered feature names");
     std::set<std::string> selected;
@@ -157,14 +155,21 @@ namespace {
    else return usage_error("formatter requires exactly one input file");
   }
   if(source.empty())return usage_error("formatter requires an input file");
-  if(check){
+  if(inplace){
+   if(check||!out.empty())
+    return usage_error("formatter --inplace cannot be combined with --check or -o");
+   if(options.target&&*options.target!=fmt::Target::plain)
+    return usage_error("formatter --inplace requires plain output");
+   options.target=fmt::Target::plain;
+  }else if(check){
    if(!out.empty()||(options.target&&*options.target!=fmt::Target::plain))
     return usage_error("formatter --check requires plain output and cannot be combined with -o");
    options.target=fmt::Target::plain;
   }
   auto result=fmt::file(source,options);
   if(check)return result==on1x::read_source_file(source)?0:1;
-  publish_format(out,result);
+  if(inplace||(!out.empty()&&out!="-"))publish_format(inplace?source:out,result);
+  else if(!(std::cout<<result).flush())throw std::runtime_error("cannot write formatted output");
   return 0;
  }
  bool diagnostic_color(const std::string& mode,const std::string& format){
@@ -397,7 +402,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       on1xc --help\n"
    "       on1xc init (--bin | --proj | --lib) [DIRECTORY]\n"
    "       on1xc exec COMMAND [ARGS ...] (explicit On1xfile command execution)\n"
-   "       on1xc fmt INPUT [--target plain|latex|troff] [--check | -o OUTPUT]\n"
+    "       on1xc fmt INPUT [--target plain|latex|troff] [--check | --inplace | -i | -o OUTPUT]\n"
    "       on1xc (--format | --emit-latex | --emit-troff) INPUT [-o OUTPUT]\n"
   "--emit-ast expands macros and exports pre-PPX AST; it never executes programs.\n"
   "MIR modes support i64/bool/void, direct On1x calls, control flow and scalar print/assert.\n"

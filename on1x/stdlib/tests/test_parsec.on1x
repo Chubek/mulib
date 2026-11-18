@@ -1,7 +1,8 @@
 import "../parsec/parsec.on1x";
-fn main() {
- assert(parsec_literal("abcdef",2,"cd"));
- let (ok,value,end) = parsec_uint("123!",0);
- assert(ok && value == 123 && end == 3);
- println("OK");
+fn main()
+{
+  assert(parsec_literal("abcdef", 2, "cd"));
+  let(ok, value, end) = parsec_uint("123!", 0);
+  assert(ok && value == 123 && end == 3);
+  println("OK");
 }

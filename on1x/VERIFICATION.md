@@ -1,4 +1,66 @@
-# On1x verification — 2026-11-18
+# On1x verification — through 2026-11-19
+
+## Combined core and ChatGPT-addon closeout — 2026-11-19
+
+Validated MuLIB
+`bf23bd1282d280f1935b9ca1898fcb2ab19a7ca4` plus the closeout documentation
+changes, with configured LibStone
+`934b6ed029bfea28bbf23b5dc77c476154b0dd0d`, Linux x86-64,
+GCC/G++ 16.2.1 and Clang/Clang++ 22.1.8.
+
+The final shared source tree was configured and rebuilt directly on the NVMe
+workspace so compiler temporaries and build paths had one canonical spelling.
+This closeout includes the late `on1x.addon_chatgpt` CTest registration.
+
+| Final check | Result |
+|---|---|
+| GCC 16.2.1, LibStone generated scanner, complete final inventory | **98/98 passed** |
+| GCC 16.2.1, bootstrap fallback scanner, complete final inventory | **97/97 passed** |
+| Standalone ChatGPT addon Python development-mode suite | **27/27 passed** |
+| Focused Clang 22.1.8 ASan/UBSan cross-feature profile | **15/15 passed**, no sanitizer findings |
+| CDD suite, GCC and Clang, normal and ASan/UBSan profiles | **PASS** in all four profiles |
+| Existing configured root integration suite | **683/683 passed**; existing binaries, no full rebuild |
+| Embedded-unit consistency and final diff whitespace checks | **PASS** |
+
+The generated inventory has one additional test because it includes scanner
+parity; both inventories include the addon. The addon remains a **PARTIAL**
+hosted integration: its local read-only MCP behavior, packaging and relocation
+are tested, but operator TLS/auth deployment and actual ChatGPT web
+interoperability are not.
+
+Reproduction from the repository root:
+
+```sh
+TMPDIR="$PWD/build/on1x-final-tmp" \
+  cmake -S on1x -B build/on1x-final-generated-nvme -DBUILD_TESTING=ON
+TMPDIR="$PWD/build/on1x-final-tmp" \
+  cmake --build build/on1x-final-generated-nvme --parallel 3
+TMPDIR="$PWD/build/on1x-final-tmp" \
+  ctest --test-dir build/on1x-final-generated-nvme \
+    --output-on-failure --parallel 4
+
+TMPDIR="$PWD/build/on1x-final-tmp-fallback" \
+  cmake -S on1x -B build/on1x-final-fallback -DBUILD_TESTING=ON \
+    -DON1X_USE_FALLBACK_SCANNER=ON
+TMPDIR="$PWD/build/on1x-final-tmp-fallback" \
+  cmake --build build/on1x-final-fallback --parallel 3
+TMPDIR="$PWD/build/on1x-final-tmp-fallback" \
+  ctest --test-dir build/on1x-final-fallback \
+    --output-on-failure --parallel 4
+
+TMPDIR="$PWD/build" \
+  python3 -B -X dev on1x/addons/chatgpt/test_chatgpt.py
+python3 tools/embed_units.py --check
+git diff --check
+```
+
+Two infrastructure artifacts were isolated without changing tests or source
+semantics. An initial generated run exhausted the host `/tmp` tmpfs; its four
+affected tests passed after redirecting `TMPDIR` to NVMe. Moving that configured
+tree and accessing it through its old `/tmp/opencode` symlink later made six
+exact-path assertions compare the symlink spelling with canonical NVMe paths.
+All six passed in the fresh canonical NVMe build, followed by the complete
+**98/98** run above.
 
 ## Final type-checker and cross-feature hardening — 2026-11-19
 
@@ -22,10 +84,11 @@ No ownership syntax, operation, runtime ABI or admitted backend was added.
 
 | Final configuration | Result |
 |---|---|
-| GCC/generated scanner, complete rebuilt suite | **97/97 passed** |
-| GCC/fallback scanner, complete rebuilt suite | **86 passed, 1 intentional Category skip, 0 failed** (87 registered) |
+| GCC/generated scanner, complete final suite | **98/98 passed** |
+| GCC/fallback scanner, complete final suite | **97/97 passed** |
 | Clang/generated ASan+UBSan, compiler and emitted C11/runtime, focused cross-feature selection | **15/15 passed**, no sanitizer findings |
 | Combined ownership/shared ownership, cliche, inherent and hardening selection in each of the three profiles | **9/9 passed** |
+| Standalone ChatGPT addon suite | **27/27 passed** |
 | `python3 tools/embed_units.py --check` | **PASS**, embedded profiles current |
 
 The focused selection retains both `on1x.cliche_hir` and
@@ -894,6 +957,46 @@ make -f prettyprint.mk test CC=clang BUILD_DIR=build/formatter-pretty-asan \
 
 The source formatter is not a PPX executor, partial parser, or whole-project
 rewriter; see its [manual](docs/formatter.md) for the preservation contract.
+
+#### In-place CLI and repository style
+
+Tested on Linux x86-64 using MuLIB `bf23bd1282d280f1935b9ca1898fcb2ab19a7ca4`
+plus the formatter changes and LibStone `934b6ed029bfea28bbf23b5dc77c476154b0dd0d`.
+`on1x.formatter` exercises both in-place spellings, conflicting arguments,
+unchanged input on rejection, file permissions, a literal `-` filename, and
+Allman formatting with strict C11 execution before and after rewriting. It
+also checks that bounded search and group-fit can choose different layouts.
+
+Applied `on1x/.on1xfmt` to the tracked `.on1x` corpus. All 250 rewritten files
+preserve token spellings and dot adjacency and are byte-idempotent with both
+scanners. The one
+unmodified file, `addons/sublime/syntax_test_on1x.on1x`, deliberately contains
+invalid syntax and column-sensitive editor assertions. The three inputs
+outside `on1x/` were formatted using temporary copies with the same config.
+
+Full GCC 16.2.1 suite runs initially passed 95/98 (generated) and 94/97
+(fallback). The three failures caught an exact-whitespace source assertion
+and the pinned SHA-256 of `tests/mulib/elvi-scrape.on1x`. After checking that
+the fixture emits identical C11, its evidence hash was refreshed without
+changing contract admission, and the diagnostic source check was made
+whitespace-tolerant. All three affected tests and `on1x.formatter` then
+passed in both builds.
+
+```sh
+export TMPDIR="$PWD/build/on1x-final-tmp"
+for dir in build/on1x-final-generated-nvme build/on1x-final-fallback; do
+  cmake --build "$dir" --parallel 3
+  ctest --test-dir "$dir" --output-on-failure --parallel 4
+  ctest --test-dir "$dir" --output-on-failure \
+    -R '^on1x\.(diagnostic_catalog_source|contracts|mulib|formatter)$'
+done
+# Clang 22.1.8, fallback scanner, ASan/UBSan:
+cmake --build build/cliche-sanitize --target on1xc --parallel 3
+ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
+  ctest --test-dir build/cliche-sanitize -R '^on1x\.formatter$' --output-on-failure
+make -f prettyprint.mk test-on1x BUILD_DIR=build/formatter-prettydoc \
+  ON1XC=build/on1x-final-generated-nvme/on1xc CC=cc
+```
 
 ## Sandbox kernel discovery and archive
 

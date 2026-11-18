@@ -1,11 +1,19 @@
 # Checked constants and a short-circuited unreachable trap; effects stay ordered.
-fn mark(n: i64) -> i64 { println(n); return n; }
-fn main() {
+fn mark(n: i64) -> i64
+{
+  println(n);
+  return n;
+}
+fn main()
+{
   let dead = (10 < 20) == true;
   let answer = (2 + 5) * 6;
-  if true && (answer == 42) {
+  if true && (answer == 42)
+  {
     println(mark(1) + answer);
-  } else {
+  }
+  else
+  {
     println(1 / 0);
   }
   println(answer);

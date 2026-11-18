@@ -1,10 +1,14 @@
-fn base_list_length(items: sexpr) -> i64 {
- return basis_list_length(items);
+fn base_list_length(items: sexpr) -> i64
+{
+  return basis_list_length(items);
 }
-fn base_list_reverse(items: sexpr) -> sexpr {
- return basis_list_rev(items);
+fn base_list_reverse(items: sexpr) -> sexpr
+{
+  return basis_list_rev(items);
 }
-fn base_list_map(items: sexpr,f: fn(sexpr) -> sexpr) -> sexpr {
- basis_list_length(items);return basis_list_map(items,f);
+fn base_list_map(items: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
+{
+  basis_list_length(items);
+  return basis_list_map(items, f);
 }
 import "../collections/List.on1x";

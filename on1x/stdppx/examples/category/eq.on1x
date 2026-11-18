@@ -4,7 +4,8 @@
   impl Eq for i64 { fn eq(a: i64, b: i64) -> bool { return a == b; } }
   witness Different: Eq<i64> { fn eq(a: i64, b: i64) -> bool { return a != b; } }
 }
-fn main() {
+fn main()
+{
   println(Eq_i64_eq(42, 42));
   println(Different_eq(42, 42));
 }

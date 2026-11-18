@@ -1,42 +1,73 @@
 # Immutable graph as a list of edge pairs (each pair is a two-atom list).
-fn graph_empty() -> sexpr { return sx_nil(); }
-fn graph_edge(source: string, target: string) -> sexpr {
- return sx_cons(sx_string(source),sx_cons(sx_string(target),sx_nil()));
+fn graph_empty() -> sexpr
+{
+  return sx_nil();
 }
-fn graph_add(edges: sexpr, source: string, target: string) -> sexpr {
- basis_graph_validate(edges);
- return sx_cons(graph_edge(source,target),edges);
+fn graph_edge(source: string, target: string) -> sexpr
+{
+  return sx_cons(sx_string(source), sx_cons(sx_string(target), sx_nil()));
 }
-fn graph_has(edges: sexpr, source: string, target: string) -> bool {
- basis_graph_validate(edges);
- var rest = edges;
- while sx_kind(rest) == 3 {
-  let edge = sx_head(rest);
-  if sx_text(sx_head(edge)) == source && sx_text(sx_head(sx_tail(edge))) == target { return true; }
-  rest = sx_tail(rest);
- }
- return false;
+fn graph_add(edges: sexpr, source: string, target: string) -> sexpr
+{
+  basis_graph_validate(edges);
+  return sx_cons(graph_edge(source, target), edges);
 }
-fn graph_reverse(edges: sexpr) -> sexpr {
- basis_graph_validate(edges);
- var rest = edges; var result = sx_nil();
- while sx_kind(rest) == 3 {
-  let e = sx_head(rest); result = graph_add(result,sx_text(sx_head(sx_tail(e))),sx_text(sx_head(e)));
-  rest = sx_tail(rest);
- }
- return result;
+fn graph_has(edges: sexpr, source: string, target: string) -> bool
+{
+  basis_graph_validate(edges);
+  var rest = edges;
+  while sx_kind(rest) == 3
+  {
+    let edge = sx_head(rest);
+    if sx_text(sx_head(edge)) == source && sx_text(sx_head(sx_tail(edge))) == target
+    {
+      return true;
+    }
+    rest = sx_tail(rest);
+  }
+  return false;
 }
-fn graph_out_degree(edges: sexpr, source: string) -> i64 {
- basis_graph_validate(edges);
- var rest = edges; var count = 0;
- while sx_kind(rest) == 3 {
-  if sx_text(sx_head(sx_head(rest))) == source { count = count + 1; }
-  rest = sx_tail(rest);
- }
- return count;
+fn graph_reverse(edges: sexpr) -> sexpr
+{
+  basis_graph_validate(edges);
+  var rest = edges;
+  var result = sx_nil();
+  while sx_kind(rest) == 3
+  {
+    let e = sx_head(rest);
+    result = graph_add(result,
+      sx_text(sx_head(sx_tail(e))),
+      sx_text(sx_head(e)));
+    rest = sx_tail(rest);
+  }
+  return result;
+}
+fn graph_out_degree(edges: sexpr, source: string) -> i64
+{
+  basis_graph_validate(edges);
+  var rest = edges;
+  var count = 0;
+  while sx_kind(rest) == 3
+  {
+    if sx_text(sx_head(sx_head(rest))) == source
+    {
+      count = count + 1;
+    }
+    rest = sx_tail(rest);
+  }
+  return count;
 }
 import "../base/shape.on1x";
-fn basis_graph_validate(edges:sexpr) {
- basis_shape_list(edges);var rest=edges;
- while sx_kind(rest)==3{let edge=sx_head(rest);basis_shape_pair(edge);basis_shape_text(sx_head(edge));basis_shape_text(sx_head(sx_tail(edge)));rest=sx_tail(rest);}
+fn basis_graph_validate(edges: sexpr)
+{
+  basis_shape_list(edges);
+  var rest = edges;
+  while sx_kind(rest) == 3
+  {
+    let edge = sx_head(rest);
+    basis_shape_pair(edge);
+    basis_shape_text(sx_head(edge));
+    basis_shape_text(sx_head(sx_tail(edge)));
+    rest = sx_tail(rest);
+  }
 }

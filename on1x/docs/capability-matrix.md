@@ -1,16 +1,17 @@
 # On1x capability matrix
 
-Core syntax work item: MuLIB `b66da8f5150adca2a3416db747d91bf81a3fe138`
-plus worktree changes, configured LibStone
+Current closeout baseline: MuLIB
+`bf23bd1282d280f1935b9ca1898fcb2ab19a7ca4` plus documentation changes,
+configured LibStone
 `934b6ed029bfea28bbf23b5dc77c476154b0dd0d`.
 
-Final hardening validation (2026-11-19) is **97/97 passed** with the generated
-scanner and **86 passed + 1 intentional Category skip** with the fallback
-scanner, with no failures. Focused Clang ASan/UBSan cross-feature validation
-passes **15/15**. The earlier finite-owner profile also passed real
+Final combined validation (2026-11-19) is **98/98 passed** with the generated
+scanner and **97/97 passed** with the fallback scanner. The standalone ChatGPT
+addon passes **27/27**; focused Clang ASan/UBSan cross-feature validation passes
+**15/15**. The earlier finite-owner profile also passed real
 Chisel/Nerotypical fail-closed checks and strict Clang ASan/UBSan execution.
 Later per-work-item totals are dated historical records and do not override
-this current result.
+these current results.
 
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
 |---|---|---|---|---|---|---|
@@ -28,6 +29,7 @@ this current result.
 |---|---|---|---|---|---|---|
 | On1x editor packages | `addons/{neovim,vscode,sublime,bat}` | Editor-local; no application ABI | Lexical highlighting for `.on1x` and `.on1xi`; no compiler conformance claim | See [editor-addon verification](../VERIFICATION.md#on1x-editor-addons) | EXECUTABLE | Native GUI editor coverage |
 | On1x stdio language server | `addons/lsp` | Python stdio bridge to the existing `on1xc` | Compiler parse/import diagnostics on save; formatter for open `.on1x` buffers | See [editor-addon verification](../VERIFICATION.md#on1x-editor-addons) | PARTIAL | Type diagnostics without executing PPX, compiler symbol index, completion, navigation, and rename |
+| ChatGPT repository-knowledge MCP | `addons/chatgpt/{core,server,test_chatgpt}.py`, packaging and manifests | Tool-only, stateless Streamable HTTP JSON backend; no compiler or application ABI | Seven bounded read-only tools over an allowlisted startup snapshot, with path/line/hash citations and separate discovery/contract/implementation/admission states | `on1x.addon_chatgpt`; standalone **27/27** plus packaging/relocation and final generated/fallback suites | PARTIAL | Operator-hosted TLS/auth/publication policy and actual ChatGPT web interoperability remain unverified |
 
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
 |---|---|---|---|---|---|---|
@@ -95,7 +97,7 @@ and Python 3.14.7.
 
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
 |---|---|---|---|---|---|---|
-| On1x source formatter | `stdlib/prettyprint/on1x/formatter.cpp`, canonical lexer/parser, PrettyDoc/PrettyEmit | Compiler-only planned C11 kernel linkage; existing raw adapter also exports a verbatim document constructor | `.on1xfmt`, paired preservation and target comment directives, CLI and On1xfile plain/LaTeX/troff; conserves tokens and dot adjacency | `tests/test_formatter.py`, `prettyprint.mk`, original/formatted strict C11 execution and markup compiler tests | EXECUTABLE | Conservative wrap points; no syntax recovery, unchanged source locations, or cross-platform publication verification |
+| On1x source formatter | `src/cli.cpp`, `stdlib/prettyprint/on1x/formatter.cpp`, canonical lexer/parser, PrettyDoc/PrettyEmit | Compiler-only planned C11 kernel linkage; existing raw adapter also exports a verbatim document constructor | `.on1xfmt` with bounded layout search and Allman braces, paired preservation and target directives, CLI and On1xfile plain/LaTeX/troff, CLI `--inplace`/`-i` for plain source; conserves tokens and dot adjacency | `tests/test_formatter.py`, `prettyprint.mk`, in-place publication/rejection, original/formatted strict C11 execution and markup compiler tests | EXECUTABLE | Conservative wrap points; no syntax recovery, unchanged source locations, or cross-platform publication verification |
 | On1xfile project builds and locked Git inputs | `tools/on1x-project.py`, `stdlib/on1xfile` | Existing C11 builder and canonical MuLIB native plans; object-only local/HTTPS Git acquisition; optional QMR compiler on Mune; Linux bubblewrap | Line-oriented declarations; full commit, branch and lightweight/annotated tag selectors resolved by canonical `On1xfile.lock`; offline/locked/frozen modes | `test_on1x_project.py` (14 cases) and `test_project_fetch.py` (11 cases); local bare repositories, smart-HTTPS loopback, ref movement, atomic concurrent cache reuse, frozen C11 builds and negative transport/ref/cache cases | EXECUTABLE | No registry/version solver/transitive fetching, authenticated/SSH remotes, portable atomic publication or pinned complete toolchain |
 | On1xfile project lifecycle | `src/{cli,discovery}.cpp`, `tools/on1x_project.py`, `stdlib` | No new application ABI | New stdlib manifests with legacy discovery compatibility; executable, complex and library scaffolds | `on1x.project_driver`, `on1x.install`, `on1x.discovery` | EXECUTABLE | More platforms; no expansion of SML Basis conformance |
 

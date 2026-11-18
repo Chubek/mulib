@@ -1,15 +1,40 @@
 # Encoder accepts NUL-free On1x strings and emits RFC 4648 Base64.
-fn batteries_base64_encode(text: string) -> string {
- let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
- let out = buffer_new(); let n = text_len(text);
- for (var i = 0; i < n; i = i+3) {
-  let a = text_byte(text,i); var b = 0; var c = 0;
-  if i+1 < n { b = text_byte(text,i+1); }
-  if i+2 < n { c = text_byte(text,i+2); }
-  buffer_byte(out,text_byte(alphabet,a/4));
-  buffer_byte(out,text_byte(alphabet,(a%4)*16+b/16));
-  if i+1 < n { buffer_byte(out,text_byte(alphabet,(b%16)*4+c/64)); } else { buffer_byte(out,61); }
-  if i+2 < n { buffer_byte(out,text_byte(alphabet,c%64)); } else { buffer_byte(out,61); }
- }
- return buffer_text(out);
+fn batteries_base64_encode(text: string) -> string
+{
+  let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  let out = buffer_new();
+  let n = text_len(text);
+  for (var i = 0; i < n; i = i + 3)
+  {
+    let a = text_byte(text, i);
+    var b = 0;
+    var c = 0;
+    if i + 1 < n
+    {
+      b = text_byte(text, i + 1);
+    }
+    if i + 2 < n
+    {
+      c = text_byte(text, i + 2);
+    }
+    buffer_byte(out, text_byte(alphabet, a / 4));
+    buffer_byte(out, text_byte(alphabet, (a % 4) * 16 + b / 16));
+    if i + 1 < n
+    {
+      buffer_byte(out, text_byte(alphabet, (b % 16) * 4 + c / 64));
+    }
+    else
+    {
+      buffer_byte(out, 61);
+    }
+    if i + 2 < n
+    {
+      buffer_byte(out, text_byte(alphabet, c % 64));
+    }
+    else
+    {
+      buffer_byte(out, 61);
+    }
+  }
+  return buffer_text(out);
 }

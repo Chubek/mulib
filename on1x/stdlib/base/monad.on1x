@@ -1,10 +1,18 @@
 import "result.on1x";
 # Result encoded as (ok value)/(error message) in S-expression.
-fn base_result_bind(result: sexpr,f: fn(sexpr) -> sexpr) -> sexpr {
- if base_result_ok(result) { return f(base_result_payload(result)); }
- return result;
+fn base_result_bind(result: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
+{
+  if base_result_ok(result)
+  {
+    return f(base_result_payload(result));
+  }
+  return result;
 }
-fn base_result_map(result: sexpr,f: fn(sexpr) -> sexpr) -> sexpr {
- if base_result_ok(result) { return base_ok(f(base_result_payload(result))); }
- return result;
+fn base_result_map(result: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
+{
+  if base_result_ok(result)
+  {
+    return base_ok(f(base_result_payload(result)));
+  }
+  return result;
 }

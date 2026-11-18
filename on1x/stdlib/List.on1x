@@ -1,8 +1,1 @@
-from .collections.List import basis_list_nil as nil, basis_list_cons as cons,
-    basis_list_is_empty as is_empty, basis_list_hd as hd, basis_list_tl as tl,
-    basis_list_length as length, basis_list_rev as rev, basis_list_nth as nth,
-    basis_list_append as append, basis_list_take as take, basis_list_drop as drop,
-    basis_list_map as map, basis_list_filter as filter, basis_list_foldl as foldl,
-    basis_list_exists as exists, basis_list_all as all, basis_list_find as find,
-    basis_list_tabulate as tabulate, basis_list_app as app,
-    basis_list_foldr as foldr, basis_list_partition as partition;
+from .collections.List import basis_list_nil as nil, basis_list_cons as cons, basis_list_is_empty as is_empty, basis_list_hd as hd, basis_list_tl as tl, basis_list_length as length, basis_list_rev as rev, basis_list_nth as nth, basis_list_append as append, basis_list_take as take, basis_list_drop as drop, basis_list_map as map, basis_list_filter as filter, basis_list_foldl as foldl, basis_list_exists as exists, basis_list_all as all, basis_list_find as find, basis_list_tabulate as tabulate, basis_list_app as app, basis_list_foldr as foldr, basis_list_partition as partition;

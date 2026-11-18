@@ -1,28 +1,56 @@
 import "List.on1x";
-fn basis_listpair_zip(a:sexpr,b:sexpr)->sexpr {
-  var x=a; var y=b; var out=sx_nil();
-  while sx_kind(x)==3 && sx_kind(y)==3 {
-    let pair=sx_cons(sx_head(x),sx_cons(sx_head(y),sx_nil()));
-    out=sx_cons(pair,out); x=sx_tail(x); y=sx_tail(y);
+fn basis_listpair_zip(a: sexpr, b: sexpr) -> sexpr
+{
+  var x = a;
+  var y = b;
+  var out = sx_nil();
+  while sx_kind(x) == 3 && sx_kind(y) == 3
+  {
+    let pair = sx_cons(sx_head(x), sx_cons(sx_head(y), sx_nil()));
+    out = sx_cons(pair, out);
+    x = sx_tail(x);
+    y = sx_tail(y);
   }
-  if sx_kind(x)!=0 || sx_kind(y)!=0 { tool_fail("ListPair.zip unequal lengths"); }
+  if sx_kind(x) != 0 || sx_kind(y) != 0
+  {
+    tool_fail("ListPair.zip unequal lengths");
+  }
   return basis_list_rev(out);
 }
-fn basis_listpair_unzip(pairs:sexpr)->(sexpr,sexpr) {
-  var rest=pairs; var xs=sx_nil(); var ys=sx_nil();
-  while sx_kind(rest)==3 {
-    let p=sx_head(rest); if basis_list_length(p)!=2 { tool_fail("expected pair"); }
-    xs=sx_cons(sx_head(p),xs); ys=sx_cons(sx_head(sx_tail(p)),ys);
-    rest=sx_tail(rest);
+fn basis_listpair_unzip(pairs: sexpr) ->(sexpr, sexpr)
+{
+  var rest = pairs;
+  var xs = sx_nil();
+  var ys = sx_nil();
+  while sx_kind(rest) == 3
+  {
+    let p = sx_head(rest);
+    if basis_list_length(p) != 2
+    {
+      tool_fail("expected pair");
+    }
+    xs = sx_cons(sx_head(p), xs);
+    ys = sx_cons(sx_head(sx_tail(p)), ys);
+    rest = sx_tail(rest);
   }
-  return (basis_list_rev(xs),basis_list_rev(ys));
+  return (basis_list_rev(xs), basis_list_rev(ys));
 }
-fn basis_listpair_all(a:sexpr,b:sexpr,p:fn(sexpr,sexpr)->bool)->bool {
-  var x=a; var y=b;
-  while sx_kind(x)==3 && sx_kind(y)==3 {
-    if !p(sx_head(x),sx_head(y)) { return false; }
-    x=sx_tail(x); y=sx_tail(y);
+fn basis_listpair_all(a: sexpr, b: sexpr, p: fn(sexpr, sexpr) -> bool) -> bool
+{
+  var x = a;
+  var y = b;
+  while sx_kind(x) == 3 && sx_kind(y) == 3
+  {
+    if ! p(sx_head(x), sx_head(y))
+    {
+      return false;
+    }
+    x = sx_tail(x);
+    y = sx_tail(y);
   }
-  if sx_kind(x)!=0 || sx_kind(y)!=0 { tool_fail("ListPair.all unequal lengths"); }
+  if sx_kind(x) != 0 || sx_kind(y) != 0
+  {
+    tool_fail("ListPair.all unequal lengths");
+  }
   return true;
 }

@@ -1,19 +1,29 @@
 # Option, Result and their helpers are available without imports.
-fn checked_half(value:i64)->Result<i64,u8> {
-  if value < 0 { return result_error(1u8); }
-  if value % 2 != 0 { return result_error(2u8); }
-  return result_ok(value/2);
+fn checked_half(value: i64) -> Result < i64, u8 >
+{
+  if value < 0
+  {
+    return result_error(1u8);
+  }
+  if value % 2 != 0
+  {
+    return result_error(2u8);
+  }
+  return result_ok(value / 2);
 }
-
-fn answer(value:i64)->Result<i64,u8> {
+fn answer(value: i64) -> Result < i64, u8 >
+{
   let half = checked_half(value)?;
-  let adjusted = option_map(option_some(half),fn(n:i64)->i64{return n+1;});
-  return result_ok(option_unwrap_or(adjusted,0));
+  let adjusted = option_map(option_some(half), fn(n: i64) -> i64
+  {
+    return n + 1;
+  });
+  return result_ok(option_unwrap_or(adjusted, 0));
 }
-
-fn main() {
-  match answer(82) with {
-    Ok(value) => println(value),
-    Err(code) => println(code)
+fn main()
+{
+  match answer(82) with
+  {
+    Ok(value) => println(value), Err(code) => println(code)
   };
 }

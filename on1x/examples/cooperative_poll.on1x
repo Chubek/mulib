@@ -1,16 +1,25 @@
 # The bounded cooperative profile: atomic choice, checked close, no deadlines.
-fn main() {
-    taskgroup {
-        let channel = ->(1, 1) { payload: i64, capacity: 0, mode: uni };
-        let (tx, rx) = split channel;
-        let worker = launch {
-            let sent = tx <- 42;
-            match sent with { Ok(_) => 1, Err(_) => -1 }
-        };
-        poll {
-            recv rx as value => println(value),
-            closed rx => println(-1)
-        };
-        println(join worker);
-    }
+fn main()
+{
+  taskgroup
+  {
+    let channel = ->(1, 1)
+    {
+      payload: i64, capacity: 0, mode: uni
+    };
+    let(tx, rx) = split channel;
+    let worker = launch
+    {
+      let sent = tx <- 42;
+      match sent with
+      {
+        Ok(_) => 1, Err(_) => - 1
+      }
+    };
+    poll
+    {
+      recv rx as value => println(value), closed rx => println(- 1)
+    };
+    println(join worker);
+  }
 }

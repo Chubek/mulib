@@ -4,5 +4,6 @@ import kernel mulib.histprice as History;
 import kernel mulib.priceopt as PriceOpt;
 import kernel mulib.money as Money;
 import kernel mulib.json as Json;
-
-fn main() {}
+fn main()
+{
+}

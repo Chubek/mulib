@@ -1,19 +1,37 @@
 # JSON-RPC request builder. General dispatcher requires an actual callback FFI.
-fn rpc_escape(text: string) -> string {
- let out = buffer_new();
- for i in 0..text_len(text) {
-  match let c = text_byte(text,i) with {
-   34 | 92 => { buffer_byte(out,92); buffer_byte(out,c); },
-   10 => buffer_append(out,"\\n"),
-   13 => buffer_append(out,"\\r"),
-   9 => buffer_append(out,"\\t"),
-   _ => { if c < 32 { tool_fail("unsupported JSON control byte"); } buffer_byte(out,c); }
-  };
- }
- return buffer_text(out);
+fn rpc_escape(text: string) -> string
+{
+  let out = buffer_new();
+  for i in 0 .. text_len(text)
+  {
+    match let c = text_byte(text, i) with
+    {
+      34 | 92 =>
+      {
+        buffer_byte(out, 92);
+        buffer_byte(out, c);
+      }, 10 => buffer_append(out,
+        "\\n"), 13 => buffer_append(out,
+        "\\r"), 9 => buffer_append(out,
+        "\\t"), _ =>
+      {
+        if c < 32
+        {
+          tool_fail("unsupported JSON control byte");
+        }
+        buffer_byte(out, c);
+      }
+    };
+  }
+  return buffer_text(out);
 }
-fn rpc_notification(method: string, raw_params: string) -> string {
- let prefix = "{\"jsonrpc\":\"2.0\",\"method\":\"";
- let middle = "\",\"params\":";
- return text_concat(text_concat(prefix,rpc_escape(method)),text_concat(middle,text_concat(raw_params,"}")));
+fn rpc_notification(method: string, raw_params: string) -> string
+{
+  let prefix = "{\"jsonrpc\":\"2.0\",\"method\":\"";
+  let middle = "\",\"params\":";
+  return text_concat(text_concat(prefix,
+    rpc_escape(method)),
+    text_concat(middle,
+    text_concat(raw_params,
+    "}")));
 }

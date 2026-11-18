@@ -1,215 +1,603 @@
 # Emitted as ordinary, type-checked On1x AST. ge_* names are renamed by the
 # native PPX; placeholder literals are replaced by liblr-generated tables.
 # No imports, foreign calls, global mutation or build-host runtime dependency.
-fn ge_config()->string{return "@CONFIG@";}
-fn ge_transitions()->string{return "@TRANSITIONS@";}
-fn ge_accepts()->string{return "@ACCEPTS@";}
-fn ge_closures()->string{return "@CLOSURES@";}
-fn ge_edges()->string{return "@EDGES@";}
-fn ge_actions()->string{return "@ACTIONS@";}
-fn ge_gotos()->string{return "@GOTOS@";}
-fn ge_productions()->string{return "@PRODUCTIONS@";}
-fn ge_rhs()->string{return "@RHS@";}
-fn ge_names()->string{return "@NAMES@";}
-fn ge_offsets()->string{return "@OFFSETS@";}
-fn ge_terminals()->string{return "@TERMINALS@";}
-fn ge_cell(data:string,index:i64)->i64 {
-  var n=0;
-  for j in 0..4 { n=n*16+text_byte(data,index*4+j)-65; }
-  return n-1;
+fn ge_config() -> string
+{
+  return "@CONFIG@";
 }
-fn ge_cfg(index:i64)->i64{return ge_cell(ge_config(),index);}
-fn ge_decimal(value:i64)->string {
-  let digits=buffer_new();var n=value;
-  loop {
-    buffer_byte(digits,48+n%10);n=n/10;
-    if n==0 {break;}
+fn ge_transitions() -> string
+{
+  return "@TRANSITIONS@";
+}
+fn ge_accepts() -> string
+{
+  return "@ACCEPTS@";
+}
+fn ge_closures() -> string
+{
+  return "@CLOSURES@";
+}
+fn ge_edges() -> string
+{
+  return "@EDGES@";
+}
+fn ge_actions() -> string
+{
+  return "@ACTIONS@";
+}
+fn ge_gotos() -> string
+{
+  return "@GOTOS@";
+}
+fn ge_productions() -> string
+{
+  return "@PRODUCTIONS@";
+}
+fn ge_rhs() -> string
+{
+  return "@RHS@";
+}
+fn ge_names() -> string
+{
+  return "@NAMES@";
+}
+fn ge_offsets() -> string
+{
+  return "@OFFSETS@";
+}
+fn ge_terminals() -> string
+{
+  return "@TERMINALS@";
+}
+fn ge_cell(data: string, index: i64) -> i64
+{
+  var n = 0;
+  for j in 0 .. 4
+  {
+    n = n * 16 + text_byte(data, index * 4 + j) - 65;
   }
-  let reversed=buffer_text(digits);let out=buffer_new();var i=text_len(reversed);
-  while i>0 {i=i-1;buffer_byte(out,text_byte(reversed,i));}
+  return n - 1;
+}
+fn ge_cfg(index: i64) -> i64
+{
+  return ge_cell(ge_config(), index);
+}
+fn ge_decimal(value: i64) -> string
+{
+  let digits = buffer_new();
+  var n = value;
+  loop
+  {
+    buffer_byte(digits, 48 + n % 10);
+    n = n / 10;
+    if n == 0
+    {
+      break;
+    }
+  }
+  let reversed = buffer_text(digits);
+  let out = buffer_new();
+  var i = text_len(reversed);
+  while i > 0
+  {
+    i = i - 1;
+    buffer_byte(out, text_byte(reversed, i));
+  }
   return buffer_text(out);
 }
-fn ge_number(text:string)->i64 {
-  var n=0;for i in 0..text_len(text){n=n*10+text_byte(text,i)-48;}return n;
+fn ge_number(text: string) -> i64
+{
+  var n = 0;
+  for i in 0 .. text_len(text)
+  {
+    n = n * 10 + text_byte(text, i) - 48;
+  }
+  return n;
 }
-fn ge_steps()->i64{return ge_number("@STEPS@");}
-fn ge_input_limit()->i64{return ge_number("@INPUT@");}
-fn ge_at(list:sexpr,index:i64)->sexpr {
-  var rest=list;for _ in 0..index {rest=sx_tail(rest);}return sx_head(rest);
+fn ge_steps() -> i64
+{
+  return ge_number("@STEPS@");
 }
-fn ge_num(list:sexpr,index:i64)->i64{return ge_number(sx_text(ge_at(list,index)));}
-fn ge_atom(value:i64)->sexpr{return sx_symbol(ge_decimal(value));}
-fn ge_reverse(list:sexpr)->sexpr {
-  var rest=list;var out=sx_nil();
-  while sx_kind(rest)==3{out=sx_cons(sx_head(rest),out);rest=sx_tail(rest);}return out;
+fn ge_input_limit() -> i64
+{
+  return ge_number("@INPUT@");
 }
-fn ge_four(a:sexpr,b:sexpr,c:sexpr,d:sexpr)->sexpr {
-  return sx_cons(a,sx_cons(b,sx_cons(c,sx_cons(d,sx_nil()))));
+fn ge_at(list: sexpr, index: i64) -> sexpr
+{
+  var rest = list;
+  for _ in 0 .. index
+  {
+    rest = sx_tail(rest);
+  }
+  return sx_head(rest);
 }
-fn ge_has(states:sexpr,wanted:i64)->bool {
-  var rest=states;
-  while sx_kind(rest)==3 {
-    if ge_number(sx_text(sx_head(rest)))==wanted{return true;}rest=sx_tail(rest);
-  }return false;
+fn ge_num(list: sexpr, index: i64) -> i64
+{
+  return ge_number(sx_text(ge_at(list, index)));
 }
-fn ge_close(states:sexpr,state:i64,work:i64,data:string)->(sexpr,i64) {
-  var result=states;var used=work;let count=ge_cfg(3);
-  for i in 0..count {
+fn ge_atom(value: i64) -> sexpr
+{
+  return sx_symbol(ge_decimal(value));
+}
+fn ge_reverse(list: sexpr) -> sexpr
+{
+  var rest = list;
+  var out = sx_nil();
+  while sx_kind(rest) == 3
+  {
+    out = sx_cons(sx_head(rest), out);
+    rest = sx_tail(rest);
+  }
+  return out;
+}
+fn ge_four(a: sexpr, b: sexpr, c: sexpr, d: sexpr) -> sexpr
+{
+  return sx_cons(a, sx_cons(b, sx_cons(c, sx_cons(d, sx_nil()))));
+}
+fn ge_has(states: sexpr, wanted: i64) -> bool
+{
+  var rest = states;
+  while sx_kind(rest) == 3
+  {
+    if ge_number(sx_text(sx_head(rest))) == wanted
+    {
+      return true;
+    }
+    rest = sx_tail(rest);
+  }
+  return false;
+}
+fn ge_close(states: sexpr, state: i64, work: i64, data: string) ->(sexpr, i64)
+{
+  var result = states;
+  var used = work;
+  let count = ge_cfg(3);
+  for i in 0 .. count
+  {
     # Membership traverses at most count states; charge before traversal.
-    used=used+count+1;
-    if used>ge_steps(){return (sx_nil(),used);}
-    if text_byte(data,state*count+i)==49 && !ge_has(result,i) {
-      result=sx_cons(ge_atom(i),result);
+    used = used + count + 1;
+    if used > ge_steps()
+    {
+      return (sx_nil(), used);
     }
-  }return (result,used);
-}
-fn ge_match_dfa(input:string,begin:i64,work:i64,transitions:string,accepts:string)->(i64,i64,i64,i64) {
-  var state=ge_cfg(2);var pos=begin;var end=begin;var token=-1;var skip=0;var used=work;
-  while pos<text_len(input) {
-    used=used+1;if used>ge_steps(){return (-1,begin,0,used);}
-    state=ge_cell(transitions,state*256+text_byte(input,pos));
-    if state<0 {break;}pos=pos+1;
-    let id=ge_cell(accepts,state*3);
-    if id>=0 {token=id;skip=ge_cell(accepts,state*3+1);end=pos;}
+    if text_byte(data, state * count + i) == 49 && ! ge_has(result, i)
+    {
+      result = sx_cons(ge_atom(i), result);
+    }
   }
-  return (token,end,skip,used);
+  return (result, used);
 }
-fn ge_match_nfa(input:string,begin:i64,work:i64,edges:string,accepts:string,closures:string)->(i64,i64,i64,i64) {
-  let (initial,initial_work)=ge_close(sx_nil(),0,work,closures);
-  var states=initial;var used=initial_work;var pos=begin;var end=begin;var token=-1;var skip=0;
-  let count=ge_cfg(3);
-  while pos<text_len(input) && sx_kind(states)==3 {
-    let byte=text_byte(input,pos);var next=sx_nil();var i=0;
-    while i<text_len(edges)/16 {
-      used=used+count+1;if used>ge_steps(){return (-1,begin,0,used);}
-      let from=ge_cell(edges,i*4);let low=ge_cell(edges,i*4+1);let high=ge_cell(edges,i*4+2);
-      if byte>=low && byte<=high && ge_has(states,from) {
-        let (closed,ticks)=ge_close(next,ge_cell(edges,i*4+3),used,closures);next=closed;used=ticks;
-        if used>ge_steps(){return (-1,begin,0,used);}
-      }i=i+1;
+fn ge_match_dfa(input: string,
+  begin: i64,
+  work: i64,
+  transitions: string,
+  accepts: string) ->(i64,
+  i64,
+  i64,
+  i64)
+{
+  var state = ge_cfg(2);
+  var pos = begin;
+  var end = begin;
+  var token = - 1;
+  var skip = 0;
+  var used = work;
+  while pos < text_len(input)
+  {
+    used = used + 1;
+    if used > ge_steps()
+    {
+      return (- 1, begin, 0, used);
     }
-    states=next;pos=pos+1;var rest=states;var priority=65535;
-    while sx_kind(rest)==3 {
-      used=used+1;if used>ge_steps(){return (-1,begin,0,used);}
-      let state=ge_number(sx_text(sx_head(rest)));rest=sx_tail(rest);
-      let id=ge_cell(accepts,state*3);let rank=ge_cell(accepts,state*3+2);
-      if id>=0 && rank<priority {
-        priority=rank;token=id;skip=ge_cell(accepts,state*3+1);end=pos;
+    state = ge_cell(transitions, state * 256 + text_byte(input, pos));
+    if state < 0
+    {
+      break;
+    }
+    pos = pos + 1;
+    let id = ge_cell(accepts, state * 3);
+    if id >= 0
+    {
+      token = id;
+      skip = ge_cell(accepts, state * 3 + 1);
+      end = pos;
+    }
+  }
+  return (token, end, skip, used);
+}
+fn ge_match_nfa(input: string,
+  begin: i64,
+  work: i64,
+  edges: string,
+  accepts: string,
+  closures: string) ->(i64,
+  i64,
+  i64,
+  i64)
+{
+  let(initial, initial_work) = ge_close(sx_nil(), 0, work, closures);
+  var states = initial;
+  var used = initial_work;
+  var pos = begin;
+  var end = begin;
+  var token = - 1;
+  var skip = 0;
+  let count = ge_cfg(3);
+  while pos < text_len(input) && sx_kind(states) == 3
+  {
+    let byte = text_byte(input, pos);
+    var next = sx_nil();
+    var i = 0;
+    while i < text_len(edges) / 16
+    {
+      used = used + count + 1;
+      if used > ge_steps()
+      {
+        return (- 1, begin, 0, used);
+      }
+      let from = ge_cell(edges, i * 4);
+      let low = ge_cell(edges, i * 4 + 1);
+      let high = ge_cell(edges, i * 4 + 2);
+      if byte >= low && byte <= high && ge_has(states, from)
+      {
+        let(closed,
+          ticks) = ge_close(next,
+          ge_cell(edges,
+          i * 4 + 3),
+          used,
+          closures);
+        next = closed;
+        used = ticks;
+        if used > ge_steps()
+        {
+          return (- 1, begin, 0, used);
+        }
+      }
+      i = i + 1;
+    }
+    states = next;
+    pos = pos + 1;
+    var rest = states;
+    var priority = 65535;
+    while sx_kind(rest) == 3
+    {
+      used = used + 1;
+      if used > ge_steps()
+      {
+        return (- 1, begin, 0, used);
+      }
+      let state = ge_number(sx_text(sx_head(rest)));
+      rest = sx_tail(rest);
+      let id = ge_cell(accepts, state * 3);
+      let rank = ge_cell(accepts, state * 3 + 2);
+      if id >= 0 && rank < priority
+      {
+        priority = rank;
+        token = id;
+        skip = ge_cell(accepts, state * 3 + 1);
+        end = pos;
       }
     }
   }
-  return (token,end,skip,used);
+  return (token, end, skip, used);
 }
-fn ge_lex_work(input:string)->(i64,sexpr,i64,i64) {
-  if text_len(input)>ge_input_limit(){return (ge_cfg(13),sx_nil(),0,0);}
-  let transitions=ge_transitions();let accepts=ge_accepts();let edges=ge_edges();let closures=ge_closures();
-  var pos=0;var out=sx_nil();var count=0;var used=0;
-  while pos<text_len(input) {
-    var token=-1;var end=pos;var skip=0;
-    if ge_cfg(0)==0 {
-      let (t,e,s,w)=ge_match_dfa(input,pos,used,transitions,accepts);token=t;end=e;skip=s;used=w;
-    } else {
-      let (t,e,s,w)=ge_match_nfa(input,pos,used,edges,accepts,closures);token=t;end=e;skip=s;used=w;
-    }
-    if used>ge_steps(){return (ge_cfg(13),sx_nil(),pos,used);}
-    if token<0 || end<=pos{return (ge_cfg(11),sx_nil(),pos,used);}
-    if skip==0 {
-      count=count+1;if count>ge_cfg(8){return (ge_cfg(13),sx_nil(),pos,used);}
-      out=sx_cons(ge_four(ge_atom(token),ge_atom(pos),ge_atom(end),sx_string(text_slice(input,pos,end))),out);
-    }pos=end;
+fn ge_lex_work(input: string) ->(i64, sexpr, i64, i64)
+{
+  if text_len(input) > ge_input_limit()
+  {
+    return (ge_cfg(13), sx_nil(), 0, 0);
   }
-  return (ge_cfg(10),ge_reverse(out),pos,used);
-}
-fn ge_lex(input:string)->(i64,sexpr,i64) {
-  let (status,tokens,offset,work)=ge_lex_work(input);return (status,tokens,offset);
-}
-fn ge_name(id:i64)->string {
-  if id<0 || id>=ge_cfg(4){return "";}
-  let begin=ge_cell(ge_offsets(),id*2);let size=ge_cell(ge_offsets(),id*2+1);
-  return text_slice(ge_names(),begin,begin+size);
-}
-fn ge_leaf(token:sexpr)->sexpr {
-  return ge_four(sx_string(ge_name(ge_num(token,0))),ge_at(token,1),ge_at(token,2),ge_at(token,3));
-}
-fn ge_parse_lr(tokens:sexpr,input_end:i64,work:i64)->(i64,sexpr,i64) {
-  var rest=tokens;var states=sx_cons(ge_atom(0),sx_nil());var nodes=sx_nil();var depths=sx_nil();
-  var used=work;var offset=input_end;
-  let actions=ge_actions();let gotos=ge_gotos();let productions=ge_productions();let count=ge_cfg(4);
-  loop {
-    used=used+1;if used>ge_steps(){return (ge_cfg(13),sx_nil(),offset);}
-    var look=0;offset=input_end;
-    if sx_kind(rest)==3{look=ge_num(sx_head(rest),0);offset=ge_num(sx_head(rest),1);}
-    let state=ge_number(sx_text(sx_head(states)));let index=(state*count+look)*2;
-    let action=ge_cell(actions,index);let target=ge_cell(actions,index+1);
-    if action<0{return (ge_cfg(12),sx_nil(),offset);}
-    if action==0 {
-      nodes=sx_cons(ge_leaf(sx_head(rest)),nodes);rest=sx_tail(rest);
-      depths=sx_cons(ge_atom(1),depths);states=sx_cons(ge_atom(target),states);
-    } else {
-      if action==2{return (ge_cfg(10),sx_head(nodes),input_end);}
-      let lhs=ge_cell(productions,target*3);let size=ge_cell(productions,target*3+1);
-      var children=sx_nil();var depth=0;var begin=offset;var end=offset;
-      for i in 0..size {
-        let node=sx_head(nodes);let child_depth=ge_number(sx_text(sx_head(depths)));
-        if child_depth>depth{depth=child_depth;}
-        if i==0{end=ge_num(node,2);}begin=ge_num(node,1);
-        children=sx_cons(node,children);nodes=sx_tail(nodes);depths=sx_tail(depths);states=sx_tail(states);
+  let transitions = ge_transitions();
+  let accepts = ge_accepts();
+  let edges = ge_edges();
+  let closures = ge_closures();
+  var pos = 0;
+  var out = sx_nil();
+  var count = 0;
+  var used = 0;
+  while pos < text_len(input)
+  {
+    var token = - 1;
+    var end = pos;
+    var skip = 0;
+    if ge_cfg(0) == 0
+    {
+      let(t, e, s, w) = ge_match_dfa(input, pos, used, transitions, accepts);
+      token = t;
+      end = e;
+      skip = s;
+      used = w;
+    }
+    else
+    {
+      let(t,
+        e,
+        s,
+        w) = ge_match_nfa(input,
+        pos,
+        used,
+        edges,
+        accepts,
+        closures);
+      token = t;
+      end = e;
+      skip = s;
+      used = w;
+    }
+    if used > ge_steps()
+    {
+      return (ge_cfg(13), sx_nil(), pos, used);
+    }
+    if token < 0 || end <= pos
+    {
+      return (ge_cfg(11), sx_nil(), pos, used);
+    }
+    if skip == 0
+    {
+      count = count + 1;
+      if count > ge_cfg(8)
+      {
+        return (ge_cfg(13), sx_nil(), pos, used);
       }
-      depth=depth+1;if depth>ge_cfg(9){return (ge_cfg(13),sx_nil(),offset);}
-      let next=ge_cell(gotos,ge_number(sx_text(sx_head(states)))*count+lhs);
-      nodes=sx_cons(ge_four(sx_string(ge_name(lhs)),ge_atom(begin),ge_atom(end),children),nodes);
-      depths=sx_cons(ge_atom(depth),depths);states=sx_cons(ge_atom(next),states);
+      out = sx_cons(ge_four(ge_atom(token),
+        ge_atom(pos),
+        ge_atom(end),
+        sx_string(text_slice(input,
+        pos,
+        end))),
+        out);
+    }
+    pos = end;
+  }
+  return (ge_cfg(10), ge_reverse(out), pos, used);
+}
+fn ge_lex(input: string) ->(i64, sexpr, i64)
+{
+  let(status, tokens, offset, work) = ge_lex_work(input);
+  return (status, tokens, offset);
+}
+fn ge_name(id: i64) -> string
+{
+  if id < 0 || id >= ge_cfg(4)
+  {
+    return "";
+  }
+  let begin = ge_cell(ge_offsets(), id * 2);
+  let size = ge_cell(ge_offsets(), id * 2 + 1);
+  return text_slice(ge_names(), begin, begin + size);
+}
+fn ge_leaf(token: sexpr) -> sexpr
+{
+  return ge_four(sx_string(ge_name(ge_num(token,
+    0))),
+    ge_at(token,
+    1),
+    ge_at(token,
+    2),
+    ge_at(token,
+    3));
+}
+fn ge_parse_lr(tokens: sexpr, input_end: i64, work: i64) ->(i64, sexpr, i64)
+{
+  var rest = tokens;
+  var states = sx_cons(ge_atom(0), sx_nil());
+  var nodes = sx_nil();
+  var depths = sx_nil();
+  var used = work;
+  var offset = input_end;
+  let actions = ge_actions();
+  let gotos = ge_gotos();
+  let productions = ge_productions();
+  let count = ge_cfg(4);
+  loop
+  {
+    used = used + 1;
+    if used > ge_steps()
+    {
+      return (ge_cfg(13), sx_nil(), offset);
+    }
+    var look = 0;
+    offset = input_end;
+    if sx_kind(rest) == 3
+    {
+      look = ge_num(sx_head(rest), 0);
+      offset = ge_num(sx_head(rest), 1);
+    }
+    let state = ge_number(sx_text(sx_head(states)));
+    let index = (state * count + look) * 2;
+    let action = ge_cell(actions, index);
+    let target = ge_cell(actions, index + 1);
+    if action < 0
+    {
+      return (ge_cfg(12), sx_nil(), offset);
+    }
+    if action == 0
+    {
+      nodes = sx_cons(ge_leaf(sx_head(rest)), nodes);
+      rest = sx_tail(rest);
+      depths = sx_cons(ge_atom(1), depths);
+      states = sx_cons(ge_atom(target), states);
+    }
+    else
+    {
+      if action == 2
+      {
+        return (ge_cfg(10), sx_head(nodes), input_end);
+      }
+      let lhs = ge_cell(productions, target * 3);
+      let size = ge_cell(productions, target * 3 + 1);
+      var children = sx_nil();
+      var depth = 0;
+      var begin = offset;
+      var end = offset;
+      for i in 0 .. size
+      {
+        let node = sx_head(nodes);
+        let child_depth = ge_number(sx_text(sx_head(depths)));
+        if child_depth > depth
+        {
+          depth = child_depth;
+        }
+        if i == 0
+        {
+          end = ge_num(node, 2);
+        }
+        begin = ge_num(node, 1);
+        children = sx_cons(node, children);
+        nodes = sx_tail(nodes);
+        depths = sx_tail(depths);
+        states = sx_tail(states);
+      }
+      depth = depth + 1;
+      if depth > ge_cfg(9)
+      {
+        return (ge_cfg(13), sx_nil(), offset);
+      }
+      let next = ge_cell(gotos,
+        ge_number(sx_text(sx_head(states))) * count + lhs);
+      nodes = sx_cons(ge_four(sx_string(ge_name(lhs)),
+        ge_atom(begin),
+        ge_atom(end),
+        children),
+        nodes);
+      depths = sx_cons(ge_atom(depth), depths);
+      states = sx_cons(ge_atom(next), states);
     }
   }
-  return (ge_cfg(12),sx_nil(),offset);
+  return (ge_cfg(12), sx_nil(), offset);
 }
 # LL uses an explicit work stack with close frames, avoiding C-stack recursion.
-fn ge_parse_ll(tokens:sexpr,input_end:i64,work:i64)->(i64,sexpr,i64) {
-  var rest=tokens;var nodes=sx_nil();var depths=sx_nil();var used=work;var offset=input_end;
+fn ge_parse_ll(tokens: sexpr, input_end: i64, work: i64) ->(i64, sexpr, i64)
+{
+  var rest = tokens;
+  var nodes = sx_nil();
+  var depths = sx_nil();
+  var used = work;
+  var offset = input_end;
   # Frame: symbol, child count+1 for close (zero for open), offset, nesting depth.
-  var frames=sx_cons(ge_four(ge_atom(ge_cfg(5)),ge_atom(0),ge_atom(0),ge_atom(1)),sx_nil());
-  let actions=ge_actions();let productions=ge_productions();let rhs=ge_rhs();let count=ge_cfg(4);
-  while sx_kind(frames)==3 {
-    used=used+1;if used>ge_steps(){return (ge_cfg(13),sx_nil(),offset);}
-    offset=input_end;var look=0;
-    if sx_kind(rest)==3{look=ge_num(sx_head(rest),0);offset=ge_num(sx_head(rest),1);}
-    let frame=sx_head(frames);frames=sx_tail(frames);let symbol=ge_num(frame,0);let close=ge_num(frame,1);
-    let nesting=ge_num(frame,3);
-    if nesting>ge_cfg(9){return (ge_cfg(13),sx_nil(),offset);}
-    if close>0 {
-      var children=sx_nil();var begin=ge_num(frame,2);var end=begin;var depth=0;
-      for i in 0..close-1 {
-        let node=sx_head(nodes);let child_depth=ge_number(sx_text(sx_head(depths)));
-        if child_depth>depth{depth=child_depth;}if i==0{end=ge_num(node,2);}
-        begin=ge_num(node,1);children=sx_cons(node,children);nodes=sx_tail(nodes);depths=sx_tail(depths);
+  var frames = sx_cons(ge_four(ge_atom(ge_cfg(5)),
+    ge_atom(0),
+    ge_atom(0),
+    ge_atom(1)),
+    sx_nil());
+  let actions = ge_actions();
+  let productions = ge_productions();
+  let rhs = ge_rhs();
+  let count = ge_cfg(4);
+  while sx_kind(frames) == 3
+  {
+    used = used + 1;
+    if used > ge_steps()
+    {
+      return (ge_cfg(13), sx_nil(), offset);
+    }
+    offset = input_end;
+    var look = 0;
+    if sx_kind(rest) == 3
+    {
+      look = ge_num(sx_head(rest), 0);
+      offset = ge_num(sx_head(rest), 1);
+    }
+    let frame = sx_head(frames);
+    frames = sx_tail(frames);
+    let symbol = ge_num(frame, 0);
+    let close = ge_num(frame, 1);
+    let nesting = ge_num(frame, 3);
+    if nesting > ge_cfg(9)
+    {
+      return (ge_cfg(13), sx_nil(), offset);
+    }
+    if close > 0
+    {
+      var children = sx_nil();
+      var begin = ge_num(frame, 2);
+      var end = begin;
+      var depth = 0;
+      for i in 0 .. close - 1
+      {
+        let node = sx_head(nodes);
+        let child_depth = ge_number(sx_text(sx_head(depths)));
+        if child_depth > depth
+        {
+          depth = child_depth;
+        }
+        if i == 0
+        {
+          end = ge_num(node, 2);
+        }
+        begin = ge_num(node, 1);
+        children = sx_cons(node, children);
+        nodes = sx_tail(nodes);
+        depths = sx_tail(depths);
       }
-      nodes=sx_cons(ge_four(sx_string(ge_name(symbol)),ge_atom(begin),ge_atom(end),children),nodes);
-      depths=sx_cons(ge_atom(depth+1),depths);
-    } else {
-      if text_byte(ge_terminals(),symbol)==49 {
-        if symbol!=look{return (ge_cfg(12),sx_nil(),offset);}
-        nodes=sx_cons(ge_leaf(sx_head(rest)),nodes);depths=sx_cons(ge_atom(1),depths);rest=sx_tail(rest);
-      } else {
-        let choice=ge_cell(actions,symbol*count+look);
-        if choice<0{return (ge_cfg(12),sx_nil(),offset);}
-        let size=ge_cell(productions,choice*3+1);let start=ge_cell(productions,choice*3+2);
-        frames=sx_cons(ge_four(ge_atom(symbol),ge_atom(size+1),ge_atom(offset),ge_atom(nesting)),frames);
-        var i=size;
-        while i>0 {
-          i=i-1;frames=sx_cons(ge_four(ge_atom(ge_cell(rhs,start+i)),ge_atom(0),ge_atom(0),ge_atom(nesting+1)),frames);
+      nodes = sx_cons(ge_four(sx_string(ge_name(symbol)),
+        ge_atom(begin),
+        ge_atom(end),
+        children),
+        nodes);
+      depths = sx_cons(ge_atom(depth + 1), depths);
+    }
+    else
+    {
+      if text_byte(ge_terminals(), symbol) == 49
+      {
+        if symbol != look
+        {
+          return (ge_cfg(12), sx_nil(), offset);
+        }
+        nodes = sx_cons(ge_leaf(sx_head(rest)), nodes);
+        depths = sx_cons(ge_atom(1), depths);
+        rest = sx_tail(rest);
+      }
+      else
+      {
+        let choice = ge_cell(actions, symbol * count + look);
+        if choice < 0
+        {
+          return (ge_cfg(12), sx_nil(), offset);
+        }
+        let size = ge_cell(productions, choice * 3 + 1);
+        let start = ge_cell(productions, choice * 3 + 2);
+        frames = sx_cons(ge_four(ge_atom(symbol),
+          ge_atom(size + 1),
+          ge_atom(offset),
+          ge_atom(nesting)),
+          frames);
+        var i = size;
+        while i > 0
+        {
+          i = i - 1;
+          frames = sx_cons(ge_four(ge_atom(ge_cell(rhs,
+            start + i)),
+            ge_atom(0),
+            ge_atom(0),
+            ge_atom(nesting + 1)),
+            frames);
         }
       }
     }
   }
-  if sx_kind(rest)==3{return (ge_cfg(12),sx_nil(),ge_num(sx_head(rest),1));}
-  return (ge_cfg(10),sx_head(nodes),input_end);
+  if sx_kind(rest) == 3
+  {
+    return (ge_cfg(12), sx_nil(), ge_num(sx_head(rest), 1));
+  }
+  return (ge_cfg(10), sx_head(nodes), input_end);
 }
-fn ge_parse(input:string)->(i64,sexpr,i64) {
-  let (status,tokens,offset,work)=ge_lex_work(input);
-  if status!=ge_cfg(10){return (status,sx_nil(),offset);}
-  if ge_cfg(1)==1{return ge_parse_ll(tokens,text_len(input),work);}
-  return ge_parse_lr(tokens,text_len(input),work);
+fn ge_parse(input: string) ->(i64, sexpr, i64)
+{
+  let(status, tokens, offset, work) = ge_lex_work(input);
+  if status != ge_cfg(10)
+  {
+    return (status, sx_nil(), offset);
+  }
+  if ge_cfg(1) == 1
+  {
+    return ge_parse_ll(tokens, text_len(input), work);
+  }
+  return ge_parse_lr(tokens, text_len(input), work);
 }
-fn ge_matches(input:string)->bool {
-  let (status,tree,offset)=ge_parse(input);return status==ge_cfg(10);
+fn ge_matches(input: string) -> bool
+{
+  let(status, tree, offset) = ge_parse(input);
+  return status == ge_cfg(10);
 }

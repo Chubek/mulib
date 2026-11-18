@@ -1,16 +1,73 @@
 import "common.on1x";
-fn transform(tree:sexpr,label:string)->sexpr {
- return visitor_rewrite(tree,fn(node:sexpr,path:sexpr)->sexpr {
-  if visitor_tag(node)!="Do"{return node;}let expr=sexpr_nth(node,1);
-  if visitor_tag(expr)!="ExtensionExpr"||sx_text(sexpr_nth(expr,1))!=label{return node;}
-  let op=sx_text(sexpr_nth(expr,2));let args=sexpr_nth(expr,3);let at=sexpr_nth(expr,4);
-  if sexpr_size(args)!=1{tool_fail("logging expects one argument");}
-  if op=="print"{return native_do(ppx_call("println",args,at),at);}
-  var prefix="";
-  if op=="info"{prefix="INFO: ";}else{if op=="debug"{prefix="DEBUG: ";}else{if op=="warn"{prefix="WARN: ";}else{if op=="error"{prefix="ERROR: ";}else{tool_fail("logging expects debug/info/warn/error");}}}}
-  let text=ppx_call("text_concat",ppx_list2(native_string(prefix,at),sx_head(args)),at);
-  let line=ppx_call("text_concat",ppx_list2(text,native_string("\n",at)),at);
-  return native_do(ppx_call("io_stderr",ppx_list1(line),at),at);
- });
+fn transform(tree: sexpr, label: string) -> sexpr
+{
+  return visitor_rewrite(tree, fn(node: sexpr, path: sexpr) -> sexpr
+  {
+    if visitor_tag(node) != "Do"
+    {
+      return node;
+    }
+    let expr = sexpr_nth(node, 1);
+    if visitor_tag(expr) != "ExtensionExpr" || sx_text(sexpr_nth(expr,
+      1)) != label
+    {
+      return node;
+    }
+    let op = sx_text(sexpr_nth(expr, 2));
+    let args = sexpr_nth(expr, 3);
+    let at = sexpr_nth(expr, 4);
+    if sexpr_size(args) != 1
+    {
+      tool_fail("logging expects one argument");
+    }
+    if op == "print"
+    {
+      return native_do(ppx_call("println", args, at), at);
+    }
+    var prefix = "";
+    if op == "info"
+    {
+      prefix = "INFO: ";
+    }
+    else
+    {
+      if op == "debug"
+      {
+        prefix = "DEBUG: ";
+      }
+      else
+      {
+        if op == "warn"
+        {
+          prefix = "WARN: ";
+        }
+        else
+        {
+          if op == "error"
+          {
+            prefix = "ERROR: ";
+          }
+          else
+          {
+            tool_fail("logging expects debug/info/warn/error");
+          }
+        }
+      }
+    }
+    let text = ppx_call("text_concat",
+      ppx_list2(native_string(prefix,
+      at),
+      sx_head(args)),
+      at);
+    let line = ppx_call("text_concat",
+      ppx_list2(text,
+      native_string("\n",
+      at)),
+      at);
+    return native_do(ppx_call("io_stderr", ppx_list1(line), at), at);
+  });
 }
-fn main(){native_serve(transform);}
+fn main()
+{
+  native_serve(transform);
+}

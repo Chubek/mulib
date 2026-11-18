@@ -1,18 +1,75 @@
 # ASCII/byte character model, since On1x does not yet have a char type.
-fn basis_char_is_ascii(c:i64)->bool { return c>=0 && c<=127; }
-fn basis_char_is_alpha(c:i64)->bool { return (c>=65 && c<=90) || (c>=97 && c<=122); }
-fn basis_char_is_digit(c:i64)->bool { return c>=48 && c<=57; }
-fn basis_char_is_hex(c:i64)->bool {
-  return basis_char_is_digit(c) || (c>=65 && c<=70) || (c>=97 && c<=102);
+fn basis_char_is_ascii(c: i64) -> bool
+{
+  return c >= 0 && c <= 127;
 }
-fn basis_char_is_space(c:i64)->bool { return c==32 || c==9 || c==10 || c==13 || c==11 || c==12; }
-fn basis_char_is_upper(c:i64)->bool { return c>=65 && c<=90; }
-fn basis_char_is_lower(c:i64)->bool { return c>=97 && c<=122; }
-fn basis_char_to_upper(c:i64)->i64 { if basis_char_is_lower(c) { return c-32; } return c; }
-fn basis_char_to_lower(c:i64)->i64 { if basis_char_is_upper(c) { return c+32; } return c; }
-fn basis_char_ord(c:i64)->i64 { if c<0 || c>255 { tool_fail("char code invalid"); } return c; }
-fn basis_char_chr(c:i64)->string {
-  if c<=0 || c>255 { tool_fail("NUL-free string ABI: chr is 1..255"); }
-  let out=buffer_new(); buffer_byte(out,c); return buffer_text(out);
+fn basis_char_is_alpha(c: i64) -> bool
+{
+  return (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
 }
-fn basis_char_compare(a:i64,b:i64)->i64 { if a<b { return -1; } if a>b { return 1; } return 0; }
+fn basis_char_is_digit(c: i64) -> bool
+{
+  return c >= 48 && c <= 57;
+}
+fn basis_char_is_hex(c: i64) -> bool
+{
+  return basis_char_is_digit(c) || (c >= 65 && c <= 70) || (c >= 97 && c <= 102);
+}
+fn basis_char_is_space(c: i64) -> bool
+{
+  return c == 32 || c == 9 || c == 10 || c == 13 || c == 11 || c == 12;
+}
+fn basis_char_is_upper(c: i64) -> bool
+{
+  return c >= 65 && c <= 90;
+}
+fn basis_char_is_lower(c: i64) -> bool
+{
+  return c >= 97 && c <= 122;
+}
+fn basis_char_to_upper(c: i64) -> i64
+{
+  if basis_char_is_lower(c)
+  {
+    return c - 32;
+  }
+  return c;
+}
+fn basis_char_to_lower(c: i64) -> i64
+{
+  if basis_char_is_upper(c)
+  {
+    return c + 32;
+  }
+  return c;
+}
+fn basis_char_ord(c: i64) -> i64
+{
+  if c < 0 || c > 255
+  {
+    tool_fail("char code invalid");
+  }
+  return c;
+}
+fn basis_char_chr(c: i64) -> string
+{
+  if c <= 0 || c > 255
+  {
+    tool_fail("NUL-free string ABI: chr is 1..255");
+  }
+  let out = buffer_new();
+  buffer_byte(out, c);
+  return buffer_text(out);
+}
+fn basis_char_compare(a: i64, b: i64) -> i64
+{
+  if a < b
+  {
+    return - 1;
+  }
+  if a > b
+  {
+    return 1;
+  }
+  return 0;
+}

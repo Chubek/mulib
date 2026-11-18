@@ -16,7 +16,8 @@
     }
   }
 }
-fn main() {
-  println(Ascending_compare(-9223372036854775808, 9223372036854775807));
-  println(Descending_compare(-9223372036854775808, 9223372036854775807));
+fn main()
+{
+  println(Ascending_compare(- 9223372036854775808, 9223372036854775807));
+  println(Descending_compare(- 9223372036854775808, 9223372036854775807));
 }

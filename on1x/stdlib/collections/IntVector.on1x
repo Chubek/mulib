@@ -1,3 +1,6 @@
 import "Vector.on1x";
 # Vector elements are decimal symbols, not native boxed i64.
-fn basis_int_vector_length(v:sexpr)->i64 { return basis_vector_length(v); }
+fn basis_int_vector_length(v: sexpr) -> i64
+{
+  return basis_vector_length(v);
+}

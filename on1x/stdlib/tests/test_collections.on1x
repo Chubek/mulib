@@ -2,20 +2,27 @@ import "../collections/List.on1x";
 import "../collections/ListPair.on1x";
 import "../collections/Vector.on1x";
 import "../collections/ArraySlice.on1x";
-fn double_name(item:sexpr)->sexpr { return sx_symbol(text_concat(sx_text(item),"!")); }
-fn is_a(item:sexpr)->bool { return sx_text(item)=="a"; }
-fn main() {
-  let xs=sx_cons(sx_symbol("a"),sx_cons(sx_symbol("b"),sx_nil()));
-  assert(basis_list_length(xs)==2);
-  assert(sx_text(basis_list_nth(xs,1))=="b");
-  assert(basis_list_length(basis_list_map(xs,double_name))==2);
-  assert(basis_list_length(basis_list_filter(xs,is_a))==1);
-  let (left,right)=basis_listpair_unzip(basis_listpair_zip(xs,xs));
-      assert(basis_list_length(left)==2 && basis_list_length(right)==2);
-  let a=basis_array_array(3,7);
-  let slice=basis_array_slice(a,1,2);
-  basis_array_slice_update(slice,0,44);
-  assert(basis_array_sub(a,1)==44);
+fn double_name(item: sexpr) -> sexpr
+{
+  return sx_symbol(text_concat(sx_text(item), "!"));
+}
+fn is_a(item: sexpr) -> bool
+{
+  return sx_text(item) == "a";
+}
+fn main()
+{
+  let xs = sx_cons(sx_symbol("a"), sx_cons(sx_symbol("b"), sx_nil()));
+  assert(basis_list_length(xs) == 2);
+  assert(sx_text(basis_list_nth(xs, 1)) == "b");
+  assert(basis_list_length(basis_list_map(xs, double_name)) == 2);
+  assert(basis_list_length(basis_list_filter(xs, is_a)) == 1);
+  let(left, right) = basis_listpair_unzip(basis_listpair_zip(xs, xs));
+  assert(basis_list_length(left) == 2 && basis_list_length(right) == 2);
+  let a = basis_array_array(3, 7);
+  let slice = basis_array_slice(a, 1, 2);
+  basis_array_slice_update(slice, 0, 44);
+  assert(basis_array_sub(a, 1) == 44);
   basis_array_destroy(a);
   println("basis collections OK");
 }

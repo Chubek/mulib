@@ -1,14 +1,24 @@
 # Inspect with --emit-ir-facts or --analyze-ir in a Novostone-enabled build.
-fn even(n: i64) -> bool {
-  if n == 0 { return true; }
+fn even(n: i64) -> bool
+{
+  if n == 0
+  {
+    return true;
+  }
   return odd(n - 1);
 }
-fn odd(n: i64) -> bool {
-  if n == 0 { return false; }
+fn odd(n: i64) -> bool
+{
+  if n == 0
+  {
+    return false;
+  }
   return even(n - 1);
 }
-fn main() {
-  for n in 0..4 {
+fn main()
+{
+  for n in 0 .. 4
+  {
     println(even(n));
   }
 }

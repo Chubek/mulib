@@ -1,25 +1,58 @@
 import "../../stdlib/ppx/ppx.on1x";
 # Constructors are syntactic only: ordinary inference/ownership checks still run.
-fn native_string(text:string,at:sexpr)->sexpr{return ppx_node("StringLiteral",ppx_list2(sx_string(text),at));}
-fn native_append(a:sexpr,b:sexpr)->sexpr {
- var rest=sexpr_reverse(a);var out=b;
- while sx_kind(rest)==3{out=sx_cons(sx_head(rest),out);rest=sx_tail(rest);}return out;
+fn native_string(text: string, at: sexpr) -> sexpr
+{
+  return ppx_node("StringLiteral", ppx_list2(sx_string(text), at));
 }
-fn native_parameter(name:string,type:sexpr,at:sexpr)->sexpr{return ppx_node("Parameter",ppx_list3(sx_string(name),type,at));}
-fn native_block(statements:sexpr,at:sexpr)->sexpr{return ppx_node("Block",ppx_list2(statements,at));}
-fn native_do(value:sexpr,at:sexpr)->sexpr{return ppx_node("Do",ppx_list2(value,at));}
-fn native_binary(op:string,a:sexpr,b:sexpr,at:sexpr)->sexpr{return ppx_node("Binary",ppx_list4(sx_symbol(op),a,b,at));}
-fn native_lambda(parameters:sexpr,result:sexpr,body:sexpr,at:sexpr)->sexpr{return ppx_node("Lambda",ppx_list4(parameters,result,body,at));}
-fn native_serve(transform:fn(sexpr,string)->sexpr) {
- ppx_serve(ppx_schema_env(),fn(tree:sexpr,label:string)->sexpr {
-  let result=transform(tree,label);
-  visitor_rewrite(result,fn(node:sexpr,path:sexpr)->sexpr {
-   let tag=visitor_tag(node);
-   if (tag=="ExtensionExpr"||tag=="Attribute")&&sx_text(sexpr_nth(node,1))==label {
-    tool_fail("unconsumed native PPX extension/attribute");
-   }
-   return node;
+fn native_append(a: sexpr, b: sexpr) -> sexpr
+{
+  var rest = sexpr_reverse(a);
+  var out = b;
+  while sx_kind(rest) == 3
+  {
+    out = sx_cons(sx_head(rest), out);
+    rest = sx_tail(rest);
+  }
+  return out;
+}
+fn native_parameter(name: string, type: sexpr, at: sexpr) -> sexpr
+{
+  return ppx_node("Parameter", ppx_list3(sx_string(name), type, at));
+}
+fn native_block(statements: sexpr, at: sexpr) -> sexpr
+{
+  return ppx_node("Block", ppx_list2(statements, at));
+}
+fn native_do(value: sexpr, at: sexpr) -> sexpr
+{
+  return ppx_node("Do", ppx_list2(value, at));
+}
+fn native_binary(op: string, a: sexpr, b: sexpr, at: sexpr) -> sexpr
+{
+  return ppx_node("Binary", ppx_list4(sx_symbol(op), a, b, at));
+}
+fn native_lambda(parameters: sexpr,
+  result: sexpr,
+  body: sexpr,
+  at: sexpr) -> sexpr
+{
+  return ppx_node("Lambda", ppx_list4(parameters, result, body, at));
+}
+fn native_serve(transform: fn(sexpr, string) -> sexpr)
+{
+  ppx_serve(ppx_schema_env(), fn(tree: sexpr, label: string) -> sexpr
+  {
+    let result = transform(tree, label);
+    visitor_rewrite(result, fn(node: sexpr, path: sexpr) -> sexpr
+    {
+      let tag = visitor_tag(node);
+      if (tag == "ExtensionExpr" || tag == "Attribute") && sx_text(sexpr_nth(node,
+        1)) == label
+      {
+        tool_fail("unconsumed native PPX extension/attribute");
+      }
+      return node;
+    });
+    return result;
   });
-  return result;
- });
 }

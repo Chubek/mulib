@@ -1,4 +1,5 @@
-fn main() -> i64 {
+fn main() -> i64
+{
   let n = 21;
   {
     let n = n * 2;

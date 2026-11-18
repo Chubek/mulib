@@ -1,35 +1,102 @@
 import "common.on1x";
-fn transform(tree:sexpr,label:string)->sexpr {
- return visitor_rewrite(tree,fn(node:sexpr,path:sexpr)->sexpr {
-  if visitor_tag(node)!="ExtensionExpr"||sx_text(sexpr_nth(node,1))!=label{return node;}
-  let op=sx_text(sexpr_nth(node,2));let args=sexpr_nth(node,3);let at=sexpr_nth(node,4);
-  if op=="concat"&&sexpr_size(args)==2{return ppx_call("text_concat",args,at);}
-  if op!="string"||sexpr_size(args)<1||visitor_tag(sx_head(args))!="StringLiteral"{tool_fail("format expects string(template,string_args...)");}
-  let text=sx_text(sexpr_nth(sx_head(args),1));let literal=buffer_new();var parts=sx_nil();var next=0;var i=0;
-  while i<text_len(text){
-   let c=text_byte(text,i);
-   if c==123||c==125{
-    if i+1<text_len(text)&&text_byte(text,i+1)==c{buffer_byte(literal,c);i=i+2;}
-    else{if c==125{tool_fail("format unmatched closing brace");}
-     var end=i+1;var slot=0;var digits=0;
-     while end<text_len(text)&&text_byte(text,end)!=125{
-      let d=text_byte(text,end)-48;
-      if d<0||d>9||digits>=4{tool_fail("format invalid placeholder");}
-      slot=slot*10+d;digits=digits+1;end=end+1;
-     }
-     if digits==0||end==text_len(text){tool_fail("format unclosed/empty placeholder");}
-     if slot!=next{tool_fail("format placeholders must occur once in argument order");}
-     if next+1>=sexpr_size(args){tool_fail("format missing argument");}
-     parts=sx_cons(native_string(buffer_text(literal),at),parts);buffer_clear(literal);
-     parts=sx_cons(sexpr_nth(args,next+1),parts);next=next+1;i=end+1;
+fn transform(tree: sexpr, label: string) -> sexpr
+{
+  return visitor_rewrite(tree, fn(node: sexpr, path: sexpr) -> sexpr
+  {
+    if visitor_tag(node) != "ExtensionExpr" || sx_text(sexpr_nth(node,
+      1)) != label
+    {
+      return node;
     }
-   }else{buffer_byte(literal,c);i=i+1;}
-  }
-  if next!=sexpr_size(args)-1{tool_fail("format unused argument");}
-  parts=sexpr_reverse(sx_cons(native_string(buffer_text(literal),at),parts));
-  var result=sx_head(parts);var rest=sx_tail(parts);
-  while sx_kind(rest)==3{result=ppx_call("text_concat",ppx_list2(result,sx_head(rest)),at);rest=sx_tail(rest);}
-  return result;
- });
+    let op = sx_text(sexpr_nth(node, 2));
+    let args = sexpr_nth(node, 3);
+    let at = sexpr_nth(node, 4);
+    if op == "concat" && sexpr_size(args) == 2
+    {
+      return ppx_call("text_concat", args, at);
+    }
+    if op != "string" || sexpr_size(args) < 1 || visitor_tag(sx_head(args)) != "StringLiteral"
+    {
+      tool_fail("format expects string(template,string_args...)");
+    }
+    let text = sx_text(sexpr_nth(sx_head(args), 1));
+    let literal = buffer_new();
+    var parts = sx_nil();
+    var next = 0;
+    var i = 0;
+    while i < text_len(text)
+    {
+      let c = text_byte(text, i);
+      if c == 123 || c == 125
+      {
+        if i + 1 < text_len(text) && text_byte(text, i + 1) == c
+        {
+          buffer_byte(literal, c);
+          i = i + 2;
+        }
+        else
+        {
+          if c == 125
+          {
+            tool_fail("format unmatched closing brace");
+          }
+          var end = i + 1;
+          var slot = 0;
+          var digits = 0;
+          while end < text_len(text) && text_byte(text, end) != 125
+          {
+            let d = text_byte(text, end) - 48;
+            if d < 0 || d > 9 || digits >= 4
+            {
+              tool_fail("format invalid placeholder");
+            }
+            slot = slot * 10 + d;
+            digits = digits + 1;
+            end = end + 1;
+          }
+          if digits == 0 || end == text_len(text)
+          {
+            tool_fail("format unclosed/empty placeholder");
+          }
+          if slot != next
+          {
+            tool_fail("format placeholders must occur once in argument order");
+          }
+          if next + 1 >= sexpr_size(args)
+          {
+            tool_fail("format missing argument");
+          }
+          parts = sx_cons(native_string(buffer_text(literal), at), parts);
+          buffer_clear(literal);
+          parts = sx_cons(sexpr_nth(args, next + 1), parts);
+          next = next + 1;
+          i = end + 1;
+        }
+      }
+      else
+      {
+        buffer_byte(literal, c);
+        i = i + 1;
+      }
+    }
+    if next != sexpr_size(args) - 1
+    {
+      tool_fail("format unused argument");
+    }
+    parts = sexpr_reverse(sx_cons(native_string(buffer_text(literal),
+      at),
+      parts));
+    var result = sx_head(parts);
+    var rest = sx_tail(parts);
+    while sx_kind(rest) == 3
+    {
+      result = ppx_call("text_concat", ppx_list2(result, sx_head(rest)), at);
+      rest = sx_tail(rest);
+    }
+    return result;
+  });
 }
-fn main(){native_serve(transform);}
+fn main()
+{
+  native_serve(transform);
+}

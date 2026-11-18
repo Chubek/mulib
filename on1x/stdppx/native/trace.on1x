@@ -1,20 +1,74 @@
 import "common.on1x";
-fn transform(tree:sexpr,label:string)->sexpr {
- return visitor_rewrite(tree,fn(node:sexpr,path:sexpr)->sexpr {
-  if visitor_tag(node)!="Function"{return node;}
-  var rest=sexpr_nth(node,5);var keep=sx_nil();var logs=sx_nil();
-  while sx_kind(rest)==3{
-   let attr=sx_head(rest);let args=sexpr_nth(attr,3);let at=sexpr_nth(attr,4);
-   if sx_text(sexpr_nth(attr,1))==label{
-    if sx_text(sexpr_nth(attr,2))!="entry"||sexpr_size(args)>1{tool_fail("trace expects entry([message])");}
-    var message=sx_text(sexpr_nth(node,1));
-    if sexpr_size(args)==1{if visitor_tag(sx_head(args))!="StringLiteral"{tool_fail("trace message must be a string literal");}message=sx_text(sexpr_nth(sx_head(args),1));}
-    logs=sx_cons(native_do(ppx_call("io_stderr",ppx_list1(native_string(text_concat("TRACE ",text_concat(message,"\n")),at)),at),at),logs);
-   }else{keep=sx_cons(attr,keep);}rest=sx_tail(rest);
-  }
-  if sx_kind(logs)==0{return node;}
-  let old=sexpr_nth(node,4);let body=native_block(native_append(sexpr_reverse(logs),sexpr_nth(old,1)),sexpr_nth(old,2));
-  return ppx_node("Function",sx_cons(sexpr_nth(node,1),sx_cons(sexpr_nth(node,2),sx_cons(sexpr_nth(node,3),ppx_list3(body,sexpr_reverse(keep),sexpr_nth(node,6))))));
- });
+fn transform(tree: sexpr, label: string) -> sexpr
+{
+  return visitor_rewrite(tree, fn(node: sexpr, path: sexpr) -> sexpr
+  {
+    if visitor_tag(node) != "Function"
+    {
+      return node;
+    }
+    var rest = sexpr_nth(node, 5);
+    var keep = sx_nil();
+    var logs = sx_nil();
+    while sx_kind(rest) == 3
+    {
+      let attr = sx_head(rest);
+      let args = sexpr_nth(attr, 3);
+      let at = sexpr_nth(attr, 4);
+      if sx_text(sexpr_nth(attr, 1)) == label
+      {
+        if sx_text(sexpr_nth(attr, 2)) != "entry" || sexpr_size(args) > 1
+        {
+          tool_fail("trace expects entry([message])");
+        }
+        var message = sx_text(sexpr_nth(node, 1));
+        if sexpr_size(args) == 1
+        {
+          if visitor_tag(sx_head(args)) != "StringLiteral"
+          {
+            tool_fail("trace message must be a string literal");
+          }
+          message = sx_text(sexpr_nth(sx_head(args), 1));
+        }
+        logs = sx_cons(native_do(ppx_call("io_stderr",
+          ppx_list1(native_string(text_concat("TRACE ",
+          text_concat(message,
+          "\n")),
+          at)),
+          at),
+          at),
+          logs);
+      }
+      else
+      {
+        keep = sx_cons(attr, keep);
+      }
+      rest = sx_tail(rest);
+    }
+    if sx_kind(logs) == 0
+    {
+      return node;
+    }
+    let old = sexpr_nth(node, 4);
+    let body = native_block(native_append(sexpr_reverse(logs),
+      sexpr_nth(old,
+      1)),
+      sexpr_nth(old,
+      2));
+    return ppx_node("Function",
+      sx_cons(sexpr_nth(node,
+      1),
+      sx_cons(sexpr_nth(node,
+      2),
+      sx_cons(sexpr_nth(node,
+      3),
+      ppx_list3(body,
+      sexpr_reverse(keep),
+      sexpr_nth(node,
+      6))))));
+  });
 }
-fn main(){native_serve(transform);}
+fn main()
+{
+  native_serve(transform);
+}
