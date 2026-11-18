@@ -21,7 +21,8 @@ State meet(const State& a,const State& b){
  std::set_intersection(a.tags.begin(),a.tags.end(),b.tags.begin(),b.tags.end(),std::inserter(out.tags,out.tags.end()));return out;
 }
 Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b);}
-class Verify {
+ class Verify {
+  bool unsafe_context=false;
  struct Local {Type type;bool mut=false;const Stmt* storage=nullptr;std::size_t id=0;};
  struct Target {std::size_t id;std::vector<State> exits,continues;};
  std::vector<std::map<std::string,Local>> scopes;
@@ -48,7 +49,10 @@ class Verify {
  }
  bool expression(const Expr& e,State& state,std::size_t depth){
   tick(e.where,depth);if(e.prototype)return true;
-    if(e.kind==E::PatternMatch||e.kind==E::Match||e.kind==E::Case||e.kind==E::Loop||e.kind==E::Propagate)fail(e.where,"surface value construct reached the canonical verifier");
+     if(e.kind==E::PatternMatch||e.kind==E::Match||e.kind==E::Case||e.kind==E::Loop||e.kind==E::Propagate||e.kind==E::UnsafeBlock)fail(e.where,"surface value construct reached the canonical verifier");
+   if(e.unsafe_region&&e.kind!=E::Region)fail(e.where,"unsafe marker on a non-region expression");
+   if(e.reference==Expr::Reference::UnsafeForeign)
+    fail(e.where,"unsafe foreign reference must be the direct callee of an unsafe call");
   if(e.noreturn&&e.kind!=E::Region)fail(e.where,"non-returning metadata on an ordinary expression");
   if(e.kind==E::Region||e.kind==E::TagTest||e.kind==E::Payload||e.kind==E::Project||e.kind==E::Unit){source(e.where);if(e.callee||!e.parameters.empty()||!e.patterns.empty()||!e.labels.empty())fail(e.where,"extraneous canonical expression fields");}
   if(e.kind==E::Variable){auto binding=find(e.text);if(binding||e.reference==Expr::Reference::Local){if(!binding||e.reference!=Expr::Reference::Local||binding->type!=e.type)fail(e.where,"canonical local binding/type mismatch: "+e.text);if(binding->storage&&!state.initialized.contains(binding->storage))fail(e.where,"read of uninitialized canonical storage: "+e.text);}return true;}
@@ -56,23 +60,31 @@ class Verify {
    for(const auto& capture:e.captures){auto b=find(capture.name);if(!b||b->mut||b->type!=capture.type||capture.type==Type::Json||capture.type==Type::JsonView||(b->storage&&!state.initialized.contains(b->storage)))fail(e.where,"uninitialized/invalid closure capture");}
    auto saved_scopes=std::move(scopes);auto saved_regions=std::move(regions),saved_loops=std::move(loops);scopes.clear();regions.clear();loops.clear();scopes.emplace_back();
    for(const auto& capture:e.captures)bind(capture.name,capture.type,false);
-   auto saved_returns=returns;returns=e.result;params(e.parameters);(void)body(e.body,State{},depth+1,false);returns=saved_returns;
+    auto saved_returns=returns;returns=e.result;params(e.parameters);
+    auto saved_unsafe=unsafe_context;unsafe_context=false;
+    (void)body(e.body,State{},depth+1,false);returns=saved_returns;unsafe_context=saved_unsafe;
    scopes=std::move(saved_scopes);regions=std::move(saved_regions);loops=std::move(saved_loops);return true;
   }
-  if(e.kind==E::Region){
-   if(e.children.size()!=1||!e.children[0])fail(e.where,"value region requires one result");
+   if(e.kind==E::Region){
+    if(e.children.size()!=1||!e.children[0])fail(e.where,"value region requires one result");
+    auto saved_unsafe=unsafe_context;unsafe_context=unsafe_context||e.unsafe_region;
    scopes.emplace_back();auto after=body(e.body,state,depth+1,false);
    if(e.noreturn==after.has_value())fail(e.where,"incorrect value-region completion metadata");
    if(after){if(!expression(*e.children[0],*after,depth+1)||e.children[0]->type!=e.type)fail(e.where,"value-region result mismatch");state=*after;}
    else if(e.type!=Type::Void||e.children[0]->kind!=E::Unit)fail(e.where,"non-returning region must have no value");
-   scopes.pop_back();return after.has_value();
+    scopes.pop_back();unsafe_context=saved_unsafe;return after.has_value();
   }
   if(e.kind==E::Binary&&(e.text=="&&"||e.text=="||")){
    if(e.children.size()!=2)fail(e.where,"malformed logical expression");
    if(!expression(*e.children[0],state,depth+1))return false;
    charge(state,e.where);auto right=state;bool live=expression(*e.children[1],right,depth+1);if(live)state=meet(state,right);return true;
   }
-  if(e.callee&&!expression(*e.callee,state,depth+1))return false;
+   if(e.callee&&e.callee->reference==Expr::Reference::UnsafeForeign){
+    tick(e.callee->where,depth+1);
+    if(!unsafe_context||e.kind!=E::Call||e.callee->kind!=E::Variable||
+       e.callee->callee||!e.callee->children.empty()||!e.callee->body.empty())
+     fail(e.callee->where,"unsafe foreign call outside its checked lexical scope");
+   }else if(e.callee&&!expression(*e.callee,state,depth+1))return false;
   for(const auto& child:e.children){if(!child)fail(e.where,"missing expression child");if(!expression(*child,state,depth+1))return false;}
   if(e.kind==E::TagTest){(void)tag(e);if(e.type!=Type::Bool)fail(e.where,"tag test result is not bool");}
   if(e.kind==E::Payload){auto fact=tag(e);if(!state.tags.contains(fact))fail(e.where,"payload projection lacks a dominating tag test");if(e.type!=e.children[0]->type.elements().at(e.projection))fail(e.where,"payload result type mismatch");}
@@ -86,7 +98,8 @@ class Verify {
   if(scoped)scopes.emplace_back();
   Flow state=std::move(initial);
   for(const auto& s:statements){
-   tick(s.where,depth);if(s.prototype)continue;if(!state)fail(s.where,"unreachable canonical statement");
+    tick(s.where,depth);if(s.prototype)continue;if(!state)fail(s.where,"unreachable canonical statement");
+    if(s.unsafe_block&&s.kind!=S::Block)fail(s.where,"unsafe marker on a non-block statement");
    charge(*state,s.where);
     if(s.kind==S::Storage||s.kind==S::Initialize||s.kind==S::Region||s.kind==S::Leave||s.kind==S::Trap||s.kind==S::PushDefer){
     source(s.where);if(s.pattern||s.mutable_binding||!s.label.empty()||s.label_context||s.context||s.inclusive||!s.otherwise.empty())fail(s.where,"extraneous canonical statement fields");
@@ -109,7 +122,8 @@ class Verify {
    case S::Expr:break;
    case S::Return:if((s.value?s.value->type:Type{Type::Void})!=returns)fail(s.where,"canonical return type mismatch");state.reset();break;
    case S::Trap:state.reset();break;
-   case S::Block:state=body(s.body,*state,depth+1);break;
+    case S::Block:{auto saved=unsafe_context;unsafe_context=unsafe_context||s.unsafe_block;
+     state=body(s.body,*state,depth+1);unsafe_context=saved;break;}
    case S::If:{
     if(!s.value||s.value->type!=Type::Bool)fail(s.where,"invalid canonical branch condition");
     auto yes=*state;if(s.value->kind==E::TagTest)yes.tags.insert(tag(*s.value));

@@ -7,10 +7,11 @@ The M5/M7 [discovery continuation](search-paths.md) integrates the moved
 search lists with CLI/environment inputs and declarative manifests. It does not
 add separate compilation, dependency downloading or foreign safety admission.
 
-Latest CSP continuation: [running/blocked cooperative cancellation and monotonic
-poll deadlines](cancellation-deadlines.md), private ABI v3, now execute through
-checked HIR/C11. Async/await remains absent pending verified suspension/frame
-lowering, not a wrapper around stackful fibers; taskgroup `within` is also absent.
+Latest CSP continuation: [cooperative cancellation and monotonic deadlines](cancellation-deadlines.md)
+execute through checked HIR/C11, including `taskgroup within` with terminal
+timeout after cleanup (private ABI v4). Typed timeout recovery and async/await
+remain absent; async requires verified suspension/frame lowering, not a wrapper
+around stackful fibers.
 
 | Area | State | Evidence / limits |
 |---|---|---|
@@ -57,13 +58,13 @@ lowering, not a wrapper around stackful fibers; taskgroup `within` is also absen
 | Chisel resource checking | Opt-in scalar/JSON usage subset | Real solver plus conservative joins, token-use and exit/reinitialization checks; generic external resource CFG API; [manual](memory-safety.md) |
 | Nerotypical structural verification | Opt-in concrete HIR checker | Real TypeGraph/Satie EUF obligations for calls, closures, tuples, staging and resources; explicit universals reject; separate patched source SDK; [manual](type-safety.md) |
 | Exotract static bindings | MANIFEST-backed kernel and companion archives | Typed CDecl/import metadata; executable JSON/Vec/Parsec and MicroJS C clients, On1x JSON/YANTLR/Shiraz archive linkage, fixture provenance and one kernel implementation TU; [manual](../contracts-exotract/README.md) |
-| Compiler-native KernelBind | Discovery and a narrow unsafe scalar C11 profile (Packages B/C partial) | Source-pinned ExoLib/CDecl inspection and executable `mulib.clamp` saturation via scoped `unsafe`. Safe authorization, ownership, records, and Shylock integration remain open; [manual](kernel-bind.md) |
+| Compiler-native KernelBind | Discovery, unsafe scalar calls and review-gated scalar/numerical calls (Packages B–D partial) | ExoLib/CDecl, independent Ed25519 review, one-TU archives, atomic admission bundles, bounded snapshots and nominal results for Histprice and PriceOpt. No production approvals or general owned resources; Shylock release gate remains open. [Manual](kernel-bind.md), [numerical profile](kernel-numerics.md), [source migration blockers](source-migration.md) |
 | Wetstone / general foreign ownership lowering | Not implemented | Contract-driven external handle types, ABI, alias/extent and effect proofs remain open |
 | Flintstone/Firestone native lowering | Not implemented | C11 is the sole backend |
 | Value data model (M1 slice) | Executable by-value C11 subset | Structural records with canonical labels, closed sums with exhaustive `match`, `array<T,N>` and owning `slice` snapshots, bounds-checked access with exit-70 errors; no MIR lowering, mutation, borrowed/dynamic arrays, derives or foreign aggregate ABI; [contract](data-model.md) |
 | Nonrecursive nominal records/enums | Executable bounded C11 profile | Invariant parameters (including phantoms), inferred arguments, generic specialization/forall, constructor catalogs, exhaustive structural matching and imported type identity; independently reconstructed layouts; [manual](nominal-adts.md) |
 | Recursive/owning ADTs, functors | Not implemented | Boxing, resource-bearing fields, ownership/drop analysis, recursive layouts and signatures/functors remain absent |
-| Cooperative fiber / channel G4 slice | Executable bounded C11 profile | `taskgroup`, eager `launch`/`join`, consuming cooperative internal `cancel`, 1:1 i64 uni channels with bounded FIFO/rendezvous, checked outcomes and atomic mixed i64/u8 `poll` with monotonic `after`; POSIX `xfiber` direct exec/join/cancel; compiler-parsed backtick argv and affine bounded `u8` streams; MuLIB kernels through one implementation TU; no Plaid integration, full shell operators/expansion, taskgroup `within`, async or native workers; [contract](concurrency.md), [cancellation/deadlines](cancellation-deadlines.md) |
+| Cooperative fiber / channel G4 slice | Executable bounded C11 profile | `taskgroup`/`within` (terminal timeout), eager `launch`/`join`, consuming cooperative internal `cancel`, 1:1 i64 uni channels with bounded FIFO/rendezvous, checked outcomes and atomic mixed i64/u8 `poll` with monotonic `after`; POSIX `xfiber` direct exec/join/cancel; compiler-parsed backtick argv and affine bounded `u8` streams; MuLIB kernels through one implementation TU; no Plaid integration, full shell operators/expansion, typed timeout recovery, async or native workers; [contract](concurrency.md), [cancellation/deadlines](cancellation-deadlines.md) |
 | Plaid/Prolific integration | Not implemented | The cooperative G4 adapter uses MuLIB, not Plaid; profiling and broader concurrency remain open |
 
 ## Immediate next iterations

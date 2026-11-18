@@ -1,5 +1,6 @@
 #include <on1x/infer.hpp>
 #include <on1x/clone.hpp>
+#include <on1x/kernel.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/staging.hpp>
 #include <on1x/numeric.hpp>
@@ -29,7 +30,7 @@ bool holes_in(const std::vector<Stmt>& body) {
 }
 bool holes_in(const Expr& expression) {
   if(expression.kind==Expr::Kind::Propagate||expression.kind==Expr::Kind::SourceCsp)return true;
-  if((expression.kind>=Expr::Kind::Record&&expression.kind<=Expr::Kind::Length)||expression.kind==Expr::Kind::PatternMatch||expression.kind==Expr::Kind::Loop)return true;
+   if((expression.kind>=Expr::Kind::Record&&expression.kind<=Expr::Kind::Length)||expression.kind==Expr::Kind::PatternMatch||expression.kind==Expr::Kind::Loop||expression.kind==Expr::Kind::UnsafeBlock)return true;
  if(expression.kind==Expr::Kind::Lambda){
    if(has_type_holes(expression.result)||expression.result.has_foralls()||holes_in(expression.body))return true;
    for(const auto& parameter:expression.parameters)if(has_type_holes(parameter.type)||parameter.type.has_foralls())return true;
@@ -872,7 +873,13 @@ class Inference {
   case Expr::Kind::Boolean:result=scalar(Type::Bool,at);break;
   case Expr::Kind::String:result=scalar(Type::String,at);break;
    case Expr::Kind::Variable:return name(e);
-    case Expr::Kind::Unit:result=scalar(Type::Void,at);break;
+     case Expr::Kind::Unit:result=scalar(Type::Void,at);break;
+     case Expr::Kind::UnsafeBlock:
+      if(e.children.size()!=1||!e.children[0])fail(at,"malformed unsafe expression");
+      scopes.emplace_back();block(e.body,false);
+      result=expression(*e.children[0]);scopes.pop_back();
+      if(patterns::terminates(*e.children[0]))result=scalar(Type::Void,at);
+      break;
     case Expr::Kind::Loop:{
      result=fresh(at);loop_values.push_back({e.control_target,result});block(e.body);
      auto exits=loop_values.back();loop_values.pop_back();if(exits.bare||!exits.valued)result=scalar(Type::Void,at);break;
@@ -990,10 +997,13 @@ class Inference {
     if(kind!=Type::Hole&&kind!=Type::Function)
      fail(callee.where,"cannot call value of type "+describe(callable,at));
    }
-    std::vector<Term> args;
-    auto target=intrinsic?Term{0}:head(callable,at);
-    for(std::size_t i=0;i<e.children.size();++i){
-     if(!intrinsic&&nodes[target].kind==Type::Function&&i<nodes[target].parameters.size())
+     std::vector<Term> args;
+     auto target=intrinsic?Term{0}:head(callable,at);
+     const auto kernel=callee.kind==Expr::Kind::Variable&&callee.text.starts_with(kernel_reviewed_prefix)?
+       std::string_view(callee.text).substr(kernel_reviewed_prefix.size()):std::string_view{};
+     for(std::size_t i=0;i<e.children.size();++i){
+      if(kernel_span_argument(kernel,i))args.push_back(expression(*e.children[i]));
+      else if(!intrinsic&&nodes[target].kind==Type::Function&&i<nodes[target].parameters.size())
       args.push_back(expected(*e.children[i],nodes[target].parameters[i]));
      else args.push_back(expression(*e.children[i]));
     }
@@ -1003,7 +1013,16 @@ class Inference {
     result=fresh(at);auto shape=function(args,result,at);unify(callable,shape,at);
    } else {
     if(nodes[root].parameters.size()!=args.size())fail(at,"wrong number of arguments to function value");
-    for(std::size_t i=0;i<args.size();++i)unify(args[i],nodes[root].parameters[i],e.children[i]->where);
+     for(std::size_t i=0;i<args.size();++i){
+      const auto& where=e.children[i]->where;
+      if(kernel_span_argument(kernel,i)){
+       auto actual=head(args[i],where);
+       if(nodes[actual].kind!=Type::Slice||nodes[actual].extent>256)
+        fail(where,"KernelBind requires a bounded slice<f64,N>");
+       auto shape=nodes[root].parameters[i];
+       unify(nodes[actual].parameters[0],nodes[shape].parameters[0],where);
+      }else unify(args[i],nodes[root].parameters[i],where);
+     }
     result=nodes[root].result;
    }
    break;
@@ -1017,7 +1036,9 @@ class Inference {
    const auto& at=statement.where;
    tick(at);
      switch(statement.kind) {
-     case Stmt::Kind::TaskGroup:block(statement.body);break;
+     case Stmt::Kind::TaskGroup:
+      if(statement.value)expected(*statement.value,scalar(Type::I64,at));
+      block(statement.body);break;
      case Stmt::Kind::CspScope:fail(at,"private task scope before inference");
     case Stmt::Kind::Defer:expression(*statement.value);break;
     case Stmt::Kind::PushDefer:fail(at,"private defer registration before inference");

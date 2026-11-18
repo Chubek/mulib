@@ -31,19 +31,19 @@ fn basis_list_append(a:sexpr,b:sexpr)->sexpr {
 }
 fn basis_list_take(xs:sexpr,n:i64)->sexpr {
   if n<0 { tool_fail("negative take"); }
-  var rest=xs; var out=sx_nil(); var i=0;
-  while i<n {
+  var rest=xs; var out=sx_nil();
+  for _ in 0..n {
     if sx_kind(rest)!=3 { tool_fail("list take beyond end"); }
-    out=sx_cons(sx_head(rest),out); rest=sx_tail(rest); i=i+1;
+    out=sx_cons(sx_head(rest),out); rest=sx_tail(rest);
   }
   return basis_list_rev(out);
 }
 fn basis_list_drop(xs:sexpr,n:i64)->sexpr {
   if n<0 { tool_fail("negative drop"); }
-  var rest=xs; var i=0;
-  while i<n {
+  var rest=xs;
+  for _ in 0..n {
     if sx_kind(rest)!=3 { tool_fail("list drop beyond end"); }
-    rest=sx_tail(rest); i=i+1;
+    rest=sx_tail(rest);
   }
   return rest;
 }
@@ -83,8 +83,8 @@ fn basis_list_find(xs:sexpr,p:fn(sexpr)->bool)->(bool,sexpr) {
 }
 fn basis_list_tabulate(n:i64,f:fn(i64)->sexpr)->sexpr {
   if n<0 || n>262144 { tool_fail("invalid tabulate length"); }
-  var result=sx_nil(); var i=0;
-  while i<n { result=sx_cons(f(i),result); i=i+1; }
+  var result=sx_nil();
+  for i in 0..n { result=sx_cons(f(i),result); }
   return basis_list_rev(result);
 }
 fn basis_list_app(xs:sexpr,f:fn(sexpr)->void) {

@@ -22,6 +22,7 @@
     "CspType":{"category":"Type","fields":[["kind","Bytes"],["payload","Type"]]},
     "SourceCsp":{"category":"Expression","fields":[["operation","Bytes"],["payload","Type"],["operands","Expression*"],["location","Location"]]},
     "TaskGroup":{"category":"Statement","fields":[["body","Block"],["location","Location"]]},
+    "TaskGroupWithin":{"category":"Statement","fields":[["duration","Expression"],["body","Block"],["location","Location"]]},
     "Defer":{"category":"Statement","fields":[["call","Expression"],["location","Location"]]},
     "Propagate":{"category":"Expression","fields":[["value","Expression"],["location","Location"]]},
     "Unit": {"category":"Unit", "fields":[["version","Version"],["functions","Declaration*"]]},

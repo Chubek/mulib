@@ -79,6 +79,7 @@ valid_cases = [
     b'0..10 0..=10 0...10 ... ..= .. ....= 1.0..2.0 1u64..=2u64',
     b'outer:for(var i=0;i<3;i=i+1){loop{continue outer;}} for x in -2..=2{break;}',
     b'match let x=f() with { (1|2) as n if n>0 => n, rest => 0 }; :: :::: ||| | record{x:_,..}',
+    b'fn main(){taskgroup within 25ms{taskgroup within duration() s{poll{after 0ms=>1};}}}',
     b'1f32 1.5f32 1.5e-12f32 1e3f64 1u128 1.5u8 1f16 0x1.0f32 1u8x 1f32x 1u16f32',
     b'"' + b'x' * 65536 + b'"',
     b'#' + b'x' * (2 * 1024 * 1024 - 1),

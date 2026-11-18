@@ -60,11 +60,14 @@ class Lower {
     e.control_target=++serial;loops.push_back({e.text,e.context,e.control_target,true});body(e.body,depth+1);loops.pop_back();return;
    }
   if(e.kind==E::PatternMatch){expression(*e.children.at(0),depth+1);names.emplace_back();if(!e.text.empty())names.back().insert(e.text);for(std::size_t i=1;i<e.children.size();++i)expression(*e.children[i],depth+1);names.pop_back();return;}
-  if(e.kind==E::Case){names.emplace_back();for(const auto& p:e.patterns)pattern(p);expression(*e.children.at(0),depth+1);names.emplace_back();body(e.body,depth+1,false);expression(*e.children.at(1),depth+1);names.pop_back();names.pop_back();return;}
+   if(e.kind==E::Case){names.emplace_back();for(const auto& p:e.patterns)pattern(p);expression(*e.children.at(0),depth+1);names.emplace_back();body(e.body,depth+1,false);expression(*e.children.at(1),depth+1);names.pop_back();names.pop_back();return;}
+   if(e.kind==E::UnsafeBlock||e.kind==E::Region){
+    if(e.children.size()!=1||!e.children[0])fail(e.where,"value block requires one tail expression");
+    names.emplace_back();body(e.body,depth+1,false);expression(*e.children[0],depth+1);names.pop_back();return;
+   }
   if(e.callee)expression(*e.callee,depth+1);
   for(auto& c:e.children){if(!c)fail(e.where,"missing expression child");expression(*c,depth+1);}
   if(e.kind==E::Lambda){auto outer=std::move(loops);loops.clear();names.emplace_back();parameters(e.parameters);body(e.body,depth+1);names.pop_back();loops=std::move(outer);}
-  else if(e.kind==E::Region)body(e.body,depth+1);
   else if(!e.body.empty())fail(e.where,"unlowered expression body");
  }
  void body(std::vector<Stmt>& statements,std::size_t depth,bool scope=true){
@@ -114,7 +117,7 @@ class Verify {
   if(e.callee)expression(*e.callee,depth+1);
   for(const auto& c:e.children){if(!c)fail(e.where,"missing expression child");expression(*c,depth+1);}
    if(e.kind==E::Lambda){auto saved=std::move(targets);auto saved_regions=std::move(regions),saved_values=std::move(value_targets);targets.clear();regions.clear();value_targets.clear();body(e.body,depth+1);targets=std::move(saved);regions=std::move(saved_regions);value_targets=std::move(saved_values);}
-  else if(e.kind==E::Case||e.kind==E::Region)body(e.body,depth+1);
+   else if(e.kind==E::Case||e.kind==E::Region||e.kind==E::UnsafeBlock)body(e.body,depth+1);
   else if(!e.body.empty())fail(e.where,"noncanonical expression body");
  }
  void body(const std::vector<Stmt>& statements,std::size_t depth){for(const auto& s:statements){

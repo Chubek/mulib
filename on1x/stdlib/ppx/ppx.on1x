@@ -17,11 +17,10 @@ fn ppx_find_text(node: sexpr, text: string, depth: i64, work: i64) -> (bool, i64
 }
 fn ppx_fresh(tree: sexpr, start: i64) -> (string, i64) {
   var serial = start; var work = 0;
-  while true {
+  return loop {
     serial = serial + 1; let name = text_concat("on1x_ppx_", sexpr_nat(serial)); let (found, used) = ppx_find_text(tree, name, 0, work); work = used;
-    if !found { return (name, serial); }
-  }
-  return ("", serial);
+    if !found { break with (name, serial); }
+  };
 }
 fn ppx_schema_env() -> sexpr {
   let path = tool_env("ON1X_PPX_SCHEMA");

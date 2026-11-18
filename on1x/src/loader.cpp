@@ -1,4 +1,5 @@
 #include <on1x/loader.hpp>
+#include <on1x/kernel.hpp>
 #include <on1x/discovery.hpp>
 #include <algorithm>
 #include <cstdlib>
@@ -56,9 +57,15 @@ class Loader {
   bool unsafe_context=false;
   std::size_t kernel_requests=0;
   std::map<std::string,Function> kernel_calls;
-  static constexpr const char* kernel_symbols[]={"mulib_clamp_add_i64","mulib_clamp_sub_i64"};
+  static constexpr const char* kernel_symbols[]={"mulib_clamp_add_i64","mulib_clamp_sub_i64",
+    "mulib_histprice_ema","mulib_histprice_holt","mulib_priceopt_optimize","mulib_priceopt_candidates"};
   static bool kernel_name(std::string_view name){
    return std::find(std::begin(kernel_symbols),std::end(kernel_symbols),name)!=std::end(kernel_symbols);
+  }
+  std::string kernel_type_prefix(bool history)const{return prefix+(history?"kernel_history_":"kernel_pricing_");}
+  Type kernel_result(bool history)const {
+   auto p=kernel_type_prefix(history);
+   return Type::named(p+"Result",{Type::named(p+(history?"Forecast":"Decision")),Type::named(p+"Error")});
   }
   bool kernel_reference(Expr& e,const Scope& values,bool direct){
    if(!kernel_scope||e.kind!=Expr::Kind::Variable)return false;
@@ -68,15 +75,21 @@ class Loader {
    if(found==kernel_scope->kernels.end()||values.contains(alias))return false;
    if(dot==std::string::npos||!direct)
     throw Error(e.where,"ON1X-KERNEL-DIRECT: kernel exports must be called directly","ON1X-KERNEL-DIRECT");
-   const auto symbol="mulib_clamp_"+e.text.substr(dot+1);
+   const bool history=found->second.module=="mulib.histprice";
+   const bool pricing=found->second.module=="mulib.priceopt";
+   const auto symbol=(history?"mulib_histprice_":pricing?"mulib_priceopt_":"mulib_clamp_")+e.text.substr(dot+1);
    if(!kernel_name(symbol))
     throw Error(e.where,"ON1X-KERNEL-MEMBER: no ABI-verified export "+e.text,"ON1X-KERNEL-MEMBER");
-   if(!unsafe_context)
-    throw Error(e.where,"ON1X-KERNEL-CONTEXT: "+e.text+" requires unsafe { ... }","ON1X-KERNEL-CONTEXT");
-   auto name="@kernel_"+symbol;
-   if(!kernel_calls.contains(name)){
-    Function f;f.name=name;f.where=e.where;f.result=Type::I64;f.external=true;f.unsafe_kernel_symbol=symbol;
-    for(const char* p:{"a","b"}){Param param;param.name=p;param.type=Type::I64;param.where=e.where;f.params.push_back(std::move(param));}
+    const bool unsafe=found->second.is_unsafe;
+    if(unsafe&&!unsafe_context)
+     throw Error(e.where,"ON1X-KERNEL-CONTEXT: "+e.text+" requires unsafe { ... }","ON1X-KERNEL-CONTEXT");
+    auto name=(unsafe?"@kernel_":"@kernel_scalar_")+symbol;
+    if(!kernel_calls.contains(name)){
+    Function f;f.name=name;f.where=e.where;f.result=history||pricing?kernel_result(history):Type{Type::I64};f.external=true;
+    f.kernel_symbol=symbol;f.kernel_link_only=!unsafe;
+    auto params=history?history_kernel_parameters(symbol):pricing?pricing_kernel_parameters(symbol,kernel_type_prefix(false)):
+      std::vector<Type>{Type::I64,Type::I64};
+    for(std::size_t i=0;i<params.size();++i){Param param;param.name="arg"+std::to_string(i);param.type=params[i];param.where=e.where;f.params.push_back(std::move(param));}
     kernel_calls.emplace(name,std::move(f));
    }
    e.text=std::move(name);
@@ -194,7 +207,9 @@ class Loader {
       if(!m->unit.ppx.empty()||!m->unit.macros.empty()||!m->unit.extensions.empty()||!m->unit.features.empty())
        throw Error(at,"ON1X-KERNEL-PROFILE: this C11 profile does not execute source macros, PPX or extensions","ON1X-KERNEL-PROFILE");
       for(const auto& request:m->unit.kernel_imports){
-       if(!request.is_unsafe||request.module!="mulib.clamp"){
+         const bool supported=request.is_unsafe?request.module=="mulib.clamp":
+          options.kernel_stage&&(request.module=="mulib.clamp"||request.module=="mulib.histprice"||request.module=="mulib.priceopt");
+         if(!supported){
         Unit denied;denied.kernel_imports.push_back(request);require_no_kernel_imports(denied);
        }
       }
@@ -307,7 +322,17 @@ class Loader {
   }
   Type type_reference(const Type& t,const Location& at,const Names& names){
    if(t.kind()==Type::Named){
-    auto text=t.nominal();reference(text,at,names,{},false,true);
+     auto text=t.nominal();
+     const auto dot=text.find('.');
+     auto found=kernel_scope?kernel_scope->kernels.find(text.substr(0,dot)):std::map<std::string,KernelImport>::const_iterator{};
+     if(dot!=std::string::npos&&kernel_scope&&found!=kernel_scope->kernels.end()){
+      auto member=text.substr(dot+1);
+      const bool history=found->second.module=="mulib.histprice", pricing=found->second.module=="mulib.priceopt";
+      if(!((history||pricing)&&(member=="Error"||member=="Result"))&&!(history&&member=="Forecast")&&
+         !(pricing&&(member=="DemandKind"||member=="Objective"||member=="DemandModel"||member=="Constraints"||member=="Decision")))
+       throw Error(at,"ON1X-KERNEL-MEMBER: no kernel type "+text,"ON1X-KERNEL-MEMBER");
+      text=kernel_type_prefix(history)+member;
+     }else reference(text,at,names,{},false,true);
     std::vector<Type> args;for(const auto& a:t.arguments())args.push_back(type_reference(a,at,names));
     return Type::named(std::move(text),std::move(args));
    }
@@ -353,8 +378,17 @@ class Loader {
    for(auto& child:e.children)expression(*child,names,values,inner);
    return;
   }
-    if(e.kind==Expr::Kind::Lambda){auto inner=values;parameters(inner,e.parameters);
-     auto saved=unsafe_context;unsafe_context=false;body(e.body,names,inner,syntax);unsafe_context=saved;return;}
+     if(e.kind==Expr::Kind::Lambda){auto inner=values;parameters(inner,e.parameters);
+      auto saved=unsafe_context;unsafe_context=false;body(e.body,names,inner,syntax);unsafe_context=saved;return;}
+    if(e.kind==Expr::Kind::UnsafeBlock){
+     if(!options.kernel_c11)
+      throw Error(e.where,"ON1X-KERNEL-PROFILE: unsafe blocks require KernelBind C11 mode","ON1X-KERNEL-PROFILE");
+     if(e.children.size()!=1||!e.children[0])throw Error(e.where,"malformed unsafe expression");
+     auto saved=unsafe_context;unsafe_context=true;
+     auto inner=body(e.body,names,values,syntax);
+     expression(*e.children[0],names,inner,syntax);
+     unsafe_context=saved;return;
+    }
    if(e.kind==Expr::Kind::PatternMatch){expression(*e.children.at(0),names,values,syntax);auto inner=values;if(!e.text.empty())inner.insert(e.text);for(std::size_t i=1;i<e.children.size();++i)expression(*e.children[i],names,inner,syntax);return;}
    if(e.kind==Expr::Kind::Case){auto inner=values;for(const auto& p:e.patterns)bind(inner,p);expression(*e.children.at(0),names,inner,syntax);body(e.body,names,inner,syntax);
     for(const auto& s:e.body)if(s.kind==Stmt::Kind::Let){if(s.pattern)bind(inner,*s.pattern);else inner.insert(s.name);}
@@ -364,8 +398,7 @@ class Loader {
   for(auto& child:e.children)expression(*child,names,values,syntax);
   body(e.body,names,values,syntax);
  }
- void body(std::vector<Stmt>& statements,const Names& names,const Scope& outer,const Scope& syntax){
-  if(statements.empty())return;
+  Scope body(std::vector<Stmt>& statements,const Names& names,const Scope& outer,const Scope& syntax){
   auto values=outer;
     for(auto& s:statements){
      s.declared=type_reference(s.declared,s.where,names);
@@ -384,10 +417,11 @@ class Loader {
     if(s.kind==Stmt::Kind::Assign)reference(s.name,s.where,names,values,false);
     auto inner=values;if(s.kind==Stmt::Kind::Range)inner.insert(s.name);
      auto saved=unsafe_context;unsafe_context=unsafe_context||s.unsafe_block;
-     body(s.body,names,inner,syntax);unsafe_context=saved;s.unsafe_block=false;
+      body(s.body,names,inner,syntax);unsafe_context=saved;
      body(s.otherwise,names,values,syntax);
+   }
+   return values;
   }
- }
 public:
   explicit Loader(const LoaderOptions& opts,KernelImportRequests* inspect=nullptr)
    :options(opts),standard_roots(standard_library_roots(opts)),inspection(inspect){}
@@ -410,7 +444,9 @@ public:
   LoadedUnit result;std::map<std::string,const Function*> externs;std::set<std::string> lazy;
   // Reserve storage so pointers used for identical raw-extern admission stay valid.
   std::size_t count=0;for(auto* m:order)count+=m->unit.functions.size();
-   const std::size_t generated=options.kernel_c11?std::size(kernel_symbols):0;
+   // In reviewed staging a distinct unsafe and reviewed spelling can refer
+   // to each clamp export. Their call authorities are not interchangeable.
+   const std::size_t generated=options.kernel_c11?std::size(kernel_symbols)+(options.kernel_stage?2:0):0;
    if(count>16384-generated)throw Error({input.string()},"loaded function count limit exceeded");
    result.unit.functions.reserve(count+generated);
    for(auto* m:order){
@@ -463,7 +499,17 @@ public:
     result.unit.source_digests.insert(m->unit.source_digests.begin(),m->unit.source_digests.end());
     if(regular(m->path))result.dependencies.push_back(m->path);
    }
-   for(auto& [name,f]:kernel_calls){(void)name;result.unit.functions.push_back(std::move(f));}
+    bool history_types=false,pricing_types=false;
+    for(const auto* m:order)for(const auto& [alias,request]:m->kernels){
+     (void)alias;
+     if(!history_types&&request.module=="mulib.histprice"){
+      history_types=true;append_kernel_nominals(result.unit,kernel_type_prefix(true),true,request.where);
+     }
+     if(!pricing_types&&request.module=="mulib.priceopt"){
+      pricing_types=true;append_kernel_nominals(result.unit,kernel_type_prefix(false),false,request.where);
+     }
+    }
+    for(auto& [name,f]:kernel_calls){(void)name;result.unit.functions.push_back(std::move(f));}
   // Automatic pervasive bindings are demand-loaded. This preserves the existing
   // annotated-only checking path and keeps unused generic helpers out of PPX/MIR.
   // Explicit imports and --prelude files always retain/check their definitions.

@@ -130,7 +130,7 @@ class Verify {
    case Expr::Kind::Region:{if(e.children.size()!=1)fail(e.where,"invalid value region");scopes.push_back({});bool done=body(e.body,false,depth+1);equal(child(0),result,e.where);scopes.pop_back();if(done!=e.noreturn)fail(e.where,"incorrect value-region control");break;}
    case Expr::Kind::Project:{arity(1);auto t=e.children[0]->type;if(!t.is_tuple()||e.projection>=t.elements().size())fail(e.where,"invalid tuple projection");(void)child(0);equal(result,t.elements()[e.projection],e.where);break;}
    case Expr::Kind::TagTest:case Expr::Kind::Payload:fail(e.where,"closed-sum model is outside the structural adapter");
-    case Expr::Kind::PatternMatch:case Expr::Kind::Case:case Expr::Kind::Loop:fail(e.where,"unlowered source value construct");
+     case Expr::Kind::PatternMatch:case Expr::Kind::Case:case Expr::Kind::Loop:case Expr::Kind::UnsafeBlock:fail(e.where,"unlowered source value construct");
     case Expr::Kind::Integer:arity(0);(void)integer_literal_bits(e.text,e.where);equal(result,numeric_literal_type(e.text),e.where);break;
     case Expr::Kind::Float:arity(0);(void)float_literal_bits(e.text,e.where);equal(result,numeric_literal_type(e.text),e.where);break;
   case Expr::Kind::Boolean:arity(0);equal(result,Type::Bool,e.where);break;

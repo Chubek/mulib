@@ -1,6 +1,7 @@
 # Poll captured process bytes and an ordinary i64 channel in one atomic choice.
 fn main() {
-    taskgroup {
+    # A stuck subprocess or pipe should not leave this example waiting forever.
+    taskgroup within 5s {
         let (process, input, output, error) = launch capture `/bin/cat`;
         let channel = ->(1,1){payload:i64,capacity:1,mode:uni};
         let (tx, rx) = split channel;

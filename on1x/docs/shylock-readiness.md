@@ -2,6 +2,13 @@
 
 **SHYLOCK-EXECUTABLE-READY: NO. SHYLOCK-SAFE-FFI-READY: NO.**
 
+Current continuation: [bounded numerical KernelBind](kernel-numerics.md)
+now executes canonical EMA, Holt, optimize, and candidates calls through an
+independently signed review gate. The multi-module pricing example checks
+embedded monetary inputs, selection/holdout, optimization, and direct C
+equivalence. No production review is shipped and §9.5 still lacks admitted
+JSON/file I/O and Shylock parity. The scalar MIR baseline below is historical.
+
 This continuation implements an executable scalar MIR foundation (B1 partial).
 It does not implement a pricing application or change foreign-contract admission.
 The full executable and safe-import gates in `COMPLETION.md` remain open.

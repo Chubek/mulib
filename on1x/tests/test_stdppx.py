@@ -55,8 +55,8 @@ for processor,(text,expected) in cases.items():
     if processor=='trace':assert 'TRACE work' in p.stderr,p.stderr
     if processor=='logging':assert 'INFO: hello' in p.stderr,p.stderr
 
-# Native pipe/compose run as real compiler plugins, not just standalone source checks.
-for processor in ('pipe','compose','control'):
+# Run the native equivalents as real compiler plugins, not just source checks.
+for processor in ('pipe','compose','control','unroll'):
     exe=t.build('native_'+processor,source=t.root/'stdppx/native'/(processor+'.on1x'))
     p=run([t.compiler,'--emit-c',t.work/(processor+'.on1x'),'--ppx',processor,exe],env=env)
     assert p.returncode == 0,p.stderr
@@ -156,4 +156,4 @@ for example,expected in [('transformations','Literal text expansion\n4\n'),('ins
            '--allow-source-ppx','-o',exe,*[f'--cflag={flag}' for flag in t.flags]],env=environment)
     assert p.returncode == 0,(example,p.stderr)
     p=run([exe]);assert p.returncode == 0 and p.stdout == expected,(example,p.stdout,p.stderr)
-print('24 Python PPXs compiled/executed; native control/pipe/compose parity; clock bounds and bounded failures: PASS')
+print('24 Python PPXs compiled/executed; native control/pipe/compose/unroll parity; clock bounds and bounded failures: PASS')

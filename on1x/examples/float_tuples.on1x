@@ -3,8 +3,7 @@ fn advance((x, (step, index)): (f64, (f64, i64))) -> (f64, (f64, i64)) {
 }
 fn main() {
   var state = (0.0, (0.125, 0));
-  var count = 0;
-  while count < 4 { state = advance(state); count = count + 1; }
+  for _ in 0..4 { state = advance(state); }
   let (value, (step, index)) = state;
   println(value); println(step); println(index);
   assert(f64_signbit(-0.0));

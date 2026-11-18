@@ -67,6 +67,7 @@ for name, text, diagnostic in (
     ('missing_semi', 'import kernel mulib.json as J\nfn main(){}', "expected ';'"),
     ('missing_alias', 'import kernel mulib.json as;', 'expected identifier'),
     ('quoted_kernel', 'import kernel "../quote";', 'expected identifier'),
+    ('traversal_safe', 'import kernel ../quote;', 'expected identifier'),
     ('traversal', 'unsafe import kernel ../quote;', 'expected identifier'),
     ('unsafe_relative', 'unsafe import kernel mulib../quote;', "expected ';'"),
     ('duplicate', 'import kernel mulib.json as J; import kernel mulib.json as J;', 'conflicting kernel import alias: J'),
@@ -137,3 +138,40 @@ for name, source, diagnostic in (
     assert p.returncode == 1 and diagnostic in p.stderr and not p.stdout, p
 p = run([t.compiler, '--emit-c', '--kernel-c11', clamp, '--ppx', 'tripwire', processor])
 assert p.returncode != 0 and 'without PPX' in p.stderr, p
+
+# Both forms are contextual; expression tails evaluate inside the block and
+# a closure body must opt in even when construction occurs inside the block.
+expr = t.source('unsafe_expression', '''unsafe import kernel mulib.clamp as C;
+fn answer() -> i64 {
+  return unsafe {
+    let x = 40;
+    C.add_i64(x, unsafe { C.sub_i64(4, 2) })
+  };
+}
+fn main(){
+  var total = 0;
+  let value = unsafe { total = answer(); total };
+  let thunk = unsafe { fn()->i64 { return unsafe { C.add_i64(40,2) }; } };
+  unsafe { println(thunk()); }
+  println(value);
+}
+''')
+assert inspect(expr)['requests'][0]['unsafe']
+p = run([t.compiler, '--no-prelude', '--emit-c', '--kernel-c11', expr])
+assert p.returncode == 0 and 'unsafe_foreign: mulib_clamp_add_i64' in p.stdout, p
+for name, source, diagnostic in (
+    ('outside_arg', 'fn main(){println(C.add_i64(unsafe { 1 }, 2));}', 'ON1X-KERNEL-CONTEXT'),
+    ('following_call', 'fn main(){let x=unsafe { C.add_i64(40,2) }; println(C.add_i64(x,2));}', 'ON1X-KERNEL-CONTEXT'),
+    ('tail_lambda', 'fn main(){let f=unsafe { fn(){println(C.add_i64(1,2));} };}', 'ON1X-KERNEL-CONTEXT'),
+    ('escaping_local', 'fn main(){let r=unsafe { let private=42; private }; println(private);}', 'undefined'),
+    ('void_tail', 'fn main(){let r=unsafe { C.add_i64(40,2); };}', 'cannot bind a void expression'),
+    ('unsafe_value', 'fn main(){let f=unsafe { C.add_i64 };}', 'ON1X-KERNEL-DIRECT'),
+    ('unterminated', 'fn main(){let r=unsafe { 1;', 'unterminated value block'),
+    ('depth', 'fn main(){let r='+('unsafe {'*300)+'42'+('}'*300)+';}', 'limit'),
+):
+    path = t.source('unsafe_expr_'+name, 'unsafe import kernel mulib.clamp as C;\n'+source)
+    p = run([t.compiler, '--no-prelude', '--emit-c', '--kernel-c11', path])
+    assert p.returncode == 1 and diagnostic in p.stderr and not p.stdout, p
+no_import = t.source('unsafe_expr_no_profile', 'fn main(){println(unsafe { 42 });}')
+p = run([t.compiler, '--check', no_import])
+assert p.returncode == 1 and 'ON1X-KERNEL-PROFILE' in p.stderr, p

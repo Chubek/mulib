@@ -17,30 +17,46 @@
 >
 > **Proving application:** `https://github.com/Chubek/shylock`.
 >
-> **Status:** Design and acceptance specification, **not** an assertion that
-> `import kernel`, general safe foreign-resource imports, or the illustrated
-> high-level wrappers exist in the current compiler.
+> **Status:** Partially implemented acceptance specification. Native discovery,
+> unsafe clamp calls, and signed-review clamp and bounded numerical profiles
+> exist. General foreign resources and full Shylock integration do not.
 >
 > **Verified implementation:** [KernelBind discovery](docs/kernel-bind.md)
 > parses native import requests, resolves canonical profiles, and extracts
 > source-pinned CDecl v2 and applicable ExoML sidecars. A separate opt-in
 > C11 profile executes `unsafe import kernel mulib.clamp` for the two
-> saturating `i64` operations. Safe and resource-bearing imports remain
-> unadmitted. PrettyPrint is covered
+> saturating `i64` operations. The [reviewed scalar profile](docs/kernel-review.md)
+> additionally builds safe clamp imports with independent signed authorization;
+> no production approval is shipped. Resource-bearing imports remain unadmitted.
+> The [bounded numerical profiles](docs/kernel-numerics.md) execute native
+> Histprice EMA/Holt and PriceOpt optimize/candidates after the same review gate.
+> PrettyPrint is covered
 > by `make -f prettyprint.mk test-kernel-discovery`; its
 > [stdlib migration](stdlib/prettyprint/README.md#direct-kernel-import-status)
 > is blocked on callable lowering for the renderer's record borrow, enum,
 > null failure, and owned string result, as well as safe admission.
 
-**Implementation update — Packages A/B, discovery only.** The current compiler
-parses distinct contextual kernel requests and reports them with `--kernel-imports`.
-`on1x-build.py --inspect-kernels` explicitly uses the bundled ExoLib recipe and real
-Exotract/ExoML CDecl v2 for six canonical kernels; the existing JSON sidecar
-remains unreviewed and the other profiles have no semantic sidecar.
-Both safe and unsafe kernel imports reject compilation, including through an
-ordinary dependency. No fake or raw binding is synthesized. See
-[the implemented profile](docs/kernel-bind.md) and [measured evidence](VERIFICATION.md).
-The Package C scalar runnable milestone and §9.5 Shylock gate are unmet.
+**Implementation update — Packages A/B, C and part of D.** Native contextual
+requests, source-pinned discovery, typed numerical namespaces, strict C11 adapters,
+one-TU linkage, independent signed-review validation and atomic admission bundles
+are implemented. `tests/test_kernel_review_sdk.py` executes real safe-import
+programs under an ephemeral **test** authority, including dependency imports.
+`tests/test_kernel_history_sdk.py` additionally tests the numerical fixture,
+including immutable snapshots, enum/record mapping, and one archive for several
+kernels. These tests do not supply independent production reviews. Exact commands, trust
+policy, supported symbols and limitations: [reviewed scalar profile](docs/kernel-review.md),
+[discovery/unsafe profile](docs/kernel-bind.md), [measured evidence](VERIFICATION.md).
+
+| Package | Implemented scope | Remaining release gate |
+|---|---|---|
+| A/B | Native syntax, bounded discovery, canonical ExoLib/CDecl, source pinning, namespaces | Additional profiles and targets |
+| C | Unsafe clamp and signed-review scalar build mechanism, execution/negative tests | Independently issued production review; general scalar exports and independent checker integration |
+| D | Bounded f64 snapshot spans, record/enum/output/error lowering for four Histprice/PriceOpt functions; multi-module pricing fixture | Statsprice, Money, demand/ensemble, dynamic buffers, independently issued reviews and full §9.5 |
+| E | No admitted resource imports | Affine foreign owners, borrows, cleanup and KVDB failure tests |
+| F | No admitted callback/transport imports | Callback lifetimes, capabilities and scheduler integration |
+| G | Local atomic reviewed bundles (including multi-kernel) and inspection | Reusable locked imports, installed/relocated review policy and migration parity |
+
+The complete document and §9.5 Shylock gate are **not complete**.
 
 ## 0. Objective and non-negotiable invariants
 
@@ -184,6 +200,11 @@ rules already handle the identifiers and punctuation needed; update both
 Aurocks-generated and fallback scanner paths only if the chosen grammar
 actually requires it. Retain source offsets, module-local feature activation,
 macro hygiene and diagnostics. Do not parse these imports through a PPX.
+
+The C11 profile supports both statement blocks and value-producing expressions.
+For example, `let n = unsafe { Clamp.add_i64(40, 2) };` yields the tail expression
+without transferring unsafe permission to its caller or to nested lambda bodies.
+See [lexical unsafe scope](docs/kernel-bind.md).
 
 ### 2.2 Name resolution
 
@@ -628,6 +649,11 @@ implementation under On1x.
   generated/fallback compiler profiles do not regress.
 
 ### 9.5 Shylock proof of usability
+
+**Release gate: NOT YET ADMITTED.** The multi-module
+`examples/kernel/pricing/main.on1x` runs the numerical slice and a direct C
+differential test. It does not load or publish JSON through an admitted API,
+or verify Shylock equivalence. The numerical test does not satisfy this gate.
 
 Create a *real* multi-module On1x fixture application (initially in
 `on1x/examples/` or `on1x/tests/`) that imports selected MuLIB pricing kernels

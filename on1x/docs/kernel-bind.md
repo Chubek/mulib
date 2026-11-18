@@ -1,4 +1,4 @@
-# KernelBind: discovery and an unsafe scalar C11 profile
+# KernelBind: discovery and scalar C11 profiles
 
 On1x recognizes `import kernel mulib.histprice as History;` and
 `unsafe import kernel mulib.json;` as native, distinct import requests. `as` is
@@ -8,14 +8,23 @@ still an ordinary source import.
 
 Ordinary builds still reject imports during loading with
 `ON1X-KERNEL-NOT-ADMITTED` or `ON1X-KERNEL-UNSAFE-UNSUPPORTED`, including
-imports in dependencies. The only callable profile is explicitly unsafe:
+imports in dependencies. Two opt-in callable profiles exist: the original
+explicitly unsafe profile below and review-gated [scalar](kernel-review.md) and
+[numerical](kernel-numerics.md) profiles.
+Reviewed builds require an operator-selected independent Ed25519 review authority;
+the repository ships no production approval.
 
 ```on1x
 unsafe import kernel mulib.clamp as Clamp;
 
 fn main() {
+    let answer = unsafe {
+        let base = 40;
+        Clamp.add_i64(base, 2)
+    };
+    println(answer);
     unsafe {
-        println(Clamp.add_i64(40, 2));
+        println(Clamp.sub_i64(answer, 2));
     }
 }
 ```
@@ -34,10 +43,26 @@ build/kernelbind-gcc/clamp
 Use fresh output paths. `add_i64` and `sub_i64` have the exact typed shape
 `(i64, i64) -> i64`; `mulib_clamp_i64` is not exported by this profile.
 Aliases are local to the importing source file. Calls are direct only
-and require a lexical `unsafe { ... }` statement block. A lambda does not
-inherit a surrounding block's permission. Value-producing `unsafe` expressions,
-deferred calls, raw externs, macros, PPX, staging, task groups, MIR and independent checker
-modes are outside this profile.
+and require a lexical `unsafe { ... }` block. In expression position, an
+tail expression without a semicolon supplies the block's value; a tail followed by
+`;` is a statement, and a block without a tail evaluates to `void`. Local
+bindings are visible to the tail but not outside the block. Statements and
+the tail run in order. `return` still returns from the enclosing function;
+loop exits still target their enclosing lexical loop. No owner, borrow, or
+concurrency handle can be yielded across this boundary.
+
+An unsafe block does not grant permission to its enclosing expression (for
+example, an unsafe argument does not authorize the outer call). A lambda does
+not inherit permission from where it was created; give its body a separate
+unsafe block if needed. The loader and checked HIR enforce these boundaries;
+unsafe markers are not PPX wire data. Deferred calls, raw externs, macros, PPX,
+staging, task groups, MIR and independent checker modes remain outside this
+profile. An unsupported ABI stays unsupported in both block forms.
+
+A reviewed program may use both import spellings under distinct aliases.
+The unsafe alias still needs its own unsafe scope, even if the same kernel
+also has a reviewed alias. Both aliases use the same implementation TU; the
+reviewed bundle lists unsafe exports separately.
 
 The build helper re-runs pinned ExoLib/Exotract declaration extraction, checks
 the CDecl source, linkage, calling convention, arity, and signed 64-bit scalar
@@ -89,8 +114,10 @@ profiles are `mulib.histprice`, `mulib.statsprice`, `mulib.priceopt`,
 `mulib.money`, `mulib.json`, `mulib.prettysexpr`, `mulib.ini`,
 `mulib.cryptohash`, `mulib.socket`, `mulib.channel` and `mulib.clamp`. JSON attaches the
 existing unreviewed ExoML v2 sidecar; PrettySexpr attaches its separate
-unreviewed ExoML v2 sidecar. Both run ExoML validation. The other
-profiles do not attach a sidecar. PrettySexpr requires the canonical
+unreviewed ExoML v2 sidecar. A safe clamp request attaches the new unreviewed
+clamp sidecar. Review candidate and reviewed builds also attach the respective
+unreviewed Histprice or PriceOpt sidecars. The other profiles and unsafe
+clamp requests do not attach a sidecar. PrettySexpr requires the canonical
 `mulib_pretty_parse_expr` and `mulib_pretty_render_expr` declarations. The
 legacy PrettyPrint companion sidecar does not describe these declarations
 and is not used. Repeated logical requests with distinct aliases share the
@@ -123,12 +150,11 @@ representability.
 
 ## What would unlock safe and resource-bearing imports
 
-The next gate is independently accountable review/authorization for an exact
-canonical MuLIB scalar surface, linked to its CDecl, headers and target. A
+The [reviewed scalar](kernel-review.md) and [numerical](kernel-numerics.md)
+builds implement independent signed authorization tied to CDecl, headers,
+contracts, tools and target. Production use still needs independently issued
+review: shipped sidecars are annotated, not approved. A
 sidecar `review_status` string or the legacy `admitted-extern` mechanism does not
-authorize a safe KernelBind import. The exact-scalar unsafe path is not
-evidence for resource, concurrency, or error-bearing shapes. The existing archive
-pipeline can execute the independently tested C Holt oracle; it does not
-turn `History.holt(...)` into On1x. The Holt interface includes `const double *`,
-`size_t`, and a forecast-record out-parameter; these, money records,
-owned handles, callbacks, and the Shylock-style workflow remain unadmitted.
+authorize a safe KernelBind import. The numerical path handles bounded
+immutable slices and specific record/enum/status shapes only. Money, owned
+handles, callbacks, and the full Shylock workflow remain unadmitted.

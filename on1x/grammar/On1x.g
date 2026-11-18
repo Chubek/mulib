@@ -48,9 +48,10 @@ static on1x_token_t on1x_lexeme(char *text, GLRParser start) {
  *   propagation := postfix_expression '?'     (nominal typed Result return)
  * Loop/match words are contextual. '::' is recognized so owning-list patterns
  * can diagnose their unsupported profile; array tails are never invented.
- * Intrinsic cooperative profile: taskgroup block, launch block, join/split/
+ * Intrinsic cooperative profile: taskgroup ['within' expression ['ms'|'s']] block,
+ * launch block, join/split/
  * close prefix, <-receive and <-send, ->(1,1){payload,capacity,mode:uni},
- * and contextual poll {recv/send/closed/default => arm}.
+ * and contextual poll {recv/send/closed/after/default => arm}.
  * POSIX bounded profile: launch exec("/absolute/path", "literal-arg", ...)
  * or launch [capture] `absolute argv words`; capture binds process/stdin/
  * stdout/stderr capabilities. The parser, not a host shell, decodes words.

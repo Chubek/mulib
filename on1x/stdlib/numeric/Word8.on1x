@@ -42,12 +42,14 @@ fn basis_word8_not(a: i64) -> i64 {
 fn basis_word8_shift_left(a: i64,n: i64) -> i64 {
   if !basis_word8_check(a) || n < 0 { tool_fail("word8 shift invalid"); }
   if n >= 8 { return 0; }
-  var x = a; var i = 0;
-  while i < n { x=(x*2)%256; i=i+1; } return x;
+  var x = a;
+  for _ in 0..n { x=(x*2)%256; }
+  return x;
 }
 fn basis_word8_shift_right(a: i64,n: i64) -> i64 {
   if !basis_word8_check(a) || n < 0 { tool_fail("word8 shift invalid"); }
   if n >= 8 { return 0; }
-  var x=a; var i=0;
-  while i<n { x=x/2; i=i+1; } return x;
+  var x=a;
+  for _ in 0..n { x=x/2; }
+  return x;
 }

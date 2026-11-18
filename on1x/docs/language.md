@@ -461,7 +461,9 @@ profile described above. `break`, `continue` and `for` remain unsupported.
 ## Bounded cooperative processes and byte streams
 
 The Linux/glibc C11 profile admits structured `taskgroup` scopes, cooperative
-internal fibers, i64 channels/`poll`, and external process capabilities. A
+internal fibers, i64 channels/`poll`, and external process capabilities.
+`taskgroup within duration { ... }` adds a monotonic deadline, with terminal
+expiry after cooperative cleanup; see the [deadline contract](cancellation-deadlines.md#taskgroup-within). A
 single- or triple-backtick command literal after `launch` is parsed by the
 compiler into one absolute-path argv command; it is never passed to a host
 shell. With `launch capture`, an immutable four-name pattern receives
@@ -471,8 +473,8 @@ reader fibers. Stdin send/close and stdout/stderr receive have checked
 channel outcomes; stream bytes are not text-decoded.
 
 This grammar is deliberately smaller than a shell: expansion, assignments,
-command lists, pipelines and redirection reject, as do byte-stream `poll` and
-general user-created byte channels. Exact limits, close/backpressure behavior,
+command lists, pipelines and redirection reject, as do general user-created
+byte channels. `poll` can select captured byte streams. Exact limits, close/backpressure behavior,
 cancellation and examples are in the [concurrency contract](concurrency.md).
 
 ## Explicitly absent language facilities

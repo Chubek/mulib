@@ -59,8 +59,9 @@ struct Expr {
   enum class Kind { Integer, Float, Boolean, String, Variable, Unary, Binary, Call, Lambda, Tuple, PolyPack, PolyProjection,
                     MacroCall, SyntaxHole, SyntaxBlock, Extension, SyntaxList, SyntaxVector, SyntaxKeyword,
                      Quote, Splice, Lift, Run, SyntaxLet, Record, Variant, Match, Array, Field, Index, Slice, Length,
-                       PatternMatch, Case, Unit, Region, TagTest, Payload, Project, Loop, Propagate, SourceCsp, Csp } kind;
- enum class Reference { Unresolved, Local, Function, Extern, Intrinsic, UnsafeForeign } reference = Reference::Unresolved;
+                       PatternMatch, Case, Unit, Region, TagTest, Payload, Project, Loop, Propagate, SourceCsp, Csp, UnsafeBlock } kind;
+ enum class Reference { Unresolved, Local, Function, Extern, Intrinsic, UnsafeForeign, ScalarForeign } reference = Reference::Unresolved;
+ bool unsafe_region = false; // Canonical region lowered from a lexical unsafe expression.
  Location where;
  std::string text;
   std::vector<std::string> labels;
@@ -95,7 +96,7 @@ struct Stmt {
   std::size_t label_context=0;
   std::size_t control_target=0; // Recomputed after PPX; never accepted as proof.
   bool inclusive=false; // Source Range only; value holds the two bound expressions.
-  bool unsafe_block=false; // Source-only annotation on a lexical Block.
+   bool unsafe_block=false; // Lexical Block authority; retained through verification, never PPX data.
  std::optional<Pattern> pattern; // Local tuple destructuring only; names use name.
  Type declared = Type::Invalid;
  bool mutable_binding = false;
@@ -111,7 +112,8 @@ struct Function {
  Type result = Type::Void;
  bool external = false;
  // Internal typed foreign declaration. An ordinary source extern has no symbol here.
- std::string unsafe_kernel_symbol;
+ std::string kernel_symbol;
+ bool kernel_link_only=false; // Scalar call to an adapter supplied only after build-driver admission.
  bool prototype = false; // Checked generalized declaration, not emitted.
  std::vector<Stmt> body;
   std::vector<ExprPtr> attributes;

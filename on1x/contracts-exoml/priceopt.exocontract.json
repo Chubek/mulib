@@ -1,0 +1,54 @@
+{
+  "schema_version": 2,
+  "library": "priceopt",
+  "headers": ["mulib-priceopt.h"],
+  "state": "annotated",
+  "bundle_provenance": {
+    "header": "mulib-priceopt.h",
+    "revision": "sha256:29e4759e09e4c6378f1d7affde01a7e20a4915e4e007dcf36a88c29fb16a757f",
+    "author": "On1x KernelBind contributors",
+    "review_status": "unreviewed",
+    "evidence_method": "Source annotation; no independent production approval."
+  },
+  "functions": [
+    {
+      "c_name": "mulib_priceopt_optimize",
+      "return": {"kind": "value", "nullable": false},
+      "parameters": [
+        {"index": 0, "name": "model", "ownership": "borrowed_immutable", "nullable": false, "alignment": 8,
+         "lifetime": {"origin": "explicit_region", "region_name": "call"}},
+        {"index": 1, "name": "constraints", "ownership": "borrowed_immutable", "nullable": false, "alignment": 8,
+         "lifetime": {"origin": "explicit_region", "region_name": "call"}},
+        {"index": 2, "name": "objective", "ownership": "scalar", "nullable": false},
+        {"index": 3, "name": "out", "ownership": "out", "nullable": false, "alignment": 8,
+         "lifetime": {"origin": "explicit_region", "region_name": "call"}}
+      ],
+      "errors": {"kind": "boolean_return", "out_valid_on_failure": false, "cleanup_required_on_failure": false},
+      "effects": {"effects": ["read", "write"], "unknown": false},
+      "concurrency": {"thread_safety": "thread_safe", "blocking_behavior": "nonblocking", "suspension_safe": true},
+      "provenance": {"header": "mulib-priceopt.h", "author": "On1x KernelBind contributors", "review_status": "unreviewed",
+                     "evidence_method": "Synchronous bounded search, no pointer retention or allocation. Success writes the complete decision; rejection does not publish output."}
+    },
+    {
+      "c_name": "mulib_priceopt_candidates",
+      "return": {"kind": "value", "nullable": false},
+      "parameters": [
+        {"index": 0, "name": "prices", "ownership": "borrowed_immutable", "nullable": false, "length_parameter": 2, "alignment": 8,
+         "lifetime": {"origin": "explicit_region", "region_name": "call"}},
+        {"index": 1, "name": "predicted_units", "ownership": "borrowed_immutable", "nullable": false, "length_parameter": 2, "alignment": 8,
+         "lifetime": {"origin": "explicit_region", "region_name": "call"}},
+        {"index": 2, "name": "n", "ownership": "scalar", "nullable": false},
+        {"index": 3, "name": "constraints", "ownership": "borrowed_immutable", "nullable": false, "alignment": 8,
+         "lifetime": {"origin": "explicit_region", "region_name": "call"}},
+        {"index": 4, "name": "objective", "ownership": "scalar", "nullable": false},
+        {"index": 5, "name": "out", "ownership": "out", "nullable": false, "alignment": 8,
+         "lifetime": {"origin": "explicit_region", "region_name": "call"}}
+      ],
+      "errors": {"kind": "boolean_return", "out_valid_on_failure": false, "cleanup_required_on_failure": false},
+      "effects": {"effects": ["read", "write"], "unknown": false},
+      "concurrency": {"thread_safety": "thread_safe", "blocking_behavior": "nonblocking", "suspension_safe": true},
+      "provenance": {"header": "mulib-priceopt.h", "author": "On1x KernelBind contributors", "review_status": "unreviewed",
+                     "evidence_method": "Read exactly n entries from each array without retaining references. Success writes the complete decision; rejection does not publish output."}
+    }
+  ]
+}

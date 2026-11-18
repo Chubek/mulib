@@ -58,17 +58,15 @@ fn ppx_json_quoted(text: string, start: i64) -> (string, i64) {
         } else { if code >= 56320 && code <= 57343 { tool_fail("schema JSON: unpaired low surrogate"); } }
         ppx_json_utf8(out, code);
       } else {
-        if c == 110 { c = 10; } else {
-          if c == 114 { c = 13; } else {
-            if c == 116 { c = 9; } else {
-              if c == 98 { c = 8; } else {
-                if c == 102 { c = 12; } else {
-                  if c != 34 && c != 92 && c != 47 { tool_fail("schema JSON: invalid escape"); }
-                }
-              }
-            }
-          }
-        }
+        match c with {
+          110 => { c = 10; },
+          114 => { c = 13; },
+          116 => { c = 9; },
+          98 => { c = 8; },
+          102 => { c = 12; },
+          34 | 92 | 47 => {},
+          _ => tool_fail("schema JSON: invalid escape")
+        };
         buffer_byte(out, c);
       }
     } else { buffer_byte(out, c); }
@@ -87,7 +85,7 @@ fn ppx_json_read(text: string, start: i64, depth: i64, count: i64, work: i64) ->
       var kind = "array"; if c == 123 { kind = "object"; }
       return (sx_cons(sx_symbol(kind), sx_cons(sx_nil(), sx_nil())), pos + 1, nodes, ticks);
     }
-    while true {
+    loop {
       var key = "";
       if c == 123 {
         let (name, end) = ppx_json_quoted(text, pos); key = name; pos = sexpr_skip(text, end);

@@ -14,8 +14,8 @@
 #include <time.h>
 #include <unistd.h>
 extern char **environ;
-#if !defined(ON1X_CSP_ABI_VERSION)
-#error "On1x cooperative fibers currently require Linux/glibc x86_64"
+#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 4
+#error "On1x cooperative fibers require Linux/glibc x86_64 and CSP runtime ABI v4"
 #endif
 #ifndef ON1X_CSP_MAX_TASKS
 #define ON1X_CSP_MAX_TASKS 256
@@ -62,14 +62,17 @@ struct on1x_csp_task {
  size_t calls;
   mulib_channel_t *cancel_signal;
   unsigned shield;
-  bool done,joined,waiting,started,cancel_before_start,cancel_requested;
+  bool done,joined,waiting,started,cancel_before_start,cancel_requested,cleanup_work;
 };
 struct on1x_csp_group {
- on1x_csp_group *parent;
- on1x_csp_task *owner,*children;
+  on1x_csp_group *parent;
+  on1x_csp_group *deadline_next;
+  on1x_csp_task *owner,*children;
   on1x_csp_channel *channels;
   on1x_csp_process *processes;
- source_point at;
+  source_point at;
+  uint64_t expires;
+  bool timed;
 };
 struct on1x_csp_channel {
  on1x_csp_channel *next,*sibling;
@@ -90,7 +93,7 @@ struct on1x_csp_process {
   on1x_csp_channel *input,*output,*error;
   uint8_t input_byte,output_byte,error_byte;
   bool input_pending,output_pending,error_pending;
-  bool done,joined,stopping,killed;
+  bool done,joined,stopping,killed,cleanup_work;
 };
 typedef struct on1x_csp_timer {
  struct on1x_csp_timer *next;
@@ -103,7 +106,9 @@ typedef struct {
  on1x_csp_task *tasks;
  on1x_csp_channel *channels;
   on1x_csp_process *processes;
- on1x_csp_timer *timers;
+  on1x_csp_timer *timers;
+  on1x_csp_group *deadlines;
+  source_point expired;
  size_t task_count,channel_count,process_count,process_active,io_active,groups,active,work;
  uint64_t progress;
 } execution;
@@ -111,6 +116,7 @@ static _Thread_local execution *current_execution;
 static void request_cancel(on1x_csp_task *);
 static bool cancel_owned(on1x_csp_task *,source_point);
 static int64_t finish_process(on1x_csp_process *,on1x_csp_task *);
+static bool request_process_stop(on1x_csp_process *,source_point);
 static void reap(on1x_csp_process *);
 static uint64_t monotonic_ms(source_point);
 static _Noreturn void failure(source_point at,const char *what){
@@ -132,9 +138,33 @@ static void tick(source_point at){
  if(!current_execution||current_execution->work++>=ON1X_CSP_MAX_WORK)failure(at,"scheduler work budget exhausted");
  ++current_execution->progress;
 }
+/* Check only live obligations. Explicitly cancelling a task already retires
+ * deadlines in that task and its subtree (even during shielded cleanup). */
+static bool deadline_retired(const on1x_csp_group *g){
+ const on1x_csp_task *t;
+ for(t=g->owner;t;t=t->owner?t->owner->owner:NULL)if(t->cancel_requested)return true;
+ return false;
+}
+static bool observe_deadlines(void){
+ execution *e=current_execution;
+ on1x_csp_group *g,*earliest=NULL;
+ if(e->expired.file)return false;
+ for(g=e->deadlines;g;g=g->deadline_next)
+  if((!earliest||g->expires<=earliest->expires)&&!deadline_retired(g))earliest=g;
+ if(!earliest)return false;
+ if(monotonic_ms(earliest->at)<earliest->expires)return true;
+ /* There is no typed timeout effect in this profile. Latch the first expiry
+  * and stop the entire run, but only report failure after normal stackful
+  * returns have drained cleanup. The list is newest-first; ties prefer older. */
+ e->expired=earliest->at;
+ for(on1x_csp_task *t=e->tasks;t;t=t->next)if(!t->cleanup_work)request_cancel(t);
+ for(on1x_csp_process *p=e->processes;p;p=p->next)if(!p->cleanup_work)(void)request_process_stop(p,p->at);
+ return false;
+}
 bool on1x_csp_cancelled(void){
- source_point at={"<cancellation>",1,1};on1x_csp_task *t=current(at);
- return t->cancel_requested&&!t->shield;
+  source_point at={"<cancellation>",1,1};on1x_csp_task *t=current(at);
+  if(current_execution->deadlines)(void)observe_deadlines();
+  return t->cancel_requested&&!t->shield;
 }
 void on1x_csp_shield_enter(void){
  source_point at={"<cleanup>",1,1};on1x_csp_task *t=current(at);
@@ -191,12 +221,24 @@ on1x_csp_group *on1x_csp_group_enter(const char *file,size_t line,size_t column)
  g=(on1x_csp_group *)ON1X_CSP_CALLOC(1,sizeof(*g));
  if(!g)failure(at,"taskgroup allocation failure");
  g->owner=t;g->parent=t->group;g->at=at;t->group=g;++current_execution->groups;
+  return g;
+}
+on1x_csp_group *on1x_csp_group_enter_within(int64_t delay,const char *file,size_t line,size_t column){
+ source_point at={file,line,column};on1x_csp_task *t=current(at);uint64_t now;on1x_csp_group *g;
+ if(t->shield||t->cleanup_work)failure(at,"taskgroup within is unavailable during shielded cleanup");
+ if(delay<0)failure(at,"negative taskgroup duration");
+ now=monotonic_ms(at);
+ if((uint64_t)delay>UINT64_MAX-now)failure(at,"taskgroup deadline overflow");
+ g=on1x_csp_group_enter(file,line,column);
+ g->timed=true;g->expires=now+(uint64_t)delay;
+ g->deadline_next=current_execution->deadlines;current_execution->deadlines=g;
  return g;
 }
 void on1x_csp_group_finish(on1x_csp_group *g){
  source_point at={"<taskgroup>",1,1};on1x_csp_task *t=current(at),*child;on1x_csp_channel *c;on1x_csp_process *p;
  if(!g||t->group!=g)failure(at,"invalid taskgroup cleanup order");
-  at=g->at;tick(at);
+   at=g->at;tick(at);
+  if(current_execution->deadlines)(void)observe_deadlines();
  if(t->cancel_requested){
   on1x_csp_shield_enter();
   for(child=g->children;child;child=child->sibling)request_cancel(child);
@@ -218,7 +260,13 @@ void on1x_csp_group_finish(on1x_csp_group *g){
   if(mulib_channel_destroy(c->channel)!=MULIB_CHANNEL_OK)failure(at,"channel still borrowed during cleanup");
   c->channel=NULL;
  }
- t->group=g->parent;--current_execution->groups;ON1X_CSP_FREE(g);
+  if(g->timed){
+   on1x_csp_group **link=&current_execution->deadlines;
+   while(*link&&*link!=g)link=&(*link)->deadline_next;
+   if(!*link)failure(at,"lost taskgroup deadline registration");
+   *link=g->deadline_next;
+  }
+  t->group=g->parent;--current_execution->groups;ON1X_CSP_FREE(g);
 }
 static void task_entry(void *arg){
   on1x_csp_task *t=(on1x_csp_task *)arg;
@@ -240,7 +288,8 @@ static on1x_csp_task *spawn(on1x_csp_callback invoke,on1x_env *env,on1x_csp_grou
  if(e->task_count>=ON1X_CSP_MAX_TASKS)failure(at,"total fiber budget exhausted");
   t=(on1x_csp_task *)ON1X_CSP_CALLOC(1,sizeof(*t));if(!t)failure(at,"fiber record allocation failure");
  if(mulib_channel_create(&t->cancel_signal,1,0)!=MULIB_CHANNEL_OK){ON1X_CSP_FREE(t);failure(at,"cancellation signal allocation failure");}
- t->invoke=invoke;t->environment=env;t->owner=owner;t->at=at;on1x_env_retain(env);
+  t->invoke=invoke;t->environment=env;t->owner=owner;t->at=at;on1x_env_retain(env);
+  t->cleanup_work=owner&&(owner->owner->shield||owner->owner->cleanup_work);
  if(mulib_fiber_spawn(e->scheduler,task_entry,t,ON1X_CSP_STACK_BYTES,&t->fiber)!=MULIB_FIBER_OK)failure(at,"fiber stack/context allocation failure");
  t->next=e->tasks;e->tasks=t;++e->task_count;++e->active;
  if(owner){t->sibling=owner->children;owner->children=t;}
@@ -269,8 +318,12 @@ bool on1x_csp_cancel_ready(on1x_csp_task *value,const char *file,size_t line,siz
  return on1x_csp_cancel(value,file,line,column);
 }
 static uint64_t monotonic_ms(source_point at){
- struct timespec now;if(clock_gettime(CLOCK_MONOTONIC,&now)!=0)failure(at,"monotonic clock unavailable");
- return (uint64_t)now.tv_sec*1000u+(uint64_t)now.tv_nsec/1000000u;
+  struct timespec now;uint64_t ms;
+  if(clock_gettime(CLOCK_MONOTONIC,&now)!=0)failure(at,"monotonic clock unavailable");
+  if(now.tv_sec<0||now.tv_nsec<0||now.tv_nsec>=1000000000L)failure(at,"invalid monotonic clock value");
+  ms=(uint64_t)now.tv_nsec/1000000u;
+  if((uint64_t)now.tv_sec>(UINT64_MAX-ms)/1000u)failure(at,"monotonic clock value overflow");
+  return (uint64_t)now.tv_sec*1000u+ms;
 }
 /* Control offers use ordinary MuLIB channels, preserving atomic rendezvous and
  * losing-offer withdrawal without changing the kernel's UTC timeout semantics. */
@@ -351,7 +404,8 @@ on1x_csp_process *on1x_csp_launch_exec(const char *const *argv,size_t count,cons
  if(!rc)rc=posix_spawn(&pid,argv[0],NULL,&attr,(char *const *)argv,environ);
  (void)posix_spawnattr_destroy(&attr);
  if(rc){ON1X_CSP_FREE(p);failure(at,"external posix_spawn failure");}
- p->pid=pid;p->parent=t;p->owner=t->group;p->at=at;
+  p->pid=pid;p->parent=t;p->owner=t->group;p->at=at;
+  p->cleanup_work=t->shield||t->cleanup_work;
  p->next=current_execution->processes;current_execution->processes=p;
  p->sibling=t->group->processes;t->group->processes=p;
  ++current_execution->process_count;++current_execution->process_active;return p;
@@ -397,7 +451,8 @@ void on1x_csp_launch_capture(const char *const *argv,size_t count,on1x_csp_proce
  (void)posix_spawn_file_actions_destroy(&actions);have_actions=false;
  (void)posix_spawnattr_destroy(&attr);have_attr=false;
  (void)close(inpipe[0]);inpipe[0]=-1;(void)close(outpipe[1]);outpipe[1]=-1;(void)close(errpipe[1]);errpipe[1]=-1;
- p->pid=pid;p->parent=t;p->owner=t->group;p->at=at;
+  p->pid=pid;p->parent=t;p->owner=t->group;p->at=at;
+  p->cleanup_work=t->shield||t->cleanup_work;
  p->input_fd=inpipe[1];p->output_fd=outpipe[0];p->error_fd=errpipe[0];
  inpipe[1]=outpipe[0]=errpipe[0]=-1;current_execution->io_active+=3;
  channel_link(in,t->group);channel_link(out,t->group);channel_link(err,t->group);
@@ -486,17 +541,25 @@ int64_t on1x_csp_process_join(on1x_csp_process *value,const char *file,size_t li
  if(p->input&&p->input->channel)(void)mulib_channel_close(p->input->channel);
  reap(p);return finish_process(p,caller);
 }
+static bool request_process_stop(on1x_csp_process *p,source_point at){
+  reap(p);
+  if(!p->done&&!p->stopping){
+    if(p->input&&p->input->channel)(void)mulib_channel_close(p->input->channel);
+    process_fd_close(&p->input_fd);p->input_pending=false;
+   if(kill(-p->pid,SIGTERM)!=0){
+    if(errno!=ESRCH)failure(at,"external process-group SIGTERM failure");
+    reap(p);
+   }else{
+    uint64_t now=monotonic_ms(at);
+    if(now>UINT64_MAX-250u)failure(at,"external process escalation deadline overflow");
+    p->stopping=true;p->kill_at=now+250u;return true;
+   }
+  }
+  return false;
+}
 bool on1x_csp_process_cancel(on1x_csp_process *value,const char *file,size_t line,size_t column){
- source_point at={file,line,column};on1x_csp_task *caller=current(at);on1x_csp_process *p;bool requested=false;
- tick(at);p=owned_process(value,caller,at);reap(p);
- if(!p->done){
-   if(p->input&&p->input->channel)(void)mulib_channel_close(p->input->channel);
-   process_fd_close(&p->input_fd);p->input_pending=false;
-  if(kill(-p->pid,SIGTERM)!=0){
-   if(errno!=ESRCH)failure(at,"external process-group SIGTERM failure");
-   reap(p);
-  }else{p->stopping=true;p->kill_at=monotonic_ms(at)+250;requested=true;}
- }
+  source_point at={file,line,column};on1x_csp_task *caller=current(at);on1x_csp_process *p;bool requested;
+  tick(at);p=owned_process(value,caller,at);requested=request_process_stop(p,at);
  (void)finish_process(p,caller);return requested;
 }
 int64_t on1x_csp_join(on1x_csp_task *value,const char *file,size_t line,size_t column){
@@ -635,8 +698,9 @@ void on1x_csp_call_leave(void){
 }
 static void supervise(void *arg){
  execution *e=(execution *)arg;uint64_t previous=e->progress;unsigned quiet=0;
- while(e->active){
-  on1x_csp_task *t,*blocked=NULL;on1x_csp_process *p;bool all_waiting=true,progressed;
+  while(e->active){
+   on1x_csp_task *t,*blocked=NULL;on1x_csp_process *p;bool all_waiting=true,progressed;
+   bool timed_group=observe_deadlines();
   for(p=e->processes;p;p=p->next){
    pump_process(p);reap(p);pump_process(p);
    if(!p->done&&p->stopping&&!p->killed&&monotonic_ms(p->at)>=p->kill_at){
@@ -648,15 +712,15 @@ static void supervise(void *arg){
   for(t=e->tasks;t;t=t->next)if(!t->done){if(!t->waiting)all_waiting=false;else blocked=t;}
   /* A channel/pipe commit may have made a task runnable while its adapter still
    * reports waiting. Allow complete scheduler rounds for it to acknowledge. */
-  if(all_waiting&&previous==e->progress&&!e->process_active&&!e->io_active&&!e->timers){
+   if(all_waiting&&previous==e->progress&&!e->process_active&&!e->io_active&&!e->timers&&!timed_group){
    if(++quiet>=2)failure(blocked?blocked->at:(source_point){"<scheduler>",1,1},"quiescent fiber/channel deadlock");
   }else quiet=0;
   progressed=previous!=e->progress;previous=e->progress;
-  if(all_waiting&&(e->process_active||e->io_active||e->timers)&&!progressed){struct timespec idle={0,1000000};(void)nanosleep(&idle,NULL);mulib_fiber_yield();}
+   if(all_waiting&&(e->process_active||e->io_active||e->timers||timed_group)&&!progressed){struct timespec idle={0,1000000};(void)nanosleep(&idle,NULL);mulib_fiber_yield();}
   else mulib_fiber_yield();
  }
 }
-int64_t on1x_csp_run(on1x_csp_callback invoke,on1x_env *env,const char *file,size_t line,size_t column){
+int64_t on1x_csp_run_v4(on1x_csp_callback invoke,on1x_env *env,const char *file,size_t line,size_t column){
  source_point at={file,line,column};execution e={0};on1x_csp_task *root,*t;on1x_csp_channel *c;on1x_csp_process *p;int64_t result;
  if(current_execution||mulib_fiber_current())failure(at,"nested or foreign scheduler entry");
  current_execution=&e;
@@ -664,11 +728,13 @@ int64_t on1x_csp_run(on1x_csp_callback invoke,on1x_env *env,const char *file,siz
  root=spawn(invoke,env,NULL,at);
  if(mulib_fiber_spawn(e.scheduler,supervise,&e,ON1X_CSP_STACK_BYTES,NULL)!=MULIB_FIBER_OK)failure(at,"supervisor allocation failure");
  if(mulib_fiber_run(e.scheduler)!=MULIB_FIBER_OK)failure(at,"scheduler execution failure");
- if(e.active||e.process_active||e.io_active||e.groups||!root->done)failure(at,"unfinished scheduler cleanup");
+  if(e.active||e.process_active||e.io_active||e.groups||e.deadlines||e.timers||!root->done)failure(at,"unfinished scheduler cleanup");
  result=root->result;
  if(mulib_fiber_scheduler_destroy(e.scheduler)!=MULIB_FIBER_OK)failure(at,"scheduler destruction failure");
  while((t=e.tasks)!=NULL){e.tasks=t->next;if(mulib_channel_destroy(t->cancel_signal)!=MULIB_CHANNEL_OK)failure(at,"live cancellation observer");ON1X_CSP_FREE(t);}
  while((c=e.channels)!=NULL){e.channels=c->next;if(c->channel)failure(at,"unreleased channel");ON1X_CSP_FREE(c);}
  while((p=e.processes)!=NULL){e.processes=p->next;if(!p->done||!p->joined)failure(at,"unreaped external process");ON1X_CSP_FREE(p);}
- current_execution=NULL;return result;
+  current_execution=NULL;
+  if(e.expired.file)failure(e.expired,"monotonic taskgroup deadline expired");
+  return result;
 }

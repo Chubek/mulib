@@ -58,6 +58,8 @@ SExpr extension(const Expr& e,bool attribute){
  return form(attribute?"Attribute":"ExtensionExpr",{string(e.text),string(literal_value(e.children.at(0)->text)),list(std::move(args)),loc(e.where)});
 }
 SExpr expression(const Expr& e){
+  if(e.kind==K::UnsafeBlock||e.unsafe_region||e.reference==Expr::Reference::UnsafeForeign)
+   throw Error(e.where,"ON1X-KERNEL-PPX: unsafe scopes and calls are not PPX wire data","ON1X-KERNEL-PPX");
  if(e.kind==K::SourceCsp){
   std::vector<SExpr> args;for(const auto& c:e.children)args.push_back(expression(*c));
   return form("SourceCsp",{string(e.text),type(e.result),list(std::move(args)),loc(e.where)});
@@ -95,10 +97,13 @@ SExpr expression(const Expr& e){
  default:throw Error(e.where,"PPX serialization requires macro-expanded, untyped source AST");
  }
 }
-SExpr statement(const Stmt& s){
+ SExpr statement(const Stmt& s){
+  if(s.unsafe_block)throw Error(s.where,"ON1X-KERNEL-PPX: unsafe scopes are not PPX wire data","ON1X-KERNEL-PPX");
  auto at=loc(s.where);
   switch(s.kind){
-  case Stmt::Kind::TaskGroup:return form("TaskGroup",{block(s.body,s.where),at});
+  case Stmt::Kind::TaskGroup:
+   if(s.value)return form("TaskGroupWithin",{expression(*s.value),block(s.body,s.where),at});
+   return form("TaskGroup",{block(s.body,s.where),at});
  case Stmt::Kind::Defer:return form("Defer",{expression(*s.value),at});
  case Stmt::Kind::Let:
   return s.pattern?form("LetPattern",{pattern(*s.pattern),type(s.declared),expression(*s.value),std::move(at)}):form(s.mutable_binding?"Var":"Let",{string(s.name),type(s.declared),expression(*s.value),std::move(at)});
@@ -262,7 +267,11 @@ std::vector<Stmt> read_block(const SExpr& n){
  if(tag(n)!="Block")invalid(n,"unhandled block constructor "+tag(n));
  std::vector<Stmt> body;
  for(const auto& c:field(n,0).items){Stmt s;s.where=location(c.items.back());const auto& k=tag(c);
-   if(k=="TaskGroup"){s.kind=Stmt::Kind::TaskGroup;s.body=read_block(field(c,0));}
+   if(k=="TaskGroup"||k=="TaskGroupWithin"){
+    s.kind=Stmt::Kind::TaskGroup;
+    if(k=="TaskGroupWithin")s.value=read_expression(field(c,0));
+    s.body=read_block(field(c,k=="TaskGroupWithin"?1:0));
+   }
    else if(k=="Let"||k=="Var"||k=="LetPattern"){
    s.kind=Stmt::Kind::Let;s.mutable_binding=k=="Var";if(k=="LetPattern"){s.pattern=read_pattern(field(c,0));patterns::require_binding(*s.pattern);}else s.name=field(c,0).text;
    s.declared=read_type(field(c,1),true);s.value=read_expression(field(c,2));
@@ -302,7 +311,7 @@ SExpr encode(const Unit& unit){
   functions.push_back(form("NominalDeclaration",{string(d.kind==Type::Record?"record":"enum"),string(d.name),list(std::move(params)),list(std::move(labels)),list(std::move(fields)),loc(d.where)}));
  }
   for(const auto& f:unit.functions){
-   if(!f.unsafe_kernel_symbol.empty())
+    if(!f.kernel_symbol.empty())
     throw Error(f.where,"ON1X-KERNEL-PPX: foreign interfaces are not PPX wire data","ON1X-KERNEL-PPX");
    std::vector<SExpr> attributes;for(const auto& a:f.attributes)attributes.push_back(extension(*a,true));
   if(f.external)functions.push_back(form("Extern",{string(f.name),parameters(f.params),type(f.result),list(std::move(attributes)),loc(f.where)}));

@@ -5,6 +5,7 @@ No generated On1x ABI guesses: Exotract emits typed metadata. C11 clients link
 the generated static archive; On1x clients still require an admitted ABI adapter.
 """
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -19,6 +20,13 @@ HOME = Path(__file__).resolve().parents[1]
 CATALOG = HOME/'contracts-exotract/catalog.json'
 KERNEL_PROFILE = HOME/'contracts-exotract/kernel-discovery-v1.lua'
 CLAMP_EXPORTS = ('mulib_clamp_add_i64', 'mulib_clamp_sub_i64')
+KERNEL_CODEGEN_FLAGS = frozenset(('-O0', '-O1', '-O2', '-O3', '-g', '-fno-omit-frame-pointer',
+                                  '-fsanitize=address,undefined', '-fno-sanitize-recover=all'))
+CLAMP_ADAPTER_PREFIX = 'on1x_kernel_scalar_v1_'
+HISTORY_EXPORTS = ('mulib_histprice_ema', 'mulib_histprice_holt')
+HISTORY_IMPL = ['MULIB_IMPL_STATSPROC', 'MULIB_IMPL_HISTPRICE']
+PRICING_EXPORTS = ('mulib_priceopt_optimize', 'mulib_priceopt_candidates')
+PRICING_IMPL = ['MULIB_IMPL_PRICEOPT']
 # Profile v1's known entry points are sanity checks, not binding allowlists.
 KERNEL_MODULES = {
     'clamp': (None, list(CLAMP_EXPORTS)),
@@ -70,7 +78,24 @@ def executable(value):
         raise ValueError('executable unavailable: '+str(value))
     return Path(resolved).resolve()
 
-def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cflags, pins_before_load):
+
+def require_lossless_contract(source, normalized, path='contract'):
+    """Detect fields/types the canonical SDK discarded; do not interpret semantics."""
+    if isinstance(source, dict):
+        if not isinstance(normalized, dict) or set(source) - set(normalized):
+            raise ValueError('ON1X-KERNEL-NOT-REPRESENTABLE: discarded ExoML fields at '+path)
+        for key, value in source.items():
+            require_lossless_contract(value, normalized[key], path+'.'+key)
+    elif isinstance(source, list):
+        if not isinstance(normalized, list) or len(source) != len(normalized):
+            raise ValueError('ON1X-KERNEL-NOT-REPRESENTABLE: discarded ExoML sequence at '+path)
+        for i, (left, right) in enumerate(zip(source, normalized)):
+            require_lossless_contract(left, right, path+f'[{i}]')
+    elif contracts.dumps(source) != contracts.dumps(normalized):
+        raise ValueError('ON1X-KERNEL-NOT-REPRESENTABLE: changed ExoML value at '+path)
+
+
+def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cflags, pins_before_load, *, review=False):
     """Resolve *compiler* source requests. This produces no interface or link input."""
     def location(request):
         return f"{request['file']}:{request['line']}:{request['column']}: "
@@ -114,6 +139,8 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
     target = invoke([compiler, '-dumpmachine']).decode().strip()
     defines, undefines, flags = [], [], []
     for flag in cflags:
+        if flag in KERNEL_CODEGEN_FLAGS:
+            continue  # Recorded separately; these do not change the C declaration profile.
         if 'MULIB_IMPL_' in flag:
             raise ValueError('implementation macros belong to the generated TU, not KernelBind discovery')
         if flag.startswith('-D') and len(flag) > 2:
@@ -149,6 +176,10 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
             header, manual, revision = modules[name]
             sidecar = None
             sidecar_name, required = KERNEL_MODULES[name]
+            if name == 'clamp' and any(r['module'] == 'mulib.clamp' and not r['unsafe'] for r in imports):
+                sidecar_name = 'clamp.exocontract.json'
+            if name in ('histprice', 'priceopt') and review:
+                sidecar_name = name+'.exocontract.json'
             required = sorted(set(required + recipe['required_symbols'][name]))
             pins = [manifest_input, lua_profile, manual, *(h for mod, (h, _, _) in modules.items() if mod != name)]
             if sidecar_name:
@@ -207,7 +238,9 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
             if sidecar:
                 # Reject duplicate keys even if an alternate SDK reader were
                 # permissive. Only ExoML interprets semantic fields.
-                contracts.load(sidecar)
+                original_contract = contracts.load(sidecar)
+                if name in ('clamp', 'histprice', 'priceopt'):
+                    require_lossless_contract(original_contract, contract)
             if (sidecar is None and contract is not None) or (sidecar is not None and (
                 not isinstance(contract, dict) or contract['schema_version'] != 2 or contract['library'] != name or
                 contract['bundle_provenance']['revision'] != globs['REVISION'])):
@@ -221,26 +254,28 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
                 if (entry['safe'] is not False or entry['c_name'] not in status or entry['c_type_id'] not in type_ids):
                     raise ValueError('unexpected Exotract import metadata')
             discovered['mulib.'+name] = dict(exolib=profile, metadata=on1x, contract=contract, callable=False,
-                                           status='missing_review', safe_export=False, symbols=status)
+                                            status='missing_review', safe_export=False, symbols=status,
+                                            sidecar=str(sidecar) if sidecar else None)
         except (ValueError, OSError, KeyError, TypeError, subprocess.TimeoutExpired) as error:
             raise ValueError(location(request)+'ON1X-KERNEL-DISCOVERY: '+str(error)) from error
     compiler_version = invoke([compiler, '--version']).decode()
     for path, digest in list(observed.items()):
         observe(path, digest)
     return dict(schema='on1x.kernel-discovery/v1', safe_export=False, requests=imports,
+                source_inputs=sources,
                 modules=discovered, inputs={str(p): h for p, h in observed.items()},
                 exotract=str(exotract), compiler=str(compiler), target=target, cflags=cflags,
                 compiler_version=compiler_version, resource_directory=str(resource))
 
 
-def unsafe_scalar_interface(report):
+def clamp_scalar_interface(report, *, unsafe):
     """Project the exact, deliberately narrow executable CDecl shape.
 
     Only use an in-process discovery result with pinned inputs; this function
     is not a reader for public discovery reports or admission certificates.
     """
     for request in report['requests']:
-        if not request['unsafe'] or request['module'] != 'mulib.clamp':
+        if request['unsafe'] is not unsafe or request['module'] != 'mulib.clamp':
             code = 'UNSAFE-UNSUPPORTED' if request['unsafe'] else 'NOT-ADMITTED'
             raise ValueError(f"{request['file']}:{request['line']}:{request['column']}: "
                              f"ON1X-KERNEL-{code}: {request['module']}")
@@ -278,11 +313,581 @@ def unsafe_scalar_interface(report):
             raise ValueError('ON1X-KERNEL-ABI: incompatible CDecl signature for '+symbol)
         exports[symbol.removeprefix('mulib_clamp_')] = dict(
             c_name=symbol, c_type_id=d['type'], declaration_id=d['id'],
-            parameters=['i64', 'i64'], result='i64', status='unsafe', effect='unsafe_foreign')
-    return dict(schema='on1x.kernel-interface/v1', profile='unsafe-clamp-i64/v1',
+            declaration_source=d['source'],
+            parameters=['i64', 'i64'], result='i64',
+            status='unsafe' if unsafe else 'missing_review', effect='unsafe_foreign' if unsafe else 'foreign_call')
+    return dict(schema='on1x.kernel-interface/v1', profile='unsafe-clamp-i64/v1' if unsafe else 'reviewed-clamp-i64/v1',
                 module='mulib.clamp', safe_export=False, target=report['target'],
                 cdecl_fingerprint=cdecl['fingerprint'], header=cdecl['header'],
-                header_revision=cdecl['revision'], imports=report['requests'], exports=exports)
+                header_revision=cdecl['revision'], imports=report['requests'], exports=exports,
+                rejected={'i64': dict(c_name='mulib_clamp_i64', status='unsupported',
+                                     reason='interval precondition and three-argument profile are not admitted')})
+
+
+def history_interface(report):
+    module = report['modules']['mulib.histprice']
+    cdecl = module['metadata']['cdecl']
+    types = {t['id']: t for t in cdecl['types']}
+
+    def require(condition, what):
+        if not condition:
+            raise ValueError('ON1X-KERNEL-ABI: incompatible histprice '+what)
+
+    require(len(types) == len(cdecl['types']) and re.fullmatch('[0-9a-f]{64}', cdecl['fingerprint']) and
+            re.fullmatch(r'x86_64(?:-[a-z0-9_]+)?-linux-gnu', report['target']) and
+            cdecl['target']['pointer_bits'] == 64 and
+            module['exolib']['header_only']['implementation_defines'] == HISTORY_IMPL, 'target/implementation')
+
+    def shape(t, kind, spelling=None, size=8, align=8, const=False):
+        return (t['kind'] == kind and (spelling is None or t['spelling'] == spelling) and
+                t['size'] == size and t['alignment'] == align and t['const'] is const and
+                not any(t[k] for k in ('volatile', 'restrict', 'attributes', 'unsupported_reason')))
+
+    def scalar(t, spelling='double', const=False):
+        if spelling == 'size_t':
+            c = types[t['canonical_id']]
+            return shape(t, 'typedef', 'size_t') and shape(c, 'integer') and c['signed'] is False
+        if spelling == 'int':
+            return shape(t, 'integer', 'int', 4, 4) and t['signed'] is True
+        return shape(t, 'floating', 'const double' if const else 'double', const=const)
+
+    def declaration(symbol, kind):
+        rows = [d for d in cdecl['declarations'] if d['name'] == symbol]
+        require(len(rows) == 1 and rows[0]['kind'] == kind and rows[0]['source']['file'] == cdecl['header']
+                and not rows[0]['unsupported_reason'], symbol+' declaration')
+        return rows[0]
+
+    td = declaration('mulib_histprice_forecast_t', 'typedef')
+    ty = types[td['type']]
+    record = types[ty['canonical_id']]
+    require(shape(ty, 'typedef', 'mulib_histprice_forecast_t', 16) and
+            shape(record, 'record', 'struct mulib_histprice_forecast', 16) and
+            not record['union'] and len(record['fields']) == 2, 'forecast record layout')
+    for i, name in enumerate(('point', 'variance')):
+        field = record['fields'][i]
+        require(field['name'] == name and field['offset_bits'] == i*64 and field['bit_width'] is None and
+                scalar(types[field['type']]), 'forecast field '+name)
+
+    exports = {}
+    for symbol in HISTORY_EXPORTS:
+        d = declaration(symbol, 'function')
+        f = types[d['type']]
+        names = ['prices', 'n', 'alpha', *(['beta', 'phi'] if symbol.endswith('_holt') else []), 'horizon', 'out']
+        require(not d['definition'] and not d['inline'] and d['linkage'] == '4' and
+                shape(f, 'function', size=None, align=None) and f['calling_convention'] == 1 and
+                not f['variadic'] and f['prototype'] and scalar(types[f['result']], 'int') and
+                [p['name'] for p in d['parameters']] == names and
+                [p['type'] for p in d['parameters']] == f['arguments'], symbol+' signature')
+        args = [types[t] for t in f['arguments']]
+        require(shape(args[0], 'pointer') and scalar(types[args[0]['element']], const=True) and
+                scalar(args[1], 'size_t') and scalar(args[-2], 'size_t') and
+                all(scalar(t) for t in args[2:-2]) and
+                shape(args[-1], 'pointer') and args[-1]['element'] == ty['id'], symbol+' wire types')
+        member = symbol.removeprefix('mulib_histprice_')
+        exports[member] = dict(c_name=symbol, c_type_id=d['type'], declaration_id=d['id'],
+                               declaration_source=d['source'], c_output_type_id=record['id'],
+                               parameters=['slice<f64,N:0..256>', *(['f64']*(len(args)-4)), 'i64'],
+                               result='Result<Forecast,Error>', effects=['read','write','foreign_call'],
+                               status='missing_review')
+    rejected = {d['name'].removeprefix('mulib_histprice_'): dict(
+                    c_name=d['name'], status='unsupported', reason='no checked adapter in this profile')
+                for d in cdecl['declarations']
+                if d['kind'] == 'function' and d['name'].startswith('mulib_histprice_') and d['name'] not in HISTORY_EXPORTS}
+    return dict(schema='on1x.kernel-interface/v1', profile='reviewed-histprice-f64/v1',
+                module='mulib.histprice', target=report['target'], safe_export=False,
+                cdecl_fingerprint=cdecl['fingerprint'], header=cdecl['header'], header_revision=cdecl['revision'],
+                imports=report['requests'], exports=exports, rejected=rejected,
+                types={'Forecast': {'point':'f64', 'variance':'f64'}, 'Error':['Rejected'], 'Result':['Ok(T)','Err(E)']})
+
+
+PRICING_ENUMS = {
+    'demand_kind': ['LINEAR', 'ISOELASTIC', 'LOGISTIC'],
+    'objective': ['PROFIT', 'REVENUE'],
+}
+PRICING_RECORDS = {
+    'demand_model': [('kind', 'demand_kind'), ('scale', 'double'), ('shape', 'double'), ('reference', 'double')],
+    'constraints': [(name, 'double') for name in (
+        'min_price', 'max_price', 'unit_cost', 'min_unit_margin', 'previous_price', 'max_relative_change', 'tick')],
+    'result': [('price', 'double'), ('score', 'double'), ('expected_demand', 'double'), ('evaluations', 'size_t')],
+}
+
+
+def pricing_interface(report):
+    module = report['modules']['mulib.priceopt']
+    cdecl = module['metadata']['cdecl']
+    types = {t['id']: t for t in cdecl['types']}
+
+    def require(test, where):
+        if not test:
+            raise ValueError('ON1X-KERNEL-ABI: incompatible priceopt '+where)
+
+    require(len(types) == len(cdecl['types']) and re.fullmatch('[0-9a-f]{64}', cdecl['fingerprint']) and
+            re.fullmatch(r'x86_64(?:-[a-z0-9_]+)?-linux-gnu', report['target']) and
+            cdecl['target']['pointer_bits'] == 64 and
+            module['exolib']['header_only']['implementation_defines'] == PRICING_IMPL, 'target/implementation')
+
+    def clean(t, kind, width, align, *, const=False):
+        return (t['kind'] == kind and t['size'] == width and t['alignment'] == align and t['const'] is const
+                and not any(t[k] for k in ('attributes', 'unsupported_reason', 'restrict', 'volatile')))
+
+    def decl(name, kind):
+        hits = [d for d in cdecl['declarations'] if d['name'] == name]
+        require(len(hits) == 1 and hits[0]['kind'] == kind and not hits[0]['unsupported_reason']
+                and hits[0]['source']['file'] == cdecl['header'], name+' declaration')
+        return hits[0]
+
+    def typedef(name, width, align, kind):
+        spelling = 'mulib_priceopt_'+name
+        t = types[decl(spelling+'_t', 'typedef')['type']]
+        c = types[t['canonical_id']]
+        require(clean(t, 'typedef', width, align) and clean(c, kind, width, align)
+                and t['spelling'] == spelling+'_t' and c['spelling'] == ('enum ' if kind == 'enum' else 'struct ')+spelling,
+                name+' typedef')
+        return t, c
+
+    projections = {}
+    for name, values in PRICING_ENUMS.items():
+        t, c = typedef(name, 4, 4, 'enum')
+        underlying = types[c['element']]
+        require(clean(underlying, 'integer', 4, 4) and c['signed'] is False and
+                underlying['signed'] is False and c['enumerators'] ==
+                [dict(name='MULIB_PRICEOPT_'+tag, value=str(i)) for i, tag in enumerate(values)], name+' enum')
+        projections[name] = t
+
+    def scalar(t, name, const=False):
+        if name == 'double':
+            return clean(t, 'floating', 8, 8, const=const) and t['spelling'] == ('const double' if const else 'double')
+        if name == 'int':
+            return clean(t, 'integer', 4, 4) and t['signed'] is True and t['spelling'] == 'int'
+        if name == 'size_t':
+            c = types[t['canonical_id']]
+            return clean(t, 'typedef', 8, 8) and t['spelling'] == 'size_t' and clean(c, 'integer', 8, 8) and c['signed'] is False
+        p = projections[name]
+        return (clean(t, 'typedef', p['size'], p['alignment'], const=const) and
+                t['declaration_id'] == p['declaration_id'] and
+                t['spelling'] == ('const ' if const else '')+p['spelling'])
+
+    for name, fields in PRICING_RECORDS.items():
+        t, c = typedef(name, len(fields)*8, 8, 'record')
+        require(not c['union'] and len(c['fields']) == len(fields), name+' record')
+        for i, ((field, spelling), actual) in enumerate(zip(fields, c['fields'])):
+            require(actual['name'] == field and actual['offset_bits'] == 64*i and actual['bit_width'] is None
+                    and scalar(types[actual['type']], spelling), name+'.'+field)
+        projections[name] = t
+
+    exports = {}
+    for name in PRICING_EXPORTS:
+        candidates = name.endswith('_candidates')
+        d = decl(name, 'function')
+        t = types[d['type']]
+        names = ['prices','predicted_units','n'] if candidates else ['model']
+        names += ['constraints','objective','out']
+        shapes = [('double', True, True), ('double', True, True), ('size_t', False, False)] if candidates else [
+            ('demand_model', True, True)]
+        shapes += [('constraints', True, True), ('objective', False, False), ('result', True, False)]
+        require(not d['definition'] and not d['inline'] and d['linkage'] == '4' and
+                clean(t, 'function', None, None) and t['calling_convention'] == 1 and t['prototype'] and not t['variadic']
+                and [p['name'] for p in d['parameters']] == names and
+                [p['type'] for p in d['parameters']] == t['arguments'] and scalar(types[t['result']], 'int'), name+' signature')
+        for i, (spelling, pointer, const) in enumerate(shapes):
+            arg = types[t['arguments'][i]]
+            if pointer:
+                require(clean(arg, 'pointer', 8, 8), name+' pointer')
+                arg = types[arg['element']]
+            require(scalar(arg, spelling, const), name+' '+names[i]+' type')
+        exports[name.removeprefix('mulib_priceopt_')] = dict(
+            c_name=name, c_type_id=d['type'], declaration_id=d['id'], declaration_source=d['source'],
+            c_type_ids={key: t['canonical_id'] for key, t in projections.items()},
+            parameters=(['slice<f64,N:0..256>']*2 if candidates else ['DemandModel'])+['Constraints','Objective'],
+            result='Result<Decision,Error>', effects=['read','write','foreign_call'], status='missing_review')
+    rejected = {d['name'].removeprefix('mulib_priceopt_'): dict(
+                    c_name=d['name'], status='unsupported', reason='no checked adapter in this profile')
+                for d in cdecl['declarations']
+                if d['kind'] == 'function' and d['name'].startswith('mulib_priceopt_') and d['name'] not in PRICING_EXPORTS}
+    return dict(schema='on1x.kernel-interface/v1', profile='reviewed-priceopt-f64/v1', module='mulib.priceopt',
+                target=report['target'], safe_export=False, cdecl_fingerprint=cdecl['fingerprint'],
+                header=cdecl['header'], header_revision=cdecl['revision'], imports=report['requests'],
+                exports=exports, rejected=rejected,
+                types={'DemandKind': ['Linear','Isoelastic','Logistic'], 'Objective': ['Profit','Revenue'],
+                       'DemandModel': {'kind':'DemandKind', 'scale':'f64', 'shape':'f64', 'reference':'f64'},
+                       'Constraints': {name:'f64' for name, _ in PRICING_RECORDS['constraints']},
+                       'Decision': {'price':'f64','score':'f64','expected_demand':'f64','evaluations':'u64'},
+                       'Error':['Rejected'], 'Result':['Ok(T)','Err(E)']})
+
+
+def reviewed_interface(report):
+    modules = {}
+    for r in report['requests']:
+        if r['unsafe'] and r['module'] == 'mulib.clamp':
+            continue
+        if r['unsafe'] or r['module'] not in ('mulib.clamp', 'mulib.histprice', 'mulib.priceopt'):
+            code = 'UNSAFE-UNSUPPORTED' if r['unsafe'] else 'NOT-ADMITTED'
+            raise ValueError(f"{r['file']}:{r['line']}:{r['column']}: ON1X-KERNEL-{code}: {r['module']}")
+        modules.setdefault(r['module'], []).append(r)
+    if not modules:
+        raise ValueError('ON1X-KERNEL-NOT-ADMITTED: review mode requires at least one safe kernel import')
+    interfaces = {}
+    for name, requests in sorted(modules.items()):
+        scoped = dict(report, requests=requests)
+        interfaces[name] = (history_interface(scoped) if name == 'mulib.histprice'
+                            else pricing_interface(scoped) if name == 'mulib.priceopt'
+                            else clamp_scalar_interface(scoped, unsafe=False))
+    if len(interfaces) == 1:
+        return next(iter(interfaces.values()))
+    return dict(schema='on1x.kernel-interface-set/v1', profile='reviewed-kernel-set/v1',
+                target=report['target'], safe_export=False, modules=interfaces)
+
+
+def interface_members(interface):
+    return interface['modules'] if 'modules' in interface else {interface['module']: interface}
+
+
+def review_candidate(report):
+    """Describe what an independent reviewer must approve; does not admit anything."""
+    interface = reviewed_interface(report)
+    members = interface_members(interface)
+    if len(members) > 1:
+        return dict(schema='on1x.kernel-review-subject-set/v1', profile=interface['profile'],
+                    modules={name: review_subject(report, item) for name, item in members.items()})
+    return review_subject(report, interface)
+
+
+def review_subject(report, interface):
+    module = report['modules'][interface['module']]
+    sidecar = module['contract']
+    if not sidecar:
+        raise ValueError('ON1X-KERNEL-NOT-ADMITTED: no validated ExoML contract')
+    functions = {f['c_name']: f for f in sidecar['functions']}
+    expected_return = dict(kind='value', nullable=False, nullable_means_success=False,
+                           alias_of='', allocation_source='', deallocator_family='', destroy_with='')
+    expected_errors = dict(kind='none', cleanup_required_on_failure=False, error_parameter='',
+                           out_valid_on_failure=False, sentinel_value='')
+    expected_concurrency = dict(thread_safety='thread_safe', blocking_behavior='nonblocking',
+                                callback_origin='', registration_thread_affine=False, signal_safe=False,
+                                suspension_safe=True)
+    expected_params = [dict(index=i, name=name, ownership='scalar', nullable=False, alignment=None,
+                            length_parameter=None, count_parameter=None, encoding='', transfer_predicate='')
+                       for i, name in enumerate(('a', 'b'))]
+    history = interface['module'] == 'mulib.histprice'
+    pricing = interface['module'] == 'mulib.priceopt'
+    symbols = HISTORY_EXPORTS if history else PRICING_EXPORTS if pricing else CLAMP_EXPORTS
+    if set(functions) != set(symbols) or len(sidecar['functions']) != len(symbols):
+        raise ValueError('ON1X-KERNEL-NOT-REPRESENTABLE: unexpected ExoML export set')
+    for name, f in functions.items():
+        params = expected_params
+        errors = expected_errors
+        effects = []
+        if history or pricing:
+            if history:
+                names = ['prices', 'n', 'alpha', *(['beta', 'phi'] if name.endswith('_holt') else []), 'horizon', 'out']
+                borrows = [(0, 1)]
+            elif name.endswith('_candidates'):
+                names = ['prices', 'predicted_units', 'n', 'constraints', 'objective', 'out']
+                borrows = [(0, 2), (1, 2), (3, None)]
+            else:
+                names = ['model', 'constraints', 'objective', 'out']
+                borrows = [(0, None), (1, None)]
+            params = [dict(expected_params[0], index=i, name=p) for i, p in enumerate(names)]
+            lifetime = dict(origin='explicit_region', parameter_index=0, region_name='call')
+            for index, length in borrows:
+                params[index].update(ownership='borrowed_immutable', lifetime=lifetime, length_parameter=length, alignment=8)
+            params[-1].update(ownership='out', lifetime=lifetime, alignment=8)
+            errors = dict(expected_errors, kind='boolean_return')
+            effects = ['read', 'write']
+        if (set(f) - {'c_name', 'return', 'parameters', 'errors', 'effects', 'concurrency',
+                     'callbacks', 'destructors', 'transfers', 'invalidations', 'provenance'}
+            or f['return'] != expected_return or f['parameters'] != params or f['errors'] != errors
+            or f['effects'] != dict(effects=effects, unknown=False) or f['concurrency'] != expected_concurrency
+            or any(f.get(k, []) != [] for k in ('callbacks', 'destructors', 'transfers', 'invalidations'))):
+            raise ValueError('ON1X-KERNEL-NOT-REPRESENTABLE: nontrivial or unknown ExoML obligations for '+name)
+    if set(report['cflags']) - KERNEL_CODEGEN_FLAGS:
+        raise ValueError('ON1X-KERNEL-ABI: unsupported flags for reviewed C11')
+    cdecl = module['metadata']['cdecl']
+    # Build-tool and input identity is exact. A reviewer does not sign the
+    # importing program or the aliases: only the foreign interface and its TCB.
+    excluded_paths = set(report['source_inputs'])
+    if excluded_paths & {item['path'] for item in cdecl['inputs']}:
+        raise ValueError('ON1X-KERNEL-ABI: overlapping application and review inputs')
+    inputs = {k: v for k, v in report['inputs'].items() if k not in excluded_paths}
+    def fingerprint(value):
+        return hashlib.sha256(contracts.dumps(value).encode('ascii')).hexdigest()
+    return dict(schema='on1x.kernel-review-subject/v1', profile=interface['profile'],
+                module=interface['module'], header=interface['header'], header_revision=interface['header_revision'],
+                target=cdecl['target'], compiler=report['compiler'], compiler_version=report['compiler_version'],
+                cflags=report['cflags'], inputs=inputs, cdecl_fingerprint=cdecl['fingerprint'],
+                cdecl_sha256=fingerprint(cdecl), exolib_sha256=fingerprint(module['exolib']),
+                contract_sha256=fingerprint(sidecar), contract_path=module['sidecar'],
+                symbols=interface['exports'] if history or pricing else {
+                    name: {k: entry[k] for k in ('c_name', 'c_type_id', 'declaration_id')}
+                    for name, entry in interface['exports'].items()})
+
+
+def authorize_review(report, key, review, signature, stage):
+    """Verify evidence using the operator-selected Ed25519 trust anchor."""
+    def reject(reason):
+        request = report['requests'][0]
+        raise ValueError(f"{request['file']}:{request['line']}:{request['column']}: "
+                         'ON1X-KERNEL-NOT-ADMITTED: '+reason)
+    raw = contracts.read(review, 1024*1024)
+    public = contracts.read(key, 1024)
+    sig = contracts.read(signature, 1024)
+    # Only DER SubjectPublicKeyInfo for Ed25519; reject alternate algorithms,
+    # private keys, trailing data and ambiguous key encodings.
+    if len(public) != 44 or not public.startswith(bytes.fromhex('302a300506032b6570032100')) or len(sig) != 64:
+        reject('expected an Ed25519 DER public key and 64-byte detached signature')
+    evidence = contracts.loads(raw)
+    if (not isinstance(evidence, dict) or set(evidence) != {'schema', 'reviewer', 'review_reference', 'subject'}
+        or evidence['schema'] != 'on1x.kernel-review/v1'
+        or not isinstance(evidence['subject'], dict)
+        or not all(isinstance(evidence[k], str) and 0 < len(evidence[k].strip()) <= 1024
+                   for k in ('reviewer', 'review_reference'))):
+        reject('invalid independent review schema')
+    for name, data in [('review.ed25519.der', public), ('review.json', raw), ('review.sig', sig)]:
+        (stage/name).write_bytes(data)
+    openssl = executable('openssl')
+    digest = contracts.digest(openssl)
+    verified = subprocess.run([openssl, 'pkeyutl', '-verify', '-pubin', '-keyform', 'DER',
+                               '-inkey', stage/'review.ed25519.der', '-rawin', '-in', stage/'review.json',
+                               '-sigfile', stage/'review.sig'], capture_output=True, timeout=30)
+    if verified.returncode or contracts.digest(openssl) != digest:
+        reject('independent review signature verification failed')
+    if contracts.dumps(evidence['subject']) != contracts.dumps(review_candidate(report)):
+        reject('independent review does not match the current binding inputs')
+    return dict(**evidence, signature_hex=sig.hex(), key_der_hex=public.hex(),
+                review_sha256=hashlib.sha256(raw).hexdigest(), signed_review_hex=raw.hex(),
+                verifier=str(openssl), verifier_sha256=digest)
+
+
+def clamp_adapter(interface):
+    output = ['#include <mulib-clamp.h>',
+              '#if !defined(__linux__) || !defined(__x86_64__) || !defined(__LP64__)',
+              '#error "KernelBind scalar profile requires native Linux x86-64"', '#endif',
+              '_Static_assert(CHAR_BIT == 8 && sizeof(int64_t) == 8 && _Alignof(int64_t) == 8'
+              ' && sizeof(void *) == 8 && INT64_MIN == -INT64_MAX - 1, "KernelBind target ABI drift");']
+    for export in interface['exports'].values():
+        symbol = export['c_name']
+        output.extend([
+            f'_Static_assert(_Generic(&{symbol}, int64_t (*)(int64_t, int64_t): 1, default: 0), '
+            '"KernelBind prototype drift");',
+            f'int64_t {CLAMP_ADAPTER_PREFIX}{symbol}(int64_t a, int64_t b) {{ return {symbol}(a, b); }}',
+        ])
+    return '\n'.join(output)+'\n'
+
+
+def clamp_probe():
+    """Independent integer oracle, compiled against the exact generated adapter."""
+    import random
+    low, high = -(1 << 63), (1 << 63)-1
+    edges = [low, low+1, -2, -1, 0, 1, 2, high-1, high]
+    pairs = [(a, b) for a in edges for b in edges]
+    rng = random.Random(0xC1A0)
+    pairs += [(rng.randrange(low, high+1), rng.randrange(low, high+1)) for _ in range(256)]
+    def literal(n):
+        if n == low:
+            return 'INT64_MIN'
+        return ('-' if n < 0 else '')+f'INT64_C({abs(n)})'
+    output = ['#include <stdint.h>', '#include <mulib-clamp.h>']
+    for symbol in CLAMP_EXPORTS:
+        output.append(f'extern int64_t {CLAMP_ADAPTER_PREFIX}{symbol}(int64_t, int64_t);')
+    output.append('int main(void) {')
+    for a, b in pairs:
+        for symbol, expected in zip(CLAMP_EXPORTS, (a+b, a-b)):
+            expected = min(high, max(low, expected))
+            args = f'{literal(a)}, {literal(b)}'
+            output.append(f'if ({CLAMP_ADAPTER_PREFIX}{symbol}({args}) != {literal(expected)}'
+                          f' || {symbol}({args}) != {literal(expected)}) return 1;')
+    output += ['return 0;', '}']
+    return '\n'.join(output)+'\n'
+
+
+def history_adapter(interface):
+    source = [
+        '#include <mulib-histprice.h>', '#include <float.h>', '#include <limits.h>',
+        '#include <math.h>', '#include <stdbool.h>', '#include <stdint.h>',
+        '#if !defined(__linux__) || !defined(__x86_64__) || !defined(__LP64__) || defined(__FAST_MATH__)',
+        '#error "unsupported KernelBind history ABI"', '#endif',
+        '_Static_assert(CHAR_BIT == 8 && sizeof(int) == 4 && _Alignof(int) == 4 && INT_MAX == 2147483647, "status ABI");',
+        '_Static_assert(sizeof(size_t) == 8 && _Alignof(size_t) == 8 && SIZE_MAX == UINT64_MAX, "size ABI");',
+        '_Static_assert(sizeof(double) == 8 && _Alignof(double) == 8 && FLT_RADIX == 2 && DBL_MANT_DIG == 53 && DBL_MAX_EXP == 1024, "binary64 ABI");',
+        '_Static_assert(sizeof(void *) == 8 && sizeof(int64_t) == 8 && _Alignof(int64_t) == 8, "adapter ABI");',
+        '_Static_assert(sizeof(mulib_histprice_forecast_t) == 16 && _Alignof(mulib_histprice_forecast_t) == 8, "forecast layout");',
+        '_Static_assert(offsetof(mulib_histprice_forecast_t, point) == 0 && offsetof(mulib_histprice_forecast_t, variance) == 8, "forecast offsets");',
+        '_Static_assert(_Generic(&((mulib_histprice_forecast_t *)0)->point, double *:1, default:0) && _Generic(&((mulib_histprice_forecast_t *)0)->variance, double *:1, default:0), "forecast fields");',
+    ]
+    for export in interface['exports'].values():
+        symbol = export['c_name']
+        holt = symbol.endswith('_holt')
+        extra = 'double, double, ' if holt else ''
+        source += [
+            f'_Static_assert(_Generic(&{symbol}, int (*)(const double *, size_t, double, {extra}size_t, mulib_histprice_forecast_t *):1, default:0), "forecast prototype");',
+            f'bool {CLAMP_ADAPTER_PREFIX}{symbol}(const double *backing, int64_t capacity, int64_t start, int64_t n, double alpha, '
+            + ('double beta, double phi, ' if holt else '')+'int64_t horizon, double *point, double *variance) {',
+            '  if (!backing || !point || !variance || capacity < 0 || capacity > 256 || start < 0 || start > capacity ||'
+            f' n < {2 if holt else 1} || n > capacity - start || horizon <= 0 || horizon > 1000000) return false;',
+            '  if (!(alpha >= 0.0 && alpha <= 1.0)) return false;',
+        ]
+        if holt:
+            source.append('  if (!(beta >= 0.0 && beta <= 1.0 && phi > 0.0 && phi <= 1.0)) return false;')
+        source += [
+            '  const double *samples = backing + (size_t)start;',
+            '  for (size_t i = 0; i < (size_t)n; ++i) if (!isfinite(samples[i]) || samples[i] < 0) return false;',
+            '  mulib_histprice_forecast_t output = {NAN, NAN};',
+            f'  if ({symbol}(samples, (size_t)n, alpha, '+('beta, phi, ' if holt else '')+
+            '(size_t)horizon, &output) != 1) return false;',
+            '  if (!isfinite(output.point) || output.point < 0 || !isnan(output.variance)) return false;',
+            '  *point = output.point;',
+            '  *variance = output.variance;',
+            '  return true;', '}',
+        ]
+    return '\n'.join(source)+'\n'
+
+
+def history_probe():
+    return '''#include <mulib-histprice.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <math.h>
+extern bool on1x_kernel_scalar_v1_mulib_histprice_ema(const double *, int64_t, int64_t, int64_t, double, int64_t, double *, double *);
+extern bool on1x_kernel_scalar_v1_mulib_histprice_holt(const double *, int64_t, int64_t, int64_t, double, double, double, int64_t, double *, double *);
+int main(void) {
+    const double prices[] = {NAN, 10, 12, 14, NAN};
+    double point = -1, variance = -1;
+    mulib_histprice_forecast_t direct;
+    if (!mulib_histprice_ema(prices+1, 3, 0.0, 2, &direct)) return 1;
+    if (!on1x_kernel_scalar_v1_mulib_histprice_ema(prices, 5, 1, 3, 0.0, 2, &point, &variance)
+        || point != 10 || point != direct.point || !isnan(variance) || !isnan(direct.variance)) return 2;
+    if (!mulib_histprice_holt(prices+1, 3, .5, .2, 1.0, 2, &direct)) return 3;
+    if (!on1x_kernel_scalar_v1_mulib_histprice_holt(prices, 5, 1, 3, .5, .2, 1.0, 2, &point, &variance)
+        || point != 18 || point != direct.point || !isnan(variance) || !isnan(direct.variance)) return 4;
+    point = -1; variance = -2;
+    if (on1x_kernel_scalar_v1_mulib_histprice_ema(prices, 5, 0, 5, .5, 1, &point, &variance)
+        || on1x_kernel_scalar_v1_mulib_histprice_ema(prices, 5, 1, 0, .5, 1, &point, &variance)
+        || on1x_kernel_scalar_v1_mulib_histprice_ema(prices, 5, 1, 3, .5, INT64_MAX, &point, &variance)
+        || on1x_kernel_scalar_v1_mulib_histprice_ema(prices, 5, 1, 3, .5, -1, &point, &variance)
+        || on1x_kernel_scalar_v1_mulib_histprice_ema(prices, 5, 1, 3, INFINITY, 1, &point, &variance)
+        || on1x_kernel_scalar_v1_mulib_histprice_ema(prices, 5, INT64_MAX, INT64_MAX, .5, 1, &point, &variance)
+        || on1x_kernel_scalar_v1_mulib_histprice_holt(prices, 5, 1, 1, .5, .2, 1., 1, &point, &variance)
+        || on1x_kernel_scalar_v1_mulib_histprice_holt(prices, 5, 1, 3, .5, .2, 0., 1, &point, &variance)
+        || point != -1 || variance != -2) return 5;
+    return 0;
+}
+'''
+
+
+def pricing_adapter(interface):
+    source = ['#include <mulib-priceopt.h>', '#include <float.h>', '#include <limits.h>',
+              '#include <math.h>', '#include <stdbool.h>', '#include <stdint.h>',
+              '#if !defined(__linux__) || !defined(__x86_64__) || !defined(__LP64__) || defined(__FAST_MATH__)',
+              '#error "unsupported KernelBind pricing ABI"', '#endif',
+              '_Static_assert(CHAR_BIT == 8 && sizeof(int) == 4 && _Alignof(int) == 4 && INT_MAX == 2147483647, "status ABI");',
+              '_Static_assert(sizeof(size_t) == 8 && _Alignof(size_t) == 8 && SIZE_MAX == UINT64_MAX, "size ABI");',
+              '_Static_assert(sizeof(double) == 8 && _Alignof(double) == 8 && FLT_RADIX == 2 && DBL_MANT_DIG == 53 && DBL_MAX_EXP == 1024, "binary64 ABI");']
+    for name, values in PRICING_ENUMS.items():
+        ty = f'mulib_priceopt_{name}_t'
+        source += [f'_Static_assert(sizeof({ty}) == 4 && _Alignof({ty}) == 4 &&'
+                   f' _Generic(({ty})0, unsigned int:1, default:0), "enum ABI");']
+        for i, value in enumerate(values):
+            source += [f'_Static_assert(MULIB_PRICEOPT_{value} == {i}, "enum value drift");']
+    for name, fields in PRICING_RECORDS.items():
+        ty = f'mulib_priceopt_{name}_t'
+        source += [f'_Static_assert(sizeof({ty}) == {len(fields)*8} && _Alignof({ty}) == 8, "record ABI");']
+        for i, (field, spelling) in enumerate(fields):
+            expect = f'mulib_priceopt_{spelling}_t' if spelling in PRICING_ENUMS else spelling
+            source += [f'_Static_assert(offsetof({ty}, {field}) == {i*8} &&'
+                       f' _Generic(&(({ty} *)0)->{field}, {expect} *:1, default:0), "record field drift");']
+    # The only implementation switch is in the planner's separate TU.
+    for export in interface['exports'].values():
+        symbol = export['c_name']
+        candidates = symbol.endswith('_candidates')
+        prefix = 'const double *, const double *, size_t' if candidates else 'const mulib_priceopt_demand_model_t *'
+        source += [f'_Static_assert(_Generic(&{symbol}, int (*)({prefix}, const mulib_priceopt_constraints_t *,'
+                   ' mulib_priceopt_objective_t, mulib_priceopt_result_t *):1, default:0), "pricing prototype");']
+        prefix = ('const double *prices, int64_t pcap, int64_t ps, int64_t pn, '
+                  'const double *units, int64_t ucap, int64_t us, int64_t un' if candidates else
+                  'int64_t tag, double reference, double scale, double shape')
+        source += [
+            f'bool {CLAMP_ADAPTER_PREFIX}{symbol}({prefix}, double cap, double change, double floor, double margin, '
+            'double previous, double tick, double cost, int64_t objective, double *demand, double *price,'
+            ' double *score, uint64_t *evaluations) {',
+            '  if (!demand || !price || !score || !evaluations) return false;',
+            '  mulib_priceopt_objective_t selected;',
+            '  switch (objective) {',
+            '  case 0: selected = MULIB_PRICEOPT_PROFIT; break;',
+            '  case 1: selected = MULIB_PRICEOPT_REVENUE; break;',
+            '  default: return false;',
+            '  }',
+            '  const mulib_priceopt_constraints_t limits = {.min_price=floor, .max_price=cap, .unit_cost=cost,'
+            ' .min_unit_margin=margin, .previous_price=previous, .max_relative_change=change, .tick=tick};',
+        ]
+        if candidates:
+            source += [
+                '  if (!prices || !units || pcap < 0 || pcap > 256 || ucap < 0 || ucap > 256 ||'
+                ' ps < 0 || ps > pcap || us < 0 || us > ucap || pn <= 0 || pn != un || pn > pcap - ps || un > ucap - us) return false;',
+            ]
+            first = 'prices + (size_t)ps, units + (size_t)us, (size_t)pn'
+        else:
+            source += [
+                '  mulib_priceopt_demand_kind_t kind;',
+                '  switch (tag) {',
+                '  case 0: kind = MULIB_PRICEOPT_ISOELASTIC; break;',
+                '  case 1: kind = MULIB_PRICEOPT_LINEAR; break;',
+                '  case 2: kind = MULIB_PRICEOPT_LOGISTIC; break;',
+                '  default: return false;',
+                '  }',
+                '  const mulib_priceopt_demand_model_t model = {.kind=kind, .scale=scale, .shape=shape, .reference=reference};',
+            ]
+            first = '&model'
+        source += [
+            '  mulib_priceopt_result_t out = {NAN, NAN, NAN, 0};',
+            f'  if ({symbol}({first}, &limits, selected, &out) != 1) return false;',
+            '  if (!isfinite(out.price) || !isfinite(out.score) || !isfinite(out.expected_demand) || !out.evaluations) return false;',
+            '  *demand = out.expected_demand; *price = out.price; *score = out.score; *evaluations = out.evaluations;',
+            '  return true;',
+            '}',
+        ]
+    return '\n'.join(source)+'\n'
+
+
+def pricing_probe():
+    return '''#include <mulib-priceopt.h>
+#include <stdbool.h>
+#include <stdint.h>
+extern bool on1x_kernel_scalar_v1_mulib_priceopt_optimize(int64_t, double, double, double, double, double, double, double, double, double, double, int64_t, double *, double *, double *, uint64_t *);
+extern bool on1x_kernel_scalar_v1_mulib_priceopt_candidates(const double *, int64_t, int64_t, int64_t, const double *, int64_t, int64_t, int64_t, double, double, double, double, double, double, double, int64_t, double *, double *, double *, uint64_t *);
+int main(void) {
+    const mulib_priceopt_constraints_t limits = {.min_price=6, .max_price=20, .unit_cost=4, .tick=1};
+    const mulib_priceopt_demand_model_t model = {.kind=MULIB_PRICEOPT_LINEAR, .scale=20, .shape=1};
+    mulib_priceopt_result_t direct;
+    double demand, price, score;
+    uint64_t evaluations;
+    if (!mulib_priceopt_optimize(&model, &limits, MULIB_PRICEOPT_PROFIT, &direct) ||
+        !on1x_kernel_scalar_v1_mulib_priceopt_optimize(1, 0, 20, 1, 20, 0, 6, 0, 0, 1, 4, 0,
+         &demand, &price, &score, &evaluations) || price != 12 || score != 64 ||
+        price != direct.price || score != direct.score || demand != direct.expected_demand ||
+        evaluations != direct.evaluations) return 1;
+    const double p[]={-999, 10, 12, 15}, q[]={12, 9, 4};
+    if (!mulib_priceopt_candidates(p+1, q, 3, &limits, MULIB_PRICEOPT_PROFIT, &direct) ||
+        !on1x_kernel_scalar_v1_mulib_priceopt_candidates(p,4,1,3,q,3,0,3,20,0,6,0,0,1,4,0,
+         &demand,&price,&score,&evaluations) || price != 10 ||
+        price != direct.price || score != direct.score || demand != direct.expected_demand ||
+        evaluations != direct.evaluations) return 2;
+    price=-1; demand=-2; score=-3; evaluations=4;
+    if (on1x_kernel_scalar_v1_mulib_priceopt_optimize(3,0,20,1,20,0,6,0,0,1,4,0,&demand,&price,&score,&evaluations) ||
+        on1x_kernel_scalar_v1_mulib_priceopt_optimize(1,0,20,1,6,0,20,0,0,1,4,0,&demand,&price,&score,&evaluations) ||
+        on1x_kernel_scalar_v1_mulib_priceopt_candidates(p,4,1,3,q,3,0,2,20,0,6,0,0,1,4,0,&demand,&price,&score,&evaluations) ||
+        price!=-1 || demand!=-2 || score!=-3 || evaluations!=4) return 3;
+    return 0;
+}
+'''
+
+
+def reviewed_profile_tools(name):
+    """Closure, adapter and executable boundary test for a reviewed profile."""
+    return {
+        'mulib.clamp': (['MULIB_IMPL_CLAMP'], clamp_adapter, clamp_probe, 'clamp-boundaries-seeded/v1'),
+        'mulib.histprice': (HISTORY_IMPL, history_adapter, history_probe, 'histprice-differential-boundaries/v1'),
+        'mulib.priceopt': (PRICING_IMPL, pricing_adapter, pricing_probe, 'priceopt-differential-boundaries/v1'),
+    }[name]
 
 
 def build(args, root):

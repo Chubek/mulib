@@ -1,4 +1,5 @@
 #include <on1x/ast.hpp>
+#include <on1x/kernel.hpp>
 #include <on1x/extensions.hpp>
 #include <on1x/meta.hpp>
 #include <on1x/primitives.hpp>
@@ -62,7 +63,7 @@ class Generator {
   int indent=0;
    bool uses_f64=false,uses_f32=false,uses_unsigned=false;
     bool uses_value_data=false,uses_defer=false;
-     bool uses_csp=false;
+     bool uses_csp=false,uses_group_deadlines=false;
      Type current_result=Type::Void;
      std::size_t cancellation_budget=262144;
    std::string location(const Location& at)const{return c_string(meta::source_literal(at.file))+", "+std::to_string(at.line)+", "+std::to_string(at.column);}
@@ -177,6 +178,7 @@ class Generator {
  void collect(const std::vector<Stmt>& body){
   for(const auto& statement:body){
     if(statement.prototype)continue;
+    if(statement.kind==Stmt::Kind::CspScope&&statement.value)uses_group_deadlines=true;
     if(statement.kind==Stmt::Kind::Break)break_targets.insert(statement.control_target);
     if(statement.kind==Stmt::Kind::Continue)continue_targets.insert(statement.control_target);
     if(statement.kind==Stmt::Kind::Leave)region_exit_targets.insert(statement.control_target);
@@ -190,10 +192,11 @@ class Generator {
    else if(owner.type==Type::Json)definitions<<pad()<<"on1x_json_drop("<<owner.name<<");\n";
   else adjust(definitions,owner.type,owner.name,false,pad());
  }
- void drops(){
-  for(auto scope=owners.rbegin();scope!=owners.rend();++scope)
-   for(auto owner=scope->rbegin();owner!=scope->rend();++owner)release(*owner);
+ void drops(std::size_t live_scopes){
+  for(auto i=live_scopes;i>0;--i)
+   for(auto owner=owners[i-1].rbegin();owner!=owners[i-1].rend();++owner)release(*owner);
  }
+ void drops(){drops(owners.size());}
  void pop(bool cleanup=true){
   if(cleanup)for(auto owner=owners.back().rbegin();owner!=owners.back().rend();++owner)release(*owner);
   scopes.pop_back();owners.pop_back();--indent;
@@ -221,20 +224,21 @@ class Generator {
      if(uses_csp)definitions<<pad()<<"on1x_csp_shield_leave();\n";
     }}
     void leave_call(){if(uses_csp)definitions<<pad()<<"on1x_csp_call_leave();\n";}
-    void cancellation_edge(const Location& at){
+    void cancellation_edge(const Location& at,std::size_t live_scopes){
      if(!uses_csp)return;
      std::size_t work=1+temporary_values.size();
-     for(const auto& scope:owners)work+=scope.size();
+     for(std::size_t i=0;i<live_scopes;++i)work+=owners[i].size();
      if(work>cancellation_budget)throw Error(at,"cancellation cleanup expansion budget exhausted","ON1X-CSP-LIMIT");
      cancellation_budget-=work;
      definitions<<pad()<<"if (on1x_csp_cancelled()) {\n";++indent;
      definitions<<pad()<<"on1x_csp_shield_enter();\n";
      run_defers();
      for(auto t=temporary_values.rbegin();t!=temporary_values.rend();++t)release(*t);
-     drops();definitions<<pad()<<"on1x_csp_shield_leave();\n";leave_call();
+     drops(live_scopes);definitions<<pad()<<"on1x_csp_shield_leave();\n";leave_call();
      definitions<<pad()<<"return"<<(current_result==Type::Void?"":" ("+ctype(current_result)+"){0}")<<";\n";
      --indent;definitions<<pad()<<"}\n";
     }
+    void cancellation_edge(const Location& at){cancellation_edge(at,owners.size());}
  void finish(std::size_t keep=0){
   for(std::size_t i=temporary_values.size();i>keep;--i)release(temporary_values[i-1]);
   temporary_values.resize(keep);
@@ -262,13 +266,14 @@ class Generator {
  }
    std::string expr(const Expr& e){
     auto result=emit_expr(e);
-    if(e.kind==Expr::Kind::Call||e.kind==Expr::Kind::Csp)cancellation_edge(e.where);
+    if(e.kind==Expr::Kind::Call||e.kind==Expr::Kind::Csp||(uses_group_deadlines&&e.kind==Expr::Kind::Run))cancellation_edge(e.where);
     return result;
    }
    std::string emit_expr(const Expr& e){
        switch(e.kind){
        case Expr::Kind::SourceCsp:throw Error(e.where,"unlowered concurrency operation");
         case Expr::Kind::Csp:{
+         if(uses_group_deadlines)cancellation_edge(e.where);
          const auto& op=e.text;auto at=location(e.where);
          if(op=="poll"){
           std::size_t n=e.children.size();bool fallback=e.children.back()->kind==Expr::Kind::Boolean;
@@ -346,7 +351,7 @@ class Generator {
        }
       case Expr::Kind::Propagate:throw Error(e.where,"unlowered propagation");
      case Expr::Kind::Unit:return {};
-      case Expr::Kind::PatternMatch:case Expr::Kind::Case:case Expr::Kind::Loop:throw Error(e.where,"surface value construct must be canonicalized");
+       case Expr::Kind::PatternMatch:case Expr::Kind::Case:case Expr::Kind::Loop:case Expr::Kind::UnsafeBlock:throw Error(e.where,"surface value construct must be canonicalized");
      case Expr::Kind::Region:{
       auto output=e.type==Type::Void?std::string{}:unique("region_value");if(!output.empty())definitions<<pad()<<ctype(e.type)<<" "<<output<<" = {0};\n";
       auto outer=std::move(temporary_values);temporary_values.clear();definitions<<pad()<<"{\n";push();owners.back()=outer;definitions<<pad()<<"{\n";push();
@@ -361,7 +366,11 @@ class Generator {
      case Expr::Kind::Project:{auto root=expr(*e.children.at(0));return temp(e.type,root+".element_"+std::to_string(e.projection),true);}
     case Expr::Kind::Splice:case Expr::Kind::Lift:throw Error(e.where,"MSP stage lowering required before code generation");
     case Expr::Kind::Quote:return expr(*e.children.at(0));
-    case Expr::Kind::Run:{auto code=expr(*e.children.at(0));return temp(e.type,code+".invoke("+code+".environment)");}
+   case Expr::Kind::Run:{
+    auto code=expr(*e.children.at(0));
+    if(uses_group_deadlines)cancellation_edge(e.where);
+    return temp(e.type,code+".invoke("+code+".environment)");
+   }
     case Expr::Kind::MacroCall:case Expr::Kind::SyntaxHole:case Expr::Kind::SyntaxBlock:case Expr::Kind::Extension:case Expr::Kind::SyntaxList:case Expr::Kind::SyntaxVector:case Expr::Kind::SyntaxKeyword:case Expr::Kind::SyntaxLet:
     throw Error(e.where,"unexpanded metaprogramming syntax before code generation");
    case Expr::Kind::PolyPack:{
@@ -474,18 +483,65 @@ class Generator {
   }
   case Expr::Kind::Call:{
    const auto& callee=*e.callee;bool builtin=callee.reference==Expr::Reference::Intrinsic;
-    const bool foreign=callee.reference==Expr::Reference::Extern||callee.reference==Expr::Reference::UnsafeForeign;
+    const bool foreign=callee.reference==Expr::Reference::Extern||callee.reference==Expr::Reference::UnsafeForeign||
+                       callee.reference==Expr::Reference::ScalarForeign;
     bool direct=builtin||foreign;
     auto target=foreign?functions.at(callee.text):direct?callee.text:expr(callee);
     std::vector<std::string> args;
-   for(std::size_t i=0;i<e.children.size();++i){
+    for(std::size_t i=0;i<e.children.size();++i){
     const auto& child=e.children[i];auto value=expr(*child);
     if(!child->type.has_functions())value=temp(child->type,value);
     if(callee.reference==Expr::Reference::Extern&&externs.at(callee.text)->params[i].pattern)
      flatten(*externs.at(callee.text)->params[i].pattern,child->type,value,args);
-    else args.push_back(value);
-   }
-   if(builtin){
+     else args.push_back(value);
+    }
+    if(uses_group_deadlines)cancellation_edge(e.where);
+    if(callee.reference==Expr::Reference::ScalarForeign&&pricing_kernel_symbol(externs.at(callee.text)->kernel_symbol)){
+     const bool candidates=externs.at(callee.text)->kernel_symbol=="mulib_priceopt_candidates";
+     std::vector<std::string> wire;
+     if(candidates){
+      for(std::size_t i=0;i<2;++i){
+       const auto& slice=args[i];
+       wire.insert(wire.end(),{slice+".backing.elements","INT64_C("+std::to_string(e.children[i]->type.extent())+")",
+                               slice+".start",slice+".length"});
+      }
+     }else{
+      // Private wire follows lexicographic nominal field order. It is not
+      // the MuLIB record layout; the adapter constructs actual C records.
+      const auto& m=args[0];
+      wire.insert(wire.end(),{m+".element_0.tag",m+".element_1",m+".element_2",m+".element_3"});
+     }
+     const auto& limits=args[candidates?2:1];
+     for(unsigned i=0;i<7;++i)wire.push_back(limits+".element_"+std::to_string(i));
+     wire.push_back(args.back()+".tag");
+     const auto result=unique("decision"), demand=unique("demand"), price=unique("price");
+     const auto score=unique("score"), count=unique("evaluations");
+     definitions<<pad()<<"double "<<demand<<", "<<price<<", "<<score<<";\n"
+                <<pad()<<"uint64_t "<<count<<";\n"<<pad()<<ctype(e.type)<<" "<<result<<" = {.tag = INT64_C(0)};\n"
+                <<pad()<<"if ("<<target<<"(";
+     for(const auto& arg:wire)definitions<<arg<<", ";
+     definitions<<"&"<<demand<<", &"<<price<<", &"<<score<<", &"<<count<<")) {\n";
+     unsigned index=0;
+     for(const auto& field:{count,demand,price,score})
+      definitions<<pad()<<"  "<<result<<".payload.element_1.element_"<<index++<<" = "<<field<<";\n";
+     definitions<<pad()<<"  "<<result<<".tag = INT64_C(1);\n"<<pad()<<"}\n";
+     return result;
+    }
+    if(callee.reference==Expr::Reference::ScalarForeign&&history_kernel_symbol(externs.at(callee.text)->kernel_symbol)){
+     const auto& slice=args.at(0);
+     const auto ty=ctype(e.type), result=unique("forecast"), point=unique("point"), variance=unique("variance");
+     definitions<<pad()<<"double "<<point<<", "<<variance<<";\n"
+                <<pad()<<ty<<" "<<result<<" = {.tag = INT64_C(0)};\n"
+                <<pad()<<"if ("<<target<<"("<<slice<<".backing.elements, INT64_C("<<e.children[0]->type.extent()
+                <<"), "<<slice<<".start, "<<slice<<".length";
+     for (std::size_t i=1;i<args.size();++i)definitions<<", "<<args[i];
+     definitions<<", &"<<point<<", &"<<variance<<")) {\n"
+                <<pad()<<"  "<<result<<".payload.element_1.element_0 = "<<point<<";\n"
+                <<pad()<<"  "<<result<<".payload.element_1.element_1 = "<<variance<<";\n"
+                <<pad()<<"  "<<result<<".tag = INT64_C(1);\n"<<pad()<<"}\n";
+     return result;
+    }
+    if(builtin){
     const auto& name=callee.text;
     if(name=="println"){
       auto type=e.children[0]->type;target="on1x_print_"+type_name(type);
@@ -528,12 +584,25 @@ class Generator {
     switch(s.kind){
     case Stmt::Kind::TaskGroup:throw Error(s.where,"unlowered taskgroup");
     case Stmt::Kind::CspScope:{
+     std::string delay;
+     if(s.value){
+      auto mark=temporary_values.size();
+      delay=temp(Type::I64,expr(*s.value));
+      finish(mark);
+      cancellation_edge(s.where);
+     }
      definitions<<pad()<<"{\n";push();
      auto owner=unique("taskgroup");
-     definitions<<pad()<<"on1x_csp_group *"<<owner<<" = on1x_csp_group_enter("<<location(s.where)<<");\n";
+     definitions<<pad()<<"on1x_csp_group *"<<owner<<" = "
+                <<(s.value?"on1x_csp_group_enter_within(":"on1x_csp_group_enter(")
+                <<(s.value?delay+", ":"")<<location(s.where)<<");\n";
      owners.back().push_back({Type::CspGroup,owner});
+     if(s.value)cancellation_edge(s.where);
      bool terminated=false;for(const auto& child:s.body)terminated=stmt(child);
-     pop(!terminated);definitions<<pad()<<"}\n";return terminated;
+     if(!terminated&&uses_group_deadlines)cancellation_edge(s.where);
+     pop(!terminated);definitions<<pad()<<"}\n";
+     if(!terminated&&uses_group_deadlines)cancellation_edge(s.where);
+     return terminated;
     }
    case Stmt::Kind::Defer:throw Error(s.where,"unlowered defer");
    case Stmt::Kind::PushDefer:{
@@ -573,12 +642,16 @@ class Generator {
     if(s.value){
      auto value=expr(*s.value);
      if(s.value->noreturn)return true;
+     if(uses_group_deadlines)cancellation_edge(s.where);
     if(s.value->type!=Type::Void){
      auto result=unique("return");definitions<<pad()<<ctype(s.value->type)<<" "<<result<<" = "<<value<<";\n";
      retain(s.value->type,result);
       run_defers();finish();drops();leave_call();definitions<<pad()<<"return "<<result<<";\n";
       }else{run_defers();finish();drops();leave_call();definitions<<pad()<<"return;\n";}
-     }else{run_defers();finish();drops();leave_call();definitions<<pad()<<"return;\n";}
+     }else{
+      if(uses_group_deadlines)cancellation_edge(s.where);
+      run_defers();finish();drops();leave_call();definitions<<pad()<<"return;\n";
+     }
    return true;
   }
    case Stmt::Kind::Expr:{
@@ -608,7 +681,9 @@ class Generator {
     auto target=std::find_if(loop_targets.rbegin(),loop_targets.rend(),[&](const auto& t){return t.id==s.control_target;});
     if(target==loop_targets.rend())throw Error(s.where,"ON1X-CONTROL: missing C11 loop target");
     finish();
+    if(uses_group_deadlines)cancellation_edge(s.where);
     for(std::size_t i=owners.size();i>target->keep;--i)for(auto owner=owners[i-1].rbegin();owner!=owners[i-1].rend();++owner)release(*owner);
+    if(uses_group_deadlines)cancellation_edge(s.where,target->keep);
     definitions<<pad()<<"goto "<<(s.kind==Stmt::Kind::Break?target->done:target->latch)<<";\n";return true;
    }
    case Stmt::Kind::Range:throw Error(s.where,"ON1X-CONTROL: unlowered range in C11 emitter");
@@ -618,7 +693,9 @@ class Generator {
    }
    case Stmt::Kind::Leave:{
     auto target=std::find_if(region_targets.rbegin(),region_targets.rend(),[&](const auto& r){return r.id==s.control_target;});if(target==region_targets.rend())throw Error(s.where,"missing canonical region target");finish();
+    if(uses_group_deadlines)cancellation_edge(s.where);
     for(std::size_t i=owners.size();i>target->keep;--i)for(auto owner=owners[i-1].rbegin();owner!=owners[i-1].rend();++owner)release(*owner);
+    if(uses_group_deadlines)cancellation_edge(s.where,target->keep);
     definitions<<pad()<<"goto "<<target->done<<";\n";return true;
    }
    case Stmt::Kind::Trap:definitions<<pad()<<"on1x_assert(false);\n"<<pad()<<"for (;;) {}\n";return true;
@@ -714,22 +791,40 @@ class Generator {
  }
  public:
   explicit Generator(const Unit& source):unit(source){
+   for(const auto& f:unit.functions)verify_kernel_shape(f);
    uses_csp=csp::present(unit);
-   for(const auto& f:unit.functions)if(f.external&&f.unsafe_kernel_symbol.empty())identifiers.insert(f.name);
+    for(const auto& f:unit.functions)if(f.external&&f.kernel_symbol.empty())identifiers.insert(f.name);
+    for(const auto& f:unit.functions)if(f.kernel_link_only)identifiers.insert("on1x_kernel_scalar_v1_"+f.kernel_symbol);
   for(const auto& f:unit.functions)if(f.external)externs.emplace(f.name,&f);
-    for(const auto& f:unit.functions)functions.emplace(f.name,f.unsafe_kernel_symbol.empty()&&f.external?f.name:reserve("on1x_fn_"+(f.name.starts_with("@")?f.name.substr(1):f.name)));
+     for(const auto& f:unit.functions)functions.emplace(f.name,f.kernel_link_only?"on1x_kernel_scalar_v1_"+f.kernel_symbol:
+      f.kernel_symbol.empty()&&f.external?f.name:reserve("on1x_fn_"+(f.name.starts_with("@")?f.name.substr(1):f.name)));
    for(const auto& f:unit.functions)if(!f.prototype)collect(f.body);
  }
   std::string run(){
     std::string kernel_headers;
     for(const auto& f:unit.functions){
      if(f.prototype)continue;
-    if(!f.unsafe_kernel_symbol.empty()){
+     if(f.kernel_link_only){
+      prototypes<<"/* foreign: "<<f.kernel_symbol<<"; unresolved until KernelBind review and ABI gates */\n";
+      if(history_kernel_symbol(f.kernel_symbol)){
+       prototypes<<"extern bool "<<functions.at(f.name)<<"(const double *, int64_t, int64_t, int64_t, double, ";
+       if(f.kernel_symbol=="mulib_histprice_holt")prototypes<<"double, double, ";
+       prototypes<<"int64_t, double *, double *);\n";
+      }else if(pricing_kernel_symbol(f.kernel_symbol)){
+       prototypes<<"extern bool "<<functions.at(f.name)<<"(";
+       if(f.kernel_symbol=="mulib_priceopt_candidates")
+        prototypes<<"const double *, int64_t, int64_t, int64_t, const double *, int64_t, int64_t, int64_t, ";
+       else prototypes<<"int64_t, double, double, double, ";
+       prototypes<<"double, double, double, double, double, double, double, int64_t, double *, double *, double *, uint64_t *);\n";
+      }else prototypes<<"extern int64_t "<<functions.at(f.name)<<"(int64_t, int64_t);\n";
+      continue;
+     }
+     if(!f.kernel_symbol.empty()){
      kernel_headers="#include <mulib-clamp.h>\n"
       "#if !defined(ON1X_KERNEL_ABI_V1) || ON1X_KERNEL_ABI_V1 != 1 || !defined(__linux__) || !defined(__x86_64__)\n"
       "#error \"KernelBind C requires the verified native Linux x86-64 build profile\"\n#endif\n"
       "_Static_assert(CHAR_BIT == 8 && sizeof(int64_t) == 8 && _Alignof(int64_t) == 8 && sizeof(void *) == 8, \"KernelBind target ABI drift\");\n";
-     const auto& symbol=f.unsafe_kernel_symbol;
+      const auto& symbol=f.kernel_symbol;
      prototypes<<"/* unsafe_foreign: "<<symbol<<" */\n"
       <<"_Static_assert(_Generic(&"<<symbol<<", int64_t (*)(int64_t, int64_t): 1, default: 0), \"KernelBind prototype drift\");\n"
       <<"static int64_t "<<functions.at(f.name)<<"(int64_t a, int64_t b) { return "<<symbol<<"(a, b); }\n";
@@ -753,7 +848,7 @@ class Generator {
     definitions<<"static int64_t "<<entry<<"(on1x_env *context) { (void)context; ";
     if(main.result==Type::Void)definitions<<functions.at("main")<<"(); return 0;";
     else definitions<<"return "<<functions.at("main")<<"();";
-    definitions<<" }\nint main(void) { return (int)on1x_csp_run("<<entry<<", NULL, "<<location(main.where)<<"); }\n";
+    definitions<<" }\nint main(void) { return (int)on1x_csp_run_v4("<<entry<<", NULL, "<<location(main.where)<<"); }\n";
    }
    else if(main.result==Type::Void)definitions<<"int main(void) { "<<functions.at("main")<<"(); return 0; }\n";
   else definitions<<"int main(void) { return (int)"<<functions.at("main")<<"(); }\n";
@@ -767,7 +862,7 @@ class Generator {
       +(uses_f32?std::string("#if !defined(ON1X_F32_ABI_VERSION) || ON1X_F32_ABI_VERSION != 1\n#error \"unsupported On1x f32 target or runtime ABI\"\n#endif\n"):std::string{})
       +(uses_unsigned?std::string("#if !defined(ON1X_UNSIGNED_ABI_VERSION) || ON1X_UNSIGNED_ABI_VERSION != 1\n#error \"incompatible On1x unsigned runtime ABI\"\n#endif\n"):std::string{})
        +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
-         +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 3\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
+         +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 4\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
        +kernel_headers+float_guard+types.str()+"\n"+prototypes.str()+"\n"+value_helpers.str()+helpers.str()+definitions.str();
  }
 };

@@ -80,7 +80,7 @@ def keys(value, allowed):
         reject('invalid/unknown profile keys')
 
 
-def catalog(root):
+def catalog(root, selected=None):
     data = load(CONTRACTS/'catalog.json', 2*1024*1024)
     keys(data, ['schema', 'safe_export', 'profiles'])
     if data['schema'] != 'on1x.contract-catalog/v1' or data['safe_export'] is not False:
@@ -89,6 +89,8 @@ def catalog(root):
     if obligations['schema'] != 'on1x.contract-obligations/v1' or obligations['safe_export'] is not False:
         reject('unsupported/unsafe obligations')
     for name, profile in data['profiles'].items():
+        if selected is not None and name not in selected:
+            continue
         keys(profile, ['contract', 'header', 'header_sha256', 'manual', 'manual_sha256', 'evidence_sha256', 'function_prefix', 'function_count', 'implementation_modules', 'active_optional_macros', 'inactive_optional_macros', 'link_libraries'])
         if not re.fullmatch('[a-z][a-z0-9_-]*', name):
             reject('invalid profile name')

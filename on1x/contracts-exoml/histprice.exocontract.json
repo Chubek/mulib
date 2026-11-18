@@ -1,0 +1,61 @@
+{
+  "schema_version": 2,
+  "library": "histprice",
+  "headers": ["mulib-histprice.h"],
+  "state": "annotated",
+  "bundle_provenance": {
+    "header": "mulib-histprice.h",
+    "revision": "sha256:3f8eec2e0812e85d6649508f51f49bb9f800a9840d8c5b042bb7eb4cae0557d6",
+    "author": "On1x KernelBind contributors",
+    "review_status": "unreviewed",
+    "evidence_method": "Source annotation; no independent production review."
+  },
+  "functions": [
+    {
+      "c_name": "mulib_histprice_ema",
+      "return": {"kind": "value", "nullable": false},
+      "parameters": [
+        {"index": 0, "name": "prices", "ownership": "borrowed_immutable", "nullable": false, "length_parameter": 1, "alignment": 8,
+         "lifetime": {"origin": "explicit_region", "region_name": "call"}},
+        {"index": 1, "name": "n", "ownership": "scalar", "nullable": false},
+        {"index": 2, "name": "alpha", "ownership": "scalar", "nullable": false},
+        {"index": 3, "name": "horizon", "ownership": "scalar", "nullable": false},
+        {"index": 4, "name": "out", "ownership": "out", "nullable": false, "alignment": 8,
+         "lifetime": {"origin": "explicit_region", "region_name": "call"}}
+      ],
+      "errors": {"kind": "boolean_return", "out_valid_on_failure": false, "cleanup_required_on_failure": false},
+      "effects": {"effects": ["read", "write"], "unknown": false},
+      "concurrency": {"thread_safety": "thread_safe", "blocking_behavior": "nonblocking", "suspension_safe": true},
+      "provenance": {
+        "header": "mulib-histprice.h",
+        "author": "On1x KernelBind contributors",
+        "review_status": "unreviewed",
+        "evidence_method": "Synchronous call without pointer retention. Returns 1 with both fields written, 0 without writing output on rejection. Alpha is in [0,1]. Variance is NaN."
+      }
+    },
+    {
+      "c_name": "mulib_histprice_holt",
+      "return": {"kind": "value", "nullable": false},
+      "parameters": [
+        {"index": 0, "name": "prices", "ownership": "borrowed_immutable", "nullable": false, "length_parameter": 1, "alignment": 8,
+         "lifetime": {"origin": "explicit_region", "region_name": "call"}},
+        {"index": 1, "name": "n", "ownership": "scalar", "nullable": false},
+        {"index": 2, "name": "alpha", "ownership": "scalar", "nullable": false},
+        {"index": 3, "name": "beta", "ownership": "scalar", "nullable": false},
+        {"index": 4, "name": "phi", "ownership": "scalar", "nullable": false},
+        {"index": 5, "name": "horizon", "ownership": "scalar", "nullable": false},
+        {"index": 6, "name": "out", "ownership": "out", "nullable": false, "alignment": 8,
+         "lifetime": {"origin": "explicit_region", "region_name": "call"}}
+      ],
+      "errors": {"kind": "boolean_return", "out_valid_on_failure": false, "cleanup_required_on_failure": false},
+      "effects": {"effects": ["read", "write"], "unknown": false},
+      "concurrency": {"thread_safety": "thread_safe", "blocking_behavior": "nonblocking", "suspension_safe": true},
+      "provenance": {
+        "header": "mulib-histprice.h",
+        "author": "On1x KernelBind contributors",
+        "review_status": "unreviewed",
+        "evidence_method": "Synchronous call without pointer retention. Returns 1 with both fields written, 0 without writing output on rejection. Requires at least two samples. Alpha/beta are in [0,1], phi in (0,1]. Variance is NaN."
+      }
+    }
+  ]
+}

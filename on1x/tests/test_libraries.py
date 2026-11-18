@@ -46,6 +46,53 @@ fn main(){
  println(F.uncurry(F.curry(sum))((9,11)));
 }''')
 
+t.valid('basis_loops','',text='''
+import std.batteries.base64 as B; import std.collections.List as L;
+import std.numeric.IntInf as I; import std.numeric.Word8 as W;
+import std.parsec.parsec as P;
+fn main() {
+ assert(B.batteries_base64_encode("")=="");
+ assert(B.batteries_base64_encode("M")=="TQ==");
+ assert(B.batteries_base64_encode("Ma")=="TWE=");
+ assert(B.batteries_base64_encode("Many")=="TWFueQ==");
+ let two=sx_cons(sx_symbol("a"),sx_cons(sx_symbol("b"),sx_nil()));
+ assert(sx_kind(L.basis_list_take(two,0))==0);
+ assert(sx_text(sx_head(L.basis_list_take(two,1)))=="a");
+ assert(sx_text(sx_head(L.basis_list_drop(two,1)))=="b");
+ assert(sx_kind(L.basis_list_drop(two,2))==0);
+ assert(I.basis_intinf_compare_nat("000999","1000")==-1);
+ assert(I.basis_intinf_compare_nat("789","0788")==1);
+ assert(I.basis_intinf_compare_nat("000","0")==0);
+ assert(W.basis_word8_shift_left(255,0)==255);
+ assert(W.basis_word8_shift_left(255,7)==128);
+ assert(W.basis_word8_shift_right(255,7)==1);
+ assert(P.parsec_literal("abc",3,"") && !P.parsec_literal("abc",3,"d"));
+ assert(P.parsec_space("a \\t\\n",1)==4);
+ assert(P.parsec_space("a \\tx",1)==3);
+}
+''')
+
+t.valid('match_escapes','',text=r'''
+import std.ppx.json as J; import std.rpc.rpc as R;
+fn main() {
+ let escaped="\"\\/\n\r\t";
+ assert(R.rpc_escape(escaped)=="\\\"\\\\/\\n\\r\\t");
+ let (json,end)=J.ppx_json_quoted("\"\\\"\\\\\\/\\n\\r\\t\\b\\f\"",0);
+ assert(text_slice(json,0,6)==escaped && text_byte(json,6)==8 && text_byte(json,7)==12 && end==18);
+ assert(sx_text(J.sexpr_parse("\"\\\"\\\\/\\n\\r\\t\""))==escaped);
+}
+''')
+
+t.valid('fresh_loop_exit','',text='''
+import std.ppx.source as P;
+fn main() {
+ let tree=sx_cons(sx_symbol("on1x_ppx_1"),sx_cons(sx_symbol("custom_2"),sx_nil()));
+ let (plain,a)=P.ppx_fresh(tree,0);
+ let (prefixed,b)=P.ppx_fresh_prefixed(tree,"custom_",1);
+ assert(plain=="on1x_ppx_2" && a==2 && prefixed=="custom_3" && b==3);
+}
+''')
+
 # Independent Python arithmetic oracle for signed floor division, all sign combinations.
 cases=[(a,b) for a in [-9223372036854775808,-101,-7,-1,0,1,7,101,9223372036854775807]
        for b in [-9223372036854775808,-17,-3,-1,1,3,17,9223372036854775807]
@@ -64,8 +111,12 @@ for name,body,message in [
     ('word8_sub','W.basis_word8_sub(-1,0);','word8 out of range'),
     ('list_atom','L.map(sx_symbol("atom"),fn(x:sexpr)->sexpr{return x;});','list is not proper'),
     ('substring_overflow','S.substring("x",1,9223372036854775807);','substring bounds'),
+    ('rpc_control_byte','let b=buffer_new();buffer_byte(b,1);R.rpc_escape(buffer_text(b));','unsupported JSON control byte'),
+    ('json_escape',r'J.ppx_json_quoted("\"\\q\"",0);','schema JSON: invalid escape'),
+    ('sexpr_escape',r'J.sexpr_parse("\"\\q\"");','unknown escape'),
 ]:
-    exe=t.build(name,text='import std.numeric.Word8 as W;import std.List as L;import std.String as S;fn main(){'+body+'}')
+    exe=t.build(name,text='import std.numeric.Word8 as W;import std.List as L;import std.String as S;'
+                          'import std.rpc.rpc as R;import std.ppx.json as J;fn main(){'+body+'}')
     p=run([exe],env={**os.environ,'LSAN_OPTIONS':'detect_leaks=0'})
     assert p.returncode == 73 and message in p.stderr,(name,p.returncode,p.stderr)
 

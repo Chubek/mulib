@@ -17,8 +17,7 @@ fn basis_string_is_suffix(suffix: string,s: string) -> bool {
 fn basis_string_match_at(s:string,needle:string,start:i64)->bool {
   let n=text_len(needle); let size=text_len(s);
   if start<0 || start>size || n>size-start { return false; }
-  var i=0;
-  while i<n { if text_byte(s,start+i)!=text_byte(needle,i) { return false; } i=i+1; }
+  for i in 0..n { if text_byte(s,start+i)!=text_byte(needle,i) { return false; } }
   return true;
 }
 fn basis_string_find(s:string,needle:string,start:i64)->i64 {
@@ -44,10 +43,10 @@ fn basis_string_implode_ascii(xs: sexpr) -> string {
   while sx_kind(rest)==3 {
     let item=sx_head(rest);
     if sx_kind(item)!=1 { tool_fail("expected decimal ASCII character code symbol"); }
-    let code=sx_text(item); var value=0; var i=0;
-    while i<text_len(code) {
+    let code=sx_text(item); var value=0;
+    for i in 0..text_len(code) {
       let c=text_byte(code,i); if c<48 || c>57 { tool_fail("bad ASCII code"); }
-      value=value*10+c-48; i=i+1;
+      value=value*10+c-48;
     }
     if value<1 || value>127 { tool_fail("ASCII char must be 1..127"); }
     buffer_byte(out,value); rest=sx_tail(rest);
@@ -56,8 +55,8 @@ fn basis_string_implode_ascii(xs: sexpr) -> string {
   return buffer_text(out);
 }
 fn basis_string_translate(s: string, f: fn(i64)->string) -> string {
-  let out=buffer_new(); var i=0;
-  while i<text_len(s) { buffer_append(out,f(text_byte(s,i))); i=i+1; }
+  let out=buffer_new();
+  for i in 0..text_len(s) { buffer_append(out,f(text_byte(s,i))); }
   return buffer_text(out);
 }
 fn basis_string_join(separator:string,strings:sexpr)->string {

@@ -163,7 +163,7 @@ assert p.returncode == 0, p
 bad_abi = t.work / 'bad-abi'
 bad_abi.mkdir(exist_ok=True)
 (bad_abi / 'on1x_concurrency.h').write_text(
-    (t.root / 'runtime/on1x_concurrency.h').read_text().replace('ON1X_CSP_ABI_VERSION 3', 'ON1X_CSP_ABI_VERSION 2'))
+    (t.root / 'runtime/on1x_concurrency.h').read_text().replace('ON1X_CSP_ABI_VERSION 4', 'ON1X_CSP_ABI_VERSION 3'))
 p = run([t.cc, '-std=c11', '-I', bad_abi, '-I', t.root / 'runtime', '-fsyntax-only', generated])
 assert p.returncode != 0 and 'runtime ABI' in p.stderr, p
 

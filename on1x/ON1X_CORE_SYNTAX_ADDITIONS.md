@@ -19,13 +19,13 @@ full-specification conformance or support in scalar MIR. No row is VERIFIED.
 | §2 internal fibers | EXECUTABLE cooperative i64 profile with running/blocked cancellation; [manual](docs/concurrency.md) | General results/captures, native-thread ownership and effectful MIR |
 | §2 external fibers | EXECUTABLE bounded POSIX argv/backtick commands and byte streams | Full portable shell AST/operators/expansion, typed process outcomes, other targets |
 | §2 channels | EXECUTABLE 1:1 i64 uni channels and process-byte endpoints | General channel payloads, duplex, cardinality quotas/cloning, cancellation |
-| §2 atomic `poll` | EXECUTABLE mixed i64/u8 choices, monotonic `after` and cancellation-aware waits; [increment](docs/cancellation-deadlines.md) | General endpoint expressions, taskgroup deadlines and effectful MIR |
+| §2 atomic `poll` | EXECUTABLE mixed i64/u8 choices, monotonic `after` and cancellation-aware waits; [increment](docs/cancellation-deadlines.md) | General endpoint expressions and effectful MIR |
 | §3 loops/exits/results | EXECUTABLE statement/range/for-C and value loops; [manual](docs/value-loops.md) | General iterator/drop protocol and destructuring iteration |
 | §4 cleanup | EXECUTABLE **different bounded profile**: [function-scoped Go-style `defer call;`](docs/defer-errors.md), including cooperative fiber cancellation | This is not scope-exit `defer`; `using`, scope cleanup and general exception/async unwind remain unimplemented |
 | §5 typed errors | EXECUTABLE nominal Result postfix `?` and explicit match recovery | `try`/`catch`/`finally`/`throw`, Option propagation, general error effects |
 | §6 async/await | NOT IMPLEMENTED | Typed suspension IR, liveness, frames, scheduler/ownership/cleanup |
 | §7 generators | NOT IMPLEMENTED | Stream ownership, yield/frame/drop semantics and iterator protocol |
-| §8 taskgroups | EXECUTABLE bounded lexical scopes, explicit joins and consuming cooperative internal / external cancel | Automatic normal-exit outstanding-child join and taskgroup `within` deadlines |
+| §8 taskgroups | EXECUTABLE bounded lexical scopes, explicit joins, consuming cooperative internal / external cancel, and `within` with [terminal expiry](docs/cancellation-deadlines.md#taskgroup-within) | Automatic normal-exit outstanding-child join and typed timeout propagation/recovery |
 | §9 synchronization | NOT IMPLEMENTED as checked language constructs | Shared ownership/memory model, atomic/lock typing and suspension restrictions |
 | §10 owning-list comprehensions | NOT IMPLEMENTED | Owning list ABI, builder/drop protocol and allocation outcomes |
 | §11 nominal records/enums | EXECUTABLE nonrecursive trivial-value profile; [manual](docs/nominal-adts.md) | Boxed recursive/owning layouts and general constructor sugar |

@@ -4,8 +4,8 @@ This is the next vertical implementation of section 2 of
 `../ON1X_CORE_SYNTAX_ADDITIONS.md`, not completion of that specification.
 The earlier Go-style function-scoped defer contract is unchanged.
 The [cancellation/deadline continuation](cancellation-deadlines.md) extends this
-profile with running/blocked cancellation and monotonic `poll after`. Async/await
-and taskgroup `within` remain unsupported.
+profile with running/blocked cancellation, monotonic `poll after`, and
+`taskgroup within`. Async/await remains unsupported.
 
 ## Selected profile
 
@@ -17,7 +17,13 @@ and taskgroup `within` remain unsupported.
   unterminated expression or explicit returns. `ifiber<i64>` is affine:
   `join handle` consumes it and yields i64. Every reached handle must be joined
    or consumed by `cancel` on every normal exit; no detach or silently dropped
-  unfinished child.
+   unfinished child.
+- `taskgroup within duration { statements }` additionally limits the body and
+  its descendants by a monotonic deadline. Expiry stops the run cooperatively,
+  drains cleanup and exits 73 with the timed group's source location. It is
+  not a branch, a recoverable join result, or a substitute for normal affine
+  consumption. Use `poll after` for a recoverable choice. See the
+  [deadline contract](cancellation-deadlines.md#taskgroup-within).
 - `launch exec("/absolute/program", "literal-arg", ...)` eagerly starts one
   external process with POSIX `posix_spawn` and a fresh process group. The
   first argument is the absolute executable path; all 1..9 argv entries are
@@ -157,7 +163,7 @@ taskgroup {
 
 ## Deliberately unsupported
 
-Taskgroup `within`, typed cancelled join results, the full portable shell grammar
+Typed cancelled join results, the full portable shell grammar
 (expansion, environment mutation, command lists,
 pipelines/redirection and portable builtins), duplex/MPMC
 endpoint cloning, general/managed payloads and results,
@@ -181,9 +187,10 @@ single-thread profile. ASan's fiber-switch hooks are used by the actual kernel.
 
 | Capability | State | Remaining gate |
 |---|---|---|
-| `taskgroup`, internal i64 `launch`/`join` and cooperative consuming `cancel` | EXECUTABLE | Taskgroup deadlines, native-worker ownership, effectful MIR and independent cross-platform verification |
+| `taskgroup`, internal i64 `launch`/`join` and cooperative consuming `cancel` | EXECUTABLE | Automatic normal-exit joins, native-worker ownership, effectful MIR and independent cross-platform verification |
+| `taskgroup within` | EXECUTABLE terminal-timeout C11 profile | Typed timeout propagation/recovery and effectful MIR |
 | 1:1 i64 uni channels, bounded/zero-capacity send/receive | EXECUTABLE | General messages, endpoint quotas/duplex, cancellation and complete sanitizer/stress matrix |
-| `poll` / atomic select | EXECUTABLE bounded i64/process-u8 profile, monotonic `after` and cancellation-aware waits | General payloads, taskgroup deadlines and recoverable scheduler errors |
+| `poll` / atomic select | EXECUTABLE bounded i64/process-u8 profile, monotonic `after` and cancellation-aware waits | General payloads and recoverable scheduler errors |
 | Direct-exec external `xfiber` and consuming `cancel` | EXECUTABLE bounded POSIX profile | Typed exit-status record, recoverable spawn errors, broader targets and internal-fiber cancellation |
 | Backtick command literals and captured process streams | EXECUTABLE bounded POSIX profile | Full portable command AST/operators/expansion, configurable language-level stream limits and effectful ownership MIR |
 | Async/await, actors, native workers | Unsupported | Suspension frames, ownership/effects and memory model |

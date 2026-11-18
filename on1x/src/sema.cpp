@@ -1,4 +1,5 @@
 #include <on1x/ast.hpp>
+#include <on1x/kernel.hpp>
 #include <on1x/extensions.hpp>
 #include <on1x/infer.hpp>
 #include <on1x/meta.hpp>
@@ -50,6 +51,7 @@ bool is_intrinsic_name(const std::string& name){
 namespace {
 struct Binding { Type type; bool is_mutable; std::size_t scope; };
 class Checker {
+ bool unsafe_context=false;
  std::vector<std::pair<std::size_t,bool>> regions;
   Unit& unit;
   NominalCatalog catalog;
@@ -159,8 +161,11 @@ class Checker {
   if(auto found=funcs.find(e.text);found!=funcs.end()){
    if(found->second->external&&!call_position)
     fail(e.where,"raw extern functions cannot be used as values; write an On1x wrapper");
-    e.reference=!found->second->unsafe_kernel_symbol.empty()?Expr::Reference::UnsafeForeign:
+     e.reference=found->second->kernel_link_only?Expr::Reference::ScalarForeign:
+       !found->second->kernel_symbol.empty()?Expr::Reference::UnsafeForeign:
       found->second->external?Expr::Reference::Extern:Expr::Reference::Function;
+    if(e.reference==Expr::Reference::UnsafeForeign&&!unsafe_context)
+     throw Error(e.where,"ON1X-KERNEL-CONTEXT: unsafe foreign call requires unsafe { ... }","ON1X-KERNEL-CONTEXT");
    return e.type=signatures.at(e.text);
   }
   if(is_intrinsic_name(e.text)){
@@ -349,10 +354,20 @@ class Checker {
       }
       pop();patterns::coverage(e);e.noreturn=all_exit;return e.type=e.statement_match||result==Type::Invalid?Type{Type::Void}:result;
      }
-     case Expr::Kind::Case:fail(e.where,"match arm outside a match");
-     case Expr::Kind::Region:{
-      if(e.children.size()!=1)fail(e.where,"canonical value region requires one result");
-      push();bool exits=check_block(e.body,false);auto result=check_expr(*e.children[0]);pop();
+      case Expr::Kind::Case:fail(e.where,"match arm outside a match");
+      case Expr::Kind::UnsafeBlock:{
+       if(e.children.size()!=1||!e.children[0])fail(e.where,"unsafe expression requires one tail expression");
+       auto saved=unsafe_context;unsafe_context=true;push();bool exits=check_block(e.body,false);
+       if(exits&&e.children[0]->kind!=Expr::Kind::Unit)fail(e.children[0]->where,"unreachable unsafe block result");
+       auto result=check_expr(*e.children[0]);pop();unsafe_context=saved;
+       if(resource(result)||csp::contains(result))fail(e.where,"unsafe blocks cannot export owners, borrows or concurrency handles");
+       e.noreturn=exits||e.children[0]->noreturn;
+       return e.type=e.noreturn?Type{Type::Void}:result;
+      }
+      case Expr::Kind::Region:{
+       if(e.children.size()!=1)fail(e.where,"canonical value region requires one result");
+       auto saved=unsafe_context;unsafe_context=unsafe_context||e.unsafe_region;
+       push();bool exits=check_block(e.body,false);auto result=check_expr(*e.children[0]);pop();unsafe_context=saved;
       if(exits!=e.noreturn)fail(e.where,"canonical value region control mismatch");
       equal(result,e.type,e.where);return e.type;
      }
@@ -376,13 +391,14 @@ class Checker {
       parameters.push_back(parameter.type);
      }
      auto type=Type::function(std::move(parameters),e.result);validate_type(type,e.where);
-      e.captures.clear();auto previous_returns=returns;auto previous_loops=std::move(loop_values);loop_values.clear();auto saved_groups=taskgroups;taskgroups=&e==launch_body?1:0;
+       e.captures.clear();auto previous_returns=returns;auto previous_loops=std::move(loop_values);loop_values.clear();auto saved_groups=taskgroups;taskgroups=&e==launch_body?1:0;
+       auto saved_unsafe=unsafe_context;unsafe_context=false;
       lambdas.push_back({&e,scopes.size(),{}});push();returns=e.result;
       for(const auto& parameter:e.parameters){
        if(parameter.pattern)bind_pattern(*parameter.pattern,parameter.type);
        else define(parameter.name,parameter.type,false,parameter.where);
       }
-      bool complete=check_block(e.body,false);pop();lambdas.pop_back();returns=previous_returns;loop_values=std::move(previous_loops);taskgroups=saved_groups;
+       bool complete=check_block(e.body,false);pop();lambdas.pop_back();returns=previous_returns;loop_values=std::move(previous_loops);taskgroups=saved_groups;unsafe_context=saved_unsafe;
      if(e.result!=Type::Void&&!complete)fail(e.where,"not all paths return in anonymous function");
      return e.type=std::move(type);
     }
@@ -458,7 +474,12 @@ class Checker {
      if(builtin)return check_intrinsic(e,arg);
      const auto& n=callee.text;
      if(callable.parameters().size()!=arg.size())fail(e.where,"wrong number of arguments to "+(n.empty()?"function value":n));
-     for(size_t i=0;i<arg.size();++i){equal(arg[i],callable.parameters()[i],e.children[i]->where);
+      const auto kernel=callee.reference==Expr::Reference::ScalarForeign?std::string_view(funcs.at(n)->kernel_symbol):std::string_view{};
+      for(size_t i=0;i<arg.size();++i){
+       if(kernel_span_argument(kernel,i)){
+        if(arg[i].kind()!=Type::Slice||arg[i].elements()!=std::vector<Type>{Type::F64}||arg[i].extent()>256)
+         fail(e.children[i]->where,"KernelBind requires a bounded slice<f64,N>");
+       }else equal(arg[i],callable.parameters()[i],e.children[i]->where);
       if(resource(arg[i]))fail(e.where,"resource arguments need a reviewed FFI adapter");}
      return e.type=callable.result();
    }
@@ -467,7 +488,9 @@ class Checker {
  bool check_block(std::vector<Stmt>& body,bool owns_scope=true){if(owns_scope)push();bool guarantees=false;
   for(auto& s:body){if(guarantees)fail(s.where,"unreachable statement after return or loop exit");
      switch(s.kind){
-     case Stmt::Kind::TaskGroup:case Stmt::Kind::CspScope:++taskgroups;guarantees=check_block(s.body);--taskgroups;break;
+     case Stmt::Kind::TaskGroup:case Stmt::Kind::CspScope:
+      if(s.value)equal(check_expr(*s.value),Type::I64,s.value->where);
+      ++taskgroups;guarantees=check_block(s.body);--taskgroups;break;
      case Stmt::Kind::PushDefer:equal(check_expr(*s.value),Type::function({},Type::Void),s.where);break;
      case Stmt::Kind::Defer:{
       if(!s.value||s.value->kind!=Expr::Kind::Call)fail(s.where,"defer requires a call expression");
@@ -524,7 +547,7 @@ class Checker {
      case Stmt::Kind::Region:{regions.push_back({s.control_target,false});bool exits=check_block(s.body);bool joins=regions.back().second;regions.pop_back();guarantees=exits&&!joins;break;}
      case Stmt::Kind::Leave:{auto target=std::find_if(regions.rbegin(),regions.rend(),[&](const auto& r){return r.first==s.control_target;});if(target==regions.rend())fail(s.where,"missing canonical region target");target->second=true;guarantees=true;break;}
      case Stmt::Kind::Trap:guarantees=true;break;
-    case Stmt::Kind::Block:{guarantees=check_block(s.body);break;}
+     case Stmt::Kind::Block:{auto saved=unsafe_context;unsafe_context=unsafe_context||s.unsafe_block;guarantees=check_block(s.body);unsafe_context=saved;break;}
     case Stmt::Kind::Expr:{Type t=check_expr(*s.value);
      if(resource(t))fail(s.where,"discarding an owned or borrowed resource is not allowed");
      if(s.value->noreturn)guarantees=true;
@@ -539,11 +562,13 @@ class Checker {
   void run(){
    if(unit.functions.empty())fail({"<unit>"},"missing main function");
     for(auto& f:unit.functions){
+      verify_kernel_shape(f);
      if(f.result.has_generics()&&!f.prototype)fail(f.where,"quantified types require a checked prototype");
      for(const auto& parameter:f.params)if(parameter.type.has_generics()&&!f.prototype)
       fail(parameter.where,"quantified types are only valid in local let prototypes");
     if(is_intrinsic_name(f.name))fail(f.where,"intrinsic name cannot be redefined: "+f.name);
-     if(f.external) {
+      const bool aggregate=history_kernel_symbol(f.kernel_symbol)||pricing_kernel_symbol(f.kernel_symbol);
+      if(f.external&&!aggregate) {
      if(f.result.is_data())fail(f.where,"data-valued extern ABI requires reviewed aggregate adapters");
     static const std::set<std::string> c_keywords={"auto","break","case","char","const","continue","default","do","double","else","enum","extern","float","for","goto","if","inline","int","long","register","restrict","return","short","signed","sizeof","static","struct","switch","typedef","union","unsigned","void","volatile","while","_Alignas","_Alignof","_Atomic","_Bool","_Complex","_Generic","_Imaginary","_Noreturn","_Static_assert","_Thread_local"};
      if(c_keywords.contains(f.name))fail(f.where,"C keyword cannot be a raw extern name: "+f.name);
@@ -557,7 +582,7 @@ class Checker {
     validate_type(f.result,f.where);
     std::vector<Type> parameters;
       std::set<std::string> names;for(auto& p:f.params){if(!names.insert(p.name).second)fail(p.where,"duplicate parameter: "+p.name);
-      if(f.external&&p.type.is_data())fail(p.where,"data-valued extern ABI requires reviewed aggregate adapters");
+       if(f.external&&!aggregate&&p.type.is_data())fail(p.where,"data-valued extern ABI requires reviewed aggregate adapters");
       if(p.type==Type::Void||p.type==Type::Json||p.type==Type::JsonView)fail(p.where,"unsupported parameter type in this milestone");
       if(csp::contains(p.type))fail(p.where,"concurrency handles cannot cross ordinary function signatures");
       if(f.external&&p.type.is_function())fail(p.where,"function-valued extern ABI is unsupported; callbacks require reviewed contracts");

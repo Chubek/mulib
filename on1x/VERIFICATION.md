@@ -1,5 +1,281 @@
 # On1x verification — 2026-11-18
 
+## KernelBind language surface: lexical unsafe expressions
+
+Baseline MuLIB `2da654cae071226ad246415d2fad4ba43f6f9ec1` plus the prior
+KernelBind worktree; LibStone `9c44917b6518c03ef33c544c0ef93b2d864fe4fa`
+unchanged. No pricing or kernel C changes for this language slice.
+`unsafe { statements; tail }` now lowers to the existing checked value-region
+form; a block in statement position keeps its previous behavior. The
+post-lowering verifier preserves and rechecks lexical authorization; neither
+unsafe block form is accepted as a PPX wire node.
+
+`examples/kernel/clamp.on1x` now exercises both forms. The SDK test compares its
+saturating results with direct C and independently checks left-to-right effects,
+early function return, an enclosing loop exit, and a closure whose body has its
+own unsafe expression. Compiler negatives include out-of-scope calls, unsafe
+arguments that don't authorize an outer call, permission not inherited by
+lambda bodies, escaping locals, void bindings, malformed/deep syntax, and an
+HIR mutation removing the checked scope. The generated-scanner focused run
+passed **7/7** on Linux x86-64/GCC 16.2.1:
+
+```sh
+cmake --build build/kernelbind-gcc --target on1xc on1x_loader_tests --parallel 6
+ctest --test-dir build/kernelbind-gcc -R \
+  '(kernel_imports|loader_api|scanner_parity|value_loops|patterns)' \
+  --output-on-failure --parallel 4
+```
+
+The fallback scanner with Clang ASan/UBSan and the actual ExoLib SDK also
+passed **3/3** (`cmake --build build/kernelbind-sanitize --target on1xc
+on1x_loader_tests --parallel 6`, then `ctest --test-dir
+build/kernelbind-sanitize -R '(kernel_imports|loader_api)' --output-on-failure
+--parallel 3`).
+
+The generated-scanner regression selection
+`-R '(kernel_review|kernel_history|defer_errors|control_hir|ppx$)'` passed
+**6/6**. This checks that preserving unsafe scope markers did not change
+reviewed imports or ordinary PPX/control behavior.
+
+Reviewed and ABI-verified unsafe aliases can also coexist, including aliases
+for the same clamp kernel. The SDK test verifies one implementation object,
+separate reviewed/unsafe manifests, and refusal of an unsafe call outside its
+lexical scope even when a reviewed alias is present. The combined generated
+GCC integration run after the CSP and source migration changes passed **13/13**:
+
+```sh
+cmake --build build/kernelbind-gcc --parallel 6
+ctest --test-dir build/kernelbind-gcc -R \
+  '(kernel_(review|history|imports)|loader_api|scanner_parity|taskgroup_within|cancellation_deadlines|stream_poll|value_loops|on1x.patterns$|on1x.libraries$|on1x.stdppx$)' \
+  --output-on-failure --parallel 4
+```
+
+## First-party source migration: control flow
+
+MuLIB `2da654cae071226ad246415d2fad4ba43f6f9ec1` plus the shared
+worktree; LibStone `9c44917b6518c03ef33c544c0ef93b2d864fe4fa`, Linux
+6.18.52-1-lts x86-64, GCC 16.2.1 and Clang 22.1.8. The
+[source audit](docs/source-migration.md) found no further eligible direct
+kernel imports. No compiler, kernel, runtime ABI, or review policy changes
+are needed for this slice.
+
+Focused tests exercise range boundaries and partial Base64 groups, numeric
+and list outcomes, literal/whitespace parsing, byte-escape alternatives and
+invalid escapes, value-loop exits after name collisions, and native `unroll`
+plugin parity with the Python processor.
+
+```sh
+for cc in gcc clang; do
+  ctest --test-dir "build/kernelbind-$cc" --output-on-failure --parallel 6 \
+    -R '^on1x\.(compiler|data|passes|mir|libraries|stdlib_extensions|control|patterns|relational|stdppx|scanner_parity)$'
+done
+work=$(mktemp -d /tmp/opencode/on1x-source-native.XXXXXX)
+for test in libraries stdppx; do
+  python3 "on1x/tests/test_$test.py" build/kernelbind-sanitize/on1xc on1x \
+    "$work/$test" clang --cflag=-fsanitize=address,undefined \
+    --cflag=-fno-omit-frame-pointer --cflag=-fno-sanitize-recover=all
+done
+```
+
+Generated/GCC **11/11**, fallback/Clang **10/10** (no parity test in that
+build), and both strict C11 Clang ASan/UBSan integration runs passed. The
+optional Novostone analyzer was disabled; its disabled-path test passed,
+and the `analysis` example ran through scalar MIR. Direct C11 executions of
+`control`, `data_model` and `memory`, and MIR executions of `analysis`,
+`float_tuples` and `control`, produced the same output as before the source
+changes.
+
+### CSP example migration
+
+With the tested ABI v4 compiler/runtime, three examples now use `taskgroup
+within 5s`. Fresh C11 executables built using `on1x/tools/on1x-build.py
+--on1xc build/on1x-csp-within/on1xc --cc gcc` were compared to `HEAD`.
+All exited zero with these unchanged stdout lines:
+
+| Example | Output, one value per line |
+|---|---|
+| `cancellation_deadlines.on1x` | `90`, `7`, `8` |
+| `cooperative_process_streams.on1x` | `79`, `110`, `49`, `120`, `0` |
+| `cooperative_stream_poll.on1x` | `1`, `213`, `0` |
+
+```sh
+for build in on1x-csp-within on1x-csp-within-generated on1x-csp-within-sanitize; do
+  ctest --test-dir "build/$build" --output-on-failure --parallel 4 \
+    -R '^on1x\.(concurrency|concurrency_hir|stream_poll|cancellation_deadlines|taskgroup_within|scanner_parity)$'
+done
+```
+
+GCC/fallback **5/5**, GCC/generated **6/6** including scanner parity, and
+Clang ASan/UBSan/fallback **5/5**. The example migration leaves the plain
+taskgroup demos, unsupported KernelBind consumers, and pricing unchanged.
+
+## KernelBind Package D: bounded forecasting and price optimization
+
+MuLIB `2da654cae071226ad246415d2fad4ba43f6f9ec1` plus the Package C/D worktree;
+LibStone `9c44917b6518c03ef33c544c0ef93b2d864fe4fa` unchanged.
+Linux x86-64/glibc 2.44, GCC 16.2.1 and Clang/libclang 22.1.8.
+No canonical kernel or LibStone source was modified.
+
+- `include/on1x/kernel.hpp`, `src/{loader,infer,sema,codegen,cli}.cpp` and
+  `include/on1x/loader.hpp`: compiler-owned nominal interfaces, bounded
+  immutable slice argument checking, checked result shaping, and explicit
+  scalar/pointer pairs confined to generated C.
+- `contracts-exoml/{histprice,priceopt}.exocontract.json`,
+  `contracts-exotract/catalog.json` and `tools/{on1x-build,on1x-exotract}.py`:
+  provenance and layout validation against canonical CDecl and ExoML,
+  checked projections, native enum/record probes, signed multi-profile
+  subjects, and one canonical implementation archive. The program and
+  boundary probe link the very same adapter object.
+- `examples/kernel/forecast.on1x`, `examples/kernel/pricing/{main,forecasts}.on1x`,
+  `tests/test_kernel_history_sdk.py`, `tests/fixtures/kernel_pricing_oracle.c`,
+  and `CMakeLists.txt`: executable fixtures and real SDK integration tests.
+
+The profile uses `mulib_histprice_ema`, `mulib_histprice_holt`,
+`mulib_priceopt_optimize` and `mulib_priceopt_candidates`. The forecasting
+fixture covers zero alpha, unavailable variance, and early `?` failure.
+The multi-module pricing fixture converts validated embedded cents, selects
+between EMA and Holt using a chronological sample, checks a disjoint holdout,
+and executes the tick-grid and discrete candidate APIs. The boundary probe and
+the separate direct C client compare both models and both optimizers. Negative
+tests cover wrong span element/type, missing review, stale single-profile
+approval, record/enum drift, escape and output-initialization obligations,
+invalid limits, bad numerical parameters, oversized/negative horizon, empty
+and mismatched extents, and unpublished outputs on failure.
+
+```sh
+cmake --build build/kernelbind-gcc --parallel 6
+ctest --test-dir build/kernelbind-gcc -R \
+  '(kernel_(history|imports|review)|loader_api|scanner_parity|defer_errors|nominal_adts)' \
+  --output-on-failure --parallel 4
+cmake --build build/kernelbind-sanitize --parallel 6
+ctest --test-dir build/kernelbind-sanitize -R \
+  '(kernel_(history|imports|review)|loader_api|closure_hir|nominal_hir)' \
+  --output-on-failure --parallel 4
+```
+
+Focused generated/GCC SDK tests passed **8/8** and fallback Clang ASan/UBSan
+SDK tests passed **7/7** on the numerical profiles. After adding the explicit
+minor-unit/holdout steps and separate C workflow comparison, both
+`ctest --test-dir build/kernelbind-gcc -R 'on1x.kernel_history_sdk'`
+and the same run in `build/kernelbind-sanitize` passed **1/1**. An intermediate
+fixture failed to parse because it used C rather than On1x comment syntax;
+both final reruns include the correction. See the
+[numerical profile](docs/kernel-numerics.md) for the supported surface and
+independent review workflow. Test keys are not production authorizations.
+The final full generated/GCC rerun (`ctest --test-dir build/kernelbind-gcc
+--output-on-failure --parallel 4`) had **58 passed, 4 failed, 1 skipped**.
+All four failures stop on the preexisting Elvi-scrape manual pin mismatch
+described below. Category was skipped with native PPX disabled.
+Statsprice, Money, demand/ensemble, dynamic buffers, JSON file I/O, owned
+handles, callbacks, scheduler integration, reusable installed locks, and
+full Shylock parity remain open. §9.5 is explicitly not admitted.
+
+## KernelBind Package C: independently authorized scalar build mechanism
+
+Baseline MuLIB `2da654cae071226ad246415d2fad4ba43f6f9ec1`, plus this working-tree
+change; configured LibStone `9c44917b6518c03ef33c544c0ef93b2d864fe4fa`
+at `on1x/third_party/libstone`, unchanged. Linux 6.18.52 x86-64, glibc 2.44,
+GCC 16.2.1 (`x86_64-pc-linux-gnu`), Clang/libclang 22.1.8, Python 3.14.7,
+OpenSSL 3.6.4. This implements the
+[reviewed scalar mechanism](docs/kernel-review.md), not all of
+`KERNEL_DIRECT_USAGE.md`. The shipped contract remains unreviewed.
+
+Before implementation:
+
+```sh
+ctest --test-dir build/kernelbind-gcc \
+  -R '(kernel_imports|scanner_parity)' --output-on-failure
+```
+
+**2 passed, 1 failed**: the SDK discovery test failed because selecting JSON
+validated an unrelated stale `elvi-scrape` manual pin. The planner now validates
+the selected contract and dependency closure; it does not refresh or bypass
+the stale profile's pins. The same SDK test subsequently passed.
+
+Implementation files:
+
+- `include/on1x/{ast,clone,loader,kernel}.hpp`,
+  `src/{loader,sema,codegen,cli,ppx_ast,safety}.cpp`,
+  `src/canonical/values.cpp`: typed scalar foreign calls, unresolved staging,
+  shape validation, preserved cloning/evaluation order, and closed PPX/checker
+  boundaries.
+- `tools/{on1x-build,on1x-exotract}.py`: real CDecl/ExoML validation,
+  lossless-sidecar checks, operator-selected Ed25519 review verification,
+  strict C11 ABI probes, single canonical implementation archive, executable
+  comparison gate, source/implementation drift checks, atomic bundle publication.
+- `tools/on1x-contracts.py`, `stdlib/mulib/housekeeping.py`: selected-contract
+  planning fix.
+- `contracts-exoml/clamp.exocontract.json`: unreviewed canonical v2 annotation.
+- `examples/kernel/clamp_safe.on1x`, `tests/test_kernel_review_sdk.py`,
+  `tests/test_loader.cpp`, `tests/test_kernel_imports_sdk.py`, `CMakeLists.txt`:
+  runnable fixture, real SDK tests, malformed HIR and regression integration.
+
+The safe source fixture calls actual `mulib_clamp_add_i64` and
+`mulib_clamp_sub_i64` using native `import kernel`, without application externs.
+Tests generate a fresh **test authority** key and exercise real signature
+verification, strict GCC/Clang C11, direct C equivalence, two independent
+extractions, dependency aliases, closure wrappers, left-to-right argument
+evaluation, and one-object archive linkage. Every admitted build executes
+1,348 oracle comparisons. Negative tests cover wrong/missing review, stale
+identity/flags, wrong keys, duplicate JSON fields, silently discarded sidecar
+fields, unsupported effects/resources, ABI drift, wrong types/arity,
+non-callable members, duplicate implementation TUs, missing adapter definitions,
+failed executable probes, changing module resolution, changing implementation
+inputs, and non-overwriting publication. Malformed typed HIR rejects at C11
+ingress. No production review is created or claimed by these tests.
+
+Commands used:
+
+```sh
+cmake --build build/kernelbind-gcc --parallel 6
+ctest --test-dir build/kernelbind-gcc --output-on-failure --parallel 4
+cmake --build build/kernelbind-clang --parallel 6
+ctest --test-dir build/kernelbind-clang --output-on-failure --parallel 4
+ctest --test-dir build/kernelbind-clang \
+  -R '(kernel_imports|loader_api)' --output-on-failure
+cmake --build build/kernelbind-sanitize --parallel 6
+ctest --test-dir build/kernelbind-sanitize \
+  -R '(kernel_(imports|review)|loader_api|closure_hir|nominal_hir)' \
+  --output-on-failure --parallel 3
+git diff --check
+```
+
+`kernelbind-gcc` uses the generated scanner and real Lua/ExoML/Exotract SDK.
+`kernelbind-clang` uses the fallback scanner without the SDK. The sanitizer
+configuration uses Clang, the fallback scanner and real SDK with both
+`CMAKE_C_FLAGS` and `CMAKE_CXX_FLAGS` set to
+`-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all`.
+CTest propagates these flags into emitted C11, adapters, implementation archives
+and executable probes.
+
+Final results:
+
+| Configuration/check | Result |
+|---|---|
+| Generated scanner, GCC, full SDK suite | **57 passed, 4 failed, 1 skipped** |
+| Fallback scanner, Clang, full non-SDK suite | **53 passed, 2 failed, 1 skipped** |
+| Final fallback loader/import regressions | **2/2 passed** |
+| Clang ASan/UBSan, compiler/runtime/SDK focused suite | **6/6 passed** |
+| Generated/fallback scanner parity | **passed**, included in GCC suite |
+| Whitespace and Python syntax checks | **passed** |
+
+The remaining GCC failures are `on1x.exotract`, `on1x.contracts`,
+`on1x.mulib`, and `on1x.contracts_sdk`; Clang fails the latter configuration's
+`on1x.contracts` and `on1x.mulib`. All stop on the preexisting
+`manual/mulib-elvi-scrape.md` source/manual fingerprint mismatch, also observed
+in the pre-change discovery baseline. No source pins were refreshed to hide
+this failure. Category skips because native PPX is disabled in these profiles.
+Initial runs also exposed two test-fixture issues (the copied helper needed
+runtime pin inputs; typed diagnostics use “wrong number of arguments”), both
+corrected and rerun successfully. The full suite is therefore **not green**.
+
+Remaining gates: independently issued production scalar review; numeric
+spans/records/enums/output/error lowering; affine foreign handles and cleanup;
+callbacks/capabilities/transport; independent checker and MIR integration;
+installed/reusable reviewed import locks; and the §9.5 Shylock application.
+No 32-bit, non-Linux or cross-target admission, native backend, or general safe
+FFI is claimed. TSAN is inapplicable to this resource-free synchronous profile.
+
 ## PrettyPrint: paragraph optimization, maps, math, and incremental formatting
 
 MuLIB `9f52595d958c4377915c92302501cb97b3813b03`; the checkout's LibStone
@@ -446,7 +722,60 @@ separate compilation were not exercised. No new threaded runtime or foreign
 ABI is introduced; TSAN is not applicable to this slice.
 See [the manual and phase/status table](docs/category.md).
 
-## Cooperative cancellation and monotonic poll deadlines (CSP ABI v3)
+## Monotonic `taskgroup within` (CSP ABI v4)
+
+Base MuLIB `2da654cae071226ad246415d2fad4ba43f6f9ec1`, LibStone
+`9c44917b6518c03ef33c544c0ef93b2d864fe4fa`; Linux 6.18.52-1-lts x86_64,
+glibc 2.44, GCC/g++ 16.2.1, Clang/clang++ 22.1.8, CMake 4.4.3, Python 3.14.7.
+The starting parser rejected `taskgroup within`. The bounded C11 profile now
+checks a one-shot `i64` duration (`ms`, `s`, or bare milliseconds), retains
+normal explicit affine consumption, and exits 73 at the expiry source point
+only after cooperative cancellation and draining. There is no typed timeout
+or auto-join. See [the exact deadline semantics](docs/cancellation-deadlines.md#taskgroup-within).
+
+`tests/fixtures/taskgroup_within.on1x` executes a nested timed rendezvous,
+disarms deadlines on return/break/continue, and prints `10\n42\n7\n8\n`.
+`test_taskgroup_within.py` runs strict C11 (`-Wall -Wextra -Wpedantic
+-Werror`) with the real MuLIB scheduler, deterministic link-time monotonic
+clock injection and a real-clock captured `/bin/cat` timeout. Tests exercise
+duration evaluation once, optimized C11, zero before admission, blocked
+join/receive/poll cancellation, nested precedence and ties, busy loop
+observation, unrelated operands not continuing, explicit cancel retiring a
+deadline, shielded cleanup, negative/overflow/bad clock/OOM, foreign
+rejection, affine rejection, and transactional MIR rejection. CSP HIR tests
+round-trip the source PPX carrier and reject forged type/binder/unsafe markers
+at verification and C11 emission. The existing ABI mismatch test rejects a
+v3 header when compiling v4 C. The generated C's scheduler entry symbol is
+versioned, so stale runtime objects cannot silently link.
+
+```sh
+common='-DBUILD_TESTING=ON -DON1X_BUILD_NATIVE_PPX=OFF'
+cmake -S on1x -B build/on1x-csp-within $common -DON1X_USE_FALLBACK_SCANNER=ON
+cmake -S on1x -B build/on1x-csp-within-generated $common -DON1X_REQUIRE_LIBSTONE=ON
+cmake -S on1x -B build/on1x-csp-within-sanitize $common -DON1X_USE_FALLBACK_SCANNER=ON \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer'
+for dir in build/on1x-csp-within{,-generated,-sanitize}; do
+  cmake --build "$dir" --parallel 4 --target on1xc on1x_concurrency_hir_tests
+  if [[ "$dir" == *-generated ]]; then
+    cmake --build "$dir" --parallel 4 --target on1x_reference_tokens on1x_generated_tokens
+  fi
+  ctest --test-dir "$dir" -R 'on1x\.(concurrency(_hir)?|stream_poll|cancellation_deadlines|taskgroup_within|scanner_parity)$' \
+    --output-on-failure -j 4
+done
+```
+
+Focused results: **5/5** GCC fallback, **6/6** GCC generated including scanner
+parity, **5/5** Clang fallback ASan/UBSan (compiler, generated C and runtime).
+After the separate example migration, the GCC fallback cancellation-deadline
+and stream-poll suites passed again (**2/2**).
+Intentional non-unwinding fault-injection paths disable only leak detection;
+ordinary expiry retains it. No claim of a full unrelated suite, SDK proof,
+TSan/native worker coverage, other supported targets or general async.
+
+## Cooperative cancellation and monotonic poll deadlines (historical CSP ABI v3)
 
 Baseline MuLIB `1f027c48bc6363dce5752c00057830777325ff47`; configured
 read-only LibStone `55755485acaded7c4ed804c0946bc8c7363f6763`, unchanged.
@@ -459,7 +788,8 @@ diagnostics rejected `after` and any nonadjacent internal cancellation.
 poll deadlines](docs/cancellation-deadlines.md), not the entire request.
 **Async/await is not implemented.** The existing MIR has no suspension/frame/
 future/effect descriptors; no stackful wrapper is represented as stackless async.
-Taskgroup `within` and typed cancelled join outcomes also remain unsupported.
+In this ABI-v3 increment, taskgroup `within` and typed cancelled join outcomes
+were still unsupported; the ABI-v4 section above supersedes the former only.
 
 ### Behavior and boundaries
 

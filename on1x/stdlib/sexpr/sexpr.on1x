@@ -20,8 +20,7 @@ fn sexpr_size(values: sexpr) -> i64 {
 fn sexpr_nth(values: sexpr, index: i64) -> sexpr {
   if index < 0 { tool_fail("negative S-expression index"); }
   var rest = values;
-  var i = 0;
-  while i < index { rest = sx_tail(rest); i = i + 1; }
+  for _ in 0..index { rest = sx_tail(rest); }
   return sx_head(rest);
 }
 fn sexpr_nat(value: i64) -> string {
@@ -60,7 +59,7 @@ fn sexpr_read(text: string, start: i64, depth: i64, count: i64) -> (sexpr, i64, 
   var nodes = count + 1;
   if c == 40 {
     var children = sx_nil();
-    while true {
+    loop {
       pos = sexpr_skip(text, pos);
       if pos == text_len(text) { sexpr_error(pos, "unterminated list"); }
       if text_byte(text, pos) == 41 { return (sexpr_reverse(children), pos + 1, nodes); }
@@ -81,13 +80,13 @@ fn sexpr_read(text: string, start: i64, depth: i64, count: i64) -> (sexpr, i64, 
           if pos + 2 > text_len(text) { sexpr_error(pos, "truncated hex escape"); }
           byte = sexpr_hex(text_byte(text, pos)) * 16 + sexpr_hex(text_byte(text, pos + 1)); pos = pos + 2;
         } else {
-          if byte == 110 { byte = 10; } else {
-            if byte == 114 { byte = 13; } else {
-              if byte == 116 { byte = 9; } else {
-                if byte != 34 && byte != 92 { sexpr_error(pos, "unknown escape"); }
-              }
-            }
-          }
+          match byte with {
+            110 => { byte = 10; },
+            114 => { byte = 13; },
+            116 => { byte = 9; },
+            34 | 92 => {},
+            _ => sexpr_error(pos, "unknown escape")
+          };
         }
       } else { if byte < 32 || byte > 126 { sexpr_error(pos, "control/non-ASCII bytes must be escaped"); } }
       if byte == 0 { sexpr_error(pos, "NUL is unsupported by the text ABI"); }
@@ -123,9 +122,9 @@ fn sexpr_write(node: sexpr, out: buffer, depth: i64, count: i64) -> i64 {
   } else {
     let value = sx_text(node);
     if sx_kind(node) == 1 { buffer_append(out, value); } else {
-      buffer_byte(out, 34); var i = 0;
-      while i < text_len(value) {
-        let c = text_byte(value, i); i = i + 1;
+      buffer_byte(out, 34);
+      for i in 0..text_len(value) {
+        let c = text_byte(value, i);
         if c == 34 || c == 92 { buffer_byte(out, 92); buffer_byte(out, c); } else {
           if c >= 32 && c <= 126 { buffer_byte(out, c); } else {
             buffer_append(out, "\\x"); buffer_byte(out, text_byte("0123456789abcdef", c / 16)); buffer_byte(out, text_byte("0123456789abcdef", c % 16));

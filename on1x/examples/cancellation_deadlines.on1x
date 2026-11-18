@@ -1,5 +1,6 @@
 fn main() {
-    taskgroup {
+    # Bound the whole run; poll's after arms still choose results locally.
+    taskgroup within 5s {
         let ready = ->(1,1){payload:i64,capacity:0,mode:uni};
         let (notify, observed) = split ready;
         let child = launch {

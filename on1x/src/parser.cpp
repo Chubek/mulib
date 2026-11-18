@@ -230,12 +230,18 @@ class Parser {
     for(auto& word:shell_words(token)){auto arg=std::make_unique<Expr>();arg->kind=Expr::Kind::String;arg->where=token.where;arg->text=source_string(word);e->children.push_back(std::move(arg));}
     return syntax_bounded(std::move(e));
    }
-      Expression atom(){
-        const Token t=peek();
+       Expression atom(){
+         const Token t=peek();
+         if(at("unsafe")&&peek(1).text=="{"){
+          ++pos;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::UnsafeBlock;e->where=t.where;
+          value_block(*e);
+          auto depth=std::max(body_expression_depth(e->body),e->children[0]->syntax_depth)+1;
+          return bounded(std::move(e),depth);
+         }
          if(at("launch")&&peek(1).text=="capture"&&!peek(2).text.empty()&&peek(2).text[0]=='`')return shell_launch(true);
          if(at("launch")&&!peek(1).text.empty()&&peek(1).text[0]=='`')return shell_launch(false);
         if(at("launch")&&peek(1).text=="{"){
-        ++pos;Expr arm;arm.where=t.where;match_arm_block(arm);
+         ++pos;Expr arm;arm.where=t.where;value_block(arm);
         auto thunk=std::make_unique<Expr>();thunk->kind=Expr::Kind::Lambda;thunk->where=t.where;thunk->result=Type::I64;thunk->body=std::move(arm.body);
         if(arm.children[0]->kind!=Expr::Kind::Unit){Stmt ret;ret.kind=Stmt::Kind::Return;ret.where=arm.children[0]->where;ret.value=std::move(arm.children[0]);thunk->body.push_back(std::move(ret));}
          auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;e->where=t.where;e->text="launch";thunk->syntax_depth=body_expression_depth(thunk->body)+1;e->children.push_back(std::move(thunk));return syntax_bounded(std::move(e));
@@ -573,17 +579,18 @@ class Parser {
    if(accept("|")){Pattern either;either.kind=Pattern::Kind::Or;either.where=p.where;either.elements.push_back(std::move(p));either.elements.push_back(match_pattern());return either;}
    return p;
   }
-  void match_arm_block(Expr& arm){
-   Nesting guard(*this);consume("{");
-   while(!at("}")){
-     bool structured=at("let")||at("var")||at("return")||at("if")||at("while")||at("{")||at("let_syntax")||at("letrec_syntax")||(at("taskgroup")&&peek(1).text=="{")||defer_header()||for_header()||
+   void value_block(Expr& arm){
+    Nesting guard(*this);consume("{");
+    while(!at("}")){
+      if(at("<eof>"))throw Error(peek().where,"unterminated value block");
+      if(arm.body.size()>=100000)throw Error(arm.where,"too many value block statements");
+     bool structured=at("let")||at("var")||at("return")||at("if")||at("while")||at("{")||at("let_syntax")||at("letrec_syntax")||taskgroup_header()||defer_header()||for_header()||
      (at("loop")&&peek(1).text=="{")||((at("break")||at("continue"))&&peek(1).text!="(")||
      (is_ident(peek().text)&&peek(1).text==":"&&(peek(2).text=="loop"||peek(2).text=="while"||peek(2).text=="for"))||peek(1).text=="=";
     if(structured){arm.body.push_back(statement());continue;}
     auto value=expr().node;
     if(accept(";")){Stmt s;s.kind=Stmt::Kind::Expr;s.where=value->where;s.value=std::move(value);arm.body.push_back(std::move(s));}
     else{arm.children.push_back(std::move(value));consume("}");return;}
-    if(arm.body.size()>100000)throw Error(arm.where,"too many match arm statements");
    }
    consume("}");auto unit=std::make_unique<Expr>();unit->kind=Expr::Kind::Unit;unit->where=arm.where;arm.children.push_back(std::move(unit));
   }
@@ -606,11 +613,19 @@ class Parser {
    if(!at("}")){do{
     auto arm=std::make_unique<Expr>();arm->kind=Expr::Kind::Case;arm->where=peek().where;arm->patterns.push_back(match_pattern());
     if(accept("if"))arm->children.push_back(expr().node);else arm->children.push_back(truth(arm->where));
-    consume("=>");if(at("{"))match_arm_block(*arm);else arm->children.push_back(expr().node);
+     consume("=>");if(at("{"))value_block(*arm);else arm->children.push_back(expr().node);
     auto depth=std::max(body_expression_depth(arm->body)+1,arm->children.back()->syntax_depth+1);auto checked=bounded(std::move(arm),depth);e->children.push_back(std::move(checked.node));
     if(e->children.size()>257)throw Error(where,"match arm limit exceeded");
    }while(accept(",")&&!at("}"));}
     consume("}");return syntax_bounded(std::move(e));
+   }
+   ExprPtr csp_duration(const Location& at){
+    auto duration=expr().node;
+    if(!accept("s")){accept("ms");return duration;}
+    auto multiply=std::make_unique<Expr>();multiply->kind=Expr::Kind::Binary;multiply->text="*";multiply->where=at;
+    multiply->children.push_back(std::move(duration));
+    auto scale=std::make_unique<Expr>();scale->kind=Expr::Kind::Integer;scale->text="1000";scale->where=at;multiply->children.push_back(std::move(scale));
+    return syntax_bounded(std::move(multiply)).node;
    }
    Expression polling(bool statement_mode){
     auto where=peek().where;consume("poll");consume("{");
@@ -638,21 +653,14 @@ class Parser {
      }else if(accept("after")){
       if(deadline)throw Error(site,"ON1X-CSP: duplicate poll deadline");
       deadline=std::make_unique<Expr>();deadline->kind=Expr::Kind::SourceCsp;deadline->text="offer_after";deadline->where=site;
-      auto duration=expr().node;
-      if(accept("s")){
-       auto multiply=std::make_unique<Expr>();multiply->kind=Expr::Kind::Binary;multiply->text="*";multiply->where=site;
-       multiply->children.push_back(std::move(duration));
-       auto scale=std::make_unique<Expr>();scale->kind=Expr::Kind::Integer;scale->text="1000";scale->where=site;multiply->children.push_back(std::move(scale));
-       duration=syntax_bounded(std::move(multiply)).node;
-      }else accept("ms");
-      deadline->children.push_back(std::move(duration));label="After";
+      deadline->children.push_back(csp_duration(site));label="After";
      }
      else throw Error(site,"expected recv, send, closed or default poll offer");
      consume("=>");auto arm=std::make_unique<Expr>();arm->kind=Expr::Kind::Case;arm->where=site;
      Pattern pattern;pattern.kind=Pattern::Kind::Variant;pattern.where=site;pattern.name=label;
      if(!binder.empty()){Pattern p;p.kind=Pattern::Kind::Name;p.where=site;p.name=binder;pattern.elements.push_back(std::move(p));}
      arm->patterns.push_back(std::move(pattern));arm->children.push_back(truth(site));
-     if(at("{"))match_arm_block(*arm);else arm->children.push_back(expr().node);
+      if(at("{"))value_block(*arm);else arm->children.push_back(expr().node);
      match->children.push_back(std::move(arm));
     }while(accept(",")&&!at("}"));consume("}");
     if(endpoints.empty()&&!deadline)throw Error(where,"ON1X-CSP: poll requires a channel offer or deadline");
@@ -723,13 +731,15 @@ class Parser {
     // Preserve ordinary `defer(...)`, `defer;`, assignments and operators.
     auto next=peek(1).text;return is_ident(next)||next=="@"||next=="{"||(!next.empty()&&(std::isdigit(static_cast<unsigned char>(next[0]))||next[0]=='"'));
    }
+   bool taskgroup_header()const{return at("taskgroup")&&(peek(1).text=="{"||peek(1).text=="within");}
      Stmt statement(){Stmt s; s.where=peek().where;
      if(at("unsafe")&&peek(1).text=="{"){
       consume("unsafe");s.kind=Stmt::Kind::Block;s.unsafe_block=true;s.body=block();return s;
      }
-    if(at("taskgroup")&&(peek(1).text=="{"||peek(1).text=="within")){
-     ++pos;if(at("within"))throw Error(s.where,"ON1X-CSP-UNSUPPORTED: monotonic taskgroup deadlines unavailable");
-     s.kind=Stmt::Kind::TaskGroup;s.body=block();return s;
+    if(taskgroup_header()){
+     ++pos;s.kind=Stmt::Kind::TaskGroup;
+     if(accept("within"))s.value=csp_duration(s.where);
+     s.body=block();return s;
     }
      if(at("poll")&&peek(1).text=="{"){s.kind=Stmt::Kind::Expr;s.value=polling(true).node;accept(";");return s;}
     if(defer_header()){
@@ -855,9 +865,10 @@ class Parser {
     }
     // `kernel` remains an ordinary name in `import kernel;`,
     // `import kernel.member;` and `import kernel as K;`.
-    bool unsafe_kernel=at("unsafe")&&peek(1).text=="import"&&peek(2).text=="kernel";
-    if(unsafe_kernel||(at("import")&&peek(1).text=="kernel"&&
-       ((is_ident(peek(2).text)&&peek(2).text!="as")||peek(2).text.starts_with('"')))){
+     bool unsafe_kernel=at("unsafe")&&peek(1).text=="import"&&peek(2).text=="kernel";
+     if(unsafe_kernel||(at("import")&&peek(1).text=="kernel"&&
+        ((is_ident(peek(2).text)&&peek(2).text!="as")||peek(2).text.starts_with('"')||
+         peek(2).text==".."||peek(2).text=="..."))){
      KernelImport item;item.where=peek().where;item.is_unsafe=unsafe_kernel;
      if(unsafe_kernel)consume("unsafe");
      consume("import");consume("kernel");

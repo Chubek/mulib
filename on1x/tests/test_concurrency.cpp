@@ -36,7 +36,7 @@ int main(){try{
  auto unit=checked();on1x::csp::verify(unit,true);
  require(unit.functions[0].body[0].kind==on1x::Stmt::Kind::CspScope,"taskgroup was not canonicalized");
  require(unit.functions[0].body[0].body[0].value->kind==on1x::Expr::Kind::Csp,"channel operation was erased");
- require(on1x::emit_c(unit,"fiber-test").find("on1x_csp_run(")!=std::string::npos,"C11 scheduler not emitted");
+ require(on1x::emit_c(unit,"fiber-test").find("on1x_csp_run_v4(")!=std::string::npos,"C11 scheduler not emitted");
  reject([&]{(void)on1x::mir::lower(unit);});
  auto source_wire=on1x::meta::encode(on1x::parse(on1x::scan(source,"fiber-test")));
  auto round_trip=on1x::meta::decode(source_wire);on1x::check(round_trip);on1x::csp::verify(round_trip,true);
@@ -95,6 +95,26 @@ int main(){try{
     }
     reject([&]{on1x::csp::verify(forged,true);});
     reject([&]{(void)on1x::emit_c(forged,"forged-timer");});
+   }
+   auto within_wire=on1x::meta::encode(on1x::parse(on1x::scan(
+    "fn main(){let milliseconds=8;taskgroup within milliseconds {taskgroup within 1s {}}}",
+    "within-test")));
+   auto within=on1x::meta::decode(within_wire);on1x::check(within);
+   on1x::csp::verify(within,true);
+   auto& scope=within.functions[0].body[1];
+   require(scope.kind==on1x::Stmt::Kind::CspScope&&scope.value&&scope.value->type==on1x::Type::I64,
+           "round-trip lost the checked taskgroup duration");
+   require(on1x::emit_c(within,"within-test").find("on1x_csp_group_enter_within(")!=std::string::npos,
+           "timed group not emitted");
+   reject([&]{(void)on1x::mir::lower(within);});
+   for(int mutation=0;mutation<3;++mutation){
+    std::size_t copy_budget=262144;auto forged=on1x::clone_unit(within,copy_budget);
+    auto& group=forged.functions[0].body[1];
+    if(mutation==0)group.value->type=on1x::Type::Bool;
+    if(mutation==1)group.value->text="not_in_scope";
+    if(mutation==2)group.unsafe_block=true;
+    reject([&]{on1x::csp::verify(forged,true);});
+    reject([&]{(void)on1x::emit_c(forged,"forged-within");});
    }
    constexpr auto mixed_source=R"(fn main(){taskgroup{
     let (p,input,output,error)=launch capture `/bin/cat`;

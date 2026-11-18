@@ -69,6 +69,16 @@
       "link_libraries": ["dl", "m"],
       "required_symbols": ["mulib_prettydoc_new", "mulib_pretty_layout", "mulib_pretty_layout_free"]
     },
+    "histprice": {
+      "recipe": "manifest",
+      "link_libraries": ["m"],
+      "required_symbols": ["mulib_histprice_ema", "mulib_histprice_holt"]
+    },
+    "priceopt": {
+      "recipe": "manifest",
+      "link_libraries": ["m"],
+      "required_symbols": ["mulib_priceopt_optimize", "mulib_priceopt_candidates"]
+    },
     "prettyemit": {
       "recipe": "manifest",
       "link_libraries": ["dl", "m"],

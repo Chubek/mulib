@@ -8,12 +8,13 @@
 
 ## 0. Source baseline, revisions and the exact newly added work
 
-**CSP ABI v3 continuation:** [cooperative cancellation and monotonic poll
-deadlines](docs/cancellation-deadlines.md) now have generated function-return
-cleanup edges and private control offers using existing MuLIB atomic selection.
-Running/blocked fibers drain descendants and run registered defers before
-consuming cancel returns. These are HIR→C11 semantics, not suspension/effect
-MIR or stackless async. The earlier absence statements below are historical.
+**CSP ABI v4 continuation:** [cooperative cancellation and monotonic
+deadlines](docs/cancellation-deadlines.md) use generated function-return cleanup
+edges and private control offers through existing MuLIB atomic selection.
+`taskgroup within` expiry drains cleanup and terminates the run. Consuming
+cancel waits for running/blocked fibers to drain descendants and defers. These
+are HIR→C11 semantics, not typed timeout propagation, suspension/effect MIR or
+stackless async. The earlier absence statements below are historical.
 
 **G4 cooperative fiber/channel slice:** `taskgroup`, internal i64 fibers and
 1:1 uni i64 channels and bounded atomic `poll` execute through the canonical HIR→C11 path and the

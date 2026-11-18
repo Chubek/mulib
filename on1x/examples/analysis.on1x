@@ -8,9 +8,7 @@ fn odd(n: i64) -> bool {
   return even(n - 1);
 }
 fn main() {
-  var n = 0;
-  while n < 4 {
+  for n in 0..4 {
     println(even(n));
-    n = n + 1;
   }
 }

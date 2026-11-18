@@ -32,7 +32,7 @@ inline ExprPtr clone_expression(const Expr& e,std::size_t& budget){
   out->kind=e.kind;out->reference=e.reference;out->where=e.where;out->text=e.text;out->type=e.type;
    out->labels=e.labels;
    for(const auto& p:e.patterns)out->patterns.push_back(clone_pattern(p,budget));
-   out->statement_match=e.statement_match;out->noreturn=e.noreturn;
+   out->statement_match=e.statement_match;out->noreturn=e.noreturn;out->unsafe_region=e.unsafe_region;
  out->parameters=e.parameters;out->result=e.result;out->captures=e.captures;out->syntax_depth=e.syntax_depth;
  out->projection=e.projection;out->prototype=e.prototype;
  out->syntax_repeat=e.syntax_repeat;
@@ -75,7 +75,8 @@ inline Unit clone_unit(const Unit& unit,std::size_t& budget){
  for(const auto& f:unit.functions){
    Function copy;copy.name=f.name;copy.where=f.where;copy.params=f.params;copy.result=f.result;copy.external=f.external;copy.prototype=f.prototype;
     copy.extension_generated=f.extension_generated;
-    copy.unsafe_kernel_symbol=f.unsafe_kernel_symbol;
+    copy.kernel_symbol=f.kernel_symbol;
+    copy.kernel_link_only=f.kernel_link_only;
   for(const auto& statement:f.body)copy.body.push_back(clone_statement(statement,budget));
   for(const auto& attribute:f.attributes)copy.attributes.push_back(clone_expression(*attribute,budget));
   out.functions.push_back(std::move(copy));

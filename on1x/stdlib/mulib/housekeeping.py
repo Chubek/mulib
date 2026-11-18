@@ -161,8 +161,12 @@ def plan(root, libraries, fixtures=(), paths=()):
         profile = profiles['profiles'].get(name, {'recipe': profiles['default_recipe']})
         required[name] = profile.get('required_symbols', [])
         if profile['recipe']=='exoml-core':
-            for path in contracts.CONTRACTS.glob('*.json'):inputs[str(path)]=contracts.digest(path)
-            core = contracts.catalog(root)['profiles'][name]
+            # A kernel plan depends on the selected contract, not the source
+            # pins of every unrelated catalog entry.
+            core = contracts.catalog(root, selected={name})['profiles'][name]
+            for path in ('catalog.json', 'obligations.json', core['contract']):
+                path = contracts.CONTRACTS/path
+                inputs[str(path)] = contracts.digest(path)
             for dep in core['implementation_modules']:add(dep)
             extra.extend(core.get('active_optional_macros', []))
             for path, expected in core.get('evidence_sha256', {}).items():

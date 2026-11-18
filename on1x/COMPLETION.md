@@ -13,11 +13,12 @@ and script second-line metadata support name-based offline discovery. See
 No general-safe-FFI, application, separate-compilation or concurrency gate is
 advanced by this tooling change.
 
-CSP ABI v3 continuation: [running/blocked cooperative cancellation and monotonic
-`poll after`](docs/cancellation-deadlines.md) now execute explicit C11 cleanup
-returns and atomic control offers. This supersedes earlier absence claims only
-for this bounded language profile. Async/await, taskgroup `within`, effectful MIR
-and general foreign-resource unwinding remain unsupported; application/safe-FFI
+CSP ABI v4 continuation: [cooperative cancellation and monotonic
+deadlines](docs/cancellation-deadlines.md) execute explicit C11 cleanup returns
+and atomic control offers. `taskgroup within` expires cooperatively and drains
+cleanup before terminal failure; no typed recovery. This supersedes earlier
+absence claims only for this bounded profile. Async/await, effectful MIR and
+general foreign-resource unwinding remain unsupported; application/safe-FFI
 gates are not advanced.
 
 G4 continuation (2026-11-18): the bounded [cooperative fiber/channel
@@ -107,6 +108,14 @@ tests alone.
 At the time this specification was authored (2026-11-14), repository documentation reports a tested **subset**, not a complete On1x compiler. Check the current checkout instead of assuming these statuses remain unchanged.
 
 ### Preserve working subsystems
+
+**KernelBind continuation (2026-11-18):** native safe scalar imports can now
+build through an independently signed-review gate, exact CDecl/ExoML projection,
+strict C11 adapter, one-TU archive and atomic evidence publication. The two
+clamp i64 exports execute under a test authority; the shipped contract is still
+unreviewed and production authorization must be independently supplied.
+This is not the numerical/resource or Shylock milestone. See
+[`docs/kernel-review.md`](docs/kernel-review.md) and `VERIFICATION.md`.
 
 - Optional Nerotypical/Satie structural verification of concrete HIR, with
   independent type obligations and closed rejection on unsupported/unknown cases;

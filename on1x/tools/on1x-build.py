@@ -61,10 +61,24 @@ def main():
     cli.add_argument('--mulib-plan', type=Path, help='write the resolved native link plan and input fingerprints')
     cli.add_argument('--inspect-kernels', action='store_true',
                      help='publish KernelBind discovery JSON without building a program or archive')
-    cli.add_argument('--kernel-bind', action='store_true', help='build with the unsafe clamp KernelBind C11 profile')
+    cli.add_argument('--kernel-bind', action='store_true', help='build a supported KernelBind C11 profile')
+    cli.add_argument('--kernel-review-candidate', action='store_true',
+                     help='inspect a supported safe import and publish its unsigned review subject')
+    cli.add_argument('--kernel-review', type=Path,
+                     help='independent signed review; -o publishes an atomic directory containing program and evidence')
+    cli.add_argument('--kernel-review-key', type=Path, help='operator-selected Ed25519 DER public trust anchor')
+    cli.add_argument('--kernel-review-signature', type=Path, help='detached Ed25519 signature of the review file bytes')
     cli.add_argument('--exotract', help='trusted Lua-enabled Exotract executable for KernelBind')
     cli.add_argument('--resource-dir', help='Clang resource directory for KernelBind')
     args = cli.parse_args()
+    if args.kernel_review_candidate:
+        args.inspect_kernels = True
+    review_options = (args.kernel_review, args.kernel_review_key, args.kernel_review_signature)
+    if any(review_options):
+        if not all(review_options) or not args.kernel_bind:
+            cli.error('review, public key and signature must be supplied together with --kernel-bind')
+        if args.mulib_plan:
+            cli.error('reviewed builds publish their link plan inside the output directory')
     if args.optimize_ir and not args.via_mir:
         cli.error('--optimize-ir requires --via-mir')
     if args.admitted_extern and not args.memory_check:
@@ -134,12 +148,14 @@ def main():
             compiler += ['--disable', name]
         for label, schema in args.ppx_schema:
             compiler += ['--ppx-schema', label, schema]
-        kernel_report = kernel_interface = None
+        kernel_report = kernel_interface = raw_kernel_interface = None
         if args.inspect_kernels or args.kernel_bind:
             spec = importlib.util.spec_from_file_location('on1x_exotract', ROOT/'tools/on1x-exotract.py')
             exo = importlib.util.module_from_spec(spec);spec.loader.exec_module(exo)
             compiler[0] = exo.executable(compiler[0])
-            driver_pins = {path: exo.contracts.digest(path) for path in [compiler[0], Path(__file__).resolve()]}
+            driver_pins = {path: exo.contracts.digest(path) for path in
+                           [compiler[0], Path(__file__).resolve(),
+                            ROOT/'runtime/on1x_runtime.c', ROOT/'runtime/on1x_runtime.h']}
             requests_path = Path(temp)/'kernel-requests.json'
             inspect = [str(compiler[0]), '--kernel-imports', str(args.input), '-o', str(requests_path), *compiler[5:]]
             subprocess.run(inspect, check=True, timeout=60)
@@ -147,22 +163,40 @@ def main():
             root = exo.housekeeping.kernel_root(args.mulib_root, MULIB, paths)
             requests = exo.contracts.load(requests_path)
             report = exo.kernel_discovery(requests, root, paths, args.exotract, args.cc, args.resource_dir,
-                                          [] if args.kernel_bind else args.cflag, driver_pins)
+                                          args.cflag, driver_pins,
+                                          review=bool(args.kernel_review_candidate or args.kernel_review))
+            candidate = exo.review_candidate(report) if args.kernel_review_candidate else None
             if args.inspect_kernels:
                 args.output.parent.mkdir(parents=True, exist_ok=True)
                 with tempfile.NamedTemporaryFile(dir=args.output.parent, prefix='.kernel-discovery-', delete=False) as stream:
                     staged = Path(stream.name)
                 try:
-                    staged.write_text(exo.contracts.dumps(report), encoding='ascii')
+                    staged.write_text(exo.contracts.dumps(candidate or report), encoding='ascii')
                     exo.contracts.publish_new(staged, args.output)
                 finally:
                     staged.unlink(missing_ok=True)
                 return
             kernel_report = report
-            kernel_interface = exo.unsafe_scalar_interface(report)
+            if args.kernel_review:
+                kernel_interface = exo.reviewed_interface(report)
+                raw_requests = [r for r in report['requests'] if r['unsafe']]
+                if raw_requests:
+                    raw_kernel_interface = exo.clamp_scalar_interface(dict(report, requests=raw_requests), unsafe=True)
+                review = exo.authorize_review(report, args.kernel_review_key, args.kernel_review,
+                                              args.kernel_review_signature, Path(temp))
+                compiler.append('--kernel-stage')
+            else:
+                kernel_interface = exo.clamp_scalar_interface(report, unsafe=True)
             args.cc = report['compiler']
             compiler.append('--kernel-c11')
         subprocess.run(compiler, check=True)
+        if kernel_interface:
+            # Re-resolve the graph after lowering as well as checking each
+            # original source hash. Adding a higher-priority module candidate
+            # must not leave an incomplete application input lock.
+            subprocess.run(inspect, check=True, timeout=60)
+            if exo.contracts.load(requests_path) != requests:
+                raise ValueError('KernelBind application source graph drift')
         code = generated.read_text()
         if args.emit_only:
             args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -174,6 +208,10 @@ def main():
         paths=house.search_paths(args.mulib_path)
         mulib_root=house.kernel_root(args.mulib_root,MULIB,paths)
         includes=house.include_paths(mulib_root,paths)
+        if args.kernel_review:
+            # Discovery checked alternate kernel candidates but did not add
+            # those search roots to ExoLib's C header search path.
+            includes=[mulib_root/'include']
         include_flags=[part for path in includes for part in ['-I',str(path)]]
         cmd = [args.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
                '-I', str(ROOT / 'runtime'), *include_flags,
@@ -206,12 +244,25 @@ def main():
             kernels = list(args.mulib)
             if kernel_interface:
                 if has_json or has_csp or has_pretty or has_mulib or has_bridge:
-                    raise ValueError('KernelBind clamp profile cannot be mixed with built-in raw kernel bridges')
+                    raise ValueError('KernelBind profile cannot be mixed with built-in raw kernel bridges')
                 if compiler_target != kernel_report['target'] or root != mulib_root:
                     raise ValueError('KernelBind target or MuLIB root drift')
                 fingerprints.update(kernel_report['inputs'])
-                kernels.append('clamp')
+                members = exo.interface_members(kernel_interface)
+                selected = set(members)
+                if raw_kernel_interface:
+                    selected.add(raw_kernel_interface['module'])
+                kernels.extend(name.removeprefix('mulib.') for name in sorted(selected))
+                profiles = {name: exo.reviewed_profile_tools(name) for name in members}
+                expected_macros = list(dict.fromkeys(
+                    macro for name in sorted(selected) for macro in exo.reviewed_profile_tools(name)[0]))
                 cmd.append('-DON1X_KERNEL_ABI_V1=1')
+                if args.kernel_review:
+                    adapter = Path(temp)/'kernel-adapter.c'
+                    adapter.write_text(''.join(
+                        profiles[name][1](item)
+                        for name, item in members.items()))
+                    fingerprints[review['verifier']] = review['verifier_sha256']
             if has_csp:
                 kernels += [name for name in ('channel', 'fiber', 'xthreads') if name not in kernels]
                 cmd.append(str(ROOT/'runtime/on1x_concurrency.c'))
@@ -253,7 +304,7 @@ def main():
                 native_links.append(str(archive/'libmulib.a'))
                 fingerprints[str(archive/'libmulib.a')]=house.contracts.digest(archive/'libmulib.a')
             if recipe:
-                if kernel_interface and recipe['implementation_macros'] != ['MULIB_IMPL_CLAMP']:
+                if kernel_interface and recipe['implementation_macros'] != expected_macros:
                     raise ValueError('KernelBind implementation closure drift')
                 if kernel_interface:
                     for path, digest in recipe['inputs'].items():
@@ -272,7 +323,25 @@ def main():
                         fingerprints[str(path)]=module[field+'_sha256']
                 cmd += ['-D'+item for item in recipe['compile_definitions']]
                 if not args.mulib_archive:
-                    impl = Path(temp)/'mulib.c';impl.write_text(house.implementation(mulib_root,recipe));cmd.append(str(impl))
+                    impl = Path(temp)/'mulib.c';impl.write_text(house.implementation(mulib_root,recipe))
+                    if args.kernel_review:
+                        # Reuse the canonical planner's single TU and compile it
+                        # once; the adapter probe and application link this archive.
+                        ar = exo.executable('ar')
+                        fingerprints[str(ar)] = house.contracts.digest(ar)
+                        obj, archive = Path(temp)/'mulib.o', Path(temp)/'libmulib.a'
+                        compile_flags = ['-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
+                                         *include_flags, *args.cflag]
+                        for path, digest in house.compile_inputs(args.cc, compile_flags, impl).items():
+                            if path in fingerprints and fingerprints[path] != digest:
+                                raise ValueError('native input drift: '+path)
+                            fingerprints[path] = digest
+                        subprocess.run([args.cc, *compile_flags, '-c', str(impl), '-o', str(obj)], check=True)
+                        subprocess.run([str(ar), 'rcsD', str(archive), str(obj)], check=True)
+                        fingerprints[str(archive)] = house.contracts.digest(archive)
+                        native_links.append(str(archive))
+                    else:
+                        cmd.append(str(impl))
                     cmd += [str(mulib_root/path) for path in recipe['native_sources']]
                 native_links += ['-l'+link for link in recipe['link_libraries']]
                 for extra in args.extra_c:
@@ -323,11 +392,73 @@ def main():
                     if path in fingerprints and fingerprints[path]!=digest:raise ValueError('native input drift: '+path)
                     fingerprints[path]=digest
         binary=Path(temp)/'program'
+        if args.kernel_review:
+            adapter_obj = Path(temp)/'kernel-adapter.o'
+            adapter_flags = [*compile_flags, *['-D'+item for item in recipe['compile_definitions']]]
+            for path, digest in house.compile_inputs(args.cc, adapter_flags, adapter).items():
+                if path in fingerprints and fingerprints[path] != digest:
+                    raise ValueError('native input drift: '+path)
+                fingerprints[path] = digest
+            subprocess.run([args.cc, *adapter_flags, '-c', str(adapter), '-o', str(adapter_obj)], check=True)
+            fingerprints[str(adapter_obj)] = house.contracts.digest(adapter_obj)
+            cmd.insert(cmd.index(str(archive)), str(adapter_obj))
+            probe = Path(temp)/'kernel-probe.c'
+            if len(profiles) > 1:
+                names = []
+                source = []
+                for i, (_, _, generate, _) in enumerate(profiles.values()):
+                    name = f'kernel_probe_{i}'
+                    names.append(name+'()')
+                    source.extend((f'#define main {name}\n', generate(), '#undef main\n'))
+                probe.write_text(''.join(source)+'int main(void) { return '+' || '.join(names)+'; }\n')
+            else:
+                probe.write_text(next(iter(profiles.values()))[2]())
+            probe_binary = Path(temp)/'kernel-probe'
+            subprocess.run([args.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
+                            *include_flags, *args.cflag, str(probe), str(adapter_obj), *native_links,
+                            '-o', str(probe_binary)], check=True)
+            subprocess.run([str(probe_binary)], check=True, timeout=30)
         cmd += ['-o', str(binary)]
         subprocess.run(cmd, check=True)
         if native:
             for path, digest in fingerprints.items():
                 if house.contracts.digest(path)!=digest:raise ValueError('native input drift: '+path)
+            if args.kernel_review:
+                kernel_interface['safe_export'] = True
+                for member in members.values():
+                    member['safe_export'] = True
+                    for export in member['exports'].values():
+                        export['status'] = 'admitted'
+                # Everything is published as one non-overwriting directory.
+                # No admission can be left beside a failed or missing executable.
+                stage = Path(tempfile.mkdtemp(dir=args.output.absolute().parent, prefix='.kernel-admission-'))
+                try:
+                    files = [generated, adapter, adapter_obj, impl, archive, probe, Path(temp)/'review.json',
+                             Path(temp)/'review.sig', Path(temp)/'review.ed25519.der', binary]
+                    for path in files:
+                        shutil.copy2(path, stage/path.name)
+                    def save(name, value):
+                        (stage/name).write_text(house.contracts.dumps(value), encoding='ascii')
+                    save('interface.json', kernel_interface)
+                    if raw_kernel_interface:
+                        save('unsafe-interface.json', raw_kernel_interface)
+                    save('discovery.json', kernel_report)
+                    save('build-plan.json', recipe)
+                    stable = {p: h for p, h in fingerprints.items() if not Path(p).is_relative_to(Path(temp))}
+                    save('admission.json', dict(schema='on1x.kernel-admission/v1',
+                         profile=kernel_interface['profile'], safe_export=True, review=review,
+                         contains_unsafe_imports=bool(raw_kernel_interface),
+                         executable_gate=(dict(profile='kernel-set-differential/v1', passed=True,
+                                               profiles=[tools[3] for tools in profiles.values()])
+                             if len(profiles)>1 else dict(profile=next(iter(profiles.values()))[3], passed=True,
+                                 **({'comparisons':1348} if 'mulib.clamp' in profiles else {}))),
+                         inputs=stable, cflags=args.cflag, compiler_target=compiler_target,
+                         artifacts={p.name: house.contracts.digest(p) for p in sorted(stage.iterdir())}))
+                    house.contracts.publish_new(stage, args.output.absolute())
+                finally:
+                    if stage.exists():
+                        shutil.rmtree(stage)
+                return
             if args.mulib_plan:
                 # Generated temporary inputs are captured by content, not stale temp paths.
                 stable={path:digest for path,digest in fingerprints.items() if not Path(path).is_relative_to(Path(temp))}
@@ -364,6 +495,6 @@ if __name__ == '__main__':
         main()
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
-    except (ValueError, OSError, KeyError, subprocess.TimeoutExpired) as e:
+    except (ValueError, OSError, KeyError, TypeError, RecursionError, subprocess.TimeoutExpired) as e:
         print('on1x-build: '+str(e),file=sys.stderr)
         sys.exit(1)

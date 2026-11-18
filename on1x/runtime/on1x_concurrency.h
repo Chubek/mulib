@@ -4,7 +4,7 @@
 /* Private generated-code ABI. These are NOT copyable foreign handles, an
  * embedding API, native-thread tasks, or an async/await implementation. */
 #if defined(__linux__) && defined(__GLIBC__) && defined(__x86_64__)
-#define ON1X_CSP_ABI_VERSION 3
+#define ON1X_CSP_ABI_VERSION 4
 #endif
 #ifdef __cplusplus
 extern "C" {
@@ -28,8 +28,11 @@ bool on1x_csp_cancelled(void);
 void on1x_csp_shield_enter(void);
 void on1x_csp_shield_leave(void);
 bool on1x_csp_cancel(on1x_csp_task *,const char *,size_t,size_t);
-int64_t on1x_csp_run(on1x_csp_callback,on1x_env *,const char *,size_t,size_t);
+int64_t on1x_csp_run_v4(on1x_csp_callback,on1x_env *,const char *,size_t,size_t);
 on1x_csp_group *on1x_csp_group_enter(const char *,size_t,size_t);
+/* A nonnegative relative monotonic duration. Check cancellation immediately
+ * after entry (including duration zero) and do not execute a cancelled body. */
+on1x_csp_group *on1x_csp_group_enter_within(int64_t,const char *,size_t,size_t);
 void on1x_csp_group_finish(on1x_csp_group *);
 on1x_csp_task *on1x_csp_launch(on1x_csp_callback,on1x_env *,const char *,size_t,size_t);
 /* Legacy name retained for callers of the earlier pre-dispatch entrypoint.

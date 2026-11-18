@@ -1,0 +1,49 @@
+{
+  "schema_version": 2,
+  "library": "clamp",
+  "headers": ["mulib-clamp.h"],
+  "state": "annotated",
+  "bundle_provenance": {
+    "header": "mulib-clamp.h",
+    "revision": "sha256:c24b4c3dcbb132177d61a587a4d07c9f52f4bbca572f00ccd6e73cd40cf16efc",
+    "author": "On1x KernelBind contributors",
+    "review_status": "unreviewed",
+    "evidence_method": "Source annotation; independent approval must be supplied via KernelBind review policy."
+  },
+  "functions": [
+    {
+      "c_name": "mulib_clamp_add_i64",
+      "return": {"kind": "value", "nullable": false},
+      "parameters": [
+        {"index": 0, "name": "a", "ownership": "scalar", "nullable": false},
+        {"index": 1, "name": "b", "ownership": "scalar", "nullable": false}
+      ],
+      "errors": {"kind": "none"},
+      "effects": {"effects": [], "unknown": false},
+      "concurrency": {"thread_safety": "thread_safe", "blocking_behavior": "nonblocking", "suspension_safe": true},
+      "provenance": {
+        "header": "mulib-clamp.h",
+        "author": "On1x KernelBind contributors",
+        "review_status": "unreviewed",
+        "evidence_method": "Saturating addition for every int64_t input pair; bound checks precede arithmetic. No external state or failure result."
+      }
+    },
+    {
+      "c_name": "mulib_clamp_sub_i64",
+      "return": {"kind": "value", "nullable": false},
+      "parameters": [
+        {"index": 0, "name": "a", "ownership": "scalar", "nullable": false},
+        {"index": 1, "name": "b", "ownership": "scalar", "nullable": false}
+      ],
+      "errors": {"kind": "none"},
+      "effects": {"effects": [], "unknown": false},
+      "concurrency": {"thread_safety": "thread_safe", "blocking_behavior": "nonblocking", "suspension_safe": true},
+      "provenance": {
+        "header": "mulib-clamp.h",
+        "author": "On1x KernelBind contributors",
+        "review_status": "unreviewed",
+        "evidence_method": "Saturating subtraction for every int64_t input pair without negating the subtrahend. No external state or failure result."
+      }
+    }
+  ]
+}

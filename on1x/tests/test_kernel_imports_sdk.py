@@ -97,6 +97,7 @@ with tempfile.TemporaryDirectory(dir=work) as directory:
     for subdir, names in (
         ('tools', ['on1x-build.py', 'on1x-exotract.py', 'on1x-contracts.py']),
         ('stdlib/mulib', ['housekeeping.py', 'catalog.json']),
+        ('runtime', ['on1x_runtime.c', 'on1x_runtime.h']),
         ('contracts-exotract', ['kernel-discovery-v1.lua', 'catalog.json']),
         ('contracts-exoml', [p.name for p in (root/'contracts-exoml').glob('*.json')]),
     ):
@@ -184,6 +185,28 @@ with tempfile.TemporaryDirectory(dir=work) as directory:
     assert p.returncode == 0, p
     c_run = run([oracle])
     assert c_run.returncode == 0 and c_run.stdout == result.stdout, c_run
+    expressions = directory/'unsafe-expressions.on1x'
+    expressions.write_text('''unsafe import kernel mulib.clamp as C;
+fn arg(x:i64)->i64 { println(x); return x; }
+fn answer(skip:bool)->i64 {
+  return unsafe {
+    if skip { return 7; }
+    C.add_i64(arg(40), unsafe { C.sub_i64(arg(4), arg(2)) })
+  };
+}
+fn main(){
+  let f = unsafe { let n=1; fn()->i64 { return unsafe { C.add_i64(n, 41) }; } };
+  while true { (unsafe { break; }); }
+  println(f());
+  println(answer(true));
+  println(answer(false));
+}
+''')
+    expr_exe = directory/'unsafe-expressions'
+    p = run([*build_cmd, expressions, '-o', expr_exe])
+    assert p.returncode == 0, p
+    p = run([expr_exe])
+    assert p.returncode == 0 and p.stdout == '42\n7\n40\n4\n2\n42\n', p
     duplicate = directory/'duplicate-impl.c'
     duplicate.write_bytes(impl.read_bytes())
     p = run([cc, '-std=c11', *cflags, '-I', root.parent/'include',

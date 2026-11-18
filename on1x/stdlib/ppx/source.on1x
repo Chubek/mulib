@@ -4,14 +4,13 @@ import "ppx.on1x";
 # The canonical origin itself remains in the declaration identity and locations.
 fn ppx_source_prefix(key: string) -> string {
   if text_len(key)!=64 { tool_fail("ON1X-CAT-PPX: invalid module naming key"); }
-  var i=0;while i<64 { let c=text_byte(key,i);if !ppx_digit(c)&&!(c>=97&&c<=102) { tool_fail("ON1X-CAT-PPX: invalid module naming key"); }i=i+1; }
+  for i in 0..64 { let c=text_byte(key,i);if !ppx_digit(c)&&!(c>=97&&c<=102) { tool_fail("ON1X-CAT-PPX: invalid module naming key"); } }
   return text_concat("on1x_extension_",text_concat(key,"_"));
 }
 fn ppx_fresh_prefixed(tree: sexpr, prefix: string, start: i64) -> (string,i64) {
   var serial=start;var work=0;
-  while true {
+  return loop {
     serial=serial+1;let name=text_concat(prefix,sexpr_nat(serial));let (found,used)=ppx_find_text(tree,name,0,work);work=used;
-    if !found { return (name,serial); }
-  }
-  return ("",serial);
+    if !found { break with (name,serial); }
+  };
 }

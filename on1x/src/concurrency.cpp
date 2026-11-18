@@ -266,8 +266,10 @@ class Verify {
     budget.state(state->size(),s.where);
    if(s.kind==S::TaskGroup||s.kind==S::CspScope){
     source(s.where);
-    if((canonical&&s.kind!=S::CspScope)||s.value||s.pattern||!s.name.empty()||s.declared!=Type::Invalid||
-       s.mutable_binding||!s.otherwise.empty()||s.control_target||!s.label.empty()||s.label_context||s.context||s.inclusive)fail(s.where,"invalid taskgroup shape");
+     if((canonical&&s.kind!=S::CspScope)||s.pattern||!s.name.empty()||s.declared!=Type::Invalid||
+        s.mutable_binding||!s.otherwise.empty()||s.control_target||!s.label.empty()||s.label_context||s.context||s.inclusive||s.unsafe_block)fail(s.where,"invalid taskgroup shape");
+     if(s.value&&(!expression(*s.value,*state,depth+1)||s.value->type!=Type::I64))
+      fail(s.value->where,"taskgroup duration must be a completing i64");
     ++groups;state=body(s.body,*state,depth+1);--groups;continue;
    }
    if(s.kind==S::Let&&s.value&&contains(s.value->type)){

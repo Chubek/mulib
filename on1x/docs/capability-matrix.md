@@ -1,5 +1,29 @@
 # On1x capability matrix
 
+Package D continuation: MuLIB `2da654cae071226ad246415d2fad4ba43f6f9ec1`,
+LibStone `9c44917b6518c03ef33c544c0ef93b2d864fe4fa`. See
+[the numerical profile](kernel-numerics.md) and [verification](../VERIFICATION.md).
+
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| Bounded numerical KernelBind | `include/on1x/kernel.hpp`, `src/{loader,infer,sema,codegen}.cpp`, `tools/{on1x-build,on1x-exotract}.py` | Histprice EMA/Holt and PriceOpt optimize/candidates; exact Linux x86-64 C11 signatures; one implementation archive | Immutable snapshot slices; named models, constraints, enums and `Result` with `?`; no exposed pointers | SDK differential/probes, independent C pricing fixture, drift/type/failure rejections and ASan/UBSan | EXECUTABLE | No production review, other pricing kernels, general spans/owned resources, JSON I/O or Shylock parity |
+
+Package C safe-scalar continuation baseline: MuLIB
+`2da654cae071226ad246415d2fad4ba43f6f9ec1`, configured LibStone
+`9c44917b6518c03ef33c544c0ef93b2d864fe4fa`, Linux x86-64/glibc 2.44,
+GCC 16.2.1 and Clang 22.1.8. The safe-scalar trust boundary is documented
+in [KernelBind](kernel-bind.md).
+
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| Signed-review scalar KernelBind | `src/{loader,sema,codegen,cli}.cpp`, `tools/{on1x-build,on1x-exotract}.py`, `contracts-exoml/clamp.exocontract.json` | Exact clamp i64 ABI, one-TU archive, generated adapter, atomic reviewed bundle | Native safe namespace calls after independent operator-selected Ed25519 authorization; unapproved builds reject | `tests/test_kernel_review_sdk.py`, `examples/kernel/clamp_safe.on1x`; ephemeral test authority only | EXECUTABLE | Independently issued production review; resources/numerical shapes; independent checker/MIR profiles |
+| Selected-contract build planning | `stdlib/mulib/housekeeping.py`, `tools/on1x-contracts.py` | Validate selected core contract and its closure; unrelated stale source pins no longer block selection | Build helper only | Real-SDK KernelBind discovery regression | EXECUTABLE | Whole-catalog verification still diagnoses unrelated stale profiles |
+
+Measured continuation results: generated/GCC full suite **57 passed, 4 failed,
+1 skipped**; fallback/Clang full suite **53 passed, 2 failed, 1 skipped**;
+focused Clang ASan/UBSan **6/6 passed**. Remaining failures stop at the stale
+Elvi-scrape manual pin; see [verification](../VERIFICATION.md).
+
 PrettyPrint layout continuation, MuLIB `db7330a875208752ff3b982a5a6474c4e7c8a8bb`:
 
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
@@ -14,7 +38,7 @@ for the discovery profile and its limits.
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
 |---|---|---|---|---|---|---|
 | KernelBind import discovery | `src/{parser,loader,cli,ppx_ast}.cpp`, `tools/{on1x-build,on1x-exotract}.py`, `contracts-exotract/kernel-discovery-v1.lua` | ExoLib/Exotract declaration-only ExoML CDecl v2 | Native contextual imports and read-only source graph, pinned MuLIB discovery and unreviewed sidecars | `test_kernel_imports.py`, `test_kernel_imports_sdk.py` | PARTIAL | More profiles and independent safe authorization |
-| KernelBind unsafe scalar calls | `src/{loader,sema,codegen}.cpp`, `tools/{on1x-build,on1x-exotract}.py` | Real clamp kernel, strict C11 adapters, one implementation TU on native Linux x86-64 | Direct scoped `unsafe_foreign` calls with two exact `i64` arguments | `examples/kernel/clamp.on1x`, C oracle, compiler/SDK negative tests | EXECUTABLE | General scalar shapes, alternative targets/backends, value-producing unsafe blocks |
+| KernelBind unsafe scalar calls | `src/{parser,loader,sema,codegen}.cpp`, `src/canonical/{values,verify_values}.cpp`, `tools/{on1x-build,on1x-exotract}.py` | Real clamp kernel, strict C11 adapters, one implementation TU on native Linux x86-64 | Direct scoped `unsafe_foreign` calls with two exact `i64` arguments; statement blocks and value-producing `unsafe` expressions | `examples/kernel/clamp.on1x`, C oracle, compiler/SDK negative tests and malformed scoped HIR | EXECUTABLE | General scalar shapes and alternative targets/backends |
 | KernelBind safe calls and foreign resources | `KERNEL_DIRECT_USAGE.md` | No safely admitted symbols or resource-bearing shapes | Default imports fail closed | Explicit fail-closed compilation tests | ABSENT | Independent review, ownership/errors/effects, target execution and Shylock milestone |
 
 Search-path/ecosystem work item (M5/M7), baseline MuLIB
@@ -45,8 +69,9 @@ configured read-only LibStone `55755485acaded7c4ed804c0946bc8c7363f6763`:
 
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
 |---|---|---|---|---|---|---|
-| Monotonic poll deadline | `src/{parser,infer,sema,concurrency,codegen,ppx_ast}.cpp` | ABI v3 private timer-channel offer using existing atomic MuLIB select, CLOCK_MONOTONIC supervision; no kernel timeout change | One `after` per poll, timer-only choices, i64 milliseconds or ms/s units, optional default; located invalid-duration faults | `test_cancellation_deadlines.py`, `test_concurrency.cpp`, clock-jump/OOM fixtures, compiled example, scanner parity; exact evidence in `../VERIFICATION.md` | EXECUTABLE | No taskgroup `within`, typed timeout/cancel join outcomes, effectful MIR or other-target validation |
-| Running/blocked fiber cancellation | `src/{concurrency,codegen}.cpp`, `runtime/on1x_concurrency.*` | ABI v3 private cancel offer, explicit cleanup returns, shielded defers, descendant cancel/join, existing process-group cancellation/reaping | Consuming affine `cancel` before dispatch, while running or blocked; same-parent checks, no forced native preemption | `test_cancellation_deadlines.py`, `test_concurrency.cpp`; loop/call/defer/RC/nested/byte waits, observer reuse, OOM, strict C11 and ASan/UBSan | EXECUTABLE | General effects/ownership MIR, native workers, independent SDK models and general async suspension |
+| Monotonic poll deadline | `src/{parser,infer,sema,concurrency,codegen,ppx_ast}.cpp` | Private timer-channel offer using existing atomic MuLIB select, CLOCK_MONOTONIC supervision; no kernel timeout change | One `after` per poll, timer-only choices, i64 milliseconds or ms/s units, optional default; located invalid-duration faults | `test_cancellation_deadlines.py`, `test_concurrency.cpp`, clock-jump/OOM fixtures, compiled example, scanner parity; exact evidence in `../VERIFICATION.md` | EXECUTABLE | No typed timeout/cancel join outcomes, effectful MIR or other-target validation |
+| Taskgroup deadline | `src/{parser,infer,sema,concurrency,codegen,ppx_ast}.cpp`, `runtime/on1x_concurrency.*` | CSP ABI v4; existing supervisor, cancellation and cleanup | `taskgroup within duration { ... }`, checked i64 milliseconds or ms/s; cooperative terminal expiry after cleanup; ordinary affine obligations unchanged | `test_taskgroup_within.py`, CSP HIR, real and deterministic monotonic clocks, both scanners, strict GCC/Clang C11 and ASan/UBSan; see `../VERIFICATION.md` | EXECUTABLE | No typed recovery, general async or effectful MIR |
+| Running/blocked fiber cancellation | `src/{concurrency,codegen}.cpp`, `runtime/on1x_concurrency.*` | Private cancel offer, explicit cleanup returns, shielded defers, descendant cancel/join, existing process-group cancellation/reaping | Consuming affine `cancel` before dispatch, while running or blocked; same-parent checks, no forced native preemption | `test_cancellation_deadlines.py`, `test_concurrency.cpp`; loop/call/defer/RC/nested/byte waits, observer reuse, OOM, strict C11 and ASan/UBSan | EXECUTABLE | General effects/ownership MIR, native workers, independent SDK models and general async suspension |
 | Stackless async/await | Existing scalar MIR and CSP HIR | No admitted future frame/runtime ABI | Not admitted | Unsupported-profile coverage only | ABSENT | Typed verified suspension/frame lowering; not stackful launch sugar |
 
 Linux 6.18.52 x86_64/glibc 2.44, GCC 16.2.1 and Clang 22.1.8.
@@ -55,7 +80,7 @@ Full fallback/GCC: **52 passed, 1 failed, 1 skipped**; full generated/GCC:
 `tools/embed_units.py` fixture fingerprint; Category skips with native PPX off.
 Focused ASan/UBSan: **4/4**; strict Release: **2/2**; scanner parity: **302**.
 See [the profile](cancellation-deadlines.md). This request is only partially
-implemented: stackless async/await and taskgroup-wide deadlines remain absent.
+implemented: stackless async/await and typed timeout recovery remain absent.
 
 G4 stream-poll continuation (baseline `d4cc478df76bfe9b5b8e6485f42d56fde81e8a68`):
 atomic `poll` now accepts captured process byte endpoints, including mixed i64/u8
@@ -274,6 +299,7 @@ and execution evidence, not deletion of platform/environment guards.
 | Diagnostics / repair | `src/diagnostics.cpp` | Optional Syren build-time adapter | Located errors; proposed edits only | `test_diagnostics.*` | PARTIAL | Full stable diagnostic taxonomy |
 | Formatter / LSP / linter / packages | `tools/` | Build helper only | None for these tools | Existing installation tests | ABSENT | Implement tools and protocol guarantees |
 | Standard library | `stdlib/`, `std/` | Persistent helpers, trusted scalar bridges | Partial functional modules | `test_libraries.py`, `test_stdlib_extensions.py` | PARTIAL | Coherent data/resource model and conformance |
+| Compatible first-party control-flow migration | [Source audit](source-migration.md): examples, Basis/PPX libraries, native unroll | Existing C11 and scalar/numeric tuple MIR; CSP examples use the existing ABI v4 deadline path | Ranges, three-clause `for`, value/statement `loop`, structural `match`, bounded taskgroup examples | [Verification](../VERIFICATION.md#first-party-source-migration-control-flow): both scanners, strict C11, ASan/UBSan, and output parity | EXECUTABLE | Unsupported kernel adapters unchanged; expiry is terminal, not a recoverable join result |
 | Self-hosting | `stdlib/{sexpr,ppx,visitor}/` | C11 native authoring tools | Compiler remains C++20 | `test_selfhost.py` | PARTIAL | Real compiler-stage migration/bootstrap |
 
 No row is newly certified VERIFIED by source inspection alone. Optional SDKs,

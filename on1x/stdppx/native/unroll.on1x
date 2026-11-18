@@ -6,8 +6,8 @@ fn unroll_node(node: sexpr, label: string) -> sexpr {
   if sx_text(sexpr_nth(expression, 2)) != "repeat" || sexpr_size(args) != 2 || visitor_tag(sexpr_nth(args, 1)) != "Block" { tool_fail("unroll: expected repeat(IntegerLiteral, Block)"); }
   let (valid, count) = ppx_literal_i64(sx_head(args));
   if !valid || count < 0 || count > 256 { tool_fail("unroll: count must be 0..256"); }
-  var body = sx_nil(); var i = 0;
-  while i < count { body = sx_cons(ppx_node("Scope", ppx_list2(sexpr_nth(args, 1), location)), body); i = i + 1; }
+  var body = sx_nil();
+  for _ in 0..count { body = sx_cons(ppx_node("Scope", ppx_list2(sexpr_nth(args, 1), location)), body); }
   return ppx_node("Scope", ppx_list2(ppx_node("Block", ppx_list2(body, location)), location));
 }
 fn transform(tree: sexpr, label: string) -> sexpr {

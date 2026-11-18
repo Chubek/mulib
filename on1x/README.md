@@ -9,10 +9,12 @@ original native processors and contracts are preserved.
 The [cancellation/deadline continuation](docs/cancellation-deadlines.md) now
 executes consuming cancellation of running or blocked internal fibers, explicit
 defer/lexical cleanup, descendant draining, and monotonic `poll after` choices
-through C11 (private CSP ABI v3). See
+through C11. The same profile now admits `taskgroup within 1s { ... }`:
+expiry drains cooperative cleanup and terminates the run, not a typed timeout
+result (private CSP ABI v4). See
 [`examples/cancellation_deadlines.on1x`](examples/cancellation_deadlines.on1x).
-**Async/await and taskgroup `within` are not implemented**: verified stackless
-suspension/frame lowering is still required. This is not completion of M4.
+**Async/await is not implemented**: verified stackless suspension/frame
+lowering is still required. This is not completion of M4.
 
 An initial [cooperative fiber/channel profile](docs/concurrency.md) now executes
 `taskgroup`, `launch { ... }`/`join`, 1:1 `i64` unidirectional bounded and
@@ -20,7 +22,7 @@ rendezvous channels, and bounded atomic `poll` through generated C11 and existin
 source [channel example](examples/cooperative_channels.on1x) covers checked send/receive,
 close and scoped cleanup; the [poll example](examples/cooperative_poll.on1x)
 selects a rendezvous receive. This is **not** completion of the core-syntax
-specification: taskgroup deadlines, the full portable shell grammar, async/await, duplex,
+specification: typed timeout recovery, the full portable shell grammar, async/await, duplex,
 general payloads and native worker threads remain unsupported. See the
 [verification record](VERIFICATION.md) for commands and current suite failures.
 
@@ -107,9 +109,13 @@ still not admitted. See the
 [verification record](VERIFICATION.md). This does not complete M1 or On1x.
 
 [KernelBind](docs/kernel-bind.md) recognizes `import kernel` in the compiler and
-supports explicit ExoLib/ExoML discovery of six canonical MuLIB profiles.
+supports explicit ExoLib/ExoML discovery of selected canonical MuLIB profiles.
 The opt-in C11 build profile can call two `mulib.clamp` functions via
-`unsafe import kernel`; safe and resource-bearing imports are still closed.
+`unsafe import kernel`. The [review-gated scalar build](docs/kernel-review.md)
+also accepts safe clamp and [bounded numerical imports](docs/kernel-numerics.md)
+with an independently signed, operator-selected review. Tests use an ephemeral
+authority; no production approval is shipped. Owned foreign resources remain
+closed.
 
 The repository accessed through the GitHub connection exposed the prior PPX-v1 schema and Exotract/ExoML contract catalogs. The `on1x/std/ppx` path in the request appears to refer to the actual `on1x/stdlib/ppx` path, whose `ppx.on1x` is used by all newly added native PPXs.
 

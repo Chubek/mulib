@@ -73,8 +73,17 @@ class Lower {
   }
   e.kind=E::PatternMatch;e.children=std::move(arms);e.labels.clear();e.statement_match=false;
  }
-  void expression(Expr& e){
-   tick(e.where);if(e.prototype)return;
+   void expression(Expr& e){
+    tick(e.where);if(e.prototype)return;
+    if(e.kind==E::UnsafeBlock){
+     if(e.children.size()!=1||!e.children[0])fail(e.where,"unsafe expression requires one checked result");
+     body(e.body);expression(*e.children[0]);
+     if(e.children[0]->noreturn){
+      Stmt action;action.kind=S::Expr;action.where=e.children[0]->where;action.value=std::move(e.children[0]);
+      e.body.push_back(std::move(action));e.children[0]=value(E::Unit,Type::Void,e.where);
+     }
+     e.kind=E::Region;e.unsafe_region=true;return;
+    }
     if(e.kind==E::Propagate){
      if(e.children.size()!=1||!e.children[0])fail(e.where,"propagation requires one checked operand");
      auto t=e.children[0]->type;catalog.verify(t,e.where);catalog.verify(e.result,e.where);
@@ -147,7 +156,7 @@ class Lower {
      if(!s.value||s.value->kind!=E::Call||!s.value->callee||(s.value->callee->kind==E::Variable&&s.value->callee->reference==Expr::Reference::Unresolved)||s.value->type==Type::Invalid||s.value->type.has_holes()||s.value->type.has_generics())fail(s.where,"defer requires a checked call expression");
      auto at=s.where;auto call=std::move(s.value);Stmt scope;scope.kind=S::Block;scope.where=at;
      if(call->callee->reference!=Expr::Reference::Intrinsic&&call->callee->reference!=Expr::Reference::Extern&&
-        call->callee->reference!=Expr::Reference::UnsafeForeign){auto t=call->callee->type;auto n=fresh();scope.body.push_back(bind(n,std::move(call->callee),at));call->callee=local(n,t,at);}
+        call->callee->reference!=Expr::Reference::UnsafeForeign&&call->callee->reference!=Expr::Reference::ScalarForeign){auto t=call->callee->type;auto n=fresh();scope.body.push_back(bind(n,std::move(call->callee),at));call->callee=local(n,t,at);}
     for(auto& a:call->children){auto t=a->type;auto n=fresh();scope.body.push_back(bind(n,std::move(a),at));a=local(n,t,at);}
     auto thunk=value(E::Lambda,Type::function({},Type::Void),at);thunk->result=Type::Void;
     Stmt invoke;invoke.kind=S::Expr;invoke.where=at;invoke.value=std::move(call);thunk->body.push_back(std::move(invoke));
@@ -177,7 +186,7 @@ public:
 };
 }
 bool needs_values(const Unit& unit){
-  auto expression=[&](auto&& self,const Expr& e)->bool{if(e.kind==E::PatternMatch||e.kind==E::Match||e.kind==E::Loop||e.kind==E::Propagate)return true;if(e.callee&&self(self,*e.callee))return true;for(const auto& c:e.children)if(self(self,*c))return true;auto body=[&](auto&& walk,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if(!s.prototype&&(s.kind==S::Defer||(s.value&&s.kind!=S::Template&&self(self,*s.value))||walk(walk,s.body)||walk(walk,s.otherwise)))return true;return false;};return body(body,e.body);};
+   auto expression=[&](auto&& self,const Expr& e)->bool{if(e.kind==E::PatternMatch||e.kind==E::Match||e.kind==E::Loop||e.kind==E::Propagate||e.kind==E::UnsafeBlock)return true;if(e.callee&&self(self,*e.callee))return true;for(const auto& c:e.children)if(self(self,*c))return true;auto body=[&](auto&& walk,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if(!s.prototype&&(s.kind==S::Defer||(s.value&&s.kind!=S::Template&&self(self,*s.value))||walk(walk,s.body)||walk(walk,s.otherwise)))return true;return false;};return body(body,e.body);};
  for(const auto& f:unit.functions)if(!f.prototype){auto body=[&](auto&& walk,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if(!s.prototype&&(s.kind==S::Defer||(s.value&&s.kind!=S::Template&&expression(expression,*s.value))||walk(walk,s.body)||walk(walk,s.otherwise)))return true;return false;};if(body(body,f.body))return true;}
  return false;
 }

@@ -1,0 +1,44 @@
+import forecasts as Forecast;
+import kernel mulib.priceopt as Pricing;
+
+fn cents_to_units(cents:i64) -> f64 {
+    assert(cents >= 0 && cents <= 9007199254740992);
+    return f64_from_i64(cents) / 100.0;
+}
+
+fn main() {
+    let samples = array[cents_to_units(1000), cents_to_units(1200), cents_to_units(1400),
+                        cents_to_units(1600), cents_to_units(1800)];
+    let training = samples[0:3];
+    match Forecast.select(training, samples[3]) with {
+        Ok(holt_selected) => { assert(holt_selected); },
+        Err(_) => { assert(false); }
+    };
+    match Forecast.predict(training) with {
+        Ok(h) => {
+            assert(h["point"] == samples[4]);
+            println(h["point"]);
+            println(h["variance"] != h["variance"]);
+        },
+        Err(_) => { println(-1); }
+    };
+    let profit = variant<Pricing.Objective>(Profit, record{});
+    let linear = variant<Pricing.DemandKind>(Linear, record{});
+    let model = record<Pricing.DemandModel>{kind:linear, scale:20.0, shape:1.0, reference:0.0};
+    let limits = record<Pricing.Constraints>{min_price:6.0, max_price:20.0, unit_cost:4.0,
+        min_unit_margin:0.0, previous_price:0.0, max_relative_change:0.0, tick:1.0};
+    match Pricing.optimize(model, limits, profit) with {
+        Ok(decision) => { println(decision["price"]); println(decision["score"]); },
+        Err(_) => { println(-1); }
+    };
+    let prices = array[999.0, 10.0, 12.0, 15.0];
+    let units = array[12.0, 9.0, 4.0];
+    match Pricing.candidates(prices[1:4], units[0:3], limits, profit) with {
+        Ok(decision) => { println(decision["price"]); println(decision["evaluations"]); },
+        Err(_) => { println(-1); }
+    };
+    match Pricing.candidates(prices[1:4], units[0:2], limits, profit) with {
+        Ok(_) => { println(-1); },
+        Err(Rejected()) => { println(0); }
+    };
+}

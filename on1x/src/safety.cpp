@@ -211,7 +211,7 @@ class Lower {
    }
    case Expr::Kind::Project:if(!trivial(e.type,e.where)||expression(*e.children.at(0)).owner)fail(e.where,"nontrivial tuple projection memory model");return {};
    case Expr::Kind::TagTest:case Expr::Kind::Payload:fail(e.where,"closed-sum memory model unavailable");
-    case Expr::Kind::PatternMatch:case Expr::Kind::Case:case Expr::Kind::Loop:fail(e.where,"unlowered source value construct");
+     case Expr::Kind::PatternMatch:case Expr::Kind::Case:case Expr::Kind::Loop:case Expr::Kind::UnsafeBlock:fail(e.where,"unlowered source value construct");
    case Expr::Kind::Integer:case Expr::Kind::Boolean:case Expr::Kind::Float:case Expr::Kind::String:return {};
    case Expr::Kind::Tuple:
     if(!trivial(e.type,e.where))fail(e.where,"tuple memory model requires trivially copied numeric/bool fields");
@@ -233,7 +233,8 @@ class Lower {
   case Expr::Kind::Call:{
    if(!e.callee||e.callee->kind!=Expr::Kind::Variable)fail(e.where,"indirect call not modeled");
     const auto& callee=*e.callee;auto name=callee.text;
-    if(callee.reference==Expr::Reference::UnsafeForeign)fail(e.where,"unsafe kernel call lacks a checked memory model");
+    if(callee.reference==Expr::Reference::UnsafeForeign||callee.reference==Expr::Reference::ScalarForeign)
+      fail(e.where,"KernelBind call is outside the independent checker profile");
    if(callee.reference==Expr::Reference::Extern){
     // Admitted externs carry scalars or immutable strings only. Strings have
     // process-lifetime storage in the admitted HIR; parameters cannot escape

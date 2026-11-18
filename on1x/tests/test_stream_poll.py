@@ -198,7 +198,7 @@ int64_t on1x_test_poll(on1x_env *);
 #endif
 int main(int argc,char **argv){
  on1x_test_poll_mode=argc>1?atoi(argv[1]):0;
- return (int)on1x_csp_run(on1x_test_poll,NULL,__FILE__,1,1);
+ return (int)on1x_csp_run_v4(on1x_test_poll,NULL,__FILE__,1,1);
 }
 ''')
 objects = []

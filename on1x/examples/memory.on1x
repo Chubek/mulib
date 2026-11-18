@@ -9,10 +9,8 @@ fn inspect(stop: bool) -> i64 {
 fn main() {
   println(inspect(true));
   println(inspect(false));
-  var i = 0;
-  while i < 3 {
+  for _ in 0..3 {
     let root = json_parse_or_die("[1,2,3]");
     println(json_size(root));
-    i = i + 1;
   }
 }

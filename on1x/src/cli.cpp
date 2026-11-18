@@ -160,7 +160,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       on1xc --list-extensions | --explain-extension NAME\n"
   "       on1xc --emit-category-plan INPUT [-o OUTPUT] (checked concrete evidence)\n"
    "       on1xc --kernel-imports INPUT [-o OUTPUT] (source requests only; never executes PPX)\n"
-   "       on1xc --emit-c --kernel-c11 INPUT (unsafe KernelBind C generation; link with on1x-build.py)\n"
+    "       on1xc --emit-c --kernel-c11 INPUT (unsafe KernelBind C generation; link with on1x-build.py)\n"
+    "       on1xc --emit-c --kernel-c11 --kernel-stage INPUT (unresolved kernel callers; NOT admission)\n"
    "       [-I DIRECTORY | --module-path DIRECTORY] [--stdlib DIRECTORY]\n"
    "       [--lib-path DIR:DIR] [--stdlib-path DIR:DIR]\n"
    "       [--ppx-path DIR:DIR] [--stdppx-path DIR:DIR] [--use-ppx NAME]\n"
@@ -232,6 +233,7 @@ int main(int argc,char**argv){
      }
        if(arg=="--memory-check"){memory=true;continue;}
        if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
+       if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
     if(arg=="--check-memory"){mode=arg;continue;}
     if(arg=="--admitted-extern"){
      if(++i>=argc||!argv[i][0])throw std::runtime_error("--admitted-extern requires a nonempty path");
@@ -350,7 +352,8 @@ int main(int argc,char**argv){
      if(analysis_mode)throw std::runtime_error("MIR analysis unavailable: configure with ON1X_WITH_NOVOSTONE=ON");
 #endif
       bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||mode=="--run-ir"||mode=="--dump-passes"||analysis_mode;
-      if(loader.kernel_c11){
+       if(loader.kernel_stage&&!loader.kernel_c11)throw std::runtime_error("--kernel-stage requires --kernel-c11");
+       if(loader.kernel_c11){
        if(mode!="--emit-c"||ir_input||memory||type_safety||!ppx.programs.empty()||!ppx.schemas.empty()||
           ppx.allow_source||!loader.extensions.enabled.empty())
         throw std::runtime_error("--kernel-c11 requires direct C11 emission without PPX, extensions or independent checker modes");

@@ -360,7 +360,7 @@ if(BUILD_TESTING)
     target_link_libraries(on1x_concurrency_hir_tests PRIVATE on1x_frontend)
     add_test(NAME on1x.concurrency_hir COMMAND on1x_concurrency_hir_tests)
   set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules libraries stdppx install mulib stdlib_extensions f64 unsigned_f32 numeric_limits)
-     list(APPEND _meta_tests category control patterns value_loops nominal_adts defer_errors concurrency stream_poll cancellation_deadlines discovery)
+     list(APPEND _meta_tests category control patterns value_loops nominal_adts defer_errors concurrency stream_poll cancellation_deadlines taskgroup_within discovery)
   list(APPEND _meta_tests kernel_imports)
   add_test(NAME on1x.stdppx_protocol COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/tests" -v)
   if(ON1X_WITH_EXOTRACT)
@@ -378,6 +378,14 @@ if(BUILD_TESTING)
       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-imports-sdk" "${CMAKE_C_COMPILER}" ${_test_c_flags})
     set_tests_properties(on1x.kernel_imports_sdk PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
+    add_test(NAME on1x.kernel_review_sdk COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_review_sdk.py"
+      "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-review-sdk" "${CMAKE_C_COMPILER}" ${_test_c_flags})
+    set_tests_properties(on1x.kernel_review_sdk PROPERTIES TIMEOUT 300 SKIP_RETURN_CODE 77)
+    add_test(NAME on1x.kernel_history_sdk COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_history_sdk.py"
+      "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-history-sdk" "${CMAKE_C_COMPILER}" ${_test_c_flags})
+    set_tests_properties(on1x.kernel_history_sdk PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
   endif()
   if(ON1X_WITH_NEROTYPICAL)
     list(APPEND _meta_tests type_safety)
