@@ -6,6 +6,7 @@ AGENTS.md
 .agents
 .aws
 .gapcode
+.sot
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
