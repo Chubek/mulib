@@ -2,10 +2,11 @@ CC ?= cc
 CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -Werror -O2
 CPPFLAGS ?= -Iinclude
 LDLIBS ?= -lm
-TESTS := $(patsubst tests/%.c,build/%,$(wildcard tests/test-*.c))
+TESTS := $(patsubst tests/%.c,build/%,$(wildcard tests/test-*.c)) build/cdd-test
 HEADERS := $(wildcard include/*.h include/detail/*.h include/detail/*.inc)
 TEST_FIXTURES := $(wildcard tests/fixtures/*.h)
 EXAMPLES := $(patsubst examples/%.c,build/%,$(wildcard examples/mulib-*.c)) build/fontshape-native build/docir-publication
+EXAMPLES += build/cdd-pipeline
 .PHONY: all check check-shell check-examples check-compiler demo formats docir-formats clean
 .PHONY: muw3 check-muw3 check-tls
 .PHONY: check-openai
@@ -56,6 +57,8 @@ build:
 	mkdir -p build
 build/test-%: tests/test-%.c $(HEADERS) $(TEST_FIXTURES) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
+build/cdd-test: tests/cdd-test.c tests/cdd-implementation.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter %.c,$^) $(LDLIBS) -o $@
 check: $(TESTS)
 	@set -eu; for t in $(TESTS); do ./$$t; done
 	@echo "All $(words $(TESTS)) C11 API tests passed."
@@ -67,6 +70,8 @@ check-examples: $(EXAMPLES)
 build/fontshape-native: examples/fontshape-native.c $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -o $@
 build/docir-publication: examples/docir-publication.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
+build/cdd-pipeline: examples/cdd-pipeline.c $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
 docir-formats: build/docir-publication
 	mkdir -p build/docir-fixtures

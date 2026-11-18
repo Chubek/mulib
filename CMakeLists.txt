@@ -67,7 +67,7 @@ function(mulib_test_executable target)
 endfunction()
 
 function(mulib_register_test target)
-  if(target STREQUAL "mulib_test-elvi-scrape")
+  if(target STREQUAL "mulib_test-elvi-scrape" OR target STREQUAL "mulib_test-elvi-scrape-providers")
     add_test(NAME ${target} COMMAND ${target} "${CMAKE_CURRENT_SOURCE_DIR}")
   elseif(target STREQUAL "mulib_test_git_exec")
     add_test(NAME ${target} COMMAND ${target} "${CMAKE_CURRENT_SOURCE_DIR}/library/git")
@@ -225,10 +225,26 @@ if(MULIB_BUILD_TESTS)
   mulib_test_executable(mulib_declarations)
   mulib_register_test(mulib_declarations)
 
+  add_executable(mulib_test_cdd tests/cdd-test.c tests/cdd-implementation.c)
+  mulib_test_executable(mulib_test_cdd)
+  mulib_register_test(mulib_test_cdd)
+
   file(GLOB focused_tests CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test-*.c")
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING
+      AND CMAKE_SIZEOF_VOID_P EQUAL 8 AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|aarch64)$")
+    # The worker must use the production syscall policy, not an ASan runtime.
+    add_test(NAME mulib_test_sandbox
+      COMMAND ${CMAKE_COMMAND} -E env "CC=${CMAKE_C_COMPILER}"
+        "SANITIZE=$<BOOL:${MULIB_SANITIZERS}>"
+        sh "${CMAKE_CURRENT_SOURCE_DIR}/tests/run_sandbox.sh")
+    set_tests_properties(mulib_test_sandbox PROPERTIES TIMEOUT 60)
+  endif()
   foreach(source_file IN LISTS focused_tests)
     get_filename_component(test_name "${source_file}" NAME_WE)
+    if(test_name STREQUAL "test_sandbox")
+      continue() # requires separately built trusted-bootstrap fixtures
+    endif()
     if(test_name MATCHES "^test_(parallel|shebang|sh_|mune_compile)")
       if(NOT UNIX)
         continue()
@@ -552,6 +568,14 @@ if(MULIB_BUILD_FUZZER)
   target_link_options(mulib_fuzz_docir PRIVATE -fsanitize=fuzzer,address,undefined)
 endif()
 
+if(MULIB_BUILD_TESTS OR MULIB_BUILD_MODULE_EXAMPLES)
+  add_executable(mulib_example_cdd_pipeline examples/cdd-pipeline.c)
+  mulib_test_executable(mulib_example_cdd_pipeline)
+  if(MULIB_BUILD_TESTS)
+    mulib_register_test(mulib_example_cdd_pipeline)
+  endif()
+endif()
+
 if(MULIB_BUILD_MODULE_EXAMPLES)
   add_executable(mulib_example_fontshape_native examples/fontshape-native.c)
   mulib_test_executable(mulib_example_fontshape_native)
@@ -581,6 +605,10 @@ if(MULIB_BUILD_MODULE_EXAMPLES)
     string(REGEX REPLACE "[^A-Za-z0-9_.+-]" "_" module_target "${module_name}")
     add_executable("mulib_example_${module_target}" "${source_file}")
     mulib_test_executable("mulib_example_${module_target}")
+    if(module_name STREQUAL "sandbox-process" AND MULIB_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+      target_compile_options("mulib_example_${module_target}" PRIVATE -fno-sanitize=address,undefined)
+      target_link_options("mulib_example_${module_target}" PRIVATE -fno-sanitize=address,undefined)
+    endif()
     if(MULIB_BUILD_TESTS)
       mulib_register_test("mulib_example_${module_target}")
     endif()
