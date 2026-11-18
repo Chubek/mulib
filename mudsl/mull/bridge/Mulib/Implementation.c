@@ -1,4 +1,14 @@
 /* Generated implementation switches for every public header. */
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
+#endif
+/* Load libc networking declarations before any Linux UAPI headers. */
+#ifdef __linux__
+#include <net/if.h>
+#endif
+/* Use the C11 bsearch function in this combined C11 TU. */
+#include <stdlib.h>
+#undef bsearch
 #define MULIB_IMPL_2DGEOM
 #define MULIB_IMPL_AARCH64
 #define MULIB_IMPL_ABSTUN
@@ -113,13 +123,23 @@
 #define MULIB_IMPL_BZIP2
 #define MULIB_IMPL_CACHE
 #define MULIB_IMPL_CALLCONV
+#define MULIB_IMPL_CAPBROKER
 #define MULIB_IMPL_CASSOWARY_SOLVER
 #define MULIB_IMPL_CBOR
 #define MULIB_IMPL_CCWEAVE
+#define MULIB_IMPL_CDD_CATALOGUE
+#define MULIB_IMPL_CDD_DIFF
+#define MULIB_IMPL_CDD_EXECUTE
+#define MULIB_IMPL_CDD_PLAN
+#define MULIB_IMPL_CDD_QUERY
+#define MULIB_IMPL_CDD_REGISTRY
+#define MULIB_IMPL_CDD_RESOLVE
+#define MULIB_IMPL_CDD_SCHEMA
 #define MULIB_IMPL_CFF
 #define MULIB_IMPL_CFF2
 #define MULIB_IMPL_CFG
 #define MULIB_IMPL_CGEOM
+#define MULIB_IMPL_CGROUP2
 #define MULIB_IMPL_CHANNEL
 #define MULIB_IMPL_CHARSET
 #define MULIB_IMPL_CHART
@@ -491,6 +511,7 @@
 #define MULIB_IMPL_INTERPOLATE
 #define MULIB_IMPL_INVINDEX
 #define MULIB_IMPL_IO
+#define MULIB_IMPL_IPC_FRAMED
 #define MULIB_IMPL_IPFS
 #define MULIB_IMPL_IPV6_NDP
 #define MULIB_IMPL_IPV6_RA
@@ -512,6 +533,7 @@
 #define MULIB_IMPL_KVDB
 #define MULIB_IMPL_KVM
 #define MULIB_IMPL_KVMCONTAINER
+#define MULIB_IMPL_LANDLOCK
 #define MULIB_IMPL_LATEX
 #define MULIB_IMPL_LATEXWRITER
 #define MULIB_IMPL_LATTICE
@@ -630,6 +652,7 @@
 #define MULIB_IMPL_MUW3
 #define MULIB_IMPL_MUW3_MUNE
 #define MULIB_IMPL_NAMESERVER
+#define MULIB_IMPL_NAMESPACE
 #define MULIB_IMPL_NAME_RESOLUTION
 #define MULIB_IMPL_NDJSON
 #define MULIB_IMPL_NETDEVICE
@@ -860,6 +883,8 @@
 #define MULIB_IMPL_RTNL_VLAN
 #define MULIB_IMPL_RTNL_VRF
 #define MULIB_IMPL_RUBYBIND
+#define MULIB_IMPL_SANDBOX_PROCESS
+#define MULIB_IMPL_SANDBOX_PROFILE
 #define MULIB_IMPL_SAT
 #define MULIB_IMPL_SCANVEC
 #define MULIB_IMPL_SCHEDUTILS
@@ -875,6 +900,7 @@
 #define MULIB_IMPL_SEARCH_RANK
 #define MULIB_IMPL_SEARCH_SERP
 #define MULIB_IMPL_SEARCH_SESSION
+#define MULIB_IMPL_SECCOMP
 #define MULIB_IMPL_SECURITY
 #define MULIB_IMPL_SELECT
 #define MULIB_IMPL_SEMILATTICE
@@ -1288,13 +1314,23 @@
 #include "mulib-bzip2.h"
 #include "mulib-cache.h"
 #include "mulib-callconv.h"
+#include "mulib-capbroker.h"
 #include "mulib-cassowary-solver.h"
 #include "mulib-cbor.h"
 #include "mulib-ccweave.h"
+#include "mulib-cdd-catalogue.h"
+#include "mulib-cdd-diff.h"
+#include "mulib-cdd-execute.h"
+#include "mulib-cdd-plan.h"
+#include "mulib-cdd-query.h"
+#include "mulib-cdd-registry.h"
+#include "mulib-cdd-resolve.h"
+#include "mulib-cdd-schema.h"
 #include "mulib-cff.h"
 #include "mulib-cff2.h"
 #include "mulib-cfg.h"
 #include "mulib-cgeom.h"
+#include "mulib-cgroup2.h"
 #include "mulib-channel.h"
 #include "mulib-charset.h"
 #include "mulib-chart.h"
@@ -1666,6 +1702,7 @@
 #include "mulib-interpolate.h"
 #include "mulib-invindex.h"
 #include "mulib-io.h"
+#include "mulib-ipc-framed.h"
 #include "mulib-ipfs.h"
 #include "mulib-ipv6-ndp.h"
 #include "mulib-ipv6-ra.h"
@@ -1687,6 +1724,7 @@
 #include "mulib-kvdb.h"
 #include "mulib-kvm.h"
 #include "mulib-kvmcontainer.h"
+#include "mulib-landlock.h"
 #include "mulib-latex.h"
 #include "mulib-latexwriter.h"
 #include "mulib-lattice.h"
@@ -1808,6 +1846,7 @@
 #include "mulib-n-grams.h"
 #include "mulib-name-resolution.h"
 #include "mulib-nameserver.h"
+#include "mulib-namespace.h"
 #include "mulib-ndjson.h"
 #include "mulib-net-cap.h"
 #include "mulib-net-cli-format.h"
@@ -2036,6 +2075,8 @@
 #include "mulib-rtnl-vrf.h"
 #include "mulib-rtnl.h"
 #include "mulib-rubybind.h"
+#include "mulib-sandbox-process.h"
+#include "mulib-sandbox-profile.h"
 #include "mulib-sat.h"
 #include "mulib-scanvec.h"
 #include "mulib-schedutils.h"
@@ -2051,6 +2092,7 @@
 #include "mulib-search-serp.h"
 #include "mulib-search-session.h"
 #include "mulib-search.h"
+#include "mulib-seccomp.h"
 #include "mulib-select.h"
 #include "mulib-semilattice.h"
 #include "mulib-semiring.h"

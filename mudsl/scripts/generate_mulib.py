@@ -185,7 +185,7 @@ def main():
             candidates.append((n.spelling, Path(str(n.location.file)).name))
     probe = source + '\n' + '\n'.join(f'__auto_type mb_probe_{i} = ({name});' for i,(name,_) in enumerate(candidates))
     macro_tu = c.Index.create().parse('macros.c',
-        args=['-x','c','-std=gnu11','-ferror-limit=0','-resource-dir='+resource,'-I'+str(include)],
+        args=['-x','c','-std=gnu11','-D_GNU_SOURCE','-ferror-limit=0','-resource-dir='+resource,'-I'+str(include)],
         unsaved_files=[('macros.c', probe)])
     bad_lines = {d.location.line for d in macro_tu.diagnostics if d.severity >= c.Diagnostic.Error}
     bound_macros = set()
@@ -333,7 +333,14 @@ def main():
         out.append('default: return 0; }}')
 
     macros = sorted(set(re.findall(r'(?:defined\s*\(?\s*|#\s*ifdef\s+)(MULIB_IMPL_\w+)', '\n'.join(h.read_text() for h in headers))))
-    implementation = '/* Generated implementation switches for every public header. */\n' + '\n'.join('#define '+m for m in macros) + '\n' + source + '\n'
+    implementation = ('/* Generated implementation switches for every public header. */\n'
+                      '#if defined(__linux__) && !defined(_GNU_SOURCE)\n'
+                      '#define _GNU_SOURCE\n#endif\n'
+                      '/* Load libc networking declarations before any Linux UAPI headers. */\n'
+                      '#ifdef __linux__\n#include <net/if.h>\n#endif\n'
+                      '/* Use the C11 bsearch function in this combined C11 TU. */\n'
+                      '#include <stdlib.h>\n#undef bsearch\n'
+                      + '\n'.join('#define '+m for m in macros) + '\n' + source + '\n')
     inventory = {'headers': [h.name for h in headers], 'libraries': len(modules), 'functions': len(funcs),
                  'types': len(types), 'constants': len(constants),
                  'preprocessor_only': sorted(set(preprocessor_only)),

@@ -114,13 +114,23 @@
     "mulib-bzip2.h",
     "mulib-cache.h",
     "mulib-callconv.h",
+    "mulib-capbroker.h",
     "mulib-cassowary-solver.h",
     "mulib-cbor.h",
     "mulib-ccweave.h",
+    "mulib-cdd-catalogue.h",
+    "mulib-cdd-diff.h",
+    "mulib-cdd-execute.h",
+    "mulib-cdd-plan.h",
+    "mulib-cdd-query.h",
+    "mulib-cdd-registry.h",
+    "mulib-cdd-resolve.h",
+    "mulib-cdd-schema.h",
     "mulib-cff.h",
     "mulib-cff2.h",
     "mulib-cfg.h",
     "mulib-cgeom.h",
+    "mulib-cgroup2.h",
     "mulib-channel.h",
     "mulib-charset.h",
     "mulib-chart.h",
@@ -492,6 +502,7 @@
     "mulib-interpolate.h",
     "mulib-invindex.h",
     "mulib-io.h",
+    "mulib-ipc-framed.h",
     "mulib-ipfs.h",
     "mulib-ipv6-ndp.h",
     "mulib-ipv6-ra.h",
@@ -513,6 +524,7 @@
     "mulib-kvdb.h",
     "mulib-kvm.h",
     "mulib-kvmcontainer.h",
+    "mulib-landlock.h",
     "mulib-latex.h",
     "mulib-latexwriter.h",
     "mulib-lattice.h",
@@ -634,6 +646,7 @@
     "mulib-n-grams.h",
     "mulib-name-resolution.h",
     "mulib-nameserver.h",
+    "mulib-namespace.h",
     "mulib-ndjson.h",
     "mulib-net-cap.h",
     "mulib-net-cli-format.h",
@@ -862,6 +875,8 @@
     "mulib-rtnl-vrf.h",
     "mulib-rtnl.h",
     "mulib-rubybind.h",
+    "mulib-sandbox-process.h",
+    "mulib-sandbox-profile.h",
     "mulib-sat.h",
     "mulib-scanvec.h",
     "mulib-schedutils.h",
@@ -877,6 +892,7 @@
     "mulib-search-serp.h",
     "mulib-search-session.h",
     "mulib-search.h",
+    "mulib-seccomp.h",
     "mulib-select.h",
     "mulib-semilattice.h",
     "mulib-semiring.h",
@@ -1176,10 +1192,10 @@
     "mulib-zorder.h",
     "mulib-zstd.h"
   ],
-  "libraries": 1175,
-  "functions": 5192,
-  "types": 8581,
-  "constants": 2650,
+  "libraries": 1191,
+  "functions": 5254,
+  "types": 8717,
+  "constants": 2726,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -1190,6 +1206,7 @@
     "MULIB_ASDL_PRODUCT_TYPE",
     "MULIB_ASDL_SEQ",
     "MULIB_ASDL_SUM_TYPE",
+    "MULIB_CGROUP2_INIT",
     "MULIB_DATAGRAM_INIT",
     "MULIB_DBUS_CLIENT_INIT",
     "MULIB_DRM_DEVICE_INIT",
@@ -1204,6 +1221,7 @@
     "MULIB_MMFILE_INIT",
     "MULIB_NETLINK_INIT",
     "MULIB_OIX_IMAGE_INIT",
+    "MULIB_SANDBOX_PROCESS_INIT",
     "MULIB_SHM_INIT",
     "MULIB_SOCKET_INIT",
     "MULIB_TERMUTILS_RAW_INIT",
@@ -1221,7 +1239,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "f511565a4230821361677a106b6d9e6ebc20a35e5c51f7cdcddac6b135d73eb2",
+  "fingerprint": "e0bfc28770e499970fa4cb4ee2b1684e6945a000606140596ce25163f15e5f72",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -2309,6 +2327,16 @@
         "mulib_callconv_arguments"
       ]
     },
+    "capbroker": {
+      "header": "mulib-capbroker.h",
+      "functions": [
+        "mulib_capbroker_intersect",
+        "mulib_capbroker_init",
+        "mulib_capbroker_begin",
+        "mulib_capbroker_call",
+        "mulib_capbroker_finish"
+      ]
+    },
     "cassowary-solver": {
       "header": "mulib-cassowary-solver.h",
       "functions": [
@@ -2337,6 +2365,70 @@
       "header": "mulib-ccweave.h",
       "functions": [
         "mulib_ccweave_generate"
+      ]
+    },
+    "cdd-catalogue": {
+      "header": "mulib-cdd-catalogue.h",
+      "functions": [
+        "mulib_cdd_name_valid",
+        "mulib_cdd_value_valid",
+        "mulib_cdd_req_valid",
+        "mulib_cdd_cap_matches",
+        "mulib_cdd_entry_provides",
+        "mulib_cdd_entries_conflict",
+        "mulib_cdd_attr_get",
+        "mulib_cdd_find",
+        "mulib_cdd_validate"
+      ]
+    },
+    "cdd-diff": {
+      "header": "mulib-cdd-diff.h",
+      "functions": [
+        "mulib_cdd_diff"
+      ]
+    },
+    "cdd-execute": {
+      "header": "mulib-cdd-execute.h",
+      "functions": [
+        "mulib_cdd_execute"
+      ]
+    },
+    "cdd-plan": {
+      "header": "mulib-cdd-plan.h",
+      "functions": [
+        "mulib_cdd_problem_valid",
+        "mulib_cdd_satisfied",
+        "mulib_cdd_can_append",
+        "mulib_cdd_plan_validate"
+      ]
+    },
+    "cdd-query": {
+      "header": "mulib-cdd-query.h",
+      "functions": [
+        "mulib_cdd_query_valid",
+        "mulib_cdd_query_matches",
+        "mulib_cdd_query_run"
+      ]
+    },
+    "cdd-registry": {
+      "header": "mulib-cdd-registry.h",
+      "functions": [
+        "mulib_cdd_registry_init",
+        "mulib_cdd_registry_view",
+        "mulib_cdd_registry_add",
+        "mulib_cdd_registry_remove"
+      ]
+    },
+    "cdd-resolve": {
+      "header": "mulib-cdd-resolve.h",
+      "functions": [
+        "mulib_cdd_resolve"
+      ]
+    },
+    "cdd-schema": {
+      "header": "mulib-cdd-schema.h",
+      "functions": [
+        "mulib_cdd_schema_validate"
       ]
     },
     "cff": {
@@ -2384,6 +2476,17 @@
         "mulib_cgeom_bounds",
         "mulib_cgeom_convex_hull",
         "mulib_cgeom_distances_squared"
+      ]
+    },
+    "cgroup2": {
+      "header": "mulib-cgroup2.h",
+      "functions": [
+        "mulib_cgroup2_create",
+        "mulib_cgroup2_attach",
+        "mulib_cgroup2_verify",
+        "mulib_cgroup2_populated",
+        "mulib_cgroup2_kill",
+        "mulib_cgroup2_destroy"
       ]
     },
     "channel": {
@@ -6060,6 +6163,16 @@
         "mulib_io_load_table"
       ]
     },
+    "ipc-framed": {
+      "header": "mulib-ipc-framed.h",
+      "functions": [
+        "mulib_ipc_framed_init",
+        "mulib_ipc_now_ms",
+        "mulib_ipc_deadline",
+        "mulib_ipc_send",
+        "mulib_ipc_receive"
+      ]
+    },
     "ipfs": {
       "header": "mulib-ipfs.h",
       "functions": [
@@ -6261,6 +6374,14 @@
         "mulib_kvmcontainer_init",
         "mulib_kvmcontainer_open",
         "mulib_kvmcontainer_close"
+      ]
+    },
+    "landlock": {
+      "header": "mulib-landlock.h",
+      "functions": [
+        "mulib_landlock_abi",
+        "mulib_landlock_supported_access",
+        "mulib_landlock_restrict"
       ]
     },
     "latex": {
@@ -7417,6 +7538,13 @@
       "functions": [
         "mulib_nameserver_init",
         "mulib_nameserver_answer"
+      ]
+    },
+    "namespace": {
+      "header": "mulib-namespace.h",
+      "functions": [
+        "mulib_namespace_enter",
+        "mulib_namespace_mount_private"
       ]
     },
     "ndjson": {
@@ -8627,6 +8755,7 @@
         "mulib_prettydoc_new",
         "mulib_prettydoc_free",
         "mulib_pretty_text",
+        "mulib_pretty_verbatim",
         "mulib_pretty_fill",
         "mulib_pretty_softline",
         "mulib_pretty_hardline",
@@ -9284,6 +9413,26 @@
         "mulib_rubybind_generate"
       ]
     },
+    "sandbox-process": {
+      "header": "mulib-sandbox-process.h",
+      "functions": [
+        "mulib_sandbox_process_start",
+        "mulib_sandbox_worker_enter",
+        "mulib_sandbox_process_send",
+        "mulib_sandbox_process_receive",
+        "mulib_sandbox_process_tick",
+        "mulib_sandbox_process_poll",
+        "mulib_sandbox_process_stop"
+      ]
+    },
+    "sandbox-profile": {
+      "header": "mulib-sandbox-profile.h",
+      "functions": [
+        "mulib_sandbox_profile_default",
+        "mulib_sandbox_profile_validate",
+        "mulib_sandbox_strerror"
+      ]
+    },
     "sat": {
       "header": "mulib-sat.h",
       "functions": [
@@ -9387,6 +9536,17 @@
       "functions": [
         "mulib_search_session_init",
         "mulib_search_session_next"
+      ]
+    },
+    "seccomp": {
+      "header": "mulib-seccomp.h",
+      "functions": [
+        "mulib_seccomp_init",
+        "mulib_seccomp_allow",
+        "mulib_seccomp_validate",
+        "mulib_seccomp_worker",
+        "mulib_seccomp_supported",
+        "mulib_seccomp_install"
       ]
     },
     "select": {
@@ -12280,7 +12440,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "1033fb8bad67602b23726280ec991df3a622b79dc4ff8fb1f7878ba46a937500",
-    "Implementation.c": "f9fa88eee2026c496e9542ba5bb47ff166cf09a60d79b820909756367cbbdab5"
+    "Generated.inc": "3b596ac18b29451834c3a624a5499174e7e0cd9f57f71e421ded254c20fd3d36",
+    "Implementation.c": "a74cc7ea1f0d486c2beccd151f25f150e3f8fc83e790b4ac2b6cd76cd031fd6a"
   }
 }
