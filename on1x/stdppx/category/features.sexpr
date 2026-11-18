@@ -1,5 +1,5 @@
 (on1x.extensions 1
- ((feature "Protocols" "on1x-ppx-protocols" "1" "explicit-local-scalar-v1" ())
+ ((feature "Protocols" "on1x-ppx-protocols" "2" "checked-local-scalar-v2" ())
   (unavailable "Functors" "module interfaces and nominal sealing are not implemented")
   (unavailable "Derive" "checked structural witness derivation is not implemented")
   (unavailable "Laws" "Category law generation is not implemented")

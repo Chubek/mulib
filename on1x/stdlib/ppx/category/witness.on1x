@@ -1,8 +1,10 @@
 import "syntax.on1x";
 import "../source.on1x";
+import "metadata.on1x";
 
 # Internal models never escape as runtime evidence. Only ordinary typed functions
-# and reporting facts are emitted; the host checks every generated function.
+# and explicit evidence requests are emitted; the host independently substitutes
+# interface binders and checks every generated function after inference.
 fn ppx_category_substitute(type: sexpr, concrete: sexpr) -> sexpr {
   if visitor_tag(type)=="SelfSlot" { return concrete; }return type;
 }
@@ -50,11 +52,13 @@ fn ppx_category_expand(packet: sexpr) -> sexpr {
     provenance=sx_tail(provenance);
   }
   var names=sx_nil();var rest=sexpr_nth(packet,3);var functions=sx_nil();var facts=sx_nil();var serial=0;var emitted=0;
+  var contracts=sx_nil();var implementations=sx_nil();
   while sx_kind(rest)==3 { names=sx_cons(ppx_list2(sx_head(rest),sx_symbol("1")),names);rest=sx_tail(rest); }
   rest=protocols;
   while sx_kind(rest)==3 {
     let protocol=sexpr_nth(sx_head(rest),1);let name=sx_text(sexpr_nth(protocol,1));let id=text_concat(origin,text_concat("::protocol::",name));
-    facts=sx_cons(ppx_category_fact("protocol",name,id,sexpr_nth(protocol,3)),facts);rest=sx_tail(rest);
+     facts=sx_cons(ppx_category_fact("protocol",name,id,sexpr_nth(protocol,3)),facts);rest=sx_tail(rest);
+     contracts=sx_cons(ppx_category_emit_metadata(protocol),contracts);
   }
   rest=witnesses;
   while sx_kind(rest)==3 {
@@ -66,7 +70,7 @@ fn ppx_category_expand(packet: sexpr) -> sexpr {
     if sexpr_size(requirements)!=sexpr_size(members) { ppx_diagnostic(at,"ON1X-CAT-WITNESS",text_concat(protocol_name,": missing/extra protocol members")); }
     let id=text_concat(origin,text_concat("::protocol::",text_concat(protocol_name,text_concat("::",text_concat(target,text_concat("::witness::",name))))));
     facts=sx_cons(ppx_category_fact("witness",name,id,at),facts);
-    var methods=members;
+    var methods=members;var bindings=sx_nil();
     while sx_kind(methods)==3 {
       let method=sx_head(methods);methods=sx_tail(methods);let member_name=sx_text(sexpr_nth(method,1));var wanted=sx_nil();var pending=requirements;
       let location=sexpr_nth(method,5);let context=text_concat(protocol_name,text_concat("<",text_concat(target,text_concat(">.",text_concat(member_name,": ")))));
@@ -92,9 +96,13 @@ fn ppx_category_expand(packet: sexpr) -> sexpr {
       if visitor_tag(result)=="VoidType" { statement=ppx_node("Do",ppx_list2(call,location)); }
       let body=ppx_node("Block",ppx_list2(ppx_list1(statement),location));
       functions=sx_cons(ppx_category_function(exported,ps,result,body,location),functions);
+      bindings=sx_cons(ppx_node("EvidenceBinding",ppx_list4(sx_string(member_name),sx_string(helper),sx_string(exported),location)),bindings);
       emitted=emitted+2;if emitted>256 { tool_fail("ON1X-CAT-OBLIGATION: generated function budget exhausted"); }
     }
+    implementations=sx_cons(ppx_node("EvidenceImplementation",sx_cons(sx_string(name),sx_cons(sx_string(protocol_name),
+      ppx_list4(ppx_list1(concrete),sexpr_nth(witness,6),sexpr_reverse(bindings),at)))),implementations);
   }
   let core=ppx_node("Unit",ppx_list2(sx_symbol("1"),sexpr_reverse(functions)));
-  return ppx_node("ModuleExpansion",ppx_list4(sx_symbol("1"),sx_string(origin),core,sexpr_reverse(facts)));
+  return ppx_node("ModuleEvidenceExpansion",sx_cons(sx_symbol("1"),sx_cons(sx_string(origin),
+    ppx_list4(core,sexpr_reverse(facts),sexpr_reverse(contracts),sexpr_reverse(implementations)))));
 }

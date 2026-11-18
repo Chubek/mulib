@@ -1,0 +1,19 @@
+import "syntax.on1x";
+
+# Declaration requests contain types, not assertions of well-typedness.
+# Self is a scoped binder in the ordinary canonical Type schema.
+fn ppx_category_bound(type: sexpr) -> sexpr {
+  if visitor_tag(type)=="SelfSlot" { return ppx_node("BoundType",ppx_list1(sx_symbol("0"))); }
+  return type;
+}
+fn ppx_category_emit_metadata(protocol: sexpr) -> sexpr {
+  var members=sx_nil();var rest=sexpr_nth(protocol,2);
+  while sx_kind(rest)==3 {
+    let member=sx_head(rest);rest=sx_tail(rest);var params=sx_nil();var ps=sexpr_nth(member,2);
+    while sx_kind(ps)==3 { params=sx_cons(ppx_category_bound(sexpr_nth(sx_head(ps),2)),params);ps=sx_tail(ps); }
+    let signature=ppx_node("FunctionType",ppx_list2(sexpr_reverse(params),ppx_category_bound(sexpr_nth(member,3))));
+    let scheme=ppx_node("ForallType",ppx_list2(sx_symbol("1"),signature));
+    members=sx_cons(ppx_node("EvidenceMember",ppx_list3(sexpr_nth(member,1),scheme,sexpr_nth(member,5))),members);
+  }
+  return ppx_node("EvidenceContract",ppx_list3(sexpr_nth(protocol,1),sexpr_reverse(members),sexpr_nth(protocol,3)));
+}

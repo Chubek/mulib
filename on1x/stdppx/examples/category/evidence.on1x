@@ -1,0 +1,31 @@
+@enable Protocols
+@extension Protocols {
+  protocol Ordered<Self> {
+    fn less(a: Self, b: Self) -> bool;
+    fn first(a: Self, b: Self) -> Self;
+  }
+  impl Ordered for i64 {
+    fn first(a: i64, b: i64) -> i64 {
+      if a < b { return a; }
+      return b;
+    }
+    fn less(a: i64, b: i64) -> bool { return a < b; }
+  }
+  witness Descending: Ordered<i64> {
+    fn less(a: i64, b: i64) -> bool { return a > b; }
+    fn first(a: i64, b: i64) -> i64 {
+      if a > b { return a; }
+      return b;
+    }
+  }
+  protocol Signal<Self> { fn tick() -> void; }
+  impl Signal for bool { fn tick() -> void { println(7); } }
+}
+fn sample(value: i64) -> i64 { println(value); return value; }
+fn main() {
+  println(Ordered_i64_first(sample(9), sample(3)));
+  let alternative = Descending_first;
+  println(alternative(9, 3));
+  println(Descending_less(9, 3));
+  Signal_bool_tick();
+}

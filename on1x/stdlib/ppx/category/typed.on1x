@@ -1,0 +1,100 @@
+import "syntax.on1x";
+import "../../text/String.on1x";
+
+# Read-only concrete evidence planning. No runtime code is evaluated and no
+# candidate AST is returned. All choices are independently checked by the host.
+fn ppx_category_evidence_error(message: string) {
+  tool_fail(text_concat("ON1X-CAT-EVIDENCE: ",message));
+}
+fn ppx_category_evidence_leaf(type: sexpr, argument: sexpr, result: bool) -> sexpr {
+  let kind=visitor_tag(type);
+  if kind=="BoundType" {
+    if sx_text(sexpr_nth(type,1))!="0" { ppx_category_evidence_error("unbound interface type"); }
+    return argument;
+  }
+  if kind=="I64Type"||kind=="BoolType"||kind=="U8Type"||kind=="U16Type"||kind=="U32Type"||kind=="U64Type"||kind=="F32Type"||kind=="F64Type" { return type; }
+  if result&&kind=="VoidType" { return type; }
+  ppx_category_evidence_error("unsupported interface type");return sx_nil();
+}
+fn ppx_category_normalize_member(scheme: sexpr, arguments: sexpr) -> sexpr {
+  if visitor_tag(scheme)!="ForallType" { ppx_category_evidence_error("expected member scheme"); }
+  if sx_text(sexpr_nth(scheme,1))!="1"||sexpr_size(arguments)!=1 { ppx_category_evidence_error("scalar profile requires one type argument"); }
+  let argument=sx_head(arguments);
+  if visitor_tag(argument)=="BoundType" { ppx_category_evidence_error("evidence must be concrete"); }
+  ppx_category_evidence_leaf(argument,argument,false);
+  let body=sexpr_nth(scheme,2);
+  if visitor_tag(body)!="FunctionType" { ppx_category_evidence_error("expected function member"); }
+  var ps=sexpr_nth(body,1);var params=sx_nil();
+  if sexpr_size(ps)>16 { ppx_category_evidence_error("member arity budget exhausted"); }
+  while sx_kind(ps)==3 { params=sx_cons(ppx_category_evidence_leaf(sx_head(ps),argument,false),params);ps=sx_tail(ps); }
+  return ppx_node("FunctionType",ppx_list2(sexpr_reverse(params),ppx_category_evidence_leaf(sexpr_nth(body,2),argument,true)));
+}
+fn ppx_category_order(previous: string, name: string) {
+  if name==""||basis_string_compare(previous,name)>=0 { ppx_category_evidence_error("duplicate or noncanonical declaration order"); }
+}
+fn ppx_category_read_typed_facts(packet: sexpr) -> sexpr {
+  ppx_validate_at(ppx_schema_env(),packet,"EvidenceInput","$",0,0);
+  let world=sx_text(sexpr_nth(packet,2));
+  if text_len(world)!=64 { ppx_category_evidence_error("invalid typed snapshot identity"); }
+  var i=0;while i<64 { let b=text_byte(world,i);if !((b>=48&&b<=57)||(b>=97&&b<=102)) { ppx_category_evidence_error("invalid typed snapshot identity"); }i=i+1; }
+  var rest=sexpr_nth(packet,6);var facts=sx_nil();var previous="";
+  if sexpr_size(rest)>256 { ppx_category_evidence_error("typed fact budget exhausted"); }
+  while sx_kind(rest)==3 {
+    let fact=sx_head(rest);rest=sx_tail(rest);let name=sx_text(sexpr_nth(fact,1));
+    ppx_category_order(previous,name);previous=name;
+    facts=sx_cons(ppx_list2(sx_string(name),sexpr_nth(fact,2)),facts);
+  }
+  return facts;
+}
+fn ppx_category_make_evidence_plan(packet: sexpr) -> sexpr {
+  let facts=ppx_category_read_typed_facts(packet);let origin=sx_text(sexpr_nth(packet,3));
+  var contracts=sx_nil();var cs=sexpr_nth(packet,4);var previous="";
+  if sexpr_size(cs)+sexpr_size(sexpr_nth(packet,5))>64 { ppx_category_evidence_error("declaration budget exhausted"); }
+  while sx_kind(cs)==3 {
+    let contract=sx_head(cs);cs=sx_tail(cs);let name=sx_text(sexpr_nth(contract,1));
+    ppx_category_order(previous,name);previous=name;
+    if sx_text(sexpr_nth(sexpr_nth(contract,3),1))!=origin { ppx_category_evidence_error("interface origin mismatch"); }
+    var members=sexpr_nth(contract,2);var last="";
+    if sexpr_size(members)==0||sexpr_size(members)>16 { ppx_category_evidence_error("invalid member count"); }
+    while sx_kind(members)==3 {
+      let m=sx_head(members);members=sx_tail(members);
+      ppx_category_order(last,sx_text(sexpr_nth(m,1)));last=sx_text(sexpr_nth(m,1));
+      if sx_text(sexpr_nth(sexpr_nth(m,3),1))!=origin { ppx_category_evidence_error("member origin mismatch"); }
+      ppx_category_normalize_member(sexpr_nth(m,2),ppx_list1(ppx_node("I64Type",sx_nil())));
+    }
+    contracts=sx_cons(ppx_list2(sx_string(name),contract),contracts);
+  }
+  var implementations=sexpr_nth(packet,5);var choices=sx_nil();var used=sx_nil();var heads=sx_nil();previous="";
+  while sx_kind(implementations)==3 {
+    let impl=sx_head(implementations);implementations=sx_tail(implementations);
+    let name=sx_text(sexpr_nth(impl,1));ppx_category_order(previous,name);previous=name;
+    if sx_text(sexpr_nth(sexpr_nth(impl,6),1))!=origin { ppx_category_evidence_error("implementation origin mismatch"); }
+    let found=ppx_lookup(contracts,sx_text(sexpr_nth(impl,2)));
+    if sx_kind(found)==0 { ppx_category_evidence_error("unknown local interface"); }
+    let contract=sx_head(found);let arguments=sexpr_nth(impl,3);
+    if sx_text(sexpr_nth(impl,4))=="true" {
+      let head=sexpr_print(ppx_list2(sexpr_nth(impl,2),arguments));
+      if sx_kind(ppx_lookup(heads,head))!=0 { ppx_category_evidence_error("overlapping canonical evidence"); }
+      heads=sx_cons(ppx_list2(sx_string(head),sx_symbol("1")),heads);
+    }
+    var methods=sexpr_nth(impl,5);var members=sexpr_nth(contract,2);
+    if sexpr_size(methods)!=sexpr_size(members) { ppx_category_evidence_error("incomplete evidence"); }
+    while sx_kind(methods)==3 {
+      let binding=sx_head(methods);methods=sx_tail(methods);let member=sx_head(members);members=sx_tail(members);
+      if sx_text(sexpr_nth(binding,1))!=sx_text(sexpr_nth(member,1)) { ppx_category_evidence_error("missing, duplicate or reordered member"); }
+      if sx_text(sexpr_nth(sexpr_nth(binding,4),1))!=origin { ppx_category_evidence_error("binding origin mismatch"); }
+      let expected=ppx_category_normalize_member(sexpr_nth(member,2),arguments);var index=2;
+      while index<=3 {
+        let id=sx_text(sexpr_nth(binding,index));let fact=ppx_lookup(facts,id);
+        if sx_kind(fact)==0 { ppx_category_evidence_error("missing typed function"); }
+        if sexpr_print(sx_head(fact))!=sexpr_print(expected) { ppx_category_evidence_error("typed member mismatch"); }
+        if sx_kind(ppx_lookup(used,id))!=0 { ppx_category_evidence_error("reused evidence function"); }
+        used=sx_cons(ppx_list2(sx_string(id),sx_symbol("1")),used);index=index+1;
+      }
+      choices=sx_cons(ppx_node("EvidenceChoice",sx_cons(sx_string(name),
+        ppx_list4(sexpr_nth(binding,1),sexpr_nth(binding,2),sexpr_nth(binding,3),expected))),choices);
+    }
+  }
+  if sexpr_size(used)!=sexpr_size(facts) { ppx_category_evidence_error("unclaimed typed facts"); }
+  return ppx_node("EvidencePlan",ppx_list3(sx_symbol("1"),sexpr_nth(packet,2),sexpr_reverse(choices)));
+}
