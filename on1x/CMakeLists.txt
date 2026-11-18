@@ -69,7 +69,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS stdppx/category/f
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/category/features.sexpr" ON1X_EXTENSION_REGISTRY)
 configure_file(cmake/extensions_registry.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/extensions_registry.hpp" @ONLY)
 add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/infer.cpp src/sema.cpp src/concurrency.cpp src/codegen.cpp
-  src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp src/extensions.cpp src/extensions_hash.c src/canonical/control.cpp src/patterns.cpp src/canonical/values.cpp src/canonical/verify_values.cpp
+  src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp src/extensions.cpp src/extension_evidence.cpp src/extensions_hash.c src/canonical/control.cpp src/patterns.cpp src/canonical/values.cpp src/canonical/verify_values.cpp
   src/backend/mir.cpp src/backend/lower.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp)
 target_include_directories(on1x_frontend PUBLIC include)
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
@@ -183,6 +183,14 @@ if(ON1X_WITH_EXOML)
 endif()
 
 if(BUILD_TESTING)
+  if(ON1X_BUILD_NATIVE_PPX)
+    add_executable(on1x_extension_evidence_tests tests/test_extension_evidence.cpp)
+    target_link_libraries(on1x_extension_evidence_tests PRIVATE on1x_frontend)
+    add_dependencies(on1x_extension_evidence_tests on1x_category_pin)
+    add_test(NAME on1x.extension_evidence_hir COMMAND on1x_extension_evidence_tests
+      "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/examples/category/eq.on1x")
+    set_tests_properties(on1x.extension_evidence_hir PROPERTIES TIMEOUT 60)
+  endif()
   if(ON1X_WITH_SYREN)
     add_executable(on1x_diagnostics_tests tests/test_diagnostics.cpp)
     target_link_libraries(on1x_diagnostics_tests PRIVATE on1x_diagnostics)

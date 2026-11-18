@@ -130,6 +130,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
  "       [--ppx-timeout-ms MILLISECONDS]\n"
   "       [--enable NAME[,NAME]] [--disable NAME] (bundled native extensions only)\n"
   "       on1xc --list-extensions | --explain-extension NAME\n"
+  "       on1xc --emit-category-plan INPUT [-o OUTPUT] (checked concrete evidence)\n"
   "       [-I DIRECTORY | --module-path DIRECTORY] [--stdlib DIRECTORY]\n"
   "       [--no-prelude] [--prelude FILE] [--stdppx PROCESSOR]\n"
   "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
@@ -193,6 +194,7 @@ int main(int argc,char**argv){
     }
     if(arg=="--verify-types"){type_safety=true;continue;}
     if(arg=="--check-types"){mode=arg;continue;}
+    if(arg=="--emit-category-plan"){mode=arg;continue;}
      if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes")mode=arg;
       else if(arg=="--no-prelude")loader.prelude=false;
       else if(arg=="-I"||arg=="--module-path"||arg=="--stdlib"||arg=="--prelude"||arg=="--stdppx"){
@@ -321,6 +323,7 @@ int main(int argc,char**argv){
    }
    on1x::meta::rewrite(unit,ppx);
     on1x::check(unit);
+    auto category_plan=on1x::extensions::evidence_plan(unit);
     std::string type_evidence;
 #ifdef ON1X_WITH_NEROTYPICAL
     if(type_safety)type_evidence=on1x::type_safety::verify(unit);
@@ -329,6 +332,7 @@ int main(int argc,char**argv){
     if(memory){auto evidence=on1x::safety::check(unit,{},admitted);if(mode=="--check-memory"){write_all(out,evidence);return 0;}}
 #endif
     if(mode=="--check-types"){write_all(out,type_evidence);return 0;}
+    if(mode=="--emit-category-plan"){write_all(out,category_plan);return 0;}
      if(mode=="--check"){std::cout<<"OK: "<<unit.functions.size()<<" functions\n";return 0;}
      if(mir_mode)return mir_output(on1x::mir::lower(unit),mode,out,analysis_work,optimize?&optimization:nullptr);
    if(mode=="--types"){

@@ -27,6 +27,11 @@ std::string literal_value(const std::string& text);
 std::string source_literal(const std::string& value);
 SExpr encode(const Unit& unit);
 Unit decode(const SExpr& tree);
+// Reuse the canonical, schema-validated type/location codec for sideband
+// requests. Decoding syntax never confers semantic admission.
+SExpr encode_type(const Type& type);
+Type decode_type(const SExpr& tree);
+Location decode_source_location(const SExpr& tree);
 void require_core(const Unit& unit);
 struct PpxOptions {
  std::vector<PpxRegistration> programs;

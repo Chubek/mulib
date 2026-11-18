@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Category M0/M1: actual native On1x PPX, checked core and closed boundaries."""
+"""Category concrete evidence: native On1x PPX, checked core and closed boundaries."""
 import os
 import hashlib
+import copy
 from pathlib import Path
 import sys
 import tempfile
@@ -35,6 +36,7 @@ def rejected(name,source,diagnostic,options=()):
 
 compiled('eq',example,'true\nfalse\n')
 compiled('ordering',t.root/'stdppx/examples/category/ordering.on1x','-1\n1\n')
+compiled('evidence',t.root/'stdppx/examples/category/evidence.on1x','9\n3\n3\n9\ntrue\n7\n')
 compiled('mir',example,'true\nfalse\n',via=True)
 compiled('ordinary_ppx',example,'true\nfalse\n',options=['--stdppx','identity'])
 rejected_label=run([t.compiler,'--check',example,'--ppx','Protocols',t.root/'stdppx/identity.py'])
@@ -50,6 +52,15 @@ mutator.write_text('#!'+sys.executable+'\nimport sys\nsys.path.insert(0,'+repr(s
 mutator.chmod(0o755)
 p=run([t.compiler,'--check',example,'--ppx','mutator',mutator])
 assert p.returncode and 'ON1X-EXT-INTERFACE' in p.stderr and not p.stdout,p.stderr
+redirect=t.work/'redirect_evidence.py'
+redirect.write_text('#!'+sys.executable+'\nimport sys\nsys.path.insert(0,'+repr(str(t.root/'stdlib'))+')\n'
+                   'from sexpr import loads,dumps\nt=loads(sys.stdin.read())\n'
+                   'for f in t[2]:\n'
+                   ' if f[1]=="Eq_i64_eq": f[4][1][0][1][1][1]="Different_eq"\n'
+                   'print(dumps(t))\n')
+redirect.chmod(0o755)
+rejected('redirect_evidence',example.read_text(),'selector no longer forwards',
+         ['--ppx','redirect',redirect])
 for mode in ['--check-types','--check-memory']:
     p=run([t.compiler,mode,example])
     assert p.returncode==0 or (p.returncode==2 and 'unavailable' in p.stderr),p.stderr
@@ -149,7 +160,8 @@ p=run([t.compiler,'--emit-ast',example]);assert p.returncode and 'inspection doe
 
 # Environment must not select a PPX executable or schema. No PATH lookup; no
 # Python interpreter is needed to execute the bundled processor.
-hostile=dict(os.environ,ON1X_PPX_SCHEMA='/does/not/exist',ON1X_PPX_LABEL='evil',ON1X_PPX_PROTOCOL='evil',PATH='/does/not/exist')
+hostile=dict(os.environ,ON1X_PPX_SCHEMA='/does/not/exist',ON1X_PPX_LABEL='evil',ON1X_PPX_PROTOCOL='evil',
+             ON1X_EXTENSION_PHASE='evil',PATH='/does/not/exist')
 p=run([t.compiler,'--check',example],env=hostile);assert p.returncode==0,p.stderr
 p=run([t.compiler,'--list-extensions']);assert p.returncode==0 and 'Protocols:' in p.stdout and 'Functors: UNAVAILABLE' in p.stdout and str(processor) in p.stdout,p.stdout
 p=run([t.compiler,'--explain-extension','Protocols','--disable','Protocols']);assert p.returncode==0 and 'disabled by CLI' in p.stdout,p.stdout
@@ -161,7 +173,55 @@ assert p.returncode==0,p.stderr
 # Direct protocol packets: deterministic metadata, no output on errors, and
 # token/source/module binding independent of the compiler's trusted producer.
 sys.path.insert(0,str(t.root/'stdlib'))
-from sexpr import Atom as S, dumps
+from sexpr import Atom as S, dumps, loads
+
+# Read-only typed feedback is pinned to a complete concrete request snapshot.
+# These reports are inspected, never accepted as cached proof inputs.
+def checked_plan(path,options=()):
+    p=run([t.compiler,'--emit-category-plan',path,*options]);assert p.returncode==0,p.stderr
+    return loads(p.stdout),p.stdout
+report,wire=checked_plan(example)
+assert report[0]=='on1x.category-plan' and report[3]=='well_typed'
+batch=report[4][0];snapshot=batch[8];plan=batch[9]
+assert len(plan[3])==2 and batch[2]=='2'
+assert wire==checked_plan(example)[1]
+assert wire==checked_plan(example,['--stdppx','identity'])[1]
+assert snapshot[0]=='EvidenceSnapshot' and len(snapshot[2])==64
+assert [S('SourceDigest'),str(example.resolve()),hashlib.sha256(example.read_bytes()).hexdigest()] in report[5]
+assert snapshot[4][0][2][0][2][0]=='ForallType'
+assert plan[3][0][1]=='Different' and plan[3][1][1]=='Eq_i64'
+typed_env={**os.environ,'ON1X_PPX_PROTOCOL':'1','ON1X_PPX_LABEL':'Protocols',
+           'ON1X_PPX_SCHEMA':str(t.root/'grammar/PPX.schema.json'),'ON1X_EXTENSION_PHASE':'evidence-v1'}
+p=run([processor],input=dumps(snapshot),env=typed_env)
+assert p.returncode==0 and loads(p.stdout)==plan,p.stderr
+# The shared authoring API executes independently of the bundled entry point.
+api_exe=t.build('evidence_api',text='import "'+str(t.root/'stdlib/ppx/category/typed.on1x')+'";\n'
+               'fn main(){io_stdout(sexpr_print(ppx_category_make_evidence_plan(sexpr_parse(io_stdin()))));}')
+p=run([api_exe],input=dumps(snapshot),env=typed_env)
+assert p.returncode==0 and loads(p.stdout)==plan,p.stderr
+for name,change in [
+    ('wrong_type',lambda q:q[6][0].__setitem__(2,[S('I64Type')])),
+    ('missing_fact',lambda q:q[6].pop()),
+    ('extra_fact',lambda q:q[6].append(q[6][-1])),
+    ('missing_member',lambda q:q[5][0][5].clear()),
+    ('unknown_interface',lambda q:q[5][0].__setitem__(2,'Foreign')),
+    ('invalid_binder',lambda q:q[4][0][2][0][2].__setitem__(1,S('2'))),
+    ('wrong_origin',lambda q:q.__setitem__(3,'forged.on1x')),
+    ('invalid_fingerprint',lambda q:q.__setitem__(2,'not-a-fingerprint')),
+    ('version',lambda q:q.__setitem__(1,S('2'))),
+    ('fact_budget',lambda q:q.__setitem__(6,[q[6][0]]*257)),
+]:
+    packet_bad=copy.deepcopy(snapshot);change(packet_bad)
+    p=run([processor],input=dumps(packet_bad),env=typed_env)
+    assert p.returncode and not p.stdout,(name,p.stderr)
+module_report,_=checked_plan(consumer)
+assert len(module_report[4])==1,'aliases duplicated evidence'
+assert module_report[4][0][8][3]==str(module.resolve())
+before=module_report[4][0][8][2];module.write_text(module.read_text()+'\n# new source revision\n')
+assert checked_plan(consumer)[0][4][0][8][2]!=before,'stale source snapshot identity'
+# Evidence execution still obeys source-PPX authorization.
+rejected('plan_source_ppx',source+'\n@ppx arbitrary "./malicious"','--allow-source-ppx',
+         ['--emit-category-plan'])
 raw='@extension Protocols { protocol P<Self>{fn ok(x:Self)->bool;} }'
 spelling=['protocol','P','<','Self','>','{','fn','ok','(','x',':','Self',')','->','bool',';','}']
 start=[S('Loc'),'packet.on1x',S('0'),S('1'),S('1')]
@@ -194,6 +254,8 @@ with tempfile.TemporaryDirectory(dir=t.work,prefix='category-install-') as tempo
     local=base/'eq.on1x';local.write_text(source)
     env=dict(hostile,ON1X_STDLIB=str(prefix/'share/on1x/stdlib'))
     p=run([compiler,'--check',local],env=env,cwd=base);assert p.returncode==0,p.stderr
+    p=run([compiler,'--emit-category-plan',local],env=env,cwd=base)
+    assert p.returncode==0 and loads(p.stdout)[3]=='well_typed',p.stderr
     p=run([compiler,'--emit-c',local],env=env,cwd=base);assert p.returncode==0,p.stderr
     out=base/'relocated.c';out.write_text(p.stdout);exe=base/'relocated-example'
     p=run([t.cc,'-std=c11','-Wall','-Wextra','-Wpedantic','-Werror','-I',prefix/'share/on1x/runtime',out,
@@ -207,4 +269,4 @@ with tempfile.TemporaryDirectory(dir=t.work,prefix='category-install-') as tempo
     schema.write_bytes(original_schema);native.rename(native.with_suffix('.missing'))
     p=run([compiler,'--check',local],env=env);assert p.returncode and 'no PATH or Python fallback' in p.stderr,p.stderr
 
-print('Category M0/M1 explicit local scalar protocols: native parser, checked witnesses, activation, import isolation and relocation PASS')
+print('Category concrete evidence: native syntax/typed phases, host admission, activation, import identity and relocation PASS')

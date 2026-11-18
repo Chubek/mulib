@@ -149,6 +149,8 @@ void rewrite(Unit& unit,const PpxOptions& options){
    if(!same)throw Error(expected.where,"ON1X-EXT-INTERFACE: native generated declaration interface changed by ordinary PPX: "+expected.name,"ON1X-EXT-INTERFACE");
    actual->extension_generated=true;
   }
-  require_core(result);unit=std::move(result);
+   result.extension_evidence=std::move(working.extension_evidence);
+   result.source_digests=std::move(working.source_digests);
+   require_core(result);unit=std::move(result);
 }
 }

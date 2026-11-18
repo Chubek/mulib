@@ -67,6 +67,7 @@ Resolved resolve(const Options& options,const SExpr& entry){
 }
 SExpr loc(const Location& at){return list({symbol("Loc"),string(at.file),symbol(std::to_string(at.offset)),symbol(std::to_string(at.line)),symbol(std::to_string(at.column))});}
 }
+std::string digest(const std::string& bytes){return module_key(bytes);}
 std::string canonical(const std::string& name,const Location& at){(void)feature(name,at);return name;}
 void select(std::set<std::string>& into,const std::string& names,const Location& at){
  std::size_t start=0;
@@ -109,9 +110,9 @@ void expand(Unit& unit,const Options& options,const std::string& origin){
   if(carriers.empty())continue;
   auto packet=list({symbol("ModuleSyntax"),symbol("1"),string(origin),list(std::move(names)),list(std::move(carriers)),string(module_key(origin))});
   auto schema=base_schema();schema.validate(packet,"ExtensionInput");
-  auto wire=run_transformer(resolved.program.string(),write_sexpr(packet),options.timeout_ms,name,{{"ON1X_PPX_SCHEMA",resolved.schema.string()}});
+   auto wire=run_transformer(resolved.program.string(),write_sexpr(packet),options.timeout_ms,name,{{"ON1X_PPX_SCHEMA",resolved.schema.string()},{"ON1X_EXTENSION_PHASE","syntax-v1"}});
   auto result=read_sexpr(wire,"<native-extension:"+name+">");schema.validate(result,"ExtensionOutput");
-  if(tag(result)!="ModuleExpansion"||result.items[2].text!=origin)fail({origin},"response origin/envelope mismatch");
+   if(tag(result)!="ModuleEvidenceExpansion"||result.items[2].text!=origin)fail({origin},"response origin/envelope mismatch (checked evidence required)");
   // Facts are reporting data only, never privileged typing or ownership proofs.
   for(const auto& fact:result.items[4].items)if(fact.items[1].text!=name||fact.items.back().items[1].text!=origin)fail({origin},"response fact owner/source mismatch");
   if(hash(resolved.program)!=resolved.binary_hash||hash(resolved.schema)!=resolved.schema_hash)fail({origin},"bundled artifact changed during expansion");
@@ -120,10 +121,71 @@ void expand(Unit& unit,const Options& options,const std::string& origin){
     auto generated=decode(tree);
     if(!generated.nominals.empty())fail({origin},"native declaration profile cannot generate nominal types");
    if(unit.functions.size()+generated_functions.size()+generated.functions.size()>2048)fail({origin},"generated function budget exhausted");
-    for(auto& f:generated.functions){if(f.external||!f.attributes.empty())fail(f.where,"generated extern/attribute not admitted");f.extension_generated=true;generated_functions.push_back(std::move(f));}
-  }
+     for(auto& f:generated.functions){if(f.external||!f.attributes.empty())fail(f.where,"generated extern/attribute not admitted");f.extension_generated=true;generated_functions.push_back(std::move(f));}
+   }
+   ExtensionEvidence evidence;
+   evidence.owner=name;evidence.origin=origin;evidence.version=entry.items[3].text;
+   evidence.program=resolved.program.string();evidence.schema=resolved.schema.string();
+   evidence.binary_hash=resolved.binary_hash;evidence.schema_hash=resolved.schema_hash;
+   evidence.registry_hash=digest(on1x_extension_registry);evidence.timeout_ms=options.timeout_ms;
+#if defined(__linux__)
+   evidence.compiler_hash=hash("/proc/self/exe");
+#else
+   fail({origin},"checked evidence requires an audited compiler image identity");
+#endif
+   if(result.items[5].items.size()+result.items[6].items.size()>64)fail({origin},"evidence declaration budget exhausted");
+   for(const auto& c:result.items[5].items){
+    ExtensionContract contract;contract.name=c.items[1].text;contract.where=decode_source_location(c.items[3]);
+    if(c.items[2].items.size()>16)fail(contract.where,"evidence member budget exhausted");
+    for(const auto& m:c.items[2].items)contract.members.push_back({m.items[1].text,decode_type(m.items[2]),decode_source_location(m.items[3])});
+    evidence.contracts.push_back(std::move(contract));
+   }
+   for(const auto& w:result.items[6].items){
+    ExtensionImplementation impl;impl.name=w.items[1].text;impl.contract=w.items[2].text;
+    impl.canonical=w.items[4].text=="true";impl.where=decode_source_location(w.items[6]);
+    if(w.items[3].items.size()>16||w.items[5].items.size()>16)fail(impl.where,"evidence argument/member budget exhausted");
+    for(const auto& a:w.items[3].items)impl.arguments.push_back(decode_type(a));
+    for(const auto& b:w.items[5].items){
+     ExtensionBinding binding{b.items[1].text,b.items[2].text,b.items[3].text,{},{},decode_source_location(b.items[4])};
+     schema.validate(string(binding.function),"Name");schema.validate(string(binding.selector),"Name");
+     binding.function_id=origin+"::function::"+binding.function;
+     binding.selector_id=origin+"::function::"+binding.selector;
+     impl.bindings.push_back(std::move(binding));
+    }
+    evidence.implementations.push_back(std::move(impl));
+   }
+   unit.extension_evidence.push_back(std::move(evidence));
  }
  for(auto& f:generated_functions)unit.functions.push_back(std::move(f));
  unit.extensions.clear();
+}
+std::string evidence_plan(const Unit& unit){
+ verify_evidence(unit);
+ std::vector<const ExtensionEvidence*> ordered;
+ for(const auto& evidence:unit.extension_evidence)ordered.push_back(&evidence);
+ std::sort(ordered.begin(),ordered.end(),[](auto a,auto b){return std::tie(a->origin,a->owner)<std::tie(b->origin,b->owner);});
+ std::vector<SExpr> reports,sources;
+ for(const auto& [origin,hash]:unit.source_digests)
+  sources.push_back(list({symbol("SourceDigest"),string(origin),string(hash)}));
+ for(const auto* evidence:ordered){
+  Options options;options.directory=fs::path(evidence->program).parent_path();
+  auto entry=feature(evidence->owner,{evidence->origin});auto resolved=resolve(options,entry);
+  if(resolved.program!=evidence->program||resolved.schema!=evidence->schema||
+     resolved.binary_hash!=evidence->binary_hash||resolved.schema_hash!=evidence->schema_hash||
+     entry.items[3].text!=evidence->version||digest(on1x_extension_registry)!=evidence->registry_hash)
+   fail({evidence->origin},"extension changed between syntax and evidence phases");
+  auto snapshot=evidence_snapshot(unit,*evidence);
+  auto wire=run_transformer(resolved.program.string(),write_sexpr(snapshot),evidence->timeout_ms,evidence->owner,
+    {{"ON1X_PPX_SCHEMA",resolved.schema.string()},{"ON1X_EXTENSION_PHASE","evidence-v1"}});
+  auto plan=read_sexpr(wire,"<native-evidence:"+evidence->owner+">");
+  admit_evidence_plan(unit,*evidence,plan);
+  if(hash(resolved.program)!=evidence->binary_hash||hash(resolved.schema)!=evidence->schema_hash)
+   fail({evidence->origin},"bundled artifact changed during evidence planning");
+  reports.push_back(list({symbol("CheckedModule"),string(evidence->owner),string(evidence->version),
+    string(evidence->program),string(evidence->binary_hash),string(evidence->schema_hash),
+    string(evidence->compiler_hash),string(evidence->registry_hash),std::move(snapshot),std::move(plan)}));
+ }
+ return write_sexpr(list({symbol("on1x.category-plan"),symbol("1"),string(on1x_extension_host),
+   symbol("well_typed"),list(std::move(reports)),list(std::move(sources))}));
 }
 }

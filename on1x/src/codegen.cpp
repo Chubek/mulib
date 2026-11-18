@@ -1,4 +1,5 @@
 #include <on1x/ast.hpp>
+#include <on1x/extensions.hpp>
 #include <on1x/meta.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/numeric.hpp>
@@ -757,5 +758,5 @@ public:
  }
 };
 }
-std::string emit_c(const Unit& unit,const std::string& source_name){(void)source_name;canonical::verify_control(unit);meta::require_core(unit);canonical::verify_values(unit);verify_nominals(unit);csp::verify(unit,true);return Generator(unit).run();}
+std::string emit_c(const Unit& unit,const std::string& source_name){(void)source_name;extensions::verify_evidence(unit);canonical::verify_control(unit);meta::require_core(unit);canonical::verify_values(unit);verify_nominals(unit);csp::verify(unit,true);return Generator(unit).run();}
 }

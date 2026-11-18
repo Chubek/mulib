@@ -152,6 +152,7 @@ class Loader {
      carrier.source=source.substr(carrier.where.offset,carrier.end.offset-carrier.where.offset);
     }
     extensions::expand(m->unit,options.extensions,path.string());
+    m->unit.source_digests.emplace(path.string(),extensions::digest(source));
   }
    for(const auto& d:m->unit.nominals)insert(m->names.types,d.name,Symbol{m,d.name},d.where);
    for(const auto& f:m->unit.functions){
@@ -361,6 +362,14 @@ public:
     for(auto& registration:m->unit.ppx)result.unit.ppx.push_back(std::move(registration));
     for(auto& carrier:m->unit.extensions)result.unit.extensions.push_back(std::move(carrier));
     for(auto& feature:m->unit.features)result.unit.features.push_back(std::move(feature));
+    for(auto& evidence:m->unit.extension_evidence){
+     for(auto& implementation:evidence.implementations)for(auto& binding:implementation.bindings){
+      binding.function=name({m,binding.function});
+      binding.selector=name({m,binding.selector});
+     }
+     result.unit.extension_evidence.push_back(std::move(evidence));
+    }
+    result.unit.source_digests.insert(m->unit.source_digests.begin(),m->unit.source_digests.end());
    if(regular(m->path))result.dependencies.push_back(m->path);
   }
   // Automatic pervasive bindings are demand-loaded. This preserves the existing
@@ -381,6 +390,10 @@ public:
    for(const auto& s:body){if(s.value)collect(collect,*s.value,refs);self(self,s.body,refs);self(self,s.otherwise,refs);}
   };
   std::set<std::string> needed;
+  for(const auto& evidence:result.unit.extension_evidence)
+   for(const auto& implementation:evidence.implementations)for(const auto& binding:implementation.bindings){
+    needed.insert(binding.function);needed.insert(binding.selector);
+   }
   for(const auto& f:result.unit.functions){
    auto& refs=calls[f.name];statements(statements,f.body,refs);for(const auto& a:f.attributes)collect(collect,*a,refs);
    if(!lazy.contains(f.name))needed.insert(f.name);

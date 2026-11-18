@@ -289,6 +289,9 @@ std::vector<Stmt> read_block(const SExpr& n){
  }return body;
 }
 }
+SExpr encode_type(const Type& value){return type(value);}
+Type decode_type(const SExpr& tree){base_schema().validate(tree,"Type");return read_type(tree);}
+Location decode_source_location(const SExpr& tree){base_schema().validate(tree,"Location");return location(tree);}
 SExpr encode(const Unit& unit){
  if(!unit.extensions.empty())throw Error(unit.extensions.front().where,"ON1X-CAT-PPX: declaration carriers require native expansion (inspection does not execute processors)","ON1X-CAT-PPX");
  if(!unit.macros.empty())throw Error(unit.macros.front().where,"expand macros before PPX encoding");

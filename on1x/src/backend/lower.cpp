@@ -1,4 +1,5 @@
 #include <on1x/backend/mir.hpp>
+#include <on1x/extensions.hpp>
 #include <on1x/nominal.hpp>
 #include <on1x/meta.hpp>
 #include <on1x/numeric.hpp>
@@ -238,5 +239,5 @@ public:
  }
 };
 }
-Module lower(const Unit& unit,Limits limits){return Lowering(unit,limits).run();}
+Module lower(const Unit& unit,Limits limits){extensions::verify_evidence(unit);return Lowering(unit,limits).run();}
 }

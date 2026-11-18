@@ -67,10 +67,13 @@ capture-byte budgets. Use `match` for recovery; fatal traps still do not unwind.
 See [`examples/defer_errors.on1x`](examples/defer_errors.on1x). General exceptions,
 resource-bearing results, async cancellation and MIR/SDK defer models remain unsupported.
 
-Category now has an executable **M0/M1 local scalar slice**: `@enable Protocols`
+Category now has an executable **M0/M1 plus concrete M2 slice**: `@enable Protocols`
 invokes a bundled native On1x-authored processor for `@extension Protocols { ... }`
 declarations and generates explicit, normally typechecked witness selectors.
-[Category](docs/category.md) documents native pinning, activation and installation.
+Native post-inference planning and independent host admission check member types,
+module provenance and exact selector forwarding. `--emit-category-plan` reports
+the checked choices and source/artifact fingerprints.
+[Category](docs/category.md) documents the version-2 processor, activation and installation.
 Constrained generics, associated types, functors/sealing and auto protocols remain
 unsupported; `CATEGORY.md` is still the broader implementation specification.
 

@@ -149,12 +149,41 @@ struct NominalDeclaration {
  std::vector<std::string> parameters,labels;
  std::vector<Type> fields; // Bound indices refer to parameters; no inferred layout.
 };
+// Host-retained declaration-extension requests, never accepted from ordinary
+// Unit-v1 PPX output. They are proposals, not cached typing/ownership proofs.
+struct ExtensionMember { std::string name; Type scheme; Location where; };
+struct ExtensionContract {
+ std::string name;
+ std::vector<ExtensionMember> members;
+ Location where;
+};
+struct ExtensionBinding {
+ std::string member,function,selector;
+ std::string function_id,selector_id; // Stable origins; loader names may change.
+ Location where;
+};
+struct ExtensionImplementation {
+ std::string name,contract;
+ std::vector<Type> arguments;
+ bool canonical=false;
+ std::vector<ExtensionBinding> bindings;
+ Location where;
+};
+struct ExtensionEvidence {
+ std::string owner,origin,version,program,schema;
+ std::string binary_hash,schema_hash,compiler_hash,registry_hash;
+ unsigned timeout_ms=5000;
+ std::vector<ExtensionContract> contracts;
+ std::vector<ExtensionImplementation> implementations;
+};
 struct Unit {
   std::vector<std::string> imports; std::vector<Function> functions;
   std::vector<Import> module_imports;
   std::vector<FeatureActivation> features;
   std::vector<ModuleExtension> extensions;
   std::vector<NominalDeclaration> nominals;
+  std::vector<ExtensionEvidence> extension_evidence;
+  std::map<std::string,std::string> source_digests;
  std::map<Type,std::vector<Type>> forall_layouts; // Internal whole-unit demand ABI.
  bool forall_elaborated=false;
  bool stages_lowered=false;

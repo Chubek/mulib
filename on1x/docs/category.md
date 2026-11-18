@@ -1,9 +1,11 @@
-# Category: native declaration PPXs, explicit scalar profile v1
+# Category: native declaration PPXs, checked scalar profile v2
 
-This is an executable **M0/M1 slice** of `../CATEGORY.md`, not the complete
-Category system. Protocol syntax, substitution, local coherence and lowering
-are implemented in `stdlib/ppx/category/{syntax,witness}.on1x` and compiled into
-`stdppx/native/protocols.on1x`. No Python/C++ protocol parser or solver is used.
+This is an executable **M0/M1 plus concrete M2 slice** of `../CATEGORY.md`.
+Protocol syntax, substitution, local coherence, lowering and typed-plan production
+are implemented in `stdlib/ppx/category/{syntax,witness,metadata,typed}.on1x` and
+compiled into `stdppx/native/protocols.on1x`. The host independently validates
+concrete interface substitution and selector forwarding. This does not complete
+the Category system or provide generic constraint solving.
 
 ## Use
 
@@ -33,6 +35,7 @@ cmake -S on1x -B build/on1x -DBUILD_TESTING=ON -DON1X_BUILD_NATIVE_PPX=ON
 cmake --build build/on1x --parallel 4
 build/on1x/on1xc --list-extensions
 build/on1x/on1xc --explain-extension Protocols
+build/on1x/on1xc --emit-category-plan on1x/stdppx/examples/category/eq.on1x
 python3 on1x/tools/on1x-build.py on1x/stdppx/examples/category/eq.on1x \
   --on1xc build/on1x/on1xc -o build/category-eq
 build/category-eq
@@ -72,7 +75,11 @@ keywords were added: `fn protocol(impl: i64)` remains valid.
   A generic host-only provenance flag additionally locks generated function
   signatures across later ordinary v1 PPXs: changing, erasing or duplicating
   these interfaces rejects with `ON1X-EXT-INTERFACE`. Bodies still undergo normal
-  checking; this is not a law/equivalence proof or a typed generic feedback loop.
+  checking. Host-retained evidence also binds each selector to its declared
+  implementation and ordered parameters: redirecting it to another same-typed
+  function, swapping arguments or adding effects rejects with
+  `ON1X-CAT-EVIDENCE`. Implementation bodies can undergo ordinary PPX transforms
+  and normal checking; their mathematical laws are not proved.
 - Bodies accept a bounded scalar subset: literals, identifiers/calls,
   parentheses, unary/binary operations, `let`/`var`, `return`, `if`/`else` and
   expression statements. Normal checked arithmetic and left-to-right evaluation
@@ -90,18 +97,25 @@ syntax; all visited files are checked. The loader retains canonical origins,
 aliases, cycle checks and exports. Generated scalar selectors are ordinary
 exports; protocol metadata is not imported as compiled/cross-module evidence.
 
-The initial **declaration-only phase split** is deliberate: generic span capture
+The phase split is: generic span capture
 → native declaration expansion **before loader export binding** → existing loader
-resolution/hygienic macros/ordinary PPX/staging/inference/checking pipeline. This
+resolution/hygienic macros/ordinary PPX/staging/inference/checking → independent
+host evidence verification → native read-only typed planning → host plan admission. This
 lets imports resolve generated selectors without rewriting the ordinary AST or
 putting Category semantics in the loader. Macros inside carriers reject; ordinary
-macros outside them can call selectors. Typed feedback is required before future
-generic/associated-type elaboration.
+macros outside them can call selectors. The typed phase validates concrete
+requests only; it does not elaborate generic or associated-type syntax.
 
 C++ hooks only handle activation, registry resolution, balanced spans, source
-identity, bounded transport, schemas, reconstruction of ordinary functions and
-retention of their explicit interfaces through later PPXs.
-`Self` syntax, member comparison, local head checks and lowering are On1x source.
+identity, bounded transport, schemas, reconstruction of ordinary functions,
+retention of their explicit interfaces through later PPXs, and concrete admission.
+`src/extension_evidence.cpp` is the trusted generic admission kernel: binder
+substitution, completeness/duplicate-head checks, inferred signature equality,
+module provenance and exact direct-call forwarding. It recognizes no Category
+source grammar. `check`, direct C11 ingress and MIR lowering all run this pure
+verification. The CLI additionally runs the native typed subprocess for every
+checked Category compilation; embedders can request it with `evidence_plan`.
+That API requires an already checked Unit and a host-retained evidence batch.
 
 ### Additive syntax transport
 
@@ -109,8 +123,13 @@ retention of their explicit interfaces through later PPXs.
 (ModuleSyntax 1 origin existing-function-names carriers module-key)
 (DeclarationCarrier owner exact-source start-location end-location tokens)
 (SourceToken exact-spelling location)
-(ModuleExpansion 1 origin (Unit 1 generated-functions) reporting-facts)
+(ModuleEvidenceExpansion 1 origin (Unit 1 generated-functions)
+  reporting-facts contracts implementations)
 (ExtensionFact owner kind name identity location)
+(EvidenceContract name members location)
+(EvidenceMember name scheme location)
+(EvidenceImplementation name contract arguments canonical bindings location)
+(EvidenceBinding member function selector location)
 ```
 
 `ExtensionInput`/`ExtensionOutput` are separate schema categories. `Unit` v1 and
@@ -119,6 +138,57 @@ prior field meanings are unchanged; carriers are never forged functions.
 behavior and protocol-v1 environment. Facts are reporting data, never typing,
 ownership or safety certificates, and are not reused as compiler proofs.
 
+### Typed feedback and inspection
+
+The syntax phase emits explicit requests with scoped `ForallType`/`BoundType`
+member schemes. The host retains them outside ordinary `Unit` v1 PPX serialization,
+renames their function references during module loading, and preserves them
+through cloning and inference. A later ordinary PPX cannot erase or replace them.
+
+After checking, the same pinned native executable receives:
+
+```text
+(EvidenceSnapshot 1 world-sha256 origin contracts implementations typed-functions)
+(TypedFunction canonical-function-id concrete-function-type)
+```
+
+It returns:
+
+```text
+(EvidencePlan 1 world-sha256 choices)
+(EvidenceChoice implementation member function-id selector-id concrete-function-type)
+```
+
+`ON1X_EXTENSION_PHASE` selects `syntax-v1` or `evidence-v1`; the compiler overrides
+inherited values. Both phases use protocol-v1 framing and separately validated
+schema roots. Native planning normalizes each member scheme, checks all supplied
+typed signatures, completeness, ordering and local canonical-head uniqueness.
+The host independently reconstructs the expected choices and rejects missing,
+extra, reordered, stale or forged responses. Plans authorize no AST/type edits.
+
+`--emit-category-plan` produces deterministic inspection output:
+
+```text
+(on1x.category-plan 1 host well_typed checked-modules source-digests)
+(CheckedModule owner processor-version executable binary-sha256 schema-sha256
+  compiler-image-sha256 registry-sha256 snapshot plan)
+(SourceDigest canonical-origin source-sha256)
+```
+
+The world digest binds all loaded source digests, the running host image,
+registry/processor/schema identities, host platform, requests and relevant
+inferred signatures. Function identities survive loader renaming; output is
+sorted by canonical module, implementation and member identity. Repeated
+compilation and an identity PPX yield identical reports within the same build
+and source paths. Relocation changes path-bound identities. The report identifies
+the compiler **host**, not a target ABI or foreign-contract proof.
+
+Reports are never accepted as persistent cached proofs; each compilation checks
+the live program again. `well_typed` describes concrete member compatibility,
+not laws, ownership effects or thread safety. Imported selectors still execute
+as ordinary functions; imported protocol declarations and separate interfaces
+remain unsupported.
+
 Tokens retain exact bytes, offsets, byte-based line/column and module origin.
 The On1x reader checks spellings against source slices, nonoverlap, coordinates
 and end spans. Bounds: 32 carriers/module, 16,384 tokens/carrier, 256 KiB/carrier,
@@ -126,7 +196,9 @@ and end spans. Bounds: 32 carriers/module, 16,384 tokens/carrier, 256 KiB/carrie
 16 parameters/member, 256 generated functions, 64 expression levels/chain nodes,
 32 block levels and 256 statements/block. Existing 4 MiB wire, 262,144-node and
 subprocess timeout limits apply. Exhaustion diagnoses, not success or an
-unsatisfiable predicate. Errors publish no final C or partial interface cache.
+unsatisfiable predicate. Typed feedback additionally bounds 256 function facts
+per module, 1,024 evidence modules and 8,192 bindings per compilation.
+Errors publish no final C or partial interface cache.
 
 ### Registry/security
 
@@ -151,6 +223,12 @@ native PPXs, not run target binaries on the host. `ON1X_BUILD_NATIVE_PPX=OFF`
 disables activation even if stale binaries exist. No Category cache or compiled
 evidence interface exists yet.
 
+Migration: bundled `Protocols` processor/pin version is **2**. Rebuild/reinstall
+the compiler, native processor and schema together; version-1 pins reject.
+Local scalar source syntax and selector names are unchanged. Ordinary `Unit`
+PPX v1 and the older `ModuleExpansion` schema constructor remain available, but
+the bundled version-2 gateway requires `ModuleEvidenceExpansion`.
+
 ## Authoring APIs implemented
 
 | Library | Actual APIs |
@@ -161,8 +239,11 @@ evidence interface exists yet.
 | `ppx/diagnostic.on1x` | `ppx_diagnostic`, original coordinates/category |
 | `ppx/category/syntax.on1x` | Protocol/witness/member/type and scalar expression/block parsers |
 | `ppx/category/witness.on1x` | Declaration collection, substitution, local coherence and selector/fact generation |
+| `ppx/category/metadata.on1x` | `ppx_category_emit_metadata`, scoped member scheme construction |
+| `ppx/category/typed.on1x` | `ppx_category_read_typed_facts`, `ppx_category_normalize_member`, `ppx_category_make_evidence_plan` |
 
-No solver, typed-query, functor, derive, law or auto-protocol stubs were added.
+The typed-query API is limited to concrete function signatures. General solver,
+functor, derive, law and auto-protocol APIs remain unsupported.
 Shared authoring API tests compile/run independently of the native processor.
 
 ## Status
@@ -171,7 +252,7 @@ Shared authoring API tests compile/run independently of the native processor.
 |---|---|---|
 | M0 activation | partial | Executable Linux/native profile; other-host/cross-host execution closed |
 | M1 scalar protocols | partial | Local declarations/selectors; no nominal witness values or generic lookup |
-| M2 typed metadata | unimplemented | Facts are not certificates/module interfaces |
+| M2 typed metadata | partial | Concrete typed snapshots, native planning and independent host admission execute; no persisted/imported interfaces or generic evidence |
 | M3 generics/coherence | unimplemented | No qualified schemes, blanket instances or cross-module evidence |
 | M4 associated types | unimplemented | No projections/kind solver |
 | M5 signatures/functors | unimplemented | No module application, abstract identity or sealing |
@@ -179,6 +260,8 @@ Shared authoring API tests compile/run independently of the native processor.
 | M7 auto protocols | unimplemented | No ownership/thread-safety admission |
 | M8 advanced | unimplemented | No higher kinds, dynamic witness ABI or specialization |
 
-Examples: `stdppx/examples/category/{eq,ordering}.on1x`. Tests:
-`tests/test_category.py`. Exact evidence: `../VERIFICATION.md` and
+Examples: `stdppx/examples/category/{eq,ordering,evidence}.on1x`. The evidence
+example exercises multiple members, named alternatives, a void method, function
+values and left-to-right single evaluation. Tests:
+`tests/test_category.py`, `tests/test_extension_evidence.cpp`. Exact evidence: `../VERIFICATION.md` and
 `capability-matrix.md`.

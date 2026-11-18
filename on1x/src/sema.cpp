@@ -1,4 +1,5 @@
 #include <on1x/ast.hpp>
+#include <on1x/extensions.hpp>
 #include <on1x/infer.hpp>
 #include <on1x/meta.hpp>
 #include <on1x/canonical/control.hpp>
@@ -576,5 +577,5 @@ class Checker {
  }
 };
 }
-void check(Unit&u){expand_macros(u);meta::require_core(u);infer_types(u);canonical::lower_control(u);Checker(u).run();if(canonical::needs_values(u)){canonical::lower_values(u);Checker(u).run();}csp::lower(u);canonical::verify_control(u);canonical::verify_values(u);csp::verify(u,true);}
+void check(Unit&u){expand_macros(u);meta::require_core(u);infer_types(u);canonical::lower_control(u);Checker(u).run();if(canonical::needs_values(u)){canonical::lower_values(u);Checker(u).run();}csp::lower(u);canonical::verify_control(u);canonical::verify_values(u);csp::verify(u,true);extensions::verify_evidence(u);}
 }

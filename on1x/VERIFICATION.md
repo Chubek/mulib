@@ -1,5 +1,106 @@
 # On1x verification — 2026-11-18
 
+## Category M2 continuation: checked concrete evidence, processor v2
+
+Baseline MuLIB `2ff743469c62b6a369b21bcbfb045e05b30d27f3`; actual configured,
+read-only LibStone `c7cfeca5a5d5086b0c25dad08264fc450c03f85b`. Linux
+6.18.52-1-lts x86_64, glibc 2.44; GCC/g++ 16.2.1, Clang/clang++ 22.1.8,
+CMake 4.4.3, Python 3.14.7. No dependency revision was updated.
+
+### Implemented behavior
+
+- Native On1x `stdlib/ppx/category/{metadata,typed}.on1x` now builds scoped
+  concrete member requests and plans against host-inferred signatures.
+  `stdppx/native/protocols.on1x` runs separately bounded syntax/evidence phases.
+- `src/extension_evidence.cpp` independently checks substitution, completeness,
+  local canonical-head uniqueness, provenance, exact signature equality and
+  direct selector forwarding. `check`, C11 emission and MIR lowering enforce
+  this admission. Erasing evidence or redirecting a selector to a different
+  same-typed function rejects.
+- Loader renaming, cloning and ordinary PPX reconstruction retain host-owned
+  requests. `--emit-category-plan` exposes sorted choices and source/artifact
+  fingerprints. Plans are read-only responses bound to the live snapshot,
+  never accepted as cached proofs or authority to change types.
+- Existing `Unit` v1 PPX framing remains compatible; additive evidence schema
+  roots match in the canonical/standalone copies. Bundled Protocols binary/pin
+  version is 2; old installations require a coordinated rebuild.
+- Actual `eq.on1x`, `ordering.on1x` and new `evidence.on1x` execute under strict
+  C11. The last prints `9\n3\n3\n9\ntrue\n7\n`, exercising reordered multiple
+  members, named alternatives, function values, void results and single
+  left-to-right operand evaluation. Eq also runs through MIR→C11.
+
+The native planner has an independently compiled authoring-API client.
+Negative packets cover type mismatches, missing/extra facts, missing members,
+unknown interfaces, binder/version/origin/digest errors and fact exhaustion.
+Host tests reject stale source snapshots, missing/reordered/forged choices,
+erased or nonlocal requests, mutated types/dispatch/argument order and null
+selector operands at both C11 and MIR ingress. Integration tests also cover
+ordinary PPX composition, CLI/source activation, alias identity, changed source
+digests, hostile phase/schema environment, preserved output on errors and
+relocated installations.
+
+### Reproduction and results
+
+Existing Debug configurations were rebuilt: `/tmp/opencode/on1x-values-gcc`
+uses GCC/generated scanner, `/tmp/opencode/on1x-values-clang` uses
+Clang/fallback scanner. Both enable native PPXs and testing, use
+`-Wall -Wextra -Wpedantic -Werror` for C/C++, and disable optional SDK adapters.
+Configured LibStone root: `/mnt/nvme/mulib/on1x/third_party/libstone`.
+
+```sh
+cmake --build /tmp/opencode/on1x-values-gcc --parallel 4
+ctest --test-dir /tmp/opencode/on1x-values-gcc --output-on-failure --parallel 4 \
+  --output-junit /tmp/opencode/on1x-values-gcc/results-category-final.xml
+cmake --build /tmp/opencode/on1x-values-clang --parallel 4
+ctest --test-dir /tmp/opencode/on1x-values-clang --output-on-failure --parallel 4 \
+  --output-junit /tmp/opencode/on1x-values-clang/results-category-final.xml
+```
+
+The pre-change GCC/generated baseline was **54 passed, 1 failed**.
+The initial Clang run overlapped schema edits: **51 passed, 3 failed**, including
+two temporary schema-copy mismatches; it is not a clean baseline.
+The final GCC/generated suite is **55 passed, 1 failed**; the final
+Clang/fallback suite is **54 passed, 1 failed**. Its schema-copy
+failures are resolved. The remaining failure, also present in the GCC baseline,
+is `on1x.mulib`: `fixture/generated kernel mismatch: tools/embed_units.py`
+(`stale unit profiles`). No test was disabled to conceal this failure.
+Focused GCC Category integration and evidence HIR tests pass **2/2**.
+
+Fresh core-only Clang ASan/UBSan configuration and exact command:
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-category-sanitize \
+  -DBUILD_TESTING=ON -DON1X_BUILD_NATIVE_PPX=ON -DON1X_REQUIRE_LIBSTONE=ON \
+  -DON1X_LIBSTONE_ROOT=/mnt/nvme/mulib/on1x/third_party/libstone \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug \
+  '-DCMAKE_C_FLAGS=-Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DCMAKE_CXX_FLAGS=-Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer'
+cmake --build /tmp/opencode/on1x-category-sanitize --parallel 4
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
+  ctest --test-dir /tmp/opencode/on1x-category-sanitize --output-on-failure \
+  --parallel 2 -R 'category|extension_evidence|ppx|meta_hir|scanner_parity' \
+  --output-junit /tmp/opencode/on1x-category-sanitize/results-category-final.xml
+```
+
+The prior SDK-enabled sanitizer configuration was also attempted with
+`cmake --build /tmp/opencode/on1x-values-sanitize --parallel 4`; compilation
+stopped in unchanged `src/safety.cpp:271` because `TaskGroup`/`CspScope` cases
+are unhandled under `-Werror,-Wswitch`. No SDK sanitizer tests ran. Optional
+Nerotypical/Chisel Category checks report **UNSUPPORTED** in the core profiles.
+
+### Remaining scope
+
+This is a concrete **M2 slice**, not completion of `CATEGORY.md`. Imported or
+persisted declaration/witness interfaces, constrained generics, associated
+types, multi-parameter source protocols, signatures/functors/sealing, derives/
+laws, ownership/effect-aware auto protocols and advanced abstractions remain
+unsupported. Reports describe host/type compatibility, not target ABI, laws or
+safety proofs. Other platforms/cross-host PPX execution, 32-bit targets and
+separate compilation were not exercised. No new threaded runtime or foreign
+ABI is introduced; TSAN is not applicable to this slice.
+See [the manual and phase/status table](docs/category.md).
+
 ## Cooperative cancellation and monotonic poll deadlines (CSP ABI v3)
 
 Baseline MuLIB `1f027c48bc6363dce5752c00057830777325ff47`; configured

@@ -7,10 +7,11 @@ Both schemas and native/Python signature renderers agree; the compiler validates
 all reconstructed declarations/types after transforms. Category's pinned local
 scalar gateway still rejects nominal declaration output from its native processor.
 
-Category's opt-in native declaration gateway is an additive, syntax-only phase
-before loader export binding; it does not change ordinary v1 PPXs or macro
-hygiene. See [Category](category.md) for the explicit scalar subset, native
-On1x libraries, transport, checking boundary and unsupported advanced features.
+Category's opt-in native declaration gateway runs before loader export binding.
+Its version-2 processor also consumes read-only concrete typed snapshots after
+checking; host-retained requests survive ordinary v1 PPXs and undergo independent
+member/dispatch admission. See [Category](category.md) for the scalar subset,
+native On1x libraries, transport and unsupported advanced features.
 
 Intrinsic [structural matching](core-syntax.md) crosses the v1 wire as additive
 source constructors `SourceMatch`, `MatchArm`, `StructuralPattern`, `UnitValue`.

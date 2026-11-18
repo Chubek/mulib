@@ -68,6 +68,7 @@ inline Unit clone_unit(const Unit& unit,std::size_t& budget){
   Unit out;out.imports=unit.imports;out.forall_layouts=unit.forall_layouts;out.forall_elaborated=unit.forall_elaborated;out.ppx=unit.ppx;out.stages_lowered=unit.stages_lowered;
    out.module_imports=unit.module_imports;
     out.features=unit.features;out.extensions=unit.extensions;out.nominals=unit.nominals;
+    out.extension_evidence=unit.extension_evidence;out.source_digests=unit.source_digests;
  for(const auto& m:unit.macros)out.macros.push_back(clone_macro(m,budget));
  for(const auto& f:unit.functions){
    Function copy;copy.name=f.name;copy.where=f.where;copy.params=f.params;copy.result=f.result;copy.external=f.external;copy.prototype=f.prototype;
