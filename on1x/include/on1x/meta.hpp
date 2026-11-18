@@ -2,6 +2,7 @@
 #include <on1x/ast.hpp>
 #include <map>
 #include <string_view>
+#include <filesystem>
 namespace on1x::meta {
 inline constexpr std::size_t max_wire_bytes=4*1024*1024;
 inline constexpr std::size_t max_wire_nodes=262144;
@@ -36,6 +37,7 @@ void require_core(const Unit& unit);
 struct PpxOptions {
  std::vector<PpxRegistration> programs;
  std::map<std::string,std::string> schemas;
+ std::vector<std::filesystem::path> paths;
  bool allow_source=false;
  unsigned timeout_ms=5000;
 };

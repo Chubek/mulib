@@ -64,7 +64,7 @@ plan=json.loads(report.read_text());assert plan['plan']['implementation_translat
 assert {'json','yaml','toml','ini','cryptohash'}<={x['name'] for x in plan['plan']['modules']}
 assert str(t.root/'stdlib/_bridge/mulib_bridge.h') in plan['inputs']
 
-spec=importlib.util.spec_from_file_location('house',t.root/'std/mulib/housekeeping.py')
+spec=importlib.util.spec_from_file_location('house',t.root/'stdlib/mulib/housekeeping.py')
 house=importlib.util.module_from_spec(spec);spec.loader.exec_module(house)
 implementation=t.work/'ini_impl.c';implementation.write_text(house.implementation(t.root.parent,house.plan(t.root.parent,['ini'])))
 allocation=t.work/'bridge_allocation'

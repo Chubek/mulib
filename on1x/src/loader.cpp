@@ -1,4 +1,5 @@
 #include <on1x/loader.hpp>
+#include <on1x/discovery.hpp>
 #include <algorithm>
 #include <cstdlib>
 #include <sstream>
@@ -40,7 +41,8 @@ fs::path package(const Module& m){return directory(m.path)?m.path:m.path.parent_
 
 class Loader {
  const LoaderOptions& options;
- fs::path entry_directory;
+  fs::path entry_directory;
+ std::vector<fs::path> standard_roots;
  std::map<fs::path,std::unique_ptr<Module>> modules;
  std::vector<Module*> order,stack,preludes;
   std::set<std::string> tokens,globals,type_globals;
@@ -78,11 +80,16 @@ class Loader {
   if(directory(base))return base; // Namespace package, with no executable initializer.
    return {};
   }
-  fs::path standard(const std::string& module,const Location& at){
-   auto first=candidate(options.stdlib/module_path(module),at);
-   auto second=candidate(options.stdlib.parent_path()/"std"/module_path(module),at);
-   if(!first.empty()&&!second.empty())throw Error(at,"ambiguous standard module: "+module);
-   return first.empty()?second:first;
+   fs::path standard(const std::string& module,const Location& at){
+    for(const auto& root:standard_roots){
+     auto first=candidate(root/module_path(module),at);
+     // Compatibility with older installed extension trees; the canonical MuLIB
+     // package now lives inside stdlib, not in this legacy sibling directory.
+     auto second=candidate(root.parent_path()/"std"/module_path(module),at);
+     if(!first.empty()&&!second.empty())throw Error(at,"ambiguous standard module: "+module);
+     if(!first.empty()||!second.empty())return first.empty()?second:first;
+    }
+    return {};
   }
  fs::path resolve(const Import& imp,const Module& parent){
   if(imp.quoted)return parent.path.parent_path()/imp.module;
@@ -99,16 +106,18 @@ class Loader {
    throw Error(imp.where,"module not found: "+std::string(imp.relative,'.')+imp.module+" (in "+base.string()+")");
   }
   if(imp.module=="std"||imp.module.starts_with("std.")){
-   if(options.stdlib.empty())throw Error(imp.where,"standard library root is not configured");
-    auto found=imp.module=="std"?options.stdlib:standard(imp.module.substr(4),imp.where);
+    if(standard_roots.empty())throw Error(imp.where,"standard library root is not configured");
+     auto found=imp.module=="std"?standard_roots.front():standard(imp.module.substr(4),imp.where);
    if(!found.empty()&&fs::exists(found))return found;
    throw Error(imp.where,"standard module not found: "+imp.module);
   }
   std::vector<fs::path> roots{entry_directory};roots.insert(roots.end(),options.paths.begin(),options.paths.end());
-  if(!options.stdlib.empty())roots.push_back(options.stdlib);
+   roots.insert(roots.end(),standard_roots.begin(),standard_roots.end());
   std::string searched;
-  for(const auto& root:roots){
-   auto found=candidate(root/relative,imp.where);if(!found.empty())return found;
+   for(const auto& root:roots){
+    auto found=discovery::library(root,imp.module,imp.where);
+    if(found.empty())found=candidate(root/relative,imp.where);
+    if(!found.empty())return found;
    if(!searched.empty())searched+=", ";
    searched+=root.string();
   }
@@ -187,7 +196,8 @@ class Loader {
     if(found)continue;
     if(!directory(target->path)&&target->path.filename()!="__init__.on1x")throw Error(imp.where,"module '"+imp.module+"' has no export '"+name+"'");
      auto child=candidate(package(*target)/name,imp.where);
-     if(directory(options.stdlib)&&directory(target->path)&&target->path==canonical(options.stdlib,imp.where))child=standard(name,imp.where);
+      for(const auto& root:standard_roots)
+       if(directory(root)&&directory(target->path)&&target->path==canonical(root,imp.where)){child=standard(name,imp.where);break;}
     if(child.empty())throw Error(imp.where,"module '"+imp.module+"' has no export or submodule '"+name+"'");
     auto* imported=visit(child,imp.where);m->dependencies.push_back(imported);
     bind_module(m->names,alias,imported,imp.where);
@@ -307,12 +317,13 @@ class Loader {
   }
  }
 public:
- explicit Loader(const LoaderOptions& opts):options(opts){}
+  explicit Loader(const LoaderOptions& opts):options(opts),standard_roots(standard_library_roots(opts)){}
  LoadedUnit run(const fs::path& input){
   entry_directory=canonical(input,{input.string()}).parent_path();
   if(options.prelude){
-   if(options.stdlib.empty())throw Error({input.string()},"automatic prelude requires --stdlib or --no-prelude");
-   implicit=true;preludes.push_back(visit(options.stdlib/"pervasive.on1x",{"<prelude>"},false));implicit=false;
+    auto path=standard("pervasive",{"<prelude>"});
+    if(path.empty())throw Error({input.string()},"automatic prelude requires --stdlib or --no-prelude (pervasive.on1x not found)");
+    implicit=true;preludes.push_back(visit(path,{"<prelude>"},false));implicit=false;
   }
   for(const auto& path:options.preludes)preludes.push_back(visit(path,{"<prelude>"},false));
    auto* entry=visit(input,{input.string()},false);legacy(entry);
@@ -433,16 +444,44 @@ LoaderOptions default_loader_options(const std::string& executable){
   else options.stdlib=ON1X_STDLIB_ROOT;
 #endif
  }
+ discovery::environment(options.stdlib_paths,"ON1X_STDLIB_PATH");
+ discovery::environment(options.paths,"ON1X_LIB_PATH");
+#ifdef _WIN32
+ // Keep the old alias's drive-letter/semicolon spelling. Only the new lists
+ // mandate colons independently of the host.
  if(const char* path=std::getenv("ON1X_PATH")){
   std::istringstream search(path);std::string dir;
-#ifdef _WIN32
-  constexpr char separator=';';
-#else
-  constexpr char separator=':';
-#endif
-  while(std::getline(search,dir,separator))if(!dir.empty())options.paths.emplace_back(dir);
+  while(std::getline(search,dir,';'))if(!dir.empty())options.paths.emplace_back(dir);
  }
+#else
+ discovery::environment(options.paths,"ON1X_PATH");
+#endif
  return options;
+}
+std::vector<fs::path> standard_library_roots(const LoaderOptions& options){
+ if(options.paths.size()+options.stdlib_paths.size()>256)throw Error({"<search-path>"},"library search path count limit exceeded");
+ std::vector<fs::path> result;
+ auto add=[&](const fs::path& path){
+  if(path.empty())return;
+  std::error_code ec;auto normalized=fs::weakly_canonical(path,ec);
+  if(ec)normalized=path.lexically_normal();
+  if(std::find(result.begin(),result.end(),normalized)==result.end())result.push_back(normalized);
+ };
+ if(options.stdlib_explicit){
+  auto root=discovery::stdlib(options.stdlib);
+  add(root.empty()?options.stdlib:root);
+ }
+ for(const auto& path:options.stdlib_paths){
+  auto root=discovery::stdlib(path);
+  if(!root.empty())add(root);
+  else if(directory(path))throw Error({(path/"On1xfile").string()},"stdlib search directory requires an On1xfile manifest");
+ }
+ for(const auto& path:options.paths)add(discovery::stdlib(path));
+ if(!options.stdlib.empty()&&!options.stdlib_explicit){
+  auto root=discovery::stdlib(options.stdlib);
+  add(root.empty()?options.stdlib:root); // Legacy --stdlib/ON1X_STDLIB compatibility.
+ }
+ return result;
 }
 LoadedUnit load_unit(const fs::path& input,const LoaderOptions& options){return Loader(options).run(input);}
 }

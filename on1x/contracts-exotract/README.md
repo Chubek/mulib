@@ -102,7 +102,7 @@ chunks, error-output preservation and module bundles in tree/VM/JIT modes.
 The matching On1x acceptance client uses an ABI-exact raw `int64_t` test adapter;
 it does not synthesize safe pointer/union/callback On1x declarations.
 
-The shared [`std.mulib` planner](../std/mulib/README.md) also matches native
+The shared [`std.mulib` planner](../stdlib/mulib/README.md) also matches native
 companions and resource fixtures under `library/`. `--fixture yantlr` opts into
 its provider header, implementation and typed Exotract metadata; selecting
 Shiraz includes its separate runtime/registry objects and KVDB kernels.

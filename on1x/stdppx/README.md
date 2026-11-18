@@ -2,7 +2,8 @@
 
 An additional **native On1x Category processor** is now built for opt-in
 `@enable Protocols` / `--enable Protocols`. It is separate from the ordinary v1
-processor catalog below: `--stdppx` still selects Python files. Its grammar and
+processor catalog below: `--stdppx` defaults to the shipped Python files but can
+discover explicitly selected native bundles through configured paths. Its grammar and
 lowering live in On1x libraries, not Python/C++. See [Category](../docs/category.md)
 for the checked local scalar profile, native typed feedback and independent
 host admission, trusted activation, and remaining generic/functor stages.
@@ -119,3 +120,11 @@ schemas and authoring resources install under `share/on1x`. Tests execute emitte
 C11 with GCC, Clang and ASan/UBSan, compare native/Python behavior, and reject bad
 protocol input, unconsumed carriers, collisions and post-PPX type errors.
 See [`VERIFICATION.md`](VERIFICATION.md) for measured results and historical scope.
+## Discovery metadata
+
+All shipped script processors have a terse version-1 manifest on the second line
+after their shebang. Native builds/installations include a declarative
+`On1xfile` processor bundle. Select processors by name with `--use-ppx NAME` or
+`--stdppx NAME` and `ON1X_PPX_PATH`/`ON1X_STDPPX_PATH` (matching CLI flags exist).
+Discovery does not authorize execution or alter the pinned Category registry.
+See [the complete search/manifest contract](../docs/search-paths.md).

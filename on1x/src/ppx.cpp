@@ -1,5 +1,6 @@
 #include <on1x/meta.hpp>
 #include <on1x/clone.hpp>
+#include <on1x/discovery.hpp>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -104,7 +105,12 @@ void rewrite(Unit& unit,const PpxOptions& options){
  std::size_t budget=262144;auto working=clone_unit(unit,budget);
  if(!working.ppx.empty()&&!options.allow_source)throw Error(working.ppx.front().where,"source PPX execution requires --allow-source-ppx (not a sandbox)");
  std::vector<PpxRegistration> programs=working.ppx;
- for(auto& p:programs)p.program=(std::filesystem::path(p.where.file).parent_path()/p.program).lexically_normal().string();
+  for(auto& p:programs){
+   auto path=std::filesystem::path(p.program);
+   // Preserve source-relative explicit paths, including old bare filenames.
+   auto relative=std::filesystem::path(p.where.file).parent_path()/path;
+   if(path.has_parent_path()||std::filesystem::is_regular_file(relative))p.program=relative.lexically_normal().string();
+  }
  programs.insert(programs.end(),options.programs.begin(),options.programs.end());
  if(programs.size()>32)throw Error({"<ppx>"},"PPX program count limit exceeded");
  auto schema=base_schema();
@@ -116,7 +122,14 @@ void rewrite(Unit& unit,const PpxOptions& options){
  for(const auto& [label,path]:options.schemas){(void)path;if(!labels.contains(label))throw Error({"<ppx>"},"schema supplied for unregistered PPX label: "+label);}
  expand_macros(working);working.ppx.clear();
  if(programs.empty()){require_core(working);unit=std::move(working);return;}
- for(const auto& [label,path]:options.schemas)schema.extend(read_source_file(path),label,path);
+  std::map<std::string,std::string> native_schemas;
+  for(auto& p:programs)if(!std::filesystem::path(p.program).has_parent_path()&&
+    (p.where.file=="<standard-ppx>"||!std::filesystem::is_regular_file(p.program))){
+   auto found=discovery::ppx(p.program,options.paths,p.where);
+   p.program=found.program.string();
+   if(!found.schema.empty())native_schemas[p.label]=found.schema.string();
+  }
+  for(const auto& [label,path]:options.schemas)schema.extend(read_source_file(path),label,path);
  auto tree=encode(working);schema.validate(tree);
  auto extensions=[&](const SExpr& ast,bool final){
   auto walk=[&](auto&& self,const SExpr& node)->void{
@@ -132,7 +145,9 @@ void rewrite(Unit& unit,const PpxOptions& options){
  };
  extensions(tree,false);
  for(const auto& program:programs){
-  auto output=run_transformer(program.program,write_sexpr(tree),options.timeout_ms,program.label);
+   std::map<std::string,std::string> environment;
+   if(auto it=native_schemas.find(program.label);it!=native_schemas.end())environment["ON1X_PPX_SCHEMA"]=it->second;
+   auto output=run_transformer(program.program,write_sexpr(tree),options.timeout_ms,program.label,environment);
   auto replacement=read_sexpr(output,"<ppx:"+program.label+" stdout>");schema.validate(replacement);extensions(replacement,false);tree=std::move(replacement);
  }
   extensions(tree,true);auto result=decode(tree);

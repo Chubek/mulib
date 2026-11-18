@@ -8,6 +8,13 @@ host-size checks. Import it with `import std.mulib as M;` or
 
 ## Build and use
 
+This package now resides in the canonical `stdlib/mulib` tree; all build,
+installation and extraction tools use that location. Kernel discovery accepts
+colon-separated `ON1X_MULIB_PATH` or repeated `--mulib-path DIR:DIR`; selected
+headers and hashes enter the shared single-TU plan. See
+[search paths and manifests](../../docs/search-paths.md) for exact precedence,
+standard-library/PPX lookup, source-pin checks and limitations.
+
 ```sh
 python3 on1x/tools/on1x-mulib.py plan yantlr --fixture yantlr
 python3 on1x/tools/on1x-build.py on1x/examples/mulib.on1x \

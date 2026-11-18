@@ -1,6 +1,7 @@
 #include <on1x/ast.hpp>
 #include <on1x/meta.hpp>
 #include <on1x/loader.hpp>
+#include <on1x/discovery.hpp>
 #include <on1x/backend/mir.hpp>
 #include <on1x/backend/passes.hpp>
 #ifdef ON1X_WITH_SYREN
@@ -16,6 +17,7 @@
 #include <on1x/backend/relational.hpp>
 #endif
 #include <charconv>
+#include <algorithm>
 #include <cstdio>
 #include <fstream>
 #include <filesystem>
@@ -131,7 +133,11 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       [--enable NAME[,NAME]] [--disable NAME] (bundled native extensions only)\n"
   "       on1xc --list-extensions | --explain-extension NAME\n"
   "       on1xc --emit-category-plan INPUT [-o OUTPUT] (checked concrete evidence)\n"
-  "       [-I DIRECTORY | --module-path DIRECTORY] [--stdlib DIRECTORY]\n"
+   "       [-I DIRECTORY | --module-path DIRECTORY] [--stdlib DIRECTORY]\n"
+   "       [--lib-path DIR:DIR] [--stdlib-path DIR:DIR]\n"
+   "       [--ppx-path DIR:DIR] [--stdppx-path DIR:DIR] [--use-ppx NAME]\n"
+   "       on1xc --print-stdlib (resolved first standard-library root)\n"
+   "       on1xc --stdlib-resource RELATIVE_PATH (find a standard-library resource)\n"
   "       [--no-prelude] [--prelude FILE] [--stdppx PROCESSOR]\n"
   "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
   "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
@@ -156,14 +162,15 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 int main(int argc,char**argv){
  std::string diagnostic_format="text";
  try{
-      std::string mode="--emit-c",source,out,explain_extension;bool ir_input=false;
+       std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false;
      std::size_t analysis_work=10000000;bool analysis_limit=false;
       on1x::mir::passes::Options optimization;bool optimize=false,opt_limit=false;
       bool memory=false;
       bool type_safety=false;
     on1x::meta::PpxOptions ppx;
     auto loader=on1x::default_loader_options(argv[0]);
-    std::vector<std::filesystem::path> import_paths;
+     std::vector<std::filesystem::path> import_paths;
+     std::vector<std::filesystem::path> stdlib_paths,ppx_paths,stdppx_paths;
     std::vector<std::string> admission_files;
   for(int i=1;i<argc;++i){std::string arg=argv[i];
       if(arg=="--help"||arg=="-h"){usage();return 0;}
@@ -176,7 +183,16 @@ int main(int argc,char**argv){
        if(++i>=argc)throw std::runtime_error("--explain-extension requires a feature name");
        explain_extension=argv[i];mode=arg;continue;
       }
-     if(arg=="--repair"){mode=arg;continue;}
+      if(arg=="--repair"||arg=="--print-stdlib"){mode=arg;continue;}
+      if(arg=="--stdlib-resource"){
+       if(++i>=argc||!argv[i][0])throw std::runtime_error(arg+" requires a nonempty relative path");
+       stdlib_resource=argv[i];mode=arg;continue;
+      }
+      if(arg=="--lib-path"||arg=="--stdlib-path"||arg=="--ppx-path"||arg=="--stdppx-path"){
+       if(++i>=argc||!argv[i][0])throw std::runtime_error(arg+" requires a nonempty search list");
+       auto& paths=arg=="--lib-path"?import_paths:arg=="--stdlib-path"?stdlib_paths:arg=="--ppx-path"?ppx_paths:stdppx_paths;
+       on1x::discovery::append_paths(paths,argv[i]);continue;
+      }
      if(arg=="--diagnostics"){
       if(++i>=argc)throw std::runtime_error("--diagnostics requires text, json or sarif");
       diagnostic_format=argv[i];
@@ -197,11 +213,11 @@ int main(int argc,char**argv){
     if(arg=="--emit-category-plan"){mode=arg;continue;}
      if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes")mode=arg;
       else if(arg=="--no-prelude")loader.prelude=false;
-      else if(arg=="-I"||arg=="--module-path"||arg=="--stdlib"||arg=="--prelude"||arg=="--stdppx"){
+      else if(arg=="-I"||arg=="--module-path"||arg=="--stdlib"||arg=="--prelude"||arg=="--stdppx"||arg=="--use-ppx"){
        if(++i>=argc||!argv[i][0])throw std::runtime_error(arg+" requires a nonempty path or name");
-       if(arg=="--stdlib")loader.stdlib=argv[i];
+       if(arg=="--stdlib"){loader.stdlib=argv[i];loader.stdlib_paths.clear();loader.stdlib_explicit=true;}
        else if(arg=="--prelude")loader.preludes.emplace_back(argv[i]);
-       else if(arg=="--stdppx")ppx.programs.push_back({{"<standard-ppx>"},argv[i],argv[i]});
+       else if(arg=="--stdppx"||arg=="--use-ppx")ppx.programs.push_back({{"<standard-ppx>"},argv[i],argv[i]});
        else import_paths.emplace_back(argv[i]);
       }
       else if(arg.starts_with("-I")&&arg.size()>2)import_paths.emplace_back(arg.substr(2));
@@ -237,11 +253,26 @@ int main(int argc,char**argv){
   }
        if(mode=="--list-extensions"){write_all(out,on1x::extensions::describe(loader.extensions));return 0;}
        if(mode=="--explain-extension"){write_all(out,on1x::extensions::describe(loader.extensions,explain_extension));return 0;}
+       loader.paths.insert(loader.paths.begin(),import_paths.begin(),import_paths.end());
+       loader.stdlib_paths.insert(loader.stdlib_paths.begin(),stdlib_paths.begin(),stdlib_paths.end());
+       if(mode=="--print-stdlib"||mode=="--stdlib-resource"){
+        auto roots=on1x::standard_library_roots(loader);
+        if(roots.empty())throw std::runtime_error("standard library root is not configured");
+        if(mode=="--stdlib-resource"){
+         auto relative=std::filesystem::path(stdlib_resource);
+         if(stdlib_resource.size()>4096||relative.is_absolute()||std::find(relative.begin(),relative.end(),std::filesystem::path(".."))!=relative.end())
+          throw std::runtime_error("standard-library resource requires a local relative path");
+         for(const auto& root:roots)if(std::filesystem::is_regular_file(root/relative)){
+          write_all(out,std::filesystem::canonical(root/relative).string()+"\n");return 0;
+         }
+         throw std::runtime_error("standard-library resource not found: "+stdlib_resource);
+        }
+        write_all(out,roots.front().string()+"\n");return 0;
+       }
        if(source.empty()){usage();return 2;}
        loader.extensions.execute=mode!="--deps"&&mode!="--emit-ast"&&mode!="--repair";
        loader.extensions.timeout_ms=ppx.timeout_ms;
        for(const auto& name:loader.extensions.enabled)if(loader.extensions.disabled.contains(name))throw on1x::Error({"<command-line>"},"ON1X-CAT-ENABLE: enabled/disabled conflict: "+name,"ON1X-CAT-ENABLE");
-       loader.paths.insert(loader.paths.begin(),import_paths.begin(),import_paths.end());
        if(mode=="--repair"){
 #ifdef ON1X_WITH_SYREN
         if(ir_input||memory||type_safety||optimize||opt_limit||analysis_limit||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source)
@@ -251,15 +282,14 @@ int main(int argc,char**argv){
         throw std::runtime_error("repair unavailable: configure with ON1X_WITH_SYREN=ON");
 #endif
        }
-      for(auto& registration:ppx.programs){
-       if(registration.where.file!="<standard-ppx>")continue;
-       const auto& processor=registration.label;
-       if(processor.empty()||processor.size()>128||processor.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_")!=std::string::npos)
-        throw std::runtime_error("invalid standard PPX name: "+processor);
-       auto program=std::filesystem::absolute(loader.stdlib).parent_path()/"stdppx"/(processor+".py");
-       if(!std::filesystem::is_regular_file(program))throw std::runtime_error("standard PPX not found: "+processor);
-       registration.program=std::filesystem::absolute(program).string();
-      }
+      ppx.paths=stdppx_paths;
+      on1x::discovery::environment(ppx.paths,"ON1X_STDPPX_PATH");
+      ppx.paths.insert(ppx.paths.end(),ppx_paths.begin(),ppx_paths.end());
+      on1x::discovery::environment(ppx.paths,"ON1X_PPX_PATH");
+      for(const auto& root:on1x::standard_library_roots(loader))ppx.paths.push_back(root.parent_path()/"stdppx");
+      // Executable-relative native tools are an ordinary explicitly selected PPX
+      // fallback, never an override of the pinned Category extension registry.
+      if(!loader.extensions.directory.empty())ppx.paths.push_back(loader.extensions.directory);
      memory=memory||mode=="--check-memory";
      type_safety=type_safety||mode=="--check-types";
 #ifndef ON1X_WITH_NEROTYPICAL

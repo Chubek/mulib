@@ -13,7 +13,10 @@ with tempfile.TemporaryDirectory(dir=t.work,prefix='install-') as temporary:
     compiler=relocated/'bin/on1xc';library=relocated/'share/on1x'
     source=base/'client.on1x'
     source.write_text('import std.Int as I;fn main(){println(@pipe("apply",identity(-7),I.abs));}')
-    env={k:v for k,v in os.environ.items() if k not in ('ON1X_STDLIB','ON1X_PATH','ON1X_PPX_SCHEMA')}
+    env={k:v for k,v in os.environ.items() if k not in (
+        'ON1X_STDLIB','ON1X_PATH','ON1X_PPX_SCHEMA','ON1X_LIB_PATH','ON1X_STDLIB_PATH',
+        'ON1X_PPX_PATH','ON1X_STDPPX_PATH','ON1X_MULIB_PATH','ON1X_MULIB_ROOT')}
+    assert (library/'stdlib/On1xfile').is_file()
     p=run([compiler,'--deps',source],cwd=base,env=env);assert p.returncode == 0,p.stderr
     assert str(library/'stdlib/Int.on1x') in p.stdout and str(t.root/'stdlib') not in p.stdout,p.stdout
     exe=base/'client'
@@ -21,9 +24,14 @@ with tempfile.TemporaryDirectory(dir=t.work,prefix='install-') as temporary:
            '--cc',t.cc,'--stdppx','pipe','-o',exe,*[f'--cflag={flag}' for flag in t.flags]],env=env,cwd=base)
     assert p.returncode == 0,p.stderr
     p=run([exe]);assert p.returncode == 0 and p.stdout == '7\n',p.stderr
+    if (relocated/'libexec/on1x/on1x-ppx-identity').is_file():
+        assert (relocated/'libexec/on1x/On1xfile').is_file()
+        p=run([compiler,'--check',source,'--stdppx','pipe','--use-ppx','identity',
+               '--ppx-path',relocated/'libexec/on1x'],env=env,cwd=base)
+        assert p.returncode==0,p.stderr
     source.write_text('from std import mulib;fn main(){assert(mulib.fits_size(42));println(mulib.abi_version());}')
     p=run([compiler,'--deps',source],cwd=base,env=env);assert p.returncode==0,p.stderr
-    assert str(library/'std/mulib/__init__.on1x') in p.stdout and str(t.root/'std/mulib') not in p.stdout
+    assert str(library/'stdlib/mulib/__init__.on1x') in p.stdout and str(t.root/'stdlib/mulib') not in p.stdout
     p=run([sys.executable,library/'tools/on1x-build.py',source,'--on1xc',compiler,
            '--cc',t.cc,'-o',exe,*[f'--cflag={flag}' for flag in t.flags]],env=env,cwd=base)
     assert p.returncode==0,p.stderr

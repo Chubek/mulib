@@ -117,6 +117,19 @@ The repository accessed through the GitHub connection exposed the prior PPX-v1 s
 - [`stdlib/CATALOG.json`](stdlib/CATALOG.json): complete named SML Basis inventory;
   extension modules remain partial adapters, not Base/Batteries API parity.
 
+## Library, PPX and kernel discovery
+
+`stdlib/mulib` is part of the installed standard-library tree (`std.mulib`).
+Colon-separated `ON1X_LIB_PATH`, `ON1X_STDLIB_PATH`, `ON1X_PPX_PATH`,
+`ON1X_STDPPX_PATH` and `ON1X_MULIB_PATH` have matching CLI flags:
+`--lib-path`, `--stdlib-path`, `--ppx-path`, `--stdppx-path`, `--mulib-path`
+(kernel paths are build-tool options). Imports and `--use-ppx NAME` no longer
+need individual paths when installed in these directories. Standard-library
+and native PPX directories advertise versioned `On1xfile` manifests; discovered
+script PPXs carry terse metadata on their second line, after the shebang.
+PPX activation remains explicit. See [search order, manifest examples and
+compatibility](docs/search-paths.md).
+
 ## Build (C11 adapter)
 
 The build helper selects bridge/kernel groups automatically and preserves one

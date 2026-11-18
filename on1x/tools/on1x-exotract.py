@@ -18,7 +18,7 @@ CATALOG = HOME/'contracts-exotract/catalog.json'
 spec = importlib.util.spec_from_file_location('contracts', HOME/'tools/on1x-contracts.py')
 contracts = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(contracts)
-spec = importlib.util.spec_from_file_location('mulib_housekeeping', HOME/'std/mulib/housekeeping.py')
+spec = importlib.util.spec_from_file_location('mulib_housekeeping', HOME/'stdlib/mulib/housekeeping.py')
 housekeeping = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(housekeeping)
 
@@ -27,9 +27,9 @@ def inventory(root):
     return housekeeping.inventory(root)
 
 
-def plan(root, libraries, fixtures=()):
+def plan(root, libraries, fixtures=(), paths=()):
     if not libraries:raise ValueError('select MuLIB modules for typed extraction')
-    recipe=housekeeping.plan(root,libraries,fixtures)
+    recipe=housekeeping.plan(root,libraries,fixtures,paths)
     recipe['schema']='on1x.exotract-plan/v1'
     return recipe
 
@@ -51,7 +51,7 @@ def executable(value):
 
 
 def build(args, root):
-    recipe = plan(root, args.libraries, args.fixture)
+    recipe = plan(root, args.libraries, args.fixture,args.paths)
     housekeeping.check_generated(root, recipe)
     output = args.output.absolute()
     if output.exists() or output.is_symlink():
@@ -85,7 +85,7 @@ def build(args, root):
         observe(path)
     for path,digest in recipe['inputs'].items():observe(path,digest)
     for entry in recipe['modules']:
-        observe(root/entry['header'], entry['header_sha256'])
+        observe(housekeeping.header_path(root,entry), entry['header_sha256'])
         observe(root/entry['manual'], entry['manual_sha256'])
     for record in recipe['files']:observe(root/record['path'], record['sha256'])
     for name in args.libraries:
@@ -97,13 +97,15 @@ def build(args, root):
     try:
         housekeeping.materialize(root, recipe, stage)
         imports={}
-        requests=[(name,root/'include'/('mulib-'+name+'.h')) for name in args.libraries]
+        headers={m['name']:housekeeping.header_path(root,m) for m in recipe['modules']}
+        requests=[(name,headers[name]) for name in args.libraries]
         requests += [('fixture-'+Path(path).parent.name+'-'+Path(path).stem,root/path) for path in recipe['include_headers']]
         for name,header in requests:
-            common=[exotract, '--name', name, '--header', header, '--include', root/'include',
+            common=[exotract, '--name', name, '--header', header,
                     '--compiler', compiler, '--resource-dir', resource, '--preprocessor', 'compiler',
                     '--revision', 'sha256:'+contracts.digest(header), '--provenance', root/'MANIFEST.yaml',
                     '--provenance', CATALOG]
+            for directory in recipe['include_directories']:common += ['--include',directory]
             common += discovery
             profile = contracts.load(CATALOG)['profiles'].get(name, {})
             if profile.get('recipe') == 'exoml-core':
@@ -131,16 +133,17 @@ def build(args, root):
         # All selected modules share one implementation TU, avoiding duplicate
         # definitions when several requested libraries depend on the same kernel.
         last=recipe['modules'][-1]
-        command=[exotract,'emit-source','--name','MuLIB','--header',root/last['header']]
+        command=[exotract,'emit-source','--name','MuLIB','--header',housekeeping.header_path(root,last)]
         for macro in recipe['implementation_macros']:command += ['--impl-define',macro]
-        for entry in recipe['modules'][:-1]:command += ['--dependency',root/entry['header']]
+        for entry in recipe['modules'][:-1]:command += ['--dependency',housekeeping.header_path(root,entry)]
         for header in recipe['include_headers']:command += ['--dependency',root/header]
         definitions=''.join('#define '+item.replace('=', ' ', 1)+'\n' for item in recipe['compile_definitions'])
         (stage/'mulib.c').write_bytes(definitions.encode()+invoke(command))
         (stage/'mulib.h').write_text('/* Declaration-only static binding surface. */\n#pragma once\n'+
             ''.join('#include <mulib-'+name+'.h>\n' for name in args.libraries)+
             ''.join('#include '+json.dumps(path)+'\n' for path in recipe['include_headers']))
-        flags=[*args.cflag,'-I',str(root/'include'),*['-D'+item for item in recipe['compile_definitions']]]
+        flags=[*args.cflag,*[part for p in recipe['include_directories'] for part in ['-I',p]],
+               *['-D'+item for item in recipe['compile_definitions']]]
         objects=[]
         for i,source in enumerate([stage/'mulib.c',*[root/path for path in recipe['native_sources']]]):
             obj=stage/('mulib.o' if i==0 else 'fixture_'+str(i)+'.o')
@@ -182,7 +185,8 @@ def build(args, root):
 
 def main():
     cli=argparse.ArgumentParser(description=__doc__)
-    cli.add_argument('--root',type=Path,default=HOME.parent)
+    cli.add_argument('--root',type=Path)
+    cli.add_argument('--mulib-path',action='append',default=[],metavar='DIR:DIR')
     sub=cli.add_subparsers(dest='mode',required=True)
     sub.add_parser('list')
     p=sub.add_parser('plan');p.add_argument('libraries',nargs='+');p.add_argument('--fixture',action='append',default=[])
@@ -190,14 +194,16 @@ def main():
     b.add_argument('--exotract',required=True);b.add_argument('--compiler',default='clang');b.add_argument('--ar',default='ar');b.add_argument('--nm',default='nm')
     b.add_argument('--resource-dir');b.add_argument('--cflag',action='append',default=[])
     b.add_argument('--fixture',action='append',default=[])
-    args=cli.parse_args();root=args.root.resolve()
+    args=cli.parse_args()
     try:
+        args.paths=housekeeping.search_paths(args.mulib_path)
+        root=housekeeping.kernel_root(args.root,HOME.parent,args.paths)
         if args.mode=='list':
             modules=inventory(root)
             known={m['header'] for m in modules.values()}
             auxiliary=sorted(str(p.relative_to(root)) for p in (root/'include').glob('mulib-*.h') if str(p.relative_to(root)) not in known)
             print(contracts.dumps(dict(schema='on1x.exotract-inventory/v1',modules=modules,auxiliary_headers=auxiliary)),end='')
-        elif args.mode=='plan':print(contracts.dumps(plan(root,args.libraries,args.fixture)),end='')
+        elif args.mode=='plan':print(contracts.dumps(plan(root,args.libraries,args.fixture,args.paths)),end='')
         else:build(args,root);print(args.output)
     except (ValueError,OSError,KeyError,subprocess.TimeoutExpired) as error:
         print('on1x-exotract: '+str(error),file=sys.stderr);return 1

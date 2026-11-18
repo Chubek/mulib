@@ -63,20 +63,23 @@ small facade modules, as in `stdlib/Int.on1x`.
 Absolute named imports search in this order:
 
 1. The entry source file's canonical directory.
-2. Repeated `-I DIRECTORY` / `--module-path DIRECTORY`, in command-line order.
-3. `ON1X_PATH` directories, in order (colon-separated on POSIX, semicolon on Windows).
-4. The standard-library root.
+2. Repeated `-I DIRECTORY` / `--module-path DIRECTORY` and colon-separated
+   `--lib-path` lists, in command-line order.
+3. `ON1X_LIB_PATH`, then legacy `ON1X_PATH` directories.
+4. The resolved standard-library roots.
 
-Empty environment path entries are ignored. `std` is anchored directly to the
-standard-library root and its sibling `std/` extension directory, so
+Empty environment path entries are ignored. `std` is anchored to the
+resolved standard-library roots (including manifested stdlibs discovered through
+`ON1X_LIB_PATH`), so
 `import std.Int` cannot accidentally select a project's
 `Int.on1x`. `import Int` uses the ordinary search order. Relative named imports
 search only the indicated directory. Quoted paths are relative to the importing
 file and retain support for explicit absolute paths.
 
-`std.mulib` is implemented in `on1x/std/mulib`; `from std import mulib` uses
-the same resolution. A module present in both standard roots is an ambiguity
-error. Both roots are installed and relocated together.
+`std.mulib` is implemented in `on1x/stdlib/mulib`; `from std import mulib` uses
+the same resolution. Legacy sibling `std/` trees remain readable; a module
+present in both a stdlib root and its legacy sibling is an ambiguity error.
+The canonical installed tree only needs `stdlib/`.
 
 An import loads the requested file/initializer and its declared dependencies.
 Importing `pkg.child` does not implicitly execute/load ancestor initializers;
@@ -127,10 +130,17 @@ do not force inference or enlarge generated programs.
 
 ## Standard-library root and installation
 
-`--stdlib DIRECTORY` overrides `ON1X_STDLIB`. Without either, the compiler first
+New `--stdlib-path`/`ON1X_STDLIB_PATH` and manifested general-library paths
+precede the default library. `--stdlib DIRECTORY` retains explicit-root priority
+and overrides `ON1X_STDLIB`. Without overrides, the compiler first
 looks beside its executable at `../share/on1x/stdlib`, then uses its configured
 source-tree root. A missing automatic prelude is an error, with `--no-prelude`
 available for freestanding builds.
+
+The shipped root has an `On1xfile` manifest; new standard-library search
+directories require one. Plain modules and legacy explicit roots remain
+compatible. See [search paths and manifests](search-paths.md) for exact order,
+directory-list syntax, package source roots and bounded validation.
 
 ```sh
 cmake -S on1x -B build/on1x
@@ -155,12 +165,16 @@ unimplemented SML signatures/functors.
 
 ## PPX lookup
 
-`on1xc --stdppx pipe --stdppx checks INPUT.on1x` selects the corresponding Python
-processors from the `stdppx` directory beside the configured standard library.
+`on1xc --stdppx pipe --stdppx checks INPUT.on1x` selects processors by name.
+`--use-ppx NAME` is an equivalent activation flag. Dedicated
+`--stdppx-path`/`ON1X_STDPPX_PATH` and general `--ppx-path`/`ON1X_PPX_PATH`
+precede standard-library sibling and executable-relative defaults.
 It is explicit command-line execution authorization, like `--ppx LABEL PROGRAM`.
 The compiler and build helper preserve ordering when these flags are mixed. Source registrations
 still require `--allow-source-ppx`, including registrations in imported files.
-Native PPXs remain available via `--ppx LABEL EXECUTABLE` and `ON1X_PPX_SCHEMA`.
+Discovered native PPXs use `On1xfile` bundle metadata; discovered scripts use
+terse second-line manifests after their shebang. Native PPXs also remain
+available via explicit `--ppx LABEL EXECUTABLE` and `ON1X_PPX_SCHEMA`.
 
 ## API, diagnostics and limits
 

@@ -16,7 +16,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 MULIB = ROOT.parent
 
-class PpxAction(argparse.Action):
+class OrderedAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         chain = getattr(namespace, self.dest, None)
         if chain is None:
@@ -39,18 +39,22 @@ def main():
     cli.add_argument('--optimize-ir', action='store_true', help='enable verified scalar passes (requires --via-mir)')
     cli.add_argument('--extra-c', action='append', default=[], help='extra C translation unit to compile/link')
     cli.add_argument('--cflag', action='append', default=[], help='explicit extra C compiler option')
-    cli.add_argument('--ppx', nargs=2, action=PpxAction, dest='ppx_chain', metavar=('LABEL', 'PROGRAM'))
+    cli.add_argument('--ppx', nargs=2, action=OrderedAction, dest='ppx_chain', metavar=('LABEL', 'PROGRAM'))
     cli.add_argument('--ppx-schema', nargs=2, action='append', default=[], metavar=('LABEL', 'FILE'))
     cli.add_argument('--allow-source-ppx', action='store_true')
     cli.add_argument('--ppx-timeout-ms', type=int, default=5000)
-    cli.add_argument('-I', '--module-path', action='append', default=[])
+    cli.add_argument('-I', '--module-path', action=OrderedAction, dest='search_chain')
     cli.add_argument('--stdlib', type=Path)
+    for option in ('lib-path', 'stdlib-path', 'ppx-path', 'stdppx-path'):
+        cli.add_argument('--'+option, action=OrderedAction, dest='search_chain', metavar='DIR:DIR')
+    cli.add_argument('--mulib-path', action='append', default=[], metavar='DIR:DIR')
     cli.add_argument('--no-prelude', action='store_true')
     cli.add_argument('--prelude', action='append', default=[])
-    cli.add_argument('--stdppx', action=PpxAction, dest='ppx_chain', metavar='PROCESSOR')
+    cli.add_argument('--stdppx', action=OrderedAction, dest='ppx_chain', metavar='PROCESSOR')
+    cli.add_argument('--use-ppx', action=OrderedAction, dest='ppx_chain', metavar='PROCESSOR')
     cli.add_argument('--enable', action='append', default=[], metavar='FEATURES')
     cli.add_argument('--disable', action='append', default=[], metavar='FEATURES')
-    cli.add_argument('--mulib-root', type=Path, default=Path(os.environ.get('ON1X_MULIB_ROOT', MULIB)))
+    cli.add_argument('--mulib-root', type=Path)
     cli.add_argument('--mulib', action='append', default=[], metavar='KERNEL')
     cli.add_argument('--mulib-fixture', action='append', default=[], metavar='GROUP')
     cli.add_argument('--mulib-archive', type=Path, help='locked on1x-exotract output directory')
@@ -80,8 +84,14 @@ def main():
             compiler.append('--no-prelude')
         if args.stdlib:
             compiler += ['--stdlib', str(args.stdlib)]
-        for path in args.module_path:
-            compiler += ['-I', path]
+        loader_flags=[]
+        if args.stdlib:loader_flags += ['--stdlib',str(args.stdlib)]
+        processor_paths={'--ppx-path':[], '--stdppx-path':[]}
+        for option,arguments in args.search_chain or []:
+            compiler += [option,*arguments]
+            if option in ('-I','--module-path','--lib-path','--stdlib-path'):
+                loader_flags += [option,*arguments]
+            if option in processor_paths:processor_paths[option] += arguments
         for path in args.prelude:
             compiler += ['--prelude', path]
         for option, arguments in args.ppx_chain or []:
@@ -99,9 +109,14 @@ def main():
             args.output.write_text(code)
             return
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        mulib_root = args.mulib_root.resolve()
+        spec = importlib.util.spec_from_file_location('mulib_housekeeping', ROOT/'stdlib/mulib/housekeeping.py')
+        house = importlib.util.module_from_spec(spec);spec.loader.exec_module(house)
+        paths=house.search_paths(args.mulib_path)
+        mulib_root=house.kernel_root(args.mulib_root,MULIB,paths)
+        includes=house.include_paths(mulib_root,paths)
+        include_flags=[part for path in includes for part in ['-I',str(path)]]
         cmd = [args.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-               '-I', str(ROOT / 'runtime'), '-I', str(mulib_root / 'include'),
+               '-I', str(ROOT / 'runtime'), *include_flags,
                 str(generated), str(ROOT / 'runtime/on1x_runtime.c')]
         has_json = 'on1x_json_' in code
         has_csp = '#include <on1x_concurrency.h>' in code
@@ -121,8 +136,6 @@ def main():
         native = has_json or has_csp or has_mulib or has_bridge or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan
         recipe, fingerprints, native_links = None, {}, []
         if native:
-            spec = importlib.util.spec_from_file_location('mulib_housekeeping', ROOT/'std/mulib/housekeeping.py')
-            house = importlib.util.module_from_spec(spec);spec.loader.exec_module(house)
             cc=shutil.which(args.cc)
             if not cc:raise ValueError('C compiler unavailable: '+args.cc)
             cc=Path(cc).resolve()
@@ -137,7 +150,7 @@ def main():
                 for kernel in bridge_groups[group][0]:
                     if kernel not in kernels:kernels.append(kernel)
             if has_json and 'json' not in kernels:kernels.append('json')
-            recipe = house.plan(mulib_root, kernels, args.mulib_fixture) if kernels or args.mulib_fixture or args.mulib_archive else None
+            recipe = house.plan(mulib_root, kernels, args.mulib_fixture,paths) if kernels or args.mulib_fixture or args.mulib_archive else None
             if any('MULIB_IMPL_' in flag for flag in args.cflag):
                 raise ValueError('MuLIB implementation macros belong to the single generated TU')
             if args.mulib_archive:
@@ -157,6 +170,9 @@ def main():
                     raise ValueError('unsupported MuLIB archive plan')
                 if not set(recipe['implementation_macros'])<=set(saved['implementation_macros']):
                     raise ValueError('MuLIB archive does not supply requested kernel/fixture implementations')
+                locked={m['name']:m['header_sha256'] for m in saved['modules']}
+                if any(locked.get(m['name'])!=m['header_sha256'] for m in recipe['modules']):
+                    raise ValueError('MuLIB archive kernel search-path/header mismatch')
                 for field in ['native_sources','include_headers','link_libraries']:
                     if not set(recipe[field])<=set(saved[field]):raise ValueError('MuLIB archive lacks requested '+field)
                 if not {f['path'] for f in recipe['files']}<={f['path'] for f in saved['files']}:
@@ -175,7 +191,7 @@ def main():
                     fingerprints[str(house.local(mulib_root,record['path']))]=record['sha256']
                 for module in recipe['modules']:
                     for field in ['header','manual']:
-                        path=house.local(mulib_root,module[field])
+                        path=house.header_path(mulib_root,module) if field=='header' else house.local(mulib_root,module[field])
                         if house.contracts.digest(path)!=module[field+'_sha256']:raise ValueError('MuLIB kernel/archive mismatch: '+str(path))
                         fingerprints[str(path)]=module[field+'_sha256']
                 cmd += ['-D'+item for item in recipe['compile_definitions']]
@@ -197,13 +213,20 @@ def main():
                 metadata=Path(temp)/'mulib_metadata.c'
                 metadata.write_text(house.metadata_source(mulib_root,recipe or {'modules':[], 'files':[]}))
                 cmd.append(str(metadata))
-                cmd += ['-I',str(ROOT/'std/mulib')]
-        library = (args.stdlib or Path(os.environ.get('ON1X_STDLIB', ROOT / 'stdlib'))).resolve()
+                cmd += ['-I',str(ROOT/'stdlib/mulib')]
+        # Ask the compiler, rather than implementing a second manifest resolver.
+        library = Path(subprocess.check_output([args.on1xc,'--print-stdlib',*loader_flags],text=True).strip())
         adapters = []
         if re.search(r'\bextern\s+[^;\n]*\bbasis_native_\w+\(', code):
-            adapters += [library / 'runtime/basis_native.c', library / 'runtime/basis_real.c']
+            for file in ('runtime/basis_native.c','runtime/basis_real.c'):
+                adapters.append(Path(subprocess.check_output(
+                    [args.on1xc,'--stdlib-resource',file,*loader_flags],text=True).strip()))
         if re.search(r'\bextern\s+[^;\n]*\bon1x_ppx_clock_ns\(', code):
-            adapters += [library.parent / 'stdppx/runtime/on1x_ppx_timing.c']
+            ppx_roots=[*house.search_paths(processor_paths['--stdppx-path'],'ON1X_STDPPX_PATH'),
+                       *house.search_paths(processor_paths['--ppx-path'],'ON1X_PPX_PATH'),library.parent/'stdppx',ROOT/'stdppx']
+            timing=next((p/'runtime/on1x_ppx_timing.c' for p in ppx_roots if (p/'runtime/on1x_ppx_timing.c').is_file()),None)
+            if timing is None:raise ValueError('PPX timing runtime not found in configured paths')
+            adapters += [timing]
         supplied = {Path(path).resolve() for path in args.extra_c}
         cmd += [str(path) for path in adapters if path.resolve() not in supplied]
         cmd += args.extra_c
@@ -211,7 +234,7 @@ def main():
             cmd += ['-lm']
         cmd += args.cflag + native_links
         if native:
-            flags=['-I',str(ROOT/'runtime'),'-I',str(mulib_root/'include'),'-I',str(ROOT/'std/mulib'),*args.cflag]
+            flags=['-I',str(ROOT/'runtime'),*include_flags,'-I',str(ROOT/'stdlib/mulib'),*args.cflag]
             if recipe:flags += ['-D'+item for item in recipe['compile_definitions']]
             flags += ['-DON1X_BRIDGE_'+group for group in sorted(groups)]
             for source in [Path(value) for value in cmd if value.endswith('.c')]:

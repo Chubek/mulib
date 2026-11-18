@@ -1,5 +1,5 @@
 /* A caller-owned, exact scalar adapter; declarations come from the real provider. */
-#include "../../std/mulib/runtime.h"
+#include "../../stdlib/mulib/runtime.h"
 #include "../../../library/yantlr/mulib-yantlr-stdlib.h"
 #include <string.h>
 int64_t fixture_yantlr_artifacts(const char *source) {

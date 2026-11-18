@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# on1x: (On1xfile 1 (kind "ppx") (name "match_int") (protocol "1"))
 """Standalone On1x match_int PPX (source-compatible AST v1)."""
 from _support.driver import serve
 

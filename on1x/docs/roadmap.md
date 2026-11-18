@@ -2,6 +2,11 @@
 
 ## Current feature matrix
 
+The M5/M7 [discovery continuation](search-paths.md) integrates the moved
+`stdlib/mulib` package and adds bounded library/stdlib, PPX/stdppx and kernel
+search lists with CLI/environment inputs and declarative manifests. It does not
+add separate compilation, dependency downloading or foreign safety admission.
+
 Latest CSP continuation: [running/blocked cooperative cancellation and monotonic
 poll deadlines](cancellation-deadlines.md), private ABI v3, now execute through
 checked HIR/C11. Async/await remains absent pending verified suspension/frame
@@ -17,7 +22,8 @@ lowering, not a wrapper around stackful fibers; taskgroup `within` is also absen
 | Intrinsic core additions G1/G2 | Executable control/matching/value-loop slice | Loop/for-C/i64 ranges, labels/exits, guarded structural matches and typed value-loop joins/initialization verification; C11 plus scalar/tuple MIR; nominal-data and G3 continuations below; no owning lists/iterators or concurrency; [manual](core-syntax.md), [value loops](value-loops.md) |
 | G3 function defer / typed errors | Executable bounded C11 profile | Go-style function-scoped `defer call;`, registration-time snapshots, function-owned LIFO records, exact nominal `Result` postfix `?`, return/cleanup edges including cooperative CSP cancellation; no using, exceptions, terminal-trap unwind, managed Result fields or MIR/SDK defer admission; [contract](defer-errors.md) |
 | Module loader / pervasive environment | Implemented compile-time namespaces | Named/selective/relative imports, aliases, packages, canonical deduplication, bounded cycles, demand-loaded prelude and relocatable installation; [manual](modules.md) |
-| MuLIB native housekeeping | Implemented bounded kernel/fixture planning | `std.mulib` metadata/byte access and size checks; shared one-TU planning, fixture/provider/native companion linkage, fingerprints and relocatable bundles; [manual](../std/mulib/README.md) |
+| MuLIB native housekeeping | Implemented bounded kernel/fixture planning | Integrated `stdlib/mulib`; `std.mulib` metadata/byte access and size checks; shared one-TU planning, fixture/provider/native companion linkage, actual selected header paths/fingerprints and relocatable bundles; [manual](../stdlib/mulib/README.md) |
+| Search lists / manifests | Executable Linux build-time subset | Five colon-separated CLI/environment path lists; existing named imports, explicitly activated PPX, native bundle/script metadata and MANIFEST-backed kernel lookup; [manual](search-paths.md), `test_discovery.py`; no downloads or new safe-FFI claim |
 | Frontend input limits | Implemented and tested | 2 MiB per file; 256-level parsing/HIR limits including lambdas; bounded capture metadata |
 | Type inference | P1 schemes and explicit universals | Global recursive-component and value-restricted immutable let/pattern generalization, rigid `forall` parameters, bounded C11 specialization/bundles; no defaulting or inferred polymorphic recursion |
 | Structural function types / values | P1 subset | Monomorphic aliases, parameters/results, indirect/postfix calls and lexical resolution; no foreign callbacks |

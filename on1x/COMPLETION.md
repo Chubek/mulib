@@ -5,6 +5,14 @@
 > **Primary deliverable:** an honestly verified, statically compiled, safe-by-default On1x capable of writing **Shylock**, a price prediction, demand estimation, and pricing optimization engine built by composing MuLIB C11 kernels through LibStone ExoML semantic contracts.
 > **Repository:** `https://github.com/Chubek/mulib` (`on1x/`, `include/`, `library/`, `MANIFEST.yaml`); LibStone: `https://github.com/Chubek/libstone` (`moonstone/exoml/`, related analyzers).
 
+M5/M7 discovery continuation (2026-11-18): the moved `stdlib/mulib` package is
+integrated into build/install/extraction tools. Five bounded colon-separated
+CLI/environment search lists, standard-library/native-PPX `On1xfile` manifests
+and script second-line metadata support name-based offline discovery. See
+[the contract](docs/search-paths.md) and measured `VERIFICATION.md` evidence.
+No general-safe-FFI, application, separate-compilation or concurrency gate is
+advanced by this tooling change.
+
 CSP ABI v3 continuation: [running/blocked cooperative cancellation and monotonic
 `poll after`](docs/cancellation-deadlines.md) now execute explicit C11 cleanup
 returns and atomic control offers. This supersedes earlier absence claims only

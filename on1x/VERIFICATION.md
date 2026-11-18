@@ -1,5 +1,163 @@
 # On1x verification — 2026-11-18
 
+## M5/M7: integrated MuLIB package, search lists and manifests
+
+Baseline MuLIB `b11af815facb35a791d9721c4c654df21b877d94`; actual configured,
+read-only LibStone `c7cfeca5a5d5086b0c25dad08264fc450c03f85b` at
+`on1x/third_party/libstone`. Linux 6.18.52-1-lts x86_64, glibc 2.44,
+GCC/g++ 16.2.1, Clang/clang++ 22.1.8, CMake 4.4.3, Python 3.14.7.
+No dependency checkout, kernel, source contract or generated fixture was updated.
+
+### Behavior delivered
+
+- Build, extraction, installation and tests use the existing `stdlib/mulib`
+  package, replacing stale references to the removed `std/mulib`. Its source API
+  remains `std.mulib`, with the existing raw trust boundary.
+- `ON1X_LIB_PATH`, `ON1X_STDLIB_PATH`, `ON1X_PPX_PATH`,
+  `ON1X_STDPPX_PATH`, `ON1X_MULIB_PATH` and matching repeatable CLI options
+  provide bounded colon lists. Existing `-I`, explicit source/PPX paths,
+  `--stdlib`, `ON1X_PATH`, `ON1X_STDLIB` and `ON1X_MULIB_ROOT` remain supported.
+- The canonical loader resolves manifested library source directories and
+  standard-library roots. `std.*`, selective `from std` and the implicit
+  prelude agree. The helper preserves mixed CLI path order and asks the compiler
+  for Basis resources, including fallback standard roots.
+- `src/discovery.cpp` reuses the existing S-expression reader for declarative
+  version-1 `On1xfile` metadata. The standard library and MuLIB package advertise
+  their source roots; native PPX build/install bundles advertise executables and
+  schemas. All 24 shipped Python processors have terse second-line manifests.
+  New discovery rejects missing/malformed metadata, name/protocol/version
+  mismatches, duplicate/unknown fields, escaping/missing manifest inputs and
+  resource exhaustion. Explicit-path legacy scripts remain compatible.
+- Name-based PPX activation (`--use-ppx`, `--stdppx`, `--ppx LABEL NAME` and
+  authorized source registrations) uses configured search directories without
+  granting implicit execution. Native schemas are supplied per process.
+  Category's pinned extension registry is independent of ordinary PPX lookup.
+- The shared MuLIB planner records actual selected header paths/hashes and
+  include ordering across directories. Implementation code, C11 callers and
+  Exotract discovery use those headers. MANIFEST-backed macro/dependency and
+  companion planning, source-contract pins and archive drift checks remain in
+  force; exactly one kernel implementation TU is retained.
+
+The [discovery contract](docs/search-paths.md) documents manifest syntax, exact
+precedence, compatibility and unsupported cases. There is no new language
+syntax, runtime ABI, resource proof, safe import or native-machine backend.
+
+### Baseline and measured results
+
+The pre-change GCC/generated suite was **49 passed, 7 failed** of 56:
+install/Category failed on the absent `std/` install directory, and MuLIB,
+stdlib-extension and three concurrency suites hit stale `std/mulib` paths.
+Baseline XML: `/tmp/opencode/on1x-values-gcc/results-paths-baseline.xml`.
+
+| Final profile | Result |
+|---|---|
+| Strict GCC Debug, generated scanner, native PPXs, complete suite | **56 passed, 1 failed** (57 tests) |
+| Strict Clang Debug, fallback scanner, native PPXs, complete suite | **55 passed, 1 failed** (56 tests) |
+| Clang generated ASan/UBSan, affected discovery/modules/loader/PPX/install/extensions/parity | **7/7**, no sanitizer findings |
+| Real existing Exotract executable, selected-header archive and compiled On1x caller, GCC | **PASS** |
+| Same focused SDK boundary, instrumented compiler/archive/adapter/program, Clang ASan/UBSan | **PASS**, no sanitizer findings |
+
+The sole complete-suite failure is `on1x.mulib`, now reaching the previously
+documented unrelated `tools/embed_units.py` stale-unit-profile fixture check.
+No failing test was disabled, no fixture hash was weakened, and no unrelated
+generated kernel was regenerated.
+
+`tests/test_discovery.py` compiles actual On1x clients and executes library,
+prelude, Basis-runtime, script/native PPX and multi-root kernel paths through
+strict C11. It tests CLI/environment ordering, empty/missing directories,
+spaces, mixed `-I`/`--lib-path`, explicit-root compatibility, namespace imports,
+fallback resources, source-PPX authorization, dependency-only nonexecution,
+native schema lookup, installed relocation, preserved output on rejection,
+manifest traversal/symlink attacks, missing/wrong metadata and finite budgets.
+Kernel callers use the real bitset implementation via a separate C adapter;
+reports check exact selected headers and single implementation switches.
+
+Development reruns exposed a test-fixture-state error: a deliberately created
+first-root header from one run affected the next run. Discovery tests now use a
+fresh automatically cleaned workspace. An additional mixed-path regression
+first reproduced `42` instead of expected `41`; preserving helper CLI order
+fixes it. Earlier `results-paths-final.xml` reports retain these development
+failures; `results-paths-complete.xml` contains the complete final suites above.
+A tool-output log hit disk exhaustion while several old `/tmp` trees coexisted.
+Only this task's discovery artifacts were moved into ignored
+`build/on1x-paths-evidence/`; later temporary compilations use the directory
+below. No unrelated build trees or user files were removed.
+
+### Exact commands and configurations
+
+Existing `/tmp/opencode/on1x-values-{gcc,clang}` configurations were retained:
+Debug, `BUILD_TESTING=ON`, `ON1X_BUILD_NATIVE_PPX=ON`,
+`ON1X_LIBSTONE_ROOT=/mnt/nvme/mulib/on1x/third_party/libstone`,
+`CMAKE_{C,CXX}_FLAGS=-Wall -Wextra -Wpedantic -Werror`.
+GCC uses generated scanning (`ON1X_USE_FALLBACK_SCANNER=OFF`), Clang uses fallback
+(`ON1X_USE_FALLBACK_SCANNER=ON`). Optional SDK/diagnostic adapters are OFF.
+The sanitizer tree `/tmp/opencode/on1x-category-sanitize` retains Clang Debug,
+generated scanning, native PPXs and testing, adds
+`-fsanitize=address,undefined -fno-omit-frame-pointer` to both compiler flag sets,
+and sets
+`ON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer`
+to instrument generated programs and C adapters as well.
+
+For each tree `/tmp/opencode/on1x-values-gcc` and
+`/tmp/opencode/on1x-values-clang`:
+
+```sh
+cmake --build <tree> --parallel 4
+TMPDIR=/mnt/nvme/mulib/build/on1x-paths-tmp \
+  ctest --test-dir <tree> --output-on-failure --parallel 2 \
+  --output-junit <tree>/results-paths-complete.xml
+```
+
+The temporary directory was created explicitly before these commands. Sanitizer:
+
+```sh
+cmake --build /tmp/opencode/on1x-category-sanitize --parallel 4
+TMPDIR=/mnt/nvme/mulib/build/on1x-paths-tmp \
+  ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
+  ctest --test-dir /tmp/opencode/on1x-category-sanitize --output-on-failure \
+  --parallel 2 -R '^on1x.(discovery|modules|loader_api|ppx|install|stdlib_extensions|scanner_parity)$' \
+  --output-junit /tmp/opencode/on1x-category-sanitize/results-paths-complete.xml
+```
+
+After retaining the Windows-only legacy `ON1X_PATH` semicolon parser, each of
+the three compilers was rebuilt with `--target on1xc`; discovery/modules were
+rerun with the same environments and `-R '^on1x.(discovery|modules)$'`
+(`results-paths-last.xml`). Windows itself was not executed.
+
+Focused SDK reproduction (`test_kernel_paths.py` is also registered when
+`ON1X_WITH_EXOTRACT=ON`):
+
+```sh
+TMPDIR=/mnt/nvme/mulib/build/on1x-paths-tmp \
+  python3 on1x/tests/test_kernel_paths.py \
+  /tmp/opencode/on1x-values-sdk/libstone-moonstone/exotract/exotract \
+  /tmp/opencode/on1x-values-gcc/on1xc "$PWD/on1x" \
+  "$PWD/build/on1x-paths-kernel-sdk" gcc
+TMPDIR=/mnt/nvme/mulib/build/on1x-paths-tmp \
+  ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
+  python3 on1x/tests/test_kernel_paths.py \
+  /tmp/opencode/on1x-values-sdk/libstone-moonstone/exotract/exotract \
+  /tmp/opencode/on1x-category-sanitize/on1xc "$PWD/on1x" \
+  "$PWD/build/on1x-paths-kernel-sanitize" clang \
+  --cflag=-fsanitize=address,undefined --cflag=-fno-omit-frame-pointer
+```
+
+The real Exotract executable was reused, not rebuilt or claimed to certify the
+entire current SDK. Its SHA-256 is
+`27d04e5011c8e024de971e5a5bdad87f951870db5eaa7c7bb0bece280888a566`.
+The focused test extracts the selected external header, builds an actual
+one-object archive, runs the linked On1x client, then mutates the header and
+requires drift rejection with the old executable intact. Other optional
+Chisel/Nerotypical/Novostone/Syren checks were **UNSUPPORTED/not exercised** in
+these core profiles, not reported as green SDK coverage.
+
+Python compilation and `git diff --check` pass. New discovery remains
+**EXECUTABLE**, not VERIFIED general packaging: non-Linux/cross-host PPX,
+32-bit targets, new static/shared runtime profiles, native-source auto-building,
+download/lockfile/dependency resolution, unknown unmanifested kernel recipes,
+process sandboxing and general foreign-resource safety were not implemented or
+certified. TSAN is not applicable evidence: no threaded runtime was changed.
+
 ## Category M2 continuation: checked concrete evidence, processor v2
 
 Baseline MuLIB `2ff743469c62b6a369b21bcbfb045e05b30d27f3`; actual configured,

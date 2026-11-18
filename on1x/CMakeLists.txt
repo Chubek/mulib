@@ -68,7 +68,7 @@ configure_file(cmake/ppx_schema.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/ppx_schema.h
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS stdppx/category/features.sexpr)
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/category/features.sexpr" ON1X_EXTENSION_REGISTRY)
 configure_file(cmake/extensions_registry.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/extensions_registry.hpp" @ONLY)
-add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/infer.cpp src/sema.cpp src/concurrency.cpp src/codegen.cpp
+add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/discovery.cpp src/infer.cpp src/sema.cpp src/concurrency.cpp src/codegen.cpp
   src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp src/extensions.cpp src/extension_evidence.cpp src/extensions_hash.c src/canonical/control.cpp src/patterns.cpp src/canonical/values.cpp src/canonical/verify_values.cpp
   src/backend/mir.cpp src/backend/lower.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp)
 target_include_directories(on1x_frontend PUBLIC include)
@@ -96,11 +96,13 @@ if(ON1X_BUILD_NATIVE_PPX)
     message(FATAL_ERROR "Native build-host PPXs cannot be target executables; configure ON1X_BUILD_NATIVE_PPX=OFF for cross compilation")
   endif()
   file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/stdppx")
+  set(_ppx_manifest "(On1xfile 1 (kind \"ppx\") (name \"stdppx\") (protocol \"1\")\n")
   configure_file(grammar/PPX.schema.json "${CMAKE_CURRENT_BINARY_DIR}/stdppx/category.schema.json" COPYONLY)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/stdppx/category.schema.json" DESTINATION libexec/on1x)
   file(GLOB_RECURSE _native_stdlib CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/*.on1x")
   file(GLOB _native_ppx_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/native/*.on1x")
   foreach(_processor identity checks control unroll derive fold pipe compose assertions cond format logging state_machine tap trace protocols)
+    string(APPEND _ppx_manifest " (processor \"${_processor}\" \"on1x-ppx-${_processor}\" \"category.schema.json\")\n")
     set(_native_input "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/native/${_processor}.on1x")
     set(_native_c "${CMAKE_CURRENT_BINARY_DIR}/stdppx/${_processor}.c")
     add_custom_command(OUTPUT "${_native_c}"
@@ -111,6 +113,9 @@ if(ON1X_BUILD_NATIVE_PPX)
     set_target_properties(on1x_ppx_${_processor} PROPERTIES OUTPUT_NAME "on1x-ppx-${_processor}" RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/stdppx")
     install(TARGETS on1x_ppx_${_processor} RUNTIME DESTINATION libexec/on1x)
   endforeach()
+  string(APPEND _ppx_manifest ")\n")
+  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/stdppx/On1xfile" "${_ppx_manifest}")
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/stdppx/On1xfile" DESTINATION libexec/on1x)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/stdppx/on1x-ppx-protocols.pin"
     COMMAND "${CMAKE_COMMAND}" "-DPROGRAM=$<TARGET_FILE:on1x_ppx_protocols>"
       "-DSCHEMA=${CMAKE_CURRENT_BINARY_DIR}/stdppx/category.schema.json"
@@ -121,7 +126,7 @@ if(ON1X_BUILD_NATIVE_PPX)
 endif()
 
 install(TARGETS on1xc RUNTIME DESTINATION bin)
-install(DIRECTORY std stdlib stdppx runtime grammar contracts-exoml contracts-exotract DESTINATION share/on1x
+install(DIRECTORY stdlib stdppx runtime grammar contracts-exoml contracts-exotract DESTINATION share/on1x
   PATTERN "__pycache__" EXCLUDE PATTERN "*.pyc" EXCLUDE)
 install(PROGRAMS tools/on1x-build.py tools/on1x-mulib.py tools/on1x-exotract.py tools/on1x-contracts.py DESTINATION share/on1x/tools)
 
@@ -348,13 +353,17 @@ if(BUILD_TESTING)
     target_link_libraries(on1x_concurrency_hir_tests PRIVATE on1x_frontend)
     add_test(NAME on1x.concurrency_hir COMMAND on1x_concurrency_hir_tests)
   set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules libraries stdppx install mulib stdlib_extensions f64 unsigned_f32 numeric_limits)
-     list(APPEND _meta_tests category control patterns value_loops nominal_adts defer_errors concurrency stream_poll cancellation_deadlines)
+     list(APPEND _meta_tests category control patterns value_loops nominal_adts defer_errors concurrency stream_poll cancellation_deadlines discovery)
   add_test(NAME on1x.stdppx_protocol COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/tests" -v)
   if(ON1X_WITH_EXOTRACT)
     add_test(NAME on1x.exotract COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exotract.py"
       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/exotract" "${CMAKE_C_COMPILER}" ${_test_c_flags})
     set_tests_properties(on1x.exotract PROPERTIES TIMEOUT 180)
+    add_test(NAME on1x.kernel_paths COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_paths.py"
+      "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-paths" "${CMAKE_C_COMPILER}" ${_test_c_flags})
+    set_tests_properties(on1x.kernel_paths PROPERTIES TIMEOUT 180)
   endif()
   if(ON1X_WITH_NEROTYPICAL)
     list(APPEND _meta_tests type_safety)

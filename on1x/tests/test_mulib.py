@@ -10,7 +10,7 @@ from support import NativeTests, run
 t=NativeTests();root=t.root.parent
 tool=t.root/'tools/on1x-mulib.py'
 helper=t.root/'tools/on1x-build.py'
-spec=importlib.util.spec_from_file_location('house',t.root/'std/mulib/housekeeping.py')
+spec=importlib.util.spec_from_file_location('house',t.root/'stdlib/mulib/housekeeping.py')
 house=importlib.util.module_from_spec(spec);spec.loader.exec_module(house)
 
 def command(*args):return run([sys.executable,tool,*args])
@@ -157,7 +157,7 @@ int main(void){assert(on1x_mulib_has_fixture("library/bytes"));
  assert(on1x_mulib_fixture_size("library/empty")==0);
  assert(!strcmp(on1x_mulib_fixture_text("library/empty"),""));
  assert(!on1x_mulib_has_fixture(NULL));return 0;}''')
-p=run([t.cc,'-std=c11','-Wall','-Wextra','-Wpedantic','-Werror','-I',t.root/'std/mulib',metadata,client,*t.flags,'-o',t.work/'binary_client'])
+p=run([t.cc,'-std=c11','-Wall','-Wextra','-Wpedantic','-Werror','-I',t.root/'stdlib/mulib',metadata,client,*t.flags,'-o',t.work/'binary_client'])
 assert p.returncode==0,p.stderr
 execute(t.work/'binary_client','')
 

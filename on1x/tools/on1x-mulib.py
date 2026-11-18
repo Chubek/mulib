@@ -9,7 +9,7 @@ import sys
 import tempfile
 
 HOME = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('mulib_housekeeping', HOME/'std/mulib/housekeeping.py')
+spec = importlib.util.spec_from_file_location('mulib_housekeeping', HOME/'stdlib/mulib/housekeeping.py')
 housekeeping = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(housekeeping)
 c = housekeeping.contracts
@@ -27,7 +27,8 @@ def bundle(root, recipe, output):
         inputs[str(Path(__file__).resolve())]=c.digest(__file__)
         for item in recipe['modules']:
             for field in ['header','manual']:
-                path=housekeeping.local(root,item[field]);inputs[str(path)]=item[field+'_sha256']
+                path=housekeeping.header_path(root,item) if field=='header' else housekeeping.local(root,item[field])
+                inputs[str(path)]=item[field+'_sha256']
         for record in recipe['files']:inputs[str(housekeeping.local(root,record['path']))]=record['sha256']
         artifacts = {p.relative_to(stage).as_posix():c.digest(p) for p in sorted(stage.rglob('*')) if p.is_file()}
         (stage/'lock.json').write_text(c.dumps(dict(schema='on1x.mulib-bundle/v1',inputs=inputs,artifacts=artifacts,safe_export=False)))
@@ -53,7 +54,8 @@ def verify(directory, sources=False):
 
 def main():
     cli=argparse.ArgumentParser(description=__doc__)
-    cli.add_argument('--root',type=Path,default=HOME.parent)
+    cli.add_argument('--root',type=Path)
+    cli.add_argument('--mulib-path',action='append',default=[],metavar='DIR:DIR')
     sub=cli.add_subparsers(dest='mode',required=True)
     sub.add_parser('list')
     for mode in ['plan','bundle','audit']:
@@ -62,8 +64,10 @@ def main():
         if mode=='bundle':p.add_argument('--output',type=Path,required=True)
         if mode=='audit':p.add_argument('--all',action='store_true',help='verify every registered fixture group and embedding')
     p=sub.add_parser('verify');p.add_argument('directory',type=Path);p.add_argument('--sources',action='store_true')
-    a=cli.parse_args();root=a.root.resolve()
+    a=cli.parse_args()
     try:
+        paths=housekeeping.search_paths(a.mulib_path)
+        root=housekeeping.kernel_root(a.root,HOME.parent,paths)
         if a.mode=='verify':verify(a.directory.resolve(),a.sources);print('MuLIB bundle verified');return 0
         if a.mode=='list':
             modules=housekeeping.inventory(root);config=housekeeping.catalog(root,modules)
@@ -72,7 +76,7 @@ def main():
         if a.mode=='audit' and a.all:
             config=housekeeping.catalog(root,housekeeping.inventory(root))
             a.fixture=[name for name,group in config['fixtures'].items() if group['kind']!='empty']
-        recipe=housekeeping.plan(root,a.libraries,a.fixture)
+        recipe=housekeeping.plan(root,a.libraries,a.fixture,paths)
         if a.mode=='bundle':bundle(root,recipe,a.output.absolute());print(a.output)
         elif a.mode=='audit':housekeeping.check_generated(root,recipe);print('MuLIB fixture/kernel matches verified')
         else:print(c.dumps(recipe),end='')

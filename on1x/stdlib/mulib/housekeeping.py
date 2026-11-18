@@ -2,6 +2,7 @@
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -15,6 +16,40 @@ contracts = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(contracts)
 MAX_FILES = 8192
 MAX_BYTES = 64*1024*1024
+
+
+def search_paths(values=(), environment='ON1X_MULIB_PATH'):
+    """Ordered, bounded colon lists; empty entries never select CWD."""
+    result = []
+    for value in [*values, os.environ.get(environment, '')]:
+        if len(os.fsencode(value))>65536:raise ValueError('search path byte limit exceeded')
+        for entry in value.split(':'):
+            if not entry:continue
+            if len(os.fsencode(entry))>4096 or len(result)>=256:raise ValueError('search path count/entry limit exceeded')
+            path = Path(entry).resolve()
+            if path not in result:result.append(path)
+    return result
+
+
+def kernel_root(explicit, default, paths):
+    if explicit is not None:return explicit.resolve()
+    if os.environ.get('ON1X_MULIB_ROOT'):return Path(os.environ['ON1X_MULIB_ROOT']).resolve()
+    for path in paths:
+        for root in [path, path.parent]:
+            if (root/'MANIFEST.yaml').is_file():return root.resolve()
+    return default.resolve()
+
+
+def include_paths(root, paths):
+    result = []
+    for path in [*paths, root/'include']:
+        directory = path/'include' if (path/'include').is_dir() else path
+        if directory not in result:result.append(directory)
+    return result
+
+
+def header_path(root, module):
+    return Path(module['header_path']) if 'header_path' in module else local(root, module['header'])
 
 
 def local(root, name):
@@ -92,7 +127,7 @@ def fixture_files(root, group):
     return sorted(files)
 
 
-def plan(root, libraries, fixtures=()):
+def plan(root, libraries, fixtures=(), paths=()):
     root = root.resolve()
     inputs = {str(path):contracts.digest(path) for path in
               [root/'MANIFEST.yaml', CATALOG, Path(__file__), HOME/'tools/on1x-contracts.py',
@@ -153,8 +188,20 @@ def plan(root, libraries, fixtures=()):
         for name in sorted(selected):
             for dep in config['fixtures'][name].get('requires', []):visit(dep)
         if previous==(len(ordered), len(selected)):break
-    entries = [dict(name=n, **modules[n], header_sha256=contracts.digest(local(root,modules[n]['header'])),
-                    manual_sha256=contracts.digest(local(root,modules[n]['manual']))) for n in ordered]
+    directories=include_paths(root,paths)
+    entries=[]
+    for n in ordered:
+        item=modules[n]
+        header=next((p/Path(item['header']).name for p in directories if (p/Path(item['header']).name).is_file()), None)
+        if header is None:raise ValueError('MuLIB kernel not found in search paths: '+n)
+        header=header.resolve()
+        digest=contracts.digest(header)
+        # Core source-contract recipes remain bound to their canonical header.
+        if profiles['profiles'].get(n, {}).get('recipe')=='exoml-core' and digest!=contracts.digest(local(root,item['header'])):
+            raise ValueError('source-pinned MuLIB kernel differs in search path: '+n)
+        entries.append(dict(name=n, **item, header_path=str(header), header_sha256=digest,
+                            manual_sha256=contracts.digest(local(root,item['manual']))))
+        inputs[str(header)]=digest
     macros = [m['macro'] for m in entries]
     if len(macros)!=len(set(macros)):raise ValueError('duplicate kernel implementation switch')
     groups, files, sources, headers, checks = [], {}, [], [], set()
@@ -186,7 +233,8 @@ def plan(root, libraries, fixtures=()):
                 modules=entries, implementation_macros=macros, implementation_translation_units=1,
                 required_symbols=required, dependency_cycles=cycles, fixtures=groups, files=records,
                 native_sources=sources, include_headers=headers, generator_checks=sorted(checks),
-                link_libraries=sorted(links), compile_definitions=['_POSIX_C_SOURCE=200809L'], inputs=inputs, safe_export=False)
+                link_libraries=sorted(links), include_directories=[str(p) for p in directories],
+                compile_definitions=['_POSIX_C_SOURCE=200809L'], inputs=inputs, safe_export=False)
 
 
 def check_generated(root, recipe):
@@ -199,13 +247,13 @@ def check_generated(root, recipe):
 def implementation(root, recipe):
     """Implementation placement only; all declarations remain canonical C headers."""
     for module in recipe['modules']:
-        if contracts.digest(local(root,module['header']))!=module['header_sha256']:
+        if contracts.digest(header_path(root,module))!=module['header_sha256']:
             raise ValueError('kernel input drift: '+module['header'])
     return ('/* One MuLIB implementation TU; ABI declarations are not synthesized. */\n'+
             ''.join('#define '+item.replace('=', ' ', 1)+'\n' for item in recipe['compile_definitions'])+
             ''.join('#define '+macro+'\n' for macro in recipe['implementation_macros'])+
-            ''.join('#include '+json.dumps(str(local(root, path)))+'\n' for path in
-                    [*[m['header'] for m in recipe['modules']], *recipe['include_headers']]))
+            ''.join('#include '+json.dumps(str(path))+'\n' for path in
+                    [*[header_path(root,m) for m in recipe['modules']], *[local(root,p) for p in recipe['include_headers']]]))
 
 
 def materialize(root, recipe, output):

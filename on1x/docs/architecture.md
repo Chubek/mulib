@@ -104,7 +104,7 @@ automatic prelude is demand-loaded; explicit imports retain their definitions.
 Namespaces disappear before the v1 PPX wire boundary, preserving the existing
 type, ownership and C11 pipeline. See [the module contract](modules.md).
 
-`std/mulib/housekeeping.py` is shared by the native build helper and Exotract.
+`stdlib/mulib/housekeeping.py` is shared by the native build helper and Exotract.
 It joins MANIFEST kernel dependencies with explicit `library/` fixture recipes,
 separates kernel implementation placement from companion C translation units,
 and obtains include provenance from the C compiler. `std.mulib` reads generated
