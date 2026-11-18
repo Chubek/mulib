@@ -30,6 +30,15 @@ companion does not expose session handles or map ownership.
 
 Width counts [Unicode scalar display columns](../../../manual/mulib-prettydoc.md#algorithms), not UTF-8 bytes or grapheme clusters.
 
+Use `pp_verbatim` when embedded newlines must not acquire the active
+`pp_nest` indentation (e.g. a multiline literal). Unlike `pp_fill`, this
+does not reflow or normalize its input. Annotations and target escaping
+still apply.
+
+The compiler's [On1x source formatter](../../docs/formatter.md) is an adapter
+under `on1x/`: it builds documents using the same PrettyDoc operations and
+does not add any On1x syntax rules to the layout or rendering kernels.
+
 ## Linking
 
 `on1x-build.py` detects the package's raw bridge declarations and selects

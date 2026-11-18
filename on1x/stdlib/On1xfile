@@ -1,1 +1,4 @@
-(On1xfile 1 (kind "stdlib") (name "std") (root "."))
+on1xfile 1
+kind library
+name "std"
+directory "."

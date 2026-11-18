@@ -1,1 +1,4 @@
-(On1xfile 1 (kind "library") (name "mulib") (root "."))
+on1xfile 1
+kind library
+name "mulib"
+directory "."

@@ -28,6 +28,44 @@ build/basis-io
 libraries and tools. See [loader configuration](../docs/modules.md) for `-I`,
 `--stdlib`, environment paths, prelude selection and PPX discovery.
 
+## Building the standard-library source package
+
+```sh
+python3 on1x/tools/on1x-project.py build on1x/stdlib \
+  --on1xc build/on1x/on1xc --output-dir build/on1x-stdlib
+python3 on1x/tools/on1x-build.py on1x/examples/stdlib_extensions.on1x \
+  --on1xc build/on1x/on1xc --stdlib build/on1x-stdlib/library \
+  --mulib-root . -o build/packaged-stdlib-example
+build/packaged-stdlib-example
+```
+
+The root `On1xfile` advertises `std`. Directory-local `On1xfile.m` files
+classify every library module and selected raw runtime resources. The project
+driver checks the modules against the staged `std` package, including its
+pervasive module, rather than resolving missing sources in the checkout or
+installed library. The output preserves the module paths and can be moved as
+a unit. Use it with `--stdlib` or `--stdlib-path`, not as an ordinary project
+dependency named `std`.
+
+The package includes the Basis C adapters (`runtime/basis_native.c`,
+`runtime/basis_real.c`, and `runtime/basis_native.h`) and the prettyprint
+companion (`prettyprint/runtime.c` and `prettyprint/runtime.h`). The build
+helper resolves their `.c` files from the selected `--stdlib` root and
+compiles them with the host C toolchain when needed. Prettyprint still needs
+the MuLIB kernel planner and headers. Only select a source package you trust as
+an SDK library: selecting it with `--stdlib` permits those raw C files to be
+compiled into downstream binaries. The `mulib/On1xfile` discovery manifest also
+ships, so `-I PACKAGE/mulib` can still resolve `import mulib`.
+
+This is not an SDK installation or native archive. The build helper takes
+the core On1x runtime, `_bridge/mulib_bridge.c` and its header, and the
+`std.mulib` metadata runtime/planner from its SDK, not from the source package.
+MuLIB headers and any selected native companions must be available to that
+SDK; `--mulib-root` selects their checkout or installation. The package does
+not carry compiler/PPX executables, project-policy helpers, the Basis
+reference/catalog, or test fixtures. Use CMake installation for the full SDK.
+The raw extern boundary and the existing partial Basis coverage are unchanged.
+
 ## C/ABI requirements
 
 C11, `int64_t`, `_Bool`, NUL-free `const char *` and POSIX filesystem/time

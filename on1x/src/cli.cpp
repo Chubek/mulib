@@ -2,6 +2,7 @@
 #include <on1x/meta.hpp>
 #include <on1x/loader.hpp>
 #include <on1x/discovery.hpp>
+#include <on1x/formatter.hpp>
 #include <on1x/backend/mir.hpp>
 #include <on1x/backend/passes.hpp>
 #ifdef ON1X_WITH_SYREN
@@ -27,7 +28,142 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#if defined(__unix__) || defined(__APPLE__)
+#include <cerrno>
+#include <cstring>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#endif
 namespace {
+ int project_command(int argc,char** argv){
+#if defined(__unix__) || defined(__APPLE__)
+  namespace fs=std::filesystem;
+  std::error_code ec;
+  fs::path compiler;
+#if defined(__linux__)
+  compiler=fs::canonical("/proc/self/exe",ec);
+#elif defined(__APPLE__)
+  uint32_t size=0;
+  (void)::_NSGetExecutablePath(nullptr,&size);
+  if(size){
+   std::string name(size,'\0');
+   if(::_NSGetExecutablePath(name.data(),&size)==0)compiler=fs::canonical(name.c_str(),ec);
+  }
+#endif
+  if(compiler.empty()){
+   fs::path candidate=argv[0];
+   if(!candidate.has_parent_path()){
+    std::vector<fs::path> paths;
+    on1x::discovery::environment(paths,"PATH");
+    candidate.clear();
+    for(const auto& dir:paths)
+     if(auto path=dir/argv[0];fs::is_regular_file(path)&&::access(path.c_str(),X_OK)==0){candidate=path;break;}
+   }
+   compiler=fs::canonical(candidate,ec);
+   if(ec)throw std::runtime_error("cannot locate on1xc for the project driver");
+  }
+  auto installed=compiler.parent_path()/"../share/on1x";
+  auto helper=installed/"tools/on1x-build.py";
+  if(!fs::is_directory(installed))helper=fs::path(ON1X_DRIVER_SOURCE_TOOLS)/"on1x-build.py";
+  auto script=helper.string();
+  auto binary=compiler.string();
+  if(::setenv("ON1X_PROJECT_COMPILER",binary.c_str(),1)!=0)
+   throw std::runtime_error("cannot set compiler path for the project driver");
+  std::vector<char*> arguments{script.data()};
+  arguments.insert(arguments.end(),argv+1,argv+argc);
+  arguments.push_back(nullptr);
+  ::execv(script.c_str(),arguments.data());
+  auto error=errno;
+  throw std::runtime_error("cannot start project driver "+script+": "+std::strerror(error));
+#else
+  (void)argc;(void)argv;
+  throw std::runtime_error("on1xc project commands require a POSIX host; try tools/on1x-build.py");
+#endif
+ }
+ void publish_format(const std::string& destination,const std::string& text){
+  if(destination.empty()||destination=="-"){
+   if(!(std::cout<<text).flush())throw std::runtime_error("cannot write formatted output");
+   return;
+  }
+#if defined(__unix__) || defined(__APPLE__)
+  namespace fs=std::filesystem;
+  const fs::path path=destination;
+  const auto parent=path.has_parent_path()?path.parent_path():fs::path(".");
+  auto temporary=(parent/".on1xfmt-XXXXXX").string();
+  struct stat prior{};
+  const bool exists=::lstat(destination.c_str(),&prior)==0;
+  if((exists&&!S_ISREG(prior.st_mode))||(!exists&&errno!=ENOENT))
+   throw std::runtime_error("formatter output must be a regular file: "+destination);
+  int fd=::mkstemp(temporary.data());
+  if(fd<0)throw std::runtime_error("cannot stage formatter output: "+destination);
+  bool ok=true;
+  for(std::size_t written=0;written<text.size();){
+   auto count=::write(fd,text.data()+written,text.size()-written);
+   if(count<0&&errno==EINTR)continue;
+   if(count<=0){ok=false;break;}
+   written+=static_cast<std::size_t>(count);
+  }
+  if(ok&&exists&&::fchmod(fd,prior.st_mode&0777)<0)ok=false;
+  if(::close(fd)<0)ok=false;
+  if(ok&&std::rename(temporary.c_str(),destination.c_str())==0)return;
+  ::unlink(temporary.c_str());
+  throw std::runtime_error("cannot publish formatter output: "+destination);
+#else
+  throw std::runtime_error("atomic formatter file output requires a POSIX host; use stdout");
+#endif
+ }
+ int format_command(int argc,char** argv,std::string_view command){
+  namespace fmt=on1x::format;
+  fmt::Options options;
+  if(command=="--emit-latex")options.target=fmt::Target::latex;
+  if(command=="--emit-troff")options.target=fmt::Target::troff;
+  bool check=false, options_done=false;
+  std::string source,out;
+  auto usage_error=[](const std::string& message){
+   std::cerr<<"on1xc: "<<message<<'\n';
+   return 2;
+  };
+  for(int i=2;i<argc;++i){
+   std::string_view arg=argv[i];
+   if(!options_done&&arg=="--"){options_done=true;continue;}
+   if(!options_done&&(arg=="--help"||arg=="-h")){
+    std::cout<<"usage: on1xc fmt INPUT [--target plain|latex|troff] [--check | -o OUTPUT]\n";
+    return 0;
+   }
+   if(!options_done&&arg=="--target"){
+     if(++i==argc)return usage_error("--target requires plain, latex or troff");
+    std::string_view target=argv[i];
+    if(target=="plain")options.target=fmt::Target::plain;
+    else if(target=="latex")options.target=fmt::Target::latex;
+    else if(target=="troff")options.target=fmt::Target::troff;
+     else return usage_error("unknown formatter target: "+std::string(target));
+   }else if(!options_done&&arg=="--check")check=true;
+   else if(!options_done&&arg=="--enable"){
+    if(++i==argc)return usage_error("--enable requires registered feature names");
+    std::set<std::string> selected;
+    on1x::extensions::select(selected,argv[i],{"<command-line>"});
+    options.enabled_extensions.insert(options.enabled_extensions.end(),selected.begin(),selected.end());
+   }else if(!options_done&&arg=="-o"){
+    if(++i==argc||!argv[i][0]||!out.empty())return usage_error("-o requires exactly one nonempty output path");
+    out=argv[i];
+   }else if(!options_done&&arg.starts_with('-'))return usage_error("unknown formatter option: "+std::string(arg));
+   else if(source.empty()&&!arg.empty())source=arg;
+   else return usage_error("formatter requires exactly one input file");
+  }
+  if(source.empty())return usage_error("formatter requires an input file");
+  if(check){
+   if(!out.empty()||(options.target&&*options.target!=fmt::Target::plain))
+    return usage_error("formatter --check requires plain output and cannot be combined with -o");
+   options.target=fmt::Target::plain;
+  }
+  auto result=fmt::file(source,options);
+  if(check)return result==on1x::read_source_file(source)?0:1;
+  publish_format(out,result);
+  return 0;
+ }
 #ifdef ON1X_WITH_SYREN
 void report_error(const on1x::Error& error,const std::string& format){
  std::optional<std::string> snapshot;
@@ -154,6 +290,7 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
 }
 void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO C11\n"
  "usage: on1xc [--check | --emit-c | --tokens | --types | --emit-ast] INPUT.on1x [-o OUTPUT]\n"
+  "       on1xc --check-interfaces INPUT.on1x --interface FILE.on1xi [--interface FILE.on1xi ...]\n"
  "       [--ppx LABEL PROGRAM] [--ppx-schema LABEL FILE] [--allow-source-ppx]\n"
  "       [--ppx-timeout-ms MILLISECONDS]\n"
   "       [--enable NAME[,NAME]] [--disable NAME] (bundled native extensions only)\n"
@@ -181,7 +318,11 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    "       [--verify-types] (require independent structural HIR type verification)\n"
    "       [--diagnostics text|json|sarif] (Syren opt-in build; errors on stderr)\n"
    "       on1xc --repair INPUT.on1x -o NEW_FILE (Syren; reviewable proposal only)\n"
- "       on1xc --help\n"
+  "       on1xc --help\n"
+   "       on1xc init (--bin | --proj | --lib) [DIRECTORY]\n"
+   "       on1xc exec COMMAND [ARGS ...] (explicit On1xfile command execution)\n"
+   "       on1xc fmt INPUT [--target plain|latex|troff] [--check | -o OUTPUT]\n"
+   "       on1xc (--format | --emit-latex | --emit-troff) INPUT [-o OUTPUT]\n"
   "--emit-ast expands macros and exports pre-PPX AST; it never executes programs.\n"
   "MIR modes support i64/bool/void, direct On1x calls, control flow and scalar print/assert.\n"
   "--run-ir is a bounded reference evaluator, not a native or VM backend.\n"
@@ -191,6 +332,13 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 int main(int argc,char**argv){
  std::string diagnostic_format="text";
  try{
+   if(argc>1&&(std::string_view(argv[1])=="init"||std::string_view(argv[1])=="exec"))
+    return project_command(argc,argv);
+   if(argc>1){
+    std::string_view command=argv[1];
+    if(command=="fmt"||command=="--format"||command=="--emit-latex"||command=="--emit-troff")
+     return format_command(argc,argv,command);
+   }
        std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false;
      std::size_t analysis_work=10000000;bool analysis_limit=false;
       on1x::mir::passes::Options optimization;bool optimize=false,opt_limit=false;
@@ -234,7 +382,12 @@ int main(int argc,char**argv){
        if(arg=="--memory-check"){memory=true;continue;}
        if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
        if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
-    if(arg=="--check-memory"){mode=arg;continue;}
+     if(arg=="--check-memory"||arg=="--check-interfaces"){mode=arg;continue;}
+     if(arg=="--interface"){
+      if(++i>=argc||!argv[i][0])throw std::runtime_error("--interface requires a nonempty path");
+      if(loader.interfaces.size()>=on1x::max_interface_files)throw std::runtime_error("interface file count limit exceeded");
+      loader.interfaces.emplace_back(argv[i]);continue;
+     }
     if(arg=="--admitted-extern"){
      if(++i>=argc||!argv[i][0])throw std::runtime_error("--admitted-extern requires a nonempty path");
      admission_files.emplace_back(argv[i]);continue;
@@ -282,7 +435,14 @@ int main(int argc,char**argv){
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
    else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
   }
-       if(mode=="--list-extensions"){write_all(out,on1x::extensions::describe(loader.extensions));return 0;}
+        const bool interface_mode=mode=="--check-interfaces";
+        if(interface_mode==loader.interfaces.empty())
+         throw std::runtime_error("--check-interfaces and at least one --interface FILE must be used together");
+        if(interface_mode&&(source.empty()||!out.empty()||ir_input||memory||type_safety||optimize||opt_limit||
+           analysis_limit||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source||
+           loader.kernel_c11||loader.kernel_stage||!loader.extensions.enabled.empty()))
+         throw std::runtime_error("--check-interfaces requires plain source without output, PPX, declaration extensions or other checker options");
+        if(mode=="--list-extensions"){write_all(out,on1x::extensions::describe(loader.extensions));return 0;}
        if(mode=="--explain-extension"){write_all(out,on1x::extensions::describe(loader.extensions,explain_extension));return 0;}
        loader.paths.insert(loader.paths.begin(),import_paths.begin(),import_paths.end());
        loader.stdlib_paths.insert(loader.stdlib_paths.begin(),stdlib_paths.begin(),stdlib_paths.end());
@@ -301,7 +461,7 @@ int main(int argc,char**argv){
         write_all(out,roots.front().string()+"\n");return 0;
        }
        if(source.empty()){usage();return 2;}
-       loader.extensions.execute=mode!="--deps"&&mode!="--emit-ast"&&mode!="--repair";
+        loader.extensions.execute=mode!="--deps"&&mode!="--emit-ast"&&mode!="--repair"&&!interface_mode;
        loader.extensions.timeout_ms=ppx.timeout_ms;
        for(const auto& name:loader.extensions.enabled)if(loader.extensions.disabled.contains(name))throw on1x::Error({"<command-line>"},"ON1X-CAT-ENABLE: enabled/disabled conflict: "+name,"ON1X-CAT-ENABLE");
        if(mode=="--repair"){
@@ -381,7 +541,11 @@ int main(int argc,char**argv){
      std::ostringstream paths;for(const auto& path:loaded.dependencies)paths<<path.string()<<"\n";
      write_all(out,paths.str());return 0;
     }
-     auto& unit=loaded.unit;
+      auto& unit=loaded.unit;
+      if(interface_mode){
+       on1x::check_interfaces(std::move(unit),loaded.interfaces);
+       std::cout<<"OK: "<<loaded.interfaces.size()<<" interface members\n";return 0;
+      }
      auto extension_names=loader.extensions.enabled;
      for(const auto& activation:unit.features)extension_names.insert(activation.name);
      for(const auto& registration:ppx.programs)if(extension_names.contains(registration.label))

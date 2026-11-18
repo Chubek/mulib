@@ -1,5 +1,17 @@
 # On1x capability matrix
 
+M5/M7 tooling work item, starting checkout: MuLIB
+`f520a7da8cd29c282f335ed3d0fdca1599c2ff30`, configured LibStone
+`57113dc48d815359431dce63a6b865a21dd993cd` (different from the parent
+gitlink; left unchanged), Linux x86-64, GCC 16.2.1 and Clang 22.1.8.
+The table records the current state of this work item.
+
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| On1x source formatter | `stdlib/prettyprint/on1x/formatter.cpp`, canonical lexer/parser, PrettyDoc/PrettyEmit | Compiler-only planned C11 kernel linkage; existing raw adapter also exports a verbatim document constructor | `.on1xfmt`, paired preservation and target comment directives, CLI and On1xfile plain/LaTeX/troff; conserves tokens and dot adjacency | `tests/test_formatter.py`, `prettyprint.mk`, original/formatted strict C11 execution and markup compiler tests | EXECUTABLE | Conservative wrap points; no syntax recovery, unchanged source locations, or cross-platform publication verification |
+| On1xfile project builds | `tools/on1x-project.py`, `stdlib/on1xfile` | Existing C11 builder and canonical MuLIB native plans; optional QMR compiler on Mune; Linux bubblewrap | Line-oriented root/local declarations, profiles, direct certified local and offline pinned Git dependencies | `test_on1x_project.py` (11 cases); host file and network namespace isolation, repeatable sandboxed release smoke build | EXECUTABLE | True interface/separate compilation, registry/remote materialization, portable and pinned toolchain |
+| On1xfile project lifecycle | `src/{cli,discovery}.cpp`, `tools/on1x_project.py`, `stdlib` | No new application ABI | New stdlib manifests with legacy discovery compatibility; executable, complex and library scaffolds | `on1x.project_driver`, `on1x.install`, `on1x.discovery` | EXECUTABLE | More platforms; no expansion of SML Basis conformance |
+
 Package D continuation: MuLIB `2da654cae071226ad246415d2fad4ba43f6f9ec1`,
 LibStone `9c44917b6518c03ef33c544c0ef93b2d864fe4fa`. See
 [the numerical profile](kernel-numerics.md) and [verification](../VERIFICATION.md).

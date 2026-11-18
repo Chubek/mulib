@@ -63,6 +63,17 @@ execute('manifest_library','import arithmetic;from arithmetic import number;'
         extra_env={'ON1X_LIB_PATH':str(roots[1])})
 execute('direct_package','import arithmetic.number as N;fn main(){println(N.answer());}','42\n',
         ['--lib-path',package])
+modern=roots[0]/'new_arithmetic'
+write(modern/'On1xfile','''# Modern project metadata is declarative for discovery.
+on1xfile 1
+kind library
+name "new_arithmetic"
+directory "source files"
+profile "preview" "must-not-run.lua"
+''')
+write(modern/'source files/number.on1x','fn answer()->i64{return 42;}')
+execute('modern_library','import new_arithmetic.number as N;fn main(){println(N.answer());}','42\n',
+        ['--lib-path',modern])
 
 # A stdlib is discovered as a direct manifest root or as container/stdlib.
 # Both explicit/selective std imports and the implicit prelude share resolution.
@@ -77,6 +88,11 @@ for flag in ['--lib-path','--stdlib-path']:
     execute('stdlib_'+flag[2:],client,'42\n41\n',[flag,f'{t.work}/absent:{custom}'])
     p=run([t.compiler,'--print-stdlib',flag,custom],env=env)
     assert p.returncode==0 and Path(p.stdout.strip())==custom.resolve(),p
+modern_stdlib=t.work/'modern ecosystem'/'stdlib'
+write(modern_stdlib/'On1xfile','on1xfile 1\nkind library\nname "std"\ndirectory "lib"\n')
+write(modern_stdlib/'lib/pervasive.on1x','fn identity(x:i64)->i64{return x+1;}')
+write(modern_stdlib/'lib/Answer.on1x','fn value()->i64{return 41;}')
+execute('modern_stdlib',client,'42\n41\n',['--stdlib-path',modern_stdlib])
 # Ordinary project imports cannot shadow std.*.
 write(t.work/'Answer.on1x','fn value()->i64{return -1;}')
 execute('anchored_std',client,'42\n41\n',['--stdlib-path',custom])
@@ -169,6 +185,9 @@ for i,text in enumerate([
     '(On1xfile 1 (kind "stdlib") (kind "stdlib") (name "std"))',
     '(On1xfile 1 (kind "stdlib") (name "std") (root ".."))',
     '(On1xfile 1 (kind "stdlib") (name "std") (command "touch evil"))',
+    'on1xfile 2\nkind library\nname "std"\n',
+    'on1xfile 1\nkind library\nkind complex\nname "std"\n',
+    'on1xfile 1\nkind library\nname "std"\ndirectory ".."\n',
 ]):
     write(bad/'On1xfile',text)
     reject('bad_manifest_'+str(i),'fn main(){}','manifest',['--stdlib-path',bad])

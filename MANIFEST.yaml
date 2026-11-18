@@ -12689,6 +12689,12 @@ project_files:
   purpose: On1x example using the language-neutral PrettyPrint document DSL.
 - file: on1x/stdlib/prettyprint/runtime.c
   purpose: Declaration-only PrettyPrint companion calling the planner-linked kernels.
+- file: on1x/stdlib/prettyprint/on1x/formatter.cpp
+  purpose: Canonical On1x source adapter to language-neutral PrettyPrint documents.
+- file: on1x/stdlib/prettyprint/on1x/implementation.py
+  purpose: Generate the compiler's single PrettyPrint implementation TU from the MuLIB planner.
+- file: on1x/tests/test_formatter.py
+  purpose: Test source formatter idempotence, semantics, configuration, directives, and escaped markup.
 - file: on1x/contracts-exoml/prettyprint.exocontract.json
   purpose: Unreviewed CDecl-backed contract annotations for the raw PrettyPrint bridge.
 - file: prettyprint.mk

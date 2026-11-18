@@ -559,8 +559,8 @@ class Checker {
  }
  public:
  explicit Checker(Unit& u):unit(u),catalog(u){}
-  void run(){
-   if(unit.functions.empty())fail({"<unit>"},"missing main function");
+   void run(const std::vector<InterfaceObligation>* interfaces){
+    if(!interfaces&&unit.functions.empty())fail({"<unit>"},"missing main function");
     for(auto& f:unit.functions){
       verify_kernel_shape(f);
      if(f.result.has_generics()&&!f.prototype)fail(f.where,"quantified types require a checked prototype");
@@ -593,8 +593,26 @@ class Checker {
      signatures.emplace(f.name,Type::function(std::move(parameters),f.result));
      if(f.external)(void)extern_parameter_types(f);
   }
-  if(!funcs.contains("main"))fail(unit.functions.front().where,"missing main function");
-  auto main=funcs.at("main");if(main->external||!main->params.empty()||(main->result!=Type::I64&&main->result!=Type::Void))fail(main->where,"main must be fn main() -> i64 or void");
+   if(!interfaces){
+    if(!funcs.contains("main"))fail(unit.functions.front().where,"missing main function");
+    auto main=funcs.at("main");if(main->external||!main->params.empty()||(main->result!=Type::I64&&main->result!=Type::Void))fail(main->where,"main must be fn main() -> i64 or void");
+   }else for(const auto& obligation:*interfaces){
+    const auto& member=obligation.member;
+    auto definition=funcs.find(obligation.resolved_name);
+    if(definition==funcs.end()||definition->second->external||definition->second->prototype||
+       definition->second->where.file!=obligation.implementation.file||
+       definition->second->where.offset!=obligation.implementation.offset)
+     throw Error(member.where,"missing original On1x definition of '"+member.name+"'",
+                 "ON1X-INTERFACE-MEMBER");
+    const auto& checked=signatures.at(obligation.resolved_name);
+    if(member.signature!=checked){
+     const auto& at=obligation.implementation;
+     auto expected=type_name(member.signature),found=type_name(checked);
+     throw Error(member.where,"interface signature mismatch for '"+member.name+"': expected "+expected+
+                 ", found "+found+" in "+at.file+":"+std::to_string(at.line)+":"+std::to_string(at.column),
+                 "ON1X-INTERFACE-MISMATCH",expected,found);
+    }
+   }
   for(auto& f:unit.functions){if(f.external)continue;returns=f.result;push();
     for(auto& p:f.params){if(p.pattern)bind_pattern(*p.pattern,p.type);else define(p.name,p.type,false,p.where);}
    bool complete=check_block(f.body,false);pop();
@@ -602,6 +620,16 @@ class Checker {
   }
  }
 };
+ void check_unit(Unit& u,const std::vector<InterfaceObligation>* interfaces){
+  require_no_kernel_imports(u);expand_macros(u);meta::require_core(u);infer_types(u);canonical::lower_control(u);
+  Checker(u).run(interfaces);
+  if(canonical::needs_values(u)){canonical::lower_values(u);Checker(u).run(interfaces);}
+  csp::lower(u);canonical::verify_control(u);canonical::verify_values(u);csp::verify(u,true);extensions::verify_evidence(u);
+ }
 }
-void check(Unit&u){require_no_kernel_imports(u);expand_macros(u);meta::require_core(u);infer_types(u);canonical::lower_control(u);Checker(u).run();if(canonical::needs_values(u)){canonical::lower_values(u);Checker(u).run();}csp::lower(u);canonical::verify_control(u);canonical::verify_values(u);csp::verify(u,true);extensions::verify_evidence(u);}
+ void check(Unit& u){check_unit(u,nullptr);}
+ void check_interfaces(Unit u,const std::vector<InterfaceObligation>& interfaces){
+  if(interfaces.empty())throw Error({"<unit>"},"no interface obligations to verify","ON1X-INTERFACE-MEMBER");
+  check_unit(u,&interfaces);
+ }
 }

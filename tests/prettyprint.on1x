@@ -3,6 +3,9 @@ import std.prettyprint as Pretty;
 fn main() {
   let (text_status, text)=Pretty.pp_format(Pretty.pp_text("café\n<>&"),80);
   assert(text_status==0 && text=="café\n<>&");
+  let raw=Pretty.pp_nest(4,Pretty.pp_cat(Pretty.pp_hardline(),Pretty.pp_verbatim("a\n\tb\n.c")));
+  let (raw_status,raw_text)=Pretty.pp_format(raw,80);
+  assert(raw_status==0 && raw_text=="\n    a\n\tb\n.c");
   let doc=Pretty.pp_group(Pretty.pp_cat(Pretty.pp_text("界"),Pretty.pp_cat(Pretty.pp_softline(),Pretty.pp_text("é"))));
   let (fit_status, fit)=Pretty.pp_format(doc,4);
   assert(fit_status==0 && fit=="界 é");

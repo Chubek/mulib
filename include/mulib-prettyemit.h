@@ -61,8 +61,11 @@ static int mulib_pretty_escape_tex_(mulib_pretty_buf_ *b,const char *s,size_t n)
    case '%':esc="\\%";break;case '#':esc="\\#";break;
    case '_':esc="\\_";break;case '^':esc="\\textasciicircum{}";break;
    case '~':esc="\\textasciitilde{}";break;
-   case ' ':esc="\\ ";break;
-   case '\n':esc="\\par\\noindent\n";break;
+    case ' ':esc="\\ ";break;
+    case '\n':esc="\\par\\noindent\n";break;
+    case '\r':esc="\\textless{}CR\\textgreater{}";break;
+    case '\t':esc="\\ \\ \\ \\ \\ \\ \\ \\ ";break;
+    case '\177':esc="\\textless{}DEL\\textgreater{}";break;
   }
   if(!(esc?mulib_pretty_lit_(b,esc):mulib_pretty_append_(b,s+i,1)))return 0;
  }
@@ -71,7 +74,9 @@ static int mulib_pretty_escape_tex_(mulib_pretty_buf_ *b,const char *s,size_t n)
 static int mulib_pretty_escape_roff_(mulib_pretty_buf_ *b,const char *s,size_t n,int *line_start){
  for(size_t i=0;i<n;i++){
   if(*line_start && (s[i]=='.'||s[i]=='\''))if(!mulib_pretty_lit_(b,"\\&"))return 0;
-  if(s[i]=='\\'){if(!mulib_pretty_lit_(b,"\\e"))return 0;}
+   if(s[i]=='\\'){if(!mulib_pretty_lit_(b,"\\e"))return 0;}
+   else if(s[i]=='\r'){if(!mulib_pretty_lit_(b,"<CR>"))return 0;}
+   else if(s[i]=='\177'){if(!mulib_pretty_lit_(b,"<DEL>"))return 0;}
   else if(!mulib_pretty_append_(b,s+i,1))return 0;
   *line_start=s[i]=='\n';
  }
@@ -189,7 +194,9 @@ char *mulib_pretty_emit(const mulib_pretty_layout_t *l,mulib_pretty_target_t tar
   }
   if(ok)ok=mulib_pretty_lit_(&b,"\\begin{document}\n\\noindent{\\ttfamily ");
  }
- else if(target==MULIB_PRETTY_TROFF)ok=mulib_pretty_lit_(&b,".nf\n.ft CW\n");
+  /* nroff's terminal output is already fixed-width and may not have a
+   * Courier font. Groff's typesetting devices use CR (Courier Roman). */
+  else if(target==MULIB_PRETTY_TROFF)ok=mulib_pretty_lit_(&b,".nf\n.if t .ft CR\n");
  if(!ok){free(b.s);return NULL;}
  if(target!=MULIB_PRETTY_PLAIN){
   int equation=0;
@@ -232,7 +239,7 @@ char *mulib_pretty_emit(const mulib_pretty_layout_t *l,mulib_pretty_target_t tar
   if(ok){
    if(target==MULIB_PRETTY_HTML_MATHML)ok=mulib_pretty_lit_(&b,"</code></pre></body></html>\n");
    if(target==MULIB_PRETTY_LATEX)ok=mulib_pretty_lit_(&b,"}\n\\end{document}\n");
-   if(target==MULIB_PRETTY_TROFF)ok=mulib_pretty_lit_(&b,"\n.ft\n.fi\n");
+    if(target==MULIB_PRETTY_TROFF)ok=mulib_pretty_lit_(&b,"\n.if t .ft\n.fi\n");
   }
  }
  if(!ok){free(b.s);return NULL;}

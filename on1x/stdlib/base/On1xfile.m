@@ -1,0 +1,12 @@
+on1xfile 1
+library "either.on1x"
+library "fn.on1x"
+library "list.on1x"
+library "monad.on1x"
+library "option.on1x"
+library "ordering.on1x"
+library "predicate.on1x"
+library "result.on1x"
+library "sequence.on1x"
+library "shape.on1x"
+library "string.on1x"

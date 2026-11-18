@@ -23,7 +23,7 @@ typedef enum mulib_pretty_kind {
  MULIB_PRETTY_CAT, MULIB_PRETTY_GROUP, MULIB_PRETTY_NEST,
  MULIB_PRETTY_ALIGN, MULIB_PRETTY_CHOICE, MULIB_PRETTY_ANNOTATE,
  MULIB_PRETTY_FILL, MULIB_PRETTY_REGION, MULIB_PRETTY_PARAGRAPH_REGION,
- MULIB_PRETTY_SOURCE, MULIB_PRETTY_MATH
+ MULIB_PRETTY_SOURCE, MULIB_PRETTY_MATH, MULIB_PRETTY_VERBATIM
 } mulib_pretty_kind_t;
 typedef enum mulib_pretty_style {
  MULIB_PRETTY_NORMAL, MULIB_PRETTY_KEYWORD, MULIB_PRETTY_IDENTIFIER,
@@ -79,6 +79,9 @@ typedef struct mulib_pretty_session mulib_pretty_session_t;
 mulib_prettydoc_t *mulib_prettydoc_new(void);
 void mulib_prettydoc_free(mulib_prettydoc_t *doc);
 mulib_pretty_id_t mulib_pretty_text(mulib_prettydoc_t *doc,const char *text);
+/* Literal text: embedded LF does not add the current nest's indentation.
+ * Still participates in width measurement, annotations, and target escaping. */
+mulib_pretty_id_t mulib_pretty_verbatim(mulib_prettydoc_t *doc,const char *text);
 mulib_pretty_id_t mulib_pretty_fill(mulib_prettydoc_t *doc,const char *text);
 mulib_pretty_id_t mulib_pretty_softline(mulib_prettydoc_t *doc);
 mulib_pretty_id_t mulib_pretty_hardline(mulib_prettydoc_t *doc);
@@ -334,6 +337,7 @@ static mulib_pretty_id_t mulib_pretty_string_(mulib_prettydoc_t *d,const char *s
  mulib_pretty_id_t i=mulib_pretty_add_(d,n);if(i==MULIB_PRETTY_NONE)free(p);return i;
 }
 mulib_pretty_id_t mulib_pretty_text(mulib_prettydoc_t *d,const char *s){return mulib_pretty_string_(d,s,MULIB_PRETTY_TEXT);}
+mulib_pretty_id_t mulib_pretty_verbatim(mulib_prettydoc_t *d,const char *s){return mulib_pretty_string_(d,s,MULIB_PRETTY_VERBATIM);}
 mulib_pretty_id_t mulib_pretty_fill(mulib_prettydoc_t *d,const char *s){return mulib_pretty_string_(d,s,MULIB_PRETTY_FILL);}
 static mulib_pretty_id_t mulib_pretty_node1_(mulib_prettydoc_t *d,mulib_pretty_kind_t k,size_t amt,mulib_pretty_id_t a){
  if(!mulib_pretty_valid_(d,a))return MULIB_PRETTY_NONE;
@@ -510,18 +514,22 @@ static size_t mulib_pretty_room_(const mulib_pretty_renderer_ *r,size_t column,s
   size_t limit=mulib_pretty_line_limit_(r,line_indent);
   return column<limit?limit-column:0;
 }
-static int mulib_pretty_break_(mulib_pretty_renderer_ *r,size_t indent){
+static int mulib_pretty_break_as_(mulib_pretty_renderer_ *r,size_t indent,mulib_pretty_style_t sty,int literal){
   size_t w=mulib_pretty_line_limit_(r,r->line_indent);size_t diff=r->column>=w?0:w-r->column;
  if(r->column>w)r->overflow+=r->column-w;
  r->ragged+=diff>4096?4096*4096:diff*diff;
  if(r->column>r->out.max_columns)r->out.max_columns=r->column;
  r->breaks++;r->column=0;r->out.lines++;
-  if(!mulib_pretty_piece_(r,"\n",1,MULIB_PRETTY_NORMAL))return 0;
+  if(!(literal?mulib_pretty_mapped_(r,"\n",1,sty):
+               mulib_pretty_piece_(r,"\n",1,MULIB_PRETTY_NORMAL)))return 0;
   if(indent>r->options.indent_limit||indent>*r->work){r->failed=1;return 0;}
   *r->work-=indent;
   r->line_indent=indent;
  while(indent--){if(!mulib_pretty_piece_(r," ",1,MULIB_PRETTY_NORMAL))return 0;r->column++;}
  return 1;
+}
+static int mulib_pretty_break_(mulib_pretty_renderer_ *r,size_t indent){
+ return mulib_pretty_break_as_(r,indent,MULIB_PRETTY_NORMAL,0);
 }
 /* Greedy mode defers a softline until the following text fragment is known. */
 static int mulib_pretty_pending_(mulib_pretty_renderer_ *r,size_t next_width){
@@ -533,7 +541,7 @@ static int mulib_pretty_pending_(mulib_pretty_renderer_ *r,size_t next_width){
  }
  return mulib_pretty_break_(r,r->pending_indent);
 }
-static int mulib_pretty_put_(mulib_pretty_renderer_ *r,const char *s,mulib_pretty_style_t sty){
+static int mulib_pretty_put_(mulib_pretty_renderer_ *r,const char *s,mulib_pretty_style_t sty,int verbatim){
  const unsigned char *p=(const unsigned char*)s,*q=p;
  for(;;){
   size_t width=mulib_pretty_measure_(r,&q,SIZE_MAX-1,0);
@@ -541,7 +549,10 @@ static int mulib_pretty_put_(mulib_pretty_renderer_ *r,const char *s,mulib_prett
      !mulib_pretty_mapped_(r,(const char*)p,(size_t)(q-p),sty))return 0;
   r->column+=width;
   if(!*q)return 1;
-  if(!mulib_pretty_break_(r,r->indent))return 0;
+  if(verbatim){
+   /* The LF belongs to this source span, not to generated whitespace. */
+   if(!mulib_pretty_break_as_(r,0,sty,1))return 0;
+  }else if(!mulib_pretty_break_(r,r->indent))return 0;
   p=++q;
  }
 }
@@ -603,7 +614,7 @@ static size_t mulib_pretty_flat_(mulib_pretty_renderer_ *r,mulib_pretty_id_t id,
  if(depth>256)return cap+1;
  const mulib_pretty_node_ *n=&r->doc->nodes[id];size_t a,b;
  switch(n->kind){
- case MULIB_PRETTY_TEXT: {
+ case MULIB_PRETTY_TEXT: case MULIB_PRETTY_VERBATIM: {
   const unsigned char *s=(const unsigned char*)n->text;
   a=mulib_pretty_measure_(r,&s,cap,0);
   return *s=='\n'?cap+1:a;
@@ -768,7 +779,8 @@ static int mulib_pretty_walk_(mulib_pretty_renderer_ *r,mulib_pretty_id_t id,int
  if(depth>256||!mulib_pretty_visit_(r->work)){r->failed=1;return 0;}
  const mulib_pretty_node_ *n=&r->doc->nodes[id];size_t old;
  switch(n->kind){
- case MULIB_PRETTY_TEXT:return mulib_pretty_put_(r,n->text,style);
+ case MULIB_PRETTY_TEXT:return mulib_pretty_put_(r,n->text,style,0);
+ case MULIB_PRETTY_VERBATIM:return mulib_pretty_put_(r,n->text,style,1);
  case MULIB_PRETTY_MATH: {
   size_t width=0;
   if(r->pending_soft&&(!mulib_pretty_equation_(r,id,depth,SIZE_MAX-1,&width,0)||

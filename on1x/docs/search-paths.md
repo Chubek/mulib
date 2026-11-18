@@ -93,19 +93,22 @@ Timeouts, wire/schema validation and post-PPX semantic checks remain in force.
 The separate pinned native Category extension registry is **not** redirected by
 any of these environment variables or flags.
 
-## `On1xfile` version 1
+## Project `On1xfile` version 1
 
-Manifests are bounded declarative S-expressions, using the existing compiler
-S-expression reader, not executable On1x or shell code. Field values are quoted
-strings. Unknown/duplicate fields, unsupported versions and escaping paths
-reject. Names have 1–128 ASCII letters/digits/underscore/dot/hyphen characters
-(excluding `.` and `..`). There is no dependency resolution or lockfile format
-implied by this initial manifest version.
+New project manifests are line-oriented declarations. The compiler reads only
+the literal package identity (`kind`, `name` and optional `directory`) for
+search-path discovery. It does not execute Mune, expand a template, select a
+build profile, or look inside `On1xfile.m`/`On1xfile.i` to resolve an import.
+Project commands, dependency declarations and local directory roles are handled
+by the explicit project build driver instead.
 
 The standard-library root contains:
 
-```lisp
-(On1xfile 1 (kind "stdlib") (name "std") (root "."))
+```text
+on1xfile 1
+kind library
+name "std"
+directory "."
 ```
 
 The shipped `stdlib/On1xfile` advertises the whole standard library, including
@@ -114,15 +117,34 @@ and `ON1X_STDLIB` still accept old unmanifested roots.
 
 A library directory can advertise a different source directory:
 
-```lisp
-(On1xfile 1 (kind "library") (name "arithmetic") (root "src"))
+```text
+on1xfile 1
+kind library
+name "arithmetic"
+directory "src"
 ```
 
 When the manifest is at `SEARCH/arithmetic/On1xfile` or directly at
 `SEARCH/On1xfile`, `import arithmetic.number` resolves to `src/number.on1x`
 inside that package. `import arithmetic` selects `src/__init__.on1x` or its
 namespace directory. Plain `.on1x`/`__init__.on1x` libraries remain compatible.
-`root` defaults to `.` and must be a directory.
+`directory` defaults to `.`, must name an existing directory inside the package,
+and is a literal quoted path without escapes for compiler discovery. New names
+start with an ASCII letter or underscore and contain up to 64 ASCII letters,
+digits, underscores or hyphens. The old `(On1xfile 1 ...)` package declarations
+remain readable for compatibility with existing search paths, not as new build
+manifests.
+
+To create a new project, run `on1xc init --bin`, `on1xc init --proj`, or
+`on1xc init --lib`. Pass an optional directory instead of using the current
+directory. The scaffold refuses to overwrite existing files. From the new
+project directory, `on1xc exec build` selects the development profile and
+`on1xc exec release` selects the release profile; other command names select a
+declared build profile. These commands also work through `tools/on1x-build.py`.
+Unlike import discovery, `exec` can evaluate the selected root project's Mune
+Lua policy. The driver does not pass the command name or options to a shell.
+
+### Legacy PPX discovery metadata
 
 An already-built native On1x PPX package contains an `On1xfile`:
 
@@ -161,9 +183,10 @@ Explicit-path scripts retain their previous compatibility behavior.
 
 Limits: 256 search directories per family (combined general/standard library
 inputs also bounded at 256), 64 KiB per list and file manifest, 4,096 bytes per
-path or script header line, and 128 manifest fields. Existing S-expression
-depth/node limits apply. Missing inputs, malformed metadata and budget exhaustion
-reject before executable/generated-C publication.
+search path or script header line, and 128 legacy manifest fields. Existing
+S-expression depth/node limits apply to legacy metadata. Missing inputs,
+malformed discovery metadata and budget exhaustion reject before
+executable/generated-C publication.
 
 ## Kernel lookup and evidence
 

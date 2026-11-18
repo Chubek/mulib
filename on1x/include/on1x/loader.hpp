@@ -19,12 +19,14 @@ struct LoaderOptions {
  // an empty map. All normal parsing, import and byte limits still apply.
   std::map<std::filesystem::path,std::string> source_overrides;
   extensions::Options extensions;
+  std::vector<std::filesystem::path> interfaces; // Explicit opt-in, never searched or imported.
 };
 struct LoadedUnit {
  Unit unit;
  // Canonical paths in dependency-first order, each included exactly once.
  std::vector<std::filesystem::path> dependencies;
  std::set<std::string> internal_functions;
+ std::vector<InterfaceObligation> interfaces;
 };
 // Reads the new *_PATH lists and legacy ON1X_STDLIB/ON1X_PATH aliases.
  LoaderOptions default_loader_options(const std::string& executable);

@@ -16,7 +16,10 @@ fn pp_node2(tag:string,a:sexpr,b:sexpr)->sexpr {
  return sx_cons(sx_symbol(tag),sx_cons(a,sx_cons(b,sx_nil())));
 }
 fn pp_text(value:string)->sexpr {
- return pp_node1("text",sx_string(value));
+  return pp_node1("text",sx_string(value));
+}
+fn pp_verbatim(value:string)->sexpr {
+  return pp_node1("verbatim",sx_string(value));
 }
 fn pp_fill(value:string)->sexpr {
  return pp_node1("fill",sx_string(value));

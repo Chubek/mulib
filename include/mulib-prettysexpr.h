@@ -3,7 +3,7 @@
  * @brief Parse language-independent PrettyDoc S-expression interchange.
  * Define MULIB_IMPL_PRETTYSEXPR in exactly one translation unit; requires
  * MULIB_IMPL_PRETTYDOC, and MULIB_IMPL_PRETTYEMIT to call render_expr.
- * Supported forms: (text "str"), (fill "paragraph"), (soft), (hard),
+ * Supported forms: (text "str"), (verbatim "str"), (fill "paragraph"), (soft), (hard),
  * (cat a b), (group a), (nest unsigned a), (align a),
  * (choice a b), (region "greedy|fits|search" a),
  * (paragraph "greedy|ragged|knuth-plass" a), (annot "style" a),
@@ -103,9 +103,10 @@ static mulib_pretty_id_t mulib_pretty_parse_node_(mulib_pretty_parser_ *p,unsign
  char name[40];mulib_pretty_id_t a=MULIB_PRETTY_NONE,b=MULIB_PRETTY_NONE,result=MULIB_PRETTY_NONE;
  size_t number=0;mulib_pretty_style_t style=MULIB_PRETTY_NORMAL;
  if(!mulib_pretty_sym_(p,name,sizeof(name)))return MULIB_PRETTY_NONE;
- if(!strcmp(name,"text")||!strcmp(name,"fill")){
+ if(!strcmp(name,"text")||!strcmp(name,"verbatim")||!strcmp(name,"fill")){
   char *s=mulib_pretty_quote_(p);if(!s)return MULIB_PRETTY_NONE;
-  result=!strcmp(name,"text")?mulib_pretty_text(p->doc,s):mulib_pretty_fill(p->doc,s);
+  result=!strcmp(name,"text")?mulib_pretty_text(p->doc,s):
+         !strcmp(name,"verbatim")?mulib_pretty_verbatim(p->doc,s):mulib_pretty_fill(p->doc,s);
   free(s);
  }else if(!strcmp(name,"soft"))result=mulib_pretty_softline(p->doc);
  else if(!strcmp(name,"hard"))result=mulib_pretty_hardline(p->doc);

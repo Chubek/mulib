@@ -1,0 +1,9 @@
+on1xfile 1
+library "diagnostic.on1x"
+library "json.on1x"
+library "numbers.on1x"
+library "ppx.on1x"
+library "schema.on1x"
+library "signature.on1x"
+library "source.on1x"
+library "tokens.on1x"

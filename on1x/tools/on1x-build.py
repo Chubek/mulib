@@ -24,8 +24,38 @@ class OrderedAction(argparse.Action):
             setattr(namespace, self.dest, chain)
         chain.append((option_string, values if isinstance(values, list) else [values]))
 
+def project_debug_flags(stage, generated_dir, mulib, stdlib):
+    """Give project DWARF stable source paths without changing file lookups or C macros."""
+    roots = {
+        mulib.resolve(): '/__on1x__/mulib',
+        ROOT: '/__on1x__/sdk',
+        stdlib.resolve(): '/__on1x__/stdlib',
+        stage.resolve(): '/__on1x__/build',
+        Path(generated_dir).resolve(): '/__on1x__/generated',
+    }
+    # GCC and Clang take the last matching mapping. Prefer nested roots
+    # (e.g. the SDK and stdlib in the MuLIB checkout) over their parents.
+    flags = []
+    cwd = Path.cwd()
+    for root in sorted(roots, key=lambda path: len(path.parts)):
+        prefix = str(root)
+        if root == Path(root.anchor):
+            raise ValueError('cannot remap an entire filesystem in project debug info: ' + prefix)
+        # GCC and Clang disagree on which "=" terminates the old prefix.
+        if '=' in prefix:
+            raise ValueError('debug path remapping requires build and SDK paths without "=": ' + prefix)
+        if root == cwd:
+            flags.append(f'-fdebug-prefix-map={prefix}={roots[root]}')
+        flags.append(f'-fdebug-prefix-map={prefix}/={roots[root]}/')
+    return flags
+
 def main():
-    cli = argparse.ArgumentParser(description=__doc__)
+    if len(sys.argv) > 1 and sys.argv[1] in ('init', 'exec'):
+        from on1x_project import main as project_main
+        return project_main(sys.argv[1:])
+    cli = argparse.ArgumentParser(description=__doc__, epilog=
+        'Projects: use "init --bin|--proj|--lib [DIRECTORY]" to scaffold, '
+        'or "exec COMMAND" to run a command defined by an On1xfile.')
     cli.add_argument('input', type=Path)
     cli.add_argument('-o', '--output', type=Path, required=True)
     cli.add_argument('--on1xc', default=str(ROOT / 'build' / 'on1xc') if (ROOT / 'build' / 'on1xc').is_file() else shutil.which('on1xc') or 'on1xc')
@@ -39,6 +69,8 @@ def main():
     cli.add_argument('--optimize-ir', action='store_true', help='enable verified scalar passes (requires --via-mir)')
     cli.add_argument('--extra-c', action='append', default=[], help='extra C translation unit to compile/link')
     cli.add_argument('--cflag', action='append', default=[], help='explicit extra C compiler option')
+    cli.add_argument('--debug-build-root', type=Path,
+                     help='remap this project staging root, generated C and SDK source paths in debug info')
     cli.add_argument('--ppx', nargs=2, action=OrderedAction, dest='ppx_chain', metavar=('LABEL', 'PROGRAM'))
     cli.add_argument('--ppx-schema', nargs=2, action='append', default=[], metavar=('LABEL', 'FILE'))
     cli.add_argument('--allow-source-ppx', action='store_true')
@@ -83,6 +115,8 @@ def main():
         cli.error('--optimize-ir requires --via-mir')
     if args.admitted_extern and not args.memory_check:
         cli.error('--admitted-extern requires --memory-check')
+    if args.debug_build_root and (args.inspect_kernels or args.kernel_bind):
+        cli.error('--debug-build-root is not supported by KernelBind profiles')
     if args.mulib_plan and args.mulib_plan.resolve() in (args.input.resolve(),args.output.resolve()):
         cli.error('--mulib-plan must be separate from the input and executable')
     if args.inspect_kernels or args.kernel_bind:
@@ -381,6 +415,10 @@ def main():
         cmd += args.extra_c
         if adapters:
             cmd += ['-lm']
+        if args.debug_build_root:
+            # Keep physical, private temp paths for file I/O and diagnostics;
+            # filenames such as main.c and mulib.c are already deterministic.
+            cmd += project_debug_flags(args.debug_build_root, temp, mulib_root, library)
         cmd += args.cflag + native_links
         if native:
             flags=['-I',str(ROOT/'runtime'),*include_flags,'-I',str(ROOT/'stdlib/mulib'),*args.cflag]
@@ -492,7 +530,7 @@ def main():
 
 if __name__ == '__main__':
     try:
-        main()
+        sys.exit(main())
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
     except (ValueError, OSError, KeyError, TypeError, RecursionError, subprocess.TimeoutExpired) as e:

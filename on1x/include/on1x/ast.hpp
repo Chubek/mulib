@@ -119,6 +119,15 @@ struct Function {
   std::vector<ExprPtr> attributes;
   bool extension_generated=false; // Host-only: explicit interface cannot be erased by a later PPX.
 };
+// .on1xi declarations are not functions or PPX data. A loader obligation
+// records the original definition and its resolved name in this particular unit.
+struct InterfaceMember { Location where; std::string name; Type signature; };
+struct InterfaceObligation {
+ InterfaceMember member;
+ Location implementation;
+ std::string resolved_name;
+};
+inline constexpr std::size_t max_interface_files=256;
 struct MacroParameter {
  enum class Kind { Capture, Literal, Wildcard, List, Vector, Tuple, Call, Unary, Binary } kind=Kind::Capture;
  Location where;std::string name,category;bool repeated=false;
@@ -206,9 +215,13 @@ struct Unit {
 std::string read_source_file(const std::string& filename);
 std::vector<Token> scan(const std::string& source, const std::string& filename);
 Unit parse(const std::vector<Token>& tokens,const std::vector<std::string>& enabled={});
+std::vector<InterfaceMember> parse_interface(const std::vector<Token>& tokens);
 void require_no_kernel_imports(const Unit&);
 bool is_intrinsic_name(const std::string& name);
 std::vector<Type> extern_parameter_types(const Function& function);
 void check(Unit& unit);
+// Check a source graph with explicit interface obligations. Unlike check(),
+// this also accepts library units with no main. It does not authorize emission.
+void check_interfaces(Unit unit,const std::vector<InterfaceObligation>& interfaces);
 std::string emit_c(const Unit& unit, const std::string& source_name);
 }

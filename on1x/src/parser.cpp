@@ -790,6 +790,52 @@ class Parser {
   explicit Parser(const std::vector<Token>&t,const std::vector<std::string>& enabled):ts(t){
    for(const auto& name:enabled)enabled_extensions.insert(extensions::canonical(name,{"<command-line>"}));
   }
+   std::vector<InterfaceMember> interface(){
+    if(!at("on1xi"))
+     throw Error(peek().where,"expected interface header 'on1xi 1;'","ON1X-INTERFACE-VERSION");
+    consume("on1xi");
+    if(!at("1"))
+     throw Error(peek().where,"unsupported interface version: "+peek().text+" (expected 1)","ON1X-INTERFACE-VERSION");
+    consume("1");consume(";");
+    std::vector<InterfaceMember> members;
+    std::set<std::string> names;
+    auto signature_type=[&](bool result){
+     auto where=peek().where;auto shape=type();
+     auto allowed=[&](auto&& self,const Type& t)->bool{
+      if(t==Type::I64||t==Type::Bool||t==Type::String)return true;
+      if(!t.is_tuple())return false;
+      if(t.elements().size()>32)
+       throw Error(where,"interface tuple width limit exceeded","ON1X-INTERFACE-LIMIT");
+      return std::all_of(t.elements().begin(),t.elements().end(),[&](const auto& part){return self(self,part);});
+     };
+     if(!(result&&shape==Type::Void)&&!allowed(allowed,shape))
+      throw Error(where,"interface v1 expects i64, bool, string or tuples of these (void only as a result)",
+                  "ON1X-INTERFACE-SHAPE");
+     return shape;
+    };
+    if(at("<eof>"))throw Error(peek().where,"interface requires at least one function declaration","ON1X-INTERFACE-SHAPE");
+    while(!at("<eof>")){
+     if(members.size()>=256)throw Error(peek().where,"interface member limit exceeded","ON1X-INTERFACE-LIMIT");
+     if(!at("fn"))
+      throw Error(peek().where,"interface v1 accepts only 'fn name(parameter: type, ...) -> type;' declarations",
+                  "ON1X-INTERFACE-SHAPE");
+     consume("fn");auto where=peek().where;auto name=ident();
+     if(!names.insert(name).second)
+      throw Error(where,"duplicate interface member: "+name,"ON1X-INTERFACE-DUPLICATE");
+     consume("(");std::vector<Type> parameters;std::set<std::string> parameter_names;
+     if(!at(")"))do{
+      auto parameter=peek().where;
+      if(parameters.size()>=32)throw Error(parameter,"interface parameter limit exceeded","ON1X-INTERFACE-LIMIT");
+      auto label=ident();
+      if(!parameter_names.insert(label).second)
+       throw Error(parameter,"duplicate interface parameter: "+label,"ON1X-INTERFACE-DUPLICATE");
+      consume(":");parameters.push_back(signature_type(false));
+     }while(accept(","));
+     consume(")");consume("->");auto result=signature_type(true);consume(";");
+     members.push_back({where,std::move(name),Type::function(std::move(parameters),std::move(result))});
+    }
+    return members;
+   }
    std::string module_name(){
    auto where=peek().where;std::string name=ident();
    while(accept(".")){name+="."+ident();if(name.size()>4096)throw Error(where,"module name exceeds 4096 bytes");}
@@ -922,6 +968,7 @@ class Parser {
 };
 }
 Unit parse(const std::vector<Token>&ts,const std::vector<std::string>& enabled){return Parser(ts,enabled).parse();}
+std::vector<InterfaceMember> parse_interface(const std::vector<Token>& ts){return Parser(ts,{}).interface();}
 void require_no_kernel_imports(const Unit& unit){
  if(unit.kernel_imports.empty())return;
  const auto& request=unit.kernel_imports.front();

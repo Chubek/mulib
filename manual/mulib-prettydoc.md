@@ -50,7 +50,11 @@ Python's Unicode 16.0 database; use `--write` to regenerate it.
            (cat (soft) (text ")")))))
 ```
 
-Accepted document operators: `(text "string")`, `(fill "paragraph")`, `(soft)`, `(hard)`, `(cat A B)`, `(group A)`, `(nest COUNT A)`, `(align A)`, `(choice A B)`, `(annot "style" A)`, `(region "greedy|fits|search" A)`, `(paragraph "greedy|ragged|knuth-plass" A)`, `(source ID START END A)` and the math forms below. Strings accept escapes `\n`, `\r`, `\t`, `\\`, `\"` and `\xHH` (exactly two hexadecimal digits encoding one byte). Decoded text must be valid NUL-free UTF-8. The full input must be consumed; source is limited to 2 MiB, each decoded string to 1 MiB, parser depth to 128, and nodes to 200,000.
+Accepted document operators: `(text "string")`, `(verbatim "string")`, `(fill "paragraph")`, `(soft)`, `(hard)`, `(cat A B)`, `(group A)`, `(nest COUNT A)`, `(align A)`, `(choice A B)`, `(annot "style" A)`, `(region "greedy|fits|search" A)`, `(paragraph "greedy|ragged|knuth-plass" A)`, `(source ID START END A)` and the math forms below. Strings accept escapes `\n`, `\r`, `\t`, `\\`, `\"` and `\xHH` (exactly two hexadecimal digits encoding one byte). Decoded text must be valid NUL-free UTF-8. The full input must be consumed; source is limited to 2 MiB, each decoded string to 1 MiB, parser depth to 128, and nodes to 200,000.
+
+`Verbatim` preserves literal line endings without adding the active nest's
+indentation after embedded LF. Those line breaks still count in layout,
+inherit annotations and source spans, and are escaped by markup emitters.
 
 Semantic styles: `normal`, `keyword`, `identifier`, `number`, `operator`, `comment`, `string`, `math-ident`, `math-number`, `math-operator`.
 

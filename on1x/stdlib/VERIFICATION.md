@@ -1,5 +1,23 @@
 # Verification report
 
+## Restricted project package — 2026-11-18
+
+`tests/test_stdlib_project.py` (under `on1x/`) builds and relocates a package
+containing all 129 declared library modules, the Basis and prettyprint C
+companions, and the existing standalone `mulib` discovery manifest. It verifies
+the packaged bytes and snapshot hashes, rebuilds byte-identical package files,
+and checks that removing the pervasive declaration fails rather than falling
+back to the installed stdlib. A separate On1x executable uses the relocated
+prelude, root List facade, parent-relative `base/list` module, raw Basis
+arithmetic, prettyprint, INI and `std.mulib` metadata. INI and MuLIB metadata
+link against the SDK companions, not copies from the package.
+
+Reproduce on Linux with `python3 on1x/tests/test_stdlib_project.py --on1xc
+build/on1x/on1xc --cc cc`. The test also checks that undeclared paths, path
+escapes, cross-package relative imports, symlinks, and unregistered resources
+do not publish an output. Packaging does not validate foreign ownership or
+increase Basis conformance.
+
 ## Extension integration — 2026-11-15
 
 The current inventory has **118 library modules and six On1x test programs**,

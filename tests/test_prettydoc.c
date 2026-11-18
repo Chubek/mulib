@@ -25,6 +25,25 @@ static void expect_plain(const char *spec,const mulib_pretty_options_t *opt,cons
  assert(s && !strcmp(s,expected));
  free(s);
 }
+static void test_verbatim(void){
+ const char *spec="(nest 4 (cat (hard) (source 9 1 12 (annot \"string\" (verbatim \"a\\r\\n\\tb\\n.c\")))))";
+ mulib_pretty_options_t o;mulib_pretty_options_init(&o);
+ expect_plain(spec,&o,"\n    a\r\n\tb\n.c");
+ expect_plain("(nest 4 (text \"a\\nb\"))",&o,"a\n    b");
+ expect_plain("(group (cat (text \"a\") (cat (soft) (verbatim \"b\\nc\"))))",&o,"a\nb\nc");
+ assert(!mulib_pretty_render_expr("(verbatim \"\\x00\")",&o,MULIB_PRETTY_PLAIN));
+ mulib_prettydoc_t *d=NULL;mulib_pretty_id_t root;
+ assert(mulib_pretty_parse_expr(spec,&d,&root));
+ mulib_pretty_layout_t l={0};
+ assert(mulib_pretty_layout(d,root,&o,&l));
+ assert(l.lines==4 && l.max_columns==6 && l.map_count==1);
+ assert(l.map[0].start==5 && l.map[0].length==8 && l.map[0].origin.source==9);
+ assert(l.count==2 && l.pieces[1].style==MULIB_PRETTY_STRING && l.pieces[1].length==8);
+ char *roff=mulib_pretty_emit(&l,MULIB_PRETTY_TROFF);
+ assert(roff&&strstr(roff,"a<CR>\n\tb\n\\&.c"));
+ free(roff);
+ mulib_pretty_layout_free(&l);mulib_prettydoc_free(d);
+}
 static void test_source_and_incremental(void){
  mulib_prettydoc_t *d=NULL;mulib_pretty_id_t a;
  assert(mulib_pretty_parse_expr("(source 1 10 24 (cat (text \"é\") (cat (hard) (source 2 0 1 (text \"x\")))))",&d,&a));
@@ -172,6 +191,7 @@ static void test_ribbon(void){
  expect_plain(group,&opt,"abc def");
 }
 int main(void){
+ test_verbatim();
  test_ribbon();
  test_unicode_width();
  test_source_and_incremental();

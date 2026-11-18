@@ -202,6 +202,15 @@ class Loader {
    bytes+=source.size();auto scanned=scan(source,path.string());
    for(const auto& t:scanned)tokens.insert(t.text);
     m->unit=parse(scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()});
+      if(!options.interfaces.empty()){
+       const auto reject=[](const Location& where){
+        throw Error(where,"interface verification does not execute PPX or declaration extensions",
+                    "ON1X-INTERFACE-UNSUPPORTED");
+       };
+       if(!m->unit.ppx.empty())reject(m->unit.ppx.front().where);
+       if(!m->unit.features.empty())reject(m->unit.features.front().where);
+       if(!m->unit.extensions.empty())reject(m->unit.extensions.front().where);
+      }
      if(!inspection&&!options.kernel_c11)require_no_kernel_imports(m->unit);
      if(options.kernel_c11){
       if(!m->unit.ppx.empty()||!m->unit.macros.empty()||!m->unit.extensions.empty()||!m->unit.features.empty())
@@ -422,10 +431,58 @@ class Loader {
    }
    return values;
   }
+  std::vector<InterfaceObligation> bind_interfaces(){
+   std::set<fs::path> seen;
+   std::vector<InterfaceObligation> obligations;
+   for(const auto& path:options.interfaces){
+    Location where{path.string()};
+    if(path.extension()!=".on1xi"||!regular(path))
+     throw Error(where,"expected a regular .on1xi file","ON1X-INTERFACE-FILE");
+    auto origin=canonical(path,where);
+    if(!seen.insert(origin).second)
+     throw Error(where,"duplicate interface file","ON1X-INTERFACE-DUPLICATE");
+    if(origin.extension()!=".on1xi")
+     throw Error(where,"interface must resolve to a .on1xi file","ON1X-INTERFACE-FILE");
+    where.file=origin.string();
+    auto implementation=origin;implementation.replace_extension(".on1x");
+    // Never resolve by search precedence, import alias, or re-export. The
+    // same-stem file itself must have been selected in this loaded graph.
+    auto it=modules.find(implementation);
+    if(it==modules.end()||!regular(implementation))
+     throw Error(where,"matching implementation is not in the loaded graph: "+implementation.string(),
+                 "ON1X-INTERFACE-IMPLEMENTATION");
+    auto& module=*it->second;
+    auto source=read_source_file(where.file);
+    if(source.size()>options.max_bytes-bytes)
+     throw Error(where,"total source and interface byte limit exceeded","ON1X-INTERFACE-LIMIT");
+    bytes+=source.size();
+    auto members=parse_interface(scan(source,where.file));
+    std::map<std::string,std::vector<const Function*>> definitions;
+    for(const auto& f:module.unit.functions)definitions[f.name].push_back(&f);
+    for(auto& member:members){
+     auto definition=definitions.find(member.name);
+     if(definition==definitions.end()||definition->second.size()!=1||definition->second.front()->external)
+      throw Error(member.where,"expected one local On1x definition of '"+member.name+"' in "+implementation.string()+
+                  " (externs and re-exports do not satisfy interfaces)","ON1X-INTERFACE-MEMBER");
+     const auto& f=*definition->second.front();
+     if(f.result.has_holes()||std::any_of(f.params.begin(),f.params.end(),[](const auto& p){return p.type.has_holes();}))
+      throw Error(f.where,"interface member '"+member.name+"' requires a fully annotated signature (no inferred types)",
+                  "ON1X-INTERFACE-ANNOTATION");
+     auto resolved=name({&module,f.name});
+     obligations.push_back({std::move(member),f.where,std::move(resolved)});
+    }
+   }
+   return obligations;
+  }
 public:
   explicit Loader(const LoaderOptions& opts,KernelImportRequests* inspect=nullptr)
    :options(opts),standard_roots(standard_library_roots(opts)),inspection(inspect){}
  LoadedUnit run(const fs::path& input){
+   if(options.interfaces.size()>max_interface_files)
+    throw Error({input.string()},"interface file count limit exceeded","ON1X-INTERFACE-LIMIT");
+   if(!options.interfaces.empty()&&(inspection||options.kernel_c11||!options.extensions.enabled.empty()))
+    throw Error({input.string()},"interface verification cannot run with KernelBind or declaration extensions",
+                "ON1X-INTERFACE-UNSUPPORTED");
   entry_directory=canonical(input,{input.string()}).parent_path();
   if(options.prelude){
     auto path=standard("pervasive",{"<prelude>"});
@@ -442,6 +499,7 @@ public:
    for(auto* m:order)for(const auto& f:m->unit.functions)globals.insert(name({m,f.name,f.external}));
    for(auto* m:order)for(const auto& d:m->unit.nominals)type_globals.insert(name({m,d.name}));
   LoadedUnit result;std::map<std::string,const Function*> externs;std::set<std::string> lazy;
+   result.interfaces=bind_interfaces();
   // Reserve storage so pointers used for identical raw-extern admission stay valid.
   std::size_t count=0;for(auto* m:order)count+=m->unit.functions.size();
    // In reviewed staging a distinct unsafe and reviewed spelling can refer
@@ -528,6 +586,7 @@ public:
    for(const auto& s:body){if(s.value)collect(collect,*s.value,refs);self(self,s.body,refs);self(self,s.otherwise,refs);}
   };
   std::set<std::string> needed;
+   for(const auto& obligation:result.interfaces)needed.insert(obligation.resolved_name);
   for(const auto& evidence:result.unit.extension_evidence)
    for(const auto& implementation:evidence.implementations)for(const auto& binding:implementation.bindings){
     needed.insert(binding.function);needed.insert(binding.selector);

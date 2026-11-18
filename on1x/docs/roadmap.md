@@ -2,10 +2,23 @@
 
 ## Current feature matrix
 
+The M5/M7 project tools add non-S-expression `On1xfile` builds, directory-local
+input declarations, MuLIB Mune policies, and an opt-in Linux build sandbox.
+The [On1x formatter](formatter.md) uses the existing PrettyPrint layout and
+emission library; its LaTeX and troff listings are not compiler backends.
+These are tooling increments, not general separate compilation or interface
+type checking.
+
 The M5/M7 [discovery continuation](search-paths.md) integrates the moved
 `stdlib/mulib` package and adds bounded library/stdlib, PPX/stdppx and kernel
 search lists with CLI/environment inputs and declarative manifests. It does not
 add separate compilation, dependency downloading or foreign safety admission.
+
+**Direct pinned Git acquisition.** An explicit `on1x-project.py fetch` can stage one
+[On1xfile-certified Git library](../stdlib/on1xfile/README.md#explicit-remote-git-acquisition)
+on Linux over smart HTTPS. Builds remain offline. There is no registry,
+version solver, transitive fetching, authenticated remote, or complete
+distributed toolchain.
 
 Latest CSP continuation: [cooperative cancellation and monotonic deadlines](cancellation-deadlines.md)
 execute through checked HIR/C11, including `taskgroup within` with terminal
@@ -25,6 +38,7 @@ around stackful fibers.
 | Module loader / pervasive environment | Implemented compile-time namespaces | Named/selective/relative imports, aliases, packages, canonical deduplication, bounded cycles, demand-loaded prelude and relocatable installation; [manual](modules.md) |
 | MuLIB native housekeeping | Implemented bounded kernel/fixture planning | Integrated `stdlib/mulib`; `std.mulib` metadata/byte access and size checks; shared one-TU planning, fixture/provider/native companion linkage, actual selected header paths/fingerprints and relocatable bundles; [manual](../stdlib/mulib/README.md) |
 | PrettyPrint | Executable document DSL, raw C11 bridge and formatter tool | Global Knuth–Plass for `Fill`, semantic math, plain-UTF-8 source maps, block-incremental C sessions and `.ppg` → Python; no safe import, glyph justification or full Oppen; [manual](../stdlib/prettyprint/README.md) |
+| On1x source formatter | Executable conservative source layout | Canonical scanner/parser, preserved comments/literals/carriers and dot adjacency, `.on1xfmt`, paired directives, plain/LaTeX/groff; no type checking, syntax recovery or unchanged diagnostic locations; [manual](formatter.md) |
 | Search lists / manifests | Executable Linux build-time subset | Five colon-separated CLI/environment path lists; existing named imports, explicitly activated PPX, native bundle/script metadata and MANIFEST-backed kernel lookup; [manual](search-paths.md), `test_discovery.py`; no downloads or new safe-FFI claim |
 | Frontend input limits | Implemented and tested | 2 MiB per file; 256-level parsing/HIR limits including lambdas; bounded capture metadata |
 | Type inference | P1 schemes and explicit universals | Global recursive-component and value-restricted immutable let/pattern generalization, rigid `forall` parameters, bounded C11 specialization/bundles; no defaulting or inferred polymorphic recursion |

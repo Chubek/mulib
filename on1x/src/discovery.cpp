@@ -22,7 +22,7 @@ bool name(const std::string& text){
  return !text.empty()&&text.size()<=128&&text!="."&&text!=".."&&
   text.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-")==std::string::npos;
 }
-Manifest parse(std::string_view text,const std::string& file){
+Manifest parse_legacy(std::string_view text,const std::string& file){
  auto tree=meta::read_sexpr(text,file);
  auto fail=[&]()->void{throw Error({file},"invalid On1xfile manifest (expected version 1)");};
  if(tree.kind!=meta::SExpr::Kind::List||tree.items.size()<4||tree.items.size()>128)fail();
@@ -54,6 +54,56 @@ Manifest parse(std::string_view text,const std::string& file){
  if(result.kind=="ppx"){
   if(!fields.contains("protocol")||fields.contains("root"))fail();
  }else if(fields.contains("protocol")||!result.processors.empty())fail();
+ return result;
+}
+std::string_view trim(std::string_view text){
+ const auto start=text.find_first_not_of(" \t\r\n");
+ if(start==std::string_view::npos)return {};
+ return text.substr(start,text.find_last_not_of(" \t\r\n")-start+1);
+}
+// Compiler discovery only reads literal package identity. Project commands,
+// profiles, templates, and directory roles are owned by the build engine.
+Manifest parse_package(std::string_view text,const std::string& file){
+ auto fail=[&](std::string message)->void{throw Error({file},"invalid On1xfile manifest: "+message);};
+ Manifest result;
+ std::set<std::string_view> fields;
+ bool header=false;
+ if(text.find('\0')!=std::string_view::npos)fail("contains NUL");
+ for(;!text.empty();){
+  const auto newline=text.find('\n');
+  auto line=trim(text.substr(0,newline));
+  text=newline==std::string_view::npos?std::string_view{}:text.substr(newline+1);
+  if(line.empty()||line.front()=='#')continue;
+  const auto word_end=line.find_first_of(" \t#");
+  const auto key=line.substr(0,word_end);
+  auto value=word_end==std::string_view::npos?std::string_view{}:trim(line.substr(word_end));
+  if(!header){
+   if(key!="on1xfile"||trim(value.substr(0,value.find('#')))!="1")fail("expected on1xfile 1");
+   header=true;
+   continue;
+  }
+  if(key!="kind"&&key!="name"&&key!="directory")continue;
+  if(!fields.insert(key).second)fail("duplicate "+std::string(key));
+  if(key=="kind")value=trim(value.substr(0,value.find('#')));
+  else{
+   if(value.empty()||value.front()!='"')fail("expected quoted "+std::string(key));
+   const auto end=value.find('"',1);
+   if(end==std::string_view::npos)fail("unterminated "+std::string(key));
+   const auto suffix=trim(value.substr(end+1));
+   if(!suffix.empty()&&suffix.front()!='#')fail("invalid value for "+std::string(key));
+   value=value.substr(1,end-1);
+   if(value.empty()||value.size()>1024||value.find('\\')!=std::string_view::npos)
+    fail("invalid literal "+std::string(key));
+  }
+  if(key=="kind")result.kind=value;
+  else if(key=="name")result.name=value;
+  else result.root=value;
+ }
+ constexpr std::string_view initial="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
+ if(result.name.empty()||result.name.size()>64||initial.find(result.name.front())==std::string_view::npos||
+    result.name.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789-")!=std::string::npos)
+  fail("invalid package name");
+ if(result.kind!="library"&&result.kind!="executable"&&result.kind!="complex")fail("invalid project kind");
  return result;
 }
 fs::path local(const fs::path& base,const std::string& value,bool file){
@@ -94,7 +144,7 @@ Ppx script(const fs::path& path,const std::string& requested){
  for(std::string_view marker:{"# on1x: ","// on1x: ","-- on1x: ","; on1x: "})
   if(second.starts_with(marker)){metadata=std::string_view(second).substr(marker.size());break;}
  if(metadata.empty())throw Error({path.string(),0,2},"discovered script PPX requires second-line on1x manifest");
- auto m=parse(metadata,path.string()+":2");
+  auto m=parse_legacy(metadata,path.string()+":2");
  if(m.kind!="ppx"||m.name!=requested||!m.processors.empty())
   throw Error({path.string(),0,2},"PPX manifest name/kind does not match: "+requested);
  return {fs::canonical(path),{}};
@@ -114,12 +164,16 @@ void append_paths(std::vector<fs::path>& into,std::string_view text){
  }
 }
 void environment(std::vector<fs::path>& into,const char* key){if(const char* value=std::getenv(key))append_paths(into,value);}
-Manifest manifest(const fs::path& path){return parse(bounded(path,65536),path.string());}
+Manifest manifest(const fs::path& path){
+ auto text=bounded(path,65536);
+ const auto start=trim(text);
+ return start.starts_with('(')||start.starts_with(';')?parse_legacy(text,path.string()):parse_package(text,path.string());
+}
 fs::path stdlib(const fs::path& path){
  for(const auto& dir:{path,path/"stdlib"}){
   if(!regular(dir/"On1xfile"))continue;
   auto m=manifest(dir/"On1xfile");
-  if(m.kind=="stdlib")return local(dir,m.root,false);
+  if(m.kind=="stdlib"||(m.kind=="library"&&m.name=="std"))return local(dir,m.root,false);
  }
  return {};
 }

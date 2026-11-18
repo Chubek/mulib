@@ -4,6 +4,24 @@ These extensions are integrated with the existing C11 compiler and module loader
 The refined Basis modules, `stdlib/ppx/`, `stdlib/sexpr/`, `stdlib/visitor/`,
 original native processors and contracts are preserved.
 
+## Project tools
+
+Use `on1xc init --bin`, `on1xc init --proj`, or `on1xc init --lib` to
+scaffold an executable, a multi-target project, or a source library. Build
+from the project root with `on1xc exec build` or `on1xc exec release`. The
+[On1xfile guide](stdlib/on1xfile/README.md) describes root policy,
+directory-local input declarations, Mune profiles, and dependencies. The
+`--sandbox` build option requires Linux and bubblewrap and does not fall back
+to a host build.
+
+Builds do not fetch dependencies. Use the separate
+[`on1x-project.py fetch` command](stdlib/on1xfile/README.md#explicit-remote-git-acquisition)
+to acquire a pinned Git library over HTTPS.
+
+The [source formatter](docs/formatter.md) runs as `on1xc fmt`, reads
+`.on1xfmt`, and can also emit LaTeX or troff listings. Formatting itself does
+not run project scripts or PPX.
+
 ## Language implementation continuation
 
 The [cancellation/deadline continuation](docs/cancellation-deadlines.md) now
@@ -146,6 +164,8 @@ compatibility](docs/search-paths.md).
 The build helper selects bridge/kernel groups automatically and preserves one
 kernel implementation TU. Alternatively supply a locked Exotract archive through
 `--mulib-archive DIRECTORY`; do not define kernel switches in consumer adapters.
+Building `on1xc` requires Python 3 for the PrettyPrint kernel plan. The compiler
+does not invoke Python to format source.
 
 ```sh
 cmake -S on1x -B build/on1x -DBUILD_TESTING=ON

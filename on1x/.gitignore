@@ -11,3 +11,5 @@ Testing/
 __pycache__/
 *.pyc
 *.cdecl.json
+!On1xfile.m
+!On1xfile.i

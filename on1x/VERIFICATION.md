@@ -1,5 +1,111 @@
 # On1x verification — 2026-11-18
 
+## Project tooling — starting baseline
+
+MuLIB `f520a7da8cd29c282f335ed3d0fdca1599c2ff30`; configured LibStone
+`57113dc48d815359431dce63a6b865a21dd993cd` (left unchanged), Linux
+6.18.52-1-lts x86-64/glibc 2.44, CMake 4.4.3 and GCC 16.2.1.
+
+```sh
+cmake -S on1x -B build/on1x-tooling-make -DBUILD_TESTING=ON -DON1X_REQUIRE_LIBSTONE=ON
+cmake --build build/on1x-tooling-make --parallel 5
+ctest --test-dir build/on1x-tooling-make --output-on-failure --parallel 5
+make -f prettyprint.mk test
+```
+
+The first generated-scanner run had **57 passes and 2 failures**. Both failures
+(`on1x.contracts`, `on1x.mulib`) rejected the existing stale
+`manual/mulib-elvi-scrape.md` fingerprint. The PrettyPrint C11, bridge, CLI and
+`.ppg` tests passed. This is baseline evidence, not verification of the new
+formatter or project driver.
+
+### Integrated tooling
+
+The generated/GCC tooling selection passed **7/7** and covers formatting,
+project builds, driver, Mune/QMR, discovery, relocated installation and
+scanner parity. The fallback/Clang selection passed **6/6**, without the parity
+harness. The ASan/UBSan selection passed **2/2**, exercising the C++ formatter,
+the C11 PrettyPrint implementation, and both build-time helpers.
+The full generated/GCC suite passed **61/63**; only the two baseline
+Elvi-scrape fingerprint failures remained.
+
+```sh
+ctest --test-dir build/on1x-tooling-make \
+  -R '(formatter|project_|install$|discovery|scanner_parity)' --output-on-failure
+ctest --test-dir build/on1x-tooling-clang \
+  -R '(formatter|project_|install$|discovery)' --output-on-failure
+ctest --test-dir build/on1x-tooling-asan \
+  -R '(formatter|project_helpers)' --output-on-failure
+python3 on1x/stdlib/tests/check_package.py
+```
+
+Project tests run generated executables, check linked MuLIB plans and failed
+generation rollback, execute Mune profiles and QMR preprocessing, verify
+offline Git object pins, and exercise private network and filesystem
+namespaces when available. Repeated sandboxed release builds of the same
+fixture match; debug output can include generated-C temporary paths and is
+not generally byte-identical. The stdlib inventory check passes, but the
+whole stdlib is not a self-contained source package under the project's
+restricted import rules; the ordinary module loader and CMake installation
+remain supported.
+
+### Explicit pinned Git acquisition
+
+The loopback fixture in `tests/test_project_fetch.py` uses a temporary TLS
+certificate and Git's `git-http-backend`, with no public network access.
+It tests SHA-1 and SHA-256 pins, disabled redirects/auth/config/checkout and
+submodule fetching, certificate verification, shallow and dumb HTTP refusal,
+failure cleanup, transfer and pack limits, offline cache revalidation, and
+real C11 program execution after stopping the server. Both ordinary and
+bubblewrap builds used the cache offline on this host.
+
+All **9/9** tests passed with a newly built generated-scanner GCC compiler,
+the fallback Clang compiler, and the Clang ASan/UBSan compiler. The existing
+project suite passed **11/11** with the generated scanner and Mune/QMR.
+Host: Linux `6.18.52-1-lts` x86-64, Git `2.55.0`, Python `3.14.7`,
+OpenSSL `3.6.4`; MuLIB and LibStone revisions and compiler versions are
+as above. This tests the stated [Linux smart HTTPS profile](stdlib/on1xfile/README.md#explicit-remote-git-acquisition),
+not arbitrary Git server deployments or platform support.
+
+```sh
+cmake -S on1x -B build/on1x-fetch-agent -DBUILD_TESTING=ON -DON1X_REQUIRE_LIBSTONE=ON
+cmake --build build/on1x-fetch-agent --parallel 4 --target on1xc on1x-mune-runner on1x-qmr-compile
+python3 on1x/tests/test_project_fetch.py --on1xc build/on1x-fetch-agent/on1xc --cc gcc
+python3 on1x/tests/test_project_fetch.py --on1xc build/on1x-tooling-clang/on1xc --cc clang
+ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
+  python3 on1x/tests/test_project_fetch.py --on1xc build/on1x-tooling-asan/on1xc --cc clang
+python3 on1x/tests/test_on1x_project.py --on1xc build/on1x-fetch-agent/on1xc --cc gcc \
+  --mune-runner build/on1x-fetch-agent/on1x-mune-runner --qmr-compiler build/on1x-fetch-agent/on1x-qmr-compile
+```
+
+### On1x source formatter and PrettyPrint verbatim documents
+
+Linux x86-64: GCC 16.2.1 with LibStone's generated scanner, Clang
+22.1.8 with the fallback scanner, and a Clang ASan/UBSan compiler all
+passed `tests/test_formatter.py`. The test compiles original and
+formatted On1x programs through strict C11, checks their identical output
+and formatter idempotence, exercises invalid input/configuration and
+unchanged destinations, compares all three named On1xfile formatter commands
+to their CLI equivalents, and renders inert hostile-looking listings with
+`pdflatex -no-shell-escape` and `groff -S -Tutf8` when installed. Both
+scanner modes also produced the same, byte-idempotent output on 232
+checked-in On1x sources at widths 80 and 28.
+
+```sh
+ctest --test-dir build/formatter-generated -R '^on1x.formatter$' --output-on-failure
+ctest --test-dir build/formatter-fallback -R '^on1x.formatter$' --output-on-failure
+ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
+  ctest --test-dir build/on1x-tooling-asan -R '^on1x.formatter$' --output-on-failure
+make -f prettyprint.mk test BUILD_DIR=build/formatter-prettydoc
+make -f prettyprint.mk test-on1x BUILD_DIR=build/formatter-prettydoc \
+  ON1XC=build/formatter-fallback/on1xc CC=clang
+make -f prettyprint.mk test CC=clang BUILD_DIR=build/formatter-pretty-asan \
+  CFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all'
+```
+
+The source formatter is not a PPX executor, partial parser, or whole-project
+rewriter; see its [manual](docs/formatter.md) for the preservation contract.
+
 ## KernelBind language surface: lexical unsafe expressions
 
 Baseline MuLIB `2da654cae071226ad246415d2fad4ba43f6f9ec1` plus the prior
