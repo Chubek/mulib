@@ -24,8 +24,8 @@
 > **Verified implementation:** [KernelBind discovery](docs/kernel-bind.md)
 > parses native import requests, resolves canonical profiles, and extracts
 > source-pinned CDecl v2 and applicable ExoML sidecars. A separate opt-in
-> C11 profile executes `unsafe import kernel mulib.clamp` for the two
-> saturating `i64` operations. The [reviewed scalar profile](docs/kernel-review.md)
+> C11 profile executes `unsafe import kernel mulib.clamp` for both
+> saturating operations and the checked interval clamp. The [reviewed scalar profile](docs/kernel-review.md)
 > additionally builds safe clamp imports with independent signed authorization;
 > no production approval is shipped. Resource-bearing imports remain unadmitted.
 > The [bounded numerical profiles](docs/kernel-numerics.md) execute native

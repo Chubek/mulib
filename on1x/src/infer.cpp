@@ -20,6 +20,9 @@ namespace {
 bool data_kind(Type::Kind kind){return kind==Type::Record||kind==Type::Sum||kind==Type::Array||kind==Type::Slice;}
 bool compound(Type::Kind kind){return kind==Type::Function||kind==Type::Tuple||kind==Type::Code||data_kind(kind);}
 bool has_result(Type::Kind kind){return kind==Type::Function||kind==Type::Code;}
+bool numeric_kind(Type::Kind kind){
+ return kind==Type::I64||kind==Type::F64||kind==Type::F32||(kind>=Type::U8&&kind<=Type::U64);
+}
 bool holes_in(const Expr& expression);
 bool holes_in(const std::vector<Stmt>& body) {
  for(const auto& s:body)if(s.kind==Stmt::Kind::Defer)return true;
@@ -149,10 +152,26 @@ class Inference {
     fields.insert(fields.end(),args.begin(),args.end());
     auto id=add(kind,std::move(fields),0,at);nodes[id].labels=std::move(labels);nodes[id].extent=extent;nodes[id].nominal=std::move(nominal);nodes[id].arguments=arguments;return id;
    }
-  Term annotation(const Type& type,const Location& where,const std::vector<Term>* variables=nullptr,std::size_t depth=0) {
-   tick(where);
-    if(depth>limits.depth)fail(where,"nominal/type annotation depth limit exceeded");
-    if(type==Type::Hole)return fresh(where);
+   Term annotation(const Type& type,const Location& where,const std::vector<Term>* variables=nullptr,std::size_t depth=0) {
+    tick(where);
+     if(depth>limits.depth)fail(where,"nominal/type annotation depth limit exceeded");
+     if(type.is_tuple())for(const auto& element:type.elements()){
+      if(element==Type::Void)fail(where,"tuple elements cannot be void");
+      if(element==Type::Json||element==Type::JsonView)
+       fail(where,"tuple elements cannot contain JSON resources or views");
+     }
+     if(type.is_function()){
+      for(const auto& parameter:type.parameters()){
+       if(parameter==Type::Void)fail(where,"function parameter type cannot be void");
+       if(parameter==Type::Json||parameter==Type::JsonView)
+        fail(where,"function types cannot contain resource parameters");
+       if(csp::contains(parameter))fail(where,"concurrency handles cannot cross ordinary function signatures");
+      }
+      if(type.result()==Type::Json||type.result()==Type::JsonView)
+       fail(where,"function types cannot contain resource returns");
+      if(csp::contains(type.result()))fail(where,"concurrency handles cannot escape through function results");
+     }
+     if(type==Type::Hole)return fresh(where);
     if(type.kind()==Type::Bound){if(!variables||type.generic_identity()>=variables->size())fail(where,"quantified type variable outside forall/declaration");return (*variables)[type.generic_identity()];}
     if(type.kind()==Type::Named||!type.nominal().empty()){
      const auto& d=catalog.find(type.nominal(),where);
@@ -224,9 +243,10 @@ class Inference {
  std::string describe(Term id,const Location& where) {
   std::size_t budget=64;return describe(id,where,budget);
  }
- void unify(Term actual,Term expected,const Location& where) {
-  std::vector<std::pair<Term,Term>> pending{{actual,expected}};
-  std::set<std::pair<Term,Term>> compared;
+  void unify(Term actual,Term expected,const Location& where) {
+   const auto context_actual=actual,context_expected=expected;
+   std::vector<std::pair<Term,Term>> pending{{actual,expected}};
+   std::set<std::pair<Term,Term>> compared;
   while(!pending.empty()) {
    auto [a,b]=pending.back();pending.pop_back();
    a=head(a,where);b=head(b,where);if(a==b)continue;
@@ -241,11 +261,23 @@ class Inference {
     }
     continue;
    }
-    if(nodes[a].kind!=nodes[b].kind)
-     fail(where,"expected "+describe(b,where)+", got "+describe(a,where));
-    if(atoms.contains(a)||atoms.contains(b)){
-     if(!atoms.contains(a)||!atoms.contains(b)||atoms.at(a)!=atoms.at(b))
-      fail(where,"incompatible quantified types: expected "+describe(b,where)+", got "+describe(a,where));
+     if(nodes[a].kind!=nodes[b].kind){
+      auto outer_expected=describe(context_expected,where),outer_actual=describe(context_actual,where);
+      auto inner_expected=describe(b,where),inner_actual=describe(a,where);
+      auto message="expected "+outer_expected+", got "+outer_actual;
+      if(outer_expected!=inner_expected||outer_actual!=inner_actual)
+       message+="; nested mismatch: expected "+inner_expected+", got "+inner_actual;
+      fail(where,message);
+     }
+     if(atoms.contains(a)||atoms.contains(b)){
+      if(!atoms.contains(a)||!atoms.contains(b)||atoms.at(a)!=atoms.at(b)){
+       auto outer_expected=describe(context_expected,where),outer_actual=describe(context_actual,where);
+       auto inner_expected=describe(b,where),inner_actual=describe(a,where);
+       auto message="incompatible quantified types: expected "+outer_expected+", got "+outer_actual;
+       if(outer_expected!=inner_expected||outer_actual!=inner_actual)
+        message+="; nested mismatch: expected "+inner_expected+", got "+inner_actual;
+       fail(where,message);
+      }
      continue;
     }
      if(!compound(nodes[a].kind))continue;
@@ -410,14 +442,23 @@ class Inference {
   if(has_result(kind))result=copy_signature(result,variables,copies,at,depth+1);
     auto id=data_kind(kind)?data(kind,std::move(children),std::move(labels),extent,at,std::move(nominal),arguments):add(kind,std::move(children),result,at);copies.emplace(term,id);return id;
  }
- void bind_pattern(const Pattern& pattern,Term value){
-  tick(pattern.where);
-  if(!pattern.is_tuple()){define(pattern.name,value,pattern.where);return;}
-  std::vector<Term> elements;
-  for(std::size_t i=0;i<pattern.elements.size();++i)elements.push_back(fresh(pattern.where));
-  auto shape=add(Type::Tuple,elements,0,pattern.where);unify(value,shape,pattern.where);
-  for(std::size_t i=0;i<pattern.elements.size();++i)bind_pattern(pattern.elements[i],elements[i]);
- }
+  void bind_pattern(const Pattern& pattern,Term value){
+   tick(pattern.where);
+   if(!pattern.is_tuple()){define(pattern.name,value,pattern.where);return;}
+   std::vector<Term> elements;
+   value=head(value,pattern.where);
+   if(nodes[value].kind==Type::Hole){
+    for(std::size_t i=0;i<pattern.elements.size();++i)elements.push_back(fresh(pattern.where));
+    auto shape=add(Type::Tuple,elements,0,pattern.where);unify(value,shape,pattern.where);
+   }else{
+    if(nodes[value].kind!=Type::Tuple)
+     fail(pattern.where,"tuple binding pattern requires a tuple; expected tuple shape, got "+describe(value,pattern.where));
+    if(nodes[value].parameters.size()!=pattern.elements.size())
+     fail(pattern.where,"tuple binding pattern has wrong arity (tuple arity mismatch)");
+    elements=nodes[value].parameters;
+   }
+   for(std::size_t i=0;i<pattern.elements.size();++i)bind_pattern(pattern.elements[i],elements[i]);
+  }
  std::optional<Binding> local(const std::string& name)const {
   for(auto scope=scopes.rbegin();scope!=scopes.rend();++scope)
    if(auto found=scope->find(name);found!=scope->end())return found->second;
@@ -451,7 +492,8 @@ class Inference {
    if(p.pattern)bind_pattern(*p.pattern,type);else define(p.name,type,p.where);
   }
   returns=nodes[signature].result;saw_return=false;global.first_slot=slots.size();block(f.body,false);scopes.pop_back();global.last_slot=slots.size();
-  if(!saw_return)unify(returns,scalar(Type::Void,f.where),f.where);
+   if(!saw_return&&nodes[head(returns,f.where)].kind==Type::Hole)
+    unify(returns,scalar(Type::Void,f.where),f.where);
   if(global.low==global.index){
    std::vector<std::string> group;
    do{group.push_back(component_stack.back());component_stack.pop_back();globals.at(group.back()).on_stack=false;}while(group.back()!=name);
@@ -619,7 +661,15 @@ class Inference {
   // Bidirectional checking avoids guessing universal types for parameters.
   if(e.kind==Expr::Kind::Tuple&&nodes[expectation].kind==Type::Tuple&&e.children.size()==nodes[expectation].parameters.size()){
    auto parameters=nodes[expectation].parameters;
-   for(std::size_t i=0;i<parameters.size();++i)expected(*e.children[i],parameters[i]);
+   try{
+    for(std::size_t i=0;i<parameters.size();++i)expected(*e.children[i],parameters[i]);
+   }catch(const Error& error){
+    std::string message=error.what();
+    if(error.diagnostic_id=="ON1X-TYPE"&&message.starts_with("expected "))
+     throw Error(error.where,message+" while checking tuple expected "+describe(expectation,e.where),
+      error.diagnostic_id,error.expected,error.found);
+    throw;
+   }
    slots.push_back({&e.type,expectation,e.where,"checked tuple"});return expectation;
   }
   auto first=slots.size();
@@ -968,7 +1018,8 @@ class Inference {
      if(p.pattern)bind_pattern(*p.pattern,parameters[i]);else define(p.name,parameters[i],p.where);
     }
    returns=result_type;saw_return=false;block(e.body,false);scopes.pop_back();
-   if(!saw_return)unify(result_type,scalar(Type::Void,at),at);
+    if(!saw_return&&nodes[head(result_type,at)].kind==Type::Hole)
+     unify(result_type,scalar(Type::Void,at),at);
     returns=previous_returns;saw_return=previous_saw_return;loop_values=std::move(previous_loops);break;
   }
    case Expr::Kind::Unary:{
@@ -982,7 +1033,16 @@ class Inference {
      else if(e.text=="&&"||e.text=="||"){
       auto operand=scalar(Type::Bool,at);
      unify(left,operand,at);unify(right,operand,at);
-    }else{unify(left,right,at);numeric_operand(left,at);}
+     }else{
+      auto left_kind=nodes[head(left,at)].kind,right_kind=nodes[head(right,at)].kind;
+      if(left_kind!=Type::Hole&&!numeric_kind(left_kind))
+       fail(at,"numeric operand requires a numeric scalar; expected i64, got "+describe(left,at));
+      if(right_kind!=Type::Hole&&!numeric_kind(right_kind))
+       fail(at,"numeric operand requires a numeric scalar; expected "+describe(left,at)+", got "+describe(right,at));
+      if(left_kind>=Type::U8&&left_kind<=Type::U64&&right_kind==Type::I64)unify(left,right,at);
+      else unify(right,left,at);
+      numeric_operand(left,at);
+     }
     bool arithmetic=e.text=="+"||e.text=="-"||e.text=="*"||e.text=="/"||e.text=="%";
     result=arithmetic?left:scalar(Type::Bool,at);break;
   }

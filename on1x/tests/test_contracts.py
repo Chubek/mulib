@@ -1,5 +1,6 @@
 """Canonical header/manual evidence and executable semantics without ExoML."""
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -17,6 +18,53 @@ p = run([sys.executable, tool, 'lint'])
 assert p.returncode == 0, p.stderr
 lint = json.loads(p.stdout)
 assert lint['profiles'] == {'json':20, 'vec':7, 'parsec':18, 'elvi-scrape':6, 'mune':52} and not lint['safe_export'] and not lint['gate_b']
+exo = t.root/'tools/on1x-exotract.py'
+p = run([sys.executable, tool, '--root', root, 'list'])
+assert p.returncode == 0, p.stderr
+inventory = json.loads(p.stdout)
+p = run([sys.executable, exo, '--root', root, 'list'])
+assert p.returncode == 0, p.stderr
+assert inventory == dict(json.loads(p.stdout), schema='on1x.contract-inventory/v1')
+modules, coverage = inventory['modules'], inventory['coverage']
+auxiliary = set(inventory['auxiliary_headers'])
+assert auxiliary == {'include/mulib-'+n+'.h' for n in ['container-core', 'lprowse', 'qvm']}
+registered = {m['header'] for m in modules.values()}
+assert not registered & auxiliary
+assert registered | auxiliary == {p.relative_to(root).as_posix() for p in (root/'include').glob('mulib-*.h')}
+assert set(coverage) == set(modules) and inventory['safe_export'] is False
+assert {n for n, p in coverage.items() if p['snapshot_profile']} == lint['profiles'].keys()
+assert coverage['clamp']['semantic_sidecar'] == 'clamp.exocontract.json'
+assert coverage['clamp']['sidecar_header_matches'] is True
+pretty = json.loads((t.root/'contracts-exoml/prettysexpr.exocontract.json').read_text())
+pretty_revision = 'sha256:'+hashlib.sha256((root/'include/mulib-prettysexpr.h').read_bytes()).hexdigest()
+assert coverage['prettysexpr']['sidecar_header_matches'] is (pretty['bundle_provenance']['revision'] == pretty_revision)
+assert coverage['elvi-scrape']['archive_recipe'] == 'exoml-core'
+assert coverage['ipc-framed']['semantic_sidecar'] == 'sandbox/ipc-framed.exocontract.json'
+assert coverage['b+tree']['semantic_sidecar'] is None
+assert inventory['non_kernel_sidecars'] == ['prettyprint.exocontract.json']
+
+cdd = {'cdd-'+n for n in ['catalogue', 'registry', 'schema', 'query', 'plan', 'resolve', 'execute', 'diff']}
+assert cdd <= modules.keys()
+for name in cdd:
+    entry = coverage[name]
+    assert not entry['snapshot_profile'] and entry['semantic_sidecar'] is None and entry['archive_recipe'] is None
+    assert entry['sidecar_header_matches'] is None
+    assert entry['discovery_only_reason']
+p = run([sys.executable, exo, '--root', root, 'plan', 'cdd-resolve', 'cdd-diff'])
+assert p.returncode == 0, p.stderr
+cdd_plan = json.loads(p.stdout)
+assert cdd_plan['safe_export'] is False and cdd_plan['implementation_translation_units'] == 1
+assert [m['name'] for m in cdd_plan['modules']] == ['cdd-catalogue', 'cdd-plan', 'cdd-resolve', 'cdd-diff']
+assert set(cdd_plan['discovery_only']) == {'cdd-catalogue', 'cdd-plan', 'cdd-resolve', 'cdd-diff'}
+assert cdd_plan['implementation_macros'] == ['MULIB_IMPL_CDD_CATALOGUE', 'MULIB_IMPL_CDD_PLAN',
+                                             'MULIB_IMPL_CDD_RESOLVE', 'MULIB_IMPL_CDD_DIFF']
+with tempfile.TemporaryDirectory(prefix='contract-discovery-only-', dir=t.work) as tmp:
+    output = Path(tmp)/'no-archive'
+    p = run([sys.executable, exo, '--root', root, 'build', 'vec', 'cdd-resolve',
+             '--output', output, '--exotract', Path(tmp)/'unused'])
+    assert p.returncode != 0 and 'discovery-only MuLIB kernel' in p.stderr and not output.exists(), p
+p = run([sys.executable, tool, 'build-plan', 'cdd-catalogue'])
+assert p.returncode != 0 and not p.stdout, p
 p = run([sys.executable, tool, 'build-plan', 'json', 'vec', 'parsec'])
 assert p.returncode == 0, p.stderr
 plan = json.loads(p.stdout)
@@ -66,6 +114,15 @@ with tempfile.TemporaryDirectory(prefix='contract-root-', dir=t.work) as tmp:
 
 spec = importlib.util.spec_from_file_location('on1x_contracts', tool)
 module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+token = r'[a-z][a-z0-9-]*'
+for sequence in [' [one, two]', '\n  - one\n  - two', '\n    - one\n    - two']:
+    assert module.manifest_list('  dependencies:'+sequence+'\n  status: implemented', 'dependencies', token) == ['one', 'two']
+for sequence in ['', ' [one,]', ' [one]\n  - two', '\n  - one\n    - two',
+                 '\n  - one\n  - one', '\n    item: value', '\n  - ../one',
+                 '\n  - one\n  dependencies: [two]']:
+    try: module.manifest_list('  dependencies:'+sequence+'\n  status: implemented', 'dependencies', token)
+    except ValueError: pass
+    else: raise AssertionError('malformed dependency list accepted: '+sequence)
 with tempfile.TemporaryDirectory(prefix='contract-profile-',dir=t.work) as tmp:
     destination = Path(tmp)/'profiles'; shutil.copytree(module.CONTRACTS,destination)
     original_contracts = module.CONTRACTS; module.CONTRACTS = destination

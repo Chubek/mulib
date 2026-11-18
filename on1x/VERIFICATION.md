@@ -1,5 +1,89 @@
 # On1x verification — 2026-11-18
 
+## Complete Clamp C11 binding (v2)
+
+MuLIB `17a4fdd7ea78c0350b39a01892f47adeb7e1f6ba` plus worktree changes;
+LibStone `934b6ed029bfea28bbf23b5dc77c476154b0dd0d`; Linux x86-64,
+GCC 16.2.1 and Clang 22.1.8. All three functions in `mulib-clamp.h`
+are callable through the checked C11 projection. The examples and a separate
+C caller agree, and the real SDK test checks 2,670 C/adapter comparisons,
+source evaluation order, reversed bounds in both modes, and rejection of
+old reviews and incompatible declarations. Signing in this suite uses an
+ephemeral test authority; no production approval ships.
+
+```sh
+sdk="$PWD/build/sandbox-kernelbind-sdk"
+cmake --build "$sdk" --target on1xc on1x_generated_tokens on1x_reference_tokens --parallel 4
+ctest --test-dir "$sdk" --output-on-failure \
+  -R '^on1x\.(kernel_imports|kernel_review_sdk|kernel_history_sdk|cdd_discovery_sdk|scanner_parity)$'
+cmake --build build/elvis-on1x-fallback --target on1xc --parallel 4
+ctest --test-dir build/elvis-on1x-fallback --output-on-failure -R '^on1x\.kernel_imports$'
+ASAN_OPTIONS=detect_leaks=1 python3 on1x/tests/test_kernel_review_sdk.py \
+  "$sdk/libstone-moonstone/exotract/exotract" "$sdk/on1xc" "$PWD/on1x" \
+  "$PWD/build/clamp-v2-review-clang-asan" clang \
+  --cflag=-fsanitize=address,undefined --cflag=-fno-omit-frame-pointer \
+  --cflag=-fno-sanitize-recover=all
+```
+
+Clamp remains limited to the native Linux x86-64 C11 build profile. MIR,
+other targets and general C FFI were not enabled by this change.
+
+## MuLIB contract inventory and CDD discovery
+
+MuLIB `17a4fdd7ea78c0350b39a01892f47adeb7e1f6ba` plus worktree changes;
+configured LibStone `57113dc48d815359431dce63a6b865a21dd993cd`; Linux x86-64,
+GCC 16.2.1 and Clang 22.1.8. Both `on1x/tools/on1x-{contracts,exotract}.py list`
+reported 1,188 MANIFEST kernels and three auxiliary headers. Seventeen kernels
+have shipped semantic sidecars (five have core snapshot profiles); one
+non-kernel companion sidecar is listed separately. The PrettySexpr sidecar's
+header revision is stale on this checkout. Registration does not authorize safe
+exports.
+
+With the existing `build/sandbox-kernelbind-sdk` tools and a fresh work directory:
+
+```sh
+sdk="$PWD/build/sandbox-kernelbind-sdk"
+work="$(mktemp -d /tmp/opencode/on1x-contract-coverage.XXXXXX)"
+exo="$sdk/libstone-moonstone/exotract/exotract"
+python3 on1x/tests/test_contracts.py "$sdk/on1xc" "$PWD/on1x" "$work/contracts" clang
+python3 on1x/tests/test_cdd_discovery_sdk.py "$exo" "$sdk/on1xc" "$PWD/on1x" "$work/cdd-clang" clang
+python3 on1x/tests/test_cdd_discovery_sdk.py "$exo" "$sdk/on1xc" "$PWD/on1x" "$work/cdd-gcc" gcc
+python3 on1x/tests/test_exotract.py "$exo" "$sdk/on1xc" "$PWD/on1x" "$work/exotract" clang
+python3 on1x/tests/test_kernel_sandbox_sdk.py "$exo" "$sdk/on1xc" "$PWD/on1x" "$work/sandbox" clang
+```
+
+These passed. The CDD SDK test extracts all eight headers with ExoML/libclang
+and verifies that safe and unsafe builds and review-subject generation refuse
+CDD. The CDD plan is metadata only; there was no CDD archive or callable ABI to
+test. `test_contracts_sdk.py --extract` also passed with
+`build/kernelbind-gcc/on1x-bind`. Broader `test_kernel_imports_sdk.py` and
+`test_mulib.py` are blocked by the pre-existing PrettySexpr sidecar revision and
+stale generated OptML unit profiles, respectively.
+
+## Surfraw ElviScrape fixture integration
+
+MuLIB `681dacbdd419b71ae86042d0c307180cbd5dea5e` plus worktree changes;
+LibStone `57113dc48d815359431dce63a6b865a21dd993cd`; Linux x86-64
+6.18.52-1-lts/glibc 2.44; GCC 16.2.1 and Clang 22.1.8.
+
+- `ctest --test-dir build/elvis-clang-asan --output-on-failure -R mulib_test-elvi-scrape`:
+  four strict C11 suites with Clang ASan/UBSan passed, covering all five profiles,
+  legacy path parity, extraction, HTTPS transport, and allocation failures.
+- `python3 on1x/tools/on1x-contracts.py lint` and the SDK `snapshot --library
+  elvi-scrape` passed with refreshed source pins; neither admits safe imports.
+  `on1x-exotract.py build elvi-scrape --fixture elvis --compiler clang` built
+  the one-TU archive; its separate C11 client and generated On1x client both
+  executed offline. The full `on1x/tests/test_exotract.py` suite passed with
+  Clang. The same [On1x client](tests/mulib/elvi-scrape.on1x) passed with
+  `on1x-build.py --mulib-fixture elvis --extra-c on1x/tests/mulib/elvi-scrape.c`
+  using each scanner mode.
+- Both On1x scanner selections passed the core test selection, including
+  generated-vs-fallback scanner parity in the generated configuration.
+  Fallback `on1x.contracts`, `on1x.install`, `on1x.stdlib_extensions` and
+  `on1x.kernel_imports` passed separately. `on1x.mulib` ran its Elvi assertions
+  successfully and then hit the previously documented unrelated stale
+  `tools/embed_units.py` profile check. No live search provider was contacted.
+
 ## Project tooling — starting baseline
 
 MuLIB `f520a7da8cd29c282f335ed3d0fdca1599c2ff30`; configured LibStone
@@ -64,7 +148,8 @@ the fallback Clang compiler, and the Clang ASan/UBSan compiler. The existing
 project suite passed **11/11** with the generated scanner and Mune/QMR.
 Host: Linux `6.18.52-1-lts` x86-64, Git `2.55.0`, Python `3.14.7`,
 OpenSSL `3.6.4`; MuLIB and LibStone revisions and compiler versions are
-as above. This tests the stated [Linux smart HTTPS profile](stdlib/on1xfile/README.md#explicit-remote-git-acquisition),
+as above. This tests the pinned subset of the stated
+[Linux smart HTTPS profile](stdlib/on1xfile/README.md#locking-and-explicit-remote-git-acquisition),
 not arbitrary Git server deployments or platform support.
 
 ```sh
@@ -77,6 +162,53 @@ ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
 python3 on1x/tests/test_on1x_project.py --on1xc build/on1x-fetch-agent/on1xc --cc gcc \
   --mune-runner build/on1x-fetch-agent/on1x-mune-runner --qmr-compiler build/on1x-fetch-agent/on1x-qmr-compile
 ```
+
+### Locked Git selector continuation — 2026-11-18
+
+Starting MuLIB checkout `681dacbdd419b71ae86042d0c307180cbd5dea5e`;
+configured LibStone `57113dc48d815359431dce63a6b865a21dd993cd`;
+Linux x86-64, Git 2.55.0 and Python 3.14.7. The continuation adds
+`On1xfile.lock` v1, explicit commit/branch/tag selectors, annotated-tag peeling,
+offline/locked/frozen modes, serialized atomic cache publication and atomic
+lockfile replacement. Git subprocesses still use the existing shell-free,
+HTTPS-only, object-only envelope and never initialize submodules.
+
+The local project suite passed **14/14**. It uses a temporary local bare
+repository with a moving branch and annotated tag, proves frozen builds keep
+the old executable result, updates locks explicitly, and rejects unsafe refs,
+malformed/duplicate lockfile data and lockfile symlinks. The smart-HTTPS suite
+passed **11/11**. Its two new cases resolve remote branches/tags, build from the
+cache after server shutdown, and race two fetch processes to one valid cache
+generation. No public network is used.
+
+```sh
+python3 on1x/tests/test_on1x_project.py \
+  --on1xc build/on1x-fetch-agent/on1xc --cc gcc \
+  --mune-runner build/on1x-fetch-agent/on1x-mune-runner \
+  --qmr-compiler build/on1x-fetch-agent/on1x-qmr-compile
+python3 on1x/tests/test_project_fetch.py \
+  --on1xc build/on1x-fetch-agent/on1xc --cc gcc
+ctest --test-dir build/on1x-fetch-agent \
+  -R '^on1x\.project_(build|fetch)$' --output-on-failure
+cmake -S on1x -B /tmp/opencode/on1x-git-clang -DBUILD_TESTING=ON \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF
+cmake --build /tmp/opencode/on1x-git-clang --parallel 4 \
+  --target on1xc on1x-mune-runner on1x-qmr-compile
+ctest --test-dir /tmp/opencode/on1x-git-clang \
+  -R '^on1x\.project_(build|fetch)$' --output-on-failure
+ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
+  python3 on1x/tests/test_project_fetch.py \
+  --on1xc build/on1x-tooling-asan/on1xc --cc clang
+```
+
+The registered project build/fetch pair passed **2/2** with generated-scanner
+GCC and a fresh fallback-scanner Clang 22.1.8 build. The HTTPS suite also
+passed **11/11** with the existing Clang ASan/UBSan compiler; the complete
+project suite was not rerun under sanitizers. This does not establish
+authenticated/SSH transport, a registry or version solver, transitive
+dependency resolution, non-Linux publication, or a reproducibly pinned
+compiler/host C toolchain.
 
 ### On1x source formatter and PrettyPrint verbatim documents
 
@@ -105,6 +237,59 @@ make -f prettyprint.mk test CC=clang BUILD_DIR=build/formatter-pretty-asan \
 
 The source formatter is not a PPX executor, partial parser, or whole-project
 rewriter; see its [manual](docs/formatter.md) for the preservation contract.
+
+## Sandbox kernel discovery and archive
+
+MuLIB HEAD `681dacbdd419b71ae86042d0c307180cbd5dea5e` plus sandbox worktree
+changes; configured `ON1X_LIBSTONE_ROOT=on1x/third_party/libstone` at the
+MuLIB gitlink `57113dc48d815359431dce63a6b865a21dd993cd`. Linux x86-64
+6.18.52, glibc 2.44, GCC 16.2.1 (`x86_64-pc-linux-gnu`), Clang/libclang
+22.1.8, Python 3.14.7. The clean SDK build reported linked ExoML,
+vendored Lua/Kaguya, `/usr/lib/libclang.so`, and the generated scanner.
+Commands to configure/build, run CTest, and retain the actual JSON/archive
+are in [the sandbox manual](docs/kernel-sandbox.md#reproduce-the-evidence).
+
+- `on1x.kernel_sandbox_sdk`: **passed** (GCC strict C11). Extracted eight
+  complete CDecl v2 graphs and validated all 37 annotations, compared the
+  inspection and archive evidence, checked one `mulib.o` and actual exports,
+  and executed a separate-TU C client (default/invalid profile, grant
+  intersection and output preservation, bounded local IPC with binary data).
+  The test compares sampled C record sizes, alignment and member offsets
+  against CDecl; it is not a complete ABI or callbacks test. Negative cases
+  reject archive overwrite, macro override, stale revision, self-claimed
+  review, safe/unsafe imports and review subjects without publishing output.
+- The same test passed with Clang and ASan/UBSan on the archive and C client:
+
+  ```sh
+  sdk=build/sandbox-kernelbind-sdk
+  python3 on1x/tests/test_kernel_sandbox_sdk.py \
+    "$sdk/libstone-moonstone/exotract/exotract" "$sdk/on1xc" on1x \
+    "$sdk/test-artifacts/kernel-sandbox-clang-san" clang \
+    --cflag=-fsanitize=address,undefined --cflag=-fno-omit-frame-pointer \
+    --cflag=-fno-sanitize-recover=all
+  ```
+
+- Final stable-tree GCC selection: **5/5 passed**.
+
+  ```sh
+  ctest --test-dir build/sandbox-kernelbind-sdk \
+    -R '^on1x\.(kernel_sandbox_sdk|kernel_paths|kernel_review_sdk|kernel_history_sdk|kernel_imports)$' \
+    --output-on-failure --parallel 3
+  ```
+
+  The separate broader `on1x.kernel_imports_sdk` test reached
+  the existing PrettySexpr migration and failed its pre-existing header
+  revision check: `include/mulib-prettysexpr.h` SHA-256 at HEAD starts
+  `fa7bd9da`, its checked-in sidecar expects `371680e6`.
+
+The verified local artifacts are `build/sandbox-kernelbind-sdk/sandbox-inspection-final.json`
+and `build/sandbox-kernelbind-sdk/sandbox-archive-final/`; their recorded input
+and archive artifact hashes were rechecked after publication.
+
+Not run by these SDK tests: process launch, seccomp, Landlock, namespace
+or delegated cgroup enforcement; AArch64; Chisel usage checking; an
+independently issued sandbox review. No sandbox glue has been admitted to
+safe On1x. The SDK/compiler themselves were not sanitizer-instrumented.
 
 ## KernelBind language surface: lexical unsafe expressions
 
@@ -3437,6 +3622,200 @@ These are compiler-valid **proposals**, not proofs of intended behavior, safe FF
 admission, runtime error recovery or automatic adoption of an edited program.
 Normal compilation still rejects invalid input; repair writes only a new file.
 
+## Bounded diagnostics, scrutiny, and PPX continuation — 2026-11-18
+
+Validated from MuLIB `681dacbdd419b71ae86042d0c307180cbd5dea5e`
+plus the working-tree changes, with configured LibStone
+`57113dc48d815359431dce63a6b865a21dd993cd` left unchanged. Host:
+Linux 6.18.52-1-lts x86-64, GCC 16.2.1 and Clang 22.1.8.
+
+This continuation adds the LibStone-independent catalog/registry core, bounded
+Wetstone translation, Syren presentation and repair ranking, scrutiny
+precedence, and descriptor-3 PPX advisories described in
+[diagnostics.md](docs/diagnostics.md). The analysis accepts only conservative
+straight-line checked `i64`/`bool` prefixes. Checked overflow, dynamic checked
+add/subtract/multiply, negation of `INT64_MIN`, and `INT64_MIN / -1` stop the
+translation rather than fabricating a value or finding. Repairs remain
+compiler-validated proposals, not intent or semantic-equivalence proofs.
+
+The final security pass additionally verifies that PPX messages and captured
+stderr cannot inject terminal controls, forged lines, or bidi overrides.
+Malformed UTF-8 is escaped. PPX-controlled locations cannot authorize host
+filesystem reads. Source snapshots remain 2 MiB each and share a monotonic
+16 MiB bundle/lookup budget, so repeated findings cannot amplify snapshot
+retention or lookup work without bound. JSON/SARIF remain deterministic and
+SARIF uses UTF-16 columns only when a matching loaded-graph snapshot is retained.
+
+| Configuration | Measured result |
+|---|---|
+| `/tmp/opencode/on1x-diagnostics-build`: GCC Debug, generated scanner, native PPXs, Syren and Wetstone | **67/69 passed** |
+| `/tmp/opencode/on1x-diagnostics-fallback`: GCC Debug, fallback scanner, native PPXs, no Syren/Wetstone | **64/66 passed** on the final complete rerun |
+| `/tmp/opencode/on1x-diagnostics-sanitize`: Clang Debug, generated scanner, Syren/Wetstone, ASan/UBSan | Focused diagnostics/analysis/PPX/inference/loader **7/7 passed**, no sanitizer finding |
+| Strict `-Wall -Wextra -Werror -pedantic` GCC fallback and Clang generated builds | Focused **2/2** and **4/4 passed** |
+
+The generated and fallback policy/compatibility selections passed **10/10** and
+**8/8**, covering diagnostics, analysis, adversarial PPX, inference, loader and
+all project build/fetch/driver tests available in each profile. An earlier
+parallel fallback run saw a GCC internal compiler segfault while compiling
+unchanged `runtime/on1x_runtime.c` for `poly_extended`; the isolated test passed,
+the 64-test run excluding the known fingerprint checks passed **64/64**, and the
+final complete rerun produced the **64/66** result above.
+
+In both complete profiles the only final failures are `on1x.contracts` and
+`on1x.mulib`. Both reject the unrelated
+`manual/mulib-elvi-scrape.md` source/manual fingerprint drift. The audited
+fingerprint was not refreshed, bypassed, or weakened.
+
+Reproduction:
+
+```sh
+cmake --build /tmp/opencode/on1x-diagnostics-build --parallel 4
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-diagnostics-build \
+  --output-on-failure --parallel 3 \
+  --output-junit /tmp/opencode/on1x-diagnostics-build/results-diagnostics-final.xml
+
+cmake --build /tmp/opencode/on1x-diagnostics-fallback --parallel 4
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-diagnostics-fallback \
+  --output-on-failure --parallel 3 \
+  --output-junit /tmp/opencode/on1x-diagnostics-fallback/results-diagnostics-final-rerun.xml
+
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
+  ctest --test-dir /tmp/opencode/on1x-diagnostics-sanitize \
+  -R '^on1x\.(diagnostics(_api)?|analysis_api|ppx|inference(_engine)?|loader_api)$' \
+  --output-on-failure --parallel 2
+
+ctest --test-dir /tmp/opencode/on1x-diagnostics-strict-gcc \
+  -R '^on1x\.(analysis_api|ppx)$' --output-on-failure
+ctest --test-dir /tmp/opencode/on1x-diagnostics-strict-clang \
+  -R '^on1x\.(diagnostics(_api)?|analysis_api|ppx)$' --output-on-failure
+```
+
+This is **EXECUTABLE**, not a whole-language verifier or mature diagnostics
+platform. CFG/loop/interprocedural reasoning, ownership/resource proofs,
+incremental/LSP publication, cross-platform PPX sidebands, and whole-suite
+sanitizer coverage remain unsupported.
+
+## Catalog-v2 data ownership — 2026-11-18
+
+This is the follow-up to the bounded-diagnostics continuation above. Its earlier
+67/69 and 64/66 totals are historical, not validation of this refactor. Current
+checkout identity: MuLIB `681dacbdd419b71ae86042d0c307180cbd5dea5e` plus
+uncommitted/concurrent work, configured LibStone
+`57113dc48d815359431dce63a6b865a21dd993cd` unchanged. Linux
+6.18.52-1-lts x86-64; GCC/g++ 16.2.1 (`20260810`), Clang/clang++ 22.1.8.
+
+### Implemented and exercised boundary
+
+- `stdlib/diagnostics/catalog.json` uses `on1x.diagnostic-catalog/v2`. It owns
+  new diagnostic IDs, levels and failure behavior, message templates, provider/
+  origin labels, category/phase/guidance/remediation, scrutiny names/checks/
+  activation/overrides, upstream mappings, source-repair policies and replacement
+  lists, advisory labels, validation/command-failure text and PPX declarations.
+  Implementation enums select numeric closed mechanics, not user-visible names.
+- CMake validates the trusted catalog with
+  `tools/generate-diagnostic-catalog.py` before generating its embedded header.
+  Malformed external catalogs report the trusted embedded role entry, never
+  partially parsed untrusted bootstrap text. A new reporting-limit entry handles
+  oversized legacy message expansion without recursive exceptions/abort.
+- Compiler `match` keys are independent of presented IDs. Runtime replacements
+  change compiler and PPX codes, levels and messages, metadata/colors, scrutiny/
+  check names and activation, level failure semantics and repair candidates,
+  without rebuilding the compiler or native diagnostic PPX.
+- PPX emit records contain **only ID and location** after registration. Free-form
+  message payloads reject. Native declaration ID and failure text come from the
+  host-selected catalog. Fatal PPX findings keep their registered identity and
+  are reported once. PPX paths still do not authorize source-file reads.
+- Wetstone repair analysis remains default-on but its rationale/proposal notes
+  are explicitly advisory, not compiler-revalidated edits. `--repair` separately
+  recompiles each Syren edit through load/parse/check/C-emission with the selected
+  catalog, before any “validated” label or exclusive publication. Legacy compiler
+  exceptions conservatively yield inconclusive outcomes instead of classification
+  by message substrings. Intent/equivalence is never proved.
+- New unconditional CTests `on1x.diagnostic_catalog_source` and
+  `on1x.diagnostic_catalog_runtime` cover both reporting configurations. The
+  former source-lints feature/upstream code literals, diagnostic level/provider/
+  policy text, repair replacement policy, AST defaults and PPX signatures, and
+  exercises status-only generator rejection and compiles a non-BMP Unicode
+  embedded-header regression. The latter checks replacement/bootstrap,
+  oversize-message handling, optional analysis and native PPX replacement.
+  API tests additionally cover catalog copy/move ownership, bounded numeric
+  colors, invalid edit/cost rejection, validator outcomes and snapshot limits.
+
+These changes also fixed two regressions exposed during verification:
+compiler-owned ANSI prefixes were being escaped as untrusted text, and oversized
+legacy diagnostic text could throw while reporting. Both have executable
+regressions; no warning or test was disabled to hide them.
+
+### Final measured results
+
+| Configuration | Result after the final code changes |
+|---|---|
+| `/tmp/opencode/on1x-diagnostics-build`: GCC Debug, generated scanner, Syren/Wetstone and native PPXs | Full suite **70/71 passed** |
+| `/tmp/opencode/on1x-diagnostics-fallback`: GCC Debug, fallback scanner, no Syren/Wetstone, native PPXs | Full suite **67/68 passed** |
+| `/tmp/opencode/on1x-diagnostics-strict-gcc`: GCC Debug/fallback, no optional analysis/presentation or native PPXs, `-Wall -Wextra -Werror -pedantic` | Focused **4/4 passed** |
+| `/tmp/opencode/on1x-diagnostics-strict-clang`: Clang Debug/generated, Syren/Wetstone, native PPXs OFF, same strict flags | Focused **6/6 passed** |
+| `/tmp/opencode/on1x-diagnostics-sanitize`: Clang Debug/generated, Syren/Wetstone and native PPXs, ASan/UBSan | Focused **9/9 passed**, no sanitizer findings |
+
+The only failure in each full suite is now `on1x.mulib`,
+`tests/test_mulib.py:109`: the OptML fixture build rejects
+`fixture/generated kernel mismatch: tools/embed_units.py` / `stale unit profiles`.
+The previously recorded manual-fingerprint failure is not the current failure:
+concurrent work changed that boundary, and `on1x.contracts` passes in these runs.
+Unrelated artifacts, fingerprints and sandbox/TTY/Git/prelude work were not
+regenerated, reverted or repaired by this follow-up.
+
+Reproduction (existing trees retain the settings in the table):
+
+```sh
+cmake --build /tmp/opencode/on1x-diagnostics-build --parallel 4
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-diagnostics-build \
+  --output-on-failure --parallel 3 \
+  --output-junit /tmp/opencode/on1x-diagnostics-build/results-catalog-v2.xml
+cmake --build /tmp/opencode/on1x-diagnostics-fallback --parallel 4
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-diagnostics-fallback \
+  --output-on-failure --parallel 3 \
+  --output-junit /tmp/opencode/on1x-diagnostics-fallback/results-catalog-v2.xml
+
+cmake --build /tmp/opencode/on1x-diagnostics-strict-gcc --parallel 4
+ctest --test-dir /tmp/opencode/on1x-diagnostics-strict-gcc \
+  -R '^on1x\.(diagnostic_catalog_(source|runtime)|analysis_api|ppx)$' \
+  --output-on-failure \
+  --output-junit /tmp/opencode/on1x-diagnostics-strict-gcc/results-catalog-v2.xml
+cmake --build /tmp/opencode/on1x-diagnostics-strict-clang --parallel 4
+ctest --test-dir /tmp/opencode/on1x-diagnostics-strict-clang \
+  -R '^on1x\.(diagnostics(_api)?|diagnostic_catalog_(source|runtime)|analysis_api|ppx)$' \
+  --output-on-failure \
+  --output-junit /tmp/opencode/on1x-diagnostics-strict-clang/results-catalog-v2.xml
+
+cmake -S on1x -B /tmp/opencode/on1x-diagnostics-sanitize \
+  -DON1X_BUILD_NATIVE_PPX=ON \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer'
+cmake --build /tmp/opencode/on1x-diagnostics-sanitize --parallel 4
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
+TMPDIR=/tmp/opencode ctest --test-dir /tmp/opencode/on1x-diagnostics-sanitize \
+  -R '^on1x\.(diagnostics(_api)?|diagnostic_catalog_(source|runtime)|analysis_api|ppx|inference(_engine)?|loader_api)$' \
+  --output-on-failure --parallel 2 \
+  --output-junit /tmp/opencode/on1x-diagnostics-sanitize/results-catalog-v2.xml
+```
+
+The sanitizer tree additionally uses
+`CMAKE_C_FLAGS` and `CMAKE_CXX_FLAGS` =
+`-fsanitize=address,undefined -fno-omit-frame-pointer -g`; thus the compiler,
+generated native PPXs, generated C11 clients and their runtime TUs are
+instrumented, not just the test driver. Source-lint/generator checks and Python
+syntax compilation also pass.
+
+### Truthful limits
+
+This remains **EXECUTABLE**, not whole-language diagnostic migration or proof.
+Legacy compiler phases, old runtime/SDK errors and project-driver/OS failures
+still contain literal messages/IDs. They are outside this feature except for
+catalog routing; unknown compiler events use the data-defined fallback.
+Normal suggestions remain candidates, not prevalidated edits. JSON is supported;
+there is no YAML catalog parser. No whole-suite sanitizer, TSAN, AArch64,
+non-Linux, CFG/interprocedural/resource analysis or LSP evidence is claimed.
+See [diagnostics.md](docs/diagnostics.md) for the schema/protocol migration.
+
 ## Standard-library and native PPX extension integration
 
 **PASS: 107/107 final CTests, with no failures, disabled or skipped tests.**
@@ -3532,6 +3911,82 @@ socket API or completed Shylock backend is claimed. Operation contracts and
 examples: [`stdlib/README.md`](stdlib/README.md),
 [`stdlib/_bridge/README.md`](stdlib/_bridge/README.md),
 [`stdppx/README.md`](stdppx/README.md).
+
+## Pervasive generic Option/Result facade
+
+Validated 2026-11-18 from MuLIB
+`681dacbdd419b71ae86042d0c307180cbd5dea5e` plus the working-tree changes,
+with configured LibStone
+`57113dc48d815359431dce63a6b865a21dd993cd` left unchanged. Host:
+Linux 6.18.52 x86-64, glibc 2.44, GCC 16.2.1, Clang 22.1.8,
+Python 3.14.7 and CMake 4.4.3.
+
+The default pervasive environment now exports canonical bounded nominal
+`Option<T>`/`Result<T,E>` declarations and the documented `option_*`/`result_*`
+helpers. They are ordinary demand-loaded On1x declarations. No parser,
+typechecker, runtime or ABI change was required. The dedicated test exercises
+every exported helper, generic specializations, branch laziness, contextual
+phantom inference failures, Result propagation, explicit/custom-prelude and
+local shadowing, `--no-prelude`, direct core imports, and all three legacy
+representations.
+
+Measured results:
+
+- Fallback-scanner Debug build completed. Focused CTest
+  (`prelude|modules|libraries|nominal_hir|nominal_adts|defer_error_hir|defer_errors|inference|inference_engine|install`)
+  passed **10/10**.
+- Generated-scanner Debug build completed, including all native PPX generated
+  C programs. The same focused set plus scanner parity passed **11/11**;
+  native/Python standard-PPX integration and protocol tests passed **2/2**.
+- `test_prelude.py` passed with generated scanning and strict Clang C11
+  `-fsanitize=address,undefined -fno-omit-frame-pointer
+  -fno-sanitize-recover=all`; no sanitizer finding was reported.
+- `on1x-build.py examples/pervasive_options.on1x` compiled and linked the
+  example, which printed `42`. `on1x.libraries` admitted all 132 current
+  non-test `.on1x` library modules, and `stdlib/tests/check_package.py` retained
+  unique exported implementation names across 138 total `.on1x` files.
+- The complete fallback CTest run was **51 passed, 10 failed, 1 skipped**.
+  `on1x.prelude` and every focused compatibility suite above passed. The failures
+  were outside this change: seven concurrent diagnostics/PPX expected-text
+  mismatches (`compiler`, `functions`, `closures`, `tuples`,
+  `parameter_patterns`, `macros`, `ppx`), the pre-existing
+  `manual/mulib-elvi-scrape.md` fingerprint drift (`contracts`, `mulib`), and
+  concurrent native-input drift in `stream_poll`. These excluded areas were not
+  modified as part of this facade.
+- A strict warnings-as-errors generated-compiler build was additionally
+  attempted. It stopped in unrelated concurrent `loader.cpp`, `sema.cpp` and
+  `analysis.cpp` warning failures; rebuilding that same generated profile
+  without host `-Werror` succeeded, and generated applications themselves were
+  compiled with strict warning flags by the focused tests.
+
+Reproduction:
+
+```sh
+cmake -S on1x -B /tmp/opencode/on1x-prelude-build \
+  -DBUILD_TESTING=ON -DON1X_USE_FALLBACK_SCANNER=ON -DCMAKE_BUILD_TYPE=Debug
+cmake --build /tmp/opencode/on1x-prelude-build --parallel 4
+ctest --test-dir /tmp/opencode/on1x-prelude-build \
+  -R '^on1x\.(prelude|modules|libraries|nominal_hir|nominal_adts|defer_error_hir|defer_errors|inference|inference_engine|install)$' \
+  --output-on-failure --parallel 4
+
+cmake -S on1x -B /tmp/opencode/on1x-prelude-generated \
+  -DBUILD_TESTING=ON -DON1X_USE_FALLBACK_SCANNER=OFF \
+  -DON1X_WITH_SYREN=OFF -DCMAKE_BUILD_TYPE=Debug
+cmake --build /tmp/opencode/on1x-prelude-generated --parallel 4
+ctest --test-dir /tmp/opencode/on1x-prelude-generated \
+  -R '^on1x\.(prelude|modules|libraries|nominal_hir|nominal_adts|defer_error_hir|defer_errors|inference|inference_engine|install|scanner_parity)$' \
+  --output-on-failure --parallel 4
+
+python3 on1x/tests/test_prelude.py \
+  /tmp/opencode/on1x-prelude-generated/on1xc "$PWD/on1x" \
+  /tmp/opencode/on1x-prelude-clang-sanitize clang \
+  --cflag=-fsanitize=address,undefined --cflag=-fno-omit-frame-pointer \
+  --cflag=-fno-sanitize-recover=all
+```
+
+This remains the nonrecursive, trivially copied nominal profile. Managed or
+resource-bearing payloads/drop, Option propagation, recursive ADTs, and
+aggregate MIR/SDK lowering remain unsupported.
 
 ## Earlier artifact-only verification (historical)
 

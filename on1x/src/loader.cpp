@@ -57,7 +57,7 @@ class Loader {
   bool unsafe_context=false;
   std::size_t kernel_requests=0;
   std::map<std::string,Function> kernel_calls;
-  static constexpr const char* kernel_symbols[]={"mulib_clamp_add_i64","mulib_clamp_sub_i64",
+   static constexpr const char* kernel_symbols[]={"mulib_clamp_add_i64","mulib_clamp_sub_i64","mulib_clamp_i64",
     "mulib_histprice_ema","mulib_histprice_holt","mulib_priceopt_optimize","mulib_priceopt_candidates"};
   static bool kernel_name(std::string_view name){
    return std::find(std::begin(kernel_symbols),std::end(kernel_symbols),name)!=std::end(kernel_symbols);
@@ -78,8 +78,9 @@ class Loader {
    const bool history=found->second.module=="mulib.histprice";
    const bool pricing=found->second.module=="mulib.priceopt";
    const auto symbol=(history?"mulib_histprice_":pricing?"mulib_priceopt_":"mulib_clamp_")+e.text.substr(dot+1);
-   if(!kernel_name(symbol))
-    throw Error(e.where,"ON1X-KERNEL-MEMBER: no ABI-verified export "+e.text,"ON1X-KERNEL-MEMBER");
+    if(!kernel_name(symbol)){
+     throw Error(e.where,"ON1X-KERNEL-MEMBER: no ABI-verified export "+e.text,"ON1X-KERNEL-MEMBER");
+    }
     const bool unsafe=found->second.is_unsafe;
     if(unsafe&&!unsafe_context)
      throw Error(e.where,"ON1X-KERNEL-CONTEXT: "+e.text+" requires unsafe { ... }","ON1X-KERNEL-CONTEXT");
@@ -88,7 +89,7 @@ class Loader {
     Function f;f.name=name;f.where=e.where;f.result=history||pricing?kernel_result(history):Type{Type::I64};f.external=true;
     f.kernel_symbol=symbol;f.kernel_link_only=!unsafe;
     auto params=history?history_kernel_parameters(symbol):pricing?pricing_kernel_parameters(symbol,kernel_type_prefix(false)):
-      std::vector<Type>{Type::I64,Type::I64};
+       std::vector<Type>(clamp_kernel_arity(symbol),Type::I64);
     for(std::size_t i=0;i<params.size();++i){Param param;param.name="arg"+std::to_string(i);param.type=params[i];param.where=e.where;f.params.push_back(std::move(param));}
     kernel_calls.emplace(name,std::move(f));
    }
@@ -281,10 +282,11 @@ class Loader {
    for(auto& request:m->unit.kernel_imports){
      if(++edges>16384||++kernel_requests>1024)
      throw Error(request.where,"kernel import inspection limit exceeded");
-    if(!aliases.insert(request.alias).second||module_bound(m->names,request.alias)||
-       m->names.values.contains(request.alias)||m->names.types.contains(request.alias)||
-       m->names.syntax.contains(request.alias))
-     throw Error(request.where,"conflicting kernel import alias: "+request.alias,"ON1X-KERNEL-ALIAS");
+     if(!aliases.insert(request.alias).second||module_bound(m->names,request.alias)||
+        m->names.values.contains(request.alias)||m->names.types.contains(request.alias)||
+        m->names.syntax.contains(request.alias)){
+      throw Error(request.where,"conflicting kernel import alias: "+request.alias,"ON1X-KERNEL-ALIAS");
+     }
      if(inspection)inspection->requests.push_back(std::move(request));
      else m->kernels.emplace(request.alias,std::move(request));
    }
@@ -502,9 +504,11 @@ public:
    result.interfaces=bind_interfaces();
   // Reserve storage so pointers used for identical raw-extern admission stay valid.
   std::size_t count=0;for(auto* m:order)count+=m->unit.functions.size();
-   // In reviewed staging a distinct unsafe and reviewed spelling can refer
-   // to each clamp export. Their call authorities are not interchangeable.
-   const std::size_t generated=options.kernel_c11?std::size(kernel_symbols)+(options.kernel_stage?2:0):0;
+    // In reviewed staging each clamp export can also have a distinct unsafe
+    // spelling. Their call authorities are not interchangeable.
+    std::size_t generated=options.kernel_c11?std::size(kernel_symbols):0;
+    if(options.kernel_stage)
+     for(auto symbol:kernel_symbols)if(clamp_kernel_arity(symbol))++generated;
    if(count>16384-generated)throw Error({input.string()},"loaded function count limit exceeded");
    result.unit.functions.reserve(count+generated);
    for(auto* m:order){
@@ -545,8 +549,9 @@ public:
    }
    for(auto& definition:m->unit.macros){macro(definition,names,{},{});definition.name=name({m,definition.name});result.unit.macros.push_back(std::move(definition));}
     for(auto& registration:m->unit.ppx)result.unit.ppx.push_back(std::move(registration));
-    for(auto& carrier:m->unit.extensions)result.unit.extensions.push_back(std::move(carrier));
-    for(auto& feature:m->unit.features)result.unit.features.push_back(std::move(feature));
+     for(auto& carrier:m->unit.extensions)result.unit.extensions.push_back(std::move(carrier));
+     for(auto& feature:m->unit.features)result.unit.features.push_back(std::move(feature));
+     for(auto& directive:m->unit.scrutiny)result.unit.scrutiny.push_back(std::move(directive));
     for(auto& evidence:m->unit.extension_evidence){
      for(auto& implementation:evidence.implementations)for(auto& binding:implementation.bindings){
       binding.function=name({m,binding.function});

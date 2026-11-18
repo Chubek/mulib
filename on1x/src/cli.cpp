@@ -1,4 +1,5 @@
 #include <on1x/ast.hpp>
+#include <on1x/analysis.hpp>
 #include <on1x/meta.hpp>
 #include <on1x/loader.hpp>
 #include <on1x/discovery.hpp>
@@ -19,6 +20,7 @@
 #endif
 #include <charconv>
 #include <algorithm>
+#include <cstdlib>
 #include <cstdio>
 #include <fstream>
 #include <filesystem>
@@ -38,6 +40,7 @@
 #include <mach-o/dyld.h>
 #endif
 namespace {
+ std::string terminal_text(std::string_view text){return on1x::diagnostic::terminal_text(text);}
  int project_command(int argc,char** argv){
 #if defined(__unix__) || defined(__APPLE__)
   namespace fs=std::filesystem;
@@ -122,8 +125,8 @@ namespace {
   if(command=="--emit-troff")options.target=fmt::Target::troff;
   bool check=false, options_done=false;
   std::string source,out;
-  auto usage_error=[](const std::string& message){
-   std::cerr<<"on1xc: "<<message<<'\n';
+   auto usage_error=[](const std::string& message){
+    std::cerr<<"on1xc: "<<terminal_text(message)<<'\n';
    return 2;
   };
   for(int i=2;i<argc;++i){
@@ -164,59 +167,130 @@ namespace {
   publish_format(out,result);
   return 0;
  }
+ bool diagnostic_color(const std::string& mode,const std::string& format){
+  if(format!="text"||mode=="never")return false;
+  if(mode=="always")return true;
+  if(std::getenv("NO_COLOR"))return false;
+#if defined(__unix__) || defined(__APPLE__)
+  return ::isatty(STDERR_FILENO);
+#else
+  return false;
+#endif
+ }
 #ifdef ON1X_WITH_SYREN
-void report_error(const on1x::Error& error,const std::string& format){
- std::optional<std::string> snapshot;
- try{snapshot=on1x::read_source_file(error.where.file);}catch(const std::exception&){}
- auto report=on1x::diagnostics::describe(error,std::move(snapshot));
- std::cerr<<(format=="json"?on1x::diagnostics::json(report):format=="sarif"?on1x::diagnostics::sarif(report):on1x::diagnostics::text(report));
-}
-int repair_source(const std::string& source,const std::string& out,const on1x::LoaderOptions& options,const std::string& format){
+  std::optional<std::string> diagnostic_source(const on1x::Location& where,
+   const std::map<std::string,std::string>& snapshots,bool fallback=true){
+   if(auto found=snapshots.find(where.file);found!=snapshots.end())return found->second;
+   if(!fallback)return {};
+   try{
+   auto source=on1x::read_source_file(where.file);
+   if(source.size()<=on1x::max_source_bytes)return source;
+  }catch(const std::exception&){}
+  return {};
+ }
+  void emit_diagnostics(const on1x::diagnostics::Bundle& bundle,const std::string& format,bool color){
+  std::cerr<<(format=="json"?on1x::diagnostics::json(bundle):
+   format=="sarif"?on1x::diagnostics::sarif(bundle):on1x::diagnostics::text(bundle,color));
+ }
+  on1x::diagnostics::Bundle diagnostic_bundle(const on1x::diagnostic::Registry& registry,
+   const on1x::diagnostic::Catalog& catalog,const std::map<std::string,std::string>& snapshots){
+   return on1x::diagnostics::describe(registry,catalog,[&](const on1x::Location& where){
+    // Registry locations include PPX-controlled paths. Never grant them a
+    // filesystem read; only immutable snapshots from the loaded graph qualify.
+    return diagnostic_source(where,snapshots,false);
+   });
+ }
+ void report_registry(const on1x::diagnostic::Registry& registry,
+  const on1x::diagnostic::Catalog& catalog,const std::map<std::string,std::string>& snapshots,
+  const std::string& format,bool color){
+  if(registry.empty()&&!registry.dropped())return;
+  emit_diagnostics(diagnostic_bundle(registry,catalog,snapshots),format,color);
+ }
+  void report_error(const on1x::Error& error,const on1x::diagnostic::Registry& registry,
+   const on1x::diagnostic::Catalog& catalog,const std::map<std::string,std::string>& snapshots,
+   const std::string& format,bool color,bool include_registry,bool source_fallback){
+  auto bundle=include_registry?diagnostic_bundle(registry,catalog,snapshots):on1x::diagnostics::Bundle{};
+  bundle.presentation=catalog.presentation();
+  auto described=on1x::diagnostics::describe(error,std::nullopt,catalog);
+  const bool duplicate=std::any_of(bundle.diagnostics.begin(),bundle.diagnostics.end(),[&](const auto& item){
+   return item.diagnostic.id==described.diagnostic.id&&item.diagnostic.message==described.diagnostic.message&&
+    item.diagnostic.primary.file==error.where.file&&item.offset==error.where.offset;
+  });
+   if(!duplicate){
+     auto source=diagnostic_source(error.where,snapshots,source_fallback);
+    std::size_t retained=0;
+    for(const auto& item:bundle.diagnostics)if(item.source)retained+=item.source->size();
+    if(source&&(retained>=on1x::diagnostic::max_source_snapshot_bytes||
+       source->size()>on1x::diagnostic::max_source_snapshot_bytes-retained))source.reset();
+    bundle.diagnostics.push_back(on1x::diagnostics::describe(error,std::move(source),catalog));
+   }
+  emit_diagnostics(bundle,format,color);
+ }
+ int repair_source(const std::string& source,const std::string& out,const on1x::LoaderOptions& options,
+  const on1x::diagnostic::Catalog& catalog,const std::string& format,bool color){
  namespace fs=std::filesystem;
- if(out.empty()||out=="-")throw std::runtime_error("--repair requires -o NEW_FILE (never edits input files)");
+ using Failure=on1x::diagnostic::CommandFailure;
+ if(out.empty()||out=="-")throw std::runtime_error(catalog.command_failure(Failure::RepairOutput));
  // Refuse all existing destinations, including symlinks and imported sources.
- if(fs::symlink_status(out).type()!=fs::file_type::not_found)throw std::runtime_error("repair output must not already exist");
+ if(fs::symlink_status(out).type()!=fs::file_type::not_found)
+  throw std::runtime_error(catalog.command_failure(Failure::RepairExists));
  auto path=fs::canonical(source);
  auto original=on1x::read_source_file(path.string());
  auto compile=[&](std::string_view text){
   auto overlay=options;overlay.source_overrides[path]=std::string(text);
   auto loaded=on1x::load_unit(path,overlay);
-  if(!loaded.unit.ppx.empty())throw std::runtime_error("repair validation never executes source PPX programs");
-  on1x::check(loaded.unit);
+  if(!loaded.unit.ppx.empty())throw std::runtime_error(catalog.presentation().source_ppx_unavailable);
+  on1x::diagnostic::Registry validation_records;
+  on1x::analysis::Context validation_context{catalog,validation_records,{},{}};
+  on1x::check(loaded.unit,validation_context);
+  if(validation_records.has_errors()){
+   const auto& finding=*std::find_if(validation_records.records().begin(),validation_records.records().end(),
+    [](const auto& item){return item.level.failure;});
+   throw on1x::Error(finding.where,finding.message,finding.id);
+  }
   (void)on1x::emit_c(loaded.unit,path.string());
  };
- try{compile(original);std::cerr<<"on1xc: source is already valid; no repair output written\n";return 0;}
+  try{compile(original);std::cerr<<terminal_text(catalog.presentation().already_valid)<<"\n";return 0;}
  catch(const on1x::Error& error){
   if(error.where.file!=path.string())throw; // Do not misapply imported-file offsets.
-  auto report=on1x::diagnostics::describe(error,original);
+   auto report=on1x::diagnostics::describe(error,original,catalog);
   on1x::diagnostics::validate(report,[&](std::string_view changed){
    using namespace moonstone;
-   try{compile(changed);return ProofResult{Status::Proven,"reloaded, parsed, type checked and C-emitted; intended behavior is not proven",{},1};}
-   catch(const on1x::Error& e){
-    // Existing frontend limits are exhaustion, not evidence against a repair.
-    auto message=std::string(e.what());
-    auto status=message.find("limit")!=std::string::npos||message.find("too many")!=std::string::npos?Status::BudgetExhausted:Status::Refuted;
-    return ProofResult{status,e.where.file+":"+std::to_string(e.where.line)+": "+message,{},1};
-   }catch(const std::exception& e){return ProofResult{Status::Unknown,e.what(),{},1};}
+    try{compile(changed);return ProofResult{Status::Proven,catalog.presentation().compiler_validated,{},1};}
+    catch(const on1x::Error& e){
+     auto detail=e.where.file+":"+std::to_string(e.where.line)+": "+e.what();
+     return ProofResult{Status::Unknown,on1x::diagnostic::expand(catalog.presentation().validator_failure,{.message=detail}),{},1};
+    }catch(const std::exception& e){
+     return ProofResult{Status::Unknown,on1x::diagnostic::expand(catalog.presentation().validator_failure,{.message=e.what()}),{},1};
+    }
   });
-  std::cerr<<(format=="json"?on1x::diagnostics::json(report):format=="sarif"?on1x::diagnostics::sarif(report):on1x::diagnostics::text(report));
+   on1x::diagnostics::Bundle bundle;bundle.diagnostics.push_back(report);
+   emit_diagnostics(bundle,format,color);
   std::optional<std::string> proposal;
   for(const auto& candidate:report.repairs)if(candidate.status==moonstone::syren::RepairStatus::Validated){
    auto changed=moonstone::apply_edits(original,candidate.edits);
-   if(proposal&&proposal!=changed){std::cerr<<"on1xc: ambiguous repairs; no output written\n";return 1;}
+    if(proposal&&proposal!=changed){std::cerr<<terminal_text(catalog.presentation().ambiguous_repairs)<<"\n";return 1;}
    proposal=std::move(changed);
   }
   if(!proposal)return 1;
   // Recheck before publication; compilation and validation never write sources.
-  if(fs::symlink_status(out).type()!=fs::file_type::not_found)throw std::runtime_error("repair output must not already exist");
+   if(fs::symlink_status(out).type()!=fs::file_type::not_found)
+    throw std::runtime_error(catalog.command_failure(Failure::RepairExists));
   auto* output=std::fopen(out.c_str(),"wbx"); // C11 exclusive creation, including against symlink races.
-  if(!output)throw std::runtime_error("cannot exclusively create repair proposal "+out);
+   if(!output)throw std::runtime_error(catalog.command_failure(Failure::RepairCreate,{.message=out}));
   bool written=std::fwrite(proposal->data(),1,proposal->size(),output)==proposal->size();
   if(std::fclose(output)!=0)written=false;
-  if(!written)throw std::runtime_error("cannot write repair proposal "+out);
+   if(!written)throw std::runtime_error(catalog.command_failure(Failure::RepairWrite,{.message=out}));
   return 0;
  }
-}
+ }
+ #endif
+#ifndef ON1X_WITH_SYREN
+ void report_registry(const on1x::diagnostic::Registry& registry,
+  const on1x::diagnostic::Catalog& catalog,const std::map<std::string,std::string>&,
+  const std::string&,bool color){
+  std::cerr<<on1x::diagnostic::text(registry,catalog,color);
+ }
 #endif
 void write_all(const std::string& name,const std::string& text){
  if(name.empty()||name=="-"){std::cout<<text;return;}
@@ -237,7 +311,7 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
  if(optimization){
   optimized=on1x::mir::passes::run(input,*optimization);
   if(optimized->status()==on1x::mir::passes::Status::BudgetExhausted)
-   std::cerr<<"on1xc: ON1X-MIR-PASS: "<<optimized->diagnostic()<<"; using last verified MIR prefix\n";
+    std::cerr<<"on1xc: ON1X-MIR-PASS: "<<terminal_text(optimized->diagnostic())<<"; using last verified MIR prefix\n";
  }
  if(mode=="--dump-passes"){write_all(out,on1x::mir::passes::report(*optimized));return 0;}
  const auto& module=optimized?optimized->module():input;
@@ -255,7 +329,7 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
     throw on1x::Error(f.where,"ON1X-MIR-EVAL: main must have no parameters and return i64 or void");
   auto result=on1x::mir::evaluate(module);write_all(out,result.output);
   if(result.status!=on1x::mir::Status::Returned){
-   std::cerr<<result.where.file<<":"<<result.where.line<<":"<<result.where.column<<": ON1X-MIR-EVAL: "<<result.diagnostic<<"\n";
+    std::cerr<<terminal_text(result.where.file)<<":"<<result.where.line<<":"<<result.where.column<<": ON1X-MIR-EVAL: "<<terminal_text(result.diagnostic)<<"\n";
    return result.status==on1x::mir::Status::Trapped?70:75;
   }
   return static_cast<int>(result.value);
@@ -316,7 +390,9 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       [--memory-check] (check resource usage before source compilation)\n"
   "       on1xc --check-types INPUT [-o OUTPUT] (Nerotypical opt-in build)\n"
    "       [--verify-types] (require independent structural HIR type verification)\n"
-   "       [--diagnostics text|json|sarif] (Syren opt-in build; errors on stderr)\n"
+    "       [--diagnostics text|json|sarif] [--color auto|always|never] (diagnostics use stderr)\n"
+    "       [--diagnostic-catalog FILE] [--scrutiny LEVEL] [--project-scrutiny LEVEL]\n"
+    "       [--scrutiny-work UNITS] [--no-analysis-repairs] (bounded Wetstone analysis)\n"
    "       on1xc --repair INPUT.on1x -o NEW_FILE (Syren; reviewable proposal only)\n"
   "       on1xc --help\n"
    "       on1xc init (--bin | --proj | --lib) [DIRECTORY]\n"
@@ -328,10 +404,22 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "--run-ir is a bounded reference evaluator, not a native or VM backend.\n"
   "--ir-input reads verified serialized MIR instead of On1x source (MIR modes only).\n"
  "Output defaults to stdout. Use tools/on1x-build.py to link a native executable.\n";}
-}
-int main(int argc,char**argv){
- std::string diagnostic_format="text";
- try{
+ }
+ int main(int argc,char**argv){
+  std::string diagnostic_format="text",color_mode="auto";
+  on1x::diagnostic::Registry diagnostic_registry;
+  const on1x::diagnostic::Catalog* diagnostic_catalog=nullptr;
+  std::optional<on1x::diagnostic::Catalog> external_catalog;
+   std::map<std::string,std::string> diagnostic_snapshots;
+   std::size_t diagnostic_snapshot_bytes=0;
+  bool color=false,diagnostics_published=false;
+  [[maybe_unused]] bool diagnostic_sources_sealed=false;
+  try{
+    diagnostic_catalog=&on1x::diagnostic::Catalog::embedded();
+    using CommandFailure=on1x::diagnostic::CommandFailure;
+    auto command_failure=[&](CommandFailure kind,std::string_view detail={}){
+     return std::runtime_error(diagnostic_catalog->command_failure(kind,{.message=detail}));
+    };
    if(argc>1&&(std::string_view(argv[1])=="init"||std::string_view(argv[1])=="exec"))
     return project_command(argc,argv);
    if(argc>1){
@@ -341,7 +429,12 @@ int main(int argc,char**argv){
    }
        std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false;
      std::size_t analysis_work=10000000;bool analysis_limit=false;
-      on1x::mir::passes::Options optimization;bool optimize=false,opt_limit=false;
+       on1x::mir::passes::Options optimization;bool optimize=false,opt_limit=false;
+       on1x::analysis::Options scrutiny;
+       [[maybe_unused]] bool scrutiny_option=false;
+       bool scrutiny_work_invalid=false;
+       bool color_option=false;
+       std::string diagnostic_catalog_file;
       bool memory=false;
       bool type_safety=false;
     on1x::meta::PpxOptions ppx;
@@ -370,15 +463,44 @@ int main(int argc,char**argv){
        auto& paths=arg=="--lib-path"?import_paths:arg=="--stdlib-path"?stdlib_paths:arg=="--ppx-path"?ppx_paths:stdppx_paths;
        on1x::discovery::append_paths(paths,argv[i]);continue;
       }
-     if(arg=="--diagnostics"){
-      if(++i>=argc)throw std::runtime_error("--diagnostics requires text, json or sarif");
+      if(arg=="--diagnostics"){
+      if(++i>=argc)throw command_failure(CommandFailure::FormatMissing);
       diagnostic_format=argv[i];
-      if(diagnostic_format!="text"&&diagnostic_format!="json"&&diagnostic_format!="sarif")throw std::runtime_error("unknown diagnostic format "+diagnostic_format);
-#ifndef ON1X_WITH_SYREN
-      throw std::runtime_error("Syren diagnostics unavailable: configure with ON1X_WITH_SYREN=ON");
-#endif
-      continue;
-     }
+      if(diagnostic_format!="text"&&diagnostic_format!="json"&&diagnostic_format!="sarif")
+       throw command_failure(CommandFailure::FormatUnknown,diagnostic_format);
+ #ifndef ON1X_WITH_SYREN
+       if(diagnostic_format!="text")
+        throw command_failure(CommandFailure::StructuredUnavailable);
+ #endif
+       continue;
+      }
+      if(arg=="--color"){
+       if(++i>=argc)throw command_failure(CommandFailure::ColorMissing);
+       if(color_option)throw command_failure(CommandFailure::ColorDuplicate);
+       color_option=true;color_mode=argv[i];
+       if(color_mode!="auto"&&color_mode!="always"&&color_mode!="never")
+        throw command_failure(CommandFailure::ColorUnknown,color_mode);
+       continue;
+      }
+      if(arg=="--diagnostic-catalog"){
+       if(++i>=argc||!argv[i][0]||!diagnostic_catalog_file.empty())
+        throw command_failure(CommandFailure::CatalogArgument);
+       diagnostic_catalog_file=argv[i];continue;
+      }
+      if(arg=="--scrutiny"||arg=="--project-scrutiny"){
+       if(++i>=argc||!argv[i][0])throw command_failure(CommandFailure::ScrutinyArgument,arg);
+       auto& selected=arg=="--scrutiny"?scrutiny.command_scrutiny:scrutiny.project_scrutiny;
+       if(selected)throw command_failure(CommandFailure::OptionDuplicate,arg);
+       selected=argv[i];scrutiny_option=true;continue;
+      }
+      if(arg=="--scrutiny-work"){
+       if(++i>=argc)throw command_failure(CommandFailure::WorkMissing);
+       std::string value=argv[i];auto [end,ec]=std::from_chars(value.data(),value.data()+value.size(),scrutiny.work);
+       if(ec!=std::errc{}||end!=value.data()+value.size()||!scrutiny.work||scrutiny.work>10000000)
+        scrutiny_work_invalid=true;
+       scrutiny_option=true;continue;
+      }
+      if(arg=="--no-analysis-repairs"){scrutiny.repairs=false;scrutiny_option=true;continue;}
        if(arg=="--memory-check"){memory=true;continue;}
        if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
        if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
@@ -435,7 +557,19 @@ int main(int argc,char**argv){
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
    else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
   }
-        const bool interface_mode=mode=="--check-interfaces";
+         if(!diagnostic_catalog_file.empty()){
+          external_catalog=on1x::diagnostic::Catalog::load(diagnostic_catalog_file);
+          diagnostic_catalog=&*external_catalog;
+         }
+         if(scrutiny_work_invalid)
+          throw diagnostic_catalog->failure(on1x::diagnostic::Role::ScrutinyFailure,{"<command-line>"});
+         color=diagnostic_color(color_mode,diagnostic_format);
+         auto publish_diagnostics=[&]{
+          if(diagnostics_published)return;
+          report_registry(diagnostic_registry,*diagnostic_catalog,diagnostic_snapshots,diagnostic_format,color);
+          diagnostics_published=true;
+         };
+         const bool interface_mode=mode=="--check-interfaces";
         if(interface_mode==loader.interfaces.empty())
          throw std::runtime_error("--check-interfaces and at least one --interface FILE must be used together");
         if(interface_mode&&(source.empty()||!out.empty()||ir_input||memory||type_safety||optimize||opt_limit||
@@ -466,17 +600,22 @@ int main(int argc,char**argv){
        for(const auto& name:loader.extensions.enabled)if(loader.extensions.disabled.contains(name))throw on1x::Error({"<command-line>"},"ON1X-CAT-ENABLE: enabled/disabled conflict: "+name,"ON1X-CAT-ENABLE");
        if(mode=="--repair"){
 #ifdef ON1X_WITH_SYREN
-        if(ir_input||memory||type_safety||optimize||opt_limit||analysis_limit||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source)
-         throw std::runtime_error("--repair requires plain source without PPX, analysis or optimization options");
-        return repair_source(source,out,loader,diagnostic_format);
+         if(ir_input||memory||type_safety||optimize||opt_limit||analysis_limit||
+            !ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source){
+          throw command_failure(CommandFailure::RepairOptions);
+         }
+         if(scrutiny_option)throw command_failure(CommandFailure::RepairPolicy);
+         return repair_source(source,out,loader,*diagnostic_catalog,diagnostic_format,color);
 #else
-        throw std::runtime_error("repair unavailable: configure with ON1X_WITH_SYREN=ON");
+         throw command_failure(CommandFailure::RepairUnavailable);
 #endif
        }
       ppx.paths=stdppx_paths;
       on1x::discovery::environment(ppx.paths,"ON1X_STDPPX_PATH");
-      ppx.paths.insert(ppx.paths.end(),ppx_paths.begin(),ppx_paths.end());
-      on1x::discovery::environment(ppx.paths,"ON1X_PPX_PATH");
+       ppx.paths.insert(ppx.paths.end(),ppx_paths.begin(),ppx_paths.end());
+       on1x::discovery::environment(ppx.paths,"ON1X_PPX_PATH");
+       ppx.diagnostics=&diagnostic_registry;
+       ppx.diagnostic_catalog=diagnostic_catalog;
       for(const auto& root:on1x::standard_library_roots(loader))ppx.paths.push_back(root.parent_path()/"stdppx");
       // Executable-relative native tools are an ordinary explicitly selected PPX
       // fallback, never an override of the pinned Category extension registry.
@@ -536,16 +675,28 @@ int main(int argc,char**argv){
    std::ostringstream listing;for(auto& t:tokens)listing<<t.where.line<<":"<<t.where.column<<"  "<<t.text<<"\n";
    write_all(out,listing.str());return 0;
   }
-    auto loaded=on1x::load_unit(source,loader);
+      auto loaded=on1x::load_unit(source,loader);
+      for(const auto& path:loaded.dependencies)try{
+       if(diagnostic_snapshot_bytes==on1x::diagnostic::max_source_snapshot_bytes)break;
+       auto snapshot=on1x::read_source_file(path.string());
+       if(snapshot.size()>on1x::max_source_bytes||
+          snapshot.size()>on1x::diagnostic::max_source_snapshot_bytes-diagnostic_snapshot_bytes)break;
+       auto [stored,inserted]=diagnostic_snapshots.emplace(path.string(),std::move(snapshot));
+       if(inserted)diagnostic_snapshot_bytes+=stored->second.size();
+      }catch(const std::exception&){break;}
+      diagnostic_sources_sealed=true;
     if(mode=="--deps"){
      std::ostringstream paths;for(const auto& path:loaded.dependencies)paths<<path.string()<<"\n";
      write_all(out,paths.str());return 0;
     }
-      auto& unit=loaded.unit;
-      if(interface_mode){
-       on1x::check_interfaces(std::move(unit),loaded.interfaces);
-       std::cout<<"OK: "<<loaded.interfaces.size()<<" interface members\n";return 0;
-      }
+       auto& unit=loaded.unit;
+       if(interface_mode){
+        on1x::analysis::Context context{*diagnostic_catalog,diagnostic_registry,scrutiny,{}};
+        on1x::check_interfaces(std::move(unit),loaded.interfaces,context);
+        if(diagnostic_registry.has_errors()){publish_diagnostics();return 1;}
+        publish_diagnostics();
+        std::cout<<"OK: "<<loaded.interfaces.size()<<" interface members\n";return 0;
+       }
      auto extension_names=loader.extensions.enabled;
      for(const auto& activation:unit.features)extension_names.insert(activation.name);
      for(const auto& registration:ppx.programs)if(extension_names.contains(registration.label))
@@ -555,21 +706,26 @@ int main(int argc,char**argv){
    if(mode=="--emit-ast"){
     on1x::expand_macros(unit);auto tree=on1x::meta::encode(unit);on1x::meta::base_schema().validate(tree);
     write_all(out,on1x::meta::write_sexpr(tree));return 0;
-   }
-   on1x::meta::rewrite(unit,ppx);
-    on1x::check(unit);
-    auto category_plan=on1x::extensions::evidence_plan(unit);
+    }
+    on1x::meta::rewrite(unit,ppx);
+     on1x::analysis::Context analysis_context{*diagnostic_catalog,diagnostic_registry,scrutiny,{}};
+     on1x::check(unit,analysis_context);
+     if(diagnostic_registry.has_errors()){publish_diagnostics();return 1;}
+     auto category_plan=on1x::extensions::evidence_plan(unit);
     std::string type_evidence;
 #ifdef ON1X_WITH_NEROTYPICAL
     if(type_safety)type_evidence=on1x::type_safety::verify(unit);
 #endif
 #ifdef ON1X_WITH_CHISEL
-    if(memory){auto evidence=on1x::safety::check(unit,{},admitted);if(mode=="--check-memory"){write_all(out,evidence);return 0;}}
+     if(memory){auto evidence=on1x::safety::check(unit,{},admitted);if(mode=="--check-memory"){publish_diagnostics();write_all(out,evidence);return 0;}}
 #endif
-    if(mode=="--check-types"){write_all(out,type_evidence);return 0;}
-    if(mode=="--emit-category-plan"){write_all(out,category_plan);return 0;}
-     if(mode=="--check"){std::cout<<"OK: "<<unit.functions.size()<<" functions\n";return 0;}
-     if(mir_mode)return mir_output(on1x::mir::lower(unit),mode,out,analysis_work,optimize?&optimization:nullptr);
+     if(mode=="--check-types"){publish_diagnostics();write_all(out,type_evidence);return 0;}
+     if(mode=="--emit-category-plan"){publish_diagnostics();write_all(out,category_plan);return 0;}
+      if(mode=="--check"){publish_diagnostics();std::cout<<"OK: "<<unit.functions.size()<<" functions\n";return 0;}
+      if(mir_mode){
+       auto result=mir_output(on1x::mir::lower(unit),mode,out,analysis_work,optimize?&optimization:nullptr);
+       publish_diagnostics();return result;
+      }
    if(mode=="--types"){
     std::ostringstream listing;
      for(const auto& function:unit.functions){
@@ -605,27 +761,42 @@ int main(int argc,char**argv){
       }
       listing<<on1x::type_name(signature)<<"\n";
     }
-    write_all(out,listing.str());return 0;
-   }
-  write_all(out,on1x::emit_c(unit,source));return 0;
+     publish_diagnostics();write_all(out,listing.str());return 0;
+    }
+   auto generated=on1x::emit_c(unit,source);publish_diagnostics();write_all(out,generated);return 0;
 #ifdef ON1X_WITH_NOVOSTONE
  }catch(const on1x::mir::relational::BudgetExceeded& e){
-  std::cerr<<e.where.file<<":"<<e.where.line<<":"<<e.where.column<<": error: "<<e.what()<<"\n";return 75;
+   std::cerr<<terminal_text(e.where.file)<<":"<<e.where.line<<":"<<e.where.column<<": error: "<<terminal_text(e.what())<<"\n";return 75;
 #endif
 #ifdef ON1X_WITH_CHISEL
   }catch(const on1x::safety::BudgetExceeded& e){
-   std::cerr<<e.where.file<<":"<<e.where.line<<":"<<e.where.column<<": "<<e.what()<<"\n";return 75;
+    std::cerr<<terminal_text(e.where.file)<<":"<<e.where.line<<":"<<e.where.column<<": "<<terminal_text(e.what())<<"\n";return 75;
 #endif
 #ifdef ON1X_WITH_NEROTYPICAL
   }catch(const on1x::type_safety::Inconclusive& e){
-   std::cerr<<e.where.file<<":"<<e.where.line<<":"<<e.where.column<<": "<<e.what()<<"\n";return 75;
+    std::cerr<<terminal_text(e.where.file)<<":"<<e.where.line<<":"<<e.where.column<<": "<<terminal_text(e.what())<<"\n";return 75;
 #endif
-   }catch(const on1x::Error& e){
-#ifdef ON1X_WITH_SYREN
-   try{report_error(e,diagnostic_format);}catch(const std::exception&){std::cerr<<e.where.file<<":"<<e.where.line<<":"<<e.where.column<<": error: "<<e.what()<<"\n";}
-   return 1;
-#else
-   std::cerr<<e.where.file<<":"<<e.where.line<<":"<<e.where.column<<": error: "<<e.what()<<"\n";return 1;
-#endif
- }catch(const std::exception&e){std::cerr<<"on1xc: "<<e.what()<<"\n";return 2;}
-}
+    }catch(const on1x::Error& e){
+ #ifdef ON1X_WITH_SYREN
+    try{
+     const auto& active=diagnostic_catalog?*diagnostic_catalog:on1x::diagnostic::Catalog::embedded();
+      report_error(e,diagnostic_registry,active,diagnostic_snapshots,
+       diagnostic_format,color,!diagnostics_published,!diagnostic_sources_sealed);
+    }catch(const std::exception&){
+      const auto& active=on1x::diagnostic::Catalog::embedded();
+      on1x::diagnostic::Registry fallback;(void)fallback.emit(active.record(e));
+      std::cerr<<on1x::diagnostic::text(fallback,active,color);
+    }
+    return 1;
+ #else
+    if(!diagnostics_published)report_registry(diagnostic_registry,*diagnostic_catalog,diagnostic_snapshots,diagnostic_format,color);
+    on1x::diagnostic::Registry fallback;
+    (void)fallback.emit(diagnostic_catalog->record(e));
+    std::cerr<<on1x::diagnostic::text(fallback,*diagnostic_catalog,color);return 1;
+ #endif
+  }catch(const std::exception&e){
+   if(!diagnostics_published&&diagnostic_catalog)
+    report_registry(diagnostic_registry,*diagnostic_catalog,diagnostic_snapshots,diagnostic_format,color);
+   std::cerr<<"on1xc: "<<terminal_text(e.what())<<"\n";return 2;
+  }
+ }

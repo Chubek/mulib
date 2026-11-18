@@ -1,0 +1,18 @@
+{
+  "schema_version": 2,
+  "library": "namespace",
+  "headers": ["mulib-namespace.h"],
+  "state": "annotated",
+  "bundle_provenance": {"header": "mulib-namespace.h", "revision": "sha256:ae4ad41f0231af151bcaeb8eb5583d5804e4920888cb1d0e31fc63e9762e4bb8", "review_status": "unreviewed"},
+  "functions": [
+    {"c_name": "mulib_namespace_enter", "return": {"kind": "value"},
+     "parameters": [{"index": 0, "name": "spec", "ownership": "borrowed_immutable", "nullable": true, "lifetime": {"origin": "explicit_region", "region_name": "call"}}, {"index": 1, "name": "applied", "ownership": "out", "nullable": true}],
+     "errors": {"kind": "int_code", "cleanup_required_on_failure": true},
+     "effects": {"effects": ["read", "write", "io", "foreign_call"], "unknown": true},
+     "provenance": {"header": "mulib-namespace.h", "review_status": "unreviewed", "evidence_method": "Child-only irreversible setup; output may change on failure and is not an enforcement attestation. PID semantics apply to future children. Abort child on any error."}},
+    {"c_name": "mulib_namespace_mount_private", "return": {"kind": "value"},
+     "errors": {"kind": "int_code", "cleanup_required_on_failure": true},
+     "effects": {"effects": ["write", "io", "foreign_call"], "unknown": true},
+     "provenance": {"header": "mulib-namespace.h", "review_status": "unreviewed", "evidence_method": "Only inside the explicitly isolated mount namespace. Failure is fatal to bootstrap."}}
+  ]
+}

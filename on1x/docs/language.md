@@ -12,6 +12,14 @@ empty payloads are `record{}` and multi-field payloads are tuples. Type argument
 and nominal identities remain exact through inference, imports and C11. Only
 nonrecursive, bounded, trivially copied fields are admitted.
 
+The default [pervasive environment](modules.md#the-pervasive-environment)
+supplies canonical `Option<T>` and `Result<T,E>` declarations plus constructor,
+query, map/chain, fallback, conversion and focused iteration helpers without an
+import. They are ordinary On1x definitions, not intrinsics; local declarations
+and explicit imports still win. `--no-prelude` removes both the types and helper
+names. Legacy tuple and S-expression facades remain available through explicit
+standard-library modules.
+
 ## Function-scoped defer and recoverable results
 
 `defer f(args);` evaluates the callable and arguments once, left-to-right, when
@@ -20,12 +28,12 @@ when a block/loop exits. Returned values are saved before defers; remaining
 lexical owners drop afterwards. RC operands retain independent references.
 `defer fn(){ ... }();` provides an action body with ordinary immutable captures.
 
-For a nominal `enum Result<T,E>{Ok(T),Err(E)}`, `value?` evaluates once and yields
-the `Ok` payload or returns `Err` from the current function/lambda, running its
-defers and early-return cleanup. The return must use the same nominal declaration
-and exact error type; its success type may differ. This protocol also admits an
-equivalently defined enum under another name. Recover explicitly with `match`.
-Result fields retain the bounded trivial-value restrictions of nominal data.
+For the pervasive `Result<T,E>` (or an equivalently defined nominal
+`enum Result<T,E>{Ok(T),Err(E)}`), `value?` evaluates once and yields the `Ok`
+payload or returns `Err` from the current function/lambda, running its defers and
+early-return cleanup. The return must use the same nominal declaration and exact
+error type; its success type may differ. Recover explicitly with `match`. Result
+fields retain the bounded trivial-value restrictions of nominal data.
 
 These are intrinsic C11 features, not macros or C++ exceptions. Fatal arithmetic,
 assertion, bounds and allocation failures remain terminal and do not promise
@@ -58,13 +66,15 @@ The core below is supplemented by [typed macros and PPX syntax](metaprogramming.
 top-level `macro name { rule (...) => expression {...}; }` / `block {...}`, typed
 `$capture: SyntaxCategory`, recursive structural patterns and nested `...`, `name!(...)`,
 lexical `let_syntax`/`letrec_syntax` groups,
-source `@ppx label "path"` registrations, and labeled `@label("name", ...)`
+ source `@ppx label "path"` registrations, file-local `@scrutiny level;`
+ analysis policy, and labeled `@label("name", ...)`
 expression/Block payloads and function attributes. Expansion happens after
 parsing and before inference. PPX output must become valid core syntax. Typed
 [MSP](staging.md) runs stage checks/AOT lowering after PPX and before inference.
 
 ```ebnf
-unit    = { import | function | extern } ;
+ unit    = { scrutiny | import | function | extern } ;
+ scrutiny= '@' 'scrutiny' ID ';' ;
 import  = 'import' STRING ';'
         | 'import' module ['as' ID] { ',' module ['as' ID] } ';'
         | 'from' { '.' } [module] 'import' import_names ';' ;

@@ -16,7 +16,42 @@
 extern char **environ;
 #endif
 namespace on1x::meta {
-std::string run_transformer(const std::string& program,std::string_view input,unsigned timeout_ms,const std::string& label,const std::map<std::string,std::string>& overrides){
+namespace {
+void sideband(std::string_view wire,const std::string& label,diagnostic::Registry* registry,const diagnostic::Catalog* selected){
+ if(wire.empty())return;
+ const auto& catalog=selected?*selected:diagnostic::Catalog::embedded();
+ auto protocol=[&](Location where)->void{throw catalog.failure(diagnostic::Role::ProtocolFailure,std::move(where));};
+ if(wire.back()!='\n')protocol({"<ppx:"+label+" sideband>"});
+ std::set<std::string> registered;
+ std::size_t begin=0,count=0;
+ while(begin<wire.size()){
+   auto end=wire.find('\n',begin);if(end==std::string_view::npos)end=wire.size();
+   auto line=wire.substr(begin,end-begin);begin=end==wire.size()?end:end+1;
+   if(line.empty())continue;
+   if(++count>256)protocol({"<ppx:"+label+" sideband>"});
+   SExpr node;
+   try{node=read_sexpr(line,"<ppx:"+label+" sideband>");}
+   catch(const Error&){protocol({"<ppx:"+label+" sideband>"});}
+   auto fail=[&]()->void{protocol(node.where);};
+   if(node.kind!=SExpr::Kind::List||node.items.empty()||node.items[0].kind!=SExpr::Kind::Symbol)fail();
+   const auto& tag=node.items[0].text;
+   if(tag=="register"){
+    if(node.items.size()!=2||node.items[1].kind!=SExpr::Kind::String)fail();
+    auto entry=catalog.ppx(node.items[1].text);if(!entry)fail();
+    registered.insert(entry->id);continue;
+   }
+   if(tag!="emit"||node.items.size()!=3||node.items[1].kind!=SExpr::Kind::String)fail();
+   auto entry=catalog.ppx(node.items[1].text);if(!entry||!registered.contains(entry->id))fail();
+   Location where;
+   try{where=decode_source_location(node.items[2]);}catch(const Error&){fail();}
+   auto record=catalog.record(*entry,std::move(where));
+    if(registry)(void)registry->emit(record);
+    else {diagnostic::Registry validate;(void)validate.emit(record);}
+   if(record.level.failure)throw Error(record.where,record.message,record.id);
+  }
+ }
+}
+std::string run_transformer(const std::string& program,std::string_view input,unsigned timeout_ms,const std::string& label,const std::map<std::string,std::string>& overrides,diagnostic::Registry* diagnostics,const diagnostic::Catalog* diagnostic_catalog){
  if(label.size()>128)throw Error({"<ppx>"},"PPX label exceeds 128 bytes");
  Location at{"<ppx:"+label+">"};
  auto fail=[&](const std::string& text)->void{throw Error(at,"PPX "+label+": "+text);};
@@ -42,36 +77,36 @@ std::string run_transformer(const std::string& program,std::string_view input,un
  }
  std::vector<char*> argv;for(auto& arg:args)argv.push_back(arg.data());argv.push_back(nullptr);
  std::vector<std::string> environment;
-  for(char** entry=environ;entry&&*entry;++entry){std::string value=*entry;if(!value.starts_with("ON1X_PPX_LABEL=")&&!value.starts_with("ON1X_PPX_PROTOCOL=")&&!overrides.contains(value.substr(0,value.find('='))))environment.push_back(std::move(value));}
-  for(const auto& [key,value]:overrides)environment.push_back(key+"="+value);
- environment.push_back("ON1X_PPX_LABEL="+label);environment.push_back("ON1X_PPX_PROTOCOL=1");
+    for(char** entry=environ;entry&&*entry;++entry){std::string value=*entry;if(!value.starts_with("ON1X_PPX_LABEL=")&&!value.starts_with("ON1X_PPX_PROTOCOL=")&&!value.starts_with("ON1X_PPX_DIAGNOSTICS_FD=")&&!value.starts_with("ON1X_PPX_DIAGNOSTIC_ID=")&&!value.starts_with("ON1X_PPX_DIAGNOSTIC_FAILURE=")&&!overrides.contains(value.substr(0,value.find('='))))environment.push_back(std::move(value));}
+   for(const auto& [key,value]:overrides)environment.push_back(key+"="+value);
+  environment.push_back("ON1X_PPX_LABEL="+label);environment.push_back("ON1X_PPX_PROTOCOL=1");environment.push_back("ON1X_PPX_DIAGNOSTICS_FD=3");
  std::vector<char*> envp;for(auto& value:environment)envp.push_back(value.data());envp.push_back(nullptr);
  struct Socket {int fd=-1;~Socket(){if(fd>=0)::close(fd);}void close(){if(fd>=0)::close(fd);fd=-1;}};
- Socket sockets[6];
- for(int i=0;i<3;++i){int fds[2];if(::socketpair(AF_UNIX,SOCK_STREAM,0,fds))fail("socketpair failed");
+  Socket sockets[8];
+  for(int i=0;i<4;++i){int fds[2];if(::socketpair(AF_UNIX,SOCK_STREAM,0,fds))fail("socketpair failed");
   sockets[i*2].fd=fds[0];sockets[i*2+1].fd=fds[1];
   for(int fd:fds)if(::fcntl(fd,F_SETFD,FD_CLOEXEC)==-1)fail("cannot set close-on-exec");
  }
  auto pid=::fork();if(pid<0)fail("fork failed");
  if(pid==0){
-  if(::setpgid(0,0)||::dup2(sockets[1].fd,0)<0||::dup2(sockets[3].fd,1)<0||::dup2(sockets[5].fd,2)<0)::_exit(126);
-  for(auto& s:sockets)if(s.fd>2)::close(s.fd);
+   if(::setpgid(0,0)||::dup2(sockets[1].fd,0)<0||::dup2(sockets[3].fd,1)<0||::dup2(sockets[5].fd,2)<0||::dup2(sockets[7].fd,3)<0)::_exit(126);
+   for(auto& s:sockets)if(s.fd>3)::close(s.fd);
   ::execve(argv[0],argv.data(),envp.data());static constexpr char error[]="PPX exec failed (unsupported executable, permissions or interpreter)\n";
   (void)::write(2,error,sizeof(error)-1);::_exit(127);
  }
  (void)::setpgid(pid,pid);
  struct Child {pid_t pid;bool reaped=false;~Child(){::kill(-pid,SIGKILL);if(!reaped){::kill(pid,SIGKILL);int status;while(::waitpid(pid,&status,0)<0&&errno==EINTR){}}}} child{pid};
- sockets[1].close();sockets[3].close();sockets[5].close();
- for(int i:{0,2,4})if(::fcntl(sockets[i].fd,F_SETFL,O_NONBLOCK)==-1)fail("cannot set nonblocking transport");
- std::string output,errors;std::size_t sent=0;int status=0;
+  sockets[1].close();sockets[3].close();sockets[5].close();sockets[7].close();
+  for(int i:{0,2,4,6})if(::fcntl(sockets[i].fd,F_SETFL,O_NONBLOCK)==-1)fail("cannot set nonblocking transport");
+  std::string output,errors,diagnostic_wire;std::size_t sent=0;int status=0;
  auto deadline=std::chrono::steady_clock::now()+std::chrono::milliseconds(timeout_ms);
  while(true){
   if(std::chrono::steady_clock::now()>=deadline)fail("transformer timeout after "+std::to_string(timeout_ms)+" ms");
   if(!child.reaped){auto result=::waitpid(pid,&status,WNOHANG);if(result==pid)child.reaped=true;else if(result<0&&errno!=EINTR)fail("waitpid failed");}
   if(sent==input.size())sockets[0].close();
-  if(child.reaped&&sockets[2].fd<0&&sockets[4].fd<0)break;
-  pollfd fds[3]={{sockets[0].fd,POLLOUT,0},{sockets[2].fd,POLLIN,0},{sockets[4].fd,POLLIN,0}};
-  int ready=::poll(fds,3,10);if(ready<0){if(errno==EINTR)continue;fail("poll failed");}
+   if(child.reaped&&sockets[2].fd<0&&sockets[4].fd<0&&sockets[6].fd<0)break;
+   pollfd fds[4]={{sockets[0].fd,POLLOUT,0},{sockets[2].fd,POLLIN,0},{sockets[4].fd,POLLIN,0},{sockets[6].fd,POLLIN,0}};
+   int ready=::poll(fds,4,10);if(ready<0){if(errno==EINTR)continue;fail("poll failed");}
   if(sockets[0].fd>=0&&(fds[0].revents&(POLLOUT|POLLHUP|POLLERR))){
 #ifdef MSG_NOSIGNAL
    auto n=::send(sockets[0].fd,input.data()+sent,input.size()-sent,MSG_NOSIGNAL);
@@ -81,10 +116,14 @@ std::string run_transformer(const std::string& program,std::string_view input,un
 #endif
    if(n>0)sent+=static_cast<std::size_t>(n);else if(n<0&&errno!=EINTR&&errno!=EAGAIN&&errno!=EWOULDBLOCK)sockets[0].close();
   }
-  for(int i=1;i<3;++i){auto& socket=sockets[i*2];if(socket.fd<0||!fds[i].revents)continue;
-   char buffer[8192];auto n=::recv(socket.fd,buffer,sizeof(buffer),0);
-   if(n>0){auto& destination=i==1?output:errors;auto limit=i==1?max_wire_bytes:std::size_t{65536};
-    if(static_cast<std::size_t>(n)>limit-destination.size())fail(i==1?"stdout byte limit exceeded":"stderr byte limit exceeded");
+   for(int i=1;i<4;++i){auto& socket=sockets[i*2];if(socket.fd<0||!fds[i].revents)continue;
+    char buffer[8192];auto n=::recv(socket.fd,buffer,sizeof(buffer),0);
+    if(n>0){auto& destination=i==1?output:i==2?errors:diagnostic_wire;auto limit=i==1?max_wire_bytes:std::size_t{65536};
+     if(static_cast<std::size_t>(n)>limit-destination.size()){
+      if(i==3)throw (diagnostic_catalog?*diagnostic_catalog:diagnostic::Catalog::embedded()).failure(
+       diagnostic::Role::ProtocolFailure,at);
+      fail(i==1?"stdout byte limit exceeded":"stderr byte limit exceeded");
+     }
     destination.append(buffer,static_cast<std::size_t>(n));
    }else if(n==0)socket.close();else if(errno!=EAGAIN&&errno!=EWOULDBLOCK&&errno!=EINTR)fail("transport read failed");
   }
@@ -93,11 +132,12 @@ std::string run_transformer(const std::string& program,std::string_view input,un
   auto message=WIFEXITED(status)?"exit status "+std::to_string(WEXITSTATUS(status)):"terminated by signal";
   if(!errors.empty())message+="; stderr: "+errors.substr(0,4096);
   fail(message);
- }
- if(output.empty())fail("empty stdout; expected one S-expression AST");
- return output;
+  }
+  if(output.empty())fail("empty stdout; expected one S-expression AST");
+  sideband(diagnostic_wire,label,diagnostics,diagnostic_catalog);
+  return output;
 #else
-  (void)program;(void)input;(void)overrides;fail("external PPX transport is currently implemented only for POSIX hosts");return {};
+  (void)program;(void)input;(void)overrides;(void)diagnostics;(void)diagnostic_catalog;fail("external PPX transport is currently implemented only for POSIX hosts");return {};
 #endif
 }
 void rewrite(Unit& unit,const PpxOptions& options){
@@ -145,10 +185,13 @@ void rewrite(Unit& unit,const PpxOptions& options){
   };walk(walk,ast);
  };
  extensions(tree,false);
- for(const auto& program:programs){
-   std::map<std::string,std::string> environment;
-   if(auto it=native_schemas.find(program.label);it!=native_schemas.end())environment["ON1X_PPX_SCHEMA"]=it->second;
-   auto output=run_transformer(program.program,write_sexpr(tree),options.timeout_ms,program.label,environment);
+  for(const auto& program:programs){
+    std::map<std::string,std::string> environment;
+    if(auto it=native_schemas.find(program.label);it!=native_schemas.end())environment["ON1X_PPX_SCHEMA"]=it->second;
+    const auto& catalog=options.diagnostic_catalog?*options.diagnostic_catalog:diagnostic::Catalog::embedded();
+    environment["ON1X_PPX_DIAGNOSTIC_FAILURE"]=catalog.presentation().ppx_client_failure;
+    if(auto id=catalog.ppx_id(program.label))environment["ON1X_PPX_DIAGNOSTIC_ID"]=*id;
+     auto output=run_transformer(program.program,write_sexpr(tree),options.timeout_ms,program.label,environment,options.diagnostics,options.diagnostic_catalog);
   auto replacement=read_sexpr(output,"<ppx:"+program.label+" stdout>");schema.validate(replacement);extensions(replacement,false);tree=std::move(replacement);
  }
   extensions(tree,true);auto result=decode(tree);
@@ -165,7 +208,8 @@ void rewrite(Unit& unit,const PpxOptions& options){
    if(!same)throw Error(expected.where,"ON1X-EXT-INTERFACE: native generated declaration interface changed by ordinary PPX: "+expected.name,"ON1X-EXT-INTERFACE");
    actual->extension_generated=true;
   }
-   result.extension_evidence=std::move(working.extension_evidence);
+    result.scrutiny=std::move(working.scrutiny);
+    result.extension_evidence=std::move(working.extension_evidence);
    result.source_digests=std::move(working.source_digests);
    require_core(result);unit=std::move(result);
 }

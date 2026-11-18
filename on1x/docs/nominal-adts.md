@@ -80,8 +80,12 @@ occupy the loader's type namespace, not the value namespace; local variables do
 not capture macro-definition-site type references. Named/selective/relative
 imports and re-exports retain the declaring module's identity. Legacy quoted
 imports keep their existing flat conflict policy. There is no automatically
-imported `Option`/`Result`, bare constructor function, boxing or field mutation.
-Declare/import types explicitly; existing tuple/status/sexpr APIs are unchanged.
+generated bare constructor syntax, boxing or field mutation. The later
+pervasive-library increment automatically imports canonical `Option`/`Result`
+declarations and ordinary `option_*`/`result_*` constructor helpers. Local
+declarations such as this document's example retain precedence and their
+distinct nominal identity. `--no-prelude` still requires explicit declarations
+or imports; existing tuple/status/S-expression APIs are unchanged.
 
 PPX v1 adds `NamedType` and `NominalDeclaration`. The unchanged `Unit` envelope's
 declaration list now accepts the `Declaration` superclass of functions and named

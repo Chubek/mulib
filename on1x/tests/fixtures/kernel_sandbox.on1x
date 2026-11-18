@@ -1,0 +1,10 @@
+import kernel mulib.sandbox_profile as Profile;
+import kernel mulib.seccomp as Seccomp;
+import kernel mulib.landlock as Landlock;
+import kernel mulib.namespace as Namespace;
+import kernel mulib.cgroup2 as Groups;
+import kernel mulib.ipc_framed as IPC;
+import kernel mulib.capbroker as Broker;
+import kernel mulib.sandbox_process as Process;
+
+fn main() {}

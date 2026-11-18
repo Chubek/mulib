@@ -1,0 +1,33 @@
+{
+  "schema_version": 2,
+  "library": "seccomp",
+  "headers": ["mulib-seccomp.h"],
+  "state": "annotated",
+  "bundle_provenance": {"header": "mulib-seccomp.h", "revision": "sha256:112ffa65dbe923b5dc76d6a4d98726952e30f203c69ebd4f3b9b90dae57c0015", "review_status": "unreviewed"},
+  "functions": [
+    {"c_name": "mulib_seccomp_init", "return": {"kind": "value"},
+     "parameters": [{"index": 0, "name": "p", "ownership": "out", "nullable": true}, {"index": 1, "name": "deny_errno", "ownership": "scalar"}],
+     "errors": {"kind": "int_code"}, "effects": {"effects": ["write"], "unknown": false},
+     "provenance": {"header": "mulib-seccomp.h", "review_status": "unreviewed", "evidence_method": "Caller owns policy storage; successful initialization precedes use."}},
+    {"c_name": "mulib_seccomp_allow", "return": {"kind": "value"},
+     "parameters": [{"index": 0, "name": "p", "ownership": "borrowed_mutable", "nullable": true, "lifetime": {"origin": "explicit_region", "region_name": "call"}}, {"index": 1, "name": "nr", "ownership": "scalar"}, {"index": 2, "name": "checks", "ownership": "borrowed_immutable", "nullable": true, "count_parameter": 3, "lifetime": {"origin": "explicit_region", "region_name": "call"}}, {"index": 3, "name": "count", "ownership": "scalar"}],
+     "errors": {"kind": "int_code"}, "effects": {"effects": ["read", "write"], "unknown": false},
+     "provenance": {"header": "mulib-seccomp.h", "review_status": "unreviewed", "evidence_method": "Trusted policy only; checked elements must be live, bounded, and not overlap mutable policy state."}},
+    {"c_name": "mulib_seccomp_validate", "return": {"kind": "value"},
+     "parameters": [{"index": 0, "name": "p", "ownership": "borrowed_immutable", "nullable": true, "lifetime": {"origin": "explicit_region", "region_name": "call"}}],
+     "errors": {"kind": "int_code"}, "effects": {"effects": ["read"], "unknown": false},
+     "provenance": {"header": "mulib-seccomp.h", "review_status": "unreviewed", "evidence_method": "Valid syntax does not authorize installation or attest filter semantics."}},
+    {"c_name": "mulib_seccomp_worker", "return": {"kind": "value"},
+     "parameters": [{"index": 0, "name": "p", "ownership": "inout", "nullable": true}, {"index": 1, "name": "fd", "ownership": "opaque_unsafe"}, {"index": 2, "name": "deny_errno", "ownership": "scalar"}],
+     "errors": {"kind": "int_code"}, "effects": {"effects": ["read", "write"], "unknown": true},
+     "provenance": {"header": "mulib-seccomp.h", "review_status": "unreviewed", "evidence_method": "Policy encodes a descriptor number; caller must maintain descriptor identity until enforcement. Do not use partial policy on failure."}},
+    {"c_name": "mulib_seccomp_supported", "return": {"kind": "value"},
+     "errors": {"kind": "none"}, "effects": {"effects": [], "unknown": true},
+     "provenance": {"header": "mulib-seccomp.h", "review_status": "unreviewed", "evidence_method": "Availability indication is not proof that a concrete worker has the required filter."}},
+    {"c_name": "mulib_seccomp_install", "return": {"kind": "value"},
+     "parameters": [{"index": 0, "name": "p", "ownership": "borrowed_immutable", "nullable": true, "lifetime": {"origin": "explicit_region", "region_name": "call"}}],
+     "errors": {"kind": "int_code", "cleanup_required_on_failure": true},
+     "effects": {"effects": ["read", "write", "foreign_call"], "unknown": true},
+     "provenance": {"header": "mulib-seccomp.h", "review_status": "unreviewed", "evidence_method": "Irreversible process-state transition in trusted single-thread bootstrap; failure is not guaranteed to restore prior state."}}
+  ]
+}

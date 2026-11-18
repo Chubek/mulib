@@ -17,7 +17,7 @@ struct Error : std::runtime_error {
  Location where;
  // Reporting metadata only: never used to recover or accept an invalid program.
  std::string diagnostic_id,expected,found;
- Error(Location at, std::string message, std::string id="ON1X-SOURCE", std::string want={}, std::string got={})
+ Error(Location at, std::string message, std::string id={}, std::string want={}, std::string got={})
   : std::runtime_error(std::move(message)), where(std::move(at)), diagnostic_id(std::move(id)),
     expected(std::move(want)), found(std::move(got)) {}
 };
@@ -143,6 +143,8 @@ struct MacroRule {
 struct Macro {Location where;std::string name;std::vector<MacroRule> rules;std::string ellipsis="...";std::vector<std::string> literals;};
 struct PpxRegistration {Location where;std::string label,program;};
 struct FeatureActivation {Location where,end;std::string name;};
+// Host-retained analysis policy. It is not PPX wire data or type evidence.
+struct ScrutinyDirective {Location where;std::string level;};
 struct ModuleExtension {
  Location where,end;
  std::string owner,source;
@@ -202,6 +204,7 @@ struct Unit {
   std::vector<Import> module_imports;
   std::vector<KernelImport> kernel_imports;
   std::vector<FeatureActivation> features;
+  std::vector<ScrutinyDirective> scrutiny;
   std::vector<ModuleExtension> extensions;
   std::vector<NominalDeclaration> nominals;
   std::vector<ExtensionEvidence> extension_evidence;

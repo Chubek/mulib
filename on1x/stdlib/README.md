@@ -38,7 +38,8 @@ Accordingly:
   Implementations retain `basis_...` names; small facade modules re-export short names.
 - List/Vector are persistent `sexpr` lists, not general SML polymorphic lists
   or random-access vectors. `Vector.sub` is O(n).
-- `Option` uses a `(bool,payload)` pair, not an option ADT.
+- The explicit `std.Option` compatibility facade uses a `(bool,payload)` pair,
+  not the pervasive nominal `Option<T>`.
 - Array is a mutable fixed-size `i64` **handle**, not a polymorphic array;
   it must be explicitly freed, and the compiler cannot prove ownership.
 - String/Char are byte-oriented, cannot represent embedded NUL, and are not
@@ -55,7 +56,7 @@ Accordingly:
 
 ```text
 on1x/stdlib/
-  pervasive.on1x     default identity/ignore/fst/snd/const environment
+  pervasive.on1x     default functions plus nominal Option/Result helpers
   Int.on1x, ...     short-name Int/String/List/Option/Functional facades
   core/              General Bool
   numeric/           Int, Word8, Real/Math bridges, widths, IntInf natural adapter
@@ -85,6 +86,9 @@ fn main() {
 
 Quoted imports remain supported and resolve relative to their source files.
 `stdlib/sexpr`, `stdlib/visitor`, and `stdlib/ppx` provide the native authoring APIs.
+`stdlib/diagnostics` provides bounded diagnostic values and descriptor-3 PPX
+registration/emission helpers; the compiler still validates every ID against
+the selected declarative catalog.
 
 ## Expanded APIs and corrected semantics
 
@@ -97,9 +101,13 @@ Quoted imports remain supported and resolve relative to their source files.
 - `List.tabulate` calls its function in ascending index order. `app`, `foldr`
   and stable `partition` complement the existing map/filter/foldl operations.
   Lists contain `sexpr` elements; malformed root atoms are rejected.
-- `Option.some(value)`, `none(default)`, `is_some`, `get_or`, `map(option,f,default)`
-  and `and_then(option,f,default)` work polymorphically over tagged tuples.
-  `none` requires a typed default payload until payload-free ADTs exist.
+- The automatic pervasive environment provides bounded nominal `Option<T>` and
+  `Result<T,E>` plus `option_*`/`result_*` constructors, predicates, transforms,
+  fallbacks, conversions and focused iteration helpers. They require trivially
+  copied payloads; `Result ?` is supported, while `Option ?` is not.
+- Legacy `std.Option.some(value)`, `none(default)`, `is_some`, `get_or`,
+  `map(option,f,default)` and `and_then(option,f,default)` continue to work
+  polymorphically over tagged tuples. `none` retains its typed default payload.
 - `Functional.compose(f,g)`, `pipe(value,f)`, `flip(f)`, `curry(f)` and `uncurry(f)`
   are polymorphic closure-based operations. `compose(f,g)(x)` means `f(g(x))`.
 - Native snapshot budgets include allocation overhead; binary-read allocation

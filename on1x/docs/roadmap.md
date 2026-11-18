@@ -2,6 +2,11 @@
 
 ## Current feature matrix
 
+The [MuLIB contract catalogs](../contracts-exotract/README.md) share a
+MANIFEST-backed inventory. CDD declarations can be inspected through
+[KernelBind](kernel-bind.md#inspect-requests-and-discover-declarations), but have
+no semantic sidecars or callable bindings.
+
 The M5/M7 project tools add non-S-expression `On1xfile` builds, directory-local
 input declarations, MuLIB Mune policies, and an opt-in Linux build sandbox.
 The [On1x formatter](formatter.md) uses the existing PrettyPrint layout and
@@ -14,11 +19,13 @@ The M5/M7 [discovery continuation](search-paths.md) integrates the moved
 search lists with CLI/environment inputs and declarative manifests. It does not
 add separate compilation, dependency downloading or foreign safety admission.
 
-**Direct pinned Git acquisition.** An explicit `on1x-project.py fetch` can stage one
-[On1xfile-certified Git library](../stdlib/on1xfile/README.md#explicit-remote-git-acquisition)
-on Linux over smart HTTPS. Builds remain offline. There is no registry,
-version solver, transitive fetching, authenticated remote, or complete
-distributed toolchain.
+**Locked Git acquisition.** Explicit `on1x-project.py lock`/`fetch` commands
+resolve full commit pins or branch/tag intent to immutable commits and stage
+[On1xfile-certified Git libraries](../stdlib/on1xfile/README.md#locking-and-explicit-remote-git-acquisition)
+from local object stores or smart HTTPS. Canonical lockfiles, atomic
+content-addressed cache generations and frozen/offline builds are implemented
+on Linux. There is no registry, version solver, transitive fetching,
+authenticated/SSH remote, or complete distributed toolchain.
 
 Latest CSP continuation: [cooperative cancellation and monotonic deadlines](cancellation-deadlines.md)
 execute through checked HIR/C11, including `taskgroup within` with terminal
@@ -35,12 +42,13 @@ around stackful fibers.
 | Parser / typed AST | Implemented functional subset | Functions, tuples/patterns, explicit universal types, scopes, control flow, imports |
 | Intrinsic core additions G1/G2 | Executable control/matching/value-loop slice | Loop/for-C/i64 ranges, labels/exits, guarded structural matches and typed value-loop joins/initialization verification; C11 plus scalar/tuple MIR; nominal-data and G3 continuations below; no owning lists/iterators or concurrency; [manual](core-syntax.md), [value loops](value-loops.md) |
 | G3 function defer / typed errors | Executable bounded C11 profile | Go-style function-scoped `defer call;`, registration-time snapshots, function-owned LIFO records, exact nominal `Result` postfix `?`, return/cleanup edges including cooperative CSP cancellation; no using, exceptions, terminal-trap unwind, managed Result fields or MIR/SDK defer admission; [contract](defer-errors.md) |
-| Module loader / pervasive environment | Implemented compile-time namespaces | Named/selective/relative imports, aliases, packages, canonical deduplication, bounded cycles, demand-loaded prelude and relocatable installation; [manual](modules.md) |
+| Module loader / pervasive environment | Executable compile-time namespaces and generic core facade | Named/selective/relative imports, aliases, packages, canonical deduplication, bounded cycles, demand-loaded prelude, relocatable installation, and canonical bounded nominal `Option`/`Result` helpers with explicit/local shadowing; no managed payloads or Option propagation; [manual](modules.md) |
 | MuLIB native housekeeping | Implemented bounded kernel/fixture planning | Integrated `stdlib/mulib`; `std.mulib` metadata/byte access and size checks; shared one-TU planning, fixture/provider/native companion linkage, actual selected header paths/fingerprints and relocatable bundles; [manual](../stdlib/mulib/README.md) |
 | PrettyPrint | Executable document DSL, raw C11 bridge and formatter tool | Global Knuth–Plass for `Fill`, semantic math, plain-UTF-8 source maps, block-incremental C sessions and `.ppg` → Python; no safe import, glyph justification or full Oppen; [manual](../stdlib/prettyprint/README.md) |
 | On1x source formatter | Executable conservative source layout | Canonical scanner/parser, preserved comments/literals/carriers and dot adjacency, `.on1xfmt`, paired directives, plain/LaTeX/groff; no type checking, syntax recovery or unchanged diagnostic locations; [manual](formatter.md) |
 | Search lists / manifests | Executable Linux build-time subset | Five colon-separated CLI/environment path lists; existing named imports, explicitly activated PPX, native bundle/script metadata and MANIFEST-backed kernel lookup; [manual](search-paths.md), `test_discovery.py`; no downloads or new safe-FFI claim |
 | Frontend input limits | Implemented and tested | 2 MiB per file; 256-level parsing/HIR limits including lambdas; bounded capture metadata |
+| Diagnostics and scrutiny | Executable bounded tooling slice | Build-validated JSON v2 owns new identities/presentation/policy/repairs/PPX declarations, with runtime replacement and trusted bootstrap; bounded registry, text/JSON/SARIF with UTF-16 columns, CLI/source/On1xfile precedence, message-free registered PPX sideband, independently checked Syren edits and explicitly advisory Wetstone proposals; legacy compiler text migration, CFG/interprocedural/resource proof and LSP remain open; [manual](diagnostics.md) |
 | Type inference | P1 schemes and explicit universals | Global recursive-component and value-restricted immutable let/pattern generalization, rigid `forall` parameters, bounded C11 specialization/bundles; no defaulting or inferred polymorphic recursion |
 | Structural function types / values | P1 subset | Monomorphic aliases, parameters/results, indirect/postfix calls and lexical resolution; no foreign callbacks |
 | Anonymous functions / lexical closures | P1 immutable subset | Escaping scalar/function/tuple captures, transitive capture, reference-counted C11 environments; no mutable/resource captures or recursive let |
@@ -72,7 +80,8 @@ around stackful fibers.
 | Chisel resource checking | Opt-in scalar/JSON usage subset | Real solver plus conservative joins, token-use and exit/reinitialization checks; generic external resource CFG API; [manual](memory-safety.md) |
 | Nerotypical structural verification | Opt-in concrete HIR checker | Real TypeGraph/Satie EUF obligations for calls, closures, tuples, staging and resources; explicit universals reject; separate patched source SDK; [manual](type-safety.md) |
 | Exotract static bindings | MANIFEST-backed kernel and companion archives | Typed CDecl/import metadata; executable JSON/Vec/Parsec and MicroJS C clients, On1x JSON/YANTLR/Shiraz archive linkage, fixture provenance and one kernel implementation TU; [manual](../contracts-exotract/README.md) |
-| Compiler-native KernelBind | Discovery, unsafe scalar calls and review-gated scalar/numerical calls (Packages B–D partial) | ExoLib/CDecl, independent Ed25519 review, one-TU archives, atomic admission bundles, bounded snapshots and nominal results for Histprice and PriceOpt. No production approvals or general owned resources; Shylock release gate remains open. [Manual](kernel-bind.md), [numerical profile](kernel-numerics.md), [source migration blockers](source-migration.md) |
+| Compiler-native KernelBind | Discovery, unsafe scalar calls and review-gated scalar/numerical calls (Packages B–D partial) | ExoLib/CDecl, independent Ed25519 review, one-TU archives, atomic admission bundles, all three Clamp functions, and bounded snapshots and nominal results for Histprice and PriceOpt. No production approvals or general owned resources; Shylock release gate remains open. [Manual](kernel-bind.md), [numerical profile](kernel-numerics.md), [source migration blockers](source-migration.md) |
+| Sandbox KernelBind profiles | Build and discovery only | Real ExoLib, CDecl v2 and unreviewed ExoML sidecars for all eight sandbox kernels; one C11 TU. No callable imports, process/capability lowering or enforcement claim. [Manual](kernel-sandbox.md) |
 | Wetstone / general foreign ownership lowering | Not implemented | Contract-driven external handle types, ABI, alias/extent and effect proofs remain open |
 | Flintstone/Firestone native lowering | Not implemented | C11 is the sole backend |
 | Value data model (M1 slice) | Executable by-value C11 subset | Structural records with canonical labels, closed sums with exhaustive `match`, `array<T,N>` and owning `slice` snapshots, bounds-checked access with exit-70 errors; no MIR lowering, mutation, borrowed/dynamic arrays, derives or foreign aggregate ABI; [contract](data-model.md) |

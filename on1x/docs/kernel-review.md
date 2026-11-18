@@ -1,7 +1,8 @@
 # KernelBind reviewed scalar profile
 
-The Package C continuation executes **only** `mulib.clamp.add_i64` and
-`sub_i64`, both `(i64, i64) -> i64`, on native Linux x86-64 through C11.
+The clamp v2 profile executes all three `mulib.clamp` functions on native
+Linux x86-64 through C11: `add_i64` and `sub_i64` with `(i64, i64) -> i64`,
+and `i64` with `(i64, i64, i64) -> i64`.
 It accepts native safe imports conditional on an independently signed review
 selected explicitly by the build operator. The shipped ExoML annotation remains
 **unreviewed**; no production review or trusted reviewer key is bundled.
@@ -13,7 +14,7 @@ original scalar profile.
 ```on1x
 import kernel mulib.clamp as Clamp;
 fn main() {
-    println(Clamp.add_i64(40, 2));
+    println(Clamp.i64(Clamp.add_i64(40, 2), 0, 40));
 }
 ```
 
@@ -27,9 +28,11 @@ trust store, signing command, or automatically approved contract.
 
 The authority reviews the canonical C implementation and ExoML claims, exact
 target, declarations, build tools, adapter generator, and flags identified in
-the review subject. In particular, the two scalar functions must be total for
-all `int64_t` argument pairs, nonblocking, resource-free, and free of external
-state effects. It returns a JSON file with **exactly** these fields:
+the review subject. The arithmetic functions must be total for all `int64_t`
+argument pairs. The interval function requires `low <= high`; On1x checks this
+before calling C and exits with assertion status 70 if the bounds are reversed.
+All three C functions are nonblocking, resource-free, and free of external state
+effects. The authority returns a JSON file with **exactly** these fields:
 
 ```json
 {
@@ -48,8 +51,8 @@ An operator-controlled key establishes whose judgment is trusted; cryptography
 does not establish reviewer competence or prove C semantics. The review
 reference and signer identity remain in the published evidence.
 
-Approval covers exactly the two named exports. `Clamp.i64` is rejected with
-`ON1X-KERNEL-MEMBER`; the generated interface explains its exclusion. The
+Approval covers exactly the three named exports and the binding's interval check.
+The v2 subject needs a new signature; a v1 approval cannot authorize it. The
 signed subject cannot authorize another kernel, target, ABI, tool revision,
 contract, or compiler flag set. The importing application's aliases and source
 hashes are outside the review subject, but are checked during the build and
@@ -102,9 +105,11 @@ pass. Its contents include:
 
 The adapter includes the actual public header and checks its prototype with
 `_Generic` and target size/alignment with `_Static_assert`. Every build executes
-1,348 comparisons: generated adapter and direct C calls against a Python
-arbitrary-precision oracle, covering both operations, boundary pairs and a
-deterministic random corpus. This is executable evidence, not a proof.
+2,670 comparisons: generated adapter and direct C calls against a Python
+arbitrary-precision oracle, covering saturating arithmetic and valid intervals
+with boundary values and a seeded corpus. SDK tests separately check that
+reversed bounds are rejected before calling C. This is executable evidence,
+not a proof.
 The application itself is compiled and linked, not executed during admission.
 OpenSSL, Exotract, libclang and Lua are build-time tools only.
 

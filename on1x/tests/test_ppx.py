@@ -48,10 +48,20 @@ for mode,diagnostic in [
     ('unbound_type','unbound quantified'),('trailing','trailing input'),('bad_semantics','expected i64'),
     ('empty','empty stdout'),('exit_error','exit status 23'),('flood','stdout byte limit'),
     ('stderr_flood','stderr byte limit'),('deep','depth limit'),('timeout','timeout'),
-    ('huge_binders','binder count limit'),
+     ('huge_binders','binder count limit'),
 ]:
     p=run([t.compiler,'--emit-c',source,*options(mode),'--ppx-timeout-ms','200' if mode=='timeout' else '5000'])
     assert p.returncode==1 and diagnostic in p.stderr and not p.stdout,(mode,p.returncode,p.stderr)
+
+# PPX records select catalog data rather than supplying free-form messages.
+# Captured PPX stderr still cannot inject terminal controls or forged lines,
+# including in the no-Syren fallback renderer.
+p=run([t.compiler,'--check',source,*options('hostile_diagnostic'),'--color','always'])
+assert p.returncode==0 and p.stderr.count('\x1b')==2,p.stderr
+assert 'cataloged advisory' in p.stderr and 'forged' not in p.stderr,repr(p.stderr)
+p=run([t.compiler,'--check',source,*options('exit_control'),'--color','never'])
+assert p.returncode==1 and '\x1b' not in p.stderr,p.stderr
+assert r'forged line\n\x1b[31mred\x1b[0m' in p.stderr,repr(p.stderr)
 
 for name, text, flags, diagnostic in [
     ('source_label_limit','@ppx '+'x'*129+' "program"\nfn main(){}',[], 'label exceeds 128'),

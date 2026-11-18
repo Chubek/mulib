@@ -136,6 +136,8 @@ const char *on1x_io_stdin(void);
 void on1x_io_stdout(const char *text);
 void on1x_io_stderr(const char *text);
 const char *on1x_tool_env(const char *name);
+/* Compiler-created native PPX sideband. Returns false outside protocol v1. */
+bool on1x_diagnostics_sideband(const char *wire);
 const char *on1x_tool_read_file(const char *path);
 void on1x_tool_fail(const char *message);
 on1x_json *on1x_json_parse_or_die(const char *text);

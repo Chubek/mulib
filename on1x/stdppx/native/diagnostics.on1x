@@ -1,0 +1,16 @@
+import "common.on1x";
+import "../../stdlib/diagnostics/ppx.on1x";
+
+fn transform(tree:sexpr,label:string)->sexpr {
+ let id=basis_diagnostics_ppx_declaration();
+ if !basis_diagnostics_ppx_register(id) { tool_fail(basis_diagnostics_ppx_failure()); }
+ return visitor_rewrite(tree,fn(node:sexpr,path:sexpr)->sexpr {
+  if visitor_tag(node)!="ExtensionExpr"||sx_text(sexpr_nth(node,1))!=label{return node;}
+  let op=sx_text(sexpr_nth(node,2));let args=sexpr_nth(node,3);let at=sexpr_nth(node,4);
+  if op!="warn"||sexpr_size(args)!=1{tool_fail(basis_diagnostics_ppx_failure());}
+  if !basis_diagnostics_ppx_emit(id,at) { tool_fail(basis_diagnostics_ppx_failure()); }
+  return sx_head(args);
+ });
+}
+
+fn main(){native_serve(transform);}

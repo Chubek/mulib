@@ -1,0 +1,20 @@
+import std.mulib as M;
+
+extern fn fixture_elvi_provider(source: string) -> i64;
+
+fn main() {
+    assert(M.has_kernel("elvi-scrape"));
+    assert(M.fixture_group("library/elvis/Google.elvs") == "elvis");
+    assert(M.fixture_group("library/elvi-scrape/google.elvs") == "elvi-scrape");
+    assert(M.has_fixture("library/elvis/DuckDuckGo.elvs"));
+    assert(M.has_fixture("library/elvis/MDN.elvs"));
+    assert(M.has_fixture("library/elvis/Scholar.elvs"));
+    let google = M.require_fixture("library/elvis/Google.elvs");
+    let bing = M.require_fixture("library/elvis/Bing.elvs");
+    assert(google == M.require_fixture("library/elvi-scrape/google.elvs"));
+    assert(bing == M.require_fixture("library/elvi-scrape/bing.elvs"));
+    assert(fixture_elvi_provider(google) == 1);
+    assert(fixture_elvi_provider(bing) == 1);
+    assert(fixture_elvi_provider("shell echo unsafe") == 0);
+    println("elvi providers OK");
+}

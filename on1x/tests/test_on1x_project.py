@@ -59,9 +59,18 @@ class ProjectTests(unittest.TestCase):
         self.write(f'{prefix}/lib/value.on1x', 'fn number() -> i64 { return 42; }\n')
         return self.project / prefix
 
-    def run_bin(self, output=None, target='sample'):
+    def lock(self, *arguments, negative=None):
+        command = [sys.executable, OPTIONS.driver, 'lock', str(self.project), *arguments]
+        result = subprocess.run(command, text=True, capture_output=True, timeout=100)
+        if negative is None:
+            self.assertEqual(result.returncode, 0, result.stderr)
+            return Path(result.stdout.strip())
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn(negative, result.stderr)
+
+    def run_bin(self, output=None, target='sample', expected='42\n'):
         result = subprocess.check_output([str((output or self.output) / target)], text=True, timeout=5)
-        self.assertEqual(result, '42\n')
+        self.assertEqual(result, expected)
 
     def test_basic_and_transaction(self):
         self.app()
@@ -80,6 +89,32 @@ class ProjectTests(unittest.TestCase):
         self.assertEqual(json.loads((release / report.name).read_text())['cflags'], ['-O3'])
         self.build('--release', '--output-dir', str(self.output),
                    negative='not a build output for this project kind/name/profile')
+
+    def test_scrutiny_precedence(self):
+        probe = self.root / 'analysis-probe.on1x'
+        probe.write_text('fn main()->i64{return 42/0;}\n')
+        checked = subprocess.run(
+            [OPTIONS.on1xc, '--no-prelude', '--check', '--scrutiny', 'strict', probe],
+            text=True, capture_output=True, timeout=20)
+        if checked.returncode == 0:
+            self.skipTest('Wetstone analysis is unavailable in this build')
+        self.assertIn('ON1X-ANALYSIS-DIVZERO', checked.stderr)
+
+        division = 'fn main()->i64{return 42/0;}\n'
+        self.app(extra='scrutiny strict\n', implementation=division)
+        self.build(negative='ON1X-ANALYSIS-DIVZERO')
+
+        self.app(extra='scrutiny strict\n', implementation='@scrutiny off;\n' + division)
+        output = self.build()
+        self.assertEqual(json.loads((output / '.on1x-build.json').read_text())['scrutiny'], 'strict')
+
+        self.app(extra='scrutiny off\n', implementation='@scrutiny strict;\n' + division)
+        self.build(negative='ON1X-ANALYSIS-DIVZERO')
+        output = self.build('--scrutiny', 'off')
+        self.assertEqual(json.loads((output / '.on1x-build.json').read_text())['scrutiny'], 'off')
+
+        self.app(extra='scrutiny off\n', implementation='@scrutiny off;\n' + division)
+        self.build('--scrutiny', 'strict', negative='ON1X-ANALYSIS-DIVZERO')
 
     def test_only_declared_roles_and_imports(self):
         self.app(implementation='import private as P;\nfn main() -> i64 { println(P.number()); return 0; }\n')
@@ -161,10 +196,111 @@ class ProjectTests(unittest.TestCase):
         report = json.loads((self.output / '.on1x-build.json').read_text())
         self.assertEqual(report['dependencies']['toolkit']['commit'], commit)
         original = (self.project / 'On1xfile').read_text()
+        self.write('On1xfile', original.replace(f'"{commit}"', f'commit "{commit}"'))
+        self.build()
+        self.run_bin()
         self.write('On1xfile', original.replace(commit, 'HEAD'))
         self.build(negative='requires a full lowercase commit')
         self.write('On1xfile', original.replace(commit, '0' * len(commit)))
         self.build(negative='is missing from the offline object store')
+
+    @unittest.skipUnless(shutil.which('git'), 'Git is unavailable')
+    def test_git_branch_tag_locking_and_frozen_reproducibility(self):
+        author = self.library('author', 'toolkit')
+        environment = dict(os.environ, GIT_CONFIG_GLOBAL='/dev/null', GIT_CONFIG_NOSYSTEM='1',
+                           GIT_AUTHOR_NAME='Build test', GIT_AUTHOR_EMAIL='build@localhost',
+                           GIT_COMMITTER_NAME='Build test', GIT_COMMITTER_EMAIL='build@localhost')
+
+        def git(*arguments, cwd=author):
+            return subprocess.run(['git', '-C', cwd, *arguments], check=True, env=environment,
+                                  capture_output=True, text=True, timeout=20).stdout.strip()
+
+        git('init', '-q', '--template=', '--initial-branch=main')
+        git('add', 'On1xfile', 'lib')
+        git('commit', '-qm', 'version 1')
+        original = git('rev-parse', 'HEAD')
+        bare = self.project / 'vendor/toolkit.git'
+        bare.parent.mkdir()
+        subprocess.run(['git', 'clone', '--bare', '--quiet', author, bare], check=True,
+                       env=environment, capture_output=True, timeout=20)
+        self.app(extra='dependency "toolkit" git "vendor/toolkit.git" branch "main"\n',
+                 implementation='import toolkit.value as V;\n'
+                                'fn main() -> i64 { println(V.number()); return 0; }\n')
+        self.build('--frozen', negative='lockfile is required')
+        lock = self.lock('--offline')
+        document = json.loads(lock.read_text())
+        entry = document['dependencies']['toolkit']
+        self.assertEqual(entry['selector'], {'kind': 'branch', 'value': 'main'})
+        self.assertEqual(entry['commit'], original)
+        self.build('--frozen')
+        self.run_bin()
+
+        self.write('author/lib/value.on1x', 'fn number() -> i64 { return 99; }\n')
+        git('commit', '-qam', 'version 2')
+        updated = git('rev-parse', 'HEAD')
+        git('push', '--quiet', '--force', str(bare), 'HEAD:refs/heads/main')
+        locked_bytes = lock.read_bytes()
+        self.build('--frozen')
+        self.run_bin()  # The moved branch cannot affect the locked build.
+        self.assertEqual(lock.read_bytes(), locked_bytes)
+        self.lock('--offline')
+        self.assertEqual(json.loads(lock.read_text())['dependencies']['toolkit']['commit'], updated)
+        self.build('--frozen')
+        self.run_bin(expected='99\n')
+
+        git('tag', '-am', 'release 1', 'release-1', original)
+        git('push', '--quiet', str(bare), 'refs/tags/release-1')
+        self.write('On1xfile', (self.project / 'On1xfile').read_text().replace(
+            'branch "main"', 'tag "release-1"'))
+        self.build(negative='stale entry')
+        self.lock('--offline')
+        entry = json.loads(lock.read_text())['dependencies']['toolkit']
+        self.assertEqual(entry['selector'], {'kind': 'tag', 'value': 'release-1'})
+        self.assertEqual(entry['commit'], original)  # Annotated tag is peeled to its commit.
+        frozen = lock.read_bytes()
+        self.lock('--offline')
+        self.assertEqual(lock.read_bytes(), frozen)
+        self.lock('--frozen')
+        self.assertEqual(lock.read_bytes(), frozen)
+        self.build('--frozen')
+        self.run_bin()
+
+    def test_git_selector_syntax_rejected_before_access(self):
+        self.app()
+        base = (self.project / 'On1xfile').read_text()
+        cases = (
+            ('branch', '-config', 'invalid Git branch'),
+            ('branch', '../main', 'invalid Git branch'),
+            ('branch', 'main..old', 'invalid Git branch'),
+            ('tag', 'v1^{commit}', 'invalid Git tag'),
+            ('revision', 'main', 'selector must be commit, branch or tag'),
+        )
+        for selector, value, diagnostic in cases:
+            with self.subTest(selector=selector, value=value):
+                self.write('On1xfile', base + f'dependency "toolkit" git "missing.git" '
+                           f'{selector} {json.dumps(value)}\n')
+                self.lock('--offline', negative=diagnostic)
+
+    def test_lockfile_schema_and_symlink_rejected(self):
+        commit = '0' * 40
+        self.app(extra=f'dependency "toolkit" git "missing.git" "{commit}"\n')
+        lock = self.write('On1xfile.lock',
+                          '{"schema":"on1x.lock/v1","schema":"on1x.lock/v1","dependencies":{}}\n')
+        self.build('--frozen', negative='duplicate lockfile key')
+        lock.write_text(json.dumps({
+            'schema': 'on1x.lock/v1',
+            'dependencies': {'toolkit': {
+                'kind': 'git',
+                'source': 'missing.git',
+                'selector': {'kind': 'commit', 'value': commit},
+                'commit': commit,
+                'unexpected': True,
+            }},
+        }))
+        self.build('--frozen', negative='expected exactly kind, source, selector and commit')
+        lock.unlink()
+        lock.symlink_to(self.project / 'On1xfile')
+        self.build('--frozen', negative='expected a regular lockfile')
 
     def test_profiles_and_preprocessing(self):
         if not (OPTIONS.mune_runner and OPTIONS.qmr_compiler):

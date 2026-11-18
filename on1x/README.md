@@ -15,8 +15,9 @@ directory-local input declarations, Mune profiles, and dependencies. The
 to a host build.
 
 Builds do not fetch dependencies. Use the separate
-[`on1x-project.py fetch` command](stdlib/on1xfile/README.md#explicit-remote-git-acquisition)
-to acquire a pinned Git library over HTTPS.
+[`on1x-project.py lock`/`fetch` commands](stdlib/on1xfile/README.md#locking-and-explicit-remote-git-acquisition)
+to resolve branch/tag intent to immutable commits and acquire a Git library
+over HTTPS. `On1xfile.lock` plus `build --frozen` keeps later builds offline.
 
 The [source formatter](docs/formatter.md) runs as `on1xc fmt`, reads
 `.on1xfmt`, and can also emit LaTeX or troff listings. Formatting itself does
@@ -87,6 +88,14 @@ capture-byte budgets. Use `match` for recovery; fatal traps still do not unwind.
 See [`examples/defer_errors.on1x`](examples/defer_errors.on1x). General exceptions,
 resource-bearing results, async cancellation and MIR/SDK defer models remain unsupported.
 
+The default [pervasive environment](docs/modules.md#the-pervasive-environment)
+now exposes canonical bounded `Option<T>`/`Result<T,E>` types and focused
+`option_*`/`result_*` helpers without imports. These are ordinary generic On1x
+declarations, preserve explicit-import/local-shadow precedence, and add no ABI.
+Payloads are still limited to trivially copied nominal data; legacy tuple,
+scalar-pair and S-expression facades remain explicit compatibility APIs. See
+[`examples/pervasive_options.on1x`](examples/pervasive_options.on1x).
+
 Category now has an executable **M0/M1 plus concrete M2 slice**: `@enable Protocols`
 invokes a bundled native On1x-authored processor for `@extension Protocols { ... }`
 declarations and generates explicit, normally typechecked witness selectors.
@@ -128,7 +137,9 @@ still not admitted. See the
 
 [KernelBind](docs/kernel-bind.md) recognizes `import kernel` in the compiler and
 supports explicit ExoLib/ExoML discovery of selected canonical MuLIB profiles.
-The opt-in C11 build profile can call two `mulib.clamp` functions via
+The [sandbox profiles](docs/kernel-sandbox.md) expose build and declaration
+evidence only, not callable or safe imports.
+The opt-in C11 build profile can call all three `mulib.clamp` functions via
 `unsafe import kernel`. The [review-gated scalar build](docs/kernel-review.md)
 also accepts safe clamp and [bounded numerical imports](docs/kernel-numerics.md)
 with an independently signed, operator-selected review. Tests use an ephemeral
@@ -196,7 +207,14 @@ Read [the bridge manual](stdlib/_bridge/README.md), [PPX manual](stdppx/README.m
 and `AGENTS.md` before production use.
 ## Error reporting and repair proposals
 
-Optional Syren integration (`-DON1X_WITH_SYREN=ON`) adds text/JSON/SARIF source
-diagnostics and `on1xc --repair INPUT -o NEW_FILE`. Repairs are independently
-compiler-checked proposals, never in-place edits or changes to ON1X's syntax or
-semantics. See [diagnostics and repair](docs/diagnostics.md).
+The bounded core diagnostic registry uses a build-validated JSON v2 catalog for
+new diagnostic identity, presentation and policy, with runtime replacement,
+file-local `@scrutiny`, CLI/On1xfile policy, and message-free registered PPX
+advisories. Existing compiler messages remain a documented legacy boundary.
+When available,
+Wetstone analyzes a conservative straight-line checked-scalar subset; Syren adds
+JSON/SARIF presentation and `on1xc --repair INPUT -o NEW_FILE`. Strict scrutiny
+escalates supported findings but does not turn skipped HIR into a proof. Wetstone
+proposals are advisory and unvalidated; only independently rechecked Syren edits
+are labeled compiler-valid, never intent-equivalent or in-place changes.
+See [diagnostics, scrutiny, and repair](docs/diagnostics.md).

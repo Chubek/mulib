@@ -66,6 +66,23 @@ On1xfile is not a valid replacement destination. The `.on1x-build.json`
 report records profile settings, selected source and manifest hashes, direct
 helper executable identities, and executable artifact hashes.
 
+### Static-analysis scrutiny
+
+A root manifest may set the project-wide fallback policy:
+
+```text
+scrutiny standard
+```
+
+The value is a lowercase catalog level. The driver forwards it as
+`--project-scrutiny`; it does not reinterpret analysis findings. A
+`@scrutiny LEVEL;` directive in the file that owns a function overrides this
+project value, and `on1x-project.py build --scrutiny LEVEL` overrides both.
+The selected value is recorded in `.on1x-build.json`. With the embedded
+catalog, the levels are `off`, `standard`, and `strict`; an unknown level is
+rejected by the compiler. See [diagnostics and scrutiny](../../docs/diagnostics.md)
+for the exact supported Wetstone subset and unavailable-SDK behavior.
+
 `on1x-project.py format PATH [--check]` validates and canonically spaces a
 plain root, module, or interface manifest, preserving comment text and order.
 It writes to stdout (no overwrite); `--check` fails if bytes would change.
@@ -161,6 +178,7 @@ commands, Mune profiles, PPX, or QMR templates.
 ```text
 dependency "toolkit" local "vendor/toolkit"
 dependency "mathlib" git "vendor/mathlib.git" "0123456789abcdef0123456789abcdef01234567"
+dependency "parser" git "vendor/parser.git" tag "v2.1.0"
 kernel "clamp"
 ```
 
@@ -173,37 +191,78 @@ package identity and file roles, **not** a signature, endorsement, or proof
 of the behavior of an application that imports the code.
 
 The `git` form refers to a pre-existing, self-contained **local** object store
-(bare or ordinary `.git` directory), with a full SHA-1/SHA-256 commit ID.
-The helper projects regular loose objects and pack files into a fresh bare
-Git store, checks object integrity, and reads pinned commit blobs. It does not
-use checkout data, repository config, hooks, alternates, shallow histories, or
+(bare or ordinary `.git` directory). Its selector can be a full SHA-1/SHA-256
+commit ID (the backwards-compatible final quoted field), `commit "ID"`,
+`branch "NAME"`, or `tag "NAME"`. Branches and lightweight/annotated tags are
+resolved by `on1x-project.py lock` to a commit in `On1xfile.lock`; builds use
+that commit and do not follow a moved ref. Annotated tags are peeled to commits.
+Ref names use a conservative ASCII subset and cannot begin with an option,
+contain traversal/dot-lock syntax, or use Git revision expressions.
+
+The helper projects regular loose objects and pack files into a fresh bare Git
+store, checks object integrity, and reads pinned commit blobs. It does not use
+checkout data, repository config, hooks, alternates, shallow histories, or
 submodules. Projects without Git objects can use `local`; these dependencies
 are not immutable, but the actual declared bytes used are recorded. There is
-no version solver, transitive manifest resolution, registry, automatic
-network fetch, or dependency-specific tooling execution.
+no version solver, transitive manifest resolution, registry, automatic network
+fetch during builds, or dependency-specific tooling execution.
 
 `kernel` requests a native MuLIB kernel through the existing single-file C11
 builder and the canonical one-TU MuLIB planner. `--mulib-root` selects the
 operator's MuLIB SDK. Native requests produce `<target>.mulib.json` with the
 canonical link plan. This is not independent KernelBind/FFI admission.
 
-### Explicit remote Git acquisition
+### Locking and explicit remote Git acquisition
 
 ```text
 dependency "mathlib" git-remote "https://packages.example.org/mathlib.git" "0123456789abcdef0123456789abcdef01234567"
+dependency "parser" git-remote "https://packages.example.org/parser.git" branch "stable"
+dependency "syntax" git-remote "https://packages.example.org/syntax.git" tag "v2.1.0"
 ```
 
-From a checkout, run:
+Commit pins can be written in the legacy shorthand shown on the first line or
+as `commit "ID"`. A branch or tag is mutable manifest intent, so resolve it to
+an immutable commit before building:
 
 ```sh
+python3 on1x/tools/on1x-project.py lock /path/to/project
 python3 on1x/tools/on1x-project.py fetch mathlib /path/to/project
+python3 on1x/tools/on1x-project.py build /path/to/project --frozen
 ```
 
-`fetch NAME [PROJECT] [--ca-file PEM]` requests only the named direct dependency.
-`PROJECT` defaults to the current directory. Regular builds and `--sandbox`
-builds never fetch; a missing store is an error. Run `fetch` separately before
-building. `fetch` runs on the host, not in the build sandbox; review the
-manifest's endpoint before authorizing it.
+`lock [PROJECT]` resolves and validates all direct Git dependencies, fills the
+remote object cache, and atomically writes canonical JSON to `On1xfile.lock`.
+`fetch NAME [PROJECT]` does the same for one named `git-remote` dependency and
+merges its entry into the lockfile. `PROJECT` defaults to the current directory.
+Both commands accept `--ca-file PEM`. They run on the host, not in the build
+sandbox; review each endpoint before authorizing network access.
+
+The lockfile has schema `on1x.lock/v1`. Each entry records the dependency kind,
+exact source, manifest selector, and resolved full commit ID. It is intended to
+be committed. For example:
+
+```json
+{
+  "dependencies": {
+    "parser": {
+      "commit": "0123456789abcdef0123456789abcdef01234567",
+      "kind": "git-remote",
+      "selector": {"kind": "branch", "value": "stable"},
+      "source": "https://packages.example.org/parser.git"
+    }
+  },
+  "schema": "on1x.lock/v1"
+}
+```
+
+Regular and sandbox builds never contact a remote. A selector declaration
+requires a matching lock entry; a legacy commit pin can still build directly
+for compatibility. `build --locked` requires complete matching lock entries
+even for commit pins. `--offline` makes the normal network prohibition
+explicit. `--frozen` means `--offline --locked`. The same flags on `lock` and
+`fetch` reuse locked cache data (`--offline`), prohibit lockfile changes
+(`--locked`), or do both (`--frozen`). An ordinary `lock` or selector `fetch`
+refreshes branch/tag intent; a frozen operation never does.
 
 Only **smart HTTPS** with TLS certificate and hostname verification is
 admitted: use a DNS hostname or IPv4 address, optional port, and a repository
@@ -215,19 +274,38 @@ system CA defaults. Git sees a clean environment and a private home. Local,
 user and system Git configuration, credential helpers, askpass, ambient
 proxy/TLS variables and `.netrc` credentials aren't inherited. Authenticated
 servers, shallow or partial history, and servers that refuse the requested
-full commit ID are not supported. Branches, tags (including tag object IDs),
-abbreviated IDs, and implicit fallback to a reference are not accepted.
+full commit/ref are not supported. SSH, `git://`, arbitrary remote helpers and
+absolute `file://` URLs remain unsupported; use the normalized project-relative
+`git` form for a local bare or ordinary repository. Abbreviated object IDs and
+implicit fallback to a different reference are never accepted. Network
+diagnostics escape terminal controls and redact the admitted endpoint URL.
 
 On Linux, the command atomically publishes only the checked object files
 under `PROJECT/.on1x-deps/NAME/COMMIT` and prints that path. Treat `.on1x-deps`
-as a cache, not project source. The command never checks out the repository or
-runs dependency scripts, hooks, or filters. Acquisition
+as a cache, not project source. `(NAME, COMMIT)` is the deterministic cache key.
+A per-project advisory lock serializes writers; no-clobber rename publishes a
+whole generation, and a concurrent winner is revalidated. Lockfiles are also
+replaced atomically. Corrupt or conflicting generations fail closed rather
+than being overwritten.
+
+The commands never check out the repository or run dependency scripts, hooks,
+filters, or repository-configured commands. They pass arguments directly to
+Git without a shell and use a clean environment/private home. Gitlinks may be
+present as inert tree entries, but submodules are never initialized, fetched,
+or admitted as declared regular source files. Acquisition
 checks the exact commit with the same offline integrity, library-name and
 file-role checks used during builds. It does not compile the library or
 prove its behavior: builds still enforce the module, source and compiler
 checks. A cached generation is revalidated offline; corrupt or conflicting
 stores are not overwritten. To reacquire one, remove that cached generation
 and run `fetch` again.
+
+For `local`, current declared bytes determine the build and are fingerprinted.
+For `git`, only committed blobs at the selected/locked commit are visible:
+dirty or untracked checkout files and the checked-out branch are deliberately
+ignored. A missing local ref, garbage-collected locked commit, malformed store,
+stale lock source/selector, unavailable network, TLS/authentication failure and
+missing cache have distinct diagnostics.
 
 The network Git subprocess has a 30-second wall limit, a 64 MiB pack file
 limit, and a 512 MiB per-process address-space limit. Offline verification

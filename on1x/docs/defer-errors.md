@@ -19,6 +19,11 @@ fn twice(n:i64)->Result<i64,u8> {
 }
 ```
 
+The default pervasive environment now provides a canonical declaration with
+this exact protocol plus `result_ok`/`result_error` and combinators. The explicit
+declaration above remains valid and intentionally has its own nominal identity;
+local declarations take precedence over the automatic prelude.
+
 ## Defer contract
 
 The later [CSP continuation](cancellation-deadlines.md) also runs registered

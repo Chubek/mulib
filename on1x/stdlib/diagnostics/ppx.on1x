@@ -1,0 +1,16 @@
+import "diagnostics.on1x";
+
+# The runtime writes only to the compiler-created PPX sideband descriptor.
+# Outside that envelope these functions return false and do not use stderr.
+extern fn on1x_diagnostics_sideband(wire:string)->bool;
+
+fn basis_diagnostics_ppx_register(id:string)->bool {
+ if text_len(id)<1||text_len(id)>128 { tool_fail(basis_diagnostics_ppx_failure()); }
+ return on1x_diagnostics_sideband(sexpr_print(ppx_node("register",ppx_list1(sx_string(id)))));
+}
+
+fn basis_diagnostics_ppx_emit(id:string,location:sexpr)->bool {
+ let record=basis_diagnostics_record(id,location);
+ return on1x_diagnostics_sideband(sexpr_print(ppx_node("emit",ppx_list2(
+  sexpr_nth(record,1),sexpr_nth(record,2)))));
+}

@@ -52,34 +52,8 @@ def header_path(root, module):
     return Path(module['header_path']) if 'header_path' in module else local(root, module['header'])
 
 
-def local(root, name):
-    path = Path(name)
-    if path.is_absolute() or '..' in path.parts or not path.parts:
-        raise ValueError('nonlocal MuLIB path: '+str(name))
-    resolved = (root/path).resolve()
-    if not resolved.is_relative_to(root.resolve()) or not resolved.is_file():
-        raise ValueError('missing/escaping MuLIB input: '+str(name))
-    return resolved
-
-
-def inventory(root):
-    text = contracts.read(root/'MANIFEST.yaml', 8*1024*1024).decode().split('\nproject_files:', 1)[0]
-    names = re.findall(r'^- name: ([a-z0-9][a-z0-9_+-]*)$', text, re.M)
-    if not names or len(names)>4096 or len(names)!=len(set(names)):
-        raise ValueError('missing/duplicate/excessive MANIFEST modules')
-    modules = {}
-    for name in names:
-        item = contracts.module_info(root, name, text)
-        if item['header'] != 'include/mulib-'+name+'.h':
-            raise ValueError('noncanonical module header: '+name)
-        local(root, item['header']); local(root, item['manual'])
-        if any(not re.fullmatch(r'MULIB_IMPL_[A-Z0-9_]+', m) for m in [item['macro'], *item['extra_macros']]):
-            raise ValueError('invalid implementation macro: '+name)
-        modules[name] = item
-    for item in modules.values():
-        if any(dep not in modules for dep in item['manifest_dependencies']):
-            raise ValueError('unknown MANIFEST dependency')
-    return modules
+local = contracts.local
+inventory = contracts.manifest_inventory
 
 
 def catalog(root, modules):
@@ -127,16 +101,14 @@ def fixture_files(root, group):
     return sorted(files)
 
 
-def plan(root, libraries, fixtures=(), paths=()):
+def plan(root, libraries, fixtures=(), paths=(), *, discovery=False):
     root = root.resolve()
     inputs = {str(path):contracts.digest(path) for path in
               [root/'MANIFEST.yaml', CATALOG, Path(__file__), HOME/'tools/on1x-contracts.py',
                HOME/'contracts-exotract/catalog.json']}
     modules = inventory(root)
     config = catalog(root, modules)
-    profiles = contracts.load(HOME/'contracts-exotract/catalog.json')
-    if profiles['schema']!='on1x.exotract-catalog/v1' or profiles['safe_export'] is not False:
-        raise ValueError('unsupported Exotract catalog')
+    profiles = contracts.exotract_catalog()
     if len(libraries)!=len(set(libraries)) or any(n not in modules for n in libraries):
         raise ValueError('select unique known MuLIB modules')
     if len(fixtures)!=len(set(fixtures)) or any(n not in config['fixtures'] for n in fixtures):
@@ -158,9 +130,10 @@ def plan(root, libraries, fixtures=(), paths=()):
         extra.extend(modules[name]['extra_macros'])
     required = {}
     def select(name):
-        profile = profiles['profiles'].get(name, {'recipe': profiles['default_recipe']})
+        profile = profiles['profiles'].get(name, {})
         required[name] = profile.get('required_symbols', [])
-        if profile['recipe']=='exoml-core':
+        recipe = profile.get('recipe', profiles['default_recipe'])
+        if recipe=='exoml-core':
             # A kernel plan depends on the selected contract, not the source
             # pins of every unrelated catalog entry.
             core = contracts.catalog(root, selected={name})['profiles'][name]
@@ -172,7 +145,7 @@ def plan(root, libraries, fixtures=(), paths=()):
             for path, expected in core.get('evidence_sha256', {}).items():
                 inputs[str(local(root, path))] = expected
             links.update(core['link_libraries'])
-        elif profile['recipe']=='manifest':visit(name)
+        elif recipe=='manifest':visit(name)
         else:raise ValueError('unknown kernel recipe')
         links.update(profile.get('link_libraries', []))
     for name in libraries:select(name)
@@ -192,6 +165,11 @@ def plan(root, libraries, fixtures=(), paths=()):
         for name in sorted(selected):
             for dep in config['fixtures'][name].get('requires', []):visit(dep)
         if previous==(len(ordered), len(selected)):break
+    discovery_only = {name: reason for name in ordered
+                      if (reason := contracts.discovery_only_reason(name, profiles))}
+    if discovery_only and not discovery:
+        name = next(iter(discovery_only))
+        raise ValueError('discovery-only MuLIB kernel '+name+': '+discovery_only[name])
     directories=include_paths(root,paths)
     entries=[]
     for n in ordered:
@@ -233,12 +211,18 @@ def plan(root, libraries, fixtures=(), paths=()):
         path=local(root,check);inputs[str(path)]=contracts.digest(path)
     for path,digest in inputs.items():
         if contracts.digest(path)!=digest:raise ValueError('planning input drift: '+path)
+    # Linux UAPI declarations used by the sandbox implementation (unshare,
+    # syscall, O_PATH, etc.) must be visible before the TU's first include.
+    definitions = ['_POSIX_C_SOURCE=200809L']
+    if any(profiles['profiles'].get(name, {}).get('sandbox_contract') for name in ordered):
+        definitions.append('_GNU_SOURCE=1')
     return dict(schema='on1x.mulib-plan/v1', libraries=list(libraries), requested_fixtures=list(fixtures),
                 modules=entries, implementation_macros=macros, implementation_translation_units=1,
                 required_symbols=required, dependency_cycles=cycles, fixtures=groups, files=records,
                 native_sources=sources, include_headers=headers, generator_checks=sorted(checks),
                 link_libraries=sorted(links), include_directories=[str(p) for p in directories],
-                compile_definitions=['_POSIX_C_SOURCE=200809L'], inputs=inputs, safe_export=False)
+                compile_definitions=definitions, inputs=inputs, safe_export=False,
+                **({'discovery_only': discovery_only} if discovery_only else {}))
 
 
 def check_generated(root, recipe):

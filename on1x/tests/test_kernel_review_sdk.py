@@ -65,12 +65,15 @@ with tempfile.TemporaryDirectory(dir=work) as temporary:
     bundle = d/'bundle'
     run([*build, app, '-o', bundle])
     result = run([bundle/'program'])
-    assert result.stdout == '42\n9223372036854775807\n-9223372036854775808\n9223372036854775807\n-9223372036854775808\n6\n', result
+    expected = '42\n9223372036854775807\n-9223372036854775808\n9223372036854775807\n-9223372036854775808\n6\n0\n10\n4\n-7\n'
+    assert result.stdout == expected, result
     admission, interface = load(bundle/'admission.json'), load(bundle/'interface.json')
     assert admission['safe_export'] is True and admission['schema'] == 'on1x.kernel-admission/v1'
-    assert admission['executable_gate']['comparisons'] == 1348 and admission['executable_gate']['passed']
+    assert admission['executable_gate']['comparisons'] == 2670 and admission['executable_gate']['passed']
     assert all(digest(bundle/name) == h for name, h in admission['artifacts'].items())
-    assert interface['safe_export'] is True and set(interface['exports']) == {'add_i64', 'sub_i64'}
+    assert interface['profile'] == 'reviewed-clamp-i64/v2'
+    assert interface['safe_export'] is True and set(interface['exports']) == {'add_i64', 'sub_i64', 'i64'}
+    assert load(subject)['symbols']['i64']['precondition'] == interface['exports']['i64']['precondition']
     assert all(e['status'] == 'admitted' and e['effect'] == 'foreign_call' for e in interface['exports'].values())
     assert load(bundle/'build-plan.json')['implementation_macros'] == ['MULIB_IMPL_CLAMP']
     assert run(['ar', 't', bundle/'libmulib.a']).stdout == 'mulib.o\n'
@@ -85,6 +88,21 @@ with tempfile.TemporaryDirectory(dir=work) as temporary:
               '-I', root.parent/'include']
     run([*strict, root/'tests/fixtures/kernel_clamp_oracle.c', bundle/'libmulib.a', '-o', oracle])
     assert run([oracle]).stdout == result.stdout
+    raw = d/'raw-clamp'
+    run([*common, '--kernel-bind', root/'examples/kernel/clamp.on1x', '-o', raw])
+    assert run([raw]).stdout == expected
+    # Reversed bounds are rejected before the foreign call, after evaluating
+    # each argument once and in source order, in both admission modes.
+    for unsafe in (False, True):
+        invalid = d/f'invalid-interval-{unsafe}.on1x'
+        call = 'println(C.i64(arg(8),arg(2),arg(1)));'
+        invalid.write_text(('unsafe ' if unsafe else '') + 'import kernel mulib.clamp as C;\n'
+                           'fn arg(x:i64)->i64 {println(x);return x;}\n'
+                           'fn main(){' + ('unsafe {' + call + '}' if unsafe else call) + '}')
+        output = d/f'bad-interval-{unsafe}'
+        run([*(common+['--kernel-bind'] if unsafe else build), invalid, '-o', output])
+        p = run([output if unsafe else output/'program'], ok=False)
+        assert p.returncode == 70 and p.stdout == '8\n2\n1\n' and 'assertion failed' in p.stderr, p
     # A staged compiler caller alone cannot link to the canonical archive.
     p = run([*strict, '-I', root/'runtime', bundle/'main.c', root/'runtime/on1x_runtime.c',
              bundle/'libmulib.a', '-o', d/'unadmitted'], ok=False)
@@ -151,6 +169,12 @@ with tempfile.TemporaryDirectory(dir=work) as temporary:
     denied([*build, '--kernel-review-key', private], 'Ed25519 DER public key')
     # Even a genuine signature cannot approve stale/different inputs.
     data = load(review)
+    data['subject']['profile'] = 'reviewed-clamp-i64/v1'
+    del data['subject']['symbols']['i64']
+    review.write_text(json.dumps(data))
+    sign()
+    denied(build, 'does not match')
+    data = json.loads(saved)
     data['subject']['header_revision'] = 'sha256:'+'0'*64
     review.write_text(json.dumps(data))
     sign()
@@ -166,7 +190,8 @@ with tempfile.TemporaryDirectory(dir=work) as temporary:
     for source, error in (
         ('println(C.add_i64(true,2));', 'expected i64, got bool'),
         ('println(C.add_i64(1));', 'wrong number of arguments'),
-        ('println(C.i64(1,2,3));', 'ON1X-KERNEL-MEMBER'),
+        ('println(C.unknown(1,2,3));', 'ON1X-KERNEL-MEMBER'),
+        ('println(C.i64(1,2));', 'wrong number of arguments'),
         ('let f=C.add_i64;', 'ON1X-KERNEL-DIRECT'),
         ('defer println(C.add_i64(1,2));', 'ON1X-KERNEL-PROFILE'),
     ):
@@ -220,7 +245,7 @@ with tempfile.TemporaryDirectory(dir=work) as temporary:
     ):
         bad = copy.deepcopy(report)
         graph = bad['modules']['mulib.clamp']['metadata']['cdecl']
-        declaration = next(f for f in graph['declarations'] if f['name'] == 'mulib_clamp_add_i64')
+        declaration = next(f for f in graph['declarations'] if f['name'] == 'mulib_clamp_i64')
         function = next(t for t in graph['types'] if t['id'] == declaration['type'])
         change(function)
         try:

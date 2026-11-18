@@ -2,6 +2,7 @@
 """Build a declared On1x project without running dependency build programs."""
 import argparse
 import ctypes
+from dataclasses import dataclass
 import errno
 import hashlib
 import json
@@ -17,9 +18,15 @@ import sys
 import tempfile
 import time
 
+try:
+    import fcntl
+except ImportError:  # Non-POSIX hosts can still validate/format manifests.
+    fcntl = None
+
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / 'stdlib/on1xfile'
 MAX_MANIFEST = 64 * 1024
+MAX_LOCKFILE = 256 * 1024
 MAX_SOURCE = 2 * 1024 * 1024
 MAX_INPUT = 64 * 1024 * 1024
 MAX_FILES = 4096
@@ -27,6 +34,7 @@ MAX_PROCESS = 64 * 1024 * 1024
 MAX_GIT_MEMORY = 512 * 1024 * 1024
 MAX_GIT_OBJECT_FILES = 32768
 MAX_GIT_OBJECT_BYTES = 128 * 1024 * 1024
+MAX_GIT_REFS = 4 * 1024 * 1024
 GIT_FETCH_TIMEOUT = 30
 GIT_VALIDATION_TIMEOUT = 30
 NAME = re.compile(r'[A-Za-z_][A-Za-z0-9_-]{0,63}\Z')
@@ -38,6 +46,14 @@ ENV = {'PATH': '/usr/bin:/bin', 'LC_ALL': 'C', 'TZ': 'UTC',
        'HOME': '/nonexistent', 'SOURCE_DATE_EPOCH': '0', 'PYTHONDONTWRITEBYTECODE': '1'}
 GIT_ENV = dict(ENV, GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL='/dev/null',
                GIT_ALLOW_PROTOCOL='', GIT_NO_LAZY_FETCH='1', GIT_TERMINAL_PROMPT='0')
+
+
+@dataclass(frozen=True)
+class Dependency:
+    kind: str
+    source: object
+    selector_kind: object = None
+    selector: object = None
 
 
 def fail(message):
@@ -156,8 +172,36 @@ def remote_url(value):
     return value
 
 
+def git_object_id(value, message='git dependency requires a full lowercase commit object ID'):
+    if not isinstance(value, str) or not re.fullmatch(r'[0-9a-f]{40}|[0-9a-f]{64}', value):
+        fail(message)
+    return value
+
+
+def git_ref(kind, value):
+    if kind not in ('branch', 'tag'):
+        fail('git selector must be commit, branch or tag')
+    # Use an intentionally conservative portable subset of Git ref names. The
+    # fully qualified ref is still passed after `--`; this validation also
+    # keeps lockfiles and diagnostics unambiguous.
+    if (not isinstance(value, str) or len(value) > 240
+            or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._/+-]*', value)
+            or value == '@' or value.endswith(('/', '.')) or '//' in value
+            or '..' in value or '@{' in value
+            or any(part.startswith('.') or part.endswith('.lock') for part in value.split('/'))):
+        fail(f'invalid Git {kind} name {value!r}')
+    return f'refs/{"heads" if kind == "branch" else "tags"}/{value}'
+
+
+def git_selector(kind, value):
+    if kind == 'commit':
+        return git_object_id(value)
+    git_ref(kind, value)
+    return value
+
+
 def root_manifest(payload, origin, dependency=False):
-    options, targets, deps, remotes, defines, profiles, kernels, commands = {}, {}, {}, {}, {}, {}, {}, {}
+    options, targets, deps, defines, profiles, kernels, commands = {}, {}, {}, {}, {}, {}, {}
     for at, verb, args in rows(payload, origin):
         try:
             if verb == 'kind':
@@ -168,6 +212,11 @@ def root_manifest(payload, origin, dependency=False):
             elif verb in ('name', 'directory'):
                 value, = fields(args, '"')
                 unique(options, verb, name(value) if verb == 'name' else local(value, dot=True))
+            elif verb == 'scrutiny' and not dependency:
+                value, = fields(args, 'w')
+                if not re.fullmatch(r'[a-z][a-z0-9-]{0,63}', value):
+                    fail('invalid scrutiny level')
+                unique(options, verb, value)
             elif verb == 'target' and not dependency:
                 key, value = fields(args, '""')
                 unique(targets, name(key), local(value))
@@ -175,18 +224,22 @@ def root_manifest(payload, origin, dependency=False):
                 kind = args[1] if len(args) > 1 else None
                 if kind == ('local', False):
                     key, _, path = fields(args, '"w"')
-                    unique(deps, name(key, IDENT), ('local', local(path), None))
+                    unique(deps, name(key, IDENT), Dependency('local', local(path)))
                 elif kind in (('git', False), ('git-remote', False)):
-                    key, transport, path, revision = fields(args, '"w""')
-                    key = name(key, IDENT)
-                    if not re.fullmatch(r'[0-9a-f]{40}|[0-9a-f]{64}', revision):
-                        fail('git dependency requires a full lowercase commit object ID')
-                    if transport == 'git-remote':
-                        remotes[key] = remote_url(path)
-                        relative = Path('.on1x-deps') / key / revision
+                    if len(args) == 4:
+                        key, transport, path, revision = fields(args, '"w""')
+                        selector_kind = 'commit'
+                    elif len(args) == 5:
+                        key, transport, path, selector_kind, revision = fields(args, '"w"w"')
                     else:
-                        relative = local(path)
-                    unique(deps, key, (transport, relative, revision))
+                        fail('expected a Git source and commit, branch or tag selector')
+                    key = name(key, IDENT)
+                    revision = git_selector(selector_kind, revision)
+                    if transport == 'git-remote':
+                        source = remote_url(path)
+                    else:
+                        source = local(path)
+                    unique(deps, key, Dependency(transport, source, selector_kind, revision))
                 else:
                     fail('dependency kind must be local, git or git-remote')
             elif verb == 'profile' and not dependency:
@@ -229,9 +282,194 @@ def root_manifest(payload, origin, dependency=False):
         fail(f'{origin}: a command cannot have the same name as a profile')
     if len(commands) > 32:
         fail(f'{origin}: command declaration count budget exceeded')
-    options.update(targets=targets, deps=deps, remotes=remotes, defines=defines,
+    options.update(targets=targets, deps=deps, defines=defines,
                    profiles=profiles, kernels=list(kernels), commands=commands)
     return options
+
+
+def dependency_source(dependency):
+    return (dependency.source.as_posix()
+            if isinstance(dependency.source, Path) else dependency.source)
+
+
+def lock_entry(dependency, commit):
+    commit = git_object_id(commit, 'lockfile commit must be a full lowercase Git object ID')
+    if dependency.selector_kind == 'commit' and dependency.selector != commit:
+        fail('resolved Git commit does not match the pinned On1xfile commit')
+    return {
+        'kind': dependency.kind,
+        'source': dependency_source(dependency),
+        'selector': {'kind': dependency.selector_kind, 'value': dependency.selector},
+        'commit': commit,
+    }
+
+
+def lock_bytes(entries):
+    document = {'schema': 'on1x.lock/v1',
+                'dependencies': {key: entries[key] for key in sorted(entries)}}
+    return (json.dumps(document, indent=2, sort_keys=True, ensure_ascii=True) + '\n').encode()
+
+
+def unique_json_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            fail(f'duplicate lockfile key {key!r}')
+        result[key] = value
+    return result
+
+
+def parse_lock(payload, origin):
+    try:
+        document = json.loads(payload.decode('utf-8'), object_pairs_hook=unique_json_object)
+    except (UnicodeError, ValueError, RecursionError) as error:
+        fail(f'{origin}: invalid lockfile JSON: {error}')
+    if (not isinstance(document, dict) or set(document) != {'schema', 'dependencies'}
+            or document.get('schema') != 'on1x.lock/v1'
+            or not isinstance(document.get('dependencies'), dict)):
+        fail(f'{origin}: expected an on1x.lock/v1 object')
+    dependencies = document['dependencies']
+    if len(dependencies) > 32:
+        fail(f'{origin}: dependency count budget exceeded')
+    result = {}
+    for key, entry in dependencies.items():
+        try:
+            name(key, IDENT)
+            if not isinstance(entry, dict) or set(entry) != {'kind', 'source', 'selector', 'commit'}:
+                fail('expected exactly kind, source, selector and commit')
+            if entry['kind'] not in ('git', 'git-remote') or not isinstance(entry['source'], str):
+                fail('invalid Git kind or source')
+            selector = entry['selector']
+            if (not isinstance(selector, dict) or set(selector) != {'kind', 'value'}
+                    or not isinstance(selector['kind'], str) or not isinstance(selector['value'], str)):
+                fail('invalid selector')
+            git_selector(selector['kind'], selector['value'])
+            git_object_id(entry['commit'], 'lockfile commit must be a full lowercase Git object ID')
+            if len(entry['source']) > 4096 or '\x00' in entry['source']:
+                fail('invalid or overlong source')
+            result[key] = entry
+        except ValueError as error:
+            fail(f'{origin}: dependency {key!r}: {error}')
+    return result
+
+
+def read_lock(project, config, *, required=False, strict=True, snapshot=None):
+    path = project / 'On1xfile.lock'
+    try:
+        mode = path.lstat().st_mode
+    except FileNotFoundError:
+        if required:
+            fail(f'{path}: lockfile is required; run on1x-project.py lock')
+        return {}, None
+    if not stat.S_ISREG(mode):
+        fail(f'{path}: expected a regular lockfile')
+    payload = read(path, MAX_LOCKFILE)
+    entries = parse_lock(payload, path)
+    if snapshot is not None:
+        snapshot.record('project/On1xfile.lock', payload)
+    git_dependencies = {key: dependency for key, dependency in config['deps'].items()
+                        if dependency.kind in ('git', 'git-remote')}
+    matching = {}
+    for key, entry in entries.items():
+        dependency = git_dependencies.get(key)
+        expected = None if dependency is None else {
+            'kind': dependency.kind,
+            'source': dependency_source(dependency),
+            'selector': {'kind': dependency.selector_kind, 'value': dependency.selector},
+        }
+        if dependency is None or any(entry[field] != value for field, value in expected.items()):
+            if strict:
+                fail(f'{path}: stale entry for {key!r} does not match On1xfile')
+            continue
+        if dependency.selector_kind == 'commit' and entry['commit'] != dependency.selector:
+            if strict:
+                fail(f'{path}: pinned commit for {key!r} does not match On1xfile')
+            continue
+        matching[key] = entry
+    return matching, payload
+
+
+def require_locked(entries, config, keys=None):
+    selected = (set(keys) if keys is not None else
+                {key for key, dependency in config['deps'].items()
+                 if dependency.kind in ('git', 'git-remote')})
+    missing = sorted(selected - entries.keys())
+    if missing:
+        fail('lockfile is missing Git dependencies: ' + ', '.join(missing))
+
+
+def write_lock(project, entries):
+    path = project / 'On1xfile.lock'
+    try:
+        mode = path.lstat().st_mode
+        if not stat.S_ISREG(mode):
+            fail(f'{path}: refusing to replace a non-regular lockfile')
+    except FileNotFoundError:
+        pass
+    payload = lock_bytes(entries)
+    descriptor, temporary = tempfile.mkstemp(dir=project, prefix='.On1xfile.lock-')
+    temporary = Path(temporary)
+    try:
+        os.fchmod(descriptor, 0o644)
+        with os.fdopen(descriptor, 'wb') as stream:
+            descriptor = -1
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+        directory = os.open(project, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        temporary.unlink(missing_ok=True)
+    return path
+
+
+def cache_relative(key, commit):
+    return Path('.on1x-deps') / name(key, IDENT) / git_object_id(commit)
+
+
+class DependencyCacheLock:
+    """Serialize cache publication and lockfile replacement for one project."""
+    def __init__(self, project):
+        self.root = project / '.on1x-deps'
+        self.descriptor = None
+
+    def __enter__(self):
+        if fcntl is None:
+            fail('dependency cache locking requires POSIX flock')
+        if self.root.is_symlink():
+            fail(f'{self.root}: dependency cache must not be a symlink')
+        self.root.mkdir(mode=0o700, exist_ok=True)
+        if not self.root.is_dir() or self.root.is_symlink():
+            fail(f'{self.root}: expected a real dependency cache directory')
+        path = self.root / '.lock'
+        self.descriptor = os.open(path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+        try:
+            if not stat.S_ISREG(os.fstat(self.descriptor).st_mode):
+                fail(f'{path}: expected a regular cache lock')
+            fcntl.flock(self.descriptor, fcntl.LOCK_EX)
+        except Exception:
+            os.close(self.descriptor)
+            self.descriptor = None
+            raise
+        return self
+
+    def __exit__(self, *_):
+        if self.descriptor is not None:
+            fcntl.flock(self.descriptor, fcntl.LOCK_UN)
+            os.close(self.descriptor)
+            self.descriptor = None
+
+
+def dependency_modes(args):
+    frozen = bool(getattr(args, 'frozen', False))
+    return bool(getattr(args, 'offline', False) or frozen), bool(
+        getattr(args, 'locked', False) or frozen)
 
 
 def program(value):
@@ -313,6 +551,62 @@ class Disk:
                     yield rel / filename
 
 
+def git_directory(repository):
+    if repository.is_symlink() or not repository.is_dir():
+        fail(f'{repository}: offline Git object store is missing')
+    dotgit = repository / '.git'
+    if dotgit.is_symlink() or dotgit.is_file():
+        fail(f'{repository}: external Git worktrees are not supported')
+    directory = dotgit if dotgit.is_dir() else repository
+    objects = directory / 'objects'
+    if objects.is_symlink() or not objects.is_dir():
+        fail(f'{repository}: expected a self-contained Git objects directory')
+    return directory, objects
+
+
+def local_ref_object(repository, kind, value):
+    directory, _ = git_directory(repository)
+    reference = git_ref(kind, value)
+    loose = contained(directory, Path(reference))
+    try:
+        payload = read(loose, 256)
+    except FileNotFoundError:
+        payload = None
+    if payload is not None:
+        try:
+            object_id = payload.decode('ascii').strip()
+        except UnicodeError:
+            fail(f'{repository}: malformed Git {kind} {value!r}')
+        return git_object_id(object_id, f'{repository}: malformed Git {kind} {value!r}')
+    packed = directory / 'packed-refs'
+    try:
+        payload = read(packed, MAX_GIT_REFS)
+    except FileNotFoundError:
+        fail(f'{repository}: Git {kind} {value!r} was not found')
+    found = None
+    try:
+        lines = payload.decode('ascii').splitlines()
+    except UnicodeError:
+        fail(f'{packed}: malformed packed refs')
+    if len(lines) > 65536:
+        fail(f'{packed}: ref count budget exceeded')
+    for line in lines:
+        if not line or line.startswith('#') or line.startswith('^'):
+            continue
+        fields = line.split(' ')
+        if len(fields) != 2:
+            fail(f'{packed}: malformed packed ref')
+        object_id, candidate = fields
+        git_object_id(object_id, f'{packed}: malformed packed ref object ID')
+        if candidate == reference:
+            if found is not None:
+                fail(f'{packed}: duplicate packed ref {reference}')
+            found = object_id
+    if found is None:
+        fail(f'{repository}: Git {kind} {value!r} was not found')
+    return found
+
+
 class Git:
     """Use commit blobs, never checkout, archives, filters, hooks, or remote URLs."""
     @staticmethod
@@ -325,17 +619,11 @@ class Git:
         return ('init', '--bare', '--quiet', '--template=',
                 '--object-format=' + ('sha256' if len(revision) == 64 else 'sha1'))
 
-    def __init__(self, repository, revision, cwd, gitdir, *, deadline=None):
+    def __init__(self, repository, revision, cwd, gitdir, *, deadline=None, peel=False):
         self.cwd = cwd
         self.deadline = deadline
-        if not repository.is_dir():
-            fail(f'{repository}: offline Git object store is missing')
-        dotgit = repository / '.git'
-        if dotgit.is_symlink() or dotgit.is_file():
-            fail(f'{repository}: external Git worktrees are not supported')
-        source = (dotgit if dotgit.is_dir() else repository) / 'objects'
-        if source.is_symlink() or not source.is_dir():
-            fail(f'{repository}: expected a self-contained Git objects directory')
+        git_object_id(revision)
+        _, source = git_directory(repository)
         self.git = self.command(gitdir)
         self.call(*self.init(revision), bound=4096)
         # Project only standard object filenames into a fresh repository. Its
@@ -362,11 +650,21 @@ class Git:
             object_kind = self.call('cat-file', '-t', revision, bound=64)
         except ValueError:
             fail(f'Git pin {revision} is missing from the offline object store')
-        if object_kind != b'commit\n':
+        if object_kind == b'commit\n':
+            commit = revision
+        elif peel and object_kind == b'tag\n':
+            try:
+                commit = self.call('rev-parse', '--verify',
+                                   revision + '^{commit}', bound=128).decode().strip()
+            except ValueError:
+                fail('Git tag must resolve to a commit')
+            git_object_id(commit, 'Git tag did not resolve to a full commit object ID')
+        else:
             fail('Git pin must name a commit, not a tag, tree or blob')
         self.call('fsck', '--strict', '--no-reflogs', '--no-dangling', revision, bound=4096)
+        self.revision = commit
         self.entries = {}
-        listing = self.call('ls-tree', '-rz', '--full-tree', revision, bound=4 * 1024 * 1024)
+        listing = self.call('ls-tree', '-rz', '--full-tree', commit, bound=4 * 1024 * 1024)
         for record in listing.split(b'\x00')[:-1]:
             header, path = record.split(b'\t', 1)
             if len(self.entries) >= 32768:
@@ -562,13 +860,18 @@ def dependency_layout(provider, key, stage, snapshot):
     return layouts(provider, metadata, label, stage, snapshot, dependency=True)
 
 
-def download_git(url, revision, ca_file, work):
+def git_diagnostic(error):
+    # Escape controls and non-ASCII terminal formatting sent in server
+    # diagnostics. URLs admitted by remote_url cannot contain credentials.
+    return ''.join(c if c == '\n' or 0x20 <= ord(c) <= 0x7e else ascii(c)[1:-1]
+                   for c in str(error))
+
+
+def download_git(url, revision, ca_file, work, *, reference=None, selector=None):
     repository = work / 'download.git'
     cwd = work / 'cwd'
     home = work / 'home'
     home.mkdir()
-    git = Git.command(repository)
-    run([*git, *Git.init(revision)], cwd, env=GIT_ENV, bound=4096, timeout=20, memory=MAX_GIT_MEMORY)
     env = dict(GIT_ENV, HOME=str(home), GIT_ALLOW_PROTOCOL='https', NETRC='/dev/null',
                GIT_ASKPASS='/bin/false', SSH_ASKPASS='/bin/false', GIT_CEILING_DIRECTORIES=str(work))
     options = ['protocol.allow=never', 'protocol.https.allow=always', 'protocol.version=2',
@@ -578,23 +881,144 @@ def download_git(url, revision, ca_file, work):
         trusted_ca = work / 'ca.pem'
         stage_bytes(trusted_ca, read(ca_file.resolve(strict=True), 1024 * 1024))
         options.append('http.sslCAInfo=' + str(trusted_ca))
+    configured = [word for option in options for word in ('-c', option)]
+    if reference is not None:
+        remote = [program('git'), '--no-replace-objects', '-c', 'core.hooksPath=/dev/null',
+                  '-c', 'pack.threads=1']
+        try:
+            advertised = run([*remote, *configured, 'ls-remote', '--exit-code', '--refs',
+                              '--', url, reference], cwd, env=env, bound=4096,
+                             timeout=GIT_FETCH_TIMEOUT, memory=MAX_GIT_MEMORY)
+        except ValueError as error:
+            if 'failed (2)' in str(error):
+                fail(f'remote Git {selector} was not found')
+            fail(f'HTTPS Git ref discovery failed: '
+                 f'{git_diagnostic(error).replace(url, "<git-remote>")}')
+        records = advertised.rstrip(b'\n').split(b'\n')
+        if len(records) != 1:
+            fail(f'remote Git {selector} did not resolve to exactly one object')
+        try:
+            object_id, found = records[0].decode('ascii').split('\t')
+        except (UnicodeError, ValueError):
+            fail(f'remote Git {selector} returned a malformed advertisement')
+        if found != reference:
+            fail(f'remote Git {selector} returned an unexpected ref')
+        revision = git_object_id(object_id, f'remote Git {selector} returned an invalid object ID')
+    else:
+        revision = git_object_id(revision)
+    git = Git.command(repository)
+    run([*git, *Git.init(revision)], cwd, env=GIT_ENV, bound=4096, timeout=20, memory=MAX_GIT_MEMORY)
+    request = revision if reference is None else f'{reference}:refs/on1x/resolved'
     try:
         # Git's infinite-depth sentinel requests full history from smart
         # servers while making Git's dumb HTTP fallback refuse the fetch.
         # Keeping the pack applies RLIMIT_FSIZE to the whole pack rather than
         # allowing a stream of loose objects.
-        run([*git, *(word for option in options for word in ('-c', option)),
+        run([*git, *configured,
              'fetch', '--quiet', '--no-tags', '--no-recurse-submodules', '--no-auto-maintenance',
-             '--no-write-fetch-head', '--no-write-commit-graph', '--no-update-shallow', '--no-filter',
-             '--depth=2147483647', '--keep', '--', url, revision], cwd, env=env,
-            bound=4096, timeout=GIT_FETCH_TIMEOUT, memory=MAX_GIT_MEMORY)
+              '--no-write-fetch-head', '--no-write-commit-graph', '--no-update-shallow', '--no-filter',
+              '--depth=2147483647', '--keep', '--', url, request], cwd, env=env,
+             bound=4096, timeout=GIT_FETCH_TIMEOUT, memory=MAX_GIT_MEMORY)
     except ValueError as error:
-        # Escape control characters sent in Git server diagnostics.
-        diagnostic = ''.join(c if c.isprintable() or c == '\n' else ascii(c)[1:-1] for c in str(error))
-        fail(f'HTTPS Git fetch of {revision} failed: {diagnostic}')
+        fail(f'HTTPS Git fetch of {selector or revision} failed: '
+             f'{git_diagnostic(error).replace(url, "<git-remote>")}')
     if (repository / 'shallow').exists():
         fail('remote Git dependency requires complete history, not a shallow object store')
-    return repository
+    if reference is not None:
+        fetched = run([*git, 'rev-parse', '--verify', 'refs/on1x/resolved'], cwd, env=GIT_ENV,
+                      bound=128, timeout=20, memory=MAX_GIT_MEMORY).decode().strip()
+        if fetched != revision:
+            fail(f'remote Git {selector} changed while it was being resolved; retry')
+    return repository, revision
+
+
+def inspect_git_dependency(repository, requested, key, work, *, peel=False):
+    work.mkdir()
+    cwd = work / 'cwd'
+    cwd.mkdir()
+    checked = work / 'checked.git'
+    provider = Git(repository, requested, cwd, checked,
+                   deadline=time.monotonic() + GIT_VALIDATION_TIMEOUT, peel=peel)
+    dependency_layout(provider, key, work / 'declared', Snapshot())
+    return provider.revision, checked
+
+
+def atomic_publish_store(checked, destination):
+    rename = getattr(ctypes.CDLL(None, use_errno=True), 'renameat2', None)
+    if rename is None:
+        fail('atomic dependency publication requires Linux renameat2')
+    stage = checked.parent / 'store'
+    stage.mkdir(mode=0o700)
+    (checked / 'objects').rename(stage / 'objects')
+    # Publish only the offline validator's object projection: no refs,
+    # remotes/config, hooks or checked-out source files.
+    if rename(-100, os.fsencode(stage), -100, os.fsencode(destination), 1):  # RENAME_NOREPLACE
+        code = ctypes.get_errno() or errno.EIO
+        if code == errno.EEXIST:
+            return False
+        raise OSError(code, os.strerror(code), destination)
+    return True
+
+
+def materialize_remote(project, key, dependency, commit, *, refresh, offline, ca_file):
+    if dependency.kind != 'git-remote':
+        fail('internal error: expected a remote Git dependency')
+    if not refresh:
+        commit = git_object_id(commit)
+        destination = contained(project, cache_relative(key, commit))
+        if destination.is_symlink():
+            fail(f'{destination}: dependency cache entry must not be a symlink')
+        if destination.exists():
+            with tempfile.TemporaryDirectory(prefix='on1x-git-check-') as temporary:
+                resolved, _ = inspect_git_dependency(destination, commit, key,
+                                                     Path(temporary) / 'existing')
+            return resolved, destination
+        if offline:
+            fail(f'{destination}: remote Git objects are missing and network access is disabled')
+    elif offline:
+        fail(f'{key!r}: cannot refresh a Git selector while offline')
+
+    cache_parent = contained(project, Path('.on1x-deps') / key)
+    cache_parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=cache_parent, prefix='.fetch-') as temporary:
+        work = Path(temporary)
+        (work / 'cwd').mkdir()
+        if refresh:
+            reference = git_ref(dependency.selector_kind, dependency.selector)
+            repository, requested = download_git(
+                dependency.source, None, ca_file, work, reference=reference,
+                selector=f'{dependency.selector_kind} {dependency.selector!r}')
+            peel = dependency.selector_kind == 'tag'
+        else:
+            repository, requested = download_git(dependency.source, commit, ca_file, work)
+            peel = False
+        resolved, checked = inspect_git_dependency(repository, requested, key,
+                                                   work / 'candidate', peel=peel)
+        destination = contained(project, cache_relative(key, resolved))
+        if destination.is_symlink():
+            fail(f'{destination}: dependency cache entry must not be a symlink')
+        if destination.exists():
+            winner, _ = inspect_git_dependency(destination, resolved, key, work / 'winner')
+            return winner, destination
+        if not atomic_publish_store(checked, destination):
+            winner, _ = inspect_git_dependency(destination, resolved, key, work / 'winner')
+            return winner, destination
+        return resolved, destination
+
+
+def resolve_local_git(project, key, dependency, commit=None):
+    repository = contained(project, dependency.source)
+    if commit is not None:
+        requested, peel = git_object_id(commit), False
+    elif dependency.selector_kind == 'commit':
+        requested, peel = dependency.selector, False
+    else:
+        requested = local_ref_object(repository, dependency.selector_kind, dependency.selector)
+        peel = dependency.selector_kind == 'tag'
+    with tempfile.TemporaryDirectory(prefix='on1x-git-local-') as temporary:
+        resolved, _ = inspect_git_dependency(repository, requested, key,
+                                             Path(temporary) / 'candidate', peel=peel)
+    return resolved, repository
 
 
 def fetch_dependency(args):
@@ -602,39 +1026,83 @@ def fetch_dependency(args):
     if not project.is_dir():
         fail(f'{project}: expected project directory')
     manifest = project / 'On1xfile'
-    config = root_manifest(read(manifest, MAX_MANIFEST), manifest)
+    manifest_payload = read(manifest, MAX_MANIFEST)
+    config = root_manifest(manifest_payload, manifest)
     key = name(args.name, IDENT)
-    if key not in config['remotes']:
+    dependency = config['deps'].get(key)
+    if dependency is None or dependency.kind != 'git-remote':
         fail(f'{key!r} is not a declared git-remote dependency')
     if key == 'std' or config['kind'] == 'library':
         fail('cannot fetch a dependency named std or a dependency of a standalone library')
-    _, relative, revision = config['deps'][key]
-    dest = contained(project, relative)
-    # Same-filesystem, no-clobber publication; as with other local inputs, no
-    # protection is claimed against hostile concurrent writers in the project.
-    rename = getattr(ctypes.CDLL(None, use_errno=True), 'renameat2', None)
-    if rename is None:
-        fail('atomic dependency publication requires Linux renameat2')
-    dest.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(dir=dest.parent, prefix='.fetch-') as tmp:
-        work = Path(tmp)
-        cwd = work / 'cwd'
-        cwd.mkdir()
-        present = dest.exists()
-        repository = dest if present else download_git(config['remotes'][key], revision, args.ca_file, work)
-        checked = work / 'checked.git'
-        provider = Git(repository, revision, cwd, checked, deadline=time.monotonic() + GIT_VALIDATION_TIMEOUT)
-        dependency_layout(provider, key, work / 'declared', Snapshot())
-        if not present:
-            stage = work / 'store'
-            stage.mkdir(mode=0o700)
-            (checked / 'objects').rename(stage / 'objects')
-            # Publish only the offline validator's object projection: no refs,
-            # remotes/config, hooks or checked-out source files.
-            if rename(-100, os.fsencode(stage), -100, os.fsencode(dest), 1):  # RENAME_NOREPLACE
-                code = ctypes.get_errno() or errno.EIO
-                raise OSError(code, os.strerror(code), dest)
-    print(dest)
+    offline, locked = dependency_modes(args)
+    with DependencyCacheLock(project):
+        if read(manifest, MAX_MANIFEST) != manifest_payload:
+            fail(f'{manifest}: changed while waiting for the dependency cache lock')
+        entries, _ = read_lock(project, config, required=locked, strict=locked)
+        if locked:
+            require_locked(entries, config, (key,))
+        existing = entries.get(key)
+        if dependency.selector_kind == 'commit':
+            commit, refresh = dependency.selector, False
+        elif offline or locked:
+            if existing is None:
+                fail(f'{key!r}: selector requires a matching lockfile entry')
+            commit, refresh = existing['commit'], False
+        else:
+            commit, refresh = None, True
+        resolved, destination = materialize_remote(
+            project, key, dependency, commit, refresh=refresh, offline=offline,
+            ca_file=args.ca_file)
+        updated = dict(entries)
+        updated[key] = lock_entry(dependency, resolved)
+        if not locked:
+            write_lock(project, updated)
+    print(destination)
+
+
+def lock_dependencies(args):
+    project = args.root.resolve(strict=True)
+    if not project.is_dir():
+        fail(f'{project}: expected project directory')
+    manifest = project / 'On1xfile'
+    manifest_payload = read(manifest, MAX_MANIFEST)
+    config = root_manifest(manifest_payload, manifest)
+    if config['kind'] == 'library' and config['deps']:
+        fail('standalone source libraries cannot declare dependencies')
+    offline, locked = dependency_modes(args)
+    with DependencyCacheLock(project):
+        if read(manifest, MAX_MANIFEST) != manifest_payload:
+            fail(f'{manifest}: changed while waiting for the dependency cache lock')
+        entries, _ = read_lock(project, config, required=locked, strict=locked)
+        if locked:
+            require_locked(entries, config)
+        resolved_entries = {}
+        for key, dependency in sorted(config['deps'].items()):
+            if dependency.kind == 'local':
+                continue
+            existing = entries.get(key)
+            if dependency.kind == 'git':
+                commit = (existing['commit'] if locked and existing is not None else
+                          dependency.selector if dependency.selector_kind == 'commit' else None)
+                resolved, _ = resolve_local_git(project, key, dependency, commit)
+            else:
+                if dependency.selector_kind == 'commit':
+                    commit, refresh = dependency.selector, False
+                elif offline or locked:
+                    if existing is None:
+                        fail(f'{key!r}: selector requires a matching lockfile entry')
+                    commit, refresh = existing['commit'], False
+                else:
+                    commit, refresh = None, True
+                resolved, _ = materialize_remote(
+                    project, key, dependency, commit, refresh=refresh, offline=offline,
+                    ca_file=args.ca_file)
+            resolved_entries[key] = lock_entry(dependency, resolved)
+        if not locked:
+            path = write_lock(project, resolved_entries)
+        else:
+            path = project / 'On1xfile.lock'
+    print(path)
 
 
 def quoted_import(file, spelling, root, libraries):
@@ -736,7 +1204,8 @@ def build(args):
         if selected:
             if (args.sandbox or args.allow_shell or args.target or args.output_dir or args.stdlib
                     or args.cc != 'cc' or args.mulib_root or args.libstone_root or args.qmr_compiler
-                    or args.mune_runner):
+                    or args.mune_runner or args.offline or args.locked or args.frozen
+                    or args.scrutiny):
                 fail('project formatting commands do not take build options')
             target, source = selected
             if not source.is_relative_to(config.get('directory', Path('.'))):
@@ -749,8 +1218,32 @@ def build(args):
     cc = program(args.cc)
     if config['kind'] == 'library' and (config['deps'] or config['kernels']):
         fail('standalone source libraries cannot declare dependencies or kernels')
+    _, locked = dependency_modes(args)
+    git_keys = {key for key, dependency in config['deps'].items()
+                if dependency.kind in ('git', 'git-remote')}
+    lock_entries, lock_payload = read_lock(
+        project, config, required=locked and bool(git_keys), strict=True, snapshot=snapshot)
+    if locked:
+        require_locked(lock_entries, config)
+    resolved_dependencies = {}
+    for key, dependency in sorted(config['deps'].items()):
+        if dependency.kind == 'local':
+            location, commit = dependency.source, None
+        else:
+            entry = lock_entries.get(key)
+            if dependency.selector_kind == 'commit':
+                commit = dependency.selector
+            elif entry is not None:
+                commit = entry['commit']
+            else:
+                fail(f'{key!r}: Git {dependency.selector_kind} selector is not locked; '
+                     'run on1x-project.py lock')
+            location = (dependency.source if dependency.kind == 'git'
+                        else cache_relative(key, commit))
+        resolved_dependencies[key] = (dependency, location, commit)
     directory = config.get('directory', Path('.'))
-    if any(directory.is_relative_to(path) for _, path, _ in config['deps'].values()):
+    if any(directory.is_relative_to(location)
+           for _, location, _ in resolved_dependencies.values()):
         fail('the project source directory cannot be inside a dependency store')
     chosen = args.profile or ('release' if args.release else 'dev')
     name(chosen)
@@ -763,7 +1256,8 @@ def build(args):
     dest = dest.parent.resolve() / dest.name
     if dest == project or project.is_relative_to(dest):
         fail(f'invalid output directory: {dest}')
-    disk.exclude.update([dest, *(project / path for _, path, _ in config['deps'].values())])
+    disk.exclude.update([dest, *(project / location
+                                 for _, location, _ in resolved_dependencies.values())])
     with tempfile.TemporaryDirectory(prefix='on1x-project-') as tmp:
         work = Path(tmp)
         (work / 'input/project').mkdir(parents=True)
@@ -852,18 +1346,22 @@ def build(args):
         dep_modules = {}
         dep_roles = {}
         dep_report = {}
-        for key, (kind, relative, revision) in sorted(config['deps'].items()):
+        for key, (dependency, relative, revision) in resolved_dependencies.items():
             location = contained(project, relative)
-            if kind == 'git-remote' and not location.exists():
+            if dependency.kind == 'git-remote' and not location.exists():
                 fail(f'{location}: remote Git objects are missing; run on1x-project.py fetch {key} explicitly')
             stage = deps_stage / key
             with tempfile.TemporaryDirectory(dir=work, prefix='git-') as objects:
                 provider = (Git(location, revision, work / 'cwd', Path(objects) / 'git')
-                            if kind in ('git', 'git-remote') else Disk(location))
+                            if dependency.kind in ('git', 'git-remote') else Disk(location))
                 entries = dependency_layout(provider, key, stage, snapshot)
             dep_modules[key] = [stage / path for path, role in entries.items() if role == 'library']
             dep_roles[key] = entries
-            dep_report[key] = {'kind': kind, **({'commit': revision} if revision else {})}
+            record = {'kind': dependency.kind, **({'commit': revision} if revision else {})}
+            if dependency.selector_kind in ('branch', 'tag'):
+                record['selector'] = {'kind': dependency.selector_kind,
+                                      'value': dependency.selector}
+            dep_report[key] = record
 
         project_modules = {project_stage / path for path, role in roles.items() if role == 'library'}
         project_programs = [project_stage / path for path, role in roles.items() if role in ('source', 'library')]
@@ -880,22 +1378,29 @@ def build(args):
         trusted_roots = () if std_package else (stdlib, stdlib.parent / 'std')
         loader = ['--stdlib', str(standard), '-I', str(executor.path(deps_stage)),
                   '-I', str(executor.path(project_stage))]
+        analysis_flags = []
+        if config.get('scrutiny'):
+            analysis_flags.extend(('--project-scrutiny', config['scrutiny']))
+        if args.scrutiny:
+            analysis_flags.extend(('--scrutiny', args.scrutiny))
+        compiler_flags = [*loader, *analysis_flags]
         dependency_loader = loader[:-2]
+        dependency_compiler_flags = [*dependency_loader, *analysis_flags]
         for key, modules in dep_modules.items():
             own_files = {executor.path(path) for path in modules}
             for entry in sorted(own_files):
                 verify_graph(executor, compiler, entry, dependency_loader, own_files, trusted_roots)
             verify_interfaces(executor, compiler, deps_stage / key, dep_roles[key],
-                              dependency_loader, own_files, trusted_roots, graph_checked=own_files)
+                              dependency_compiler_flags, own_files, trusted_roots, graph_checked=own_files)
         permitted = {executor.path(path) for path in [*project_modules, *dep_sources]}
-        verify_interfaces(executor, compiler, project_stage, roles, loader, permitted, trusted_roots)
+        verify_interfaces(executor, compiler, project_stage, roles, compiler_flags, permitted, trusted_roots)
         outputs = {}
         for key, source in sorted(targets.items()):
             entry = executor.path(project_stage / source)
             verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots)
             output = executor.path(work / 'artifact' / key)
             command = [sys.executable, ROOT / 'tools/on1x-build.py', entry, '-o', output,
-                       '--on1xc', compiler, '--cc', cc, '--mulib-root', mulib, *loader,
+                       '--on1xc', compiler, '--cc', cc, '--mulib-root', mulib, *compiler_flags,
                        *(f'--cflag={flag}' for flag in cflags)]
             if setting[1]:
                 command.extend(('--debug-build-root', executor.path(work)))
@@ -915,7 +1420,7 @@ def build(args):
                                    'fn main() -> i64 { return 0; }\n'.encode())
                 entry = executor.path(check)
                 verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots)
-                executor.run([compiler, '--check', entry, *loader])
+                executor.run([compiler, '--check', entry, *compiler_flags])
             package = work / 'artifact' / 'library'
             shutil.copytree(project_stage, package)
             # Preserve checked interface bytes, but publish only plain,
@@ -935,8 +1440,11 @@ def build(args):
 
         report = dict(schema='on1x.project-build/v1', project=config['name'], kind=config['kind'],
                       profile=chosen, cflags=cflags, sandbox=bool(args.sandbox), shell=bool(args.allow_shell),
+                      scrutiny=args.scrutiny or config.get('scrutiny'),
                       dependencies=dep_report, inputs=snapshot.inputs, outputs=outputs,
                       tools={key: digest(read(path, MAX_PROCESS)) for key, path in chosen_tools.items()})
+        if lock_payload is not None:
+            report['lockfile'] = digest(lock_payload)
         stage_bytes(work / 'artifact/.on1x-build.json',
                     (json.dumps(report, indent=2, sort_keys=True) + '\n').encode())
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -1003,16 +1511,33 @@ def main():
     command.add_argument('--output-dir', type=Path, help='exact generation output directory')
     command.add_argument('--sandbox', action='store_true', help='require Linux bubblewrap isolation; no fallback')
     command.add_argument('--allow-shell', action='store_true', help='allow explicit root shell defines outside sandbox')
+    command.add_argument('--scrutiny', help='override source and On1xfile static-analysis scrutiny')
+    command.add_argument('--offline', action='store_true',
+                         help='explicitly require the normal network-free build behavior')
+    command.add_argument('--locked', action='store_true',
+                         help='require a complete, current On1xfile.lock')
+    command.add_argument('--frozen', action='store_true',
+                         help='equivalent to --offline --locked')
     formatting = commands.add_parser('format', help='validate and format a plain On1xfile without running its policy')
     formatting.add_argument('input', type=Path)
     formatting.add_argument('--check', action='store_true')
-    fetch = commands.add_parser('fetch', help='explicitly fetch one pinned git-remote library over HTTPS')
+    fetch = commands.add_parser('fetch', help='explicitly resolve and fetch one git-remote library over HTTPS')
     fetch.add_argument('name', help='dependency name declared in On1xfile')
     fetch.add_argument('root', type=Path, nargs='?', default=Path('.'))
     fetch.add_argument('--ca-file', type=Path, help='explicit trusted PEM CA bundle for this fetch')
+    fetch.add_argument('--offline', action='store_true', help='validate only an existing locked cache entry')
+    fetch.add_argument('--locked', action='store_true', help='do not change On1xfile.lock')
+    fetch.add_argument('--frozen', action='store_true', help='equivalent to --offline --locked')
+    locking = commands.add_parser('lock', help='resolve Git selectors and atomically write On1xfile.lock')
+    locking.add_argument('root', type=Path, nargs='?', default=Path('.'))
+    locking.add_argument('--ca-file', type=Path, help='explicit trusted PEM CA bundle for HTTPS Git')
+    locking.add_argument('--offline', action='store_true', help='use local stores and existing remote cache entries only')
+    locking.add_argument('--locked', action='store_true', help='validate without changing On1xfile.lock')
+    locking.add_argument('--frozen', action='store_true', help='equivalent to --offline --locked')
     try:
         arguments = parser.parse_args()
-        {'build': build, 'format': format_manifest, 'fetch': fetch_dependency}[arguments.command](arguments)
+        {'build': build, 'format': format_manifest, 'fetch': fetch_dependency,
+         'lock': lock_dependencies}[arguments.command](arguments)
     except (ValueError, OSError, KeyError, TypeError) as error:
         print(f'on1x-project: {error}', file=sys.stderr)
         return 1

@@ -121,13 +121,18 @@ assert p.returncode == 1 and 'ON1X-KERNEL-UNSAFE-UNSUPPORTED' in p.stderr and no
 p = run([t.compiler, '--emit-c', '--kernel-c11', clamp])
 assert p.returncode == 0 and 'unsafe_foreign: mulib_clamp_add_i64' in p.stdout, p
 assert '#include <mulib-clamp.h>' in p.stdout and '_Generic(&mulib_clamp_add_i64' in p.stdout
+assert '_Generic(&mulib_clamp_i64, int64_t (*)(int64_t, int64_t, int64_t)' in p.stdout
 assert 'extern int64_t mulib_clamp' not in p.stdout
 
 for name, source, diagnostic in (
     ('outside', 'fn main(){println(C.add_i64(1,2));}', 'ON1X-KERNEL-CONTEXT'),
     ('nested_lambda', 'fn main(){unsafe { let f=fn(){println(C.add_i64(1,2));}; f(); }}', 'ON1X-KERNEL-CONTEXT'),
     ('value', 'fn main(){unsafe { let f=C.add_i64; }}', 'ON1X-KERNEL-DIRECT'),
-    ('unbound_member', 'fn main(){unsafe { println(C.i64(1,2,3)); }}', 'ON1X-KERNEL-MEMBER'),
+    ('unbound_member', 'fn main(){unsafe { println(C.unknown(1,2,3)); }}', 'ON1X-KERNEL-MEMBER'),
+    ('interval_arity', 'fn main(){unsafe { println(C.i64(1,2)); }}', 'arity'),
+    ('interval_type', 'fn main(){unsafe { println(C.i64(1,2,true)); }}', 'type'),
+    ('interval_outside', 'fn main(){println(C.i64(1,2,3));}', 'ON1X-KERNEL-CONTEXT'),
+    ('interval_extern', 'extern fn mulib_clamp_i64(v:i64,lo:i64,hi:i64)->i64; fn main(){}', 'ON1X-KERNEL-EXTERN'),
     ('type', 'fn main(){unsafe { println(C.add_i64("1",2)); }}', 'type'),
     ('arity', 'fn main(){unsafe { println(C.add_i64(1)); }}', 'arity'),
     ('extern', 'extern fn mulib_clamp_add_i64(a:i64,b:i64)->i64; fn main(){}', 'ON1X-KERNEL-EXTERN'),

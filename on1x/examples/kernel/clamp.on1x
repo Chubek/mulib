@@ -12,5 +12,9 @@ fn main() {
         println(Clamp.sub_i64(9223372036854775807, -9223372036854775808));
         println(Clamp.add_i64(-9223372036854775808, -1));
         println(Clamp.sub_i64(4, -2));
+        println(Clamp.i64(-1, 0, 10));
+        println(Clamp.i64(20, 0, 10));
+        println(Clamp.i64(4, 0, 10));
+        println(Clamp.i64(20, -7, -7));
     }
 }

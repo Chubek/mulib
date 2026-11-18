@@ -18,9 +18,22 @@ promotes these annotations to safe export. `emit-safe` remains blocked even for
 reviewed metadata.
 
 ```sh
+python3 on1x/tools/on1x-contracts.py list
 python3 on1x/tools/on1x-contracts.py lint
 python3 on1x/tools/on1x-contracts.py build-plan json vec parsec elvi-scrape mune
 ```
+
+`list` uses the same `MANIFEST.yaml`-backed kernel inventory as
+[`on1x-exotract.py list`](../contracts-exotract/README.md). It distinguishes
+shipped semantic sidecars, core snapshot profiles, and headers with no sidecar.
+`sidecar_header_matches` compares the sidecar's recorded revision to the
+canonical header; it is not semantic validation. Non-kernel sidecars (such as
+the PrettyPrint native runtime companion) are listed separately. `lint`,
+`build-plan`, and `snapshot` still apply only to the explicit core profiles.
+
+CDD entries have no semantic sidecar or snapshot profile. The declarations
+include fixed arrays, counts and borrowed lifetimes; the checked accessor
+wrappers required for a contract are not in this archive.
 
 Real Gate B acceptance requires compiler-generated ExoML CDecl artifacts, not
 the lint result. The optional SDK-backed `on1x-bind` implements extraction,

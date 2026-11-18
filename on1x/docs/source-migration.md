@@ -6,14 +6,12 @@ It excludes vendor code and the LibStone submodule.
 
 ## Native kernel imports
 
-No additional production consumer was eligible for the current callable
-profiles. The clamp examples already use native imports for saturating
-`mulib_clamp_add_i64` and `mulib_clamp_sub_i64`. The similarly named
-`base_clamp_i64` in `stdlib/base/ordering.on1x` implements a checked
-three-argument interval clamp, not saturating arithmetic. Its corresponding C
-function `mulib_clamp_i64` is not exported by either clamp profile, and the
-On1x function also checks the ordering of its bounds. Pricing and forecasting
-sources were outside this migration.
+The clamp examples use native imports for all three functions in the v2
+profile. `base_clamp_i64` in `stdlib/base/ordering.on1x` remains a portable
+On1x implementation: switching to `Clamp.i64` would require an explicit
+KernelBind build and review for ordinary standard-library consumers. Both
+check the ordering of the bounds. Pricing and forecasting sources were
+outside this migration.
 
 The profiles below are not callable with either import spelling. In
 particular, discovery does not replace a linked adapter; see the

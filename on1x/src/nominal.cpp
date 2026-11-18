@@ -9,13 +9,36 @@ bool identifier(const std::string& name){
  if(name.empty()||!(std::isalpha(static_cast<unsigned char>(name[0]))||name[0]=='_'))return false;
  return std::all_of(name.begin(),name.end(),[](unsigned char c){return std::isalnum(c)||c=='_';});
 }
+bool primitive_typo(std::string_view value){
+ auto distance_one=[&](std::string_view expected){
+  if(value.size()+1<expected.size()||expected.size()+1<value.size())return false;
+  std::size_t left=0,right=0,edits=0;
+  while(left<value.size()&&right<expected.size()){
+   if(value[left]==expected[right]){++left;++right;continue;}
+   if(++edits>1)return false;
+   if(value.size()>expected.size())++left;
+   else if(expected.size()>value.size())++right;
+   else {++left;++right;}
+  }
+  edits+=(left<value.size())+(right<expected.size());
+  return edits==1;
+ };
+ for(auto type:{Type::I64,Type::F64,Type::F32,Type::U8,Type::U16,Type::U32,Type::U64,
+                Type::Bool,Type::String,Type::Void,Type::Json,Type::JsonView,Type::SExpr,Type::Buffer})
+  if(distance_one(type_name(type)))return true;
+ return false;
+}
 }
 void NominalCatalog::tick(const Location& at,std::size_t depth) const{
  if(depth>32||!work)throw Error(at,"ON1X-NOMINAL: layout depth/work budget exhausted","ON1X-NOMINAL-LIMIT");
  --work;
 }
 const NominalDeclaration& NominalCatalog::find(const std::string& name,const Location& at) const{
- auto it=declarations.find(name);if(it==declarations.end())fail(at,"unknown type: "+name);
+ auto it=declarations.find(name);
+ if(it==declarations.end()){
+  if(primitive_typo(name))throw Error(at,"unknown type: "+name,"ON1X-PARSE-TYPE",{},name);
+  fail(at,"unknown type: "+name);
+ }
  return *it->second;
 }
 const NominalDeclaration& NominalCatalog::result(const std::string& name,const Location& at) const{
@@ -113,7 +136,11 @@ Type NominalCatalog::resolve(const Type& type,const Location& at) const{
 }
 void NominalCatalog::verify(const Type& type,const Location& at) const{
  tick(at,0);
- if(type.kind()==Type::Named)fail(at,"unresolved named type in checked HIR: "+type.nominal());
+ if(type.kind()==Type::Named){
+  if(primitive_typo(type.nominal()))
+   throw Error(at,"unknown type: "+type.nominal(),"ON1X-PARSE-TYPE",{},type.nominal());
+  fail(at,"unresolved named type in checked HIR: "+type.nominal());
+ }
  if(type.nominal().empty()||verified.contains(type))return;
  if(type!=instantiate(type.nominal(),type.arguments(),at))fail(at,"checked nominal representation differs from declaration: "+type.nominal());
  (void)layout(type,at);

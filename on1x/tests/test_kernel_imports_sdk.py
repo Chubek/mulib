@@ -167,14 +167,15 @@ with tempfile.TemporaryDirectory(dir=work) as directory:
     p = run([*build_cmd, clamp, '--mulib-plan', lock, '-o', app])
     assert p.returncode == 0, p
     result = run([app])
-    assert result.returncode == 0 and result.stdout == '42\n9223372036854775807\n-9223372036854775808\n9223372036854775807\n-9223372036854775808\n6\n', result
+    assert result.returncode == 0 and result.stdout == '42\n9223372036854775807\n-9223372036854775808\n9223372036854775807\n-9223372036854775808\n6\n0\n10\n4\n-7\n', result
     evidence = json.loads(lock.read_bytes())
     assert evidence['safe_export'] is False and evidence['plan']['implementation_translation_units'] == 1
     assert evidence['plan']['implementation_macros'] == ['MULIB_IMPL_CLAMP']
     assert 'mulib.c' in evidence['generated_inputs']
     interface = evidence['kernel_interface']
     assert interface['schema'] == 'on1x.kernel-interface/v1' and interface['safe_export'] is False
-    assert set(interface['exports']) == {'add_i64', 'sub_i64'}
+    assert interface['profile'] == 'unsafe-clamp-i64/v2'
+    assert set(interface['exports']) == {'add_i64', 'sub_i64', 'i64'}
     assert all(v['effect'] == 'unsafe_foreign' and v['status'] == 'unsafe' and v['c_type_id']
                for v in interface['exports'].values())
     impl = directory/'clamp-impl.c'

@@ -1,15 +1,66 @@
 # On1x capability matrix
 
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| Shared MuLIB registration and CDD discovery | `contracts-exoml/catalog.json`, `contracts-exotract/catalog.json`, `tools/{on1x-contracts,on1x-exotract}.py`, `stdlib/mulib/housekeeping.py` | MANIFEST-backed library inventory and target-specific CDD CDecl; no CDD archive or callable ABI | Existing KernelBind inspection syntax only | `on1x.contracts`, `on1x.cdd_discovery_sdk`; [recorded results](../VERIFICATION.md#mulib-contract-inventory-and-cdd-discovery) | PARTIAL | Checked CDD accessors for fixed arrays, explicit counts and borrowed lifetimes; semantic contracts and independent admission gates |
+
+Sandbox KernelBind integration (M2 discovery slice): MuLIB
+`681dacbdd419b71ae86042d0c307180cbd5dea5e` plus worktree changes, configured
+LibStone `57113dc48d815359431dce63a6b865a21dd993cd`, Linux x86-64.
+
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| Sandbox kernel build and discovery | `tools/on1x-exotract.py`, `contracts-exotract/`, `contracts-exoml/sandbox/` | One native C11 archive and target-specific CDecl evidence for eight kernels, not a checked On1x runtime ABI | Discovery only; no safe or raw callable imports | `on1x.kernel_sandbox_sdk`; strict separate-TU client and negative SDK/admission cases | PARTIAL | Independent semantic review; affine process/descriptor/cgroup ownership, error cleanup, capability and callback checking; host enforcement separately gated |
+
+Terminal standard-library slice baseline: MuLIB
+`681dacbdd419b71ae86042d0c307180cbd5dea5e`, Linux x86-64, GCC 16.2.1 and
+Clang 22.1.8. This remains a trusted raw scalar bridge, not safe FFI admission.
+
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| Bounded terminal I/O, events, modes and vterm | `stdlib/tty/{tty.on1x,runtime.[ch]}`, `tools/on1x-build.py` | Canonical one-TU `termutils`/`termkey`/`termstyle`/`terminfo`/`vterm` closure; kind/generation handles, normal-exit raw restoration, bounded immutable snapshots and lossless hex bytes | Existing scalar/tuple facade; explicit statuses, TTY/`TERM`/`NO_COLOR` policy, style/control, caller-clocked events and one-scalar-per-cell vterm | `test_tty.py`, `test_tty_runtime.c`, `test_tty_allocation.c`, compiled `examples/tty.on1x`; strict GCC/Clang and focused ASan/UBSan | EXECUTABLE | No reviewed safe FFI/resource-drop type, byte-string type, concurrent API, signal-crash restoration, Windows backend, wcwidth/graphemes or full DEC/Kitty protocol |
+
+Static-analysis diagnostics continuation starting baseline: MuLIB
+`681dacbdd419b71ae86042d0c307180cbd5dea5e`, configured LibStone
+`57113dc48d815359431dce63a6b865a21dd993cd`, Linux x86-64. This row records
+ the pre-change boundary; the row below records the implemented continuation
+ without claiming whole-language proof.
+
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| Bounded diagnostics, scrutiny, PPX advisories and repair analysis | `src/{diagnostic,diagnostics,analysis,cli,ppx,sema}.cpp`, `include/on1x/{diagnostic,diagnostics,analysis}.hpp`, `stdlib/diagnostics`, `tools/generate-diagnostic-catalog.py`, build drivers | Compiler-side core registry; optional Syren/Wetstone; message-free native PPX descriptor-3 runtime ABI; generated non-PPX applications have no LibStone dependency | File-local `@scrutiny`, CLI > source > On1xfile > catalog precedence; conservative checked-i64/bool prefixes; build-validated JSON v2 owns new identities/presentation/policy/repair/PPX declarations, with trusted bootstrap and runtime replacement; text/JSON/SARIF and independently rechecked Syren source edits; Wetstone proposals remain advisory | `test_analysis.cpp`, `test_diagnostics.{cpp,py}`, unconditional `test_diagnostic_catalog_{source,runtime}.py`, adversarial PPX and project policy tests; generated/fallback, strict GCC/Clang and focused Clang ASan/UBSan | EXECUTABLE | Legacy compiler messages/IDs outside this subsystem remain literal; no CFG/loop/interprocedural/resource proof, complete dynamic checked-overflow model, incremental/LSP stream, cross-platform PPX sideband, or whole-suite sanitizer evidence |
+
+Pre-v2 historical continuation results: generated-scanner GCC with Syren/Wetstone **67/69**
+and fallback-scanner GCC without them **64/66**; only `on1x.contracts` and
+`on1x.mulib` fail on the unrelated audited `manual/mulib-elvi-scrape.md`
+fingerprint drift. Focused Clang ASan/UBSan passed **7/7**; strict
+warnings-as-errors GCC and Clang selections passed **2/2** and **4/4**.
+
+Catalog-v2 follow-up on the same MuLIB/LibStone revisions, Linux
+6.18.52-1-lts x86-64, GCC 16.2.1 and Clang 22.1.8: current complete reruns are
+**70/71 generated** and **67/68 fallback**. The sole failure in each is
+`on1x.mulib` rejecting unrelated stale OptML profiles from `tools/embed_units.py`;
+`on1x.contracts` now passes in this concurrently changing worktree. No unrelated
+profiles/fingerprints were regenerated. Strict GCC/Clang focused selections
+pass **4/4** and **6/6**; Clang ASan/UBSan with compiler, runtime, generated C11
+clients and native PPXs instrumented passes **9/9**. Exact commands and limits
+are recorded under “Catalog-v2 data ownership” in `../VERIFICATION.md`.
+
 M5/M7 tooling work item, starting checkout: MuLIB
 `f520a7da8cd29c282f335ed3d0fdca1599c2ff30`, configured LibStone
 `57113dc48d815359431dce63a6b865a21dd993cd` (different from the parent
 gitlink; left unchanged), Linux x86-64, GCC 16.2.1 and Clang 22.1.8.
 The table records the current state of this work item.
 
+Git-locking continuation starting checkout
+`681dacbdd419b71ae86042d0c307180cbd5dea5e`, configured LibStone
+`57113dc48d815359431dce63a6b865a21dd993cd`, Linux x86-64, Git 2.55.0
+and Python 3.14.7.
+
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
 |---|---|---|---|---|---|---|
 | On1x source formatter | `stdlib/prettyprint/on1x/formatter.cpp`, canonical lexer/parser, PrettyDoc/PrettyEmit | Compiler-only planned C11 kernel linkage; existing raw adapter also exports a verbatim document constructor | `.on1xfmt`, paired preservation and target comment directives, CLI and On1xfile plain/LaTeX/troff; conserves tokens and dot adjacency | `tests/test_formatter.py`, `prettyprint.mk`, original/formatted strict C11 execution and markup compiler tests | EXECUTABLE | Conservative wrap points; no syntax recovery, unchanged source locations, or cross-platform publication verification |
-| On1xfile project builds | `tools/on1x-project.py`, `stdlib/on1xfile` | Existing C11 builder and canonical MuLIB native plans; optional QMR compiler on Mune; Linux bubblewrap | Line-oriented root/local declarations, profiles, direct certified local and offline pinned Git dependencies | `test_on1x_project.py` (11 cases); host file and network namespace isolation, repeatable sandboxed release smoke build | EXECUTABLE | True interface/separate compilation, registry/remote materialization, portable and pinned toolchain |
+| On1xfile project builds and locked Git inputs | `tools/on1x-project.py`, `stdlib/on1xfile` | Existing C11 builder and canonical MuLIB native plans; object-only local/HTTPS Git acquisition; optional QMR compiler on Mune; Linux bubblewrap | Line-oriented declarations; full commit, branch and lightweight/annotated tag selectors resolved by canonical `On1xfile.lock`; offline/locked/frozen modes | `test_on1x_project.py` (14 cases) and `test_project_fetch.py` (11 cases); local bare repositories, smart-HTTPS loopback, ref movement, atomic concurrent cache reuse, frozen C11 builds and negative transport/ref/cache cases | EXECUTABLE | No registry/version solver/transitive fetching, authenticated/SSH remotes, portable atomic publication or pinned complete toolchain |
 | On1xfile project lifecycle | `src/{cli,discovery}.cpp`, `tools/on1x_project.py`, `stdlib` | No new application ABI | New stdlib manifests with legacy discovery compatibility; executable, complex and library scaffolds | `on1x.project_driver`, `on1x.install`, `on1x.discovery` | EXECUTABLE | More platforms; no expansion of SML Basis conformance |
 
 Package D continuation: MuLIB `2da654cae071226ad246415d2fad4ba43f6f9ec1`,
@@ -50,7 +101,7 @@ for the discovery profile and its limits.
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
 |---|---|---|---|---|---|---|
 | KernelBind import discovery | `src/{parser,loader,cli,ppx_ast}.cpp`, `tools/{on1x-build,on1x-exotract}.py`, `contracts-exotract/kernel-discovery-v1.lua` | ExoLib/Exotract declaration-only ExoML CDecl v2 | Native contextual imports and read-only source graph, pinned MuLIB discovery and unreviewed sidecars | `test_kernel_imports.py`, `test_kernel_imports_sdk.py` | PARTIAL | More profiles and independent safe authorization |
-| KernelBind unsafe scalar calls | `src/{parser,loader,sema,codegen}.cpp`, `src/canonical/{values,verify_values}.cpp`, `tools/{on1x-build,on1x-exotract}.py` | Real clamp kernel, strict C11 adapters, one implementation TU on native Linux x86-64 | Direct scoped `unsafe_foreign` calls with two exact `i64` arguments; statement blocks and value-producing `unsafe` expressions | `examples/kernel/clamp.on1x`, C oracle, compiler/SDK negative tests and malformed scoped HIR | EXECUTABLE | General scalar shapes and alternative targets/backends |
+| KernelBind clamp v2 | `include/on1x/kernel.hpp`, `src/{loader,sema,codegen}.cpp`, `tools/{on1x-build,on1x-exotract}.py`, `contracts-exoml/clamp.exocontract.json` | All three canonical clamp functions, strict C11 on Linux x86-64, one implementation TU; safe path requires independent signed review | Exact `i64` arguments, scoped unsafe or review-gated direct calls; interval wrapper checks bounds | `examples/kernel/clamp{,_safe}.on1x`, C oracle, `on1x.kernel_imports`, `on1x.kernel_review_sdk` | EXECUTABLE | No production review is shipped; more general scalar shapes and alternative targets/backends |
 | KernelBind safe calls and foreign resources | `KERNEL_DIRECT_USAGE.md` | No safely admitted symbols or resource-bearing shapes | Default imports fail closed | Explicit fail-closed compilation tests | ABSENT | Independent review, ownership/errors/effects, target execution and Shylock milestone |
 
 Search-path/ecosystem work item (M5/M7), baseline MuLIB
@@ -60,7 +111,7 @@ Search-path/ecosystem work item (M5/M7), baseline MuLIB
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
 |---|---|---|---|---|---|---|
 | Integrated stdlib MuLIB package | `stdlib/mulib`, build/install/extraction tools | Existing raw adapters and one implementation TU; no new ABI | Existing `std.mulib` imports | Library/install/extension/MuLIB and discovery suites | EXECUTABLE | General MuLIB suite retains unrelated stale `embed_units.py` fixture blocker; not new safe bindings |
-| Library and stdlib search lists | `src/{discovery,loader,cli}.cpp`, `stdlib/On1xfile`, build helper | Build-time only; compiler-resolved Basis resources | Existing imports; `ON1X_LIB_PATH`, `ON1X_STDLIB_PATH`, matching CLI flags; declarative version-1 source roots | `test_discovery.py`, `test_modules.py`, `test_install.py`; compiled ordinary/stdlib/prelude clients, malformed/escape/budget rejection, ordered roots and explicit-path compatibility | EXECUTABLE | Linux-only evidence; no package downloader, lockfiles, separate compilation or persisted interfaces |
+| Library and stdlib search lists | `src/{discovery,loader,cli}.cpp`, `stdlib/On1xfile`, build helper | Build-time only; compiler-resolved Basis resources | Existing imports; `ON1X_LIB_PATH`, `ON1X_STDLIB_PATH`, matching CLI flags; declarative version-1 source roots | `test_discovery.py`, `test_modules.py`, `test_install.py`; compiled ordinary/stdlib/prelude clients, malformed/escape/budget rejection, ordered roots and explicit-path compatibility | EXECUTABLE | Linux-only evidence; compiler discovery does not itself resolve the project tool's lockfile; no separate compilation or persisted interfaces |
 | PPX and stdppx search lists | `src/{discovery,ppx,cli}.cpp`, CMake, script second-line metadata | Existing bounded, explicitly authorized process transport; native bundle executable/schema paths | `ON1X_PPX_PATH`, `ON1X_STDPPX_PATH`, matching CLI flags, `--use-ppx`; native `On1xfile` and inline script manifests | `test_discovery.py`, PPX/modules/install suites; native/script C11 clients, authorization/metadata/path escape negatives, relocation, ASan/UBSan | EXECUTABLE | No process sandbox or implicit native-source compilation; trusted Category registry remains independent |
 | MuLIB kernel search lists | Build/extraction/inspection helpers, `stdlib/mulib/housekeeping.py` | Existing MANIFEST-backed single-TU planning; exact selected header paths/hashes and archive checks | `ON1X_MULIB_PATH`, `--mulib-path`; no new foreign admission | `test_discovery.py`, optional real-SDK `test_kernel_paths.py`; multi-root kernel C11 execution, CLI/env precedence, source-pin/archive drift refusal | EXECUTABLE | Unknown unmanifested kernel recipes/ABI remain unsupported; metadata/companions require a real checkout |
 
@@ -295,7 +346,7 @@ and execution evidence, not deletion of platform/environment guards.
 | Staging | `src/staging.cpp` | AOT closure thunks | Closed code, quote/splice/lift/run | `test_staging.py` | EXECUTABLE | Broader staged data types |
 | Managed data / text | `src/primitives.cpp`, `runtime/on1x_runtime.c` | RC sexpr/buffer; bounded text snapshots | Primitive managed types | `test_selfhost.py` | PARTIAL | Owning Unicode text / binary slices |
 | Ownership / recoverable errors | `src/{sema,safety}.cpp`, `src/canonical/`, `runtime/` | Lexical JSON/RC cleanup and typed Result early returns; fatal failures remain terminal | Restricted resource flows; bounded nominal Result propagation and function-scoped defers | `test_json.py`, `test_safety.*`, `test_defer_errors.*` | PARTIAL | General moves/borrows, managed Result fields, full effect/cleanup MIR |
-| Generic Option / Result | `src/nominal.cpp`, `stdlib/base/{option,result}.on1x` | Native bounded by-value nominal enums; older facade encodings preserved | User-declared Option/Result construction/exhaustive matching; Result `?` protocol; no Option propagation | Nominal-data/defer-error and existing library tests | PARTIAL | Canonical library generic facades and resource-bearing fields/drop |
+| Generic Option / Result | `stdlib/{pervasive,core/Pervasive}.on1x`, existing nominal frontend/C11 lowering | Native bounded by-value nominal enums; no new ABI; older tuple/scalar-pair/S-expression facades preserved | Canonical default `Option<T>`/`Result<T,E>`; constructors, predicates, map/chain/error-map, fallbacks, conversions, iteration and Result `?`; automatic names obey import/local precedence | `test_prelude.py`, nominal/defer/module/library compatibility suites, `examples/pervasive_options.on1x` | EXECUTABLE | Managed/resource payload ownership/drop, recursive forms, Option propagation and aggregate MIR/SDK models |
 | Exceptions / effect system | `src/backend/mir.cpp`, `runtime/` | Scalar effect chains; no unwind edges | No recoverable exceptions or inferred effect summaries | Scalar MIR tests only | PARTIAL | Typed failure/control-flow/cleanup model |
 | Raw C FFI | `src/codegen.cpp`, `tools/on1x-bind.cpp` | Exact declared scalar escape hatch; generated signed/unsigned integer, boolean and binary32/64 adapters assert signature/type/size/alignment/format/range | extern; explicit parameter flattening | `test_contracts*.py`, `test_parameter_patterns.py`, `test_unsigned_f32.py` | PARTIAL | Enums, aggregates, callbacks and resources |
 | Safe foreign admission | `tools/on1x-bind.cpp`, `src/{cli,safety}.cpp`, `include/on1x/safety.hpp` | `reviewed-scalar/v1`: signed integer/void; v2 adds bool/f64; v3 adds unsigned/f32. Generated C11 facade, strict target boundary run, `on1x.safe-ffi/v1` manifest and bounded versioned admitted-extern evidence | Ordinary `on1x_safe_*` functions; raw declarations remain explicit and Chisel requires exact declaration/callsite parameter/result evidence | `test_contracts_sdk.py`, `test_safety.*` | EXECUTABLE | Accountable real reviews for production bundles; pointers/resources/errors/aggregates/callbacks, Wetstone effects and broader targets |

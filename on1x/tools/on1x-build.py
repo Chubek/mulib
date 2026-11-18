@@ -66,6 +66,16 @@ def main():
     cli.add_argument('--admitted-extern', type=Path, action='append', default=[],
                      help='reviewed scalar-only extern evidence (requires --memory-check)')
     cli.add_argument('--verify-types', action='store_true', help='require Nerotypical structural HIR type verification')
+    cli.add_argument('--scrutiny', metavar='LEVEL', help='override source and project static-analysis scrutiny')
+    cli.add_argument('--project-scrutiny', metavar='LEVEL', help=argparse.SUPPRESS)
+    cli.add_argument('--scrutiny-work', type=int, metavar='UNITS',
+                     help='bounded Wetstone work budget (1..10000000)')
+    cli.add_argument('--no-analysis-repairs', action='store_true',
+                     help='disable advisory Wetstone repair analysis')
+    cli.add_argument('--diagnostic-catalog', type=Path, metavar='FILE',
+                     help='validated external diagnostic catalog')
+    cli.add_argument('--diagnostics', choices=('text', 'json', 'sarif'))
+    cli.add_argument('--color', choices=('auto', 'always', 'never'))
     cli.add_argument('--optimize-ir', action='store_true', help='enable verified scalar passes (requires --via-mir)')
     cli.add_argument('--extra-c', action='append', default=[], help='extra C translation unit to compile/link')
     cli.add_argument('--cflag', action='append', default=[], help='explicit extra C compiler option')
@@ -160,6 +170,20 @@ def main():
             compiler += ['--admitted-extern', str(evidence)]
         if args.verify_types:
             compiler.append('--verify-types')
+        if args.project_scrutiny:
+            compiler += ['--project-scrutiny', args.project_scrutiny]
+        if args.scrutiny:
+            compiler += ['--scrutiny', args.scrutiny]
+        if args.scrutiny_work is not None:
+            compiler += ['--scrutiny-work', str(args.scrutiny_work)]
+        if args.no_analysis_repairs:
+            compiler.append('--no-analysis-repairs')
+        if args.diagnostic_catalog:
+            compiler += ['--diagnostic-catalog', str(args.diagnostic_catalog)]
+        if args.diagnostics:
+            compiler += ['--diagnostics', args.diagnostics]
+        if args.color:
+            compiler += ['--color', args.color]
         if args.no_prelude:
             compiler.append('--no-prelude')
         if args.stdlib:
@@ -253,6 +277,7 @@ def main():
         has_json = 'on1x_json_' in code
         has_csp = '#include <on1x_concurrency.h>' in code
         has_pretty = bool(re.search(r'^extern [^;\n]*\bon1x_pretty_(?:render|status)\(', code, re.M))
+        has_tty = bool(re.search(r'^extern [^;\n]*\bon1x_tty_\w+\(', code, re.M))
         externs=set(re.findall(r'\bextern\s+[^;\n]*\b(on1x_mulib_\w+)\(',code))
         has_mulib = any(re.fullmatch(r'on1x_mulib_(abi_version|pointer_bits|max_size|(?:kernel|fixture)_\w+|has_kernel|has_fixture)',name) for name in externs)
         bridge_groups={
@@ -266,7 +291,7 @@ def main():
         }
         groups={group for group,(_,symbols) in bridge_groups.items() if any('on1x_mulib_'+s in externs for s in symbols)}
         has_bridge=bool(groups) or 'on1x_mulib_bridge_status' in externs
-        native = kernel_interface or has_json or has_csp or has_pretty or has_mulib or has_bridge or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan
+        native = kernel_interface or has_json or has_csp or has_pretty or has_tty or has_mulib or has_bridge or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan
         recipe, fingerprints, native_links = None, {}, []
         if native:
             cc=shutil.which(args.cc)
@@ -277,7 +302,7 @@ def main():
             for path in [cc,Path(__file__).resolve(),Path(house.__file__)]:fingerprints[str(path)]=house.contracts.digest(path)
             kernels = list(args.mulib)
             if kernel_interface:
-                if has_json or has_csp or has_pretty or has_mulib or has_bridge:
+                if has_json or has_csp or has_pretty or has_tty or has_mulib or has_bridge:
                     raise ValueError('KernelBind profile cannot be mixed with built-in raw kernel bridges')
                 if compiler_target != kernel_report['target'] or root != mulib_root:
                     raise ValueError('KernelBind target or MuLIB root drift')
@@ -305,6 +330,9 @@ def main():
                     if kernel not in kernels:kernels.append(kernel)
             if has_json and 'json' not in kernels:kernels.append('json')
             if has_pretty and 'prettysexpr' not in kernels:kernels.append('prettysexpr')
+            if has_tty:
+                for kernel in ('termutils', 'termkey', 'termstyle', 'vterm'):
+                    if kernel not in kernels:kernels.append(kernel)
             recipe = house.plan(mulib_root, kernels, args.mulib_fixture,paths) if kernels or args.mulib_fixture or args.mulib_archive else None
             if any('MULIB_IMPL_' in flag for flag in args.cflag):
                 raise ValueError('MuLIB implementation macros belong to the single generated TU')
@@ -387,6 +415,10 @@ def main():
             if has_pretty:
                 bridge = Path(subprocess.check_output(
                     [args.on1xc, '--stdlib-resource', 'prettyprint/runtime.c', *loader_flags], text=True).strip())
+                if bridge.resolve() not in {Path(p).resolve() for p in args.extra_c}:cmd.append(str(bridge))
+            if has_tty:
+                bridge = Path(subprocess.check_output(
+                    [args.on1xc, '--stdlib-resource', 'tty/runtime.c', *loader_flags], text=True).strip())
                 if bridge.resolve() not in {Path(p).resolve() for p in args.extra_c}:cmd.append(str(bridge))
             if has_bridge:
                 bridge=ROOT/'stdlib/_bridge/mulib_bridge.c'
@@ -489,7 +521,7 @@ def main():
                          executable_gate=(dict(profile='kernel-set-differential/v1', passed=True,
                                                profiles=[tools[3] for tools in profiles.values()])
                              if len(profiles)>1 else dict(profile=next(iter(profiles.values()))[3], passed=True,
-                                 **({'comparisons':1348} if 'mulib.clamp' in profiles else {}))),
+                                  **({'comparisons':exo.CLAMP_PROBE_COMPARISONS} if 'mulib.clamp' in profiles else {}))),
                          inputs=stable, cflags=args.cflag, compiler_target=compiler_target,
                          artifacts={p.name: house.contracts.digest(p) for p in sorted(stage.iterdir())}))
                     house.contracts.publish_new(stage, args.output.absolute())

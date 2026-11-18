@@ -120,8 +120,8 @@
     "source_ranges": [
       "include/mulib-elvi-scrape.h (public API and MULIB_IMPL_ELVI_SCRAPE implementation)",
       "include/detail/mulib-webscan.h (iterative scanner and explicit work accounting)",
-      "tests/test-elvi-scrape{,-https,-alloc}.c, tests/fuzz_elvi_scrape.c and tests/fixtures/elvi-scrape (offline/allocator/fuzzer evidence)",
-      "library/elvi-scrape/*.elvs and on1x/tests/mulib/elvi-scrape.c (trusted declarative providers, offline On1x acceptance)"
+      "tests/test-elvi-scrape{,-providers,-https,-alloc}.c, tests/fuzz_elvi_scrape.c and tests/fixtures/elvi-scrape (offline/allocator/fuzzer evidence)",
+      "library/elvis/*.elvs, legacy library/elvi-scrape/*.elvs, and on1x/tests/mulib/elvi-scrape.{on1x,c} (trusted declarative providers, offline On1x acceptance)"
     ],
     "preconditions": [
       "Programs originate from compile/load and remain unmodified during use. All C pointers and capacities denote live, correctly sized, nonoverlapping storage.",
@@ -130,9 +130,11 @@
     ],
     "postconditions": [
       "Compile/url/parse preserve outputs on failure except compile diagnostics; search may report status on a later failure. Zero parse results is success.",
+      "An empty query selects the validated provider homepage. A nonempty query expands into a literal, exact-host HTTPS template with complete percent escapes and no fragment.",
       "HTTPS transport preserves caller outputs on failure; successful append may reallocate body. Every created session is closed and temporary allocations are freed.",
       "HTTPS prohibition and tighter fetch limits are preserved. No redirect, pagination or rate-limit retry is performed.",
       "Scanner work exhaustion and allocation failures preserve all caller results/count via staged output. Opaque/inert containers cannot introduce results; the extractor is not a complete HTML5 or CSS visibility parser.",
+      "Extraction uses the first href attribute (quoted or unquoted) and preserves the UTF-8 title prefix across text spans when clipping.",
       "Google targets are unambiguous/nonempty and stop before wrapper fragments; invalid numeric URL entities and request fragments reject. Exact-byte destination duplicates are removed without changing URL path/query meaning.",
       "HTTPS response metadata rejects duplicate type/encoding and unsupported content encodings; bounded fixed/chunked/EOF framing and partial reads/writes are tested separately from extraction.",
       "Explicit provider-fixture selection retains the source-pinned recipe, evidence inputs and required exports; no optional owned parser or safe status is inferred."

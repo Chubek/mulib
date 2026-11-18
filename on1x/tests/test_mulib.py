@@ -34,6 +34,8 @@ assert len(inventory['fixtures']['webidl']['matched_files'])>=1000
 assert len(inventory['fixtures']['librl']['matched_files'])==45
 assert inventory['fixtures']['elvi-scrape']['matched_files']==[
     'library/elvi-scrape/bing.elvs','library/elvi-scrape/google.elvs']
+elvis = inventory['fixtures']['elvis']['matched_files']
+assert {'library/elvis/Google.elvs', 'library/elvis/Bing.elvs'} < set(elvis)
 for group in inventory['fixtures'].values():
     for path in group['matched_files']:assert (root/path).is_file()
 for args,message in [(('plan','absent'),'known MuLIB modules'),
@@ -57,6 +59,10 @@ elvi=house.plan(root,[],['elvi-scrape'])
 assert elvi['requested_fixtures']==['elvi-scrape'] and len(elvi['required_symbols']['elvi-scrape'])==6
 assert elvi['implementation_translation_units']==1 and 'MULIB_IMPL_PARSER' not in elvi['implementation_macros']
 assert elvi['link_libraries']==['m']
+canonical_elvi=house.plan(root,[],['elvis'])
+assert canonical_elvi['requested_fixtures']==['elvis']
+assert canonical_elvi['implementation_macros']==elvi['implementation_macros']
+assert canonical_elvi['inputs']==elvi['inputs'] and canonical_elvi['files']==elvi['files']
 
 execute(build('housekeeping','''from std import mulib;
 fn main(){
@@ -97,14 +103,8 @@ assert plan['compiler_target'] and plan['compiler_version']
 relocated=t.work/'relocated';relocated.mkdir(exist_ok=True)
 shutil.copy2(exe,relocated/'app');execute(relocated/'app','3\nkernel + fixture OK\n')
 
-execute(build('elvi-provider','''import std.mulib as M;
-extern fn fixture_elvi_provider(source:string)->i64;
-fn main(){assert(M.has_kernel("elvi-scrape"));
-  assert(M.fixture_group("library/elvi-scrape/google.elvs")=="elvi-scrape");
-  assert(fixture_elvi_provider(M.require_fixture("library/elvi-scrape/google.elvs"))==1);
-  assert(fixture_elvi_provider(M.require_fixture("library/elvi-scrape/bing.elvs"))==1);
-  assert(fixture_elvi_provider("shell echo unsafe")==0);println("elvi providers OK");}''',
-  ['--mulib-fixture','elvi-scrape','--extra-c',t.root/'tests/mulib/elvi-scrape.c']),'elvi providers OK\n')
+execute(build('elvi-provider',(t.root/'tests/mulib/elvi-scrape.on1x').read_text(),
+  ['--mulib-fixture','elvis','--extra-c',t.root/'tests/mulib/elvi-scrape.c']),'elvi providers OK\n')
 
 execute(build('optml','''from std.mulib import require_fixture;
 extern fn fixture_optml_count(source:string)->i64;

@@ -44,6 +44,24 @@
         "review_status": "unreviewed",
         "evidence_method": "Saturating subtraction for every int64_t input pair without negating the subtrahend. No external state or failure result."
       }
+    },
+    {
+      "c_name": "mulib_clamp_i64",
+      "return": {"kind": "value", "nullable": false},
+      "parameters": [
+        {"index": 0, "name": "value", "ownership": "scalar", "nullable": false},
+        {"index": 1, "name": "low", "ownership": "scalar", "nullable": false},
+        {"index": 2, "name": "high", "ownership": "scalar", "nullable": false}
+      ],
+      "errors": {"kind": "none"},
+      "effects": {"effects": [], "unknown": false},
+      "concurrency": {"thread_safety": "thread_safe", "blocking_behavior": "nonblocking", "suspension_safe": true},
+      "provenance": {
+        "header": "mulib-clamp.h",
+        "author": "On1x KernelBind contributors",
+        "review_status": "unreviewed",
+        "evidence_method": "For low <= high, compares value with both inclusive endpoints. No external state or failure result. The binding must enforce the interval precondition before the call."
+      }
     }
   ]
 }

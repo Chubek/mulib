@@ -1,0 +1,273 @@
+# Terminal facade over a trusted, bounded raw C adapter. Status values are:
+# 0 success, 1 sanitized plain fallback, 2 EOF, 3 retry, and negative errors.
+# Resource handles are generation checked but remain explicit i64 owners.
+
+extern fn on1x_tty_status() -> i64;
+extern fn on1x_tty_capabilities(fd:i64) -> i64;
+extern fn on1x_tty_render(fd:i64,text:string,attributes:i64,
+  foreground:i64,background:i64,truecolor:bool) -> string;
+extern fn on1x_tty_write(fd:i64,text:string,attributes:i64,
+  foreground:i64,background:i64,truecolor:bool) -> i64;
+extern fn on1x_tty_control(fd:i64,operation:i64,first:i64,second:i64) -> string;
+extern fn on1x_tty_size(fd:i64) -> i64;
+extern fn on1x_tty_raw_begin(fd:i64) -> i64;
+extern fn on1x_tty_raw_end(handle:i64) -> bool;
+extern fn on1x_tty_read_hex(fd:i64,limit:i64) -> string;
+
+extern fn on1x_tty_decoder_open() -> i64;
+extern fn on1x_tty_decoder_reset(handle:i64) -> bool;
+extern fn on1x_tty_decoder_feed(handle:i64,text:string) -> bool;
+extern fn on1x_tty_decoder_feed_hex(handle:i64,hex:string) -> bool;
+extern fn on1x_tty_decoder_next(handle:i64,flush:bool) -> bool;
+extern fn on1x_tty_decoder_event_value(handle:i64,field:i64) -> i64;
+extern fn on1x_tty_decoder_event_raw_hex(handle:i64) -> string;
+extern fn on1x_tty_decoder_close(handle:i64) -> bool;
+
+extern fn on1x_tty_vterm_open(width:i64,height:i64) -> i64;
+extern fn on1x_tty_vterm_resize(handle:i64,width:i64,height:i64) -> bool;
+extern fn on1x_tty_vterm_reset(handle:i64) -> bool;
+extern fn on1x_tty_vterm_feed(handle:i64,text:string) -> bool;
+extern fn on1x_tty_vterm_feed_hex(handle:i64,hex:string) -> bool;
+extern fn on1x_tty_vterm_finish(handle:i64) -> bool;
+extern fn on1x_tty_vterm_value(handle:i64,field:i64) -> i64;
+extern fn on1x_tty_vterm_cell(handle:i64,x:i64,y:i64,field:i64) -> i64;
+extern fn on1x_tty_vterm_close(handle:i64) -> bool;
+
+fn basis_tty_capabilities(fd:i64) -> (i64,i64) {
+  let value=on1x_tty_capabilities(fd);
+  return (on1x_tty_status(),value);
+}
+
+fn basis_tty_rgb(red:i64,green:i64,blue:i64) -> i64 {
+  if red<0 || red>255 || green<0 || green>255 || blue<0 || blue>255 {
+    return -2;
+  }
+  return 16777216+red*65536+green*256+blue;
+}
+
+fn basis_tty_attributes(bold:bool,dim:bool,italic:bool,underline:bool,
+  blink:bool,inverse:bool,conceal:bool,strike:bool) -> i64 {
+  var value=0;
+  if bold { value=value+1; }
+  if dim { value=value+2; }
+  if italic { value=value+4; }
+  if underline { value=value+8; }
+  if blink { value=value+16; }
+  if inverse { value=value+32; }
+  if conceal { value=value+64; }
+  if strike { value=value+128; }
+  return value;
+}
+
+fn basis_tty_has_capability(capabilities:i64,capability:i64) -> bool {
+  if capability!=1 && capability!=2 && capability!=4 && capability!=8 &&
+     capability!=16 && capability!=32 && capability!=64 { return false; }
+  return (capabilities/capability)%2==1;
+}
+
+fn basis_tty_render(fd:i64,text:string,attributes:i64,
+  foreground:i64,background:i64,truecolor:bool) -> (i64,string) {
+  let value=on1x_tty_render(fd,text,attributes,foreground,background,truecolor);
+  return (on1x_tty_status(),value);
+}
+
+fn basis_tty_write(fd:i64,text:string,attributes:i64,
+  foreground:i64,background:i64,truecolor:bool) -> (i64,i64) {
+  let count=on1x_tty_write(fd,text,attributes,foreground,background,truecolor);
+  return (on1x_tty_status(),count);
+}
+
+# Control operations: 0 reset, 1 clear, 2 zero-based cursor position,
+# 3/4 cursor hide/show, 5/6 alternate screen enter/leave,
+# 7/8 keypad enter/leave, 9/10 bracketed paste enter/leave, 11 erase line.
+fn basis_tty_control(fd:i64,operation:i64,first:i64,second:i64)
+  -> (i64,string) {
+  let value=on1x_tty_control(fd,operation,first,second);
+  return (on1x_tty_status(),value);
+}
+fn basis_tty_clear(fd:i64) -> (i64,string) {
+  return basis_tty_control(fd,1,0,0);
+}
+fn basis_tty_cursor(fd:i64,row:i64,column:i64) -> (i64,string) {
+  return basis_tty_control(fd,2,row,column);
+}
+fn basis_tty_cursor_visible(fd:i64,visible:bool) -> (i64,string) {
+  if visible { return basis_tty_control(fd,4,0,0); }
+  return basis_tty_control(fd,3,0,0);
+}
+fn basis_tty_alternate_screen(fd:i64,enabled:bool) -> (i64,string) {
+  if enabled { return basis_tty_control(fd,5,0,0); }
+  return basis_tty_control(fd,6,0,0);
+}
+fn basis_tty_bracketed_paste(fd:i64,enabled:bool) -> (i64,string) {
+  if enabled { return basis_tty_control(fd,9,0,0); }
+  return basis_tty_control(fd,10,0,0);
+}
+
+fn basis_tty_size(fd:i64) -> (i64,i64,i64) {
+  let packed=on1x_tty_size(fd);
+  let status=on1x_tty_status();
+  if status!=0 { return (status,0,0); }
+  return (0,packed/65536,packed%65536);
+}
+
+fn basis_tty_raw_begin(fd:i64) -> (i64,i64) {
+  let handle=on1x_tty_raw_begin(fd);
+  return (on1x_tty_status(),handle);
+}
+fn basis_tty_raw_end(handle:i64) -> i64 {
+  let unused=on1x_tty_raw_end(handle);
+  return on1x_tty_status();
+}
+
+fn basis_tty_read_hex(fd:i64,limit:i64) -> (i64,string) {
+  let value=on1x_tty_read_hex(fd,limit);
+  return (on1x_tty_status(),value);
+}
+
+fn basis_tty_decoder_open() -> (i64,i64) {
+  let handle=on1x_tty_decoder_open();
+  return (on1x_tty_status(),handle);
+}
+fn basis_tty_decoder_reset(handle:i64) -> i64 {
+  let unused=on1x_tty_decoder_reset(handle);
+  return on1x_tty_status();
+}
+fn basis_tty_decoder_feed(handle:i64,text:string) -> i64 {
+  let unused=on1x_tty_decoder_feed(handle,text);
+  return on1x_tty_status();
+}
+fn basis_tty_decoder_feed_hex(handle:i64,hex:string) -> i64 {
+  let unused=on1x_tty_decoder_feed_hex(handle,hex);
+  return on1x_tty_status();
+}
+
+# Event type: 0 key, 1 mouse, 2 unknown, 3 paste begin, 4 paste text,
+# 5 paste end. Key/mouse enums and modifiers match mulib-termkey.
+fn basis_tty_event_type_name(event_type:i64) -> string {
+  if event_type==0 { return "key"; }
+  if event_type==1 { return "mouse"; }
+  if event_type==2 { return "unknown"; }
+  if event_type==3 { return "paste-begin"; }
+  if event_type==4 { return "paste-text"; }
+  if event_type==5 { return "paste-end"; }
+  return "invalid";
+}
+fn basis_tty_key_name(key:i64) -> string {
+  if key==0 { return "none"; }
+  if key==1 { return "char"; }
+  if key==2 { return "escape"; }
+  if key==3 { return "enter"; }
+  if key==4 { return "tab"; }
+  if key==5 { return "backspace"; }
+  if key==6 { return "up"; }
+  if key==7 { return "down"; }
+  if key==8 { return "left"; }
+  if key==9 { return "right"; }
+  if key==10 { return "home"; }
+  if key==11 { return "end"; }
+  if key==12 { return "insert"; }
+  if key==13 { return "delete"; }
+  if key==14 { return "page-up"; }
+  if key==15 { return "page-down"; }
+  if key>=16 && key<=27 {
+    if key==16 { return "f1"; }
+    if key==17 { return "f2"; }
+    if key==18 { return "f3"; }
+    if key==19 { return "f4"; }
+    if key==20 { return "f5"; }
+    if key==21 { return "f6"; }
+    if key==22 { return "f7"; }
+    if key==23 { return "f8"; }
+    if key==24 { return "f9"; }
+    if key==25 { return "f10"; }
+    if key==26 { return "f11"; }
+    return "f12";
+  }
+  return "invalid";
+}
+fn basis_tty_mouse_action_name(action:i64) -> string {
+  if action==0 { return "press"; }
+  if action==1 { return "release"; }
+  if action==2 { return "move"; }
+  if action==3 { return "wheel"; }
+  return "invalid";
+}
+fn basis_tty_has_modifier(modifiers:i64,modifier:i64) -> bool {
+  if modifier!=1 && modifier!=2 && modifier!=4 && modifier!=8 { return false; }
+  return (modifiers/modifier)%2==1;
+}
+fn basis_tty_decoder_next(handle:i64,flush:bool)
+  -> (i64,bool,i64,i64,i64,i64,i64,i64,i64,i64,string) {
+  let available=on1x_tty_decoder_next(handle,flush);
+  let next_status=on1x_tty_status();
+  if !available {
+    return (next_status,false,0,0,0,0,0,0,0,0,"");
+  }
+  let event_type=on1x_tty_decoder_event_value(handle,0);
+  let key=on1x_tty_decoder_event_value(handle,1);
+  let codepoint=on1x_tty_decoder_event_value(handle,2);
+  let modifiers=on1x_tty_decoder_event_value(handle,3);
+  let button=on1x_tty_decoder_event_value(handle,4);
+  let action=on1x_tty_decoder_event_value(handle,5);
+  let x=on1x_tty_decoder_event_value(handle,6);
+  let y=on1x_tty_decoder_event_value(handle,7);
+  let raw=on1x_tty_decoder_event_raw_hex(handle);
+  return (on1x_tty_status(),true,event_type,key,codepoint,modifiers,
+    button,action,x,y,raw);
+}
+fn basis_tty_decoder_close(handle:i64) -> i64 {
+  let unused=on1x_tty_decoder_close(handle);
+  return on1x_tty_status();
+}
+
+fn basis_tty_vterm_open(width:i64,height:i64) -> (i64,i64) {
+  let handle=on1x_tty_vterm_open(width,height);
+  return (on1x_tty_status(),handle);
+}
+fn basis_tty_vterm_resize(handle:i64,width:i64,height:i64) -> i64 {
+  let unused=on1x_tty_vterm_resize(handle,width,height);
+  return on1x_tty_status();
+}
+fn basis_tty_vterm_reset(handle:i64) -> i64 {
+  let unused=on1x_tty_vterm_reset(handle);
+  return on1x_tty_status();
+}
+fn basis_tty_vterm_feed(handle:i64,text:string) -> i64 {
+  let unused=on1x_tty_vterm_feed(handle,text);
+  return on1x_tty_status();
+}
+fn basis_tty_vterm_feed_hex(handle:i64,hex:string) -> i64 {
+  let unused=on1x_tty_vterm_feed_hex(handle,hex);
+  return on1x_tty_status();
+}
+fn basis_tty_vterm_finish(handle:i64) -> i64 {
+  let unused=on1x_tty_vterm_finish(handle);
+  return on1x_tty_status();
+}
+
+fn basis_tty_vterm_info(handle:i64)
+  -> (i64,i64,i64,i64,i64,i64,i64,i64) {
+  let width=on1x_tty_vterm_value(handle,0);
+  let height=on1x_tty_vterm_value(handle,1);
+  let cursor_x=on1x_tty_vterm_value(handle,2);
+  let cursor_y=on1x_tty_vterm_value(handle,3);
+  let invalid=on1x_tty_vterm_value(handle,4);
+  let ignored=on1x_tty_vterm_value(handle,5);
+  let cursor_visible=on1x_tty_vterm_value(handle,6);
+  return (on1x_tty_status(),width,height,cursor_x,cursor_y,invalid,ignored,
+    cursor_visible);
+}
+
+fn basis_tty_vterm_cell(handle:i64,x:i64,y:i64)
+  -> (i64,i64,i64,i64,i64) {
+  let codepoint=on1x_tty_vterm_cell(handle,x,y,0);
+  let foreground=on1x_tty_vterm_cell(handle,x,y,1);
+  let background=on1x_tty_vterm_cell(handle,x,y,2);
+  let attributes=on1x_tty_vterm_cell(handle,x,y,3);
+  return (on1x_tty_status(),codepoint,foreground,background,attributes);
+}
+fn basis_tty_vterm_close(handle:i64) -> i64 {
+  let unused=on1x_tty_vterm_close(handle);
+  return on1x_tty_status();
+}

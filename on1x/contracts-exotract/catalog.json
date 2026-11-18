@@ -4,6 +4,9 @@
   "headers": "include/mulib-*.h",
   "implementation_translation_units": 1,
   "safe_export": false,
+  "discovery_only_prefixes": {
+    "cdd-": "CDD requires checked accessors for fixed arrays, explicit counts and borrowed lifetimes before semantic contracts or bindings"
+  },
   "profiles": {
     "json": {
       "recipe": "exoml-core",
@@ -88,6 +91,52 @@
       "recipe": "manifest",
       "link_libraries": ["dl", "m"],
       "required_symbols": ["mulib_pretty_parse_expr", "mulib_pretty_render_expr"]
+    },
+    "sandbox-profile": {
+      "recipe": "manifest",
+      "sandbox_contract": "sandbox/sandbox-profile.exocontract.json",
+      "required_symbols": ["mulib_sandbox_profile_default", "mulib_sandbox_profile_validate", "mulib_sandbox_strerror"]
+    },
+    "seccomp": {
+      "recipe": "manifest",
+      "sandbox_contract": "sandbox/seccomp.exocontract.json",
+      "required_symbols": ["mulib_seccomp_init", "mulib_seccomp_allow", "mulib_seccomp_validate",
+                           "mulib_seccomp_worker", "mulib_seccomp_supported", "mulib_seccomp_install"]
+    },
+    "landlock": {
+      "recipe": "manifest",
+      "sandbox_contract": "sandbox/landlock.exocontract.json",
+      "required_symbols": ["mulib_landlock_abi", "mulib_landlock_supported_access", "mulib_landlock_restrict"]
+    },
+    "namespace": {
+      "recipe": "manifest",
+      "sandbox_contract": "sandbox/namespace.exocontract.json",
+      "required_symbols": ["mulib_namespace_enter", "mulib_namespace_mount_private"]
+    },
+    "cgroup2": {
+      "recipe": "manifest",
+      "sandbox_contract": "sandbox/cgroup2.exocontract.json",
+      "required_symbols": ["mulib_cgroup2_create", "mulib_cgroup2_attach", "mulib_cgroup2_verify",
+                           "mulib_cgroup2_populated", "mulib_cgroup2_kill", "mulib_cgroup2_destroy"]
+    },
+    "ipc-framed": {
+      "recipe": "manifest",
+      "sandbox_contract": "sandbox/ipc-framed.exocontract.json",
+      "required_symbols": ["mulib_ipc_framed_init", "mulib_ipc_now_ms", "mulib_ipc_deadline",
+                           "mulib_ipc_send", "mulib_ipc_receive"]
+    },
+    "capbroker": {
+      "recipe": "manifest",
+      "sandbox_contract": "sandbox/capbroker.exocontract.json",
+      "required_symbols": ["mulib_capbroker_intersect", "mulib_capbroker_init", "mulib_capbroker_begin",
+                           "mulib_capbroker_call", "mulib_capbroker_finish"]
+    },
+    "sandbox-process": {
+      "recipe": "manifest",
+      "sandbox_contract": "sandbox/sandbox-process.exocontract.json",
+      "required_symbols": ["mulib_sandbox_process_start", "mulib_sandbox_worker_enter",
+                           "mulib_sandbox_process_send", "mulib_sandbox_process_receive",
+                           "mulib_sandbox_process_tick", "mulib_sandbox_process_poll", "mulib_sandbox_process_stop"]
     }
   },
   "default_recipe": "manifest"

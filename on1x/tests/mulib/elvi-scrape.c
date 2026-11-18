@@ -8,6 +8,7 @@ int64_t fixture_elvi_provider(const char *source) {
   mulib_elvi_scrape_program_t p;mulib_elvi_scrape_result_t result;size_t count;
   char url[8192];
   if(!mulib_elvi_scrape_compile(source,strlen(source),&p,NULL) ||
+     !mulib_elvi_scrape_url(&p,"",1,url,sizeof url) || strcmp(url,p.home) ||
      !mulib_elvi_scrape_url(&p,"C11 tools",1,url,sizeof url) ||
      !mulib_elvi_scrape_parse(&p,html,strlen(html),&result,1,&count))return 0;
   return count==1 && !strcmp(result.title,"C11 & tools") &&

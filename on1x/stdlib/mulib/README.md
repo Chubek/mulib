@@ -80,8 +80,9 @@ implementation switches come from `MANIFEST.yaml`, including `extra_macros`.
 
 - **Runtime/profiles:** Git, ImmGTK, daemon/distributed profiles, Readline,
   ArchML/DSymSpec, OptML, MicroChan and ElviScrape are selected automatically for
-  their owners. `--mulib-fixture elvi-scrape` embeds both trusted `.elvs` provider
-  files for offline DSL compilation; they are never executed as code.
+  their owners. `--mulib-fixture elvis` selects the ElviScrape kernel and embeds
+  the providers in `library/elvis/` along with the legacy Google and Bing paths.
+  These files are compiled offline as declarative data, never executed as code.
 - **Embedded/amalgamated sources:** lmuw3, lprowse, ldocstr, lcharts, lpaleo and
   Virtio retain source fixtures for provenance. Canonical generator `--check`
   commands verify their checked-in kernel representations. Standalone

@@ -65,9 +65,10 @@ for name,libraries,source,expected in [
         assert len(symbols['elvi-scrape']['archive_exports'])==6 and not symbols['elvi-scrape']['declaration_only']
         recipe=json.loads((dest/'build-plan.json').read_text())
         assert 'MULIB_IMPL_PARSER' not in recipe['implementation_macros']
-        assert [f['path'] for f in recipe['files']]==[
-            'library/elvi-scrape/bing.elvs','library/elvi-scrape/google.elvs']
         evidence=json.loads((a.root/'contracts-exoml/catalog.json').read_text())['profiles']['elvi-scrape']['evidence_sha256']
+        expected_files=sorted(path for path in evidence if path.endswith('.elvs'))
+        assert {'library/elvis/Google.elvs', 'library/elvis/Bing.elvs'} < set(expected_files)
+        assert [f['path'] for f in recipe['files']]==expected_files
         for path,digest in evidence.items():assert lock['inputs'][str((a.root.parent/path).resolve())]==digest
     elif name=='mune':
         assert len(symbols['mune']['archive_exports'])==52 and not symbols['mune']['declaration_only']
@@ -113,13 +114,7 @@ p=run([sys.executable,helper,source,'--on1xc',a.on1xc,'--cc',a.cc,'--mulib-archi
        '--extra-c',a.root/'tests/mulib/mune.c','-o',exe,*['--cflag='+f for f in a.cflag]])
 assert p.returncode==0,p.stderr
 p=run([exe]);assert p.returncode==0 and p.stdout=='mune On1x OK\n',(p.stdout,p.stderr)
-source=a.work/'elvi-scrape.on1x'
-source.write_text('''import std.mulib as M;
-extern fn fixture_elvi_provider(source:string)->i64;
-fn main(){assert(M.has_kernel("elvi-scrape"));
-assert(fixture_elvi_provider(M.require_fixture("library/elvi-scrape/google.elvs"))==1);
-assert(fixture_elvi_provider(M.require_fixture("library/elvi-scrape/bing.elvs"))==1);
-println("elvi providers OK");}''')
+source=a.root/'tests/mulib/elvi-scrape.on1x'
 exe=a.work/'elvi-scrape-app'
 p=run([sys.executable,helper,source,'--on1xc',a.on1xc,'--cc',a.cc,'--mulib-archive',a.work/'elvi-scrape',
        '--extra-c',a.root/'tests/mulib/elvi-scrape.c','-o',exe,*['--cflag='+f for f in a.cflag]])

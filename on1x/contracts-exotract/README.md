@@ -11,12 +11,20 @@ ExoML/libclang declaration extractor to produce:
 - A build plan and an input/artifact SHA-256 lock file.
 - `symbols.json`, separating actual archive exports from declaration-only APIs.
 
-The binding source is `include/mulib-*.h`. `catalog.json` uses `MANIFEST.yaml`
-as the module registry: **1,165 module profiles**, plus inventory reporting of
-the three auxiliary headers `mulib-container-core.h`, `mulib-qvm.h` and
-`mulib-lprowse.h`. Those helpers have no independent MANIFEST implementation
-recipe; they remain included by their owning kernels. This is a library-wide
-registry, not a claim that every module has been compiled on every platform.
+The binding source is `include/mulib-*.h`. Both this catalog and the
+[ExoML inventory](../contracts-exoml/README.md) use `MANIFEST.yaml` as the
+module registry. `list` reports each canonical header, manual, implementation
+switch and dependencies, plus its archive recipe and whether any semantic
+sidecar or core snapshot profile exists. The three auxiliary headers
+`mulib-container-core.h`, `mulib-qvm.h` and `mulib-lprowse.h` are reported
+separately; they have no independent implementation recipe. Registration
+does not mean a kernel builds on every platform or has a KernelBind profile.
+
+The `cdd-*` modules are **discovery-only**. `plan cdd-resolve` reports its
+MANIFEST closure, labeled `discovery_only`; `build` refuses to generate a CDD
+archive. The [KernelBind inspector](../docs/kernel-bind.md#inspect-requests-and-discover-declarations)
+can extract declaration metadata for `mulib.cdd_*`. It neither attaches a
+semantic sidecar nor enables callable bindings.
 
 ## Build the generator
 
@@ -172,4 +180,12 @@ implementation switches. This verifies raw linkage, not general foreign safety.
 `plan elvi-scrape` and `build elvi-scrape` use the pinned complete one-TU
 recipe and require all six exported symbols. `examples/elvi-scrape.c` executes
 offline provider compilation, URL expansion and extraction against that archive.
+The archive includes canonical `library/elvis/*.elvs` profiles and the legacy
+Google and Bing fixture paths.
 TLS session fixtures test the adapter independently; typed imports remain unsafe.
+
+## Sandbox kernel profiles
+
+See [Sandbox kernels: build and inspect, not import](../docs/kernel-sandbox.md)
+for the native one-TU archive recipe, declaration evidence and required SDK.
+The sandbox profiles do not generate callable On1x adapters.

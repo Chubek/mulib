@@ -173,6 +173,13 @@ class FetchTests(unittest.TestCase):
             f'dependency "toolkit" {kind} {json.dumps(url or self.base + "/lib.git")} "{pin}"\n')
         return self.project / '.on1x-deps/toolkit' / pin
 
+    def selector_manifest(self, selector, value, url=None):
+        (self.project / 'On1xfile').write_text(
+            'on1xfile 1\nkind executable\nname "sample"\ndirectory "src"\n'
+            'target "sample" "src/main.on1x"\n'
+            f'dependency "toolkit" git-remote {json.dumps(url or self.base + "/lib.git")} '
+            f'{selector} {json.dumps(value)}\n')
+
     def driver(self, *args, negative=None, env=None, prefix=None):
         result = subprocess.run([*(prefix or (sys.executable, OPTIONS.driver)), *args],
                                 cwd=self.project, capture_output=True, text=True, env=env, timeout=100)
@@ -210,9 +217,10 @@ class FetchTests(unittest.TestCase):
                     GIT_SSL_NO_VERIFY='1', GIT_ALLOW_PROTOCOL='ext', https_proxy='http://127.0.0.1:1',
                     GIT_EXEC_PATH=str(home), GIT_DIR=str(home / 'wrong-git')), probe
 
-    def fetch(self, *, negative=None, env=None, ca=True, prefix=None):
+    def fetch(self, *extra, negative=None, env=None, ca=True, prefix=None):
         flags = ['--ca-file', self.ca] if ca else []
-        return self.driver('fetch', 'toolkit', *flags, negative=negative, env=env, prefix=prefix)
+        return self.driver('fetch', 'toolkit', *flags, *extra,
+                           negative=negative, env=env, prefix=prefix)
 
     def build(self, *flags, negative=None):
         return self.driver('build', '--on1xc', OPTIONS.on1xc, '--cc', OPTIONS.cc, *flags,
@@ -258,6 +266,66 @@ class FetchTests(unittest.TestCase):
         self.assertEqual(len(pin), 64)
         dest = self.manifest(pin)
         self.assertEqual(self.driver('fetch', 'toolkit', self.project, '--ca-file', self.ca), str(dest))
+        self.selector_manifest('branch', 'main')
+        self.assertEqual(self.driver('lock', '--ca-file', self.ca),
+                         str(self.project / 'On1xfile.lock'))
+        entry = json.loads((self.project / 'On1xfile.lock').read_text())['dependencies']['toolkit']
+        self.assertEqual(len(entry['commit']), 64)
+        self.assertEqual(entry['commit'], self.server.head)
+
+    def test_branch_and_annotated_tag_resolve_to_locked_commits(self):
+        pin = self.library()
+        self.git('-C', self.source, 'tag', '-am', 'release fixture', 'release-1', pin)
+        self.selector_manifest('branch', 'main')
+        self.build('--frozen', negative='lockfile is required')
+        self.fetch('--offline', negative='selector requires a matching lockfile entry')
+        self.assertFalse(self.server.requests)
+        branch_store = Path(self.fetch())
+        self.assertEqual(branch_store.name, self.server.head)
+        lock = json.loads((self.project / 'On1xfile.lock').read_text())
+        self.assertEqual(lock['dependencies']['toolkit']['selector'],
+                         {'kind': 'branch', 'value': 'main'})
+        self.assertEqual(lock['dependencies']['toolkit']['commit'], self.server.head)
+        output = Path(self.build('--frozen'))
+        self.assertEqual(subprocess.check_output([output / 'sample'], text=True, timeout=5), '99\n')
+
+        self.selector_manifest('tag', 'release-1')
+        self.fetch('--frozen', negative='stale entry')
+        self.assertEqual(self.driver('lock', '--ca-file', self.ca),
+                         str(self.project / 'On1xfile.lock'))
+        tag_store = self.project / '.on1x-deps/toolkit' / pin
+        self.assertEqual(tag_store.name, pin)
+        lock = json.loads((self.project / 'On1xfile.lock').read_text())
+        self.assertEqual(lock['dependencies']['toolkit']['selector'],
+                         {'kind': 'tag', 'value': 'release-1'})
+        self.assertEqual(lock['dependencies']['toolkit']['commit'], pin)
+        output = Path(self.build('--frozen'))
+        self.assertEqual(subprocess.check_output([output / 'sample'], text=True, timeout=5), '42\n')
+
+        requests = len(self.server.requests)
+        self.server.shutdown()
+        self.server.server_close()
+        self.assertEqual(self.fetch('--frozen', ca=False), str(tag_store))
+        self.assertEqual(len(self.server.requests), requests)
+
+    def test_concurrent_fetches_publish_one_valid_cache_generation(self):
+        pin = self.library()
+        destination = self.manifest(pin)
+        command = [sys.executable, OPTIONS.driver, 'fetch', 'toolkit',
+                   '--ca-file', str(self.ca)]
+        children = [subprocess.Popen(command, cwd=self.project, text=True,
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    for _ in range(2)]
+        results = [child.communicate(timeout=100) for child in children]
+        for child, (stdout, stderr) in zip(children, results):
+            self.assertEqual(child.returncode, 0, stderr)
+            self.assertEqual(stdout.strip(), str(destination))
+        advertisements = [path for method, path, _ in self.server.requests
+                          if method == 'GET' and 'info/refs?service=git-upload-pack' in path]
+        self.assertEqual(len(advertisements), 1, self.server.requests)
+        self.assertEqual({path.name for path in destination.iterdir()}, {'objects'})
+        lock = json.loads((self.project / 'On1xfile.lock').read_text())
+        self.assertEqual(lock['dependencies']['toolkit']['commit'], pin)
 
     def test_reject_unadmitted_transports_and_non_pins_before_network(self):
         for url in ('http://127.0.0.1/repo.git', 'file:///etc', 'git://127.0.0.1/repo.git',
@@ -308,6 +376,9 @@ class FetchTests(unittest.TestCase):
         self.git('-C', self.source, 'tag', '-am', 'fixture', 'fixture', pin)
         dest = self.manifest(self.git('-C', self.source, 'rev-parse', 'refs/tags/fixture').decode())
         self.fetch(negative='must name a commit')
+        self.assertEqual(list(dest.parent.iterdir()), [])
+        self.selector_manifest('branch', 'does-not-exist')
+        self.fetch(negative="branch 'does-not-exist' was not found")
         self.assertEqual(list(dest.parent.iterdir()), [])
 
     def test_invalid_roles_and_symlink_cache_fail_closed(self):

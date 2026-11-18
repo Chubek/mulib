@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
+#if defined(__unix__) || defined(__APPLE__)
+#include <errno.h>
+#include <unistd.h>
+#endif
 #ifndef ON1X_ENV_MALLOC
 #define ON1X_ENV_MALLOC malloc
 #endif
@@ -472,6 +476,22 @@ static const char *read_stream(FILE *stream){
 const char *on1x_io_stdin(void){return read_stream(stdin);}
 void on1x_io_stdout(const char *text){if(fputs(text,stdout)==EOF||fflush(stdout))data_error("stdout write failure");}
 void on1x_io_stderr(const char *text){if(fputs(text,stderr)==EOF||fflush(stderr))data_error("stderr write failure");}
+bool on1x_diagnostics_sideband(const char *wire){
+ const char *descriptor=getenv("ON1X_PPX_DIAGNOSTICS_FD");size_t length,written=0;
+ if(!wire||!descriptor||strcmp(descriptor,"3")!=0||strcmp(on1x_tool_env("ON1X_PPX_PROTOCOL"),"1")!=0)return false;
+ length=strlen(wire);if(!length||length>32768||wire[length-1]!='\n')return false;
+#if defined(__unix__) || defined(__APPLE__)
+ while(written<length){
+  ssize_t count=write(3,wire+written,length-written);
+  if(count<0&&errno==EINTR)continue;
+  if(count<=0)return false;
+  written+=(size_t)count;
+ }
+ return true;
+#else
+ (void)written;return false;
+#endif
+}
 const char *on1x_tool_env(const char *name){const char *value=getenv(name);if(!value)return "";return on1x_text_slice(value,0,on1x_text_len(value));}
 const char *on1x_tool_read_file(const char *path){
   FILE *file;const char *text;if(text_size(path)>4096)data_error("file path limit exceeded");

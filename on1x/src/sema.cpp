@@ -1,4 +1,5 @@
 #include <on1x/ast.hpp>
+#include <on1x/analysis.hpp>
 #include <on1x/kernel.hpp>
 #include <on1x/extensions.hpp>
 #include <on1x/infer.hpp>
@@ -620,16 +621,33 @@ class Checker {
   }
  }
 };
- void check_unit(Unit& u,const std::vector<InterfaceObligation>* interfaces){
-  require_no_kernel_imports(u);expand_macros(u);meta::require_core(u);infer_types(u);canonical::lower_control(u);
-  Checker(u).run(interfaces);
-  if(canonical::needs_values(u)){canonical::lower_values(u);Checker(u).run(interfaces);}
+  void check_unit(Unit& u,const std::vector<InterfaceObligation>* interfaces,analysis::Context* analysis_context){
+   require_no_kernel_imports(u);expand_macros(u);meta::require_core(u);infer_types(u);canonical::lower_control(u);
+   Checker(u).run(interfaces);
+   if(analysis_context)analysis::run(u,*analysis_context);
+   if(canonical::needs_values(u)){canonical::lower_values(u);Checker(u).run(interfaces);}
   csp::lower(u);canonical::verify_control(u);canonical::verify_values(u);csp::verify(u,true);extensions::verify_evidence(u);
  }
 }
- void check(Unit& u){check_unit(u,nullptr);}
- void check_interfaces(Unit u,const std::vector<InterfaceObligation>& interfaces){
-  if(interfaces.empty())throw Error({"<unit>"},"no interface obligations to verify","ON1X-INTERFACE-MEMBER");
-  check_unit(u,&interfaces);
- }
+  void check(Unit& u,analysis::Context& context){check_unit(u,nullptr,&context);}
+  void check(Unit& u){
+   diagnostic::Registry registry;analysis::Context context{diagnostic::Catalog::embedded(),registry,{},{}};
+   check_unit(u,nullptr,&context);
+   if(registry.has_errors()){
+    const auto& finding=*std::find_if(registry.records().begin(),registry.records().end(),[](const auto& item){return item.level.failure;});
+    throw Error(finding.where,finding.message,finding.id);
+   }
+  }
+  void check_interfaces(Unit u,const std::vector<InterfaceObligation>& interfaces,analysis::Context& context){
+   if(interfaces.empty())throw Error({"<unit>"},"no interface obligations to verify","ON1X-INTERFACE-MEMBER");
+   check_unit(u,&interfaces,&context);
+  }
+  void check_interfaces(Unit u,const std::vector<InterfaceObligation>& interfaces){
+   diagnostic::Registry registry;analysis::Context context{diagnostic::Catalog::embedded(),registry,{},{}};
+   check_interfaces(std::move(u),interfaces,context);
+   if(registry.has_errors()){
+    const auto& finding=*std::find_if(registry.records().begin(),registry.records().end(),[](const auto& item){return item.level.failure;});
+    throw Error(finding.where,finding.message,finding.id);
+   }
+  }
 }

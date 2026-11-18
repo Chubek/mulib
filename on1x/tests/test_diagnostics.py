@@ -61,7 +61,8 @@ assert run('--check', type_out).returncode == 0
 typed = fixture('ill-typed.on1x', 'fn main()->i64{return true}')
 p = run('--repair', '--diagnostics', 'json', typed, '-o', root / 'rejected-output')
 assert p.returncode == 1 and not (root / 'rejected-output').exists(), p
-assert all(c['status'] == 'rejected' for c in json.loads(p.stderr)['diagnostics'][0]['repairs'])
+assert all(c['status'] == 'inconclusive'
+           for c in json.loads(p.stderr)['diagnostics'][0]['repairs'])
 report(fixture('undefined.on1x', 'fn main()->i64{return missing;}'), 'ON1X-SEMA')
 report(fixture('mismatch.on1x', 'fn main()->i64{return true;}'), 'ON1X-TYPE')
 assert report(fixture('semantic.on1x', 'fn main()->i64{let x=1;x=2;return x;}'), 'ON1X-SEMA')['repairs'] == []
@@ -69,6 +70,263 @@ nul = root / 'nul.on1x'
 nul.write_bytes(b'fn main(){\x00}')
 report(nul, 'ON1X-LEX-NUL')
 report(fixture('token.on1x', 'fn main(){`;}'), 'ON1X-LEX-TOKEN')
+
+# Wetstone findings are advisory at standard scrutiny and errors at strict
+# scrutiny. CLI policy overrides a source directive, which overrides project
+# policy. Builds without Wetstone remain usable and emit no fabricated result.
+division = fixture('division.on1x', 'fn main()->i64{return 42/0;}')
+p = run('--check', '--diagnostics', 'json', division)
+wetstone_enabled = bool(p.stderr)
+if wetstone_enabled:
+    finding = json.loads(p.stderr)['diagnostics'][0]
+    assert p.returncode == 0 and finding['id'] == 'ON1X-ANALYSIS-DIVZERO', p
+    assert finding['severity'] == 'warning' and p.stdout.startswith('OK:'), p
+    assert any('advisory proposal' in note and 'not compiler-revalidated' in note
+               for note in finding['notes'])
+    assert p.stderr == run('--check', '--diagnostics', 'json', division).stderr
+    p = run('--check', '--diagnostics', 'json', '--scrutiny', 'strict', division)
+    assert p.returncode == 1 and not p.stdout
+    assert json.loads(p.stderr)['diagnostics'][0]['severity'] == 'error'
+    directed = fixture('directed.on1x', '@scrutiny strict;\nfn main()->i64{return 42/0;}')
+    assert run('--check', '--project-scrutiny', 'off', directed).returncode == 1
+    assert run('--check', '--project-scrutiny', 'strict', '--scrutiny', 'off', directed).returncode == 0
+    p = run('--check', '--diagnostics', 'json', '--no-analysis-repairs', division)
+    assert p.returncode == 0
+    assert all('advisory proposal' not in note
+               for note in json.loads(p.stderr)['diagnostics'][0]['notes'])
+else:
+    assert p.returncode == 0 and p.stdout.startswith('OK:'), p
+for bad_policy in [
+        ('--scrutiny', 'unknown'),
+        ('--scrutiny-work', '0'),
+]:
+    p = run('--check', '--diagnostics', 'json', *bad_policy, division)
+    assert p.returncode == 1 and not p.stdout, p
+    assert json.loads(p.stderr)['diagnostics'][0]['id'] == 'ON1X-DIAGNOSTIC-SCRUTINY'
+
+# External catalogs own presented identities, levels, messages, remediation,
+# scrutiny/check mappings, repair policy and native PPX declarations. These
+# replacements are loaded by the already-built compiler.
+catalog_source = t.root / 'stdlib/diagnostics/catalog.json'
+catalog = json.loads(catalog_source.read_text())
+parse_entry = next(item for item in catalog['diagnostics']
+                   if item.get('match') == 'ON1X-PARSE-EXPECTED')
+parse_entry.update(id='EXTERNAL-PARSE', level='notice',
+                   message='external catalog message',
+                   remediation='external catalog remediation')
+next(level for level in catalog['levels'] if level['kind'] == 0)['name'] = 'notice'
+ppx_entry = next(item for item in catalog['diagnostics']
+                 if item.get('processor') == 'diagnostics')
+ppx_entry.update(id='EXTERNAL-PPX', level='notice',
+                 message='external PPX catalog message')
+catalog_path = root / 'catalog.json'
+catalog_path.write_text(json.dumps(catalog, sort_keys=True))
+p = run('--check', '--diagnostics', 'json', '--diagnostic-catalog', catalog_path, bad)
+assert p.returncode == 1
+replaced = json.loads(p.stderr)['diagnostics'][0]
+assert (replaced['id'], replaced['severity'], replaced['message'],
+        replaced['remediation']) == (
+            'EXTERNAL-PARSE', 'notice', 'external catalog message',
+            'external catalog remediation')
+
+# Replacements and candidate identity/labels are repair policy data as well.
+repair_catalog = json.loads(catalog_source.read_text())
+spelling = next(policy for policy in repair_catalog['repair_policies']
+                if policy['kind'] == 2)
+spelling.update(name='spelling-review', candidate_id='review-{replacement}',
+                replacements=['bool'], maximum_distance=1,
+                notice='replacement repair notice')
+next(item for item in repair_catalog['diagnostics']
+     if item.get('match') == 'ON1X-PARSE-TYPE')['repair'] = 'spelling-review'
+repair_path = root / 'repair-catalog.json'
+repair_path.write_text(json.dumps(repair_catalog))
+p = run('--check', '--diagnostics', 'json', '--diagnostic-catalog',
+        repair_path, typo)
+assert p.returncode == 1
+diagnosed = json.loads(p.stderr)['diagnostics'][0]
+assert [candidate['id'] for candidate in diagnosed['repairs']] == ['review-bool']
+assert 'replacement repair notice' in diagnosed['notes']
+spelling['replacements'] = ['i64']
+repair_path.write_text(json.dumps(repair_catalog))
+p = run('--check', '--diagnostics', 'json', '--diagnostic-catalog',
+        repair_path, typo)
+assert p.returncode == 1 and not json.loads(p.stderr)['diagnostics'][0]['repairs']
+
+if wetstone_enabled:
+    analysis_catalog = json.loads(catalog_source.read_text())
+    for policy in analysis_catalog['scrutiny']:
+        policy['checks'] = [
+            'division-check' if check == 'arithmetic' else check
+            for check in policy['checks']
+        ]
+        if policy['name'] == 'standard':
+            policy['name'] = 'review'
+        elif policy['name'] == 'strict':
+            policy['name'] = 'audit'
+    analysis_catalog['default_scrutiny'] = 'review'
+    for item in analysis_catalog['diagnostics']:
+        if item.get('check') == 'arithmetic':
+            item['check'] = 'division-check'
+        if item.get('minimum_scrutiny') == 'standard':
+            item['minimum_scrutiny'] = 'review'
+        elif item.get('minimum_scrutiny') == 'strict':
+            item['minimum_scrutiny'] = 'audit'
+    division_entry = next(
+        item for item in analysis_catalog['diagnostics']
+        if item.get('upstream') == {
+            'rule': 'WET-DIVZERO', 'level': 1, 'adapter': 0
+        })
+    division_entry.update(id='EXTERNAL-DIVISION',
+                          message='external division message')
+    analysis_catalog_path = root / 'analysis-catalog.json'
+    analysis_catalog_path.write_text(json.dumps(analysis_catalog, sort_keys=True))
+    p = run('--check', '--diagnostics', 'json', '--diagnostic-catalog',
+            analysis_catalog_path, division)
+    assert p.returncode == 0 and p.stdout.startswith('OK:'), p
+    replaced = json.loads(p.stderr)['diagnostics'][0]
+    assert (replaced['id'], replaced['message'], replaced['check']) == (
+        'EXTERNAL-DIVISION', 'external division message', 'division-check')
+    p = run('--check', '--diagnostics', 'json', '--diagnostic-catalog',
+            analysis_catalog_path, '--scrutiny', 'audit', division)
+    assert p.returncode == 1 and json.loads(p.stderr)['diagnostics'][0][
+        'severity'] == 'error', p
+    p = run('--check', '--diagnostics', 'json', '--diagnostic-catalog',
+            analysis_catalog_path, '--scrutiny', 'standard', division)
+    assert p.returncode == 1
+    assert json.loads(p.stderr)['diagnostics'][0][
+        'id'] == 'ON1X-DIAGNOSTIC-SCRUTINY'
+
+    disabled_catalog = json.loads(json.dumps(analysis_catalog))
+    next(policy for policy in disabled_catalog['scrutiny']
+         if policy['name'] == 'review')['checks'].remove('division-check')
+    disabled_path = root / 'disabled-analysis-catalog.json'
+    disabled_path.write_text(json.dumps(disabled_catalog, sort_keys=True))
+    p = run('--check', '--diagnostics', 'json', '--diagnostic-catalog',
+            disabled_path, division)
+    assert p.returncode == 0 and p.stdout.startswith('OK:') and not p.stderr, p
+
+malformed_catalog = root / 'malformed-catalog.json'
+malformed_catalog.write_text(
+    '{"schema":"on1x.diagnostic-catalog/v2","schema":"duplicate"}')
+p = run('--check', '--diagnostics', 'json', '--diagnostic-catalog', malformed_catalog, bad)
+assert p.returncode == 1 and not p.stdout
+assert json.loads(p.stderr)['diagnostics'][0]['id'] == 'ON1X-DIAGNOSTIC-CATALOG'
+
+# Native and ordinary external PPXs use descriptor 3, never stderr, and must
+# register a cataloged PPX ID before emission.
+ppx_source = fixture('ppx-diagnostic.on1x',
+                     'fn main()->i64{return @diagnostics("warn",42);}')
+native_ppx = t.compiler.parent / 'stdppx/on1x-ppx-diagnostics'
+if native_ppx.is_file():
+    p = run('--check', '--diagnostics', 'json', '--stdppx-path', native_ppx.parent,
+            '--stdppx', 'diagnostics', ppx_source)
+    assert p.returncode == 0 and p.stdout.startswith('OK:'), p
+    emitted = json.loads(p.stderr)['diagnostics'][0]
+    assert emitted['id'] == 'ON1X-PPX-DIAGNOSTIC' and emitted['origin'] == 'ppx'
+    # The same compiled native processor consumes the replacement declaration.
+    p = run('--check', '--diagnostics', 'json', '--diagnostic-catalog',
+            catalog_path, '--stdppx-path', native_ppx.parent,
+            '--stdppx', 'diagnostics', ppx_source)
+    assert p.returncode == 0 and p.stdout.startswith('OK:'), p
+    emitted = json.loads(p.stderr)['diagnostics'][0]
+    assert (emitted['id'], emitted['severity'], emitted['message']) == (
+        'EXTERNAL-PPX', 'notice', 'external PPX catalog message')
+
+def external_ppx(name, records):
+    path = root / name
+    path.write_text(
+        '#!/usr/bin/python3\n'
+        'import os,sys\n'
+        f'os.write(3,{records!r})\n'
+        'sys.stdout.buffer.write(sys.stdin.buffer.read())\n')
+    path.chmod(0o755)
+    return path
+
+plugin_source = fixture('external-ppx-source.on1x', 'fn main()->i64{return 42;}')
+location = f'(Loc {json.dumps(str(plugin_source.resolve()))} 0 1 1)'
+wire = (f'(register "ON1X-PPX-DIAGNOSTIC")\n'
+        f'(emit "ON1X-PPX-DIAGNOSTIC" {location})\n').encode()
+plugin = external_ppx('diagnostic-ppx.py', wire)
+p = run('--check', '--diagnostics', 'json', '--ppx', 'external_diagnostic', plugin, plugin_source)
+assert p.returncode == 0 and p.stdout.startswith('OK:'), p
+assert json.loads(p.stderr)['diagnostics'][0]['message'] == (
+    'The selected diagnostics PPX emitted its cataloged advisory.')
+
+# A catalog-selected failing level emits exactly one registered finding; it
+# must not acquire a second generic compiler identity during exception routing.
+failure_catalog = json.loads(catalog_source.read_text())
+next(item for item in failure_catalog['diagnostics']
+     if item.get('processor') == 'diagnostics')['level'] = 'error'
+failure_catalog_path = root / 'failure-ppx-catalog.json'
+failure_catalog_path.write_text(json.dumps(failure_catalog))
+p = run('--check', '--diagnostics', 'json', '--diagnostic-catalog',
+        failure_catalog_path, '--ppx', 'external_diagnostic', plugin, plugin_source)
+assert p.returncode == 1 and not p.stdout
+diagnosed = json.loads(p.stderr)['diagnostics']
+assert len(diagnosed) == 1 and diagnosed[0]['id'] == 'ON1X-PPX-DIAGNOSTIC'
+assert diagnosed[0]['severity'] == 'error'
+
+# PPX records cannot supply message text at all. Catalog-controlled text still
+# cannot inject terminal lines or control sequences into text output.
+hostile_message = r'external advisory\nforged: error\x1b[31mred\x1b[0m'
+hostile_catalog = json.loads(catalog_source.read_text())
+next(item for item in hostile_catalog['diagnostics']
+     if item.get('processor') == 'diagnostics')['message'] = (
+         'external advisory\nforged: error\x1b[31mred\x1b[0m')
+hostile_catalog_path = root / 'hostile-catalog.json'
+hostile_catalog_path.write_text(json.dumps(hostile_catalog, sort_keys=True))
+hostile_wire = (f'(register "ON1X-PPX-DIAGNOSTIC")\n'
+                 f'(emit "ON1X-PPX-DIAGNOSTIC" {location})\n').encode()
+hostile_plugin = external_ppx('hostile-diagnostic-ppx.py', hostile_wire)
+p = run('--check', '--color', 'always', '--diagnostic-catalog',
+        hostile_catalog_path, '--ppx', 'hostile_diagnostic', hostile_plugin,
+        plugin_source)
+assert p.returncode == 0 and p.stdout.startswith('OK:'), p
+assert p.stderr.count('\x1b') == 2, repr(p.stderr)
+assert r'external advisory\nforged: error\x1b[31mred\x1b[0m' in p.stderr
+assert '\nforged: error' not in p.stderr
+p = run('--check', '--diagnostics', 'json', '--color', 'always',
+        '--diagnostic-catalog', hostile_catalog_path, '--ppx',
+        'hostile_diagnostic', hostile_plugin, plugin_source)
+assert p.returncode == 0 and '\x1b' not in p.stderr
+assert json.loads(p.stderr)['diagnostics'][0]['message'] == (
+    'external advisory\nforged: error\x1b[31mred\x1b[0m')
+
+# PPX-controlled locations never authorize reading an arbitrary host path.
+# Without a loaded-graph snapshot SARIF must omit, rather than derive, a column.
+foreign = fixture('not-a-dependency.on1x', 'fn hidden(){let s="😀";}')
+foreign_location = f'(Loc {json.dumps(str(foreign.resolve()))} 0 1 1)'
+foreign_wire = (f'(register "ON1X-PPX-DIAGNOSTIC")\n'
+                f'(emit "ON1X-PPX-DIAGNOSTIC" {foreign_location})\n').encode()
+p = run('--check', '--diagnostics', 'sarif', '--ppx', 'foreign_location',
+        external_ppx('foreign-location-ppx.py', foreign_wire), plugin_source)
+assert p.returncode == 0, p
+region = json.loads(p.stderr)['runs'][0]['results'][0]['locations'][0][
+    'physicalLocation']['region']
+assert 'startColumn' not in region, region
+
+for index, (name, records) in enumerate([
+    ('unregistered-ppx.py',
+     f'(emit "ON1X-PPX-DIAGNOSTIC" {location})\n'.encode()),
+    ('free-form-message-ppx.py',
+     f'(register "ON1X-PPX-DIAGNOSTIC")\n'
+     f'(emit "ON1X-PPX-DIAGNOSTIC" "forbidden" {location})\n'.encode()),
+    ('malformed-ppx.py', b'(emit "ON1X-PPX-DIAGNOSTIC")\n'),
+    ('unterminated-ppx.py', b'(register "ON1X-PPX-DIAGNOSTIC")'),
+    ('bounded-ppx.py', b'(register "ON1X-PPX-DIAGNOSTIC")\n' * 257),
+]):
+    p = run('--check', '--diagnostics', 'json', '--ppx', f'bad_ppx_{index}', external_ppx(name, records),
+            plugin_source)
+    assert p.returncode == 1 and not p.stdout, p
+    failure = json.loads(p.stderr)['diagnostics'][0]
+    assert failure['id'] == 'ON1X-DIAGNOSTIC-PROTOCOL', failure
+
+# Text diagnostics color only the severity and never contaminate stdout or
+# structured JSON.
+p = run('--check', '--color', 'always', bad)
+assert p.returncode == 1 and not p.stdout and '\x1b[31merror\x1b[0m' in p.stderr
+assert '\x1b[' not in run('--check', '--color', 'never', bad).stderr
+assert '\x1b[' not in run('--check', '--diagnostics', 'json', '--color', 'always', bad).stderr
 
 # Imported errors retain imported-file identity, not entry-file offsets.
 dep = fixture('dep.on1x', 'fn answer()->i64{return 42}')

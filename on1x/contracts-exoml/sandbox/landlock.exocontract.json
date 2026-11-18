@@ -1,0 +1,20 @@
+{
+  "schema_version": 2,
+  "library": "landlock",
+  "headers": ["mulib-landlock.h"],
+  "state": "annotated",
+  "bundle_provenance": {"header": "mulib-landlock.h", "revision": "sha256:38c9422cc70eb25f07cc35b925e48002e9139f1810991fbcede0d266c47a512e", "review_status": "unreviewed"},
+  "functions": [
+    {"c_name": "mulib_landlock_abi", "return": {"kind": "value"},
+     "errors": {"kind": "custom_classifier"}, "effects": {"effects": ["foreign_call"], "unknown": true},
+     "provenance": {"header": "mulib-landlock.h", "review_status": "unreviewed", "evidence_method": "Positive ABI or negative MuLIB status; querying availability does not apply a policy."}},
+    {"c_name": "mulib_landlock_supported_access", "return": {"kind": "value"}, "parameters": [{"index": 0, "name": "abi", "ownership": "scalar"}],
+     "errors": {"kind": "none"}, "effects": {"effects": [], "unknown": false},
+     "provenance": {"header": "mulib-landlock.h", "review_status": "unreviewed", "evidence_method": "Calculates rights represented by this revision; not an enforcement probe."}},
+    {"c_name": "mulib_landlock_restrict", "return": {"kind": "value"},
+     "parameters": [{"index": 0, "name": "rules", "ownership": "borrowed_immutable", "nullable": true, "count_parameter": 1, "lifetime": {"origin": "explicit_region", "region_name": "call"}}, {"index": 1, "name": "count", "ownership": "scalar"}, {"index": 2, "name": "min_abi", "ownership": "scalar"}],
+     "errors": {"kind": "int_code", "cleanup_required_on_failure": true},
+     "effects": {"effects": ["read", "write", "io", "foreign_call"], "unknown": true},
+     "provenance": {"header": "mulib-landlock.h", "review_status": "unreviewed", "evidence_method": "Unique rule descriptor owners lend O_PATH handles for the call; descriptor integers cannot prove that identity. No automatic fallback, fd revocation, or full filesystem mediation. On bootstrap failure never proceed."}}
+  ]
+}

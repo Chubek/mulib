@@ -3,6 +3,14 @@
 #include <on1x/nominal.hpp>
 
 namespace on1x {
+inline bool clamp_interval_symbol(std::string_view symbol) {
+ return symbol=="mulib_clamp_i64";
+}
+inline std::size_t clamp_kernel_arity(std::string_view symbol) {
+ if(clamp_interval_symbol(symbol))return 3;
+ if(symbol=="mulib_clamp_add_i64"||symbol=="mulib_clamp_sub_i64")return 2;
+ return 0;
+}
 inline bool history_kernel_symbol(std::string_view symbol) {
  return symbol=="mulib_histprice_ema"||symbol=="mulib_histprice_holt";
 }
@@ -92,9 +100,10 @@ inline void verify_kernel_shape(const Function& f) {
   }
   throw Error(f.where,"ON1X-KERNEL-ABI: invalid internal history interface","ON1X-KERNEL-ABI");
  }
- if((f.kernel_symbol!="mulib_clamp_add_i64"&&f.kernel_symbol!="mulib_clamp_sub_i64")||
-    f.name!=expected||!f.external||f.prototype||!f.body.empty()||!f.attributes.empty()||
-    f.result!=Type::I64||f.params.size()!=2)
+ const auto arity=clamp_kernel_arity(f.kernel_symbol);
+ if(!arity||
+     f.name!=expected||!f.external||f.prototype||!f.body.empty()||!f.attributes.empty()||
+     f.result!=Type::I64||f.params.size()!=arity)
   throw Error(f.where,"ON1X-KERNEL-ABI: invalid internal scalar interface","ON1X-KERNEL-ABI");
  for(const auto& p:f.params)
   if(p.type!=Type::I64||p.pattern)

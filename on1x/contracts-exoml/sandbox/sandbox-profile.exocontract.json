@@ -1,0 +1,23 @@
+{
+  "schema_version": 2,
+  "library": "sandbox-profile",
+  "headers": ["mulib-sandbox-profile.h"],
+  "state": "annotated",
+  "bundle_provenance": {"header": "mulib-sandbox-profile.h", "revision": "sha256:013739fae1574c158e29f4eb8c083bf80efd5ee40129c9855f8e00c8520dfd33", "review_status": "unreviewed"},
+  "functions": [
+    {"c_name": "mulib_sandbox_profile_default", "return": {"kind": "value"},
+     "errors": {"kind": "none"}, "effects": {"effects": [], "unknown": false},
+     "concurrency": {"thread_safety": "thread_safe", "blocking_behavior": "nonblocking", "suspension_safe": true},
+     "provenance": {"header": "mulib-sandbox-profile.h", "review_status": "unreviewed", "evidence_method": "Target-qualified by-value record ABI is required; defaults do not attest enforcement."}},
+    {"c_name": "mulib_sandbox_profile_validate", "return": {"kind": "value"},
+     "parameters": [{"index": 0, "name": "p", "ownership": "borrowed_immutable", "nullable": true, "lifetime": {"origin": "explicit_region", "region_name": "call"}}],
+     "errors": {"kind": "int_code"}, "effects": {"effects": ["read"], "unknown": false},
+     "concurrency": {"thread_safety": "thread_safe", "blocking_behavior": "nonblocking", "suspension_safe": true},
+     "provenance": {"header": "mulib-sandbox-profile.h", "review_status": "unreviewed", "evidence_method": "Validation is policy checking only, not evidence of host enforcement."}},
+    {"c_name": "mulib_sandbox_strerror", "return": {"kind": "borrow", "lifetime": {"origin": "global_static"}},
+     "parameters": [{"index": 0, "name": "code", "ownership": "scalar"}],
+     "errors": {"kind": "none"}, "effects": {"effects": [], "unknown": false},
+     "concurrency": {"thread_safety": "thread_safe", "blocking_behavior": "nonblocking", "suspension_safe": true},
+     "provenance": {"header": "mulib-sandbox-profile.h", "review_status": "unreviewed", "evidence_method": "Return is borrowed immutable static NUL-terminated text, never freed by caller."}}
+  ]
+}

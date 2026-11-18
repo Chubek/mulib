@@ -1,0 +1,31 @@
+import std.tty.tty as T;
+
+fn main() {
+  # Styling is capability-aware: a pipe or NO_COLOR receives sanitized plain
+  # text, while a supported terminal may receive a bold indexed-color rendition.
+  let (render_status,text)=T.basis_tty_render(1,"terminal-safe text",1,2,-1,false);
+  assert(render_status==0 || render_status==1);
+  println(text);
+
+  # Hex preserves every input byte across the current NUL-free string ABI.
+  let (decoder_status,decoder)=T.basis_tty_decoder_open();
+  assert(decoder_status==0);
+  assert(T.basis_tty_decoder_feed_hex(decoder,"1b5b41")==0);
+  let (event_status,available,event_type,key,codepoint,modifiers,
+       button,action,x,y,raw)=T.basis_tty_decoder_next(decoder,false);
+  assert(event_status==0 && available && event_type==0 && raw=="1b5b41");
+  assert(codepoint==0 && modifiers==0 && button==0 && action==0 && x==0 && y==0);
+  println(key); # mulib-termkey's Up key code
+  assert(T.basis_tty_decoder_close(decoder)==0);
+
+  # The vterm is explicitly bounded and models one Unicode scalar per cell.
+  let (screen_status,screen)=T.basis_tty_vterm_open(8,2);
+  assert(screen_status==0);
+  assert(T.basis_tty_vterm_feed_hex(screen,"1b5b33316d58")==0);
+  let (cell_status,cell,foreground,background,attributes)=
+    T.basis_tty_vterm_cell(screen,0,0);
+  assert(cell_status==0 && foreground==1 && background==4294967295 &&
+         attributes==0);
+  println(cell); # U+0058, "X"
+  assert(T.basis_tty_vterm_close(screen)==0);
+}

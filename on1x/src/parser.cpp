@@ -867,13 +867,17 @@ class Parser {
     if(sum&&d.fields.empty())throw Error(d.where,"enum requires at least one constructor");
     return d;
    }
-   Unit parse(){Unit u;
-    while(!at("<eof>")){
+    Unit parse(){Unit u;
+     while(!at("<eof>")){
      if((at("record")||at("enum"))&&is_ident(peek(1).text)){
       if(u.nominals.size()>=512)throw Error(peek().where,"nominal declaration limit exceeded");
       u.nominals.push_back(nominal_declaration());continue;
      }
-     if(at("@")&&peek(1).text=="enable"){
+       if(at("@")&&peek(1).text=="scrutiny"){
+        auto where=peek().where;pos+=2;auto level=ident();
+        consume(";");u.scrutiny.push_back({where,std::move(level)});continue;
+       }
+      if(at("@")&&peek(1).text=="enable"){
       auto where=peek().where;pos+=2;auto token=peek();auto name=extensions::canonical(ident(),where);
       if(used_extensions.contains(name))throw Error(where,"ON1X-CAT-ENABLE: late @enable "+name,"ON1X-CAT-ENABLE");
       auto end=token.where;end.offset+=token.text.size();end.column+=token.text.size();

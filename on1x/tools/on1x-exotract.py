@@ -19,7 +19,13 @@ from pathlib import Path
 HOME = Path(__file__).resolve().parents[1]
 CATALOG = HOME/'contracts-exotract/catalog.json'
 KERNEL_PROFILE = HOME/'contracts-exotract/kernel-discovery-v1.lua'
-CLAMP_EXPORTS = ('mulib_clamp_add_i64', 'mulib_clamp_sub_i64')
+CLAMP_PARAMETERS = {
+    'mulib_clamp_add_i64': ('a', 'b'),
+    'mulib_clamp_sub_i64': ('a', 'b'),
+    'mulib_clamp_i64': ('value', 'low', 'high'),
+}
+CLAMP_EXPORTS = tuple(CLAMP_PARAMETERS)
+CLAMP_PROBE_COMPARISONS = 2 * (2 * (9**2 + 256) + 9 * (9 * 10 // 2) + 256)
 KERNEL_CODEGEN_FLAGS = frozenset(('-O0', '-O1', '-O2', '-O3', '-g', '-fno-omit-frame-pointer',
                                   '-fsanitize=address,undefined', '-fno-sanitize-recover=all'))
 CLAMP_ADAPTER_PREFIX = 'on1x_kernel_scalar_v1_'
@@ -44,6 +50,12 @@ KERNEL_MODULES = {
                        'mulib_channel_send', 'mulib_channel_receive', 'mulib_channel_close',
                        'mulib_channel_destroy']),
 }
+# On1x source identifiers cannot contain hyphens. These named sandbox profiles
+# (and explicitly configured discovery-only prefixes) map underscores to dashes.
+SANDBOX_MODULES = {name.replace('-', '_'): name for name in (
+    'sandbox-profile', 'seccomp', 'landlock', 'namespace', 'cgroup2',
+    'ipc-framed', 'capbroker', 'sandbox-process',
+)}
 spec = importlib.util.spec_from_file_location('contracts', HOME/'tools/on1x-contracts.py')
 contracts = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(contracts)
@@ -52,13 +64,9 @@ housekeeping = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(housekeeping)
 
 
-def inventory(root):
-    return housekeeping.inventory(root)
-
-
-def plan(root, libraries, fixtures=(), paths=()):
+def plan(root, libraries, fixtures=(), paths=(), *, discovery=False):
     if not libraries:raise ValueError('select MuLIB modules for typed extraction')
-    recipe=housekeeping.plan(root,libraries,fixtures,paths)
+    recipe=housekeeping.plan(root,libraries,fixtures,paths,discovery=discovery)
     recipe['schema']='on1x.exotract-plan/v1'
     return recipe
 
@@ -95,6 +103,175 @@ def require_lossless_contract(source, normalized, path='contract'):
         raise ValueError('ON1X-KERNEL-NOT-REPRESENTABLE: changed ExoML value at '+path)
 
 
+def sandbox_profile(name):
+    if name not in SANDBOX_MODULES.values():
+        return None
+    profile = contracts.load(CATALOG)['profiles'][name]
+    if profile['recipe'] != 'manifest' or profile['sandbox_contract'] != f'sandbox/{name}.exocontract.json':
+        raise ValueError('invalid sandbox ExoLib recipe: '+name)
+    return profile
+
+
+def kernel_options(cflags):
+    defines, undefines, flags = [], [], []
+    for flag in cflags:
+        if flag in KERNEL_CODEGEN_FLAGS:
+            continue  # Recorded separately; these do not change the C declaration profile.
+        if 'MULIB_IMPL_' in flag:
+            raise ValueError('implementation macros belong to the generated TU, not KernelBind discovery')
+        if flag.startswith('-D') and len(flag) > 2:
+            defines.append(flag[2:])
+        elif flag.startswith('-U') and len(flag) > 2:
+            undefines.append(flag[2:])
+        else:
+            flags.append(flag)  # The real Exotract SDK allowlists ABI flags.
+    return defines, undefines, flags
+
+
+def extract_exolib(name, recipe, root, exotract, compiler, resource, target,
+                   options, observe, *, sidecar_name, required):
+    manifest_input = observe(housekeeping.local(root, 'MANIFEST.yaml'))
+    lua_profile = observe(KERNEL_PROFILE)
+    discovery_only = recipe.get('discovery_only', {}).get(name)
+    if discovery_only and sidecar_name:
+        raise ValueError('discovery-only kernel cannot attach a semantic sidecar: '+name)
+    for path, digest in recipe['inputs'].items():
+        observe(path, digest)
+    if recipe['dependency_cycles'] or recipe['native_sources'] or recipe['include_headers'] or recipe['generator_checks']:
+        raise ValueError('discovery profile has unsupported build requirements')
+    modules = {}
+    for item in recipe['modules']:
+        header = housekeeping.local(root, item['header'])
+        if root/item['header'] != header:
+            raise ValueError('symlinked MuLIB kernel header: '+item['header'])
+        # Reject additional candidates, even identical copies or broken symlinks.
+        for directory in recipe['include_directories']:
+            candidate = Path(directory)/header.name
+            if candidate != header and (candidate.exists() or candidate.is_symlink()):
+                raise ValueError('ambiguous MuLIB kernel header: '+str(candidate))
+        if housekeeping.header_path(root, item) != header:
+            raise ValueError('noncanonical MuLIB header: '+item['header'])
+        doc = observe(housekeeping.local(root, item['manual']), item['manual_sha256'])
+        modules[item['name']] = (observe(header, item['header_sha256']), doc, item['header_sha256'])
+    header, manual, revision = modules[name]
+    sandbox = sandbox_profile(name)
+    defines, undefines, flags = options
+    if sandbox:
+        if not re.fullmatch(r'(?:x86_64|aarch64)(?:-[a-z0-9_]+)?-linux-gnu', target):
+            raise ValueError('UNSUPPORTED: sandbox ExoLib requires a Linux x86-64 or AArch64 GNU target')
+        if defines or undefines or flags:
+            raise ValueError('sandbox ExoLib only accepts the documented codegen flags; declaration features are fixed')
+        defines = recipe['compile_definitions']
+    sidecar = None
+    dependencies = [h for mod, (h, _, _) in modules.items() if mod != name]
+    pins = [manifest_input, lua_profile, manual, *dependencies]
+    if sandbox or discovery_only:
+        pins += [observe(CATALOG), *(doc for mod, (_, doc, _) in modules.items() if mod != name)]
+    if sidecar_name:
+        sidecar = observe(housekeeping.local(contracts.CONTRACTS, sidecar_name))
+        pins.append(sidecar)
+        original_contract = contracts.load(sidecar)  # Reject duplicate keys before the SDK.
+        if sandbox and original_contract['bundle_provenance']['revision'] != 'sha256:'+revision:
+            raise ValueError('sandbox ExoML sidecar header revision drift: '+name)
+    required = sorted(set(required + recipe['required_symbols'][name]))
+    # Do not pass ExoLib's `target` override: it adds --target to C
+    # preprocessing and native GCC does not accept that option.
+    globs = dict(KERNEL=name, HEADER=header, MANUAL=manual, REVISION='sha256:'+revision,
+                 COMPILER=compiler, RESOURCE=resource)
+    if sidecar:
+        globs['CONTRACT'] = sidecar
+    for key, values in dict(INCLUDES=[root/'include'], PINS=pins,
+                            REQUIRED=required, FLAGS=flags, DEFINES=defines,
+                            UNDEFINES=undefines, DEPENDENCIES=dependencies,
+                            IMPL=recipe['implementation_macros']).items():
+        globs[key+'_COUNT'] = len(values)
+        globs.update({f'{key}_{i}': v for i, v in enumerate(values, 1)})
+    argv = [exotract, 'lua', lua_profile]
+    for k, v in globs.items():
+        if '$GLOBAL{' in str(v):
+            raise ValueError('nested ExoLib global substitution is not allowed')
+        argv += ['--global', f'{k}={v}']
+    wire = contracts.loads(invoke(argv))
+    profile, on1x, contract = (wire[key] for key in ('profile', 'on1x', 'contract'))
+    decl = on1x['cdecl']
+    if (profile['schema'] != 'moonstone.exotract/2' or profile['name'] != name or
+        profile['header'] != str(header) or profile['revision'] != globs['REVISION'] or
+        profile['required_symbols'] != required or
+        profile['safe_export'] is not False or profile['complete'] is not True or
+        profile['syntax_checked'] is not True or
+        on1x['schema'] != 'moonstone.exotract.on1x/2' or on1x['library'] != name or
+        on1x['unsafe_by_default'] is not True or on1x['requires_review'] is not True or
+        decl['schema_version'] != 2 or decl['complete'] is not True or decl['safe_export'] is not False or
+        decl['header'] != str(header) or decl['revision'] != globs['REVISION'] or
+        decl['target']['triple'] != target):
+        raise ValueError('incomplete or mismatched ExoLib/CDecl identity')
+    impl = profile['header_only']
+    if (impl['implementation_translation_units'] != 1 or
+        impl['implementation_defines'] != recipe['implementation_macros'] or
+        impl['dependencies'] != [str(h) for h in dependencies]):
+        raise ValueError('mismatched ExoLib implementation profile')
+    decl_inputs = set()
+    for record in decl['inputs']:
+        path = observe(record['path'], record['sha256'])
+        if path in decl_inputs:
+            raise ValueError('duplicate CDecl input')
+        decl_inputs.add(path)
+    if not {header, *pins} <= decl_inputs:
+        raise ValueError('incomplete CDecl provenance pins')
+    preprocessing = decl['preprocessing']
+    active = {m['name']: m for m in preprocessing['final_macros'] if m['defined']}
+    if preprocessing['final_snapshot_complete'] is not True or any(n.startswith('MULIB_IMPL_') for n in active):
+        raise ValueError('not a complete declaration-only CDecl macro snapshot')
+    if sandbox and not {'_GNU_SOURCE', '_POSIX_C_SOURCE'} <= active.keys():
+        raise ValueError('incomplete sandbox declaration feature macros')
+    if sidecar and (sandbox or name in ('clamp', 'histprice', 'priceopt')):
+        require_lossless_contract(original_contract, contract)
+    if (sidecar is None and contract is not None) or (sidecar is not None and (
+        not isinstance(contract, dict) or contract['schema_version'] != 2 or contract['library'] != name or
+        contract['bundle_provenance']['revision'] != globs['REVISION'])):
+        raise ValueError('mismatched ExoML semantic sidecar')
+    declarations = [d for d in decl['declarations'] if d['kind'] == 'function']
+    functions = {d['name']: d for d in declarations}
+    if discovery_only and (profile['parser'] != 'exoml/libclang' or profile['externally_imported'] is not False or
+                           not functions or len(functions) != len(declarations) or
+                           any(d['source']['file'] != str(header) or d['definition'] for d in declarations)):
+        raise ValueError('discovery-only kernel requires canonical declaration-only CDecl: '+name)
+    type_ids = {entry['id'] for entry in decl['types'] if entry['kind'] == 'function'}
+    for entry in on1x['imports']:
+        if entry['safe'] is not False or entry['c_name'] not in functions or entry['c_type_id'] not in type_ids:
+            raise ValueError('unexpected Exotract import metadata')
+    if sandbox:
+        # The SDK validates structure but does not fully bind names or review
+        # state. Require full coverage and exact parameter names; never admit
+        # a sandbox sidecar, regardless of its annotations.
+        claimed = contract['functions']
+        if (profile['parser'] != 'exoml/libclang' or profile['externally_imported'] is not False or
+            decl['target']['pointer_bits'] != 64 or not re.fullmatch('[0-9a-f]{64}', decl['fingerprint']) or
+            set(functions) != set(required) or len(declarations) != len(required) or len(claimed) != len(required) or
+            {f['c_name'] for f in claimed} != set(required) or
+            contract['headers'] != [header.name] or contract['state'] != 'annotated' or
+            contract['bundle_provenance']['header'] != header.name or
+            contract['bundle_provenance']['review_status'] != 'unreviewed'):
+            raise ValueError('sandbox CDecl identity, ExoML export coverage or unreviewed provenance mismatch')
+        if (len(on1x['imports']) != len(required) or
+            {e['c_name']: e['c_type_id'] for e in on1x['imports']} != {n: d['type'] for n, d in functions.items()}):
+            raise ValueError('sandbox Exotract import/CDecl mismatch')
+        for f in claimed:
+            d = functions[f['c_name']]
+            if (d['source']['file'] != str(header) or d['definition'] or
+                f['provenance']['header'] != header.name or f['provenance']['review_status'] != 'unreviewed' or
+                [(p['index'], p['name']) for p in f.get('parameters', [])] !=
+                list(enumerate(p['name'] for p in d['parameters']))):
+                raise ValueError('sandbox ExoML declaration mismatch: '+f['c_name'])
+    status = 'not_representable' if sandbox or discovery_only else 'missing_review'
+    reason = discovery_only or ('no checked sandbox ABI, ownership/effect lowering or independent review' if sandbox else
+              'no independent KernelBind authorization' if sidecar else
+              'no ExoML semantic sidecar or independent KernelBind authorization')
+    return dict(exolib=profile, metadata=on1x, contract=contract, callable=False, status=status,
+                safe_export=False, symbols={sym: dict(status=status, callable=False, reason=reason) for sym in functions},
+                sidecar=str(sidecar) if sidecar else None)
+
+
 def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cflags, pins_before_load, *, review=False):
     """Resolve *compiler* source requests. This produces no interface or link input."""
     def location(request):
@@ -108,12 +285,27 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
     if not imports or len(imports) > 1024:
         raise ValueError('KernelBind inspection requires 1..1024 source requests')
     # Do not automatically enable arbitrary manifest recipes or executable inputs.
+    # Only explicitly opted-in discovery-only families get MANIFEST-derived aliases.
+    catalog_hash = contracts.digest(CATALOG)
+    profiles = contracts.exotract_catalog()
+    manifest = None
     selected = {}
     for request in imports:
         match = re.fullmatch(r'mulib\.([a-z][a-z0-9_]*)', request['module'])
-        if not match or match[1] not in KERNEL_MODULES:
+        logical = match[1] if match else ''
+        candidate = logical.replace('_', '-')
+        metadata_only = contracts.discovery_only_reason(candidate, profiles)
+        if logical in KERNEL_MODULES or logical in SANDBOX_MODULES:
+            name = SANDBOX_MODULES.get(logical, logical)
+        elif metadata_only:
+            if manifest is None:
+                manifest = housekeeping.inventory(root)
+            name = candidate if candidate in manifest else None
+        else:
+            name = None
+        if name is None:
             raise ValueError(location(request)+'ON1X-KERNEL-PROFILE: no discovery profile: '+request['module'])
-        selected.setdefault(match[1], request)
+        selected.setdefault(logical, (request, name))
     observed = {}
 
     def observe(path, expected=None):
@@ -128,8 +320,7 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
         observe(path, digest)
     for path, digest in pins_before_load.items():
         observe(path, digest)
-    manifest_input = observe(housekeeping.local(root, 'MANIFEST.yaml'))
-    lua_profile = observe(KERNEL_PROFILE)
+    observe(CATALOG, catalog_hash)
     exotract, compiler = map(executable, [exotract, compiler])
     for tool in [exotract, compiler, Path(__file__)]:
         observe(tool)
@@ -137,125 +328,20 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
     if not (resource/'include/stddef.h').is_file():
         raise ValueError('provide --resource-dir from a compatible clang')
     target = invoke([compiler, '-dumpmachine']).decode().strip()
-    defines, undefines, flags = [], [], []
-    for flag in cflags:
-        if flag in KERNEL_CODEGEN_FLAGS:
-            continue  # Recorded separately; these do not change the C declaration profile.
-        if 'MULIB_IMPL_' in flag:
-            raise ValueError('implementation macros belong to the generated TU, not KernelBind discovery')
-        if flag.startswith('-D') and len(flag) > 2:
-            defines.append(flag[2:])
-        elif flag.startswith('-U') and len(flag) > 2:
-            undefines.append(flag[2:])
-        else:
-            flags.append(flag)  # The real Exotract SDK allowlists ABI flags.
+    options = kernel_options(cflags)
 
     discovered = {}
-    for name, request in selected.items():
+    for logical, (request, name) in selected.items():
         try:
-            recipe = plan(root, [name], paths=paths)
-            for path, digest in recipe['inputs'].items():
-                observe(path, digest)
-            if recipe['dependency_cycles'] or recipe['native_sources'] or recipe['include_headers'] or recipe['generator_checks']:
-                raise ValueError('discovery profile has unsupported build requirements')
-            modules = {}
-            for item in recipe['modules']:
-                header = housekeeping.local(root, item['header'])
-                if root/item['header'] != header:
-                    raise ValueError('symlinked MuLIB kernel header: '+item['header'])
-                # Reject additional candidates, even identical copies or broken symlinks.
-                # Use the actual path rather than only comparing content hashes.
-                for directory in recipe['include_directories']:
-                    candidate = Path(directory)/Path(item['header']).name
-                    if candidate != root/item['header'] and (candidate.exists() or candidate.is_symlink()):
-                        raise ValueError('ambiguous MuLIB kernel header: '+str(candidate))
-                if Path(housekeeping.header_path(root, item)) != header:
-                    raise ValueError('noncanonical MuLIB header: '+item['header'])
-                doc = observe(housekeeping.local(root, item['manual']), item['manual_sha256'])
-                modules[item['name']] = (observe(header, item['header_sha256']), doc, item['header_sha256'])
-            header, manual, revision = modules[name]
-            sidecar = None
-            sidecar_name, required = KERNEL_MODULES[name]
+            sandbox = sandbox_profile(name)
+            sidecar_name, required = (sandbox['sandbox_contract'], []) if sandbox else KERNEL_MODULES.get(name, (None, []))
             if name == 'clamp' and any(r['module'] == 'mulib.clamp' and not r['unsafe'] for r in imports):
                 sidecar_name = 'clamp.exocontract.json'
             if name in ('histprice', 'priceopt') and review:
                 sidecar_name = name+'.exocontract.json'
-            required = sorted(set(required + recipe['required_symbols'][name]))
-            pins = [manifest_input, lua_profile, manual, *(h for mod, (h, _, _) in modules.items() if mod != name)]
-            if sidecar_name:
-                sidecar = observe(housekeeping.local(contracts.CONTRACTS, sidecar_name))
-                pins.append(sidecar)
-            # Do not pass ExoLib's `target` override: it adds --target to C
-            # preprocessing and GCC does not accept that option. In this
-            # native-only profile compare its actual CDecl target below.
-            globs = dict(KERNEL=name, HEADER=header, MANUAL=manual, REVISION='sha256:'+revision,
-                         COMPILER=compiler, RESOURCE=resource)
-            if sidecar:
-                globs['CONTRACT'] = sidecar
-            dependencies = [h for mod, (h, _, _) in modules.items() if mod != name]
-            for key, values in dict(INCLUDES=[root/'include'], PINS=pins,
-                                    REQUIRED=required, FLAGS=flags, DEFINES=defines,
-                                    UNDEFINES=undefines, DEPENDENCIES=dependencies,
-                                    IMPL=recipe['implementation_macros']).items():
-                globs[key+'_COUNT'] = len(values)
-                globs.update({f'{key}_{i}': v for i, v in enumerate(values, 1)})
-            argv = [exotract, 'lua', lua_profile]
-            for k, v in globs.items():
-                if '$GLOBAL{' in str(v):
-                    raise ValueError('nested ExoLib global substitution is not allowed')
-                argv += ['--global', f'{k}={v}']
-            wire = contracts.loads(invoke(argv))
-            profile, on1x, contract = (wire[key] for key in ('profile', 'on1x', 'contract'))
-            decl = on1x['cdecl']
-            if (profile['schema'] != 'moonstone.exotract/2' or profile['name'] != name or
-                profile['header'] != str(header) or profile['revision'] != globs['REVISION'] or
-                profile['required_symbols'] != required or
-                profile['safe_export'] is not False or profile['complete'] is not True or
-                profile['syntax_checked'] is not True or
-                on1x['schema'] != 'moonstone.exotract.on1x/2' or on1x['library'] != name or
-                on1x['unsafe_by_default'] is not True or on1x['requires_review'] is not True or
-                decl['schema_version'] != 2 or decl['complete'] is not True or decl['safe_export'] is not False or
-                decl['header'] != str(header) or decl['revision'] != globs['REVISION'] or
-                decl['target']['triple'] != target):
-                raise ValueError('incomplete or mismatched ExoLib/CDecl identity')
-            impl = profile['header_only']
-            if (impl['implementation_translation_units'] != 1 or
-                impl['implementation_defines'] != recipe['implementation_macros'] or
-                impl['dependencies'] != [str(h) for h in dependencies]):
-                raise ValueError('mismatched ExoLib implementation profile')
-            decl_inputs = set()
-            for record in decl['inputs']:
-                path = observe(record['path'], record['sha256'])
-                if path in decl_inputs:
-                    raise ValueError('duplicate CDecl input')
-                decl_inputs.add(path)
-            if not {header, *pins} <= decl_inputs:
-                raise ValueError('incomplete CDecl provenance pins')
-            preprocessing = decl['preprocessing']
-            if (preprocessing['final_snapshot_complete'] is not True or
-                any(m['defined'] and m['name'].startswith('MULIB_IMPL_') for m in preprocessing['final_macros'])):
-                raise ValueError('not a complete declaration-only CDecl macro snapshot')
-            if sidecar:
-                # Reject duplicate keys even if an alternate SDK reader were
-                # permissive. Only ExoML interprets semantic fields.
-                original_contract = contracts.load(sidecar)
-                if name in ('clamp', 'histprice', 'priceopt'):
-                    require_lossless_contract(original_contract, contract)
-            if (sidecar is None and contract is not None) or (sidecar is not None and (
-                not isinstance(contract, dict) or contract['schema_version'] != 2 or contract['library'] != name or
-                contract['bundle_provenance']['revision'] != globs['REVISION'])):
-                raise ValueError('mismatched ExoML semantic sidecar')
-            status = {entry['name']: dict(status='missing_review', callable=False,
-                       reason=('no independent KernelBind authorization' if sidecar else
-                               'no ExoML semantic sidecar or independent KernelBind authorization'))
-                      for entry in decl['declarations'] if entry['kind'] == 'function'}
-            type_ids = {entry['id'] for entry in decl['types'] if entry['kind'] == 'function'}
-            for entry in on1x['imports']:
-                if (entry['safe'] is not False or entry['c_name'] not in status or entry['c_type_id'] not in type_ids):
-                    raise ValueError('unexpected Exotract import metadata')
-            discovered['mulib.'+name] = dict(exolib=profile, metadata=on1x, contract=contract, callable=False,
-                                            status='missing_review', safe_export=False, symbols=status,
-                                            sidecar=str(sidecar) if sidecar else None)
+            discovered['mulib.'+logical] = extract_exolib(
+                name, plan(root, [name], paths=paths, discovery=True), root, exotract, compiler, resource, target,
+                options, observe, sidecar_name=sidecar_name, required=required)
         except (ValueError, OSError, KeyError, TypeError, subprocess.TimeoutExpired) as error:
             raise ValueError(location(request)+'ON1X-KERNEL-DISCOVERY: '+str(error)) from error
     compiler_version = invoke([compiler, '--version']).decode()
@@ -308,20 +394,24 @@ def clamp_scalar_interface(report, *, unsafe):
             d['source']['file'] != cdecl['header'] or d['unsupported_reason'] or
             f['kind'] != 'function' or f['calling_convention'] != 1 or f['variadic'] or
             not f['prototype'] or f['attributes'] or f['unsupported_reason'] or
-            len(f['arguments']) != 2 or [p['type'] for p in d['parameters']] != f['arguments'] or
+            len(f['arguments']) != len(CLAMP_PARAMETERS[symbol]) or
+            [p['name'] for p in d['parameters']] != list(CLAMP_PARAMETERS[symbol]) or
+            [p['type'] for p in d['parameters']] != f['arguments'] or
             not all(scalar(t) for t in [f['result'], *f['arguments']])):
             raise ValueError('ON1X-KERNEL-ABI: incompatible CDecl signature for '+symbol)
         exports[symbol.removeprefix('mulib_clamp_')] = dict(
             c_name=symbol, c_type_id=d['type'], declaration_id=d['id'],
             declaration_source=d['source'],
-            parameters=['i64', 'i64'], result='i64',
+            parameters=['i64'] * len(CLAMP_PARAMETERS[symbol]), result='i64',
             status='unsafe' if unsafe else 'missing_review', effect='unsafe_foreign' if unsafe else 'foreign_call')
-    return dict(schema='on1x.kernel-interface/v1', profile='unsafe-clamp-i64/v1' if unsafe else 'reviewed-clamp-i64/v1',
+        if symbol == 'mulib_clamp_i64':
+            exports['i64']['precondition'] = {
+                'require': 'low <= high', 'enforcement': 'On1x checks before the C call; assertion failure exits 70'}
+    return dict(schema='on1x.kernel-interface/v1', profile='unsafe-clamp-i64/v2' if unsafe else 'reviewed-clamp-i64/v2',
                 module='mulib.clamp', safe_export=False, target=report['target'],
                 cdecl_fingerprint=cdecl['fingerprint'], header=cdecl['header'],
                 header_revision=cdecl['revision'], imports=report['requests'], exports=exports,
-                rejected={'i64': dict(c_name='mulib_clamp_i64', status='unsupported',
-                                     reason='interval precondition and three-argument profile are not admitted')})
+                rejected={})
 
 
 def history_interface(report):
@@ -565,16 +655,14 @@ def review_subject(report, interface):
     expected_concurrency = dict(thread_safety='thread_safe', blocking_behavior='nonblocking',
                                 callback_origin='', registration_thread_affine=False, signal_safe=False,
                                 suspension_safe=True)
-    expected_params = [dict(index=i, name=name, ownership='scalar', nullable=False, alignment=None,
-                            length_parameter=None, count_parameter=None, encoding='', transfer_predicate='')
-                       for i, name in enumerate(('a', 'b'))]
+    scalar_param = dict(ownership='scalar', nullable=False, alignment=None,
+                        length_parameter=None, count_parameter=None, encoding='', transfer_predicate='')
     history = interface['module'] == 'mulib.histprice'
     pricing = interface['module'] == 'mulib.priceopt'
     symbols = HISTORY_EXPORTS if history else PRICING_EXPORTS if pricing else CLAMP_EXPORTS
     if set(functions) != set(symbols) or len(sidecar['functions']) != len(symbols):
         raise ValueError('ON1X-KERNEL-NOT-REPRESENTABLE: unexpected ExoML export set')
     for name, f in functions.items():
-        params = expected_params
         errors = expected_errors
         effects = []
         if history or pricing:
@@ -587,13 +675,15 @@ def review_subject(report, interface):
             else:
                 names = ['model', 'constraints', 'objective', 'out']
                 borrows = [(0, None), (1, None)]
-            params = [dict(expected_params[0], index=i, name=p) for i, p in enumerate(names)]
+            params = [dict(scalar_param, index=i, name=p) for i, p in enumerate(names)]
             lifetime = dict(origin='explicit_region', parameter_index=0, region_name='call')
             for index, length in borrows:
                 params[index].update(ownership='borrowed_immutable', lifetime=lifetime, length_parameter=length, alignment=8)
             params[-1].update(ownership='out', lifetime=lifetime, alignment=8)
             errors = dict(expected_errors, kind='boolean_return')
             effects = ['read', 'write']
+        else:
+            params = [dict(scalar_param, index=i, name=p) for i, p in enumerate(CLAMP_PARAMETERS[name])]
         if (set(f) - {'c_name', 'return', 'parameters', 'errors', 'effects', 'concurrency',
                      'callbacks', 'destructors', 'transfers', 'invalidations', 'provenance'}
             or f['return'] != expected_return or f['parameters'] != params or f['errors'] != errors
@@ -618,7 +708,7 @@ def review_subject(report, interface):
                 cdecl_sha256=fingerprint(cdecl), exolib_sha256=fingerprint(module['exolib']),
                 contract_sha256=fingerprint(sidecar), contract_path=module['sidecar'],
                 symbols=interface['exports'] if history or pricing else {
-                    name: {k: entry[k] for k in ('c_name', 'c_type_id', 'declaration_id')}
+                    name: {k: entry[k] for k in ('c_name', 'c_type_id', 'declaration_id', 'precondition') if k in entry}
                     for name, entry in interface['exports'].items()})
 
 
@@ -666,10 +756,13 @@ def clamp_adapter(interface):
               ' && sizeof(void *) == 8 && INT64_MIN == -INT64_MAX - 1, "KernelBind target ABI drift");']
     for export in interface['exports'].values():
         symbol = export['c_name']
+        names = CLAMP_PARAMETERS[symbol]
+        types = ', '.join('int64_t' for _ in names)
+        params = ', '.join('int64_t '+name for name in names)
         output.extend([
-            f'_Static_assert(_Generic(&{symbol}, int64_t (*)(int64_t, int64_t): 1, default: 0), '
+            f'_Static_assert(_Generic(&{symbol}, int64_t (*)({types}): 1, default: 0), '
             '"KernelBind prototype drift");',
-            f'int64_t {CLAMP_ADAPTER_PREFIX}{symbol}(int64_t a, int64_t b) {{ return {symbol}(a, b); }}',
+            f'int64_t {CLAMP_ADAPTER_PREFIX}{symbol}({params}) {{ return {symbol}({", ".join(names)}); }}',
         ])
     return '\n'.join(output)+'\n'
 
@@ -682,20 +775,29 @@ def clamp_probe():
     pairs = [(a, b) for a in edges for b in edges]
     rng = random.Random(0xC1A0)
     pairs += [(rng.randrange(low, high+1), rng.randrange(low, high+1)) for _ in range(256)]
+    intervals = [(value, lo, hi) for value in edges for lo in edges for hi in edges if lo <= hi]
+    for _ in range(256):
+        value, a, b = [rng.randrange(low, high+1) for _ in range(3)]
+        intervals.append((value, min(a, b), max(a, b)))
     def literal(n):
         if n == low:
             return 'INT64_MIN'
         return ('-' if n < 0 else '')+f'INT64_C({abs(n)})'
+    cases = [(symbol, (a, b), min(high, max(low, expected)))
+             for a, b in pairs for symbol, expected in zip(CLAMP_EXPORTS[:2], (a+b, a-b))]
+    cases += [('mulib_clamp_i64', (value, lo, hi), min(hi, max(lo, value)))
+              for value, lo, hi in intervals]
+    if 2 * len(cases) != CLAMP_PROBE_COMPARISONS:
+        raise ValueError('KernelBind clamp differential case-count drift')
     output = ['#include <stdint.h>', '#include <mulib-clamp.h>']
-    for symbol in CLAMP_EXPORTS:
-        output.append(f'extern int64_t {CLAMP_ADAPTER_PREFIX}{symbol}(int64_t, int64_t);')
+    for symbol, names in CLAMP_PARAMETERS.items():
+        types = ', '.join('int64_t' for _ in names)
+        output.append(f'extern int64_t {CLAMP_ADAPTER_PREFIX}{symbol}({types});')
     output.append('int main(void) {')
-    for a, b in pairs:
-        for symbol, expected in zip(CLAMP_EXPORTS, (a+b, a-b)):
-            expected = min(high, max(low, expected))
-            args = f'{literal(a)}, {literal(b)}'
-            output.append(f'if ({CLAMP_ADAPTER_PREFIX}{symbol}({args}) != {literal(expected)}'
-                          f' || {symbol}({args}) != {literal(expected)}) return 1;')
+    for symbol, values, expected in cases:
+        args = ', '.join(map(literal, values))
+        output.append(f'if ({CLAMP_ADAPTER_PREFIX}{symbol}({args}) != {literal(expected)}'
+                      f' || {symbol}({args}) != {literal(expected)}) return 1;')
     output += ['return 0;', '}']
     return '\n'.join(output)+'\n'
 
@@ -884,7 +986,7 @@ int main(void) {
 def reviewed_profile_tools(name):
     """Closure, adapter and executable boundary test for a reviewed profile."""
     return {
-        'mulib.clamp': (['MULIB_IMPL_CLAMP'], clamp_adapter, clamp_probe, 'clamp-boundaries-seeded/v1'),
+        'mulib.clamp': (['MULIB_IMPL_CLAMP'], clamp_adapter, clamp_probe, 'clamp-boundaries-seeded/v2'),
         'mulib.histprice': (HISTORY_IMPL, history_adapter, history_probe, 'histprice-differential-boundaries/v1'),
         'mulib.priceopt': (PRICING_IMPL, pricing_adapter, pricing_probe, 'priceopt-differential-boundaries/v1'),
     }[name]
@@ -912,15 +1014,17 @@ def build(args, root):
         if flag.startswith('-D') and len(flag)>2:discovery += ['--define',flag[2:]]
         elif flag.startswith('-U') and len(flag)>2:discovery += ['--undefine',flag[2:]]
         else:discovery += ['--compile-arg',flag]
-    resource = args.resource_dir or invoke([compiler, '-print-resource-dir']).decode().strip()
-    if not Path(resource).is_dir():
+    resource = Path(args.resource_dir or invoke([compiler, '-print-resource-dir']).decode().strip()).resolve()
+    if not (resource/'include/stddef.h').is_file():
         raise ValueError('provide --resource-dir from a compatible clang')
+    compiler_target = invoke([compiler, '-dumpmachine']).decode().strip()
     observed = {}
     def observe(path, expected=None):
-        path = str(Path(path).resolve()); digest = contracts.digest(path)
-        if expected and digest != expected or path in observed and observed[path] != digest:
-            raise ValueError('input drift: '+path)
-        observed[path] = digest
+        real = Path(path).resolve(); key = str(real); digest = contracts.digest(real)
+        if expected and digest != expected or key in observed and observed[key] != digest:
+            raise ValueError('input drift: '+key)
+        observed[key] = digest
+        return real
     for path in [CATALOG, housekeeping.CATALOG, Path(housekeeping.__file__), root/'MANIFEST.yaml', Path(__file__), HOME/'tools/on1x-contracts.py', exotract, compiler, ar, nm]:
         observe(path)
     for path,digest in recipe['inputs'].items():observe(path,digest)
@@ -938,8 +1042,17 @@ def build(args, root):
         housekeeping.materialize(root, recipe, stage)
         imports={}
         headers={m['name']:housekeeping.header_path(root,m) for m in recipe['modules']}
-        requests=[(name,headers[name]) for name in args.libraries]
+        sandbox_profiles = {name: profile for name in headers if (profile := sandbox_profile(name))}
+        requests=[(name,headers[name]) for name in args.libraries if name not in sandbox_profiles]
         requests += [('fixture-'+Path(path).parent.name+'-'+Path(path).stem,root/path) for path in recipe['include_headers']]
+        for name, profile in sandbox_profiles.items():
+            evidence = extract_exolib(name, plan(root, [name], paths=args.paths), root, exotract, compiler,
+                                       resource, compiler_target, kernel_options(args.cflag), observe,
+                                       sidecar_name=profile['sandbox_contract'], required=[])
+            (stage/(name+'.sandbox-evidence.json')).write_text(contracts.dumps(evidence))
+            (stage/(name+'.on1x-import.json')).write_text(contracts.dumps(evidence['metadata']))
+            (stage/(name+'.cdecl.json')).write_text(contracts.dumps(evidence['metadata']['cdecl']))
+            imports[name] = list(evidence['symbols'])
         for name,header in requests:
             common=[exotract, '--name', name, '--header', header,
                     '--compiler', compiler, '--resource-dir', resource, '--preprocessor', 'compiler',
@@ -982,7 +1095,8 @@ def build(args, root):
         (stage/'mulib.h').write_text('/* Declaration-only static binding surface. */\n#pragma once\n'+
             ''.join('#include <mulib-'+name+'.h>\n' for name in args.libraries)+
             ''.join('#include '+json.dumps(path)+'\n' for path in recipe['include_headers']))
-        flags=[*args.cflag,*[part for p in recipe['include_directories'] for part in ['-I',p]],
+        strict = ['-Wall', '-Wextra', '-Wpedantic', '-Werror'] if sandbox_profiles else []
+        flags=[*args.cflag,*strict,*[part for p in recipe['include_directories'] for part in ['-I',p]],
                *['-D'+item for item in recipe['compile_definitions']]]
         objects=[]
         for i,source in enumerate([stage/'mulib.c',*[root/path for path in recipe['native_sources']]]):
@@ -1006,6 +1120,9 @@ def build(args, root):
                   for name,names in imports.items()}
         for name,required in recipe['required_symbols'].items():
             if not set(required)<=exports:raise ValueError('required archive symbols missing: '+name)
+        for name, profile in sandbox_profiles.items():
+            if not set(profile['required_symbols']) <= exports:
+                raise ValueError('required sandbox archive symbols missing: '+name)
         (stage/'symbols.json').write_text(contracts.dumps(dict(schema='on1x.exotract-symbols/v1',
             libraries=surfaces, defined_symbols=sorted(exports), safe_export=False)))
         (stage/'build-plan.json').write_text(contracts.dumps(recipe))
@@ -1015,9 +1132,10 @@ def build(args, root):
         (stage/'lock.json').write_text(contracts.dumps(dict(schema='on1x.exotract-lock/v1',
             safe_export=False, inputs=observed, artifacts=artifacts, compiler=str(compiler),
             compiler_version=invoke([compiler,'--version']).decode(), cflags=args.cflag,
-            compiler_target=invoke([compiler,'-dumpmachine']).decode().strip(),
+            compiler_target=compiler_target,
             declaration_options=discovery,
-            resource_directory=resource)))
+            resource_directory=str(resource),
+            **(dict(sandbox_compile_flags=strict, sandbox_profiles=list(sandbox_profiles)) if sandbox_profiles else {}))))
         contracts.publish_new(stage,output)
     finally:
         if stage.exists():shutil.rmtree(stage)
@@ -1039,11 +1157,8 @@ def main():
         args.paths=housekeeping.search_paths(args.mulib_path)
         root=housekeeping.kernel_root(args.root,HOME.parent,args.paths)
         if args.mode=='list':
-            modules=inventory(root)
-            known={m['header'] for m in modules.values()}
-            auxiliary=sorted(str(p.relative_to(root)) for p in (root/'include').glob('mulib-*.h') if str(p.relative_to(root)) not in known)
-            print(contracts.dumps(dict(schema='on1x.exotract-inventory/v1',modules=modules,auxiliary_headers=auxiliary)),end='')
-        elif args.mode=='plan':print(contracts.dumps(plan(root,args.libraries,args.fixture,args.paths)),end='')
+            print(contracts.dumps(dict(schema='on1x.exotract-inventory/v1', **contracts.inventory(root))),end='')
+        elif args.mode=='plan':print(contracts.dumps(plan(root,args.libraries,args.fixture,args.paths,discovery=True)),end='')
         else:build(args,root);print(args.output)
     except (ValueError,OSError,KeyError,subprocess.TimeoutExpired) as error:
         print('on1x-exotract: '+str(error),file=sys.stderr);return 1

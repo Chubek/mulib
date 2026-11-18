@@ -31,7 +31,16 @@ endif()
 option(ON1X_WITH_NOVOSTONE "Build optional MIR Datalog/CCDB analyses" OFF)
 option(ON1X_WITH_CHISEL "Build optional resource memory checking" OFF)
 option(ON1X_WITH_NEROTYPICAL "Build optional independent HIR structural type checking" OFF)
-option(ON1X_WITH_SYREN "Build Syren source diagnostics and explicit repair tooling" OFF)
+set(_on1x_syren_default OFF)
+if(EXISTS "${ON1X_LIBSTONE_ROOT}/moonstone/syren/include/syren/Syren.hpp")
+  set(_on1x_syren_default ON)
+endif()
+option(ON1X_WITH_SYREN "Build Syren source diagnostics and explicit repair tooling" ${_on1x_syren_default})
+set(_on1x_wetstone_default OFF)
+if(EXISTS "${ON1X_LIBSTONE_ROOT}/wetstone/verification/AnalysisSuite.hpp")
+  set(_on1x_wetstone_default ON)
+endif()
+option(ON1X_WITH_WETSTONE "Run the bounded Wetstone static-analysis prelude" ${_on1x_wetstone_default})
 option(ON1X_WITH_PROJECT_QMR "Enable the optional Moonstone QMR compiler for On1xfile templates when available" ON)
 if(ON1X_WITH_EXOML_EXTRACT AND NOT ON1X_WITH_EXOML)
   message(FATAL_ERROR "ON1X_WITH_EXOML_EXTRACT requires ON1X_WITH_EXOML")
@@ -66,25 +75,43 @@ else()
 endif()
 message(STATUS "On1x scanner: ${ON1X_SCANNER_DESCRIPTION}")
 include(cmake/DependencyReport.cmake)
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS grammar/PPX.schema.json)
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/grammar/PPX.schema.json" ON1X_SCHEMA_TEXT)
 configure_file(cmake/ppx_schema.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/ppx_schema.hpp" @ONLY)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS stdlib/diagnostics/catalog.json)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS tools/generate-diagnostic-catalog.py)
+execute_process(
+  COMMAND "${Python3_EXECUTABLE}" -IB "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate-diagnostic-catalog.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/diagnostics/catalog.json"
+    "${CMAKE_CURRENT_BINARY_DIR}/diagnostic_catalog.hpp"
+  COMMAND_ERROR_IS_FATAL ANY)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS stdppx/category/features.sexpr)
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/category/features.sexpr" ON1X_EXTENSION_REGISTRY)
 configure_file(cmake/extensions_registry.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/extensions_registry.hpp" @ONLY)
-add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/discovery.cpp src/infer.cpp src/sema.cpp src/concurrency.cpp src/codegen.cpp
+add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/discovery.cpp src/infer.cpp src/sema.cpp src/analysis.cpp src/diagnostic.cpp src/concurrency.cpp src/codegen.cpp
   src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp src/extensions.cpp src/extension_evidence.cpp src/extensions_hash.c src/canonical/control.cpp src/patterns.cpp src/canonical/values.cpp src/canonical/verify_values.cpp
   src/backend/mir.cpp src/backend/lower.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp)
 target_include_directories(on1x_frontend PUBLIC include)
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../include")
 target_compile_definitions(on1x_frontend PRIVATE ON1X_STDLIB_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/stdlib")
+if(ON1X_WITH_WETSTONE)
+  if(EXISTS "${ON1X_LIBSTONE_ROOT}/wetstone/verification/AnalysisSuite.hpp")
+    target_compile_definitions(on1x_frontend PRIVATE ON1X_WITH_WETSTONE=1)
+    target_include_directories(on1x_frontend SYSTEM PRIVATE "${ON1X_LIBSTONE_ROOT}")
+    message(STATUS "On1x static analysis: Wetstone prelude enabled")
+  else()
+    message(WARNING "ON1X_WITH_WETSTONE requested, but Wetstone headers are unavailable; using the bounded no-analysis fallback")
+  endif()
+else()
+  message(STATUS "On1x static analysis: Wetstone prelude unavailable/disabled")
+endif()
 if(ON1X_GENERATED_FRONTEND)
   target_compile_definitions(on1x_frontend PRIVATE ON1X_ASDL_PPX=1)
 endif()
 target_link_libraries(on1x_frontend PUBLIC on1x_scanner)
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
 set(_pretty_impl "${CMAKE_CURRENT_BINARY_DIR}/on1x_pretty_impl.c")
 add_custom_command(OUTPUT "${_pretty_impl}"
   COMMAND "${Python3_EXECUTABLE}" -IB "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/prettyprint/on1x/implementation.py"
@@ -122,7 +149,7 @@ if(ON1X_BUILD_NATIVE_PPX)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/stdppx/category.schema.json" DESTINATION libexec/on1x)
   file(GLOB_RECURSE _native_stdlib CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/*.on1x")
   file(GLOB _native_ppx_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/native/*.on1x")
-  foreach(_processor identity checks control unroll derive fold pipe compose assertions cond format logging state_machine tap trace protocols)
+  foreach(_processor identity checks control unroll derive fold pipe compose assertions cond format logging state_machine tap trace protocols diagnostics)
     string(APPEND _ppx_manifest " (processor \"${_processor}\" \"on1x-ppx-${_processor}\" \"category.schema.json\")\n")
     set(_native_input "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/native/${_processor}.on1x")
     set(_native_c "${CMAKE_CURRENT_BINARY_DIR}/stdppx/${_processor}.c")
@@ -254,6 +281,16 @@ if(BUILD_TESTING)
     target_link_libraries(on1x_diagnostics_tests PRIVATE on1x_diagnostics)
     add_test(NAME on1x.diagnostics_api COMMAND on1x_diagnostics_tests)
   endif()
+  add_executable(on1x_analysis_tests tests/test_analysis.cpp)
+  target_link_libraries(on1x_analysis_tests PRIVATE on1x_frontend)
+  add_test(NAME on1x.analysis_api COMMAND on1x_analysis_tests
+    "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/diagnostics/catalog.json")
+  add_test(NAME on1x.diagnostic_catalog_source COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_diagnostic_catalog_source.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/diagnostic-catalog-source"
+    "${CMAKE_CXX_COMPILER}")
+  set_tests_properties(on1x.diagnostic_catalog_source PROPERTIES TIMEOUT 30)
   add_executable(on1x_loader_tests tests/test_loader.cpp)
   target_link_libraries(on1x_loader_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.loader_api COMMAND on1x_loader_tests "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/loader-api")
@@ -342,6 +379,10 @@ if(BUILD_TESTING)
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_on1x_project.py" --on1xc "$<TARGET_FILE:on1xc>"
       --cc "${CMAKE_C_COMPILER}" ${_project_test_tools})
     set_tests_properties(on1x.project_build PROPERTIES TIMEOUT 300)
+    add_test(NAME on1x.project_fetch COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_project_fetch.py" --on1xc "$<TARGET_FILE:on1xc>"
+      --cc "${CMAKE_C_COMPILER}")
+    set_tests_properties(on1x.project_fetch PROPERTIES TIMEOUT 300)
   endif()
   set(_novostone_test_options)
   if(ON1X_WITH_NOVOSTONE)
@@ -355,6 +396,11 @@ if(BUILD_TESTING)
   foreach(_flag IN LISTS ON1X_TEST_C_FLAGS)
     list(APPEND _test_c_flags "--cflag=${_flag}")
   endforeach()
+  add_test(NAME on1x.diagnostic_catalog_runtime COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_diagnostic_catalog_runtime.py" "$<TARGET_FILE:on1xc>"
+    "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/diagnostic-catalog-runtime"
+    "${CMAKE_C_COMPILER}" ${_test_c_flags})
+  set_tests_properties(on1x.diagnostic_catalog_runtime PROPERTIES TIMEOUT 60)
   if(ON1X_WITH_SYREN)
     add_test(NAME on1x.diagnostics COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_diagnostics.py" "$<TARGET_FILE:on1xc>"
@@ -429,7 +475,7 @@ if(BUILD_TESTING)
     add_executable(on1x_concurrency_hir_tests tests/test_concurrency.cpp)
     target_link_libraries(on1x_concurrency_hir_tests PRIVATE on1x_frontend)
     add_test(NAME on1x.concurrency_hir COMMAND on1x_concurrency_hir_tests)
-  set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules libraries stdppx install mulib stdlib_extensions f64 unsigned_f32 numeric_limits)
+  set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules prelude libraries stdppx install mulib stdlib_extensions tty f64 unsigned_f32 numeric_limits)
      list(APPEND _meta_tests category control patterns value_loops nominal_adts defer_errors concurrency stream_poll cancellation_deadlines taskgroup_within discovery)
   list(APPEND _meta_tests kernel_imports project_driver)
   add_test(NAME on1x.stdppx_protocol COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/tests" -v)
@@ -444,6 +490,14 @@ if(BUILD_TESTING)
     set_tests_properties(on1x.kernel_paths PROPERTIES TIMEOUT 180)
   endif()
   if(ON1X_WITH_EXOTRACT_LUA)
+    add_test(NAME on1x.cdd_discovery_sdk COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cdd_discovery_sdk.py"
+      "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/cdd-discovery-sdk" "${CMAKE_C_COMPILER}")
+    set_tests_properties(on1x.cdd_discovery_sdk PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
+    add_test(NAME on1x.kernel_sandbox_sdk COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_sandbox_sdk.py"
+      "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-sandbox-sdk" "${CMAKE_C_COMPILER}" ${_test_c_flags})
+    set_tests_properties(on1x.kernel_sandbox_sdk PROPERTIES TIMEOUT 240 SKIP_RETURN_CODE 77)
     add_test(NAME on1x.kernel_imports_sdk COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_imports_sdk.py"
       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-imports-sdk" "${CMAKE_C_COMPILER}" ${_test_c_flags})

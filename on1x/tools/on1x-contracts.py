@@ -19,6 +19,7 @@ import tempfile
 
 HOME = Path(__file__).resolve().parents[1]
 CONTRACTS = HOME/'contracts-exoml'
+EXOTRACT_CATALOG = HOME/'contracts-exotract/catalog.json'
 MAX_BYTES = 64 * 1024 * 1024
 
 
@@ -80,11 +81,39 @@ def keys(value, allowed):
         reject('invalid/unknown profile keys')
 
 
-def catalog(root, selected=None):
+def contract_catalog():
     data = load(CONTRACTS/'catalog.json', 2*1024*1024)
-    keys(data, ['schema', 'safe_export', 'profiles'])
-    if data['schema'] != 'on1x.contract-catalog/v1' or data['safe_export'] is not False:
+    keys(data, ['schema', 'safe_export', 'inventory', 'profiles'])
+    if (data['schema'] != 'on1x.contract-catalog/v1' or data['safe_export'] is not False
+            or data['inventory'] != '../contracts-exotract/catalog.json'):
         reject('unsupported/unsafe catalog')
+    return data
+
+
+def exotract_catalog():
+    data = load(EXOTRACT_CATALOG, 2*1024*1024)
+    keys(data, ['schema', 'manifest', 'headers', 'implementation_translation_units',
+                'safe_export', 'discovery_only_prefixes', 'profiles', 'default_recipe'])
+    if (data['schema'] != 'on1x.exotract-catalog/v1' or data['safe_export'] is not False
+            or data['manifest'] != 'MANIFEST.yaml' or data['headers'] != 'include/mulib-*.h'
+            or data['default_recipe'] != 'manifest' or data['implementation_translation_units'] != 1
+            or not isinstance(data['profiles'], dict) or not isinstance(data['discovery_only_prefixes'], dict)):
+        reject('unsupported Exotract catalog')
+    for prefix, reason in data['discovery_only_prefixes'].items():
+        if not re.fullmatch(r'[a-z][a-z0-9]*-', prefix) or not isinstance(reason, str) or not reason:
+            reject('invalid discovery-only kernel policy')
+    if any(discovery_only_reason(name, data) for name in data['profiles']):
+        reject('discovery-only kernel cannot have an archive profile')
+    return data
+
+
+def discovery_only_reason(name, data):
+    return next((reason for prefix, reason in data['discovery_only_prefixes'].items()
+                 if name.startswith(prefix)), None)
+
+
+def catalog(root, selected=None):
+    data = contract_catalog()
     obligations = load(CONTRACTS/'obligations.json', 2*1024*1024)
     if obligations['schema'] != 'on1x.contract-obligations/v1' or obligations['safe_export'] is not False:
         reject('unsupported/unsafe obligations')
@@ -135,9 +164,37 @@ def catalog(root, selected=None):
     return data
 
 
+def manifest_list(entry, key, token, *, optional=False):
+    fields = list(re.finditer(r'^  '+key+r':([^\n]*)$', entry, re.M))
+    if not fields and optional:
+        return []
+    if len(fields) == 1:
+        field = fields[0]
+        inline = re.fullmatch(r' \[([^\]]*)\]', field[1])
+        tail = entry[field.end():].removeprefix('\n').splitlines()
+        block = []
+        indent = None
+        for line in tail:
+            if not line.startswith(('   ', '  -')):
+                break
+            item = re.fullmatch(r'( {2}| {4})- (.+)', line)
+            if not item or (indent is not None and item[1] != indent):
+                reject('unsupported MANIFEST '+key+' layout')
+            indent = item[1]
+            block.append(item[2])
+        if inline is not None and not block:
+            values = [v.strip() for v in inline[1].split(',')] if inline[1].strip() else []
+        elif not field[1] and block:
+            values = block
+        else:
+            reject('unsupported MANIFEST '+key+' layout')
+        if all(re.fullmatch(token, value) for value in values) and len(values) == len(set(values)):
+            return values
+    reject('unsupported MANIFEST '+key+' layout')
+
+
 def module_info(root, name, manifest=None):
-    # This repository's selected MANIFEST entries are a flat, inline-list subset
-    # of YAML. Reject other layouts rather than guessing a general YAML parser.
+    # This is the repository's plain MANIFEST subset, not a general YAML parser.
     if manifest is None:
         manifest = read(root/'MANIFEST.yaml', 8*1024*1024).decode('utf-8')
     manifest = manifest.split('\nproject_files:', 1)[0]
@@ -150,15 +207,81 @@ def module_info(root, name, manifest=None):
         if not field:
             reject('unsupported MANIFEST field: ' + key)
         fields[key] = field[1]
-    deps = re.search(r'^  dependencies: \[([^\]]*)\]$', match[1], re.M)
-    if not deps:
-        reject('unsupported MANIFEST dependency layout')
-    fields['manifest_dependencies'] = [d.strip() for d in deps[1].split(',') if d.strip()]
-    extra = re.search(r'^  extra_macros: \[([^\]]*)\]$', match[1], re.M)
-    if not extra and re.search(r'^  extra_macros:', match[1], re.M):
-        reject('unsupported MANIFEST extra macro layout')
-    fields['extra_macros'] = [m.strip() for m in extra[1].split(',') if m.strip()] if extra else []
+    fields['manifest_dependencies'] = manifest_list(match[1], 'dependencies', r'[a-z0-9][a-z0-9_+-]*')
+    fields['extra_macros'] = manifest_list(match[1], 'extra_macros', r'MULIB_IMPL_[A-Z0-9_]+', optional=True)
     return fields
+
+
+def local(root, name):
+    path = Path(name)
+    if path.is_absolute() or '..' in path.parts or not path.parts:
+        reject('nonlocal MuLIB path: '+str(name))
+    resolved = (root/path).resolve()
+    if not resolved.is_relative_to(root.resolve()) or not resolved.is_file():
+        reject('missing/escaping MuLIB input: '+str(name))
+    return resolved
+
+
+def manifest_inventory(root):
+    text = read(local(root, 'MANIFEST.yaml'), 8*1024*1024).decode().split('\nproject_files:', 1)[0]
+    names = re.findall(r'^- name: ([a-z0-9][a-z0-9_+-]*)$', text, re.M)
+    if not names or len(names) > 4096 or len(names) != len(set(names)):
+        reject('missing/duplicate/excessive MANIFEST modules')
+    modules = {}
+    for name in names:
+        item = module_info(root, name, text)
+        if item['header'] != 'include/mulib-'+name+'.h':
+            reject('noncanonical module header: '+name)
+        local(root, item['header'])
+        local(root, item['manual'])
+        if not re.fullmatch(r'MULIB_IMPL_[A-Z0-9_]+', item['macro']):
+            reject('invalid implementation macro: '+name)
+        modules[name] = item
+    for name, item in modules.items():
+        if set(item['manifest_dependencies']) - modules.keys():
+            reject('unknown MANIFEST dependency: '+name)
+    return modules
+
+
+def inventory(root):
+    """Inventory only: report existing sidecars, never infer contracts from C."""
+    modules = manifest_inventory(root)
+    exo = exotract_catalog()
+    core = contract_catalog()['profiles']
+    if (core.keys() | exo['profiles'].keys()) - modules.keys():
+        reject('contract catalog references an unknown MANIFEST module')
+    known = {m['header'] for m in modules.values()}
+    headers = {p.relative_to(root).as_posix() for p in root.glob(exo['headers'])}
+    for header in headers - known:
+        local(root, header)
+    sidecars, source_matches, non_kernel = {}, {}, []
+    paths = sorted([*CONTRACTS.glob('*.exocontract.json'), *CONTRACTS.glob('*/*.exocontract.json')])
+    for path in paths:
+        relative = path.relative_to(CONTRACTS).as_posix()
+        bundle = load(local(CONTRACTS, relative), 2*1024*1024)
+        name = bundle['library']
+        if name not in modules or bundle['headers'] != [Path(modules[name]['header']).name]:
+            non_kernel.append(relative)
+            continue
+        if name in sidecars or discovery_only_reason(name, exo):
+            reject('conflicting kernel sidecar registration: '+name)
+        sidecars[name] = relative
+        source_matches[name] = bundle['bundle_provenance']['revision'] == 'sha256:'+digest(local(root, modules[name]['header']))
+    for name, profile in core.items():
+        if sidecars.get(name) != profile['contract']:
+            reject('missing/mismatched core sidecar registration: '+name)
+    for name, profile in exo['profiles'].items():
+        if 'sandbox_contract' in profile and sidecars.get(name) != profile['sandbox_contract']:
+            reject('missing/mismatched sandbox sidecar registration: '+name)
+    coverage = {}
+    for name in modules:
+        reason = discovery_only_reason(name, exo)
+        coverage[name] = dict(semantic_sidecar=sidecars.get(name), sidecar_header_matches=source_matches.get(name),
+                              snapshot_profile=name in core,
+                              archive_recipe=None if reason else exo['profiles'].get(name, {}).get('recipe', exo['default_recipe']),
+                              discovery_only_reason=reason)
+    return dict(modules=modules, auxiliary_headers=sorted(headers - known), coverage=coverage,
+                non_kernel_sidecars=non_kernel, safe_export=False)
 
 
 def plan(root, data, libraries):
@@ -328,6 +451,7 @@ def main():
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument('--root', type=Path, default=HOME.parent, help='canonical MuLIB checkout, not a vendored snapshot')
     commands = cli.add_subparsers(dest='command', required=True)
+    commands.add_parser('list', help='MANIFEST-backed MuLIB kernel coverage, not ABI extraction or review')
     commands.add_parser('lint', help='source/annotation inventory only; not ExoML Gate B')
     build = commands.add_parser('build-plan')
     build.add_argument('libraries', nargs='*', default=[])
@@ -341,7 +465,11 @@ def main():
     check.add_argument('directory', type=Path)
     check.add_argument('--bind', type=Path, required=True)
     args = cli.parse_args()
-    root = args.root.resolve(); data = catalog(root)
+    root = args.root.resolve()
+    if args.command == 'list':
+        sys.stdout.write(dumps(dict(schema='on1x.contract-inventory/v1', **inventory(root))))
+        return
+    data = catalog(root)
     libraries = getattr(args, 'library', []) or getattr(args, 'libraries', []) or list(data['profiles'])
     if len(set(libraries)) != len(libraries) or set(libraries) - data['profiles'].keys():
         reject('unknown/duplicate requested library')

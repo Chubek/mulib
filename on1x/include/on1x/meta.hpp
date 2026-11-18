@@ -1,5 +1,6 @@
 #pragma once
 #include <on1x/ast.hpp>
+#include <on1x/diagnostic.hpp>
 #include <map>
 #include <string_view>
 #include <filesystem>
@@ -38,11 +39,14 @@ struct PpxOptions {
  std::vector<PpxRegistration> programs;
  std::map<std::string,std::string> schemas;
  std::vector<std::filesystem::path> paths;
+ diagnostic::Registry* diagnostics=nullptr;
+ const diagnostic::Catalog* diagnostic_catalog=nullptr;
  bool allow_source=false;
  unsigned timeout_ms=5000;
 };
 std::string run_transformer(const std::string& program,std::string_view input,unsigned timeout_ms,const std::string& label,
- const std::map<std::string,std::string>& environment={});
+  const std::map<std::string,std::string>& environment={},diagnostic::Registry* diagnostics=nullptr,
+  const diagnostic::Catalog* diagnostic_catalog=nullptr);
 void rewrite(Unit& unit,const PpxOptions& options);
 }
 namespace on1x {

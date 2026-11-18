@@ -40,8 +40,12 @@ python3 on1x/tools/on1x-build.py on1x/examples/kernel/clamp.on1x \
 build/kernelbind-gcc/clamp
 ```
 
-Use fresh output paths. `add_i64` and `sub_i64` have the exact typed shape
-`(i64, i64) -> i64`; `mulib_clamp_i64` is not exported by this profile.
+Use fresh output paths. The clamp v2 profile exposes all three C functions:
+`add_i64` and `sub_i64` have type `(i64, i64) -> i64`; `i64(value, low, high)`
+has type `(i64, i64, i64) -> i64` and clamps to the inclusive interval.
+On1x evaluates its arguments once, in source order, then checks `low <= high`.
+Reversed bounds trigger an On1x assertion failure (exit 70), before the C
+function runs. This check also applies to unsafe imports.
 Aliases are local to the importing source file. Calls are direct only
 and require a lexical `unsafe { ... }` block. In expression position, an
 tail expression without a semicolon supplies the block's value; a tail followed by
@@ -121,9 +125,22 @@ clamp requests do not attach a sidecar. PrettySexpr requires the canonical
 `mulib_pretty_parse_expr` and `mulib_pretty_render_expr` declarations. The
 legacy PrettyPrint companion sidecar does not describe these declarations
 and is not used. Repeated logical requests with distinct aliases share the
-same extraction. Other logical names are rejected at their source location.
+same extraction.
 See [staged stdlib migrations](../tests/fixtures/kernel_migrations/README.md)
 for proposed call sites and remaining ABI and ownership requirements.
+
+The eight [sandbox kernel profiles](kernel-sandbox.md) additionally provide
+declaration and archive evidence, but return `not_representable` and expose no
+safe or unsafe callable imports.
+The eight CDD modules are also discoverable as `mulib.cdd_catalogue`,
+`mulib.cdd_registry`, `mulib.cdd_schema`, `mulib.cdd_query`, `mulib.cdd_plan`,
+`mulib.cdd_resolve`, `mulib.cdd_execute`, and `mulib.cdd_diff`. These source names
+map underscores to hyphens for the matching discovery-only MANIFEST entries.
+The report returns `not_representable`, with CDecl metadata but no semantic
+sidecar. Checked accessors for fixed arrays, counts and borrowed lifetimes are
+required before preparing semantic contracts. CDD is not an archive or callable
+profile. Other logical names are rejected at their source location, even if
+they appear in the broader [MuLIB inventory](../contracts-exotract/README.md).
 
 `--mulib-root`, `--mulib-path`, `ON1X_MULIB_ROOT`, and `ON1X_MULIB_PATH` select
 the canonical checkout using the existing planner. Additional selected-header
@@ -138,7 +155,8 @@ sidecar, or PPX execution. Lua and libclang are build-time dependencies only.
 The Linux-only publication uses atomic no-replace rename to emit a single
 `on1x.kernel-discovery/v1` JSON report with ExoLib metadata, original Exotract
 On1x metadata and embedded CDecl v2, normalized semantic sidecar (if present),
-per-symbol `missing_review`/`callable:false` results, and hashed inputs.
+per-symbol `missing_review` or `not_representable` results (all
+`callable:false`), and hashed inputs.
 It checks declaration-only macro state, target, header identity, required
 provenance pins and source/tool drift within the inspection invocation.
 This report is **not** an import interface, build lock, ABI probe, or
