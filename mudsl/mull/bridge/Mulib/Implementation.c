@@ -323,6 +323,7 @@
 #define MULIB_IMPL_ELFBUILDER
 #define MULIB_IMPL_ELFUTILS
 #define MULIB_IMPL_ELF_OBJDUMP
+#define MULIB_IMPL_ELVI_SCRAPE
 #define MULIB_IMPL_EMBEDDINGSDB
 #define MULIB_IMPL_EMITTER
 #define MULIB_IMPL_ENCODING
@@ -774,6 +775,9 @@
 #define MULIB_IMPL_POSITIONS
 #define MULIB_IMPL_POSTDOMINANCE
 #define MULIB_IMPL_POSTINGS
+#define MULIB_IMPL_PRETTYDOC
+#define MULIB_IMPL_PRETTYEMIT
+#define MULIB_IMPL_PRETTYSEXPR
 #define MULIB_IMPL_PRICEOPT
 #define MULIB_IMPL_PRICE_CAUSAL
 #define MULIB_IMPL_PRICE_CONFIDENCE
@@ -1491,6 +1495,7 @@
 #include "mulib-elf.h"
 #include "mulib-elfbuilder.h"
 #include "mulib-elfutils.h"
+#include "mulib-elvi-scrape.h"
 #include "mulib-embeddingsdb.h"
 #include "mulib-emitter.h"
 #include "mulib-encoding.h"
@@ -1941,6 +1946,9 @@
 #include "mulib-positions.h"
 #include "mulib-postdominance.h"
 #include "mulib-postings.h"
+#include "mulib-prettydoc.h"
+#include "mulib-prettyemit.h"
+#include "mulib-prettysexpr.h"
 #include "mulib-price-causal.h"
 #include "mulib-price-confidence.h"
 #include "mulib-price-demand.h"

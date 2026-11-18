@@ -8,6 +8,10 @@ fn main() {
   assert(fit_status==0 && fit=="界 é");
   let (wrap_status, wrapped)=Pretty.pp_format(doc,3);
   assert(wrap_status==0 && wrapped=="界\né");
+  let (kp_status, kp)=Pretty.pp_render(Pretty.pp_fill("abc abc abc abc"),7,1,0,2);
+  assert(kp_status==0 && kp=="abc abc\nabc abc");
+  let (math_status, math)=Pretty.pp_format(Pretty.pp_frac(Pretty.pp_math_atom("x"),Pretty.pp_root(Pretty.pp_math_atom("2"))),80);
+  assert(math_status==0 && math=="(x)/(sqrt(2))");
   let (html_status, html)=Pretty.pp_render(Pretty.pp_math_identifier("x<&"),80,1,1,0);
   assert(html_status==0);
   let (bad_status, bad)=Pretty.pp_format(Pretty.pp_annotate("not-a-style",Pretty.pp_text("x")),80);

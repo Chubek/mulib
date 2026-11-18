@@ -165,6 +165,14 @@ static void knuth_lines(void) {
     /* Every selected discretionary is flagged, including repeated hyphens. */
     assert(!mulib_linebreak("ab\xc2\xad" "cd\xc2\xad" "ef", 10, MULIB_LINEBREAK_KNUTH_PLASS, &o, &r));
     assert(r.count == 3 && r.cost == 5400);
+    /* The prefix leaves six columns on page one; subsequent lines get nine. */
+    size_t work=0;
+    mulib_linebreak_options_init(&o,9);
+    assert(!mulib_linebreak_knuth_plass("aa bb cccc dddd",15,&o,6,&r,&work));
+    assert(r.count==2&&r.lines[0].end==5&&r.lines[1].width==9&&work>0);
+    o.max_work=1;
+    assert(mulib_linebreak_knuth_plass("aa bb cccc dddd",15,&o,6,&r,&work)==MULIB_LINEBREAK_LIMIT);
+    assert(r.count==2&&r.lines[1].width==9);
     mulib_linebreak_result_free(&r);
 }
 /* Exhaustively enumerate all partitions of small ASCII paragraphs, independently
@@ -174,12 +182,13 @@ static void optimality(void) {
     for (trial = 0; trial < 250; ++trial) {
         char text[100];
         size_t lengths[7], words, n = 0, i, j, lines, mask, a;
-        double oracle[3] = {DBL_MAX, DBL_MAX, DBL_MAX}, target;
+        double oracle[4] = {DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX}, target,first;
         mulib_linebreak_options_t o;
         mulib_linebreak_result_t r = {0};
         seed = seed * 1664525u + 1013904223u; words = seed % 7 + 1;
         seed = seed * 1664525u + 1013904223u;
         mulib_linebreak_options_init(&o, seed % 11 + 2);
+        first = (double)(trial % 13 + 1);
         for (i = 0; i < words; ++i) {
             seed = seed * 1664525u + 1013904223u; lengths[i] = seed % 9 + 1;
             if (i) text[n++] = ' ';
@@ -188,37 +197,40 @@ static void optimality(void) {
         assert(!mulib_linebreak(text, n, MULIB_LINEBREAK_GREEDY, &o, &r));
         lines = r.count; target = (double)n / (double)lines;
         for (mask = 0; mask < ((size_t)1 << (words - 1)); ++mask) {
-            double rag = 0, balance = 0, knuth = 0;
-            size_t begin = 0, count = 0, previous_fitness = 1;
-            int legal = 1, feasible = 1;
+            double rag = 0, balance = 0, knuth[2] = {0,0};
+            size_t begin = 0,count = 0,previous_fitness[2] = {1,1};
+            int legal = 1,feasible[2] = {1,1};
             for (i = 0; i < words; ++i) if (i == words - 1 || (mask & ((size_t)1 << i))) {
-                double width = (double)(i - begin), delta, ratio = 0, badness;
-                size_t fitness;
+                double width = (double)(i - begin);
                 for (j = begin; j <= i; ++j) width += (double)lengths[j];
                 ++count;
                 if (width > o.width && begin != i) legal = 0;
                 if (i != words - 1 || width > o.width) rag += (o.width - width) * (o.width - width);
                 balance += (target - width) * (target - width);
-                delta = o.width - width;
-                if (!(i == words - 1 && delta >= 0) && delta != 0) {
-                    double capacity = (double)(i - begin) * (delta > 0 ? o.space_stretch : o.space_shrink);
-                    if (!capacity) feasible = 0;
-                    else { ratio = delta / capacity; if (ratio < -1 || ratio > o.tolerance) feasible = 0; }
+                for(size_t k=0;k<2;k++){
+                    double delta=(k&&count==1?first:o.width)-width,ratio=0;
+                    if (!(i == words - 1 && delta >= 0) && delta != 0) {
+                        double capacity = (double)(i - begin) * (delta > 0 ? o.space_stretch : o.space_shrink);
+                        if (!capacity) feasible[k] = 0;
+                        else { ratio = delta / capacity; if (ratio < -1 || ratio > o.tolerance) feasible[k] = 0; }
+                    }
+                    size_t fitness=ratio < -.5 ? 0 : ratio <= .5 ? 1 : ratio <= 1 ? 2 : 3;
+                    double badness=fmin(10000, 100 * pow(fabs(ratio), 3));
+                    knuth[k]+=(10 + badness) * (10 + badness);
+                    if(fitness+1<previous_fitness[k]||previous_fitness[k]+1<fitness)knuth[k]+=100;
+                    previous_fitness[k]=fitness;
                 }
-                fitness = ratio < -.5 ? 0 : ratio <= .5 ? 1 : ratio <= 1 ? 2 : 3;
-                badness = fmin(10000, 100 * pow(fabs(ratio), 3));
-                knuth += (10 + badness) * (10 + badness);
-                if (fitness + 1 < previous_fitness || previous_fitness + 1 < fitness) knuth += 100;
-                previous_fitness = fitness; begin = i + 1;
+                begin = i + 1;
             }
             if (legal && rag < oracle[0]) oracle[0] = rag;
             if (legal && count == lines && balance < oracle[1]) oracle[1] = balance;
-            if (feasible && knuth < oracle[2]) oracle[2] = knuth;
+            for(size_t k=0;k<2;k++)if(feasible[k]&&knuth[k]<oracle[2+k])oracle[2+k]=knuth[k];
         }
-        for (a = 0; a < 3; ++a) {
+        for (a = 0; a < 4; ++a) {
             const mulib_linebreak_algorithm_t algorithms[] = {MULIB_LINEBREAK_MINIMUM_RAGGEDNESS,
                 MULIB_LINEBREAK_BALANCED, MULIB_LINEBREAK_KNUTH_PLASS};
-            int rc = mulib_linebreak(text, n, algorithms[a], &o, &r);
+            int rc = a==3?mulib_linebreak_knuth_plass(text,n,&o,first,&r,NULL):
+                           mulib_linebreak(text,n,algorithms[a],&o,&r);
             if (oracle[a] == DBL_MAX) assert(rc == MULIB_LINEBREAK_INFEASIBLE);
             else {
                 assert(!rc); check_lines(text, n, &r);

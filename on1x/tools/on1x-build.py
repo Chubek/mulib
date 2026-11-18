@@ -59,6 +59,11 @@ def main():
     cli.add_argument('--mulib-fixture', action='append', default=[], metavar='GROUP')
     cli.add_argument('--mulib-archive', type=Path, help='locked on1x-exotract output directory')
     cli.add_argument('--mulib-plan', type=Path, help='write the resolved native link plan and input fingerprints')
+    cli.add_argument('--inspect-kernels', action='store_true',
+                     help='publish KernelBind discovery JSON without building a program or archive')
+    cli.add_argument('--kernel-bind', action='store_true', help='build with the unsafe clamp KernelBind C11 profile')
+    cli.add_argument('--exotract', help='trusted Lua-enabled Exotract executable for KernelBind')
+    cli.add_argument('--resource-dir', help='Clang resource directory for KernelBind')
     args = cli.parse_args()
     if args.optimize_ir and not args.via_mir:
         cli.error('--optimize-ir requires --via-mir')
@@ -66,9 +71,36 @@ def main():
         cli.error('--admitted-extern requires --memory-check')
     if args.mulib_plan and args.mulib_plan.resolve() in (args.input.resolve(),args.output.resolve()):
         cli.error('--mulib-plan must be separate from the input and executable')
+    if args.inspect_kernels or args.kernel_bind:
+        if not args.exotract:
+            cli.error('KernelBind requires --exotract PATH (LibStone Lua/ExoML build)')
+    if args.inspect_kernels:
+        if args.kernel_bind:
+            cli.error('--inspect-kernels and --kernel-bind are mutually exclusive')
+        if (args.emit_only or args.via_mir or args.memory_check or args.verify_types or args.extra_c or
+            args.ppx_chain or args.ppx_schema or args.allow_source_ppx or args.mulib or args.mulib_fixture or
+            args.mulib_archive or args.mulib_plan or
+            any(option in ('--ppx-path', '--stdppx-path') for option, _ in args.search_chain or [])):
+            cli.error('--inspect-kernels cannot be combined with build, linkage or PPX options')
+        if args.output.exists() or args.output.is_symlink():
+            cli.error('KernelBind discovery destination already exists')
+    elif args.kernel_bind:
+        if (args.emit_only or args.via_mir or args.memory_check or args.verify_types or
+            args.extra_c or args.ppx_chain or args.ppx_schema or args.allow_source_ppx or args.enable or
+            args.mulib or args.mulib_fixture or args.mulib_archive):
+            cli.error('--kernel-bind is restricted to direct C11 with no user C, PPX, extensions, or additional kernels')
+        if any(flag not in ('-O0','-O1','-O2','-O3','-g','-fno-omit-frame-pointer',
+                           '-fsanitize=address,undefined','-fno-sanitize-recover=all') for flag in args.cflag):
+            cli.error('--kernel-bind permits only the documented optimization/debug/sanitizer flags')
+        for path in [args.output, args.mulib_plan]:
+            if path is not None and (path.exists() or path.is_symlink()):
+                cli.error('KernelBind requires fresh output and plan paths')
+    elif args.exotract or args.resource_dir:
+        cli.error('--exotract and --resource-dir require KernelBind')
     with tempfile.TemporaryDirectory(prefix='on1x-build-') as temp:
-        generated = Path(temp) / 'main.c'
-        compiler = [args.on1xc, '--emit-ir-c' if args.via_mir else '--emit-c', str(args.input), '-o', str(generated),
+        generated = Path(temp) / ('kernel-requests.json' if args.inspect_kernels else 'main.c')
+        mode = '--kernel-imports' if args.inspect_kernels else '--emit-ir-c' if args.via_mir else '--emit-c'
+        compiler = [args.on1xc, mode, str(args.input), '-o', str(generated),
                     '--ppx-timeout-ms', str(args.ppx_timeout_ms)]
         if args.allow_source_ppx:
             compiler.append('--allow-source-ppx')
@@ -102,6 +134,34 @@ def main():
             compiler += ['--disable', name]
         for label, schema in args.ppx_schema:
             compiler += ['--ppx-schema', label, schema]
+        kernel_report = kernel_interface = None
+        if args.inspect_kernels or args.kernel_bind:
+            spec = importlib.util.spec_from_file_location('on1x_exotract', ROOT/'tools/on1x-exotract.py')
+            exo = importlib.util.module_from_spec(spec);spec.loader.exec_module(exo)
+            compiler[0] = exo.executable(compiler[0])
+            driver_pins = {path: exo.contracts.digest(path) for path in [compiler[0], Path(__file__).resolve()]}
+            requests_path = Path(temp)/'kernel-requests.json'
+            inspect = [str(compiler[0]), '--kernel-imports', str(args.input), '-o', str(requests_path), *compiler[5:]]
+            subprocess.run(inspect, check=True, timeout=60)
+            paths = exo.housekeeping.search_paths(args.mulib_path)
+            root = exo.housekeeping.kernel_root(args.mulib_root, MULIB, paths)
+            requests = exo.contracts.load(requests_path)
+            report = exo.kernel_discovery(requests, root, paths, args.exotract, args.cc, args.resource_dir,
+                                          [] if args.kernel_bind else args.cflag, driver_pins)
+            if args.inspect_kernels:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                with tempfile.NamedTemporaryFile(dir=args.output.parent, prefix='.kernel-discovery-', delete=False) as stream:
+                    staged = Path(stream.name)
+                try:
+                    staged.write_text(exo.contracts.dumps(report), encoding='ascii')
+                    exo.contracts.publish_new(staged, args.output)
+                finally:
+                    staged.unlink(missing_ok=True)
+                return
+            kernel_report = report
+            kernel_interface = exo.unsafe_scalar_interface(report)
+            args.cc = report['compiler']
+            compiler.append('--kernel-c11')
         subprocess.run(compiler, check=True)
         code = generated.read_text()
         if args.emit_only:
@@ -120,6 +180,7 @@ def main():
                 str(generated), str(ROOT / 'runtime/on1x_runtime.c')]
         has_json = 'on1x_json_' in code
         has_csp = '#include <on1x_concurrency.h>' in code
+        has_pretty = bool(re.search(r'^extern [^;\n]*\bon1x_pretty_(?:render|status)\(', code, re.M))
         externs=set(re.findall(r'\bextern\s+[^;\n]*\b(on1x_mulib_\w+)\(',code))
         has_mulib = any(re.fullmatch(r'on1x_mulib_(abi_version|pointer_bits|max_size|(?:kernel|fixture)_\w+|has_kernel|has_fixture)',name) for name in externs)
         bridge_groups={
@@ -133,7 +194,7 @@ def main():
         }
         groups={group for group,(_,symbols) in bridge_groups.items() if any('on1x_mulib_'+s in externs for s in symbols)}
         has_bridge=bool(groups) or 'on1x_mulib_bridge_status' in externs
-        native = has_json or has_csp or has_mulib or has_bridge or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan
+        native = kernel_interface or has_json or has_csp or has_pretty or has_mulib or has_bridge or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan
         recipe, fingerprints, native_links = None, {}, []
         if native:
             cc=shutil.which(args.cc)
@@ -143,6 +204,14 @@ def main():
             compiler_target=subprocess.check_output([str(cc),'-dumpmachine'],text=True,timeout=30).strip()
             for path in [cc,Path(__file__).resolve(),Path(house.__file__)]:fingerprints[str(path)]=house.contracts.digest(path)
             kernels = list(args.mulib)
+            if kernel_interface:
+                if has_json or has_csp or has_pretty or has_mulib or has_bridge:
+                    raise ValueError('KernelBind clamp profile cannot be mixed with built-in raw kernel bridges')
+                if compiler_target != kernel_report['target'] or root != mulib_root:
+                    raise ValueError('KernelBind target or MuLIB root drift')
+                fingerprints.update(kernel_report['inputs'])
+                kernels.append('clamp')
+                cmd.append('-DON1X_KERNEL_ABI_V1=1')
             if has_csp:
                 kernels += [name for name in ('channel', 'fiber', 'xthreads') if name not in kernels]
                 cmd.append(str(ROOT/'runtime/on1x_concurrency.c'))
@@ -150,6 +219,7 @@ def main():
                 for kernel in bridge_groups[group][0]:
                     if kernel not in kernels:kernels.append(kernel)
             if has_json and 'json' not in kernels:kernels.append('json')
+            if has_pretty and 'prettysexpr' not in kernels:kernels.append('prettysexpr')
             recipe = house.plan(mulib_root, kernels, args.mulib_fixture,paths) if kernels or args.mulib_fixture or args.mulib_archive else None
             if any('MULIB_IMPL_' in flag for flag in args.cflag):
                 raise ValueError('MuLIB implementation macros belong to the single generated TU')
@@ -183,6 +253,12 @@ def main():
                 native_links.append(str(archive/'libmulib.a'))
                 fingerprints[str(archive/'libmulib.a')]=house.contracts.digest(archive/'libmulib.a')
             if recipe:
+                if kernel_interface and recipe['implementation_macros'] != ['MULIB_IMPL_CLAMP']:
+                    raise ValueError('KernelBind implementation closure drift')
+                if kernel_interface:
+                    for path, digest in recipe['inputs'].items():
+                        if fingerprints.get(path) != digest:
+                            raise ValueError('KernelBind discovery/link input drift: '+path)
                 fingerprints.update(recipe['inputs'])
                 house.check_generated(mulib_root, recipe)
                 for record in recipe['files']:
@@ -205,6 +281,10 @@ def main():
                         defines=set(re.findall(r'^\s*#\s*define\s+(MULIB_IMPL_[A-Z0-9_]+)\b',path.read_text(),re.M))
                         if defines & set(recipe['implementation_macros']):raise ValueError('duplicate MuLIB implementation in --extra-c: '+extra)
             if has_json:cmd.append(str(ROOT/'runtime/on1x_json.c'))
+            if has_pretty:
+                bridge = Path(subprocess.check_output(
+                    [args.on1xc, '--stdlib-resource', 'prettyprint/runtime.c', *loader_flags], text=True).strip())
+                if bridge.resolve() not in {Path(p).resolve() for p in args.extra_c}:cmd.append(str(bridge))
             if has_bridge:
                 bridge=ROOT/'stdlib/_bridge/mulib_bridge.c'
                 if bridge.resolve() not in {Path(p).resolve() for p in args.extra_c}:cmd.append(str(bridge))
@@ -237,6 +317,7 @@ def main():
             flags=['-I',str(ROOT/'runtime'),*include_flags,'-I',str(ROOT/'stdlib/mulib'),*args.cflag]
             if recipe:flags += ['-D'+item for item in recipe['compile_definitions']]
             flags += ['-DON1X_BRIDGE_'+group for group in sorted(groups)]
+            if kernel_interface:flags.append('-DON1X_KERNEL_ABI_V1=1')
             for source in [Path(value) for value in cmd if value.endswith('.c')]:
                 for path,digest in house.compile_inputs(args.cc,flags,source).items():
                     if path in fingerprints and fingerprints[path]!=digest:raise ValueError('native input drift: '+path)
@@ -255,13 +336,26 @@ def main():
                             compiler=str(cc),compiler_version=compiler_version,compiler_target=compiler_target,
                             cflags=args.cflag,bridge_groups=sorted(groups),
                             executable_sha256=house.contracts.digest(binary),safe_export=False)
+                if kernel_interface:report['kernel_interface']=kernel_interface
                 args.mulib_plan.parent.mkdir(parents=True,exist_ok=True)
-                args.mulib_plan.write_text(house.contracts.dumps(report))
+                if kernel_interface:
+                    with tempfile.NamedTemporaryFile(dir=args.mulib_plan.parent, prefix='.kernel-plan-', delete=False) as stream:
+                        staged_plan = Path(stream.name)
+                    try:
+                        staged_plan.write_text(house.contracts.dumps(report), encoding='ascii')
+                        house.contracts.publish_new(staged_plan, args.mulib_plan)
+                    finally:
+                        staged_plan.unlink(missing_ok=True)
+                else:
+                    args.mulib_plan.write_text(house.contracts.dumps(report))
         with tempfile.NamedTemporaryFile(dir=args.output.resolve().parent,prefix='.on1x-publish-',delete=False) as stream:
             staged=Path(stream.name)
         try:
             shutil.copy2(binary,staged)
-            os.replace(staged,args.output.resolve())
+            if kernel_interface:
+                house.contracts.publish_new(staged, args.output)
+            else:
+                os.replace(staged,args.output.resolve())
         finally:
             staged.unlink(missing_ok=True)
 

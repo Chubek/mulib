@@ -7,10 +7,7 @@
 /* The generic focused-test runner compiles one source. The PrettyPrint build
  * also tests this caller with a separate runtime and implementation object. */
 #ifndef PRETTYPRINT_TEST_SEPARATE
-#define MULIB_IMPL_PRETTYDOC
-#define MULIB_IMPL_PRETTYEMIT
-#define MULIB_IMPL_PRETTYSEXPR
-#include "mulib-prettysexpr.h"
+#include "mulib-pretty-standalone.inc"
 #include "../on1x/stdlib/prettyprint/runtime.c"
 #endif
 
@@ -32,6 +29,12 @@ int main(void){
  assert(on1x_pretty_status()==-1&&strcmp(b,"")==0);
  b=on1x_pretty_render(src,80,1,0,-1);
  assert(on1x_pretty_status()==-1&&strcmp(b,"")==0);
+ b=on1x_pretty_render(src,80,1,0,3);
+ assert(on1x_pretty_status()==-1&&strcmp(b,"")==0);
+ b=on1x_pretty_render("(fill \"abc abc abc abc\")",7,1,0,2);
+ assert(on1x_pretty_status()==0&&strcmp(b,"abc abc\nabc abc")==0);
+ b=on1x_pretty_render("(fill \"wide\")",1,1,0,2);
+ assert(on1x_pretty_status()==-2&&strcmp(b,"")==0);
  size_t limit=2u*1024u*1024u;
  char *large=malloc(limit+2);assert(large);
  memset(large,' ',limit+1);memcpy(large,src,strlen(src));large[limit]='\0';

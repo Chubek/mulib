@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define MULIB_IMPL_PRETTYDOC
-#define MULIB_IMPL_PRETTYEMIT
-#define MULIB_IMPL_PRETTYSEXPR
-#include "mulib-prettysexpr.h"
+#include "mulib-pretty-standalone.inc"
 int main(void){
  const char *doc="(cat (annot \"keyword\" (text \"let\")) (cat (soft) (cat (annot \"identifier\" (text \"x\")) (cat (text \" = \") (annot \"math-number\" (text \"42\"))))))";
  mulib_pretty_options_t opt;mulib_pretty_options_init(&opt);opt.width=80;

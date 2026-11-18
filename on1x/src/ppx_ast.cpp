@@ -293,6 +293,7 @@ SExpr encode_type(const Type& value){return type(value);}
 Type decode_type(const SExpr& tree){base_schema().validate(tree,"Type");return read_type(tree);}
 Location decode_source_location(const SExpr& tree){base_schema().validate(tree,"Location");return location(tree);}
 SExpr encode(const Unit& unit){
+ require_no_kernel_imports(unit);
  if(!unit.extensions.empty())throw Error(unit.extensions.front().where,"ON1X-CAT-PPX: declaration carriers require native expansion (inspection does not execute processors)","ON1X-CAT-PPX");
  if(!unit.macros.empty())throw Error(unit.macros.front().where,"expand macros before PPX encoding");
  std::vector<SExpr> functions;
@@ -300,8 +301,10 @@ SExpr encode(const Unit& unit){
   std::vector<SExpr> params,labels,fields;for(const auto& p:d.parameters)params.push_back(string(p));for(const auto& l:d.labels)labels.push_back(string(l));for(const auto& f:d.fields)fields.push_back(type(f));
   functions.push_back(form("NominalDeclaration",{string(d.kind==Type::Record?"record":"enum"),string(d.name),list(std::move(params)),list(std::move(labels)),list(std::move(fields)),loc(d.where)}));
  }
- for(const auto& f:unit.functions){
-  std::vector<SExpr> attributes;for(const auto& a:f.attributes)attributes.push_back(extension(*a,true));
+  for(const auto& f:unit.functions){
+   if(!f.unsafe_kernel_symbol.empty())
+    throw Error(f.where,"ON1X-KERNEL-PPX: foreign interfaces are not PPX wire data","ON1X-KERNEL-PPX");
+   std::vector<SExpr> attributes;for(const auto& a:f.attributes)attributes.push_back(extension(*a,true));
   if(f.external)functions.push_back(form("Extern",{string(f.name),parameters(f.params),type(f.result),list(std::move(attributes)),loc(f.where)}));
   else functions.push_back(form("Function",{string(f.name),parameters(f.params),type(f.result),block(f.body,f.where),list(std::move(attributes)),loc(f.where)}));
  }return form("Unit",{symbol("1"),list(std::move(functions))});
@@ -328,6 +331,7 @@ Unit decode(const SExpr& tree){
  return unit;
 }
 void require_core(const Unit& unit){
+ require_no_kernel_imports(unit);
  if(!unit.extensions.empty())throw Error(unit.extensions.front().where,"ON1X-CAT-PPX: unconsumed declaration carrier","ON1X-CAT-PPX");
  if(!unit.macros.empty())throw Error(unit.macros.front().where,"unexpanded macro definitions");
  if(!unit.ppx.empty())throw Error(unit.ppx.front().where,"source PPX registrations require --allow-source-ppx in the compiler driver");

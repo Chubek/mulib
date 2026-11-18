@@ -146,7 +146,8 @@ class Lower {
     if(s.kind==S::Defer){
      if(!s.value||s.value->kind!=E::Call||!s.value->callee||(s.value->callee->kind==E::Variable&&s.value->callee->reference==Expr::Reference::Unresolved)||s.value->type==Type::Invalid||s.value->type.has_holes()||s.value->type.has_generics())fail(s.where,"defer requires a checked call expression");
      auto at=s.where;auto call=std::move(s.value);Stmt scope;scope.kind=S::Block;scope.where=at;
-    if(call->callee->reference!=Expr::Reference::Intrinsic&&call->callee->reference!=Expr::Reference::Extern){auto t=call->callee->type;auto n=fresh();scope.body.push_back(bind(n,std::move(call->callee),at));call->callee=local(n,t,at);}
+     if(call->callee->reference!=Expr::Reference::Intrinsic&&call->callee->reference!=Expr::Reference::Extern&&
+        call->callee->reference!=Expr::Reference::UnsafeForeign){auto t=call->callee->type;auto n=fresh();scope.body.push_back(bind(n,std::move(call->callee),at));call->callee=local(n,t,at);}
     for(auto& a:call->children){auto t=a->type;auto n=fresh();scope.body.push_back(bind(n,std::move(a),at));a=local(n,t,at);}
     auto thunk=value(E::Lambda,Type::function({},Type::Void),at);thunk->result=Type::Void;
     Stmt invoke;invoke.kind=S::Expr;invoke.where=at;invoke.value=std::move(call);thunk->body.push_back(std::move(invoke));

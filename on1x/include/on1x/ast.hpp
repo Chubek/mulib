@@ -60,7 +60,7 @@ struct Expr {
                     MacroCall, SyntaxHole, SyntaxBlock, Extension, SyntaxList, SyntaxVector, SyntaxKeyword,
                      Quote, Splice, Lift, Run, SyntaxLet, Record, Variant, Match, Array, Field, Index, Slice, Length,
                        PatternMatch, Case, Unit, Region, TagTest, Payload, Project, Loop, Propagate, SourceCsp, Csp } kind;
- enum class Reference { Unresolved, Local, Function, Extern, Intrinsic } reference = Reference::Unresolved;
+ enum class Reference { Unresolved, Local, Function, Extern, Intrinsic, UnsafeForeign } reference = Reference::Unresolved;
  Location where;
  std::string text;
   std::vector<std::string> labels;
@@ -95,6 +95,7 @@ struct Stmt {
   std::size_t label_context=0;
   std::size_t control_target=0; // Recomputed after PPX; never accepted as proof.
   bool inclusive=false; // Source Range only; value holds the two bound expressions.
+  bool unsafe_block=false; // Source-only annotation on a lexical Block.
  std::optional<Pattern> pattern; // Local tuple destructuring only; names use name.
  Type declared = Type::Invalid;
  bool mutable_binding = false;
@@ -109,6 +110,8 @@ struct Function {
  std::vector<Param> params;
  Type result = Type::Void;
  bool external = false;
+ // Internal typed foreign declaration. An ordinary source extern has no symbol here.
+ std::string unsafe_kernel_symbol;
  bool prototype = false; // Checked generalized declaration, not emitted.
  std::vector<Stmt> body;
   std::vector<ExprPtr> attributes;
@@ -141,6 +144,13 @@ struct Import {
  std::vector<ImportName> names;
  std::size_t relative=0;
  bool quoted=false,selective=false;
+};
+// A source request, never a filesystem path or an admission certificate.
+// Deliberately not part of the PPX Unit wire format.
+struct KernelImport {
+ Location where;
+ std::string module,alias;
+ bool is_unsafe=false;
 };
 struct NominalDeclaration {
  Location where;
@@ -179,6 +189,7 @@ struct ExtensionEvidence {
 struct Unit {
   std::vector<std::string> imports; std::vector<Function> functions;
   std::vector<Import> module_imports;
+  std::vector<KernelImport> kernel_imports;
   std::vector<FeatureActivation> features;
   std::vector<ModuleExtension> extensions;
   std::vector<NominalDeclaration> nominals;
@@ -193,6 +204,7 @@ struct Unit {
 std::string read_source_file(const std::string& filename);
 std::vector<Token> scan(const std::string& source, const std::string& filename);
 Unit parse(const std::vector<Token>& tokens,const std::vector<std::string>& enabled={});
+void require_no_kernel_imports(const Unit&);
 bool is_intrinsic_name(const std::string& name);
 std::vector<Type> extern_parameter_types(const Function& function);
 void check(Unit& unit);

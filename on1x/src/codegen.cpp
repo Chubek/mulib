@@ -474,8 +474,10 @@ class Generator {
   }
   case Expr::Kind::Call:{
    const auto& callee=*e.callee;bool builtin=callee.reference==Expr::Reference::Intrinsic;
-   bool direct=builtin||callee.reference==Expr::Reference::Extern;
-   auto target=direct?callee.text:expr(callee);std::vector<std::string> args;
+    const bool foreign=callee.reference==Expr::Reference::Extern||callee.reference==Expr::Reference::UnsafeForeign;
+    bool direct=builtin||foreign;
+    auto target=foreign?functions.at(callee.text):direct?callee.text:expr(callee);
+    std::vector<std::string> args;
    for(std::size_t i=0;i<e.children.size();++i){
     const auto& child=e.children[i];auto value=expr(*child);
     if(!child->type.has_functions())value=temp(child->type,value);
@@ -710,17 +712,29 @@ class Generator {
   for(std::size_t i=0;i<f.params.size();++i){if(i)helpers<<", ";helpers<<"on1x_arg_"<<i;}
   helpers<<");\n";if(f.result==Type::Void)helpers<<"  return;\n";helpers<<"}\n\n";
  }
-public:
+ public:
   explicit Generator(const Unit& source):unit(source){
    uses_csp=csp::present(unit);
-  for(const auto& f:unit.functions)if(f.external)identifiers.insert(f.name);
+   for(const auto& f:unit.functions)if(f.external&&f.unsafe_kernel_symbol.empty())identifiers.insert(f.name);
   for(const auto& f:unit.functions)if(f.external)externs.emplace(f.name,&f);
-   for(const auto& f:unit.functions)functions.emplace(f.name,f.external?f.name:reserve("on1x_fn_"+(f.name.starts_with("@")?f.name.substr(1):f.name)));
+    for(const auto& f:unit.functions)functions.emplace(f.name,f.unsafe_kernel_symbol.empty()&&f.external?f.name:reserve("on1x_fn_"+(f.name.starts_with("@")?f.name.substr(1):f.name)));
    for(const auto& f:unit.functions)if(!f.prototype)collect(f.body);
  }
- std::string run(){
-   for(const auto& f:unit.functions){
-    if(f.prototype)continue;
+  std::string run(){
+    std::string kernel_headers;
+    for(const auto& f:unit.functions){
+     if(f.prototype)continue;
+    if(!f.unsafe_kernel_symbol.empty()){
+     kernel_headers="#include <mulib-clamp.h>\n"
+      "#if !defined(ON1X_KERNEL_ABI_V1) || ON1X_KERNEL_ABI_V1 != 1 || !defined(__linux__) || !defined(__x86_64__)\n"
+      "#error \"KernelBind C requires the verified native Linux x86-64 build profile\"\n#endif\n"
+      "_Static_assert(CHAR_BIT == 8 && sizeof(int64_t) == 8 && _Alignof(int64_t) == 8 && sizeof(void *) == 8, \"KernelBind target ABI drift\");\n";
+     const auto& symbol=f.unsafe_kernel_symbol;
+     prototypes<<"/* unsafe_foreign: "<<symbol<<" */\n"
+      <<"_Static_assert(_Generic(&"<<symbol<<", int64_t (*)(int64_t, int64_t): 1, default: 0), \"KernelBind prototype drift\");\n"
+      <<"static int64_t "<<functions.at(f.name)<<"(int64_t a, int64_t b) { return "<<symbol<<"(a, b); }\n";
+     continue;
+    }
    prototypes<<(f.external?"extern ":"")<<ctype(f.result)<<" "<<functions.at(f.name)<<"(";
    if(f.external){
     auto flattened=extern_parameter_types(f);if(flattened.empty())prototypes<<"void";
@@ -754,7 +768,7 @@ public:
       +(uses_unsigned?std::string("#if !defined(ON1X_UNSIGNED_ABI_VERSION) || ON1X_UNSIGNED_ABI_VERSION != 1\n#error \"incompatible On1x unsigned runtime ABI\"\n#endif\n"):std::string{})
        +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
          +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 3\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
-      +float_guard+types.str()+"\n"+prototypes.str()+"\n"+value_helpers.str()+helpers.str()+definitions.str();
+       +kernel_headers+float_guard+types.str()+"\n"+prototypes.str()+"\n"+value_helpers.str()+helpers.str()+definitions.str();
  }
 };
 }

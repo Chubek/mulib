@@ -1,0 +1,17 @@
+# Local parity scenario for future owning socket projections; no remote I/O.
+import kernel mulib.socket as Socket;
+
+fn main() {
+  let (created,reader,writer)=Socket.pair();
+  assert(created==0);
+  let (sent,count)=Socket.send_text(writer,"hello",0);
+  assert(sent==0 && count==5);
+  let (received,text)=Socket.receive_text(reader,5);
+  assert(received==0 && text=="hello");
+  let close_writer=Socket.close(writer);
+  assert(close_writer==0);
+  let (eof,empty)=Socket.receive_text(reader,5);
+  assert(eof==2 && empty=="");
+  let close_reader=Socket.close(reader);
+  assert(close_reader==0);
+}

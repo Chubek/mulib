@@ -1,0 +1,20 @@
+# Ports the success path of on1x/examples/json.on1x to a scoped kernel owner.
+import kernel mulib.json as Json;
+
+fn main()->i64 {
+  let (parsed,doc)=Json.parse("{\"items\":[1,2,3],\"ok\":true}");
+  if !parsed { return 71; }
+  let (found,items)=Json.get(doc,"items");
+  if !found {
+    Json.destroy(doc);
+    return 71;
+  }
+  let count=Json.size_i64(items);
+  println(count);
+  let (status,rendered)=Json.stringify_compact(doc);
+  Json.destroy(doc);
+  if status!=0 { return 71; }
+  println(rendered);
+  assert(count==3);
+  return 0;
+}

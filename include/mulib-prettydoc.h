@@ -2,12 +2,14 @@
  * @file mulib-prettydoc.h
  * @brief Portable C11 document algebra, structural source layouts, and annotated events.
  * Define MULIB_IMPL_PRETTYDOC in exactly one translation unit.
- * No nonstandard dependencies. NOT a glyph shaper or a complete Oppen/Leijen implementation.
+ * Uses the MuLIB linebreak kernel; Knuth-Plass does not require ICU.
+ * NOT a glyph shaper or a complete Oppen/Leijen implementation.
  */
 #ifndef MULIB_PRETTYDOC_H
 #define MULIB_PRETTYDOC_H
 #include <stddef.h>
 #include <stdint.h>
+#include "mulib-linebreak.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -20,21 +22,32 @@ typedef enum mulib_pretty_kind {
  MULIB_PRETTY_TEXT, MULIB_PRETTY_SOFTLINE, MULIB_PRETTY_HARDLINE,
  MULIB_PRETTY_CAT, MULIB_PRETTY_GROUP, MULIB_PRETTY_NEST,
  MULIB_PRETTY_ALIGN, MULIB_PRETTY_CHOICE, MULIB_PRETTY_ANNOTATE,
- MULIB_PRETTY_FILL, MULIB_PRETTY_REGION, MULIB_PRETTY_PARAGRAPH_REGION
+ MULIB_PRETTY_FILL, MULIB_PRETTY_REGION, MULIB_PRETTY_PARAGRAPH_REGION,
+ MULIB_PRETTY_SOURCE, MULIB_PRETTY_MATH
 } mulib_pretty_kind_t;
 typedef enum mulib_pretty_style {
  MULIB_PRETTY_NORMAL, MULIB_PRETTY_KEYWORD, MULIB_PRETTY_IDENTIFIER,
  MULIB_PRETTY_NUMBER, MULIB_PRETTY_OPERATOR, MULIB_PRETTY_COMMENT,
  MULIB_PRETTY_STRING, MULIB_PRETTY_MATH_IDENT,
- MULIB_PRETTY_MATH_NUMBER, MULIB_PRETTY_MATH_OPERATOR
+ MULIB_PRETTY_MATH_NUMBER, MULIB_PRETTY_MATH_OPERATOR,
+ /* Semantic math layout events. These are not annotation styles. */
+ MULIB_PRETTY_EQ_BEGIN, MULIB_PRETTY_EQ_END, MULIB_PRETTY_EQ_ATOM,
+ MULIB_PRETTY_EQ_FRAC, MULIB_PRETTY_EQ_SUP, MULIB_PRETTY_EQ_SUB, MULIB_PRETTY_EQ_ROOT,
+ MULIB_PRETTY_EQ_BETWEEN_FRAC, MULIB_PRETTY_EQ_BETWEEN_SUP, MULIB_PRETTY_EQ_BETWEEN_SUB,
+ MULIB_PRETTY_EQ_CLOSE_FRAC, MULIB_PRETTY_EQ_CLOSE_SUP, MULIB_PRETTY_EQ_CLOSE_SUB, MULIB_PRETTY_EQ_CLOSE_ROOT,
+ MULIB_PRETTY_EQ_MATRIX, MULIB_PRETTY_EQ_ROW, MULIB_PRETTY_EQ_CELL,
+ MULIB_PRETTY_EQ_CLOSE_ROW, MULIB_PRETTY_EQ_CLOSE_MATRIX
 } mulib_pretty_style_t;
+typedef enum mulib_pretty_math_kind {
+ MULIB_PRETTY_MATH_FRAC, MULIB_PRETTY_MATH_SUP, MULIB_PRETTY_MATH_SUB, MULIB_PRETTY_MATH_ROOT
+} mulib_pretty_math_kind_t;
 typedef enum mulib_pretty_algorithm {
  MULIB_PRETTY_GREEDY, /* greedily fit the next text fragment at each softline */
  MULIB_PRETTY_FITS,   /* Wadler-style group flattening when it fits */
  MULIB_PRETTY_SEARCH  /* bounded group-layout enumeration and cost scoring */
 } mulib_pretty_algorithm_t;
 typedef enum mulib_pretty_paragraph {
- MULIB_PRETTY_WORD_GREEDY, MULIB_PRETTY_MIN_RAGGEDNESS
+ MULIB_PRETTY_WORD_GREEDY, MULIB_PRETTY_MIN_RAGGEDNESS, MULIB_PRETTY_KNUTH_PLASS
 } mulib_pretty_paragraph_t;
 typedef struct mulib_pretty_options {
  size_t width, indent_limit, max_output;
@@ -47,11 +60,21 @@ typedef struct mulib_pretty_piece {
  size_t start, length;
  mulib_pretty_style_t style;
 } mulib_pretty_piece_t;
+typedef struct mulib_pretty_origin {
+ uint32_t source;
+ size_t start,end;
+} mulib_pretty_origin_t;
+typedef struct mulib_pretty_mapping {
+ size_t start,length; /* output byte range, in layout.text */
+ mulib_pretty_origin_t origin;
+} mulib_pretty_mapping_t;
 typedef struct mulib_pretty_layout {
  char *text; size_t length;
  mulib_pretty_piece_t *pieces; size_t count;
  size_t lines, max_columns;
+ mulib_pretty_mapping_t *map; size_t map_count;
 } mulib_pretty_layout_t;
+typedef struct mulib_pretty_session mulib_pretty_session_t;
 
 mulib_prettydoc_t *mulib_prettydoc_new(void);
 void mulib_prettydoc_free(mulib_prettydoc_t *doc);
@@ -65,6 +88,15 @@ mulib_pretty_id_t mulib_pretty_nest(mulib_prettydoc_t *doc,size_t spaces,mulib_p
 mulib_pretty_id_t mulib_pretty_align(mulib_prettydoc_t *doc,mulib_pretty_id_t a);
 mulib_pretty_id_t mulib_pretty_choice(mulib_prettydoc_t *doc,mulib_pretty_id_t a,mulib_pretty_id_t b);
 mulib_pretty_id_t mulib_pretty_annotate(mulib_prettydoc_t *doc,mulib_pretty_style_t style,mulib_pretty_id_t a);
+/* The innermost source span wins. Source numbers are caller-defined. */
+mulib_pretty_id_t mulib_pretty_source(mulib_prettydoc_t *doc,mulib_pretty_origin_t origin,mulib_pretty_id_t a);
+mulib_pretty_id_t mulib_pretty_math_atom(mulib_prettydoc_t *doc,const char *text);
+/* Root uses only a; pass MULIB_PRETTY_NONE for b. Operands must be math nodes. */
+mulib_pretty_id_t mulib_pretty_math(mulib_prettydoc_t *doc,mulib_pretty_math_kind_t kind,
+ mulib_pretty_id_t a,mulib_pretty_id_t b);
+/* Copies the row-major cell IDs; each dimension is 1..32. */
+mulib_pretty_id_t mulib_pretty_matrix(mulib_prettydoc_t *doc,size_t rows,size_t cols,
+ const mulib_pretty_id_t *cells);
 mulib_pretty_id_t mulib_pretty_region(mulib_prettydoc_t *doc,mulib_pretty_algorithm_t algorithm,mulib_pretty_id_t a);
 mulib_pretty_id_t mulib_pretty_paragraph_region(mulib_prettydoc_t *doc,mulib_pretty_paragraph_t paragraph,mulib_pretty_id_t a);
 void mulib_pretty_options_init(mulib_pretty_options_t *opt);
@@ -72,6 +104,14 @@ void mulib_pretty_options_init(mulib_pretty_options_t *opt);
 int mulib_pretty_layout(const mulib_prettydoc_t *doc,mulib_pretty_id_t root,
                        const mulib_pretty_options_t *opt,mulib_pretty_layout_t *out);
 void mulib_pretty_layout_free(mulib_pretty_layout_t *out);
+/* The document is borrowed until session_free; append new nodes for edits.
+ * Blocks are independently laid out and joined by one unmapped newline.
+ * Update replaces the borrowed view only on success. At most 1024 blocks. */
+mulib_pretty_session_t *mulib_pretty_session_new(const mulib_prettydoc_t *doc);
+void mulib_pretty_session_free(mulib_pretty_session_t *session);
+int mulib_pretty_session_update(mulib_pretty_session_t *session,const mulib_pretty_id_t *roots,
+ size_t count,const mulib_pretty_options_t *options,size_t *reused);
+const mulib_pretty_layout_t *mulib_pretty_session_view(const mulib_pretty_session_t *session);
 #ifdef __cplusplus
 }
 #endif
@@ -91,6 +131,8 @@ typedef struct mulib_pretty_node_ {
  mulib_pretty_id_t a,b;
  size_t amount;
  char *text;
+ mulib_pretty_origin_t origin;
+ mulib_pretty_id_t *cells;
 } mulib_pretty_node_;
 struct mulib_prettydoc {
  mulib_pretty_node_ *nodes;
@@ -270,7 +312,7 @@ static char *mulib_pretty_dup_(const char *s) {
 mulib_prettydoc_t *mulib_prettydoc_new(void){return (mulib_prettydoc_t*)calloc(1,sizeof(mulib_prettydoc_t));}
 void mulib_prettydoc_free(mulib_prettydoc_t *d){
  if(!d)return;
- for(size_t i=0;i<d->count;i++)free(d->nodes[i].text);
+ for(size_t i=0;i<d->count;i++){free(d->nodes[i].text);free(d->nodes[i].cells);}
  free(d->nodes);free(d);
 }
 static mulib_pretty_id_t mulib_pretty_add_(mulib_prettydoc_t *d,mulib_pretty_node_ n){
@@ -312,12 +354,53 @@ mulib_pretty_id_t mulib_pretty_annotate(mulib_prettydoc_t *d,mulib_pretty_style_
  if(style<0||style>MULIB_PRETTY_MATH_OPERATOR)return MULIB_PRETTY_NONE;
  return mulib_pretty_node1_(d,MULIB_PRETTY_ANNOTATE,(size_t)style,a);
 }
+mulib_pretty_id_t mulib_pretty_source(mulib_prettydoc_t *d,mulib_pretty_origin_t origin,mulib_pretty_id_t a){
+ if(!mulib_pretty_valid_(d,a)||origin.end<origin.start)return MULIB_PRETTY_NONE;
+ mulib_pretty_node_ n={0};n.kind=MULIB_PRETTY_SOURCE;n.a=a;n.origin=origin;
+ n.amount=d->nodes[a].kind==MULIB_PRETTY_MATH||
+          (d->nodes[a].kind==MULIB_PRETTY_SOURCE&&d->nodes[a].amount);
+ return mulib_pretty_add_(d,n);
+}
+#define MULIB_PRETTY_ATOM_ 4
+#define MULIB_PRETTY_MATRIX_ 5
+static int mulib_pretty_is_math_(const mulib_prettydoc_t *d,mulib_pretty_id_t a){
+ /* Source wrappers are transparent to math typing; cache that property. */
+ return mulib_pretty_valid_(d,a)&&(d->nodes[a].kind==MULIB_PRETTY_MATH||
+   (d->nodes[a].kind==MULIB_PRETTY_SOURCE&&d->nodes[a].amount));
+}
+mulib_pretty_id_t mulib_pretty_math_atom(mulib_prettydoc_t *d,const char *s){
+ if(!s||!*s||strpbrk(s,"\n\r\t"))return MULIB_PRETTY_NONE;
+ mulib_pretty_id_t id=mulib_pretty_string_(d,s,MULIB_PRETTY_MATH);
+ if(id!=MULIB_PRETTY_NONE)d->nodes[id].amount=MULIB_PRETTY_ATOM_;
+ return id;
+}
+mulib_pretty_id_t mulib_pretty_math(mulib_prettydoc_t *d,mulib_pretty_math_kind_t kind,
+ mulib_pretty_id_t a,mulib_pretty_id_t b){
+ if(kind<MULIB_PRETTY_MATH_FRAC||kind>MULIB_PRETTY_MATH_ROOT||!mulib_pretty_is_math_(d,a)||
+    (kind==MULIB_PRETTY_MATH_ROOT?b!=MULIB_PRETTY_NONE:!mulib_pretty_is_math_(d,b)))return MULIB_PRETTY_NONE;
+ mulib_pretty_node_ n={0};n.kind=MULIB_PRETTY_MATH;n.amount=(size_t)kind;n.a=a;n.b=b;
+ return mulib_pretty_add_(d,n);
+}
+mulib_pretty_id_t mulib_pretty_matrix(mulib_prettydoc_t *d,size_t rows,size_t cols,
+ const mulib_pretty_id_t *cells){
+ if(!rows||rows>32||!cols||cols>32||!cells)return MULIB_PRETTY_NONE;
+ size_t count=rows*cols;
+ for(size_t i=0;i<count;i++)if(!mulib_pretty_is_math_(d,cells[i]))return MULIB_PRETTY_NONE;
+ mulib_pretty_node_ n={0};n.kind=MULIB_PRETTY_MATH;n.amount=MULIB_PRETTY_MATRIX_;
+ n.a=(mulib_pretty_id_t)rows;n.b=(mulib_pretty_id_t)cols;
+ n.cells=(mulib_pretty_id_t*)malloc(count*sizeof(*n.cells));
+ if(!n.cells)return MULIB_PRETTY_NONE;
+ memcpy(n.cells,cells,count*sizeof(*n.cells));
+ mulib_pretty_id_t id=mulib_pretty_add_(d,n);
+ if(id==MULIB_PRETTY_NONE)free(n.cells);
+ return id;
+}
 mulib_pretty_id_t mulib_pretty_region(mulib_prettydoc_t *d,mulib_pretty_algorithm_t algorithm,mulib_pretty_id_t a){
  if(algorithm<0||algorithm>MULIB_PRETTY_SEARCH)return MULIB_PRETTY_NONE;
  return mulib_pretty_node1_(d,MULIB_PRETTY_REGION,(size_t)algorithm,a);
 }
 mulib_pretty_id_t mulib_pretty_paragraph_region(mulib_prettydoc_t *d,mulib_pretty_paragraph_t paragraph,mulib_pretty_id_t a){
- if(paragraph<0||paragraph>MULIB_PRETTY_MIN_RAGGEDNESS)return MULIB_PRETTY_NONE;
+ if(paragraph<0||paragraph>MULIB_PRETTY_KNUTH_PLASS)return MULIB_PRETTY_NONE;
  return mulib_pretty_node1_(d,MULIB_PRETTY_PARAGRAPH_REGION,(size_t)paragraph,a);
 }
 void mulib_pretty_options_init(mulib_pretty_options_t *o){
@@ -332,7 +415,9 @@ typedef struct mulib_pretty_renderer_ {
  double ragged,overflow;
  unsigned group_count,mask,group_cursor;
  int pending_soft;size_t pending_indent;
- int failed;
+ int failed,infeasible;
+ const mulib_pretty_origin_t *origin;
+ size_t map_capacity;
 } mulib_pretty_renderer_;
 static int mulib_pretty_visit_(size_t *work){
  if(!*work)return 0;
@@ -347,6 +432,10 @@ static size_t mulib_pretty_measure_(mulib_pretty_renderer_ *r,const unsigned cha
   uint32_t cp;
   if(!mulib_pretty_visit_(r->work)||!mulib_pretty_scalar_(s,&cp)){
    r->failed=1;return 0;
+  }
+  if(word==2){
+   if(cp==0x85||cp==0x2028||cp==0x2029)return cap+1;
+   if(cp==0xad||cp==0x200b||cp==0x2060)continue;
   }
   size_t cells=mulib_pretty_width_(cp);
   if(cells>cap-width)return cap+1;
@@ -372,8 +461,8 @@ static int mulib_pretty_piece_(mulib_pretty_renderer_ *r,const char *s,size_t n,
  }
  if(n)memcpy(r->out.text+len,s,n);
  r->out.length+=n;r->out.text[r->out.length]=0;
- if(n){
-  if(r->out.count && r->out.pieces[r->out.count-1].style==style &&
+ if(n||style>=MULIB_PRETTY_EQ_BEGIN){
+  if(style<MULIB_PRETTY_EQ_BEGIN && r->out.count && r->out.pieces[r->out.count-1].style==style &&
      r->out.pieces[r->out.count-1].start+r->out.pieces[r->out.count-1].length==len){
     r->out.pieces[r->out.count-1].length+=n;
   }else{
@@ -386,6 +475,28 @@ static int mulib_pretty_piece_(mulib_pretty_renderer_ *r,const char *s,size_t n,
    r->out.pieces[r->out.count++]=(mulib_pretty_piece_t){len,n,style};
   }
  }
+ return 1;
+}
+static int mulib_pretty_same_origin_(mulib_pretty_origin_t a,mulib_pretty_origin_t b){
+ return a.source==b.source&&a.start==b.start&&a.end==b.end;
+}
+static int mulib_pretty_mapped_(mulib_pretty_renderer_ *r,const char *s,size_t n,mulib_pretty_style_t style){
+ size_t start=r->out.length;
+ if(!mulib_pretty_piece_(r,s,n,style))return 0;
+ if(!n||!r->origin)return 1;
+ size_t count=r->out.map_count;
+ if(count && r->out.map[count-1].start+r->out.map[count-1].length==start &&
+    mulib_pretty_same_origin_(r->out.map[count-1].origin,*r->origin)){
+  r->out.map[count-1].length+=n;return 1;
+ }
+ if(count>=65536){r->failed=1;return 0;}
+ if(count==r->map_capacity){
+  size_t cap=count?count*2:16;
+  mulib_pretty_mapping_t *next=(mulib_pretty_mapping_t*)realloc(r->out.map,cap*sizeof(*next));
+  if(!next){r->failed=1;return 0;}
+  r->out.map=next;r->map_capacity=cap;
+ }
+ r->out.map[count]=(mulib_pretty_mapping_t){start,n,*r->origin};r->out.map_count++;
  return 1;
 }
 /* Nesting can change midway through a line. Start the ribbon after the
@@ -406,7 +517,8 @@ static int mulib_pretty_break_(mulib_pretty_renderer_ *r,size_t indent){
  if(r->column>r->out.max_columns)r->out.max_columns=r->column;
  r->breaks++;r->column=0;r->out.lines++;
   if(!mulib_pretty_piece_(r,"\n",1,MULIB_PRETTY_NORMAL))return 0;
-  if(indent>r->options.indent_limit){r->failed=1;return 0;}
+  if(indent>r->options.indent_limit||indent>*r->work){r->failed=1;return 0;}
+  *r->work-=indent;
   r->line_indent=indent;
  while(indent--){if(!mulib_pretty_piece_(r," ",1,MULIB_PRETTY_NORMAL))return 0;r->column++;}
  return 1;
@@ -426,12 +538,64 @@ static int mulib_pretty_put_(mulib_pretty_renderer_ *r,const char *s,mulib_prett
  for(;;){
   size_t width=mulib_pretty_measure_(r,&q,SIZE_MAX-1,0);
   if(r->failed || !mulib_pretty_pending_(r,width) ||
-     !mulib_pretty_piece_(r,(const char*)p,(size_t)(q-p),sty))return 0;
+     !mulib_pretty_mapped_(r,(const char*)p,(size_t)(q-p),sty))return 0;
   r->column+=width;
   if(!*q)return 1;
   if(!mulib_pretty_break_(r,r->indent))return 0;
   p=++q;
  }
+}
+static int mulib_pretty_equation_(mulib_pretty_renderer_ *r,mulib_pretty_id_t id,
+ unsigned depth,size_t cap,size_t *width,int emit);
+static int mulib_pretty_event_(mulib_pretty_renderer_ *r,mulib_pretty_style_t style,
+ const char *s,size_t bytes,size_t cells,size_t cap,size_t *width,int emit){
+ if(cells>cap-*width)return 0;
+ *width+=cells;
+ if(!emit)return 1;
+ return style==MULIB_PRETTY_EQ_ATOM?mulib_pretty_mapped_(r,s,bytes,style):
+                                    mulib_pretty_piece_(r,s,bytes,style);
+}
+static int mulib_pretty_equation_(mulib_pretty_renderer_ *r,mulib_pretty_id_t id,
+ unsigned depth,size_t cap,size_t *width,int emit){
+ if(depth>256||!mulib_pretty_visit_(r->work)){r->failed=1;return 0;}
+ const mulib_pretty_node_ *n=&r->doc->nodes[id];
+ if(n->kind==MULIB_PRETTY_SOURCE){
+  const mulib_pretty_origin_t *old=r->origin;r->origin=&n->origin;
+  int ok=mulib_pretty_equation_(r,n->a,depth+1,cap,width,emit);
+  r->origin=old;return ok;
+ }
+ if(n->amount==MULIB_PRETTY_ATOM_){
+  const unsigned char *s=(const unsigned char*)n->text,*p=s;
+  size_t cells=mulib_pretty_measure_(r,&p,cap-*width,0);
+  return !r->failed&&mulib_pretty_event_(r,MULIB_PRETTY_EQ_ATOM,n->text,(size_t)(p-s),cells,cap,width,emit);
+ }
+#define MULIB_PRETTY_EVENT_(kind,lit) \
+ mulib_pretty_event_(r,(kind),(lit),sizeof(lit)-1,sizeof(lit)-1,cap,width,emit)
+ if(n->amount==MULIB_PRETTY_MATRIX_){
+  if(!MULIB_PRETTY_EVENT_(MULIB_PRETTY_EQ_MATRIX,"["))return 0;
+  for(size_t row=0;row<n->a;row++){
+   if(!(row?MULIB_PRETTY_EVENT_(MULIB_PRETTY_EQ_ROW,"; ["):MULIB_PRETTY_EVENT_(MULIB_PRETTY_EQ_ROW,"[")))return 0;
+   for(size_t col=0;col<n->b;col++){
+    if(col&&!MULIB_PRETTY_EVENT_(MULIB_PRETTY_EQ_CELL,", "))return 0;
+    if(!mulib_pretty_equation_(r,n->cells[row*n->b+col],depth+1,cap,width,emit))return 0;
+   }
+   if(!MULIB_PRETTY_EVENT_(MULIB_PRETTY_EQ_CLOSE_ROW,"]"))return 0;
+  }
+  return MULIB_PRETTY_EVENT_(MULIB_PRETTY_EQ_CLOSE_MATRIX,"]");
+ }
+ size_t k=n->amount;
+ if(!(k==MULIB_PRETTY_MATH_ROOT?
+      MULIB_PRETTY_EVENT_(MULIB_PRETTY_EQ_ROOT,"sqrt("):
+      MULIB_PRETTY_EVENT_((mulib_pretty_style_t)(MULIB_PRETTY_EQ_FRAC+k),"(")))return 0;
+ if(!mulib_pretty_equation_(r,n->a,depth+1,cap,width,emit))return 0;
+ if(k!=MULIB_PRETTY_MATH_ROOT){
+  if(!(k==MULIB_PRETTY_MATH_FRAC?MULIB_PRETTY_EVENT_(MULIB_PRETTY_EQ_BETWEEN_FRAC,")/("):
+       k==MULIB_PRETTY_MATH_SUP?MULIB_PRETTY_EVENT_(MULIB_PRETTY_EQ_BETWEEN_SUP,")^("):
+                               MULIB_PRETTY_EVENT_(MULIB_PRETTY_EQ_BETWEEN_SUB,")_(")))return 0;
+  if(!mulib_pretty_equation_(r,n->b,depth+1,cap,width,emit))return 0;
+ }
+ return MULIB_PRETTY_EVENT_((mulib_pretty_style_t)(MULIB_PRETTY_EQ_CLOSE_FRAC+k),")");
+#undef MULIB_PRETTY_EVENT_
 }
 /* Upper-bound flat width of a subtree, capped at 'remaining'; hardlines do not fit. */
 static size_t mulib_pretty_flat_(mulib_pretty_renderer_ *r,mulib_pretty_id_t id,size_t cap,unsigned depth){
@@ -444,12 +608,14 @@ static size_t mulib_pretty_flat_(mulib_pretty_renderer_ *r,mulib_pretty_id_t id,
   a=mulib_pretty_measure_(r,&s,cap,0);
   return *s=='\n'?cap+1:a;
  }
+ case MULIB_PRETTY_MATH:
+  a=0;return mulib_pretty_equation_(r,id,depth,cap,&a,0)?a:cap+1;
  case MULIB_PRETTY_FILL: {
   const unsigned char *s=(const unsigned char*)n->text;
   size_t width=0;int first=1;
   while(mulib_pretty_skip_space_(r,&s) && *s){
    if(!first){if(width==cap)return cap+1;width++;}
-   a=mulib_pretty_measure_(r,&s,cap-width,1);
+   a=mulib_pretty_measure_(r,&s,cap-width,r->options.paragraph==MULIB_PRETTY_KNUTH_PLASS?2:1);
    if(r->failed||a>cap-width)return cap+1;
    width+=a;first=0;
   }
@@ -462,28 +628,92 @@ static size_t mulib_pretty_flat_(mulib_pretty_renderer_ *r,mulib_pretty_id_t id,
   if(r->failed||a>cap)return cap+1;
   b=mulib_pretty_flat_(r,n->b,cap-a,depth+1);return b>cap-a?cap+1:a+b;
  case MULIB_PRETTY_CHOICE:return mulib_pretty_flat_(r,n->a,cap,depth+1);
+ case MULIB_PRETTY_PARAGRAPH_REGION: {
+  mulib_pretty_paragraph_t previous=r->options.paragraph;
+  r->options.paragraph=(mulib_pretty_paragraph_t)n->amount;
+  a=mulib_pretty_flat_(r,n->a,cap,depth+1);
+  r->options.paragraph=previous;return a;
+ }
  default:return mulib_pretty_flat_(r,n->a,cap,depth+1);
  }
 }
+typedef struct {const unsigned char *begin;size_t bytes,cells;} mulib_pretty_word_;
+static double mulib_pretty_box_width_(void *ctx,uint32_t scalar){
+ (void)ctx;return (double)mulib_pretty_width_(scalar);
+}
+/* Keep discretionary hyphens and zero-width break opportunities in the
+ * normalized paragraph. The backend returns byte ranges and break flags. */
+static int mulib_pretty_knuth_(mulib_pretty_renderer_ *r,const mulib_pretty_word_ *words,
+ size_t count,mulib_pretty_style_t style){
+ if(!count)return 1;
+ size_t first=mulib_pretty_room_(r,r->column,r->line_indent);
+ size_t rest=mulib_pretty_room_(r,r->indent,r->indent);
+ if(!*r->work)return 0;
+ size_t bytes=count-1;
+ for(size_t i=0;i<count;i++){
+  if(words[i].bytes>1048576-bytes)return 0;
+  bytes+=words[i].bytes;
+ }
+ char *boxes=(char*)malloc(bytes+1);
+ if(!boxes)return 0;
+ size_t pos=0;
+ for(size_t i=0;i<count;i++){
+  if(i)boxes[pos++]=' ';
+  memcpy(boxes+pos,words[i].begin,words[i].bytes);pos+=words[i].bytes;
+ }
+ boxes[bytes]=0;
+ mulib_linebreak_options_t opt;
+ mulib_linebreak_options_init(&opt,rest?(double)rest:1e-6);
+ opt.measure=mulib_pretty_box_width_;
+ opt.max_work=*r->work;
+ mulib_linebreak_result_t lines={0};size_t work=0;
+ int rc=mulib_linebreak_knuth_plass(boxes,bytes,&opt,first?(double)first:1e-6,&lines,&work);
+ *r->work-=work;
+ if(rc==MULIB_LINEBREAK_INFEASIBLE)r->infeasible=1;
+ int ok=!rc;
+ for(size_t i=0;ok&&i<lines.count;i++){
+  const mulib_linebreak_line_t *line=&lines.lines[i];
+  if(i&&!mulib_pretty_break_(r,r->indent)){ok=0;break;}
+  const unsigned char *p=(const unsigned char*)boxes+line->start;
+  const unsigned char *end=(const unsigned char*)boxes+line->end,*begin=p;
+  while(p<end){
+   const unsigned char *prev=p;uint32_t cp;
+   if(!mulib_pretty_visit_(r->work)||!mulib_pretty_scalar_(&p,&cp)){ok=0;break;}
+   if(cp==' '||cp==0xad||cp==0x200b||cp==0x2060){
+    if(!mulib_pretty_mapped_(r,(const char*)begin,(size_t)(prev-begin),style)){ok=0;break;}
+    if(cp==' '&&!mulib_pretty_piece_(r," ",1,style)){ok=0;break;}
+    begin=p;
+   }
+  }
+  if(ok)ok=mulib_pretty_mapped_(r,(const char*)begin,(size_t)(end-begin),style);
+  if(ok&&(line->flags&MULIB_LINEBREAK_HYPHEN))ok=mulib_pretty_piece_(r,"-",1,style);
+  r->column+=(size_t)line->width;
+  if(ok&&i+1==lines.count&&(line->flags&MULIB_LINEBREAK_HARD))ok=mulib_pretty_break_(r,r->indent);
+ }
+ free(boxes);mulib_linebreak_result_free(&lines);return ok;
+}
 /* Word separator normalization: wrap runs of ASCII whitespace in a Fill node. */
 static int mulib_pretty_fill_render_(mulib_pretty_renderer_ *r,const char *s,mulib_pretty_style_t style){
- typedef struct {const unsigned char *begin;size_t bytes,cells;} word_t;
- size_t capacity=16,count=0;word_t *words=(word_t*)malloc(capacity*sizeof(*words));
+ size_t capacity=16,count=0;mulib_pretty_word_ *words=(mulib_pretty_word_*)malloc(capacity*sizeof(*words));
  if(!words)return 0;
  const unsigned char *p=(const unsigned char*)s;
  while(mulib_pretty_skip_space_(r,&p) && *p){
   if(count==capacity){
    if(capacity>=8192){free(words);return 0;}
    size_t nc=capacity*2;
-   word_t *w=(word_t*)realloc(words,nc*sizeof(*w));
+   mulib_pretty_word_ *w=(mulib_pretty_word_*)realloc(words,nc*sizeof(*w));
    if(!w){free(words);return 0;}words=w;capacity=nc;
   }
   const unsigned char *begin=p;
   size_t cells=mulib_pretty_measure_(r,&p,SIZE_MAX-1,1);
   if(r->failed)break;
-  words[count++]=(word_t){begin,(size_t)(p-begin),cells};
+  words[count++]=(mulib_pretty_word_){begin,(size_t)(p-begin),cells};
  }
  if(r->failed || !mulib_pretty_pending_(r,count?words[0].cells:0)){free(words);return 0;}
+ if(r->options.paragraph==MULIB_PRETTY_KNUTH_PLASS){
+  int ok=mulib_pretty_knuth_(r,words,count,style);
+  free(words);return ok;
+ }
  size_t *ends=(size_t*)malloc((count+1)*sizeof(*ends));if(!ends){free(words);return 0;}
  ends[count]=count;
  if(r->options.paragraph==MULIB_PRETTY_MIN_RAGGEDNESS && count && count<=512){
@@ -525,7 +755,7 @@ static int mulib_pretty_fill_render_(mulib_pretty_renderer_ *r,const char *s,mul
   size_t j=ends[i];if(i && !mulib_pretty_break_(r,r->indent))break;
   for(size_t k=i;k<j;k++){
    if(k>i){if(!mulib_pretty_piece_(r," ",1,style))break;r->column++;}
-   if(!mulib_pretty_piece_(r,(const char*)words[k].begin,words[k].bytes,style))break;
+   if(!mulib_pretty_mapped_(r,(const char*)words[k].begin,words[k].bytes,style))break;
    r->column+=words[k].cells;
   }
   if(r->failed)break;
@@ -539,6 +769,16 @@ static int mulib_pretty_walk_(mulib_pretty_renderer_ *r,mulib_pretty_id_t id,int
  const mulib_pretty_node_ *n=&r->doc->nodes[id];size_t old;
  switch(n->kind){
  case MULIB_PRETTY_TEXT:return mulib_pretty_put_(r,n->text,style);
+ case MULIB_PRETTY_MATH: {
+  size_t width=0;
+  if(r->pending_soft&&(!mulib_pretty_equation_(r,id,depth,SIZE_MAX-1,&width,0)||
+                      !mulib_pretty_pending_(r,width)))return 0;
+  width=0;
+  if(!mulib_pretty_piece_(r,"",0,MULIB_PRETTY_EQ_BEGIN)||
+     !mulib_pretty_equation_(r,id,depth,r->options.max_output-r->out.length,&width,1)||
+     !mulib_pretty_piece_(r,"",0,MULIB_PRETTY_EQ_END))return 0;
+  r->column+=width;return 1;
+ }
  case MULIB_PRETTY_FILL:return mulib_pretty_fill_render_(r,n->text,style);
  case MULIB_PRETTY_SOFTLINE:
   if(flat){
@@ -562,6 +802,12 @@ static int mulib_pretty_walk_(mulib_pretty_renderer_ *r,mulib_pretty_id_t id,int
   old=r->indent;r->indent=r->column;
   {int ok=mulib_pretty_walk_(r,n->a,flat,style,depth+1);r->indent=old;return ok;}
  case MULIB_PRETTY_ANNOTATE:return mulib_pretty_walk_(r,n->a,flat,(mulib_pretty_style_t)n->amount,depth+1);
+ case MULIB_PRETTY_SOURCE: {
+  const mulib_pretty_origin_t *previous=r->origin;
+  r->origin=&n->origin;
+  int ok=mulib_pretty_walk_(r,n->a,flat,style,depth+1);
+  r->origin=previous;return ok;
+ }
  case MULIB_PRETTY_REGION: {
   mulib_pretty_algorithm_t previous=r->options.algorithm;
   r->options.algorithm=(mulib_pretty_algorithm_t)n->amount;
@@ -607,7 +853,7 @@ static size_t mulib_pretty_search_groups_(const mulib_prettydoc_t *d,
  case MULIB_PRETTY_CAT:case MULIB_PRETTY_CHOICE:
   return mulib_pretty_search_groups_(d,n->a,mode,depth+1,work)+mulib_pretty_search_groups_(d,n->b,mode,depth+1,work);
  case MULIB_PRETTY_NEST:case MULIB_PRETTY_ALIGN:case MULIB_PRETTY_ANNOTATE:
- case MULIB_PRETTY_PARAGRAPH_REGION:
+ case MULIB_PRETTY_PARAGRAPH_REGION:case MULIB_PRETTY_SOURCE:
   return mulib_pretty_search_groups_(d,n->a,mode,depth+1,work);
  default:return 0;
  }
@@ -621,25 +867,30 @@ static int mulib_pretty_run_(mulib_pretty_renderer_ *r,mulib_pretty_id_t root){
   if(r->column>limit)r->overflow+=r->column-limit;
  return !r->failed;
 }
-void mulib_pretty_layout_free(mulib_pretty_layout_t *o){if(o){free(o->text);free(o->pieces);memset(o,0,sizeof(*o));}}
-int mulib_pretty_layout(const mulib_prettydoc_t *doc,mulib_pretty_id_t root,
-                       const mulib_pretty_options_t *options,mulib_pretty_layout_t *out){
- if(!mulib_pretty_valid_(doc,root)||!out||!options||!options->width||
-    !options->max_output||options->max_output==SIZE_MAX||options->width>65536||options->indent_limit>options->max_output||
-    options->algorithm>MULIB_PRETTY_SEARCH||options->paragraph>MULIB_PRETTY_MIN_RAGGEDNESS)return 0;
+void mulib_pretty_layout_free(mulib_pretty_layout_t *o){if(o){free(o->text);free(o->pieces);free(o->map);memset(o,0,sizeof(*o));}}
+static int mulib_pretty_options_valid_(const mulib_pretty_options_t *options){
+ return options&&options->width&&options->max_output&&options->max_output!=SIZE_MAX&&
+    options->width<=65536&&options->indent_limit<=options->max_output&&
+    options->algorithm>=MULIB_PRETTY_GREEDY&&options->algorithm<=MULIB_PRETTY_SEARCH&&
+    options->paragraph>=MULIB_PRETTY_WORD_GREEDY&&options->paragraph<=MULIB_PRETTY_KNUTH_PLASS;
+}
+static int mulib_pretty_layout_work_(const mulib_prettydoc_t *doc,mulib_pretty_id_t root,
+ const mulib_pretty_options_t *options,mulib_pretty_layout_t *out,size_t *work){
+ if(!mulib_pretty_valid_(doc,root)||!out||!mulib_pretty_options_valid_(options))return 0;
  unsigned count=0;
  /* Shared across traversal, width scans and paragraph trials. Depth alone
   * does not bound work for reused subtrees in the C builder. */
- size_t work=4u*1024u*1024u;
- size_t total=mulib_pretty_search_groups_(doc,root,options->algorithm,0,&work);
- if(!work)return 0;
+ size_t total=mulib_pretty_search_groups_(doc,root,options->algorithm,0,work);
+ if(!*work)return 0;
  if(total<=options->search_group_limit && total<=12)count=(unsigned)total;
  unsigned permutations=count?1u<<count:1u;
  mulib_pretty_layout_t best={0};double best_cost=1e300;int found=0;
  for(unsigned mask=0;mask<permutations;mask++){
-  mulib_pretty_renderer_ r={0};r.doc=doc;r.options=*options;r.work=&work;r.mask=mask;r.group_count=count;
+  mulib_pretty_renderer_ r={0};r.doc=doc;r.options=*options;r.work=work;r.mask=mask;r.group_count=count;
   if(!mulib_pretty_run_(&r,root)){
-   mulib_pretty_layout_free(&r.out);mulib_pretty_layout_free(&best);return 0;
+   mulib_pretty_layout_free(&r.out);
+   if(r.infeasible)continue;
+   mulib_pretty_layout_free(&best);return 0;
   }
   double cost=(double)r.overflow*1000000.0+(double)r.ragged+(double)r.breaks*8.0;
   if(!found||cost<best_cost){
@@ -650,6 +901,102 @@ int mulib_pretty_layout(const mulib_prettydoc_t *doc,mulib_pretty_id_t root,
  /* Empty documents still have allocated, NUL-terminated output. */
  if(!best.text){best.text=(char*)malloc(1);if(!best.text)return 0;best.text[0]=0;}
  *out=best;return 1;
+}
+int mulib_pretty_layout(const mulib_prettydoc_t *doc,mulib_pretty_id_t root,
+ const mulib_pretty_options_t *options,mulib_pretty_layout_t *out){
+ size_t work=4u*1024u*1024u;
+ return mulib_pretty_layout_work_(doc,root,options,out,&work);
+}
+typedef struct mulib_pretty_block_ {
+ mulib_pretty_id_t root;
+ size_t previous;
+ mulib_pretty_layout_t layout;
+} mulib_pretty_block_;
+struct mulib_pretty_session {
+ const mulib_prettydoc_t *doc;
+ mulib_pretty_options_t options;
+ mulib_pretty_block_ *blocks;
+ size_t count;
+ mulib_pretty_layout_t view;
+};
+mulib_pretty_session_t *mulib_pretty_session_new(const mulib_prettydoc_t *doc){
+ if(!doc)return NULL;
+ mulib_pretty_session_t *s=(mulib_pretty_session_t*)calloc(1,sizeof(*s));
+ if(s)s->doc=doc;
+ return s;
+}
+static void mulib_pretty_blocks_free_(mulib_pretty_block_ *b,size_t count){
+ for(size_t i=0;i<count;i++)mulib_pretty_layout_free(&b[i].layout);
+ free(b);
+}
+void mulib_pretty_session_free(mulib_pretty_session_t *s){
+ if(s){mulib_pretty_blocks_free_(s->blocks,s->count);mulib_pretty_layout_free(&s->view);free(s);}
+}
+const mulib_pretty_layout_t *mulib_pretty_session_view(const mulib_pretty_session_t *s){
+ return s&&s->view.text?&s->view:NULL;
+}
+static int mulib_pretty_equal_options_(const mulib_pretty_options_t *a,const mulib_pretty_options_t *b){
+ return a->width==b->width&&a->indent_limit==b->indent_limit&&a->max_output==b->max_output&&
+  a->algorithm==b->algorithm&&a->paragraph==b->paragraph&&a->search_group_limit==b->search_group_limit&&
+  a->ribbon_width==b->ribbon_width;
+}
+int mulib_pretty_session_update(mulib_pretty_session_t *s,const mulib_pretty_id_t *roots,
+ size_t count,const mulib_pretty_options_t *options,size_t *reused){
+ if(!s||count>1024||(count&&!roots)||!mulib_pretty_options_valid_(options))return 0;
+ mulib_pretty_block_ *blocks=count?(mulib_pretty_block_*)calloc(count,sizeof(*blocks)):NULL;
+ if(count&&!blocks)return 0;
+ unsigned char used[1024]={0};
+ size_t hits=0,work=4u*1024u*1024u,bytes=count?count-1:0,parts=bytes,maps=0,lines=0,max=0;
+ mulib_pretty_layout_t view={0};
+ int match=mulib_pretty_equal_options_(options,&s->options);
+ if(bytes>options->max_output)goto fail;
+ for(size_t i=0;i<count;i++){
+  blocks[i].root=roots[i];blocks[i].previous=SIZE_MAX;
+  if(match)for(size_t j=0;j<s->count;j++)if(!used[j]&&s->blocks[j].root==roots[i]){
+   used[j]=1;hits++;blocks[i].previous=j;break;
+  }
+  const mulib_pretty_layout_t *l;
+  if(blocks[i].previous!=SIZE_MAX)l=&s->blocks[blocks[i].previous].layout;
+  else {
+   if(!mulib_pretty_layout_work_(s->doc,roots[i],options,&blocks[i].layout,&work))goto fail;
+   l=&blocks[i].layout;
+  }
+  if(l->length>options->max_output-bytes||l->count>262144-parts||l->map_count>65536-maps||
+     l->lines>SIZE_MAX-lines)goto fail;
+  bytes+=l->length;parts+=l->count;maps+=l->map_count;lines+=l->lines;
+  if(l->max_columns>max)max=l->max_columns;
+ }
+ view.text=(char*)malloc(bytes+1);
+ if(parts)view.pieces=(mulib_pretty_piece_t*)malloc(parts*sizeof(*view.pieces));
+ if(maps)view.map=(mulib_pretty_mapping_t*)malloc(maps*sizeof(*view.map));
+ if(!view.text||(parts&&!view.pieces)||(maps&&!view.map))goto fail;
+ for(size_t i=0;i<count;i++){
+  const mulib_pretty_layout_t *l=&blocks[i].layout;
+  if(blocks[i].previous!=SIZE_MAX)l=&s->blocks[blocks[i].previous].layout;
+  if(i){
+   view.pieces[view.count++]=(mulib_pretty_piece_t){view.length,1,MULIB_PRETTY_NORMAL};
+   view.text[view.length++]='\n';
+  }
+  memcpy(view.text+view.length,l->text,l->length);
+  for(size_t j=0;j<l->count;j++){
+   mulib_pretty_piece_t p=l->pieces[j];p.start+=view.length;view.pieces[view.count++]=p;
+  }
+  for(size_t j=0;j<l->map_count;j++){
+   mulib_pretty_mapping_t p=l->map[j];p.start+=view.length;view.map[view.map_count++]=p;
+  }
+  view.length+=l->length;
+ }
+ view.text[bytes]=0;view.lines=lines?lines:1;view.max_columns=max;
+ for(size_t i=0;i<count;i++)if(blocks[i].previous!=SIZE_MAX){
+  mulib_pretty_layout_t *old=&s->blocks[blocks[i].previous].layout;
+  blocks[i].layout=*old;memset(old,0,sizeof(*old));
+ }
+ mulib_pretty_blocks_free_(s->blocks,s->count);mulib_pretty_layout_free(&s->view);
+ s->blocks=blocks;s->count=count;s->options=*options;s->view=view;
+ if(reused)*reused=hits;
+ return 1;
+fail:
+ mulib_pretty_blocks_free_(blocks,count);mulib_pretty_layout_free(&view);return 0;
 }
 #ifdef __cplusplus
 }

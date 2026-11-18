@@ -6,8 +6,9 @@
  * Supported forms: (text "str"), (fill "paragraph"), (soft), (hard),
  * (cat a b), (group a), (nest unsigned a), (align a),
  * (choice a b), (region "greedy|fits|search" a),
- * (paragraph "greedy|ragged" a), (annot "keyword|identifier|number|operator|comment|string|
- * math-ident|math-number|math-operator" a).
+ * (paragraph "greedy|ragged|knuth-plass" a), (annot "style" a),
+ * (source id start end a), (math-atom "str"), (frac a b), (sup a b),
+ * (sub a b), (root a), (matrix (row a ...) ...).
  */
 #ifndef MULIB_PRETTYSEXPR_H
 #define MULIB_PRETTYSEXPR_H
@@ -64,7 +65,7 @@ static char *mulib_pretty_quote_(mulib_pretty_parser_ *p){
  while(*p->p && *p->p!='"'){
   unsigned char ch=(unsigned char)*p->p++;
   if(ch=='\\'){
-   char esc=*p->p++;if(!esc){free(s);return NULL;}
+    char esc=*p->p;if(!esc){free(s);return NULL;}p->p++;
     switch(esc){case 'n':ch='\n';break;case 't':ch='\t';break;
      case 'r':ch='\r';break;case '"':ch='"';break;case '\\':ch='\\';break;
      case 'x':{
@@ -112,7 +113,45 @@ static mulib_pretty_id_t mulib_pretty_parse_node_(mulib_pretty_parser_ *p,unsign
   if(!mulib_pretty_uint_(p,&number)||number>4096)return MULIB_PRETTY_NONE;
   a=mulib_pretty_parse_node_(p,depth+1);
   result=mulib_pretty_nest(p->doc,number,a);
- }else if(!strcmp(name,"annot")){
+  }else if(!strcmp(name,"math-atom")){
+   char *s=mulib_pretty_quote_(p);if(!s)return MULIB_PRETTY_NONE;
+   result=mulib_pretty_math_atom(p->doc,s);free(s);
+  }else if(!strcmp(name,"frac")||!strcmp(name,"sup")||!strcmp(name,"sub")||!strcmp(name,"root")){
+   mulib_pretty_math_kind_t k=!strcmp(name,"frac")?MULIB_PRETTY_MATH_FRAC:
+    !strcmp(name,"sup")?MULIB_PRETTY_MATH_SUP:!strcmp(name,"sub")?MULIB_PRETTY_MATH_SUB:MULIB_PRETTY_MATH_ROOT;
+   a=mulib_pretty_parse_node_(p,depth+1);
+   if(a==MULIB_PRETTY_NONE)return a;
+   if(k!=MULIB_PRETTY_MATH_ROOT)b=mulib_pretty_parse_node_(p,depth+1);
+   result=mulib_pretty_math(p->doc,k,a,b);
+  }else if(!strcmp(name,"matrix")){
+   /* Allocate one row at a time on recursive descent, keeping frame size small. */
+   mulib_pretty_id_t *cells=(mulib_pretty_id_t*)malloc(1024*sizeof(*cells));
+   if(!cells)return MULIB_PRETTY_NONE;
+   size_t rows=0,cols=0;int ok=1;
+   mulib_pretty_ws_(p);
+   while(*p->p=='(' && rows<32){
+    p->p++;char row[8];size_t count=0;
+    if(!mulib_pretty_sym_(p,row,sizeof(row))||strcmp(row,"row")){ok=0;break;}
+    mulib_pretty_ws_(p);
+    while(*p->p=='(' && count<32){
+     a=mulib_pretty_parse_node_(p,depth+1);
+     if(a==MULIB_PRETTY_NONE){ok=0;break;}
+     cells[rows*cols+count++]=a;
+     if(rows&&count>cols){ok=0;break;}
+     mulib_pretty_ws_(p);
+    }
+    if(!ok||!count||(rows&&count!=cols)||!mulib_pretty_expect_(p,')')){ok=0;break;}
+    cols=count;rows++;mulib_pretty_ws_(p);
+   }
+   if(ok)result=mulib_pretty_matrix(p->doc,rows,cols,cells);
+   free(cells);
+  }else if(!strcmp(name,"source")){
+   size_t id,start,end;
+   if(!mulib_pretty_uint_(p,&id)||id>UINT32_MAX||!mulib_pretty_uint_(p,&start)||
+      !mulib_pretty_uint_(p,&end)||end<start)return MULIB_PRETTY_NONE;
+   a=mulib_pretty_parse_node_(p,depth+1);
+   result=mulib_pretty_source(p->doc,(mulib_pretty_origin_t){(uint32_t)id,start,end},a);
+  }else if(!strcmp(name,"annot")){
   char *s=mulib_pretty_quote_(p);if(!s)return MULIB_PRETTY_NONE;
   int ok=mulib_pretty_style_(s,&style);free(s);if(!ok)return MULIB_PRETTY_NONE;
   a=mulib_pretty_parse_node_(p,depth+1);
@@ -126,15 +165,17 @@ static mulib_pretty_id_t mulib_pretty_parse_node_(mulib_pretty_parser_ *p,unsign
    else if(!strcmp(s,"search"))which=MULIB_PRETTY_SEARCH;
   }else{
    if(!strcmp(s,"greedy"))which=MULIB_PRETTY_WORD_GREEDY;
-   else if(!strcmp(s,"ragged"))which=MULIB_PRETTY_MIN_RAGGEDNESS;
+    else if(!strcmp(s,"ragged"))which=MULIB_PRETTY_MIN_RAGGEDNESS;
+    else if(!strcmp(s,"knuth-plass"))which=MULIB_PRETTY_KNUTH_PLASS;
   }
   free(s);if(which<0)return MULIB_PRETTY_NONE;
   a=mulib_pretty_parse_node_(p,depth+1);
   result=!strcmp(name,"region")?mulib_pretty_region(p->doc,(mulib_pretty_algorithm_t)which,a):
                              mulib_pretty_paragraph_region(p->doc,(mulib_pretty_paragraph_t)which,a);
- }else if(!strcmp(name,"cat")||!strcmp(name,"choice")){
-  a=mulib_pretty_parse_node_(p,depth+1);
-  b=mulib_pretty_parse_node_(p,depth+1);
+  }else if(!strcmp(name,"cat")||!strcmp(name,"choice")){
+   a=mulib_pretty_parse_node_(p,depth+1);
+   if(a==MULIB_PRETTY_NONE)return a;
+   b=mulib_pretty_parse_node_(p,depth+1);
   result=!strcmp(name,"cat")?mulib_pretty_cat(p->doc,a,b):mulib_pretty_choice(p->doc,a,b);
  }else if(!strcmp(name,"group")||!strcmp(name,"align")){
   a=mulib_pretty_parse_node_(p,depth+1);

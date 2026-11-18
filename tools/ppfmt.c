@@ -1,15 +1,13 @@
-/* Portable source document renderer. Builds without other MuLIB kernels. */
+/* Portable source document renderer. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define MULIB_IMPL_PRETTYDOC
-#define MULIB_IMPL_PRETTYEMIT
-#define MULIB_IMPL_PRETTYSEXPR
-#include "mulib-prettysexpr.h"
+#include <inttypes.h>
+#include "mulib-pretty-standalone.inc"
 static void usage(const char *program){
  fprintf(stderr,"usage: %s [--width N] [--ribbon N] [--algorithm greedy|fits|search]\n"
-         "       [--paragraph greedy|ragged] [--target plain|html|latex|troff]\n"
-         "       [-o FILE] [INPUT.ppdoc]\n",program);
+         "       [--paragraph greedy|ragged|knuth-plass] [--target plain|html|latex|troff]\n"
+         "       [--map FILE] [-o FILE] [INPUT.ppdoc]\n",program);
 }
 static int read_width(const char *s,unsigned long min,size_t *out){
  unsigned long n=0;
@@ -39,13 +37,14 @@ static int read_all(FILE *f,char **out){
  s[len]=0;if(memchr(s,0,len)){free(s);return 0;}*out=s;return 1;
 }
 int main(int argc,char **argv){
- const char *input=NULL,*output=NULL;mulib_pretty_options_t opt;
+ const char *input=NULL,*output=NULL,*map=NULL;mulib_pretty_options_t opt;
  mulib_pretty_target_t target=MULIB_PRETTY_PLAIN;
  mulib_pretty_options_init(&opt);
  for(int i=1;i<argc;i++){
   const char *arg=argv[i];
   if(!strcmp(arg,"--help")){usage(argv[0]);return 0;}
   if(!strcmp(arg,"-o") && i+1<argc){output=argv[++i];continue;}
+  if(!strcmp(arg,"--map") && i+1<argc){map=argv[++i];continue;}
   if(!strcmp(arg,"--width")||!strcmp(arg,"--ribbon")){
    int ribbon=!strcmp(arg,"--ribbon");
    if(i+1>=argc||!read_width(argv[++i],ribbon?0:1,ribbon?&opt.ribbon_width:&opt.width)){
@@ -64,6 +63,7 @@ int main(int argc,char **argv){
    const char *s=argv[++i];
    if(!strcmp(s,"greedy"))opt.paragraph=MULIB_PRETTY_WORD_GREEDY;
    else if(!strcmp(s,"ragged"))opt.paragraph=MULIB_PRETTY_MIN_RAGGEDNESS;
+   else if(!strcmp(s,"knuth-plass"))opt.paragraph=MULIB_PRETTY_KNUTH_PLASS;
    else {usage(argv[0]);return 2;}continue;
   }
   if(!strcmp(arg,"--target")&&i+1<argc){
@@ -77,13 +77,34 @@ int main(int argc,char **argv){
   if(arg[0]=='-' && strcmp(arg,"-")){usage(argv[0]);return 2;}
   if(input){usage(argv[0]);return 2;}input=arg;
  }
+ if(map&&output&&!strcmp(map,output)){usage(argv[0]);return 2;}
  FILE *in=stdin;
  if(input && strcmp(input,"-")){in=fopen(input,"rb");if(!in){perror(input);return 1;}}
  char *spec=NULL;
  int ok=read_all(in,&spec);
  if(in!=stdin)fclose(in);
  if(!ok){fprintf(stderr,"ppfmt: input too large or unreadable\n");return 1;}
- char *result=mulib_pretty_render_expr(spec,&opt,target);free(spec);
+ mulib_pretty_layout_t layout={0};mulib_prettydoc_t *doc=NULL;mulib_pretty_id_t root;
+ char *result=NULL;
+ if(mulib_pretty_parse_expr(spec,&doc,&root)&&mulib_pretty_layout(doc,root,&opt,&layout))
+  result=mulib_pretty_emit(&layout,target);
+ mulib_prettydoc_free(doc);free(spec);
+ if(result&&map){
+  FILE *m=fopen(map,"wb");
+  ok=m!=NULL;
+  if(m){
+   ok=fputs("{\"coordinate_space\":\"plain-utf8\",\"mappings\":[",m)>=0;
+   for(size_t i=0;ok&&i<layout.map_count;i++){
+    const mulib_pretty_mapping_t *p=&layout.map[i];
+    ok=fprintf(m,"%s[%zu,%zu,%" PRIu32 ",%zu,%zu]",i?",":"",p->start,p->length,
+               p->origin.source,p->origin.start,p->origin.end)>=0;
+   }
+   if(ok)ok=fputs("]}\n",m)>=0;
+   if(fclose(m)!=0)ok=0;
+  }
+  if(!ok){fprintf(stderr,"ppfmt: map I/O failure\n");free(result);mulib_pretty_layout_free(&layout);return 1;}
+ }
+ mulib_pretty_layout_free(&layout);
  if(!result){fprintf(stderr,"ppfmt: malformed document, layout failure, or out of memory\n");return 1;}
  FILE *out=stdout;
  if(output){out=fopen(output,"wb");if(!out){perror(output);free(result);return 1;}}

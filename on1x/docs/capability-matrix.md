@@ -1,5 +1,22 @@
 # On1x capability matrix
 
+PrettyPrint layout continuation, MuLIB `db7330a875208752ff3b982a5a6474c4e7c8a8bb`:
+
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| PrettyPrint document rendering | `include/mulib-pretty{doc,emit,sexpr}.h`, `stdlib/prettyprint`, `examples/ppgc.py` | Single-TU C11 kernels and raw scalar companion; maps and incremental sessions on C side | Language-neutral `sexpr` DSL with semantic math and Knuth–Plass; `.ppg` v1 compiles tagged AST rules to Python | `prettyprint.mk`, `tests/check_prettyprint.py`, `tests/test_linebreak.c` | EXECUTABLE | No safe FFI admission, glyph justification, full Oppen, or arbitrary subtree reuse |
+
+KernelBind continuation (Packages A/B), baseline MuLIB
+`db7330a875208752ff3b982a5a6474c4e7c8a8bb`, read-only LibStone
+`c7cfeca5a5d5086b0c25dad08264fc450c03f85b`. See [KernelBind](kernel-bind.md)
+for the discovery profile and its limits.
+
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| KernelBind import discovery | `src/{parser,loader,cli,ppx_ast}.cpp`, `tools/{on1x-build,on1x-exotract}.py`, `contracts-exotract/kernel-discovery-v1.lua` | ExoLib/Exotract declaration-only ExoML CDecl v2 | Native contextual imports and read-only source graph, pinned MuLIB discovery and unreviewed sidecars | `test_kernel_imports.py`, `test_kernel_imports_sdk.py` | PARTIAL | More profiles and independent safe authorization |
+| KernelBind unsafe scalar calls | `src/{loader,sema,codegen}.cpp`, `tools/{on1x-build,on1x-exotract}.py` | Real clamp kernel, strict C11 adapters, one implementation TU on native Linux x86-64 | Direct scoped `unsafe_foreign` calls with two exact `i64` arguments | `examples/kernel/clamp.on1x`, C oracle, compiler/SDK negative tests | EXECUTABLE | General scalar shapes, alternative targets/backends, value-producing unsafe blocks |
+| KernelBind safe calls and foreign resources | `KERNEL_DIRECT_USAGE.md` | No safely admitted symbols or resource-bearing shapes | Default imports fail closed | Explicit fail-closed compilation tests | ABSENT | Independent review, ownership/errors/effects, target execution and Shylock milestone |
+
 Search-path/ecosystem work item (M5/M7), baseline MuLIB
 `b11af815facb35a791d9721c4c654df21b877d94`, read-only LibStone
 `c7cfeca5a5d5086b0c25dad08264fc450c03f85b`:

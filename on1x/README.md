@@ -106,6 +106,11 @@ still not admitted. See the
 [capability matrix](docs/capability-matrix.md) and
 [verification record](VERIFICATION.md). This does not complete M1 or On1x.
 
+[KernelBind](docs/kernel-bind.md) recognizes `import kernel` in the compiler and
+supports explicit ExoLib/ExoML discovery of six canonical MuLIB profiles.
+The opt-in C11 build profile can call two `mulib.clamp` functions via
+`unsafe import kernel`; safe and resource-bearing imports are still closed.
+
 The repository accessed through the GitHub connection exposed the prior PPX-v1 schema and Exotract/ExoML contract catalogs. The `on1x/std/ppx` path in the request appears to refer to the actual `on1x/stdlib/ppx` path, whose `ppx.on1x` is used by all newly added native PPXs.
 
 ## Contents

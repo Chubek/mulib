@@ -1,0 +1,15 @@
+# Kernel parity case for copying, draining, and closing an i64 channel.
+# No task scheduling or indefinite wait; this is not a replacement for taskgroup.
+import kernel mulib.channel as Channel;
+
+fn main() {
+  let (created,owner)=Channel.create_i64(1);
+  assert(created==0);
+  let sent=Channel.try_send_i64(owner,42);
+  let closed=Channel.close(owner);
+  let (received,value)=Channel.try_receive_i64(owner);
+  let (drained,unused)=Channel.try_receive_i64(owner);
+  let destroyed=Channel.destroy(owner);
+  assert(sent==0 && closed==0 && received==0 && value==42);
+  assert(drained==-4 && destroyed==0);
+}

@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1171 headers, 1206 direct dependency edges.
+Inventory: 1171 headers, 1207 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (397 modules)
+## Stratum 0 (396 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -280,7 +280,6 @@ Compatibility group: `parsec`, `peg`.
 | [port](mulib-port.md) | none |
 | [positions](mulib-positions.md) | none |
 | [postings](mulib-postings.md) | none |
-| [prettydoc](mulib-prettydoc.md) | none |
 | [price-causal](mulib-price-causal.md) | none |
 | [price-confidence](mulib-price-confidence.md) | none |
 | [price-demand](mulib-price-demand.md) | none |
@@ -417,7 +416,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (389 modules)
+## Stratum 1 (388 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -673,7 +672,6 @@ Compatibility group: `parsec`, `peg`.
 | [perlpod](mulib-perlpod.md) | `strbuf`, `utf8` |
 | [phrasequery](mulib-phrasequery.md) | `positions` |
 | [plot2d](mulib-plot2d.md) | `typecore` |
-| [prettyemit](mulib-prettyemit.md) | `prettydoc` |
 | [price-normalize](mulib-price-normalize.md) | `money` |
 | [price-observation](mulib-price-observation.md) | `money` |
 | [procfs](mulib-procfs.md) | `vfs` |
@@ -811,7 +809,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (142 modules)
+## Stratum 2 (141 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -911,7 +909,6 @@ Compatibility group: `parsec`, `peg`.
 | [peg](mulib-peg.md) | `parsec`, `strbuf` |
 | [pipeline](mulib-pipeline.md) | `parallel` |
 | [postdominance](mulib-postdominance.md) | `dominance` |
-| [prettysexpr](mulib-prettysexpr.md) | `prettyemit` |
 | [price-history](mulib-price-history.md) | `price-observation` |
 | [price-match](mulib-price-match.md) | `shylock-core` |
 | [price-monitor](mulib-price-monitor.md) | `price-observation` |
@@ -1053,7 +1050,7 @@ Compatibility group: `parsec`, `peg`.
 | [xtas](mulib-xtas.md) | `dsdom` |
 | [xz](mulib-xz.md) | `authcrypto`, `bcj`, `crc32`, `lzma` |
 
-## Stratum 4 (47 modules)
+## Stratum 4 (48 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1088,6 +1085,7 @@ Compatibility group: `parsec`, `peg`.
 | [ociimage](mulib-ociimage.md) | `json` |
 | [pandocast](mulib-pandocast.md) | `dsdom`, `json` |
 | [pebuilder](mulib-pebuilder.md) | `binfilewriter`, `bycutils`, `objfilebuilder` |
+| [prettydoc](mulib-prettydoc.md) | `linebreak` |
 | [price-forecast](mulib-price-forecast.md) | `price-timeseries` |
 | [raytracing](mulib-raytracing.md) | `collision`, `glx` |
 | [readline](mulib-readline.md) | `json`, `strbuf`, `terminfo`, `termkey`, `termutils` |
@@ -1105,7 +1103,7 @@ Compatibility group: `parsec`, `peg`.
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (43 modules)
+## Stratum 5 (44 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1144,6 +1142,7 @@ Compatibility group: `parsec`, `peg`.
 | [paleography](mulib-paleography.md) | `base64`, `json`, `mune`, `svg`, `tex` |
 | [parallel-sh](mulib-parallel-sh.md) | `mune` |
 | [pglayout](mulib-pglayout.md) | `bidi`, `fontshape`, `json`, `stylesheet`, `unibreak`, `yaml` |
+| [prettyemit](mulib-prettyemit.md) | `prettydoc` |
 | [row-rdbms](mulib-row-rdbms.md) | `dbschema`, `documentdb` |
 | [shebang-sh](mulib-shebang-sh.md) | `mune` |
 | [vizigen](mulib-vizigen.md) | `asdl`, `binfilereader`, `binfilewriter`, `mmfile`, `walker` |
@@ -1153,7 +1152,7 @@ Compatibility group: `parsec`, `peg`.
 | [wit](mulib-wit.md) | `buffer`, `dbschema` |
 | [x509](mulib-x509.md) | `base64`, `inet6`, `signature` |
 
-## Stratum 6 (17 modules)
+## Stratum 6 (18 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1170,6 +1169,7 @@ Compatibility group: `parsec`, `peg`.
 | [glyph](mulib-glyph.md) | `fontdraw`, `ligature`, `pglayout`, `sysfonts` |
 | [nvptx](mulib-nvptx.md) | `gpu` |
 | [pe-objdump](mulib-pe-objdump.md) | `coff-objdump`, `pe` |
+| [prettysexpr](mulib-prettysexpr.md) | `prettyemit` |
 | [riscv64](mulib-riscv64.md) | `mpu` |
 | [task](mulib-task.md) | `exec` |
 | [uri](mulib-uri.md) | `inte6`, `strbuf` |

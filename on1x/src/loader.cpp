@@ -25,7 +25,8 @@ struct Module {
  Unit unit;
  Names names;
  std::vector<Module*> quoted;
- std::vector<Module*> dependencies;
+  std::vector<Module*> dependencies;
+  std::map<std::string,KernelImport> kernels;
  std::size_t id=0;
  bool active=true,legacy=false,implicit=false;
 };
@@ -40,6 +41,7 @@ fs::path module_path(std::string name){std::replace(name.begin(),name.end(),'.',
 fs::path package(const Module& m){return directory(m.path)?m.path:m.path.parent_path();}
 
 class Loader {
+ using Scope=std::set<std::string>;
  const LoaderOptions& options;
   fs::path entry_directory;
  std::vector<fs::path> standard_roots;
@@ -49,6 +51,37 @@ class Loader {
  std::string prefix="on1x_module_";
  std::size_t bytes=0,bindings=0,edges=0;
  bool implicit=false;
+  KernelImportRequests* inspection;
+  const Module* kernel_scope=nullptr;
+  bool unsafe_context=false;
+  std::size_t kernel_requests=0;
+  std::map<std::string,Function> kernel_calls;
+  static constexpr const char* kernel_symbols[]={"mulib_clamp_add_i64","mulib_clamp_sub_i64"};
+  static bool kernel_name(std::string_view name){
+   return std::find(std::begin(kernel_symbols),std::end(kernel_symbols),name)!=std::end(kernel_symbols);
+  }
+  bool kernel_reference(Expr& e,const Scope& values,bool direct){
+   if(!kernel_scope||e.kind!=Expr::Kind::Variable)return false;
+   const auto dot=e.text.find('.');
+   const auto alias=e.text.substr(0,dot);
+   auto found=kernel_scope->kernels.find(alias);
+   if(found==kernel_scope->kernels.end()||values.contains(alias))return false;
+   if(dot==std::string::npos||!direct)
+    throw Error(e.where,"ON1X-KERNEL-DIRECT: kernel exports must be called directly","ON1X-KERNEL-DIRECT");
+   const auto symbol="mulib_clamp_"+e.text.substr(dot+1);
+   if(!kernel_name(symbol))
+    throw Error(e.where,"ON1X-KERNEL-MEMBER: no ABI-verified export "+e.text,"ON1X-KERNEL-MEMBER");
+   if(!unsafe_context)
+    throw Error(e.where,"ON1X-KERNEL-CONTEXT: "+e.text+" requires unsafe { ... }","ON1X-KERNEL-CONTEXT");
+   auto name="@kernel_"+symbol;
+   if(!kernel_calls.contains(name)){
+    Function f;f.name=name;f.where=e.where;f.result=Type::I64;f.external=true;f.unsafe_kernel_symbol=symbol;
+    for(const char* p:{"a","b"}){Param param;param.name=p;param.type=Type::I64;param.where=e.where;f.params.push_back(std::move(param));}
+    kernel_calls.emplace(name,std::move(f));
+   }
+   e.text=std::move(name);
+   return true;
+  }
  void explicit_module(Module* m){
   if(!m->implicit)return;
   m->implicit=false;for(auto* child:m->dependencies)explicit_module(child);
@@ -156,6 +189,22 @@ class Loader {
    bytes+=source.size();auto scanned=scan(source,path.string());
    for(const auto& t:scanned)tokens.insert(t.text);
     m->unit=parse(scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()});
+     if(!inspection&&!options.kernel_c11)require_no_kernel_imports(m->unit);
+     if(options.kernel_c11){
+      if(!m->unit.ppx.empty()||!m->unit.macros.empty()||!m->unit.extensions.empty()||!m->unit.features.empty())
+       throw Error(at,"ON1X-KERNEL-PROFILE: this C11 profile does not execute source macros, PPX or extensions","ON1X-KERNEL-PROFILE");
+      for(const auto& request:m->unit.kernel_imports){
+       if(!request.is_unsafe||request.module!="mulib.clamp"){
+        Unit denied;denied.kernel_imports.push_back(request);require_no_kernel_imports(denied);
+       }
+      }
+      for(const auto& f:m->unit.functions){
+       if(f.external)
+        throw Error(f.where,"ON1X-KERNEL-EXTERN: raw externs cannot be mixed with this KernelBind profile","ON1X-KERNEL-EXTERN");
+       if(!f.attributes.empty())
+        throw Error(f.where,"ON1X-KERNEL-PROFILE: attributes are outside this C11 profile","ON1X-KERNEL-PROFILE");
+      }
+     }
     for(auto& carrier:m->unit.extensions){
      if(carrier.end.offset-carrier.where.offset>262144)throw Error(carrier.where,"ON1X-CAT-SYNTAX: carrier byte budget exhausted","ON1X-CAT-SYNTAX");
      carrier.source=source.substr(carrier.where.offset,carrier.end.offset-carrier.where.offset);
@@ -203,11 +252,24 @@ class Loader {
     bind_module(m->names,alias,imported,imp.where);
    }
   }
+   if((inspection||options.kernel_c11)&&regular(path)){
+   std::set<std::string> aliases;
+   for(auto& request:m->unit.kernel_imports){
+     if(++edges>16384||++kernel_requests>1024)
+     throw Error(request.where,"kernel import inspection limit exceeded");
+    if(!aliases.insert(request.alias).second||module_bound(m->names,request.alias)||
+       m->names.values.contains(request.alias)||m->names.types.contains(request.alias)||
+       m->names.syntax.contains(request.alias))
+     throw Error(request.where,"conflicting kernel import alias: "+request.alias,"ON1X-KERNEL-ALIAS");
+     if(inspection)inspection->requests.push_back(std::move(request));
+     else m->kernels.emplace(request.alias,std::move(request));
+   }
+    if(inspection)inspection->source_digests.merge(m->unit.source_digests);
+  }
   stack.pop_back();m->active=false;order.push_back(m);return m;
  }
  void legacy(Module* m){if(m->legacy)return;m->legacy=true;for(auto* child:m->quoted)legacy(child);}
  std::string name(const Symbol& s)const{return s.external||s.owner->legacy?s.name:prefix+std::to_string(s.owner->id)+"_"+s.name;}
- using Scope=std::set<std::string>;
  void bind(Scope& scope,const Pattern& p){pattern_bindings(p,[&](const Pattern& name){scope.insert(name.name);});}
  void parameters(Scope& scope,const std::vector<Param>& ps){for(const auto& p:ps){if(p.pattern)bind(scope,*p.pattern);else scope.insert(p.name);}}
   void reference(std::string& text,const Location& at,const Names& names,const Scope& locals,bool syntax,bool type=false){
@@ -274,7 +336,10 @@ class Loader {
   void expression(Expr& e,const Names& names,const Scope& values,const Scope& syntax){
    e.result=type_reference(e.result,e.where,names);
    for(auto& p:e.parameters)p.type=type_reference(p.type,p.where,names);
-  if(e.kind==Expr::Kind::Variable)reference(e.text,e.where,names,values,false);
+   if(e.kind==Expr::Kind::Variable){(void)kernel_reference(e,values,false);reference(e.text,e.where,names,values,false);}
+   if(options.kernel_c11&&(e.kind==Expr::Kind::SyntaxLet||e.kind==Expr::Kind::MacroCall||
+      e.kind==Expr::Kind::Quote||e.kind==Expr::Kind::Run||e.kind==Expr::Kind::Splice||e.kind==Expr::Kind::Lift))
+    throw Error(e.where,"ON1X-KERNEL-PROFILE: staging and local syntax are outside this C11 profile","ON1X-KERNEL-PROFILE");
   if(e.kind==Expr::Kind::MacroCall){
    auto dot=e.text.find('.');
    if(dot!=std::string::npos&&values.contains(e.text.substr(0,dot)))throw Error(e.where,"qualified reference is shadowed by local binding: "+e.text.substr(0,dot));
@@ -288,12 +353,13 @@ class Loader {
    for(auto& child:e.children)expression(*child,names,values,inner);
    return;
   }
-   if(e.kind==Expr::Kind::Lambda){auto inner=values;parameters(inner,e.parameters);body(e.body,names,inner,syntax);return;}
+    if(e.kind==Expr::Kind::Lambda){auto inner=values;parameters(inner,e.parameters);
+     auto saved=unsafe_context;unsafe_context=false;body(e.body,names,inner,syntax);unsafe_context=saved;return;}
    if(e.kind==Expr::Kind::PatternMatch){expression(*e.children.at(0),names,values,syntax);auto inner=values;if(!e.text.empty())inner.insert(e.text);for(std::size_t i=1;i<e.children.size();++i)expression(*e.children[i],names,inner,syntax);return;}
    if(e.kind==Expr::Kind::Case){auto inner=values;for(const auto& p:e.patterns)bind(inner,p);expression(*e.children.at(0),names,inner,syntax);body(e.body,names,inner,syntax);
     for(const auto& s:e.body)if(s.kind==Stmt::Kind::Let){if(s.pattern)bind(inner,*s.pattern);else inner.insert(s.name);}
     expression(*e.children.at(1),names,inner,syntax);return;}
-  if(e.callee)expression(*e.callee,names,values,syntax);
+   if(e.callee&&!kernel_reference(*e.callee,values,true))expression(*e.callee,names,values,syntax);
   if(e.syntax_tail)expression(*e.syntax_tail,names,values,syntax);
   for(auto& child:e.children)expression(*child,names,values,syntax);
   body(e.body,names,values,syntax);
@@ -309,15 +375,22 @@ class Loader {
       s.kind=Stmt::Kind::Expr;s.value=std::make_unique<Expr>();s.value->kind=Expr::Kind::Variable;s.value->text=spelling;s.value->where=s.where;
      }
     }
-    if(s.value)expression(*s.value,names,values,syntax);
+     if(options.kernel_c11&&(s.kind==Stmt::Kind::TaskGroup||s.kind==Stmt::Kind::Defer))
+      throw Error(s.where,"ON1X-KERNEL-PROFILE: task groups and defer are outside this C11 profile","ON1X-KERNEL-PROFILE");
+     if(s.unsafe_block&&!options.kernel_c11)
+      throw Error(s.where,"ON1X-KERNEL-PROFILE: unsafe blocks require KernelBind C11 mode","ON1X-KERNEL-PROFILE");
+     if(s.value)expression(*s.value,names,values,syntax);
    if(s.kind==Stmt::Kind::Let){if(s.pattern)bind(values,*s.pattern);else values.insert(s.name);}
     if(s.kind==Stmt::Kind::Assign)reference(s.name,s.where,names,values,false);
     auto inner=values;if(s.kind==Stmt::Kind::Range)inner.insert(s.name);
-    body(s.body,names,inner,syntax);body(s.otherwise,names,values,syntax);
+     auto saved=unsafe_context;unsafe_context=unsafe_context||s.unsafe_block;
+     body(s.body,names,inner,syntax);unsafe_context=saved;s.unsafe_block=false;
+     body(s.otherwise,names,values,syntax);
   }
  }
 public:
-  explicit Loader(const LoaderOptions& opts):options(opts),standard_roots(standard_library_roots(opts)){}
+  explicit Loader(const LoaderOptions& opts,KernelImportRequests* inspect=nullptr)
+   :options(opts),standard_roots(standard_library_roots(opts)),inspection(inspect){}
  LoadedUnit run(const fs::path& input){
   entry_directory=canonical(input,{input.string()}).parent_path();
   if(options.prelude){
@@ -326,7 +399,9 @@ public:
     implicit=true;preludes.push_back(visit(path,{"<prelude>"},false));implicit=false;
   }
   for(const auto& path:options.preludes)preludes.push_back(visit(path,{"<prelude>"},false));
-   auto* entry=visit(input,{input.string()},false);legacy(entry);
+   auto* entry=visit(input,{input.string()},false);
+   if(inspection)return {};
+   legacy(entry);
   // Pick an identifier prefix absent from every token, including local binders.
   while(std::any_of(tokens.begin(),tokens.end(),[&](const auto& t){return t.starts_with(prefix);}))prefix+="m_";
   Names flat;for(auto* m:order)if(m->legacy)merge(flat,m->names,{m->path.string()});
@@ -335,10 +410,15 @@ public:
   LoadedUnit result;std::map<std::string,const Function*> externs;std::set<std::string> lazy;
   // Reserve storage so pointers used for identical raw-extern admission stay valid.
   std::size_t count=0;for(auto* m:order)count+=m->unit.functions.size();
-  if(count>16384)throw Error({input.string()},"loaded function count limit exceeded");
-  result.unit.functions.reserve(count);
-  for(auto* m:order){
-   auto names=m->legacy?flat:m->names;
+   const std::size_t generated=options.kernel_c11?std::size(kernel_symbols):0;
+   if(count>16384-generated)throw Error({input.string()},"loaded function count limit exceeded");
+   result.unit.functions.reserve(count+generated);
+   for(auto* m:order){
+    kernel_scope=m;
+    auto names=m->legacy?flat:m->names;
+    for(const auto& [alias,request]:m->kernels)if(module_bound(names,alias)||names.values.contains(alias)||
+     names.syntax.contains(alias)||names.types.contains(alias))
+      throw Error(request.where,"conflicting kernel import alias: "+alias,"ON1X-KERNEL-ALIAS");
    for(auto it=preludes.rbegin();it!=preludes.rend();++it){
     auto* prelude=*it;
     for(const auto& [key,symbol]:prelude->names.values)if(!names.values.contains(key)&&!module_bound(names,key))insert(names.values,key,symbol,{m->path.string()});
@@ -381,8 +461,9 @@ public:
      result.unit.extension_evidence.push_back(std::move(evidence));
     }
     result.unit.source_digests.insert(m->unit.source_digests.begin(),m->unit.source_digests.end());
-   if(regular(m->path))result.dependencies.push_back(m->path);
-  }
+    if(regular(m->path))result.dependencies.push_back(m->path);
+   }
+   for(auto& [name,f]:kernel_calls){(void)name;result.unit.functions.push_back(std::move(f));}
   // Automatic pervasive bindings are demand-loaded. This preserves the existing
   // annotated-only checking path and keeps unused generic helpers out of PPX/MIR.
   // Explicit imports and --prelude files always retain/check their definitions.
@@ -484,4 +565,11 @@ std::vector<fs::path> standard_library_roots(const LoaderOptions& options){
  return result;
 }
 LoadedUnit load_unit(const fs::path& input,const LoaderOptions& options){return Loader(options).run(input);}
+KernelImportRequests inspect_kernel_imports(const fs::path& input,const LoaderOptions& options){
+ auto inspect_options=options;
+ inspect_options.extensions.execute=false;
+ KernelImportRequests result;
+ (void)Loader(inspect_options,&result).run(input);
+ return result;
+}
 }

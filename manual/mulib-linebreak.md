@@ -23,6 +23,12 @@ and replaces its old lines. Every failure leaves the complete old result intact.
 `mulib_linebreak_result_free` frees and zeros it; NULL and repeated calls are safe.
 Options initialization overwrites the options, does not allocate, and accepts NULL.
 
+`mulib_linebreak_knuth_plass` accepts a separate first-line width in the
+same range as `options.width`; all continuation lines and later hard
+paragraphs use `options.width`. Its optional work counter reports attempted
+edges even on failure, so a caller can share an optimization budget across
+multiple paragraphs. The same transactional result rules apply.
+
 Text, options, callback context, locale and the optional ICU context are borrowed
 only during the call. No source pointer is retained: results contain byte offsets,
 and remain usable with an unchanged copy of the input. Do not mutate these inputs

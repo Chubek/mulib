@@ -72,7 +72,12 @@ void mulib_linebreak_options_init(mulib_linebreak_options_t *options, double wid
 int mulib_linebreak(const char *text, size_t length,
                     mulib_linebreak_algorithm_t algorithm,
                     const mulib_linebreak_options_t *options,
-                    mulib_linebreak_result_t *result);
+                     mulib_linebreak_result_t *result);
+/* As above, with a separate first-line width for Knuth-Plass and optional
+ * accounting of attempted edges (including on failure). */
+int mulib_linebreak_knuth_plass(const char *text,size_t length,
+ const mulib_linebreak_options_t *options,double first_width,
+ mulib_linebreak_result_t *result,size_t *work);
 /** @brief Free owned lines and zero result; NULL/repeated calls are safe. */
 void mulib_linebreak_result_free(mulib_linebreak_result_t *result);
 
@@ -107,6 +112,7 @@ typedef struct mulib_linebreak_work_ {
     mulib_linebreak_result_t result;
     size_t work;
     int status;
+    double first_width;
 } mulib_linebreak_work_;
 typedef struct mulib_linebreak_edge_ {
     double width, stretch, shrink, base;
@@ -168,12 +174,13 @@ static int mulib_linebreak_emit_(mulib_linebreak_work_ *w, size_t i, size_t j, d
     line->end = w->p[w->b[j].end < w->b[i].at ? w->b[i].at : w->b[j].end].byte;
     line->next = w->p[w->b[j].at].byte;
     line->width = e.width; line->adjustment = ratio;
-    line->flags = w->b[j].flags | (e.width > w->o->width ? (unsigned)MULIB_LINEBREAK_OVERFULL : 0u);
+    double limit = i==0 && w->first_width>0 ? w->first_width : w->o->width;
+    line->flags = w->b[j].flags | (e.width > limit ? (unsigned)MULIB_LINEBREAK_OVERFULL : 0u);
     return 1;
 }
 static int mulib_linebreak_knuth_(mulib_linebreak_work_ *w, const mulib_linebreak_edge_ *e,
-                                  int last, double *ratio, size_t *fitness, double *badness) {
-    double delta = w->o->width - e->width, capacity;
+                                  int first,int last, double *ratio, size_t *fitness, double *badness) {
+    double delta = (first && w->first_width>0 ? w->first_width : w->o->width) - e->width, capacity;
     if (last && delta >= 0) *ratio = 0;
     else if (delta == 0) *ratio = 0;
     else {
@@ -251,7 +258,7 @@ static int mulib_linebreak_optimize_(mulib_linebreak_work_ *w, size_t start, siz
             size_t fitness = 0, destination, source_layer = balanced ? layer - 1 : layer;
             if (!mulib_linebreak_edge_get_(w, start + i, start + j, &e)) { rc = w->status; goto done; }
             if (states == 4) {
-                if (!mulib_linebreak_knuth_(w, &e, j == n - 1, &ratio, &fitness, &badness)) continue;
+                if (!mulib_linebreak_knuth_(w, &e, start+i==0,j == n - 1, &ratio, &fitness, &badness)) continue;
                 linecost = mulib_linebreak_square_(w->o->line_penalty + badness);
                 if (w->b[start + j].flags & MULIB_LINEBREAK_HYPHEN)
                     linecost += mulib_linebreak_square_(w->o->hyphen_penalty);
@@ -285,7 +292,7 @@ static int mulib_linebreak_optimize_(mulib_linebreak_work_ *w, size_t start, siz
         mulib_linebreak_edge_ e;
         if (states == 4) {
             if (!mulib_linebreak_edge_get_(w, start + a, start + b, &e)) { rc = w->status; goto done; }
-            (void)mulib_linebreak_knuth_(w, &e, b == n - 1, &ratio, &fit, &badness);
+            (void)mulib_linebreak_knuth_(w, &e, start+a==0,b == n - 1, &ratio, &fit, &badness);
         }
         if (!mulib_linebreak_emit_(w, start + a, start + b, ratio)) { rc = w->status; goto done; }
     }
@@ -296,14 +303,16 @@ static int mulib_linebreak_optimize_(mulib_linebreak_work_ *w, size_t start, siz
 done:
     free(cost); free(previous); return rc;
 }
-int mulib_linebreak(const char *text, size_t length, mulib_linebreak_algorithm_t algorithm,
-                    const mulib_linebreak_options_t *o, mulib_linebreak_result_t *out) {
+static int mulib_linebreak_run_(const char *text, size_t length, mulib_linebreak_algorithm_t algorithm,
+                    const mulib_linebreak_options_t *o, mulib_linebreak_result_t *out,
+                    double first_width,size_t *work) {
     mulib_linebreak_work_ w;
     mulib_unibreak_boundary_t *unicode = NULL;
     size_t count = 0, bytes, used, k, nb = 1, nu = 0, u = 1, start = 0, trim = 0;
     uint32_t cp;
     int rc = MULIB_LINEBREAK_OK;
-    memset(&w, 0, sizeof w); w.o = o;
+    memset(&w, 0, sizeof w); w.o = o; w.first_width=first_width;
+    if(work)*work=0;
     if (!o || !out || (!text && length) || algorithm < MULIB_LINEBREAK_GREEDY || algorithm > MULIB_LINEBREAK_UNICODE ||
         !isfinite(o->width) || o->width < 1e-6 || o->width > 1e12 || !o->max_work ||
         !mulib_linebreak_number_(o->hyphen_width, 1e12) || !mulib_linebreak_number_(o->space_stretch, 1000) ||
@@ -373,7 +382,21 @@ int mulib_linebreak(const char *text, size_t length, mulib_linebreak_algorithm_t
     }
     mulib_linebreak_result_free(out); *out = w.result; memset(&w.result, 0, sizeof w.result);
 done:
+    if(work)*work=w.work;
     free(unicode); free(w.p); free(w.b); mulib_linebreak_result_free(&w.result); return rc;
+}
+int mulib_linebreak(const char *text,size_t length,mulib_linebreak_algorithm_t algorithm,
+ const mulib_linebreak_options_t *options,mulib_linebreak_result_t *result) {
+    return mulib_linebreak_run_(text,length,algorithm,options,result,0,NULL);
+}
+int mulib_linebreak_knuth_plass(const char *text,size_t length,
+ const mulib_linebreak_options_t *options,double first_width,
+ mulib_linebreak_result_t *result,size_t *work) {
+    if(!isfinite(first_width)||first_width<1e-6||first_width>1e12){
+        if(work)*work=0;
+        return MULIB_LINEBREAK_INVALID;
+    }
+    return mulib_linebreak_run_(text,length,MULIB_LINEBREAK_KNUTH_PLASS,options,result,first_width,work);
 }
 #ifdef __cplusplus
 }

@@ -723,7 +723,10 @@ class Parser {
     // Preserve ordinary `defer(...)`, `defer;`, assignments and operators.
     auto next=peek(1).text;return is_ident(next)||next=="@"||next=="{"||(!next.empty()&&(std::isdigit(static_cast<unsigned char>(next[0]))||next[0]=='"'));
    }
-    Stmt statement(){Stmt s; s.where=peek().where;
+     Stmt statement(){Stmt s; s.where=peek().where;
+     if(at("unsafe")&&peek(1).text=="{"){
+      consume("unsafe");s.kind=Stmt::Kind::Block;s.unsafe_block=true;s.body=block();return s;
+     }
     if(at("taskgroup")&&(peek(1).text=="{"||peek(1).text=="within")){
      ++pos;if(at("within"))throw Error(s.where,"ON1X-CSP-UNSUPPORTED: monotonic taskgroup deadlines unavailable");
      s.kind=Stmt::Kind::TaskGroup;s.body=block();return s;
@@ -850,6 +853,23 @@ class Parser {
      if(u.ppx.size()>=32)throw Error(where,"PPX program count limit exceeded");
      ++pos;u.ppx.push_back({where,std::move(label),token.text.substr(1,token.text.size()-2)});accept(";");continue;
     }
+    // `kernel` remains an ordinary name in `import kernel;`,
+    // `import kernel.member;` and `import kernel as K;`.
+    bool unsafe_kernel=at("unsafe")&&peek(1).text=="import"&&peek(2).text=="kernel";
+    if(unsafe_kernel||(at("import")&&peek(1).text=="kernel"&&
+       ((is_ident(peek(2).text)&&peek(2).text!="as")||peek(2).text.starts_with('"')))){
+     KernelImport item;item.where=peek().where;item.is_unsafe=unsafe_kernel;
+     if(unsafe_kernel)consume("unsafe");
+     consume("import");consume("kernel");
+     item.module=module_name();
+     if(item.module.size()>4096)throw Error(item.where,"kernel module name exceeds 4096 bytes");
+     if(accept("as"))item.alias=ident();
+     else item.alias=item.module.substr(item.module.rfind('.')+1);
+     consume(";");
+     u.kernel_imports.push_back(std::move(item));
+     if(u.kernel_imports.size()+u.module_imports.size()>1024)throw Error(peek().where,"import count limit exceeded");
+     continue;
+    }
     if(at("import")||at("from")){
      Import declaration;declaration.where=peek().where;declaration.selective=accept("from");
      if(declaration.selective){
@@ -873,7 +893,7 @@ class Parser {
        u.module_imports.push_back(std::move(item));
       }while(accept(","));
      }
-     if(u.module_imports.size()>1024)throw Error(peek().where,"import count limit exceeded");
+     if(u.module_imports.size()+u.kernel_imports.size()>1024)throw Error(peek().where,"import count limit exceeded");
      consume(";");continue;
    }
     Function f;f.where=peek().where;
@@ -891,4 +911,12 @@ class Parser {
 };
 }
 Unit parse(const std::vector<Token>&ts,const std::vector<std::string>& enabled){return Parser(ts,enabled).parse();}
+void require_no_kernel_imports(const Unit& unit){
+ if(unit.kernel_imports.empty())return;
+ const auto& request=unit.kernel_imports.front();
+ const char* code=request.is_unsafe?"ON1X-KERNEL-UNSAFE-UNSUPPORTED":"ON1X-KERNEL-NOT-ADMITTED";
+ throw Error(request.where,std::string(code)+": "+request.module+
+  (request.is_unsafe?" has no ABI-verified unsafe import support":" has no independently admitted KernelBind interface")+
+  "; use --kernel-imports to inspect source requests",code);
+}
 }

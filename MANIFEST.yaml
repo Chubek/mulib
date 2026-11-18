@@ -7,16 +7,17 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1165
-implemented_module_count: 1165
+module_count: 1168
+implemented_module_count: 1168
 modules:
 - name: elvi-scrape
   header: include/mulib-elvi-scrape.h
   manual: manual/mulib-elvi-scrape.md
   macro: MULIB_IMPL_ELVI_SCRAPE
   purpose: Declarative Surfraw-inspired search URL generation and bounded HTML SERP title/link extraction from .elvs providers.
-  dependencies: [fetch, url, https, utf8]
+  dependencies: [fetch, https, url]
   status: implemented
+  example: examples/elvi-scrape.c
 - name: openai
   header: include/mulib-openai.h
   manual: manual/mulib-openai.md
@@ -8340,6 +8341,31 @@ modules:
   purpose: Transactional static-HTML document loading with enforced byte/tree/history limits and events.
   dependencies: [browser-fetch, browser-documentload, browser-navigation, browser-stream, browser-limits]
   status: implemented
+- name: prettydoc
+  header: include/mulib-prettydoc.h
+  manual: manual/mulib-prettydoc.md
+  macro: MULIB_IMPL_PRETTYDOC
+  purpose: Owned structural source-code document algebra and bounded layout strategies.
+  dependencies: [linebreak]
+  status: implemented
+  example: examples/prettyprint-demo.c
+- name: prettyemit
+  header: include/mulib-prettyemit.h
+  manual: manual/mulib-prettyemit.md
+  macro: MULIB_IMPL_PRETTYEMIT
+  purpose: Escaped plain, HTML/MathML, LaTeX and troff emitters for code layouts.
+  dependencies: [prettydoc]
+  status: implemented
+  example: examples/prettyprint-demo.c
+- name: prettysexpr
+  header: include/mulib-prettysexpr.h
+  manual: manual/mulib-prettysexpr.md
+  macro: MULIB_IMPL_PRETTYSEXPR
+  purpose: Bounded language-independent S-expression documents and renderer entry point.
+  # prettyemit supplies the direct include; prettydoc is transitive.
+  dependencies: [prettyemit]
+  status: implemented
+  example: examples/prettyprint-demo.c
 project_files:
 - file: on1x/stdlib/_bridge/mulib_bridge.c
   purpose: Bounded raw scalar standard-library adapters calling canonical MuLIB kernels.
@@ -12625,3 +12651,37 @@ project_files:
   purpose: "Focused regression suite for test_web_hostile."
 - file: tests/test_web_pricing.c
   purpose: "Focused regression suite for test_web_pricing."
+- file: examples/prettyprint-demo.c
+  purpose: C11 example for all PrettyPrint output targets.
+- file: examples/prettyprint.on1x
+  purpose: On1x example using the language-neutral PrettyPrint document DSL.
+- file: on1x/stdlib/prettyprint/runtime.c
+  purpose: Declaration-only PrettyPrint companion calling the planner-linked kernels.
+- file: on1x/contracts-exoml/prettyprint.exocontract.json
+  purpose: Unreviewed CDecl-backed contract annotations for the raw PrettyPrint bridge.
+- file: prettyprint.mk
+  purpose: PrettyPrint native and optional On1x and SDK verification targets.
+- file: tests/check_prettyprint.py
+  purpose: CLI, planned On1x builds and typed raw contract verification.
+- file: tools/ppfmt.c
+  purpose: CLI for the portable PrettyDoc interchange format.
+- file: tests/test_prettybridge.c
+  purpose: "Focused regression suite for test_prettybridge."
+- file: tests/test_prettydoc.c
+  purpose: "Focused regression suite for test_prettydoc."
+- file: tests/generate_pretty_width.py
+  purpose: Regenerate and check the Unicode scalar width table embedded in PrettyDoc.
+- file: include/mulib-pretty-standalone.inc
+  purpose: Single-translation-unit PrettyPrint switches for standalone examples and tests.
+- file: examples/ppgc.py
+  purpose: Compile a language-neutral PrettyPrint formatter spec to standalone Python source.
+- file: examples/arithmetic.ppg
+  purpose: Tagged AST formatter rules for semantic math and source spans.
+- file: examples/arithmetic.ast.json
+  purpose: Sample source-annotated AST consumed by the generated formatter.
+- file: tests/test-elvi-scrape-alloc.c
+  purpose: "Focused regression suite for test-elvi-scrape-alloc."
+- file: tests/test-elvi-scrape-https.c
+  purpose: "Focused regression suite for test-elvi-scrape-https."
+- file: tests/test-elvi-scrape.c
+  purpose: "Focused regression suite for test-elvi-scrape."

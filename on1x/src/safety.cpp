@@ -232,7 +232,8 @@ class Lower {
    return {};
   case Expr::Kind::Call:{
    if(!e.callee||e.callee->kind!=Expr::Kind::Variable)fail(e.where,"indirect call not modeled");
-   const auto& callee=*e.callee;auto name=callee.text;
+    const auto& callee=*e.callee;auto name=callee.text;
+    if(callee.reference==Expr::Reference::UnsafeForeign)fail(e.where,"unsafe kernel call lacks a checked memory model");
    if(callee.reference==Expr::Reference::Extern){
     // Admitted externs carry scalars or immutable strings only. Strings have
     // process-lifetime storage in the admitted HIR; parameters cannot escape

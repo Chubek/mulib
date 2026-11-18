@@ -1,5 +1,192 @@
 # On1x verification — 2026-11-18
 
+## PrettyPrint: paragraph optimization, maps, math, and incremental formatting
+
+MuLIB `9f52595d958c4377915c92302501cb97b3813b03`; the checkout's LibStone
+gitlink is `9c44917b6518c03ef33c544c0ef93b2d864fe4fa`. The On1x checks below
+use the existing Lua-enabled `build/kernelbind-gcc` SDK binaries, not a fresh
+SDK build. Linux x86_64; GCC 16.2.1 and Clang 22.1.8.
+
+```sh
+mkdir -p build/prettyprint-next-tmp
+export TMPDIR="$PWD/build/prettyprint-next-tmp"
+make -f prettyprint.mk BUILD_DIR=build/prettyprint-next test
+make -f prettyprint.mk BUILD_DIR=build/prettyprint-next-san CC=clang \
+  CFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all' test
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude \
+  tests/test_linebreak.c -lm -ldl -o build/prettyprint-next/test_linebreak
+build/prettyprint-next/test_linebreak
+sdk="$PWD/build/kernelbind-gcc"
+make -f prettyprint.mk BUILD_DIR=build/prettyprint-next-sdk \
+  ON1XC="$sdk/on1xc" ON1X_BIND="$sdk/on1x-bind" \
+  EXOTRACT="$sdk/libstone-moonstone/exotract/exotract" \
+  test-on1x test-exotract test-contract test-kernel-discovery
+```
+
+The linebreak test compares global optima with exhaustive enumeration on 250
+small inputs, including separate first-line widths. PrettyPrint tests cover
+ribbons, discretionary hyphens, infeasible layout, UTF-8 map rebasing,
+incremental/full equivalence on independent blocks, semantic matrix output
+through `eqn` and `pdflatex`, and `.ppg` compilation and failure cases.
+The actual On1x fixture runs the new paragraph and math modes through both
+single-TU and Exotract archive linkage. The raw companion signature is
+unchanged; kernel discovery still does not admit calls. Repository-wide manual
+link validation remains blocked by missing `MULIB_VMMPROTO.md`.
+
+## PrettyPrint: Unicode scalar column widths
+
+MuLIB `db7330a875208752ff3b982a5a6474c4e7c8a8bb` and read-only LibStone
+`c7cfeca5a5d5086b0c25dad08264fc450c03f85b`; Linux x86_64, GCC 16.2.1,
+Clang 22.1.8, Python Unicode database 16.0.0. From the repository root:
+
+```sh
+mkdir -p build/prettyprint-followup-tmp
+export TMPDIR="$PWD/build/prettyprint-followup-tmp"
+python3 tests/generate_pretty_width.py
+make -f prettyprint.mk BUILD_DIR=build/prettyprint-followup test
+make -f prettyprint.mk BUILD_DIR=build/prettyprint-followup-san CC=clang \
+  CFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all' test
+sdk="$PWD/build/kernelbind-gcc"
+make -f prettyprint.mk BUILD_DIR=build/prettyprint-followup \
+  ON1XC="$sdk/on1xc" ON1X_BIND="$sdk/on1x-bind" \
+  EXOTRACT="$sdk/libstone-moonstone/exotract/exotract" \
+  test-on1x test-exotract test-contract test-kernel-discovery
+```
+
+The native, CLI and SDK targets passed: narrow, wide and nonspacing scalars
+affect breaks without changing UTF-8 bytes or annotation offsets. The On1x
+boundary executes with both the generated implementation TU and the one-object
+Exotract archive. CDecl/ExoML Gate B checks the raw companion; KernelBind
+discovery still rejects unadmitted calls. No change to the bridge ABI or claim
+of safe FFI, grapheme shaping, or full streaming/optimal layout.
+
+## KernelBind continuation: callable unsafe scalar profile
+
+MuLIB baseline `db7330a875208752ff3b982a5a6474c4e7c8a8bb` and pinned
+LibStone `c7cfeca5a5d5086b0c25dad08264fc450c03f85b`, native Linux x86-64,
+GCC 16.2.1 and Clang/libclang 22.1.8. See [KernelBind](docs/kernel-bind.md)
+for the exact example command and profile limits.
+The LibStone checkout moved concurrently to
+`9c44917b6518c03ef33c544c0ef93b2d864fe4fa`; the diff does not touch the
+ExoML/Exotract sources used here. This change did not modify the gitlink.
+
+`examples/kernel/clamp.on1x` calls the actual `mulib_clamp_add_i64` and
+`mulib_clamp_sub_i64`. The SDK test compares ordinary and saturating inputs
+with a separate strict C11 caller, asserts exactly one planned implementation
+TU, and tests rejection of a duplicate implementation TU. It also rejects
+an incompatible signedness change extracted from an isolated checkout,
+an implementation macro on the compile command, a safe spelling of the
+import, and overwriting an existing executable. The compiler test covers
+scope, lambdas, first-class use, wrong members, arity/types, raw externs and
+PPX rejection. Run from the repository root with the configurations below:
+
+```sh
+mkdir -p build/kernelbind-tmp
+export TMPDIR="$PWD/build/kernelbind-tmp"
+cmake --build build/kernelbind-gcc --parallel 6
+ctest --test-dir build/kernelbind-gcc -j4 --output-on-failure
+cmake --build build/kernelbind-sanitize --target on1xc --parallel 4
+ctest --test-dir build/kernelbind-sanitize -R '^on1x\.(kernel_imports|kernel_imports_sdk)$' --output-on-failure
+```
+
+The profile is explicitly unsafe, not a safe-FFI admission. No legacy
+`admitted-extern` certificate is consumed. No staged resource-bearing
+stdlib port or Shylock workflow is claimed executable.
+
+## KernelBind Packages A/B baseline: native requests and declaration discovery
+
+MuLIB baseline `db7330a875208752ff3b982a5a6474c4e7c8a8bb`, with concurrent
+PrettyPrint worktree changes; configured read-only LibStone
+`c7cfeca5a5d5086b0c25dad08264fc450c03f85b` at `on1x/third_party/libstone`,
+matching the gitlink (`git submodule status` cannot enumerate it because
+there is no mapping in this checkout). Linux 6.18.52-1-lts x86_64, glibc
+2.44, GCC/g++ 16.2.1, Clang/clang++/libclang 22.1.8, native compiler triple
+`x86_64-pc-linux-gnu`, CMake 4.4.3, Python 3.14.7. The external sibling
+LibStone checkout was not used or changed.
+
+The new `kernel_imports` test exercises contextual identifiers and compiles
+and runs an ordinary On1x positive control, checks deterministic source
+coordinates and hashes, transitive rejection, aliases, malformed source and
+budgets, no publication on rejection, and rejection of forged PPX nodes.
+The optional `kernel_imports_sdk` test executes **real** LibStone Lua
+`exolib.new` and ExoML discovery. Canonical fixture inventory: Histprice 7,
+Statsprice 3, Priceopt 5, Money 6, JSON 20 C functions; all remain
+`callable:false`. It verifies source pins, deduplication, deterministic reports
+and no-replace publication, unknown profiles, shadowed headers, macro
+injection rejection, and edited sidecars (forged review string, duplicate JSON
+key, stale review/revision, wrong C symbol). JSON is the only attached semantic
+sidecar and remains unreviewed.
+
+An additional `mulib.prettysexpr` smoke discovery used
+`build/kernelbind-gcc/prettysexpr-discovery.on1x` containing
+`import kernel mulib.prettysexpr as Pretty;` and `fn main(){}` with the same
+`--inspect-kernels --no-prelude --cc gcc --resource-dir` command documented in
+[the KernelBind manual](docs/kernel-bind.md). It verified both required canonical
+declarations and `MULIB_IMPL_PRETTYDOC`, `MULIB_IMPL_PRETTYEMIT`,
+`MULIB_IMPL_PRETTYSEXPR` in that order. No semantic sidecar was attached;
+neither export is callable.
+
+The same SDK test independently uses the existing Exotract archive command
+to compile Histprice and Statsproc in one implementation TU (verified with
+`ar t`), then compiles `tests/fixtures/kernel_histprice_boundary.c` as a
+strict separate caller TU. The C probe checks the actual Holt function
+prototype, leaves point/variance unchanged on rejected input, and returns
+point 18, variance NaN on its valid series. It is **not** KernelBind-generated
+code, a proof of arbitrary C behavior, or the Shylock release gate.
+
+Commands from the MuLIB root (use the NVMe `TMPDIR` if system `/tmp` is full):
+
+```sh
+mkdir -p build/kernelbind-tmp
+export TMPDIR="$PWD/build/kernelbind-tmp"
+cmake -S on1x -B build/kernelbind-gcc -DBUILD_TESTING=ON \
+  -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_REQUIRE_LIBSTONE=ON \
+  -DON1X_LIBSTONE_ROOT="$PWD/on1x/third_party/libstone" -DON1X_WITH_EXOML=ON \
+  -DON1X_WITH_EXOML_EXTRACT=ON -DON1X_WITH_EXOTRACT=ON -DON1X_WITH_EXOTRACT_LUA=ON
+cmake --build build/kernelbind-gcc --parallel 4
+ctest --test-dir build/kernelbind-gcc --output-on-failure --parallel 4
+ctest --test-dir build/kernelbind-gcc -R '(kernel_imports|scanner_parity)' --output-on-failure --parallel 3
+python3 on1x/tools/on1x-build.py on1x/examples/hello.on1x \
+  --on1xc build/kernelbind-gcc/on1xc --cc gcc -o build/kernelbind-gcc/on1x-hello
+build/kernelbind-gcc/on1x-hello
+
+CC=clang CXX=clang++ cmake -S on1x -B build/kernelbind-clang -DBUILD_TESTING=ON \
+  -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_USE_FALLBACK_SCANNER=ON
+cmake --build build/kernelbind-clang --parallel 4
+ctest --test-dir build/kernelbind-clang --output-on-failure --parallel 4
+
+san='-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all'
+CC=clang CXX=clang++ cmake -S on1x -B build/kernelbind-sanitize -DBUILD_TESTING=ON \
+  -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_USE_FALLBACK_SCANNER=ON \
+  -DON1X_WITH_EXOML=ON -DON1X_WITH_EXOML_EXTRACT=ON \
+  -DON1X_WITH_EXOTRACT=ON -DON1X_WITH_EXOTRACT_LUA=ON \
+  -DCMAKE_C_FLAGS="$san" -DCMAKE_CXX_FLAGS="$san"
+cmake --build build/kernelbind-sanitize --target on1xc on1x-exotract --parallel 4
+ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
+  ctest --test-dir build/kernelbind-sanitize -R kernel_imports --output-on-failure
+```
+
+Focused GCC/generated SDK + parser + scanner tests **3/3**; 303 exact
+scanner-parity cases. Fallback/Clang parser test **1/1**; fallback/Clang
+ASan+UBSan focused **2/2**, instrumenting the frontend, SDK, and C oracle and
+archive (not the system libclang DSO). `hello` printed `21`. Early builds in
+`/tmp/opencode/kernelbind-*` failed because `/tmp` was full. Baseline concurrent
+worktree suites were not clean: pre-existing `on1x.mulib` fixture fingerprint
+failure, then-in-progress PrettyPrint `sexpr_nat` resolution in
+`on1x.libraries`, and input-drift rejections when another writer changed
+`MANIFEST.yaml`. No tests or root artifacts were changed to mask failures.
+After the concurrent inputs stopped drifting, full GCC/generated SDK
+**59 passed, 1 failed, 1 skipped** (61), and Clang/fallback
+**54 passed, 1 failed, 1 skipped** (56). In each, the only failure was
+`on1x.mulib` (stale `tools/embed_units.py` outputs), and Category was skipped
+because native PPXs were disabled.
+
+At this baseline checkpoint the native compiler gate was closed for both safe and unsafe calls. The safe
+scalar, raw unsafe, ownership/callbacks, aggregate/target ABI, link selection
+from On1x and Shylock release gates are not exercised or met. See
+[KernelBind discovery](docs/kernel-bind.md) for the exact input and output
+contract.
+
 ## M5/M7: integrated MuLIB package, search lists and manifests
 
 Baseline MuLIB `b11af815facb35a791d9721c4c654df21b877d94`; actual configured,

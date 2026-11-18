@@ -63,6 +63,21 @@
         "mulib_elvi_scrape_search",
         "mulib_elvi_scrape_https_transport"
       ]
+    },
+    "prettydoc": {
+      "recipe": "manifest",
+      "link_libraries": ["dl", "m"],
+      "required_symbols": ["mulib_prettydoc_new", "mulib_pretty_layout", "mulib_pretty_layout_free"]
+    },
+    "prettyemit": {
+      "recipe": "manifest",
+      "link_libraries": ["dl", "m"],
+      "required_symbols": ["mulib_pretty_emit", "mulib_pretty_render"]
+    },
+    "prettysexpr": {
+      "recipe": "manifest",
+      "link_libraries": ["dl", "m"],
+      "required_symbols": ["mulib_pretty_parse_expr", "mulib_pretty_render_expr"]
     }
   },
   "default_recipe": "manifest"

@@ -1,0 +1,53 @@
+{
+  "schema_version": 2,
+  "library": "prettyprint",
+  "headers": ["runtime.h"],
+  "state": "annotated",
+  "bundle_provenance": {
+    "header": "runtime.h",
+    "revision": "sha256:f4bd41171b6748af083c429110831504ea91ab71aba57bdc43be8c737547485a",
+    "author": "MuLIB PrettyPrint contributors",
+    "review_status": "unreviewed",
+    "evidence_method": "Raw companion contract based on on1x/stdlib/prettyprint/runtime.h and runtime.c; tests/test_prettybridge.c exercises exact C11 prototypes and status/lifetime behavior."
+  },
+  "functions": [
+    {
+      "c_name": "on1x_pretty_render",
+      "return": {
+        "kind": "borrow",
+        "nullable": false,
+        "lifetime": {"origin": "explicit_region", "region_name": "until process-exit cleanup"}
+      },
+      "parameters": [
+        {"index": 0, "name": "expr", "ownership": "borrowed_immutable", "nullable": true, "encoding": "nul_terminated_bytes", "lifetime": {"origin": "explicit_region", "region_name": "call"}},
+        {"index": 1, "name": "width", "ownership": "scalar", "nullable": false},
+        {"index": 2, "name": "algorithm", "ownership": "scalar", "nullable": false},
+        {"index": 3, "name": "target", "ownership": "scalar", "nullable": false},
+        {"index": 4, "name": "paragraph", "ownership": "scalar", "nullable": false}
+      ],
+      "errors": {"kind": "custom_classifier", "error_parameter": "on1x_pretty_status", "out_valid_on_failure": true, "cleanup_required_on_failure": false},
+      "effects": {"effects": ["read", "write", "allocate", "free"], "unknown": false},
+      "concurrency": {"thread_safety": "single_thread", "blocking_behavior": "synchronous rendering, heap allocation and exit cleanup registration", "suspension_safe": false},
+      "provenance": {
+        "header": "runtime.h",
+        "author": "MuLIB PrettyPrint contributors",
+        "review_status": "unreviewed",
+        "evidence_method": "Input is not retained; non-null result is immutable and must not be freed. Successful results survive later calls. Failures return a static empty string; read on1x_pretty_status before the next render."
+      }
+    },
+    {
+      "c_name": "on1x_pretty_status",
+      "return": {"kind": "value", "nullable": false},
+      "parameters": [],
+      "errors": {"kind": "none"},
+      "effects": {"effects": ["read"], "unknown": false},
+      "concurrency": {"thread_safety": "single_thread", "blocking_behavior": "synchronous global status read", "suspension_safe": false},
+      "provenance": {
+        "header": "runtime.h",
+        "author": "MuLIB PrettyPrint contributors",
+        "review_status": "unreviewed",
+        "evidence_method": "Returns status of immediately preceding render; callers cannot multiplex render/status on this companion."
+      }
+    }
+  ]
+}

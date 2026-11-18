@@ -325,6 +325,7 @@
     "mulib-elf.h",
     "mulib-elfbuilder.h",
     "mulib-elfutils.h",
+    "mulib-elvi-scrape.h",
     "mulib-embeddingsdb.h",
     "mulib-emitter.h",
     "mulib-encoding.h",
@@ -775,6 +776,9 @@
     "mulib-positions.h",
     "mulib-postdominance.h",
     "mulib-postings.h",
+    "mulib-prettydoc.h",
+    "mulib-prettyemit.h",
+    "mulib-prettysexpr.h",
     "mulib-price-causal.h",
     "mulib-price-confidence.h",
     "mulib-price-demand.h",
@@ -1168,10 +1172,10 @@
     "mulib-zorder.h",
     "mulib-zstd.h"
   ],
-  "libraries": 1167,
-  "functions": 5127,
-  "types": 8445,
-  "constants": 2556,
+  "libraries": 1171,
+  "functions": 5163,
+  "types": 8517,
+  "constants": 2619,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -1213,7 +1217,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "e2d010d7dab79536f1d7cc49b5919b3c53205712cbffa53d9e55d49ab07eebab",
+  "fingerprint": "8a6657092edf96ba794d4e63ed8bc50fa66bdbbc112a4c9df745c6f0a2db88e4",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -4528,6 +4532,17 @@
         "mulib_elfutils_symbol"
       ]
     },
+    "elvi-scrape": {
+      "header": "mulib-elvi-scrape.h",
+      "functions": [
+        "mulib_elvi_scrape_compile",
+        "mulib_elvi_scrape_load",
+        "mulib_elvi_scrape_url",
+        "mulib_elvi_scrape_parse",
+        "mulib_elvi_scrape_search",
+        "mulib_elvi_scrape_https_transport"
+      ]
+    },
     "embeddingsdb": {
       "header": "mulib-embeddingsdb.h",
       "functions": [
@@ -6345,6 +6360,7 @@
       "functions": [
         "mulib_linebreak_options_init",
         "mulib_linebreak",
+        "mulib_linebreak_knuth_plass",
         "mulib_linebreak_result_free"
       ]
     },
@@ -8550,6 +8566,50 @@
         "mulib_postings_find",
         "mulib_postings_remove",
         "mulib_postings_free"
+      ]
+    },
+    "prettydoc": {
+      "header": "mulib-prettydoc.h",
+      "functions": [
+        "mulib_prettydoc_new",
+        "mulib_prettydoc_free",
+        "mulib_pretty_text",
+        "mulib_pretty_fill",
+        "mulib_pretty_softline",
+        "mulib_pretty_hardline",
+        "mulib_pretty_cat",
+        "mulib_pretty_group",
+        "mulib_pretty_nest",
+        "mulib_pretty_align",
+        "mulib_pretty_choice",
+        "mulib_pretty_annotate",
+        "mulib_pretty_source",
+        "mulib_pretty_math_atom",
+        "mulib_pretty_math",
+        "mulib_pretty_matrix",
+        "mulib_pretty_region",
+        "mulib_pretty_paragraph_region",
+        "mulib_pretty_options_init",
+        "mulib_pretty_layout",
+        "mulib_pretty_layout_free",
+        "mulib_pretty_session_new",
+        "mulib_pretty_session_free",
+        "mulib_pretty_session_update",
+        "mulib_pretty_session_view"
+      ]
+    },
+    "prettyemit": {
+      "header": "mulib-prettyemit.h",
+      "functions": [
+        "mulib_pretty_emit",
+        "mulib_pretty_render"
+      ]
+    },
+    "prettysexpr": {
+      "header": "mulib-prettysexpr.h",
+      "functions": [
+        "mulib_pretty_parse_expr",
+        "mulib_pretty_render_expr"
       ]
     },
     "price-causal": {
@@ -12167,7 +12227,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "b5643c56f63aa5e8c7b01494e907454502a71bfc63e25d4887300a3c262c924c",
-    "Implementation.c": "21732b463941ce8cce9206a96d9329950c157e4499d6361d232c6f496dcdea3f"
+    "Generated.inc": "dbc92b133c212ec32aaff790b093c3ff9fcc36a57cee2d5df5b831c698313565",
+    "Implementation.c": "d71867f7b5fb2331f668557c0150bd9dfe0cb288da6ae169b81cd96e496e1a6f"
   }
 }

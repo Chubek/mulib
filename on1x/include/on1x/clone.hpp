@@ -19,7 +19,8 @@ inline Stmt clone_statement(const Stmt& s,std::size_t& budget){
   out.kind=s.kind;out.where=s.where;out.name=s.name;if(s.pattern)out.pattern=clone_pattern(*s.pattern,budget);
  out.declared=s.declared;out.mutable_binding=s.mutable_binding;out.prototype=s.prototype;
   out.context=s.context;
-  out.label=s.label;out.label_context=s.label_context;out.control_target=s.control_target;out.inclusive=s.inclusive;
+   out.label=s.label;out.label_context=s.label_context;out.control_target=s.control_target;out.inclusive=s.inclusive;
+   out.unsafe_block=s.unsafe_block;
  if(s.value)out.value=clone_expression(*s.value,budget);
  for(const auto& child:s.body)out.body.push_back(clone_statement(child,budget));
  for(const auto& child:s.otherwise)out.otherwise.push_back(clone_statement(child,budget));
@@ -67,12 +68,14 @@ inline Macro clone_macro(const Macro& m,std::size_t& budget){
 inline Unit clone_unit(const Unit& unit,std::size_t& budget){
   Unit out;out.imports=unit.imports;out.forall_layouts=unit.forall_layouts;out.forall_elaborated=unit.forall_elaborated;out.ppx=unit.ppx;out.stages_lowered=unit.stages_lowered;
    out.module_imports=unit.module_imports;
+   out.kernel_imports=unit.kernel_imports;
     out.features=unit.features;out.extensions=unit.extensions;out.nominals=unit.nominals;
     out.extension_evidence=unit.extension_evidence;out.source_digests=unit.source_digests;
  for(const auto& m:unit.macros)out.macros.push_back(clone_macro(m,budget));
  for(const auto& f:unit.functions){
    Function copy;copy.name=f.name;copy.where=f.where;copy.params=f.params;copy.result=f.result;copy.external=f.external;copy.prototype=f.prototype;
-   copy.extension_generated=f.extension_generated;
+    copy.extension_generated=f.extension_generated;
+    copy.unsafe_kernel_symbol=f.unsafe_kernel_symbol;
   for(const auto& statement:f.body)copy.body.push_back(clone_statement(statement,budget));
   for(const auto& attribute:f.attributes)copy.attributes.push_back(clone_expression(*attribute,budget));
   out.functions.push_back(std::move(copy));

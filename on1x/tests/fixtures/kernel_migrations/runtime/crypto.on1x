@@ -1,0 +1,26 @@
+import kernel mulib.cryptohash as Hash;
+
+fn basis_crypto_blake3(text:string)->(i64,string) {
+  if text_len(text)>2097152 { return (-4,""); }
+  return Hash.blake3_hex(text);
+}
+
+fn basis_crypto_blake2s(text:string)->(i64,string) {
+  if text_len(text)>2097152 { return (-4,""); }
+  return Hash.blake2s_hex(text);
+}
+
+fn crypto_blake3(text:string)->string {
+  let (status,value)=basis_crypto_blake3(text);
+  return value;
+}
+
+fn crypto_blake2s(text:string)->string {
+  let (status,value)=basis_crypto_blake2s(text);
+  return value;
+}
+
+fn main() {
+  assert(crypto_blake3("")=="af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262");
+  assert(crypto_blake2s("")=="69217a3079908094e11121d042354a7c1f55b6482ca1a51e1b250dfd1ed0eef9");
+}

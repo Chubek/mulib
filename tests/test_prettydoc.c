@@ -3,11 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 #ifndef PRETTYPRINT_TEST_SEPARATE
-#define MULIB_IMPL_PRETTYDOC
-#define MULIB_IMPL_PRETTYEMIT
-#define MULIB_IMPL_PRETTYSEXPR
-#endif
+#include "mulib-pretty-standalone.inc"
+#else
 #include "mulib-prettysexpr.h"
+#endif
 
 _Static_assert(_Generic(&mulib_pretty_parse_expr,
  int (*)(const char *,mulib_prettydoc_t **,mulib_pretty_id_t *):1,default:0),
@@ -26,6 +25,77 @@ static void expect_plain(const char *spec,const mulib_pretty_options_t *opt,cons
  assert(s && !strcmp(s,expected));
  free(s);
 }
+static void test_source_and_incremental(void){
+ mulib_prettydoc_t *d=NULL;mulib_pretty_id_t a;
+ assert(mulib_pretty_parse_expr("(source 1 10 24 (cat (text \"é\") (cat (hard) (source 2 0 1 (text \"x\")))))",&d,&a));
+ mulib_pretty_id_t b=mulib_pretty_source(d,(mulib_pretty_origin_t){3,1,2},mulib_pretty_text(d,"y"));
+ mulib_pretty_id_t c=mulib_pretty_source(d,(mulib_pretty_origin_t){4,2,3},mulib_pretty_text(d,"z"));
+ mulib_pretty_session_t *s=mulib_pretty_session_new(d);assert(s&&!mulib_pretty_session_view(s));
+ mulib_pretty_options_t o;mulib_pretty_options_init(&o);
+ size_t hits=99;mulib_pretty_id_t roots[]={a,b};
+ assert(mulib_pretty_session_update(s,roots,2,&o,&hits)&&hits==0);
+ const mulib_pretty_layout_t *view=mulib_pretty_session_view(s);
+ assert(!strcmp(view->text,"é\nx\ny")&&view->map_count==3&&view->lines==3);
+ assert(view->map[0].start==0&&view->map[0].length==2&&view->map[0].origin.start==10);
+ assert(view->map[1].start==3&&view->map[1].origin.source==2);
+ assert(view->map[2].start==5&&view->map[2].origin.source==3);
+ roots[0]=c;roots[1]=a;
+ assert(mulib_pretty_session_update(s,roots,2,&o,&hits)&&hits==1);
+ view=mulib_pretty_session_view(s);
+ assert(!strcmp(view->text,"z\né\nx")&&view->map[1].start==2&&view->map[2].start==5);
+ mulib_pretty_id_t fresh=mulib_pretty_cat(d,c,mulib_pretty_cat(d,mulib_pretty_hardline(d),a));
+ mulib_pretty_layout_t oracle={0};assert(mulib_pretty_layout(d,fresh,&o,&oracle));
+ assert(!strcmp(view->text,oracle.text)&&view->map_count==oracle.map_count);
+ for(size_t i=0;i<view->map_count;i++){
+  assert(view->map[i].start==oracle.map[i].start&&view->map[i].length==oracle.map[i].length&&
+         view->map[i].origin.source==oracle.map[i].origin.source);
+ }
+ mulib_pretty_layout_free(&oracle);
+ for(int t=0;t<=3;t++){
+  char *first=mulib_pretty_emit(view,(mulib_pretty_target_t)t);
+  assert(mulib_pretty_session_update(s,roots,2,&o,&hits)&&hits==2);
+  view=mulib_pretty_session_view(s);
+  char *next=mulib_pretty_emit(view,(mulib_pretty_target_t)t);
+  assert(first&&next&&!strcmp(first,next));free(first);free(next);
+ }
+ roots[0]=MULIB_PRETTY_NONE;
+ assert(!mulib_pretty_session_update(s,roots,2,&o,&hits)&&hits==2&&!strcmp(view->text,"z\né\nx"));
+ roots[0]=c;o.width=40;
+ assert(mulib_pretty_session_update(s,roots,2,&o,&hits)&&hits==0);
+ assert(mulib_pretty_session_update(s,NULL,0,&o,&hits));
+ view=mulib_pretty_session_view(s);assert(view&&!view->length&&view->lines==1);
+ mulib_pretty_session_free(s);mulib_prettydoc_free(d);
+}
+
+static void test_math(void){
+ const char *spec="(matrix (row (frac (math-atom \"<&\") (root (math-atom \"2\")))"
+  " (sup (math-atom \"x\") (math-atom \"n\")))"
+  " (row (sub (math-atom \"a\") (math-atom \"i\")) (math-atom \"\\\"\\\\\")))";
+ mulib_pretty_options_t o;mulib_pretty_options_init(&o);
+ expect_plain(spec,&o,"[[(<&)/(sqrt(2)), (x)^(n)]; [(a)_(i), \"\\]]");
+ char *s=mulib_pretty_render_expr(spec,&o,MULIB_PRETTY_HTML_MATHML);
+ assert(s&&strstr(s,"<mtable><mtr><mtd><mfrac>")&&strstr(s,"<msqrt>")&&strstr(s,"<msup>")&&
+        strstr(s,"<msub>")&&strstr(s,"&lt;&amp;"));free(s);
+ s=mulib_pretty_render_expr(spec,&o,MULIB_PRETTY_LATEX);
+ assert(s&&strstr(s,"\\begin{matrix}\\frac{\\text{<\\&}}{\\sqrt{")&&strstr(s,"\\end{matrix}"));free(s);
+ s=mulib_pretty_render_expr(spec,&o,MULIB_PRETTY_TROFF);
+ assert(s&&strstr(s,".EQ\n matrix {  lcol")&&strstr(s,"above")&&strstr(s,"\\N'034'\\N'092'"));free(s);
+ assert(!mulib_pretty_render_expr("(matrix (row (math-atom \"a\")) (row))",&o,MULIB_PRETTY_PLAIN));
+ assert(!mulib_pretty_render_expr("(root (text \"a\"))",&o,MULIB_PRETTY_PLAIN));
+ assert(!mulib_pretty_render_expr("(root (math-atom \"\\n.EN\"))",&o,MULIB_PRETTY_TROFF));
+}
+
+static void test_knuth_plass(void){
+ mulib_pretty_options_t o;mulib_pretty_options_init(&o);
+ o.paragraph=MULIB_PRETTY_KNUTH_PLASS;o.width=9;
+ expect_plain("(cat (text \"// \") (fill \"aa bb cccc dddd\"))",&o,"// aa bb\ncccc dddd");
+ o.width=10;o.ribbon_width=7;
+ expect_plain("(nest 2 (cat (hard) (fill \"abc abc abc abc\")))",&o,"\n  abc abc\n  abc abc");
+ o.width=6;o.ribbon_width=0;
+ expect_plain("(source 1 0 11 (fill \"aa ab\xc2\xad""cdef\"))",&o,"aa ab-\ncdef");
+ assert(!mulib_pretty_render_expr("(fill \"unbreakable\")",&o,MULIB_PRETTY_PLAIN));
+}
+
 static void test_unicode_width(void){
  /* U+754C is wide, U+00E9 is narrow, and U+0301 is nonspacing. */
  const char *wide="\xe7\x95\x8c",*accent="\xc3\xa9",*combining="e\xcc\x81";
@@ -104,6 +174,9 @@ static void test_ribbon(void){
 int main(void){
  test_ribbon();
  test_unicode_width();
+ test_source_and_incremental();
+ test_math();
+ test_knuth_plass();
  const char *spec="(group (cat (text \"call(\") (cat (nest 2 (cat (soft) (text \"alpha,beta\"))) (cat (soft) (text \")\")))))";
  char *s=formatted(spec,80,MULIB_PRETTY_FITS,MULIB_PRETTY_PLAIN);
  assert(s);assert(strcmp(s,"call( alpha,beta )")==0);free(s);

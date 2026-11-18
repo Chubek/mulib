@@ -159,7 +159,8 @@ class Checker {
   if(auto found=funcs.find(e.text);found!=funcs.end()){
    if(found->second->external&&!call_position)
     fail(e.where,"raw extern functions cannot be used as values; write an On1x wrapper");
-   e.reference=found->second->external?Expr::Reference::Extern:Expr::Reference::Function;
+    e.reference=!found->second->unsafe_kernel_symbol.empty()?Expr::Reference::UnsafeForeign:
+      found->second->external?Expr::Reference::Extern:Expr::Reference::Function;
    return e.type=signatures.at(e.text);
   }
   if(is_intrinsic_name(e.text)){
@@ -577,5 +578,5 @@ class Checker {
  }
 };
 }
-void check(Unit&u){expand_macros(u);meta::require_core(u);infer_types(u);canonical::lower_control(u);Checker(u).run();if(canonical::needs_values(u)){canonical::lower_values(u);Checker(u).run();}csp::lower(u);canonical::verify_control(u);canonical::verify_values(u);csp::verify(u,true);extensions::verify_evidence(u);}
+void check(Unit&u){require_no_kernel_imports(u);expand_macros(u);meta::require_core(u);infer_types(u);canonical::lower_control(u);Checker(u).run();if(canonical::needs_values(u)){canonical::lower_values(u);Checker(u).run();}csp::lower(u);canonical::verify_control(u);canonical::verify_values(u);csp::verify(u,true);extensions::verify_evidence(u);}
 }

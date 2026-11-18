@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "pattern": ["divide", {"capture": "left"}, {"capture": "right"}],
+      "emit": ["frac", {"render": "left"}, {"render": "right"}]
+    },
+    {
+      "pattern": ["root", {"capture": "radicand"}],
+      "emit": ["root", {"render": "radicand"}]
+    },
+    {
+      "pattern": ["atom", [{"capture": "file"}, {"capture": "start"}, {"capture": "end"}], {"capture": "text"}],
+      "emit": ["source", {"value": "file"}, {"value": "start"}, {"value": "end"},
+               ["math-atom", {"value": "text"}]]
+    }
+  ]
+}

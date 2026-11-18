@@ -126,6 +126,32 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
  }
  write_all(out,mode=="--emit-ir"?on1x::mir::serialize(module):mode=="--ir-cfg"?on1x::mir::cfg_dot(module):on1x::mir::emit_c(module));return 0;
 }
+std::string kernel_requests(const on1x::KernelImportRequests& inspected){
+ // Filesystem paths need not be UTF-8. Retain exact bytes without emitting
+ // malformed JSON; module and alias spellings are scanner identifiers.
+ auto path_hex=[](const std::string& file){
+  constexpr char hex[]="0123456789abcdef";
+  std::string out;out.reserve(file.size()*2);
+  for(unsigned char c:file){out+=hex[c>>4];out+=hex[c&15];}return out;
+ };
+ std::ostringstream out;
+ out<<"{\"schema\":\"on1x.kernel-requests/v1\",\"sources\":[";
+ bool first=true;
+ for(const auto& [file,digest]:inspected.source_digests){
+  if(!first)out<<',';
+  first=false;out<<"{\"file_hex\":\""<<path_hex(file)<<"\",\"sha256\":\""<<digest<<"\"}";
+ }
+ out<<"],\"requests\":[";first=true;
+ for(const auto& item:inspected.requests){
+  if(!first)out<<',';
+  first=false;out<<"{\"file_hex\":\""<<path_hex(item.where.file)<<"\",\"line\":"<<item.where.line
+    <<",\"column\":"<<item.where.column<<",\"offset\":"<<item.where.offset
+    <<",\"module\":\""<<item.module<<"\",\"alias\":\""<<item.alias<<"\",\"unsafe\":"
+    <<(item.is_unsafe?"true":"false")<<"}";
+ }
+ out<<"]}\n";
+ return out.str();
+}
 void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO C11\n"
  "usage: on1xc [--check | --emit-c | --tokens | --types | --emit-ast] INPUT.on1x [-o OUTPUT]\n"
  "       [--ppx LABEL PROGRAM] [--ppx-schema LABEL FILE] [--allow-source-ppx]\n"
@@ -133,6 +159,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       [--enable NAME[,NAME]] [--disable NAME] (bundled native extensions only)\n"
   "       on1xc --list-extensions | --explain-extension NAME\n"
   "       on1xc --emit-category-plan INPUT [-o OUTPUT] (checked concrete evidence)\n"
+   "       on1xc --kernel-imports INPUT [-o OUTPUT] (source requests only; never executes PPX)\n"
+   "       on1xc --emit-c --kernel-c11 INPUT (unsafe KernelBind C generation; link with on1x-build.py)\n"
    "       [-I DIRECTORY | --module-path DIRECTORY] [--stdlib DIRECTORY]\n"
    "       [--lib-path DIR:DIR] [--stdlib-path DIR:DIR]\n"
    "       [--ppx-path DIR:DIR] [--stdppx-path DIR:DIR] [--use-ppx NAME]\n"
@@ -202,7 +230,8 @@ int main(int argc,char**argv){
 #endif
       continue;
      }
-    if(arg=="--memory-check"){memory=true;continue;}
+       if(arg=="--memory-check"){memory=true;continue;}
+       if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
     if(arg=="--check-memory"){mode=arg;continue;}
     if(arg=="--admitted-extern"){
      if(++i>=argc||!argv[i][0])throw std::runtime_error("--admitted-extern requires a nonempty path");
@@ -210,7 +239,7 @@ int main(int argc,char**argv){
     }
     if(arg=="--verify-types"){type_safety=true;continue;}
     if(arg=="--check-types"){mode=arg;continue;}
-    if(arg=="--emit-category-plan"){mode=arg;continue;}
+    if(arg=="--emit-category-plan"||arg=="--kernel-imports"){mode=arg;continue;}
      if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes")mode=arg;
       else if(arg=="--no-prelude")loader.prelude=false;
       else if(arg=="-I"||arg=="--module-path"||arg=="--stdlib"||arg=="--prelude"||arg=="--stdppx"||arg=="--use-ppx"){
@@ -320,7 +349,13 @@ int main(int argc,char**argv){
 #ifndef ON1X_WITH_NOVOSTONE
      if(analysis_mode)throw std::runtime_error("MIR analysis unavailable: configure with ON1X_WITH_NOVOSTONE=ON");
 #endif
-     bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||mode=="--run-ir"||mode=="--dump-passes"||analysis_mode;
+      bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||mode=="--run-ir"||mode=="--dump-passes"||analysis_mode;
+      if(loader.kernel_c11){
+       if(mode!="--emit-c"||ir_input||memory||type_safety||!ppx.programs.empty()||!ppx.schemas.empty()||
+          ppx.allow_source||!loader.extensions.enabled.empty())
+        throw std::runtime_error("--kernel-c11 requires direct C11 emission without PPX, extensions or independent checker modes");
+       loader.extensions.execute=false;
+      }
      optimize=optimize||mode=="--dump-passes";
      if(optimize&&!mir_mode)throw std::runtime_error("--optimize-ir requires a MIR mode");
      if(opt_limit&&!optimize)throw std::runtime_error("optimization budgets require --optimize-ir or --dump-passes");
@@ -329,7 +364,10 @@ int main(int argc,char**argv){
      if(!mir_mode||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source)throw std::runtime_error("--ir-input requires a MIR mode without PPX options");
       return mir_output(on1x::mir::deserialize(read_ir(source),source),mode,out,analysis_work,optimize?&optimization:nullptr);
     }
-   if((mode=="--tokens"||mode=="--emit-ast")&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
+   if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports")&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
+   if(mode=="--kernel-imports"){
+    write_all(out,kernel_requests(on1x::inspect_kernel_imports(source,loader)));return 0;
+   }
    if(mode=="--tokens"){
     auto tokens=on1x::scan(on1x::read_source_file(source),source);
    std::ostringstream listing;for(auto& t:tokens)listing<<t.where.line<<":"<<t.where.column<<"  "<<t.text<<"\n";
