@@ -1,0 +1,9 @@
+(group
+  (cat
+    (annot "keyword" (text "let"))
+    (cat
+      (soft)
+      (cat
+        (annot "identifier" (text "answer"))
+        (cat (text " = ")
+             (annot "math-number" (text "42")))))))

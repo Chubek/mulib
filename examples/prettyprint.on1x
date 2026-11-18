@@ -1,0 +1,12 @@
+import std.prettyprint as Pretty;
+fn main() {
+  let args=sx_cons(Pretty.pp_annotate("identifier",Pretty.pp_text("alpha")),
+           sx_cons(Pretty.pp_annotate("identifier",Pretty.pp_text("beta")),sx_nil()));
+  let doc=Pretty.pp_call("calculate",args);
+  let (status,plain)=Pretty.pp_format(doc,18);
+  assert(status==0);
+  println(plain);
+  let (html_status,html)=Pretty.pp_render(doc,18,1,1,0);
+  assert(html_status==0);
+  println(html);
+}
