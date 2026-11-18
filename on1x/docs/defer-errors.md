@@ -21,6 +21,11 @@ fn twice(n:i64)->Result<i64,u8> {
 
 ## Defer contract
 
+The later [CSP continuation](cancellation-deadlines.md) also runs registered
+function defers on cooperative internal-fiber cancellation. These explicit
+cleanup returns are shielded; fatal traps remain non-unwinding, and there is
+still no general exception/async/effectful-MIR model.
+
 - `defer f(args);` requires a call expression. The callable is evaluated first,
   followed by the arguments once, left-to-right, **when registered**. Invocation
   is delayed. Copyable values are snapshotted; RC values retain independent

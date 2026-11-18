@@ -5,6 +5,13 @@
 > **Primary deliverable:** an honestly verified, statically compiled, safe-by-default On1x capable of writing **Shylock**, a price prediction, demand estimation, and pricing optimization engine built by composing MuLIB C11 kernels through LibStone ExoML semantic contracts.
 > **Repository:** `https://github.com/Chubek/mulib` (`on1x/`, `include/`, `library/`, `MANIFEST.yaml`); LibStone: `https://github.com/Chubek/libstone` (`moonstone/exoml/`, related analyzers).
 
+CSP ABI v3 continuation: [running/blocked cooperative cancellation and monotonic
+`poll after`](docs/cancellation-deadlines.md) now execute explicit C11 cleanup
+returns and atomic control offers. This supersedes earlier absence claims only
+for this bounded language profile. Async/await, taskgroup `within`, effectful MIR
+and general foreign-resource unwinding remain unsupported; application/safe-FFI
+gates are not advanced.
+
 G4 continuation (2026-11-18): the bounded [cooperative fiber/channel
 profile](docs/concurrency.md) compiles and runs real On1x `taskgroup`, internal
 `ifiber<i64>` launch/join, i64 1:1 uni channels and bounded atomic `poll`

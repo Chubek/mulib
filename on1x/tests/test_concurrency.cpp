@@ -18,7 +18,7 @@ constexpr auto source = R"(fn main(){taskgroup{
 on1x::Unit checked(){auto unit=on1x::parse(on1x::scan(source,"fiber-test"));on1x::check(unit);return unit;}
 on1x::Expr *find_poll(std::vector<on1x::Stmt>&);
 on1x::Expr *find_poll(on1x::Expr& e){
- if(e.kind==on1x::Expr::Kind::Csp&&e.text=="poll")return &e;
+ if((e.kind==on1x::Expr::Kind::Csp||e.kind==on1x::Expr::Kind::SourceCsp)&&e.text=="poll")return &e;
  if(e.callee)if(auto p=find_poll(*e.callee))return p;
  for(auto& child:e.children)if(child)if(auto p=find_poll(*child))return p;
  return find_poll(e.body);
@@ -66,6 +66,36 @@ int main(){try{
   on1x::csp::verify(poll_unit,true);
   require(on1x::emit_c(poll_unit,"poll-test").find("on1x_csp_select(")!=std::string::npos,"atomic poll not emitted");
    reject([&]{(void)on1x::mir::lower(poll_unit);});
+   constexpr auto timed_source=R"(fn main(){taskgroup{
+    let child=launch{defer println(8);for i in 0..1000{assert(i>=0);} 42};
+    poll{after 1ms=>println(1),default=>println(2)};
+    let stopped=cancel child;println(stopped);
+   }})";
+   auto timed_wire=on1x::meta::encode(on1x::parse(on1x::scan(timed_source,"timed-test")));
+   {
+    auto untyped=on1x::meta::decode(timed_wire);
+    auto poll=find_poll(untyped.functions[0].body);require(poll!=nullptr,"missing wire deadline");
+    std::size_t wire_budget=262144;
+    poll->children.insert(poll->children.begin(),on1x::clone_expression(*poll->children[0],wire_budget));
+    reject([&]{on1x::check(untyped);});
+   }
+   auto timed=on1x::meta::decode(timed_wire);on1x::check(timed);on1x::csp::verify(timed,true);
+   auto timed_c=on1x::emit_c(timed,"timed-test");
+   require(timed_c.find("on1x_csp_select_after(")!=std::string::npos,"monotonic deadline not emitted");
+   require(timed_c.find("on1x_csp_cancelled()")!=std::string::npos,"cancellation exit edges not emitted");
+   require(timed_c.find("on1x_csp_shield_enter()")!=std::string::npos,"cleanup shielding not emitted");
+   reject([&]{(void)on1x::mir::lower(timed);});
+   for(int mutation=0;mutation<3;++mutation){
+    std::size_t copy_budget=262144;auto forged=on1x::clone_unit(timed,copy_budget);
+    auto poll=find_poll(forged.functions[0].body);require(poll!=nullptr,"missing deadline mutation target");
+    if(mutation==0)poll->children[0]->children[0]->type=on1x::Type::Bool;
+    else if(mutation==1)poll->children[0]->children[0].reset();
+    else{
+     poll->children.insert(poll->children.begin(),on1x::clone_expression(*poll->children[0],copy_budget));
+    }
+    reject([&]{on1x::csp::verify(forged,true);});
+    reject([&]{(void)on1x::emit_c(forged,"forged-timer");});
+   }
    constexpr auto mixed_source=R"(fn main(){taskgroup{
     let (p,input,output,error)=launch capture `/bin/cat`;
     let c=->(1,1){payload:i64,capacity:1,mode:uni};let (tx,rx)=split c;
@@ -144,7 +174,7 @@ int main(){try{
   }})";
   auto ready_unit=on1x::meta::decode(on1x::meta::encode(on1x::parse(on1x::scan(ready_source,"ready-test"))));
   on1x::check(ready_unit);on1x::csp::verify(ready_unit,true);
-  require(on1x::emit_c(ready_unit,"ready-test").find("on1x_csp_cancel_ready(")!=std::string::npos,"pre-dispatch cancellation not emitted");
+   require(on1x::emit_c(ready_unit,"ready-test").find("on1x_csp_cancel(")!=std::string::npos,"consuming cancellation not emitted");
  std::cout<<"canonical concurrency verification and source-wire round-trip PASS\n";
  return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

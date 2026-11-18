@@ -1,5 +1,22 @@
 # On1x capability matrix
 
+Cancellation/deadline continuation at `1f027c48bc6363dce5752c00057830777325ff47`,
+configured read-only LibStone `55755485acaded7c4ed804c0946bc8c7363f6763`:
+
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| Monotonic poll deadline | `src/{parser,infer,sema,concurrency,codegen,ppx_ast}.cpp` | ABI v3 private timer-channel offer using existing atomic MuLIB select, CLOCK_MONOTONIC supervision; no kernel timeout change | One `after` per poll, timer-only choices, i64 milliseconds or ms/s units, optional default; located invalid-duration faults | `test_cancellation_deadlines.py`, `test_concurrency.cpp`, clock-jump/OOM fixtures, compiled example, scanner parity; exact evidence in `../VERIFICATION.md` | EXECUTABLE | No taskgroup `within`, typed timeout/cancel join outcomes, effectful MIR or other-target validation |
+| Running/blocked fiber cancellation | `src/{concurrency,codegen}.cpp`, `runtime/on1x_concurrency.*` | ABI v3 private cancel offer, explicit cleanup returns, shielded defers, descendant cancel/join, existing process-group cancellation/reaping | Consuming affine `cancel` before dispatch, while running or blocked; same-parent checks, no forced native preemption | `test_cancellation_deadlines.py`, `test_concurrency.cpp`; loop/call/defer/RC/nested/byte waits, observer reuse, OOM, strict C11 and ASan/UBSan | EXECUTABLE | General effects/ownership MIR, native workers, independent SDK models and general async suspension |
+| Stackless async/await | Existing scalar MIR and CSP HIR | No admitted future frame/runtime ABI | Not admitted | Unsupported-profile coverage only | ABSENT | Typed verified suspension/frame lowering; not stackful launch sugar |
+
+Linux 6.18.52 x86_64/glibc 2.44, GCC 16.2.1 and Clang 22.1.8.
+Full fallback/GCC: **52 passed, 1 failed, 1 skipped**; full generated/GCC:
+**53 passed, 1 failed, 1 skipped**. The failure is the unchanged
+`tools/embed_units.py` fixture fingerprint; Category skips with native PPX off.
+Focused ASan/UBSan: **4/4**; strict Release: **2/2**; scanner parity: **302**.
+See [the profile](cancellation-deadlines.md). This request is only partially
+implemented: stackless async/await and taskgroup-wide deadlines remain absent.
+
 G4 stream-poll continuation (baseline `d4cc478df76bfe9b5b8e6485f42d56fde81e8a68`):
 atomic `poll` now accepts captured process byte endpoints, including mixed i64/u8
 offers. Configured LibStone remains `55755485acaded7c4ed804c0946bc8c7363f6763`.

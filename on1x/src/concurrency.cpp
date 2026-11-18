@@ -37,7 +37,7 @@ using Flow=std::optional<State>;
 class Verify {
  struct Local {Type type;bool mut,capture;std::size_t id;};
  struct Target {std::size_t id,keep;std::vector<State> exits,continues;};
-  bool canonical,ready_cancel=false;Budget budget;std::size_t serial=0,groups=0;
+   bool canonical;Budget budget;std::size_t serial=0,groups=0;
  std::vector<std::map<std::string,Local>> scopes;
  std::vector<Target> loops,regions;
  std::set<std::string> capture_uses;
@@ -141,7 +141,7 @@ class Verify {
    if(e.children.size()!=static_cast<std::size_t>(count))fail(e.where,"concurrency operand arity mismatch");
   for(const auto& c:e.children)if(!c)fail(e.where,"missing concurrency operand");
   if(e.result!=(e.text=="channel"?Type{Type::I64}:Type{Type::Void}))fail(e.where,"invalid concurrency payload annotation");
-     Type result=e.text=="poll"?e.type:e.text=="offer_recv"||e.text=="offer_send"?Type{Type::Void}:e.text=="channel"?Type{Type::Channel}:e.text=="launch"?Type{Type::Fiber}:e.text=="launch_exec"?Type{Type::ExternalFiber}:
+      Type result=e.text=="poll"?e.type:e.text=="offer_recv"||e.text=="offer_send"||e.text=="offer_after"?Type{Type::Void}:e.text=="channel"?Type{Type::Channel}:e.text=="launch"?Type{Type::Fiber}:e.text=="launch_exec"?Type{Type::ExternalFiber}:
      e.text=="launch_capture"?Type::tuple({Type::ExternalFiber,Type::ByteSender,Type::ByteReceiver,Type::ByteReceiver}):
      e.text=="join"?Type{Type::I64}:e.text=="split"?Type::tuple({Type::Sender,Type::Receiver}):
      e.text=="close"||e.text=="cancel"?Type{Type::Bool}:e.text=="send"?send_result():e.text=="recv"?receive_result(e.children.empty()||e.children[0]->type!=Type::ByteReceiver?Type::I64:Type::U8):Type{Type::Invalid};
@@ -152,12 +152,21 @@ class Verify {
    if(operation(e)){
     shape(e);
     if(e.text=="poll"){
-      if(e.children.empty()||e.children.size()>17)fail(e.where,"poll offer limit/arity mismatch");
+      if(e.children.empty()||e.children.size()>18)fail(e.where,"poll offer limit/arity mismatch");
+      bool deadline=false;
      std::vector<Type> fields;std::vector<std::string> labels;std::set<std::size_t> seen;
      for(std::size_t i=0;i<e.children.size();++i){const auto& offer=*e.children[i];
-      if(offer.kind==E::Boolean&&offer.text=="true"&&i+1==e.children.size()){
-       fields.push_back(Type::data(Type::Record,{}));labels.push_back("Default");break;
-      }
+       if(offer.kind==E::Boolean&&offer.text=="true"&&i+1==e.children.size()){
+        fields.push_back(Type::data(Type::Record,{}));labels.push_back("Default");break;
+       }
+       if(operation(offer)&&offer.text=="offer_after"){
+        shape(offer);
+        if(deadline||i+2<e.children.size()||(i+2==e.children.size()&&e.children.back()->kind!=E::Boolean))fail(offer.where,"poll deadline must be unique and follow channel offers");
+        deadline=true;
+        if(!expression(*offer.children[0],state,depth+1)||offer.children[0]->type!=Type::I64)fail(offer.where,"poll duration must be a completing i64");
+        for(const auto id:seen)if(state.at(id)!=live)fail(offer.where,"poll deadline moved an offered endpoint");
+        fields.push_back(Type::data(Type::Record,{}));labels.push_back("After");continue;
+       }
       if(!operation(offer)||(offer.text!="offer_recv"&&offer.text!="offer_send"))fail(offer.where,"invalid poll offer");
       shape(offer);
       if(offer.children.empty()||offer.children.size()!=(offer.text=="offer_recv"?1u:2u))fail(offer.where,"poll operand arity mismatch");
@@ -167,7 +176,8 @@ class Verify {
         fail(offer.where,"poll endpoint direction/type mismatch");
        capability(endpoint,endpoint.type,state,false);
       const auto& binding=local(endpoint.text,endpoint.where);
-      if(!seen.insert(binding.id).second)fail(offer.where,"duplicate poll endpoint");
+       if(seen.size()>=16)fail(offer.where,"poll channel offer limit exceeded");
+       if(!seen.insert(binding.id).second)fail(offer.where,"duplicate poll endpoint");
        Type payload=endpoint.type==Type::ByteReceiver||endpoint.type==Type::ByteSender?Type::U8:Type::I64;
        if(!receive&&(!expression(*offer.children[1],state,depth+1)||offer.children[1]->type!=payload))fail(offer.where,"poll send requires a completing exact endpoint payload");
       for(const auto id:seen)if(state.at(id)!=live)fail(offer.where,"poll payload moved an offered endpoint");
@@ -175,10 +185,10 @@ class Verify {
       labels.push_back((offer.text=="offer_recv"?"Recv":"Sent")+std::to_string(i));
       fields.push_back(Type::data(Type::Record,{}));labels.push_back("Closed"+std::to_string(i));
      }
-     if(fields.size()<2||Type::data(Type::Sum,std::move(fields),std::move(labels))!=e.type)fail(e.where,"poll result/offer type mismatch");
+     if((seen.empty()&&!deadline)||Type::data(Type::Sum,std::move(fields),std::move(labels))!=e.type)fail(e.where,"poll result/offer type mismatch");
      return true;
     }
-     if(e.text=="offer_recv"||e.text=="offer_send")fail(e.where,"poll offer outside a checked poll");
+     if(e.text=="offer_recv"||e.text=="offer_send"||e.text=="offer_after")fail(e.where,"poll offer outside a checked poll");
       if(e.text=="launch_exec"||e.text=="launch_capture"){
        if(!acquire||!groups||e.children.empty()||e.children.size()>9)fail(e.where,"external launch must bind its capabilities inside a taskgroup (1..9 literal argv items)");
        std::vector<std::string> arguments;std::size_t total=0;
@@ -211,7 +221,6 @@ class Verify {
    }else{
       auto t=operand.type;
       if(e.text=="join"&&t!=Type::Fiber&&t!=Type::ExternalFiber)fail(e.where,"join requires a fiber handle");
-     if(e.text=="cancel"&&t==Type::Fiber&&!ready_cancel)fail(e.where,"ON1X-CSP-UNSUPPORTED: internal cancellation requires the immediately preceding launch and no scheduling point");
       if(e.text=="cancel"&&t!=Type::Fiber&&t!=Type::ExternalFiber)fail(e.where,"cancel requires a fiber handle");
       if(e.text=="recv"&&t!=Type::Receiver&&t!=Type::ByteReceiver)fail(e.where,"receive requires a receiver capability");
       if((e.text=="send"||e.text=="close")&&t!=Type::Sender&&t!=Type::ByteSender)fail(e.where,"send/close requires a sender capability");
@@ -252,17 +261,9 @@ class Verify {
   Flow body(const std::vector<Stmt>& b,State initial,std::size_t depth,bool scoped=true){
    if(scoped)scopes.emplace_back();
    Flow state=std::move(initial);
-   std::optional<std::size_t> ready;
    for(const auto& s:b){
     budget.tick(s.where,depth);if(s.prototype)continue;if(!state)fail(s.where,"unreachable statement in concurrency admission");
     budget.state(state->size(),s.where);
-    bool immediate_cancel=s.kind==S::Expr&&s.value&&operation(*s.value)&&s.value->text=="cancel"&&
-      s.value->children.size()==1&&s.value->children[0]&&s.value->children[0]->type==Type::Fiber;
-    if(immediate_cancel){
-     const auto& handle=*s.value->children[0];
-     if(!ready||handle.kind!=E::Variable||local(handle.text,handle.where).id!=*ready)fail(s.where,"ON1X-CSP-UNSUPPORTED: internal cancellation requires the immediately preceding launch and no scheduling point");
-    }
-    ready.reset();
    if(s.kind==S::TaskGroup||s.kind==S::CspScope){
     source(s.where);
     if((canonical&&s.kind!=S::CspScope)||s.value||s.pattern||!s.name.empty()||s.declared!=Type::Invalid||
@@ -281,15 +282,13 @@ class Verify {
        for(const auto& p:s.pattern->elements)if(p.kind!=Pattern::Kind::Name||!p.elements.empty())fail(p.where,"captured process capabilities require four simple names");
       }else if((e.text!="channel"&&e.text!="launch"&&e.text!="launch_exec")||s.pattern)fail(s.where,"invalid affine acquisition binding");
     (void)expression(e,*state,depth+1,true);
-     if(s.pattern)pattern(*s.pattern,e.type,*state);else {bind(s.name,e.type,false,*state,s.where);if(e.text=="launch")ready=scopes.back().at(s.name).id;}
+      if(s.pattern)pattern(*s.pattern,e.type,*state);else bind(s.name,e.type,false,*state,s.where);
     continue;
    }
    if(contains(s.declared))fail(s.where,"concurrency storage/assignment/annotation is outside an affine acquisition");
    if(s.kind==S::Expr&&s.value&&operation(*s.value)&&s.value->text=="send")fail(s.where,"send outcome must be handled explicitly (match or let); statement error effects are not yet supported");
    auto header=state;
-    ready_cancel=immediate_cancel;
-    if(s.value&&s.kind!=S::Template&&!expression(*s.value,*state,depth+1)){ready_cancel=false;state.reset();continue;}
-    ready_cancel=false;
+     if(s.value&&s.kind!=S::Template&&!expression(*s.value,*state,depth+1)){state.reset();continue;}
    switch(s.kind){
    case S::Let:if(!s.value)fail(s.where,"missing binding value");if(s.pattern)pattern(*s.pattern,s.value->type,*state);else bind(s.name,s.value->type,s.mutable_binding,*state,s.where);break;
    case S::Storage:bind(s.name,s.declared,false,*state,s.where);break;

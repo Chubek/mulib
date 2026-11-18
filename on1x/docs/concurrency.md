@@ -3,6 +3,9 @@
 This is the next vertical implementation of section 2 of
 `../ON1X_CORE_SYNTAX_ADDITIONS.md`, not completion of that specification.
 The earlier Go-style function-scoped defer contract is unchanged.
+The [cancellation/deadline continuation](cancellation-deadlines.md) extends this
+profile with running/blocked cancellation and monotonic `poll after`. Async/await
+and taskgroup `within` remain unsupported.
 
 ## Selected profile
 
@@ -13,7 +16,7 @@ The earlier Go-style function-scoped defer contract is unchanged.
   eagerly schedules an internal fiber; its body has an i64 result, using a final
   unterminated expression or explicit returns. `ifiber<i64>` is affine:
   `join handle` consumes it and yields i64. Every reached handle must be joined
-  or immediately cancelled on every normal exit; no detach or silently dropped
+   or consumed by `cancel` on every normal exit; no detach or silently dropped
   unfinished child.
 - `launch exec("/absolute/program", "literal-arg", ...)` eagerly starts one
   external process with POSIX `posix_spawn` and a fresh process group. The
@@ -77,15 +80,15 @@ The earlier Go-style function-scoped defer contract is unchanged.
   completes before the call returns, and a taskgroup cannot leave with an
   unjoined/uncancelled process. OS-level uninterruptible waits or independently
   escaped descendants cannot be proven to stop; no detached-process API exists.
-- `let child = launch { ... }; cancel child;` is the **only** internal-fiber
-  cancellation spelling admitted here. The `cancel` must be the very next
-  statement in the same block: the single-threaded scheduler cannot have run
-  that child yet. It consumes and joins the ready fiber without entering its
-  body; the unstarted closure environment is released. It returns `true` but
-  the standalone statement discards that result. No body defer has registered
-  yet. Any intervening statement, nested expression or yield rejects at
-  compile time. This is pre-dispatch cancellation, **not** a way to interrupt
-  a running fiber, channel wait, `poll`, or nested function/cleanup edge.
+- `cancel child` consumes and joins an owned internal fiber. Before dispatch it
+  skips the body and releases the unstarted environment. For a running or blocked
+  child it requests cancellation, withdraws interrupted waits, runs registered
+  function defers LIFO and lexical cleanup through explicit generated returns,
+  and cancels/drains descendants. It returns true if requested before completion,
+  false for an already completed child. Cleanup is shielded, not forcibly
+  interrupted; an infinite/blocking cleanup can prevent cooperative completion.
+  Cancellation is observed at generated function entry, loop backedges and
+  call/communication resumption. Already committed effects are not rolled back.
 - Immutable i64 values and scoped i64/process-stream channel endpoints may be
   captured. An endpoint capture moves that capability out of the parent. Mutable, JSON, managed,
   function-valued and fiber-handle captures are rejected in this first profile.
@@ -120,7 +123,11 @@ The earlier Go-style function-scoped defer contract is unchanged.
   receive or closed send selects its matching `closed` arm. The kernel rotates
   the first probed offer; this is fairness among initially ready offers, not
   a general starvation guarantee. As with other operations, allocation or
-  terminal scheduler failure is not recoverable or unwound.
+  terminal scheduler failure is not recoverable or unwound. One optional
+  `after duration => arm` (milliseconds, or `ms`/`s` units) adds a monotonic
+  timer offer; a timer-only poll is supported. Durations evaluate once after
+  send operands, and an expired timer competes atomically with communications.
+  Default never suspends. See the deadline contract for exact arbitration.
 - All concurrency values are group-owned, never scalar foreign handles. No
   aliases, assignment, aggregates (except the compiler-owned split pair and
   four-capability captured-process result), return, ordinary closure
@@ -150,10 +157,10 @@ taskgroup {
 
 ## Deliberately unsupported
 
-Running/internal-blocked-fiber cancellation and cancellation unwinding, the full
-portable shell grammar (expansion, environment mutation, command lists,
+Taskgroup `within`, typed cancelled join results, the full portable shell grammar
+(expansion, environment mutation, command lists,
 pipelines/redirection and portable builtins), duplex/MPMC
-endpoint cloning, general/managed payloads and results, `poll after` deadlines,
+endpoint cloning, general/managed payloads and results,
 async/await, generators, actors, native worker threads, atomics/shared state and
 general error/effect inference remain separate capabilities. Source operations
 outside this profile must reject, never block a native thread as a fake fiber.
@@ -161,7 +168,11 @@ The scalar MIR and independent SDK adapters reject concurrency operations/types.
 Raw foreign declarations and unmodeled blocking intrinsics reject in a concurrent
 unit; ordinary nonconcurrent source behavior is unchanged.
 
-MuLIB's current park/select deadlines use UTC, not monotonic time. Its stackful
+MuLIB's park/select timeout API still uses UTC. On1x does not use those timed
+waits for language deadlines: its existing supervisor observes CLOCK_MONOTONIC
+and commits a private timer-channel offer. Private cancellation-channel offers
+also wake blocked channel/select waits without changing kernel semantics.
+Its stackful
 runtime has fixed stacks and no TSan fiber annotations; no cross-platform,
 stack-exhaustion safety or native-thread race-freedom claim follows from this
 single-thread profile. ASan's fiber-switch hooks are used by the actual kernel.
@@ -170,9 +181,9 @@ single-thread profile. ASan's fiber-switch hooks are used by the actual kernel.
 
 | Capability | State | Remaining gate |
 |---|---|---|
-| `taskgroup`, internal i64 `launch`/`join` and immediate pre-dispatch `cancel` | EXECUTABLE | Running/blocked cancellation, native-worker ownership, effectful MIR and independent cross-platform verification |
+| `taskgroup`, internal i64 `launch`/`join` and cooperative consuming `cancel` | EXECUTABLE | Taskgroup deadlines, native-worker ownership, effectful MIR and independent cross-platform verification |
 | 1:1 i64 uni channels, bounded/zero-capacity send/receive | EXECUTABLE | General messages, endpoint quotas/duplex, cancellation and complete sanitizer/stress matrix |
-| `poll` / atomic select | EXECUTABLE bounded i64/process-u8 profile | Cancellation, monotonic deadline, general payloads and recoverable scheduler errors |
+| `poll` / atomic select | EXECUTABLE bounded i64/process-u8 profile, monotonic `after` and cancellation-aware waits | General payloads, taskgroup deadlines and recoverable scheduler errors |
 | Direct-exec external `xfiber` and consuming `cancel` | EXECUTABLE bounded POSIX profile | Typed exit-status record, recoverable spawn errors, broader targets and internal-fiber cancellation |
 | Backtick command literals and captured process streams | EXECUTABLE bounded POSIX profile | Full portable command AST/operators/expansion, configurable language-level stream limits and effectful ownership MIR |
 | Async/await, actors, native workers | Unsupported | Suspension frames, ownership/effects and memory model |

@@ -1,5 +1,147 @@
 # On1x verification — 2026-11-18
 
+## Cooperative cancellation and monotonic poll deadlines (CSP ABI v3)
+
+Baseline MuLIB `1f027c48bc6363dce5752c00057830777325ff47`; configured
+read-only LibStone `55755485acaded7c4ed804c0946bc8c7363f6763`, unchanged.
+Linux 6.18.52-1-lts x86_64, glibc 2.44; GCC/g++ 16.2.1, Clang/clang++
+22.1.8. Existing CMake 4.4.3 / Python 3.14.7 configurations below were reused.
+Baseline focused fallback concurrency/HIR/stream-poll: **3/3**. Earlier source
+diagnostics rejected `after` and any nonadjacent internal cancellation.
+
+**Scope delivered:** [running/blocked cooperative cancellation and monotonic
+poll deadlines](docs/cancellation-deadlines.md), not the entire request.
+**Async/await is not implemented.** The existing MIR has no suspension/frame/
+future/effect descriptors; no stackful wrapper is represented as stackless async.
+Taskgroup `within` and typed cancelled join outcomes also remain unsupported.
+
+### Behavior and boundaries
+
+- `cancel` consumes a same-parent internal handle, requests cancellation and
+  waits for cleanup; true before completion, false after completion. Pre-dispatch
+  cancel skips the body as before. Running/blocked tasks return through generated
+  cleanup edges: function defers LIFO, remaining temporary/lexical owners, call
+  depth accounting and nested taskgroup cleanup. No longjmp or discarded C stack.
+  RC-return/indirect-call cancellation cannot invoke a dummy null callable.
+  A 262,144-unit generated-cleanup budget bounds edge/release expansion and
+  rejects exhaustion with located `ON1X-CSP-LIMIT` metadata before publication.
+- Cleanup is shielded. Nested children are cancelled/joined and owned external
+  processes use the existing SIGTERM/250ms/SIGKILL/reap path. Noncooperative code
+  and nonterminating cleanup cannot be forcibly interrupted. Already committed
+  communication is not rolled back. Fatal errors still do not unwind.
+- Each bounded task owns a private cancel channel. A blocked communication offers
+  it alongside its ordinary cases in **one existing MuLIB atomic selection**.
+  Cancelled/losing registrations are removed before generated cleanup can release
+  storage. Ordinary join/process waits observe cancellation and return into the
+  same cleanup mechanism.
+- One `after` accepts i64 milliseconds or `ms`/`s` units. Duration evaluates once
+  after send operands. The supervisor closes a private timer channel at its
+  absolute CLOCK_MONOTONIC deadline; expired timer/default/communications use the
+  kernel's ready-choice arbitration. Timer-only polls are supported. No change to
+  MuLIB's UTC park/select API, no readiness-probe loop or duplicate scheduler.
+  Supervisor idle waits use bounded relative nanosleep, not UTC fiber sleep.
+- Private CSP ABI is **v3**; generated C checks its header. Rebuild compiler,
+  generated C and runtime together. PPX-v1 adds source operation `offer_after`
+  within the existing generic constructor, never typed/canonical authority.
+  Malformed/duplicate carriers reject with located errors.
+
+Source changes: `src/{parser,infer,sema,ppx_ast,concurrency,codegen}.cpp`,
+`runtime/on1x_concurrency.[ch]`, CMake. Tests:
+`tests/test_cancellation_deadlines.py`, `test_concurrency.{cpp,py}` and
+`fixtures/poll_{wallclock,allocator}.c`; example:
+`examples/cancellation_deadlines.on1x`.
+No MuLIB kernel, LibStone checkout, raw/safe FFI admission or MIR version change.
+
+### Commands and results
+
+The three `on1x-csp-*` trees retain the exact configurations from the preceding
+stream-poll section below: GCC default/fallback, GCC default/generated, and Clang
+fallback with both compiler and generated-program
+`-fsanitize=address,undefined -fno-omit-frame-pointer`
+(`ON1X_TEST_C_FLAGS` explicitly instruments emitted C and fixtures).
+
+```sh
+cmake --build /tmp/opencode/on1x-csp-check --parallel 2
+ctest --test-dir /tmp/opencode/on1x-csp-check --output-on-failure --parallel 4 \
+  --output-junit /tmp/opencode/on1x-csp-check/results-cancellation-final.xml
+cmake --build /tmp/opencode/on1x-csp-generated --parallel 2
+ctest --test-dir /tmp/opencode/on1x-csp-generated --output-on-failure --parallel 4 \
+  --output-junit /tmp/opencode/on1x-csp-generated/results-cancellation-final.xml
+cmake --build /tmp/opencode/on1x-csp-sanitize --parallel 2 \
+  --target on1xc on1x_concurrency_hir_tests
+ctest --test-dir /tmp/opencode/on1x-csp-sanitize --output-on-failure \
+  -R '^on1x.(concurrency_hir|concurrency|stream_poll|cancellation_deadlines)$' \
+  --output-junit /tmp/opencode/on1x-csp-sanitize/results-cancellation-final.xml
+cmake --build /tmp/opencode/on1x-values-release --parallel 2 \
+  --target on1xc on1x_concurrency_hir_tests
+ctest --test-dir /tmp/opencode/on1x-values-release --output-on-failure \
+  -R '^on1x.(concurrency_hir|cancellation_deadlines)$' \
+  --output-junit /tmp/opencode/on1x-values-release/results-cancellation-final.xml
+```
+
+| Profile | Result |
+|---|---|
+| GCC fallback, full suite | **52 passed, 1 failed, 1 skipped** (54 registered) |
+| GCC generated, full suite | **53 passed, 1 failed, 1 skipped** (55 registered) |
+| Clang ASan+UBSan, focused | **4/4** |
+| Strict GCC Release fallback, focused | **2/2** |
+
+The sole full-suite failure remains the baseline stale `tools/embed_units.py`
+fixture fingerprint in `on1x.mulib`. Category skips with native PPX disabled.
+No tests were disabled: the previous `after`/late-cancel rejection fixtures were
+replaced by executable positives plus wrong-duration/use-after-consumption
+negatives. Sanitizers cover compiler, generated C, runtime, actual kernels and
+fixtures. Normal paths retain leak checking; only deliberate terminal allocation/
+negative-duration failures disable it. ASan's known makecontext support warning
+is accepted, not an error report. TSAN is not applicable evidence to this
+one-native-thread runtime; MuLIB has no TSAN fiber annotations.
+
+Tests include 16 repeated blocked send/receive/timed-select cancellations,
+loop and nested-call resumption, LIFO defers and RC callable cleanup, nested
+children, process/byte-wait cleanup, timer/default/communication arbitration,
+duration side effects/order/once, completed-cancel behavior, preservation of
+outputs on errors, malformed HIR/wire and MIR refusal. Link-time `timespec_get`
+perturbation jumps UTC between epochs while a real monotonic deadline expires.
+Every calloc failure of a bounded timer program is injected, including new
+cancel-signal, timer and kernel selection registration allocations.
+The suite also rejects an incompatible CSP ABI header and a deliberately
+oversized cleanup expansion, preserving an existing output file. An async
+declaration remains rejected; this negative test is not async implementation.
+
+Standalone strict Clang C11:
+
+```sh
+python3 on1x/tools/on1x-build.py on1x/examples/cancellation_deadlines.on1x \
+  --on1xc /tmp/opencode/on1x-csp-generated/on1xc --cc clang \
+  -o /tmp/opencode/on1x-cancel-example --cflag=-O2
+/tmp/opencode/on1x-cancel-example
+ldd /tmp/opencode/on1x-cancel-example
+python3 on1x/tests/scanner_parity.py \
+  /tmp/opencode/on1x-csp-generated/on1x_generated_tokens \
+  /tmp/opencode/on1x-csp-generated/on1x_reference_tokens \
+  on1x/examples /tmp/opencode/on1x-cancel-parity
+```
+
+Output: `90`, `7`, `8`. Only libc/Linux loader dependencies; no LibStone, Lua,
+C++ runtime or compiler library. Exact scanner parity: **302 cases**.
+The same example executes through freshly rebuilt native identity PPX and strict
+GCC Debug/generated (the existing `on1x-values-gcc` strict configuration):
+
+```sh
+cmake --build /tmp/opencode/on1x-values-gcc --parallel 2 --target on1x_ppx_identity
+ON1X_PPX_SCHEMA="$PWD/on1x/grammar/PPX.schema.json" \
+  python3 on1x/tools/on1x-build.py on1x/examples/cancellation_deadlines.on1x \
+  --on1xc /tmp/opencode/on1x-values-gcc/on1xc --cc gcc \
+  --ppx identity /tmp/opencode/on1x-values-gcc/stdppx/on1x-ppx-identity \
+  -o /tmp/opencode/on1x-cancel-native-ppx
+/tmp/opencode/on1x-cancel-native-ppx
+```
+
+Unsupported: async/await/futures and verified suspension frames, taskgroup-wide
+deadlines, general error/effect/ownership MIR, native workers, other platforms
+and independent SDK safety checking. These capabilities are not promoted by
+this increment. Status is EXECUTABLE, not VERIFIED full M4 conformance.
+
 ## G4 continuation — exact mixed i64/u8 atomic process-stream poll
 
 Re-inspected clean baseline MuLIB `d4cc478df76bfe9b5b8e6485f42d56fde81e8a68`

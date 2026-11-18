@@ -6,14 +6,21 @@ original native processors and contracts are preserved.
 
 ## Language implementation continuation
 
+The [cancellation/deadline continuation](docs/cancellation-deadlines.md) now
+executes consuming cancellation of running or blocked internal fibers, explicit
+defer/lexical cleanup, descendant draining, and monotonic `poll after` choices
+through C11 (private CSP ABI v3). See
+[`examples/cancellation_deadlines.on1x`](examples/cancellation_deadlines.on1x).
+**Async/await and taskgroup `within` are not implemented**: verified stackless
+suspension/frame lowering is still required. This is not completion of M4.
+
 An initial [cooperative fiber/channel profile](docs/concurrency.md) now executes
 `taskgroup`, `launch { ... }`/`join`, 1:1 `i64` unidirectional bounded and
 rendezvous channels, and bounded atomic `poll` through generated C11 and existing MuLIB kernels. The real
 source [channel example](examples/cooperative_channels.on1x) covers checked send/receive,
 close and scoped cleanup; the [poll example](examples/cooperative_poll.on1x)
 selects a rendezvous receive. This is **not** completion of the core-syntax
-specification: `poll after` deadlines, running/blocked internal-fiber cancellation,
-the full portable shell grammar, async/await, duplex,
+specification: taskgroup deadlines, the full portable shell grammar, async/await, duplex,
 general payloads and native worker threads remain unsupported. See the
 [verification record](VERIFICATION.md) for commands and current suite failures.
 
@@ -25,14 +32,14 @@ affine process/stdin/stdout/stderr tuple whose streams are bounded byte-channel
 endpoints; the [stream example](examples/cooperative_process_streams.on1x) writes
 stdin and drains stdout. No host shell is invoked: expansion, assignments,
 pipelines, redirection and command lists reject. A newly launched
-internal fiber may also be cancelled by an immediately following standalone
-`cancel handle;` before it runs; blocked internal fibers cannot be cancelled.
+internal fiber can be cancelled before dispatch or cooperatively while running/
+blocked; registered cleanups run before consuming `cancel handle` returns.
 
 Atomic [`poll` now selects captured byte streams](docs/stream-poll.md), including
 mixed i64/u8 choices, exact receive binder types, send backpressure and distinct
 EOF arms. The [compiled example](examples/cooperative_stream_poll.on1x) combines
-process stdout and a normal channel. This does not add deadlines, async/await or
-general byte-channel construction.
+process stdout and a normal channel. The later continuation adds `poll after`
+deadlines, not async/await or general byte-channel construction.
 
 The M2 [immutable C-string FFI slice](docs/ffi-strings.md) extends existing
 review-gated admission with exact call-scoped inputs and immutable static
@@ -58,7 +65,7 @@ callee/arguments at registration and run LIFO at **function return**, including
 propagated errors; loop exits do not drain them. Registration has finite count/
 capture-byte budgets. Use `match` for recovery; fatal traps still do not unwind.
 See [`examples/defer_errors.on1x`](examples/defer_errors.on1x). General exceptions,
-resource-bearing results, cancellation and MIR/SDK defer models remain unsupported.
+resource-bearing results, async cancellation and MIR/SDK defer models remain unsupported.
 
 Category now has an executable **M0/M1 local scalar slice**: `@enable Protocols`
 invokes a bundled native On1x-authored processor for `@extension Protocols { ... }`

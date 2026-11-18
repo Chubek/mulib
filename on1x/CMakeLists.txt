@@ -340,7 +340,7 @@ if(BUILD_TESTING)
     target_link_libraries(on1x_concurrency_hir_tests PRIVATE on1x_frontend)
     add_test(NAME on1x.concurrency_hir COMMAND on1x_concurrency_hir_tests)
   set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules libraries stdppx install mulib stdlib_extensions f64 unsigned_f32 numeric_limits)
-     list(APPEND _meta_tests category control patterns value_loops nominal_adts defer_errors concurrency stream_poll)
+     list(APPEND _meta_tests category control patterns value_loops nominal_adts defer_errors concurrency stream_poll cancellation_deadlines)
   add_test(NAME on1x.stdppx_protocol COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/tests" -v)
   if(ON1X_WITH_EXOTRACT)
     add_test(NAME on1x.exotract COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exotract.py"

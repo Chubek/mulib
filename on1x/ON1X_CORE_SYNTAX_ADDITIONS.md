@@ -16,16 +16,16 @@ full-specification conformance or support in scalar MIR. No row is VERIFIED.
 | Section / capability | Current admitted status | Remaining specification gap |
 |---|---|---|
 | §1 structural match | EXECUTABLE bounded value profile; [manual](docs/core-syntax.md) | Owning lists/cons patterns, general recursive/resource patterns |
-| §2 internal fibers | EXECUTABLE cooperative i64 profile; [manual](docs/concurrency.md) | General results/captures, running cancellation, native-thread ownership |
+| §2 internal fibers | EXECUTABLE cooperative i64 profile with running/blocked cancellation; [manual](docs/concurrency.md) | General results/captures, native-thread ownership and effectful MIR |
 | §2 external fibers | EXECUTABLE bounded POSIX argv/backtick commands and byte streams | Full portable shell AST/operators/expansion, typed process outcomes, other targets |
 | §2 channels | EXECUTABLE 1:1 i64 uni channels and process-byte endpoints | General channel payloads, duplex, cardinality quotas/cloning, cancellation |
-| §2 atomic `poll` | EXECUTABLE i64 plus captured u8 streams, mixed choices; [increment](docs/stream-poll.md) | Monotonic `after`, cancellation, general endpoint expressions and effectful MIR |
+| §2 atomic `poll` | EXECUTABLE mixed i64/u8 choices, monotonic `after` and cancellation-aware waits; [increment](docs/cancellation-deadlines.md) | General endpoint expressions, taskgroup deadlines and effectful MIR |
 | §3 loops/exits/results | EXECUTABLE statement/range/for-C and value loops; [manual](docs/value-loops.md) | General iterator/drop protocol and destructuring iteration |
-| §4 cleanup | EXECUTABLE **different bounded profile**: [function-scoped Go-style `defer call;`](docs/defer-errors.md) | This is not the scope-exit `defer` specified below; `using`, scope cleanup, exception/cancel unwind remain unimplemented |
+| §4 cleanup | EXECUTABLE **different bounded profile**: [function-scoped Go-style `defer call;`](docs/defer-errors.md), including cooperative fiber cancellation | This is not scope-exit `defer`; `using`, scope cleanup and general exception/async unwind remain unimplemented |
 | §5 typed errors | EXECUTABLE nominal Result postfix `?` and explicit match recovery | `try`/`catch`/`finally`/`throw`, Option propagation, general error effects |
 | §6 async/await | NOT IMPLEMENTED | Typed suspension IR, liveness, frames, scheduler/ownership/cleanup |
 | §7 generators | NOT IMPLEMENTED | Stream ownership, yield/frame/drop semantics and iterator protocol |
-| §8 taskgroups | EXECUTABLE bounded lexical scopes, explicit joins and immediate pre-dispatch internal / consuming external cancel | Automatic outstanding-child join, deadlines and running/blocked internal cancel |
+| §8 taskgroups | EXECUTABLE bounded lexical scopes, explicit joins and consuming cooperative internal / external cancel | Automatic normal-exit outstanding-child join and taskgroup `within` deadlines |
 | §9 synchronization | NOT IMPLEMENTED as checked language constructs | Shared ownership/memory model, atomic/lock typing and suspension restrictions |
 | §10 owning-list comprehensions | NOT IMPLEMENTED | Owning list ABI, builder/drop protocol and allocation outcomes |
 | §11 nominal records/enums | EXECUTABLE nonrecursive trivial-value profile; [manual](docs/nominal-adts.md) | Boxed recursive/owning layouts and general constructor sugar |

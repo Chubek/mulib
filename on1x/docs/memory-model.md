@@ -42,5 +42,10 @@ fiber before `join`/`cancel` returns. Direct-exec inherited stdout/stderr may
 interleave with On1x output; no ordering is promised except that a joined
 process has terminated and been reaped. Immediate pre-dispatch internal
 cancellation skips the body and releases its unstarted closure environment;
-running/blocked cancellation remains unsupported, including attempts to unwind
-across channel waits.
+running/blocked cancellation now uses explicit generated cleanup returns and
+private signal-channel offers. A cancelled wait withdraws its kernel
+registrations before lexical storage can be released; a previously committed
+message is not rolled back. Defers and descendant draining are shielded from
+repeated cancellation. There is no forced C-stack abandonment or native-thread
+preemption. Monotonic `poll` deadlines likewise commit through private channel
+offers and do not depend on the kernel's UTC timeout API.

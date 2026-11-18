@@ -200,11 +200,17 @@ class Checker {
         case Expr::Kind::SourceCsp:case Expr::Kind::Csp:{
          auto arity=[&](std::size_t n){if(e.children.size()!=n)fail(e.where,"concurrency operand arity mismatch");};
          if(e.text=="poll"){
-          if(e.children.empty()||e.children.size()>17)fail(e.where,"poll offer limit/arity mismatch");
-          std::vector<Type> fields;std::vector<std::string> labels;
+          if(e.children.empty()||e.children.size()>18)fail(e.where,"poll offer limit/arity mismatch");
+          std::vector<Type> fields;std::vector<std::string> labels;bool has_deadline=false;
           for(std::size_t i=0;i<e.children.size();++i){auto& offer=*e.children[i];
            if(offer.kind==Expr::Kind::Boolean&&offer.text=="true"&&i+1==e.children.size()){
             fields.push_back(Type::data(Type::Record,{}));labels.push_back("Default");break;
+           }
+           if(offer.kind==Expr::Kind::SourceCsp&&offer.text=="offer_after"){
+            if(has_deadline||offer.children.size()!=1)fail(offer.where,"invalid or duplicate poll deadline");
+            has_deadline=true;
+            offer.type=Type::Void;equal(check_expr(*offer.children[0]),Type::I64,offer.where);
+            fields.push_back(Type::data(Type::Record,{}));labels.push_back("After");continue;
            }
            if(offer.kind!=Expr::Kind::SourceCsp||(offer.text!="offer_recv"&&offer.text!="offer_send")||
               offer.children.size()!=(offer.text=="offer_recv"?1u:2u))fail(offer.where,"invalid poll offer");

@@ -61,7 +61,9 @@ class Generator {
   int indent=0;
    bool uses_f64=false,uses_f32=false,uses_unsigned=false;
     bool uses_value_data=false,uses_defer=false;
-    bool uses_csp=false;
+     bool uses_csp=false;
+     Type current_result=Type::Void;
+     std::size_t cancellation_budget=262144;
    std::string location(const Location& at)const{return c_string(meta::source_literal(at.file))+", "+std::to_string(at.line)+", "+std::to_string(at.column);}
 
  std::string reserve(const std::string& preferred){
@@ -212,8 +214,26 @@ class Generator {
       (s.value&&s.kind!=Stmt::Kind::Template&&has_defer(*s.value))||has_defer(s.body)||has_defer(s.otherwise)))return true;
    return false;
   }
-   void run_defers(){if(!defer_stack.empty())definitions<<pad()<<"on1x_defer_run(&"<<defer_stack<<");\n";}
-   void leave_call(){if(uses_csp)definitions<<pad()<<"on1x_csp_call_leave();\n";}
+    void run_defers(){if(!defer_stack.empty()){
+     if(uses_csp)definitions<<pad()<<"on1x_csp_shield_enter();\n";
+     definitions<<pad()<<"on1x_defer_run(&"<<defer_stack<<");\n";
+     if(uses_csp)definitions<<pad()<<"on1x_csp_shield_leave();\n";
+    }}
+    void leave_call(){if(uses_csp)definitions<<pad()<<"on1x_csp_call_leave();\n";}
+    void cancellation_edge(const Location& at){
+     if(!uses_csp)return;
+     std::size_t work=1+temporary_values.size();
+     for(const auto& scope:owners)work+=scope.size();
+     if(work>cancellation_budget)throw Error(at,"cancellation cleanup expansion budget exhausted","ON1X-CSP-LIMIT");
+     cancellation_budget-=work;
+     definitions<<pad()<<"if (on1x_csp_cancelled()) {\n";++indent;
+     definitions<<pad()<<"on1x_csp_shield_enter();\n";
+     run_defers();
+     for(auto t=temporary_values.rbegin();t!=temporary_values.rend();++t)release(*t);
+     drops();definitions<<pad()<<"on1x_csp_shield_leave();\n";leave_call();
+     definitions<<pad()<<"return"<<(current_result==Type::Void?"":" ("+ctype(current_result)+"){0}")<<";\n";
+     --indent;definitions<<pad()<<"}\n";
+    }
  void finish(std::size_t keep=0){
   for(std::size_t i=temporary_values.size();i>keep;--i)release(temporary_values[i-1]);
   temporary_values.resize(keep);
@@ -239,7 +259,12 @@ class Generator {
   for(std::size_t i=0;i<pattern.elements.size();++i)
    flatten(pattern.elements[i],type.elements()[i],root+"->element_"+std::to_string(i),args);
  }
-  std::string expr(const Expr& e){
+   std::string expr(const Expr& e){
+    auto result=emit_expr(e);
+    if(e.kind==Expr::Kind::Call||e.kind==Expr::Kind::Csp)cancellation_edge(e.where);
+    return result;
+   }
+   std::string emit_expr(const Expr& e){
        switch(e.kind){
        case Expr::Kind::SourceCsp:throw Error(e.where,"unlowered concurrency operation");
         case Expr::Kind::Csp:{
@@ -247,7 +272,8 @@ class Generator {
          if(op=="poll"){
           std::size_t n=e.children.size();bool fallback=e.children.back()->kind==Expr::Kind::Boolean;
           if(fallback)--n;
-          auto offers=unique("poll_offers");definitions<<pad()<<"on1x_csp_offer "<<offers<<"["<<n<<"] = {0};\n";
+          bool deadline=n&&e.children[n-1]->text=="offer_after";if(deadline)--n;
+          auto offers=unique("poll_offers");definitions<<pad()<<"on1x_csp_offer "<<offers<<"["<<std::max<std::size_t>(1,n)<<"] = {0};\n";
           for(std::size_t i=0;i<n;++i){const auto& offer=*e.children[i];
            auto endpoint=expr(*offer.children[0]);
            definitions<<pad()<<offers<<"["<<i<<"].channel = "<<endpoint<<";\n";
@@ -258,12 +284,14 @@ class Generator {
           }
           auto payload=unique("poll_payload"),selected=unique("poll_selected"),closed=unique("poll_closed");
           definitions<<pad()<<"int64_t "<<payload<<" = 0;\n"<<pad()<<"size_t "<<selected<<" = 0;\n"<<pad()<<"bool "<<closed<<" = false;\n";
-          definitions<<pad()<<"on1x_csp_select("<<offers<<", "<<n<<", "<<(fallback?"true":"false")<<", &"<<payload<<", &"<<selected<<", &"<<closed<<", "<<at<<");\n";
+          std::string delay;if(deadline)delay=expr(*e.children[n]->children[0]);
+          definitions<<pad()<<(deadline?"on1x_csp_select_after(":"on1x_csp_select(")<<offers<<", "<<n<<", "<<(fallback?"true":"false")<<", "<<(deadline?delay+", ":"")<<"&"<<payload<<", &"<<selected<<", &"<<closed<<", "<<at<<");\n";
           auto result=temp(e.type,"{0}");
           auto index=[&](const std::string& label){auto it=std::find(e.type.labels().begin(),e.type.labels().end(),label);
            if(it==e.type.labels().end())throw Error(e.where,"missing checked poll result variant");
            return static_cast<std::size_t>(it-e.type.labels().begin());};
-          if(fallback)definitions<<pad()<<"if ("<<selected<<" == "<<n<<") "<<result<<".tag = "<<index("Default")<<";\n";
+          if(deadline)definitions<<pad()<<"if ("<<selected<<" == "<<n<<") "<<result<<".tag = "<<index("After")<<";\n";
+          if(fallback)definitions<<pad()<<"if ("<<selected<<" == "<<n+(deadline?1:0)<<") "<<result<<".tag = "<<index("Default")<<";\n";
           for(std::size_t i=0;i<n;++i){
            auto success=index((e.children[i]->text=="offer_recv"?"Recv":"Sent")+std::to_string(i));
            auto failure=index("Closed"+std::to_string(i));
@@ -294,7 +322,7 @@ class Generator {
         auto handle=expr(*e.children.at(0));
         if(op=="split")return temp(e.type,"("+ctype(e.type)+"){"+handle+", "+handle+"}");
          if(op=="join")return temp(e.type,std::string(e.children[0]->type==Type::ExternalFiber?"on1x_csp_process_join(":"on1x_csp_join(")+handle+", "+at+")");
-         if(op=="cancel")return temp(e.type,std::string(e.children[0]->type==Type::Fiber?"on1x_csp_cancel_ready(":"on1x_csp_process_cancel(")+handle+", "+at+")");
+          if(op=="cancel")return temp(e.type,std::string(e.children[0]->type==Type::Fiber?"on1x_csp_cancel(":"on1x_csp_process_cancel(")+handle+", "+at+")");
          if(op=="close")return temp(e.type,std::string(e.children[0]->type==Type::ByteSender?"on1x_csp_stream_close(":"on1x_csp_close(")+handle+", "+at+")");
          if(op=="send"){
           auto payload=expr(*e.children.at(1));
@@ -568,7 +596,7 @@ class Generator {
     definitions<<pad()<<"{\n";body(s.body);definitions<<pad()<<"}\n";
     if(continue_targets.contains(s.control_target))definitions<<pad()<<latch<<": ;\n";
      if(!s.otherwise.empty()){definitions<<pad()<<"{\n";body(s.otherwise);definitions<<pad()<<"}\n";}
-     if(uses_csp)definitions<<pad()<<"on1x_csp_yield("<<location(s.where)<<");\n";
+      if(uses_csp){definitions<<pad()<<"on1x_csp_yield("<<location(s.where)<<");\n";cancellation_edge(s.where);}
     --indent;definitions<<pad()<<"}\n";
     if(break_targets.contains(s.control_target))definitions<<pad()<<done<<": ;\n";
     loop_targets.pop_back();return false;
@@ -641,7 +669,7 @@ class Generator {
  }
   void definition(const std::string& name,const Type& result,const std::vector<Param>& parameters,
                   const std::vector<Stmt>& statements,const Location& at,const Lambda* lambda=nullptr){
-  scopes.clear();owners.clear();temporary_values.clear();indent=0;
+   scopes.clear();owners.clear();temporary_values.clear();indent=0;current_result=result;
   if(lambda){scopes.emplace_back();owners.emplace_back();}
   push();definitions<<(lambda?"static ":"")<<ctype(result)<<" "<<name<<"(";
   std::string context;
@@ -664,8 +692,9 @@ class Generator {
    }
   }
   for(const auto& parameter:parameters)definitions<<pad()<<"(void)"<<ref(parameter.name)<<";\n";
-  for(const auto& parameter:parameters)if(parameter.pattern)
-   bind_pattern(*parameter.pattern,parameter.type,ref(parameter.name));
+   for(const auto& parameter:parameters)if(parameter.pattern)
+    bind_pattern(*parameter.pattern,parameter.type,ref(parameter.name));
+   cancellation_edge(at);
   bool terminated=false;for(const auto& statement:statements)terminated=stmt(statement);
    if(!terminated)run_defers();
     pop(!terminated);if(!terminated)leave_call();if(result==Type::Void&&!terminated)definitions<<"  return;\n";
@@ -723,7 +752,7 @@ public:
       +(uses_f32?std::string("#if !defined(ON1X_F32_ABI_VERSION) || ON1X_F32_ABI_VERSION != 1\n#error \"unsupported On1x f32 target or runtime ABI\"\n#endif\n"):std::string{})
       +(uses_unsigned?std::string("#if !defined(ON1X_UNSIGNED_ABI_VERSION) || ON1X_UNSIGNED_ABI_VERSION != 1\n#error \"incompatible On1x unsigned runtime ABI\"\n#endif\n"):std::string{})
        +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
-        +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 2\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
+         +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 3\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
       +float_guard+types.str()+"\n"+prototypes.str()+"\n"+value_helpers.str()+helpers.str()+definitions.str();
  }
 };

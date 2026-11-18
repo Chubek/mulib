@@ -616,7 +616,7 @@ class Parser {
     auto where=peek().where;consume("poll");consume("{");
     auto choice=std::make_unique<Expr>();choice->kind=Expr::Kind::SourceCsp;choice->where=where;choice->text="poll";
     auto match=std::make_unique<Expr>();match->kind=Expr::Kind::PatternMatch;match->where=where;match->statement_match=statement_mode;
-    std::vector<std::string> endpoints;std::set<std::string> closed;bool has_default=false;
+    std::vector<std::string> endpoints;std::set<std::string> closed;bool has_default=false;ExprPtr deadline;
     do{
      if(at("}"))break;
      auto site=peek().where;std::string label,binder;
@@ -635,7 +635,18 @@ class Parser {
      }else if(accept("default")){
       if(has_default)throw Error(site,"ON1X-CSP: duplicate poll default arm");
       has_default=true;label="Default";
-     }else if(at("after"))throw Error(site,"ON1X-CSP-UNSUPPORTED: monotonic poll deadlines unavailable");
+     }else if(accept("after")){
+      if(deadline)throw Error(site,"ON1X-CSP: duplicate poll deadline");
+      deadline=std::make_unique<Expr>();deadline->kind=Expr::Kind::SourceCsp;deadline->text="offer_after";deadline->where=site;
+      auto duration=expr().node;
+      if(accept("s")){
+       auto multiply=std::make_unique<Expr>();multiply->kind=Expr::Kind::Binary;multiply->text="*";multiply->where=site;
+       multiply->children.push_back(std::move(duration));
+       auto scale=std::make_unique<Expr>();scale->kind=Expr::Kind::Integer;scale->text="1000";scale->where=site;multiply->children.push_back(std::move(scale));
+       duration=syntax_bounded(std::move(multiply)).node;
+      }else accept("ms");
+      deadline->children.push_back(std::move(duration));label="After";
+     }
      else throw Error(site,"expected recv, send, closed or default poll offer");
      consume("=>");auto arm=std::make_unique<Expr>();arm->kind=Expr::Kind::Case;arm->where=site;
      Pattern pattern;pattern.kind=Pattern::Kind::Variant;pattern.where=site;pattern.name=label;
@@ -644,7 +655,7 @@ class Parser {
      if(at("{"))match_arm_block(*arm);else arm->children.push_back(expr().node);
      match->children.push_back(std::move(arm));
     }while(accept(",")&&!at("}"));consume("}");
-    if(endpoints.empty())throw Error(where,"ON1X-CSP: poll requires a channel offer");
+    if(endpoints.empty()&&!deadline)throw Error(where,"ON1X-CSP: poll requires a channel offer or deadline");
     for(auto& arm:match->children){auto& name=arm->patterns[0].name;
      if(name.starts_with("@closed:")){
       auto found=std::find(endpoints.begin(),endpoints.end(),name.substr(8));
@@ -653,6 +664,7 @@ class Parser {
      }
     }
     for(const auto& name:endpoints)if(!closed.contains(name))throw Error(where,"ON1X-CSP: poll requires a closed arm for "+name);
+    if(deadline)choice->children.push_back(std::move(deadline));
     if(has_default){auto marker=std::make_unique<Expr>();marker->kind=Expr::Kind::Boolean;marker->text="true";marker->where=where;choice->children.push_back(std::move(marker));}
     match->children.insert(match->children.begin(),std::move(choice));
     return syntax_bounded(std::move(match));

@@ -270,10 +270,8 @@ for name, text, diagnostic in [
     ('capture_stdout_close', 'fn main(){taskgroup{let (p,input,output,error)=launch capture `/bin/cat`;close output;cancel p;}}', 'close expects'),
     ('capture_alias', 'fn main(){taskgroup{let (p,input,output,error)=launch capture `/bin/cat`;let copy=output;cancel p;}}', 'affine'),
     ('capture_poll_wrong_result', 'fn main(){taskgroup{let (p,input,output,error)=launch capture `/bin/cat`;let value:i64=poll{recv output as n=>n,closed output=>0u8};cancel p;}}', 'expected i64'),
-    ('poll_after', 'fn main(){taskgroup{let c=->(1,1){payload:i64,capacity:0,mode:uni};let (tx,rx)=split c;poll{recv rx as n=>println(n),closed rx=>println(1),after 1s=>println(2)};}}', 'monotonic poll deadlines'),
-    ('cancel_running', 'fn main(){taskgroup{let f=launch{1};let pause=1;cancel f;}}', 'immediately preceding launch'),
-    ('cancel_in_expression', 'fn main(){taskgroup{let f=launch{1};let stopped=cancel f;}}', 'immediately preceding launch'),
-    ('cancel_after_join', 'fn main(){taskgroup{let f=launch{1};println(join f);cancel f;}}', 'immediately preceding launch'),
+    ('poll_after_type', 'fn main(){taskgroup{poll{after true=>println(2)};}}', 'expected i64'),
+    ('cancel_after_join', 'fn main(){taskgroup{let f=launch{1};println(join f);cancel f;}}', 'moved'),
 ]:
     reject(name, text, diagnostic)
 
