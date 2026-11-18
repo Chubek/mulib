@@ -1,5 +1,21 @@
 # Verification report
 
+## GrammarEmbed continuation — 2026-11-18
+
+Native `GrammarEmbed` uses Firestone `liblr` at configured revision
+`934b6ed029bfea28bbf23b5dc77c476154b0dd0d` to emit ordinary On1x NFA/DFA
+lexers and LR1/LALR1/LL1 parser engines. GCC/generated, Clang/fallback and
+Clang ASan/UBSan/leak-detection integration/bridge/install selections pass
+**3/3 each** (including targeted integration reruns). Each integration profile
+checks **4,686** short-input results against independent liblr C++ runtimes.
+Additional cases cover concrete trees, byte spans, epsilon, conflicts,
+left recursion, token helpers, limits, fresh names and LuaEmbed → GrammarEmbed.
+The shipped example runs after name-based discovery and installed relocation.
+
+See [`../VERIFICATION.md`](../VERIFICATION.md#grammarembed--native-liblr-lexerparser-emission)
+for commands and exact scope, and the [GrammarEmbed guide](grammarembed/README.md)
+for the grammar subset and emitted API.
+
 ## Native extension integration — 2026-11-15
 
 All **15 native processors** build and have compiler-generated C11 execution

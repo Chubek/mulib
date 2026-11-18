@@ -139,14 +139,18 @@ The repository accessed through the GitHub connection exposed the prior PPX-v1 s
 
 ## Contents
 
+- Native [`GrammarEmbed`](stdppx/grammarembed/README.md): Perl 6-like grammar
+  declarations using Firestone liblr to emit On1x NFA/DFA lexers and
+  LR(1)/LALR(1)/LL(1) parsers, including spans and concrete parse trees.
+
 - Native [`LuaEmbed`](stdppx/luaembed/README.md) and its embedded `llembed` Lua
   module: bounded Mune execution, captured program-stream output, schema-checked
   AST/program generation and explicit metaprogram chains; no runtime Lua dependency.
 
 - Source-only `.on1x` facades: JSON, YAML, TOML, INI, Parsec, crypto, Unix, sockets, network, IPC, NNG-style envelopes, RPC JSON request construction, Shexp ASTs, hashconsing, graph traversal, Base and Batteries-like structures.
 - `_bridge/mulib_bridge.c`: raw C ABI bridge against *real MuLIB public headers* and an independently built Exotract one-TU `libmulib.a`. C bridge is **not** safe by ExoML/Chisel criteria. It requires reviewed extraction and independent memory/effect checks before a safe FFI claim.
-- Sixteen ordinary native On1x PPXs: the original eight plus assertions, cond,
-  format, logging, state_machine, tap, trace and native-only LuaEmbed, with
+- Seventeen ordinary native On1x PPXs: the original eight plus assertions, cond,
+  format, logging, state_machine, tap, trace and native-only LuaEmbed/GrammarEmbed, with
   compiler-generated C11 execution tests.
 - [`stdlib/CATALOG.json`](stdlib/CATALOG.json): complete named SML Basis inventory;
   extension modules remain partial adapters, not Base/Batteries API parity.

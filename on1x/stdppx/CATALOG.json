@@ -1,12 +1,12 @@
 {
   "package": "on1x/stdppx",
   "protocol": "on1x.sexpr-ast/v1",
-  "status_note": "The 24 Python processors and 16 ordinary native processors have compiler-generated C11 execution tests. LuaEmbed is native-only. See VERIFICATION.md for measured configurations. Design-only entries are not implementations.",
+  "status_note": "The 24 Python processors and 17 ordinary native processors have compiler-generated C11 execution tests. LuaEmbed and GrammarEmbed are native-only. See VERIFICATION.md for measured configurations. Design-only entries are not implementations.",
   "counts": {
     "existing_python": 6,
     "new_python": 18,
     "design_only": 17,
-    "native_sources": 16
+    "native_sources": 17
   },
   "processors": [
     {
@@ -344,6 +344,14 @@
       "prerequisites": "MuLIB mune via the canonical single-TU planner; explicit PPX authorization",
       "entrypoint": null,
       "native": "native/LuaEmbed.on1x"
+    },
+    {
+      "name": "GrammarEmbed",
+      "status": "implemented-native",
+      "description": "Perl 6-like grammar/token/rule constructs; liblr NFA/DFA lexers and LR1/LALR1/LL1 parser generation",
+      "prerequisites": "LibStone firestone/liblr at PPX build time; explicit PPX authorization",
+      "entrypoint": null,
+      "native": "native/GrammarEmbed.on1x"
     }
   ]
 }

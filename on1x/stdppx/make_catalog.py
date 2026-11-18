@@ -52,7 +52,7 @@ blocked={
 'async':('Async/await syntax lowering','Typed continuation/CPS pass, scheduler and Plaid'),
 'actor':('Actor/message-processing syntax','ADTs, async channels, ownership and Plaid')}
 entries=[]
-native=set(original)|{'pipe','compose','assertions','cond','format','logging','state_machine','tap','trace','LuaEmbed'}
+native=set(original)|{'pipe','compose','assertions','cond','format','logging','state_machine','tap','trace','LuaEmbed','GrammarEmbed'}
 for d,status in [(original,'existing'),(additional,'implemented-python'),(blocked,'design-only')]:
     for name,(description,need) in sorted(d.items()):
         entries.append({'name':name,'status':status,'description':description,'prerequisites':need,'entrypoint':f'{name}.py' if status!='design-only' else None,'native':('native/'+name+'.on1x') if name in native else None})
@@ -60,11 +60,15 @@ entries.append({'name':'LuaEmbed','status':'implemented-native',
                 'description':'Bounded compile-time Mune Lua, captured stdout, schema-checked AST streams/programs and chaining',
                 'prerequisites':'MuLIB mune via the canonical single-TU planner; explicit PPX authorization',
                 'entrypoint':None,'native':'native/LuaEmbed.on1x'})
-result={'package':'on1x/stdppx','protocol':'on1x.sexpr-ast/v1','status_note':'The 24 Python processors and 16 ordinary native processors have compiler-generated C11 execution tests. LuaEmbed is native-only. See VERIFICATION.md for measured configurations. Design-only entries are not implementations.','counts':{'existing_python':len(original),'new_python':len(additional),'design_only':len(blocked),'native_sources':len(native)},'processors':entries}
+entries.append({'name':'GrammarEmbed','status':'implemented-native',
+                'description':'Perl 6-like grammar/token/rule constructs; liblr NFA/DFA lexers and LR1/LALR1/LL1 parser generation',
+                'prerequisites':'LibStone firestone/liblr at PPX build time; explicit PPX authorization',
+                'entrypoint':None,'native':'native/GrammarEmbed.on1x'})
+result={'package':'on1x/stdppx','protocol':'on1x.sexpr-ast/v1','status_note':'The 24 Python processors and 17 ordinary native processors have compiler-generated C11 execution tests. LuaEmbed and GrammarEmbed are native-only. See VERIFICATION.md for measured configurations. Design-only entries are not implementations.','counts':{'existing_python':len(original),'new_python':len(additional),'design_only':len(blocked),'native_sources':len(native)},'processors':entries}
 (p/'CATALOG.json').write_text(json.dumps(result,indent=2)+'\n')
 rows=['| Processor | Status | What it does |','|---|---|---|']
 for x in entries:rows.append(f"| `{x['name']}` | {x['status']} | {x['description']} |")
-(p/'docs/CATALOG.md').write_text('# Complete PPX catalog\n\n'+'\n'.join(rows)+'\n\n`implemented-python` and `implemented-native` processors have protocol and compiler-generated C11 execution tests. LuaEmbed is native-only. See `VERIFICATION.md` for measured configurations. `design-only` means documentation exists but no processor executable is shipped.\n')
+(p/'docs/CATALOG.md').write_text('# Complete PPX catalog\n\n'+'\n'.join(rows)+'\n\n`implemented-python` and `implemented-native` processors have protocol and compiler-generated C11 execution tests. LuaEmbed and GrammarEmbed are native-only. See `VERIFICATION.md` for measured configurations. `design-only` means documentation exists but no processor executable is shipped.\n')
 for name,(purpose,need) in blocked.items():
     if not options.refresh_designs:continue
     text=f'''# {name} — proposed PPX, NOT IMPLEMENTED
