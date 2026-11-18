@@ -6,6 +6,10 @@
 #include <on1x/formatter.hpp>
 #include <on1x/backend/mir.hpp>
 #include <on1x/backend/passes.hpp>
+#ifdef ON1X_WITH_EXTENSION_SDK
+#include "Builtin.hpp"
+#include "Driver.hpp"
+#endif
 #ifdef ON1X_WITH_SYREN
 #include <on1x/diagnostics.hpp>
 #endif
@@ -30,6 +34,7 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <vector>
 #if defined(__unix__) || defined(__APPLE__)
 #include <cerrno>
 #include <cstring>
@@ -86,18 +91,19 @@ namespace {
   throw std::runtime_error("on1xc project commands require a POSIX host; try tools/on1x-build.py");
 #endif
  }
- void publish_format(const std::string& destination,const std::string& text){
+ void publish_regular_file(const std::string& destination,const std::string& text,
+                           const std::string& action,const std::string& temporary_name){
 #if defined(__unix__) || defined(__APPLE__)
   namespace fs=std::filesystem;
   const fs::path path=destination;
   const auto parent=path.has_parent_path()?path.parent_path():fs::path(".");
-  auto temporary=(parent/".on1xfmt-XXXXXX").string();
+   auto temporary=(parent/temporary_name).string();
   struct stat prior{};
   const bool exists=::lstat(destination.c_str(),&prior)==0;
   if((exists&&!S_ISREG(prior.st_mode))||(!exists&&errno!=ENOENT))
-   throw std::runtime_error("formatter output must be a regular file: "+destination);
+    throw std::runtime_error(action+" output must be a regular file: "+destination);
   int fd=::mkstemp(temporary.data());
-  if(fd<0)throw std::runtime_error("cannot stage formatter output: "+destination);
+   if(fd<0)throw std::runtime_error("cannot stage "+action+" output: "+destination);
   bool ok=true;
   for(std::size_t written=0;written<text.size();){
    auto count=::write(fd,text.data()+written,text.size()-written);
@@ -109,9 +115,9 @@ namespace {
   if(::close(fd)<0)ok=false;
   if(ok&&std::rename(temporary.c_str(),destination.c_str())==0)return;
   ::unlink(temporary.c_str());
-  throw std::runtime_error("cannot publish formatter output: "+destination);
+   throw std::runtime_error("cannot publish "+action+" output: "+destination);
 #else
-  throw std::runtime_error("atomic formatter file output requires a POSIX host; use stdout");
+   throw std::runtime_error("atomic "+action+" file output requires a POSIX host; use stdout");
 #endif
  }
  int format_command(int argc,char** argv,std::string_view command){
@@ -168,7 +174,8 @@ namespace {
   }
   auto result=fmt::file(source,options);
   if(check)return result==on1x::read_source_file(source)?0:1;
-  if(inplace||(!out.empty()&&out!="-"))publish_format(inplace?source:out,result);
+   if(inplace||(!out.empty()&&out!="-"))
+    publish_regular_file(inplace?source:out,result,"formatter",".on1xfmt-XXXXXX");
   else if(!(std::cout<<result).flush())throw std::runtime_error("cannot write formatted output");
   return 0;
  }
@@ -329,7 +336,15 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
 #else
  (void)analysis_work;
 #endif
-  if(mode=="--run-ir"){
+#ifdef ON1X_WITH_EXTENSION_SDK
+  const char *backend=mode=="--run-ir"?"mir-eval":mode=="--emit-ir"?"mir-text":
+                      mode=="--ir-cfg"?"mir-cfg":"mir-c11";
+  auto result=on1x::backends::run_mir(module,backend);
+  write_all(out,result.bytes);
+  if(!result.diagnostic.empty())std::cerr<<result.diagnostic;
+  return result.exit_code;
+#else
+   if(mode=="--run-ir"){
    for(const auto& f:module.functions)if(f.name=="main"&&(!f.blocks.front().parameters.empty()||(f.result!=on1x::Type::I64&&f.result!=on1x::Type::Void)))
     throw on1x::Error(f.where,"ON1X-MIR-EVAL: main must have no parameters and return i64 or void");
   auto result=on1x::mir::evaluate(module);write_all(out,result.output);
@@ -339,7 +354,8 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
   }
   return static_cast<int>(result.value);
  }
- write_all(out,mode=="--emit-ir"?on1x::mir::serialize(module):mode=="--ir-cfg"?on1x::mir::cfg_dot(module):on1x::mir::emit_c(module));return 0;
+  write_all(out,mode=="--emit-ir"?on1x::mir::serialize(module):mode=="--ir-cfg"?on1x::mir::cfg_dot(module):on1x::mir::emit_c(module));return 0;
+#endif
 }
 std::string kernel_requests(const on1x::KernelImportRequests& inspected){
  // Filesystem paths need not be UTF-8. Retain exact bytes without emitting
@@ -385,7 +401,12 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    "       on1xc --stdlib-resource RELATIVE_PATH (find a standard-library resource)\n"
   "       [--no-prelude] [--prelude FILE] [--stdppx PROCESSOR]\n"
   "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
-  "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
+   "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
+#ifdef ON1X_WITH_EXTENSION_SDK
+   "       on1xc --sdk-analyze NAME INPUT [--ir-input]\n"
+   "       on1xc --sdk-emit NAME INPUT [-o OUTPUT] [--ir-input]\n"
+   "       [--plugin +NAME_OR_PATH] (repeatable in SDK hook modes)\n"
+#endif
   "       on1xc [--emit-ir-facts | --analyze-ir] INPUT [-o OUTPUT] [--ir-input]\n"
   "       [--analysis-work UNITS] (Novostone opt-in build; --analyze-ir only)\n"
   "       [--optimize-ir] [--opt-work UNITS] [--opt-rewrites COUNT] (MIR modes only)\n"
@@ -432,7 +453,10 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     if(command=="fmt"||command=="--format"||command=="--emit-latex"||command=="--emit-troff")
      return format_command(argc,argv,command);
    }
-       std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false;
+         std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false;
+         std::string sdk_mode,sdk_name;
+         std::vector<std::string> plugin_selectors;
+         bool explicit_c=false;
      std::size_t analysis_work=10000000;bool analysis_limit=false;
        on1x::mir::passes::Options optimization;bool optimize=false,opt_limit=false;
        on1x::analysis::Options scrutiny;
@@ -447,8 +471,23 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      std::vector<std::filesystem::path> import_paths;
      std::vector<std::filesystem::path> stdlib_paths,ppx_paths,stdppx_paths;
     std::vector<std::string> admission_files;
-  for(int i=1;i<argc;++i){std::string arg=argv[i];
-      if(arg=="--help"||arg=="-h"){usage();return 0;}
+   for(int i=1;i<argc;++i){std::string arg=argv[i];
+       if(arg=="--help"||arg=="-h"){usage();return 0;}
+       if(arg=="--sdk-analyze"||arg=="--sdk-emit"){
+         if(!sdk_mode.empty()||++i>=argc||!argv[i][0]||argv[i][0]=='-')
+         throw std::runtime_error("specify one SDK mode with a nonempty hook name");
+         sdk_mode=arg;sdk_name=argv[i];continue;
+        }
+        if(arg=="--plugin"){
+         if(++i>=argc)throw std::runtime_error("--plugin requires +NAME_OR_PATH");
+         std::string_view selector=argv[i];
+         if(!selector.starts_with('+')||selector.size()==1)
+          throw std::runtime_error("--plugin requires +NAME_OR_PATH");
+         selector.remove_prefix(1);
+         if(selector.size()>4096)throw std::runtime_error("--plugin selector exceeds 4096 bytes");
+         if(plugin_selectors.size()>=32)throw std::runtime_error("--plugin selector count limit exceeded (32)");
+         plugin_selectors.emplace_back(selector);continue;
+        }
       if(arg=="--enable"||arg=="--disable"){
        if(++i>=argc)throw std::runtime_error(arg+" requires registered feature names");
        on1x::extensions::select(arg=="--enable"?loader.extensions.enabled:loader.extensions.disabled,argv[i],{"<command-line>"});continue;
@@ -522,7 +561,9 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     if(arg=="--verify-types"){type_safety=true;continue;}
     if(arg=="--check-types"){mode=arg;continue;}
     if(arg=="--emit-category-plan"||arg=="--kernel-imports"){mode=arg;continue;}
-     if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes")mode=arg;
+      if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes"){
+       mode=arg;explicit_c=explicit_c||arg=="--emit-c";
+      }
       else if(arg=="--no-prelude")loader.prelude=false;
       else if(arg=="-I"||arg=="--module-path"||arg=="--stdlib"||arg=="--prelude"||arg=="--stdppx"||arg=="--use-ppx"){
        if(++i>=argc||!argv[i][0])throw std::runtime_error(arg+" requires a nonempty path or name");
@@ -560,8 +601,18 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     }
    else if(arg=="-o"){if(++i>=argc)throw std::runtime_error("-o needs a file");out=argv[i];}
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
-   else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
-  }
+    else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
+   }
+           if(!sdk_mode.empty()&&(mode!="--emit-c"||explicit_c||optimize||opt_limit||
+              (sdk_mode=="--sdk-analyze"&&!out.empty())))
+            throw std::runtime_error("SDK modes cannot be combined with other modes, MIR optimization, or analyzer output files");
+#ifdef ON1X_WITH_EXTENSION_SDK
+           if(!plugin_selectors.empty()&&sdk_mode.empty())
+            throw std::runtime_error("--plugin requires --sdk-analyze or --sdk-emit");
+#else
+           if(!sdk_mode.empty()||!plugin_selectors.empty())
+            throw std::runtime_error("SDK hooks unavailable: configure with ON1X_BUILD_EXTENSION_SDK=ON");
+#endif
          if(!diagnostic_catalog_file.empty()){
           external_catalog=on1x::diagnostic::Catalog::load(diagnostic_catalog_file);
           diagnostic_catalog=&*external_catalog;
@@ -655,10 +706,25 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 #ifndef ON1X_WITH_NOVOSTONE
      if(analysis_mode)throw std::runtime_error("MIR analysis unavailable: configure with ON1X_WITH_NOVOSTONE=ON");
 #endif
-      bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||mode=="--run-ir"||mode=="--dump-passes"||analysis_mode;
+       bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||mode=="--run-ir"||mode=="--dump-passes"||analysis_mode;
+       mir_mode=mir_mode||!sdk_mode.empty();
+#ifdef ON1X_WITH_EXTENSION_SDK
+      auto sdk_output=[&](const on1x::mir::Module& module){
+       const bool emit=sdk_mode=="--sdk-emit";
+       auto result=on1x::sdk_driver::run(module,source,sdk_name,emit,diagnostic_registry,plugin_selectors);
+       publish_diagnostics();
+       if(result.exit_code!=0)return result.exit_code;
+       if(emit){
+        if(out.empty()||out=="-"){
+         if(!(std::cout<<result.artifact))throw std::runtime_error("cannot write SDK artifact to stdout");
+        }else publish_regular_file(out,result.artifact,"SDK",".on1x-sdk-XXXXXX");
+       }
+       return 0;
+      };
+#endif
        if(loader.kernel_stage&&!loader.kernel_c11)throw std::runtime_error("--kernel-stage requires --kernel-c11");
        if(loader.kernel_c11){
-       if(mode!="--emit-c"||ir_input||memory||type_safety||!ppx.programs.empty()||!ppx.schemas.empty()||
+        if(mode!="--emit-c"||!sdk_mode.empty()||ir_input||memory||type_safety||!ppx.programs.empty()||!ppx.schemas.empty()||
           ppx.allow_source||!loader.extensions.enabled.empty())
         throw std::runtime_error("--kernel-c11 requires direct C11 emission without PPX, extensions or independent checker modes");
        loader.extensions.execute=false;
@@ -666,10 +732,20 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      optimize=optimize||mode=="--dump-passes";
      if(optimize&&!mir_mode)throw std::runtime_error("--optimize-ir requires a MIR mode");
      if(opt_limit&&!optimize)throw std::runtime_error("optimization budgets require --optimize-ir or --dump-passes");
-     if(ir_input){
-      if(!loader.extensions.enabled.empty()||!loader.extensions.disabled.empty())throw std::runtime_error("--ir-input cannot enable source extensions");
-     if(!mir_mode||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source)throw std::runtime_error("--ir-input requires a MIR mode without PPX options");
-      return mir_output(on1x::mir::deserialize(read_ir(source),source),mode,out,analysis_work,optimize?&optimization:nullptr);
+      if(ir_input){
+       if(!loader.extensions.enabled.empty()||!loader.extensions.disabled.empty())throw std::runtime_error("--ir-input cannot enable source extensions");
+       if(!mir_mode||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source)throw std::runtime_error("--ir-input requires a MIR mode without PPX options");
+      }
+#ifdef ON1X_WITH_EXTENSION_SDK
+      // Configuration only; the SDK hook runs after source lowering or MIR verification.
+      if(!sdk_mode.empty())on1x::sdk_driver::check_plugin_selection(plugin_selectors);
+#endif
+      if(ir_input){
+        auto module=on1x::mir::deserialize(read_ir(source),source);
+#ifdef ON1X_WITH_EXTENSION_SDK
+       if(!sdk_mode.empty())return sdk_output(module);
+#endif
+       return mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr);
     }
    if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports")&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
    if(mode=="--kernel-imports"){
@@ -727,8 +803,12 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      if(mode=="--check-types"){publish_diagnostics();write_all(out,type_evidence);return 0;}
      if(mode=="--emit-category-plan"){publish_diagnostics();write_all(out,category_plan);return 0;}
       if(mode=="--check"){publish_diagnostics();std::cout<<"OK: "<<unit.functions.size()<<" functions\n";return 0;}
-      if(mir_mode){
-       auto result=mir_output(on1x::mir::lower(unit),mode,out,analysis_work,optimize?&optimization:nullptr);
+       if(mir_mode){
+        auto module=on1x::mir::lower(unit);
+#ifdef ON1X_WITH_EXTENSION_SDK
+        if(!sdk_mode.empty())return sdk_output(module);
+#endif
+        auto result=mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr);
        publish_diagnostics();return result;
       }
    if(mode=="--types"){
@@ -776,7 +856,12 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     }
      publish_diagnostics();write_all(out,listing.str());return 0;
     }
-   auto generated=on1x::emit_c(unit,source);publish_diagnostics();write_all(out,generated);return 0;
+#ifdef ON1X_WITH_EXTENSION_SDK
+    auto generated=on1x::backends::run_c11(unit,source).bytes;
+#else
+    auto generated=on1x::emit_c(unit,source);
+#endif
+    publish_diagnostics();write_all(out,generated);return 0;
 #ifdef ON1X_WITH_NOVOSTONE
  }catch(const on1x::mir::relational::BudgetExceeded& e){
    std::cerr<<terminal_text(e.where.file)<<":"<<e.where.line<<":"<<e.where.column<<": error: "<<terminal_text(e.what())<<"\n";return 75;

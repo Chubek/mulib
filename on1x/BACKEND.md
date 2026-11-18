@@ -8,6 +8,13 @@
 
 ## 0. Source baseline, revisions and the exact newly added work
 
+**SDK dispatch:** the [built-in backend adapters](backends/README.md) give
+the existing direct C11 path and four MIR output modes distinct SDK
+registrations and static archives. The canonical emitters/evaluator are
+unchanged. A build-host Yellowstone Lua manifest can generate the
+registration references; the target C++ linker still links `on1xc`.
+This does not add a machine-code backend or change generated program ABIs.
+
 **CSP ABI v4 continuation:** [cooperative cancellation and monotonic
 deadlines](docs/cancellation-deadlines.md) use generated function-return cleanup
 edges and private control offers through existing MuLIB atomic selection.

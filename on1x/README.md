@@ -31,6 +31,11 @@ retrieves cited repository evidence; it does not compile code or admit safe
 bindings, and it requires a separately hosted HTTPS endpoint or Secure MCP
 Tunnel.
 
+For C/C++ build-tool integrations, see the [On1x extension SDK](sdk/README.md).
+SDK hook commands can discover isolated external plugins through
+`ON1X_PLUGIN_PATH` or select them with `--plugin +NAME_OR_PATH`. Ordinary
+compilation does not load SDK plugins.
+
 ## Language implementation continuation
 
 The [core literal forms](docs/core-literals.md) add UTF-8 `char`, `b!` byte/buffer literals, raw and

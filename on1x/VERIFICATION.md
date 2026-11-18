@@ -1,5 +1,84 @@
 # On1x verification — through 2026-11-19
 
+## On1x extension SDK
+
+SDK ABI 1 was tested on Linux x86-64 at MuLIB
+`b9790059fb89ada683f05081239222d92aa93d53` plus SDK worktree changes, with
+LibStone `934b6ed029bfea28bbf23b5dc77c476154b0dd0d`.
+
+```sh
+fixture="$PWD/on1x/sdk/tests/linked_extension.c"
+cmake -S on1x -B build/on1x-sdk-gcc-make -DBUILD_TESTING=ON \
+  -DON1X_REQUIRE_LIBSTONE=ON -DCMAKE_BUILD_TYPE=Release \
+  -DON1X_USE_YELLOWSTONE_LINK=OFF \
+  -DON1X_LINKED_SDK_EXTENSION="$fixture"
+cmake --build build/on1x-sdk-gcc-make --parallel 4
+ctest --test-dir build/on1x-sdk-gcc-make --parallel 4 --output-on-failure
+
+cmake -S on1x -B build/on1x-sdk-clang-san -DBUILD_TESTING=ON \
+  -DON1X_USE_FALLBACK_SCANNER=ON -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DON1X_BUILD_DYNAMIC_SDK_PLUGINS=OFF -DON1X_USE_YELLOWSTONE_LINK=OFF \
+  '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  -DON1X_LINKED_SDK_EXTENSION="$fixture"
+cmake --build build/on1x-sdk-clang-san --parallel 3 \
+  --target on1xc on1x_sdk_test_registry on1x_sdk_test_analyzer \
+  on1x_sdk_test_backend on1x_sdk_test_security on1x_sdk_test_c_abi
+ctest --test-dir build/on1x-sdk-clang-san --output-on-failure -R '^on1x\.sdk\.'
+```
+
+The GCC 16.2.1 Release build with the generated scanner passed the full
+**105/105** suite; the SDK-only rerun passed **7/7** after the short-descriptor
+validation change. Clang 22.1.8 with the fallback scanner and ASan/UBSan
+passed the focused SDK suite **7/7**, with no sanitizer findings.
+
+The seven SDK tests cover registry transactions, bounded sinks and ABI
+validation, C11 linkage from an installed and relocated package, and an
+explicitly linked C provider consuming compiler-verified MIR. The provider
+round-trips `examples/hello.on1x` and produces the same executable output as
+the direct C11 path. Bad source and malformed or unverifiable MIR never reach
+the provider; hook failures leave existing output unchanged.
+
+The original SDK evidence above is for linked, trusted native providers.
+External providers now run in a separate Linux x86-64 worker (see
+[SDK guide](sdk/README.md)). The test `on1x.sdk.dynamic_plugins` checks
+colon-separated discovery, explicit selectors, duplicate rejection, real
+loading and MIR handoff, and rejection of constructor file writes, network
+socket creation, process creation, and unbounded CPU use. The worker builds
+with `ON1X_BUILD_DYNAMIC_SDK_PLUGINS=ON`; disable it for instrumented SDK
+builds (the sanitizer runtime is not inside the worker syscall profile).
+The profile has not been independently audited. There is no public checked
+HIR ABI, alternate native code backend, or safe FFI admission through SDK
+metadata.
+
+### SDK backend migration and Yellowstone manifest
+
+The `on1x.backends.c11` and `on1x.backends.mir_c11` tests exercise the
+checked compiler views, compare the new SDK artifact bytes to the canonical
+emitters, and check rejection and diagnostic preservation. `on1x.mir`
+continues to compare direct C11, MIR C11, and reference evaluation through
+the driver.
+
+On Linux x86-64, use the configuration above with
+`-DON1X_USE_YELLOWSTONE_LINK=ON` for GCC (this checkout includes the extended
+LibStone manifest API); `on1x.backends.yellowstone` checks generation and
+rejects invalid manifests. The generated-scanner Release build passed
+**109/109** with `TMPDIR` set to a disk-backed build directory. For the Clang
+sanitizer build add
+`-DON1X_BUILD_DYNAMIC_SDK_PLUGINS=OFF -DON1X_USE_YELLOWSTONE_LINK=OFF`,
+also build `on1x_backend_test_c11` and `on1x_backend_test_mir_c11`, and run
+`ctest --test-dir build/on1x-sdk-clang-san --output-on-failure -R '^on1x\.(sdk\.|backends\.)'`.
+That fallback-scanner sanitizer run passed **9/9**.
+
+The backend manifest is platform-independent, but non-Linux target linking
+and execution were not exercised. The target C++ toolchain still links the
+driver; no native qobjld C++ compiler-driver link is claimed.
+In the LibStone worktree, the GCC Debug `qld-*` suite passed **7/7**.
+Clang ASan/UBSan/LSan passed the three focused manifest and frontend tests.
+See [`ld/VALIDATION.md`](third_party/libstone/yellowstone/ld/VALIDATION.md)
+for the linker commands and coverage.
+
 ## Combined core and ChatGPT-addon closeout — 2026-11-19
 
 Validated MuLIB

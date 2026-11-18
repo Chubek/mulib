@@ -1,5 +1,10 @@
 # On1x roadmap and implementation status
 
+The [extension SDK](../sdk/README.md) is an M7 tooling slice: analyzers and
+artifact emitters can receive verified MIR from `on1xc`. Linux x86-64
+supports isolated shared-library plugins as well as trusted linked providers.
+The SDK does not expose checked HIR or add a native backend.
+
 ## Current feature matrix
 
 M1/M2 core-syntax additions use the canonical parser, checker, and C11
