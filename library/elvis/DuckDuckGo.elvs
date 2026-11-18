@@ -1,0 +1,10 @@
+# Source: .sot/surfraw/elvi/duckduckgo, non-JavaScript Lite mode.
+elvi duckduckgo
+host lite.duckduckgo.com
+home https://lite.duckduckgo.com/lite/
+# Request direct links; redirect wrappers themselves are not supported.
+search "https://lite.duckduckgo.com/lite/?q={query}&kg=g&kd=-1"
+anchor parent td
+rewrite direct
+exclude_host duckduckgo.com
+max_results 30

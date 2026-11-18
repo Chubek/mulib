@@ -1,0 +1,10 @@
+# Source: .sot/surfraw/elvi/scholar, ordinary scholarly search.
+elvi scholar
+host scholar.google.com
+home https://scholar.google.com/
+search "https://scholar.google.com/scholar?q={query}"
+# Supports result titles within H3 headings, not unlinked citations.
+anchor parent h3
+rewrite direct
+exclude_host scholar.google.com
+max_results 30

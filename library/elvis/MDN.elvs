@@ -1,0 +1,10 @@
+# Source: .sot/surfraw/elvi/mdn, using the Surfraw Google custom-search backend.
+elvi mdn
+host www.google.com
+home https://www.google.com/
+search "https://www.google.com/search?q=site%3Adeveloper.mozilla.org%20{query}&num={limit}"
+anchor child h3
+rewrite google
+exclude_host google.com
+exclude_host googleusercontent.com
+max_results 30

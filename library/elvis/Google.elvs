@@ -1,9 +1,10 @@
-# ElviScrape provider: Google's ordinary HTML SERP (best effort)
+# Source: .sot/surfraw/elvi/google, default US web search.
+# See library/elvis/README.md. Kept in sync at both Google provider paths.
 elvi google
 host www.google.com
 home https://www.google.com/
 search "https://www.google.com/search?q={query}&num={limit}"
-# Google commonly nests a heading inside the result anchor
+# Google's result title is a heading within the anchor (best effort).
 anchor child h3
 rewrite google
 exclude_host google.com
