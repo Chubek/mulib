@@ -6,6 +6,7 @@ No third-party Python packages are required. All binaries/data are temporary.
 """
 import argparse
 import os
+import platform
 import re
 import shlex
 import shutil
@@ -196,6 +197,22 @@ def main():
         tmp = Path(tmp)
 
         def check(label, sources=None, source_text=None, language='c', execute=True, extra_flags=None):
+            if sources == [root / 'tests/test_sandbox.c']:
+                if sys.platform != 'linux' or platform.machine() not in ('x86_64', 'aarch64'):
+                    print('SKIP sandbox process fixtures: requires native Linux x86-64/AArch64')
+                    return True
+                env = dict(os.environ, CC=shlex.join(compiler), SANITIZE=str(int(args.sanitizers)))
+                try:
+                    result = subprocess.run(['sh', 'tests/run_sandbox.sh'], cwd=root,
+                                            env=env, capture_output=True, text=True, timeout=60)
+                except (OSError, subprocess.TimeoutExpired) as error:
+                    failures.append((label, str(error)))
+                    return False
+                if result.returncode:
+                    failures.append((label, result.stdout + result.stderr))
+                    return False
+                print(result.stdout.rstrip(), flush=True)
+                return True
             with tempfile.TemporaryDirectory(prefix='case-', dir=tmp) as work:
                 binary = Path(work) / 'test'
                 source_name = sources[0].name if sources and len(sources) == 1 else ''
@@ -203,6 +220,9 @@ def main():
                 command = (compiler if language == 'c' else cxx) + [
                     '-std=c11' if language == 'c' else '-std=c++17'] + flags
                 command += extra_flags or []
+                if source_name == 'sandbox-process.c' and args.sanitizers:
+                    # The trusted-bootstrap example also becomes the strict worker.
+                    command += ['-fno-sanitize=address,undefined']
                 # Match CMake's shell-test profile; test_mune_compile deliberately
                 # checks real API declarations without linking Mune implementations.
                 if os.name == 'posix' and re.match(r'^test_(parallel|shebang|sh_|mune_compile)', source_name):
@@ -369,6 +389,7 @@ def main():
             print(f'MuLIB {category}: {passed}/{len(sources)} passed', flush=True)
         integration = [
             ('smoke', [root / 'tests/smoke.c']),
+            ('CDD semantics', [root / 'tests/cdd-test.c', root / 'tests/cdd-implementation.c']),
             ('functional', [root / 'tests/implementation.c', root / 'tests/functional.c']),
             ('composition', [root / 'tests/implementation.c', root / 'tests/composition.c']),
             ('extensions', [root / 'tests/implementation.c', root / 'tests/extensions.c']),
@@ -385,10 +406,13 @@ def main():
         defines = ''.join('#define ' + switch + '\n' for switch in sorted(all_switches))
         includes = ''.join('#include "' + header.name + '"\n' for header in reversed(headers))
         main_source = 'int main(void) { return 0; }\n'
+        linux_source = ('#if defined(__linux__) && !defined(_GNU_SOURCE)\n'
+                        '#define _GNU_SOURCE\n#endif\n')
+        combined_source = linux_source + posix_source + '#include <stdlib.h>\n#undef bsearch\n'
         cases.append(dict(label='reverse-order implementations',
-                          source_text=posix_source + defines + includes + main_source))
+                          source_text=combined_source + defines + includes + main_source))
         cases.append(dict(label='implementations after declarations',
-                          source_text=posix_source + includes + defines + includes + main_source))
+                          source_text=combined_source + includes + defines + includes + main_source))
         if os.name == 'posix':
             cases.append(dict(label='POSIX shell', sources=[root / 'tests/test_runtime.c'],
                               extra_flags=['-DMULIB_MINISH_ENABLE_POSIX']))
@@ -418,6 +442,10 @@ def main():
                 defines = ''.join('#define ' + switch + '\n' for switch in sorted(enabled))
                 if enabled & {'MULIB_IMPL_PARALLEL_SH', 'MULIB_IMPL_SHEBANG_SH'}:
                     defines = posix_source + defines
+                if enabled & {'MULIB_IMPL_CGROUP2', 'MULIB_IMPL_IPC_FRAMED',
+                              'MULIB_IMPL_LANDLOCK', 'MULIB_IMPL_NAMESPACE',
+                              'MULIB_IMPL_SANDBOX_PROCESS', 'MULIB_IMPL_SECCOMP'}:
+                    defines = linux_source + posix_source + defines
                 cases.append(dict(label='isolated implementation: ' + name,
                                   source_text=defines + declaration))
             print(f'MuLIB checking {len(cases)} isolated header builds', flush=True)
