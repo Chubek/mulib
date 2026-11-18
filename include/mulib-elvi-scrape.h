@@ -55,7 +55,9 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
 int mulib_elvi_scrape_load(const char *path,
                           mulib_elvi_scrape_program_t *out,
                           mulib_elvi_scrape_error_t *error);
-/* Percent-encode query with mulib-url; leave output unchanged on failure. */
+/* Percent-encode a nonempty query with mulib-url; "" selects the provider
+ * home URL. In both cases limit is 1..max_results. Output is unchanged on
+ * failure. */
 int mulib_elvi_scrape_url(const mulib_elvi_scrape_program_t *p,
                          const char *query, unsigned limit,
                          char *out, size_t capacity);
@@ -100,7 +102,6 @@ int mulib_elvi_scrape_https_transport(void *ctx, const char *url,
 #if defined(MULIB_IMPL_ELVI_SCRAPE) && !defined(MULIB_ELVI_SCRAPE_IMPLEMENTED)
 #define MULIB_ELVI_SCRAPE_IMPLEMENTED
 #include "detail/mulib-webscan.h"
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -121,6 +122,9 @@ static void melvi_error_(mulib_elvi_scrape_error_t *e, size_t line,
   (void)melvi_copy_(e->message, sizeof(e->message), message);
 }
 static int melvi_eq_(const char *a, const char *b) { return strcmp(a,b)==0; }
+static void melvi_lower_(char *s) {
+  for(;*s;s++) *s=(char)mulib_webscan_lower_((unsigned char)*s);
+}
 static int melvi_hostname_(const char *s) {
   size_t n=strlen(s), label=0;
   if(!n || n>253) return 0;
@@ -176,6 +180,13 @@ static int melvi_program_(const mulib_elvi_scrape_program_t *p) {
 static int melvi_same_host_(const char *url, const char *host) {
   char parsed[256]; return melvi_host_(url,parsed,sizeof parsed) && !strcmp(parsed,host);
 }
+/* Match the literal template authority, independently of any expansion. */
+static int melvi_template_host_(const mulib_elvi_scrape_program_t *p) {
+  const char *s=p->search_template;
+  if(strncmp(s,"https://",8)) return 0;
+  s+=8;
+  return mulib_webscan_equal_(s,strcspn(s,"/?#"),p->host);
+}
 static int melvi_excluded_(const mulib_elvi_scrape_program_t *p, const char *url) {
   char h[256];
   if (!melvi_host_(url,h,sizeof h)) return 1;
@@ -220,15 +231,20 @@ static int melvi_uint_(const char *s, unsigned *out) {
 int mulib_elvi_scrape_compile(const char *src, size_t len,
                               mulib_elvi_scrape_program_t *out,
                               mulib_elvi_scrape_error_t *error) {
+  enum { M_NAME, M_HOST, M_HOME, M_SEARCH, M_ANCHOR, M_REWRITE, M_EXCLUDE,
+         M_MAX_RESULTS, M_DIRECTIVES };
+  static const char *const keys[M_DIRECTIVES]={
+    "elvi","host","home","search","anchor","rewrite","exclude_host","max_results"
+  };
   mulib_elvi_scrape_program_t v;
-  size_t at=0,line=0;
+  size_t at=0,line=0,lines[M_DIRECTIVES]={0};
   if(!out||(!src&&len)||len>65536 || (len && memchr(src,0,len))) {
     melvi_error_(error,0,"invalid DSL input"); return 0;
   }
   memset(&v,0,sizeof v);v.max_results=20;
   while(at<len) {
     size_t start=at;const char *cur,*end;
-    char k[64],a[4096],b[256];int nk,na,nb,extra;
+    char k[64],a[4096],b[256];int nk,na,nb,extra,kind;
     while(at<len && src[at]!='\n') at++;
     end=src+at;cur=src+start;line++;
     if(at<len) at++;
@@ -237,55 +253,71 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
     na=melvi_token_(&cur,end,a,sizeof a);
     nb=melvi_token_(&cur,end,b,sizeof b);
     {char unused[2];extra=melvi_token_(&cur,end,unused,sizeof unused);}
-    if(nk<0||na<0||nb<0||extra!=0) goto syntax;
-    if(melvi_eq_(k,"elvi") && na==1 && nb==0) {
+    if(nk<0||na!=1||nb<0||extra!=0) goto syntax;
+    for(kind=0;kind<M_DIRECTIVES && !melvi_eq_(k,keys[kind]);kind++) {}
+    if(kind==M_DIRECTIVES || (kind!=M_ANCHOR && nb!=0)) goto syntax;
+    if(kind!=M_EXCLUDE && lines[kind]) {
+      melvi_error_(error,line,"duplicate directive");return 0;
+    }
+    lines[kind]=line;
+    switch(kind) {
+    case M_NAME:
       if(!melvi_copy_(v.name,sizeof v.name,a)) goto syntax;
-    } else if(melvi_eq_(k,"host") && na==1 && nb==0) {
+      break;
+    case M_HOST:
       if(!melvi_copy_(v.host,sizeof v.host,a)) goto syntax;
-      for(char *q=v.host;*q;q++) {
-        if(*q>='A'&&*q<='Z') *q=(char)(*q+32);
-        if(!((*q>='a'&&*q<='z')||(*q>='0'&&*q<='9')||*q=='-'||*q=='.')) goto syntax;
-      }
-    } else if(melvi_eq_(k,"home") && na==1 && nb==0) {
+      melvi_lower_(v.host);
+      if(!melvi_hostname_(v.host)) goto syntax;
+      break;
+    case M_HOME:
       if(!melvi_copy_(v.home,sizeof v.home,a)) goto syntax;
-    } else if(melvi_eq_(k,"search") && na==1 && nb==0) {
+      break;
+    case M_SEARCH:
       if(!melvi_copy_(v.search_template,sizeof v.search_template,a)) goto syntax;
-    } else if(melvi_eq_(k,"anchor") && na==1 && nb==1) {
+      break;
+    case M_ANCHOR:
       v.anchor_mode=melvi_eq_(a,"child")?MULIB_ELVI_ANCHOR_CHILD:
                     melvi_eq_(a,"parent")?MULIB_ELVI_ANCHOR_PARENT:
                     melvi_eq_(a,"any")?MULIB_ELVI_ANCHOR_ANY:0;
-      if(!v.anchor_mode || !melvi_copy_(v.anchor_tag,sizeof v.anchor_tag,b)) goto syntax;
+      if(!v.anchor_mode || (!nb && v.anchor_mode!=MULIB_ELVI_ANCHOR_ANY) ||
+         !melvi_copy_(v.anchor_tag,sizeof v.anchor_tag,nb?b:"a")) goto syntax;
+      melvi_lower_(v.anchor_tag);
       for(char *q=v.anchor_tag;*q;q++) {
-        if(*q>='A'&&*q<='Z')*q=(char)(*q+32);
-        if(!((*q>='a'&&*q<='z')||(q!=v.anchor_tag&&*q>='0'&&*q<='9')))goto syntax;
+        if(!((*q>='a'&&*q<='z') ||
+             (q!=v.anchor_tag && ((*q>='0'&&*q<='9') || *q=='-' || *q==':'))))
+          goto syntax;
       }
-    } else if(melvi_eq_(k,"rewrite") && na==1 && nb==0) {
+      break;
+    case M_REWRITE:
       if(melvi_eq_(a,"direct")) v.rewrite=MULIB_ELVI_REWRITE_DIRECT;
       else if(melvi_eq_(a,"google")) v.rewrite=MULIB_ELVI_REWRITE_GOOGLE;
       else goto syntax;
-    } else if(melvi_eq_(k,"exclude_host") && na==1 && nb==0) {
+      break;
+    case M_EXCLUDE:
       if(v.excluded_count==8 || !melvi_copy_(v.excluded_hosts[v.excluded_count],256,a)) goto syntax;
-      for(char *q=v.excluded_hosts[v.excluded_count];*q;q++) {
-        if(*q>='A'&&*q<='Z') *q=(char)(*q+32);
-        if(!((*q>='a'&&*q<='z')||(*q>='0'&&*q<='9')||*q=='-'||*q=='.')) goto syntax;
-      }
+      melvi_lower_(v.excluded_hosts[v.excluded_count]);
+      if(!melvi_hostname_(v.excluded_hosts[v.excluded_count])) goto syntax;
       v.excluded_count++;
-    } else if(melvi_eq_(k,"max_results") && na==1 && nb==0) {
+      break;
+    case M_MAX_RESULTS:
       if(!melvi_uint_(a,&v.max_results) || v.max_results<1||v.max_results>64) goto syntax;
-    } else goto syntax;
+      break;
+    default:
+      goto syntax;
+    }
     continue;
   syntax: melvi_error_(error,line,"unknown directive or invalid arguments");return 0;
   }
-  if(!v.name[0] || !v.host[0] || !v.home[0] ||
-     !v.search_template[0] || !v.anchor_mode ||
-     !v.anchor_tag[0] || !strstr(v.search_template,"{query}") ||
-     strchr(v.home,'#') || !melvi_same_host_(v.home,v.host)) {
-    melvi_error_(error,line,"required directives missing or home/host mismatch");return 0;
+  if(!lines[M_NAME] || !lines[M_HOST] || !lines[M_HOME] || !lines[M_SEARCH] || !lines[M_ANCHOR]) {
+    melvi_error_(error,line,"required directives missing");return 0;
   }
-  { /* Render with an empty query to validate all placeholders and host. */
+  if(strchr(v.home,'#') || !melvi_same_host_(v.home,v.host)) {
+    melvi_error_(error,lines[M_HOME],"invalid HTTPS home URL or host mismatch");return 0;
+  }
+  { /* Render with a nonempty probe to validate placeholders and URL syntax. */
     char url[8192];
-    if(!mulib_elvi_scrape_url(&v,"x",1,url,sizeof url)) {
-      melvi_error_(error,line,"invalid HTTPS search template");return 0;
+    if(!strstr(v.search_template,"{query}") || !mulib_elvi_scrape_url(&v,"x",1,url,sizeof url)) {
+      melvi_error_(error,lines[M_SEARCH],"invalid HTTPS search template");return 0;
     }
   }
   *out=v; if(error) memset(error,0,sizeof *error);return 1;
@@ -313,16 +345,17 @@ int mulib_elvi_scrape_url(const mulib_elvi_scrape_program_t *p,
                           const char *query, unsigned limit, char *out, size_t cap) {
   char num[24],host[256],*enc=NULL,*tmp=NULL;
   size_t qlen,used=0; const char *fmt;int ok=0;
-  if(!melvi_program_(p)||!query||!out||!cap||!p->search_template[0]||
-     !limit||limit>p->max_results) return 0;
+  if(!melvi_program_(p)||!query||!out||!cap||!limit||limit>p->max_results ||
+     !melvi_template_host_(p)) return 0;
   if(cap>8192)cap=8192;
+  if(!*query)
+    return !strchr(p->home,'#') && melvi_same_host_(p->home,p->host) &&
+      melvi_copy_(out,cap,p->home);
   qlen=0;while(qlen<=2048 && query[qlen])qlen++;
   if(qlen>2048||qlen>(SIZE_MAX-1)/3) return 0;
   enc=(char*)malloc(qlen*3+1);tmp=(char*)malloc(cap);
   if(!enc||!tmp) goto done;
-  if(qlen) {
-    if(!mulib_url_encode((const unsigned char*)query,qlen,enc,qlen*3+1)) goto done;
-  } else enc[0]=0;
+  if(!mulib_url_encode((const unsigned char*)query,qlen,enc,qlen*3+1)) goto done;
   snprintf(num,sizeof num,"%u",limit);
   fmt=p->search_template;tmp[0]=0;
   while(*fmt) {
@@ -332,6 +365,11 @@ int mulib_elvi_scrape_url(const mulib_elvi_scrape_program_t *p,
       else if(!strncmp(fmt,"{limit}",7)) {value=num;fmt+=7;}
       else goto done;
       if(!melvi_append_(tmp,cap,&used,value,strlen(value))) goto done;
+    } else if(*fmt=='%') {
+      static const char hex[]="0123456789abcdefABCDEF";
+      if(!fmt[1] || !strchr(hex,fmt[1]) || !fmt[2] || !strchr(hex,fmt[2]) ||
+         !melvi_append_(tmp,cap,&used,fmt,3)) goto done;
+      fmt+=3;
     } else if (*fmt=='}') goto done;
     else if(!melvi_append_(tmp,cap,&used,fmt++,1)) goto done;
   }
@@ -348,10 +386,10 @@ static size_t melvi_entity_(const char *p,size_t n,unsigned char out[4]) {
   if(n>=6&&!memcmp(p,"&apos;",6)) {out[0]='\'';return 6;}
   if(n>=6&&!memcmp(p,"&nbsp;",6)) {out[0]=' ';return 6;}
   if(n<4||p[0]!='&'||p[1]!='#')return 0;
-  unsigned v=0;size_t k=2;int radix=10;
+  uint32_t v=0;size_t k=2;int radix=10;
   if(k<n&&(p[k]=='x'||p[k]=='X')) {radix=16;k++;}
   size_t digits=k;
-  for(;k<n&&k<12&&p[k]!=';';k++) {
+  for(;k<n&&p[k]!=';';k++) {
     unsigned d=(unsigned char)p[k];
     if(d>='0'&&d<='9')d-='0';
     else if(radix==16&&d>='a'&&d<='f')d=d-'a'+10;
@@ -369,8 +407,9 @@ static size_t melvi_entity_(const char *p,size_t n,unsigned char out[4]) {
   else {out[0]=(unsigned char)(0xf0|(v>>18));out[1]=(unsigned char)(0x80|((v>>12)&63));out[2]=(unsigned char)(0x80|((v>>6)&63));out[3]=(unsigned char)(0x80|(v&63));}
   return k+1;
 }
-static void melvi_text_(char *title,size_t cap,const char *src,size_t len) {
-  size_t j=strlen(title);
+/* Once a code point will not fit, do not resume with a later text span. */
+static int melvi_text_(char *title,size_t cap,size_t *used,const char *src,size_t len) {
+  size_t j=*used;int clipped=0;
   for(size_t i=0;i<len&&j+1<cap;) {
     unsigned char chars[4]={0};size_t consumed=0;
     unsigned char c=(unsigned char)src[i];
@@ -397,7 +436,7 @@ static void melvi_text_(char *title,size_t cap,const char *src,size_t len) {
       if(chars[0]==' '||chars[0]=='\n'||chars[0]=='\r'||chars[0]=='\t'||chars[0]=='\f') {
         if(j&&title[j-1]!=' ')title[j++]=' ';
       } else if(chars[0]>=32 && chars[0]!=127) {
-        if(n>=cap-j)break;
+        if(n>=cap-j) {clipped=1;break;}
         memcpy(title+j,chars,n);j+=n;
       }
       i+=consumed;continue;
@@ -410,12 +449,12 @@ static void melvi_text_(char *title,size_t cap,const char *src,size_t len) {
         i++;continue;
       }
       if(point==160) {if(j&&title[j-1]!=' ')title[j++]=' ';i+=width;continue;}
-      if(width>=cap-j)break;
+      if(width>=cap-j) {clipped=1;break;}
       memcpy(title+j,src+i,width);j+=width;i+=width;continue;
     } else if(c>=32 && c!=127) title[j++]=(char)c;
     i++;
   }
-  title[j]=0;
+  title[j]=0;*used=j;return clipped || j+1==cap;
 }
 /* HTML attribute values are entity-encoded; decode before URL analysis. */
 static int melvi_attribute_(const char *raw, char *out, size_t cap) {
@@ -474,9 +513,52 @@ static int melvi_redirect_(const mulib_elvi_scrape_program_t *p,
 static int melvi_tag_(const mulib_webscan_tag_ *tag,const char *name) {
   return mulib_webscan_equal_(tag->name,tag->length,name);
 }
+/* HTML's first occurrence wins, including a missing or empty value. The
+ * generic scanner's quoted-only attribute API is not meant for this. */
+static int melvi_href_(const mulib_webscan_tag_ *tag,const char **value,size_t *length) {
+  const char *s=tag->attrs,*end=tag->end;
+  while(s<end) {
+    const char *name,*start;int href;char quote;
+    while(s<end && mulib_webscan_space_((unsigned char)*s))s++;
+    if(s==end || *s=='/') break;
+    name=s;
+    while(s<end && !mulib_webscan_space_((unsigned char)*s) && !strchr("=/'\"",*s))s++;
+    if(s==name)return 0;
+    href=mulib_webscan_equal_(name,(size_t)(s-name),"href");
+    while(s<end && mulib_webscan_space_((unsigned char)*s))s++;
+    if(s==end || *s!='=') {
+      if(href)return 0;
+      continue;
+    }
+    do {s++;} while(s<end && mulib_webscan_space_((unsigned char)*s));
+    if(s==end)return 0;
+    quote=*s;
+    if(quote=='"' || quote=='\'') {
+      start=++s;
+      while(s<end && *s!=quote)s++;
+      if(s==end)return 0;
+      if(href) {*value=start;*length=(size_t)(s-start);}
+      s++;
+      if(s<end && *s!='/' && !mulib_webscan_space_((unsigned char)*s))return 0;
+    } else {
+      start=s;
+      while(s<end && !mulib_webscan_space_((unsigned char)*s))s++;
+      if(href) {*value=start;*length=(size_t)(s-start);}
+    }
+    if(href)return *length!=0;
+  }
+  return 0;
+}
 static int melvi_heading_(const mulib_webscan_tag_ *tag) {
   return tag->length==2 && mulib_webscan_lower_((unsigned char)tag->name[0])=='h' &&
     tag->name[1]>='1' && tag->name[1]<='6';
+}
+static unsigned char melvi_cell_(const mulib_webscan_tag_ *tag) {
+  return melvi_tag_(tag,"td")?1:melvi_tag_(tag,"th")?2:0;
+}
+static int melvi_row_(const mulib_webscan_tag_ *tag) {
+  return melvi_tag_(tag,"tr") || melvi_tag_(tag,"thead") ||
+    melvi_tag_(tag,"tbody") || melvi_tag_(tag,"tfoot");
 }
 static const char *melvi_raw_(const mulib_webscan_tag_ *tag) {
   static const char *const names[]={"script","style","textarea","title","xmp",
@@ -490,23 +572,32 @@ int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *p,
                             size_t *count) {
   char *copy;const char *scan,*prev;mulib_webscan_tag_ tag;
   mulib_elvi_scrape_result_t *pending;
-  size_t used=0,work,parent=0,child=0,inert=0;int active=0,seen_child=0,parsed=0;
+  size_t used=0,work,parent=0,child=0,inert=0,title_len=0,tables=0,anchor_table=0;
+  unsigned char cell_parent=0,*cells=NULL;
+  int active=0,seen_child=0,parsed=0,clipped=0;
   char href[4096],title[512];
   if(!melvi_program_(p)||(!html&&len)||!count||(!results&&cap)||len>2097152||(len&&memchr(html,0,len)))return 0;
   if(cap>p->max_results)cap=p->max_results;
   if(!cap) {*count=0;return 1;}
+  if(p->anchor_mode==MULIB_ELVI_ANCHOR_PARENT)
+    cell_parent=melvi_eq_(p->anchor_tag,"td")?1:melvi_eq_(p->anchor_tag,"th")?2:0;
   pending=(mulib_elvi_scrape_result_t *)calloc(cap,sizeof *pending);
   if(!pending)return 0;
-  copy=(char*)malloc(len+1);if(!copy){free(pending);return 0;}
+  /* One cell marker per open table, plus a base entry for fragment input.
+   * A table opening tag takes at least seven bytes. */
+  copy=(char*)malloc(len+1+(cell_parent?len/7+1:0));
+  if(!copy){free(pending);return 0;}
   if(len) memcpy(copy,html,len);
   copy[len]=0;
+  if(cell_parent) {cells=(unsigned char *)copy+len+1;cells[0]=0;}
   scan=prev=copy;title[0]=href[0]=0;
   work=len*16+1024;
   while(used<cap && (parsed=mulib_webscan_next_work_(&scan,&tag,&work))==1) {
     const char *start=tag.name-(tag.closing?2:1);
     const char *raw=melvi_raw_(&tag);
-    if(active && !inert && start>=prev && ((p->anchor_mode!=MULIB_ELVI_ANCHOR_CHILD)||child))
-      melvi_text_(title,sizeof title,prev,(size_t)(start-prev));
+    if(active && !clipped && !inert && start>=prev &&
+       (p->anchor_mode!=MULIB_ELVI_ANCHOR_CHILD || child))
+      clipped=melvi_text_(title,sizeof title,&title_len,prev,(size_t)(start-prev));
     if(!tag.closing && melvi_tag_(&tag,"plaintext"))break;
     if(!tag.closing && raw) {
       /* webscan already skipped script/style; opaque/RCDATA tags must never
@@ -529,14 +620,26 @@ int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *p,
         parent=0;active=0;
       } else if(p->anchor_mode==MULIB_ELVI_ANCHOR_CHILD)child=0;
     }
-    if(!tag.closing && melvi_tag_(&tag,p->anchor_tag) &&
-       p->anchor_mode==MULIB_ELVI_ANCHOR_PARENT) parent++;
+    if(cells) {
+      unsigned char cell=melvi_cell_(&tag);
+      int table=melvi_tag_(&tag,"table");
+      if(table && !tag.closing) cells[++tables]=0;
+      else if(table || melvi_row_(&tag) ||
+              (cell && (!tag.closing || cell==cells[tables]))) {
+        if(cells[tables]==cell_parent)parent--;
+        cells[tables]=tag.closing?0:cell;
+        if(cells[tables]==cell_parent)parent++;
+        if(active && tables==anchor_table)active=0;
+        if(table && tables)tables--;
+      }
+    } else if(!tag.closing && melvi_tag_(&tag,p->anchor_tag) &&
+              p->anchor_mode==MULIB_ELVI_ANCHOR_PARENT) parent++;
     if(!tag.closing && melvi_tag_(&tag,"a")) {
       const char *v;size_t n;
-      active=0;seen_child=0;child=0;title[0]=href[0]=0;
+      active=0;seen_child=0;child=0;clipped=0;title_len=0;title[0]=href[0]=0;
       if((p->anchor_mode!=MULIB_ELVI_ANCHOR_PARENT||parent) &&
-         mulib_webscan_attr_(&tag,"href",&v,&n)&&n<sizeof href) {
-        memcpy(href,v,n);href[n]=0;active=1;
+         melvi_href_(&tag,&v,&n)&&n<sizeof href) {
+        memcpy(href,v,n);href[n]=0;active=1;anchor_table=tables;
       }
     } else if(active && !tag.closing && p->anchor_mode==MULIB_ELVI_ANCHOR_CHILD &&
               melvi_tag_(&tag,p->anchor_tag)) {child++;seen_child=1;}
@@ -544,7 +647,7 @@ int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *p,
             melvi_tag_(&tag,p->anchor_tag)) {if(child)child--;}
     else if(active && tag.closing && melvi_tag_(&tag,"a")) {
       int qualified=p->anchor_mode!=MULIB_ELVI_ANCHOR_CHILD || seen_child;
-      {size_t tl=strlen(title);while(tl && title[tl-1]==' ')title[--tl]=0;}
+      while(title_len && title[title_len-1]==' ')title[--title_len]=0;
       if(qualified && title[0]) {
         char url[2048];
         if(melvi_redirect_(p,href,url,sizeof url)) {
@@ -559,7 +662,7 @@ int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *p,
       }
       active=0;child=0;seen_child=0;
     }
-    if(tag.closing && melvi_tag_(&tag,p->anchor_tag) &&
+    if(!cells && tag.closing && melvi_tag_(&tag,p->anchor_tag) &&
        p->anchor_mode==MULIB_ELVI_ANCHOR_PARENT && parent) parent--;
     prev=tag.end+1;
   }
