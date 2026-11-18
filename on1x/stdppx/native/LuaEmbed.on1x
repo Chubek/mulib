@@ -1,0 +1,151 @@
+import "common.on1x";
+
+# Trusted build-host adapter only. Returned views are copied to S-expressions
+# before another eval. The compiler still checks the final generated program.
+extern fn on1x_luaembed_eval(source:string,location:string,label:string,
+  input:string)->bool;
+extern fn on1x_luaembed_output()->string;
+extern fn on1x_luaembed_error()->string;
+extern fn on1x_luaembed_offset()->i64;
+extern fn on1x_luaembed_message(key:string)->string;
+
+fn llembed_fail(key:string) { tool_fail(on1x_luaembed_message(key)); }
+fn llembed_source(carrier:sexpr)->string {
+  let args=sexpr_nth(carrier,3);
+  if sexpr_size(args)!=1 || visitor_tag(sx_head(args))!="StringLiteral" {
+    llembed_fail("argument");
+  }
+  return sx_text(sexpr_nth(sx_head(args),1));
+}
+fn llembed_run(carrier:sexpr,label:string,input:string)->string {
+  let at=sexpr_nth(carrier,4);
+  if !on1x_luaembed_eval(llembed_source(carrier),sexpr_print(at),label,input) {
+    tool_fail(text_concat(sexpr_print(at),text_concat(
+      on1x_luaembed_error(),text_concat(" @ ",sexpr_nat(on1x_luaembed_offset())))));
+  }
+  return on1x_luaembed_output();
+}
+fn llembed_statements(schema:sexpr,text:string)->sexpr {
+  var pos=sexpr_skip(text,0);var nodes=0;var out=sx_nil();
+  while pos<text_len(text) {
+    let (node,end,used)=sexpr_read(text,pos,0,nodes);
+    nodes=ppx_validate_at(schema,node,"Statement","$LuaEmbed",0,used);
+    out=sx_cons(node,out);pos=sexpr_skip(text,end);
+  }
+  return sexpr_reverse(out);
+}
+fn llembed_owned(node:sexpr,label:string)->bool {
+  let tag=visitor_tag(node);
+  return (tag=="ExtensionExpr" || tag=="Attribute") &&
+    sx_text(sexpr_nth(node,1))==label;
+}
+fn llembed_names(tree:sexpr)->sexpr {
+  var rest=sexpr_nth(tree,2);var names=sx_nil();
+  while sx_kind(rest)==3 {
+    let declaration=sx_head(rest);
+    var index=1;if visitor_tag(declaration)=="NominalDeclaration" { index=2; }
+    var name=sx_text(sexpr_nth(declaration,index));
+    if index==2 { name=text_concat("type:",name); }
+    if sx_kind(ppx_lookup(names,name))!=0 { llembed_fail("collision"); }
+    names=sx_cons(sx_cons(sx_string(name),ppx_list1(sx_symbol("1"))),names);
+    rest=sx_tail(rest);
+  }
+  return names;
+}
+fn llembed_pending(tree:sexpr,label:string,depth:i64,work:i64)->(bool,i64) {
+  if depth>=256 || work>=262144 { llembed_fail("expansions"); }
+  var used=work+1;
+  if llembed_owned(tree,label) { return (true,used); }
+  if !sexpr_list(tree) { return (false,used); }
+  var rest=tree;
+  while sx_kind(rest)==3 {
+    let (found,count)=llembed_pending(sx_head(rest),label,depth+1,used);
+    if found { return (true,count); }
+    used=count;rest=sx_tail(rest);
+  }
+  return (false,used);
+}
+fn transform(tree:sexpr,label:string)->sexpr {
+  let schema=ppx_schema_env();
+  var working=tree;
+  for pass in 0..16 {
+    let (pending,count)=llembed_pending(working,label,0,0);
+    if !pending { return working; }
+    let (wrapper,next)=ppx_fresh(working,0);
+    let input=sexpr_print(working);
+    let rewritten=visitor_rewrite(working,fn(node:sexpr,path:sexpr)->sexpr {
+      if visitor_tag(node)=="Do" {
+        let expr=sexpr_nth(node,1);
+        if llembed_owned(expr,label) && sx_text(sexpr_nth(expr,2))=="statements" {
+          let at=sexpr_nth(expr,4);
+          let body=llembed_statements(schema,llembed_run(expr,label,input));
+          return ppx_node("Scope",ppx_list2(native_block(body,at),at));
+        }
+      }
+      if !llembed_owned(node,label) { return node; }
+      let op=sx_text(sexpr_nth(node,2));
+      if visitor_tag(node)=="Attribute" {
+        if op!="program" { llembed_fail("context"); }return node;
+      }
+      if op=="statements" || op=="program" { return node; }
+      if op!="stdout" && op!="text" && op!="expr" { llembed_fail("operation"); }
+      let text=llembed_run(node,label,input);let at=sexpr_nth(node,4);
+      if op=="text" { return native_string(text,at); }
+      if op=="stdout" { return ppx_call(wrapper,ppx_list1(native_string(text,at)),at); }
+      if op=="expr" {
+        let expression=sexpr_parse(text);
+        ppx_validate_at(schema,expression,"Expression","$LuaEmbed",0,0);
+        return expression;
+      }
+      llembed_fail("operation");return node;
+    });
+    var declarations=sexpr_nth(rewritten,2);var output=sx_nil();
+    while sx_kind(declarations)==3 {
+      let declaration=sx_head(declarations);declarations=sx_tail(declarations);
+      var marker=sx_nil();
+      let tag=visitor_tag(declaration);
+      if tag=="Function" || tag=="Extern" {
+        var index=5;if tag=="Extern" { index=4; }
+        var attributes=sexpr_nth(declaration,index);
+        while sx_kind(attributes)==3 {
+          let attribute=sx_head(attributes);attributes=sx_tail(attributes);
+          if llembed_owned(attribute,label) {
+            if sx_kind(marker)!=0 { llembed_fail("marker"); }marker=attribute;
+          }
+        }
+      }
+      if sx_kind(marker)==0 { output=sx_cons(declaration,output);continue; }
+      if tag!="Function" || sexpr_size(sexpr_nth(declaration,2))!=0 ||
+        sexpr_size(sexpr_nth(declaration,5))!=1 ||
+        sexpr_size(sexpr_nth(sexpr_nth(declaration,4),1))!=0 {
+        llembed_fail("marker");
+      }
+      let generated=sexpr_parse(llembed_run(marker,label,input));
+      ppx_validate(schema,generated);
+      var generated_declarations=sexpr_nth(generated,2);
+      while sx_kind(generated_declarations)==3 {
+        output=sx_cons(sx_head(generated_declarations),output);
+        generated_declarations=sx_tail(generated_declarations);
+      }
+    }
+    working=ppx_node("Unit",ppx_list2(sx_symbol("1"),sexpr_reverse(output)));
+    let (uses_wrapper,used)=ppx_find_text(working,wrapper,0,0);
+    if uses_wrapper {
+      let functions=sexpr_nth(working,2);let first=sx_head(functions);
+      let at=sexpr_nth(first,sexpr_size(first)-1);
+      let params=ppx_list1(native_parameter("text",ppx_node("StringType",sx_nil()),at));
+      let body=native_block(ppx_list1(native_do(ppx_call("io_stdout",
+        ppx_list1(ppx_ident("text",at)),at),at)),at);
+      let definition=ppx_node("Function",sx_cons(sx_string(wrapper),sx_cons(params,
+        sx_cons(ppx_node("VoidType",sx_nil()),ppx_list3(body,sx_nil(),at)))));
+      working=ppx_node("Unit",ppx_list2(sx_symbol("1"),native_append(functions,ppx_list1(definition))));
+    }
+    let names=llembed_names(working);
+    ppx_validate(schema,working);
+    if text_len(sexpr_print(working))>4194304 { llembed_fail("expansions"); }
+  }
+  let (pending,count)=llembed_pending(working,label,0,0);
+  if !pending { return working; }
+  llembed_fail("chain");return working;
+}
+fn main() { native_serve(transform); }

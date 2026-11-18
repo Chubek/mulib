@@ -46,6 +46,13 @@ pass **4/4** and **6/6**; Clang ASan/UBSan with compiler, runtime, generated C11
 clients and native PPXs instrumented passes **9/9**. Exact commands and limits
 are recorded under “Catalog-v2 data ownership” in `../VERIFICATION.md`.
 
+LuaEmbed work item starts at MuLIB `681dacbdd419b71ae86042d0c307180cbd5dea5e`.
+
+| capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
+|---|---|---|---|---|---|---|
+| Native GrammarEmbed | `stdppx/native/GrammarEmbed.on1x`, `stdppx/grammarembed/` | Build-host liblr C++ companion; emitted pure On1x runtime engines and tables | Embedded grammar/token/rule DSL, named refs/EBNF; NFA/DFA × LR1/LALR1/LL1; token spans/trees | `test_grammarembed.py`, independent liblr runtime oracle, bridge API and relocated install | EXECUTABLE | Documented byte grammar subset; no Raku actions/inheritance, GLR/PEG, incremental liblr construction budget or general foreign ABI |
+| Native LuaEmbed and `llembed` | `stdppx/native/LuaEmbed.on1x`, `stdppx/luaembed/` | Trusted synchronous build-host scalar bridge to canonical Mune, one planner implementation TU; no application Lua dependency | Existing explicit carriers; captured runtime-position stdout/text, schema-checked expressions/statement streams/programs, finite chained expansion | `test_luaembed.py`, runtime/allocation C tests, relocated installation, both scanners, strict GCC/Clang C11 and ASan/UBSan; see `VERIFICATION.md` | EXECUTABLE | No OS sandbox, raw-Lua core lexer, automatic external PPX authorization, general safe FFI, binary-NUL application strings or cross-platform certification |
+
 M5/M7 tooling work item, starting checkout: MuLIB
 `f520a7da8cd29c282f335ed3d0fdca1599c2ff30`, configured LibStone
 `57113dc48d815359431dce63a6b865a21dd993cd` (different from the parent

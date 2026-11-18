@@ -50,6 +50,24 @@ with tempfile.TemporaryDirectory(dir=t.work,prefix='install-') as temporary:
         p=run([compiler,'--check',source,'--stdppx','pipe','--use-ppx','identity',
                '--ppx-path',relocated/'libexec/on1x'],env=env,cwd=base)
         assert p.returncode==0,p.stderr
+    if (relocated/'libexec/on1x/on1x-ppx-LuaEmbed').is_file():
+        source.write_text('fn main(){println(@LuaEmbed("expr",'
+                          '"llembed.emit(llembed.integer(42))"));}')
+        p=run([sys.executable,library/'tools/on1x-build.py',source,'--on1xc',compiler,
+               '--cc',t.cc,'--use-ppx','LuaEmbed','--stdppx-path',relocated/'libexec/on1x',
+               '-o',exe,*[f'--cflag={flag}' for flag in t.flags]],env=env,cwd=base)
+        assert p.returncode==0,p.stderr
+        p=run([exe],cwd=base,env=env)
+        assert p.returncode==0 and p.stdout=='42\n',p.stderr
+    if (relocated/'libexec/on1x/on1x-ppx-GrammarEmbed').is_file():
+        source.write_text('@GrammarEmbed("grammar","grammar Installed {rule TOP {\'ok\'}}") '
+                          'fn marker(){}fn main(){println(Installed_matches("ok"));}')
+        p=run([sys.executable,library/'tools/on1x-build.py',source,'--on1xc',compiler,
+               '--cc',t.cc,'--use-ppx','GrammarEmbed','--stdppx-path',relocated/'libexec/on1x',
+               '-o',exe,*[f'--cflag={flag}' for flag in t.flags]],env=env,cwd=base)
+        assert p.returncode==0,p.stderr
+        p=run([exe],cwd=base,env=env)
+        assert p.returncode==0 and p.stdout=='true\n',p.stderr
     source.write_text('from std import mulib;fn main(){assert(mulib.fits_size(42));println(mulib.abi_version());}')
     p=run([compiler,'--deps',source],cwd=base,env=env);assert p.returncode==0,p.stderr
     assert str(library/'stdlib/mulib/__init__.on1x') in p.stdout and str(t.root/'stdlib/mulib') not in p.stdout

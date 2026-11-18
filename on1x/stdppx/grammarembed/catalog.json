@@ -1,0 +1,29 @@
+{
+  "schema": "on1x.grammarembed/v1",
+  "messages": {
+    "input": "GrammarEmbed: invalid or oversized grammar input",
+    "syntax": "GrammarEmbed: malformed grammar construct",
+    "name": "GrammarEmbed: expected a bounded, nonreserved identifier",
+    "option": "GrammarEmbed: unknown, repeated or unsupported grammar option",
+    "duplicate": "GrammarEmbed: duplicate token or rule name",
+    "reference": "GrammarEmbed: undefined or invalid named reference",
+    "recursive-token": "GrammarEmbed: recursive token definition",
+    "nullable": "GrammarEmbed: tokens must consume at least one byte",
+    "conflict": "GrammarEmbed: conflicting parser actions; rewrite the grammar or select a suitable algorithm",
+    "left-recursion": "GrammarEmbed: LL(1) cannot admit left recursion",
+    "limit": "GrammarEmbed: grammar or generated-table budget exceeded",
+    "liblr": "GrammarEmbed: liblr rejected the grammar",
+    "internal": "GrammarEmbed: generator failure",
+    "marker": "GrammarEmbed: grammar requires a parameterless empty void marker function with one attribute",
+    "argument": "GrammarEmbed: expected grammar and exactly one literal grammar source string",
+    "collision": "GrammarEmbed: generated function name collides with an existing name"
+  },
+  "statuses": {"ok": 0, "lexical": 1, "syntax": 2, "limit": 3},
+  "limits": {
+    "source": 16384, "definitions": 64, "name_bytes": 48, "group_depth": 32,
+    "regex": 2048, "symbols": 128,
+    "productions": 256, "rhs": 64, "dfa_states": 256, "nfa_states": 256,
+    "lr_states": 512, "table_bytes": 1048576, "grammars": 8,
+    "input_bytes": 65536, "tokens": 4096, "steps": 1048576, "tree_depth": 128
+  }
+}

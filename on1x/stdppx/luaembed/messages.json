@@ -1,0 +1,25 @@
+{
+  "schema": "on1x.luaembed-messages/v1",
+  "messages": {
+    "internal": "LuaEmbed: internal adapter failure",
+    "input": "LuaEmbed: invalid or oversized input",
+    "memory": "LuaEmbed: allocation or initialization failed",
+    "lua": "LuaEmbed: Lua syntax, semantic, execution or resource failure",
+    "output": "LuaEmbed: output limit, NUL byte or invalid output callback",
+    "operation": "LuaEmbed: expected stdout, text, expr, statements or program",
+    "argument": "LuaEmbed: expected exactly one literal Lua source string",
+    "context": "LuaEmbed: statements is valid only as a statement; program only as a function attribute",
+    "marker": "LuaEmbed: program requires a parameterless empty marker function with no other attributes",
+    "collision": "LuaEmbed: generated declaration collides with an existing declaration",
+    "chain": "LuaEmbed: expansion pass limit exceeded",
+    "expansions": "LuaEmbed: total expansion limit exceeded",
+    "fresh": "LuaEmbed: fresh-name pool exhausted",
+    "identifier": "llembed: expected a bounded On1x identifier",
+    "string": "llembed: expected a NUL-free string",
+    "integer": "llembed: expected an i64 integer",
+    "symbol": "llembed: invalid S-expression symbol",
+    "sequence": "llembed: expected a bounded dense sequence of S-expressions",
+    "node": "llembed: invalid constructor or field sequence",
+    "require": "llembed: only the embedded llembed module is available"
+  }
+}

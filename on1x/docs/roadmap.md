@@ -7,6 +7,19 @@ MANIFEST-backed inventory. CDD declarations can be inspected through
 [KernelBind](kernel-bind.md#inspect-requests-and-discover-declarations), but have
 no semantic sidecars or callable bindings.
 
+[`GrammarEmbed`](../stdppx/grammarembed/README.md) provides embedded
+`grammar`/`token`/`rule` constructs through the ordinary native PPX protocol.
+Firestone liblr supplies NFA/DFA generation and LR1/LALR1/LL1 analysis; the PPX
+emits checked On1x lexer/parser machinery. Its documented byte-oriented grammar
+subset includes named references, alternatives, groups, repetition and skip tokens.
+
+M7 [`LuaEmbed`](../stdppx/luaembed/README.md) is a native On1x PPX using canonical
+MuLIB Mune through a trusted build-host bridge. It captures stdout for ordinary
+runtime emission or validates generated AST expressions/statements/programs,
+including finite LuaEmbed chains and explicitly ordered subsequent PPXs.
+This adds no raw-Lua core grammar, application interpreter, safe FFI claim or
+authority to register more processors.
+
 The M5/M7 project tools add non-S-expression `On1xfile` builds, directory-local
 input declarations, MuLIB Mune policies, and an opt-in Linux build sandbox.
 The [On1x formatter](formatter.md) uses the existing PrettyPrint layout and

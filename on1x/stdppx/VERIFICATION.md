@@ -1,5 +1,21 @@
 # Verification report
 
+## GrammarEmbed continuation — 2026-11-18
+
+Native `GrammarEmbed` uses Firestone `liblr` at configured revision
+`934b6ed029bfea28bbf23b5dc77c476154b0dd0d` to emit ordinary On1x NFA/DFA
+lexers and LR1/LALR1/LL1 parser engines. GCC/generated, Clang/fallback and
+Clang ASan/UBSan/leak-detection integration/bridge/install selections pass
+**3/3 each** (including targeted integration reruns). Each integration profile
+checks **4,686** short-input results against independent liblr C++ runtimes.
+Additional cases cover concrete trees, byte spans, epsilon, conflicts,
+left recursion, token helpers, limits, fresh names and LuaEmbed → GrammarEmbed.
+The shipped example runs after name-based discovery and installed relocation.
+
+See [`../VERIFICATION.md`](../VERIFICATION.md#grammarembed--native-liblr-lexerparser-emission)
+for commands and exact scope, and the [GrammarEmbed guide](grammarembed/README.md)
+for the grammar subset and emitted API.
+
 ## Native extension integration — 2026-11-15
 
 All **15 native processors** build and have compiler-generated C11 execution
@@ -96,3 +112,19 @@ catalog entries remain unimplemented, and raw FFI fixtures grant no safety proof
    trees, and symlink escapes in embedded source files.
 5. Inspect external processors as trusted executable code; protocol validation
    is not sandboxing.
+## LuaEmbed continuation
+
+Native-only `LuaEmbed` and the embedded `llembed` module are tested on Linux
+x86-64 with GCC 16.2.1/generated scanner and Clang 22.1.8/fallback scanner.
+Final focused selections pass **5/5** (GCC), **4/4** (Clang), and **6/6**
+(Clang ASan/UBSan/leak detection), including actual On1x C11 programs,
+metaprogram chains, 128 allocation-failure samples and relocated installation.
+Standalone Python/schema regressions remain **30/30**.
+
+The parent full generated-scanner run is **63/65**, with only the known
+Elvi-scrape manual fingerprint failures. A strict-clean C++ compiler is not
+claimed: preexisting loader indentation warnings remain. New C11 kernel,
+bridge, processor and client code is compiled with warnings-as-errors.
+See [`../VERIFICATION.md`](../VERIFICATION.md#luaembed-native-ppx-and-embedded-llembed)
+for revisions, exact commands, supported scope and limits, and the
+[LuaEmbed contract](luaembed/README.md).
