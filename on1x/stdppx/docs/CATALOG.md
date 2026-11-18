@@ -43,5 +43,6 @@
 | `derive_visitor` | design-only | Per-ADT visitor dispatch |
 | `ffi_safe` | design-only | Verified ownership-safe MuLIB wrappers |
 | `letops` | design-only | Monadic/applicative binding expansion |
+| `LuaEmbed` | implemented-native | Bounded compile-time Mune Lua, captured stdout, schema-checked AST streams/programs and chaining |
 
-`implemented-python` processors have protocol and compiler-generated C11 execution tests. See `VERIFICATION.md` for measured configurations. `design-only` means documentation exists but no processor executable is shipped.
+`implemented-python` and `implemented-native` processors have protocol and compiler-generated C11 execution tests. LuaEmbed is native-only. See `VERIFICATION.md` for measured configurations. `design-only` means documentation exists but no processor executable is shipped.

@@ -1,5 +1,104 @@
 # On1x verification — 2026-11-18
 
+## LuaEmbed native PPX and embedded `llembed`
+
+Isolated branch `on1x/luaembed`, starting MuLIB
+`681dacbdd419b71ae86042d0c307180cbd5dea5e`; configured read-only LibStone
+`57113dc48d815359431dce63a6b865a21dd993cd` at
+`/mnt/nvme/mulib/on1x/third_party/libstone`, unchanged. Linux
+`6.18.52-1-lts` x86-64, GCC 16.2.1 and Clang 22.1.8.
+
+`stdppx/native/LuaEmbed.on1x` uses the existing native PPX/visitor/schema
+libraries. `stdppx/luaembed/runtime.[ch]` is a trusted, synchronous build-host
+scalar companion to canonical Mune, not safe foreign admission. The existing
+MuLIB planner generates one Mune implementation TU; `ar t
+/tmp/opencode/luaembed-gcc/libon1x_luaembed_kernels.a` reports only
+`luaembed_impl.c.o`. `llembed.lua` and `messages.json` are embedded by a
+build-only generator. The ordinary application runtime and core grammar did
+not change; generated clients do not link Mune or LibStone.
+
+The integration suite compiles/runs runtime-position stdout, exact text,
+expressions, statement streams, full programs, generated-program/expr chains,
+composition with a later explicitly registered native PPX, fresh names and
+caller shadowing, UTF-8/escape handling, i64 minimum, discovery and the shipped
+example. It verifies byte-identical repeated C output for these scalar/string
+fixtures, final compiler type rejection and unchanged C destinations on failure.
+Negatives cover malformed protocol/schema/S-expressions, trailing stream data,
+bad Lua syntax/semantics, NUL, unsupported modules, source/work/heap/output
+exhaustion, generated-name collisions, unauthorized labels, 65 evaluations and
+nonterminating metaprogram chains. Native C tests separately exercise ABI
+failure paths and terminal-control escaping. Linux linker allocation wrappers
+sample 128 failure points across the full parse/state/library/execution lifetime.
+Relocated installation executes LuaEmbed using the installed bundle/schema.
+
+### Reproduction
+
+From the MuLIB root:
+
+```sh
+cmake -S on1x -B /tmp/opencode/luaembed-gcc \
+  -DBUILD_TESTING=ON -DON1X_BUILD_NATIVE_PPX=ON \
+  -DON1X_LIBSTONE_ROOT=/mnt/nvme/mulib/on1x/third_party/libstone \
+  -DON1X_REQUIRE_LIBSTONE=ON -DON1X_WITH_PROJECT_QMR=OFF \
+  '-DCMAKE_C_FLAGS=-Wall -Wextra -Wpedantic -Werror' \
+  '-DCMAKE_CXX_FLAGS=-Wall -Wextra -Wpedantic'
+cmake --build /tmp/opencode/luaembed-gcc --parallel 4
+ctest --test-dir /tmp/opencode/luaembed-gcc --output-on-failure --parallel 4
+ctest --test-dir /tmp/opencode/luaembed-gcc --output-on-failure --parallel 3 \
+  -R '^on1x\.(luaembed(_runtime|_allocation)?|install|scanner_parity)$'
+```
+
+The Clang configuration `/tmp/opencode/luaembed-clang` substitutes
+`-DON1X_USE_FALLBACK_SCANNER=ON` for `-DON1X_REQUIRE_LIBSTONE=ON` and sets
+`-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++`. Its final selection is
+`-R '^on1x\.(luaembed(_runtime|_allocation)?|install)$'`.
+
+The Clang/fallback Debug sanitizer configuration `/tmp/opencode/luaembed-san`
+adds `-fsanitize=address,undefined -fno-omit-frame-pointer
+-fno-sanitize-recover=all` to both compiler flag sets and uses
+`-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer;-fno-sanitize-recover=all`
+to instrument generated client C11 as well:
+
+```sh
+cmake --build /tmp/opencode/luaembed-san --parallel 4
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
+  ctest --test-dir /tmp/opencode/luaembed-san --output-on-failure --parallel 3 \
+  -R '^on1x\.(luaembed(_runtime|_allocation)?|ppx|stdppx|install)$'
+python3 -m unittest discover -s on1x/stdppx/tests -v
+python3 -B on1x/stdppx/make_catalog.py
+```
+
+### Results and limits
+
+| Configuration | Result |
+|---|---|
+| Initial related GCC/generated PPX, libraries, stdppx and scanner parity | **4/4 passed** |
+| Full GCC/generated run before allocation-test registration | **63 passed, 2 failed** (65) |
+| Final GCC/generated LuaEmbed/runtime/allocation, install, scanner parity | **5/5 passed** |
+| Clang/fallback related LuaEmbed/PPX/libraries/stdppx selection | **5/5 passed** |
+| Final Clang/fallback LuaEmbed/runtime/allocation and relocated installation | **4/4 passed** |
+| Clang ASan/UBSan/leak detection, kernel/bridge/processor/client/fault paths | **6/6 passed**, no findings |
+| Final expanded program-chain/i64-boundary integration rerun, all three profiles | **1/1 passed each** |
+| Standalone Python PPX/schema regressions | **30/30 passed** |
+| Python compilation, generated catalog regeneration and `git diff --check` | **passed** |
+
+The full-suite failures are the previously recorded `on1x.contracts` and
+`on1x.mulib` Elvi-scrape manual fingerprint mismatch. Its audited fingerprint
+was not refreshed. The first attempted all-`-Werror` C++ build also stopped on
+two existing misleading-indentation warnings in `src/loader.cpp` (lines 81/284).
+That file was left untouched; C11 kernels, bridge, generated PPX and client
+code still compile with strict warnings-as-errors. Host C++ builds retain the
+warnings without `-Werror`; no claim of a strict-clean whole compiler is made.
+
+This is an **EXECUTABLE bounded Linux x86-64 profile**, not an OS sandbox,
+full Lua conformance proof, automatic processor authorization, raw-Lua core
+syntax, general foreign-resource admission or a cross-platform certification.
+Lua object-identity formatting is not promised byte-reproducible; use stable
+scalar/string constructors. NUL cannot cross the current On1x string ABI and
+is rejected, not truncated. The kernel's parser/AST budgets are distinct from
+its runtime heap budget. The compiler's existing subprocess deadline remains
+the wall-clock limit. See the [complete contract](stdppx/luaembed/README.md).
+
 ## Project tooling — starting baseline
 
 MuLIB `f520a7da8cd29c282f335ed3d0fdca1599c2ff30`; configured LibStone

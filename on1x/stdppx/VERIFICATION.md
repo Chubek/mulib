@@ -96,3 +96,19 @@ catalog entries remain unimplemented, and raw FFI fixtures grant no safety proof
    trees, and symlink escapes in embedded source files.
 5. Inspect external processors as trusted executable code; protocol validation
    is not sandboxing.
+## LuaEmbed continuation
+
+Native-only `LuaEmbed` and the embedded `llembed` module are tested on Linux
+x86-64 with GCC 16.2.1/generated scanner and Clang 22.1.8/fallback scanner.
+Final focused selections pass **5/5** (GCC), **4/4** (Clang), and **6/6**
+(Clang ASan/UBSan/leak detection), including actual On1x C11 programs,
+metaprogram chains, 128 allocation-failure samples and relocated installation.
+Standalone Python/schema regressions remain **30/30**.
+
+The parent full generated-scanner run is **63/65**, with only the known
+Elvi-scrape manual fingerprint failures. A strict-clean C++ compiler is not
+claimed: preexisting loader indentation warnings remain. New C11 kernel,
+bridge, processor and client code is compiled with warnings-as-errors.
+See [`../VERIFICATION.md`](../VERIFICATION.md#luaembed-native-ppx-and-embedded-llembed)
+for revisions, exact commands, supported scope and limits, and the
+[LuaEmbed contract](luaembed/README.md).

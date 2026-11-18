@@ -8,10 +8,16 @@ lowering live in On1x libraries, not Python/C++. See [Category](../docs/category
 for the checked local scalar profile, native typed feedback and independent
 host admission, trusted activation, and remaining generic/functor stages.
 
-**24 Python processors and 15 native On1x processors** implement bounded,
+**24 Python processors and 16 native On1x processors** implement bounded,
 schema-v1 source transformations. CMake builds/installs all native executables;
 the compiler always runs its normal inference, type, staging and ownership checks
 after reconstruction. This is not a typed deriving or safe-FFI framework.
+
+[`LuaEmbed`](luaembed/README.md) is native-only: it runs bounded, restricted
+Mune Lua at compile time, captures stdout into normal runtime stream calls or
+strings, and validates generated S-expression expressions, statement streams
+and programs. Its embedded Lua module `llembed` supplies AST constructors,
+escaping, fresh names and bounded metaprogram chaining. Activation stays explicit.
 
 The M1 numeric increments add `F64Type` and unsigned decimal `FloatLiteral`
 spelling to the canonical and standalone v1 schemas, and f64 to native/Python
@@ -47,8 +53,8 @@ Source `@ppx` registrations require `--allow-source-ppx`.
 
 ## Implemented native/Python operations
 
-All fifteen native processors import the original `stdlib/ppx` authoring library.
-`native/common.on1x` is a shared helper, not a sixteenth executable.
+All sixteen ordinary native processors import the original `stdlib/ppx` authoring library.
+`native/common.on1x` is a shared helper, not an executable.
 
 | Processor | Source API |
 |---|---|
@@ -67,6 +73,7 @@ All fifteen native processors import the original `stdlib/ppx` authoring library
 | `state_machine` | `transition(state,event,from,on,to,...)`; compatibility statement `set(identifier,value)` |
 | `tap` | `call(value,callback_identifier)`; compatibility `identity(value)` |
 | `trace` | Function attribute `entry` with zero or one literal message; stderr `TRACE message` |
+| `LuaEmbed` | Native-only: bounded Mune Lua `stdout`, `text`, `expr`, `statements`, and `program`; embedded `llembed` helpers and finite chaining |
 
 `tap` evaluates the value then the callback exactly once, invokes the callback,
 and returns the value. A mutable callback is passed as an argument rather than

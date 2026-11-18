@@ -1,0 +1,9 @@
+# Activate explicitly with --use-ppx LuaEmbed and the native stdppx search path.
+fn main() {
+  @LuaEmbed("stdout", "print('Lua output at this runtime position')");
+  println(@LuaEmbed("expr", "llembed.emit(llembed.integer(6*7))"));
+  @LuaEmbed("statements",
+    "local L=require('llembed'); L.emit(L.do_(L.call('println',{L.string('generated statement')})))");
+  println(@LuaEmbed("expr",
+    "llembed.emit(llembed.extension('expr','llembed.emit(llembed.integer(7))'))"));
+}

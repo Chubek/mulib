@@ -1,12 +1,12 @@
 {
   "package": "on1x/stdppx",
   "protocol": "on1x.sexpr-ast/v1",
-  "status_note": "All 24 Python processors and 15 native processors have compiler-generated C11 execution tests. See VERIFICATION.md for measured configurations. Design-only entries are not implementations.",
+  "status_note": "The 24 Python processors and 16 ordinary native processors have compiler-generated C11 execution tests. LuaEmbed is native-only. See VERIFICATION.md for measured configurations. Design-only entries are not implementations.",
   "counts": {
     "existing_python": 6,
     "new_python": 18,
     "design_only": 17,
-    "native_sources": 15
+    "native_sources": 16
   },
   "processors": [
     {
@@ -336,6 +336,14 @@
       "prerequisites": "Option/Result ADTs, typed lowering and appropriate effects",
       "entrypoint": null,
       "native": null
+    },
+    {
+      "name": "LuaEmbed",
+      "status": "implemented-native",
+      "description": "Bounded compile-time Mune Lua, captured stdout, schema-checked AST streams/programs and chaining",
+      "prerequisites": "MuLIB mune via the canonical single-TU planner; explicit PPX authorization",
+      "entrypoint": null,
+      "native": "native/LuaEmbed.on1x"
     }
   ]
 }

@@ -2,6 +2,13 @@
 
 ## Current feature matrix
 
+M7 [`LuaEmbed`](../stdppx/luaembed/README.md) is a native On1x PPX using canonical
+MuLIB Mune through a trusted build-host bridge. It captures stdout for ordinary
+runtime emission or validates generated AST expressions/statements/programs,
+including finite LuaEmbed chains and explicitly ordered subsequent PPXs.
+This adds no raw-Lua core grammar, application interpreter, safe FFI claim or
+authority to register more processors.
+
 The M5/M7 project tools add non-S-expression `On1xfile` builds, directory-local
 input declarations, MuLIB Mune policies, and an opt-in Linux build sandbox.
 The [On1x formatter](formatter.md) uses the existing PrettyPrint layout and

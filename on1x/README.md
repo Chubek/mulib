@@ -139,10 +139,15 @@ The repository accessed through the GitHub connection exposed the prior PPX-v1 s
 
 ## Contents
 
+- Native [`LuaEmbed`](stdppx/luaembed/README.md) and its embedded `llembed` Lua
+  module: bounded Mune execution, captured program-stream output, schema-checked
+  AST/program generation and explicit metaprogram chains; no runtime Lua dependency.
+
 - Source-only `.on1x` facades: JSON, YAML, TOML, INI, Parsec, crypto, Unix, sockets, network, IPC, NNG-style envelopes, RPC JSON request construction, Shexp ASTs, hashconsing, graph traversal, Base and Batteries-like structures.
 - `_bridge/mulib_bridge.c`: raw C ABI bridge against *real MuLIB public headers* and an independently built Exotract one-TU `libmulib.a`. C bridge is **not** safe by ExoML/Chisel criteria. It requires reviewed extraction and independent memory/effect checks before a safe FFI claim.
-- Fifteen native On1x PPXs: the original eight plus assertions, cond, format,
-  logging, state_machine, tap and trace, with Python/native execution comparisons.
+- Sixteen ordinary native On1x PPXs: the original eight plus assertions, cond,
+  format, logging, state_machine, tap, trace and native-only LuaEmbed, with
+  compiler-generated C11 execution tests.
 - [`stdlib/CATALOG.json`](stdlib/CATALOG.json): complete named SML Basis inventory;
   extension modules remain partial adapters, not Base/Batteries API parity.
 
