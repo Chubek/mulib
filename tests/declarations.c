@@ -1165,4 +1165,8 @@
 #include "mulib-webidl-runtime.h"
 #include "mulib-websearch-engine.h"
 #include "mulib-websearch-provider.h"
+#include "mulib-elvi-scrape.h"
+#include "mulib-prettydoc.h"
+#include "mulib-prettyemit.h"
+#include "mulib-prettysexpr.h"
 int main(void) { return 0; }

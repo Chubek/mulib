@@ -1,3 +1,7 @@
+#define MULIB_IMPL_ELVI_SCRAPE
+#define MULIB_IMPL_PRETTYDOC
+#define MULIB_IMPL_PRETTYEMIT
+#define MULIB_IMPL_PRETTYSEXPR
 #define MULIB_IMPL_BROWSER_CACHE
 #define MULIB_IMPL_BROWSER_COOKIEJAR
 #define MULIB_IMPL_BROWSER_DOCUMENTLOAD
@@ -2337,3 +2341,7 @@
 #include "mulib-webidl-runtime.h"
 #include "mulib-websearch-engine.h"
 #include "mulib-websearch-provider.h"
+#include "mulib-elvi-scrape.h"
+#include "mulib-prettydoc.h"
+#include "mulib-prettyemit.h"
+#include "mulib-prettysexpr.h"

@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1167 headers, 1201 direct dependency edges.
+Inventory: 1171 headers, 1206 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (396 modules)
+## Stratum 0 (397 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -280,6 +280,7 @@ Compatibility group: `parsec`, `peg`.
 | [port](mulib-port.md) | none |
 | [positions](mulib-positions.md) | none |
 | [postings](mulib-postings.md) | none |
+| [prettydoc](mulib-prettydoc.md) | none |
 | [price-causal](mulib-price-causal.md) | none |
 | [price-confidence](mulib-price-confidence.md) | none |
 | [price-demand](mulib-price-demand.md) | none |
@@ -416,7 +417,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (388 modules)
+## Stratum 1 (389 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -672,6 +673,7 @@ Compatibility group: `parsec`, `peg`.
 | [perlpod](mulib-perlpod.md) | `strbuf`, `utf8` |
 | [phrasequery](mulib-phrasequery.md) | `positions` |
 | [plot2d](mulib-plot2d.md) | `typecore` |
+| [prettyemit](mulib-prettyemit.md) | `prettydoc` |
 | [price-normalize](mulib-price-normalize.md) | `money` |
 | [price-observation](mulib-price-observation.md) | `money` |
 | [procfs](mulib-procfs.md) | `vfs` |
@@ -809,7 +811,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (141 modules)
+## Stratum 2 (142 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -909,6 +911,7 @@ Compatibility group: `parsec`, `peg`.
 | [peg](mulib-peg.md) | `parsec`, `strbuf` |
 | [pipeline](mulib-pipeline.md) | `parallel` |
 | [postdominance](mulib-postdominance.md) | `dominance` |
+| [prettysexpr](mulib-prettysexpr.md) | `prettyemit` |
 | [price-history](mulib-price-history.md) | `price-observation` |
 | [price-match](mulib-price-match.md) | `shylock-core` |
 | [price-monitor](mulib-price-monitor.md) | `price-observation` |
@@ -1225,11 +1228,12 @@ Compatibility group: `parsec`, `peg`.
 | [vcscomitt](mulib-vcscomitt.md) | `vcscommit` |
 | [web_conntection](mulib-web_conntection.md) | `http1` |
 
-## Stratum 10 (3 modules)
+## Stratum 10 (4 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [browser-fetch](mulib-browser-fetch.md) | `browser-origin`, `fetch` |
+| [elvi-scrape](mulib-elvi-scrape.md) | `fetch`, `https`, `url` |
 | [muw3](mulib-muw3.md) | `https`, `socket`, `tls` |
 | [static_file](mulib-static_file.md) | `http_response`, `mime`, `vfs` |
 

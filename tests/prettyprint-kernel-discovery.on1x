@@ -1,0 +1,4 @@
+# Discovery fixture only; direct rendering is not admitted by KernelBind yet.
+import kernel mulib.prettysexpr as PrettyKernel;
+
+fn main() {}
