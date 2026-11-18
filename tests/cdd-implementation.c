@@ -1,0 +1,14 @@
+#define MULIB_IMPL_CDD_CATALOGUE
+#define MULIB_IMPL_CDD_REGISTRY
+#define MULIB_IMPL_CDD_QUERY
+#define MULIB_IMPL_CDD_PLAN
+#define MULIB_IMPL_CDD_RESOLVE
+#define MULIB_IMPL_CDD_SCHEMA
+#define MULIB_IMPL_CDD_EXECUTE
+#define MULIB_IMPL_CDD_DIFF
+#include "mulib-cdd-registry.h"
+#include "mulib-cdd-query.h"
+#include "mulib-cdd-resolve.h"
+#include "mulib-cdd-schema.h"
+#include "mulib-cdd-execute.h"
+#include "mulib-cdd-diff.h"

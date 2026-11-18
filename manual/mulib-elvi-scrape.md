@@ -8,9 +8,13 @@ It neither embeds Surfraw nor executes shell scripts.
 ## Paths
 
 - `include/mulib-elvi-scrape.h` — public API and implementation switch.
-- `library/elvi-scrape/google.elvs` — Google provider.
-- `library/elvi-scrape/bing.elvs` — Bing provider.
+- [`library/elvis/`](../library/elvis/README.md) — canonical profiles: `Google.elvs`,
+  `Bing.elvs`, `DuckDuckGo.elvs`, `Scholar.elvs`, and `MDN.elvs`. The lowercase
+  `library/elvi-scrape/google.elvs` and `library/elvi-scrape/bing.elvs` paths
+  remain compatible.
 - `tests/test-elvi-scrape.c` — deterministic offline behavior tests.
+- `tests/test-elvi-scrape-providers.c` — provider URL and extraction tests,
+  including the legacy paths.
 - `tests/test-elvi-scrape-https.c` — independent authenticated-session/HTTP tests.
 - `tests/test-elvi-scrape-alloc.c` — exhaustive single-allocation failure injection.
 - `examples/elvi-scrape.c` — offline parse / URL construction example.
@@ -36,7 +40,9 @@ TLS connector and authenticated-peer inspector; it adds no external dependency.
 
 One directive per line. `#` begins comments outside quoted strings. Values may
 be unquoted single tokens or double-quoted strings; in quotes `\\` and `\"`
-are valid escapes. Directive names are lowercase and case-sensitive.
+are valid escapes. Directive names are lowercase and case-sensitive. `elvi`,
+`host`, `home`, `search`, and `anchor` are required. Only `exclude_host` can
+repeat, up to eight times.
 
 ```text
 elvi NAME
@@ -45,17 +51,23 @@ home https://EXACT_HOSTNAME/
 search "https://EXACT_HOSTNAME/search?q={query}&count={limit}"
 anchor child h3        # title H3 nested within result <a href=...>
 # or: anchor parent h2 # result <a href=...> nested within H2
-# or: anchor any a     # any anchor with text
+# or: anchor any       # any anchor with text (legacy `anchor any a` also works)
 rewrite direct         # direct HTTPS anchors
 # or: rewrite google   # also recognizes Google's /url?url=... or /url?q=...
 exclude_host bing.com  # block the given host and subdomains from results
 max_results 30         # 1..64; default 20
 ```
 
-`{query}` expands to URL-component-encoded query bytes using
-`mulib_url_encode` (spaces become `%20`). `{limit}` expands to the user-requested
-result maximum. No other variables or expression language are supported. The
-provider URL must use HTTPS, and its exact request hostname must match `host`.
+For a nonempty query, the `search` template must include `{query}`, which
+expands to URL-component-encoded query bytes using `mulib_url_encode` (spaces
+become `%20`). The optional `{limit}` expands to the requested result maximum.
+The placeholders can occur in the path or query, but not in the authority or
+inside a percent escape. No other placeholders or expressions are supported.
+An empty query (`""`) selects `home`, like the no-terms branch of Surfraw's
+Google and Bing elvi. It does not fall back to `home` on request failure.
+Both URLs must use `https://` and a literal request hostname matching `host`
+(ASCII case-insensitive). The caller supplies one query string; the module
+does not parse Surfraw shell options or quote/split query words.
 Host exclusions are enforced on **result URLs**, never just their display text.
 Only HTTPS result links are emitted; relative links and non-HTTPS links are
 ignored, except recognized Google redirect links, which are decoded to HTTPS.
@@ -99,12 +111,16 @@ int mulib_elvi_scrape_search(const mulib_elvi_scrape_program_t *program,
 All functions return 1 on success and 0 on failure. A successful `parse` or
 `search` may produce **zero results**. `compile` is transactional: an invalid
 file leaves its destination unchanged and optionally reports a 1-based line
-number. The caller owns result buffers. No global mutable state is used. `url` leaves output unchanged on failure;
+number (`0` for errors not associated with a source line). The caller owns
+result buffers. No global mutable state is used. `url` leaves output unchanged on failure;
 `parse` leaves results/count unchanged on failure. `search` changes results/count
 only on success, but reports HTTP status after a successful fetch even when that
 status causes rejection. Inputs and output buffers must not overlap. Programs
 must come from successful compilation and remain unmodified during calls.
-Queries are bounded to 2048 bytes. Titles are clipped on UTF-8 boundaries;
+Queries are bounded to 2048 bytes, and `limit` must be in `1..max_results` even
+for an empty query. `search` fetches the same URL that `url` returns and then
+parses the response; a home page may have no matching results.
+Titles are clipped at UTF-8 code point boundaries;
 invalid UTF-8 bytes in titles are skipped. The five XML entities, `nbsp`, and
 valid numeric Unicode references are decoded; this is not a full HTML entity table.
 Literal and decoded NBSP are collapsed like ASCII whitespace. Duplicate results
@@ -116,8 +132,10 @@ Extraction stages at most `min(capacity, max_results)` records (never more than
 and limited to `16 * length + 1024` work steps; exhausted work or allocation
 failure returns 0 without committing partial results. Scratch result storage is
 at most 64 times `sizeof(mulib_elvi_scrape_result_t)`, in addition to the bounded
-HTML copy and fixed-size URL/title buffers. Zero capacity succeeds with zero
-results after input/program validation.
+HTML copy and fixed-size URL/title buffers. A parent `td` or `th` selector also
+needs at most `length / 7 + 1` bytes of cell nesting state in the same allocation
+as the HTML copy. Zero capacity succeeds with zero results after input/program
+validation.
 
 ## Example
 
@@ -125,7 +143,7 @@ results after input/program validation.
 mulib_elvi_scrape_program_t program;
 mulib_elvi_scrape_error_t error;
 char request_url[8192];
-if (!mulib_elvi_scrape_load("library/elvi-scrape/google.elvs", &program, &error)) {
+if (!mulib_elvi_scrape_load("library/elvis/Google.elvs", &program, &error)) {
     /* report error.line and error.message */
 }
 if (!mulib_elvi_scrape_url(&program, "C11 compiler", 10,
@@ -135,8 +153,15 @@ if (!mulib_elvi_scrape_url(&program, "C11 compiler", 10,
 /* Or use a configured mulib_fetch_client_t and mulib_elvi_scrape_search. */
 ```
 
-For an example that parses saved HTML without network I/O, see
-`examples/elvi-scrape.c`.
+Build and run the standalone demo from the repository root. Without a saved
+page it prints only the generated URL; neither mode performs network I/O.
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/elvi-scrape.c -lm -o elvi-demo
+./elvi-demo library/elvis/Google.elvs "C11 compiler"
+./elvi-demo library/elvis/Google.elvs ""
+./elvi-demo library/elvis/Google.elvs "C11 compiler" tests/fixtures/elvi-scrape/layout.html
+```
 
 ## Verified HTTPS transport
 
@@ -169,17 +194,21 @@ framing, metadata, capacity or allocation checks preserve body/status/type.
 
 ## Important limitations
 
-- Google's and Bing's HTML layouts are not stable APIs. Selectors are
+- Search providers' HTML layouts are not stable APIs. Selectors are
   heuristic. Results may be empty if the provider shows a consent page,
   CAPTCHA, JavaScript-only interface, or modified markup.
 - `anchor child h3` and `anchor parent h2` are simple structural patterns,
-  **not** full CSS or XPath. Other MuLIB DOM/CSS kernels could support more
-  expressive selectors in a future version.
+  **not** full CSS or XPath. `anchor child` captures only text inside its
+  matching descendant; `anchor parent` captures anchor text inside its
+  configured ancestor. Tags and attribute names match independently of ASCII
+  case. `href` can be quoted or unquoted; only its first occurrence counts.
 - This version extracts title and destination URL. It does not extract
   snippets, search ranking metadata, or pagination offsets.
 - Malformed HTML is best-effort; the shared MuLIB webscan scanner is intentionally
   not a complete HTML5 parser. Heading changes/closures terminate stale heading
-  context. Comments/declarations, nested templates, script/style, RCDATA and
+  context. In `anchor parent td` or `anchor parent th`, cell and row boundaries
+  can also end the context even when a closing cell tag is omitted. Comments/
+  declarations, nested templates, script/style, RCDATA and
   fallback containers (`textarea`, `title`, `xmp`, `iframe`, `noembed`, `noframes`,
   `noscript`) cannot introduce results or title markup. `plaintext` ends markup
   scanning. This conservative subset does not implement CSS visibility or the
@@ -200,16 +229,19 @@ Tests use actual URL/fetch/policy/HTTPS/TSL kernels with offline HTML and TLS
 session fixtures, never live search engines. From the repository root:
 
 ```sh
-make build/test-elvi-scrape build/test-elvi-scrape-https build/test-elvi-scrape-alloc
+make build/test-elvi-scrape build/test-elvi-scrape-https build/test-elvi-scrape-alloc \
+     build/test-elvi-scrape-providers
 ./build/test-elvi-scrape
 ./build/test-elvi-scrape-https
 ./build/test-elvi-scrape-alloc
+./build/test-elvi-scrape-providers
 ```
 
 CTest supplies the source directory when running from an isolated work directory.
 Enable `MULIB_SANITIZERS` for ASan/UBSan. With Clang and `MULIB_BUILD_FUZZER`,
 `mulib_fuzz_elvi_scrape` fuzzes the DSL compiler, HTML extractor and URL/redirect
-processing. Seed it with the providers and `tests/fixtures/elvi-scrape` files.
+processing. Seed it with the providers from `library/elvis` and
+`tests/fixtures/elvi-scrape` files.
 
 `MANIFEST.yaml` and both On1x catalogs register `elvi-scrape`. The ExoML v2
 sidecar records all six exported functions, caller-owned outputs, transactional
@@ -219,9 +251,10 @@ shared scanner, offline providers/HTML fixtures, allocator tests and fuzz harnes
 as source evidence. Annotations remain
 **unreviewed**, and neither extraction nor successful tests imply safe On1x ABI
 lowering. Exotract requires the six symbols from the generated archive.
-`on1x/std/mulib/catalog.json` registers both `.elvs` files as the `elvi-scrape`
-fixture group. Explicit fixture selection preserves the same source-pinned
-recipe as kernel selection (including leaving optional `MULIB_IMPL_PARSER` off).
+[`on1x/stdlib/mulib/catalog.json`](../on1x/stdlib/mulib/catalog.json) registers
+`elvis` for the canonical profiles and `elvi-scrape` for the legacy lowercase
+profiles. Explicit fixture selection preserves the same source-pinned recipe
+as kernel selection (including leaving optional `MULIB_IMPL_PARSER` off).
 The generated On1x acceptance client compiles the embedded provider data offline
 through a test-only scalar C adapter; no general safe FFI is claimed.
 
@@ -250,6 +283,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/elvi-scrape.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/elvi-scrape.c -lm -o elvi-demo
 ```
 <!-- /manual-reference -->

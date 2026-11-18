@@ -1,6 +1,9 @@
 /* Always-moving realloc and injectable allocation failures turn stale aliases
  * and incomplete failure cleanup into deterministic regression failures. */
 #ifndef _POSIX_C_SOURCE
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE /* this TU includes the combined sandbox implementation */
+#endif
 #define _POSIX_C_SOURCE 200809L
 #endif
 #include <assert.h>

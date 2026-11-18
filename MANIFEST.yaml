@@ -7,9 +7,81 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1172
-implemented_module_count: 1172
+module_count: 1188
+implemented_module_count: 1188
 modules:
+- name: cdd-catalogue
+  header: include/mulib-cdd-catalogue.h
+  manual: manual/mulib-cdd-catalogue.md
+  macro: MULIB_IMPL_CDD_CATALOGUE
+  purpose: Versioned capability descriptors, typed metadata and structural validation.
+  dependencies: []
+  status: implemented
+  example: examples/cdd-pipeline.c
+  test: tests/cdd-test.c
+- name: cdd-registry
+  header: include/mulib-cdd-registry.h
+  manual: manual/mulib-cdd-registry.md
+  macro: MULIB_IMPL_CDD_REGISTRY
+  purpose: Bounded registry of borrowed immutable descriptors.
+  dependencies: [cdd-catalogue]
+  status: implemented
+  example: examples/cdd-pipeline.c
+  test: tests/cdd-test.c
+- name: cdd-query
+  header: include/mulib-cdd-query.h
+  manual: manual/mulib-cdd-query.md
+  macro: MULIB_IMPL_CDD_QUERY
+  purpose: Capability and typed predicate filtering with deterministic cost ranking.
+  dependencies: [cdd-catalogue]
+  status: implemented
+  example: examples/cdd-pipeline.c
+  test: tests/cdd-test.c
+- name: cdd-schema
+  header: include/mulib-cdd-schema.h
+  manual: manual/mulib-cdd-schema.md
+  macro: MULIB_IMPL_CDD_SCHEMA
+  purpose: Category-aware required metadata, types and bounds.
+  dependencies: [cdd-catalogue]
+  status: implemented
+  example: examples/cdd-pipeline.c
+  test: tests/cdd-test.c
+- name: cdd-plan
+  header: include/mulib-cdd-plan.h
+  manual: manual/mulib-cdd-plan.md
+  macro: MULIB_IMPL_CDD_PLAN
+  purpose: Planning problems and independent sequential plan validation.
+  dependencies: [cdd-catalogue]
+  status: implemented
+  example: examples/cdd-pipeline.c
+  test: tests/cdd-test.c
+- name: cdd-resolve
+  header: include/mulib-cdd-resolve.h
+  manual: manual/mulib-cdd-resolve.md
+  macro: MULIB_IMPL_CDD_RESOLVE
+  purpose: Bounded exact dependency resolution with cost minimization and subset memoization.
+  dependencies: [cdd-plan]
+  status: implemented
+  example: examples/cdd-pipeline.c
+  test: tests/cdd-test.c
+- name: cdd-execute
+  header: include/mulib-cdd-execute.h
+  manual: manual/mulib-cdd-execute.md
+  macro: MULIB_IMPL_CDD_EXECUTE
+  purpose: Validated host callback dispatch with reverse compensation.
+  dependencies: [cdd-plan]
+  status: implemented
+  example: examples/cdd-pipeline.c
+  test: tests/cdd-test.c
+- name: cdd-diff
+  header: include/mulib-cdd-diff.h
+  manual: manual/mulib-cdd-diff.md
+  macro: MULIB_IMPL_CDD_DIFF
+  purpose: Identity-based catalogue structural differences.
+  dependencies: [cdd-catalogue]
+  status: implemented
+  example: examples/cdd-pipeline.c
+  test: tests/cdd-test.c
 - name: elvi-scrape
   header: include/mulib-elvi-scrape.h
   manual: manual/mulib-elvi-scrape.md
@@ -8398,6 +8470,70 @@ modules:
   dependencies: [prettyemit]
   status: implemented
   example: examples/prettyprint-demo.c
+- name: sandbox-profile
+  header: include/mulib-sandbox-profile.h
+  manual: manual/mulib-sandbox-profile.md
+  macro: MULIB_IMPL_SANDBOX_PROFILE
+  purpose: Versioned sandbox limits and enforcement policy validation.
+  dependencies: []
+  status: implemented
+  example: examples/modules/sandbox-process.c
+- name: seccomp
+  header: include/mulib-seccomp.h
+  manual: manual/mulib-seccomp.md
+  macro: MULIB_IMPL_SECCOMP
+  purpose: Architecture-checked Linux seccomp BPF compilation and strict worker policies.
+  dependencies: [sandbox-profile]
+  status: implemented
+  example: examples/modules/sandbox-process.c
+- name: landlock
+  header: include/mulib-landlock.h
+  manual: manual/mulib-landlock.md
+  macro: MULIB_IMPL_LANDLOCK
+  purpose: Linux filesystem Landlock ABI and fd allowlist enforcement.
+  dependencies: [sandbox-profile]
+  status: implemented
+  example: examples/modules/sandbox-process.c
+- name: namespace
+  header: include/mulib-namespace.h
+  manual: manual/mulib-namespace.md
+  macro: MULIB_IMPL_NAMESPACE
+  purpose: Linux user mappings and namespace isolation primitives.
+  dependencies: [sandbox-profile]
+  status: implemented
+  example: examples/modules/sandbox-process.c
+- name: cgroup2
+  header: include/mulib-cgroup2.h
+  manual: manual/mulib-cgroup2.md
+  macro: MULIB_IMPL_CGROUP2
+  purpose: Delegated cgroup v2 lifecycle and verified resource limits.
+  dependencies: [sandbox-profile]
+  status: implemented
+  example: examples/modules/sandbox-process.c
+- name: ipc-framed
+  header: include/mulib-ipc-framed.h
+  manual: manual/mulib-ipc-framed.md
+  macro: MULIB_IMPL_IPC_FRAMED
+  purpose: Bounded deadline-aware binary framing over connected stream sockets.
+  dependencies: [sandbox-profile]
+  status: implemented
+  example: examples/modules/sandbox-process.c
+- name: capbroker
+  header: include/mulib-capbroker.h
+  manual: manual/mulib-capbroker.md
+  macro: MULIB_IMPL_CAPBROKER
+  purpose: Host-owned capability grants, quota-checked dispatch and transaction hooks.
+  dependencies: [sandbox-profile]
+  status: implemented
+  example: examples/modules/capbroker.c
+- name: sandbox-process
+  header: include/mulib-sandbox-process.h
+  manual: manual/mulib-sandbox-process.md
+  macro: MULIB_IMPL_SANDBOX_PROCESS
+  purpose: Trusted-bootstrap Linux worker launch, strict seccomp, resource controls and supervision.
+  dependencies: [sandbox-profile, seccomp, landlock, namespace, cgroup2, ipc-framed]
+  status: implemented
+  example: examples/modules/sandbox-process.c
 project_files:
 - file: on1x/stdlib/_bridge/mulib_bridge.c
   purpose: Bounded raw scalar standard-library adapters calling canonical MuLIB kernels.
@@ -12723,3 +12859,39 @@ project_files:
   purpose: "Focused regression suite for test-elvi-scrape-https."
 - file: tests/test-elvi-scrape.c
   purpose: "Focused regression suite for test-elvi-scrape."
+- file: examples/modules/buildparse.c
+  purpose: "Standalone checked usage example for buildparse."
+- file: examples/modules/buildplan.c
+  purpose: "Standalone checked usage example for buildplan."
+- file: examples/modules/buildstate.c
+  purpose: "Standalone checked usage example for buildstate."
+- file: examples/modules/capbroker.c
+  purpose: "Standalone checked usage example for capbroker."
+- file: examples/modules/depfile.c
+  purpose: "Standalone checked usage example for depfile."
+- file: examples/modules/sandbox-process.c
+  purpose: "Standalone checked usage example for sandbox-process."
+- file: tests/test_buildsys_alloc.c
+  purpose: "Focused regression suite for test_buildsys_alloc."
+- file: tests/test_buildsys_kernels.c
+  purpose: "Focused regression suite for test_buildsys_kernels."
+- file: tests/test_sandbox.c
+  purpose: "Focused regression suite for test_sandbox."
+- file: tests/sandbox-implementation.c
+  purpose: Implementation translation unit for the sandbox host and worker fixtures.
+- file: tests/worker.c
+  purpose: Trusted-bootstrap fixture for native sandbox process verification.
+- file: tests/run_sandbox.sh
+  purpose: Strict GCC/Clang sandbox fixture and optional supervisor sanitizer runner.
+- file: manual/sandbox-verification.md
+  purpose: Verified kernel behavior, requirements, skips and outstanding sandbox work.
+- file: tests/test-elvi-scrape-providers.c
+  purpose: "Focused regression suite for test-elvi-scrape-providers."
+- file: examples/cdd-pipeline.c
+  purpose: Standalone catalogue-driven compiler pipeline example.
+- file: tests/cdd-test.c
+  purpose: Semantic regression suite for the CDD modules.
+- file: tests/cdd-implementation.c
+  purpose: Single implementation translation unit for the CDD semantic suite.
+- file: tests/run-cdd.sh
+  purpose: Standalone CDD semantic, header inclusion and C++17 linkage checks.

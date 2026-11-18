@@ -6,6 +6,6 @@ cd "$(dirname "$0")/.."
 build=${BUILD_DIR:-tests/build}
 cmake -S . -B "$build" -DMULIB_BUILD_SHIRAZ=OFF \
     -DMULIB_SANITIZERS="${SANITIZERS:-OFF}" \
-    -DCMAKE_C_FLAGS="${CFLAGS:-}"
+    -DCMAKE_C_FLAGS="${CFLAGS:-}" ${CC:+-DCMAKE_C_COMPILER="$CC"}
 cmake --build "$build" --parallel "${JOBS:-4}"
 ctest --test-dir "$build" --output-on-failure --parallel "${JOBS:-4}"

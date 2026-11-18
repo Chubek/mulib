@@ -13,6 +13,85 @@ static char *read_fixture(const char *root,const char *name) {
   assert(n>=0 && n<2097152);rewind(f);s=malloc((size_t)n+1);assert(s);
   assert(fread(s,1,(size_t)n,f)==(size_t)n);fclose(f);s[n]=0;return s;
 }
+static void provider_language(void) {
+  static const char dsl[]="# Surfraw's no-terms case opens the provider home.\r\n"
+    "elvi \"Offline provider\"\r\nhost Example.org\r\nhome https://example.org/start\r\n"
+    "search \"https://EXAMPLE.ORG/search/{query}?count={limit}\"\t# comment\r\n"
+    "anchor any\r\n";
+  static const struct {
+    const char *home, *search, *extra;
+    size_t error_line;
+  } invalid[]={
+    {"https://example.net/", "https://example.org/?q={query}", "", 3},
+    {"https://example.org/", "https://example.org/?q=missing", "", 4},
+    {"https://example.org/", "https://example.org/?q={query}&n={unknown}", "", 4},
+    {"https://example.org/", "https://example.org/%a{limit}?q={query}", "", 4},
+    {"https://example.org/", "https://example.org/?q={query}", "exclude_host bad..host\n", 6},
+    {"https://example.org/", "https://example.org/?q={query}", "host example.org\n", 6},
+  };
+  static const char variable_host[]="elvi x\nhost x.example.org\nhome https://x.example.org/\n"
+    "search https://{query}.example.org/\nanchor any a\n";
+  mulib_elvi_scrape_program_t p,before;mulib_elvi_scrape_error_t error;
+  char url[8192],src[1024];
+  assert(mulib_elvi_scrape_compile(dsl,sizeof dsl-1,&p,&error));
+  assert(!error.line && !error.message[0] && !strcmp(p.name,"Offline provider"));
+  assert(p.max_results==20 && p.anchor_mode==MULIB_ELVI_ANCHOR_ANY);
+  assert(mulib_elvi_scrape_url(&p,"",20,url,sizeof url));
+  assert(!strcmp(url,"https://example.org/start"));
+  strcpy(url,"unchanged");
+  assert(!mulib_elvi_scrape_url(&p,"",0,url,sizeof url) && !strcmp(url,"unchanged"));
+  assert(!mulib_elvi_scrape_url(&p,"",1,url,2) && !strcmp(url,"unchanged"));
+  assert(mulib_elvi_scrape_url(&p,"C++ / \xc3\xa9",2,url,sizeof url));
+  assert(!strcmp(url,"https://EXAMPLE.ORG/search/C%2B%2B%20%2F%20%C3%A9?count=2"));
+  before=p;
+  assert(!mulib_elvi_scrape_compile(variable_host,sizeof variable_host-1,&p,&error));
+  assert(error.line==4 && !memcmp(&p,&before,sizeof p));
+  for(size_t i=0;i<sizeof invalid/sizeof *invalid;i++) {
+    int len=snprintf(src,sizeof src,"elvi x\nhost example.org\nhome \"%s\"\n"
+      "search \"%s\"\nanchor any a\n%s",invalid[i].home,invalid[i].search,invalid[i].extra);
+    assert(len>0 && (size_t)len<sizeof src);
+    assert(!mulib_elvi_scrape_compile(src,(size_t)len,&p,&error));
+    assert(error.line==invalid[i].error_line && error.message[0]);
+    assert(!memcmp(&p,&before,sizeof p));
+  }
+}
+
+static void anchor_attributes(void) {
+  static const char dsl[]="elvi offline\nhost example.org\nhome https://example.org/\n"
+    "search https://example.org/?q={query}\nanchor child result-title\n";
+  static const char html[]=
+    "<a data-href='https://decoy.example/' HREF = https://example.net/a"
+    " href='https://decoy.example/'><RESULT-TITLE>A</RESULT-TITLE></a>"
+    "<a href href='https://decoy.example/'><result-title>Missing</result-title></a>"
+    "<a href='' href='https://decoy.example/'><result-title>Empty</result-title></a>"
+    "<a href='http://decoy.example/' href='https://decoy.example/'>"
+    "<result-title>Forbidden</result-title></a>"
+    "<a href='https://example.net/ends-with/'><result-title>B</result-title></a>";
+  mulib_elvi_scrape_program_t p;mulib_elvi_scrape_result_t results[4];size_t count;
+  assert(mulib_elvi_scrape_compile(dsl,sizeof dsl-1,&p,NULL));
+  assert(mulib_elvi_scrape_parse(&p,html,sizeof html-1,results,4,&count) && count==2);
+  assert(!strcmp(results[0].title,"A") && !strcmp(results[0].url,"https://example.net/a"));
+  assert(!strcmp(results[1].title,"B") && !strcmp(results[1].url,"https://example.net/ends-with/"));
+}
+
+static void table_cell_context(void) {
+  /* Lite pages can omit cell and row end tags. A nested table is still in
+   * the outer cell, but a new cell/row in the same table ends that context. */
+  static const char dsl[]="elvi lite\nhost example.org\nhome https://example.org/\n"
+    "search https://example.org/?q={query}\nanchor parent td\n";
+  static const char html[]="<table><tr><td><a href='https://example.net/1'>First</a>"
+    "<table><tr><th><a href='https://example.net/2'>Nested</a></table>"
+    "<a href='https://example.net/3'>Back in outer cell</a>"
+    "<th><a href='https://decoy.example/'>Sibling header</a>"
+    "<tr><td><a href='https://example.net/4'>Last</a></table>"
+    "<a href='https://decoy.example/'>Outside the table</a>";
+  mulib_elvi_scrape_program_t p;mulib_elvi_scrape_result_t results[8];size_t count;
+  assert(mulib_elvi_scrape_compile(dsl,sizeof dsl-1,&p,NULL));
+  assert(mulib_elvi_scrape_parse(&p,html,sizeof html-1,results,8,&count) && count==4);
+  assert(!strcmp(results[0].title,"First") && !strcmp(results[1].title,"Nested"));
+  assert(!strcmp(results[2].title,"Back in outer cell") && !strcmp(results[3].title,"Last"));
+}
+
 static void hardening(const char *root,const mulib_elvi_scrape_program_t *program) {
   mulib_elvi_scrape_program_t p=*program,before;mulib_elvi_scrape_error_t error;
   mulib_elvi_scrape_result_t results[8];char html[8192],url[8192];size_t count;
@@ -59,7 +138,7 @@ static void hardening(const char *root,const mulib_elvi_scrape_program_t *progra
   /* UTF-8 clipping never leaves an incomplete code point. */
   strcpy(html,"<a href='https://example.org/'><h3>");
   size_t n=strlen(html);memset(html+n,'a',510);n+=510;
-  strcpy(html+n,"\xf0\x9f\x9a\x80</h3></a>");
+  strcpy(html+n,"\xf0\x9f\x9a\x80<em>Z</em></h3></a>");
   assert(mulib_elvi_scrape_parse(&p,html,strlen(html),results,8,&count));
   assert(count==1 && strlen(results[0].title)==510);
   assert(mulib_utf8_validate((unsigned char *)results[0].title,strlen(results[0].title)));
@@ -80,7 +159,7 @@ static void hardening(const char *root,const mulib_elvi_scrape_program_t *progra
   assert(mulib_elvi_scrape_parse(&p,NULL,0,NULL,0,&count) && count==0);
   /* Raw NBSP and numeric entities have the same whitespace behavior. */
   p.max_results=8;
-  strcpy(html,"<a href='https://example.org/'><h3>A\xc2\xa0 B&#160; C</h3></a>");
+  strcpy(html,"<a href='https://example.org/'><h3>A\xc2\xa0 B&#000000000000160; C</h3></a>");
   assert(mulib_elvi_scrape_parse(&p,html,strlen(html),results,SIZE_MAX,&count));
   assert(count==1 && !strcmp(results[0].title,"A B C"));
   p.anchor_mode=MULIB_ELVI_ANCHOR_PARENT;strcpy(p.anchor_tag,"h2");
@@ -98,10 +177,12 @@ static void hardening(const char *root,const mulib_elvi_scrape_program_t *progra
     count=123;assert(!mulib_elvi_scrape_parse(&p,large,bytes+1,results,8,&count) && count==123);
     free(large);}
 }
-static const char *fixture;
+static const char *fixture,*expected_home;
 static int mocked_transport(void*ctx,const char*url,mulib_shylock_buffer_t*b,
                             unsigned*status,char*type,size_t cap){
-  (void)ctx;calls++;assert(strstr(url,"q=C11%20compilers")!=NULL);
+  (void)ctx;calls++;
+  if(expected_home)assert(!strcmp(url,expected_home));
+  else assert(strstr(url,"q=C11%20compilers")!=NULL);
   b->len=strlen(fixture);b->cap=b->len+1;
   b->data=(char*)malloc(b->cap);assert(b->data);
   memcpy(b->data,fixture,b->cap);
@@ -111,6 +192,9 @@ int main(int argc,char **argv) {
   const char *root=argc>1?argv[1]:".";char path[4096];
   mulib_elvi_scrape_program_t p={0};mulib_elvi_scrape_error_t err={0};
   mulib_elvi_scrape_result_t out[10]={0};size_t count=0;char url[8192];
+  provider_language();
+  anchor_attributes();
+  table_cell_context();
   snprintf(path,sizeof path,"%s/library/elvi-scrape/google.elvs",root);
   assert(mulib_elvi_scrape_load(path,&p,&err));
   hardening(root,&p);
@@ -133,6 +217,9 @@ int main(int argc,char **argv) {
   assert(count==2);
   assert(mulib_elvi_scrape_search(&p,&client,"C11 compilers",1,out,10,&count,NULL));
   assert(count==1);
+  expected_home=p.home;
+  assert(mulib_elvi_scrape_search(&p,&client,"",1,out,10,&count,NULL) && count==1);
+  expected_home=NULL;
   /* Never retry rate limits, follow redirects, or relax caller policy. */
   unsigned status=0;
   for(unsigned i=0;i<4;i++) {

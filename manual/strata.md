@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1175 headers, 1209 direct dependency edges.
+Inventory: 1191 headers, 1228 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (398 modules)
+## Stratum 0 (400 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -62,6 +62,7 @@ Compatibility group: `parsec`, `peg`.
 | [bytecode](mulib-bytecode.md) | none |
 | [callconv](mulib-callconv.md) | none |
 | [cassowary-solver](mulib-cassowary-solver.md) | none |
+| [cdd-catalogue](mulib-cdd-catalogue.md) | none |
 | [cfg](mulib-cfg.md) | none |
 | [charset](mulib-charset.md) | none |
 | [checksum](mulib-checksum.md) | none |
@@ -310,6 +311,7 @@ Compatibility group: `parsec`, `peg`.
 | [rng](mulib-rng.md) | none |
 | [robots](mulib-robots.md) | none |
 | [roman](mulib-roman.md) | none |
+| [sandbox-profile](mulib-sandbox-profile.md) | none |
 | [sat](mulib-sat.md) | none |
 | [scanvec](mulib-scanvec.md) | none |
 | [schedutils](mulib-schedutils.md) | none |
@@ -418,7 +420,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (390 modules)
+## Stratum 1 (401 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -458,9 +460,16 @@ Compatibility group: `parsec`, `peg`.
 | [bytecode-opt](mulib-bytecode-opt.md) | `bytecode` |
 | [bytecode-serialize](mulib-bytecode-serialize.md) | `bytecode` |
 | [bytecode-verify](mulib-bytecode-verify.md) | `bytecode` |
+| [capbroker](mulib-capbroker.md) | `sandbox-profile` |
 | [ccweave](mulib-ccweave.md) | `mir`, `strbuf` |
+| [cdd-diff](mulib-cdd-diff.md) | `cdd-catalogue` |
+| [cdd-plan](mulib-cdd-plan.md) | `cdd-catalogue` |
+| [cdd-query](mulib-cdd-query.md) | `cdd-catalogue` |
+| [cdd-registry](mulib-cdd-registry.md) | `cdd-catalogue` |
+| [cdd-schema](mulib-cdd-schema.md) | `cdd-catalogue` |
 | [cff](mulib-cff.md) | `typecore` |
 | [cff2](mulib-cff2.md) | `typecore` |
+| [cgroup2](mulib-cgroup2.md) | `sandbox-profile` |
 | [chemical](mulib-chemical.md) | `typecore` |
 | [cmachine](mulib-cmachine.md) | `minivm`, `mir` |
 | [codec-core](mulib-codec-core.md) | `buffer` |
@@ -577,12 +586,14 @@ Compatibility group: `parsec`, `peg`.
 | [indexer](mulib-indexer.md) | `typecore` |
 | [initsysutils](mulib-initsysutils.md) | `cpio` |
 | [invindex](mulib-invindex.md) | `buffer`, `bycutils`, `memtable` |
+| [ipc-framed](mulib-ipc-framed.md) | `sandbox-profile` |
 | [ipfs](mulib-ipfs.md) | `varint` |
 | [ir-print](mulib-ir-print.md) | `ir-verify` |
 | [keyremap](mulib-keyremap.md) | `input` |
 | [kf8write](mulib-kf8write.md) | `typecore` |
 | [kvdb](mulib-kvdb.md) | `buffer`, `crc32`, `endian`, `varint` |
 | [kvmcontainer](mulib-kvmcontainer.md) | `kvm` |
+| [landlock](mulib-landlock.md) | `sandbox-profile` |
 | [latexwriter](mulib-latexwriter.md) | `typecore` |
 | [lexer](mulib-lexer.md) | `lexical-token` |
 | [linker](mulib-linker.md) | `emitter` |
@@ -620,6 +631,7 @@ Compatibility group: `parsec`, `peg`.
 | [mulib](mulib-mulib.md) | `buffer`, `strbuf` |
 | [multipart](mulib-multipart.md) | `strbuf` |
 | [musicnotation](mulib-musicnotation.md) | `typecore` |
+| [namespace](mulib-namespace.md) | `sandbox-profile` |
 | [net-monitor](mulib-net-monitor.md) | `netlink` |
 | [net-reconcile](mulib-net-reconcile.md) | `net-profile`, `net-state` |
 | [netlink-async](mulib-netlink-async.md) | `netlink` |
@@ -693,6 +705,7 @@ Compatibility group: `parsec`, `peg`.
 | [rf-smith](mulib-rf-smith.md) | `rf-sparams` |
 | [rtnl](mulib-rtnl.md) | `netlink` |
 | [scrape](mulib-scrape.md) | `scrape-readable` |
+| [seccomp](mulib-seccomp.md) | `sandbox-profile` |
 | [sfnt](mulib-sfnt.md) | `typecore` |
 | [shylock-core](mulib-shylock-core.md) | `utf8` |
 | [signature](mulib-signature.md) | `der`, `entropy`, `sha` |
@@ -813,7 +826,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (141 modules)
+## Stratum 2 (144 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -832,6 +845,8 @@ Compatibility group: `parsec`, `peg`.
 | [bytecode-eval](mulib-bytecode-eval.md) | `bytecode-verify` |
 | [bzip2](mulib-bzip2.md) | `codec-core` |
 | [cache](mulib-cache.md) | `hattrie`, `kvdb`, `trie` |
+| [cdd-execute](mulib-cdd-execute.md) | `cdd-plan` |
+| [cdd-resolve](mulib-cdd-resolve.md) | `cdd-plan` |
 | [cgeom](mulib-cgeom.md) | `linalg`, `simdmath` |
 | [channel](mulib-channel.md) | `fiber` |
 | [clickir](mulib-clickir.md) | `gssair` |
@@ -930,6 +945,7 @@ Compatibility group: `parsec`, `peg`.
 | [rtnl-rule](mulib-rtnl-rule.md) | `rtnl` |
 | [rtnl-tc](mulib-rtnl-tc.md) | `rtnl` |
 | [rubybind](mulib-rubybind.md) | `pybind` |
+| [sandbox-process](mulib-sandbox-process.md) | `cgroup2`, `ipc-framed`, `landlock`, `namespace`, `sandbox-profile`, `seccomp` |
 | [spice-ac](mulib-spice-ac.md) | `spice-netlist` |
 | [spice-measure](mulib-spice-measure.md) | `wave-measure` |
 | [spice-op](mulib-spice-op.md) | `num-dense`, `spice-independent`, `spice-netlist`, `spice-r`, `spice-stamp` |

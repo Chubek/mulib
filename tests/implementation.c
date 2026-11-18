@@ -1,3 +1,26 @@
+#define MULIB_IMPL_CAPBROKER
+#define MULIB_IMPL_CDD_CATALOGUE
+#define MULIB_IMPL_CDD_DIFF
+#define MULIB_IMPL_CDD_EXECUTE
+#define MULIB_IMPL_CDD_PLAN
+#define MULIB_IMPL_CDD_QUERY
+#define MULIB_IMPL_CDD_REGISTRY
+#define MULIB_IMPL_CDD_RESOLVE
+#define MULIB_IMPL_CDD_SCHEMA
+#define MULIB_IMPL_CGROUP2
+#define MULIB_IMPL_IPC_FRAMED
+#define MULIB_IMPL_LANDLOCK
+#define MULIB_IMPL_NAMESPACE
+#define MULIB_IMPL_SANDBOX_PROCESS
+#define MULIB_IMPL_SANDBOX_PROFILE
+#define MULIB_IMPL_SECCOMP
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
+#endif
+/* GNU mode on recent glibc declares a C23 bsearch macro. Use the C11
+   function in this mixed-module verification translation unit. */
+#include <stdlib.h>
+#undef bsearch
 #define MULIB_IMPL_ELVI_SCRAPE
 #define MULIB_IMPL_PRETTYDOC
 #define MULIB_IMPL_PRETTYEMIT
@@ -2353,3 +2376,19 @@
 #include "mulib-prettydoc.h"
 #include "mulib-prettyemit.h"
 #include "mulib-prettysexpr.h"
+#include "mulib-capbroker.h"
+#include "mulib-cdd-catalogue.h"
+#include "mulib-cdd-diff.h"
+#include "mulib-cdd-execute.h"
+#include "mulib-cdd-plan.h"
+#include "mulib-cdd-query.h"
+#include "mulib-cdd-registry.h"
+#include "mulib-cdd-resolve.h"
+#include "mulib-cdd-schema.h"
+#include "mulib-cgroup2.h"
+#include "mulib-ipc-framed.h"
+#include "mulib-landlock.h"
+#include "mulib-namespace.h"
+#include "mulib-sandbox-process.h"
+#include "mulib-sandbox-profile.h"
+#include "mulib-seccomp.h"
