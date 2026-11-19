@@ -1,20 +1,17 @@
-local ui = require('immgtk.core')
--- Nearest-neighbor ARGB pixel grid using only the host rectangle primitive.
-function ui.image(pixels, columns, rows, x, y, w, h)
-  ui._index(columns, 256); ui._index(rows, 256)
-  assert(type(pixels) == 'table' and #pixels == columns * rows and
-         #pixels <= 4096, 'image pixel count')
-  x, y, w, h = ui._box(x, y, w, h)
-  for i = 1, #pixels do
-    local color = ui._number(pixels[i])
-    assert(color >= 0 and color <= 0xffffffff and color == math.floor(color),
-           'invalid image color')
+local ui=require('immgtk.core')
+function ui.image(pixels,cols,rows,x,y,w,h)
+  ui._index(cols,256);ui._index(rows,256)
+  local count=cols*rows
+  assert(type(pixels)=='table' and #pixels==count and count<=4096,'image pixel count')
+  local colors={}
+  for i=1,count do
+    local c=ui._number(pixels[i])
+    assert(c>=0 and c<=0xffffffff and c==math.floor(c),'invalid image color')
+    colors[i]=c
   end
-  for row = 0, rows - 1 do
-    for column = 0, columns - 1 do
-      imm_rect(x + column * w / columns, y + row * h / rows,
-               w / columns, h / rows, pixels[row * columns + column + 1])
-    end
-  end
+  x,y,w,h=ui._box(x,y,w,h)
+  for j=1,rows do for i=1,cols do
+    imm_rect(x+(i-1)*w/cols,y+(j-1)*h/rows,w/cols,h/rows,colors[(j-1)*cols+i])
+  end end
 end
 return ui

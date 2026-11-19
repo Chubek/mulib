@@ -1,0 +1,1 @@
+local M=require('retgtk.core');return function(p) local w=M.widget('progress',p);function w:paint(r,c) imm_rect(r.x,r.y,r.w,r.h,c.theme.normal);imm_rect(r.x,r.y,r.w*math.max(0,math.min(1,self.value)),r.h,c.theme.accent) end;return w end

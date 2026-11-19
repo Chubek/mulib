@@ -1,13 +1,3 @@
-local ui = require('immgtk.core')
-function ui.meter(value, lo, hi, segments, x, y, w, h)
-  ui._range(value, lo, hi); ui._index(segments, 128)
-  x, y, w, h = ui._box(x, y, w, h)
-  assert(w >= 2 * segments, 'meter dimensions')
-  local filled = math.floor((ui._clamp(value, lo, hi) - lo) / (hi - lo) * segments)
-  local width = w / segments
-  for i = 1, segments do
-    imm_rect(x + (i - 1) * width, y, width - 1, h,
-             i <= filled and ui.accent or ui.normal)
-  end
-end
+local ui=require('immgtk.core')
+function ui.meter(v,lo,hi,n,x,y,w,h) x,y,w,h=ui._box(x,y,w,h);ui._range(v,lo,hi);assert(n>=1 and n<=128 and n==math.floor(n) and w>=2*n);local q=math.floor(n*ui._clamp((v-lo)/(hi-lo),0,1));for i=1,n do imm_rect(x+(i-1)*w/n,y,w/n-1,h,i<=q and ui.accent or ui.normal) end end
 return ui

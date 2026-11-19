@@ -1,16 +1,3 @@
-local ui = require('immgtk.core')
--- Bounded sample markers (not an antialiased line/path renderer).
-function ui.sparkline(values, lo, hi, x, y, w, h)
-  ui._range(lo, lo, hi)
-  assert(type(values) == 'table' and #values > 0 and #values <= 256, 'sample count')
-  x, y, w, h = ui._box(x, y, w, h)
-  for i = 1, #values do ui._number(values[i]) end
-  imm_rect(x, y, w, h, ui.background)
-  local size = math.min(2, w / #values, h)
-  for i = 1, #values do
-    local t = (ui._clamp(values[i], lo, hi) - lo) / (hi - lo)
-    local xx = x + (i - 1) * (w - size) / math.max(1, #values - 1)
-    imm_rect(xx, y + (h - size) * (1 - t), size, size, ui.accent)
-  end
-end
+local ui=require('immgtk.core')
+function ui.sparkline(v,lo,hi,x,y,w,h) x,y,w,h=ui._box(x,y,w,h);assert(#v>=1 and #v<=256);for i=1,#v do ui._range(v[i],lo,hi);local q=ui._clamp((v[i]-lo)/(hi-lo),0,1);imm_rect(x+(i-1)*w/#v,y+(1-q)*math.max(0,h-2),math.min(2,w/#v),math.min(2,h),ui.accent) end end
 return ui

@@ -1,0 +1,1 @@
+return function(nodes) local m={nodes=nodes or {}};function m:visible() local out={};local function walk(v,depth) if depth>64 then return end;for i=1,#v do local n=v[i];out[#out+1]={node=n,depth=depth};if n.open and n.children then walk(n.children,depth+1) end end end;walk(self.nodes,0);return out end;return m end

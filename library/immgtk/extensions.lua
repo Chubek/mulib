@@ -1,0 +1,11 @@
+local a=require('immgtk.advanced')
+require('immgtk.collections')
+require('immgtk.containers')
+require('immgtk.controls')
+require('immgtk.demo')
+require('immgtk.dialogs')
+require('immgtk.editors')
+require('immgtk.menus')
+require('immgtk.plotting')
+require('immgtk.themes')
+return a

@@ -1,0 +1,1 @@
+local M=require('retgtk.core');return function(p) local w=M.widget('checkbox',p);function w:paint(r,c) if M.control(self,r,c) then self:set('checked',not self.checked) end;if self.checked then imm_rect(r.x+r.w-14,r.y+5,8,math.max(1,r.h-10),c.theme.accent) end end;return w end

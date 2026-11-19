@@ -1,0 +1,1 @@
+return function(items) local m={items=items or {},revision=0};function m:count() return #self.items end;function m:get(i) return self.items[i] end;function m:append(v) self.items[#self.items+1]=v;self.revision=self.revision+1 end;function m:remove(i) local v=table.remove(self.items,i);self.revision=self.revision+1;return v end;return m end

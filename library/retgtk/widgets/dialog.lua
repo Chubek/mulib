@@ -1,0 +1,1 @@
+local M=require('retgtk.core');return function(p) local w=M.widget('dialog',p);function w:paint(r,c) imm_rect(r.x,r.y,r.w,r.h,c.theme.panel);M.caption(self,r,c) end;function w:close(result) self.result=result;self:hide();self:emit('closed',result) end;return w end

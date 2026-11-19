@@ -1,0 +1,1 @@
+return {dark={background=0xff202630,panel=0xff2b3440,normal=0xff394353,hover=0xff4a586a,active=0xff426c9f,text=0xfff0f3f8,accent=0xff56b4e9,padding=8,gap=4,row=24},light={background=0xfff2f4f7,panel=0xffffffff,normal=0xffe2e7ed,hover=0xffd1dbe7,active=0xffa9c8ed,text=0xff202630,accent=0xff286bb0,padding=8,gap=4,row=24}}

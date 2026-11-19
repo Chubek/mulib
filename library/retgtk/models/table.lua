@@ -1,0 +1,1 @@
+return function(rows,columns) local m={rows=rows or {},cols=columns or 1,revision=0};function m:count() return #self.rows end;function m:columns() return self.cols end;function m:get(i,j) return self.rows[i] and self.rows[i][j] end;function m:set(i,j,v) assert(self.rows[i] and j>=1 and j<=self.cols);self.rows[i][j]=v;self.revision=self.revision+1 end;return m end
