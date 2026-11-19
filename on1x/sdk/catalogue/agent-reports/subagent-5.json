@@ -1,0 +1,184 @@
+{
+  "schema": "on1x.sdk.agent-report/1",
+  "agent": 5,
+  "area": "backends/toolchains",
+  "baseline": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
+  "status": "PARTIAL",
+  "summary": [
+    "Capability-ranked ABI-2 backend providers now consume host-admitted checked HIR or serialized verified MIR and produce immutable staged artifacts.",
+    "Validated immutable target profiles, target feature constraints, data layouts, object formats, calling conventions, artifact metadata, SHA-256 identities, cancellation polling, reproducibility checks, and bounded output rollback are executable.",
+    "All five compiler-linked backends publish copied ABI-2 capabilities while retaining ABI-v1 names, statuses, command behavior, and public backend-run compatibility.",
+    "Toolchain providers are inert copied identities. A separate host resolver authorizes exact canonical absolute paths by driver, role, and SHA-256 without PATH lookup, file access, shell invocation, or execution.",
+    "Native instruction selection, assembly, object generation, linking, AOT, and JIT remain explicitly unsupported because MuLIB has no verified bridge from canonical On1x MIR."
+  ],
+  "facilities": [
+    {
+      "id": "backend.capability-selection",
+      "status": "EXECUTABLE",
+      "subset": "Copied provider/capability descriptors; phase, schema, artifact, target and feature matching; priority then target-specificity ranking; explicit-provider selection; ambiguity rejection; callback exception/status normalization; same-provider reentrancy rejection."
+    },
+    {
+      "id": "backend.target-profile",
+      "status": "EXECUTABLE",
+      "subset": "Immutable validated canonical target triples, CPUs, sorted unique feature sets, data layouts, object formats, calling conventions, equality, and feature queries."
+    },
+    {
+      "id": "backend.staged-artifact",
+      "status": "EXECUTABLE",
+      "subset": "Bounded private staging, no partial publication, owned immutable bytes and metadata, SHA-256, declared determinism, and optional two-run byte reproducibility checks."
+    },
+    {
+      "id": "backend.builtin-adapters",
+      "status": "EXECUTABLE",
+      "subset": "c11, mir-c11, mir-cfg, mir-eval, and mir-text use canonical compiler implementations and advertise ABI-2 capabilities without changing existing on1xc modes."
+    },
+    {
+      "id": "toolchain.authorized-resolution",
+      "status": "EXECUTABLE",
+      "subset": "Exact validated target matching, deterministic priority selection, ambiguity rejection, host allowlisted POSIX paths, role and digest binding, and owned relocatable inert resolution records."
+    },
+    {
+      "id": "backend.native-machine",
+      "status": "UNSUPPORTED",
+      "subset": "",
+      "blockers": [
+        "MuLIB machine facilities consume a different native IR.",
+        "No canonical verified On1x-MIR legalization bridge exists.",
+        "MuLIB assembly still requires separately authorized external assembly/link steps."
+      ]
+    }
+  ],
+  "public_headers": [
+    "on1x/sdk/include/On1xSDK-AOT.h",
+    "on1x/sdk/include/On1xSDK-Artifact.h",
+    "on1x/sdk/include/On1xSDK-Backend.h",
+    "on1x/sdk/include/On1xSDK-CallingConvention.h",
+    "on1x/sdk/include/On1xSDK-DataLayout.h",
+    "on1x/sdk/include/On1xSDK-JIT.h",
+    "on1x/sdk/include/On1xSDK-MachineIR.h",
+    "on1x/sdk/include/On1xSDK-ObjectABI.h",
+    "on1x/sdk/include/On1xSDK-Target.h",
+    "on1x/sdk/include/On1xSDK-TargetMachine.h",
+    "on1x/sdk/include/On1xSDK-Toolchain.h",
+    "on1x/sdk/include/On1xSDK-ToolchainResolver.h"
+  ],
+  "changed_files": [
+    "on1x/backends/README.md",
+    "on1x/backends/c11/Backend.cpp",
+    "on1x/backends/mir-c11/Backend.cpp",
+    "on1x/backends/mir-cfg/Backend.cpp",
+    "on1x/backends/mir-eval/Backend.cpp",
+    "on1x/backends/mir-text/Backend.cpp",
+    "on1x/sdk/catalogue/agent-reports/subagent-5.json",
+    "on1x/sdk/cmake/Integration5.cmake",
+    "on1x/sdk/cmake/Subagent5.cmake",
+    "on1x/sdk/examples/backend/README.md",
+    "on1x/sdk/examples/backend/external_backend.c",
+    "on1x/sdk/examples/backend/external_backend.h",
+    "on1x/sdk/include/On1xSDK-AOT.h",
+    "on1x/sdk/include/On1xSDK-Artifact.h",
+    "on1x/sdk/include/On1xSDK-Backend.h",
+    "on1x/sdk/include/On1xSDK-CallingConvention.h",
+    "on1x/sdk/include/On1xSDK-DataLayout.h",
+    "on1x/sdk/include/On1xSDK-JIT.h",
+    "on1x/sdk/include/On1xSDK-MachineIR.h",
+    "on1x/sdk/include/On1xSDK-ObjectABI.h",
+    "on1x/sdk/include/On1xSDK-Target.h",
+    "on1x/sdk/include/On1xSDK-TargetMachine.h",
+    "on1x/sdk/include/On1xSDK-Toolchain.h",
+    "on1x/sdk/include/On1xSDK-ToolchainResolver.h",
+    "on1x/sdk/src/Backend.cpp",
+    "on1x/sdk/src/Toolchain.cpp",
+    "on1x/sdk/src/backend/Artifact.cpp",
+    "on1x/sdk/src/backend/ArtifactInternal.hpp",
+    "on1x/sdk/src/backend/BackendProviderInternal.hpp",
+    "on1x/sdk/src/backend/NativeUnsupported.cpp",
+    "on1x/sdk/src/backend/Target.cpp",
+    "on1x/sdk/src/backend/TargetInternal.hpp",
+    "on1x/sdk/src/toolchain/Resolver.cpp",
+    "on1x/sdk/src/toolchain/ToolchainInternal.hpp",
+    "on1x/sdk/tests/backend_artifact_emit.cpp",
+    "on1x/sdk/tests/backend_c_abi.c",
+    "on1x/sdk/tests/backend_v2.cpp",
+    "on1x/sdk/tests/builtin_providers_v2.cpp",
+    "on1x/sdk/tests/check_backend_artifact.py",
+    "on1x/sdk/tests/check_backend_headers.py",
+    "on1x/sdk/tests/check_backend_package.py",
+    "on1x/sdk/tests/external_backend.cpp",
+    "on1x/sdk/tests/target_v2.cpp",
+    "on1x/sdk/tests/toolchain_v2.cpp",
+    "on1x/toolchains/README.md"
+  ],
+  "tests": [
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk2-backends-gcc-make -G 'Unix Makefiles' -DON1X_BUILD_EXTENSION_SDK=ON -DBUILD_TESTING=ON -DON1X_BUILD_NATIVE_PPX=OFF && cmake --build /tmp/opencode/sdk2-backends-gcc-make --parallel 4",
+      "result": "PASS: complete GCC build"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/sdk2-backends-gcc-make --output-on-failure -R '^(on1x\\.sdk\\.|on1x\\.backends\\.)'",
+      "result": "PASS: 18/18"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/sdk2-backends-gcc-make --output-on-failure",
+      "result": "NON-BACKEND BASELINE LIMITATION: 100 passed, 3 failed, 1 skipped out of 104. Failures were on1x.type_checker_hardening_hir (configured LibStone Firestone unavailable), on1x.contracts (pre-existing MuLIB auxiliary inventory assertion), and on1x.mulib (pre-existing MuLIB fixture inventory assertion). All SDK/backend and compiler behavior tests passed."
+    },
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk2-backends-clang-make -G 'Unix Makefiles' -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_FLAGS='-Wall -Wextra -Wpedantic -Werror' -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wpedantic -Werror' -DON1X_BUILD_EXTENSION_SDK=ON -DBUILD_TESTING=ON -DON1X_BUILD_NATIVE_PPX=OFF",
+      "result": "PASS: strict Clang 22 configuration"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/sdk2-backends-clang-make --target on1x_sdk_test_target_v2 on1x_sdk_test_backend_v2 on1x_sdk_test_toolchain_v2 on1x_sdk_test_external_backend on1x_sdk_test_backend_c_abi --parallel 4 && ctest --test-dir /tmp/opencode/sdk2-backends-clang-make --output-on-failure -R '^on1x\\.sdk\\.(target_v2|backend_v2|toolchain_v2|external_backend|backend_c_abi)$'",
+      "result": "PASS: Clang 22 with -Wall -Wextra -Wpedantic -Werror; 5/5"
+    },
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk2-backends-clang-normal -G 'Unix Makefiles' -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DON1X_BUILD_EXTENSION_SDK=ON -DBUILD_TESTING=ON -DON1X_BUILD_NATIVE_PPX=OFF && cmake --build /tmp/opencode/sdk2-backends-clang-normal --target on1x_sdk_test_target_v2 on1x_sdk_test_backend_v2 on1x_sdk_test_toolchain_v2 on1x_sdk_test_external_backend on1x_sdk_test_builtin_providers_v2 on1x_sdk_test_backend_c_abi on1x_sdk_backend_artifact_emit --parallel 4 && ctest --test-dir /tmp/opencode/sdk2-backends-clang-normal --output-on-failure -R '^on1x\\.sdk\\.(target_v2|backend_v2|toolchain_v2|external_backend|builtin_providers_v2|backend_c_abi|backend_headers|backend_relocated_consumer|backend_artifact)$'",
+      "result": "PASS: 9/9"
+    },
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk2-backends-asan -G 'Unix Makefiles' -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined' -DON1X_BUILD_EXTENSION_SDK=ON -DBUILD_TESTING=ON -DON1X_BUILD_NATIVE_PPX=OFF",
+      "result": "PASS: Clang ASan+UBSan configuration"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/sdk2-backends-asan --target on1x_sdk_test_target_v2 on1x_sdk_test_backend_v2 on1x_sdk_test_toolchain_v2 on1x_sdk_test_external_backend on1x_sdk_test_builtin_providers_v2 on1x_sdk_test_backend_c_abi on1x_sdk_backend_artifact_emit --parallel 4 && ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 ctest --test-dir /tmp/opencode/sdk2-backends-asan --output-on-failure -R '^on1x\\.sdk\\.(target_v2|backend_v2|toolchain_v2|external_backend|builtin_providers_v2|backend_c_abi|backend_headers|backend_relocated_consumer|backend_artifact)$'",
+      "result": "PASS: Clang ASan+UBSan, 9/9"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS"
+    }
+  ],
+  "unsupported": [
+    "Native On1x machine IR creation",
+    "Instruction selection, scheduling, register allocation, assembly, object writing, linking and disassembly",
+    "Native AOT and JIT",
+    "Artifact publication or execution by backend providers",
+    "Tool lookup through PATH, environment variables, command names or shells",
+    "Opening, hashing, validating or executing host tool files inside the resolver"
+  ],
+  "cross_owner_requests": [
+    {
+      "owner": 1,
+      "request": "Publish symbolic ABI-2 status constants for normative numeric values 8 through 16 in the core status header.",
+      "reason": "Backend polling preserves all nine ABI-2 statuses, but the frozen baseline exposes symbolic names only for ABI-v1 values 0 through 7.",
+      "proposed_api": "ON1X_SDK_CANCELLED=8, DEADLINE_EXCEEDED=9, STALE=10, CONFLICT=11, NOT_FOUND=12, INVALID_STATE=13, VERIFICATION_FAILED=14, CAPABILITY_DENIED=15, IO_ERROR=16 (final names owned by core)."
+    },
+    {
+      "owner": 1,
+      "request": "Expose an internal registry callback lease used by backend invocation so registry destruction/mutation can be deferred or rejected while a callback is active.",
+      "reason": "Backend code copies callback state and rejects same-provider reentry, but registry lifetime enforcement belongs to the shared registry implementation.",
+      "proposed_api": "On1xSDK_Status registry_callback_enter(const On1xSDK_Registry *) noexcept; void registry_callback_leave(const On1xSDK_Registry *) noexcept;"
+    },
+    {
+      "owner": 3,
+      "request": "Expose the admitted MIR envelope schema as an immutable program/snapshot query.",
+      "reason": "Backend matching currently derives the schema from the canonical serialized MIR prefix; a representation-owned query avoids duplicate envelope inspection.",
+      "proposed_api": "On1xSDK_Status on1x_sdk_program_schema(const On1xSDK_Program *, uint32_t *out_schema);"
+    },
+    {
+      "owner": "principal",
+      "request": "Add the new backend, target, artifact, native-probe and resolver headers to on1x/sdk/include/On1xSDK.h and merge this report into the capability matrix/inventory.",
+      "reason": "The umbrella header and shared capability records are principal-owned.",
+      "proposed_api": "Include the twelve headers listed in public_headers without changing their standalone C11 include paths."
+    }
+  ]
+}
