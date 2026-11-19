@@ -1,7 +1,8 @@
 /** @file mulib-elvi-scrape.h
- * @brief Declarative Surfraw-inspired search providers and HTML link extraction.
+ * @brief Declarative search providers and bounded HTML/JSON link extraction.
  * ISO C11; no third-party libraries. MuLIB dependencies: mulib-fetch,
- * mulib-url, and detail/mulib-webscan. Define MULIB_IMPL_ELVI_SCRAPE in one TU.
+ * mulib-url, mulib-https, mulib-json, and detail/mulib-webscan.
+ * Define MULIB_IMPL_ELVI_SCRAPE in one TU.
  *
  * The HTTPS adapter composes MuLIB HTTPS/TSL with application-owned TLS
  * connection and authenticated peer inspection callbacks.
@@ -24,8 +25,13 @@ typedef enum mulib_elvi_anchor_mode {
 } mulib_elvi_anchor_mode_t;
 typedef enum mulib_elvi_rewrite {
   MULIB_ELVI_REWRITE_DIRECT = 0,
-  MULIB_ELVI_REWRITE_GOOGLE = 1
+  MULIB_ELVI_REWRITE_GOOGLE = 1,
+  MULIB_ELVI_REWRITE_RELATIVE = 2
 } mulib_elvi_rewrite_t;
+typedef enum mulib_elvi_format {
+  MULIB_ELVI_FORMAT_HTML = 0,
+  MULIB_ELVI_FORMAT_JSON = 1
+} mulib_elvi_format_t;
 typedef struct mulib_elvi_scrape_program {
   char name[64];
   char host[256];                 /* exact HTTPS request host */
@@ -37,6 +43,9 @@ typedef struct mulib_elvi_scrape_program {
   unsigned max_results;          /* 1..64 */
   mulib_elvi_anchor_mode_t anchor_mode;
   mulib_elvi_rewrite_t rewrite;
+  mulib_elvi_format_t format;
+  char anchor_class[128];        /* optional case-sensitive HTML class token */
+  char json_results[256], json_title[256], json_url[256]; /* selector paths */
 } mulib_elvi_scrape_program_t;
 typedef struct mulib_elvi_scrape_result {
   char title[512];
@@ -61,14 +70,14 @@ int mulib_elvi_scrape_load(const char *path,
 int mulib_elvi_scrape_url(const mulib_elvi_scrape_program_t *p,
                          const char *query, unsigned limit,
                          char *out, size_t capacity);
-/* Parse HTML (<=2 MiB) without fetching, with bounded scanner work. Returns
+/* Parse HTML or JSON (<=2 MiB) without fetching, with bounded work. Returns
  * success even for zero hits. Results/count remain unchanged on failure. */
 int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *p,
-                           const char *html, size_t len,
+                            const char *body, size_t len,
                            mulib_elvi_scrape_result_t *results, size_t cap,
                            size_t *count);
 /* Build URL, fetch via supplied MuLIB fetch client, parse if status=200 and
- * HTML response. Caller's transport MUST use verified TLS for HTTPS. */
+ * media type matches the profile. Transport MUST use verified TLS for HTTPS. */
 int mulib_elvi_scrape_search(const mulib_elvi_scrape_program_t *p,
                             const mulib_fetch_client_t *client,
                             const char *query, unsigned limit,
@@ -102,6 +111,7 @@ int mulib_elvi_scrape_https_transport(void *ctx, const char *url,
 #if defined(MULIB_IMPL_ELVI_SCRAPE) && !defined(MULIB_ELVI_SCRAPE_IMPLEMENTED)
 #define MULIB_ELVI_SCRAPE_IMPLEMENTED
 #include "detail/mulib-webscan.h"
+#include "mulib-json.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -164,15 +174,35 @@ static int melvi_host_(const char *url, char *host, size_t cap) {
   }
   host[n]=0;return melvi_hostname_(host);
 }
+static int melvi_class_token_(const char *s) {
+  if(!*s)return 0;
+  for(;*s;s++)if((unsigned char)*s<=32 || (unsigned char)*s==127)return 0;
+  return 1;
+}
+static int melvi_pointer_syntax_(const char *s,size_t cap) {
+  if(!memchr(s,0,cap) || *s!='/')return 0;
+  for(;*s;s++)if(*s=='~' && (*++s!='0' && *s!='1'))return 0;
+  return 1;
+}
 /* Public structs are caller-owned: validate extents before string operations. */
 static int melvi_program_(const mulib_elvi_scrape_program_t *p) {
   if(!p || p->excluded_count>8 || p->max_results<1 || p->max_results>64 ||
-     p->anchor_mode<MULIB_ELVI_ANCHOR_CHILD || p->anchor_mode>MULIB_ELVI_ANCHOR_ANY ||
-     (p->rewrite!=MULIB_ELVI_REWRITE_DIRECT && p->rewrite!=MULIB_ELVI_REWRITE_GOOGLE) ||
+     (p->rewrite!=MULIB_ELVI_REWRITE_DIRECT && p->rewrite!=MULIB_ELVI_REWRITE_GOOGLE &&
+      p->rewrite!=MULIB_ELVI_REWRITE_RELATIVE) ||
      !memchr(p->name,0,sizeof p->name) || !memchr(p->host,0,sizeof p->host) ||
      !memchr(p->home,0,sizeof p->home) ||
-     !memchr(p->search_template,0,sizeof p->search_template) ||
-     !memchr(p->anchor_tag,0,sizeof p->anchor_tag) || !p->anchor_tag[0])return 0;
+     !memchr(p->search_template,0,sizeof p->search_template))return 0;
+  if(p->format==MULIB_ELVI_FORMAT_HTML) {
+    if(p->anchor_mode<MULIB_ELVI_ANCHOR_CHILD || p->anchor_mode>MULIB_ELVI_ANCHOR_ANY ||
+       !memchr(p->anchor_tag,0,sizeof p->anchor_tag) || !p->anchor_tag[0] ||
+       !memchr(p->anchor_class,0,sizeof p->anchor_class) ||
+       (p->anchor_class[0] && !melvi_class_token_(p->anchor_class)))return 0;
+  } else if(p->format==MULIB_ELVI_FORMAT_JSON) {
+    if(p->rewrite==MULIB_ELVI_REWRITE_GOOGLE ||
+       !melvi_pointer_syntax_(p->json_results,sizeof p->json_results) ||
+       !melvi_pointer_syntax_(p->json_title,sizeof p->json_title) ||
+       !melvi_pointer_syntax_(p->json_url,sizeof p->json_url))return 0;
+  } else return 0;
   for(size_t i=0;i<p->excluded_count;i++)
     if(!memchr(p->excluded_hosts[i],0,256) || !melvi_hostname_(p->excluded_hosts[i]))return 0;
   return melvi_hostname_(p->host);
@@ -232,9 +262,10 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
                               mulib_elvi_scrape_program_t *out,
                               mulib_elvi_scrape_error_t *error) {
   enum { M_NAME, M_HOST, M_HOME, M_SEARCH, M_ANCHOR, M_REWRITE, M_EXCLUDE,
-         M_MAX_RESULTS, M_DIRECTIVES };
+         M_MAX_RESULTS, M_FORMAT, M_CLASS, M_RESULTS, M_TITLE, M_URL, M_DIRECTIVES };
   static const char *const keys[M_DIRECTIVES]={
-    "elvi","host","home","search","anchor","rewrite","exclude_host","max_results"
+    "elvi","host","home","search","anchor","rewrite","exclude_host","max_results",
+    "format","anchor_class","results","title","url"
   };
   mulib_elvi_scrape_program_t v;
   size_t at=0,line=0,lines[M_DIRECTIVES]={0};
@@ -278,7 +309,7 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
     case M_ANCHOR:
       v.anchor_mode=melvi_eq_(a,"child")?MULIB_ELVI_ANCHOR_CHILD:
                     melvi_eq_(a,"parent")?MULIB_ELVI_ANCHOR_PARENT:
-                    melvi_eq_(a,"any")?MULIB_ELVI_ANCHOR_ANY:0;
+                    melvi_eq_(a,"any")?MULIB_ELVI_ANCHOR_ANY:(mulib_elvi_anchor_mode_t)0;
       if(!v.anchor_mode || (!nb && v.anchor_mode!=MULIB_ELVI_ANCHOR_ANY) ||
          !melvi_copy_(v.anchor_tag,sizeof v.anchor_tag,nb?b:"a")) goto syntax;
       melvi_lower_(v.anchor_tag);
@@ -291,6 +322,7 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
     case M_REWRITE:
       if(melvi_eq_(a,"direct")) v.rewrite=MULIB_ELVI_REWRITE_DIRECT;
       else if(melvi_eq_(a,"google")) v.rewrite=MULIB_ELVI_REWRITE_GOOGLE;
+      else if(melvi_eq_(a,"relative")) v.rewrite=MULIB_ELVI_REWRITE_RELATIVE;
       else goto syntax;
       break;
     case M_EXCLUDE:
@@ -302,14 +334,38 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
     case M_MAX_RESULTS:
       if(!melvi_uint_(a,&v.max_results) || v.max_results<1||v.max_results>64) goto syntax;
       break;
+    case M_FORMAT:
+      if(melvi_eq_(a,"html"))v.format=MULIB_ELVI_FORMAT_HTML;
+      else if(melvi_eq_(a,"json"))v.format=MULIB_ELVI_FORMAT_JSON;
+      else goto syntax;
+      break;
+    case M_CLASS:
+      if(!melvi_class_token_(a) || !melvi_copy_(v.anchor_class,sizeof v.anchor_class,a))goto syntax;
+      break;
+    case M_RESULTS: case M_TITLE: case M_URL: {
+      char *path=kind==M_RESULTS?v.json_results:kind==M_TITLE?v.json_title:v.json_url;
+      if(!melvi_copy_(path,sizeof v.json_results,a) ||
+         !melvi_pointer_syntax_(path,sizeof v.json_results))goto syntax;
+      break;
+    }
     default:
       goto syntax;
     }
     continue;
   syntax: melvi_error_(error,line,"unknown directive or invalid arguments");return 0;
   }
-  if(!lines[M_NAME] || !lines[M_HOST] || !lines[M_HOME] || !lines[M_SEARCH] || !lines[M_ANCHOR]) {
+  if(!lines[M_NAME] || !lines[M_HOST] || !lines[M_HOME] || !lines[M_SEARCH] ||
+     (v.format==MULIB_ELVI_FORMAT_HTML && !lines[M_ANCHOR]) ||
+     (v.format==MULIB_ELVI_FORMAT_JSON && (!lines[M_RESULTS] || !lines[M_TITLE] || !lines[M_URL]))) {
     melvi_error_(error,line,"required directives missing");return 0;
+  }
+  if(v.format==MULIB_ELVI_FORMAT_HTML) {
+    for(int kind=M_RESULTS;kind<=M_URL;kind++)if(lines[kind]) {
+      melvi_error_(error,lines[kind],"JSON selector requires format json");return 0;
+    }
+  } else if(lines[M_ANCHOR] || lines[M_CLASS] || v.rewrite==MULIB_ELVI_REWRITE_GOOGLE) {
+    melvi_error_(error,lines[M_ANCHOR]?lines[M_ANCHOR]:lines[M_CLASS]?lines[M_CLASS]:lines[M_REWRITE],
+                 "HTML selector or rewrite not supported for JSON");return 0;
   }
   if(strchr(v.home,'#') || !melvi_same_host_(v.home,v.host)) {
     melvi_error_(error,lines[M_HOME],"invalid HTTPS home URL or host mismatch");return 0;
@@ -474,6 +530,23 @@ static int melvi_attribute_(const char *raw, char *out, size_t cap) {
   }
   out[j]=0;return 1;
 }
+/* An already-decoded result URL, independent of the response format. */
+static int melvi_result_url_(const mulib_elvi_scrape_program_t *p,
+                              const char *value,char *out,size_t cap) {
+  char resolved[sizeof (((mulib_elvi_scrape_result_t *)0)->url)];
+  if(p->rewrite==MULIB_ELVI_REWRITE_RELATIVE && value[0]=='/') {
+    size_t used=0;
+    /* Only root-relative paths, never an alternate authority or <base>. */
+    if(value[1]=='/' ||
+       !melvi_append_(resolved,sizeof resolved,&used,"https://",8) ||
+       !melvi_append_(resolved,sizeof resolved,&used,p->host,strlen(p->host)) ||
+       !melvi_append_(resolved,sizeof resolved,&used,value,strlen(value)))return 0;
+    value=resolved;
+  }
+  /* We intentionally do not fetch result URLs; only return HTTPS links. */
+  if(melvi_excluded_(p,value))return 0;
+  return melvi_copy_(out,cap,value);
+}
 static int melvi_redirect_(const mulib_elvi_scrape_program_t *p,
                            const char *raw,char *out,size_t cap) {
   char normalized[4096],dec[4096];size_t n=0;
@@ -506,48 +579,10 @@ static int melvi_redirect_(const mulib_elvi_scrape_program_t *p,
       dec[n]=0;value=dec;
     }
   }
-  /* We intentionally do not fetch result URLs; only return HTTPS links. */
-  if(melvi_excluded_(p,value))return 0;
-  return melvi_copy_(out,cap,value);
+  return melvi_result_url_(p,value,out,cap);
 }
 static int melvi_tag_(const mulib_webscan_tag_ *tag,const char *name) {
   return mulib_webscan_equal_(tag->name,tag->length,name);
-}
-/* HTML's first occurrence wins, including a missing or empty value. The
- * generic scanner's quoted-only attribute API is not meant for this. */
-static int melvi_href_(const mulib_webscan_tag_ *tag,const char **value,size_t *length) {
-  const char *s=tag->attrs,*end=tag->end;
-  while(s<end) {
-    const char *name,*start;int href;char quote;
-    while(s<end && mulib_webscan_space_((unsigned char)*s))s++;
-    if(s==end || *s=='/') break;
-    name=s;
-    while(s<end && !mulib_webscan_space_((unsigned char)*s) && !strchr("=/'\"",*s))s++;
-    if(s==name)return 0;
-    href=mulib_webscan_equal_(name,(size_t)(s-name),"href");
-    while(s<end && mulib_webscan_space_((unsigned char)*s))s++;
-    if(s==end || *s!='=') {
-      if(href)return 0;
-      continue;
-    }
-    do {s++;} while(s<end && mulib_webscan_space_((unsigned char)*s));
-    if(s==end)return 0;
-    quote=*s;
-    if(quote=='"' || quote=='\'') {
-      start=++s;
-      while(s<end && *s!=quote)s++;
-      if(s==end)return 0;
-      if(href) {*value=start;*length=(size_t)(s-start);}
-      s++;
-      if(s<end && *s!='/' && !mulib_webscan_space_((unsigned char)*s))return 0;
-    } else {
-      start=s;
-      while(s<end && !mulib_webscan_space_((unsigned char)*s))s++;
-      if(href) {*value=start;*length=(size_t)(s-start);}
-    }
-    if(href)return *length!=0;
-  }
-  return 0;
 }
 static int melvi_heading_(const mulib_webscan_tag_ *tag) {
   return tag->length==2 && mulib_webscan_lower_((unsigned char)tag->name[0])=='h' &&
@@ -566,18 +601,16 @@ static const char *melvi_raw_(const mulib_webscan_tag_ *tag) {
   for(size_t i=0;i<sizeof names/sizeof *names;i++)if(melvi_tag_(tag,names[i]))return names[i];
   return NULL;
 }
-int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *p,
-                            const char *html,size_t len,
-                            mulib_elvi_scrape_result_t *results,size_t cap,
-                            size_t *count) {
+static int melvi_parse_html_(const mulib_elvi_scrape_program_t *p,
+                             const char *html,size_t len,
+                             mulib_elvi_scrape_result_t *results,size_t cap,
+                             size_t *count) {
   char *copy;const char *scan,*prev;mulib_webscan_tag_ tag;
   mulib_elvi_scrape_result_t *pending;
   size_t used=0,work,parent=0,child=0,inert=0,title_len=0,tables=0,anchor_table=0;
   unsigned char cell_parent=0,*cells=NULL;
   int active=0,seen_child=0,parsed=0,clipped=0;
   char href[4096],title[512];
-  if(!melvi_program_(p)||(!html&&len)||!count||(!results&&cap)||len>2097152||(len&&memchr(html,0,len)))return 0;
-  if(cap>p->max_results)cap=p->max_results;
   if(!cap) {*count=0;return 1;}
   if(p->anchor_mode==MULIB_ELVI_ANCHOR_PARENT)
     cell_parent=melvi_eq_(p->anchor_tag,"td")?1:melvi_eq_(p->anchor_tag,"th")?2:0;
@@ -635,11 +668,18 @@ int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *p,
     } else if(!tag.closing && melvi_tag_(&tag,p->anchor_tag) &&
               p->anchor_mode==MULIB_ELVI_ANCHOR_PARENT) parent++;
     if(!tag.closing && melvi_tag_(&tag,"a")) {
-      const char *v;size_t n;
       active=0;seen_child=0;child=0;clipped=0;title_len=0;title[0]=href[0]=0;
-      if((p->anchor_mode!=MULIB_ELVI_ANCHOR_PARENT||parent) &&
-         melvi_href_(&tag,&v,&n)&&n<sizeof href) {
-        memcpy(href,v,n);href[n]=0;active=1;anchor_table=tables;
+      if(p->anchor_mode!=MULIB_ELVI_ANCHOR_PARENT||parent) {
+        const char *v;size_t n;
+        int match=mulib_webscan_attr_first_work_(&tag,"href",&v,&n,&work);
+        if(match<0) {parsed=-1;break;}
+        if(match && n<sizeof href && p->anchor_class[0]) {
+          match=mulib_webscan_class_work_(&tag,p->anchor_class,&work);
+          if(match<0) {parsed=-1;break;}
+        }
+        if(match && n<sizeof href) {
+          memcpy(href,v,n);href[n]=0;active=1;anchor_table=tables;
+        }
       }
     } else if(active && !tag.closing && p->anchor_mode==MULIB_ELVI_ANCHOR_CHILD &&
               melvi_tag_(&tag,p->anchor_tag)) {child++;seen_child=1;}
@@ -671,10 +711,87 @@ int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *p,
   if(used)memcpy(results,pending,used*sizeof *pending);
   free(pending);*count=used;return 1;
 }
-static int melvi_html_type_(const char *ct) {
+/* Traverse a pointer that the compiler has already validated. Object key
+ * lookups are byte-exact; array indexes are canonical unsigned decimals. */
+static const mulib_json_t *melvi_json_at_(const mulib_json_t *v,const char *path) {
+  while(v && *path) {
+    char key[256];size_t n=0;
+    path++;
+    for(;*path && *path!='/';path++) {
+      if(*path=='~') key[n++]=*++path=='0'?'~':'/';
+      else key[n++]=*path;
+    }
+    if(mulib_json_typeof(v)==MULIB_JSON_OBJECT)v=mulib_json_get_n(v,key,n);
+    else if(mulib_json_typeof(v)==MULIB_JSON_ARRAY) {
+      size_t idx=0;
+      if(!n || (n>1 && key[0]=='0'))return NULL;
+      for(size_t i=0;i<n;i++) {
+        if(key[i]<'0' || key[i]>'9' || idx>(SIZE_MAX-(size_t)(key[i]-'0'))/10)return NULL;
+        idx=idx*10+(size_t)(key[i]-'0');
+      }
+      v=mulib_json_at(v,idx);
+    } else return NULL;
+  }
+  return v;
+}
+/* JSON strings are already decoded text, not HTML. Normalize whitespace
+ * without interpreting literal markup/entities, and clip on UTF-8 boundaries. */
+static int melvi_json_title_(const char *s,size_t n,char *out,size_t cap) {
+  size_t j=0;
+  if(!s || memchr(s,0,n))return 0;
+  for(size_t i=0;i<n && j+1<cap;) {
+    uint32_t cp;size_t w;
+    if(!mulib_utf8_decode((const unsigned char *)s+i,n-i,&cp,&w))return 0;
+    if(cp==160 || (cp<128 && mulib_webscan_space_((unsigned char)cp))) {
+      if(j && out[j-1]!=' ')out[j++]=' ';
+    } else if(cp>=32 && cp!=127) {
+      if(w>=cap-j)break;
+      memcpy(out+j,s+i,w);j+=w;
+    }
+    i+=w;
+  }
+  while(j && out[j-1]==' ')j--;
+  out[j]=0;return j!=0;
+}
+static int melvi_parse_json_(const mulib_elvi_scrape_program_t *p,
+                             const char *body,size_t len,
+                             mulib_elvi_scrape_result_t *results,size_t cap,
+                             size_t *count) {
+  mulib_json_t *root=mulib_json_parse(body,len,NULL);
+  const mulib_json_t *items;size_t used=0;
+  if(!root)return 0;
+  items=melvi_eq_(p->json_results,"/")?root:melvi_json_at_(root,p->json_results);
+  if(mulib_json_typeof(items)!=MULIB_JSON_ARRAY) {mulib_json_destroy(root);return 0;}
+  /* No fallible operations from here on; ineligible rows are simply skipped. */
+  for(size_t i=0,n=mulib_json_size(items);i<n && used<cap;i++) {
+    const mulib_json_t *item=mulib_json_at(items,i);
+    mulib_elvi_scrape_result_t hit={0};
+    size_t ulen=0,tlen=0,k;
+    const char *url=mulib_json_text(melvi_json_at_(item,p->json_url),&ulen);
+    const char *title=mulib_json_text(melvi_json_at_(item,p->json_title),&tlen);
+    if(!url || !ulen || ulen>=sizeof hit.url || memchr(url,0,ulen) ||
+       !melvi_result_url_(p,url,hit.url,sizeof hit.url))continue;
+    for(k=0;k<used;k++)if(melvi_eq_(results[k].url,hit.url))break;
+    if(k==used && melvi_json_title_(title,tlen,hit.title,sizeof hit.title))results[used++]=hit;
+  }
+  mulib_json_destroy(root);*count=used;return 1;
+}
+int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *p,
+                            const char *body,size_t len,
+                            mulib_elvi_scrape_result_t *results,size_t cap,
+                            size_t *count) {
+  if(!melvi_program_(p)||(!body&&len)||!count||(!results&&cap)||len>2097152||
+     (len&&memchr(body,0,len)))return 0;
+  if(cap>p->max_results)cap=p->max_results;
+  if(p->format==MULIB_ELVI_FORMAT_JSON)return melvi_parse_json_(p,body,len,results,cap,count);
+  return melvi_parse_html_(p,body,len,results,cap,count);
+}
+static int melvi_media_type_(const char *ct,mulib_elvi_format_t format) {
   size_t n=0;while(ct[n] && ct[n]!=';' && ct[n]!=' ' && ct[n]!='\t')n++;
-  if(!mulib_webscan_equal_(ct,n,"text/html") &&
-     !mulib_webscan_equal_(ct,n,"application/xhtml+xml"))return 0;
+  if(format==MULIB_ELVI_FORMAT_JSON) {
+    if(!mulib_webscan_equal_(ct,n,"application/json"))return 0;
+  } else if(!mulib_webscan_equal_(ct,n,"text/html") &&
+            !mulib_webscan_equal_(ct,n,"application/xhtml+xml"))return 0;
   while(ct[n]==' ' || ct[n]=='\t')n++;
   return !ct[n] || ct[n]==';';
 }
@@ -696,7 +813,7 @@ int mulib_elvi_scrape_search(const mulib_elvi_scrape_program_t *p,
   body.limit=safe.policy.max_bytes;
   if(!mulib_fetch_get(&safe,url,&body,&status,ct,sizeof ct))goto done;
   if(http_status)*http_status=status;
-  if(status!=200 || !melvi_html_type_(ct))goto done;
+  if(status!=200 || !melvi_media_type_(ct,p->format))goto done;
   if(body.len && !body.data)goto done;
   ok=mulib_elvi_scrape_parse(p,body.data,body.len,results,
                               cap<limit?cap:limit,count);

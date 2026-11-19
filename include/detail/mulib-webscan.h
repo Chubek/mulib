@@ -92,57 +92,111 @@ mulib_webscan_tag_parse_ (const char *p, mulib_webscan_tag_ *t)
 {
   return mulib_webscan_tag_parse_work_ (p, t, NULL);
 }
-/* Exact attribute names, either quote style, arbitrary attribute order.
- * Boolean/unquoted attributes are skipped but never returned as values. */
+/* Exact attribute names, arbitrary order. In first-value mode, a missing or
+ * empty first value never falls back to a later instance of an attribute. */
 static inline int
-mulib_webscan_attr_ (const mulib_webscan_tag_ *t, const char *key,
-                     const char **value, size_t *length)
+mulib_webscan_attr_value_work_ (const mulib_webscan_tag_ *t, const char *key,
+                                const char **value, size_t *length,
+                                int first_value, size_t *work)
 {
   const char *p = t->attrs;
   while (p < t->end)
     {
       while (p < t->end && mulib_webscan_space_ ((unsigned char)*p))
-        ++p;
+        { if (!mulib_webscan_work_ (work)) return -1; ++p; }
       if (p == t->end || *p == '/')
         break;
       const char *name = p;
       while (p < t->end && !mulib_webscan_space_ ((unsigned char)*p)
              && *p != '=' && *p != '/' && *p != '\'' && *p != '"')
-        ++p;
+        { if (!mulib_webscan_work_ (work)) return -1; ++p; }
       if (p == name)
         return 0;
-      size_t n = (size_t)(p - name);
+      int match = mulib_webscan_equal_ (name, (size_t)(p - name), key);
       while (p < t->end && mulib_webscan_space_ ((unsigned char)*p))
-        ++p;
+        { if (!mulib_webscan_work_ (work)) return -1; ++p; }
       if (p == t->end || *p != '=')
-        continue;
+        {
+          if (first_value && match)
+            return 0;
+          continue;
+        }
       ++p;
       while (p < t->end && mulib_webscan_space_ ((unsigned char)*p))
-        ++p;
+        { if (!mulib_webscan_work_ (work)) return -1; ++p; }
       if (p == t->end)
         return 0;
       char quote = *p;
+      const char *a;
+      size_t m;
       if (quote != '\'' && quote != '"')
         {
+          a = p;
           while (p < t->end && !mulib_webscan_space_ ((unsigned char)*p))
-            ++p;
-          continue;
+            { if (!mulib_webscan_work_ (work)) return -1; ++p; }
+          if (!first_value)
+            continue;
+          m = (size_t)(p - a);
         }
-      const char *a = ++p;
-      while (p < t->end && *p != quote)
-        ++p;
-      if (p == t->end)
-        return 0;
-      size_t m = (size_t)(p - a);
-      ++p;
-      if (p < t->end && !mulib_webscan_space_ ((unsigned char)*p) && *p != '/')
-        return 0;
-      if (mulib_webscan_equal_ (name, n, key))
+      else
         {
+          a = ++p;
+          while (p < t->end && *p != quote)
+            { if (!mulib_webscan_work_ (work)) return -1; ++p; }
+          if (p == t->end)
+            return 0;
+          m = (size_t)(p - a);
+          ++p;
+          if (p < t->end && !mulib_webscan_space_ ((unsigned char)*p) && *p != '/')
+            return 0;
+        }
+      if (match)
+        {
+          if (first_value && !m)
+            return 0;
           *value = a;
           *length = m;
           return 1;
         }
+    }
+  return 0;
+}
+/* Legacy attribute query: skip boolean/unquoted attributes. */
+static inline int
+mulib_webscan_attr_ (const mulib_webscan_tag_ *t, const char *key,
+                     const char **value, size_t *length)
+{
+  return mulib_webscan_attr_value_work_ (t, key, value, length, 0, NULL);
+}
+static inline int
+mulib_webscan_attr_first_work_ (const mulib_webscan_tag_ *t, const char *key,
+                                const char **value, size_t *length, size_t *work)
+{
+  return mulib_webscan_attr_value_work_ (t, key, value, length, 1, work);
+}
+/* Match a complete, case-sensitive token in the literal class value.
+ * Only HTML ASCII whitespace delimits tokens; entities are not decoded. */
+static inline int
+mulib_webscan_class_work_ (const mulib_webscan_tag_ *t, const char *token,
+                           size_t *work)
+{
+  const char *p;
+  size_t len, n = strlen (token);
+  if (!n || t->closing)
+    return 0;
+  int found = mulib_webscan_attr_first_work_ (t, "class", &p, &len, work);
+  if (found != 1)
+    return found;
+  const char *end = p + len;
+  while (p < end)
+    {
+      while (p < end && mulib_webscan_space_ ((unsigned char)*p))
+        { if (!mulib_webscan_work_ (work)) return -1; ++p; }
+      const char *start = p;
+      while (p < end && !mulib_webscan_space_ ((unsigned char)*p))
+        { if (!mulib_webscan_work_ (work)) return -1; ++p; }
+      if ((size_t)(p - start) == n && !memcmp (start, token, n))
+        return 1;
     }
   return 0;
 }

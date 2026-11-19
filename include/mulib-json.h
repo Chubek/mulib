@@ -66,7 +66,8 @@ extern "C"
   /** @brief Length-delimited version of mulib_json_set. */
   int mulib_json_set_n (mulib_json_t *object, const char *key, size_t length,
                         mulib_json_t *value);
-  /** @brief Parse exactly one UTF-8 JSON value; return NULL with a diagnostic.
+  /** @brief Parse exactly one UTF-8 JSON value within parser work limits;
+   * return NULL with a diagnostic on failure.
    */
   mulib_json_t *mulib_json_parse (const char *source, size_t length,
                                   mulib_json_error_t *error);
@@ -343,16 +344,11 @@ extern "C"
     v->parent = a;
     return 1;
   }
-  int
-  mulib_json_set_n (mulib_json_t *o, const char *key, size_t n,
-                    mulib_json_t *v)
+  static int
+  mulib_json_store_ (mulib_json_t *o, const char *key, size_t n,
+                     mulib_json_t *v, size_t i)
   {
-    size_t i;
     char *copy;
-    if (!o || o->type != MULIB_JSON_OBJECT || n == SIZE_MAX
-        || !mulib_utf8_validate ((const unsigned char *)key, n))
-      return 0;
-    i = mulib_json_find_ (o, key, n);
     if (i != SIZE_MAX && o->as.list.items[i].value == v)
       return 1;
     if (!mulib_json_attachable_ (o, v))
@@ -380,6 +376,15 @@ extern "C"
     o->as.list.items[i].value = v;
     v->parent = o;
     return 1;
+  }
+  int
+  mulib_json_set_n (mulib_json_t *o, const char *key, size_t n,
+                     mulib_json_t *v)
+  {
+    if (!o || o->type != MULIB_JSON_OBJECT || n == SIZE_MAX
+        || !mulib_utf8_validate ((const unsigned char *)key, n))
+      return 0;
+    return mulib_json_store_ (o, key, n, v, mulib_json_find_ (o, key, n));
   }
   int
   mulib_json_set (mulib_json_t *o, const char *key, mulib_json_t *v)
@@ -561,12 +566,37 @@ extern "C"
     mulib_json_t *value;
     size_t index, depth;
   } mulib_json_build_;
+  /* The general object API stores members in insertion order and uses a
+   * linear lookup. Bound that work when materializing untrusted wire data;
+   * charge both entry visits and bytes that could be examined by memcmp. */
+  static int
+  mulib_json_build_find_ (const mulib_json_t *o, const char *key, size_t n,
+                          size_t *work, size_t *index)
+  {
+    for (size_t i = 0; i < o->as.list.length; ++i)
+      {
+        const mulib_json_entry_ *e = &o->as.list.items[i];
+        if (!*work) return 0;
+        --*work;
+        if (e->key_length != n) continue;
+        if (*work < n) return 0;
+        *work -= n;
+        if (!n || !memcmp (e->key, key, n))
+          {
+            *index = i;
+            return 1;
+          }
+      }
+    *index = SIZE_MAX;
+    return 1;
+  }
   static mulib_json_t *
-  mulib_json_build_values_ (const char *source, const mulib_parsec_result_t *r,
-                            mulib_json_error_t *error)
+  mulib_json_build_values_ (const char *source, size_t length,
+                            const mulib_parsec_result_t *r, mulib_json_error_t *error)
   {
     mulib_json_build_ *stack;
     size_t used = 0, i, j;
+    size_t work = length > (SIZE_MAX - 4096) / 64 ? SIZE_MAX : length * 64 + 4096;
     mulib_json_t *v = NULL;
     if (!r->count || r->count > SIZE_MAX / sizeof *stack)
       {
@@ -636,9 +666,17 @@ extern "C"
                 else
                   {
                     mulib_json_t *key = stack[j].value;
-                    ok = mulib_json_set_n (v, key->as.string.bytes,
-                                           key->as.string.length,
-                                           stack[j + 1].value);
+                    size_t index;
+                    if (!mulib_json_build_find_ (v, key->as.string.bytes,
+                                                  key->as.string.length, &work, &index))
+                      {
+                        mulib_json_error_ (error, source, c->offset,
+                                           "JSON object lookup work limit exceeded");
+                        goto fail;
+                      }
+                    ok = mulib_json_store_ (v, key->as.string.bytes,
+                                            key->as.string.length,
+                                            stack[j + 1].value, index);
                     if (ok)
                       {
                         stack[j + 1].value = NULL;
@@ -843,7 +881,7 @@ extern "C"
         mulib_parsec_result_free (&result);
         return NULL;
       }
-    answer = mulib_json_build_values_ (source, &result, error);
+    answer = mulib_json_build_values_ (source, length, &result, error);
     mulib_parsec_result_free (&result);
     return answer;
   }
