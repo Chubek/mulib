@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1188
-implemented_module_count: 1188
+module_count: 1196
+implemented_module_count: 1196
 modules:
 - name: cdd-catalogue
   header: include/mulib-cdd-catalogue.h
@@ -86,10 +86,55 @@ modules:
   header: include/mulib-elvi-scrape.h
   manual: manual/mulib-elvi-scrape.md
   macro: MULIB_IMPL_ELVI_SCRAPE
-  purpose: Declarative Surfraw-inspired search URL generation and bounded HTML SERP title/link extraction from .elvs providers.
-  dependencies: [fetch, https, url]
+  purpose: Declarative search URL generation and bounded HTML/JSON title/link extraction from .elvs providers.
+  dependencies: [fetch, https, json, url]
   status: implemented
   example: examples/elvi-scrape.c
+- name: markup-tree
+  header: include/mulib-markup-tree.h
+  manual: manual/mulib-markup-tree.md
+  macro: MULIB_IMPL_CDD_MARKUP_TREE
+  purpose: Owned ordered markup tree, stable node IDs, and SXML export.
+  dependencies: []
+  status: implemented
+  example: examples/markup-ir.c
+  test: tests/test-markup-tree-stream.c
+- name: markup-stream
+  header: include/mulib-markup-stream.h
+  manual: manual/mulib-markup-stream.md
+  macro: MULIB_IMPL_CDD_MARKUP_STREAM
+  purpose: Length-delimited markup scanning, CST snapshots, and tree events.
+  dependencies: [markup-tree]
+  status: implemented
+  example: examples/markup-ir.c
+  test: tests/test-markup-tree-stream.c
+- name: markup-spans
+  header: include/mulib-markup-spans.h
+  manual: manual/mulib-markup-spans.md
+  macro: MULIB_IMPL_CDD_MARKUP_SPANS
+  purpose: Owned byte text, overlapping annotations, and attributed run partitioning.
+  dependencies: []
+  status: implemented
+  example: examples/markup-ir.c
+  test: tests/test-markup-spans-graph-bridge.c
+- name: markup-graph
+  header: include/mulib-markup-graph.h
+  manual: manual/mulib-markup-graph.md
+  macro: MULIB_IMPL_CDD_MARKUP_GRAPH
+  purpose: Typed markup graph links, hyperedges, properties, and DAG traversal.
+  dependencies: []
+  status: implemented
+  example: examples/markup-ir.c
+  test: tests/test-markup-spans-graph-bridge.c
+- name: markup-bridge
+  header: include/mulib-markup-bridge.h
+  manual: manual/mulib-markup-bridge.md
+  macro: MULIB_IMPL_CDD_MARKUP_BRIDGE
+  purpose: Checked tree, range, graph, and hybrid markup conversions.
+  dependencies: [markup-graph, markup-spans, markup-stream, markup-tree]
+  status: implemented
+  example: examples/markup-ir.c
+  test: tests/test-markup-ir.c
 - name: openai
   header: include/mulib-openai.h
   manual: manual/mulib-openai.md
@@ -97,6 +142,30 @@ modules:
   purpose: OpenAI REST operation catalog, safe routing, JSON envelopes and text extraction.
   dependencies: [http, json, utf8]
   status: implemented
+- name: mcp-client
+  header: include/mulib-mcp-client.h
+  manual: manual/mulib-mcp-client.md
+  macro: MULIB_IMPL_CDD_MCP_CLIENT
+  purpose: Bounded MCP client for discovery, tools, resources, prompts, and completion.
+  dependencies: [json, utf8]
+  status: implemented
+  test: tests/test_mcp.c
+- name: mcp-server
+  header: include/mulib-mcp-server.h
+  manual: manual/mulib-mcp-server.md
+  macro: MULIB_IMPL_CDD_MCP_SERVER
+  purpose: Stateless MCP and legacy stdio dispatch to host-approved catalogues and handlers.
+  dependencies: [json, utf8]
+  status: implemented
+  test: tests/test_mcp.c
+- name: mcp-http
+  header: include/mulib-mcp-http.h
+  manual: manual/mulib-mcp-http.md
+  macro: MULIB_IMPL_CDD_MCP_HTTP
+  purpose: Bounded Streamable HTTP/1.1 framing for current MCP requests and responses.
+  dependencies: [http, mcp-client, mcp-server, sse]
+  status: implemented
+  test: tests/test_mcp_http.c
 - name: openai-client
   header: include/mulib-openai-client.h
   manual: manual/mulib-openai-client.md
@@ -8535,6 +8604,36 @@ modules:
   status: implemented
   example: examples/modules/sandbox-process.c
 project_files:
+- file: examples/markup-ir.c
+  purpose: Standalone XML-like CST, tree, spans and hybrid graph example.
+- file: manual/markup-ir.md
+  purpose: Shared contracts and conversion semantics for the markup IR kernels.
+- file: tests/fixtures/markup-ir-implementation.c
+  purpose: Separate C implementation TU using legacy markup switches.
+- file: tests/markup-ir-consumer.cpp
+  purpose: Declaration-only C++17 markup consumer linked against the C fixture.
+- file: tests/run-markup.sh
+  purpose: Focused markup IR and cross-language ABI regression runner.
+- file: tests/fuzz-markup-ir.c
+  purpose: Markup CST and stand-off range/graph libFuzzer oracle.
+- file: tests/fixtures/markup-ir/nested.markup
+  purpose: Fuzz seed for nested tags, quoted delimiters, and raw XML-like entities.
+- file: tests/fixtures/markup-ir/boundaries.markup
+  purpose: Fuzz seed for adjacent and equal text ranges.
+- file: tests/fixtures/markup-ir/malformed.markup
+  purpose: Fuzz seed for a duplicate attribute.
+- file: tests/fixtures/markup-ir/opaque.markup
+  purpose: Fuzz seed for declarations, CDATA, and processing instructions.
+- file: include/detail/mulib-mcp-common.h
+  purpose: Shared MCP status and limit declarations.
+- file: include/detail/mulib-mcp-wire.h
+  purpose: Private bounded MCP JSON-RPC message helpers.
+- file: tests/test_mcp_stdio.py
+  purpose: Cross-process MCP stdio wire tests with independent JSON parsing.
+- file: tests/test_mcp_http.py
+  purpose: Loopback TCP MCP HTTP wire tests with independent HTTP and JSON fixtures.
+- file: tests/run-mcp.sh
+  purpose: Focused MCP C11, C/C++17 linkage, and real stdio regression runner.
 - file: on1x/stdlib/_bridge/mulib_bridge.c
   purpose: Bounded raw scalar standard-library adapters calling canonical MuLIB kernels.
 - file: on1x/stdlib/_bridge/mulib_bridge.h
@@ -12895,3 +12994,21 @@ project_files:
   purpose: Single implementation translation unit for the CDD semantic suite.
 - file: tests/run-cdd.sh
   purpose: Standalone CDD semantic, header inclusion and C++17 linkage checks.
+- file: examples/modules/mcp-client.c
+  purpose: "Standalone checked usage example for mcp-client."
+- file: examples/modules/mcp-server.c
+  purpose: "Standalone checked usage example for mcp-server."
+- file: tests/test_mcp.c
+  purpose: "Focused regression suite for test_mcp."
+- file: tests/test_mcp_http.c
+  purpose: "Focused regression suite for test_mcp_http."
+- file: tests/test-markup-alloc.c
+  purpose: "Focused regression suite for test-markup-alloc."
+- file: tests/test-markup-ir.c
+  purpose: "Focused regression suite for test-markup-ir."
+- file: tests/test-markup-spans-graph-bridge.c
+  purpose: "Focused regression suite for test-markup-spans-graph-bridge."
+- file: tests/test-markup-tree-stream.c
+  purpose: "Focused regression suite for test-markup-tree-stream."
+- file: examples/modules/mcp-http.c
+  purpose: "Standalone checked usage example for mcp-http."

@@ -286,6 +286,12 @@ if(MULIB_BUILD_TESTS)
   check_language(CXX)
   if(CMAKE_CXX_COMPILER)
     enable_language(CXX)
+    add_executable(mulib_test_markup_cpp tests/markup-ir-consumer.cpp tests/fixtures/markup-ir-implementation.c)
+    set_target_properties(mulib_test_markup_cpp PROPERTIES
+      CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS NO)
+    mulib_test_executable(mulib_test_markup_cpp)
+    mulib_register_test(mulib_test_markup_cpp)
+
     add_executable(mulib_test_hash_cpp tests/test_hash_cpp.cpp tests/hash_implementations.c)
     set_target_properties(mulib_test_hash_cpp PROPERTIES
       CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS NO)
@@ -323,6 +329,21 @@ if(MULIB_BUILD_TESTS)
     endforeach()
   endif()
   if(Python3_Interpreter_FOUND)
+    foreach(role client server)
+      add_executable("mulib_mcp_${role}_example" "examples/modules/mcp-${role}.c")
+      mulib_test_executable("mulib_mcp_${role}_example")
+    endforeach()
+    add_test(NAME mulib_mcp_stdio
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_mcp_stdio.py
+        --client $<TARGET_FILE:mulib_mcp_client_example>
+        --server $<TARGET_FILE:mulib_mcp_server_example>)
+    set_tests_properties(mulib_mcp_stdio PROPERTIES TIMEOUT 30)
+    if(NOT CMAKE_CROSSCOMPILING)
+      add_test(NAME mulib_mcp_http_loopback
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_mcp_http.py
+          --fixture $<TARGET_FILE:mulib_test_mcp_http>)
+      set_tests_properties(mulib_mcp_http_loopback PROPERTIES TIMEOUT 30)
+    endif()
     add_test(NAME mulib_compression_interoperability
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_compression.py
         --codec $<TARGET_FILE:mulib_test_compression_codecs>)
@@ -541,6 +562,11 @@ if(MULIB_BUILD_FUZZER)
   target_compile_options(mulib_fuzz_elvi_scrape PRIVATE -fsanitize=fuzzer,address,undefined
     -fno-sanitize-recover=all -fno-omit-frame-pointer)
   target_link_options(mulib_fuzz_elvi_scrape PRIVATE -fsanitize=fuzzer,address,undefined)
+  add_executable(mulib_fuzz_markup_ir tests/fuzz-markup-ir.c)
+  mulib_test_executable(mulib_fuzz_markup_ir)
+  target_compile_options(mulib_fuzz_markup_ir PRIVATE -fsanitize=fuzzer,address,undefined
+    -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  target_link_options(mulib_fuzz_markup_ir PRIVATE -fsanitize=fuzzer,address,undefined)
   add_executable(mulib_fuzz_headers tests/fuzz_headers.c)
   mulib_test_executable(mulib_fuzz_headers)
   target_compile_options(mulib_fuzz_headers PRIVATE -fsanitize=fuzzer,address,undefined
@@ -571,8 +597,11 @@ endif()
 if(MULIB_BUILD_TESTS OR MULIB_BUILD_MODULE_EXAMPLES)
   add_executable(mulib_example_cdd_pipeline examples/cdd-pipeline.c)
   mulib_test_executable(mulib_example_cdd_pipeline)
+  add_executable(mulib_example_markup_ir examples/markup-ir.c)
+  mulib_test_executable(mulib_example_markup_ir)
   if(MULIB_BUILD_TESTS)
     mulib_register_test(mulib_example_cdd_pipeline)
+    mulib_register_test(mulib_example_markup_ir)
   endif()
 endif()
 

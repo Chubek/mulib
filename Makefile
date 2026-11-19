@@ -9,7 +9,7 @@ EXAMPLES := $(patsubst examples/%.c,build/%,$(wildcard examples/mulib-*.c)) buil
 EXAMPLES += build/cdd-pipeline
 .PHONY: all check check-shell check-examples check-compiler demo formats docir-formats clean
 .PHONY: muw3 check-muw3 check-tls
-.PHONY: check-openai
+.PHONY: check-openai check-markup
 .PHONY: check-web-primitives
 WEB_PRIMITIVES_TESTS := pricing extraction browser css alloc hostile
 TESTS += $(addprefix build/test_web_,$(WEB_PRIMITIVES_TESTS))
@@ -27,6 +27,8 @@ check-openai: build/test-openai build/test-openai-alloc build/test-http-stream b
 	./build/test-multipart
 	python3 tools/generate_openai.py --check
 	python3 tests/test_openai_integration.py --cc "$(CC)"
+check-markup:
+	CC="$(CC)" sh tests/run-markup.sh
 muw3: build/muw3 build/microchand
 build/microchan-runtime.o: library/microchan/runtime.c $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
