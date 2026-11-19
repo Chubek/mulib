@@ -1,0 +1,302 @@
+{
+  "schema": "on1x.sdk.agent-report/1",
+  "agent": 6,
+  "area": "ffi-contracts-runtime-sdk",
+  "captured": "2026-11-19",
+  "baseline_revision": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
+  "libstone_revision": "3399047f6c6328b8f07788795c610699e66c060a",
+  "overall_status": "PARTIAL",
+  "summary": "Executable bounded C11 projections of canonical ExoML CDecl/contract and Exotract evidence, fail-closed host-owned foreign admission, checked one-TU MuLIB CDD accessors, and an independently versioned recoverable On1xRT ABI for statically linked or explicitly authorized native AOT modules. General foreign callbacks, dynamic loading, WASM, concurrency, sandboxing, debugger and profiler integration remain explicitly unsupported.",
+  "facilities": [
+    {
+      "id": "ffi.structured-projections",
+      "status": "EXECUTABLE",
+      "public_headers": [
+        "On1xSDK-FFI.h",
+        "On1xSDK-ForeignType.h",
+        "On1xSDK-CDecl.h",
+        "On1xSDK-ContractCheck.h",
+        "On1xSDK-Exotract.h",
+        "On1xSDK-ExoML.h",
+        "On1xSDK-ExoLib.h",
+        "On1xSDK-KernelDiscovery.h"
+      ],
+      "subset": "Bounded length-aware UTF-8 views, exact target-qualified scalar/string/opaque-pointer layouts, immutable CDecl source identity and spans, structured ownership/lifetime/effect/error claims, and one-TU Exotract profile checks. These checks expose canonical data and never constitute admission by themselves."
+    },
+    {
+      "id": "ffi.host-admission",
+      "status": "EXECUTABLE",
+      "public_headers": [
+        "On1xSDK-ContractReview.h",
+        "On1xSDK-KernelBind.h",
+        "On1xSDK-ForeignResource.h"
+      ],
+      "subset": "Exact scalar, immutable non-null C-string, and opaque-handle create/borrow/destroy profiles; ordinary target C calling convention; exact source/target/pointer-width/contract/review identity; host review and executable-boundary callbacks; stable machine codes; observable diagnostic failures; callback re-entry rejection; unknown layout, ownership, lifetime or effects reject."
+    },
+    {
+      "id": "ffi.cdd-accessors",
+      "status": "EXECUTABLE",
+      "public_headers": [
+        "mulib-cdd-accessors.h"
+      ],
+      "subset": "Count-explicit borrowed catalogue and validated-plan views over the canonical MuLIB CDD records, implemented in one translation unit with finite catalogue, nested-array, problem and text limits."
+    },
+    {
+      "id": "ffi.legacy-contract-adapter",
+      "status": "UNSUPPORTED",
+      "public_headers": [
+        "On1xSDK-KernelBind.h"
+      ],
+      "subset": "ABI-v1 contract records remain structurally inspectable metadata.",
+      "blockers": [
+        "Opaque ABI-v1 signature and ownership strings cannot be reinterpreted as structured ABI-2 foreign-safety evidence."
+      ]
+    },
+    {
+      "id": "ffi.general-activation",
+      "status": "UNSUPPORTED",
+      "public_headers": [
+        "On1xSDK-Marshalling.h",
+        "On1xSDK-ForeignCallback.h",
+        "On1xSDK-ForeignModule.h",
+        "On1xSDK-BindingGenerator.h"
+      ],
+      "subset": "",
+      "blockers": [
+        "No general runtime marshaller, retained foreign callback ABI, dynamic foreign loader, or in-process binding-generator service is admitted.",
+        "Binding generation remains the explicit canonical on1x-bind build-time tool."
+      ]
+    },
+    {
+      "id": "runtime.embedding",
+      "status": "PARTIAL",
+      "public_headers": [
+        "On1xRT.h",
+        "On1xRT-Allocator.h",
+        "On1xRT-Array.h",
+        "On1xRT-Buffer.h",
+        "On1xRT-Capability.h",
+        "On1xRT-Channel.h",
+        "On1xRT-Closure.h",
+        "On1xRT-Debugger.h",
+        "On1xRT-Engine.h",
+        "On1xRT-Error.h",
+        "On1xRT-Event.h",
+        "On1xRT-Fiber.h",
+        "On1xRT-Function.h",
+        "On1xRT-Handle.h",
+        "On1xRT-HostFunction.h",
+        "On1xRT-Instance.h",
+        "On1xRT-Memory.h",
+        "On1xRT-Module.h",
+        "On1xRT-Profiler.h",
+        "On1xRT-Sandbox.h",
+        "On1xRT-Scheduler.h",
+        "On1xRT-String.h",
+        "On1xRT-Task.h",
+        "On1xRT-Value.h"
+      ],
+      "subset": "Independent C11 ABI 1; prefix-negotiated descriptors; copied host allocator; allocator-domain errors; thread-confined engines; owner/kind/generation/lifecycle-checked generation32-slot32 handles; copied descriptors; transactional dependency registration; reverse lifecycle compensation; instances/functions; exact scalar/string/buffer calls; synchronous host callbacks; callback-scoped capabilities; statically registered native modules; native AOT only after explicit host authorization.",
+      "blockers": [
+        "Dynamic libraries, WASM, tasks, fibers, channels, schedulers, sandbox enforcement, debugger and profiler integration return UNSUPPORTED.",
+        "Native callbacks execute with host-process authority and are not sandboxed."
+      ]
+    }
+  ],
+  "unsupported_paths": [
+    "Extraction, discovery, hashes, review claims and shape checks alone never admit a foreign interface.",
+    "Unknown calling conventions, layouts, ownership, lifetimes, effects, nullability, callback behavior and source identity reject.",
+    "ABI-v1 On1xSDK_Contract metadata is never upgraded to structured admission.",
+    "On1xRT does not resolve a path, load a DSO, instantiate WASM, create concurrency primitives, or claim native-code isolation.",
+    "On1xRT native AOT execution is trusted in-process execution after an explicit host callback, not a sandbox.",
+    "The private generated-program runtime under on1x/runtime is unchanged."
+  ],
+  "changed_files": [
+    "on1x/contracts-exoml/README.md",
+    "on1x/contracts-exotract/include/mulib-cdd-accessors.h",
+    "on1x/runtime-sdk/README.md",
+    "on1x/runtime-sdk/include/On1xRT-Allocator.h",
+    "on1x/runtime-sdk/include/On1xRT-Array.h",
+    "on1x/runtime-sdk/include/On1xRT-Buffer.h",
+    "on1x/runtime-sdk/include/On1xRT-Capability.h",
+    "on1x/runtime-sdk/include/On1xRT-Channel.h",
+    "on1x/runtime-sdk/include/On1xRT-Closure.h",
+    "on1x/runtime-sdk/include/On1xRT-Debugger.h",
+    "on1x/runtime-sdk/include/On1xRT-Engine.h",
+    "on1x/runtime-sdk/include/On1xRT-Error.h",
+    "on1x/runtime-sdk/include/On1xRT-Event.h",
+    "on1x/runtime-sdk/include/On1xRT-Fiber.h",
+    "on1x/runtime-sdk/include/On1xRT-Function.h",
+    "on1x/runtime-sdk/include/On1xRT-Handle.h",
+    "on1x/runtime-sdk/include/On1xRT-HostFunction.h",
+    "on1x/runtime-sdk/include/On1xRT-Instance.h",
+    "on1x/runtime-sdk/include/On1xRT-Memory.h",
+    "on1x/runtime-sdk/include/On1xRT-Module.h",
+    "on1x/runtime-sdk/include/On1xRT-Profiler.h",
+    "on1x/runtime-sdk/include/On1xRT-Sandbox.h",
+    "on1x/runtime-sdk/include/On1xRT-Scheduler.h",
+    "on1x/runtime-sdk/include/On1xRT-String.h",
+    "on1x/runtime-sdk/include/On1xRT-Task.h",
+    "on1x/runtime-sdk/include/On1xRT-Value.h",
+    "on1x/runtime-sdk/include/On1xRT.h",
+    "on1x/runtime-sdk/src/On1xRT.c",
+    "on1x/runtime-sdk/tests/abi.c",
+    "on1x/runtime-sdk/tests/fault.c",
+    "on1x/runtime-sdk/tests/fixture_module.c",
+    "on1x/runtime-sdk/tests/fixture_module.h",
+    "on1x/runtime-sdk/tests/host.cpp",
+    "on1x/runtime-sdk/tests/lifecycle.c",
+    "on1x/runtime-sdk/tests/negative.c",
+    "on1x/sdk/catalogue/agent-reports/subagent-6.json",
+    "on1x/sdk/cmake/Integration6.cmake",
+    "on1x/sdk/cmake/Subagent6.cmake",
+    "on1x/sdk/include/On1xSDK-BindingGenerator.h",
+    "on1x/sdk/include/On1xSDK-CDecl.h",
+    "on1x/sdk/include/On1xSDK-ContractCheck.h",
+    "on1x/sdk/include/On1xSDK-ContractReview.h",
+    "on1x/sdk/include/On1xSDK-ExoLib.h",
+    "on1x/sdk/include/On1xSDK-ExoML.h",
+    "on1x/sdk/include/On1xSDK-Exotract.h",
+    "on1x/sdk/include/On1xSDK-FFI.h",
+    "on1x/sdk/include/On1xSDK-ForeignCallback.h",
+    "on1x/sdk/include/On1xSDK-ForeignModule.h",
+    "on1x/sdk/include/On1xSDK-ForeignResource.h",
+    "on1x/sdk/include/On1xSDK-ForeignType.h",
+    "on1x/sdk/include/On1xSDK-KernelBind.h",
+    "on1x/sdk/include/On1xSDK-KernelDiscovery.h",
+    "on1x/sdk/include/On1xSDK-Marshalling.h",
+    "on1x/sdk/src/contracts/CddAccessors.c",
+    "on1x/sdk/src/contracts/ForeignAdmission.c",
+    "on1x/sdk/src/contracts/README.md",
+    "on1x/sdk/tests/contracts/cdd_accessors.c",
+    "on1x/sdk/tests/contracts/foreign_admission.c",
+    "on1x/sdk/tests/contracts/foreign_cpp.cpp"
+  ],
+  "behavioral_coverage": [
+    "positive scalar, immutable C-string and opaque create/borrow/destroy admission",
+    "unknown layout, ownership and effects; unsupported effect, nullability, lifetime, source/contract/target drift and one-TU/discovery-only rejection",
+    "short prefixes, nested ABI mismatches, malformed UTF-8, invalid spans, duplicate switches, output clearing and finite CDD nested limits",
+    "review, boundary and diagnostic callback failures, unknown callback statuses and recursive admission",
+    "module dependency order, cycles, duplicates, missing dependencies, authorization order, transaction rollback and reverse compensation",
+    "recoverable initialize/shutdown and instance create/destroy failures",
+    "owner, kind, generation, thread, reentrancy, handle, module, host-function and aggregate-byte limits",
+    "embedded-NUL UTF-8 strings, arbitrary buffers, overlap-safe writes and exactly-once result ownership",
+    "allocator failure sweep, allocator-domain release and misaligned host allocator rejection",
+    "C11 and C++20 ABI layout, independent header and installed-package consumers",
+    "explicit unsupported dynamic, WASM, concurrency, sandbox, debugger and profiler paths"
+  ],
+  "tests": [
+    {
+      "command": "gcc -std=c11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -Ion1x/runtime-sdk/include -Ion1x/runtime-sdk/tests on1x/runtime-sdk/src/On1xRT.c on1x/runtime-sdk/tests/fixture_module.c on1x/runtime-sdk/tests/negative.c -pthread -o /tmp/opencode/sdk6-rt-negative-gcc && /tmp/opencode/sdk6-rt-negative-gcc && clang -std=c11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -Ion1x/runtime-sdk/include -Ion1x/runtime-sdk/tests on1x/runtime-sdk/src/On1xRT.c on1x/runtime-sdk/tests/fixture_module.c on1x/runtime-sdk/tests/negative.c -pthread -o /tmp/opencode/sdk6-rt-negative-clang && /tmp/opencode/sdk6-rt-negative-clang",
+      "result": "PASS with GCC 16.2.1 and Clang 22.1.8"
+    },
+    {
+      "command": "gcc -std=c11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -Ion1x/sdk/include on1x/sdk/src/contracts/ForeignAdmission.c on1x/sdk/tests/contracts/foreign_admission.c -o /tmp/opencode/sdk6-ffi-gcc && /tmp/opencode/sdk6-ffi-gcc && clang -std=c11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -Ion1x/sdk/include on1x/sdk/src/contracts/ForeignAdmission.c on1x/sdk/tests/contracts/foreign_admission.c -o /tmp/opencode/sdk6-ffi-clang && /tmp/opencode/sdk6-ffi-clang",
+      "result": "PASS with GCC 16.2.1 and Clang 22.1.8"
+    },
+    {
+      "command": "gcc -std=c11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -Ion1x/contracts-exotract/include -Iinclude on1x/sdk/src/contracts/CddAccessors.c on1x/sdk/tests/contracts/cdd_accessors.c -o /tmp/opencode/sdk6-cdd-gcc && /tmp/opencode/sdk6-cdd-gcc && clang -std=c11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -Ion1x/contracts-exotract/include -Iinclude on1x/sdk/src/contracts/CddAccessors.c on1x/sdk/tests/contracts/cdd_accessors.c -o /tmp/opencode/sdk6-cdd-clang && /tmp/opencode/sdk6-cdd-clang",
+      "result": "PASS with GCC 16.2.1 and Clang 22.1.8"
+    },
+    {
+      "command": "for each header in on1x/runtime-sdk/include/*.h, the 15 new on1x/sdk/include/On1xSDK-*.h headers, and mulib-cdd-accessors.h: pipe a one-header translation unit to gcc -x c -std=c11 -Wall -Wextra -Wpedantic -Werror and clang++ -x c++ -std=c++20 -Wall -Wextra -Wpedantic -Werror with the corresponding include paths",
+      "result": "PASS for all On1xRT, structured FFI and CDD accessor headers"
+    },
+    {
+      "command": "clang --analyze -std=c11 -Wall -Wextra -Wpedantic -Ion1x/runtime-sdk/include on1x/runtime-sdk/src/On1xRT.c -o /tmp/opencode/sdk6-rt-analyze.plist && clang --analyze -std=c11 -Wall -Wextra -Wpedantic -Ion1x/sdk/include on1x/sdk/src/contracts/ForeignAdmission.c -o /tmp/opencode/sdk6-ffi-analyze.plist && clang --analyze -std=c11 -Wall -Wextra -Wpedantic -Ion1x/contracts-exotract/include -Iinclude on1x/sdk/src/contracts/CddAccessors.c -o /tmp/opencode/sdk6-cdd-analyze.plist",
+      "result": "PASS; no diagnostics"
+    },
+    {
+      "command": "cppcheck --enable=warning,performance,portability --error-exitcode=1 --std=c11 --inline-suppr -Ion1x/runtime-sdk/include on1x/runtime-sdk/src/On1xRT.c && cppcheck --enable=warning,performance,portability --error-exitcode=1 --std=c11 --inline-suppr -Ion1x/sdk/include on1x/sdk/src/contracts/ForeignAdmission.c && cppcheck --enable=warning,performance,portability --error-exitcode=1 --std=c11 --inline-suppr -Ion1x/contracts-exotract/include -Iinclude on1x/sdk/src/contracts/CddAccessors.c",
+      "result": "PASS; no findings"
+    },
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk6-gcc-evidence -DBUILD_TESTING=ON -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF -DON1X_WITH_PROJECT_QMR=OFF -DON1X_BUILD_DYNAMIC_SDK_PLUGINS=OFF -DCMAKE_BUILD_TYPE=Debug",
+      "result": "PASS; GCC 16.2.1 configuration"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/sdk6-gcc-evidence --parallel 4 --target on1x_sdk6_test_contracts on1x_sdk6_test_cdd on1x_sdk6_test_cpp on1x_rt_test_lifecycle on1x_rt_test_negative on1x_rt_test_fault on1x_rt_test_cpp on1x_rt_test_abi on1x_sdk_test_registry on1x_sdk_test_analyzer on1x_sdk_test_backend on1x_sdk_test_security on1x_sdk_test_c_abi",
+      "result": "PASS; all focused and existing SDK targets built with warnings as errors"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/sdk6-gcc-evidence --output-on-failure -R '^on1x\\.sdk6\\.'",
+      "result": "PASS; 8/8"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/sdk6-gcc-evidence --output-on-failure -R '^on1x\\.sdk\\.'",
+      "result": "PASS; 6/6 existing SDK integration tests, including the existing installed consumer"
+    },
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk6-clang-asan-evidence -DBUILD_TESTING=ON -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF -DON1X_WITH_PROJECT_QMR=OFF -DON1X_BUILD_DYNAMIC_SDK_PLUGINS=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined'",
+      "result": "PASS; Clang 22.1.8 ASan+UBSan configuration"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/sdk6-clang-asan-evidence --parallel 4 --target on1x_sdk6_test_contracts on1x_sdk6_test_cdd on1x_sdk6_test_cpp on1x_rt_test_lifecycle on1x_rt_test_negative on1x_rt_test_fault on1x_rt_test_cpp on1x_rt_test_abi",
+      "result": "PASS; all focused sanitizer targets built"
+    },
+    {
+      "command": "ASAN_OPTIONS=detect_leaks=1:strict_string_checks=1 UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 ctest --test-dir /tmp/opencode/sdk6-clang-asan-evidence --output-on-failure -R '^on1x\\.sdk6\\.'",
+      "result": "PASS; 8/8, no sanitizer findings"
+    },
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk6-gcc-asan-evidence -DBUILD_TESTING=ON -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF -DON1X_WITH_PROJECT_QMR=OFF -DON1X_BUILD_DYNAMIC_SDK_PLUGINS=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined'",
+      "result": "PASS; GCC 16.2.1 ASan+UBSan configuration"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/sdk6-gcc-asan-evidence --parallel 4 --target on1x_sdk6_test_contracts on1x_sdk6_test_cdd on1x_sdk6_test_cpp on1x_rt_test_lifecycle on1x_rt_test_negative on1x_rt_test_fault on1x_rt_test_cpp on1x_rt_test_abi",
+      "result": "PASS; all focused sanitizer targets built"
+    },
+    {
+      "command": "ASAN_OPTIONS=detect_leaks=1:strict_string_checks=1 UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 ctest --test-dir /tmp/opencode/sdk6-gcc-asan-evidence --output-on-failure -R '^on1x\\.sdk6\\.'",
+      "result": "PASS; 8/8, no sanitizer findings"
+    },
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk6-libstone-evidence -DBUILD_TESTING=ON -DON1X_LIBSTONE_ROOT=/mnt/nvme/mulib/on1x/third_party/libstone -DON1X_REQUIRE_LIBSTONE=ON -DON1X_USE_FALLBACK_SCANNER=OFF -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF -DON1X_WITH_PROJECT_QMR=OFF -DON1X_BUILD_DYNAMIC_SDK_PLUGINS=OFF -DCMAKE_BUILD_TYPE=Debug",
+      "result": "PASS; generated ASDL+Aurocks profile using LibStone 3399047f6c6328b8f07788795c610699e66c060a"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/sdk6-libstone-evidence --parallel 4 --target on1x_sdk6_test_contracts on1x_sdk6_test_cdd on1x_sdk6_test_cpp on1x_rt_test_lifecycle on1x_rt_test_negative on1x_rt_test_fault on1x_rt_test_cpp on1x_rt_test_abi",
+      "result": "PASS; all focused generated-profile targets built"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/sdk6-libstone-evidence --output-on-failure -R '^on1x\\.sdk6\\.'",
+      "result": "PASS; 8/8"
+    },
+    {
+      "command": "cmake --install /tmp/opencode/sdk6-gcc-evidence --prefix /tmp/opencode/sdk6-install-evidence --component On1xRT && cmake --install /tmp/opencode/sdk6-gcc-evidence --prefix /tmp/opencode/sdk6-install-evidence --component On1xSDK",
+      "result": "PASS; separate On1xRT and On1xSDK packages installed with the intended headers, archives and CMake exports"
+    },
+    {
+      "command": "cmake -S /tmp/opencode/sdk6-build-consumer-evidence -B /tmp/opencode/sdk6-build-consumer-evidence/build -DOn1xRT_DIR=/tmp/opencode/sdk6-gcc-evidence/sdk && cmake --build /tmp/opencode/sdk6-build-consumer-evidence/build --parallel 2 && /tmp/opencode/sdk6-build-consumer-evidence/build/consumer_c && /tmp/opencode/sdk6-build-consumer-evidence/build/consumer_cpp",
+      "result": "PASS for build-tree C and C++ consumers"
+    },
+    {
+      "command": "cmake -S /tmp/opencode/sdk6-install-consumer-evidence -B /tmp/opencode/sdk6-install-consumer-evidence/build -DCMAKE_PREFIX_PATH=/tmp/opencode/sdk6-install-evidence && cmake --build /tmp/opencode/sdk6-install-consumer-evidence/build --parallel 2 && /tmp/opencode/sdk6-install-consumer-evidence/build/consumer_c && /tmp/opencode/sdk6-install-consumer-evidence/build/consumer_cpp",
+      "result": "PASS for installed C and C++ consumers using On1x::SDK and On1x::RT"
+    },
+    {
+      "command": "clang-format --dry-run --Werror on1x/runtime-sdk/include/*.h on1x/runtime-sdk/src/On1xRT.c on1x/runtime-sdk/tests/*.c on1x/runtime-sdk/tests/*.h on1x/runtime-sdk/tests/*.cpp on1x/sdk/include/On1xSDK-{FFI,ForeignType,CDecl,ContractCheck,Exotract,ExoML,ExoLib,ContractReview,KernelBind,KernelDiscovery,Marshalling,ForeignResource,ForeignCallback,ForeignModule,BindingGenerator}.h on1x/sdk/src/contracts/*.c on1x/sdk/tests/contracts/*.c on1x/sdk/tests/contracts/*.cpp on1x/contracts-exotract/include/mulib-cdd-accessors.h && python3 -m json.tool on1x/sdk/catalogue/agent-reports/subagent-6.json >/dev/null && git diff --cached --check",
+      "result": "PASS"
+    }
+  ],
+  "cross_owner_api_requests": [
+    {
+      "owner": 1,
+      "required_api": "Shared ABI-2 length-aware text/span/diagnostic and extended status definitions.",
+      "reason": "The frozen baseline exposes only ABI-v1 core types. The FFI boundary therefore uses narrowly prefixed On1xSDK_FFIText, On1xSDK_FFISpan and On1xSDK_FFIDiagnostic records. These should be adapted to the final core-owned ABI-2 records without changing the structured admission semantics.",
+      "proposed_signature": "On1xSDK_Status on1x_sdk_foreign_admit_v2(const On1xSDK_ForeignCandidate *, const On1xSDK_ForeignAdmissionPolicy *, On1xSDK_ForeignAdmissionResult *); with policy diagnostics expressed through the final core On1xSDK_DiagnosticSinkV2."
+    },
+    {
+      "owner": 8,
+      "required_api": "Migrate trusted native module adapters from compiler-generated symbol names to the stable On1xRT_ModuleDescriptor ABI where the admitted scalar profile is sufficient.",
+      "reason": "On1xRT now provides the stable statically registered/explicitly authorized AOT descriptor and synchronous scalar host-call boundary requested by the native SDK report.",
+      "proposed_signature": "ON1X_RT_EXPORT const On1xRT_ModuleDescriptor *on1x_rt_module_descriptor_v1(void);"
+    },
+    {
+      "owner": "principal",
+      "required_api": "Add the new structured FFI headers to the principal-owned On1xSDK.h umbrella and merge this report into CAPABILITY_MATRIX.json and IMPLEMENTATION_INVENTORY.json.",
+      "reason": "Workers cannot edit the umbrella or shared capability records. Direct independent headers, On1x::SDK, and the separately packaged On1x::RT target are executable now.",
+      "proposed_signature": "Include the On1xSDK headers listed by ffi.structured-projections and ffi.host-admission in dependency order; record ffi.contracts and runtime.embedding as PARTIAL with the executable subsets and explicit blockers above."
+    }
+  ]
+}

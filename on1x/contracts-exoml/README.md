@@ -31,9 +31,11 @@ canonical header; it is not semantic validation. Non-kernel sidecars (such as
 the PrettyPrint native runtime companion) are listed separately. `lint`,
 `build-plan`, and `snapshot` still apply only to the explicit core profiles.
 
-CDD entries have no semantic sidecar or snapshot profile. The declarations
-include fixed arrays, counts and borrowed lifetimes; the checked accessor
-wrappers required for a contract are not in this archive.
+CDD entries have no semantic sidecar or snapshot profile. The SDK 2 accessor
+adapter in `../contracts-exotract/include/mulib-cdd-accessors.h` validates the
+catalogue/plan before exposing count-explicit borrowed views. This removes
+unchecked fixed-array access; it does not attach a semantic contract or make a
+CDD discovery record callable.
 
 Real Gate B acceptance requires compiler-generated ExoML CDecl artifacts, not
 the lint result. The optional SDK-backed `on1x-bind` implements extraction,
