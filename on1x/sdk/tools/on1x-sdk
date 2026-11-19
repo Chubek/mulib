@@ -1,0 +1,414 @@
+#!/usr/bin/env python3
+"""Inspect bounded SDK data without loading extension code."""
+
+import argparse
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import stat
+import sys
+
+MAX_JSON = 1024 * 1024
+MAX_NODES = 65536
+MAX_DEPTH = 64
+WORD = re.compile(r"[a-z][a-z0-9-]{0,63}\Z")
+NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_-]{0,63}\Z")
+SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+
+CAPABILITIES = (
+    ("bindings.cpp-raii", "EXECUTABLE"),
+    ("bindings.python-ctypes", "EXECUTABLE"),
+    ("project.authorized-process-request", "EXECUTABLE"),
+    ("project.build-graph", "EXECUTABLE"),
+    ("project.manifest-subset", "EXECUTABLE"),
+    ("project.offline-resolver", "EXECUTABLE"),
+    ("project.reproducibility-record", "EXECUTABLE"),
+    ("tooling.code-action-candidate", "EXECUTABLE"),
+    ("tooling.diagnostic-catalog-process-adapter", "EXECUTABLE"),
+    ("tooling.manifest-formatter", "EXECUTABLE"),
+    ("tooling.semantic-index", "UNSUPPORTED"),
+)
+
+
+class Invalid(ValueError):
+    pass
+
+
+class Unsupported(ValueError):
+    pass
+
+
+def unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise Invalid(f"duplicate JSON member {key!r}")
+        result[key] = value
+    return result
+
+
+def integer(value):
+    if len(value) > 20:
+        raise Invalid("JSON integer exceeds 64-bit syntax budget")
+    result = int(value)
+    if not -(2**63) <= result < 2**64:
+        raise Invalid("JSON integer exceeds the supported range")
+    return result
+
+
+def read_regular(path, limit=MAX_JSON):
+    path = Path(path)
+    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(descriptor, "rb") as stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_size > limit:
+            raise Invalid(f"{path}: expected a regular file of at most {limit} bytes")
+        data = stream.read(limit + 1)
+        after = os.fstat(stream.fileno())
+    identity = lambda item: (item.st_dev, item.st_ino, item.st_size,
+                             item.st_mtime_ns, item.st_ctime_ns)
+    if len(data) > limit or identity(info) != identity(after):
+        raise Invalid(f"{path}: input exceeded its limit or changed while read")
+    return data
+
+
+def bounded_json(data):
+    try:
+        value = json.loads(
+            data.decode("utf-8"), object_pairs_hook=unique_object,
+            parse_int=integer, parse_float=lambda _: (_ for _ in ()).throw(
+                Invalid("floating JSON values are unsupported")),
+            parse_constant=lambda _: (_ for _ in ()).throw(
+                Invalid("non-finite JSON values are unsupported")),
+        )
+    except (UnicodeError, json.JSONDecodeError, RecursionError) as error:
+        raise Invalid(f"invalid JSON: {error}") from None
+    pending = [(value, 0)]
+    nodes = 0
+    while pending:
+        item, depth = pending.pop()
+        nodes += 1
+        if nodes > MAX_NODES or depth >= MAX_DEPTH:
+            raise Invalid("JSON node or depth budget exceeded")
+        if isinstance(item, dict):
+            pending.extend((child, depth + 1) for child in item.values())
+        elif isinstance(item, list):
+            pending.extend((child, depth + 1) for child in item)
+        elif not isinstance(item, (str, int, bool, type(None))):
+            raise Invalid("unsupported JSON value")
+        if isinstance(item, str) and (len(item.encode("utf-8")) > 65536 or "\0" in item):
+            raise Invalid("JSON string exceeds its byte budget or contains NUL")
+    return value
+
+
+def canonical(value):
+    return (json.dumps(value, ensure_ascii=True, allow_nan=False, sort_keys=True,
+                       separators=(",", ":")) + "\n").encode("ascii")
+
+
+def shape(value, required, optional=()):
+    if not isinstance(value, dict):
+        raise Invalid("expected a JSON object")
+    keys = set(value)
+    if not set(required) <= keys or keys - set(required) - set(optional):
+        raise Invalid("object has missing or unknown fields")
+
+
+def string(value, limit=4096, pattern=None):
+    if (not isinstance(value, str) or not value or
+            len(value.encode("utf-8")) > limit or "\0" in value or
+            pattern is not None and not pattern.fullmatch(value)):
+        raise Invalid("invalid bounded string")
+    return value
+
+
+def string_list(value, maximum=256, pattern=None):
+    if not isinstance(value, list) or len(value) > maximum:
+        raise Invalid("invalid or oversized string list")
+    output = [string(item, pattern=pattern) for item in value]
+    if len(set(output)) != len(output):
+        raise Invalid("duplicate string list entry")
+    return output
+
+
+def validate_extension(value):
+    if not isinstance(value, dict):
+        raise Invalid("expected an extension manifest object")
+    schema = string(value.get("schema"), 128)
+    if not re.fullmatch(
+            r"on1x\.sdk\.extension-manifest/[1-9][0-9]*", schema):
+        raise Invalid("invalid extension manifest schema")
+    if schema != "on1x.sdk.extension-manifest/1":
+        raise Unsupported(f"unsupported extension manifest schema {schema!r}")
+    shape(value, (
+        "schema", "name", "version", "sdk_abi", "dependencies", "facets",
+        "requested_capabilities", "execution_profile",
+    ), ("phases", "resources", "artifacts", "trust"))
+    string(value["name"], 128, re.compile(r"[a-z][a-z0-9.-]*\Z"))
+    string(value["version"], 128)
+    abi = value["sdk_abi"]
+    shape(abi, ("minimum", "maximum"))
+    if (type(abi["minimum"]) is not int or type(abi["maximum"]) is not int or
+            not 1 <= abi["minimum"] <= abi["maximum"] <= 2):
+        raise Invalid("invalid SDK ABI range")
+    if not isinstance(value["dependencies"], list) or len(value["dependencies"]) > 64:
+        raise Invalid("invalid dependency list")
+    seen = set()
+    for dependency in value["dependencies"]:
+        shape(dependency, ("name", "version"))
+        name = string(dependency["name"], 128,
+                      re.compile(r"[a-z][a-z0-9.-]*\Z"))
+        string(dependency["version"], 128)
+        if name in seen:
+            raise Invalid("duplicate extension dependency")
+        seen.add(name)
+    string_list(value["facets"], 64, WORD)
+    string_list(value["requested_capabilities"], 64, WORD)
+    profile = string(value["execution_profile"], 64, WORD)
+    if profile not in ("static-linked", "trusted-dso", "native-worker", "on1x-native", "wasm"):
+        raise Invalid("unknown execution profile")
+    if "phases" in value:
+        string_list(value["phases"], 64, WORD)
+    if "artifacts" in value:
+        if not isinstance(value["artifacts"], list) or len(value["artifacts"]) > 64:
+            raise Invalid("invalid artifact list")
+        for artifact in value["artifacts"]:
+            shape(artifact, ("name", "sha256"))
+            string(artifact["name"], 1024)
+            string(artifact["sha256"], 64, SHA256)
+    # Validation establishes only a bounded declarative envelope.  It neither
+    # grants requested capabilities nor resolves/loads any artifact.
+    return schema
+
+
+def validate_catalogue(value):
+    if not isinstance(value, dict):
+        raise Invalid("catalogue must be an object")
+    schema = value.get("schema")
+    if schema == "on1x.contract-catalog/v1":
+        shape(value, ("schema", "safe_export", "inventory", "profiles"))
+        if value["safe_export"] is not False or not isinstance(value["profiles"], dict):
+            raise Invalid("contract catalogue must remain discovery-only")
+        for name, profile in value["profiles"].items():
+            string(name, 64, re.compile(r"[a-z][a-z0-9_-]*\Z"))
+            if not isinstance(profile, dict):
+                raise Invalid("invalid contract profile")
+        return schema
+    if schema == "on1x.exotract-catalog/v1":
+        shape(value, (
+            "schema", "manifest", "headers", "implementation_translation_units",
+            "safe_export", "discovery_only_prefixes", "profiles", "default_recipe",
+        ))
+        if (value["safe_export"] is not False or
+                value["implementation_translation_units"] != 1 or
+                not isinstance(value["profiles"], dict) or
+                not isinstance(value["discovery_only_prefixes"], dict)):
+            raise Invalid("invalid Exotract discovery catalogue")
+        return schema
+    if schema == "on1x.diagnostic-catalog/v2":
+        validator = diagnostic_catalog_validator()
+        try:
+            validator.validate(value)
+        except validator.InvalidCatalog:
+            raise Invalid("invalid diagnostic catalogue") from None
+        return schema
+    if schema in ("on1x.sdk.capability-matrix/1",
+                  "on1x.sdk.implementation-inventory/1"):
+        if not isinstance(value, dict) or len(value) > 64:
+            raise Invalid("invalid SDK catalogue envelope")
+        return schema
+    raise Unsupported(f"unsupported catalogue schema {schema!r}")
+
+
+def validate_contract(value):
+    shape(value, ("schema_version", "library", "headers", "state",
+                  "bundle_provenance", "functions"))
+    if value["schema_version"] != 2:
+        raise Unsupported("only ExoML contract schema version 2 is supported")
+    string(value["library"], 128, NAME)
+    if value["state"] not in ("draft", "annotated", "reviewed", "rejected"):
+        raise Invalid("unknown contract state")
+    string_list(value["headers"], 128)
+    if not isinstance(value["bundle_provenance"], dict):
+        raise Invalid("invalid bundle provenance")
+    functions = value["functions"]
+    if not isinstance(functions, list) or not 1 <= len(functions) <= 4096:
+        raise Invalid("invalid contract function list")
+    names = []
+    for function in functions:
+        shape(function, ("c_name", "return", "parameters", "errors", "effects",
+                         "concurrency", "provenance"),
+              ("callbacks", "destructors", "transfers", "invalidations"))
+        names.append(string(function["c_name"], 256,
+                            re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")))
+        if not isinstance(function["return"], dict):
+            raise Invalid("invalid return contract")
+        parameters = function["parameters"]
+        if not isinstance(parameters, list) or len(parameters) > 128:
+            raise Invalid("invalid parameter contracts")
+        if (any(not isinstance(item, dict)
+                or type(item.get("index")) is not int for item in parameters)
+                or [item["index"] for item in parameters]
+                != list(range(len(parameters)))):
+            raise Invalid("parameter indices must be contiguous")
+        effects = function["effects"]
+        concurrency = function["concurrency"]
+        if (not isinstance(effects, dict) or type(effects.get("unknown")) is not bool or
+                not isinstance(effects.get("effects"), list) or
+                not isinstance(concurrency, dict) or
+                type(concurrency.get("suspension_safe")) is not bool or
+                not isinstance(concurrency.get("blocking_behavior"), str) or
+                not concurrency["blocking_behavior"]):
+            raise Invalid("effects and concurrency claims must be explicit")
+    if len(names) != len(set(names)):
+        raise Invalid("duplicate contract function")
+    return "exoml.contract/2"
+
+
+def project_engine():
+    here = Path(__file__).resolve()
+    candidates = [
+        here.parents[2] / "tools/on1x-project.py",  # source tree
+        here.parent.parent / "share/on1x/tools/on1x-project.py",
+        here.parent.parent / "libexec/on1x/on1x-project.py",
+    ]
+    for path in candidates:
+        if path.is_file():
+            spec = importlib.util.spec_from_file_location("_on1x_project_engine", path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module
+    raise Unsupported("installed On1x project validator is unavailable")
+
+
+def diagnostic_catalog_validator():
+    here = Path(__file__).resolve()
+    candidates = [
+        here.parents[2] / "tools/generate-diagnostic-catalog.py",
+        here.parent.parent / "share/on1x/tools/generate-diagnostic-catalog.py",
+    ]
+    for path in candidates:
+        if path.is_file():
+            spec = importlib.util.spec_from_file_location(
+                "_on1x_diagnostic_catalog_validator", path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module
+    raise Unsupported("installed diagnostic-catalog validator is unavailable")
+
+
+def validate_project(family, path, data):
+    engine = project_engine()
+    if family == "on1xfile":
+        engine.root_manifest(data, path)
+        return "on1xfile/1"
+    if family == "lock":
+        engine.parse_lock(data, path)
+        return "on1x.lock/v1"
+    raise AssertionError(family)
+
+
+def inspect(path):
+    data = read_regular(path)
+    value = bounded_json(data)
+    if not isinstance(value, dict):
+        raise Invalid("inspection root must be an object")
+    stable = canonical(value)
+    schema = value.get("schema")
+    if schema is None and "schema_version" in value:
+        schema = f"exoml.contract/{value['schema_version']}"
+    return {
+        "canonical_sha256": hashlib.sha256(stable).hexdigest(),
+        "input_schema": schema,
+        "keys": sorted(value),
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "size": len(data),
+    }
+
+
+def validate(family, path):
+    data = read_regular(path, 256 * 1024 if family in ("on1xfile", "lock") else MAX_JSON)
+    if family in ("on1xfile", "lock"):
+        schema = validate_project(family, Path(path), data)
+        value = None
+    else:
+        value = bounded_json(data)
+        if family == "extension-manifest":
+            schema = validate_extension(value)
+        elif family == "catalogue":
+            schema = validate_catalogue(value)
+        elif family == "contract":
+            schema = validate_contract(value)
+        else:
+            raise Invalid(f"unknown validation family {family!r}")
+    return {
+        "family": family,
+        "input_schema": schema,
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "size": len(data),
+        "valid": True,
+        "authority": "inspection-only",
+        "code_loaded": False,
+        "capabilities_granted": False,
+    }
+
+
+def emit(value, pretty=False):
+    options = {"ensure_ascii": True, "sort_keys": True, "allow_nan": False}
+    if pretty:
+        text = json.dumps(value, indent=2, **options)
+    else:
+        text = json.dumps(value, separators=(",", ":"), **options)
+    sys.stdout.write(text + "\n")
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--pretty", action="store_true",
+                        help="indent JSON without changing field ordering")
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("info", help="report exact implemented SDK capabilities")
+    inspection = commands.add_parser("inspect", help="bounded duplicate-safe JSON inspection")
+    inspection.add_argument("path", type=Path)
+    validation = commands.add_parser("validate", help="validate one supported data family")
+    validation.add_argument("family", choices=(
+        "extension-manifest", "catalogue", "contract", "on1xfile", "lock"))
+    validation.add_argument("path", type=Path)
+    args = parser.parse_args(argv)
+    try:
+        if args.command == "info":
+            result = {
+                "schema": "on1x.sdk.info/1",
+                "extension_abi": 2,
+                "project_abi": 2,
+                "v1_status_values": list(range(8)),
+                "manifest_schema": "on1xfile/1-supported-subset",
+                "network_access": False,
+                "loads_extension_code": False,
+                "capabilities": [
+                    {"id": name, "status": status}
+                    for name, status in CAPABILITIES
+                ],
+            }
+        elif args.command == "inspect":
+            result = {"schema": "on1x.sdk.inspect/1", **inspect(args.path)}
+        else:
+            result = {"schema": "on1x.sdk.validation/1",
+                      **validate(args.family, args.path)}
+        emit(result, args.pretty)
+        return 0
+    except Unsupported as error:
+        emit({"schema": "on1x.sdk.error/1", "status": "UNSUPPORTED",
+              "message": str(error)}, args.pretty)
+        return 3
+    except (Invalid, OSError, ValueError, TypeError, KeyError, RecursionError) as error:
+        emit({"schema": "on1x.sdk.error/1", "status": "INVALID_ARGUMENT",
+              "message": str(error)}, args.pretty)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

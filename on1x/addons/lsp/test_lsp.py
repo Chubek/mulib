@@ -105,6 +105,19 @@ class Wire:
         return self.request("textDocument/formatting", {
             "textDocument": {"uri": uri}, "options": {"tabSize": 4, "insertSpaces": True}})
 
+    def actions(self, uri, only=None):
+        context = {"diagnostics": []}
+        if only is not None:
+            context["only"] = only
+        return self.request("textDocument/codeAction", {
+            "textDocument": {"uri": uri},
+            "range": {
+                "start": {"line": 0, "character": 0},
+                "end": {"line": 100, "character": 0},
+            },
+            "context": context,
+        })
+
     def diagnostics(self, uri, version):
         packet = self.receive()
         self.case.assertEqual(packet.get("method"), "textDocument/publishDiagnostics", packet)
@@ -168,8 +181,25 @@ elif mode == "--deps":
     records = [{
         "id": "TEST001", "severity": "warning", "message": "test diagnostic",
         "location": {"file": name, "offset": offset, "line": text[:offset].count(b"\n") + 1,
-                     "byteColumn": offset - text.rfind(b"\n", 0, offset)}}
+                      "byteColumn": offset - text.rfind(b"\n", 0, offset)}}
     ]
+    if b"bad-repair" in text:
+        records[0]["repairs"] = [
+            {"id": "malformed", "status": "validated", "reason": "",
+             "edits": [{"begin": len(text) + 1, "end": len(text) + 2,
+                        "replacement": "outside"}]},
+        ]
+    elif b"repair" in text:
+        records[0]["repairs"] = [
+            {"id": "validated-repair", "status": "validated", "reason": "",
+             "edits": [{"begin": offset, "end": offset + len(b"diagnose"),
+                        "replacement": "fixed"}]},
+            {"id": "candidate-repair", "status": "candidate", "reason": "",
+             "edits": [{"begin": offset, "end": offset,
+                        "replacement": "maybe "}]},
+        ]
+    else:
+        records[0]["repairs"] = []
     if b"elsewhere" in text:
         records[0]["location"]["file"] = str(path.parent / "dependency.on1x")
     if b"bogus" in text:
@@ -221,7 +251,10 @@ class Protocol(Base):
         self.assertEqual(capabilities, {"positionEncoding": "utf-16",
                                         "textDocumentSync": {"openClose": True, "change": 1,
                                                              "save": {"includeText": False}},
-                                        "documentFormattingProvider": True})
+                                        "documentFormattingProvider": True,
+                                        "codeActionProvider": {
+                                            "codeActionKinds": ["quickfix"],
+                                            "resolveProvider": False}})
         for method in ("textDocument/completion", "textDocument/definition", "textDocument/hover",
                        "textDocument/rename", "textDocument/references"):
             self.assertEqual(wire.request(method)["error"]["code"], -32601)
@@ -340,6 +373,47 @@ class Protocol(Base):
             wire.document("didSave", self.uri)
             self.assertIn(warning, wire.log())
             self.assertEqual(wire.diagnostics(self.uri, version), [])
+        wire.finish()
+
+    def test_versioned_validated_and_disabled_candidate_actions(self):
+        wire = self.launch()
+        wire.initialize()
+        text = "diagnose repair"
+        self.write(text)
+        wire.open(self.uri, text, 7)
+        wire.document("didSave", self.uri)
+        diagnostics = wire.diagnostics(self.uri, 7)
+        self.assertEqual(
+            diagnostics[0]["data"]["on1xRepairActions"], [0, 1])
+        actions = wire.actions(self.uri)["result"]
+        self.assertEqual(len(actions), 2)
+        validated, candidate = actions
+        self.assertTrue(validated["isPreferred"])
+        change = validated["edit"]["documentChanges"][0]
+        self.assertEqual(
+            change["textDocument"], {"uri": self.uri, "version": 7})
+        self.assertEqual(change["edits"][0]["newText"], "fixed")
+        self.assertEqual(
+            validated["data"]["on1xRepairStatus"], "validated")
+        self.assertNotIn("edit", candidate)
+        self.assertIn("unverified", candidate["disabled"]["reason"])
+        self.assertEqual(wire.actions(self.uri, ["refactor"])["result"], [])
+        wire.change(self.uri, 8, [{"text": text + " changed"}])
+        self.assertEqual(wire.diagnostics(self.uri, 8), [])
+        self.assertEqual(wire.actions(self.uri)["result"], [])
+        wire.finish()
+
+    def test_malformed_repair_is_not_an_action(self):
+        wire = self.launch()
+        wire.initialize()
+        text = "diagnose bad-repair"
+        self.write(text)
+        wire.open(self.uri, text)
+        wire.document("didSave", self.uri)
+        self.assertIn("findings omitted", wire.log())
+        diagnostic, = wire.diagnostics(self.uri, 1)
+        self.assertNotIn("data", diagnostic)
+        self.assertEqual(wire.actions(self.uri)["result"], [])
         wire.finish()
 
     def test_format_failure_output_limit_and_timeout(self):

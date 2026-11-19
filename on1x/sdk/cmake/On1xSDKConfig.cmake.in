@@ -1,4 +1,11 @@
 @PACKAGE_INIT@
 
 include("${CMAKE_CURRENT_LIST_DIR}/On1xSDKTargets.cmake")
+
+set(On1xSDK_PROJECT_ABI_VERSION 2)
+set_and_check(On1xSDK_TOOL
+    "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_BINDIR@/on1x-sdk")
+set_and_check(On1xSDK_PYTHON_BINDING_DIR
+    "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@/on1x-sdk/python")
+
 check_required_components(On1xSDK)

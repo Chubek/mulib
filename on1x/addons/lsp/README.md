@@ -47,11 +47,17 @@ process/resource APIs. It has been tested on Linux, not on Windows.
   invalid syntax. It uses compiler defaults (not workspace `.on1xfmt`
   or the client's tab settings) and can normalize line endings. Source
   preservation directives such as `# on1xfmt: off` still apply.
+- **Revision-bound quick fixes.** Bounded compiler-reported repair edits with
+  status `validated` are exposed after save as quick fixes tied to the open
+  document version. Repairs reported only as `candidate` are visible as
+  disabled suggestions with an explicit unverified reason. The adapter never
+  upgrades a candidate, applies an edit itself, or keeps actions after the
+  document changes.
 - The server advertises full-text synchronization and UTF-16 positions
   by default; it can negotiate UTF-8 or UTF-32. It accepts local
   `file:` URIs (including `localhost`), not remote or untitled buffers.
   No hover, completion, symbols, go-to-definition, references, rename,
-  range formatting or code actions are implemented.
+  range formatting or semantic index is implemented.
 
 ## What runs and what is read
 

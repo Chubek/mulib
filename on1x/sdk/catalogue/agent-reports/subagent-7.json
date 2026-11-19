@@ -1,0 +1,224 @@
+{
+  "schema": "on1x.sdk.agent-report/1",
+  "agent": 7,
+  "area": "projects-tooling-bindings",
+  "baseline_revision": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
+  "summary": "Executable ABI-2 project, package, process, tooling, C++17, Python, CLI and LSP subsets with bounded inputs, host-owned allocation, explicit lifetimes and installed relocation coverage.",
+  "facilities": [
+    {
+      "id": "project.manifest-subset",
+      "status": "EXECUTABLE",
+      "public_headers": [
+        "On1xSDK-Project.h",
+        "On1xSDK-Manifest.h",
+        "On1xSDK-Formatter.h"
+      ],
+      "subset": "Bounded immutable parsing and idempotent formatting of declarative On1xfile 1 kind/name/directory/target/dependency records; unsupported directives reject without executing templates or policy."
+    },
+    {
+      "id": "project.build-graph",
+      "status": "EXECUTABLE",
+      "public_headers": [
+        "On1xSDK-BuildGraph.h",
+        "On1xSDK-Reproducibility.h"
+      ],
+      "subset": "Deep-copied deterministic dependency-before-consumer graphs, canonical SHA-256 identity, cycle/missing/conflict diagnostics and provenance records."
+    },
+    {
+      "id": "project.offline-resolver",
+      "status": "EXECUTABLE",
+      "public_headers": [
+        "On1xSDK-PackageResolver.h"
+      ],
+      "subset": "Deterministic resolution over host-supplied local/cache candidates and exact lock entries; no path opening, executable loading or network fallback."
+    },
+    {
+      "id": "project.authorized-process-request",
+      "status": "EXECUTABLE",
+      "public_headers": [
+        "On1xSDK-Process.h"
+      ],
+      "subset": "Bounded absolute-path argv and replacement-environment requests behind authorize/execute/finish host callbacks; no shell or executable-name resolution."
+    },
+    {
+      "id": "developer.tooling-primitives",
+      "status": "PARTIAL",
+      "public_headers": [
+        "On1xSDK-CodeAction.h",
+        "On1xSDK-Command.h",
+        "On1xSDK-DiagnosticCatalog.h",
+        "On1xSDK-Formatter.h"
+      ],
+      "subset": "Revision-bound unverified edit candidates, namespaced command validation, manifest formatting and authorized adapters to canonical compiler formatting/catalogue checks.",
+      "blockers": [
+        "No stable compiler session or semantic index is available at this baseline.",
+        "Completion, hover, symbols, references, rename, refactoring, REPL, debug, coverage and profiling APIs remain unsupported."
+      ]
+    },
+    {
+      "id": "developer.on1x-sdk-tool",
+      "status": "EXECUTABLE",
+      "public_headers": [],
+      "subset": "Installable deterministic data-only info, inspection and bounded validation CLI for supported manifests, locks, catalogues, contracts and extension-manifest envelopes."
+    },
+    {
+      "id": "language.bindings",
+      "status": "PARTIAL",
+      "public_headers": [
+        "On1xSDK.hpp"
+      ],
+      "subset": "C++17 move-only RAII owners and executable CPython ctypes access to the implemented project subset.",
+      "blockers": [
+        "Python allocation currently requires POSIX posix_memalign.",
+        "D, Rust, Lua/Mune, Crystal, Zig and OCaml bindings are not shipped without executable build and lifecycle coverage."
+      ]
+    },
+    {
+      "id": "lsp.revision-bound-quick-fixes",
+      "status": "EXECUTABLE",
+      "public_headers": [],
+      "subset": "Bounded compiler-reported validated repairs become versioned LSP edits; unverified candidates are disabled suggestions and stale actions are cleared."
+    },
+    {
+      "id": "tooling.semantic-index",
+      "status": "UNSUPPORTED",
+      "public_headers": [],
+      "subset": "",
+      "blockers": [
+        "Canonical checked-HIR symbol, scope and revision-aware query views are not public."
+      ]
+    }
+  ],
+  "unsupported_paths": [
+    "The reusable manifest API does not execute On1xfile templates, profiles, commands, build policy, PPX or extension code.",
+    "The package API does not fetch from a network, discover candidates from paths or trust lockfile-supplied executable locations.",
+    "The process API does not invoke a shell, search PATH or execute without a nonzero host authorization token.",
+    "Code-action candidates are not proof of correctness and are never published without authoritative compiler validation.",
+    "LSP candidate repairs remain disabled; only compiler-reported validated repairs are exposed as edits.",
+    "No WASM, sandbox or process-isolation claim is made by this project layer."
+  ],
+  "changed_files": [
+    "on1x/addons/lsp/README.md",
+    "on1x/addons/lsp/on1x-lsp.py",
+    "on1x/addons/lsp/test_lsp.py",
+    "on1x/sdk/bindings/README.md",
+    "on1x/sdk/bindings/python/on1x_sdk.py",
+    "on1x/sdk/catalogue/agent-reports/subagent-7.json",
+    "on1x/sdk/cmake/Integration7.cmake",
+    "on1x/sdk/cmake/On1xSDKConfig.cmake.in",
+    "on1x/sdk/cmake/On1xSDKProject.map",
+    "on1x/sdk/cmake/Subagent7.cmake",
+    "on1x/sdk/include/On1xSDK-BuildGraph.h",
+    "on1x/sdk/include/On1xSDK-CodeAction.h",
+    "on1x/sdk/include/On1xSDK-Command.h",
+    "on1x/sdk/include/On1xSDK-DiagnosticCatalog.h",
+    "on1x/sdk/include/On1xSDK-Formatter.h",
+    "on1x/sdk/include/On1xSDK-Manifest.h",
+    "on1x/sdk/include/On1xSDK-PackageResolver.h",
+    "on1x/sdk/include/On1xSDK-Process.h",
+    "on1x/sdk/include/On1xSDK-Project.h",
+    "on1x/sdk/include/On1xSDK-Reproducibility.h",
+    "on1x/sdk/include/On1xSDK.hpp",
+    "on1x/sdk/src/project/BuildGraph.cpp",
+    "on1x/sdk/src/project/Command.cpp",
+    "on1x/sdk/src/project/Manifest.cpp",
+    "on1x/sdk/src/project/PackageResolver.cpp",
+    "on1x/sdk/src/project/Process.cpp",
+    "on1x/sdk/src/project/Project.cpp",
+    "on1x/sdk/src/project/ProjectInternal.hpp",
+    "on1x/sdk/src/project/Tooling.cpp",
+    "on1x/sdk/tests/check_project_exports.py",
+    "on1x/sdk/tests/check_project_headers.py",
+    "on1x/sdk/tests/check_project_package.py",
+    "on1x/sdk/tests/project.cpp",
+    "on1x/sdk/tests/project_c.c",
+    "on1x/sdk/tests/test_python_binding.py",
+    "on1x/sdk/tests/test_sdk_tool.py",
+    "on1x/sdk/tools/README.md",
+    "on1x/sdk/tools/on1x-sdk"
+  ],
+  "tests": [
+    {
+      "command": "cmake --build /tmp/opencode/sdk7-gcc-make -j2",
+      "result": "PASS; complete GCC fallback-scanner build"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/sdk7-gcc-make --output-on-failure -R '^on1x\\.sdk\\.'",
+      "result": "PASS; 13/13, including ABI-v1, exact ELF exports, C11/C++17 headers, Python, CLI and installed/relocated consumers"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/sdk7-clang-make -j2",
+      "result": "PASS; complete Clang 22 fallback-scanner build"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/sdk7-clang-make --output-on-failure -R '^on1x\\.sdk\\.'",
+      "result": "PASS; 13/13"
+    },
+    {
+      "command": "ASAN_OPTIONS=detect_leaks=1:strict_string_checks=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ctest --test-dir /tmp/opencode/sdk7-sanitize-make --output-on-failure -R 'on1x\\.sdk\\.(project|project_c)$'",
+      "result": "PASS; 2/2 under Clang ASan+UBSan"
+    },
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 on1x/addons/lsp/test_lsp.py --on1xc /tmp/opencode/sdk7-gcc-make/on1xc --no-syren -v",
+      "result": "PASS; 13 passed, 1 Syren-only test skipped"
+    },
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 on1x/tests/test_on1x_project.py --on1xc /tmp/opencode/sdk7-gcc-make/on1xc --cc cc -v",
+      "result": "PASS; 12 passed, 3 optional Mune/QMR/Wetstone tests skipped"
+    },
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 on1x/tests/test_project_fetch.py --on1xc /tmp/opencode/sdk7-gcc-make/on1xc --cc cc -v",
+      "result": "PASS; 11/11"
+    },
+    {
+      "command": "python3 on1x/tests/test_formatter.py /tmp/opencode/sdk7-gcc-make/on1xc cc",
+      "result": "PASS; format configuration, round trips, C11 execution and markup"
+    },
+    {
+      "command": "CC=gcc CXX=g++ sh tests/run-cdd.sh",
+      "result": "PASS; 500 seeded and 24576 exhaustive oracle cases, allocation failure, example and C++17 linkage"
+    },
+    {
+      "command": "CC=clang CXX=clang++ sh tests/run-cdd.sh",
+      "result": "PASS; 500 seeded and 24576 exhaustive oracle cases, allocation failure, example and C++17 linkage"
+    },
+    {
+      "command": "CC=gcc CXX=g++ CFLAGS='-O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined' CXXFLAGS='-O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined' LDFLAGS='-fsanitize=address,undefined' ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 sh tests/run-cdd.sh",
+      "result": "PASS"
+    },
+    {
+      "command": "CC=clang CXX=clang++ CFLAGS='-O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined' CXXFLAGS='-O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined' LDFLAGS='-fsanitize=address,undefined' ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 sh tests/run-cdd.sh",
+      "result": "PASS"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/sdk7-gcc-make --output-on-failure",
+      "result": "101/104 passed; three baseline/environment failures outside changed files: type_checker_hardening_hir requires unavailable Firestone regex SDK, contracts expects only three auxiliary MuLIB headers while the baseline inventory reports many new unregistered headers, and mulib has baseline fixture drift (muw3lib absent from inventory; immgtk-widgets stale)."
+    }
+  ],
+  "cross_owner_api_requests": [
+    {
+      "owner": 1,
+      "required_api": "Shared ABI-2 prefix, allocator, string/bytes/span, diagnostic sink, cancellation and extended status types from On1xSDK-ABI.h, On1xSDK-Allocator.h, On1xSDK-String.h, On1xSDK-Span.h, On1xSDK-Diagnostic.h, On1xSDK-Cancellation.h and On1xSDK-Status.h.",
+      "reason": "The baseline has only ABI-v1 core declarations, so the project service must currently use a project-prefixed ABI-2-compatible subset. Shared definitions are required before all SDK-2 subsystems can exchange owned buffers and cancellation/status values without duplicate protocols.",
+      "proposed_signature": "typedef struct On1xSDK_ABIHeader { uint32_t abi_version; uint32_t struct_size; } On1xSDK_ABIHeader; typedef struct On1xSDK_Allocator { On1xSDK_ABIHeader abi; void *context; On1xSDK_AllocateFn allocate; On1xSDK_ReallocateFn reallocate; On1xSDK_ReleaseFn release; } On1xSDK_Allocator;"
+    },
+    {
+      "owner": 2,
+      "required_api": "Revision-aware in-process compiler formatting, diagnostics and repair-validation sessions over host VFS/source handles.",
+      "reason": "Current formatter and diagnostic-catalog operations truthfully use an explicitly authorized on1xc argv request because no reusable compiler session exists. An in-process service would remove process overhead without creating a second parser or semantic authority.",
+      "proposed_signature": "On1xSDK_Status on1x_sdk_compiler_format(On1xSDK_CompilerSession *, On1xSDK_SourceHandle, const On1xSDK_FormatOptions *, On1xSDK_Buffer **); On1xSDK_Status on1x_sdk_compiler_validate_repairs(On1xSDK_CompilerSession *, On1xSDK_SourceRevision, const On1xSDK_RepairCandidate *, size_t, On1xSDK_RepairSet **);"
+    },
+    {
+      "owner": 3,
+      "required_api": "Immutable checked-HIR symbol/scope/reference snapshots keyed by source revision.",
+      "reason": "A truthful semantic index, hover, references and rename implementation cannot be built from point diagnostics or reparsed source.",
+      "proposed_signature": "On1xSDK_Status on1x_sdk_hir_symbol_index(const On1xSDK_CheckedHIR *, On1xSDK_SourceRevision, const On1xSDK_IndexOptions *, On1xSDK_SymbolIndex **);"
+    },
+    {
+      "owner": "principal",
+      "required_api": "Add the new project/tooling headers to the principal-owned On1xSDK.h umbrella and merge this report into CAPABILITY_MATRIX.json.",
+      "reason": "Workers may not edit the umbrella or shared capability matrix; direct independent includes and installed On1x::Project already work.",
+      "proposed_signature": "#include \"On1xSDK-Project.h\" and the remaining Subagent 7 public headers in dependency order."
+    }
+  ]
+}

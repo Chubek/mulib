@@ -12,7 +12,7 @@ import stat
 import subprocess
 import sys
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 from urllib.parse import unquote, urlsplit
 
@@ -27,6 +27,8 @@ MAX_SOURCE = 2 * MIB
 MAX_DOCUMENTS = 64
 MAX_DOCUMENT_BYTES = 16 * MIB
 MAX_CLI_OUTPUT = 4 * MIB  # Per stream.
+MAX_CODE_ACTIONS = 256
+MAX_CODE_ACTION_BYTES = 2 * MIB
 CLI_TIMEOUT = 5
 ENCODINGS = ("utf-16", "utf-8", "utf-32")
 SEVERITIES = {"error": 1, "warning": 2, "note": 3}
@@ -233,7 +235,8 @@ def compiler_diagnostics(data, path, source, encoding):
     if (report.get("schema") != "on1x.diagnostics/v1" or not isinstance(records, list)
             or len(records) > 1024 or type(dropped) is not int or dropped < 0):
         raise ToolError("unsupported on1xc diagnostic report")
-    diagnostics, elsewhere, invalid = [], [], 0
+    diagnostics, actions, elsewhere, invalid = [], [], [], 0
+    action_bytes = 0
     for item in records:
         item = object_or_empty(item)
         loc = object_or_empty(item.get("location"))
@@ -260,8 +263,81 @@ def compiler_diagnostics(data, path, source, encoding):
                       "message": message, "severity": SEVERITIES[severity]}
         if isinstance(item.get("id"), str) and item["id"]:
             diagnostic["code"] = item["id"]
+        action_ids = []
+        repairs = item.get("repairs", [])
+        if isinstance(repairs, list) and len(repairs) <= 64:
+            for repair in repairs:
+                repair = object_or_empty(repair)
+                identity = repair.get("id")
+                status = repair.get("status")
+                edits = repair.get("edits")
+                try:
+                    identity_bytes = identity.encode("utf-8")
+                except (AttributeError, UnicodeError):
+                    identity_bytes = b""
+                if (not identity_bytes
+                        or len(identity_bytes) > 256
+                        or re.search(r"[\x00-\x1f\x7f]", identity)
+                        or status not in ("candidate", "validated")
+                        or not isinstance(edits, list) or not edits
+                        or len(edits) > 64
+                        or len(actions) >= MAX_CODE_ACTIONS):
+                    invalid += 1
+                    continue
+                converted, cursor, previous = [], 0, None
+                output_size, repair_bytes = len(source), 0
+                valid = True
+                for edit in edits:
+                    edit = object_or_empty(edit)
+                    begin, end = edit.get("begin"), edit.get("end")
+                    replacement = edit.get("replacement")
+                    try:
+                        replacement_bytes = replacement.encode("utf-8")
+                    except (AttributeError, UnicodeError):
+                        valid = False
+                        break
+                    if (type(begin) is not int or type(end) is not int
+                            or not 0 <= begin <= end <= len(source)
+                            or begin < cursor or begin == previous
+                            or len(replacement_bytes) > MAX_SOURCE):
+                        valid = False
+                        break
+                    output_size -= end - begin
+                    output_size += len(replacement_bytes)
+                    if (output_size > MAX_SOURCE
+                            or action_bytes + repair_bytes + len(replacement_bytes)
+                            > MAX_CODE_ACTION_BYTES):
+                        valid = False
+                        break
+                    try:
+                        start = position(source, begin, encoding)
+                        finish = position(source, end, encoding)
+                    except UnicodeError:
+                        valid = False
+                        break
+                    converted.append({
+                        "range": {"start": start, "end": finish},
+                        "newText": replacement,
+                    })
+                    repair_bytes += len(replacement_bytes)
+                    cursor, previous = end, begin
+                if not valid:
+                    invalid += 1
+                    continue
+                action_bytes += repair_bytes
+                action_ids.append(len(actions))
+                actions.append({
+                    "id": identity,
+                    "status": status,
+                    "edits": converted,
+                    "diagnostic": diagnostic,
+                })
+        elif repairs:
+            invalid += 1
+        if action_ids:
+            diagnostic["data"] = {"on1xRepairActions": action_ids}
         diagnostics.append(diagnostic)
-    return diagnostics, elsewhere, invalid + dropped
+    return diagnostics, actions, elsewhere, invalid + dropped
 
 
 @dataclass
@@ -270,6 +346,7 @@ class Document:
     version: int
     source: Optional[bytes]
     published: bool = False
+    actions: list = field(default_factory=list)
 
 
 class Server:
@@ -348,6 +425,10 @@ class Server:
             "positionEncoding": self.encoding,
             "textDocumentSync": {"openClose": True, "change": 1, "save": {"includeText": False}},
             "documentFormattingProvider": True,
+            "codeActionProvider": {
+                "codeActionKinds": ["quickfix"],
+                "resolveProvider": False,
+            },
         }, "serverInfo": {"name": "on1x-lsp"}}
 
     def formatting(self, doc):
@@ -376,6 +457,7 @@ class Server:
 
     def save(self, uri, doc):
         diagnostics = []
+        actions = []
         try:
             if doc.source is None:
                 raise ToolError("document text exceeds the synchronization limits")
@@ -393,15 +475,53 @@ class Server:
             if code not in (0, 1) or (code == 1 and not errors):
                 raise ToolError(f"on1xc --deps failed (exit {code}): {concise(errors)}")
             if errors:
-                diagnostics, elsewhere, dropped = compiler_diagnostics(errors, path, before[0],
-                                                                      self.encoding)
+                diagnostics, actions, elsewhere, dropped = compiler_diagnostics(
+                    errors, path, before[0], self.encoding)
                 for report in elsewhere[:3]:
                     self.log(concise(report.encode("utf-8", errors="replace")))
                 if dropped or len(elsewhere) > 3:
                     self.log(f"on1xc findings omitted: {dropped + max(0, len(elsewhere) - 3)}")
         except (ToolError, OSError, RuntimeError, ValueError) as exc:
             self.log(f"On1x save inspection skipped: {exc}")
+        doc.actions = actions
         self.publish(uri, doc, diagnostics)
+
+    def code_actions(self, uri, doc, params):
+        if not doc or doc.source is None:
+            raise RequestError(
+                -32602,
+                "code actions require an open local On1x document within limits",
+            )
+        context = object_or_empty(params.get("context"))
+        only = context.get("only")
+        if isinstance(only, list) and not any(
+                isinstance(kind, str)
+                and (kind == "quickfix" or kind.startswith("quickfix."))
+                for kind in only):
+            return []
+        result = []
+        for action in doc.actions:
+            item = {
+                "title": f"On1x repair proposal: {action['id']}",
+                "kind": "quickfix",
+                "diagnostics": [action["diagnostic"]],
+                "data": {"on1xRepairStatus": action["status"]},
+            }
+            if action["status"] == "validated":
+                item["edit"] = {"documentChanges": [{
+                    "textDocument": {"uri": uri, "version": doc.version},
+                    "edits": action["edits"],
+                }]}
+                item["isPreferred"] = True
+            else:
+                item["disabled"] = {
+                    "reason": (
+                        "compiler reported an unverified candidate; run "
+                        "explicit repair validation"
+                    )
+                }
+            result.append(item)
+        return result
 
     def document_event(self, method, params, uri, document_id, doc):
         if method == "textDocument/didOpen":
@@ -426,6 +546,7 @@ class Server:
                                    "rangeLength" not in change else None)
             elif not isinstance(changes, list):
                 self.update_source(doc, None)
+            doc.actions = []
             if doc.published:
                 self.publish(uri, doc, [])
         elif doc and method == "textDocument/didSave":
@@ -480,6 +601,8 @@ class Server:
                 result = None
             elif method == "textDocument/formatting":
                 result = self.formatting(doc)
+            elif method == "textDocument/codeAction":
+                result = self.code_actions(uri, doc, params)
             else:
                 raise RequestError(-32601, "method not found")
             self.send(id=ident, result=result)

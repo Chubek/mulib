@@ -1,0 +1,60 @@
+"""Require the ELF project library to expose only its documented C ABI."""
+
+import subprocess
+import sys
+
+
+EXPECTED = {
+    "on1x_sdk_build_graph_create",
+    "on1x_sdk_build_graph_destroy",
+    "on1x_sdk_build_graph_node_at",
+    "on1x_sdk_build_graph_node_count",
+    "on1x_sdk_build_graph_sha256",
+    "on1x_sdk_code_action_apply_candidate",
+    "on1x_sdk_command_is_builtin",
+    "on1x_sdk_command_validate_extension_name",
+    "on1x_sdk_diagnostic_catalog_dispatch_check",
+    "on1x_sdk_formatter_dispatch_source",
+    "on1x_sdk_manifest_dependency_at",
+    "on1x_sdk_manifest_dependency_count",
+    "on1x_sdk_manifest_destroy",
+    "on1x_sdk_manifest_format",
+    "on1x_sdk_manifest_info",
+    "on1x_sdk_manifest_parse",
+    "on1x_sdk_manifest_target_at",
+    "on1x_sdk_manifest_target_count",
+    "on1x_sdk_package_resolve_offline",
+    "on1x_sdk_process_dispatch",
+    "on1x_sdk_process_request_validate",
+    "on1x_sdk_project_buffer_destroy",
+    "on1x_sdk_project_buffer_view",
+    "on1x_sdk_project_normalize_path",
+    "on1x_sdk_project_sha256",
+    "on1x_sdk_reproducibility_describe",
+}
+
+
+def main():
+    result = subprocess.run(
+        (sys.argv[1], "-D", "--defined-only", sys.argv[2]),
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=30,
+        text=True,
+    )
+    actual = {
+        line.split()[-1]
+        for line in result.stdout.splitlines()
+        if line.split()
+    }
+    if actual != EXPECTED:
+        raise SystemExit(
+            f"unexpected project ABI exports; "
+            f"missing={sorted(EXPECTED - actual)!r}, "
+            f"extra={sorted(actual - EXPECTED)!r}"
+        )
+
+
+if __name__ == "__main__":
+    main()

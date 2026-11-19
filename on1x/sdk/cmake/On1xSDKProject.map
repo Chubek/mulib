@@ -1,0 +1,6 @@
+{
+    global:
+        on1x_sdk_*;
+    local:
+        *;
+};
