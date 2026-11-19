@@ -31,7 +31,9 @@ retrieves cited repository evidence; it does not compile code or admit safe
 bindings, and it requires a separately hosted HTTPS endpoint or Secure MCP
 Tunnel.
 
-For C/C++ build-tool integrations, see the [On1x extension SDK](sdk/README.md).
+For C/C++ build-tool integrations, see [On1x SDK 2](sdk/README.md) and its
+[capability matrix](sdk/CAPABILITY_MATRIX.json). Runtime embedding uses the
+separate [On1xRT ABI 1](runtime-sdk/README.md).
 SDK hook commands can discover isolated external plugins through
 `ON1X_PLUGIN_PATH` or select them with `--plugin +NAME_OR_PATH`. Ordinary
 compilation does not load SDK plugins.

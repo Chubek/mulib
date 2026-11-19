@@ -1,7 +1,10 @@
 {
   "schema": "on1x.sdk.implementation-inventory/1",
   "captured": "2026-11-19",
-  "repository_revision": "6a145cbf09efcac76f387f6b664fc2257bac93aa",
+  "proposal_base_revision": "6a145cbf09efcac76f387f6b664fc2257bac93aa",
+  "worker_baseline_revision": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
+  "aggregate_integration_revision": "18aa71faa49d6d98b333cd1e53075b4e685bcc35",
+  "sdk_version": "2.0.0",
   "libstone_revision": "3399047f6c6328b8f07788795c610699e66c060a",
   "contracts": {
     "sdk_abi": 2,
@@ -11,6 +14,24 @@
     "handle_encoding": "generation32-slot32",
     "external_ir_state": "candidate",
     "publication_authority": "host-only"
+  },
+  "workers": [
+    {"id": 1, "commit": "4f16e5780f527254c981ac4cd4236edf9d51776d", "stage": "A", "report": "catalogue/agent-reports/subagent-1.json"},
+    {"id": 2, "commit": "405ecbf6491e8effcc051fd98331c2c2c534f428", "stage": "B", "report": "catalogue/agent-reports/subagent-2.json"},
+    {"id": 3, "commit": "64d1430b0b8facd284c826b897d23f1323376c7d", "stage": "B", "report": "catalogue/agent-reports/subagent-3.json"},
+    {"id": 4, "commit": "88a8092285629f045037b5fbecfeea32941fed23", "stage": "C", "report": "catalogue/agent-reports/subagent-4.json"},
+    {"id": 5, "commit": "07be40bd64e44a09cac51c44173907128d09eb50", "stage": "C", "report": "catalogue/agent-reports/subagent-5.json"},
+    {"id": 6, "commit": "1aab73b3499a690f6a5e8216c13eaad2c7474d5d", "stage": "C", "report": "catalogue/agent-reports/subagent-6.json"},
+    {"id": 7, "commit": "a259e3504b023f92d46c87ae205eef004692b0fb", "stage": "D", "report": "catalogue/agent-reports/subagent-7.json"},
+    {"id": 8, "commit": "67ea0383deec83698ad6047a67bd1c206706e03e", "stage": "E", "report": "catalogue/agent-reports/subagent-8.json"}
+  ],
+  "artifacts": {
+    "sdk": {"package": "On1xSDK", "component": "On1xSDK", "targets": ["On1x::SDK", "On1x::SDKSemanticsIR", "On1x::Project"], "c_headers": 126, "cpp_headers": 1},
+    "runtime": {"package": "On1xRT", "component": "On1xRT", "targets": ["On1x::RT"], "c_headers": 24, "abi": 1},
+    "tool": "on1x-sdk",
+    "compiler_dispatch": "on1xc sdk",
+    "capabilities": "CAPABILITY_MATRIX.json",
+    "verification": "VERIFICATION.md"
   },
   "baseline_tests": {
     "command": "ctest --test-dir build/on1x-sdk-gcc-make --output-on-failure -R ^on1x\\\\.sdk\\\\.",

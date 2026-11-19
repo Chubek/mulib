@@ -15,6 +15,7 @@ modules.
 cmake -S on1x -B build/on1x -DBUILD_TESTING=ON
 cmake --build build/on1x --target on1x_sdk on1x_sdk_project on1x_rt_sdk
 cmake --install build/on1x --prefix "$PWD/build/on1x-install" --component On1xSDK
+cmake --install build/on1x --prefix "$PWD/build/on1x-install" --component On1xRT
 ```
 
 Consumers use `find_package(On1xSDK 2 CONFIG REQUIRED)`,
@@ -27,6 +28,8 @@ adapters.
 Point `CMAKE_PREFIX_PATH` at the install prefix. The archive is implemented in
 C++; a C-only consumer needs a compatible C++ linker/runtime. With CMake,
 enable both C and CXX in the consuming project.
+The runtime is separately discoverable with `find_package(On1xRT 1 CONFIG
+REQUIRED)` and links as `On1x::RT`; it does not need the compiler SDK.
 
 The data-only SDK utility is also available explicitly through the compiler:
 

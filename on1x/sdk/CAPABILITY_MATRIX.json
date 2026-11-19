@@ -1,153 +1,163 @@
 {
   "schema": "on1x.sdk.capability-matrix/1",
+  "sdk_version": "2.0.0",
   "sdk_abi_target": 2,
-  "repository_revision": "6a145cbf09efcac76f387f6b664fc2257bac93aa",
+  "worker_baseline_revision": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
   "libstone_revision": "3399047f6c6328b8f07788795c610699e66c060a",
   "statuses": ["EXECUTABLE", "PARTIAL", "UNSUPPORTED"],
+  "scope": "Statuses apply to the stated subset, not to the complete architecture. Verification and build-option evidence are recorded separately.",
   "facilities": [
     {
       "id": "core.abi-v1",
       "owner": 1,
       "status": "EXECUTABLE",
       "headers": ["On1xSDK-Types.h", "On1xSDK-Registry.h", "On1xSDK-Diagnostic.h"],
-      "subset": "C11 descriptors, bounded copied metadata, transactional callback rollback, synchronous diagnostics",
+      "subset": "Frozen ABI 1 layouts and status values 0–7; copied registry metadata, transaction rollback and synchronous source or verified-MIR hooks.",
       "blockers": []
     },
     {
       "id": "core.abi-v2-host",
       "owner": 1,
-      "status": "UNSUPPORTED",
-      "headers": ["On1xSDK-ABI.h", "On1xSDK-Host.h", "On1xSDK-Version.h", "On1xSDK-Status.h", "On1xSDK-Handle.h", "On1xSDK-Allocator.h", "On1xSDK-String.h", "On1xSDK-Span.h", "On1xSDK-Context.h", "On1xSDK-Lifecycle.h"],
-      "subset": "",
-      "blockers": ["versioned host table and v1 adapter not implemented"]
+      "status": "EXECUTABLE",
+      "headers": ["On1xSDK-ABI.h", "On1xSDK-Host.h", "On1xSDK-Version.h", "On1xSDK-Status.h", "On1xSDK-Allocator.h", "On1xSDK-Handle.h", "On1xSDK-Cancellation.h", "On1xSDK-Budget.h", "On1xSDK-Span.h"],
+      "subset": "Prefix negotiation, shared contracts, allocator domains, generation handles, bounded diagnostics and budgets, cancellation and monotonic deadlines.",
+      "blockers": []
     },
     {
       "id": "core.registry-catalogue",
       "owner": 1,
       "status": "PARTIAL",
-      "headers": ["On1xSDK-Registry.h", "On1xSDK-Extension.h", "On1xSDK-Event.h", "On1xSDK-Catalogue.h", "On1xSDK-Metadata.h", "On1xSDK-Configuration.h", "On1xSDK-Provenance.h", "On1xSDK-Serialization.h"],
-      "subset": "v1 append-only per-kind registry with rollback and deterministic insertion order",
-      "blockers": ["dependencies, snapshots, capability queries, lifecycle compensation, CDD adapter"]
+      "headers": ["On1xSDK-Registry.h", "On1xSDK-Extension.h", "On1xSDK-Catalogue.h", "On1xSDK-Capability.h"],
+      "subset": "Transactional ABI 2 dependency registration with capability intersection, reverse compensation, immutable views and bounded canonical MuLIB CDD planning.",
+      "blockers": ["Exact CDD planner profile is limited to 64 entries."]
     },
     {
       "id": "plugin.isolated-native-v1",
       "owner": 1,
       "status": "EXECUTABLE",
-      "headers": ["On1xSDK-Plugin.h", "On1xSDK-PluginHost.h", "On1xSDK-PluginWorker.h"],
-      "subset": "Linux x86-64 single-operation DSO worker for serialized MIR analyzer/backend hooks",
-      "blockers": ["not portable; no manifest/capability grant/data plane"]
+      "headers": ["On1xSDK-PluginHost.h", "On1xSDK-PluginWorker.h"],
+      "subset": "ABI 1 DSO callbacks for serialized verified MIR on the explicitly selected Linux x86-64 worker path; isolation setup is fail-closed.",
+      "blockers": ["Requires host isolation support and a compatible worker; no unsupported-platform fallback."]
     },
     {
       "id": "plugin.v2-management",
       "owner": 1,
-      "status": "UNSUPPORTED",
-      "headers": ["On1xSDK-PluginManifest.h", "On1xSDK-PluginDiscovery.h", "On1xSDK-PluginProtocol.h", "On1xSDK-Capability.h", "On1xSDK-Sandbox.h", "On1xSDK-Budget.h", "On1xSDK-Cancellation.h", "On1xSDK-PluginTrust.h", "On1xSDK-PluginSignature.h", "On1xSDK-PluginEvent.h", "On1xSDK-PluginDependency.h", "On1xSDK-SharedMemory.h", "On1xSDK-Transport.h"],
-      "subset": "",
-      "blockers": ["protocol 2, manifests, generation handles, grants, sealed data plane"]
+      "status": "PARTIAL",
+      "headers": ["On1xSDK-Plugin.h", "On1xSDK-PluginManifest.h", "On1xSDK-PluginDiscovery.h", "On1xSDK-PluginProtocol.h", "On1xSDK-PluginTrust.h", "On1xSDK-SharedMemory.h", "On1xSDK-Transport.h"],
+      "subset": "Inert manifest discovery, host trust and digest authorization, capability-scoped tables, bounded protocol 2 and a digest-checked data plane.",
+      "blockers": ["The CLI legacy hook path is not a general ABI 2 extension activation driver.", "The System V mapping transport does not provide kernel sealing.", "No WASM engine or cross-platform sandbox."]
     },
     {
       "id": "compiler.embedding",
       "owner": 2,
-      "status": "UNSUPPORTED",
-      "headers": ["On1xSDK-Compiler.h", "On1xSDK-Session.h", "On1xSDK-Options.h", "On1xSDK-Source.h", "On1xSDK-SourceMap.h", "On1xSDK-Dependency.h", "On1xSDK-Compilation.h", "On1xSDK-Incremental.h", "On1xSDK-Cache.h", "On1xSDK-Workspace.h", "On1xSDK-VFS.h"],
-      "subset": "",
-      "blockers": ["CLI-specific orchestration has not been extracted into a public session"]
+      "status": "EXECUTABLE",
+      "headers": ["On1xSDK-Compiler.h", "On1xSDK-Session.h", "On1xSDK-Source.h", "On1xSDK-VFS.h", "On1xSDK-Compilation.h", "On1xSDK-Cache.h", "On1xSDK-Incremental.h", "On1xSDK-Workspace.h"],
+      "subset": "Thread-confined canonical frontend sessions, immutable sources, normalized VFS/workspaces, dependency snapshots, incremental refresh and exact-revision cache keys.",
+      "blockers": ["Frontend object allocation is SDK-owned; custom compiler-session allocators are not supported."]
     },
     {
       "id": "frontend.services",
       "owner": 2,
       "status": "PARTIAL",
-      "headers": ["On1xSDK-Lexer.h", "On1xSDK-Token.h", "On1xSDK-Parser.h", "On1xSDK-Grammar.h", "On1xSDK-AST.h", "On1xSDK-ASTBuilder.h", "On1xSDK-ASTVisitor.h", "On1xSDK-Syntax.h", "On1xSDK-Attribute.h", "On1xSDK-Directive.h", "On1xSDK-Macro.h", "On1xSDK-Hygiene.h", "On1xSDK-PPX.h", "On1xSDK-Staging.h", "On1xSDK-Elaborator.h", "On1xSDK-Frontend.h"],
-      "subset": "canonical parser, macros, PPX-v1 and staging exist internally; SDK exposes only unverified source bytes",
-      "blockers": ["stable structured views/builders and PPX-v2 transport"]
+      "headers": ["On1xSDK-Frontend.h", "On1xSDK-Lexer.h", "On1xSDK-Parser.h", "On1xSDK-AST.h", "On1xSDK-ASTBuilder.h", "On1xSDK-ASTVisitor.h", "On1xSDK-Macro.h", "On1xSDK-Hygiene.h", "On1xSDK-PPX.h", "On1xSDK-Staging.h", "On1xSDK-Elaborator.h"],
+      "subset": "Canonical scanners, token/AST visitors, source maps, macro and hygiene data, PPX-v1 candidate readmission and revision-checked source edits.",
+      "blockers": ["The frontend API does not publish checked HIR or perform semantic staging lowering.", "No PPX-v2 transport."]
     },
     {
       "id": "types.semantics",
       "owner": 3,
-      "status": "UNSUPPORTED",
-      "headers": ["On1xSDK-Type.h", "On1xSDK-TypeBuilder.h", "On1xSDK-TypeScheme.h", "On1xSDK-Unification.h", "On1xSDK-Inference.h", "On1xSDK-Constraint.h", "On1xSDK-ConstraintSolver.h", "On1xSDK-Cliche.h", "On1xSDK-Nominal.h", "On1xSDK-Layout.h", "On1xSDK-Ownership.h", "On1xSDK-Borrow.h", "On1xSDK-Effect.h", "On1xSDK-Specialization.h", "On1xSDK-Semantics.h", "On1xSDK-Symbol.h", "On1xSDK-Scope.h", "On1xSDK-Resolution.h"],
-      "subset": "",
-      "blockers": ["canonical internal types lack public stable handles and candidate constraints"]
+      "status": "PARTIAL",
+      "headers": ["On1xSDK-Type.h", "On1xSDK-SemanticTypes.h", "On1xSDK-Semantics.h"],
+      "subset": "Immutable canonical type handles, child/label and kind queries, verification, equality and forall-instance tests. Typed CSP payloads and endpoint cardinalities use explicit wire mapping.",
+      "blockers": ["Legacy untyped endpoint wire values 33/34 reject explicitly.", "No general public inference, unification, layout, borrow or constraint solver."]
     },
     {
       "id": "ir.structured",
       "owner": 3,
       "status": "PARTIAL",
-      "headers": ["On1xSDK-HIR.h", "On1xSDK-HIRBuilder.h", "On1xSDK-HIRVisitor.h", "On1xSDK-HIRVerifier.h", "On1xSDK-MIR.h", "On1xSDK-MIRBuilder.h", "On1xSDK-MIRVisitor.h", "On1xSDK-MIRVerifier.h", "On1xSDK-IRFunction.h", "On1xSDK-IRBlock.h", "On1xSDK-IRInstruction.h", "On1xSDK-IRValue.h", "On1xSDK-IRUseDef.h", "On1xSDK-IRMetadata.h", "On1xSDK-IRRegion.h", "On1xSDK-IRSerialize.h", "On1xSDK-IRPrinter.h", "On1xSDK-IRParser.h", "On1xSDK-IRDialect.h", "On1xSDK-IRTransaction.h"],
-      "subset": "canonical scalar MIR serialization and private checked-HIR views exist; external SDK receives serialized MIR only",
-      "blockers": ["stable traversal, transactions, aggregate/effect/ownership MIR coverage"]
+      "headers": ["On1xSDK-HIR.h", "On1xSDK-MIR.h", "On1xSDK-IRSerialize.h", "On1xSDK-IRTransaction.h"],
+      "subset": "Revision-bound canonical checked-HIR views, scalar/numeric verified MIR and evaluator, candidate-only wire decode and rollback-capable MIR transactions.",
+      "blockers": ["Inspected wire HIR cannot be promoted.", "Host-only publication; no general aggregate, resource or effectful MIR coverage."]
     },
     {
       "id": "analysis.sdk",
       "owner": 4,
       "status": "PARTIAL",
-      "headers": ["On1xSDK-Analyzer.h", "On1xSDK-AnalysisManager.h", "On1xSDK-Query.h", "On1xSDK-CFG.h", "On1xSDK-DFG.h", "On1xSDK-PDG.h", "On1xSDK-CallGraph.h", "On1xSDK-Dominator.h", "On1xSDK-Loop.h", "On1xSDK-Liveness.h", "On1xSDK-Alias.h", "On1xSDK-PointsTo.h", "On1xSDK-Escape.h", "On1xSDK-Range.h", "On1xSDK-AbstractInterp.h", "On1xSDK-Dependence.h", "On1xSDK-EffectAnalysis.h", "On1xSDK-ResourceAnalysis.h", "On1xSDK-ConcurrencyAnalysis.h", "On1xSDK-Taint.h", "On1xSDK-Symbolic.h", "On1xSDK-Datalog.h", "On1xSDK-Proof.h"],
-      "subset": "v1 callbacks can inspect serialized MIR; several analyses exist internally or optionally in LibStone",
-      "blockers": ["revision-aware manager, structured IR adapters, cache invalidation"]
+      "headers": ["On1xSDK-AnalysisManager.h", "On1xSDK-CFG.h", "On1xSDK-Dominator.h", "On1xSDK-Liveness.h", "On1xSDK-Loop.h", "On1xSDK-EffectAnalysis.h"],
+      "subset": "Revision-bound canonical MIR v1–v3 CFG, dominators, loops, SSA liveness and effect analysis; bounded options and cache.",
+      "blockers": ["No general alias, points-to or symbolic analyses.", "Optional Novostone covers a narrow MIR-v1 subset; see verification for packaging scope."]
     },
     {
       "id": "transformation.sdk",
       "owner": 4,
       "status": "PARTIAL",
-      "headers": ["On1xSDK-Transformer.h", "On1xSDK-Pass.h", "On1xSDK-PassManager.h", "On1xSDK-Pipeline.h", "On1xSDK-Rewrite.h", "On1xSDK-Pattern.h", "On1xSDK-RewriteRule.h", "On1xSDK-EGraph.h", "On1xSDK-Canonicalize.h", "On1xSDK-Optimizer.h", "On1xSDK-Lowering.h", "On1xSDK-Legalizer.h", "On1xSDK-CostModel.h", "On1xSDK-TranslationValidation.h", "On1xSDK-PassInstrumentation.h"],
-      "subset": "source replacement and four internal verified scalar MIR passes",
-      "blockers": ["candidate IR transactions, general pass manager, pipeline DSL"]
+      "headers": ["On1xSDK-Pass.h", "On1xSDK-Pipeline.h", "On1xSDK-PassManager.h", "On1xSDK-TranslationValidation.h"],
+      "subset": "Bounded built-in pipeline DSL, instrumentation, rollback, declared preservation checks, candidate bytes and scalar invocation evidence.",
+      "blockers": ["Not a general equivalence proof, arbitrary rewrite engine or independent publication API."]
     },
     {
       "id": "backend.sdk",
       "owner": 5,
       "status": "PARTIAL",
-      "headers": ["On1xSDK-Backend.h", "On1xSDK-Target.h", "On1xSDK-TargetMachine.h", "On1xSDK-DataLayout.h", "On1xSDK-CallingConvention.h", "On1xSDK-ObjectABI.h", "On1xSDK-MachineIR.h", "On1xSDK-Instruction.h", "On1xSDK-InstructionSelect.h", "On1xSDK-InstructionSchedule.h", "On1xSDK-Register.h", "On1xSDK-RegAlloc.h", "On1xSDK-Assembler.h", "On1xSDK-ObjectWriter.h", "On1xSDK-Relocation.h", "On1xSDK-Linker.h", "On1xSDK-DebugInfo.h", "On1xSDK-Unwind.h", "On1xSDK-JIT.h", "On1xSDK-AOT.h", "On1xSDK-Artifact.h", "On1xSDK-Toolchain.h", "On1xSDK-ToolchainResolver.h", "On1xSDK-Disassembler.h"],
-      "subset": "five executable built-in adapters and opaque external MIR artifact callbacks",
-      "blockers": ["capability model, target/data-layout APIs, machine pipeline"]
+      "headers": ["On1xSDK-Backend.h", "On1xSDK-Target.h", "On1xSDK-Artifact.h", "On1xSDK-ToolchainResolver.h", "On1xSDK-MachineIR.h", "On1xSDK-AOT.h", "On1xSDK-JIT.h"],
+      "subset": "Five canonical built-in adapters, explicit capabilities and target matching, bounded staged artifacts with digest/reproducibility checks, and host-authorized inert toolchain resolution.",
+      "blockers": ["No verified direct machine-code pipeline, native JIT or general cross-target ABI.", "Toolchain resolution does not execute tools or search PATH."]
     },
     {
       "id": "ffi.contracts",
       "owner": 6,
       "status": "PARTIAL",
-      "headers": ["On1xSDK-FFI.h", "On1xSDK-CDecl.h", "On1xSDK-Exotract.h", "On1xSDK-ExoML.h", "On1xSDK-ExoLib.h", "On1xSDK-KernelBind.h", "On1xSDK-Contract.h", "On1xSDK-ContractCheck.h", "On1xSDK-ContractReview.h", "On1xSDK-Marshalling.h", "On1xSDK-ForeignType.h", "On1xSDK-ForeignResource.h", "On1xSDK-ForeignCallback.h", "On1xSDK-ForeignModule.h", "On1xSDK-BindingGenerator.h", "On1xSDK-KernelDiscovery.h"],
-      "subset": "external contract tools support reviewed restricted scalar/string profiles; SDK contract descriptor is metadata only",
-      "blockers": ["structured SDK models, aggregates/resources/callbacks, runtime marshalling"]
+      "headers": ["On1xSDK-FFI.h", "On1xSDK-CDecl.h", "On1xSDK-ContractReview.h", "On1xSDK-KernelBind.h", "On1xSDK-ForeignResource.h"],
+      "subset": "Structured CDecl/contract projections, checked one-TU CDD accessors and explicit host review/boundary evidence for scalar, immutable C-string and restricted opaque handle profiles.",
+      "blockers": ["No admission from ABI 1 metadata or extraction alone.", "General marshalling, retained foreign callbacks, dynamic loader and in-process binding generation are unsupported."]
     },
     {
       "id": "runtime.embedding",
       "owner": 6,
-      "status": "UNSUPPORTED",
-      "headers": ["On1xRT.h", "On1xRT-Engine.h", "On1xRT-Instance.h", "On1xRT-Module.h", "On1xRT-Function.h", "On1xRT-Value.h", "On1xRT-Closure.h", "On1xRT-String.h", "On1xRT-Buffer.h", "On1xRT-Array.h", "On1xRT-Handle.h", "On1xRT-Memory.h", "On1xRT-Allocator.h", "On1xRT-Error.h", "On1xRT-HostFunction.h", "On1xRT-Task.h", "On1xRT-Fiber.h", "On1xRT-Channel.h", "On1xRT-Scheduler.h", "On1xRT-Capability.h", "On1xRT-Sandbox.h", "On1xRT-Profiler.h", "On1xRT-Debugger.h", "On1xRT-Event.h"],
-      "subset": "",
-      "blockers": ["separate exported-module ABI and recoverable lifecycle API"]
+      "status": "PARTIAL",
+      "headers": ["On1xRT.h"],
+      "subset": "Independent On1xRT ABI 1 for explicitly host-authorized native AOT and statically registered modules, bounded lifecycle, scalar/string/buffer calls and synchronous host callbacks.",
+      "blockers": ["No dynamic loading, WASM, task/channel scheduler, debugger, profiler or sandbox enforcement. Native callbacks have process authority."]
     },
     {
       "id": "project.sdk",
       "owner": 7,
-      "status": "PARTIAL",
-      "headers": ["On1xSDK-Build.h", "On1xSDK-BuildGraph.h", "On1xSDK-BuildRule.h", "On1xSDK-Manifest.h", "On1xSDK-Package.h", "On1xSDK-PackageResolver.h", "On1xSDK-PackageLock.h", "On1xSDK-Module.h", "On1xSDK-ModuleLoader.h", "On1xSDK-ModuleResolver.h", "On1xSDK-Command.h", "On1xSDK-CLIOpt.h", "On1xSDK-Process.h", "On1xSDK-Project.h", "On1xSDK-Distribution.h", "On1xSDK-Reproducibility.h"],
-      "subset": "On1xfile/project/build scripts exist; SDK module and CLI option records are inert metadata",
-      "blockers": ["reusable C API, package lock/install policy, authorized execution"]
+      "status": "EXECUTABLE",
+      "headers": ["On1xSDK-Project.h", "On1xSDK-Manifest.h", "On1xSDK-BuildGraph.h", "On1xSDK-PackageResolver.h", "On1xSDK-Process.h", "On1xSDK-Reproducibility.h"],
+      "subset": "Declarative On1xfile subset, deterministic graph and digests, offline host-supplied resolution, and bounded process requests dispatched only by host callbacks.",
+      "blockers": ["No template or policy execution through the manifest API, network fetch or implicit process execution."]
     },
     {
       "id": "developer.tools",
       "owner": 7,
       "status": "PARTIAL",
-      "headers": ["On1xSDK-Formatter.h", "On1xSDK-Completion.h", "On1xSDK-Hover.h", "On1xSDK-Index.h", "On1xSDK-Reference.h", "On1xSDK-Refactor.h", "On1xSDK-CodeAction.h", "On1xSDK-Documentation.h", "On1xSDK-DiagnosticCatalog.h", "On1xSDK-FixIt.h", "On1xSDK-REPL.h", "On1xSDK-Debug.h", "On1xSDK-Coverage.h", "On1xSDK-Profile.h"],
-      "subset": "formatter and narrow process-based LSP diagnostics/formatting exist",
-      "blockers": ["session-backed semantic index and execution/instrumentation services"]
+      "headers": ["On1xSDK-Formatter.h", "On1xSDK-Command.h", "On1xSDK-CodeAction.h", "On1xSDK-DiagnosticCatalog.h"],
+      "subset": "Data-only on1x-sdk CLI including explicit on1xc dispatch, project formatting, authorized compiler formatting/catalogue calls and revision-bound LSP candidate actions.",
+      "blockers": ["No public semantic index and no SDK completion, rename, REPL, debugging or profiling service."]
     },
     {
       "id": "language.bindings",
       "owner": 7,
-      "status": "UNSUPPORTED",
+      "status": "PARTIAL",
       "headers": ["On1xSDK.hpp"],
-      "subset": "",
-      "blockers": ["stable ABI 2 must precede C++, D, Rust, Python, Lua/Mune, Crystal, Zig and OCaml wrappers"]
+      "subset": "C++17 RAII and CPython ctypes for the implemented project subset.",
+      "blockers": ["Python allocator uses POSIX posix_memalign; other language bindings are not shipped."]
     },
     {
       "id": "native.sdk",
       "owner": 8,
-      "status": "UNSUPPORTED",
+      "status": "PARTIAL",
       "headers": [],
-      "subset": "",
-      "blockers": ["reviewed native bindings and compiler plugin output profiles are absent"]
+      "subset": "On1x-authored value modules and reference analyzer emitted by canonical on1xc to C11, using an explicitly trusted static scalar bridge.",
+      "blockers": ["No general reviewed native host-table binding, dynamic worker/DSO loading, sandbox, cross-compiled host reference or structured compiler snapshot access."]
+    },
+    {
+      "id": "packaging.aggregate",
+      "owner": "integration",
+      "status": "EXECUTABLE",
+      "headers": ["On1xSDK.h", "On1xSDK.hpp", "On1xRT.h"],
+      "subset": "SDK 2.0.0 CMake package, independent C11/C++17 headers, project shared library, compiler support, provenance reports and separate runtime package.",
+      "blockers": []
     }
   ]
 }

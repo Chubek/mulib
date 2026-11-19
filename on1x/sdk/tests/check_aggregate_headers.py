@@ -36,15 +36,16 @@ def compile_header(
 
 
 def main() -> int:
-    if len(sys.argv) != 5:
+    if len(sys.argv) != 6:
         print(
-            "usage: check_aggregate_headers.py CC CXX INCLUDE_DIR WORK_DIR",
+            "usage: check_aggregate_headers.py CC CXX SDK_INCLUDE RT_INCLUDE WORK_DIR",
             file=sys.stderr,
         )
         return 2
     cc, cxx = sys.argv[1:3]
     include = Path(sys.argv[3]).resolve(strict=True)
-    work = Path(sys.argv[4]).resolve()
+    runtime_include = Path(sys.argv[4]).resolve(strict=True)
+    work = Path(sys.argv[5]).resolve()
     work.mkdir(parents=True, exist_ok=True)
     empty_c = work / "empty.c"
     empty_cpp = work / "empty.cpp"
@@ -68,14 +69,19 @@ def main() -> int:
             f"On1xSDK.h inventory mismatch; missing=[{missing}], extra=[{extra}]"
         )
 
-    for header in headers:
-        compile_header(cc, "c11", "c", include, empty_c, header)
-        compile_header(cxx, "c++17", "c++", include, empty_cpp, header)
+    runtime_headers = sorted(path.name for path in runtime_include.glob("*.h"))
+    if "On1xRT.h" not in runtime_headers:
+        raise RuntimeError("missing On1xRT.h")
+    for directory, inventory in ((include, headers), (runtime_include, runtime_headers)):
+        for header in inventory:
+            compile_header(cc, "c11", "c", directory, empty_c, header)
+            compile_header(cxx, "c++17", "c++", directory, empty_cpp, header)
     for header in sorted(path.name for path in include.glob("*.hpp")):
         compile_header(cxx, "c++17", "c++", include, empty_cpp, header)
 
     print(
-        f"{len(headers)} C headers passed independent C11/C++17 compilation; "
+        f"{len(headers)} SDK and {len(runtime_headers)} runtime C headers "
+        "passed independent C11/C++17 compilation; "
         "the aggregate umbrella includes the complete inventory"
     )
     return 0

@@ -321,10 +321,21 @@ class Index:
         if len(modules) > MAX_FILES:
             fail("INDEX_LIMIT", "Manifest module budget exceeded.")
         for name, item in modules.items():
+            if item.get("status") == "bounded":
+                valid_implementation = (
+                    item.get("implementation") == "static-inline"
+                    and "macro" not in item
+                    and re.fullmatch(r"manual/[a-z0-9][a-z0-9_+-]*\.md", item.get("manual", ""))
+                )
+            else:
+                valid_implementation = (
+                    item.get("status") in ("implemented", "reserved")
+                    and "implementation" not in item
+                    and item.get("manual") == "manual/mulib-" + name + ".md"
+                    and re.fullmatch(r"MULIB_IMPL_[A-Z0-9_]+", item.get("macro", ""))
+                )
             if (item.get("header") != "include/mulib-" + name + ".h"
-                    or item.get("manual") != "manual/mulib-" + name + ".md"
-                    or not re.fullmatch(r"MULIB_IMPL_[A-Z0-9_]+", item.get("macro", ""))
-                    or item.get("status") not in ("implemented", "reserved")):
+                    or not valid_implementation):
                 fail("INVALID_MANIFEST", "Noncanonical kernel fields.")
             deps = item.get("dependencies", "")
             if not re.fullmatch(r"\[(?:[a-z0-9_+-]+(?:, [a-z0-9_+-]+)*)?\]", deps):
@@ -335,10 +346,14 @@ class Index:
         for item in modules.values():
             if set(item["dependencies"]) - modules.keys():
                 fail("INVALID_MANIFEST", "Unknown dependency.")
+        bounded = sum(m["status"] == "bounded" for m in modules.values())
         for field, expected in (
                 ("module_count", len(modules)),
-                ("implemented_module_count", sum(m["status"] == "implemented" for m in modules.values()))):
+                ("implemented_module_count", sum(m["status"] == "implemented" for m in modules.values())),
+                ("bounded_module_count", bounded)):
             counts = re.findall(r"^" + field + r": ([0-9]+)$", text, re.M)
+            if field == "bounded_module_count" and not counts and not bounded:
+                continue
             if counts != [str(expected)]:
                 fail("INVALID_MANIFEST", "Manifest count mismatch.")
         return modules

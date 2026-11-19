@@ -159,7 +159,7 @@ def main() -> int:
     )
 
     malformed = work / "malformed-utf8.on1x"
-    malformed.write_bytes(b"fn main() -> i64 { return 0; }\\n\\xc0\\x80")
+    malformed.write_bytes(b"fn main() -> i64 { return 0; }\n\xc0\x80\n")
     process = subprocess.run(
         [on1xc, "--check", str(malformed)],
         stdout=subprocess.PIPE,
@@ -167,8 +167,8 @@ def main() -> int:
         check=False,
         timeout=120,
     )
-    if process.returncode == 0:
-        raise RuntimeError("malformed UTF-8 source was accepted")
+    if process.returncode != 1 or b"ON1X-LEX-TOKEN" not in process.stderr:
+        raise RuntimeError(f"expected rejection of the invalid token: {process.stderr!r}")
 
     validate_catalogues(root)
     print("native SDK source and manifest checks passed")

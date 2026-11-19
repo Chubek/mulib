@@ -11,6 +11,15 @@ fn main() -> i64
   }
   assert(SDK.basis_sdk_status_code(
     SDK.basis_sdk_status_from_v1(99u32)) == 1u32);
+  while code <= 19u32
+  {
+    assert(SDK.basis_sdk_status_code(SDK.basis_sdk_status_from_v1(code)) == 1u32);
+    assert(SDK.basis_sdk_status_code(SDK.basis_sdk_status_from_code(code)) == code);
+    assert(SDK.basis_sdk_status_normalize(code) == code);
+    code = code + 1u32;
+  }
+  assert(SDK.basis_sdk_status_code(SDK.basis_sdk_status_from_code(code)) == 1u32);
+  assert(SDK.basis_sdk_status_normalize(code) == 1u32);
   assert(SDK.basis_sdk_status_normalize(99u32) == 1u32);
 
   let result: SDK.SDKResult < u32 > =

@@ -773,20 +773,22 @@ if(ON1X_BUILD_EXTENSION_SDK)
   foreach(_on1x_sdk_subagent RANGE 1 8)
     include("${CMAKE_CURRENT_SOURCE_DIR}/sdk/cmake/Integration${_on1x_sdk_subagent}.cmake" OPTIONAL)
   endforeach()
-  if(BUILD_TESTING)
+  if(BUILD_TESTING AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang"
+      AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_test(NAME on1x.sdk.aggregate_headers
       COMMAND "${Python3_EXECUTABLE}" -B
         "${CMAKE_CURRENT_SOURCE_DIR}/sdk/tests/check_aggregate_headers.py"
         "${CMAKE_C_COMPILER}" "${CMAKE_CXX_COMPILER}"
         "${CMAKE_CURRENT_SOURCE_DIR}/sdk/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime-sdk/include"
         "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/sdk-aggregate-headers")
     set_tests_properties(on1x.sdk.aggregate_headers PROPERTIES TIMEOUT 300)
-    if(NOT CMAKE_CROSSCOMPILING)
-      add_test(NAME on1x.sdk.cli_dispatch
-        COMMAND "${Python3_EXECUTABLE}" -B
-          "${CMAKE_CURRENT_SOURCE_DIR}/sdk/tests/test_cli_dispatch.py"
-          "$<TARGET_FILE:on1xc>")
-      set_tests_properties(on1x.sdk.cli_dispatch PROPERTIES TIMEOUT 60)
-    endif()
+  endif()
+  if(BUILD_TESTING AND UNIX AND NOT CMAKE_CROSSCOMPILING)
+    add_test(NAME on1x.sdk.cli_dispatch
+      COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_CURRENT_SOURCE_DIR}/sdk/tests/test_cli_dispatch.py"
+        "$<TARGET_FILE:on1xc>")
+    set_tests_properties(on1x.sdk.cli_dispatch PROPERTIES TIMEOUT 60)
   endif()
 endif()

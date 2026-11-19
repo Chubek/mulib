@@ -1,9 +1,12 @@
 # On1x roadmap and implementation status
 
-The [extension SDK](../sdk/README.md) is an M7 tooling slice: analyzers and
-artifact emitters can receive verified MIR from `on1xc`. Linux x86-64
-supports isolated shared-library plugins as well as trusted linked providers.
-The SDK does not expose checked HIR or add a native backend.
+The [On1x SDK 2](../sdk/README.md) integrates compiler sessions, structured
+HIR/MIR inspection, bounded analysis and pass pipelines, staged backends,
+project tooling and an independently versioned runtime embedding ABI. The
+legacy `on1xc` hook dispatch still takes verified MIR only; neither a plugin nor
+a wire decoder can publish checked HIR/MIR. See the [SDK capability
+matrix](../sdk/CAPABILITY_MATRIX.json) for the admitted subsets. No direct
+machine-code backend is added.
 
 ## Current feature matrix
 

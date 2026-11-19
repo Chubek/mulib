@@ -44,6 +44,10 @@ The machine-readable detail is in
 5. On1x-native bindings and extensions.
 6. Cross-subsystem, sanitizer, security, installation and relocation validation.
 
-Aggregate CMake files and `on1xc` option dispatch are integrated by the principal
-agent after subsystem commits. Per-agent optional CMake hooks avoid concurrent
-edits to those files.
+All eight worker slices are integrated. Their commit IDs and reports are
+indexed in the machine-readable inventory. The aggregate keeps the canonical
+compiler and scanner as CMake implementation dependencies, rather than
+reimplementing them or exposing compiler C++ layouts through the C API.
+`on1xc sdk` dispatches the existing data-only tool; the legacy compiler hooks
+remain separate and explicit. See [verification](VERIFICATION.md) for tested
+profiles and the [capability matrix](CAPABILITY_MATRIX.json) for exclusions.

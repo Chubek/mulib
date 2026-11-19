@@ -202,13 +202,24 @@ def module_info(root, name, manifest=None):
     if not match:
         reject('module missing from MANIFEST: ' + name)
     fields = {}
-    for key in ['header', 'manual', 'macro']:
+    for key in ['header', 'manual']:
         field = re.search(r'^  '+key+r': ([A-Za-z0-9_./+-]+)$', match[1], re.M)
         if not field:
             reject('unsupported MANIFEST field: ' + key)
         fields[key] = field[1]
+    macro = re.findall(r'^  macro:([^\n]*)$', match[1], re.M)
+    implementation = re.findall(r'^  implementation:([^\n]*)$', match[1], re.M)
+    if len(macro) == 1 and not implementation and re.fullmatch(r' MULIB_IMPL_[A-Z0-9_]+', macro[0]):
+        fields['macro'] = macro[0][1:]
+    elif not macro and implementation == [' static-inline']:
+        fields['macro'] = None
+        fields['implementation'] = 'static-inline'
+    else:
+        reject('unsupported MANIFEST implementation: ' + name)
     fields['manifest_dependencies'] = manifest_list(match[1], 'dependencies', r'[a-z0-9][a-z0-9_+-]*')
     fields['extra_macros'] = manifest_list(match[1], 'extra_macros', r'MULIB_IMPL_[A-Z0-9_]+', optional=True)
+    if fields['macro'] is None and fields['extra_macros']:
+        reject('static-inline module declares implementation switches: ' + name)
     return fields
 
 
@@ -234,8 +245,6 @@ def manifest_inventory(root):
             reject('noncanonical module header: '+name)
         local(root, item['header'])
         local(root, item['manual'])
-        if not re.fullmatch(r'MULIB_IMPL_[A-Z0-9_]+', item['macro']):
-            reject('invalid implementation macro: '+name)
         modules[name] = item
     for name, item in modules.items():
         if set(item['manifest_dependencies']) - modules.keys():
@@ -263,7 +272,7 @@ def inventory(root):
         if name not in modules or bundle['headers'] != [Path(modules[name]['header']).name]:
             non_kernel.append(relative)
             continue
-        if name in sidecars or discovery_only_reason(name, exo):
+        if name in sidecars or module_discovery_only_reason(name, modules[name], exo):
             reject('conflicting kernel sidecar registration: '+name)
         sidecars[name] = relative
         source_matches[name] = bundle['bundle_provenance']['revision'] == 'sha256:'+digest(local(root, modules[name]['header']))
@@ -275,13 +284,19 @@ def inventory(root):
             reject('missing/mismatched sandbox sidecar registration: '+name)
     coverage = {}
     for name in modules:
-        reason = discovery_only_reason(name, exo)
+        reason = module_discovery_only_reason(name, modules[name], exo)
         coverage[name] = dict(semantic_sidecar=sidecars.get(name), sidecar_header_matches=source_matches.get(name),
                               snapshot_profile=name in core,
                               archive_recipe=None if reason else exo['profiles'].get(name, {}).get('recipe', exo['default_recipe']),
                               discovery_only_reason=reason)
     return dict(modules=modules, auxiliary_headers=sorted(headers - known), coverage=coverage,
                 non_kernel_sidecars=non_kernel, safe_export=False)
+
+
+def module_discovery_only_reason(name, module, exo):
+    if module['macro'] is None:
+        return 'static-inline header has no supported external archive ABI'
+    return discovery_only_reason(name, exo)
 
 
 def plan(root, data, libraries):
@@ -291,6 +306,8 @@ def plan(root, data, libraries):
             if module not in modules:
                 modules.append(module)
     entries = [dict(name=name, **module_info(root, name)) for name in modules]
+    if any(m['macro'] is None for m in entries):
+        reject('static-inline headers are unsupported in contract archives')
     macros = [m['macro'] for m in entries]
     active = {macro for name in libraries for macro in data['profiles'][name].get('active_optional_macros', [])}
     for name in libraries:

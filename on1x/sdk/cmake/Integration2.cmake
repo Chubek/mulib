@@ -53,6 +53,17 @@ if(BUILD_TESTING)
     add_test(NAME on1x.sdk.frontend_scanner_parity
         COMMAND on1x_sdk_test_scanner_parity)
 
+    # These tests use assert for both API calls and verification. Keep their
+    # assertions active in Release without changing the library's build mode.
+    foreach(_frontend_test IN ITEMS on1x_sdk_test_frontend
+            on1x_sdk_test_frontend_c on1x_sdk_test_scanner_parity)
+        if(MSVC)
+            target_compile_options(${_frontend_test} PRIVATE /UNDEBUG)
+        else()
+            target_compile_options(${_frontend_test} PRIVATE -UNDEBUG)
+        endif()
+    endforeach()
+
     add_executable(on1x_sdk_frontend_embed_example
         "${CMAKE_CURRENT_LIST_DIR}/../examples/frontend/embed.c")
     target_link_libraries(on1x_sdk_frontend_embed_example PRIVATE On1x::SDK)

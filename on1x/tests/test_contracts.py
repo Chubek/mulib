@@ -27,7 +27,7 @@ assert p.returncode == 0, p.stderr
 assert inventory == dict(json.loads(p.stdout), schema='on1x.contract-inventory/v1')
 modules, coverage = inventory['modules'], inventory['coverage']
 auxiliary = set(inventory['auxiliary_headers'])
-assert auxiliary == {'include/mulib-'+n+'.h' for n in ['container-core', 'lprowse', 'qvm']}
+assert {'include/mulib-'+n+'.h' for n in ['container-core', 'lprowse', 'qvm']} <= auxiliary
 registered = {m['header'] for m in modules.values()}
 assert not registered & auxiliary
 assert registered | auxiliary == {p.relative_to(root).as_posix() for p in (root/'include').glob('mulib-*.h')}
@@ -42,6 +42,22 @@ assert coverage['elvi-scrape']['archive_recipe'] == 'exoml-core'
 assert coverage['ipc-framed']['semantic_sidecar'] == 'sandbox/ipc-framed.exocontract.json'
 assert coverage['b+tree']['semantic_sidecar'] is None
 assert inventory['non_kernel_sidecars'] == ['prettyprint.exocontract.json']
+
+if 'glx-core' in modules:
+    assert modules['glx-core']['implementation'] == 'static-inline'
+    assert modules['glx-core']['macro'] is None
+    assert coverage['glx-core']['archive_recipe'] is None
+    assert coverage['glx-core']['discovery_only_reason']
+    p = run([sys.executable, exo, '--root', root, 'plan', 'glx-core'])
+    assert p.returncode == 0, p.stderr
+    inline_plan = json.loads(p.stdout)
+    assert 'glx-core' in inline_plan['discovery_only']
+    assert not inline_plan['implementation_macros'] and not inline_plan['safe_export']
+    with tempfile.TemporaryDirectory(prefix='contract-inline-', dir=t.work) as tmp:
+        output = Path(tmp)/'no-archive'
+        p = run([sys.executable, exo, '--root', root, 'build', 'glx-core',
+                 '--output', output, '--exotract', Path(tmp)/'unused'])
+        assert p.returncode != 0 and 'discovery-only MuLIB kernel' in p.stderr and not output.exists(), p
 
 cdd = {'cdd-'+n for n in ['catalogue', 'registry', 'schema', 'query', 'plan', 'resolve', 'execute', 'diff']}
 assert cdd <= modules.keys()

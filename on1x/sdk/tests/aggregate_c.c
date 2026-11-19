@@ -31,8 +31,10 @@ int main(void)
             &selected) != ON1X_SDK_OK ||
         selected != ON1X_SDK_ABI_VERSION_V2)
         return 2;
+    if (!on1x_sdk_analysis_manager_storage_size())
+        return 3;
     return on1x_sdk_status_is_v1(ON1X_SDK_BUSY) &&
                    on1x_sdk_status_is_known(ON1X_SDK_UNSATISFIABLE)
                ? 0
-               : 3;
+               : 4;
 }

@@ -18,18 +18,29 @@ def main():
         work = pathlib.Path(directory)
         install = work / "original"
         relocated = work / "moved"
-        run(cmake, "--install", build, *build_config,
-            "--prefix", str(install), "--component", "On1xSDK")
+        for component in ("On1xSDK", "On1xRT"):
+            run(cmake, "--install", build, *build_config,
+                "--prefix", str(install), "--component", component)
         install.rename(relocated)
         consumer = work / "consumer"
         consumer.mkdir()
         tests = pathlib.Path(__file__).parent
         shutil.copyfile(tests / "aggregate_c.c", consumer / "main.c")
         shutil.copyfile(tests / "aggregate_cpp.cpp", consumer / "main.cpp")
+        shutil.copyfile(tests / "c_abi.c", consumer / "legacy.c")
+        runtime = tests.parent.parent / "runtime-sdk" / "tests"
+        for fixture in ("lifecycle.c", "fixture_module.c", "fixture_module.h"):
+            shutil.copyfile(runtime / fixture, consumer / fixture)
         (consumer / "CMakeLists.txt").write_text(
             """cmake_minimum_required(VERSION 3.20)
 project(SDKConsumer LANGUAGES C CXX)
 enable_testing()
+find_package(On1xSDK 1 CONFIG REQUIRED)
+add_executable(consumer_legacy legacy.c)
+set_target_properties(consumer_legacy PROPERTIES
+  C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+target_link_libraries(consumer_legacy PRIVATE On1x::SDK)
+add_test(NAME consumer_legacy COMMAND consumer_legacy)
 find_package(On1xSDK 2 CONFIG REQUIRED)
 if(NOT On1xSDK_VERSION VERSION_EQUAL "2.0.0" OR
    NOT On1xSDK_ABI_VERSION EQUAL 2 OR
@@ -52,6 +63,12 @@ set_target_properties(consumer_cpp PROPERTIES
   CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 target_link_libraries(consumer_cpp PRIVATE On1x::Project)
 add_test(NAME consumer_cpp COMMAND consumer_cpp)
+find_package(On1xRT 1 CONFIG REQUIRED)
+add_executable(consumer_rt lifecycle.c fixture_module.c)
+set_target_properties(consumer_rt PROPERTIES
+  C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+target_link_libraries(consumer_rt PRIVATE On1x::RT)
+add_test(NAME consumer_rt COMMAND consumer_rt)
 """, encoding="utf-8")
         output = work / "consumer-build"
         run(cmake, "-S", str(consumer), "-B", str(output),

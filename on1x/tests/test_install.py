@@ -1,4 +1,5 @@
 """A relocated installed compiler finds its own libraries without checkout paths."""
+import json
 import os
 import sys
 import tempfile
@@ -17,6 +18,13 @@ with tempfile.TemporaryDirectory(dir=t.work,prefix='install-') as temporary:
         'ON1X_STDLIB','ON1X_PATH','ON1X_PPX_SCHEMA','ON1X_LIB_PATH','ON1X_STDLIB_PATH',
         'ON1X_PPX_PATH','ON1X_STDPPX_PATH','ON1X_MULIB_PATH','ON1X_MULIB_ROOT')}
     assert (library/'stdlib/On1xfile').is_file()
+    sdk_tool=relocated/'bin/on1x-sdk'
+    if sdk_tool.is_file() and os.name=='posix':
+        direct=run([sdk_tool,'info'],cwd=base,env=env)
+        via_driver=run([compiler,'sdk','info'],cwd=base,env=env)
+        assert direct.returncode==via_driver.returncode==0,(direct,via_driver)
+        assert via_driver.stdout==direct.stdout,via_driver
+        assert json.loads(via_driver.stdout)['sdk_version']=='2.0.0'
     # Formatting is linked into on1xc and uses the file-local configuration
     # after relocation; no checkout cwd or on-demand build tool is needed.
     fmt_dir=base/'format'

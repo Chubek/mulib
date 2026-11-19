@@ -56,7 +56,9 @@ ABI 2 preserves ABI-v1 values `0..7`:
 ABI 2 appends distinct values for cancellation, deadline expiry, stale or
 conflicting revisions, not-found objects, invalid lifecycle state, verification
 failure, denied capability, and I/O failure. Limit exhaustion is not a timeout,
-and neither implies semantic rejection.
+and neither implies semantic rejection. Protocol error, callback failure and
+unsatisfiability are distinct values 17–19. The exact enumeration is in
+[`On1xSDK-Types.h`](include/On1xSDK-Types.h).
 
 ## Handles
 

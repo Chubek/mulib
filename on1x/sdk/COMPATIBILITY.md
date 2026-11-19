@@ -23,7 +23,9 @@ trusted linked provider or through the existing compatible isolated profile.
 
 Existing v1 headers and include paths remain installable. New declarations are
 additive or provided through new headers. `On1xSDK.h` remains an umbrella, while
-each public header must compile independently as C11 and C++20.
+each C header must compile independently as C11 and C++17. The SDK 2 package
+still satisfies `find_package(On1xSDK 1 CONFIG REQUIRED)` for existing
+consumers of 1.0.0, but is not an exact 1.0.0 match.
 
 ## Binary compatibility
 

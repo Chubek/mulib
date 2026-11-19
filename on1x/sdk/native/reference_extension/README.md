@@ -45,10 +45,8 @@ calls its scalar entry through `module_adapter.c`.
 
 ## ABI 2 migration
 
-When the public ABI 2 host table is available, replace `_Trusted.on1x` and this
-bridge with reviewed generated bindings for allocator, handle, diagnostic,
-budget, cancellation and candidate operations. The required signatures and
-cross-owner requests are recorded in
-`sdk/catalogue/agent-reports/subagent-8.json`. Until then, DSO/worker loading,
-arbitrary extension registration and structured compiler snapshots reject as
-unsupported.
+The host-facing bridge reuses the shared ABI 2 status, handle, prefix and source
+span contracts. `_Trusted.on1x` is still a private scalar interface, not a
+reviewed binding to the public host table. DSO/worker loading, arbitrary
+extension registration and structured compiler snapshots remain unsupported
+for this reference profile.

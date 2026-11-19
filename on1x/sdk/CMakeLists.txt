@@ -29,9 +29,11 @@ configure_package_config_file(cmake/On1xSDKConfig.cmake.in
     "${CMAKE_CURRENT_BINARY_DIR}/On1xSDKConfig.cmake"
     INSTALL_DESTINATION "${_sdk_package_dir}"
 )
-write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/On1xSDKConfigVersion.cmake"
+write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/On1xSDKVersion2.cmake"
     VERSION "${ON1X_SDK_PACKAGE_VERSION}" COMPATIBILITY SameMajorVersion
 )
+configure_file(cmake/On1xSDKConfigVersion.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/On1xSDKConfigVersion.cmake" COPYONLY)
 
 install(
     DIRECTORY include/
@@ -61,6 +63,11 @@ install(
     DESTINATION "${CMAKE_INSTALL_DATADIR}/on1x-sdk"
     COMPONENT On1xSDK
 )
+install(
+    DIRECTORY docs/
+    DESTINATION "${CMAKE_INSTALL_DOCDIR}/sdk"
+    COMPONENT On1xSDK
+)
 
 install(
     TARGETS on1x_sdk
@@ -76,6 +83,7 @@ install(
 )
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/On1xSDKConfig.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/On1xSDKConfigVersion.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/On1xSDKVersion2.cmake"
     DESTINATION "${_sdk_package_dir}" COMPONENT On1xSDK
 )
 

@@ -2,11 +2,7 @@
 target_sources(on1x_frontend PRIVATE
   "${CMAKE_CURRENT_LIST_DIR}/../../src/analyzer/mir_analysis.cpp"
 )
-# In-tree SDK consumers get the canonical MIR implementation transitively.
-# Installed aggregate packaging is principal-owned and is recorded in report 4.
-target_link_libraries(on1x_sdk PRIVATE
-  "$<BUILD_INTERFACE:on1x_frontend>"
-)
+# Integration2 supplies the canonical compiler archive to all SDK consumers.
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   set_source_files_properties(
     "${CMAKE_CURRENT_LIST_DIR}/../../src/analyzer/mir_analysis.cpp"
@@ -14,12 +10,30 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   )
 endif()
 
+set(_on1x_sdk_analysis_dependencies "")
 if(TARGET on1x_novostone)
   target_sources(on1x_sdk PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/../src/analysis/NovostoneAdapter.cpp")
   target_compile_definitions(on1x_sdk PRIVATE ON1X_SDK_WITH_NOVOSTONE=1)
-  target_link_libraries(on1x_sdk PRIVATE
-    "$<BUILD_INTERFACE:on1x_novostone>")
+  target_link_libraries(on1x_sdk PRIVATE on1x_novostone)
+  set_target_properties(on1x_novostone PROPERTIES EXPORT_NAME RelationalSupport)
+  install(TARGETS on1x_novostone EXPORT On1xSDKTargets
+    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT On1xSDK)
+
+  get_target_property(_on1x_novo_imported Novostone::Datalog IMPORTED)
+  if(_on1x_novo_imported)
+    string(APPEND _on1x_sdk_analysis_dependencies
+      "include(CMakeFindDependencyMacro)\nfind_dependency(Novostone CONFIG)\n")
+  else()
+    # Export the exact linked closure from the pinned source checkout, not all
+    # unrelated Novostone components. These are private implementation targets.
+    string(APPEND _on1x_sdk_analysis_dependencies
+      "include(CMakeFindDependencyMacro)\nfind_dependency(Threads)\n")
+    install(TARGETS novostone_Datalog novostone_CCDB EXPORT On1xSDKTargets
+      ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT On1xSDK
+      LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT On1xSDK
+      RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT On1xSDK)
+  endif()
   if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_source_files_properties(
       "${CMAKE_CURRENT_LIST_DIR}/../src/analysis/NovostoneAdapter.cpp"
@@ -27,6 +41,10 @@ if(TARGET on1x_novostone)
     )
   endif()
 endif()
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/On1xSDKDependencies.cmake"
+  "${_on1x_sdk_analysis_dependencies}")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/On1xSDKDependencies.cmake"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/On1xSDK" COMPONENT On1xSDK)
 
 if(BUILD_TESTING)
   add_executable(on1x_sdk_test_analysis_passes

@@ -166,7 +166,7 @@ def plan(root, libraries, fixtures=(), paths=(), *, discovery=False):
             for dep in config['fixtures'][name].get('requires', []):visit(dep)
         if previous==(len(ordered), len(selected)):break
     discovery_only = {name: reason for name in ordered
-                      if (reason := contracts.discovery_only_reason(name, profiles))}
+                      if (reason := contracts.module_discovery_only_reason(name, modules[name], profiles))}
     if discovery_only and not discovery:
         name = next(iter(discovery_only))
         raise ValueError('discovery-only MuLIB kernel '+name+': '+discovery_only[name])
@@ -184,7 +184,7 @@ def plan(root, libraries, fixtures=(), paths=(), *, discovery=False):
         entries.append(dict(name=n, **item, header_path=str(header), header_sha256=digest,
                             manual_sha256=contracts.digest(local(root,item['manual']))))
         inputs[str(header)]=digest
-    macros = [m['macro'] for m in entries]
+    macros = [m['macro'] for m in entries if m['macro'] is not None]
     if len(macros)!=len(set(macros)):raise ValueError('duplicate kernel implementation switch')
     groups, files, sources, headers, checks = [], {}, [], [], set()
     for name in sorted(selected):

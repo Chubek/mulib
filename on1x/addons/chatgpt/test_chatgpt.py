@@ -402,6 +402,11 @@ class RepositorySmoke(unittest.TestCase):
         cdd = index.inspect_kernel("cdd-catalogue")
         self.assertEqual(cdd["on1x_admission"]["status"], "NOT_ESTABLISHED")
         self.assertEqual(cdd["contract"]["status"], "ABSENT_IN_INDEX")
+        if "glx-core" in index.modules:
+            inline = index.inspect_kernel("glx-core")
+            self.assertEqual(inline["implementation"]["claim"], "bounded")
+            self.assertFalse(inline["implementation"]["execution_verified_by_service"])
+            self.assertEqual(inline["on1x_admission"]["status"], "NOT_ESTABLISHED")
         for name in ("clamp", "json", "mune", "cdd-catalogue"):
             response = server.dispatch(index, {
                 "jsonrpc": "2.0", "id": 1, "method": "tools/call",

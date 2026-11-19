@@ -1,0 +1,9 @@
+include("${CMAKE_CURRENT_LIST_DIR}/On1xSDKVersion2.cmake")
+
+# The old 1.0.0 package's target and ABI are still present. Do not treat SDK
+# 2 as an exact match for SDK 1 or override architecture/range checks.
+if(NOT PACKAGE_VERSION_UNSUITABLE AND NOT PACKAGE_FIND_VERSION_RANGE
+   AND PACKAGE_FIND_VERSION_MAJOR EQUAL 1
+   AND PACKAGE_FIND_VERSION VERSION_LESS_EQUAL "1.0.0")
+    set(PACKAGE_VERSION_COMPATIBLE TRUE)
+endif()
