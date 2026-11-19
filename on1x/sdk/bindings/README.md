@@ -18,7 +18,7 @@ or use a `with` block; borrowed properties must not outlive that owner.
 After installation, C and C++ consumers use:
 
 ```cmake
-find_package(On1xSDK 1 CONFIG REQUIRED)
+find_package(On1xSDK 2 CONFIG REQUIRED)
 target_link_libraries(my_project_tool PRIVATE On1x::Project)
 ```
 

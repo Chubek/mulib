@@ -1,8 +1,11 @@
-# On1x extension SDK (ABI 1)
+# On1x SDK 2
 
-The SDK is a C11-compatible API for trusted C or C++ build-time tools. It
-provides a registry, callback hooks, diagnostics, and extension metadata. It
-is not the runtime API for generated On1x programs.
+SDK 2 is the C11 boundary around the canonical On1x compiler, immutable
+frontend/semantic/IR views, analyses, transformations, backends, reviewed
+foreign admission, projects, and developer tooling. It preserves the original
+ABI-v1 extension profile as a distinct compatibility surface. The independently
+versioned `On1xRT` package is the runtime embedding API for generated native
+modules.
 
 ## Build and install
 
@@ -10,15 +13,30 @@ is not the runtime API for generated On1x programs.
 
 ```sh
 cmake -S on1x -B build/on1x -DBUILD_TESTING=ON
-cmake --build build/on1x --target on1x_sdk
+cmake --build build/on1x --target on1x_sdk on1x_sdk_project on1x_rt_sdk
 cmake --install build/on1x --prefix "$PWD/build/on1x-install" --component On1xSDK
 ```
 
-Consumers use `find_package(On1xSDK 1 CONFIG REQUIRED)`,
+Consumers use `find_package(On1xSDK 2 CONFIG REQUIRED)`,
 `target_link_libraries(my_tool PRIVATE On1x::SDK)`, and `#include <On1xSDK.h>`.
+`On1x::Project` adds the shared project/tooling service, while
+`On1x::SDKSemanticsIR` makes the canonical compiler-support dependency explicit.
+Every C header is independently C11/C++17 compatible; `On1xSDK.h` includes the
+complete C surface and `On1xSDK.hpp` supplies the covered C++17 project RAII
+adapters.
 Point `CMAKE_PREFIX_PATH` at the install prefix. The archive is implemented in
 C++; a C-only consumer needs a compatible C++ linker/runtime. With CMake,
 enable both C and CXX in the consuming project.
+
+The data-only SDK utility is also available explicitly through the compiler:
+
+```sh
+on1xc sdk info
+on1xc sdk validate catalogue /path/to/CAPABILITY_MATRIX.json
+```
+
+This dispatch occurs only for the `sdk` subcommand and never loads extension
+code or grants capabilities.
 
 ## Using the SDK in `on1xc`
 
@@ -94,8 +112,10 @@ Run only code you trust in those modes.
 
 ## Scope and lifetime
 
-- The headers are the API contract. Initialize each versioned descriptor with
-  `ON1X_SDK_ABI_VERSION` and `sizeof(descriptor)`. Check every returned status.
+- The headers are the API contract. Initialize ABI-2 descriptors with
+  `ON1X_SDK_ABI_VERSION_V2` and `sizeof(descriptor)`. The frozen
+  `ON1X_SDK_ABI_VERSION` value remains `1` only for the exact legacy layouts.
+  Check every returned status.
 - Hosts own registries and program/artifact handles; release them through the
   matching SDK function. Descriptor data copied by the registry is independent
   of the caller's strings; userdata and callback code remain caller-owned.

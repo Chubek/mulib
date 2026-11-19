@@ -382,6 +382,7 @@ def main(argv=None):
         if args.command == "info":
             result = {
                 "schema": "on1x.sdk.info/1",
+                "sdk_version": "2.0.0",
                 "extension_abi": 2,
                 "project_abi": 2,
                 "v1_status_values": list(range(8)),

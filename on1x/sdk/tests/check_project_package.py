@@ -60,7 +60,7 @@ int main() {
 cmake_minimum_required(VERSION 3.20)
 project(ProjectSDKConsumer LANGUAGES CXX)
 enable_testing()
-find_package(On1xSDK 1 CONFIG REQUIRED)
+find_package(On1xSDK 2 CONFIG REQUIRED)
 if(NOT On1xSDK_PROJECT_ABI_VERSION EQUAL 2)
   message(FATAL_ERROR "project ABI metadata is missing")
 endif()

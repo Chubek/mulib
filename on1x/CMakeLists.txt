@@ -162,7 +162,9 @@ if(ON1X_BUILD_EXTENSION_SDK)
   target_sources(on1xc PRIVATE sdk/src/Driver.cpp)
   target_include_directories(on1xc PRIVATE sdk/src)
   target_link_libraries(on1xc PRIVATE On1x::SDK on1x_builtin_backends)
-  target_compile_definitions(on1xc PRIVATE ON1X_WITH_EXTENSION_SDK=1)
+  target_compile_definitions(on1xc PRIVATE
+    ON1X_WITH_EXTENSION_SDK=1
+    ON1X_DRIVER_SOURCE_SDK_TOOL="${CMAKE_CURRENT_SOURCE_DIR}/sdk/tools/on1x-sdk")
   if(ON1X_BUILD_DYNAMIC_SDK_PLUGINS AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND
       CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_library(on1x_plugin_kernels STATIC sdk/src/PluginKernels.c)
@@ -771,4 +773,20 @@ if(ON1X_BUILD_EXTENSION_SDK)
   foreach(_on1x_sdk_subagent RANGE 1 8)
     include("${CMAKE_CURRENT_SOURCE_DIR}/sdk/cmake/Integration${_on1x_sdk_subagent}.cmake" OPTIONAL)
   endforeach()
+  if(BUILD_TESTING)
+    add_test(NAME on1x.sdk.aggregate_headers
+      COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_CURRENT_SOURCE_DIR}/sdk/tests/check_aggregate_headers.py"
+        "${CMAKE_C_COMPILER}" "${CMAKE_CXX_COMPILER}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/sdk/include"
+        "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/sdk-aggregate-headers")
+    set_tests_properties(on1x.sdk.aggregate_headers PROPERTIES TIMEOUT 300)
+    if(NOT CMAKE_CROSSCOMPILING)
+      add_test(NAME on1x.sdk.cli_dispatch
+        COMMAND "${Python3_EXECUTABLE}" -B
+          "${CMAKE_CURRENT_SOURCE_DIR}/sdk/tests/test_cli_dispatch.py"
+          "$<TARGET_FILE:on1xc>")
+      set_tests_properties(on1x.sdk.cli_dispatch PROPERTIES TIMEOUT 60)
+    endif()
+  endif()
 endif()

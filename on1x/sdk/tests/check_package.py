@@ -23,16 +23,35 @@ def main():
         install.rename(relocated)
         consumer = work / "consumer"
         consumer.mkdir()
-        shutil.copyfile(pathlib.Path(__file__).with_name("c_abi.c"), consumer / "main.c")
+        tests = pathlib.Path(__file__).parent
+        shutil.copyfile(tests / "aggregate_c.c", consumer / "main.c")
+        shutil.copyfile(tests / "aggregate_cpp.cpp", consumer / "main.cpp")
         (consumer / "CMakeLists.txt").write_text(
             """cmake_minimum_required(VERSION 3.20)
 project(SDKConsumer LANGUAGES C CXX)
 enable_testing()
-find_package(On1xSDK 1 CONFIG REQUIRED)
-add_executable(consumer main.c)
-set_target_properties(consumer PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
-target_link_libraries(consumer PRIVATE On1x::SDK)
-add_test(NAME consumer COMMAND consumer)
+find_package(On1xSDK 2 CONFIG REQUIRED)
+if(NOT On1xSDK_VERSION VERSION_EQUAL "2.0.0" OR
+   NOT On1xSDK_ABI_VERSION EQUAL 2 OR
+   NOT On1xSDK_ABI_V1_COMPATIBLE)
+  message(FATAL_ERROR "unexpected SDK package metadata")
+endif()
+foreach(target IN ITEMS
+    On1x::SDK On1x::SDKSemanticsIR On1x::CompilerSupport On1x::Project)
+  if(NOT TARGET ${target})
+    message(FATAL_ERROR "missing installed target ${target}")
+  endif()
+endforeach()
+add_executable(consumer_c main.c)
+set_target_properties(consumer_c PROPERTIES
+  C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+target_link_libraries(consumer_c PRIVATE On1x::SDKSemanticsIR)
+add_test(NAME consumer_c COMMAND consumer_c)
+add_executable(consumer_cpp main.cpp)
+set_target_properties(consumer_cpp PROPERTIES
+  CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+target_link_libraries(consumer_cpp PRIVATE On1x::Project)
+add_test(NAME consumer_cpp COMMAND consumer_cpp)
 """, encoding="utf-8")
         output = work / "consumer-build"
         run(cmake, "-S", str(consumer), "-B", str(output),

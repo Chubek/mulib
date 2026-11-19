@@ -12,6 +12,11 @@ endif()
 # implementation dependencies, not additional public C++ header surfaces.
 set_property(TARGET on1x_frontend PROPERTY INTERFACE_INCLUDE_DIRECTORIES
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
+set_target_properties(on1x_frontend PROPERTIES EXPORT_NAME CompilerSupport)
+set_target_properties(on1x_scanner PROPERTIES EXPORT_NAME ScannerSupport)
+if(NOT TARGET On1x::CompilerSupport)
+    add_library(On1x::CompilerSupport ALIAS on1x_frontend)
+endif()
 install(TARGETS on1x_frontend on1x_scanner
     EXPORT On1xSDKTargets
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"

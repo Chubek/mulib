@@ -24,17 +24,41 @@ target_include_directories(
 )
 
 set(_sdk_package_dir "${CMAKE_INSTALL_LIBDIR}/cmake/On1xSDK")
+set(ON1X_SDK_PACKAGE_VERSION 2.0.0)
 configure_package_config_file(cmake/On1xSDKConfig.cmake.in
     "${CMAKE_CURRENT_BINARY_DIR}/On1xSDKConfig.cmake"
     INSTALL_DESTINATION "${_sdk_package_dir}"
 )
 write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/On1xSDKConfigVersion.cmake"
-    VERSION 1.0.0 COMPATIBILITY SameMajorVersion
+    VERSION "${ON1X_SDK_PACKAGE_VERSION}" COMPATIBILITY SameMajorVersion
 )
 
 install(
     DIRECTORY include/
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/on1x-sdk"
+    COMPONENT On1xSDK
+)
+install(
+    FILES
+        ARCHITECTURE.md
+        ABI.md
+        COMPATIBILITY.md
+        EXTENSIONS.md
+        IMPLEMENTATION.md
+        README.md
+        SECURITY.md
+        VERIFICATION.md
+    DESTINATION "${CMAKE_INSTALL_DOCDIR}/sdk"
+    COMPONENT On1xSDK
+)
+install(
+    FILES CAPABILITY_MATRIX.json IMPLEMENTATION_INVENTORY.json
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/on1x-sdk"
+    COMPONENT On1xSDK
+)
+install(
+    DIRECTORY protocol schemas catalogue
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/on1x-sdk"
     COMPONENT On1xSDK
 )
 
@@ -76,3 +100,43 @@ endif()
 foreach(_on1x_sdk_subagent RANGE 1 8)
     include("cmake/Subagent${_on1x_sdk_subagent}.cmake" OPTIONAL)
 endforeach()
+
+if(TARGET on1x_sdk_semantics_ir)
+    set_target_properties(on1x_sdk_semantics_ir PROPERTIES
+        EXPORT_NAME SDKSemanticsIR)
+    install(
+        TARGETS on1x_sdk_semantics_ir
+        EXPORT On1xSDKTargets
+        COMPONENT On1xSDK
+    )
+endif()
+
+if(BUILD_TESTING)
+    add_executable(on1x_sdk_test_aggregate_c tests/aggregate_c.c)
+    target_link_libraries(on1x_sdk_test_aggregate_c
+        PRIVATE On1x::SDKSemanticsIR)
+    set_target_properties(on1x_sdk_test_aggregate_c PROPERTIES
+        C_STANDARD 11
+        C_STANDARD_REQUIRED ON
+        C_EXTENSIONS OFF
+    )
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(on1x_sdk_test_aggregate_c PRIVATE
+            -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME on1x.sdk.aggregate_c COMMAND on1x_sdk_test_aggregate_c)
+
+    add_executable(on1x_sdk_test_aggregate_cpp tests/aggregate_cpp.cpp)
+    target_link_libraries(on1x_sdk_test_aggregate_cpp
+        PRIVATE On1x::Project)
+    set_target_properties(on1x_sdk_test_aggregate_cpp PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS OFF
+    )
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(on1x_sdk_test_aggregate_cpp PRIVATE
+            -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME on1x.sdk.aggregate_cpp COMMAND on1x_sdk_test_aggregate_cpp)
+endif()

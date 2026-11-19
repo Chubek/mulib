@@ -61,6 +61,7 @@ class Tool(unittest.TestCase):
         second, second_wire = self.run_tool("info")
         self.assertEqual(wire, second_wire)
         self.assertEqual(first["schema"], "on1x.sdk.info/1")
+        self.assertEqual(first["sdk_version"], "2.0.0")
         self.assertFalse(first["network_access"])
         self.assertFalse(first["loads_extension_code"])
         statuses = {item["id"]: item["status"]

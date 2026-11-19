@@ -91,6 +91,50 @@ namespace {
   throw std::runtime_error("on1xc project commands require a POSIX host; try tools/on1x-build.py");
 #endif
  }
+#ifdef ON1X_WITH_EXTENSION_SDK
+ int sdk_command(int argc,char** argv){
+#if defined(__unix__) || defined(__APPLE__)
+  namespace fs=std::filesystem;
+  std::error_code ec;
+  fs::path compiler;
+#if defined(__linux__)
+  compiler=fs::canonical("/proc/self/exe",ec);
+#elif defined(__APPLE__)
+  uint32_t size=0;
+  (void)::_NSGetExecutablePath(nullptr,&size);
+  if(size){
+   std::string name(size,'\0');
+   if(::_NSGetExecutablePath(name.data(),&size)==0)compiler=fs::canonical(name.c_str(),ec);
+  }
+#endif
+  if(compiler.empty()){
+   fs::path candidate=argv[0];
+   if(!candidate.has_parent_path()){
+    std::vector<fs::path> paths;
+    on1x::discovery::environment(paths,"PATH");
+    candidate.clear();
+    for(const auto& dir:paths)
+     if(auto path=dir/argv[0];fs::is_regular_file(path)&&::access(path.c_str(),X_OK)==0){candidate=path;break;}
+   }
+   compiler=fs::canonical(candidate,ec);
+   if(ec)throw std::runtime_error("cannot locate on1xc for the SDK tool");
+  }
+  auto helper=compiler.parent_path()/"on1x-sdk";
+  if(!fs::is_regular_file(helper)||::access(helper.c_str(),X_OK)!=0)
+   helper=fs::path(ON1X_DRIVER_SOURCE_SDK_TOOL);
+  auto script=helper.string();
+  std::vector<char*> arguments{script.data()};
+  arguments.insert(arguments.end(),argv+2,argv+argc);
+  arguments.push_back(nullptr);
+  ::execv(script.c_str(),arguments.data());
+  auto error=errno;
+  throw std::runtime_error("cannot start SDK tool "+script+": "+std::strerror(error));
+#else
+  (void)argc;(void)argv;
+  throw std::runtime_error("on1xc SDK data commands require a POSIX host; run on1x-sdk directly");
+#endif
+ }
+#endif
  void publish_regular_file(const std::string& destination,const std::string& text,
                            const std::string& action,const std::string& temporary_name){
 #if defined(__unix__) || defined(__APPLE__)
@@ -406,6 +450,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    "       on1xc --sdk-analyze NAME INPUT [--ir-input]\n"
    "       on1xc --sdk-emit NAME INPUT [-o OUTPUT] [--ir-input]\n"
    "       [--plugin +NAME_OR_PATH] (repeatable in SDK hook modes)\n"
+   "       on1xc sdk COMMAND [ARGS ...] (bounded SDK data tool)\n"
 #endif
   "       on1xc [--emit-ir-facts | --analyze-ir] INPUT [-o OUTPUT] [--ir-input]\n"
   "       [--analysis-work UNITS] (Novostone opt-in build; --analyze-ir only)\n"
@@ -448,6 +493,10 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     };
    if(argc>1&&(std::string_view(argv[1])=="init"||std::string_view(argv[1])=="exec"))
     return project_command(argc,argv);
+#ifdef ON1X_WITH_EXTENSION_SDK
+   if(argc>1&&std::string_view(argv[1])=="sdk")
+    return sdk_command(argc,argv);
+#endif
    if(argc>1){
     std::string_view command=argv[1];
     if(command=="fmt"||command=="--format"||command=="--emit-latex"||command=="--emit-troff")

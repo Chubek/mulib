@@ -518,7 +518,8 @@ On1xSDK_Status on1x_sdk_effect_step_at(const On1xSDK_AnalysisManager* manager,
  return record_at(manager,result,ON1X_SDK_ANALYSIS_EFFECTS,
    &on1x::mir::analysis::Result::effects,index,output,[](const auto& v,auto& out){
    out.function_id=v.function;out.block_id=v.block;
-   out.instruction_id=v.instruction;out.effect=static_cast<std::uint32_t>(v.effect);
+   out.instruction_id=v.instruction;
+   out.effect=static_cast<On1xSDK_MIREffect>(v.effect);
   });
 }
 On1xSDK_Status on1x_sdk_function_effect_at(const On1xSDK_AnalysisManager* manager,

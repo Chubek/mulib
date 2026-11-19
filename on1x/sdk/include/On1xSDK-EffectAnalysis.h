@@ -2,19 +2,12 @@
 #define ON1X_SDK_EFFECT_ANALYSIS_H
 
 #include "On1xSDK-AnalysisManager.h"
+#include "On1xSDK-MIR.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef uint32_t On1xSDK_MIREffect;
-enum {
-    ON1X_SDK_MIR_EFFECT_PURE = 0,
-    ON1X_SDK_MIR_EFFECT_TRAP = 1,
-    ON1X_SDK_MIR_EFFECT_MEMORY = 2,
-    ON1X_SDK_MIR_EFFECT_CALL = 3,
-    ON1X_SDK_MIR_EFFECT_IO = 4
-};
 enum {
     ON1X_SDK_EFFECT_MASK_TRAP = 1u << 0,
     ON1X_SDK_EFFECT_MASK_MEMORY = 1u << 1,

@@ -36,7 +36,7 @@ def main():
             """cmake_minimum_required(VERSION 3.20)
 project(FrontendConsumer LANGUAGES C CXX)
 enable_testing()
-find_package(On1xSDK 1 CONFIG REQUIRED)
+find_package(On1xSDK 2 CONFIG REQUIRED)
 add_executable(frontend main.c)
 set_target_properties(frontend PROPERTIES
   C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
