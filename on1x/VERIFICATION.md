@@ -1,5 +1,13 @@
 # On1x verification — through 2026-11-19
 
+## On1x SDK 2 integration
+
+The [SDK verification record](sdk/VERIFICATION.md) documents the aggregate
+ABI-v1/v2, compiler, runtime, native C11 reference, relocation, sanitizer and
+CDD checks. [Machine-readable results](sdk/catalogue/integration-report.json)
+and the [capability matrix](sdk/CAPABILITY_MATRIX.json) describe the tested
+profiles and explicit limits separately from the older language baselines.
+
 ## Restricted multistage lexical quotation regions — 2026-11-19
 
 This increment is **EXECUTABLE**, not a claim that arbitrary runtime code

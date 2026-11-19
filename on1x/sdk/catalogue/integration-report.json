@@ -1,0 +1,93 @@
+{
+  "schema": "on1x.sdk.integration-report/1",
+  "sdk_version": "2.0.0",
+  "implementation_revision": "8339d319dbe495b4632e56df347ccc69d12d8a7b",
+  "worker_baseline_revision": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
+  "worker_count": 8,
+  "worker_inventory": "../IMPLEMENTATION_INVENTORY.json",
+  "capability_matrix": "../CAPABILITY_MATRIX.json",
+  "reproduction_document": "on1x/sdk/VERIFICATION.md",
+  "host": {
+    "system": "Linux",
+    "architecture": "x86_64",
+    "kernel": "6.18.52-1-lts",
+    "gcc": "16.2.1",
+    "clang": "22.1.8",
+    "cmake": "4.4.3",
+    "python": "3.14.7",
+    "libstone": "3399047f6c6328b8f07788795c610699e66c060a"
+  },
+  "stages": {
+    "A": "Core ABI 2, frozen ABI 1, registry, catalogue and worker primitives",
+    "B": "Canonical frontend sessions, types and immutable IR",
+    "C": "Analyses, candidate passes, backends, FFI and On1xRT",
+    "D": "Project services, data-only CLI and project bindings",
+    "E": "Trusted static native SDK reference compiled through C11"
+  },
+  "checks": [
+    {
+      "id": "gcc-debug-generated-full",
+      "result": "PASS",
+      "passed": 167,
+      "failed": 0,
+      "skipped": 0,
+      "scope": "Complete configured On1x regression inventory, generated scanner and scanner parity, native PPX, linked and isolated ABI 1 plugins, all SDK and runtime targets, relocation and add-ons"
+    },
+    {
+      "id": "clang-release-fallback",
+      "result": "PASS",
+      "passed": 75,
+      "failed": 0,
+      "scope": "SDK, backends, contract/inventory and installation; linked and isolated ABI 1 fixtures, ABI 2, C11/C++17, Python, relocation and native C11"
+    },
+    {
+      "id": "clang-debug-asan-ubsan",
+      "result": "PASS",
+      "passed": 40,
+      "failed": 0,
+      "scope": "Focused SDK ABI 1/2, core/plugin data boundary, frontend/semantics, analysis/backend, project, contracts, On1xRT and trusted native profile",
+      "exclusions": ["Instrumented isolated worker", "Python loading of the instrumented shared library", "Sanitizer flags are not propagated by every supplementary subprocess fixture runner"]
+    },
+    {
+      "id": "gcc-novostone-source",
+      "result": "PASS",
+      "passed": 2,
+      "failed": 0,
+      "scope": "Analysis/pass suite with real MIR-v1 Novostone adapter and relocated static SDK consumer using the analysis archive",
+      "exclusions": ["Imported Novostone package provider", "MIR-v2/v3 Novostone adapter"]
+    },
+    {
+      "id": "cdd-oracle",
+      "result": "PASS",
+      "profiles": ["GCC", "Clang", "GCC ASan/UBSan", "Clang ASan/UBSan"],
+      "seeded_cases_per_profile": 500,
+      "exhaustive_cases_per_profile": 24576,
+      "scope": "CDD resolution, injected allocation failure, example execution and C++17 linkage"
+    },
+    {
+      "id": "public-symbol-inventory",
+      "result": "PASS",
+      "sdk_declarations_accounted_for": 502,
+      "runtime_declarations_accounted_for": 51,
+      "scope": "Public names matched against the Clang release archives and project DSO with nm; provider-defined on1x_sdk_linked_extension is intentionally external"
+    },
+    {
+      "id": "gcc-mulib-root-regression",
+      "result": "PARTIAL",
+      "passed": 722,
+      "failed": 2,
+      "skipped": 0,
+      "scope": "Complete root MuLIB CTest suite; CDD and the graphics gate passed",
+      "failures": [
+        {"test": "mulib_dependency_strata", "reason": "Generated dependency strata are stale."},
+        {"test": "mulib_mull_inventory", "reason": "MuLL registration omits existing root headers."}
+      ],
+      "unchanged_root_inputs_against": "bdbd79aedc806468195cb67df402591ae7209551"
+    }
+  ],
+  "limitations": [
+    "This is not a security audit or a grant of extension publication authority.",
+    "No general FFI, native machine-code backend, WASM or runtime sandbox certification.",
+    "No 32-bit, non-Linux or TSAN result is claimed."
+  ]
+}
