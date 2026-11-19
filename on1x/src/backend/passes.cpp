@@ -10,9 +10,20 @@ namespace on1x::mir::passes {
 namespace {
 [[noreturn]] void fail(const Location& at,const std::string& message){throw Error(at,"ON1X-MIR-PASS: "+message);}
 struct Exhausted {Location where;std::string reason;};
+struct Stopped {Status status;Location where;std::string reason;};
 struct Budget {
  std::size_t work,rewrites,used=0,edits=0;
+ const std::function<Control(std::size_t)>* control=nullptr;
+ void poll(const Location& at){
+  if(!control||!*control)return;
+  Control decision=Control::Failure;
+  try{decision=(*control)(used);}catch(...){decision=Control::Failure;}
+  if(decision==Control::Cancel)throw Stopped{Status::Cancelled,at,"pass cancelled"};
+  if(decision==Control::Deadline)throw Stopped{Status::DeadlineExceeded,at,"pass deadline exceeded"};
+  if(decision==Control::Failure)throw Stopped{Status::CallbackFailed,at,"pass control callback failed"};
+ }
  void tick(const Location& at,std::size_t n=1){
+  poll(at);
   if(n>work)throw Exhausted{at,"pass work budget exhausted"};
   work-=n;used+=n;
  }
@@ -294,27 +305,48 @@ Result run(const Module& module,Options options){
  if(options.pipeline.empty()||options.pipeline.size()>16||!options.rounds||options.rounds>64)fail({"<mir-pass>"},"pipeline requires 1..16 passes and 1..64 rounds");
  for(auto pass:options.pipeline)(void)descriptor(pass);
  verify(module,options.verification);Result result(module,serialize(module),options);
- Budget budget{options.work,options.rewrites};std::size_t revision=0;
- for(std::size_t round=0;round<options.rounds;++round){
-  bool changed=false;
-  for(auto pass:options.pipeline){
-   Event event{pass,round,revision,revision,Outcome::Unchanged,0,0,{"<mir-pass>"},{}};
-   auto start_work=budget.used,start_edits=budget.edits;
-   try{
-    charge_copy(result.module_,budget);auto candidate=result.module_;
+  Budget budget{options.work,options.rewrites,0,0,&options.control};std::size_t revision=0;
+  for(std::size_t round=0;round<options.rounds;++round){
+   bool changed=false;
+   for(auto pass:options.pipeline){
+    Event event{pass,round,revision,revision,Outcome::Unchanged,0,0,{"<mir-pass>"},{}};
+    auto start_work=budget.used,start_edits=budget.edits;
+    try{
+     if(options.instrumentation){
+      Control decision=Control::Failure;
+      try{decision=options.instrumentation(event,true);}catch(...){decision=Control::Failure;}
+      if(decision==Control::Cancel)throw Stopped{Status::Cancelled,event.where,"pass instrumentation cancelled"};
+      if(decision==Control::Deadline)throw Stopped{Status::DeadlineExceeded,event.where,"pass instrumentation deadline exceeded"};
+      if(decision==Control::Failure)throw Stopped{Status::CallbackFailed,event.where,"pass instrumentation callback failed"};
+     }
+     charge_copy(result.module_,budget);auto candidate=result.module_;
     switch(pass){case Pass::ConstantFold:constant_fold(candidate,budget);break;case Pass::SimplifyCFG:simplify_cfg(candidate,budget);break;case Pass::DeadPure:dead_pure(candidate,budget);break;case Pass::LocalSlots:local_slots(candidate,budget);break;}
     verify_transition(result.module_,candidate,pass,options.verification);auto wire=serialize(candidate);
-    if(wire!=result.output_){
-     result.module_=std::move(candidate);result.output_=std::move(wire);changed=true;
-     event.outcome=Outcome::Committed;event.output_revision=++revision;
+     if(wire!=result.output_){
+      result.module_=std::move(candidate);result.output_=std::move(wire);changed=true;
+      event.outcome=Outcome::Committed;event.output_revision=++revision;
+     }
+     event.work=budget.used-start_work;
+     event.attempted_rewrites=budget.edits-start_edits;
+     if(options.instrumentation){
+      Control decision=Control::Failure;
+      try{decision=options.instrumentation(event,false);}catch(...){decision=Control::Failure;}
+      if(decision==Control::Cancel)throw Stopped{Status::Cancelled,event.where,"pass instrumentation cancelled"};
+      if(decision==Control::Deadline)throw Stopped{Status::DeadlineExceeded,event.where,"pass instrumentation deadline exceeded"};
+      if(decision==Control::Failure)throw Stopped{Status::CallbackFailed,event.where,"pass instrumentation callback failed"};
+     }
+    }catch(const Exhausted& e){
+     event.outcome=Outcome::BudgetExhausted;event.where=e.where;event.diagnostic=e.reason;
+     result.status_=Status::BudgetExhausted;result.diagnostic_=std::string(descriptor(pass).name)+": "+e.reason;
+    }catch(const Stopped& e){
+     result.status_=e.status;event.where=e.where;event.diagnostic=e.reason;
+     event.outcome=e.status==Status::Cancelled?Outcome::Cancelled:
+      e.status==Status::DeadlineExceeded?Outcome::DeadlineExceeded:Outcome::CallbackFailed;
+     result.diagnostic_=std::string(descriptor(pass).name)+": "+e.reason;
     }
-   }catch(const Exhausted& e){
-    event.outcome=Outcome::BudgetExhausted;event.where=e.where;event.diagnostic=e.reason;
-    result.status_=Status::BudgetExhausted;result.diagnostic_=std::string(descriptor(pass).name)+": "+e.reason;
-   }
    event.work=budget.used-start_work;event.attempted_rewrites=budget.edits-start_edits;result.events_.push_back(std::move(event));
    result.work_=budget.used;result.rewrites_=budget.edits;
-   if(result.status_==Status::BudgetExhausted)return result;
+    if(result.status_!=Status::Complete)return result;
   }
   if(!changed)return result;
  }
@@ -330,13 +362,20 @@ std::string report(const Result& result){
   catalog.push_back(list({symbol("pass"),string(std::string(d.name)),num(d.version),list(std::move(requirements)),names(d.preserves),names(d.invalidates),string(std::string(d.effects)),string(std::string(d.target)),string(std::string(d.budget)),string(std::string(d.verifier))}));
  }
  for(const auto& e:result.events())events.push_back(list({symbol("event"),string(std::string(descriptor(e.pass).name)),num(e.round),num(e.input_revision),num(e.output_revision),
-  symbol(e.outcome==Outcome::Committed?"committed":e.outcome==Outcome::Unchanged?"unchanged":"budget-exhausted"),num(e.work),num(e.attempted_rewrites),
+  symbol(e.outcome==Outcome::Committed?"committed":
+         e.outcome==Outcome::Unchanged?"unchanged":
+         e.outcome==Outcome::BudgetExhausted?"budget-exhausted":
+         e.outcome==Outcome::Cancelled?"cancelled":
+         e.outcome==Outcome::DeadlineExceeded?"deadline-exceeded":"callback-failed"),num(e.work),num(e.attempted_rewrites),
   list({symbol("at"),string(e.where.file),num(e.where.offset),num(e.where.line),num(e.where.column)}),string(e.diagnostic)}));
  const auto& o=result.options();
  return meta::write_sexpr(list({symbol("on1x.mir-passes"),num(pipeline_version),
   list({symbol("target"),string(o.target)}),list({symbol("source"),string(result.source())}),list({symbol("output"),string(result.output())}),
   list({symbol("budgets"),num(o.work),num(o.rewrites),num(o.rounds),num(o.verification.nodes),num(o.verification.work)}),
-  list({symbol("status"),symbol(result.status()==Status::Complete?"complete":"budget-exhausted"),string(result.diagnostic())}),
+   list({symbol("status"),symbol(result.status()==Status::Complete?"complete":
+         result.status()==Status::BudgetExhausted?"budget-exhausted":
+         result.status()==Status::Cancelled?"cancelled":
+         result.status()==Status::DeadlineExceeded?"deadline-exceeded":"callback-failed"),string(result.diagnostic())}),
   list({symbol("consumed"),num(result.work()),num(result.attempted_rewrites())}),list(std::move(catalog)),list(std::move(events))}));
 }
 }

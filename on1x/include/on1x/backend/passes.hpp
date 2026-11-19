@@ -15,14 +15,16 @@ struct Descriptor {
 };
 const Descriptor& descriptor(Pass pass);
 std::string_view analysis_name(Analysis analysis);
-struct Options {
- std::vector<Pass> pipeline={Pass::ConstantFold,Pass::SimplifyCFG,Pass::LocalSlots,Pass::DeadPure};
- std::string target="portable-scalar-v1";
- std::size_t work=4194304, rewrites=65536, rounds=8;
- mir::Limits verification;
+enum class Status { Complete, BudgetExhausted, Cancelled, DeadlineExceeded, CallbackFailed };
+enum class Outcome {
+ Unchanged,
+ Committed,
+ BudgetExhausted,
+ Cancelled,
+ DeadlineExceeded,
+ CallbackFailed
 };
-enum class Status { Complete, BudgetExhausted };
-enum class Outcome { Unchanged, Committed, BudgetExhausted };
+enum class Control { Continue, Cancel, Deadline, Failure };
 struct Event {
  Pass pass;
  std::size_t round=0, input_revision=0, output_revision=0;
@@ -30,6 +32,16 @@ struct Event {
  std::size_t work=0, attempted_rewrites=0;
  Location where;
  std::string diagnostic;
+};
+struct Options {
+ std::vector<Pass> pipeline={Pass::ConstantFold,Pass::SimplifyCFG,Pass::LocalSlots,Pass::DeadPure};
+ std::string target="portable-scalar-v1";
+ std::size_t work=4194304, rewrites=65536, rounds=8;
+ mir::Limits verification;
+ // Synchronous cooperative control. Throwing is reported as CallbackFailed.
+ std::function<Control(std::size_t)> control;
+ // Called before and after each pass attempt. `before` is true for the first call.
+ std::function<Control(const Event&,bool before)> instrumentation;
 };
 class Result {
 public:
@@ -45,7 +57,10 @@ public:
  bool changed() const { return source_!=output_; }
 private:
  Result(Module module,std::string source,Options options)
-  : module_(std::move(module)),source_(std::move(source)),output_(source_),options_(std::move(options)) {}
+  : module_(std::move(module)),source_(std::move(source)),output_(source_),options_(std::move(options)) {
+   // Control/instrumentation and their captured userdata are call-scoped.
+   options_.control={};options_.instrumentation={};
+  }
  Module module_;
  std::string source_,output_;
  Options options_;
@@ -56,8 +71,9 @@ private:
  friend Result run(const Module&,Options);
 };
 // Built-in passes only. Each candidate commits after structural verification and
-// checked preservation obligations. Exhaustion returns the last verified prefix;
-// a malformed source or failed verifier throws without mutating the input.
+// checked preservation obligations. Exhaustion/cancellation/deadline/callback
+// failure returns the last verified prefix with a distinct status; a malformed
+// source or failed verifier throws without mutating the input.
 Result run(const Module& module,Options options={});
 // Checks structural/preservation obligations, NOT arbitrary rewrite equivalence.
 // This does not manufacture a publishable Result from an external candidate.

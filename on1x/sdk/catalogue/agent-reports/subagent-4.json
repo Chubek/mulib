@@ -1,0 +1,185 @@
+{
+  "schema": "on1x.sdk.agent-report/1",
+  "subagent": 4,
+  "captured": "2026-11-19",
+  "baseline_revision": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
+  "status": "complete",
+  "summary": "Revision-aware bounded analyses and transactional built-in pass pipelines over canonical verified MIR, with ABI-v1 compatibility preserved.",
+  "capabilities": [
+    {
+      "id": "analysis.canonical-mir",
+      "status": "EXECUTABLE",
+      "subset": "MIR v1-v3 CFG, immediate dominators, natural and irreducible loops, exact SSA definitions/uses/liveness, exact instruction effects, and conservative transitive function effects"
+    },
+    {
+      "id": "analysis.revision-cache",
+      "status": "EXECUTABLE",
+      "subset": "owner/identity/revision/target/options/version/backend cache keys, atomic observation replacement, bounded cache, stale/conflict detection, and borrowed generation-scoped results"
+    },
+    {
+      "id": "analysis.novostone",
+      "status": "PARTIAL",
+      "subset": "Actual Novostone MIR-v1 Reachable, LiveIn/LiveOut, and MayEffect queries when on1x_novostone is linked",
+      "unsupported": "MIR v2/v3 and builds without the exact Novostone target reject explicitly"
+    },
+    {
+      "id": "analysis.wetstone",
+      "status": "UNSUPPORTED",
+      "reason": "The existing Wetstone adapter consumes checked HIR rather than verified scalar MIR"
+    },
+    {
+      "id": "analysis.alias",
+      "status": "UNSUPPORTED",
+      "reason": "Canonical scalar MIR has no address values; local non-addressable slots do not justify a general alias or points-to claim"
+    },
+    {
+      "id": "transformation.builtin-pipeline",
+      "status": "EXECUTABLE",
+      "subset": "Bounded DSL over constant-fold, simplify-cfg, local-slots, and dead-pure with descriptors, cooperative control, synchronous instrumentation, checked preservation, rollback, and candidate bytes"
+    },
+    {
+      "id": "transformation.translation-evidence",
+      "status": "PARTIAL",
+      "subset": "One explicitly named scalar invocation in the canonical reference evaluator",
+      "unsupported": "No general equivalence certificate is claimed"
+    }
+  ],
+  "abi": {
+    "new_major": 2,
+    "preserved_v1_status_values": [0, 1, 2, 3, 4, 5, 6, 7],
+    "local_v2_status_values": {
+      "cancelled": 8,
+      "deadline_exceeded": 9,
+      "stale_revision": 10,
+      "revision_conflict": 11,
+      "not_found": 12,
+      "invalid_state": 13,
+      "verification_failed": 14
+    },
+    "manager_storage": "caller-owned aligned storage; internal allocations remain library-private",
+    "threading": "manager operations are thread-confined; mutating callback re-entry returns BUSY",
+    "publication": "host-only; successful passes return untrusted candidate bytes"
+  },
+  "owned_files": {
+    "canonical_headers": [
+      "on1x/include/on1x/analysis.hpp",
+      "on1x/include/on1x/backend/passes.hpp"
+    ],
+    "canonical_sources": [
+      "on1x/src/analyzer/mir_analysis.cpp",
+      "on1x/src/backend/passes.cpp"
+    ],
+    "public_headers": [
+      "on1x/sdk/include/On1xSDK-Query.h",
+      "on1x/sdk/include/On1xSDK-AnalysisManager.h",
+      "on1x/sdk/include/On1xSDK-CFG.h",
+      "on1x/sdk/include/On1xSDK-Dominator.h",
+      "on1x/sdk/include/On1xSDK-Loop.h",
+      "on1x/sdk/include/On1xSDK-Liveness.h",
+      "on1x/sdk/include/On1xSDK-EffectAnalysis.h",
+      "on1x/sdk/include/On1xSDK-Pass.h",
+      "on1x/sdk/include/On1xSDK-Pipeline.h",
+      "on1x/sdk/include/On1xSDK-PassInstrumentation.h",
+      "on1x/sdk/include/On1xSDK-PassManager.h",
+      "on1x/sdk/include/On1xSDK-TranslationValidation.h"
+    ],
+    "sdk_sources": [
+      "on1x/sdk/src/analysis/AnalysisInternal.hpp",
+      "on1x/sdk/src/analysis/AnalysisManager.cpp",
+      "on1x/sdk/src/analysis/NovostoneAdapter.cpp",
+      "on1x/sdk/src/transformation/PassManager.cpp"
+    ],
+    "build_hooks": [
+      "on1x/sdk/cmake/Subagent4.cmake",
+      "on1x/sdk/cmake/Integration4.cmake"
+    ],
+    "documentation": [
+      "on1x/sdk/docs/analysis-transformation.md"
+    ],
+    "tests": [
+      "on1x/sdk/tests/analysis_passes.cpp",
+      "on1x/sdk/tests/analysis_c_abi.c",
+      "on1x/sdk/tests/analysis_passes_c11.py"
+    ]
+  },
+  "validation": [
+    {
+      "toolchain": "GCC 16.2.1",
+      "command": "ctest --test-dir /tmp/opencode/sdk2-subagent4-dev-gcc --output-on-failure -R '^on1x\\.sdk\\.analysis_'",
+      "result": "3 passed, 0 failed"
+    },
+    {
+      "toolchain": "GCC 16.2.1",
+      "command": "ctest --test-dir /tmp/opencode/sdk2-subagent4-dev-gcc --output-on-failure -R '^on1x\\.sdk\\.'",
+      "result": "9 passed, 0 failed, including ABI-v1 regression and installed consumer"
+    },
+    {
+      "toolchain": "GCC 16.2.1",
+      "command": "ctest --test-dir /tmp/opencode/sdk2-subagent4-dev-gcc --output-on-failure -R '^(on1x\\.analysis_api|on1x\\.passes_hir|on1x\\.mir_hir)$'",
+      "result": "3 passed, 0 failed"
+    },
+    {
+      "toolchain": "Clang 22.1.8",
+      "command": "cmake --build /tmp/opencode/sdk2-subagent4-clang --parallel 4 --target on1x_sdk_test_analysis_passes on1x_sdk_test_analysis_c_abi on1x_sdk4_headers on1x_pass_tests on1x_mir_tests on1x_sdk_test_analyzer",
+      "result": "all targets built; owned new sources, tests, and independent header translation units passed -Wall -Wextra -Wpedantic -Werror"
+    },
+    {
+      "toolchain": "Clang 22.1.8",
+      "command": "ctest --test-dir /tmp/opencode/sdk2-subagent4-clang --output-on-failure -R '^on1x\\.sdk\\.analysis_'",
+      "result": "3 passed, 0 failed"
+    },
+    {
+      "toolchain": "Clang 22.1.8 ASan+UBSan",
+      "command": "ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ctest --test-dir /tmp/opencode/sdk2-subagent4-asan-clang --output-on-failure -R '^on1x\\.sdk\\.analysis_'",
+      "result": "3 passed, 0 sanitizer findings"
+    },
+    {
+      "toolchain": "GCC 16.2.1 plus LibStone 3399047f6c6328b8f07788795c610699e66c060a",
+      "command": "ctest --test-dir /tmp/opencode/sdk2-subagent4-novostone-gcc --output-on-failure -R '^on1x\\.sdk\\.analysis_'",
+      "result": "3 passed, 0 failed with actual Novostone adapter enabled"
+    },
+    {
+      "toolchain": "GCC 16.2.1 full fallback-scanner configuration",
+      "command": "cmake --build /tmp/opencode/sdk2-subagent4-dev-gcc --parallel 4 && ctest --test-dir /tmp/opencode/sdk2-subagent4-dev-gcc --output-on-failure",
+      "result": "93 passed, 1 skipped, 3 unrelated environment/inventory failures out of 97; every SDK, MIR, pass, backend, and new analysis test passed",
+      "unrelated_failures": [
+        "on1x.type_checker_hardening_hir: Firestone compiler SDK unavailable in the fallback configuration",
+        "on1x.contracts: external auxiliary-contract inventory assertion",
+        "on1x.mulib: external MuLIB fixture inventory assertion"
+      ]
+    }
+  ],
+  "negative_coverage": [
+    "malformed and noncanonical verified-MIR bytes",
+    "wrong owner, target, options, analysis version, backend, and revision",
+    "same-revision byte conflict and failed newer observation rollback",
+    "work, result, rewrite, verifier-node, verifier-work, and round exhaustion",
+    "cancellation, deadline, unknown callback status, instrumentation failure, and mutating callback re-entry",
+    "preservation violation, malformed pass candidate, wrong program phase, and unsupported alias/Wetstone/domain mappings",
+    "stale cache generation and pass result lifetime",
+    "MIR v2 binary64 and MIR v3 full-width u64 payload preservation",
+    "wide uint64 identities, irreducible CFGs, simultaneous block-argument liveness, and bounded long-CFG analysis"
+  ],
+  "integration_requests": [
+    {
+      "owner": "principal",
+      "id": "sdk4-umbrella-and-catalogue",
+      "request": "Add the twelve new public headers to On1xSDK.h and update CAPABILITY_MATRIX.json and IMPLEMENTATION_INVENTORY.json from this report."
+    },
+    {
+      "owner": "principal/core",
+      "id": "sdk4-common-v2-status",
+      "request": "Reconcile the local analysis status aliases 8..14 with the principal-owned common ABI-2 status header while preserving the exact ABI-v1 values 0..7."
+    },
+    {
+      "owner": "principal",
+      "id": "sdk4-installed-canonical-link",
+      "request": "Export/install a canonical compiler support target and make the installed static On1x::SDK transitively link it when analysis/pass objects are selected. The build-tree hook currently links on1x_frontend only through BUILD_INTERFACE because aggregate package ownership is principal-only."
+    },
+    {
+      "owner": "principal",
+      "id": "sdk4-installed-novostone-link",
+      "request": "When packaging a Novostone-enabled SDK, either export its exact Novostone/relational dependencies or compile the selector out of the installed SDK; do not leave an advertised adapter with unresolved static dependencies."
+    }
+  ]
+}
