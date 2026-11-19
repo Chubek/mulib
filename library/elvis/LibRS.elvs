@@ -1,0 +1,8 @@
+# Source: .sot/searxng/searx/engines/lib_rs.py.
+elvi librs
+host lib.rs
+home https://lib.rs/
+search "https://lib.rs/search?q={query}"
+anchor child h4
+rewrite relative
+max_results 30

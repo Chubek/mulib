@@ -1,0 +1,11 @@
+# Source: .sot/searxng/searx/engines/openlibrary.py.
+elvi openlibrary
+host openlibrary.org
+home https://openlibrary.org/
+search "https://openlibrary.org/search.json?q={query}&page=1&limit={limit}&fields=key,title"
+format json
+results /docs
+title /title
+url /key
+rewrite relative
+max_results 30

@@ -1,0 +1,10 @@
+# Source: .sot/searxng/searx/engines/crossref.py.
+elvi crossref
+host api.crossref.org
+home https://api.crossref.org/
+search "https://api.crossref.org/works?query={query}&rows={limit}&select=title,URL"
+format json
+results /message/items
+title /title/0
+url /URL
+max_results 30

@@ -1,0 +1,10 @@
+# Source: .sot/searxng/searx/settings.yml, packagist.
+elvi packagist
+host packagist.org
+home https://packagist.org/
+search "https://packagist.org/search.json?q={query}&page=1&per_page={limit}"
+format json
+results /results
+title /name
+url /url
+max_results 30

@@ -1,0 +1,9 @@
+# Source: .sot/searxng/searx/engines/fdroid.py.
+elvi fdroid
+host search.f-droid.org
+home https://search.f-droid.org/
+search "https://search.f-droid.org/?q={query}&page=1&lang="
+anchor child h4
+anchor_class package-header
+rewrite direct
+max_results 30

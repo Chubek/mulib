@@ -1,0 +1,10 @@
+# Source: .sot/searxng/searx/engines/hex.py.
+elvi hex
+host hex.pm
+home https://hex.pm/
+search "https://hex.pm/api/packages/?search={query}&page=1&per_page={limit}&sort=recent_downloads"
+format json
+results /
+title /name
+url /html_url
+max_results 30
