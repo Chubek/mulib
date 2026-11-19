@@ -1,0 +1,11 @@
+[
+  {"name": "untitled", "html_url": null},
+  {
+    "name": "demo_http",
+    "url": "https://hex.pm/api/packages/demo_http",
+    "html_url": "https://hex.pm/packages/demo_http",
+    "meta": {"description": "A package for HTTP.", "links": {"Source": "https://example.org/demo_http"}}
+  },
+  {"name": "duplicate", "html_url": "https://hex.pm/packages/demo_http"},
+  {"name": "demo_json", "html_url": "https://hex.pm/packages/demo_json"}
+]

@@ -1189,4 +1189,12 @@
 #include "mulib-sandbox-process.h"
 #include "mulib-sandbox-profile.h"
 #include "mulib-seccomp.h"
+#include "mulib-mcp-client.h"
+#include "mulib-mcp-server.h"
+#include "mulib-markup-bridge.h"
+#include "mulib-markup-graph.h"
+#include "mulib-markup-spans.h"
+#include "mulib-markup-stream.h"
+#include "mulib-markup-tree.h"
+#include "mulib-mcp-http.h"
 int main(void) { return 0; }

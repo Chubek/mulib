@@ -2,26 +2,40 @@
 
 ElviScrape is a Surfraw-inspired, **C11 header-only** provider interpreter. Surfraw's
 elvi primarily dispatch a query URL to a browser; this module also extracts a
-bounded list of `{title, url}` records from a supplied HTML search results page.
-It neither embeds Surfraw nor executes shell scripts.
+bounded list of `{title, url}` records from supplied HTML or JSON search
+responses. It neither embeds Surfraw/SearXNG nor executes provider code.
+
+## What this takes from SearXNG
+
+Local SearXNG revision `b867c56a5668966ef4be8097f1b559bdc2841743` has 353
+default settings entries referencing 228 distinct engine modules, out of
+253 adapter files. These are inventory counts, not live availability counts.
+In `searx/engines/__init__.py` and `searx/search/processors/online.py`, each
+configured entry supplies request and response logic while the processor
+owns transport. `searx/engines/xpath.py` selects result containers and reads
+fields from each, while `searx/engines/json_engine.py` maps fields over
+structured responses. ElviScrape independently applies that split:
+compile a description, render the request, fetch under policy, and extract
+fields together from each anchor or JSON row. It does not copy upstream
+Python, use its recursive JSON query language, or implement its scheduling,
+ranking, provider traits, or per-engine scripts.
 
 ## Paths
 
 - `include/mulib-elvi-scrape.h` — public API and implementation switch.
-- [`library/elvis/`](../library/elvis/README.md) — canonical profiles: `Google.elvs`,
-  `Bing.elvs`, `DuckDuckGo.elvs`, `Scholar.elvs`, and `MDN.elvs`.
+- [`library/elvis/`](../library/elvis/README.md) — shipped profiles with
+  template and response-field provenance.
 - `tests/test-elvi-scrape.c` — deterministic offline behavior tests.
-- `tests/test-elvi-scrape-providers.c` — provider URL and extraction tests for
-  all five profiles.
+- `tests/test-elvi-scrape-providers.c` — provider URL and extraction tests.
 - `tests/test-elvi-scrape-https.c` — independent authenticated-session/HTTP tests.
 - `tests/test-elvi-scrape-alloc.c` — exhaustive single-allocation failure injection.
 - `examples/elvi-scrape.c` — offline parse / URL construction example.
 
 ## Dependencies (MuLIB only)
 
-The module uses `fetch`, `url`, `https`, `utf8` and the internal webscan scanner.
+The module uses `fetch`, `url`, `https`, `json`, `utf8` and the internal webscan scanner.
 The complete one-TU implementation recipe is: `parsec`, `strbuf`, `buffer`,
-`inet4`, `inet6`, `uri`, `utf8`, `shylock-core`, `browser-origin`, `fetch-policy`,
+`inet4`, `inet6`, `uri`, `utf8`, `json`, `shylock-core`, `browser-origin`, `fetch-policy`,
 `fetch`, `url`, `http`, `webclient`, `tsl`, `https`, `elvi-scrape`. Define all
 corresponding `MULIB_IMPL_*` macros before including `mulib-elvi-scrape.h` in
 exactly one C11 translation unit. Other translation units include declarations
@@ -34,27 +48,46 @@ Offline compilation and extraction never open a connection. The HTTPS adapter
 composes MuLIB HTTPS, HTTP and TSL kernels with an application-supplied blocking
 TLS connector and authenticated-peer inspector; it adds no external dependency.
 
-## `.elvs` grammar (v1)
+## `.elvs` grammar
 
 One directive per line. `#` begins comments outside quoted strings. Values may
 be unquoted single tokens or double-quoted strings; in quotes `\\` and `\"`
 are valid escapes. Directive names are lowercase and case-sensitive. `elvi`,
-`host`, `home`, `search`, and `anchor` are required. Only `exclude_host` can
-repeat, up to eight times.
+`host`, `home`, and `search` are always required. Only `exclude_host` can
+repeat, up to eight times. HTML is the default; prior HTML profiles still work.
 
 ```text
 elvi NAME
 host EXACT_HOSTNAME
 home https://EXACT_HOSTNAME/
 search "https://EXACT_HOSTNAME/search?q={query}&count={limit}"
+format html            # optional; default
 anchor child h3        # title H3 nested within result <a href=...>
 # or: anchor parent h2 # result <a href=...> nested within H2
 # or: anchor any       # any anchor with text (legacy `anchor any a` also works)
+anchor_class hit        # optional class token on the <a>
 rewrite direct         # direct HTTPS anchors
 # or: rewrite google   # also recognizes Google's /url?url=... or /url?q=...
+# or: rewrite relative # also recognizes root-relative /path on EXACT_HOSTNAME
 exclude_host bing.com  # block the given host and subdomains from results
 max_results 30         # 1..64; default 20
 ```
+
+For JSON, replace `format html` and the HTML anchor directives with:
+
+```text
+format json
+results /message/items # one array, or / to select a root array
+title /title/0         # string in each item
+url /URL               # string in the same item
+```
+
+JSON selectors are slash-prefixed paths up to 255 bytes, using RFC 6901
+`~0` and `~1` escapes and canonical decimal array indices. `results /` is an
+ElviScrape special case for the root array. `title` and `url` are evaluated
+relative to each row. They do not search descendants or zip unrelated arrays.
+Missing/non-string fields are skipped; a missing/non-array result collection
+or invalid JSON fails. Only `direct` and `relative` rewrites are valid for JSON.
 
 For a nonempty query, the `search` template must include `{query}`, which
 expands to URL-component-encoded query bytes using `mulib_url_encode` (spaces
@@ -67,8 +100,10 @@ Both URLs must use `https://` and a literal request hostname matching `host`
 (ASCII case-insensitive). The caller supplies one query string; the module
 does not parse Surfraw shell options or quote/split query words.
 Host exclusions are enforced on **result URLs**, never just their display text.
-Only HTTPS result links are emitted; relative links and non-HTTPS links are
-ignored, except recognized Google redirect links, which are decoded to HTTPS.
+Only HTTPS result links are emitted. The `relative` rewrite resolves a path
+starting with exactly one slash against the configured request host (never an
+HTML base tag or an origin in the response). Scheme-relative, path-relative,
+and non-HTTPS links are not accepted. `google` decodes recognized wrappers.
 Google wrappers accept one nonempty `q=` **or** `url=` target before a fragment;
 repeated/ambiguous targets and malformed escapes anywhere in the wrapper are
 rejected. Invalid numeric character references in URL attributes are rejected,
@@ -98,7 +133,7 @@ int mulib_elvi_scrape_load(const char *path,
 int mulib_elvi_scrape_url(const mulib_elvi_scrape_program_t *program,
     const char *query, unsigned limit, char *out, size_t capacity);
 int mulib_elvi_scrape_parse(const mulib_elvi_scrape_program_t *program,
-    const char *html, size_t length,
+    const char *body, size_t length,
     mulib_elvi_scrape_result_t *results, size_t capacity, size_t *count);
 int mulib_elvi_scrape_search(const mulib_elvi_scrape_program_t *program,
     const mulib_fetch_client_t *client, const char *query, unsigned limit,
@@ -115,25 +150,32 @@ result buffers. No global mutable state is used. `url` leaves output unchanged o
 only on success, but reports HTTP status after a successful fetch even when that
 status causes rejection. Inputs and output buffers must not overlap. Programs
 must come from successful compilation and remain unmodified during calls.
+Rebuild consumers against the current header: the caller-owned program struct
+has grown to store the new selectors.
 Queries are bounded to 2048 bytes, and `limit` must be in `1..max_results` even
 for an empty query. `search` fetches the same URL that `url` returns and then
 parses the response; a home page may have no matching results.
-Titles are clipped at UTF-8 code point boundaries;
-invalid UTF-8 bytes in titles are skipped. The five XML entities, `nbsp`, and
-valid numeric Unicode references are decoded; this is not a full HTML entity table.
-Literal and decoded NBSP are collapsed like ASCII whitespace. Duplicate results
+Titles are clipped at UTF-8 code point boundaries. HTML titles skip invalid
+UTF-8 bytes and decode the five XML entities, `nbsp`, and valid numeric
+references; this is not a full HTML entity table. JSON titles are decoded JSON
+strings, not markup, and strings containing a NUL are skipped. Literal and
+decoded NBSP in titles are collapsed like ASCII whitespace. Duplicate results
 are removed by exact destination URL bytes, without reinterpreting path escapes
 or changing query semantics.
 
-Extraction stages at most `min(capacity, max_results)` records (never more than
+HTML extraction stages at most `min(capacity, max_results)` records (never more than
 64) and an HTML copy before committing caller outputs. The scanner is iterative
 and limited to `16 * length + 1024` work steps; exhausted work or allocation
 failure returns 0 without committing partial results. Scratch result storage is
 at most 64 times `sizeof(mulib_elvi_scrape_result_t)`, in addition to the bounded
 HTML copy and fixed-size URL/title buffers. A parent `td` or `th` selector also
 needs at most `length / 7 + 1` bytes of cell nesting state in the same allocation
-as the HTML copy. Zero capacity succeeds with zero results after input/program
-validation.
+as the HTML copy. For HTML, zero capacity succeeds with zero results after
+input/program validation. JSON extraction validates and builds an owned tree
+using [mulib-json](mulib-json.md), accounting for its nesting, parse and
+object-key work limits. JSON still validates the document and array when
+capacity is zero; rows are emitted only after the tree and result array have
+passed validation.
 
 ## Example
 
@@ -182,7 +224,7 @@ native `mulib-tls` is an available TLS 1.3 connector; its implementation and
 additional dependencies belong to the application. Existing generic fetch
 transports remain supported and must provide the same security guarantees.
 The adapter returns HTTP responses without following `Location`; search accepts
-only status 200 and an exact HTML/XHTML media type (case-insensitive, optional
+only status 200 and a media type matching the profile (case-insensitive, optional
 parameters). HTTP redirects, 429 and 503 never trigger follow-up requests or
 retries. Rate scheduling and retry decisions belong to the application.
 The adapter rejects duplicate `Content-Type` fields, duplicate `Content-Encoding`
@@ -200,6 +242,9 @@ framing, metadata, capacity or allocation checks preserve body/status/type.
   matching descendant; `anchor parent` captures anchor text inside its
   configured ancestor. Tags and attribute names match independently of ASCII
   case. `href` can be quoted or unquoted; only its first occurrence counts.
+  An optional `anchor_class` matches a literal, case-sensitive, ASCII
+  whitespace-delimited token on the anchor itself, using its first `class`
+  attribute. Class values are not entity-decoded.
 - This version extracts title and destination URL. It does not extract
   snippets, search ranking metadata, or pagination offsets.
 - Malformed HTML is best-effort; the shared MuLIB webscan scanner is intentionally
@@ -211,8 +256,9 @@ framing, metadata, capacity or allocation checks preserve body/status/type.
   `noscript`) cannot introduce results or title markup. `plaintext` ends markup
   scanning. This conservative subset does not implement CSS visibility or the
   complete HTML5 tree-construction/namespace rules.
-- Content-type must be `text/html` or `application/xhtml+xml`, with optional
-  parameters, and HTTP status must be 200. The supplied generic transport must
+- HTML requires `text/html` or `application/xhtml+xml`; JSON requires
+  `application/json`. A JSON profile does not accept script or JSONP media
+  types. The supplied generic transport must
   not follow redirects implicitly; the provided HTTPS adapter never does.
 - The module does not bypass bot detection, paywalls, CAPTCHAs, rate limits,
   or search-provider restrictions. Use responsible request rates and comply
@@ -223,8 +269,9 @@ framing, metadata, capacity or allocation checks preserve body/status/type.
 
 ## Verification and On1x registration
 
-Tests use actual URL/fetch/policy/HTTPS/TSL kernels with offline HTML and TLS
-session fixtures, never live search engines. From the repository root:
+Tests use actual URL/fetch/policy/JSON/HTTPS/TSL kernels with offline HTML, JSON
+and TLS session fixtures. Optional live proxy smoke results are recorded in
+the [provider inventory](../library/elvis/README.md). From the repository root:
 
 ```sh
 make build/test-elvi-scrape build/test-elvi-scrape-https build/test-elvi-scrape-alloc \
@@ -237,7 +284,7 @@ make build/test-elvi-scrape build/test-elvi-scrape-https build/test-elvi-scrape-
 
 CTest supplies the source directory when running from an isolated work directory.
 Enable `MULIB_SANITIZERS` for ASan/UBSan. With Clang and `MULIB_BUILD_FUZZER`,
-`mulib_fuzz_elvi_scrape` fuzzes the DSL compiler, HTML extractor and URL/redirect
+`mulib_fuzz_elvi_scrape` fuzzes the DSL compiler, HTML/JSON extractor and URL/redirect
 processing. Seed it with the providers from `library/elvis` and
 `tests/fixtures/elvi-scrape` files.
 
@@ -270,7 +317,7 @@ until reusable compiler/selector/runner APIs have stable tests.
 | --- | --- |
 | Header | [`include/mulib-elvi-scrape.h`](../include/mulib-elvi-scrape.h) |
 | Implementation switch | `MULIB_IMPL_ELVI_SCRAPE` |
-| Repository-local includes | [`include/detail/mulib-webscan.h`](../include/detail/mulib-webscan.h), [mulib-fetch](mulib-fetch.md), [mulib-https](mulib-https.md), [mulib-url](mulib-url.md) |
+| Repository-local includes | [`include/detail/mulib-webscan.h`](../include/detail/mulib-webscan.h), [mulib-fetch](mulib-fetch.md), [mulib-https](mulib-https.md), [mulib-json](mulib-json.md), [mulib-url](mulib-url.md) |
 | Complete example | [`examples/elvi-scrape.c`](../examples/elvi-scrape.c) |
 
 The include list includes conditional and implementation-only includes;

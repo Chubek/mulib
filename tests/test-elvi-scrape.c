@@ -74,6 +74,87 @@ static void anchor_attributes(void) {
   assert(!strcmp(results[1].title,"B") && !strcmp(results[1].url,"https://example.net/ends-with/"));
 }
 
+static void anchor_classes(void) {
+  static const char dsl[]="elvi offline\nhost example.org\nhome https://example.org/\n"
+    "search https://example.org/?q={query}\nanchor %s\nanchor_class Result\n";
+  static const char html[]=
+    "<section><a href='https://example.net/first' CLASS='other\tResult\fmore'>"
+      "<h3>First</h3></a></section>"
+    "<section><a class=Result href=https://example.net/last><h3>Last</h3></a></section>"
+    "<section class=Result><a data-class=Result href='https://decoy.example/'>"
+      "<h3 class=Result>Class on another element</h3></a></section>"
+    "<section><a class='result NotResult Result-ish' href='https://decoy.example/'>"
+      "<h3>Not a matching token</h3></a></section>"
+    "<section><a class='other' class=Result href='https://decoy.example/'>"
+      "<h3>Duplicate class</h3></a></section>"
+    "<section><a class class=Result href='https://decoy.example/'>"
+      "<h3>Missing first value</h3></a></section>"
+    "<section><a class='' class=Result href='https://decoy.example/'>"
+      "<h3>Empty first value</h3></a></section>"
+    "<section><a class='other\xc2\xa0Result' href='https://decoy.example/'>"
+      "<h3>NBSP is not an HTML class separator</h3></a></section>"
+    "<a class=Result href='https://example.net/outside'><h3>Outside</h3></a>"
+    "<section><a class=Result href='https://example.net/nochild'>No heading</a></section>";
+  static const struct {const char *selector,*third;size_t count;} modes[]={
+    {"any","Outside",4},{"child h3","Outside",3},{"parent section","No heading",3}
+  };
+  mulib_elvi_scrape_program_t p;mulib_elvi_scrape_result_t results[8];size_t count;
+  char src[1024];
+  for(size_t i=0;i<sizeof modes/sizeof *modes;i++) {
+    int n=snprintf(src,sizeof src,dsl,modes[i].selector);
+    assert(n>0 && (size_t)n<sizeof src);
+    assert(mulib_elvi_scrape_compile(src,(size_t)n,&p,NULL));
+    assert(mulib_elvi_scrape_parse(&p,html,sizeof html-1,results,8,&count));
+    assert(count==modes[i].count);
+    assert(!strcmp(results[0].title,"First") && !strcmp(results[0].url,"https://example.net/first"));
+    assert(!strcmp(results[1].title,"Last") && !strcmp(results[1].url,"https://example.net/last"));
+    assert(!strcmp(results[2].title,modes[i].third));
+    if(count==4)assert(!strcmp(results[3].title,"No heading"));
+  }
+}
+
+static void relative_links(void) {
+  static const char dsl[]="elvi offline\nhost Example.org\nhome https://example.org/base/\n"
+    "search https://example.org/search/?q={query}\nanchor any\nrewrite %s\n"
+    "exclude_host blocked.example\n";
+  static const char html[]="<base href='https://decoy.example/'>"
+    "<a href='/wiki/Test?a=1&amp;b=%2F#part'>Relative</a>"
+    "<a href='https://example.org/wiki/Test?a=1&amp;b=%2F#part'>Duplicate</a>"
+    "<a href='&#47;from-entity'>Slash entity</a><a href='/'>Root</a>"
+    "<a href='https://example.net/elsewhere'>External</a>"
+    "<a href='//evil.example/x'>Network path</a>"
+    "<a href='/&#x2f;evil.example/x'>Entity-encoded network path</a>"
+    "<a href='/\\evil.example/x'>Backslash</a>"
+    "<a href='/%5Cevil.example/x'>Escaped backslash</a>"
+    "<a href='/bad%0Apath'>Escaped control</a>"
+    "<a href='/bad%0'>Malformed escape</a>"
+    "<a href='/bad&#10;path'>Entity-encoded control</a>"
+    "<a href='path'>No leading slash</a><a href='../path'>Parent relative</a>"
+    "<a href='?q=1'>Query only</a><a href='#part'>Fragment only</a>"
+    "<a href='http://example.org/'>Insecure absolute</a>"
+    "<a href='https://127.0.0.1/'>Private absolute</a>"
+    "<a href='https://a.blocked.example/'>Excluded absolute</a>";
+  mulib_elvi_scrape_program_t p;mulib_elvi_scrape_result_t results[8];size_t count;
+  char src[1024];
+  int n=snprintf(src,sizeof src,dsl,"relative");
+  assert(n>0 && (size_t)n<sizeof src);
+  assert(mulib_elvi_scrape_compile(src,(size_t)n,&p,NULL));
+  assert(mulib_elvi_scrape_parse(&p,html,sizeof html-1,results,8,&count) && count==4);
+  assert(!strcmp(results[0].title,"Relative"));
+  assert(!strcmp(results[0].url,"https://example.org/wiki/Test?a=1&b=%2F#part"));
+  assert(!strcmp(results[1].url,"https://example.org/from-entity"));
+  assert(!strcmp(results[2].url,"https://example.org/"));
+  assert(!strcmp(results[3].url,"https://example.net/elsewhere"));
+  strcpy(p.excluded_hosts[p.excluded_count++],"example.org");
+  assert(mulib_elvi_scrape_parse(&p,html,sizeof html-1,results,8,&count) && count==1);
+  assert(!strcmp(results[0].url,"https://example.net/elsewhere"));
+  n=snprintf(src,sizeof src,dsl,"direct");
+  assert(n>0 && (size_t)n<sizeof src);
+  assert(mulib_elvi_scrape_compile(src,(size_t)n,&p,NULL));
+  assert(mulib_elvi_scrape_parse(&p,html,sizeof html-1,results,8,&count) && count==2);
+  assert(!strcmp(results[0].title,"Duplicate") && !strcmp(results[1].title,"External"));
+}
+
 static void table_cell_context(void) {
   /* Lite pages can omit cell and row end tags. A nested table is still in
    * the outer cell, but a new cell/row in the same table ends that context. */
@@ -151,6 +232,11 @@ static void hardening(const char *root,const mulib_elvi_scrape_program_t *progra
     assert(mulib_webscan_next_work_(&cursor,&tag,&work)==-1 && !work);}
   {const char *cursor="<script>lots of raw text</script>";mulib_webscan_tag_ tag;size_t work=20;
     assert(mulib_webscan_next_work_(&cursor,&tag,&work)==-1 && !work);}
+  {mulib_webscan_tag_ tag;const char *value;size_t len,work=100;
+    assert(mulib_webscan_tag_parse_("<a class='pre Target post'>",&tag));
+    assert(mulib_webscan_attr_first_work_(&tag,"class",&value,&len,&work)==1);
+    work=100-work; /* Sufficient for the attribute, but not its tokens. */
+    assert(mulib_webscan_class_work_(&tag,"Target",&work)==-1 && !work);}
   /* Length-delimited input, arbitrary capacity, invalid programs and NUL all
    * leave caller storage untouched, including the count sentinel. */
   memset(results,0x5a,sizeof results);count=123;
@@ -194,6 +280,8 @@ int main(int argc,char **argv) {
   mulib_elvi_scrape_result_t out[10]={0};size_t count=0;char url[8192];
   provider_language();
   anchor_attributes();
+  anchor_classes();
+  relative_links();
   table_cell_context();
   snprintf(path,sizeof path,"%s/library/elvis/Google.elvs",root);
   assert(mulib_elvi_scrape_load(path,&p,&err));

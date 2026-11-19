@@ -1,0 +1,7 @@
+{"results":[
+  {"name":"example/http","description":"Client","url":"https://packagist.org/packages/example/http"},
+  {"name":"bad/missing-link"},
+  {"name":"bad/non-https","url":"http://packagist.org/packages/bad/non-https"},
+  {"name":"duplicate","url":"https://packagist.org/packages/example/http"},
+  {"name":"example/json","url":"https://packagist.org/packages/example/json"}
+],"total":5}

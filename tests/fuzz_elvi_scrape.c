@@ -1,4 +1,4 @@
-/* libFuzzer: length-delimited DSL, HTML and URL/redirect paths, no network. */
+/* libFuzzer: length-delimited DSL, HTML/JSON and URL/redirect paths, no network. */
 #include "fixtures/elvi-scrape-setup.h"
 #include <assert.h>
 static void elvi_fuzz_parse_(const mulib_elvi_scrape_program_t *p,const char *html,size_t size) {
@@ -38,5 +38,9 @@ int LLVMFuzzerTestOneInput(const unsigned char *data,size_t size) {
     assert(n>0 && (size_t)n<sizeof wrapped);elvi_fuzz_parse_(&p,wrapped,(size_t)n);
   }
   (void)mulib_elvi_scrape_url(&p,text,1,url,sizeof url);
+  dsl="elvi fixture\nhost example.org\nhome https://example.org/\n"
+    "search https://example.org/?q={query}\nformat json\nresults /\ntitle /title\nurl /url\nrewrite relative\n";
+  assert(mulib_elvi_scrape_compile(dsl,strlen(dsl),&p,NULL));
+  elvi_fuzz_parse_(&p,(const char *)data,size);
   free(text);return 0;
 }

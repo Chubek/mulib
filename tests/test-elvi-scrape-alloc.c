@@ -29,6 +29,9 @@ static void *elvi_realloc_(void *p,size_t n) {
 static const char elvi_dsl_[]="elvi fixture\nhost example.org\nhome https://example.org/\n"
   "search https://example.org/?q={query}&n={limit}\nanchor child h3\nrewrite google\n";
 static const char elvi_html_[]="<a href='/url?q=https%3A%2F%2Fexample.net%2F'><h3>Safe &amp; local</h3></a>";
+static const char elvi_json_dsl_[]="elvi fixture\nhost example.org\nhome https://example.org/\n"
+  "search https://example.org/?q={query}\nformat json\nresults /\ntitle /label\nurl /href\n";
+static const char elvi_json_[]="[{\"label\":\"Safe & local\",\"href\":\"https://example.net/\"}]";
 static int elvi_fetch_(void *ctx,const char *url,mulib_shylock_buffer_t *body,
                        unsigned *status,char *type,size_t cap) {
   (void)ctx;(void)url;
@@ -56,6 +59,10 @@ static void elvi_operation_(const mulib_elvi_scrape_program_t *p,int operation) 
       mulib_elvi_scrape_search(p,&client,"test",1,&result,1,&count,NULL);
     if(!ok)assert(count==123 && !memcmp(&result,&original,sizeof result));
     else assert(count==1 && !strcmp(result.title,"Safe & local"));
+  } else if(operation==5) {
+    ok=mulib_elvi_scrape_parse(p,elvi_json_,sizeof elvi_json_-1,&result,1,&count);
+    if(!ok)assert(count==123 && !memcmp(&result,&original,sizeof result));
+    else assert(count==1 && !strcmp(result.title,"Safe & local"));
   } else {
     const char *wire="HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 2\r\n\r\nOK";
     fixture f={wire,0,0,0,0,0};mulib_elvi_scrape_https_t tls={connect_tls,peer_tls,&f};
@@ -69,16 +76,18 @@ static void elvi_operation_(const mulib_elvi_scrape_program_t *p,int operation) 
   if(!allocation_fail)assert(ok);
 }
 int main(void) {
-  mulib_elvi_scrape_program_t p;FILE *file;
+  mulib_elvi_scrape_program_t p,j;FILE *file;
   assert(mulib_elvi_scrape_compile(elvi_dsl_,sizeof elvi_dsl_-1,&p,NULL));
+  assert(mulib_elvi_scrape_compile(elvi_json_dsl_,sizeof elvi_json_dsl_-1,&j,NULL));
   assert(!allocation_live);
   file=fopen("elvi-allocation.elvs","wb");assert(file);
   assert(fwrite(elvi_dsl_,1,sizeof elvi_dsl_-1,file)==sizeof elvi_dsl_-1 && !fclose(file));
-  for(int operation=0;operation<6;operation++) {
+  for(int operation=0;operation<7;operation++) {
     size_t allocations;allocation_calls=allocation_fail=0;
-    elvi_operation_(&p,operation);allocations=allocation_calls;assert(!allocation_live && allocations);
+    const mulib_elvi_scrape_program_t *program=operation==5?&j:&p;
+    elvi_operation_(program,operation);allocations=allocation_calls;assert(!allocation_live && allocations);
     for(size_t k=1;k<=allocations;k++) {
-      allocation_calls=0;allocation_fail=k;elvi_operation_(&p,operation);assert(!allocation_live);
+      allocation_calls=0;allocation_fail=k;elvi_operation_(program,operation);assert(!allocation_live);
     }
   }
   assert(!remove("elvi-allocation.elvs"));

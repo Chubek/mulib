@@ -38,6 +38,76 @@ static int peer_tls(void *ctx,const mulib_tsl_t *s,mulib_elvi_scrape_peer_t *pee
   if(f->mode==11)memset(peer->alpn,'x',sizeof peer->alpn);
   return f->mode==6?0:1;
 }
+static void json_dsl_validation(void) {
+  const char prefix[]="elvi fixture\nhost example.org\nhome https://example.org/\n"
+    "search https://example.org/?q={query}\n";
+  const struct {const char *tail;size_t line;} invalid[]={
+    {"format xml\nanchor any\n",5},
+    {"anchor any\nresults /items\n",6},
+    {"format json\nresults /items\ntitle /name\n",7},
+    {"format json\nresults /items\ntitle /name\nurl /url~\n",8},
+    {"format json\nresults /items\ntitle /na~2me\nurl /url\n",7},
+    {"format json\nresults items\ntitle /name\nurl /url\n",6},
+    {"format json\nresults /items\ntitle /name\nurl /url\nanchor any\n",9},
+    {"format json\nresults /items\ntitle /name\nurl /url\nanchor_class hit\n",9},
+    {"format json\nresults /items\ntitle /name\nurl /url\nrewrite google\n",9},
+    {"format json\nresults /items\ntitle /name\nurl /url\nresults /\n",9}
+  };
+  mulib_elvi_scrape_program_t p;
+  mulib_elvi_scrape_error_t err;
+  unsigned char before[sizeof p];
+  memset(&p,0xa5,sizeof p);memcpy(before,&p,sizeof p);
+  for(size_t i=0;i<sizeof invalid/sizeof *invalid;i++) {
+    char dsl[512];
+    int n=snprintf(dsl,sizeof dsl,"%s%s",prefix,invalid[i].tail);
+    assert(n>0 && (size_t)n<sizeof dsl);
+    assert(!mulib_elvi_scrape_compile(dsl,(size_t)n,&p,&err));
+    assert(err.line==invalid[i].line && err.message[0] && !memcmp(&p,before,sizeof p));
+  }
+}
+static void json_search(void) {
+  const char dsl[]="elvi fixture\nhost example.org\nhome https://example.org/\n"
+    "search https://example.org/?q={query}\nformat json\nresults /items\n"
+    "title /meta~1data/0/name\nurl /~0uri\nrewrite relative\n";
+  const char *types[]={"Application/JSON; charset=utf-8","text/html",
+    "application/jsonx","application/json junk","application/problem+json"};
+  const char *payload="{\"items\":["
+    "{\"meta/data\":[{\"name\":\"ignored\"}],\"~uri\":\"//example.net/\"},"
+    "{\"meta/data\":[{\"name\":\"ignored\\u0000x\"}],\"~uri\":\"/nul-title\"},"
+    "{\"meta/data\":[{\"name\":\"ignored\"}],\"~uri\":\"/nul\\u0000-url\"},"
+    "{\"meta/data\":[{\"name\":\"  one \\uD83D\\uDE00 \\n &amp;  \"}],\"~uri\":\"/result\"},"
+    "{\"meta/data\":[{\"name\":\"duplicate\"}],\"~uri\":\"https://example.org/result\"},"
+    "{\"meta/data\":[{\"name\":\"two\"}],\"~uri\":\"https://example.net/two?x=&amp;\"}]}";
+  mulib_elvi_scrape_program_t p;
+  assert(mulib_elvi_scrape_compile(dsl,sizeof dsl-1,&p,NULL));
+  for(size_t i=0;i<sizeof types/sizeof *types;i++) {
+    char wire[1024];
+    fixture f={wire,0,0,0,0,0};mulib_elvi_scrape_https_t tls={connect_tls,peer_tls,&f};
+    mulib_fetch_client_t client={{8192,2097152,0,1,0},mulib_elvi_scrape_https_transport,&tls};
+    mulib_elvi_scrape_result_t results[4],before[4];size_t n=99;unsigned status=0;
+    int written=snprintf(wire,sizeof wire,"HTTP/1.1 200 OK\r\nContent-Type: %s\r\n"
+        "Content-Length: %zu\r\n\r\n%s",types[i],strlen(payload),payload);
+    assert(written>0 && (size_t)written<sizeof wire);
+    memset(results,0xa5,sizeof results);memcpy(before,results,sizeof results);
+    assert(mulib_elvi_scrape_search(&p,&client,"test",2,results,4,&n,&status)==(i==0));
+    assert(f.connects==1 && f.closes==1 && status==200);
+    if(i)assert(n==99 && !memcmp(before,results,sizeof results));
+    else {
+      assert(n==2 && !strcmp(results[0].title,"one \xf0\x9f\x98\x80 &amp;"));
+      assert(!strcmp(results[0].url,"https://example.org/result"));
+      assert(!strcmp(results[1].url,"https://example.net/two?x=&amp;"));
+      assert(!memcmp(before+2,results+2,2*sizeof *results));
+    }
+  }
+  const char *bad[]={"null","{}","{\"items\":null}","{\"items\":[{}]} null","{\"items\":[],"};
+  for(size_t i=0;i<sizeof bad/sizeof *bad;i++) {
+    size_t n=99;
+    assert(!mulib_elvi_scrape_parse(&p,bad[i],strlen(bad[i]),NULL,0,&n) && n==99);
+  }
+  const char empty[]="{\"items\":[]}";
+  size_t n=99;
+  assert(mulib_elvi_scrape_parse(&p,empty,sizeof empty-1,NULL,0,&n) && !n);
+}
 static void responses(void) {
   const char *invalid[]={
     "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nOK",
@@ -102,5 +172,7 @@ int main(void) {
   assert(!mulib_elvi_scrape_https_transport(&tls,"https://example.org/",&body,&status,type,sizeof type));
   assert(f.connects==1 && f.closes==1 && !body.data);
   responses();
+  json_dsl_validation();
+  json_search();
   puts("elvi-scrape HTTPS: OK");return 0;
 }

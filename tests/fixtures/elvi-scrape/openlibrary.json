@@ -1,0 +1,12 @@
+{
+  "numFound": 6,
+  "start": 0,
+  "docs": [
+    {"title": "Non-root path", "key": "works/OL110W"},
+    {"title": "Network path", "key": "//example.org/works/OL111W"},
+    {"title": "Missing key"},
+    {"title": "Caf\u00e9 at the Library", "key": "\/works\/OL112W"},
+    {"title": "Duplicate", "key": "/works/OL112W"},
+    {"title": "Another Book", "key": "/works/OL113W"}
+  ]
+}

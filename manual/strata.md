@@ -8,14 +8,14 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1191 headers, 1228 direct dependency edges.
+Inventory: 1199 headers, 1242 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (400 modules)
+## Stratum 0 (403 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -223,6 +223,9 @@ Compatibility group: `parsec`, `peg`.
 | [lsh](mulib-lsh.md) | none |
 | [manpage](mulib-manpage.md) | none |
 | [map](mulib-map.md) | none |
+| [markup-graph](mulib-markup-graph.md) | none |
+| [markup-spans](mulib-markup-spans.md) | none |
+| [markup-tree](mulib-markup-tree.md) | none |
 | [math](mulib-math.md) | none |
 | [matrix](mulib-matrix.md) | none |
 | [matview](mulib-matview.md) | none |
@@ -420,7 +423,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (401 modules)
+## Stratum 1 (402 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -606,6 +609,7 @@ Compatibility group: `parsec`, `peg`.
 | [machobuidler](mulib-machobuidler.md) | `buffer`, `bycutils` |
 | [marionette](mulib-marionette.md) | `input`, `vec` |
 | [markov_chain](mulib-markov_chain.md) | `probability` |
+| [markup-stream](mulib-markup-stream.md) | `markup-tree` |
 | [mathaccent](mulib-mathaccent.md) | `typecore` |
 | [mathatom](mulib-mathatom.md) | `typecore` |
 | [mathdelimiter](mulib-mathdelimiter.md) | `typecore` |
@@ -826,7 +830,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (144 modules)
+## Stratum 2 (145 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -897,6 +901,7 @@ Compatibility group: `parsec`, `peg`.
 | [lzo](mulib-lzo.md) | `codec-core` |
 | [machinebuild](mulib-machinebuild.md) | `fst`, `strbuf` |
 | [machoutils](mulib-machoutils.md) | `macho` |
+| [markup-bridge](mulib-markup-bridge.md) | `markup-graph`, `markup-spans`, `markup-stream`, `markup-tree` |
 | [mathml](mulib-mathml.md) | `xml` |
 | [mempool](mulib-mempool.md) | `alloc` |
 | [memtkx](mulib-memtkx.md) | `alloc` |
@@ -1070,7 +1075,7 @@ Compatibility group: `parsec`, `peg`.
 | [xtas](mulib-xtas.md) | `dsdom` |
 | [xz](mulib-xz.md) | `authcrypto`, `bcj`, `crc32`, `lzma` |
 
-## Stratum 4 (48 modules)
+## Stratum 4 (50 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1094,6 +1099,8 @@ Compatibility group: `parsec`, `peg`.
 | [inet6](mulib-inet6.md) | `inet4` |
 | [isel](mulib-isel.md) | `archml`, `isched`, `lir`, `lowopt` |
 | [machobuilder](mulib-machobuilder.md) | `binfilewriter`, `bycutils`, `machobuidler`, `objfilebuilder` |
+| [mcp-client](mulib-mcp-client.md) | `json`, `utf8` |
+| [mcp-server](mulib-mcp-server.md) | `json`, `utf8` |
 | [messagepack](mulib-messagepack.md) | `buffer`, `json` |
 | [microcc](mulib-microcc.md) | `depir`, `isched`, `lowopt`, `machine`, `strbuf` |
 | [mune](mulib-mune.md) | `dynload`, `jit`, `parsec` |
@@ -1210,7 +1217,7 @@ Compatibility group: `parsec`, `peg`.
 | [vcspack](mulib-vcspack.md) | `adler32`, `endian`, `git` |
 | [vcsrepo](mulib-vcsrepo.md) | `git` |
 
-## Stratum 8 (17 modules)
+## Stratum 8 (18 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1222,6 +1229,7 @@ Compatibility group: `parsec`, `peg`.
 | [http_request](mulib-http_request.md) | `http` |
 | [httpserver_config](mulib-httpserver_config.md) | `http` |
 | [layoutml](mulib-layoutml.md) | `layout`, `xml` |
+| [mcp-http](mulib-mcp-http.md) | `http`, `mcp-client`, `mcp-server`, `sse` |
 | [openai](mulib-openai.md) | `http`, `json`, `utf8` |
 | [prowse-protocol](mulib-prowse-protocol.md) | `base64`, `git`, `http`, `json`, `socket`, `utf8` |
 | [vcscommit](mulib-vcscommit.md) | `strbuf`, `vcsrepo` |
@@ -1253,7 +1261,7 @@ Compatibility group: `parsec`, `peg`.
 | Module | Direct dependencies |
 | --- | --- |
 | [browser-fetch](mulib-browser-fetch.md) | `browser-origin`, `fetch` |
-| [elvi-scrape](mulib-elvi-scrape.md) | `fetch`, `https`, `url` |
+| [elvi-scrape](mulib-elvi-scrape.md) | `fetch`, `https`, `json`, `url` |
 | [muw3](mulib-muw3.md) | `https`, `socket`, `tls` |
 | [static_file](mulib-static_file.md) | `http_response`, `mime`, `vfs` |
 

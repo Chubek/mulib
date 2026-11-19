@@ -102,8 +102,10 @@ locale. Do not change the global C locale concurrently with these operations.
 Parsing and serialization allow **128 nested arrays/objects** by default.
 Define `MULIB_JSON_MAX_DEPTH` before implementation inclusion to change this
 limit, keeping C stack capacity in mind. The parser additionally applies bounded
-parsec evaluator depth, proportional work limits and capture limits to reject
-malformed deeply recursive input safely. Manually constructed trees may exceed
+parsec evaluator depth, proportional work limits and capture limits. During
+materialization the parser also limits aggregate object-key comparisons to
+`64 * length + 4096` entry visits and compared key bytes, so a sufficiently
+wide object can be rejected even if its syntax is valid. Manually constructed trees may exceed
 the nesting limit, but stringify then returns NULL. All allocation arithmetic
 checks for overflow. A source/string length of `SIZE_MAX` is invalid.
 

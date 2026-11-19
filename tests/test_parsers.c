@@ -158,6 +158,22 @@ static void test_json(void) {
     assert(e.message);
     assert(!mulib_json_parse("{\n\"a\":\n}", 9, &e) && e.line >= 2);
     {
+        mulib_strbuf_t wide;
+        mulib_strbuf_init(&wide);
+        assert(mulib_strbuf_putc(&wide, '{'));
+        for (i = 0; i < 500; ++i) {
+            char field[64];
+            int length = snprintf(field, sizeof field, "%s\"common-field-prefix-%04zu\":0",
+                                  i ? "," : "", i);
+            assert(length > 0 && (size_t)length < sizeof field);
+            assert(mulib_strbuf_append_n(&wide, field, (size_t)length));
+        }
+        assert(mulib_strbuf_putc(&wide, '}'));
+        assert(!mulib_json_parse(wide.data, wide.length, &e));
+        assert(e.message && !strcmp(e.message, "JSON object lookup work limit exceeded"));
+        mulib_strbuf_free(&wide);
+    }
+    {
         char deep[10000];
         memset(deep, '[', sizeof deep);
         assert(!mulib_json_parse(deep, sizeof deep, &e));

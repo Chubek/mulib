@@ -1,3 +1,11 @@
+#define MULIB_IMPL_CDD_MARKUP_BRIDGE
+#define MULIB_IMPL_CDD_MARKUP_GRAPH
+#define MULIB_IMPL_CDD_MARKUP_SPANS
+#define MULIB_IMPL_CDD_MARKUP_STREAM
+#define MULIB_IMPL_CDD_MARKUP_TREE
+#define MULIB_IMPL_CDD_MCP_CLIENT
+#define MULIB_IMPL_CDD_MCP_HTTP
+#define MULIB_IMPL_CDD_MCP_SERVER
 #define MULIB_IMPL_CAPBROKER
 #define MULIB_IMPL_CDD_CATALOGUE
 #define MULIB_IMPL_CDD_DIFF
@@ -2392,3 +2400,11 @@
 #include "mulib-sandbox-process.h"
 #include "mulib-sandbox-profile.h"
 #include "mulib-seccomp.h"
+#include "mulib-markup-bridge.h"
+#include "mulib-markup-graph.h"
+#include "mulib-markup-spans.h"
+#include "mulib-markup-stream.h"
+#include "mulib-markup-tree.h"
+#include "mulib-mcp-client.h"
+#include "mulib-mcp-http.h"
+#include "mulib-mcp-server.h"

@@ -1,0 +1,14 @@
+{
+  "status": "ok",
+  "message-type": "work-list",
+  "message": {
+    "total-results": 5,
+    "items": [
+      {"title": [], "URL": "https://doi.org/10.5555/untitled"},
+      {"title": ["Caf\u00e9 & Tools", "Alternate title"], "URL": "https:\/\/doi.org\/10.5555\/cafe"},
+      {"title": ["Duplicate"], "URL": "https://doi.org/10.5555/cafe"},
+      {"title": ["Insecure DOI"], "URL": "http://doi.org/10.5555/insecure"},
+      {"title": ["Second Work"], "URL": "https://doi.org/10.5555/second"}
+    ]
+  }
+}
