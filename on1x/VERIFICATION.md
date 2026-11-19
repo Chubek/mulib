@@ -82,6 +82,135 @@ python3 tools/embed_units.py --check
 git diff --check
 ```
 
+## Move-only Result ownership lifecycle — 2026-11-19
+
+Validated detached MuLIB baseline
+`6a145cbf09efcac76f387f6b664fc2257bac93aa` plus this continuation.
+The generated-scanner build used the read-only LibStone checkout
+`3399047f6c6328b8f07788795c610699e66c060a` at
+`/mnt/nvme/mulib/on1x/third_party/libstone`. Host: Linux
+`6.18.52-1-lts` x86-64, GCC/G++ 16.2.1 (`20260810`),
+Clang/Clang++ 22.1.8, CMake 4.4.3 and Python 3.14.7. All build and
+test artifacts were kept under
+`/mnt/nvme/opencode-builds/ses_e0d13d7a9ffe4DEJxtuNoZl9ei/resource-ownership`;
+the LibStone checkout remained clean.
+
+This is a bounded extension of the existing finite `own<Named>` profile, not a
+general resource or foreign-handle model. Canonical postfix `?` now consumes a
+direct local move-only `Result`: the complete input, selected `Ok`/`Err`
+projection, and region result carry independently checked transfer metadata.
+The C11 backend therefore clears each transferred source and retains exactly
+one active owner across either continuation or early return. Missing any of
+those three transfer classes is rejected by `canonical::verify_values`.
+
+The lifecycle suite covers:
+
+- the pervasive nominal `Result` with owning success and error payloads, plus a
+  distinct local Result declaration in checked-HIR transfer tests;
+- successful transfer/take/drop, one- and two-owner partial acquisition,
+  propagated `Err`, defer-before-lexical-cleanup order, and zero live owners
+  after each path;
+- implicit copy, second propagation/use-after-move, generic and shipped
+  pervasive-helper copies, raw foreign owner-bearing parameter/result ABIs,
+  owner-bearing defer capture, staging, concurrency, MIR and PPX rejection;
+- unique allocation failure at every constructor allocation point. Exit 72 is
+  retained as terminal OOM, and the allocator's exit verifier requires all
+  previously acquired owners to have been drained;
+- strict `-std=c11 -Wall -Wextra -Wpedantic -Werror` generated C plus strict
+  C11 and C++17 separate translation-unit callers of the same generated
+  internal interface; and
+- malformed-HIR transfer-marker mutations, a second take through a cleared
+  internal owner slot, ABI-version mismatch, and existing 50,001/20,000-node
+  iterative destruction stress.
+
+The boundary callers deliberately rebuild generated C and the runtime together.
+They do **not** establish a stable aggregate foreign ABI or promote arbitrary
+pointers/scalar handles to a checked owner.
+
+### Exact results
+
+| Profile | Result |
+|---|---|
+| GCC 16.2.1 Release, LibStone generated scanner, final ownership/defer selection | **4/4 passed** |
+| GCC 16.2.1 Debug, fallback scanner, final ownership/defer selection | **4/4 passed** |
+| Clang 22.1.8 Debug, fallback scanner, compiler/runtime/generated C with ASan+UBSan, final cross-feature selection | **12/12 passed**, no sanitizer findings |
+| Complete generated-scanner On1x inventory | **95 passed, 2 failed, 1 skipped of 98**; both failures are stale baseline inventories, not ownership failures |
+| Complete fallback-scanner On1x inventory | **90 passed, 3 failed, 1 skipped of 94**; the ownership tests and concurrency passed |
+| Repository-wide GCC Debug integration inventory | **707/709 passed**; two pre-existing generated inventories are stale |
+| `git diff --check` and embedded-unit consistency | **passed** in the final tree |
+
+The complete generated run's stable failures were:
+
+- `on1x.contracts`: the baseline assertion still permits only three auxiliary
+  MuLIB headers while the baseline tree has 259 additional unregistered
+  auxiliary headers; and
+- `on1x.mulib`: baseline `library/muw3lib` is not present in the embedded
+  fixture catalog.
+
+Neither failing test nor any implicated `include/`, `library/`, manifest, or
+catalog path differs from baseline in this change. The root integration run
+reported the same pre-existing registration drift as
+`mulib_dependency_strata` and `mulib_mull_inventory`. These failures are
+preserved rather than hidden, skipped, or repaired outside this task.
+
+The fallback complete run additionally had the expected
+`on1x.type_checker_hardening_hir` failure because that bootstrap configuration
+has no Firestone regex SDK. An earlier parallel run's
+`on1x.concurrency` captured-stdin assertion failed once, then passed both an
+isolated rerun **1/1** and the refreshed complete inventory.
+`on1x.category` skipped in both complete configurations because native PPX was
+disabled.
+
+Final affected and sanitizer commands:
+
+```sh
+base=/mnt/nvme/opencode-builds/ses_e0d13d7a9ffe4DEJxtuNoZl9ei/resource-ownership
+
+cmake --build "$base/gcc-generated" --parallel 2 --target \
+  on1xc on1x_recursive_owning_adts_tests on1x_defer_error_tests
+ctest --test-dir "$base/gcc-generated" --output-on-failure \
+  -R '^on1x\.(recursive_owning_adts(_hir)?|defer_error_hir|defer_errors)$'
+
+cmake --build "$base/gcc" --parallel 2 --target \
+  on1xc on1x_recursive_owning_adts_tests on1x_defer_error_tests
+ctest --test-dir "$base/gcc" --output-on-failure \
+  -R '^on1x\.(recursive_owning_adts(_hir)?|defer_error_hir|defer_errors)$'
+
+cmake --build "$base/clang-san" --parallel 2 --target \
+  on1xc on1x_recursive_owning_adts_tests on1x_defer_error_tests
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1:strict_string_checks=1 \
+UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+ctest --test-dir "$base/clang-san" --output-on-failure --parallel 2 \
+  -R '^on1x\.(compiler|functions|patterns|value_loops|nominal_adts|owning_adt|recursive_owning_adts(_hir)?|defer_error_hir|defer_errors|prelude|modules)$'
+```
+
+The Clang tree uses
+`-fsanitize=address,undefined -fno-omit-frame-pointer
+-fno-sanitize-recover=all` for C/C++ compiler targets and the same flags through
+`ON1X_TEST_C_FLAGS` for generated programs and their runtime.
+
+Complete inventory commands:
+
+```sh
+ctest --test-dir "$base/gcc-generated" --output-on-failure --parallel 4 \
+  --output-junit "$base/gcc-generated/results-resource-ownership.xml"
+ctest --test-dir "$base/gcc" --output-on-failure --parallel 4 \
+  --output-junit "$base/gcc/results-resource-ownership.xml"
+
+cmake -S . -B "$base/repo-gcc" -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_C_COMPILER=gcc
+cmake --build "$base/repo-gcc" --parallel 4
+ctest --test-dir "$base/repo-gcc" --output-on-failure --parallel 4 \
+  --output-junit "$base/repo-gcc/results-resource-ownership.xml"
+```
+
+Remaining closed boundaries are checked scalar/foreign owners and stale-handle
+generation validation, general borrows, callbacks, user destructors,
+affinity/reentrancy effects, ownership-constrained generic helpers,
+owner-bearing deferred arguments, concurrency ownership and `Send`/`Sync`,
+PPX/interface transport, and typed ownership/cleanup MIR. Allocation failure
+remains terminal and no budget is reinterpreted as a timeout.
+
 ## Function defer and owned Result closeout — 2026-11-19
 
 Validated MuLIB
@@ -95,17 +224,17 @@ This closes the direct-C11 ownership gap in the already executable
 [function-defer/typed-error profile](docs/defer-errors.md). Postfix `?` now
 uses checked destructive payload projections for either active arm of a
 move-only nominal `Result<T,E>`, then transfers the successful result slot.
-The projection clears its source before residual sum destruction. A named
-move-only Result must be explicit as `move(local)?`; omission reports a located
-source error. Immutable shared `sexpr` payloads retain/release through the
-existing generated aggregate helpers. No runtime ABI, foreign admission,
-exception model or MIR representation changed.
+The projection clears its source before residual sum destruction. Postfix `?`
+is an explicit consuming operation for a named move-only Result; a second read
+reports a located use-after-move error. Immutable shared `sexpr` payloads
+retain/release through the existing generated aggregate helpers. No runtime
+ABI, foreign admission, exception model or MIR representation changed.
 
 Executable tests cover:
 
 - shared success/error propagation, deferred aggregate captures, discarded
   managed deferred results, abandoned operands and zero final RC live nodes;
-- finite `own<Named>` success and error transfer, explicit named-local moves,
+- finite `own<Named>` success and error transfer, consuming named-local use,
   zero internal/fixture live-owner counters, and abort-on-second-free fixtures;
 - every owning-box allocation failure in the two-path program, with terminal
   exit 72, the original located allocation diagnostic and no sanitizer finding;

@@ -16,8 +16,10 @@ share structural matching.
 call-scoped borrows, not first-class references or a foreign pointer ABI.
 [Shared `sexpr` owners in nominal fields](owning-adts.md) use existing RC
 cleanup. [Finite unique owners](recursive-owning-adts.md) add recursive nominal
-layouts through `own<Named>`, explicit transfer, and direct C11 cleanup.
-General borrows/resources and effectful ownership MIR remain unsupported.
+layouts through `own<Named>`, explicit transfer, direct C11 cleanup, and
+consuming owner-bearing nominal `Result` propagation. General borrows,
+checked external handles/resources and effectful ownership MIR remain
+unsupported.
 
 The current defer/Result ownership continuation (2026-11-19) adds checked
 active-arm transfer for finite `own<Named>` payloads, proves shared-payload
@@ -106,7 +108,7 @@ around stackful fibers.
 | Parser / typed AST | Implemented functional subset | Functions, tuples/patterns, explicit universal types, scopes, control flow, imports |
 | Intrinsic core additions G1/G2 | Executable control/matching/value-loop slice | Loop/for-C/i64 ranges, labels/exits, guarded structural matches and typed value-loop joins/initialization verification; C11 plus scalar/tuple MIR; nominal-data and G3 continuations below; no owning lists/iterators or concurrency; [manual](core-syntax.md), [value loops](value-loops.md) |
 | G3 function defer / typed errors | Executable bounded C11 profile | Go-style function-scoped `defer call;`, registration-time snapshots, function-owned LIFO records, exact nominal `Result` postfix `?`, shared-`sexpr` retention and finite-unique active-arm transfer, return/cleanup edges including cooperative CSP cancellation; no unique deferred captures, JSON/CSP Result fields, using, exceptions, terminal-trap unwind or MIR/SDK defer admission; [contract](defer-errors.md) |
-| Module loader / pervasive environment | Executable compile-time namespaces and generic core facade | Named/selective/relative imports, aliases, packages, canonical deduplication, bounded cycles, demand-loaded prelude, relocatable installation, and canonical bounded nominal `Option`/`Result` helpers with explicit/local shadowing; helper functions remain copy-safe while direct Result `?` has the separate finite-owner profile above; Option propagation remains closed; [manual](modules.md) |
+| Module loader / pervasive environment | Executable compile-time namespaces and generic core facade | Named/selective/relative imports, aliases, packages, canonical deduplication, bounded cycles, demand-loaded prelude, relocatable installation, and canonical bounded nominal `Option`/`Result` helpers with explicit/local shadowing; direct concrete owner-bearing Result propagation is admitted, while generic move-only helpers and Option propagation remain closed; [manual](modules.md) |
 | MuLIB native housekeeping | Implemented bounded kernel/fixture planning | Integrated `stdlib/mulib`; `std.mulib` metadata/byte access and size checks; shared one-TU planning, fixture/provider/native companion linkage, actual selected header paths/fingerprints and relocatable bundles; [manual](../stdlib/mulib/README.md) |
 | PrettyPrint | Executable document DSL, raw C11 bridge and formatter tool | Global Knuth–Plass for `Fill`, semantic math, plain-UTF-8 source maps, block-incremental C sessions and `.ppg` → Python; no safe import, glyph justification or full Oppen; [manual](../stdlib/prettyprint/README.md) |
 | On1x source formatter | Executable conservative source layout | Canonical scanner/parser, preserved comments/literals/carriers and dot adjacency, `.on1xfmt` bounded layout search and Allman braces, paired directives, plain/LaTeX/groff, atomic plain-source `--inplace`/`-i` on POSIX; no type checking, syntax recovery or unchanged diagnostic locations; [manual](formatter.md) |
@@ -153,7 +155,7 @@ around stackful fibers.
 | Flintstone/Firestone native lowering | Not implemented | C11 is the sole backend |
 | Value data model (M1 slice) | Executable by-value C11 subset | Structural records with canonical labels, closed sums with exhaustive `match`, `array<T,N>` and owning `slice` snapshots, bounds-checked access with exit-70 errors; no MIR lowering, mutation, borrowed/dynamic arrays, derives or foreign aggregate ABI; [contract](data-model.md) |
 | Nonrecursive nominal records/enums | Executable bounded C11 profile | Invariant parameters (including phantoms), inferred arguments, generic specialization/forall, constructor catalogs, exhaustive structural matching and imported type identity; independently reconstructed layouts; [manual](nominal-adts.md) |
-| Recursive nominal ADTs / unique owners | Executable bounded HIR→C11 profile | `own<Named>`, `box`, explicit whole-value moves, consuming take/drop/match and nominal Result `?`, path-sensitive moved-state verification, lexical/overwrite/partial-construction cleanup, active-arm destruction, iterative traversal/drop and non-owning-defer composition; no MIR, PPX, raw FFI, unique defer capture/action, staging/concurrency or receiver ownership; [contract](recursive-owning-adts.md), [Result contract](defer-errors.md) |
+| Recursive nominal ADTs / unique owners | Executable bounded HIR→C11 profile | `own<Named>`, `box`, explicit whole-value moves, consuming take/drop/match/Result `?`, path-sensitive whole/projected moved-state verification, lexical/overwrite/partial-construction/error cleanup, active-arm destruction, iterative traversal/drop and non-owning-defer composition; no MIR, PPX, raw FFI, owner capture/deferred arguments, staging/concurrency or receiver ownership; [contract](recursive-owning-adts.md), [Result contract](defer-errors.md) |
 | Module signatures / functors | Not implemented | Interface ownership/effects, generative/applicative identity and separate-compilation ABI remain absent |
 | Cooperative fiber / channel G4 slice | Executable bounded C11 profile | `taskgroup`/`within` (terminal timeout), eager `launch`/`join`, consuming cooperative internal `cancel`, 1:1 i64 uni channels with bounded FIFO/rendezvous, checked outcomes and atomic mixed i64/u8 `poll` with monotonic `after`; POSIX `xfiber` direct exec/join/cancel; compiler-parsed backtick argv and affine bounded `u8` streams; MuLIB kernels through one implementation TU; no Plaid integration, full shell operators/expansion, typed timeout recovery, async or native workers; [contract](concurrency.md), [cancellation/deadlines](cancellation-deadlines.md) |
 | Plaid/Prolific integration | Not implemented | The cooperative G4 adapter uses MuLIB, not Plaid; profiling and broader concurrency remain open |
@@ -171,6 +173,9 @@ protects a pending managed return while non-owning defers run. Next
 error/resource work remains unique deferred captures/actions, JSON/CSP Result
 payloads, general foreign error adapters, effectful cleanup MIR and independent
 SDK models; this is not general exception or typed cancellation support.
+Concrete finite owners transfer through both arms with partial-acquisition
+cleanup. Further work includes ownership-constrained generic helpers, checked
+foreign handles, and owner-bearing deferred actions.
 
 The language-only M1 continuation adds decimal f64 literals with scanner/PPX
 parity and a versioned float/trivial-tuple MIR execution path. A later M2

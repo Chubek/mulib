@@ -139,11 +139,16 @@ call, while `_or_else` callbacks are invoked only for the fallback branch.
 Maps, chains, filters and iteration callbacks likewise run only for their
 selected variant. Postfix `?` applies to `Result`, not `Option`.
 
-These nominal values retain the bounded, nonrecursive, trivially copied data
-profile: managed strings, closures, buffers, S-expressions and resources cannot
-be payloads yet. This adds no runtime ABI. The explicit `std.Option` tagged-tuple,
-`std.extensions.Result` scalar-pair and `std.base.{option,result}` S-expression
-APIs remain separate compatibility representations.
+These nominal values retain the bounded data profile. A concrete pervasive
+`Result<T,E>` may use the separate finite `own<Named>` profile in `T` or `E`;
+direct construction, consuming match and postfix `?` then use checked moves and
+lexical cleanup. The generic helper functions above remain copy-safe because
+On1x has no ownership trait bound, so they reject rather than copy a move-only
+specialization. Managed strings, closures, buffers, S-expressions and general
+foreign resources remain restricted. This adds no runtime ABI. The explicit
+`std.Option` tagged-tuple, `std.extensions.Result` scalar-pair and
+`std.base.{option,result}` S-expression APIs remain separate compatibility
+representations.
 
 Automatic definitions are retained only when referenced, including dependencies
 of referenced helpers, so an unused prelude does not force inference or enlarge

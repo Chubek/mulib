@@ -134,9 +134,9 @@ fn scope(){let saved=source(true);defer show(saved);defer discard();
 fn main(){scope();assert(data_live_nodes()==0);}
 ''', '6\nvalue\n6\nerror\nvalue\n')
 
-# `?` consumes only the active unique Result arm. A named move-only Result
-# remains explicit (`move(pending)?`), and both success and propagated-error
-# paths reach zero live owners without a second drop.
+# `?` is an explicit consumption site for a move-only Result. It transfers only
+# the active unique arm, and both success and propagated-error paths reach zero
+# live owners without a second drop.
 unique_allocator = ['-include', t.root / 'tests/fixtures/unique_allocator.h',
                     t.root / 'tests/fixtures/unique_allocator.c']
 _, unique_result_exe = execute('unique_result_ownership', RESULT + '''
@@ -148,7 +148,7 @@ fn make(n:i64)->Result<own<Value>,own<Failure>>{
  if n<0{return variant<Result<own<Value>,own<Failure>>>(Err,box(record<Failure>{code:0-n}));}
  return variant<Result<own<Value>,own<Failure>>>(Ok,box(record<Value>{number:n}));}
 fn number(n:i64)->Result<i64,own<Failure>>{defer println(9);let pending=make(n);
- let value=move(pending)?;let item=take(value);
+ let value=pending?;let item=take(value);
  return variant<Result<i64,own<Failure>>>(Ok,item["number"]);}
 fn run(n:i64){let answer=number(n);match answer with{
  Ok(value)=>println(value),Err(error)=>{let problem=take(error);println(problem["code"]);}};}
@@ -292,11 +292,6 @@ negative = [
     ('extra_variant', 'enum R<T,E>{Ok(T),Err(E),Other}fn f()->R<i64,u8>{let n=variant<R<i64,u8>>(Ok,1)?;return variant<R<i64,u8>>(Ok,n);}fn main(){}', 'exactly Ok(T)'),
     ('lambda_boundary', RESULT+'fn f()->Result<i64,u8>{let g=fn(){let n=variant<Result<i64,u8>>(Ok,1)?;};g();return variant<Result<i64,u8>>(Ok,1);}fn main(){}', 'same nominal Result'),
     ('option', 'enum Option<T>{None,Some(T)}fn main(){let n=variant<Option<i64>>(Some,1)?;}', 'exactly Ok(T)'),
-    ('unique_result_copy', 'record N{x:i64}'+RESULT+
-     'fn make()->Result<own<N>,u8>{return variant<Result<own<N>,u8>>(Ok,box(record<N>{x:1}));}'
-     'fn use()->Result<own<N>,u8>{let pending=make();let value=pending?;'
-     'return variant<Result<own<N>,u8>>(Ok,move(value));}fn main(){drop(use());}',
-     'move-only Result local requires move(local)?'),
     ('json_result', RESULT+'fn bad()->Result<json,u8>{'
      'return variant<Result<json,u8>>(Ok,json_parse_or_die("{}"));}fn main(){}',
      'unsupported json'),

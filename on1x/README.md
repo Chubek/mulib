@@ -108,16 +108,19 @@ values may retain [immutable shared `sexpr`](docs/owning-adts.md), and the
 `own<Named>`, `box`, explicit `move`, consuming `take`/`drop`, and recursive
 layouts through strict C11. Unique ownership remains closed to MIR, PPX, raw
 FFI, captures, staging, deferred arguments/actions, and cooperative concurrency;
-the checked nominal-Result transfer below is the bounded exception. That
-transfer requires `move(local)?` for named move-only Results, composes with
-non-owning defers, and supports explicit iterative consuming traversal. There is
-no intrinsic list/iterator protocol or general borrow system.
+the checked nominal-Result transfer below is the bounded exception. Postfix `?`
+is itself an explicit consuming operation: it moves the complete Result and its
+active payload, composes with non-owning defers, and supports explicit iterative
+consuming traversal. There is no intrinsic list/iterator protocol, checked
+external scalar-handle owner, or general borrow system.
 
 The earlier final type-checker hardening matrix covers ownership together with
 inherent `impl` and cliche admission, including forged HIR and generated-member
 metadata. Its recorded results are generated GCC **98/98**, fallback GCC
 **97/97**, and focused Clang ASan/UBSan **15/15**. See
-[`VERIFICATION.md`](VERIFICATION.md) for exact commands and remaining limits.
+[`VERIFICATION.md`](VERIFICATION.md) for exact commands, current owner-bearing
+Result profiles, unrelated stale checkout-inventory failures, and remaining
+limits.
 
 Typed [multi-stage programming](docs/staging.md) accepts both expression quotes
 and lexical quotation regions such as
@@ -135,9 +138,9 @@ The M2 [defer/typed-error profile](docs/defer-errors.md) completes Go-style
 callee/arguments at registration and run LIFO at **function return**, including
 propagated errors; loop exits do not drain them. Registration has finite count/
 capture-byte budgets. `?` also transfers finite `own<Named>` success/error
-payloads exactly once and retains immutable shared `sexpr` payloads; named
-move-only Result locals require explicit `move(local)?`. Use `match` for recovery;
-fatal traps still do not unwind. See
+payloads exactly once and retains immutable shared `sexpr` payloads. The postfix
+operator consumes a named move-only Result as an explicit consumption site. Use
+`match` for recovery; fatal traps still do not unwind. See
 [`examples/defer_errors.on1x`](examples/defer_errors.on1x). General exceptions,
 JSON owner/view or concurrency-capability Result payloads, unique deferred
 arguments/captures, async/await and MIR/SDK defer models remain unsupported.
@@ -154,7 +157,11 @@ now exposes canonical bounded `Option<T>`/`Result<T,E>` types and focused
 `option_*`/`result_*` helpers without imports. These are ordinary generic On1x
 declarations, preserve explicit-import/local-shadow precedence, and add no ABI.
 The helper functions remain copy-safe even though direct `?` now has a checked
-finite-unique transfer path; legacy tuple, scalar-pair and S-expression facades
+finite-unique transfer path. The pervasive declaration supports direct
+owner-bearing construction, consuming match and `?`, but its generic helpers do
+not accept move-only specializations without a future ownership-constraint
+model. Other managed payloads remain restricted; legacy tuple, scalar-pair and
+S-expression facades
 remain explicit compatibility APIs. See
 [`examples/pervasive_options.on1x`](examples/pervasive_options.on1x).
 

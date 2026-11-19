@@ -43,7 +43,7 @@ The ownership operations are fallback intrinsics:
 | `move(local)` | Transfers one named local or parameter whose type is move-only. The source becomes statically moved-from. It is not valid on a temporary or a copyable value. |
 | `take(owner)` | Consumes one `own<Named>`, frees that box without destroying the transferred payload, and returns the named value. |
 | `drop(value)` | Consumes any move-only value and destroys its active owned/shared fields exactly once. |
-| `result?` | For the exact nominal `Ok(T)`/`Err(E)` protocol, consumes a move-only result, moves the active payload, and either continues with `T` or returns the same nominal result and `E`. |
+| `result?` | For the exact nominal `Ok(T)`/`Err(E)` protocol containing a unique owner, consumes the complete result, transfers only the active payload, and either continues with `T` or returns the same nominal result and `E`. |
 
 `box`, `move`, `take`, and `drop` are not reserved function names. An ordinary
 lexical binding or declared function with the same name wins normal name
@@ -68,6 +68,77 @@ partial move, forged transfer metadata, and ownership state that disagrees at a
 control-flow join. Assigning a new value to mutable storage reinitializes it;
 the previous value is dropped before overwrite. A repeatable loop cannot leave
 an enclosing unique local newly moved on its backedge.
+
+These are static representation properties, not user-implementable traits:
+
+| Checked shape | `Copy` | explicit/consuming `Move` | lexical `Drop` | `Send` / `Sync` |
+|---|---:|---:|---:|---:|
+| Scalar without managed fields | yes | not required | no | outside this profile |
+| `own<Named>` | no | yes | yes | no |
+| Nominal record/enum containing an owner | no | yes | yes, active fields only | no |
+| `Result<T,E>` containing an owner | no | yes, including postfix `?` | yes, active variant only | no |
+
+There is no derive or protocol override for these properties. A type is
+move-only transitively, and source cannot declare a unique value copyable.
+This profile is single-threaded and callback-free: it neither proves thread
+affinity/reentrancy nor admits owners as `Send` or `Sync`.
+
+`own<Named>` owns a compiler-created box. It is not a wrapper around an
+arbitrary `i64`, pointer, descriptor, socket, terminal handle, or foreign
+allocation. Existing generation-tagged scalar adapters remain raw bridges;
+they are not promoted to this safe type. A checked external owner still needs a
+reviewed constructor/drop/error/effect ABI, invalidation rules, and affinity
+contract.
+
+## Recoverable construction and `Result`
+
+The nominal two-variant `Result<T,E>` protocol from
+[typed error propagation](defer-errors.md) now composes with this finite owner
+profile. Both success owners and owned errors are admitted:
+
+```on1x
+enum Result<T,E> { Ok(T), Err(E) }
+enum Node { Node(i64) }
+
+fn node(value:i64)->own<Node> {
+  return box(variant<Node>(Node,value));
+}
+
+fn acquire(fail:bool)->Result<own<Node>,u8> {
+  let first=node(1);
+  if fail {
+    // first is still owned here and is dropped on this Err return.
+    return variant<Result<own<Node>,u8>>(Err,7u8);
+  }
+  return variant<Result<own<Node>,u8>>(Ok,move(first));
+}
+
+fn use(fail:bool)->Result<i64,u8> {
+  let pending=acquire(fail);
+  let owner=pending?; // consumes pending
+  let value=take(owner);
+  return match value with {
+    Node(number)=>variant<Result<i64,u8>>(Ok,number)
+  };
+}
+```
+
+Postfix `?` is an explicit consuming operation for a move-only result, like a
+consuming match. A named operand is marked moved as a whole; the selected
+payload is moved into either the continuation slot or the returned `Err`; and
+the generated source slots are cleared. Reading the result again, removing a
+transfer marker in checked HIR, or copying either payload rejects. Temporaries
+transfer directly.
+
+A constructor may therefore return a normal `Err` after partially acquiring
+owners. Reached function defers run first, then unreturned local owners drop in
+reverse lexical order. An owner placed in the returned `Ok` or `Err` is saved
+before those cleanups and is not dropped by the callee. This is ordinary typed
+failure, not exception unwinding.
+
+Owning allocation failure remains terminal. `box` exhaustion drains the
+bounded emergency registry and exits 72; it is not converted into `Err`, and
+the allocation budget is not a timeout.
 
 ## Construction, matching, and destruction
 
@@ -120,6 +191,13 @@ Generated C represents an owner as opaque `on1x_unique *` and requires
 Successful box and take operations clear their source storage so generated
 cleanup cannot observe a second owner.
 
+`on1x_unique_take` also clears the internal caller slot. A second take through
+that cleared slot fails closed. This tests stale transfer state without
+dereferencing freed storage. The raw opaque pointer ABI is internal; arbitrary
+foreign pointer reuse or a raw double-drop is not a supported checked operation.
+Generated On1x code prevents those cases statically and by clearing moved
+storage.
+
 Recursive destruction is iterative. `on1x_unique_drop` appends boxes to a FIFO
 work queue; destructors can enqueue child owners without recursively consuming
 the C stack. The executable tests both consume and destroy independent chains
@@ -149,8 +227,9 @@ This profile does not admit unique ownership through:
   typed move, drop, place, and cleanup events first;
 - Unit-v1 PPX transport, `--emit-ast`, or source units transformed by a PPX;
 - raw foreign parameters/results or inferred foreign aggregate layouts;
-- closure captures, deferred arguments, staged code, or cooperative
-  concurrency;
+- closure captures, owner-bearing deferred arguments/results, staged code, or
+  cooperative concurrency. Copy-only defers may coexist with owner locals and
+  run on a propagated `Err`;
 - Chisel or Nerotypical adapters, which reject rather than approximate it; or
 - arrays/slices and unnamed data aggregates. Unique storage is admitted through
   named record/enum layouts and their checked payload structure only.
@@ -161,8 +240,11 @@ before cleanup. It does not open the PPX, foreign, capture, deferred-argument,
 staging or concurrency boundaries above.
 
 There are no general borrows of owned values, field mutation, shared unique
-graphs, user-defined destructors, recoverable allocation failure, thread-safe
-`Send`/`Sync` model, or separate-compilation ownership ABI in this slice.
+graphs, checked scalar/foreign owners, user-defined destructors, recoverable
+allocation failure, thread-safe `Send`/`Sync` model, or separate-compilation
+ownership ABI in this slice. Generic pervasive Result helper functions remain
+copy-safe; concrete owner-bearing `Result` construction, matching and `?` are
+the admitted path.
 
 Inherent implementations continue to reject both `ref self` and `move self`.
 Sound consuming receivers require receiver-place and method-call lifetime
@@ -189,3 +271,6 @@ drift, and the unsupported boundaries above. The C++ test mutates whole and
 projected transfer metadata, checks MIR rejection and the C/C++ runtime ABI, and
 verifies iterative destruction. Exact compiler/scanner/sanitizer results are
 recorded in [`VERIFICATION.md`](../VERIFICATION.md).
+Additional fixtures cover partial acquisition, defer/cleanup order, double
+propagation, stale take state, strict C11/C++17 boundaries, and owned-error
+Results.

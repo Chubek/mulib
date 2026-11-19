@@ -89,6 +89,12 @@ still no general exception/async/effectful-MIR model.
   owner is consumed; its active payload is moved and its source storage is
   cleared. Reusing that result is a located use-after-move error.
   Short-circuiting is unchanged.
+- Under the finite [unique-owner profile](recursive-owning-adts.md), `?`
+  consumes a move-only result. A direct named operand is moved as a whole, and
+  the active success or error payload is transferred out before its source
+  storage is cleared. This admits both `Result<own<Named>,E>` and
+  `Result<T,own<Named>>`; a second propagation/read of the original result is a
+  checked use-after-move.
 - The admitted protocol is a nominal enum with two parameters and exactly
   `Ok(T)` / `Err(E)` payloads. The enclosing return uses the **same declaration**
   and exact error type; its success type may differ. No implicit error conversion,
@@ -98,9 +104,14 @@ still no general exception/async/effectful-MIR model.
   shared `sexpr` are supported, as are finite `own<Named>` payloads. Shared payload
   extraction retains one independent reference. A move-only `?` transfers and
   clears only the active `Ok` or `Err` payload before the residual sum is dropped;
-  write `move(pending)?` when propagating a named move-only Result local. JSON
-  owners/views and concurrency capabilities remain rejected. Use `record{}` as a
-  unit success payload, not `void` (which is not a data field).
+  the postfix operator itself is an explicit consuming site for a named
+  move-only Result. JSON owners/views and concurrency capabilities remain
+  rejected.
+  Concrete finite unique-owner payloads use explicit move/drop rules. Generic
+  pervasive helper functions remain copy-safe because there is no ownership
+  trait bound; they cannot silently specialize into owner copies. Other managed
+  resources retain their existing restrictions. Use `record{}` as a unit
+  success payload, not `void` (which is not a data field).
 - Use explicit `match` for recovery. This is a typed-result alternative to
   exceptions, not `try`/`catch`/`throw`/`finally`. Foreign statuses must be explicitly
   converted to checked result values by existing raw wrappers. No foreign
@@ -123,7 +134,9 @@ zero-argument thunk. Move-only Result arms use checked destructive projections;
 the payload slot is cleared so active-arm destruction cannot drop it twice.
 Ordinary checking recomputes closure captures. The source PPX wire transports
 only `Defer` / `Propagate`, not private registration or proof nodes. Both scanner
-modes recognize `?` and have parity coverage.
+modes recognize `?` and have parity coverage. Move-only propagation records
+whole-input, active-payload, and region-result transfers; the canonical verifier
+independently rejects a missing or forged marker.
 
 `src/codegen.cpp` emits a stack only for functions actually registering defers.
 Compiler-generated invocation/destruction helpers use exact capture types and
@@ -145,5 +158,9 @@ separate-TU callers, record/capture allocation failures, both budgets, fatal
 paths, owning-OOM cleanup during defers, source-wire/HIR mutations and explicit
 MIR/SDK rejections. Separate-TU tests use a shared generated interface: they do
 not claim separate On1x compilation or aggregate foreign ABI.
+Additional owner fixtures cover partial acquisition, double propagation, stale
+internal slots, strict C11/C++17 boundaries, and both success/error payloads.
+The generated interface is internal and does not establish a stable aggregate
+foreign ABI.
 
 Implementation/validation status: `capability-matrix.md` and `../VERIFICATION.md`.

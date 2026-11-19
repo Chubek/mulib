@@ -47,11 +47,11 @@ adapters remain unsupported; no application/general-FFI gate is promoted.
 
 Finite-owner continuation (2026-11-19): nominal `Result<T,E>?` now consumes and
 moves supported `own<Named>` payloads through the direct checked-HIR-to-C11
-profile; a named move-only Result local requires `move(local)?`. A pending
-managed return is protected while non-owning defers execute, including injected
-owning-allocation failure. This does not admit owner captures or deferred
-arguments, general managed results, ownership MIR/PPX/FFI, or separate
-compilation.
+profile; postfix `?` is itself an explicit consuming site for a named move-only
+Result. A pending managed return is protected while non-owning defers execute,
+including injected owning-allocation failure. This does not admit owner captures
+or deferred arguments, general managed results, ownership MIR/PPX/FFI, or
+separate compilation.
 
 Category continuation (2026-11-17): a native On1x-authored processor now expands
 explicit, module-local scalar protocols/witnesses into ordinary checked selectors.

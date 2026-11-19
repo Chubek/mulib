@@ -245,6 +245,104 @@ fn main(){
 }
 ''', extra=unique_fixture + ('-O2',))
 
+# A move-only Result is itself consumed by `?`. Both the Ok owner and an owned
+# Err payload transfer through canonical projections, while defers observe the
+# documented pre-lexical-cleanup state.
+owning_result_source = t.root / 'tests/fixtures/owning_result_lifecycle.on1x'
+owning_result = t.valid(
+    'owning_result_lifecycle',
+    '100\n1\n200\n0\n20\n101\n1\n201\n0\n7\n102\n2\n202\n0\n8\n9\n',
+    source=owning_result_source,
+    extra=unique_fixture + ('-O2',))
+
+# Terminal allocation failure is still distinct from recoverable Result::Err.
+# Every allocation point in this Result-producing constructor is injected.
+owning_result_fault_source = t.root / 'tests/fixtures/owning_result_fault.on1x'
+owning_result_fault = t.build(
+    'owning_result_fault',
+    source=owning_result_fault_source,
+    extra=unique_fixture)
+for fail_after in ('0', '1'):
+    failed = run([
+        owning_result_fault
+    ], env={**os.environ, 'ON1X_TEST_UNIQUE_FAIL_AFTER': fail_after})
+    assert failed.returncode == 72 and \
+           'owning-box allocation failure' in failed.stderr and \
+           'Sanitizer' not in failed.stderr, (
+               fail_after, failed.returncode, failed.stdout, failed.stderr)
+successful = run([
+    owning_result_fault
+], env={**os.environ, 'ON1X_TEST_UNIQUE_FAIL_AFTER': '2'})
+assert successful.returncode == 0 and not successful.stdout and \
+       not successful.stderr, (
+           successful.returncode, successful.stdout, successful.stderr)
+
+# The generated ownership ABI is internal, but rebuilding the generated C and
+# runtime together must remain usable from strict C11 and C++17 translation
+# units. Callers consume the successful owner exactly once; the failing
+# constructor has already cleaned its partial acquisition.
+generated_result = t.work / 'owning_result_lifecycle.c'
+generated_text = generated_result.read_text(encoding='utf-8')
+interface_end = generated_text.index('static void on1x_unique_destroy_')
+interface_text = '\n'.join(
+    line for line in generated_text[:interface_end].splitlines()
+    if not line.startswith('static ')) + '\n'
+result_prototype = next(
+    line for line in interface_text.splitlines()
+    if ' on1x_fn_boundary_make(bool);' in line)
+result_type = result_prototype.split()[0]
+interface = t.work / 'owning_result_interface.h'
+interface.write_text(interface_text, encoding='utf-8')
+strict = [
+    '-Wall', '-Wextra', '-Wpedantic', '-Werror',
+    '-I', t.root / 'runtime', '-I', t.work, *t.flags,
+]
+objects = []
+for name, file, extra in (
+        ('owning_result_generated', generated_result,
+         ('-Dmain=on1x_test_hidden_main',)),
+        ('owning_result_runtime', t.root / 'runtime/on1x_runtime.c',
+         ('-include', t.root / 'tests/fixtures/unique_allocator.h')),
+        ('owning_result_allocator',
+         t.root / 'tests/fixtures/unique_allocator.c', ())):
+    obj = t.work / (name + '.o')
+    compiled = run([
+        t.cc, '-std=c11', *strict, *extra, '-c', file, '-o', obj])
+    assert compiled.returncode == 0, (name, compiled.stderr)
+    objects.append(obj)
+for language, extension, standard in (
+        ('c', 'c', 'c11'), ('c++', 'cpp', 'c++17')):
+    caller = t.work / ('owning_result_caller.' + extension)
+    include = '#include "owning_result_interface.h"\n'
+    if language == 'c++':
+        include = 'extern "C" {\n' + include + '}\n'
+    caller.write_text(include + f'''
+int main(void) {{
+  {result_type} ok = on1x_fn_boundary_make(false);
+  if (ok.tag != 1 || !ok.payload.element_1 ||
+      on1x_unique_live_allocations() != 1) return 1;
+  on1x_unique_drop(ok.payload.element_1);
+  if (on1x_unique_live_allocations() != 0) return 2;
+  {result_type} error = on1x_fn_boundary_make(true);
+  if (error.tag != 0 || error.payload.element_0 != 4 ||
+      on1x_unique_live_allocations() != 0) return 3;
+  return 0;
+}}
+''', encoding='utf-8')
+    caller_object = t.work / ('owning_result_caller_' + extension + '.o')
+    compiled = run([
+        t.cc, '-x', language, '-std=' + standard, *strict,
+        '-c', caller, '-o', caller_object])
+    assert compiled.returncode == 0, (language, compiled.stderr)
+    executable = t.work / ('owning_result_boundary_' + extension)
+    linked = run([
+        t.cc, *t.flags, *objects, caller_object, '-o', executable])
+    assert linked.returncode == 0, (language, linked.stderr)
+    crossed = run([executable])
+    assert crossed.returncode == 0 and not crossed.stdout and \
+           not crossed.stderr, (
+           language, crossed.returncode, crossed.stdout, crossed.stderr)
+
 t.valid('recursive_owning_stress', '', text=r'''
 enum List { Nil, Cons(i64, own<List>) }
 extern fn on1x_unique_live_allocations()->i64;
@@ -410,6 +508,21 @@ negative_cases = (
     ('foreign_result',
      'enum N{Z}extern fn make()->own<N>;fn main(){}',
      ('unique ownership cannot cross a raw foreign return ABI',)),
+    ('result_foreign_parameter',
+     'enum N{Z}enum Result<T,E>{Ok(T),Err(E)}extern fn consume(x:Result<own<N>,u8>);fn main(){}',
+     ('unique ownership cannot cross a raw foreign parameter ABI',)),
+    ('result_foreign_result',
+     'enum N{Z}enum Result<T,E>{Ok(T),Err(E)}extern fn make()->Result<i64,own<N>>;fn main(){}',
+     ('unique ownership cannot cross a raw foreign return ABI',)),
+    ('result_implicit_copy',
+     'enum N{Z}enum Result<T,E>{Ok(T),Err(E)}fn main(){let a=variant<Result<own<N>,u8>>(Ok,box(variant<N>(Z,record{})));let b=a;drop(a);drop(b);}',
+     ('copy of unique local requires move(local)',)),
+    ('generic_result_forward',
+     'enum N{Z}enum Result<T,E>{Ok(T),Err(E)}fn forward<T,E>(r:Result<T,E>)->Result<T,E>{let value=r?;return variant<Result<T,E>>(Ok,value);}fn make()->Result<own<N>,u8>{return variant<Result<own<N>,u8>>(Ok,box(variant<N>(Z,record{})));}fn main(){drop(forward(make()));}',
+     ('copy of unique local requires move(local)',)),
+    ('pervasive_result_helper_owner',
+     'enum N{Z}fn make()->Result<own<N>,u8>{let owner=box(variant<N>(Z,record{}));return result_ok(move(owner));}fn main(){drop(make());}',
+     ('copy of unique local requires move(local)',)),
     ('direct_recursion',
      'enum L{Nil,Cons(i64,L)}fn main(){}',
      ('recursive nominal type has no owning indirection',)),
@@ -422,6 +535,16 @@ negative_cases = (
 )
 for name, text, diagnostics in negative_cases:
     reject(name, text, *diagnostics)
+
+double_propagate = run([
+    t.compiler, '--check',
+    t.root / 'tests/fixtures/owning_result_double_propagate.on1x'])
+assert double_propagate.returncode == 1 and \
+       'use after move of local: pending' in double_propagate.stderr and \
+       not double_propagate.stdout, (
+           double_propagate.returncode,
+           double_propagate.stdout,
+           double_propagate.stderr)
 
 owner_source = t.source('recursive_owning_boundaries', r'''
 enum Node { Leaf }
@@ -463,6 +586,11 @@ int main(int argc,char **argv){
     (void)on1x_unique_try_box(&source,0,destroy);
   }else if(argv[1][0]=='t'){
     on1x_unique_take(&owner,&destination,sizeof(destination),"abi",1,1);
+  }else if(argv[1][0]=='s'){
+    owner=on1x_unique_try_box(&source,sizeof(source),destroy);
+    if(!owner)return 6;
+    on1x_unique_take(&owner,&destination,sizeof(destination),"abi",1,1);
+    on1x_unique_take(&owner,&destination,sizeof(destination),"abi",1,2);
   }else if(argv[1][0]=='c'){
     on1x_cleanup record={0};
     on1x_cleanup_push(&record,0,destroy);
@@ -479,6 +607,7 @@ assert compiled.returncode == 0, compiled.stderr
 for mode, diagnostic in (
         ('zero', 'invalid owning-box allocation'),
         ('take', 'invalid take from owning box'),
+        ('stale', 'invalid take from owning box'),
         ('cleanup', 'invalid cleanup registration')):
     malformed = run([abi_executable, mode])
     assert malformed.returncode == 72 and not malformed.stdout and \
@@ -502,4 +631,4 @@ assert abi_mismatch.returncode != 0 and \
        'incompatible On1x unique ownership runtime ABI' in abi_mismatch.stderr, \
        abi_mismatch.stderr
 
-print('recursive owning ADTs: moves, cleanup, ABI, modules, failures and boundaries PASS')
+print('recursive owning ADTs: moves, owning Results, cleanup, ABI, failures and boundaries PASS')

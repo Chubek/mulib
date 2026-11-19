@@ -150,6 +150,88 @@ fn main(){
   moved->move_out=false;
   reject([&]{canonical::verify_values(moved_copy);},"ON1X-VALUES-VERIFY");
 
+  const std::string result_source=R"(
+enum Node { Node(i64) }
+enum Failure { Failure(i64) }
+enum Result<T,E> { Ok(T), Err(E) }
+fn make()->Result<own<Node>,u8> {
+  return variant<Result<own<Node>,u8>>(
+    Ok,box(variant<Node>(Node,1)));
+}
+fn consume()->Result<i64,u8> {
+  let pending_ok=make();
+  let owner=pending_ok?;
+  drop(owner);
+  return variant<Result<i64,u8>>(Ok,1);
+}
+fn fail()->Result<i64,own<Failure>> {
+  return variant<Result<i64,own<Failure>>>(
+    Err,box(variant<Failure>(Failure,2)));
+}
+fn forward()->Result<bool,own<Failure>> {
+  let pending_err=fail();
+  let number=pending_err?;
+  return variant<Result<bool,own<Failure>>>(Ok,number==0);
+}
+fn main() {}
+)";
+  auto results=parse(scan(result_source,"owning-result-hir"));
+  check(results);
+  auto result_c=emit_c(results,"owning-result-hir");
+  require(result_c.find("on1x_unique_drop")!=std::string::npos,
+          "owning Result C11 omitted owner destruction");
+  bool moved_ok_input=false,moved_err_input=false;
+  bool moved_ok=false,moved_error=false,moved_result=false;
+  for(auto& function:results.functions)if(!function.prototype)
+   walk(function.body,[&](Expr& expression){
+    if(expression.kind==Expr::Kind::Variable&&expression.move_out){
+     moved_ok_input=moved_ok_input||expression.text=="pending_ok";
+     moved_err_input=moved_err_input||expression.text=="pending_err";
+    }
+    if(expression.kind==Expr::Kind::Payload&&expression.move_out&&
+       expression.type.is_own()){
+     moved_ok=moved_ok||expression.text=="Ok";
+     moved_error=moved_error||expression.text=="Err";
+    }
+    if(expression.kind==Expr::Kind::Region&&expression.type.is_own()&&
+       expression.children.size()==1&&expression.children[0]&&
+       expression.children[0]->kind==Expr::Kind::Variable&&
+       expression.children[0]->move_out)
+     moved_result=true;
+   });
+  require(moved_ok_input&&moved_err_input&&moved_ok&&moved_error&&moved_result,
+          "owning Result propagation lost consuming transfer metadata");
+  for(const auto& target:{std::string{"input-ok"},std::string{"input-err"},
+                         std::string{"Ok"},std::string{"Err"},
+                         std::string{"result"}}){
+   std::size_t budget=262144;
+   auto forged=clone_unit(results,budget);
+   bool changed=false;
+   for(auto& function:forged.functions)if(!function.prototype)
+    walk(function.body,[&](Expr& expression){
+     if(changed)return;
+     if((target=="input-ok"||target=="input-err")&&
+        expression.kind==Expr::Kind::Variable&&
+        expression.text==(target=="input-ok"?"pending_ok":"pending_err")&&
+        expression.move_out){
+      expression.move_out=false;changed=true;
+     }else if((target=="Ok"||target=="Err")&&
+              expression.kind==Expr::Kind::Payload&&
+              expression.text==target&&expression.type.is_own()&&
+              expression.move_out){
+      expression.move_out=false;changed=true;
+     }else if(target=="result"&&expression.kind==Expr::Kind::Region&&
+              expression.type.is_own()&&expression.children.size()==1&&
+              expression.children[0]&&
+              expression.children[0]->kind==Expr::Kind::Variable&&
+              expression.children[0]->move_out){
+      expression.children[0]->move_out=false;changed=true;
+     }
+    });
+   require(changed,"missing owning Result transfer mutation fixture");
+   reject([&]{canonical::verify_values(forged);},"ON1X-VALUES-VERIFY");
+  }
+
   require(on1x_unique_live_allocations()==0,
           "runtime unique allocation counter was not initially zero");
   RuntimeNode taken_source{7,nullptr};
@@ -195,7 +277,7 @@ fn main(){
           destroyed_markers==depth+8,
           "disarmed cleanup changed owner destruction");
 
-  std::cout<<"recursive own HIR, MIR rejection, C11 ABI and iterative C++ caller PASS\n";
+  std::cout<<"recursive own/Result HIR, MIR rejection, C11 ABI and iterative C++ caller PASS\n";
  }catch(const std::exception& error){
   std::cerr<<error.what()<<'\n';
   return 1;
