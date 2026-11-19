@@ -19,8 +19,20 @@
 #include <new>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
+
+static_assert(std::is_same_v<On1xSDK_ProjectString, On1xSDK_StringView>);
+static_assert(std::is_same_v<On1xSDK_ProjectBytes, On1xSDK_ByteView>);
+static_assert(std::is_same_v<On1xSDK_ProjectAllocator, On1xSDK_Allocator>);
+static_assert(std::is_same_v<On1xSDK_ProjectSpan, On1xSDK_SourceSpan>);
+static_assert(std::is_same_v<
+              On1xSDK_ProjectDiagnostic, On1xSDK_DiagnosticV2>);
+static_assert(std::is_same_v<
+              On1xSDK_ProjectDiagnosticSink, On1xSDK_DiagnosticSinkV2>);
+static_assert(std::is_same_v<
+              On1xSDK_ProcessCancellation, On1xSDK_Cancellation>);
 
 namespace {
 
@@ -101,15 +113,19 @@ On1xSDK_Status diagnostic(void* context,
     CHECK(item->abi_version == ON1X_SDK_PROJECT_ABI_VERSION);
     CHECK(item->struct_size >= sizeof(*item));
     CHECK(item->severity == ON1X_SDK_PROJECT_ERROR);
+    CHECK(item->primary.source_id != 0 && item->primary.revision != 0);
+    CHECK(item->primary.line_begin == UINT32_MAX &&
+          item->primary.column_begin == UINT32_MAX);
     output.codes.push_back(value(item->code));
     output.messages.push_back(value(item->message));
-    output.spans.emplace_back(item->primary.begin, item->primary.end);
+    output.spans.emplace_back(
+        item->primary.byte_begin, item->primary.byte_end);
     return output.response;
 }
 
 On1xSDK_ProjectDiagnosticSink sink(Diagnostics& diagnostics) {
     return {ON1X_SDK_PROJECT_ABI_VERSION,
-            sizeof(On1xSDK_ProjectDiagnosticSink), &diagnostics, diagnostic};
+            sizeof(On1xSDK_ProjectDiagnosticSink), diagnostic, &diagnostics};
 }
 
 std::string sha256(std::string_view input) {
@@ -292,10 +308,10 @@ void manifests_and_formatting() {
               memory, &manifest, &reports, &tiny) == ON1X_SDK_LIMIT);
     CHECK(manifest == nullptr);
 
-    diagnostics.response = ON1X_SDK_BUSY;
+    diagnostics.response = ON1X_SDK_UNSATISFIABLE;
     manifest = nullptr;
     CHECK(parse_manifest(invalid[0], memory, &manifest, &reports) ==
-          ON1X_SDK_BUSY);
+          ON1X_SDK_UNSATISFIABLE);
     diagnostics.response = ON1X_SDK_OK;
 
     allocations.reject = true;
@@ -645,7 +661,8 @@ On1xSDK_Status execute_process(
     CHECK(authorization == state.token);
     if (cancellation)
         state.cancellation_polls +=
-            cancellation->is_cancelled(cancellation->context) ? 1 : 0;
+            on1x_sdk_cancellation_poll(cancellation) == ON1X_SDK_CANCELLED
+                ? 1 : 0;
     result->abi_version = ON1X_SDK_PROJECT_ABI_VERSION;
     result->struct_size = sizeof(*result);
     result->exit_code = 0;
@@ -662,8 +679,6 @@ On1xSDK_Status finish_process(void* context, std::uint64_t authorization,
     state.operation_status = operation_status;
     return state.finish_status;
 }
-
-int cancelled(void*) { return 1; }
 
 On1xSDK_ProcessHost process_host(ProcessContext& state) {
     return {ON1X_SDK_PROJECT_ABI_VERSION, sizeof(On1xSDK_ProcessHost), &state,
@@ -689,11 +704,15 @@ void processes_and_commands() {
     CHECK(on1x_sdk_process_request_validate(&request) == ON1X_SDK_OK);
     ProcessContext state;
     auto host = process_host(state);
-    On1xSDK_ProcessCancellation cancellation{
-        ON1X_SDK_PROJECT_ABI_VERSION,
-        sizeof(On1xSDK_ProcessCancellation), nullptr, cancelled};
+    On1xSDK_CancellationConfig cancellation_config{
+        ON1X_SDK_ABI_VERSION_V2,
+        sizeof(On1xSDK_CancellationConfig), 0};
+    On1xSDK_ProcessCancellation* cancellation = nullptr;
+    CHECK(on1x_sdk_cancellation_create(
+              &cancellation_config, &cancellation) == ON1X_SDK_OK);
+    CHECK(on1x_sdk_cancellation_cancel(cancellation) == ON1X_SDK_OK);
     On1xSDK_ProcessResult result{};
-    CHECK(on1x_sdk_process_dispatch(&host, &request, &cancellation, &result) ==
+    CHECK(on1x_sdk_process_dispatch(&host, &request, cancellation, &result) ==
           ON1X_SDK_OK);
     CHECK(state.authorize_calls == 1 && state.execute_calls == 1 &&
           state.finish_calls == 1);
@@ -701,15 +720,8 @@ void processes_and_commands() {
     CHECK(state.arguments[2] == "two words");
     CHECK(state.cancellation_polls == 1);
     CHECK(result.exit_code == 0 && result.output_bytes == 12);
-    auto incompatible_cancellation = cancellation;
-    incompatible_cancellation.abi_version = 99;
-    CHECK(on1x_sdk_process_dispatch(
-              &host, &request, &incompatible_cancellation, &result) ==
-          ON1X_SDK_ABI_MISMATCH);
-    CHECK(state.authorize_calls == 1);
-
     state.execute_status = ON1X_SDK_BUSY;
-    CHECK(on1x_sdk_process_dispatch(&host, &request, &cancellation, &result) ==
+    CHECK(on1x_sdk_process_dispatch(&host, &request, cancellation, &result) ==
           ON1X_SDK_BUSY);
     CHECK(state.finish_calls == 2);
     CHECK(state.operation_status == ON1X_SDK_BUSY);
@@ -724,6 +736,7 @@ void processes_and_commands() {
     CHECK(state.finished_token == 0);
     CHECK(state.operation_status == ON1X_SDK_ERROR);
     state.token = 77;
+    on1x_sdk_cancellation_release(cancellation);
 
     auto duplicate_environment = environment;
     duplicate_environment[1] = text("LC_ALL=other");

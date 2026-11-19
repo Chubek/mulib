@@ -306,38 +306,28 @@ void quoted(const Token& token, bool expected) {
 } // namespace
 
 bool allocator_valid(const On1xSDK_ProjectAllocator* allocator) noexcept {
-    constexpr auto required = offsetof(On1xSDK_ProjectAllocator, release) +
-                              sizeof(On1xSDK_ProjectAllocator::release);
-    return descriptor(allocator, required) && allocator->allocate && allocator->release;
+    return on1x_sdk_allocator_validate(allocator) == ON1X_SDK_OK;
 }
 
 On1xSDK_Status diagnostic_sink_status(
     const On1xSDK_ProjectDiagnosticSink* sink) noexcept {
-    if (!sink) return ON1X_SDK_OK;
-    constexpr auto required = offsetof(On1xSDK_ProjectDiagnosticSink, emit) +
-                              sizeof(On1xSDK_ProjectDiagnosticSink::emit);
-    if (sink->abi_version != ON1X_SDK_PROJECT_ABI_VERSION)
-        return ON1X_SDK_ABI_MISMATCH;
-    return descriptor(sink, required) && sink->emit
-               ? ON1X_SDK_OK
-               : ON1X_SDK_INVALID_ARGUMENT;
+    return sink
+        ? on1x_sdk_abi_header_validate(
+              sink, sizeof(*sink), ON1X_SDK_ABI_VERSION_V2, nullptr)
+        : ON1X_SDK_OK;
 }
 
 void* allocate(const On1xSDK_ProjectAllocator& allocator, std::size_t size) {
     if (!size) size = 1;
     void* result = nullptr;
-    try {
-        result = allocator.allocate(allocator.context, size, object_alignment);
-    } catch (...) {
-        result = nullptr;
-    }
-    if (!result)
-        fail(ON1X_SDK_LIMIT, "ON1X-SDK-PROJECT-ALLOCATION",
+    const auto status =
+        on1x_sdk_allocate(&allocator, size, object_alignment, &result);
+    if (status != ON1X_SDK_OK)
+        fail(status, "ON1X-SDK-PROJECT-ALLOCATION",
              "host allocator rejected the project allocation");
     if (reinterpret_cast<std::uintptr_t>(result) % object_alignment != 0) {
-        try {
-            allocator.release(allocator.context, result, size, object_alignment);
-        } catch (...) {}
+        (void)on1x_sdk_release(
+            &allocator, result, size, object_alignment);
         fail(ON1X_SDK_INVALID_ARGUMENT, "ON1X-SDK-PROJECT-ALLOCATOR",
              "host allocator returned insufficiently aligned memory");
     }
@@ -346,9 +336,7 @@ void* allocate(const On1xSDK_ProjectAllocator& allocator, std::size_t size) {
 
 void release(const On1xSDK_ProjectAllocator& allocator, void* pointer,
              std::size_t size) noexcept {
-    try {
-        allocator.release(allocator.context, pointer, size, object_alignment);
-    } catch (...) {}
+    (void)on1x_sdk_release(&allocator, pointer, size, object_alignment);
 }
 
 Digest sha256(std::span<const unsigned char> input) noexcept {
@@ -470,41 +458,38 @@ bool command_component(std::string_view input) noexcept {
 }
 
 On1xSDK_Status callback_status(On1xSDK_Status status) noexcept {
-    switch (status) {
-        case ON1X_SDK_OK: case ON1X_SDK_ERROR: case ON1X_SDK_UNSUPPORTED:
-        case ON1X_SDK_LIMIT: case ON1X_SDK_INVALID_ARGUMENT:
-        case ON1X_SDK_ABI_MISMATCH: case ON1X_SDK_DUPLICATE:
-        case ON1X_SDK_BUSY:
-            return status;
-        default:
-            return ON1X_SDK_ERROR;
-    }
+    return on1x_sdk_status_is_known(status) ? status : ON1X_SDK_ERROR;
 }
 
 On1xSDK_Status emit(const On1xSDK_ProjectDiagnosticSink* sink,
                     const Failure& failure, const Digest& revision,
                     std::size_t input_size) noexcept {
     if (!sink) return failure.status;
-    const auto sink_status = diagnostic_sink_status(sink);
-    if (sink_status != ON1X_SDK_OK) return sink_status;
     On1xSDK_ProjectDiagnostic diagnostic{};
     diagnostic.abi_version = ON1X_SDK_PROJECT_ABI_VERSION;
     diagnostic.struct_size = sizeof(diagnostic);
     diagnostic.code = view(failure.code);
     diagnostic.severity = ON1X_SDK_PROJECT_ERROR;
     diagnostic.message = view(failure.message);
-    diagnostic.primary.abi_version = ON1X_SDK_PROJECT_ABI_VERSION;
-    diagnostic.primary.struct_size = sizeof(diagnostic.primary);
-    std::copy(revision.bytes.begin(), revision.bytes.end(),
-              diagnostic.primary.source_revision);
-    diagnostic.primary.begin = std::min(failure.begin, input_size);
-    diagnostic.primary.end = std::clamp(failure.end, diagnostic.primary.begin, input_size);
-    On1xSDK_Status status = ON1X_SDK_ERROR;
-    try {
-        status = callback_status(sink->emit(sink->context, &diagnostic));
-    } catch (...) {
-        status = ON1X_SDK_ERROR;
-    }
+    const auto load_identity = [&revision](std::size_t offset) {
+        std::uint64_t value = 0;
+        for (std::size_t i = 0; i < sizeof(value); ++i)
+            value = (value << 8) | revision.bytes[offset + i];
+        return value ? value : UINT64_C(1);
+    };
+    const On1xSDK_SourceRevision source{
+        load_identity(0), load_identity(sizeof(std::uint64_t)), input_size};
+    diagnostic.primary.source_id = source.source_id;
+    diagnostic.primary.revision = source.revision;
+    diagnostic.primary.byte_begin = std::min(failure.begin, input_size);
+    diagnostic.primary.byte_end =
+        std::clamp(failure.end, diagnostic.primary.byte_begin, input_size);
+    diagnostic.primary.line_begin = UINT32_MAX;
+    diagnostic.primary.column_begin = UINT32_MAX;
+    diagnostic.primary.line_end = UINT32_MAX;
+    diagnostic.primary.column_end = UINT32_MAX;
+    const auto status =
+        on1x_sdk_diagnostic_emit_v2(sink, &diagnostic, &source);
     return status == ON1X_SDK_OK ? failure.status : status;
 }
 

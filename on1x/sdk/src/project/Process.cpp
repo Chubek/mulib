@@ -92,19 +92,6 @@ On1xSDK_Status normalize_request(const On1xSDK_ProcessRequest* input,
     return ON1X_SDK_OK;
 }
 
-On1xSDK_Status cancellation_status(
-    const On1xSDK_ProcessCancellation* cancellation) noexcept {
-    if (!cancellation) return ON1X_SDK_OK;
-    constexpr auto required =
-        offsetof(On1xSDK_ProcessCancellation, is_cancelled) +
-        sizeof(On1xSDK_ProcessCancellation::is_cancelled);
-    if (cancellation->abi_version != ON1X_SDK_PROJECT_ABI_VERSION)
-        return ON1X_SDK_ABI_MISMATCH;
-    return descriptor(cancellation, required) && cancellation->is_cancelled
-               ? ON1X_SDK_OK
-               : ON1X_SDK_INVALID_ARGUMENT;
-}
-
 } // namespace
 } // namespace on1x::sdk::project
 
@@ -129,9 +116,6 @@ extern "C" On1xSDK_Status on1x_sdk_process_dispatch(
     if (!descriptor(host, required) || !host->authorize || !host->execute ||
         !host->finish)
         return ON1X_SDK_INVALID_ARGUMENT;
-    if (const auto status = cancellation_status(cancellation);
-        status != ON1X_SDK_OK)
-        return status;
     On1xSDK_ProcessRequest normalized{};
     if (const auto status = normalize_request(request, normalized);
         status != ON1X_SDK_OK)

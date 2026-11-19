@@ -64,7 +64,7 @@ class Allocator(ctypes.Structure):
     _fields_ = [
         ("abi_version", ctypes.c_uint32),
         ("struct_size", ctypes.c_uint32),
-        ("context", ctypes.c_void_p),
+        ("userdata", ctypes.c_void_p),
         ("allocate", ALLOCATE),
         ("reallocate", REALLOCATE),
         ("release", RELEASE),
@@ -73,11 +73,27 @@ class Allocator(ctypes.Structure):
 
 class Span(ctypes.Structure):
     _fields_ = [
-        ("abi_version", ctypes.c_uint32),
-        ("struct_size", ctypes.c_uint32),
-        ("source_revision", ctypes.c_ubyte * 32),
-        ("begin", ctypes.c_size_t),
-        ("end", ctypes.c_size_t),
+        ("source_id", ctypes.c_uint64),
+        ("revision", ctypes.c_uint64),
+        ("byte_begin", ctypes.c_uint64),
+        ("byte_end", ctypes.c_uint64),
+        ("line_begin", ctypes.c_uint32),
+        ("column_begin", ctypes.c_uint32),
+        ("line_end", ctypes.c_uint32),
+        ("column_end", ctypes.c_uint32),
+    ]
+
+
+class RelatedDiagnostic(ctypes.Structure):
+    _fields_ = [("span", Span), ("message", String)]
+
+
+class FixIt(ctypes.Structure):
+    _fields_ = [
+        ("span", Span),
+        ("replacement", String),
+        ("is_proposal", ctypes.c_uint32),
+        ("reserved", ctypes.c_uint32),
     ]
 
 
@@ -88,12 +104,18 @@ class Diagnostic(ctypes.Structure):
 Diagnostic._fields_ = [
     ("abi_version", ctypes.c_uint32),
     ("struct_size", ctypes.c_uint32),
-    ("code", String),
     ("severity", ctypes.c_uint32),
+    ("reserved", ctypes.c_uint32),
+    ("code", String),
     ("message", String),
     ("primary", Span),
+    ("related", ctypes.POINTER(RelatedDiagnostic)),
     ("related_count", ctypes.c_size_t),
-    ("related", ctypes.POINTER(Span)),
+    ("fixits", ctypes.POINTER(FixIt)),
+    ("fixit_count", ctypes.c_size_t),
+    ("category", String),
+    ("phase", String),
+    ("provider", String),
 ]
 
 DIAGNOSTIC = ctypes.CFUNCTYPE(ctypes.c_uint32, ctypes.c_void_p,
@@ -104,8 +126,8 @@ class DiagnosticSink(ctypes.Structure):
     _fields_ = [
         ("abi_version", ctypes.c_uint32),
         ("struct_size", ctypes.c_uint32),
-        ("context", ctypes.c_void_p),
         ("emit", DIAGNOSTIC),
+        ("userdata", ctypes.c_void_p),
     ]
 
 
@@ -233,7 +255,7 @@ class Manifest:
                             f"{value.message.bytes().decode('utf-8', 'replace')}")
             return OK
 
-        sink = DiagnosticSink(ABI, ctypes.sizeof(DiagnosticSink), None, diagnostic)
+        sink = DiagnosticSink(ABI, ctypes.sizeof(DiagnosticSink), diagnostic, None)
         status = int(_library.on1x_sdk_manifest_parse(
             raw, None, ctypes.byref(_allocator), ctypes.byref(sink),
             ctypes.byref(handle)))

@@ -34,14 +34,8 @@ typedef struct On1xSDK_ProcessResult {
     uint64_t output_bytes;
 } On1xSDK_ProcessResult;
 
-typedef int (*On1xSDK_ProcessCancelledFn)(void *context);
-
-typedef struct On1xSDK_ProcessCancellation {
-    uint32_t abi_version;
-    uint32_t struct_size;
-    void *context;
-    On1xSDK_ProcessCancelledFn is_cancelled;
-} On1xSDK_ProcessCancellation;
+/* Compatibility name for the shared, thread-safe cancellation object. */
+typedef On1xSDK_Cancellation On1xSDK_ProcessCancellation;
 
 typedef On1xSDK_Status (*On1xSDK_ProcessAuthorizeFn)(
     void *context, const On1xSDK_ProcessRequest *request,

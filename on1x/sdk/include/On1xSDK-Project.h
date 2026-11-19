@@ -7,7 +7,11 @@
 #ifndef ON1X_SDK_PROJECT_H
 #define ON1X_SDK_PROJECT_H
 
-#include "On1xSDK-Types.h"
+#include "On1xSDK-Allocator.h"
+#include "On1xSDK-Cancellation.h"
+#include "On1xSDK-Diagnostic.h"
+#include "On1xSDK-Status.h"
+#include "On1xSDK-String.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -30,7 +34,7 @@ extern "C" {
 #  endif
 #endif
 
-#define ON1X_SDK_PROJECT_ABI_VERSION 2u
+#define ON1X_SDK_PROJECT_ABI_VERSION ON1X_SDK_ABI_VERSION_V2
 #define ON1X_SDK_PROJECT_MAX_PATH_BYTES 1024u
 #define ON1X_SDK_PROJECT_SHA256_BYTES 32u
 #define ON1X_SDK_PROJECT_SHA256_TEXT_BYTES 64u
@@ -38,66 +42,24 @@ extern "C" {
 
 typedef struct On1xSDK_ProjectBuffer On1xSDK_ProjectBuffer;
 
-typedef struct On1xSDK_ProjectString {
-    const char *data; /* May be NULL when size is zero.  Not necessarily NUL-terminated. */
-    size_t size;
-} On1xSDK_ProjectString;
-
-typedef struct On1xSDK_ProjectBytes {
-    const unsigned char *data; /* May be NULL when size is zero. */
-    size_t size;
-} On1xSDK_ProjectBytes;
-
-typedef void *(*On1xSDK_ProjectAllocateFn)(void *context, size_t size, size_t alignment);
-typedef void *(*On1xSDK_ProjectReallocateFn)(void *context, void *pointer,
-                                             size_t old_size, size_t new_size,
-                                             size_t alignment);
-typedef void (*On1xSDK_ProjectReleaseFn)(void *context, void *pointer,
-                                         size_t size, size_t alignment);
-
-typedef struct On1xSDK_ProjectAllocator {
-    uint32_t abi_version;
-    uint32_t struct_size;
-    void *context;
-    On1xSDK_ProjectAllocateFn allocate;
-    On1xSDK_ProjectReallocateFn reallocate; /* Optional; current services do not call it. */
-    On1xSDK_ProjectReleaseFn release;
-} On1xSDK_ProjectAllocator;
+/* Compatibility names over the shared ABI-2 ownership and view contracts. */
+typedef On1xSDK_StringView On1xSDK_ProjectString;
+typedef On1xSDK_ByteView On1xSDK_ProjectBytes;
+typedef On1xSDK_AllocateFn On1xSDK_ProjectAllocateFn;
+typedef On1xSDK_ReallocateFn On1xSDK_ProjectReallocateFn;
+typedef On1xSDK_ReleaseFn On1xSDK_ProjectReleaseFn;
+typedef On1xSDK_Allocator On1xSDK_ProjectAllocator;
 
 enum {
-    ON1X_SDK_PROJECT_NOTE = 0,
-    ON1X_SDK_PROJECT_WARNING = 1,
-    ON1X_SDK_PROJECT_ERROR = 2
+    ON1X_SDK_PROJECT_NOTE = ON1X_SDK_NOTE,
+    ON1X_SDK_PROJECT_WARNING = ON1X_SDK_WARNING,
+    ON1X_SDK_PROJECT_ERROR = ON1X_SDK_DIAGNOSTIC_ERROR
 };
 
-typedef struct On1xSDK_ProjectSpan {
-    uint32_t abi_version;
-    uint32_t struct_size;
-    unsigned char source_revision[ON1X_SDK_PROJECT_SHA256_BYTES];
-    size_t begin; /* Zero-based half-open byte offsets in the exact input revision. */
-    size_t end;
-} On1xSDK_ProjectSpan;
-
-typedef struct On1xSDK_ProjectDiagnostic {
-    uint32_t abi_version;
-    uint32_t struct_size;
-    On1xSDK_ProjectString code;     /* Stable ASCII machine code. */
-    uint32_t severity;
-    On1xSDK_ProjectString message;  /* Callback-scoped UTF-8. */
-    On1xSDK_ProjectSpan primary;
-    size_t related_count;
-    const On1xSDK_ProjectSpan *related; /* Callback-scoped; bounded by MAX_RELATED. */
-} On1xSDK_ProjectDiagnostic;
-
-typedef On1xSDK_Status (*On1xSDK_ProjectDiagnosticFn)(
-    void *context, const On1xSDK_ProjectDiagnostic *diagnostic);
-
-typedef struct On1xSDK_ProjectDiagnosticSink {
-    uint32_t abi_version;
-    uint32_t struct_size;
-    void *context;
-    On1xSDK_ProjectDiagnosticFn emit;
-} On1xSDK_ProjectDiagnosticSink;
+typedef On1xSDK_SourceSpan On1xSDK_ProjectSpan;
+typedef On1xSDK_DiagnosticV2 On1xSDK_ProjectDiagnostic;
+typedef On1xSDK_DiagnosticFnV2 On1xSDK_ProjectDiagnosticFn;
+typedef On1xSDK_DiagnosticSinkV2 On1xSDK_ProjectDiagnosticSink;
 
 /*
  * Validate and copy a normalized project-relative path.  Accepted paths use

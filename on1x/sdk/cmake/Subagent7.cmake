@@ -26,6 +26,7 @@ target_include_directories(on1x_sdk_project PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/on1x-sdk>
 )
+target_link_libraries(on1x_sdk_project PUBLIC On1x::SDK)
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(on1x_sdk_project PRIVATE
         -Wall -Wextra -Wpedantic -Werror)
