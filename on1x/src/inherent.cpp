@@ -37,8 +37,11 @@ void check_type(const Type& type,std::size_t variables,const Location& at,
   for(const auto& parameter:type.parameters())
    check_type(parameter,variables,at,budget,depth+1);
   check_type(type.result(),variables,at,budget,depth+1);
- }else if(type.is_forall())check_type(type.body(),variables,at,budget,depth+1);
- else if(type.is_code())check_type(type.code_result(),variables,at,budget,depth+1);
+  }else if(type.is_forall())check_type(type.body(),variables,at,budget,depth+1);
+  else if(type.is_code())check_type(type.code_result(),variables,at,budget,depth+1);
+  else if(type.kind()==Type::Channel||type.kind()==Type::Sender||
+          type.kind()==Type::Receiver)
+   check_type(type.csp_payload(),variables,at,budget,depth+1);
  else if(type.is_tuple()||type.is_data())
   for(const auto& field:type.elements())
    check_type(field,variables,at,budget,depth+1);
@@ -57,8 +60,11 @@ void collect_bounds(const Type& type,std::set<std::size_t>& found,
  if(type.is_function()){
   for(const auto& parameter:type.parameters())collect_bounds(parameter,found,budget,depth+1);
   collect_bounds(type.result(),found,budget,depth+1);
- }else if(type.is_forall())collect_bounds(type.body(),found,budget,depth+1);
- else if(type.is_code())collect_bounds(type.code_result(),found,budget,depth+1);
+  }else if(type.is_forall())collect_bounds(type.body(),found,budget,depth+1);
+  else if(type.is_code())collect_bounds(type.code_result(),found,budget,depth+1);
+  else if(type.kind()==Type::Channel||type.kind()==Type::Sender||
+          type.kind()==Type::Receiver)
+   collect_bounds(type.csp_payload(),found,budget,depth+1);
  else if(type.is_tuple()||type.is_data())
   for(const auto& field:type.elements())collect_bounds(field,found,budget,depth+1);
 }

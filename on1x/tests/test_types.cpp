@@ -48,9 +48,28 @@ int main() {
    auto code=Type::code(Type::I64);
    require(code!=Type::function({},Type::I64)&&code!=Type::code(Type::Bool),"code type constructor/result was erased");
    require(on1x::type_name(Type::code(code))=="code<code<i64>>"&&code.has_functions(),"code type shape/ownership metadata was missed");
-   require(Type::code(Type::Hole).has_holes()&&Type::code(Type::generic(2)).has_generics(),"code result variables were missed");
-   require(Type(Type::SExpr).has_functions()&&Type::tuple({Type::SExpr,Type::Buffer}).has_functions(),"managed data ownership was missed");
-   auto universal=Type::for_all(1,Type::function({Type::bound(0)},Type::bound(0)));
+    require(Type::code(Type::Hole).has_holes()&&Type::code(Type::generic(2)).has_generics(),"code result variables were missed");
+    require(Type(Type::SExpr).has_functions()&&Type::tuple({Type::SExpr,Type::Buffer}).has_functions(),"managed data ownership was missed");
+    auto packet=Type::data(Type::Record,{Type::Bool,Type::U16},{"accepted","sequence"});
+    auto descriptor=Type::channel(packet,2,3);
+    auto wildcard_descriptor=Type::channel(packet);
+    auto sender=Type::sender(packet),receiver=Type::receiver(packet);
+    require(descriptor.is_csp()&&!descriptor.is_csp_endpoint()&&
+            sender.is_csp_endpoint()&&receiver.is_csp_endpoint(),
+            "directional CSP type classification was lost");
+    require(descriptor.csp_payload()==packet&&descriptor.sender_cardinality()==2&&
+            descriptor.receiver_cardinality()==3,
+            "channel payload/cardinality shape was lost");
+    require(descriptor!=wildcard_descriptor&&sender!=receiver&&
+            sender==Type::sender(packet),
+            "directional CSP structural equality was erased");
+    require(on1x::type_name(descriptor)=="channel<record{accepted:bool, sequence:u16}>[2,3]"&&
+            on1x::type_name(sender)=="sender<record{accepted:bool, sequence:u16}>",
+            "typed CSP diagnostic spelling is incorrect");
+    require(Type::sender(Type::Hole).has_holes()&&
+            Type::receiver(Type::generic(9)).has_generics(),
+            "CSP payload variable metadata was missed");
+    auto universal=Type::for_all(1,Type::function({Type::bound(0)},Type::bound(0)));
     require(universal.has_functions()&&universal.has_foralls()&&!universal.has_holes(),"forall metadata was missed");
      require(on1x::forall_instance(universal,first)&&!on1x::forall_proof(universal,first),"monomorphic implementation passed as a universal proof");
     require(on1x::forall_proof(universal,Type::function({Type::generic(7)},Type::generic(7))),"rigid universal proof was rejected");
@@ -85,8 +104,18 @@ int main() {
    require(on1x::check_type_form(Type::bound(0),bound_form)&&
            on1x::check_type_form(Type::bound(1),bound_form).status==TypeFormStatus::Malformed,
            "quantified-variable scope was not enforced");
-   require(static_cast<bool>(on1x::check_type_form(universal)),
-           "closed forall form was rejected");
+    require(static_cast<bool>(on1x::check_type_form(universal)),
+            "closed forall form was rejected");
+    require(on1x::check_type_form(descriptor)&&
+            on1x::check_type_form(sender)&&on1x::check_type_form(receiver),
+            "well-formed structural CSP type was rejected");
+    auto csp_universal=Type::for_all(
+      1,Type::function({Type::sender(Type::bound(0))},
+                       Type::receiver(Type::bound(0))));
+    require(on1x::forall_instance(
+              csp_universal,
+              Type::function({Type::sender(Type::U32)},Type::receiver(Type::U32))),
+            "forall matching did not traverse directional payloads");
    TypeFormOptions one_node;one_node.max_nodes=1;
    require(on1x::check_type_form(first,one_node).status==TypeFormStatus::Limit,
            "type-form node budget was not enforced");
@@ -118,7 +147,10 @@ int main() {
                           Type::Json,Type::JsonView,first,same,different,nested,
                            Type::function({},Type::Void),Type::function({first},Type::Bool),pair,product,
                             Type::tuple({Type::I64,Type::String}),Type::function({pair},product),
-                             universal,Type::bound(0),Type::bound(1),Type::generic(1),Type::generic(2),code,Type::code(code),Type::SExpr,Type::Buffer};
+                             universal,csp_universal,Type::bound(0),Type::bound(1),
+                             Type::generic(1),Type::generic(2),code,Type::code(code),
+                             Type::SExpr,Type::Buffer,packet,descriptor,
+                             wildcard_descriptor,sender,receiver};
   for(const auto& a:types)for(const auto& b:types) {
    require((a==b)==((a<=>b)==0),"inconsistent type equality/ordering");
    require((a<b)==(b>a),"asymmetric type ordering");
@@ -128,9 +160,17 @@ int main() {
   bool rejected=false;
   try { Type invalid(Type::Function); } catch(const std::logic_error&) { rejected=true; }
   require(rejected,"signature-free function type was admitted");
-  rejected=false;
-  try { Type invalid(Type::Tuple); } catch(const std::logic_error&) { rejected=true; }
-  require(rejected,"shape-free tuple type was admitted");
+   rejected=false;
+   try { Type invalid(Type::Tuple); } catch(const std::logic_error&) { rejected=true; }
+   require(rejected,"shape-free tuple type was admitted");
+   for(auto kind:{Type::Channel,Type::Sender,Type::Receiver}){
+    rejected=false;try{Type invalid(kind);}catch(const std::logic_error&){rejected=true;}
+    require(rejected,"shape-free CSP type was admitted");
+   }
+   rejected=false;
+   try{(void)Type::channel(Type::I64,256,1);}
+   catch(const std::logic_error&){rejected=true;}
+   require(rejected,"oversized endpoint cardinality was admitted");
   for(const auto& invalid:std::vector<std::vector<Type>>{{},{Type::I64}}){
    rejected=false;try{(void)Type::tuple(invalid);}catch(const std::logic_error&){rejected=true;}
    require(rejected,"invalid tuple arity was admitted");

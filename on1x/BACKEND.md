@@ -15,16 +15,22 @@ unchanged. A build-host Yellowstone Lua manifest can generate the
 registration references; the target C++ linker still links `on1xc`.
 This does not add a machine-code backend or change generated program ABIs.
 
-**CSP ABI v4 continuation:** [cooperative cancellation and monotonic
-deadlines](docs/cancellation-deadlines.md) use generated function-return cleanup
-edges and private control offers through existing MuLIB atomic selection.
+**CSP ABI v5 continuation:** [typed directional channels](docs/concurrency.md)
+use runtime-owned descriptor/endpoint records, exact quotas and generic
+fixed-size pointer-free byte copies through the existing MuLIB FIFO/rendezvous
+and atomic selection. Blocking/try transfer, last-sender close and
+heterogeneous poll remain HIR→C11 effects. The earlier
+[cooperative cancellation and monotonic deadlines](docs/cancellation-deadlines.md)
+use generated function-return cleanup edges and private control offers through
+the same selection kernel.
 `taskgroup within` expiry drains cleanup and terminates the run. Consuming
 cancel waits for running/blocked fibers to drain descendants and defers. These
 are HIR→C11 semantics, not typed timeout propagation, suspension/effect MIR or
 stackless async. The earlier absence statements below are historical.
 
-**G4 cooperative fiber/channel slice:** `taskgroup`, internal i64 fibers and
-1:1 uni i64 channels and bounded atomic `poll` execute through the canonical HIR→C11 path and the
+**G4 cooperative fiber/channel slice:** `taskgroup`, internal i64 fibers,
+typed quota-bearing uni channels and bounded heterogeneous atomic `poll`
+execute through the canonical HIR→C11 path and the
 existing MuLIB stackful fiber/channel kernels (see [contract](docs/concurrency.md)).
 The scalar MIR verifier rejects this profile; it has no effectful ownership/
 suspension descriptors. This is neither `async/await` nor a native-thread/VM
@@ -35,10 +41,11 @@ external path also admits compiler-parsed single/triple backtick command words
 and `launch capture`, whose affine stdin/stdout/stderr capabilities use bounded
 `u8` MuLIB channels and nonblocking POSIX pipes. It does not invoke a host shell;
 expansion, assignments, command lists, pipelines and redirection remain closed.
-The [stream-poll continuation](docs/stream-poll.md) adds exact u8 send/receive
-offers and mixed i64/u8 atomic choices through the same MuLIB kernel/C11 ABI.
-Running/blocked internal-fiber cancellation and `poll after` deadlines remain
-unsupported. None of these effects is represented by scalar MIR.
+The [stream-poll continuation](docs/stream-poll.md) supplies exact u8
+process-stream offers through the same MuLIB kernel/C11 ABI. Running/blocked
+internal-fiber cancellation and `poll after` deadlines are now available in
+the bounded cancellation profile, but typed recovery remains unsupported.
+None of these effects is represented by scalar MIR.
 
 **M2 function defer / typed errors:** [the C11 profile](docs/defer-errors.md)
 executes function-owned bounded LIFO registrations and exact nominal Result `?`

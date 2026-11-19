@@ -11,6 +11,100 @@
 namespace on1x::csp {
 Type send_result(){return Type::data(Type::Sum,{Type::I64,Type::data(Type::Record,{})},{"Err","Ok"});}
 Type receive_result(Type payload){return Type::data(Type::Sum,{Type::data(Type::Record,{}),std::move(payload)},{"None","Some"});}
+Type try_send_result(){
+ return Type::data(Type::Sum,
+  {Type::data(Type::Record,{}),Type::data(Type::Record,{}),Type::data(Type::Record,{})},
+  {"Closed","Sent","WouldBlock"});
+}
+Type try_receive_result(Type payload){
+ return Type::data(Type::Sum,
+  {Type::data(Type::Record,{}),Type::data(Type::Record,{}),std::move(payload)},
+  {"Closed","Empty","Value"});
+}
+Type split_result(const Type& channel){
+ if(channel.kind()!=Type::Channel||!channel.sender_cardinality()||
+    !channel.receiver_cardinality())
+  throw std::logic_error("split requires an exact channel descriptor type");
+ std::vector<Type> endpoints;
+ endpoints.reserve(channel.sender_cardinality()+channel.receiver_cardinality());
+ for(std::size_t i=0;i<channel.sender_cardinality();++i)
+  endpoints.push_back(Type::sender(channel.csp_payload()));
+ for(std::size_t i=0;i<channel.receiver_cardinality();++i)
+  endpoints.push_back(Type::receiver(channel.csp_payload()));
+ return Type::tuple(std::move(endpoints));
+}
+namespace {
+constexpr std::size_t max_payload_bytes=32768;
+std::size_t align8(std::size_t value){
+ return value>std::numeric_limits<std::size_t>::max()-7
+  ?std::numeric_limits<std::size_t>::max():(value+7)&~std::size_t{7};
+}
+std::pair<std::size_t,std::string> payload_size(const Type& type,std::size_t depth=0){
+ if(depth>32)return {0,"payload nesting exceeds 32 levels"};
+ switch(type.kind()){
+ case Type::Bool:case Type::U8:return {1,{}};
+ case Type::U16:return {2,{}};
+ case Type::F32:case Type::U32:case Type::Char:return {4,{}};
+ case Type::I64:case Type::F64:case Type::U64:return {8,{}};
+ case Type::Tuple:case Type::Record:{
+  std::size_t size=type.elements().empty()?1:0;
+  for(const auto& field:type.elements()){
+   auto child=payload_size(field,depth+1);if(!child.second.empty())return child;
+   auto padded=align8(child.first);
+   if(padded>max_payload_bytes-size)return {0,"payload exceeds 32768-byte storage bound"};
+   size+=padded;
+  }
+  return {std::max<std::size_t>(1,size),{}};
+ }
+ case Type::Sum:{
+  std::size_t size=0;
+  for(const auto& field:type.elements()){
+   auto child=payload_size(field,depth+1);if(!child.second.empty())return child;
+   size=std::max(size,align8(child.first));
+  }
+  if(size>max_payload_bytes-8)return {0,"payload exceeds 32768-byte storage bound"};
+  return {size+8,{}};
+ }
+ case Type::Array:case Type::Slice:{
+  auto child=payload_size(type.elements().front(),depth+1);
+  if(!child.second.empty())return child;
+  auto count=std::max<std::size_t>(1,type.extent());
+  if(child.first>max_payload_bytes/count)
+   return {0,"payload exceeds 32768-byte storage bound"};
+  auto size=child.first*count;
+  if(type.kind()==Type::Slice){
+   size=align8(size);
+   if(size>max_payload_bytes-16)
+    return {0,"payload exceeds 32768-byte storage bound"};
+   size+=16;
+  }
+  return {size,{}};
+ }
+ case Type::String:return {0,"string payload contains borrowed pointer storage"};
+ case Type::SExpr:case Type::Buffer:case Type::Function:case Type::Code:
+  return {0,"managed or callable payload requires a retain/drop protocol"};
+ case Type::Own:return {0,"unique payload transfer requires task-local cleanup state"};
+ case Type::Json:case Type::JsonView:case Type::Regex:case Type::RegexCaptures:
+  return {0,"resource, view or runtime-pointer payload is unsupported"};
+ case Type::Channel:case Type::Sender:case Type::Receiver:case Type::Fiber:
+ case Type::ExternalFiber:case Type::CspGroup:
+  return {0,"concurrency capabilities cannot be channel payloads"};
+ case Type::Void:return {0,"void is not a channel payload"};
+ case Type::Invalid:case Type::Hole:case Type::Generic:case Type::Bound:
+ case Type::Forall:case Type::Named:
+  return {0,"channel payload must be a closed resolved value type"};
+ }
+ return {0,"unknown channel payload representation"};
+}
+}
+std::string payload_diagnostic(const Type& type){
+ auto result=payload_size(type);
+ if(!result.second.empty())return result.second;
+ if(!result.first||result.first>max_payload_bytes)
+  return "payload exceeds 32768-byte storage bound";
+ return {};
+}
+bool payload_supported(const Type& type){return payload_diagnostic(type).empty();}
 bool contains(const Type& t){
  if(t.is_csp())return true;
  if(t.is_function()){if(contains(t.result()))return true;for(const auto& p:t.parameters())if(contains(p))return true;}
@@ -109,10 +203,12 @@ class Verify {
    if(!names.insert(c.name).second)fail(e.where,"duplicate closure capture");
    const auto& b=local(c.name,e.where);
    if(b.type!=c.type||b.mut)fail(e.where,"invalid/mutable launch or closure capture");
-    if(launched&&c.type!=Type::I64&&c.type!=Type::Sender&&c.type!=Type::Receiver&&c.type!=Type::ByteSender&&c.type!=Type::ByteReceiver)fail(e.where,"launch captures support only immutable i64 or scoped endpoints");
-    if(contains(c.type)){
-     if(!launched||(c.type!=Type::Sender&&c.type!=Type::Receiver&&c.type!=Type::ByteSender&&c.type!=Type::ByteReceiver)||parent[b.id]!=live)fail(e.where,"invalid or moved endpoint capture: "+c.name);
-    parent[b.id]=dead;
+     if(launched&&!c.type.is_csp_endpoint()&&!payload_supported(c.type))
+      fail(e.where,"launch captures support only immutable fixed-size values or scoped endpoints");
+     if(contains(c.type)){
+      if(!launched||!c.type.is_csp_endpoint()||parent[b.id]!=live)
+       fail(e.where,"invalid or moved endpoint capture: "+c.name);
+     parent[b.id]=dead;
    }
   }
   auto outer=std::move(scopes);auto outer_loops=std::move(loops),outer_regions=std::move(regions);
@@ -135,17 +231,50 @@ class Verify {
      !e.patterns.empty()||!e.captures.empty()||!e.proofs.empty()||e.syntax_tail||!e.syntax_definitions.empty()||
      e.projection||e.control_target||e.noreturn||e.statement_match||e.reference!=Expr::Reference::Unresolved)
    fail(e.where,"invalid/private concurrency expression shape");
-    auto count=e.text=="channel"?3:e.text=="send"||e.text=="offer_send"?2:1;
+     auto count=e.text=="channel"?3:e.text=="send"||e.text=="try_send"||
+                e.text=="offer_send"?2:1;
     if(e.text=="poll")count=static_cast<int>(e.children.size());
      if(e.text=="launch_exec"||e.text=="launch_capture")count=static_cast<int>(e.children.size());
-   if(e.children.size()!=static_cast<std::size_t>(count))fail(e.where,"concurrency operand arity mismatch");
-  for(const auto& c:e.children)if(!c)fail(e.where,"missing concurrency operand");
-  if(e.result!=(e.text=="channel"?Type{Type::I64}:Type{Type::Void}))fail(e.where,"invalid concurrency payload annotation");
-      Type result=e.text=="poll"?e.type:e.text=="offer_recv"||e.text=="offer_send"||e.text=="offer_after"?Type{Type::Void}:e.text=="channel"?Type{Type::Channel}:e.text=="launch"?Type{Type::Fiber}:e.text=="launch_exec"?Type{Type::ExternalFiber}:
-     e.text=="launch_capture"?Type::tuple({Type::ExternalFiber,Type::ByteSender,Type::ByteReceiver,Type::ByteReceiver}):
-     e.text=="join"?Type{Type::I64}:e.text=="split"?Type::tuple({Type::Sender,Type::Receiver}):
-     e.text=="close"||e.text=="cancel"?Type{Type::Bool}:e.text=="send"?send_result():e.text=="recv"?receive_result(e.children.empty()||e.children[0]->type!=Type::ByteReceiver?Type::I64:Type::U8):Type{Type::Invalid};
-   if(result==Type::Invalid||result!=e.type)fail(e.where,"unknown concurrency operation or result type");
+    if(e.children.size()!=static_cast<std::size_t>(count))fail(e.where,"concurrency operand arity mismatch");
+   for(const auto& c:e.children)if(!c)fail(e.where,"missing concurrency operand");
+   if(e.text!="channel"&&e.result!=Type::Void)
+    fail(e.where,"invalid concurrency payload annotation");
+   if(e.text=="channel"&&!payload_supported(e.result))
+    fail(e.where,"unsupported channel payload annotation: "+payload_diagnostic(e.result));
+      Type result=Type::Invalid;
+      if(e.text=="poll")result=e.type;
+      else if(e.text=="offer_recv"||e.text=="offer_send"||e.text=="offer_after")result=Type::Void;
+      else if(e.text=="launch")result=Type::Fiber;
+      else if(e.text=="launch_exec")result=Type::ExternalFiber;
+      else if(e.text=="launch_capture")
+       result=Type::tuple({Type::ExternalFiber,Type::sender(Type::U8),
+                          Type::receiver(Type::U8),Type::receiver(Type::U8)});
+      else if(e.text=="join")result=Type::I64;
+      else if(e.text=="close"||e.text=="cancel")result=Type::Bool;
+      else if(e.text=="send")result=send_result();
+      else if(e.text=="try_send")result=try_send_result();
+      else if(e.text=="recv"&&e.children[0]->type.kind()==Type::Receiver)
+       result=receive_result(e.children[0]->type.csp_payload());
+      else if(e.text=="try_recv"&&e.children[0]->type.kind()==Type::Receiver)
+       result=try_receive_result(e.children[0]->type.csp_payload());
+      else if(e.text=="split"&&e.children[0]->type.kind()==Type::Channel){
+       const auto& descriptor=e.children[0]->type;
+       if(!descriptor.sender_cardinality()||!descriptor.receiver_cardinality())
+        fail(e.where,"split descriptor has unresolved endpoint cardinality");
+       result=split_result(descriptor);
+      }
+      else if(e.text=="channel"){
+       if(e.children[0]->kind!=E::Integer||e.children[1]->kind!=E::Integer)
+        fail(e.where,"channel cardinalities must be integer literals");
+       auto senders=integer_literal_bits(e.children[0]->text,e.children[0]->where);
+       auto receivers=integer_literal_bits(e.children[1]->text,e.children[1]->where);
+       if(senders<=0||receivers<=0||senders>256||receivers>256||
+          senders+receivers>256)
+        fail(e.where,"channel endpoint cardinality mismatch");
+       result=Type::channel(e.result,static_cast<std::size_t>(senders),
+                            static_cast<std::size_t>(receivers));
+      }
+    if(result==Type::Invalid||result!=e.type)fail(e.where,"unknown concurrency operation or result type");
   }
  bool expression(const Expr& e,State& state,std::size_t depth,bool acquire=false){
   budget.tick(e.where,depth);if(e.prototype)return true;
@@ -177,13 +306,13 @@ class Verify {
       if(offer.children.empty()||offer.children.size()!=(offer.text=="offer_recv"?1u:2u))fail(offer.where,"poll operand arity mismatch");
       const auto& endpoint=*offer.children[0];
        bool receive=offer.text=="offer_recv";
-       if(receive?(endpoint.type!=Type::Receiver&&endpoint.type!=Type::ByteReceiver):(endpoint.type!=Type::Sender&&endpoint.type!=Type::ByteSender))
-        fail(offer.where,"poll endpoint direction/type mismatch");
+        if(receive?endpoint.type.kind()!=Type::Receiver:endpoint.type.kind()!=Type::Sender)
+         fail(offer.where,"poll endpoint direction/type mismatch");
        capability(endpoint,endpoint.type,state,false);
       const auto& binding=local(endpoint.text,endpoint.where);
        if(seen.size()>=16)fail(offer.where,"poll channel offer limit exceeded");
        if(!seen.insert(binding.id).second)fail(offer.where,"duplicate poll endpoint");
-       Type payload=endpoint.type==Type::ByteReceiver||endpoint.type==Type::ByteSender?Type::U8:Type::I64;
+        Type payload=endpoint.type.csp_payload();
        if(!receive&&(!expression(*offer.children[1],state,depth+1)||offer.children[1]->type!=payload))fail(offer.where,"poll send requires a completing exact endpoint payload");
       for(const auto id:seen)if(state.at(id)!=live)fail(offer.where,"poll payload moved an offered endpoint");
        fields.push_back(receive?payload:Type::data(Type::Record,{}));
@@ -218,21 +347,28 @@ class Verify {
      const auto& c=*e.children[i];
      if(c.kind!=E::Integer||c.type!=Type::I64||!c.children.empty())fail(c.where,"channel cardinality/capacity must be checked i64 literals");
      auto n=integer_literal_bits(c.text,c.where);
-     if(i<2?n!=1:n<0||n>256)fail(c.where,"channel requires (1,1) cardinality and capacity in 0..256");
-    }
-   }else if(e.text=="split"){
-    if(!acquire)fail(e.where,"split must bind exactly (sender,receiver)");
-    capability(operand,Type::Channel,state,true);
+      if(i<2?n<=0||n>256:n<0||n>256)
+       fail(c.where,"channel requires positive endpoint cardinalities and capacity in 0..256");
+     }
+     auto senders=integer_literal_bits(e.children[0]->text,e.children[0]->where);
+     auto receivers=integer_literal_bits(e.children[1]->text,e.children[1]->where);
+     if(senders+receivers>256)fail(e.where,"channel endpoint cardinality total exceeds 256");
+    }else if(e.text=="split"){
+     if(!acquire)fail(e.where,"split must bind all directional endpoints");
+     if(operand.type.kind()!=Type::Channel)fail(e.where,"split requires a channel descriptor");
+     capability(operand,operand.type,state,true);
    }else{
       auto t=operand.type;
       if(e.text=="join"&&t!=Type::Fiber&&t!=Type::ExternalFiber)fail(e.where,"join requires a fiber handle");
       if(e.text=="cancel"&&t!=Type::Fiber&&t!=Type::ExternalFiber)fail(e.where,"cancel requires a fiber handle");
-      if(e.text=="recv"&&t!=Type::Receiver&&t!=Type::ByteReceiver)fail(e.where,"receive requires a receiver capability");
-      if((e.text=="send"||e.text=="close")&&t!=Type::Sender&&t!=Type::ByteSender)fail(e.where,"send/close requires a sender capability");
-      capability(operand,t,state,e.text=="join"||e.text=="cancel");
-     if(e.text=="send"){
-      auto payload=t==Type::ByteSender?Type::U8:Type::I64;
-      if(!expression(*e.children[1],state,depth+1)||e.children[1]->type!=payload)fail(e.where,"send payload type mismatch");
+       if((e.text=="recv"||e.text=="try_recv")&&t.kind()!=Type::Receiver)
+        fail(e.where,"receive requires a receiver capability");
+       if((e.text=="send"||e.text=="try_send"||e.text=="close")&&t.kind()!=Type::Sender)
+        fail(e.where,"send/close requires a sender capability");
+       capability(operand,t,state,e.text=="join"||e.text=="cancel");
+      if(e.text=="send"||e.text=="try_send"){
+       auto payload=t.csp_payload();
+       if(!expression(*e.children[1],state,depth+1)||e.children[1]->type!=payload)fail(e.where,"send payload type mismatch");
      if(state.at(local(operand.text,operand.where).id)!=live)fail(e.where,"send payload moved its endpoint");
     }
    }
@@ -281,9 +417,13 @@ class Verify {
     const auto& e=*s.value;
      if(s.mutable_binding||!operation(e))fail(s.where,"affine bindings must originate from launch/channel/split, never an alias");
     if(s.declared!=Type::Invalid&&s.declared!=e.type)fail(s.where,"affine binding annotation mismatch");
-     if(e.text=="split"){
-      if(!s.pattern||!s.pattern->is_tuple()||s.pattern->elements.size()!=2)fail(s.where,"split requires exactly (sender,receiver)");
-      for(const auto& p:s.pattern->elements)if(p.kind!=Pattern::Kind::Name||!p.elements.empty())fail(p.where,"split endpoints require two simple names");
+      if(e.text=="split"){
+       if(!s.pattern||!s.pattern->is_tuple()||
+          s.pattern->elements.size()!=e.type.elements().size())
+        fail(s.where,"split pattern must bind every declared directional endpoint");
+       for(const auto& p:s.pattern->elements)
+        if(p.kind!=Pattern::Kind::Name||!p.elements.empty())
+         fail(p.where,"split endpoints require simple names");
       }else if(e.text=="launch_capture"){
        if(!s.pattern||!s.pattern->is_tuple()||s.pattern->elements.size()!=4)fail(s.where,"captured shell launch requires exactly (process,stdin,stdout,stderr)");
        for(const auto& p:s.pattern->elements)if(p.kind!=Pattern::Kind::Name||!p.elements.empty())fail(p.where,"captured process capabilities require four simple names");

@@ -13,11 +13,20 @@ struct TypeShape;
 // nothing refers to the scanner arena or foreign CDecl type IDs.
 class Type {
 public:
-   enum Kind { Invalid, I64, Bool, String, Void, Json, JsonView, Function, Hole, Tuple, Generic, Bound, Forall, Code, SExpr, Buffer, F64, Record, Sum, Array, Slice, F32, U8, U16, U32, U64, Named, Fiber, Channel, Sender, Receiver, CspGroup, ExternalFiber, ByteSender, ByteReceiver, Char, Regex, RegexCaptures, Own };
+   enum Kind { Invalid, I64, Bool, String, Void, Json, JsonView, Function, Hole, Tuple, Generic, Bound, Forall, Code, SExpr, Buffer, F64, Record, Sum, Array, Slice, F32, U8, U16, U32, U64, Named, Fiber, Channel, Sender, Receiver, CspGroup, ExternalFiber, Char, Regex, RegexCaptures, Own };
  Type(Kind kind = Invalid);
  static Type function(std::vector<Type> parameters, Type result);
- static Type tuple(std::vector<Type> elements);
- static Type data(Kind kind,std::vector<Type> elements,std::vector<std::string> labels={},std::size_t extent=0);
+  static Type tuple(std::vector<Type> elements);
+  static Type data(Kind kind,std::vector<Type> elements,std::vector<std::string> labels={},std::size_t extent=0);
+  // Channel descriptors preserve their exact endpoint quota after inference.
+  // A source annotation channel<T> uses the (0,0) wildcard until it is unified
+  // with one constructor. Sender/receiver values are always one owned view.
+  static Type channel(Type payload,std::size_t senders=0,std::size_t receivers=0);
+  static Type sender(Type payload);
+  static Type receiver(Type payload);
+  const Type& csp_payload() const;
+  std::size_t sender_cardinality() const;
+  std::size_t receiver_cardinality() const;
  // Named is a source reference. Checked nominal values retain their ordinary
  // Record/Sum representation plus invariant identity/arguments.
   static Type named(std::string name,std::vector<Type> arguments={});
@@ -33,7 +42,11 @@ public:
  bool is_unsigned() const { return kind_>=U8&&kind_<=U64; }
  bool is_float() const { return kind_==F32||kind_==F64; }
   bool is_numeric() const { return kind_==I64||is_float()||is_unsigned(); }
-   bool is_csp() const { return kind_>=Fiber&&kind_<=ByteReceiver; }
+    bool is_csp() const {
+     return kind_==Fiber||kind_==Channel||kind_==Sender||kind_==Receiver||
+            kind_==CspGroup||kind_==ExternalFiber;
+    }
+    bool is_csp_endpoint() const { return kind_==Sender||kind_==Receiver; }
  const std::vector<std::string>& labels() const;
  std::size_t extent() const;
  static Type generic(std::size_t identity);

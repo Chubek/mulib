@@ -388,6 +388,149 @@ already tracks 259 additional unregistered headers. `on1x.mulib` likewise
 rejects baseline-tracked `library/muw3lib`, which is absent from its fixture
 inventory. This worktree changes none of `include/`, `library/`,
 `on1x/contracts-exotract/`, or `on1x/stdlib/mulib/`.
+
+## Typed directional CSP channels — private ABI v5
+
+This continuation starts from detached MuLIB/On1x commit
+`6a145cbf09efcac76f387f6b664fc2257bac93aa`. The configured read-only
+LibStone checkout is
+`3399047f6c6328b8f07788795c610699e66c060a`; it was not modified or used as a
+build directory. Validation ran on Linux 6.18.52-1-lts x86-64, glibc 2.44,
+GCC 16.2.1, Clang 22.1.8, CMake 4.4.3 and Python 3.14.7. All build and test
+artifacts were kept below the approved external directory:
+
+```sh
+B=/mnt/nvme/opencode-builds/ses_e0d13d7a9ffe4DEJxtuNoZl9ei/csp-channels
+LS=/mnt/nvme/mulib/on1x/third_party/libstone
+```
+
+The executable slice retains exact directional quotas in structural
+`channel<T>` types, splits all senders before all receivers, and transfers
+closed fixed-size pointer-free values of at most 32,768 bytes. Private ABI v5
+owns descriptors/endpoints, validates direction and exact `sizeof(T)`, closes
+the MuLIB channel when its final sender closes, and exposes blocking and
+nonparking try operations. Heterogeneous `poll` still performs one MuLIB atomic
+selection; losing registrations are withdrawn by that kernel and ready-case
+priority rotates across visible and private cancellation/timer offers.
+Process streams now use the same structural `sender<u8>`/`receiver<u8>` types.
+No second scheduler or channel implementation was added.
+
+### Full compiler/scanner matrices
+
+The generated-scanner GCC complete build and test run were:
+
+```sh
+cmake --build "$B/gcc" --parallel 2
+ctest --test-dir "$B/gcc" --parallel 2 --output-on-failure \
+  --output-junit "$B/gcc/results-typed-csp-final.xml"
+```
+
+Result: **101 registered; 98 passed, 2 failed, 1 skipped**. Every CSP test,
+including `types`, `type_checker_hardening_hir`, `concurrency_hir`,
+`concurrency`, `stream_poll`, `cancellation_deadlines` and
+`taskgroup_within`, passed. `on1x.scanner_parity` passed **314** exact
+Aurocks/fallback token and diagnostic cases. The skip is the expected
+`on1x.category` native-PPX-disabled profile.
+
+The two failures are fixed-inventory checks unrelated to this continuation and
+are identical under both compilers:
+
+- `on1x.contracts` expects exactly three auxiliary MuLIB headers, while this
+  baseline already contains many newer headers.
+- `on1x.mulib` expects every existing `library/` directory in a static fixture
+  inventory, which this baseline has already outgrown.
+
+Neither their tests nor inventories are touched by this diff. Direct inventory
+comparison reproduces both mismatches before any compiler/runtime path is
+entered.
+
+After the final wildcard-cardinality hardening and deterministic EPIPE
+synchronization, all affected tests were rerun from the final source and passed
+**7/7**:
+
+```sh
+ctest --test-dir "$B/gcc" --parallel 1 --output-on-failure \
+  -R '^on1x\.(types|type_checker_hardening_hir|concurrency_hir|concurrency|stream_poll|cancellation_deadlines|taskgroup_within)$' \
+  --output-junit "$B/gcc/results-typed-csp-final-focus.xml"
+```
+
+The fallback-scanner Clang build and full run were configured and executed as:
+
+```sh
+CC=/usr/bin/clang CXX=/usr/bin/clang++ \
+cmake -S on1x -B "$B/clang-fallback" -DBUILD_TESTING=ON \
+  -DCMAKE_BUILD_TYPE=Debug -DON1X_USE_FALLBACK_SCANNER=ON \
+  -DON1X_LIBSTONE_ROOT="$LS"
+cmake --build "$B/clang-fallback" --parallel 2
+ctest --test-dir "$B/clang-fallback" --parallel 2 --output-on-failure \
+  --output-junit "$B/clang-fallback/results-typed-csp.xml"
+```
+
+Result: **103 registered; 101 passed, the same 2 inventory tests failed**.
+After the final try-state/O2/allocation assertions were added, the affected
+selection was rerun from the final source and passed **7/7**:
+
+```sh
+ctest --test-dir "$B/clang-fallback" --parallel 1 --output-on-failure \
+  -R '^on1x\.(types|type_checker_hardening_hir|concurrency_hir|concurrency|stream_poll|cancellation_deadlines|taskgroup_within)$' \
+  --output-junit "$B/clang-fallback/results-typed-csp-final-focus.xml"
+```
+
+### Sanitizers and strict C11
+
+The final focused Clang ASan/UBSan matrix used the fallback scanner:
+
+```sh
+CC=/usr/bin/clang CXX=/usr/bin/clang++ \
+cmake -S on1x -B "$B/clang-sanitize" -DBUILD_TESTING=ON \
+  -DCMAKE_BUILD_TYPE=Debug -DON1X_USE_FALLBACK_SCANNER=ON \
+  -DON1X_LIBSTONE_ROOT="$LS" \
+  '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' \
+  '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' \
+  '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined' \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer;-fno-sanitize-recover=all'
+cmake --build "$B/clang-sanitize" --parallel 2 \
+  --target on1xc on1x_type_tests on1x_type_checker_hardening_tests \
+           on1x_concurrency_hir_tests
+ASAN_OPTIONS=detect_leaks=0 \
+ctest --test-dir "$B/clang-sanitize" --parallel 1 --output-on-failure \
+  -R '^on1x\.(types|type_checker_hardening_hir|concurrency_hir|concurrency|stream_poll|cancellation_deadlines|taskgroup_within)$' \
+  --output-junit "$B/clang-sanitize/results-typed-csp-final.xml"
+```
+
+Result: **7/7 passed**, including generated programs, MuLIB channel/fiber
+kernels, malformed ABI calls and exhaustive bounded allocation injection; no
+ASan or UBSan finding was reported. Strict standalone runtime syntax also
+passes both compilers:
+
+```sh
+for cc in /usr/bin/gcc /usr/bin/clang; do
+  "$cc" -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread \
+    -I on1x/runtime -I include -fsyntax-only \
+    on1x/runtime/on1x_concurrency.c
+done
+```
+
+TSan is deliberately not reported as evidence. This runtime executes all On1x
+fibers on one native thread and MuLIB's stackful context switches have no TSan
+fiber annotations; a clean or noisy TSan run would not establish the claimed
+semantics. The admitted memory model remains single-native-thread cooperative.
+
+### Executed boundaries
+
+The suites execute rendezvous and bounded FIFO transfer, seeded multi-fiber
+ordering, nominal/tuple/sum/array/snapshot-slice payloads, the exact
+32,768-byte admission boundary and the first oversized rejection, 256-way
+split lowering, independent multi-sender close and drained EOF, every
+`try_send`/`try_recv` state, heterogeneous fairness, same-channel non-self
+rendezvous, evaluation-once and losing-offer reuse. Negative paths cover
+affine aliases/moves, wrong directions, duplicate offers, malformed
+cardinality/size ABI calls, unsupported pointer/managed/resource/unique/CSP
+payloads, deadlock/work/task/channel budgets, and failures in descriptor,
+endpoint, MuLIB channel, bounded-buffer, select, cancellation and timer
+allocations. Python subprocesses use the shared 60-second watchdog.
+
+
 ## On1x extension SDK
 
 SDK ABI 1 was tested on Linux x86-64 at MuLIB

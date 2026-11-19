@@ -36,11 +36,64 @@ int main(){try{
  auto unit=checked();on1x::csp::verify(unit,true);
  require(unit.functions[0].body[0].kind==on1x::Stmt::Kind::CspScope,"taskgroup was not canonicalized");
  require(unit.functions[0].body[0].body[0].value->kind==on1x::Expr::Kind::Csp,"channel operation was erased");
- require(on1x::emit_c(unit,"fiber-test").find("on1x_csp_run_v4(")!=std::string::npos,"C11 scheduler not emitted");
+  require(on1x::emit_c(unit,"fiber-test").find("on1x_csp_run_v5(")!=std::string::npos,"C11 scheduler not emitted");
  reject([&]{(void)on1x::mir::lower(unit);});
- auto source_wire=on1x::meta::encode(on1x::parse(on1x::scan(source,"fiber-test")));
- auto round_trip=on1x::meta::decode(source_wire);on1x::check(round_trip);on1x::csp::verify(round_trip,true);
- std::size_t budget=262144;
+  auto source_wire=on1x::meta::encode(on1x::parse(on1x::scan(source,"fiber-test")));
+  auto round_trip=on1x::meta::decode(source_wire);on1x::check(round_trip);on1x::csp::verify(round_trip,true);
+  constexpr auto typed_source=R"(
+record Packet{sequence:u16,accepted:bool}
+fn main(){taskgroup{
+ let c=->(2,3){payload:Packet,capacity:2,mode:uni};
+ let (tx0,tx1,rx0,rx1,rx2)=split c;
+ match try_send(tx0,record<Packet>{sequence:7u16,accepted:true}) with{
+  Sent(_)=>assert(true),Closed(_)=>assert(false),WouldBlock(_)=>assert(false)
+ };
+ close tx0;close tx1;
+ match try_recv(rx2) with{
+  Value(packet)=>assert(packet["sequence"]==7u16),
+  Empty(_)=>assert(false),Closed(_)=>assert(false)
+ };
+}})";
+  auto typed_wire=on1x::meta::encode(
+    on1x::parse(on1x::scan(typed_source,"typed-fiber-test")));
+  auto typed=on1x::meta::decode(typed_wire);on1x::check(typed);
+  on1x::csp::verify(typed,true);
+  const auto& typed_body=typed.functions[0].body[0].body;
+  const auto& descriptor=typed_body[0].value->type;
+  require(descriptor.kind()==on1x::Type::Channel&&
+          descriptor.sender_cardinality()==2&&
+          descriptor.receiver_cardinality()==3&&
+          descriptor.csp_payload().nominal()=="Packet",
+          "typed channel descriptor lost payload/cardinality");
+  require(typed_body[1].value->type==
+          on1x::csp::split_result(descriptor),
+          "split result did not preserve all directional endpoints");
+  auto typed_c=on1x::emit_c(typed,"typed-fiber-test");
+  require(typed_c.find("on1x_csp_channel_split(")!=std::string::npos&&
+          typed_c.find("on1x_csp_try_send(")!=std::string::npos&&
+          typed_c.find("on1x_csp_try_receive(")!=std::string::npos,
+          "typed split/try C11 operations were not emitted");
+  require(on1x::csp::payload_supported(descriptor.csp_payload())&&
+          !on1x::csp::payload_supported(on1x::Type::String)&&
+          !on1x::csp::payload_supported(on1x::Type::sender(on1x::Type::I64)),
+          "pointer-free CSP payload admission profile is inconsistent");
+  {
+   std::size_t typed_budget=262144;
+   auto forged=on1x::clone_unit(typed,typed_budget);
+   forged.functions[0].body[0].body[0].value->type=
+     on1x::Type::channel(descriptor.csp_payload(),1,1);
+   reject([&]{on1x::csp::verify(forged,true);});
+   reject([&]{(void)on1x::emit_c(forged,"forged-cardinality");});
+  }
+  {
+   std::size_t typed_budget=262144;
+   auto forged=on1x::clone_unit(typed,typed_budget);
+   forged.functions[0].body[0].body[1].value->children[0]->type=
+     on1x::Type::channel(descriptor.csp_payload());
+   reject([&]{on1x::csp::verify(forged,true);});
+   reject([&]{(void)on1x::emit_c(forged,"forged-wildcard-cardinality");});
+  }
+  std::size_t budget=262144;
  auto invalid=on1x::clone_unit(unit,budget);
  invalid.functions[0].body[0].body[0].value->type=on1x::Type::I64;
  reject([&]{on1x::csp::verify(invalid,true);});reject([&]{(void)on1x::emit_c(invalid,"invalid");});
@@ -155,7 +208,8 @@ int main(){try{
      auto fields=p->type.elements();fields[byte_index]=on1x::Type::I64;
      p->type=on1x::Type::data(on1x::Type::Sum,std::move(fields),p->type.labels());
     }else if(mutation==1)p->children[0]->children[1]->type=on1x::Type::I64;
-    else if(mutation==2)p->children[1]->children[0]->type=on1x::Type::Receiver;
+     else if(mutation==2)
+      p->children[1]->children[0]->type=on1x::Type::receiver(on1x::Type::I64);
     else if(mutation==3)p->children[1]->text="offer_send";
     else p->children[0]->children[1].reset();
     reject([&]{on1x::csp::verify(forged,true);});
@@ -192,10 +246,14 @@ int main(){try{
    const auto& capture=*capture_unit.functions[0].body[0].body[0].value;
    require(capture.kind==on1x::Expr::Kind::Csp&&capture.text=="launch_capture","captured shell command not canonicalized");
    require(capture.children.size()==3&&capture.children[1]->text=="\"two words\""&&capture.children[2]->text=="\"escaped word\"","shell argv parser did not preserve words");
-   require(capture.type==on1x::Type::tuple({on1x::Type::ExternalFiber,on1x::Type::ByteSender,on1x::Type::ByteReceiver,on1x::Type::ByteReceiver}),"captured stream tuple type mismatch");
+    require(capture.type==on1x::Type::tuple({
+             on1x::Type::ExternalFiber,on1x::Type::sender(on1x::Type::U8),
+             on1x::Type::receiver(on1x::Type::U8),
+             on1x::Type::receiver(on1x::Type::U8)}),
+            "captured stream tuple type mismatch");
    auto capture_c=on1x::emit_c(capture_unit,"capture-test");
    require(capture_c.find("on1x_csp_launch_capture(")!=std::string::npos,"captured process spawn not emitted");
-   require(capture_c.find("on1x_csp_stream_receive(")!=std::string::npos,"captured byte receive not emitted");
+    require(capture_c.find("on1x_csp_receive(")!=std::string::npos,"captured byte receive not emitted");
    reject([&]{(void)on1x::mir::lower(capture_unit);});
    auto forged_capture=on1x::clone_unit(capture_unit,budget);
    forged_capture.functions[0].body[0].body[0].value->type=on1x::Type::ExternalFiber;

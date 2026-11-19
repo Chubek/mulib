@@ -198,17 +198,24 @@ int64_t on1x_test_poll(on1x_env *);
 #endif
 int main(int argc,char **argv){
  on1x_test_poll_mode=argc>1?atoi(argv[1]):0;
- return (int)on1x_csp_run_v4(on1x_test_poll,NULL,__FILE__,1,1);
+ return (int)on1x_csp_run_v5(on1x_test_poll,NULL,__FILE__,1,1);
 }
 ''')
 objects = []
 for index, source in enumerate([t.root / 'tests/fixtures/stream_poll_boundary.c',
-                                t.root / 'runtime/on1x_runtime.c',
-                                t.root / 'runtime/on1x_concurrency.c']):
+                                 t.root / 'runtime/on1x_runtime.c',
+                                 t.root / 'runtime/on1x_concurrency.c']):
     obj = t.work / f'boundary_{index}.o'
+    allocation_hook = []
+    if source.name == 'on1x_concurrency.c':
+        allocation_hook = [
+            '-include', t.root / 'tests/fixtures/runtime_alloc_hook.h',
+            '-DON1X_CSP_CALLOC=on1x_test_runtime_calloc',
+            '-DON1X_CSP_FREE=on1x_test_runtime_free',
+        ]
     p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-             '-pthread', '-I', t.root / 'runtime', '-I', t.root.parent / 'include',
-             *t.flags, '-c', source, '-o', obj])
+              '-pthread', '-I', t.root / 'runtime', '-I', t.root.parent / 'include',
+              *allocation_hook, *t.flags, '-c', source, '-o', obj])
     assert p.returncode == 0, p
     objects.append(obj)
 consumers = [(t.cc, '-std=c11', driver)]
@@ -224,11 +231,22 @@ for index, (cc, standard, source) in enumerate(consumers):
     assert p.returncode == 0, p
     p = run([exe, '0'])
     assert p.returncode == 0 and p.stdout == '', p
-    for mode, needle in [(1, 'byte payload outside u8 range'),
-                         (2, 'byte payload outside u8 range'),
-                         (3, 'byte send requires captured stdin'),
-                         (4, 'byte receive requires captured stdout/stderr'),
-                         (5, 'poll allocation/protocol failure')]:
+    for mode, needle in [(1, 'payload representation mismatch'),
+                          (2, 'invalid poll send storage'),
+                          (3, 'endpoint direction mismatch'),
+                          (4, 'endpoint direction mismatch'),
+                          (5, 'poll allocation/protocol failure'),
+                          (6, 'payload representation mismatch'),
+                          (7, 'channel descriptor/endpoint/storage allocation failure'),
+                          (8, 'channel descriptor/endpoint/storage allocation failure'),
+                          (9, 'channel descriptor/endpoint/storage allocation failure'),
+                          (10, 'channel descriptor/endpoint/storage allocation failure'),
+                          (11, 'cardinality-mismatched channel split'),
+                          (12, 'repeated or cardinality-mismatched channel split'),
+                          (13, 'duplicate poll endpoint'),
+                          (14, 'endpoint direction mismatch'),
+                          (15, 'payload representation mismatch'),
+                          (16, 'endpoint direction mismatch')]:
         p = run([exe, str(mode)], env={**os.environ, 'ASAN_OPTIONS': 'detect_leaks=0'})
         assert p.returncode == 73 and needle in p.stderr, (mode, p)
 

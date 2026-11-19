@@ -4,13 +4,15 @@ CTest registers independent tests with separate artifact directories:
 
 - `on1x.concurrency_hir`: source-wire round-trip, canonical CSP admission,
   mutation/provenance rejection, C11 emission and explicit MIR refusal.
-- `on1x.concurrency`: compiled taskgroup/fiber and 1:1 i64 channel programs,
-  atomic `poll`, immediate internal and process-group cancellation, compiler-parsed
-  command literals, captured byte stdin/stdout/stderr, rendezvous/FIFO/close,
+- `on1x.concurrency`: compiled taskgroup/fiber and exact-quota typed channel
+  programs, blocking/try operations, rendezvous/bounded FIFO, multi-sender
+  close/EOF races, seeded aggregate transfer and heterogeneous atomic `poll`;
+  immediate internal and process-group cancellation, compiler-parsed
+  command literals, captured byte stdin/stdout/stderr,
   repeated lifecycle, backpressure/EPIPE, defer/return cleanup, negative affine/
   capability/syntax profiles and located deadlock/budget/spawn failures. Both
   scanner modes and focused sanitizer runs are recorded in
-  [verification](../VERIFICATION.md); broader async/cancellation/shell profiles
+  [verification](../VERIFICATION.md); broader async/managed-payload/shell profiles
   remain unsupported.
 
 - `on1x.defer_error_hir`: source-wire round-trip, transactional lowering,

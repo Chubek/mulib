@@ -429,9 +429,16 @@ class Loader {
     std::vector<Type> args;for(const auto& a:t.arguments())args.push_back(type_reference(a,at,names));
     return Type::named(std::move(text),std::move(args));
    }
-   if(t.is_forall())return Type::for_all(t.generic_identity(),type_reference(t.body(),at,names));
-   if(t.is_code())return Type::code(type_reference(t.code_result(),at,names));
-   if(t.is_function()){std::vector<Type> args;for(const auto& p:t.parameters())args.push_back(type_reference(p,at,names));return Type::function(std::move(args),type_reference(t.result(),at,names));}
+    if(t.is_forall())return Type::for_all(t.generic_identity(),type_reference(t.body(),at,names));
+    if(t.is_code())return Type::code(type_reference(t.code_result(),at,names));
+    if(t.kind()==Type::Channel)
+     return Type::channel(type_reference(t.csp_payload(),at,names),
+                          t.sender_cardinality(),t.receiver_cardinality());
+    if(t.kind()==Type::Sender)
+     return Type::sender(type_reference(t.csp_payload(),at,names));
+    if(t.kind()==Type::Receiver)
+     return Type::receiver(type_reference(t.csp_payload(),at,names));
+    if(t.is_function()){std::vector<Type> args;for(const auto& p:t.parameters())args.push_back(type_reference(p,at,names));return Type::function(std::move(args),type_reference(t.result(),at,names));}
    if(t.is_tuple()||t.is_data()){
     std::vector<Type> fields;for(const auto& f:t.elements())fields.push_back(type_reference(f,at,names));
     return t.is_tuple()?Type::tuple(std::move(fields)):Type::data(t.kind(),std::move(fields),t.labels(),t.extent());

@@ -21,7 +21,8 @@
 namespace on1x {
 namespace {
 bool data_kind(Type::Kind kind){return kind==Type::Record||kind==Type::Sum||kind==Type::Array||kind==Type::Slice;}
-bool compound(Type::Kind kind){return kind==Type::Function||kind==Type::Tuple||kind==Type::Code||kind==Type::Own||data_kind(kind);}
+bool channel_kind(Type::Kind kind){return kind==Type::Channel||kind==Type::Sender||kind==Type::Receiver;}
+bool compound(Type::Kind kind){return kind==Type::Function||kind==Type::Tuple||kind==Type::Code||kind==Type::Own||channel_kind(kind)||data_kind(kind);}
 bool has_result(Type::Kind kind){return kind==Type::Function||kind==Type::Code;}
 bool numeric_kind(Type::Kind kind){
  return kind==Type::I64||kind==Type::F64||kind==Type::F32||(kind>=Type::U8&&kind<=Type::U64);
@@ -117,8 +118,9 @@ class Inference {
    Term result = 0;
    std::vector<std::string> labels{};
     std::size_t extent=0;
-    std::string nominal{};
-    std::size_t arguments=0; // Trailing parameters, never representation fields.
+     std::string nominal{};
+     std::size_t arguments=0; // Trailing parameters, never representation fields.
+     std::size_t senders=0,receivers=0;
  };
  struct Scheme;
   struct Predicate {std::string name;std::vector<Term> arguments;Location where;};
@@ -213,9 +215,19 @@ class Inference {
   if(auto found=scalars.find(kind);found!=scalars.end())return found->second;
   auto id=add(kind,{},0,where);scalars.emplace(kind,id);return id;
  }
-   Term function(std::vector<Term> parameters,Term result,const Location& where) {
-    return add(Type::Function,std::move(parameters),result,where);
-   }
+    Term function(std::vector<Term> parameters,Term result,const Location& where) {
+     return add(Type::Function,std::move(parameters),result,where);
+    }
+    Term channel(Type::Kind kind,Term payload,const Location& at,
+                 std::size_t senders=0,std::size_t receivers=0){
+     if(!channel_kind(kind)||(kind!=Type::Channel&&(senders||receivers))||
+        ((senders==0)!=(receivers==0))||senders>256||receivers>256||
+        senders+receivers>256)
+      fail(at,"invalid channel type/cardinality");
+     auto id=add(kind,{payload},0,at);
+     nodes[id].senders=senders;nodes[id].receivers=receivers;
+     return id;
+    }
    Term owning(std::string nominal,std::vector<Term> arguments,const Location& at){
     if(nominal.empty())fail(at,"own<T> requires a nominal target");
     auto id=add(Type::Own,std::move(arguments),0,at);
@@ -307,7 +319,11 @@ class Inference {
      fields.insert(fields.end(),args.begin(),args.end());
      return data(d.kind,std::move(fields),d.labels,0,where,d.name,args.size());
     }
-    if(type.is_code())return add(Type::Code,{},annotation(type.code_result(),where,variables,depth+1),where);
+     if(type.is_code())return add(Type::Code,{},annotation(type.code_result(),where,variables,depth+1),where);
+     if(channel_kind(type.kind()))
+      return channel(type.kind(),annotation(type.csp_payload(),where,variables,depth+1),
+                     where,type.kind()==Type::Channel?type.sender_cardinality():0,
+                     type.kind()==Type::Channel?type.receiver_cardinality():0);
     if(type.is_forall()||type.kind()==Type::Generic){
      auto resolved=type.is_forall()?catalog.resolve(type,where):type;
      if(auto found=atom_terms.find(resolved);found!=atom_terms.end())return found->second;
@@ -377,9 +393,18 @@ class Inference {
      return text+">";
     }
    if(auto atom=atoms.find(id);atom!=atoms.end())return type_name(atom->second);
-  bool tuple=nodes[id].kind==Type::Tuple;
-   bool aggregate=data_kind(nodes[id].kind);
-   if(nodes[id].kind!=Type::Function&&!tuple&&!aggregate)return type_name(Type(nodes[id].kind));
+    bool tuple=nodes[id].kind==Type::Tuple;
+    bool aggregate=data_kind(nodes[id].kind);
+    if(channel_kind(nodes[id].kind)){
+     std::string text=nodes[id].kind==Type::Channel?"channel<":
+                      nodes[id].kind==Type::Sender?"sender<":"receiver<";
+     text+=describe(nodes[id].parameters.front(),where,budget,depth+1)+">";
+     if(nodes[id].kind==Type::Channel&&nodes[id].senders)
+      text+="["+std::to_string(nodes[id].senders)+","+
+            std::to_string(nodes[id].receivers)+"]";
+     return text;
+    }
+    if(nodes[id].kind!=Type::Function&&!tuple&&!aggregate)return type_name(Type(nodes[id].kind));
    std::string text=aggregate?"data("+std::to_string(nodes[id].extent)+"; ":tuple?"(":"fn(";
   for(std::size_t i=0;i<nodes[id].parameters.size();++i) {
    if(i)text+=", ";
@@ -428,7 +453,16 @@ class Inference {
       }
      continue;
     }
-     if(!compound(nodes[a].kind))continue;
+      if(!compound(nodes[a].kind))continue;
+      if(nodes[a].kind==Type::Channel){
+       auto& as=nodes[a].senders;auto& ar=nodes[a].receivers;
+       auto& bs=nodes[b].senders;auto& br=nodes[b].receivers;
+       if(!as&&!ar){as=bs;ar=br;}
+       else if(!bs&&!br){bs=as;br=ar;}
+       else if(as!=bs||ar!=br)
+        fail(where,"incompatible channel endpoint cardinalities: expected "+
+                   describe(b,where)+", got "+describe(a,where));
+      }
      if(nodes[a].nominal!=nodes[b].nominal||nodes[a].arguments!=nodes[b].arguments)fail(where,"incompatible nominal types: expected "+nodes[b].nominal+", got "+nodes[a].nominal);
     if(data_kind(nodes[a].kind)&&(nodes[a].labels!=nodes[b].labels||nodes[a].extent!=nodes[b].extent))
      fail(where,"incompatible data labels or array/slice extent");
@@ -467,7 +501,9 @@ class Inference {
     if(!seen.emplace(a,b).second)continue;
     if(nodes[a].kind!=nodes[b].kind||nodes[a].nominal!=nodes[b].nominal||
        nodes[a].arguments!=nodes[b].arguments||nodes[a].labels!=nodes[b].labels||
-       nodes[a].extent!=nodes[b].extent||nodes[a].parameters.size()!=nodes[b].parameters.size())
+       nodes[a].extent!=nodes[b].extent||nodes[a].senders!=nodes[b].senders||
+       nodes[a].receivers!=nodes[b].receivers||
+       nodes[a].parameters.size()!=nodes[b].parameters.size())
      return false;
     if(auto aa=atoms.find(a);aa!=atoms.end()){
      auto bb=atoms.find(b);if(bb==atoms.end()||aa->second!=bb->second)return false;
@@ -636,11 +672,12 @@ class Inference {
    auto [a,b]=pending.back();pending.pop_back();a=head(a,at);b=head(b,at);
    if(!seen.emplace(a,b).second)continue;
     if(nodes[a].kind==Type::Hole&&scheme.variables.contains(a))continue;
-    if(compound(nodes[a].kind)&&nodes[a].kind==nodes[b].kind){
-     if(nodes[a].parameters.size()!=nodes[b].parameters.size()||
-        nodes[a].nominal!=nodes[b].nominal||nodes[a].arguments!=nodes[b].arguments){
-      unify(b,a,at);continue;
-     }
+     if(compound(nodes[a].kind)&&nodes[a].kind==nodes[b].kind){
+      if(nodes[a].parameters.size()!=nodes[b].parameters.size()||
+         nodes[a].nominal!=nodes[b].nominal||nodes[a].arguments!=nodes[b].arguments||
+         nodes[a].senders!=nodes[b].senders||nodes[a].receivers!=nodes[b].receivers){
+       unify(b,a,at);continue;
+      }
     if(has_result(nodes[a].kind))pending.emplace_back(nodes[a].result,nodes[b].result);
     for(std::size_t i=0;i<nodes[a].parameters.size();++i)pending.emplace_back(nodes[a].parameters[i],nodes[b].parameters[i]);
    }else unify(b,a,at);
@@ -652,14 +689,19 @@ class Inference {
   if(auto found=copies.find(term);found!=copies.end())return found->second;
   if(variables.contains(term)){auto result=fresh(at);copies.emplace(term,result);return result;}
   if(!compound(nodes[term].kind))return term;
-   auto kind=nodes[term].kind;auto children=nodes[term].parameters;auto result=nodes[term].result;
-    auto labels=nodes[term].labels;auto extent=nodes[term].extent;auto nominal=nodes[term].nominal;auto arguments=nodes[term].arguments;
+    auto kind=nodes[term].kind;auto children=nodes[term].parameters;auto result=nodes[term].result;
+     auto labels=nodes[term].labels;auto extent=nodes[term].extent;auto nominal=nodes[term].nominal;auto arguments=nodes[term].arguments;
+     auto senders=nodes[term].senders,receivers=nodes[term].receivers;
   for(auto& child:children)child=copy_signature(child,variables,copies,at,depth+1);
   if(has_result(kind))result=copy_signature(result,variables,copies,at,depth+1);
     Term id;
     if(data_kind(kind))id=data(kind,std::move(children),std::move(labels),extent,at,std::move(nominal),arguments);
-    else if(kind==Type::Own)id=owning(std::move(nominal),std::move(children),at);
-    else id=add(kind,std::move(children),result,at);
+     else if(kind==Type::Own)id=owning(std::move(nominal),std::move(children),at);
+     else if(channel_kind(kind)){
+      if(children.size()!=1)fail(at,"invalid copied channel signature");
+      id=channel(kind,children.front(),at,senders,receivers);
+     }
+     else id=add(kind,std::move(children),result,at);
     copies.emplace(term,id);return id;
  }
   void bind_pattern(const Pattern& pattern,Term value){
@@ -1394,47 +1436,60 @@ class Inference {
    tick(at);
    normalize_inherent_owner(e);
       switch(e.kind) {
-      case Expr::Kind::SourceCsp:{
-       auto operand=[&](std::size_t i){if(i>=e.children.size()||!e.children[i])fail(at,"missing concurrency operand");return expression(*e.children[i]);};
-       if(e.text=="poll"){
-        if(e.children.empty()||e.children.size()>18)fail(at,"poll offer limit/arity mismatch");
-        std::vector<Type> fields;std::vector<std::string> labels;bool has_deadline=false;
-         for(std::size_t i=0;i<e.children.size();++i){auto& offer=*e.children[i];
-          if(offer.kind==Expr::Kind::Boolean&&offer.text=="true"&&i+1==e.children.size()){
-           fields.push_back(Type::data(Type::Record,{}));labels.push_back("Default");break;
-          }
+       case Expr::Kind::SourceCsp:{
+        auto operand=[&](std::size_t i){if(i>=e.children.size()||!e.children[i])fail(at,"missing concurrency operand");return expression(*e.children[i]);};
+        auto empty=[&](const Location& where){return data(Type::Record,{},{},0,where);};
+        auto receive_result=[&](Term payload,const Location& where){
+         return data(Type::Sum,{empty(where),payload},{"None","Some"},0,where);
+        };
+        auto try_receive_result=[&](Term payload,const Location& where){
+         return data(Type::Sum,{empty(where),empty(where),payload},
+                     {"Closed","Empty","Value"},0,where);
+        };
+        if(e.text=="poll"){
+         if(e.children.empty()||e.children.size()>18)fail(at,"poll offer limit/arity mismatch");
+         std::vector<Term> fields;std::vector<std::string> labels;bool has_deadline=false;
+          for(std::size_t i=0;i<e.children.size();++i){auto& offer=*e.children[i];
+           if(offer.kind==Expr::Kind::Boolean&&offer.text=="true"&&i+1==e.children.size()){
+            fields.push_back(empty(offer.where));labels.push_back("Default");break;
+           }
          if(offer.kind==Expr::Kind::SourceCsp&&offer.text=="offer_after"){
           if(has_deadline||offer.children.size()!=1)fail(offer.where,"invalid or duplicate poll deadline");
           has_deadline=true;
           offer.type=Type::Void;unify(expression(*offer.children[0]),scalar(Type::I64,offer.where),offer.where);
-          fields.push_back(Type::data(Type::Record,{}));labels.push_back("After");continue;
+           fields.push_back(empty(offer.where));labels.push_back("After");continue;
          }
          if(offer.kind!=Expr::Kind::SourceCsp||
             (offer.text!="offer_recv"&&offer.text!="offer_send")||offer.children.size()!=(offer.text=="offer_recv"?1u:2u))fail(offer.where,"invalid poll offer");
          offer.type=Type::Void;
-          auto endpoint=expression(*offer.children[0]);auto kind=nodes[head(endpoint,offer.where)].kind;
-          bool receive=offer.text=="offer_recv";
-          if(receive?(kind!=Type::Receiver&&kind!=Type::ByteReceiver):(kind!=Type::Sender&&kind!=Type::ByteSender))
-           fail(offer.where,receive?"poll receive expects receiver<i64> or receiver<u8>":"poll send expects sender<i64> or sender<u8>");
-          Type payload=kind==Type::ByteReceiver||kind==Type::ByteSender?Type::U8:Type::I64;
-          if(!receive)unify(expression(*offer.children[1]),scalar(payload.kind(),offer.where),offer.where);
-          fields.push_back(receive?payload:Type::data(Type::Record,{}));
-         labels.push_back((offer.text=="offer_recv"?"Recv":"Sent")+std::to_string(i));
-         fields.push_back(Type::data(Type::Record,{}));labels.push_back("Closed"+std::to_string(i));
+           auto endpoint=expression(*offer.children[0]);auto root=head(endpoint,offer.where);
+           auto kind=nodes[root].kind;
+           bool receive=offer.text=="offer_recv";
+           if(receive?kind!=Type::Receiver:kind!=Type::Sender)
+            fail(offer.where,receive?"poll receive expects receiver<T>":"poll send expects sender<T>");
+           if(nodes[root].parameters.size()!=1)fail(offer.where,"invalid poll endpoint payload");
+           auto payload=nodes[root].parameters.front();
+           if(!receive)unify(expression(*offer.children[1]),payload,offer.where);
+           fields.push_back(receive?payload:empty(offer.where));
+          labels.push_back((offer.text=="offer_recv"?"Recv":"Sent")+std::to_string(i));
+          fields.push_back(empty(offer.where));labels.push_back("Closed"+std::to_string(i));
+         }
+         result=data(Type::Sum,std::move(fields),std::move(labels),0,at);break;
         }
-        result=annotation(Type::data(Type::Sum,std::move(fields),std::move(labels)),at);break;
-       }
-      if(e.text=="send"){
-       auto left=operand(0);auto k=nodes[head(left,at)].kind;
-        if(k!=Type::Sender&&k!=Type::ByteSender&&k!=Type::Receiver&&k!=Type::ByteReceiver&&k!=Type::Channel&&k!=Type::Fiber&&k!=Type::ExternalFiber){
-        // `<-` used to tokenize as `<` then unary `-`. Keep existing numeric
-        // comparisons, including source without whitespace, byte-for-byte.
+       if(e.text=="send"){
+        auto left=operand(0);auto k=nodes[head(left,at)].kind;
+         if(k!=Type::Sender&&k!=Type::Receiver&&k!=Type::Channel&&
+            k!=Type::Fiber&&k!=Type::ExternalFiber){
+         // `<-` used to tokenize as `<` then unary `-`. Keep existing numeric
+         // comparisons, including source without whitespace, byte-for-byte.
         auto neg=std::make_unique<Expr>();neg->kind=Expr::Kind::Unary;neg->where=at;neg->text="-";neg->children.push_back(std::move(e.children.at(1)));e.children[1]=std::move(neg);e.kind=Expr::Kind::Binary;e.text="<";
-        auto right=operand(1);unify(left,right,at);numeric_operand(left,at);result=scalar(Type::Bool,at);break;
-       }
-        auto endpoint=k==Type::ByteSender?Type::ByteSender:Type::Sender;
-        unify(left,scalar(endpoint,at),at);unify(operand(1),scalar(endpoint==Type::ByteSender?Type::U8:Type::I64,at),at);result=annotation(csp::send_result(),at);
-       }else if(e.text=="launch"){unify(operand(0),function({},scalar(Type::I64,at),at),at);result=scalar(Type::Fiber,at);}
+         auto right=operand(1);unify(left,right,at);numeric_operand(left,at);result=scalar(Type::Bool,at);break;
+        }
+         if(k!=Type::Sender)fail(at,"send expects sender<T>");
+         auto root=head(left,at);if(nodes[root].parameters.size()!=1)fail(at,"invalid sender payload type");
+         unify(operand(1),nodes[root].parameters.front(),at);
+         result=annotation(csp::send_result(),at);
+        }else if(e.text=="launch"){unify(operand(0),function({},scalar(Type::I64,at),at),at);result=scalar(Type::Fiber,at);}
        else if(e.text=="launch_exec"){
         if(e.children.empty()||e.children.size()>9)fail(at,"external argv limit/arity mismatch");
         for(std::size_t i=0;i<e.children.size();++i)unify(operand(i),scalar(Type::String,at),at);
@@ -1443,10 +1498,40 @@ class Inference {
        else if(e.text=="launch_capture"){
         if(e.children.empty()||e.children.size()>9)fail(at,"captured shell argv limit/arity mismatch");
         for(std::size_t i=0;i<e.children.size();++i)unify(operand(i),scalar(Type::String,at),at);
-        result=add(Type::Tuple,{scalar(Type::ExternalFiber,at),scalar(Type::ByteSender,at),scalar(Type::ByteReceiver,at),scalar(Type::ByteReceiver,at)},0,at);
+         auto byte=scalar(Type::U8,at);
+         result=add(Type::Tuple,{scalar(Type::ExternalFiber,at),
+                    channel(Type::Sender,byte,at),channel(Type::Receiver,byte,at),
+                    channel(Type::Receiver,byte,at)},0,at);
+        }
+       else if(e.text=="channel"){
+        if(e.children.size()!=3)fail(at,"channel operand arity mismatch");
+        for(std::size_t i=0;i<3;++i)unify(operand(i),scalar(Type::I64,at),at);
+        if(e.children[0]->kind!=Expr::Kind::Integer||
+           e.children[1]->kind!=Expr::Kind::Integer)
+         fail(at,"channel endpoint cardinalities must be decimal integer literals");
+        auto senders=integer_literal_bits(e.children[0]->text,e.children[0]->where);
+        auto receivers=integer_literal_bits(e.children[1]->text,e.children[1]->where);
+        if(senders<=0||receivers<=0||senders>256||receivers>256||
+           senders+receivers>256)
+         fail(at,"channel endpoint cardinalities must be positive with total at most 256");
+        auto payload=annotation(e.result,at);
+        slots.push_back({&e.result,payload,at,"channel payload type"});
+        result=channel(Type::Channel,payload,at,static_cast<std::size_t>(senders),
+                       static_cast<std::size_t>(receivers));
        }
-      else if(e.text=="channel"){for(std::size_t i=0;i<e.children.size();++i)unify(operand(i),scalar(Type::I64,at),at);result=scalar(Type::Channel,at);}
-      else if(e.text=="split"){unify(operand(0),scalar(Type::Channel,at),at);result=add(Type::Tuple,{scalar(Type::Sender,at),scalar(Type::Receiver,at)},0,at);}
+       else if(e.text=="split"){
+        auto descriptor=head(operand(0),at);
+        if(nodes[descriptor].kind!=Type::Channel||!nodes[descriptor].senders||
+           !nodes[descriptor].receivers||nodes[descriptor].parameters.size()!=1)
+         fail(at,"split expects a channel descriptor with known cardinalities");
+        std::vector<Term> endpoints;
+        endpoints.reserve(nodes[descriptor].senders+nodes[descriptor].receivers);
+        for(std::size_t i=0;i<nodes[descriptor].senders;++i)
+         endpoints.push_back(channel(Type::Sender,nodes[descriptor].parameters[0],at));
+        for(std::size_t i=0;i<nodes[descriptor].receivers;++i)
+         endpoints.push_back(channel(Type::Receiver,nodes[descriptor].parameters[0],at));
+        result=add(Type::Tuple,std::move(endpoints),0,at);
+       }
        else if(e.text=="join"){
         auto t=nodes[head(operand(0),at)].kind;
         if(t!=Type::Fiber&&t!=Type::ExternalFiber)fail(at,"join expects an internal or external fiber");
@@ -1458,16 +1543,32 @@ class Inference {
         result=scalar(Type::Bool,at);
        }
        else if(e.text=="recv"){
-        auto endpoint=operand(0);auto kind=nodes[head(endpoint,at)].kind;
-        if(kind!=Type::Receiver&&kind!=Type::ByteReceiver)fail(at,"receive expects receiver<i64> or receiver<u8>");
-        result=annotation(csp::receive_result(kind==Type::ByteReceiver?Type::U8:Type::I64),at);
-       }
-       else if(e.text=="close"){
-        auto endpoint=operand(0);auto kind=nodes[head(endpoint,at)].kind;
-        if(kind!=Type::Sender&&kind!=Type::ByteSender)fail(at,"close expects sender<i64> or sender<u8>");
-        result=scalar(Type::Bool,at);
-       }
-      else fail(at,"unknown source concurrency operation");
+         auto endpoint=head(operand(0),at);
+         if(nodes[endpoint].kind!=Type::Receiver||nodes[endpoint].parameters.size()!=1)
+          fail(at,"receive expects receiver<T>");
+         result=receive_result(nodes[endpoint].parameters.front(),at);
+        }
+        else if(e.text=="close"){
+         auto endpoint=operand(0);auto kind=nodes[head(endpoint,at)].kind;
+         if(kind!=Type::Sender)fail(at,"close expects sender<T>");
+         result=scalar(Type::Bool,at);
+        }
+        else if(e.text=="try_send"){
+         if(e.children.size()!=2)fail(at,"try_send requires an endpoint and payload");
+         auto endpoint=head(operand(0),at);
+         if(nodes[endpoint].kind!=Type::Sender||nodes[endpoint].parameters.size()!=1)
+          fail(at,"try_send expects sender<T>");
+         unify(operand(1),nodes[endpoint].parameters.front(),at);
+         result=annotation(csp::try_send_result(),at);
+        }
+        else if(e.text=="try_recv"){
+         if(e.children.size()!=1)fail(at,"try_recv requires one receiver");
+         auto endpoint=head(operand(0),at);
+         if(nodes[endpoint].kind!=Type::Receiver||nodes[endpoint].parameters.size()!=1)
+          fail(at,"try_recv expects receiver<T>");
+         result=try_receive_result(nodes[endpoint].parameters.front(),at);
+        }
+       else fail(at,"unknown source concurrency operation");
       break;
      }
      case Expr::Kind::Csp:fail(at,"private concurrency operation before inference");
@@ -1808,15 +1909,17 @@ class Inference {
    }
    std::size_t depth=1,size=1;
     std::vector<Type> parameters;std::vector<std::size_t> key{static_cast<std::size_t>(node.kind)};
-     if(data_kind(node.kind)){
-      auto [layout,inserted]=label_identities.emplace(node.labels,label_identities.size()+1);(void)inserted;
-       key.push_back(layout->second);key.push_back(node.extent);
-       auto [nominal,added]=nominal_identities.emplace(node.nominal,nominal_identities.size()+1);(void)added;
-       key.push_back(nominal->second);key.push_back(node.arguments);
-     }else if(node.kind==Type::Own){
+      if(data_kind(node.kind)){
+       auto [layout,inserted]=label_identities.emplace(node.labels,label_identities.size()+1);(void)inserted;
+        key.push_back(layout->second);key.push_back(node.extent);
+        auto [nominal,added]=nominal_identities.emplace(node.nominal,nominal_identities.size()+1);(void)added;
+        key.push_back(nominal->second);key.push_back(node.arguments);
+      }else if(node.kind==Type::Own){
       auto [nominal,added]=nominal_identities.emplace(node.nominal,nominal_identities.size()+1);(void)added;
-      key.push_back(nominal->second);key.push_back(node.arguments);
-    }
+       key.push_back(nominal->second);key.push_back(node.arguments);
+      }else if(node.kind==Type::Channel){
+       key.push_back(node.senders);key.push_back(node.receivers);
+     }
    Type result_type=Type::Invalid;
    if(has_result(node.kind)){
     const auto& result=*ground[head(node.result,at)];depth=result.depth+1;size=result.size+1;
@@ -1837,7 +1940,17 @@ class Inference {
         if(node.nominal.empty()||node.arguments!=parameters.size())
          fail(at,"invalid inferred own<Named> representation");
         type=Type::own(Type::named(node.nominal,std::move(parameters)));
-       }else{
+        }else if(channel_kind(node.kind)){
+         if(parameters.size()!=1)
+          fail(at,"invalid inferred channel payload representation");
+         if(node.kind==Type::Channel){
+          if(!node.senders||!node.receivers)
+           fail(at,"cannot infer channel endpoint cardinality from channel<T> annotation");
+          type=Type::channel(std::move(parameters.front()),node.senders,node.receivers);
+         }else if(node.kind==Type::Sender)
+          type=Type::sender(std::move(parameters.front()));
+         else type=Type::receiver(std::move(parameters.front()));
+        }else{
         std::vector<Type> arguments;
         if(!node.nominal.empty()){arguments.assign(parameters.end()-node.arguments,parameters.end());parameters.resize(parameters.size()-node.arguments);}
         type=data_kind(node.kind)?Type::data(node.kind,std::move(parameters),node.labels,node.extent):node.kind==Type::Tuple?Type::tuple(std::move(parameters)):node.kind==Type::Code?Type::code(std::move(result_type)):Type::function(std::move(parameters),std::move(result_type));

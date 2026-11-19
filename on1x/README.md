@@ -57,19 +57,25 @@ executes consuming cancellation of running or blocked internal fibers, explicit
 defer/lexical cleanup, descendant draining, and monotonic `poll after` choices
 through C11. The same profile now admits `taskgroup within 1s { ... }`:
 expiry drains cooperative cleanup and terminates the run, not a typed timeout
-result (private CSP ABI v4). See
+result (private CSP ABI v5). See
 [`examples/cancellation_deadlines.on1x`](examples/cancellation_deadlines.on1x).
 **Async/await is not implemented**: verified stackless suspension/frame
 lowering is still required. This is not completion of M4.
 
-An initial [cooperative fiber/channel profile](docs/concurrency.md) now executes
-`taskgroup`, `launch { ... }`/`join`, 1:1 `i64` unidirectional bounded and
-rendezvous channels, and bounded atomic `poll` through generated C11 and existing MuLIB kernels. The real
-source [channel example](examples/cooperative_channels.on1x) covers checked send/receive,
-close and scoped cleanup; the [poll example](examples/cooperative_poll.on1x)
-selects a rendezvous receive. This is **not** completion of the core-syntax
-specification: typed timeout recovery, the full portable shell grammar, async/await, duplex,
-general payloads and native worker threads remain unsupported. See the
+The [cooperative fiber/channel profile](docs/concurrency.md) now executes
+`taskgroup`, `launch { ... }`/`join`, exact directional endpoint quotas,
+rendezvous/bounded FIFO channels carrying fixed-size pointer-free values,
+blocking and `try_` transfer, last-sender EOF, and heterogeneous atomic `poll`
+through generated C11 and the existing MuLIB kernels. The
+[typed channel example](examples/cooperative_typed_channels.on1x) uses a nominal
+record, two senders/two receivers, `try_send`/`try_recv`, and idempotent close;
+the original [channel example](examples/cooperative_channels.on1x) covers
+rendezvous and scoped cleanup, while the
+[poll example](examples/cooperative_poll.on1x) selects a rendezvous receive.
+This is **not** completion of the core-syntax specification: managed/resource
+payload transfer, typed timeout recovery, the full portable shell grammar,
+async/await, duplex/cloned endpoints and native worker threads remain
+unsupported. See the
 [verification record](VERIFICATION.md) for commands, current suite results and
 the intentional optional-profile skip.
 
@@ -84,11 +90,12 @@ pipelines, redirection and command lists reject. A newly launched
 internal fiber can be cancelled before dispatch or cooperatively while running/
 blocked; registered cleanups run before consuming `cancel handle` returns.
 
-Atomic [`poll` now selects captured byte streams](docs/stream-poll.md), including
-mixed i64/u8 choices, exact receive binder types, send backpressure and distinct
-EOF arms. The [compiled example](examples/cooperative_stream_poll.on1x) combines
-process stdout and a normal channel. The later continuation adds `poll after`
-deadlines, not async/await or general byte-channel construction.
+Atomic [`poll` selects captured byte streams](docs/stream-poll.md), including
+mixed general-channel/process-u8 choices, exact receive binder types, send
+backpressure and distinct EOF arms. The
+[compiled example](examples/cooperative_stream_poll.on1x) combines process
+stdout and a normal channel. The deadline continuation adds `poll after`; none
+of these stackful effects implements async/await.
 
 The M2 [immutable C-string FFI slice](docs/ffi-strings.md) extends existing
 review-gated admission with exact call-scoped inputs and immutable static

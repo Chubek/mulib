@@ -5,24 +5,36 @@ Scheduling points are channel/stream send and receive, blocking `poll`, join and
 the supervisor also yields while pumping process pipes. Ordinary
 expression operands still evaluate once, left-to-right; suspension does not
 reevaluate an operand. MuLIB's channel lock commits the communication and copies
-one i64 or process-stream byte before returning success. Rendezvous success
-acknowledges a receiver.
+one exactly typed value representation before returning success. Channel payloads
+are closed fixed-size pointer-free values of at most 32,768 bytes; a transfer is
+an ordinary byte copy of `sizeof(T)`, with no hidden pointer ownership,
+serialization, widening, retain or drop. Rendezvous success acknowledges a
+receiver; a positive-capacity success acknowledges FIFO enqueueing.
 
-An atomic `poll` may offer i64 channels and process u8 streams together.
+An atomic `poll` may offer heterogeneous general channels and process u8 streams together.
 The same kernel lock commits exactly one communication; losing registrations
-are removed before its arm executes. A byte send/receive uses actual uint8
-storage, never an endian-dependent byte of an i64 object. Buffered process-stdin
+are removed before its arm executes or stack-local payload storage is released.
+Every offer points to an object of its exact generated C type. A byte
+send/receive therefore uses actual `uint8_t` storage, never an
+endian-dependent byte of an i64 object. Buffered process-stdin
 success acknowledges enqueueing, not OS child consumption. EOF/closed is
 distinct from a received zero byte. Default commits no channel operation.
 
 There is no shared mutable capture or cross-native-thread ownership transfer.
-An immutable scalar is copied; a scoped endpoint capability moves into one
+An immutable admitted value is copied; a scoped endpoint capability moves into one
 launched body and cannot also be used by the parent. Each child must finish
 before its owning group and channel storage are destroyed. Endpoint pointer
 representation is private, cannot cross raw FFI and does not authorize copying.
+Each sender endpoint closes once; closing one does not close its siblings. The
+channel's close event is linearized when the final sender closes. Values already
+in the FIFO drain before receivers observe closed. Receiver endpoints do not
+close the channel in this profile.
 
-FIFO is the selected kernel's buffered order; no preemptive fairness or global
-ordering between independent fibers is promised. Native blocking calls are not
+FIFO is the selected kernel's buffered order, including each sender's accepted
+order under multi-sender interleaving. Ready select cases use rotating probe
+priority; hidden cancellation/timer cases also participate, so strict
+alternation and global ordering between independent fibers are not promised.
+Native blocking calls are not
 implicitly made asynchronous. General Send/Sync, atomics, locks, shared mutable
 values and a multiworker happens-before model are not admitted by this profile.
 

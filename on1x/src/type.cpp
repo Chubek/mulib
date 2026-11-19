@@ -5,10 +5,22 @@
 #include <algorithm>
 
 namespace on1x {
-struct TypeShape { std::vector<Type> children; Type result; bool holes, functions, generics, foralls; std::vector<std::string> labels{}; std::size_t extent=0; std::string nominal{}; std::vector<Type> arguments{}; };
+struct TypeShape {
+ std::vector<Type> children;
+ Type result;
+ bool holes, functions, generics, foralls;
+ std::vector<std::string> labels{};
+ std::size_t extent=0;
+ std::string nominal{};
+ std::vector<Type> arguments{};
+ std::size_t senders=0,receivers=0;
+};
 
 Type::Type(Kind kind):kind_(kind) {
-  if(kind == Function || kind == Tuple || kind == Forall || kind == Code || kind==Named || kind==Own || is_data()) throw std::logic_error("composite type requires a shape");
+  if(kind == Function || kind == Tuple || kind == Forall || kind == Code ||
+     kind==Named || kind==Own || kind==Channel || kind==Sender ||
+     kind==Receiver || is_data())
+   throw std::logic_error("composite type requires a shape");
 }
 Type::Type(Kind kind, std::shared_ptr<const TypeShape> shape)
   :kind_(kind),shape_(std::move(shape)) {}
@@ -39,6 +51,43 @@ Type Type::tuple(std::vector<Type> elements) {
  bool holes=false,functions=false,generics=false,foralls=false;
  for(const auto& element:elements){holes=holes||element.has_holes();functions=functions||element.has_functions();generics=generics||element.has_generics();foralls=foralls||element.has_foralls();}
  return Type(Tuple,std::make_shared<const TypeShape>(TypeShape{std::move(elements),Type::Invalid,holes,functions,generics,foralls}));
+}
+Type Type::channel(Type payload,std::size_t senders,std::size_t receivers){
+ if((senders==0)!=(receivers==0)||
+    (senders&&senders>256)||(receivers&&receivers>256)||
+    senders+receivers>256)
+  throw std::logic_error("invalid channel endpoint cardinality");
+ auto holes=payload.has_holes(),functions=payload.has_functions();
+ auto generics=payload.has_generics(),foralls=payload.has_foralls();
+ auto shape=std::make_shared<TypeShape>(
+  TypeShape{{std::move(payload)},Type::Invalid,holes,functions,generics,foralls});
+ shape->senders=senders;shape->receivers=receivers;
+ return Type(Channel,std::move(shape));
+}
+Type Type::sender(Type payload){
+ auto holes=payload.has_holes(),functions=payload.has_functions();
+ auto generics=payload.has_generics(),foralls=payload.has_foralls();
+ return Type(Sender,std::make_shared<const TypeShape>(
+  TypeShape{{std::move(payload)},Type::Invalid,holes,functions,generics,foralls}));
+}
+Type Type::receiver(Type payload){
+ auto holes=payload.has_holes(),functions=payload.has_functions();
+ auto generics=payload.has_generics(),foralls=payload.has_foralls();
+ return Type(Receiver,std::make_shared<const TypeShape>(
+  TypeShape{{std::move(payload)},Type::Invalid,holes,functions,generics,foralls}));
+}
+const Type& Type::csp_payload() const{
+ if(kind_!=Channel&&kind_!=Sender&&kind_!=Receiver)
+  throw std::logic_error("non-channel type has no CSP payload");
+ return shape_->children.front();
+}
+std::size_t Type::sender_cardinality() const{
+ if(kind_!=Channel)throw std::logic_error("non-channel type has no sender cardinality");
+ return shape_->senders;
+}
+std::size_t Type::receiver_cardinality() const{
+ if(kind_!=Channel)throw std::logic_error("non-channel type has no receiver cardinality");
+ return shape_->receivers;
 }
 Type Type::data(Kind kind,std::vector<Type> elements,std::vector<std::string> labels,std::size_t extent){
  if(kind!=Record&&kind!=Sum&&kind!=Array&&kind!=Slice)throw std::logic_error("invalid data type kind");
@@ -119,11 +168,15 @@ std::strong_ordering Type::operator<=>(const Type& other) const {
  if(!shape_ || shape_ == other.shape_) return std::strong_ordering::equal;
  if(auto order=nominal()<=>other.nominal();order!=0)return order;
  if(auto order=arguments()<=>other.arguments();order!=0)return order;
- if(is_data()){
+  if(is_data()){
   if(auto order=extent()<=>other.extent();order!=0)return order;
   if(auto order=labels()<=>other.labels();order!=0)return order;
- }
- if(auto order = shape_->children <=> other.shape_->children; order != 0) return order;
+  }
+  if(kind_==Channel){
+   if(auto order=sender_cardinality()<=>other.sender_cardinality();order!=0)return order;
+   if(auto order=receiver_cardinality()<=>other.receiver_cardinality();order!=0)return order;
+  }
+  if(auto order = shape_->children <=> other.shape_->children; order != 0) return order;
   if(is_forall())return body() <=> other.body();
   if(is_code())return code_result() <=> other.code_result();
   if(is_own())return owned() <=> other.owned();
@@ -199,11 +252,21 @@ TypeFormResult check_type_form(const Type& root,const TypeFormOptions& options){
   }else if(type.is_code()){
    if(!add(type.code_result(),item,item.allow_generics,item.allow_foralls))
     return limited("type-form node budget exhausted");
-   }else if(type.is_tuple()||type.is_data()){
-   for(const auto& element:type.elements())
-    if(!add(element,item,item.allow_generics,item.allow_foralls))
+    }else if(type.is_tuple()||type.is_data()){
+    for(const auto& element:type.elements())
+     if(!add(element,item,item.allow_generics,item.allow_foralls))
+      return limited("type-form node budget exhausted");
+   }else if(type.kind()==Type::Channel||type.kind()==Type::Sender||
+            type.kind()==Type::Receiver){
+    if(type.kind()==Type::Channel){
+     auto senders=type.sender_cardinality(),receivers=type.receiver_cardinality();
+     if((senders==0)!=(receivers==0)||senders>256||receivers>256||
+        senders+receivers>256)
+      return malformed("invalid channel endpoint cardinality");
+    }
+    if(!add(type.csp_payload(),item,item.allow_generics,item.allow_foralls))
      return limited("type-form node budget exhausted");
-  }
+   }
  }
  return {TypeFormStatus::Valid,{},nodes};
 }
@@ -215,10 +278,17 @@ std::string type_name(const Type& type) {
   return name;
  }
   switch(type.kind()) {
-  case Type::Fiber:return "ifiber<i64>";case Type::Channel:return "channel<i64>";
-  case Type::Sender:return "sender<i64>";case Type::Receiver:return "receiver<i64>";
+   case Type::Fiber:return "ifiber<i64>";
+   case Type::Channel:{
+    auto name="channel<"+type_name(type.csp_payload())+">";
+    if(type.sender_cardinality())
+     name+="["+std::to_string(type.sender_cardinality())+","+
+           std::to_string(type.receiver_cardinality())+"]";
+    return name;
+   }
+   case Type::Sender:return "sender<"+type_name(type.csp_payload())+">";
+   case Type::Receiver:return "receiver<"+type_name(type.csp_payload())+">";
    case Type::CspGroup:return "<taskgroup>";case Type::ExternalFiber:return "xfiber";
-   case Type::ByteSender:return "sender<u8>";case Type::ByteReceiver:return "receiver<u8>";
   case Type::I64:return "i64";
    case Type::F64:return "f64";
    case Type::F32:return "f32";
@@ -293,8 +363,16 @@ bool match_forall(const Type& schema,const Type& instance,ForallMatch mode){
   }
     if(pattern.kind()!=actual.kind()||pattern.nominal()!=actual.nominal()||pattern.arguments().size()!=actual.arguments().size())return false;
     for(std::size_t i=0;i<pattern.arguments().size();++i)if(!self(self,pattern.arguments()[i],actual.arguments()[i]))return false;
-    if(pattern.is_code())return self(self,pattern.code_result(),actual.code_result());
-    if(pattern.is_own())return self(self,pattern.owned(),actual.owned());
+     if(pattern.is_code())return self(self,pattern.code_result(),actual.code_result());
+     if(pattern.is_own())return self(self,pattern.owned(),actual.owned());
+     if(pattern.kind()==Type::Channel||pattern.kind()==Type::Sender||
+        pattern.kind()==Type::Receiver){
+      if(pattern.kind()==Type::Channel&&
+         (pattern.sender_cardinality()!=actual.sender_cardinality()||
+          pattern.receiver_cardinality()!=actual.receiver_cardinality()))
+       return false;
+      return self(self,pattern.csp_payload(),actual.csp_payload());
+     }
   if(pattern.is_function()){
    if(pattern.parameters().size()!=actual.parameters().size()||!self(self,pattern.result(),actual.result()))return false;
    for(std::size_t i=0;i<pattern.parameters().size();++i)if(!self(self,pattern.parameters()[i],actual.parameters()[i]))return false;

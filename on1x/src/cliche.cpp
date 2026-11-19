@@ -48,8 +48,11 @@ bool contains_bound(const Type& type){
   for(const auto& parameter:type.parameters())if(contains_bound(parameter))return true;
   return contains_bound(type.result());
  }
- if(type.is_forall())return contains_bound(type.body());
- if(type.is_code())return contains_bound(type.code_result());
+  if(type.is_forall())return contains_bound(type.body());
+  if(type.is_code())return contains_bound(type.code_result());
+  if(type.kind()==Type::Channel||type.kind()==Type::Sender||
+     type.kind()==Type::Receiver)
+   return contains_bound(type.csp_payload());
  if(type.is_tuple()||type.is_data())
   for(const auto& element:type.elements())if(contains_bound(element))return true;
  return false;
@@ -65,8 +68,10 @@ std::size_t type_size(const Type& type,std::size_t depth=0){
  if(type.is_own()){add(type.owned());return result;}
  for(const auto& argument:type.arguments())add(argument);
  if(type.is_function()){for(const auto& parameter:type.parameters())add(parameter);add(type.result());}
- else if(type.is_forall())add(type.body());
- else if(type.is_code())add(type.code_result());
+  else if(type.is_forall())add(type.body());
+  else if(type.is_code())add(type.code_result());
+  else if(type.kind()==Type::Channel||type.kind()==Type::Sender||
+          type.kind()==Type::Receiver)add(type.csp_payload());
  else if(type.is_tuple()||type.is_data())for(const auto& element:type.elements())add(element);
  return result;
 }
@@ -90,7 +95,10 @@ void validate_type(const Type& type,std::size_t variables,const Location& at,
  if(type.is_function()){
   for(const auto& parameter:type.parameters())validate_type(parameter,variables,at,work,depth+1);
   validate_type(type.result(),variables,at,work,depth+1);
- }else if(type.is_code())validate_type(type.code_result(),variables,at,work,depth+1);
+  }else if(type.is_code())validate_type(type.code_result(),variables,at,work,depth+1);
+  else if(type.kind()==Type::Channel||type.kind()==Type::Sender||
+          type.kind()==Type::Receiver)
+   validate_type(type.csp_payload(),variables,at,work,depth+1);
  else if(type.is_tuple()||type.is_data())
   for(const auto& element:type.elements())validate_type(element,variables,at,work,depth+1);
 }
@@ -100,7 +108,13 @@ Type rebuild(const Type& source,std::vector<Type> children,std::vector<Type> arg
  (void)at;
  if(source.kind()==Type::Named)return Type::named(source.nominal(),std::move(arguments));
  if(source.is_function())return Type::function(std::move(children),std::move(result));
- if(source.is_code())return Type::code(std::move(result));
+  if(source.is_code())return Type::code(std::move(result));
+  if(source.kind()==Type::Channel)
+   return Type::channel(std::move(children.at(0)),
+                        source.sender_cardinality(),
+                        source.receiver_cardinality());
+  if(source.kind()==Type::Sender)return Type::sender(std::move(children.at(0)));
+  if(source.kind()==Type::Receiver)return Type::receiver(std::move(children.at(0)));
  if(source.is_tuple())return Type::tuple(std::move(children));
  if(source.is_data()){
   auto out=Type::data(source.kind(),std::move(children),source.labels(),source.extent());
@@ -150,7 +164,15 @@ bool may_overlap(const Type& left,const Type& right){
    if(!may_overlap(left.parameters()[i],right.parameters()[i]))return false;
   return may_overlap(left.result(),right.result());
  }
- if(left.is_code())return may_overlap(left.code_result(),right.code_result());
+  if(left.is_code())return may_overlap(left.code_result(),right.code_result());
+  if(left.kind()==Type::Channel||left.kind()==Type::Sender||
+     left.kind()==Type::Receiver){
+   if(left.kind()==Type::Channel&&
+      (left.sender_cardinality()!=right.sender_cardinality()||
+       left.receiver_cardinality()!=right.receiver_cardinality()))
+    return false;
+   return may_overlap(left.csp_payload(),right.csp_payload());
+  }
  if(left.is_tuple()||left.is_data()){
   if(left.elements().size()!=right.elements().size())return false;
   if(left.is_data()&&(left.labels()!=right.labels()||left.extent()!=right.extent()))return false;
@@ -185,7 +207,15 @@ bool match(const Type& pattern,const Type& actual,std::vector<Type>& substitutio
    if(!match(pattern.parameters()[i],actual.parameters()[i],substitutions))return false;
   return match(pattern.result(),actual.result(),substitutions);
  }
- if(pattern.is_code())return match(pattern.code_result(),actual.code_result(),substitutions);
+  if(pattern.is_code())return match(pattern.code_result(),actual.code_result(),substitutions);
+  if(pattern.kind()==Type::Channel||pattern.kind()==Type::Sender||
+     pattern.kind()==Type::Receiver){
+   if(pattern.kind()==Type::Channel&&
+      (pattern.sender_cardinality()!=actual.sender_cardinality()||
+       pattern.receiver_cardinality()!=actual.receiver_cardinality()))
+    return false;
+   return match(pattern.csp_payload(),actual.csp_payload(),substitutions);
+  }
  if(pattern.is_tuple()||pattern.is_data()){
   if(pattern.elements().size()!=actual.elements().size())return false;
   if(pattern.is_data()&&(pattern.labels()!=actual.labels()||pattern.extent()!=actual.extent()))return false;
@@ -459,8 +489,11 @@ Type substitute(const Type& source,const std::vector<Type>& variables,const Loca
   if(type.is_function()){
    for(const auto& parameter:type.parameters())children.push_back(self(self,parameter,depth+1));
    result=self(self,type.result(),depth+1);
-  }else if(type.is_code())result=self(self,type.code_result(),depth+1);
-  else if(type.is_forall())fail(at,"forall is not supported in cliche signatures","ON1X-CLICHE-SIGNATURE");
+   }else if(type.is_code())result=self(self,type.code_result(),depth+1);
+   else if(type.is_forall())fail(at,"forall is not supported in cliche signatures","ON1X-CLICHE-SIGNATURE");
+   else if(type.kind()==Type::Channel||type.kind()==Type::Sender||
+           type.kind()==Type::Receiver)
+    children.push_back(self(self,type.csp_payload(),depth+1));
   else if(type.is_tuple()||type.is_data())
    for(const auto& element:type.elements())children.push_back(self(self,element,depth+1));
   return rebuild(type,std::move(children),std::move(arguments),std::move(result),at);
@@ -566,8 +599,10 @@ void prepare(Unit& unit){
     if(type.kind()==Type::Bound){if(type.generic_identity()<used.size())used[type.generic_identity()]=true;return;}
     if(type.is_own()){self(self,type.owned());return;}
     for(const auto& argument:type.arguments())self(self,argument);
-   if(type.is_function()){for(const auto& parameter:type.parameters())self(self,parameter);self(self,type.result());}
-   else if(type.is_code())self(self,type.code_result());
+    if(type.is_function()){for(const auto& parameter:type.parameters())self(self,parameter);self(self,type.result());}
+    else if(type.is_code())self(self,type.code_result());
+    else if(type.kind()==Type::Channel||type.kind()==Type::Sender||
+            type.kind()==Type::Receiver)self(self,type.csp_payload());
    else if(type.is_tuple()||type.is_data())for(const auto& element:type.elements())self(self,element);
   };
   for(const auto& argument:implementation.arguments)mark(mark,argument);

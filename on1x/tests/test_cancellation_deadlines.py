@@ -182,7 +182,7 @@ assert p.returncode == 0, p
 bad_abi = t.work / 'bad-abi'
 bad_abi.mkdir(exist_ok=True)
 (bad_abi / 'on1x_concurrency.h').write_text(
-    (t.root / 'runtime/on1x_concurrency.h').read_text().replace('ON1X_CSP_ABI_VERSION 4', 'ON1X_CSP_ABI_VERSION 3'))
+    (t.root / 'runtime/on1x_concurrency.h').read_text().replace('ON1X_CSP_ABI_VERSION 5', 'ON1X_CSP_ABI_VERSION 4'))
 p = run([t.cc, '-std=c11', '-I', bad_abi, '-I', t.root / 'runtime', '-fsyntax-only', generated])
 assert p.returncode != 0 and 'runtime ABI' in p.stderr, p
 
@@ -221,6 +221,7 @@ else:
     raise AssertionError('timer allocation enumeration did not reach success')
 assert any('timer allocation failure' in text for text in failures), failures
 assert any('cancellation signal allocation failure' in text for text in failures), failures
+assert any('closed-endpoint signal allocation failure' in text for text in failures), failures
 assert any('poll allocation/protocol failure' in text for text in failures), failures
 p = run([exe])
 assert p.returncode == 0 and p.stdout == '3\n', p

@@ -1,4 +1,4 @@
-# Cooperative fibers and channels — initial G4 contract
+# Cooperative fibers and typed directional channels
 
 This is the next vertical implementation of section 2 of
 `../ON1X_CORE_SYNTAX_ADDITIONS.md`, not completion of that specification.
@@ -55,9 +55,10 @@ profile with running/blocked cancellation, monotonic `poll after`, and
   uses the same command grammar but replaces the child's standard descriptors
   with three checked pipes. Its affine result type is
   `(xfiber, sender<u8>, receiver<u8>, receiver<u8>)`: stdin, stdout and stderr
-  respectively. The byte endpoints are process-stream capabilities, not a way
-  to construct arbitrary `u8` channels. Sending to stdin returns the same
-  checked `sum{Err:i64,Ok:record{}}` shape as an i64 send; `close input` is
+  respectively. These stream endpoints use the same structural directional
+  types as general `u8` channels but remain tied to the process-pipe adapter.
+  Sending to stdin returns the generic checked
+  `sum{Err:i64,Ok:record{}}` send shape; `close input` is
   idempotent and produces child EOF after queued bytes drain. Joining or
   cancelling also closes stdin. Receiving either output returns
   `sum{None:record{},Some:u8}` and returns `None` only after pipe EOF and queued
@@ -68,10 +69,10 @@ profile with running/blocked cancellation, monotonic `poll after`, and
   blocking the native scheduler thread. A program expecting more than the
   bounded capacity must drain stdout/stderr while the process runs—typically by
   moving each receiver into an internal fiber—before joining the process.
-   Atomic `poll` may mix these byte endpoints with i64 channels; each receive
-   binder retains its exact payload type (see [stream poll](stream-poll.md)).
-   Closing a stdout/stderr receiver and copying or
-  reversing endpoint directions are rejected. Pipe `EPIPE` closes stdin, so a
+  Atomic `poll` may mix these byte endpoints with general typed channels; each
+  receive binder retains its exact payload type (see
+  [stream poll](stream-poll.md)). Closing a stdout/stderr receiver and copying
+  or reversing endpoint directions are rejected. Pipe `EPIPE` closes stdin, so a
   subsequent or still-blocked send yields checked failure instead of terminating
   the On1x process (an already enqueued buffered send may have returned `Ok`).
   The adapter blocks and consumes a newly generated SIGPIPE only around each
@@ -95,31 +96,49 @@ profile with running/blocked cancellation, monotonic `poll after`, and
   interrupted; an infinite/blocking cleanup can prevent cooperative completion.
   Cancellation is observed at generated function entry, loop backedges and
   call/communication resumption. Already committed effects are not rolled back.
-- Immutable i64 values and scoped i64/process-stream channel endpoints may be
-  captured. An endpoint capture moves that capability out of the parent. Mutable, JSON, managed,
-  function-valued and fiber-handle captures are rejected in this first profile.
+- Immutable fixed-size pointer-free values and scoped directional endpoints may
+  be captured. An endpoint capture moves that capability out of the parent.
+  Mutable, JSON, managed, function-valued and fiber-handle captures are rejected.
   Ordinary closures and function signatures cannot export concurrency handles.
-- `->(1,1){payload:i64,capacity:N,mode:uni}` creates a scoped descriptor;
-  `N` is a literal in 0..256. `split descriptor` consumes the descriptor and
-  must bind exactly `(sender,receiver)` through an immutable let pattern.
-  Cardinalities other than one, duplex, cloning and general payloads reject.
+- `->(S,R){payload:T,capacity:N,mode:uni}` creates a scoped `channel<T>`
+  descriptor. `S` and `R` are positive decimal literals, each at most 256 and
+  with `S + R <= 256`; `N` is a literal in 0..256. The exact quotas are retained
+  in checked descriptor types. `split descriptor` consumes it and must bind
+  exactly `S + R` simple names through an immutable let pattern: all
+  `sender<T>` endpoints first, then all `receiver<T>` endpoints. Endpoints are
+  separately affine capabilities, not aliases or cloneable views.
+- `T` may be a closed fixed-size pointer-free value whose conservative generated
+  representation is at most 32,768 bytes: numeric scalars, bool/char, tuples,
+  structural or nominal records/sums, fixed arrays and snapshot slices composed
+  from those values. Strings, managed `sexpr`/buffers/callables, JSON/regex
+  resources or views, `own<T>`, concurrency capabilities, unresolved types and
+  larger layouts reject at the payload annotation with a source location.
+  MuLIB copies exactly `sizeof(T)` bytes; there is no widening, serialization,
+  retain/drop callback or cleanup transfer.
 - `(tx <- value)` returns the checked structural outcome
   `sum{Err:i64,Ok:record{}}`; 1 denotes closed. Handle it with `match` or an
   explicit expression discard. Bare `tx <- value;` rejects until channel-error
   effects can propagate through function signatures. This is an explicitly
   bounded typed-result profile, not nominal `Result`/`?` admission.
-- `<-rx` returns `sum{None:record{},Some:i64}`. Close drains queued messages
-  before None. `close tx` is checked/idempotent (bool: first close versus already
-  closed). Dropping an endpoint view does not implicitly close it; use `close`
-  for EOF. The group closes/destroys its channel storage after all children
-  finish, including early exits after their required joins.
+- `<-rx` returns `sum{None:record{},Some:T}`. Close drains queued messages
+  before `None`. `close tx` is checked and idempotent for that sender endpoint
+  (bool: first endpoint close versus repeated close). The underlying channel
+  closes only when its last sender endpoint closes. Dropping an endpoint does
+  not implicitly close it; use `close` for prompt EOF. The group closes and
+  destroys its channel storage after all children finish, including early exits
+  after their required joins.
+- `try_send(tx, value)` never parks and returns
+  `sum{Closed:record{},Sent:record{},WouldBlock:record{}}`.
+  `try_recv(rx)` returns
+  `sum{Closed:record{},Empty:record{},Value:T}`. A drained close is distinct
+  from an empty open channel. Operands still evaluate exactly once.
 - Capacity zero is an acknowledged rendezvous; positive capacity is bounded FIFO.
   Channel operations and joins suspend only the current fiber. Loop backedges
   yield cooperatively. No implicit blocking-I/O interception or preemption.
 - `poll { recv rx as n => expression, closed rx => expression, send tx <-
   value => expression, closed tx => expression, default => expression }`
-   selects among 1..16 distinct named i64 or captured-process u8 endpoints,
-   including mixed choices. Statement arms may use blocks;
+    selects among 1..16 distinct named directional endpoints, including mixed
+    payload types and process streams. Statement arms may use blocks;
   expression arms must have a common result. Each offered endpoint has exactly
   one `closed` arm; at most one `default` is permitted. Send payloads evaluate
   left-to-right, exactly once, **before** selection; only the winning send
@@ -127,17 +146,18 @@ profile with running/blocked cancellation, monotonic `poll after`, and
   commits at most one, and withdraws losing registrations before an arm runs.
   `default` never suspends; without it a fiber may park. A drained closed
   receive or closed send selects its matching `closed` arm. The kernel rotates
-  the first probed offer; this is fairness among initially ready offers, not
-  a general starvation guarantee. As with other operations, allocation or
-  terminal scheduler failure is not recoverable or unwound. One optional
+  the first probed case. Private timer/cancellation cases participate in that
+  rotation, so this is bounded rotating priority rather than strict alternation
+  or a general scheduler starvation guarantee. As with other operations,
+  allocation or terminal scheduler failure is not recoverable or unwound. One optional
   `after duration => arm` (milliseconds, or `ms`/`s` units) adds a monotonic
   timer offer; a timer-only poll is supported. Durations evaluate once after
   send operands, and an expired timer competes atomically with communications.
   Default never suspends. See the deadline contract for exact arbitration.
 - All concurrency values are group-owned, never scalar foreign handles. No
-  aliases, assignment, aggregates (except the compiler-owned split pair and
-  four-capability captured-process result), return, ordinary closure
-  escape, foreign ABI or deferred retention. Branch joins and repeatable loop
+  aliases, assignment, user-built aggregates (except compiler-owned split
+  tuples and the four-capability captured-process result), return, ordinary
+  closure escape, foreign ABI or deferred retention. Branch joins and repeatable loop
   transfers are conservatively checked. Typed canonical operations remain
   explicit effects, never erased into ordinary raw calls.
 - A bounded supervisor detects quiescent deadlock and scheduler work exhaustion
@@ -165,8 +185,8 @@ taskgroup {
 
 Typed cancelled join results, the full portable shell grammar
 (expansion, environment mutation, command lists,
-pipelines/redirection and portable builtins), duplex/MPMC
-endpoint cloning, general/managed payloads and results,
+pipelines/redirection and portable builtins), duplex channels, endpoint
+cloning, managed/resource-bearing payload transfer,
 async/await, generators, actors, native worker threads, atomics/shared state and
 general error/effect inference remain separate capabilities. Source operations
 outside this profile must reject, never block a native thread as a fake fiber.
@@ -189,9 +209,9 @@ single-thread profile. ASan's fiber-switch hooks are used by the actual kernel.
 |---|---|---|
 | `taskgroup`, internal i64 `launch`/`join` and cooperative consuming `cancel` | EXECUTABLE | Automatic normal-exit joins, native-worker ownership, effectful MIR and independent cross-platform verification |
 | `taskgroup within` | EXECUTABLE terminal-timeout C11 profile | Typed timeout propagation/recovery and effectful MIR |
-| 1:1 i64 uni channels, bounded/zero-capacity send/receive | EXECUTABLE | General messages, endpoint quotas/duplex, cancellation and complete sanitizer/stress matrix |
-| `poll` / atomic select | EXECUTABLE bounded i64/process-u8 profile, monotonic `after` and cancellation-aware waits | General payloads and recoverable scheduler errors |
-| Direct-exec external `xfiber` and consuming `cancel` | EXECUTABLE bounded POSIX profile | Typed exit-status record, recoverable spawn errors, broader targets and internal-fiber cancellation |
+| Typed uni channels, exact directional quotas, bounded/zero-capacity send/receive/try/close | EXECUTABLE fixed-size pointer-free C11 profile | Managed/resource payload protocols, endpoint cloning/duplex, native workers and effectful MIR |
+| `poll` / atomic select | EXECUTABLE heterogeneous typed profile, monotonic `after` and cancellation-aware waits | Recoverable scheduler/allocation errors, managed transfers and strict scheduler-wide fairness |
+| Direct-exec external `xfiber` and consuming `cancel` | EXECUTABLE bounded POSIX profile | Typed exit-status record, recoverable spawn errors and broader targets |
 | Backtick command literals and captured process streams | EXECUTABLE bounded POSIX profile | Full portable command AST/operators/expansion, configurable language-level stream limits and effectful ownership MIR |
 | Async/await, actors, native workers | Unsupported | Suspension frames, ownership/effects and memory model |
 

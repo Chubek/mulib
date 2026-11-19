@@ -142,7 +142,8 @@ class Generator {
       case Type::Own:uses_unique=true;return "on1x_unique *";
      case Type::Fiber:return "on1x_csp_task *";
      case Type::ExternalFiber:return "on1x_csp_process *";
-     case Type::Channel:case Type::Sender:case Type::Receiver:case Type::ByteSender:case Type::ByteReceiver:return "on1x_csp_channel *";
+      case Type::Channel:return "on1x_csp_channel *";
+      case Type::Sender:case Type::Receiver:return "on1x_csp_endpoint *";
     case Type::CspGroup:return "on1x_csp_group *";
    case Type::I64:return "int64_t";case Type::Bool:return "bool";case Type::Char:return "uint32_t";
     case Type::F64:uses_f64=true;return "double";
@@ -465,23 +466,30 @@ class Generator {
         case Expr::Kind::Csp:{
          if(uses_group_deadlines)cancellation_edge(e.where);
          const auto& op=e.text;auto at=location(e.where);
-         if(op=="poll"){
+          if(op=="poll"){
           std::size_t n=e.children.size();bool fallback=e.children.back()->kind==Expr::Kind::Boolean;
           if(fallback)--n;
           bool deadline=n&&e.children[n-1]->text=="offer_after";if(deadline)--n;
-          auto offers=unique("poll_offers");definitions<<pad()<<"on1x_csp_offer "<<offers<<"["<<std::max<std::size_t>(1,n)<<"] = {0};\n";
-          for(std::size_t i=0;i<n;++i){const auto& offer=*e.children[i];
-           auto endpoint=expr(*offer.children[0]);
-           definitions<<pad()<<offers<<"["<<i<<"].channel = "<<endpoint<<";\n";
-           definitions<<pad()<<offers<<"["<<i<<"].operation = "<<(offer.text=="offer_send"?1:2)<<";\n";
-           if(offer.text=="offer_send"){
-            auto value=expr(*offer.children[1]);definitions<<pad()<<offers<<"["<<i<<"].payload = "<<value<<";\n";
+           auto offers=unique("poll_offers");definitions<<pad()<<"on1x_csp_offer "<<offers<<"["<<std::max<std::size_t>(1,n)<<"] = {0};\n";
+           std::vector<std::string> received(n);
+           for(std::size_t i=0;i<n;++i){const auto& offer=*e.children[i];
+            auto endpoint=expr(*offer.children[0]);
+            const auto payload_type=offer.children[0]->type.csp_payload();
+            definitions<<pad()<<offers<<"["<<i<<"].endpoint = "<<endpoint<<";\n";
+            definitions<<pad()<<offers<<"["<<i<<"].operation = "<<(offer.text=="offer_send"?1:2)<<";\n";
+            definitions<<pad()<<offers<<"["<<i<<"].element_size = sizeof("<<ctype(payload_type)<<");\n";
+            if(offer.text=="offer_send"){
+             auto value=temp(payload_type,expr(*offer.children[1]));
+             definitions<<pad()<<offers<<"["<<i<<"].send_value = &"<<value<<";\n";
+            }else{
+             received[i]=temp(payload_type,"{0}");
+             definitions<<pad()<<offers<<"["<<i<<"].receive_value = &"<<received[i]<<";\n";
+            }
            }
-          }
-          auto payload=unique("poll_payload"),selected=unique("poll_selected"),closed=unique("poll_closed");
-          definitions<<pad()<<"int64_t "<<payload<<" = 0;\n"<<pad()<<"size_t "<<selected<<" = 0;\n"<<pad()<<"bool "<<closed<<" = false;\n";
-          std::string delay;if(deadline)delay=expr(*e.children[n]->children[0]);
-          definitions<<pad()<<(deadline?"on1x_csp_select_after(":"on1x_csp_select(")<<offers<<", "<<n<<", "<<(fallback?"true":"false")<<", "<<(deadline?delay+", ":"")<<"&"<<payload<<", &"<<selected<<", &"<<closed<<", "<<at<<");\n";
+           auto selected=unique("poll_selected"),closed=unique("poll_closed");
+           definitions<<pad()<<"size_t "<<selected<<" = 0;\n"<<pad()<<"bool "<<closed<<" = false;\n";
+           std::string delay;if(deadline)delay=expr(*e.children[n]->children[0]);
+           definitions<<pad()<<(deadline?"on1x_csp_select_after(":"on1x_csp_select(")<<offers<<", "<<n<<", "<<(fallback?"true":"false")<<", "<<(deadline?delay+", ":"")<<"&"<<selected<<", &"<<closed<<", "<<at<<");\n";
           auto result=temp(e.type,"{0}");
           auto index=[&](const std::string& label){auto it=std::find(e.type.labels().begin(),e.type.labels().end(),label);
            if(it==e.type.labels().end())throw Error(e.where,"missing checked poll result variant");
@@ -492,8 +500,10 @@ class Generator {
            auto success=index((e.children[i]->text=="offer_recv"?"Recv":"Sent")+std::to_string(i));
            auto failure=index("Closed"+std::to_string(i));
            definitions<<pad()<<"if ("<<selected<<" == "<<i<<") "<<result<<".tag = "<<closed<<" ? "<<failure<<" : "<<success<<";\n";
-            if(e.children[i]->text=="offer_recv")definitions<<pad()<<"if ("<<selected<<" == "<<i<<" && !"<<closed<<") "<<result<<".payload.element_"<<success<<" = ("<<ctype(e.type.elements()[success])<<")"<<payload<<";\n";
-          }
+             if(e.children[i]->text=="offer_recv")
+              definitions<<pad()<<"if ("<<selected<<" == "<<i<<" && !"<<closed<<") "
+                         <<result<<".payload.element_"<<success<<" = "<<received[i]<<";\n";
+           }
           return result;
          }
          if(op=="launch"){
@@ -514,29 +524,84 @@ class Generator {
           definitions<<pad()<<"on1x_csp_launch_capture("<<args<<", "<<e.children.size()<<", &"<<result<<".element_0, &"<<result<<".element_1, &"<<result<<".element_2, &"<<result<<".element_3, "<<at<<");\n";
           return result;
          }
-        if(op=="channel")return temp(e.type,"on1x_csp_channel_create("+expr(*e.children.at(2))+", "+at+")");
-        auto handle=expr(*e.children.at(0));
-        if(op=="split")return temp(e.type,"("+ctype(e.type)+"){"+handle+", "+handle+"}");
+         if(op=="channel"){
+          auto payload=ctype(e.type.csp_payload());
+          return temp(e.type,"on1x_csp_channel_create(sizeof("+payload+"), "+
+                      std::to_string(e.type.sender_cardinality())+", "+
+                      std::to_string(e.type.receiver_cardinality())+", "+
+                      expr(*e.children.at(2))+", "+at+")");
+         }
+         auto handle=expr(*e.children.at(0));
+         if(op=="split"){
+          auto result=temp(e.type,"{0}");
+          auto endpoints=unique("split_endpoints");
+          auto senders=e.children[0]->type.sender_cardinality();
+          auto receivers=e.children[0]->type.receiver_cardinality();
+          auto count=senders+receivers;
+          definitions<<pad()<<"on1x_csp_endpoint *"<<endpoints<<"["<<count<<"] = {0};\n"
+                     <<pad()<<"on1x_csp_channel_split("<<handle<<", "<<endpoints<<", "
+                     <<senders<<", "<<receivers<<", "<<at<<");\n";
+          for(std::size_t i=0;i<count;++i)
+           definitions<<pad()<<result<<".element_"<<i<<" = "<<endpoints<<"["<<i<<"];\n";
+          return result;
+         }
          if(op=="join")return temp(e.type,std::string(e.children[0]->type==Type::ExternalFiber?"on1x_csp_process_join(":"on1x_csp_join(")+handle+", "+at+")");
           if(op=="cancel")return temp(e.type,std::string(e.children[0]->type==Type::Fiber?"on1x_csp_cancel(":"on1x_csp_process_cancel(")+handle+", "+at+")");
-         if(op=="close")return temp(e.type,std::string(e.children[0]->type==Type::ByteSender?"on1x_csp_stream_close(":"on1x_csp_close(")+handle+", "+at+")");
-         if(op=="send"){
-          auto payload=expr(*e.children.at(1));
-          auto status=temp(Type::I64,std::string(e.children[0]->type==Type::ByteSender?"on1x_csp_stream_send(":"on1x_csp_send(")+handle+", "+payload+", "+at+")");
+          if(op=="close")return temp(e.type,"on1x_csp_close("+handle+", "+at+")");
+          if(op=="send"){
+           auto payload_type=e.children[0]->type.csp_payload();
+           auto payload=temp(payload_type,expr(*e.children.at(1)));
+           auto status=temp(Type::I64,"on1x_csp_send("+handle+", &"+payload+
+                            ", sizeof("+ctype(payload_type)+"), "+at+")");
          auto result=temp(e.type,"{0}");
          definitions<<pad()<<result<<".tag = "<<status<<" == 0 ? 1 : 0;\n"
                     <<pad()<<"if ("<<status<<" != 0) "<<result<<".payload.element_0 = "<<status<<";\n";
          return result;
-        }
-         if(op=="recv"){
-          auto byte=e.children[0]->type==Type::ByteReceiver;
-          auto payload=temp(byte?Type::U8:Type::I64,"0");
-          auto status=temp(Type::Bool,std::string(byte?"on1x_csp_stream_receive(":"on1x_csp_receive(")+handle+", &"+payload+", "+at+")");
+         }
+          if(op=="recv"){
+           auto payload_type=e.children[0]->type.csp_payload();
+           auto payload=temp(payload_type,"{0}");
+           auto status=temp(Type::Bool,"on1x_csp_receive("+handle+", &"+payload+
+                            ", sizeof("+ctype(payload_type)+"), "+at+")");
          auto result=temp(e.type,"{0}");
          definitions<<pad()<<result<<".tag = "<<status<<" ? 1 : 0;\n"
                     <<pad()<<"if ("<<status<<") "<<result<<".payload.element_1 = "<<payload<<";\n";
-         return result;
-        }
+          return result;
+         }
+         if(op=="try_send"){
+          auto payload_type=e.children[0]->type.csp_payload();
+          auto payload=temp(payload_type,expr(*e.children.at(1)));
+          auto status=temp(Type::I64,"on1x_csp_try_send("+handle+", &"+payload+
+                           ", sizeof("+ctype(payload_type)+"), "+at+")");
+          auto result=temp(e.type,"{0}");
+          auto tag=[&](const std::string& label){
+           auto found=std::find(e.type.labels().begin(),e.type.labels().end(),label);
+           if(found==e.type.labels().end())throw Error(e.where,"missing checked try_send result variant");
+           return static_cast<std::size_t>(found-e.type.labels().begin());
+          };
+          definitions<<pad()<<result<<".tag = "<<status<<" == ON1X_CSP_TRANSFERRED ? "
+                     <<tag("Sent")<<" : ("<<status<<" == ON1X_CSP_CLOSED ? "
+                     <<tag("Closed")<<" : "<<tag("WouldBlock")<<");\n";
+          return result;
+         }
+         if(op=="try_recv"){
+          auto payload_type=e.children[0]->type.csp_payload();
+          auto payload=temp(payload_type,"{0}");
+          auto status=temp(Type::I64,"on1x_csp_try_receive("+handle+", &"+payload+
+                           ", sizeof("+ctype(payload_type)+"), "+at+")");
+          auto result=temp(e.type,"{0}");
+          auto tag=[&](const std::string& label){
+           auto found=std::find(e.type.labels().begin(),e.type.labels().end(),label);
+           if(found==e.type.labels().end())throw Error(e.where,"missing checked try_recv result variant");
+           return static_cast<std::size_t>(found-e.type.labels().begin());
+          };
+          definitions<<pad()<<result<<".tag = "<<status<<" == ON1X_CSP_TRANSFERRED ? "
+                     <<tag("Value")<<" : ("<<status<<" == ON1X_CSP_CLOSED ? "
+                     <<tag("Closed")<<" : "<<tag("Empty")<<");\n"
+                     <<pad()<<"if ("<<status<<" == ON1X_CSP_TRANSFERRED) "
+                     <<result<<".payload.element_"<<tag("Value")<<" = "<<payload<<";\n";
+          return result;
+         }
         throw Error(e.where,"unknown canonical concurrency operation");
        }
       case Expr::Kind::Propagate:throw Error(e.where,"unlowered propagation");
@@ -1215,7 +1280,7 @@ class Generator {
     definitions<<"static int64_t "<<entry<<"(on1x_env *context) { (void)context; ";
     if(main.result==Type::Void)definitions<<functions.at("main")<<"(); return 0;";
     else definitions<<"return "<<functions.at("main")<<"();";
-    definitions<<" }\nint main(void) { return (int)on1x_csp_run_v4("<<entry<<", NULL, "<<location(main.where)<<"); }\n";
+    definitions<<" }\nint main(void) { return (int)on1x_csp_run_v5("<<entry<<", NULL, "<<location(main.where)<<"); }\n";
    }
    else {
     definitions<<"int main(void) { ";
@@ -1237,7 +1302,7 @@ class Generator {
       +(uses_f32?std::string("#if !defined(ON1X_F32_ABI_VERSION) || ON1X_F32_ABI_VERSION != 1\n#error \"unsupported On1x f32 target or runtime ABI\"\n#endif\n"):std::string{})
       +(uses_unsigned?std::string("#if !defined(ON1X_UNSIGNED_ABI_VERSION) || ON1X_UNSIGNED_ABI_VERSION != 1\n#error \"incompatible On1x unsigned runtime ABI\"\n#endif\n"):std::string{})
        +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
-         +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 4\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
+          +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 5\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
        +kernel_headers+float_guard+types.str()+"\n"+prototypes.str()+"\n"+value_helpers.str()+helpers.str()+definitions.str();
  }
 };

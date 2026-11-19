@@ -96,13 +96,17 @@ class Parser {
        throw Error(t.where,
                    "borrow/ref modes are only valid on a named On1x "
                    "function parameter","ON1X-REF");
-      if((at("ifiber")||at("channel")||at("sender")||at("receiver"))&&peek(1).text=="<"){
-      ++pos;consume("<");auto payload=type();close_angle();
-      if((t.text=="sender"||t.text=="receiver")&&payload==Type::U8)
-       return t.text=="sender"?Type::ByteSender:Type::ByteReceiver;
-      if(payload!=Type::I64)throw Error(t.where,"ON1X-CSP-UNSUPPORTED: channel/fiber payload must be i64, except captured process streams use u8");
-       return t.text=="ifiber"?Type::Fiber:t.text=="channel"?Type::Channel:t.text=="sender"?Type::Sender:Type::Receiver;
-      }
+       if((at("ifiber")||at("channel")||at("sender")||at("receiver"))&&peek(1).text=="<"){
+        ++pos;consume("<");auto payload=type();close_angle();
+        if(t.text=="ifiber"){
+         if(payload!=Type::I64)
+         throw Error(t.where,"ON1X-CSP-UNSUPPORTED: internal fiber result must be i64");
+        return Type::Fiber;
+       }
+        return t.text=="channel"?Type::channel(std::move(payload)):
+               t.text=="sender"?Type::sender(std::move(payload)):
+               Type::receiver(std::move(payload));
+       }
       if(at("xfiber")&&peek(1).text!="<"){++pos;return Type::ExternalFiber;}
       if(accept("own")){
        consume("<");auto target=type();close_angle();
@@ -457,7 +461,7 @@ class Parser {
         if(arm.children[0]->kind!=Expr::Kind::Unit){Stmt ret;ret.kind=Stmt::Kind::Return;ret.where=arm.children[0]->where;ret.value=std::move(arm.children[0]);thunk->body.push_back(std::move(ret));}
          auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;e->where=t.where;e->text="launch";thunk->syntax_depth=body_expression_depth(thunk->body)+1;e->children.push_back(std::move(thunk));return syntax_bounded(std::move(e));
          }
-         if(at("launch")&&peek(1).text=="exec"&&peek(2).text=="("){
+          if(at("launch")&&peek(1).text=="exec"&&peek(2).text=="("){
           pos+=3;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;e->where=t.where;e->text="launch_exec";
           if(!at(")"))do{
            if(e->children.size()>=9)throw Error(t.where,"ON1X-CSP-LIMIT: external argv limit exceeded");
@@ -471,7 +475,14 @@ class Parser {
            e->children.push_back(std::move(argument));
           }while(accept(","));
           consume(")");if(e->children.empty())throw Error(t.where,"external launch requires an absolute executable path");
-          return syntax_bounded(std::move(e));
+           return syntax_bounded(std::move(e));
+          }
+         if((at("try_recv")||at("try_send"))&&peek(1).text=="("){
+          auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;
+          e->where=t.where;e->text=t.text;++pos;consume("(");
+          e->children.push_back(expr().node);
+          if(e->text=="try_send"){consume(",");e->children.push_back(expr().node);}
+          consume(")");return syntax_bounded(std::move(e));
          }
         if(at("poll")&&peek(1).text=="{")return polling(false);
        if(at("->")&&peek(1).text=="("){

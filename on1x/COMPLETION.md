@@ -13,15 +13,19 @@ and script second-line metadata support name-based offline discovery. See
 No general-safe-FFI, application, separate-compilation or concurrency gate is
 advanced by this tooling change.
 
-CSP ABI v4 continuation: [cooperative cancellation and monotonic
-deadlines](docs/cancellation-deadlines.md) execute explicit C11 cleanup returns
-and atomic control offers. `taskgroup within` expires cooperatively and drains
-cleanup before terminal failure; no typed recovery. This supersedes earlier
-absence claims only for this bounded profile. Async/await, effectful MIR and
+CSP ABI v5 continuation: [typed directional channels](docs/concurrency.md)
+retain exact sender/receiver quotas, transfer fixed-size pointer-free values,
+close on the last sender, expose blocking/try operations, and atomically poll
+heterogeneous offers through the existing MuLIB kernels. The earlier
+[cooperative cancellation and monotonic deadlines](docs/cancellation-deadlines.md)
+still execute explicit C11 cleanup returns and atomic control offers;
+`taskgroup within` drains cleanup before terminal failure, with no typed
+recovery. Async/await, managed/resource channel transfer, effectful MIR and
 general foreign-resource unwinding remain unsupported; application/safe-FFI
 gates are not advanced.
 
-G4 continuation (2026-11-18): the bounded [cooperative fiber/channel
+Historical G4 baseline (2026-11-18, superseded where noted by ABI v5 above):
+the bounded [cooperative fiber/channel
 profile](docs/concurrency.md) compiles and runs real On1x `taskgroup`, internal
 `ifiber<i64>` launch/join, i64 1:1 uni channels and bounded atomic `poll`
 through C11 and existing MuLIB kernels. A bounded POSIX direct-exec `xfiber`
@@ -29,11 +33,13 @@ with process-group cancellation is executable. Compiler-parsed backtick command
 words and affine, bounded byte-channel stdin/stdout/stderr capture now execute
 without a host shell; this is not the full proposed portable shell grammar or
 typed exit-status/error model. Immediate pre-dispatch internal cancellation
-is also executable; deadlines, running/blocked cancellation, async, native workers,
-general resources and full concurrency/MIR semantics remain unsupported. This
-does not advance the application or general-safe-FFI gates below. The later
+was also executable; at that baseline, deadlines and running/blocked
+cancellation were still absent. Async, native workers, general resources and
+full concurrency/MIR semantics remain unsupported. This does not advance the
+application or general-safe-FFI gates below. The historical
 [stream-poll slice](docs/stream-poll.md) additionally admits atomic choices
-mixing captured u8 streams and i64 channels, not deadlines or effectful MIR.
+mixing captured u8 streams and i64 channels; later ABI revisions supersede
+those payload and deadline limits.
 
 M2 continuation (2026-11-17): [function-scoped defer and nominal Result
 propagation](docs/defer-errors.md) now execute through C11. Defers snapshot

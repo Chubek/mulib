@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Real compiled On1x cooperative-fiber/channel profile and closed boundaries."""
 import os
+import random
 import time
 from pathlib import Path
 from support import NativeTests, run
@@ -31,12 +32,22 @@ def reject(name, source, needle, *flags):
     preserved = t.work / (name + '.c')
     preserved.write_text('do not replace')
     p = run([t.compiler, '--emit-ir-c' if '--via-mir' in flags else '--emit-c', path, '-o', preserved])
-    assert p.returncode != 0 and needle in p.stderr and preserved.read_text() == 'do not replace', (name, p)
+    assert (p.returncode != 0 and needle in p.stderr and f'{path}:' in p.stderr and
+            preserved.read_text() == 'do not replace'), (name, p)
 
 
 example = t.root / 'examples/cooperative_channels.on1x'
 execute('cooperative_example', example, '1\n10\n20\n2\n3\n30\n0\n7\n')
 execute('cooperative_example_o2', example, '1\n10\n20\n2\n3\n30\n0\n7\n', '--cflag=-O2')
+execute('typed_channel_example', t.root / 'examples/cooperative_typed_channels.on1x',
+        '0\n1\n2\n7\n9\n3\n4\n')
+execute('typed_channel_example_o2', t.root / 'examples/cooperative_typed_channels.on1x',
+        '0\n1\n2\n7\n9\n3\n4\n', '--cflag=-O2')
+typed_identity = build(
+    'typed_channel_identity', t.root / 'examples/cooperative_typed_channels.on1x',
+    '--ppx', 'identity', t.root / 'stdppx/identity.py')
+p = run([typed_identity])
+assert p.returncode == 0 and p.stdout == '0\n1\n2\n7\n9\n3\n4\n', p
 execute('poll_example', t.root / 'examples/cooperative_poll.on1x', '42\n1\n')
 execute('external_example', t.root / 'examples/cooperative_external.on1x', '0\ntrue\n1\n')
 execute('process_stream_example', t.root / 'examples/cooperative_process_streams.on1x', '79\n110\n49\n120\n0\n')
@@ -125,10 +136,10 @@ execute('captured_join_closes_stdin', '''fn main(){taskgroup{
 # SIGPIPE to the generated parent process.
 execute('captured_stdin_epipe', f'''fn main(){{taskgroup{{
  let (process,input,output,error)=launch capture `{stream_child} noinput`;
- var rejected=false;
- for i in 0..300{{let outcome=input <- 65u8;match outcome with{{Ok(_)=>assert(true),Err(_)=>{{rejected=true;}}}};}}
- assert(rejected);close input;
  match <-output with{{Some(byte)=>println(u8_to_bits(byte)),None(_)=>println(-1)}};
+ var rejected=false;
+ for i in 0..4{{let outcome=input <- 65u8;match outcome with{{Ok(_)=>assert(true),Err(_)=>{{rejected=true;}}}};}}
+ assert(rejected);close input;
  match <-output with{{Some(_)=>println(-2),None(_)=>println(0)}};
  println(join process);
  }}}}''', '88\n0\n0\n', '--cflag=-DON1X_CSP_STREAM_CAPACITY=1')
@@ -184,6 +195,257 @@ execute('repeated_rendezvous', '''fn main(){for n in 0..64{taskgroup{
  assert(join child==n);
 }}}''', '')
 
+# A deterministic seeded aggregate capture feeds a bounded FIFO. The writer and
+# reader run in separate fibers, so every capacity boundary parks and resumes.
+rng = random.Random(20261119)
+fifo_values = [rng.randrange(0, 2**32) for _ in range(96)]
+execute('typed_seeded_fifo', '''fn main(){taskgroup{
+ let values=array[''' + ','.join(f'{value}u32' for value in fifo_values) + '''];
+ let c=->(1,1){payload:u32,capacity:7,mode:uni};let (tx,rx)=split c;
+ let writer=launch{
+  for i in 0..96{match tx <- values[i] with{Ok(_)=>assert(true),Err(_)=>assert(false)};}
+  assert(close tx);1
+ };
+ for i in 0..96{
+  match <-rx with{Some(value)=>assert(value==values[i]),None(_)=>assert(false)};
+ }
+ match <-rx with{Some(_)=>assert(false),None(_)=>assert(true)};
+ assert(join writer==1);
+}}''', '')
+
+# Cover every nonparking state without relying on timing: a one-slot FIFO is
+# sent, saturated, drained, observed empty, then closed.
+execute('try_operation_states', '''fn main(){taskgroup{
+ let c=->(1,1){payload:i64,capacity:1,mode:uni};let (tx,rx)=split c;
+ match try_send(tx,11) with{
+  Sent(_)=>assert(true),Closed(_)=>assert(false),WouldBlock(_)=>assert(false)
+ };
+ match try_send(tx,12) with{
+  WouldBlock(_)=>assert(true),Sent(_)=>assert(false),Closed(_)=>assert(false)
+ };
+ match try_recv(rx) with{
+  Value(value)=>assert(value==11),Empty(_)=>assert(false),Closed(_)=>assert(false)
+ };
+ match try_recv(rx) with{
+  Empty(_)=>assert(true),Value(_)=>assert(false),Closed(_)=>assert(false)
+ };
+ assert(close tx);
+ match try_send(tx,13) with{
+  Closed(_)=>assert(true),Sent(_)=>assert(false),WouldBlock(_)=>assert(false)
+ };
+ match try_recv(rx) with{
+  Closed(_)=>assert(true),Value(_)=>assert(false),Empty(_)=>assert(false)
+ };
+}}''', '')
+
+# Two rendezvous senders close independently. EOF is observable only after both
+# endpoint closes, and each sender's values remain FIFO under interleaving.
+execute('multi_sender_close_race', '''fn main(){taskgroup{
+ let c=->(2,1){payload:i64,capacity:0,mode:uni};
+ let (even_tx,odd_tx,rx)=split c;
+ let evens=launch{
+  for i in 0..100{
+   match even_tx <- i*2 with{Ok(_)=>assert(true),Err(_)=>assert(false)};
+  }
+  assert(close even_tx);0
+ };
+ let odds=launch{
+  for i in 0..100{
+   match odd_tx <- i*2+1 with{Ok(_)=>assert(true),Err(_)=>assert(false)};
+  }
+  assert(close odd_tx);0
+ };
+ var next_even=0;var next_odd=1;var total=0;
+ for i in 0..200{
+  match <-rx with{
+   Some(value)=>{
+    total=total+value;
+    if value%2==0{assert(value==next_even);next_even=next_even+2;}
+    else{assert(value==next_odd);next_odd=next_odd+2;}
+   },
+   None(_)=>assert(false)
+  };
+ }
+ assert(total==19900);assert(next_even==200);assert(next_odd==201);
+ match <-rx with{Some(_)=>assert(false),None(_)=>assert(true)};
+ assert(join evens==0);assert(join odds==0);
+}}''', '')
+
+# Both heterogeneous offers stay ready. MuLIB's rotating priority includes the
+# hidden cancellation offer, so fairness is bounded rather than strict alternation.
+execute('heterogeneous_poll_fairness', '''fn main(){taskgroup{
+ let a=->(1,1){payload:u16,capacity:64,mode:uni};let (at,ar)=split a;
+ let b=->(1,1){payload:bool,capacity:64,mode:uni};let (bt,br)=split b;
+ for i in 0..64{
+  match try_send(at,u16_from_bits(i)) with{
+   Sent(_)=>assert(true),Closed(_)=>assert(false),WouldBlock(_)=>assert(false)
+  };
+  match try_send(bt,true) with{
+   Sent(_)=>assert(true),Closed(_)=>assert(false),WouldBlock(_)=>assert(false)
+  };
+ }
+ var left=0;var right=0;var last=-1;var run=0;var longest=0;
+ for i in 0..60{
+  let choice=poll{
+   recv ar as n=>{assert(u16_to_bits(n)<64);0},closed ar=>-1,
+   recv br as flag=>{assert(flag);1},closed br=>-2
+  };
+  if choice==0{left=left+1;}else{assert(choice==1);right=right+1;}
+  if choice==last{run=run+1;}else{last=choice;run=1;}
+  if run>longest{longest=run;}
+ }
+ assert(left>0);assert(right>0);assert(longest<=3);
+ assert(close at);assert(close bt);
+}}''', '')
+
+# Ready heterogeneous sends evaluate once in source order and commit exactly
+# one. Losing registrations are withdrawn before their stack payloads expire.
+execute('heterogeneous_poll_loser', '''
+record Packet{sequence:u16,accepted:bool}
+fn packet()->Packet{println(10);return record<Packet>{sequence:55u16,accepted:true};}
+fn flag()->bool{println(20);return true;}
+fn main(){taskgroup{
+ let a=->(1,1){payload:Packet,capacity:1,mode:uni};let (at,ar)=split a;
+ let b=->(1,1){payload:bool,capacity:1,mode:uni};let (bt,br)=split b;
+ let choice=poll{
+  send at <- packet()=>0,closed at=>-1,
+  send bt <- flag()=>1,closed bt=>-2
+ };
+ if choice==0{
+  match try_recv(ar) with{
+   Value(value)=>assert(value["sequence"]==55u16),
+   Empty(_)=>assert(false),Closed(_)=>assert(false)
+  };
+  match try_recv(br) with{
+   Empty(_)=>assert(true),Value(_)=>assert(false),Closed(_)=>assert(false)
+  };
+  match try_send(bt,false) with{
+   Sent(_)=>assert(true),Closed(_)=>assert(false),WouldBlock(_)=>assert(false)
+  };
+ }else{
+  assert(choice==1);
+  match try_recv(br) with{
+   Value(value)=>assert(value),Empty(_)=>assert(false),Closed(_)=>assert(false)
+  };
+  match try_recv(ar) with{
+   Empty(_)=>assert(true),Value(_)=>assert(false),Closed(_)=>assert(false)
+  };
+  match try_send(at,record<Packet>{sequence:89u16,accepted:false}) with{
+   Sent(_)=>assert(true),Closed(_)=>assert(false),WouldBlock(_)=>assert(false)
+  };
+ }
+ assert(close at);assert(close bt);
+}}''', '10\n20\n')
+
+# Distinct directional capabilities for one channel are legal offers, while a
+# send and receive in the same selection may not rendezvous with each other.
+execute('same_channel_poll_cases', '''fn main(){taskgroup{
+ let buffered=->(2,1){payload:i64,capacity:1,mode:uni};
+ let (tx0,tx1,rx)=split buffered;
+ let selected=poll{
+  send tx0 <- 10=>0,closed tx0=>-1,
+  send tx1 <- 20=>1,closed tx1=>-2
+ };
+ match try_recv(rx) with{
+  Value(value)=>{
+   if selected==0{assert(value==10);}else{assert(selected==1);assert(value==20);}
+  },
+  Empty(_)=>assert(false),Closed(_)=>assert(false)
+ };
+ match try_recv(rx) with{
+  Empty(_)=>assert(true),Value(_)=>assert(false),Closed(_)=>assert(false)
+ };
+ assert(close tx0);assert(close tx1);
+
+ let rendezvous=->(1,1){payload:i64,capacity:0,mode:uni};
+ let (out,input)=split rendezvous;
+ let self_choice=poll{
+  send out <- 7=>0,closed out=>-3,
+  recv input as value=>value,closed input=>-4,
+  default=>2
+ };
+ assert(self_choice==2);assert(close out);
+ match try_recv(input) with{
+  Closed(_)=>assert(true),Empty(_)=>assert(false),Value(_)=>assert(false)
+ };
+}}''', '')
+
+# Exercise every admitted aggregate representation: tuples, nominal sums,
+# fixed arrays, and inline snapshot slices. Each value crosses MuLIB storage
+# without widening, serialization, or pointer ownership.
+execute('aggregate_payload_shapes', '''
+enum Choice{Number(i64),Flag(bool)}
+fn main(){taskgroup{
+ let tuples=->(1,1){payload:(u16,bool),capacity:1,mode:uni};
+ let (tuple_tx,tuple_rx)=split tuples;
+ match try_send(tuple_tx,(7u16,true)) with{
+  Sent(_)=>assert(true),Closed(_)=>assert(false),WouldBlock(_)=>assert(false)
+ };
+ match try_recv(tuple_rx) with{
+  Value(value)=>{let (number,flag)=value;assert(number==7u16);assert(flag);},
+  Closed(_)=>assert(false),Empty(_)=>assert(false)
+ };
+ assert(close tuple_tx);
+
+ let sums=->(1,1){payload:Choice,capacity:1,mode:uni};
+ let (sum_tx,sum_rx)=split sums;
+ match try_send(sum_tx,variant<Choice>(Number,42)) with{
+  Sent(_)=>assert(true),Closed(_)=>assert(false),WouldBlock(_)=>assert(false)
+ };
+ match try_recv(sum_rx) with{
+  Value(value)=>match value with{
+   Number(number)=>assert(number==42),Flag(_)=>assert(false)
+  },
+  Closed(_)=>assert(false),Empty(_)=>assert(false)
+ };
+ assert(close sum_tx);
+
+ let arrays=->(1,1){payload:array<u8,3>,capacity:1,mode:uni};
+ let (array_tx,array_rx)=split arrays;
+ match try_send(array_tx,array[1u8,2u8,3u8]) with{
+  Sent(_)=>assert(true),Closed(_)=>assert(false),WouldBlock(_)=>assert(false)
+ };
+ match try_recv(array_rx) with{
+  Value(value)=>assert(value[2]==3u8),
+  Closed(_)=>assert(false),Empty(_)=>assert(false)
+ };
+ assert(close array_tx);
+
+ let slices=->(1,1){payload:slice<i64,4>,capacity:1,mode:uni};
+ let (slice_tx,slice_rx)=split slices;let backing=array[4,5,6,7];
+ match try_send(slice_tx,backing[1:4]) with{
+  Sent(_)=>assert(true),Closed(_)=>assert(false),WouldBlock(_)=>assert(false)
+ };
+ match try_recv(slice_rx) with{
+  Value(value)=>{
+   assert(value[]==3);assert(value[0]==5);assert(value[2]==7);
+  },
+  Closed(_)=>assert(false),Empty(_)=>assert(false)
+ };
+ assert(close slice_tx);
+}}''', '')
+
+# The compiler's conservative bound and the runtime's exact sizeof guard agree
+# at 32,768 bytes. The next representable nested array is rejected below.
+execute('maximum_payload_size', '''fn main(){taskgroup{
+ let c=->(1,1){
+  payload:array<array<u64,16>,256>,capacity:0,mode:uni
+ };
+ let (tx,rx)=split c;assert(close tx);
+}}''', '')
+
+# Exercise the exact cardinality boundary and arbitrary-width split lowering.
+senders = [f'tx{i}' for i in range(128)]
+receivers = [f'rx{i}' for i in range(128)]
+execute('maximum_cardinality', '''fn main(){taskgroup{
+ let c=->(128,128){payload:u8,capacity:0,mode:uni};
+ let (''' + ','.join([*senders, *receivers]) + ''')=split c;
+ ''' + ''.join(f'assert(close {sender});' for sender in senders) + '''
+ match try_recv(rx127) with{
+  Closed(_)=>assert(true),Empty(_)=>assert(false),Value(_)=>assert(false)
+ };
+}}''', '')
+
 # A single atomic MuLIB selection commits exactly one offer. Check both
 # immediate/default and suspended/rendezvous paths, plus closure dispatch.
 execute('poll_choice', '''fn main(){taskgroup{
@@ -219,11 +481,22 @@ for name, text, diagnostic in [
     ('escape', 'fn main()->ifiber<i64>{taskgroup{let f=launch{42};return f;}}', 'cannot escape'),
     ('mutable_capture', 'fn main(){taskgroup{var x=1;let f=launch{x};println(join f);}}', 'mutable'),
     ('outside_group', 'fn main(){let f=launch{42};println(join f);}', 'taskgroup'),
-    ('bad_cardinality', 'fn main(){taskgroup{let c=->(2,1){payload:i64,capacity:0,mode:uni};}}', 'cardinality'),
+    ('bad_cardinality', 'fn main(){taskgroup{let c=->(256,1){payload:i64,capacity:0,mode:uni};}}', 'cardinality'),
     ('bad_capacity', 'fn main(){taskgroup{let c=->(1,1){payload:i64,capacity:257,mode:uni};}}', 'capacity'),
-    ('bad_payload', 'fn main(){taskgroup{let c=->(1,1){payload:string,capacity:0,mode:uni};}}', 'i64'),
+    ('bad_payload', 'fn main(){taskgroup{let c=->(1,1){payload:string,capacity:0,mode:uni};}}', 'borrowed pointer storage'),
+    ('zero_senders', 'fn main(){taskgroup{let c=->(0,1){payload:i64,capacity:0,mode:uni};}}', 'cardinalities must be positive'),
+    ('zero_receivers', 'fn main(){taskgroup{let c=->(1,0){payload:i64,capacity:0,mode:uni};}}', 'cardinalities must be positive'),
+    ('wrong_split_width', 'fn main(){taskgroup{let c=->(2,1){payload:i64,capacity:0,mode:uni};let (tx,rx)=split c;}}', 'tuple arity'),
+    ('managed_payload', 'fn main(){taskgroup{let c=->(1,1){payload:sexpr,capacity:0,mode:uni};}}', 'retain/drop protocol'),
+    ('callable_payload', 'fn main(){taskgroup{let c=->(1,1){payload:fn()->i64,capacity:0,mode:uni};}}', 'retain/drop protocol'),
+    ('resource_payload', 'fn main(){taskgroup{let c=->(1,1){payload:json,capacity:0,mode:uni};}}', 'runtime-pointer payload'),
+    ('unique_payload', 'enum Node{End}fn main(){taskgroup{let c=->(1,1){payload:own<Node>,capacity:0,mode:uni};}}', 'task-local cleanup state'),
+    ('endpoint_payload', 'fn main(){taskgroup{let c=->(1,1){payload:sender<i64>,capacity:0,mode:uni};}}', 'capabilities cannot be channel payloads'),
+    ('oversized_payload', 'fn main(){taskgroup{let c=->(1,1){payload:array<array<u64,256>,17>,capacity:0,mode:uni};}}', '32768-byte storage bound'),
     ('double_split', 'fn main(){taskgroup{let c=->(1,1){payload:i64,capacity:0,mode:uni};let (tx,rx)=split c;let (a,b)=split c;}}', 'moved'),
     ('endpoint_alias', 'fn main(){taskgroup{let c=->(1,1){payload:i64,capacity:0,mode:uni};let (tx,rx)=split c;let copy=tx;}}', 'affine'),
+    ('try_send_wrong_direction', 'fn main(){taskgroup{let c=->(1,1){payload:i64,capacity:0,mode:uni};let (tx,rx)=split c;try_send(rx,1);}}', 'try_send expects sender'),
+    ('try_recv_wrong_direction', 'fn main(){taskgroup{let c=->(1,1){payload:i64,capacity:0,mode:uni};let (tx,rx)=split c;try_recv(tx);}}', 'try_recv expects receiver'),
     ('lost_send', 'fn main(){taskgroup{let c=->(1,1){payload:i64,capacity:1,mode:uni};let (tx,rx)=split c;tx <- 1;}}', 'send outcome'),
     ('duplex', 'fn main(){taskgroup{let c=->(1,1){request:i64,response:i64,capacity:0,mode:duplex};}}', 'duplex'),
     ('poll', 'fn main(){taskgroup{poll{default=>println(1)};}}', 'poll'),
@@ -266,7 +539,7 @@ for name, text, diagnostic in [
     ('capture_bad_pattern', 'fn main(){taskgroup{let (p,input,output)=launch capture `/bin/cat`;}}', 'tuple arity'),
     ('capture_unjoined', 'fn main(){taskgroup{let (p,input,output,error)=launch capture `/bin/cat`;close input;}}', 'fiber must be joined or cancelled'),
     ('capture_stdin_receive', 'fn main(){taskgroup{let (p,input,output,error)=launch capture `/bin/cat`;match <-input with{Some(_)=>println(1),None(_)=>println(0)};cancel p;}}', 'receive expects'),
-    ('capture_stdout_send', 'fn main(){taskgroup{let (p,input,output,error)=launch capture `/bin/cat`;let sent=output <- 1u8;cancel p;}}', 'expected sender'),
+    ('capture_stdout_send', 'fn main(){taskgroup{let (p,input,output,error)=launch capture `/bin/cat`;let sent=output <- 1u8;cancel p;}}', 'send expects sender'),
     ('capture_stdout_close', 'fn main(){taskgroup{let (p,input,output,error)=launch capture `/bin/cat`;close output;cancel p;}}', 'close expects'),
     ('capture_alias', 'fn main(){taskgroup{let (p,input,output,error)=launch capture `/bin/cat`;let copy=output;cancel p;}}', 'affine'),
     ('capture_poll_wrong_result', 'fn main(){taskgroup{let (p,input,output,error)=launch capture `/bin/cat`;let value:i64=poll{recv output as n=>n,closed output=>0u8};cancel p;}}', 'expected i64'),

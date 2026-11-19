@@ -95,11 +95,15 @@ content-addressed cache generations and frozen/offline builds are implemented
 on Linux. There is no registry, version solver, transitive fetching,
 authenticated/SSH remote, or complete distributed toolchain.
 
-Latest CSP continuation: [cooperative cancellation and monotonic deadlines](cancellation-deadlines.md)
-execute through checked HIR/C11, including `taskgroup within` with terminal
-timeout after cleanup (private ABI v4). Typed timeout recovery and async/await
-remain absent; async requires verified suspension/frame lowering, not a wrapper
-around stackful fibers.
+Latest CSP continuation: [typed directional channels](concurrency.md) execute
+through checked HIR/C11 and private ABI v5. Exact sender/receiver quotas,
+fixed-size pointer-free payloads, blocking and try transfer, last-sender EOF,
+and heterogeneous atomic `poll` reuse the existing MuLIB channel/select and
+fiber kernels. The earlier [cancellation and monotonic deadline](cancellation-deadlines.md)
+profile remains, including `taskgroup within` with terminal timeout after
+cleanup. Managed/resource payload transfer, typed timeout recovery and
+async/await remain absent; async requires verified suspension/frame lowering,
+not a wrapper around stackful fibers.
 
 | Area | State | Evidence / limits |
 |---|---|---|
@@ -160,7 +164,7 @@ around stackful fibers.
 | Nonrecursive nominal records/enums | Executable bounded C11 profile | Invariant parameters (including phantoms), inferred arguments, generic specialization/forall, constructor catalogs, exhaustive structural matching and imported type identity; independently reconstructed layouts; [manual](nominal-adts.md) |
 | Recursive nominal ADTs / unique owners | Executable bounded HIR→C11 profile | `own<Named>`, `box`, explicit whole-value moves, consuming take/drop/match/Result `?`, path-sensitive whole/projected moved-state verification, lexical/overwrite/partial-construction/error cleanup, active-arm destruction, iterative traversal/drop and non-owning-defer composition; whole payloads compose with checked lexical/call borrows, but no MIR, PPX, raw FFI, capture/deferred arguments, staging/concurrency or receiver ownership; [contract](recursive-owning-adts.md), [Result contract](defer-errors.md) |
 | Module signatures / functors | Not implemented | Interface ownership/effects, generative/applicative identity and separate-compilation ABI remain absent |
-| Cooperative fiber / channel G4 slice | Executable bounded C11 profile | `taskgroup`/`within` (terminal timeout), eager `launch`/`join`, consuming cooperative internal `cancel`, 1:1 i64 uni channels with bounded FIFO/rendezvous, checked outcomes and atomic mixed i64/u8 `poll` with monotonic `after`; POSIX `xfiber` direct exec/join/cancel; compiler-parsed backtick argv and affine bounded `u8` streams; MuLIB kernels through one implementation TU; no Plaid integration, full shell operators/expansion, typed timeout recovery, async or native workers; [contract](concurrency.md), [cancellation/deadlines](cancellation-deadlines.md) |
+| Cooperative fiber / channel G4 slice | Executable bounded C11 profile | `taskgroup`/`within` (terminal timeout), eager `launch`/`join`, consuming cooperative internal `cancel`; exact 1..256-total directional quotas; rendezvous/bounded FIFO channels for <=32,768-byte pointer-free payloads; blocking/try transfer, last-sender EOF and heterogeneous atomic `poll` with monotonic `after`; POSIX `xfiber` direct exec/join/cancel and affine `u8` streams; existing MuLIB kernels through one implementation TU and private CSP ABI v5. No managed/resource payload protocol, endpoint cloning/duplex, Plaid integration, typed timeout recovery, async or native workers; [contract](concurrency.md), [cancellation/deadlines](cancellation-deadlines.md) |
 | Plaid/Prolific integration | Not implemented | The cooperative G4 adapter uses MuLIB, not Plaid; profiling and broader concurrency remain open |
 
 ## Immediate next iterations

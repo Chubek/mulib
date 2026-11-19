@@ -159,8 +159,15 @@ Type NominalCatalog::expand(const Type& type,const std::vector<Type>& variables,
   auto key=Type::named(d.name,args);if(auto hit=expanded.find(key);hit!=expanded.end())return hit->second;
   std::vector<Type> fields;for(const auto& f:d.fields)fields.push_back(expand(f,args,at,depth+1));
   auto result=Type::data(d.kind,std::move(fields),d.labels).with_nominal(d.name,std::move(args));expanded.emplace(std::move(key),result);return result;
- }
- if(type.is_tuple()||type.is_data()){
+  }
+  if(type.kind()==Type::Channel)
+   return Type::channel(expand(type.csp_payload(),variables,at,depth+1),
+                        type.sender_cardinality(),type.receiver_cardinality());
+  if(type.kind()==Type::Sender)
+   return Type::sender(expand(type.csp_payload(),variables,at,depth+1));
+  if(type.kind()==Type::Receiver)
+   return Type::receiver(expand(type.csp_payload(),variables,at,depth+1));
+  if(type.is_tuple()||type.is_data()){
   std::vector<Type> fields;for(const auto& f:type.elements())fields.push_back(expand(f,variables,at,depth+1));
   auto result=type.is_tuple()?Type::tuple(std::move(fields)):Type::data(type.kind(),std::move(fields),type.labels(),type.extent());
   if(!type.nominal().empty()){std::vector<Type> args;for(const auto& a:type.arguments())args.push_back(expand(a,variables,at,depth+1));result=result.with_nominal(type.nominal(),std::move(args));}
@@ -188,8 +195,13 @@ Type NominalCatalog::resolve(const Type& type,const Location& at) const{
   if(type.kind()==Type::Named){
   if(auto builtin=regex_builtin(type);builtin!=Type::Invalid)return builtin;
   std::vector<Type> args;for(const auto& a:type.arguments())args.push_back(resolve(a,at));return instantiate(type.nominal(),args,at);
- }
- if(type.is_forall())return Type::for_all(type.generic_identity(),resolve(type.body(),at));
+  }
+  if(type.kind()==Type::Channel)
+   return Type::channel(resolve(type.csp_payload(),at),
+                        type.sender_cardinality(),type.receiver_cardinality());
+  if(type.kind()==Type::Sender)return Type::sender(resolve(type.csp_payload(),at));
+  if(type.kind()==Type::Receiver)return Type::receiver(resolve(type.csp_payload(),at));
+  if(type.is_forall())return Type::for_all(type.generic_identity(),resolve(type.body(),at));
  if(type.is_code())return Type::code(resolve(type.code_result(),at));
  if(type.is_function()){std::vector<Type> args;for(const auto& p:type.parameters())args.push_back(resolve(p,at));return Type::function(std::move(args),resolve(type.result(),at));}
  if(type.is_tuple()||type.is_data()){
@@ -280,8 +292,10 @@ void verify_nominals(const Unit& unit){
    }else if(t.is_forall())
     self(self,t.body(),at,depth+1,false,t.generic_identity());
    else if(t.is_code())self(self,t.code_result(),at,depth+1,generics,bound);
-   else if(t.is_tuple()||t.is_data())
-    for(const auto& f:t.elements())self(self,f,at,depth+1,generics,bound);
+    else if(t.kind()==Type::Channel||t.kind()==Type::Sender||t.kind()==Type::Receiver)
+     self(self,t.csp_payload(),at,depth+1,generics,bound);
+    else if(t.is_tuple()||t.is_data())
+     for(const auto& f:t.elements())self(self,f,at,depth+1,generics,bound);
   };
  auto pattern=[&](auto&& self,const Pattern& p,std::size_t depth,
                   bool generics)->void{

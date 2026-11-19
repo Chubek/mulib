@@ -500,23 +500,30 @@ profile described above. `break`, `continue` and `for` remain unsupported.
 - `json_parse_or_die`, `json_get_or_die`, `json_size`, `json_number`,
   `json_print` are the temporary MuLIB JSON facade.
 
-## Bounded cooperative processes and byte streams
+## Bounded cooperative channels, processes and byte streams
 
 The Linux/glibc C11 profile admits structured `taskgroup` scopes, cooperative
-internal fibers, i64 channels/`poll`, and external process capabilities.
+internal fibers, exact-quota directional channels carrying fixed-size
+pointer-free values, heterogeneous atomic `poll`, and external process
+capabilities. Blocking and nonparking `try_send`/`try_recv` operations preserve
+the endpoint payload type; closing the final sender produces EOF after buffered
+values drain. See the [channel contract](concurrency.md).
 `taskgroup within duration { ... }` adds a monotonic deadline, with terminal
 expiry after cooperative cleanup; see the [deadline contract](cancellation-deadlines.md#taskgroup-within). A
 single- or triple-backtick command literal after `launch` is parsed by the
 compiler into one absolute-path argv command; it is never passed to a host
 shell. With `launch capture`, an immutable four-name pattern receives
 `(xfiber, sender<u8>, receiver<u8>, receiver<u8>)` for the process, stdin,
-stdout and stderr. The byte endpoints are affine and may move into internal
-reader fibers. Stdin send/close and stdout/stderr receive have checked
-channel outcomes; stream bytes are not text-decoded.
+stdout and stderr. The byte endpoints use the same affine
+`sender<u8>`/`receiver<u8>` structural types and may move into internal reader
+fibers. Stdin send/close and stdout/stderr receive have checked channel
+outcomes; stream bytes are not text-decoded.
 
 This grammar is deliberately smaller than a shell: expansion, assignments,
-command lists, pipelines and redirection reject, as do general user-created
-byte channels. `poll` can select captured byte streams. Exact limits, close/backpressure behavior,
+command lists, pipelines and redirection reject. General `u8` channels are
+ordinary admitted channels; captured stream endpoints remain tied to their
+process pipes. `poll` can mix them with any admitted typed channel. Exact
+limits, close/backpressure behavior,
 cancellation and examples are in the [concurrency contract](concurrency.md).
 
 ## Explicitly absent language facilities

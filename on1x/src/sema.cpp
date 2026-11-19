@@ -113,9 +113,9 @@ class Checker {
     if(binding.is_mutable)fail(loc,"capturing mutable binding is unsupported; use an immutable let: "+name);
     if(resource(binding.type))fail(loc,"capturing JSON resources or views requires lifetime analysis: "+name);
     if(binding.type.contains_unique())fail(loc,"closures cannot capture unique owning values: "+name);
-    if(binding.type.is_csp()&&(frame->expression!=launch_body||
-       (binding.type!=Type::Sender&&binding.type!=Type::Receiver&&binding.type!=Type::ByteSender&&binding.type!=Type::ByteReceiver)))
-     fail(loc,"concurrency capabilities may only move into a launch body: "+name);
+     if(binding.type.is_csp()&&(frame->expression!=launch_body||
+        !binding.type.is_csp_endpoint()))
+      fail(loc,"concurrency capabilities may only move into a launch body: "+name);
    auto& captures=frame->expression->captures;
    if(frame->names.contains(name))continue;
    if(capture_count>=16384||name.size()>max_source_bytes-capture_bytes)
@@ -185,7 +185,17 @@ class Checker {
      if(!form)
       throw Error(loc,"malformed checked type: "+form.message,"ON1X-TYPE-FORM");
     }
-     catalog.verify(type,loc);
+      catalog.verify(type,loc);
+      if(type.kind()==Type::Channel||type.is_csp_endpoint()){
+       validate_type(type.csp_payload(),loc,false);
+       if(auto reason=csp::payload_diagnostic(type.csp_payload());!reason.empty())
+        fail(loc,"ON1X-CSP-UNSUPPORTED: "+reason+" ("+
+                 type_name(type.csp_payload())+")");
+       if(type.kind()==Type::Channel&&
+          (!type.sender_cardinality()||!type.receiver_cardinality()))
+        fail(loc,"channel descriptor cardinality was not resolved");
+       return;
+      }
      if(type.is_forall()){validate_type(type.body(),loc,false);return;}
      if(type.is_code()){
        if(resource(type.code_result()))fail(loc,"code values cannot return JSON resources or views");
@@ -354,9 +364,9 @@ class Checker {
               offer.children.size()!=(offer.text=="offer_recv"?1u:2u))fail(offer.where,"invalid poll offer");
            offer.type=Type::Void;
             auto endpoint=check_expr(*offer.children[0]);bool receive=offer.text=="offer_recv";
-            if(receive?(endpoint!=Type::Receiver&&endpoint!=Type::ByteReceiver):(endpoint!=Type::Sender&&endpoint!=Type::ByteSender))
-             fail(offer.where,receive?"poll receive expects receiver<i64> or receiver<u8>":"poll send expects sender<i64> or sender<u8>");
-            Type payload=endpoint==Type::ByteReceiver||endpoint==Type::ByteSender?Type::U8:Type::I64;
+             if(receive?endpoint.kind()!=Type::Receiver:endpoint.kind()!=Type::Sender)
+              fail(offer.where,receive?"poll receive expects receiver<T>":"poll send expects sender<T>");
+             Type payload=endpoint.csp_payload();
             if(!receive)equal(check_expr(*offer.children[1]),payload,offer.where);
             fields.push_back(receive?payload:Type::data(Type::Record,{}));
            labels.push_back((offer.text=="offer_recv"?"Recv":"Sent")+std::to_string(i));
@@ -367,7 +377,9 @@ class Checker {
          if(e.text=="launch"){
          arity(1);if(!taskgroups||e.children[0]->kind!=Expr::Kind::Lambda)fail(e.where,"launch requires an enclosing taskgroup and a source block");
          auto saved=launch_body;launch_body=e.children[0].get();equal(child(0),Type::function({},Type::I64),e.where);launch_body=saved;
-          for(const auto& c:e.children[0]->captures)if(c.type!=Type::I64&&c.type!=Type::Sender&&c.type!=Type::Receiver&&c.type!=Type::ByteSender&&c.type!=Type::ByteReceiver)fail(e.where,"launch captures support only immutable i64 or scoped endpoints");
+           for(const auto& c:e.children[0]->captures)
+            if(!c.type.is_csp_endpoint()&&!csp::payload_supported(c.type))
+             fail(e.where,"launch captures support only immutable fixed-size values or scoped endpoints");
           return e.type=Type::Fiber;
          }
          if(e.text=="launch_exec"){
@@ -378,17 +390,31 @@ class Checker {
          if(e.text=="launch_capture"){
           if(!taskgroups||e.children.empty()||e.children.size()>9)fail(e.where,"captured shell launch requires a taskgroup and 1..9 literal argv items");
           for(auto& arg:e.children){if(arg->kind!=Expr::Kind::String)fail(arg->where,"captured shell argv must be constant strings");equal(check_expr(*arg),Type::String,arg->where);}
-          return e.type=Type::tuple({Type::ExternalFiber,Type::ByteSender,Type::ByteReceiver,Type::ByteReceiver});
+           return e.type=Type::tuple({Type::ExternalFiber,Type::sender(Type::U8),
+                                     Type::receiver(Type::U8),Type::receiver(Type::U8)});
+          }
+         if(e.text=="channel"){
+          arity(3);if(!taskgroups)fail(e.where,"channel requires a taskgroup");
+          if(auto reason=csp::payload_diagnostic(e.result);!reason.empty())
+           fail(e.where,"ON1X-CSP-UNSUPPORTED: "+reason+" ("+type_name(e.result)+")");
+          for(std::size_t i=0;i<3;++i){equal(child(i),Type::I64,e.where);if(e.children[i]->kind!=Expr::Kind::Integer)fail(e.where,"channel cardinality/capacity must be decimal literals");}
+          auto senders=integer_literal_bits(e.children[0]->text,e.where);
+          auto receivers=integer_literal_bits(e.children[1]->text,e.where);
+          if(senders<=0||receivers<=0||senders>256||receivers>256||
+             senders+receivers>256)
+           fail(e.where,"channel endpoint cardinalities must be positive with total at most 256");
+          auto capacity=integer_literal_bits(e.children[2]->text,e.where);if(capacity<0||capacity>256)fail(e.where,"channel capacity must be in 0..256");
+          return e.type=Type::channel(e.result,static_cast<std::size_t>(senders),
+                                     static_cast<std::size_t>(receivers));
          }
-        if(e.text=="channel"){
-         arity(3);if(!taskgroups||e.result!=Type::I64)fail(e.where,"channel requires a taskgroup and i64 payload");
-         for(std::size_t i=0;i<3;++i){equal(child(i),Type::I64,e.where);if(e.children[i]->kind!=Expr::Kind::Integer)fail(e.where,"channel cardinality/capacity must be decimal literals");}
-         if(integer_literal_bits(e.children[0]->text,e.where)!=1||integer_literal_bits(e.children[1]->text,e.where)!=1)fail(e.where,"ON1X-CSP-UNSUPPORTED: initial endpoint cardinalities must be (1,1)");
-         auto capacity=integer_literal_bits(e.children[2]->text,e.where);if(capacity<0||capacity>256)fail(e.where,"channel capacity must be in 0..256");
-         return e.type=Type::Channel;
-        }
-        arity(e.text=="send"?2:1);
-        if(e.text=="split"){equal(child(0),Type::Channel,e.where);return e.type=Type::tuple({Type::Sender,Type::Receiver});}
+         arity(e.text=="send"||e.text=="try_send"?2:1);
+         if(e.text=="split"){
+          auto descriptor=child(0);if(descriptor.kind()!=Type::Channel)
+           fail(e.where,"split expects channel<T>");
+          if(!descriptor.sender_cardinality()||!descriptor.receiver_cardinality())
+           fail(e.where,"split descriptor has unresolved endpoint cardinality");
+          return e.type=csp::split_result(descriptor);
+         }
          if(e.text=="join"){
           auto t=child(0);if(t!=Type::Fiber&&t!=Type::ExternalFiber)fail(e.where,"join requires an internal or external fiber");
           return e.type=Type::I64;
@@ -397,18 +423,26 @@ class Checker {
           auto t=child(0);if(t!=Type::Fiber&&t!=Type::ExternalFiber)fail(e.where,"cancel requires an internal or external fiber");
           return e.type=Type::Bool;
          }
-         if(e.text=="recv"){
-          auto endpoint=child(0);if(endpoint!=Type::Receiver&&endpoint!=Type::ByteReceiver)fail(e.where,"receive expects receiver<i64> or receiver<u8>");
-          return e.type=csp::receive_result(endpoint==Type::ByteReceiver?Type::U8:Type::I64);
-         }
-         if(e.text=="close"){
-          auto endpoint=child(0);if(endpoint!=Type::Sender&&endpoint!=Type::ByteSender)fail(e.where,"close expects sender<i64> or sender<u8>");
-          return e.type=Type::Bool;
-         }
-         if(e.text=="send"){
-          auto endpoint=child(0);if(endpoint!=Type::Sender&&endpoint!=Type::ByteSender)fail(e.where,"send expects sender<i64> or sender<u8>");
-          equal(child(1),endpoint==Type::ByteSender?Type::U8:Type::I64,e.where);return e.type=csp::send_result();
-         }
+          if(e.text=="recv"){
+           auto endpoint=child(0);if(endpoint.kind()!=Type::Receiver)fail(e.where,"receive expects receiver<T>");
+           return e.type=csp::receive_result(endpoint.csp_payload());
+          }
+          if(e.text=="close"){
+           auto endpoint=child(0);if(endpoint.kind()!=Type::Sender)fail(e.where,"close expects sender<T>");
+           return e.type=Type::Bool;
+          }
+          if(e.text=="send"){
+           auto endpoint=child(0);if(endpoint.kind()!=Type::Sender)fail(e.where,"send expects sender<T>");
+           equal(child(1),endpoint.csp_payload(),e.where);return e.type=csp::send_result();
+          }
+          if(e.text=="try_send"){
+           auto endpoint=child(0);if(endpoint.kind()!=Type::Sender)fail(e.where,"try_send expects sender<T>");
+           equal(child(1),endpoint.csp_payload(),e.where);return e.type=csp::try_send_result();
+          }
+          if(e.text=="try_recv"){
+           auto endpoint=child(0);if(endpoint.kind()!=Type::Receiver)fail(e.where,"try_recv expects receiver<T>");
+           return e.type=csp::try_receive_result(endpoint.csp_payload());
+          }
         fail(e.where,"unknown concurrency operation");
        }
       case Expr::Kind::Propagate:{

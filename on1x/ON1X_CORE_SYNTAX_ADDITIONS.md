@@ -4,10 +4,11 @@
 **Target:** `Chubek/mulib/on1x`, with optional facilities from `on1x/third_party/libstone`.  
 **Scope:** intrinsic On1x syntax and semantics, **not** `stdppx`, `stdlib/ppx`, macros, or PPX transforms.
 
-## Implementation ledger — 2026-11-18
+## Implementation ledger — 2026-11-19
 
-Re-inspected repository `d4cc478df76bfe9b5b8e6485f42d56fde81e8a68` and
-configured LibStone `55755485acaded7c4ed804c0946bc8c7363f6763`.
+Typed-channel work starts from repository
+`6a145cbf09efcac76f387f6b664fc2257bac93aa`; the configured LibStone checkout
+remains read-only.
 The sections below specify the intended language, not blanket compiler support.
 The linked profile manuals define what is actually admitted today.
 **EXECUTABLE** means a bounded source→checked/canonical HIR→C11 program, not
@@ -18,8 +19,8 @@ full-specification conformance or support in scalar MIR. No row is VERIFIED.
 | §1 structural match | EXECUTABLE bounded value profile; [manual](docs/core-syntax.md) | Owning lists/cons patterns, general recursive/resource patterns |
 | §2 internal fibers | EXECUTABLE cooperative i64 profile with running/blocked cancellation; [manual](docs/concurrency.md) | General results/captures, native-thread ownership and effectful MIR |
 | §2 external fibers | EXECUTABLE bounded POSIX argv/backtick commands and byte streams | Full portable shell AST/operators/expansion, typed process outcomes, other targets |
-| §2 channels | EXECUTABLE 1:1 i64 uni channels and process-byte endpoints | General channel payloads, duplex, cardinality quotas/cloning, cancellation |
-| §2 atomic `poll` | EXECUTABLE mixed i64/u8 choices, monotonic `after` and cancellation-aware waits; [increment](docs/cancellation-deadlines.md) | General endpoint expressions and effectful MIR |
+| §2 channels | EXECUTABLE exact-quota uni channels for bounded fixed-size pointer-free values, plus process-byte endpoints; blocking/try transfer and last-sender EOF; [manual](docs/concurrency.md) | Managed/resource payload protocols, duplex, endpoint cloning, native workers and effectful MIR |
+| §2 atomic `poll` | EXECUTABLE heterogeneous typed choices, monotonic `after` and cancellation-aware waits; [increment](docs/cancellation-deadlines.md) | General endpoint expressions, recoverable runtime errors and effectful MIR |
 | §3 loops/exits/results | EXECUTABLE statement/range/for-C and value loops; [manual](docs/value-loops.md) | General iterator/drop protocol and destructuring iteration |
 | §4 cleanup | EXECUTABLE **different bounded profile**: [function-scoped Go-style `defer call;`](docs/defer-errors.md), including cooperative fiber cancellation | This is not scope-exit `defer`; `using`, scope cleanup and general exception/async unwind remain unimplemented |
 | §5 typed errors | EXECUTABLE nominal Result postfix `?` and explicit match recovery | `try`/`catch`/`finally`/`throw`, Option propagation, general error effects |
@@ -32,8 +33,9 @@ full-specification conformance or support in scalar MIR. No row is VERIFIED.
 | §12 contracts/invariants | NOT IMPLEMENTED as intrinsic syntax | Pure contract typing, runtime checks, `old`, verifier obligations |
 | §13 canonical Core | LOWERED/checked for admitted control/value regions and CSP operations | Full effect/ownership/suspension Core and MIR; no general source-ASDL migration |
 
-This continuation adds real mixed-byte `poll` execution, tests and an example;
-it does not complete G1–G6 or M4. See [verification](VERIFICATION.md) for exact
+The latest continuation adds typed quota-bearing channels, try operations,
+heterogeneous poll execution, tests and an example; it does not complete
+G1–G6 or M4. See [verification](VERIFICATION.md) for exact
 commands/results and [capability matrix](docs/capability-matrix.md) for source,
 ABI and blocker details. The configured LibStone checkout is read-only; MuLIB's
 existing channel/fiber kernels own this runtime, not Plaid.

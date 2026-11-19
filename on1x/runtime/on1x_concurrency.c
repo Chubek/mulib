@@ -14,14 +14,17 @@
 #include <time.h>
 #include <unistd.h>
 extern char **environ;
-#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 4
-#error "On1x cooperative fibers require Linux/glibc x86_64 and CSP runtime ABI v4"
+#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 5
+#error "On1x cooperative fibers require Linux/glibc x86_64 and CSP runtime ABI v5"
 #endif
 #ifndef ON1X_CSP_MAX_TASKS
 #define ON1X_CSP_MAX_TASKS 256
 #endif
 #ifndef ON1X_CSP_MAX_CHANNELS
 #define ON1X_CSP_MAX_CHANNELS 256
+#endif
+#ifndef ON1X_CSP_MAX_PAYLOAD
+#define ON1X_CSP_MAX_PAYLOAD 32768
 #endif
 #ifndef ON1X_CSP_MAX_PROCESSES
 #define ON1X_CSP_MAX_PROCESSES 128
@@ -77,9 +80,24 @@ struct on1x_csp_group {
 struct on1x_csp_channel {
  on1x_csp_channel *next,*sibling;
  mulib_channel_t *channel;
+ on1x_csp_endpoint *endpoints;
+ size_t element_size,senders,receivers,open_senders;
  unsigned role;
+ bool split;
 };
-enum {ON1X_CHANNEL_I64,ON1X_CHANNEL_PROCESS_INPUT,ON1X_CHANNEL_PROCESS_OUTPUT,ON1X_CHANNEL_PROCESS_ERROR};
+struct on1x_csp_endpoint {
+ on1x_csp_channel *channel;
+ size_t identity;
+ unsigned direction;
+ bool closed;
+};
+enum {
+ ON1X_CHANNEL_VALUE,
+ ON1X_CHANNEL_PROCESS_INPUT,
+ ON1X_CHANNEL_PROCESS_OUTPUT,
+ ON1X_CHANNEL_PROCESS_ERROR
+};
+enum {ON1X_ENDPOINT_SEND=1,ON1X_ENDPOINT_RECEIVE=2};
 struct on1x_csp_process {
   on1x_csp_process *next,*sibling;
   on1x_csp_group *owner;
@@ -103,6 +121,7 @@ typedef struct on1x_csp_timer {
 } on1x_csp_timer;
 typedef struct {
  mulib_fiber_scheduler_t *scheduler;
+ mulib_channel_t *closed_signal;
  on1x_csp_task *tasks;
  on1x_csp_channel *channels;
   on1x_csp_process *processes;
@@ -190,15 +209,59 @@ static on1x_csp_channel *channel(on1x_csp_channel *value,source_point at){
  for(c=current_execution->channels;c;c=c->next)if(c==value&&c->channel)return c;
  failure(at,"stale or invalid channel");
 }
-static on1x_csp_channel *channel_new(size_t size,size_t capacity,unsigned role){
+static on1x_csp_endpoint *endpoint_direction(on1x_csp_endpoint *value,
+                                             unsigned direction,
+                                             source_point at){
+ on1x_csp_channel *c;size_t i,count;
+ (void)current(at);
+ for(c=current_execution->channels;c;c=c->next){
+  count=c->senders+c->receivers;
+  for(i=0;i<count;++i)if(&c->endpoints[i]==value){
+   on1x_csp_endpoint *e=&c->endpoints[i];
+    if(!c->channel||e->channel!=c||e->identity!=i)
+     failure(at,"stale or corrupt channel endpoint");
+    if(e->direction!=direction)failure(at,"channel endpoint direction mismatch");
+    return e;
+   }
+  }
+ failure(at,"stale or invalid channel endpoint");
+}
+static on1x_csp_endpoint *endpoint(on1x_csp_endpoint *value,unsigned direction,
+                                   size_t element_size,source_point at){
+ on1x_csp_endpoint *e=endpoint_direction(value,direction,at);
+ if(!element_size||element_size!=e->channel->element_size)
+  failure(at,"channel payload representation mismatch");
+ return e;
+}
+static on1x_csp_channel *channel_new(size_t size,size_t capacity,unsigned role,
+                                     size_t senders,size_t receivers){
  on1x_csp_channel *c=(on1x_csp_channel *)ON1X_CSP_CALLOC(1,sizeof(*c));
+ size_t count,i;
  if(!c)return NULL;
- if(mulib_channel_create(&c->channel,size,capacity)!=MULIB_CHANNEL_OK){ON1X_CSP_FREE(c);return NULL;}
- c->role=role;return c;
+ if(senders>SIZE_MAX-receivers){
+  ON1X_CSP_FREE(c);return NULL;
+ }
+ count=senders+receivers;
+ if(!size||size>ON1X_CSP_MAX_PAYLOAD||!count||count>256){
+  ON1X_CSP_FREE(c);return NULL;
+ }
+ c->endpoints=(on1x_csp_endpoint *)ON1X_CSP_CALLOC(count,sizeof(*c->endpoints));
+ if(!c->endpoints){ON1X_CSP_FREE(c);return NULL;}
+ if(mulib_channel_create(&c->channel,size,capacity)!=MULIB_CHANNEL_OK){
+  ON1X_CSP_FREE(c->endpoints);ON1X_CSP_FREE(c);return NULL;
+ }
+ c->element_size=size;c->senders=senders;c->receivers=receivers;
+ c->open_senders=senders;c->role=role;
+ for(i=0;i<count;++i){
+  c->endpoints[i].channel=c;c->endpoints[i].identity=i;
+  c->endpoints[i].direction=i<senders?ON1X_ENDPOINT_SEND:ON1X_ENDPOINT_RECEIVE;
+ }
+ return c;
 }
 static void channel_discard(on1x_csp_channel *c){
  if(!c)return;
  if(c->channel){(void)mulib_channel_close(c->channel);(void)mulib_channel_destroy(c->channel);}
+ ON1X_CSP_FREE(c->endpoints);
  ON1X_CSP_FREE(c);
 }
 static void channel_link(on1x_csp_channel *c,on1x_csp_group *g){
@@ -326,7 +389,8 @@ static uint64_t monotonic_ms(source_point at){
   return (uint64_t)now.tv_sec*1000u+ms;
 }
 /* Control offers use ordinary MuLIB channels, preserving atomic rendezvous and
- * losing-offer withdrawal without changing the kernel's UTC timeout semantics. */
+ * losing-offer withdrawal. Monotonic timers close a private channel instead of
+ * relying on the kernel's native timeout clock. */
 static int select_controlled(mulib_channel_case_t *cases,size_t count,bool fallback,
                             int64_t delay,size_t *selected,source_point at){
  on1x_csp_task *t=current(at);on1x_csp_timer timer={0};uint8_t signal=0;
@@ -411,7 +475,7 @@ on1x_csp_process *on1x_csp_launch_exec(const char *const *argv,size_t count,cons
  ++current_execution->process_count;++current_execution->process_active;return p;
 }
 void on1x_csp_launch_capture(const char *const *argv,size_t count,on1x_csp_process **process,
- on1x_csp_channel **input,on1x_csp_channel **output,on1x_csp_channel **error,
+ on1x_csp_endpoint **input,on1x_csp_endpoint **output,on1x_csp_endpoint **error,
  const char *file,size_t line,size_t column){
  source_point at={file,line,column};on1x_csp_task *t=current(at);on1x_csp_process *p=NULL;
  on1x_csp_channel *in=NULL,*out=NULL,*err=NULL;posix_spawnattr_t attr;posix_spawn_file_actions_t actions;
@@ -431,9 +495,12 @@ void on1x_csp_launch_capture(const char *const *argv,size_t count,on1x_csp_proce
   total+=length+1;
  }
  p=(on1x_csp_process *)ON1X_CSP_CALLOC(1,sizeof(*p));
- in=channel_new(sizeof(uint8_t),ON1X_CSP_STREAM_CAPACITY,ON1X_CHANNEL_PROCESS_INPUT);
- out=channel_new(sizeof(uint8_t),ON1X_CSP_STREAM_CAPACITY,ON1X_CHANNEL_PROCESS_OUTPUT);
- err=channel_new(sizeof(uint8_t),ON1X_CSP_STREAM_CAPACITY,ON1X_CHANNEL_PROCESS_ERROR);
+  in=channel_new(sizeof(uint8_t),ON1X_CSP_STREAM_CAPACITY,
+                 ON1X_CHANNEL_PROCESS_INPUT,1,0);
+  out=channel_new(sizeof(uint8_t),ON1X_CSP_STREAM_CAPACITY,
+                  ON1X_CHANNEL_PROCESS_OUTPUT,0,1);
+  err=channel_new(sizeof(uint8_t),ON1X_CSP_STREAM_CAPACITY,
+                  ON1X_CHANNEL_PROCESS_ERROR,0,1);
  if(!p||!in||!out||!err){failure_text="captured process/channel allocation failure";goto failed;}
  p->input_fd=p->output_fd=p->error_fd=-1;p->input=in;p->output=out;p->error=err;
  if(capture_pipe(inpipe,1)||capture_pipe(outpipe,0)||capture_pipe(errpipe,0)){failure_text="captured pipe allocation failure";goto failed;}
@@ -459,7 +526,9 @@ void on1x_csp_launch_capture(const char *const *argv,size_t count,on1x_csp_proce
  p->next=current_execution->processes;current_execution->processes=p;
  p->sibling=t->group->processes;t->group->processes=p;
  ++current_execution->process_count;++current_execution->process_active;
- *process=p;*input=in;*output=out;*error=err;return;
+  in->split=out->split=err->split=true;
+  *process=p;*input=&in->endpoints[0];*output=&out->endpoints[0];
+  *error=&err->endpoints[0];return;
 failed:
  if(have_actions)(void)posix_spawn_file_actions_destroy(&actions);
  if(have_attr)(void)posix_spawnattr_destroy(&attr);
@@ -575,114 +644,157 @@ int64_t on1x_csp_join(on1x_csp_task *value,const char *file,size_t line,size_t c
  mulib_fiber_clear_wake();caller->waiting=false;t->joined=true;
  ++current_execution->progress;return t->result;
 }
-on1x_csp_channel *on1x_csp_channel_create(int64_t capacity,const char *file,size_t line,size_t column){
+on1x_csp_channel *on1x_csp_channel_create(size_t element_size,size_t senders,
+ size_t receivers,int64_t capacity,const char *file,size_t line,size_t column){
  source_point at={file,line,column};on1x_csp_task *t=current(at);on1x_csp_channel *c;
  tick(at);
- if(!t->group||capacity<0||capacity>256)failure(at,"invalid channel owner/capacity");
- if(current_execution->channel_count>=ON1X_CSP_MAX_CHANNELS)failure(at,"total channel budget exhausted");
- c=channel_new(sizeof(int64_t),(size_t)capacity,ON1X_CHANNEL_I64);if(!c)failure(at,"channel storage allocation failure");
+ if(!t->group||!element_size||element_size>ON1X_CSP_MAX_PAYLOAD||
+    !senders||!receivers||senders>256||receivers>256||
+    senders>256-receivers||capacity<0||capacity>256)
+  failure(at,"invalid channel owner/payload/cardinality/capacity");
+ if(current_execution->channel_count>=ON1X_CSP_MAX_CHANNELS)
+  failure(at,"total channel budget exhausted");
+ c=channel_new(element_size,(size_t)capacity,ON1X_CHANNEL_VALUE,
+               senders,receivers);
+ if(!c)failure(at,"channel descriptor/endpoint/storage allocation failure");
  channel_link(c,t->group);return c;
 }
-int64_t on1x_csp_send(on1x_csp_channel *value,int64_t payload,const char *file,size_t line,size_t column){
- source_point at={file,line,column};on1x_csp_task *t=current(at);on1x_csp_channel *c=channel(value,at);int rc;
- if(c->role!=ON1X_CHANNEL_I64)failure(at,"i64 send used with byte process stream");
- tick(at);t->waiting=true;
- {mulib_channel_case_t cases[2];size_t selected;
-  cases[0]=mulib_channel_send_case(mulib_channel_sender(c->channel),&payload);
-  rc=select_controlled(cases,1,false,-1,&selected,at);}
- t->waiting=false;++current_execution->progress;
- if(on1x_csp_cancelled())return 0;
- if(rc!=MULIB_CHANNEL_OK&&rc!=MULIB_CHANNEL_CLOSED)failure(at,"channel send allocation/protocol failure");
- return rc==MULIB_CHANNEL_CLOSED?1:0;
+void on1x_csp_channel_split(on1x_csp_channel *value,on1x_csp_endpoint **out,
+ size_t senders,size_t receivers,const char *file,size_t line,size_t column){
+ source_point at={file,line,column};on1x_csp_channel *c=channel(value,at);
+ size_t i,count;
+ tick(at);
+ if(!out||c->role!=ON1X_CHANNEL_VALUE||c->split||
+    senders!=c->senders||receivers!=c->receivers)
+  failure(at,"invalid, repeated or cardinality-mismatched channel split");
+ count=senders+receivers;
+ for(i=0;i<count;++i)out[i]=&c->endpoints[i];
+ c->split=true;
 }
-bool on1x_csp_receive(on1x_csp_channel *value,int64_t *payload,const char *file,size_t line,size_t column){
- source_point at={file,line,column};on1x_csp_task *t=current(at);on1x_csp_channel *c=channel(value,at);int rc;
- if(!payload)failure(at,"invalid receive output");
- if(c->role!=ON1X_CHANNEL_I64)failure(at,"i64 receive used with byte process stream");
- tick(at);t->waiting=true;
- {mulib_channel_case_t cases[2];size_t selected;
-  cases[0]=mulib_channel_receive_case(mulib_channel_receiver(c->channel),payload);
-  rc=select_controlled(cases,1,false,-1,&selected,at);}
- t->waiting=false;++current_execution->progress;
- if(on1x_csp_cancelled())return false;
- if(rc!=MULIB_CHANNEL_OK&&rc!=MULIB_CHANNEL_CLOSED)failure(at,"channel receive allocation/protocol failure");
- return rc==MULIB_CHANNEL_OK;
-}
-bool on1x_csp_close(on1x_csp_channel *value,const char *file,size_t line,size_t column){
- source_point at={file,line,column};on1x_csp_channel *c=channel(value,at);int rc;
- if(c->role!=ON1X_CHANNEL_I64)failure(at,"i64 close used with byte process stream");
- tick(at);rc=mulib_channel_close(c->channel);
- if(rc!=MULIB_CHANNEL_OK&&rc!=MULIB_CHANNEL_CLOSED)failure(at,"invalid close");
- return rc==MULIB_CHANNEL_OK;
-}
-int64_t on1x_csp_stream_send(on1x_csp_channel *value,uint8_t payload,const char *file,size_t line,size_t column){
- source_point at={file,line,column};on1x_csp_task *t=current(at);on1x_csp_channel *c=channel(value,at);int rc;
- if(c->role!=ON1X_CHANNEL_PROCESS_INPUT)failure(at,"byte send requires captured stdin sender");
- tick(at);t->waiting=true;
- {mulib_channel_case_t cases[2];size_t selected;
-  cases[0]=mulib_channel_send_case(mulib_channel_sender(c->channel),&payload);
-  rc=select_controlled(cases,1,false,-1,&selected,at);}
- t->waiting=false;++current_execution->progress;
- if(on1x_csp_cancelled())return 0;
- if(rc!=MULIB_CHANNEL_OK&&rc!=MULIB_CHANNEL_CLOSED)failure(at,"captured stdin channel failure");
- return rc==MULIB_CHANNEL_CLOSED?1:0;
-}
-bool on1x_csp_stream_receive(on1x_csp_channel *value,uint8_t *payload,const char *file,size_t line,size_t column){
- source_point at={file,line,column};on1x_csp_task *t=current(at);on1x_csp_channel *c=channel(value,at);int rc;
- if(!payload||c->role==ON1X_CHANNEL_PROCESS_INPUT||c->role==ON1X_CHANNEL_I64)failure(at,"byte receive requires captured stdout/stderr receiver");
- tick(at);t->waiting=true;
- {mulib_channel_case_t cases[2];size_t selected;
-  cases[0]=mulib_channel_receive_case(mulib_channel_receiver(c->channel),payload);
-  rc=select_controlled(cases,1,false,-1,&selected,at);}
- t->waiting=false;++current_execution->progress;
- if(on1x_csp_cancelled())return false;
- if(rc!=MULIB_CHANNEL_OK&&rc!=MULIB_CHANNEL_CLOSED)failure(at,"captured output channel failure");
- return rc==MULIB_CHANNEL_OK;
-}
-bool on1x_csp_stream_close(on1x_csp_channel *value,const char *file,size_t line,size_t column){
- source_point at={file,line,column};on1x_csp_channel *c=channel(value,at);int rc;
- if(c->role!=ON1X_CHANNEL_PROCESS_INPUT)failure(at,"only captured stdin sender can be closed");
- tick(at);rc=mulib_channel_close(c->channel);
- if(rc!=MULIB_CHANNEL_OK&&rc!=MULIB_CHANNEL_CLOSED)failure(at,"captured stdin close failure");
- return rc==MULIB_CHANNEL_OK;
-}
-static void select_offers(on1x_csp_offer *offers,size_t count,bool has_default,int64_t delay,int64_t *payload,size_t *selected,bool *closed,const char *file,size_t line,size_t column){
+int64_t on1x_csp_send(on1x_csp_endpoint *value,const void *payload,
+ size_t element_size,const char *file,size_t line,size_t column){
  source_point at={file,line,column};on1x_csp_task *t=current(at);
-  mulib_channel_case_t cases[18];uint8_t bytes[16]={0};bool byte_offer[16]={false};size_t i,index=SIZE_MAX;int rc;
- if((count&&!offers)||!payload||!selected||!closed||(!count&&delay<0)||count>16)failure(at,"invalid poll offers");
+ on1x_csp_endpoint *e=endpoint(value,ON1X_ENDPOINT_SEND,element_size,at);
+ on1x_csp_channel *c=e->channel;int rc;
+ if(!payload)failure(at,"invalid send payload");
+ if(e->closed)return ON1X_CSP_CLOSED;
+ tick(at);t->waiting=true;
+ {mulib_channel_case_t cases[2];size_t selected;
+  cases[0]=mulib_channel_send_case(mulib_channel_sender(c->channel),payload);
+  rc=select_controlled(cases,1,false,-1,&selected,at);}
+ t->waiting=false;++current_execution->progress;
+ if(on1x_csp_cancelled())return ON1X_CSP_TRANSFERRED;
+ if(rc!=MULIB_CHANNEL_OK&&rc!=MULIB_CHANNEL_CLOSED)
+  failure(at,"channel send allocation/protocol failure");
+ return rc==MULIB_CHANNEL_CLOSED?ON1X_CSP_CLOSED:ON1X_CSP_TRANSFERRED;
+}
+bool on1x_csp_receive(on1x_csp_endpoint *value,void *payload,
+ size_t element_size,const char *file,size_t line,size_t column){
+ source_point at={file,line,column};on1x_csp_task *t=current(at);
+ on1x_csp_endpoint *e=endpoint(value,ON1X_ENDPOINT_RECEIVE,element_size,at);
+ on1x_csp_channel *c=e->channel;int rc;
+ if(!payload)failure(at,"invalid receive output");
+ tick(at);t->waiting=true;
+ {mulib_channel_case_t cases[2];size_t selected;
+  cases[0]=mulib_channel_receive_case(mulib_channel_receiver(c->channel),payload);
+  rc=select_controlled(cases,1,false,-1,&selected,at);}
+ t->waiting=false;++current_execution->progress;
+ if(on1x_csp_cancelled())return false;
+ if(rc!=MULIB_CHANNEL_OK&&rc!=MULIB_CHANNEL_CLOSED)
+  failure(at,"channel receive allocation/protocol failure");
+ return rc==MULIB_CHANNEL_OK;
+}
+int on1x_csp_try_send(on1x_csp_endpoint *value,const void *payload,
+ size_t element_size,const char *file,size_t line,size_t column){
+ source_point at={file,line,column};
+ on1x_csp_endpoint *e=endpoint(value,ON1X_ENDPOINT_SEND,element_size,at);
+ int rc;
+ if(!payload)failure(at,"invalid try_send payload");
+ if(e->closed)return ON1X_CSP_CLOSED;
+ tick(at);
+ if(on1x_csp_cancelled())return ON1X_CSP_WOULD_BLOCK;
+ rc=mulib_channel_send(mulib_channel_sender(e->channel->channel),payload,0);
+ if(rc==MULIB_CHANNEL_OK)return ON1X_CSP_TRANSFERRED;
+ if(rc==MULIB_CHANNEL_CLOSED)return ON1X_CSP_CLOSED;
+ if(rc==MULIB_CHANNEL_TIMEOUT)return ON1X_CSP_WOULD_BLOCK;
+ failure(at,"channel try_send allocation/protocol failure");
+}
+int on1x_csp_try_receive(on1x_csp_endpoint *value,void *payload,
+ size_t element_size,const char *file,size_t line,size_t column){
+ source_point at={file,line,column};
+ on1x_csp_endpoint *e=endpoint(value,ON1X_ENDPOINT_RECEIVE,element_size,at);
+ int rc;
+ if(!payload)failure(at,"invalid try_recv output");
+ tick(at);
+ if(on1x_csp_cancelled())return ON1X_CSP_WOULD_BLOCK;
+ rc=mulib_channel_receive(mulib_channel_receiver(e->channel->channel),payload,0);
+ if(rc==MULIB_CHANNEL_OK)return ON1X_CSP_TRANSFERRED;
+ if(rc==MULIB_CHANNEL_CLOSED)return ON1X_CSP_CLOSED;
+ if(rc==MULIB_CHANNEL_TIMEOUT)return ON1X_CSP_WOULD_BLOCK;
+ failure(at,"channel try_recv allocation/protocol failure");
+}
+bool on1x_csp_close(on1x_csp_endpoint *value,const char *file,size_t line,size_t column){
+ source_point at={file,line,column};
+ on1x_csp_endpoint *e=endpoint_direction(value,ON1X_ENDPOINT_SEND,at);
+ on1x_csp_channel *c=e->channel;int rc;
+ tick(at);
+ if(e->closed)return false;
+ e->closed=true;
+ if(!c->open_senders)failure(at,"channel sender accounting underflow");
+ if(--c->open_senders)return true;
+ rc=mulib_channel_close(c->channel);
+ if(rc!=MULIB_CHANNEL_OK&&rc!=MULIB_CHANNEL_CLOSED)
+  failure(at,"channel close protocol failure");
+ return rc==MULIB_CHANNEL_OK;
+}
+static void select_offers(on1x_csp_offer *offers,size_t count,bool has_default,
+ int64_t delay,size_t *selected,bool *closed,const char *file,size_t line,size_t column){
+ source_point at={file,line,column};on1x_csp_task *t=current(at);
+ mulib_channel_case_t cases[18];on1x_csp_endpoint *values[16]={0};
+ size_t i,j,index=SIZE_MAX;int rc;
+ if((count&&!offers)||!selected||!closed||(!count&&delay<0)||count>16)
+  failure(at,"invalid poll offers");
  tick(at);
  for(i=0;i<count;++i){
-  on1x_csp_channel *c=channel(offers[i].channel,at);
-   byte_offer[i]=c->role!=ON1X_CHANNEL_I64;
-   if(offers[i].operation==MULIB_CHANNEL_SEND){
-    if(byte_offer[i]){
-     if(c->role!=ON1X_CHANNEL_PROCESS_INPUT)failure(at,"poll byte send requires captured stdin sender");
-     if(offers[i].payload<0||offers[i].payload>UINT8_MAX)failure(at,"poll byte payload outside u8 range");
-     bytes[i]=(uint8_t)offers[i].payload;
-    }
-    /* Never copy a byte from the representation of an int64_t: the kernel's
-     * element size must address an actual object of the matching C type. */
-    cases[i]=mulib_channel_send_case(mulib_channel_sender(c->channel),byte_offer[i]?(const void *)&bytes[i]:(const void *)&offers[i].payload);
-   }else if(offers[i].operation==MULIB_CHANNEL_RECEIVE){
-    if(byte_offer[i]&&c->role!=ON1X_CHANNEL_PROCESS_OUTPUT&&c->role!=ON1X_CHANNEL_PROCESS_ERROR)failure(at,"poll byte receive requires captured stdout/stderr receiver");
-    cases[i]=mulib_channel_receive_case(mulib_channel_receiver(c->channel),byte_offer[i]?(void *)&bytes[i]:(void *)&offers[i].payload);
-   }
-  else failure(at,"invalid poll operation");
+  if(offers[i].operation==MULIB_CHANNEL_SEND){
+   if(!offers[i].send_value||offers[i].receive_value)
+    failure(at,"invalid poll send storage");
+   values[i]=endpoint(offers[i].endpoint,ON1X_ENDPOINT_SEND,
+                      offers[i].element_size,at);
+   cases[i]=mulib_channel_send_case(
+    mulib_channel_sender(values[i]->closed?current_execution->closed_signal:
+                         values[i]->channel->channel),
+    offers[i].send_value);
+  }else if(offers[i].operation==MULIB_CHANNEL_RECEIVE){
+   if(!offers[i].receive_value||offers[i].send_value)
+    failure(at,"invalid poll receive storage");
+   values[i]=endpoint(offers[i].endpoint,ON1X_ENDPOINT_RECEIVE,
+                      offers[i].element_size,at);
+   cases[i]=mulib_channel_receive_case(
+    mulib_channel_receiver(values[i]->channel->channel),
+    offers[i].receive_value);
+  }else failure(at,"invalid poll operation");
+  for(j=0;j<i;++j)if(values[j]==values[i])
+   failure(at,"duplicate poll endpoint");
  }
  t->waiting=true;
  rc=select_controlled(cases,count,has_default,delay,&index,at);
  t->waiting=false;++current_execution->progress;
- if(on1x_csp_cancelled()||(rc==MULIB_CHANNEL_TIMEOUT&&delay>=0)||(rc==MULIB_CHANNEL_DEFAULT&&has_default)){*selected=index;*payload=0;*closed=false;return;}
+ if(on1x_csp_cancelled()||(rc==MULIB_CHANNEL_TIMEOUT&&delay>=0)||
+    (rc==MULIB_CHANNEL_DEFAULT&&has_default)){
+  *selected=index;*closed=false;return;
+ }
  if((rc!=MULIB_CHANNEL_OK&&rc!=MULIB_CHANNEL_CLOSED)||index>=count)failure(at,"poll allocation/protocol failure");
-  *selected=index;*closed=rc==MULIB_CHANNEL_CLOSED;
-  *payload=rc==MULIB_CHANNEL_OK?(byte_offer[index]?(int64_t)bytes[index]:offers[index].payload):0;
+ *selected=index;*closed=rc==MULIB_CHANNEL_CLOSED;
 }
-void on1x_csp_select(on1x_csp_offer *offers,size_t count,bool fallback,int64_t *payload,size_t *selected,bool *closed,const char *file,size_t line,size_t column){
- select_offers(offers,count,fallback,-1,payload,selected,closed,file,line,column);
+void on1x_csp_select(on1x_csp_offer *offers,size_t count,bool fallback,
+ size_t *selected,bool *closed,const char *file,size_t line,size_t column){
+ select_offers(offers,count,fallback,-1,selected,closed,file,line,column);
 }
-void on1x_csp_select_after(on1x_csp_offer *offers,size_t count,bool fallback,int64_t delay,int64_t *payload,size_t *selected,bool *closed,const char *file,size_t line,size_t column){
+void on1x_csp_select_after(on1x_csp_offer *offers,size_t count,bool fallback,
+ int64_t delay,size_t *selected,bool *closed,const char *file,size_t line,size_t column){
  source_point at={file,line,column};if(delay<0)failure(at,"negative poll duration");
- select_offers(offers,count,fallback,delay,payload,selected,closed,file,line,column);
+ select_offers(offers,count,fallback,delay,selected,closed,file,line,column);
 }
 void on1x_csp_yield(const char *file,size_t line,size_t column){
  source_point at={file,line,column};(void)current(at);tick(at);mulib_fiber_yield();
@@ -720,19 +832,28 @@ static void supervise(void *arg){
   else mulib_fiber_yield();
  }
 }
-int64_t on1x_csp_run_v4(on1x_csp_callback invoke,on1x_env *env,const char *file,size_t line,size_t column){
+int64_t on1x_csp_run_v5(on1x_csp_callback invoke,on1x_env *env,const char *file,size_t line,size_t column){
  source_point at={file,line,column};execution e={0};on1x_csp_task *root,*t;on1x_csp_channel *c;on1x_csp_process *p;int64_t result;
  if(current_execution||mulib_fiber_current())failure(at,"nested or foreign scheduler entry");
  current_execution=&e;
  if(mulib_fiber_scheduler_create(&e.scheduler)!=MULIB_FIBER_OK)failure(at,"scheduler allocation failure");
+ if(mulib_channel_create(&e.closed_signal,1,0)!=MULIB_CHANNEL_OK)
+  failure(at,"closed-endpoint signal allocation failure");
+ if(mulib_channel_close(e.closed_signal)!=MULIB_CHANNEL_OK)
+  failure(at,"closed-endpoint signal initialization failure");
  root=spawn(invoke,env,NULL,at);
  if(mulib_fiber_spawn(e.scheduler,supervise,&e,ON1X_CSP_STACK_BYTES,NULL)!=MULIB_FIBER_OK)failure(at,"supervisor allocation failure");
  if(mulib_fiber_run(e.scheduler)!=MULIB_FIBER_OK)failure(at,"scheduler execution failure");
   if(e.active||e.process_active||e.io_active||e.groups||e.deadlines||e.timers||!root->done)failure(at,"unfinished scheduler cleanup");
  result=root->result;
  if(mulib_fiber_scheduler_destroy(e.scheduler)!=MULIB_FIBER_OK)failure(at,"scheduler destruction failure");
+ if(mulib_channel_destroy(e.closed_signal)!=MULIB_CHANNEL_OK)
+  failure(at,"live closed-endpoint signal observer");
  while((t=e.tasks)!=NULL){e.tasks=t->next;if(mulib_channel_destroy(t->cancel_signal)!=MULIB_CHANNEL_OK)failure(at,"live cancellation observer");ON1X_CSP_FREE(t);}
- while((c=e.channels)!=NULL){e.channels=c->next;if(c->channel)failure(at,"unreleased channel");ON1X_CSP_FREE(c);}
+ while((c=e.channels)!=NULL){
+  e.channels=c->next;if(c->channel)failure(at,"unreleased channel");
+  ON1X_CSP_FREE(c->endpoints);ON1X_CSP_FREE(c);
+ }
  while((p=e.processes)!=NULL){e.processes=p->next;if(!p->done||!p->joined)failure(at,"unreaped external process");ON1X_CSP_FREE(p);}
   current_execution=NULL;
   if(e.expired.file)failure(e.expired,"monotonic taskgroup deadline expired");

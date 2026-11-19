@@ -421,9 +421,14 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
      if(!text_allowed&&!e.text.empty())
        fail(e.where,"text metadata on an unrelated canonical expression");
      }
-    if(e.kind==E::Csp&&
-       e.result!=(e.text=="channel"?Type{Type::I64}:Type{Type::Void}))
-     fail(e.where,"invalid canonical concurrency payload annotation");
+     if(e.kind==E::Csp){
+      if(e.text=="channel"){
+       if(e.result==Type::Invalid||e.type.kind()!=Type::Channel||
+          e.type.csp_payload()!=e.result)
+        fail(e.where,"invalid canonical concurrency payload annotation");
+      }else if(e.result!=Type::Void)
+       fail(e.where,"invalid canonical concurrency payload annotation");
+     }
    if(!e.patterns.empty()||e.statement_match||e.sum_match){
      fail(e.where,"surface pattern metadata reached canonical HIR");
     }
