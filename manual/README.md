@@ -11,6 +11,11 @@ their ownership and callback rules, supported subsets and security boundaries.
 These integrate with the existing HTTP, Prowse, HTML, XML, DOM and CSS libraries;
 they are not a claim of full HTML5, CSS rendering or ECMAScript conformance.
 
+The [bounded graphics overlay](graphics-overlay.md) documents the shared CPU
+renderer, native and Lua GUI layers, explicit presentation lifetimes, and the
+device-free `make check-graphics` validation gate. Optional backend helpers are
+not complete desktop protocols or GPU drivers.
+
 Every implemented module has a manual and a runnable example. Use each manual's
 source/build reference for implementation switches and dependencies.
 

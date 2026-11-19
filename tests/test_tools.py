@@ -24,9 +24,63 @@ snapshot = module('check_snapshot')
 strata = module('stratify')
 inventory = module('sync_inventory')
 manuals = module('manuals')
+graphics = module('graphics_inventory')
 
 
 class Tools(unittest.TestCase):
+    def test_graphics_inventory_preserves_bounded_status(self):
+        parent = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None
+        with tempfile.TemporaryDirectory(dir=parent) as tmp:
+            root = Path(tmp)
+            (root / 'include').mkdir()
+            (root / 'tests').mkdir()
+            (root / 'tests/implementation.c').write_text('/* ABI TU */\n')
+            (root / 'tests/declarations.c').write_text('int main(void) { return 0; }\n')
+            (root / 'include/mulib-a.h').write_text(
+                '#if defined(MULIB_IMPL_A)\n#endif\n')
+            (root / 'include/mulib-glx-core.h').write_text(
+                'static inline int mulib_gfx_core(void) { return 7; }\n')
+            (root / 'include/mulib-glx-surface.h').write_text(
+                '#include "mulib-glx-core.h"\n')
+            manifest = root / 'MANIFEST.yaml'
+            manifest.write_text(
+                'module_count: 1\nimplemented_module_count: 1\nmodules:\n'
+                '- name: a\n  header: include/mulib-a.h\n'
+                '  purpose: User-authored scope.\n  status: implemented\n'
+                '  macro: MULIB_IMPL_A\n  dependencies: []\n'
+                'project_files:\n- file: user.c\n  purpose: User work.\n')
+            manifest.write_text(graphics.updated_manifest(root))
+            expected = manifest.read_text()
+            self.assertIn('module_count: 3\n', expected)
+            self.assertIn('bounded_module_count: 2\n', expected)
+            self.assertEqual(expected.count('  status: bounded\n'), 2)
+            self.assertIn('  dependencies: [glx-core]\n', expected)
+            self.assertIn('purpose: User-authored scope.', expected)
+            self.assertIn('- file: user.c\n  purpose: User work.', expected)
+            self.assertEqual(expected, graphics.updated_manifest(root))
+            inventory.sync(root)
+            self.assertEqual((root / 'tests/implementation.c').read_text().count(
+                '#include "mulib-glx-'), 0)
+            self.assertIn('  status: bounded\n', manifest.read_text())
+            self.assertIn('implemented_module_count: 1\n', manifest.read_text())
+            (root / 'include/mulib-glx-core.h').write_text(
+                '#if defined(MULIB_IMPL_GLX_CORE)\n#endif\n')
+            with self.assertRaisesRegex(ValueError, 'ABI switch'):
+                graphics.updated_manifest(root)
+
+    def test_graphics_inventory_rejects_missing_dependencies(self):
+        parent = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None
+        with tempfile.TemporaryDirectory(dir=parent) as tmp:
+            root = Path(tmp)
+            (root / 'include').mkdir()
+            (root / 'include/mulib-glx-core.h').write_text(
+                '#include "mulib-missing.h"\n')
+            (root / 'MANIFEST.yaml').write_text(
+                'modules:\n- name: a\n  header: include/mulib-a.h\n'
+                'project_files:\n')
+            with self.assertRaisesRegex(ValueError, 'unknown dependency'):
+                graphics.updated_manifest(root)
+
     def test_checker_compile_budget(self):
         for value in ('0', '-1', 'invalid'):
             with self.subTest(value=value):

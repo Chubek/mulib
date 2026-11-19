@@ -50,8 +50,9 @@ def main():
     manifest = (ROOT / 'MANIFEST.yaml').read_text()
     names = re.findall(r'^- name: (.+)$', manifest, re.M)
     assert len(names) == len(set(names)), 'duplicate manifest names'
-    for field in ('module_count', 'implemented_module_count'):
-        assert int(re.search(r'^' + field + r': (\d+)$', manifest, re.M)[1]) == len(names)
+    assert int(re.search(r'^module_count: (\d+)$', manifest, re.M)[1]) == len(names)
+    implemented = len(re.findall(r'^  status: implemented$', manifest, re.M))
+    assert int(re.search(r'^implemented_module_count: (\d+)$', manifest, re.M)[1]) == implemented
     for name in MODULES:
         assert name in names, 'missing manifest entry: ' + name
         for directory, filename in [('include', 'mulib-' + name + '.h'),

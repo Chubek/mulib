@@ -89,9 +89,13 @@ def sync(root):
         text = header.read_text()
         match = re.search(r'^#\s*if(?:def\s+|\s+defined\s*\(\s*)'
                           r'(MULIB_IMPL_[A-Z0-9_]+)', text, re.M)
+        inline = header.name in registered and bool(re.search(
+            r'^  implementation: static-inline$', registered[header.name], re.M))
+        if inline and match:
+            raise ValueError('static-inline header gained an ABI switch: ' + header.name)
         if match:
             switches.append(match.group(1))
-        elif re.sub(r'/\*.*?\*/|//[^\n]*', '', text, flags=re.S).strip():
+        elif not inline and re.sub(r'/\*.*?\*/|//[^\n]*', '', text, flags=re.S).strip():
             raise ValueError('header lacks implementation switch: ' + header.name)
         name = header.stem[6:]
         deps = sorted({d for d in re.findall(r'^\s*#\s*include\s*["<]mulib-([^">]+)\.h[">]', text, re.M)
@@ -102,6 +106,12 @@ def sync(root):
             if implemented and not match:
                 raise ValueError('implemented header lost its API: ' + header.name)
             new = old
+            if inline:
+                if not re.search(r'^  status: bounded$', old, re.M):
+                    raise ValueError('static-inline module must retain bounded status: ' + header.name)
+                new = re.sub(r'^  dependencies:.*$',
+                             lambda _: '  dependencies: [' + ', '.join(deps) + ']',
+                             new, flags=re.M)
             if match:
                 if not implemented:
                     brief = re.search(r'@brief\s+([^\n]+)', text)
@@ -139,6 +149,11 @@ def sync(root):
         blocks.append(block)
     manifest = re.sub(r'^module_count: \d+$', f'module_count: {len(headers)}', manifest, flags=re.M)
     manifest = re.sub(r'^implemented_module_count: \d+$', f'implemented_module_count: {len(switches)}', manifest, flags=re.M)
+    inline_headers = {name for name, block in registered.items() if re.search(
+        r'^  implementation: static-inline$', block, re.M)}
+    if inline_headers:
+        manifest = re.sub(r'^bounded_module_count: \d+$',
+                          f'bounded_module_count: {len(inline_headers)}', manifest, flags=re.M)
     manifest = manifest.replace('project_files:', ''.join(blocks) + 'project_files:', 1)
     registered_files = set(re.findall(r'^- file: (.+)$', manifest, re.M))
     candidates = [(p, 'Standalone checked usage example for ' + p.stem + '.')
@@ -160,12 +175,14 @@ def sync(root):
     prefix = ''.join('#define ' + switch + '\n' for switch in switches
                      if '#define ' + switch + '\n' not in implementation)
     includes = ''.join('#include "' + header.name + '"\n' for header in headers
-                       if '#include "' + header.name + '"' not in implementation)
+                        if header.name not in inline_headers
+                        if '#include "' + header.name + '"' not in implementation)
     implementation = prefix + implementation.rstrip() + '\n' + includes
     declaration_path = root / 'tests/declarations.c'
     declaration = declaration_path.read_text()
     includes = ''.join('#include "' + header.name + '"\n' for header in headers
-                       if '#include "' + header.name + '"' not in declaration)
+                        if header.name not in inline_headers
+                        if '#include "' + header.name + '"' not in declaration)
     if includes:
         anchor = re.search(r'^\s*int\s+main\s*\(\s*void\s*\)', declaration, re.M)
         if not anchor:

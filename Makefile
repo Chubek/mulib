@@ -11,6 +11,7 @@ EXAMPLES += build/cdd-pipeline
 .PHONY: muw3 check-muw3 check-muw3lib check-tls
 .PHONY: check-openai check-markup check-api-kernels
 .PHONY: check-web-primitives
+.PHONY: check-graphics
 WEB_PRIMITIVES_TESTS := pricing extraction browser css alloc hostile
 TESTS += $(addprefix build/test_web_,$(WEB_PRIMITIVES_TESTS))
 build/test_web_%: tests/test_web_%.c $(HEADERS) $(TEST_FIXTURES) | build
@@ -31,6 +32,15 @@ check-markup:
 	CC="$(CC)" sh tests/run-markup.sh
 check-api-kernels:
 	CC="$(CC)" CXX="$(CXX)" sh tests/run-api-kernels.sh
+check-graphics:
+	CC="$(CC)" CXX="$(CXX)" sh tests/run-graphics.sh
+build/test-gfx-%: CFLAGS += -D_POSIX_C_SOURCE=200809L -Wno-misleading-indentation
+build/test-gfx-%: LDLIBS += -ldl -pthread
+build/test-gfx-%: tests/test-gfx-%.c $(HEADERS) $(TEST_FIXTURES) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter %.c,$^) $(LDLIBS) -o $@
+build/test-gfx-input: tests/gfx-input-tu.c tests/gfx-input-unix.c tests/gfx-input-evdev.c
+build/test-gfx-retgtk-core: tests/gfx-retgtk-core-types-a.c tests/gfx-retgtk-core-types-b.c
+build/test-gfx-retgtk-model-layout: tests/gfx-retgtk-model-layout-peer.c
 muw3: build/muw3 build/microchand
 build/microchan-runtime.o: library/microchan/runtime.c $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@

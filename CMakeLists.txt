@@ -278,6 +278,22 @@ if(MULIB_BUILD_TESTS)
     endif()
     add_executable("mulib_${test_name}" "${source_file}")
     mulib_test_executable("mulib_${test_name}")
+    if(test_name MATCHES "^test-gfx-")
+      target_compile_definitions("mulib_${test_name}" PRIVATE _POSIX_C_SOURCE=200809L)
+      if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        # Untouched overlay helpers still use compact, single-line formatting.
+        target_compile_options("mulib_${test_name}" PRIVATE -Wno-misleading-indentation)
+      endif()
+    endif()
+    if(test_name STREQUAL "test-gfx-input")
+      target_sources("mulib_${test_name}" PRIVATE
+        tests/gfx-input-tu.c tests/gfx-input-unix.c tests/gfx-input-evdev.c)
+    elseif(test_name STREQUAL "test-gfx-retgtk-core")
+      target_sources("mulib_${test_name}" PRIVATE
+        tests/gfx-retgtk-core-types-a.c tests/gfx-retgtk-core-types-b.c)
+    elseif(test_name STREQUAL "test-gfx-retgtk-model-layout")
+      target_sources("mulib_${test_name}" PRIVATE tests/gfx-retgtk-model-layout-peer.c)
+    endif()
     if(test_name MATCHES "^test-api-(json-http|sse-client|websocket)$")
       target_sources("mulib_${test_name}" PRIVATE $<TARGET_OBJECTS:mulib_api_kernels_implementation>)
     endif()
@@ -292,6 +308,14 @@ if(MULIB_BUILD_TESTS)
     endif()
     mulib_register_test("mulib_${test_name}")
   endforeach()
+  if(UNIX)
+    add_test(NAME mulib_graphics_gate
+      COMMAND ${CMAKE_COMMAND} -E env "CC=${CMAKE_C_COMPILER}"
+        "SANITIZE=$<BOOL:${MULIB_SANITIZERS}>"
+        sh "${CMAKE_CURRENT_SOURCE_DIR}/tests/run-graphics.sh")
+    set_tests_properties(mulib_graphics_gate PROPERTIES
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" TIMEOUT 300)
+  endif()
   if(UNIX)
     foreach(name parallel shebang)
       add_executable("mulib_${name}_sh" "tests/${name}.c")

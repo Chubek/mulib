@@ -66,12 +66,16 @@ def inventory():
         stem = header.stem
         text = header.read_text()
         switch = IMPLEMENTATION.search(text)
-        if fields and (not switch or fields.get('macro') != switch.group(1)):
+        inline = fields.get('implementation') == 'static-inline'
+        if inline and (switch or fields.get('status') != 'bounded'):
+            raise ValueError('invalid bounded static-inline entry: ' + header.name)
+        if fields and not inline and (not switch or fields.get('macro') != switch.group(1)):
             raise ValueError('manifest switch differs from header: ' + header.name)
         example = ROOT / fields.get('example', 'examples/modules/' +
                                     AUXILIARY.get(stem, stem[6:]) + '.c')
-        manual = ROOT / 'manual' / (stem + '.md')
-        if fields and fields.get('manual') != manual.relative_to(ROOT).as_posix():
+        manual = (ROOT / fields['manual'] if inline else
+                  ROOT / 'manual' / (stem + '.md'))
+        if fields and not inline and fields.get('manual') != manual.relative_to(ROOT).as_posix():
             raise ValueError('manifest manual differs from header: ' + header.name)
         for path in (manual, example):
             if not path.is_file():
@@ -84,7 +88,7 @@ def inventory():
             purpose = brief.group(1).split('*/')[0].strip() if brief else 'Embedded support data.'
         records.append(dict(header=header, manual=manual, example=example,
                             text=text, switch=switch.group(1) if switch else None,
-                            purpose=purpose))
+                            purpose=purpose, inline=inline))
     return records
 
 
@@ -253,6 +257,10 @@ def main():
         documents = {p: p.read_text() for p in (ROOT / 'manual').glob('*.md')}
         updates = {}
         for record in records:
+            # Bounded header families deliberately share handwritten scope pages.
+            # Do not overwrite one shared page with 60 per-header references.
+            if record.get('inline'):
+                continue
             path = record['manual']
             text = documents[path]
             if marker('interface') in text or marker('interface', True) in text:

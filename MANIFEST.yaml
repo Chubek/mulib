@@ -2,13 +2,14 @@ name: MuLIB
 version: 0.1.0
 language: C11
 header_only: true
-implementation_model: Define MULIB_IMPL_<MODULE> in exactly one translation unit before include.
+implementation_model: ABI modules define MULIB_IMPL_<MODULE> in one translation unit; bounded static-inline modules require no switch.
 inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1204
+module_count: 1421
 implemented_module_count: 1204
+bounded_module_count: 217
 modules:
 - name: cdd-catalogue
   header: include/mulib-cdd-catalogue.h
@@ -8667,6 +8668,1959 @@ modules:
   dependencies: [sandbox-profile, seccomp, landlock, namespace, cgroup2, ipc-framed]
   status: implemented
   example: examples/modules/sandbox-process.c
+- name: drm-atomic
+  header: include/mulib-drm-atomic.h
+  manual: manual/mulib-gfx-drm.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded drm-atomic API; see documented scope and acceptance gates.
+  dependencies: [drm-kms, glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: drm-framebuffer
+  header: include/mulib-drm-framebuffer.h
+  manual: manual/mulib-gfx-drm.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded drm-framebuffer API; see documented scope and acceptance gates.
+  dependencies: [drm-kms]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: drm-gem
+  header: include/mulib-drm-gem.h
+  manual: manual/mulib-gfx-drm.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded drm-gem API; see documented scope and acceptance gates.
+  dependencies: [drm-kms]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: drm-kms
+  header: include/mulib-drm-kms.h
+  manual: manual/mulib-gfx-drm.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded drm-kms API; see documented scope and acceptance gates.
+  dependencies: []
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: drm-output
+  header: include/mulib-drm-output.h
+  manual: manual/mulib-gfx-drm.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded drm-output API; see documented scope and acceptance gates.
+  dependencies: [drm-kms]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: drm-pageflip
+  header: include/mulib-drm-pageflip.h
+  manual: manual/mulib-gfx-drm.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded drm-pageflip API; see documented scope and acceptance gates.
+  dependencies: [drm-kms]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: drm-prime
+  header: include/mulib-drm-prime.h
+  manual: manual/mulib-gfx-drm.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded drm-prime API; see documented scope and acceptance gates.
+  dependencies: [drm-kms]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: drm-session
+  header: include/mulib-drm-session.h
+  manual: manual/mulib-gfx-drm.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded drm-session API; see documented scope and acceptance gates.
+  dependencies: [drm-kms]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: drm-syncobj
+  header: include/mulib-drm-syncobj.h
+  manual: manual/mulib-gfx-drm.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded drm-syncobj API; see documented scope and acceptance gates.
+  dependencies: [drm-kms]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-antialias
+  header: include/mulib-glx-antialias.h
+  manual: manual/mulib-gfx-path.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-antialias API; see documented scope and acceptance gates.
+  dependencies: [glx-raster]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-atlas
+  header: include/mulib-glx-atlas.h
+  manual: manual/mulib-gfx-font-image.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-atlas API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-backend-drm
+  header: include/mulib-glx-backend-drm.h
+  manual: manual/mulib-gfx-drm.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-backend-drm API; see documented scope and acceptance gates.
+  dependencies: [drm, drm-framebuffer, drm-output, drm-pageflip, glx-platform]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-backend-wayland
+  header: include/mulib-glx-backend-wayland.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-backend-wayland API; see documented scope and acceptance gates.
+  dependencies: [glx-platform, wayland-shm]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-backend-x11
+  header: include/mulib-glx-backend-x11.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-backend-x11 API; see documented scope and acceptance gates.
+  dependencies: [glx-platform, x11-image]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-blend
+  header: include/mulib-glx-blend.h
+  manual: manual/mulib-gfx-raster.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-blend API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-clip
+  header: include/mulib-glx-clip.h
+  manual: manual/mulib-gfx-raster.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-clip API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-compositor
+  header: include/mulib-glx-compositor.h
+  manual: manual/mulib-gfx-raster.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-compositor API; see documented scope and acceptance gates.
+  dependencies: [glx-blend, glx-surface]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-core
+  header: include/mulib-glx-core.h
+  manual: manual/mulib-gfx-raster.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-core API; see documented scope and acceptance gates.
+  dependencies: []
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-cursor
+  header: include/mulib-glx-cursor.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-cursor API; see documented scope and acceptance gates.
+  dependencies: [glx-compositor]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-display
+  header: include/mulib-glx-display.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-display API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-drawlist
+  header: include/mulib-glx-drawlist.h
+  manual: manual/mulib-gfx-raster.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-drawlist API; see documented scope and acceptance gates.
+  dependencies: [glx-shape, glx-texture]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-egl
+  header: include/mulib-glx-egl.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-egl API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-event
+  header: include/mulib-glx-event.h
+  manual: manual/mulib-gfx-input.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-event API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-eventloop
+  header: include/mulib-glx-eventloop.h
+  manual: manual/mulib-gfx-input.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-eventloop API; see documented scope and acceptance gates.
+  dependencies: [glx-event]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-filter
+  header: include/mulib-glx-filter.h
+  manual: manual/mulib-gfx-path.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-filter API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-font
+  header: include/mulib-glx-font.h
+  manual: manual/mulib-gfx-font-image.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-font API; see documented scope and acceptance gates.
+  dependencies: [textbuffer]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-fontscan
+  header: include/mulib-glx-fontscan.h
+  manual: manual/mulib-gfx-font-image.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-fontscan API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-glyphcache
+  header: include/mulib-glx-glyphcache.h
+  manual: manual/mulib-gfx-font-image.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-glyphcache API; see documented scope and acceptance gates.
+  dependencies: [glx-font, glx-rendercache]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-gpu
+  header: include/mulib-glx-gpu.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-gpu API; see documented scope and acceptance gates.
+  dependencies: [glx-drawlist]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-gradient
+  header: include/mulib-glx-gradient.h
+  manual: manual/mulib-gfx-path.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-gradient API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-icon
+  header: include/mulib-glx-icon.h
+  manual: manual/mulib-gfx-font-image.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-icon API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-imagedecode
+  header: include/mulib-glx-imagedecode.h
+  manual: manual/mulib-gfx-font-image.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-imagedecode API; see documented scope and acceptance gates.
+  dependencies: [glx-font]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-legacy-bridge
+  header: include/mulib-glx-legacy-bridge.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-legacy-bridge API; see documented scope and acceptance gates.
+  dependencies: [glx, glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-mesh
+  header: include/mulib-glx-mesh.h
+  manual: manual/mulib-gfx-path.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-mesh API; see documented scope and acceptance gates.
+  dependencies: [glx-raster]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-opengl
+  header: include/mulib-glx-opengl.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-opengl API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-paint
+  header: include/mulib-glx-paint.h
+  manual: manual/mulib-gfx-path.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-paint API; see documented scope and acceptance gates.
+  dependencies: [glx-gradient]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-path
+  header: include/mulib-glx-path.h
+  manual: manual/mulib-gfx-path.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-path API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-pixelformat
+  header: include/mulib-glx-pixelformat.h
+  manual: manual/mulib-gfx-raster.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-pixelformat API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-platform
+  header: include/mulib-glx-platform.h
+  manual: manual/mulib-gfx-present.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-platform API; see documented scope and acceptance gates.
+  dependencies: [glx-display, glx-event]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-present
+  header: include/mulib-glx-present.h
+  manual: manual/mulib-gfx-present.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-present API; see documented scope and acceptance gates.
+  dependencies: [glx-platform, glx-region]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-raster
+  header: include/mulib-glx-raster.h
+  manual: manual/mulib-gfx-path.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-raster API; see documented scope and acceptance gates.
+  dependencies: [glx-path]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-region
+  header: include/mulib-glx-region.h
+  manual: manual/mulib-gfx-raster.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-region API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-rendercache
+  header: include/mulib-glx-rendercache.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-rendercache API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-renderqueue
+  header: include/mulib-glx-renderqueue.h
+  manual: manual/mulib-gfx-raster.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-renderqueue API; see documented scope and acceptance gates.
+  dependencies: [glx-drawlist]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-shaderir
+  header: include/mulib-glx-shaderir.h
+  manual: manual/mulib-gfx-shader.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-shaderir API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-shaderjit
+  header: include/mulib-glx-shaderjit.h
+  manual: manual/mulib-gfx-shader.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-shaderjit API; see documented scope and acceptance gates.
+  dependencies: [glx-shadervm]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-shadervm
+  header: include/mulib-glx-shadervm.h
+  manual: manual/mulib-gfx-shader.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-shadervm API; see documented scope and acceptance gates.
+  dependencies: [glx-shaderir]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-shape
+  header: include/mulib-glx-shape.h
+  manual: manual/mulib-gfx-path.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-shape API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-simd
+  header: include/mulib-glx-simd.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-simd API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-stroke
+  header: include/mulib-glx-stroke.h
+  manual: manual/mulib-gfx-path.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-stroke API; see documented scope and acceptance gates.
+  dependencies: [glx-path]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-surface
+  header: include/mulib-glx-surface.h
+  manual: manual/mulib-gfx-raster.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-surface API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-svg
+  header: include/mulib-glx-svg.h
+  manual: manual/mulib-gfx-path.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-svg API; see documented scope and acceptance gates.
+  dependencies: [glx-path]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-swapchain
+  header: include/mulib-glx-swapchain.h
+  manual: manual/mulib-gfx-present.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-swapchain API; see documented scope and acceptance gates.
+  dependencies: [glx-surface]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-tessellate
+  header: include/mulib-glx-tessellate.h
+  manual: manual/mulib-gfx-path.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-tessellate API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-text
+  header: include/mulib-glx-text.h
+  manual: manual/mulib-gfx-font-image.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-text API; see documented scope and acceptance gates.
+  dependencies: [glx-font]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-textatlas
+  header: include/mulib-glx-textatlas.h
+  manual: manual/mulib-gfx-font-image.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-textatlas API; see documented scope and acceptance gates.
+  dependencies: [glx-atlas, glx-font]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-texture
+  header: include/mulib-glx-texture.h
+  manual: manual/mulib-gfx-font-image.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-texture API; see documented scope and acceptance gates.
+  dependencies: [glx-gradient, glx-surface]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-tiledraster
+  header: include/mulib-glx-tiledraster.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-tiledraster API; see documented scope and acceptance gates.
+  dependencies: [glx-drawlist]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-transform
+  header: include/mulib-glx-transform.h
+  manual: manual/mulib-gfx-path.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-transform API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-unix
+  header: include/mulib-glx-unix.h
+  manual: manual/mulib-gfx-input.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-unix API; see documented scope and acceptance gates.
+  dependencies: [glx-backend-drm, glx-backend-wayland, glx-backend-x11, glx-eventloop, glx-window, input-seat]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-vulkan
+  header: include/mulib-glx-vulkan.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-vulkan API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: glx-window
+  header: include/mulib-glx-window.h
+  manual: manual/mulib-gfx-present.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded glx-window API; see documented scope and acceptance gates.
+  dependencies: [glx-present, glx-swapchain]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-accessibility
+  header: include/mulib-gui-accessibility.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-accessibility API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-animation
+  header: include/mulib-gui-animation.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-animation API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-app
+  header: include/mulib-gui-app.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-app API; see documented scope and acceptance gates.
+  dependencies: [glx-platform, gui-dispatch]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-atspi
+  header: include/mulib-gui-atspi.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-atspi API; see documented scope and acceptance gates.
+  dependencies: [gui-accessibility]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-clipboard
+  header: include/mulib-gui-clipboard.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-clipboard API; see documented scope and acceptance gates.
+  dependencies: [gui-mime]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-command
+  header: include/mulib-gui-command.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-command API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-core
+  header: include/mulib-gui-core.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-core API; see documented scope and acceptance gates.
+  dependencies: [glx-drawlist, glx-event, glx-text]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-desktop
+  header: include/mulib-gui-desktop.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-desktop API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-dispatch
+  header: include/mulib-gui-dispatch.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-dispatch API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-dragdrop
+  header: include/mulib-gui-dragdrop.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-dragdrop API; see documented scope and acceptance gates.
+  dependencies: [gui-clipboard]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-filedialog
+  header: include/mulib-gui-filedialog.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-filedialog API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-focus
+  header: include/mulib-gui-focus.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-focus API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-hitest
+  header: include/mulib-gui-hitest.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-hitest API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-ime
+  header: include/mulib-gui-ime.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-ime API; see documented scope and acceptance gates.
+  dependencies: [texteditor]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-locale
+  header: include/mulib-gui-locale.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-locale API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-mime
+  header: include/mulib-gui-mime.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-mime API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-notification
+  header: include/mulib-gui-notification.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-notification API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-portal
+  header: include/mulib-gui-portal.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-portal API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-resource
+  header: include/mulib-gui-resource.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-resource API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-settings
+  header: include/mulib-gui-settings.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-settings API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-shortcut
+  header: include/mulib-gui-shortcut.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-shortcut API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-style
+  header: include/mulib-gui-style.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-style API; see documented scope and acceptance gates.
+  dependencies: [gui-theme]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-theme
+  header: include/mulib-gui-theme.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-theme API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-tray
+  header: include/mulib-gui-tray.h
+  manual: manual/mulib-gfx-gui.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-tray API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: gui-undo
+  header: include/mulib-gui-undo.h
+  manual: manual/mulib-gfx-text.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded gui-undo API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-clipper
+  header: include/mulib-immgtk-clipper.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-clipper API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-codeeditor
+  header: include/mulib-immgtk-codeeditor.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-codeeditor API; see documented scope and acceptance gates.
+  dependencies: [immgtk-textedit]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-colorpicker
+  header: include/mulib-immgtk-colorpicker.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-colorpicker API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-commandpalette
+  header: include/mulib-immgtk-commandpalette.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-commandpalette API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-curveeditor
+  header: include/mulib-immgtk-curveeditor.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-curveeditor API; see documented scope and acceptance gates.
+  dependencies: [immgtk-gizmo]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-dnd
+  header: include/mulib-immgtk-dnd.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-dnd API; see documented scope and acceptance gates.
+  dependencies: [gui-dragdrop, immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-dock
+  header: include/mulib-immgtk-dock.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-dock API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-drawlist-bridge
+  header: include/mulib-immgtk-drawlist-bridge.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-drawlist-bridge API; see documented scope and acceptance gates.
+  dependencies: [glx-drawlist, immgtk-drawlist]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-extensions
+  header: include/mulib-immgtk-extensions.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-extensions API; see documented scope and acceptance gates.
+  dependencies: [immgtk-clipper, immgtk-codeeditor, immgtk-colorpicker, immgtk-commandpalette, immgtk-curveeditor, immgtk-dnd, immgtk-dock, immgtk-filebrowser, immgtk-gizmo, immgtk-hexeditor, immgtk-id, immgtk-io, immgtk-layout, immgtk-menu, immgtk-native, immgtk-nav, immgtk-nodeeditor, immgtk-plot-3d, immgtk-plot-axis, immgtk-plot-contour, immgtk-plot-heatmap, immgtk-plot-interact, immgtk-plot-legend, immgtk-plot-series, immgtk-plot-stream, immgtk-popup, immgtk-profiler, immgtk-propertygrid, immgtk-scroll, immgtk-sequencer, immgtk-settings, immgtk-state, immgtk-style, immgtk-table, immgtk-tabs, immgtk-terminal, immgtk-textedit, immgtk-timeline, immgtk-viewport, immgtk-window]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-filebrowser
+  header: include/mulib-immgtk-filebrowser.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-filebrowser API; see documented scope and acceptance gates.
+  dependencies: [gui-filedialog, immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-gizmo
+  header: include/mulib-immgtk-gizmo.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-gizmo API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-hexeditor
+  header: include/mulib-immgtk-hexeditor.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-hexeditor API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-id
+  header: include/mulib-immgtk-id.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-id API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-io
+  header: include/mulib-immgtk-io.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-io API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native, input-keyboard, input-mouse, textbuffer]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-layout
+  header: include/mulib-immgtk-layout.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-layout API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-menu
+  header: include/mulib-immgtk-menu.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-menu API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-mune-bridge
+  header: include/mulib-immgtk-mune-bridge.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-mune-bridge API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native, mune]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-native
+  header: include/mulib-immgtk-native.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-native API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-nav
+  header: include/mulib-immgtk-nav.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-nav API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-nodeeditor
+  header: include/mulib-immgtk-nodeeditor.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-nodeeditor API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-plot-3d
+  header: include/mulib-immgtk-plot-3d.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-plot-3d API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-plot-axis
+  header: include/mulib-immgtk-plot-axis.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-plot-axis API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-plot-contour
+  header: include/mulib-immgtk-plot-contour.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-plot-contour API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-plot-heatmap
+  header: include/mulib-immgtk-plot-heatmap.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-plot-heatmap API; see documented scope and acceptance gates.
+  dependencies: [immgtk-colorpicker]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-plot-interact
+  header: include/mulib-immgtk-plot-interact.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-plot-interact API; see documented scope and acceptance gates.
+  dependencies: [immgtk-plot-axis]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-plot-legend
+  header: include/mulib-immgtk-plot-legend.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-plot-legend API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-plot-series
+  header: include/mulib-immgtk-plot-series.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-plot-series API; see documented scope and acceptance gates.
+  dependencies: [immgtk-plot-axis]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-plot-stream
+  header: include/mulib-immgtk-plot-stream.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-plot-stream API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-popup
+  header: include/mulib-immgtk-popup.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-popup API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-profiler
+  header: include/mulib-immgtk-profiler.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-profiler API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-propertygrid
+  header: include/mulib-immgtk-propertygrid.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-propertygrid API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-scroll
+  header: include/mulib-immgtk-scroll.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-scroll API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-sequencer
+  header: include/mulib-immgtk-sequencer.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-sequencer API; see documented scope and acceptance gates.
+  dependencies: [immgtk-timeline]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-settings
+  header: include/mulib-immgtk-settings.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-settings API; see documented scope and acceptance gates.
+  dependencies: [gui-settings]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-state
+  header: include/mulib-immgtk-state.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-state API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-style
+  header: include/mulib-immgtk-style.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-style API; see documented scope and acceptance gates.
+  dependencies: [gui-style, immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-table
+  header: include/mulib-immgtk-table.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-table API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-tabs
+  header: include/mulib-immgtk-tabs.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-tabs API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-terminal
+  header: include/mulib-immgtk-terminal.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-terminal API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-textedit
+  header: include/mulib-immgtk-textedit.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-textedit API; see documented scope and acceptance gates.
+  dependencies: [immgtk-io, texteditor]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-timeline
+  header: include/mulib-immgtk-timeline.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-timeline API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-viewport
+  header: include/mulib-immgtk-viewport.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-viewport API; see documented scope and acceptance gates.
+  dependencies: [glx-window, immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: immgtk-window
+  header: include/mulib-immgtk-window.h
+  manual: manual/mulib-gfx-immgtk.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded immgtk-window API; see documented scope and acceptance gates.
+  dependencies: [immgtk-native]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: input-compose
+  header: include/mulib-input-compose.h
+  manual: manual/mulib-gfx-input.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded input-compose API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: input-gamepad
+  header: include/mulib-input-gamepad.h
+  manual: manual/mulib-gfx-input.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded input-gamepad API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: input-gesture
+  header: include/mulib-input-gesture.h
+  manual: manual/mulib-gfx-input.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded input-gesture API; see documented scope and acceptance gates.
+  dependencies: [input-touch]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: input-keyboard
+  header: include/mulib-input-keyboard.h
+  manual: manual/mulib-gfx-input.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded input-keyboard API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: input-keymap
+  header: include/mulib-input-keymap.h
+  manual: manual/mulib-gfx-input.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded input-keymap API; see documented scope and acceptance gates.
+  dependencies: [input-keyboard]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: input-mouse
+  header: include/mulib-input-mouse.h
+  manual: manual/mulib-gfx-input.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded input-mouse API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: input-seat
+  header: include/mulib-input-seat.h
+  manual: manual/mulib-gfx-input.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded input-seat API; see documented scope and acceptance gates.
+  dependencies: [glx-event, input, input-keymap, input-mouse, input-touch]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: input-tablet
+  header: include/mulib-input-tablet.h
+  manual: manual/mulib-gfx-input.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded input-tablet API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: input-touch
+  header: include/mulib-input-touch.h
+  manual: manual/mulib-gfx-input.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded input-touch API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-anchor
+  header: include/mulib-retgtk-anchor.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-anchor API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-binding
+  header: include/mulib-retgtk-binding.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-binding API; see documented scope and acceptance gates.
+  dependencies: [retgtk-property]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-box
+  header: include/mulib-retgtk-box.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-box API; see documented scope and acceptance gates.
+  dependencies: [retgtk-layout]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-builder
+  header: include/mulib-retgtk-builder.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-builder API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-button
+  header: include/mulib-retgtk-button.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-button API; see documented scope and acceptance gates.
+  dependencies: [retgtk-kind, retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-calendar
+  header: include/mulib-retgtk-calendar.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-calendar API; see documented scope and acceptance gates.
+  dependencies: [retgtk-button, retgtk-grid]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-canvas
+  header: include/mulib-retgtk-canvas.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-canvas API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-choice
+  header: include/mulib-retgtk-choice.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-choice API; see documented scope and acceptance gates.
+  dependencies: [retgtk-button]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-color
+  header: include/mulib-retgtk-color.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-color API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-constraint
+  header: include/mulib-retgtk-constraint.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-constraint API; see documented scope and acceptance gates.
+  dependencies: [retgtk-kind, retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-container
+  header: include/mulib-retgtk-container.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-container API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-delegate
+  header: include/mulib-retgtk-delegate.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-delegate API; see documented scope and acceptance gates.
+  dependencies: [retgtk-model]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-dialog
+  header: include/mulib-retgtk-dialog.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-dialog API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-entry
+  header: include/mulib-retgtk-entry.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-entry API; see documented scope and acceptance gates.
+  dependencies: [retgtk-kind, retgtk-widget, texteditor]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-event
+  header: include/mulib-retgtk-event.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-event API; see documented scope and acceptance gates.
+  dependencies: [retgtk-tree]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-flex
+  header: include/mulib-retgtk-flex.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-flex API; see documented scope and acceptance gates.
+  dependencies: [retgtk-box]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-flow
+  header: include/mulib-retgtk-flow.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-flow API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-grid
+  header: include/mulib-retgtk-grid.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-grid API; see documented scope and acceptance gates.
+  dependencies: [retgtk-layout]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-hotreload
+  header: include/mulib-retgtk-hotreload.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-hotreload API; see documented scope and acceptance gates.
+  dependencies: [retgtk-entry, retgtk-scene, retgtk-tree, retgtk-uiml]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-image
+  header: include/mulib-retgtk-image.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-image API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-inspector
+  header: include/mulib-retgtk-inspector.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-inspector API; see documented scope and acceptance gates.
+  dependencies: [retgtk-box, retgtk-label]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-invalidate
+  header: include/mulib-retgtk-invalidate.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-invalidate API; see documented scope and acceptance gates.
+  dependencies: [glx-region, retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-kind
+  header: include/mulib-retgtk-kind.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-kind API; see documented scope and acceptance gates.
+  dependencies: []
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-label
+  header: include/mulib-retgtk-label.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-label API; see documented scope and acceptance gates.
+  dependencies: [retgtk-kind, retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-layout
+  header: include/mulib-retgtk-layout.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-layout API; see documented scope and acceptance gates.
+  dependencies: [retgtk-constraint]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-list
+  header: include/mulib-retgtk-list.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-list API; see documented scope and acceptance gates.
+  dependencies: [retgtk-delegate, retgtk-kind]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-listmodel
+  header: include/mulib-retgtk-listmodel.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-listmodel API; see documented scope and acceptance gates.
+  dependencies: [retgtk-model]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-menu
+  header: include/mulib-retgtk-menu.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-menu API; see documented scope and acceptance gates.
+  dependencies: [retgtk-box, retgtk-button]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-model
+  header: include/mulib-retgtk-model.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-model API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-mune
+  header: include/mulib-retgtk-mune.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-mune API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-notebook
+  header: include/mulib-retgtk-notebook.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-notebook API; see documented scope and acceptance gates.
+  dependencies: [retgtk-stack]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-object
+  header: include/mulib-retgtk-object.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-object API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-painter
+  header: include/mulib-retgtk-painter.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-painter API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-progress
+  header: include/mulib-retgtk-progress.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-progress API; see documented scope and acceptance gates.
+  dependencies: [retgtk-slider]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-property
+  header: include/mulib-retgtk-property.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-property API; see documented scope and acceptance gates.
+  dependencies: [retgtk-signal]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-proxymodel
+  header: include/mulib-retgtk-proxymodel.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-proxymodel API; see documented scope and acceptance gates.
+  dependencies: [retgtk-model]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-reactive
+  header: include/mulib-retgtk-reactive.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-reactive API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-scene
+  header: include/mulib-retgtk-scene.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-scene API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-scroll
+  header: include/mulib-retgtk-scroll.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-scroll API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-selection
+  header: include/mulib-retgtk-selection.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-selection API; see documented scope and acceptance gates.
+  dependencies: [retgtk-model]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-signal
+  header: include/mulib-retgtk-signal.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-signal API; see documented scope and acceptance gates.
+  dependencies: [retgtk-object]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-slider
+  header: include/mulib-retgtk-slider.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-slider API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-split
+  header: include/mulib-retgtk-split.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-split API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-stack
+  header: include/mulib-retgtk-stack.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-stack API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-statusbar
+  header: include/mulib-retgtk-statusbar.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-statusbar API; see documented scope and acceptance gates.
+  dependencies: [retgtk-label]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-tablemodel
+  header: include/mulib-retgtk-tablemodel.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-tablemodel API; see documented scope and acceptance gates.
+  dependencies: [retgtk-model]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-tableview
+  header: include/mulib-retgtk-tableview.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-tableview API; see documented scope and acceptance gates.
+  dependencies: [retgtk-list]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-template
+  header: include/mulib-retgtk-template.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-template API; see documented scope and acceptance gates.
+  dependencies: [textbuffer]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-textview
+  header: include/mulib-retgtk-textview.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-textview API; see documented scope and acceptance gates.
+  dependencies: [retgtk-entry]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-toolbar
+  header: include/mulib-retgtk-toolbar.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-toolbar API; see documented scope and acceptance gates.
+  dependencies: [retgtk-menu]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-tree
+  header: include/mulib-retgtk-tree.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-tree API; see documented scope and acceptance gates.
+  dependencies: [retgtk-widget]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-treemodel
+  header: include/mulib-retgtk-treemodel.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-treemodel API; see documented scope and acceptance gates.
+  dependencies: [retgtk-model]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-treeview
+  header: include/mulib-retgtk-treeview.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-treeview API; see documented scope and acceptance gates.
+  dependencies: [retgtk-delegate, retgtk-treemodel]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-type
+  header: include/mulib-retgtk-type.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-type API; see documented scope and acceptance gates.
+  dependencies: [gui-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-uiml
+  header: include/mulib-retgtk-uiml.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-uiml API; see documented scope and acceptance gates.
+  dependencies: [retgtk-builder]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-widget
+  header: include/mulib-retgtk-widget.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-widget API; see documented scope and acceptance gates.
+  dependencies: [retgtk-object, retgtk-signal, retgtk-type]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk-window
+  header: include/mulib-retgtk-window.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk-window API; see documented scope and acceptance gates.
+  dependencies: [glx-window, retgtk-event, retgtk-scene]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: retgtk
+  header: include/mulib-retgtk.h
+  manual: manual/graphics-overlay.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded retgtk API; see documented scope and acceptance gates.
+  dependencies: [retgtk-anchor, retgtk-binding, retgtk-box, retgtk-builder, retgtk-button, retgtk-calendar, retgtk-canvas, retgtk-choice, retgtk-color, retgtk-constraint, retgtk-container, retgtk-delegate, retgtk-dialog, retgtk-entry, retgtk-event, retgtk-flex, retgtk-flow, retgtk-grid, retgtk-hotreload, retgtk-image, retgtk-inspector, retgtk-invalidate, retgtk-label, retgtk-layout, retgtk-list, retgtk-listmodel, retgtk-menu, retgtk-model, retgtk-mune, retgtk-notebook, retgtk-object, retgtk-painter, retgtk-progress, retgtk-property, retgtk-proxymodel, retgtk-reactive, retgtk-scene, retgtk-scroll, retgtk-selection, retgtk-signal, retgtk-slider, retgtk-split, retgtk-stack, retgtk-statusbar, retgtk-tablemodel, retgtk-tableview, retgtk-template, retgtk-textview, retgtk-toolbar, retgtk-tree, retgtk-treemodel, retgtk-treeview, retgtk-type, retgtk-uiml, retgtk-widget, retgtk-window]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: richtext
+  header: include/mulib-richtext.h
+  manual: manual/mulib-gfx-text.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded richtext API; see documented scope and acceptance gates.
+  dependencies: [textbuffer]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: textbuffer
+  header: include/mulib-textbuffer.h
+  manual: manual/mulib-gfx-text.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded textbuffer API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: textcursor
+  header: include/mulib-textcursor.h
+  manual: manual/mulib-gfx-text.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded textcursor API; see documented scope and acceptance gates.
+  dependencies: [textbuffer]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: texteditor
+  header: include/mulib-texteditor.h
+  manual: manual/mulib-gfx-text.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded texteditor API; see documented scope and acceptance gates.
+  dependencies: [texthistory]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: texthistory
+  header: include/mulib-texthistory.h
+  manual: manual/mulib-gfx-text.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded texthistory API; see documented scope and acceptance gates.
+  dependencies: [textselection]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: textselection
+  header: include/mulib-textselection.h
+  manual: manual/mulib-gfx-text.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded textselection API; see documented scope and acceptance gates.
+  dependencies: [textcursor]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: wayland-data
+  header: include/mulib-wayland-data.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded wayland-data API; see documented scope and acceptance gates.
+  dependencies: [wayland-wire]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: wayland-dmabuf
+  header: include/mulib-wayland-dmabuf.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded wayland-dmabuf API; see documented scope and acceptance gates.
+  dependencies: [wayland-wire]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: wayland-protocol
+  header: include/mulib-wayland-protocol.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded wayland-protocol API; see documented scope and acceptance gates.
+  dependencies: [wayland-wire]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: wayland-seat
+  header: include/mulib-wayland-seat.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded wayland-seat API; see documented scope and acceptance gates.
+  dependencies: [glx-event, wayland-wire]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: wayland-shm
+  header: include/mulib-wayland-shm.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded wayland-shm API; see documented scope and acceptance gates.
+  dependencies: [wayland-wire]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: wayland-textinput
+  header: include/mulib-wayland-textinput.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded wayland-textinput API; see documented scope and acceptance gates.
+  dependencies: [wayland-wire]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: wayland-wire
+  header: include/mulib-wayland-wire.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded wayland-wire API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: wayland-xdg
+  header: include/mulib-wayland-xdg.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded wayland-xdg API; see documented scope and acceptance gates.
+  dependencies: [wayland-wire]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: x11-events
+  header: include/mulib-x11-events.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded x11-events API; see documented scope and acceptance gates.
+  dependencies: [glx-event, x11-wire]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: x11-image
+  header: include/mulib-x11-image.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded x11-image API; see documented scope and acceptance gates.
+  dependencies: [x11-wire]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: x11-selection
+  header: include/mulib-x11-selection.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded x11-selection API; see documented scope and acceptance gates.
+  dependencies: [x11-wire]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: x11-window
+  header: include/mulib-x11-window.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded x11-window API; see documented scope and acceptance gates.
+  dependencies: [x11-wire]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: x11-wire
+  header: include/mulib-x11-wire.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded x11-wire API; see documented scope and acceptance gates.
+  dependencies: [glx-core]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: x11-wm
+  header: include/mulib-x11-wm.h
+  manual: manual/mulib-gfx-wire.md
+  implementation: static-inline
+  status: bounded
+  purpose: Bounded x11-wm API; see documented scope and acceptance gates.
+  dependencies: [x11-wire]
+  example: examples/gfx-headless.c
+  validation: tests/run-graphics.sh; header compilation is not feature completeness.
 project_files:
 - file: manual/api-kernels.md
   purpose: Shared protocol kernel integration, trust boundaries and tested scope.
@@ -13198,3 +15152,107 @@ project_files:
   purpose: "Standalone checked usage example for sse-client."
 - file: examples/modules/websocket.c
   purpose: "Standalone checked usage example for websocket."
+- file: examples/gfx-headless.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/graphics-overlay.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-drm.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-font-image.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-gui.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-immgtk-lua.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-immgtk.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-input.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-path.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-present.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-raster.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-retgtk-core.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-retgtk-model-layout.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-shader.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-text.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/mulib-gfx-wire.md
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/graphics/bridges.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/graphics/consumer.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/graphics/consumer.cpp
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/graphics/link.h
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/graphics/producer.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/run-graphics.sh
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-drm.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-font-image.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-gui.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-immgtk-lua.lua
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-immgtk.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-input.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-path-limits.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-path.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-present.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-raster.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-retgtk-core.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-retgtk-lua.lua
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-retgtk-model-layout.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-shader.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-text.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-wire.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tools/graphics_inventory.py
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/gfx-drm-prime-no-cloexec.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/gfx-immgtk-alloc.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/gfx-immgtk-legacy-cxx.cpp
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/gfx-immgtk-link-peer.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/gfx-immgtk-link.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/gfx-immgtk-mune.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/gfx-input-evdev.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/gfx-input-tu.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/gfx-input-unix.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/gfx-retgtk-core-types-a.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/gfx-retgtk-core-types-b.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/gfx-retgtk-core-types.h
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/gfx-retgtk-model-layout-peer.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.

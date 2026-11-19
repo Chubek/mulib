@@ -115,11 +115,32 @@ def main():
     count = re.search(r'^module_count: (\d+)$', manifest, re.M)
     if not count or int(count.group(1)) != len(headers):
         failures.append(('MANIFEST.yaml', 'module_count does not match header inventory'))
+    bounded = set()
     for header in headers:
         name, text = header.name, texts[header.name]
         match = re.search(r'^#\s*if(?:def\s+|\s+defined\s*\(\s*)'
                           r'(MULIB_IMPL_[A-Z0-9_]+)', text, re.M)
         block = entries.get(name, '')
+        if re.search(r'^  implementation: static-inline$', block, re.M):
+            bounded.add(name)
+            if match or not re.search(r'^  status: bounded$', block, re.M):
+                failures.append((name, 'static-inline module must have bounded status and no ABI switch'))
+            dependencies[name] = [d for d in re.findall(r'^\s*#\s*include\s*["<]'
+                                      r'(mulib-[^">]+\.h)[">]', text, re.M)
+                                  if d not in SUPPORT_HEADERS]
+            deps = re.search(r'^  dependencies: \[([^\]]*)\]$', block, re.M)
+            actual = {d.strip() for d in deps.group(1).split(',') if d.strip()} if deps else None
+            expected = {d[len('mulib-'):-len('.h')] for d in dependencies[name]}
+            if actual != expected:
+                failures.append((name, 'manifest dependency list differs from header includes'))
+            for key in ('manual', 'example'):
+                field = re.search(r'^  ' + key + r': (.+)$', block, re.M)
+                if not field or not (root / field.group(1)).is_file():
+                    failures.append((name, 'missing bounded module ' + key))
+            for dependency in dependencies[name]:
+                if dependency not in texts:
+                    failures.append((name, 'unknown MuLIB dependency ' + dependency))
+            continue
         if re.search(r'^  status: reserved$', block, re.M):
             # Explicitly inventoried future modules are not implemented APIs.
             # They must remain empty/comment-only, and cannot be dependencies.
@@ -167,12 +188,17 @@ def main():
     implemented_count = re.search(r'^implemented_module_count: (\d+)$', manifest, re.M)
     if not implemented_count or int(implemented_count.group(1)) != len(switches):
         failures.append(('MANIFEST.yaml', 'implemented_module_count does not match implemented headers'))
+    bounded_count = re.search(r'^bounded_module_count: (\d+)$', manifest, re.M)
+    if bounded and (not bounded_count or int(bounded_count.group(1)) != len(bounded)):
+        failures.append(('MANIFEST.yaml', 'bounded_module_count does not match static-inline headers'))
 
     if len(set(switches.values())) != len(switches):
         failures.append(('headers', 'implementation switch shared by multiple modules'))
     implementation = (root / 'tests/implementation.c').read_text()
     declarations = (root / 'tests/declarations.c').read_text()
     for name in texts:
+        if name in bounded:
+            continue # exercised by the separate combined C11 graphics gate
         for path, text in [('tests/implementation.c', implementation),
                            ('tests/declarations.c', declarations)]:
             if '#include "' + name + '"' not in text:
