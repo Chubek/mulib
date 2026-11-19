@@ -152,6 +152,11 @@ extern "C"
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
+/* Override before including the implementation to inject native ioctl tests.
+ * The hook has ioctl's fd/request/pointer arguments and errno convention. */
+#ifndef MULIB_DRM_IOCTL
+#define MULIB_DRM_IOCTL(fd, request, argument) ioctl ((fd), (request), (argument))
+#endif
 #endif
 #ifdef __cplusplus
 extern "C"
@@ -188,7 +193,7 @@ extern "C"
     int rc;
     do
       {
-        rc = ioctl (fd, mulib_drm_ioctl_request (operation), request);
+        rc = MULIB_DRM_IOCTL (fd, mulib_drm_ioctl_request (operation), request);
       }
     while (rc < 0 && errno == EINTR);
     return rc;
@@ -203,7 +208,11 @@ extern "C"
       return MULIB_DRM_ESTATE;
 #ifdef __linux__
     {
-      int fd = open (path, O_RDWR), saved;
+      int flags = O_RDWR, fd, saved;
+#ifdef O_CLOEXEC
+      flags |= O_CLOEXEC;
+#endif
+      fd = open (path, flags);
       if (fd < 0)
         return MULIB_DRM_EIO;
       if (fcntl (fd, F_SETFD, FD_CLOEXEC) < 0)
@@ -299,7 +308,7 @@ extern "C"
     if (!device || device->fd < 0 || !buffer || !width || !height || !bpp
         || bpp > 64)
       return MULIB_DRM_EINVAL;
-    if (buffer->fd != -1 || buffer->data || buffer->mapped_size)
+    if (buffer->fd != -1 || buffer->handle || buffer->data || buffer->mapped_size)
       return MULIB_DRM_ESTATE;
 #ifdef __linux__
     {
@@ -308,7 +317,11 @@ extern "C"
       uint64_t minimum_pitch = ((uint64_t)width * bpp + 7) / 8;
       if (minimum_pitch > UINT32_MAX)
         return MULIB_DRM_EOVERFLOW;
+#ifdef F_DUPFD_CLOEXEC
+      fd = fcntl (device->fd, F_DUPFD_CLOEXEC, 0);
+#else
       fd = dup (device->fd);
+#endif
       if (fd < 0)
         return MULIB_DRM_EIO;
       if (fcntl (fd, F_SETFD, FD_CLOEXEC) < 0)
@@ -329,7 +342,7 @@ extern "C"
           errno = saved;
           return MULIB_DRM_EIO;
         }
-      if (!q.size || q.pitch < minimum_pitch
+      if (!q.handle || !q.size || q.pitch < minimum_pitch
           || q.size < (uint64_t)q.pitch * height || q.size > SIZE_MAX)
         {
           mulib_drm_destroy_request_t destroy;

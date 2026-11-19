@@ -33,6 +33,11 @@ void mulib_immgtk_drawlist_free(mulib_immgtk_drawlist_t *d);
 }
 #endif
 #endif /* MULIB_IMMGTK_DRAWLIST_H */
+/* Keep the legacy C/C++ declaration-only include dependency-free. The C11
+ * shared-renderer adapter is also available by including its header directly. */
+#ifdef MULIB_GFX_ENABLE_IMMGTK_DRAWLIST_ADAPTER
+#include "mulib-immgtk-drawlist-bridge.h"
+#endif
 #if defined(MULIB_IMPL_IMMGTK_DRAWLIST) && !defined(MULIB_IMMGTK_DRAWLIST_H_IMPLEMENTED)
 #define MULIB_IMMGTK_DRAWLIST_H_IMPLEMENTED
 #include <stdlib.h>
@@ -45,7 +50,8 @@ void mulib_immgtk_drawlist_free(mulib_immgtk_drawlist_t *d);
 extern "C" {
 #endif
 int mulib_immgtk_drawlist_push(mulib_immgtk_drawlist_t *d, mulib_immgtk_drawcmd_t c) {
-    if (!d || c.type < MULIB_IMMGTK_LINE || c.type > MULIB_IMMGTK_CIRCLE || !isfinite(c.x1) ||
+    if (!d || d->count > d->cap || (d->cap && !d->cmds) ||
+        d->count == SIZE_MAX || c.type < MULIB_IMMGTK_LINE || c.type > MULIB_IMMGTK_CIRCLE || !isfinite(c.x1) ||
         !isfinite(c.x2) || !isfinite(c.y1) || !isfinite(c.y2) || !isfinite(c.width) || c.width < 0)
         return 0;
     if (d->count == d->cap) {
@@ -55,7 +61,7 @@ int mulib_immgtk_drawlist_push(mulib_immgtk_drawlist_t *d, mulib_immgtk_drawcmd_
         void *p = realloc(d->cmds, n * sizeof *d->cmds);
         if (!p)
             return 0;
-        d->cmds = p;
+        d->cmds = (mulib_immgtk_drawcmd_t *)p;
         d->cap = n;
     }
     d->cmds[d->count++] = c;
