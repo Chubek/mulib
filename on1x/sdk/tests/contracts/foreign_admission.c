@@ -102,12 +102,9 @@ typedef struct ScalarFixture {
 } ScalarFixture;
 
 static On1xSDK_FFISpan span(uint64_t begin, uint64_t end) {
-  On1xSDK_FFISpan value = {ON1X_SDK_FFI_ABI_VERSION,
-                           sizeof(On1xSDK_FFISpan),
-                           TEXT("revision-1"),
-                           begin,
-                           end,
-                           100u};
+  On1xSDK_FFISpan value = {
+      17u, 1u, begin, end,
+      UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX};
   return value;
 }
 
@@ -160,6 +157,8 @@ static void initialize_fixture(ScalarFixture *fixture) {
   fixture->source.compiler = TEXT("clang-22");
   fixture->source.source_size = 100u;
   fixture->source.flags = ON1X_SDK_CDECL_COMPLETE;
+  fixture->source.source_identity =
+      (On1xSDK_SourceRevision){17u, 1u, fixture->source.source_size};
   for (size_t index = 0; index < 2u; ++index) {
     fixture->parameters[index].abi_version = ON1X_SDK_FFI_ABI_VERSION;
     fixture->parameters[index].struct_size = sizeof(On1xSDK_CDeclParameter);
@@ -409,10 +408,10 @@ static int test_rejections(void) {
 
   initialize_fixture(&fixture);
   fixture.contract.effects_known = 0u;
-  fixture.callbacks.diagnostic_status = ON1X_SDK_BUSY;
+  fixture.callbacks.diagnostic_status = ON1X_SDK_UNSATISFIABLE;
   admission = result();
   CHECK(on1x_sdk_foreign_admit(&fixture.candidate, &fixture.policy,
-                               &admission) == ON1X_SDK_BUSY &&
+                               &admission) == ON1X_SDK_UNSATISFIABLE &&
             admission.code == ON1X_SDK_ADMISSION_DIAGNOSTIC_FAILED,
         "diagnostic sink failure was not observable");
 
@@ -586,10 +585,17 @@ static int test_malformed_and_legacy(void) {
             0),
         "malformed UTF-8 accepted");
   CHECK(!on1x_sdk_ffi_span_valid(
-            &fixture.function.declaration_span,
-            (On1xSDK_FFIText){NULL, fixture.source.revision.size},
-            fixture.source.source_size),
-        "invalid expected source revision was dereferenced or accepted");
+            &fixture.function.declaration_span, NULL),
+        "missing source identity was accepted");
+  {
+    const On1xSDK_SourceRevision stale_source = {
+        fixture.source.source_identity.source_id,
+        fixture.source.source_identity.revision + 1u,
+        fixture.source.source_size};
+    CHECK(!on1x_sdk_ffi_span_valid(
+              &fixture.function.declaration_span, &stale_source),
+          "stale source identity was accepted");
+  }
   fixture.exotract.implementation_switch_count = 2u;
   {
     On1xSDK_FFIText duplicate_switches[2] = {TEXT("MULIB_IMPL_FIXTURE"),

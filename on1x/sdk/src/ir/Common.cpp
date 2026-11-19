@@ -1,4 +1,5 @@
 #include "IRInternal.hpp"
+#include "On1xSDK-Status.h"
 
 #include <algorithm>
 #include <cstring>
@@ -175,18 +176,7 @@ On1xSDK_Status read_limits(const On1xSDK_IRLimits *source,
 }
 
 On1xSDK_Status normalize_status(On1xSDK_Status status) noexcept {
-    switch (status) {
-    case ON1X_SDK_OK:
-    case ON1X_SDK_ERROR:
-    case ON1X_SDK_UNSUPPORTED:
-    case ON1X_SDK_LIMIT:
-    case ON1X_SDK_INVALID_ARGUMENT:
-    case ON1X_SDK_ABI_MISMATCH:
-    case ON1X_SDK_DUPLICATE:
-    case ON1X_SDK_BUSY:
-        return status;
-    }
-    return ON1X_SDK_ERROR;
+    return on1x_sdk_status_is_known(status) ? status : ON1X_SDK_ERROR;
 }
 
 On1xSDK_Status error_status(const Error &error) noexcept {

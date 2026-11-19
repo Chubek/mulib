@@ -92,19 +92,9 @@ int on1x_sdk_ffi_sha256_valid(On1xSDK_FFIText text) {
 }
 
 int on1x_sdk_ffi_span_valid(const On1xSDK_FFISpan *span,
-                            On1xSDK_FFIText expected_revision,
-                            uint64_t expected_source_size) {
-  if (!span ||
-      !on1x_ffi_prefix_(span, span->struct_size,
-                        ON1X_FFI_REQUIRED(On1xSDK_FFISpan, source_size)) ||
-      !on1x_sdk_ffi_text_valid(expected_revision, 0) || !expected_source_size ||
-      !on1x_sdk_ffi_text_valid(span->revision, 0) ||
-      !on1x_ffi_text_equal_(span->revision, expected_revision) ||
-      span->source_size != expected_source_size || span->begin > span->end ||
-      span->end > span->source_size) {
-    return 0;
-  }
-  return 1;
+                             const On1xSDK_SourceRevision *source) {
+  return span && source &&
+         on1x_sdk_span_validate(span, source, 0) == ON1X_SDK_OK;
 }
 
 static int on1x_ffi_identifier_(On1xSDK_FFIText text) {
@@ -218,8 +208,9 @@ On1xSDK_Status on1x_sdk_cdecl_source_check(const On1xSDK_CDeclSource *source) {
     return ON1X_SDK_INVALID_ARGUMENT;
   if (source->abi_version != ON1X_SDK_FFI_ABI_VERSION)
     return ON1X_SDK_ABI_MISMATCH;
-  if (!on1x_ffi_prefix_(source, source->struct_size,
-                        ON1X_FFI_REQUIRED(On1xSDK_CDeclSource, reserved)) ||
+  if (!on1x_ffi_prefix_(
+          source, source->struct_size,
+          ON1X_FFI_REQUIRED(On1xSDK_CDeclSource, source_identity)) ||
       source->schema_version != ON1X_SDK_FFI_CDECL_SCHEMA_VERSION ||
       (source->pointer_bits != 32u && source->pointer_bits != 64u) ||
       !on1x_sdk_ffi_text_valid(source->header, 0) ||
@@ -228,6 +219,9 @@ On1xSDK_Status on1x_sdk_cdecl_source_check(const On1xSDK_CDeclSource *source) {
       !on1x_sdk_ffi_sha256_valid(source->header_sha256) ||
       !on1x_sdk_ffi_text_valid(source->target, 0) ||
       !on1x_sdk_ffi_text_valid(source->compiler, 0) || !source->source_size ||
+      !source->source_identity.source_id ||
+      !source->source_identity.revision ||
+      source->source_identity.byte_size != source->source_size ||
       (source->flags & ~flag_mask) || source->reserved) {
     return ON1X_SDK_INVALID_ARGUMENT;
   }
@@ -267,11 +261,9 @@ on1x_sdk_cdecl_function_check(const On1xSDK_CDeclFunction *function) {
                                        function->source->pointer_bits);
   if (status != ON1X_SDK_OK)
     return status;
-  if (!on1x_sdk_ffi_span_valid(&function->declaration_span,
-                               function->source->revision,
-                               function->source->source_size)) {
+  if (!on1x_sdk_ffi_span_valid(
+          &function->declaration_span, &function->source->source_identity))
     return ON1X_SDK_INVALID_ARGUMENT;
-  }
   for (size_t i = 0; i < function->parameter_count; ++i) {
     const On1xSDK_CDeclParameter *parameter = function->parameters + i;
     if (parameter->abi_version != ON1X_SDK_FFI_ABI_VERSION)
@@ -280,8 +272,8 @@ on1x_sdk_cdecl_function_check(const On1xSDK_CDeclFunction *function) {
                           ON1X_FFI_REQUIRED(On1xSDK_CDeclParameter, source)) ||
         (!on1x_sdk_ffi_text_valid(parameter->name, 0) &&
          parameter->name.size) ||
-        !on1x_sdk_ffi_span_valid(&parameter->source, function->source->revision,
-                                 function->source->source_size)) {
+        !on1x_sdk_ffi_span_valid(
+            &parameter->source, &function->source->source_identity)) {
       return ON1X_SDK_INVALID_ARGUMENT;
     }
     status = on1x_sdk_foreign_type_check(&parameter->type,
@@ -631,7 +623,9 @@ static void on1x_ffi_result_(On1xSDK_ForeignAdmissionResult *result,
 
 static On1xSDK_Status on1x_ffi_callback_status_(On1xSDK_Status status) {
   const uint32_t value = (uint32_t)status;
-  return value <= (uint32_t)ON1X_SDK_BUSY ? status : ON1X_SDK_ERROR;
+  return value <= (uint32_t)ON1X_SDK_UNSATISFIABLE
+             ? status
+             : ON1X_SDK_ERROR;
 }
 
 static On1xSDK_Status
@@ -641,13 +635,15 @@ on1x_ffi_diagnostic_(const On1xSDK_ForeignAdmissionPolicy *policy,
                      On1xSDK_ForeignAdmissionResult *result,
                      On1xSDK_Status operation_status) {
   On1xSDK_FFIDiagnostic diagnostic;
+  On1xSDK_DiagnosticSinkV2 shared_sink;
+  const On1xSDK_SourceRevision *diagnostic_source = NULL;
   On1xSDK_Status sink_status;
   const On1xSDK_FFIDiagnosticSink sink = on1x_ffi_diagnostic_sink_(policy);
   const int was_active = on1x_ffi_admission_active_;
   if (!sink)
     return operation_status;
   memset(&diagnostic, 0, sizeof(diagnostic));
-  diagnostic.abi_version = ON1X_SDK_FFI_ABI_VERSION;
+  diagnostic.abi_version = ON1X_SDK_ABI_VERSION_V2;
   diagnostic.struct_size = sizeof(diagnostic);
   diagnostic.code = on1x_ffi_static_text_(on1x_ffi_code_name_(code));
   diagnostic.message = on1x_ffi_static_text_(message);
@@ -658,17 +654,20 @@ on1x_ffi_diagnostic_(const On1xSDK_ForeignAdmissionPolicy *policy,
           ON1X_FFI_REQUIRED(On1xSDK_CDeclFunction, declaration_span)) &&
       function->source &&
       on1x_sdk_cdecl_source_check(function->source) == ON1X_SDK_OK &&
-      on1x_sdk_ffi_span_valid(&function->declaration_span,
-                              function->source->revision,
-                              function->source->source_size)) {
+      on1x_sdk_ffi_span_valid(
+          &function->declaration_span, &function->source->source_identity)) {
     diagnostic.primary = function->declaration_span;
+    diagnostic_source = &function->source->source_identity;
   } else {
-    diagnostic.primary.abi_version = ON1X_SDK_FFI_ABI_VERSION;
-    diagnostic.primary.struct_size = sizeof(diagnostic.primary);
+    diagnostic.primary = on1x_sdk_span_unlocated();
   }
+  shared_sink.abi_version = ON1X_SDK_ABI_VERSION_V2;
+  shared_sink.struct_size = sizeof(shared_sink);
+  shared_sink.emit = sink;
+  shared_sink.userdata = on1x_ffi_diagnostic_context_(policy);
   on1x_ffi_admission_active_ = 1;
-  sink_status = on1x_ffi_callback_status_(
-      sink(on1x_ffi_diagnostic_context_(policy), &diagnostic));
+  sink_status = on1x_sdk_diagnostic_emit_v2(
+      &shared_sink, &diagnostic, diagnostic_source);
   on1x_ffi_admission_active_ = was_active;
   if (sink_status != ON1X_SDK_OK) {
     on1x_ffi_result_(result, ON1X_SDK_ADMISSION_DIAGNOSTIC_FAILED, 0);

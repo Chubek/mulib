@@ -66,9 +66,8 @@ constexpr std::uint32_t provider_flags =
     ON1X_SDK_BACKEND_TARGET_INDEPENDENT | ON1X_SDK_BACKEND_DETERMINISTIC;
 constexpr std::uint32_t request_flags =
     ON1X_SDK_BACKEND_REQUIRE_DETERMINISTIC | ON1X_SDK_BACKEND_CHECK_REPRODUCIBILITY;
-/* ABI 2 reserves consecutive values 8..16 for the nine appended statuses
- * specified by ABI.md. Core supplies their public symbolic names. */
-constexpr std::uint32_t max_abi2_status = 16u;
+/* The core owns the consecutive ABI-2 status range. */
+constexpr std::uint32_t max_abi2_status = ON1X_SDK_UNSATISFIABLE;
 
 bool native_artifact(On1xSDK_ArtifactKind kind) noexcept {
     return kind == ON1X_SDK_ARTIFACT_ASSEMBLY || kind == ON1X_SDK_ARTIFACT_OBJECT ||

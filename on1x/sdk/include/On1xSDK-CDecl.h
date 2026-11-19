@@ -36,6 +36,8 @@ typedef struct On1xSDK_CDeclSource {
   uint64_t source_size;
   uint32_t flags;
   uint32_t reserved;
+  /* Host-assigned immutable identity; byte_size must equal source_size. */
+  On1xSDK_SourceRevision source_identity;
 } On1xSDK_CDeclSource;
 
 typedef struct On1xSDK_CDeclParameter {

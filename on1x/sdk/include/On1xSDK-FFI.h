@@ -9,7 +9,7 @@
 #ifndef ON1X_SDK_FFI_H
 #define ON1X_SDK_FFI_H
 
-#include "On1xSDK-Types.h"
+#include "On1xSDK-Diagnostic.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,63 +25,33 @@ extern "C" {
 #define ON1X_SDK_FFI_MAX_TEXT_BYTES 4096u
 #define ON1X_SDK_FFI_SHA256_HEX_BYTES 64u
 
-typedef struct On1xSDK_FFIText {
-  const char *data;
-  size_t size;
-} On1xSDK_FFIText;
-
-#ifdef __cplusplus
-typedef enum On1xSDK_FFISeverity : uint32_t {
-#else
-typedef enum On1xSDK_FFISeverity {
-#endif
-  ON1X_SDK_FFI_NOTE = 1,
-  ON1X_SDK_FFI_WARNING = 2,
-  ON1X_SDK_FFI_ERROR_SEVERITY = 3
-} On1xSDK_FFISeverity;
-
-#ifndef __cplusplus
-_Static_assert(sizeof(On1xSDK_FFISeverity) == sizeof(uint32_t),
-               "FFI severity requires a 32-bit enum");
-#endif
+/* Source-compatible aliases over the shared ABI-2 text contract. */
+typedef On1xSDK_StringView On1xSDK_FFIText;
+typedef On1xSDK_Severity On1xSDK_FFISeverity;
+enum {
+  ON1X_SDK_FFI_NOTE = ON1X_SDK_NOTE,
+  ON1X_SDK_FFI_WARNING = ON1X_SDK_WARNING,
+  ON1X_SDK_FFI_ERROR_SEVERITY = ON1X_SDK_DIAGNOSTIC_ERROR
+};
 
 /*
  * Source offsets are zero-based half-open byte offsets.  The revision must
  * match the immutable CDecl source identity.  No line/column surrogate is used
  * as source identity.
  */
-typedef struct On1xSDK_FFISpan {
-  uint32_t abi_version;
-  uint32_t struct_size;
-  On1xSDK_FFIText revision;
-  uint64_t begin;
-  uint64_t end;
-  uint64_t source_size;
-} On1xSDK_FFISpan;
-
-typedef struct On1xSDK_FFIDiagnostic {
-  uint32_t abi_version;
-  uint32_t struct_size;
-  On1xSDK_FFIText code;
-  On1xSDK_FFIText message;
-  On1xSDK_FFISeverity severity;
-  On1xSDK_FFISpan primary;
-  const On1xSDK_FFISpan *related;
-  size_t related_count;
-} On1xSDK_FFIDiagnostic;
+typedef On1xSDK_SourceSpan On1xSDK_FFISpan;
+typedef On1xSDK_DiagnosticV2 On1xSDK_FFIDiagnostic;
 
 /*
  * The diagnostic is callback-scoped.  Returning a non-OK status is observable
  * and aborts the operation; an unknown numeric callback status becomes ERROR.
  */
-typedef On1xSDK_Status (*On1xSDK_FFIDiagnosticSink)(
-    void *context, const On1xSDK_FFIDiagnostic *diagnostic);
+typedef On1xSDK_DiagnosticFnV2 On1xSDK_FFIDiagnosticSink;
 
 int on1x_sdk_ffi_text_valid(On1xSDK_FFIText text, int allow_empty);
 int on1x_sdk_ffi_sha256_valid(On1xSDK_FFIText text);
 int on1x_sdk_ffi_span_valid(const On1xSDK_FFISpan *span,
-                            On1xSDK_FFIText expected_revision,
-                            uint64_t expected_source_size);
+                            const On1xSDK_SourceRevision *source);
 
 #ifdef __cplusplus
 }

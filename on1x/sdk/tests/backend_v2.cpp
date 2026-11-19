@@ -112,7 +112,7 @@ extern "C" On1xSDK_Status run(void *userdata,
     case Mode::Unknown:
         return static_cast<On1xSDK_Status>(200);
     case Mode::V2Status:
-        return static_cast<On1xSDK_Status>(8);
+        return ON1X_SDK_UNSATISFIABLE;
     case Mode::Flaky: {
         const char value = state.calls & 1u ? 'a' : 'b';
         return on1x_sdk_output_write(output, &value, 1);
@@ -263,6 +263,9 @@ int main() {
     high.mode = Mode::Unknown;
     CHECK(on1x_sdk_backend_produce(owner.get(), &invoke, &raw) == ON1X_SDK_ERROR);
     high.mode = Mode::V2Status;
+    CHECK(on1x_sdk_backend_produce(owner.get(), &invoke, &raw) ==
+          ON1X_SDK_UNSATISFIABLE);
+    CHECK(raw == nullptr);
     CHECK(on1x_sdk_backend_run(owner.get(), "provider.high", program.get(),
                                ON1X_SDK_MAX_ARTIFACT_BYTES, &raw) ==
           ON1X_SDK_ERROR);

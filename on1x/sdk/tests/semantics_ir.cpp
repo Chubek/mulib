@@ -146,6 +146,11 @@ On1xSDK_Status reject_hir(void *, const On1xSDK_HIRSnapshot *,
     return ON1X_SDK_ERROR;
 }
 
+On1xSDK_Status stale_hir(void *, const On1xSDK_HIRSnapshot *,
+                         const On1xSDK_HIRNodeRef *, size_t) {
+    return ON1X_SDK_STALE;
+}
+
 struct InstructionSearch {
     std::size_t count = 0;
     bool found_constant = false;
@@ -530,6 +535,11 @@ void test_hir_and_mir(const On1xSDK_Context *owner) {
                 ON1X_SDK_ERROR &&
             failure == ON1X_SDK_IR_FAILURE_CALLBACK,
             "HIR callback failure was not propagated");
+    require(on1x_sdk_hir_visit(
+                hir, nullptr, stale_hir, nullptr, &failure) ==
+                ON1X_SDK_STALE &&
+            failure == ON1X_SDK_IR_FAILURE_CALLBACK,
+            "shared HIR callback status was not propagated");
 
     On1xSDK_HIRNodeRef first_function{};
     ok(on1x_sdk_hir_snapshot_function(

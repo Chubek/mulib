@@ -20,6 +20,9 @@
 #include <type_traits>
 
 static_assert(sizeof(On1xSDK_FFISeverity) == sizeof(std::uint32_t));
+static_assert(std::is_same_v<On1xSDK_FFIText, On1xSDK_StringView>);
+static_assert(std::is_same_v<On1xSDK_FFISpan, On1xSDK_SourceSpan>);
+static_assert(std::is_same_v<On1xSDK_FFIDiagnostic, On1xSDK_DiagnosticV2>);
 static_assert(sizeof(On1xSDK_ForeignTypeKind) == sizeof(std::uint32_t));
 static_assert(sizeof(On1xSDK_ForeignOwnership) == sizeof(std::uint32_t));
 static_assert(sizeof(On1xSDK_ForeignProfile) == sizeof(std::uint32_t));
