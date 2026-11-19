@@ -25,6 +25,9 @@ struct LoadedUnit {
  Unit unit;
  // Canonical paths in dependency-first order, each included exactly once.
  std::vector<std::filesystem::path> dependencies;
+ // Exact immutable bytes parsed for each dependency at the same index. This
+ // includes tooling overrides and avoids a racy second filesystem read.
+ std::vector<std::string> dependency_sources;
  std::set<std::string> internal_functions;
  std::vector<InterfaceObligation> interfaces;
 };

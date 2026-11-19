@@ -1,0 +1,4 @@
+import dep;
+fn main() {
+  println(dep.value());
+}

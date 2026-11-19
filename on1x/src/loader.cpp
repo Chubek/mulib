@@ -23,6 +23,7 @@ struct Names {
 };
 struct Module {
  fs::path path;
+ std::string source;
  Unit unit;
  Names names;
  std::vector<Module*> quoted;
@@ -199,10 +200,10 @@ class Loader {
   m->implicit=implicit;
   modules.emplace(path,std::move(storage));stack.push_back(m);
   if(regular(path)){
-    auto replacement=options.source_overrides.find(path);
-    auto source=replacement==options.source_overrides.end()?read_source_file(path.string()):replacement->second;
-   if(source.size()>options.max_bytes-bytes)throw Error(at,"total imported source byte limit exceeded");
-   bytes+=source.size();auto scanned=scan(source,path.string());
+     auto replacement=options.source_overrides.find(path);
+     m->source=replacement==options.source_overrides.end()?read_source_file(path.string()):replacement->second;
+    if(m->source.size()>options.max_bytes-bytes)throw Error(at,"total imported source byte limit exceeded");
+    bytes+=m->source.size();auto scanned=scan(m->source,path.string());
    for(const auto& t:scanned)tokens.insert(t.text);
      m->unit=parse(scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()});
        if((!m->unit.cliches.empty()||!m->unit.cliche_implementations.empty()||
@@ -252,10 +253,10 @@ class Loader {
      }
     for(auto& carrier:m->unit.extensions){
      if(carrier.end.offset-carrier.where.offset>262144)throw Error(carrier.where,"ON1X-CAT-SYNTAX: carrier byte budget exhausted","ON1X-CAT-SYNTAX");
-     carrier.source=source.substr(carrier.where.offset,carrier.end.offset-carrier.where.offset);
+      carrier.source=m->source.substr(carrier.where.offset,carrier.end.offset-carrier.where.offset);
     }
     extensions::expand(m->unit,options.extensions,path.string());
-    m->unit.source_digests.emplace(path.string(),extensions::digest(source));
+     m->unit.source_digests.emplace(path.string(),extensions::digest(m->source));
   }
    for(const auto& d:m->unit.nominals)insert(m->names.types,d.name,Symbol{m,d.name},d.where);
     for(const auto& c:m->unit.cliches)insert(m->names.cliches,c.name,Symbol{m,c.name},c.where);
@@ -757,7 +758,10 @@ public:
      result.unit.extension_evidence.push_back(std::move(evidence));
     }
     result.unit.source_digests.insert(m->unit.source_digests.begin(),m->unit.source_digests.end());
-    if(regular(m->path))result.dependencies.push_back(m->path);
+     if(regular(m->path)){
+      result.dependencies.push_back(m->path);
+      result.dependency_sources.push_back(m->source);
+     }
    }
     bool history_types=false,pricing_types=false;
     for(const auto* m:order)for(const auto& [alias,request]:m->kernels){

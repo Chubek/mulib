@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://on1x.dev/sdk/frontend/ast-view-v1.schema.json",
+  "title": "On1x SDK immutable frontend AST view v1",
+  "description": "Documentation schema for the generic C traversal view. It is independent from the PPX wire schema and never denotes checked HIR.",
+  "type": "object",
+  "required": ["schema", "validation_state", "revision", "root", "sources", "nodes"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "on1x.sdk.frontend-ast/1"},
+    "validation_state": {
+      "enum": ["PARSED_CANDIDATE", "MACRO_EXPANDED_CANDIDATE", "PPX_READMITTED_CANDIDATE"]
+    },
+    "revision": {"type": "integer", "minimum": 1},
+    "root": {"type": "integer", "minimum": 1},
+    "sources": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": {
+        "type": "object",
+        "required": ["source_id", "revision", "path", "byte_size"],
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {"type": "integer", "minimum": 1},
+          "revision": {"type": "integer", "minimum": 1},
+          "path": {"type": "string", "maxLength": 4096},
+          "byte_size": {"type": "integer", "minimum": 0, "maximum": 2097152}
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "maxItems": 262144,
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "tag", "children"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "integer", "minimum": 1},
+          "category": {
+            "enum": ["unit", "declaration", "parameter", "statement", "expression", "pattern", "type_syntax", "import", "macro", "macro_rule", "directive", "attribute", "constraint", "extension"]
+          },
+          "tag": {"type": "string", "minLength": 1, "maxLength": 128},
+          "flags": {"type": "integer", "minimum": 0},
+          "text": {"type": "string"},
+          "hygiene_context": {"type": "integer", "minimum": 0},
+          "source_id": {"type": "integer", "minimum": 0},
+          "source_revision": {"type": "integer", "minimum": 0},
+          "path": {"type": "string", "maxLength": 4096},
+          "byte_begin": {"type": "integer", "minimum": 0},
+          "byte_end": {"type": "integer", "minimum": 0},
+          "line": {"type": "integer", "minimum": 1},
+          "column": {"type": "integer", "minimum": 1},
+          "children": {
+            "type": "array",
+            "maxItems": 262144,
+            "items": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    }
+  }
+}

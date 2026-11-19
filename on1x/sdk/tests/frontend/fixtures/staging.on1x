@@ -1,0 +1,6 @@
+fn make(x:i64) -> code<i64> {
+  return quote { lift(x) + 2 };
+}
+fn main() {
+  println(run(make(40)));
+}

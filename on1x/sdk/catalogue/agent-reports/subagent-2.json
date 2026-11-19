@@ -1,0 +1,190 @@
+{
+  "schema": "on1x.sdk.agent-report/1",
+  "agent": 2,
+  "area": "compiler/frontend",
+  "baseline": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
+  "status": "PARTIAL",
+  "summary": "Executable C11 compiler sessions, immutable sources and revisions, VFS/workspaces, canonical lexing/parsing/module loading, generic AST traversal, macro expansion, PPX-v1 candidate readmission, transactional source candidates, dependency snapshots, incremental refresh, and exact-revision caches. Checked-HIR elaboration and semantic staging lowering reject explicitly because they belong to the semantic SDK.",
+  "facilities": [
+    {
+      "id": "compiler.embedding",
+      "status": "EXECUTABLE",
+      "subset": "thread-confined sessions; bounded options; immutable source revisions; normalized VFS; exact canonical dependency snapshots; compilation refresh; exact source/options cache keys; root-contained workspaces; diagnostics, cancellation, deadline polling, stale and cross-session rejection"
+    },
+    {
+      "id": "frontend.services",
+      "status": "PARTIAL",
+      "subset": "canonical scanner/parser adapters; bounded token and AST views; source maps; visitors; attributes, directives, macro and hygiene inspection; canonical macro expansion; PPX-v1 encode/schema validation/readmission; revision-checked source candidate builders",
+      "unsupported": [
+        "checked-HIR elaboration",
+        "semantic staging lowering",
+        "PPX-v2 transport"
+      ]
+    },
+    {
+      "id": "frontend.generated-scanner-profile",
+      "status": "UNSUPPORTED",
+      "subset": "fallback scanner profile is executable and parity-tested",
+      "blockers": [
+        "on1x/third_party/libstone is empty, so the required ASDL/Aurocks generators are unavailable"
+      ]
+    },
+    {
+      "id": "compiler.abi-v2-host-services",
+      "status": "UNSUPPORTED",
+      "subset": "opaque SDK-released objects and borrowed views avoid a competing allocator; legacy status values 0..7 are preserved and On1xSDK_CompilerCondition carries specific outcomes",
+      "blockers": [
+        "core ABI-v2 allocator, appended status, cancellation, budget, span, and structured diagnostic services are separately owned and unavailable"
+      ]
+    }
+  ],
+  "public_headers": [
+    "on1x/sdk/include/On1xSDK-Compiler.h",
+    "on1x/sdk/include/On1xSDK-Session.h",
+    "on1x/sdk/include/On1xSDK-Options.h",
+    "on1x/sdk/include/On1xSDK-Source.h",
+    "on1x/sdk/include/On1xSDK-SourceMap.h",
+    "on1x/sdk/include/On1xSDK-Dependency.h",
+    "on1x/sdk/include/On1xSDK-Compilation.h",
+    "on1x/sdk/include/On1xSDK-Incremental.h",
+    "on1x/sdk/include/On1xSDK-Cache.h",
+    "on1x/sdk/include/On1xSDK-Workspace.h",
+    "on1x/sdk/include/On1xSDK-VFS.h",
+    "on1x/sdk/include/On1xSDK-Lexer.h",
+    "on1x/sdk/include/On1xSDK-Token.h",
+    "on1x/sdk/include/On1xSDK-Parser.h",
+    "on1x/sdk/include/On1xSDK-Grammar.h",
+    "on1x/sdk/include/On1xSDK-AST.h",
+    "on1x/sdk/include/On1xSDK-ASTBuilder.h",
+    "on1x/sdk/include/On1xSDK-ASTVisitor.h",
+    "on1x/sdk/include/On1xSDK-Syntax.h",
+    "on1x/sdk/include/On1xSDK-Attribute.h",
+    "on1x/sdk/include/On1xSDK-Directive.h",
+    "on1x/sdk/include/On1xSDK-Macro.h",
+    "on1x/sdk/include/On1xSDK-Hygiene.h",
+    "on1x/sdk/include/On1xSDK-PPX.h",
+    "on1x/sdk/include/On1xSDK-Staging.h",
+    "on1x/sdk/include/On1xSDK-Elaborator.h",
+    "on1x/sdk/include/On1xSDK-Frontend.h"
+  ],
+  "changed_files": [
+    "on1x/include/on1x/loader.hpp",
+    "on1x/src/loader.cpp",
+    "on1x/sdk/cmake/Subagent2.cmake",
+    "on1x/sdk/cmake/Integration2.cmake",
+    "on1x/sdk/examples/frontend/embed.c",
+    "on1x/sdk/include/On1xSDK-AST.h",
+    "on1x/sdk/include/On1xSDK-ASTBuilder.h",
+    "on1x/sdk/include/On1xSDK-ASTVisitor.h",
+    "on1x/sdk/include/On1xSDK-Attribute.h",
+    "on1x/sdk/include/On1xSDK-Cache.h",
+    "on1x/sdk/include/On1xSDK-Compilation.h",
+    "on1x/sdk/include/On1xSDK-Compiler.h",
+    "on1x/sdk/include/On1xSDK-Dependency.h",
+    "on1x/sdk/include/On1xSDK-Directive.h",
+    "on1x/sdk/include/On1xSDK-Elaborator.h",
+    "on1x/sdk/include/On1xSDK-Frontend.h",
+    "on1x/sdk/include/On1xSDK-Grammar.h",
+    "on1x/sdk/include/On1xSDK-Hygiene.h",
+    "on1x/sdk/include/On1xSDK-Incremental.h",
+    "on1x/sdk/include/On1xSDK-Lexer.h",
+    "on1x/sdk/include/On1xSDK-Macro.h",
+    "on1x/sdk/include/On1xSDK-Options.h",
+    "on1x/sdk/include/On1xSDK-PPX.h",
+    "on1x/sdk/include/On1xSDK-Parser.h",
+    "on1x/sdk/include/On1xSDK-Session.h",
+    "on1x/sdk/include/On1xSDK-Source.h",
+    "on1x/sdk/include/On1xSDK-SourceMap.h",
+    "on1x/sdk/include/On1xSDK-Staging.h",
+    "on1x/sdk/include/On1xSDK-Syntax.h",
+    "on1x/sdk/include/On1xSDK-Token.h",
+    "on1x/sdk/include/On1xSDK-VFS.h",
+    "on1x/sdk/include/On1xSDK-Workspace.h",
+    "on1x/sdk/schemas/frontend/ast-view-v1.schema.json",
+    "on1x/sdk/schemas/frontend/ppx-readmission-v1.schema.json",
+    "on1x/sdk/src/compiler/Compiler.cpp",
+    "on1x/sdk/src/compiler/Compilation.cpp",
+    "on1x/sdk/src/compiler/FrontendInternal.hpp",
+    "on1x/sdk/src/frontend/Frontend.cpp",
+    "on1x/sdk/tests/frontend/check_package.py",
+    "on1x/sdk/tests/frontend/fixtures/dep.on1x",
+    "on1x/sdk/tests/frontend/fixtures/macro.on1x",
+    "on1x/sdk/tests/frontend/fixtures/main.on1x",
+    "on1x/sdk/tests/frontend/fixtures/staging.on1x",
+    "on1x/sdk/tests/frontend/frontend.cpp",
+    "on1x/sdk/tests/frontend/frontend_c.c",
+    "on1x/sdk/tests/frontend/header_compile.py",
+    "on1x/sdk/tests/frontend/scanner_parity.cpp",
+    "on1x/sdk/catalogue/agent-reports/subagent-2.json"
+  ],
+  "tests": [
+    {
+      "command": "cmake --build /tmp/opencode/sdk2-frontend-strict --target on1x_sdk_test_frontend on1x_sdk_test_frontend_c on1x_sdk_test_scanner_parity on1x_sdk_frontend_embed_example --parallel 2",
+      "result": "PASS",
+      "detail": "strict Debug profile built with -Wall -Wextra -Wpedantic -Werror"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/sdk2-frontend-strict --output-on-failure -R '^on1x\\.sdk\\.frontend'",
+      "result": "PASS",
+      "detail": "6/6 passed: functional C++, strict C11 ABI, scanner parity, C embedding example, independent C11/C++20 headers, installed static consumer"
+    },
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk2-frontend-asan -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined'",
+      "result": "PASS",
+      "detail": "ASan/UBSan profile configured"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/sdk2-frontend-asan --target on1x_sdk_test_frontend on1x_sdk_test_frontend_c on1x_sdk_test_scanner_parity on1x_sdk_frontend_embed_example --parallel 2",
+      "result": "PASS"
+    },
+    {
+      "command": "ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ctest --test-dir /tmp/opencode/sdk2-frontend-asan --output-on-failure -R '^on1x\\.sdk\\.(frontend|frontend_c|frontend_scanner_parity|frontend_example)$'",
+      "result": "PASS",
+      "detail": "4/4 passed with leak detection and halt-on-error"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/sdk2-frontend-fallback --parallel 2",
+      "result": "PASS",
+      "detail": "complete fallback tree built, including on1xc, SDK tests, backends, and package targets"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/sdk2-frontend-fallback --output-on-failure --parallel 4",
+      "result": "ENVIRONMENT_FAILURE",
+      "detail": "97 passed, 1 skipped, 3 failed out of 101. Failures were outside this ownership: on1x.type_checker_hardening_hir requires unavailable LibStone Firestone regex support; on1x.contracts and on1x.mulib assert repository-wide MuLIB inventories."
+    },
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk2-frontend-generated-required -DON1X_REQUIRE_LIBSTONE=ON -DON1X_USE_FALLBACK_SCANNER=OFF -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug",
+      "result": "BLOCKED",
+      "detail": "configuration correctly failed: missing LibStone generators under third_party/libstone/scripts"
+    },
+    {
+      "command": "python3 -m json.tool on1x/sdk/schemas/frontend/ast-view-v1.schema.json >/dev/null && python3 -m json.tool on1x/sdk/schemas/frontend/ppx-readmission-v1.schema.json >/dev/null && git diff --check",
+      "result": "PASS"
+    }
+  ],
+  "cross_owner_requests": [
+    {
+      "owner": 1,
+      "required_api": "versioned ABI-v2 host services for compiler sessions",
+      "reason": "replace the temporary compiler-condition mapping and make allocator, structured diagnostic, cancellation, and budget ownership use the shared core authority",
+      "proposed_signature": "On1xSDK_Status on1x_sdk_session_create_v2(const On1xSDK_SessionDesc *descriptor, On1xSDK_Session **out_session);",
+      "required_descriptor_fields": [
+        "const On1xSDK_Host *host",
+        "const On1xSDK_DiagnosticSinkV2 *diagnostics",
+        "const On1xSDK_Cancellation *cancellation",
+        "const On1xSDK_Budget *budget"
+      ]
+    },
+    {
+      "owner": 3,
+      "required_api": "authoritative AST-candidate semantic admission",
+      "reason": "checked-HIR publication and semantic staging lowering must remain owned by the canonical semantic/type SDK",
+      "proposed_signature": "On1xSDK_Status on1x_sdk_semantics_admit_ast_candidate(const On1xSDK_AST *candidate, const On1xSDK_Options *options, On1xSDK_HIR **out_checked_hir);"
+    }
+  ],
+  "principal_integration": [
+    "include the new compiler/frontend headers from the principal-owned On1xSDK.h umbrella",
+    "merge compiler.embedding as EXECUTABLE and frontend.services as PARTIAL into CAPABILITY_MATRIX.json",
+    "retain Subagent2.cmake and Integration2.cmake hooks in aggregate builds"
+  ]
+}
