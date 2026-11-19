@@ -151,9 +151,11 @@ static int test_success(void)
                  diagnostic.machine_code_length) == 0);
     CHECK(memcmp(diagnostic.message, "discouraged exclamation byte",
                  diagnostic.message_length) == 0);
+    CHECK(diagnostic.primary.source_id == context);
     CHECK(diagnostic.primary.revision == config.source_revision);
-    CHECK(diagnostic.primary.start == 5u);
-    CHECK(diagnostic.primary.end == 6u);
+    CHECK(diagnostic.primary.byte_begin == 5u);
+    CHECK(diagnostic.primary.byte_end == 6u);
+    CHECK(diagnostic.primary.line_begin == UINT32_MAX);
     CHECK(diagnostic.related_count == 0u);
 
     CHECK_STATUS(on1x_sdk_native_context_candidate(

@@ -135,6 +135,7 @@ def main() -> int:
         "-Wpedantic",
         "-Werror",
         f"-I{root / 'runtime'}",
+        f"-I{root / 'sdk/include'}",
         f"-I{root / 'sdk/native/reference_extension'}",
         str(generated_positive),
         str(root / "sdk/native/reference_extension/trusted_bridge.c"),

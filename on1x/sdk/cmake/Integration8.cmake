@@ -38,7 +38,8 @@ add_executable(on1x_sdk_native_reference_host
   "${_on1x_sdk8_sdk}/tests/native/host_profile.c")
 target_include_directories(on1x_sdk_native_reference_host PRIVATE
   "${_on1x_sdk8_root}/runtime"
-  "${_on1x_sdk8_sdk}/native/reference_extension")
+  "${_on1x_sdk8_sdk}/native/reference_extension"
+  "${_on1x_sdk8_sdk}/include")
 target_link_libraries(on1x_sdk_native_reference_host PRIVATE on1x_runtime)
 if(UNIX)
   target_link_libraries(on1x_sdk_native_reference_host PRIVATE m)
@@ -59,7 +60,8 @@ add_executable(on1x_sdk_native_stdlib_positive
   "${_on1x_sdk8_sdk}/native/reference_extension/trusted_bridge.c")
 target_include_directories(on1x_sdk_native_stdlib_positive PRIVATE
   "${_on1x_sdk8_root}/runtime"
-  "${_on1x_sdk8_sdk}/native/reference_extension")
+  "${_on1x_sdk8_sdk}/native/reference_extension"
+  "${_on1x_sdk8_sdk}/include")
 target_link_libraries(on1x_sdk_native_stdlib_positive PRIVATE on1x_runtime)
 if(UNIX)
   target_link_libraries(on1x_sdk_native_stdlib_positive PRIVATE m)
@@ -69,7 +71,8 @@ add_library(on1x_sdk_native_header_cpp OBJECT
   "${_on1x_sdk8_sdk}/tests/native/header_c.c"
   "${_on1x_sdk8_sdk}/tests/native/header_cpp.cpp")
 target_include_directories(on1x_sdk_native_header_cpp PRIVATE
-  "${_on1x_sdk8_sdk}/native/reference_extension")
+  "${_on1x_sdk8_sdk}/native/reference_extension"
+  "${_on1x_sdk8_sdk}/include")
 set_target_properties(on1x_sdk_native_header_cpp PROPERTIES
   C_STANDARD 11
   C_STANDARD_REQUIRED ON

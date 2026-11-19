@@ -17,7 +17,8 @@ static On1xSDKNative_Status invoke_reference(
 {
     const uint32_t status =
         on1x_fn_basis_sdk_reference_extension(context, operation);
-    return status <= ON1X_SDK_NATIVE_IO ? status : ON1X_SDK_NATIVE_ERROR;
+    return status <= ON1X_SDK_NATIVE_UNSATISFIABLE
+        ? (On1xSDKNative_Status)status : ON1X_SDK_NATIVE_ERROR;
 }
 
 const On1xSDKNative_Module on1x_sdk_native_reference_module = {

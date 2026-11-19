@@ -822,14 +822,24 @@ uint32_t basis_sdk_bridge_diagnostic_emit(
     diagnostic->message_length = message_length;
     memcpy(diagnostic->machine_code, code_text, sizeof(code_text) - 1u);
     memcpy(diagnostic->message, message_text, sizeof(message_text) - 1u);
+    diagnostic->primary.source_id = context;
     diagnostic->primary.revision = revision;
-    diagnostic->primary.start = span_start;
-    diagnostic->primary.end = span_end;
+    diagnostic->primary.byte_begin = span_start;
+    diagnostic->primary.byte_end = span_end;
+    diagnostic->primary.line_begin = UINT32_MAX;
+    diagnostic->primary.column_begin = UINT32_MAX;
+    diagnostic->primary.line_end = UINT32_MAX;
+    diagnostic->primary.column_end = UINT32_MAX;
     diagnostic->related_count = related_count;
     if (related_count == 1u) {
+        diagnostic->related[0].source_id = context;
         diagnostic->related[0].revision = revision;
-        diagnostic->related[0].start = related_start;
-        diagnostic->related[0].end = related_end;
+        diagnostic->related[0].byte_begin = related_start;
+        diagnostic->related[0].byte_end = related_end;
+        diagnostic->related[0].line_begin = UINT32_MAX;
+        diagnostic->related[0].column_begin = UINT32_MAX;
+        diagnostic->related[0].line_end = UINT32_MAX;
+        diagnostic->related[0].column_end = UINT32_MAX;
     }
     ++value->diagnostic_count;
     return ON1X_SDK_NATIVE_OK;
