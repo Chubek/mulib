@@ -15,6 +15,9 @@ endforeach()
 install(TARGETS lmuw3 mulib_microchan muw3 microchand
   ARCHIVE DESTINATION lib RUNTIME DESTINATION bin)
 install(FILES lmuw3.lua DESTINATION share/mulib/lmuw3)
+install(DIRECTORY ../muw3lib DESTINATION share/mulib
+  FILES_MATCHING PATTERN "*.lua" PATTERN "*.md"
+  PATTERN "tests" EXCLUDE)
 install(FILES ../microchan/profiles/muw3.prof DESTINATION share/mulib/microchan/profiles)
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include
   FILES_MATCHING PATTERN "*.h" PATTERN "*.inc")

@@ -8,8 +8,8 @@ TEST_FIXTURES := $(wildcard tests/fixtures/*.h)
 EXAMPLES := $(patsubst examples/%.c,build/%,$(wildcard examples/mulib-*.c)) build/fontshape-native build/docir-publication
 EXAMPLES += build/cdd-pipeline
 .PHONY: all check check-shell check-examples check-compiler demo formats docir-formats clean
-.PHONY: muw3 check-muw3 check-tls
-.PHONY: check-openai check-markup
+.PHONY: muw3 check-muw3 check-muw3lib check-tls
+.PHONY: check-openai check-markup check-api-kernels
 .PHONY: check-web-primitives
 WEB_PRIMITIVES_TESTS := pricing extraction browser css alloc hostile
 TESTS += $(addprefix build/test_web_,$(WEB_PRIMITIVES_TESTS))
@@ -29,6 +29,8 @@ check-openai: build/test-openai build/test-openai-alloc build/test-http-stream b
 	python3 tests/test_openai_integration.py --cc "$(CC)"
 check-markup:
 	CC="$(CC)" sh tests/run-markup.sh
+check-api-kernels:
+	CC="$(CC)" CXX="$(CXX)" sh tests/run-api-kernels.sh
 muw3: build/muw3 build/microchand
 build/microchan-runtime.o: library/microchan/runtime.c $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
@@ -43,6 +45,11 @@ check-muw3: muw3 build/test-muw3 build/test-microchan build/test-muw3-mune
 	./build/test-microchan
 	./build/test-muw3-mune
 	python3 tests/test_muw3_integration.py --muw3 build/muw3 --microchand build/microchand
+check-muw3lib: build/muw3
+	@set -eu; for suite in mock core protocols services; do \
+		./build/muw3 --weblet "library/muw3lib/tests/$$suite.lua"; \
+	done
+	python3 library/muw3lib/tests/loopback.py --muw3 build/muw3
 check-tls: muw3 build/test-tls-crypto build/test-signature build/test-x509 build/test-tls
 	./build/test-tls-crypto
 	./build/test-signature
@@ -50,6 +57,11 @@ check-tls: muw3 build/test-tls-crypto build/test-signature build/test-x509 build
 	./build/test-tls
 	python3 tests/test_tls_integration.py --muw3 build/muw3 --x509 build/test-x509 --signature build/test-signature
 build/test-muw3-mune: LDLIBS += -pthread -ldl
+build/test-opencode-client: LDLIBS += -pthread -ldl
+build/test-api-%-impl.o: tests/api-kernels/%.c $(HEADERS) $(TEST_FIXTURES) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+build/test-api-json-http build/test-api-sse-client build/test-api-websocket: build/%: tests/%.c build/test-api-implementation-impl.o build/test-api-dependencies-impl.o | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LDLIBS) -pthread -ldl -o $@
 all: check
 check-shell:
 	CC="$(CC)" sh tests/run_tests.sh

@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1199 headers, 1242 direct dependency edges.
+Inventory: 1207 headers, 1267 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -1217,7 +1217,7 @@ Compatibility group: `parsec`, `peg`.
 | [vcspack](mulib-vcspack.md) | `adler32`, `endian`, `git` |
 | [vcsrepo](mulib-vcsrepo.md) | `git` |
 
-## Stratum 8 (18 modules)
+## Stratum 8 (19 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1238,6 +1238,7 @@ Compatibility group: `parsec`, `peg`.
 | [webframework](mulib-webframework.md) | `http` |
 | [websearch-engine](mulib-websearch-engine.md) | `browser-origin`, `shylock-core` |
 | [websearch-provider](mulib-websearch-provider.md) | `browser-origin`, `shylock-core` |
+| [websocket](mulib-websocket.md) | `base64`, `buffer`, `http`, `uri`, `utf8` |
 | [xll](mulib-xll.md) | `json`, `layout`, `strbuf` |
 
 ## Stratum 9 (11 modules)
@@ -1265,16 +1266,23 @@ Compatibility group: `parsec`, `peg`.
 | [muw3](mulib-muw3.md) | `https`, `socket`, `tls` |
 | [static_file](mulib-static_file.md) | `http_response`, `mime`, `vfs` |
 
-## Stratum 11 (3 modules)
+## Stratum 11 (8 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [browser-documentload](mulib-browser-documentload.md) | `browser-fetch`, `html-treebuilder` |
+| [grpc](mulib-grpc.md) | `buffer`, `muw3` |
 | [muw3-mune](mulib-muw3-mune.md) | `microchan`, `mune`, `muw3`, `yaml` |
 | [openai-client](mulib-openai-client.md) | `multipart`, `muw3`, `openai`, `sse` |
+| [opencode-client](mulib-opencode-client.md) | `buffer`, `json`, `mune`, `muw3`, `sse`, `uri`, `url`, `utf8` |
+| [rest](mulib-rest.md) | `json`, `muw3`, `uri` |
+| [soap](mulib-soap.md) | `muw3`, `xml` |
+| [sse-client](mulib-sse-client.md) | `muw3`, `sse`, `utf8` |
 
-## Stratum 12 (1 modules)
+## Stratum 12 (3 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [browser-engine](mulib-browser-engine.md) | `browser-documentload`, `browser-fetch`, `browser-limits`, `browser-navigation`, `browser-stream` |
+| [graphql](mulib-graphql.md) | `rest` |
+| [jsonrpc](mulib-jsonrpc.md) | `rest` |

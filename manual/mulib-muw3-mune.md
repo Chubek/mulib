@@ -58,7 +58,11 @@ local value = r:json()
 ```
 
 `request` requires a URL, defaults GET, and accepts `method`, `headers`, `query`,
-`body`, `json`, `form`, `bearer`. Body, JSON and form are mutually exclusive. Body
+`body`, `json`, `form`, `bearer`, `follow_redirects`. Set `follow_redirects=false`
+to return a redirect response without following its Location. Omit it (or pass
+`true`) to retain the host's redirect policy; a request cannot enable redirects
+when the host has disabled them. `lmuw3.request_redirect_control` indicates support.
+Body, JSON and form are mutually exclusive. Body
 is a binary Lua string. JSON/form select Content-Type unless supplied. Query/form
 maps contain string keys/values; `{{name,value},...}` preserves duplicates/order.
 Header input is copied logically, never modified. Native header/form lists are

@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1196
-implemented_module_count: 1196
+module_count: 1204
+implemented_module_count: 1204
 modules:
 - name: cdd-catalogue
   header: include/mulib-cdd-catalogue.h
@@ -173,6 +173,14 @@ modules:
   purpose: MuW3 OpenAI REST client with live SSE, multipart, pagination and tool workflows.
   dependencies: [muw3, openai, sse, multipart]
   status: implemented
+- name: opencode-client
+  header: include/mulib-opencode-client.h
+  manual: manual/mulib-opencode-client.md
+  macro: MULIB_IMPL_CDD_MUNE_OPENCODE_CLIENT
+  purpose: Pinned OpenCode V2 HTTP and SSE client with a read-only Mune binding.
+  dependencies: [buffer, json, mune, muw3, sse, uri, url, utf8]
+  status: implemented
+  test: tests/test-opencode-client.c
 - name: openai-server
   header: include/mulib-openai-server.h
   manual: manual/mulib-openai-server.md
@@ -187,6 +195,62 @@ modules:
   purpose: Bounded incremental UTF-8 server-sent event parsing and encoding.
   dependencies: [strbuf, utf8]
   status: implemented
+- name: graphql
+  header: include/mulib-graphql.h
+  manual: manual/mulib-graphql.md
+  macro: MULIB_IMPL_CDD_GRAPHQL
+  purpose: Bounded GraphQL-over-HTTP request and response envelopes.
+  dependencies: [rest]
+  status: implemented
+  test: tests/test-api-json-http.c
+- name: grpc
+  header: include/mulib-grpc.h
+  manual: manual/mulib-grpc.md
+  macro: MULIB_IMPL_CDD_GRPC
+  purpose: Bounded gRPC message framing and binary unary gRPC-Web.
+  dependencies: [buffer, muw3]
+  status: implemented
+  test: tests/test-api-grpc.c
+- name: jsonrpc
+  header: include/mulib-jsonrpc.h
+  manual: manual/mulib-jsonrpc.md
+  macro: MULIB_IMPL_CDD_JSONRPC
+  purpose: JSON-RPC 2.0 envelope validation and HTTP transactions.
+  dependencies: [rest]
+  status: implemented
+  test: tests/test-api-json-http.c
+- name: rest
+  header: include/mulib-rest.h
+  manual: manual/mulib-rest.md
+  macro: MULIB_IMPL_CDD_REST
+  purpose: Status-aware HTTP JSON requests and bounded query construction over MuW3.
+  dependencies: [json, muw3, uri]
+  status: implemented
+  test: tests/test-api-json-http.c
+- name: soap
+  header: include/mulib-soap.h
+  manual: manual/mulib-soap.md
+  macro: MULIB_IMPL_CDD_SOAP
+  purpose: Checked SOAP 1.1 and 1.2 envelope helpers and HTTP transport.
+  dependencies: [muw3, xml]
+  status: implemented
+  test: tests/test-api-soap.c
+- name: sse-client
+  header: include/mulib-sse-client.h
+  manual: manual/mulib-sse-client.md
+  macro: MULIB_IMPL_CDD_SSE_CLIENT
+  purpose: One bounded SSE stream over a caller-configured MuW3 client.
+  dependencies: [muw3, sse, utf8]
+  status: implemented
+  test: tests/test-api-sse-client.c
+- name: websocket
+  header: include/mulib-websocket.h
+  manual: manual/mulib-websocket.md
+  macro: MULIB_IMPL_CDD_WEBSOCKET
+  purpose: RFC 6455 opening handshake and bounded WebSocket frame codecs.
+  dependencies: [base64, buffer, http, uri, utf8]
+  status: implemented
+  test: tests/test-api-websocket.c
 - name: entropy
   header: include/mulib-entropy.h
   manual: manual/mulib-entropy.md
@@ -8604,6 +8668,32 @@ modules:
   status: implemented
   example: examples/modules/sandbox-process.c
 project_files:
+- file: manual/api-kernels.md
+  purpose: Shared protocol kernel integration, trust boundaries and tested scope.
+- file: tests/api-kernels/dependencies.c
+  purpose: Real MuW3, buffer, JSON, and codec implementations for protocol tests.
+- file: tests/api-kernels/implementation.c
+  purpose: Combined C implementation of the seven protocol kernels.
+- file: tests/api-kernels/link.cpp
+  purpose: Separate C++ consumer of all seven protocol kernels.
+- file: tests/api-kernels/http-client.c
+  purpose: C client for the real protocol kernel loopback tests.
+- file: tests/test_api_kernels_loopback.py
+  purpose: Independent HTTP/1.1 peer for the protocol kernel integration tests.
+- file: tests/run-api-kernels.sh
+  purpose: Strict independent C11 implementation and C++17 linkage checks.
+- file: tests/fuzz-api-kernels.c
+  purpose: Bounded WebSocket and gRPC codec round-trip fuzz target.
+- file: include/mune-opencode-client.h
+  purpose: OpenCode V2 single-header implementation and alternate include entry.
+- file: include/detail/mulib-opencode-operations.inc
+  purpose: OpenCode V2 operation metadata generated from the pinned standard.
+- file: tests/fixtures/opencode-client-setup.h
+  purpose: Standalone implementation recipe for OpenCode, Mune and MuW3 tests.
+- file: tools/generate_opencode_client.py
+  purpose: Generate and verify the OpenCode V2 client operation catalog.
+- file: tests/test_opencode_loopback.py
+  purpose: Real TCP loopback test for OpenCode V2 JSON and chunked SSE.
 - file: examples/markup-ir.c
   purpose: Standalone XML-like CST, tree, spans and hybrid graph example.
 - file: manual/markup-ir.md
@@ -8754,6 +8844,74 @@ project_files:
   purpose: IPC-controlled HTTP worker Weblet.
 - file: library/lmuw3/examples/client.lua
   purpose: MicroChan request/reply client Weblet.
+- file: library/muw3lib/README.md
+  purpose: MuW3 service and protocol adapter usage, compatibility and security guide.
+- file: library/muw3lib/CAPABILITIES.md
+  purpose: Supported native API subsets and unsupported browser and wire features.
+- file: library/muw3lib/init.lua
+  purpose: Main import for the native MuW3 client adapter package.
+- file: library/muw3lib/core.lua
+  purpose: Common MuW3 HTTP client, URL components, field validation and request policies.
+- file: library/muw3lib/browser.lua
+  purpose: Synchronous native Fetch-style wrapper and browser capability registry.
+- file: library/muw3lib/protocols/rest.lua
+  purpose: Generic HTTP and JSON client.
+- file: library/muw3lib/protocols/common.lua
+  purpose: Shared protocol envelope, endpoint and media-type checks.
+- file: library/muw3lib/protocols/graphql.lua
+  purpose: GraphQL JSON-over-HTTP adapter.
+- file: library/muw3lib/protocols/jsonrpc.lua
+  purpose: JSON-RPC 2.0 adapter over HTTP.
+- file: library/muw3lib/protocols/soap.lua
+  purpose: SOAP XML envelope and HTTP adapter.
+- file: library/muw3lib/protocols/sse.lua
+  purpose: Buffered Server-Sent Events decoder and HTTP adapter.
+- file: library/muw3lib/protocols/grpc.lua
+  purpose: Explicit unsupported gRPC entry point for the Mune Weblet host.
+- file: library/muw3lib/protocols/websocket.lua
+  purpose: Explicit unsupported WebSocket entry point for the Mune Weblet host.
+- file: library/muw3lib/protocols/unsupported.lua
+  purpose: Protocol capability lookup for unbound transports.
+- file: library/muw3lib/services/_util.lua
+  purpose: Shared provider endpoint, field and identifier validation.
+- file: library/muw3lib/services/github.lua
+  purpose: Selected GitHub repository API operations.
+- file: library/muw3lib/services/gitlab.lua
+  purpose: Selected GitLab project API operations.
+- file: library/muw3lib/services/googlemaps.lua
+  purpose: Selected Google Maps Geocoding, Directions and Places API operations.
+- file: library/muw3lib/services/openai.lua
+  purpose: Selected OpenAI model and inference API operations.
+- file: library/muw3lib/services/opencode.lua
+  purpose: Selected OpenCode V2 operations using the pinned API contract.
+- file: library/muw3lib/services/openweather.lua
+  purpose: Selected OpenWeather geocoding, weather and forecast operations.
+- file: library/muw3lib/services/slack.lua
+  purpose: Selected Slack Web API operations.
+- file: library/muw3lib/services/stripe.lua
+  purpose: Selected Stripe API operations.
+- file: library/muw3lib/services/twilio.lua
+  purpose: Selected Twilio messaging and call API operations.
+- file: library/muw3lib/services/wikipedia.lua
+  purpose: Selected Wikipedia and MediaWiki read operations.
+- file: library/muw3lib/examples/demo.lua
+  purpose: Offline-by-default MuW3 Weblet example.
+- file: library/muw3lib/examples/github.lua
+  purpose: Example GitHub repository Weblet.
+- file: library/muw3lib/examples/jsonrpc.lua
+  purpose: Example JSON-RPC Weblet.
+- file: library/muw3lib/tests/mock.lua
+  purpose: Offline mocked smoke test for package imports and service contracts.
+- file: library/muw3lib/tests/core.lua
+  purpose: Offline MuW3 core and Fetch regression suite.
+- file: library/muw3lib/tests/protocols.lua
+  purpose: Offline protocol adapter regression suite.
+- file: library/muw3lib/tests/services.lua
+  purpose: Offline provider request and credential boundary regression suite.
+- file: library/muw3lib/tests/loopback.lua
+  purpose: Real Mune Weblet exercising MuW3 protocol and redirect behavior.
+- file: library/muw3lib/tests/loopback.py
+  purpose: Independent HTTP loopback peers for the Mune Weblet integration suite.
 - file: library/microchan/runtime.c
   purpose: Separately compiled MicroChan codec, socket client and broker.
 - file: library/microchan/main.c
@@ -13012,3 +13170,31 @@ project_files:
   purpose: "Focused regression suite for test-markup-tree-stream."
 - file: examples/modules/mcp-http.c
   purpose: "Standalone checked usage example for mcp-http."
+- file: examples/modules/graphql.c
+  purpose: "Standalone checked usage example for graphql."
+- file: examples/modules/jsonrpc.c
+  purpose: "Standalone checked usage example for jsonrpc."
+- file: examples/modules/opencode-client.c
+  purpose: "Standalone checked usage example for opencode-client."
+- file: examples/modules/rest.c
+  purpose: "Standalone checked usage example for rest."
+- file: tests/test-api-grpc.c
+  purpose: "Focused regression suite for test-api-grpc."
+- file: tests/test-api-json-http.c
+  purpose: "Focused regression suite for test-api-json-http."
+- file: tests/test-api-soap.c
+  purpose: "Focused regression suite for test-api-soap."
+- file: tests/test-api-sse-client.c
+  purpose: "Focused regression suite for test-api-sse-client."
+- file: tests/test-api-websocket.c
+  purpose: "Focused regression suite for test-api-websocket."
+- file: tests/test-opencode-client.c
+  purpose: "Focused regression suite for test-opencode-client."
+- file: examples/modules/grpc.c
+  purpose: "Standalone checked usage example for grpc."
+- file: examples/modules/soap.c
+  purpose: "Standalone checked usage example for soap."
+- file: examples/modules/sse-client.c
+  purpose: "Standalone checked usage example for sse-client."
+- file: examples/modules/websocket.c
+  purpose: "Standalone checked usage example for websocket."

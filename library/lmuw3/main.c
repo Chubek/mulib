@@ -7,7 +7,8 @@ static void usage (void)
 {
   fputs ("Usage: muw3 [-X METHOD] [-H 'Name: value'] [-d DATA] [-i] [-o FILE]\n"
          "            [--redirects N] [--timeout MS] [--cacert PEM] URL\n"
-         "       muw3 [--cacert PEM] --weblet FILE [ARGS...]\n", stderr);
+         "       muw3 [--redirects N] [--timeout MS] [--cacert PEM] --weblet FILE [ARGS...]\n",
+         stderr);
 }
 static int number (const char *s, unsigned max, unsigned *out)
 {

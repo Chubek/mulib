@@ -18,6 +18,7 @@ headers plus the C/POSIX runtime; no external Lua, curl or data-parser library.
 
 * [Client manual](../../manual/mulib-muw3.md)
 * [Weblet API and embedding](../../manual/mulib-muw3-mune.md)
+* [muw3lib protocol and service adapters](../muw3lib/README.md)
 * [Worker example](examples/worker.lua) and [IPC client](examples/client.lua)
 * [MicroChan service](../microchan/README.md)
 

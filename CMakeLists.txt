@@ -109,6 +109,15 @@ if(MULIB_BUILD_TESTS)
     mulib_register_test(mulib_virtio_devices_link)
   endif()
   find_package(Python3 QUIET COMPONENTS Interpreter)
+  if(TARGET muw3 AND NOT CMAKE_CROSSCOMPILING)
+    foreach(suite mock core protocols services)
+      add_test(NAME mulib_muw3lib_${suite}
+        COMMAND $<TARGET_FILE:muw3> --weblet
+          "${CMAKE_CURRENT_SOURCE_DIR}/library/muw3lib/tests/${suite}.lua")
+      set_tests_properties(mulib_muw3lib_${suite} PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" TIMEOUT 20)
+    endforeach()
+  endif()
   add_executable(mulib_publish_example examples/build-publication.c)
   mulib_test_executable(mulib_publish_example)
   mulib_register_test(mulib_publish_example)
@@ -168,6 +177,8 @@ if(MULIB_BUILD_TESTS)
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed_lmuw3.py --check)
     add_test(NAME mulib_openai_catalog
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_openai.py --check)
+    add_test(NAME mulib_opencode_catalog
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_opencode_client.py --check)
     if(UNIX)
       add_test(NAME mulib_openai_integration
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_openai_integration.py --cc ${CMAKE_C_COMPILER})
@@ -178,6 +189,12 @@ if(MULIB_BUILD_TESTS)
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_muw3_integration.py
           --muw3 $<TARGET_FILE:muw3> --microchand $<TARGET_FILE:microchand>)
       set_tests_properties(mulib_muw3_integration PROPERTIES TIMEOUT 60)
+      if(NOT CMAKE_CROSSCOMPILING)
+        add_test(NAME mulib_muw3lib_loopback
+          COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/library/muw3lib/tests/loopback.py"
+            --muw3 $<TARGET_FILE:muw3>)
+        set_tests_properties(mulib_muw3lib_loopback PROPERTIES TIMEOUT 30)
+      endif()
       find_program(MULIB_OPENSSL_ORACLE openssl)
       if(MULIB_OPENSSL_ORACLE)
         add_test(NAME mulib_tls_interoperability
@@ -231,6 +248,9 @@ if(MULIB_BUILD_TESTS)
 
   file(GLOB focused_tests CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test-*.c")
+  add_library(mulib_api_kernels_implementation OBJECT
+    tests/api-kernels/implementation.c tests/api-kernels/dependencies.c)
+  mulib_test_executable(mulib_api_kernels_implementation)
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING
       AND CMAKE_SIZEOF_VOID_P EQUAL 8 AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|aarch64)$")
     # The worker must use the production syscall policy, not an ASan runtime.
@@ -258,6 +278,9 @@ if(MULIB_BUILD_TESTS)
     endif()
     add_executable("mulib_${test_name}" "${source_file}")
     mulib_test_executable("mulib_${test_name}")
+    if(test_name MATCHES "^test-api-(json-http|sse-client|websocket)$")
+      target_sources("mulib_${test_name}" PRIVATE $<TARGET_OBJECTS:mulib_api_kernels_implementation>)
+    endif()
     if(test_name MATCHES "^test_(parallel|shebang|sh_)")
       target_compile_definitions("mulib_${test_name}" PRIVATE _POSIX_C_SOURCE=200809L)
     endif()
@@ -291,6 +314,13 @@ if(MULIB_BUILD_TESTS)
       CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS NO)
     mulib_test_executable(mulib_test_markup_cpp)
     mulib_register_test(mulib_test_markup_cpp)
+
+    add_executable(mulib_test_api_kernels_cpp tests/api-kernels/link.cpp
+      $<TARGET_OBJECTS:mulib_api_kernels_implementation>)
+    set_target_properties(mulib_test_api_kernels_cpp PROPERTIES
+      CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS NO)
+    mulib_test_executable(mulib_test_api_kernels_cpp)
+    mulib_register_test(mulib_test_api_kernels_cpp)
 
     add_executable(mulib_test_hash_cpp tests/test_hash_cpp.cpp tests/hash_implementations.c)
     set_target_properties(mulib_test_hash_cpp PROPERTIES
@@ -329,6 +359,15 @@ if(MULIB_BUILD_TESTS)
     endforeach()
   endif()
   if(Python3_Interpreter_FOUND)
+    if(UNIX AND NOT CMAKE_CROSSCOMPILING)
+      add_executable(mulib_test_api_kernels_http
+        tests/api-kernels/http-client.c $<TARGET_OBJECTS:mulib_api_kernels_implementation>)
+      mulib_test_executable(mulib_test_api_kernels_http)
+      add_test(NAME mulib_api_kernels_loopback
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_api_kernels_loopback.py
+          --client $<TARGET_FILE:mulib_test_api_kernels_http>)
+      set_tests_properties(mulib_api_kernels_loopback PROPERTIES TIMEOUT 20)
+    endif()
     foreach(role client server)
       add_executable("mulib_mcp_${role}_example" "examples/modules/mcp-${role}.c")
       mulib_test_executable("mulib_mcp_${role}_example")
@@ -343,6 +382,12 @@ if(MULIB_BUILD_TESTS)
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_mcp_http.py
           --fixture $<TARGET_FILE:mulib_test_mcp_http>)
       set_tests_properties(mulib_mcp_http_loopback PROPERTIES TIMEOUT 30)
+      if(UNIX)
+        add_test(NAME mulib_opencode_loopback
+          COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_opencode_loopback.py
+            --client $<TARGET_FILE:mulib_test-opencode-client>)
+        set_tests_properties(mulib_opencode_loopback PROPERTIES TIMEOUT 20)
+      endif()
     endif()
     add_test(NAME mulib_compression_interoperability
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_compression.py
@@ -567,6 +612,12 @@ if(MULIB_BUILD_FUZZER)
   target_compile_options(mulib_fuzz_markup_ir PRIVATE -fsanitize=fuzzer,address,undefined
     -fno-sanitize-recover=all -fno-omit-frame-pointer)
   target_link_options(mulib_fuzz_markup_ir PRIVATE -fsanitize=fuzzer,address,undefined)
+  add_executable(mulib_fuzz_api_kernels tests/fuzz-api-kernels.c
+    tests/api-kernels/implementation.c tests/api-kernels/dependencies.c)
+  mulib_test_executable(mulib_fuzz_api_kernels)
+  target_compile_options(mulib_fuzz_api_kernels PRIVATE -fsanitize=fuzzer,address,undefined
+    -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  target_link_options(mulib_fuzz_api_kernels PRIVATE -fsanitize=fuzzer,address,undefined)
   add_executable(mulib_fuzz_headers tests/fuzz_headers.c)
   mulib_test_executable(mulib_fuzz_headers)
   target_compile_options(mulib_fuzz_headers PRIVATE -fsanitize=fuzzer,address,undefined

@@ -169,17 +169,19 @@ static mulib_mune_status_t mulib_muw3_native_ (mulib_mune_state_t *s,
   if (!argc || !(op = mulib_muw3_string_ (a[0], NULL, 1))) return MULIB_MUNE_INVALID;
   roots = mulib_mune_result_create (s);
   if (!roots) return MULIB_MUNE_MEMORY;
-  if (!strcmp (op, "request") && argc == 5) {
+  if (argc == 5 && (!strcmp (op, "request") || !strcmp (op, "request_no_redirect"))) {
     mulib_http_header_t headers[256];
+    mulib_muw3_client_t client = e->client;
     mulib_muw3_request_t request = {0};
     mulib_muw3_response_t response = {0};
+    if (!strcmp (op, "request_no_redirect")) client.options.max_redirects = 0;
     request.method = mulib_muw3_string_ (a[1], NULL, 1);
     request.url = mulib_muw3_string_ (a[2], NULL, 1);
     request.body = mulib_muw3_string_ (a[4], &request.body_length, 0);
     request.headers = headers;
     if (request.method && request.url && request.body
         && mulib_muw3_fields_ (s, a[3], headers, &request.header_count)) {
-      code = mulib_muw3_perform (&e->client, &request, &response);
+      code = mulib_muw3_perform (&client, &request, &response);
       error = mulib_muw3_strerror (code);
       if (code == MULIB_MUW3_OK) {
         code = 0;

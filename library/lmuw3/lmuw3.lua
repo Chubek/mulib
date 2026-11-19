@@ -1,6 +1,6 @@
 -- MuW3's Weblet library. Native I/O and data parsers are supplied by MuLIB.
 local native = assert(__mulib_muw3, 'lmuw3 requires a MuW3 Mune host')
-local M = {version = '1.0'}
+local M = {version = '1.1', request_redirect_control = true}
 local array_mt = {}
 M.null = setmetatable({}, {__tostring = function() return 'null' end})
 function M.array(t) return setmetatable(t or {}, array_mt) end
@@ -83,6 +83,8 @@ function response:expect(status)
 end
 function M.request(spec)
   assert(type(spec) == 'table' and type(spec.url) == 'string', 'request requires url')
+  assert(spec.follow_redirects == nil or type(spec.follow_redirects) == 'boolean',
+    'follow_redirects must be a boolean')
   local headers, body, url = fields(spec.headers), spec.body or '', spec.url
   local modes = (spec.body ~= nil and 1 or 0) + (spec.json ~= nil and 1 or 0) + (spec.form ~= nil and 1 or 0)
   assert(modes <= 1, 'choose body, json or form')
@@ -101,7 +103,8 @@ function M.request(spec)
     assert(not url:find('#', 1, true), 'query URL must not contain a fragment')
     url = url .. (url:find('?', 1, true) and '&' or '?') .. M.form(spec.query)
   end
-  local r = call('request', spec.method or 'GET', url, headers, body)
+  local op = spec.follow_redirects == false and 'request_no_redirect' or 'request'
+  local r = call(op, spec.method or 'GET', url, headers, body)
   return setmetatable(r, {__index = response})
 end
 function M.get(url, headers) return M.request{url=url, headers=headers} end

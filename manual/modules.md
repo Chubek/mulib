@@ -38,7 +38,9 @@ consult each manual's exact supported syntax, errors, and limits.
 | Indexes and differences | [avl](mulib-avl.md), [b+tree](mulib-b+tree.md), [hattrie](mulib-hattrie.md), [txtdiff](mulib-txtdiff.md), [mmdiff](mulib-mmdiff.md) |
 | DNS | [wire format](mulib-dns.md), [client](mulib-dnsclient.md), [cache](mulib-dnscache.md), [resolver](mulib-dnsresolver.md), [nameserver](mulib-nameserver.md), [historical dnsnmeserver facade](mulib-dnsnmeserver.md) |
 | HTTP applications | [webclient](mulib-webclient.md), [webframework](mulib-webframework.md), [fileserver](mulib-fileserver.md), [reverse proxy](mulib-revproxy.md), [minicurl](mulib-minicurl.md), [miniwget](mulib-miniwget.md), [minincat](mulib-minincat.md) |
-| Weblets and messaging | [MuW3 client](mulib-muw3.md), [Mune/lmuw3 engine](mulib-muw3-mune.md), [MicroChan protocol and daemon](mulib-microchan.md) |
+| HTTP and wire protocols | [REST, GraphQL, JSON-RPC, SOAP, gRPC-Web, SSE and WebSocket](api-kernels.md) |
+| OpenCode V2 | [Schema-derived C client and read-only Mune binding](mulib-opencode-client.md) |
+| Weblets and messaging | [MuW3 client](mulib-muw3.md), [Mune/lmuw3 engine](mulib-muw3-mune.md), [muw3lib service and protocol adapters](../library/muw3lib/README.md), [MicroChan protocol and daemon](mulib-microchan.md) |
 | Model Context Protocol | [MCP client](mulib-mcp-client.md) and [server](mulib-mcp-server.md): discovery, tools, resources, prompts, and completion over stdio, with optional legacy handshake; [MCP HTTP](mulib-mcp-http.md) adds bounded current Streamable HTTP framing |
 | Markup IR | [Tree, token stream, stand-off spans, graph and bridge](markup-ir.md): byte-preserving markup representations and checked conversions |
 | Native TLS and cryptography | [TLS 1.3](mulib-tls.md), [X.509](mulib-x509.md), [signatures](mulib-signature.md), [X25519](mulib-x25519.md), [AES-GCM](mulib-aes-gcm.md), [HKDF](mulib-hkdf.md), [entropy](mulib-entropy.md), [DER](mulib-der.md) |
