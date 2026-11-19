@@ -16,6 +16,10 @@ renderer, native and Lua GUI layers, explicit presentation lifetimes, and the
 device-free `make check-graphics` validation gate. Optional backend helpers are
 not complete desktop protocols or GPU drivers.
 
+The [Linux notebook desktop overlay](notebook-desktop.md) adds bounded notebook,
+scene, window policy, X11, Wayland and execution kernels. Its separate device-free
+build gate is `make check-notebook-desktop`.
+
 Every implemented module has a manual and a runnable example. Use each manual's
 source/build reference for implementation switches and dependencies.
 

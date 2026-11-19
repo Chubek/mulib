@@ -34,6 +34,18 @@ mulib_glx_present_complete(mulib_glx_present_t *p,uint64_t serial)
  if(!p||!p->pending||serial!=p->serial)return 0;
  p->presented=serial;
  p->pending=0;
+  return 1;
+}
+/* Explicit backend-loss path, NOT a timeout/retry shortcut. The caller must
+ * first disconnect/stop the backend and prove it no longer reads submitted
+ * pixels. Unlike complete(), abort does not claim presentation/completion.
+ * Serial remains consumed; damage accumulated since submission is retained.
+ * Repaint the full new target before submitting to a replacement backend. */
+static inline int
+mulib_glx_present_abort(mulib_glx_present_t *p,uint64_t serial)
+{
+ if(!p||!p->pending||serial!=p->serial)return 0;
+ p->pending=0;
  return 1;
 }
 static inline int

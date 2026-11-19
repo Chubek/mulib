@@ -47,6 +47,12 @@ clicks on that same widget within one frame.
 `g->last_action` records the successful action most recently returned by
 `mig_interact`; sliders use its release coordinates for an entire click delivered
 in one batch, even if a later motion leaves the control.
+Draggable window handles also retain captured gesture endpoints in that bounded
+action queue. Those records are not clicks and are never returned by
+`mig_interact`. Release outside the original handle completes a drag, while
+later motion after release cannot change its endpoint. Escape, focus loss,
+modal-scope changes, malformed input and action allocation failure cancel pending
+drag delivery.
 
 Button codes are normalized (primary is 0), key codes use Linux evdev numbers,
 and modifier bit 0 is Shift. Feed MOTION before BUTTON; button coordinates come
@@ -91,9 +97,53 @@ spatial/gamepad navigation or focus-tab-index API yet.
 
 `mulib_immgtk_window_begin/end` register passive background occlusion, so an empty
 later equal-z window blocks hits to earlier content without adding a keyboard
-tab stop. Title dragging uses the original press position, including when
-motion follows the press in the same batch. Windows are not automatically
-raised/reordered, resized, collapsed, or persisted.
+tab stop. Title dragging uses the original press position, including an entire
+press/move/release batch or a capture held across frames after the title moves
+away from the press point. A host-moved handle cannot accept a stale new press.
+The original begin/end signatures retain their move-only behavior.
+
+### Resizable/collapsible windows
+
+Use the additive `mulib_immgtk_window_begin_ex` for bottom-right resizing and a
+collapse control:
+
+```c
+/* Retain these in the host, not in a per-frame temporary. */
+mgx_rect bounds = {20, 20, 320, 240};
+int collapsed = 0;
+/* ... inside a native frame ... */
+mulib_immgtk_window_scope_t window;
+if (mulib_immgtk_window_begin_ex(g, "Inspector", &bounds,
+        MIG_WINDOW_RESIZABLE | MIG_WINDOW_COLLAPSIBLE, &collapsed,
+        120, 80, &window)) {
+    if (window.content.h > 0) {
+        /* Submit content using window.content; both hits and drawing are clipped. */
+    }
+    mulib_immgtk_window_end(g, &window);
+}
+```
+
+Minimum dimensions must both be at least 40, and initial bounds must meet them.
+The names `#background`, `#title`, `#collapse` and `#resize` are reserved within
+the window's ID scope; use different content IDs.
+Resizing clamps to those minima and representable geometry without changing the
+origin. `MIG_WINDOW_NO_MOVE` disables title dragging; changing to it cancels an
+existing title capture. The 12-pixel resize grip is painted/hit-tested after its
+own content, but remains below a later equal-z window. Item-array growth by
+content does not invalidate grip bookkeeping.
+
+The collapse control supports pointer activation and the normal Tab/Enter/Space
+navigation. Collapsing retains the expanded bounds, draws/hits only the
+24-pixel title bar and sets `window.content.h` to zero. A successful begin
+**always** needs end, including collapsed windows. Prefer skipping collapsed
+content rather than executing arbitrary application-side widget code.
+
+Invalid geometry/options, duplicate window IDs and window setup allocation
+failure are rejected before consuming actions, changing bounds/collapse,
+registering items or drawing. Allocation capacity may grow on failure; an entire
+frame is still not transactional. Windows are not automatically raised/reordered
+or persisted. The host must submit them in painter order, and should invalidate
+previous routing before external structural/z-order changes as described above.
 
 ## Popups and modals
 
@@ -152,6 +202,9 @@ From the repository root (executables may instead be placed in `build/`):
 cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
   tests/test-gfx-immgtk.c -lm -ldl -o /tmp/opencode/test-gfx-immgtk
 /tmp/opencode/test-gfx-immgtk
+cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+  tests/test-gfx-immgtk-followup.c -lm -ldl -o /tmp/opencode/test-gfx-immgtk-followup
+/tmp/opencode/test-gfx-immgtk-followup
 cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
   tests/gfx-immgtk-alloc.c -lm -o /tmp/opencode/gfx-immgtk-alloc
 /tmp/opencode/gfx-immgtk-alloc
@@ -173,3 +226,7 @@ certification. Existing `test_immgtk.c` (including `immgtk-widgets.lua`),
 `test_immgtk_drawlist.c`, `test_immgtk_canvas.c` and `test_immgtk_plot.c` remain
 separate regression gates. No physical devices or display-server integration
 are exercised by these headless tests.
+The follow-up window suite checks complete and multi-frame drags, resize minima,
+release-time coordinates, collapse keyboard focus, real clipped pixels, modal
+blocking, empty-window occlusion, stale geometry, input cancellation and injected
+setup/action allocation failures.

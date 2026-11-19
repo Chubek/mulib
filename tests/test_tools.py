@@ -42,18 +42,27 @@ class Tools(unittest.TestCase):
                 'static inline int mulib_gfx_core(void) { return 7; }\n')
             (root / 'include/mulib-glx-surface.h').write_text(
                 '#include "mulib-glx-core.h"\n')
+            (root / 'include/mulib-glx-scene.h').write_text(
+                'static inline int mulib_scene(void) { return 1; }\n')
+            notebook = ('- name: glx-scene\n  header: include/mulib-glx-scene.h\n'
+                        '  implementation: static-inline\n  status: bounded\n'
+                        '  profile: notebook-desktop\n'
+                        '  purpose: Independent notebook scene.\n  dependencies: []\n')
             manifest = root / 'MANIFEST.yaml'
             manifest.write_text(
                 'module_count: 1\nimplemented_module_count: 1\nmodules:\n'
                 '- name: a\n  header: include/mulib-a.h\n'
                 '  purpose: User-authored scope.\n  status: implemented\n'
-                '  macro: MULIB_IMPL_A\n  dependencies: []\n'
+                '  macro: MULIB_IMPL_A\n  dependencies: []\n' + notebook +
                 'project_files:\n- file: user.c\n  purpose: User work.\n')
             manifest.write_text(graphics.updated_manifest(root))
             expected = manifest.read_text()
-            self.assertIn('module_count: 3\n', expected)
-            self.assertIn('bounded_module_count: 2\n', expected)
-            self.assertEqual(expected.count('  status: bounded\n'), 2)
+            self.assertIn('module_count: 4\n', expected)
+            self.assertIn('bounded_module_count: 3\n', expected)
+            self.assertEqual(expected.count('  status: bounded\n'), 3)
+            self.assertIn(notebook, expected)
+            self.assertEqual([p.name for p in graphics.headers(root)],
+                             ['mulib-glx-core.h', 'mulib-glx-surface.h'])
             self.assertIn('  dependencies: [glx-core]\n', expected)
             self.assertIn('purpose: User-authored scope.', expected)
             self.assertIn('- file: user.c\n  purpose: User work.', expected)

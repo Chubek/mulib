@@ -44,4 +44,71 @@ static inline int mulib_x11_events_decode(const unsigned char p[32],mgx_event *e
     if(e->type==MGX_EVENT_KEY)e->code=e->code>=8?e->code-8:0;
     return 1;
 }
+
+enum {
+    MULIB_X11_DESTROY_NOTIFY=17, MULIB_X11_UNMAP_NOTIFY=18,
+    MULIB_X11_MAP_NOTIFY=19, MULIB_X11_MAP_REQUEST=20,
+    MULIB_X11_REPARENT_NOTIFY=21, MULIB_X11_CONFIGURE_NOTIFY=22,
+    MULIB_X11_CONFIGURE_REQUEST=23, MULIB_X11_PROPERTY_NOTIFY=28,
+    MULIB_X11_CLIENT_MESSAGE=33
+};
+enum {
+    MULIB_X11_CW_X=1u<<0, MULIB_X11_CW_Y=1u<<1,
+    MULIB_X11_CW_WIDTH=1u<<2, MULIB_X11_CW_HEIGHT=1u<<3,
+    MULIB_X11_CW_BORDER=1u<<4, MULIB_X11_CW_SIBLING=1u<<5,
+    MULIB_X11_CW_STACK_MODE=1u<<6
+};
+typedef struct {
+    uint32_t event,window,parent,sibling,atom,time;
+    int16_t x,y;
+    uint16_t width,height,border,mask;
+    uint8_t type,synthetic,override_redirect,detail;
+    unsigned char data[20]; /* ClientMessage payload in wire byte order. */
+} mulib_x11_wm_event;
+/* Reusable core-event decoder. 1 decoded, 0 unsupported, -1 malformed.
+ * Synthetic events are identified here, not treated as server state. */
+static inline int mulib_x11_events_wm(const unsigned char *p,size_t n,mulib_x11_wm_event *out) {
+    if(!p||!out||n<32) { errno=EINVAL; return -1; }
+    mulib_x11_wm_event e={0};
+    e.type=p[0]&127;
+    e.synthetic=(p[0]>>7);
+    switch(e.type) {
+    case MULIB_X11_DESTROY_NOTIFY:
+    case MULIB_X11_UNMAP_NOTIFY:
+    case MULIB_X11_MAP_NOTIFY:
+    case MULIB_X11_MAP_REQUEST:
+    case MULIB_X11_REPARENT_NOTIFY:
+    case MULIB_X11_CONFIGURE_NOTIFY:
+    case MULIB_X11_CONFIGURE_REQUEST:
+        e.event=mx11_get32(p+4); e.window=mx11_get32(p+8);
+        if(e.type==MULIB_X11_UNMAP_NOTIFY)e.detail=p[12]; /* from-configure */
+        if(e.type==MULIB_X11_MAP_NOTIFY)e.override_redirect=p[12];
+        if(e.type==MULIB_X11_REPARENT_NOTIFY) {
+            e.parent=mx11_get32(p+12);
+            e.x=(int16_t)mx11_get16(p+16); e.y=(int16_t)mx11_get16(p+18);
+            e.override_redirect=p[20];
+        }
+        if(e.type==MULIB_X11_CONFIGURE_NOTIFY||e.type==MULIB_X11_CONFIGURE_REQUEST) {
+            e.sibling=mx11_get32(p+12);
+            e.x=(int16_t)mx11_get16(p+16); e.y=(int16_t)mx11_get16(p+18);
+            e.width=mx11_get16(p+20); e.height=mx11_get16(p+22);
+            e.border=mx11_get16(p+24);
+            if(e.type==MULIB_X11_CONFIGURE_NOTIFY)e.override_redirect=p[26];
+            else { e.detail=p[1]; e.mask=mx11_get16(p+26); }
+        }
+        break;
+    case MULIB_X11_PROPERTY_NOTIFY:
+        e.window=mx11_get32(p+4); e.atom=mx11_get32(p+8);
+        e.time=mx11_get32(p+12); e.detail=p[16];
+        break;
+    case MULIB_X11_CLIENT_MESSAGE:
+        e.window=mx11_get32(p+4); e.atom=mx11_get32(p+8); e.detail=p[1];
+        if(e.detail!=8&&e.detail!=16&&e.detail!=32) { errno=EPROTO; return -1; }
+        memcpy(e.data,p+12,sizeof e.data);
+        break;
+    default: return 0;
+    }
+    *out=e;
+    return 1;
+}
 #endif

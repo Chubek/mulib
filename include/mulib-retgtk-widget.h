@@ -15,9 +15,57 @@ typedef struct mret_widget_route {
 struct mulib_retgtk_widget{mulib_retgtk_object_t object;const mulib_retgtk_widget_ops *ops;mulib_retgtk_widget_t *parent,**children;size_t n,cap;mulib_retgtk_signal_t signals;mgx_rect bounds;mulib_gui_size_t desired;int visible,enabled,focusable,dirty,pressed,hover,focused;double weight,value,lo,hi;char *text;void *data;uint32_t color;unsigned kind;
     mret_widget_route *routes;
     const mulib_retgtk_type_t *type;
+    /* Only the root owns pending screen-space damage. The ordinary dirty flag
+     * remains a subtree/layout hint for compatibility with existing callers. */
+    mgx_rect damage;
+    int damage_pending, damage_full, layout_retry, arranging;
 };
 enum{MRET_CLICK=1,MRET_CHANGED,MRET_FOCUS,MRET_CLOSE};
-static inline void mulib_retgtk_widget_invalidate(mulib_retgtk_widget_t *w){for(;w;w=w->parent)w->dirty=1;}
+static inline void mret_widget_damage(mulib_retgtk_widget_t *w, mgx_rect rect)
+{
+    if (!w) return;
+    mulib_retgtk_widget_t *root = w;
+    for (mulib_retgtk_widget_t *p = w->parent; p; p = p->parent) {
+        rect = mgx_intersect(rect, p->bounds);
+        root = p;
+    }
+    root->damage_pending = 1;
+    if (rect.w <= 0 || rect.h <= 0 || root->damage_full) return;
+    if (root->damage.w <= 0 || root->damage.h <= 0) {
+        root->damage = rect;
+        return;
+    }
+    int64_t x = root->damage.x < rect.x ? root->damage.x : rect.x;
+    int64_t y = root->damage.y < rect.y ? root->damage.y : rect.y;
+    int64_t right = (int64_t)root->damage.x + root->damage.w;
+    int64_t bottom = (int64_t)root->damage.y + root->damage.h;
+    if ((int64_t)rect.x + rect.w > right) right = (int64_t)rect.x + rect.w;
+    if ((int64_t)rect.y + rect.h > bottom) bottom = (int64_t)rect.y + rect.h;
+    if (right - x > INT_MAX || bottom - y > INT_MAX) {
+        root->damage_full = 1;
+        return;
+    }
+    root->damage = (mgx_rect){(int)x, (int)y, (int)(right-x), (int)(bottom-y)};
+}
+static inline void mulib_retgtk_widget_invalidate(mulib_retgtk_widget_t *w)
+{
+    if (w) mret_widget_damage(w, w->bounds);
+    for (; w; w=w->parent) {
+        w->dirty=1;
+        /* Layout callbacks may append/remove/reveal children after snapshots.
+         * Such changes need another layout, not just this frame's repaint. */
+        if (!w->parent && w->arranging) w->layout_retry=1;
+    }
+}
+/* Void arrangement callbacks report scratch OOM this way so an incremental
+ * scene does not permanently settle on stale child geometry. */
+static inline void mulib_retgtk_widget_layout_retry(mulib_retgtk_widget_t *w)
+{
+    if (!w) return;
+    while (w->parent) w=w->parent;
+    w->layout_retry=1;
+    mulib_retgtk_widget_invalidate(w);
+}
 static inline void mulib_retgtk_widget_unref(mulib_retgtk_widget_t *w){if(w)mulib_retgtk_object_unref(&w->object);}
 enum{MRET_ROUTE_CAPTURE=1,MRET_ROUTE_FOCUS,MRET_ROUTE_HOVER};
 /* Intrusive route links own one widget ref. They live inside an immovable router. */
@@ -153,10 +201,17 @@ static inline mulib_gui_size_t mulib_retgtk_widget_measure(mulib_retgtk_widget_t
 }
 static inline void mulib_retgtk_widget_arrange(mulib_retgtk_widget_t *w,mgx_rect b){
     if(!w||!mulib_retgtk_object_ref(&w->object))return;
+    if(w->bounds.x!=b.x||w->bounds.y!=b.y||w->bounds.w!=b.w||w->bounds.h!=b.h){
+        /* Both positions matter: shrinking/moving must erase the old pixels. */
+        mret_widget_damage(w,w->bounds);
+        mret_widget_damage(w,b);
+        for(mulib_retgtk_widget_t *p=w;p;p=p->parent)p->dirty=1;
+    }
     w->bounds=b;
     if(w->ops&&w->ops->arrange)w->ops->arrange(w,b);
     else{
         size_t n=0;mulib_retgtk_widget_t **v=mulib_retgtk_widget_children_snapshot(w,&n);
+        if(w->n&&!v)mulib_retgtk_widget_layout_retry(w);
         for(size_t i=0;i<n;i++)if(v[i]->parent==w)mulib_retgtk_widget_arrange(v[i],b);
         mulib_retgtk_widget_children_release(v,n);
     }
@@ -164,10 +219,15 @@ static inline void mulib_retgtk_widget_arrange(mulib_retgtk_widget_t *w,mgx_rect
 }
 static inline void mulib_retgtk_widget_paint(mulib_retgtk_widget_t *w,mret_paint *p){
     if(!w||!w->visible||!p||!p->surface||!mulib_retgtk_object_ref(&w->object))return;
-    mgx_rect old=p->surface->clip;p->surface->clip=mgx_intersect(old,w->bounds);
+    mgx_rect old=p->surface->clip,clip=mgx_intersect(old,w->bounds);
+    if(clip.w<=0||clip.h<=0){mulib_retgtk_widget_unref(w);return;}
+    p->surface->clip=clip;
     w->dirty=0;
     if(w->ops&&w->ops->paint)w->ops->paint(w,p);
+    size_t expected=w->n;
     size_t n=0;mulib_retgtk_widget_t **v=mulib_retgtk_widget_children_snapshot(w,&n);
+    /* A failed snapshot must not silently consume the last repaint request. */
+    if(expected&&!v)mulib_retgtk_widget_invalidate(w);
     if(w->visible)for(size_t i=0;i<n;i++)if(v[i]->parent==w)mulib_retgtk_widget_paint(v[i],p);
     mulib_retgtk_widget_children_release(v,n);p->surface->clip=old;
     mulib_retgtk_widget_unref(w);

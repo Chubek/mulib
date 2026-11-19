@@ -15,6 +15,7 @@ static inline void mret_grid_measure(mulib_retgtk_widget_t *w,
     size_t n = 0, snapshot_n = 0, cols = w->kind ? w->kind : 1;
     mulib_retgtk_widget_t **children =
         mulib_retgtk_widget_children_snapshot(w, &snapshot_n);
+    if (w->n && !children) mulib_retgtk_widget_layout_retry(w);
     int width = 0, height = 0, pad = mgx_max(0, mgx_int(w->lo));
     for (size_t i = 0; i < snapshot_n; ++i) {
         if (children[i]->parent != w || !children[i]->visible) continue;
@@ -38,6 +39,7 @@ static inline void mret_grid_arrange(mulib_retgtk_widget_t *w, mgx_rect r)
     size_t snapshot_n = 0;
     mulib_retgtk_widget_t **children =
         mulib_retgtk_widget_children_snapshot(w, &snapshot_n);
+    if (w->n && !children) mulib_retgtk_widget_layout_retry(w);
     size_t rows = 1 + (n - 1) / cols, k = 0;
     r.w = mgx_max(0, r.w);
     r.h = mgx_max(0, r.h);

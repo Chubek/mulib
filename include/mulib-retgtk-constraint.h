@@ -40,6 +40,7 @@ static inline void mret_size_measure(mulib_retgtk_widget_t *w,
     size_t n = 0;
     mulib_retgtk_widget_t **children =
         mulib_retgtk_widget_children_snapshot(w, &n);
+    if (w->n && !children) mulib_retgtk_widget_layout_retry(w);
     for (size_t i = 0; i < n; ++i) {
         if (children[i]->parent != w || !children[i]->visible) continue;
         mulib_gui_size_t s = mulib_retgtk_widget_measure(children[i], c);
@@ -61,6 +62,7 @@ static inline void mret_size_arrange(mulib_retgtk_widget_t *w, mgx_rect r)
     size_t n = 0;
     mulib_retgtk_widget_t **children =
         mulib_retgtk_widget_children_snapshot(w, &n);
+    if (w->n && !children) mulib_retgtk_widget_layout_retry(w);
     for (size_t i = 0; i < n; ++i)
         if (children[i]->parent == w && children[i]->visible)
             mulib_retgtk_widget_arrange(children[i], r);

@@ -56,8 +56,11 @@ when changing live widgets so the core immediately invalidates router state.
 Grid tracks remain uniform, with per-cell padding. Grid measurement uses the
 largest visible child's intrinsic size. Hidden children no longer leave empty
 tracks; configured column count is retained. Grid spans, intrinsic track sizing,
-baseline alignment, wrapping flex, measurement caching and damage-driven layout
-remain unfinished. The new limits are integrated with linear allocation; other
+baseline alignment, wrapping flex, per-widget measurement caching and
+incremental per-subtree layout remain unfinished. Incremental scene repaint
+now skips layout on clean frames and retries built-in layout scratch failures;
+see [retained damage and persistent targets](mulib-gfx-retgtk-core.md#retained-damage-and-persistent-targets).
+The new limits are integrated with linear allocation; other
 container policies are not upgraded to a general constraint solver.
 
 ## Models, proxies, and views
@@ -148,14 +151,13 @@ Scene replacement publishes the new root before releasing the old tree.
 Run from the repository root:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Wpedantic \
-  -Wno-misleading-indentation -Iinclude \
+cc -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Werror -Wpedantic -Iinclude \
   tests/test-gfx-retgtk-model-layout.c tests/gfx-retgtk-model-layout-peer.c \
   -lm -ldl -o /tmp/opencode/gfx-retgtk-model-layout
 /tmp/opencode/gfx-retgtk-model-layout
 
-cc -std=c11 -Wall -Wextra -Werror -Wpedantic \
-  -Wno-misleading-indentation -g -fsanitize=address,undefined \
+cc -std=c11 -D_GNU_SOURCE -O1 -Wall -Wextra -Werror -Wpedantic \
+  -g -fsanitize=address,undefined \
   -fno-omit-frame-pointer -Iinclude \
   tests/test-gfx-retgtk-model-layout.c tests/gfx-retgtk-model-layout-peer.c \
   -lm -ldl -o /tmp/opencode/gfx-retgtk-model-layout-asan

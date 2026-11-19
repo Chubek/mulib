@@ -17,11 +17,26 @@ TEXT = {"richtext", "textbuffer", "textcursor", "texteditor", "texthistory",
 SUPPORT = {"container-core", "qvm", "lprowse"}
 INCLUDE = re.compile(r'^\s*#\s*include\s*["<]mulib-([^">]+)\.h[">]', re.M)
 SWITCH = re.compile(r'^#\s*if(?:def\s+|\s+defined\s*\(\s*)MULIB_IMPL_', re.M)
+MODULES = re.compile(r'^- name: .*?(?=^- name: |\Z)', re.M | re.S)
+MANIFEST_HEADER = re.compile(r'^  header: include/(mulib-.+\.h)$', re.M)
+VALIDATION = "  validation: tests/run-graphics.sh; header compilation is not feature completeness.\n"
+NOTEBOOK_PROFILE = re.compile(r'^  profile: notebook-desktop$', re.M)
 
 
 def headers(root=ROOT):
+    # glx-* and x11-* are also used by the separate notebook desktop overlay.
+    # That profile has its own inventory, documentation and compiler gate.
+    manifest = (root / "MANIFEST.yaml").read_text().split("project_files:\n", 1)[0]
+    notebook = set()
+    for block in MODULES.findall(manifest):
+        if not NOTEBOOK_PROFILE.search(block):
+            continue
+        match = MANIFEST_HEADER.search(block)
+        if not match:
+            raise ValueError("notebook desktop manifest entry lacks a public header path")
+        notebook.add(match.group(1))
     return sorted(p for p in (root / "include").glob("mulib-*.h")
-                  if p.stem[6:] not in LEGACY
+                  if p.name not in notebook and p.stem[6:] not in LEGACY
                   and (p.stem[6:] in TEXT or p.stem[6:].startswith(PREFIXES)))
 
 
@@ -72,24 +87,26 @@ def updated_manifest(root=ROOT):
     if manifest.count("\nproject_files:\n") != 1:
         raise ValueError("manifest must contain one project_files section")
     before, projects = manifest.split("project_files:\n", 1)
-    blocks = re.findall(r'^- name: .*?(?=^- name: |\Z)', before, re.M | re.S)
+    blocks = MODULES.findall(before)
     if not blocks:
         raise ValueError("manifest has no module entries")
     prefix = before[:before.index(blocks[0])]
     retained = []
     names = set()
     for block in blocks:
-        if re.search(r'^  implementation: static-inline$', block, re.M):
+        if VALIDATION in block and not NOTEBOOK_PROFILE.search(block) and re.search(
+            r'^  implementation: static-inline$', block, re.M
+        ):
             continue
         retained.append(block)
-        match = re.search(r'^  header: include/mulib-(.+)\.h$', block, re.M)
+        match = MANIFEST_HEADER.search(block)
         if match:
-            names.add(match.group(1))
+            names.add(match.group(1)[6:-2])
     overlay = headers(root)
     for header in overlay:
         name = header.stem[6:]
         if name in names:
-            raise ValueError(f"graphics entry collides with ABI entry: {name}")
+            raise ValueError(f"graphics entry collides with a separately registered entry: {name}")
         text = header.read_text()
         if SWITCH.search(text):
             raise ValueError(f"graphics header now has an ABI switch: {name}")
@@ -105,13 +122,13 @@ def updated_manifest(root=ROOT):
             "  status: bounded\n"
             f"  purpose: Bounded {name} API; see documented scope and acceptance gates.\n"
             f"  dependencies: [{', '.join(deps)}]\n"
-            "  example: examples/gfx-headless.c\n"
-            "  validation: tests/run-graphics.sh; header compilation is not feature completeness.\n")
+            "  example: examples/gfx-headless.c\n" + VALIDATION)
     # Do not silently register or assign status to unrelated, previously
     # unregistered headers. This command owns only the graphics overlay.
     total = len(retained)
     prefix = re.sub(r'^module_count: \d+$', f"module_count: {total}", prefix, flags=re.M)
-    count_line = f"bounded_module_count: {len(overlay)}"
+    bounded = sum(bool(re.search(r'^  status: bounded$', block, re.M)) for block in retained)
+    count_line = f"bounded_module_count: {bounded}"
     if re.search(r'^bounded_module_count:', prefix, re.M):
         prefix = re.sub(r'^bounded_module_count:.*$', count_line, prefix, flags=re.M)
     else:

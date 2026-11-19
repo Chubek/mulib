@@ -97,6 +97,34 @@ static inline int mulib_x11_wire_setup_body_valid(const unsigned char *p,size_t 
     }
     return pos==n;
 }
+/* Root XID for one screen in the setup success body (zero on failure). */
+static inline uint32_t mulib_x11_wire_root(const unsigned char *p,size_t n,unsigned screen) {
+    if(!mulib_x11_wire_setup_body_valid(p,n)||screen>=p[20]) { errno=EINVAL; return 0; }
+    size_t pos=32+(((size_t)mx11_get16(p+16)+3)&~(size_t)3)+(size_t)p[21]*8;
+    while(screen--) {
+        unsigned depths=p[pos+39];
+        pos+=40;
+        while(depths--) { pos+=8+(size_t)mx11_get16(p+pos+2)*24; }
+    }
+    uint32_t root=mx11_get32(p+pos);
+    if(!root)errno=EPROTO;
+    return root;
+}
+/* Connect to an explicit local Unix socket path (no DISPLAY or Xauthority
+ * discovery). The caller owns the returned fd, including on setup failure. */
+static inline int mulib_x11_wire_connect_unix(const char *path) {
+    struct sockaddr_un addr={0};
+    if(!path||path[0]!='/'||strlen(path)>=sizeof addr.sun_path) { errno=EINVAL; return -1; }
+    addr.sun_family=AF_UNIX;
+    memcpy(addr.sun_path,path,strlen(path)+1);
+    int fd=socket(AF_UNIX,SOCK_STREAM|SOCK_CLOEXEC,0);
+    if(fd<0)return -1;
+    if(connect(fd,(struct sockaddr *)&addr,sizeof addr)==0)return fd;
+    int err=errno;
+    close(fd);
+    errno=err;
+    return -1;
+}
 static inline int mulib_x11_wire_setup(mx11_connection *c,int fd,const void *cookie,
         size_t n,unsigned char **reply,size_t *reply_n) {
     if(reply)*reply=NULL;
@@ -197,21 +225,186 @@ typedef struct {
     uint8_t type;
 } mx11_frame;
 typedef mx11_frame mulib_x11_wire_frame_t;
+static inline size_t mx11_frame_size(const unsigned char b[32],size_t limit) {
+    uint8_t type=b[0]&127;
+    if(type==1||type==35) {
+        uint32_t extra=mx11_get32(b+4);
+        if(extra>(limit-32)/4) { errno=EMSGSIZE; return 0; }
+        return 32+(size_t)extra*4;
+    }
+    return 32;
+}
 static inline int mulib_x11_wire_parse(const void *p,size_t n,size_t limit,mx11_frame *out) {
     if(!out||(!p&&n)) { errno=EINVAL; return -1; }
     if(!limit)limit=16777216;
     if(limit<32) { errno=EINVAL; return -1; }
     if(n<32)return 0;
     const unsigned char *b=(const unsigned char *)p;
-    uint8_t type=b[0]&127;
-    size_t bytes=32;
-    if(type==1||type==35) {
-        uint32_t extra=mx11_get32(b+4);
-        if(extra>(limit-32)/4) { errno=EMSGSIZE; return -1; }
-        bytes+=(size_t)extra*4;
-    }
+    size_t bytes=mx11_frame_size(b,limit);
+    if(!bytes)return -1;
     if(bytes>n)return 0;
-    *out=(mx11_frame){b,bytes,mx11_get16(b+2),type};
+    *out=(mx11_frame){b,bytes,mx11_get16(b+2),(uint8_t)(b[0]&127)};
     return 1;
+}
+
+typedef struct {
+    uint32_t resource;
+    uint16_t sequence,minor;
+    uint8_t code,major;
+} mx11_error;
+typedef struct mx11_pending_event {
+    struct mx11_pending_event *next;
+    unsigned char *data;
+    size_t n;
+} mx11_pending_event;
+/* Synchronous single-owner router for a trusted local display. Use from
+ * setup onwards: no raw/unchecked requests or other readers on this fd.
+ * Caller sets connection and explicit nonzero event/byte limits (max_frame
+ * >= 32). Clear on teardown; never copy, re-enter, or share across threads.
+ * Complete frames are malloc-owned by the recipient. I/O can block. */
+typedef struct {
+    mx11_connection *connection; /* borrowed; close separately */
+    size_t max_frame,max_events,max_event_bytes;
+    mx11_error error; /* last checked server rejection, otherwise zero */
+    mx11_pending_event *head,*tail;
+    size_t events,event_bytes;
+} mx11_stream;
+static inline void mulib_x11_wire_stream_clear(mx11_stream *s) {
+    if(!s)return;
+    while(s->head) {
+        mx11_pending_event *e=s->head;
+        s->head=e->next;
+        free(e->data);
+        free(e);
+    }
+    memset(s,0,sizeof *s);
+}
+static inline int mx11_stream_valid(const mx11_stream *s) {
+    if(!s||!s->connection||s->max_frame<32||!s->max_events||s->max_event_bytes<32) {
+        errno=EINVAL;
+        return 0;
+    }
+    if(s->connection->failed) { errno=EPIPE; return 0; }
+    return 1;
+}
+static inline int mx11_stream_fail(mx11_stream *s,int err) {
+    s->connection->failed=1;
+    s->error=(mx11_error){0};
+    errno=err;
+    return -1;
+}
+static inline int mx11_stream_packet(mx11_stream *s,unsigned char **data,size_t *n) {
+    unsigned char header[32];
+    int fd=s->connection->fd;
+    if(!mx11_read(fd,header,sizeof header))return mx11_stream_fail(s,errno);
+    if(header[0]==128||header[0]==129)return mx11_stream_fail(s,EPROTO);
+    size_t len=mx11_frame_size(header,s->max_frame);
+    if(!len)return mx11_stream_fail(s,errno);
+    unsigned char *p=(unsigned char *)malloc(len);
+    if(!p)return mx11_stream_fail(s,ENOMEM);
+    memcpy(p,header,sizeof header);
+    if(!mx11_read(fd,p+sizeof header,len-sizeof header)) {
+        int err=errno;
+        free(p);
+        return mx11_stream_fail(s,err);
+    }
+    *data=p;
+    *n=len;
+    return 1;
+}
+/* Transfers p on success only. Overflow invalidates the connection instead
+ * of discarding, for example, a lifecycle event during a checked request. */
+static inline int mx11_stream_enqueue(mx11_stream *s,unsigned char *p,size_t n) {
+    if(s->events>=s->max_events||n>s->max_event_bytes-s->event_bytes)
+        return mx11_stream_fail(s,ENOBUFS);
+    mx11_pending_event *e=(mx11_pending_event *)malloc(sizeof *e);
+    if(!e)return mx11_stream_fail(s,ENOMEM);
+    *e=(mx11_pending_event){NULL,p,n};
+    if(s->tail)s->tail->next=e;
+    else s->head=e;
+    s->tail=e;
+    s->events++;
+    s->event_bytes+=n;
+    return 1;
+}
+/* One request expecting exactly one reply, or one void request fenced by
+ * GetInputFocus. 1 accepted, 0 X11 error (see s->error, errno=EPROTO),
+ * -1 local/transport/protocol failure. Close if connection->failed is set.
+ * No outstanding unchecked request means equality is sufficient at 16-bit
+ * rollover. An unexpected reply/error is fatal; events are queued in order. */
+static inline int mx11_stream_roundtrip(mx11_stream *s,uint8_t op,uint8_t arg,
+        const void *body,size_t n,int checked_void,unsigned char **reply,size_t *reply_n) {
+    if(reply)*reply=NULL;
+    if(reply_n)*reply_n=0;
+    if(s)s->error=(mx11_error){0};
+    if(!mx11_stream_valid(s))return -1;
+    if(!checked_void&&(!reply||!reply_n)) { errno=EINVAL; return -1; }
+    mx11_connection *c=s->connection;
+    if(!mulib_x11_wire_request(c,op,arg,body,n))return -1;
+    uint16_t sequence=c->sequence;
+    if(checked_void&&!mulib_x11_wire_request(c,43,0,NULL,0))
+        return mx11_stream_fail(s,errno);
+    for(;;) {
+        unsigned char *p;
+        size_t len;
+        if(mx11_stream_packet(s,&p,&len)<0)return -1;
+        if(p[0]>=2) {
+            if(mx11_stream_enqueue(s,p,len)>0)continue;
+            free(p);
+            return -1;
+        }
+        uint16_t got=mx11_get16(p+2);
+        if(p[0]==0&&got==sequence&&p[1]&&!s->error.code&&p[10]==op) {
+            s->error=(mx11_error){mx11_get32(p+4),got,mx11_get16(p+8),p[1],p[10]};
+            free(p);
+            if(checked_void)continue; /* Still drain our barrier reply. */
+            errno=EPROTO;
+            return 0;
+        }
+        if(p[0]!=1||got!=c->sequence||(checked_void&&len!=32)) {
+            free(p);
+            return mx11_stream_fail(s,EPROTO);
+        }
+        if(!checked_void) {
+            *reply=p;
+            *reply_n=len;
+            return 1;
+        }
+        free(p);
+        if(s->error.code) { errno=EPROTO; return 0; }
+        return 1;
+    }
+}
+static inline int mulib_x11_wire_checked(mx11_stream *s,uint8_t op,uint8_t arg,
+        const void *body,size_t n) {
+    return mx11_stream_roundtrip(s,op,arg,body,n,1,NULL,NULL);
+}
+static inline int mulib_x11_wire_reply(mx11_stream *s,uint8_t op,uint8_t arg,
+        const void *body,size_t n,unsigned char **reply,size_t *reply_n) {
+    return mx11_stream_roundtrip(s,op,arg,body,n,0,reply,reply_n);
+}
+/* 1 event, -1 failure. Queued events precede unread wire events. */
+static inline int mulib_x11_wire_event(mx11_stream *s,unsigned char **out,size_t *n) {
+    if(out)*out=NULL;
+    if(n)*n=0;
+    if(!mx11_stream_valid(s))return -1;
+    if(!out||!n) { errno=EINVAL; return -1; }
+    if(s->head) {
+        mx11_pending_event *e=s->head;
+        s->head=e->next;
+        if(!s->head)s->tail=NULL;
+        s->events--;
+        s->event_bytes-=e->n;
+        *out=e->data;
+        *n=e->n;
+        free(e);
+        return 1;
+    }
+    if(mx11_stream_packet(s,out,n)<0)return -1;
+    if((*out)[0]>=2)return 1;
+    free(*out);
+    *out=NULL;
+    *n=0;
+    return mx11_stream_fail(s,EPROTO);
 }
 #endif

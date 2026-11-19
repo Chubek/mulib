@@ -1,7 +1,9 @@
-# GLX bitmap fonts and bounded images
+# GLX bitmap fonts and bounded native images
 
-These C11, header-only overlay APIs share `mgx_surface`. They do not require a
-display server, font package, or third-party decoder.
+These C11 overlay APIs share `mgx_surface`. They do not require a display server,
+font package, or third-party decoder. PPM/BMP remain dependency-free static-inline
+paths. Native PNG is opt-in and reuses MuLIB's existing DEFLATE and checksum
+kernels rather than adding a second inflater.
 
 ## Ownership
 
@@ -108,9 +110,58 @@ borrowed only during the call. Supported formats:
   bits per pixel. Header extent, pixel offset, declared file/image sizes, padded
   row sizes and complete raster availability are checked. BI_RGB's reserved
   fourth byte is ignored; output is opaque, including for 32-bit BMP.
+- **PNG, when enabled:** noninterlaced 8-bit grayscale, RGB, indexed color,
+  grayscale+alpha and RGBA (color types 0, 2, 3, 4, 6). All five row filters,
+  consecutive/split/empty IDAT chunks, stored/fixed/dynamic DEFLATE blocks,
+  PLTE, and the corresponding grayscale/RGB/palette tRNS transparency are
+  supported. Alpha is preserved without premultiplication, including RGB
+  channels beneath zero alpha.
 
-PNG, JPEG, WebP, compressed/paletted BMP, bitfields and color-management metadata
-are not decoded. Unsupported formats return zero, not fabricated pixels.
+JPEG, WebP, compressed/paletted BMP and BMP bitfields are not decoded. PNG packed
+1/2/4-bit or 16-bit samples, Adam7 and APNG are explicitly rejected. The supported
+zlib wrapper advertises a 32 KiB window; smaller advertised windows are rejected
+rather than accepting streams whose distances the existing raw decoder cannot
+check against that smaller window. Unsupported formats return zero, not
+fabricated pixels.
+
+### Enabling native PNG
+
+Define `MULIB_GLX_IMAGEDECODE_ENABLE_PNG` before including
+`mulib-glx-imagedecode.h` in each consuming translation unit. Provide the existing
+`MULIB_IMPL_TYPECORE`, `MULIB_IMPL_BUFFER`, and `MULIB_IMPL_DEFLATE` implementations
+in **exactly one** translation unit, or link objects that already provide them:
+
+```c
+/* These three implementation switches belong in one .c file only. */
+#define MULIB_IMPL_TYPECORE
+#define MULIB_IMPL_BUFFER
+#define MULIB_IMPL_DEFLATE
+#define MULIB_GLX_IMAGEDECODE_ENABLE_PNG
+#include "mulib-glx-imagedecode.h"
+```
+
+`MULIB_IMPL_IMAGEPNG` is needed only when using the existing PNG **encoder**;
+its original API and dependency contract are unchanged. Keeping PNG opt-in
+preserves existing graphics consumers that intentionally link only libc/libm.
+No zlib shared library or runtime loading is used.
+
+The additive `mulib_imagepng_decode_rgba(data, length, &image, &limits)` helper in
+`mulib-imagepng.h` is also available independently of GLX. It returns `1`/`0` and
+publishes an owned, tightly packed RGBA8 image only on success. Initialize
+`mulib_imagepng_rgba_t` to zero and release it with
+`mulib_imagepng_rgba_free`; live outputs are rejected. Input is borrowed only
+during the call. `MULIB_IMAGEPNG_MALLOC`/`MULIB_IMAGEPNG_FREE` customize the
+decoder's own allocations; existing buffer allocations follow their own kernel's
+allocation policy.
+
+The parser checks the entire PNG signature, chunk extents/type characters,
+reserved chunk bit, every chunk CRC, mandatory/duplicate chunk ordering,
+consecutive IDAT ordering, palette indices, exact decompressed row count, zlib
+FCHECK/no-dictionary, exact DEFLATE stream boundary, and Adler-32. Unknown
+critical chunks and APNG animation chunks fail. Ancillary metadata is CRC-checked
+but otherwise skipped, including color profiles, gamma, EXIF and text; no
+color-space conversion or metadata extraction is claimed. The input must end
+immediately after the zero-length IEND chunk.
 
 The default limits are:
 
@@ -129,6 +180,17 @@ Overflow and raster-bound checks remain mandatory even with raised limits.
 All decoding happens into a temporary surface, so malformed samples or
 allocation failures never leave a partially published destination.
 
+The PNG helper additionally defaults to **65,536 chunks** and **512 MiB of
+variable-size working allocations**, excluding caller-owned encoded input,
+fixed stack storage and allocator bookkeeping. The conservative working bound
+accounts for concatenated IDAT, both capacities used by the existing
+failure-atomic inflater, and the RGBA output. Obtain
+`mulib_imagepng_limits_default()` to adjust these ceilings when using the helper
+directly. Every field is inclusive; zero forbids decoding. The GLX adapter maps
+its five existing image limits to PNG limits and retains the default independent
+PNG chunk/working ceilings. Converting RGBA to `mgx_surface` temporarily holds
+both output representations, each bounded by `max_output_bytes`.
+
 ## Regression tests
 
 From the repository root:
@@ -144,11 +206,25 @@ cc -std=c11 -pedantic -Wall -Wextra -Werror \
   -fno-omit-frame-pointer -Iinclude tests/test-gfx-font-image.c \
   -lm -o /tmp/opencode/test-gfx-font-image-asan
 ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 /tmp/opencode/test-gfx-font-image-asan
+
+cc -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Wpedantic -Werror \
+  -Iinclude tests/test-gfx-font-image-followup.c \
+  -lm -o /tmp/opencode/test-gfx-font-image-followup
+/tmp/opencode/test-gfx-font-image-followup
 ```
 
 The test build injects bitmap/map/surface allocation failures. It verifies exact pixels,
 multi-byte aliases, fallback order, sequence exclusion, every truncated prefix,
 malformed headers/UTF-8, 16-bit sample conversion, padded BMP rows, top-down
 images, live-destination rejection, source lifetimes, clipping, allocator
-overflow, and 3,000 deterministic parser mutations. It does not certify shaping,
-font discovery, PNG support, or hardware rendering.
+overflow, and 3,000 deterministic parser mutations.
+
+The follow-up suite checks all five supported PNG color types and all filters,
+first-row filter boundaries, transparency and hidden RGB preservation, split
+IDAT at every compressed-byte boundary, an independently generated dynamic
+Huffman fixture, native encoder round trips, every truncated prefix, bad CRCs,
+Adler/FCHECK/DEFLATE corruption, chunk ordering, malformed palettes,
+exact dimension/output/working/chunk limits, each allocation failure through
+GLX surface publication, and 4,000 deterministic mutations. Both tests pass
+strict GCC and Clang C11 builds and ASan/UBSan. These are subset regressions,
+not a PNG conformance, shaping, font-discovery or hardware-rendering certificate.

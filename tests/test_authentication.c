@@ -55,6 +55,9 @@ crypto (void)
   hex_equal(out,20,"b617318655057264e28bc0b6fb378c8ef146be00");
   assert(mulib_authcrypto_hmac(MULIB_AUTHCRYPTO_SHA256,key,20,"Hi There",8,out,32));
   hex_equal(out,32,"b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7");
+  const mulib_authcrypto_part parts[]={{"Hi ",3},{NULL,0},{"There",5}};
+  assert(mulib_authcrypto_hmac_parts(MULIB_AUTHCRYPTO_SHA256,key,20,parts,3,out,32));
+  hex_equal(out,32,"b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7");
   memset(key,0xaa,sizeof key);
   assert(mulib_authcrypto_hmac(MULIB_AUTHCRYPTO_SHA256,key,sizeof key,
     "Test Using Larger Than Block-Size Key - Hash Key First",54,out,32));
@@ -64,6 +67,13 @@ crypto (void)
   hex_equal(out,20,"aa4ae5e15272d00e95705637ce8a3b55ed402112");
   memset(out,0xa5,sizeof out);
   assert(!mulib_authcrypto_hmac(MULIB_AUTHCRYPTO_SHA256,NULL,1,"",0,out,32));
+  const mulib_authcrypto_part bad_part[]={{NULL,1}};
+  assert(!mulib_authcrypto_hmac_parts(MULIB_AUTHCRYPTO_SHA256,key,20,bad_part,1,out,32));
+  assert(!mulib_authcrypto_hmac_parts(MULIB_AUTHCRYPTO_SHA256,key,20,NULL,1,out,32));
+#if SIZE_MAX > UINT64_MAX / 8
+  const mulib_authcrypto_part too_long[]={{"x",1},{"x",UINT64_MAX/8-64}};
+  assert(!mulib_authcrypto_hmac_parts(MULIB_AUTHCRYPTO_SHA256,key,20,too_long,2,out,32));
+#endif
   assert(out[0]==0xa5);
   assert(!mulib_authcrypto_pbkdf2("password",8,"salt",4,0,out));
   assert(out[0]==0xa5);

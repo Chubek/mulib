@@ -183,3 +183,10 @@ ctest --test-dir tests/build/cdd -R '^mulib_(test_cdd|example_cdd_pipeline)$' --
 
 Use `sh tests/run-cdd.sh` for the standalone suite, including delayed
 implementation switches and C++17 linkage.
+
+## Linux notebook desktop overlay
+
+The [notebook desktop guide](manual/notebook-desktop.md) describes the 83
+bounded header-only C11 modules, integration limits, and the strict GCC/Clang
+`make check-notebook-desktop` gate. `make check-graphics` still tests the
+original graphics overlay separately.

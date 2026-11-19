@@ -7,9 +7,9 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1421
+module_count: 1504
 implemented_module_count: 1204
-bounded_module_count: 217
+bounded_module_count: 300
 modules:
 - name: cdd-catalogue
   header: include/mulib-cdd-catalogue.h
@@ -7032,8 +7032,8 @@ modules:
   header: include/mulib-imagepng.h
   manual: manual/mulib-imagepng.md
   macro: MULIB_IMPL_IMAGEPNG
-  purpose: Encode 8-bit RGB PNG using uncompressed DEFLATE blocks and CRC-checked chunks.
-  dependencies: [typecore]
+  purpose: RGB PNG encoding and bounded noninterlaced 8-bit PNG decoding without color conversion.
+  dependencies: [deflate, typecore]
   status: implemented
   example: examples/mulib-imagepng.c
 - name: imagejpeg
@@ -8668,6 +8668,755 @@ modules:
   dependencies: [sandbox-profile, seccomp, landlock, namespace, cgroup2, ipc-framed]
   status: implemented
   example: examples/modules/sandbox-process.c
+- name: dmabuf
+  header: include/mulib-dmabuf.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Owned DMA-BUF plane descriptors, validation and FD duplication.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: gbm
+  header: include/mulib-gbm.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Optional runtime GBM device, buffer allocation and single-plane export.
+  dependencies: [dmabuf]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: glx-clientbuffer
+  header: include/mulib-glx-clientbuffer.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Reference-counted CPU ARGB8888 pixel view.
+  dependencies: [glx-core, wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: glx-damage
+  header: include/mulib-glx-damage.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Clipped damage rectangles with full-damage fallback.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: glx-frameclock
+  header: include/mulib-glx-frameclock.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Monotonic deadline tracking with one outstanding frame.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: glx-hittest
+  header: include/mulib-glx-hittest.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Topmost scene hit and inverse-transformed coordinates.
+  dependencies: [glx-scene]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: glx-occlusion
+  header: include/mulib-glx-occlusion.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Rectangular subtraction for verified opaque regions.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: glx-outputlayout
+  header: include/mulib-glx-outputlayout.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Named logical displays with scale and transform metadata.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: glx-scene
+  header: include/mulib-glx-scene.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Ordered scene tree, traversal and CPU scaled alpha composition.
+  dependencies: [glx-scenenode]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: glx-scenenode
+  header: include/mulib-glx-scenenode.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Parent, transform, clip, visibility, opacity and buffer ownership.
+  dependencies: [glx-clientbuffer]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: jupyter-wire
+  header: include/mulib-jupyter-wire.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Signed multipart envelope with HMAC-SHA256 and bounded JSON object decode.
+  dependencies: [authcrypto, json]
+  example: tests/test-jupyter-envelope.c
+  test: tests/test-jupyter-envelope.c
+- name: memfd
+  header: include/mulib-memfd.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Anonymous file creation, checked sizing and mapping.
+  dependencies: []
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-cell
+  header: include/mulib-nb-cell.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Typed cells with owned source, language and revision.
+  dependencies: [utf8, wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-completion
+  header: include/mulib-nb-completion.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: ASCII identifier-prefix completion from caller-supplied symbols.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-core
+  header: include/mulib-nb-core.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Owned ordered notebook with stable document-local cell IDs.
+  dependencies: [nb-cell]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-display
+  header: include/mulib-nb-display.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Display payload replacement keyed by cell, display and MIME.
+  dependencies: [nb-output]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-execgraph
+  header: include/mulib-nb-execgraph.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Execution DAG with cycle rejection and topological sorting.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-execute
+  header: include/mulib-nb-execute.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Authorized revision-aware execution and interrupt state.
+  dependencies: [nb-core, nb-runtime]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-history
+  header: include/mulib-nb-history.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Bounded snapshot-based notebook undo and redo.
+  dependencies: [nb-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-inspect
+  header: include/mulib-nb-inspect.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Exact and prefix lookup of caller-supplied symbol metadata.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-ipynb
+  header: include/mulib-nb-ipynb.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Notebook text, code and raw cell JSON export.
+  dependencies: [nb-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-layout
+  header: include/mulib-nb-layout.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Fenwick height index with prefix sums and offset lookup.
+  dependencies: [nb-tree]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-message
+  header: include/mulib-nb-message.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Bounded binary execution envelope encoder and decoder.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-metadata
+  header: include/mulib-nb-metadata.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Owned per-cell string key/value metadata.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-mime
+  header: include/mulib-nb-mime.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: MIME handler registry with caller-owned trust policy.
+  dependencies: [nb-output]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-order
+  header: include/mulib-nb-order.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Move cells while preserving their document-local IDs.
+  dependencies: [nb-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-output
+  header: include/mulib-nb-output.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Owned notebook output payloads with a byte budget.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-runtime
+  header: include/mulib-nb-runtime.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Language runtime callback registry.
+  dependencies: [nb-message]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-scheduler
+  header: include/mulib-nb-scheduler.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Ready-job scheduling with dependency failure propagation.
+  dependencies: [nb-execgraph]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-serialize
+  header: include/mulib-nb-serialize.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Bounded MNB1 binary document codec with graph validation.
+  dependencies: [nb-tree]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-store
+  header: include/mulib-nb-store.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: File-synced same-directory temporary writes with atomic rename.
+  dependencies: [nb-serialize]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-stream
+  header: include/mulib-nb-stream.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Bounded binary ring for output backpressure.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-tree
+  header: include/mulib-nb-tree.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Group hierarchy, cycle rejection and inherited visibility.
+  dependencies: [nb-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-viewport
+  header: include/mulib-nb-viewport.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Clamped scroll and zoom with reveal and inverse mapping.
+  dependencies: [nb-layout]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-virtualize
+  header: include/mulib-nb-virtualize.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Variable-height visible cell range with overscan.
+  dependencies: [nb-viewport]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-window
+  header: include/mulib-nb-window.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Bidirectional single-window association for a notebook cell.
+  dependencies: [nb-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: nb-worker
+  header: include/mulib-nb-worker.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Trusted executable launch with nonblocking stdout/stderr and reaping.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: pty
+  header: include/mulib-pty.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: POSIX pseudoterminal open, resize and child controlling-terminal setup.
+  dependencies: []
+  example: tests/test-notebook-pty.c
+  test: tests/test-notebook-pty.c
+- name: seat
+  header: include/mulib-seat.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Caller-supplied seat broker interface and device lifetime bookkeeping.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-buffer
+  header: include/mulib-wl-buffer.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Reference-counted Wayland buffer lifetime and idle release.
+  dependencies: [glx-clientbuffer]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-client
+  header: include/mulib-wl-client.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Nonblocking server-side byte transport and bounded incoming FD queue.
+  dependencies: [wayland-protocol, wl-resource]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-compositor
+  header: include/mulib-wl-compositor.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Version 1 compositor resources with SHM surfaces and frame lists.
+  dependencies: [glx-occlusion, wl-frame, wl-shm, wl-surface]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-datadevice
+  header: include/mulib-wl-datadevice.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: MIME offer state and focus/serial authorization helpers.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-dispatch
+  header: include/mulib-wl-dispatch.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Native-endian frame validation and resource request dispatch.
+  dependencies: [wl-client]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-dmabuf
+  header: include/mulib-wl-dmabuf.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: DMA-BUF plane parameter assembly and ownership helpers.
+  dependencies: [dmabuf]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-frame
+  header: include/mulib-wl-frame.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Bounded frame callback list and done/delete-ID events.
+  dependencies: [wl-dispatch]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-layershell
+  header: include/mulib-wl-layershell.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Layer policy helper for exclusive edge zones.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-output
+  header: include/mulib-wl-output.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Output mode, scale and done event serializers.
+  dependencies: [wl-client]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-protogen
+  header: include/mulib-wl-protogen.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Descriptor-driven C opcode and signature emission.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-registry
+  header: include/mulib-wl-registry.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Wayland global announcements and bind validation.
+  dependencies: [wl-dispatch]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-resource
+  header: include/mulib-wl-resource.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Bounded object table with destruction callbacks.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-seat
+  header: include/mulib-wl-seat.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Serial generation and key, motion and button event helpers.
+  dependencies: [wl-client]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-server
+  header: include/mulib-wl-server.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Unix listener, client acceptance and display sync/registry dispatch.
+  dependencies: [wl-registry]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-shm
+  header: include/mulib-wl-shm.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Version 1 SHM pool and buffer resources with CPU snapshots.
+  dependencies: [wl-buffer, wl-dispatch]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-subsurface
+  header: include/mulib-wl-subsurface.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Cycle-safe subsurface relationships and pending positions.
+  dependencies: [wl-surface]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-surface
+  header: include/mulib-wl-surface.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Pending/current surface attachment, role and commit state.
+  dependencies: [glx-damage, wl-buffer]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-xdgshell
+  header: include/mulib-wl-xdgshell.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Minimal version 1 xdg-shell toplevel handshake and configure queue.
+  dependencies: [wl-compositor, wl-surface]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wl-xwayland
+  header: include/mulib-wl-xwayland.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: XWayland process supervisor and displayfd parsing.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wm-container
+  header: include/mulib-wm-container.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Cycle-safe parent/child window grouping.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wm-core
+  header: include/mulib-wm-core.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Stable window registry with owned strings, rectangle math and mapping state.
+  dependencies: [glx-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wm-decoration
+  header: include/mulib-wm-decoration.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Frame extents and resize-edge hit testing.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wm-focus
+  header: include/mulib-wm-focus.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Focus eligibility and cyclic focus selection.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wm-keybind
+  header: include/mulib-wm-keybind.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Key, modifier and mode command lookup.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wm-launch
+  header: include/mulib-wm-launch.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Launch hint matching with ambiguity rejection.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wm-layout
+  header: include/mulib-wm-layout.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Vertical, horizontal, grid, monocle and master-stack placement.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wm-rules
+  header: include/mulib-wm-rules.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Window actions from exact app IDs or title prefixes.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wm-session
+  header: include/mulib-wm-session.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Bounded offline window placement records.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wm-stack
+  header: include/mulib-wm-stack.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Window stacking and topmost hit lookup.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wm-transaction
+  header: include/mulib-wm-transaction.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Configure transaction with acknowledgement, revision and deadline checks.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: wm-workspace
+  header: include/mulib-wm-workspace.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Named workspace activation and window assignment.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: x11-atoms
+  header: include/mulib-x11-atoms.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: X11 atom intern requests and connection-local cache.
+  dependencies: [wm-core, x11-ext]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: x11-composite
+  header: include/mulib-x11-composite.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Composite redirection and named-pixmap request helpers.
+  dependencies: [x11-ext]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: x11-damage
+  header: include/mulib-x11-damage.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Damage creation, subtraction and destruction request helpers.
+  dependencies: [x11-ext]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: x11-ewmh
+  header: include/mulib-x11-ewmh.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: EWMH property lists and client-message decoding helpers.
+  dependencies: [x11-property]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: x11-ext
+  header: include/mulib-x11-ext.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Little-endian request/reply adapter and extension query helpers.
+  dependencies: [x11-wire]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: x11-grab
+  header: include/mulib-x11-grab.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Key grab/ungrab and pointer grab requests.
+  dependencies: [x11-ext]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: x11-icccm
+  header: include/mulib-x11-icccm.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: ICCCM size hint subset and WM_PROTOCOLS messages.
+  dependencies: [x11-property]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: x11-property
+  header: include/mulib-x11-property.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Get/ChangeProperty and checked reply length and CARD32 access.
+  dependencies: [x11-ext]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: x11-randr
+  header: include/mulib-x11-randr.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: RandR input selection and bounded screen resources reply.
+  dependencies: [x11-ext]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: x11-reparent
+  header: include/mulib-x11-reparent.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Core reparent, save-set, event selection and configure requests.
+  dependencies: [x11-ext]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: x11-xfixes
+  header: include/mulib-x11-xfixes.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: XFixes region creation and selection event requests.
+  dependencies: [x11-ext]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: x11-xinput
+  header: include/mulib-x11-xinput.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: XI2 version query and event selection requests.
+  dependencies: [x11-ext]
+  example: tests/notebook-desktop-headers/consumer.c
+- name: xkb
+  header: include/mulib-xkb.h
+  manual: manual/notebook-desktop.md
+  implementation: static-inline
+  status: bounded
+  profile: notebook-desktop
+  purpose: Optional runtime xkbcommon state, key symbols and UTF-8 lookup.
+  dependencies: [wm-core]
+  example: tests/notebook-desktop-headers/consumer.c
 - name: drm-atomic
   header: include/mulib-drm-atomic.h
   manual: manual/mulib-gfx-drm.md
@@ -8953,7 +9702,7 @@ modules:
   implementation: static-inline
   status: bounded
   purpose: Bounded glx-imagedecode API; see documented scope and acceptance gates.
-  dependencies: [glx-font]
+  dependencies: [glx-font, imagepng]
   example: examples/gfx-headless.c
   validation: tests/run-graphics.sh; header compilation is not feature completeness.
 - name: glx-legacy-bridge
@@ -10267,7 +11016,7 @@ modules:
   implementation: static-inline
   status: bounded
   purpose: Bounded retgtk-scroll API; see documented scope and acceptance gates.
-  dependencies: [retgtk-widget]
+  dependencies: [retgtk-kind, retgtk-widget]
   example: examples/gfx-headless.c
   validation: tests/run-graphics.sh; header compilation is not feature completeness.
 - name: retgtk-selection
@@ -10618,7 +11367,7 @@ modules:
   implementation: static-inline
   status: bounded
   purpose: Bounded x11-wm API; see documented scope and acceptance gates.
-  dependencies: [x11-wire]
+  dependencies: [wm-focus, x11-events, x11-icccm, x11-reparent, x11-window, x11-wire]
   example: examples/gfx-headless.c
   validation: tests/run-graphics.sh; header compilation is not feature completeness.
 project_files:
@@ -15255,4 +16004,56 @@ project_files:
 - file: tests/gfx-retgtk-core-types.h
   purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
 - file: tests/gfx-retgtk-model-layout-peer.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: manual/notebook-desktop.md
+  purpose: Linux notebook desktop overlay scope, integration and validation.
+- file: tests/run-notebook-desktop-headers.py
+  purpose: Strict independent and aggregate C11 checks for the notebook desktop profile.
+- file: tests/notebook-desktop-headers/consumer.c
+  purpose: Standalone notebook example and consumer for the independent C11 link check.
+- file: tests/notebook-desktop-headers/peer.c
+  purpose: Separate translation unit that adds a cell to the consumer's notebook.
+- file: tests/test-jupyter-envelope.c
+  purpose: Known HMAC-SHA256 test vector and signed Jupyter envelope regression.
+- file: tests/test-notebook-pty.c
+  purpose: PTY peer open, close-on-exec, resize and child controlling-terminal regression.
+- file: tests/test-gfx-immgtk-followup.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: examples/notebook-headless.c
+  purpose: Headless notebook shell and CPU rendering example.
+- file: examples/notebook-headless.h
+  purpose: Shared interface for the notebook example and its integration regression.
+- file: tests/run-notebook-headless.sh
+  purpose: Headless notebook integration gate with screenshot and persistence fixtures.
+- file: tests/test-notebook-headless.c
+  purpose: Headless notebook chrome, client scene, hit testing and persistence regression.
+- file: examples/wl-headless-private.c
+  purpose: Private headless Wayland host and software output.
+- file: examples/wl-headless-private.h
+  purpose: Shared interface for the private Wayland host, CLI and tests.
+- file: examples/wl-headless-private-main.c
+  purpose: CLI for the private headless Wayland host.
+- file: tests/test-wl-headless-private.c
+  purpose: Private Wayland socket, SHM/xdg lifecycle and CPU scene regression.
+- file: tests/run-wl-headless-private.sh
+  purpose: Headless Wayland wire and CLI build gate with optional libwayland interoperability.
+- file: tests/wl-headless-private-libwayland.c
+  purpose: Optional real libwayland-client fixture using scanner-generated xdg-shell bindings.
+- file: examples/x11-nested-wm.c
+  purpose: Reference window manager for a caller-owned private X server.
+- file: tests/run-x11-nested.sh
+  purpose: Wire regression and optional private Xvfb test driver.
+- file: tests/test-x11-nested-live.c
+  purpose: Optional XCB fixture for a private X server started by the test driver.
+- file: tests/test-x11-nested-wire.c
+  purpose: Socketpair regression for checked X11 window management.
+- file: tests/test-gfx-backend-followup.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-font-image-followup.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/test-gfx-retgtk-followup.c
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/graphics/png-consumer.cpp
+  purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/graphics/png-producer.c
   purpose: Bounded graphics contracts, device-free examples or regression infrastructure.

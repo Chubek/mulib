@@ -38,6 +38,7 @@ static inline void mulib_retgtk_layout_linear_measure(
     size_t count = 0, n = 0;
     mulib_retgtk_widget_t **children =
         mulib_retgtk_widget_children_snapshot(w, &n);
+    if (w->n && !children) mulib_retgtk_widget_layout_retry(w);
     for (size_t i = 0; i < n; ++i) {
         if (children[i]->parent != w || !children[i]->visible) continue;
         mulib_gui_size_t s = mulib_retgtk_widget_measure(children[i], child);
@@ -70,6 +71,7 @@ static inline void mulib_retgtk_layout_linear(mulib_retgtk_widget_t *w,
     size_t snapshot_n = 0;
     mulib_retgtk_widget_t **children =
         mulib_retgtk_widget_children_snapshot(w, &snapshot_n);
+    if (w->n && !children) mulib_retgtk_widget_layout_retry(w);
     size_t n = 0;
     for (size_t i = 0; i < snapshot_n; ++i) n += children[i]->visible != 0;
     if (!n || snapshot_n > SIZE_MAX / sizeof(mret_layout_slot)) {
@@ -78,6 +80,7 @@ static inline void mulib_retgtk_layout_linear(mulib_retgtk_widget_t *w,
     }
     mret_layout_slot *v = malloc(snapshot_n * sizeof *v);
     if (!v) {
+        mulib_retgtk_widget_layout_retry(w);
         mulib_retgtk_widget_children_release(children, snapshot_n);
         return;
     }

@@ -55,6 +55,16 @@ mulib_glx_window_complete(mulib_glx_window_t *w,uint64_t serial)
  return mulib_glx_swapchain_complete(&w->swap,w->swap.front);
 }
 static inline int
+mulib_glx_window_abort(mulib_glx_window_t *w,uint64_t serial)
+{
+ /* Backend must already be disconnected/quiescent; see present_abort. */
+ if(!w||!w->present.pending||serial!=w->present.serial||
+    w->swap.front>=w->swap.count||w->swap.front>=3||
+    !w->swap.busy[w->swap.front])return 0;
+ if(!mulib_glx_present_abort(&w->present,serial))return 0;
+ return mulib_glx_swapchain_complete(&w->swap,w->swap.front);
+}
+static inline int
 mulib_glx_window_try_free(mulib_glx_window_t *w)
 {
  if(!w)return 0;

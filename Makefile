@@ -3,6 +3,8 @@ CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -Werror -O2
 CPPFLAGS ?= -Iinclude
 LDLIBS ?= -lm
 TESTS := $(patsubst tests/%.c,build/%,$(wildcard tests/test-*.c)) build/cdd-test
+# These fixtures need additional TUs, arguments, or a private Xvfb.
+TESTS := $(filter-out build/test-notebook-headless build/test-wl-headless-private build/test-x11-nested-live,$(TESTS))
 HEADERS := $(wildcard include/*.h include/detail/*.h include/detail/*.inc)
 TEST_FIXTURES := $(wildcard tests/fixtures/*.h)
 EXAMPLES := $(patsubst examples/%.c,build/%,$(wildcard examples/mulib-*.c)) build/fontshape-native build/docir-publication
@@ -11,7 +13,8 @@ EXAMPLES += build/cdd-pipeline
 .PHONY: muw3 check-muw3 check-muw3lib check-tls
 .PHONY: check-openai check-markup check-api-kernels
 .PHONY: check-web-primitives
-.PHONY: check-graphics
+.PHONY: check-graphics check-notebook-desktop
+.PHONY: check-notebook-headless check-wl-headless-private check-x11-nested
 WEB_PRIMITIVES_TESTS := pricing extraction browser css alloc hostile
 TESTS += $(addprefix build/test_web_,$(WEB_PRIMITIVES_TESTS))
 build/test_web_%: tests/test_web_%.c $(HEADERS) $(TEST_FIXTURES) | build
@@ -34,6 +37,17 @@ check-api-kernels:
 	CC="$(CC)" CXX="$(CXX)" sh tests/run-api-kernels.sh
 check-graphics:
 	CC="$(CC)" CXX="$(CXX)" sh tests/run-graphics.sh
+check-notebook-desktop:
+	python3 tests/run-notebook-desktop-headers.py
+check-notebook-headless:
+	CC="$(CC)" sh tests/run-notebook-headless.sh
+check-wl-headless-private: build/test-wl-headless-private
+	./build/test-wl-headless-private
+check-x11-nested:
+	CC="$(CC)" sh tests/run-x11-nested.sh
+build/test-wl-headless-private: tests/test-wl-headless-private.c examples/wl-headless-private.c examples/wl-headless-private.h $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D_GNU_SOURCE $(filter %.c,$^) $(LDLIBS) -ldl -o $@
+build/test-x11-nested-wire: CFLAGS += -D_POSIX_C_SOURCE=200809L
 build/test-gfx-%: CFLAGS += -D_POSIX_C_SOURCE=200809L -Wno-misleading-indentation
 build/test-gfx-%: LDLIBS += -ldl -pthread
 build/test-gfx-%: tests/test-gfx-%.c $(HEADERS) $(TEST_FIXTURES) | build

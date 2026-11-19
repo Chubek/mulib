@@ -13,9 +13,11 @@ trap 'rm -rf "$BUILD"' EXIT HUP INT TERM
 WARN="-Wall -Wextra -Wpedantic -Werror -Wno-misleading-indentation -UNDEBUG"
 FLAGS="-std=c11 -D_POSIX_C_SOURCE=200809L $WARN ${CFLAGS:-}"
 LINK="${LDFLAGS:-} -lm -ldl -pthread"
+CXX_SANITIZERS=""
 if [ "${SANITIZE:-0}" = 1 ]; then
     FLAGS="$FLAGS -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
     LINK="$LINK -fsanitize=address,undefined"
+    CXX_SANITIZERS="-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
 fi
 "$PYTHON" tools/graphics_inventory.py --check
 "$PYTHON" tools/graphics_inventory.py --list-headers > "$BUILD/headers"
@@ -87,15 +89,25 @@ fi
 "$BUILD/link-c"
 if command -v "$CXX" >/dev/null 2>&1; then
     # shellcheck disable=SC2086
-    "$CXX" -std=c++17 $WARN ${CXXFLAGS:-} -I"$ROOT/tests/graphics" \
+    "$CXX" -std=c++17 $WARN ${CXXFLAGS:-} $CXX_SANITIZERS -I"$ROOT/tests/graphics" \
         "$ROOT/tests/graphics/consumer.cpp" "$BUILD/producer.o" $LINK -o "$BUILD/link-cxx"
     "$BUILD/link-cxx"
     if [ -f "$ROOT/tests/gfx-immgtk-legacy-cxx.cpp" ]; then
         # shellcheck disable=SC2086
-        "$CXX" -std=c++17 $WARN ${CXXFLAGS:-} -I"$ROOT/include" \
+        "$CXX" -std=c++17 $WARN ${CXXFLAGS:-} $CXX_SANITIZERS -I"$ROOT/include" \
             "$ROOT/tests/gfx-immgtk-legacy-cxx.cpp" $LINK -o "$BUILD/legacy-cxx"
         "$BUILD/legacy-cxx"
     fi
+    # The legacy PNG header remains directly C++-includable, independently of
+    # the C11-only GLX overlay. Exercise original encoder and additive decoder.
+    # shellcheck disable=SC2086
+    "$CC" $FLAGS -I"$ROOT/include" -c "$ROOT/tests/graphics/png-producer.c" \
+        -o "$BUILD/png-producer.o"
+    # shellcheck disable=SC2086
+    "$CXX" -std=c++17 $WARN ${CXXFLAGS:-} $CXX_SANITIZERS -I"$ROOT/include" \
+        "$ROOT/tests/graphics/png-consumer.cpp" "$BUILD/png-producer.o" \
+        $LINK -o "$BUILD/png-cxx"
+    "$BUILD/png-cxx"
 else
     printf 'SKIP: C++ ABI consumer (compiler unavailable)\n'
 fi

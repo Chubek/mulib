@@ -7,7 +7,10 @@ ISO C11 fixed-width unsigned arithmetic; no allocations, platform entropy or I/O
 
 `mulib_authcrypto_hash` implements SHA-1 (20 bytes) and SHA-256 (32 bytes).
 `mulib_authcrypto_hmac` implements RFC 2104 HMAC with either digest, including
-hashing long keys. `mulib_authcrypto_size` returns zero for unsupported algorithms.
+hashing long keys. `mulib_authcrypto_hmac_parts` signs the concatenation of
+multiple byte spans without allocating a combined buffer. It does not encode
+the span boundaries, so use it only when concatenation is the intended format.
+`mulib_authcrypto_size` returns zero for unsupported algorithms.
 SHA-1 exists solely for legacy HOTP/TOTP interoperability, not new signatures,
 password hashing or collision-resistant identifiers. SHA-512 is unsupported.
 

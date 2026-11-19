@@ -21,9 +21,20 @@ int mulib_authcrypto_hash (mulib_authcrypto_algorithm algorithm,
                           unsigned char *out, size_t capacity);
 /** RFC 2104 HMAC, with the same output contract as hash. */
 int mulib_authcrypto_hmac (mulib_authcrypto_algorithm algorithm,
-                          const void *key, size_t key_length,
-                          const void *data, size_t length,
-                          unsigned char *out, size_t capacity);
+                           const void *key, size_t key_length,
+                           const void *data, size_t length,
+                           unsigned char *out, size_t capacity);
+typedef struct mulib_authcrypto_part {
+  const void *data;
+  size_t length;
+} mulib_authcrypto_part;
+/** HMAC over the concatenated parts without copying them. NULL parts is
+ * allowed only at zero count. Same output contract as mulib_authcrypto_hmac. */
+int mulib_authcrypto_hmac_parts (mulib_authcrypto_algorithm algorithm,
+                                 const void *key, size_t key_length,
+                                 const mulib_authcrypto_part *parts,
+                                 size_t count, unsigned char *out,
+                                 size_t capacity);
 /** Derive exactly 32 bytes. Iterations must be nonzero; the caller must bound
  * cost and choose a password-storage work factor. Not a password record API. */
 int mulib_authcrypto_pbkdf2 (const void *password, size_t password_length,
@@ -198,12 +209,27 @@ int
 mulib_authcrypto_hmac (mulib_authcrypto_algorithm a, const void *key, size_t kn,
                        const void *p, size_t n, unsigned char *out, size_t cap)
 {
+  mulib_authcrypto_part part = {p, n};
+  return mulib_authcrypto_hmac_parts(a,key,kn,&part,1,out,cap);
+}
+int
+mulib_authcrypto_hmac_parts (mulib_authcrypto_algorithm a, const void *key,
+                             size_t kn, const mulib_authcrypto_part *parts,
+                             size_t count, unsigned char *out, size_t cap)
+{
   mulib_authcrypto_ctx_ inner, outer;
   size_t size=mulib_authcrypto_size(a);
-  if (!size || (!key && kn) || (!p && n) || !out || cap<size
-      || kn>UINT64_MAX/8 || n>UINT64_MAX/8-64) return 0;
+  uint64_t remaining=UINT64_MAX/8-64; /* inner hash starts with a 64-byte pad */
+  if (!size || (!key && kn) || (!parts && count) || !out || cap<size
+      || kn>UINT64_MAX/8) return 0;
+  for (size_t i=0; i<count; ++i) {
+    if ((!parts[i].data && parts[i].length) || parts[i].length>remaining)
+      return 0;
+    remaining-=parts[i].length;
+  }
   mulib_authcrypto_hmac_init_ (&inner,&outer,a,key,kn);
-  mulib_authcrypto_update_ (&inner,p,n);
+  for (size_t i=0; i<count; ++i)
+    mulib_authcrypto_update_ (&inner,parts[i].data,parts[i].length);
   mulib_authcrypto_hmac_final_ (&inner,&outer,out);
   return 1;
 }

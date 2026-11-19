@@ -13,6 +13,7 @@ typedef struct {
     int z, enabled;
     uint64_t scope;
     int passive;
+    int draggable;
 } mig_item;
 typedef struct {
     uint64_t id;
@@ -26,6 +27,9 @@ typedef struct {
     double press_x, press_y, x, y;
     int keyboard;
 } mig_action;
+/* Click actions keep keyboard == 0/1. Drag records share the bounded ordered
+ * action queue, but are never returned as clicks by mig_interact. */
+enum { MIG_ACTION_DRAG = 2, MIG_DRAG_START = 4, MIG_DRAG_END = 8 };
 typedef struct {
     mgx_surface *surface;
     const mulib_glx_font_t *font;
@@ -52,6 +56,7 @@ typedef struct {
     size_t clip_depth;
     int in_frame, escape, unfocused;
     mig_action last_action;
+    size_t drag_index; /* Index + 1 of this batch's current capture record. */
 } mulib_immgtk_native_t;
 typedef mig_item mulib_immgtk_item_t;
 typedef mig_state mulib_immgtk_state_t;
@@ -167,6 +172,7 @@ static inline uint64_t mig_nav_step(mulib_immgtk_native_t *g, int reverse) {
 static inline void mulib_immgtk_native_invalidate(mulib_immgtk_native_t *g) {
     if (!g) return;
     g->pn = g->an = 0;
+    g->drag_index = 0;
     g->hot = g->active = g->focus = 0;
 }
 /* A nonzero scope blocks ALL other scopes, including empty popup background. */
@@ -174,6 +180,7 @@ static inline void mulib_immgtk_native_block(mulib_immgtk_native_t *g, uint64_t 
     if (!g || g->blocker == scope) return;
     g->blocker = scope;
     g->an = 0; /* Never pass a dismissing/opening click through to another scope. */
+    g->drag_index = 0;
     const mig_item *p = mig_previous(g, g->active);
     if (!p || !mig_eligible(g, p) || p->scope != g->capture_scope) g->active = 0;
     p = mig_previous(g, g->focus);
@@ -188,6 +195,7 @@ static inline int mig_start(mulib_immgtk_native_t *g, mgx_surface *s) {
     ++g->frame;
     g->error = 0;
     g->n = g->an = g->depth = g->clip_depth = 0;
+    g->drag_index = 0;
     g->scope = 0;
     g->z = g->pressed = g->released = g->activate = g->escape = 0;
     g->scroll = 0;
@@ -214,6 +222,28 @@ static inline int mig_action_add(mulib_immgtk_native_t *g, uint64_t id, int keyb
         g->x, g->y, keyboard};
     return 1;
 }
+/* Capture drags even when released outside the handle. Event-time endpoints
+ * are preserved; later uncaptured motion cannot alter a completed gesture. */
+static inline int mig_drag_record(mulib_immgtk_native_t *g, int flags) {
+    const mig_item *p = mig_previous(g, g->active);
+    if (!p || !p->draggable || !mig_eligible(g, p)) return 1;
+    if (!g->drag_index) {
+        if (!mig_reserve(g, (void **)&g->actions, &g->ac, g->an + 1,
+                sizeof *g->actions, g->max_actions)) {
+            g->an = g->drag_index = 0;
+            g->active = 0;
+            return 0;
+        }
+        g->actions[g->an] = (mig_action){p->id, p->scope, g->press_x, g->press_y,
+            g->x, g->y, MIG_ACTION_DRAG};
+        g->drag_index = ++g->an;
+    }
+    mig_action *a = g->actions + g->drag_index - 1;
+    a->x = g->x;
+    a->y = g->y;
+    a->keyboard |= flags;
+    return 1;
+}
 static inline void mig_pointer(mulib_immgtk_native_t *g, int down) {
     down = !!down;
     if (down == g->down) return;
@@ -225,10 +255,14 @@ static inline void mig_pointer(mulib_immgtk_native_t *g, int down) {
         g->capture_scope = p ? p->scope : 0;
         g->press_x = g->x;
         g->press_y = g->y;
+        g->drag_index = 0;
+        (void)mig_drag_record(g, MIG_DRAG_START);
     } else {
         g->released = 1;
+        (void)mig_drag_record(g, MIG_DRAG_END);
         if (g->active && g->active == mig_hit(g, g->x, g->y))
             (void)mig_action_add(g, g->active, 0);
+        g->drag_index = 0;
     }
     g->down = down;
 }
@@ -246,6 +280,13 @@ static inline void mulib_immgtk_native_begin(mulib_immgtk_native_t *g, mgx_surfa
     g->unfocused = 0;
     g->hot = mig_hit(g, x, y);
     mig_pointer(g, down);
+    if (g->down) (void)mig_drag_record(g, 0);
+    if (g->error) {
+        g->an = g->drag_index = 0;
+        g->active = g->focus = 0;
+        g->down = 0;
+        return;
+    }
     g->activate = !!activate;
     if (activate) (void)mig_action_add(g, g->focus, 1);
 }
@@ -273,6 +314,7 @@ static inline int mulib_immgtk_native_begin_events(mulib_immgtk_native_t *g,
                 g->active = g->focus = 0;
                 g->down = 0;
                 g->an = 0;
+                g->drag_index = 0;
             }
         } else if (!focused) {
             continue;
@@ -283,6 +325,7 @@ static inline int mulib_immgtk_native_begin_events(mulib_immgtk_native_t *g,
             }
             g->x = e->x;
             g->y = e->y;
+            if (g->down) (void)mig_drag_record(g, 0);
         } else if (e->type == MGX_EVENT_BUTTON && e->code == 0) {
             if (e->down != 0 && e->down != 1) { g->error |= MIG_ERROR_INPUT; break; }
             mig_pointer(g, e->down);
@@ -305,12 +348,15 @@ static inline int mulib_immgtk_native_begin_events(mulib_immgtk_native_t *g,
             } else if (e->code == 1) {
                 g->escape = 1;
                 g->active = 0;
+                g->an = g->drag_index = 0;
             }
         }
         if (g->error) break;
     }
+    if (!g->error && g->down) (void)mig_drag_record(g, 0);
     if (g->error) {
         g->an = 0;
+        g->drag_index = 0;
         g->active = g->focus = 0;
         g->down = 0;
     }
@@ -332,8 +378,8 @@ static inline mig_state *mig_state_get(mulib_immgtk_native_t *g, uint64_t id) {
     *p = (mig_state){id, 0, 0, g->frame, {0, 0, 0, 0}};
     return p;
 }
-static inline int mig_interact(mulib_immgtk_native_t *g, uint64_t id,
-        mgx_rect r, int enabled) {
+static inline int mig_interact_mode(mulib_immgtk_native_t *g, uint64_t id,
+        mgx_rect r, int enabled, int draggable) {
     if (!g || !g->in_frame) {
         if (g) g->error |= MIG_ERROR_LIFETIME;
         return 0;
@@ -350,16 +396,19 @@ static inline int mig_interact(mulib_immgtk_native_t *g, uint64_t id,
         mgx_intersect(g->surface->clip, (mgx_rect){0, 0, g->surface->w, g->surface->h})) :
         g->clip;
     mig_item *p = g->items + g->n++;
-    *p = (mig_item){r, clip, id, g->z, !!enabled, g->scope, 0};
+    *p = (mig_item){r, clip, id, g->z, !!enabled, g->scope, 0, !!draggable};
     int eligible = mig_eligible(g, p);
+    const mig_item *old = mig_previous(g, id);
+    if (g->active == id && old && old->draggable && !draggable) g->active = 0;
     if (g->focus == id && !eligible) g->focus = 0;
     if (g->active == id && (!eligible || g->capture_scope != g->scope ||
-        !mgx_contains(r, g->press_x, g->press_y) ||
-        !mgx_contains(clip, g->press_x, g->press_y))) g->active = 0;
+        (!draggable && (!mgx_contains(r, g->press_x, g->press_y) ||
+         !mgx_contains(clip, g->press_x, g->press_y))))) g->active = 0;
     int clicked = 0;
     for (size_t i = 0; i < g->an; ++i) {
         mig_action *a = g->actions + i;
         if (a->id != id) continue;
+        if (a->keyboard & MIG_ACTION_DRAG) continue;
         if (eligible && a->scope == g->scope &&
             (a->keyboard || (mgx_contains(r, a->press_x, a->press_y) &&
                 mgx_contains(clip, a->press_x, a->press_y) &&
@@ -370,6 +419,10 @@ static inline int mig_interact(mulib_immgtk_native_t *g, uint64_t id,
         a->id = 0; /* An immediate-mode boolean coalesces repeated clicks per item. */
     }
     return clicked;
+}
+static inline int mig_interact(mulib_immgtk_native_t *g, uint64_t id,
+        mgx_rect r, int enabled) {
+    return mig_interact_mode(g, id, r, enabled, 0);
 }
 /* Blocks a lower-z hit without becoming a focus/navigation target. */
 static inline int mig_block_region(mulib_immgtk_native_t *g, uint64_t id, mgx_rect r) {

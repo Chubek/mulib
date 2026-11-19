@@ -181,12 +181,16 @@ static inline int mulib_wayland_wire_parse(const void *p,size_t n,mway_frame *ou
 /* Successful receive transfers all FDs to the caller. Every FD obtained by a
  * failed/truncated receive is closed; the bytes from that receive are unusable.
  * cap must be nonzero so SCM_RIGHTS cannot be consumed without stream bytes. */
+#define MULIB_WAYLAND_WIRE_RECEIVE_FDS 128u
 static inline ssize_t mulib_wayland_wire_receive_flags(int fd,void *buf,size_t cap,
         int *fds,size_t fd_cap,size_t *fd_n,int flags) {
     if(fd_n)*fd_n=0;
     if(!fd_n||!buf||!cap||(!fds&&fd_cap)) { errno=EINVAL; return -1; }
     struct iovec iov={buf,cap};
-    union { struct cmsghdr align; char b[CMSG_SPACE(32*sizeof(int))]; } control;
+    union {
+        struct cmsghdr align;
+        char b[CMSG_SPACE(MULIB_WAYLAND_WIRE_RECEIVE_FDS*sizeof(int))];
+    } control;
     struct msghdr m={0};
     m.msg_iov=&iov; m.msg_iovlen=1;
     m.msg_control=control.b; m.msg_controllen=sizeof control.b;

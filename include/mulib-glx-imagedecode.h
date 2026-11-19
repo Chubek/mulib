@@ -2,7 +2,11 @@
 #ifndef MULIB_GLX_IMAGEDECODE_H
 #define MULIB_GLX_IMAGEDECODE_H
 #include "mulib-glx-font.h"
-/* Native P6 PPM and BI_RGB 24/32-bit BMP. Other formats return 0.
+#ifdef MULIB_GLX_IMAGEDECODE_ENABLE_PNG
+#include "mulib-imagepng.h"
+#endif
+/* Native P6 PPM and BI_RGB 24/32-bit BMP; opt-in native PNG through the existing
+ * imagepng/deflate/typecore kernels. Other formats return 0.
  * All limits are inclusive; a zero field forbids decoding. */
 typedef struct {
     size_t max_input_bytes, max_pixels, max_output_bytes;
@@ -125,7 +129,38 @@ static inline int mulib_glx_imagedecode_limited(const void *data, size_t n,
             }
             s.pixels[k] = color;
         }
-    } else if (p[0] == 'B' && p[1] == 'M') {
+    }
+#ifdef MULIB_GLX_IMAGEDECODE_ENABLE_PNG
+    else if (n >= 8 && !memcmp(p, "\x89PNG\r\n\x1a\n", 8)) {
+        mulib_imagepng_limits_t png_limits = mulib_imagepng_limits_default();
+        mulib_imagepng_rgba_t rgba = {0};
+        /* Retain the PNG decoder's independent temporary-memory/chunk ceilings.
+         * Raising shared image limits does not silently remove those limits. */
+        png_limits.max_input_bytes = limits->max_input_bytes;
+        png_limits.max_pixels = limits->max_pixels;
+        png_limits.max_output_bytes = limits->max_output_bytes;
+        png_limits.max_width = limits->max_width < INT_MAX
+            ? limits->max_width : INT_MAX;
+        png_limits.max_height = limits->max_height < INT_MAX
+            ? limits->max_height : INT_MAX;
+        if (!mulib_imagepng_decode_rgba(p, n, &rgba, &png_limits))
+            return 0;
+        if (!mgx_surface_init(&s, (int)rgba.width, (int)rgba.height)) {
+            mulib_imagepng_rgba_free(&rgba);
+            return 0;
+        }
+        for (uint32_t y = 0; y < rgba.height; ++y) {
+            const unsigned char *row = rgba.pixels + (size_t)y * rgba.stride;
+            for (uint32_t x = 0; x < rgba.width; ++x) {
+                const unsigned char *q = row + (size_t)x * 4;
+                s.pixels[(size_t)y * s.stride + x] = (uint32_t)q[3] << 24
+                    | (uint32_t)q[0] << 16 | (uint32_t)q[1] << 8 | q[2];
+            }
+        }
+        mulib_imagepng_rgba_free(&rgba);
+    }
+#endif
+    else if (p[0] == 'B' && p[1] == 'M') {
         uint32_t off, dib, w, raw_height, h, declared, image_bytes;
         size_t row, pixel_bytes, raster_bytes;
         unsigned bpp;

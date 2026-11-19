@@ -34,6 +34,7 @@ consult each manual's exact supported syntax, errors, and limits.
 | IP addresses | [IPv4](mulib-inet4.md), [IPv6](mulib-inet6.md), [historical inte6 header](mulib-inte6.md), [address lookup](mulib-getaddr.md) |
 | Input and devices | [input](mulib-input.md), [keyremap](mulib-keyremap.md), [marionette](mulib-marionette.md), [udev](mulib-udev.md), [vdev](mulib-vdev.md), [kvm](mulib-kvm.md) |
 | Desktop integration | [wayland](mulib-wayland.md), [wlroots geometry](mulib-wlroots.md), [xlib](mulib-xlib.md) |
+| Linux notebook desktop | [Bounded notebook, scene, window policy, X11 and Wayland overlay](notebook-desktop.md) |
 | Runtime utilities | [minivm](mulib-minivm.md), [minish](mulib-minish.md), [Python bindings generator](mulib-pybind.md), [Ruby bindings generator](mulib-rubybind.md) |
 | Indexes and differences | [avl](mulib-avl.md), [b+tree](mulib-b+tree.md), [hattrie](mulib-hattrie.md), [txtdiff](mulib-txtdiff.md), [mmdiff](mulib-mmdiff.md) |
 | DNS | [wire format](mulib-dns.md), [client](mulib-dnsclient.md), [cache](mulib-dnscache.md), [resolver](mulib-dnsresolver.md), [nameserver](mulib-nameserver.md), [historical dnsnmeserver facade](mulib-dnsnmeserver.md) |

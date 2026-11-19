@@ -5,14 +5,15 @@ This additive overlay is C11, header-only `static inline` code. It has no
 remain separate. `MANIFEST.yaml` marks the overlay as **bounded**, not as toolkit,
 Unicode, wire-protocol, font, desktop-service, or GPU feature parity.
 
-The `implemented_module_count` field continues to count legacy ABI modules;
-`bounded_module_count` counts this overlay. `module_count` counts both sets of
+The `implemented_module_count` field continues to count legacy ABI modules.
+`bounded_module_count` counts registered bounded modules, including the separate
+[notebook desktop overlay](notebook-desktop.md). `module_count` counts all
 registered modules; unrelated pre-existing unregistered headers are not promoted
-or assigned a status by this overlay's generator.
+or assigned a status by the graphics generator.
 `python3 tools/graphics_inventory.py --check` validates the overlay inventory
 and direct include dependency graph. After deliberately changing header
-dependencies, refresh it with `--write`. Handwritten legacy module records
-are preserved.
+dependencies, refresh it with `--write`. Handwritten module records, including
+the desktop profile's `glx-*` and `x11-*` headers, are preserved.
 
 ## Dependency order and scope
 
@@ -87,6 +88,29 @@ hardware-validation result.
 - A 32-bit compiler probe failed because the host lacks `gnu/stubs-32.h`.
   No 32-bit runtime, device, compositor, X server, or desktop-service validation
   is claimed.
+
+### Graphics follow-up
+
+The follow-up remains confined to the existing graphics/UI layer:
+
+- Opt-in native, bounded noninterlaced 8-bit PNG decoding reuses the existing
+  inflater and checksum kernels. The original PNG encoder and strict C++17
+  header inclusion remain compatible; a C-producer/C++-consumer round trip
+  runs in the graphics gate.
+- Native ImmGTK windows support captured move/resize gestures, collapse,
+  minimum dimensions and content clipping through `window_begin_ex`.
+  Applications still control painter order and raising.
+- RetGTK supports damage-driven repaint, immediate clipped scrolling and a
+  retained backing image. Presentation still copies that full image.
+- The optional Wayland client supports bounded registry/xdg bootstrap,
+  configure/ack, host-supplied SHM buffers, release-safe resize and disconnect
+  cleanup. Frame callbacks are pacing, not physical presentation feedback.
+
+The expanded gate passed **217 headers and 22 C suites** with optimized GCC and
+optimized Clang ASan/UBSan, including PNG C/C++ linkage, actual Mune bridge and
+interpreter/VM regressions, legacy widgets, Lua suites and the headless demo.
+No live compositor or hardware validation was performed. See the linked family
+manuals for the supported subsets and remaining limitations.
 
 ## Acceptance gates still required
 

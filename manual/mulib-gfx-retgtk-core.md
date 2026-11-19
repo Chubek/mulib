@@ -46,6 +46,10 @@ children, and restore the paint clip. Custom layout/model callbacks should use
 `mulib_retgtk_widget_children_release(v, n)` when recursively invoking user code.
 Check `v[i]->parent == w` before visiting a snapshot child. A failed snapshot
 allocation returns NULL and n=0; void paint/arrange APIs skip that descent.
+The built-in painter and default/linear/grid/constraint/scroll arrangement
+paths keep a repaint/layout retry pending rather than losing the skipped work.
+Custom void layout callbacks can use `mulib_retgtk_widget_layout_retry(w)` on
+scratch-allocation failure.
 The snapshot is independently owned, not a replacement for `w->children`.
 
 Finalization first detaches the child array, cancels descendant routes and
@@ -149,6 +153,91 @@ The existing arithmetic reactive graph remains a small backwards-reference DAG,
 not an observable typed store. It rejects nonfinite inputs/invalid dependency
 indices and treats repeated NaN arithmetic results as unchanged.
 
+## Retained damage and persistent targets
+
+`mulib_retgtk_scene_repaint(scene, painter, bounds)` uses the existing widget
+tree and CPU painter on a **persistent, otherwise unmodified** `mgx_surface`.
+Return values are `1` repainted, `0` idle/no visible damage, `-1` invalid target
+or recursive scene drawing. Initialize a scene to zero, use `scene_set` to
+retain its root, and release that root with `scene_set(scene, NULL)`.
+
+```c
+#include "mulib-retgtk-scene.h"
+#include "mulib-retgtk-button.h"
+
+/* surface is initialized and has its full clip; the host owns its lifetime. */
+mulib_retgtk_scene_t scene = {0};
+mulib_retgtk_widget_t *button = mulib_retgtk_button(1, "Apply");
+if (button) {
+    mulib_retgtk_scene_set(&scene, button);
+    mret_paint paint = {&surface, font, mgui_default_theme()};
+    mulib_retgtk_scene_repaint(&scene, &paint, (mgx_rect){0,0,surface.w,surface.h});
+    /* This mutation records damage; the next repaint updates just that area. */
+    mulib_retgtk_widget_text(button, "Applied");
+    mulib_retgtk_scene_repaint(&scene, &paint, (mgx_rect){0,0,surface.w,surface.h});
+    mulib_retgtk_widget_unref(button);
+}
+mulib_retgtk_scene_set(&scene, NULL);
+```
+
+Invalidation records one conservative, ancestor-clipped screen-space bounding
+rectangle at the root without allocating. Ancestors retain their ordinary
+`dirty` hints without automatically expanding every invalidation to the root
+rectangle. Moving/shrinking through `widget_arrange` records old and new bounds;
+visibility changes and removal erase old pixels. Coordinate union overflow
+falls back to full-target damage. `invalidate_collect` observes root damage
+without consuming it and preserves pending state on region-allocation failure.
+
+Repaint source-clears the damaged background, then paints **all intersecting
+layers in normal order**, including clean overlapping/translucent widgets.
+It is not correct to paint only dirty widgets onto a previously composed image.
+Nonintersecting branches do not invoke paint callbacks. Pending damage is
+consumed before callbacks, so paint-time invalidation/removal queues another
+frame. Root references remain pinned if a callback replaces the scene; the new
+root is painted on the next call. Re-entering either scene draw path is rejected.
+Scene/painter/target storage must remain alive and immovable through callbacks.
+
+First use, root replacement/removal, target/buffer/size changes, bounds changes,
+and font/theme value changes repaint the complete target. Call
+`mulib_retgtk_scene_invalidate()` after external target clearing/loss or
+in-place font/image/theme-asset mutations that retain the same pointer.
+The scene root must be unparented, and the target must have its **full surface clip**;
+parented roots and partial external clips are
+rejected to avoid silently consuming damage outside that clip.
+Use one incremental scene owner per widget root/target.
+
+`mulib_retgtk_scene_draw` remains the unconditional compatibility path; its
+caller still owns clearing the background. Mixing it with incremental repaint
+requires a full baseline on the next repaint. Direct writes to widget fields
+must be followed by `widget_invalidate(w)`; merely writing `dirty` on a
+descendant is not a notification API. Model mutations also still require
+explicit invalidation of their views.
+
+Clean incremental frames skip arrangement as well as painting. Dirty frames
+still arrange the whole root; **per-widget measure caches, per-subtree layout,
+general model subscriptions and variable-height collection indexing remain
+unfinished**. Damage uses a bounding rectangle, not a canonical sparse region.
+Callbacks may therefore repaint more than the exact changed pixels.
+
+`mulib_retgtk_window_draw` keeps one additional CPU image and copies that image
+to each acquired native swapchain buffer. This prevents alternating/async
+buffers from showing stale pixels without assuming backend buffer-age support.
+The extra image uses the existing surface allocator and follows window size.
+Failed allocation/presentation cancels acquisition so a subsequent draw can
+retry; resizing preserves the previous retained image if replacement allocation
+fails. Presentation still copies a complete image and is not a GPU/bandwidth
+optimization. Complete outstanding native presentations before window teardown,
+as required by the underlying GLX window.
+
+Retained scrolling now uses snapshot-safe arrangement. `scroll_to(w, offset)`
+clamps finite offsets and immediately updates child geometry for hit testing;
+it returns zero for invalid/no-change requests. `scroll_content(w, height)`
+updates nonnegative content height and clamps/arranges again. Wheel input ignores
+nonfinite deltas and disabled/hidden ancestry, and bubbles when already clamped
+at a boundary. These APIs use stable `MRET_KIND_SCROLL` identity, not ops addresses.
+Content remains one overlaid child area; this is not variable-height row
+virtualization or a native input grab.
+
 ## Validation
 
 Run the three translation units together:
@@ -175,3 +264,29 @@ subtree removal and parent destruction, event/click/paint/measure callback mutat
 separate-TU type identity/collision rejection, DAG validation and pinned numeric
 handles. These headless tests do not validate compositor input, actual Mune glue,
 all widget-specific callbacks, thread safety or complete toolkit parity.
+
+The retained follow-up has no extra translation-unit peer:
+
+```sh
+cc -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+  tests/test-gfx-retgtk-followup.c -lm -ldl -o /tmp/opencode/retgtk-followup
+/tmp/opencode/retgtk-followup
+clang -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+  tests/test-gfx-retgtk-followup.c -lm -ldl -o /tmp/opencode/retgtk-followup-clang
+/tmp/opencode/retgtk-followup-clang
+cc -std=c11 -D_GNU_SOURCE -O1 -g -Wall -Wextra -Wpedantic -Werror -Iinclude \
+  -fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all \
+  tests/test-gfx-retgtk-followup.c -lm -ldl -o /tmp/opencode/retgtk-followup-asan
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
+  /tmp/opencode/retgtk-followup-asan
+lua tests/test-gfx-retgtk-lua.lua
+make check-graphics
+```
+
+`test-gfx-retgtk-followup.c` checks idle pruning, narrow damage, offscreen pruning,
+source-clear with translucent themes/overlap, 500 deterministic randomized
+incremental-vs-full image comparisons, move/hide/remove cleanup, callback
+invalidation/root replacement and reentrancy, snapshot/layout allocation
+failures and retries, arrange-callback append scheduling, scroll mutation/clamping, resize/present allocation
+failures, alternating swapchain images and simulated async completion. It uses
+no devices, real display connection, toolkit or desktop service.

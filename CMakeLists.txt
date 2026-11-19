@@ -262,6 +262,13 @@ if(MULIB_BUILD_TESTS)
   endif()
   foreach(source_file IN LISTS focused_tests)
     get_filename_component(test_name "${source_file}" NAME_WE)
+    if(test_name MATCHES "^test-(notebook-headless|wl-headless-private|x11-nested-live)$")
+      continue() # dedicated multi-source fixtures or optional live Xvfb
+    endif()
+    if(test_name MATCHES "^test-(notebook-pty|x11-nested-wire)$"
+        AND NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+      continue()
+    endif()
     if(test_name STREQUAL "test_sandbox")
       continue() # requires separately built trusted-bootstrap fixtures
     endif()
@@ -300,6 +307,9 @@ if(MULIB_BUILD_TESTS)
     if(test_name MATCHES "^test_(parallel|shebang|sh_)")
       target_compile_definitions("mulib_${test_name}" PRIVATE _POSIX_C_SOURCE=200809L)
     endif()
+    if(test_name STREQUAL "test-x11-nested-wire")
+      target_compile_definitions("mulib_${test_name}" PRIVATE _POSIX_C_SOURCE=200809L)
+    endif()
     if(test_name STREQUAL "test_android_sdk")
       target_include_directories("mulib_${test_name}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/android-sdk")
     endif()
@@ -315,6 +325,26 @@ if(MULIB_BUILD_TESTS)
         sh "${CMAKE_CURRENT_SOURCE_DIR}/tests/run-graphics.sh")
     set_tests_properties(mulib_graphics_gate PROPERTIES
       WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" TIMEOUT 300)
+  endif()
+  if(Python3_Interpreter_FOUND AND CMAKE_SYSTEM_NAME STREQUAL "Linux"
+      AND NOT CMAKE_CROSSCOMPILING AND CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang)$")
+    add_test(NAME mulib_notebook_desktop_headers
+      COMMAND ${CMAKE_COMMAND} -E env "SANITIZE=$<BOOL:${MULIB_SANITIZERS}>"
+        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/run-notebook-desktop-headers.py"
+        --cc "${CMAKE_C_COMPILER}")
+    set_tests_properties(mulib_notebook_desktop_headers PROPERTIES TIMEOUT 60)
+  endif()
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING)
+    add_test(NAME mulib_notebook_headless
+      COMMAND ${CMAKE_COMMAND} -E env "CC=${CMAKE_C_COMPILER}"
+        "SANITIZE=$<BOOL:${MULIB_SANITIZERS}>"
+        sh "${CMAKE_CURRENT_SOURCE_DIR}/tests/run-notebook-headless.sh")
+    set_tests_properties(mulib_notebook_headless PROPERTIES TIMEOUT 60)
+    add_executable(mulib_test_wl_headless_private
+      tests/test-wl-headless-private.c examples/wl-headless-private.c)
+    target_compile_definitions(mulib_test_wl_headless_private PRIVATE _GNU_SOURCE)
+    mulib_test_executable(mulib_test_wl_headless_private)
+    mulib_register_test(mulib_test_wl_headless_private)
   endif()
   if(UNIX)
     foreach(name parallel shebang)
