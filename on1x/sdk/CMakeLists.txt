@@ -69,3 +69,10 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME on1x.sdk.c_abi COMMAND on1x_sdk_test_c_abi)
 endif()
+
+# SDK 2 workers own disjoint optional fragments. Keeping these hooks here avoids
+# concurrent edits to this aggregate file; absent fragments are intentionally
+# ignored during staged integration.
+foreach(_on1x_sdk_subagent RANGE 1 8)
+    include("cmake/Subagent${_on1x_sdk_subagent}.cmake" OPTIONAL)
+endforeach()

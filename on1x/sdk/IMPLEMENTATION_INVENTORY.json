@@ -1,0 +1,42 @@
+{
+  "schema": "on1x.sdk.implementation-inventory/1",
+  "captured": "2026-11-19",
+  "repository_revision": "6a145cbf09efcac76f387f6b664fc2257bac93aa",
+  "libstone_revision": "3399047f6c6328b8f07788795c610699e66c060a",
+  "contracts": {
+    "sdk_abi": 2,
+    "sdk_v1_adapter": 1,
+    "plugin_protocol": 2,
+    "runtime_abi_target": 1,
+    "handle_encoding": "generation32-slot32",
+    "external_ir_state": "candidate",
+    "publication_authority": "host-only"
+  },
+  "baseline_tests": {
+    "command": "ctest --test-dir build/on1x-sdk-gcc-make --output-on-failure -R ^on1x\\\\.sdk\\\\.",
+    "passed": 8,
+    "failed": 0,
+    "scope": "existing ABI-v1 profile"
+  },
+  "reuse": [
+    {"area": "sdk", "paths": ["on1x/sdk"], "facilities": ["v1 registry rollback", "source/MIR hooks", "isolated DSO worker", "package export"]},
+    {"area": "compiler", "paths": ["on1x/src", "on1x/include/on1x"], "facilities": ["canonical parser", "loader", "inference", "semantics", "diagnostics", "C11", "scalar MIR"]},
+    {"area": "frontend-protocols", "paths": ["on1x/grammar", "on1x/stdppx"], "facilities": ["Aurocks/ASDL", "PPX-v1", "hygienic macros", "staging", "grammar embedding"]},
+    {"area": "runtime", "paths": ["on1x/runtime"], "facilities": ["closures", "managed data", "unique boxes", "defer", "numeric runtime", "cooperative CSP"]},
+    {"area": "foreign", "paths": ["on1x/contracts-exoml", "on1x/contracts-exotract", "on1x/tools"], "facilities": ["CDecl v2", "contract v2 validation", "KernelBind review", "single-TU planning"]},
+    {"area": "projects", "paths": ["on1x/tools/on1x_project.py", "on1x/tools/on1x-project.py", "on1x/tools/on1x-build.py"], "facilities": ["On1xfile", "frozen builds", "atomic outputs", "kernel plans"]},
+    {"area": "mulib", "paths": ["MANIFEST.yaml", "include/mulib-cdd-*.h"], "facilities": ["CDD", "IPC", "sandbox", "shared memory", "graphs", "passes", "egraph", "Mune", "assembler/object/link/regalloc"]},
+    {"area": "libstone", "paths": ["on1x/third_party/libstone"], "facilities": ["Chisel", "Syren", "Wetstone", "Nerotypical", "Novostone", "ExoML", "Exotract", "Plaid", "Prolific", "Yellowstone"]}
+  ],
+  "exclusive_owners": {
+    "1": ["sdk core", "ABI", "registry", "plugin", "isolation", "catalogue"],
+    "2": ["compiler embedding", "frontend", "AST", "PPX"],
+    "3": ["types", "semantics", "ownership views", "HIR", "MIR"],
+    "4": ["analysis manager", "passes", "rewrites", "pipelines"],
+    "5": ["backends", "targets", "machine IR", "native toolchains"],
+    "6": ["FFI", "contracts", "KernelBind", "runtime SDK"],
+    "7": ["projects", "packages", "developer tooling", "language bindings"],
+    "8": ["On1x-native SDK", "native reference extensions"]
+  },
+  "principal_owned": ["aggregate CMake", "on1xc CLI dispatch", "umbrella header", "shared contracts", "capability matrix", "cross-subsystem tests"]
+}

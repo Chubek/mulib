@@ -12,9 +12,11 @@ set(_libstone_default "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/libstone")
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libstone/scripts/asdl.pl")
   set(_libstone_default "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libstone")
 endif()
+
 if(DEFINED ENV{ON1X_LIBSTONE_ROOT} AND NOT "$ENV{ON1X_LIBSTONE_ROOT}" STREQUAL "")
   set(_libstone_default "$ENV{ON1X_LIBSTONE_ROOT}")
 endif()
+
 set(ON1X_LIBSTONE_ROOT "${_libstone_default}" CACHE PATH "LibStone source checkout")
 option(ON1X_REQUIRE_LIBSTONE "Fail if LibStone generators are unavailable" OFF)
 option(ON1X_USE_FALLBACK_SCANNER "Use the bootstrap scanner even when LibStone is present" OFF)
@@ -760,4 +762,13 @@ if(BUILD_TESTING)
       "${CMAKE_CURRENT_SOURCE_DIR}/examples" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/parity")
     set_tests_properties(on1x.scanner_parity PROPERTIES TIMEOUT 120)
   endif()
+endif()
+
+# SDK 2 integration fragments are evaluated only after every canonical compiler,
+# runtime, backend and test target above has been declared. Subsystem workers own
+# one numbered fragment each; the principal retains this aggregate file.
+if(ON1X_BUILD_EXTENSION_SDK)
+  foreach(_on1x_sdk_subagent RANGE 1 8)
+    include("${CMAKE_CURRENT_SOURCE_DIR}/sdk/cmake/Integration${_on1x_sdk_subagent}.cmake" OPTIONAL)
+  endforeach()
 endif()
