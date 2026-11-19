@@ -11,9 +11,8 @@
   ],
   "json": {
     "source_ranges": [
-      "include/mulib-json.h:139-388 (construction, access, mutation)",
-      "include/mulib-json.h:676-850 (parse ownership/error cleanup)",
-      "include/mulib-json.h:989-end (stringify ownership)"
+      "include/mulib-json.h (construction, access, mutation, bounded parsing and stringify ownership)",
+      "tests/test_parsers.c (nesting and wide-object work limits)"
     ],
     "preconditions": [
       "Destroy only an owned root, never a borrowed/transferred child.",
@@ -25,7 +24,7 @@
       "Successful set to an already-installed identical value is a no-op; other replacement destroys the old child.",
       "Accessors borrow from the containing tree. Missing pointer and a non-NULL JSON-null value are distinct.",
       "Stringify's text is independent malloc-owned storage released with free, not mulib_json_destroy.",
-      "Parse initializes optional diagnostics on success/failure; diagnostic messages are static and partial trees/captures are cleaned on failure."
+      "Parse initializes optional diagnostics on success/failure; diagnostic messages are static and partial trees/captures are cleaned on failure, including object-key lookup work exhaustion."
     ],
     "unlowered": [
       "Conditional ownership and same-value alias exception.",
@@ -119,7 +118,7 @@
   "elvi-scrape": {
     "source_ranges": [
       "include/mulib-elvi-scrape.h (public API and MULIB_IMPL_ELVI_SCRAPE implementation)",
-      "include/detail/mulib-webscan.h (iterative scanner and explicit work accounting)",
+      "include/detail/mulib-webscan.h (iterative scanner and explicit work accounting), include/mulib-json.h (bounded JSON tree construction)",
       "tests/test-elvi-scrape{,-providers,-https,-alloc}.c, tests/fuzz_elvi_scrape.c and tests/fixtures/elvi-scrape (offline/allocator/fuzzer evidence)",
       "library/elvis/*.elvs and on1x/tests/mulib/elvi-scrape.{on1x,c} (trusted declarative providers, offline On1x acceptance)"
     ],
@@ -133,7 +132,7 @@
       "An empty query selects the validated provider homepage. A nonempty query expands into a literal, exact-host HTTPS template with complete percent escapes and no fragment.",
       "HTTPS transport preserves caller outputs on failure; successful append may reallocate body. Every created session is closed and temporary allocations are freed.",
       "HTTPS prohibition and tighter fetch limits are preserved. No redirect, pagination or rate-limit retry is performed.",
-      "Scanner work exhaustion and allocation failures preserve all caller results/count via staged output. Opaque/inert containers cannot introduce results; the extractor is not a complete HTML5 or CSS visibility parser.",
+      "Scanner work exhaustion and allocation failures preserve all caller results/count. HTML stages output and ignores opaque/inert containers; JSON validates the tree and result schema before emitting any output.",
       "Extraction uses the first href attribute (quoted or unquoted) and preserves the UTF-8 title prefix across text spans when clipping.",
       "Google targets are unambiguous/nonempty and stop before wrapper fragments; invalid numeric URL entities and request fragments reject. Exact-byte destination duplicates are removed without changing URL path/query meaning.",
       "HTTPS response metadata rejects duplicate type/encoding and unsupported content encodings; bounded fixed/chunked/EOF framing and partial reads/writes are tested separately from extraction.",

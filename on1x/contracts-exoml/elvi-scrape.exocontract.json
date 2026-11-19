@@ -7,7 +7,7 @@
   "state": "annotated",
   "bundle_provenance": {
     "header": "mulib-elvi-scrape.h",
-    "revision": "sha256:ad3f0c22cc0751cb3ef46761c9002d58bfc7e0b7081997482f0d1be2c4650051",
+    "revision": "sha256:100a954cd6eeccbd2024410a0af3e9a90c56191ffbf12b1ff19bc298961807c9",
     "author": "Codex (AI-authored)",
     "review_status": "unreviewed",
     "evidence_method": "Source/manual audit; contracts-exoml/obligations.json; real-kernel offline extraction and HTTPS adapter tests. Independent review pending."
@@ -208,11 +208,11 @@
           "index": 0
         },
         {
-          "name": "html",
+          "name": "body",
           "ownership": "borrowed_immutable",
           "nullable": true,
           "length_parameter": 2,
-          "encoding": "NUL-free HTML bytes, <=2097152; NULL only at zero length",
+          "encoding": "NUL-free HTML or UTF-8 JSON bytes, <=2097152; NULL only at zero length",
           "index": 1
         },
         {
@@ -265,7 +265,7 @@
         "header": "mulib-elvi-scrape.h",
         "author": "Codex (AI-authored)",
         "review_status": "unreviewed",
-        "evidence_method": "Source/manual, offline fixtures, allocator injection and fuzz invariants: iterative scanner work <=16*len+1024, HTML copy with up to len/7+1 extra bytes of table-cell state, and <=64 staged inline records. No borrowed output strings. Uses the first href attribute, accepts unquoted values, and clips titles at UTF-8 boundaries. Opaque/inert containers and stale selector context excluded; zero results is success. Allocation/work failures preserve results/count."
+        "evidence_method": "Source/manual, offline HTML/JSON fixtures, allocator injection and fuzz invariants: HTML scanner work <=16*len+1024, bounded scratch and staged records; JSON validates syntax and selected array before emitting records within the JSON parser budget. No borrowed output strings. Titles clip at UTF-8 boundaries. Zero results is success after validation. Allocation/work failures preserve results/count."
       }
     },
     {
