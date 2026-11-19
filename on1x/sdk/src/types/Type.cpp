@@ -8,7 +8,44 @@
 namespace on1x::sdk::ir {
 
 static_assert(static_cast<unsigned>(Type::Invalid) == ON1X_SDK_TYPE_INVALID);
-static_assert(static_cast<unsigned>(Type::Own) == ON1X_SDK_TYPE_OWN);
+static_assert(static_cast<unsigned>(Type::ExternalFiber) ==
+              ON1X_SDK_TYPE_EXTERNAL_FIBER);
+
+bool sdk_type_kind(Type::Kind kind, On1xSDK_TypeKind &out) noexcept {
+    const auto raw = static_cast<std::uint32_t>(kind);
+    if (raw <= static_cast<std::uint32_t>(Type::ExternalFiber)) {
+        out = static_cast<On1xSDK_TypeKind>(raw);
+        return true;
+    }
+    switch (kind) {
+    case Type::Char: out = ON1X_SDK_TYPE_CHAR; return true;
+    case Type::Regex: out = ON1X_SDK_TYPE_REGEX; return true;
+    case Type::RegexCaptures:
+        out = ON1X_SDK_TYPE_REGEX_CAPTURES;
+        return true;
+    case Type::Own: out = ON1X_SDK_TYPE_OWN; return true;
+    default: return false;
+    }
+}
+
+bool canonical_type_kind(
+    On1xSDK_TypeKind kind,
+    Type::Kind &out) noexcept {
+    const auto raw = static_cast<std::uint32_t>(kind);
+    if (raw <= ON1X_SDK_TYPE_EXTERNAL_FIBER) {
+        out = static_cast<Type::Kind>(raw);
+        return true;
+    }
+    switch (kind) {
+    case ON1X_SDK_TYPE_CHAR: out = Type::Char; return true;
+    case ON1X_SDK_TYPE_REGEX: out = Type::Regex; return true;
+    case ON1X_SDK_TYPE_REGEX_CAPTURES:
+        out = Type::RegexCaptures;
+        return true;
+    case ON1X_SDK_TYPE_OWN: out = Type::Own; return true;
+    default: return false;
+    }
+}
 
 On1xSDK_Type *make_type(const Identity &identity, Type type) {
     auto result = std::make_unique<On1xSDK_Type>();
@@ -28,7 +65,10 @@ bool valid_kind(On1xSDK_TypeKind kind) noexcept {
 
 Type::Kind canonical_kind(On1xSDK_TypeKind kind) {
     if (!valid_kind(kind)) throw std::invalid_argument("unknown type kind");
-    return static_cast<Type::Kind>(kind);
+    Type::Kind result = Type::Invalid;
+    if (!canonical_type_kind(kind, result))
+        throw std::invalid_argument("unsupported legacy type kind");
+    return result;
 }
 
 bool composite(Type::Kind kind) noexcept {
@@ -36,7 +76,9 @@ bool composite(Type::Kind kind) noexcept {
            kind == Type::Forall || kind == Type::Code ||
            kind == Type::Named || kind == Type::Own ||
            kind == Type::Record || kind == Type::Sum ||
-           kind == Type::Array || kind == Type::Slice;
+           kind == Type::Array || kind == Type::Slice ||
+           kind == Type::Channel || kind == Type::Sender ||
+           kind == Type::Receiver;
 }
 
 On1xSDK_Type *make_candidate_type(const Identity &identity, Type type) {
@@ -75,6 +117,10 @@ On1xSDK_Type *make_candidate_type(const Identity &identity, Type type) {
             add(item.type->code_result(), item.depth + 1);
         } else if (item.type->is_own()) {
             add(item.type->owned(), item.depth + 1);
+        } else if (item.type->kind() == Type::Channel ||
+                   item.type->kind() == Type::Sender ||
+                   item.type->kind() == Type::Receiver) {
+            add(item.type->csp_payload(), item.depth + 1);
         }
     }
     return make_type(identity, std::move(type));
@@ -215,6 +261,11 @@ On1xSDK_Status on1x_sdk_type_create_atomic(
     if (variable > std::numeric_limits<std::size_t>::max()) {
         if (out_type) *out_type = nullptr;
         return ON1X_SDK_LIMIT;
+    }
+    if (kind == ON1X_SDK_TYPE_BYTE_SENDER ||
+        kind == ON1X_SDK_TYPE_BYTE_RECEIVER) {
+        if (out_type) *out_type = nullptr;
+        return ON1X_SDK_UNSUPPORTED;
     }
     return create(out_type, [&] {
         const auto canonical = canonical_kind(kind);
@@ -433,6 +484,44 @@ On1xSDK_Status on1x_sdk_type_create_code(
     });
 }
 
+On1xSDK_Status on1x_sdk_type_create_csp(
+    const On1xSDK_IRIdentity *identity_record,
+    On1xSDK_TypeKind kind,
+    const On1xSDK_Type *payload,
+    size_t sender_count,
+    size_t receiver_count,
+    On1xSDK_Type **out_type) {
+    using namespace on1x::sdk::ir;
+    Identity identity;
+    if (const auto status = candidate(identity_record, identity);
+        status != ON1X_SDK_OK) {
+        if (out_type) *out_type = nullptr;
+        return status;
+    }
+    if (!out_type || !payload) {
+        if (out_type) *out_type = nullptr;
+        return ON1X_SDK_INVALID_ARGUMENT;
+    }
+    *out_type = nullptr;
+    if (!same_identity(identity, payload->identity))
+        return ON1X_SDK_STALE;
+    if (kind != ON1X_SDK_TYPE_CHANNEL &&
+        kind != ON1X_SDK_TYPE_SENDER &&
+        kind != ON1X_SDK_TYPE_RECEIVER)
+        return ON1X_SDK_INVALID_ARGUMENT;
+    if (kind != ON1X_SDK_TYPE_CHANNEL &&
+        (sender_count || receiver_count))
+        return ON1X_SDK_INVALID_ARGUMENT;
+    return create(out_type, [&] {
+        Type result = kind == ON1X_SDK_TYPE_CHANNEL
+            ? Type::channel(payload->type, sender_count, receiver_count)
+            : kind == ON1X_SDK_TYPE_SENDER
+                ? Type::sender(payload->type)
+                : Type::receiver(payload->type);
+        return make_candidate_type(identity, std::move(result));
+    });
+}
+
 void on1x_sdk_type_retain(On1xSDK_Type *type) {
     if (!type) return;
     auto current = type->references.load(std::memory_order_relaxed);
@@ -458,8 +547,8 @@ On1xSDK_Status on1x_sdk_type_kind(
     const On1xSDK_Type *type,
     On1xSDK_TypeKind *out_kind) {
     if (!type || !out_kind) return ON1X_SDK_INVALID_ARGUMENT;
-    *out_kind = static_cast<On1xSDK_TypeKind>(type->type.kind());
-    return ON1X_SDK_OK;
+    return on1x::sdk::ir::sdk_type_kind(type->type.kind(), *out_kind)
+        ? ON1X_SDK_OK : ON1X_SDK_UNSUPPORTED;
 }
 
 On1xSDK_Status on1x_sdk_type_flags(
@@ -489,6 +578,30 @@ On1xSDK_Status on1x_sdk_type_extent(
     if (!type->type.is_data()) return ON1X_SDK_UNSUPPORTED;
     *out_extent = type->type.extent();
     return ON1X_SDK_OK;
+}
+
+On1xSDK_Status on1x_sdk_type_csp_cardinality(
+    const On1xSDK_Type *type,
+    size_t *out_sender_count,
+    size_t *out_receiver_count) {
+    if (!type || !out_sender_count || !out_receiver_count)
+        return ON1X_SDK_INVALID_ARGUMENT;
+    if (type->type.kind() == on1x::Type::Channel) {
+        *out_sender_count = type->type.sender_cardinality();
+        *out_receiver_count = type->type.receiver_cardinality();
+        return ON1X_SDK_OK;
+    }
+    if (type->type.kind() == on1x::Type::Sender) {
+        *out_sender_count = 1;
+        *out_receiver_count = 0;
+        return ON1X_SDK_OK;
+    }
+    if (type->type.kind() == on1x::Type::Receiver) {
+        *out_sender_count = 0;
+        *out_receiver_count = 1;
+        return ON1X_SDK_OK;
+    }
+    return ON1X_SDK_UNSUPPORTED;
 }
 
 On1xSDK_Status on1x_sdk_type_nominal(
@@ -533,6 +646,10 @@ On1xSDK_Status on1x_sdk_type_child_count(
         *out_count = value.elements().size() + value.arguments().size();
     else if (value.kind() == on1x::Type::Named)
         *out_count = value.arguments().size();
+    else if (value.kind() == on1x::Type::Channel ||
+             value.kind() == on1x::Type::Sender ||
+             value.kind() == on1x::Type::Receiver)
+        *out_count = 1;
     else if (value.is_forall() || value.is_code() || value.is_own())
         *out_count = 1;
     else
@@ -574,6 +691,11 @@ On1xSDK_Status on1x_sdk_type_child(
                 child = &value.arguments()[index];
                 *out_role = ON1X_SDK_TYPE_CHILD_ARGUMENT;
             }
+        } else if ((value.kind() == Type::Channel ||
+                    value.kind() == Type::Sender ||
+                    value.kind() == Type::Receiver) && index == 0) {
+            child = &value.csp_payload();
+            *out_role = ON1X_SDK_TYPE_CHILD_PAYLOAD;
         } else if (value.is_forall() && index == 0) {
             child = &value.body();
             *out_role = ON1X_SDK_TYPE_CHILD_BODY;

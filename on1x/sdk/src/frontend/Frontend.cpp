@@ -57,8 +57,6 @@ std::string type_tag(const on1x::Type &type) {
     case Kind::Receiver: return "receiver_type";
     case Kind::CspGroup: return "csp_group_type";
     case Kind::ExternalFiber: return "external_fiber_type";
-    case Kind::ByteSender: return "byte_sender_type";
-    case Kind::ByteReceiver: return "byte_receiver_type";
     case Kind::Regex: return "regex_type";
     case Kind::RegexCaptures: return "regex_captures_type";
     default: return "internal_type";
@@ -314,8 +312,11 @@ class Flattener {
         auto index = add(
             ON1X_SDK_AST_PARAMETER,
             value.pattern ? "pattern_parameter"
-                          : value.exclusive ? "exclusive_parameter"
-                                            : "parameter",
+                          : value.borrow == on1x::BorrowMode::Exclusive
+                                ? "exclusive_parameter"
+                                : value.borrow == on1x::BorrowMode::Shared
+                                      ? "shared_parameter"
+                                      : "parameter",
             value.name, value.where, value.context);
         if (value.pattern) link(index, pattern(*value.pattern));
         link(index, type(value.type, value.where));
@@ -924,7 +925,7 @@ On1xSDK_Status on1x_sdk_grammar_info(On1xSDK_GrammarInfo *out_info) {
 }
 
 On1xSDK_Status on1x_sdk_lex(
-    const On1xSDK_SourceRevision *source,
+    const On1xSDK_SourceSnapshot *source,
     const On1xSDK_Options *options,
     On1xSDK_TokenStream **out_tokens) {
     if (!out_tokens) return ON1X_SDK_INVALID_ARGUMENT;
@@ -987,12 +988,12 @@ On1xSDK_Status on1x_sdk_token_stream_get(
 
 On1xSDK_Status on1x_sdk_token_stream_source(
     const On1xSDK_TokenStream *tokens,
-    On1xSDK_SourceRevision **out_revision) {
+    On1xSDK_SourceSnapshot **out_revision) {
     if (!out_revision) return ON1X_SDK_INVALID_ARGUMENT;
     *out_revision = nullptr;
     if (!tokens) return ON1X_SDK_INVALID_ARGUMENT;
     return api(tokens->data->state, [&] {
-        auto revision = std::make_unique<On1xSDK_SourceRevision>();
+        auto revision = std::make_unique<On1xSDK_SourceSnapshot>();
         revision->data = tokens->data->source;
         *out_revision = revision.release();
     }, true);
@@ -1019,7 +1020,7 @@ On1xSDK_Status on1x_sdk_parse(
 }
 
 On1xSDK_Status on1x_sdk_frontend_parse(
-    const On1xSDK_SourceRevision *source,
+    const On1xSDK_SourceSnapshot *source,
     const On1xSDK_Options *options,
     On1xSDK_AST **out_ast) {
     if (!out_ast) return ON1X_SDK_INVALID_ARGUMENT;
@@ -1112,14 +1113,14 @@ On1xSDK_Status on1x_sdk_ast_child(
 On1xSDK_Status on1x_sdk_ast_source(
     const On1xSDK_AST *ast,
     size_t source_index,
-    On1xSDK_SourceRevision **out_revision) {
+    On1xSDK_SourceSnapshot **out_revision) {
     if (!out_revision) return ON1X_SDK_INVALID_ARGUMENT;
     *out_revision = nullptr;
     if (!ast) return ON1X_SDK_INVALID_ARGUMENT;
     return api(ast->data->state, [&] {
         if (source_index >= ast->data->sources.size())
             not_found("AST source index is out of range");
-        auto revision = std::make_unique<On1xSDK_SourceRevision>();
+        auto revision = std::make_unique<On1xSDK_SourceSnapshot>();
         revision->data = ast->data->sources[source_index];
         *out_revision = revision.release();
     }, true);
@@ -1162,13 +1163,13 @@ On1xSDK_Status on1x_sdk_ast_visit(
                             node_id(*ast->data, frame.index),
                             frame.depth));
                 } catch (...) {
-                    fail(ON1X_SDK_ERROR,
+                    fail(ON1X_SDK_CALLBACK_FAILED,
                          ON1X_SDK_COMPILER_INVALID_STATE,
                          "ON1X-SDK-CALLBACK",
                          "AST visitor unwound through the C boundary");
                 }
-                if (raw > ON1X_SDK_BUSY)
-                    fail(ON1X_SDK_ERROR,
+                if (raw > ON1X_SDK_UNSATISFIABLE)
+                    fail(ON1X_SDK_CALLBACK_FAILED,
                          ON1X_SDK_COMPILER_INVALID_STATE,
                          "ON1X-SDK-CALLBACK-STATUS",
                          "AST visitor returned an unknown status");
@@ -1558,7 +1559,7 @@ On1xSDK_Status on1x_sdk_ast_builder_validate(
 
 On1xSDK_Status on1x_sdk_ast_builder_commit(
     On1xSDK_ASTBuilder *builder,
-    On1xSDK_SourceRevision **out_revision,
+    On1xSDK_SourceSnapshot **out_revision,
     On1xSDK_AST **out_ast) {
     if (out_revision) *out_revision = nullptr;
     if (out_ast) *out_ast = nullptr;
@@ -1571,7 +1572,7 @@ On1xSDK_Status on1x_sdk_ast_builder_commit(
         if (builder->source->current->revision != builder->expected_revision)
             stale("source changed before candidate commit");
         auto revision_handle =
-            std::make_unique<On1xSDK_SourceRevision>();
+            std::make_unique<On1xSDK_SourceSnapshot>();
         auto ast_handle = std::make_unique<On1xSDK_AST>();
         auto revision = make_revision(
             builder->state, builder->source->source_id,

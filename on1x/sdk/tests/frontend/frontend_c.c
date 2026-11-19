@@ -49,7 +49,7 @@ int main(void) {
     On1xSDK_Session *session = NULL;
     On1xSDK_Options *options = NULL;
     On1xSDK_Source *source = NULL;
-    On1xSDK_SourceRevision *revision = NULL;
+    On1xSDK_SourceSnapshot *revision = NULL;
     On1xSDK_TokenStream *tokens = NULL;
     On1xSDK_AST *ast = NULL;
     size_t token_count = 0;
@@ -92,7 +92,8 @@ int main(void) {
     assert(on1x_sdk_session_request_cancel(session) == ON1X_SDK_OK);
     {
         On1xSDK_TokenStream *cancelled = NULL;
-        assert(on1x_sdk_lex(revision, options, &cancelled) == ON1X_SDK_BUSY);
+        assert(on1x_sdk_lex(revision, options, &cancelled) ==
+               ON1X_SDK_CANCELLED);
         assert(cancelled == NULL);
         assert(on1x_sdk_session_last_condition(session) ==
                ON1X_SDK_COMPILER_CANCELLED);

@@ -26,12 +26,12 @@ void on1x_sdk_cache_release(On1xSDK_Cache *cache);
 /* Keys compare the exact source revision and complete options revision/value. */
 On1xSDK_Status on1x_sdk_cache_store(
     On1xSDK_Cache *cache,
-    const On1xSDK_SourceRevision *source,
+    const On1xSDK_SourceSnapshot *source,
     const On1xSDK_Options *options,
     const On1xSDK_AST *ast);
 On1xSDK_Status on1x_sdk_cache_lookup(
     On1xSDK_Cache *cache,
-    const On1xSDK_SourceRevision *source,
+    const On1xSDK_SourceSnapshot *source,
     const On1xSDK_Options *options,
     On1xSDK_AST **out_ast);
 On1xSDK_Status on1x_sdk_cache_clear(On1xSDK_Cache *cache);

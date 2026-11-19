@@ -58,27 +58,27 @@ On1xSDK_Status on1x_sdk_source_replace(
     const void *bytes,
     size_t byte_size,
     On1xSDK_SourceEncoding encoding,
-    On1xSDK_SourceRevision **out_revision);
+    On1xSDK_SourceSnapshot **out_revision);
 
 On1xSDK_Status on1x_sdk_source_snapshot(
     const On1xSDK_Source *source,
-    On1xSDK_SourceRevision **out_revision);
+    On1xSDK_SourceSnapshot **out_revision);
 On1xSDK_Status on1x_sdk_source_info(
     const On1xSDK_Source *source,
     On1xSDK_SourceInfo *out_info);
 
 On1xSDK_Status on1x_sdk_source_revision_retain(
-    On1xSDK_SourceRevision *revision);
-void on1x_sdk_source_revision_release(On1xSDK_SourceRevision *revision);
+    On1xSDK_SourceSnapshot *revision);
+void on1x_sdk_source_revision_release(On1xSDK_SourceSnapshot *revision);
 On1xSDK_Status on1x_sdk_source_revision_info(
-    const On1xSDK_SourceRevision *revision,
+    const On1xSDK_SourceSnapshot *revision,
     On1xSDK_SourceInfo *out_info);
 On1xSDK_Status on1x_sdk_source_revision_bytes(
-    const On1xSDK_SourceRevision *revision,
+    const On1xSDK_SourceSnapshot *revision,
     const void **out_bytes,
     size_t *out_size);
 On1xSDK_Status on1x_sdk_source_revision_is_current(
-    const On1xSDK_SourceRevision *revision,
+    const On1xSDK_SourceSnapshot *revision,
     uint32_t *out_current);
 
 #ifdef __cplusplus

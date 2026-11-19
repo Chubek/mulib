@@ -71,6 +71,8 @@ void emit_diagnostic(const On1xSDK_DiagnosticSink *sink,
                      const std::string &message,
                      const Location *where = nullptr) noexcept;
 On1xSDK_IRSourceSpan span(const Location &where) noexcept;
+bool sdk_type_kind(Type::Kind kind, On1xSDK_TypeKind &out) noexcept;
+bool canonical_type_kind(On1xSDK_TypeKind kind, Type::Kind &out) noexcept;
 
 template<class F>
 On1xSDK_Status guard(F &&function) noexcept {

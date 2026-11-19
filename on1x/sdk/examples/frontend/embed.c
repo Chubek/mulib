@@ -11,7 +11,7 @@ int main(void) {
     On1xSDK_Session *session = NULL;
     On1xSDK_Options *options = NULL;
     On1xSDK_Source *source = NULL;
-    On1xSDK_SourceRevision *revision = NULL;
+    On1xSDK_SourceSnapshot *revision = NULL;
     On1xSDK_AST *ast = NULL;
     On1xSDK_ASTInfo info = ON1X_SDK_COMPILER_INIT(On1xSDK_ASTInfo);
     int result = 1;

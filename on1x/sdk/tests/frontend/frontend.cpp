@@ -8,6 +8,7 @@
 #include "On1xSDK-Macro.h"
 #include "On1xSDK-PPX.h"
 #include "On1xSDK-Session.h"
+#include "On1xSDK-SourceMap.h"
 #include "On1xSDK-Staging.h"
 #include "On1xSDK-Syntax.h"
 #include "On1xSDK-Workspace.h"
@@ -56,8 +57,8 @@ On1xSDK_Source *source_file(
     return source;
 }
 
-On1xSDK_SourceRevision *snapshot(On1xSDK_Source *source) {
-    On1xSDK_SourceRevision *revision = nullptr;
+On1xSDK_SourceSnapshot *snapshot(On1xSDK_Source *source) {
+    On1xSDK_SourceSnapshot *revision = nullptr;
     assert(on1x_sdk_source_snapshot(source, &revision) == ON1X_SDK_OK);
     return revision;
 }
@@ -153,7 +154,7 @@ int main(int argc, char **argv) {
         ON1X_SDK_COMPILER_INIT(On1xSDK_SourceInfo);
     assert(on1x_sdk_source_revision_info(old_dep, &old_dep_info) ==
            ON1X_SDK_OK);
-    On1xSDK_SourceRevision *dep_revision = nullptr;
+    On1xSDK_SourceSnapshot *dep_revision = nullptr;
     assert(on1x_sdk_source_replace(
         dep_source, old_dep_info.revision, dep_overlay.data(),
         dep_overlay.size(), ON1X_SDK_SOURCE_UTF8, &dep_revision) ==
@@ -177,7 +178,7 @@ int main(int argc, char **argv) {
         ON1X_SDK_COMPILER_INIT(On1xSDK_SourceInfo);
     assert(on1x_sdk_source_revision_info(
         ephemeral_old, &ephemeral_info) == ON1X_SDK_OK);
-    On1xSDK_SourceRevision *ephemeral_new = nullptr;
+    On1xSDK_SourceSnapshot *ephemeral_new = nullptr;
     assert(on1x_sdk_source_replace(
         ephemeral, ephemeral_info.revision, ephemeral_text.data(),
         ephemeral_text.size(), ON1X_SDK_SOURCE_UTF8,
@@ -211,7 +212,7 @@ int main(int argc, char **argv) {
             compilation, i, &dependency) == ON1X_SDK_OK);
         saw_entry |= dependency.is_entry != 0;
         saw_overlay |= dependency.from_overlay != 0;
-        On1xSDK_SourceRevision *exact = nullptr;
+        On1xSDK_SourceSnapshot *exact = nullptr;
         assert(on1x_sdk_compilation_dependency_source(
             compilation, i, &exact) == ON1X_SDK_OK);
         On1xSDK_SourceInfo exact_info =
@@ -294,7 +295,7 @@ int main(int argc, char **argv) {
 
     assert(on1x_sdk_ast_visit(
         loaded_ast, loaded_info.root, ON1X_SDK_AST_PREORDER,
-        throwing_visitor, nullptr) == ON1X_SDK_ERROR);
+        throwing_visitor, nullptr) == ON1X_SDK_CALLBACK_FAILED);
     assert(on1x_sdk_session_last_condition(session) ==
            ON1X_SDK_COMPILER_INVALID_STATE);
 
@@ -326,7 +327,7 @@ int main(int argc, char **argv) {
     assert(on1x_sdk_ppx_readmit(
         loaded_ast, ON1X_SDK_PPX_SCHEMA_FORMAT,
         strlen(ON1X_SDK_PPX_SCHEMA_FORMAT), ON1X_SDK_PPX_SCHEMA_VERSION,
-        "()", 2, options, &bad_wire) == ON1X_SDK_ERROR);
+        "()", 2, options, &bad_wire) == ON1X_SDK_VERIFICATION_FAILED);
     assert(bad_wire == nullptr);
     On1xSDK_PPXLimits ppx_limits =
         ON1X_SDK_COMPILER_INIT(On1xSDK_PPXLimits);
@@ -345,9 +346,21 @@ int main(int argc, char **argv) {
     On1xSDK_SourceInfo main_info =
         ON1X_SDK_COMPILER_INIT(On1xSDK_SourceInfo);
     assert(on1x_sdk_source_revision_info(old_main, &main_info) == ON1X_SDK_OK);
+    On1xSDK_SourceSpan shared_span{
+        main_info.source_id, main_info.revision, 0, 2,
+        UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX};
+    assert(on1x_sdk_source_validate_span(old_main, &shared_span) ==
+           ON1X_SDK_OK);
+    ++shared_span.revision;
+    assert(on1x_sdk_source_validate_span(old_main, &shared_span) ==
+           ON1X_SDK_STALE);
+    --shared_span.revision;
+    shared_span.line_begin = 1;
+    assert(on1x_sdk_source_validate_span(old_main, &shared_span) ==
+           ON1X_SDK_INVALID_ARGUMENT);
     const std::string changed_main =
         "# revision two\nimport dep;fn main(){println(dep.value());}";
-    On1xSDK_SourceRevision *changed_revision = nullptr;
+    On1xSDK_SourceSnapshot *changed_revision = nullptr;
     assert(on1x_sdk_source_replace(
         main_source, main_info.revision, changed_main.data(),
         changed_main.size(), ON1X_SDK_SOURCE_UTF8, &changed_revision) ==
@@ -377,16 +390,16 @@ int main(int argc, char **argv) {
     assert(on1x_sdk_ast_builder_set_source(
         stale_builder, candidate.data(), candidate.size(),
         ON1X_SDK_SOURCE_UTF8) == ON1X_SDK_OK);
-    On1xSDK_SourceRevision *third_revision = nullptr;
+    On1xSDK_SourceSnapshot *third_revision = nullptr;
     assert(on1x_sdk_source_replace(
         main_source, changed_info.revision, changed_main.data(),
         changed_main.size(), ON1X_SDK_SOURCE_UTF8, &third_revision) ==
         ON1X_SDK_OK);
-    On1xSDK_SourceRevision *should_be_null_revision = nullptr;
+    On1xSDK_SourceSnapshot *should_be_null_revision = nullptr;
     On1xSDK_AST *should_be_null_ast = nullptr;
     assert(on1x_sdk_ast_builder_commit(
         stale_builder, &should_be_null_revision, &should_be_null_ast) ==
-        ON1X_SDK_BUSY);
+        ON1X_SDK_STALE);
     assert(should_be_null_revision == nullptr && should_be_null_ast == nullptr);
     assert(on1x_sdk_session_last_condition(session) ==
            ON1X_SDK_COMPILER_STALE_REVISION);
@@ -409,7 +422,7 @@ int main(int argc, char **argv) {
            ON1X_SDK_OK);
     assert(still_current == 1);
     on1x_sdk_ast_release(validated);
-    On1xSDK_SourceRevision *committed_revision = nullptr;
+    On1xSDK_SourceSnapshot *committed_revision = nullptr;
     On1xSDK_AST *committed_ast = nullptr;
     assert(on1x_sdk_ast_builder_commit(
         builder, &committed_revision, &committed_ast) == ON1X_SDK_OK);
@@ -435,7 +448,7 @@ int main(int argc, char **argv) {
         static_cast<std::uintptr_t>(1));
     assert(on1x_sdk_cache_lookup(
         cache, committed_revision, same_content_new_revision,
-        &cache_miss) == ON1X_SDK_ERROR);
+        &cache_miss) == ON1X_SDK_NOT_FOUND);
     assert(cache_miss == nullptr);
     assert(on1x_sdk_session_last_condition(session) ==
            ON1X_SDK_COMPILER_NOT_FOUND);
@@ -468,7 +481,7 @@ int main(int argc, char **argv) {
 
     /* Node IDs are generation-bound and reject cross-snapshot use. */
     assert(on1x_sdk_ast_node(
-        staging_ast, loaded_info.root, &root_info) == ON1X_SDK_BUSY);
+        staging_ast, loaded_info.root, &root_info) == ON1X_SDK_STALE);
     assert(on1x_sdk_session_last_condition(session) ==
            ON1X_SDK_COMPILER_STALE_REVISION);
 
@@ -480,7 +493,7 @@ int main(int argc, char **argv) {
     assert(on1x_sdk_source_create(
         session, "virtual/strict.on1x", strlen("virtual/strict.on1x"),
         invalid_utf8, sizeof(invalid_utf8), ON1X_SDK_SOURCE_UTF8,
-        &strict_invalid) == ON1X_SDK_ERROR);
+        &strict_invalid) == ON1X_SDK_VERIFICATION_FAILED);
     assert(strict_invalid == nullptr);
     On1xSDK_Source *byte_source = nullptr;
     assert(on1x_sdk_source_create(
@@ -500,7 +513,7 @@ int main(int argc, char **argv) {
     auto *nul_revision = snapshot(nul_source);
     On1xSDK_TokenStream *nul_tokens = nullptr;
     assert(on1x_sdk_lex(nul_revision, options, &nul_tokens) ==
-           ON1X_SDK_ERROR);
+           ON1X_SDK_VERIFICATION_FAILED);
     assert(nul_tokens == nullptr && diagnostics.begin == 2);
 
     /* Deterministic token/work budgets and cooperative cancellation differ. */
@@ -518,7 +531,7 @@ int main(int argc, char **argv) {
     assert(on1x_sdk_lex(committed_revision, tiny, &limited) == ON1X_SDK_LIMIT);
     assert(on1x_sdk_session_request_cancel(session) == ON1X_SDK_OK);
     assert(on1x_sdk_lex(committed_revision, options, &limited) ==
-           ON1X_SDK_BUSY);
+           ON1X_SDK_CANCELLED);
     assert(on1x_sdk_session_last_condition(session) ==
            ON1X_SDK_COMPILER_CANCELLED);
     assert(on1x_sdk_session_reset_cancel(session) == ON1X_SDK_OK);
@@ -624,7 +637,7 @@ int main(int argc, char **argv) {
     On1xSDK_Session *lifetime_session = nullptr;
     On1xSDK_Options *lifetime_options = nullptr;
     On1xSDK_Source *lifetime_source = nullptr;
-    On1xSDK_SourceRevision *lifetime_revision = nullptr;
+    On1xSDK_SourceSnapshot *lifetime_revision = nullptr;
     On1xSDK_AST *lifetime_ast = nullptr;
     assert(on1x_sdk_session_create(nullptr, &lifetime_session) ==
            ON1X_SDK_OK);
@@ -645,12 +658,12 @@ int main(int argc, char **argv) {
     assert(on1x_sdk_source_revision_bytes(
         lifetime_revision, &lifetime_bytes, &lifetime_size) == ON1X_SDK_OK);
     assert(lifetime_size == ephemeral_text.size());
-    On1xSDK_SourceRevision *closed_mutation =
-        reinterpret_cast<On1xSDK_SourceRevision *>(
+    On1xSDK_SourceSnapshot *closed_mutation =
+        reinterpret_cast<On1xSDK_SourceSnapshot *>(
             static_cast<std::uintptr_t>(1));
     assert(on1x_sdk_source_replace(
         lifetime_source, 0, ephemeral_text.data(), ephemeral_text.size(),
-        ON1X_SDK_SOURCE_UTF8, &closed_mutation) == ON1X_SDK_ERROR);
+        ON1X_SDK_SOURCE_UTF8, &closed_mutation) == ON1X_SDK_INVALID_STATE);
     assert(closed_mutation == nullptr);
     on1x_sdk_ast_release(lifetime_ast);
     on1x_sdk_source_revision_release(lifetime_revision);

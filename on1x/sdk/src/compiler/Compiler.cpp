@@ -38,6 +38,39 @@ bool limit_error(const on1x::Error &error) {
            message.find("allocation failure") != std::string_view::npos;
 }
 
+On1xSDK_Status shared_status(
+    On1xSDK_Status status,
+    On1xSDK_CompilerCondition condition) noexcept {
+    /*
+     * Preserve already-specific ABI statuses. The frontend worker used ERROR
+     * and BUSY as compatibility carriers while core ABI 2 was unavailable.
+     */
+    if (status != ON1X_SDK_ERROR && status != ON1X_SDK_BUSY)
+        return status;
+    switch (condition) {
+    case ON1X_SDK_COMPILER_CANCELLED:
+        return ON1X_SDK_CANCELLED;
+    case ON1X_SDK_COMPILER_DEADLINE_EXPIRED:
+        return ON1X_SDK_DEADLINE_EXCEEDED;
+    case ON1X_SDK_COMPILER_STALE_REVISION:
+        return ON1X_SDK_STALE;
+    case ON1X_SDK_COMPILER_NOT_FOUND:
+        return ON1X_SDK_NOT_FOUND;
+    case ON1X_SDK_COMPILER_INVALID_STATE:
+        return ON1X_SDK_INVALID_STATE;
+    case ON1X_SDK_COMPILER_VERIFICATION_FAILED:
+        return ON1X_SDK_VERIFICATION_FAILED;
+    case ON1X_SDK_COMPILER_CAPABILITY_DENIED:
+        return ON1X_SDK_CAPABILITY_DENIED;
+    case ON1X_SDK_COMPILER_IO_FAILURE:
+        return ON1X_SDK_IO_ERROR;
+    case ON1X_SDK_COMPILER_SCHEMA_MISMATCH:
+        return ON1X_SDK_ABI_MISMATCH;
+    default:
+        return status;
+    }
+}
+
 std::string read_bounded_file(const std::string &path) {
     std::ifstream input(path, std::ios::binary);
     if (!input)
@@ -300,7 +333,7 @@ On1xSDK_Status caught(
     } catch (const StatusFailure &failure) {
         record_error(state, failure.condition, failure.code, failure.message,
                      failure.begin, failure.end);
-        return failure.status;
+        return shared_status(failure.status, failure.condition);
     } catch (const on1x::Error &failure) {
         const bool limited = limit_error(failure);
         record_error(
@@ -310,7 +343,7 @@ On1xSDK_Status caught(
             failure.diagnostic_id.empty() ? "ON1X-SDK-FRONTEND"
                                           : failure.diagnostic_id,
             failure.what(), failure.where.offset, failure.where.offset);
-        return limited ? ON1X_SDK_LIMIT : ON1X_SDK_ERROR;
+        return limited ? ON1X_SDK_LIMIT : ON1X_SDK_VERIFICATION_FAILED;
     } catch (const std::bad_alloc &) {
         record_error(state, ON1X_SDK_COMPILER_CONDITION_NONE,
                      "ON1X-SDK-ALLOCATION", "compiler allocation failed");
@@ -322,7 +355,7 @@ On1xSDK_Status caught(
     } catch (const fs::filesystem_error &failure) {
         record_error(state, ON1X_SDK_COMPILER_IO_FAILURE,
                      "ON1X-SDK-IO", failure.what());
-        return ON1X_SDK_ERROR;
+        return ON1X_SDK_IO_ERROR;
     } catch (const std::exception &failure) {
         record_error(state, ON1X_SDK_COMPILER_CONDITION_NONE,
                      "ON1X-SDK-ERROR", failure.what());
@@ -899,7 +932,7 @@ On1xSDK_Status on1x_sdk_source_replace(
     const void *bytes,
     size_t byte_size,
     On1xSDK_SourceEncoding encoding,
-    On1xSDK_SourceRevision **out_revision) {
+    On1xSDK_SourceSnapshot **out_revision) {
     if (!out_revision) return ON1X_SDK_INVALID_ARGUMENT;
     *out_revision = nullptr;
     if (!source) return ON1X_SDK_INVALID_ARGUMENT;
@@ -909,7 +942,7 @@ On1xSDK_Status on1x_sdk_source_replace(
         auto text = checked_bytes(
             bytes, byte_size, on1x::max_source_bytes, "source bytes");
         validate_encoding(text, encoding);
-        auto view = std::make_unique<On1xSDK_SourceRevision>();
+        auto view = std::make_unique<On1xSDK_SourceSnapshot>();
         auto next = make_revision(
             source->data->state, source->data->source_id,
             source->data->current->path, std::move(text), encoding);
@@ -922,12 +955,12 @@ On1xSDK_Status on1x_sdk_source_replace(
 
 On1xSDK_Status on1x_sdk_source_snapshot(
     const On1xSDK_Source *source,
-    On1xSDK_SourceRevision **out_revision) {
+    On1xSDK_SourceSnapshot **out_revision) {
     if (!out_revision) return ON1X_SDK_INVALID_ARGUMENT;
     *out_revision = nullptr;
     if (!source) return ON1X_SDK_INVALID_ARGUMENT;
     return api(source->data->state, [&] {
-        auto view = std::make_unique<On1xSDK_SourceRevision>();
+        auto view = std::make_unique<On1xSDK_SourceSnapshot>();
         view->data = source->data->current;
         *out_revision = view.release();
     });
@@ -943,16 +976,16 @@ On1xSDK_Status on1x_sdk_source_info(
 }
 
 On1xSDK_Status on1x_sdk_source_revision_retain(
-    On1xSDK_SourceRevision *revision) {
+    On1xSDK_SourceSnapshot *revision) {
     return retain_object(revision);
 }
 
-void on1x_sdk_source_revision_release(On1xSDK_SourceRevision *revision) {
+void on1x_sdk_source_revision_release(On1xSDK_SourceSnapshot *revision) {
     release_object(revision);
 }
 
 On1xSDK_Status on1x_sdk_source_revision_info(
-    const On1xSDK_SourceRevision *revision,
+    const On1xSDK_SourceSnapshot *revision,
     On1xSDK_SourceInfo *out_info) {
     if (!revision) return ON1X_SDK_INVALID_ARGUMENT;
     return api(revision->data->state, [&] {
@@ -961,7 +994,7 @@ On1xSDK_Status on1x_sdk_source_revision_info(
 }
 
 On1xSDK_Status on1x_sdk_source_revision_bytes(
-    const On1xSDK_SourceRevision *revision,
+    const On1xSDK_SourceSnapshot *revision,
     const void **out_bytes,
     size_t *out_size) {
     if (out_bytes) *out_bytes = nullptr;
@@ -975,7 +1008,7 @@ On1xSDK_Status on1x_sdk_source_revision_bytes(
 }
 
 On1xSDK_Status on1x_sdk_source_revision_is_current(
-    const On1xSDK_SourceRevision *revision,
+    const On1xSDK_SourceSnapshot *revision,
     uint32_t *out_current) {
     if (!revision || !out_current) return ON1X_SDK_INVALID_ARGUMENT;
     return api(revision->data->state, [&] {
@@ -984,7 +1017,7 @@ On1xSDK_Status on1x_sdk_source_revision_is_current(
 }
 
 On1xSDK_Status on1x_sdk_source_location_at(
-    const On1xSDK_SourceRevision *revision,
+    const On1xSDK_SourceSnapshot *revision,
     size_t byte_offset,
     On1xSDK_SourceLocation *out_location) {
     if (!revision) return ON1X_SDK_INVALID_ARGUMENT;
@@ -1004,21 +1037,23 @@ On1xSDK_Status on1x_sdk_source_location_at(
 }
 
 On1xSDK_Status on1x_sdk_source_validate_span(
-    const On1xSDK_SourceRevision *revision,
+    const On1xSDK_SourceSnapshot *revision,
     const On1xSDK_SourceSpan *span) {
     if (!revision || !span) return ON1X_SDK_INVALID_ARGUMENT;
     return api(revision->data->state, [&] {
-        if (span->struct_size < sizeof(On1xSDK_SourceSpan) ||
-            span->abi_version != ON1X_SDK_COMPILER_ABI_VERSION)
-            fail(ON1X_SDK_ABI_MISMATCH,
-                 ON1X_SDK_COMPILER_INVALID_STATE,
-                 "ON1X-SDK-ABI", "source span ABI mismatch");
-        if (span->source_id != revision->data->source_id ||
-            span->revision != revision->data->revision)
+        const On1xSDK_SourceRevision identity{
+            revision->data->source_id,
+            revision->data->revision,
+            static_cast<std::uint64_t>(revision->data->bytes.size())
+        };
+        const auto status = on1x_sdk_span_validate(span, &identity, 0);
+        if (status == ON1X_SDK_STALE)
             stale("source span names a different immutable revision");
-        if (span->byte_begin > span->byte_end ||
-            span->byte_end > revision->data->bytes.size())
-            invalid("source span is outside its immutable revision");
+        if (status == ON1X_SDK_INVALID_ARGUMENT)
+            invalid("source span has invalid byte or display positions");
+        if (status != ON1X_SDK_OK)
+            fail(status, ON1X_SDK_COMPILER_INVALID_STATE,
+                 "ON1X-SDK-SPAN", "source span validation failed");
     }, true);
 }
 

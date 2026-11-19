@@ -32,7 +32,7 @@ int main() {
         const auto path = "virtual/parity-" + std::to_string(sample) + ".on1x";
         const auto direct = on1x::scan(samples[sample], path);
         On1xSDK_Source *source = nullptr;
-        On1xSDK_SourceRevision *revision = nullptr;
+        On1xSDK_SourceSnapshot *revision = nullptr;
         On1xSDK_TokenStream *tokens = nullptr;
         assert(on1x_sdk_source_create(
             session, path.data(), path.size(), samples[sample].data(),

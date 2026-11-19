@@ -10,7 +10,7 @@ extern "C" {
 
 /* Convenience operation equivalent to canonical lex followed by parse. */
 On1xSDK_Status on1x_sdk_frontend_parse(
-    const On1xSDK_SourceRevision *source,
+    const On1xSDK_SourceSnapshot *source,
     const On1xSDK_Options *options,
     On1xSDK_AST **out_ast);
 

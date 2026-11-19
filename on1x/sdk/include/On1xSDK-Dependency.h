@@ -31,7 +31,7 @@ On1xSDK_Status on1x_sdk_compilation_dependency(
 On1xSDK_Status on1x_sdk_compilation_dependency_source(
     const On1xSDK_Compilation *compilation,
     size_t index,
-    On1xSDK_SourceRevision **out_revision);
+    On1xSDK_SourceSnapshot **out_revision);
 
 #ifdef __cplusplus
 }

@@ -38,7 +38,7 @@ extern "C" {
 typedef struct On1xSDK_Session On1xSDK_Session;
 typedef struct On1xSDK_Options On1xSDK_Options;
 typedef struct On1xSDK_Source On1xSDK_Source;
-typedef struct On1xSDK_SourceRevision On1xSDK_SourceRevision;
+typedef struct On1xSDK_SourceSnapshot On1xSDK_SourceSnapshot;
 typedef struct On1xSDK_VFS On1xSDK_VFS;
 typedef struct On1xSDK_TokenStream On1xSDK_TokenStream;
 typedef struct On1xSDK_AST On1xSDK_AST;
@@ -48,9 +48,9 @@ typedef struct On1xSDK_Cache On1xSDK_Cache;
 typedef struct On1xSDK_Workspace On1xSDK_Workspace;
 
 /*
- * ABI-v2 core status declarations are supplied by the core SDK component.
- * Until that component is present, compiler operations preserve the existing
- * status values 0..7 and publish the more specific reason here.
+ * Operations return the shared ABI-2 status directly. CompilerCondition is
+ * retained as supplemental frontend detail for diagnostics and compatibility;
+ * it never replaces the specific primary result.
  */
 typedef uint32_t On1xSDK_CompilerCondition;
 enum {

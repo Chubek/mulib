@@ -28,7 +28,7 @@ On1xSDK_Status on1x_sdk_ast_builder_validate(
     On1xSDK_AST **out_candidate);
 On1xSDK_Status on1x_sdk_ast_builder_commit(
     On1xSDK_ASTBuilder *builder,
-    On1xSDK_SourceRevision **out_revision,
+    On1xSDK_SourceSnapshot **out_revision,
     On1xSDK_AST **out_ast);
 void on1x_sdk_ast_builder_destroy(On1xSDK_ASTBuilder *builder);
 

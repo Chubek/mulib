@@ -85,7 +85,8 @@ private:
     std::uint64_t parameter(const Param &source, std::size_t depth) {
         HIRNode node;
         node.node_class = ON1X_SDK_HIR_NODE_PARAMETER;
-        node.flags = source.exclusive ? ON1X_SDK_HIR_FLAG_EXCLUSIVE : 0;
+        node.flags = source.borrow == BorrowMode::Exclusive
+            ? ON1X_SDK_HIR_FLAG_EXCLUSIVE : 0;
         node.name = source.name;
         node.where = source.where;
         node.type = source.type;

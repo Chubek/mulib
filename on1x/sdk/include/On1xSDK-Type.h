@@ -52,6 +52,7 @@ typedef enum {
     ON1X_SDK_TYPE_RECEIVER = 30,
     ON1X_SDK_TYPE_CSP_GROUP = 31,
     ON1X_SDK_TYPE_EXTERNAL_FIBER = 32,
+    /* Reserved legacy encodings; use typed SENDER/RECEIVER with U8 payload. */
     ON1X_SDK_TYPE_BYTE_SENDER = 33,
     ON1X_SDK_TYPE_BYTE_RECEIVER = 34,
     ON1X_SDK_TYPE_CHAR = 35,
@@ -70,7 +71,8 @@ typedef enum {
     ON1X_SDK_TYPE_CHILD_ELEMENT = 3,
     ON1X_SDK_TYPE_CHILD_ARGUMENT = 4,
     ON1X_SDK_TYPE_CHILD_BODY = 5,
-    ON1X_SDK_TYPE_CHILD_OWNED = 6
+    ON1X_SDK_TYPE_CHILD_OWNED = 6,
+    ON1X_SDK_TYPE_CHILD_PAYLOAD = 7
 } On1xSDK_TypeChildRole;
 
 typedef uint64_t On1xSDK_TypeFlags;
@@ -161,6 +163,19 @@ On1xSDK_Status on1x_sdk_type_create_code(
     const On1xSDK_Type *body,
     On1xSDK_Type **out_type);
 
+/*
+ * Construct the canonical typed CSP forms. CHANNEL preserves exact endpoint
+ * quotas; zero/zero is the source-level wildcard. SENDER and RECEIVER require
+ * sender_count == receiver_count == 0 and represent one owned endpoint view.
+ */
+On1xSDK_Status on1x_sdk_type_create_csp(
+    const On1xSDK_IRIdentity *identity,
+    On1xSDK_TypeKind kind,
+    const On1xSDK_Type *payload,
+    size_t sender_count,
+    size_t receiver_count,
+    On1xSDK_Type **out_type);
+
 void on1x_sdk_type_retain(On1xSDK_Type *type);
 void on1x_sdk_type_release(On1xSDK_Type *type);
 
@@ -179,6 +194,10 @@ On1xSDK_Status on1x_sdk_type_variable(
 On1xSDK_Status on1x_sdk_type_extent(
     const On1xSDK_Type *type,
     size_t *out_extent);
+On1xSDK_Status on1x_sdk_type_csp_cardinality(
+    const On1xSDK_Type *type,
+    size_t *out_sender_count,
+    size_t *out_receiver_count);
 On1xSDK_Status on1x_sdk_type_nominal(
     const On1xSDK_Type *type,
     On1xSDK_IRStringView *out_name);

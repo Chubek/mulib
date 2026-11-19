@@ -365,14 +365,14 @@ On1xSDK_Status on1x_sdk_compilation_dependency(
 On1xSDK_Status on1x_sdk_compilation_dependency_source(
     const On1xSDK_Compilation *compilation,
     size_t index,
-    On1xSDK_SourceRevision **out_revision) {
+    On1xSDK_SourceSnapshot **out_revision) {
     if (!out_revision) return ON1X_SDK_INVALID_ARGUMENT;
     *out_revision = nullptr;
     if (!compilation) return ON1X_SDK_INVALID_ARGUMENT;
     return api(compilation->data->state, [&] {
         if (index >= compilation->data->dependencies.size())
             not_found("dependency index is out of range");
-        auto revision = std::make_unique<On1xSDK_SourceRevision>();
+        auto revision = std::make_unique<On1xSDK_SourceSnapshot>();
         revision->data = compilation->data->dependencies[index].source;
         *out_revision = revision.release();
     }, true);
@@ -422,7 +422,7 @@ void on1x_sdk_cache_release(On1xSDK_Cache *cache) {
 
 On1xSDK_Status on1x_sdk_cache_store(
     On1xSDK_Cache *cache,
-    const On1xSDK_SourceRevision *source,
+    const On1xSDK_SourceSnapshot *source,
     const On1xSDK_Options *options,
     const On1xSDK_AST *ast) {
     if (!cache || !source || !options || !ast)
@@ -460,7 +460,7 @@ On1xSDK_Status on1x_sdk_cache_store(
 
 On1xSDK_Status on1x_sdk_cache_lookup(
     On1xSDK_Cache *cache,
-    const On1xSDK_SourceRevision *source,
+    const On1xSDK_SourceSnapshot *source,
     const On1xSDK_Options *options,
     On1xSDK_AST **out_ast) {
     if (!out_ast) return ON1X_SDK_INVALID_ARGUMENT;

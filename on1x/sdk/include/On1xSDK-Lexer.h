@@ -13,7 +13,7 @@ extern "C" {
  * stream and records one bounded diagnostic on the owning session.
  */
 On1xSDK_Status on1x_sdk_lex(
-    const On1xSDK_SourceRevision *source,
+    const On1xSDK_SourceSnapshot *source,
     const On1xSDK_Options *options,
     On1xSDK_TokenStream **out_tokens);
 

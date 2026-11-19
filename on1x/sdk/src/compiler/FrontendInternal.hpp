@@ -363,7 +363,7 @@ struct On1xSDK_Source {
     std::shared_ptr<on1x::sdk2::SourceData> data;
 };
 
-struct On1xSDK_SourceRevision {
+struct On1xSDK_SourceSnapshot {
     std::atomic<std::size_t> references{1};
     std::shared_ptr<on1x::sdk2::RevisionData> data;
 };

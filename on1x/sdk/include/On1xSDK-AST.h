@@ -98,7 +98,7 @@ On1xSDK_Status on1x_sdk_ast_child(
 On1xSDK_Status on1x_sdk_ast_source(
     const On1xSDK_AST *ast,
     size_t source_index,
-    On1xSDK_SourceRevision **out_revision);
+    On1xSDK_SourceSnapshot **out_revision);
 
 #ifdef __cplusplus
 }

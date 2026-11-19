@@ -334,8 +334,41 @@ void test_types(const On1xSDK_Context *owner,
     ok(on1x_sdk_type_extent(array, &extent), "array extent");
     require(extent == 4, "array extent mismatch");
     require(on1x_sdk_type_extent(i64, &extent) ==
-                ON1X_SDK_UNSUPPORTED,
-            "atomic type exposed a data extent");
+                 ON1X_SDK_UNSUPPORTED,
+             "atomic type exposed a data extent");
+
+    On1xSDK_Type *u8 = nullptr, *channel = nullptr;
+    ok(on1x_sdk_type_create_atomic(
+           &id, ON1X_SDK_TYPE_U8, 0, &u8), "create u8");
+    held.take(u8);
+    ok(on1x_sdk_type_create_csp(
+           &id, ON1X_SDK_TYPE_CHANNEL, u8, 2, 2, &channel),
+       "create typed channel");
+    held.take(channel);
+    ok(on1x_sdk_type_kind(channel, &kind), "channel kind");
+    require(kind == ON1X_SDK_TYPE_CHANNEL, "channel kind mismatch");
+    size_t senders = 0, receivers = 0;
+    ok(on1x_sdk_type_csp_cardinality(
+           channel, &senders, &receivers), "channel cardinality");
+    require(senders == 2 && receivers == 2,
+            "channel cardinality mismatch");
+    ok(on1x_sdk_type_child_count(channel, &child_count),
+       "channel child count");
+    require(child_count == 1, "channel payload count mismatch");
+    ok(on1x_sdk_type_child(channel, 0, &role, &child),
+       "channel payload");
+    held.take(child);
+    require(role == ON1X_SDK_TYPE_CHILD_PAYLOAD,
+            "channel payload role mismatch");
+    ok(on1x_sdk_type_equal(u8, child, &equal),
+       "channel payload equality");
+    require(equal == 1, "channel payload changed");
+    On1xSDK_Type *legacy_endpoint = reinterpret_cast<On1xSDK_Type *>(1);
+    require(on1x_sdk_type_create_atomic(
+                &id, ON1X_SDK_TYPE_BYTE_SENDER, 0, &legacy_endpoint) ==
+                ON1X_SDK_UNSUPPORTED &&
+            legacy_endpoint == nullptr,
+            "legacy byte endpoint did not reject explicitly");
 
     static constexpr char pair_name[] = "Pair";
     const On1xSDK_Type *nominal_arguments[]{i64};

@@ -46,7 +46,7 @@ On1xSDK_Status on1x_sdk_token_stream_get(
     On1xSDK_TokenInfo *out_token);
 On1xSDK_Status on1x_sdk_token_stream_source(
     const On1xSDK_TokenStream *tokens,
-    On1xSDK_SourceRevision **out_revision);
+    On1xSDK_SourceSnapshot **out_revision);
 
 #ifdef __cplusplus
 }

@@ -154,15 +154,24 @@ private:
 };
 
 void write_type(Writer &writer, const Type &type,
-                std::size_t depth, std::size_t &nodes) {
+                 std::size_t depth, std::size_t &nodes) {
     if (depth > ON1X_SDK_IR_MAX_DEPTH || ++nodes > max_type_nodes)
         throw WireError(ON1X_SDK_LIMIT, ON1X_SDK_IR_FAILURE_LIMIT,
                         "type wire traversal limit exhausted");
-    writer.u32(static_cast<std::uint32_t>(type.kind()));
+    On1xSDK_TypeKind encoded_kind = ON1X_SDK_TYPE_INVALID;
+    if (!sdk_type_kind(type.kind(), encoded_kind))
+        throw WireError(ON1X_SDK_UNSUPPORTED,
+                        ON1X_SDK_IR_FAILURE_UNSUPPORTED,
+                        "canonical type has no SDK wire kind");
+    writer.u32(static_cast<std::uint32_t>(encoded_kind));
     writer.u64((type.kind() == Type::Generic ||
                 type.kind() == Type::Bound || type.is_forall())
-                   ? type.generic_identity() : 0);
-    writer.u64(type.is_data() ? type.extent() : 0);
+                   ? type.generic_identity()
+                   : type.kind() == Type::Channel
+                       ? type.sender_cardinality() : 0);
+    writer.u64(type.is_data() ? type.extent()
+               : type.kind() == Type::Channel
+                   ? type.receiver_cardinality() : 0);
     writer.text(type.nominal());
     writer.u32(static_cast<std::uint32_t>(type.arguments().size()));
     for (const auto &argument : type.arguments())
@@ -191,6 +200,11 @@ void write_type(Writer &writer, const Type &type,
     } else if (type.is_own()) {
         writer.u32(1);
         write_type(writer, type.owned(), depth + 1, nodes);
+    } else if (type.kind() == Type::Channel ||
+               type.kind() == Type::Sender ||
+               type.kind() == Type::Receiver) {
+        writer.u32(1);
+        write_type(writer, type.csp_payload(), depth + 1, nodes);
     } else {
         writer.u32(0);
     }
@@ -203,9 +217,12 @@ Type read_type(Reader &reader, std::size_t depth, std::size_t &nodes,
         throw WireError(ON1X_SDK_LIMIT, ON1X_SDK_IR_FAILURE_LIMIT,
                          "type wire traversal limit exhausted");
     const auto kind_value = reader.u32();
-    if (kind_value > static_cast<std::uint32_t>(Type::Own))
+    if (kind_value > ON1X_SDK_TYPE_OWN)
         reader.malformed("unknown canonical type kind");
-    const auto kind = static_cast<Type::Kind>(kind_value);
+    Type::Kind kind = Type::Invalid;
+    if (!canonical_type_kind(
+            static_cast<On1xSDK_TypeKind>(kind_value), kind))
+        reader.malformed("unsupported legacy canonical type kind");
     const auto variable = reader.u64();
     const auto extent = reader.u64();
     if (variable > std::numeric_limits<std::size_t>::max() ||
@@ -317,6 +334,30 @@ Type read_type(Reader &reader, std::size_t depth, std::size_t &nodes,
             return Type::own(read_type(
                 reader, depth + 1, nodes,
                 maximum_depth, maximum_nodes));
+        case Type::Channel: {
+            if (!nominal.empty() || !arguments.empty() || !labels.empty() ||
+                child_count != 1)
+                reader.malformed("malformed channel type");
+            auto payload = read_type(
+                reader, depth + 1, nodes,
+                maximum_depth, maximum_nodes);
+            return Type::channel(
+                std::move(payload),
+                static_cast<std::size_t>(variable),
+                static_cast<std::size_t>(extent));
+        }
+        case Type::Sender:
+        case Type::Receiver: {
+            if (variable || extent || !nominal.empty() ||
+                !arguments.empty() || !labels.empty() || child_count != 1)
+                reader.malformed("malformed channel endpoint type");
+            auto payload = read_type(
+                reader, depth + 1, nodes,
+                maximum_depth, maximum_nodes);
+            return kind == Type::Sender
+                ? Type::sender(std::move(payload))
+                : Type::receiver(std::move(payload));
+        }
         case Type::Generic:
             if (extent || !nominal.empty() || !arguments.empty() ||
                 !labels.empty() || child_count)
