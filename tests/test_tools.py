@@ -190,6 +190,58 @@ class Tools(unittest.TestCase):
                 inventory.sync(root)
             self.assertEqual(before, {p: p.read_text() for p in before})
 
+    def test_amb3r_inventory_retains_shared_manual(self):
+        original_manuals, original_strata = manuals.ROOT, strata.ROOT
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                root = manuals.ROOT = strata.ROOT = Path(tmp)
+                for name in ('include', 'tests', 'manual'):
+                    (root / name).mkdir()
+                implementation = root / 'tests/implementation.c'
+                declarations = root / 'tests/declarations.c'
+                implementation.write_text('/* legacy ABI TU */\n')
+                declarations.write_text('int main(void) { return 0; }\n')
+                for stem in manuals.AUXILIARY:
+                    (root / 'include' / (stem + '.h')).touch()
+                    (root / 'manual' / (stem + '.md')).touch()
+                (root / 'examples/modules').mkdir(parents=True)
+                for name in manuals.AUXILIARY.values():
+                    (root / 'examples/modules' / (name + '.c')).touch()
+                (root / 'manual/amb3r-kernels.md').write_text('# Reference kernels\n')
+                (root / 'include/mulib-amb3r-base.h').write_text(
+                    'static inline int ma_identity(int n) { return n; }\n')
+                (root / 'include/mulib-amb3r-example.h').write_text(
+                    '#include "mulib-amb3r-base.h"\n#if defined(MULIB_IMPL_AMB3R_EXAMPLE)\n#endif\n')
+                manifest = root / 'MANIFEST.yaml'
+                manifest.write_text(
+                    'module_count: 0\nimplemented_module_count: 0\nbounded_module_count: 0\n'
+                    'modules:\n'
+                    '- name: amb3r-base\n  header: include/mulib-amb3r-base.h\n'
+                    '  manual: manual/amb3r-kernels.md\n  profile: amb3r\n'
+                    '  implementation: static-inline\n  status: bounded\n  dependencies: []\n'
+                    '- name: amb3r-example\n  header: include/mulib-amb3r-example.h\n'
+                    '  manual: manual/amb3r-kernels.md\n  profile: amb3r\n'
+                    '  macro: MULIB_IMPL_AMB3R_EXAMPLE\n  status: implemented\n'
+                    '  dependencies: []\nproject_files:\n')
+                inventory.sync(root)
+                result = manifest.read_text()
+                self.assertIn('module_count: 2\n', result)
+                self.assertIn('implemented_module_count: 1\n', result)
+                self.assertIn('bounded_module_count: 1\n', result)
+                self.assertIn('  dependencies: [amb3r-base]\n', result)
+                self.assertNotIn('amb3r', implementation.read_text())
+                self.assertNotIn('amb3r', declarations.read_text())
+                records = [r for r in manuals.inventory() if r['header'].name.startswith('mulib-amb3r')]
+                self.assertEqual(len(records), 2)
+                for record in records:
+                    self.assertEqual(record['manual'].name, 'amb3r-kernels.md')
+                    self.assertTrue(record['shared'])
+                    self.assertIsNone(record['example'])
+                self.assertIn('[amb3r-example](amb3r-kernels.md)', manuals.index(records))
+                self.assertIn('[amb3r-example](amb3r-kernels.md)', strata.render())
+        finally:
+            manuals.ROOT, strata.ROOT = original_manuals, original_strata
+
     def test_inventory_additions(self):
         for filename in ('MANIFEST.yaml.additions', 'MANIFESTS.yaml.additions'):
             with self.subTest(filename=filename), tempfile.TemporaryDirectory() as tmp:

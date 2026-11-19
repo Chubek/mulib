@@ -328,6 +328,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/elvi-scrape.c -lm -o elvi-demo
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/elvi-scrape.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -18,3 +18,27 @@ A `mulib_cdd_query_t` combines an optional category (NULL = any), a conjunction 
 - `mulib_cdd_query_run(c,q,out,capacity,needed)` validates the catalogue and query, then sorts matching indices by cost ascending, ID ascending as tie-breaker. Writes at most capacity; `needed` is mandatory. A NULL output and zero capacity is valid for size discovery, returning LIMIT when matches exist. On argument or catalogue validation failure, including LIMIT for an oversized catalogue, `needed` is zero if supplied and the output array is untouched. Output storage must not overlap the inputs or `needed`.
 
 This is a filter, not a dependency resolver. To constrain composition, translate candidate indices into a `mulib_cdd_problem_t.allowed` mask; keep required support categories enabled as appropriate. O(n²) worst-case insertion sort, bounded by 64 candidates.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-cdd-query.h`](../include/mulib-cdd-query.h) |
+| Implementation switch | `MULIB_IMPL_CDD_QUERY` |
+| Repository-local includes | [mulib-cdd-catalogue](mulib-cdd-catalogue.md) |
+| Complete example | [`examples/cdd-pipeline.c`](../examples/cdd-pipeline.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

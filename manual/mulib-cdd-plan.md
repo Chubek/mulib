@@ -18,3 +18,27 @@ Other translation units include the header without switches. See `examples/cdd-p
 - `mulib_cdd_plan_validate(c,p,plan,failed)` independently verifies allowed indices, duplicates, symmetric conflicts, prior requirements, accumulated cost, exact claimed cost and final goal coverage. `failed` is optional; on an invalid step it is the step index; end-of-plan errors report count; initial structural errors report NONE. On success it is count.
 
 Capabilities accumulate; a requirement must be provided externally or by an earlier step. A component cannot satisfy its own prerequisite unless an earlier/external provider exists. There is no resource consumption or invalidation model.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-cdd-plan.h`](../include/mulib-cdd-plan.h) |
+| Implementation switch | `MULIB_IMPL_CDD_PLAN` |
+| Repository-local includes | [mulib-cdd-catalogue](mulib-cdd-catalogue.md) |
+| Complete example | [`examples/cdd-pipeline.c`](../examples/cdd-pipeline.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

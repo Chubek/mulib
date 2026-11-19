@@ -84,6 +84,11 @@ void mulib_immgtk_drawlist_free(mulib_immgtk_drawlist_t *d);
 }
 #endif
 #endif /* MULIB_IMMGTK_DRAWLIST_H */
+/* Keep the legacy C/C++ declaration-only include dependency-free. The C11
+ * shared-renderer adapter is also available by including its header directly. */
+#ifdef MULIB_GFX_ENABLE_IMMGTK_DRAWLIST_ADAPTER
+#include "mulib-immgtk-drawlist-bridge.h"
+#endif
 ```
 
 </details>
@@ -98,7 +103,7 @@ void mulib_immgtk_drawlist_free(mulib_immgtk_drawlist_t *d);
 | --- | --- |
 | Header | [`include/mulib-immgtk-drawlist.h`](../include/mulib-immgtk-drawlist.h) |
 | Implementation switch | `MULIB_IMPL_IMMGTK_DRAWLIST` |
-| Repository-local includes | None |
+| Repository-local includes | [mulib-immgtk-drawlist-bridge](mulib-gfx-immgtk.md) |
 | Complete example | [`examples/modules/immgtk-drawlist.c`](../examples/modules/immgtk-drawlist.c) |
 
 The include list includes conditional and implementation-only includes;

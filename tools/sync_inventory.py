@@ -84,7 +84,9 @@ def sync(root):
         registered[name.group(1)] = block
     if set(registered) - {p.name for p in headers}:
         raise ValueError('manifest references missing headers')
-    switches, blocks = [], []
+    amb3r_headers = {name for name, block in registered.items()
+                     if re.search(r'^  profile: amb3r$', block, re.M)}
+    switches, fixture_switches, blocks = [], [], []
     for header in headers:
         text = header.read_text()
         match = re.search(r'^#\s*if(?:def\s+|\s+defined\s*\(\s*)'
@@ -95,6 +97,8 @@ def sync(root):
             raise ValueError('static-inline header gained an ABI switch: ' + header.name)
         if match:
             switches.append(match.group(1))
+            if header.name not in amb3r_headers:
+                fixture_switches.append(match.group(1))
         elif not inline and re.sub(r'/\*.*?\*/|//[^\n]*', '', text, flags=re.S).strip():
             raise ValueError('header lacks implementation switch: ' + header.name)
         name = header.stem[6:]
@@ -119,10 +123,11 @@ def sync(root):
                     new = new.replace(
                         '  purpose: Reserved future module; no implemented API.\n',
                         '  purpose: ' + json.dumps(purpose) + '\n')
-                fields = {'manual': f'manual/mulib-{name}.md',
-                          'macro': match.group(1),
+                fields = {'macro': match.group(1),
                           'dependencies': '[' + ', '.join(deps) + ']',
                           'status': 'implemented'}
+                if header.name not in amb3r_headers:
+                    fields = {'manual': f'manual/mulib-{name}.md', **fields}
                 for key, value in fields.items():
                     pattern = r'^  ' + key + r':[^\n]*$'
                     line = f'  {key}: {value}'
@@ -170,18 +175,21 @@ def sync(root):
             manifest += f'- file: {relative}\n  purpose: {json.dumps(purpose)}\n'
     if len(set(switches)) != len(switches):
         raise ValueError('implementation switch shared by multiple headers')
+    # The main checker compiles Amb3r as part of its generated TU checks.
+    # Do not repeat that group in the older handwritten ABI fixtures.
+    generated_headers = inline_headers | amb3r_headers
     implementation_path = root / 'tests/implementation.c'
     implementation = implementation_path.read_text()
-    prefix = ''.join('#define ' + switch + '\n' for switch in switches
+    prefix = ''.join('#define ' + switch + '\n' for switch in fixture_switches
                      if '#define ' + switch + '\n' not in implementation)
     includes = ''.join('#include "' + header.name + '"\n' for header in headers
-                        if header.name not in inline_headers
+                        if header.name not in generated_headers
                         if '#include "' + header.name + '"' not in implementation)
     implementation = prefix + implementation.rstrip() + '\n' + includes
     declaration_path = root / 'tests/declarations.c'
     declaration = declaration_path.read_text()
     includes = ''.join('#include "' + header.name + '"\n' for header in headers
-                        if header.name not in inline_headers
+                        if header.name not in generated_headers
                         if '#include "' + header.name + '"' not in declaration)
     if includes:
         anchor = re.search(r'^\s*int\s+main\s*\(\s*void\s*\)', declaration, re.M)

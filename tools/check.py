@@ -115,12 +115,19 @@ def main():
     count = re.search(r'^module_count: (\d+)$', manifest, re.M)
     if not count or int(count.group(1)) != len(headers):
         failures.append(('MANIFEST.yaml', 'module_count does not match header inventory'))
-    bounded = set()
+    bounded, amb3r = set(), set()
     for header in headers:
         name, text = header.name, texts[header.name]
         match = re.search(r'^#\s*if(?:def\s+|\s+defined\s*\(\s*)'
                           r'(MULIB_IMPL_[A-Z0-9_]+)', text, re.M)
         block = entries.get(name, '')
+        profile = re.search(r'^  profile: amb3r$', block, re.M)
+        if profile:
+            amb3r.add(name)
+            for key in ('manual', 'example'):
+                field = re.search(r'^  ' + key + r': (.+)$', block, re.M)
+                if (field and not (root / field.group(1)).is_file()) or (key == 'manual' and not field):
+                    failures.append((name, 'missing Amb3r ' + key))
         if re.search(r'^  implementation: static-inline$', block, re.M):
             bounded.add(name)
             if match or not re.search(r'^  status: bounded$', block, re.M):
@@ -133,10 +140,11 @@ def main():
             expected = {d[len('mulib-'):-len('.h')] for d in dependencies[name]}
             if actual != expected:
                 failures.append((name, 'manifest dependency list differs from header includes'))
-            for key in ('manual', 'example'):
-                field = re.search(r'^  ' + key + r': (.+)$', block, re.M)
-                if not field or not (root / field.group(1)).is_file():
-                    failures.append((name, 'missing bounded module ' + key))
+            if not profile:
+                for key in ('manual', 'example'):
+                    field = re.search(r'^  ' + key + r': (.+)$', block, re.M)
+                    if not field or not (root / field.group(1)).is_file():
+                        failures.append((name, 'missing bounded module ' + key))
             for dependency in dependencies[name]:
                 if dependency not in texts:
                     failures.append((name, 'unknown MuLIB dependency ' + dependency))
@@ -159,10 +167,11 @@ def main():
                                         r'(mulib-[^">]+\.h)[">]', text, re.M) if d not in SUPPORT_HEADERS]
         module = name[len('mulib-'):-len('.h')]
         example = re.search(r'^  example: (.+)$', block, re.M)
-        for expected in ['manual/mulib-' + module + '.md',
-                         example.group(1) if example else 'examples/modules/' + module + '.c']:
-            if not (root / expected).is_file():
-                failures.append((name, 'missing ' + expected))
+        if not profile:
+            for expected in ['manual/mulib-' + module + '.md',
+                             example.group(1) if example else 'examples/modules/' + module + '.c']:
+                if not (root / expected).is_file():
+                    failures.append((name, 'missing ' + expected))
         if name not in entries:
             failures.append((name, 'missing manifest entry'))
         else:
@@ -197,14 +206,14 @@ def main():
     implementation = (root / 'tests/implementation.c').read_text()
     declarations = (root / 'tests/declarations.c').read_text()
     for name in texts:
-        if name in bounded:
-            continue # exercised by the separate combined C11 graphics gate
+        if name in bounded or name in amb3r:
+            continue  # graphics gate or generated Amb3r compilation below
         for path, text in [('tests/implementation.c', implementation),
                            ('tests/declarations.c', declarations)]:
             if '#include "' + name + '"' not in text:
                 failures.append((path, 'missing header ' + name))
     for name, switch in switches.items():
-        if '#define ' + switch + '\n' not in implementation:
+        if name not in amb3r and '#define ' + switch + '\n' not in implementation:
             failures.append(('tests/implementation.c', 'missing switch ' + switch))
 
     def closure(name, seen=None):
@@ -429,14 +438,19 @@ def main():
             ('C declarations', [root / 'tests/declarations.c']),
         ]
         cases = [dict(label=label, sources=paths) for label, paths in integration]
-        all_switches = set(switches.values())
-        for values in extra_switches.values():
-            all_switches.update(values)
+
+        def header_switches(names):
+            enabled = {switches[name] for name in names if name in switches}
+            for name in names:
+                enabled.update(extra_switches.get(name, []))
+            return ''.join('#define ' + switch + '\n' for switch in sorted(enabled))
+
         # The shell modules require this before any system header, including in
         # the declaration-first and reverse-order combined implementation tests.
         posix_source = '#ifndef _POSIX_C_SOURCE\n#define _POSIX_C_SOURCE 200809L\n#endif\n'
-        defines = ''.join('#define ' + switch + '\n' for switch in sorted(all_switches))
-        includes = ''.join('#include "' + header.name + '"\n' for header in reversed(headers))
+        defines = header_switches(texts.keys() - amb3r)
+        includes = ''.join('#include "' + header.name + '"\n' for header in reversed(headers)
+                           if header.name not in amb3r)
         main_source = 'int main(void) { return 0; }\n'
         linux_source = ('#if defined(__linux__) && !defined(_GNU_SOURCE)\n'
                         '#define _GNU_SOURCE\n#endif\n')
@@ -453,17 +467,31 @@ def main():
                               language='c++'))
         else:
             print('C++ declaration check skipped: no C++ compiler')
+        # Amb3r includes a resolver symbol incompatible with legacy dsim-logic4.
+        # Scope the indentation exception to this separate reference family.
+        amb3r_flags = ['-Wno-misleading-indentation']
+        if amb3r:
+            includes = ''.join(f'#include "{name}"\n' for name in sorted(amb3r))
+            dependencies = set().union(*(closure(name) for name in amb3r))
+            cases.append(dict(label='Amb3r combined implementations',
+                              source_text=header_switches(dependencies) + includes + main_source,
+                              extra_flags=amb3r_flags))
+            if have_cxx:
+                cases.append(dict(label='Amb3r C++ declarations', source_text=includes + main_source,
+                                  language='c++', extra_flags=amb3r_flags))
         counts['combined builds'] = (check_many(cases), len(cases))
         print('MuLIB combined builds: %s/%s passed' % counts['combined builds'], flush=True)
         if not args.no_isolation:
             cases = []
             for header in headers:
                 name = header.name
+                extra_flags = amb3r_flags if name in amb3r else []
                 declaration = ('#include "' + name + '"\n') * 2 + 'int main(void) { return 0; }\n'
-                cases.append(dict(label='isolated declarations: ' + name, source_text=declaration))
+                cases.append(dict(label='isolated declarations: ' + name, source_text=declaration,
+                                  extra_flags=extra_flags))
                 if have_cxx:
                     cases.append(dict(label='isolated C++ declarations: ' + name,
-                                      source_text=declaration, language='c++'))
+                                      source_text=declaration, language='c++', extra_flags=extra_flags))
                 if name in reserved:
                     continue
                 enabled = set()
@@ -479,7 +507,7 @@ def main():
                               'MULIB_IMPL_SANDBOX_PROCESS', 'MULIB_IMPL_SECCOMP'}:
                     defines = linux_source + posix_source + defines
                 cases.append(dict(label='isolated implementation: ' + name,
-                                  source_text=defines + declaration))
+                                  source_text=defines + declaration, extra_flags=extra_flags))
             print(f'MuLIB checking {len(cases)} isolated header builds', flush=True)
             counts['isolated headers'] = (check_many(cases), len(cases))
     for category, (passed, total) in counts.items():

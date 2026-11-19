@@ -8,20 +8,23 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1207 headers, 1267 direct dependency edges.
+Inventory: 1766 headers, 2088 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
 
+Compatibility group: `immgtk-drawlist`, `immgtk-drawlist-bridge`.
+
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (403 modules)
+## Stratum 0 (408 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [abstun](mulib-abstun.md) | none |
 | [acpi](mulib-acpi.md) | none |
 | [adler32](mulib-adler32.md) | none |
+| [amb3r-base](amb3r-kernels.md) | none |
 | [arena](mulib-arena.md) | none |
 | [argparse](mulib-argparse.md) | none |
 | [artifact](mulib-artifact.md) | none |
@@ -112,6 +115,7 @@ Compatibility group: `parsec`, `peg`.
 | [dom-mutation](mulib-dom-mutation.md) | none |
 | [dom-range](mulib-dom-range.md) | none |
 | [domserialize](mulib-domserialize.md) | none |
+| [drm-kms](mulib-gfx-drm.md) | none |
 | [drm](mulib-drm.md) | none |
 | [dsim-logic4](mulib-dsim-logic4.md) | none |
 | [dsu](mulib-dsu.md) | none |
@@ -168,6 +172,7 @@ Compatibility group: `parsec`, `peg`.
 | [geoindex](mulib-geoindex.md) | none |
 | [geometry](mulib-geometry.md) | none |
 | [glob](mulib-glob.md) | none |
+| [glx-core](mulib-gfx-raster.md) | none |
 | [gputest](mulib-gputest.md) | none |
 | [graph](mulib-graph.md) | none |
 | [grid](mulib-grid.md) | none |
@@ -188,7 +193,6 @@ Compatibility group: `parsec`, `peg`.
 | [icmp](mulib-icmp.md) | none |
 | [imapserver](mulib-imapserver.md) | none |
 | [immgtk-canvas](mulib-immgtk-canvas.md) | none |
-| [immgtk-drawlist](mulib-immgtk-drawlist.md) | none |
 | [immgtk-plot](mulib-immgtk-plot.md) | none |
 | [importgraph](mulib-importgraph.md) | none |
 | [ingest-stream](mulib-ingest-stream.md) | none |
@@ -229,6 +233,7 @@ Compatibility group: `parsec`, `peg`.
 | [math](mulib-math.md) | none |
 | [matrix](mulib-matrix.md) | none |
 | [matview](mulib-matview.md) | none |
+| [memfd](notebook-desktop.md) | none |
 | [memtable](mulib-memtable.md) | none |
 | [memtest](mulib-memtest.md) | none |
 | [metrics](mulib-metrics.md) | none |
@@ -294,6 +299,7 @@ Compatibility group: `parsec`, `peg`.
 | [prime](mulib-prime.md) | none |
 | [probability](mulib-probability.md) | none |
 | [process](mulib-process.md) | none |
+| [pty](notebook-desktop.md) | none |
 | [qa-corpus](mulib-qa-corpus.md) | none |
 | [qa-repro](mulib-qa-repro.md) | none |
 | [queryaggregate](mulib-queryaggregate.md) | none |
@@ -306,6 +312,7 @@ Compatibility group: `parsec`, `peg`.
 | [regalloc-graph](mulib-regalloc-graph.md) | none |
 | [regex](mulib-regex.md) | none |
 | [replace](mulib-replace.md) | none |
+| [retgtk-kind](graphics-overlay.md) | none |
 | [rf-microstrip](mulib-rf-microstrip.md) | none |
 | [rf-sparams](mulib-rf-sparams.md) | none |
 | [ring](mulib-ring.md) | none |
@@ -423,7 +430,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (402 modules)
+## Stratum 1 (613 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -463,6 +470,16 @@ Compatibility group: `parsec`, `peg`.
 | [bytecode-opt](mulib-bytecode-opt.md) | `bytecode` |
 | [bytecode-serialize](mulib-bytecode-serialize.md) | `bytecode` |
 | [bytecode-verify](mulib-bytecode-verify.md) | `bytecode` |
+| [canvas-camera](amb3r-kernels.md) | `amb3r-base` |
+| [canvas-command](amb3r-kernels.md) | `amb3r-base` |
+| [canvas-gizmo](amb3r-kernels.md) | `amb3r-base` |
+| [canvas-grid](amb3r-kernels.md) | `amb3r-base` |
+| [canvas-hittest](amb3r-kernels.md) | `amb3r-base` |
+| [canvas-layer](amb3r-kernels.md) | `amb3r-base` |
+| [canvas-lod](amb3r-kernels.md) | `amb3r-base` |
+| [canvas-selection](amb3r-kernels.md) | `amb3r-base` |
+| [canvas-tile](amb3r-kernels.md) | `amb3r-base` |
+| [canvas-viewport](amb3r-kernels.md) | `amb3r-base` |
 | [capbroker](mulib-capbroker.md) | `sandbox-profile` |
 | [ccweave](mulib-ccweave.md) | `mir`, `strbuf` |
 | [cdd-diff](mulib-cdd-diff.md) | `cdd-catalogue` |
@@ -522,18 +539,56 @@ Compatibility group: `parsec`, `peg`.
 | [docstyle](mulib-docstyle.md) | `typecore` |
 | [dom](mulib-dom.md) | `buffer`, `utf8` |
 | [dominance](mulib-dominance.md) | `cfg` |
+| [drm-atomic](mulib-gfx-drm.md) | `drm-kms`, `glx-core` |
+| [drm-framebuffer](mulib-gfx-drm.md) | `drm-kms` |
+| [drm-gem](mulib-gfx-drm.md) | `drm-kms` |
+| [drm-output](mulib-gfx-drm.md) | `drm-kms` |
+| [drm-pageflip](mulib-gfx-drm.md) | `drm-kms` |
+| [drm-prime](mulib-gfx-drm.md) | `drm-kms` |
+| [drm-session](mulib-gfx-drm.md) | `drm-kms` |
+| [drm-syncobj](mulib-gfx-drm.md) | `drm-kms` |
 | [dsim-bitvec](mulib-dsim-bitvec.md) | `dsim-logic4` |
+| [dsim-bytecode](amb3r-kernels.md) | `amb3r-base` |
+| [dsim-cosim](amb3r-kernels.md) | `amb3r-base` |
+| [dsim-coverage](amb3r-kernels.md) | `amb3r-base` |
+| [dsim-delta](amb3r-kernels.md) | `amb3r-base` |
+| [dsim-region](amb3r-kernels.md) | `amb3r-base` |
+| [dsim-resolve](amb3r-kernels.md) | `amb3r-base` |
 | [dsim-scheduler](mulib-dsim-scheduler.md) | `dsim-logic4` |
+| [dsim-testbench](amb3r-kernels.md) | `amb3r-base` |
 | [dvi](mulib-dvi.md) | `typecore` |
 | [dvifont](mulib-dvifont.md) | `typecore` |
 | [dviread](mulib-dviread.md) | `typecore` |
+| [ecad-annotation](amb3r-kernels.md) | `amb3r-base` |
+| [ecad-bus](amb3r-kernels.md) | `amb3r-base` |
 | [ecad-connect](mulib-ecad-connect.md) | `ecad-schematic` |
+| [ecad-elaborate](amb3r-kernels.md) | `amb3r-base` |
 | [ecad-erc](mulib-ecad-erc.md) | `ecad-schematic` |
+| [ecad-hittest](amb3r-kernels.md) | `amb3r-base` |
+| [ecad-instance](amb3r-kernels.md) | `amb3r-base` |
+| [ecad-kicad](amb3r-kernels.md) | `amb3r-base` |
 | [ecad-netlist](mulib-ecad-netlist.md) | `ecad-schematic` |
+| [ecad-pin](amb3r-kernels.md) | `amb3r-base` |
+| [ecad-port](amb3r-kernels.md) | `amb3r-base` |
+| [ecad-power](amb3r-kernels.md) | `amb3r-base` |
+| [ecad-sheet](amb3r-kernels.md) | `amb3r-base` |
+| [ecad-snap](amb3r-kernels.md) | `amb3r-base` |
+| [ecad-wire-route](amb3r-kernels.md) | `amb3r-base` |
+| [ecad-wire](amb3r-kernels.md) | `amb3r-base` |
+| [eda-catalogue](amb3r-kernels.md) | `amb3r-base` |
+| [eda-dependency](amb3r-kernels.md) | `amb3r-base` |
+| [eda-diagnostics](amb3r-kernels.md) | `amb3r-base` |
+| [eda-handles](amb3r-kernels.md) | `amb3r-base` |
+| [eda-job](amb3r-kernels.md) | `amb3r-base` |
 | [eda-object](mulib-eda-object.md) | `eda-ids` |
+| [eda-parametric](amb3r-kernels.md) | `amb3r-base` |
+| [eda-properties](amb3r-kernels.md) | `amb3r-base` |
 | [eda-quantity](mulib-eda-quantity.md) | `eda-units` |
+| [eda-selection](amb3r-kernels.md) | `amb3r-base` |
+| [eda-store](amb3r-kernels.md) | `amb3r-base` |
 | [eda-transaction](mulib-eda-transaction.md) | `eda-design-db` |
 | [eda-undo](mulib-eda-undo.md) | `eda-design-db` |
+| [eda-variants](amb3r-kernels.md) | `amb3r-base` |
 | [edit_distance](mulib-edit_distance.md) | `levenshtein` |
 | [elf](mulib-elf.md) | `endian` |
 | [epubcheck](mulib-epubcheck.md) | `typecore` |
@@ -541,6 +596,15 @@ Compatibility group: `parsec`, `peg`.
 | [ezndk](mulib-ezndk.md) | `buffer` |
 | [fft](mulib-fft.md) | `complex` |
 | [fiber](mulib-fiber.md) | `xthreads` |
+| [field-boundary](amb3r-kernels.md) | `amb3r-base` |
+| [field-capacitance](amb3r-kernels.md) | `amb3r-base` |
+| [field-current](amb3r-kernels.md) | `amb3r-base` |
+| [field-electrothermal](amb3r-kernels.md) | `amb3r-base` |
+| [field-fdm](amb3r-kernels.md) | `amb3r-base` |
+| [field-fdtd](amb3r-kernels.md) | `amb3r-base` |
+| [field-inductance](amb3r-kernels.md) | `amb3r-base` |
+| [field-material](amb3r-kernels.md) | `amb3r-base` |
+| [field-mesh](amb3r-kernels.md) | `amb3r-base` |
 | [figurelayout](mulib-figurelayout.md) | `typecore` |
 | [flatbuffers](mulib-flatbuffers.md) | `binfile`, `bycutils` |
 | [floatgraphics](mulib-floatgraphics.md) | `typecore` |
@@ -558,20 +622,66 @@ Compatibility group: `parsec`, `peg`.
 | [fontraster](mulib-fontraster.md) | `typecore` |
 | [fontsubset](mulib-fontsubset.md) | `typecore` |
 | [fontvar](mulib-fontvar.md) | `typecore` |
+| [formal-assertion](amb3r-kernels.md) | `amb3r-base` |
+| [formal-cdc](amb3r-kernels.md) | `amb3r-base` |
 | [formal-cec](mulib-formal-cec.md) | `synth-truthtable` |
+| [formal-counterexample](amb3r-kernels.md) | `amb3r-base` |
+| [formal-ltl](amb3r-kernels.md) | `amb3r-base` |
+| [formal-rdc](amb3r-kernels.md) | `amb3r-base` |
 | [formal-sat](mulib-formal-sat.md) | `formal-cnf` |
+| [formal-sec](amb3r-kernels.md) | `amb3r-base` |
+| [formal-transition](amb3r-kernels.md) | `amb3r-base` |
+| [fpga-architecture](amb3r-kernels.md) | `amb3r-base` |
+| [fpga-bitstream](amb3r-kernels.md) | `amb3r-base` |
+| [fpga-constraints](amb3r-kernels.md) | `amb3r-base` |
+| [fpga-fasm](amb3r-kernels.md) | `amb3r-base` |
+| [fpga-grid](amb3r-kernels.md) | `amb3r-base` |
 | [fpga-lut](mulib-fpga-lut.md) | `synth-truthtable` |
+| [fpga-pack](amb3r-kernels.md) | `amb3r-base` |
+| [fpga-timing](amb3r-kernels.md) | `amb3r-base` |
 | [fst](mulib-fst.md) | `buffer`, `crc32`, `endian`, `vec` |
 | [fuse](mulib-fuse.md) | `container-core`, `vfs` |
 | [galois](mulib-galois.md) | `fca` |
 | [gc-roots](mulib-gc-roots.md) | `gc` |
 | [glossary](mulib-glossary.md) | `typecore` |
+| [glx-atlas](mulib-gfx-font-image.md) | `glx-core` |
+| [glx-blend](mulib-gfx-raster.md) | `glx-core` |
+| [glx-clip](mulib-gfx-raster.md) | `glx-core` |
+| [glx-display](graphics-overlay.md) | `glx-core` |
+| [glx-egl](graphics-overlay.md) | `glx-core` |
+| [glx-event](mulib-gfx-input.md) | `glx-core` |
+| [glx-filter](mulib-gfx-path.md) | `glx-core` |
+| [glx-fontscan](mulib-gfx-font-image.md) | `glx-core` |
+| [glx-gradient](mulib-gfx-path.md) | `glx-core` |
+| [glx-icon](mulib-gfx-font-image.md) | `glx-core` |
+| [glx-opengl](graphics-overlay.md) | `glx-core` |
+| [glx-path](mulib-gfx-path.md) | `glx-core` |
+| [glx-pixelformat](mulib-gfx-raster.md) | `glx-core` |
+| [glx-region](mulib-gfx-raster.md) | `glx-core` |
+| [glx-rendercache](graphics-overlay.md) | `glx-core` |
+| [glx-shaderir](mulib-gfx-shader.md) | `glx-core` |
+| [glx-shape](mulib-gfx-path.md) | `glx-core` |
+| [glx-simd](graphics-overlay.md) | `glx-core` |
+| [glx-surface](mulib-gfx-raster.md) | `glx-core` |
+| [glx-tessellate](mulib-gfx-path.md) | `glx-core` |
+| [glx-transform](mulib-gfx-path.md) | `glx-core` |
+| [glx-vulkan](graphics-overlay.md) | `glx-core` |
 | [glx](mulib-glx.md) | `drm`, `linalg` |
 | [graphdb](mulib-graphdb.md) | `memtable` |
 | [graphviz](mulib-graphviz.md) | `graph`, `strbuf`, `utf8` |
 | [gss](mulib-gss.md) | `vec` |
 | [gssair](mulib-gssair.md) | `mir` |
 | [hattrie](mulib-hattrie.md) | `hash` |
+| [hdl-ast](amb3r-kernels.md) | `amb3r-base` |
+| [hdl-elaborate](amb3r-kernels.md) | `amb3r-base` |
+| [hdl-liberty](amb3r-kernels.md) | `amb3r-base` |
+| [hdl-preprocessor](amb3r-kernels.md) | `amb3r-base` |
+| [hdl-sdc](amb3r-kernels.md) | `amb3r-base` |
+| [hdl-sdf](amb3r-kernels.md) | `amb3r-base` |
+| [hdl-symboltable](amb3r-kernels.md) | `amb3r-base` |
+| [hdl-systemverilog-lex](amb3r-kernels.md) | `amb3r-base` |
+| [hdl-timescale](amb3r-kernels.md) | `amb3r-base` |
+| [hdl-vhdl-lex](amb3r-kernels.md) | `amb3r-base` |
 | [health_checker](mulib-health_checker.md) | `upstream` |
 | [heaptable](mulib-heaptable.md) | `memtable` |
 | [histprice](mulib-histprice.md) | `statsproc` |
@@ -579,15 +689,27 @@ Compatibility group: `parsec`, `peg`.
 | [html-tokenizer](mulib-html-tokenizer.md) | `html-textstream` |
 | [htmlwriter](mulib-htmlwriter.md) | `typecore` |
 | [http2](mulib-http2.md) | `buffer` |
+| [hwil-clock](amb3r-kernels.md) | `amb3r-base` |
+| [hwil-context](amb3r-kernels.md) | `amb3r-base` |
 | [hwil-module](mulib-hwil-module.md) | `dsim-logic4` |
+| [hwil-region](amb3r-kernels.md) | `amb3r-base` |
+| [hwil-wire](amb3r-kernels.md) | `amb3r-base` |
 | [imageconvert](mulib-imageconvert.md) | `typecore` |
 | [imagejpeg](mulib-imagejpeg.md) | `typecore` |
-| [imagepng](mulib-imagepng.md) | `typecore` |
 | [imagewebp](mulib-imagewebp.md) | `typecore` |
+| [immgtk-plot-contour](mulib-gfx-immgtk.md) | `glx-core` |
+| [immgtk-plot-stream](mulib-gfx-immgtk.md) | `glx-core` |
 | [impaclient](mulib-impaclient.md) | `imapserver` |
 | [index](mulib-index.md) | `b+tree` |
 | [indexer](mulib-indexer.md) | `typecore` |
 | [initsysutils](mulib-initsysutils.md) | `cpio` |
+| [input-compose](mulib-gfx-input.md) | `glx-core` |
+| [input-gamepad](mulib-gfx-input.md) | `glx-core` |
+| [input-keyboard](mulib-gfx-input.md) | `glx-core` |
+| [input-mouse](mulib-gfx-input.md) | `glx-core` |
+| [input-tablet](mulib-gfx-input.md) | `glx-core` |
+| [input-touch](mulib-gfx-input.md) | `glx-core` |
+| [instrument-transport](amb3r-kernels.md) | `amb3r-base` |
 | [invindex](mulib-invindex.md) | `buffer`, `bycutils`, `memtable` |
 | [ipc-framed](mulib-ipc-framed.md) | `sandbox-profile` |
 | [ipfs](mulib-ipfs.md) | `varint` |
@@ -645,8 +767,27 @@ Compatibility group: `parsec`, `peg`.
 | [netpolicy](mulib-netpolicy.md) | `urlcanon` |
 | [nextclosure](mulib-nextclosure.md) | `fca` |
 | [nfnetlink](mulib-nfnetlink.md) | `netlink` |
+| [num-adaptive](amb3r-kernels.md) | `amb3r-base` |
+| [num-amd](amb3r-kernels.md) | `amb3r-base` |
+| [num-autodiff](amb3r-kernels.md) | `amb3r-base` |
+| [num-bdf](amb3r-kernels.md) | `amb3r-base` |
+| [num-bicgstab](amb3r-kernels.md) | `amb3r-base` |
+| [num-cholesky](amb3r-kernels.md) | `amb3r-base` |
+| [num-colamd](amb3r-kernels.md) | `amb3r-base` |
+| [num-complex-lu](amb3r-kernels.md) | `amb3r-base` |
+| [num-condition](amb3r-kernels.md) | `amb3r-base` |
 | [num-csc](mulib-num-csc.md) | `num-sparse` |
 | [num-csr](mulib-num-csr.md) | `num-sparse` |
+| [num-dae](amb3r-kernels.md) | `amb3r-base` |
+| [num-eigensolver](amb3r-kernels.md) | `amb3r-base` |
+| [num-gmres](amb3r-kernels.md) | `amb3r-base` |
+| [num-jacobian](amb3r-kernels.md) | `amb3r-base` |
+| [num-linesearch](amb3r-kernels.md) | `amb3r-base` |
+| [num-newton](amb3r-kernels.md) | `amb3r-base` |
+| [num-precondition](amb3r-kernels.md) | `amb3r-base` |
+| [num-sparse-lu](amb3r-kernels.md) | `amb3r-base` |
+| [num-symbolic](amb3r-kernels.md) | `amb3r-base` |
+| [num-trapezoid](amb3r-kernels.md) | `amb3r-base` |
 | [objectdb](mulib-objectdb.md) | `memtable` |
 | [objfilelibsearch](mulib-objfilelibsearch.md) | `binfile` |
 | [objfilepacker](mulib-objfilepacker.md) | `buffer` |
@@ -678,9 +819,25 @@ Compatibility group: `parsec`, `peg`.
 | [parallel](mulib-parallel.md) | `taskpool` |
 | [pathdb](mulib-pathdb.md) | `vfs` |
 | [pcb-board](mulib-pcb-board.md) | `pcb-geometry` |
+| [pcb-diffpair](amb3r-kernels.md) | `amb3r-base` |
 | [pcb-drc](mulib-pcb-drc.md) | `pcb-geometry` |
 | [pcb-gerber](mulib-pcb-gerber.md) | `pcb-geometry` |
 | [pcb-impedance](mulib-pcb-impedance.md) | `rf-microstrip` |
+| [pcb-kicad](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-lengthmatch](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-netclass](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-pad](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-panelize](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-placement](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-pour](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-ratsnest](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-router](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-shove](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-spatial](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-stackup](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-thermal-relief](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-via](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-zone](amb3r-kernels.md) | `amb3r-base` |
 | [pdf](mulib-pdf.md) | `buffer`, `strbuf` |
 | [pdfannot](mulib-pdfannot.md) | `typecore` |
 | [pdfcanvas](mulib-pdfcanvas.md) | `typecore` |
@@ -691,6 +848,12 @@ Compatibility group: `parsec`, `peg`.
 | [pdfstructure](mulib-pdfstructure.md) | `typecore` |
 | [perlpod](mulib-perlpod.md) | `strbuf`, `utf8` |
 | [phrasequery](mulib-phrasequery.md) | `positions` |
+| [physical-def](amb3r-kernels.md) | `amb3r-base` |
+| [physical-lef](amb3r-kernels.md) | `amb3r-base` |
+| [place-analytical](amb3r-kernels.md) | `amb3r-base` |
+| [place-anneal](amb3r-kernels.md) | `amb3r-base` |
+| [place-floorplan](amb3r-kernels.md) | `amb3r-base` |
+| [place-legalize](amb3r-kernels.md) | `amb3r-base` |
 | [plot2d](mulib-plot2d.md) | `typecore` |
 | [price-normalize](mulib-price-normalize.md) | `money` |
 | [price-observation](mulib-price-observation.md) | `money` |
@@ -706,7 +869,13 @@ Compatibility group: `parsec`, `peg`.
 | [regpressure](mulib-regpressure.md) | `liveintervals` |
 | [rewrite](mulib-rewrite.md) | `egraph` |
 | [rewrite_url](mulib-rewrite_url.md) | `seurity` |
+| [rf-matching](amb3r-kernels.md) | `amb3r-base` |
+| [rf-network](amb3r-kernels.md) | `amb3r-base` |
 | [rf-smith](mulib-rf-smith.md) | `rf-sparams` |
+| [rf-tolerance](amb3r-kernels.md) | `amb3r-base` |
+| [rf-touchstone](amb3r-kernels.md) | `amb3r-base` |
+| [rf-transmission](amb3r-kernels.md) | `amb3r-base` |
+| [route-detailed](amb3r-kernels.md) | `amb3r-base` |
 | [rtnl](mulib-rtnl.md) | `netlink` |
 | [scrape](mulib-scrape.md) | `scrape-readable` |
 | [seccomp](mulib-seccomp.md) | `sandbox-profile` |
@@ -718,9 +887,27 @@ Compatibility group: `parsec`, `peg`.
 | [smtpclient](mulib-smtpclient.md) | `smtpserver` |
 | [sock-diag](mulib-sock-diag.md) | `netlink` |
 | [spice-c](mulib-spice-c.md) | `spice-stamp` |
+| [spice-checkpoint](amb3r-kernels.md) | `amb3r-base` |
+| [spice-convergence](amb3r-kernels.md) | `amb3r-base` |
+| [spice-elaborate](amb3r-kernels.md) | `amb3r-base` |
+| [spice-fourier](amb3r-kernels.md) | `amb3r-base` |
 | [spice-independent](mulib-spice-independent.md) | `spice-stamp` |
+| [spice-model](amb3r-kernels.md) | `amb3r-base` |
+| [spice-montecarlo](amb3r-kernels.md) | `amb3r-base` |
+| [spice-mosfet](amb3r-kernels.md) | `amb3r-base` |
 | [spice-netlist](mulib-spice-netlist.md) | `spice-lexer` |
+| [spice-noise](amb3r-kernels.md) | `amb3r-base` |
+| [spice-params](amb3r-kernels.md) | `amb3r-base` |
+| [spice-pz](amb3r-kernels.md) | `amb3r-base` |
 | [spice-r](mulib-spice-r.md) | `spice-stamp` |
+| [spice-rawfile](amb3r-kernels.md) | `amb3r-base` |
+| [spice-sensitivity](amb3r-kernels.md) | `amb3r-base` |
+| [spice-sourcewave](amb3r-kernels.md) | `amb3r-base` |
+| [spice-subckt](amb3r-kernels.md) | `amb3r-base` |
+| [spice-sweep](amb3r-kernels.md) | `amb3r-base` |
+| [spice-switch](amb3r-kernels.md) | `amb3r-base` |
+| [spice-temperature](amb3r-kernels.md) | `amb3r-base` |
+| [spice-tline](amb3r-kernels.md) | `amb3r-base` |
 | [sppf](mulib-sppf.md) | `vec` |
 | [sql](mulib-sql.md) | `buffer`, `memtable`, `strbuf` |
 | [sqlite-format](mulib-sqlite-format.md) | `buffer`, `endian` |
@@ -730,6 +917,16 @@ Compatibility group: `parsec`, `peg`.
 | [statsprice](mulib-statsprice.md) | `statsproc` |
 | [superinstr](mulib-superinstr.md) | `mir`, `strbuf` |
 | [svgpaint](mulib-svgpaint.md) | `typecore` |
+| [synth-aig-rewrite](amb3r-kernels.md) | `amb3r-base` |
+| [synth-bdd](amb3r-kernels.md) | `amb3r-base` |
+| [synth-cellmap](amb3r-kernels.md) | `amb3r-base` |
+| [synth-fsm](amb3r-kernels.md) | `amb3r-base` |
+| [synth-memory](amb3r-kernels.md) | `amb3r-base` |
+| [synth-mig](amb3r-kernels.md) | `amb3r-base` |
+| [synth-npn](amb3r-kernels.md) | `amb3r-base` |
+| [synth-quinemccluskey](amb3r-kernels.md) | `amb3r-base` |
+| [synth-retime](amb3r-kernels.md) | `amb3r-base` |
+| [synth-xag](amb3r-kernels.md) | `amb3r-base` |
 | [sysfonts](mulib-sysfonts.md) | `dynload` |
 | [sysfs](mulib-sysfs.md) | `vfs` |
 | [tablelayout](mulib-tablelayout.md) | `typecore` |
@@ -771,10 +968,18 @@ Compatibility group: `parsec`, `peg`.
 | [texscope](mulib-texscope.md) | `typecore` |
 | [texshipout](mulib-texshipout.md) | `typecore` |
 | [textanalyzer](mulib-textanalyzer.md) | `stopwords`, `tokenizer` |
+| [textbuffer](mulib-gfx-text.md) | `glx-core` |
 | [textitemize](mulib-textitemize.md) | `typecore` |
 | [textrace](mulib-textrace.md) | `typecore` |
 | [texvalue](mulib-texvalue.md) | `typecore` |
 | [texvlist](mulib-texvlist.md) | `typecore` |
+| [timing-clock](amb3r-kernels.md) | `amb3r-base` |
+| [timing-corner](amb3r-kernels.md) | `amb3r-base` |
+| [timing-elmore](amb3r-kernels.md) | `amb3r-base` |
+| [timing-graph](amb3r-kernels.md) | `amb3r-base` |
+| [timing-parasitic](amb3r-kernels.md) | `amb3r-base` |
+| [timing-slack](amb3r-kernels.md) | `amb3r-base` |
+| [timing-spef](amb3r-kernels.md) | `amb3r-base` |
 | [toc](mulib-toc.md) | `typecore` |
 | [trie_traversal](mulib-trie_traversal.md) | `trie` |
 | [ttf](mulib-ttf.md) | `typecore` |
@@ -816,21 +1021,34 @@ Compatibility group: `parsec`, `peg`.
 | [vmmdev](mulib-vmmdev.md) | `endian` |
 | [vterm](mulib-vterm.md) | `grid`, `utf8` |
 | [wal](mulib-wal.md) | `buffer`, `bycutils`, `crc32` |
+| [wave-correlation](amb3r-kernels.md) | `amb3r-base` |
 | [wave-decimate](mulib-wave-decimate.md) | `wave-signal` |
+| [wave-expression](amb3r-kernels.md) | `amb3r-base` |
+| [wave-eye](amb3r-kernels.md) | `amb3r-base` |
+| [wave-fst](amb3r-kernels.md) | `amb3r-base` |
+| [wave-histogram](amb3r-kernels.md) | `amb3r-base` |
+| [wave-index](amb3r-kernels.md) | `amb3r-base` |
+| [wave-jitter](amb3r-kernels.md) | `amb3r-base` |
 | [wave-measure](mulib-wave-measure.md) | `wave-signal` |
+| [wave-spectrum](amb3r-kernels.md) | `amb3r-base` |
+| [wave-store](amb3r-kernels.md) | `amb3r-base` |
+| [wave-trigger](amb3r-kernels.md) | `amb3r-base` |
 | [wave-vcd](mulib-wave-vcd.md) | `dsim-logic4` |
+| [wayland-wire](mulib-gfx-wire.md) | `glx-core` |
 | [wayland](mulib-wayland.md) | `dynload` |
 | [weblocation](mulib-weblocation.md) | `urlcanon` |
 | [weighted-edit-distance](mulib-weighted-edit-distance.md) | `weighed_edit_distane` |
 | [wifi-monitor](mulib-wifi-monitor.md) | `netlink` |
 | [wlroots](mulib-wlroots.md) | `vec` |
+| [wm-core](notebook-desktop.md) | `glx-core` |
 | [woff](mulib-woff.md) | `typecore` |
 | [woff2](mulib-woff2.md) | `typecore` |
+| [x11-wire](mulib-gfx-wire.md) | `glx-core` |
 | [x25519](mulib-x25519.md) | `entropy` |
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (145 modules)
+## Stratum 2 (268 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -869,30 +1087,88 @@ Compatibility group: `parsec`, `peg`.
 | [dbus-client](mulib-dbus-client.md) | `dbus-transport` |
 | [devlink](mulib-devlink.md) | `netlink-genl` |
 | [dfa](mulib-dfa.md) | `crc32`, `endian`, `fst` |
+| [dmabuf](notebook-desktop.md) | `wm-core` |
 | [dnsresolver](mulib-dnsresolver.md) | `dnscache`, `dnsclient` |
 | [docnormalize](mulib-docnormalize.md) | `docir`, `typecore` |
 | [docserialize](mulib-docserialize.md) | `docir`, `typecore` |
 | [docsource](mulib-docsource.md) | `docir`, `typecore`, `typesrc` |
 | [docvalidate](mulib-docvalidate.md) | `docir`, `typecore` |
 | [dsdom](mulib-dsdom.md) | `xml` |
+| [dsim-driver](amb3r-kernels.md) | `amb3r-base`, `dsim-resolve` |
+| [dsim-sequential](amb3r-kernels.md) | `amb3r-base`, `dsim-resolve` |
+| [dsim-signal](amb3r-kernels.md) | `amb3r-base`, `dsim-resolve` |
+| [dsim-trigger](amb3r-kernels.md) | `amb3r-base`, `dsim-resolve` |
+| [ecad-flatten](amb3r-kernels.md) | `amb3r-base`, `ecad-sheet` |
+| [eda-changeset](amb3r-kernels.md) | `amb3r-base`, `eda-store` |
+| [eda-query](amb3r-kernels.md) | `amb3r-base`, `eda-store` |
+| [eda-revision](amb3r-kernels.md) | `amb3r-base`, `eda-store` |
+| [eda-serialize](amb3r-kernels.md) | `amb3r-base`, `eda-store` |
+| [eda-validate](amb3r-kernels.md) | `amb3r-base`, `eda-store` |
 | [elfutils](mulib-elfutils.md) | `elf` |
 | [ethtool-netlink](mulib-ethtool-netlink.md) | `netlink-genl` |
 | [etl-transform](mulib-etl-transform.md) | `record` |
 | [evtstream](mulib-evtstream.md) | `ast` |
+| [field-electrostatic](amb3r-kernels.md) | `amb3r-base`, `field-fdm` |
+| [field-fem](amb3r-kernels.md) | `amb3r-base`, `field-mesh` |
 | [fmt-sv](mulib-fmt-sv.md) | `hwil-module` |
 | [fontshape](mulib-fontshape.md) | `dynload`, `fontcmap`, `fontgdef`, `fontgpos`, `fontgsub`, `fontkern`, `fontmetrics`, `sfnt`, `utf8` |
+| [formal-aig-cnf](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
+| [formal-assume](amb3r-kernels.md) | `amb3r-base`, `formal-transition` |
+| [formal-bmc](amb3r-kernels.md) | `amb3r-base`, `formal-counterexample`, `formal-transition` |
+| [formal-ctl](amb3r-kernels.md) | `amb3r-base`, `formal-transition` |
+| [formal-kinduction](amb3r-kernels.md) | `amb3r-base`, `formal-transition` |
+| [formal-miter](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
+| [formal-pdr](amb3r-kernels.md) | `amb3r-base`, `formal-transition` |
+| [fpga-place](amb3r-kernels.md) | `amb3r-base`, `fpga-architecture`, `place-legalize` |
+| [fpga-rrgraph](amb3r-kernels.md) | `amb3r-base`, `fpga-grid` |
 | [glr](mulib-glr.md) | `atn`, `gss`, `sppf` |
+| [glx-clientbuffer](notebook-desktop.md) | `glx-core`, `wm-core` |
+| [glx-compositor](mulib-gfx-raster.md) | `glx-blend`, `glx-surface` |
+| [glx-damage](notebook-desktop.md) | `wm-core` |
+| [glx-eventloop](mulib-gfx-input.md) | `glx-event` |
+| [glx-font](mulib-gfx-font-image.md) | `textbuffer` |
+| [glx-frameclock](notebook-desktop.md) | `wm-core` |
+| [glx-legacy-bridge](graphics-overlay.md) | `glx`, `glx-core` |
+| [glx-occlusion](notebook-desktop.md) | `wm-core` |
+| [glx-outputlayout](notebook-desktop.md) | `wm-core` |
+| [glx-paint](mulib-gfx-path.md) | `glx-gradient` |
+| [glx-platform](mulib-gfx-present.md) | `glx-display`, `glx-event` |
+| [glx-raster](mulib-gfx-path.md) | `glx-path` |
+| [glx-shadervm](mulib-gfx-shader.md) | `glx-shaderir` |
+| [glx-stroke](mulib-gfx-path.md) | `glx-path` |
+| [glx-svg](mulib-gfx-path.md) | `glx-path` |
+| [glx-swapchain](mulib-gfx-present.md) | `glx-surface` |
+| [glx-texture](mulib-gfx-font-image.md) | `glx-gradient`, `glx-surface` |
 | [gzip](mulib-gzip.md) | `codec-core`, `crc32`, `deflate` |
+| [hdl-consteval](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hdl-width](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
 | [hidden_markov_chain](mulib-hidden_markov_chain.md) | `markov_chain` |
 | [html-jsonld](mulib-html-jsonld.md) | `html-tokenizer`, `shylock-core` |
 | [html-treebuilder](mulib-html-treebuilder.md) | `html-tokenizer`, `shylock-core` |
 | [html](mulib-html.md) | `docir`, `xml` |
 | [http3](mulib-http3.md) | `quic` |
+| [hwil-attribute](amb3r-kernels.md) | `amb3r-base`, `eda-properties` |
+| [hwil-builder](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hwil-cell](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hwil-elaborate](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hwil-memory](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hwil-pass](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hwil-port](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hwil-register](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hwil-reset](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hwil-serialize](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hwil-text](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hwil-use-def](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hwil-value](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
 | [hwil-verify](mulib-hwil-verify.md) | `hwil-module` |
 | [ifft](mulib-ifft.md) | `fft` |
+| [imagepng](mulib-imagepng.md) | `deflate`, `typecore` |
 | [imgformat](mulib-imgformat.md) | `container`, `crc32` |
 | [inet-diag](mulib-inet-diag.md) | `sock-diag` |
 | [initsys](mulib-initsys.md) | `process`, `taskdag` |
+| [input-gesture](mulib-gfx-input.md) | `input-touch` |
+| [input-keymap](mulib-gfx-input.md) | `input-keyboard` |
+| [instrument-scpi](amb3r-kernels.md) | `amb3r-base`, `instrument-transport` |
 | [latex](mulib-latex.md) | `docir`, `tex` |
 | [lir](mulib-lir.md) | `lowopt`, `machine` |
 | [loops](mulib-loops.md) | `dominance` |
@@ -915,11 +1191,21 @@ Compatibility group: `parsec`, `peg`.
 | [miniwav](mulib-miniwav.md) | `audio` |
 | [mumq](mulib-mumq.md) | `aes`, `socket` |
 | [nameserver](mulib-nameserver.md) | `dnsclient` |
+| [nb-cell](notebook-desktop.md) | `utf8`, `wm-core` |
+| [nb-completion](notebook-desktop.md) | `wm-core` |
+| [nb-execgraph](notebook-desktop.md) | `wm-core` |
+| [nb-inspect](notebook-desktop.md) | `wm-core` |
+| [nb-message](notebook-desktop.md) | `wm-core` |
+| [nb-metadata](notebook-desktop.md) | `wm-core` |
+| [nb-output](notebook-desktop.md) | `wm-core` |
+| [nb-stream](notebook-desktop.md) | `wm-core` |
+| [nb-worker](notebook-desktop.md) | `wm-core` |
 | [netfilter-log](mulib-netfilter-log.md) | `netlink-attr`, `nfnetlink` |
 | [netfilter-queue](mulib-netfilter-queue.md) | `netlink-attr`, `nfnetlink` |
 | [netfs](mulib-netfs.md) | `endian`, `fuse`, `xtks` |
 | [nftables](mulib-nftables.md) | `nfnetlink` |
 | [nl80211](mulib-nl80211.md) | `netlink`, `netlink-attr`, `netlink-genl` |
+| [num-sparse-ldlt](amb3r-kernels.md) | `amb3r-base`, `num-sparse-lu` |
 | [oauth2](mulib-oauth2.md) | `auth`, `authcrypto` |
 | [objfileleader](mulib-objfileleader.md) | `elf` |
 | [objfilewriter](mulib-objfilewriter.md) | `binfilewriter`, `buffer`, `bycutils` |
@@ -928,6 +1214,10 @@ Compatibility group: `parsec`, `peg`.
 | [otpath](mulib-otpath.md) | `otpauth` |
 | [parsec](mulib-parsec.md) | `ast`, `glob`, `peg`, `strbuf` |
 | [parser-pratt](mulib-parser-pratt.md) | `lexer` |
+| [pcb-dfm](amb3r-kernels.md) | `amb3r-base`, `pcb-via` |
+| [pcb-dft](amb3r-kernels.md) | `amb3r-base`, `pcb-pad` |
+| [pcb-footprint](amb3r-kernels.md) | `amb3r-base`, `pcb-pad` |
+| [pcb-ipc2581](amb3r-kernels.md) | `amb3r-base`, `pcb-stackup` |
 | [pe](mulib-pe.md) | `coff` |
 | [peephole](mulib-peephole.md) | `lowopt` |
 | [peg](mulib-peg.md) | `parsec`, `strbuf` |
@@ -939,7 +1229,10 @@ Compatibility group: `parsec`, `peg`.
 | [readability](mulib-readability.md) | `html-textstream`, `shylock-core` |
 | [recordbatch](mulib-recordbatch.md) | `record` |
 | [regalloc](mulib-regalloc.md) | `regalloc-graph`, `regalloc-linear` |
+| [retgtk-template](graphics-overlay.md) | `textbuffer` |
+| [richtext](mulib-gfx-text.md) | `textbuffer` |
 | [rootfs](mulib-rootfs.md) | `archive`, `vfs` |
+| [route-global](amb3r-kernels.md) | `amb3r-base`, `formal-counterexample` |
 | [rtnl-address](mulib-rtnl-address.md) | `netlink-attr`, `rtnl` |
 | [rtnl-link](mulib-rtnl-link.md) | `rtnl` |
 | [rtnl-neighbor](mulib-rtnl-neighbor.md) | `netlink-attr`, `rtnl` |
@@ -951,8 +1244,11 @@ Compatibility group: `parsec`, `peg`.
 | [rtnl-tc](mulib-rtnl-tc.md) | `rtnl` |
 | [rubybind](mulib-rubybind.md) | `pybind` |
 | [sandbox-process](mulib-sandbox-process.md) | `cgroup2`, `ipc-framed`, `landlock`, `namespace`, `sandbox-profile`, `seccomp` |
+| [seat](notebook-desktop.md) | `wm-core` |
 | [spice-ac](mulib-spice-ac.md) | `spice-netlist` |
+| [spice-jfet](amb3r-kernels.md) | `amb3r-base`, `spice-mosfet` |
 | [spice-measure](mulib-spice-measure.md) | `wave-measure` |
+| [spice-mna](amb3r-kernels.md) | `amb3r-base`, `num-sparse-lu` |
 | [spice-op](mulib-spice-op.md) | `num-dense`, `spice-independent`, `spice-netlist`, `spice-r`, `spice-stamp` |
 | [spice-tran](mulib-spice-tran.md) | `num-dense`, `spice-c`, `spice-independent`, `spice-netlist`, `spice-r`, `spice-stamp` |
 | [sqlite-pager](mulib-sqlite-pager.md) | `sqlite-format` |
@@ -960,7 +1256,21 @@ Compatibility group: `parsec`, `peg`.
 | [strpool](mulib-strpool.md) | `alloc`, `hash` |
 | [superblocks](mulib-superblocks.md) | `gssair` |
 | [svg](mulib-svg.md) | `xml` |
+| [synth-aig-balance](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
+| [synth-aig-refactor](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
+| [synth-arithmetic](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
+| [synth-cost](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
+| [synth-cuts](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
+| [synth-dce](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
+| [synth-egraph](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
+| [synth-espresso](amb3r-kernels.md) | `amb3r-base`, `synth-quinemccluskey` |
+| [synth-lutmap](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
+| [synth-multiplexer](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
+| [synth-register](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
 | [term_rewriting](mulib-term_rewriting.md) | `ast` |
+| [textcursor](mulib-gfx-text.md) | `textbuffer` |
+| [timing-critical](amb3r-kernels.md) | `amb3r-base`, `formal-counterexample` |
+| [timing-propagate](amb3r-kernels.md) | `amb3r-base`, `timing-graph` |
 | [tree_parsing](mulib-tree_parsing.md) | `ast` |
 | [tui](mulib-tui.md) | `terminfo`, `termkey`, `vterm` |
 | [unibreak](mulib-unibreak.md) | `uniproc` |
@@ -971,16 +1281,47 @@ Compatibility group: `parsec`, `peg`.
 | [vm-module](mulib-vm-module.md) | `bytecode`, `bytecode-verify` |
 | [vmm-memory](mulib-vmm-memory.md) | `vmmdev` |
 | [vmweave](mulib-vmweave.md) | `mir`, `rewrite` |
+| [wave-psd](amb3r-kernels.md) | `amb3r-base`, `wave-spectrum` |
+| [wave-stream](amb3r-kernels.md) | `amb3r-base`, `wave-store` |
+| [wayland-data](mulib-gfx-wire.md) | `wayland-wire` |
+| [wayland-dmabuf](mulib-gfx-wire.md) | `wayland-wire` |
+| [wayland-protocol](mulib-gfx-wire.md) | `wayland-wire` |
+| [wayland-seat](mulib-gfx-wire.md) | `glx-event`, `wayland-wire` |
+| [wayland-shm](mulib-gfx-wire.md) | `wayland-wire` |
+| [wayland-textinput](mulib-gfx-wire.md) | `wayland-wire` |
+| [wayland-xdg](mulib-gfx-wire.md) | `wayland-wire` |
 | [webextract-evidence](mulib-webextract-evidence.md) | `shylock-core` |
 | [webidl-bindgen](mulib-webidl-bindgen.md) | `shylock-core` |
 | [webidl-runtime](mulib-webidl-runtime.md) | `shylock-core`, `utf8` |
+| [wl-datadevice](notebook-desktop.md) | `wm-core` |
+| [wl-layershell](notebook-desktop.md) | `wm-core` |
+| [wl-protogen](notebook-desktop.md) | `wm-core` |
+| [wl-resource](notebook-desktop.md) | `wm-core` |
+| [wl-xwayland](notebook-desktop.md) | `wm-core` |
+| [wm-container](notebook-desktop.md) | `wm-core` |
+| [wm-decoration](notebook-desktop.md) | `wm-core` |
+| [wm-focus](notebook-desktop.md) | `wm-core` |
+| [wm-keybind](notebook-desktop.md) | `wm-core` |
+| [wm-launch](notebook-desktop.md) | `wm-core` |
+| [wm-layout](notebook-desktop.md) | `wm-core` |
+| [wm-rules](notebook-desktop.md) | `wm-core` |
+| [wm-session](notebook-desktop.md) | `wm-core` |
+| [wm-stack](notebook-desktop.md) | `wm-core` |
+| [wm-transaction](notebook-desktop.md) | `wm-core` |
+| [wm-workspace](notebook-desktop.md) | `wm-core` |
 | [wmfunc](mulib-wmfunc.md) | `wlroots` |
+| [x11-events](mulib-gfx-wire.md) | `glx-event`, `x11-wire` |
+| [x11-ext](notebook-desktop.md) | `x11-wire` |
+| [x11-image](mulib-gfx-wire.md) | `x11-wire` |
+| [x11-selection](mulib-gfx-wire.md) | `x11-wire` |
+| [x11-window](mulib-gfx-wire.md) | `x11-wire` |
+| [xkb](notebook-desktop.md) | `wm-core` |
 | [xpath](mulib-xpath.md) | `xml` |
 | [xtbb](mulib-xtbb.md) | `parallel` |
 | [zip](mulib-zip.md) | `crc32`, `deflate`, `utf8` |
 | [zstd](mulib-zstd.md) | `codec-core`, `container-core` |
 
-## Stratum 3 (90 modules)
+## Stratum 3 (144 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1006,15 +1347,42 @@ Compatibility group: `parsec`, `peg`.
 | [depir](mulib-depir.md) | `anfir`, `clickir`, `superblocks` |
 | [dnsnmeserver](mulib-dnsnmeserver.md) | `nameserver` |
 | [dom-query](mulib-dom-query.md) | `html-treebuilder` |
+| [dsim-engine](amb3r-kernels.md) | `amb3r-base`, `dsim-region`, `dsim-signal` |
+| [dsim-memory](amb3r-kernels.md) | `amb3r-base`, `hwil-value` |
+| [eda-diff](amb3r-kernels.md) | `amb3r-base`, `eda-changeset` |
+| [eda-journal](amb3r-kernels.md) | `amb3r-base`, `eda-serialize` |
 | [efi](mulib-efi.md) | `pe` |
 | [epub](mulib-epub.md) | `html`, `xml`, `zip` |
 | [evtlistener](mulib-evtlistener.md) | `evtstream` |
+| [field-magnetostatic](amb3r-kernels.md) | `amb3r-base`, `field-electrostatic` |
+| [formal-proof](amb3r-kernels.md) | `amb3r-base`, `formal-aig-cnf` |
+| [gbm](notebook-desktop.md) | `dmabuf` |
 | [geosolve](mulib-geosolve.md) | `alloc`, `cgeom`, `geometry` |
+| [glx-antialias](mulib-gfx-path.md) | `glx-raster` |
+| [glx-backend-drm](mulib-gfx-drm.md) | `drm`, `drm-framebuffer`, `drm-output`, `drm-pageflip`, `glx-platform` |
+| [glx-backend-wayland](mulib-gfx-wire.md) | `glx-platform`, `wayland-shm` |
+| [glx-backend-x11](mulib-gfx-wire.md) | `glx-platform`, `x11-image` |
+| [glx-cursor](graphics-overlay.md) | `glx-compositor` |
+| [glx-drawlist](mulib-gfx-raster.md) | `glx-shape`, `glx-texture` |
+| [glx-glyphcache](mulib-gfx-font-image.md) | `glx-font`, `glx-rendercache` |
+| [glx-imagedecode](mulib-gfx-font-image.md) | `glx-font`, `imagepng` |
+| [glx-mesh](mulib-gfx-path.md) | `glx-raster` |
+| [glx-present](mulib-gfx-present.md) | `glx-platform`, `glx-region` |
+| [glx-scenenode](notebook-desktop.md) | `glx-clientbuffer` |
+| [glx-shaderjit](mulib-gfx-shader.md) | `glx-shadervm` |
+| [glx-text](mulib-gfx-font-image.md) | `glx-font` |
+| [glx-textatlas](mulib-gfx-font-image.md) | `glx-atlas`, `glx-font` |
 | [gvizz](mulib-gvizz.md) | `dsdom` |
 | [html-dombridge](mulib-html-dombridge.md) | `html-treebuilder` |
+| [hwil-flatten](amb3r-kernels.md) | `amb3r-base`, `hwil-elaborate` |
+| [hwil-instance](amb3r-kernels.md) | `amb3r-base`, `hwil-port` |
+| [hwil-lower](amb3r-kernels.md) | `amb3r-base`, `hwil-builder` |
+| [hwil-process](amb3r-kernels.md) | `amb3r-base`, `hwil-cell` |
+| [hwil-rewrite](amb3r-kernels.md) | `amb3r-base`, `hwil-cell` |
 | [hyphen](mulib-hyphen.md) | `cache`, `dfa`, `orhoconv` |
 | [image2container](mulib-image2container.md) | `imgformat`, `rootfs` |
 | [inet4](mulib-inet4.md) | `parsec` |
+| [input-seat](mulib-gfx-input.md) | `glx-event`, `input`, `input-keymap`, `input-mouse`, `input-touch` |
 | [iwd-client](mulib-iwd-client.md) | `dbus-client` |
 | [jit](mulib-jit.md) | `dyncall`, `vmweave` |
 | [json](mulib-json.md) | `parsec`, `strbuf`, `utf8` |
@@ -1030,6 +1398,11 @@ Compatibility group: `parsec`, `peg`.
 | [mumq-server](mulib-mumq-server.md) | `mumq` |
 | [mumq-subscriber](mulib-mumq-subscriber.md) | `mumq` |
 | [name-resolution](mulib-name-resolution.md) | `parser-pratt`, `symboltable` |
+| [nb-core](notebook-desktop.md) | `nb-cell` |
+| [nb-display](notebook-desktop.md) | `nb-output` |
+| [nb-mime](notebook-desktop.md) | `nb-output` |
+| [nb-runtime](notebook-desktop.md) | `nb-message` |
+| [nb-scheduler](notebook-desktop.md) | `nb-execgraph` |
 | [networkd-client](mulib-networkd-client.md) | `dbus-client` |
 | [nm-connection](mulib-nm-connection.md) | `dbus-client` |
 | [nm-secret-agent](mulib-nm-secret-agent.md) | `dbus-client` |
@@ -1046,6 +1419,7 @@ Compatibility group: `parsec`, `peg`.
 | [resolved-client](mulib-resolved-client.md) | `dbus-client` |
 | [rootfs-buildspec](mulib-rootfs-buildspec.md) | `container-core`, `rootfs` |
 | [rootfsbuilder](mulib-rootfsbuilder.md) | `archive`, `buffer`, `rootfs` |
+| [route-negotiated](amb3r-kernels.md) | `amb3r-base`, `route-global` |
 | [rtnl-bridge](mulib-rtnl-bridge.md) | `rtnl`, `rtnl-link` |
 | [rtnl-tunnel](mulib-rtnl-tunnel.md) | `rtnl`, `rtnl-link` |
 | [rtnl-veth](mulib-rtnl-veth.md) | `rtnl`, `rtnl-link` |
@@ -1054,12 +1428,21 @@ Compatibility group: `parsec`, `peg`.
 | [shaderx](mulib-shaderx.md) | `parsec`, `strbuf` |
 | [shiraz](mulib-shiraz.md) | `pe`, `strbuf` |
 | [spellcheck](mulib-spellcheck.md) | `bktree`, `cache`, `endian`, `fst`, `utf8`, `weighted-edit-distance` |
+| [spice-behavioral](amb3r-kernels.md) | `amb3r-base`, `spice-mna` |
+| [spice-controlled](amb3r-kernels.md) | `amb3r-base`, `spice-mna` |
+| [spice-dae](amb3r-kernels.md) | `amb3r-base`, `num-dae`, `spice-mna` |
 | [spice-dc](mulib-spice-dc.md) | `spice-op` |
+| [spice-device](amb3r-kernels.md) | `amb3r-base`, `spice-mna` |
+| [spice-diode](amb3r-kernels.md) | `amb3r-base`, `spice-mna` |
+| [spice-k](amb3r-kernels.md) | `amb3r-base`, `spice-mna` |
+| [spice-l](amb3r-kernels.md) | `amb3r-base`, `spice-mna` |
 | [sqlite](mulib-sqlite.md) | `arena`, `parsec`, `peg`, `rng`, `sqlite-pager`, `strbuf`, `utf8` |
 | [stylesheet](mulib-stylesheet.md) | `css` |
 | [symbol](mulib-symbol.md) | `mathml` |
 | [tbl](mulib-tbl.md) | `csv`, `dsdom`, `tex` |
 | [termstyle](mulib-termstyle.md) | `css`, `terminfo`, `vterm` |
+| [textselection](mulib-gfx-text.md) | `textcursor` |
+| [timing-sta](amb3r-kernels.md) | `amb3r-base`, `timing-propagate`, `timing-slack` |
 | [typecheck](mulib-typecheck.md) | `parser-pratt`, `symboltable`, `typesystem` |
 | [udev](mulib-udev.md) | `parsec` |
 | [ustack-tuntap](mulib-ustack-tuntap.md) | `ustack` |
@@ -1072,10 +1455,22 @@ Compatibility group: `parsec`, `peg`.
 | [wifi-regulatory](mulib-wifi-regulatory.md) | `nl80211` |
 | [wifi-scan](mulib-wifi-scan.md) | `nl80211` |
 | [wifi-station](mulib-wifi-station.md) | `nl80211` |
+| [wl-buffer](notebook-desktop.md) | `glx-clientbuffer` |
+| [wl-client](notebook-desktop.md) | `wayland-protocol`, `wl-resource` |
+| [wl-dmabuf](notebook-desktop.md) | `dmabuf` |
+| [x11-atoms](notebook-desktop.md) | `wm-core`, `x11-ext` |
+| [x11-composite](notebook-desktop.md) | `x11-ext` |
+| [x11-damage](notebook-desktop.md) | `x11-ext` |
+| [x11-grab](notebook-desktop.md) | `x11-ext` |
+| [x11-property](notebook-desktop.md) | `x11-ext` |
+| [x11-randr](notebook-desktop.md) | `x11-ext` |
+| [x11-reparent](notebook-desktop.md) | `x11-ext` |
+| [x11-xfixes](notebook-desktop.md) | `x11-ext` |
+| [x11-xinput](notebook-desktop.md) | `x11-ext` |
 | [xtas](mulib-xtas.md) | `dsdom` |
 | [xz](mulib-xz.md) | `authcrypto`, `bcj`, `crc32`, `lzma` |
 
-## Stratum 4 (50 modules)
+## Stratum 4 (80 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1091,19 +1486,39 @@ Compatibility group: `parsec`, `peg`.
 | [css-selector](mulib-css-selector.md) | `dom-query`, `html-treebuilder` |
 | [dbschema](mulib-dbschema.md) | `json` |
 | [documentdb](mulib-documentdb.md) | `json`, `memtable` |
+| [dsim-clock](amb3r-kernels.md) | `amb3r-base`, `dsim-engine` |
+| [dsim-delay](amb3r-kernels.md) | `amb3r-base`, `dsim-engine` |
+| [dsim-process](amb3r-kernels.md) | `amb3r-base`, `dsim-engine` |
 | [dsymspec](mulib-dsymspec.md) | `json` |
 | [dyegram](mulib-dyegram.md) | `gvizz` |
+| [eda-merge](amb3r-kernels.md) | `amb3r-base`, `eda-diff` |
 | [elfbuilder](mulib-elfbuilder.md) | `binfilewriter`, `bycutils`, `objfilebuilder` |
 | [eqn](mulib-eqn.md) | `symbol`, `tex` |
+| [fpga-pathfinder](amb3r-kernels.md) | `amb3r-base`, `fpga-rrgraph`, `route-negotiated` |
+| [glx-gpu](graphics-overlay.md) | `glx-drawlist` |
+| [glx-renderqueue](mulib-gfx-raster.md) | `glx-drawlist` |
+| [glx-scene](notebook-desktop.md) | `glx-scenenode` |
+| [glx-tiledraster](graphics-overlay.md) | `glx-drawlist` |
+| [glx-window](mulib-gfx-present.md) | `glx-present`, `glx-swapchain` |
+| [gui-core](mulib-gfx-gui.md) | `glx-drawlist`, `glx-event`, `glx-text` |
 | [imgbuildspec](mulib-imgbuildspec.md) | `imgformat`, `rootfs-buildspec` |
+| [immgtk-drawlist-bridge](mulib-gfx-immgtk.md) | `glx-drawlist`, `immgtk-drawlist` |
+| [immgtk-drawlist](mulib-immgtk-drawlist.md) | `immgtk-drawlist-bridge` |
 | [inet6](mulib-inet6.md) | `inet4` |
 | [isel](mulib-isel.md) | `archml`, `isched`, `lir`, `lowopt` |
+| [jupyter-wire](notebook-desktop.md) | `authcrypto`, `json` |
 | [machobuilder](mulib-machobuilder.md) | `binfilewriter`, `bycutils`, `machobuidler`, `objfilebuilder` |
 | [mcp-client](mulib-mcp-client.md) | `json`, `utf8` |
 | [mcp-server](mulib-mcp-server.md) | `json`, `utf8` |
 | [messagepack](mulib-messagepack.md) | `buffer`, `json` |
 | [microcc](mulib-microcc.md) | `depir`, `isched`, `lowopt`, `machine`, `strbuf` |
 | [mune](mulib-mune.md) | `dynload`, `jit`, `parsec` |
+| [nb-execute](notebook-desktop.md) | `nb-core`, `nb-runtime` |
+| [nb-history](notebook-desktop.md) | `nb-core` |
+| [nb-ipynb](notebook-desktop.md) | `nb-core` |
+| [nb-order](notebook-desktop.md) | `nb-core` |
+| [nb-tree](notebook-desktop.md) | `nb-core` |
+| [nb-window](notebook-desktop.md) | `nb-core` |
 | [nm-client](mulib-nm-client.md) | `dbus-properties` |
 | [nm-device](mulib-nm-device.md) | `dbus-properties` |
 | [objdump](mulib-objdump.md) | `termstyle` |
@@ -1118,19 +1533,29 @@ Compatibility group: `parsec`, `peg`.
 | [readline](mulib-readline.md) | `json`, `strbuf`, `terminfo`, `termkey`, `termutils` |
 | [rpc](mulib-rpc.md) | `json` |
 | [schemaorg](mulib-schemaorg.md) | `json`, `shylock-core` |
+| [spice-bjt](amb3r-kernels.md) | `amb3r-base`, `spice-diode` |
+| [spice-nonlinear](amb3r-kernels.md) | `amb3r-base`, `spice-device` |
+| [spice-timestep](amb3r-kernels.md) | `amb3r-base`, `num-adaptive`, `spice-dae` |
 | [tas](mulib-tas.md) | `xtas` |
 | [template](mulib-template.md) | `json`, `strbuf`, `utf8` |
 | [termsyn](mulib-termsyn.md) | `edbuf`, `termstyle` |
+| [texthistory](mulib-gfx-text.md) | `textselection` |
 | [toml](mulib-toml.md) | `json`, `strbuf`, `utf8` |
 | [unit](mulib-unit.md) | `archml`, `emitter` |
 | [vmm](mulib-vmm.md) | `virtio-os`, `vmm-memory` |
 | [walker](mulib-walker.md) | `evtlistener` |
 | [webextract-llm](mulib-webextract-llm.md) | `json`, `shylock-core` |
 | [webextract-rules](mulib-webextract-rules.md) | `dom-query`, `html-textstream`, `shylock-core` |
+| [wl-dispatch](notebook-desktop.md) | `wl-client` |
+| [wl-output](notebook-desktop.md) | `wl-client` |
+| [wl-seat](notebook-desktop.md) | `wl-client` |
+| [wl-surface](notebook-desktop.md) | `glx-damage`, `wl-buffer` |
+| [x11-ewmh](notebook-desktop.md) | `x11-property` |
+| [x11-icccm](notebook-desktop.md) | `x11-property` |
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (44 modules)
+## Stratum 5 (76 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1152,9 +1577,30 @@ Compatibility group: `parsec`, `peg`.
 | [elf-objdump](mulib-elf-objdump.md) | `elf`, `objdump` |
 | [exec](mulib-exec.md) | `mune`, `perf`, `process` |
 | [getaddr](mulib-getaddr.md) | `inet6` |
+| [glx-hittest](notebook-desktop.md) | `glx-scene` |
+| [glx-unix](mulib-gfx-input.md) | `glx-backend-drm`, `glx-backend-wayland`, `glx-backend-x11`, `glx-eventloop`, `glx-window`, `input-seat` |
 | [gpu](mulib-gpu.md) | `unit` |
+| [gui-accessibility](mulib-gfx-gui.md) | `gui-core` |
+| [gui-animation](mulib-gfx-gui.md) | `gui-core` |
+| [gui-command](mulib-gfx-gui.md) | `gui-core` |
+| [gui-desktop](mulib-gfx-gui.md) | `gui-core` |
+| [gui-dispatch](mulib-gfx-gui.md) | `gui-core` |
+| [gui-filedialog](mulib-gfx-gui.md) | `gui-core` |
+| [gui-focus](mulib-gfx-gui.md) | `gui-core` |
+| [gui-hitest](mulib-gfx-gui.md) | `gui-core` |
+| [gui-locale](mulib-gfx-gui.md) | `gui-core` |
+| [gui-mime](mulib-gfx-gui.md) | `gui-core` |
+| [gui-notification](mulib-gfx-gui.md) | `gui-core` |
+| [gui-portal](mulib-gfx-gui.md) | `gui-core` |
+| [gui-resource](mulib-gfx-gui.md) | `gui-core` |
+| [gui-settings](mulib-gfx-gui.md) | `gui-core` |
+| [gui-shortcut](mulib-gfx-gui.md) | `gui-core` |
+| [gui-theme](mulib-gfx-gui.md) | `gui-core` |
+| [gui-tray](mulib-gfx-gui.md) | `gui-core` |
+| [gui-undo](mulib-gfx-text.md) | `gui-core` |
 | [imgbuilder](mulib-imgbuilder.md) | `imgbuildspec`, `rootfsbuilder` |
 | [imgtrackerd](mulib-imgtrackerd.md) | `bycutils`, `memtable`, `ociimage` |
+| [immgtk-native](mulib-gfx-immgtk.md) | `gui-core` |
 | [immgtk](mulib-immgtk.md) | `glx`, `mune` |
 | [inte6](mulib-inte6.md) | `inet6` |
 | [jvm](mulib-jvm.md) | `art` |
@@ -1162,6 +1608,8 @@ Compatibility group: `parsec`, `peg`.
 | [mcu](mulib-mcu.md) | `unit` |
 | [mpu](mulib-mpu.md) | `unit` |
 | [muidl](mulib-muidl.md) | `buffer`, `dbschema` |
+| [nb-layout](notebook-desktop.md) | `nb-tree` |
+| [nb-serialize](notebook-desktop.md) | `nb-tree` |
 | [ocicontainernetwrork](mulib-ocicontainernetwrork.md) | `ocicontainernetwork` |
 | [ociimagebuilder](mulib-ociimagebuilder.md) | `ociimage` |
 | [oix](mulib-oix.md) | `base64`, `confuse`, `crc32`, `emitter`, `json`, `kvm`, `toml`, `yaml` |
@@ -1170,16 +1618,25 @@ Compatibility group: `parsec`, `peg`.
 | [parallel-sh](mulib-parallel-sh.md) | `mune` |
 | [pglayout](mulib-pglayout.md) | `bidi`, `fontshape`, `json`, `stylesheet`, `unibreak`, `yaml` |
 | [prettyemit](mulib-prettyemit.md) | `prettydoc` |
+| [retgtk-object](graphics-overlay.md) | `gui-core` |
+| [retgtk-reactive](graphics-overlay.md) | `gui-core` |
+| [retgtk-type](graphics-overlay.md) | `gui-core` |
 | [row-rdbms](mulib-row-rdbms.md) | `dbschema`, `documentdb` |
 | [shebang-sh](mulib-shebang-sh.md) | `mune` |
+| [texteditor](mulib-gfx-text.md) | `texthistory` |
 | [vizigen](mulib-vizigen.md) | `asdl`, `binfilereader`, `binfilewriter`, `mmfile`, `walker` |
 | [vmm-kvm](mulib-vmm-kvm.md) | `kvm`, `vmm` |
 | [wask](mulib-wask.md) | `dsymspec`, `utf8` |
 | [webidl](mulib-webidl.md) | `buffer`, `dbschema`, `utf8` |
 | [wit](mulib-wit.md) | `buffer`, `dbschema` |
+| [wl-frame](notebook-desktop.md) | `wl-dispatch` |
+| [wl-registry](notebook-desktop.md) | `wl-dispatch` |
+| [wl-shm](notebook-desktop.md) | `wl-buffer`, `wl-dispatch` |
+| [wl-subsurface](notebook-desktop.md) | `wl-surface` |
+| [x11-wm](mulib-gfx-wire.md) | `wm-focus`, `x11-events`, `x11-icccm`, `x11-reparent`, `x11-window`, `x11-wire` |
 | [x509](mulib-x509.md) | `base64`, `inet6`, `signature` |
 
-## Stratum 6 (18 modules)
+## Stratum 6 (57 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1194,15 +1651,54 @@ Compatibility group: `parsec`, `peg`.
 | [fswatch](mulib-fswatch.md) | `daemon`, `glob`, `select`, `vfs` |
 | [git](mulib-git.md) | `exec` |
 | [glyph](mulib-glyph.md) | `fontdraw`, `ligature`, `pglayout`, `sysfonts` |
+| [gui-app](mulib-gfx-gui.md) | `glx-platform`, `gui-dispatch` |
+| [gui-atspi](mulib-gfx-gui.md) | `gui-accessibility` |
+| [gui-clipboard](mulib-gfx-gui.md) | `gui-mime` |
+| [gui-ime](mulib-gfx-gui.md) | `texteditor` |
+| [gui-style](mulib-gfx-gui.md) | `gui-theme` |
+| [immgtk-clipper](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-colorpicker](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-commandpalette](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-dock](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-filebrowser](mulib-gfx-immgtk.md) | `gui-filedialog`, `immgtk-native` |
+| [immgtk-gizmo](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-hexeditor](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-id](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-io](mulib-gfx-immgtk.md) | `immgtk-native`, `input-keyboard`, `input-mouse`, `textbuffer` |
+| [immgtk-layout](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-menu](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-mune-bridge](mulib-gfx-immgtk.md) | `immgtk-native`, `mune` |
+| [immgtk-nav](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-nodeeditor](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-plot-3d](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-plot-axis](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-plot-legend](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-popup](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-profiler](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-propertygrid](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-scroll](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-settings](mulib-gfx-immgtk.md) | `gui-settings` |
+| [immgtk-state](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-table](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-tabs](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-terminal](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-timeline](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [immgtk-viewport](mulib-gfx-immgtk.md) | `glx-window`, `immgtk-native` |
+| [immgtk-window](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [nb-store](notebook-desktop.md) | `nb-serialize` |
+| [nb-viewport](notebook-desktop.md) | `nb-layout` |
 | [nvptx](mulib-nvptx.md) | `gpu` |
 | [pe-objdump](mulib-pe-objdump.md) | `coff-objdump`, `pe` |
 | [prettysexpr](mulib-prettysexpr.md) | `prettyemit` |
+| [retgtk-signal](graphics-overlay.md) | `retgtk-object` |
 | [riscv64](mulib-riscv64.md) | `mpu` |
 | [task](mulib-task.md) | `exec` |
 | [uri](mulib-uri.md) | `inte6`, `strbuf` |
+| [wl-compositor](notebook-desktop.md) | `glx-occlusion`, `wl-frame`, `wl-shm`, `wl-surface` |
+| [wl-server](notebook-desktop.md) | `wl-registry` |
 | [xtensa](mulib-xtensa.md) | `mcu` |
 
-## Stratum 7 (10 modules)
+## Stratum 7 (22 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1210,14 +1706,26 @@ Compatibility group: `parsec`, `peg`.
 | [browser-origin](mulib-browser-origin.md) | `uri` |
 | [containerd-ctrlbridge](mulib-containerd-ctrlbridge.md) | `containerd`, `containerd-accessstub` |
 | [distribcluster](mulib-distribcluster.md) | `container-runtime`, `distribcomp`, `ocicontainer`, `vmm` |
+| [gui-dragdrop](mulib-gfx-gui.md) | `gui-clipboard` |
 | [http](mulib-http.md) | `buffer`, `parsec`, `uri` |
+| [immgtk-curveeditor](mulib-gfx-immgtk.md) | `immgtk-gizmo` |
+| [immgtk-plot-heatmap](mulib-gfx-immgtk.md) | `immgtk-colorpicker` |
+| [immgtk-plot-interact](mulib-gfx-immgtk.md) | `immgtk-plot-axis` |
+| [immgtk-plot-series](mulib-gfx-immgtk.md) | `immgtk-plot-axis` |
+| [immgtk-sequencer](mulib-gfx-immgtk.md) | `immgtk-timeline` |
+| [immgtk-style](mulib-gfx-immgtk.md) | `gui-style`, `immgtk-native` |
+| [immgtk-textedit](mulib-gfx-immgtk.md) | `immgtk-io`, `texteditor` |
 | [layout](mulib-layout.md) | `glyph` |
+| [nb-virtualize](notebook-desktop.md) | `nb-viewport` |
 | [polytask](mulib-polytask.md) | `json`, `task`, `taskpool` |
+| [retgtk-property](graphics-overlay.md) | `retgtk-signal` |
+| [retgtk-widget](graphics-overlay.md) | `retgtk-object`, `retgtk-signal`, `retgtk-type` |
 | [tls](mulib-tls.md) | `aes-gcm`, `hkdf`, `socket`, `tsl`, `uri`, `x25519`, `x509` |
 | [vcspack](mulib-vcspack.md) | `adler32`, `endian`, `git` |
 | [vcsrepo](mulib-vcsrepo.md) | `git` |
+| [wl-xdgshell](notebook-desktop.md) | `wl-compositor`, `wl-surface` |
 
-## Stratum 8 (19 modules)
+## Stratum 8 (44 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1228,10 +1736,35 @@ Compatibility group: `parsec`, `peg`.
 | [http1](mulib-http1.md) | `http` |
 | [http_request](mulib-http_request.md) | `http` |
 | [httpserver_config](mulib-httpserver_config.md) | `http` |
+| [immgtk-codeeditor](mulib-gfx-immgtk.md) | `immgtk-textedit` |
+| [immgtk-dnd](mulib-gfx-immgtk.md) | `gui-dragdrop`, `immgtk-native` |
 | [layoutml](mulib-layoutml.md) | `layout`, `xml` |
 | [mcp-http](mulib-mcp-http.md) | `http`, `mcp-client`, `mcp-server`, `sse` |
 | [openai](mulib-openai.md) | `http`, `json`, `utf8` |
 | [prowse-protocol](mulib-prowse-protocol.md) | `base64`, `git`, `http`, `json`, `socket`, `utf8` |
+| [retgtk-anchor](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-binding](graphics-overlay.md) | `retgtk-property` |
+| [retgtk-builder](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-button](graphics-overlay.md) | `retgtk-kind`, `retgtk-widget` |
+| [retgtk-canvas](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-color](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-constraint](graphics-overlay.md) | `retgtk-kind`, `retgtk-widget` |
+| [retgtk-container](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-dialog](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-entry](graphics-overlay.md) | `retgtk-kind`, `retgtk-widget`, `texteditor` |
+| [retgtk-flow](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-image](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-invalidate](graphics-overlay.md) | `glx-region`, `retgtk-widget` |
+| [retgtk-label](graphics-overlay.md) | `retgtk-kind`, `retgtk-widget` |
+| [retgtk-model](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-mune](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-painter](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-scene](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-scroll](graphics-overlay.md) | `retgtk-kind`, `retgtk-widget` |
+| [retgtk-slider](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-split](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-stack](graphics-overlay.md) | `retgtk-widget` |
+| [retgtk-tree](graphics-overlay.md) | `retgtk-widget` |
 | [vcscommit](mulib-vcscommit.md) | `strbuf`, `vcsrepo` |
 | [waf](mulib-waf.md) | `http`, `seurity` |
 | [webclient](mulib-webclient.md) | `http` |
@@ -1241,7 +1774,7 @@ Compatibility group: `parsec`, `peg`.
 | [websocket](mulib-websocket.md) | `base64`, `buffer`, `http`, `uri`, `utf8` |
 | [xll](mulib-xll.md) | `json`, `layout`, `strbuf` |
 
-## Stratum 9 (11 modules)
+## Stratum 9 (26 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1249,24 +1782,45 @@ Compatibility group: `parsec`, `peg`.
 | [fileserver](mulib-fileserver.md) | `webframework` |
 | [http_response](mulib-http_response.md) | `webframework` |
 | [https](mulib-https.md) | `tsl`, `webclient` |
+| [immgtk-extensions](mulib-gfx-immgtk.md) | `immgtk-clipper`, `immgtk-codeeditor`, `immgtk-colorpicker`, `immgtk-commandpalette`, `immgtk-curveeditor`, `immgtk-dnd`, `immgtk-dock`, `immgtk-filebrowser`, `immgtk-gizmo`, `immgtk-hexeditor`, `immgtk-id`, `immgtk-io`, `immgtk-layout`, `immgtk-menu`, `immgtk-native`, `immgtk-nav`, `immgtk-nodeeditor`, `immgtk-plot-3d`, `immgtk-plot-axis`, `immgtk-plot-contour`, `immgtk-plot-heatmap`, `immgtk-plot-interact`, `immgtk-plot-legend`, `immgtk-plot-series`, `immgtk-plot-stream`, `immgtk-popup`, `immgtk-profiler`, `immgtk-propertygrid`, `immgtk-scroll`, `immgtk-sequencer`, `immgtk-settings`, `immgtk-state`, `immgtk-style`, `immgtk-table`, `immgtk-tabs`, `immgtk-terminal`, `immgtk-textedit`, `immgtk-timeline`, `immgtk-viewport`, `immgtk-window` |
 | [minicurl](mulib-minicurl.md) | `webclient` |
 | [miniwget](mulib-miniwget.md) | `webclient` |
 | [openai-server](mulib-openai-server.md) | `multipart`, `openai`, `sse` |
 | [prowse-control](mulib-prowse-control.md) | `lprowse`, `mune`, `prowse-protocol`, `readline`, `strbuf` |
+| [retgtk-choice](graphics-overlay.md) | `retgtk-button` |
+| [retgtk-delegate](graphics-overlay.md) | `retgtk-model` |
+| [retgtk-event](graphics-overlay.md) | `retgtk-tree` |
+| [retgtk-layout](graphics-overlay.md) | `retgtk-constraint` |
+| [retgtk-listmodel](graphics-overlay.md) | `retgtk-model` |
+| [retgtk-notebook](graphics-overlay.md) | `retgtk-stack` |
+| [retgtk-progress](graphics-overlay.md) | `retgtk-slider` |
+| [retgtk-proxymodel](graphics-overlay.md) | `retgtk-model` |
+| [retgtk-selection](graphics-overlay.md) | `retgtk-model` |
+| [retgtk-statusbar](graphics-overlay.md) | `retgtk-label` |
+| [retgtk-tablemodel](graphics-overlay.md) | `retgtk-model` |
+| [retgtk-textview](graphics-overlay.md) | `retgtk-entry` |
+| [retgtk-treemodel](graphics-overlay.md) | `retgtk-model` |
+| [retgtk-uiml](graphics-overlay.md) | `retgtk-builder` |
 | [revproxy](mulib-revproxy.md) | `webclient` |
 | [vcscomitt](mulib-vcscomitt.md) | `vcscommit` |
 | [web_conntection](mulib-web_conntection.md) | `http1` |
 
-## Stratum 10 (4 modules)
+## Stratum 10 (10 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [browser-fetch](mulib-browser-fetch.md) | `browser-origin`, `fetch` |
 | [elvi-scrape](mulib-elvi-scrape.md) | `fetch`, `https`, `json`, `url` |
 | [muw3](mulib-muw3.md) | `https`, `socket`, `tls` |
+| [retgtk-box](graphics-overlay.md) | `retgtk-layout` |
+| [retgtk-grid](graphics-overlay.md) | `retgtk-layout` |
+| [retgtk-hotreload](graphics-overlay.md) | `retgtk-entry`, `retgtk-scene`, `retgtk-tree`, `retgtk-uiml` |
+| [retgtk-list](graphics-overlay.md) | `retgtk-delegate`, `retgtk-kind` |
+| [retgtk-treeview](graphics-overlay.md) | `retgtk-delegate`, `retgtk-treemodel` |
+| [retgtk-window](graphics-overlay.md) | `glx-window`, `retgtk-event`, `retgtk-scene` |
 | [static_file](mulib-static_file.md) | `http_response`, `mime`, `vfs` |
 
-## Stratum 11 (8 modules)
+## Stratum 11 (13 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1276,13 +1830,25 @@ Compatibility group: `parsec`, `peg`.
 | [openai-client](mulib-openai-client.md) | `multipart`, `muw3`, `openai`, `sse` |
 | [opencode-client](mulib-opencode-client.md) | `buffer`, `json`, `mune`, `muw3`, `sse`, `uri`, `url`, `utf8` |
 | [rest](mulib-rest.md) | `json`, `muw3`, `uri` |
+| [retgtk-calendar](graphics-overlay.md) | `retgtk-button`, `retgtk-grid` |
+| [retgtk-flex](graphics-overlay.md) | `retgtk-box` |
+| [retgtk-inspector](graphics-overlay.md) | `retgtk-box`, `retgtk-label` |
+| [retgtk-menu](graphics-overlay.md) | `retgtk-box`, `retgtk-button` |
+| [retgtk-tableview](graphics-overlay.md) | `retgtk-list` |
 | [soap](mulib-soap.md) | `muw3`, `xml` |
 | [sse-client](mulib-sse-client.md) | `muw3`, `sse`, `utf8` |
 
-## Stratum 12 (3 modules)
+## Stratum 12 (4 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [browser-engine](mulib-browser-engine.md) | `browser-documentload`, `browser-fetch`, `browser-limits`, `browser-navigation`, `browser-stream` |
 | [graphql](mulib-graphql.md) | `rest` |
 | [jsonrpc](mulib-jsonrpc.md) | `rest` |
+| [retgtk-toolbar](graphics-overlay.md) | `retgtk-menu` |
+
+## Stratum 13 (1 modules)
+
+| Module | Direct dependencies |
+| --- | --- |
+| [retgtk](graphics-overlay.md) | `retgtk-anchor`, `retgtk-binding`, `retgtk-box`, `retgtk-builder`, `retgtk-button`, `retgtk-calendar`, `retgtk-canvas`, `retgtk-choice`, `retgtk-color`, `retgtk-constraint`, `retgtk-container`, `retgtk-delegate`, `retgtk-dialog`, `retgtk-entry`, `retgtk-event`, `retgtk-flex`, `retgtk-flow`, `retgtk-grid`, `retgtk-hotreload`, `retgtk-image`, `retgtk-inspector`, `retgtk-invalidate`, `retgtk-label`, `retgtk-layout`, `retgtk-list`, `retgtk-listmodel`, `retgtk-menu`, `retgtk-model`, `retgtk-mune`, `retgtk-notebook`, `retgtk-object`, `retgtk-painter`, `retgtk-progress`, `retgtk-property`, `retgtk-proxymodel`, `retgtk-reactive`, `retgtk-scene`, `retgtk-scroll`, `retgtk-selection`, `retgtk-signal`, `retgtk-slider`, `retgtk-split`, `retgtk-stack`, `retgtk-statusbar`, `retgtk-tablemodel`, `retgtk-tableview`, `retgtk-template`, `retgtk-textview`, `retgtk-toolbar`, `retgtk-tree`, `retgtk-treemodel`, `retgtk-treeview`, `retgtk-type`, `retgtk-uiml`, `retgtk-widget`, `retgtk-window` |

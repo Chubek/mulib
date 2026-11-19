@@ -20,3 +20,27 @@ Other translation units include the header without switches. See `examples/cdd-p
 - `mulib_cdd_name_valid`, `mulib_cdd_value_valid`, `mulib_cdd_req_valid` check individual inputs. `mulib_cdd_cap_matches`, `mulib_cdd_entry_provides`, `mulib_cdd_entries_conflict` implement exact matching and conflict checking. Entry-level helpers assume structurally validated entries; never pass malformed pointer/count pairs.
 
 Status values: `OK=0`, `INVALID`, `DUPLICATE`, `NOT_FOUND`, `CONFLICT`, `UNSAT`, `LIMIT`, `NOMEM`, `CALLBACK` are negative. No API sets errno as a contract. No memory allocation occurs in this kernel.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-cdd-catalogue.h`](../include/mulib-cdd-catalogue.h) |
+| Implementation switch | `MULIB_IMPL_CDD_CATALOGUE` |
+| Repository-local includes | None |
+| Complete example | [`examples/cdd-pipeline.c`](../examples/cdd-pipeline.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

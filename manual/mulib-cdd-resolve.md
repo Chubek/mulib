@@ -20,3 +20,27 @@ Other translation units include the header without switches. See `examples/cdd-p
 - INVALID, NOMEM or other validation errors: no plan; `out` and `stats` are cleared if supplied. An oversized catalogue is INVALID here, so LIMIT always denotes exhausted search rather than rejected input. `out` is required.
 
 `max_nodes` must be positive; `stats` is optional and reports expanded states and memo hits. The memo table is capped at 1,048,576 slots and insertion stops at half load. Recursion depth is bounded by 65. Complexity is exponential and budget does not bound every inner operation or wall time. An application may use smaller resolution domains or a higher-level SAT/SMT backend for large problems. Multiple capability providers, conflicting alternatives, external seeds and multi-goal composition are supported.
+
+<!-- manual-reference -->
+## Source and build reference
+
+[Manual index](index.md) · [Integration guide](integration.md)
+
+| Resource | Location |
+| --- | --- |
+| Header | [`include/mulib-cdd-resolve.h`](../include/mulib-cdd-resolve.h) |
+| Implementation switch | `MULIB_IMPL_CDD_RESOLVE` |
+| Repository-local includes | [mulib-cdd-plan](mulib-cdd-plan.md) |
+| Complete example | [`examples/cdd-pipeline.c`](../examples/cdd-pipeline.c) |
+
+The include list includes conditional and implementation-only includes;
+it is not a minimal link recipe. Use the example (and any setup header it
+includes) for a complete switch configuration. See the integration guide
+for dependency placement and platform-specific linking.
+
+Compile the example from the repository root on Linux:
+
+```sh
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
+```
+<!-- /manual-reference -->

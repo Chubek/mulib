@@ -7,9 +7,9 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1504
-implemented_module_count: 1204
-bounded_module_count: 300
+module_count: 1763
+implemented_module_count: 1462
+bounded_module_count: 301
 modules:
 - name: cdd-catalogue
   header: include/mulib-cdd-catalogue.h
@@ -4767,7 +4767,7 @@ modules:
   manual: manual/mulib-immgtk-drawlist.md
   macro: MULIB_IMPL_IMMGTK_DRAWLIST
   purpose: "Backend-neutral owned draw-command array for lines, rectangles and circles; renderer retains clipping and rasterization responsibilities."
-  dependencies: []
+  dependencies: [immgtk-drawlist-bridge]
   status: implemented
 - name: immgtk-plot
   header: include/mulib-immgtk-plot.h
@@ -9417,6 +9417,2078 @@ modules:
   purpose: Optional runtime xkbcommon state, key symbols and UTF-8 lookup.
   dependencies: [wm-core]
   example: tests/notebook-desktop-headers/consumer.c
+- name: amb3r-base
+  header: include/mulib-amb3r-base.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  implementation: static-inline
+  purpose: "Shared static-inline Amb3r types and storage, numeric, geometry, and graph primitives."
+  dependencies: []
+  status: bounded
+- name: canvas-camera
+  header: include/mulib-canvas-camera.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_CANVAS_CAMERA
+  purpose: "World-to-screen transforms, inverse mapping, and anchored zoom."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: canvas-command
+  header: include/mulib-canvas-command.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_CANVAS_COMMAND
+  purpose: "Owned drawing command list with ordered callback playback."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: canvas-gizmo
+  header: include/mulib-canvas-gizmo.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_CANVAS_GIZMO
+  purpose: "Point rotation and axis-wise scaling about an anchor."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: canvas-grid
+  header: include/mulib-canvas-grid.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_CANVAS_GRID
+  purpose: "Zoom-dependent 1-2-5 grid spacing and visible line coordinates."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: canvas-hittest
+  header: include/mulib-canvas-hittest.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_CANVAS_HITTEST
+  purpose: "Reverse-order point hit testing against axis-aligned boxes with tolerance."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: canvas-layer
+  header: include/mulib-canvas-layer.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_CANVAS_LAYER
+  purpose: "Stable z-order sorting of visible canvas layers."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: canvas-lod
+  header: include/mulib-canvas-lod.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_CANVAS_LOD
+  purpose: "Level-of-detail selection from projected size and pixel thresholds."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: canvas-selection
+  header: include/mulib-canvas-selection.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_CANVAS_SELECTION
+  purpose: "Rectangular selection by box overlap or containment."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: canvas-tile
+  header: include/mulib-canvas-tile.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_CANVAS_TILE
+  purpose: "Integer tile index bounds for a rectangular viewport."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: canvas-viewport
+  header: include/mulib-canvas-viewport.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_CANVAS_VIEWPORT
+  purpose: "Line segment clipping against an axis-aligned viewport."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: dsim-bytecode
+  header: include/mulib-dsim-bytecode.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_BYTECODE
+  purpose: "Four-state register bytecode for literals and basic logic operators."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: dsim-clock
+  header: include/mulib-dsim-clock.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_CLOCK
+  purpose: "Periodic rising and falling event generation for a simulation signal."
+  dependencies: [amb3r-base, dsim-engine]
+  status: implemented
+- name: dsim-cosim
+  header: include/mulib-dsim-cosim.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_COSIM
+  purpose: "Budgeted analog and digital callbacks over fixed-maximum-step intervals."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: dsim-coverage
+  header: include/mulib-dsim-coverage.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_COVERAGE
+  purpose: "Four-state sample counts, change counts, and binary value coverage."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: dsim-delay
+  header: include/mulib-dsim-delay.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_DELAY
+  purpose: "Transport-delay scheduling and single-signal inertial replacement."
+  dependencies: [amb3r-base, dsim-engine]
+  status: implemented
+- name: dsim-delta
+  header: include/mulib-dsim-delta.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_DELTA
+  purpose: "Callback-driven delta-cycle iteration to a fixed point within a limit."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: dsim-driver
+  header: include/mulib-dsim-driver.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_DRIVER
+  purpose: "Indexed update and strength-based re-resolution of four-state signal drivers."
+  dependencies: [amb3r-base, dsim-resolve]
+  status: implemented
+- name: dsim-engine
+  header: include/mulib-dsim-engine.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_ENGINE
+  purpose: "Stable single-signal event queue ordered by time, delta, and region."
+  dependencies: [amb3r-base, dsim-region, dsim-signal]
+  status: implemented
+- name: dsim-memory
+  header: include/mulib-dsim-memory.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_MEMORY
+  purpose: "Addressable four-state simulation memory with word widths up to 64 bits."
+  dependencies: [amb3r-base, hwil-value]
+  status: implemented
+- name: dsim-process
+  header: include/mulib-dsim-process.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_PROCESS
+  purpose: "Sensitivity-list dispatch of simulation process callbacks."
+  dependencies: [amb3r-base, dsim-engine]
+  status: implemented
+- name: dsim-region
+  header: include/mulib-dsim-region.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_REGION
+  purpose: "Delta-cycle rollover when scheduling into an earlier simulation region."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: dsim-resolve
+  header: include/mulib-dsim-resolve.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_RESOLVE
+  purpose: "Four-state signal resolution by driver strength and equal-strength conflicts."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: dsim-sequential
+  header: include/mulib-dsim-sequential.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_SEQUENTIAL
+  purpose: "Basic four-state rising-edge flip-flop and level-sensitive latch behavior."
+  dependencies: [amb3r-base, dsim-resolve]
+  status: implemented
+- name: dsim-signal
+  header: include/mulib-dsim-signal.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_SIGNAL
+  purpose: "Four-state signal updates with previous value, timestamp, and change count."
+  dependencies: [amb3r-base, dsim-resolve]
+  status: implemented
+- name: dsim-testbench
+  header: include/mulib-dsim-testbench.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_TESTBENCH
+  purpose: "Four-state sample comparison with wildcard expectations and first mismatch reporting."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: dsim-trigger
+  header: include/mulib-dsim-trigger.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_DSIM_TRIGGER
+  purpose: "Four-state transition classification with change, rising, and falling flags."
+  dependencies: [amb3r-base, dsim-resolve]
+  status: implemented
+- name: ecad-annotation
+  header: include/mulib-ecad-annotation.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_ANNOTATION
+  purpose: "Allocation of the first unused prefixed numeric reference designator."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: ecad-bus
+  header: include/mulib-ecad-bus.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_BUS
+  purpose: "Parsing inclusive bus index ranges and computing their widths."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: ecad-elaborate
+  header: include/mulib-ecad-elaborate.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_ELABORATE
+  purpose: "Canonical net IDs from explicit pairwise connections."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: ecad-flatten
+  header: include/mulib-ecad-flatten.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_FLATTEN
+  purpose: "Slash-delimited sheet paths from a parent-linked hierarchy."
+  dependencies: [amb3r-base, ecad-sheet]
+  status: implemented
+- name: ecad-hittest
+  header: include/mulib-ecad-hittest.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_HITTEST
+  purpose: "Reverse-order schematic box hit testing with point tolerance."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: ecad-instance
+  header: include/mulib-ecad-instance.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_INSTANCE
+  purpose: "Forward and inverse instance transforms using translation, mirroring, and quarter turns."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: ecad-kicad
+  header: include/mulib-ecad-kicad.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_KICAD
+  purpose: "KiCad-style S-expression token scanning and parenthesis balance checks."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: ecad-pin
+  header: include/mulib-ecad-pin.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_PIN
+  purpose: "Pin metadata validation and simple output-driver conflict checks."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: ecad-port
+  header: include/mulib-ecad-port.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_PORT
+  purpose: "Port compatibility checks by name, width, and direction."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: ecad-power
+  header: include/mulib-ecad-power.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_POWER
+  purpose: "Checks for a source on each load's net within its voltage tolerance."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: ecad-sheet
+  header: include/mulib-ecad-sheet.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_SHEET
+  purpose: "Parent-first sheet ordering with ID, parent, and cycle checks."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: ecad-snap
+  header: include/mulib-ecad-snap.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_SNAP
+  purpose: "Point snapping to nearby targets or a regular grid."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: ecad-wire
+  header: include/mulib-ecad-wire.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_WIRE
+  purpose: "One-bend orthogonal paths and point-to-segment proximity checks."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: ecad-wire-route
+  header: include/mulib-ecad-wire-route.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ECAD_WIRE_ROUTE
+  purpose: "Four-neighbor, unit-cost A* wire routing over a blocked grid."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: eda-catalogue
+  header: include/mulib-eda-catalogue.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_CATALOGUE
+  purpose: "In-memory catalogue resolving exact or latest versions by identifier."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: eda-changeset
+  header: include/mulib-eda-changeset.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_CHANGESET
+  purpose: "Revision-checked batches of scalar record updates and removals applied through a snapshot."
+  dependencies: [amb3r-base, eda-store]
+  status: implemented
+- name: eda-dependency
+  header: include/mulib-eda-dependency.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_DEPENDENCY
+  purpose: "Dependency graph topological ordering and downstream dirty marking."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: eda-diagnostics
+  header: include/mulib-eda-diagnostics.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_DIAGNOSTICS
+  purpose: "Owned diagnostic messages with severity, code, and object ID."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: eda-diff
+  header: include/mulib-eda-diff.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_DIFF
+  purpose: "Record equality and ID-based changesets between design snapshots."
+  dependencies: [amb3r-base, eda-changeset]
+  status: implemented
+- name: eda-handles
+  header: include/mulib-eda-handles.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_HANDLES
+  purpose: "Pool-local generation-checked handle allocation, validation, and release."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: eda-job
+  header: include/mulib-eda-job.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_JOB
+  purpose: "Job lifecycle transition checks and monotonic progress tracking."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: eda-journal
+  header: include/mulib-eda-journal.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_JOURNAL
+  purpose: "Length-framed design snapshots on caller-owned streams; not a crash-atomic log."
+  dependencies: [amb3r-base, eda-serialize]
+  status: implemented
+- name: eda-merge
+  header: include/mulib-eda-merge.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_MERGE
+  purpose: "Three-way scalar record merge with same-record conflict reporting."
+  dependencies: [amb3r-base, eda-diff]
+  status: implemented
+- name: eda-parametric
+  header: include/mulib-eda-parametric.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_PARAMETRIC
+  purpose: "Stack-based evaluation of scalar arithmetic with literal and parameter operands."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: eda-properties
+  header: include/mulib-eda-properties.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_PROPERTIES
+  purpose: "Owned integer, real, and text properties keyed by object ID and name."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: eda-query
+  header: include/mulib-eda-query.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_QUERY
+  purpose: "Linear design record filtering by kind, parent ID, and rectangular bounds."
+  dependencies: [amb3r-base, eda-store]
+  status: implemented
+- name: eda-revision
+  header: include/mulib-eda-revision.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_REVISION
+  purpose: "Owned design store snapshots tagged with the source revision."
+  dependencies: [amb3r-base, eda-store]
+  status: implemented
+- name: eda-selection
+  header: include/mulib-eda-selection.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_SELECTION
+  purpose: "Owned, duplicate-free selection list of object IDs."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: eda-serialize
+  header: include/mulib-eda-serialize.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_SERIALIZE
+  purpose: "Versioned binary encoding and decoding of scalar design store snapshots."
+  dependencies: [amb3r-base, eda-store]
+  status: implemented
+- name: eda-store
+  header: include/mulib-eda-store.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_STORE
+  purpose: "ID-sorted in-memory scalar design records with revision tracking and snapshot cloning."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: eda-validate
+  header: include/mulib-eda-validate.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_VALIDATE
+  purpose: "Design store record and parent-chain checks, including missing parents and cycles."
+  dependencies: [amb3r-base, eda-store]
+  status: implemented
+- name: eda-variants
+  header: include/mulib-eda-variants.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_EDA_VARIANTS
+  purpose: "Per-variant component substitution and population lookup."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: field-boundary
+  header: include/mulib-field-boundary.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FIELD_BOUNDARY
+  purpose: "Dirichlet boundary constraints by elimination in a dense linear system."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: field-capacitance
+  header: include/mulib-field-capacitance.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FIELD_CAPACITANCE
+  purpose: "Capacitance from stored energy or an ideal parallel-plate model."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: field-current
+  header: include/mulib-field-current.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FIELD_CURRENT
+  purpose: "Ohmic current density and power density from sampled electric fields."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: field-electrostatic
+  header: include/mulib-field-electrostatic.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FIELD_ELECTROSTATIC
+  purpose: "2-D finite-difference electrostatic potential and field for uniform permittivity."
+  dependencies: [amb3r-base, field-fdm]
+  status: implemented
+- name: field-electrothermal
+  header: include/mulib-field-electrothermal.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FIELD_ELECTROTHERMAL
+  purpose: "Explicit temperature and power step for a lumped resistor thermal model."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: field-fdm
+  header: include/mulib-field-fdm.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FIELD_FDM
+  purpose: "Iteration-limited 2-D Gauss-Seidel Poisson solve on a rectangular grid with fixed boundaries."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: field-fdtd
+  header: include/mulib-field-fdtd.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FIELD_FDTD
+  purpose: "1-D Yee time step with uniform material and perfectly conducting boundaries."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: field-fem
+  header: include/mulib-field-fem.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FIELD_FEM
+  purpose: "Dense scalar diffusion assembly on 2-D linear triangular elements."
+  dependencies: [amb3r-base, field-mesh]
+  status: implemented
+- name: field-inductance
+  header: include/mulib-field-inductance.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FIELD_INDUCTANCE
+  purpose: "Inductance from stored energy or an ideal solenoid model."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: field-magnetostatic
+  header: include/mulib-field-magnetostatic.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FIELD_MAGNETOSTATIC
+  purpose: "2-D scalar magnetic vector potential and flux for uniform permeability."
+  dependencies: [amb3r-base, field-electrostatic]
+  status: implemented
+- name: field-material
+  header: include/mulib-field-material.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FIELD_MATERIAL
+  purpose: "Material parameter validation and thermal diffusivity calculation."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: field-mesh
+  header: include/mulib-field-mesh.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FIELD_MESH
+  purpose: "Validation and total area of a caller-supplied 2-D triangular mesh."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: formal-aig-cnf
+  header: include/mulib-formal-aig-cnf.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_AIG_CNF
+  purpose: "Tseitin CNF encoding for the Amb3r and-inverter graph representation."
+  dependencies: [amb3r-base, synth-aig-rewrite]
+  status: implemented
+- name: formal-assertion
+  header: include/mulib-formal-assertion.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_ASSERTION
+  purpose: "Sampled implication checks with bounded response windows and pending status."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: formal-assume
+  header: include/mulib-formal-assume.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_ASSUME
+  purpose: "Guarantee checking on explicit-state paths restricted by a state predicate."
+  dependencies: [amb3r-base, formal-transition]
+  status: implemented
+- name: formal-bmc
+  header: include/mulib-formal-bmc.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_BMC
+  purpose: "Explicit-state safety checking up to a step bound, with shortest witnesses."
+  dependencies: [amb3r-base, formal-counterexample, formal-transition]
+  status: implemented
+- name: formal-cdc
+  header: include/mulib-formal-cdc.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_CDC
+  purpose: "Reports unsynchronized crossings in caller-declared clock-domain metadata."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: formal-counterexample
+  header: include/mulib-formal-counterexample.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_COUNTEREXAMPLE
+  purpose: "Bounded witness path reconstruction from predecessor links."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: formal-ctl
+  header: include/mulib-formal-ctl.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_CTL
+  purpose: "Explicit-state CTL next, until, and globally operators."
+  dependencies: [amb3r-base, formal-transition]
+  status: implemented
+- name: formal-kinduction
+  header: include/mulib-formal-kinduction.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_KINDUCTION
+  purpose: "Explicit-state k-induction step checking without a base-case check."
+  dependencies: [amb3r-base, formal-transition]
+  status: implemented
+- name: formal-ltl
+  header: include/mulib-formal-ltl.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_LTL
+  purpose: "Next, eventually, globally, and until on a supplied lasso trace."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: formal-miter
+  header: include/mulib-formal-miter.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_MITER
+  purpose: "Combinational and-inverter graph miter over pairs of output literals."
+  dependencies: [amb3r-base, synth-aig-rewrite]
+  status: implemented
+- name: formal-pdr
+  header: include/mulib-formal-pdr.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_PDR
+  purpose: "Explicit predecessor closure for an inductive safety invariant, not symbolic PDR."
+  dependencies: [amb3r-base, formal-transition]
+  status: implemented
+- name: formal-proof
+  header: include/mulib-formal-proof.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_PROOF
+  purpose: "Single-clause reverse unit propagation checking over CNF."
+  dependencies: [amb3r-base, formal-aig-cnf]
+  status: implemented
+- name: formal-rdc
+  header: include/mulib-formal-rdc.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_RDC
+  purpose: "Reports unsynchronized crossings in caller-declared reset-domain metadata."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: formal-sec
+  header: include/mulib-formal-sec.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_SEC
+  purpose: "Product-state equivalence checks for explicit deterministic machines with per-transition outputs."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: formal-transition
+  header: include/mulib-formal-transition.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FORMAL_TRANSITION
+  purpose: "Explicit transition graph validation and breadth-first distances and predecessors."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: fpga-architecture
+  header: include/mulib-fpga-architecture.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FPGA_ARCHITECTURE
+  purpose: "Validation of a rectangular tile, LUT, and routing-track configuration."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: fpga-bitstream
+  header: include/mulib-fpga-bitstream.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FPGA_BITSTREAM
+  purpose: "Architecture-neutral packing and unpacking of bit fields up to 64 bits."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: fpga-constraints
+  header: include/mulib-fpga-constraints.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FPGA_CONSTRAINTS
+  purpose: "Pin assignment range and uniqueness checks for signals and pins."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: fpga-fasm
+  header: include/mulib-fpga-fasm.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FPGA_FASM
+  purpose: "Parsing and writing single scalar FASM feature assignments."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: fpga-grid
+  header: include/mulib-fpga-grid.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FPGA_GRID
+  purpose: "Rectangular tile indexing and four-neighbor enumeration."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: fpga-pack
+  header: include/mulib-fpga-pack.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FPGA_PACK
+  purpose: "First-fit decreasing packing of scalar demands into fixed-capacity tiles."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: fpga-pathfinder
+  header: include/mulib-fpga-pathfinder.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FPGA_PATHFINDER
+  purpose: "Round-limited negotiated-congestion routing for two-terminal nets on a supplied graph."
+  dependencies: [amb3r-base, fpga-rrgraph, route-negotiated]
+  status: implemented
+- name: fpga-place
+  header: include/mulib-fpga-place.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FPGA_PLACE
+  purpose: "Grid-site placement legalization with optional blocked sites."
+  dependencies: [amb3r-base, fpga-architecture, place-legalize]
+  status: implemented
+- name: fpga-rrgraph
+  header: include/mulib-fpga-rrgraph.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FPGA_RRGRAPH
+  purpose: "Uniform-cost directed routing graph for a four-neighbor rectangular grid."
+  dependencies: [amb3r-base, fpga-grid]
+  status: implemented
+- name: fpga-timing
+  header: include/mulib-fpga-timing.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_FPGA_TIMING
+  purpose: "Summing supplied cell and wire delays along a path."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hdl-ast
+  header: include/mulib-hdl-ast.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HDL_AST
+  purpose: "Owned source-span nodes with up to four previously added children."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hdl-consteval
+  header: include/mulib-hdl-consteval.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HDL_CONSTEVAL
+  purpose: "Selected unsigned fixed-width arithmetic, bitwise operations, and shifts up to 64 bits."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hdl-elaborate
+  header: include/mulib-hdl-elaborate.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HDL_ELABORATE
+  purpose: "Module dependency ordering and bounded enumeration of integer generate-loop indices."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hdl-liberty
+  header: include/mulib-hdl-liberty.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HDL_LIBERTY
+  purpose: "Bilinear interpolation within supplied timing tables; no Liberty parsing."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hdl-preprocessor
+  header: include/mulib-hdl-preprocessor.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HDL_PREPROCESSOR
+  purpose: "Single-pass expansion of object-like backtick macros from a supplied table."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hdl-sdc
+  header: include/mulib-hdl-sdc.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HDL_SDC
+  purpose: "Writes a subset of SDC clock and input/output delay commands."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hdl-sdf
+  header: include/mulib-hdl-sdf.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HDL_SDF
+  purpose: "Parsing finite, ordered min/typ/max delay triplets."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hdl-symboltable
+  header: include/mulib-hdl-symboltable.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HDL_SYMBOLTABLE
+  purpose: "Nested symbol scopes with shadowing and local duplicate rejection."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hdl-systemverilog-lex
+  header: include/mulib-hdl-systemverilog-lex.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HDL_SYSTEMVERILOG_LEX
+  purpose: "Basic SystemVerilog token span scanning with comment skipping."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hdl-timescale
+  header: include/mulib-hdl-timescale.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HDL_TIMESCALE
+  purpose: "Parsing 1, 10, or 100 time-unit scales and exact tick conversion."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hdl-vhdl-lex
+  header: include/mulib-hdl-vhdl-lex.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HDL_VHDL_LEX
+  purpose: "Basic VHDL token span scanning with line-comment skipping."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hdl-width
+  header: include/mulib-hdl-width.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HDL_WIDTH
+  purpose: "Selected expression width rules and fixed-width bit extension or truncation."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hwil-attribute
+  header: include/mulib-hwil-attribute.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_ATTRIBUTE
+  purpose: "Typed property lookup and assignment keyed by HWIL node index."
+  dependencies: [amb3r-base, eda-properties]
+  status: implemented
+- name: hwil-builder
+  header: include/mulib-hwil-builder.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_BUILDER
+  purpose: "Construction of validated nodes for the Amb3r HWIL graph."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hwil-cell
+  header: include/mulib-hwil-cell.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_CELL
+  purpose: "Width-masked evaluation of a small set of two-state combinational cells."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hwil-clock
+  header: include/mulib-hwil-clock.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_CLOCK
+  purpose: "Next periodic clock-edge calculation with phase offset."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hwil-context
+  header: include/mulib-hwil-context.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_CONTEXT
+  purpose: "Dynamic Amb3r hardware node graph with widths from 1 to 64 bits."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hwil-elaborate
+  header: include/mulib-hwil-elaborate.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_ELABORATE
+  purpose: "Copying a prebuilt module graph into a destination with input-node substitution."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hwil-flatten
+  header: include/mulib-hwil-flatten.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_FLATTEN
+  purpose: "Batch flattening of prebuilt module graphs with explicit input bindings."
+  dependencies: [amb3r-base, hwil-elaborate]
+  status: implemented
+- name: hwil-instance
+  header: include/mulib-hwil-instance.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_INSTANCE
+  purpose: "Binding instance ports by name and width to actual node indices."
+  dependencies: [amb3r-base, hwil-port]
+  status: implemented
+- name: hwil-lower
+  header: include/mulib-hwil-lower.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_LOWER
+  purpose: "Lowering a ripple-carry adder into one-bit logic nodes."
+  dependencies: [amb3r-base, hwil-builder]
+  status: implemented
+- name: hwil-memory
+  header: include/mulib-hwil-memory.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_MEMORY
+  purpose: "Fixed-width word memory with bit-masked writes."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hwil-pass
+  header: include/mulib-hwil-pass.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_PASS
+  purpose: "Runs transformation callbacks against copies and validates each result before committing it."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hwil-port
+  header: include/mulib-hwil-port.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_PORT
+  purpose: "Validation of unique named ports, directions, node references, and widths."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hwil-process
+  header: include/mulib-hwil-process.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_PROCESS
+  purpose: "Evaluation of a hardware node graph with supplied inputs and register state."
+  dependencies: [amb3r-base, hwil-cell]
+  status: implemented
+- name: hwil-region
+  header: include/mulib-hwil-region.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_REGION
+  purpose: "Topological ordering and entry reachability for a block graph."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: hwil-register
+  header: include/mulib-hwil-register.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_REGISTER
+  purpose: "Next-state updates for HWIL register nodes from evaluated operands."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hwil-reset
+  header: include/mulib-hwil-reset.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_RESET
+  purpose: "Width-masked selection of previous, data, or reset values at a clock edge or asynchronous reset."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hwil-rewrite
+  header: include/mulib-hwil-rewrite.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_REWRITE
+  purpose: "In-place constant folding for combinational nodes with constant operands."
+  dependencies: [amb3r-base, hwil-cell]
+  status: implemented
+- name: hwil-serialize
+  header: include/mulib-hwil-serialize.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_SERIALIZE
+  purpose: "Private AHW1 binary encoding and decoding of the Amb3r HWIL node graph."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hwil-text
+  header: include/mulib-hwil-text.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_TEXT
+  purpose: "Private HWIL1 numeric text encoding and decoding with a read limit."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hwil-use-def
+  header: include/mulib-hwil-use-def.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_USE_DEF
+  purpose: "Linear scan of operand references to find users of a node."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hwil-value
+  header: include/mulib-hwil-value.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_VALUE
+  purpose: "Up to 64-bit four-state values with known and high-impedance masks and bitwise logic."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: hwil-wire
+  header: include/mulib-hwil-wire.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_HWIL_WIRE
+  purpose: "Width-checked driver attachment and removal on a single-driver wire."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: instrument-scpi
+  header: include/mulib-instrument-scpi.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_INSTRUMENT_SCPI
+  purpose: "SCPI command and line-query helpers plus definite-length binary block reads over a supplied transport."
+  dependencies: [amb3r-base, instrument-transport]
+  status: implemented
+- name: instrument-transport
+  header: include/mulib-instrument-transport.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_INSTRUMENT_TRANSPORT
+  purpose: "Instrument I/O callbacks with partial-transfer loops for exact reads and writes and bounded line input."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-adaptive
+  header: include/mulib-num-adaptive.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_ADAPTIVE
+  purpose: "Tolerance-scaled RMS error and bounded timestep suggestions for adaptive integration."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-amd
+  header: include/mulib-num-amd.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_AMD
+  purpose: "Minimum-degree ordering of an explicit symmetric fill graph from square CSR; not SuiteSparse AMD."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-autodiff
+  header: include/mulib-num-autodiff.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_AUTODIFF
+  purpose: "Scalar forward-mode differentiation with dual-number arithmetic and selected elementary functions."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-bdf
+  header: include/mulib-num-bdf.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_BDF
+  purpose: "Constant-step BDF coefficients for orders one through six and differentiation of supplied history."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-bicgstab
+  header: include/mulib-num-bicgstab.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_BICGSTAB
+  purpose: "Unpreconditioned BiCGSTAB solve for square real CSR systems with an iteration limit."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-cholesky
+  header: include/mulib-num-cholesky.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_CHOLESKY
+  purpose: "Dense real Cholesky factorization and triangular solves for symmetric positive-definite systems."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-colamd
+  header: include/mulib-num-colamd.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_COLAMD
+  purpose: "Minimum-degree ordering on an explicit column-intersection fill graph; not quotient-graph COLAMD."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-complex-lu
+  header: include/mulib-num-complex-lu.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_COMPLEX_LU
+  purpose: "Dense complex linear solve by Gaussian elimination with partial row pivoting."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-condition
+  header: include/mulib-num-condition.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_CONDITION
+  purpose: "CSR residual two-norm and dense infinity-norm condition estimate from unit-vector solves."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-dae
+  header: include/mulib-num-dae.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_DAE
+  purpose: "One backward-Euler step for constant linear differential-algebraic systems in mass/stiffness form."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-eigensolver
+  header: include/mulib-num-eigensolver.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_EIGENSOLVER
+  purpose: "Power iteration for a dominant eigenpair of a real square CSR matrix."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-gmres
+  header: include/mulib-num-gmres.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_GMRES
+  purpose: "Restarted unpreconditioned GMRES for square real CSR systems with an iteration limit."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-jacobian
+  header: include/mulib-num-jacobian.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_JACOBIAN
+  purpose: "Central finite-difference Jacobian of a caller-supplied vector function."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-linesearch
+  header: include/mulib-num-linesearch.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_LINESEARCH
+  purpose: "Bounded Armijo backtracking along a supplied descent direction and slope."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-newton
+  header: include/mulib-num-newton.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_NEWTON
+  purpose: "Damped Newton solve using a caller-supplied residual and dense Jacobian with backtracking."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-precondition
+  header: include/mulib-num-precondition.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_PRECONDITION
+  purpose: "Jacobi preconditioning from the diagonal of a square CSR matrix, with a vector apply helper."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-sparse-ldlt
+  header: include/mulib-num-sparse-ldlt.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_SPARSE_LDLT
+  purpose: "Unpivoted symmetric LDLT factorization from CSR lower-triangle entries, with a solve helper."
+  dependencies: [amb3r-base, num-sparse-lu]
+  status: implemented
+- name: num-sparse-lu
+  header: include/mulib-num-sparse-lu.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_SPARSE_LU
+  purpose: "Row-based sparse LU factorization of square CSR with partial pivoting and reusable solves."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-symbolic
+  header: include/mulib-num-symbolic.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_SYMBOLIC
+  purpose: "Symbolic LU fill counts for fixed row and column order without numeric pivoting."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: num-trapezoid
+  header: include/mulib-num-trapezoid.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_NUM_TRAPEZOID
+  purpose: "One implicit trapezoidal step for a constant linear mass/stiffness system with endpoint sources."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-dfm
+  header: include/mulib-pcb-dfm.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_DFM
+  purpose: "Via manufacturing checks for minimum drill, annular ring, and maximum aspect ratio."
+  dependencies: [amb3r-base, pcb-via]
+  status: implemented
+- name: pcb-dft
+  header: include/mulib-pcb-dft.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_DFT
+  purpose: "Find nets without a listed test pad meeting the minimum size in both dimensions."
+  dependencies: [amb3r-base, pcb-pad]
+  status: implemented
+- name: pcb-diffpair
+  header: include/mulib-pcb-diffpair.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_DIFFPAIR
+  purpose: "Construct paired offsets from a center polyline without corner-radius or clearance enforcement."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-footprint
+  header: include/mulib-pcb-footprint.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_FOOTPRINT
+  purpose: "Aggregate pad bounds and check pad ID uniqueness and positive finite dimensions."
+  dependencies: [amb3r-base, pcb-pad]
+  status: implemented
+- name: pcb-ipc2581
+  header: include/mulib-pcb-ipc2581.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_IPC2581
+  purpose: "Write an IPC-2581-style layer-stack XML fragment; not a complete exporter."
+  dependencies: [amb3r-base, pcb-stackup]
+  status: implemented
+- name: pcb-kicad
+  header: include/mulib-pcb-kicad.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_KICAD
+  purpose: "Write a minimal two-layer KiCad board with straight copper segments and generated net names."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-lengthmatch
+  header: include/mulib-pcb-lengthmatch.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_LENGTHMATCH
+  purpose: "Measure polyline length and generate an unconstrained rectilinear serpentine between two endpoints."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-netclass
+  header: include/mulib-pcb-netclass.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_NETCLASS
+  purpose: "Combine two net classes by intersecting track-width limits and retaining stricter clearance and drill minima."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-pad
+  header: include/mulib-pcb-pad.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_PAD
+  purpose: "Point containment for rotated rectangular or elliptical PCB pads and conservative axis-aligned bounds."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-panelize
+  header: include/mulib-pcb-panelize.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_PANELIZE
+  purpose: "Grid placement of identical rectangular boards within a rectangular panel with fixed gaps."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-placement
+  header: include/mulib-pcb-placement.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_PLACEMENT
+  purpose: "Input-order shelf packing of rectangular parts in a fixed-width strip."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-pour
+  header: include/mulib-pcb-pour.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_POUR
+  purpose: "Grid-sampled polygon copper mask with circular keepouts; not exact polygon clipping."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-ratsnest
+  header: include/mulib-pcb-ratsnest.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_RATSNEST
+  purpose: "Greedy Euclidean minimum-spanning connections for points on each nonzero net."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-router
+  header: include/mulib-pcb-router.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_ROUTER
+  purpose: "Single-layer, four-neighbor A* PCB routing on a caller-supplied obstacle grid."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-shove
+  header: include/mulib-pcb-shove.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_SHOVE
+  purpose: "Reference clearance-based shove for axis-aligned boxes along one axis, honoring fixed obstacles."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-spatial
+  header: include/mulib-pcb-spatial.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_SPATIAL
+  purpose: "X-sorted array of bounding boxes for overlap queries returning original indices."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-stackup
+  header: include/mulib-pcb-stackup.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_STACKUP
+  purpose: "Layer descriptors and total stack thickness with per-layer thickness and permittivity checks."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-thermal-relief
+  header: include/mulib-pcb-thermal-relief.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_THERMAL_RELIEF
+  purpose: "Generate evenly spaced radial spoke centerlines for a pad thermal relief."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-via
+  header: include/mulib-pcb-via.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_VIA
+  purpose: "Via geometry and layer-span validation plus a plated-barrel DC resistance estimate."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: pcb-zone
+  header: include/mulib-pcb-zone.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PCB_ZONE
+  purpose: "Polygon area and point containment helpers for PCB zones."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: physical-def
+  header: include/mulib-physical-def.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PHYSICAL_DEF
+  purpose: "Write a DEF COMPONENTS fragment for explicitly placed components and orientations."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: physical-lef
+  header: include/mulib-physical-lef.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PHYSICAL_LEF
+  purpose: "Write a single-layer LEF block-macro fragment with rectangular obstructions."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: place-analytical
+  header: include/mulib-place-analytical.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PLACE_ANALYTICAL
+  purpose: "Iterative weighted-centroid placement of movable points among fixed anchors."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: place-anneal
+  header: include/mulib-place-anneal.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PLACE_ANNEAL
+  purpose: "Simulated annealing of one-to-one site assignments using pair swaps and weighted Manhattan wirelength."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: place-floorplan
+  header: include/mulib-place-floorplan.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PLACE_FLOORPLAN
+  purpose: "Estimate floorplan dimensions from rectangle area, target aspect ratio, and utilization."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: place-legalize
+  header: include/mulib-place-legalize.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_PLACE_LEGALIZE
+  purpose: "Greedily assign each requested position to its nearest unused, unblocked site."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: rf-matching
+  header: include/mulib-rf-matching.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_RF_MATCHING
+  purpose: "Compute high- or low-pass L-section reactances for two positive real impedances."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: rf-network
+  header: include/mulib-rf-network.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_RF_NETWORK
+  purpose: "Convert equal-reference two-port S parameters to ABCD and cascade ABCD matrices."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: rf-tolerance
+  header: include/mulib-rf-tolerance.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_RF_TOLERANCE
+  purpose: "First-order worst-case and root-sum-square tolerance estimates from supplied sensitivities."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: rf-touchstone
+  header: include/mulib-rf-touchstone.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_RF_TOUCHSTONE
+  purpose: "Read line-oriented Touchstone 1 two-port S-parameters in RI, MA, or DB form."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: rf-transmission
+  header: include/mulib-rf-transmission.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_RF_TRANSMISSION
+  purpose: "Lossless line input impedance and wave velocity from dielectric permittivity."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: route-detailed
+  header: include/mulib-route-detailed.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ROUTE_DETAILED
+  purpose: "Single-path four-neighbor A* detailed routing on a rectangular obstacle grid."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: route-global
+  header: include/mulib-route-global.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ROUTE_GLOBAL
+  purpose: "Dijkstra shortest-path routing between one source and target on a nonnegative weighted directed graph."
+  dependencies: [amb3r-base, formal-counterexample]
+  status: implemented
+- name: route-negotiated
+  header: include/mulib-route-negotiated.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_ROUTE_NEGOTIATED
+  purpose: "One source-to-target route with edge costs adjusted by supplied usage, capacity, and congestion history."
+  dependencies: [amb3r-base, route-global]
+  status: implemented
+- name: spice-behavioral
+  header: include/mulib-spice-behavioral.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_BEHAVIORAL
+  purpose: "Stamp a linearized behavioral current source into dense MNA from supplied values and derivatives."
+  dependencies: [amb3r-base, spice-mna]
+  status: implemented
+- name: spice-bjt
+  header: include/mulib-spice-bjt.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_BJT
+  purpose: "Evaluate terminal currents of a static NPN Ebers-Moll model without charge storage or Early effect."
+  dependencies: [amb3r-base, spice-diode]
+  status: implemented
+- name: spice-checkpoint
+  header: include/mulib-spice-checkpoint.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_CHECKPOINT
+  purpose: "Save and restore one owned in-memory time and state-vector snapshot."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-controlled
+  header: include/mulib-spice-controlled.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_CONTROLLED
+  purpose: "Dense MNA stamps for the four ideal linear controlled current and voltage source types."
+  dependencies: [amb3r-base, spice-mna]
+  status: implemented
+- name: spice-convergence
+  header: include/mulib-spice-convergence.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_CONVERGENCE
+  purpose: "Absolute/relative convergence checks, a geometric Gmin schedule, and voltage-increment limiting."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-dae
+  header: include/mulib-spice-dae.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_DAE
+  purpose: "Apply one linear backward-Euler step to a dense MNA system."
+  dependencies: [amb3r-base, num-dae, spice-mna]
+  status: implemented
+- name: spice-device
+  header: include/mulib-spice-device.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_DEVICE
+  purpose: "Dispatch caller-supplied MNA device stamp callbacks for a given state and time."
+  dependencies: [amb3r-base, spice-mna]
+  status: implemented
+- name: spice-diode
+  header: include/mulib-spice-diode.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_DIODE
+  purpose: "Shockley diode current and slope with a high-bias linear continuation, plus a dense MNA stamp."
+  dependencies: [amb3r-base, spice-mna]
+  status: implemented
+- name: spice-elaborate
+  header: include/mulib-spice-elaborate.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_ELABORATE
+  purpose: "Assign compact IDs to a flat list of node names, treating 0 and gnd as ground."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-fourier
+  header: include/mulib-spice-fourier.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_FOURIER
+  purpose: "Direct normalized discrete Fourier coefficients for requested nonnegative harmonics of real samples."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-jfet
+  header: include/mulib-spice-jfet.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_JFET
+  purpose: "Static JFET channel current and conductances using a square-law approximation; no junction model."
+  dependencies: [amb3r-base, spice-mosfet]
+  status: implemented
+- name: spice-k
+  header: include/mulib-spice-k.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_K
+  purpose: "Stamp mutual inductance between two inductor branch variables in dense MNA."
+  dependencies: [amb3r-base, spice-mna]
+  status: implemented
+- name: spice-l
+  header: include/mulib-spice-l.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_L
+  purpose: "Dense MNA branch stamp for ideal linear inductance."
+  dependencies: [amb3r-base, spice-mna]
+  status: implemented
+- name: spice-mna
+  header: include/mulib-spice-mna.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_MNA
+  purpose: "Dense reference MNA assembly and DC solve, with sparse row assembly and sparse LU for DC or backward Euler."
+  dependencies: [amb3r-base, num-sparse-lu]
+  status: implemented
+- name: spice-model
+  header: include/mulib-spice-model.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_MODEL
+  purpose: "Look up a named numeric model parameter with a supplied fallback."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-montecarlo
+  header: include/mulib-spice-montecarlo.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_MONTECARLO
+  purpose: "Generate independent Gaussian parameter samples from supplied means and deviations."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-mosfet
+  header: include/mulib-spice-mosfet.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_MOSFET
+  purpose: "Static long-channel level-1 NMOS current and small-signal derivatives without body effect or charge storage."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-noise
+  header: include/mulib-spice-noise.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_NOISE
+  purpose: "Resistor thermal and shot noise density helpers and summation of transferred uncorrelated source densities."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-nonlinear
+  header: include/mulib-spice-nonlinear.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_NONLINEAR
+  purpose: "Bounded damped DC iteration over device callbacks using dense MNA solves; no full convergence ladder."
+  dependencies: [amb3r-base, spice-device]
+  status: implemented
+- name: spice-params
+  header: include/mulib-spice-params.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_PARAMS
+  purpose: "Parse a finite numeric literal with a supported case-insensitive SPICE scale suffix."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-pz
+  header: include/mulib-spice-pz.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_PZ
+  purpose: "Extract real or complex roots from a supplied linear or quadratic polynomial; not a circuit pole-zero solver."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-rawfile
+  header: include/mulib-spice-rawfile.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_RAWFILE
+  purpose: "Write real ASCII transient sample data in SPICE rawfile form; no reader or binary profile."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-sensitivity
+  header: include/mulib-spice-sensitivity.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_SENSITIVITY
+  purpose: "Compute first-order solution sensitivities of a dense linear system from supplied matrix and RHS derivatives."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-sourcewave
+  header: include/mulib-spice-sourcewave.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_SOURCEWAVE
+  purpose: "Evaluate pulse, damped sine, piecewise-linear, and exponential source waveforms at a supplied time."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-subckt
+  header: include/mulib-spice-subckt.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_SUBCKT
+  purpose: "Map subcircuit ports to supplied node IDs and assign sequential IDs to local internal nodes."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-sweep
+  header: include/mulib-spice-sweep.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_SWEEP
+  purpose: "Generate linear or logarithmic sample values between two endpoints."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-switch
+  header: include/mulib-spice-switch.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_SWITCH
+  purpose: "Update a hysteretic switch state and select its on/off conductance from a control value."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-temperature
+  header: include/mulib-spice-temperature.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_TEMPERATURE
+  purpose: "Temperature scaling for resistance and saturation current from supplied model coefficients."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: spice-timestep
+  header: include/mulib-spice-timestep.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_TIMESTEP
+  purpose: "Choose an acceptable backward-Euler step for linear MNA using bounded step-doubling retries."
+  dependencies: [amb3r-base, num-adaptive, spice-dae]
+  status: implemented
+- name: spice-tline
+  header: include/mulib-spice-tline.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SPICE_TLINE
+  purpose: "Compute a lossless transmission line's two-port ABCD frequency response from impedance and delay."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: synth-aig-balance
+  header: include/mulib-synth-aig-balance.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_AIG_BALANCE
+  purpose: "Build a balanced pairwise conjunction of supplied AND-inverter graph literals."
+  dependencies: [amb3r-base, synth-aig-rewrite]
+  status: implemented
+- name: synth-aig-refactor
+  header: include/mulib-synth-aig-refactor.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_AIG_REFACTOR
+  purpose: "Construct a common-factor Boolean expression in an AIG from three supplied literals."
+  dependencies: [amb3r-base, synth-aig-rewrite]
+  status: implemented
+- name: synth-aig-rewrite
+  header: include/mulib-synth-aig-rewrite.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_AIG_REWRITE
+  purpose: "Rebuild a dynamic AIG with trivial Boolean reductions, shared identical gates, and a literal remap."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: synth-arithmetic
+  header: include/mulib-synth-arithmetic.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_ARITHMETIC
+  purpose: "Build a bit-vector ripple-carry adder with carry-in and carry-out in an AIG."
+  dependencies: [amb3r-base, synth-aig-rewrite]
+  status: implemented
+- name: synth-bdd
+  header: include/mulib-synth-bdd.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_BDD
+  purpose: "Build and evaluate reduced ordered BDDs from truth tables of up to six variables."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: synth-cellmap
+  header: include/mulib-synth-cellmap.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_CELLMAP
+  purpose: "Choose one exact truth-table match of up to six inputs by weighted cell area and delay."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: synth-cost
+  header: include/mulib-synth-cost.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_COST
+  purpose: "Estimate AIG area and delay from total AND count and maximum AND depth using uniform gate costs."
+  dependencies: [amb3r-base, synth-aig-rewrite]
+  status: implemented
+- name: synth-cuts
+  header: include/mulib-synth-cuts.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_CUTS
+  purpose: "Enumerate distinct AIG cuts from a selected node within an eight-leaf limit and caller capacity."
+  dependencies: [amb3r-base, synth-aig-rewrite]
+  status: implemented
+- name: synth-dce
+  header: include/mulib-synth-dce.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_DCE
+  purpose: "Rebuild an AIG from nodes reachable from supplied output literals and return a remap."
+  dependencies: [amb3r-base, synth-aig-rewrite]
+  status: implemented
+- name: synth-egraph
+  header: include/mulib-synth-egraph.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_EGRAPH
+  purpose: "Compute congruence closure of commutative AIG AND expressions under caller-supplied equalities."
+  dependencies: [amb3r-base, synth-aig-rewrite]
+  status: implemented
+- name: synth-espresso
+  header: include/mulib-synth-espresso.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_ESPRESSO
+  purpose: "Greedy two-level Boolean cover with don't-cares for at most six inputs; not full Espresso."
+  dependencies: [amb3r-base, synth-quinemccluskey]
+  status: implemented
+- name: synth-fsm
+  header: include/mulib-synth-fsm.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_FSM
+  purpose: "Partition deterministic Moore-machine states by output and transitions until equivalent state classes stabilize."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: synth-lutmap
+  header: include/mulib-synth-lutmap.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_LUTMAP
+  purpose: "Extract LUT truth for a supplied AIG cut of at most six leaves; not global mapping."
+  dependencies: [amb3r-base, synth-aig-rewrite]
+  status: implemented
+- name: synth-memory
+  header: include/mulib-synth-memory.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_MEMORY
+  purpose: "Compute address width for a given depth and decode one address to a one-hot row selection."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: synth-mig
+  header: include/mulib-synth-mig.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_MIG
+  purpose: "Evaluate topologically ordered majority-inverter graphs with constants and complemented inputs."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: synth-multiplexer
+  header: include/mulib-synth-multiplexer.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_MULTIPLEXER
+  purpose: "Build a two-input selector expression in an AIG."
+  dependencies: [amb3r-base, synth-aig-rewrite]
+  status: implemented
+- name: synth-npn
+  header: include/mulib-synth-npn.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_NPN
+  purpose: "Canonicalize up to six-variable Boolean truth tables under input permutation, input negation, and output negation."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: synth-quinemccluskey
+  header: include/mulib-synth-quinemccluskey.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_QUINEMCCLUSKEY
+  purpose: "Find a minimum-cardinality prime-implicant cover for up to six variables within a search budget."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: synth-register
+  header: include/mulib-synth-register.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_REGISTER
+  purpose: "Identify duplicate HWIL registers by width, input operand, and stored constant."
+  dependencies: [amb3r-base, hwil-context]
+  status: implemented
+- name: synth-retime
+  header: include/mulib-synth-retime.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_RETIME
+  purpose: "Apply supplied integer retiming labels to edge register counts with range checks; no label search."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: synth-xag
+  header: include/mulib-synth-xag.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_SYNTH_XAG
+  purpose: "Evaluate topologically ordered XOR-AND graphs with constants and complemented inputs."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: timing-clock
+  header: include/mulib-timing-clock.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_TIMING_CLOCK
+  purpose: "Compute clock arrival spread and scalar setup and hold slack from supplied timing parameters."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: timing-corner
+  header: include/mulib-timing-corner.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_TIMING_CORNER
+  purpose: "Apply a uniform positive scale to timing-edge delays for a simple corner model."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: timing-critical
+  header: include/mulib-timing-critical.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_TIMING_CRITICAL
+  purpose: "Reconstruct a predecessor path to the vertex with the lowest finite slack."
+  dependencies: [amb3r-base, formal-counterexample]
+  status: implemented
+- name: timing-elmore
+  header: include/mulib-timing-elmore.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_TIMING_ELMORE
+  purpose: "Compute Elmore delays on a rooted RC tree using downstream capacitance."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: timing-graph
+  header: include/mulib-timing-graph.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_TIMING_GRAPH
+  purpose: "Topologically order a timing graph after checking its edge delays."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: timing-parasitic
+  header: include/mulib-timing-parasitic.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_TIMING_PARASITIC
+  purpose: "Estimate lumped resistance and capacitance for a straight wire from supplied geometry and process parameters."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: timing-propagate
+  header: include/mulib-timing-propagate.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_TIMING_PROPAGATE
+  purpose: "Propagate latest arrivals forward and earliest required times backward on a timing DAG."
+  dependencies: [amb3r-base, timing-graph]
+  status: implemented
+- name: timing-slack
+  header: include/mulib-timing-slack.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_TIMING_SLACK
+  purpose: "Calculate per-node slack, worst slack, and summed negative slack from arrival and required times."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: timing-spef
+  header: include/mulib-timing-spef.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_TIMING_SPEF
+  purpose: "Write a single SPEF distributed-net fragment with named-node capacitances and branch resistances."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: timing-sta
+  header: include/mulib-timing-sta.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_TIMING_STA
+  purpose: "Combine scalar delay propagation, predecessor tracking, and slack calculation on a single timing DAG."
+  dependencies: [amb3r-base, timing-propagate, timing-slack]
+  status: implemented
+- name: wave-correlation
+  header: include/mulib-wave-correlation.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_WAVE_CORRELATION
+  purpose: "Pearson correlation on overlapping portions of two real sample arrays at one signed lag."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: wave-expression
+  header: include/mulib-wave-expression.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_WAVE_EXPRESSION
+  purpose: "Elementwise arithmetic on paired sample arrays and cumulative trapezoidal integration."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: wave-eye
+  header: include/mulib-wave-eye.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_WAVE_EYE
+  purpose: "Bin waveform samples into a time-amplitude eye histogram folded over two unit intervals."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: wave-fst
+  header: include/mulib-wave-fst.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_WAVE_FST
+  purpose: "Unsigned LEB128 read/write and timestamp-delta encoding only; not FST file interchange."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: wave-histogram
+  header: include/mulib-wave-histogram.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_WAVE_HISTOGRAM
+  purpose: "Equal-width amplitude histogram with separate underflow and overflow counts."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: wave-index
+  header: include/mulib-wave-index.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_WAVE_INDEX
+  purpose: "Binary-search timestamp lower bounds and find half-open windows in strictly ordered samples."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: wave-jitter
+  header: include/mulib-wave-jitter.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_WAVE_JITTER
+  purpose: "Centered RMS and peak-to-peak edge timing jitter relative to a supplied ideal period."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: wave-psd
+  header: include/mulib-wave-psd.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_WAVE_PSD
+  purpose: "One-sided Welch-style power spectral density estimate with Hann-windowed, optionally overlapping segments."
+  dependencies: [amb3r-base, wave-spectrum]
+  status: implemented
+- name: wave-spectrum
+  header: include/mulib-wave-spectrum.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_WAVE_SPECTRUM
+  purpose: "Complex forward and inverse transforms using radix-2 FFT or a direct DFT fallback."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: wave-store
+  header: include/mulib-wave-store.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_WAVE_STORE
+  purpose: "Append finite, strictly time-ordered samples to linked chunks and retrieve samples by index."
+  dependencies: [amb3r-base]
+  status: implemented
+- name: wave-stream
+  header: include/mulib-wave-stream.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_WAVE_STREAM
+  purpose: "Send strictly time-ordered samples via a callback while retaining the last accepted timestamp."
+  dependencies: [amb3r-base, wave-store]
+  status: implemented
+- name: wave-trigger
+  header: include/mulib-wave-trigger.h
+  manual: manual/amb3r-kernels.md
+  profile: amb3r
+  macro: MULIB_IMPL_WAVE_TRIGGER
+  purpose: "Find rising or falling threshold crossings and interpolate their timestamps between samples."
+  dependencies: [amb3r-base]
+  status: implemented
 - name: drm-atomic
   header: include/mulib-drm-atomic.h
   manual: manual/mulib-gfx-drm.md
@@ -11371,6 +13443,12 @@ modules:
   example: examples/gfx-headless.c
   validation: tests/run-graphics.sh; header compilation is not feature completeness.
 project_files:
+- file: manual/amb3r-kernels.md
+  purpose: Shared integration and scope notes for the Amb3r reference kernels.
+- file: include/detail/mulib-compiler-integer.h
+  purpose: Internal checked signed arithmetic shared by compiler kernels.
+- file: include/detail/mulib-hash-core.h
+  purpose: Internal allocation-free primitives shared by hash kernels.
 - file: manual/api-kernels.md
   purpose: Shared protocol kernel integration, trust boundaries and tested scope.
 - file: tests/api-kernels/dependencies.c

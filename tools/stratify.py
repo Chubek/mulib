@@ -9,6 +9,14 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def render():
     texts = {p.stem[6:]: p.read_text() for p in sorted((ROOT / 'include').glob('mulib-*.h'))}
+    manifest = ROOT / 'MANIFEST.yaml'
+    manuals = {}
+    if manifest.is_file():
+        modules = manifest.read_text().split('\nproject_files:', 1)[0]
+        for block in re.split(r'^- name: ', modules, flags=re.M)[1:]:
+            manual = re.search(r'^  manual: manual/(\S+)$', block, re.M)
+            if manual:
+                manuals[block.splitlines()[0]] = manual.group(1)
     deps = {name: sorted(set(re.findall(r'^\s*#\s*include\s*["<]mulib-([^">]+)\.h[">]', text, re.M)))
             for name, text in texts.items()}
     # Collapse mutually reachable headers (legacy compatibility includes) into
@@ -59,7 +67,8 @@ def render():
                   '| Module | Direct dependencies |', '| --- | --- |']
         for name in names:
             dependencies = ', '.join('`' + d + '`' for d in deps[name]) or 'none'
-            lines.append(f'| [{name}](mulib-{name}.md) | {dependencies} |')
+            manual = manuals.get(name, f'mulib-{name}.md')
+            lines.append(f'| [{name}]({manual}) | {dependencies} |')
         lines.append('')
     return '\n'.join(lines)
 
