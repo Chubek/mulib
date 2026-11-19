@@ -150,7 +150,9 @@ carry quotation-world identity as well as depth, preventing scope extrusion when
 a splice re-enters a different quotation at the same depth. Quotes become typed
 factories/thunks; splice/lift operands become factory arguments. `Type::Code`
 remains distinct through inference/checking but uses exact zero-argument closure
-structs in C11. No runtime compiler or AST evaluator is linked. See [MSP](staging.md).
+structs in C11. Lexical quotation regions are parser-lowered to an existing
+result-inferred lambda call, retaining statement/tail locations and the Unit-v1
+wire schema. No runtime compiler or AST evaluator is linked. See [MSP](staging.md).
 
 Native authoring libraries in `stdlib` implement codec, JSON/schema, visitor and
 processor logic in On1x. `src/primitives.cpp` declares the small byte-buffer,

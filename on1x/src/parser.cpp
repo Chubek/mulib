@@ -500,9 +500,7 @@ class Parser {
     if(regex_header())return regex_application();
     if(match_header())return matching(false);
     if(at("let_syntax")||at("letrec_syntax"))return syntax_scope();
-    if(accept("quote")){
-     consume("{");auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Quote;e->where=t.where;e->children.push_back(expr().node);consume("}");return syntax_bounded(std::move(e));
-    }
+    if(accept("quote"))return quotation(t.where);
     if(accept("splice")||accept("lift")){
      auto e=std::make_unique<Expr>();e->kind=t.text=="splice"?Expr::Kind::Splice:Expr::Kind::Lift;e->where=t.where;consume("(");e->children.push_back(expr().node);consume(")");return syntax_bounded(std::move(e));
     }
@@ -860,6 +858,74 @@ class Parser {
     if(accept("|")){Pattern either;either.kind=Pattern::Kind::Or;either.where=p.where;either.elements.push_back(std::move(p));either.elements.push_back(match_pattern(dash_wildcard));return either;}
    return p;
   }
+   Expression quotation(const Location& where){
+    Nesting guard(*this);Expr region;region.where=where;consume("{");
+    while(!at("}")){
+     if(at("<eof>"))throw Error(peek().where,"unterminated quotation region");
+     if(region.body.size()>=100000)throw Error(where,"too many quotation statements");
+     const bool labelled_statement=is_ident(peek().text)&&peek(1).text==":"&&
+       (peek(2).text=="while"||peek(2).text=="for");
+     const bool structured=at("let")||at("var")||at("return")||at("if")||
+       at("while")||at("{")||taskgroup_header()||defer_header()||for_header()||
+       labelled_statement||
+       ((at("break")||at("continue"))&&peek(1).text!="(")||
+       peek(1).text=="="||peek(1).text==":=";
+     if(structured){region.body.push_back(statement());continue;}
+     const bool match_statement=(match_header()&&!regex_header())||
+       (at("poll")&&peek(1).text=="{");
+     auto value=expr().node;
+     const bool syntax_block=value->kind==Expr::Kind::SyntaxLet&&
+       value->children.size()==1&&value->children[0]->kind==Expr::Kind::SyntaxBlock;
+     if(accept(";")||syntax_block){
+      if(match_statement&&value->kind==Expr::Kind::PatternMatch)
+       value->statement_match=true;
+      Stmt action;action.kind=Stmt::Kind::Expr;action.where=value->where;
+      action.value=std::move(value);region.body.push_back(std::move(action));continue;
+     }
+     if(at("}")){region.children.push_back(std::move(value));break;}
+     if(match_statement&&value->kind==Expr::Kind::PatternMatch){
+      value->statement_match=true;
+      Stmt action;action.kind=Stmt::Kind::Expr;action.where=value->where;
+      action.value=std::move(value);region.body.push_back(std::move(action));continue;
+     }
+     if(value->kind==Expr::Kind::Loop){
+      // A final loop remains the pre-existing value-loop expression. A loop
+      // followed by another region item is the ordinary semicolon-free loop
+      // statement spelling.
+      Stmt loop;loop.kind=Stmt::Kind::While;loop.where=value->where;
+      loop.label=std::move(value->text);loop.label_context=value->context;
+      loop.body=std::move(value->body);loop.value=std::make_unique<Expr>();
+      loop.value->kind=Expr::Kind::Boolean;loop.value->where=loop.where;
+      loop.value->text="true";region.body.push_back(std::move(loop));continue;
+     }
+     throw Error(peek().where,"quotation expression statement requires ';' before '"+peek().text+"'","ON1X-PARSE-EXPECTED",";",peek().text);
+    }
+    consume("}");
+    if(region.children.empty()){
+     auto unit=std::make_unique<Expr>();unit->kind=Expr::Kind::Unit;
+     unit->where=where;region.children.push_back(std::move(unit));
+    }
+    auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Quote;e->where=where;
+    if(region.body.empty())e->children.push_back(std::move(region.children.at(0)));
+    else{
+     // Keep Unit-v1 PPX and the checked staging HIR unchanged: a lexical
+     // quotation region is source sugar for an immediately invoked,
+     // result-inferred lambda inside the quote. The original statement/tail
+     // locations survive on the generated body and return.
+     auto thunk=std::make_unique<Expr>();thunk->kind=Expr::Kind::Lambda;
+     thunk->where=where;thunk->result=Type::Hole;thunk->body=std::move(region.body);
+     auto tail=std::move(region.children.at(0));
+     if(tail->kind!=Expr::Kind::Unit){
+      Stmt result;result.kind=Stmt::Kind::Return;result.where=tail->where;
+      result.value=std::move(tail);thunk->body.push_back(std::move(result));
+     }
+     auto depth=body_expression_depth(thunk->body)+1;
+     auto call=std::make_unique<Expr>();call->kind=Expr::Kind::Call;call->where=where;
+     call->callee=bounded(std::move(thunk),depth).node;
+     e->children.push_back(syntax_bounded(std::move(call)).node);
+    }
+    return syntax_bounded(std::move(e));
+   }
    void value_block(Expr& arm){
     Nesting guard(*this);consume("{");
     while(!at("}")){

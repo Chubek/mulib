@@ -20,6 +20,16 @@ modifier order is allowed. The expression form also accepts ordinary postfix
 calls/operators; as an expression statement it needs the ordinary semicolon.
 The block form is only accepted as a statement, not a value.
 
+Quotation regions use the same scanner tokens and ordinary statement grammar:
+
+```ebnf
+quotation = 'quote' '{' { statement } [ expression ] '}' ;
+```
+
+The parser preserves a sole expression exactly. A nontrivial region is
+represented with existing `Quote`/`Call`/`Lambda` nodes before macro expansion,
+so this addition changes neither scanner grammar nor Unit-v1 PPX wire schema.
+
 The C++ `SyntaxLet` node holds the lexical definitions and one body; expansion
 erases it before PPX, stage lowering or value inference. It is intentionally
 **not** a `PPX.asdl`/wire constructor: processors cannot introduce imports,

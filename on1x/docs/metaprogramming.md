@@ -349,11 +349,14 @@ type classes or record/ADT deriving, which the language does not yet support.
 
 ## MSP
 
-`code<T>`, `quote { expression }`, `splice(code)`, `lift(value)` and contextual
-`run(code)` implement typed closed-code staging with ahead-of-time compiled C11
-closures. Operands of splice/lift execute at construction time; quoted effects
-wait until run. Cross-stage local references and future-binding extrusion fail
-before inference. No JIT, unchecked eval or compiler subprocess is introduced.
+`code<T>`, expression or lexical-region `quote { ... }`, `splice(code)`,
+`lift(value)` and contextual `run(code)` implement typed closed-code staging
+with ahead-of-time compiled C11 closures. A region may contain ordinary
+statements and an optional tail expression; staged `return` and lexical cleanup
+belong to that region. Operands of splice/lift execute at construction time;
+quoted effects wait until run. Cross-stage local references and future-binding
+extrusion fail before inference. No JIT, unchecked eval or compiler subprocess
+is introduced.
 See [the MSP semantics/lowering manual](staging.md) and `examples/staging.on1x`.
 
 ## Limits, trust and remaining work

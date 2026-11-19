@@ -12,6 +12,55 @@ fn main(){
  assert(live_environments()==0);
 }
 ''')
+t.valid('stage_regions', '1\n39\nbuilt\n42\n42\n7\n6\n42\n', extra=hooks, text='''
+extern fn live_environments()->i64;
+fn mark(n:i64)->i64{println(n);return n;}
+fn build()->code<i64>{
+ return quote{
+  let one=lift(mark(1));
+  let rest=lift(mark(39));
+  var total=one+rest;
+  total=total+1;
+  let ready=total;
+  let finish=fn(n:i64)->i64{return ready+n;};
+  finish(1)
+ };
+}
+fn main(){
+ {let c=build();println("built");println(run(c));println(run(c));
+  let empty=quote{};run(empty);
+  let no_tail=quote{let value=1;assert(value==1);};run(no_tail);
+  let stop=quote{return;};run(stop);
+  let choice=quote{if lift(true){return 7;}return 0;};println(run(choice));
+  let looped=quote{var total=0;for i in 0..4{total=total+i;}total};
+  println(run(looped));
+  let seed=40;
+  let outer=quote{let value=lift(seed);quote{let copied=lift(value);copied+2}};
+  println(run(run(outer)));}
+ assert(live_environments()==0);
+}
+''')
+t.valid('stage_region_cleanup', 'region\nregion\n', extra=hooks, text='''
+extern fn live_environments()->i64;
+fn main(){
+ {let c=quote{let node=sx_string("region");sx_text(node)};
+  println(run(c));assert(data_live_nodes()==0);
+  println(run(c));assert(data_live_nodes()==0);}
+ assert(live_environments()==0);
+}
+''')
+t.valid('stage_region_compatibility', '42\n7\n9\n42\n', text='''
+fn main(){
+ let value_loop=quote{answer:loop{break answer with 42;}};
+ let local_syntax=quote{
+  let_syntax{macro answer{rule()=>expression{7};}}expression{answer!()}
+ };
+ let statement_loop=quote{loop{break;}let n=9;n};
+ let statement_match=quote{match true with {true=>1,false=>false}42};
+ println(run(value_loop));println(run(local_syntax));println(run(statement_loop));
+ println(run(statement_match));
+}
+''')
 t.valid('stage_functions', '42\ntrue\n42\n', extra=hooks, text='''
 extern fn live_environments()->i64;
 fn main(){
@@ -43,9 +92,9 @@ t.valid('stage_shadow_run', '42\n42\n', text='''
 fn run(x:i64)->i64{return x+2;}
 fn main(){println(run(40));let run=fn(n:i64)->i64{return n;};println(run(42));}
 ''')
-t.valid('stage_macro', '42\n', text='''
-macro stage{rule($x:Expression)=>expression{quote{lift($x)+2}};}
-fn main(){let n=40;println(run(stage!(n)));}
+t.valid('stage_macro', '42\n100\n', text='''
+macro stage{rule($x:Expression)=>expression{quote{let value=lift($x);value+2}};}
+fn main(){let value=100;let n=40;println(run(stage!(n)));println(value);}
 ''')
 t.valid('stage_universal', 'true\n42\n', extra=hooks, text='''
 extern fn live_environments()->i64;
@@ -59,6 +108,12 @@ reject = [
  ('cross_stage', 'fn main(){let n=1;let c=quote{n};}', 'cross-stage reference requires lift'),
  ('cross_stage_assignment', 'fn main(){var n=1;let c=quote{fn(){n=2;}};}', 'cross-stage reference'),
  ('future_escape', 'fn main(){let c=quote{fn(x:i64)->i64{return splice(quote{x});}};}', 'future-stage binding escapes'),
+ ('region_cross_stage', 'fn main(){let n=1;let c=quote{let x=n;x};}', 'cross-stage reference requires lift'),
+ ('region_future_escape', 'fn main(){let c=quote{let x=1;lift(x)};}', 'future-stage binding escapes'),
+ ('region_annotation', 'fn main(){let c:code<bool>=quote{return 42;};}', 'expected bool'),
+ ('region_return_path', 'fn main(){let c=quote{if true{return 42;}};}', 'not all paths return'),
+ ('region_missing_semicolon', 'fn main(){let c=quote{println(1) println(2)};}', "quotation expression statement requires ';'"),
+ ('region_loop_escape', 'fn main(){outer:loop{let c=quote{break outer;};break;}}', 'loop exit has no lexical target'),
  ('bad_splice', 'fn main(){let c=quote{splice(1)};}', 'expected code<'),
  ('bad_run', 'fn main(){run(42);}', 'expected code<'),
  ('bad_arity', 'fn main(){run();}', 'requires one code<T> operand'),
@@ -74,6 +129,17 @@ reject = [
 for name, text, diagnostic in reject:
     p = run([t.compiler, '--emit-c', t.source('reject_stage_'+name, text)])
     assert p.returncode == 1 and not p.stdout and diagnostic in p.stderr, (name, p.returncode, p.stderr)
+provenance = t.source('reject_stage_region_provenance', '''
+fn main(){
+ let n=1;
+ let c=quote{
+  let x=n;
+  x
+ };
+}
+''')
+p = run([t.compiler, '--emit-c', provenance])
+assert p.returncode == 1 and not p.stdout and f'{provenance}:5:9:' in p.stderr, p.stderr
 deep = 'fn main(){let c=' + 'quote{'*70 + '1' + '}'*70 + ';}'
 p = run([t.compiler, '--emit-c', t.source('reject_stage_depth', deep)])
 assert p.returncode == 1 and not p.stdout and 'stage limit exceeded' in p.stderr, p.stderr

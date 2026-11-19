@@ -124,7 +124,7 @@ macro attempt{rule($x:Expression)=>expression{$x?};}
 fn pick(x)->_{defer println(1);return x;}
 fn use()->Result<i64,u8>{let n=attempt!(variant<Result<i64,u8>>(Ok,42));return variant<Result<i64,u8>>(Ok,n);}
 fn main(){let n=99;later!(2);later!(3);println(n);println(pick(true));println(pick(8));
- let c=quote{fn()->i64{defer println(4);return 5;}()};println(run(c));
+ let c=quote{defer println(4);5};println(run(c));
  println(match use() with{Ok(n)=>n,Err(_)=>0});}
 '''
 hygiene_expected = '99\n1\ntrue\n1\n8\n4\n5\n42\n3\n2\n'

@@ -77,7 +77,7 @@ execute('imported_macro', '''from mac import inc as next; import mac;
 fn main(){println(next!(40));println(mac.value(41));
 println(let_syntax {macro next {rule ($x:Expression)=>expression {$x*2};}}
  expression {next!(21)});}''', '41\n42\n42\n')
-execute('staged_module', 'import alpha;fn main(){let c=quote {alpha.value(41)};println(run(c));}', '42\n')
+execute('staged_module', 'import alpha;fn main(){let c=quote {let value=alpha.value(40);value+1};println(run(c));}', '42\n')
 execute('ppx_module', 'import alpha;fn main(){println(@pipe("apply",41,alpha.value));}', '42\n', ['--stdppx', 'pipe'])
 observer=t.work/'require_fold.py'
 observer.write_text('#!/usr/bin/env python3\nimport sys\ntext=sys.stdin.read()\n'

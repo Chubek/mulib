@@ -116,6 +116,17 @@ Current final results: generated GCC **98/98**, fallback GCC **97/97**, and
 focused Clang ASan/UBSan **15/15**. See
 [`VERIFICATION.md`](VERIFICATION.md) for exact commands and remaining limits.
 
+Typed [multi-stage programming](docs/staging.md) accepts both expression quotes
+and lexical quotation regions such as
+`quote { let sampled = lift(input); sampled + 2 }`. Region statements, returns,
+locals and cleanup execute through the existing AOT C11 thunk path; the feature
+does not add JIT, source evaluation, or a new PPX/runtime ABI.
+The current focused evidence passes **12/12** generated-scanner GCC,
+**10/10** fallback-scanner GCC, and **10/10** fallback Clang ASan/UBSan tests.
+The complete inventories retain two unrelated baseline MuLIB inventory
+failures; exact commands and results are in
+[`VERIFICATION.md`](VERIFICATION.md#restricted-multistage-lexical-quotation-regions--2026-11-19).
+
 The M2 [defer/typed-error profile](docs/defer-errors.md) completes Go-style
 `defer call;` and postfix nominal `Result<T,E>?` through C11. Calls snapshot their
 callee/arguments at registration and run LIFO at **function return**, including

@@ -127,7 +127,7 @@ expr    = prefix { binary_operator expr } ;
 prefix  = ('!'|'-') prefix | postfix ;
 postfix = atom { '(' [ expr { ',' expr } ] ')' | '[' ( ID | expr [ ':' expr ] ) ']' } ;
 atom    = '(' expr ')' | '(' expr ',' expr { ',' expr } ')'
-        | literal | module | lambda | 'quote' '{' expr '}'
+        | literal | module | lambda | 'quote' quote_region
         | 'record' '{' [ ID ':' expr { ',' ID ':' expr } ] '}'
         | 'array' '[' [ expr { ',' expr } ] ']'
         | 'variant' '<' sum_type '>' '(' ID ',' expr ')'
@@ -138,6 +138,7 @@ match_expr = 'match' (expr | 'let' ID '=' expr) 'with' '{' match_arms '}' ;
 match_arms = match_arm { ',' match_arm } [','] ;
 match_arm = match_pattern ['if' expr] '=>' (expr | arm_block) ;
 arm_block = '{' { statement } [expr] '}' ;
+quote_region = '{' { statement } [expr] '}' ;
 match_pattern = ID | '_' | 'rest' | literal | ID '(' [match_patterns] ')'
           | '(' match_pattern ',' match_patterns ')' | '[' [match_patterns] ']'
           | 'record' '{' [ID ':' match_pattern {',' ID ':' match_pattern}] [',' '..'] '}'
@@ -157,6 +158,10 @@ type-checked. Postfix calls bind tighter than unary operators. Logical operators
 short circuit. The callee is evaluated first, then its arguments left-to-right.
 Other expression operands also evaluate **left-to-right**; the C11 backend sequences calls
 into temporaries rather than relying on C argument-evaluation order.
+In a `quote_region`, expression statements retain their required semicolon and
+a final expression without a semicolon is the staged result. Empty/no-tail regions
+produce `code<void>`; `return` belongs to the staged region. See
+[multi-stage programming](staging.md).
 
 See [module loading](modules.md) for namespace isolation, packages, search roots,
 relative imports, compatibility flat imports and the automatic pervasive environment.

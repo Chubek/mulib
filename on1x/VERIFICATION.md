@@ -1,5 +1,87 @@
 # On1x verification — through 2026-11-19
 
+## Restricted multistage lexical quotation regions — 2026-11-19
+
+This increment is **EXECUTABLE**, not a claim that arbitrary runtime code
+generation or the whole compiler is verified. Starting from MuLIB
+`6a145cbf09efcac76f387f6b664fc2257bac93aa`, the canonical parser now accepts
+typed lexical regions such as
+`quote { let sampled = lift(input); sampled + 2 }`. They desugar to an
+immediately invoked result-inferred lambda inside the existing `Quote` node,
+then use the existing checked AOT factory/thunk and strict C11 path. There is no
+new evaluator, JIT, compiler subprocess, runtime ABI, or Unit-v1 PPX
+constructor.
+
+The measured host was Linux x86-64 with GCC/G++ 16.2.1, Clang/Clang++ 22.1.8,
+Python 3.14.7, CMake 4.4.3, and read-only LibStone
+`3399047f6c6328b8f07788795c610699e66c060a`. Builds remained outside the
+worktree.
+
+| Check | Result |
+|---|---|
+| GCC Debug, LibStone generated scanner, staging/cross-feature selection including scanner parity | **12/12 passed** |
+| GCC Debug, bootstrap fallback scanner, corresponding selection | **10/10 passed** |
+| Clang Debug, fallback scanner, compiler and emitted C/runtime under ASan+UBSan | **10/10 passed**, no sanitizer findings |
+| Generated-scanner complete inventory | **105/108 passed** initially; timing-sensitive `on1x.concurrency` passed alone, leaving two unrelated baseline inventory failures |
+| Fallback-scanner complete inventory | **104/107 passed** initially; timing-sensitive `on1x.concurrency` passed alone, leaving the same two unrelated baseline inventory failures |
+| Embedded-unit consistency and diff whitespace | **PASS** |
+
+The two persistent full-inventory failures are outside this change.
+`on1x.contracts` sees 262 auxiliary MuLIB headers where its stale assertion
+expects exactly three, and `on1x.mulib` does not list the baseline
+`library/muw3lib` directory as a fixture. No contract, library inventory, or
+concurrency source was changed here. The failed parallel process-stream case
+(`captured_stdin_epipe`) passed in an immediate isolated rerun under each GCC
+scanner profile.
+
+The focused suites execute real generated C11 and cover statement/tail and
+empty/void regions, explicit staged returns, mutable locals, loops and matches,
+defer/resource cleanup, nested stages, lift/splice timing, quotation-world
+extrusion, exact diagnostic provenance, macro hygiene, imports, PPX identity
+round trips, deterministic emission, scanner parity, depth limits, and
+transactional HIR failure.
+
+Reproduction:
+
+```sh
+worktree=/mnt/nvme/opencode-worktrees/ses_e0d13d7a9ffe4DEJxtuNoZl9ei/multistage
+build=/mnt/nvme/opencode-builds/ses_e0d13d7a9ffe4DEJxtuNoZl9ei/multistage
+
+cmake --build "$build/gcc-generated" --parallel 4
+ctest --test-dir "$build/gcc-generated" --output-on-failure --parallel 4
+ctest --test-dir "$build/gcc-generated" --output-on-failure --parallel 3 \
+  -R '^on1x\.(scanner|scanner_parity|meta_hir|value_loop_hir|defer_error_hir|macros|ppx|staging|local_syntax|modules|value_loops|defer_errors)$'
+ctest --test-dir "$build/gcc-generated" --output-on-failure \
+  -R '^on1x\.concurrency$'
+
+cmake --build "$build/gcc-fallback" --parallel 4
+ctest --test-dir "$build/gcc-fallback" --output-on-failure --parallel 4
+ctest --test-dir "$build/gcc-fallback" --output-on-failure --parallel 3 \
+  -R '^on1x\.(meta_hir|value_loop_hir|defer_error_hir|macros|ppx|staging|local_syntax|modules|value_loops|defer_errors)$'
+ctest --test-dir "$build/gcc-fallback" --output-on-failure \
+  -R '^on1x\.concurrency$'
+
+cmake -S "$worktree/on1x" -B "$build/clang-fallback-san" \
+  -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DON1X_USE_FALLBACK_SCANNER=ON \
+  -DON1X_LIBSTONE_ROOT=/mnt/nvme/mulib/on1x/third_party/libstone \
+  -DON1X_BUILD_DYNAMIC_SDK_PLUGINS=OFF -DON1X_USE_YELLOWSTONE_LINK=OFF \
+  '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' \
+  '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer;-fno-sanitize-recover=all'
+cmake --build "$build/clang-fallback-san" --parallel 3 \
+  --target on1xc on1x_meta_tests on1x_value_loop_tests on1x_defer_error_tests
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 \
+UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+ctest --test-dir "$build/clang-fallback-san" --output-on-failure --parallel 2 \
+  -R '^on1x\.(meta_hir|value_loop_hir|defer_error_hir|macros|ppx|staging|local_syntax|modules|value_loops|defer_errors)$'
+
+cd "$worktree"
+python3 tools/embed_units.py --check
+git diff --check
+```
+
 ## On1x extension SDK
 
 SDK ABI 1 was tested on Linux x86-64 at MuLIB

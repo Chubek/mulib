@@ -51,7 +51,7 @@ int main(){
    require(rejected,"malformed wire was accepted");
   }
    require(schema.subtype("HexLiteral","NumericLiteral")&&schema.subtype("IntegerLiteral","Expression")&&!schema.subtype("Literal","IntegerLiteral"),"syntax subtype hierarchy is incorrect");
-   auto staged=parse("fn make(x:i64)->code<i64>{return quote{lift(x)+2};}fn main(){println(run(make(40)));}");
+   auto staged=parse("fn make(x:i64)->code<i64>{return quote{let sampled=lift(x);sampled+2};}fn main(){println(run(make(40)));}");
    auto stage_wire=on1x::meta::write_sexpr(on1x::meta::encode(staged));
    auto stage_copy=on1x::meta::decode(on1x::meta::read_sexpr(stage_wire,"stages"));
    on1x::check(staged);on1x::check(stage_copy);auto emitted=on1x::emit_c(staged,"a");
