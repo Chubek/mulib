@@ -940,11 +940,18 @@ class Generator {
      auto value=expr(*s.value);
      if(s.value->noreturn)return true;
      if(uses_group_deadlines)cancellation_edge(s.where);
-     if(s.value->type!=Type::Void){
-      auto result=unique("return");definitions<<pad()<<ctype(s.value->type)<<" "<<result<<" = "<<value<<";\n";
-      if(s.value->type.is_move_only())clear_value(s.value->type,value);else retain(s.value->type,result);
-       run_defers();finish();drops();leave_call();definitions<<pad()<<"return "<<result<<";\n";
-      }else{run_defers();finish();drops();leave_call();definitions<<pad()<<"return;\n";}
+      if(s.value->type!=Type::Void){
+       auto result=unique("return");definitions<<pad()<<ctype(s.value->type)<<" "<<result<<" = "<<value<<";\n";
+       if(s.value->type.is_move_only())clear_value(s.value->type,value);else retain(s.value->type,result);
+       // A reached defer can fail an owning allocation. Keep the saved return
+       // in the emergency registry until defers and lexical drops complete.
+       auto returned=defer_stack.empty()?Owner{s.value->type,result,{}}:
+                                        track(s.value->type,result);
+       run_defers();finish();drops();
+       if(!returned.cleanup.empty())
+        definitions<<pad()<<"on1x_cleanup_pop(&"<<returned.cleanup<<");\n";
+       leave_call();definitions<<pad()<<"return "<<result<<";\n";
+       }else{run_defers();finish();drops();leave_call();definitions<<pad()<<"return;\n";}
      }else{
       if(uses_group_deadlines)cancellation_edge(s.where);
       run_defers();finish();drops();leave_call();definitions<<pad()<<"return;\n";

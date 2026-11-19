@@ -106,8 +106,10 @@ argument identity and C11 execution (`examples/nominal_adts.on1x`). Nominal
 values may retain [immutable shared `sexpr`](docs/owning-adts.md), and the
 [finite unique-owner profile](docs/recursive-owning-adts.md) adds
 `own<Named>`, `box`, explicit `move`, consuming `take`/`drop`, and recursive
-layouts through strict C11. Unique ownership remains closed to MIR, PPX, raw
-FFI, captures, staging, defer, and concurrency; there is no intrinsic
+layouts through strict C11. It also composes move-only nominal `Result`
+propagation with non-owning defers and supports explicit iterative consuming
+traversal. Unique ownership remains closed to MIR, PPX, raw FFI, owner
+captures/deferred arguments, staging, and concurrency; there is no intrinsic
 list/iterator protocol or general borrow system.
 
 The final type-checker hardening matrix covers ownership together with inherent
@@ -133,14 +135,16 @@ callee/arguments at registration and run LIFO at **function return**, including
 propagated errors; loop exits do not drain them. Registration has finite count/
 capture-byte budgets. Use `match` for recovery; fatal traps still do not unwind.
 See [`examples/defer_errors.on1x`](examples/defer_errors.on1x). General exceptions,
-resource-bearing results, async cancellation and MIR/SDK defer models remain unsupported.
+resource-bearing results other than the bounded finite-owner profile, async
+cancellation and MIR/SDK defer models remain unsupported.
 
 The default [pervasive environment](docs/modules.md#the-pervasive-environment)
 now exposes canonical bounded `Option<T>`/`Result<T,E>` types and focused
 `option_*`/`result_*` helpers without imports. These are ordinary generic On1x
 declarations, preserve explicit-import/local-shadow precedence, and add no ABI.
-Payloads are still limited to trivially copied nominal data; legacy tuple,
-scalar-pair and S-expression facades remain explicit compatibility APIs. See
+The helper combinators remain the copy-safe subset; finite-owner payloads use
+explicit constructors, consuming `?`/`match`, and the direct C11 profile.
+Legacy tuple, scalar-pair and S-expression facades remain explicit compatibility APIs. See
 [`examples/pervasive_options.on1x`](examples/pervasive_options.on1x).
 
 Intrinsic [core cliches](docs/core-cliche.md) provide coherent constrained

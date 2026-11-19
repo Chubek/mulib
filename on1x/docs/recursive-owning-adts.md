@@ -43,6 +43,7 @@ The ownership operations are fallback intrinsics:
 | `move(local)` | Transfers one named local or parameter whose type is move-only. The source becomes statically moved-from. It is not valid on a temporary or a copyable value. |
 | `take(owner)` | Consumes one `own<Named>`, frees that box without destroying the transferred payload, and returns the named value. |
 | `drop(value)` | Consumes any move-only value and destroys its active owned/shared fields exactly once. |
+| `result?` | For the exact nominal `Ok(T)`/`Err(E)` protocol, consumes a move-only result, moves the active payload, and either continues with `T` or returns the same nominal result and `E`. |
 
 `box`, `move`, `take`, and `drop` are not reserved function names. An ordinary
 lexical binding or declared function with the same name wins normal name
@@ -54,8 +55,8 @@ value containing one. There is no implicit copy:
 
 - passing, returning, assigning, or embedding a named move-only local requires
   an explicit `move(local)`;
-- `take(local)`, `drop(local)`, and a consuming pattern match are themselves
-  explicit consumption sites;
+- `take(local)`, `drop(local)`, move-only `result?`, and a consuming pattern
+  match are themselves explicit consumption sites;
 - fresh temporaries transfer directly rather than requiring a synthetic local;
 - a callee owns each move-only parameter and drops it on an ordinary exit unless
   the parameter was transferred again;
@@ -83,6 +84,21 @@ array patterns, guards, and the legacy payload-lambda `match` spelling reject.
 This restriction makes the active payload transfer explicit and leaves no
 partially live scrutinee after the decision.
 
+Postfix propagation uses the same rule for a nominal result containing an owner.
+The complete result operand is consumed, and the selected `Ok` or `Err` payload
+is a checked projected move. The source and transferred payload storage are
+cleared, so active-arm cleanup cannot observe a duplicate owner. The enclosing
+function must return the same nominal result declaration and exact error type;
+the success type may differ. Nested propagation, generic owner targets and
+module-qualified identity retain the ordinary typed-`Result` rules.
+
+Non-owning deferred arguments may coexist with this propagation. A managed
+return value is registered with the emergency cleanup registry while function
+defers and trailing lexical drops run, then disarmed immediately before the C
+return. Thus an owning allocation failure inside a reached defer also drains the
+pending `Ok`/`Err` return. Capturing an owner or saving one as a deferred
+argument remains rejected.
+
 Normal lexical cleanup covers:
 
 - expression temporaries and unconsumed parameters;
@@ -106,8 +122,9 @@ cleanup cannot observe a second owner.
 
 Recursive destruction is iterative. `on1x_unique_drop` appends boxes to a FIFO
 work queue; destructors can enqueue child owners without recursively consuming
-the C stack. The executable tests release chains of 50,001 boxes, while the C++
-ABI test independently releases a 20,000-box chain.
+the C stack. The executable tests both consume and destroy independent chains
+of 50,001 boxes without recursive On1x or C calls, while the C++ ABI test
+independently releases a 20,000-box chain.
 
 The runtime bounds one payload at 64 MiB and the process-local emergency registry
 at 262,144 cleanup records by default. Compiler cleanup expansion and canonical
@@ -161,8 +178,9 @@ ctest --test-dir PATH/TO/BUILD --output-on-failure \
 
 `tests/test_recursive_owning_adts.py` covers generic recursion, modules,
 left-to-right evaluation, calls/returns, overwrite and control-exit cleanup,
-active sum arms, shared-plus-unique fields, fault injection, strict C11, ABI
-drift, and the unsupported boundaries above. The C++ test mutates checked HIR,
-checks MIR rejection and the C/C++ runtime ABI, and verifies iterative
-destruction. Exact compiler/scanner/sanitizer results are recorded in
-[`VERIFICATION.md`](../VERIFICATION.md).
+active sum arms, shared-plus-unique fields, owner-bearing `Result` success/error/
+nested/defer paths, fault injection, strict C11, deep iterative consumption, ABI
+drift, and the unsupported boundaries above. The C++ test mutates whole and
+projected transfer metadata, checks MIR rejection and the C/C++ runtime ABI, and
+verifies iterative destruction. Exact compiler/scanner/sanitizer results are
+recorded in [`VERIFICATION.md`](../VERIFICATION.md).

@@ -77,11 +77,19 @@ int main(){
  try{
   const std::string source_text=R"(
 enum List<T> { Nil, Cons(T, own<List<T>>) }
+enum Result<T,E> { Ok(T), Err(E) }
 fn empty<T>()->own<List<T>> {
   return box(variant<List<T>>(Nil,record{}));
 }
 fn prepend<T>(item:T,tail:own<List<T>>)->own<List<T>> {
   return box(variant<List<T>>(Cons,(item,move(tail))));
+}
+fn forward(
+    outcome:Result<own<List<i64>>,own<List<i64>>>
+)->Result<own<List<i64>>,own<List<i64>>> {
+  let values=outcome?;
+  return variant<Result<own<List<i64>>,own<List<i64>>>>(
+    Ok,move(values));
 }
 fn main(){
   let a:own<List<i64>>=empty();
@@ -115,18 +123,32 @@ fn main(){
   std::size_t clone_budget=262144;
   auto copy=clone_unit(raw,clone_budget);
   require(emit_c(copy,"recursive-owning-hir")==generated,
-          "ownership metadata was not stable across HIR cloning");
+           "ownership metadata was not stable across HIR cloning");
   reject([&]{(void)mir::lower(raw);},"ON1X-MIR-UNSUPPORTED");
 
-  Expr *moved=nullptr;
+  Expr *propagated_payload=nullptr;
   for(auto& function:copy.functions)if(!function.prototype)
    walk(function.body,[&](Expr& expression){
-    if(!moved&&expression.kind==Expr::Kind::Variable&&expression.move_out)
-     moved=&expression;
+    if(!propagated_payload&&expression.kind==Expr::Kind::Payload&&
+       expression.text=="Err"&&expression.move_out)
+     propagated_payload=&expression;
+   });
+  require(propagated_payload,
+          "Result propagation did not retain projected transfer metadata");
+  propagated_payload->move_out=false;
+  reject([&]{canonical::verify_values(copy);},"copy of unique sum payload");
+
+  clone_budget=262144;
+  auto moved_copy=clone_unit(raw,clone_budget);
+  Expr *moved=nullptr;
+  for(auto& function:moved_copy.functions)if(!function.prototype)
+   walk(function.body,[&](Expr& expression){
+     if(!moved&&expression.kind==Expr::Kind::Variable&&expression.move_out)
+      moved=&expression;
    });
   require(moved,"checked HIR did not retain explicit transfer metadata");
   moved->move_out=false;
-  reject([&]{canonical::verify_values(copy);},"ON1X-VALUES-VERIFY");
+  reject([&]{canonical::verify_values(moved_copy);},"ON1X-VALUES-VERIFY");
 
   require(on1x_unique_live_allocations()==0,
           "runtime unique allocation counter was not initially zero");

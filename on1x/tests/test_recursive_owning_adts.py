@@ -30,6 +30,7 @@ def reject(name, text, *diagnostics, mode='--check', extra=()):
 t.source('recursive_owning_library', r'''
 enum List<T> { Nil, Cons(T, own<List<T>>) }
 enum Choice<T> { Empty, Shared(sexpr), Owned(own<List<T>>) }
+enum Outcome<T,E> { Ok(T), Err(E) }
 record Bundle<T> { label:sexpr, values:own<List<T>> }
 
 fn empty<T>()->own<List<T>> {
@@ -48,10 +49,16 @@ fn sum(values:own<List<i64>>)->i64 {
 fn bundle(label:sexpr,values:own<List<i64>>)->Bundle<i64> {
   return record<Bundle<i64>>{label:label,values:move(values)};
 }
+fn forward<T>(
+    outcome:Outcome<own<List<T>>,own<List<T>>>
+)->Outcome<own<List<T>>,own<List<T>>> {
+  let values=outcome?;
+  return variant<Outcome<own<List<T>>,own<List<T>>>>(Ok,move(values));
+}
 ''')
 
 t.valid('recursive_owning_positive', '1\n2\n3\n', text=r'''
-from recursive_owning_library import List, Choice, Bundle, empty, prepend, sum, bundle;
+from recursive_owning_library import List, Choice, Outcome, Bundle, empty, prepend, sum, bundle, forward;
 extern fn on1x_unique_live_allocations()->i64;
 extern fn on1x_test_unique_allocator_live()->i64;
 extern fn on1x_test_unique_allocator_allocations()->i64;
@@ -106,6 +113,24 @@ fn main(){
     assert(on1x_unique_live_allocations()==1);
     drop(values);
   }
+  {
+    let result=forward(
+      variant<Outcome<own<List<i64>>,own<List<i64>>>>(
+        Ok,prepend(4,empty())));
+    match result with {
+      Ok(values)=>assert(sum(move(values))==4),
+      Err(error)=>drop(error)
+    };
+  }
+  {
+    let result=forward(
+      variant<Outcome<own<List<i64>>,own<List<i64>>>>(
+        Err,prepend(5,empty())));
+    match result with {
+      Ok(values)=>drop(values),
+      Err(error)=>assert(sum(move(error))==5)
+    };
+  }
   assert(early_cleanup()==2);
   assert(on1x_unique_live_allocations()==0);
   assert(loop_cleanup()==1);
@@ -115,6 +140,111 @@ fn main(){
 }
 ''', extra=managed_fixtures + ('-O2',))
 
+t.valid('recursive_owning_results', '90\n90\n', text=r'''
+enum Result<T,E> { Ok(T), Err(E) }
+enum List { Nil, Cons(i64, own<List>) }
+record Pair { first:own<List>, total:i64 }
+extern fn on1x_unique_live_allocations()->i64;
+extern fn on1x_test_unique_allocator_live()->i64;
+
+fn empty()->own<List> {
+  return box(variant<List>(Nil,record{}));
+}
+fn prepend(item:i64,tail:own<List>)->own<List> {
+  return box(variant<List>(Cons,(item,move(tail))));
+}
+fn consume(values:own<List>)->i64 {
+  var cursor=move(values);
+  var total=0;
+  return loop {
+    let node=take(cursor);
+    match node with {
+      Nil()=>{break with total;},
+      Cons(item,tail)=>{
+        total=total+item;
+        cursor=move(tail);
+      }
+    };
+  };
+}
+fn read(ok:bool,value:i64)->Result<own<List>,own<List>> {
+  if ok {
+    return variant<Result<own<List>,own<List>>>(
+      Ok,prepend(value,empty()));
+  }
+  return variant<Result<own<List>,own<List>>>(
+    Err,prepend(value,empty()));
+}
+fn build(ok:bool)->Result<Pair,own<List>> {
+  return variant<Result<Pair,own<List>>>(
+    Ok,
+    record<Pair>{
+      first:prepend(7,empty()),
+      total:consume(read(ok,11)?)
+    });
+}
+fn forward(ok:bool)->Result<Pair,own<List>> {
+  defer println(90);
+  let pair=build(ok)?;
+  return variant<Result<Pair,own<List>>>(Ok,move(pair));
+}
+fn nested(mode:i64)
+    ->Result<Result<own<List>,own<List>>,own<List>> {
+  if mode==0 {
+    return variant<Result<Result<own<List>,own<List>>,own<List>>>(
+      Err,prepend(30,empty()));
+  }
+  if mode==1 {
+    return variant<Result<Result<own<List>,own<List>>,own<List>>>(
+      Ok,variant<Result<own<List>,own<List>>>(
+        Err,prepend(20,empty())));
+  }
+  return variant<Result<Result<own<List>,own<List>>,own<List>>>(
+    Ok,variant<Result<own<List>,own<List>>>(
+      Ok,prepend(10,empty())));
+}
+fn flatten(mode:i64)->Result<i64,own<List>> {
+  let values=nested(mode)??;
+  return variant<Result<i64,own<List>>>(Ok,consume(move(values)));
+}
+fn main(){
+  let success=forward(true);
+  match success with {
+    Ok(pair)=>{
+      assert(pair["total"]==11);
+      drop(pair);
+    },
+    Err(values)=>drop(values)
+  };
+  assert(on1x_unique_live_allocations()==0);
+
+  let failure=forward(false);
+  match failure with {
+    Ok(pair)=>drop(pair),
+    Err(values)=>assert(consume(move(values))==11)
+  };
+  assert(on1x_unique_live_allocations()==0);
+
+  let outer=flatten(0);
+  match outer with {
+    Ok(value)=>assert(value==0),
+    Err(values)=>assert(consume(move(values))==30)
+  };
+  let inner=flatten(1);
+  match inner with {
+    Ok(value)=>assert(value==0),
+    Err(values)=>assert(consume(move(values))==20)
+  };
+  let value=flatten(2);
+  match value with {
+    Ok(total)=>assert(total==10),
+    Err(values)=>drop(values)
+  };
+  assert(on1x_unique_live_allocations()==0);
+  assert(on1x_test_unique_allocator_live()==0);
+}
+''', extra=unique_fixture + ('-O2',))
+
 t.valid('recursive_owning_stress', '', text=r'''
 enum List { Nil, Cons(i64, own<List>) }
 extern fn on1x_unique_live_allocations()->i64;
@@ -123,12 +253,31 @@ fn empty()->own<List>{return box(variant<List>(Nil,record{}));}
 fn prepend(item:i64,tail:own<List>)->own<List>{
   return box(variant<List>(Cons,(item,move(tail))));
 }
+fn consume(values:own<List>)->i64 {
+  var cursor=move(values);
+  var count=0;
+  return loop {
+    let node=take(cursor);
+    match node with {
+      Nil()=>{break with count;},
+      Cons(_,tail)=>{count=count+1;cursor=move(tail);}
+    };
+  };
+}
 fn main(){
   {
     var values=empty();
     for i in 0..50000 { values=prepend(i,move(values)); }
     assert(on1x_unique_live_allocations()==50001);
     assert(on1x_test_unique_allocator_live()==50001);
+    assert(consume(move(values))==50000);
+    assert(on1x_unique_live_allocations()==0);
+    assert(on1x_test_unique_allocator_live()==0);
+  }
+  {
+    var values=empty();
+    for i in 0..50000 { values=prepend(i,move(values)); }
+    assert(on1x_unique_live_allocations()==50001);
   }
   assert(on1x_unique_live_allocations()==0);
   assert(on1x_test_unique_allocator_live()==0);
@@ -165,6 +314,44 @@ successful = run([failure])
 assert successful.returncode == 0 and not successful.stdout and not successful.stderr, (
     successful.returncode, successful.stdout, successful.stderr)
 
+result_failure = t.build('recursive_owning_result_failure', text=r'''
+enum Result<T,E> { Ok(T), Err(E) }
+enum Node { Leaf }
+fn leaf()->own<Node> {
+  return box(variant<Node>(Leaf,record{}));
+}
+fn allocate_in_defer(){
+  let value=leaf();
+  drop(value);
+}
+fn source()->Result<own<Node>,own<Node>> {
+  return variant<Result<own<Node>,own<Node>>>(Err,leaf());
+}
+fn forward()->Result<own<Node>,own<Node>> {
+  defer allocate_in_defer();
+  let value=source()?;
+  return variant<Result<own<Node>,own<Node>>>(Ok,move(value));
+}
+fn main(){
+  let result=forward();
+  match result with {
+    Ok(value)=>drop(value),
+    Err(error)=>drop(error)
+  };
+}
+''', extra=unique_fixture)
+for fail_after in ('0', '1'):
+    failed = run(
+        [result_failure],
+        env={**os.environ, 'ON1X_TEST_UNIQUE_FAIL_AFTER': fail_after})
+    assert failed.returncode == 72 and not failed.stdout and \
+           'owning-box allocation failure' in failed.stderr, (
+               fail_after, failed.returncode, failed.stdout, failed.stderr)
+successful = run([result_failure])
+assert successful.returncode == 0 and not successful.stdout and \
+       not successful.stderr, (
+           successful.returncode, successful.stdout, successful.stderr)
+
 negative_cases = (
     ('implicit_copy',
      'enum N{Z}fn main(){let a=box(variant<N>(Z,record{}));let b=a;drop(a);drop(b);}',
@@ -196,6 +383,18 @@ negative_cases = (
     ('loop_move',
      'enum N{Z}fn f(flag:bool){let a=box(variant<N>(Z,record{}));while flag{drop(a);}}fn main(){}',
      ('repeatable loop',)),
+    ('propagate_use_after_move',
+     'enum Result<T,E>{Ok(T),Err(E)}enum N{Z}'
+     'fn f(r:Result<own<N>,u8>)->Result<i64,u8>{'
+     'let value=r?;drop(value);drop(r);'
+     'return variant<Result<i64,u8>>(Ok,0);}fn main(){}',
+     ('use after move',)),
+    ('propagate_twice',
+     'enum Result<T,E>{Ok(T),Err(E)}enum N{Z}'
+     'fn f(r:Result<own<N>,u8>)->Result<i64,u8>{'
+     'let first=r?;let second=r?;drop(first);drop(second);'
+     'return variant<Result<i64,u8>>(Ok,0);}fn main(){}',
+     ('use after move',)),
     ('capture',
      'enum N{Z}fn main(){let a=box(variant<N>(Z,record{}));let f=fn(){drop(a);};f();}',
      ('closures cannot capture unique owning values',)),

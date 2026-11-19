@@ -45,7 +45,10 @@ still no general exception/async/effectful-MIR model.
   by remaining lexical temporary/local cleanup and the return. Locals belonging
   to blocks already exited have already dropped; saved deferred references stay
   live. There are no named return variables, mutable-reference captures or
-  deferred writes into a saved return slot.
+  deferred writes into a saved return slot. In a unit using finite unique
+  owners, a saved managed return is in the emergency cleanup registry while
+  defers and trailing lexical drops run, so an owning allocation failure cannot
+  strand that return.
 - Ordinary functions, closures, direct intrinsics and existing exact raw extern
   calls are supported under their existing ABI rules. Call results are discarded
   (managed results are released). A deferred function returning `Err` does not
@@ -54,7 +57,9 @@ still no general exception/async/effectful-MIR model.
   closure capture applies; `defer { ... }`, `using`, `panic`/`recover`, exception
   unwinding and task cancellation are not introduced. JSON owners/views cannot
   be saved as deferred arguments/results or captured, even if apparently local.
-  Raw foreign pointer/text lifetimes remain the caller's unsafe obligation.
+  Finite unique owners likewise cannot be captured or saved as deferred
+  arguments. Raw foreign pointer/text lifetimes remain the caller's unsafe
+  obligation.
 - `defer` is contextual. Existing calls/values/assignments named `defer` remain
   valid, including `defer (arg)` as an ordinary call. Consequently a deferred
   callee must not start with grouping parentheses: use `defer f(args);`,
@@ -78,14 +83,19 @@ still no general exception/async/effectful-MIR model.
   payload. `Err(error)` returns an error result from the innermost source
   function/lambda and runs that function's registered defers. Later operands
   are skipped; earlier evaluated RC operands and lexical JSON owners still
-  receive ordinary early-return cleanup. Short-circuiting is unchanged.
+  receive ordinary early-return cleanup. A result containing a finite unique
+  owner is consumed; its active payload is moved and its source storage is
+  cleared. Reusing that result is a located use-after-move error.
+  Short-circuiting is unchanged.
 - The admitted protocol is a nominal enum with two parameters and exactly
   `Ok(T)` / `Err(E)` payloads. The enclosing return uses the **same declaration**
   and exact error type; its success type may differ. No implicit error conversion,
   name-based module conflation, structural-sum coercion or `Option` propagation.
   Existing generic inference applies; annotate ambiguous result inputs/returns.
-  Payloads retain nominal data's trivial-value restrictions; use `record{}` as
-  a unit success payload, not `void` (which is not a data field).
+  In the direct checked-HIR-to-C11 finite-owner profile, either payload may be a
+  supported move-only nominal value. Other resource-bearing payloads remain
+  closed. Use `record{}` as a unit success payload, not `void` (which is not a
+  data field).
 - Use explicit `match` for recovery. This is a typed-result alternative to
   exceptions, not `try`/`catch`/`throw`/`finally`. Foreign statuses must be explicitly
   converted to checked result values by existing raw wrappers. No foreign
@@ -118,12 +128,14 @@ results. No `longjmp`, foreign function-pointer cast, LibStone application runti
 or new execution IR is introduced. Rebuild generated C/runtime together:
 `ON1X_DEFER_ABI_VERSION=1` is internal, not a stable embedding ABI.
 
-Tests: `on1x.defer_error_hir` and `on1x.defer_errors`, plus scanner/control and the
-existing language suites. They cover LIFO/outcome Python oracles at C `-O0/-O2`,
+Tests: `on1x.defer_error_hir`, `on1x.defer_errors`, and
+`on1x.recursive_owning_adts{,_hir}`, plus scanner/control and the existing
+language suites. They cover LIFO/outcome Python oracles at C `-O0/-O2`,
 registration/return order, loops/recursion/closures, modules/generics/macros/PPX/
 staging, abandoned operands, counted RC/JSON cleanup, C/C++ separate-TU callers,
-record/capture allocation failures, both budgets, fatal paths, source-wire/HIR
-mutations and explicit MIR/SDK rejections. Separate-TU tests use a shared generated
-interface: they do not claim separate On1x compilation or aggregate foreign ABI.
+record/capture allocation failures, both budgets, owner-bearing result transfer
+and owning-OOM cleanup during defers, fatal paths, source-wire/HIR mutations and
+explicit MIR/SDK rejections. Separate-TU tests use a shared generated interface:
+they do not claim separate On1x compilation or aggregate foreign ABI.
 
 Implementation/validation status: `capability-matrix.md` and `../VERIFICATION.md`.

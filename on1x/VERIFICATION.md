@@ -287,9 +287,136 @@ were not repaired by this task. Unique ownership remains direct checked-HIR to
 C11 only; scalar MIR still rejects it pending typed move/drop/cleanup events.
 Earlier per-profile totals below are preserved as historical evidence.
 
-## Recursive nominal ADTs through finite unique ownership
+## Finite-owner Result propagation and iterative consumption — 2026-11-19
 
-Current checkout identity: MuLIB
+Baseline MuLIB
+`6a145cbf09efcac76f387f6b664fc2257bac93aa` plus this continuation;
+configured LibStone
+`3399047f6c6328b8f07788795c610699e66c060a`. Host: Linux
+6.18.52-1-lts x86-64, GCC/G++ 16.2.1 (`20260810`), Clang/Clang++ 22.1.8,
+Python 3.14.7 and CMake 4.4.3.
+
+This continuation extends the existing direct checked-HIR-to-C11 finite-owner
+profile rather than adding another ownership model. Postfix `?` consumes a
+move-only nominal result, marks a named source moved, and uses checked projected
+transfers for the active `Ok` or `Err` payload. The source and transferred
+payload storage are cleared. Existing canonical move-state verification
+therefore rejects later use, duplicate ownership and forged transfer metadata.
+Exact generic and module-qualified nominal identity is unchanged.
+
+A managed return snapshot is now in the bounded emergency cleanup registry
+while reached function defers and trailing lexical drops execute. It is
+disarmed immediately before the C return. The injected failure case proves that
+an owner-bearing propagated `Err` is released when a non-owning defer reaches a
+failing owning allocation and the runtime exits 72. Owner captures and deferred
+owner arguments remain rejected.
+
+The executable suite also performs explicit iterative On1x consumption of one
+50,001-box chain and independent iterative destruction of another. The C++ ABI
+test retains its separate 20,000-box destruction case.
+
+### Measured results
+
+| Configuration | Result |
+|---|---|
+| GCC, LibStone generated scanner, owner/defer focused CTest | **4/4 passed** |
+| GCC, fallback scanner, owner/defer focused CTest | **4/4 passed** |
+| Clang, generated scanner, compiler and emitted C/runtime under ASan+UBSan | **4/4 passed**, no sanitizer finding |
+| GCC, generated scanner, all tests except two unchanged baseline inventory checks | **86 passed, 1 intentionally skipped, 0 failed** (87 total) |
+| GCC, fallback scanner, complete CTest suite | **85 passed, 1 intentionally skipped, 2 baseline inventory failures** (88 total) |
+| Generated/fallback scanner ownership executable and HIR tests | strict C11, generic/module, fault and deep paths **PASS** |
+
+The intentional skip is `on1x.category` with native PPX disabled. The two
+complete-suite failures are outside this change and reproduce in unchanged
+baseline inventory code:
+
+- `on1x.contracts` still expects exactly three auxiliary MuLIB headers, while
+  the `6a145cb` baseline contains a larger uncatalogued header set;
+- `on1x.mulib` finds baseline directory `library/muw3lib`, which is absent from
+  the fixture catalog.
+
+No file under `include/` or `library/`, and none of
+`on1x/tests/test_{contracts,mulib}.py` or
+`on1x/tools/on1x-{contracts,mulib}.py`, differs from `6a145cb`. A
+generated-scanner `--parallel 4` complete run also observed one timing-sensitive
+`captured_stdin_epipe` concurrency assertion; its immediate isolated retry
+passed **1/1**, and the subsequent 87-test `--parallel 2` run passed every
+non-inventory test. This is recorded as an unrelated flaky result, not silently
+counted as a pass.
+
+Coverage added by this continuation includes:
+
+- generic and module-imported owner-bearing `Outcome<T,E>` success and error
+  propagation;
+- canonical `Result` success/error paths, nested `??`, active-arm destruction,
+  and scalar non-owning defers;
+- partial record construction before propagated failure and exact cleanup of
+  already-built owner fields;
+- use-after-propagation and repeated-propagation diagnostics;
+- projected `Err` transfer-metadata mutation rejection in checked HIR;
+- owning-allocation failure before propagation and while a propagated managed
+  return is held across a defer;
+- 50,001-box iterative consumption and 50,001-box iterative destruction; and
+- retained MIR, PPX, raw FFI, capture/deferred-owner, staging and concurrency
+  rejection boundaries.
+
+Reproduction from the MuLIB root:
+
+```sh
+build=/mnt/nvme/opencode-builds/ses_e0d13d7a9ffe4DEJxtuNoZl9ei/recursive-adts
+libstone=/mnt/nvme/mulib/on1x/third_party/libstone
+
+cmake -S on1x -B "$build/gcc-generated" -DBUILD_TESTING=ON \
+  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc \
+  -DCMAKE_CXX_COMPILER=g++ -DON1X_LIBSTONE_ROOT="$libstone" \
+  -DON1X_REQUIRE_LIBSTONE=ON -DON1X_WITH_SYREN=OFF \
+  -DON1X_WITH_WETSTONE=OFF -DON1X_BUILD_NATIVE_PPX=OFF \
+  -DON1X_BUILD_EXTENSION_SDK=OFF
+cmake --build "$build/gcc-generated" --parallel 4
+
+cmake -S on1x -B "$build/gcc-fallback" -DBUILD_TESTING=ON \
+  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc \
+  -DCMAKE_CXX_COMPILER=g++ -DON1X_LIBSTONE_ROOT="$libstone" \
+  -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_WITH_SYREN=OFF \
+  -DON1X_WITH_WETSTONE=OFF -DON1X_BUILD_NATIVE_PPX=OFF \
+  -DON1X_BUILD_EXTENSION_SDK=OFF
+cmake --build "$build/gcc-fallback" --parallel 4
+
+ctest --test-dir "$build/gcc-generated" --output-on-failure \
+  -R '^on1x\.(defer_error_hir|defer_errors|recursive_owning_adts(_hir)?)$'
+ctest --test-dir "$build/gcc-fallback" --output-on-failure \
+  -R '^on1x\.(defer_error_hir|defer_errors|recursive_owning_adts(_hir)?)$'
+
+cmake -S on1x -B "$build/clang-asan" -DBUILD_TESTING=ON \
+  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ -DON1X_LIBSTONE_ROOT="$libstone" \
+  -DON1X_REQUIRE_LIBSTONE=ON -DON1X_WITH_SYREN=OFF \
+  -DON1X_WITH_WETSTONE=OFF -DON1X_BUILD_NATIVE_PPX=OFF \
+  -DON1X_BUILD_EXTENSION_SDK=OFF \
+  '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' \
+  '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-omit-frame-pointer;-fno-sanitize-recover=all'
+cmake --build "$build/clang-asan" --parallel 4 --target \
+  on1xc on1x_defer_error_tests on1x_recursive_owning_adts_tests
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1:strict_string_checks=1 \
+UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+ctest --test-dir "$build/clang-asan" --output-on-failure \
+  -R '^on1x\.(defer_error_hir|defer_errors|recursive_owning_adts(_hir)?)$'
+
+ctest --test-dir "$build/gcc-generated" --output-on-failure --parallel 2 \
+  -E '^on1x\.(contracts|mulib)$'
+ctest --test-dir "$build/gcc-fallback" --output-on-failure --parallel 4
+```
+
+This does not admit general managed/resource-bearing results, move-only helper
+combinators, Option propagation, owners in deferred arguments or captures,
+ownership MIR/PPX/raw FFI/staging/concurrency, receiver ownership, other targets
+or a separate-compilation ownership ABI. The exact bounded contract is
+[`docs/recursive-owning-adts.md`](docs/recursive-owning-adts.md).
+
+## Initial recursive nominal ADTs through finite unique ownership (historical)
+
+Historical checkout identity: MuLIB
 `b66da8f5150adca2a3416db747d91bf81a3fe138` plus the shared uncommitted
 worktree, configured LibStone
 `934b6ed029bfea28bbf23b5dc77c476154b0dd0d`. Host: Linux
@@ -313,7 +440,7 @@ cleanup registry and exits 72; the allocation budget is not interpreted as a
 timeout. Consuming matches require exhaustive unguarded constructors and
 closed irrefutable nested destructuring.
 
-### Current measured results
+### Historical measured results
 
 | Configuration | Result |
 |---|---|
@@ -332,7 +459,7 @@ regenerating `include/mulib-unit-data.inc`;
 `python3 tools/embed_units.py --check` reports that the embedded profiles are
 current. Older dated sections below retain
 their original historical results, including then-current stale-profile
-failures, and are not descriptions of this final tree.
+failures, and are not descriptions of the current continuation.
 
 The generated-scanner complete suite includes scanner parity. The dedicated
 ownership tests additionally cover:

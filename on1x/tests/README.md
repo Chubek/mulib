@@ -42,12 +42,15 @@ CTest registers independent tests with separate artifact directories:
   and MIR rejection. This is not recursive ownership or error propagation.
 
 - `on1x.recursive_owning_adts_hir`: finite `own<Named>` identity, checked
-  transfer metadata, canonical moved-state mutation rejection, explicit MIR/PPX
-  closure, unique-runtime C++ ABI checks and 20,000-node iterative destruction.
+  whole/projected transfer metadata, canonical moved-state mutation rejection,
+  explicit MIR/PPX closure, unique-runtime C++ ABI checks and 20,000-node
+  iterative destruction.
 - `on1x.recursive_owning_adts`: generic recursive lists and mixed shared/unique
   nominal values through strict C11; modules, calls/returns, overwrite and
-  control-exit cleanup, active sum arms, 50,001-node destruction, allocator
-  failure cleanup, ABI mismatch, shadowing and unsupported-boundary negatives.
+  control-exit cleanup, active sum arms, owner-bearing Result propagation with
+  non-owning defers, nested/error/partial-construction and allocator-failure
+  cleanup, 50,001-node iterative consumption and destruction, ABI mismatch,
+  shadowing and unsupported-boundary negatives.
   See [the ownership contract](../docs/recursive-owning-adts.md).
 
 - `on1x.value_loop_hir`: additive loop/value-break source-wire round-trip,
