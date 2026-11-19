@@ -130,6 +130,9 @@
 #define MULIB_IMPL_CDD_CATALOGUE
 #define MULIB_IMPL_CDD_DIFF
 #define MULIB_IMPL_CDD_EXECUTE
+#define MULIB_IMPL_CDD_GRAPHQL
+#define MULIB_IMPL_CDD_GRPC
+#define MULIB_IMPL_CDD_JSONRPC
 #define MULIB_IMPL_CDD_MARKUP_BRIDGE
 #define MULIB_IMPL_CDD_MARKUP_GRAPH
 #define MULIB_IMPL_CDD_MARKUP_SPANS
@@ -138,11 +141,16 @@
 #define MULIB_IMPL_CDD_MCP_CLIENT
 #define MULIB_IMPL_CDD_MCP_HTTP
 #define MULIB_IMPL_CDD_MCP_SERVER
+#define MULIB_IMPL_CDD_MUNE_OPENCODE_CLIENT
 #define MULIB_IMPL_CDD_PLAN
 #define MULIB_IMPL_CDD_QUERY
 #define MULIB_IMPL_CDD_REGISTRY
 #define MULIB_IMPL_CDD_RESOLVE
+#define MULIB_IMPL_CDD_REST
 #define MULIB_IMPL_CDD_SCHEMA
+#define MULIB_IMPL_CDD_SOAP
+#define MULIB_IMPL_CDD_SSE_CLIENT
+#define MULIB_IMPL_CDD_WEBSOCKET
 #define MULIB_IMPL_CFF
 #define MULIB_IMPL_CFF2
 #define MULIB_IMPL_CFG
@@ -443,8 +451,10 @@
 #define MULIB_IMPL_GPUTEST
 #define MULIB_IMPL_GRAPH
 #define MULIB_IMPL_GRAPHDB
+#define MULIB_IMPL_GRAPHQL
 #define MULIB_IMPL_GRAPHVIZ
 #define MULIB_IMPL_GRID
+#define MULIB_IMPL_GRPC
 #define MULIB_IMPL_GSS
 #define MULIB_IMPL_GSSAIR
 #define MULIB_IMPL_GVIZZ
@@ -534,6 +544,7 @@
 #define MULIB_IMPL_JOINFILTER
 #define MULIB_IMPL_JSDOM
 #define MULIB_IMPL_JSON
+#define MULIB_IMPL_JSONRPC
 #define MULIB_IMPL_JVM
 #define MULIB_IMPL_KEYREMAP
 #define MULIB_IMPL_KF8WRITE
@@ -862,6 +873,7 @@
 #define MULIB_IMPL_REGPRESSURE
 #define MULIB_IMPL_REPLACE
 #define MULIB_IMPL_RESOLVED_CLIENT
+#define MULIB_IMPL_REST
 #define MULIB_IMPL_REVPROXY
 #define MULIB_IMPL_REWRITE
 #define MULIB_IMPL_REWRITE_URL
@@ -939,6 +951,7 @@
 #define MULIB_IMPL_SMT
 #define MULIB_IMPL_SMTPCLIENT
 #define MULIB_IMPL_SMTPSERVER
+#define MULIB_IMPL_SOAP
 #define MULIB_IMPL_SOCKET
 #define MULIB_IMPL_SOCKS5
 #define MULIB_IMPL_SOCK_DIAG
@@ -966,6 +979,7 @@
 #define MULIB_IMPL_SQLITE_FORMAT
 #define MULIB_IMPL_SQLITE_PAGER
 #define MULIB_IMPL_SSE
+#define MULIB_IMPL_SSE_CLIENT
 #define MULIB_IMPL_SSHCLIENT
 #define MULIB_IMPL_SSHSERVER
 #define MULIB_IMPL_SSTFILE
@@ -1175,6 +1189,7 @@
 #define MULIB_IMPL_WEBSEARCH
 #define MULIB_IMPL_WEBSEARCH_ENGINE
 #define MULIB_IMPL_WEBSEARCH_PROVIDER
+#define MULIB_IMPL_WEBSOCKET
 #define MULIB_IMPL_WEBSTORAGE
 #define MULIB_IMPL_WEBTIMERS
 #define MULIB_IMPL_WEB_CONNECTION
@@ -1639,8 +1654,10 @@
 #include "mulib-gputest.h"
 #include "mulib-graph.h"
 #include "mulib-graphdb.h"
+#include "mulib-graphql.h"
 #include "mulib-graphviz.h"
 #include "mulib-grid.h"
+#include "mulib-grpc.h"
 #include "mulib-gss.h"
 #include "mulib-gssair.h"
 #include "mulib-gvizz.h"
@@ -1730,6 +1747,7 @@
 #include "mulib-joinfilter.h"
 #include "mulib-jsdom.h"
 #include "mulib-json.h"
+#include "mulib-jsonrpc.h"
 #include "mulib-jvm.h"
 #include "mulib-keyremap.h"
 #include "mulib-kf8write.h"
@@ -1936,6 +1954,7 @@
 #include "mulib-openai-client.h"
 #include "mulib-openai-server.h"
 #include "mulib-openai.h"
+#include "mulib-opencode-client.h"
 #include "mulib-openvpn.h"
 #include "mulib-opticalmargin.h"
 #include "mulib-optml.h"
@@ -2062,6 +2081,7 @@
 #include "mulib-regpressure.h"
 #include "mulib-replace.h"
 #include "mulib-resolved-client.h"
+#include "mulib-rest.h"
 #include "mulib-revproxy.h"
 #include "mulib-rewrite.h"
 #include "mulib-rewrite_url.h"
@@ -2138,6 +2158,7 @@
 #include "mulib-smt.h"
 #include "mulib-smtpclient.h"
 #include "mulib-smtpserver.h"
+#include "mulib-soap.h"
 #include "mulib-soc-memorymap.h"
 #include "mulib-sock-diag.h"
 #include "mulib-socket.h"
@@ -2164,6 +2185,7 @@
 #include "mulib-sqlite-format.h"
 #include "mulib-sqlite-pager.h"
 #include "mulib-sqlite.h"
+#include "mulib-sse-client.h"
 #include "mulib-sse.h"
 #include "mulib-sshclient.h"
 #include "mulib-sshserver.h"
@@ -2375,6 +2397,7 @@
 #include "mulib-websearch-engine.h"
 #include "mulib-websearch-provider.h"
 #include "mulib-websearch.h"
+#include "mulib-websocket.h"
 #include "mulib-webstorage.h"
 #include "mulib-webtimers.h"
 #include "mulib-weighed_edit_distane.h"
@@ -2412,3 +2435,4 @@
 #include "mulib-zoneindex.h"
 #include "mulib-zorder.h"
 #include "mulib-zstd.h"
+#include "mune-opencode-client.h"

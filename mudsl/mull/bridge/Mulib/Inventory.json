@@ -426,8 +426,10 @@
     "mulib-gputest.h",
     "mulib-graph.h",
     "mulib-graphdb.h",
+    "mulib-graphql.h",
     "mulib-graphviz.h",
     "mulib-grid.h",
+    "mulib-grpc.h",
     "mulib-gss.h",
     "mulib-gssair.h",
     "mulib-gvizz.h",
@@ -517,6 +519,7 @@
     "mulib-joinfilter.h",
     "mulib-jsdom.h",
     "mulib-json.h",
+    "mulib-jsonrpc.h",
     "mulib-jvm.h",
     "mulib-keyremap.h",
     "mulib-kf8write.h",
@@ -723,6 +726,7 @@
     "mulib-openai-client.h",
     "mulib-openai-server.h",
     "mulib-openai.h",
+    "mulib-opencode-client.h",
     "mulib-openvpn.h",
     "mulib-opticalmargin.h",
     "mulib-optml.h",
@@ -849,6 +853,7 @@
     "mulib-regpressure.h",
     "mulib-replace.h",
     "mulib-resolved-client.h",
+    "mulib-rest.h",
     "mulib-revproxy.h",
     "mulib-rewrite.h",
     "mulib-rewrite_url.h",
@@ -925,6 +930,7 @@
     "mulib-smt.h",
     "mulib-smtpclient.h",
     "mulib-smtpserver.h",
+    "mulib-soap.h",
     "mulib-soc-memorymap.h",
     "mulib-sock-diag.h",
     "mulib-socket.h",
@@ -951,6 +957,7 @@
     "mulib-sqlite-format.h",
     "mulib-sqlite-pager.h",
     "mulib-sqlite.h",
+    "mulib-sse-client.h",
     "mulib-sse.h",
     "mulib-sshclient.h",
     "mulib-sshserver.h",
@@ -1162,6 +1169,7 @@
     "mulib-websearch-engine.h",
     "mulib-websearch-provider.h",
     "mulib-websearch.h",
+    "mulib-websocket.h",
     "mulib-webstorage.h",
     "mulib-webtimers.h",
     "mulib-weighed_edit_distane.h",
@@ -1198,12 +1206,13 @@
     "mulib-zip.h",
     "mulib-zoneindex.h",
     "mulib-zorder.h",
-    "mulib-zstd.h"
+    "mulib-zstd.h",
+    "mune-opencode-client.h"
   ],
-  "libraries": 1199,
-  "functions": 5314,
-  "types": 8863,
-  "constants": 2777,
+  "libraries": 1208,
+  "functions": 5373,
+  "types": 8927,
+  "constants": 2802,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -1247,7 +1256,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "9861d449d33661c346bedec9f802cc23ca7d9b794ed78c559d280a4b3601ffb4",
+  "fingerprint": "ca21dfc2dfaccb1803f787eed124f906f3e2ce3a303a6cca5186a23edbc3a3ae",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -5538,6 +5547,15 @@
         "mulib_graphdb_free"
       ]
     },
+    "graphql": {
+      "header": "mulib-graphql.h",
+      "functions": [
+        "mulib_cdd_graphql_execute",
+        "mulib_cdd_graphql_result_free",
+        "mulib_graphql_execute",
+        "mulib_graphql_result_free"
+      ]
+    },
     "graphviz": {
       "header": "mulib-graphviz.h",
       "functions": [
@@ -5551,6 +5569,20 @@
         "mulib_grid_init",
         "mulib_grid_at",
         "mulib_grid_free"
+      ]
+    },
+    "grpc": {
+      "header": "mulib-grpc.h",
+      "functions": [
+        "mulib_cdd_grpc_frame_read",
+        "mulib_cdd_grpc_frame_write",
+        "mulib_cdd_grpc_web_decode",
+        "mulib_cdd_grpc_web_unary",
+        "mulib_cdd_grpc_web_reply_free",
+        "mulib_grpc_frame_read",
+        "mulib_grpc_frame_write",
+        "mulib_grpc_web_unary",
+        "mulib_grpc_web_reply_free"
       ]
     },
     "gss": {
@@ -6308,6 +6340,19 @@
         "mulib_json_set_n",
         "mulib_json_parse",
         "mulib_json_stringify"
+      ]
+    },
+    "jsonrpc": {
+      "header": "mulib-jsonrpc.h",
+      "functions": [
+        "mulib_cdd_jsonrpc_make",
+        "mulib_cdd_jsonrpc_exchange",
+        "mulib_cdd_jsonrpc_call",
+        "mulib_cdd_jsonrpc_reply_free",
+        "mulib_jsonrpc_make",
+        "mulib_jsonrpc_exchange",
+        "mulib_jsonrpc_call",
+        "mulib_jsonrpc_reply_free"
       ]
     },
     "jvm": {
@@ -7598,6 +7643,10 @@
         "mulib_mune_load_bundle_file"
       ]
     },
+    "mune-opencode-client": {
+      "header": "mune-opencode-client.h",
+      "functions": []
+    },
     "musicnotation": {
       "header": "mulib-musicnotation.h",
       "functions": [
@@ -8149,6 +8198,18 @@
         "mulib_openai_server_event",
         "mulib_openai_server_done",
         "mulib_openai_server_part"
+      ]
+    },
+    "opencode-client": {
+      "header": "mulib-opencode-client.h",
+      "functions": [
+        "mulib_cdd_opencode_operation_count",
+        "mulib_cdd_opencode_operation_at",
+        "mulib_cdd_opencode_operation",
+        "mulib_cdd_opencode_client",
+        "mulib_cdd_opencode_request",
+        "mulib_cdd_opencode_response_free",
+        "mulib_cdd_opencode_bind"
       ]
     },
     "openvpn": {
@@ -9278,6 +9339,17 @@
         "mulib_resolved_client_dns"
       ]
     },
+    "rest": {
+      "header": "mulib-rest.h",
+      "functions": [
+        "mulib_cdd_rest_request",
+        "mulib_cdd_rest_url_query",
+        "mulib_cdd_rest_response_free",
+        "mulib_rest_request",
+        "mulib_rest_url_query",
+        "mulib_rest_response_free"
+      ]
+    },
     "revproxy": {
       "header": "mulib-revproxy.h",
       "functions": [
@@ -9934,6 +10006,18 @@
         "mulib_smtpserver_feed"
       ]
     },
+    "soap": {
+      "header": "mulib-soap.h",
+      "functions": [
+        "mulib_cdd_soap_escape_text",
+        "mulib_cdd_soap_envelope",
+        "mulib_cdd_soap_inspect",
+        "mulib_cdd_soap_call",
+        "mulib_soap_escape_text",
+        "mulib_soap_envelope",
+        "mulib_soap_call"
+      ]
+    },
     "soc-memorymap": {
       "header": "mulib-soc-memorymap.h",
       "functions": [
@@ -10190,6 +10274,13 @@
         "mulib_sse_finish",
         "mulib_sse_destroy",
         "mulib_sse_encode"
+      ]
+    },
+    "sse-client": {
+      "header": "mulib-sse-client.h",
+      "functions": [
+        "mulib_cdd_sse_client_get",
+        "mulib_sse_client_get"
       ]
     },
     "sshclient": {
@@ -12146,6 +12237,27 @@
         "mulib_websearch_provider_url"
       ]
     },
+    "websocket": {
+      "header": "mulib-websocket.h",
+      "functions": [
+        "mulib_cdd_websocket_key",
+        "mulib_cdd_websocket_accept",
+        "mulib_cdd_websocket_validate_upgrade",
+        "mulib_cdd_websocket_validate_upgrade_protocol",
+        "mulib_cdd_websocket_upgrade_request",
+        "mulib_cdd_websocket_frame_write",
+        "mulib_cdd_websocket_frame_read",
+        "mulib_cdd_websocket_frame_free",
+        "mulib_cdd_websocket_sequence_check",
+        "mulib_websocket_key",
+        "mulib_websocket_accept",
+        "mulib_websocket_validate_upgrade",
+        "mulib_websocket_upgrade_request",
+        "mulib_websocket_frame_write",
+        "mulib_websocket_frame_read",
+        "mulib_websocket_frame_free"
+      ]
+    },
     "webstorage": {
       "header": "mulib-webstorage.h",
       "functions": [
@@ -12548,7 +12660,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "aa2ffbde1441057007f66f7e991ae49925bd0545d23107fbf0af4af2fb04f25f",
-    "Implementation.c": "c5814f0f13b0d8cd6d976fe8acbb4d31039c5879007777b2fe028fcaab926c24"
+    "Generated.inc": "39cf23862874c2d29b303dd2fd7f8572e8253ecfd36141ea1e8d2e796ec664e0",
+    "Implementation.c": "a7f2e6fc622a9154ac7ac51f47524d33ea2e548488ca3812168efe601ceb73a4"
   }
 }

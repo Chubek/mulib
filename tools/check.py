@@ -378,13 +378,19 @@ def main():
             with ThreadPoolExecutor(max_workers=args.jobs) as executor:
                 return sum(executor.map(lambda case: check(**case), cases))
 
+        api_kernel_tests = {'test-api-json-http.c', 'test-api-sse-client.c', 'test-api-websocket.c'}
+        api_kernel_sources = [root / 'tests/api-kernels' / name
+                              for name in ('implementation.c', 'dependencies.c')]
         for category, sources in [
             ('module examples', sorted((root / 'examples/modules').glob('*.c'))),
             ('composition examples', sorted((root / 'examples').glob('*.c'))),
             ('focused tests', sorted((root / 'tests').glob('test_*.c'))
              + sorted((root / 'tests').glob('test-*.c'))),
         ]:
-            passed = check_many([dict(label=str(p.relative_to(root)), sources=[p]) for p in sources])
+            passed = check_many([
+                dict(label=str(p.relative_to(root)),
+                     sources=[p] + (api_kernel_sources if p.name in api_kernel_tests else []))
+                for p in sources])
             counts[category] = (passed, len(sources))
             print(f'MuLIB {category}: {passed}/{len(sources)} passed', flush=True)
         integration = [

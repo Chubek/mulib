@@ -1,3 +1,11 @@
+#define MULIB_IMPL_CDD_GRAPHQL
+#define MULIB_IMPL_CDD_GRPC
+#define MULIB_IMPL_CDD_JSONRPC
+#define MULIB_IMPL_CDD_MUNE_OPENCODE_CLIENT
+#define MULIB_IMPL_CDD_REST
+#define MULIB_IMPL_CDD_SOAP
+#define MULIB_IMPL_CDD_SSE_CLIENT
+#define MULIB_IMPL_CDD_WEBSOCKET
 #define MULIB_IMPL_CDD_MARKUP_BRIDGE
 #define MULIB_IMPL_CDD_MARKUP_GRAPH
 #define MULIB_IMPL_CDD_MARKUP_SPANS
@@ -2408,3 +2416,11 @@
 #include "mulib-mcp-client.h"
 #include "mulib-mcp-http.h"
 #include "mulib-mcp-server.h"
+#include "mulib-graphql.h"
+#include "mulib-grpc.h"
+#include "mulib-jsonrpc.h"
+#include "mulib-opencode-client.h"
+#include "mulib-rest.h"
+#include "mulib-soap.h"
+#include "mulib-sse-client.h"
+#include "mulib-websocket.h"

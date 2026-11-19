@@ -1197,4 +1197,12 @@
 #include "mulib-markup-stream.h"
 #include "mulib-markup-tree.h"
 #include "mulib-mcp-http.h"
+#include "mulib-graphql.h"
+#include "mulib-grpc.h"
+#include "mulib-jsonrpc.h"
+#include "mulib-opencode-client.h"
+#include "mulib-rest.h"
+#include "mulib-soap.h"
+#include "mulib-sse-client.h"
+#include "mulib-websocket.h"
 int main(void) { return 0; }
