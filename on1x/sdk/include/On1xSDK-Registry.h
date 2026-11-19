@@ -3,6 +3,8 @@
 #ifndef ON1X_SDK_REGISTRY_H
 #define ON1X_SDK_REGISTRY_H
 
+#include "On1xSDK-Capability.h"
+#include "On1xSDK-Context.h"
 #include "On1xSDK-Types.h"
 
 #ifdef __cplusplus
@@ -24,6 +26,39 @@ typedef struct {
     On1xSDK_RegisterFn register_all;
 } On1xSDK_Extension;
 
+typedef struct On1xSDK_ExtensionV2 On1xSDK_ExtensionV2;
+
+#define ON1X_SDK_MAX_EXTENSIONS_V2 256u
+#define ON1X_SDK_MAX_EXTENSION_DEPENDENCIES 64u
+
+typedef struct On1xSDK_RegistryConfig {
+    uint32_t abi_version;
+    uint32_t struct_size;
+    On1xSDK_Context *context; /* Retained by the registry; NULL uses a default. */
+    const On1xSDK_CapabilityGrant *host_grants;
+    size_t host_grant_count;
+    uint32_t max_extensions;
+    uint32_t reserved;
+} On1xSDK_RegistryConfig;
+
+typedef struct On1xSDK_RegistryTransactionReport {
+    uint32_t abi_version;
+    uint32_t struct_size;
+    On1xSDK_Status primary_status;
+    On1xSDK_Status compensation_status;
+    size_t validated;
+    size_t initialized;
+    size_t compensated;
+} On1xSDK_RegistryTransactionReport;
+
+typedef struct On1xSDK_RegistryExtensionView {
+    On1xSDK_StringView name;
+    On1xSDK_StringView version;
+    uint32_t abi_version;
+    uint32_t lifecycle_state;
+    size_t granted_capability_count;
+} On1xSDK_RegistryExtensionView;
+
 /*
  * Registries are thread-confined, including reads and all callback activity
  * on a registry. All input pointers must designate valid readable storage
@@ -37,11 +72,16 @@ typedef struct {
  * On failure, create clears *out if out is non-NULL.
  */
 On1xSDK_Status on1x_sdk_registry_create(On1xSDK_Registry **out);
+On1xSDK_Status on1x_sdk_registry_create_v2(
+    const On1xSDK_RegistryConfig *config, On1xSDK_Registry **out
+);
 /*
  * Do not destroy a registry while an SDK operation is using it, including
  * from within a callback. NULL and requests during register_all are no-ops.
  */
 void on1x_sdk_registry_destroy(On1xSDK_Registry *registry);
+/* Serialized reverse shutdown. Destroy calls close if necessary. */
+On1xSDK_Status on1x_sdk_registry_close(On1xSDK_Registry *registry);
 
 /*
  * Use abi_version = ON1X_SDK_ABI_VERSION and struct_size = sizeof descriptor.
@@ -73,6 +113,37 @@ void on1x_sdk_registry_destroy(On1xSDK_Registry *registry);
  */
 On1xSDK_Status on1x_sdk_registry_register(On1xSDK_Registry *registry,
                                        const On1xSDK_Extension *extension);
+/* Explicit spelling for hosts dispatching a descriptor by negotiated ABI. */
+On1xSDK_Status on1x_sdk_registry_register_v1(
+    On1xSDK_Registry *registry, const On1xSDK_Extension *extension
+);
+On1xSDK_Status on1x_sdk_registry_register_v2(
+    On1xSDK_Registry *registry, const On1xSDK_ExtensionV2 *extension,
+    On1xSDK_RegistryTransactionReport *report
+);
+On1xSDK_Status on1x_sdk_registry_register_batch_v2(
+    On1xSDK_Registry *registry,
+    const On1xSDK_ExtensionV2 *const *extensions,
+    size_t extension_count,
+    On1xSDK_RegistryTransactionReport *report
+);
+
+uint64_t on1x_sdk_registry_revision(const On1xSDK_Registry *registry);
+On1xSDK_Status on1x_sdk_registry_snapshot(
+    const On1xSDK_Registry *registry, On1xSDK_RegistrySnapshot **out
+);
+void on1x_sdk_registry_snapshot_destroy(On1xSDK_RegistrySnapshot *snapshot);
+uint64_t on1x_sdk_registry_snapshot_revision(
+    const On1xSDK_RegistrySnapshot *snapshot
+);
+On1xSDK_Status on1x_sdk_registry_snapshot_count(
+    const On1xSDK_RegistrySnapshot *snapshot, size_t *out
+);
+On1xSDK_Status on1x_sdk_registry_snapshot_at(
+    const On1xSDK_RegistrySnapshot *snapshot,
+    size_t index,
+    On1xSDK_RegistryExtensionView *out
+);
 
 #ifdef __cplusplus
 }

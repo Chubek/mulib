@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://on1x.invalid/sdk/shared-memory-v1.schema.json",
+  "title": "On1x SDK shared-memory transfer descriptor v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaMajor",
+    "schemaMinor",
+    "flags",
+    "ownerContext",
+    "handle",
+    "kind",
+    "state",
+    "platformId",
+    "capacity",
+    "size",
+    "sha256"
+  ],
+  "properties": {
+    "schemaMajor": { "const": 1 },
+    "schemaMinor": { "const": 0 },
+    "flags": { "enum": ["staging", "frozen"] },
+    "ownerContext": { "type": "integer", "minimum": 1 },
+    "handle": { "type": "integer", "minimum": 1 },
+    "kind": { "const": "shared-memory" },
+    "state": { "enum": ["created", "frozen"] },
+    "platformId": { "type": "integer", "minimum": 0 },
+    "capacity": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 67108864
+    },
+    "size": { "type": "integer", "minimum": 0, "maximum": 67108864 },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "flags": { "const": "staging" },
+        "state": { "const": "created" },
+        "size": { "const": 0 },
+        "sha256": {
+          "const": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      }
+    },
+    {
+      "properties": {
+        "flags": { "const": "frozen" },
+        "state": { "const": "frozen" }
+      }
+    }
+  ]
+}

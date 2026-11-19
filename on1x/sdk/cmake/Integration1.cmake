@@ -1,0 +1,6 @@
+if(TARGET on1x-plugin-worker)
+    target_compile_features(on1x-plugin-worker PRIVATE cxx_std_20)
+endif()
+if(TARGET on1x_plugin_kernels)
+    target_compile_features(on1x_plugin_kernels PRIVATE c_std_11)
+endif()

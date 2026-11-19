@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://on1x.invalid/sdk/plugin-manifest-v1.schema.json",
+  "title": "On1x SDK plugin manifest logical schema v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaMajor",
+    "schemaMinor",
+    "name",
+    "version",
+    "executionProfile",
+    "minimumSdkAbi",
+    "maximumSdkAbi",
+    "resources",
+    "imageSha256"
+  ],
+  "properties": {
+    "schemaMajor": { "const": 1 },
+    "schemaMinor": { "type": "integer", "minimum": 0, "maximum": 0 },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z_][A-Za-z0-9_.:-]*$"
+    },
+    "version": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "executionProfile": {
+      "enum": [
+        "static-linked",
+        "trusted-dso",
+        "isolated-native",
+        "on1x-native",
+        "wasm"
+      ]
+    },
+    "minimumSdkAbi": { "type": "integer", "minimum": 1 },
+    "maximumSdkAbi": { "type": "integer", "minimum": 1 },
+    "dependencies": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "minimumVersion"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_.:-]*$"
+          },
+          "minimumVersion": {
+            "type": "string",
+            "maxLength": 128,
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+          },
+          "maximumVersion": {
+            "type": "string",
+            "maxLength": 128,
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+          }
+        }
+      }
+    },
+    "facets": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "inputSchema",
+          "outputKind",
+          "operationVersion",
+          "requiredValidationState"
+        ],
+        "properties": {
+          "name": {
+            "type": "string", "minLength": 1, "maxLength": 128,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_.:-]*$"
+          },
+          "inputSchema": {
+            "type": "string", "minLength": 1, "maxLength": 128,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_.:-]*$"
+          },
+          "outputKind": {
+            "type": "string", "minLength": 1, "maxLength": 128,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_.:-]*$"
+          },
+          "operationVersion": { "type": "integer", "minimum": 1 },
+          "requiredValidationState": {
+            "enum": ["candidate", "checked-hir", "verified-mir"]
+          }
+        }
+      }
+    },
+    "requestedCapabilities": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "minimumRevision", "required"],
+        "properties": {
+          "name": {
+            "type": "string", "minLength": 1, "maxLength": 128,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_.:-]*$"
+          },
+          "minimumRevision": { "type": "integer", "minimum": 1 },
+          "maximumRevision": { "type": "integer", "minimum": 1 },
+          "required": { "type": "boolean" }
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "budgetLimits",
+        "addressSpaceBytes",
+        "cpuSeconds",
+        "deadlineMs",
+        "maxOpenHandles",
+        "maxThreadsOrChildren"
+      ],
+      "properties": {
+        "budgetLimits": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 18446744073709551615
+          }
+        },
+        "addressSpaceBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1099511627776
+        },
+        "cpuSeconds": { "type": "integer", "minimum": 1, "maximum": 86400 },
+        "deadlineMs": { "type": "integer", "minimum": 1, "maximum": 86400000 },
+        "maxOpenHandles": {
+          "type": "integer", "minimum": 1, "maximum": 1048576
+        },
+        "maxThreadsOrChildren": {
+          "type": "integer", "minimum": 1, "maximum": 1024
+        }
+      }
+    },
+    "imageSha256": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      ]
+    },
+    "trustClaims": {
+      "description": "Untrusted declarative claims; never grants authority.",
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

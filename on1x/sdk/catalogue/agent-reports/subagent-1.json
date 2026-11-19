@@ -1,0 +1,178 @@
+{
+  "schema": "on1x.sdk.agent-report/1",
+  "agent": 1,
+  "area": "core/plugins/catalogue",
+  "baseline": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
+  "status": "PARTIAL",
+  "summary": "Executable ABI-2 core ownership, status, allocator, context, handle, diagnostic, cancellation, budget, transport, shared-memory, registry, catalogue, manifest, authorization, and Linux native-worker facilities coexist with the ABI-v1 compatibility profile. Native activation fails closed when requested isolation cannot be installed. Kernel sealing, catalogue sizes above 64 entries, and WASM execution remain explicit unsupported paths.",
+  "facilities": [
+    {
+      "id": "sdk.core",
+      "status": "EXECUTABLE",
+      "subset": "ABI negotiation; extensible descriptors; copied allocator and host tables; context-owned buffers; generation-checked handles; immutable source identities and spans; diagnostics; deterministic budgets; monotonic cancellation deadlines; bounded serialization, transport, and shared memory"
+    },
+    {
+      "id": "sdk.registry",
+      "status": "EXECUTABLE",
+      "subset": "ABI-v1 compatibility registration plus transactional ABI-v2 batches with semantic-version dependencies, deterministic ordering, capability intersection, initialization, reverse compensation, immutable snapshots, and stale-view rejection"
+    },
+    {
+      "id": "sdk.catalogue",
+      "status": "PARTIAL",
+      "subset": "deep-copied declarative entries and exact bounded MuLIB CDD resolution, including distinct invalid, duplicate, missing, conflict, unsatisfiable, limit, and callback outcomes and non-optimal LIMIT incumbents",
+      "unsupported": [
+        "catalogues above 64 entries require a future dynamic-bitset planner profile"
+      ]
+    },
+    {
+      "id": "sdk.plugins",
+      "status": "PARTIAL",
+      "subset": "inert manifest discovery; SHA-256 image authorization; host trust callback; capability-scoped host tables; bounded protocol-2 control frames; digest-checked input and staged output mappings; Linux worker isolation before executable loading; fail-closed activation",
+      "unsupported": [
+        "WASM execution until an engine and enforcement adapter exists",
+        "kernel-sealed shared-memory claims for the current System V mapping transport"
+      ]
+    }
+  ],
+  "public_headers": [
+    "on1x/sdk/include/On1xSDK-ABI.h",
+    "on1x/sdk/include/On1xSDK-Allocator.h",
+    "on1x/sdk/include/On1xSDK-Budget.h",
+    "on1x/sdk/include/On1xSDK-Cancellation.h",
+    "on1x/sdk/include/On1xSDK-Capability.h",
+    "on1x/sdk/include/On1xSDK-Catalogue.h",
+    "on1x/sdk/include/On1xSDK-Configuration.h",
+    "on1x/sdk/include/On1xSDK-Context.h",
+    "on1x/sdk/include/On1xSDK-Diagnostic.h",
+    "on1x/sdk/include/On1xSDK-Event.h",
+    "on1x/sdk/include/On1xSDK-Extension.h",
+    "on1x/sdk/include/On1xSDK-Handle.h",
+    "on1x/sdk/include/On1xSDK-Host.h",
+    "on1x/sdk/include/On1xSDK-Lifecycle.h",
+    "on1x/sdk/include/On1xSDK-Metadata.h",
+    "on1x/sdk/include/On1xSDK-Plugin.h",
+    "on1x/sdk/include/On1xSDK-PluginDependency.h",
+    "on1x/sdk/include/On1xSDK-PluginDiscovery.h",
+    "on1x/sdk/include/On1xSDK-PluginEvent.h",
+    "on1x/sdk/include/On1xSDK-PluginHost.h",
+    "on1x/sdk/include/On1xSDK-PluginManifest.h",
+    "on1x/sdk/include/On1xSDK-PluginProtocol.h",
+    "on1x/sdk/include/On1xSDK-PluginSignature.h",
+    "on1x/sdk/include/On1xSDK-PluginTrust.h",
+    "on1x/sdk/include/On1xSDK-PluginWorker.h",
+    "on1x/sdk/include/On1xSDK-Provenance.h",
+    "on1x/sdk/include/On1xSDK-Registry.h",
+    "on1x/sdk/include/On1xSDK-Sandbox.h",
+    "on1x/sdk/include/On1xSDK-Serialization.h",
+    "on1x/sdk/include/On1xSDK-SharedMemory.h",
+    "on1x/sdk/include/On1xSDK-Span.h",
+    "on1x/sdk/include/On1xSDK-Status.h",
+    "on1x/sdk/include/On1xSDK-String.h",
+    "on1x/sdk/include/On1xSDK-Transport.h",
+    "on1x/sdk/include/On1xSDK-Types.h",
+    "on1x/sdk/include/On1xSDK-Version.h"
+  ],
+  "changed_files": [
+    "on1x/sdk/catalogue/agent-reports/subagent-1.json",
+    "on1x/sdk/cmake/Integration1.cmake",
+    "on1x/sdk/cmake/Subagent1.cmake",
+    "on1x/sdk/docs/core-plugins-abi2.md",
+    "on1x/sdk/examples/core/abi2_extension.c",
+    "on1x/sdk/include/On1xSDK-ABI.h",
+    "on1x/sdk/include/On1xSDK-Allocator.h",
+    "on1x/sdk/include/On1xSDK-Budget.h",
+    "on1x/sdk/include/On1xSDK-Cancellation.h",
+    "on1x/sdk/include/On1xSDK-Capability.h",
+    "on1x/sdk/include/On1xSDK-Catalogue.h",
+    "on1x/sdk/include/On1xSDK-Configuration.h",
+    "on1x/sdk/include/On1xSDK-Context.h",
+    "on1x/sdk/include/On1xSDK-Diagnostic.h",
+    "on1x/sdk/include/On1xSDK-Event.h",
+    "on1x/sdk/include/On1xSDK-Extension.h",
+    "on1x/sdk/include/On1xSDK-Handle.h",
+    "on1x/sdk/include/On1xSDK-Host.h",
+    "on1x/sdk/include/On1xSDK-Lifecycle.h",
+    "on1x/sdk/include/On1xSDK-Metadata.h",
+    "on1x/sdk/include/On1xSDK-Plugin.h",
+    "on1x/sdk/include/On1xSDK-PluginDependency.h",
+    "on1x/sdk/include/On1xSDK-PluginDiscovery.h",
+    "on1x/sdk/include/On1xSDK-PluginEvent.h",
+    "on1x/sdk/include/On1xSDK-PluginHost.h",
+    "on1x/sdk/include/On1xSDK-PluginManifest.h",
+    "on1x/sdk/include/On1xSDK-PluginProtocol.h",
+    "on1x/sdk/include/On1xSDK-PluginSignature.h",
+    "on1x/sdk/include/On1xSDK-PluginTrust.h",
+    "on1x/sdk/include/On1xSDK-PluginWorker.h",
+    "on1x/sdk/include/On1xSDK-Provenance.h",
+    "on1x/sdk/include/On1xSDK-Registry.h",
+    "on1x/sdk/include/On1xSDK-Sandbox.h",
+    "on1x/sdk/include/On1xSDK-Serialization.h",
+    "on1x/sdk/include/On1xSDK-SharedMemory.h",
+    "on1x/sdk/include/On1xSDK-Span.h",
+    "on1x/sdk/include/On1xSDK-Status.h",
+    "on1x/sdk/include/On1xSDK-String.h",
+    "on1x/sdk/include/On1xSDK-Transport.h",
+    "on1x/sdk/include/On1xSDK-Types.h",
+    "on1x/sdk/include/On1xSDK-Version.h",
+    "on1x/sdk/protocol/plugin-control-v2.md",
+    "on1x/sdk/protocol/plugin-manifest-v1.schema.json",
+    "on1x/sdk/protocol/shared-memory-v1.schema.json",
+    "on1x/sdk/src/PluginHost.cpp",
+    "on1x/sdk/src/PluginKernels.c",
+    "on1x/sdk/src/PluginProtocol.hpp",
+    "on1x/sdk/src/PluginWorker.cpp",
+    "on1x/sdk/src/Registry.cpp",
+    "on1x/sdk/src/catalogue/Catalogue.cpp",
+    "on1x/sdk/src/catalogue/CatalogueKernels.c",
+    "on1x/sdk/src/core/Core.cpp",
+    "on1x/sdk/src/core/CoreHashKernels.c",
+    "on1x/sdk/src/core/CoreIPCKernels.c",
+    "on1x/sdk/src/core/CoreInternal.hpp",
+    "on1x/sdk/src/core/Diagnostic.cpp",
+    "on1x/sdk/src/core/HandleStore.cpp",
+    "on1x/sdk/src/core/Protocol.cpp",
+    "on1x/sdk/src/core/SharedMemory.cpp",
+    "on1x/sdk/src/core/Transport.cpp",
+    "on1x/sdk/src/core/Wire.hpp",
+    "on1x/sdk/src/plugin/Manifest.cpp",
+    "on1x/sdk/src/plugin/Plugin.cpp",
+    "on1x/sdk/tests/abi2_c.c",
+    "on1x/sdk/tests/catalogue_v2.cpp",
+    "on1x/sdk/tests/core_v2.cpp",
+    "on1x/sdk/tests/plugin_v2.cpp",
+    "on1x/sdk/tests/registry_v2.cpp"
+  ],
+  "tests": [
+    {
+      "command": "cmake --build /mnt/nvme/opencode-builds/sdk2-clang-asan-ubsan --target on1x_sdk on1x_sdk_test_core_v2 on1x_sdk_test_registry_v2 on1x_sdk_test_catalogue_v2 on1x_sdk_test_plugin_v2 on1x_sdk_test_abi2_c on1x_sdk_test_registry on1x_sdk_test_analyzer on1x_sdk_test_backend on1x_sdk_test_security on1x_sdk_test_c_abi --parallel 3",
+      "result": "PASS",
+      "detail": "Clang 22 ASan+UBSan ABI-v1 and ABI-v2 targets built"
+    },
+    {
+      "command": "ctest --test-dir /mnt/nvme/opencode-builds/sdk2-clang-asan-ubsan --output-on-failure -R '^on1x\\.sdk\\.(core_v2|registry_v2|catalogue_v2|plugin_v2|abi2_c|registry|analyzer|backend|security|c_abi)$'",
+      "result": "PASS",
+      "detail": "10/10 ABI-v1 and ABI-v2 focused tests passed under Clang ASan+UBSan"
+    },
+    {
+      "command": "git diff --check && python3 -m json.tool on1x/sdk/catalogue/agent-reports/subagent-1.json >/dev/null",
+      "result": "PASS"
+    }
+  ],
+  "cross_owner_requests": [
+    {
+      "owner": "principal/compiler frontend",
+      "required_api": "use the core SourceRevision and SourceSpan data contracts without redefining the opaque frontend revision handle",
+      "reason": "the shared immutable source identity and diagnostic span layouts must have one ABI-2 definition"
+    },
+    {
+      "owner": "principal/all SDK components",
+      "required_api": "map component-specific conditions onto the core ABI-2 status vocabulary",
+      "reason": "unknown callback statuses must not be accepted and ABI-v1 numeric values 0 through 7 must remain unchanged"
+    },
+    {
+      "owner": "principal",
+      "required_api": "add all ABI-2 headers and sources to aggregate installation, package exports, the umbrella header, and capability inventory",
+      "reason": "worker-owned CMake hooks deliberately avoid principal-owned aggregate packaging"
+    }
+  ]
+}

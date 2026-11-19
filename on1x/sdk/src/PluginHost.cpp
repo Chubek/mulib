@@ -9,6 +9,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fcntl.h>
+#include <memory>
 #include <optional>
 #include <set>
 #include <signal.h>
@@ -151,7 +152,10 @@ struct Worker {
         }
     }
     bool finish(std::int64_t deadline) {
-        while (mulib_ipc_now_ms() < deadline) {
+        for (;;) {
+            const auto now = mulib_ipc_now_ms();
+            if (now < 0 || now >= deadline)
+                return false;
             int status = 0;
             const auto result = waitpid(pid, &status, WNOHANG);
             if (result == pid) {
@@ -182,43 +186,81 @@ struct Worker {
     _exit(125);
 }
 
-Reply parse_reply(std::string_view bytes, bool emit, std::size_t mir_size)
+Reply parse_reply(On1xSDK_Status status, std::string_view bytes, bool emit,
+                  std::size_t mir_size)
 {
+    if (status > ON1X_SDK_BUSY)
+        throw std::runtime_error("invalid plugin reply status");
+    Reply reply{status, {}, {}};
+    if (status != ON1X_SDK_OK) {
+        if (!bytes.empty())
+            throw std::runtime_error("failed plugin reply carried output");
+        return reply;
+    }
+    if (emit) {
+        if (bytes.size() > ON1X_SDK_MAX_ARTIFACT_BYTES)
+            throw std::runtime_error("plugin artifact size exceeded");
+        reply.artifact.assign(bytes);
+        return reply;
+    }
     Reader reader{bytes};
-    if (reader.take() != version) throw std::runtime_error("unknown plugin reply version");
-    const auto status = reader.take();
-    if (status > ON1X_SDK_BUSY) throw std::runtime_error("invalid plugin reply status");
-    Reply reply{static_cast<On1xSDK_Status>(status), {}, {}};
-    if (status == ON1X_SDK_OK) {
-        if (emit) reply.artifact = reader.take(ON1X_SDK_MAX_ARTIFACT_BYTES);
-        else {
-            const auto count = reader.take();
-            if (count > ON1X_SDK_MAX_ANALYZER_DIAGNOSTICS)
-                throw std::runtime_error("plugin diagnostic count exceeded");
-            for (unsigned i = 0; i < count; ++i) {
-                const auto severity = reader.take(), begin = reader.take(), end = reader.take();
-                const auto code = reader.take(ON1X_SDK_NAME_MAX);
-                const auto message = reader.take(ON1X_SDK_MAX_DIAGNOSTIC_MESSAGE_BYTES);
-                if (severity < ON1X_SDK_NOTE || severity > ON1X_SDK_DIAGNOSTIC_ERROR ||
-                    !sdk::valid_name(code) || message.empty() ||
-                    message.find('\0') != std::string_view::npos ||
-                    (!(begin == UINT32_MAX && end == UINT32_MAX) && (begin > end || end > mir_size)))
-                    throw std::runtime_error("invalid plugin diagnostic");
-                reply.diagnostics.push_back({severity, std::string(code), std::string(message),
-                                             begin == UINT32_MAX ? SIZE_MAX : begin,
-                                             end == UINT32_MAX ? SIZE_MAX : end});
-            }
+    const auto count = reader.take();
+    if (count > ON1X_SDK_MAX_ANALYZER_DIAGNOSTICS)
+        throw std::runtime_error("plugin diagnostic count exceeded");
+    for (unsigned i = 0; i < count; ++i) {
+        const auto severity = reader.take(), begin = reader.take(), end = reader.take();
+        const auto code = reader.take(ON1X_SDK_NAME_MAX);
+        const auto message = reader.take(ON1X_SDK_MAX_DIAGNOSTIC_MESSAGE_BYTES);
+        if (severity < ON1X_SDK_NOTE || severity > ON1X_SDK_DIAGNOSTIC_ERROR ||
+            !sdk::valid_name(code) || message.empty() ||
+            message.find('\0') != std::string_view::npos ||
+            (!(begin == UINT32_MAX && end == UINT32_MAX) && (begin > end || end > mir_size))) {
+            throw std::runtime_error("invalid plugin diagnostic");
         }
+        reply.diagnostics.push_back({severity, std::string(code), std::string(message),
+                                      begin == UINT32_MAX ? SIZE_MAX : begin,
+                                      end == UINT32_MAX ? SIZE_MAX : end});
     }
     reader.finish();
     return reply;
 }
 
-Reply call(int worker, const std::string &path, std::string_view request, bool emit,
-           std::size_t mir_size, std::int64_t deadline)
+Reply call(int worker, const std::string &path, std::string_view hook, bool emit,
+           std::string_view mir, std::int64_t deadline)
 {
     const Fd image(open_image(path));
     Stage stage;
+    On1xSDK_Context *raw_context = nullptr;
+    if (on1x_sdk_context_create(nullptr, &raw_context) != ON1X_SDK_OK)
+        throw std::runtime_error("cannot create plugin data-plane context");
+    const std::unique_ptr<On1xSDK_Context, decltype(&on1x_sdk_context_release)>
+        context(raw_context, on1x_sdk_context_release);
+    On1xSDK_SharedMemory *raw_input = nullptr, *raw_output = nullptr;
+    if (on1x_sdk_shared_memory_create_frozen(
+            context.get(),
+            {reinterpret_cast<const std::uint8_t *>(mir.data()), mir.size()},
+            &raw_input) != ON1X_SDK_OK)
+        throw std::runtime_error("cannot create immutable plugin input");
+    const std::unique_ptr<On1xSDK_SharedMemory, decltype(&on1x_sdk_shared_memory_release)>
+        input(raw_input, on1x_sdk_shared_memory_release);
+    if (on1x_sdk_shared_memory_create_staging(
+            context.get(), ON1X_SDK_MAX_ARTIFACT_BYTES, &raw_output) !=
+        ON1X_SDK_OK)
+        throw std::runtime_error("cannot create plugin output staging region");
+    const std::unique_ptr<On1xSDK_SharedMemory, decltype(&on1x_sdk_shared_memory_release)>
+        output(raw_output, on1x_sdk_shared_memory_release);
+    On1xSDK_SharedMemoryDescriptor input_descriptor{}, output_descriptor{};
+    if (on1x_sdk_shared_memory_export(input.get(), &input_descriptor) != ON1X_SDK_OK ||
+        on1x_sdk_shared_memory_export_staging(output.get(), &output_descriptor) !=
+            ON1X_SDK_OK)
+        throw std::runtime_error("cannot export plugin data-plane descriptors");
+    const auto setup = encode_setup(
+        emit ? 1u : 0u, hook, input_descriptor, output_descriptor
+    );
+    const auto hello = encode_message(
+        ON1X_SDK_PROTOCOL_HELLO, ON1X_SDK_OK, 0, setup
+    );
+
     int pair[2];
     if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, pair))
         throw std::runtime_error("cannot create plugin control socket");
@@ -242,25 +284,112 @@ Reply call(int worker, const std::string &path, std::string_view request, bool e
     Worker child{pid};
     std::string buffer(max_frame, '\0');
     std::size_t size = 0;
-    if (const int error = mulib_ipc_receive(&ipc, buffer.data(), 64, &size, deadline); error ||
-        std::string_view(buffer.data(), size) != ready)
+    if (const int error = mulib_ipc_send(
+            &ipc, hello.data(), hello.size(), deadline); error)
+        throw std::runtime_error(std::string("cannot send plugin setup: ") +
+                                 mulib_sandbox_strerror(error));
+    if (const int error = mulib_ipc_receive(
+            &ipc, buffer.data(), buffer.size(), &size, deadline); error)
         throw std::runtime_error(error == MULIB_SB_TIMEOUT ? "plugin isolation startup timed out" :
-                                 "plugin isolation unavailable; worker did not enter the sandbox");
-    if (const int error = mulib_ipc_send(&ipc, request.data(), request.size(), deadline); error)
-        throw std::runtime_error(std::string("cannot send plugin request: ") + mulib_sandbox_strerror(error));
-    if (const int error = mulib_ipc_receive(&ipc, buffer.data(), buffer.size(), &size, deadline); error)
+                                  "plugin isolation unavailable; worker did not enter the sandbox");
+    auto message = decode_message({buffer.data(), size});
+    if (message.kind != ON1X_SDK_PROTOCOL_HELLO_ACK ||
+        message.status != ON1X_SDK_OK || message.request_id ||
+        message.owner_context || message.object_id || message.revision ||
+        message.payload.size)
+        throw std::runtime_error("plugin isolation handshake was invalid");
+
+    const auto activate = encode_message(ON1X_SDK_PROTOCOL_ACTIVATE);
+    if (const int error = mulib_ipc_send(
+            &ipc, activate.data(), activate.size(), deadline); error)
+        throw std::runtime_error(std::string("cannot activate plugin: ") +
+                                 mulib_sandbox_strerror(error));
+    if (const int error = mulib_ipc_receive(
+            &ipc, buffer.data(), buffer.size(), &size, deadline); error)
+        throw std::runtime_error(error == MULIB_SB_TIMEOUT ?
+            "plugin activation timed out" :
+            "plugin worker failed or was terminated by its sandbox");
+    message = decode_message({buffer.data(), size});
+    if (message.kind != ON1X_SDK_PROTOCOL_ACTIVE ||
+        message.status != ON1X_SDK_OK || message.request_id ||
+        message.owner_context || message.object_id || message.revision ||
+        message.payload.size)
+        throw std::runtime_error("plugin activation handshake was invalid");
+
+    const auto operation = encode_message(
+        ON1X_SDK_PROTOCOL_REQUEST, ON1X_SDK_OK, request_id
+    );
+    if (const int error = mulib_ipc_send(
+            &ipc, operation.data(), operation.size(), deadline); error)
+        throw std::runtime_error(std::string("cannot send plugin operation: ") +
+                                 mulib_sandbox_strerror(error));
+    if (const int error = mulib_ipc_receive(
+            &ipc, buffer.data(), buffer.size(), &size, deadline); error)
         throw std::runtime_error(error == MULIB_SB_TIMEOUT ? "plugin execution timed out" :
-                                 "plugin worker failed or was terminated by its sandbox");
+                                  "plugin worker failed or was terminated by its sandbox");
     if (!child.finish(deadline)) throw std::runtime_error("plugin worker did not exit successfully");
-    return parse_reply(std::string_view(buffer.data(), size), emit, mir_size);
+    message = decode_message({buffer.data(), size});
+    if (message.kind != ON1X_SDK_PROTOCOL_RESPONSE ||
+        message.request_id != request_id ||
+        message.owner_context || message.object_id || message.revision ||
+        (message.flags & ON1X_SDK_PROTOCOL_FLAG_FINAL) == 0)
+        throw std::runtime_error("plugin response state was invalid");
+    if (message.status != ON1X_SDK_OK) {
+        if (message.payload.size ||
+            (message.flags & ON1X_SDK_PROTOCOL_FLAG_SHARED_PAYLOAD))
+            throw std::runtime_error("failed plugin response carried output");
+        return parse_reply(message.status, {}, emit, mir.size());
+    }
+    if (message.flags !=
+            (ON1X_SDK_PROTOCOL_FLAG_FINAL |
+             ON1X_SDK_PROTOCOL_FLAG_SHARED_PAYLOAD) ||
+        message.payload.size != ON1X_SDK_SHARED_MEMORY_DESCRIPTOR_WIRE_SIZE)
+        throw std::runtime_error("successful plugin response lacked data-plane output");
+    On1xSDK_SharedMemoryDescriptor worker_output{};
+    if (on1x_sdk_shared_memory_descriptor_decode(
+            message.payload.data, message.payload.size, &worker_output) !=
+            ON1X_SDK_OK ||
+        worker_output.owner_context != output_descriptor.owner_context ||
+        worker_output.handle != output_descriptor.handle ||
+        worker_output.platform_id != output_descriptor.platform_id ||
+        worker_output.capacity != output_descriptor.capacity ||
+        worker_output.size > output_descriptor.capacity ||
+        worker_output.flags != ON1X_SDK_SHARED_MEMORY_FROZEN ||
+        worker_output.state != ON1X_SDK_HANDLE_STATE_FROZEN)
+        throw std::runtime_error("plugin returned an unauthorized data-plane handle");
+    if (on1x_sdk_shared_memory_freeze(output.get(), worker_output.size) !=
+        ON1X_SDK_OK)
+        throw std::runtime_error("cannot freeze plugin output");
+    On1xSDK_SharedMemoryDescriptor local_output{};
+    if (on1x_sdk_shared_memory_export(output.get(), &local_output) !=
+            ON1X_SDK_OK ||
+        !same_descriptor(local_output, worker_output) ||
+        on1x_sdk_shared_memory_validate_local(
+            context.get(), &local_output) != ON1X_SDK_OK)
+        throw std::runtime_error("plugin output digest or handle verification failed");
+    const std::uint8_t *output_bytes = nullptr;
+    std::size_t output_size = 0;
+    if (on1x_sdk_shared_memory_bytes(
+            output.get(), &output_bytes, &output_size) != ON1X_SDK_OK)
+        throw std::runtime_error("cannot read frozen plugin output");
+    return parse_reply(
+        message.status,
+        {reinterpret_cast<const char *>(output_bytes), output_size},
+        emit, mir.size()
+    );
 }
 }
 
 std::vector<std::string> discover(const std::vector<std::string> &selectors)
 {
+    if (selectors.size() > max_paths)
+        throw std::runtime_error("plugin selector limit exceeded");
     std::vector<std::string> names;
-    for (const auto &s : selectors)
+    for (const auto &s : selectors) {
+        if (s.empty() || s.size() > max_path_bytes)
+            throw std::runtime_error("invalid plugin selector length");
         if (s.find('/') == std::string::npos) names.push_back(s);
+    }
     if (selectors.empty()) return scan_paths({});
     const auto candidates = names.empty() ? std::vector<std::string>{} : scan_paths(names);
     std::vector<std::string> result;
@@ -296,18 +425,13 @@ std::optional<Reply> dispatch(const std::vector<std::string> &paths, std::string
     if (sigaction(SIGCHLD, nullptr, &sa) || sa.sa_handler != SIG_DFL || (sa.sa_flags & SA_NOCLDWAIT))
         throw std::runtime_error("cannot supervise plugins with nondefault SIGCHLD handling");
     const Fd worker(open_worker());
-    std::string request;
-    put(request, version);
-    put(request, emit ? 1u : 0u);
-    put(request, hook);
-    put(request, mir);
     std::int64_t deadline = 0;
     if (mulib_ipc_deadline(timeout_ms, &deadline)) throw std::runtime_error("cannot set plugin deadline");
     std::optional<Reply> result;
     for (const auto &path : paths) {
         Reply reply;
         try {
-            reply = call(worker.value, path, request, emit, mir.size(), deadline);
+            reply = call(worker.value, path, hook, emit, mir, deadline);
         } catch (const std::exception &error) {
             throw std::runtime_error(path + ": " + error.what());
         }
