@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://on1x.invalid/sdk/schemas/hir-view-v1.schema.json",
+  "title": "On1x SDK HIR inspection view v1 (logical model)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "generation", "revision", "provenance", "functions", "nodes"],
+  "properties": {
+    "schema": {"const": "on1x.sdk.hir-view/1"},
+    "generation": {"type": "integer", "minimum": 1},
+    "revision": {"type": "integer", "minimum": 1},
+    "provenance": {"type": "string", "maxLength": 4096},
+    "functions": {
+      "type": "array",
+      "maxItems": 262144,
+      "items": {"type": "integer", "minimum": 1}
+    },
+    "nodes": {
+      "type": "array",
+      "maxItems": 262144,
+      "items": {"$ref": "#/$defs/node"}
+    }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "class", "kind", "flags", "name", "source", "type",
+        "labels", "auxiliary", "children"
+      ],
+      "properties": {
+        "id": {"type": "integer", "minimum": 1},
+        "class": {"type": "integer", "minimum": 1, "maximum": 6},
+        "kind": {"type": "integer", "minimum": 0},
+        "flags": {"type": "integer", "minimum": 0},
+        "name": {"type": "string", "maxLength": 1048576},
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["file", "offset", "line", "column"],
+          "properties": {
+            "file": {"type": "string", "maxLength": 1048576},
+            "offset": {"type": "integer", "minimum": 0},
+            "line": {"type": "integer", "minimum": 1},
+            "column": {"type": "integer", "minimum": 1}
+          }
+        },
+        "type": {
+          "description": "Recursive canonical On1x type encoding; never a foreign type ID.",
+          "type": "object"
+        },
+        "labels": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {"type": "string", "maxLength": 1048576}
+        },
+        "auxiliary": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {"type": "integer", "minimum": 0}
+        },
+        "children": {
+          "type": "array",
+          "maxItems": 262144,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["edge", "target"],
+            "properties": {
+              "edge": {"type": "integer", "minimum": 1, "maximum": 13},
+              "target": {"type": "integer", "minimum": 1}
+            }
+          }
+        }
+      }
+    }
+  }
+}

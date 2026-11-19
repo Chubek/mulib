@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://on1x.invalid/sdk/schemas/mir-envelope-v1.schema.json",
+  "title": "On1x SDK canonical MIR envelope v1 (logical model)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "canonical_mir_version", "generation", "revision",
+    "provenance", "canonical_payload"
+  ],
+  "properties": {
+    "schema": {"const": "on1x.sdk.mir-envelope/1"},
+    "canonical_mir_version": {"enum": [1, 2, 3]},
+    "generation": {"type": "integer", "minimum": 1},
+    "revision": {"type": "integer", "minimum": 1},
+    "provenance": {"type": "string", "maxLength": 4096},
+    "canonical_payload": {
+      "description": "Canonical pointer-free on1x.mir S-expression, bounded to 16 MiB.",
+      "type": "string",
+      "maxLength": 16777216,
+      "contentMediaType": "application/vnd.on1x.mir+sexpr"
+    }
+  }
+}

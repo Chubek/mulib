@@ -1,0 +1,178 @@
+{
+  "schema": "on1x.sdk.agent-report/1",
+  "subagent": 3,
+  "baseline": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
+  "status": "PARTIAL",
+  "summary": "Canonical immutable type handles, checked-HIR inspection, scalar/numeric MIR inspection and evaluation, bounded deterministic serialization, and rollback-capable candidate MIR transactions are executable. Broader inference/layout/effect APIs, aggregate/resource/effect MIR lowering, public host admission/publication, and installed canonical-frontend linkage remain outside this worker's integrated scope.",
+  "facilities": [
+    {
+      "id": "types.semantics",
+      "status": "PARTIAL",
+      "implemented": [
+        "canonical On1x Type construction with owner/generation/revision checks",
+        "immutable retained handles and borrowed views",
+        "kind, child, label, nominal, extent, flags and spelling queries",
+        "bounded type-form verification, structural equality and forall-instance checks"
+      ],
+      "unsupported": [
+        "public unification, inference, constraint solving, layout, borrow and effect services"
+      ]
+    },
+    {
+      "id": "ir.structured",
+      "status": "PARTIAL",
+      "implemented": [
+        "private host-only canonical Unit admission to CHECKED_HIR",
+        "immutable revision-bound HIR traversal with stale and cross-context rejection",
+        "mandatory canonical lowering and verification to scalar/numeric VERIFIED_MIR",
+        "structured function, block, instruction, terminator, type and source views",
+        "bounded scalar/numeric MIR evaluator"
+      ],
+      "unsupported": [
+        "promotion of inspection-only wire HIR",
+        "foreign declarations without separate host admission evidence",
+        "aggregate, resource or effect constructs not representable by canonical scalar/numeric MIR"
+      ]
+    },
+    {
+      "id": "ir.serialization",
+      "status": "EXECUTABLE",
+      "implemented": [
+        "deterministic pointer-free HIR-v1 inspection wire",
+        "canonical MIR text and MIR-envelope-v1",
+        "bounded bytes, nodes, work, depth, UTF-8, identity and version validation",
+        "candidate-only decode and deterministic round trips"
+      ]
+    },
+    {
+      "id": "ir.transactions",
+      "status": "EXECUTABLE",
+      "implemented": [
+        "thread-confined private-copy MIR edits",
+        "canonical verification before commit",
+        "strictly newer candidate revisions",
+        "rollback and stale/cross-context/lifecycle rejection"
+      ]
+    }
+  ],
+  "changed_files": [
+    "on1x/sdk/catalogue/agent-reports/subagent-3.json",
+    "on1x/sdk/cmake/Integration3.cmake",
+    "on1x/sdk/cmake/Subagent3.cmake",
+    "on1x/sdk/include/On1xSDK-HIR.h",
+    "on1x/sdk/include/On1xSDK-IRSerialize.h",
+    "on1x/sdk/include/On1xSDK-IRTransaction.h",
+    "on1x/sdk/include/On1xSDK-MIR.h",
+    "on1x/sdk/include/On1xSDK-SemanticTypes.h",
+    "on1x/sdk/include/On1xSDK-Semantics.h",
+    "on1x/sdk/include/On1xSDK-Type.h",
+    "on1x/sdk/schemas/SEMANTICS-IR-WIRE.md",
+    "on1x/sdk/schemas/hir-view-v1.schema.json",
+    "on1x/sdk/schemas/mir-envelope-v1.schema.json",
+    "on1x/sdk/src/ir/CanonicalBridge.hpp",
+    "on1x/sdk/src/ir/Common.cpp",
+    "on1x/sdk/src/ir/HIR.cpp",
+    "on1x/sdk/src/ir/IRInternal.hpp",
+    "on1x/sdk/src/ir/MIR.cpp",
+    "on1x/sdk/src/ir/Semantics.cpp",
+    "on1x/sdk/src/ir/Serialization.cpp",
+    "on1x/sdk/src/ir/Transaction.cpp",
+    "on1x/sdk/src/types/Type.cpp",
+    "on1x/sdk/tests/header_standalone.c",
+    "on1x/sdk/tests/header_standalone.cpp",
+    "on1x/sdk/tests/semantics_ir.cpp",
+    "on1x/sdk/tests/semantics_ir_c.c"
+  ],
+  "tests": [
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/on1x-sdk3-gcc-make -G 'Unix Makefiles' -DBUILD_TESTING=ON -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_WITH_SYREN=OFF && cmake --build /tmp/opencode/on1x-sdk3-gcc-make --parallel 4",
+      "result": "PASS: complete GCC build"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/on1x-sdk3-gcc-make --output-on-failure -R '^on1x\\.sdk\\.'",
+      "result": "PASS: 23/23"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/on1x-sdk3-clang-make --parallel 4 && ctest --test-dir /tmp/opencode/on1x-sdk3-clang-make --output-on-failure -R '^on1x\\.sdk\\.'",
+      "result": "PASS: complete Clang build and 23/23 SDK tests"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/on1x-sdk3-gcc-asan-ubsan --target on1x_sdk_test_semantics_ir on1x_sdk_test_semantics_ir_c --parallel 4 && ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ctest --test-dir /tmp/opencode/on1x-sdk3-gcc-asan-ubsan --output-on-failure -R '^on1x\\.sdk\\.(semantics_ir|semantics_ir_c)$'",
+      "result": "PASS: GCC ASan+UBSan 2/2"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/on1x-sdk3-clang-asan-ubsan --target on1x_sdk_test_semantics_ir on1x_sdk_test_semantics_ir_c --parallel 4 && ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ctest --test-dir /tmp/opencode/on1x-sdk3-clang-asan-ubsan --output-on-failure -R '^on1x\\.sdk\\.(semantics_ir|semantics_ir_c)$'",
+      "result": "PASS: Clang ASan+UBSan 2/2"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/on1x-sdk3-gcc-generated --target on1x_sdk_test_semantics_ir on1x_sdk_test_semantics_ir_c on1x_type_checker_hardening_tests --parallel 4 && ctest --test-dir /tmp/opencode/on1x-sdk3-gcc-generated --output-on-failure -R '^(on1x\\.sdk\\.(semantics_ir|semantics_ir_c)|on1x\\.type_checker_hardening_hir)$'",
+      "result": "PASS: LibStone ASDL+Aurocks generated frontend 3/3"
+    },
+    {
+      "command": "TMPDIR=/mnt/nvme/opencode-test-tmp-sdk3 CC=gcc CXX=g++ sh tests/run-cdd.sh",
+      "result": "PASS: 500 seeded plus 24576 exhaustive oracle cases, allocation failure, example and C++17 linkage"
+    },
+    {
+      "command": "TMPDIR=/mnt/nvme/opencode-test-tmp-sdk3 CC=clang CXX=clang++ sh tests/run-cdd.sh",
+      "result": "PASS: 500 seeded plus 24576 exhaustive oracle cases, allocation failure, example and C++17 linkage"
+    },
+    {
+      "command": "TMPDIR=/mnt/nvme/opencode-test-tmp-sdk3 CC=gcc CXX=g++ CFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' CXXFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' LDFLAGS='-fsanitize=address,undefined' ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 sh tests/run-cdd.sh",
+      "result": "PASS: GCC ASan+UBSan"
+    },
+    {
+      "command": "TMPDIR=/mnt/nvme/opencode-test-tmp-sdk3 CC=clang CXX=clang++ CFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' CXXFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' LDFLAGS='-fsanitize=address,undefined' ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 sh tests/run-cdd.sh",
+      "result": "PASS: Clang ASan+UBSan"
+    },
+    {
+      "command": "g++ -std=c++20 -Wall -Wextra -Wpedantic -Werror -Ion1x/sdk/include -Ion1x/include -fsyntax-only on1x/sdk/src/ir/Common.cpp on1x/sdk/src/types/Type.cpp on1x/sdk/src/ir/HIR.cpp on1x/sdk/src/ir/MIR.cpp on1x/sdk/src/ir/Semantics.cpp on1x/sdk/src/ir/Serialization.cpp on1x/sdk/src/ir/Transaction.cpp",
+      "result": "PASS: no diagnostics"
+    },
+    {
+      "command": "clang++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Ion1x/sdk/include -Ion1x/include -fsyntax-only on1x/sdk/src/ir/Common.cpp on1x/sdk/src/types/Type.cpp on1x/sdk/src/ir/HIR.cpp on1x/sdk/src/ir/MIR.cpp on1x/sdk/src/ir/Semantics.cpp on1x/sdk/src/ir/Serialization.cpp on1x/sdk/src/ir/Transaction.cpp",
+      "result": "PASS: no diagnostics"
+    },
+    {
+      "command": "clang++ --analyze --analyzer-output text -std=c++20 -Wall -Wextra -Wpedantic -Ion1x/sdk/include -Ion1x/include on1x/sdk/src/ir/Common.cpp on1x/sdk/src/types/Type.cpp on1x/sdk/src/ir/HIR.cpp on1x/sdk/src/ir/MIR.cpp on1x/sdk/src/ir/Semantics.cpp on1x/sdk/src/ir/Serialization.cpp on1x/sdk/src/ir/Transaction.cpp",
+      "result": "PASS: no findings"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/on1x-sdk3-gcc-make --parallel 4 && TMPDIR=/mnt/nvme/opencode-test-tmp-sdk3 ctest --test-dir /tmp/opencode/on1x-sdk3-gcc-make --output-on-failure -j2",
+      "result": "PARTIAL: 107 passed, 1 skipped, 3 failed out of 111; every SDK test passed",
+      "unrelated_failures": [
+        "on1x.type_checker_hardening_hir: fallback-scanner build lacks LibStone Firestone; the same test passes in the generated-frontend build",
+        "on1x.contracts: tracked contract test has a stale exact auxiliary-header assertion after tracked CDD headers",
+        "on1x.mulib: tracked fixture inventory omits one or more tracked library directories"
+      ]
+    }
+  ],
+  "cross_owner_requests": [
+    {
+      "owner": "principal/core (subagent 1)",
+      "required_api": "ABI-2 context identity/liveness validation and allocator access",
+      "reason": "This module currently treats On1xSDK_Context * as a borrowed identity token and uses internal C++ allocation because the principal-owned context and allocator contracts are not implemented.",
+      "proposed_signatures": [
+        "On1xSDK_Status on1x_sdk_context_validate_generation(const On1xSDK_Context *context, uint64_t generation);",
+        "const On1xSDK_Allocator *on1x_sdk_context_allocator(const On1xSDK_Context *context);"
+      ]
+    },
+    {
+      "owner": "compiler/frontend (subagent 2) and principal",
+      "required_api": "Invoke the existing private canonical host bridge after authoritative elaboration; never reconstruct checked HIR from HIR-v1 wire.",
+      "reason": "Only a live canonical on1x::Unit retains the evidence needed for CHECKED_HIR and mandatory lowering.",
+      "proposed_signature": "On1xSDK_Status on1x::sdk::ir::check_hir_candidate(const on1x::Unit &candidate, const On1xSDK_IRIdentity &identity, std::string_view provenance, On1xSDK_HIRSnapshot **out, On1xSDK_IRFailure *failure, const On1xSDK_DiagnosticSink *diagnostics);"
+    },
+    {
+      "owner": "principal integration",
+      "required_api": "Install/export a canonical-frontend-linked semantics component and add the seven public headers to On1xSDK.h.",
+      "reason": "The build-tree On1x::SDKSemanticsIR target is executable, but an installed static consumer needs an exported canonical frontend dependency before using these symbols.",
+      "proposed_target": "Export On1x::SDKSemanticsIR linking On1x::SDK and an installed canonical frontend target, or fold the required canonical objects into an independently linkable installed component."
+    },
+    {
+      "owner": "principal/core (subagent 1)",
+      "required_api": "Typed host-only candidate publication operation",
+      "reason": "Deserialization and transaction commit deliberately return CANDIDATE and this worker must not grant publication authority.",
+      "proposed_signature": "On1xSDK_Status on1x_sdk_host_publish_mir_candidate(On1xSDK_Context *context, const On1xSDK_MIRSnapshot *candidate, uint64_t expected_revision, On1xSDK_MIRSnapshot **out_verified);"
+    }
+  ]
+}
