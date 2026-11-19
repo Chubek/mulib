@@ -31,6 +31,26 @@ int main(){try{
  auto copy=meta::decode(meta::read_sexpr(wire,"wire"));require(meta::write_sexpr(meta::encode(copy))==wire,"source wire round-trip mismatch");
  check(copy);require(!canonical::needs_values(copy),"source effects survived lowering");auto output=emit_c(copy,"wire");check(copy);require(emit_c(copy,"wire")==output,"rechecking effects changed code");
  auto no_defer=checked("fn main(){println(42);}");require(emit_c(no_defer,"plain").find("on1x_defer_")==std::string::npos,"defer runtime leaked into unaffected code");
+ const std::string owning_source=R"(
+   record Value{number:i64}
+   record Failure{code:i64}
+   enum Result<T,E>{Ok(T),Err(E)}
+   fn make(n:i64)->Result<own<Value>,own<Failure>>{
+    if n<0{return variant<Result<own<Value>,own<Failure>>>(Err,box(record<Failure>{code:0-n}));}
+    return variant<Result<own<Value>,own<Failure>>>(Ok,box(record<Value>{number:n}));
+   }
+   fn number(n:i64)->Result<i64,own<Failure>>{let value=make(n)?;let item=take(value);
+    return variant<Result<i64,own<Failure>>>(Ok,item["number"]);}
+   fn main(){drop(number(-1));}
+  )";
+ auto owning=checked(owning_source);std::size_t moved_payloads=0;
+ visit(owning,[&](Expr& e){if(e.kind==E::Payload&&e.type.is_move_only()){require(e.move_out,"owning Result payload was copied");++moved_payloads;}},[](Stmt&){});
+ require(moved_payloads==2,"owning Result did not move both success/error payloads");
+ canonical::verify_values(owning);(void)emit_c(owning,"owning-result");
+ bool removed_move=false;
+ visit(owning,[&](Expr& e){if(!removed_move&&e.kind==E::Payload&&e.type.is_move_only()){e.move_out=false;removed_move=true;}},[](Stmt&){});
+ require(removed_move,"missing owning Result payload mutation fixture");
+ reject([&]{canonical::verify_values(owning);});reject([&]{emit_c(owning,"owning-result-mutation");});
  auto transactional=parse(scan("fn main(){defer println(42);}","unchecked"));auto before=meta::write_sexpr(meta::encode(transactional));
  reject([&]{canonical::lower_values(transactional);});require(meta::write_sexpr(meta::encode(transactional))==before,"failed defer lowering published partial HIR");
  auto propagation=parse(scan(source,"unchecked-result"));before=meta::write_sexpr(meta::encode(propagation));reject([&]{canonical::lower_values(propagation);});require(meta::write_sexpr(meta::encode(propagation))==before,"failed propagation lowering published partial HIR");
@@ -76,5 +96,5 @@ int main(){try{
  auto decoded=meta::decode(meta::read_sexpr(meta::write_sexpr(not_call),"wire-mutation"));reject([&]{check(decoded);});
  auto not_result=meta::encode(parse(scan("fn main(){42?;}","wire-mutation")));
  decoded=meta::decode(meta::read_sexpr(meta::write_sexpr(not_result),"wire-mutation"));reject([&]{check(decoded);});
- std::cout<<"defer/Result source wire, transactional lowering, exact returns, capture/tag/initialization mutations and idempotence PASS\n";return 0;
+ std::cout<<"defer/Result source wire, transactional lowering, exact returns, owning payload transfer, capture/tag/initialization mutations and idempotence PASS\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

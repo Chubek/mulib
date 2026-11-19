@@ -52,7 +52,7 @@ fn bundle(label:sexpr,values:own<List<i64>>)->Bundle<i64> {
 fn forward<T>(
     outcome:Outcome<own<List<T>>,own<List<T>>>
 )->Outcome<own<List<T>>,own<List<T>>> {
-  let values=outcome?;
+  let values=move(outcome)?;
   return variant<Outcome<own<List<T>>,own<List<T>>>>(Ok,move(values));
 }
 ''')
@@ -386,13 +386,13 @@ negative_cases = (
     ('propagate_use_after_move',
      'enum Result<T,E>{Ok(T),Err(E)}enum N{Z}'
      'fn f(r:Result<own<N>,u8>)->Result<i64,u8>{'
-     'let value=r?;drop(value);drop(r);'
+     'let value=move(r)?;drop(value);drop(r);'
      'return variant<Result<i64,u8>>(Ok,0);}fn main(){}',
      ('use after move',)),
     ('propagate_twice',
      'enum Result<T,E>{Ok(T),Err(E)}enum N{Z}'
      'fn f(r:Result<own<N>,u8>)->Result<i64,u8>{'
-     'let first=r?;let second=r?;drop(first);drop(second);'
+     'let first=move(r)?;let second=move(r)?;drop(first);drop(second);'
      'return variant<Result<i64,u8>>(Ok,0);}fn main(){}',
      ('use after move',)),
     ('capture',

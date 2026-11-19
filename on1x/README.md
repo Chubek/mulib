@@ -106,16 +106,17 @@ argument identity and C11 execution (`examples/nominal_adts.on1x`). Nominal
 values may retain [immutable shared `sexpr`](docs/owning-adts.md), and the
 [finite unique-owner profile](docs/recursive-owning-adts.md) adds
 `own<Named>`, `box`, explicit `move`, consuming `take`/`drop`, and recursive
-layouts through strict C11. It also composes move-only nominal `Result`
-propagation with non-owning defers and supports explicit iterative consuming
-traversal. Unique ownership remains closed to MIR, PPX, raw FFI, owner
-captures/deferred arguments, staging, and concurrency; there is no intrinsic
-list/iterator protocol or general borrow system.
+layouts through strict C11. Unique ownership remains closed to MIR, PPX, raw
+FFI, captures, staging, deferred arguments/actions, and cooperative concurrency;
+the checked nominal-Result transfer below is the bounded exception. That
+transfer requires `move(local)?` for named move-only Results, composes with
+non-owning defers, and supports explicit iterative consuming traversal. There is
+no intrinsic list/iterator protocol or general borrow system.
 
-The final type-checker hardening matrix covers ownership together with inherent
-`impl` and cliche admission, including forged HIR and generated-member metadata.
-Current final results: generated GCC **98/98**, fallback GCC **97/97**, and
-focused Clang ASan/UBSan **15/15**. See
+The earlier final type-checker hardening matrix covers ownership together with
+inherent `impl` and cliche admission, including forged HIR and generated-member
+metadata. Its recorded results are generated GCC **98/98**, fallback GCC
+**97/97**, and focused Clang ASan/UBSan **15/15**. See
 [`VERIFICATION.md`](VERIFICATION.md) for exact commands and remaining limits.
 
 Typed [multi-stage programming](docs/staging.md) accepts both expression quotes
@@ -133,18 +134,28 @@ The M2 [defer/typed-error profile](docs/defer-errors.md) completes Go-style
 `defer call;` and postfix nominal `Result<T,E>?` through C11. Calls snapshot their
 callee/arguments at registration and run LIFO at **function return**, including
 propagated errors; loop exits do not drain them. Registration has finite count/
-capture-byte budgets. Use `match` for recovery; fatal traps still do not unwind.
-See [`examples/defer_errors.on1x`](examples/defer_errors.on1x). General exceptions,
-resource-bearing results other than the bounded finite-owner profile, async
-cancellation and MIR/SDK defer models remain unsupported.
+capture-byte budgets. `?` also transfers finite `own<Named>` success/error
+payloads exactly once and retains immutable shared `sexpr` payloads; named
+move-only Result locals require explicit `move(local)?`. Use `match` for recovery;
+fatal traps still do not unwind. See
+[`examples/defer_errors.on1x`](examples/defer_errors.on1x). General exceptions,
+JSON owner/view or concurrency-capability Result payloads, unique deferred
+arguments/captures, async/await and MIR/SDK defer models remain unsupported.
+A pending managed return is protected while non-owning defers and trailing
+lexical cleanup execute.
+
+Current focused validation passes strict GCC/generated and GCC sanitizer
+profiles **4/4**, and strict Clang/fallback and Clang sanitizer profiles
+**3/3**; see the
+[current verification record](VERIFICATION.md#function-defer-and-owned-result-closeout--2026-11-19).
 
 The default [pervasive environment](docs/modules.md#the-pervasive-environment)
 now exposes canonical bounded `Option<T>`/`Result<T,E>` types and focused
 `option_*`/`result_*` helpers without imports. These are ordinary generic On1x
 declarations, preserve explicit-import/local-shadow precedence, and add no ABI.
-The helper combinators remain the copy-safe subset; finite-owner payloads use
-explicit constructors, consuming `?`/`match`, and the direct C11 profile.
-Legacy tuple, scalar-pair and S-expression facades remain explicit compatibility APIs. See
+The helper functions remain copy-safe even though direct `?` now has a checked
+finite-unique transfer path; legacy tuple, scalar-pair and S-expression facades
+remain explicit compatibility APIs. See
 [`examples/pervasive_options.on1x`](examples/pervasive_options.on1x).
 
 Intrinsic [core cliches](docs/core-cliche.md) provide coherent constrained

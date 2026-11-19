@@ -39,17 +39,19 @@ M2 continuation (2026-11-17): [function-scoped defer and nominal Result
 propagation](docs/defer-errors.md) now execute through C11. Defers snapshot
 operands and run LIFO at function return, including typed `Err` returns; bounded
 records/captures reuse existing RC cleanup. This supersedes older absence claims
-below only for that profile. Using, general exceptions/effects, resource-bearing
-results outside the finite-owner continuation, trap/cancellation unwinding and
-general foreign error adapters remain unsupported; no application/general-FFI
-gate is promoted.
+below only for that profile. The later finite-owner and CSP continuations now
+admit checked shared/finite-own Result payload propagation and cooperative
+cancellation cleanup respectively. Using, general exceptions/effects, JSON/CSP
+Result payloads, unique deferred actions, trap unwind and general foreign error
+adapters remain unsupported; no application/general-FFI gate is promoted.
 
 Finite-owner continuation (2026-11-19): nominal `Result<T,E>?` now consumes and
 moves supported `own<Named>` payloads through the direct checked-HIR-to-C11
-profile. A pending managed return is protected while non-owning defers execute,
-including injected owning-allocation failure. This does not admit owner captures
-or deferred arguments, general managed results, ownership MIR/PPX/FFI, or
-separate compilation.
+profile; a named move-only Result local requires `move(local)?`. A pending
+managed return is protected while non-owning defers execute, including injected
+owning-allocation failure. This does not admit owner captures or deferred
+arguments, general managed results, ownership MIR/PPX/FFI, or separate
+compilation.
 
 Category continuation (2026-11-17): a native On1x-authored processor now expands
 explicit, module-local scalar protocols/witnesses into ordinary checked selectors.

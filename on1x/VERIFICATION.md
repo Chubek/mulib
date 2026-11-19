@@ -82,6 +82,124 @@ python3 tools/embed_units.py --check
 git diff --check
 ```
 
+## Function defer and owned Result closeout — 2026-11-19
+
+Validated MuLIB
+`6a145cbf09efcac76f387f6b664fc2257bac93aa` plus this continuation, with the
+read-only configured LibStone
+`3399047f6c6328b8f07788795c610699e66c060a`, Linux
+6.18.52-1-lts x86-64, GCC/G++ 16.2.1 (`20260810`), Clang/Clang++ 22.1.8,
+CMake 4.4.3 and Python 3.14.7.
+
+This closes the direct-C11 ownership gap in the already executable
+[function-defer/typed-error profile](docs/defer-errors.md). Postfix `?` now
+uses checked destructive payload projections for either active arm of a
+move-only nominal `Result<T,E>`, then transfers the successful result slot.
+The projection clears its source before residual sum destruction. A named
+move-only Result must be explicit as `move(local)?`; omission reports a located
+source error. Immutable shared `sexpr` payloads retain/release through the
+existing generated aggregate helpers. No runtime ABI, foreign admission,
+exception model or MIR representation changed.
+
+Executable tests cover:
+
+- shared success/error propagation, deferred aggregate captures, discarded
+  managed deferred results, abandoned operands and zero final RC live nodes;
+- finite `own<Named>` success and error transfer, explicit named-local moves,
+  zero internal/fixture live-owner counters, and abort-on-second-free fixtures;
+- every owning-box allocation failure in the two-path program, with terminal
+  exit 72, the original located allocation diagnostic and no sanitizer finding;
+- malformed HIR with removed destructive-projection metadata, plus located
+  source rejection for an implicit unique copy, JSON Result payloads, unique
+  deferred arguments and unique values in cooperative concurrency;
+- cooperative cancellation through nested shared-Result propagation frames:
+  function defers drain exactly once in `2, 3, 1` order and the shared-node
+  counter reaches zero before `cancel` returns; and
+- the existing registration-time snapshot, LIFO, propagated-error, fault,
+  budget, C/C++ caller, generated/fallback scanner and O0/O2 seeded oracles.
+
+The emitted C11 for both owning arms was inspected. It contains ordinary tag
+tests, payload loads, `memset` source clearing, explicit error returns and
+`on1x_defer_run`; there is no `longjmp`, C++ unwinding or erased owner transfer.
+A deferred call returning `Err` still cannot replace the pending outcome.
+Fatal traps and cleanup/allocation failures remain terminal rather than
+recoverable typed errors.
+
+### Current measured results
+
+| Profile | Result |
+|---|---|
+| GCC, LibStone-generated scanner, strict compiler/emitted-C11 warnings, focused defer/Result/cancellation/scanner selection | **4/4 passed** |
+| Clang, fallback scanner, strict compiler/emitted-C11 warnings, focused defer/Result/cancellation selection | **3/3 passed** |
+| GCC, generated scanner, compiler plus emitted C/runtime under ASan/UBSan, same focused selection | **4/4 passed**, no sanitizer findings |
+| Clang, fallback scanner, compiler plus emitted C/runtime under ASan/UBSan, same focused selection | **3/3 passed**, no sanitizer findings |
+| CDD GCC, Clang, GCC ASan/UBSan and Clang ASan/UBSan profiles | **PASS** in all four; each retained the 500 seeded + 24,576 exhaustive oracle cases and allocation-failure test |
+| Broader GCC/generated inventory excluding the two known base-catalogue checks | **86 passed, 1 configured Category skip, 0 failed** (87 total) |
+| Root MuLIB strict GCC build and 709-test inventory | Build **PASS**; **707/709 passed**, with two untouched stale-inventory checks failing; the exclusion rerun passed **707/707** |
+
+Expected terminal-failure subprocesses disable leak reporting only for that
+subprocess; address/undefined-behavior checks remain active. The enclosing
+sanitizer CTests run with `ASAN_OPTIONS=detect_leaks=1`.
+
+The complete generated-scanner inventory was also attempted: 85 passed, three
+failed and one configured Category test skipped out of 89. The native self-host
+PPX failure was a 5-second timeout under parallel load and passed immediately
+when rerun serially. The remaining two failures reproduce without this patch:
+base commit `6a145cb` contains hundreds of new `mulib-*.h` files not represented
+by the On1x contract inventory and `library/muw3lib` is absent from the fixture
+catalogue. Excluding only those two checks, a clean rerun passed all 86 executed
+tests with the configured Category skip.
+
+The broader strict Clang/fallback run, excluding the same two catalogue checks,
+passed 82 tests, failed only the pre-existing hardening fixture that requires
+the unavailable Firestone SDK, and had the same configured Category skip.
+Every defer/error, cancellation, ownership and scanner test passed in both
+broader attempts.
+
+The repository-root GCC build completed every target. Its full 709-test
+inventory passed 707 tests; only `mulib_dependency_strata` (stale generated
+strata) and `mulib_mull_inventory` (the same unregistered base headers) failed.
+Neither check reads a file changed by this continuation. Excluding those two
+checks, all **707/707** root tests passed.
+
+Reproduction from the repository root (build trees are external):
+
+```sh
+base=/mnt/nvme/opencode-builds/ses_e0d13d7a9ffe4DEJxtuNoZl9ei/defer-errors
+focus='^on1x\.(defer_error_hir|defer_errors|cancellation_deadlines|scanner_parity)$'
+ctest --test-dir "$base/gcc-generated" --output-on-failure -R "$focus"
+ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=print_stacktrace=1 \
+  ctest --test-dir "$base/gcc-sanitize" --output-on-failure -R "$focus"
+
+focus='^on1x\.(defer_error_hir|defer_errors|cancellation_deadlines)$'
+ctest --test-dir "$base/clang-fallback" --output-on-failure -R "$focus"
+ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=print_stacktrace=1 \
+  ctest --test-dir "$base/clang-sanitize" --output-on-failure -R "$focus"
+
+ctest --test-dir "$base/gcc-generated" --output-on-failure --parallel 2 \
+  -E '^on1x\.(contracts|mulib)$'
+ctest --test-dir "$base/root-gcc" --output-on-failure --parallel 4
+ctest --test-dir "$base/root-gcc" --output-on-failure --parallel 4 \
+  -E '^mulib_(dependency_strata|mull_inventory)$'
+
+TMPDIR=/tmp/opencode CC=gcc CXX=g++ sh tests/run-cdd.sh
+TMPDIR=/tmp/opencode CC=clang CXX=clang++ sh tests/run-cdd.sh
+TMPDIR=/tmp/opencode CC=gcc CXX=g++ \
+  CFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  CXXFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  LDFLAGS='-fsanitize=address,undefined' sh tests/run-cdd.sh
+TMPDIR=/tmp/opencode CC=clang CXX=clang++ \
+  CFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  CXXFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  LDFLAGS='-fsanitize=address,undefined' sh tests/run-cdd.sh
+```
+
+The supported boundary remains deliberately finite: JSON owner/view and
+concurrency-capability Result fields, unique deferred arguments/captures,
+unique values crossing cooperative tasks, Option propagation, general foreign
+errors/resources, typed cancellation outcomes, exceptions, trap unwinding,
+aggregate ownership MIR/SDK models and other targets remain closed.
+
 ## On1x extension SDK
 
 SDK ABI 1 was tested on Linux x86-64 at MuLIB

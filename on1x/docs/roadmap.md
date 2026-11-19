@@ -19,11 +19,18 @@ cleanup. [Finite unique owners](recursive-owning-adts.md) add recursive nominal
 layouts through `own<Named>`, explicit transfer, and direct C11 cleanup.
 General borrows/resources and effectful ownership MIR remain unsupported.
 
-Final cross-feature hardening (2026-11-19) validates bounded checked types,
+The current defer/Result ownership continuation (2026-11-19) adds checked
+active-arm transfer for finite `own<Named>` payloads, proves shared-payload
+cleanup through cancellation, and keeps JSON/CSP payloads and unique deferred
+actions closed. Strict GCC/generated and sanitizer profiles pass **4/4**;
+strict Clang/fallback and sanitizer profiles pass **3/3**. See the
+[current verification record](../VERIFICATION.md#function-defer-and-owned-result-closeout--2026-11-19).
+
+The earlier final cross-feature hardening validates bounded checked types,
 unique-transfer metadata and independently reconstructed generated member
 signatures, binders, constraints and private identities. Generated GCC passes
-97/97 tests; fallback passes 86 with one intentional Category skip; the focused
-Clang ASan/UBSan matrix passes 15/15. See the current
+98/98 tests; fallback passes 97/97; the focused Clang ASan/UBSan matrix passes
+15/15. See the historical
 [verification record](../VERIFICATION.md#final-type-checker-and-cross-feature-hardening--2026-11-19)
 for commands and the remaining full-sanitizer limitations.
 
@@ -98,8 +105,8 @@ around stackful fibers.
 | Scanner parity and token lifetime | Verified P0 subset | Deterministic byte/offset/error corpus, including macro/PPX/staging/dotted syntax; repeated and concurrent scan tests |
 | Parser / typed AST | Implemented functional subset | Functions, tuples/patterns, explicit universal types, scopes, control flow, imports |
 | Intrinsic core additions G1/G2 | Executable control/matching/value-loop slice | Loop/for-C/i64 ranges, labels/exits, guarded structural matches and typed value-loop joins/initialization verification; C11 plus scalar/tuple MIR; nominal-data and G3 continuations below; no owning lists/iterators or concurrency; [manual](core-syntax.md), [value loops](value-loops.md) |
-| G3 function defer / typed errors | Executable bounded C11 profile | Go-style function-scoped `defer call;`, registration-time snapshots, function-owned LIFO records, exact nominal `Result` postfix `?`, return/cleanup edges including cooperative CSP cancellation; no using, exceptions, terminal-trap unwind, managed Result fields or MIR/SDK defer admission; [contract](defer-errors.md) |
-| Module loader / pervasive environment | Executable compile-time namespaces and generic core facade | Named/selective/relative imports, aliases, packages, canonical deduplication, bounded cycles, demand-loaded prelude, relocatable installation, and canonical bounded nominal `Option`/`Result` helpers with explicit/local shadowing; move-only helper/propagation profiles and Option propagation remain closed; [manual](modules.md) |
+| G3 function defer / typed errors | Executable bounded C11 profile | Go-style function-scoped `defer call;`, registration-time snapshots, function-owned LIFO records, exact nominal `Result` postfix `?`, shared-`sexpr` retention and finite-unique active-arm transfer, return/cleanup edges including cooperative CSP cancellation; no unique deferred captures, JSON/CSP Result fields, using, exceptions, terminal-trap unwind or MIR/SDK defer admission; [contract](defer-errors.md) |
+| Module loader / pervasive environment | Executable compile-time namespaces and generic core facade | Named/selective/relative imports, aliases, packages, canonical deduplication, bounded cycles, demand-loaded prelude, relocatable installation, and canonical bounded nominal `Option`/`Result` helpers with explicit/local shadowing; helper functions remain copy-safe while direct Result `?` has the separate finite-owner profile above; Option propagation remains closed; [manual](modules.md) |
 | MuLIB native housekeeping | Implemented bounded kernel/fixture planning | Integrated `stdlib/mulib`; `std.mulib` metadata/byte access and size checks; shared one-TU planning, fixture/provider/native companion linkage, actual selected header paths/fingerprints and relocatable bundles; [manual](../stdlib/mulib/README.md) |
 | PrettyPrint | Executable document DSL, raw C11 bridge and formatter tool | Global Knuth–Plass for `Fill`, semantic math, plain-UTF-8 source maps, block-incremental C sessions and `.ppg` → Python; no safe import, glyph justification or full Oppen; [manual](../stdlib/prettyprint/README.md) |
 | On1x source formatter | Executable conservative source layout | Canonical scanner/parser, preserved comments/literals/carriers and dot adjacency, `.on1xfmt` bounded layout search and Allman braces, paired directives, plain/LaTeX/groff, atomic plain-source `--inplace`/`-i` on POSIX; no type checking, syntax recovery or unchanged diagnostic locations; [manual](formatter.md) |
@@ -146,7 +153,7 @@ around stackful fibers.
 | Flintstone/Firestone native lowering | Not implemented | C11 is the sole backend |
 | Value data model (M1 slice) | Executable by-value C11 subset | Structural records with canonical labels, closed sums with exhaustive `match`, `array<T,N>` and owning `slice` snapshots, bounds-checked access with exit-70 errors; no MIR lowering, mutation, borrowed/dynamic arrays, derives or foreign aggregate ABI; [contract](data-model.md) |
 | Nonrecursive nominal records/enums | Executable bounded C11 profile | Invariant parameters (including phantoms), inferred arguments, generic specialization/forall, constructor catalogs, exhaustive structural matching and imported type identity; independently reconstructed layouts; [manual](nominal-adts.md) |
-| Recursive nominal ADTs / unique owners | Executable bounded HIR→C11 profile | `own<Named>`, `box`, explicit whole-value moves, consuming take/drop/match/nominal `Result ?`, path-sensitive moved-state verification, lexical/overwrite/partial-construction cleanup, active-arm destruction, iterative traversal/drop and non-owning-defer composition; no MIR, PPX, raw FFI, owner capture/deferred arguments, staging/concurrency or receiver ownership; [contract](recursive-owning-adts.md) |
+| Recursive nominal ADTs / unique owners | Executable bounded HIR→C11 profile | `own<Named>`, `box`, explicit whole-value moves, consuming take/drop/match and nominal Result `?`, path-sensitive moved-state verification, lexical/overwrite/partial-construction cleanup, active-arm destruction, iterative traversal/drop and non-owning-defer composition; no MIR, PPX, raw FFI, unique defer capture/action, staging/concurrency or receiver ownership; [contract](recursive-owning-adts.md), [Result contract](defer-errors.md) |
 | Module signatures / functors | Not implemented | Interface ownership/effects, generative/applicative identity and separate-compilation ABI remain absent |
 | Cooperative fiber / channel G4 slice | Executable bounded C11 profile | `taskgroup`/`within` (terminal timeout), eager `launch`/`join`, consuming cooperative internal `cancel`, 1:1 i64 uni channels with bounded FIFO/rendezvous, checked outcomes and atomic mixed i64/u8 `poll` with monotonic `after`; POSIX `xfiber` direct exec/join/cancel; compiler-parsed backtick argv and affine bounded `u8` streams; MuLIB kernels through one implementation TU; no Plaid integration, full shell operators/expansion, typed timeout recovery, async or native workers; [contract](concurrency.md), [cancellation/deadlines](cancellation-deadlines.md) |
 | Plaid/Prolific integration | Not implemented | The cooperative G4 adapter uses MuLIB, not Plaid; profiling and broader concurrency remain open |
@@ -156,13 +163,14 @@ around stackful fibers.
 The M2/G3 continuation finishes the already-designed function-scoped defer and
 nominal result propagation contract. Dynamic registrations persist across block
 and loop exits, retain copied RC operands, and run before remaining lexical
-cleanup on explicit/implicit/error returns. The value-region verifier checks tag
-domination, initialized payload joins and exact return types across function
-boundaries. The finite-owner continuation now moves owner-bearing `Ok`/`Err`
-payloads, consumes their result source, and protects a pending managed return
-while non-owning defers run. Next error/resource work remains other managed
+cleanup on explicit/implicit/error returns. The existing value-region verifier
+checks tag domination, initialized payload joins, unique active-arm transfers and
+exact return types across function boundaries. The finite-owner continuation
+moves owner-bearing `Ok`/`Err` payloads, consumes their result source, and
+protects a pending managed return while non-owning defers run. Next
+error/resource work remains unique deferred captures/actions, JSON/CSP Result
 payloads, general foreign error adapters, effectful cleanup MIR and independent
-SDK models; this is not general exception or cancellation support.
+SDK models; this is not general exception or typed cancellation support.
 
 The language-only M1 continuation adds decimal f64 literals with scanner/PPX
 parity and a versioned float/trivial-tuple MIR execution path. A later M2

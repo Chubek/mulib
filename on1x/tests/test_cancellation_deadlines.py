@@ -74,6 +74,25 @@ fn main(){taskgroup{
  assert(cancel child);
 }}''', '2\n1\n')
 
+# Cancellation propagates past a call before its placeholder return is examined.
+# Every active Result/defer frame drains once, and no synthetic typed error is
+# exposed as an ordinary outcome.
+execute('result_frame_cleanup', '''enum Result<T,E>{Ok(T),Err(E)}
+fn source()->Result<sexpr,u8>{
+ return variant<Result<sexpr,u8>>(Ok,sx_symbol("live"));}
+fn work()->Result<sexpr,u8>{defer println(2);let value=source()?;
+ for i in 0..100000{assert(i>=0);}
+ return variant<Result<sexpr,u8>>(Ok,value);}
+fn forwarded()->Result<bool,u8>{defer println(3);let value=work()?;
+ return variant<Result<bool,u8>>(Ok,sx_text(value)=="live");}
+fn main(){taskgroup{
+ let ready=->(1,1){payload:i64,capacity:0,mode:uni};let(tx,rx)=split ready;
+ let child=launch{defer println(1);let started=tx <- 0;
+  match forwarded() with{Ok(value)=>{assert(value);1},Err(_)=>-1}};
+ match <-rx with{Some(_)=>assert(true),None(_)=>assert(false)};
+ assert(cancel child);assert(data_live_nodes()==0);
+}}''', '2\n3\n1\n')
+
 execute('managed_call_cleanup', '''fn hold()->fn()->i64{
  let k=5;let f=fn()->i64{println(k);return k;};
  defer f();for i in 0..100000{assert(i>=0);}return f;

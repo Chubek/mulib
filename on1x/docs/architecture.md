@@ -4,9 +4,11 @@ The [M2 defer/error continuation](defer-errors.md) uses existing canonical value
 regions for nominal Result propagation and a private typed deferred thunk after
 registration-time operand snapshots. C11 owns a bounded stack per registering
 function invocation; error returns and normal returns drain it before remaining
-lexical cleanup. The verifier checks exact returns, tag/initialization facts and
-thunk shapes. This is not general exceptions, fatal-trap/cancellation unwinding
-or a resource/effectful MIR extension; unsupported MIR/SDK profiles stay closed.
+lexical cleanup. The verifier checks exact returns, tag/initialization/move facts
+and thunk shapes. The later bounded CSP profile adds explicit
+cooperative-cancellation cleanup returns; this is not general exceptions,
+fatal-trap unwind, typed cancellation recovery or a resource/effectful MIR
+extension. Unsupported MIR/SDK profiles stay closed.
 
 `src/nominal.cpp` validates the source declaration graph before layout expansion
 and reconstructs nominal record/sum representations independently of inference.

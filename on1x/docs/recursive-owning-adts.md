@@ -155,6 +155,11 @@ This profile does not admit unique ownership through:
 - arrays/slices and unnamed data aggregates. Unique storage is admitted through
   named record/enum layouts and their checked payload structure only.
 
+The later [typed Result continuation](defer-errors.md) can move the active
+`own<Named>` success or error payload through `?` and clear that source arm
+before cleanup. It does not open the PPX, foreign, capture, deferred-argument,
+staging or concurrency boundaries above.
+
 There are no general borrows of owned values, field mutation, shared unique
 graphs, user-defined destructors, recoverable allocation failure, thread-safe
 `Send`/`Sync` model, or separate-compilation ownership ABI in this slice.

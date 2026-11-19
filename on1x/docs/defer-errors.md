@@ -55,11 +55,13 @@ still no general exception/async/effectful-MIR model.
   replace the pending outcome. Explicitly handle it in a wrapper if required.
 - Use `defer fn(){ statements }();` for an action body. Existing immutable-value
   closure capture applies; `defer { ... }`, `using`, `panic`/`recover`, exception
-  unwinding and task cancellation are not introduced. JSON owners/views cannot
-  be saved as deferred arguments/results or captured, even if apparently local.
-  Finite unique owners likewise cannot be captured or saved as deferred
-  arguments. Raw foreign pointer/text lifetimes remain the caller's unsafe
-  obligation.
+  unwinding and typed cancellation outcomes are not introduced. The later bounded
+  CSP profile does drain active function frames on cooperative internal-fiber
+  cancellation as described above. JSON owners/views cannot be saved as deferred
+  arguments/results or captured, even if apparently local.
+  Finite unique owners cannot be deferred arguments or captures: defer does not
+  imply an ownership move. Concurrency capabilities are likewise rejected. Raw
+  foreign pointer/text lifetimes remain the caller's unsafe obligation.
 - `defer` is contextual. Existing calls/values/assignments named `defer` remain
   valid, including `defer (arg)` as an ordinary call. Consequently a deferred
   callee must not start with grouping parentheses: use `defer f(args);`,
@@ -92,19 +94,22 @@ still no general exception/async/effectful-MIR model.
   and exact error type; its success type may differ. No implicit error conversion,
   name-based module conflation, structural-sum coercion or `Option` propagation.
   Existing generic inference applies; annotate ambiguous result inputs/returns.
-  In the direct checked-HIR-to-C11 finite-owner profile, either payload may be a
-  supported move-only nominal value. Other resource-bearing payloads remain
-  closed. Use `record{}` as a unit success payload, not `void` (which is not a
-  data field).
+  Payloads retain nominal data's bounded field rules: ordinary values and immutable
+  shared `sexpr` are supported, as are finite `own<Named>` payloads. Shared payload
+  extraction retains one independent reference. A move-only `?` transfers and
+  clears only the active `Ok` or `Err` payload before the residual sum is dropped;
+  write `move(pending)?` when propagating a named move-only Result local. JSON
+  owners/views and concurrency capabilities remain rejected. Use `record{}` as a
+  unit success payload, not `void` (which is not a data field).
 - Use explicit `match` for recovery. This is a typed-result alternative to
   exceptions, not `try`/`catch`/`throw`/`finally`. Foreign statuses must be explicitly
   converted to checked result values by existing raw wrappers. No foreign
   safety admission follows from `?`.
 - Propagation is expansive/effectful for the value restriction. It lowers to
   existing typed regions, tag tests, payloads and return edges. Tag dominance,
-  initialization, function boundaries and exact return types are verified; no
-  new scalar MIR encoding is invented for results or dynamic defer effects.
-  Unsupported MIR/SDK effect/aggregate profiles reject explicitly.
+  initialization, move state, function boundaries and exact return types are
+  verified; no new scalar MIR encoding is invented for results or dynamic defer
+  effects. Unsupported MIR/SDK effect/aggregate profiles reject explicitly.
 - Legacy `match(value){Tag(payload)=>expr,...}` retains its existing implicit
   payload-lambda semantics; `?` there cannot escape to the surrounding function.
   Use `match value with {...}` for propagation from an arm/guard into that function.
@@ -114,9 +119,11 @@ still no general exception/async/effectful-MIR model.
 `src/canonical/values.cpp` erases source propagation into existing value regions,
 tag tests, projections, storage initialization and returns. A defer becomes an
 ordered block of immutable operand snapshots and a private `PushDefer` of a typed
-zero-argument thunk. Ordinary checking recomputes closure captures. The source
-PPX wire transports only `Defer` / `Propagate`, not private registration or proof
-nodes. Both scanner modes recognize `?` and have parity coverage.
+zero-argument thunk. Move-only Result arms use checked destructive projections;
+the payload slot is cleared so active-arm destruction cannot drop it twice.
+Ordinary checking recomputes closure captures. The source PPX wire transports
+only `Defer` / `Propagate`, not private registration or proof nodes. Both scanner
+modes recognize `?` and have parity coverage.
 
 `src/codegen.cpp` emits a stack only for functions actually registering defers.
 Compiler-generated invocation/destruction helpers use exact capture types and
@@ -132,10 +139,11 @@ Tests: `on1x.defer_error_hir`, `on1x.defer_errors`, and
 `on1x.recursive_owning_adts{,_hir}`, plus scanner/control and the existing
 language suites. They cover LIFO/outcome Python oracles at C `-O0/-O2`,
 registration/return order, loops/recursion/closures, modules/generics/macros/PPX/
-staging, abandoned operands, counted RC/JSON cleanup, C/C++ separate-TU callers,
-record/capture allocation failures, both budgets, owner-bearing result transfer
-and owning-OOM cleanup during defers, fatal paths, source-wire/HIR mutations and
-explicit MIR/SDK rejections. Separate-TU tests use a shared generated interface:
-they do not claim separate On1x compilation or aggregate foreign ABI.
+staging, abandoned operands, shared and finite-own Result payloads, counted
+RC/JSON/unique-owner cleanup, no-double-drop and allocation-fault paths, C/C++
+separate-TU callers, record/capture allocation failures, both budgets, fatal
+paths, owning-OOM cleanup during defers, source-wire/HIR mutations and explicit
+MIR/SDK rejections. Separate-TU tests use a shared generated interface: they do
+not claim separate On1x compilation or aggregate foreign ABI.
 
 Implementation/validation status: `capability-matrix.md` and `../VERIFICATION.md`.

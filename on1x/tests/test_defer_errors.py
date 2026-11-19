@@ -28,7 +28,8 @@ def rejected(name, text, diagnostic, mode='--emit-c'):
     source, out = t.source(name, text), t.work / 'preserved.c'
     out.write_text('preserved')
     p = run([t.compiler, mode, source, '-o', out])
-    assert p.returncode == 1 and diagnostic in p.stderr and not p.stdout and out.read_text() == 'preserved', (name, p.returncode, p.stderr)
+    assert p.returncode == 1 and diagnostic in p.stderr and str(source) in p.stderr and \
+        not p.stdout and out.read_text() == 'preserved', (name, p.returncode, p.stderr)
 
 
 example = (t.root / 'examples/defer_errors.on1x').read_text()
@@ -117,6 +118,44 @@ fn use()->Result<f32,Failure>{defer println(2);let unit=read()?;return variant<R
 fn main(){match use() with{Ok(n)=>println(n),Err(e)=>{assert(e["retry"]);println(e["code"]);}}}
 ''', '2\n7\n')
 
+# Shared nominal payloads retain exactly once through success/error extraction,
+# deferred aggregate captures and discarded deferred call results.
+execute('shared_result_ownership', RESULT + '''
+fn source(ok:bool)->Result<sexpr,sexpr>{if ok{return variant<Result<sexpr,sexpr>>(Ok,sx_symbol("value"));}
+ return variant<Result<sexpr,sexpr>>(Err,sx_symbol("error"));}
+fn echo(ok:bool)->Result<sexpr,sexpr>{defer println(6);let value=source(ok)?;
+ return variant<Result<sexpr,sexpr>>(Ok,value);}
+fn discard()->Result<sexpr,u8>{return variant<Result<sexpr,u8>>(Ok,sx_symbol("discarded"));}
+fn show(value:Result<sexpr,sexpr>){match value with{Ok(v)=>println(sx_text(v)),Err(e)=>println(sx_text(e))};}
+fn scope(){let saved=source(true);defer show(saved);defer discard();
+ let first=echo(true);match first with{Ok(v)=>println(sx_text(v)),Err(_)=>println("bad")};
+ let second=echo(false);match second with{Ok(_)=>println("bad"),Err(e)=>println(sx_text(e))};
+ assert(data_live_nodes()>0);}
+fn main(){scope();assert(data_live_nodes()==0);}
+''', '6\nvalue\n6\nerror\nvalue\n')
+
+# `?` consumes only the active unique Result arm. A named move-only Result
+# remains explicit (`move(pending)?`), and both success and propagated-error
+# paths reach zero live owners without a second drop.
+unique_allocator = ['-include', t.root / 'tests/fixtures/unique_allocator.h',
+                    t.root / 'tests/fixtures/unique_allocator.c']
+_, unique_result_exe = execute('unique_result_ownership', RESULT + '''
+record Value{number:i64}
+record Failure{code:i64}
+extern fn on1x_unique_live_allocations()->i64;
+extern fn on1x_test_unique_allocator_live()->i64;
+fn make(n:i64)->Result<own<Value>,own<Failure>>{
+ if n<0{return variant<Result<own<Value>,own<Failure>>>(Err,box(record<Failure>{code:0-n}));}
+ return variant<Result<own<Value>,own<Failure>>>(Ok,box(record<Value>{number:n}));}
+fn number(n:i64)->Result<i64,own<Failure>>{defer println(9);let pending=make(n);
+ let value=move(pending)?;let item=take(value);
+ return variant<Result<i64,own<Failure>>>(Ok,item["number"]);}
+fn run(n:i64){let answer=number(n);match answer with{
+ Ok(value)=>println(value),Err(error)=>{let problem=take(error);println(problem["code"]);}};}
+fn main(){run(42);assert(on1x_unique_live_allocations()==0);assert(on1x_test_unique_allocator_live()==0);
+ run(-7);assert(on1x_unique_live_allocations()==0);assert(on1x_test_unique_allocator_live()==0);}
+''', '9\n42\n9\n7\n', extra=unique_allocator)
+
 # Hygiene, generic specialization, modules, and native/Python PPX source transport.
 hygiene = RESULT + '''
 macro later{rule($x:Expression)=>block{let n=$x;defer println(n);};}
@@ -163,6 +202,10 @@ fn main(){scope();assert(live_environments()==0);assert(data_live_nodes()==0);
 # Faults remain terminal; suppress only LSan's expected fatal-path leaks, not
 # ASan/UBSan checking. Every allocation before success is fault-injected.
 fatal_env = {**os.environ, 'ASAN_OPTIONS': os.environ.get('ASAN_OPTIONS', '') + ':detect_leaks=0'}
+for limit in range(2):
+    p = run([unique_result_exe], env={**fatal_env, 'ON1X_TEST_UNIQUE_FAIL_AFTER': str(limit)})
+    assert p.returncode == 72 and 'owning-box allocation failure' in p.stderr and \
+        'Sanitizer' not in p.stderr, (limit, p.returncode, p.stdout, p.stderr)
 for limit in range(6):
     p = run([managed_exe], env={**fatal_env, 'ON1X_TEST_ENV_FAIL_AFTER': str(limit)})
     assert p.returncode == 72 and 'allocation' in p.stderr and 'Sanitizer' not in p.stderr, (limit, p.returncode, p.stderr)
@@ -249,6 +292,21 @@ negative = [
     ('extra_variant', 'enum R<T,E>{Ok(T),Err(E),Other}fn f()->R<i64,u8>{let n=variant<R<i64,u8>>(Ok,1)?;return variant<R<i64,u8>>(Ok,n);}fn main(){}', 'exactly Ok(T)'),
     ('lambda_boundary', RESULT+'fn f()->Result<i64,u8>{let g=fn(){let n=variant<Result<i64,u8>>(Ok,1)?;};g();return variant<Result<i64,u8>>(Ok,1);}fn main(){}', 'same nominal Result'),
     ('option', 'enum Option<T>{None,Some(T)}fn main(){let n=variant<Option<i64>>(Some,1)?;}', 'exactly Ok(T)'),
+    ('unique_result_copy', 'record N{x:i64}'+RESULT+
+     'fn make()->Result<own<N>,u8>{return variant<Result<own<N>,u8>>(Ok,box(record<N>{x:1}));}'
+     'fn use()->Result<own<N>,u8>{let pending=make();let value=pending?;'
+     'return variant<Result<own<N>,u8>>(Ok,move(value));}fn main(){drop(use());}',
+     'move-only Result local requires move(local)?'),
+    ('json_result', RESULT+'fn bad()->Result<json,u8>{'
+     'return variant<Result<json,u8>>(Ok,json_parse_or_die("{}"));}fn main(){}',
+     'unsupported json'),
+    ('unique_defer', 'record N{x:i64}fn sink(value:own<N>){drop(value);}'
+     'fn main(){let value=box(record<N>{x:1});defer sink(move(value));}',
+     'defer cannot retain unique owning values'),
+    ('unique_result_concurrency', 'record N{x:i64}'+RESULT+
+     'fn make()->Result<own<N>,u8>{return variant<Result<own<N>,u8>>(Ok,box(record<N>{x:1}));}'
+     'fn main(){taskgroup{let child=launch{drop(make());1};println(join child);}}',
+     'unique ownership cannot cross cooperative concurrency'),
     ('unused_bad', RESULT+'fn bad()->Result<i64,u8>{let n=1?;return variant<Result<i64,u8>>(Ok,n);}fn main(){}', 'nominal Result'),
     ('unreachable', 'fn main(){return;defer println(1);}', 'unreachable'),
 ]

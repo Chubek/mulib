@@ -95,22 +95,22 @@ class Lower {
      if(t.kind()!=Type::Sum||t.nominal().empty())fail(e.where,"propagation requires a checked nominal Result");
      (void)catalog.result(t.nominal(),e.where);
      if(e.result.kind()!=Type::Sum||e.result.nominal()!=t.nominal()||t.arguments().size()!=2||e.result.arguments().size()!=2||t.arguments()[1]!=e.result.arguments()[1]||e.type!=t.arguments()[0])fail(e.where,"propagation result/error type mismatch");
-      expression(*e.children.at(0));auto at=e.where;auto input=e.children[0]->type;auto root=fresh();auto result=fresh();
-     if(input.is_move_only()&&e.children[0]->kind==E::Variable&&
-        e.children[0]->reference==Expr::Reference::Local)
-      e.children[0]->move_out=true;
-     Expr region;region.kind=E::Region;region.type=e.type;region.where=at;
-     region.body.push_back(bind(root,std::move(e.children[0]),at));
-     Stmt slot;slot.kind=S::Storage;slot.name=result;slot.declared=e.type;slot.where=at;region.body.push_back(std::move(slot));
-     Stmt branch;branch.kind=S::If;branch.where=at;branch.value=value(E::TagTest,Type::Bool,at,"Ok");branch.value->projection=1;branch.value->children.push_back(local(root,input,at));
-     auto ok=value(E::Payload,e.type,at,"Ok");ok->projection=1;ok->move_out=e.type.is_move_only();ok->children.push_back(local(root,input,at));branch.body.push_back(store(result,std::move(ok),at));
-     Stmt err;err.kind=S::If;err.where=at;err.value=value(E::TagTest,Type::Bool,at,"Err");err.value->projection=0;err.value->children.push_back(local(root,input,at));
-     auto payload=value(E::Payload,input.arguments()[1],at,"Err");payload->projection=0;payload->move_out=payload->type.is_move_only();payload->children.push_back(local(root,input,at));
+     if(t.is_move_only()&&e.children[0]->kind==E::Variable&&
+        e.children[0]->reference==Expr::Reference::Local&&!e.children[0]->move_out)
+      fail(e.children[0]->where,"move-only Result local requires move(local)?");
+     expression(*e.children.at(0));auto at=e.where;auto input=e.children[0]->type;auto root=fresh();auto result=fresh();
+    Expr region;region.kind=E::Region;region.type=e.type;region.where=at;
+    region.body.push_back(bind(root,std::move(e.children[0]),at));
+    Stmt slot;slot.kind=S::Storage;slot.name=result;slot.declared=e.type;slot.where=at;region.body.push_back(std::move(slot));
+    Stmt branch;branch.kind=S::If;branch.where=at;branch.value=value(E::TagTest,Type::Bool,at,"Ok");branch.value->projection=1;branch.value->children.push_back(local(root,input,at));
+    // A move-only Result is consumed arm-by-arm. The checked destructive
+    // projection clears only the active payload before residual sum cleanup.
+    auto ok=value(E::Payload,e.type,at,"Ok");ok->projection=1;ok->move_out=e.type.is_move_only();ok->children.push_back(local(root,input,at));branch.body.push_back(store(result,std::move(ok),at));
+    Stmt err;err.kind=S::If;err.where=at;err.value=value(E::TagTest,Type::Bool,at,"Err");err.value->projection=0;err.value->children.push_back(local(root,input,at));
+    auto payload=value(E::Payload,input.arguments()[1],at,"Err");payload->projection=0;payload->move_out=payload->type.is_move_only();payload->children.push_back(local(root,input,at));
     Stmt ret;ret.kind=S::Return;ret.where=at;ret.value=value(E::Variant,e.result,at,"Err");ret.value->result=e.result;ret.value->projection=0;ret.value->children.push_back(std::move(payload));err.body.push_back(std::move(ret));
-    Stmt trap;trap.kind=S::Trap;trap.where=at;err.otherwise.push_back(std::move(trap));branch.otherwise.push_back(std::move(err));region.body.push_back(std::move(branch));
-     region.children.push_back(
-      transfer_local(result,e.type,at,e.type.is_move_only()));
-     e=std::move(region);return;
+     Stmt trap;trap.kind=S::Trap;trap.where=at;err.otherwise.push_back(std::move(trap));branch.otherwise.push_back(std::move(err));region.body.push_back(std::move(branch));
+     region.children.push_back(transfer_local(result,e.type,at,e.type.is_move_only()));e=std::move(region);return;
    }
    if(e.kind==E::Loop){
     if(!e.control_target||e.type==Type::Invalid||e.type.has_holes()||e.type.has_generics()||e.type==Type::Json||e.type==Type::JsonView)fail(e.where,"loop requires a checked concrete result type");

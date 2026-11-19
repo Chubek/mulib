@@ -103,8 +103,9 @@ the selected declarative catalog.
   Lists contain `sexpr` elements; malformed root atoms are rejected.
 - The automatic pervasive environment provides bounded nominal `Option<T>` and
   `Result<T,E>` plus `option_*`/`result_*` constructors, predicates, transforms,
-  fallbacks, conversions and focused iteration helpers. They require trivially
-  copied payloads; `Result ?` is supported, while `Option ?` is not.
+  fallbacks, conversions and focused iteration helpers. The helpers retain their
+  copy-safe payload profile; direct `Result ?` separately supports checked shared
+  and finite-own payload transfer. `Option ?` is not supported.
 - Legacy `std.Option.some(value)`, `none(default)`, `is_some`, `get_or`,
   `map(option,f,default)` and `and_then(option,f,default)` continue to work
   polymorphically over tagged tuples. `none` retains its typed default payload.
