@@ -573,6 +573,11 @@
     "mulib-marionette.h",
     "mulib-markdown.h",
     "mulib-markov_chain.h",
+    "mulib-markup-bridge.h",
+    "mulib-markup-graph.h",
+    "mulib-markup-spans.h",
+    "mulib-markup-stream.h",
+    "mulib-markup-tree.h",
     "mulib-math.h",
     "mulib-mathaccent.h",
     "mulib-mathatom.h",
@@ -592,6 +597,9 @@
     "mulib-mathspeech.h",
     "mulib-matrix.h",
     "mulib-matview.h",
+    "mulib-mcp-client.h",
+    "mulib-mcp-http.h",
+    "mulib-mcp-server.h",
     "mulib-mcu.h",
     "mulib-mempool.h",
     "mulib-memtable.h",
@@ -1192,10 +1200,10 @@
     "mulib-zorder.h",
     "mulib-zstd.h"
   ],
-  "libraries": 1191,
-  "functions": 5254,
-  "types": 8717,
-  "constants": 2726,
+  "libraries": 1199,
+  "functions": 5314,
+  "types": 8863,
+  "constants": 2777,
   "preprocessor_only": [
     "MULIB_ASDL_ATOM",
     "MULIB_ASDL_ATTR_SUM",
@@ -1239,7 +1247,7 @@
     "MULIB_XCOND_INIT",
     "MULIB_XMUTEX_INIT"
   ],
-  "fingerprint": "e0bfc28770e499970fa4cb4ee2b1684e6945a000606140596ce25163f15e5f72",
+  "fingerprint": "9861d449d33661c346bedec9f802cc23ca7d9b794ed78c559d280a4b3601ffb4",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -6811,6 +6819,78 @@
         "mulib_markov_chain_sample"
       ]
     },
+    "markup-bridge": {
+      "header": "mulib-markup-bridge.h",
+      "functions": [
+        "mulib_mkir_tree_to_spans",
+        "mulib_mkir_spans_to_tree",
+        "mulib_mkir_tree_to_graph",
+        "mulib_mkir_spans_to_graph",
+        "mulib_cdd_mkir_spans_to_graph_limited",
+        "mulib_mkir_hybrid_from_tree",
+        "mulib_mkir_hybrid_index",
+        "mulib_mkir_hybrid_reference",
+        "mulib_mkir_hybrid_anchor",
+        "mulib_mkir_hybrid_free"
+      ]
+    },
+    "markup-graph": {
+      "header": "mulib-markup-graph.h",
+      "functions": [
+        "mulib_mkir_graph_vertex",
+        "mulib_mkir_graph_edge",
+        "mulib_mkir_graph_hyperedge",
+        "mulib_mkir_graph_property",
+        "mulib_mkir_graph_get_property",
+        "mulib_mkir_graph_path",
+        "mulib_mkir_graph_toposort",
+        "mulib_mkir_graph_validate",
+        "mulib_mkir_graph_free"
+      ]
+    },
+    "markup-spans": {
+      "header": "mulib-markup-spans.h",
+      "functions": [
+        "mulib_mkir_spans_init",
+        "mulib_mkir_spans_append",
+        "mulib_mkir_spans_add",
+        "mulib_mkir_spans_validate",
+        "mulib_mkir_spans_runs",
+        "mulib_cdd_mkir_spans_runs_limited",
+        "mulib_mkir_runs_free",
+        "mulib_mkir_spans_free"
+      ]
+    },
+    "markup-stream": {
+      "header": "mulib-markup-stream.h",
+      "functions": [
+        "mulib_mkir_scan_next",
+        "mulib_mkir_scan_walk",
+        "mulib_mkir_parse",
+        "mulib_mkir_cst_parse",
+        "mulib_cdd_mkir_cst_token_bytes",
+        "mulib_mkir_cst_free",
+        "mulib_mkir_events_begin",
+        "mulib_mkir_events_next",
+        "mulib_mkir_events_walk",
+        "mulib_cdd_mkir_events_walk_bounded"
+      ]
+    },
+    "markup-tree": {
+      "header": "mulib-markup-tree.h",
+      "functions": [
+        "mulib_mkir_tree_add",
+        "mulib_mkir_tree_attach",
+        "mulib_cdd_mkir_tree_insert_before",
+        "mulib_mkir_tree_value",
+        "mulib_mkir_tree_attr",
+        "mulib_mkir_tree_get_attr",
+        "mulib_mkir_tree_validate",
+        "mulib_mkir_tree_ast",
+        "mulib_mkir_tree_sxml",
+        "mulib_mkir_tree_free"
+      ]
+    },
     "math": {
       "header": "mulib-math.h",
       "functions": [
@@ -6964,6 +7044,34 @@
         "mulib_matview_insert",
         "mulib_matview_delete",
         "mulib_matview_avg"
+      ]
+    },
+    "mcp-client": {
+      "header": "mulib-mcp-client.h",
+      "functions": [
+        "mulib_cdd_mcp_client_init",
+        "mulib_cdd_mcp_client_request",
+        "mulib_cdd_mcp_client_request_ex",
+        "mulib_cdd_mcp_client_receive",
+        "mulib_cdd_mcp_client_abandon",
+        "mulib_cdd_mcp_client_cancel"
+      ]
+    },
+    "mcp-http": {
+      "header": "mulib-mcp-http.h",
+      "functions": [
+        "mulib_cdd_mcp_server_http",
+        "mulib_cdd_mcp_client_http_request",
+        "mulib_cdd_mcp_client_http_receive"
+      ]
+    },
+    "mcp-server": {
+      "header": "mulib-mcp-server.h",
+      "functions": [
+        "mulib_cdd_mcp_server_init",
+        "mulib_cdd_mcp_server_process",
+        "mulib_cdd_mcp_catalog_init",
+        "mulib_cdd_mcp_catalog_process"
       ]
     },
     "mcu": {
@@ -12440,7 +12548,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "3b596ac18b29451834c3a624a5499174e7e0cd9f57f71e421ded254c20fd3d36",
-    "Implementation.c": "a74cc7ea1f0d486c2beccd151f25f150e3f8fc83e790b4ac2b6cd76cd031fd6a"
+    "Generated.inc": "aa2ffbde1441057007f66f7e991ae49925bd0545d23107fbf0af4af2fb04f25f",
+    "Implementation.c": "c5814f0f13b0d8cd6d976fe8acbb4d31039c5879007777b2fe028fcaab926c24"
   }
 }
