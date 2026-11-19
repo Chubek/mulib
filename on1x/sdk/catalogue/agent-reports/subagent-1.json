@@ -3,6 +3,7 @@
   "agent": 1,
   "area": "core/plugins/catalogue",
   "baseline": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
+  "implementation_commit": "4f16e5780f527254c981ac4cd4236edf9d51776d",
   "status": "PARTIAL",
   "summary": "Executable ABI-2 core ownership, status, allocator, context, handle, diagnostic, cancellation, budget, transport, shared-memory, registry, catalogue, manifest, authorization, and Linux native-worker facilities coexist with the ABI-v1 compatibility profile. Native activation fails closed when requested isolation cannot be installed. Kernel sealing, catalogue sizes above 64 entries, and WASM execution remain explicit unsupported paths.",
   "facilities": [
@@ -144,20 +145,76 @@
   ],
   "tests": [
     {
+      "command": "cmake --build /tmp/opencode/on1x-sdk2-tests --target on1x_sdk on1x_sdk_test_core_v2 on1x_sdk_test_registry_v2 on1x_sdk_test_catalogue_v2 on1x_sdk_test_plugin_v2 on1x_sdk_test_abi2_c on1x_sdk_test_registry on1x_sdk_test_analyzer on1x_sdk_test_backend on1x_sdk_test_security on1x_sdk_test_c_abi --parallel 3",
+      "result": "PASS",
+      "detail": "GCC 16 ABI-v1 and ABI-v2 targets built"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/on1x-sdk2-tests --output-on-failure -R '^on1x\\.sdk\\.'",
+      "result": "PASS",
+      "detail": "11/11 GCC SDK tests passed"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/on1x-sdk2-dynamic --target on1xc on1x-plugin-worker --parallel 3",
+      "result": "PASS",
+      "detail": "GCC driver and isolated worker built"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/on1x-sdk2-dynamic --output-on-failure -R '^on1x\\.sdk\\.dynamic_plugins$'",
+      "result": "PASS",
+      "detail": "1/1 isolated-native dynamic-plugin test passed"
+    },
+    {
+      "command": "cmake --build /mnt/nvme/opencode-builds/sdk2-clang-werror-make --target on1x_sdk on1x-plugin-worker on1x_sdk_test_core_v2 on1x_sdk_test_registry_v2 on1x_sdk_test_catalogue_v2 on1x_sdk_test_plugin_v2 on1x_sdk_test_abi2_c on1x_sdk_test_registry on1x_sdk_test_analyzer on1x_sdk_test_backend on1x_sdk_test_security on1x_sdk_test_c_abi --parallel 3",
+      "result": "PASS",
+      "detail": "Clang 22 strict -Wall -Wextra -Wpedantic -Werror targets built"
+    },
+    {
+      "command": "ctest --test-dir /mnt/nvme/opencode-builds/sdk2-clang-werror-make --output-on-failure -R '^on1x\\.sdk\\.'",
+      "result": "PASS",
+      "detail": "12/12 strict Clang SDK tests passed, including isolated plugins"
+    },
+    {
+      "command": "cmake --build /mnt/nvme/opencode-builds/sdk2-clang-ubsan --target on1x_sdk on1x-plugin-worker on1x_sdk_test_core_v2 on1x_sdk_test_registry_v2 on1x_sdk_test_catalogue_v2 on1x_sdk_test_plugin_v2 on1x_sdk_test_abi2_c on1x_sdk_test_registry on1x_sdk_test_analyzer on1x_sdk_test_backend on1x_sdk_test_security on1x_sdk_test_c_abi --parallel 3",
+      "result": "PASS",
+      "detail": "Clang 22 UBSan ABI-v1, ABI-v2, and isolated-worker targets built"
+    },
+    {
+      "command": "UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1:handle_segv=0' ctest --test-dir /mnt/nvme/opencode-builds/sdk2-clang-ubsan --output-on-failure -R '^on1x\\.sdk\\.'",
+      "result": "PASS",
+      "detail": "12/12 UBSan SDK tests passed, including isolated plugins"
+    },
+    {
       "command": "cmake --build /mnt/nvme/opencode-builds/sdk2-clang-asan-ubsan --target on1x_sdk on1x_sdk_test_core_v2 on1x_sdk_test_registry_v2 on1x_sdk_test_catalogue_v2 on1x_sdk_test_plugin_v2 on1x_sdk_test_abi2_c on1x_sdk_test_registry on1x_sdk_test_analyzer on1x_sdk_test_backend on1x_sdk_test_security on1x_sdk_test_c_abi --parallel 3",
       "result": "PASS",
-      "detail": "Clang 22 ASan+UBSan ABI-v1 and ABI-v2 targets built"
+      "detail": "Clang 22 ASan+UBSan focused ABI-v1 and ABI-v2 targets built"
     },
     {
-      "command": "ctest --test-dir /mnt/nvme/opencode-builds/sdk2-clang-asan-ubsan --output-on-failure -R '^on1x\\.sdk\\.(core_v2|registry_v2|catalogue_v2|plugin_v2|abi2_c|registry|analyzer|backend|security|c_abi)$'",
+      "command": "ASAN_OPTIONS='halt_on_error=1:abort_on_error=1:detect_leaks=1:handle_segv=0' UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1:handle_segv=0' ctest --test-dir /mnt/nvme/opencode-builds/sdk2-clang-asan-ubsan --output-on-failure -R '^on1x\\.sdk\\.(core_v2|registry_v2|catalogue_v2|plugin_v2|abi2_c|registry|analyzer|backend|security|c_abi)$'",
       "result": "PASS",
-      "detail": "10/10 ABI-v1 and ABI-v2 focused tests passed under Clang ASan+UBSan"
+      "detail": "10/10 focused ASan+UBSan SDK tests passed"
     },
     {
-      "command": "git diff --check && python3 -m json.tool on1x/sdk/catalogue/agent-reports/subagent-1.json >/dev/null",
+      "command": "for header in on1x/sdk/include/*.h; do compile a one-line include with /usr/bin/clang -std=c11 and /usr/bin/clang++ -std=c++20 using -Wall -Wextra -Wpedantic -Werror -fsyntax-only; done",
+      "result": "PASS",
+      "detail": "All 45 public headers compiled independently as C11 and C++20"
+    },
+    {
+      "command": "python3 Draft202012Validator.check_schema for on1x/sdk/protocol/plugin-manifest-v1.schema.json and on1x/sdk/protocol/shared-memory-v1.schema.json",
+      "result": "PASS",
+      "detail": "Both JSON schemas are valid Draft 2020-12 schemas"
+    },
+    {
+      "command": "compare public on1x_sdk_* declarations with nm -g --defined-only /tmp/opencode/on1x-sdk2-tests/sdk/libon1x_sdk.a",
+      "result": "PASS",
+      "detail": "All 179 SDK-provided public functions are defined; the one provider export is intentionally external"
+    },
+    {
+      "command": "git diff --check cc0d754cf7563de35e492b672a2fdcd5328183ca..HEAD",
       "result": "PASS"
     }
   ],
+  "sanitizer_note": "The fully ASan-instrumented isolated worker is intentionally excluded because the ASan runtime cannot enter the worker's strict namespace, resource-limit, and seccomp profile. The complete isolated-native suite passed under UBSan. ASan+UBSan covers the ten focused in-process tests; handle_segv=0 preserves the intentional child fault used to verify read-only shared mappings.",
   "cross_owner_requests": [
     {
       "owner": "principal/compiler frontend",
