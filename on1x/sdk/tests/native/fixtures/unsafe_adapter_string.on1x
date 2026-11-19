@@ -1,0 +1,9 @@
+import std.sdk._Trusted as Raw;
+
+fn main() -> i64
+{
+  # The trusted bridge admits an exact u8 scalar, never a foreign string/pointer.
+  let status = Raw.basis_sdk_bridge_candidate_append(
+    1u64, 4294967297u64, "not a byte");
+  return u32_to_i64(status);
+}

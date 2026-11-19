@@ -1,0 +1,44 @@
+from ._Trusted import basis_sdk_bridge_metadata_register,
+  basis_sdk_bridge_metadata_rollback;
+
+record SDKExtensionMetadata
+{
+  schema: u32,
+  extension_id: u32,
+  version_major: u32,
+  version_minor: u32,
+  requested_capabilities: u64,
+  execution_profile: u32
+}
+
+fn basis_sdk_extension_metadata_well_formed(
+  metadata: SDKExtensionMetadata) -> bool
+{
+  return metadata["schema"] == 1u32 &&
+    metadata["extension_id"] != 0u32 &&
+    metadata["version_major"] != 0u32 &&
+    metadata["requested_capabilities"] <= 3u64 &&
+    metadata["execution_profile"] == 1u32;
+}
+
+fn basis_sdk_extension_register(context: u64,
+  metadata: SDKExtensionMetadata) -> u32
+{
+  if context == 0u64 || ! basis_sdk_extension_metadata_well_formed(metadata)
+  {
+    return 4u32;
+  }
+  return basis_sdk_bridge_metadata_register(
+    context,
+    metadata["schema"],
+    metadata["extension_id"],
+    metadata["version_major"],
+    metadata["version_minor"],
+    metadata["requested_capabilities"],
+    metadata["execution_profile"]);
+}
+
+fn basis_sdk_extension_rollback(context: u64) -> u32
+{
+  return basis_sdk_bridge_metadata_rollback(context);
+}

@@ -1,0 +1,73 @@
+# SDK ABI 2 status model.  Values 0..7 are the exact ABI-v1 values.
+enum SDKStatus
+{
+  Ok, Error, Unsupported, Limit, InvalidArgument, AbiMismatch, Duplicate, Busy,
+  Cancelled, DeadlineExpired, Stale, Conflict, NotFound, InvalidState,
+  VerificationFailed, CapabilityDenied, Io
+}
+
+fn basis_sdk_status_from_code(code: u32) -> SDKStatus
+{
+  if code == 0u32 { return variant < SDKStatus > (Ok, record {}); }
+  if code == 1u32 { return variant < SDKStatus > (Error, record {}); }
+  if code == 2u32 { return variant < SDKStatus > (Unsupported, record {}); }
+  if code == 3u32 { return variant < SDKStatus > (Limit, record {}); }
+  if code == 4u32 { return variant < SDKStatus > (InvalidArgument, record {}); }
+  if code == 5u32 { return variant < SDKStatus > (AbiMismatch, record {}); }
+  if code == 6u32 { return variant < SDKStatus > (Duplicate, record {}); }
+  if code == 7u32 { return variant < SDKStatus > (Busy, record {}); }
+  if code == 8u32 { return variant < SDKStatus > (Cancelled, record {}); }
+  if code == 9u32 { return variant < SDKStatus > (DeadlineExpired, record {}); }
+  if code == 10u32 { return variant < SDKStatus > (Stale, record {}); }
+  if code == 11u32 { return variant < SDKStatus > (Conflict, record {}); }
+  if code == 12u32 { return variant < SDKStatus > (NotFound, record {}); }
+  if code == 13u32 { return variant < SDKStatus > (InvalidState, record {}); }
+  if code == 14u32 { return variant < SDKStatus > (VerificationFailed, record {}); }
+  if code == 15u32 { return variant < SDKStatus > (CapabilityDenied, record {}); }
+  if code == 16u32 { return variant < SDKStatus > (Io, record {}); }
+  return variant < SDKStatus > (Error, record {});
+}
+
+fn basis_sdk_status_code(status: SDKStatus) -> u32
+{
+  return match status with
+  {
+    Ok() => 0u32,
+    Error() => 1u32,
+    Unsupported() => 2u32,
+    Limit() => 3u32,
+    InvalidArgument() => 4u32,
+    AbiMismatch() => 5u32,
+    Duplicate() => 6u32,
+    Busy() => 7u32,
+    Cancelled() => 8u32,
+    DeadlineExpired() => 9u32,
+    Stale() => 10u32,
+    Conflict() => 11u32,
+    NotFound() => 12u32,
+    InvalidState() => 13u32,
+    VerificationFailed() => 14u32,
+    CapabilityDenied() => 15u32,
+    Io() => 16u32
+  };
+}
+
+fn basis_sdk_status_from_v1(code: u32) -> SDKStatus
+{
+  if code <= 7u32
+  {
+    return basis_sdk_status_from_code(code);
+  }
+  return variant < SDKStatus > (Error, record {});
+}
+
+fn basis_sdk_status_normalize(code: u32) -> u32
+{
+  if code <= 16u32 { return code; }
+  return 1u32;
+}
+
+fn basis_sdk_status_is_ok(status: SDKStatus) -> bool
+{
+  return basis_sdk_status_code(status) == 0u32;
+}

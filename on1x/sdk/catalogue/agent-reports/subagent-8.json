@@ -1,0 +1,173 @@
+{
+  "schema": "on1x.sdk.agent-report/1",
+  "agent": 8,
+  "baseline_commit": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
+  "overall_status": "PARTIAL",
+  "summary": "Executable On1x-native SDK value modules and a canonical-on1xc C11 reference analyzer are available through an explicitly trusted, statically allowlisted scalar bridge. General ABI 2 host bindings, DSO/worker loading, structured compiler snapshots, foreign resources, callbacks, and sandboxed execution remain unsupported.",
+  "facilities": [
+    {
+      "id": "native.sdk.on1x-values",
+      "status": "EXECUTABLE",
+      "subset": "Statuses including exact ABI-v1 values 0..7, bounded trivial Result values, generation-ID byte/text views, diagnostics, immutable program snapshots, copied extension metadata, host capability queries, lifecycle/cancellation/work budgets, and host-staged candidates"
+    },
+    {
+      "id": "native.sdk.reference-static-analyzer",
+      "status": "EXECUTABLE",
+      "subset": "On1x-authored deterministic source-byte analyzer compiled by canonical on1xc through C11 and invoked by a trusted static host profile; emits revision-validated diagnostics and a host-validated six-byte candidate"
+    },
+    {
+      "id": "native.sdk.trusted-scalar-bridge",
+      "status": "PARTIAL",
+      "subset": "Owned bridge ABI 1 over u8/u32/u64 only, generation32-slot32 IDs, copied host storage, owner/kind/state/revision checks, fixed limits, transactional metadata initialization, reverse compensation, cancellation, and atomic in-memory publication",
+      "blockers": [
+        "Public SDK ABI 2 host table is absent in the baseline",
+        "The generated On1x function symbol is compiler-revision-bound rather than a stable exported AOT module ABI",
+        "The profile is trusted and single-thread-confined, not isolated"
+      ]
+    },
+    {
+      "id": "native.sdk.general-plugin",
+      "status": "UNSUPPORTED",
+      "subset": "",
+      "blockers": [
+        "No reviewed general pointer/resource/callback FFI",
+        "No ABI 2 native binding generator",
+        "No isolated worker adapter for generated On1x modules",
+        "No structured AST/HIR/MIR host snapshot bindings"
+      ]
+    }
+  ],
+  "changed_files": [
+    "on1x/sdk/cmake/Integration8.cmake",
+    "on1x/sdk/cmake/Subagent8.cmake",
+    "on1x/sdk/examples/native/reference_analyzer.on1x",
+    "on1x/sdk/native/reference_extension/README.md",
+    "on1x/sdk/native/reference_extension/candidate-schema.json",
+    "on1x/sdk/native/reference_extension/catalogue.json",
+    "on1x/sdk/native/reference_extension/diagnostics.json",
+    "on1x/sdk/native/reference_extension/manifest.json",
+    "on1x/sdk/native/reference_extension/module_adapter.c",
+    "on1x/sdk/native/reference_extension/trusted-adapter-contract.json",
+    "on1x/sdk/native/reference_extension/trusted_bridge.c",
+    "on1x/sdk/native/reference_extension/trusted_bridge.h",
+    "on1x/sdk/tests/native/fixtures/handle_kind_mismatch.on1x",
+    "on1x/sdk/tests/native/fixtures/stdlib_positive.on1x",
+    "on1x/sdk/tests/native/fixtures/unsafe_adapter_string.on1x",
+    "on1x/sdk/tests/native/header_c.c",
+    "on1x/sdk/tests/native/header_cpp.cpp",
+    "on1x/sdk/tests/native/host_profile.c",
+    "on1x/sdk/tests/native/test_native_sdk.py",
+    "on1x/stdlib/sdk/Bounded.on1x",
+    "on1x/stdlib/sdk/CATALOG.json",
+    "on1x/stdlib/sdk/Candidate.on1x",
+    "on1x/stdlib/sdk/Capability.on1x",
+    "on1x/stdlib/sdk/Diagnostic.on1x",
+    "on1x/stdlib/sdk/Extension.on1x",
+    "on1x/stdlib/sdk/Lifecycle.on1x",
+    "on1x/stdlib/sdk/On1xfile",
+    "on1x/stdlib/sdk/Program.on1x",
+    "on1x/stdlib/sdk/README.md",
+    "on1x/stdlib/sdk/Result.on1x",
+    "on1x/stdlib/sdk/Status.on1x",
+    "on1x/stdlib/sdk/_Trusted.on1x",
+    "on1x/stdlib/sdk/__init__.on1x",
+    "on1x/sdk/catalogue/agent-reports/subagent-8.json"
+  ],
+  "behavioral_coverage": [
+    "positive canonical On1x check, C11 emission, strict C compilation, linking, and execution",
+    "ABI and independently versioned source/candidate/adapter schema mismatch",
+    "host-granted versus requested capability denial",
+    "candidate output limit exhaustion distinct from cancellation",
+    "deterministic work budget exhaustion",
+    "stale, forged, wrong-owner, and wrong-kind handles",
+    "typed rejection of string use on a u8 adapter and candidate/program nominal kind confusion",
+    "invalid UTF-8, invalid spans, and bounded related diagnostics",
+    "diagnostic sink and publication failure with no leaked live object or partial candidate",
+    "initialization failure with metadata rollback",
+    "busy destruction, lifecycle order, cleanup, and generation advance",
+    "ABI-v1 status values 0..7 round trip through the On1x adapter",
+    "independent C11 and C++17 header inclusion"
+  ],
+  "tests": [
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk8-gcc-fallback -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_BUILD_DYNAMIC_SDK_PLUGINS=OFF -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug && cmake --build /tmp/opencode/sdk8-gcc-fallback --target on1x_sdk_native_reference_host on1x_sdk_native_stdlib_positive on1x_sdk_native_header_cpp --parallel 4 && ctest --test-dir /tmp/opencode/sdk8-gcc-fallback --output-on-failure -R '^on1x\\.sdk\\.native\\.'",
+      "result": "PASS: 3/3 native tests; GCC 16.2.1; fallback scanner"
+    },
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk8-gcc-generated -DON1X_LIBSTONE_ROOT=/mnt/nvme/mulib/on1x/third_party/libstone -DON1X_REQUIRE_LIBSTONE=ON -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_BUILD_DYNAMIC_SDK_PLUGINS=OFF -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug && cmake --build /tmp/opencode/sdk8-gcc-generated --target on1x_sdk_native_reference_host on1x_sdk_native_stdlib_positive on1x_sdk_native_header_cpp --parallel 4 && ctest --test-dir /tmp/opencode/sdk8-gcc-generated --output-on-failure -R '^on1x\\.sdk\\.native\\.'",
+      "result": "PASS: 3/3 native tests; GCC 16.2.1; LibStone generated scanner at 3399047f6c6328b8f07788795c610699e66c060a"
+    },
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk8-clang-sanitize -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_BUILD_DYNAMIC_SDK_PLUGINS=OFF -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined' && cmake --build /tmp/opencode/sdk8-clang-sanitize --target on1x_sdk_native_reference_host on1x_sdk_native_stdlib_positive on1x_sdk_native_header_cpp --parallel 4 && ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 ctest --test-dir /tmp/opencode/sdk8-clang-sanitize --output-on-failure -R '^on1x\\.sdk\\.native\\.'",
+      "result": "PASS: 3/3 native tests; Clang 22.1.8 ASan/UBSan"
+    },
+    {
+      "command": "cmake -S on1x -B /tmp/opencode/sdk8-gcc-sanitize -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_BUILD_DYNAMIC_SDK_PLUGINS=OFF -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined' && cmake --build /tmp/opencode/sdk8-gcc-sanitize --target on1x_sdk_native_reference_host on1x_sdk_native_stdlib_positive on1x_sdk_native_header_cpp --parallel 4 && ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 ctest --test-dir /tmp/opencode/sdk8-gcc-sanitize --output-on-failure -R '^on1x\\.sdk\\.native\\.'",
+      "result": "PASS: 3/3 native tests; GCC 16.2.1 ASan/UBSan"
+    },
+    {
+      "command": "cmake --build /tmp/opencode/sdk8-gcc-fallback --parallel 4 && ctest --test-dir /tmp/opencode/sdk8-gcc-fallback --output-on-failure -R '^on1x\\.sdk\\.'",
+      "result": "PASS: 9/9 existing and native SDK tests"
+    },
+    {
+      "command": "ctest --test-dir /tmp/opencode/sdk8-gcc-fallback --output-on-failure",
+      "result": "PARTIAL: 93 passed, 1 skipped, 3 unrelated baseline/environment failures out of 97. on1x.type_checker_hardening_hir requires Firestone and passes in the generated-scanner build; on1x.contracts and on1x.mulib fail because the baseline root inventory does not yet catalogue the added root headers and library/muw3lib. No owned file participates in those assertions."
+    },
+    {
+      "command": "cmake --build /tmp/opencode/sdk8-gcc-generated --target on1x_type_checker_hardening_tests --parallel 4 && ctest --test-dir /tmp/opencode/sdk8-gcc-generated --output-on-failure -R '^on1x\\.type_checker_hardening_hir$'",
+      "result": "PASS: 1/1 with the required generated/Firestone profile"
+    },
+    {
+      "command": "TMPDIR=/tmp/opencode CC=gcc CXX=g++ sh tests/run-cdd.sh",
+      "result": "PASS: 500 seeded plus 24576 exhaustive oracle cases, allocation failure, example, C11/C++17 headers"
+    },
+    {
+      "command": "TMPDIR=/tmp/opencode CC=clang CXX=clang++ sh tests/run-cdd.sh",
+      "result": "PASS: 500 seeded plus 24576 exhaustive oracle cases, allocation failure, example, C11/C++17 headers"
+    },
+    {
+      "command": "TMPDIR=/tmp/opencode CC=gcc CXX=g++ CFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' CXXFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' LDFLAGS='-fsanitize=address,undefined' ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 sh tests/run-cdd.sh",
+      "result": "PASS: GCC ASan/UBSan"
+    },
+    {
+      "command": "TMPDIR=/tmp/opencode CC=clang CXX=clang++ CFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' CXXFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' LDFLAGS='-fsanitize=address,undefined' ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 sh tests/run-cdd.sh",
+      "result": "PASS: Clang ASan/UBSan"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS"
+    }
+  ],
+  "cross_owner_requests": [
+    {
+      "owner": 1,
+      "api": "Public ABI 2 host operations for capability_check(host, capability_id), cancellation_poll(host), budget_consume(host, counter, amount), handle_validate(host, id, owner, kind, state), diagnostic_emit(host, const On1xSDK_DiagnosticV2 *), candidate_open(host, schema, revision, limit, out_id), candidate_write_u8(host, id, value), candidate_commit(host, id), and candidate_abort(host, id), each in an abi_version/struct_size-negotiated host table.",
+      "reason": "Replace the owned trusted scalar bridge without exposing pointers to On1x and retain observable sink/cleanup failures.",
+      "migration": "Generate reviewed scalar wrappers over these host-approved callbacks; delete _Trusted.on1x declarations only after equivalent negative/lifecycle tests pass."
+    },
+    {
+      "owner": 2,
+      "api": "On1xSDK_Status on1x_sdk_source_snapshot_open(const On1xSDK_Host *, On1xSDK_Handle source, uint32_t schema, uint64_t maximum_bytes, On1xSDK_Handle *out); plus revision, byte_length, read_u8, retain and release accessors.",
+      "reason": "The reference bridge currently copies an immutable source snapshot into fixed host storage. A canonical revision-bound source snapshot is needed before this can consume compiler sessions."
+    },
+    {
+      "owner": 6,
+      "api": "A stable scalar AOT export descriptor with abi_version, struct_size, module ABI, function ID, exact (u64,u32)->u32 signature, and an invoke operation that catches all runtime failure without exposing the compiler-generated on1x_fn_* symbol.",
+      "reason": "module_adapter.c is deliberately pinned to the current generated C symbol and is not a stable runtime/module ABI."
+    },
+    {
+      "owner": 1,
+      "api": "Explicit ABI-v1 descriptor adapters in the public ABI 2 registry, preserving statuses 0..7 and synchronous v1 behavior without reading a v1 layout as v2.",
+      "reason": "The On1x-native layer preserves and tests v1 status numerics, but full v1 descriptor adaptation is outside Subagent 8 ownership."
+    }
+  ],
+  "unsupported": [
+    "Raw pointers, addresses, allocator tokens, callbacks, foreign resources, and arbitrary implementation-name resolution in safe On1x values",
+    "Plugin self-certified contracts, safety, capability grants, revisions, diagnostics, repairs, or artifacts",
+    "In-process DSO, isolated native worker, and WASM activation for this On1x module",
+    "Structured AST/HIR/MIR traversal or candidate publication",
+    "Thread-shared bridge use; the trusted profile is serialized and thread-confined",
+    "General native plugin ABI stability; the adapter is rebuilt with the canonical compiler",
+    "TSan: no multithreaded execution is admitted by this profile"
+  ]
+}

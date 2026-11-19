@@ -1,0 +1,40 @@
+# PRIVATE TRUSTED ADAPTER.
+#
+# These declarations are implemented only by the host-approved native SDK
+# reference bridge.  They are exact scalar calls; this file is not a general
+# FFI admission certificate.  No pointer, address, callback, aggregate, or
+# allocator value crosses into On1x.
+extern fn basis_sdk_bridge_negotiate(context: u64, sdk_abi: u32,
+  bridge_abi: u32, bridge_size: u32) -> u32;
+extern fn basis_sdk_bridge_metadata_register(context: u64, metadata_schema: u32,
+  extension_id: u32, version_major: u32, version_minor: u32,
+  requested_capabilities: u64, execution_profile: u32) -> u32;
+extern fn basis_sdk_bridge_metadata_rollback(context: u64) -> u32;
+extern fn basis_sdk_bridge_lifecycle(context: u64, event: u32) -> u32;
+extern fn basis_sdk_bridge_require_active(context: u64) -> u32;
+extern fn basis_sdk_bridge_capability_check(context: u64, capability: u32) -> u32;
+extern fn basis_sdk_bridge_cancel_check(context: u64) -> u32;
+extern fn basis_sdk_bridge_work_consume(context: u64, units: u32) -> u32;
+
+extern fn basis_sdk_bridge_snapshot_open(context: u64, source_schema: u32,
+  maximum_bytes: u64) -> u64;
+extern fn basis_sdk_bridge_snapshot_check(context: u64, snapshot: u64) -> u32;
+extern fn basis_sdk_bridge_snapshot_close(context: u64, snapshot: u64) -> u32;
+extern fn basis_sdk_bridge_snapshot_revision(context: u64, snapshot: u64) -> u64;
+extern fn basis_sdk_bridge_snapshot_length(context: u64, snapshot: u64) -> u64;
+extern fn basis_sdk_bridge_snapshot_schema(context: u64, snapshot: u64) -> u32;
+extern fn basis_sdk_bridge_snapshot_read(context: u64, snapshot: u64,
+  revision: u64, index: u64) -> u32;
+
+extern fn basis_sdk_bridge_diagnostic_emit(context: u64, snapshot: u64,
+  revision: u64, machine_code: u32, severity: u32, message: u32,
+  message_length: u32, span_start: u64, span_end: u64,
+  related_count: u32, related_start: u64, related_end: u64) -> u32;
+
+extern fn basis_sdk_bridge_candidate_open(context: u64, candidate_schema: u32,
+  source_revision: u64, maximum_bytes: u32) -> u64;
+extern fn basis_sdk_bridge_candidate_append(context: u64, candidate: u64,
+  value: u8) -> u32;
+extern fn basis_sdk_bridge_candidate_commit(context: u64, candidate: u64,
+  candidate_schema: u32, source_revision: u64) -> u32;
+extern fn basis_sdk_bridge_candidate_abort(context: u64, candidate: u64) -> u32;

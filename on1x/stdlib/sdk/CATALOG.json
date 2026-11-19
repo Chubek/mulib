@@ -1,0 +1,26 @@
+{
+  "schema": "on1x.stdlib.sdk.catalogue/1",
+  "profile": "trusted-static-scalar-bridge/1",
+  "sdk_abi": 2,
+  "bridge_abi": 1,
+  "modules": [
+    {"name": "Status", "status": "EXECUTABLE", "representation": "u32-and-nominal-enum"},
+    {"name": "Result", "status": "EXECUTABLE", "representation": "bounded-trivial-nominal"},
+    {"name": "Bounded", "status": "EXECUTABLE", "representation": "borrowed-generation-view"},
+    {"name": "Diagnostic", "status": "EXECUTABLE", "representation": "catalog-id-and-byte-span"},
+    {"name": "Program", "status": "EXECUTABLE", "representation": "immutable-snapshot-handle"},
+    {"name": "Extension", "status": "EXECUTABLE", "representation": "copied-scalar-metadata"},
+    {"name": "Capability", "status": "EXECUTABLE", "representation": "host-grant-query"},
+    {"name": "Lifecycle", "status": "EXECUTABLE", "representation": "serialized-host-events"},
+    {"name": "Candidate", "status": "EXECUTABLE", "representation": "host-owned-staging-handle"}
+  ],
+  "unsupported": [
+    "raw pointers or addresses",
+    "general foreign resources or callbacks",
+    "plugin self-certification",
+    "capability self-grant",
+    "structured AST/HIR/MIR access",
+    "isolated native or WASM execution",
+    "direct artifact publication"
+  ]
+}

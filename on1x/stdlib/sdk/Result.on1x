@@ -1,0 +1,24 @@
+# Result payloads remain in the compiler's bounded trivially-copyable profile.
+enum SDKResult < T >
+{
+  Value(T), Failure(u32)
+}
+
+fn basis_sdk_result_value(value: _) -> SDKResult < _ >
+{
+  return variant < SDKResult < _ > > (Value, value);
+}
+
+fn basis_sdk_result_failure(code: u32) -> SDKResult < _ >
+{
+  return variant < SDKResult < _ > > (Failure, code);
+}
+
+fn basis_sdk_result_is_value(result: SDKResult < _ >) -> bool
+{
+  return match result with
+  {
+    Value(_) => true,
+    Failure(_) => false
+  };
+}

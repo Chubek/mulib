@@ -1,0 +1,17 @@
+{
+  "schema": "on1x.sdk.native-extension-catalogue/1",
+  "entries": [
+    {
+      "name": "org.on1x.reference-byte-analyzer",
+      "manifest": "manifest.json",
+      "source": "../../examples/native/reference_analyzer.on1x",
+      "activation": "explicit-static-host-allowlist",
+      "status": "EXECUTABLE",
+      "unsupported_profiles": [
+        "in-process-dso",
+        "isolated-native-worker",
+        "wasm"
+      ]
+    }
+  ]
+}

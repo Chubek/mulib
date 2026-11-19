@@ -1,0 +1,39 @@
+{
+  "schema": "on1x.sdk.native-extension-manifest/1",
+  "name": "org.on1x.reference-byte-analyzer",
+  "version": "1.0.0",
+  "sdk_abi": {"minimum": 2, "maximum": 2},
+  "bridge": {
+    "schema": "on1x.sdk.native-trusted-scalar/1",
+    "abi": 1,
+    "handle_encoding": "generation32-slot32",
+    "contract": "trusted-adapter-contract.json"
+  },
+  "execution_profile": "trusted-statically-linked",
+  "discovery_executes_code": false,
+  "requested_capabilities": [
+    "diagnostic.emit",
+    "candidate.submit"
+  ],
+  "capability_authority": "host-only",
+  "input": {
+    "kind": "immutable-source-snapshot",
+    "schema": 1,
+    "maximum_bytes": 64
+  },
+  "output": {
+    "kind": "untrusted-analyzer-candidate",
+    "schema": 1,
+    "schema_document": "candidate-schema.json",
+    "maximum_bytes": 6,
+    "publication": "host-validated-atomic"
+  },
+  "entry": "basis_sdk_reference_extension",
+  "diagnostic_catalogue": "diagnostics.json",
+  "trust": {
+    "adapter": "explicit-host-approved",
+    "self_certifying": false,
+    "sandboxed": false,
+    "general_ffi_safe": false
+  }
+}

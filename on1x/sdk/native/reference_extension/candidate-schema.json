@@ -1,0 +1,19 @@
+{
+  "schema": "on1x.sdk.native-reference-candidate/1",
+  "wire_version": 1,
+  "canonical_size": 6,
+  "fields": [
+    {"offset": 0, "size": 4, "value_ascii": "ON1X"},
+    {"offset": 4, "size": 1, "name": "schema", "value": 1},
+    {
+      "offset": 5,
+      "size": 1,
+      "name": "diagnostic_count",
+      "minimum": 0,
+      "maximum": 8
+    }
+  ],
+  "pointers": false,
+  "byte_order": "not-applicable-single-byte-fields",
+  "publication": "host-validates-source-revision-and-copies-atomically"
+}

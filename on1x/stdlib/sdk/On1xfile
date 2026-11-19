@@ -1,0 +1,4 @@
+on1xfile 1
+kind library
+name "sdk"
+directory "."

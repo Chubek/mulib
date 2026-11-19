@@ -1,0 +1,16 @@
+import std.sdk.Program as Program;
+import std.sdk.Candidate as Candidate;
+
+fn main() -> i64
+{
+  let candidate = record < Candidate.SDKCandidate >
+  {
+    context: 1u64,
+    handle: 4294967297u64,
+    schema: 1u32,
+    source_revision: 7u64,
+    limit: 6u32
+  };
+  # Nominal kinds prevent accidentally using a candidate as a program snapshot.
+  return u32_to_i64(Program.basis_sdk_program_check(candidate));
+}

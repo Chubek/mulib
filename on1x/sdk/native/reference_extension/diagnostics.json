@@ -1,0 +1,15 @@
+{
+  "schema": "on1x.sdk.native-diagnostic-catalogue/1",
+  "maximum_diagnostics": 8,
+  "maximum_related_spans": 1,
+  "entries": [
+    {
+      "id": 1001,
+      "machine_code": "ON1X-SDK-NATIVE-EXCLAMATION",
+      "severity": "warning",
+      "message_id": 1,
+      "message": "discouraged exclamation byte",
+      "message_utf8_bytes": 28
+    }
+  ]
+}
