@@ -249,7 +249,9 @@ public:
   if(functions.empty())fail({"<type-hir>"},"empty elaborated unit");
   for(const auto& [name,f]:functions){
    (void)name;
-   if(takes_exclusive(*f))fail(f->where,"ref i64 is outside the independent structural adapter");
+    if(takes_borrows(*f))
+     fail(f->where,
+          "borrowed parameters are outside the independent structural adapter");
    (void)type(signature(*f),f->where);
   }
   for(const auto& f:unit.functions){

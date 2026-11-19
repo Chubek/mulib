@@ -1,80 +1,143 @@
-# Call-scoped `ref i64` parameters
+# Checked shared and exclusive borrows
+
+On1x has a direct-C11 borrow profile for named lexical places:
 
 ```on1x
-fn foo(k : ref i64) -> _ { k := 2; }
+record Counter { value:i64 }
+
+fn read(counter: borrow Counter) -> i64 {
+    return counter["value"];
+}
+
+fn increment(counter: ref Counter) {
+    counter := record<Counter>{value:counter["value"] + 1};
+}
 
 fn main() {
-    let a = 4;
-    foo(a);
-    println(a);  # 2
+    let owner = box(record<Counter>{value:4});
+
+    {
+        let view = borrow owner;       # shared lexical borrow
+        println(read(view));           # 4
+    }
+    {
+        let edit = borrow mut owner;   # exclusive lexical borrow
+        increment(edit);
+    }
+    println(read(owner));              # 5
+    drop(owner);
 }
 ```
 
-`ref i64` is a parameter mode on a named On1x function, not a type of
-first-class value. It takes an exclusive loan of the caller's named `i64`
-place for the duration of the call. `k := e;` evaluates `e` as an `i64` and
-writes to that place immediately. A bare `k` in a value position reads an `i64`
-copy, so `return k;` in an `i64`-returning function returns a number, not the
-reference. `let copy = k;` copies even when the original place is later changed.
-Use a copy if a closure needs a snapshot of a reference parameter.
+`borrow T` and `ref T` are parameter **modes**, not reference-valued types.
+`borrow T` takes a shared call-scoped loan and `ref T` takes an exclusive one.
+Likewise, `let view = borrow place;` and `let edit = borrow mut place;` create
+shared and exclusive aliases until the end of their lexical block. A bare alias
+in a value expression reads the referent; `:=` replaces the value through an
+exclusive alias. Ordinary `=` still follows the binding's normal mutability and
+cannot write through a borrowed alias.
 
-The caller may lend a local `let` or `var`, an addressable local binding
-introduced by a pattern, or a by-value `i64` parameter. `let` still rejects direct
-reassignment with `=`, and `:=` is only valid on a `ref i64` parameter. A call
-to a known `ref i64` parameter is the only way to mutate a caller's `let` in
-this profile. Immutable closure captures still take an `i64` snapshot at
-creation, and a captured slot is not addressable through this facility.
+The source must be one initialized, addressable named local, parameter, or
+incoming borrowed parameter. Literals, call results, fields, indices, closure
+captures, globals, and temporary expressions are not loan origins. Binding
+identity follows lexical scope rather than spelling, so shadowing is handled
+without conflating places.
 
-The callee must be a direct named function (including an imported/aliased
-On1x name). A reference argument must be a named place; literals, arithmetic,
-call results, fields, and indices do not qualify. Argument evaluation is
-left-to-right. Each exclusive loan starts at its argument and ends on
-completion of the call. From the start of the loan, the same place cannot be
-read, written, captured, or borrowed by the evaluation of later arguments.
-For example, given compatible signatures, `f(a, a)` is legal when the first
-argument copies `a` and the second lends `a`, but illegal when the first lends
-`a` and the second reads or lends it. Distinct places can be lent together.
-Binding identity follows lexical scope, not spelling.
+## Loans, reborrows, and values
 
-A borrowing function may pass one of its parameters to another borrowing
-function, including itself: the nested call temporarily acquires the same
-exclusive access. The original loan resumes for the caller of that nested
-call. The callee has no other path to the caller's local storage: references
-cannot be copied as references, stored, returned, captured by closures,
-retained by `defer`, or used as arguments to extern functions. First-class
-functions with `ref` parameters, other referent types, and `ref` in ordinary
-type annotations are not supported. This C11 profile rejects a unit that also
-contains cooperative concurrency; it does not establish borrow safety across
-suspension.
+Multiple shared loans may coexist within the finite compiler limits. An
+exclusive loan excludes every other access to the same root. A shared loan
+excludes writes, moves, drops, and exclusive loans but permits reads and further
+shared loans. Reborrowing an exclusive alias temporarily suspends that alias;
+nested shared and exclusive reborrows are supported, including sequential
+chains in one block, and the parent becomes usable again when the child scope or
+call ends. An exclusive loan cannot be derived from a shared alias.
 
-The inference engine checks the referent as `i64`; the parameter mode is tracked
-separately from value types. Canonical HIR verification reconstructs lexical
-places, checks reference stores, and verifies call-scoped loans independently
-of source inference. The C11 emitter re-verifies the checked HIR and generates
-private `int64_t *` parameters to initialized caller storage. It does not copy
-back, heap-allocate or retain a reference, use C `restrict`, or expose a
-pointer ABI. No runtime change is required. Terminal failures retain the
-existing non-unwinding behavior. PPX Unit v1/`--emit-ast`, `.on1xi` interfaces,
-scalar MIR and the independent Chisel/Nerotypical adapters do not represent
-these borrows and reject them rather than treating them as scalar calls.
+Loans are lexical for `let` aliases and call-scoped for borrowed parameters.
+Branch-local loans end before a join, and an iteration-local loan ends before
+the loop backedge. The checker composes this loan state with the canonical
+whole-value and partial-move state. Moving, taking, dropping, or partially
+moving an owner/referent while a loan is live rejects, as does borrowing an
+already moved or partially moved place.
 
-This feature does not itself admit recursive layouts. Both the
-[shared nominal-owner profile](owning-adts.md) and the
-[finite unique-owner profile](recursive-owning-adts.md) are independent of this
-stack-scoped scalar borrow; neither turns `ref i64` into a general reference
-type.
+Borrow aliases are transparent places rather than first-class reference
+values. For a copy-safe referent, `let copy = view;`, a normal by-value call, or
+`return view;` takes an ordinary value snapshot. This does not extend the loan.
+A move-only referent cannot be copied this way, and a borrowed place can never
+be moved or consumed. Closures cannot capture a borrowed alias or parameter;
+borrowed calls cannot be retained by `defer`; and functions with borrowed
+parameters cannot be used as callbacks or other first-class function values.
+
+Borrowing an `own<Named>` place exposes its `Named` payload, not the owning
+handle. Therefore the declaration is `fn inspect(x: borrow Named)`, not
+`borrow own<Named>`. The owner remains responsible for cleanup and cannot be
+moved, taken, or dropped until every payload loan has ended. Generic borrowed
+functions are supported after the existing whole-unit specialization step.
+Imported and aliased module functions remain direct private calls.
+
+## Calls and evaluation order
+
+The callee must be a direct named On1x function. Arguments are checked in
+left-to-right source order. A call loan starts when its argument is reached and
+remains active while later arguments are evaluated. Consequently a later
+argument cannot conflict with an earlier shared or exclusive loan. Distinct
+roots can be borrowed together, and a by-value read before a later loan is an
+ordinary snapshot.
+
+The callee has no route by which to retain the caller's place. Borrowed
+parameter modes are forbidden on `main`, lambdas, extern declarations,
+interfaces, cliche/inherent members, and generated extension functions. Raw
+pointer values are not introduced into the language.
+
+## Lowering and fail-closed boundaries
+
+Canonical HIR verification independently reconstructs binding identities,
+loan ancestry, move/drop state, branch/loop scopes, and call argument order.
+Malformed modes, origins, referent types, stores, captures, calls, and escaped
+borrow expressions reject with located diagnostics. Borrow analysis has a
+separate finite work budget; exhaustion is `ON1X-BORROW-LIMIT`, never successful
+admission.
+
+The C11 emitter re-runs canonical verification. Shared aliases/parameters lower
+to `const T *`; exclusive ones lower to `T *`. No copy-back, heap allocation,
+`restrict`, or public pointer ABI is introduced. For `own<Named>`, generated
+code obtains the payload through the size-checked `on1x_unique_borrow` runtime
+accessor. The static checker supplies temporal validity; the accessor also
+fails closed for null/taken handles and size drift, but is not a raw-C temporal
+safety mechanism.
+
+This profile is deliberately synchronous and direct-C11:
+
+- any unit that combines lexical or parameter borrows with cooperative
+  task/suspension constructs rejects;
+- scalar MIR, MIR serialization/evaluation/passes, PPX Unit v1/`--emit-ast`,
+  `.on1xi`, Chisel, Nerotypical, and structural adapters reject rather than
+  erase or approximate loan metadata; advisory Wetstone translation declines
+  functions it cannot model and grants no admission;
+- public/external SDK providers receive neither checked HIR nor loan
+  descriptors and remain closed; the private built-in C11 bridge is the same
+  canonical emitter described above, not a separate admission;
+- raw FFI, callbacks, closure capture, staged retention, field/index loan
+  origins, separate compilation, and cross-thread/coroutine transfer remain
+  unsupported.
+
+Terminal runtime failures retain the existing non-unwinding behavior. The
+borrow profile proves only the admitted On1x/HIR-to-C11 slice; it is not a
+general foreign-effect, pointer-provenance, or concurrent ownership proof.
 
 ## Tests
 
 Run from the MuLIB root with a configured compiler:
 
 ```sh
-python3 on1x/tests/test_core_ref.py PATH/TO/on1xc on1x /tmp/opencode/core-ref-tests gcc
+python3 on1x/tests/test_core_ref.py \
+  PATH/TO/on1xc on1x /tmp/opencode/core-ref-tests gcc
+ctest --test-dir PATH/TO/BUILD --output-on-failure \
+  -R '^on1x\.core_ref(_hir)?$'
 ```
 
-The runner tests real generated C11 with `-Wall -Wextra -Wpedantic -Werror`,
-including inference, module aliases, recursive reborrows, simultaneous loans
-to distinct places, evaluation order, closure snapshots, and rejection paths.
-Pass `clang --cflag=-fsanitize=address,undefined` for a sanitized native run.
-`on1x/tests/test_core_ref.cpp` additionally checks that malformed checked HIR
-does not reach C11 emission.
+`test_core_ref.py` executes shared/exclusive scalar and nominal loans, nested
+reborrows, joins and loop backedges, generic/module calls, unique-owner payload
+access and cleanup, strict GCC/Clang C11, ASan/UBSan, runtime accessor faults,
+budget exhaustion, and located rejection cases. `test_core_ref.cpp` mutates
+checked HIR to verify fail-closed C11 ingress and deterministic lowering.

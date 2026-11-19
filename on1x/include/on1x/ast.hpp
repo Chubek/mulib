@@ -23,6 +23,10 @@ struct Error : std::runtime_error {
 };
 struct Token { std::string text; Location where; };
 struct Capture { std::string name; Type type; };
+// Borrow modes are not first-class types. They describe a checked lexical
+// place alias or named-function parameter whose value type remains the
+// referent type.
+enum class BorrowMode { Value, Shared, Exclusive };
 struct Pattern {
  enum class Kind { Name, Tuple, Wildcard, Rest, Literal, Variant, Array, Record, Or, As } kind=Kind::Name;
   Location where;
@@ -50,7 +54,7 @@ struct Param {
  std::size_t context=0;
   // Pattern parameters have unlexable internal names, never emitted as C names.
   std::optional<Pattern> pattern;
-  bool exclusive = false; // Named ref i64 parameter mode, not a reference-valued Type.
+  BorrowMode borrow = BorrowMode::Value;
 };
 // Core cliche predicates are host-retained typed obligations. They are not
 // Category PPX evidence and never name a runtime implementation.
@@ -73,7 +77,8 @@ struct Expr {
                     MacroCall, SyntaxHole, SyntaxBlock, Extension, SyntaxList, SyntaxVector, SyntaxKeyword,
                      Quote, Splice, Lift, Run, SyntaxLet, Record, Variant, Match, Array, Field, Index, Slice, Length,
                         PatternMatch, Case, Unit, Region, TagTest, Payload, Project, Loop, Propagate, SourceCsp, Csp, UnsafeBlock,
-                        Character, ByteBuffer, Interpolated, RegexLiteral, RegexMatch, RegexCapture } kind;
+                         Character, ByteBuffer, Interpolated, RegexLiteral, RegexMatch, RegexCapture,
+                         Borrow } kind;
   enum class Reference { Unresolved, Local, Function, Extern, Intrinsic, UnsafeForeign, ScalarForeign, BorrowFunction } reference = Reference::Unresolved;
  bool unsafe_region = false; // Canonical region lowered from a lexical unsafe expression.
  Location where;
@@ -83,6 +88,7 @@ struct Expr {
    bool statement_match=false;
    bool sum_match=false; // The `~ { ... }` spelling requires a closed sum subject.
    bool move_out=false; // Checked-HIR projection transfers and clears a unique field.
+   BorrowMode borrow=BorrowMode::Value; // Shared/exclusive only on Borrow.
   bool noreturn=false; // Checked control result, never source/PPX authority.
   std::size_t context=0;
   std::size_t control_target=0; // Source Loop only; recomputed after transforms.
@@ -120,7 +126,7 @@ struct Stmt {
  std::optional<Pattern> pattern; // Local tuple destructuring only; names use name.
  Type declared = Type::Invalid;
   bool mutable_binding = false;
-  bool ref_store = false; // := writes through an exclusive parameter; never ordinary assignment.
+   bool ref_store = false; // := writes through an exclusive borrowed place.
  bool prototype = false; // Type-checked generic instance, never emitted.
  std::vector<std::unique_ptr<Stmt>> instances; // Stable storage during inference.
  ExprPtr value;
@@ -142,8 +148,14 @@ struct Function {
   std::vector<ExprPtr> attributes;
    bool extension_generated=false; // Host-only: explicit interface cannot be erased by a later PPX.
 };
+inline bool takes_borrows(const Function& function){
+ for(const auto& parameter:function.params)
+  if(parameter.borrow!=BorrowMode::Value)return true;
+ return false;
+}
 inline bool takes_exclusive(const Function& function){
- for(const auto& parameter:function.params)if(parameter.exclusive)return true;
+ for(const auto& parameter:function.params)
+  if(parameter.borrow==BorrowMode::Exclusive)return true;
  return false;
 }
 struct ClicheMember {

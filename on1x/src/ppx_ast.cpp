@@ -51,7 +51,9 @@ SExpr pattern(const Pattern& p){
  std::vector<SExpr> fields;for(const auto& e:p.elements)fields.push_back(pattern(e));return form("TuplePattern",{list(std::move(fields)),loc(p.where)});
 }
 SExpr parameters(const std::vector<Param>& ps){
- for(const auto& p:ps)if(p.exclusive)throw Error(p.where,"ref i64 parameter modes are not part of PPX Unit v1","ON1X-REF");
+ for(const auto& p:ps)if(p.borrow!=BorrowMode::Value)
+  throw Error(p.where,"borrowed parameter modes are not part of PPX Unit v1",
+              "ON1X-REF");
  std::vector<SExpr> out;for(const auto& p:ps)out.push_back(p.pattern?form("PatternParameter",{pattern(*p.pattern),type(p.type),loc(p.where)}):form("Parameter",{string(p.name),type(p.type),loc(p.where)}));return list(std::move(out));
 }
 SExpr expression(const Expr& e);
@@ -61,6 +63,9 @@ SExpr extension(const Expr& e,bool attribute){
  return form(attribute?"Attribute":"ExtensionExpr",{string(e.text),string(literal_value(e.children.at(0)->text)),list(std::move(args)),loc(e.where)});
 }
 SExpr expression(const Expr& e){
+  if(e.kind==K::Borrow||e.borrow!=BorrowMode::Value)
+   throw Error(e.where,"lexical borrows are not PPX Unit v1 wire data",
+               "ON1X-REF");
   if(e.kind==K::UnsafeBlock||e.unsafe_region||e.reference==Expr::Reference::UnsafeForeign)
    throw Error(e.where,"ON1X-KERNEL-PPX: unsafe scopes and calls are not PPX wire data","ON1X-KERNEL-PPX");
  if(e.kind==K::SourceCsp){
@@ -112,7 +117,9 @@ SExpr expression(const Expr& e){
  }
 }
  SExpr statement(const Stmt& s){
-  if(s.ref_store)throw Error(s.where,"ref i64 stores are not part of PPX Unit v1","ON1X-REF");
+   if(s.ref_store)
+    throw Error(s.where,"borrowed stores are not part of PPX Unit v1",
+                "ON1X-REF");
   if(s.unsafe_block)throw Error(s.where,"ON1X-KERNEL-PPX: unsafe scopes are not PPX wire data","ON1X-KERNEL-PPX");
  auto at=loc(s.where);
   switch(s.kind){

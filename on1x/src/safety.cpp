@@ -372,7 +372,8 @@ std::string check(const Unit& unit,Limits limits,const std::map<std::string,Admi
    for(const auto& parameter:f.params)
     if(parameter.type.contains_unique())
      fail(parameter.where,"unique ownership is outside the Chisel resource adapter");
-  if(takes_exclusive(f))fail(f.where,"ref i64 is outside the Chisel resource adapter");
+   if(takes_borrows(f))
+    fail(f.where,"borrowed parameters are outside the Chisel resource adapter");
   if(f.external){
    auto found=admitted.find(f.name);
    if(found==admitted.end())fail(f.where,"raw external declaration lacks a checked memory model: "+f.name+" (not covered by admitted-extern evidence)");

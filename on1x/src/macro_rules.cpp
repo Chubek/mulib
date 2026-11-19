@@ -38,7 +38,7 @@ std::string MacroRules::category(const Expr& e)const{
    case K::Integer:return numeric_literal_type(e.text).is_unsigned()?"UnsignedLiteral":e.text.starts_with("0x")||e.text.starts_with("0X")?"HexLiteral":"DecimalLiteral";
   case K::Float:return "FloatLiteral";
  case K::String:return "StringLiteral";case K::Boolean:return "BooleanLiteral";case K::Variable:return "Identifier";
- case K::Character:return "CharacterLiteral";case K::ByteBuffer:return "ByteBufferLiteral";case K::Interpolated:return "Expression";
+  case K::Character:return "CharacterLiteral";case K::ByteBuffer:return "ByteBufferLiteral";case K::Interpolated:case K::Borrow:return "Expression";
  case K::Unary:return "UnaryExpression";case K::Binary:return "BinaryExpression";case K::Call:return "CallExpression";
  case K::Tuple:return "TupleExpression";case K::Lambda:return "LambdaExpression";case K::SyntaxBlock:return "Block";
  case K::SyntaxList:return "ListSyntax";case K::SyntaxVector:return "VectorSyntax";case K::SyntaxKeyword:return "KeywordSyntax";

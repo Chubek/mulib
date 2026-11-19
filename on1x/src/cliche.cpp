@@ -395,8 +395,8 @@ void verify_generated_members(const Unit& unit){
          "ON1X-CLICHE-HIR");
    std::vector<Type> parameters;
    for(std::size_t i=0;i<expected_parameters.size();++i){
-    if(generated->params[i].name!=expected_parameters[i].name||
-       generated->params[i].exclusive!=expected_parameters[i].exclusive)
+     if(generated->params[i].name!=expected_parameters[i].name||
+        generated->params[i].borrow!=expected_parameters[i].borrow)
      fail(item.where,"generated cliche member parameter metadata mismatch",
           "ON1X-CLICHE-HIR");
     parameters.push_back(expected_parameters[i].type);
@@ -525,9 +525,9 @@ void prepare(Unit& unit){
     if(item.kind==ClicheMember::Kind::Value&&!item.params.empty())
      fail(item.where,"associated values cannot declare value parameters","ON1X-CLICHE-SIGNATURE");
     for(const auto& parameter:item.params){
-     if(parameter.exclusive)
-      fail(parameter.where,"ref parameters are not supported in cliche declarations",
-           "ON1X-CLICHE-SIGNATURE");
+      if(parameter.borrow!=BorrowMode::Value)
+       fail(parameter.where,"borrowed parameters are not supported in cliche declarations",
+            "ON1X-CLICHE-SIGNATURE");
      if(parameter.pattern)
       fail(parameter.where,"cliche declarations require named parameters",
            "ON1X-CLICHE-SIGNATURE");
@@ -632,9 +632,9 @@ void prepare(Unit& unit){
      }
      std::vector<Type> actual_parameters;
      for(const auto& parameter:actual_function.params)actual_parameters.push_back(parameter.type);
-     bool modes_match=actual_function.params.size()==declared.params.size();
-     for(std::size_t i=0;modes_match&&i<declared.params.size();++i)
-      modes_match=actual_function.params[i].exclusive==declared.params[i].exclusive;
+      bool modes_match=actual_function.params.size()==declared.params.size();
+      for(std::size_t i=0;modes_match&&i<declared.params.size();++i)
+       modes_match=actual_function.params[i].borrow==declared.params[i].borrow;
      if(actual_parameters!=expected_parameters||actual_function.result!=expected_result||
         !modes_match)
       fail(actual.where,"signature mismatch for cliche member "+declared.name+

@@ -226,7 +226,8 @@ class LinearHIR {
 public:
  LinearHIR(const Function& source,std::size_t& work):source_(source),work_(work){}
  std::optional<Translation> run(){
-  if(source_.external||source_.prototype||takes_exclusive(source_)||!spend())return {};
+   if(source_.external||source_.prototype||takes_borrows(source_)||!spend())
+    return {};
   wetstone::ir::Function function;function.name=source_.name;function.entry=0;
   scopes_.emplace_back();
   for(const auto& parameter:source_.params){

@@ -239,10 +239,16 @@ The later [typed Result continuation](defer-errors.md) can move the active
 before cleanup. It does not open the PPX, foreign, capture, deferred-argument,
 staging or concurrency boundaries above.
 
-There are no general borrows of owned values, field mutation, shared unique
-graphs, checked scalar/foreign owners, user-defined destructors, recoverable
-allocation failure, thread-safe `Send`/`Sync` model, or separate-compilation
-ownership ABI in this slice. Generic pervasive Result helper functions remain
+The separate [checked borrow profile](core-references.md) can lend an
+`own<Named>` place as its `Named` payload for a lexical block or direct call.
+The owner cannot move, take, or drop while that loan is live, and move-only
+payload fields cannot be copied or moved through the alias. This does not add
+borrowed fields/elements, field mutation, shared unique graphs, user-defined
+destructors, recoverable allocation failure, a thread-safe `Send`/`Sync` model,
+or a separate-compilation ownership ABI.
+
+There are no general first-class borrows, checked scalar/foreign owners, or
+ownership-constrained generic helpers. Generic pervasive Result helpers remain
 copy-safe; concrete owner-bearing `Result` construction, matching and `?` are
 the admitted path.
 

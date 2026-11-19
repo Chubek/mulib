@@ -60,9 +60,10 @@ bool holes_in(const Expr& expression,InferenceScan& scan,std::size_t depth) {
             expression.kind==Expr::Kind::SourceCsp||
             (expression.kind>=Expr::Kind::Record&&
              expression.kind<=Expr::Kind::Length)||
-            expression.kind==Expr::Kind::PatternMatch||
-            expression.kind==Expr::Kind::Loop||
-            expression.kind==Expr::Kind::UnsafeBlock;
+             expression.kind==Expr::Kind::PatternMatch||
+             expression.kind==Expr::Kind::Loop||
+             expression.kind==Expr::Kind::UnsafeBlock||
+             expression.kind==Expr::Kind::Borrow;
  if(expression.kind==Expr::Kind::Lambda){
   found=has_type_holes(expression.result)||expression.result.has_foralls()||
         found;
@@ -1224,17 +1225,35 @@ class Inference {
 
    std::vector<Term> args;
    auto target=intrinsic?Term{0}:head(callable,e.where);
+   const Function* borrowed_function=nullptr;
+   if(!callable_override&&callee.kind==Expr::Kind::Variable&&
+      !local(callee.text)){
+    auto found=globals.find(callee.text);
+    if(found!=globals.end()&&takes_borrows(*found->second.definition))
+     borrowed_function=found->second.definition;
+   }
    const auto kernel=callee.kind==Expr::Kind::Variable&&
                      callee.text.starts_with(kernel_reviewed_prefix)?
      std::string_view(callee.text).substr(kernel_reviewed_prefix.size()):
      std::string_view{};
-   for(std::size_t i=0;i<e.children.size();++i){
-    if(i==0&&first_argument){
-     args.push_back(*first_argument);
-     if(!intrinsic&&nodes[target].kind==Type::Function&&
-        i<nodes[target].parameters.size())
-      unify(*first_argument,nodes[target].parameters[i],e.children[i]->where);
-    }else if(kernel_span_argument(kernel,i))
+    for(std::size_t i=0;i<e.children.size();++i){
+     const auto borrow=borrowed_function&&i<borrowed_function->params.size()?
+      borrowed_function->params[i].borrow:BorrowMode::Value;
+     if(i==0&&first_argument){
+      args.push_back(*first_argument);
+      if(!intrinsic&&nodes[target].kind==Type::Function&&
+         i<nodes[target].parameters.size())
+       unify(*first_argument,nodes[target].parameters[i],e.children[i]->where);
+     }else if(borrow!=BorrowMode::Value){
+      auto source=expression(*e.children[i]);
+      auto root=head(source,e.children[i]->where);
+      auto referent=nodes[root].kind==Type::Own?
+       owned_value(source,e.children[i]->where):source;
+      args.push_back(referent);
+      if(nodes[target].kind==Type::Function&&
+         i<nodes[target].parameters.size())
+       unify(referent,nodes[target].parameters[i],e.children[i]->where);
+     }else if(kernel_span_argument(kernel,i))
      args.push_back(expression(*e.children[i]));
     else if(!intrinsic&&nodes[target].kind==Type::Function&&
             i<nodes[target].parameters.size())
@@ -1549,7 +1568,16 @@ class Inference {
      }
      break;
     }
-    case Expr::Kind::Variable:return name(e);
+     case Expr::Kind::Variable:return name(e);
+     case Expr::Kind::Borrow:{
+      if(e.children.size()!=1||!e.children[0]||
+         e.children[0]->kind!=Expr::Kind::Variable)
+       fail(at,"borrow requires one named local place");
+      auto source=expression(*e.children[0]);
+      auto root=head(source,at);
+      result=nodes[root].kind==Type::Own?owned_value(source,at):source;
+      break;
+     }
      case Expr::Kind::Unit:result=scalar(Type::Void,at);break;
      case Expr::Kind::UnsafeBlock:
       if(e.children.size()!=1||!e.children[0])fail(at,"malformed unsafe expression");
@@ -1702,15 +1730,19 @@ class Inference {
      case Stmt::Kind::CspScope:fail(at,"private task scope before inference");
     case Stmt::Kind::Defer:expression(*statement.value);break;
     case Stmt::Kind::PushDefer:fail(at,"private defer registration before inference");
-   case Stmt::Kind::Let:{
-    auto first=slots.size();
-    Term value;
+    case Stmt::Kind::Let:{
+     auto first=slots.size();
+     Term value;
     if(statement.declared!=Type::Invalid) {
      auto declared=annotation(statement.declared,at);value=expected(*statement.value,declared);
      slots.push_back({&statement.declared,declared,at,statement.pattern?"tuple binding annotation":"annotation for "+statement.name});
     }else value=expression(*statement.value);
-    if(!generalize_pattern(statement,value,first))generalize(statement,value,first);
-    if(statement.kind!=Stmt::Kind::Template){
+     const bool borrowed=statement.value&&
+                         statement.value->kind==Expr::Kind::Borrow;
+     if(!borrowed)
+      if(!generalize_pattern(statement,value,first))
+       generalize(statement,value,first);
+     if(statement.kind!=Stmt::Kind::Template){
      if(statement.pattern)bind_pattern(*statement.pattern,value);else define(statement.name,value,at);
     }
     break;
@@ -1827,11 +1859,11 @@ public:
  void run() {
   // Allocate all declaration variables first: calls, mutual recursion and
   // imported functions constrain the same monotype regardless of body order.
-  for(auto& f:unit.functions) {
+   for(auto& f:unit.functions) {
    if(is_reserved_intrinsic_name(f.name))fail(f.where,"intrinsic name cannot be redefined: "+f.name);
    if(globals.contains(f.name))fail(f.where,"duplicate function: "+f.name);
-   if(f.name=="main"&&(!f.type_parameters.empty()||!f.constraints.empty()))
-    fail(f.where,"main cannot declare generic binders or cliche constraints");
+    if(f.name=="main"&&(!f.type_parameters.empty()||!f.constraints.empty()))
+     fail(f.where,"main cannot declare generic binders or cliche constraints");
    if(f.external) {
      if(!f.type_parameters.empty()||!f.constraints.empty())
       fail(f.where,"extern signatures cannot declare generic binders or cliche constraints");

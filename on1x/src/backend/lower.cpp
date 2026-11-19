@@ -234,7 +234,10 @@ public:
    for(const auto& f:unit.functions){auto targets=canonical::exit_targets(f,Stmt::Kind::Leave);region_targets.insert(targets.begin(),targets.end());auto next=canonical::exit_targets(f,Stmt::Kind::Continue);continue_targets.insert(next.begin(),next.end());}
   for(const auto& f:unit.functions){
    if(f.prototype)continue;
-   if(takes_exclusive(f))unsupported(f.where,"exclusive ref i64 requires addressable-place and borrow MIR descriptors (C11 HIR backend only)");
+    if(takes_borrows(f))
+     unsupported(f.where,
+       "borrowed parameters require addressable-place and loan MIR descriptors "
+       "(C11 HIR backend only)");
    if(f.external)unsupported(f.where,"raw extern declarations require typed foreign MIR descriptors");
    scalar(f.result,f.where,true);Function target;target.id=fresh(f.where);target.name=f.name;target.result=f.result;target.where=f.where;
    functions.emplace(f.name,target.id);module.functions.push_back(std::move(target));

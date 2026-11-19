@@ -80,6 +80,7 @@ valid_cases = [
     b'outer:for(var i=0;i<3;i=i+1){loop{continue outer;}} for x in -2..=2{break;}',
     b'match let x=f() with { (1|2) as n if n>0 => n, rest => 0 }; :: :::: ||| | record{x:_,..}',
     b'fn p(k:ref i64){k := 2;} foo() ~ { Ok(-) => println(1), Err(x) => println(x) };',
+    b'fn inspect(x:borrow Cell){let y=borrow x;} fn edit(x:ref Cell){let y=borrow mut x;y:=x;}',
     b'enum List<T>{Nil,Cons(T,own<List<T>>)} let x=box(v); let y=move(x); take(y); drop(y);',
     b'cliche Show{fn show<T>(value:Self,x:T)->string;let fallback:Self;} impl<T> Show for Box<T> where Show<T>{let fallback:Box<T>=value;} Show<Box<i64>>::show<bool>(box,true);',
     br'let c = #\newline; let b = b!#\a; let raw = r!"a\n"; let n = 0o77 + 0b101;',

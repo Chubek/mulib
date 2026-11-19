@@ -23,8 +23,10 @@ void on1x_env_retain(on1x_env *environment);
 void on1x_env_release(on1x_env *environment);
 /* Finite unique owning indirection for recursive nominal values. The payload
  * bytes have max_align_t alignment. Generated C transfers values by clearing
- * the source slot; unique values are never retained or copied. Destruction is
- * drained iteratively, so a long recursive chain does not consume C stack. */
+ * the source slot; unique values are never retained or copied. Checked On1x
+ * loans use the size-checked payload accessor; temporal validity remains a
+ * compiler obligation. Destruction is drained iteratively, so a long recursive
+ * chain does not consume C stack. */
 #define ON1X_UNIQUE_ABI_VERSION 1
 typedef struct on1x_unique on1x_unique;
 typedef void (*on1x_unique_destructor)(void *);
@@ -40,6 +42,8 @@ void on1x_cleanup_push(on1x_cleanup *record,void *value,
 void on1x_cleanup_pop(on1x_cleanup *record);
 on1x_unique *on1x_unique_try_box(void *source,size_t size,
     on1x_unique_destructor destroy);
+void *on1x_unique_borrow(on1x_unique *owner,size_t size,
+    const char *file,size_t line,size_t column);
 void on1x_unique_take(on1x_unique **owner,void *destination,size_t size,
     const char *file,size_t line,size_t column);
 void on1x_unique_drop(on1x_unique *owner);

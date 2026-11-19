@@ -39,6 +39,10 @@ admit unique-resource transfer, or widen aggregate MIR/SDK/foreign ABI support.
   offset/length; it can escape/return/capture without dangling pointers. Slicing
   a slice preserves the same capacity and composes offsets. This is not a
   zero-copy borrow, a dynamic/resizable array, or an alias to subsequent writes.
+  The later [place-borrow profile](core-references.md) may lend an already
+  constructed named array/slice as a whole C11 value; that does not turn slice
+  construction into a backing-array view, and fields/elements still cannot be
+  independent loan origins or mutation targets.
 - Data fields/elements and match results must be trivially copied: i64/bool/f64,
   tuples and the new value data types. Managed functions/text/JSON/foreign
   owners are rejected. This needs no new heap allocator/drop path. Source

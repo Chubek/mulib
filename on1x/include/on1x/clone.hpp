@@ -39,7 +39,7 @@ inline ExprPtr clone_expression(const Expr& e,std::size_t& budget){
   out->kind=e.kind;out->reference=e.reference;out->where=e.where;out->text=e.text;out->type=e.type;
    out->labels=e.labels;
    for(const auto& p:e.patterns)out->patterns.push_back(clone_pattern(p,budget));
-    out->statement_match=e.statement_match;out->sum_match=e.sum_match;out->move_out=e.move_out;out->noreturn=e.noreturn;out->unsafe_region=e.unsafe_region;
+    out->statement_match=e.statement_match;out->sum_match=e.sum_match;out->move_out=e.move_out;out->borrow=e.borrow;out->noreturn=e.noreturn;out->unsafe_region=e.unsafe_region;
  out->parameters=e.parameters;out->type_parameters=e.type_parameters;out->constraints=e.constraints;
  out->cliche_arguments=e.cliche_arguments;out->member_type_arguments=e.member_type_arguments;
  out->cliche_member=e.cliche_member;

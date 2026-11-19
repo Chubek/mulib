@@ -12,14 +12,16 @@ backend. [Literals and interpolation](core-literals.md) distinguish Unicode
 scalars from bytes. [Regular expressions](core-regex.md) compile through
 Firestone and run without LibStone. [Enum arm lists](core-enum-connective.md)
 share structural matching.
-[Exclusive `ref i64` parameters](core-references.md) admit synchronous,
-call-scoped borrows, not first-class references or a foreign pointer ABI.
+[Checked shared/exclusive borrows](core-references.md) admit synchronous
+`borrow T`/`ref T` parameters and lexical `borrow [mut]` aliases for named
+places, including `own<Named>` payloads. They remain non-first-class and expose
+no foreign pointer ABI.
 [Shared `sexpr` owners in nominal fields](owning-adts.md) use existing RC
 cleanup. [Finite unique owners](recursive-owning-adts.md) add recursive nominal
 layouts through `own<Named>`, explicit transfer, direct C11 cleanup, and
 consuming owner-bearing nominal `Result` propagation. General borrows,
-checked external handles/resources and effectful ownership MIR remain
-unsupported.
+checked external handles/resources, field/index loans, borrowed receivers,
+suspension-aware loans, and effectful ownership/loan MIR remain unsupported.
 
 The current defer/Result ownership continuation (2026-11-19) adds checked
 active-arm transfer for finite `own<Named>` payloads, proves shared-payload
@@ -117,6 +119,7 @@ around stackful fibers.
 | Frontend input limits | Implemented and tested | 2 MiB per file; 256-level parsing/HIR limits including lambdas; bounded capture metadata |
 | Diagnostics and scrutiny | Executable bounded tooling slice | Build-validated JSON v2 owns new identities/presentation/policy/repairs/PPX declarations, with runtime replacement and trusted bootstrap; bounded registry, text/JSON/SARIF with UTF-16 columns, CLI/source/On1xfile precedence, message-free registered PPX sideband, independently checked Syren edits and explicitly advisory Wetstone proposals; legacy compiler text migration, CFG/interprocedural/resource proof and LSP remain open; [manual](diagnostics.md) |
 | Type inference | P1 schemes and explicit universals | Global recursive-component and value-restricted immutable let/pattern generalization, rigid `forall` parameters, bounded C11 specialization/bundles; no defaulting or inferred polymorphic recursion |
+| Shared/exclusive place borrowing | Executable bounded HIR→C11 profile | Non-first-class `borrow T`/`ref T`, lexical `borrow [mut]`, nested reborrows, joins, owner-payload access and move/drop invalidation; direct private calls only. No PPX/interface/MIR/FFI/callback/defer/concurrency transport, field/index origins, separate compilation or independent Chisel/Nerotypical admission; [manual](core-references.md) |
 | Intrinsic core cliches | Executable bounded C11 profile | Generic declarations/implementations/members, associated values, qualified constrained calls, imports, exact-over-blanket coherence, orphan/overlap checks and bounded recursive resolution; static generated functions only. No associated types, dynamic dictionaries, Unit-v1 PPX transport or separate compiled interfaces; [manual](core-cliche.md) |
 | Intrinsic nominal `impl` blocks | Executable bounded C11 profile | Generic targets/members, associated and receiver functions/values, canonical module lookup, enum receivers, deterministic private-function lowering and copy-safe value receivers. Scalar associated members also use existing MIR; `ref self`, `move self`, and managed/resource receivers reject, so owners use explicit non-receiver parameters; no explicit member type arguments, visibility modifiers, Unit-v1 PPX/interfaces or aggregate MIR; [manual](core-impl.md) |
 | Structural function types / values | P1 subset | Monomorphic aliases, parameters/results, indirect/postfix calls and lexical resolution; no foreign callbacks |
@@ -155,7 +158,7 @@ around stackful fibers.
 | Flintstone/Firestone native lowering | Not implemented | C11 is the sole backend |
 | Value data model (M1 slice) | Executable by-value C11 subset | Structural records with canonical labels, closed sums with exhaustive `match`, `array<T,N>` and owning `slice` snapshots, bounds-checked access with exit-70 errors; no MIR lowering, mutation, borrowed/dynamic arrays, derives or foreign aggregate ABI; [contract](data-model.md) |
 | Nonrecursive nominal records/enums | Executable bounded C11 profile | Invariant parameters (including phantoms), inferred arguments, generic specialization/forall, constructor catalogs, exhaustive structural matching and imported type identity; independently reconstructed layouts; [manual](nominal-adts.md) |
-| Recursive nominal ADTs / unique owners | Executable bounded HIR→C11 profile | `own<Named>`, `box`, explicit whole-value moves, consuming take/drop/match/Result `?`, path-sensitive whole/projected moved-state verification, lexical/overwrite/partial-construction/error cleanup, active-arm destruction, iterative traversal/drop and non-owning-defer composition; no MIR, PPX, raw FFI, owner capture/deferred arguments, staging/concurrency or receiver ownership; [contract](recursive-owning-adts.md), [Result contract](defer-errors.md) |
+| Recursive nominal ADTs / unique owners | Executable bounded HIR→C11 profile | `own<Named>`, `box`, explicit whole-value moves, consuming take/drop/match/Result `?`, path-sensitive whole/projected moved-state verification, lexical/overwrite/partial-construction/error cleanup, active-arm destruction, iterative traversal/drop and non-owning-defer composition; whole payloads compose with checked lexical/call borrows, but no MIR, PPX, raw FFI, capture/deferred arguments, staging/concurrency or receiver ownership; [contract](recursive-owning-adts.md), [Result contract](defer-errors.md) |
 | Module signatures / functors | Not implemented | Interface ownership/effects, generative/applicative identity and separate-compilation ABI remain absent |
 | Cooperative fiber / channel G4 slice | Executable bounded C11 profile | `taskgroup`/`within` (terminal timeout), eager `launch`/`join`, consuming cooperative internal `cancel`, 1:1 i64 uni channels with bounded FIFO/rendezvous, checked outcomes and atomic mixed i64/u8 `poll` with monotonic `after`; POSIX `xfiber` direct exec/join/cancel; compiler-parsed backtick argv and affine bounded `u8` streams; MuLIB kernels through one implementation TU; no Plaid integration, full shell operators/expansion, typed timeout recovery, async or native workers; [contract](concurrency.md), [cancellation/deadlines](cancellation-deadlines.md) |
 | Plaid/Prolific integration | Not implemented | The cooperative G4 adapter uses MuLIB, not Plaid; profiling and broader concurrency remain open |
@@ -212,8 +215,10 @@ transforms and B5 VM/native lowering remain open.
     Global recursive components and immutable value/pattern lets support schemes;
     explicit universal parameters use rigid checks and typed bundles. Extern
      tuple patterns explicitly flatten scalars. Records and bounded nominal ADTs
-     now execute; next ownership work is typed MIR and broader borrow/resource
-     composition. Mutable/resource capture lifetimes require further analysis.
+     now execute; whole-place shared/exclusive loans and unique-owner payload
+     borrows also execute through direct C11. Next ownership work is typed MIR
+     and field/receiver/foreign borrow-resource composition. Mutable/resource
+     capture lifetimes require further analysis.
     The semantic HIR remains C++-owned, not a new generated ASDL semantic AST.
     The metaprogramming core runs after parsing and before inference, with a real
     ASDL-generated wire tree in integrated builds. Follow-up metaprogramming work

@@ -210,9 +210,9 @@ void verify_generated_members(const Unit& unit){
          "ON1X-IMPL-HIR");
    std::vector<Type> parameters;
    for(std::size_t i=0;i<member.function.params.size();++i){
-    const auto& expected=member.function.params[i];
-    if(generated->params[i].name!=expected.name||
-       generated->params[i].exclusive!=expected.exclusive)
+     const auto& expected=member.function.params[i];
+     if(generated->params[i].name!=expected.name||
+        generated->params[i].borrow!=expected.borrow)
      fail(member.where,"generated inherent member parameter metadata mismatch",
           "ON1X-IMPL-HIR");
     parameters.push_back(expected.type);
@@ -360,9 +360,9 @@ void prepare(Unit& unit){
     auto& parameter=function.params[p];
     if(!names.insert(parameter.name).second)
      fail(parameter.where,"duplicate member parameter: "+parameter.name);
-    if(parameter.exclusive)
-     fail(parameter.where,"exclusive ref parameters are not supported in inherent members",
-          "ON1X-IMPL-RECEIVER");
+     if(parameter.borrow!=BorrowMode::Value)
+      fail(parameter.where,"borrowed parameters are not supported in inherent members",
+           "ON1X-IMPL-RECEIVER");
     if(parameter.name=="self"&&(member.receiver==InherentMember::Receiver::None||p!=0))
      fail(parameter.where,"self is reserved for the first receiver parameter",
           "ON1X-IMPL-RECEIVER");

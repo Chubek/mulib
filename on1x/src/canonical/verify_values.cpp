@@ -1,6 +1,7 @@
 #include <on1x/canonical/values.hpp>
 #include <on1x/concurrency.hpp>
 #include <on1x/literals.hpp>
+#include <on1x/nominal.hpp>
 #include <on1x/numeric.hpp>
 #include <on1x/primitives.hpp>
 #include <algorithm>
@@ -33,25 +34,34 @@ State meet(const State& a,const State& b){
 }
 Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b);}
  class Verify {
-  const Unit& unit;
+   const Unit& unit;
+   NominalCatalog catalog;
   bool unsafe_context=false;
   bool generic_context=false;
-  struct Local {
-   Type type;bool mut=false;const Stmt* storage=nullptr;std::size_t id=0;
-   bool exclusive=false,addressable=true,prototype=false;
- };
+   bool loan_tracking=false;
+   struct Local {
+    Type type;bool mut=false;const Stmt* storage=nullptr;std::size_t id=0;
+    BorrowMode borrow=BorrowMode::Value;
+    std::size_t origin=0,root=0;
+    bool addressable=true,prototype=false;
+   };
+   struct Loan {
+    BorrowMode mode=BorrowMode::Value;
+    std::size_t origin=0,root=0;
+   };
  struct Target {std::size_t id;std::vector<State> exits,continues;};
   std::vector<std::map<std::string,Local>> scopes;
   std::map<std::string,const Function*> functions;
   std::map<std::string,const Function*> borrowers;
   std::set<std::pair<Type,bool>> checked_types;
- std::set<std::size_t> loaned; // Binding IDs, never textual names.
+   std::vector<Loan> call_loans;
   std::vector<Target> regions,loops;
   Type returns=Type::Void;
-  std::size_t serial=0,budget=262144,state_work=4*1024*1024,type_work=262144;
+   std::size_t serial=0,budget=262144,state_work=4*1024*1024,
+               type_work=262144,borrow_work=4*1024*1024;
   void tick(const Location& at,std::size_t depth){if(depth>520||!budget--)throw Error(at,"canonical value verification budget exhausted","ON1X-VALUES-LIMIT");}
    void charge(const State& state,const Location& at){auto size=state.initialized.size()+state.maybe_initialized.size()+state.tags.size()+state.moved.size()+state.moved_parts.size();if(size>state_work)throw Error(at,"canonical value flow-state budget exhausted","ON1X-VALUES-LIMIT");state_work-=size;}
-  void source(const Location& at){
+   void source(const Location& at){
    if(at.file.empty()||at.file.size()>4096||at.file.find('\0')!=std::string::npos||
       !at.line||!at.column||at.offset>max_source_bytes||
       at.line>max_source_bytes+1||at.column>max_source_bytes+1)
@@ -70,13 +80,22 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
    if(!form)fail(at,"malformed checked type: "+form.message);
     checked_types.emplace(type,generics);
    }
-   static bool identifier(const std::string& name){
+   void borrow_charge(const Location& at,std::size_t amount=1){
+    if(amount>borrow_work)
+     throw Error(at,"borrow analysis work budget exhausted","ON1X-BORROW-LIMIT");
+    borrow_work-=amount;
+   }
+    static bool identifier(const std::string& name){
      if(name.empty()||
         !(std::isalpha(static_cast<unsigned char>(name.front()))||
           name.front()=='_'))return false;
-    return std::all_of(name.begin(),name.end(),[](unsigned char c){
-      return std::isalnum(c)||c=='_';
-     });
+     return std::all_of(name.begin(),name.end(),[](unsigned char c){
+       return std::isalnum(c)||c=='_';
+      });
+     }
+    static bool valid_borrow_mode(BorrowMode mode){
+     return mode==BorrowMode::Value||mode==BorrowMode::Shared||
+            mode==BorrowMode::Exclusive;
     }
     static bool move_place(E kind){
      return kind==E::Variable||kind==E::Payload||kind==E::Project||
@@ -142,7 +161,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
        fail(bound.where,
             "generic parameter bound is absent from function constraints");
      }
-    }
+     }
     for(const auto& item:function.constraints)
      constraint(item,function.type_parameters.size());
    }
@@ -234,9 +253,12 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
            "retained intrinsic callee carries a forged value type");
     }else checked_type(expression.type,expression.where,true);
     checked_type(expression.result,expression.where,true);
-    for(const auto& parameter:expression.parameters){
-     source(parameter.where);
-     checked_type(parameter.type,parameter.where,true);
+     for(const auto& parameter:expression.parameters){
+      source(parameter.where);
+      if(parameter.borrow!=BorrowMode::Value)
+       fail(parameter.where,
+            "borrowed parameter in retained anonymous generic source");
+      checked_type(parameter.type,parameter.where,true);
      if(parameter.pattern)
       retained_pattern(*parameter.pattern,depth+1);
     }
@@ -256,10 +278,14 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
        expression.syntax_depth>max_syntax_depth)
      fail(expression.where,
           "invalid retained generic expression syntax-depth metadata");
-    if(expression.kind==E::ClicheMember||
-       expression.kind==E::InherentMember)
-     fail(expression.where,
-          "unresolved member projection in retained generic source");
+     if(expression.kind==E::ClicheMember||
+        expression.kind==E::InherentMember)
+      fail(expression.where,
+           "unresolved member projection in retained generic source");
+     if(expression.kind==E::Borrow||
+        expression.borrow!=BorrowMode::Value)
+      fail(expression.where,
+           "borrow metadata in retained generic source");
     if(expression.move_out&&
        (!move_place(expression.kind)||!expression.type.is_move_only()||
         (expression.kind==E::Variable&&
@@ -345,7 +371,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
    if(function.kernel_link_only)return Expr::Reference::ScalarForeign;
    if(!function.kernel_symbol.empty())return Expr::Reference::UnsafeForeign;
    if(function.external)return Expr::Reference::Extern;
-   if(takes_exclusive(function))return Expr::Reference::BorrowFunction;
+    if(takes_borrows(function))return Expr::Reference::BorrowFunction;
    return Expr::Reference::Function;
    }
    void expression_header(const Expr& e,std::size_t depth,bool callee_position){
@@ -372,9 +398,12 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
      fail(e.where,"source-only metadata reached checked executable HIR");
     }
     if(e.syntax_depth==0||e.syntax_depth>max_syntax_depth){
-     fail(e.where,"invalid checked expression syntax-depth metadata");
-    }
-     if(!generic_context){
+      fail(e.where,"invalid checked expression syntax-depth metadata");
+     }
+     if(!valid_borrow_mode(e.borrow)||
+        (e.kind==E::Borrow)!=(e.borrow!=BorrowMode::Value))
+      ref_error(e.where,"invalid checked borrow expression mode");
+      if(!generic_context){
       if(e.context){
        fail(e.where,"source syntax context reached checked executable HIR");
       }
@@ -443,11 +472,18 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
   }
   const Local* find(const std::string& name)const{for(auto it=scopes.rbegin();it!=scopes.rend();++it)if(auto found=it->find(name);found!=it->end())return &found->second;return nullptr;}
    void bind(const std::string& name,Type type,bool mut,const Stmt* storage=nullptr,
-             bool exclusive=false,bool addressable=true,bool prototype=false){
-    if(name.empty()||scopes.back().contains(name))
-     fail(storage?storage->where:Location{"<canonical-values>"},
-          "empty/duplicate canonical local");
-    scopes.back()[name]={type,mut,storage,++serial,exclusive,addressable,prototype};
+             BorrowMode borrow=BorrowMode::Value,bool addressable=true,
+             bool prototype=false,std::size_t origin=0,std::size_t root=0){
+     if(name.empty()||scopes.back().contains(name))
+      fail(storage?storage->where:Location{"<canonical-values>"},
+           "empty/duplicate canonical local");
+     const auto id=++serial;
+     if(borrow==BorrowMode::Value){origin=0;root=id;}
+     else if(!origin||!root)
+      ref_error(storage?storage->where:Location{"<canonical-values>"},
+                "borrowed local has no origin");
+     scopes.back()[name]={type,mut,storage,id,borrow,origin,root,
+                          addressable,prototype};
    }
    void pattern(const Pattern& p,const Type& t,std::size_t depth=0){
      tick(p.where,depth);source(p.where);checked_type(t,p.where,generic_context);
@@ -469,19 +505,83 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
      bind(p.name,t,false);
     }
    }
-  void params(const std::vector<Param>& ps,std::size_t depth=0){
-   for(const auto& p:ps){
-     source(p.where);checked_type(p.type,p.where,generic_context);
+   void params(const std::vector<Param>& ps,std::size_t depth=0){
+    for(const auto& p:ps){
+      source(p.where);checked_type(p.type,p.where,generic_context);
+      if(!valid_borrow_mode(p.borrow))
+       ref_error(p.where,"invalid checked borrowed parameter mode");
      if(p.context)fail(p.where,"source parameter context reached canonical HIR");
-    if(p.pattern){
-     if(p.exclusive)ref_error(p.where,"ref i64 parameters cannot use a pattern");
-     pattern(*p.pattern,p.type,depth+1);
-    }else bind(p.name,p.type,false,nullptr,p.exclusive);
+     if(p.pattern){
+      if(p.borrow!=BorrowMode::Value)
+       ref_error(p.where,"borrowed parameters cannot use a pattern");
+      pattern(*p.pattern,p.type,depth+1);
+     }else{
+      bind(p.name,p.type,false);
+      if(p.borrow!=BorrowMode::Value){
+       auto& local=scopes.back().at(p.name);
+       local.borrow=p.borrow;local.origin=local.id;local.root=local.id;
+       loan_tracking=true;
+      }
+     }
+    }
    }
-  }
-  void access(const Local* binding,const Location& at,const std::string& name){
-   if(binding&&loaned.contains(binding->id))ref_error(at,"cannot access '"+name+"' during its exclusive ref i64 borrow");
-  }
+   const Local* by_id(std::size_t id,const Location& at){
+    for(auto scope=scopes.rbegin();scope!=scopes.rend();++scope)
+     for(const auto& [name,local]:*scope){
+      borrow_charge(at);
+      (void)name;if(local.id==id)return &local;
+     }
+    return nullptr;
+   }
+   bool ancestor(std::size_t possible,std::size_t node,const Location& at){
+    // Reborrows declared sequentially in one block can form a deeper chain
+    // than the lexical-scope count. Binding identity still gives a finite
+    // acyclic bound, while borrow_charge caps malformed or adversarial work.
+    for(std::size_t depth=0;node&&depth<=serial+1;++depth){
+     borrow_charge(at);
+     if(node==possible)return true;
+     auto local=by_id(node,at);
+     if(!local||local->borrow==BorrowMode::Value||local->origin==node)
+      return false;
+     node=local->origin;
+    }
+    if(node)
+     throw Error(at,"borrow ancestry depth budget exhausted",
+                 "ON1X-BORROW-LIMIT");
+    return false;
+   }
+   template<class F> void each_loan(const Location& at,F&& operation){
+    if(!loan_tracking&&call_loans.empty())return;
+    for(const auto& scope:scopes)for(const auto& [name,local]:scope){
+     (void)name;borrow_charge(at);
+     if(local.borrow!=BorrowMode::Value)
+      operation(Loan{local.borrow,local.origin,local.root},local.id);
+    }
+    for(const auto& loan:call_loans){
+     borrow_charge(at);operation(loan,std::size_t{0});
+    }
+   }
+   enum class Access { Read, Write, Consume };
+   void access(const Local* binding,const Location& at,const std::string& name,
+               Access operation=Access::Read){
+    if(!binding)return;
+    each_loan(at,[&](const Loan& loan,std::size_t loan_id){
+     if(loan_id==binding->id||loan.root!=binding->root)return;
+     bool conflict=false;
+     if(binding->borrow==BorrowMode::Value)
+      conflict=operation!=Access::Read||
+               loan.mode==BorrowMode::Exclusive;
+     else if(ancestor(binding->id,loan.origin,at))
+      conflict=binding->borrow==BorrowMode::Exclusive||
+               operation!=Access::Read||
+               loan.mode==BorrowMode::Exclusive;
+     if(conflict)
+      ref_error(at,"cannot "+std::string(operation==Access::Read?"access ":
+        operation==Access::Write?"mutate ":"consume ")+"'"+name+
+        "' during its "+(loan.mode==BorrowMode::Exclusive?
+        std::string("exclusive"):std::string("shared"))+" borrow");
+    });
+   }
   static bool has_moved_part(const State& state,std::size_t id){
    return std::any_of(state.moved_parts.begin(),state.moved_parts.end(),
                       [&](const auto& part){return part.first==id;});
@@ -496,22 +596,108 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
                      e.kind==E::Field?'r':'a';
    return std::string(1,prefix)+std::to_string(e.projection);
   }
-  void move_part(const Expr& e,State& state){
+   void move_part(const Expr& e,State& state){
    if(!e.type.is_move_only()||e.children.size()!=1||
       e.children[0]->kind!=E::Variable)
     fail(e.where,"unique projection transfer requires a direct named place");
    const auto& root=*e.children[0];auto binding=find(root.text);
-   if(!binding||root.reference!=Expr::Reference::Local||
-      binding->type!=root.type)
-    fail(e.where,"unique projection transfer has no checked local root");
+    if(!binding||root.reference!=Expr::Reference::Local||
+       binding->type!=root.type)
+     fail(e.where,"unique projection transfer has no checked local root");
+    access(binding,e.where,root.text,Access::Consume);
+    if(binding->borrow!=BorrowMode::Value)
+     ref_error(e.where,"cannot move a field out of borrowed place '"+root.text+"'");
    if(state.moved.contains(binding->id))
     fail(e.where,"projection from moved local: "+root.text);
    auto part=std::pair{binding->id,part_name(e)};
    if(!state.moved_parts.insert(part).second)
     fail(e.where,"unique field is moved more than once from local: "+root.text);
    for(auto it=state.tags.begin();it!=state.tags.end();)
-    if(it->first==binding->id)it=state.tags.erase(it);else ++it;
-  }
+     if(it->first==binding->id)it=state.tags.erase(it);else ++it;
+   }
+   Type borrowed_type(const Type& source,const Location& at){
+    if(!source.is_own())return source;
+    const auto& target=source.owned();
+    return catalog.instantiate(target.nominal(),target.arguments(),at);
+   }
+   const Local& borrow_source(const Expr& argument,State& state,
+                              std::size_t depth){
+    expression_header(argument,depth,false);
+    if(argument.kind!=E::Variable||
+       argument.reference!=Expr::Reference::Local||
+       argument.move_out||argument.borrow!=BorrowMode::Value||
+       argument.callee||!argument.children.empty()||!argument.body.empty()||
+       argument.prototype||argument.noreturn)
+     ref_error(argument.where,
+               "borrow requires one checked named addressable local place");
+    auto place=find(argument.text);
+    if(!place||place->type!=argument.type||!place->addressable)
+      ref_error(argument.where,
+                "borrow requires an initialized named addressable local place "
+                "or incoming borrowed parameter");
+    if(place->prototype)
+     ref_error(argument.where,"borrow cannot originate from a non-executable prototype");
+    if(place->storage&&!state.initialized.contains(place->storage))
+     fail(argument.where,"borrow of uninitialized canonical storage");
+    if(state.moved.contains(place->id)||has_moved_part(state,place->id))
+     ref_error(argument.where,"borrow of moved or partially moved place '"+argument.text+"'");
+    return *place;
+   }
+   void acquire(const Local& source,BorrowMode mode,const Location& at,
+                const std::string& name){
+    if(mode==BorrowMode::Value)
+     ref_error(at,"borrow acquisition has no borrow mode");
+    if(source.borrow==BorrowMode::Shared&&mode==BorrowMode::Exclusive)
+     ref_error(at,"cannot take an exclusive reborrow from shared borrowed place '"+name+"'");
+    each_loan(at,[&](const Loan& loan,std::size_t loan_id){
+     if(loan_id==source.id||loan.root!=source.root)return;
+     bool conflict=false;
+     if(source.borrow==BorrowMode::Value)
+      conflict=mode==BorrowMode::Exclusive||
+               loan.mode==BorrowMode::Exclusive;
+     else if(source.borrow==BorrowMode::Exclusive)
+      conflict=ancestor(source.id,loan.origin,at);
+     else
+      // An exclusive ancestor is already suspended by this shared reborrow;
+      // it must not prevent a further shared descendant. Exclusive siblings,
+      // descendants, and call-scoped loans still conflict.
+      conflict=loan.mode==BorrowMode::Exclusive&&
+               !(loan_id&&ancestor(loan_id,source.id,at));
+     if(conflict)
+      ref_error(at,(mode==BorrowMode::Exclusive?
+        std::string("overlapping exclusive borrow of '"):
+        std::string("conflicting shared borrow of '"))+name+
+        "' while another borrow is live");
+    });
+   }
+   void lexical_borrow(const Stmt& statement,State& state,
+                       std::size_t depth){
+    if(csp::present(unit))
+     ref_error(statement.where,
+               "lexical borrows cannot cross or coexist with cooperative "
+               "suspension/task boundaries");
+    const auto& borrow=*statement.value;
+    expression_header(borrow,depth,false);
+    if(borrow.kind!=E::Borrow||borrow.children.size()!=1||
+       !borrow.children[0]||statement.pattern||statement.mutable_binding||
+       statement.name.empty())
+     ref_error(statement.where,
+               "lexical borrow requires a simple immutable let binding");
+    const auto& source_expression=*borrow.children[0];
+    const auto& source=borrow_source(source_expression,state,depth+1);
+    const auto expected=borrowed_type(source.type,borrow.where);
+    if(borrow.type!=expected)
+     ref_error(borrow.where,"checked lexical borrow referent type mismatch");
+    if(statement.declared!=Type::Invalid&&statement.declared!=borrow.type)
+     fail(statement.where,"canonical borrow annotation/type mismatch");
+    if(borrow.type==Type::Void||borrow.type==Type::Json||
+       borrow.type==Type::JsonView||csp::contains(borrow.type))
+     ref_error(borrow.where,"unsupported lexical borrow referent type");
+    acquire(source,borrow.borrow,borrow.where,source_expression.text);
+    bind(statement.name,borrow.type,false,nullptr,borrow.borrow,true,false,
+         source.id,source.root);
+    loan_tracking=true;
+   }
   const Function* borrower(const Expr& e){
    if(e.kind!=E::Variable||find(e.text))return nullptr;
    auto found=borrowers.find(e.text);return found==borrowers.end()?nullptr:found->second;
@@ -608,31 +794,31 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
    if(callee.reference!=Expr::Reference::BorrowFunction||callee.callee||!callee.children.empty()||
       !callee.body.empty()||callee.text!=function.name||function.prototype||
       e.children.size()!=function.params.size()||e.type!=function.result)
-    ref_error(e.where,"malformed checked call with ref i64 parameters");
+     ref_error(e.where,"malformed checked call with borrowed parameters");
   std::vector<Type> parameter_types;
   for(const auto& parameter:function.params)parameter_types.push_back(parameter.type);
   if(callee.type!=Type::function(std::move(parameter_types),function.result))
-   ref_error(callee.where,"checked ref i64 callee signature mismatch");
-  std::vector<std::size_t> acquired;
-  bool live=true;
-  for(std::size_t i=0;i<e.children.size();++i){
-    if(!e.children[i])ref_error(e.where,"missing checked call argument");
-    const auto& arg=*e.children[i];const auto& param=function.params[i];
-    if(arg.type!=param.type)ref_error(arg.where,"checked ref i64 call argument type mismatch");
-    if(!param.exclusive){if(!expression(arg,state,depth+1)){live=false;break;}continue;}
-     auto* place=arg.kind==E::Variable?find(arg.text):nullptr;
-    if(!place||arg.reference!=Expr::Reference::Local||place->type!=Type::I64||!place->addressable||place->storage||
-       arg.callee||!arg.children.empty()||!arg.body.empty()||arg.prototype||arg.noreturn)
-     ref_error(arg.where,"ref i64 requires a named addressable local i64 or an incoming ref i64 parameter");
-    if(loaned.contains(place->id))
-     ref_error(arg.where,"overlapping exclusive ref i64 borrow of '"+arg.text+"'");
-    if(!expression(arg,state,depth+1)){live=false;break;}
-    loaned.insert(place->id);
-    acquired.push_back(place->id);
+    ref_error(callee.where,"checked borrowed callee signature mismatch");
+   const auto acquired=call_loans.size();
+   bool live=true;
+   for(std::size_t i=0;i<e.children.size();++i){
+     if(!e.children[i])ref_error(e.where,"missing checked call argument");
+     const auto& arg=*e.children[i];const auto& param=function.params[i];
+     if(param.borrow==BorrowMode::Value){
+      if(arg.type!=param.type)
+       ref_error(arg.where,"checked call argument type mismatch");
+      if(!expression(arg,state,depth+1)){live=false;break;}
+      continue;
+     }
+     const auto& place=borrow_source(arg,state,depth+1);
+     if(borrowed_type(place.type,arg.where)!=param.type)
+      ref_error(arg.where,"checked borrowed call argument type mismatch");
+     acquire(place,param.borrow,arg.where,arg.text);
+     call_loans.push_back({param.borrow,place.id,place.root});
+   }
+   call_loans.resize(acquired);
+   return live;
   }
-  for(auto id:acquired)loaned.erase(id);
-  return live;
- }
  std::pair<std::size_t,std::string> tag(const Expr& e){
   if(e.children.size()!=1||!e.children[0]||e.children[0]->kind!=E::Variable)fail(e.where,"sum decision operand must be a named value");
   const auto& root=*e.children[0];auto binding=find(root.text);if(!binding||binding->mut||binding->type!=root.type||root.type.kind()!=Type::Sum)fail(e.where,"sum decision requires an immutable closed-sum binding");
@@ -644,8 +830,9 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
                     bool place_base=false){
     expression_header(e,depth,callee_position);
     if(e.prototype){
-     if(!borrowers.empty())ref_error(e.where,"non-executable prototype in a checked ref i64 expression");
-     return true;
+      if(!borrowers.empty())
+       ref_error(e.where,"non-executable prototype in a checked borrowed expression");
+      return true;
     }
     if(e.kind==E::PatternMatch||e.kind==E::Match||e.kind==E::Case||
        e.kind==E::Loop||e.kind==E::Propagate||e.kind==E::UnsafeBlock||
@@ -658,9 +845,11 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
        e.kind==E::SyntaxKeyword||e.kind==E::SyntaxLet||
        e.kind==E::Splice||e.kind==E::Lift)
      fail(e.where,"unexpanded metaprogramming/staging syntax reached canonical HIR");
-   if(e.kind==E::Call&&e.callee)if(auto f=borrower(*e.callee))return borrow_call(e,*f,state,depth);
-   if(e.reference==Expr::Reference::BorrowFunction||borrower(e))
-    ref_error(e.where,"functions with ref i64 parameters require a direct named call");
+    if(e.kind==E::Call&&e.callee)if(auto f=borrower(*e.callee))return borrow_call(e,*f,state,depth);
+    if(e.reference==Expr::Reference::BorrowFunction||borrower(e))
+     ref_error(e.where,"functions with borrowed parameters require a direct named call");
+    if(e.kind==E::Borrow)
+     ref_error(e.where,"borrow expression escaped its direct lexical let binding");
    if(e.kind==E::Variable){
     if(e.text.empty()||e.callee||!e.children.empty()||!e.body.empty())
      fail(e.where,"malformed canonical variable");
@@ -671,11 +860,14 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
       }
       if(binding->prototype&&!generic_context)
        fail(e.where,"non-executable prototype local reached executable HIR: "+e.text);
-      access(binding,e.where,e.text);
+       access(binding,e.where,e.text,
+              e.move_out?Access::Consume:Access::Read);
       if(binding->storage&&!state.initialized.contains(binding->storage))
        fail(e.where,"read of uninitialized canonical storage: "+e.text);
-      if(e.move_out){
-       if(!binding->type.is_move_only())
+       if(e.move_out){
+        if(binding->borrow!=BorrowMode::Value)
+         ref_error(e.where,"cannot consume or move borrowed place '"+e.text+"'");
+        if(!binding->type.is_move_only())
         fail(e.where,"move metadata on a copyable local: "+e.text);
        if(state.moved.contains(binding->id)||has_moved_part(state,binding->id))
         fail(e.where,"use after move of local: "+e.text);
@@ -702,8 +894,8 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     const auto expected=function_reference(*found->second);
     if(e.reference!=expected||e.type!=signature(*found->second))
      fail(e.where,"canonical global reference/signature mismatch: "+e.text);
-    if(expected==Expr::Reference::BorrowFunction)
-     ref_error(e.where,"functions with ref i64 parameters require a direct named call");
+     if(expected==Expr::Reference::BorrowFunction)
+      ref_error(e.where,"functions with borrowed parameters require a direct named call");
     if(expected==Expr::Reference::Extern||expected==Expr::Reference::ScalarForeign){
      if(!callee_position)fail(e.where,"foreign function is not a first-class value");
     }else if(expected==Expr::Reference::UnsafeForeign){
@@ -714,8 +906,9 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
    }
    if(e.kind==E::Lambda){
     std::vector<Type> parameter_types;std::set<std::string> names,captured;
-    for(const auto& p:e.parameters){
-     if(p.exclusive)ref_error(p.where,"anonymous functions cannot declare ref i64 parameters");
+     for(const auto& p:e.parameters){
+      if(p.borrow!=BorrowMode::Value)
+       ref_error(p.where,"anonymous functions cannot declare borrowed parameters");
      if(!names.insert(p.name).second)fail(p.where,"duplicate lambda parameter");
      parameter_types.push_back(p.type);
     }
@@ -732,16 +925,27 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
          (b->storage&&!state.initialized.contains(b->storage)))
       fail(e.where,"uninitialized/invalid closure capture");
      access(b,e.where,capture.name);
-     if(b->exclusive)ref_error(e.where,"closure cannot capture a ref i64 parameter");
+      if(b->borrow!=BorrowMode::Value)
+       ref_error(e.where,"closure cannot capture a borrowed place");
     }
-    auto saved_scopes=std::move(scopes);auto saved_regions=std::move(regions),saved_loops=std::move(loops);scopes.clear();regions.clear();loops.clear();scopes.emplace_back();
-    for(const auto& capture:e.captures)bind(capture.name,capture.type,false,nullptr,false,false);
+     auto saved_scopes=std::move(scopes);
+      auto saved_regions=std::move(regions),saved_loops=std::move(loops);
+      auto saved_call_loans=std::move(call_loans);
+      auto saved_loan_tracking=loan_tracking;
+      scopes.clear();regions.clear();loops.clear();call_loans.clear();
+      scopes.emplace_back();
+      loan_tracking=false;
+     for(const auto& capture:e.captures)
+      bind(capture.name,capture.type,false,nullptr,BorrowMode::Value,false);
      auto saved_returns=returns;returns=e.result;params(e.parameters);
      auto saved_unsafe=unsafe_context;unsafe_context=false;
      auto after=body(e.body,State{},depth+1,false);
      if(e.result!=Type::Void&&after)fail(e.where,"lambda lacks a complete return path");
      returns=saved_returns;unsafe_context=saved_unsafe;
-    scopes=std::move(saved_scopes);regions=std::move(saved_regions);loops=std::move(saved_loops);return true;
+      scopes=std::move(saved_scopes);regions=std::move(saved_regions);
+      loops=std::move(saved_loops);call_loans=std::move(saved_call_loans);
+      loan_tracking=saved_loan_tracking;
+      return true;
    }
    if(e.kind==E::Region){
     if(e.children.size()!=1||!e.children[0])fail(e.where,"value region requires one result");
@@ -1007,7 +1211,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
         fail(s.where,"specialization prototype has void type");
        if(s.declared!=Type::Invalid&&s.declared!=s.value->type)
         fail(s.where,"specialization prototype annotation/type mismatch");
-       bind(s.name,s.value->type,false,nullptr,false,true,true);
+        bind(s.name,s.value->type,false,nullptr,BorrowMode::Value,true,true);
        continue;
       }
      if(!state)fail(s.where,"unreachable canonical statement");
@@ -1058,7 +1262,11 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
        }
        state=body(s.body,*state,depth+1,false,true);continue;
        }
-    auto header_entry=s.kind==S::While?state:Flow{};
+     if(s.kind==S::Let&&s.value&&s.value->kind==E::Borrow){
+      lexical_borrow(s,*state,depth+1);
+      continue;
+     }
+     auto header_entry=s.kind==S::While?state:Flow{};
    if(s.value&&!expression(*s.value,*state,depth+1)){state.reset();continue;}
      switch(s.kind){
       case S::TaskGroup:case S::CspScope:
@@ -1077,12 +1285,13 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     if(s.value||s.pattern||s.declared==Type::Invalid||s.declared==Type::Void||s.declared==Type::Json||s.declared==Type::JsonView||s.declared.has_holes()||s.declared.has_generics())fail(s.where,"invalid canonical storage declaration");
      bind(s.name,s.declared,false,&s);state->initialized.erase(&s);state->maybe_initialized.erase(&s);break;
      case S::Initialize:{auto b=find(s.name);if(!b||!b->storage||!s.value||b->type!=s.value->type||state->maybe_initialized.contains(b->storage))fail(s.where,"invalid or repeated canonical initialization");state->initialized.insert(b->storage);state->maybe_initialized.insert(b->storage);clear_moves(*state,b->id);break;}
-   case S::Assign:{
-    auto b=find(s.name);access(b,s.where,s.name);
-    if(s.ref_store||(b&&b->exclusive)){
-     if(!s.ref_store||!b||!b->exclusive||b->type!=Type::I64||!s.value||s.value->type!=Type::I64)
-      ref_error(s.where,"invalid checked ref i64 store");
-     }else if(!b||!b->mut)fail(s.where,"canonical assignment to missing/immutable binding");
+    case S::Assign:{
+     auto b=find(s.name);access(b,s.where,s.name,Access::Write);
+     if(s.ref_store||(b&&b->borrow!=BorrowMode::Value)){
+      if(!s.ref_store||!b||b->borrow!=BorrowMode::Exclusive||
+         !s.value||s.value->type!=b->type)
+       ref_error(s.where,"invalid checked exclusive-borrow store");
+      }else if(!b||!b->mut)fail(s.where,"canonical assignment to missing/immutable binding");
      if(!b||b->type!=s.value->type)fail(s.where,"canonical assignment type mismatch");
      for(auto it=state->tags.begin();it!=state->tags.end();){
       if(it->first==b->id)it=state->tags.erase(it);else ++it;
@@ -1136,7 +1345,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
   return state;
  }
  public:
-  explicit Verify(const Unit& source):unit(source){}
+   explicit Verify(const Unit& source):unit(source),catalog(source){}
   void run(){
    for(const auto& [schema,instances]:unit.forall_layouts){
     checked_type(schema,{"<forall-layout>"});
@@ -1168,18 +1377,22 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
    }
    generic_context=false;
    const Function* first=nullptr;
-  for(const auto& f:unit.functions)if(takes_exclusive(f)){
-   if(!first)first=&f;
-   if(f.external||f.extension_generated||!f.kernel_symbol.empty()||f.name=="main"||!borrowers.emplace(f.name,&f).second)
-    ref_error(f.where,"invalid checked ref i64 function declaration");
-   for(const auto& p:f.params)if(p.exclusive&&(p.pattern||p.type!=Type::I64))
-    ref_error(p.where,"ref i64 requires a named i64 parameter");
-  }
-   if(first&&csp::present(unit))
-    ref_error(first->where,"the ref i64 profile cannot be combined with cooperative concurrency");
-   for(const auto& f:unit.functions){
-    if(f.prototype||f.external)continue;
-    generic_context=false;returns=f.result;scopes.emplace_back();params(f.params);
+   for(const auto& f:unit.functions)if(takes_borrows(f)){
+    if(!first)first=&f;
+     if(f.external||f.extension_generated||!f.kernel_symbol.empty()||f.name=="main"||!borrowers.emplace(f.name,&f).second)
+      ref_error(f.where,"invalid checked borrowed function declaration");
+    for(const auto& p:f.params)
+     if(p.borrow!=BorrowMode::Value&&
+        (p.pattern||p.type==Type::Void||p.type==Type::Json||
+         p.type==Type::JsonView||p.type.is_own()||csp::contains(p.type)))
+      ref_error(p.where,"borrowed parameter requires a supported named referent");
+   }
+    if(first&&csp::present(unit))
+     ref_error(first->where,"the borrow profile cannot be combined with cooperative concurrency");
+    for(const auto& f:unit.functions){
+     if(f.prototype||f.external)continue;
+      generic_context=false;returns=f.result;loan_tracking=false;
+      call_loans.clear();scopes.emplace_back();params(f.params);
     auto after=body(f.body,State{},0,false);scopes.pop_back();
     if(f.result!=Type::Void&&after)
      fail(f.where,"function lacks a complete return path");

@@ -343,6 +343,19 @@ Moonstone solver. It adds all-path loan and may-live checks around the upstream
 checker. Its public event API supports modeled external protocols; general
 contract-driven foreign-handle lowering remains open.
 
+Separately, the mandatory canonical value verifier implements the bounded
+[On1x place-borrow profile](core-references.md). Shared/exclusive parameter and
+lexical modes remain metadata over the referent type. The verifier links each
+loan to a lexical binding identity and root, composes conflicts with canonical
+move/partial-move state, and rejects retention or suspension. Direct C11 lowers
+that admitted slice to private `const T *`/`T *` calls; owner payload access is
+size-checked through the unique runtime. Chisel, Nerotypical, PPX, MIR,
+public/external SDK, and foreign adapters reject this metadata until they gain
+equivalent place, loan, invalidation, and effect representations. The private
+built-in C11 bridge invokes that same canonical emitter and is not an
+independent admission. Advisory Wetstone translation skips such functions and
+supplies no safety admission.
+
 - `json` can only originate from `json_parse_or_die` bound to `let`.
 - `json` and `json_view` cannot be declared as function arguments/returns.
 - Resource assignment, copying, or reinitialization is prohibited.

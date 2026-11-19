@@ -15,6 +15,15 @@ On1x uses the real `Moonstone::Chisel` target and
 checks modeled client-side ownership and borrow lifetimes. It does not inspect
 foreign function bodies or make arbitrary C implementations memory-safe.
 
+The language's [shared/exclusive borrow profile](core-references.md) is a
+separate canonical-HIR analysis. It tracks lexical and call-scoped loans over
+ordinary places and `own<Named>` payloads, while this Chisel adapter models only
+the JSON/resource events listed below. `--check-memory` and `--memory-check`
+therefore reject `borrow`/`ref` parameters and lexical borrow expressions rather
+than translating them to scalar uses or claiming a second proof. Adding Chisel
+admission requires explicit place, ancestry, move/drop, and foreign-effect
+descriptors; successful direct-C11 borrow checking is not such evidence.
+
 ## Build and run
 
 ```sh
@@ -78,6 +87,12 @@ non-numeric tuples, staged/managed values and unmodeled intrinsics reject in che
 also reject copying/reassigning resources, resource capture/return, and dangling
 temporary borrows. Checking is additional admission, not permission to bypass
 those rules. Syntax and the default compiler path are preserved.
+
+Likewise, an On1x lexical alias is not a Chisel loan token. The adapter rejects
+it at its located HIR expression, even if the referent is a scalar. This
+fail-closed boundary prevents a successful Chisel report from erasing
+exclusive-access, owner-invalidation, or escape obligations enforced by the
+canonical borrow checker.
 
 ## Reviewed scalar-only external evidence
 

@@ -419,11 +419,25 @@ class Generator {
    definitions<<pad()<<"on1x_unique_allocation_fail("<<location(at)<<");\n";
    --indent;definitions<<pad()<<"}\n";
   }
- std::string global_value(const Expr& expression){
+  std::string global_value(const Expr& expression){
   auto found=adapters.find(expression.text);
    if(found==adapters.end())found=adapters.emplace(expression.text,reserve("on1x_adapter_"+(expression.text.starts_with("@")?expression.text.substr(1):expression.text))).first;
-  return temp(expression.type,"("+ctype(expression.type)+"){"+found->second+", NULL}");
- }
+   return temp(expression.type,"("+ctype(expression.type)+"){"+found->second+", NULL}");
+  }
+  std::string borrow_address(const Expr& source,const Type& referent,
+                             const Location& at){
+   if(source.kind!=Expr::Kind::Variable||
+      source.reference!=Expr::Reference::Local)
+    throw Error(source.where,"borrow lowering requires a checked local place",
+                "ON1X-REF");
+   if(source.type.is_own()&&source.type!=referent){
+    uses_unique=true;
+    auto target=ctype(referent);
+    return "(("+target+" *)on1x_unique_borrow("+ref(source.text)+
+      ", sizeof("+target+"), "+location(at)+"))";
+   }
+   return "&("+ref(source.text)+")";
+  }
  void flatten(const Pattern& pattern,const Type& type,const std::string& value,std::vector<std::string>& args){
   if(!pattern.is_tuple()){args.push_back(value);return;}
   auto root=unique("extern_pattern");
@@ -444,7 +458,10 @@ class Generator {
         case Expr::Kind::InherentMember:
          throw Error(e.where,"unresolved inherent projection reached C11 lowering",
                      "ON1X-IMPL");
-        case Expr::Kind::SourceCsp:throw Error(e.where,"unlowered concurrency operation");
+         case Expr::Kind::SourceCsp:throw Error(e.where,"unlowered concurrency operation");
+         case Expr::Kind::Borrow:
+          throw Error(e.where,"borrow expression escaped its lexical let binding",
+                      "ON1X-REF");
         case Expr::Kind::Csp:{
          if(uses_group_deadlines)cancellation_edge(e.where);
          const auto& op=e.text;auto at=location(e.where);
@@ -729,10 +746,12 @@ class Generator {
      std::vector<Owner> moved_args;
      for(std::size_t i=0;i<e.children.size();++i){
     const auto& child=e.children[i];
-    if(borrower&&borrower->params[i].exclusive){
-     // The verifier proved this is an initialized lexical place, and that
-     // later arguments cannot access it. No scalar temporary or copy-back.
-     args.push_back("&("+ref(child->text)+")");continue;
+     if(borrower&&borrower->params[i].borrow!=BorrowMode::Value){
+      // The verifier proved this is an initialized lexical place, and that
+      // later arguments cannot conflict with it. No temporary or copy-back.
+      args.push_back(borrow_address(*child,borrower->params[i].type,
+                                    child->where));
+      continue;
      }
      auto value=expr(*child);
      if(!needs_drop(child->type))value=temp(child->type,value);
@@ -912,7 +931,19 @@ class Generator {
    }
   case Stmt::Kind::Template:{for(const auto& instance:s.body)stmt(instance);return false;}
    case Stmt::Kind::Let:{
-   auto value=expr(*s.value);
+    if(s.value->kind==Expr::Kind::Borrow){
+     const auto& borrow=*s.value;
+     auto name=unique(s.name);
+     auto address=borrow_address(*borrow.children.at(0),borrow.type,
+                                 borrow.where);
+     scopes.back()[s.name]="(*"+name+")";
+     definitions<<pad()<<ctype(borrow.type)
+                <<(borrow.borrow==BorrowMode::Shared?" const *":" *")
+                <<name<<" = "<<address
+                <<";\n"<<pad()<<"(void)"<<name<<";\n";
+     finish();return false;
+    }
+    auto value=expr(*s.value);
    if(s.pattern)bind_pattern(*s.pattern,s.value->type,value);else bind_name(s.name,s.value->type,value);
     finish();return false;
    }
@@ -1014,7 +1045,9 @@ class Generator {
   if(parameters.empty()&&!environment)output<<"void";
   for(std::size_t i=0;i<parameters.size();++i){
    if(i||environment)output<<", ";
-   output<<ctype(parameters[i].type);if(parameters[i].exclusive)output<<" *";
+     output<<ctype(parameters[i].type);
+     if(parameters[i].borrow==BorrowMode::Shared)output<<" const *";
+     else if(parameters[i].borrow==BorrowMode::Exclusive)output<<" *";
   }
  }
  void capture_types(std::ostream& output,const Expr& expression,bool names=false){
@@ -1065,9 +1098,12 @@ class Generator {
   for(std::size_t i=0;i<parameters.size();++i){
    if(i||lambda)definitions<<", ";
    auto symbol=unique(parameters[i].pattern?"pattern_argument":parameters[i].name);
-   const bool exclusive=parameters[i].exclusive;
-   scopes.back()[parameters[i].name]=exclusive?"(*"+symbol+")":symbol;
-   definitions<<ctype(parameters[i].type)<<(exclusive?" *":" ")<<symbol;
+     const bool borrowed=parameters[i].borrow!=BorrowMode::Value;
+     scopes.back()[parameters[i].name]=borrowed?"(*"+symbol+")":symbol;
+     definitions<<ctype(parameters[i].type)
+                <<(parameters[i].borrow==BorrowMode::Shared?" const *":
+                   parameters[i].borrow==BorrowMode::Exclusive?" *":" ")
+                <<symbol;
   }
     definitions<<") {\n";
     if(uses_csp)definitions<<pad()<<"on1x_csp_call_enter("<<location(at)<<");\n";
@@ -1082,7 +1118,8 @@ class Generator {
    }
    for(const auto& parameter:parameters)definitions<<pad()<<"(void)"<<ref(parameter.name)<<";\n";
     for(const auto& parameter:parameters)
-     if(parameter.type.is_move_only())owners.back().push_back(track(parameter.type,ref(parameter.name)));
+      if(parameter.borrow==BorrowMode::Value&&parameter.type.is_move_only())
+       owners.back().push_back(track(parameter.type,ref(parameter.name)));
     for(const auto& parameter:parameters)if(parameter.pattern)
      bind_pattern(*parameter.pattern,parameter.type,ref(parameter.name));
    cancellation_edge(at);
@@ -1107,7 +1144,8 @@ class Generator {
     for(const auto& f:unit.functions)if(f.external&&f.kernel_symbol.empty())identifiers.insert(f.name);
     for(const auto& f:unit.functions)if(f.kernel_link_only)identifiers.insert("on1x_kernel_scalar_v1_"+f.kernel_symbol);
   for(const auto& f:unit.functions)if(f.external)externs.emplace(f.name,&f);
-  for(const auto& f:unit.functions)if(!f.prototype&&takes_exclusive(f))borrow_functions.emplace(f.name,&f);
+   for(const auto& f:unit.functions)
+    if(!f.prototype&&takes_borrows(f))borrow_functions.emplace(f.name,&f);
      for(const auto& f:unit.functions)functions.emplace(f.name,f.kernel_link_only?"on1x_kernel_scalar_v1_"+f.kernel_symbol:
       f.kernel_symbol.empty()&&f.external?f.name:reserve("on1x_fn_"+(f.name.starts_with("@")?f.name.substr(1):f.name)));
     for(const auto& declaration:unit.nominals)
@@ -1155,7 +1193,8 @@ class Generator {
       <<") { return "<<symbol<<"(a, b"<<(interval?", c":"")<<"); }\n";
      continue;
     }
-   prototypes<<(f.external?"extern ":takes_exclusive(f)?"static ":"")<<ctype(f.result)<<" "<<functions.at(f.name)<<"(";
+    prototypes<<(f.external?"extern ":takes_borrows(f)?"static ":"")
+              <<ctype(f.result)<<" "<<functions.at(f.name)<<"(";
    if(f.external){
     auto flattened=extern_parameter_types(f);if(flattened.empty())prototypes<<"void";
     for(std::size_t i=0;i<flattened.size();++i){if(i)prototypes<<", ";prototypes<<ctype(flattened[i]);}
@@ -1163,7 +1202,9 @@ class Generator {
    prototypes<<");\n";
   }
   for(const auto& lambda:lambdas)lambda_support(lambda);
-    for(const auto& f:unit.functions)if(!f.external&&!f.prototype)definition(functions.at(f.name),f.result,f.params,f.body,f.where,nullptr,takes_exclusive(f));
+     for(const auto& f:unit.functions)if(!f.external&&!f.prototype)
+      definition(functions.at(f.name),f.result,f.params,f.body,f.where,
+                 nullptr,takes_borrows(f));
    for(const auto& lambda:lambdas){const auto& e=*lambda.expression;definition(lambda.invoke,e.result,e.parameters,e.body,e.where,&lambda);}
   for(const auto& f:unit.functions)if(auto found=adapters.find(f.name);found!=adapters.end())adapter(f,found->second);
    emit_ownership_helpers();

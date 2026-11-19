@@ -60,8 +60,18 @@ struct on1x_unique {
  on1x_unique *next;
  on1x_unique_destructor destroy;
  size_t size;
- max_align_t payload[];
 };
+/* The aligned malloc tail has no declared C type. memcpy from the boxed value
+ * establishes its effective type, so checked payload pointers remain valid
+ * under strict C11 aliasing rather than pointing into a max_align_t array. */
+static size_t unique_header_size(void){
+ const size_t alignment=_Alignof(max_align_t);
+ const size_t remainder=sizeof(on1x_unique)%alignment;
+ return sizeof(on1x_unique)+(remainder?alignment-remainder:0);
+}
+static void *unique_payload(on1x_unique *owner){
+ return (unsigned char *)owner+unique_header_size();
+}
 static on1x_unique *on1x_unique_pending_head;
 static on1x_unique *on1x_unique_pending_tail;
 static bool on1x_unique_draining;
@@ -102,7 +112,7 @@ void on1x_cleanup_pop(on1x_cleanup *record){
 on1x_unique *on1x_unique_try_box(void *source,size_t size,
     on1x_unique_destructor destroy){
  on1x_unique *owner=NULL;
- const size_t header=offsetof(on1x_unique,payload);
+ const size_t header=unique_header_size();
  if(!source||!destroy||!size||size>ON1X_UNIQUE_MAX_PAYLOAD||
     size>SIZE_MAX-header)
   unique_error("invalid owning-box allocation","<runtime>",0,0);
@@ -111,18 +121,24 @@ on1x_unique *on1x_unique_try_box(void *source,size_t size,
  owner=(on1x_unique *)ON1X_UNIQUE_MALLOC(header+size);
  if(!owner)return NULL;
  owner->next=NULL;owner->destroy=destroy;owner->size=size;
- memcpy(owner->payload,source,size);
+ memcpy(unique_payload(owner),source,size);
  memset(source,0,size);
  ++on1x_unique_live;
  return owner;
+}
+void *on1x_unique_borrow(on1x_unique *owner,size_t size,
+    const char *file,size_t line,size_t column){
+ if(!owner||!size||owner->size!=size)
+  unique_error("invalid borrow from owning box",file,line,column);
+ return unique_payload(owner);
 }
 void on1x_unique_take(on1x_unique **slot,void *destination,size_t size,
     const char *file,size_t line,size_t column){
  on1x_unique *owner=NULL;
  if(!slot||!(owner=*slot)||!destination||!size||owner->size!=size)
   unique_error("invalid take from owning box",file,line,column);
- memcpy(destination,owner->payload,size);
- memset(owner->payload,0,size);
+ memcpy(destination,unique_payload(owner),size);
+ memset(unique_payload(owner),0,size);
  *slot=NULL;
  --on1x_unique_live;
  ON1X_UNIQUE_FREE(owner);
@@ -140,7 +156,7 @@ void on1x_unique_drop(on1x_unique *owner){
   on1x_unique_pending_head=current->next;
   if(!on1x_unique_pending_head)on1x_unique_pending_tail=NULL;
   current->next=NULL;
-  current->destroy(current->payload);
+  current->destroy(unique_payload(current));
   --on1x_unique_live;
   ON1X_UNIQUE_FREE(current);
  }

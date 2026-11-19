@@ -39,7 +39,8 @@ void extern_leaves(const Pattern& pattern,const Type& type,std::vector<Type>& ty
 std::vector<Type> extern_parameter_types(const Function& function){
  std::vector<Type> types;std::set<std::string> names;
  for(const auto& p:function.params){
-  if(p.exclusive)throw Error(p.where,"ref i64 does not cross the extern ABI","ON1X-REF");
+   if(p.borrow!=BorrowMode::Value)
+    throw Error(p.where,"borrowed parameters do not cross the extern ABI","ON1X-REF");
    if(has_type_holes(p.type)||p.type.has_foralls())throw Error(p.where,"extern signatures require concrete monotypes; inference is not ABI evidence");
   if(p.pattern)extern_leaves(*p.pattern,p.type,types,names);
   else{
@@ -68,7 +69,10 @@ namespace {
 [[noreturn]] void ref_error(const Location& where,const std::string& message){
  throw Error(where,message,"ON1X-REF");
 }
-struct Binding { Type type; bool is_mutable; std::size_t scope; bool exclusive; };
+struct Binding {
+ Type type; bool is_mutable; std::size_t scope;
+ BorrowMode borrow=BorrowMode::Value;
+};
 class Checker {
  bool unsafe_context=false;
  std::vector<std::pair<std::size_t,bool>> regions;
@@ -85,7 +89,8 @@ class Checker {
    Type returns=Type::Void;
    std::size_t taskgroups=0;
    const Expr* launch_body=nullptr;
-  bool generic_context=false;
+   bool generic_context=false;
+   bool borrow_initializer=false;
  [[noreturn]] void fail(const Location& loc,const std::string& msg){throw Error(loc,msg,"ON1X-SEMA");}
  void push(){scopes.emplace_back();}void pop(){scopes.pop_back();}
  const Binding* lookup(const std::string& name)const{
@@ -95,12 +100,16 @@ class Checker {
  const Binding& find(const std::string& name,const Location& loc){
   if(auto binding=lookup(name)){capture(name,*binding,loc);return *binding;}
   fail(loc,"undefined variable: "+name);}
- void define(const std::string& name,Type type,bool mut,const Location& where,bool exclusive=false){if(scopes.back().contains(name))fail(where,"duplicate local: "+name);
-  scopes.back()[name]={type,mut,scopes.size()-1,exclusive};}
+ void define(const std::string& name,Type type,bool mut,const Location& where,
+             BorrowMode borrow=BorrowMode::Value){
+  if(scopes.back().contains(name))fail(where,"duplicate local: "+name);
+  scopes.back()[name]={type,mut,scopes.size()-1,borrow};
+ }
  void capture(const std::string& name,const Binding& binding,const Location& loc){
   for(auto frame=lambdas.rbegin();frame!=lambdas.rend();++frame){
    if(binding.scope>=frame->scope_begin)break;
-    if(binding.exclusive)ref_error(loc,"cannot capture ref i64 parameter: "+name+"; copy its i64 value first");
+    if(binding.borrow!=BorrowMode::Value)
+     ref_error(loc,"cannot capture borrowed place '"+name+"'; copy a non-borrowed value first");
     if(binding.is_mutable)fail(loc,"capturing mutable binding is unsupported; use an immutable let: "+name);
     if(resource(binding.type))fail(loc,"capturing JSON resources or views requires lifetime analysis: "+name);
     if(binding.type.contains_unique())fail(loc,"closures cannot capture unique owning values: "+name);
@@ -216,14 +225,14 @@ class Checker {
   if(pattern.elements.size()!=type.elements().size())fail(pattern.where,"tuple binding pattern has wrong arity");
   for(std::size_t i=0;i<pattern.elements.size();++i)bind_pattern(pattern.elements[i],type.elements()[i]);
  }
- Type resolve_name(Expr& e,bool call_position=false){
+   Type resolve_name(Expr& e,bool call_position=false){
   if(auto binding=lookup(e.text)){
    capture(e.text,*binding,e.where);
    e.reference=Expr::Reference::Local;return e.type=binding->type;
   }
   if(auto found=funcs.find(e.text);found!=funcs.end()){
-   if(takes_exclusive(*found->second)){
-    if(!call_position)ref_error(e.where,"functions with ref i64 parameters require a direct named call");
+    if(takes_borrows(*found->second)){
+     if(!call_position)ref_error(e.where,"functions with borrowed parameters require a direct named call");
     e.reference=Expr::Reference::BorrowFunction;return e.type=signatures.at(e.text);
    }
    if(found->second->external&&!call_position)
@@ -244,10 +253,14 @@ class Checker {
   Type check_intrinsic(Expr& e,const std::vector<Type>& arg){
    const auto& n=e.callee->text;
     auto arity=[&](std::size_t k){if(arg.size()!=k)fail(e.where,"wrong arity for "+n);};
-    auto consume_local=[&](std::size_t index){
-     auto& operand=*e.children.at(index);
-     if(operand.kind==Expr::Kind::Variable&&operand.reference==Expr::Reference::Local)
-      operand.move_out=true;
+     auto consume_local=[&](std::size_t index){
+      auto& operand=*e.children.at(index);
+      if(operand.kind==Expr::Kind::Variable&&operand.reference==Expr::Reference::Local){
+       if(auto binding=lookup(operand.text);
+          binding&&binding->borrow!=BorrowMode::Value)
+        ref_error(operand.where,"cannot consume or move borrowed place '"+operand.text+"'");
+       operand.move_out=true;
+      }
     };
     if(n=="box"){
      arity(1);const auto& value=arg[0];
@@ -258,13 +271,16 @@ class Checker {
      auto owner=Type::own(Type::named(value.nominal(),value.arguments()));
      validate_type(owner,e.where);return e.type=std::move(owner);
     }
-    if(n=="move"){
+     if(n=="move"){
      arity(1);auto& operand=*e.children[0];
      if(operand.kind!=Expr::Kind::Variable||operand.reference!=Expr::Reference::Local)
       fail(operand.where,"move(local) requires a named local or parameter");
-     if(!arg[0].is_move_only())
-      fail(operand.where,"move(local) requires a unique owning value, got "+type_name(arg[0]));
-     operand.move_out=true;return e.type=arg[0];
+      if(!arg[0].is_move_only())
+       fail(operand.where,"move(local) requires a unique owning value, got "+type_name(arg[0]));
+      if(auto binding=lookup(operand.text);
+         binding&&binding->borrow!=BorrowMode::Value)
+       ref_error(operand.where,"cannot consume or move borrowed place '"+operand.text+"'");
+      operand.move_out=true;return e.type=arg[0];
     }
     if(n=="take"){
      arity(1);
@@ -503,7 +519,25 @@ class Checker {
     if(e.kind==Expr::Kind::RegexCapture&&e.children[0]->kind==Expr::Kind::RegexLiteral)
      regex::check_capture(regex_patterns.get(e.children[0]->text,e.children[0]->where),e.children[0]->where);
     return e.type=e.kind==Expr::Kind::RegexMatch?Type::Bool:Type::RegexCaptures;
-     case Expr::Kind::Variable:return resolve_name(e);
+      case Expr::Kind::Variable:return resolve_name(e);
+      case Expr::Kind::Borrow:{
+       if(!borrow_initializer)
+        ref_error(e.where,"borrow expressions are only valid as direct immutable let initializers");
+       if(e.borrow==BorrowMode::Value||e.children.size()!=1||
+          !e.children[0]||e.children[0]->kind!=Expr::Kind::Variable)
+        ref_error(e.where,"borrow requires one named local place and a shared or exclusive mode");
+       auto source=check_expr(*e.children[0]);
+       if(e.children[0]->reference!=Expr::Reference::Local)
+        ref_error(e.children[0]->where,"borrow requires a named local place");
+       if(source==Type::Void||resource(source)||csp::contains(source))
+        ref_error(e.where,"this value type cannot be borrowed in the lexical C11 profile");
+       if(source.is_own()){
+        const auto& target=source.owned();
+        source=catalog.instantiate(target.nominal(),target.arguments(),e.where);
+       }
+       validate_type(source,e.where);
+       return e.type=std::move(source);
+      }
       case Expr::Kind::Unit:if(!e.children.empty()||!e.body.empty())fail(e.where,"malformed unit value");return e.type=Type::Void;
       case Expr::Kind::Loop:{
        loop_values.push_back({e.control_target});(void)check_block(e.body);auto exits=loop_values.back();loop_values.pop_back();
@@ -568,7 +602,8 @@ class Checker {
     case Expr::Kind::Lambda:{
      std::vector<Type> parameters;std::set<std::string> names;
      for(const auto& parameter:e.parameters){
-      if(parameter.exclusive)ref_error(parameter.where,"anonymous functions cannot declare ref i64 parameters");
+       if(parameter.borrow!=BorrowMode::Value)
+        ref_error(parameter.where,"anonymous functions cannot declare borrowed parameters");
       if(!names.insert(parameter.name).second)fail(parameter.where,"duplicate parameter: "+parameter.name);
       parameters.push_back(parameter.type);
      }
@@ -674,10 +709,19 @@ class Checker {
      if(callable.parameters().size()!=arg.size())fail(e.where,"wrong number of arguments to "+(n.empty()?"function value":n));
       const auto kernel=callee.reference==Expr::Reference::ScalarForeign?std::string_view(funcs.at(n)->kernel_symbol):std::string_view{};
       for(size_t i=0;i<arg.size();++i){
-       if(kernel_span_argument(kernel,i)){
+        if(kernel_span_argument(kernel,i)){
         if(arg[i].kind()!=Type::Slice||arg[i].elements()!=std::vector<Type>{Type::F64}||arg[i].extent()>256)
          fail(e.children[i]->where,"KernelBind requires a bounded slice<f64,N>");
-       }else equal(arg[i],callable.parameters()[i],e.children[i]->where);
+        }else if(callee.reference==Expr::Reference::BorrowFunction&&
+                 funcs.at(n)->params[i].borrow!=BorrowMode::Value){
+         auto referent=arg[i];
+         if(referent.is_own()){
+          const auto& target=referent.owned();
+          referent=catalog.instantiate(target.nominal(),target.arguments(),
+                                       e.children[i]->where);
+         }
+         equal(referent,callable.parameters()[i],e.children[i]->where);
+        }else equal(arg[i],callable.parameters()[i],e.children[i]->where);
       if(resource(arg[i]))fail(e.where,"resource arguments need a reviewed FFI adapter");}
      return e.type=callable.result();
    }
@@ -696,8 +740,8 @@ class Checker {
      case Stmt::Kind::Defer:{
       if(!s.value||s.value->kind!=Expr::Kind::Call)fail(s.where,"defer requires a call expression");
        auto t=check_expr(*s.value);if(resource(t))fail(s.where,"defer cannot discard a JSON owner/view");
-       if(s.value->callee->reference==Expr::Reference::BorrowFunction)
-        ref_error(s.where,"defer cannot retain an exclusive ref i64 borrow");
+        if(s.value->callee->reference==Expr::Reference::BorrowFunction)
+         ref_error(s.where,"defer cannot retain a borrowed call");
        if(csp::contains(t))fail(s.where,"defer cannot retain concurrency handles");
        for(const auto& a:s.value->children)if(resource(a->type))fail(a->where,"defer cannot retain JSON owners/views");
         for(const auto& a:s.value->children)if(csp::contains(a->type))fail(a->where,"defer cannot retain concurrency handles");
@@ -714,8 +758,11 @@ class Checker {
       if(s.pattern)bind_pattern(*s.pattern,type);else define(s.name,type,false,s.where);
       break;
     }
-      case Stmt::Kind::Let:{auto t=check_expr(value());
-       if(s.declared!=Type::Invalid)validate_type(s.declared,s.where);
+       case Stmt::Kind::Let:{
+        const bool borrowed=s.value&&s.value->kind==Expr::Kind::Borrow;
+        auto saved_borrow=borrow_initializer;borrow_initializer=borrowed;
+        auto t=check_expr(value());borrow_initializer=saved_borrow;
+        if(s.declared!=Type::Invalid)validate_type(s.declared,s.where);
      if(t==Type::Void)fail(s.where,"cannot bind a void expression");
      if(s.declared!=Type::Invalid)equal(t,s.declared,s.where);
      // Every JSON owner is unique. A name cannot be copied into another owner.
@@ -723,16 +770,23 @@ class Checker {
      if(t==Type::Json&&s.value->kind!=Expr::Kind::Call)fail(s.where,"json owners must originate from a constructor");
      if(t==Type::JsonView&&s.value->kind!=Expr::Kind::Call)fail(s.where,"json views may only come from borrowed operations");
      if(t==Type::Json||t==Type::JsonView){if(s.mutable_binding)fail(s.where,"mutable resources not yet supported");}
-     if(s.pattern){
+      if(borrowed&&(s.pattern||s.mutable_binding))
+       ref_error(s.where,"a lexical borrow requires a simple immutable let binding");
+      if(s.pattern){
       if(s.mutable_binding)fail(s.where,"mutable destructuring is unsupported; use let");
       bind_pattern(*s.pattern,t);
-     }else define(s.name,t,s.mutable_binding,s.where);
-     break;
-    }
-    case Stmt::Kind::Assign:{const auto binding=find(s.name,s.where);
-     if(s.ref_store!=binding.exclusive)ref_error(s.where,s.ref_store?
-      "':=' requires a ref i64 parameter as its target":"assign to a ref i64 parameter with ':='");
-     if(!binding.exclusive&&!binding.is_mutable)fail(s.where,"assignment to immutable binding: "+s.name);
+      }else define(s.name,t,s.mutable_binding,s.where,
+                   borrowed?s.value->borrow:BorrowMode::Value);
+      break;
+     }
+     case Stmt::Kind::Assign:{const auto binding=find(s.name,s.where);
+      const bool exclusive=binding.borrow==BorrowMode::Exclusive;
+      if(s.ref_store!=exclusive)ref_error(s.where,s.ref_store?
+       "':=' requires an exclusive borrowed place as its target":
+       "assign to an exclusive borrowed place with ':='");
+      if(binding.borrow==BorrowMode::Shared)
+       ref_error(s.where,"cannot mutate shared borrowed place '"+s.name+"'");
+      if(!exclusive&&!binding.is_mutable)fail(s.where,"assignment to immutable binding: "+s.name);
      if(resource(binding.type))fail(s.where,"resource reassignment not supported");
       equal(check_expr(value()),binding.type,s.where);break;}
      case Stmt::Kind::Return:{Type t=s.value?check_expr(*s.value):Type::Void;equal(t,returns,s.where);
@@ -800,8 +854,13 @@ class Checker {
        std::set<std::string> names;for(auto& p:f.params){if(!names.insert(p.name).second)fail(p.where,"duplicate parameter: "+p.name);
         if(foreign&&p.type.contains_unique())
          fail(p.where,"unique ownership cannot cross a raw foreign parameter ABI");
-       if(p.exclusive&&(f.external||f.extension_generated||p.pattern||p.type!=Type::I64))
-        ref_error(p.where,"ref i64 requires a named On1x parameter, not a pattern or external interface");
+        if(p.borrow!=BorrowMode::Value&&
+           (f.external||f.extension_generated||p.pattern||f.name=="main"))
+         ref_error(p.where,"borrow/ref requires a named private On1x parameter, not a pattern, main, or external interface");
+        if(p.borrow!=BorrowMode::Value&&p.type.is_own())
+         ref_error(p.where,
+                   "borrowed parameter names the referent type, not own<...>; "
+                   "borrow an owning box as its nominal payload");
        if(f.external&&!aggregate&&p.type.is_data())fail(p.where,"data-valued extern ABI requires reviewed aggregate adapters");
       if(p.type==Type::Void||p.type==Type::Json||p.type==Type::JsonView)fail(p.where,"unsupported parameter type in this milestone");
       if(csp::contains(p.type))fail(p.where,"concurrency handles cannot cross ordinary function signatures");
@@ -827,7 +886,8 @@ class Checker {
      throw Error(member.where,"missing original On1x definition of '"+member.name+"'",
                  "ON1X-INTERFACE-MEMBER");
     const auto& checked=signatures.at(obligation.resolved_name);
-    if(takes_exclusive(*definition->second))ref_error(member.where,"ref i64 parameter modes are not part of the .on1xi ABI");
+     if(takes_borrows(*definition->second))
+      ref_error(member.where,"borrowed parameter modes are not part of the .on1xi ABI");
     if(member.signature!=checked){
      const auto& at=obligation.implementation;
      auto expected=type_name(member.signature),found=type_name(checked);
@@ -837,7 +897,10 @@ class Checker {
      }
     }
    for(auto& f:unit.functions){if(f.external)continue;generic_context=f.prototype;returns=f.result;push();
-     for(auto& p:f.params){if(p.pattern)bind_pattern(*p.pattern,p.type);else define(p.name,p.type,false,p.where,p.exclusive);}
+      for(auto& p:f.params){
+       if(p.pattern)bind_pattern(*p.pattern,p.type);
+       else define(p.name,p.type,false,p.where,p.borrow);
+      }
     bool complete=check_block(f.body,false);pop();
     if(f.result!=Type::Void&&!complete)fail(f.where,"not all paths return in function: "+f.name);
    }

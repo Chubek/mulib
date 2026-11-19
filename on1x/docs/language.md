@@ -526,11 +526,13 @@ Records, closed sums, fixed arrays and owning snapshot slices remain bounded.
 fields. [Finite unique owners](recursive-owning-adts.md) permit recursive
 nominal layouts only through `own<Named>` and reject MIR, PPX, FFI, capture,
 defer, staging and concurrency boundaries. General managed data fields still
-reject. [Call-scoped `ref i64`](core-references.md) does not support first-class
-reference values or general ownership. There is no field/element mutation, aggregate
+reject. [Checked shared/exclusive borrows](core-references.md) cover named
+whole places and unique-owner payloads in the synchronous direct-C11 profile,
+but do not introduce first-class reference values. There is no borrowed
+field/index origin or field/element mutation, aggregate
 equality or printing, generic higher-kinded types, module signatures/functors,
 mutable/resource captures, native coroutines, async, polymorphic numeric
 literals, foreign callbacks, foreign aggregate ABI, Option propagation,
-general exception/error effects, or production borrow checker yet. Do not add
-their names to public supported-feature lists until they are implemented with
-tests.
+general exception/error effects, foreign effect-aware loans, or suspension-aware
+borrow checking. Do not add their names to public supported-feature lists until
+they are implemented with tests.

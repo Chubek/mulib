@@ -328,7 +328,66 @@ concurrency-capability Result fields, unique deferred arguments/captures,
 unique values crossing cooperative tasks, Option propagation, general foreign
 errors/resources, typed cancellation outcomes, exceptions, trap unwinding,
 aggregate ownership MIR/SDK models and other targets remain closed.
+## Shared/exclusive borrow checking — 2026-11-19
 
+Validated from detached MuLIB baseline
+`6a145cbf09efcac76f387f6b664fc2257bac93aa` plus the borrow-checking worktree,
+using configured external LibStone
+`3399047f6c6328b8f07788795c610699e66c060a`. The host profile is Linux x86-64,
+GCC/G++ 16.2.1, Clang/Clang++ 22.1.8, Python 3.14.7, and CMake 4.4.3. The
+required build is Debug with the generated scanner, Chisel, and Novostone.
+Nerotypical is disabled because this pinned Satie checkout does not provide the
+prepared public EUF target; neither LibStone nor Satie was modified.
+
+The implemented profile is **EXECUTABLE HIR-to-C11**, not a general pointer,
+foreign-effect, concurrency, or independent Chisel/Nerotypical proof. Borrow
+modes remain non-first-class metadata. Shared `borrow T`, exclusive `ref T`,
+lexical `borrow [mut]`, nested reborrows, branch/loop scope ends, and direct
+generic/module calls are checked against canonical move/partial-move state.
+`own<Named>` lends its nominal payload through a size-checked runtime accessor;
+the owner cannot move, take, or drop while loaned. Capture, callbacks, defer,
+PPX/interfaces, raw FFI modes, MIR, structural adapters, and cooperative
+suspension fail closed.
+
+Focused reproduction:
+
+```sh
+cmake --build \
+  /mnt/nvme/opencode-builds/ses_e0d13d7a9ffe4DEJxtuNoZl9ei/borrow-checking \
+  --target on1xc on1x_core_ref_tests --parallel 4
+ctest --test-dir \
+  /mnt/nvme/opencode-builds/ses_e0d13d7a9ffe4DEJxtuNoZl9ei/borrow-checking \
+  --output-on-failure \
+  -R '^on1x\.(core_ref(_hir)?|scanner_parity)$'
+```
+
+| Check | Result |
+|---|---|
+| `on1x.core_ref_hir` malformed checked-HIR modes/origins/types/stores/captures and deterministic C11 | **PASS** |
+| `on1x.core_ref` accepted/rejected source, joins, nested reborrows, owner move/drop invalidation, modules/generics, escapes and diagnostics | **PASS** |
+| Generated owner-payload C11 under strict GCC and Clang (`-std=c11 -Wall -Wextra -Wpedantic -Werror`) | **PASS** |
+| Generated C11/runtime under ASan+UBSan+LSan | **PASS**, no sanitizer findings |
+| `on1x_unique_borrow` healthy/null/taken/size-mismatch runtime probes | **PASS**; malformed calls terminate with located ownership error/status 72 |
+| Separate canonical loan-work exhaustion (`ON1X-BORROW-LIMIT`) | **PASS**, deterministic located rejection |
+| Focused CTest selection | **3/3 passed** |
+| Generated-scanner full build | **PASS**, 100% of configured targets built |
+| Complete configured CTest inventory | **110/112 passed**; all borrow, ownership, scanner, safety, backend, SDK, and integration tests passed |
+
+The Python test compiles and executes an owner-payload program with both
+available production C compilers, then independently instruments nested-owner
+replacement and cleanup outside the C++ compiler build. It also asserts that
+failed compilation leaves an existing output untouched. The C++ test corrupts
+already checked HIR before both canonical verification and C11 emission. These
+checks do not convert the raw C accessor into a temporal-safety API; temporal
+validity is established by the On1x loan verifier.
+
+The two complete-inventory failures are unchanged baseline inventory assertions,
+not borrow regressions. `on1x.contracts` expects exactly three auxiliary MuLIB
+headers, while baseline `6a145cbf09efcac76f387f6b664fc2257bac93aa`
+already tracks 259 additional unregistered headers. `on1x.mulib` likewise
+rejects baseline-tracked `library/muw3lib`, which is absent from its fixture
+inventory. This worktree changes none of `include/`, `library/`,
+`on1x/contracts-exotract/`, or `on1x/stdlib/mulib/`.
 ## On1x extension SDK
 
 SDK ABI 1 was tested on Linux x86-64 at MuLIB

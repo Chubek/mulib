@@ -41,8 +41,10 @@ compilation does not load SDK plugins.
 The [core literal forms](docs/core-literals.md) add UTF-8 `char`, `b!` byte/buffer literals, raw and
 triple-quoted strings, interpolation, and binary/octal integers. The
 [enum connective](docs/core-enum-connective.md) adds `value ~ { … }`, and
-[call-scoped references](docs/core-references.md) allow `ref i64` parameters
-to update a named caller binding with `:=`. [Core regexes](docs/core-regex.md)
+[checked borrows](docs/core-references.md) add shared `borrow T` and exclusive
+`ref T` parameters plus lexical `borrow [mut]` aliases over named places.
+Exclusive aliases update through `:=`; `own<Named>` loans expose the checked
+nominal payload without transferring its owner. [Core regexes](docs/core-regex.md)
 use Firestone at compile time and support UTF-8 matching and a bounded capture
 profile. [Nominal ADTs](docs/owning-adts.md) can share ownership of immutable
 `sexpr` fields. That shared-owner profile remains nonrecursive; the finite
@@ -106,21 +108,29 @@ argument identity and C11 execution (`examples/nominal_adts.on1x`). Nominal
 values may retain [immutable shared `sexpr`](docs/owning-adts.md), and the
 [finite unique-owner profile](docs/recursive-owning-adts.md) adds
 `own<Named>`, `box`, explicit `move`, consuming `take`/`drop`, and recursive
-layouts through strict C11. Unique ownership remains closed to MIR, PPX, raw
-FFI, captures, staging, deferred arguments/actions, and cooperative concurrency;
-the checked nominal-Result transfer below is the bounded exception. Postfix `?`
-is itself an explicit consuming operation: it moves the complete Result and its
-active payload, composes with non-owning defers, and supports explicit iterative
-consuming traversal. There is no intrinsic list/iterator protocol, checked
-external scalar-handle owner, or general borrow system.
+layouts through strict C11. Whole nominal values and unique-owner payloads can
+participate in the bounded synchronous borrow profile, with nested lexical
+reborrows and move/drop invalidation. Borrow/unique ownership remains closed to
+MIR, PPX, raw FFI, callbacks/captures, staging, defer, and cooperative
+concurrency; there are no first-class references, borrowed fields/elements, or
+intrinsic list/iterator protocol. The checked nominal-Result transfer below is
+the bounded defer exception: postfix `?` is itself an explicit consuming
+operation that moves the complete Result and its active payload.
 
-The earlier final type-checker hardening matrix covers ownership together with
-inherent `impl` and cliche admission, including forged HIR and generated-member
-metadata. Its recorded results are generated GCC **98/98**, fallback GCC
-**97/97**, and focused Clang ASan/UBSan **15/15**. See
+The earlier final type-checker hardening matrix covers ownership together with inherent
+`impl` and cliche admission, including forged HIR and generated-member metadata.
+Its recorded results are generated GCC **98/98**, fallback GCC **97/97**, and
+focused Clang ASan/UBSan **15/15**. See
 [`VERIFICATION.md`](VERIFICATION.md) for exact commands, current owner-bearing
 Result profiles, unrelated stale checkout-inventory failures, and remaining
 limits.
+The later borrow profile adds focused source/HIR, strict GCC/Clang C11,
+ASan/UBSan, runtime-fault, output-preservation, and finite-budget evidence in
+that same record; it does not relabel the older independent-checker totals. Its
+configured generated-scanner inventory passes **110/112**: every borrow,
+ownership, scanner, safety, backend, SDK, and integration test passes; the two
+remaining failures are documented baseline MuLIB header/fixture inventory drift
+in untouched paths.
 
 Typed [multi-stage programming](docs/staging.md) accepts both expression quotes
 and lexical quotation regions such as

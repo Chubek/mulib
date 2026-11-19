@@ -61,7 +61,10 @@ class Parser {
   return true;}
   std::string ident(){if(templating&&accept("$"))return "$"+ident();
    auto t=peek();if(!is_ident(t.text))throw Error(t.where,"expected identifier");++pos;
-    static const std::set<std::string> reserved={"fn","let","var","if","else","while","return","true","false","extern","import","forall","macro","rule","quote","splice","lift","let_syntax","letrec_syntax"};
+     static const std::set<std::string> reserved={
+      "fn","let","var","if","else","while","return","true","false",
+      "extern","import","forall","macro","rule","quote","splice","lift",
+      "let_syntax","letrec_syntax","borrow","mut","ref"};
   if(reserved.count(t.text))throw Error(t.where,"reserved keyword used as identifier: "+t.text);
    return t.text;}
   void close_angle(){
@@ -89,8 +92,10 @@ class Parser {
     return name;
    }
       Type type(){Nesting guard(*this);auto t=peek();
-      if(at("ref")&&is_ident(peek(1).text))
-       throw Error(t.where,"ref i64 is only a named On1x function parameter mode","ON1X-REF");
+      if((at("ref")||at("borrow"))&&is_ident(peek(1).text))
+       throw Error(t.where,
+                   "borrow/ref modes are only valid on a named On1x "
+                   "function parameter","ON1X-REF");
       if((at("ifiber")||at("channel")||at("sender")||at("receiver"))&&peek(1).text=="<"){
       ++pos;consume("<");auto payload=type();close_angle();
       if((t.text=="sender"||t.text=="receiver")&&payload==Type::U8)
@@ -428,8 +433,16 @@ class Parser {
     for(auto& word:shell_words(token)){auto arg=std::make_unique<Expr>();arg->kind=Expr::Kind::String;arg->where=token.where;arg->text=source_string(word);e->children.push_back(std::move(arg));}
     return syntax_bounded(std::move(e));
    }
-        Expression atom(){
-          const Token t=peek();
+         Expression atom(){
+           const Token t=peek();
+           if(at("borrow")){
+           ++pos;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Borrow;
+           e->where=t.where;e->borrow=accept("mut")?BorrowMode::Exclusive:BorrowMode::Shared;
+           auto source=std::make_unique<Expr>();source->kind=Expr::Kind::Variable;
+           source->where=peek().where;source->text=ident();
+           e->children.push_back(std::move(source));
+           return bounded(std::move(e),2);
+          }
          if(at("unsafe")&&peek(1).text=="{"){
           ++pos;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::UnsafeBlock;e->where=t.where;
           value_block(*e);
@@ -1029,18 +1042,18 @@ class Parser {
     match->children.insert(match->children.begin(),std::move(choice));
     return syntax_bounded(std::move(match));
    }
-  Param parameter(std::size_t index,bool allow_ref=false){
+   Param parameter(std::size_t index,bool allow_ref=false){
    Param result;result.where=peek().where;
    if(at("(")){result.pattern=pattern();result.name="@argument_"+std::to_string(index);}
    else result.name=ident();
    if(!accept(":")){result.type=Type::Hole;return result;}
-   if(at("ref")&&is_ident(peek(1).text)){
-    if(!allow_ref||result.pattern)
-     throw Error(peek().where,"ref i64 requires a simple parameter of a named, non-extern On1x function","ON1X-REF");
-    consume("ref");
-    if(!accept("i64"))throw Error(peek().where,"only ref i64 parameters are supported","ON1X-REF");
-    result.exclusive=true;result.type=Type::I64;
-   }else result.type=type();
+     if(at("ref")||at("borrow")){
+     if(!allow_ref||result.pattern)
+      throw Error(peek().where,"borrow/ref requires a simple parameter of a named, non-extern On1x function","ON1X-REF");
+     const bool exclusive=accept("ref");if(!exclusive)consume("borrow");
+     result.borrow=exclusive?BorrowMode::Exclusive:BorrowMode::Shared;
+     result.type=type();
+    }else result.type=type();
    return result;
   }
   bool for_header()const{

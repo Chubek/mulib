@@ -12,6 +12,14 @@ constructor decomposition, clash and occurs checks. Only `WellTyped` permits
 compilation to continue. On1x's existing inference, specialization, staging and
 ownership checks run first.
 
+Borrow modes are intentionally not structural types. The
+[shared/exclusive borrow profile](core-references.md) keeps the referent's value
+type and records place/loan metadata separately. Nerotypical has no constructor
+for that metadata, so `--check-types`/`--verify-types` reject borrowed
+parameters and lexical borrow expressions instead of proving only the erased
+referent equality. A later adapter must reconstruct origins, ancestry,
+move/drop invalidation, escapes, and effects before this boundary can open.
+
 ## Build
 
 The pinned Satie source has two integration obstacles: its EUF headers require
@@ -111,6 +119,9 @@ Type verification does not establish ownership, FFI contracts, allocation extent
 cleanup, effect purity or target ABI. Chisel's resource checking remains a separate
 composable gate. This integration uses neither Nerotypical's demo AST nor its
 call-by-need Sequent optimizer and does not change strict On1x evaluation.
+In particular, a direct-C11 borrow-checked program has not received independent
+Nerotypical certification, and a structural type report cannot authorize an
+otherwise unsupported borrow or pointer escape.
 
 ## Bounds and tests
 
