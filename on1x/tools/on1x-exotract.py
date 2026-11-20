@@ -52,8 +52,7 @@ KERNEL_MODULES = {
                        'mulib_channel_send', 'mulib_channel_receive', 'mulib_channel_close',
                        'mulib_channel_destroy']),
 }
-# On1x source identifiers cannot contain hyphens. These named sandbox profiles
-# (and explicitly configured discovery-only prefixes) map underscores to dashes.
+# Keep the handwritten sandbox profiles separate from automatic discovery.
 SANDBOX_MODULES = {name.replace('-', '_'): name for name in (
     'sandbox-profile', 'seccomp', 'landlock', 'namespace', 'cgroup2',
     'ipc-framed', 'capbroker', 'sandbox-process',
@@ -131,11 +130,11 @@ def kernel_options(cflags):
 
 
 def extract_exolib(name, recipe, root, exotract, compiler, resource, target,
-                   options, observe, *, sidecar_name, required):
+                   options, observe, *, sidecar_name, required, automatic=None):
     manifest_input = observe(housekeeping.local(root, 'MANIFEST.yaml'))
     lua_profile = observe(KERNEL_PROFILE)
     discovery_only = recipe.get('discovery_only', {}).get(name)
-    if discovery_only and sidecar_name:
+    if (discovery_only or automatic is not None) and sidecar_name:
         raise ValueError('discovery-only kernel cannot attach a semantic sidecar: '+name)
     for path, digest in recipe['inputs'].items():
         observe(path, digest)
@@ -169,6 +168,10 @@ def extract_exolib(name, recipe, root, exotract, compiler, resource, target,
     pins = [manifest_input, lua_profile, manual, *dependencies]
     if sandbox or discovery_only:
         pins += [observe(CATALOG), *(doc for mod, (_, doc, _) in modules.items() if mod != name)]
+    if automatic is not None:
+        pins += [observe(contracts.KERNEL_AUTO_CATALOG),
+                 *(doc for mod, (_, doc, _) in modules.items() if mod != name)]
+        pins = list(dict.fromkeys(pins))
     if sidecar_name:
         sidecar = observe(housekeeping.local(contracts.CONTRACTS, sidecar_name))
         pins.append(sidecar)
@@ -193,7 +196,14 @@ def extract_exolib(name, recipe, root, exotract, compiler, resource, target,
         if '$GLOBAL{' in str(v):
             raise ValueError('nested ExoLib global substitution is not allowed')
         argv += ['--global', f'{k}={v}']
-    wire = contracts.loads(invoke(argv))
+    try:
+        wire = contracts.loads(invoke(argv))
+    except ValueError as error:
+        if automatic is None:
+            raise
+        provider = automatic.get('optional_dependency')
+        context = f' (declared optional dependency: {provider})' if provider else ''
+        raise ValueError(f'UNSUPPORTED: automatic C11 declaration extraction for {name}{context}: {error}') from error
     profile, on1x, contract = (wire[key] for key in ('profile', 'on1x', 'contract'))
     decl = on1x['cdecl']
     if (profile['schema'] != 'moonstone.exotract/2' or profile['name'] != name or
@@ -245,9 +255,20 @@ def extract_exolib(name, recipe, root, exotract, compiler, resource, target,
         if (profile['parser'] != 'exoml/libclang' or profile['externally_imported'] is not False or
                 (not functions and not inline) or len(functions) != len(declarations) or invalid):
             raise ValueError('discovery-only kernel requires canonical CDecl linkage: '+name)
+    if automatic is not None:
+        # A header can expose types or macros without exposing any functions.
+        # Retain the actual CDecl graph rather than inferring an ABI or using a
+        # fallback parser. Repeated declarations remain in the graph.
+        if (profile['parser'] != 'exoml/libclang' or profile['externally_imported'] is not False or
+                not re.fullmatch('[0-9a-f]{64}', decl['fingerprint']) or
+                not decl['declarations'] or
+                any(d['source']['file'] != str(header) for d in decl['declarations'])):
+            raise ValueError('UNSUPPORTED: automatic discovery requires canonical CDecl declarations: '+name)
     type_ids = {entry['id'] for entry in decl['types'] if entry['kind'] == 'function'}
+    function_types = {(d['name'], d['type']) for d in declarations}
     for entry in on1x['imports']:
-        if entry['safe'] is not False or entry['c_name'] not in functions or entry['c_type_id'] not in type_ids:
+        if (entry['safe'] is not False or entry['c_name'] not in functions or entry['c_type_id'] not in type_ids or
+                (automatic is not None and (entry['c_name'], entry['c_type_id']) not in function_types)):
             raise ValueError('unexpected Exotract import metadata')
     if sandbox:
         # The SDK validates structure but does not fully bind names or review
@@ -272,24 +293,34 @@ def extract_exolib(name, recipe, root, exotract, compiler, resource, target,
                 [(p['index'], p['name']) for p in f.get('parameters', [])] !=
                 list(enumerate(p['name'] for p in d['parameters']))):
                 raise ValueError('sandbox ExoML declaration mismatch: '+f['c_name'])
-    status = 'not_representable' if sandbox or discovery_only else 'missing_review'
-    reason = discovery_only or ('no checked sandbox ABI, ownership/effect lowering or independent review' if sandbox else
+    status = 'not_representable' if sandbox or discovery_only or automatic is not None else 'missing_review'
+    reason = discovery_only or ('automatic declaration discovery only; no checked ABI adapter or independent review'
+              if automatic is not None else
+              'no checked sandbox ABI, ownership/effect lowering or independent review' if sandbox else
               'no independent KernelBind authorization' if sidecar else
               'no ExoML semantic sidecar or independent KernelBind authorization')
     return dict(exolib=profile, metadata=on1x, contract=contract, callable=False, status=status,
                 safe_export=False, symbols={sym: dict(status=status, callable=False, reason=reason) for sym in functions},
-                sidecar=str(sidecar) if sidecar else None)
+                sidecar=str(sidecar) if sidecar else None,
+                **({'automatic_registration': automatic} if automatic is not None else {}))
 
 
-def manifest_discovery_name(logical, modules, profiles):
-    """Resolve only metadata-eligible MANIFEST names, never an archive recipe."""
-    candidates = {n for n in (logical, logical.replace('_', '-')) if n in modules}
+def manifest_aliases(modules):
+    """Index source spellings without letting one canonical name shadow another."""
+    aliases = {}
+    for name in modules:
+        logical = name.replace('-', '_').replace('+', '_plus_')
+        if logical[0].isdigit():
+            logical = 'k_'+logical
+        aliases.setdefault(logical, []).append(name)
+    return aliases
+
+
+def manifest_discovery_name(logical, aliases):
+    candidates = aliases.get(logical, ())
     if len(candidates) > 1:
-        raise ValueError('ambiguous manifest alias: mulib.'+logical)
-    name = next(iter(candidates), None)
-    if name is not None and contracts.module_discovery_only_reason(name, modules[name], profiles):
-        return name
-    return None
+        raise ValueError('ambiguous manifest alias: mulib.'+logical+' ('+', '.join(sorted(candidates))+')')
+    return candidates[0] if candidates else None
 
 
 def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cflags, pins_before_load, *, review=False):
@@ -304,30 +335,6 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
                {'file': os.fsdecode(bytes.fromhex(r['file_hex']))} for r in requests['requests']]
     if not imports or len(imports) > 1024:
         raise ValueError('KernelBind inspection requires 1..1024 source requests')
-    # MANIFEST registration is not permission to build or call a kernel.
-    # Bounded static-inline modules may expose compiler-derived metadata only;
-    # ABI modules still require an explicit profile or discovery-only policy.
-    catalog_hash = contracts.digest(CATALOG)
-    profiles = contracts.exotract_catalog()
-    manifest = None
-    selected = {}
-    for request in imports:
-        match = re.fullmatch(r'mulib\.([a-z][a-z0-9_]*)', request['module'])
-        logical = match[1] if match else ''
-        if logical in KERNEL_MODULES or logical in SANDBOX_MODULES:
-            name = SANDBOX_MODULES.get(logical, logical)
-        elif logical:
-            if manifest is None:
-                manifest = housekeeping.inventory(root)
-            try:
-                name = manifest_discovery_name(logical, manifest, profiles)
-            except ValueError as error:
-                raise ValueError(location(request)+'ON1X-KERNEL-PROFILE: '+str(error)) from error
-        else:
-            name = None
-        if name is None:
-            raise ValueError(location(request)+'ON1X-KERNEL-PROFILE: no discovery profile: '+request['module'])
-        selected.setdefault(logical, (request, name))
     observed = {}
 
     def observe(path, expected=None):
@@ -342,9 +349,41 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
         observe(path, digest)
     for path, digest in pins_before_load.items():
         observe(path, digest)
-    observe(CATALOG, catalog_hash)
+    selected, automatic = {}, None
+    try:
+        manifest_path = housekeeping.local(root, 'MANIFEST.yaml')
+        raw = contracts.read(manifest_path, 8*1024*1024)
+        manifest = housekeeping.inventory(root, raw=raw, registration=True)
+        observe(manifest_path, hashlib.sha256(raw).hexdigest())
+        observe(CATALOG)
+        profiles = contracts.exotract_catalog()
+    except (ValueError, OSError, TypeError, KeyError) as error:
+        raise ValueError(location(imports[0])+'ON1X-KERNEL-PROFILE: '+str(error)) from error
+    aliases = manifest_aliases(manifest)
+    for request in imports:
+        try:
+            match = re.fullmatch(r'mulib\.([a-z_][a-z0-9_]*)', request['module'])
+            logical = match[1] if match else ''
+            name = manifest_discovery_name(logical, aliases)
+            if name is None:
+                raise ValueError('no discovery profile: '+request['module'])
+            explicit = logical in KERNEL_MODULES or logical in SANDBOX_MODULES
+            if explicit and name != SANDBOX_MODULES.get(logical, logical):
+                raise ValueError('handwritten KernelBind profile has no canonical MANIFEST module: '+name)
+            registration, legacy = None, True
+            if not explicit:
+                if automatic is None:
+                    automatic, digest = contracts.kernel_auto_catalog(manifest)
+                    observe(contracts.KERNEL_AUTO_CATALOG, digest)
+                registration = automatic[name]
+                # Keep the explicitly configured CDD discovery recipe. A
+                # bounded static-inline header otherwise needs no build plan.
+                legacy = bool(contracts.discovery_only_reason(name, profiles))
+            selected.setdefault(logical, (request, name, registration, legacy))
+        except (ValueError, OSError, TypeError, KeyError) as error:
+            raise ValueError(location(request)+'ON1X-KERNEL-PROFILE: '+str(error)) from error
     exotract, compiler = map(executable, [exotract, compiler])
-    for tool in [exotract, compiler, Path(__file__)]:
+    for tool in [exotract, compiler, Path(__file__), Path(contracts.__file__), Path(housekeeping.__file__)]:
         observe(tool)
     resource = Path(resource_dir or invoke([compiler, '-print-resource-dir']).decode().strip()).resolve()
     if not (resource/'include/stddef.h').is_file():
@@ -353,7 +392,7 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
     options = kernel_options(cflags)
 
     discovered = {}
-    for logical, (request, name) in selected.items():
+    for logical, (request, name, registration, legacy) in selected.items():
         try:
             sandbox = sandbox_profile(name)
             sidecar_name, required = (sandbox['sandbox_contract'], []) if sandbox else KERNEL_MODULES.get(name, (None, []))
@@ -361,9 +400,13 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
                 sidecar_name = 'clamp.exocontract.json'
             if name in ('histprice', 'priceopt') and review:
                 sidecar_name = name+'.exocontract.json'
+            recipe = (plan(root, [name], paths=paths, discovery=True) if legacy
+                      else housekeeping.declaration_plan(root, name, manifest, paths))
+            if not legacy and (reason := contracts.module_discovery_only_reason(name, manifest[name], profiles)):
+                recipe['discovery_only'] = {name: reason}
             discovered['mulib.'+logical] = extract_exolib(
-                name, plan(root, [name], paths=paths, discovery=True), root, exotract, compiler, resource, target,
-                options, observe, sidecar_name=sidecar_name, required=required)
+                name, recipe, root, exotract, compiler, resource, target, options, observe,
+                sidecar_name=sidecar_name, required=required, automatic=registration)
         except (ValueError, OSError, KeyError, TypeError, subprocess.TimeoutExpired) as error:
             raise ValueError(location(request)+'ON1X-KERNEL-DISCOVERY: '+str(error)) from error
     compiler_version = invoke([compiler, '--version']).decode()

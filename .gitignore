@@ -6,7 +6,10 @@ AGENTS.md
 .agents
 .aws
 .gapcode
-.sot
+/.sot/*
+!/.sot/term/
+/.sot/term/*
+!/.sot/term/termscript-profile.md
 *.additions
 
 # Byte-compiled / optimized / DLL files

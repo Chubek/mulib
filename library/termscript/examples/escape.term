@@ -1,0 +1,5 @@
+%module: demo.escape
+% Requires `--termdb path-to-terminal.sqlite3`.
+#cursor [[CUP]] set;
+(2, 4) #cursor emit;
+"Termscript" typeout;

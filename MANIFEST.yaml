@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1991
-implemented_module_count: 1492
+module_count: 2027
+implemented_module_count: 1528
 bounded_module_count: 499
 modules:
 - name: cdd-catalogue
@@ -167,6 +167,14 @@ modules:
   dependencies: [http, mcp-client, mcp-server, sse]
   status: implemented
   test: tests/test_mcp_http.c
+- name: mcp-broadcast
+  header: include/mulib-mcp-broadcast.h
+  manual: manual/mulib-mcp-broadcast.md
+  macro: MULIB_IMPL_MCP_BROADCAST
+  purpose: Authenticated public HTTPS endpoint adapter for MCP JSON-RPC with optional OAuth resource metadata.
+  dependencies: [mcp-http]
+  status: implemented
+  test: tests/test_mcp_broadcast.c
 - name: openai-client
   header: include/mulib-openai-client.h
   manual: manual/mulib-openai-client.md
@@ -2314,18 +2322,123 @@ modules:
   purpose: "RFC 1928 method negotiation, address and CONNECT/BIND/UDP codecs."
   dependencies: []
   status: implemented
+- name: ed25519
+  header: include/mulib-ed25519.h
+  manual: manual/mulib-ed25519.md
+  macro: MULIB_IMPL_ED25519
+  example: examples/ssh/kernels.c
+  example_ldlibs: -lcrypto
+  optional_dependency: OpenSSL Crypto 1.1.1 or newer
+  purpose: "OpenSSL EVP adapter for raw Ed25519 public keys, signatures and verification."
+  dependencies: []
+  status: implemented
+- name: sshauth
+  header: include/mulib-sshauth.h
+  manual: manual/mulib-sshauth.md
+  macro: MULIB_IMPL_SSHAUTH
+  example: examples/ssh/kernels.c
+  example_ldlibs: -lcrypto
+  optional_dependency: OpenSSL Crypto via ed25519
+  purpose: "SSH service negotiation and none, password and Ed25519 user-authentication payloads."
+  dependencies: [ed25519, sshkey, sshproto]
+  status: implemented
+- name: sshchannel
+  header: include/mulib-sshchannel.h
+  manual: manual/mulib-sshchannel.md
+  macro: MULIB_IMPL_SSHCHANNEL
+  example: examples/ssh/kernels.c
+  example_ldlibs: -lcrypto
+  purpose: "SSH session-channel payloads, lifecycle and flow control."
+  dependencies: [sshpacket, sshproto]
+  status: implemented
 - name: sshclient
   header: include/mulib-sshclient.h
   manual: manual/mulib-sshclient.md
   macro: MULIB_IMPL_SSHCLIENT
-  purpose: "SSH-2 identification and pre-key-exchange binary packet codecs."
-  dependencies: [endian]
+  purpose: "SSH-2 client transport and authentication helpers; legacy cleartext codecs."
+  dependencies: [sshauth, sshtransport]
+  status: implemented
+- name: sshconnection
+  header: include/mulib-sshconnection.h
+  manual: manual/mulib-sshconnection.md
+  macro: MULIB_IMPL_SSHCONNECTION
+  example: examples/ssh/connection.c
+  example_ldlibs: -lcrypto
+  optional_dependency: OpenSSL Crypto via sshtransport and sshauth
+  purpose: "Socket-independent SSH connection driver with buffered records and authentication sequencing."
+  dependencies: [sshserver, sshchannel]
+  status: implemented
+- name: sshcrypto
+  header: include/mulib-sshcrypto.h
+  manual: manual/mulib-sshcrypto.md
+  macro: MULIB_IMPL_SSHCRYPTO
+  example: examples/ssh/kernels.c
+  example_ldlibs: -lcrypto
+  optional_dependency: OpenSSL Crypto 1.1.1 or newer
+  purpose: "SSH exchange hashing, key derivation and directional AES-128-GCM records."
+  dependencies: [aes-gcm, sshpacket]
+  status: implemented
+- name: sshkex
+  header: include/mulib-sshkex.h
+  manual: manual/mulib-sshkex.md
+  macro: MULIB_IMPL_SSHKEX
+  example: examples/ssh/kernels.c
+  example_ldlibs: -lcrypto
+  optional_dependency: OpenSSL Crypto via sshcrypto
+  purpose: "SSH Curve25519 key-exchange negotiation, messages and transcript hashing."
+  dependencies: [ed25519, sshcrypto, sshkey, sshproto, x25519]
+  status: implemented
+- name: sshkey
+  header: include/mulib-sshkey.h
+  manual: manual/mulib-sshkey.md
+  macro: MULIB_IMPL_SSHKEY
+  example: examples/ssh/kernels.c
+  example_ldlibs: -lcrypto
+  purpose: "SSH Ed25519 key and signature blob codecs."
+  dependencies: [sshwire]
+  status: implemented
+- name: sshpacket
+  header: include/mulib-sshpacket.h
+  manual: manual/mulib-sshpacket.md
+  macro: MULIB_IMPL_SSHPACKET
+  example: examples/ssh/kernels.c
+  example_ldlibs: -lcrypto
+  purpose: "Bounded SSH binary framing for cleartext and length-authenticated AEAD packets."
+  dependencies: [sshwire]
+  status: implemented
+- name: sshproto
+  header: include/mulib-sshproto.h
+  manual: manual/mulib-sshproto.md
+  macro: MULIB_IMPL_SSHPROTO
+  example: examples/ssh/kernels.c
+  example_ldlibs: -lcrypto
+  purpose: "SSH message numbers, KEXINIT payloads and algorithm name lists."
+  dependencies: [sshwire]
   status: implemented
 - name: sshserver
   header: include/mulib-sshserver.h
   manual: manual/mulib-sshserver.md
   macro: MULIB_IMPL_SSHSERVER
-  purpose: "SSH-2 password user-authentication payload parsing and attempt"
+  purpose: "SSH-2 server transport helpers and bounded user-authentication policies."
+  dependencies: [sshauth, sshtransport]
+  status: implemented
+- name: sshtransport
+  header: include/mulib-sshtransport.h
+  manual: manual/mulib-sshtransport.md
+  macro: MULIB_IMPL_SSHTRANSPORT
+  example: examples/ssh/kernels.c
+  example_ldlibs: -lcrypto
+  optional_dependency: OpenSSL Crypto via sshkex
+  purpose: "Socket-independent, pinned SSH-2 key exchange and authenticated record transport."
+  dependencies: [sshkex, sshpacket]
+  status: implemented
+- name: sshwire
+  header: include/mulib-sshwire.h
+  manual: manual/mulib-sshwire.md
+  macro: MULIB_IMPL_SSHWIRE
+  example: examples/ssh/kernels.c
+  example_ldlibs: -lcrypto
+  purpose: "Transactional SSH-2 wire cursors, strings and nonnegative mpints."
   dependencies: [endian]
   status: implemented
 - name: tunnel
@@ -15472,7 +15585,315 @@ modules:
   purpose: "Basic WebAuthn assertion data and signing input; not an authenticator or origin verifier."
   dependencies: [secret-crypto]
   status: implemented
+- name: imtui
+  header: include/mulib-imtui.h
+  manual: manual/mulib-imtui.md
+  macro: MULIB_IMPL_IMTUI
+  example: examples/imtui/headless.c
+  purpose: "Immediate-mode terminal UI suite and plain cell snapshots."
+  dependencies: [imtui-core, imtui-draw, imtui-edit, imtui-layout, imtui-list, imtui-scroll, imtui-render, imtui-syntax, imtui-table, imtui-tabs, imtui-terminal, imtui-widgets, imtui-mune, strbuf]
+  status: implemented
+- name: imtui-core
+  header: include/mulib-imtui-core.h
+  manual: manual/mulib-imtui-core.md
+  macro: MULIB_IMPL_IMTUI_CORE
+  example: examples/imtui/headless.c
+  purpose: "Terminal cell frames, scoped IDs, interaction, focus and clipping."
+  dependencies: [termkey, vterm]
+  status: implemented
+- name: imtui-draw
+  header: include/mulib-imtui-draw.h
+  manual: manual/mulib-imtui-draw.md
+  macro: MULIB_IMPL_IMTUI_DRAW
+  example: examples/imtui/headless.c
+  purpose: "Clipped cell fills, lines, borders and safe UTF-8 labels."
+  dependencies: [imtui-core]
+  status: implemented
+- name: imtui-edit
+  header: include/mulib-imtui-edit.h
+  manual: manual/mulib-imtui-edit.md
+  macro: MULIB_IMPL_IMTUI_EDIT
+  example: examples/imtui/composites.c
+  purpose: "UTF-8 single-line editing, selection and bounded paste."
+  dependencies: [imtui-draw, utf8]
+  status: implemented
+- name: imtui-layout
+  header: include/mulib-imtui-layout.h
+  manual: manual/mulib-imtui-layout.md
+  macro: MULIB_IMPL_IMTUI_LAYOUT
+  example: examples/imtui/headless.c
+  purpose: "Integer row, column, grid, split, alignment and weighted track layouts."
+  dependencies: [imtui-core]
+  status: implemented
+- name: imtui-list
+  header: include/mulib-imtui-list.h
+  manual: manual/mulib-imtui-list.md
+  macro: MULIB_IMPL_IMTUI_LIST
+  example: examples/imtui/composites.c
+  purpose: "Virtualized list with viewport and keyboard selection."
+  dependencies: [imtui-draw]
+  status: implemented
+- name: imtui-mune
+  header: include/mulib-imtui-mune.h
+  manual: manual/mulib-imtui-mune.md
+  macro: MULIB_IMPL_IMTUI_MUNE
+  example: tests/test_imtui_mune.c
+  purpose: "Frame-scoped native terminal layout, drawing and widgets for Mune."
+  dependencies: [imtui-layout, imtui-syntax, imtui-widgets, mune]
+  status: implemented
+- name: imtui-render
+  header: include/mulib-imtui-render.h
+  manual: manual/mulib-imtui-render.md
+  macro: MULIB_IMPL_IMTUI_RENDER
+  example: examples/imtui/terminal.c
+  purpose: "Differential terminfo rendering and escape-free snapshots."
+  dependencies: [imtui-core, termstyle]
+  status: implemented
+- name: imtui-scroll
+  header: include/mulib-imtui-scroll.h
+  manual: manual/mulib-imtui-scroll.md
+  macro: MULIB_IMPL_IMTUI_SCROLL
+  example: examples/imtui/composites.c
+  purpose: "Clipped viewports with saturating scroll offsets."
+  dependencies: [imtui-core]
+  status: implemented
+- name: imtui-syntax
+  header: include/mulib-imtui-syntax.h
+  manual: manual/mulib-imtui-syntax.md
+  macro: MULIB_IMPL_IMTUI_SYNTAX
+  example: tests/test_imtui_mune.c
+  purpose: "Clipped syntax-highlighted editor preview."
+  dependencies: [imtui-core, termsyn]
+  status: implemented
+- name: imtui-table
+  header: include/mulib-imtui-table.h
+  manual: manual/mulib-imtui-table.md
+  macro: MULIB_IMPL_IMTUI_TABLE
+  example: examples/imtui/composites.c
+  purpose: "Virtualized terminal tables backed by caller row and cell providers."
+  dependencies: [imtui-list]
+  status: implemented
+- name: imtui-tabs
+  header: include/mulib-imtui-tabs.h
+  manual: manual/mulib-imtui-tabs.md
+  macro: MULIB_IMPL_IMTUI_TABS
+  example: examples/imtui/composites.c
+  purpose: "Keyboard-navigable terminal tab strip."
+  dependencies: [imtui-draw]
+  status: implemented
+- name: imtui-terminal
+  header: include/mulib-imtui-terminal.h
+  manual: manual/mulib-imtui-terminal.md
+  macro: MULIB_IMPL_IMTUI_TERMINAL
+  example: examples/imtui/terminal.c
+  purpose: "POSIX tty modes, fragmented input decoding and partial output writes."
+  dependencies: [terminfo, termkey, termutils]
+  status: implemented
+- name: imtui-widgets
+  header: include/mulib-imtui-widgets.h
+  manual: manual/mulib-imtui-widgets.md
+  macro: MULIB_IMPL_IMTUI_WIDGETS
+  example: examples/imtui/headless.c
+  purpose: "Themeable immediate-mode buttons, toggles, progress and sliders."
+  dependencies: [imtui-draw]
+  status: implemented
+- name: termdb
+  header: include/mulib-termdb.h
+  manual: manual/mulib-termdb.md
+  macro: MULIB_IMPL_TERMDB
+  example: library/termscript/main.c
+  purpose: "Read-only lookup and bounded parameter expansion from the terminal SQLite database."
+  dependencies: [sqlite, terminfo, utf8]
+  status: implemented
+- name: termfunc
+  header: include/mulib-termfunc.h
+  manual: manual/mulib-termfunc.md
+  macro: MULIB_IMPL_TERMFUNC
+  example: examples/termscript/support.c
+  purpose: "Semantic terminal functions with trusted terminfo and explicit xterm modes."
+  dependencies: [terminfo]
+  status: implemented
+- name: termscript
+  header: include/mulib-termscript.h
+  manual: manual/mulib-termscript.md
+  macro: MULIB_IMPL_TERMSCRIPT
+  example: library/termscript/main.c
+  purpose: "Stack language for terminal applications and C11 interoperation."
+  dependencies: [termscript-compiler, termscript-host]
+  status: implemented
+- name: termscript-ast
+  header: include/mulib-termscript-ast.h
+  manual: manual/mulib-termscript-ast.md
+  macro: MULIB_IMPL_TERMSCRIPT_AST
+  example: library/termscript/main.c
+  purpose: "Parsec-backed Termscript syntax tree and symbolic escape literals."
+  dependencies: [parsec, utf8]
+  status: implemented
+- name: termscript-compiler
+  header: include/mulib-termscript-compiler.h
+  manual: manual/mulib-termscript-compiler.md
+  macro: MULIB_IMPL_TERMSCRIPT_COMPILER
+  example: library/termscript/main.c
+  purpose: "Canonical Termscript AST, constant folding and C11 emission."
+  dependencies: [termscript-ast, strbuf]
+  status: implemented
+- name: termscript-host
+  header: include/mulib-termscript-host.h
+  manual: manual/mulib-termscript-host.md
+  macro: MULIB_IMPL_TERMSCRIPT_HOST
+  example: library/termscript/main.c
+  purpose: "Explicit terminal, library, database, termios and state machine intrinsics."
+  dependencies: [termdb, termscript-library, termscript-runtime, termscript-state, termscript-terminal, utf8]
+  status: implemented
+- name: termscript-library
+  header: include/mulib-termscript-library.h
+  manual: manual/mulib-termscript-library.md
+  macro: MULIB_IMPL_TERMSCRIPT_LIBRARY
+  example: library/termscript/main.c
+  purpose: "Dotted Termscript modules from explicit roots and TERMSCRIPT_LIBRARY_PATH."
+  dependencies: [termscript-ast, strbuf]
+  status: implemented
+- name: termscript-runtime
+  header: include/mulib-termscript-runtime.h
+  manual: manual/mulib-termscript-runtime.md
+  macro: MULIB_IMPL_TERMSCRIPT_RUNTIME
+  example: library/termscript/main.c
+  purpose: "Bounded typed stack interpreter, closures, modules and mode-aware keys."
+  dependencies: [termscript-ast]
+  status: implemented
+- name: termscript-state
+  header: include/mulib-termscript-state.h
+  manual: manual/mulib-termscript-state.md
+  macro: MULIB_IMPL_TERMSCRIPT_STATE
+  example: examples/termscript/support.c
+  purpose: "Deterministic finite-state transition tables."
+  dependencies: []
+  status: implemented
+- name: termscript-terminal
+  header: include/mulib-termscript-terminal.h
+  manual: manual/mulib-termscript-terminal.md
+  macro: MULIB_IMPL_TERMSCRIPT_TERMINAL
+  example: examples/termscript/support.c
+  purpose: "Explicit output, terminal capabilities, VTerm and POSIX termios."
+  dependencies: [termfunc, termstyle, termutils]
+  status: implemented
 project_files:
+- file: tools/extend-kernelbind.py
+  purpose: "Update On1x's discovery-only KernelBind coverage from the kernel manifest."
+- file: on1x/contracts-exotract/kernel-auto.json
+  purpose: "Generated metadata-only inventory for KernelBind inspection."
+- file: tests/test_extend_kernelbind.py
+  purpose: "KernelBind generator freshness, additions, malformed manifest and idempotence checks."
+- file: on1x/tests/test_kernel_auto_discovery_sdk.py
+  purpose: "Real ExoLib declaration extraction, future kernels and fail-closed KernelBind admission."
+- file: .sot/term/termscript-profile.md
+  purpose: "In-tree terminal capability source profile and xterm mode definitions."
+- file: examples/imtui/headless.c
+  purpose: "Immediate-mode settings form and headless snapshot."
+- file: examples/imtui/composites.c
+  purpose: "Headless ImTUI editor, tab strip and virtual table."
+- file: examples/imtui/terminal.c
+  purpose: "Live POSIX ImTUI terminal application with input and partial output handling."
+- file: examples/termscript/support.c
+  purpose: "C11 Termscript terminal and state-machine capability example."
+- file: library/imtui/init.lua
+  purpose: "ImTUI standard-library facade for Mune."
+- file: library/imtui/core.lua
+  purpose: "Mune rectangle and immediate layout composition."
+- file: library/imtui/widgets.lua
+  purpose: "Mune ImTUI widget composition."
+- file: library/imtui/code.lua
+  purpose: "Mune ImTUI syntax preview."
+- file: library/imtui/demo.lua
+  purpose: "Runnable Mune ImTUI demonstration module."
+- file: library/termscript/implementation.h
+  purpose: "Opt-in C11 implementation recipe for Termscript and TermDB."
+- file: library/termscript/main.c
+  purpose: "Termscript interpreter and C11 compiler command-line runner."
+- file: library/termscript/README.md
+  purpose: "Termscript module discovery, standard library and host authority."
+- file: library/termscript/examples/counter.term
+  purpose: "Termscript structured loop example."
+- file: library/termscript/examples/escape.term
+  purpose: "First-class TermDB escape literal and emission example."
+- file: library/termscript/stdlib/imtui.term
+  purpose: "Termscript terminal drawing helpers."
+- file: library/termscript/stdlib/shell.term
+  purpose: "Explicit Termscript host command namespace."
+- file: library/termscript/stdlib/state.term
+  purpose: "Termscript finite-state and key mode helpers."
+- file: library/termscript/stdlib/termfunc.term
+  purpose: "Semantic terminal operation namespace."
+- file: library/termscript/stdlib/terminfo.term
+  purpose: "Terminfo short-capability namespace."
+- file: library/termscript/stdlib/termios.term
+  purpose: "POSIX tty setting and size helpers."
+- file: library/termscript/stdlib/text.term
+  purpose: "Termscript text emission helpers."
+- file: library/termscript/stdlib/vterm.term
+  purpose: "Termscript virtual-terminal command namespace."
+- file: tests/test_imtui_composites.c
+  purpose: "Editor, virtualized rows, table, and tab input regressions."
+- file: tests/test_imtui_core.c
+  purpose: "ImTUI event routing, clipping, and stable focus regressions."
+- file: tests/test_imtui_layout.c
+  purpose: "ImTUI layout sizing, bounds and scrolling regressions."
+- file: tests/test_imtui_mune.c
+  purpose: "Frame-scoped ImTUI widgets and layout in the real Mune runtime."
+- file: tests/test_imtui_render.c
+  purpose: "ImTUI drawing, sanitization and incremental terminal frame regression."
+- file: tests/test_imtui_terminal.c
+  purpose: "Short writes, fragmented input and tty lifetime regressions."
+- file: tests/test_imtui_widgets.c
+  purpose: "Immediate widget keyboard, pointer and disabled interactions."
+- file: tests/test_termdb.c
+  purpose: "Read-only MuLIB SQLite TermDB schema and template tests."
+- file: tests/test_termdb_tool.py
+  purpose: "Deterministic terminal SQLite generation, provenance and archival tests."
+- file: tests/test_termscript_ast.c
+  purpose: "Parsec Termscript AST, grammar and literal boundary regressions."
+- file: tests/test_termscript_cli.py
+  purpose: "Executable Termscript, TermDB generation and C11 differential tests."
+- file: tests/test_termscript_compiler.c
+  purpose: "Termscript canonicalization and generated C11 runtime fixture."
+- file: tests/test_termscript_library.c
+  purpose: "Termscript module search, root ordering and malformed-module tests."
+- file: tests/test_termscript_runtime.c
+  purpose: "Termscript VM execution, limits, ownership, and host capability tests."
+- file: tests/test_termscript_support.c
+  purpose: "Termscript state transition and VTerm-backed terminal regressions."
+- file: tests/test_mcp_client_api.c
+  purpose: "Canonical standalone MCP client C scope and legacy API interoperability."
+- file: tests/test_mcp_server_api.c
+  purpose: "Canonical standalone MCP server C scope and legacy API interoperability."
+- file: tools/mk-termdb.py
+  purpose: "Deterministic SQLite generation from terminal reference sources."
+- file: examples/ssh/implementation.h
+  purpose: "Opt-in single-translation-unit implementation switches for the SSH examples."
+- file: examples/ssh/kernels.c
+  purpose: "In-memory example of the SSH transport, authentication and channel kernels."
+- file: examples/ssh/connection.c
+  purpose: "In-memory connection-driver example with short writes and a two-sided close."
+- file: tests/ssh/wire.c
+  purpose: "Separate implementation translation unit for SSH wire and framing kernels."
+- file: tests/ssh/crypto.c
+  purpose: "Separate implementation translation unit for SSH cryptographic kernels."
+- file: tests/ssh/session.c
+  purpose: "Separate implementation translation unit for SSH transport and connection kernels."
+- file: tests/ssh/interop.c
+  purpose: "MuLIB client and server peers for the pinned SSH interoperability fixture."
+- file: tests/ssh/openssh.py
+  purpose: "Bidirectional OpenSSH interoperability with temporary keys on loopback."
+- file: tests/test_ssh_connection.c
+  purpose: "SSH authentication, fragmented connection I/O and channel state regressions."
+- file: tests/test_ssh_auth_channel_parse.c
+  purpose: "SSH authentication and channel parser mutation and libFuzzer target."
+- file: tests/test_ssh_transport.c
+  purpose: "SSH transport rekey, directional key activation and failure regressions."
+- file: tests/test_ssh_transport_parse.c
+  purpose: "SSH packet, key and wire parser mutation and libFuzzer target."
+- file: tests/test_ssh_vectors.c
+  purpose: "Ed25519, X25519, SSH exchange hash and key derivation vectors."
 - file: manual/secret-kernels.md
   purpose: "Secret kernel integration, trust boundaries, validation, and release gates."
 - file: tests/secret/check-headers.py
@@ -15539,6 +15960,8 @@ project_files:
   purpose: Shared MCP status and limit declarations.
 - file: include/detail/mulib-mcp-wire.h
   purpose: Private bounded MCP JSON-RPC message helpers.
+- file: include/detail/mulib-jsonrpc-envelope.h
+  purpose: Shared transport-independent JSON-RPC 2.0 envelope reader for JSON-RPC and MCP.
 - file: tests/test_mcp_stdio.py
   purpose: Cross-process MCP stdio wire tests with independent JSON parsing.
 - file: tests/test_mcp_http.py
@@ -19991,6 +20414,10 @@ project_files:
   purpose: "Focused regression suite for test-markup-tree-stream."
 - file: examples/modules/mcp-http.c
   purpose: "Standalone checked usage example for mcp-http."
+- file: examples/modules/mcp-broadcast.c
+  purpose: "In-process example of authenticated MCP JSON-RPC tool dispatch via an HTTPS endpoint adapter."
+- file: tests/test_mcp_broadcast.c
+  purpose: "Authenticated MCP endpoint routing, Bearer verification, authorization and protected-resource metadata regressions."
 - file: examples/modules/graphql.c
   purpose: "Standalone checked usage example for graphql."
 - file: examples/modules/jsonrpc.c

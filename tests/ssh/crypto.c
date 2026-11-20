@@ -1,0 +1,7 @@
+#define MULIB_IMPL_ENTROPY
+#define MULIB_IMPL_AES_GCM
+#define MULIB_IMPL_X25519
+#define MULIB_IMPL_ED25519
+#define MULIB_IMPL_SSHCRYPTO
+#define MULIB_IMPL_SSHKEX
+#include "mulib-sshkex.h"

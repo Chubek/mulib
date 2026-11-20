@@ -38,6 +38,9 @@ separate and private.
 
 ## Host responsibilities
 
+For an authenticated public endpoint with optional OAuth resource metadata,
+use the [MCP broadcast adapter](mulib-mcp-broadcast.md).
+
 - Configure a fixed Host and path; bind local-only services to loopback.
   Omit the Origin policy to deny all requests with an Origin. If you allow a
   browser origin, use an explicit allowlist and implement any required CORS
@@ -70,7 +73,7 @@ transport or authorization conformance is claimed.
 | --- | --- |
 | Header | [`include/mulib-mcp-http.h`](../include/mulib-mcp-http.h) |
 | Implementation switch | `MULIB_IMPL_CDD_MCP_HTTP` |
-| Repository-local includes | [`include/detail/mulib-mcp-wire.h`](../include/detail/mulib-mcp-wire.h), [mulib-http](mulib-http.md), [mulib-mcp-client](mulib-mcp-client.md), [mulib-mcp-server](mulib-mcp-server.md), [mulib-sse](mulib-sse.md) |
+| Repository-local includes | [`include/detail/mulib-jsonrpc-envelope.h`](../include/detail/mulib-jsonrpc-envelope.h), [`include/detail/mulib-mcp-wire.h`](../include/detail/mulib-mcp-wire.h), [mulib-http](mulib-http.md), [mulib-mcp-client](mulib-mcp-client.md), [mulib-mcp-server](mulib-mcp-server.md), [mulib-sse](mulib-sse.md) |
 | Complete example | [`examples/modules/mcp-http.c`](../examples/modules/mcp-http.c) |
 
 The include list includes conditional and implementation-only includes;

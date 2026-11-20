@@ -20,6 +20,7 @@ import tempfile
 HOME = Path(__file__).resolve().parents[1]
 CONTRACTS = HOME/'contracts-exoml'
 EXOTRACT_CATALOG = HOME/'contracts-exotract/catalog.json'
+KERNEL_AUTO_CATALOG = HOME/'contracts-exotract/kernel-auto.json'
 MAX_BYTES = 64 * 1024 * 1024
 
 
@@ -112,6 +113,33 @@ def discovery_only_reason(name, data):
                  if name.startswith(prefix)), None)
 
 
+def kernel_auto_catalog(manifest):
+    """Validate the generated declaration registry against the MANIFEST snapshot."""
+    if KERNEL_AUTO_CATALOG.resolve() != KERNEL_AUTO_CATALOG:
+        reject('symlinked automatic kernel catalog: '+str(KERNEL_AUTO_CATALOG))
+    raw = read(KERNEL_AUTO_CATALOG, 2*1024*1024)
+    data = loads(raw)
+    keys(data, ['schema', 'safe_export', 'modules'])
+    modules = data.get('modules')
+    if (data.get('schema') != 'on1x.kernel-auto/v1' or data.get('safe_export') is not False
+            or not isinstance(modules, dict)):
+        reject('unsupported/unsafe automatic kernel catalog')
+    if modules.keys() != manifest.keys():
+        missing = sorted(manifest.keys() - modules.keys())
+        extra = sorted(modules.keys() - manifest.keys())
+        sample = (('missing '+missing[0]) if missing else ('unregistered '+extra[0]))
+        reject('automatic kernel catalog/MANIFEST registration drift: '+sample+'; regenerate kernel-auto.json')
+    for name, item in manifest.items():
+        expected = {field: item[field] for field in ('header', 'status', 'implementation', 'optional_dependency')
+                    if field in item}
+        expected['dependencies'] = item['manifest_dependencies']
+        if item['macro'] is not None:
+            expected['macro'] = item['macro']
+        if modules[name] != expected:
+            reject('automatic kernel catalog/MANIFEST entry drift: '+name+'; regenerate kernel-auto.json')
+    return modules, hashlib.sha256(raw).hexdigest()
+
+
 def catalog(root, selected=None):
     data = contract_catalog()
     obligations = load(CONTRACTS/'obligations.json', 2*1024*1024)
@@ -170,7 +198,7 @@ def manifest_list(entry, key, token, *, optional=False):
         return []
     if len(fields) == 1:
         field = fields[0]
-        inline = re.fullmatch(r' \[([^\]]*)\]', field[1])
+        inline = re.fullmatch(r' +\[([^\]]*)\]', field[1])
         tail = entry[field.end():].removeprefix('\n').splitlines()
         block = []
         indent = None
@@ -193,6 +221,41 @@ def manifest_list(entry, key, token, *, optional=False):
     reject('unsupported MANIFEST '+key+' layout')
 
 
+def manifest_scalar(entry, key, token, *, optional=False):
+    fields = re.findall(r'^  '+key+r':([^\n]*)$', entry, re.M)
+    if optional and not fields:
+        return None
+    if len(fields) != 1 or not fields[0].startswith(' ') or not re.fullmatch(token, fields[0].lstrip(' ')):
+        reject('unsupported or duplicate MANIFEST field: '+key)
+    return fields[0].lstrip(' ')
+
+
+def module_fields(name, entry, *, registration=False):
+    fields = {key: manifest_scalar(entry, key, r'[A-Za-z0-9_./+-]+') for key in ('header', 'manual')}
+    macro = manifest_scalar(entry, 'macro', r'MULIB_IMPL_[A-Z0-9_]+', optional=True)
+    implementation = manifest_scalar(entry, 'implementation', r'static-inline', optional=True)
+    if (macro is None) == (implementation is None):
+        reject('unsupported MANIFEST implementation: '+name)
+    fields['macro'] = macro
+    if implementation is not None:
+        fields['implementation'] = implementation
+    fields['manifest_dependencies'] = manifest_list(entry, 'dependencies', r'[a-z0-9][a-z0-9_+-]*')
+    fields['extra_macros'] = manifest_list(entry, 'extra_macros', r'MULIB_IMPL_[A-Z0-9_]+', optional=True)
+    if macro is None and fields['extra_macros']:
+        reject('static-inline module declares implementation switches: '+name)
+    if registration:
+        fields['status'] = manifest_scalar(entry, 'status', r'implemented|bounded')
+        if (fields['status'] == 'bounded') != (implementation == 'static-inline'):
+            reject('MANIFEST implementation metadata does not match status: '+name)
+        optional_dependency = manifest_scalar(entry, 'optional_dependency', r'[A-Za-z0-9][ -~]{0,511}',
+                                              optional=True)
+        if optional_dependency is not None:
+            if re.search(r':(?:\s|$)', optional_dependency):
+                reject('unsupported MANIFEST optional_dependency scalar: '+name)
+            fields['optional_dependency'] = optional_dependency
+    return fields
+
+
 def module_info(root, name, manifest=None):
     # This is the repository's plain MANIFEST subset, not a general YAML parser.
     if manifest is None:
@@ -201,26 +264,7 @@ def module_info(root, name, manifest=None):
     match = re.search(r'^- name: '+re.escape(name)+r'\n(.*?)(?=^- name:|\Z)', manifest, re.M|re.S)
     if not match:
         reject('module missing from MANIFEST: ' + name)
-    fields = {}
-    for key in ['header', 'manual']:
-        field = re.search(r'^  '+key+r': ([A-Za-z0-9_./+-]+)$', match[1], re.M)
-        if not field:
-            reject('unsupported MANIFEST field: ' + key)
-        fields[key] = field[1]
-    macro = re.findall(r'^  macro:([^\n]*)$', match[1], re.M)
-    implementation = re.findall(r'^  implementation:([^\n]*)$', match[1], re.M)
-    if len(macro) == 1 and not implementation and re.fullmatch(r' MULIB_IMPL_[A-Z0-9_]+', macro[0]):
-        fields['macro'] = macro[0][1:]
-    elif not macro and implementation == [' static-inline']:
-        fields['macro'] = None
-        fields['implementation'] = 'static-inline'
-    else:
-        reject('unsupported MANIFEST implementation: ' + name)
-    fields['manifest_dependencies'] = manifest_list(match[1], 'dependencies', r'[a-z0-9][a-z0-9_+-]*')
-    fields['extra_macros'] = manifest_list(match[1], 'extra_macros', r'MULIB_IMPL_[A-Z0-9_]+', optional=True)
-    if fields['macro'] is None and fields['extra_macros']:
-        reject('static-inline module declares implementation switches: ' + name)
-    return fields
+    return module_fields(name, match[1])
 
 
 def local(root, name):
@@ -233,21 +277,43 @@ def local(root, name):
     return resolved
 
 
-def manifest_inventory(root):
-    text = read(local(root, 'MANIFEST.yaml'), 8*1024*1024).decode().split('\nproject_files:', 1)[0]
-    names = re.findall(r'^- name: ([a-z0-9][a-z0-9_+-]*)$', text, re.M)
-    if not names or len(names) > 4096 or len(names) != len(set(names)):
+def manifest_inventory(root, *, raw=None, registration=False):
+    if raw is None:
+        raw = read(local(root, 'MANIFEST.yaml'), 8*1024*1024)
+    # Strip plain trailing comments as the generator does. Preserve everything
+    # else in the snapshot hash, including comments and unrelated top-level data.
+    text = '\n'.join(line for raw_line in raw.decode('utf-8').splitlines()
+                     if (line := re.split(r'(?:^|[ \t]+)#', raw_line, maxsplit=1)[0].rstrip()))
+    sections = re.split(r'^modules: *$', text, flags=re.M)
+    if len(sections) != 2 or b'\0' in raw:
+        reject('missing/duplicate/invalid MANIFEST modules section')
+    text = re.split(r'^[a-zA-Z_][a-zA-Z0-9_-]*:', sections[1], maxsplit=1, flags=re.M)[0]
+    records = re.split(r'^- name: ', text, flags=re.M)
+    if records[0].strip() or not 1 < len(records) <= 4097:
         reject('missing/duplicate/excessive MANIFEST modules')
-    modules = {}
-    for name in names:
-        item = module_info(root, name, text)
+    modules, names = {}, set()
+    for record in records[1:]:
+        name, _, entry = record.partition('\n')
+        if (name in names or not re.fullmatch(r'[a-z0-9][a-z0-9_+-]*', name) or
+                any(line and not line.startswith('  ') for line in entry.splitlines())):
+            reject('invalid/duplicate MANIFEST module: '+name)
+        names.add(name)
+        status = manifest_scalar(entry, 'status', r'implemented|bounded|reserved',
+                                 optional=not registration)
+        if status == 'reserved':
+            if (manifest_scalar(entry, 'header', r'[A-Za-z0-9_./+-]+') != 'include/mulib-'+name+'.h'
+                    or re.search(r'^  (macro|implementation):', entry, re.M)):
+                reject('invalid MANIFEST reservation: '+name)
+            continue
+        item = module_fields(name, entry, registration=registration)
         if item['header'] != 'include/mulib-'+name+'.h':
             reject('noncanonical module header: '+name)
         local(root, item['header'])
         local(root, item['manual'])
         modules[name] = item
+    dependencies = names if registration else modules.keys()
     for name, item in modules.items():
-        if set(item['manifest_dependencies']) - modules.keys():
+        if set(item['manifest_dependencies']) - dependencies:
             reject('unknown MANIFEST dependency: '+name)
     return modules
 

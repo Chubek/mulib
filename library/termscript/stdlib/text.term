@@ -1,0 +1,3 @@
+%module: stdlib.text
+#print { typeout } bind seal;
+#line { typeout #\newline typeout } bind seal;

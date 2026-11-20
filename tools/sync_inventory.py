@@ -13,6 +13,8 @@ import argparse
 import json
 from pathlib import Path
 import re
+import subprocess
+import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 SUPPORT_HEADERS = {'mulib-container-core.h', 'mulib-qvm.h', 'mulib-lprowse.h'}
@@ -218,3 +220,4 @@ if __name__ == '__main__':
                         help='synchronize MANIFEST.yaml without editing C test fixtures')
     args = parser.parse_args()
     sync(ROOT, fixtures=not args.metadata_only)
+    subprocess.run([sys.executable, str(ROOT / 'tools' / 'extend-kernelbind.py')], check=True)

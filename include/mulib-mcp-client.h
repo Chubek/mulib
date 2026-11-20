@@ -1,7 +1,13 @@
 /**
  * @file mulib-mcp-client.h
  * @brief Bounded, single-in-flight Model Context Protocol client.
- * Define MULIB_IMPL_CDD_MCP_CLIENT once. See the manual for dependencies.
+ * Define MULIB_IMPL_MCP_CLIENT in one translation unit. The legacy
+ * MULIB_IMPL_CDD_MCP_CLIENT switch also emits both APIs. See the manual
+ * for dependencies.
+ *
+ * This kernel only builds and parses frames. The host owns transport,
+ * authorization, and all decisions to send or retry requests. Treat
+ * peer metadata and response content as untrusted.
  */
 #ifndef MULIB_MCP_CLIENT_H
 #define MULIB_MCP_CLIENT_H
@@ -88,12 +94,67 @@ extern "C"
    * or guarantee the peer will stop. Do not send it over modern HTTP. */
   mulib_cdd_mcp_status_t mulib_cdd_mcp_client_cancel (
       mulib_cdd_mcp_client_t *client, const char *reason, char **out);
+
+  /* Standalone names use the same types, status values and contracts as
+   * the corresponding mulib_cdd_mcp_client_* functions. The old names and
+   * struct/enum tags remain available for source and link compatibility. */
+  typedef mulib_cdd_mcp_client_t mulib_mcp_client_t;
+  typedef mulib_cdd_mcp_status_t mulib_mcp_client_status_t;
+  typedef mulib_cdd_mcp_operation_t mulib_mcp_client_operation_t;
+  typedef mulib_cdd_mcp_request_options_t mulib_mcp_client_request_options_t;
+
+#define MULIB_MCP_CLIENT_VERSION MULIB_CDD_MCP_VERSION
+#define MULIB_MCP_CLIENT_LEGACY_VERSION MULIB_CDD_MCP_LEGACY_VERSION
+#define MULIB_MCP_CLIENT_MAX_FRAME MULIB_CDD_MCP_MAX_FRAME
+
+#define MULIB_MCP_CLIENT_OK MULIB_CDD_MCP_OK
+#define MULIB_MCP_CLIENT_INVALID MULIB_CDD_MCP_INVALID
+#define MULIB_MCP_CLIENT_CONFLICT MULIB_CDD_MCP_CONFLICT
+#define MULIB_MCP_CLIENT_LIMIT MULIB_CDD_MCP_LIMIT
+#define MULIB_MCP_CLIENT_NOMEM MULIB_CDD_MCP_NOMEM
+#define MULIB_MCP_CLIENT_STATE MULIB_CDD_MCP_STATE
+#define MULIB_MCP_CLIENT_IGNORED MULIB_CDD_MCP_IGNORED
+#define MULIB_MCP_CLIENT_REMOTE_ERROR MULIB_CDD_MCP_REMOTE_ERROR
+#define MULIB_MCP_CLIENT_LEGACY_PEER MULIB_CDD_MCP_LEGACY_PEER
+#define MULIB_MCP_CLIENT_NO_VERSION MULIB_CDD_MCP_NO_VERSION
+#define MULIB_MCP_CLIENT_UNSUPPORTED MULIB_CDD_MCP_UNSUPPORTED
+#define MULIB_MCP_CLIENT_INPUT_REQUIRED MULIB_CDD_MCP_INPUT_REQUIRED
+
+#define MULIB_MCP_CLIENT_DISCOVER MULIB_CDD_MCP_DISCOVER
+#define MULIB_MCP_CLIENT_INITIALIZE_LEGACY MULIB_CDD_MCP_INITIALIZE_LEGACY
+#define MULIB_MCP_CLIENT_INITIALIZED_LEGACY MULIB_CDD_MCP_INITIALIZED_LEGACY
+#define MULIB_MCP_CLIENT_PING_LEGACY MULIB_CDD_MCP_PING_LEGACY
+#define MULIB_MCP_CLIENT_TOOLS_LIST MULIB_CDD_MCP_TOOLS_LIST
+#define MULIB_MCP_CLIENT_TOOLS_CALL MULIB_CDD_MCP_TOOLS_CALL
+#define MULIB_MCP_CLIENT_RESOURCES_LIST MULIB_CDD_MCP_RESOURCES_LIST
+#define MULIB_MCP_CLIENT_RESOURCE_TEMPLATES_LIST MULIB_CDD_MCP_RESOURCE_TEMPLATES_LIST
+#define MULIB_MCP_CLIENT_RESOURCES_READ MULIB_CDD_MCP_RESOURCES_READ
+#define MULIB_MCP_CLIENT_PROMPTS_LIST MULIB_CDD_MCP_PROMPTS_LIST
+#define MULIB_MCP_CLIENT_PROMPTS_GET MULIB_CDD_MCP_PROMPTS_GET
+#define MULIB_MCP_CLIENT_COMPLETE MULIB_CDD_MCP_COMPLETE
+
+  mulib_mcp_client_status_t mulib_mcp_client_init (
+      mulib_mcp_client_t *client, const char *name, const char *version);
+  mulib_mcp_client_status_t mulib_mcp_client_request (
+      mulib_mcp_client_t *client, mulib_mcp_client_operation_t operation,
+      const char *target, const mulib_json_t *object, char **out);
+  mulib_mcp_client_status_t mulib_mcp_client_request_ex (
+      mulib_mcp_client_t *client, mulib_mcp_client_operation_t operation,
+      const char *target, const mulib_json_t *object,
+      const mulib_mcp_client_request_options_t *options, char **out);
+  mulib_mcp_client_status_t mulib_mcp_client_receive (
+      mulib_mcp_client_t *client, const char *frame, size_t length,
+      mulib_json_t **out);
+  mulib_mcp_client_status_t mulib_mcp_client_abandon (mulib_mcp_client_t *client);
+  mulib_mcp_client_status_t mulib_mcp_client_cancel (
+      mulib_mcp_client_t *client, const char *reason, char **out);
 #ifdef __cplusplus
 }
 #endif
 #endif /* MULIB_MCP_CLIENT_H */
 
-#if defined(MULIB_IMPL_CDD_MCP_CLIENT) && !defined(MULIB_MCP_CLIENT_IMPLEMENTED)
+#if defined(MULIB_IMPL_CDD_MCP_CLIENT) || defined(MULIB_IMPL_MCP_CLIENT)
+#ifndef MULIB_MCP_CLIENT_IMPLEMENTED
 #define MULIB_MCP_CLIENT_IMPLEMENTED
 #include "mulib-utf8.h"
 #include "detail/mulib-mcp-wire.h"
@@ -644,7 +705,55 @@ extern "C"
     mulib_json_destroy (r);
     return status;
   }
+
+  mulib_mcp_client_status_t
+  mulib_mcp_client_init (mulib_mcp_client_t *client, const char *name,
+                         const char *version)
+  {
+    return mulib_cdd_mcp_client_init (client, name, version);
+  }
+
+  mulib_mcp_client_status_t
+  mulib_mcp_client_request (mulib_mcp_client_t *client,
+                            mulib_mcp_client_operation_t operation,
+                            const char *target, const mulib_json_t *object,
+                            char **out)
+  {
+    return mulib_cdd_mcp_client_request (client, operation, target, object, out);
+  }
+
+  mulib_mcp_client_status_t
+  mulib_mcp_client_request_ex (mulib_mcp_client_t *client,
+                               mulib_mcp_client_operation_t operation,
+                               const char *target, const mulib_json_t *object,
+                               const mulib_mcp_client_request_options_t *options,
+                               char **out)
+  {
+    return mulib_cdd_mcp_client_request_ex (client, operation, target, object,
+                                            options, out);
+  }
+
+  mulib_mcp_client_status_t
+  mulib_mcp_client_receive (mulib_mcp_client_t *client, const char *frame,
+                            size_t length, mulib_json_t **out)
+  {
+    return mulib_cdd_mcp_client_receive (client, frame, length, out);
+  }
+
+  mulib_mcp_client_status_t
+  mulib_mcp_client_abandon (mulib_mcp_client_t *client)
+  {
+    return mulib_cdd_mcp_client_abandon (client);
+  }
+
+  mulib_mcp_client_status_t
+  mulib_mcp_client_cancel (mulib_mcp_client_t *client, const char *reason,
+                           char **out)
+  {
+    return mulib_cdd_mcp_client_cancel (client, reason, out);
+  }
 #ifdef __cplusplus
 }
 #endif
+#endif /* MULIB_MCP_CLIENT_IMPLEMENTED */
 #endif /* implementation */

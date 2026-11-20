@@ -99,6 +99,12 @@ def main():
                                 capture_output=True, text=True)
     if tool_tests.returncode:
         failures.append(('tool regressions', tool_tests.stderr or tool_tests.stdout))
+    kernelbind = subprocess.run([sys.executable, str(root / 'tools/extend-kernelbind.py'), '--check'],
+                               capture_output=True, text=True)
+    if kernelbind.returncode:
+        failures.append(('On1x KernelBind inventory', kernelbind.stderr or kernelbind.stdout))
+    else:
+        print(kernelbind.stdout.strip())
     manifest = (root / 'MANIFEST.yaml').read_text()
     entries = {}
     for block in re.split(r'^- name: ', manifest.split('project_files:')[0], flags=re.M)[1:]:
@@ -284,6 +290,8 @@ def main():
                     if execute and not compile_only:
                         arguments = ([str(root / 'library')] if sources and len(sources) == 1
                                       and sources[0].name in ('immgtk.c', 'test_immgtk.c') else [])
+                        if source_name == 'test_imtui_mune.c':
+                            arguments = [str(root)]
                         expected_output = None
                         if sources == [root / 'examples/parallel.c']:
                             arguments = ['-k', "printf '%s\\n' {}", ':::', 'alpha', 'beta']
@@ -423,7 +431,10 @@ def main():
         for category, sources in [
             ('module examples', sorted((root / 'examples/modules').glob('*.c'))),
             ('composition examples', sorted((root / 'examples').glob('*.c'))),
-            ('focused tests', sorted((root / 'tests').glob('test_*.c'))
+            # SSH fixtures use separately compiled kernels and optional libcrypto.
+            # Run them with make check-ssh or opt in to the CMake SSH profile.
+            ('focused tests', sorted(p for p in (root / 'tests').glob('test_*.c')
+                                     if not p.name.startswith('test_ssh_'))
              + sorted((root / 'tests').glob('test-*.c'))),
         ]:
             passed = check_many([

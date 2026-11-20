@@ -1,0 +1,3 @@
+%module: stdlib.shell
+% Import grants no authority: use of this namespace needs a command callback.
+#backend "shell" set;

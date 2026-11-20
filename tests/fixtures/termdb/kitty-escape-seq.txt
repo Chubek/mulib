@@ -1,0 +1,3 @@
+Legacy functional keys (fixture)
+  F11  kf11  CSI 23 ~
+  : Legacy functional encoding

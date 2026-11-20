@@ -1,0 +1,4 @@
+%module: stdlib.termios
+#raw { termios.raw } bind seal;
+#restore { termios.restore } bind seal;
+#size { termios.size } bind seal;

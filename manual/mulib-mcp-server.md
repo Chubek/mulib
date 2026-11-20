@@ -12,6 +12,12 @@ not the [draft](https://modelcontextprotocol.io/specification/draft).
 
 ## The host supplies all handlers
 
+- New code can use `mulib_mcp_server_t` with `mulib_mcp_server_init` and
+  `mulib_mcp_server_process`, or `mulib_mcp_catalog_t` for an expanded
+  catalogue. The `mulib_cdd_mcp_*` API remains compatible. Both entry points
+  use the same protocol checks and do not perform transport I/O.
+  Define `MULIB_IMPL_MCP_SERVER` or its legacy equivalent
+  `MULIB_IMPL_CDD_MCP_SERVER` in the implementation translation unit.
 - The base `mulib_cdd_mcp_server_init` / `mulib_cdd_mcp_server_process` API
   remains a simple text-tool registry. Its text callbacks get a bounded
   8 KiB UTF-8 output buffer; `TOOL_ERROR` becomes a successful wire response
@@ -89,7 +95,7 @@ legacy reverse RPC. This is not a claim of full MCP conformance.
 | --- | --- |
 | Header | [`include/mulib-mcp-server.h`](../include/mulib-mcp-server.h) |
 | Implementation switch | `MULIB_IMPL_CDD_MCP_SERVER` |
-| Repository-local includes | [`include/detail/mulib-mcp-common.h`](../include/detail/mulib-mcp-common.h), [`include/detail/mulib-mcp-wire.h`](../include/detail/mulib-mcp-wire.h), [mulib-json](mulib-json.md), [mulib-utf8](mulib-utf8.md) |
+| Repository-local includes | [`include/detail/mulib-jsonrpc-envelope.h`](../include/detail/mulib-jsonrpc-envelope.h), [`include/detail/mulib-mcp-common.h`](../include/detail/mulib-mcp-common.h), [`include/detail/mulib-mcp-wire.h`](../include/detail/mulib-mcp-wire.h), [mulib-json](mulib-json.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/mcp-server.c`](../examples/modules/mcp-server.c) |
 
 The include list includes conditional and implementation-only includes;

@@ -17,7 +17,7 @@ exo = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(exo)
 inventory = contracts.inventory(root)
 modules = inventory['modules']
-profiles = contracts.exotract_catalog()
+aliases = exo.manifest_aliases(modules)
 sys.path.insert(0, str(root/'tools'))
 from media_inventory import inventory as media_inventory
 
@@ -36,17 +36,20 @@ for name in rows:
     includes = set(re.findall(r'^#include "mulib-([^"]+)\.h"', (root/module['header']).read_text(), re.M))
     assert set(module['manifest_dependencies']) == includes, name
     assert (root/module['manual']).is_file()
-    assert exo.manifest_discovery_name(name.replace('-', '_'), modules, profiles) == name
+    assert exo.manifest_discovery_name(name.replace('-', '_'), aliases) == name
 
-assert exo.manifest_discovery_name('media_unknown', modules, profiles) is None
-assert exo.manifest_discovery_name('vec', modules, profiles) is None
-ambiguous = {'media-core': modules['media-core'], 'media_core': modules['media-core']}
-try:
-    exo.manifest_discovery_name('media_core', ambiguous, profiles)
-except ValueError as error:
-    assert 'ambiguous manifest alias' in str(error)
-else:
-    raise AssertionError('ambiguous manifest alias was silently resolved')
+assert exo.manifest_discovery_name('media_unknown', aliases) is None
+assert exo.manifest_discovery_name('vec', aliases) == 'vec'
+for canonical, collision in (('media-core', 'media_core'), ('b+tree', 'b_plus_tree'),
+                             ('cowb+tree', 'cowb_plus_tree'), ('2dgeom', 'k_2dgeom')):
+    assert exo.manifest_discovery_name(collision, aliases) == canonical
+    ambiguous = exo.manifest_aliases([canonical, collision])
+    try:
+        exo.manifest_discovery_name(collision, ambiguous)
+    except ValueError as error:
+        assert 'ambiguous manifest alias' in str(error)
+    else:
+        raise AssertionError('ambiguous manifest alias was silently resolved')
 
 recipe = house.plan(root, rows, discovery=True)
 assert set(rows) <= set(recipe['discovery_only'])

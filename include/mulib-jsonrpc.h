@@ -52,6 +52,7 @@ void mulib_jsonrpc_reply_free(mulib_jsonrpc_reply_t *out);
 #if defined(MULIB_IMPL_CDD_JSONRPC) || defined(MULIB_IMPL_JSONRPC)
 #ifndef MULIB_JSONRPC_IMPLEMENTED
 #define MULIB_JSONRPC_IMPLEMENTED
+#include "detail/mulib-jsonrpc-envelope.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,12 +75,6 @@ static int mulib_jsonrpc_set_(mulib_json_t *obj, const char *key, mulib_json_t *
   return 0;
 }
 
-static int mulib_jsonrpc_version_(const mulib_json_t *v) {
-  size_t n = 0;
-  const char *s = mulib_json_text(v, &n);
-  return s && n == 3 && memcmp(s, "2.0", 3) == 0;
-}
-
 static int mulib_jsonrpc_id_valid_(const mulib_json_t *v) {
   mulib_json_type t = mulib_json_typeof(v);
   return v && (t == MULIB_JSON_NULL || t == MULIB_JSON_STRING || t == MULIB_JSON_NUMBER);
@@ -95,16 +90,15 @@ static int mulib_jsonrpc_method_(const char *s, size_t n) {
 }
 
 static int mulib_jsonrpc_request_valid_(const mulib_json_t *v, const mulib_json_t **id_out) {
-  const mulib_json_t *id;
+  mulib_jsonrpc_envelope_ envelope;
   const char *method;
   size_t n = 0;
-  if (mulib_json_typeof(v) != MULIB_JSON_OBJECT ||
-      !mulib_jsonrpc_version_(mulib_json_get(v, "jsonrpc"))) return 0;
-  method = mulib_json_text(mulib_json_get(v, "method"), &n);
-  id = mulib_json_get(v, "id");
-  if (!mulib_jsonrpc_method_(method, n) || (id && !mulib_jsonrpc_id_valid_(id)) ||
-      !mulib_jsonrpc_params_valid_(mulib_json_get(v, "params"))) return 0;
-  *id_out = id;
+  if (!mulib_jsonrpc_envelope_view_(v, &envelope)) return 0;
+  method = mulib_json_text(envelope.method, &n);
+  if (!mulib_jsonrpc_method_(method, n)
+      || (envelope.id && !mulib_jsonrpc_id_valid_(envelope.id))
+      || !mulib_jsonrpc_params_valid_(envelope.params)) return 0;
+  *id_out = envelope.id;
   return 1;
 }
 

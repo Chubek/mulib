@@ -49,6 +49,8 @@ int mulib_sshauth_pk_ok_write (const unsigned char key[32], void *, size_t, size
 int mulib_sshauth_pk_ok_parse (const void *, size_t, mulib_ssh_slice_t *key);
 int mulib_sshauth_reply_write (int accepted, mulib_ssh_slice_t methods, int partial,
                                void *, size_t, size_t *used);
+int mulib_sshauth_banner_write (mulib_ssh_slice_t message, mulib_ssh_slice_t language,
+                                void *, size_t, size_t *used);
 /* Decode SUCCESS, FAILURE, or BANNER. Result borrows the entire input. */
 int mulib_sshauth_reply_parse (const void *, size_t, mulib_ssh_auth_reply_t *);
 #ifdef __cplusplus
@@ -271,6 +273,19 @@ mulib_sshauth_reply_write (int accepted, mulib_ssh_slice_t methods, int partial,
       || !mulib_ssh_write_u8 (&w, accepted ? MULIB_SSH_USERAUTH_SUCCESS : MULIB_SSH_USERAUTH_FAILURE)) return 0;
   if (!accepted && (!mulib_ssh_write_string (&w, methods.data, methods.length)
                     || !mulib_ssh_write_u8 (&w, (unsigned char)partial))) return 0;
+  *used = cap - w.left;
+  return 1;
+}
+
+int
+mulib_sshauth_banner_write (mulib_ssh_slice_t message, mulib_ssh_slice_t language,
+                            void *out, size_t cap, size_t *used)
+{
+  mulib_ssh_writer_t w = {(unsigned char *)out, cap};
+  if (used) *used = 0;
+  if (!used || !mulib_ssh_write_u8 (&w, MULIB_SSH_USERAUTH_BANNER)
+      || !mulib_ssh_write_string (&w, message.data, message.length)
+      || !mulib_ssh_write_string (&w, language.data, language.length)) return 0;
   *used = cap - w.left;
   return 1;
 }

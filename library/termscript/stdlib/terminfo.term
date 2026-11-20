@@ -1,0 +1,3 @@
+%module: stdlib.terminfo
+% Backtick capability names in this namespace use the configured Terminfo.
+#backend "terminfo" set;

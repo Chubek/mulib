@@ -1,0 +1,4 @@
+%module: stdlib.termfunc
+% Semantic names in this namespace use termfunc's explicit capability profile.
+#backend "termfunc" set;
+% Example: (10, 2) `move` #Termfunc exec

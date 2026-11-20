@@ -52,10 +52,10 @@ sealed native image on Linux/glibc; this runs with host authority, not in a sand
 
 ## Language implementation continuation
 
-The [bounded kernel inventory](contracts-exotract/README.md) registers the
-193 bounded media and compute kernels for metadata discovery. Static-inline
-definitions do not provide an external archive ABI: safe and unsafe calls
-remain unsupported, and no codec/GPU provider or safety admission is implied.
+The [automatic KernelBind catalog](docs/kernel-bind.md#refresh-automatic-discovery)
+registers MuLIB kernels for metadata discovery from `MANIFEST.yaml`.
+Discovery does not create a callable binding, a native provider, or an
+independent safety approval. Static-inline definitions retain internal linkage.
 
 The [core literal forms](docs/core-literals.md) add UTF-8 `char`, `b!` byte/buffer literals, raw and
 triple-quoted strings, interpolation, and binary/octal integers. The

@@ -1,5 +1,30 @@
 # Testing the MuLIB networking add-on
 
+## Model Context Protocol
+
+Run `make check-mcp` for the client/server C APIs, stdio, localhost HTTP/SSE,
+authenticated JSON-RPC broadcast dispatch, and mixed C/C++ linkage. The
+[broadcast example](../examples/modules/mcp-broadcast.c) uses a synthetic
+credential and runs entirely in process; it does not start a public server.
+
+## ImTUI, Termscript, and TermDB
+
+Run `make check-imtui check-termscript check-termdb`. These suites test cell
+frames, input, rendering, the Mune bridge, Termscript evaluation and C11
+generation, and Python-to-C SQLite compatibility. They use no external C
+libraries. Tests use the supplied `.sot/term` documents when available and
+include a small synthetic corpus for clean checkouts. Use
+`MULIB_SANITIZERS=ON` in CMake for the corresponding ASan/UBSan suites.
+
+## SSH kernels
+
+`make check-ssh` builds the optional OpenSSL-backed stack, runs the two
+in-memory examples, and checks crypto vectors, framing, rekey, authentication
+and channels. `make check-ssh-openssh` adds a Linux loopback test using local
+OpenSSH executables and temporary keys. CMake equivalents are
+`MULIB_BUILD_SSH_OPENSSL` and `MULIB_BUILD_SSH_OPENSSH_TESTS`; the default build
+does not need `libcrypto`. See the [SSH transport manual](../manual/mulib-sshtransport.md).
+
 ## Secret kernels
 
 See [secret kernel build and verification](../manual/secret-kernels.md#build-and-verification)

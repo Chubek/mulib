@@ -20,10 +20,13 @@ authenticated policy returns -1, rejection returns 0, acceptance returns 1.
 No credentials are retained. `auth_reply` encodes message 52 success or message
 51 failure with `password` as the available method and partial-success=false.
 
-These are payload and policy helpers, not an SSH daemon. The application must
-obtain payloads from a verified encrypted SSH transport and supply account
-authorization. Public-key authentication, key exchange, channels and command
-execution require a separate backend. Tests: `tests/test_protocol_extensions.c`.
+The two legacy switches above are enough for the password helpers.
+`mulib_sshserver_start` starts the [transport](mulib-sshtransport.md) with the
+server's private Ed25519 seed. Use one [user-authentication
+policy](mulib-sshauth.md) per connection, supplying application account and key
+authorization. Open [channels](mulib-sshchannel.md) only after authentication
+succeeds. This is not an SSH daemon: the application owns sockets, key storage,
+account policy and the handling of channel requests.
 
 <!-- manual-interface -->
 ## Public header reference
@@ -36,14 +39,14 @@ Include the header in application code; dependency types come from its includes.
 
 ```c
 /** @file mulib-sshserver.h
- * @brief SSH-2 password user-authentication payload parsing and attempt
- * policy. Define MULIB_IMPL_SSHSERVER and MULIB_IMPL_ENDIAN once. Inputs must
- * come from an authenticated/encrypted SSH transport supplied by the
- * application.
+ * @brief SSH-2 server entry points and bounded user-authentication policy.
+ * Define MULIB_IMPL_SSHSERVER and ENDIAN for the legacy password API.
+ * The session helpers use SSHTRANSPORT and SSHAUTH.
  */
 #ifndef MULIB_SSHSERVER_H
 #define MULIB_SSHSERVER_H
-#include "mulib-endian.h"
+#include "mulib-sshauth.h"
+#include "mulib-sshtransport.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -59,6 +62,19 @@ extern "C"
     size_t attempts, limit;
     int authenticated;
   } mulib_sshserver_t;
+  /** @brief Attempt limit and optional callbacks for the connection driver.
+   * The limit counts requests, including none, queries, and unsupported
+   * methods. Returning 1 authorizes the exact request account and credential.
+   * The key callback sees unsigned queries and separately sees verified
+   * signed requests; approval is never cached. Callbacks borrow request data
+   * for the call only and must not re-enter the driver. */
+  typedef struct
+  {
+    size_t max_attempts;
+    int (*verify_password) (void *, const mulib_ssh_auth_request_t *);
+    int (*authorize_key) (void *, const mulib_ssh_auth_request_t *);
+    void *context;
+  } mulib_sshserver_policy_t;
   /** @brief Parse an entire SSH_MSG_USERAUTH_REQUEST (50), service
    * ssh-connection, method none/password, password change unsupported. 1
    * success, 0 malformed, -1 unsupported. Borrowed binary-safe strings;
@@ -78,6 +94,39 @@ extern "C"
   /** @brief Encode success (52) or failure (51, password, partial=false).
    * 1 success/0 insufficient output; used reset on failure. */
   int mulib_sshserver_auth_reply (int accepted, void *, size_t, size_t *used);
+  /** @brief Start a server transport using a caller-owned Ed25519 host seed.
+   * Versions exclude CRLF. Drive the exchange with mulib_sshtransport_handshake. */
+  static inline int
+  mulib_sshserver_start (mulib_sshtransport_t *s, mulib_ssh_slice_t client_version,
+                         mulib_ssh_slice_t server_version, const unsigned char host_seed[32],
+                         void *out, size_t cap, size_t *used)
+  {
+    return mulib_sshtransport_start (s, MULIB_SSH_SERVER, client_version, server_version,
+                                      host_seed, out, cap, used);
+  }
+
+  /** @brief Check a signed request from mulib_sshtransport_open after accepting
+   * ssh-userauth. Use one initialized policy per connection. Each submitted
+   * request consumes an attempt. A valid signature and authorizer return of 1
+   * are both required. Return 1 accepted, 0 rejected, -1 invalid state. */
+  static inline int
+  mulib_sshserver_public_authenticate (
+      mulib_sshserver_t *s, const mulib_sshtransport_t *transport, const void *p, size_t n,
+      int (*authorize) (void *, const mulib_ssh_auth_request_t *), void *context)
+  {
+    unsigned char session_id[32];
+    mulib_ssh_auth_request_t request;
+    if (!s || !authorize || !transport || transport->role != MULIB_SSH_SERVER
+        || s->authenticated || s->attempts >= s->limit
+        || !mulib_sshtransport_session_id (transport, session_id))
+      return -1;
+    ++s->attempts;
+    if (!mulib_sshauth_public_verify (p, n, session_id, &request)
+        || authorize (context, &request) != 1)
+      return 0;
+    s->authenticated = 1;
+    return 1;
+  }
 #ifdef __cplusplus
 }
 #endif
@@ -96,7 +145,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-sshserver.h`](../include/mulib-sshserver.h) |
 | Implementation switch | `MULIB_IMPL_SSHSERVER` |
-| Repository-local includes | [mulib-endian](mulib-endian.md) |
+| Repository-local includes | [mulib-sshauth](mulib-sshauth.md), [mulib-sshtransport](mulib-sshtransport.md) |
 | Complete example | [`examples/modules/sshserver.c`](../examples/modules/sshserver.c) |
 
 The include list includes conditional and implementation-only includes;

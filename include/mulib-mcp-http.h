@@ -65,6 +65,7 @@ extern "C"
 #if defined(MULIB_IMPL_CDD_MCP_HTTP) && !defined(MULIB_MCP_HTTP_IMPLEMENTED)
 #define MULIB_MCP_HTTP_IMPLEMENTED
 #include "mulib-sse.h"
+#include "detail/mulib-jsonrpc-envelope.h"
 #include "detail/mulib-mcp-wire.h"
 #include <stdio.h>
 #ifdef __cplusplus
@@ -391,6 +392,7 @@ extern "C"
   {
     mulib_json_error_t error = { 0, 0, 0, NULL };
     mulib_json_t *rq;
+    mulib_jsonrpc_envelope_ envelope;
     const mulib_json_t *params;
     const char *method;
     mulib_mcp_http_mirror_ mirror[MULIB_MCP_HTTP_MAX_PARAMS];
@@ -409,10 +411,11 @@ extern "C"
       return mulib_mcp_wire_parse_nomem_ (&error) ? MULIB_CDD_MCP_NOMEM
                                                  : MULIB_CDD_MCP_INVALID;
     rc = MULIB_CDD_MCP_INVALID;
-    params = mulib_json_get (rq, "params");
-    method = mulib_mcp_wire_label_ (mulib_json_get (rq, "method"), 256);
-    if (!mulib_mcp_http_method_ (method) || !mulib_mcp_wire_id_ (mulib_json_get (rq, "id"))
-        || !mulib_mcp_wire_is_ (mulib_json_get (rq, "jsonrpc"), "2.0")
+    if (!mulib_jsonrpc_envelope_view_ (rq, &envelope))
+      goto done;
+    params = envelope.params;
+    method = mulib_mcp_wire_label_ (envelope.method, 256);
+    if (!mulib_mcp_http_method_ (method) || !mulib_mcp_wire_id_ (envelope.id)
         || !mulib_mcp_wire_is_ (mulib_json_get (mulib_json_get (params, "_meta"),
                                               MULIB_MCP_WIRE_VERSION), MULIB_CDD_MCP_VERSION)
         || mulib_json_get (rq, "error") || mulib_json_get (rq, "result"))
@@ -549,6 +552,7 @@ extern "C"
     const mulib_http_options_t opts = { 0, 0, MULIB_CDD_MCP_MAX_FRAME, MULIB_HTTP_EOF };
     const mulib_json_t *id = NULL, *params, *meta;
     mulib_json_t *rq = NULL, *result = NULL;
+    mulib_jsonrpc_envelope_ envelope;
     mulib_json_error_t error = { 0, 0, 0, NULL };
     mulib_cdd_mcp_status_t rc = MULIB_CDD_MCP_OK;
     const void *principal = NULL;
@@ -606,16 +610,15 @@ extern "C"
         goto format_error;
       }
     id = mulib_json_get (rq, "id");
-    params = mulib_json_get (rq, "params");
-    meta = mulib_json_get (params, "_meta");
-    method = mulib_mcp_wire_label_ (mulib_json_get (rq, "method"), 256);
-    if (!mulib_mcp_wire_id_ (id) || !mulib_mcp_http_method_ (method)
-        || !mulib_mcp_wire_is_ (mulib_json_get (rq, "jsonrpc"), "2.0")
+    if (!mulib_jsonrpc_envelope_view_ (rq, &envelope) || !mulib_mcp_wire_id_ (id)
+        || !mulib_mcp_http_method_ (method = mulib_mcp_wire_label_ (envelope.method, 256))
         || mulib_json_get (rq, "result") || mulib_json_get (rq, "error"))
       {
         result = mulib_mcp_http_error_ (id, -32600, "Invalid HTTP JSON-RPC request", NULL);
         goto format_error;
       }
+    params = envelope.params;
+    meta = mulib_json_get (params, "_meta");
     version = mulib_mcp_wire_label_ (mulib_json_get (meta, MULIB_MCP_WIRE_VERSION), 128);
     wire_version = mulib_mcp_http_one_ (&m, "MCP-Protocol-Version", &one);
     wire_method = mulib_mcp_http_one_ (&m, "Mcp-Method", &one);

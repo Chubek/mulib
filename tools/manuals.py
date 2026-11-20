@@ -104,6 +104,7 @@ def inventory():
             brief = re.search(r'@brief\s+([^\n]+)', text)
             purpose = brief.group(1).split('*/')[0].strip() if brief else 'Embedded support data.'
         records.append(dict(header=header, manual=manual, example=example,
+                            example_ldlibs=tuple(shlex.split(fields.get('example_ldlibs', ''))),
                             text=text, switch=switch.group(1) if switch else None,
                              purpose=purpose, shared=inline or engineering))
     return records
@@ -140,7 +141,8 @@ def reference(record, by_header):
     source = record['example'].relative_to(ROOT).as_posix()
     command = shlex.join(['cc', '-std=c11', '-Wall', '-Wextra', '-Wpedantic',
                           '-Werror', '-UNDEBUG', '-Iinclude', source,
-                          '-pthread', '-lm', '-ldl', '-o', 'mulib-example'])
+                          '-pthread', '-lm', '-ldl', *record['example_ldlibs'],
+                          '-o', 'mulib-example'])
     return '\n'.join([
         '## Source and build reference', '',
         '[Manual index](index.md) · [Integration guide](integration.md)', '',
@@ -242,15 +244,18 @@ def compile_examples(records, jobs):
     libraries += ['-ldl'] if sys.platform.startswith(('linux', 'freebsd')) else []
     parent = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None
     with tempfile.TemporaryDirectory(prefix='mulib-manuals-', dir=parent) as temporary:
-        def compile_one(source):
+        def compile_one(example):
+            source, ldlibs = example
             with tempfile.TemporaryDirectory(dir=temporary) as work:
-                command = compiler + flags + [str(source)] + libraries + ['-o', str(Path(work) / 'example')]
+                command = (compiler + flags + [str(source)] + libraries + list(ldlibs)
+                           + ['-o', str(Path(work) / 'example')])
                 try:
                     result = subprocess.run(command, cwd=work, capture_output=True, text=True, timeout=180)
                     return (source.name + ':\n' + result.stdout + result.stderr) if result.returncode else None
                 except (OSError, subprocess.TimeoutExpired) as error:
                     return source.name + ': ' + str(error)
-        sources = sorted({r['example'] for r in records if r['example'] is not None})
+        sources = sorted({(r['example'], r['example_ldlibs'])
+                          for r in records if r['example'] is not None})
         with ThreadPoolExecutor(max_workers=jobs) as pool:
             failures = [failure for failure in pool.map(compile_one, sources) if failure]
         print(f'Compiled {len(sources) - len(failures)}/{len(sources)} manual examples')
@@ -263,8 +268,12 @@ def main():
     mode.add_argument('--write', action='store_true', help='refresh only generated sections and index')
     mode.add_argument('--check', action='store_true', help='verify generated content (default)')
     parser.add_argument('--compile-examples', action='store_true', help='also compile/link examples, without running them')
+    parser.add_argument('--with-optional-examples', action='store_true',
+                        help='include examples with extra link dependencies (requires --compile-examples)')
     parser.add_argument('-j', '--jobs', type=int, default=min(4, os.cpu_count() or 1))
     args = parser.parse_args()
+    if args.with_optional_examples and not args.compile_examples:
+        parser.error('--with-optional-examples requires --compile-examples')
     if args.jobs < 1:
         parser.error('--jobs must be positive')
     try:
@@ -297,7 +306,8 @@ def main():
                         + '\n'.join(p.name for p in stale) + '\n')
         print(f'Manual inventory, references and local links: {len(records)} headers OK')
         if args.compile_examples:
-            failures = compile_examples(records, args.jobs)
+            examples = [r for r in records if args.with_optional_examples or not r['example_ldlibs']]
+            failures = compile_examples(examples, args.jobs)
             if failures:
                 parser.exit(1, '\n'.join(failures) + '\n')
     except (ValueError, KeyError, OSError) as error:

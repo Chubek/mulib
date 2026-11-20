@@ -1,0 +1,5 @@
+%module: stdlib.state
+% current event [(source, event, target), ...] `next` #State exec;
+#next { state-next } bind seal;
+#mode { mode } bind seal;
+#current { mode? } bind seal;

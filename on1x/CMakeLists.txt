@@ -88,6 +88,9 @@ endif()
 message(STATUS "On1x scanner: ${ON1X_SCANNER_DESCRIPTION}")
 include(cmake/DependencyReport.cmake)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
+add_custom_target(on1x_extend_kernelbind
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../tools/extend-kernelbind.py"
+  COMMENT "Refresh the checked-in KernelBind discovery catalog" VERBATIM)
 if(ON1X_BUILD_EXTENSION_SDK AND BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
   add_test(NAME on1x.sdk.installed_consumer
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/sdk/tests/check_package.py"
@@ -367,6 +370,11 @@ if(UNIX)
 endif()
 
 if(BUILD_TESTING)
+  add_test(NAME on1x.kernel_auto_catalog
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../tools/extend-kernelbind.py" --check)
+  add_test(NAME on1x.kernel_auto_generator
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../tests/test_extend_kernelbind.py")
+  set_tests_properties(on1x.kernel_auto_catalog on1x.kernel_auto_generator PROPERTIES TIMEOUT 60)
   add_test(NAME on1x.addon_chatgpt COMMAND "${Python3_EXECUTABLE}" -B
     "${CMAKE_CURRENT_SOURCE_DIR}/addons/chatgpt/test_chatgpt.py")
   set_tests_properties(on1x.addon_chatgpt PROPERTIES TIMEOUT 60)
@@ -757,7 +765,12 @@ if(BUILD_TESTING)
     add_test(NAME on1x.kernel_imports_sdk COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_imports_sdk.py"
       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-imports-sdk" "${CMAKE_C_COMPILER}" ${_test_c_flags})
-    set_tests_properties(on1x.kernel_imports_sdk PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
+     set_tests_properties(on1x.kernel_imports_sdk PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
+     add_test(NAME on1x.kernel_auto_discovery_sdk COMMAND "${Python3_EXECUTABLE}"
+       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_auto_discovery_sdk.py"
+       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-auto-discovery-sdk" "${CMAKE_C_COMPILER}")
+     set_tests_properties(on1x.kernel_auto_discovery_sdk PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
     add_test(NAME on1x.kernel_review_sdk COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_review_sdk.py"
       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-review-sdk" "${CMAKE_C_COMPILER}" ${_test_c_flags})

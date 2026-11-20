@@ -1,0 +1,7 @@
+8.3.21
+CUP - CURSOR POSITION
+Representation: CSI Pn1;Pn2 04/08
+
+8.3.39
+ED - ERASE IN PAGE
+Representation: CSI Ps 04/10

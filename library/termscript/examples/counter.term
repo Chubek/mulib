@@ -1,0 +1,4 @@
+%module: demo.counter
+#i 0 set;
+{ #i 10 lt? } while { #i 1 add; } loop;
+#i typeout #\newline typeout;

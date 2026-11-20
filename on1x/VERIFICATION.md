@@ -7,6 +7,35 @@ preserves the baseline and integrated suite totals. Current requirements are des
 Renamed reproduction commands use current repository paths; their spelling
 does not assert a fresh execution of the historical test runs.
 
+## Automatic KernelBind discovery — 2026-11-20
+
+MuLIB `6ffb5441300c691e3d0a55f93add524153d66021` plus this work;
+configured LibStone checkout `af00e39efb8959a72969907704f0d473e72365b7`.
+Linux x86-64, GCC 16.2.1, Clang 22.1.8 resources. A fresh fallback-scanner
+`on1xc` and the existing Lua-enabled LibStone Exotract binary passed
+`test_kernel_auto_discovery_sdk.py`. The fixture extracts real CDecl for
+current and future modules, tests alias collisions and provider failures,
+and verifies safe, unsafe and review-candidate build rejection. The
+handwritten KernelBind SDK regression passed as well.
+
+```sh
+python3 tools/extend-kernelbind.py --check
+python3 tests/test_extend_kernelbind.py
+cmake -S on1x -B build/kernelbind-auto -DBUILD_TESTING=ON \
+  -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_BUILD_NATIVE_PPX=OFF \
+  -DON1X_BUILD_EXTENSION_SDK=OFF -DON1X_WITH_WETSTONE=OFF -DON1X_WITH_SYREN=OFF
+cmake --build build/kernelbind-auto --target on1xc --parallel 4
+ctest --test-dir build/kernelbind-auto --output-on-failure \
+  -R '^on1x\.(kernel_auto_catalog|kernel_auto_generator|kernel_imports|bounded_kernel_inventory|contracts)$'
+python3 on1x/tests/test_kernel_auto_discovery_sdk.py "$EXOTRACT" \
+  build/kernelbind-auto/on1xc on1x build/kernelbind-auto/artifacts gcc
+```
+
+`EXOTRACT` is the path to a previously built Lua-enabled Exotract executable
+with ExoML/libclang support. The focused CTest run passed **5/5**. The catalog
+enumerates registered kernels; this verification does not claim extraction
+on every target or callable ABI or production approval for automatic entries.
+
 ## Bounded media kernel review and registration — 2026-11-20
 
 Baseline MuLIB `53f77657126cf36401a6c18f49691499fdb53e11`, configured read-only

@@ -18,7 +18,9 @@ switch and dependencies, plus its archive recipe and whether any semantic
 sidecar or core snapshot profile exists. The three auxiliary headers
 `mulib-container-core.h`, `mulib-qvm.h` and `mulib-lprowse.h` are reported
 separately; they have no independent implementation recipe. Registration
-does not mean a kernel builds on every platform or has a KernelBind profile.
+does not mean a kernel builds on every platform or has a callable KernelBind
+profile. The [generated KernelBind catalog](../docs/kernel-bind.md#refresh-automatic-discovery)
+adds declaration discovery without changing these archive recipes.
 
 The `cdd-*` modules are **discovery-only**. `plan cdd-resolve` reports its
 MANIFEST closure, labeled `discovery_only`; `build` refuses to generate a CDD

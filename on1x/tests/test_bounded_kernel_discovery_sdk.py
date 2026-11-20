@@ -45,10 +45,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
         exolib = module['exolib']
         assert exolib['parser'] == 'exoml/libclang' and exolib['externally_imported'] is False
         assert exolib['header_only']['implementation_translation_units'] == 1
-        # A canonical type include can bring a mature dependency's switch into
-        # the hypothetical one-TU recipe; none belongs to a static-inline module.
-        assert all(not macro.startswith('MULIB_IMPL_'+name.split('-')[0].upper()+'_')
-                   for macro in exolib['header_only']['implementation_defines'])
+        assert not exolib['header_only']['implementation_defines']
         graph = module['metadata']['cdecl']
         header = root.parent/'include'/('mulib-'+name+'.h')
         assert graph['complete'] is True and graph['safe_export'] is False

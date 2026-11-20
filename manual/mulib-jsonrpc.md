@@ -68,7 +68,7 @@ leaves the output unchanged. Initialize the reply to zero and use
 | --- | --- |
 | Header | [`include/mulib-jsonrpc.h`](../include/mulib-jsonrpc.h) |
 | Implementation switch | `MULIB_IMPL_CDD_JSONRPC` |
-| Repository-local includes | [mulib-rest](mulib-rest.md) |
+| Repository-local includes | [`include/detail/mulib-jsonrpc-envelope.h`](../include/detail/mulib-jsonrpc-envelope.h), [mulib-rest](mulib-rest.md) |
 | Complete example | [`examples/modules/jsonrpc.c`](../examples/modules/jsonrpc.c) |
 
 The include list includes conditional and implementation-only includes;

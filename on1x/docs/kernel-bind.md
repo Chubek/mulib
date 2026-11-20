@@ -84,6 +84,30 @@ it does not run the SDK or link an executable.
 
 ## Inspect requests and discover declarations
 
+### Refresh automatic discovery
+
+The generated `on1x/contracts-exotract/kernel-auto.json` tracks public
+kernels from the MuLIB manifest. Regenerate after adding or reconfiguring a
+kernel. `tools/sync_inventory.py` does this after synchronizing the manifest.
+
+```sh
+python3 tools/extend-kernelbind.py
+python3 tools/extend-kernelbind.py --check
+```
+
+Automatic entries describe how to find the canonical declarations. They do
+not attach semantic sidecars, grant safe or unsafe call admission, or enable
+provider-backed implementation switches. Inspection still requires the
+target compiler, headers, and the configured LibStone extractor. Handwritten
+executable and review profiles retain their existing authority.
+
+In source names, replace `-` with `_` and `+` with `_plus_`. Prefix names
+starting with a digit with `k_`: for example `mulib.imtui_core`,
+`mulib.b_plus_tree`, and `mulib.k_2dgeom`. Ambiguous aliases fail rather than
+selecting either header. Reserved and unregistered auxiliary headers are
+not kernels. The check detects stale or missing catalog entries; it never
+writes source files.
+
 From the MuLIB root (use a fresh report path):
 
 ```sh
@@ -116,8 +140,8 @@ canonical path's exact bytes; offset is zero-based, line and column one-based.
 
 The separate build-helper inspection path passes canonical resolved paths to
 the bundled `contracts-exotract/kernel-discovery-v1.lua` recipe. That recipe uses
-the pinned LibStone `exolib.new`, `Preprocess`, `Parse` and `Bind` APIs. The
-profiles are `mulib.histprice`, `mulib.statsprice`, `mulib.priceopt`,
+the pinned LibStone `exolib.new`, `Preprocess`, `Parse` and `Bind` APIs.
+Handwritten profiles include `mulib.histprice`, `mulib.statsprice`, `mulib.priceopt`,
 `mulib.money`, `mulib.json`, `mulib.prettysexpr`, `mulib.ini`,
 `mulib.cryptohash`, `mulib.socket`, `mulib.channel` and `mulib.clamp`. JSON attaches the
 existing unreviewed ExoML v2 sidecar; PrettySexpr attaches its separate

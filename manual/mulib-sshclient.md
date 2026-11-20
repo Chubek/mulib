@@ -19,12 +19,15 @@ RNG callback that fills padding and returns 1. Production callers must use
 appropriate randomness. Decode borrows payload; it validates frame lengths,
 padding bounds and alignment, returning 1/0/-1. `used=0` on failure.
 
-All buffers are caller-owned and nonoverlapping for encoding. There is no key
-exchange, algorithm negotiation, host-key verification, encryption/MAC, channel
-management or socket connection. Encrypted SSH packets must be processed by
-an SSH backend rather than these pre-key codecs. The server module supplies
-separate user-authentication payload handling. Tests:
-`tests/test_protocol_extensions.c`.
+The two legacy switches above are enough for the cleartext codecs. Do not use
+them for encrypted traffic. For an SSH connection, `mulib_sshclient_start`
+starts the [transport](mulib-sshtransport.md) with a trusted raw Ed25519 host
+public key. Do not use a key learned from the same untrusted connection as its
+own pin. Once the server accepts `ssh-userauth`,
+`mulib_sshclient_public_auth` creates a signed Ed25519 request for that session;
+seal it before sending. After authentication, use the
+[channel helpers](mulib-sshchannel.md). The application owns sockets and
+trust decisions.
 
 <!-- manual-interface -->
 ## Public header reference
@@ -37,14 +40,14 @@ Include the header in application code; dependency types come from its includes.
 
 ```c
 /** @file mulib-sshclient.h
- * @brief SSH-2 identification and pre-key-exchange binary packet codecs.
- * Define MULIB_IMPL_SSHCLIENT and MULIB_IMPL_ENDIAN once. These codecs do
- * not perform key exchange, encryption, MAC verification or host
- * authentication.
+ * @brief SSH-2 client entry points and legacy cleartext codecs.
+ * Define MULIB_IMPL_SSHCLIENT and ENDIAN for the legacy codecs.
+ * The session helpers use SSHTRANSPORT and SSHAUTH.
  */
 #ifndef MULIB_SSHCLIENT_H
 #define MULIB_SSHCLIENT_H
-#include "mulib-endian.h"
+#include "mulib-sshauth.h"
+#include "mulib-sshtransport.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -71,6 +74,29 @@ extern "C"
   int mulib_sshclient_packet_decode (const void *, size_t,
                                      const unsigned char **, size_t *length,
                                      size_t *used);
+  /** @brief Start the client transport with a trusted raw host key pin.
+   * Versions exclude CRLF. Drive the exchange with mulib_sshtransport_handshake. */
+  static inline int
+  mulib_sshclient_start (mulib_sshtransport_t *s, mulib_ssh_slice_t client_version,
+                         mulib_ssh_slice_t server_version, const unsigned char host_key[32],
+                         void *out, size_t cap, size_t *used)
+  {
+    return mulib_sshtransport_start (s, MULIB_SSH_CLIENT, client_version, server_version,
+                                      host_key, out, cap, used);
+  }
+
+  /** @brief Encode a signed request for a ready client transport after the
+   * peer accepts ssh-userauth. Seal the result before sending. */
+  static inline int
+  mulib_sshclient_public_auth (const mulib_sshtransport_t *s, mulib_ssh_slice_t user,
+                               const unsigned char seed[32], void *out, size_t cap, size_t *used)
+  {
+    unsigned char session_id[32];
+    if (used) *used = 0;
+    return s && s->role == MULIB_SSH_CLIENT
+           && mulib_sshtransport_session_id (s, session_id)
+           && mulib_sshauth_public_write (user, seed, session_id, out, cap, used);
+  }
 #ifdef __cplusplus
 }
 #endif
@@ -89,7 +115,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-sshclient.h`](../include/mulib-sshclient.h) |
 | Implementation switch | `MULIB_IMPL_SSHCLIENT` |
-| Repository-local includes | [mulib-endian](mulib-endian.md) |
+| Repository-local includes | [mulib-sshauth](mulib-sshauth.md), [mulib-sshtransport](mulib-sshtransport.md) |
 | Complete example | [`examples/modules/sshclient.c`](../examples/modules/sshclient.c) |
 
 The include list includes conditional and implementation-only includes;

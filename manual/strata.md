@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1994 headers, 2641 direct dependency edges.
+Inventory: 2030 headers, 2723 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -17,7 +17,7 @@ Compatibility group: `immgtk-drawlist`, `immgtk-drawlist-bridge`.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (409 modules)
+## Stratum 0 (411 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -125,6 +125,7 @@ Compatibility group: `parsec`, `peg`.
 | [ecad-pcb-sync](mulib-ecad-pcb-sync.md) | none |
 | [ecad-schematic](mulib-ecad-schematic.md) | none |
 | [ecad-symbol](mulib-ecad-symbol.md) | none |
+| [ed25519](mulib-ed25519.md) | none |
 | [eda-attributes](mulib-eda-attributes.md) | none |
 | [eda-constraints](mulib-eda-constraints.md) | none |
 | [eda-design-db](mulib-eda-design-db.md) | none |
@@ -373,6 +374,7 @@ Compatibility group: `parsec`, `peg`.
 | [synth-truthtable](mulib-synth-truthtable.md) | none |
 | [syscall](mulib-syscall.md) | none |
 | [taskpool](mulib-taskpool.md) | none |
+| [termscript-state](mulib-termscript-state.md) | none |
 | [termutils](mulib-termutils.md) | none |
 | [text](mulib-text.md) | none |
 | [tfidf](mulib-tfidf.md) | none |
@@ -431,7 +433,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (509 modules)
+## Stratum 1 (508 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -826,8 +828,7 @@ Compatibility group: `parsec`, `peg`.
 | [sql](mulib-sql.md) | `buffer`, `memtable`, `strbuf` |
 | [sqlite-format](mulib-sqlite-format.md) | `buffer`, `endian` |
 | [sse](mulib-sse.md) | `strbuf`, `utf8` |
-| [sshclient](mulib-sshclient.md) | `endian` |
-| [sshserver](mulib-sshserver.md) | `endian` |
+| [sshwire](mulib-sshwire.md) | `endian` |
 | [statsprice](mulib-statsprice.md) | `statsproc` |
 | [superinstr](mulib-superinstr.md) | `mir`, `strbuf` |
 | [svgpaint](mulib-svgpaint.md) | `typecore` |
@@ -945,7 +946,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (402 modules)
+## Stratum 2 (408 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1092,6 +1093,8 @@ Compatibility group: `parsec`, `peg`.
 | [imagepng](mulib-imagepng.md) | `deflate`, `typecore` |
 | [img-core](mulib-img-core.md) | `media-core` |
 | [imgformat](mulib-imgformat.md) | `container`, `crc32` |
+| [imtui-core](mulib-imtui-core.md) | `termkey`, `vterm` |
+| [imtui-terminal](mulib-imtui-terminal.md) | `terminfo`, `termkey`, `termutils` |
 | [inet-diag](mulib-inet-diag.md) | `sock-diag` |
 | [initsys](mulib-initsys.md) | `process`, `taskdag` |
 | [input-gesture](mulib-gfx-input.md) | `input-touch` |
@@ -1270,6 +1273,9 @@ Compatibility group: `parsec`, `peg`.
 | [spice-tline](engineering-kernels.md) | `num-core` |
 | [spice-tran](mulib-spice-tran.md) | `num-dense`, `spice-c`, `spice-independent`, `spice-netlist`, `spice-r`, `spice-stamp` |
 | [sqlite-pager](mulib-sqlite-pager.md) | `sqlite-format` |
+| [sshkey](mulib-sshkey.md) | `sshwire` |
+| [sshpacket](mulib-sshpacket.md) | `sshwire` |
+| [sshproto](mulib-sshproto.md) | `sshwire` |
 | [sstfile](mulib-sstfile.md) | `buffer`, `bycutils`, `crc32`, `memtable`, `wal` |
 | [strpool](mulib-strpool.md) | `alloc`, `hash` |
 | [superblocks](mulib-superblocks.md) | `gssair` |
@@ -1288,6 +1294,7 @@ Compatibility group: `parsec`, `peg`.
 | [synth-multiplexer](engineering-kernels.md) | `storage-core`, `synth-aig-rewrite` |
 | [synth-register](engineering-kernels.md) | `graph-core`, `hwil-context`, `storage-core` |
 | [term_rewriting](mulib-term_rewriting.md) | `ast` |
+| [termfunc](mulib-termfunc.md) | `terminfo` |
 | [textcursor](mulib-gfx-text.md) | `textbuffer` |
 | [timing-clock](engineering-kernels.md) | `geom2-core`, `num-core`, `storage-core` |
 | [timing-corner](engineering-kernels.md) | `graph-core` |
@@ -1352,7 +1359,7 @@ Compatibility group: `parsec`, `peg`.
 | [zip](mulib-zip.md) | `crc32`, `deflate`, `utf8` |
 | [zstd](mulib-zstd.md) | `codec-core`, `container-core` |
 
-## Stratum 3 (268 modules)
+## Stratum 3 (275 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1486,6 +1493,9 @@ Compatibility group: `parsec`, `peg`.
 | [img-pyramid](mulib-img-pyramid.md) | `img-core` |
 | [img-sampler](mulib-img-sampler.md) | `img-core` |
 | [img-tile](mulib-img-tile.md) | `img-core` |
+| [imtui-draw](mulib-imtui-draw.md) | `imtui-core` |
+| [imtui-layout](mulib-imtui-layout.md) | `imtui-core` |
+| [imtui-scroll](mulib-imtui-scroll.md) | `imtui-core` |
 | [inet4](mulib-inet4.md) | `parsec` |
 | [input-seat](mulib-gfx-input.md) | `glx-event`, `input`, `input-keymap`, `input-mouse`, `input-touch` |
 | [iwd-client](mulib-iwd-client.md) | `dbus-client` |
@@ -1589,9 +1599,13 @@ Compatibility group: `parsec`, `peg`.
 | [spice-dc](mulib-spice-dc.md) | `spice-op` |
 | [spice-mna](engineering-kernels.md) | `graph-core`, `num-core`, `num-sparse-lu`, `storage-core` |
 | [sqlite](mulib-sqlite.md) | `arena`, `parsec`, `peg`, `rng`, `sqlite-pager`, `strbuf`, `utf8` |
+| [sshauth](mulib-sshauth.md) | `ed25519`, `sshkey`, `sshproto` |
+| [sshchannel](mulib-sshchannel.md) | `sshpacket`, `sshproto` |
+| [sshcrypto](mulib-sshcrypto.md) | `aes-gcm`, `sshpacket` |
 | [stylesheet](mulib-stylesheet.md) | `css` |
 | [symbol](mulib-symbol.md) | `mathml` |
 | [tbl](mulib-tbl.md) | `csv`, `dsdom`, `tex` |
+| [termscript-ast](mulib-termscript-ast.md) | `parsec`, `utf8` |
 | [termstyle](mulib-termstyle.md) | `css`, `terminfo`, `vterm` |
 | [textselection](mulib-gfx-text.md) | `textcursor` |
 | [timing-critical](engineering-kernels.md) | `formal-counterexample`, `graph-core`, `storage-core` |
@@ -1625,7 +1639,7 @@ Compatibility group: `parsec`, `peg`.
 | [xtas](mulib-xtas.md) | `dsdom` |
 | [xz](mulib-xz.md) | `authcrypto`, `bcj`, `crc32`, `lzma` |
 
-## Stratum 4 (122 modules)
+## Stratum 4 (133 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1675,6 +1689,11 @@ Compatibility group: `parsec`, `peg`.
 | [imgbuildspec](mulib-imgbuildspec.md) | `imgformat`, `rootfs-buildspec` |
 | [immgtk-drawlist-bridge](mulib-gfx-immgtk.md) | `glx-drawlist`, `immgtk-drawlist` |
 | [immgtk-drawlist](mulib-immgtk-drawlist.md) | `immgtk-drawlist-bridge` |
+| [imtui-edit](mulib-imtui-edit.md) | `imtui-draw`, `utf8` |
+| [imtui-list](mulib-imtui-list.md) | `imtui-draw` |
+| [imtui-render](mulib-imtui-render.md) | `imtui-core`, `termstyle` |
+| [imtui-tabs](mulib-imtui-tabs.md) | `imtui-draw` |
+| [imtui-widgets](mulib-imtui-widgets.md) | `imtui-draw` |
 | [inet6](mulib-inet6.md) | `inet4` |
 | [isel](mulib-isel.md) | `archml`, `isched`, `lir`, `lowopt` |
 | [jupyter-wire](notebook-desktop.md) | `authcrypto`, `json` |
@@ -1732,8 +1751,14 @@ Compatibility group: `parsec`, `peg`.
 | [spice-diode](engineering-kernels.md) | `spice-mna`, `storage-core` |
 | [spice-k](engineering-kernels.md) | `spice-mna`, `storage-core` |
 | [spice-l](engineering-kernels.md) | `spice-mna`, `storage-core` |
+| [sshkex](mulib-sshkex.md) | `ed25519`, `sshcrypto`, `sshkey`, `sshproto`, `x25519` |
 | [tas](mulib-tas.md) | `xtas` |
 | [template](mulib-template.md) | `json`, `strbuf`, `utf8` |
+| [termdb](mulib-termdb.md) | `sqlite`, `terminfo`, `utf8` |
+| [termscript-compiler](mulib-termscript-compiler.md) | `strbuf`, `termscript-ast` |
+| [termscript-library](mulib-termscript-library.md) | `strbuf`, `termscript-ast` |
+| [termscript-runtime](mulib-termscript-runtime.md) | `termscript-ast` |
+| [termscript-terminal](mulib-termscript-terminal.md) | `termfunc`, `termstyle`, `termutils` |
 | [termsyn](mulib-termsyn.md) | `edbuf`, `termstyle` |
 | [texthistory](mulib-gfx-text.md) | `textselection` |
 | [timing-sta](engineering-kernels.md) | `graph-core`, `timing-propagate`, `timing-slack` |
@@ -1752,7 +1777,7 @@ Compatibility group: `parsec`, `peg`.
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (102 modules)
+## Stratum 5 (106 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1807,6 +1832,8 @@ Compatibility group: `parsec`, `peg`.
 | [imgtrackerd](mulib-imgtrackerd.md) | `bycutils`, `memtable`, `ociimage` |
 | [immgtk-native](mulib-gfx-immgtk.md) | `gui-core` |
 | [immgtk](mulib-immgtk.md) | `glx`, `mune` |
+| [imtui-syntax](mulib-imtui-syntax.md) | `imtui-core`, `termsyn` |
+| [imtui-table](mulib-imtui-table.md) | `imtui-list` |
 | [inte6](mulib-inte6.md) | `inet6` |
 | [jvm](mulib-jvm.md) | `art` |
 | [kernel-wgsl](mulib-kernel-wgsl.md) | `kernel-glsl`, `kernel-ir` |
@@ -1846,6 +1873,8 @@ Compatibility group: `parsec`, `peg`.
 | [spice-bjt](engineering-kernels.md) | `spice-diode`, `storage-core` |
 | [spice-nonlinear](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `spice-device`, `storage-core` |
 | [spice-timestep](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-adaptive`, `num-core`, `spice-dae`, `storage-core` |
+| [sshtransport](mulib-sshtransport.md) | `sshkex`, `sshpacket` |
+| [termscript-host](mulib-termscript-host.md) | `termdb`, `termscript-library`, `termscript-runtime`, `termscript-state`, `termscript-terminal`, `utf8` |
 | [texteditor](mulib-gfx-text.md) | `texthistory` |
 | [vizigen](mulib-vizigen.md) | `asdl`, `binfilereader`, `binfilewriter`, `mmfile`, `walker` |
 | [vmm-kvm](mulib-vmm-kvm.md) | `kvm`, `vmm` |
@@ -1859,7 +1888,7 @@ Compatibility group: `parsec`, `peg`.
 | [x11-wm](mulib-gfx-wire.md) | `wm-focus`, `x11-events`, `x11-icccm`, `x11-reparent`, `x11-window`, `x11-wire` |
 | [x509](mulib-x509.md) | `base64`, `inet6`, `signature` |
 
-## Stratum 6 (62 modules)
+## Stratum 6 (66 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1910,6 +1939,7 @@ Compatibility group: `parsec`, `peg`.
 | [immgtk-timeline](mulib-gfx-immgtk.md) | `immgtk-native` |
 | [immgtk-viewport](mulib-gfx-immgtk.md) | `glx-window`, `immgtk-native` |
 | [immgtk-window](mulib-gfx-immgtk.md) | `immgtk-native` |
+| [imtui-mune](mulib-imtui-mune.md) | `imtui-layout`, `imtui-syntax`, `imtui-widgets`, `mune` |
 | [nb-store](notebook-desktop.md) | `nb-serialize` |
 | [nb-viewport](notebook-desktop.md) | `nb-layout` |
 | [nvptx](mulib-nvptx.md) | `gpu` |
@@ -1920,13 +1950,16 @@ Compatibility group: `parsec`, `peg`.
 | [render-integrator](mulib-render-integrator.md) | `mesh-core`, `render-bsdf`, `render-light`, `render-shadow` |
 | [retgtk-signal](graphics-overlay.md) | `retgtk-object` |
 | [riscv64](mulib-riscv64.md) | `mpu` |
+| [sshclient](mulib-sshclient.md) | `sshauth`, `sshtransport` |
+| [sshserver](mulib-sshserver.md) | `sshauth`, `sshtransport` |
 | [task](mulib-task.md) | `exec` |
+| [termscript](mulib-termscript.md) | `termscript-compiler`, `termscript-host` |
 | [uri](mulib-uri.md) | `inte6`, `strbuf` |
 | [wl-compositor](notebook-desktop.md) | `glx-occlusion`, `wl-frame`, `wl-shm`, `wl-surface` |
 | [wl-server](notebook-desktop.md) | `wl-registry` |
 | [xtensa](mulib-xtensa.md) | `mcu` |
 
-## Stratum 7 (22 modules)
+## Stratum 7 (24 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1943,11 +1976,13 @@ Compatibility group: `parsec`, `peg`.
 | [immgtk-sequencer](mulib-gfx-immgtk.md) | `immgtk-timeline` |
 | [immgtk-style](mulib-gfx-immgtk.md) | `gui-style`, `immgtk-native` |
 | [immgtk-textedit](mulib-gfx-immgtk.md) | `immgtk-io`, `texteditor` |
+| [imtui](mulib-imtui.md) | `imtui-core`, `imtui-draw`, `imtui-edit`, `imtui-layout`, `imtui-list`, `imtui-mune`, `imtui-render`, `imtui-scroll`, `imtui-syntax`, `imtui-table`, `imtui-tabs`, `imtui-terminal`, `imtui-widgets`, `strbuf` |
 | [layout](mulib-layout.md) | `glyph` |
 | [nb-virtualize](notebook-desktop.md) | `nb-viewport` |
 | [polytask](mulib-polytask.md) | `json`, `task`, `taskpool` |
 | [retgtk-property](graphics-overlay.md) | `retgtk-signal` |
 | [retgtk-widget](graphics-overlay.md) | `retgtk-object`, `retgtk-signal`, `retgtk-type` |
+| [sshconnection](mulib-sshconnection.md) | `sshchannel`, `sshserver` |
 | [tls](mulib-tls.md) | `aes-gcm`, `hkdf`, `socket`, `tsl`, `uri`, `x25519`, `x509` |
 | [vcspack](mulib-vcspack.md) | `adler32`, `endian`, `git` |
 | [vcsrepo](mulib-vcsrepo.md) | `git` |
@@ -2002,7 +2037,7 @@ Compatibility group: `parsec`, `peg`.
 | [websocket](mulib-websocket.md) | `base64`, `buffer`, `http`, `uri`, `utf8` |
 | [xll](mulib-xll.md) | `json`, `layout`, `strbuf` |
 
-## Stratum 9 (26 modules)
+## Stratum 9 (27 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -2011,6 +2046,7 @@ Compatibility group: `parsec`, `peg`.
 | [http_response](mulib-http_response.md) | `webframework` |
 | [https](mulib-https.md) | `tsl`, `webclient` |
 | [immgtk-extensions](mulib-gfx-immgtk.md) | `immgtk-clipper`, `immgtk-codeeditor`, `immgtk-colorpicker`, `immgtk-commandpalette`, `immgtk-curveeditor`, `immgtk-dnd`, `immgtk-dock`, `immgtk-filebrowser`, `immgtk-gizmo`, `immgtk-hexeditor`, `immgtk-id`, `immgtk-io`, `immgtk-layout`, `immgtk-menu`, `immgtk-native`, `immgtk-nav`, `immgtk-nodeeditor`, `immgtk-plot-3d`, `immgtk-plot-axis`, `immgtk-plot-contour`, `immgtk-plot-heatmap`, `immgtk-plot-interact`, `immgtk-plot-legend`, `immgtk-plot-series`, `immgtk-plot-stream`, `immgtk-popup`, `immgtk-profiler`, `immgtk-propertygrid`, `immgtk-scroll`, `immgtk-sequencer`, `immgtk-settings`, `immgtk-state`, `immgtk-style`, `immgtk-table`, `immgtk-tabs`, `immgtk-terminal`, `immgtk-textedit`, `immgtk-timeline`, `immgtk-viewport`, `immgtk-window` |
+| [mcp-broadcast](mulib-mcp-broadcast.md) | `mcp-http`, `utf8` |
 | [minicurl](mulib-minicurl.md) | `webclient` |
 | [miniwget](mulib-miniwget.md) | `webclient` |
 | [openai-server](mulib-openai-server.md) | `multipart`, `openai`, `sse` |

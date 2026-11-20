@@ -22,6 +22,19 @@ extern "C"
     size_t attempts, limit;
     int authenticated;
   } mulib_sshserver_t;
+  /** @brief Attempt limit and optional callbacks for the connection driver.
+   * The limit counts requests, including none, queries, and unsupported
+   * methods. Returning 1 authorizes the exact request account and credential.
+   * The key callback sees unsigned queries and separately sees verified
+   * signed requests; approval is never cached. Callbacks borrow request data
+   * for the call only and must not re-enter the driver. */
+  typedef struct
+  {
+    size_t max_attempts;
+    int (*verify_password) (void *, const mulib_ssh_auth_request_t *);
+    int (*authorize_key) (void *, const mulib_ssh_auth_request_t *);
+    void *context;
+  } mulib_sshserver_policy_t;
   /** @brief Parse an entire SSH_MSG_USERAUTH_REQUEST (50), service
    * ssh-connection, method none/password, password change unsupported. 1
    * success, 0 malformed, -1 unsupported. Borrowed binary-safe strings;

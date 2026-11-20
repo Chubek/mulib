@@ -1,0 +1,3 @@
+%module: stdlib.vterm
+% A VTerm C host can use these commands without a physical terminal.
+#backend "termfunc" set;

@@ -9,6 +9,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/* Hard limits per key/direction. Count body bytes, excluding the length
+ * field and tag. The invocation counter may impose an earlier limit. */
+enum { MULIB_SSH_GCM_PACKET_LIMIT = 1 << 24, MULIB_SSH_GCM_BYTE_LIMIT = 1 << 30 };
+
 typedef struct {
   mulib_aes_gcm_t cipher;
   unsigned char nonce[12];
@@ -114,8 +118,8 @@ mulib_ssh_gcm_ready_ (const mulib_ssh_gcm_t *g, const unsigned char length[4], s
   /* The eight-byte invocation field can start near wrap. */
   return g && g->active && length && n >= 16 && n <= MULIB_SSH_BODY_MAX && n % 16 == 0
          && n == mulib_endian_load_be32 (length)
-         && g->packets < (UINT32_C (1) << 24)
-         && g->bytes <= (UINT64_C (1) << 30) - n
+         && g->packets < MULIB_SSH_GCM_PACKET_LIMIT
+         && g->bytes <= MULIB_SSH_GCM_BYTE_LIMIT - n
          && mulib_endian_load_be64 (g->nonce + 4) != UINT64_MAX;
 }
 

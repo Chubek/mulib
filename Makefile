@@ -14,7 +14,7 @@ EXAMPLES += build/media-pipeline
 EXAMPLES += build/kernel-substrates
 .PHONY: all check check-shell check-examples check-compiler demo formats docir-formats clean
 .PHONY: muw3 check-muw3 check-muw3lib check-tls
-.PHONY: check-openai check-markup check-api-kernels
+.PHONY: check-openai check-markup check-api-kernels check-mcp
 .PHONY: check-web-primitives
 .PHONY: check-graphics check-vulkan check-raytracing check-minimpeg-video check-notebook-desktop
 .PHONY: check-notebook-headless check-wl-headless-private check-x11-nested
@@ -22,6 +22,50 @@ EXAMPLES += build/kernel-substrates
 check-media:
 	python3 tools/media_inventory.py --check
 	python3 tools/check_media.py
+.PHONY: check-imtui check-termscript check-termdb check-ssh check-ssh-openssh extend-kernelbind
+extend-kernelbind:
+	python3 tools/extend-kernelbind.py
+IMTUI_TESTS = $(patsubst tests/%.c,build/%,$(wildcard tests/test_imtui_*.c))
+TERMSCRIPT_TESTS = $(patsubst tests/%.c,build/%,$(wildcard tests/test_termscript_*.c))
+check-imtui: build/imtui-headless build/imtui-composites $(IMTUI_TESTS)
+	@set -eu; for t in $^; do ./$$t; done
+check-termscript: build/termscript build/termscript-support build/test_termdb $(TERMSCRIPT_TESTS)
+	@set -eu; for t in $(filter-out build/termscript,$^); do ./$$t; done
+	python3 tests/test_termscript_cli.py --runner build/termscript --termdb-test build/test_termdb --compiler-test build/test_termscript_compiler --cc "$(CC)"
+check-termdb: build/test_termdb
+	./$<
+	python3 tests/test_termdb_tool.py
+build/imtui-headless build/imtui-composites: build/imtui-%: examples/imtui/%.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -pthread -ldl -o $@
+build/imtui-terminal: examples/imtui/terminal.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
+build/termscript-support: examples/termscript/support.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
+build/termscript: library/termscript/main.c library/termscript/implementation.h $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
+build/test_termdb: tests/test_termdb.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
+build/test_imtui_%: tests/test_imtui_%.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -pthread -ldl -o $@
+build/test_termscript_%: tests/test_termscript_%.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -pthread -ldl -o $@
+SSH_LDLIBS ?= -lcrypto
+SSH_TESTS = $(patsubst tests/%.c,build/%,$(wildcard tests/test_ssh_*.c))
+SSH_TEST_OBJECTS := $(addprefix build/ssh-test-,$(addsuffix .o,wire crypto session))
+check-ssh: build/test_protocol_extensions build/ssh-kernels build/ssh-connection $(SSH_TESTS)
+	@set -eu; for t in $^; do ./$$t; done
+check-ssh-openssh: build/ssh-interop
+	@status=0; python3 tests/ssh/openssh.py $< || status=$$?; test "$$status" -eq 0 || test "$$status" -eq 77
+build/test_protocol_extensions: tests/test_protocol_extensions.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -pthread -ldl -o $@
+build/ssh-test-%.o: tests/ssh/%.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+build/test_ssh_%: tests/test_ssh_%.c $(SSH_TEST_OBJECTS) $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(SSH_TEST_OBJECTS) $(LDLIBS) $(SSH_LDLIBS) -o $@
+build/ssh-interop: tests/ssh/interop.c $(SSH_TEST_OBJECTS) $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(SSH_TEST_OBJECTS) $(LDLIBS) $(SSH_LDLIBS) -o $@
+build/ssh-kernels build/ssh-connection: build/ssh-%: examples/ssh/%.c examples/ssh/implementation.h $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) $(SSH_LDLIBS) -o $@
 WEB_PRIMITIVES_TESTS := pricing extraction browser css alloc hostile
 TESTS += $(addprefix build/test_web_,$(WEB_PRIMITIVES_TESTS))
 build/test_web_%: tests/test_web_%.c $(HEADERS) $(TEST_FIXTURES) | build
@@ -42,6 +86,8 @@ check-markup:
 	CC="$(CC)" sh tests/run-markup.sh
 check-api-kernels:
 	CC="$(CC)" CXX="$(CXX)" sh tests/run-api-kernels.sh
+check-mcp:
+	CC="$(CC)" CXX="$(CXX)" sh tests/run-mcp.sh
 check-graphics:
 	CC="$(CC)" CXX="$(CXX)" sh tests/run-graphics.sh
 VULKAN_CPPFLAGS ?= $(shell pkg-config --cflags vulkan 2>/dev/null)

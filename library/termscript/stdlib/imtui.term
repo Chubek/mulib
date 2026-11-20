@@ -1,0 +1,7 @@
+%module: stdlib.imtui
+% Coordinate/text helpers for terminal drawing, on top of semantic terminal I/O.
+% Example: (10, 2) "Hello" `label` #ImTUI exec
+#label { swap move typeout } bind seal;
+#clear { term.clear } bind seal;
+#hide-cursor { term.cursor-hide } bind seal;
+#show-cursor { term.cursor-show } bind seal;

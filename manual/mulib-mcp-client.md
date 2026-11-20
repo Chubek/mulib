@@ -7,7 +7,11 @@ not the [draft](https://modelcontextprotocol.io/specification/draft).
 The initialization handshake and `ping` are only for legacy `2025-11-25` stdio.
 
 Use one caller-owned client state per peer/channel. Initialize it with
-`mulib_cdd_mcp_client_init`, borrowing immutable UTF-8 name/version strings.
+`mulib_mcp_client_init` (or the compatible `mulib_cdd_mcp_client_init`),
+borrowing immutable UTF-8 name/version strings. The `mulib_mcp_client_*`
+API uses the same bounded framing and single-in-flight state machine.
+Define `MULIB_IMPL_MCP_CLIENT` or its legacy equivalent
+`MULIB_IMPL_CDD_MCP_CLIENT` in the implementation translation unit.
 Then choose one opening:
 
 - For dual-era stdio, build `MULIB_CDD_MCP_DISCOVER`. Discovery records the

@@ -1,0 +1,10 @@
+#define MULIB_IMPL_SSHTRANSPORT
+#define MULIB_IMPL_SSHAUTH
+#define MULIB_IMPL_SSHCHANNEL
+#define MULIB_IMPL_SSHCLIENT
+#define MULIB_IMPL_SSHCONNECTION
+#define MULIB_IMPL_SSHSERVER
+#include "mulib-sshchannel.h"
+#include "mulib-sshclient.h"
+#include "mulib-sshconnection.h"
+#include "mulib-sshserver.h"

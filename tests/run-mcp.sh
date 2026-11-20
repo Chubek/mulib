@@ -9,9 +9,16 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 warnings='-Wall -Wextra -Wpedantic -Werror -UNDEBUG'
 $CC -std=c11 $warnings ${CFLAGS:-} -Iinclude tests/test_mcp.c ${LDFLAGS:-} -lm -o "$work/test"
 "$work/test"
+for role in server client; do
+    $CC -std=c11 $warnings ${CFLAGS:-} -Iinclude "tests/test_mcp_${role}_api.c" \
+        ${LDFLAGS:-} -lm -o "$work/test-${role}-api"
+    "$work/test-${role}-api"
+done
 $CC -std=c11 $warnings ${CFLAGS:-} -Iinclude tests/test_mcp_http.c ${LDFLAGS:-} -lm -o "$work/test-http"
 "$work/test-http"
 python3 tests/test_mcp_http.py --fixture "$work/test-http"
+$CC -std=c11 $warnings ${CFLAGS:-} -Iinclude tests/test_mcp_broadcast.c ${LDFLAGS:-} -lm -o "$work/test-broadcast"
+"$work/test-broadcast"
 for role in client server http; do
     $CC -std=c11 $warnings ${CFLAGS:-} -Iinclude "examples/modules/mcp-$role.c" \
         ${LDFLAGS:-} -lm -o "$work/$role"
@@ -21,6 +28,11 @@ for role in client server http; do
     $CXX -std=c++17 $warnings $CXXFLAGS -Iinclude -c "$work/$role.cpp" -o "$work/$role.o"
 done
 "$work/http"
+$CC -std=c11 $warnings ${CFLAGS:-} -Iinclude examples/modules/mcp-broadcast.c \
+    ${LDFLAGS:-} -lm -o "$work/broadcast"
+"$work/broadcast"
+printf '#include "mulib-mcp-broadcast.h"\n#define MULIB_IMPL_MCP_BROADCAST\n#include "mulib-mcp-broadcast.h"\n#include "mulib-mcp-broadcast.h"\n' > "$work/broadcast.cpp"
+$CXX -std=c++17 $warnings $CXXFLAGS -Iinclude -c "$work/broadcast.cpp" -o "$work/broadcast.o"
 python3 tests/test_mcp_stdio.py --server "$work/server" --client "$work/client"
 cat > "$work/deps.c" <<'EOF'
 #define MULIB_IMPL_JSON
@@ -44,6 +56,7 @@ cat > "$work/consumer.c" <<'EOF'
 #include "mulib-mcp-server.h"
 #include "mulib-mcp-client.h"
 #include "mulib-mcp-http.h"
+#include "mulib-mcp-broadcast.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,6 +73,8 @@ int main(void)
                                        NULL, NULL, &req) == MULIB_CDD_MCP_OK);
     assert(mulib_cdd_mcp_server_process(&server, req, strlen(req), &res) == MULIB_CDD_MCP_OK);
     assert(mulib_cdd_mcp_client_receive(&client, res, strlen(res), &dom) == MULIB_CDD_MCP_OK);
+    assert(mulib_mcp_broadcast_http(NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL)
+           == MULIB_CDD_MCP_INVALID);
     mulib_json_destroy(dom);
     free(req);
     free(res);
@@ -68,7 +83,7 @@ int main(void)
 EOF
 $CC -std=c11 $warnings ${CFLAGS:-} -Iinclude -c "$work/deps.c" -o "$work/deps.o"
 $CC -std=c11 $warnings ${CFLAGS:-} -Iinclude -c "$work/consumer.c" -o "$work/consumer.o"
-$CXX $CXXFLAGS "$work/consumer.o" "$work/client.o" "$work/server.o" "$work/http.o" "$work/deps.o" \
+$CXX $CXXFLAGS "$work/consumer.o" "$work/client.o" "$work/server.o" "$work/http.o" "$work/broadcast.o" "$work/deps.o" \
     ${LDFLAGS:-} -lm -o "$work/mixed"
 "$work/mixed"
-echo 'MCP protocol, stdio, localhost HTTP/SSE, and C/C++ linkage tests passed.'
+echo 'MCP protocol, stdio, localhost HTTP/SSE, broadcast, and C/C++ linkage tests passed.'

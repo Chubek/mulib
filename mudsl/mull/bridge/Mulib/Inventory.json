@@ -428,6 +428,7 @@
     "mulib-ecad-symbol.h",
     "mulib-ecad-wire-route.h",
     "mulib-ecad-wire.h",
+    "mulib-ed25519.h",
     "mulib-eda-attributes.h",
     "mulib-eda-catalogue.h",
     "mulib-eda-changeset.h",
@@ -850,6 +851,20 @@
     "mulib-immgtk.h",
     "mulib-impaclient.h",
     "mulib-importgraph.h",
+    "mulib-imtui-core.h",
+    "mulib-imtui-draw.h",
+    "mulib-imtui-edit.h",
+    "mulib-imtui-layout.h",
+    "mulib-imtui-list.h",
+    "mulib-imtui-mune.h",
+    "mulib-imtui-render.h",
+    "mulib-imtui-scroll.h",
+    "mulib-imtui-syntax.h",
+    "mulib-imtui-table.h",
+    "mulib-imtui-tabs.h",
+    "mulib-imtui-terminal.h",
+    "mulib-imtui-widgets.h",
+    "mulib-imtui.h",
     "mulib-index.h",
     "mulib-indexer.h",
     "mulib-inet-diag.h",
@@ -984,6 +999,7 @@
     "mulib-mathspeech.h",
     "mulib-matrix.h",
     "mulib-matview.h",
+    "mulib-mcp-broadcast.h",
     "mulib-mcp-client.h",
     "mulib-mcp-http.h",
     "mulib-mcp-server.h",
@@ -1639,8 +1655,18 @@
     "mulib-sqlite.h",
     "mulib-sse-client.h",
     "mulib-sse.h",
+    "mulib-sshauth.h",
+    "mulib-sshchannel.h",
     "mulib-sshclient.h",
+    "mulib-sshconnection.h",
+    "mulib-sshcrypto.h",
+    "mulib-sshkex.h",
+    "mulib-sshkey.h",
+    "mulib-sshpacket.h",
+    "mulib-sshproto.h",
     "mulib-sshserver.h",
+    "mulib-sshtransport.h",
+    "mulib-sshwire.h",
     "mulib-sstfile.h",
     "mulib-stack.h",
     "mulib-stackmap.h",
@@ -1695,8 +1721,18 @@
     "mulib-tbl.h",
     "mulib-template.h",
     "mulib-term_rewriting.h",
+    "mulib-termdb.h",
+    "mulib-termfunc.h",
     "mulib-terminfo.h",
     "mulib-termkey.h",
+    "mulib-termscript-ast.h",
+    "mulib-termscript-compiler.h",
+    "mulib-termscript-host.h",
+    "mulib-termscript-library.h",
+    "mulib-termscript-runtime.h",
+    "mulib-termscript-state.h",
+    "mulib-termscript-terminal.h",
+    "mulib-termscript.h",
     "mulib-termstyle.h",
     "mulib-termsyn.h",
     "mulib-termutils.h",
@@ -1996,9 +2032,9 @@
     "mulib-zstd.h",
     "mune-opencode-client.h"
   ],
-  "libraries": 1995,
+  "libraries": 2031,
   "functions": 5373,
-  "declared_functions": 7389,
+  "declared_functions": 7622,
   "types": 8927,
   "constants": 2802,
   "preprocessor_only": [
@@ -2018,7 +2054,7 @@
     "MULIB_XATOMIC_DECLARE_",
     "MULIB_XATOMIC_INIT"
   ],
-  "fingerprint": "41e5bf8f8c6ecae865aa046995e5facd5732683f7e000022cc9475cfb61e1fac",
+  "fingerprint": "3a18ec99f0cb4e482fd281db041fb0e893a29b6db2781ac129e94d9dd1c4af13",
   "legacy_policy": "f998e3c5709003f8315112125a9d167550f096a614f5d514a7eadff86def08e0",
   "modules": {
     "2dgeom": {
@@ -8877,6 +8913,16 @@
         "mulib_ecad_wire_route"
       ]
     },
+    "ed25519": {
+      "header": "mulib-ed25519.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_ed25519_public",
+        "mulib_ed25519_sign",
+        "mulib_ed25519_verify"
+      ]
+    },
     "eda-attributes": {
       "header": "mulib-eda-attributes.h",
       "profile": "legacy-raw",
@@ -14040,6 +14086,180 @@
         "mulib_importgraph_order"
       ]
     },
+    "imtui": {
+      "header": "mulib-imtui.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_snapshot"
+      ]
+    },
+    "imtui-core": {
+      "header": "mulib-imtui-core.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_begin",
+        "mulib_imtui_bounds",
+        "mulib_imtui_cells",
+        "mulib_imtui_clip",
+        "mulib_imtui_clip_pop",
+        "mulib_imtui_clip_push",
+        "mulib_imtui_end",
+        "mulib_imtui_free",
+        "mulib_imtui_id",
+        "mulib_imtui_id_pop",
+        "mulib_imtui_id_push",
+        "mulib_imtui_init",
+        "mulib_imtui_interact",
+        "mulib_imtui_interact_ex",
+        "mulib_imtui_put",
+        "mulib_imtui_resize",
+        "mulib_imtui_take_key"
+      ]
+    },
+    "imtui-draw": {
+      "header": "mulib-imtui-draw.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_box",
+        "mulib_imtui_fill",
+        "mulib_imtui_hline",
+        "mulib_imtui_text",
+        "mulib_imtui_text_width",
+        "mulib_imtui_vline"
+      ]
+    },
+    "imtui-edit": {
+      "header": "mulib-imtui-edit.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_edit",
+        "mulib_imtui_edit_init"
+      ]
+    },
+    "imtui-layout": {
+      "header": "mulib-imtui-layout.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_layout_align",
+        "mulib_imtui_layout_column",
+        "mulib_imtui_layout_grid",
+        "mulib_imtui_layout_pad",
+        "mulib_imtui_layout_row",
+        "mulib_imtui_layout_split",
+        "mulib_imtui_layout_weighted"
+      ]
+    },
+    "imtui-list": {
+      "header": "mulib-imtui-list.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_list",
+        "mulib_imtui_list_init",
+        "mulib_imtui_list_view"
+      ]
+    },
+    "imtui-mune": {
+      "header": "mulib-imtui-mune.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_mune_bind",
+        "mulib_imtui_mune_call",
+        "mulib_imtui_mune_run"
+      ]
+    },
+    "imtui-render": {
+      "header": "mulib-imtui-render.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_render",
+        "mulib_imtui_renderer_free",
+        "mulib_imtui_renderer_init",
+        "mulib_imtui_renderer_invalidate"
+      ]
+    },
+    "imtui-scroll": {
+      "header": "mulib-imtui-scroll.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_scroll_begin",
+        "mulib_imtui_scroll_end",
+        "mulib_imtui_scroll_project",
+        "mulib_imtui_scroll_step",
+        "mulib_imtui_scroll_viewport"
+      ]
+    },
+    "imtui-syntax": {
+      "header": "mulib-imtui-syntax.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_syntax_draw"
+      ]
+    },
+    "imtui-table": {
+      "header": "mulib-imtui-table.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_table"
+      ]
+    },
+    "imtui-tabs": {
+      "header": "mulib-imtui-tabs.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_tabs",
+        "mulib_imtui_tabs_init"
+      ]
+    },
+    "imtui-terminal": {
+      "header": "mulib-imtui-terminal.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_terminal_abort",
+        "mulib_imtui_terminal_attach",
+        "mulib_imtui_terminal_close",
+        "mulib_imtui_terminal_escape_pending",
+        "mulib_imtui_terminal_flush",
+        "mulib_imtui_terminal_flush_input",
+        "mulib_imtui_terminal_input_fd",
+        "mulib_imtui_terminal_next",
+        "mulib_imtui_terminal_open",
+        "mulib_imtui_terminal_output_fd",
+        "mulib_imtui_terminal_output_pending",
+        "mulib_imtui_terminal_queue",
+        "mulib_imtui_terminal_size"
+      ]
+    },
+    "imtui-widgets": {
+      "header": "mulib-imtui-widgets.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_imtui_button",
+        "mulib_imtui_button_themed",
+        "mulib_imtui_checkbox",
+        "mulib_imtui_checkbox_themed",
+        "mulib_imtui_label",
+        "mulib_imtui_progress",
+        "mulib_imtui_radio",
+        "mulib_imtui_selectable",
+        "mulib_imtui_separator",
+        "mulib_imtui_slider",
+        "mulib_imtui_theme_default"
+      ]
+    },
     "index": {
       "header": "mulib-index.h",
       "profile": "legacy-raw",
@@ -16089,6 +16309,14 @@
         "mulib_matview_insert"
       ]
     },
+    "mcp-broadcast": {
+      "header": "mulib-mcp-broadcast.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_mcp_broadcast_http"
+      ]
+    },
     "mcp-client": {
       "header": "mulib-mcp-client.h",
       "profile": "legacy-raw",
@@ -16106,7 +16334,13 @@
         "mulib_cdd_mcp_client_init",
         "mulib_cdd_mcp_client_receive",
         "mulib_cdd_mcp_client_request",
-        "mulib_cdd_mcp_client_request_ex"
+        "mulib_cdd_mcp_client_request_ex",
+        "mulib_mcp_client_abandon",
+        "mulib_mcp_client_cancel",
+        "mulib_mcp_client_init",
+        "mulib_mcp_client_receive",
+        "mulib_mcp_client_request",
+        "mulib_mcp_client_request_ex"
       ]
     },
     "mcp-http": {
@@ -16136,7 +16370,11 @@
         "mulib_cdd_mcp_catalog_init",
         "mulib_cdd_mcp_catalog_process",
         "mulib_cdd_mcp_server_init",
-        "mulib_cdd_mcp_server_process"
+        "mulib_cdd_mcp_server_process",
+        "mulib_mcp_catalog_init",
+        "mulib_mcp_catalog_process",
+        "mulib_mcp_server_init",
+        "mulib_mcp_server_process"
       ]
     },
     "mcu": {
@@ -24533,6 +24771,47 @@
         "mulib_sse_client_get"
       ]
     },
+    "sshauth": {
+      "header": "mulib-sshauth.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sshauth_banner_write",
+        "mulib_sshauth_none_write",
+        "mulib_sshauth_parse",
+        "mulib_sshauth_password_write",
+        "mulib_sshauth_pk_ok_parse",
+        "mulib_sshauth_pk_ok_write",
+        "mulib_sshauth_public_query",
+        "mulib_sshauth_public_verify",
+        "mulib_sshauth_public_write",
+        "mulib_sshauth_reply_parse",
+        "mulib_sshauth_reply_write",
+        "mulib_sshauth_service_parse",
+        "mulib_sshauth_service_write"
+      ]
+    },
+    "sshchannel": {
+      "header": "mulib-sshchannel.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sshchannel_confirm_parse",
+        "mulib_sshchannel_confirm_write",
+        "mulib_sshchannel_control",
+        "mulib_sshchannel_data",
+        "mulib_sshchannel_dispatch_receive",
+        "mulib_sshchannel_dispatch_send",
+        "mulib_sshchannel_failure_parse",
+        "mulib_sshchannel_failure_write",
+        "mulib_sshchannel_init",
+        "mulib_sshchannel_open_parse",
+        "mulib_sshchannel_open_write",
+        "mulib_sshchannel_receive",
+        "mulib_sshchannel_request",
+        "mulib_sshchannel_window"
+      ]
+    },
     "sshclient": {
       "header": "mulib-sshclient.h",
       "profile": "legacy-raw",
@@ -24546,7 +24825,89 @@
         "mulib_sshclient_identification",
         "mulib_sshclient_identify",
         "mulib_sshclient_packet_decode",
-        "mulib_sshclient_packet_encode"
+        "mulib_sshclient_packet_encode",
+        "mulib_sshclient_public_auth",
+        "mulib_sshclient_start"
+      ]
+    },
+    "sshconnection": {
+      "header": "mulib-sshconnection.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sshconnection_auth",
+        "mulib_sshconnection_authenticated",
+        "mulib_sshconnection_banner",
+        "mulib_sshconnection_can_auth",
+        "mulib_sshconnection_channel",
+        "mulib_sshconnection_clear",
+        "mulib_sshconnection_consume_output",
+        "mulib_sshconnection_feed",
+        "mulib_sshconnection_output",
+        "mulib_sshconnection_rekey_due",
+        "mulib_sshconnection_start",
+        "mulib_sshconnection_user"
+      ]
+    },
+    "sshcrypto": {
+      "header": "mulib-sshcrypto.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_ssh_derive",
+        "mulib_ssh_gcm_clear",
+        "mulib_ssh_gcm_init",
+        "mulib_ssh_gcm_open",
+        "mulib_ssh_gcm_seal",
+        "mulib_ssh_sha256_parts"
+      ]
+    },
+    "sshkex": {
+      "header": "mulib-sshkex.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sshkex_hash",
+        "mulib_sshkex_init_parse",
+        "mulib_sshkex_init_write",
+        "mulib_sshkex_negotiate",
+        "mulib_sshkex_propose",
+        "mulib_sshkex_reply_parse",
+        "mulib_sshkex_reply_write"
+      ]
+    },
+    "sshkey": {
+      "header": "mulib-sshkey.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sshkey_public_parse",
+        "mulib_sshkey_public_write",
+        "mulib_sshkey_signature_parse",
+        "mulib_sshkey_signature_write"
+      ]
+    },
+    "sshpacket": {
+      "header": "mulib-sshpacket.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sshpacket_body_size",
+        "mulib_sshpacket_payload",
+        "mulib_sshpacket_peek",
+        "mulib_sshpacket_write"
+      ]
+    },
+    "sshproto": {
+      "header": "mulib-sshproto.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_ssh_kexinit_parse",
+        "mulib_ssh_kexinit_write",
+        "mulib_ssh_namelist_first",
+        "mulib_ssh_namelist_has",
+        "mulib_ssh_namelist_valid"
       ]
     },
     "sshserver": {
@@ -24562,7 +24923,46 @@
         "mulib_sshserver_auth_parse",
         "mulib_sshserver_auth_reply",
         "mulib_sshserver_authenticate",
-        "mulib_sshserver_init"
+        "mulib_sshserver_init",
+        "mulib_sshserver_public_authenticate",
+        "mulib_sshserver_start"
+      ]
+    },
+    "sshtransport": {
+      "header": "mulib-sshtransport.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sshtransport_clear",
+        "mulib_sshtransport_handshake",
+        "mulib_sshtransport_open",
+        "mulib_sshtransport_ready",
+        "mulib_sshtransport_receive",
+        "mulib_sshtransport_rekey",
+        "mulib_sshtransport_rekey_due",
+        "mulib_sshtransport_seal",
+        "mulib_sshtransport_session_id",
+        "mulib_sshtransport_start"
+      ]
+    },
+    "sshwire": {
+      "header": "mulib-sshwire.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_ssh_read_bytes",
+        "mulib_ssh_read_mpint",
+        "mulib_ssh_read_string",
+        "mulib_ssh_read_u32",
+        "mulib_ssh_read_u64",
+        "mulib_ssh_read_u8",
+        "mulib_ssh_slice_is",
+        "mulib_ssh_write_bytes",
+        "mulib_ssh_write_mpint",
+        "mulib_ssh_write_string",
+        "mulib_ssh_write_u32",
+        "mulib_ssh_write_u64",
+        "mulib_ssh_write_u8"
       ]
     },
     "sstfile": {
@@ -25337,6 +25737,26 @@
         "mulib_term_rewrite"
       ]
     },
+    "termdb": {
+      "header": "mulib-termdb.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_termdb_close",
+        "mulib_termdb_emit",
+        "mulib_termdb_meta",
+        "mulib_termdb_open"
+      ]
+    },
+    "termfunc": {
+      "header": "mulib-termfunc.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_termfunc_emit",
+        "mulib_termfunc_lookup"
+      ]
+    },
     "terminfo": {
       "header": "mulib-terminfo.h",
       "profile": "legacy-raw",
@@ -25389,6 +25809,107 @@
         "mulib_termkey_feed",
         "mulib_termkey_init",
         "mulib_termkey_next"
+      ]
+    },
+    "termscript": {
+      "header": "mulib-termscript.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_termscript_run_source"
+      ]
+    },
+    "termscript-ast": {
+      "header": "mulib-termscript-ast.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_termscript_parse",
+        "mulib_termscript_program_free"
+      ]
+    },
+    "termscript-compiler": {
+      "header": "mulib-termscript-compiler.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_termscript_canonicalize",
+        "mulib_termscript_compile_c11",
+        "mulib_termscript_emit_c11"
+      ]
+    },
+    "termscript-host": {
+      "header": "mulib-termscript-host.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_termscript_host_attach",
+        "mulib_termscript_host_dispatch"
+      ]
+    },
+    "termscript-library": {
+      "header": "mulib-termscript-library.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_termscript_library_load"
+      ]
+    },
+    "termscript-runtime": {
+      "header": "mulib-termscript-runtime.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_termscript_eval",
+        "mulib_termscript_fail",
+        "mulib_termscript_key",
+        "mulib_termscript_peek",
+        "mulib_termscript_pop",
+        "mulib_termscript_push",
+        "mulib_termscript_push_bool",
+        "mulib_termscript_push_char",
+        "mulib_termscript_push_int",
+        "mulib_termscript_push_string",
+        "mulib_termscript_push_text",
+        "mulib_termscript_resolve",
+        "mulib_termscript_run",
+        "mulib_termscript_stack_size",
+        "mulib_termscript_step",
+        "mulib_termscript_value_at",
+        "mulib_termscript_value_count",
+        "mulib_termscript_vm_clear",
+        "mulib_termscript_vm_init",
+        "mulib_termscript_vm_mode",
+        "mulib_termscript_vm_set_host",
+        "mulib_termscript_vm_set_loader",
+        "mulib_termscript_vm_set_mode",
+        "mulib_termscript_vm_set_term",
+        "mulib_termscript_vm_term"
+      ]
+    },
+    "termscript-state": {
+      "header": "mulib-termscript-state.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_termscript_state_find",
+        "mulib_termscript_state_init",
+        "mulib_termscript_state_send"
+      ]
+    },
+    "termscript-terminal": {
+      "header": "mulib-termscript-terminal.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_termscript_terminal_capability",
+        "mulib_termscript_terminal_function",
+        "mulib_termscript_terminal_init",
+        "mulib_termscript_terminal_raw",
+        "mulib_termscript_terminal_restore",
+        "mulib_termscript_terminal_size",
+        "mulib_termscript_terminal_text",
+        "mulib_termscript_terminal_vterm"
       ]
     },
     "termstyle": {
@@ -29924,7 +30445,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "bd5052ee89dfe8678c733a016b0123332b21ec8178657859f64729ede72575ed",
-    "Implementation.c": "41aa3937518d042c1ebe690dca21f1056af0ccf6d6eeb161f8883a75110ccc35"
+    "Generated.inc": "7f233f7e2dc9dd5e441cae1430ffaf9ddbfe8514b0bfdc96692d65d99697d10b",
+    "Implementation.c": "e8d42736b8b9c6ec9823eef57b1a916f5107ecfb13ff7a33e58863d1ab0425a7"
   }
 }

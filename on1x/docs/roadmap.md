@@ -15,6 +15,10 @@ bounded static-inline MANIFEST entries and canonical internal-linkage CDecl
 inspection. No callable ABI, resource lowering or independent safe admission
 is added; provider adapters remain adapters. See [KernelBind](kernel-bind.md).
 
+The [automatic discovery catalog](kernel-bind.md#refresh-automatic-discovery)
+extends registration to current MANIFEST kernels. It does not extend the
+set of callable or reviewed profiles.
+
 M1/M2 core-syntax additions use the canonical parser, checker, and C11
 backend. [Literals and interpolation](core-literals.md) distinguish Unicode
 scalars from bytes. [Regular expressions](core-regex.md) compile through

@@ -225,6 +225,36 @@ def plan(root, libraries, fixtures=(), paths=(), *, discovery=False):
                 **({'discovery_only': discovery_only} if discovery_only else {}))
 
 
+def declaration_plan(root, name, modules, paths):
+    """Plan canonical MANIFEST inputs only, not an implementation or fixture."""
+    ordered, expanded, active = [], set(), set()
+
+    def visit(module):
+        # MANIFEST describes implementation edges too. A cycle there does not
+        # prevent the compiler from reading the selected declaration header.
+        if module in expanded or module in active:
+            return
+        if len(active) >= 128:
+            raise ValueError('declaration dependency depth limit')
+        if module not in modules:
+            raise ValueError('UNSUPPORTED: no registered declaration dependency: '+module)
+        active.add(module)
+        for dependency in modules[module]['manifest_dependencies']:
+            visit(dependency)
+        active.remove(module)
+        expanded.add(module)
+        item = modules[module]
+        header = local(root, item['header'])
+        ordered.append(dict(name=module, **item, header_sha256=contracts.digest(header),
+                            manual_sha256=contracts.digest(local(root, item['manual']))))
+
+    visit(name)
+    return dict(modules=ordered, inputs={},
+                include_directories=include_paths(root, paths),
+                implementation_macros=[], required_symbols={name: []},
+                dependency_cycles=[], native_sources=[], include_headers=[], generator_checks=[])
+
+
 def check_generated(root, recipe):
     for check in recipe['generator_checks']:
         p = subprocess.run([sys.executable, local(root, check), '--check'], capture_output=True, timeout=120)

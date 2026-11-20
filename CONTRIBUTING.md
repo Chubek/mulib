@@ -52,6 +52,10 @@ After adding headers, `python3 tools/sync_inventory.py` registers new modules an
 updates combined-test inclusion without replacing existing manifest descriptions.
 It also promotes implemented reservations and refreshes dependency/switch fields;
 invalid input is rejected before writing inventory files.
+The same command refreshes On1x's generated KernelBind discovery catalog.
+For direct edits to `MANIFEST.yaml`, run `python3 tools/extend-kernelbind.py`
+(or `make extend-kernelbind`). Verification checks for drift; registration
+does not create an ABI adapter or grant permission to call a kernel.
 Then regenerate dependency documentation with `python3 tools/stratify.py`.
 Neither command implements APIs or replaces handwritten examples/manuals.
 

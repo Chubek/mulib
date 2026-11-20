@@ -1,7 +1,8 @@
 /**
  * @file mulib-mcp-server.h
  * @brief Bounded Model Context Protocol server and host-owned catalogue.
- * Define MULIB_IMPL_CDD_MCP_SERVER once. See the manual for dependencies.
+ * Define MULIB_IMPL_MCP_SERVER or MULIB_IMPL_CDD_MCP_SERVER in one translation
+ * unit. Either switch emits both API spellings. See the manual for dependencies.
  */
 #ifndef MULIB_MCP_SERVER_H
 #define MULIB_MCP_SERVER_H
@@ -136,14 +137,80 @@ extern "C"
   mulib_cdd_mcp_status_t mulib_cdd_mcp_catalog_process (
       mulib_cdd_mcp_catalog_t *catalog, const void *principal, const char *frame,
       size_t length, char **out);
+
+  /* These aliases have the same layout and callback types as the original
+   * declarations. Both sets of entrypoints can use the same instance; the
+   * original struct/enum tags and enum values remain available. */
+  typedef mulib_cdd_mcp_status_t mulib_mcp_server_status_t;
+  typedef mulib_cdd_mcp_tool_status_t mulib_mcp_tool_status_t;
+  typedef mulib_cdd_mcp_tool_fn mulib_mcp_tool_fn;
+  typedef mulib_cdd_mcp_tool_t mulib_mcp_tool_t;
+  typedef mulib_cdd_mcp_server_config_t mulib_mcp_server_config_t;
+  typedef mulib_cdd_mcp_server_t mulib_mcp_server_t;
+  typedef mulib_cdd_mcp_request_view_t mulib_mcp_request_view_t;
+  typedef mulib_cdd_mcp_handler_status_t mulib_mcp_handler_status_t;
+  typedef mulib_cdd_mcp_handler_fn mulib_mcp_handler_fn;
+  typedef mulib_cdd_mcp_authorize_fn mulib_mcp_authorize_fn;
+  typedef mulib_cdd_mcp_validate_fn mulib_mcp_validate_fn;
+  typedef mulib_cdd_mcp_structured_tool_t mulib_mcp_structured_tool_t;
+  typedef mulib_cdd_mcp_catalog_config_t mulib_mcp_catalog_config_t;
+  typedef mulib_cdd_mcp_catalog_t mulib_mcp_catalog_t;
+
+#define MULIB_MCP_SERVER_VERSION MULIB_CDD_MCP_VERSION
+#define MULIB_MCP_SERVER_LEGACY_VERSION MULIB_CDD_MCP_LEGACY_VERSION
+#define MULIB_MCP_SERVER_MAX_FRAME MULIB_CDD_MCP_MAX_FRAME
+#define MULIB_MCP_SERVER_MAX_TOOLS MULIB_CDD_MCP_MAX_TOOLS
+#define MULIB_MCP_SERVER_MAX_TEXT MULIB_CDD_MCP_MAX_TEXT
+#define MULIB_MCP_SERVER_MAX_ENTRIES MULIB_CDD_MCP_MAX_ENTRIES
+
+#define MULIB_MCP_SERVER_OK MULIB_CDD_MCP_OK
+#define MULIB_MCP_SERVER_INVALID MULIB_CDD_MCP_INVALID
+#define MULIB_MCP_SERVER_CONFLICT MULIB_CDD_MCP_CONFLICT
+#define MULIB_MCP_SERVER_LIMIT MULIB_CDD_MCP_LIMIT
+#define MULIB_MCP_SERVER_NOMEM MULIB_CDD_MCP_NOMEM
+
+#define MULIB_MCP_TOOL_OK MULIB_CDD_MCP_TOOL_OK
+#define MULIB_MCP_TOOL_ERROR MULIB_CDD_MCP_TOOL_ERROR
+#define MULIB_MCP_TOOL_FAILED MULIB_CDD_MCP_TOOL_FAILED
+#define MULIB_MCP_HANDLER_OK MULIB_CDD_MCP_HANDLER_OK
+#define MULIB_MCP_HANDLER_INVALID MULIB_CDD_MCP_HANDLER_INVALID
+#define MULIB_MCP_HANDLER_FAILED MULIB_CDD_MCP_HANDLER_FAILED
+#define MULIB_MCP_HANDLER_DEFER MULIB_CDD_MCP_HANDLER_DEFER
+
+  /** Same contract as mulib_cdd_mcp_server_init: copy config, borrow nested
+   * values, and reset legacy state only on success. */
+  mulib_mcp_server_status_t mulib_mcp_server_init (
+      mulib_mcp_server_t *server, const mulib_mcp_server_config_t *config);
+
+  /** Same contract as mulib_cdd_mcp_server_process. One frame, no delimiter;
+   * on OK free the reply or expect NULL for a notification. A local error
+   * leaves out unchanged, but a callback might already have run. The base
+   * server has no authorization callback. */
+  mulib_mcp_server_status_t mulib_mcp_server_process (
+      mulib_mcp_server_t *server, const char *frame, size_t length, char **out);
+
+  /** Same contract as mulib_cdd_mcp_catalog_init. Copy both configs and borrow
+   * their nested values. A failure leaves the catalogue unchanged. */
+  mulib_mcp_server_status_t mulib_mcp_catalog_init (
+      mulib_mcp_catalog_t *catalog, const mulib_mcp_server_config_t *base,
+      const mulib_mcp_catalog_config_t *features);
+
+  /** Same frame and ownership contract as mulib_mcp_server_process. The host
+   * supplies principal after authentication; the catalogue only passes it to
+   * callbacks. See mulib_cdd_mcp_catalog_process. */
+  mulib_mcp_server_status_t mulib_mcp_catalog_process (
+      mulib_mcp_catalog_t *catalog, const void *principal, const char *frame,
+      size_t length, char **out);
 #ifdef __cplusplus
 }
 #endif
 #endif /* MULIB_MCP_SERVER_H */
 
-#if defined(MULIB_IMPL_CDD_MCP_SERVER) && !defined(MULIB_MCP_SERVER_IMPLEMENTED)
+#if defined(MULIB_IMPL_CDD_MCP_SERVER) || defined(MULIB_IMPL_MCP_SERVER)
+#ifndef MULIB_MCP_SERVER_IMPLEMENTED
 #define MULIB_MCP_SERVER_IMPLEMENTED
 #include "mulib-utf8.h"
+#include "detail/mulib-jsonrpc-envelope.h"
 #include "detail/mulib-mcp-wire.h"
 #include <stdio.h>
 #ifdef __cplusplus
@@ -589,6 +656,7 @@ extern "C"
     const mulib_json_t *id = NULL;
     const mulib_json_t *method, *params, *meta, *version, *caps, *info;
     mulib_json_t *result = NULL, *out;
+    mulib_jsonrpc_envelope_ envelope;
     int modern = 0, cacheable = 0, callback_error = 0, invalid_page = 0;
     mulib_cdd_mcp_request_view_t rq = {
       NULL, NULL, NULL, NULL, NULL, NULL, NULL, principal, 0
@@ -598,13 +666,13 @@ extern "C"
     if (mulib_json_typeof (req) != MULIB_JSON_OBJECT)
       goto invalid_request;
     id = mulib_json_get (req, "id");
-    method = mulib_json_get (req, "method");
-    params = mulib_json_get (req, "params");
-    if (!mulib_mcp_wire_is_ (mulib_json_get (req, "jsonrpc"), "2.0")
-        || !(rq.method = mulib_mcp_wire_label_ (method, 256))
+    if (!mulib_jsonrpc_envelope_view_ (req, &envelope)
+        || !(rq.method = mulib_mcp_wire_label_ (envelope.method, 256))
         || (id && !mulib_mcp_wire_id_ (id))
         || mulib_json_get (req, "result") || mulib_json_get (req, "error"))
       goto invalid_request;
+    method = envelope.method;
+    params = envelope.params;
     if (!id)
       {
         const mulib_json_t *notification_meta = mulib_json_get (params, "_meta");
@@ -895,7 +963,37 @@ extern "C"
     return mulib_mcp_server_process_ (
         &catalog->server, &catalog->features, principal, frame, length, out);
   }
+
+  mulib_mcp_server_status_t
+  mulib_mcp_server_init (mulib_mcp_server_t *server,
+                         const mulib_mcp_server_config_t *config)
+  {
+    return mulib_cdd_mcp_server_init (server, config);
+  }
+
+  mulib_mcp_server_status_t
+  mulib_mcp_server_process (mulib_mcp_server_t *server, const char *frame,
+                            size_t length, char **out)
+  {
+    return mulib_cdd_mcp_server_process (server, frame, length, out);
+  }
+
+  mulib_mcp_server_status_t
+  mulib_mcp_catalog_init (mulib_mcp_catalog_t *catalog,
+                          const mulib_mcp_server_config_t *base,
+                          const mulib_mcp_catalog_config_t *features)
+  {
+    return mulib_cdd_mcp_catalog_init (catalog, base, features);
+  }
+
+  mulib_mcp_server_status_t
+  mulib_mcp_catalog_process (mulib_mcp_catalog_t *catalog, const void *principal,
+                             const char *frame, size_t length, char **out)
+  {
+    return mulib_cdd_mcp_catalog_process (catalog, principal, frame, length, out);
+  }
 #ifdef __cplusplus
 }
 #endif
+#endif /* MULIB_MCP_SERVER_IMPLEMENTED */
 #endif /* implementation */
