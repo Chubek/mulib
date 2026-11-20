@@ -36,7 +36,7 @@ import tempfile
 from typing import NamedTuple
 
 
-DEFAULT_SOURCE = Path(__file__).resolve().parent.parent / ".sot" / "term"
+DEFAULT_SOURCE = Path(__file__).resolve().parent / "fixtures" / "termdb"
 ECMA = "ecma-48-code-sequence.txt"
 VT = "vt100.txt"
 TI = "Terminfo.man"
@@ -473,7 +473,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("output", type=Path, help="SQLite file to create or atomically replace")
     parser.add_argument("--source-dir", type=Path, default=DEFAULT_SOURCE,
-                        help="source directory (default: the repository's .sot/term)")
+                        help="source directory (default: the repository's tools/fixtures/termdb)")
     args = parser.parse_args()
     try:
         output = args.output.parent.resolve() / args.output.name
