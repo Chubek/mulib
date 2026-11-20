@@ -10,11 +10,21 @@ credential and runs entirely in process; it does not start a public server.
 ## ImTUI, Termscript, and TermDB
 
 Run `make check-imtui check-termscript check-termdb`. These suites test cell
-frames, input, rendering, the Mune bridge, Termscript evaluation and C11
-generation, and Python-to-C SQLite compatibility. They use no external C
+frames, input, rendering, the Mune bridge, Termscript evaluation and chord
+dispatch, and Python-to-C SQLite compatibility. `make check-capasm` checks
+XMacIR, C90 emission and the bundled m4 rewrites. The Termscript suite
+builds generated C separately in strict C90 mode, links it with the C11
+runtime, and checks optional tool stages. These use no external C
 libraries. Tests use the supplied `.sot/term` documents when available and
 include a small synthetic corpus for clean checkouts. Use
 `MULIB_SANITIZERS=ON` in CMake for the corresponding ASan/UBSan suites.
+
+## FinPRED kernels
+
+`make check-finpred` uses canonical Money, verifies all 17 bounded kernels,
+and runs the hospitality and market examples. See the
+[FinPRED evidence and limits](../manual/finpred.md) for the strict compiler
+matrix, independent oracles, and separate On1x admission status.
 
 ## SSH kernels
 

@@ -1,0 +1,20 @@
+m4_dnl XMacIR swap elimination. Input must be validated.
+m4_define(`XM_line', ``XM_$1($2)'
+')m4_dnl
+m4_dnl State is plain, dup (last output is DUP), or swap (one pending SWAP).
+m4_define(`XM_set', `m4_define(`XM_state', `$1')')m4_dnl
+XM_set(`plain')m4_dnl
+m4_define(`XM_flush', `m4_ifelse(XM_state, `swap', `XM_line(`SWAP', `')')XM_set(`plain')')m4_dnl
+m4_define(`XM_plain', `m4_define(`XM_$1', `XM_flush()XM_line(`$1', `')m4_dnl')')m4_dnl
+m4_define(`XM_commutative', `m4_define(`XM_$1', `XM_set(`plain')XM_line(`$1', `')m4_dnl')')m4_dnl
+m4_define(`XM_U32', `XM_line(`U32', `$1')m4_dnl')m4_dnl
+m4_define(`XM_PUSH', `XM_flush()XM_line(`PUSH', `$1')m4_dnl')m4_dnl
+XM_commutative(`ADD')XM_commutative(`MUL')XM_commutative(`AND')XM_commutative(`OR')XM_commutative(`XOR')m4_dnl
+XM_plain(`SUB')XM_plain(`DROP')XM_plain(`RET')m4_dnl
+m4_define(`XM_DUP', `XM_flush()XM_line(`DUP', `')XM_set(`dup')m4_dnl')m4_dnl
+m4_dnl A swap after DUP is a no-op; two pending swaps cancel each other.
+m4_define(`XM_SWAP', `m4_ifelse(XM_state, `dup', `', XM_state, `swap', `XM_set(`plain')',
+`XM_set(`swap')')m4_dnl')m4_dnl
+m4_define(`XM_BLOB', `XM_line(`BLOB', `$1,$2,$3,$4')m4_dnl')m4_dnl
+m4_define(`XM_BYTES', `XM_line(`BYTES', `$1')m4_dnl')m4_dnl
+m4_define(`XM_END', `XM_line(`END', `')m4_dnl')m4_dnl

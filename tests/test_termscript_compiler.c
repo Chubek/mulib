@@ -3,8 +3,10 @@
 #define MULIB_IMPL_UTF8
 #define MULIB_IMPL_STRBUF
 #define MULIB_IMPL_TERMSCRIPT_AST
-#define MULIB_IMPL_TERMSCRIPT_COMPILER
-#include "mulib-termscript-compiler.h"
+#define MULIB_IMPL_XMACIR
+#define MULIB_IMPL_CAPASM
+#define MULIB_IMPL_TERMSCRIPT_CAPASM
+#include "mulib-termscript-capasm.h"
 #endif
 #define MULIB_IMPL_TERMSCRIPT_RUNTIME
 #include "mulib-termscript-runtime.h"
@@ -37,6 +39,7 @@ capture(mulib_termscript_vm_t *vm, void *userdata, const char *word, size_t n,
   const char *name = v.kind == MULIB_TERMSCRIPT_VALUE_INTEGER ? "int"
     : v.kind == MULIB_TERMSCRIPT_VALUE_STRING ? "str"
     : v.kind == MULIB_TERMSCRIPT_VALUE_COMMAND ? "cmd"
+    : v.kind == MULIB_TERMSCRIPT_VALUE_CHARACTER ? "char"
     : v.kind == MULIB_TERMSCRIPT_VALUE_ESCAPE ? "esc" : "unexpected";
   int len = snprintf(trace->output + trace->length, sizeof(trace->output) - trace->length,
                      "%s:%" PRId64 ":", name, v.integer);
@@ -72,9 +75,22 @@ check_result(mulib_termscript_vm_t *vm, const trace_t *trace)
                                "str:0:610a00225c3f3f2ff09f9982\n"
                                "int:2:\n"
                                "cmd:0:7469636b60\n"
-                               "int:11:\n"
-                               "int:24:\n"
-                               "esc:0:435550\n"));
+                                "int:11:\n"
+                                "int:24:\n"
+                                "int:9:\n"
+                                "char:27:1b\n"
+                                "esc:0:435550\n"));
+}
+
+static void
+check_retained_key(mulib_termscript_vm_t *vm, const trace_t *trace)
+{
+  mulib_termscript_error_t e;
+  assert(!mulib_termscript_key(vm, "alt+ctrl+F1", 11, &e));
+  const size_t before = trace->length;
+  assert(mulib_termscript_key(vm, "ctrl+alt+F1", 11, &e) == 1 && !e.message);
+  assert(!strcmp(trace->output + before, "int:42:\n"));
+  assert(mulib_termscript_stack_size(vm) == 1);
 }
 
 #ifdef MULIB_TERMSCRIPT_TEST_GENERATED
@@ -94,6 +110,7 @@ main(void)
     return 1;
   }
   check_result(&vm, &trace);
+  check_retained_key(&vm, &trace);
   fputs(trace.output, stdout);
   mulib_termscript_vm_clear(&vm);
   return 0;
@@ -121,7 +138,10 @@ static const char fixture[] =
   "%else:\n"
   "  100 capture\n"
   "%end:\n"
+  "<a: [2, 9]> .a at 1 at capture\n"
+  "#\\escape capture\n"
   "[[ CUP ]] emit\n"
+  "[[ Alt, F1, !Ctrl ]] { 6 7 mul capture } bind\n"
   "-9223372036854775808\n";
 
 static void
@@ -135,6 +155,7 @@ interpret(const mulib_termscript_program_t *p, trace_t *trace)
     abort();
   }
   check_result(&vm, trace);
+  check_retained_key(&vm, trace);
   mulib_termscript_vm_clear(&vm);
 }
 
@@ -186,7 +207,7 @@ deep_ast(void)
   }
   char *out = NULL;
   assert(mulib_termscript_emit_c11(&ast, "deep_fixture", &out, NULL));
-  assert(strstr(out, "0, mulib_termscript_nodes, 4096, 0"));
+  assert(strstr(out, "deep_fixture(") && strstr(out, "mulib_termscript_run_capsule"));
   free(out);
   mulib_termscript_program_free(&ast);
 }
@@ -246,7 +267,7 @@ negative(void)
     assert(out == sentinel && e.offset == bad[i].offset && e.message && strstr(e.message, bad[i].message));
   }
   assert(mulib_termscript_compile_c11(NULL, 0, "empty_fixture", &out, &e));
-  assert(!e.message && strstr(out, "NULL, 0, SIZE_MAX"));
+  assert(!e.message && strstr(out, "#include <stddef.h>") && strstr(out, "empty_fixture("));
   free(out);
   char longest[65];
   memset(longest, 't', sizeof longest);
@@ -266,6 +287,140 @@ negative(void)
   same_failure("2 3 + 4 * node", "value has no source node");
 }
 
+static unsigned char *
+wire(const char *text, size_t *length)
+{
+  mulib_termscript_program_t src = { 0 }, canonical = { 0 };
+  assert(mulib_termscript_parse(text, strlen(text), &src, NULL));
+  assert(mulib_termscript_canonicalize(&src, &canonical, NULL));
+  unsigned char *bytes = mulib_termscript_compiler_encode_(&canonical, length, NULL);
+  assert(bytes);
+  mulib_termscript_program_free(&src);
+  mulib_termscript_program_free(&canonical);
+  return bytes;
+}
+
+static void
+capsule(void)
+{
+  size_t n;
+  unsigned char *bytes = wire("99 capture { 8 } \"x\" %if-term: xterm\n%end:\n", &n);
+  mulib_termscript_vm_t vm;
+  mulib_termscript_error_t e;
+  trace_t trace = { { 0 }, 0 };
+  setup(&vm, &trace);
+  for (size_t i = 0; i < n; ++i)
+    assert(!mulib_termscript_run_capsule(&vm, &e, bytes, i) && e.message);
+  assert(!mulib_termscript_run_capsule(&vm, &e, NULL, n) && e.message);
+
+  static const size_t corrupt[] = {
+    5, 15, 23, 24, /* version, count, pool, root */
+    MULIB_TSCAP_HEADER_ + 2 * MULIB_TSCAP_NODE_ + MULIB_TSCAP_FIRST_,
+    MULIB_TSCAP_HEADER_ + 3 * MULIB_TSCAP_NODE_ + MULIB_TSCAP_PARENT_,
+    MULIB_TSCAP_HEADER_ + 4 * MULIB_TSCAP_NODE_ + MULIB_TSCAP_KIND_,
+    MULIB_TSCAP_HEADER_ + 4 * MULIB_TSCAP_NODE_ + MULIB_TSCAP_LENGTH_,
+    MULIB_TSCAP_HEADER_ + 4 * MULIB_TSCAP_NODE_ + MULIB_TSCAP_OFFSET_,
+    MULIB_TSCAP_HEADER_ + 4 * MULIB_TSCAP_NODE_ + MULIB_TSCAP_NEXT_ + 7,
+    MULIB_TSCAP_HEADER_ + 4 * MULIB_TSCAP_NODE_ + MULIB_TSCAP_INTEGER_
+  };
+  for (size_t i = 0; i < sizeof corrupt / sizeof *corrupt; ++i) {
+    bytes[corrupt[i]] ^= 0x80;
+    assert(!mulib_termscript_run_capsule(&vm, &e, bytes, n));
+    assert(e.message && strstr(e.message, "invalid TermScript capsule"));
+    bytes[corrupt[i]] ^= 0x80;
+  }
+  bytes[n - 5] = '!';
+  assert(!mulib_termscript_run_capsule(&vm, &e, bytes, n) && e.message);
+  bytes[n - 5] = '%';
+  const size_t string = MULIB_TSCAP_HEADER_ + 4 * MULIB_TSCAP_NODE_;
+  const size_t x = n - (size_t)mulib_tscap_read_(bytes + 16)
+    + (size_t)mulib_tscap_read_(bytes + string + MULIB_TSCAP_OFFSET_);
+  assert(bytes[x] == 'x');
+  bytes[x] = 0xf4;
+  assert(!mulib_termscript_run_capsule(&vm, &e, bytes, n) && e.offset == x);
+  bytes[x] = '\\';
+  assert(!mulib_termscript_run_capsule(&vm, &e, bytes, n) && e.offset == x);
+  bytes[x] = 'x';
+  assert(!trace.length && !mulib_termscript_stack_size(&vm));
+  assert(mulib_termscript_run_capsule(&vm, &e, bytes, n) && !e.message);
+  assert(!strcmp(trace.output, "int:99:\n"));
+  free(bytes);
+  mulib_termscript_vm_clear(&vm);
+
+  /* A failed run can still leave a quotation bound. Its program must
+   * survive the capsule buffer and remain valid until VM clear. */
+  bytes = wire("[[Shift, F2]] { \"later\" } bind no-such-word", &n);
+  mulib_termscript_vm_init(&vm, NULL);
+  assert(!mulib_termscript_run_capsule(&vm, &e, bytes, n) && e.message);
+  memset(bytes, 0, n);
+  free(bytes);
+  assert(mulib_termscript_key(&vm, "shift+F2", 8, &e) == 1 && !e.message);
+  const mulib_termscript_value_t *value = mulib_termscript_peek(&vm, 0);
+  assert(value && value->program && value->kind == MULIB_TERMSCRIPT_VALUE_STRING);
+  assert(value->length == 5 && !memcmp(value->text, "later", 5));
+  mulib_termscript_vm_clear(&vm);
+
+  bytes = wire("-9223372036854775808 -1 1 9223372036854775807", &n);
+  mulib_termscript_vm_init(&vm, NULL);
+  assert(mulib_termscript_run_capsule(&vm, &e, bytes, n) && !e.message);
+  const int64_t expected[] = { INT64_MAX, 1, -1, INT64_MIN };
+  for (size_t i = 0; i < sizeof expected / sizeof *expected; ++i) {
+    const mulib_termscript_value_t *integer = mulib_termscript_peek(&vm, i);
+    assert(integer && integer->kind == MULIB_TERMSCRIPT_VALUE_INTEGER
+           && integer->integer == expected[i]);
+  }
+  mulib_termscript_vm_clear(&vm);
+  free(bytes);
+
+  bytes = wire("", &n);
+  const mulib_termscript_limits_t limits = { 0, 0, 512, 0 };
+  mulib_termscript_vm_init(&vm, &limits);
+  size_t runs = 0;
+  while (runs < 64 && mulib_termscript_run_capsule(&vm, &e, bytes, n)) ++runs;
+  assert(runs > 0 && runs < 64 && e.message && strstr(e.message, "allocation limit"));
+  mulib_termscript_vm_clear(&vm);
+  assert(mulib_termscript_run_capsule(&vm, NULL, bytes, n));
+  mulib_termscript_vm_clear(&vm);
+  free(bytes);
+}
+
+static int
+record_build(void *arg, mulib_capasm_stage_t stage, const mulib_capasm_tool_t *tool,
+             const char *input, size_t length, char **out, size_t *n, mulib_xmacir_error_t *error)
+{
+  static const char artifact[] = { 'A', '\0', 'S', 'M' };
+  size_t *calls = (size_t *)arg;
+  assert(stage == MULIB_CAPASM_COMPILE && !strcmp(tool->executable, "mock-cc"));
+  assert(length && strstr(input, "#include <stddef.h>") && strstr(input, "options_fixture("));
+  ++*calls;
+  if (*calls == 2) {
+    error->offset = 71;
+    error->message = "mock compiler failure";
+    return 0;
+  }
+  *out = (char *)malloc(sizeof artifact);
+  assert(*out);
+  memcpy(*out, artifact, sizeof artifact);
+  *n = sizeof artifact;
+  return 1;
+}
+
+static void
+options(void)
+{
+  const mulib_capasm_tool_t tool = { "compiler", "mock-cc", NULL, 0 };
+  size_t calls = 0, n = 75;
+  const mulib_capasm_options_t opts = { .compiler = &tool, .run = record_build, .user = &calls };
+  char sentinel[] = "unchanged", *out = sentinel;
+  mulib_termscript_error_t e;
+  assert(mulib_termscript_compile("1", 1, "options_fixture", &opts, &out, &n, &e));
+  assert(calls == 1 && !e.message && n == 4 && !memcmp(out, "A\0SM\0", 5));
+  free(out);
+  out = sentinel;
+  assert(!mulib_termscript_compile("1", 1, "options_fixture", &opts, &out, &n, &e));
+  assert(calls == 2 && out == sentinel && n == 4 && e.offset == 71 && e.message);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -274,7 +429,11 @@ main(int argc, char **argv)
   assert(argc <= 2);
   if (argc == 2 && !strcmp(argv[1], "--emit")) {
     char *output = NULL;
-    assert(mulib_termscript_compile_c11(fixture, sizeof fixture - 1, "compiler_fixture", &output, &e));
+    size_t length = 0;
+    assert(mulib_termscript_compile(fixture, sizeof fixture - 1, "compiler_fixture",
+                                     NULL, &output, &length, &e));
+    assert(length == strlen(output));
+    assert(!strstr(output, "mulib-termscript-runtime.h") && !strstr(output, "INT64_"));
     fputs(output, stdout);
     free(output);
     return 0;
@@ -294,6 +453,8 @@ main(int argc, char **argv)
     canonical();
     deep_ast();
     negative();
+    capsule();
+    options();
   }
   mulib_termscript_program_free(&opt);
   mulib_termscript_program_free(&src);

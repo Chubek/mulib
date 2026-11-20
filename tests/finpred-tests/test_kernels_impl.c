@@ -1,0 +1,39 @@
+/* One implementation TU for all 17 archive kernels and canonical dependencies.
+ * The test runner selects Money with -include and defines its switch when
+ * running against the canonical implementation. */
+#define MULIB_IMPL_SHA
+#define MULIB_IMPL_CONTRACT
+#define MULIB_IMPL_RATEQUOTE
+#define MULIB_IMPL_STAYMATCH
+#define MULIB_IMPL_COMPSET
+#define MULIB_IMPL_PRICECURVE
+#define MULIB_IMPL_ASOF
+#define MULIB_IMPL_DECISIONTRACE
+#define MULIB_IMPL_RULEEVAL
+#define MULIB_IMPL_BACKTEST
+#define MULIB_IMPL_MARKETQUOTE
+#define MULIB_IMPL_TIMESERIES
+#define MULIB_IMPL_CORPORATE_ACTIONS
+#define MULIB_IMPL_FXRATE
+#define MULIB_IMPL_PORTFOLIO
+#define MULIB_IMPL_RISK
+#define MULIB_IMPL_ORDERBOOK
+#define MULIB_IMPL_ORDERINTENT
+#include "mulib-sha.h"
+#include "mulib-contract.h"
+#include "mulib-ratequote.h"
+#include "mulib-staymatch.h"
+#include "mulib-compset.h"
+#include "mulib-pricecurve.h"
+#include "mulib-asof.h"
+#include "mulib-decisiontrace.h"
+#include "mulib-ruleeval.h"
+#include "mulib-backtest.h"
+#include "mulib-marketquote.h"
+#include "mulib-timeseries.h"
+#include "mulib-corporate-actions.h"
+#include "mulib-fxrate.h"
+#include "mulib-portfolio.h"
+#include "mulib-risk.h"
+#include "mulib-orderbook.h"
+#include "mulib-orderintent.h"

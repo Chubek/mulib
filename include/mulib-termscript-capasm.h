@@ -1,13 +1,14 @@
-/** @file mulib-termscript-compiler.h
- * @brief Canonical TermScript AST and ISO C11 emission.
+/** @file mulib-termscript-capasm.h
+ * @brief Canonical TermScript AST and CAPASM-backed ANSI C emission.
  *
- * Define MULIB_IMPL_TERMSCRIPT_COMPILER in one translation unit and link the
- * TermScript AST and strbuf implementations. Compile the emitted C separately
- * and link it against the TermScript runtime, not the compiler.
+ * Define MULIB_IMPL_TERMSCRIPT_CAPASM in one translation unit and provide the
+ * TermScript AST, strbuf, and CAPASM implementations. Compile the emitted unit
+ * as ISO C90 and link it against the normal TermScript runtime, not the compiler.
  */
-#ifndef MULIB_TERMSCRIPT_COMPILER_H
-#define MULIB_TERMSCRIPT_COMPILER_H
+#ifndef MULIB_TERMSCRIPT_CAPASM_H
+#define MULIB_TERMSCRIPT_CAPASM_H
 #include "mulib-termscript-ast.h"
+#include "mulib-capasm.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -23,22 +24,35 @@ int mulib_termscript_canonicalize(const mulib_termscript_program_t *program,
                                   mulib_termscript_program_t *canonical,
                                   mulib_termscript_error_t *error);
 
-/* Emit a definition of
- *     int entry(mulib_termscript_vm_t *, mulib_termscript_error_t *);
- * into a malloc-owned, NUL-terminated string. The output pointer is assigned
- * only on success; free the returned string with free(). The entry must be a
- * nonreserved ASCII C identifier beginning with a letter, at most 63 bytes,
- * outside the MuLIB namespace and not conflicting with names in the embedding
- * application.
- * The generated unit embeds an optimized executable AST, including the
- * checked lexical control forms. The runtime executes it by tree walk;
- * operations and branches are not inlined into native C. It neither reads
- * nor parses the compiler input at run time. */
+/* Emit an ISO C90 definition of
+ *     int entry(struct mulib_termscript_vm *, struct mulib_termscript_error *);
+ * in a malloc-owned, NUL-terminated buffer; free it with free(). CAPASM
+ * options can instead select trusted host tool stages, whose final artifact
+ * may contain embedded NUL bytes, or add declaration headers that require
+ * a later C dialect than the generated body. Both outputs stay unchanged on failure.
+ * output is required; output_length is optional and excludes the appended
+ * terminator. NULL options selects pure C90. A capsule can encode up to
+ * 65536 nodes and a 2 MiB canonical byte pool, subject to CAPASM limits.
+ * entry must be a nonreserved ASCII C identifier beginning with a letter,
+ * at most 63 bytes, and neither in the MuLIB namespace nor conflicting with
+ * names in the embedding application.
+ *
+ * The output embeds a versioned, optimized executable AST, not source to
+ * parse or native operations to execute. The runtime walks the decoded tree. */
+int mulib_termscript_emit_ansi(const mulib_termscript_program_t *program,
+                               const char *entry, const mulib_capasm_options_t *options,
+                               char **output, size_t *output_length, mulib_termscript_error_t *error);
+
+/* Parse source, then emit as above. Source is borrowed for this call only. */
+int mulib_termscript_compile(const char *source, size_t length, const char *entry,
+                             const mulib_capasm_options_t *options, char **output,
+                             size_t *output_length, mulib_termscript_error_t *error);
+
+/* Deprecated source compatibility names: these now emit ANSI C (ISO C90)
+ * with default CAPASM options, not the old C11 emitter. */
 int mulib_termscript_emit_c11(const mulib_termscript_program_t *program,
                               const char *entry, char **output,
                               mulib_termscript_error_t *error);
-
-/* Parse source, then emit as above. Source is borrowed for this call only. */
 int mulib_termscript_compile_c11(const char *source, size_t length, const char *entry,
                                  char **output, mulib_termscript_error_t *error);
 
@@ -47,14 +61,13 @@ int mulib_termscript_compile_c11(const char *source, size_t length, const char *
 #endif
 #endif
 
-#if defined(MULIB_IMPL_TERMSCRIPT_COMPILER) && !defined(MULIB_TERMSCRIPT_COMPILER_IMPLEMENTED)
-#define MULIB_TERMSCRIPT_COMPILER_IMPLEMENTED
+#if defined(MULIB_IMPL_TERMSCRIPT_CAPASM) && !defined(MULIB_TERMSCRIPT_CAPASM_IMPLEMENTED)
+#define MULIB_TERMSCRIPT_CAPASM_IMPLEMENTED
+#include "mulib-termscript-ast.h" /* Private chord scanner. */
 #include "mulib-strbuf.h"
-#include <inttypes.h>
-#include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "detail/mulib-termscript-capsule.inc"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -89,47 +102,6 @@ mulib_termscript_compiler_fail_(mulib_termscript_error_t *error, size_t offset,
   return 0;
 }
 
-static const char *
-mulib_termscript_compiler_kind_(mulib_termscript_kind_t kind)
-{
-  switch (kind) {
-  case MULIB_TERMSCRIPT_WORD: return "WORD";
-  case MULIB_TERMSCRIPT_INTEGER: return "INTEGER";
-  case MULIB_TERMSCRIPT_STRING: return "STRING";
-  case MULIB_TERMSCRIPT_COMMAND: return "COMMAND";
-  case MULIB_TERMSCRIPT_CHARACTER: return "CHARACTER";
-  case MULIB_TERMSCRIPT_SYMBOL: return "SYMBOL";
-  case MULIB_TERMSCRIPT_ARRAY_SYMBOL: return "ARRAY_SYMBOL";
-  case MULIB_TERMSCRIPT_RECORD_SYMBOL: return "RECORD_SYMBOL";
-  case MULIB_TERMSCRIPT_PARAMETER: return "PARAMETER";
-  case MULIB_TERMSCRIPT_KEY: return "KEY";
-  case MULIB_TERMSCRIPT_BLOCK: return "BLOCK";
-  case MULIB_TERMSCRIPT_TUPLE: return "TUPLE";
-  case MULIB_TERMSCRIPT_ARRAY: return "ARRAY";
-  case MULIB_TERMSCRIPT_RECORD: return "RECORD";
-  case MULIB_TERMSCRIPT_FIELD: return "FIELD";
-  case MULIB_TERMSCRIPT_DIRECTIVE: return "DIRECTIVE";
-  case MULIB_TERMSCRIPT_ESCAPE: return "ESCAPE";
-  }
-  return NULL;
-}
-
-static int
-mulib_termscript_compiler_children_(mulib_termscript_kind_t kind)
-{
-  return kind == MULIB_TERMSCRIPT_BLOCK || kind == MULIB_TERMSCRIPT_TUPLE
-    || kind == MULIB_TERMSCRIPT_ARRAY || kind == MULIB_TERMSCRIPT_RECORD
-    || kind == MULIB_TERMSCRIPT_FIELD;
-}
-
-static int
-mulib_termscript_compiler_text_(mulib_termscript_kind_t kind)
-{
-  return kind != MULIB_TERMSCRIPT_INTEGER && kind != MULIB_TERMSCRIPT_BLOCK
-    && kind != MULIB_TERMSCRIPT_TUPLE && kind != MULIB_TERMSCRIPT_ARRAY
-    && kind != MULIB_TERMSCRIPT_RECORD && kind != MULIB_TERMSCRIPT_CHARACTER;
-}
-
 static int
 mulib_termscript_compiler_match_(const char *text, size_t len, const char *name)
 {
@@ -147,12 +119,13 @@ static const char *
 mulib_termscript_compiler_alias_(const char *text, size_t len)
 {
   /* Only reserved words with identical runtime behavior. In particular,
-   * import/use both consult the host with their original spelling. */
+   * import/use consult the host with their original spelling and `loop`
+   * participates in adjacent syntax. */
   static const struct { const char *alias, *name; } names[] = {
     { "+", "add" }, { "-", "sub" }, { "*", "mul" }, { "/", "div" },
     { "=", "eq?" }, { "!=", "ne?" }, { "<", "lt?" }, { "<=", "le?" },
     { ">", "gt?" }, { ">=", "ge?" }, { "field", "at" }, { "set-field", "set-at" },
-    { "length", "len" }, { "call", "invoke" }, { "loop", "while" },
+    { "length", "len" }, { "call", "invoke" },
     { "state", "mode" }, { "state?", "mode?" }
   };
   for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); ++i)
@@ -175,31 +148,6 @@ mulib_termscript_compiler_is_(const mulib_termscript_program_t *p, size_t index,
   size_t len = node->length;
   while (len && text[len - 1] == ';') --len;
   return mulib_termscript_compiler_match_(text, len, name);
-}
-
-static int
-mulib_termscript_compiler_term_sep_(char c)
-{
-  return c == ' ' || (c >= '\t' && c <= '\r') || c == ',' || c == '|';
-}
-
-static int
-mulib_termscript_compiler_term_valid_(const char *text, size_t len)
-{
-  size_t count = 0;
-  for (size_t i = 0; i < len;) {
-    while (i < len && mulib_termscript_compiler_term_sep_(text[i])) ++i;
-    if (i == len) break;
-    ++count;
-    if (text[i] == '"') {
-      do { ++i; } while (i < len && text[i] != '"');
-      if (i == len || (++i < len && !mulib_termscript_compiler_term_sep_(text[i])))
-        return 0;
-    } else {
-      do { ++i; } while (i < len && !mulib_termscript_compiler_term_sep_(text[i]));
-    }
-  }
-  return count != 0;
 }
 
 static const char *const mulib_termscript_compiler_operations_[] = {
@@ -349,9 +297,9 @@ mulib_termscript_canonicalize(const mulib_termscript_program_t *program,
     }
     const mulib_termscript_node_t *input = &program->nodes[i];
     offset = input->offset;
-    if (!mulib_termscript_compiler_kind_(input->kind)
+    if ((input->kind != MULIB_TERMSCRIPT_CHORD && mulib_tscap_wire_kind_(input->kind) < 0)
         || offset > program->length || input->length > program->length - offset
-        || (input->first != SIZE_MAX && !mulib_termscript_compiler_children_(input->kind))) {
+        || (input->first != SIZE_MAX && !mulib_tscap_children_(input->kind))) {
       problem = "invalid AST node";
       goto done;
     }
@@ -373,7 +321,7 @@ mulib_termscript_canonicalize(const mulib_termscript_program_t *program,
     }
     if (input->kind == MULIB_TERMSCRIPT_DIRECTIVE) {
       if (mulib_termscript_compiler_prefix_(text, len, "%if-term:")) {
-        if (!mulib_termscript_compiler_term_valid_(text + 9, len - 9)) {
+        if (!mulib_tscap_term_valid_(text + 9, len - 9)) {
           problem = "invalid %if-term: operand";
           goto done;
         }
@@ -413,11 +361,9 @@ mulib_termscript_canonicalize(const mulib_termscript_program_t *program,
         goto done;
       }
       /* These tokens participate in spelling-sensitive adjacent syntax. */
-      int loop_marker = after_block && mulib_termscript_compiler_is_(program, prev2, "while")
-        && mulib_termscript_compiler_match_(text, len, "loop");
       int parameter_pair = prev != SIZE_MAX && program->nodes[prev].kind == MULIB_TERMSCRIPT_PARAMETER
         && input->next < program->count && program->nodes[input->next].kind == MULIB_TERMSCRIPT_PARAMETER;
-      if (!loop_marker && !parameter_pair) {
+      if (!parameter_pair) {
         const char *alias = mulib_termscript_compiler_alias_(text, len);
         if (alias) {
           text = alias;
@@ -446,9 +392,21 @@ mulib_termscript_canonicalize(const mulib_termscript_program_t *program,
         }
       }
     }
+    mulib_termscript_kind_t kind = input->kind;
+    char key[MULIB_TERMSCRIPT_CHORD_KEY_LIMIT_ + 1];
+    if (kind == MULIB_TERMSCRIPT_CHORD) {
+      size_t consumed;
+      if (!mulib_termscript_chord_(text, len, &consumed, key, &len, NULL)
+          || consumed != input->length) {
+        problem = "invalid chord AST";
+        goto done;
+      }
+      kind = MULIB_TERMSCRIPT_KEY;
+      text = key;
+    }
     if (!mulib_termscript_compiler_flush_(&result, &pool, frame, values, &constants)
-        || !mulib_termscript_compiler_append_node_(&result, &pool, frame, input->kind, text,
-                                                    mulib_termscript_compiler_text_(input->kind)
+        || !mulib_termscript_compiler_append_node_(&result, &pool, frame, kind, text,
+                                                     mulib_tscap_text_(kind)
                                                     ? len : 0,
                                                     input->kind == MULIB_TERMSCRIPT_CHARACTER
                                                     ? input->integer : 0))
@@ -521,112 +479,112 @@ mulib_termscript_compiler_entry_(const char *entry)
   return 1;
 }
 
-static int
-mulib_termscript_compiler_appendf_(mulib_strbuf_t *buffer, const char *format, ...)
+static unsigned char *
+mulib_termscript_compiler_encode_(const mulib_termscript_program_t *p, size_t *size,
+                                  mulib_termscript_error_t *error)
 {
-  /* Callers interpolate only bounded identifiers or integer constants. */
-  char line[256];
-  va_list args;
-  va_start(args, format);
-  int n = vsnprintf(line, sizeof(line), format, args);
-  va_end(args);
-  return n >= 0 && (size_t)n < sizeof(line)
-    && mulib_strbuf_append_n(buffer, line, (size_t)n);
-}
-
-static int
-mulib_termscript_compiler_index_(mulib_strbuf_t *buffer, size_t i)
-{
-  return i == SIZE_MAX ? mulib_strbuf_append(buffer, "SIZE_MAX")
-    : mulib_termscript_compiler_appendf_(buffer, "%zu", i);
-}
-
-static int
-mulib_termscript_compiler_integer_(mulib_strbuf_t *buffer, int64_t value)
-{
-  if (value == INT64_MIN) return mulib_strbuf_append(buffer, "INT64_MIN");
-  if (value < 0) return mulib_termscript_compiler_appendf_(buffer, "-INT64_C(%" PRId64 ")", -value);
-  return mulib_termscript_compiler_appendf_(buffer, "INT64_C(%" PRId64 ")", value);
-}
-
-static int
-mulib_termscript_compiler_emit_(const mulib_termscript_program_t *program,
-                                const char *entry, mulib_strbuf_t *buffer)
-{
-  if (!mulib_strbuf_append(buffer,
-       "/* TermScript executable AST, generated by MuLIB. */\n"
-       "#include \"mulib-termscript-runtime.h\"\n\n"
-       "static unsigned char mulib_termscript_bytes[] = {\n  "))
-    return 0;
-  /* Numeric byte initializers preserve the exact data without quotes, C
-   * escape ambiguity, trigraphs, or limits on C string literal length. */
-  for (size_t i = 0; i < program->length; ++i) {
-    if (!mulib_termscript_compiler_appendf_(buffer, "0x%02x,",
-          (unsigned)(unsigned char)program->source[i])
-        || !mulib_strbuf_append(buffer, i % 16 == 15 ? "\n  " : " "))
-      return 0;
+  if (p->count > MULIB_TSCAP_MAX_NODES_ || p->length > MULIB_TSCAP_MAX_POOL_
+      || !mulib_tscap_size_(p->count, p->length, size)) {
+    mulib_termscript_compiler_fail_(error, 0, "TermScript capsule size limit");
+    return NULL;
   }
-  if (!mulib_strbuf_append(buffer, "0\n};\n")) return 0;
-  if (program->count) {
-    if (!mulib_strbuf_append(buffer, "static mulib_termscript_node_t mulib_termscript_nodes[] = {\n"))
-      return 0;
-    for (size_t i = 0; i < program->count; ++i) {
-      const mulib_termscript_node_t *node = &program->nodes[i];
-      if (!mulib_termscript_compiler_appendf_(buffer,
-           "  { MULIB_TERMSCRIPT_%s, %zu, %zu, ",
-           mulib_termscript_compiler_kind_(node->kind), node->offset, node->length)
-          || !mulib_termscript_compiler_index_(buffer, node->first)
-          || !mulib_strbuf_append(buffer, ", ")
-          || !mulib_termscript_compiler_index_(buffer, node->next)
-          || !mulib_strbuf_append(buffer, ", ")
-          || !mulib_termscript_compiler_integer_(buffer, node->integer)
-          || !mulib_strbuf_append(buffer, " },\n"))
-        return 0;
+  unsigned char *bytes = (unsigned char *)malloc(*size);
+  if (!bytes) {
+    mulib_termscript_compiler_fail_(error, 0, "out of memory");
+    return NULL;
+  }
+  memcpy(bytes, mulib_tscap_magic_, sizeof mulib_tscap_magic_);
+  mulib_tscap_write_(bytes + 8, p->count);
+  mulib_tscap_write_(bytes + 16, p->length);
+  mulib_tscap_write_(bytes + 24, mulib_tscap_link_(p->root));
+  size_t parent = SIZE_MAX;
+  unsigned char *row = bytes + MULIB_TSCAP_HEADER_;
+  for (size_t i = 0; i < p->count; ++i, row += MULIB_TSCAP_NODE_) {
+    const mulib_termscript_node_t *node = &p->nodes[i];
+    row[MULIB_TSCAP_KIND_] = (unsigned char)mulib_tscap_wire_kind_(node->kind);
+    mulib_tscap_write_(row + MULIB_TSCAP_OFFSET_, node->offset);
+    mulib_tscap_write_(row + MULIB_TSCAP_LENGTH_, node->length);
+    mulib_tscap_write_(row + MULIB_TSCAP_FIRST_, mulib_tscap_link_(node->first));
+    mulib_tscap_write_(row + MULIB_TSCAP_NEXT_, mulib_tscap_link_(node->next));
+    mulib_tscap_write_(row + MULIB_TSCAP_PARENT_, mulib_tscap_link_(parent));
+    mulib_tscap_write_(row + MULIB_TSCAP_INTEGER_, (uint64_t)node->integer);
+    if (node->first != SIZE_MAX) parent = i;
+    else {
+      size_t next = node->next;
+      while (next == SIZE_MAX && parent != SIZE_MAX) {
+        next = p->nodes[parent].next;
+        parent = mulib_tscap_index_(mulib_tscap_read_(
+          mulib_tscap_row_(bytes, parent) + MULIB_TSCAP_PARENT_));
+      }
     }
-    if (!mulib_strbuf_append(buffer, "};\n")) return 0;
   }
-  return mulib_termscript_compiler_appendf_(buffer,
-         "static const mulib_termscript_program_t mulib_termscript_program = {\n"
-         "  (char *)mulib_termscript_bytes, %zu, %s, %zu, ",
-         program->length, program->count ? "mulib_termscript_nodes" : "NULL", program->count)
-    && mulib_termscript_compiler_index_(buffer, program->root)
-    && mulib_termscript_compiler_appendf_(buffer,
-         "\n};\n\nint %s(mulib_termscript_vm_t *, mulib_termscript_error_t *);\n\n", entry)
-    && mulib_termscript_compiler_appendf_(buffer,
-         "int\n%s(mulib_termscript_vm_t *vm, mulib_termscript_error_t *error)\n"
-         "{\n  return mulib_termscript_run(vm, &mulib_termscript_program, error);\n}\n", entry);
+  memcpy(row, p->source, p->length);
+  size_t count, pool, bad;
+  if (!mulib_tscap_validate_(bytes, *size, &count, &pool, &bad)) {
+    free(bytes);
+    mulib_termscript_compiler_fail_(error, bad, "invalid canonical TermScript capsule");
+    return NULL;
+  }
+  return bytes;
+}
+
+int
+mulib_termscript_emit_ansi(const mulib_termscript_program_t *program,
+                           const char *entry, const mulib_capasm_options_t *options,
+                           char **output, size_t *output_length, mulib_termscript_error_t *error)
+{
+  mulib_termscript_program_t canonical = { NULL, 0, NULL, 0, SIZE_MAX };
+  mulib_xmacir_program_t blob = { 0 };
+  mulib_xmacir_error_t capasm_error = { 0, NULL };
+  size_t result_length;
+  char *result = NULL;
+  if (!output || !mulib_termscript_compiler_entry_(entry))
+    return mulib_termscript_compiler_fail_(error, 0, "invalid C entry identifier or output");
+  if (!mulib_termscript_canonicalize(program, &canonical, error)) return 0;
+  blob.mode = MULIB_XMACIR_BLOB;
+  memcpy(blob.entry, entry, strlen(entry) + 1);
+  memcpy(blob.bridge, "mulib_termscript_run_capsule", sizeof "mulib_termscript_run_capsule");
+  memcpy(blob.context_tag, "mulib_termscript_vm", sizeof "mulib_termscript_vm");
+  memcpy(blob.error_tag, "mulib_termscript_error", sizeof "mulib_termscript_error");
+  blob.bytes = mulib_termscript_compiler_encode_(&canonical, &blob.length, error);
+  mulib_termscript_program_free(&canonical);
+  if (!blob.bytes) return 0;
+  int ok = mulib_capasm_emit(&blob, options, &result, &result_length, &capasm_error);
+  free(blob.bytes);
+  if (!ok)
+    return mulib_termscript_compiler_fail_(error, capasm_error.offset,
+                                          capasm_error.message ? capasm_error.message : "CAPASM failed");
+  *output = result;
+  if (output_length) *output_length = result_length;
+  return 1;
+}
+
+int
+mulib_termscript_compile(const char *source, size_t length, const char *entry,
+                         const mulib_capasm_options_t *options, char **output,
+                         size_t *output_length, mulib_termscript_error_t *error)
+{
+  mulib_termscript_program_t program = { NULL, 0, NULL, 0, SIZE_MAX };
+  if (!output || !mulib_termscript_compiler_entry_(entry))
+    return mulib_termscript_compiler_fail_(error, 0, "invalid C entry identifier or output");
+  if (!mulib_termscript_parse(source, length, &program, error)) return 0;
+  int ok = mulib_termscript_emit_ansi(&program, entry, options, output, output_length, error);
+  mulib_termscript_program_free(&program);
+  return ok;
 }
 
 int
 mulib_termscript_emit_c11(const mulib_termscript_program_t *program,
                           const char *entry, char **output, mulib_termscript_error_t *error)
 {
-  mulib_termscript_program_t canonical = { NULL, 0, NULL, 0, SIZE_MAX };
-  mulib_strbuf_t buffer = { NULL, 0, 0 };
-  if (!output || !mulib_termscript_compiler_entry_(entry))
-    return mulib_termscript_compiler_fail_(error, 0, "invalid C entry identifier or output");
-  if (!mulib_termscript_canonicalize(program, &canonical, error)) return 0;
-  int ok = mulib_termscript_compiler_emit_(&canonical, entry, &buffer);
-  mulib_termscript_program_free(&canonical);
-  if (!ok) {
-    mulib_strbuf_free(&buffer);
-    return mulib_termscript_compiler_fail_(error, 0, "unable to emit C11");
-  }
-  *output = buffer.data;
-  return 1;
+  return mulib_termscript_emit_ansi(program, entry, NULL, output, NULL, error);
 }
 
 int
 mulib_termscript_compile_c11(const char *source, size_t length, const char *entry,
                              char **output, mulib_termscript_error_t *error)
 {
-  mulib_termscript_program_t program = { NULL, 0, NULL, 0, SIZE_MAX };
-  if (!output || !mulib_termscript_compiler_entry_(entry))
-    return mulib_termscript_compiler_fail_(error, 0, "invalid C entry identifier or output");
-  if (!mulib_termscript_parse(source, length, &program, error)) return 0;
-  int ok = mulib_termscript_emit_c11(&program, entry, output, error);
-  mulib_termscript_program_free(&program);
-  return ok;
+  return mulib_termscript_compile(source, length, entry, NULL, output, NULL, error);
 }
 
 #ifdef __cplusplus

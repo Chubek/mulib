@@ -7,6 +7,25 @@ preserves the baseline and integrated suite totals. Current requirements are des
 Renamed reproduction commands use current repository paths; their spelling
 does not assert a fresh execution of the historical test runs.
 
+## FinPRED declaration discovery — 2026-11-21
+
+Linux x86-64; MuLIB `eeedc2aed7db341be86c6c281582d7f46b1a564b` plus this
+work; configured LibStone `af00e39efb8959a72969907704f0d473e72365b7`.
+GCC 16.2.1 and Clang 22.1.8 resources. The real Lua-enabled Exotract
+and fallback-scanner `on1xc` extracted header-only CDecl for all 17
+FinPRED kernels without granting callable symbols. StayMatch's safe,
+unsafe, and review-candidate builds rejected admission.
+
+```sh
+python3 tools/extend-kernelbind.py --check
+python3 tests/finpred-tests/test_discovery.py \
+  --on1xc "$ON1XC" --exotract "$EXOTRACT" --cc gcc
+```
+
+Use the compiler/extractor setup described below. No independent safe
+profile or production audit is asserted. See the
+[FinPRED C evidence and remaining limits](../manual/finpred.md).
+
 ## Automatic KernelBind discovery — 2026-11-20
 
 MuLIB `6ffb5441300c691e3d0a55f93add524153d66021` plus this work;

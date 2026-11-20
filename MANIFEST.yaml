@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 2027
-implemented_module_count: 1528
+module_count: 2046
+implemented_module_count: 1547
 bounded_module_count: 499
 modules:
 - name: cdd-catalogue
@@ -172,7 +172,7 @@ modules:
   manual: manual/mulib-mcp-broadcast.md
   macro: MULIB_IMPL_MCP_BROADCAST
   purpose: Authenticated public HTTPS endpoint adapter for MCP JSON-RPC with optional OAuth resource metadata.
-  dependencies: [mcp-http]
+  dependencies: [mcp-http, utf8]
   status: implemented
   test: tests/test_mcp_broadcast.c
 - name: openai-client
@@ -15718,24 +15718,42 @@ modules:
   manual: manual/mulib-termscript.md
   macro: MULIB_IMPL_TERMSCRIPT
   example: library/termscript/main.c
-  purpose: "Stack language for terminal applications and C11 interoperation."
-  dependencies: [termscript-compiler, termscript-host]
+  purpose: "Stack language for terminal applications and portable CAPASM output."
+  dependencies: [termscript-capasm, termscript-host]
   status: implemented
 - name: termscript-ast
   header: include/mulib-termscript-ast.h
   manual: manual/mulib-termscript-ast.md
   macro: MULIB_IMPL_TERMSCRIPT_AST
   example: library/termscript/main.c
-  purpose: "Parsec-backed Termscript syntax tree and symbolic escape literals."
+  purpose: "Parsec-backed Termscript syntax tree, symbolic escapes and tuple key chords."
   dependencies: [parsec, utf8]
   status: implemented
-- name: termscript-compiler
-  header: include/mulib-termscript-compiler.h
-  manual: manual/mulib-termscript-compiler.md
-  macro: MULIB_IMPL_TERMSCRIPT_COMPILER
+- name: termscript-capasm
+  header: include/mulib-termscript-capasm.h
+  manual: manual/mulib-termscript-capasm.md
+  macro: MULIB_IMPL_TERMSCRIPT_CAPASM
   example: library/termscript/main.c
-  purpose: "Canonical Termscript AST, constant folding and C11 emission."
-  dependencies: [termscript-ast, strbuf]
+  purpose: "Canonical Termscript AST lowering to XMacIR and portable CAPASM output."
+  dependencies: [capasm, strbuf, termscript-ast]
+  status: implemented
+- name: capasm
+  header: include/mulib-capasm.h
+  manual: manual/mulib-capasm.md
+  macro: MULIB_IMPL_CAPASM
+  example: examples/modules/capasm.c
+  test: tests/test_capasm.c
+  purpose: "Compile bounded XMacIR to portable ANSI C, with explicitly selected rewrite and tool stages."
+  dependencies: [xmacir]
+  status: implemented
+- name: xmacir
+  header: include/mulib-xmacir.h
+  manual: manual/mulib-xmacir.md
+  macro: MULIB_IMPL_XMACIR
+  example: examples/modules/capasm.c
+  test: tests/test_xmacir.c
+  purpose: "Bounded X Macro IR for portable stack programs and immutable data capsules."
+  dependencies: []
   status: implemented
 - name: termscript-host
   header: include/mulib-termscript-host.h
@@ -15777,7 +15795,184 @@ modules:
   purpose: "Explicit output, terminal capabilities, VTerm and POSIX termios."
   dependencies: [termfunc, termstyle, termutils]
   status: implemented
+- name: contract
+  header: include/mulib-contract.h
+  manual: manual/mulib-contract.md
+  macro: MULIB_IMPL_CONTRACT
+  purpose: "Borrowed versioned data envelopes and canonical content digests."
+  dependencies: [sha]
+  status: implemented
+  example: examples/hospitality_demo.c
+  test: tests/finpred-tests/test_p0.c
+- name: ratequote
+  header: include/mulib-ratequote.h
+  manual: manual/mulib-ratequote.md
+  macro: MULIB_IMPL_RATEQUOTE
+  purpose: "Exact full-stay Money quote normalization and dated terms."
+  dependencies: [money]
+  status: implemented
+  example: examples/hospitality_demo.c
+  test: tests/finpred-tests/test_p0.c
+- name: staymatch
+  header: include/mulib-staymatch.h
+  manual: manual/mulib-staymatch.md
+  macro: MULIB_IMPL_STAYMATCH
+  purpose: "Bounded exact top-K room bundles with dated occupancy and shared inventory."
+  dependencies: [money]
+  status: implemented
+  example: examples/hospitality_demo.c
+  test: tests/finpred-tests/test_staymatch_oracle.c
+- name: compset
+  header: include/mulib-compset.h
+  manual: manual/mulib-compset.md
+  macro: MULIB_IMPL_COMPSET
+  purpose: "Point-in-time comparable price selection, deduplication and diagnostics."
+  dependencies: [money]
+  status: implemented
+  example: examples/hospitality_demo.c
+  test: tests/finpred-tests/test_p0.c
+- name: pricecurve
+  header: include/mulib-pricecurve.h
+  manual: manual/mulib-pricecurve.md
+  macro: MULIB_IMPL_PRICECURVE
+  purpose: "Bounded monotone percentile curves by time to event."
+  dependencies: []
+  status: implemented
+  example: examples/hospitality_demo.c
+  test: tests/finpred-tests/test_p0.c
+- name: asof
+  header: include/mulib-asof.h
+  manual: manual/mulib-asof.md
+  macro: MULIB_IMPL_ASOF
+  purpose: "Bitemporal joins and replay snapshots with revisions and withdrawals."
+  dependencies: []
+  status: implemented
+  example: examples/hospitality_demo.c
+  test: tests/finpred-tests/test_fp_boundaries.c
+- name: decisiontrace
+  header: include/mulib-decisiontrace.h
+  manual: manual/mulib-decisiontrace.md
+  macro: MULIB_IMPL_DECISIONTRACE
+  purpose: "Bounded structured decision tracing and versioned field encoding."
+  dependencies: []
+  status: implemented
+  example: examples/hospitality_demo.c
+  test: tests/finpred-tests/test_fp_boundaries.c
+- name: ruleeval
+  header: include/mulib-ruleeval.h
+  manual: manual/mulib-ruleeval.md
+  macro: MULIB_IMPL_RULEEVAL
+  purpose: "Exact minor-unit percentile shortcut, guardrails and tick rules."
+  dependencies: [money]
+  status: implemented
+  example: examples/hospitality_demo.c
+  test: tests/finpred-tests/test_fp_boundaries.c
+- name: backtest
+  header: include/mulib-backtest.h
+  manual: manual/mulib-backtest.md
+  macro: MULIB_IMPL_BACKTEST
+  purpose: "Holdout point-forecast metrics with knowledge-time checks."
+  dependencies: []
+  status: implemented
+  example: examples/finpred_market.c
+  test: tests/finpred-tests/test_fp_boundaries.c
+- name: marketquote
+  header: include/mulib-marketquote.h
+  manual: manual/mulib-marketquote.md
+  macro: MULIB_IMPL_MARKETQUOTE
+  purpose: "Checked level-one quote freshness, ticks, spread and midpoint."
+  dependencies: [money]
+  status: implemented
+  example: examples/finpred_market.c
+- name: timeseries
+  header: include/mulib-timeseries.h
+  manual: manual/mulib-timeseries.md
+  macro: MULIB_IMPL_TIMESERIES
+  purpose: "Time-ordered points with knowledge-filtered averages and latest selection."
+  dependencies: []
+  status: implemented
+  example: examples/finpred_market.c
+- name: corporate-actions
+  header: include/mulib-corporate-actions.h
+  manual: manual/mulib-corporate-actions.md
+  macro: MULIB_IMPL_CORPORATE_ACTIONS
+  purpose: "Exact integer split shares and checked rounded price and cash calculations."
+  dependencies: [money]
+  status: implemented
+  example: examples/finpred_market.c
+- name: fxrate
+  header: include/mulib-fxrate.h
+  manual: manual/mulib-fxrate.md
+  macro: MULIB_IMPL_FXRATE
+  purpose: "Rational minor-unit FX conversion with rate observation and availability."
+  dependencies: [money]
+  status: implemented
+  example: examples/finpred_market.c
+- name: portfolio
+  header: include/mulib-portfolio.h
+  manual: manual/mulib-portfolio.md
+  macro: MULIB_IMPL_PORTFOLIO
+  purpose: "Single-currency snapshot mark-to-market P&L and gross exposure."
+  dependencies: [money]
+  status: implemented
+  example: examples/finpred_market.c
+- name: risk
+  header: include/mulib-risk.h
+  manual: manual/mulib-risk.md
+  macro: MULIB_IMPL_RISK
+  purpose: "Deterministic portfolio gross, position-count and concentration limits."
+  dependencies: [portfolio]
+  status: implemented
+  example: examples/finpred_market.c
+- name: orderbook
+  header: include/mulib-orderbook.h
+  manual: manual/mulib-orderbook.md
+  macro: MULIB_IMPL_ORDERBOOK
+  purpose: "Bounded Level-2 snapshot and atomic sequenced price-level updates."
+  dependencies: []
+  status: implemented
+  example: examples/finpred_market.c
+- name: orderintent
+  header: include/mulib-orderintent.h
+  manual: manual/mulib-orderintent.md
+  macro: MULIB_IMPL_ORDERINTENT
+  purpose: "Offline side, expiry, tick and notional validation without trade authority."
+  dependencies: [money]
+  status: implemented
+  example: examples/finpred_market.c
 project_files:
+- file: manual/finpred.md
+  purpose: "FinPRED API boundaries, verification matrix and remaining gate evidence."
+- file: examples/hospitality_demo.c
+  purpose: "Synthetic dated stay pricing, canonical Money normalization and point-in-time trace replay."
+- file: examples/finpred_market.c
+  purpose: "Synthetic snapshot valuation, holdout scoring and offline order preflight."
+- file: tests/finpred-tests/run.sh
+  purpose: "Strict canonical Money and fallback FinPRED test runner."
+- file: tests/finpred-tests/test_all.c
+  purpose: "All 17 FinPRED kernels exercised from a declaration-only C11 client."
+- file: tests/finpred-tests/test_fp_boundaries.c
+  purpose: "FinPRED replay, policy, financial boundary and atomic update tests."
+- file: tests/finpred-tests/test_fp_cpp_client.cpp
+  purpose: "FinPRED and canonical Money declaration-only C++17 ABI checks."
+- file: tests/finpred-tests/test_fp_money_client.c
+  purpose: "FinPRED checked minor-unit operations used by the independent Python oracle."
+- file: tests/finpred-tests/test_fp_money_oracle.py
+  purpose: "Arbitrary-precision differential checks for financial rounding and notional."
+- file: tests/finpred-tests/test_kernels_impl.c
+  purpose: "One canonical implementation TU for the complete FinPRED C test suite."
+- file: tests/finpred-tests/test_link_cpp.cpp
+  purpose: "Legacy FinPRED declaration-only C++17 linkage fixture."
+- file: tests/finpred-tests/test_link_impl.c
+  purpose: "Legacy standalone FinPRED implementation linkage fixture."
+- file: tests/finpred-tests/test_p0.c
+  purpose: "Contract digests, exact dated quote arithmetic, comparables and curve oracles."
+- file: tests/finpred-tests/test_staymatch_oracle.c
+  purpose: "Independent exhaustive room-occupancy and deterministic top-K search oracle."
+- file: tests/finpred-tests/test_discovery.py
+  purpose: "Real FinPRED CDecl extraction and fail-closed KernelBind admission checks."
+- file: tests/finpred-tests/support/mulib-money.h
+  purpose: "Noncanonical Money fallback for isolated test smoke only; never installed."
 - file: tools/extend-kernelbind.py
   purpose: "Update On1x's discovery-only KernelBind coverage from the kernel manifest."
 - file: on1x/contracts-exotract/kernel-auto.json
@@ -15809,7 +16004,31 @@ project_files:
 - file: library/termscript/implementation.h
   purpose: "Opt-in C11 implementation recipe for Termscript and TermDB."
 - file: library/termscript/main.c
-  purpose: "Termscript interpreter and C11 compiler command-line runner."
+  purpose: "Termscript interpreter and CAPASM compiler command-line runner."
+- file: library/termscript/capasm-tools.h
+  purpose: "Explicit POSIX tool selection and bounded argv-based CAPASM stage runner."
+- file: include/detail/mulib-termscript-capsule.inc
+  purpose: "Versioned, checked Termscript capsule representation shared by lowering and runtime."
+- file: library/xmacir-trs/README.md
+  purpose: "Trusted m4 XMacIR rewrite selection and supported transformations."
+- file: library/xmacir-trs/peephole.xmtrs
+  purpose: "Opt-in XMacIR constant folding and redundant stack operation removal."
+- file: library/xmacir-trs/repack.xmtrs
+  purpose: "Opt-in XMacIR capsule chunk repacking with unchanged decoded payload."
+- file: library/xmacir-trs/commute.xmtrs
+  purpose: "Opt-in removal of swaps before commutative XMacIR operations."
+- file: library/xmacir-trs/strength.xmtrs
+  purpose: "Opt-in reduction of multiply-by-two and right annihilators in XMacIR."
+- file: examples/modules/capasm.c
+  purpose: "Compile a portable scalar XMacIR program to ISO C90."
+- file: tests/test_capasm_portable.py
+  purpose: "Strict C90 compilation and execution of a CAPASM-emitted scalar program."
+- file: tests/test_xmacir_trs.py
+  purpose: "Differential tests of the bundled m4 XMacIR rewrite passes."
+- file: tests/test_capasm.c
+  purpose: "CAPASM validation, rewrite invariants and host tool sequencing regressions."
+- file: tests/test_xmacir.c
+  purpose: "XMacIR grammar, owned round trips and checked model regressions."
 - file: library/termscript/README.md
   purpose: "Termscript module discovery, standard library and host authority."
 - file: library/termscript/examples/counter.term
@@ -15853,9 +16072,13 @@ project_files:
 - file: tests/test_termscript_ast.c
   purpose: "Parsec Termscript AST, grammar and literal boundary regressions."
 - file: tests/test_termscript_cli.py
-  purpose: "Executable Termscript, TermDB generation and C11 differential tests."
+  purpose: "Executable Termscript, TermDB, m4 rewrites, tool stages and C90 differential tests."
+- file: tests/test_termscript_capasm_tools.py
+  purpose: "Trusted rewrite path resolution, explicit tool argv, and artifact boundary checks."
 - file: tests/test_termscript_compiler.c
-  purpose: "Termscript canonicalization and generated C11 runtime fixture."
+  purpose: "Termscript canonicalization, capsule validation and CAPASM runtime fixture."
+- file: tests/test_termscript_chords.c
+  purpose: "Tuple key chord parsing, event dispatch and invalid-input regressions."
 - file: tests/test_termscript_library.c
   purpose: "Termscript module search, root ordering and malformed-module tests."
 - file: tests/test_termscript_runtime.c

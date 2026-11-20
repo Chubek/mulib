@@ -17,7 +17,7 @@ without an explicit host. See the [language manual](mulib-termscript.md).
 | --- | --- |
 | Header | [`include/mulib-termscript-runtime.h`](../include/mulib-termscript-runtime.h) |
 | Implementation switch | `MULIB_IMPL_TERMSCRIPT_RUNTIME` |
-| Repository-local includes | [mulib-termscript-ast](mulib-termscript-ast.md) |
+| Repository-local includes | [`include/detail/mulib-termscript-capsule.inc`](../include/detail/mulib-termscript-capsule.inc), [mulib-termscript-ast](mulib-termscript-ast.md) |
 | Complete example | [`library/termscript/main.c`](../library/termscript/main.c) |
 
 The include list includes conditional and implementation-only includes;

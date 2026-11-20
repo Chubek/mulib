@@ -22,7 +22,7 @@ EXAMPLES += build/kernel-substrates
 check-media:
 	python3 tools/media_inventory.py --check
 	python3 tools/check_media.py
-.PHONY: check-imtui check-termscript check-termdb check-ssh check-ssh-openssh extend-kernelbind
+.PHONY: check-capasm check-finpred check-imtui check-termscript check-termdb check-ssh check-ssh-openssh extend-kernelbind
 extend-kernelbind:
 	python3 tools/extend-kernelbind.py
 IMTUI_TESTS = $(patsubst tests/%.c,build/%,$(wildcard tests/test_imtui_*.c))
@@ -32,6 +32,22 @@ check-imtui: build/imtui-headless build/imtui-composites $(IMTUI_TESTS)
 check-termscript: build/termscript build/termscript-support build/test_termdb $(TERMSCRIPT_TESTS)
 	@set -eu; for t in $(filter-out build/termscript,$^); do ./$$t; done
 	python3 tests/test_termscript_cli.py --runner build/termscript --termdb-test build/test_termdb --compiler-test build/test_termscript_compiler --cc "$(CC)"
+	python3 tests/test_termscript_capasm_tools.py --runner build/termscript
+check-capasm: build/test_xmacir build/test_capasm build/capasm-example
+	./build/test_xmacir
+	./build/test_capasm
+	python3 tests/test_capasm_portable.py --cc "$(CC)" --example build/capasm-example
+	python3 tests/test_xmacir_trs.py
+build/test_xmacir build/test_capasm: build/%: tests/%.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
+build/capasm-example: examples/modules/capasm.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
+check-finpred: build/hospitality_demo build/finpred_market
+	./build/hospitality_demo
+	./build/finpred_market
+	MULIB_ROOT="$(CURDIR)" CC="$(CC)" CXX="$(CXX)" sh tests/finpred-tests/run.sh
+build/hospitality_demo build/finpred_market: build/%: examples/%.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
 check-termdb: build/test_termdb
 	./$<
 	python3 tests/test_termdb_tool.py
@@ -41,7 +57,7 @@ build/imtui-terminal: examples/imtui/terminal.c $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
 build/termscript-support: examples/termscript/support.c $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
-build/termscript: library/termscript/main.c library/termscript/implementation.h $(HEADERS) | build
+build/termscript: library/termscript/main.c $(wildcard library/termscript/*.h) $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
 build/test_termdb: tests/test_termdb.c $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@

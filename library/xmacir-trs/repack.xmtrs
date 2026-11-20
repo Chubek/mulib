@@ -1,0 +1,23 @@
+m4_dnl XMacIR BLOB repacking pass. Input must already be validated.
+m4_define(`XM_line', ``XM_$1($2)'
+')m4_dnl
+m4_define(`XM_U32', `XM_line(`U32', `$1')m4_dnl')m4_dnl
+m4_define(`XM_PUSH', `XM_line(`PUSH', `$1')m4_dnl')m4_dnl
+m4_define(`XM_ADD', `XM_line(`ADD', `')m4_dnl')m4_dnl
+m4_define(`XM_SUB', `XM_line(`SUB', `')m4_dnl')m4_dnl
+m4_define(`XM_MUL', `XM_line(`MUL', `')m4_dnl')m4_dnl
+m4_define(`XM_AND', `XM_line(`AND', `')m4_dnl')m4_dnl
+m4_define(`XM_OR', `XM_line(`OR', `')m4_dnl')m4_dnl
+m4_define(`XM_XOR', `XM_line(`XOR', `')m4_dnl')m4_dnl
+m4_define(`XM_DUP', `XM_line(`DUP', `')m4_dnl')m4_dnl
+m4_define(`XM_DROP', `XM_line(`DROP', `')m4_dnl')m4_dnl
+m4_define(`XM_SWAP', `XM_line(`SWAP', `')m4_dnl')m4_dnl
+m4_define(`XM_RET', `XM_line(`RET', `')m4_dnl')m4_dnl
+m4_dnl Carry only unprinted digits; it is always shorter than one record.
+m4_define(`XM_cat', ``$1$2'')m4_dnl
+m4_define(`XM_repack', `m4_ifelse(m4_eval(m4_len(`$1') < 64), `1',
+`m4_define(`XM_carry', `$1')',
+`XM_line(`BYTES', XM_cat(`h', m4_substr(`$1', `0', `64')))m4_define(`XM_carry', m4_substr(`$1', `64'))')')m4_dnl
+m4_define(`XM_BLOB', `m4_define(`XM_carry', `')XM_line(`BLOB', `$1,$2,$3,$4')m4_dnl')m4_dnl
+m4_define(`XM_BYTES', `XM_repack(XM_cat(XM_carry, m4_substr(`$1', `1')))m4_dnl')m4_dnl
+m4_define(`XM_END', `m4_ifelse(XM_carry, `', `', `XM_line(`BYTES', XM_cat(`h', XM_carry))')XM_line(`END', `')m4_dnl')m4_dnl

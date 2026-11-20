@@ -36,6 +36,7 @@
     "mulib-asdl.h",
     "mulib-asic-floorplan.h",
     "mulib-asic-sta.h",
+    "mulib-asof.h",
     "mulib-assembler.h",
     "mulib-asset-cache.h",
     "mulib-asset-catalog.h",
@@ -69,6 +70,7 @@
     "mulib-avr32.h",
     "mulib-azw3.h",
     "mulib-b+tree.h",
+    "mulib-backtest.h",
     "mulib-base64.h",
     "mulib-bayesian_methods.h",
     "mulib-baysian_ranking.h",
@@ -156,6 +158,7 @@
     "mulib-canvas-selection.h",
     "mulib-canvas-tile.h",
     "mulib-canvas-viewport.h",
+    "mulib-capasm.h",
     "mulib-capbroker.h",
     "mulib-cassowary-solver.h",
     "mulib-cbor.h",
@@ -219,6 +222,7 @@
     "mulib-compiler-test.h",
     "mulib-complex.h",
     "mulib-compression.h",
+    "mulib-compset.h",
     "mulib-compute-buffer.h",
     "mulib-compute-cache.h",
     "mulib-compute-core.h",
@@ -271,8 +275,10 @@
     "mulib-containerserverd.h",
     "mulib-containerstub.h",
     "mulib-containterpool.h",
+    "mulib-contract.h",
     "mulib-cookie.h",
     "mulib-cookiejar.h",
+    "mulib-corporate-actions.h",
     "mulib-corpus.h",
     "mulib-cosine_similarity.h",
     "mulib-countmin.h",
@@ -318,6 +324,7 @@
     "mulib-dbus-transport.h",
     "mulib-dbus.h",
     "mulib-dce.h",
+    "mulib-decisiontrace.h",
     "mulib-deflate.h",
     "mulib-defuse.h",
     "mulib-deltacodec.h",
@@ -577,6 +584,7 @@
     "mulib-ftpserver.h",
     "mulib-fuse.h",
     "mulib-fuzzyquery.h",
+    "mulib-fxrate.h",
     "mulib-galois.h",
     "mulib-gbm.h",
     "mulib-gc-roots.h",
@@ -974,6 +982,7 @@
     "mulib-map.h",
     "mulib-marionette.h",
     "mulib-markdown.h",
+    "mulib-marketquote.h",
     "mulib-markov_chain.h",
     "mulib-markup-bridge.h",
     "mulib-markup-graph.h",
@@ -1243,6 +1252,8 @@
     "mulib-openvpn.h",
     "mulib-opticalmargin.h",
     "mulib-optml.h",
+    "mulib-orderbook.h",
+    "mulib-orderintent.h",
     "mulib-orhoconv.h",
     "mulib-orthographic_rules.h",
     "mulib-otpath.h",
@@ -1350,6 +1361,7 @@
     "mulib-polytask.h",
     "mulib-popcount.h",
     "mulib-port.h",
+    "mulib-portfolio.h",
     "mulib-positions.h",
     "mulib-postdominance.h",
     "mulib-postings.h",
@@ -1367,6 +1379,7 @@
     "mulib-price-normalize.h",
     "mulib-price-observation.h",
     "mulib-price-timeseries.h",
+    "mulib-pricecurve.h",
     "mulib-priceopt.h",
     "mulib-prime.h",
     "mulib-probability.h",
@@ -1394,6 +1407,7 @@
     "mulib-range-analysis.h",
     "mulib-rangeindex.h",
     "mulib-rate_limit.h",
+    "mulib-ratequote.h",
     "mulib-raytracing.h",
     "mulib-readability.h",
     "mulib-readline.h",
@@ -1495,6 +1509,7 @@
     "mulib-richtext.h",
     "mulib-ring.h",
     "mulib-riscv64.h",
+    "mulib-risk.h",
     "mulib-rle.h",
     "mulib-rlecol.h",
     "mulib-rng.h",
@@ -1524,6 +1539,7 @@
     "mulib-rtnl-vrf.h",
     "mulib-rtnl.h",
     "mulib-rubybind.h",
+    "mulib-ruleeval.h",
     "mulib-sandbox-process.h",
     "mulib-sandbox-profile.h",
     "mulib-sat.h",
@@ -1674,6 +1690,7 @@
     "mulib-stats.h",
     "mulib-statsprice.h",
     "mulib-statsproc.h",
+    "mulib-staymatch.h",
     "mulib-stopwords.h",
     "mulib-storage-core.h",
     "mulib-strbuf.h",
@@ -1726,7 +1743,7 @@
     "mulib-terminfo.h",
     "mulib-termkey.h",
     "mulib-termscript-ast.h",
-    "mulib-termscript-compiler.h",
+    "mulib-termscript-capasm.h",
     "mulib-termscript-host.h",
     "mulib-termscript-library.h",
     "mulib-termscript-runtime.h",
@@ -1783,6 +1800,7 @@
     "mulib-tfidf.h",
     "mulib-timer.h",
     "mulib-timerfd.h",
+    "mulib-timeseries.h",
     "mulib-timing-clock.h",
     "mulib-timing-corner.h",
     "mulib-timing-critical.h",
@@ -2015,6 +2033,7 @@
     "mulib-xkb.h",
     "mulib-xlib.h",
     "mulib-xll.h",
+    "mulib-xmacir.h",
     "mulib-xml.h",
     "mulib-xpath.h",
     "mulib-xsimd.h",
@@ -2032,9 +2051,9 @@
     "mulib-zstd.h",
     "mune-opencode-client.h"
   ],
-  "libraries": 2031,
+  "libraries": 2050,
   "functions": 5373,
-  "declared_functions": 7622,
+  "declared_functions": 7674,
   "types": 8927,
   "constants": 2802,
   "preprocessor_only": [
@@ -2054,7 +2073,7 @@
     "MULIB_XATOMIC_DECLARE_",
     "MULIB_XATOMIC_INIT"
   ],
-  "fingerprint": "3a18ec99f0cb4e482fd281db041fb0e893a29b6db2781ac129e94d9dd1c4af13",
+  "fingerprint": "36e7d3031a00f8b689197fc8bf1fba36efc949fb23f3a39e938443dbb4ec6275",
   "legacy_policy": "f998e3c5709003f8315112125a9d167550f096a614f5d514a7eadff86def08e0",
   "modules": {
     "2dgeom": {
@@ -2655,6 +2674,16 @@
         "mulib_asic_sta_slack"
       ]
     },
+    "asof": {
+      "header": "mulib-asof.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_asof_join",
+        "mulib_asof_select",
+        "mulib_asof_snapshot"
+      ]
+    },
     "assembler": {
       "header": "mulib-assembler.h",
       "profile": "legacy-raw",
@@ -3174,6 +3203,15 @@
         "mulib_bptree_remove",
         "mulib_bptree_set",
         "mulib_bptree_validate"
+      ]
+    },
+    "backtest": {
+      "header": "mulib-backtest.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_backtest_score",
+        "mulib_backtest_score_replay"
       ]
     },
     "base64": {
@@ -4396,6 +4434,14 @@
         "mulib_canvas_viewport_clip"
       ]
     },
+    "capasm": {
+      "header": "mulib-capasm.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_capasm_emit"
+      ]
+    },
     "capbroker": {
       "header": "mulib-capbroker.h",
       "profile": "legacy-raw",
@@ -5347,6 +5393,16 @@
         "mulib_compression_encode"
       ]
     },
+    "compset": {
+      "header": "mulib-compset.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_compset_build",
+        "mulib_compset_build_diagnosed",
+        "mulib_compset_extract"
+      ]
+    },
     "compute-buffer": {
       "header": "mulib-compute-buffer.h",
       "profile": "discovery-only",
@@ -6182,6 +6238,18 @@
         "mulib_containterpool_tick"
       ]
     },
+    "contract": {
+      "header": "mulib-contract.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_contract_digest_sha256",
+        "mulib_contract_fingerprint64",
+        "mulib_contract_same_family",
+        "mulib_contract_usable_at",
+        "mulib_contract_valid"
+      ]
+    },
     "cookie": {
       "header": "mulib-cookie.h",
       "profile": "legacy-raw",
@@ -6204,6 +6272,16 @@
         "mulib_cookiejar_free",
         "mulib_cookiejar_get",
         "mulib_cookiejar_set"
+      ]
+    },
+    "corporate-actions": {
+      "header": "mulib-corporate-actions.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_corporate_actions_adjust_price",
+        "mulib_corporate_actions_adjust_shares",
+        "mulib_corporate_actions_dividend"
       ]
     },
     "corpus": {
@@ -7216,6 +7294,17 @@
       ],
       "declarations": [
         "mulib_dce_mark"
+      ]
+    },
+    "decisiontrace": {
+      "header": "mulib-decisiontrace.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_decisiontrace_append",
+        "mulib_decisiontrace_encode_v1",
+        "mulib_decisiontrace_fingerprint64",
+        "mulib_decisiontrace_init"
       ]
     },
     "deflate": {
@@ -10959,6 +11048,15 @@
       ],
       "declarations": [
         "mulib_fuzzyquery_distance"
+      ]
+    },
+    "fxrate": {
+      "header": "mulib-fxrate.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_fxrate_convert",
+        "mulib_fxrate_convert_asof"
       ]
     },
     "galois": {
@@ -15887,6 +15985,16 @@
         "mulib_markdown_to_html"
       ]
     },
+    "marketquote": {
+      "header": "mulib-marketquote.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_marketquote_spread_mid",
+        "mulib_marketquote_usable_at",
+        "mulib_marketquote_valid"
+      ]
+    },
     "markov_chain": {
       "header": "mulib-markov_chain.h",
       "profile": "legacy-raw",
@@ -19445,6 +19553,25 @@
         "mulib_optml_write"
       ]
     },
+    "orderbook": {
+      "header": "mulib-orderbook.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_orderbook_apply",
+        "mulib_orderbook_best",
+        "mulib_orderbook_init",
+        "mulib_orderbook_load_snapshot"
+      ]
+    },
+    "orderintent": {
+      "header": "mulib-orderintent.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_orderintent_validate"
+      ]
+    },
     "orhoconv": {
       "header": "mulib-orhoconv.h",
       "profile": "legacy-raw",
@@ -20902,6 +21029,15 @@
         "mulib_port_secure_zero"
       ]
     },
+    "portfolio": {
+      "header": "mulib-portfolio.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_portfolio_gross",
+        "mulib_portfolio_mark"
+      ]
+    },
     "positions": {
       "header": "mulib-positions.h",
       "profile": "legacy-raw",
@@ -21148,6 +21284,14 @@
       "declarations": [
         "mulib_price_timeseries_build",
         "mulib_price_timeseries_interpolate"
+      ]
+    },
+    "pricecurve": {
+      "header": "mulib-pricecurve.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_pricecurve_evaluate"
       ]
     },
     "priceopt": {
@@ -21562,6 +21706,15 @@
       "declarations": [
         "mulib_rate_limit_init",
         "mulib_rate_limit_take"
+      ]
+    },
+    "ratequote": {
+      "header": "mulib-ratequote.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_ratequote_normalize",
+        "mulib_ratequote_normalize_dated"
       ]
     },
     "raytracing": {
@@ -22623,6 +22776,14 @@
         "mulib_riscv64_init_ex"
       ]
     },
+    "risk": {
+      "header": "mulib-risk.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_risk_check"
+      ]
+    },
     "rle": {
       "header": "mulib-rle.h",
       "profile": "legacy-raw",
@@ -22967,6 +23128,16 @@
       ],
       "declarations": [
         "mulib_rubybind_generate"
+      ]
+    },
+    "ruleeval": {
+      "header": "mulib-ruleeval.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_ruleeval_apply",
+        "mulib_ruleeval_apply_percentiles",
+        "mulib_ruleeval_shortcut_percentile"
       ]
     },
     "sandbox-process": {
@@ -25077,6 +25248,15 @@
         "mulib_statsproc_winsor_mean"
       ]
     },
+    "staymatch": {
+      "header": "mulib-staymatch.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_staymatch_solve",
+        "mulib_staymatch_solve_dated"
+      ]
+    },
     "stopwords": {
       "header": "mulib-stopwords.h",
       "profile": "legacy-raw",
@@ -25828,13 +26008,15 @@
         "mulib_termscript_program_free"
       ]
     },
-    "termscript-compiler": {
-      "header": "mulib-termscript-compiler.h",
+    "termscript-capasm": {
+      "header": "mulib-termscript-capasm.h",
       "profile": "discovery-only",
       "functions": [],
       "declarations": [
         "mulib_termscript_canonicalize",
+        "mulib_termscript_compile",
         "mulib_termscript_compile_c11",
+        "mulib_termscript_emit_ansi",
         "mulib_termscript_emit_c11"
       ]
     },
@@ -25873,6 +26055,7 @@
         "mulib_termscript_push_text",
         "mulib_termscript_resolve",
         "mulib_termscript_run",
+        "mulib_termscript_run_capsule",
         "mulib_termscript_stack_size",
         "mulib_termscript_step",
         "mulib_termscript_value_at",
@@ -26646,6 +26829,16 @@
         "mulib_timerfd_create",
         "mulib_timerfd_read",
         "mulib_timerfd_set"
+      ]
+    },
+    "timeseries": {
+      "header": "mulib-timeseries.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_timeseries_latest_asof",
+        "mulib_timeseries_sma_asof",
+        "mulib_timeseries_validate"
       ]
     },
     "timing-clock": {
@@ -30081,6 +30274,17 @@
         "mulib_xll_write_c"
       ]
     },
+    "xmacir": {
+      "header": "mulib-xmacir.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_xmacir_format",
+        "mulib_xmacir_free",
+        "mulib_xmacir_parse",
+        "mulib_xmacir_validate"
+      ]
+    },
     "xml": {
       "header": "mulib-xml.h",
       "profile": "legacy-raw",
@@ -30445,7 +30649,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "7f233f7e2dc9dd5e441cae1430ffaf9ddbfe8514b0bfdc96692d65d99697d10b",
+    "Generated.inc": "270d1a62ee10a42153711fa80fd966b3238bec4bd7f200230bae89c248ea3b4f",
     "Implementation.c": "e8d42736b8b9c6ec9823eef57b1a916f5107ecfb13ff7a33e58863d1ab0425a7"
   }
 }

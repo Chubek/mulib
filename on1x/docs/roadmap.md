@@ -17,7 +17,9 @@ is added; provider adapters remain adapters. See [KernelBind](kernel-bind.md).
 
 The [automatic discovery catalog](kernel-bind.md#refresh-automatic-discovery)
 extends registration to current MANIFEST kernels. It does not extend the
-set of callable or reviewed profiles.
+set of callable or reviewed profiles. The 17 FinPRED kernels now have
+[real declaration extraction evidence](../VERIFICATION.md#finpred-declaration-discovery--2026-11-21);
+the pricing application still needs independently reviewed typed bindings.
 
 M1/M2 core-syntax additions use the canonical parser, checker, and C11
 backend. [Literals and interpolation](core-literals.md) distinguish Unicode

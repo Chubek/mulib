@@ -1,0 +1,25 @@
+m4_dnl XMacIR right-constant strength reduction. Input must be validated.
+m4_define(`XM_line', ``XM_$1($2)'
+')m4_dnl
+m4_dnl Defer just the last PUSH so its literal can be used by the next op.
+m4_define(`XM_clear', `m4_define(`XM_pending', `')')m4_dnl
+XM_clear()m4_dnl
+m4_define(`XM_flush', `m4_ifelse(XM_pending, `', `', `XM_line(`PUSH', XM_pending)XM_clear()')')m4_dnl
+m4_define(`XM_pass', `XM_flush()XM_line(`$1', `')')m4_dnl
+m4_define(`XM_plain', `m4_define(`XM_$1', `XM_pass(`$1')m4_dnl')')m4_dnl
+m4_dnl Compare canonical decimal strings, not signed m4_eval operands.
+m4_dnl x * 2 and x + x agree modulo 2^32 and have the same peak depth.
+m4_define(`XM_double', `XM_clear()XM_line(`DUP', `')XM_line(`ADD', `')')m4_dnl
+m4_dnl Drop only the computed top value, not any part of its producers.
+m4_define(`XM_annihilate', `XM_clear()XM_line(`DROP', `')XM_line(`PUSH', `$1')')m4_dnl
+m4_define(`XM_const_or_pass', `m4_ifelse(XM_pending, `$2', `XM_annihilate(`$2')', `XM_pass(`$1')')')m4_dnl
+m4_define(`XM_U32', `XM_line(`U32', `$1')m4_dnl')m4_dnl
+m4_define(`XM_PUSH', `XM_flush()m4_define(`XM_pending', `$1')m4_dnl')m4_dnl
+m4_define(`XM_MUL', `m4_ifelse(XM_pending, `2', `XM_double()', `XM_const_or_pass(`MUL', `0')')m4_dnl')m4_dnl
+m4_define(`XM_AND', `XM_const_or_pass(`AND', `0')m4_dnl')m4_dnl
+m4_define(`XM_OR', `XM_const_or_pass(`OR', `4294967295')m4_dnl')m4_dnl
+XM_plain(`ADD')XM_plain(`SUB')XM_plain(`XOR')m4_dnl
+XM_plain(`DUP')XM_plain(`DROP')XM_plain(`SWAP')XM_plain(`RET')m4_dnl
+m4_define(`XM_BLOB', `XM_line(`BLOB', `$1,$2,$3,$4')m4_dnl')m4_dnl
+m4_define(`XM_BYTES', `XM_line(`BYTES', `$1')m4_dnl')m4_dnl
+m4_define(`XM_END', `XM_line(`END', `')m4_dnl')m4_dnl

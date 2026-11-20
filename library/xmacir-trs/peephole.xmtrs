@@ -1,0 +1,45 @@
+m4_dnl XMacIR scalar peephole pass. Input must already be validated.
+m4_dnl Keep at most two pending instructions; emit quoted records verbatim.
+m4_define(`XM_line', ``XM_$1($2)'
+')m4_dnl
+m4_define(`XM_set0', `m4_define(`XM_q0', `$1')m4_define(`XM_v0', `$2')')m4_dnl
+m4_define(`XM_set1', `m4_define(`XM_q1', `$1')m4_define(`XM_v1', `$2')')m4_dnl
+XM_set0()XM_set1()m4_dnl
+m4_define(`XM_tail', `m4_ifelse(XM_q1, `', `XM_q0', `XM_q1')')m4_dnl
+m4_define(`XM_value', `m4_ifelse(XM_q1, `', `XM_v0', `XM_v1')')m4_dnl
+m4_define(`XM_pop', `m4_ifelse(XM_q1, `', `XM_set0()', `XM_set1()')')m4_dnl
+m4_define(`XM_flush0', `m4_ifelse(XM_q0, `', `', `XM_line(XM_q0, XM_v0)')')m4_dnl
+m4_define(`XM_flush1', `m4_ifelse(XM_q1, `', `', `XM_line(XM_q1, XM_v1)')')m4_dnl
+m4_define(`XM_queue', `m4_ifelse(XM_q0, `', `XM_set0(`$1', `$2')', XM_q1, `',
+`XM_set1(`$1', `$2')', `XM_flush0()XM_set0(XM_q1, XM_v1)XM_set1(`$1', `$2')')')m4_dnl
+m4_dnl Test decimal length before evaluating either operand. No intermediate
+m4_dnl exceeds signed 32-bit range; 32767 * 32767 is the largest product.
+m4_define(`XM_small', `m4_ifelse(m4_eval(m4_len(`$1') > 5), `1', `0',
+`m4_eval($1 <= 32767)')')m4_dnl
+m4_dnl Negative results can only be from subtraction and lie in [-32767, -1].
+m4_dnl Add 2^32 in decimal limbs (42949 * 100000 + 67296), without passing
+m4_dnl that value to m4_eval; the low limb stays in [34529, 67295].
+m4_define(`XM_wrap', `m4_ifelse(m4_eval($1 < 0), `1', `42949`'m4_eval(67296 + ($1))', `$1')')m4_dnl
+m4_define(`XM_fold', `XM_set0(`PUSH', XM_wrap(m4_eval(XM_v0 $1 XM_v1)))XM_set1()')m4_dnl
+m4_define(`XM_pair', `m4_ifelse(XM_small(XM_v0):XM_small(XM_v1), `1:1',
+`XM_fold(`$2')', `XM_queue(`$1', `')')')m4_dnl
+m4_define(`XM_binary', `m4_ifelse(XM_tail, `PUSH',
+`m4_ifelse(XM_value, `$3', `XM_pop()',
+`m4_ifelse(XM_q0:XM_q1, `PUSH:PUSH', `XM_pair(`$1', `$2')', `XM_queue(`$1', `')')')',
+`XM_queue(`$1', `')')')m4_dnl
+m4_define(`XM_U32', `XM_line(`U32', `$1')m4_dnl')m4_dnl
+m4_define(`XM_PUSH', `XM_queue(`PUSH', `$1')m4_dnl')m4_dnl
+m4_define(`XM_ADD', `XM_binary(`ADD', `+', `0')m4_dnl')m4_dnl
+m4_define(`XM_SUB', `XM_binary(`SUB', `-', `0')m4_dnl')m4_dnl
+m4_define(`XM_MUL', `XM_binary(`MUL', `*', `1')m4_dnl')m4_dnl
+m4_define(`XM_AND', `XM_binary(`AND', `&', `4294967295')m4_dnl')m4_dnl
+m4_define(`XM_OR', `XM_binary(`OR', `|', `0')m4_dnl')m4_dnl
+m4_define(`XM_XOR', `XM_binary(`XOR', `^', `0')m4_dnl')m4_dnl
+m4_define(`XM_DUP', `XM_queue(`DUP', `')m4_dnl')m4_dnl
+m4_define(`XM_DROP', `m4_ifelse(XM_tail, `PUSH', `XM_pop()', XM_tail, `DUP', `XM_pop()',
+`XM_queue(`DROP', `')')m4_dnl')m4_dnl
+m4_define(`XM_SWAP', `m4_ifelse(XM_tail, `SWAP', `XM_pop()', `XM_queue(`SWAP', `')')m4_dnl')m4_dnl
+m4_define(`XM_RET', `XM_flush0()XM_flush1()XM_line(`RET', `')m4_dnl')m4_dnl
+m4_define(`XM_BLOB', `XM_line(`BLOB', `$1,$2,$3,$4')m4_dnl')m4_dnl
+m4_define(`XM_BYTES', `XM_line(`BYTES', `$1')m4_dnl')m4_dnl
+m4_define(`XM_END', `XM_line(`END', `')m4_dnl')m4_dnl

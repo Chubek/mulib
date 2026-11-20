@@ -30,6 +30,8 @@ consult each manual's exact supported syntax, errors, and limits.
 | Windows binary translation | [Shiraz](mulib-shiraz.md): AMD64 PE/COFF interpretation, helper-based ELF AOT, Windows runtime libraries and Registry |
 | Terminals | [terminfo](mulib-terminfo.md), [termkey](mulib-termkey.md), [termutils](mulib-termutils.md), [vterm](mulib-vterm.md), [tui](mulib-tui.md), [readline](mulib-readline.md), [VGA text buffer](mulib-vgabuffer.md) |
 | Terminal editors | [gap/rope/piece-table buffers](mulib-edbuf.md), [CSS terminal styles](mulib-termstyle.md), [incremental syntax backend](mulib-termsyn.md) |
+| Portable code generation | [XMacIR](mulib-xmacir.md), [CAPASM](mulib-capasm.md), [Termscript](mulib-termscript.md) |
+| Financial prediction | [FinPRED](finpred.md), [StayMatch](mulib-staymatch.md), [AsOf](mulib-asof.md), [RuleEval](mulib-ruleeval.md) |
 | Native foreign interfaces | [runtime-typed SysV calls and closures](mulib-dynbox.md), [shared libraries and typed symbols](mulib-dynload.md); platform/type profiles are explicit |
 | Protocols | [uri](mulib-uri.md), [http](mulib-http.md), [rpc](mulib-rpc.md), [dbus](mulib-dbus.md) |
 | IP addresses | [IPv4](mulib-inet4.md), [IPv6](mulib-inet6.md), [historical inte6 header](mulib-inte6.md), [address lookup](mulib-getaddr.md) |

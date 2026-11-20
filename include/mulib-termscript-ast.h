@@ -30,7 +30,8 @@ extern "C"
     MULIB_TERMSCRIPT_RECORD,
     MULIB_TERMSCRIPT_FIELD,
     MULIB_TERMSCRIPT_DIRECTIVE,
-    MULIB_TERMSCRIPT_ESCAPE
+    MULIB_TERMSCRIPT_ESCAPE,
+    MULIB_TERMSCRIPT_CHORD
   } mulib_termscript_kind_t;
 
   typedef struct
@@ -48,7 +49,7 @@ extern "C"
     size_t count, root;
   } mulib_termscript_program_t;
 
-  typedef struct
+  typedef struct mulib_termscript_error
   {
     size_t offset;
     const char *message; /* Static. NULL on success. */
@@ -68,6 +69,7 @@ extern "C"
    * not including the line ending; its interpretation is left to the caller.
    * An escape literal spans only its case-sensitive symbolic name, without
    * the delimiters or surrounding whitespace; parsing never emits an escape.
+   * A chord leaf spans its entire spelling, including the delimiters.
    * integer holds the signed literal or decoded Unicode scalar as applicable.
    *
    * ASCII whitespace and semicolons separate values. "% " starts a line
@@ -75,8 +77,13 @@ extern "C"
    * them, and all three allow a trailing comma. Quoted escapes are backslash,
    * double quote, backtick, a/b/e/f/n/r/t/v/0, and x followed by two hex digits.
    * [[name]] accepts 1..63 ASCII letters, digits, underscores, or hyphens,
-   * with optional inner ASCII whitespace before and after the name. Use
-   * whitespace between the openers of nested arrays (e.g. [ [1], [2] ]).
+   * with optional inner ASCII whitespace before and after the name.
+   * [[name, name, ...]] is a chord of up to 16 such names in up to 4096
+   * source bytes. Each name may have an adjacent '!' prefix. [[name,]]
+   * or [[!name]] denotes a single key; other empty components are invalid.
+   * The modifiers ctrl, alt, shift, and super are recognized ignoring ASCII
+   * case; other names are case-sensitive. Duplicate names are invalid.
+   * Use whitespace between nested array openers (e.g. [ [1], [2] ]).
    */
   int mulib_termscript_parse (const char *source, size_t length,
                               mulib_termscript_program_t *out,
@@ -88,12 +95,163 @@ extern "C"
 #endif
 #endif /* MULIB_TERMSCRIPT_AST_H */
 
+/* Shared privately with the runtime, including when it is built in a
+ * separate translation unit. The runtime revalidates caller-supplied ASTs. */
+#if (defined(MULIB_IMPL_TERMSCRIPT_AST) || defined(MULIB_IMPL_TERMSCRIPT_RUNTIME) \
+     || defined(MULIB_IMPL_TERMSCRIPT_CAPASM)) \
+    && !defined(MULIB_TERMSCRIPT_BRACKET_IMPLEMENTED_)
+#define MULIB_TERMSCRIPT_BRACKET_IMPLEMENTED_
+#include <string.h>
+
+enum
+{
+  MULIB_TERMSCRIPT_BRACKET_NAME_LIMIT_ = 63,
+  MULIB_TERMSCRIPT_CHORD_PART_LIMIT_ = 16,
+  MULIB_TERMSCRIPT_CHORD_SOURCE_LIMIT_ = 4096,
+  MULIB_TERMSCRIPT_CHORD_KEY_LIMIT_ =
+      MULIB_TERMSCRIPT_CHORD_PART_LIMIT_
+      * (MULIB_TERMSCRIPT_BRACKET_NAME_LIMIT_ + 1) - 1
+};
+
+static inline int
+mulib_termscript_parse_fail_ (mulib_termscript_error_t *e, size_t pos,
+                              const char *msg)
+{
+  if (e)
+    {
+      e->offset = pos;
+      e->message = msg;
+    }
+  return 0;
+}
+
+static inline int
+mulib_termscript_space_ (unsigned char c)
+{
+  return c == ' ' || (c >= '\t' && c <= '\r');
+}
+
+static inline int
+mulib_termscript_bracket_name_byte_ (unsigned char c)
+{
+  return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+         || (c >= '0' && c <= '9') || c == '_' || c == '-';
+}
+
+/* Parse a chord prefix with no allocations. If requested, write its
+ * canonical basename into a CHORD_KEY_LIMIT_ + 1 byte buffer. */
+static inline int
+mulib_termscript_chord_ (const char *s, size_t length, size_t *consumed,
+                         char *key, size_t *key_length, mulib_termscript_error_t *e)
+{
+  static const char *const modifiers[] = { "ctrl", "alt", "shift", "super" };
+  enum { mod_count = sizeof modifiers / sizeof *modifiers };
+  size_t starts[mod_count + MULIB_TERMSCRIPT_CHORD_PART_LIMIT_];
+  size_t lengths[mod_count + MULIB_TERMSCRIPT_CHORD_PART_LIMIT_] = { 0 };
+  size_t i = 2, count = 0, slots = mod_count;
+  int comma = 0, prefixed = 0;
+  if (length < 2 || s[0] != '[' || s[1] != '[')
+    return mulib_termscript_parse_fail_ (e, 0, "expected '[[' before chord");
+  const size_t n = length < MULIB_TERMSCRIPT_CHORD_SOURCE_LIMIT_
+                       ? length : MULIB_TERMSCRIPT_CHORD_SOURCE_LIMIT_;
+  for (;;)
+    {
+      size_t start, len, slot;
+      while (i < n && mulib_termscript_space_ ((unsigned char)s[i]))
+        ++i;
+      if (i == n)
+        goto unclosed;
+      if (count == 1 && comma && n - i >= 2 && s[i] == ']' && s[i + 1] == ']')
+        break; /* The singleton disambiguator is not an empty component. */
+      if (s[i] == '!')
+        {
+          prefixed = 1;
+          ++i;
+        }
+      start = i;
+      while (i < n && mulib_termscript_bracket_name_byte_ ((unsigned char)s[i]))
+        {
+          if (i - start == MULIB_TERMSCRIPT_BRACKET_NAME_LIMIT_)
+            return mulib_termscript_parse_fail_ (e, i, "Termscript chord name limit");
+          ++i;
+        }
+      len = i - start;
+      if (!len)
+        return mulib_termscript_parse_fail_ (e, start, "expected chord key name");
+      if (count == MULIB_TERMSCRIPT_CHORD_PART_LIMIT_)
+        return mulib_termscript_parse_fail_ (e, start, "Termscript chord component limit");
+      for (slot = 0; slot < mod_count; ++slot)
+        {
+          size_t j;
+          if (len != strlen (modifiers[slot]))
+            continue;
+          for (j = 0; j < len; ++j)
+            {
+              char c = s[start + j];
+              if (c >= 'A' && c <= 'Z')
+                c = (char)(c - 'A' + 'a');
+              if (c != modifiers[slot][j])
+                break;
+            }
+          if (j == len)
+            break;
+        }
+      if (slot == mod_count)
+        {
+          for (; slot < slots; ++slot)
+            if (lengths[slot] == len && !memcmp (s + starts[slot], s + start, len))
+              break;
+          if (slot == slots)
+            ++slots;
+        }
+      if (lengths[slot])
+        return mulib_termscript_parse_fail_ (e, start, "duplicate chord key name");
+      starts[slot] = start;
+      lengths[slot] = len;
+      ++count;
+
+      while (i < n && mulib_termscript_space_ ((unsigned char)s[i]))
+        ++i;
+      if (n - i < 2)
+        goto unclosed;
+      if (s[i] == ']' && s[i + 1] == ']')
+        break;
+      if (s[i] != ',')
+        return mulib_termscript_parse_fail_ (e, i, "expected ',' or ']]' after chord key");
+      comma = 1;
+      ++i;
+    }
+  if (!prefixed && !comma)
+    return mulib_termscript_parse_fail_ (e, i, "chord requires ',' or '!'");
+  *consumed = i + 2;
+  if (key)
+    {
+      size_t used = 0;
+      for (size_t j = 0; j < slots; ++j)
+        if (lengths[j])
+          {
+            if (used)
+              key[used++] = '+';
+            memcpy (key + used, j < mod_count ? modifiers[j] : s + starts[j],
+                    lengths[j]);
+            used += lengths[j];
+          }
+      key[used] = '\0';
+      *key_length = used;
+    }
+  return 1;
+
+unclosed:
+  return mulib_termscript_parse_fail_ (e, i,
+      n < length ? "Termscript chord source limit" : "expected ']]' after chord");
+}
+#endif /* MULIB_TERMSCRIPT_BRACKET_IMPLEMENTED_ */
+
 #if defined(MULIB_IMPL_TERMSCRIPT_AST) && !defined(MULIB_TERMSCRIPT_AST_IMPLEMENTED)
 #define MULIB_TERMSCRIPT_AST_IMPLEMENTED
 #include "mulib-parsec.h"
 #include "mulib-utf8.h"
 #include <stdlib.h>
-#include <string.h>
 #ifdef __cplusplus
 extern "C"
 {
@@ -102,8 +260,7 @@ extern "C"
   {
     MULIB_TERMSCRIPT_SOURCE_LIMIT_ = 1024 * 1024,
     MULIB_TERMSCRIPT_NODE_LIMIT_ = 65536,
-    MULIB_TERMSCRIPT_DEPTH_LIMIT_ = 128,
-    MULIB_TERMSCRIPT_ESCAPE_NAME_LIMIT_ = 63
+    MULIB_TERMSCRIPT_DEPTH_LIMIT_ = 128
   };
 
   typedef struct
@@ -121,24 +278,6 @@ extern "C"
     mulib_parsec_parser_t atom_byte, field_byte, line_byte, atom, field, line;
     mulib_parsec_parser_t escape_byte, escape_name, escape_end;
   } mulib_termscript_reader_;
-
-  static int
-  mulib_termscript_parse_fail_ (mulib_termscript_error_t *e, size_t pos,
-                                 const char *msg)
-  {
-    if (e)
-      {
-        e->offset = pos;
-        e->message = msg;
-      }
-    return 0;
-  }
-
-  static int
-  mulib_termscript_space_ (unsigned char c)
-  {
-    return c == ' ' || (c >= '\t' && c <= '\r');
-  }
 
   static int
   mulib_termscript_atom_byte_ (unsigned char c, void *user)
@@ -174,8 +313,7 @@ extern "C"
   mulib_termscript_escape_byte_ (unsigned char c, void *user)
   {
     (void)user;
-    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
-           || (c >= '0' && c <= '9') || c == '_' || c == '-';
+    return mulib_termscript_bracket_name_byte_ (c);
   }
 
   static int
@@ -220,7 +358,7 @@ extern "C"
     r->field = mulib_parsec_repeat (&r->field_byte, 1, SIZE_MAX);
     r->line = mulib_parsec_repeat (&r->line_byte, 0, SIZE_MAX);
     r->escape_name = mulib_parsec_repeat (&r->escape_byte, 1,
-                                          MULIB_TERMSCRIPT_ESCAPE_NAME_LIMIT_);
+                                          MULIB_TERMSCRIPT_BRACKET_NAME_LIMIT_);
     r->escape_end = mulib_parsec_literal ("]]", 2);
   }
 
@@ -438,12 +576,15 @@ extern "C"
   }
 
   static size_t
-  mulib_termscript_escape_ (mulib_termscript_reader_ *r)
+  mulib_termscript_bracket_ (mulib_termscript_reader_ *r)
   {
-    size_t name, length;
+    size_t begin = r->pos, name, length, consumed;
+    mulib_termscript_error_t error;
     r->pos += 2;
     while (mulib_termscript_space_ (mulib_termscript_at_ (r)))
       ++r->pos;
+    if (mulib_termscript_at_ (r) == '!')
+      goto chord;
     name = r->pos;
     if (!mulib_termscript_scan_ (r, &r->escape_name, "expected escape name"))
       return SIZE_MAX;
@@ -455,9 +596,22 @@ extern "C"
       }
     while (mulib_termscript_space_ (mulib_termscript_at_ (r)))
       ++r->pos;
+    if (mulib_termscript_at_ (r) == ',')
+      goto chord;
     if (!mulib_termscript_scan_ (r, &r->escape_end, "expected ']]' after escape name"))
       return SIZE_MAX;
     return mulib_termscript_add_ (r, MULIB_TERMSCRIPT_ESCAPE, name, length);
+
+  chord:
+    if (!mulib_termscript_chord_ (r->program.source + begin,
+                                  r->program.length - begin, &consumed,
+                                  NULL, NULL, &error))
+      {
+        mulib_termscript_parse_fail_ (r->error, begin + error.offset, error.message);
+        return SIZE_MAX;
+      }
+    r->pos = begin + consumed;
+    return mulib_termscript_add_ (r, MULIB_TERMSCRIPT_CHORD, begin, consumed);
   }
 
   static size_t mulib_termscript_value_ (mulib_termscript_reader_ *, size_t);
@@ -567,7 +721,7 @@ extern "C"
       case '(': return mulib_termscript_container_ (r, MULIB_TERMSCRIPT_TUPLE, ')', depth);
       case '[':
         if (mulib_termscript_prefix_ (r, "[[", 2))
-          return mulib_termscript_escape_ (r);
+          return mulib_termscript_bracket_ (r);
         return mulib_termscript_container_ (r, MULIB_TERMSCRIPT_ARRAY, ']', depth);
       case '<': return mulib_termscript_container_ (r, MULIB_TERMSCRIPT_RECORD, '>', depth);
       case '"':

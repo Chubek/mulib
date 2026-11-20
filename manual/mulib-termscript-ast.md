@@ -4,6 +4,8 @@ The parser owns a copy of source and constructs an indexed tree with byte
 spans, first-child and next-sibling links. `SIZE_MAX` denotes a missing link.
 It parses without running code or touching the terminal. Start with zeroed
 storage and free the program once no VM values or definitions borrow it.
+The parser distinguishes escape values such as `[[CUP]]` from
+comma-separated key chords such as `[[ctrl, f1]]`.
 
 <!-- manual-reference -->
 ## Source and build reference

@@ -17,3 +17,7 @@ the short capability-name namespace (`stdlib.terminfo`), a VTerm output
 adapter (`stdlib.vterm`), text/control helpers, and state-machine operations.
 On platforms without POSIX terminals, scripts can still use a buffered or
 VTerm output host; the termios operations are unavailable.
+
+`--compile ENTRY` uses [CAPASM](../../manual/mulib-capasm.md) and emits a
+portable C90 translation unit by default. The generated entry uses the
+same VM and host capabilities as interpreted code.

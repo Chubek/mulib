@@ -5,7 +5,7 @@
  */
 #ifndef MULIB_TERMSCRIPT_H
 #define MULIB_TERMSCRIPT_H
-#include "mulib-termscript-compiler.h"
+#include "mulib-termscript-capasm.h"
 #include "mulib-termscript-host.h"
 #ifdef __cplusplus
 extern "C" {

@@ -947,25 +947,56 @@ if(MULIB_BUILD_TESTS OR MULIB_BUILD_MODULE_EXAMPLES)
   add_executable(mulib_example_termscript_support examples/termscript/support.c)
   mulib_test_executable(mulib_example_termscript_support)
   add_executable(termscript library/termscript/main.c)
-  target_compile_definitions(termscript PRIVATE MULIB_TERMSCRIPT_STDLIB="${CMAKE_CURRENT_SOURCE_DIR}/library/termscript")
+  target_compile_definitions(termscript PRIVATE
+    MULIB_TERMSCRIPT_STDLIB="${CMAKE_CURRENT_SOURCE_DIR}/library/termscript"
+    MULIB_XMACIR_TRS="${CMAKE_CURRENT_SOURCE_DIR}/library/xmacir-trs")
   mulib_test_executable(termscript)
   add_executable(mulib_example_cdd_pipeline examples/cdd-pipeline.c)
   mulib_test_executable(mulib_example_cdd_pipeline)
   add_executable(mulib_example_markup_ir examples/markup-ir.c)
   mulib_test_executable(mulib_example_markup_ir)
   if(MULIB_BUILD_TESTS)
+    foreach(example hospitality_demo finpred_market)
+      add_executable("mulib_${example}" "examples/${example}.c")
+      mulib_test_executable("mulib_${example}")
+      mulib_register_test("mulib_${example}")
+    endforeach()
+    add_executable(mulib_capasm_portable_example examples/modules/capasm.c)
+    mulib_test_executable(mulib_capasm_portable_example)
     mulib_register_test(mulib_example_imtui_headless)
     mulib_register_test(mulib_example_imtui_composites)
     mulib_register_test(mulib_example_termscript_support)
     add_test(NAME mulib_termscript_counter COMMAND termscript "${CMAKE_CURRENT_SOURCE_DIR}/library/termscript/examples/counter.term")
     set_tests_properties(mulib_termscript_counter PROPERTIES PASS_REGULAR_EXPRESSION "10" TIMEOUT 30)
     if(UNIX AND Python3_Interpreter_FOUND AND NOT CMAKE_CROSSCOMPILING)
+      add_test(NAME mulib_capasm_portable
+        COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_capasm_portable.py"
+          --example $<TARGET_FILE:mulib_capasm_portable_example> --cc "${CMAKE_C_COMPILER}"
+          --sanitize "$<BOOL:${MULIB_SANITIZERS}>")
+      set_tests_properties(mulib_capasm_portable PROPERTIES TIMEOUT 90)
+      add_test(NAME mulib_xmacir_trs
+        COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_xmacir_trs.py")
+      set_tests_properties(mulib_xmacir_trs PROPERTIES TIMEOUT 90)
       add_test(NAME mulib_termscript_cli
         COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_termscript_cli.py"
           --runner $<TARGET_FILE:termscript> --termdb-test $<TARGET_FILE:mulib_test_termdb>
           --compiler-test $<TARGET_FILE:mulib_test_termscript_compiler> --cc "${CMAKE_C_COMPILER}"
           --sanitize "$<BOOL:${MULIB_SANITIZERS}>")
-      set_tests_properties(mulib_termscript_cli PROPERTIES TIMEOUT 90)
+      set_tests_properties(mulib_termscript_cli PROPERTIES TIMEOUT 120)
+      add_test(NAME mulib_termscript_capasm_tools
+        COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_termscript_capasm_tools.py"
+          --runner $<TARGET_FILE:termscript>)
+      set_tests_properties(mulib_termscript_capasm_tools PROPERTIES TIMEOUT 90)
+      if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND
+          CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang)$" AND
+          CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang)$")
+        add_test(NAME mulib_finpred_kernels
+          COMMAND ${CMAKE_COMMAND} -E env "MULIB_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+            "CC=${CMAKE_C_COMPILER}" "CXX=${CMAKE_CXX_COMPILER}"
+            "SANITIZE=$<BOOL:${MULIB_SANITIZERS}>"
+            sh "${CMAKE_CURRENT_SOURCE_DIR}/tests/finpred-tests/run.sh")
+        set_tests_properties(mulib_finpred_kernels PROPERTIES TIMEOUT 180)
+      endif()
     endif()
     mulib_register_test(mulib_example_cdd_pipeline)
     mulib_register_test(mulib_example_markup_ir)

@@ -1,8 +1,9 @@
-/* Run a trusted Termscript source or emit a standalone C11 translation unit. */
+/* Run a trusted Termscript source or emit an ISO C90 translation unit. */
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #endif
 #include "implementation.h"
+#include "capasm-tools.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,7 +38,7 @@ static int
 output(void *stream, const char *bytes, size_t n)
 {
   FILE *fp = stream;
-  return fwrite(bytes, 1, n, fp) == n && !fflush(fp);
+  return (!n || fwrite(bytes, 1, n, fp) == n) && !fflush(fp);
 }
 
 static int
@@ -57,8 +58,81 @@ help(const char *exe, int ok)
   FILE *out = ok ? stdout : stderr;
   fprintf(out, "Usage: %s [--compile ENTRY | --ansi | --xterm | --termdb PATH]\n"
                "       [--profile PROFILE] [--library ROOT] [--allow-shell] [--tty] FILE\n"
-               "FILE '-' reads stdin. Run only trusted source and library roots.\n", exe);
+               "Compile only (artifact on stdout, C90 by default):\n"
+               "  --rewrite NAME [--rewrite NAME ...] [--m4 PROGRAM] [--rewrite-path PATH]\n"
+               "  --kernel NAME (repeat for declaration includes; selected headers may require C11)\n"
+               "  --emit c90|preprocessed|asm|obj|exe\n"
+               "  --cpp PROGRAM  --cc PROGRAM  --as PROGRAM  --ld DRIVER\n"
+               "  --cpp-arg ARG  --cc-arg ARG   --as-arg ARG  --ld-arg ARG  --link-input FILE\n"
+               "  Program arguments and link inputs may be repeated; exe requires explicit link inputs or arguments.\n"
+               "FILE '-' reads stdin. Use only trusted tools and rewrite/library roots.\n", exe);
   return ok ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
+/* A program is one executable pathname or PATH name, never a command line.
+   Each argv option consumes exactly one argument, even one starting with '-'. */
+static int
+compile_option(capasm_tools_t *tools, int argc, char **argv, int *i)
+{
+  const char *name = argv[*i];
+  const char **program = NULL;
+  capasm_tool_args_t *args = NULL;
+  if (!strcmp(name, "--m4")) program = &tools->m4;
+  else if (!strcmp(name, "--rewrite-path")) program = &tools->rewrite_path;
+  else if (!strcmp(name, "--cpp")) program = &tools->cpp;
+  else if (!strcmp(name, "--cc")) program = &tools->cc;
+  else if (!strcmp(name, "--as")) program = &tools->as;
+  else if (!strcmp(name, "--ld")) program = &tools->ld;
+  else if (!strcmp(name, "--rewrite")) args = &tools->rewrites;
+  else if (!strcmp(name, "--kernel")) args = &tools->kernels;
+  else if (!strcmp(name, "--cpp-arg")) args = &tools->cpp_args;
+  else if (!strcmp(name, "--cc-arg")) args = &tools->cc_args;
+  else if (!strcmp(name, "--as-arg")) args = &tools->as_args;
+  else if (!strcmp(name, "--ld-arg")) args = &tools->ld_args;
+  else if (!strcmp(name, "--link-input")) args = &tools->link_inputs;
+  else if (strcmp(name, "--emit")) return 0;
+  if (*i + 1 == argc) return -1;
+  const char *value = argv[++*i];
+  if (program) {
+    if (!*value && program != &tools->rewrite_path) return -1;
+    *program = value;
+  } else if (args) {
+    if ((args == &tools->rewrites && !capasm_tool_rewrite_name(value)) ||
+        (args == &tools->link_inputs && !*value) || !capasm_tool_arg(args, value)) return -1;
+  } else {
+    if (!strcmp(value, "c90")) tools->output = CAPASM_TOOL_C90;
+    else if (!strcmp(value, "preprocessed")) tools->output = CAPASM_TOOL_PREPROCESSED;
+    else if (!strcmp(value, "asm")) tools->output = CAPASM_TOOL_ASSEMBLY;
+    else if (!strcmp(value, "obj")) tools->output = CAPASM_TOOL_OBJECT;
+    else if (!strcmp(value, "exe")) tools->output = CAPASM_TOOL_EXECUTABLE;
+    else return -1;
+  }
+  return 1;
+}
+
+static const char *
+compile_configuration(const capasm_tools_t *tools)
+{
+  if ((tools->m4 || tools->rewrite_path) && !tools->rewrites.count)
+    return "--m4 and --rewrite-path require --rewrite";
+  if (tools->output == CAPASM_TOOL_C90 && (tools->cpp || tools->cpp_args.count ||
+                                         tools->cc || tools->cc_args.count))
+    return "compiler and preprocessor options require a tool output via --emit";
+  if (tools->output == CAPASM_TOOL_PREPROCESSED && tools->cc_args.count)
+    return "use --cpp-arg for --emit preprocessed";
+  if (tools->output == CAPASM_TOOL_PREPROCESSED && tools->cc && tools->cpp)
+    return "--cc is unused with --emit preprocessed and --cpp";
+  if (tools->output < CAPASM_TOOL_OBJECT && (tools->as || tools->as_args.count))
+    return "assembler options require --emit obj or --emit exe";
+  if (tools->output != CAPASM_TOOL_EXECUTABLE && (tools->ld || tools->ld_args.count || tools->link_inputs.count))
+    return "linker options require --emit exe";
+  if (tools->output == CAPASM_TOOL_EXECUTABLE && !tools->ld_args.count && !tools->link_inputs.count)
+    return "--emit exe requires explicit --link-input or --ld-arg";
+#ifndef MULIB_CAPASM_TOOLS_POSIX
+  if (tools->rewrites.count || tools->output != CAPASM_TOOL_C90)
+    return "external compile tools require POSIX process support";
+#endif
+  return NULL;
 }
 
 int
@@ -66,7 +140,8 @@ main(int argc, char **argv)
 {
   const char *entry = NULL, *path = NULL, *db_path = NULL, *profile = NULL;
   const char *root = MULIB_TERMSCRIPT_STDLIB;
-  int xterm = 0, ansi = 0, shell = 0, tty = 0;
+  capasm_tools_t tools = { 0 };
+  int xterm = 0, ansi = 0, shell = 0, tty = 0, has_compile_option = 0;
   for (int i = 1; i < argc; ++i) {
     const char *s = argv[i];
     if (!strcmp(s, "--help")) return help(argv[0], 1);
@@ -78,10 +153,23 @@ main(int argc, char **argv)
     else if (!strcmp(s, "--xterm")) ansi = xterm = 1;
     else if (!strcmp(s, "--allow-shell")) shell = 1;
     else if (!strcmp(s, "--tty")) tty = 1;
-    else if (!path && (s[0] != '-' || !s[1])) path = s;
-    else return help(argv[0], 0);
+    else {
+      int opt = compile_option(&tools, argc, argv, &i);
+      if (opt > 0) has_compile_option = 1;
+      else if (!opt && !path && (s[0] != '-' || !s[1])) path = s;
+      else {
+        if (opt < 0) fprintf(stderr, "Termscript: invalid or excessive %s argument\n", s);
+        return help(argv[0], 0);
+      }
+    }
   }
   if (!path) return help(argv[0], 0);
+  const char *config_error = entry ? compile_configuration(&tools) :
+    has_compile_option ? "tool and rewrite options require --compile ENTRY" : NULL;
+  if (config_error) {
+    fprintf(stderr, "Termscript: %s\n", config_error);
+    return EXIT_FAILURE;
+  }
   mulib_strbuf_t src = { NULL, 0, 0 };
   if (!source_file(path, &src)) {
     fprintf(stderr, "%s: cannot read bounded Termscript source\n", path);
@@ -93,8 +181,9 @@ main(int argc, char **argv)
   int ok = 0;
   if (entry) {
     char *c = NULL;
-    ok = mulib_termscript_compile_c11(src.data, src.length, entry, &c, &err);
-    if (ok) ok = output(stdout, c, strlen(c));
+    size_t length = 0;
+    ok = capasm_tool_emit(&tools, src.data, src.length, entry, &c, &length, &err);
+    if (ok) ok = output(stdout, c, length);
     free(c);
   } else {
     mulib_termscript_program_t program = { NULL, 0, NULL, 0, SIZE_MAX };

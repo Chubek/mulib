@@ -18,7 +18,15 @@ resolves its name against the host's explicit [terminal database](mulib-termdb.m
 and validates the parameters before writing. For example, `[[kf11]] emit`
 has no parameters and requires the explicit xterm profile. `(2, 4) [[CUP]] emit`
 uses zero-based row then column; the semantic `move` word instead takes column
-then row.
+then row. With commas between key names, the same delimiters form a key
+chord instead: `[[ctrl, shift, f1]] { "help" typeout } bind` binds it in
+the current mode; `[[shift, ctrl, f1]] press` dispatches it locally.
+`[[CUP]]` without a comma or `!` is still an escape value.
+Use `[[f1,]]` or `[[!f1]]` for a one-key chord. `ctrl`, `alt`, `shift`
+and `super` are case-insensitive and ordered before other keys, whose case
+and order are preserved. Dispatch the same chord from a host with
+`mulib_termscript_key(vm, "ctrl+shift+f1", 13, error)`. This is a single
+logical key event, not a detector for simultaneous physical key presses.
 
 ```termscript
 %module: demo.counter
@@ -40,10 +48,10 @@ Applications choose whether imports, terminfo sequences, POSIX termios, and
 command handlers are available. Module paths are resolved only under trusted
 roots. For `exec`, the command literal alone never grants access to a shell.
 
-The compiler canonicalizes the parsed representation before emitting C11.
-The resulting C is callable with the same native host as interpreted code.
-It embeds the executable AST; operation and control-flow execution still
-uses the bounded runtime.
+The compiler lowers the parsed program to [XMacIR](mulib-xmacir.md) and
+emits ISO C90 with [CAPASM](mulib-capasm.md). Link the resulting translation
+unit with the usual C11 Termscript runtime. It embeds a versioned executable
+AST; operations and control flow still execute through the bounded runtime.
 
 ```sh
 make build/termscript
@@ -52,6 +60,34 @@ make build/termscript
 python3 tools/mk-termdb.py build/terminal.sqlite3
 ./build/termscript --termdb build/terminal.sqlite3 library/termscript/examples/escape.term
 ```
+
+In compile mode, repeat `--rewrite NAME` to run named `.xmtrs` m4 passes in
+order. Termscript searches `$XMACIR_REWRITE_PATH` (colon-separated, empty
+components ignored), then `library/xmacir-trs`. `--rewrite-path` replaces
+that search path, and `--m4` selects an m4 executable. No rewrite runs by
+default. For example:
+
+```sh
+./build/termscript --compile counter --rewrite repack \
+    library/termscript/examples/counter.term > build/counter.c
+```
+
+On POSIX, `--emit preprocessed|asm|obj|exe` selects a toolchain stage instead
+of C90 output. `--cpp`, `--cc`, `--as`, and `--ld` select executables; repeat
+`--cpp-arg`, `--cc-arg`, `--as-arg`, or `--ld-arg` to pass one literal
+argument at a time. Link with an explicit C driver or compatible linker
+and supply the runtime and caller with `--link-input`. The tool writes the
+artifact to standard output; it never runs it. Use only trusted tools,
+arguments, and rewrite directories.
+When pairing Clang with GNU `as` on ELF targets, pass
+`--cc-arg -fno-addrsig` to suppress Clang-specific assembly directives.
+
+Repeat `--kernel NAME` to add declaration includes, for example
+`--kernel money --kernel termscript-runtime`. The names `capasm` and
+`xmacir` cannot be selected. When an external C tool is selected, the CLI
+uses C11 with these headers; pass `--cc-arg -Iinclude` (or
+`--cpp-arg -Iinclude` for a separate preprocessor). Without the option, the
+translation unit remains strict C90.
 
 <!-- manual-reference -->
 ## Source and build reference
@@ -62,7 +98,7 @@ python3 tools/mk-termdb.py build/terminal.sqlite3
 | --- | --- |
 | Header | [`include/mulib-termscript.h`](../include/mulib-termscript.h) |
 | Implementation switch | `MULIB_IMPL_TERMSCRIPT` |
-| Repository-local includes | [mulib-termscript-compiler](mulib-termscript-compiler.md), [mulib-termscript-host](mulib-termscript-host.md) |
+| Repository-local includes | [mulib-termscript-capasm](mulib-termscript-capasm.md), [mulib-termscript-host](mulib-termscript-host.md) |
 | Complete example | [`library/termscript/main.c`](../library/termscript/main.c) |
 
 The include list includes conditional and implementation-only includes;

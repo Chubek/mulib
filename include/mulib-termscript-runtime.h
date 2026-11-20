@@ -34,8 +34,11 @@ typedef struct mulib_termscript_object mulib_termscript_object_t;
 typedef struct mulib_termscript_vm mulib_termscript_vm_t;
 /* Integer, boolean (0/1) and character (Unicode scalar) use integer.
  * Text-like values use a byte span and are not necessarily NUL terminated;
- * a character also carries its UTF-8 bytes. Access collections via the
- * value_count/value_at functions. program/node identify source-backed values. */
+ * a character also carries its UTF-8 bytes. A chord is a KEY whose text is
+ * the canonical basename: ctrl/alt/shift/super first (lowercase, in that
+ * order), then the other names in input order, joined with '+'. Evaluating
+ * the literal alone neither dispatches nor emits anything. Access collections
+ * via value_count/value_at. program/node identify source-backed values. */
 typedef struct {
   mulib_termscript_value_kind_t kind;
   int64_t integer;
@@ -118,6 +121,15 @@ const char *mulib_termscript_vm_mode(const mulib_termscript_vm_t *, size_t *);
  * must supply valid buffers of the advertised lengths. */
 int mulib_termscript_run(mulib_termscript_vm_t *, const mulib_termscript_program_t *,
                          mulib_termscript_error_t *);
+/* CAPASM capsule entry bridge. bytes must address length readable, immutable
+ * bytes for this call. Malformed capsules are rejected before entering the
+ * script; format diagnostics use capsule byte offsets, execution diagnostics use
+ * canonical AST pool offsets. Decoded data is charged to the VM allocation
+ * budget and lives until clear, even if execution fails. Validation does not
+ * authenticate a capsule. As with run(), execution may use an installed host
+ * but never enables capabilities or installs one. */
+int mulib_termscript_run_capsule(mulib_termscript_vm_t *, mulib_termscript_error_t *,
+                                 const unsigned char *bytes, size_t length);
 int mulib_termscript_eval(mulib_termscript_vm_t *, const mulib_termscript_program_t *,
                           mulib_termscript_error_t *);
 int mulib_termscript_step(mulib_termscript_vm_t *, mulib_termscript_error_t *);
@@ -149,8 +161,10 @@ const mulib_termscript_value_t *mulib_termscript_value_at(const mulib_termscript
 
 /* Dispatch a key in the current state, falling back to global bindings.
  * Returns 1 when handled, 0 when unbound, -1 when execution fails. An external
- * key event starts its own step budget; script `!name press` dispatches
- * under the active budget without generating input. Key names are exact. */
+ * key event starts its own step budget; script `!name press` or
+ * `[[ctrl, alt, a]] press` uses the active budget without generating input.
+ * Names are exact: a chord event supplies e.g. "ctrl+alt+a" without formatting
+ * or normalization by this API. A literal `!ctrl+alt+a` shares that binding. */
 int mulib_termscript_key(mulib_termscript_vm_t *, const char *, size_t, mulib_termscript_error_t *);
 
 #ifdef __cplusplus
@@ -160,6 +174,7 @@ int mulib_termscript_key(mulib_termscript_vm_t *, const char *, size_t, mulib_te
 
 #if defined(MULIB_IMPL_TERMSCRIPT_RUNTIME) && !defined(MULIB_TERMSCRIPT_RUNTIME_IMPLEMENTED)
 #define MULIB_TERMSCRIPT_RUNTIME_IMPLEMENTED
+#include "mulib-termscript-ast.h" /* Private chord scanner, also after declaration-only inclusion. */
 #include <stdlib.h>
 #include <string.h>
 #ifdef __cplusplus
@@ -1685,6 +1700,22 @@ invalid:
 }
 
 static int
+mulib_tsrt_chord(mulib_termscript_vm_t *vm, const char *text, size_t len,
+                 mulib_termscript_value_t *out, mulib_termscript_error_t *err)
+{
+  char key[MULIB_TERMSCRIPT_CHORD_KEY_LIMIT_ + 1];
+  size_t consumed, key_length;
+  if (!mulib_termscript_chord_(text, len, &consumed, key, &key_length, NULL) || consumed != len)
+    return mulib_termscript_fail(vm, err, "invalid chord AST");
+  if (!mulib_tsrt_reserve(vm, 1))
+    return mulib_termscript_fail(vm, err, "stack or allocation limit");
+  const char *copy = mulib_tsrt_copy(vm, key, key_length);
+  if (!copy) return mulib_tsrt_nomem(vm, err);
+  *out = mulib_tsrt_value(MULIB_TERMSCRIPT_VALUE_KEY, 0, copy, key_length);
+  return 1;
+}
+
+static int
 mulib_tsrt_node(mulib_termscript_vm_t *vm, const mulib_termscript_program_t *p,
                 size_t index, mulib_termscript_error_t *err)
 {
@@ -1740,6 +1771,11 @@ mulib_tsrt_node(mulib_termscript_vm_t *vm, const mulib_termscript_program_t *p,
     break;
   case MULIB_TERMSCRIPT_KEY:
     v = mulib_tsrt_value(MULIB_TERMSCRIPT_VALUE_KEY, 0, text, len);
+    break;
+  case MULIB_TERMSCRIPT_CHORD:
+    if (n->first != SIZE_MAX)
+      return mulib_termscript_fail(vm, err, "invalid chord AST");
+    if (!mulib_tsrt_chord(vm, text, len, &v, err)) return 0;
     break;
   case MULIB_TERMSCRIPT_ESCAPE:
     v = mulib_tsrt_value(MULIB_TERMSCRIPT_VALUE_ESCAPE, 0, text, len);
@@ -1949,6 +1985,54 @@ mulib_termscript_run(mulib_termscript_vm_t *vm, const mulib_termscript_program_t
   int ok = mulib_tsrt_seq(vm, p, p->root, err);
   s->active = 0;
   return ok;
+}
+
+#include "detail/mulib-termscript-capsule.inc"
+
+int
+mulib_termscript_run_capsule(mulib_termscript_vm_t *vm, mulib_termscript_error_t *err,
+                             const unsigned char *bytes, size_t length)
+{
+  size_t count, pool, bad = 0;
+  const char *failure = NULL;
+  if (!vm) failure = "invalid run arguments";
+  else if (vm->state && vm->state->active) failure = "run is not reentrant; use eval";
+  else if (!mulib_tscap_validate_(bytes, length, &count, &pool, &bad))
+    failure = "invalid TermScript capsule";
+  else {
+    /* A single aligned arena object holds the descriptor, AST, and NUL-
+     * terminated pool. The runtime's ordinary clear frees them together. */
+    typedef union {
+      mulib_termscript_program_t program;
+      mulib_termscript_node_t align_node;
+    } capsule_t;
+    if (pool < SIZE_MAX - sizeof(capsule_t)
+        && count <= (SIZE_MAX - sizeof(capsule_t) - pool - 1) / sizeof(mulib_termscript_node_t)) {
+      size_t size = sizeof(capsule_t) + count * sizeof(mulib_termscript_node_t) + pool + 1;
+      capsule_t *owner = (capsule_t *)mulib_tsrt_alloc(vm, size);
+      if (owner) {
+        mulib_termscript_node_t *nodes = (mulib_termscript_node_t *)(owner + 1);
+        char *source = (char *)(nodes + count);
+        for (size_t i = 0; i < count; ++i) {
+          const unsigned char *row = mulib_tscap_row_(bytes, i);
+          nodes[i].kind = mulib_tscap_kinds_[row[MULIB_TSCAP_KIND_]];
+          nodes[i].offset = (size_t)mulib_tscap_read_(row + MULIB_TSCAP_OFFSET_);
+          nodes[i].length = (size_t)mulib_tscap_read_(row + MULIB_TSCAP_LENGTH_);
+          nodes[i].first = mulib_tscap_index_(mulib_tscap_read_(row + MULIB_TSCAP_FIRST_));
+          nodes[i].next = mulib_tscap_index_(mulib_tscap_read_(row + MULIB_TSCAP_NEXT_));
+          nodes[i].integer = mulib_tscap_int_(mulib_tscap_read_(row + MULIB_TSCAP_INTEGER_));
+        }
+        memcpy(source, mulib_tscap_row_(bytes, count), pool);
+        mulib_termscript_program_t p = { source, pool, nodes, count, count ? 0 : SIZE_MAX };
+        owner->program = p;
+        return mulib_termscript_run(vm, &owner->program, err);
+      }
+    }
+    bad = 0;
+    failure = "allocation limit or out of memory";
+  }
+  if (err) { err->offset = bad; err->message = failure; }
+  return 0;
 }
 
 int
