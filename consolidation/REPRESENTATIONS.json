@@ -1,0 +1,45 @@
+{
+  "schema": "mulib.consolidation.representations/1",
+  "representations": [
+    {
+      "type": "mulib_num_csr_t",
+      "header": "include/mulib-num-csr.h",
+      "domain": "compressed-sparse-row",
+      "ownership": "owner",
+      "units": {"offset": "elements", "column": "zero-based-index", "values": "caller coefficient units"},
+      "conversions": ["mulib_num_csr_borrow_amb3r"]
+    },
+    {
+      "type": "ma_csr",
+      "header": "include/mulib-amb3r-base.h",
+      "domain": "compressed-sparse-row",
+      "ownership": "read-only borrow",
+      "units": {"ptr": "elements", "idx": "zero-based-index", "val": "caller coefficient units"},
+      "conversions": ["mulib_num_csr_from_amb3r"]
+    },
+    {
+      "type": "mulib_img_view",
+      "header": "include/mulib-img-core.h",
+      "domain": "linear-light straight-alpha packed float RGBA",
+      "ownership": "view",
+      "units": {"stride": "float elements", "capacity": "float elements"},
+      "conversions": []
+    },
+    {
+      "type": "mulib_media_frame",
+      "header": "include/mulib-media-frame.h",
+      "domain": "format-tagged planar or packed frame",
+      "ownership": "owner or view, tracked by caller",
+      "units": {"stride": "bytes", "capacity": "bytes", "pts": "ticks", "timebase": "seconds per tick"},
+      "conversions": ["mulib_media_frame_copy"]
+    },
+    {
+      "type": "mulib_glx_pixelformat_t",
+      "header": "include/mulib-glx-pixelformat.h",
+      "domain": "native-endian packed pixel words",
+      "ownership": "value",
+      "units": {"pitch": "bytes in conversion API"},
+      "conversions": ["mulib_glx_pixelformat_convert"]
+    }
+  ]
+}

@@ -9,12 +9,20 @@ creates an immutable binding and checks the initializer's type. A semicolon is
 optional at the declaration's end-of-line, closing brace, or end-of-source.
 Native data referenced by the binding can still be mutated by library calls.
 
-The checked-in generated bridge covers **1,175 public headers**, **1,175 library
-names**, **5,192 functions**, **8,581 native type descriptors**, and **2,650
-constants** from MuLIB. `virtio.h` and `mulib-virtio.h` name the same library.
-`Inventory.json` records the complete header/function inventory and fingerprint.
-Functions are real compiler-typed C calls, including struct/union returns,
-static-inline APIs, and callbacks. Both hosts use the same compiled bridge.
+`Inventory.json` covers all public header names and records C function
+declarations visible in the Linux compiler profile. It separates `declarations`
+from `functions`, the subset exported by the C++ and D hosts' shared bridge.
+`LegacyExports.json` pins the existing **5,373 raw functions**, **8,927 type
+descriptors**, and **2,802 constants**. These are compiler-typed C calls, not
+safe foreign bindings. Load only trusted code: raw calls still require the
+caller to obey C contracts for lengths, ownership, callbacks and effects.
+This catalogue is not an On1x admission mechanism.
+
+Newly discovered APIs do not get wrappers, callbacks, storage constructors, or
+constants. A `discovery-only` library exposes metadata (`LibraryName`, `Header`,
+`BindingProfile`, `Symbols`, `Libraries`); its `Symbols` is empty. A library can
+remain `legacy-raw` while new declarations in its header remain unavailable.
+For example, `media-frame` is metadata-only; `Parsec` retains its raw API.
 
 MuW3, its Mune Weblet engine, and MicroChan are registered as `muw3`, `muw3-mune`
 and `microchan`. Their complete C APIs, option records and callback types are
@@ -98,8 +106,8 @@ Library names ignore ASCII case; unique punctuation-folded aliases also work:
 `Parsec`, `parsec`, and `mulib-parsec.h` identify the same wrapper. Exact library
 names take priority, preserving distinct libraries such as `container-stub` and
 `containerstub`. Unknown or ambiguous aliases raise an error.
-Every public C function and constant is accessible by its exact C name.
-Functions also have prefix-stripped, case/punctuation-insensitive aliases:
+Retained legacy C functions and constants are accessible by exact C name.
+Exported functions also have prefix-stripped, case/punctuation-insensitive aliases:
 
 ```mull
 mulib P <- G:MulibWrap("Parsec")
@@ -109,14 +117,16 @@ G:Assert(a:kind == P:MULIB_PARSEC_BYTE);
 ```
 
 Use exact C names to resolve alias collisions or names reserved by helpers.
-`library:Symbols` is a list of exact exported names; `LibraryName` and `Header`
-provide inventory metadata. The `New`, `Array`, `Buffer`, `Callback`, `SizeOf`,
-and `Libraries` helpers are available on every library wrapper too.
+`library:Symbols` lists the exact exported names; `BindingProfile` is
+`legacy-raw` or `discovery-only`. `New`, `Array`, `Buffer`, `Callback`, and
+`SizeOf` are available only on legacy wrappers and in the global `Mulib`
+helper package; they do not support discovered types.
 
-Enum values, public global constants, and object-like numeric/string macros
-are exported. Function-like C macros and type/declaration-generating macros
-are compile-time constructs; `Inventory.json` lists them under
-`preprocessor_only`. They have no native function address to call.
+Legacy exports include selected enum values, public global constants and
+object-like numeric/string macros. `preprocessor_only` lists probed legacy
+preprocessor constructs that are not runtime constants. Discovery records are
+not portable ABI descriptions: even two headers can declare incompatible
+functions with the same spelling.
 
 ## Parsec example
 
@@ -217,10 +227,13 @@ python3 scripts/generate_mulib.py --include ../include
 python3 scripts/generate_mulib.py --include ../include --check
 ```
 
-The generator rejects header parse errors and unsupported public variadic
-signatures. It emits `Generated.inc`, `Implementation.c`, and `Inventory.json`.
-The normal build links all implementations, so unresolved native functions
-fail at link time. Shared fixtures exercise inventory resolution, Parsec,
+The generator discovers additional headers in isolated declaration TUs, so
+declarations with incompatible C signatures need not coexist. It rejects parse
+errors and changes to the pinned legacy wrapper code. It emits `Generated.inc`,
+`Implementation.c`, and `Inventory.json`. CMake compiles the legacy switches in
+one implementation TU, separately from the bridge's declaration TU. The
+companion Shiraz services remain separately built. Shared fixtures exercise
+discovery-only rejection, legacy calls, Parsec,
 buffers, integers, pointer outputs, containers, callbacks, and error cases in
 both runtimes.
 
@@ -230,8 +243,11 @@ The dependency-free freshness check runs in both MuLIB and MuDSL CTest suites:
 python3 scripts/check_mulib_inventory.py --include ../include
 ```
 
-It verifies complete header/library/function registration, the header fingerprint,
-and the generated C artifacts' hashes. Run the generator after changing a public
-header, then use `--check` for a compiler-backed reproduction of the snapshot.
+It verifies header/library coverage, the callable policy, the complete `include/`
+fingerprint including local detail inputs, and the generated C artifacts' hashes.
+Regenerate after a header input changes, then use `--check` for a compiler-backed
+reproduction of the snapshot. Regeneration here was verified on Linux x86-64
+using Clang/libclang 22.1.8. Do not edit the policy to make newly discovered
+symbols callable without a separate review.
 The `ebooks.mull` fixture exercises EPUB, ZIP, DEFLATE, MOBI, AZW3, PDF and MathML
 through both C++ and D hosts, including native storage and explicit cleanup.

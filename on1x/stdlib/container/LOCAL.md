@@ -6,7 +6,7 @@ This is a synchronous, caller-owned storage API, not a concurrent one.
 
 | Import | Operations (all names have the `basis_` prefix) |
 | --- | --- |
-| `std.container.Box` | `box_new` allocates an `own<Box<T>>`; `box_get` copies the payload through a shared loan; `box_replace` writes through an exclusive loan and returns the previous value; `box_into_inner` frees the box and returns its payload. An unconsumed owner is dropped by the compiler. |
+| `std.container.Box` | `box_new` allocates an `own<Box<T>>`; `box_get` copies the payload through a shared loan; `box_replace` writes through an exclusive loan and returns the previous value; `box_exchange_box` transfers a replacement inner `own<Box<T>>` into a nested box and returns the previous owner without reallocating the outer box; `box_into_inner` frees the box and returns its payload. An unconsumed owner is dropped by the compiler. |
 | `std.container.Cell` | `cell_new` creates a `Cell<T>` value; `cell_get` reads through a shared loan; `cell_set` and `cell_replace` need an exclusive loan; `cell_swap` requires two distinct exclusively borrowed places. |
 | `std.container.Local` | `local_empty` creates a caller-owned `Local<T>` slot; `local_peek` snapshots its `Option<T>`; `local_put` installs a value and returns the previous option; `local_take` returns the previous option and leaves `None`. Independent slots do not share state. |
 | `std.container.Quarantine` | `quarantine_stage` returns `own<Quarantined<T>>`; `quarantine_check` checks a policy without consuming the staged owner; `quarantine_review` returns `Ok(T)` on acceptance or `Err(own<Quarantined<T>>)` with the same owner on rejection. There is no replacement allocation on rejection. |
@@ -86,8 +86,10 @@ for the separate move-only `Rc<T>` and `Arc<T>` APIs.
 The compiler can hold a move-only payload in `Box<T>` if constructed directly
 with `box(record<Box<T>> { value: move(payload) })`: extract it by consuming
 `take(owner)` and matching the returned record with `record{value: item}`.
-The copy-based generic helpers do not accept such payloads. This release
-does not extend the compiler's ownership, foreign ABI, or concurrency model.
+The copy-based generic helpers do not accept such payloads. For nested boxes,
+`basis_box_exchange_box(owner, move(replacement))` provides a checked exchange;
+the returned owner must be consumed or left to lexical cleanup. This does not
+extend the foreign ABI or concurrency model.
 
 Rejection by a policy is a recoverable `Err`. Allocation failure in `box`
 instead runs the compiler/runtime's emergency cleanup and exits with status

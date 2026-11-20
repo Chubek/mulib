@@ -13,6 +13,8 @@ size_t mull_mb_library_count(void);
 const char *mull_mb_library_name(size_t);
 const char *mull_mb_library_header(size_t);
 size_t mull_mb_library_find(const char *);
+/* False for metadata-only entries, which have no native symbol table. */
+int mull_mb_library_is_raw(size_t library);
 size_t mull_mb_symbol_count(size_t library);
 const char *mull_mb_symbol_name(size_t library, size_t index);
 /* Symbol kind: 0 function, 1 type, 2 constant. */

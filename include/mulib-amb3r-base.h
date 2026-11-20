@@ -29,14 +29,23 @@ typedef struct {double x,y;} ma_point;
 typedef struct {ma_point lo,hi;} ma_box;
 typedef struct {double re,im;} ma_complex;
 typedef struct {size_t from,to; double weight;} ma_edge;
+/* Borrowed CSR: rows+1 offsets and nnz column indices/values, all in elements.
+ * Indices are zero-based; ordering, duplicate entries, and explicit zeros are preserved. */
 typedef struct {size_t rows,cols,nnz; const size_t *ptr,*idx; const double *val;} ma_csr;
 typedef struct {double *v; size_t n,cap;} ma_dvec;
 typedef struct {unsigned char *v; size_t n,cap;} ma_bytes;
 typedef struct {uint64_t state;} ma_rng;
 static inline int ma_mul(size_t a,size_t b,size_t *out){if(a && b>SIZE_MAX/a)return 0;*out=a*b;return 1;}
 static inline void *ma_alloc(size_t n,size_t z){size_t b;if(!ma_mul(n,z,&b))return NULL;return calloc(b?b:1,1);}
-static inline int ma_reserve(void **ptr,size_t *cap,size_t need,size_t z){
- if(need<=*cap)return 1;size_t c=*cap?*cap:8,b;while(c<need){if(c>SIZE_MAX/2){c=need;break;}c*=2;}if(!ma_mul(c,z,&b))return 0;void *p=realloc(*ptr,b);if(!p)return 0;*ptr=p;*cap=c;return 1;}
+static inline int ma_reserve(void **ptr,size_t *cap,size_t need,size_t z) {
+ if(need<=*cap)return 1;
+ size_t c=*cap?*cap:8,b;
+ while(c<need){if(c>SIZE_MAX/2){c=need;break;}c*=2;}
+ if(!ma_mul(c,z,&b))return 0;
+ void *p=realloc(*ptr,b);
+ if(!p)return 0;
+ *ptr=p;*cap=c;return 1;
+}
 static inline int ma_push(void **p,size_t *n,size_t *cap,size_t z,const void *item){if(*n==SIZE_MAX||!ma_reserve(p,cap,*n+1,z))return 0;memcpy((unsigned char*)*p+*n*z,item,z);++*n;return 1;}
 static inline int ma_bytes_append(ma_bytes *b,const void *src,size_t n){if(!b||(!src&&n)||n>SIZE_MAX-b->n)return 0;if(!ma_reserve((void**)&b->v,&b->cap,b->n+n,1))return 0;if(n)memcpy(b->v+b->n,src,n);b->n+=n;return 1;}
 static inline void ma_bytes_free(ma_bytes *b){if(b){free(b->v);memset(b,0,sizeof *b);}}
@@ -51,7 +60,17 @@ static inline ma_complex ma_csub(ma_complex a,ma_complex b){ma_complex z={a.re-b
 static inline ma_complex ma_cmul(ma_complex a,ma_complex b){ma_complex z={a.re*b.re-a.im*b.im,a.re*b.im+a.im*b.re};return z;}
 static inline ma_complex ma_cdiv(ma_complex a,ma_complex b){double d=b.re*b.re+b.im*b.im;ma_complex z={(a.re*b.re+a.im*b.im)/d,(a.im*b.re-a.re*b.im)/d};return z;}
 static inline double ma_cabs(ma_complex a){return hypot(a.re,a.im);}
-static inline int ma_csr_valid(const ma_csr *a){if(!a||!a->ptr||(!a->idx&&a->nnz)||(!a->val&&a->nnz)||a->ptr[0]||a->ptr[a->rows]!=a->nnz)return 0;for(size_t i=0;i<a->rows;i++){if(a->ptr[i]>a->ptr[i+1]||a->ptr[i+1]>a->nnz)return 0;for(size_t k=a->ptr[i];k<a->ptr[i+1];k++)if(a->idx[k]>=a->cols||!isfinite(a->val[k]))return 0;}return 1;}
+/* Legacy logical validator: caller must supply live arrays of the declared sizes. */
+static inline int ma_csr_valid(const ma_csr *a) {
+ if(!a||a->rows>SIZE_MAX/sizeof(size_t)-1||a->nnz>SIZE_MAX/sizeof(size_t)||
+    a->nnz>SIZE_MAX/sizeof(double)||!a->ptr||(a->nnz&&(!a->idx||!a->val))||
+    a->ptr[0]||a->ptr[a->rows]!=a->nnz)return 0;
+ for(size_t i=0;i<a->rows;i++)
+  if(a->ptr[i]>a->ptr[i+1]||a->ptr[i+1]>a->nnz)return 0;
+ for(size_t k=0;k<a->nnz;k++)
+  if(a->idx[k]>=a->cols||!isfinite(a->val[k]))return 0;
+ return 1;
+}
 static inline void ma_csr_mv(const ma_csr *a,const double *x,double *y){for(size_t i=0;i<a->rows;i++){double s=0;for(size_t k=a->ptr[i];k<a->ptr[i+1];k++)s+=a->val[k]*x[a->idx[k]];y[i]=s;}}
 /* Dense reference solve, copied inputs; used only by bounded reference profiles. */
 static inline int ma_solve(size_t n,const double *a,const double *b,double *x,double tol){

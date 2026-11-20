@@ -20,10 +20,14 @@ def build(name, source, *flags, extra=()):
 
 
 def execute(name, source, output='', *flags):
-    p = run([build(name, source, *flags)])
+    exe = build(name, source, *flags)
+    start = time.monotonic()
+    p = run([exe])
+    elapsed = time.monotonic() - start
     note = "WARNING: ASan doesn't fully support makecontext/swapcontext functions and may produce false positives in some cases!"
     assert p.returncode == 0 and p.stdout == output, (name, p)
     assert not p.stderr or re.fullmatch(r'(?:==\d+==)?' + re.escape(note) + r'\n', p.stderr), (name, p)
+    return elapsed
 
 
 example = (t.root / 'examples/cancellation_deadlines.on1x').read_text()
@@ -124,8 +128,7 @@ execute('completed_cancel', '''fn main(){taskgroup{
 
 # A cancelled parent must terminate/reap external children rather than leave
 # process or pipe supervision alive after its source cleanup edge returns.
-start = time.monotonic()
-execute('external_child_cleanup', '''fn main(){taskgroup{
+elapsed = execute('external_child_cleanup', '''fn main(){taskgroup{
  let ready=->(1,1){payload:i64,capacity:0,mode:uni};let(tx,rx)=split ready;
  let child=launch{
   let p=launch exec("/bin/sleep","10");let started=tx <- 1;
@@ -134,7 +137,7 @@ execute('external_child_cleanup', '''fn main(){taskgroup{
  match <-rx with{Some(_)=>assert(true),None(_)=>assert(false)};
  assert(cancel child);
 }}''')
-assert time.monotonic() - start < 8
+assert elapsed < 8, elapsed
 
 execute('byte_wait_cleanup', '''fn main(){taskgroup{
  let ready=->(1,1){payload:i64,capacity:0,mode:uni};let(tx,rx)=split ready;

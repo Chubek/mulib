@@ -1,5 +1,11 @@
 # On1x verification — through 2026-11-20
 
+The [consolidation verification record](../consolidation/VERIFICATION.md)
+distinguishes the fresh starting tree from integrated results for MIR,
+exclusive replacement, SDK activation, trusted On1xRT loading, and raw C11
+wrapper generation. Earlier evidence below remains attached to its original
+revision and build profiles.
+
 ## Bounded JoltFX kernel review and registration — 2026-11-20
 
 Baseline MuLIB `53f77657126cf36401a6c18f49691499fdb53e11`, configured read-only

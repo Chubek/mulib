@@ -806,6 +806,19 @@ class Generator {
      clear_value(child.type,value);
      return {};
     }
+    if(builtin&&callee.text=="ref_replace"){
+     const auto type=ctype(e.type);
+     auto slot=unique("replace_place");
+     definitions<<pad()<<type<<" *"<<slot<<" = &("<<ref(e.children[0]->text)<<");\n";
+     auto next=expr(*e.children[1]);
+     // Only touch the old value after the replacement completes. The
+     // previous slot's ownership transfers to a rooted expression temporary.
+     auto previous=temp(e.type,"*"+slot);
+     if(!e.type.is_move_only())retain(e.type,next);
+     definitions<<pad()<<"*"<<slot<<" = "<<next<<";\n";
+     if(e.type.is_move_only())clear_value(e.type,next);
+     return previous;
+    }
      const auto* borrower=callee.reference==Expr::Reference::BorrowFunction?borrow_functions.at(callee.text):nullptr;
      const bool foreign=callee.reference==Expr::Reference::Extern||callee.reference==Expr::Reference::UnsafeForeign||
                         callee.reference==Expr::Reference::ScalarForeign;
@@ -1230,8 +1243,13 @@ class Generator {
    }
    for(const auto& parameter:parameters)definitions<<pad()<<"(void)"<<ref(parameter.name)<<";\n";
     for(const auto& parameter:parameters)
-      if(parameter.borrow==BorrowMode::Value&&parameter.type.is_move_only())
-       owners.back().push_back(track(parameter.type,ref(parameter.name)));
+     if(parameter.borrow==BorrowMode::Value&&needs_drop(parameter.type)){
+      const auto binding=ref(parameter.name);
+      // Copyable managed arguments arrive borrowed. A by-value slot can
+      // itself be lent exclusively, so the slot must own its reference.
+      if(!parameter.type.is_move_only())retain(parameter.type,binding);
+      owners.back().push_back(track(parameter.type,binding));
+     }
     for(const auto& parameter:parameters)if(parameter.pattern)
      bind_pattern(*parameter.pattern,parameter.type,ref(parameter.name));
    cancellation_edge(at);

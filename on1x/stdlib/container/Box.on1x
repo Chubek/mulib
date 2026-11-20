@@ -20,12 +20,22 @@ fn basis_box_get < T > (owner: borrow Box < T >) -> T
 
 fn basis_box_replace < T > (owner: ref Box < T >, value: T) -> T
 {
-  let previous = owner["value"];
-  owner := record < Box < T > >
+  let previous = ref_replace(owner, record < Box < T > >
   {
     value: value
-  };
-  return previous;
+  });
+  return previous["value"];
+}
+
+# Exchange a uniquely owned payload without copying it or reallocating the
+# outer box. The parameter and the previous payload each transfer once.
+fn basis_box_exchange_box < T > (owner: ref Box < own < Box < T > > >, value: own < Box < T > >) -> own < Box < T > >
+{
+  let previous = ref_replace(owner, record < Box < own < Box < T > > > >
+  {
+    value: move(value)
+  });
+  return match previous with { record{value:item} => move(item) };
 }
 
 # Consume and free the box, returning its payload.

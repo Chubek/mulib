@@ -97,18 +97,24 @@ def updated_manifest(root=ROOT):
         raise ValueError("manifest has no module entries")
     prefix = before[:before.index(blocks[0])]
     retained = []
+    previous_overlay = set()
     names = set()
     for block in blocks:
         if VALIDATION in block and not NOTEBOOK_PROFILE.search(block) and re.search(
             r'^  implementation: static-inline$', block, re.M
         ):
+            match = MANIFEST_HEADER.search(block)
+            if not match or match.group(1) in previous_overlay:
+                raise ValueError("missing or duplicate generated graphics header")
+            previous_overlay.add(match.group(1))
+            retained.append(match.group(1))
             continue
         retained.append(block)
         match = MANIFEST_HEADER.search(block)
         if match:
             names.add(match.group(1)[6:-2])
-    overlay = headers(root)
-    for header in overlay:
+    generated = {}
+    for header in headers(root):
         name = header.stem[6:]
         if name in names:
             raise ValueError(f"graphics entry collides with a separately registered entry: {name}")
@@ -120,7 +126,7 @@ def updated_manifest(root=ROOT):
             if not (root / "include" / f"mulib-{dependency}.h").is_file():
                 raise ValueError(f"{name}: unknown dependency {dependency}")
         purpose = PURPOSES.get(name, f"Bounded {name} API; see documented scope and acceptance gates.")
-        retained.append(
+        generated[header.name] = (
             f"- name: {name}\n"
             f"  header: include/{header.name}\n"
             f"  manual: {documentation(name)}\n"
@@ -129,6 +135,11 @@ def updated_manifest(root=ROOT):
             f"  purpose: {purpose}\n"
             f"  dependencies: [{', '.join(deps)}]\n"
             "  example: examples/gfx-headless.c\n" + VALIDATION)
+    # Update records in place. Moving unrelated entries on every refresh makes
+    # running this tool after another inventory sync needlessly non-idempotent.
+    retained = [generated.pop(block, "") if block in previous_overlay else block
+                for block in retained]
+    retained = [block for block in retained if block] + list(generated.values())
     # Do not silently register or assign status to unrelated, previously
     # unregistered headers. This command owns only the graphics overlay.
     total = len(retained)

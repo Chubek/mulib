@@ -8,7 +8,7 @@
 
 namespace on1x::sdk {
 
-enum class Kind { Analyzer, Transformer, Backend, Contract, Module, CLIOpt, Toolchain, ExecEnv };
+enum class Kind { Analyzer, Transformer, Backend, Contract, Module, CLIOpt, Toolchain, ExecEnv, AnalyzerV2 };
 
 // The caller owns validation/copying of the typed descriptor and its fields.
 // This function copies the key and keeps the immutable descriptor alive.
@@ -19,6 +19,8 @@ const void* find(const On1xSDK_Registry*, Kind, std::string_view) noexcept;
 const void* at(const On1xSDK_Registry*, Kind, size_t) noexcept;
 size_t count(const On1xSDK_Registry*, Kind) noexcept;
 bool valid_name(std::string_view) noexcept;
+On1xSDK_Status check_active_registry_context(const On1xSDK_Registry *,
+                                              const On1xSDK_Context *) noexcept;
 
 } // namespace on1x::sdk
 

@@ -23,7 +23,9 @@ share structural matching.
 [Checked shared/exclusive borrows](core-references.md) admit synchronous
 `borrow T`/`ref T` parameters and lexical `borrow [mut]` aliases for named
 places, including `own<Named>` payloads. They remain non-first-class and expose
-no foreign pointer ABI.
+no foreign pointer ABI. `ref_replace` exchanges a named exclusively lent
+place and returns its previous value. A typed early return while evaluating
+the replacement leaves the original value live.
 [Shared `sexpr` owners in nominal fields](owning-adts.md) use existing RC
 cleanup. [Finite unique owners](recursive-owning-adts.md) add recursive nominal
 layouts through `own<Named>`, explicit transfer, direct C11 cleanup, and

@@ -447,7 +447,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
    "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
 #ifdef ON1X_WITH_EXTENSION_SDK
-   "       on1xc --sdk-analyze NAME INPUT [--ir-input]\n"
+   "       on1xc --sdk-analyze NAME|linked-v2:HOOK INPUT [--ir-input]\n"
    "       on1xc --sdk-emit NAME INPUT [-o OUTPUT] [--ir-input]\n"
    "       [--plugin +NAME_OR_PATH] (repeatable in SDK hook modes)\n"
    "       on1xc sdk COMMAND [ARGS ...] (bounded SDK data tool)\n"
@@ -787,7 +787,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
       }
 #ifdef ON1X_WITH_EXTENSION_SDK
       // Configuration only; the SDK hook runs after source lowering or MIR verification.
-      if(!sdk_mode.empty())on1x::sdk_driver::check_plugin_selection(plugin_selectors);
+      if(!sdk_mode.empty())on1x::sdk_driver::check_plugin_selection(plugin_selectors,sdk_name);
 #endif
       if(ir_input){
         auto module=on1x::mir::deserialize(read_ir(source),source);

@@ -298,8 +298,13 @@ struct State {
     foreign->member=[this,library](const std::string &name) -> Value {
       if (name=="LibraryName") return mull_mb_library_name(library);
       if (name=="Header") return mull_mb_library_header(library);
+      if (name=="BindingProfile") return mull_mb_library_is_raw(library)?"legacy-raw":"discovery-only";
       if (name=="Symbols") {
         Value::List names; for(Id i=0;i<mull_mb_symbol_count(library);++i) names.emplace_back(mull_mb_symbol_name(library,i)); return names;
+      }
+      if (!mull_mb_library_is_raw(library)) {
+        if (name=="Libraries") return helper(library,name);
+        throw Error("discovery-only MuLIB library: "+std::string(mull_mb_library_name(library)));
       }
       auto h=helper(library,name); if(h.truth()) return h;
       Id id; int kind=mull_mb_symbol_find(library,name.c_str(),&id);

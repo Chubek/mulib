@@ -18,11 +18,11 @@ spec.loader.exec_module(exo)
 inventory = contracts.inventory(root)
 modules = inventory['modules']
 profiles = contracts.exotract_catalog()
-section = (root/'AGENTS.md').read_text().split(
-    '## 7. Exact per-header inventory and limitations\n', 1)[1].split('\n## 8.', 1)[0]
-rows = re.findall(r'^\| `mulib-([^`]+)\.h` \|', section, re.M)
-assert len(rows) == len(set(rows)) == 193
-rows.append('audio-core')  # Shared checked PCM helper introduced during review.
+sys.path.insert(0, str(root/'tools'))
+from joltfx_inventory import inventory as joltfx_inventory
+
+rows = [record['header'][6:-2] for record in joltfx_inventory(root)]
+assert len(rows) == len(set(rows)) == 194
 assert set(rows) <= modules.keys()
 assert set(inventory['auxiliary_headers']) == {
     'include/mulib-container-core.h', 'include/mulib-qvm.h', 'include/mulib-lprowse.h',

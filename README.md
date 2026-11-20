@@ -1,5 +1,10 @@
 # MuLIB sandbox kernels
 
+For repository-wide MuLIB and On1x integration, see the
+[consolidation results](consolidation/IMPLEMENTATION.md),
+[verification record](consolidation/VERIFICATION.md) and
+[remaining gates](consolidation/REMAINING_WORK.md).
+
 ## JoltFX assessment kernels
 
 The [bounded review guide](manual/joltfx-review.md) covers the 193 supplied

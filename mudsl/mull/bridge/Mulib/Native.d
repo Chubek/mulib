@@ -343,9 +343,15 @@ private class State
         foreign.member=(string name) {
             if (name == "LibraryName") return V(text(mull_mb_library_name(id)));
             if (name == "Header") return V(text(mull_mb_library_header(id)));
+            if (name == "BindingProfile") return V(mull_mb_library_is_raw(id) ? "legacy-raw" : "discovery-only");
             if (name == "Symbols")
             {
                 V[] names; foreach (i; 0 .. mull_mb_symbol_count(id)) names ~= V(text(mull_mb_symbol_name(id,i))); return V(names);
+            }
+            if (!mull_mb_library_is_raw(id))
+            {
+                if (name == "Libraries") return helper(id,name);
+                throw new MuLLError("discovery-only MuLIB library: " ~ text(mull_mb_library_name(id)));
             }
             auto h=helper(id,name); if (h.truth()) return h;
             size_t symbol; auto kind=name.canFind('\0') ? -1 : mull_mb_symbol_find(id,name.toStringz,&symbol);

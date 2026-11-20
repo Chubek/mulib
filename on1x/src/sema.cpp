@@ -54,7 +54,7 @@ std::vector<Type> extern_parameter_types(const Function& function){
 }
 bool is_intrinsic_name(const std::string& name){
  static const std::set<std::string> names={"println","format","assert","json_parse_or_die","json_get_or_die","json_size","json_number","json_print",
-                                          "box","move","take","drop"};
+                                          "box","move","take","drop","ref_replace"};
    return names.contains(name)||shared_intrinsic(name)||data_primitive(name).has_value();
 }
 bool is_reserved_intrinsic_name(const std::string& name){
@@ -62,7 +62,7 @@ bool is_reserved_intrinsic_name(const std::string& name){
  // keywords. Existing functions and lexical bindings win normal resolution;
  // only an otherwise-unbound direct call receives intrinsic move metadata.
  static const std::set<std::string> shadowable={
-  "format","box","move","take","drop"
+  "format","box","move","take","drop","ref_replace"
  };
  return !shadowable.contains(name)&&is_intrinsic_name(name);
 }
@@ -313,6 +313,16 @@ class Checker {
      if(!arg[0].is_move_only())
       fail(e.children[0]->where,"drop(owner) requires a unique owning value");
      consume_local(0);return e.type=Type::Void;
+    }
+    if(n=="ref_replace"){
+     arity(2);
+     const auto& place=*e.children[0];
+     const auto* binding=place.kind==Expr::Kind::Variable&&
+                         place.reference==Expr::Reference::Local?lookup(place.text):nullptr;
+     if(!binding||binding->borrow!=BorrowMode::Exclusive)
+      ref_error(place.where,"ref_replace requires a named exclusive borrowed place");
+     equal(arg[0],arg[1],e.children[1]->where);
+     return e.type=arg[0];
     }
     if(auto primitive=data_primitive(n)){
     arity(primitive->parameters().size());for(std::size_t i=0;i<arg.size();++i)equal(arg[i],primitive->parameters()[i],e.where);
@@ -790,6 +800,7 @@ class Checker {
       if(!s.value||s.value->kind!=Expr::Kind::Call)fail(s.where,"defer requires a call expression");
        auto t=check_expr(*s.value);if(resource(t))fail(s.where,"defer cannot discard a JSON owner/view");
          if(s.value->callee->reference==Expr::Reference::BorrowFunction||
+            (s.value->callee->reference==Expr::Reference::Intrinsic&&s.value->callee->text=="ref_replace")||
             (s.value->callee->reference==Expr::Reference::UnsafeForeign&&
              ipc_kernel_session_loan(funcs.at(s.value->callee->text)->kernel_symbol)))
          ref_error(s.where,"defer cannot retain a borrowed call");

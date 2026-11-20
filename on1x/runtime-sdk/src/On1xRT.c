@@ -1,4 +1,5 @@
 #include "On1xRT.h"
+#include "On1xRT-Dynamic.h"
 
 #include <stdalign.h>
 #include <stdatomic.h>
@@ -81,6 +82,11 @@ struct On1xRT_ModuleObject {
   void *state;
   size_t instance_count;
   int initialized;
+#ifdef ON1X_RT_HAS_DYNAMIC
+  void *native_library;
+  int native_fd;
+  size_t native_size;
+#endif
 };
 
 struct On1xRT_Error {
@@ -110,6 +116,9 @@ struct On1xRT_Engine {
   uint64_t next_call;
   void *authorization_context;
   On1xRT_AuthorizeAOTFn authorize_aot;
+#ifdef ON1X_RT_HAS_DYNAMIC
+  size_t native_bytes;
+#endif
 };
 
 struct On1xRT_CallContext {
@@ -1545,10 +1554,24 @@ On1xRT_Status on1x_rt_module_unload(On1xRT_Engine *engine,
     return on1x_rt_engine_fail_(engine, error, status,
                                 "module shutdown callback failed");
   }
+#ifdef ON1X_RT_HAS_DYNAMIC
+  void *native_library = object->native_library;
+  int native_fd = object->native_fd;
+  size_t native_size = object->native_size;
+#endif
   on1x_rt_module_object_release_(engine, object);
   on1x_rt_slot_clear_(engine, index);
   --engine->module_count;
   *module = (On1xRT_Module){0u, 0u};
+#ifdef ON1X_RT_HAS_DYNAMIC
+  if (native_library) {
+    ++engine->callback_depth;
+    on1x_rt_dynamic_close_(native_library);
+    --engine->callback_depth;
+    on1x_rt_dynamic_image_release_(native_fd);
+    engine->native_bytes -= native_size;
+  }
+#endif
   return ON1X_RT_OK;
 }
 
@@ -2656,6 +2679,10 @@ On1xRT_Status on1x_rt_feature_status(On1xRT_Feature feature) {
   if (feature < ON1X_RT_FEATURE_DYNAMIC_MODULE ||
       feature > ON1X_RT_FEATURE_PROFILER)
     return ON1X_RT_INVALID_ARGUMENT;
+#ifdef ON1X_RT_HAS_DYNAMIC
+  if (feature == ON1X_RT_FEATURE_DYNAMIC_MODULE)
+    return ON1X_RT_OK;
+#endif
   return ON1X_RT_UNSUPPORTED;
 }
 
@@ -2665,7 +2692,7 @@ On1xRT_Status on1x_rt_engine_load_dynamic(On1xRT_Engine *engine,
                                           On1xRT_Error **error) {
   On1xRT_Status status;
   if (!module || module->id || module->owner || !on1x_rt_error_ready_(error) ||
-      !on1x_rt_view_valid_(path, 4096u, 0, 0))
+      !on1x_rt_view_valid_(path, ON1X_RT_MAX_DYNAMIC_PATH_BYTES, 0, 0))
     return ON1X_RT_INVALID_ARGUMENT;
   status = on1x_rt_engine_check_(engine, 0);
   if (status != ON1X_RT_OK)
@@ -2674,7 +2701,95 @@ On1xRT_Status on1x_rt_engine_load_dynamic(On1xRT_Engine *engine,
                                       "invalid engine context")
                : status;
   return on1x_rt_engine_fail_(engine, error, ON1X_RT_UNSUPPORTED,
-                              "dynamic module loading is unsupported");
+                               "path-only dynamic loading is unsupported");
+}
+
+On1xRT_Status on1x_rt_engine_load_authorized_dynamic(
+    On1xRT_Engine *engine, On1xRT_StringView path,
+    On1xRT_AuthorizeDynamicFn authorize, void *authorization_context,
+    On1xRT_Module *module, On1xRT_Error **error) {
+  On1xRT_Status status;
+  if (!module || module->id || module->owner || !on1x_rt_error_ready_(error))
+    return ON1X_RT_INVALID_ARGUMENT;
+  status = on1x_rt_engine_check_(engine, 0);
+  if (status != ON1X_RT_OK)
+    return engine && engine->magic == ON1X_RT_ENGINE_MAGIC
+               ? on1x_rt_engine_fail_(engine, error, status,
+                                      "invalid engine context")
+               : status;
+  if (!on1x_rt_view_valid_(path, ON1X_RT_MAX_DYNAMIC_PATH_BYTES, 0, 0) ||
+      path.data[0] != '/')
+    return on1x_rt_engine_fail_(engine, error, ON1X_RT_INVALID_ARGUMENT,
+                               "native module path must be absolute UTF-8");
+#ifndef ON1X_RT_HAS_DYNAMIC
+  (void)authorize;
+  (void)authorization_context;
+  return on1x_rt_engine_fail_(engine, error, ON1X_RT_UNSUPPORTED,
+                               "trusted dynamic native loading is unavailable");
+#else
+  char request_path[ON1X_RT_MAX_DYNAMIC_PATH_BYTES + 1u];
+  On1xRT_DynamicImage image = {.fd = -1};
+  void *library = NULL;
+  On1xRT_ModuleEntryFn entry = NULL;
+  On1xRT_Module published = {0u, 0u};
+  const On1xRT_ModuleDescriptor *descriptor = NULL;
+  const char *message = "invalid native module image";
+  const size_t remaining = ON1X_RT_MAX_DYNAMIC_ENGINE_BYTES - engine->native_bytes;
+  if (!authorize || !engine->authorize_aot)
+    return on1x_rt_engine_fail_(engine, error, ON1X_RT_DENIED,
+                               "native loading requires both host policies");
+  if (engine->module_count >= engine->max_modules || !on1x_rt_free_slots_(engine))
+    return on1x_rt_engine_fail_(engine, error, ON1X_RT_LIMIT,
+                               "module or handle registration limit exceeded");
+  memcpy(request_path, path.data, path.size);
+  request_path[path.size] = '\0';
+  status = on1x_rt_dynamic_snapshot_(
+      request_path, remaining < ON1X_RT_MAX_DYNAMIC_IMAGE_BYTES
+                        ? remaining : ON1X_RT_MAX_DYNAMIC_IMAGE_BYTES,
+      &image, &message);
+  if (status != ON1X_RT_OK)
+    return on1x_rt_engine_fail_(engine, error, status, message);
+  ++engine->callback_depth;
+  status = on1x_rt_status_normalize_(authorize(
+      authorization_context, (On1xRT_StringView){request_path, path.size},
+      (On1xRT_StringView){image.sha256, sizeof(image.sha256) - 1u}));
+  --engine->callback_depth;
+  if (status != ON1X_RT_OK) {
+    message = "host did not authorize the measured native image";
+    goto failed;
+  }
+  ++engine->callback_depth;
+  status = on1x_rt_dynamic_open_(&image, &library, &entry, &message);
+  if (status == ON1X_RT_OK)
+    descriptor = entry();
+  --engine->callback_depth;
+  if (status != ON1X_RT_OK)
+    goto failed;
+
+  status = on1x_rt_engine_register_aot_module(engine, descriptor, &published,
+                                              error);
+  if (status != ON1X_RT_OK) {
+    message = "native module registration failed";
+    goto failed;
+  }
+  On1xRT_ModuleObject *object =
+      engine->slots[on1x_rt_handle_slot_(published.id)].object;
+  object->native_library = library;
+  object->native_fd = image.fd;
+  object->native_size = image.size;
+  engine->native_bytes += image.size;
+  *module = published;
+  return ON1X_RT_OK;
+
+failed:
+  if (library) {
+    ++engine->callback_depth;
+    on1x_rt_dynamic_close_(library);
+    --engine->callback_depth;
+  }
+  on1x_rt_dynamic_image_release_(image.fd);
+  return on1x_rt_engine_fail_(engine, error, status, message);
+#endif
 }
 
 On1xRT_Status on1x_rt_engine_load_wasm(On1xRT_Engine *engine,

@@ -30,9 +30,10 @@ Bounded static-inline entries, including the 193 JoltFX assessment kernels,
 are registered by the same MANIFEST inventory. Their source import aliases
 replace hyphens with underscores (`mulib.img_blend`, `mulib.media_timebase`).
 `--inspect-kernels` extracts their actual internal-linkage definitions into
-CDecl v2. `plan` labels them discovery-only and `build` rejects them before
-publishing an archive. No external symbols, callable lowering, semantic
-contracts or safety approval are fabricated from their header bodies.
+CDecl v2. `plan` labels them discovery-only and ordinary `build` rejects them.
+The separate, explicitly selected raw C11 workflow below can generate new
+external forwarding symbols for a bounded subset. It does not change discovery,
+KernelBind lowering, semantic contract coverage, or review status.
 
 ## Build the generator
 
@@ -51,6 +52,63 @@ normal extraction dependencies. The On1x option uses `Moonstone::Exotract`'s CLI
 target with linked ExoML extraction; Lua, LMDB, ucpp and CParser are unnecessary
 for this workflow. It does not fetch or alter the supplied dependency checkout.
 The optional feature defaults OFF.
+
+## Explicit raw C11 wrappers for static-inline functions
+
+Configure the build above with `-DON1X_WITH_EXOTRACT_LUA=ON` to run the pinned
+ExoLib recipe. Select each symbol by its MANIFEST module and exact C name
+(not an import alias):
+
+```sh
+python3 on1x/tools/on1x-exotract.py wrap-inline \
+  media-timebase:mulib_media_timebase_rescale \
+  media-timebase:mulib_media_timebase_gcd media-core:mulib_media_i64_add \
+  --exotract /tmp/opencode/on1x-exotract/libstone-moonstone/exotract/exotract \
+  --compiler gcc --resource-dir "$(clang -print-resource-dir)" \
+  --output /tmp/opencode/media-timebase-raw
+gcc -std=c11 -Wall -Wextra -Wpedantic -Werror \
+  -Iinclude -I/tmp/opencode/media-timebase-raw \
+  -c on1x/tests/fixtures/inline_wrappers_client.c -o /tmp/opencode/time-client.o
+gcc /tmp/opencode/time-client.o /tmp/opencode/media-timebase-raw/libmulib.a \
+  -o /tmp/opencode/time-client
+/tmp/opencode/time-client
+```
+
+`on1x-inline.h` declares the external symbols `on1x_inline_v1_<original-name>`;
+`mulib.c` implements them by directly forwarding to the still-internal kernel
+definitions. There is no conversion, pointer validation, ownership transfer,
+status adaptation or safety promotion. Use the exact pinned headers and target
+when compiling a caller. For example, `rescale` accepts two canonical rational
+records by value (seconds per tick) and forwards an `int64_t *` for the result.
+A nonnull output pointer must designate a live, aligned, writable `int64_t`;
+the wrapper preserves the kernel's rounding toward zero and failure behavior.
+
+Native Linux x86-64 GNU C11 only. The bounded graph projection accepts
+nonvariadic default-C prototypes with supported integer and floating scalars,
+flat named padding-free scalar structs, and one level of pointer parameters to
+supported values. It uses CDecl type IDs, not a parser for C source tokens.
+`_Generic` checks compatible function and field types; `_Static_assert` checks
+size, alignment and field offsets in both the producer and any C11 consumer
+including the generated header. Enums, unions, bitfields, arrays, nested or
+padded aggregates, opaque/`void` pointees, function pointers, pointer returns,
+nondefault calling conventions, and unsupported qualifiers or attributes are
+outside the profile. Only the documented optimization/debug/sanitizer flags
+from KernelBind are accepted; user macro and ABI flags are not.
+
+The existing MANIFEST planner deduplicates implementation switches across
+selected modules. The tool checks the archive has one `mulib.o` member and
+links references from a separate translation unit before publication. The
+lock pins the supplied compiler/tools, inputs, CDecl fingerprints and wrapper
+symbol map. Selection order does not affect generated sources or plans for
+fixed inputs; debug object bytes are not promised reproducible across builds.
+The lock schema `on1x.exotract-raw-inline/v1` is audit evidence only; it cannot
+be used as an ordinary `--mulib-archive` lock, a KernelBind compiler input or a
+signed review. Neither KernelBind import spelling becomes callable.
+
+Run the executable regression with
+`python3 on1x/tests/test_inline_wrappers_sdk.py EXOTRACT ON1XC on1x WORKDIR gcc`.
+It includes a separate-TU C11 client, wrong member/prototype and duplicate-TU
+rejections, and confirmation that safe and unsafe KernelBind imports still fail.
 
 ## List, plan, generate and link
 

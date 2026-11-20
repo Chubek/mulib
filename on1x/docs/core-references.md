@@ -37,6 +37,22 @@ in a value expression reads the referent; `:=` replaces the value through an
 exclusive alias. Ordinary `=` still follows the binding's normal mutability and
 cannot write through a borrowed alias.
 
+`ref_replace(place, next)` is a fallback intrinsic for exchanging a complete
+value through a named exclusive alias or `ref` parameter. It starts an
+exclusive reborrow before evaluating `next` once. The replacement cannot
+access that place (or an overlapping loan); compute a snapshot first if
+needed. If evaluation returns early (for example, via `?`), the original
+value remains installed. On success the replacement takes its place and the
+old value becomes an ordinary expression result, subject to normal cleanup.
+For move-only values, this transfers the old value without copying it; a
+named replacement requires `move(next)`. No box allocation is needed for
+the exchange itself.
+
+The exchange does not introduce an uninitialized borrowed slot or a movable
+borrow. It cannot be saved in `defer`, used as a function value, or applied
+to a field/index expression, shared alias, or unborrowed variable. A declared
+function or lexical binding named `ref_replace` takes precedence.
+
 The source must be one initialized, addressable named local, parameter, or
 incoming borrowed parameter. Literals, call results, fields, indices, closure
 captures, globals, and temporary expressions are not loan origins. Binding
@@ -141,3 +157,6 @@ reborrows, joins and loop backedges, generic/module calls, unique-owner payload
 access and cleanup, strict GCC/Clang C11, ASan/UBSan, runtime accessor faults,
 budget exhaustion, and located rejection cases. `test_core_ref.cpp` mutates
 checked HIR to verify fail-closed C11 ingress and deterministic lowering.
+`test_ref_replace.py` covers the exchange through strict generated C11,
+including RC parameter lifetime, owner-bearing boxes, typed early return,
+located rejection and injected allocation failures.

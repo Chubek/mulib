@@ -30,6 +30,7 @@ set(ON1X_LINKED_SDK_EXTENSION "" CACHE FILEPATH
   "Optional trusted C/C++ source defining on1x_sdk_linked_extension for on1xc")
 if(ON1X_BUILD_EXTENSION_SDK)
   add_subdirectory(sdk)
+  include(runtime-sdk/cmake/TrustedDynamic.cmake)
 elseif(ON1X_LINKED_SDK_EXTENSION)
   message(FATAL_ERROR "ON1X_LINKED_SDK_EXTENSION requires ON1X_BUILD_EXTENSION_SDK")
 endif()
@@ -198,6 +199,7 @@ if(ON1X_LINKED_SDK_EXTENSION)
         "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}" ${_sdk_test_c_flags})
   endif()
 endif()
+include(sdk/cmake/ConsolidationActivation.cmake)
 if(ON1X_WITH_NEROTYPICAL)
   include(cmake/Nerotypical.cmake)
 endif()
@@ -274,7 +276,7 @@ install(TARGETS on1xc RUNTIME DESTINATION bin)
 install(DIRECTORY stdlib stdppx runtime grammar contracts-exoml contracts-exotract DESTINATION share/on1x
   PATTERN "__pycache__" EXCLUDE PATTERN "*.pyc" EXCLUDE)
 install(PROGRAMS tools/on1x-build.py tools/on1x-project.py tools/on1x-mulib.py tools/on1x-exotract.py tools/on1x-contracts.py DESTINATION share/on1x/tools)
-install(FILES tools/on1x_project.py DESTINATION share/on1x/tools)
+install(FILES tools/on1x_project.py tools/on1x_inline.py DESTINATION share/on1x/tools)
 
 if(ON1X_WITH_EXOML OR ON1X_WITH_CHISEL OR ON1X_WITH_SYREN)
   if(NOT EXISTS "${ON1X_LIBSTONE_ROOT}/moonstone/CMakeLists.txt")
@@ -679,8 +681,8 @@ if(BUILD_TESTING)
     endif()
   endif()
      list(APPEND _meta_tests category control patterns value_loops nominal_adts cliche core_impl defer_errors concurrency stream_poll cancellation_deadlines taskgroup_within discovery)
-     list(APPEND _meta_tests kernel_imports project_driver enum_connective core_ref container_local container_shared
-      literals_core owning_adt recursive_owning_adts type_checker_hardening bounded_kernel_inventory)
+      list(APPEND _meta_tests kernel_imports project_driver enum_connective core_ref container_local container_shared
+       literals_core owning_adt recursive_owning_adts type_checker_hardening bounded_kernel_inventory ref_replace)
    if(ON1X_HAS_FIRESTONE_REGEX)
      list(APPEND _meta_tests core_syntax_integration)
      add_test(NAME on1x.core_regex COMMAND "${Python3_EXECUTABLE}"
@@ -725,8 +727,22 @@ if(BUILD_TESTING)
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-paths" "${CMAKE_C_COMPILER}" ${_test_c_flags})
     set_tests_properties(on1x.kernel_paths PROPERTIES TIMEOUT 180)
   endif()
-  if(ON1X_WITH_EXOTRACT_LUA)
-    add_test(NAME on1x.bounded_kernel_discovery_sdk COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_bounded_kernel_discovery_sdk.py"
+   if(ON1X_WITH_EXOTRACT_LUA)
+     if(NOT CMAKE_CROSSCOMPILING)
+       add_test(NAME on1x.inline_wrappers_sdk COMMAND "${Python3_EXECUTABLE}"
+         "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_inline_wrappers_sdk.py"
+         "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+         "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/inline-wrappers-sdk"
+         "${CMAKE_C_COMPILER}" ${_test_c_flags})
+       set_tests_properties(on1x.inline_wrappers_sdk PROPERTIES TIMEOUT 360 SKIP_RETURN_CODE 77)
+       add_test(NAME on1x.workload.shylock COMMAND "${Python3_EXECUTABLE}" -B
+         "${CMAKE_CURRENT_SOURCE_DIR}/../consolidation/workloads/shylock/check.py"
+         --on1xc "$<TARGET_FILE:on1xc>" --exotract "$<TARGET_FILE:exotract>"
+         --artifacts "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/workload-shylock"
+         --cc "${CMAKE_C_COMPILER}" ${_test_c_flags})
+       set_tests_properties(on1x.workload.shylock PROPERTIES TIMEOUT 360 SKIP_RETURN_CODE 77)
+     endif()
+     add_test(NAME on1x.bounded_kernel_discovery_sdk COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_bounded_kernel_discovery_sdk.py"
       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/bounded-kernel-discovery-sdk" "${CMAKE_C_COMPILER}")
     set_tests_properties(on1x.bounded_kernel_discovery_sdk PROPERTIES TIMEOUT 360 SKIP_RETURN_CODE 77)
@@ -768,6 +784,9 @@ if(BUILD_TESTING)
       "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/${_meta_test}" "${CMAKE_C_COMPILER}" ${_test_c_flags})
     set_tests_properties(on1x.${_meta_test} PROPERTIES TIMEOUT 180)
    endforeach()
+   # This suite compiles many independent C11 harnesses. Each subprocess
+   # remains bounded by support.py; this is the cumulative budget.
+   set_tests_properties(on1x.concurrency on1x.cancellation_deadlines PROPERTIES TIMEOUT 600)
    set_tests_properties(on1x.recursive_owning_adts PROPERTIES TIMEOUT 300)
   set_tests_properties(on1x.contracts PROPERTIES SKIP_RETURN_CODE 77)
   set_tests_properties(on1x.category PROPERTIES SKIP_RETURN_CODE 77)

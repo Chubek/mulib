@@ -99,7 +99,7 @@ build/on1x/on1xc --sdk-analyze mir-check on1x/examples/hello.on1x
 build/on1x/on1xc --sdk-emit mir-copy on1x/examples/hello.on1x -o hello.mir
 ```
 
-These commands invoke only the named analyzer or emitter, after the ordinary
+These ABI-v1 commands invoke only the named analyzer or emitter, after the ordinary
 On1x checker and MIR lowering. With `--ir-input`, they decode and verify
 serialized MIR instead. Both routes supply read-only canonical serialized
 MIR, not compiler object layouts; consumers must handle its own format
@@ -109,6 +109,11 @@ original On1x source file. Emitters return opaque bytes; neither the SDK nor
 C11 path and the existing PPX pipeline are unchanged.
 Successful file output is published atomically on POSIX hosts; other hosts
 must use stdout for SDK artifacts.
+
+For verified MIR traversal instead of serialized bytes, configure the
+[trusted linked ABI-2 analyzer](docs/trusted-linked-mir-analyzer.md) and select
+it with `on1xc --sdk-analyze linked-v2:HOOK INPUT`. This profile does not load
+external ABI-2 DSOs or run ABI-2 emitters or transformations.
 
 Linked and standalone in-process callbacks run with the host's privileges.
 Run only code you trust in those modes.

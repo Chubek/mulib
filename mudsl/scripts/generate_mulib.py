@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate compiler-typed MuLL bindings for every public MuLIB header.
+"""Discover public MuLIB declarations and regenerate the pinned legacy MuLL bridge.
 
 Requires the Python clang bindings and libclang only when regenerating.
 Normal builds compile the checked-in snapshot with the host C compiler.
@@ -12,16 +12,32 @@ from pathlib import Path
 import re
 import subprocess
 
+from check_mulib_inventory import bridge_surface, header_fingerprint, module_name
+
 ROOT = Path(__file__).resolve().parents[1]
 DEST = ROOT / 'mull/bridge/Mulib'
+STORAGE_SYMBOLS = ('functions', 'types', 'constants')
 
 
 def quote(text):
     return json.dumps(text, ensure_ascii=True)
 
 
-def module_name(header):
-    return re.sub(r'^(include-)?mulib-', '', header.removesuffix('.h'))
+def public_function(name):
+    return name.startswith(('mulib_', 'ma_')) and not name.endswith('_')
+
+
+def discover_functions(index, c, include, header, args):
+    """Parse one root with its dependencies; attribute only direct declarations."""
+    tu = index.parse('discovery.c', args=args + ['-D_GNU_SOURCE'],
+                     unsaved_files=[('discovery.c', f'#include "{header}"\n')],
+                     options=c.TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
+    errors = [str(d) for d in tu.diagnostics if d.severity >= c.Diagnostic.Error]
+    if errors:
+        raise RuntimeError(f'{header} declaration discovery:\n' + '\n'.join(errors))
+    return sorted({n.spelling for n in tu.cursor.get_children()
+                   if n.kind == c.CursorKind.FUNCTION_DECL and public_function(n.spelling)
+                   and n.location.file and Path(n.location.file.name) == include / header})
 
 
 def main():
@@ -29,6 +45,8 @@ def main():
     parser.add_argument('--include', type=Path, default=ROOT.parent / 'include')
     parser.add_argument('--clang', default='clang')
     parser.add_argument('--libclang', default=os.environ.get('LIBCLANG_LIBRARY_FILE'))
+    parser.add_argument('--bindings', type=Path, default=DEST,
+                        help='directory containing LegacyExports.json and generated artifacts')
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     from clang import cindex as c
@@ -37,19 +55,39 @@ def main():
     elif Path('/usr/lib/libclang.so').exists():
         c.Config.set_library_file('/usr/lib/libclang.so')
     include = args.include.resolve()
-    headers = sorted(include.glob('*.h'))
+    headers = sorted(h.name for h in include.glob('*.h'))
+    if not headers or len(set(map(module_name, headers))) != len(headers):
+        parser.error('expected a non-empty public header inventory with unique module names')
+    policy_text = (args.bindings / 'LegacyExports.json').read_bytes()
+    legacy = json.loads(policy_text)
+    policy = legacy['headers']
+    missing = sorted(set(policy) - set(headers))
+    if missing:
+        parser.error(f'legacy bridge headers removed: {missing}')
+    allowed = {h: [set(policy[h][kind]) for kind in STORAGE_SYMBOLS] for h in policy}
     resource = subprocess.check_output([args.clang, '-print-resource-dir'], text=True).strip()
-    source = '\n'.join(f'#include "{h.name}"' for h in headers)
-    tu = c.Index.create().parse('mull_mulib_inventory.c',
-        args=['-x', 'c', '-std=gnu11', '-resource-dir=' + resource, '-I' + str(include)],
+    cargs = ['-x', 'c', '-std=gnu11', '-resource-dir=' + resource, '-I' + str(include)]
+    # Only the legacy runtime headers go in the shared implementation TU.
+    # Discovery roots can have mutually incompatible C ABIs and never need to
+    # coexist in a preprocessing run, much less a native bridge.
+    source = '\n'.join(f'#include "{header}"' for header in sorted(policy))
+    index = c.Index.create()
+    tu = index.parse('mull_mulib_inventory.c', args=cargs,
         unsaved_files=[('mull_mulib_inventory.c', source)],
         options=c.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
     errors = [str(d) for d in tu.diagnostics if d.severity >= c.Diagnostic.Error]
     if errors:
         raise RuntimeError('\n'.join(errors))
-    nodes = [n for n in tu.cursor.get_children()
-             if n.location.file and Path(str(n.location.file)).parent == include]
-    modules = {module_name(h.name): {'header': h.name, 'symbols': []} for h in headers}
+    nodes = [n for n in tu.cursor.get_children() if n.location.file
+             and Path(n.location.file.name).parent == include]
+    modules = {module_name(h): {'header': h, 'symbols': []} for h in headers}
+    declarations = {h: set() for h in policy}
+    for n in nodes:
+        h = Path(n.location.file.name).name
+        if h in declarations and n.kind == c.CursorKind.FUNCTION_DECL and public_function(n.spelling):
+            declarations[h].add(n.spelling)
+    declarations.update({h: discover_functions(index, c, include, h, cargs)
+                         for h in headers if h not in policy})
     kinds = c.TypeKind
     types, type_ids, preferred = [], {}, {}
     aliases, funcs, constants = [], [], []
@@ -63,7 +101,8 @@ def main():
     # Anonymous records often have a public typedef; use it rather than the
     # source-location-dependent spelling libclang gives their canonical type.
     for n in nodes:
-        if n.kind == c.CursorKind.TYPEDEF_DECL:
+        if (n.kind == c.CursorKind.TYPEDEF_DECL
+                and n.spelling in allowed.get(Path(n.location.file.name).name, ((), (), ()))[1]):
             preferred.setdefault(key(n.underlying_typedef_type), n.spelling)
 
     def add(t, expression=None, parameter=False):
@@ -120,7 +159,8 @@ def main():
             elif kind == kinds.RECORD:
                 entry['kind'] = 'RECORD' if entry['complete'] else 'OPAQUE'
                 declaration = canon.get_declaration()
-                public = declaration.location.file and Path(str(declaration.location.file)).parent == include
+                path = Path(declaration.location.file.name) if declaration.location.file else None
+                public = path and path.parent == include and path.name in policy
                 for field in (canon.get_fields() if public else []):
                     if not field.spelling:
                         continue
@@ -151,10 +191,13 @@ def main():
     seen_functions = set()
     for n in nodes:
         header = Path(str(n.location.file)).name
-        if n.kind == c.CursorKind.TYPEDEF_DECL:
+        if header not in allowed:
+            continue
+        names = allowed[header]
+        if n.kind == c.CursorKind.TYPEDEF_DECL and n.spelling in names[1]:
             tid = add(n.underlying_typedef_type)
             aliases.append((n.spelling, tid)); symbol(header, n.spelling, 1, tid)
-        elif n.kind == c.CursorKind.FUNCTION_DECL and n.spelling.startswith('mulib_') and not n.spelling.endswith('_'):
+        elif n.kind == c.CursorKind.FUNCTION_DECL and n.spelling in names[0]:
             if n.spelling in seen_functions:
                 continue
             seen_functions.add(n.spelling)
@@ -162,11 +205,11 @@ def main():
             symbol(header, n.spelling, 0, len(funcs)); funcs.append((n.spelling, signature))
         elif n.kind == c.CursorKind.ENUM_DECL:
             for value in n.get_children():
-                if value.kind == c.CursorKind.ENUM_CONSTANT_DECL:
+                if value.kind == c.CursorKind.ENUM_CONSTANT_DECL and value.spelling in names[2]:
                     tid = add(value.type)
                     symbol(header, value.spelling, 2, len(constants))
                     constants.append((value.spelling, tid, False))
-        elif n.kind == c.CursorKind.VAR_DECL and n.spelling.startswith('mulib_'):
+        elif n.kind == c.CursorKind.VAR_DECL and n.spelling in names[2]:
             tid = add(n.type); symbol(header, n.spelling, 2, len(constants))
             constants.append((n.spelling, tid, True))
 
@@ -183,6 +226,7 @@ def main():
             preprocessor_only.append(n.spelling)
         else:
             candidates.append((n.spelling, Path(str(n.location.file)).name))
+    candidates = [(name, h) for name, h in candidates if name in allowed.get(h, ((), (), ()))[2]]
     probe = source + '\n' + '\n'.join(f'__auto_type mb_probe_{i} = ({name});' for i,(name,_) in enumerate(candidates))
     macro_tu = c.Index.create().parse('macros.c',
         args=['-x','c','-std=gnu11','-D_GNU_SOURCE','-ferror-limit=0','-resource-dir='+resource,'-I'+str(include)],
@@ -202,6 +246,14 @@ def main():
         symbol(header,name,2,len(constants)); constants.append((name,tid,False))
         bound_macros.add(name)
     preprocessor_only.extend(name for name,_ in candidates if name not in bound_macros)
+
+    for h in policy:
+        symbols = modules[module_name(h)]['symbols']
+        for k, names in enumerate(allowed[h]):
+            found = {n for n, kind, _ in symbols if kind == k}
+            if names != found:
+                raise RuntimeError(f'{h} legacy {STORAGE_SYMBOLS[k]} no longer match: '
+                                   f'missing={sorted(names - found)} extra={sorted(found - names)}')
 
     out = ['/* Generated by scripts/generate_mulib.py. Do not edit. */', source]
     emitted = set()
@@ -284,12 +336,17 @@ def main():
         if not variable: out.append(f'static const mb_t{tid} mb_const_{i} = {name};')
     out.append('static const mb_constant mb_constants[] = {')
     out.extend(f'{{{tid},&{name if variable else "mb_const_"+str(i)}}},' for i,(name,tid,variable) in enumerate(constants)); out.append('};')
-    for i,(name, module) in enumerate(sorted(modules.items())):
+    native_modules = sorted((name, m) for name, m in modules.items() if m['header'] in policy)
+    native_ids = {name: i for i, (name, _) in enumerate(native_modules)}
+    for i,(name, module) in enumerate(native_modules):
         out.append(f'static const mb_symbol mb_symbols_{i}[] = {{')
         out.extend(f'{{{quote(n)},{k},{v}}},' for n,k,v in module['symbols'])
         out.append('{NULL,0,0}};')
     out.append('static const mb_library mb_libraries[] = {')
-    out.extend(f'{{{quote(name)},{quote(m["header"])},mb_symbols_{i},{len(m["symbols"])}}},' for i,(name,m) in enumerate(sorted(modules.items()))); out.append('};')
+    for name, m in sorted(modules.items()):
+        table = f'mb_symbols_{native_ids[name]}' if name in native_ids else 'NULL'
+        out.append(f'{{{quote(name)},{quote(m["header"])},{table},{len(m["symbols"])}}},')
+    out.append('};')
     out.append('static const mb_alias mb_aliases[] = {')
     out.extend(f'{{{quote(name)},{i}}},' for name,i in sorted(set(aliases))); out.append('};')
     # Numeric conversion is compiler-typed too: no guessed enum sizes or long ABI.
@@ -332,8 +389,9 @@ def main():
             out.append('}')
         out.append('default: return 0; }}')
 
-    macros = sorted(set(re.findall(r'(?:defined\s*\(?\s*|#\s*ifdef\s+)(MULIB_IMPL_\w+)', '\n'.join(h.read_text() for h in headers))))
-    implementation = ('/* Generated implementation switches for every public header. */\n'
+    macros = sorted(set(re.findall(r'(?:defined\s*\(?\s*|#\s*ifdef\s+)(MULIB_IMPL_\w+)', '\n'.join(
+        (include / h).read_text() for h in sorted(policy)))))
+    implementation = ('/* Generated implementation switches for the legacy MuLL bridge. */\n'
                       '#if defined(__linux__) && !defined(_GNU_SOURCE)\n'
                       '#define _GNU_SOURCE\n#endif\n'
                       '/* Load libc networking declarations before any Linux UAPI headers. */\n'
@@ -341,12 +399,22 @@ def main():
                       '/* Use the C11 bsearch function in this combined C11 TU. */\n'
                       '#include <stdlib.h>\n#undef bsearch\n'
                       + '\n'.join('#define '+m for m in macros) + '\n' + source + '\n')
-    inventory = {'headers': [h.name for h in headers], 'libraries': len(modules), 'functions': len(funcs),
+    inventory = {'headers': headers, 'libraries': len(modules), 'functions': len(funcs),
+                 'declared_functions': sum(map(len, declarations.values())),
                  'types': len(types), 'constants': len(constants),
                  'preprocessor_only': sorted(set(preprocessor_only)),
-                 'fingerprint': hashlib.sha256(''.join(h.read_text() for h in headers).encode()).hexdigest(),
-                 'modules': {name: {'header': m['header'], 'functions': [n for n,k,_ in m['symbols'] if k==0]} for name,m in sorted(modules.items())}}
+                 'fingerprint': header_fingerprint(include),
+                 'legacy_policy': hashlib.sha256(policy_text).hexdigest(),
+                 'modules': {name: {'header': m['header'],
+                                   'profile': 'legacy-raw' if m['header'] in policy else 'discovery-only',
+                                   'functions': [n for n,k,_ in m['symbols'] if k==0],
+                                   'declarations': sorted(declarations[m['header']])}
+                             for name,m in sorted(modules.items())}}
     generated = '\n'.join(out)+'\n'
+    _, digest = bridge_surface(generated.encode())
+    if digest != legacy['surface_sha256']:
+        raise RuntimeError('Generated C legacy surface changed; this is not a discovery-only refresh. '
+                           f'Review changes to the raw wrappers/types/constants before updating policy ({digest}).')
     inventory['artifacts'] = {
         'Generated.inc': hashlib.sha256(generated.encode()).hexdigest(),
         'Implementation.c': hashlib.sha256(implementation.encode()).hexdigest(),
@@ -354,12 +422,13 @@ def main():
     outputs = {'Generated.inc': generated, 'Implementation.c': implementation,
                'Inventory.json': json.dumps(inventory, indent=2)+'\n'}
     for filename, content in outputs.items():
-        path = DEST / filename
+        path = args.bindings / filename
         if args.check:
             if not path.exists() or path.read_text() != content: raise RuntimeError(f'{filename} is stale; regenerate bindings')
         elif not path.exists() or path.read_text() != content:
             path.write_text(content)
-    print(f'{len(headers)} headers, {len(modules)} libraries, {len(funcs)} functions, {len(types)} native types, {len(constants)} constants')
+    print(f'{len(headers)} headers, {inventory["declared_functions"]} discovered function declarations, '
+          f'{len(funcs)} legacy raw functions, {len(types)} native types, {len(constants)} constants')
 
 
 if __name__ == '__main__':

@@ -1,0 +1,3 @@
+[submodule "on1x/third_party/libstone"]
+	path = on1x/third_party/libstone
+	url = https://github.com/Chubek/libstone.git

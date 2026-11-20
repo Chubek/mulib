@@ -67,11 +67,22 @@ class Tools(unittest.TestCase):
             self.assertIn('purpose: User-authored scope.', expected)
             self.assertIn('- file: user.c\n  purpose: User work.', expected)
             self.assertEqual(expected, graphics.updated_manifest(root))
+            # Another inventory can append after graphics without making an
+            # otherwise unchanged graphics record stale or moving it.
+            appended = ('- name: b\n  header: include/mulib-b.h\n'
+                        '  macro: MULIB_IMPL_B\n  status: implemented\n  dependencies: []\n')
+            (root / 'include/mulib-b.h').write_text('#if defined(MULIB_IMPL_B)\n#endif\n')
+            interleaved = expected.replace('project_files:\n', appended + 'project_files:\n')
+            interleaved = interleaved.replace('module_count: 4\n', 'module_count: 5\n', 1)
+            interleaved = interleaved.replace('implemented_module_count: 1\n',
+                                              'implemented_module_count: 2\n')
+            manifest.write_text(interleaved)
+            self.assertEqual(interleaved, graphics.updated_manifest(root))
             inventory.sync(root)
             self.assertEqual((root / 'tests/implementation.c').read_text().count(
                 '#include "mulib-glx-'), 0)
             self.assertIn('  status: bounded\n', manifest.read_text())
-            self.assertIn('implemented_module_count: 1\n', manifest.read_text())
+            self.assertIn('implemented_module_count: 2\n', manifest.read_text())
             (root / 'include/mulib-glx-core.h').write_text(
                 '#if defined(MULIB_IMPL_GLX_CORE)\n#endif\n')
             with self.assertRaisesRegex(ValueError, 'ABI switch'):
@@ -135,6 +146,17 @@ class Tools(unittest.TestCase):
             self.assertEqual(len(failures), 2)
             self.assertIn('missing anchor', failures[0])
             self.assertIn('missing link', failures[1])
+
+    def test_manifest_project_paths_exist_and_are_unique(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'example.c').touch()
+            manifest = 'modules:\n\nproject_files:\n- file: example.c\n'
+            manuals.check_project_files(root, manifest)
+            with self.assertRaisesRegex(ValueError, 'duplicate manifest project file'):
+                manuals.check_project_files(root, manifest + '- file: example.c\n')
+            with self.assertRaisesRegex(ValueError, 'missing or out-of-tree'):
+                manuals.check_project_files(root, manifest + '- file: stale.c\n')
 
     def test_inventory_sync(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -8,6 +8,22 @@
   "scope": "Statuses apply to the stated subset, not to the complete architecture. Verification and build-option evidence are recorded separately.",
   "facilities": [
     {
+      "id": "plugin.trusted-linked-mir-analyzer-v2",
+      "owner": 1,
+      "status": "EXECUTABLE",
+      "headers": ["On1xSDK-Analyzer.h", "On1xSDK-Extension.h"],
+      "subset": "Explicit linked-v2 analyzer selection with canonical verified MIR snapshots, capability-scoped registration, and validated transactional diagnostics.",
+      "blockers": ["No dynamic ABI-2 or worker activation; no PPX-v2, transform or backend facet in this profile."]
+    },
+    {
+      "id": "runtime.trusted-dynamic",
+      "owner": 6,
+      "status": "EXECUTABLE",
+      "headers": ["On1xRT.h"],
+      "subset": "Opt-in host-authorized loading of a sealed, digest-pinned native image on Linux/glibc. Trusted host-process execution, not an isolation facility.",
+      "blockers": ["Compiler-generated modules, attestation of native dependencies, non-Linux targets."]
+    },
+    {
       "id": "core.abi-v1",
       "owner": 1,
       "status": "EXECUTABLE",
@@ -117,7 +133,7 @@
       "status": "PARTIAL",
       "headers": ["On1xRT.h"],
       "subset": "Independent On1xRT ABI 1 for explicitly host-authorized native AOT and statically registered modules, bounded lifecycle, scalar/string/buffer calls and synchronous host callbacks.",
-      "blockers": ["No dynamic loading, WASM, task/channel scheduler, debugger, profiler or sandbox enforcement. Native callbacks have process authority."]
+      "blockers": ["Trusted Linux/glibc dynamic loading is a separate opt-in profile. No WASM, public task/channel scheduler, debugger, profiler or sandbox enforcement. Native callbacks have process authority."]
     },
     {
       "id": "project.sdk",

@@ -686,11 +686,7 @@ CONTRACTS = {
 
 
 def inventory(root=ROOT):
-    text = (root / "AGENTS.md").read_text()
-    section = text.split("## 7. Exact per-header inventory and limitations\n", 1)
-    if len(section) != 2:
-        raise ValueError("missing exact AGENTS section-7 inventory")
-    section = section[1].split("\n## 8.", 1)[0]
+    section = (root / "tools/joltfx_scope.md").read_text()
     rows = re.findall(r"^\| `(mulib-[^`]+\.h)` \| (.*?) \| (.*?) \|$", section, re.M)
     if len(rows) != 193 or len({row[0] for row in rows}) != 193:
         raise ValueError("section 7 must contain exactly 193 unique headers")

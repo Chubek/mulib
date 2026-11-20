@@ -2,15 +2,21 @@
 #include "On1xSDK.h"
 #include "ProgramInternal.hpp"
 #include "RegistryInternal.hpp"
+#ifdef ON1X_WITH_LINKED_SDK_EXTENSION_V2
+#include "ir/CanonicalBridge.hpp"
+#endif
 #ifdef ON1X_WITH_DYNAMIC_SDK_PLUGINS
 #include "PluginHost.hpp"
 #endif
 
 #include <cstdlib>
 #include <memory>
+#include <new>
 
 namespace on1x::sdk_driver {
 namespace {
+
+constexpr std::string_view linked_v2_prefix = "linked-v2:";
 
 struct Report {
     diagnostic::Registry &registry;
@@ -25,7 +31,8 @@ struct Report {
                              status == ON1X_SDK_ABI_MISMATCH ? "SDK ABI mismatch" :
                              status == ON1X_SDK_INVALID_ARGUMENT ? "invalid argument" :
                              status == ON1X_SDK_DUPLICATE ? "duplicate registration" :
-                             "operation failed";
+                             status == ON1X_SDK_ERROR ? "operation failed" :
+                             on1x_sdk_status_name(status);
         (void)registry.emit({
             "ON1X-SDK", std::string(action) + " '" + diagnostic::terminal_text(hook) + "': " + reason,
             "extension-sdk", "verified-mir", "on1x-sdk", {}, {},
@@ -84,10 +91,109 @@ int exit_for(On1xSDK_Status status)
     return status == ON1X_SDK_OK ? 0 : status == ON1X_SDK_LIMIT ? 75 : 1;
 }
 
+#ifdef ON1X_WITH_LINKED_SDK_EXTENSION_V2
+struct LinkedAnalyzerReport {
+    diagnostic::Registry &staging;
+    bool error = false;
+};
+
+extern "C" On1xSDK_Status receive_diagnostic_v2(void *userdata,
+                                                 const On1xSDK_DiagnosticV2 *value)
+{
+    auto &report = *static_cast<LinkedAnalyzerReport *>(userdata);
+    const bool error = value->severity == ON1X_SDK_DIAGNOSTIC_ERROR;
+    const char *severity = error ? "error" : value->severity == ON1X_SDK_WARNING ? "warning" : "note";
+    const std::string_view code{value->code.data, value->code.size};
+    const std::string_view text{value->message.data, value->message.size};
+    std::string message = "[" + std::string(code) + "] " + diagnostic::terminal_text(text);
+    if (message.size() > 16384) return ON1X_SDK_LIMIT;
+    (void)report.staging.emit({
+        "ON1X-SDK-ANALYZER", std::move(message), "extension-sdk", "verified-mir",
+        "on1x-sdk", {}, {}, diagnostic::Catalog::embedded().level(severity), {"<sdk-mir>"}, {}
+    });
+    report.error |= error;
+    return report.staging.exhausted() ? ON1X_SDK_LIMIT : ON1X_SDK_OK;
+}
+
+On1xSDK_Status run_linked_analyzer_v2(const mir::Module &module, std::string_view name,
+                                       Report &report, const char *&action)
+{
+    action = "ABI-2 context";
+    On1xSDK_ContextConfig context_config{};
+    context_config.abi_version = ON1X_SDK_ABI_VERSION_V2;
+    context_config.struct_size = sizeof context_config;
+    On1xSDK_Context *raw_context = nullptr;
+    auto status = on1x_sdk_context_create(&context_config, &raw_context);
+    if (status != ON1X_SDK_OK) return status;
+    const std::unique_ptr<On1xSDK_Context, decltype(&on1x_sdk_context_release)>
+        context(raw_context, on1x_sdk_context_release);
+
+    action = "verified MIR snapshot";
+    // A fresh context owns one compiler snapshot; it never reuses this identity.
+    const On1xSDK_IRIdentity identity{
+        ON1X_SDK_SEMANTICS_IR_ABI_VERSION, sizeof identity, context.get(), 1, 1,
+        ON1X_SDK_IR_CANDIDATE, ON1X_SDK_SEMANTICS_IR_SCHEMA_VERSION
+    };
+    On1xSDK_MIRSnapshot *raw_snapshot = nullptr;
+    status = sdk::ir::admit_mir(module, identity, "on1xc", &raw_snapshot, nullptr);
+    if (status != ON1X_SDK_OK) return status;
+    const std::unique_ptr<On1xSDK_MIRSnapshot, decltype(&on1x_sdk_mir_snapshot_release)>
+        snapshot(raw_snapshot, on1x_sdk_mir_snapshot_release);
+
+    action = "ABI-2 registry creation";
+    constexpr On1xSDK_CapabilityGrant grant{
+        {ON1X_SDK_MIR_ANALYZE_CAPABILITY, sizeof(ON1X_SDK_MIR_ANALYZE_CAPABILITY) - 1},
+        ON1X_SDK_MIR_ANALYZE_CAPABILITY_REVISION, 0
+    };
+    const On1xSDK_RegistryConfig registry_config{
+        ON1X_SDK_ABI_VERSION_V2, sizeof registry_config, context.get(), &grant, 1, 1, 0
+    };
+    On1xSDK_Registry *raw_registry = nullptr;
+    status = on1x_sdk_registry_create_v2(&registry_config, &raw_registry);
+    if (status != ON1X_SDK_OK) return status;
+    const std::unique_ptr<On1xSDK_Registry, decltype(&on1x_sdk_registry_destroy)>
+        registry(raw_registry, on1x_sdk_registry_destroy);
+
+    action = "linked ABI-2 extension entry point";
+    const On1xSDK_ExtensionV2 *extension = nullptr;
+    try {
+        extension = on1x_sdk_linked_extension_v2();
+    } catch (const std::bad_alloc &) {
+        return ON1X_SDK_LIMIT;
+    } catch (...) {
+        return ON1X_SDK_CALLBACK_FAILED;
+    }
+    action = "linked ABI-2 extension registration";
+    status = on1x_sdk_registry_register_v2(registry.get(), extension, nullptr);
+    if (status != ON1X_SDK_OK) return status;
+
+    // Do not publish anything if the callback, sink, or provider shutdown fails.
+    action = "ABI-2 analysis";
+    auto staging = report.registry;
+    LinkedAnalyzerReport receiver{staging};
+    const On1xSDK_DiagnosticSinkV2 sink{
+        ON1X_SDK_ABI_VERSION_V2, sizeof sink, receive_diagnostic_v2, &receiver
+    };
+    const auto analysis = sdk::run_analyzer_v2(registry.get(), name, snapshot.get(), sink);
+    const auto shutdown = on1x_sdk_registry_close(registry.get());
+    if (analysis != ON1X_SDK_OK) return analysis;
+    action = "linked ABI-2 extension shutdown";
+    if (shutdown != ON1X_SDK_OK) return shutdown;
+    report.registry = std::move(staging);
+    report.error = receiver.error;
+    return ON1X_SDK_OK;
+}
+#endif
+
 } // namespace
 
-void check_plugin_selection(const std::vector<std::string> &selectors)
+void check_plugin_selection(const std::vector<std::string> &selectors, std::string_view hook)
 {
+    if (hook.starts_with(linked_v2_prefix)) {
+        if (!selectors.empty())
+            throw std::runtime_error("linked-v2 analyzer selection cannot be combined with --plugin");
+        return;
+    }
 #ifdef ON1X_WITH_DYNAMIC_SDK_PLUGINS
     (void)selectors;
 #else
@@ -102,10 +208,29 @@ Result run(const mir::Module &module, const std::string &input, const std::strin
 {
     Report report{diagnostics, input};
     auto failure = [&](On1xSDK_Status status, std::string_view action) -> Result {
-        const auto name = hook.size() <= ON1X_SDK_NAME_MAX ? std::string_view(hook) : "<overlong>";
+        const auto name = hook.size() <= ON1X_SDK_NAME_MAX + linked_v2_prefix.size()
+                            ? std::string_view(hook) : "<overlong>";
         report.status(status, action, name);
         return {exit_for(status), {}};
     };
+    if (std::string_view(hook).starts_with(linked_v2_prefix)) {
+        const auto name = std::string_view(hook).substr(linked_v2_prefix.size());
+        if (emit || !selectors.empty() || !sdk::valid_name(name))
+            return failure(ON1X_SDK_INVALID_ARGUMENT, "linked ABI-2 analyzer selection");
+#ifdef ON1X_WITH_LINKED_SDK_EXTENSION_V2
+        const char *action = nullptr;
+        On1xSDK_Status status;
+        try {
+            status = run_linked_analyzer_v2(module, name, report, action);
+        } catch (const std::bad_alloc &) {
+            status = ON1X_SDK_LIMIT;
+        }
+        if (status != ON1X_SDK_OK) return failure(status, action);
+        return {report.error ? 1 : 0, {}};
+#else
+        return failure(ON1X_SDK_UNSUPPORTED, "no linked ABI-2 analyzer in this compiler");
+#endif
+    }
     if (!sdk::valid_name(hook))
         return failure(ON1X_SDK_INVALID_ARGUMENT, "hook selection");
 

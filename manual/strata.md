@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1960 headers, 2354 direct dependency edges.
+Inventory: 1960 headers, 2355 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -778,7 +778,7 @@ Compatibility group: `parsec`, `peg`.
 | [num-complex-lu](amb3r-kernels.md) | `amb3r-base` |
 | [num-condition](amb3r-kernels.md) | `amb3r-base` |
 | [num-csc](mulib-num-csc.md) | `num-sparse` |
-| [num-csr](mulib-num-csr.md) | `num-sparse` |
+| [num-csr](mulib-num-csr.md) | `amb3r-base`, `num-sparse` |
 | [num-dae](amb3r-kernels.md) | `amb3r-base` |
 | [num-eigensolver](amb3r-kernels.md) | `amb3r-base` |
 | [num-gmres](amb3r-kernels.md) | `amb3r-base` |

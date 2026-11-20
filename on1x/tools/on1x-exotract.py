@@ -1129,6 +1129,115 @@ def reviewed_profile_tools(name):
     }[name]
 
 
+def wrap_inline(args, root):
+    """Build one raw C11 object; leave generic archives and KernelBind unchanged."""
+    import on1x_inline as inline
+
+    pairs = inline.selections(args.selections)
+    names = sorted({name for name, _ in pairs})
+    recipe = plan(root, names, paths=args.paths, discovery=True)
+    modules = {m['name']: m for m in recipe['modules']}
+    if any(modules[name]['macro'] is not None or modules[name]['implementation'] != 'static-inline'
+           for name in names):
+        raise ValueError('wrap-inline requires selected MANIFEST static-inline modules')
+    if (recipe['dependency_cycles'] or recipe['fixtures'] or
+            any(modules[n]['macro'] is not None for n in recipe.get('discovery_only', {}))):
+        raise ValueError('wrap-inline does not support cycles, fixtures or other discovery-only dependencies')
+    if any(flag not in KERNEL_CODEGEN_FLAGS for flag in args.cflag):
+        raise ValueError('wrap-inline accepts only documented optimization/debug/sanitizer flags')
+    output = args.output.absolute()
+    if output.exists() or output.is_symlink():
+        raise ValueError('output already exists')
+    exotract, compiler, ar, nm = map(executable, [args.exotract, args.compiler, args.ar, args.nm])
+    resource = Path(args.resource_dir or invoke([compiler, '-print-resource-dir']).decode().strip()).resolve()
+    if not (resource/'include/stddef.h').is_file():
+        raise ValueError('provide --resource-dir from a compatible clang')
+    target = invoke([compiler, '-dumpmachine']).decode().strip()
+    if not inline.TARGET.fullmatch(target) or not sys.platform.startswith('linux'):
+        raise ValueError('wrap-inline requires native Linux x86-64 GNU C11')
+    compiler_version = invoke([compiler, '--version']).decode()
+    observed = {}
+
+    def observe(path, expected=None):
+        real = Path(path).resolve()
+        key = str(real)
+        digest = contracts.digest(real)
+        if (expected is not None and expected != digest) or (key in observed and observed[key] != digest):
+            raise ValueError('wrap-inline input drift: '+key)
+        observed[key] = digest
+        return real
+
+    for path in (Path(__file__), Path(inline.__file__), Path(sys.executable), exotract, compiler, ar, nm):
+        observe(path)
+    for path, digest in recipe['inputs'].items():
+        observe(path, digest)
+    # Match the real TU's declaration feature flags. Implementation switches
+    # still belong only to the implementation TU, not to the ExoLib extraction.
+    evidence = {}
+    for name in names:
+        closure = plan(root, [name], paths=args.paths, discovery=True)
+        evidence[name] = extract_exolib(
+            name, closure, root, exotract, compiler, resource, target,
+            (recipe['compile_definitions'], [], []), observe, sidecar_name=None,
+            required=[symbol for module, symbol in pairs if name == module])
+    header, definitions, link_source, exports = inline.render(evidence, pairs)
+    implementation = housekeeping.implementation(root, recipe)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    stage = Path(tempfile.mkdtemp(prefix='.exotract-inline-', dir=output.parent))
+    try:
+        (stage/'on1x-inline.h').write_text(header, encoding='ascii')
+        (stage/'mulib.c').write_text(implementation+definitions, encoding='ascii')
+        (stage/'link-probe.c').write_text(link_source, encoding='ascii')
+        flags = ['-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', *args.cflag,
+                 *['-D'+d for d in recipe['compile_definitions']],
+                 *[arg for p in recipe['include_directories'] for arg in ('-I', p)]]
+        for path in (stage/'mulib.c', stage/'link-probe.c'):
+            # Include compiler/system headers in the audit lock, not just the
+            # non-system headers that the ordinary planner's -MM collects.
+            for dependency in housekeeping.dep_paths(invoke([compiler, *flags, '-M', '-MT', 'on1x', path])):
+                if not dependency.is_relative_to(stage):
+                    observe(dependency)
+        obj, archive = stage/'mulib.o', stage/'libmulib.a'
+        invoke([compiler, *flags, '-c', stage/'mulib.c', '-o', obj])
+        symbols = {}
+        for line in invoke([nm, '--extern-only', '--defined-only', '--format=posix', obj]).decode().splitlines():
+            fields = line.split()
+            if len(fields) < 2 or len(fields[1]) != 1 or fields[0] in symbols:
+                raise ValueError('unsupported nm output')
+            symbols[fields[0]] = fields[1]
+        wrapper_names = {e['wrapper'] for e in exports}
+        if ({s for s in symbols if s.startswith(inline.PREFIX)} != wrapper_names or
+                any(symbols[name] != 'T' for name in wrapper_names) or
+                any(e['c_name'] in symbols for e in exports)):
+            raise ValueError('wrap-inline unexpected external symbol inventory')
+        invoke([ar, 'rcsD', archive, obj])
+        if invoke([ar, 't', archive]).decode().splitlines() != ['mulib.o']:
+            raise ValueError('wrap-inline expected exactly one archive member')
+        # This checks external linkage from an independent TU, not native
+        # behavior/semantics. Regression fixtures actually execute the calls.
+        invoke([compiler, *flags, '-c', stage/'link-probe.c', '-o', stage/'link-probe.o'])
+        invoke([compiler, *flags, stage/'link-probe.o', archive,
+                *['-l'+lib for lib in recipe['link_libraries']], '-o', stage/'link-probe'])
+        (stage/'link-probe.o').unlink()
+        (stage/'link-probe').unlink()
+        for name, module in evidence.items():
+            (stage/(name+'.discovery.json')).write_text(contracts.dumps(module), encoding='utf-8')
+        (stage/'build-plan.json').write_text(contracts.dumps(recipe), encoding='utf-8')
+        for path, digest in observed.items():
+            observe(path, digest)
+        artifacts = {p.name: contracts.digest(p) for p in sorted(stage.iterdir())}
+        lock = dict(schema='on1x.exotract-raw-inline/v1', safe_export=False, kernelbind_callable=False,
+                    compiler=str(compiler), compiler_version=compiler_version, target=target, flags=flags,
+                    resource_directory=str(resource), inputs=observed, artifacts=artifacts,
+                    cdecl_fingerprints={n: e['metadata']['cdecl']['fingerprint'] for n, e in evidence.items()},
+                    external_symbols=sorted(symbols), wrappers=exports, separate_tu_link=True)
+        (stage/'lock.json').write_text(contracts.dumps(lock), encoding='utf-8')
+        contracts.publish_new(stage, output)
+    finally:
+        if stage.exists():
+            shutil.rmtree(stage)
+
+
 def build(args, root):
     recipe = plan(root, args.libraries, args.fixture,args.paths)
     housekeeping.check_generated(root, recipe)
@@ -1285,10 +1394,15 @@ def main():
     sub=cli.add_subparsers(dest='mode',required=True)
     sub.add_parser('list')
     p=sub.add_parser('plan');p.add_argument('libraries',nargs='+');p.add_argument('--fixture',action='append',default=[])
-    b=sub.add_parser('build');b.add_argument('libraries',nargs='+');b.add_argument('--output',type=Path,required=True)
-    b.add_argument('--exotract',required=True);b.add_argument('--compiler',default='clang');b.add_argument('--ar',default='ar');b.add_argument('--nm',default='nm')
-    b.add_argument('--resource-dir');b.add_argument('--cflag',action='append',default=[])
+    b=sub.add_parser('build');b.add_argument('libraries',nargs='+')
     b.add_argument('--fixture',action='append',default=[])
+    w=sub.add_parser('wrap-inline',help='build raw C11 forwarding symbols, not On1x imports')
+    w.add_argument('selections',metavar='MODULE:SYMBOL',nargs='+')
+    for command in (b,w):
+        command.add_argument('--output',type=Path,required=True)
+        command.add_argument('--exotract',required=True);command.add_argument('--compiler',default='clang')
+        command.add_argument('--ar',default='ar');command.add_argument('--nm',default='nm')
+        command.add_argument('--resource-dir');command.add_argument('--cflag',action='append',default=[])
     args=cli.parse_args()
     try:
         args.paths=housekeeping.search_paths(args.mulib_path)
@@ -1296,6 +1410,7 @@ def main():
         if args.mode=='list':
             print(contracts.dumps(dict(schema='on1x.exotract-inventory/v1', **contracts.inventory(root))),end='')
         elif args.mode=='plan':print(contracts.dumps(plan(root,args.libraries,args.fixture,args.paths,discovery=True)),end='')
+        elif args.mode=='wrap-inline':wrap_inline(args,root);print(args.output)
         else:build(args,root);print(args.output)
     except (ValueError,OSError,KeyError,subprocess.TimeoutExpired) as error:
         print('on1x-exotract: '+str(error),file=sys.stderr);return 1

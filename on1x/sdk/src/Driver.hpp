@@ -2,6 +2,7 @@
 
 #include <on1x/backend/mir.hpp>
 #include <on1x/diagnostic.hpp>
+#include <string_view>
 #include <vector>
 
 namespace on1x::sdk_driver {
@@ -11,7 +12,8 @@ struct Result {
 };
 
 // This is an on1xc implementation detail, not part of the installed SDK.
-void check_plugin_selection(const std::vector<std::string> &selectors);
+void check_plugin_selection(const std::vector<std::string> &selectors,
+                             std::string_view hook = {});
 Result run(const mir::Module &, const std::string &input_name,
            const std::string &hook_name, bool emit, diagnostic::Registry &,
            const std::vector<std::string> &selectors);

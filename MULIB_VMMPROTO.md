@@ -10,8 +10,7 @@ the embedding application's responsibility.
 The authoritative interfaces are:
 
 * [`include/mulib-vmmdev.h`](include/mulib-vmmdev.h): message codecs and DMA validation.
-* [`include/virtio.h`](include/virtio.h): public Virtio contract entry point.
-* [`include/mulib-virtio.h`](include/mulib-virtio.h): IDs, support registry and services.
+* [`include/mulib-virtio.h`](include/mulib-virtio.h): Virtio contract, IDs, support registry and services.
 * [`library/virtio-os`](library/virtio-os): backend library.
 * [`library/virtio-guest`](library/virtio-guest): frontend library.
 * [`include/mulib-vmm.h`](include/mulib-vmm.h): runtime, inventory and guest-call dispatch.

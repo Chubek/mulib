@@ -4543,7 +4543,7 @@ modules:
   manual: manual/mulib-num-csr.md
   macro: MULIB_IMPL_NUM_CSR
   purpose: "Compressed sparse row conversion, validation, matvec and transpose."
-  dependencies: [num-sparse]
+  dependencies: [amb3r-base, num-sparse]
   status: implemented
 - name: num-rootfind
   header: include/mulib-num-rootfind.h
@@ -15271,19 +15271,19 @@ project_files:
   purpose: Shared syntactic constructors and checked output for native standard processors.
 - file: on1x/stdppx/examples/native_extensions.on1x
   purpose: Equivalent Python/native standard processor composition example.
-- file: on1x/std/mulib/__init__.on1x
+- file: on1x/stdlib/mulib/__init__.on1x
   purpose: On1x MuLIB housekeeping namespace and checked fixture access.
-- file: on1x/std/mulib/Native.on1x
+- file: on1x/stdlib/mulib/Native.on1x
   purpose: Exact scalar native metadata ABI and host allocation-size checks.
-- file: on1x/std/mulib/runtime.h
+- file: on1x/stdlib/mulib/runtime.h
   purpose: C11 ABI for immutable selected-kernel and binary fixture metadata.
-- file: on1x/std/mulib/runtime.c
+- file: on1x/stdlib/mulib/runtime.c
   purpose: Allocation-free native housekeeping implementation.
-- file: on1x/std/mulib/catalog.json
+- file: on1x/stdlib/mulib/catalog.json
   purpose: Explicit kernel-to-library fixture associations and native companion recipes.
-- file: on1x/std/mulib/housekeeping.py
+- file: on1x/stdlib/mulib/housekeeping.py
   purpose: Shared dependency closure, fixture matching, fingerprinting and implementation placement.
-- file: on1x/std/mulib/README.md
+- file: on1x/stdlib/mulib/README.md
   purpose: MuLIB interoperability housekeeping manual and supported boundary.
 - file: on1x/tools/on1x-mulib.py
   purpose: Native fixture inventory, audit, relocatable bundling and verification.
@@ -15544,11 +15544,11 @@ project_files:
 - file: manual/publishing-integration.md
   purpose: Publishing integration recipes, documented subset status and deferred conformance work.
 - file: mudsl/mull/bridge/Mulib/Generated.inc
-  purpose: Compiler-typed MuLL bindings regenerated to include the publishing APIs.
+  purpose: Generated native bridge wrappers and metadata-only library registration.
 - file: mudsl/mull/bridge/Mulib/Implementation.c
-  purpose: Generated single implementation translation unit for all public MuLIB headers.
+  purpose: Single generated MuLL TU for the legacy implementation switches.
 - file: mudsl/mull/bridge/Mulib/Inventory.json
-  purpose: Complete MuLL bridge registration inventory and generated-artifact fingerprints.
+  purpose: Generated MuLL discovery inventory, legacy-raw subset and artifact fingerprints.
 - file: include/detail/mulib-webscan.h
   purpose: Internal allocation-free HTML subset scanner shared by web extractors.
 - file: tests/run-all.sh
@@ -15951,8 +15951,6 @@ project_files:
   purpose: Strict freestanding compilation and hosted OSDev regression checks.
 - file: tests/test_osdev.c
   purpose: Hosted OSDev bounds, failure handling and hardware adapter regression tests.
-- file: include/mulib-efi
-  purpose: Extensionless compatibility include for mulib-efi.h.
 - file: examples/modules/efi.c
   purpose: EFI memory descriptor decoding example.
 - file: examples/modules/bootmgr.c
@@ -16041,8 +16039,6 @@ project_files:
   purpose: Native KVM guest negotiation, block I/O and pending-exit reset regression tests.
 - file: MULIB_VMMPROTO.md
   purpose: Normative MuLIB VMM device protocol and explicit device support matrix.
-- file: include/virtio.h
-  purpose: Public forwarding entry point for the Virtio contract.
 - file: library/virtio-os/virtio-os.h
   purpose: Backend library entry point.
 - file: library/virtio-os/virtio-os.c
@@ -17415,8 +17411,6 @@ project_files:
   purpose: "Focused regression suite for test_terminal_editor."
 - file: examples/modules/shiraz.c
   purpose: "Standalone checked usage example for shiraz."
-- file: tests/test_shiraz.c
-  purpose: "Focused regression suite for test_shiraz."
 - file: examples/modules/aarch64.c
   purpose: "Standalone checked usage example for aarch64."
 - file: examples/modules/amdgpu.c
@@ -17470,9 +17464,9 @@ project_files:
 - file: tests/fuzz_ebooks.c
   purpose: Bounded mutation fuzzing for publication formats and compression.
 - file: mudsl/scripts/check_mulib_inventory.py
-  purpose: Dependency-free verification of complete and current MuLL native registrations.
+  purpose: Dependency-free MuLL inventory and raw-policy freshness gate.
 - file: mudsl/tests/test_mulib_inventory.py
-  purpose: Regression checks for missing modules and stale MuLL bridge artifacts.
+  purpose: Regressions for MuLL discovery, raw-policy separation and dependency fingerprints.
 - file: mudsl/tests/mull/mulib/ebooks.mull
   purpose: Shared C++/D MuLL coverage for publication APIs, compression and ownership.
 - file: examples/modules/docstring.c
@@ -19925,9 +19919,15 @@ project_files:
   purpose: Additive inventory, collision rejection and manual generator regressions.
 - file: tools/joltfx_inventory.py
   purpose: Explicit additive bounded registration and source-backed manual generation.
+- file: tools/joltfx_scope.md
+  purpose: Exact original 193-kernel scope and limitations used by the JoltFX generator.
 - file: tools/check_joltfx.py
   purpose: Strict C11 isolation, composition, linkage, sanitizer and optional fuzz checks.
 - file: manual/joltfx-kernels.json
   purpose: Exact supplied-kernel inventory plus the explicitly reviewed PCM helper.
 - file: manual/joltfx-review.md
   purpose: Reproduction commands, contract boundaries and remaining integration gates.
+- file: mudsl/mull/bridge/Mulib/LegacyExports.json
+  purpose: Frozen trusted-raw MuLL export policy, independent of header discovery.
+- file: mudsl/scripts/generate_mulib.py
+  purpose: Compiler-backed declaration discovery and regeneration of the pinned MuLL bridge.

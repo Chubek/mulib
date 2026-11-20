@@ -1,0 +1,2 @@
+mulib M <- G:MulibWrap("media-frame");
+M:Callback("mulib_parsec_predicate_fn", fn(byte, user) { return 1; });

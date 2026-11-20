@@ -113,6 +113,16 @@ class CoreTests(unittest.TestCase):
         self.assertFalse(result["contract"]["header_pin_matches"])
         self.assertEqual(result["on1x_admission"]["status"], "NOT_ESTABLISHED")
 
+    def test_implementation_switch_modules_can_share_a_manual(self):
+        manifest = self.root / "MANIFEST.yaml"
+        manifest.write_text(manifest.read_text().replace(
+            "manual/mulib-alpha-extra.md", "manual/mulib-alpha.md"))
+        (self.root / "manual/mulib-alpha-extra.md").unlink()
+        index = core.Index(self.root)
+        for name in ("alpha", "alpha-extra"):
+            self.assertEqual(index.modules[name]["manual"], "manual/mulib-alpha.md")
+            self.assertEqual(index.inspect_kernel(name)["on1x_admission"]["status"], "NOT_ESTABLISHED")
+
     def test_missing_and_ambiguous(self):
         self.rejected("KERNEL_NOT_FOUND", lambda: self.index.inspect_kernel("missing"))
         self.rejected("AMBIGUOUS_KERNEL", lambda: self.index.inspect_kernel("alph"))
@@ -162,6 +172,8 @@ class CoreTests(unittest.TestCase):
             original.replace("dependencies: []", "dependencies: [missing]", 1),
             original.replace("dependencies: []", "dependencies: [alpha, alpha]", 1),
             original.replace("include/mulib-alpha.h", "../../etc/passwd", 1),
+            original.replace("manual/mulib-alpha.md", "manual/../README.md", 1),
+            original.replace("manual/mulib-alpha.md", "manual/nested/alpha.md", 1),
             original.replace("  macro: MULIB_IMPL_ALPHA\n", "  macro: !python evil\n", 1),
             original.replace("  status: implemented", "  status: verified", 1),
             original.replace("  dependencies: []", "  dependencies: []\n  dependencies: []", 1),

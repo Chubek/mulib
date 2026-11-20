@@ -1,3 +1,4 @@
+#include "On1xSDK-Analyzer.h"
 #include "On1xSDK-Extension.h"
 #include "On1xSDK-PluginDependency.h"
 #include "On1xSDK-Registry.h"
@@ -21,7 +22,7 @@ namespace {
 constexpr std::size_t v1_max_extensions = 1024;
 constexpr std::size_t max_entries_per_kind = 1024;
 constexpr std::size_t num_kinds =
-    static_cast<std::size_t>(on1x::sdk::Kind::ExecEnv) + 1;
+    static_cast<std::size_t>(on1x::sdk::Kind::AnalyzerV2) + 1;
 const On1xSDK_Host v1_host{};
 
 struct Entry {
@@ -377,6 +378,7 @@ struct On1xSDK_Registry {
     bool registering = false;
     bool accepting_entries = false;
     bool closed = false;
+    const On1xSDK_CapabilitySet *registering_capabilities = nullptr;
 };
 
 struct On1xSDK_RegistrySnapshot {
@@ -434,9 +436,12 @@ private:
 
 class EntryRegistration {
 public:
-    explicit EntryRegistration(On1xSDK_Registry &registry) noexcept
-        : registry_(registry), previous_(registry.accepting_entries) {
+    explicit EntryRegistration(On1xSDK_Registry &registry,
+                               const On1xSDK_CapabilitySet *capabilities = nullptr) noexcept
+        : registry_(registry), previous_(registry.accepting_entries),
+          previous_capabilities_(registry.registering_capabilities) {
         registry_.accepting_entries = true;
+        registry_.registering_capabilities = capabilities;
     }
 
     EntryRegistration(const EntryRegistration &) = delete;
@@ -444,11 +449,13 @@ public:
 
     ~EntryRegistration() {
         registry_.accepting_entries = previous_;
+        registry_.registering_capabilities = previous_capabilities_;
     }
 
 private:
     On1xSDK_Registry &registry_;
     bool previous_ = false;
+    const On1xSDK_CapabilitySet *previous_capabilities_ = nullptr;
 };
 
 std::vector<On1xSDK_CapabilityGrant> grant_views(
@@ -706,6 +713,14 @@ On1xSDK_Status add(
     if (registry->registering && !registry->accepting_entries) {
         return ON1X_SDK_BUSY;
     }
+    if (kind == Kind::AnalyzerV2 &&
+        (!registry->registering_capabilities ||
+         !on1x_sdk_capability_set_contains(
+             registry->registering_capabilities,
+             {ON1X_SDK_MIR_ANALYZE_CAPABILITY, sizeof(ON1X_SDK_MIR_ANALYZE_CAPABILITY) - 1},
+             ON1X_SDK_MIR_ANALYZE_CAPABILITY_REVISION))) {
+        return ON1X_SDK_CAPABILITY_DENIED;
+    }
     if (find(registry, kind, name)) {
         return ON1X_SDK_DUPLICATE;
     }
@@ -717,6 +732,15 @@ On1xSDK_Status add(
     if (!registry->registering) {
         ++registry->revision;
     }
+    return ON1X_SDK_OK;
+}
+
+On1xSDK_Status check_active_registry_context(const On1xSDK_Registry *registry,
+                                              const On1xSDK_Context *context) noexcept {
+    if (!registry || !context) return ON1X_SDK_INVALID_ARGUMENT;
+    if (!on_owner_thread(registry) || registry->registering) return ON1X_SDK_BUSY;
+    if (registry->closed) return ON1X_SDK_INVALID_STATE;
+    if (registry->context != context) return ON1X_SDK_STALE;
     return ON1X_SDK_OK;
 }
 
@@ -1162,7 +1186,7 @@ extern "C" On1xSDK_Status on1x_sdk_registry_register_batch_v2(
                 token, host
             );
             {
-                EntryRegistration registration(*registry);
+                EntryRegistration registration(*registry, candidate.capabilities.get());
                 status = invoke_v2(
                     candidate.register_all, &host, registry,
                     candidate.userdata

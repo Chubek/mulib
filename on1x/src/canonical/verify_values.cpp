@@ -678,6 +678,12 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
         "' while another borrow is live");
     });
    }
+   void invalidate_loan_tags(State& state,std::size_t root,const Location& at){
+    for(auto it=state.tags.begin();it!=state.tags.end();){
+     const auto* binding=by_id(it->first,at);
+     if(!binding||binding->root==root)it=state.tags.erase(it);else ++it;
+    }
+   }
    void lexical_borrow(const Stmt& statement,State& state,
                        std::size_t depth){
     if(csp::present(unit))
@@ -826,6 +832,9 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
      acquire(place,param.borrow,arg.where,arg.text);
      call_loans.push_back({param.borrow,place.id,place.root});
    }
+   if(live)for(std::size_t i=acquired;i<call_loans.size();++i)
+    if(call_loans[i].mode==BorrowMode::Exclusive)
+     invalidate_loan_tags(state,call_loans[i].root,e.where);
    call_loans.resize(acquired);
    return live;
   }
@@ -981,6 +990,22 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
      if(!e.callee)fail(e.where,"canonical call is missing its callee");
      const bool unsafe=e.callee->reference==Expr::Reference::UnsafeForeign;
      if(!expression(*e.callee,state,depth+1,true,unsafe))return false;
+     if(e.callee->reference==Expr::Reference::Intrinsic&&e.callee->text=="ref_replace"){
+      if(e.children.size()!=2||e.children[0]->type!=e.type||e.children[1]->type!=e.type)
+       ref_error(e.where,"invalid checked ref_replace signature");
+      const auto& target=*e.children[0];
+      const auto& place=borrow_source(target,state,depth+1);
+      if(place.borrow!=BorrowMode::Exclusive)
+       ref_error(target.where,"ref_replace requires a named exclusive borrowed place");
+      const auto root=place.root;
+      acquire(place,BorrowMode::Exclusive,target.where,target.text);
+      const auto acquired=call_loans.size();
+      call_loans.push_back({BorrowMode::Exclusive,place.id,root});
+      const bool live=expression(*e.children[1],state,depth+1);
+      call_loans.resize(acquired);
+      if(live)invalidate_loan_tags(state,root,e.where);
+      return live;
+     }
      if(e.callee->reference==Expr::Reference::Intrinsic)
       if(const auto* operation=shared_intrinsic(e.callee->text)){
        if(e.type!=shared_signature(*operation,e))
@@ -1310,6 +1335,8 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
       lexical_borrow(s,*state,depth+1);
       continue;
      }
+     // A backedge may have changed an active arm through an exclusive loan.
+     if(s.kind==S::While)state->tags.clear();
      auto header_entry=s.kind==S::While?state:Flow{};
    if(s.value&&!expression(*s.value,*state,depth+1)){state.reset();continue;}
      switch(s.kind){
@@ -1337,7 +1364,8 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
        ref_error(s.where,"invalid checked exclusive-borrow store");
       }else if(!b||!b->mut)fail(s.where,"canonical assignment to missing/immutable binding");
      if(!b||b->type!=s.value->type)fail(s.where,"canonical assignment type mismatch");
-     for(auto it=state->tags.begin();it!=state->tags.end();){
+     if(s.ref_store)invalidate_loan_tags(*state,b->root,s.where);
+     else for(auto it=state->tags.begin();it!=state->tags.end();){
       if(it->first==b->id)it=state->tags.erase(it);else ++it;
      }
      clear_moves(*state,b->id);

@@ -1,0 +1,51 @@
+import fixture as Fixture;
+import forecast as Forecast;
+import kernel mulib.priceopt as Pricing;
+
+fn main() {
+  let f = Fixture.parse(io_stdin());
+  if !f["valid"] {
+    println("invalid-fixture");
+    return;
+  }
+  match Forecast.backtest(f["prices"]) with {
+    Err(_) => { println("forecast-rejected"); },
+    Ok(stats) => {
+      println("ok");
+      if stats["holt"] {
+        println("holt");
+      } else {
+        println("ema");
+      }
+      println(stats["ema_mae"]);
+      println(stats["selected_mae"]);
+      println(stats["next"]);
+      if !f["demand"] {
+        println("no-demand");
+        return;
+      }
+      let kind = variant<Pricing.DemandKind>(Linear, record{});
+      let profit = variant<Pricing.Objective>(Profit, record{});
+      let model = record<Pricing.DemandModel>{
+        kind: kind, scale: f64_from_i64(f["scale"]), shape: f64_from_i64(f["slope"]),
+        reference: 0.0
+      };
+      # Illustrative policy: don't quote above the forecast; require
+      # nonnegative unit margin and search the whole-dollar grid.
+      let limits = record<Pricing.Constraints>{
+        min_price: 1.0, max_price: stats["next"], unit_cost: Fixture.units(f["cost"]),
+        min_unit_margin: 0.0, previous_price: 0.0, max_relative_change: 0.0, tick: 1.0
+      };
+      match Pricing.optimize(model, limits, profit) with {
+        Err(_) => { println("optimization-rejected"); },
+        Ok(decision) => {
+          println("quote");
+          println(decision["price"]);
+          println(decision["score"]);
+          println(decision["expected_demand"]);
+          println(decision["evaluations"]);
+        }
+      };
+    }
+  };
+}

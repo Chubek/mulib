@@ -58,10 +58,20 @@ int main(void){
   int p=mulib_spice_netlist_find_node(&n,"out");assert(p>0);
   double voltages[9]={0};
   assert(mulib_spice_tran_fixed(&n,.001,9,(uint16_t)p,voltages));
-  assert(fabs(voltages[0]-0.5)<1e-10&&voltages[8]>.998);
   mulib_wave_signal_t wave={0};
-  for(int i=0;i<9;i++)assert(mulib_wave_signal_push(&wave,(i+1)*.001,voltages[i]));
-  double rms;assert(mulib_wave_measure_rms(&wave,&rms)&&rms>.75&&rms<1);
+  /* R*C=dt=1 ms, with a 1 V source and zero initial voltage.
+   * Backward Euler gives V[k]=1-2^-k, not the continuous-time result. */
+  double prev=0, sum_sq=0;
+  for(int i=0;i<9;i++){
+    double expected=1-ldexp(1.0,-(i+1));
+    assert(fabs(voltages[i]-expected)<1e-12);
+    /* KCL residual in amperes: resistor current plus capacitor current. */
+    assert(fabs((voltages[i]-1)/1000.0+1e-6*(voltages[i]-prev)/.001)<1e-14);
+    prev=voltages[i];
+    sum_sq+=expected*expected;
+    assert(mulib_wave_signal_push(&wave,(i+1)*.001,voltages[i]));
+  }
+  double rms;assert(mulib_wave_measure_rms(&wave,&rms)&&fabs(rms-sqrt(sum_sq/9))<1e-12);
   mulib_wave_signal_free(&wave);
   mulib_pcb_segment_t traces[]={{{0,0},{10,0},.3,1},{{5,-5},{5,5},.3,2}};
   assert(mulib_pcb_drc_segments(traces,2,.2,NULL,0)==1);

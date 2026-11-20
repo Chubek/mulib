@@ -1,6 +1,7 @@
 #include <on1x/ast.hpp>
 #include <on1x/backend/mir.hpp>
 #include <on1x/canonical/values.hpp>
+#include <on1x/clone.hpp>
 #include <iostream>
 
 namespace {
@@ -26,6 +27,15 @@ Expr* borrow_in(std::vector<Stmt>& body){
    return statement.value.get();
   if(auto found=borrow_in(statement.body))return found;
   if(auto found=borrow_in(statement.otherwise))return found;
+ }
+ return nullptr;
+}
+Stmt* tag_in(std::vector<Stmt>& body){
+ for(auto& statement:body){
+  if(statement.value&&statement.value->kind==Expr::Kind::TagTest)return &statement;
+  if(statement.value)if(auto found=tag_in(statement.value->body))return found;
+  if(auto found=tag_in(statement.body))return found;
+  if(auto found=tag_in(statement.otherwise))return found;
  }
  return nullptr;
 }
@@ -124,6 +134,54 @@ int main(){try{
    Type::own(Type::named("Cell"));
   reject([&]{canonical::verify_values(wrong_owner);},
          "supported named referent");
+
+  constexpr auto exchange=
+   "fn swap(x:ref i64,y:i64)->i64{return ref_replace(x,y);}"
+   "fn main(){let a=1;println(swap(a,2));}";
+  auto bad_exchange=checked(exchange);
+  auto& exchange_call=*bad_exchange.functions[0].body[0].value;
+  exchange_call.children[1]->text="x";
+  reject([&]{canonical::verify_values(bad_exchange);},"during its exclusive borrow");
+  reject([&]{emit_c(bad_exchange,"test");},"during its exclusive borrow");
+
+  auto shared_exchange=checked(exchange);
+  shared_exchange.functions[0].params[0].borrow=BorrowMode::Shared;
+  reject([&]{emit_c(shared_exchange,"test");},"named exclusive borrowed place");
+
+  auto wrong_exchange_type=checked(exchange);
+  wrong_exchange_type.functions[0].body[0].value->children[1]->type=Type::Bool;
+  reject([&]{emit_c(wrong_exchange_type,"test");},"invalid checked ref_replace signature");
+
+  // A direct exclusive call can overwrite the active arm of an immutable
+  // lexical slot. A checked payload projection must re-test the new tag.
+  auto stale_tag=checked(
+   "enum E{A(i64),B(bool)}"
+   "fn reset(x:ref E){x:=variant<E>(B,true);}"
+   "fn use(v:E){match v with {A(x)=>println(x),B(y)=>println(y)};}"
+   "fn main(){use(variant<E>(A,42));}");
+  auto* yes=tag_in(stale_tag.functions[1].body);
+  if(!yes)throw std::runtime_error("missing tag check");
+  const auto& tag=*yes->value;
+  auto update=std::make_unique<Expr>();
+  update->kind=Expr::Kind::Call;update->type=Type::Void;update->where=tag.where;
+  update->callee=std::make_unique<Expr>();
+  update->callee->kind=Expr::Kind::Variable;
+  update->callee->reference=Expr::Reference::BorrowFunction;
+  update->callee->type=Type::function({tag.children[0]->type},Type::Void);
+  update->callee->text="reset";update->callee->where=tag.where;
+  std::size_t clone_budget=16;
+  update->children.push_back(clone_expression(*tag.children[0],clone_budget));
+  Stmt update_stmt;update_stmt.kind=Stmt::Kind::Expr;update_stmt.where=tag.where;
+  update_stmt.value=std::move(update);
+  yes->body.insert(yes->body.begin(),std::move(update_stmt));
+  bool rejected_tag=false;
+  try{(void)emit_c(stale_tag,"test");}
+  catch(const Error& error){
+   if(std::string(error.what()).find("payload projection lacks a dominating tag test")==
+      std::string::npos)throw;
+   rejected_tag=true;
+  }
+  if(!rejected_tag)throw std::runtime_error("stale tag after exclusive write was accepted");
 
   std::cout<<"borrow verifier: deterministic const/payload lowering and rejection of corrupted places/calls/stores/captures/modes PASS\n";
 }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}

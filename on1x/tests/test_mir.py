@@ -15,7 +15,8 @@ def native(path, exe):
     return run([exe])
 
 
-def compare(name, text=None, source=None, expected=None, status=0, diagnostic=None, options=()):
+def compare(name, text=None, source=None, expected=None, status=0, diagnostic=None, options=(),
+            saved_native=False):
     source = source or tests.source(name, text)
     outputs = []
     for mode, optimization, label in [('--emit-c', [], '--emit-c'), ('--emit-ir-c', [], '--emit-ir-c'),
@@ -53,6 +54,17 @@ def compare(name, text=None, source=None, expected=None, status=0, diagnostic=No
     assert (reread.returncode, reread.stdout) == outputs[0], reread.stderr
     reread = run([tests.compiler, '--ir-input', '--emit-ir-c', saved])
     assert reread.returncode == 0 and reread.stdout == (tests.work/(name+'--emit-ir-c.c')).read_text()
+    if saved_native:
+        for optimization, suffix in [([], '-saved'), (['--optimize-ir'], '-saved-opt')]:
+            reread = run([tests.compiler, '--ir-input', '--run-ir', saved, *optimization])
+            assert (reread.returncode, reread.stdout) == outputs[0], reread.stderr
+            path = tests.work/(name+suffix+'.c')
+            reread = run([tests.compiler, '--ir-input', '--emit-ir-c', saved, *optimization, '-o', path])
+            assert reread.returncode == 0, reread.stderr
+            reread = native(path, tests.work/(name+suffix))
+            assert (reread.returncode, reread.stdout) == outputs[0], reread.stderr
+            if diagnostic:
+                assert diagnostic in reread.stderr, reread.stderr
     graph = run([tests.compiler, '--ir-cfg', source, *options])
     assert graph.returncode == 0 and graph.stdout.startswith('digraph on1x_mir {')
 
@@ -71,6 +83,39 @@ fn main(){var n=1;{let n=42;println(n);}println(n);
 while n<5{var k=0;while k<n{k=k+1;}if k==3{println(k);}else{println(-k);}n=n+1;}
 var flag=false;while !flag{flag=true;}println(flag);}
 ''', expected='42\n1\n-1\n-2\n3\n-4\ntrue\n')
+compare('omitted_latch_continue', '''
+fn mark(x:i64)->i64{println(x);return x;}
+fn main(){
+ outer:for(var i=mark(0);i<3;i=mark(i+1)){
+  for(var j=0;j<2;j=loop{if true{continue outer;}break with 1;}){
+   println(10+j);break;
+  }
+  break outer;
+ }
+ println(42);
+}
+''', expected='0\n10\n42\n', saved_native=True)
+compare('entered_latch_continue', '''
+fn step(x:i64)->i64{println(20+x);return x+1;}
+fn main(){
+ outer:for(var i=0;i<3;i=step(i)){
+  for(var j=0;j<2;j=loop{if i<2{continue outer;}break with j+1;}){
+   println(10+j);if i==2{break;}
+  }
+ }
+ println(42);
+}
+''', expected='10\n20\n10\n21\n10\n22\n42\n', saved_native=True)
+compare('latch_trap', '''
+fn stop(n:i64)->i64{println(n);return 1/n;}
+fn main(){for(var i=0;i<2;i=stop(i)){println(8);continue;}println(42);}
+''', expected='8\n0\n', status=70, diagnostic='invalid division', saved_native=True)
+compare('omitted_latch_tuple', '''
+fn main(){for(var i=0;i<2;i=loop{let (a,b)=(4,5u16);break with a+u16_to_i64(b);}){
+ println(i);break;
+}println(42);}
+''', expected='0\n42\n', saved_native=True)
+assert (tests.work/'omitted_latch_tuple.mir').read_text().startswith('(on1x.mir 1 ')
 compare('returns', '''
 fn choose(n:i64)->i64{if n==1{return 10;}else{if n==2{return 20;}}return 30;}
 fn find(n:i64)->i64{var i=0;while i<n{if i==3{return i;}i=i+1;}return -1;}
@@ -165,8 +210,21 @@ unsupported = [
     'fn main(){let code=quote{42};println(run(code));}',
     'fn main(){let b=buffer_new();buffer_append(b,"x");}',
 ]
-for n, text in enumerate(unsupported):
+unsupported_latches = [
+    # The absence of an incoming latch edge does not authorize unsupported HIR.
+    'fn main(){for(var i=0;i<2;i=(fn()->i64{return 7;})()){println(i);break;}}',
+    'fn main(){for(var i=0;i<2;println("dead step")){println(i);break;}}',
+    'fn main(){for(var i=0;i<2;i=loop{defer println(7);break with 0;}){break;}}',
+    'fn main(){var n=40;for(var i=0;i<2;i=loop{let a=borrow n;break with a;}){break;}}',
+    '''record Cell{n:i64}
+    fn main(){for(var i=0;i<2;i=loop{let x=box(record<Cell>{n:7});drop(x);break with 0;}){break;}}
+    ''',
+]
+for n, text in enumerate(unsupported+unsupported_latches):
     source = tests.source(f'unsupported_{n}', text)
+    if n >= len(unsupported):
+        p = run([tests.compiler, '--emit-c', source])
+        assert p.returncode == 0, (text, p.stderr)
     for mode in ['--emit-ir', '--emit-ir-c', '--ir-cfg', '--run-ir']:
         out = tests.work/'preserved'
         out.write_text('keep me')
@@ -206,6 +264,21 @@ for mode in ['--run-ir','--emit-ir-c']:
     assert p.returncode==1 and 'main must have no parameters and return i64 or void' in p.stderr and out.read_text()=='keep me',p.stderr
 p = run([tests.compiler, '--ir-input', '--emit-c', malformed])
 assert p.returncode == 2 and 'requires a MIR mode' in p.stderr
+
+# Inject a syntactically well-shaped but unreachable block into the actual fixed
+# artifact, rather than allowing lower's omission rule to leak into admission.
+saved = tests.work/'omitted_latch_continue.mir'
+wire = saved.read_text().rstrip()
+at = '(at "forged-latch.on1x" 0 1 1)'
+close = '))))'  # block list, function, function list, root
+assert wire.endswith(close)
+forged = (wire.removesuffix(close) + f' (block 90001 90002 {at} () () '
+          f'(exit 90003 return 0 90002 () {at}))' + close)
+malformed.write_text(forged)
+for mode in ['--emit-ir', '--run-ir', '--emit-ir-c']:
+    p = run([tests.compiler, '--ir-input', mode, malformed, '-o', out])
+    assert p.returncode == 1 and 'ON1X-MIR-VERIFY: unreachable block' in p.stderr, p.stderr
+    assert not p.stdout and out.read_text() == 'keep me'
 
 # Independently invoke the public build helper on the scalar example.
 import sys

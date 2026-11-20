@@ -10,6 +10,7 @@ size_t mull_mb_library_count();
 const(char)* mull_mb_library_name(size_t);
 const(char)* mull_mb_library_header(size_t);
 size_t mull_mb_library_find(const(char)*);
+int mull_mb_library_is_raw(size_t);
 size_t mull_mb_symbol_count(size_t);
 const(char)* mull_mb_symbol_name(size_t, size_t);
 int mull_mb_symbol_find(size_t, const(char)*, size_t*);

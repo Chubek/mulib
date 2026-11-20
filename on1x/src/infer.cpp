@@ -1064,6 +1064,7 @@ class Inference {
     if(n=="move"){arity(1);return args[0];}
     if(n=="take"){arity(1);return owned_value(args[0],at);}
     if(n=="drop"){arity(1);return scalar(Type::Void,at);}
+    if(n=="ref_replace"){arity(2);unify(args[0],args[1],at);return args[0];}
     if(auto primitive=data_primitive(n)){
     arity(primitive->parameters().size());for(std::size_t i=0;i<args.size();++i)unify(args[i],annotation(primitive->parameters()[i],at),at);
     return annotation(primitive->result(),at);

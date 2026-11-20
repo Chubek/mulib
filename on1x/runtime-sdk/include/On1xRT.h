@@ -428,6 +428,34 @@ On1xRT_Status on1x_rt_engine_load_dynamic(On1xRT_Engine *engine,
                                           On1xRT_StringView path,
                                           On1xRT_Module *module,
                                           On1xRT_Error **error);
+
+#define ON1X_RT_MAX_DYNAMIC_PATH_BYTES 4096u
+#define ON1X_RT_MAX_DYNAMIC_IMAGE_BYTES (64u * 1024u * 1024u)
+#define ON1X_RT_MAX_DYNAMIC_ENGINE_BYTES (256u * 1024u * 1024u)
+
+/*
+ * Authorize the measured lowercase SHA-256 (64 bytes) of the immutable native
+ * image, not a claim made by its descriptor. The views are callback-scoped.
+ * Only OK permits the OS loader (including native constructors/resolvers).
+ * The host must trust the image, its native dependencies and the process's
+ * loader configuration. This does not sandbox or attest dependency bytes.
+ */
+typedef On1xRT_Status (*On1xRT_AuthorizeDynamicFn)(
+    void *context, On1xRT_StringView requested_path,
+    On1xRT_StringView artifact_sha256);
+
+/*
+ * Opt-in trusted native profile. Requires an absolute UTF-8 path to a
+ * nonempty regular file, a pre-load authorization callback, the engine's
+ * authorize_aot policy (for descriptor registration), and an empty output
+ * handle. Failure does not publish a handle. On success the existing
+ * on1x_rt_module_unload operation releases the loader reference after shutdown.
+ * The legacy path-only load_dynamic operation still returns UNSUPPORTED.
+ */
+On1xRT_Status on1x_rt_engine_load_authorized_dynamic(
+    On1xRT_Engine *engine, On1xRT_StringView path,
+    On1xRT_AuthorizeDynamicFn authorize, void *authorization_context,
+    On1xRT_Module *module, On1xRT_Error **error);
 On1xRT_Status on1x_rt_engine_load_wasm(On1xRT_Engine *engine,
                                        On1xRT_BytesView module_bytes,
                                        On1xRT_Module *module,

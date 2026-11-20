@@ -83,6 +83,15 @@ class LanguageTests(unittest.TestCase):
         self.assertIn("MuLL", {i["label"] for i in self.complete("MuL", "d")})
         self.assertIn("mulib_parsec_range", {i["label"] for i in self.complete('mulib P <- G:MulibWrap("Parsec")\nP:mulib_parsec_')})
 
+    def test_discovery_only_has_c_declarations_but_no_mull_exports(self):
+        self.assertIn("media-frame", {i["label"] for i in self.complete('G:MulibWrap("media-f')})
+        labels = {i["label"] for i in self.complete('mulib F <- G:MulibWrap("media-frame")\nF:')}
+        self.assertEqual(labels, {"LibraryName", "Header", "Symbols", "BindingProfile", "Libraries"})
+        c_items = {i["label"] for i in self.complete("mulib_media_frame_", "c")}
+        self.assertIn("mulib_media_frame_alloc", c_items)
+        conflict = Document("file:///example.c", "mulib_num_newton()", "c")
+        self.assertIsNone(self.server.definition(conflict, 2))
+
     def test_shadowing_parameters_and_comments(self):
         source = ('val x <- 1;\n# val ghost <- 0;\nval s <- "var fake <- 0;";\n'
                   'val f <- fn(x) {\n val y <- x;\n { val x <- 2; x; }\n return x;\n};\nx;')

@@ -210,6 +210,18 @@ if(MULIB_BUILD_TESTS)
     add_test(NAME mulib_dsymspec_snapshot
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_snapshot.py)
     set_tests_properties(mulib_dsymspec_snapshot PROPERTIES TIMEOUT 60)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING)
+      set(_workload_flags)
+      if(MULIB_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        list(APPEND _workload_flags --cflag=-fsanitize=address,undefined
+          --cflag=-fno-sanitize-recover=all --cflag=-fno-omit-frame-pointer)
+      endif()
+      add_test(NAME mulib_consolidation_c_workloads
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/consolidation/workloads/check_c.py"
+          --cc "${CMAKE_C_COMPILER}" --artifacts "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/workloads"
+          ${_workload_flags})
+      set_tests_properties(mulib_consolidation_c_workloads PROPERTIES TIMEOUT 180)
+    endif()
     add_test(NAME mulib_tool_regressions
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_tools.py)
     if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
@@ -231,6 +243,10 @@ if(MULIB_BUILD_TESTS)
     add_test(NAME mulib_mull_inventory
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/mudsl/scripts/check_mulib_inventory.py
         --include ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    add_test(NAME mulib_mull_inventory_regressions
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/mudsl/tests/test_mulib_inventory.py)
+    add_test(NAME mulib_manual_inventory
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/manuals.py --check)
     add_test(NAME mulib_lprowse_embedded
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed_lprowse.py --check)
     add_test(NAME mulib_lmuw3_embedded

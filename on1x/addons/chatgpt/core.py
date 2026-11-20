@@ -325,16 +325,17 @@ class Index:
                 valid_implementation = (
                     item.get("implementation") == "static-inline"
                     and "macro" not in item
-                    and re.fullmatch(r"manual/[a-z0-9][a-z0-9_+-]*\.md", item.get("manual", ""))
                 )
             else:
                 valid_implementation = (
                     item.get("status") in ("implemented", "reserved")
                     and "implementation" not in item
-                    and item.get("manual") == "manual/mulib-" + name + ".md"
                     and re.fullmatch(r"MULIB_IMPL_[A-Z0-9_]+", item.get("macro", ""))
                 )
+            # Implementation-switch modules can also share a family manual.
+            # Keep the same flat, Markdown-only allowlist for both profiles.
             if (item.get("header") != "include/mulib-" + name + ".h"
+                    or not re.fullmatch(r"manual/[a-z0-9][a-z0-9_+-]*\.md", item.get("manual", ""))
                     or not valid_implementation):
                 fail("INVALID_MANIFEST", "Noncanonical kernel fields.")
             deps = item.get("dependencies", "")

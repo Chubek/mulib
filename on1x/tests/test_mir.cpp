@@ -143,6 +143,14 @@ int main(int argc,char** argv){
   auto branches=lower("fn main(){if true{println(11);}else{println(22);}println(33);}");
   malformed(branches,[](auto& m){auto& b=m.functions[0].blocks;b[2].instructions[1].operands[0]=b[1].instructions[0].id;},"does not dominate");
   malformed(branches,[](auto& m){auto& b=m.functions[0].blocks;b[0].exit.edges[1]=b[0].exit.edges[0];},"unreachable");
+  const auto latch=lower(R"(
+   fn step(n:i64)->i64{println(n);return n+1;}
+   fn main(){for(var i=0;i<3;i=step(i)){println(10+i);continue;}println(42);}
+  )");
+  const auto stepped=m::evaluate(m::deserialize(m::serialize(latch)));
+  require(stepped.status==m::Status::Returned&&stepped.output=="10\n0\n11\n1\n12\n2\n42\n",
+          "continue did not evaluate the latch once in effect order");
+  malformed(latch,[&](auto& m){change_op(m,m::Op::Call,[](auto& i){i.effect_in=0;});},"effect ordering");
   auto logic=lower("fn main(){println(true&&false);}");
   malformed(logic,[](auto& m){m.functions[0].blocks[2].parameters[0].type=Type::I64;},"argument type");
   auto effect_order=lower("fn main(){println(1);println(2);}");

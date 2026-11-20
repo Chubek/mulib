@@ -99,13 +99,20 @@ size_t mull_mb_library_find(const char *name) {
   const char *shortname=stripped;
   if(!strncmp(shortname,"include-",8)) shortname+=8;
   if(!strncmp(shortname,"mulib-",6)) shortname+=6;
-  size_t found=MULL_MB_NONE;
-  for(size_t i=0;i<MB_COUNT(mb_libraries);++i)
-    if(mb_equal(shortname,mb_libraries[i].name)) {
-      if(found!=MULL_MB_NONE) return MULL_MB_NONE;
-      found=i;
-    }
-  return found;
+  /* A new catalogue-only name cannot make a legacy folded alias ambiguous. */
+  for(int legacy=1;legacy>=0;--legacy) {
+    size_t found=MULL_MB_NONE;
+    for(size_t i=0;i<MB_COUNT(mb_libraries);++i)
+      if((mb_libraries[i].symbols!=NULL)==legacy && mb_equal(shortname,mb_libraries[i].name)) {
+        if(found!=MULL_MB_NONE) return MULL_MB_NONE;
+        found=i;
+      }
+    if(found!=MULL_MB_NONE) return found;
+  }
+  return MULL_MB_NONE;
+}
+int mull_mb_library_is_raw(size_t library) {
+  return library<MB_COUNT(mb_libraries) && mb_libraries[library].symbols!=NULL;
 }
 size_t mull_mb_symbol_count(size_t library) { return library<MB_COUNT(mb_libraries)?mb_libraries[library].count:0; }
 const char *mull_mb_symbol_name(size_t library,size_t index) {
@@ -124,7 +131,8 @@ int mull_mb_symbol_find(size_t library,const char *name,size_t *id) {
   return -1;
 }
 size_t mull_mb_type_find(size_t library,const char *name) {
-  if(!name || strlen(name)>=512) return MULL_MB_NONE;
+  if(!name || strlen(name)>=512 ||
+     (library!=MULL_MB_NONE && !mull_mb_library_is_raw(library))) return MULL_MB_NONE;
   for(size_t i=0;i<MB_COUNT(mb_aliases);++i) if(!strcmp(name,mb_aliases[i].name)) return mb_aliases[i].type;
   for(size_t i=0;i<MB_COUNT(mb_types);++i) if(!strcmp(name,mb_types[i].name)) return i;
   if(library<MB_COUNT(mb_libraries)) {

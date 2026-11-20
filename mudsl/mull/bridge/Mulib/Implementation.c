@@ -1,4 +1,4 @@
-/* Generated implementation switches for every public header. */
+/* Generated implementation switches for the legacy MuLL bridge. */
 #if defined(__linux__) && !defined(_GNU_SOURCE)
 #define _GNU_SOURCE
 #endif

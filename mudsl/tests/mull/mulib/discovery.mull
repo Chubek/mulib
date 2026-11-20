@@ -1,0 +1,11 @@
+mulib P <- G:MulibWrap("Parsec");
+mulib M <- G:MulibWrap("mulib-media-frame.h");
+mulib N <- G:MulibWrap("num-newton");
+G:Assert(P:BindingProfile == "legacy-raw");
+G:Assert(P:Byte(65):kind == P:MULIB_PARSEC_BYTE);
+G:Assert(M:BindingProfile == "discovery-only");
+G:Assert(M:LibraryName == "media-frame");
+G:Assert(M:Header == "mulib-media-frame.h");
+G:Assert(G:Len(M:Symbols) == 0);
+G:Assert(N:BindingProfile == "discovery-only");
+G:Assert(G:Len(N:Symbols) == 0);

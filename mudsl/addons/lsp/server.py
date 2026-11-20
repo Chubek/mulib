@@ -182,6 +182,7 @@ class Server:
         self.mudsl = None
         self.modules = {}
         self.native = {}
+        self.declared = {}
         self.checker = checker or shutil.which("mull-check")
         self.package_paths = [Path(p).expanduser().resolve() for p in package_paths]
         self.stopped = False
@@ -206,6 +207,10 @@ class Server:
                 self.modules = json.loads(path.read_text(encoding="utf-8"))["modules"]
                 break
         self.native = {name: module["header"] for module in self.modules.values() for name in module["functions"]}
+        self.declared = {}
+        for module in self.modules.values():
+            for name in module.get("declarations", module["functions"]):
+                self.declared.setdefault(name, set()).add(module["header"])
 
     def send(self, message):
         data = json.dumps({"jsonrpc": "2.0", **message}, ensure_ascii=False).encode("utf-8")
@@ -242,6 +247,7 @@ class Server:
                 return module
         folded = re.sub(r"[^a-z0-9]", "", name)
         matches = [m for k, m in self.modules.items() if re.sub(r"[^a-z0-9]", "", k.lower()) == folded]
+        matches = [m for m in matches if m.get("profile") != "discovery-only"] or matches
         return matches[0] if len(matches) == 1 else None
 
     def members(self, document, receiver, offset):
@@ -251,6 +257,15 @@ class Server:
             module = self.module(package[7:])
             members = {k: v for k, v in MEMBERS["Mulib"].items() if k != "Wrap"}
             if module:
+                for name, doc in (
+                    ("LibraryName", "Canonical library name."),
+                    ("Header", "Public C header filename."),
+                    ("Symbols", "Exact exported names, empty for discovery-only libraries."),
+                    ("BindingProfile", "Bridge profile: legacy-raw or discovery-only."),
+                ):
+                    members[name] = (name, doc)
+                if module.get("profile") == "discovery-only":
+                    return {k: members[k] for k in ("LibraryName", "Header", "Symbols", "BindingProfile", "Libraries")}
                 members.update({name: (name, "Native C function from " + module["header"] + ". See the module manual for its argument and ownership contract.") for name in module["functions"]})
             return members
         return MEMBERS.get(package, {})
@@ -294,8 +309,9 @@ class Server:
             headers = sorted({m["header"] for m in self.modules.values()} | {"MuDSL.hpp"})
             return edits([self.item(n, 17) for n in headers if n.startswith(include[1])], include[1])
         prefix = re.search(r"[A-Za-z_0-9]*$", before)[0]
-        if prefix.startswith(("mulib_", "MULIB_")):
-            return edits([self.item(n, 3, header) for n, header in self.native.items() if n.startswith(prefix)], prefix)
+        if prefix.startswith(("mulib_", "ma_")):
+            return edits([self.item(n, 3, ", ".join(sorted(headers)))
+                          for n, headers in self.declared.items() if n.startswith(prefix)], prefix)
         if re.search(r"\b(?:dsl|mudsl|mull)::[A-Za-z_0-9]*$", before) or (document.language == "d" and prefix):
             return edits([self.item(n, 7, sig, doc) for n, (sig, doc, _) in TOOLKIT.items() if n.startswith(prefix)], prefix)
         return []
@@ -323,8 +339,11 @@ class Server:
             description = f"`{signature}` — {doc}."
             if self.mudsl:
                 description += "\n\n[MuDSL reference](" + (self.mudsl / "manual" / manual).resolve().as_uri() + ")"
-        if name in self.native and (document.language != "mull" or description):
-            header = self.native[name]
+        if document.language == "mull":
+            headers = {self.native[name]} if description and name in self.native else set()
+        else:
+            headers = self.declared.get(name, set())
+        for header in sorted(headers):
             description += f"\n\n`{name}` — `{header}`."
             if self.root:
                 manual = self.root / "manual" / (Path(header).stem + ".md")
@@ -355,12 +374,19 @@ class Server:
             binding = binding or next((b for b in document.bindings if b.token.start == token.start), None)
             if binding:
                 return {"uri": document.uri, "range": document.range(binding.token.start, binding.token.end)}
-        if self.root and token.text in self.native:
+        if self.root:
             if document.language == "mull":
                 receiver = re.search(r"\b([A-Za-z_]\w*)\s*:\s*$", document.text[:token.start], re.ASCII)
-                if not receiver or token.text not in self.members(document, receiver[1], offset):
+                if (not receiver or token.text not in self.native
+                        or token.text not in self.members(document, receiver[1], offset)):
                     return None
-            path = self.root / "include" / self.native[token.text]
+                header = self.native[token.text]
+            else:
+                headers = self.declared.get(token.text, set())
+                if len(headers) != 1:
+                    return None  # The name may have incompatible declarations.
+                header = next(iter(headers))
+            path = self.root / "include" / header
             if path.is_file():
                 text = path.read_text(encoding="utf-8", errors="replace")
                 match = re.search(r"\b" + re.escape(token.text) + r"\s*\(", text)

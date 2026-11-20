@@ -1,0 +1,68 @@
+# Fixed local fixture grammar; all numbers are bounded unsigned ASCII decimal.
+fn decimal(text: string, start: i64, separator: i64) -> record{value: i64, next: i64} {
+  let bad = record{value: 0, next: -1};
+  if start < 0 {
+    return bad;
+  }
+  var at = start;
+  var value = 0;
+  while at < text_len(text) && at - start <= 6 {
+    let b = text_byte(text, at);
+    if b == separator && at > start {
+      return record{value: value, next: at + 1};
+    }
+    if b < 48 || b > 57 || at - start == 6 {
+      return bad;
+    }
+    value = value * 10 + b - 48;
+    at = at + 1;
+  }
+  return bad;
+}
+
+fn sample(text: string, start: i64, prior: i64) -> record{day: i64, cents: i64, next: i64} {
+  let day = decimal(text, start, 44);
+  let cents = decimal(text, day["next"], 10);
+  if cents["next"] < 0 || (prior >= 0 && day["value"] != prior + 1) {
+    return record{day: -1, cents: 0, next: -1};
+  }
+  return record{day: day["value"], cents: cents["value"], next: cents["next"]};
+}
+
+fn units(cents: i64) -> f64 {
+  return f64_from_i64(cents) / 100.0;
+}
+
+fn parse(text: string) -> record{valid: bool, prices: array<f64,6>, demand: bool,
+    scale: i64, slope: i64, cost: i64} {
+  let bad = record{valid: false, prices: array[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    demand: false, scale: 0, slope: 0, cost: 0};
+  let prefix = "shylock-v1,widget,USD,2\n";
+  let begin = text_len(prefix);
+  if text_len(text) < begin || text_len(text) > 256 || text_slice(text, 0, begin) != prefix {
+    return bad;
+  }
+  let a = sample(text, begin, -1);
+  let b = sample(text, a["next"], a["day"]);
+  let c = sample(text, b["next"], b["day"]);
+  let d = sample(text, c["next"], c["day"]);
+  let e = sample(text, d["next"], d["day"]);
+  let f = sample(text, e["next"], e["day"]);
+  let prices = array[units(a["cents"]), units(b["cents"]), units(c["cents"]),
+    units(d["cents"]), units(e["cents"]), units(f["cents"])];
+  let next = f["next"];
+  if next == text_len(text) {
+    return record{valid: true, prices: prices, demand: false, scale: 0, slope: 0, cost: 0};
+  }
+  if next < 0 || text_len(text) - next < 7 || text_slice(text, next, next + 7) != "demand," {
+    return bad;
+  }
+  let scale = decimal(text, next + 7, 44);
+  let slope = decimal(text, scale["next"], 44);
+  let cost = decimal(text, slope["next"], 10);
+  if cost["next"] != text_len(text) || scale["value"] == 0 || slope["value"] == 0 {
+    return bad;
+  }
+  return record{valid: true, prices: prices, demand: true,
+    scale: scale["value"], slope: slope["value"], cost: cost["value"]};
+}

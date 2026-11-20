@@ -26,6 +26,13 @@ once-evaluated i64 ranges. No new MIR opcodes/format version are needed. CFG,
 effect, slot-initialization and dominance verification remain mandatory; the
 reference evaluator/round-trips/transactional passes execute the same edges.
 Resource-bearing loops stay on HIR→C11 and are not approximated as scalar MIR.
+For a canonical `for` step, MIR creates a latch only when a lowered body edge
+can enter it (fallthrough or a `continue` to that loop). In particular, a
+`continue` inside an omitted inner step does not create an outer latch. Latches
+may themselves transfer to an enclosing loop; the entered steps execute in
+source order. MIR still checks omitted steps for unsupported types, ownership
+and effects, but emits no edges or instructions for them. Region exit joins
+likewise require an emitted incoming exit rather than a syntactic target alone.
 
 [Value loops](value-loops.md) additionally use the existing region/slot bridge:
 typed break operands store a result and leave a checked join. Numeric/scalar
@@ -89,9 +96,20 @@ An ordinary `i64` main result follows the existing C11 main exit convention.
 | Unsupported | Strings, managed/resource-bearing aggregates, records/ADTs/arrays/slices, first-class functions/closures, staged values, resources/borrows, raw/safe foreign calls, async effects |
 
 Unsupported constructs reject the complete requested MIR artifact, including
-unused concrete definitions and raw extern declarations. They are not silently
-dropped or routed through the HIR emitter. The additive decimal float syntax is
-specified in [numeric semantics](numerics.md).
+unused concrete definitions, raw extern declarations and non-entered canonical
+loop steps. They are not silently dropped or routed through the HIR emitter.
+Retained non-executable generic prototypes are not MIR definitions. The additive
+decimal float syntax is specified in [numeric semantics](numerics.md).
+
+This is not equivalence for every HIR program. For example, HIR→C11 can return
+and project a nominal `record Point{x:i64}` or match an `Option<i64>`; MIR lacks
+nominal layout and tagged-payload descriptors. It also lacks addressable places
+and loans, unique moves/drop, defer registration and recoverable cleanup edges.
+An omitted latch does not change these boundaries. Within the admitted subset,
+compare printed traces and the returned/trapped outcome; the reference
+evaluator adds location and resource limits, and its exhaustion is not a C11
+program outcome. Native checked arithmetic/assertions use the existing runtime
+diagnostics rather than the evaluator's located diagnostic format.
 
 Optional [Novostone relational analyses](backend-analysis.md) now expose MIR
 metadata, CFG reachability, transitive calls, conservative effects and liveness
@@ -201,7 +219,7 @@ no cleanup or recoverable error semantics are claimed for this scalar subset.
 
 ## Format, budgets and testing
 
-The wire root is `(on1x.mir VERSION MODULE_ID (FUNCTIONS...))`, VERSION 1 or 2.
+The wire root is `(on1x.mir VERSION MODULE_ID (FUNCTIONS...))`, VERSION 1, 2 or 3.
 Fixed-shape tagged
 records describe functions, blocks, instructions, exits, edges, values and `at`
 locations. Operands/references are IDs; immediates preserve all signed 64 bits.
@@ -235,4 +253,6 @@ saved artifacts, 120 seeded
 arithmetic/comparison cases, ten trap programs, ordered effects, early exits,
 imports, macros, PPX, specializations and unsupported-operation rejection. An
 independently authored phi permutation is compiled and executed as C11.
+Loop regressions also compile and execute C11 from verified saved MIR (plain and
+optimized), and reject a forged unreachable block without replacing the output.
 See [verification](../VERIFICATION.md) for actual toolchains and results.

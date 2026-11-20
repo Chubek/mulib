@@ -1,0 +1,2 @@
+mulib P <- G:MulibWrap("imagepng");
+P:mulib_imagepng_decode_rgba(nil, 0, nil, nil);

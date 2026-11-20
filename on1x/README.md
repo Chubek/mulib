@@ -4,6 +4,13 @@ These extensions are integrated with the existing C11 compiler and module loader
 The refined Basis modules, `stdlib/ppx/`, `stdlib/sexpr/`, `stdlib/visitor/`,
 original native processors and contracts are preserved.
 
+For a fresh MuLIB checkout, `git submodule update --init on1x/third_party/libstone`
+checks out the pinned LibStone sources for the generated scanner and optional
+integrations. Existing compatible checkouts can be selected with
+`-DON1X_LIBSTONE_ROOT=/path/to/libstone`. CMake does not fetch or update either
+checkout. See the [consolidation plan](../consolidation/PLAN.md) for the
+cross-subsystem integration boundaries.
+
 ## Project tools
 
 Use `on1xc init --bin`, `on1xc init --proj`, or `on1xc init --lib` to
@@ -36,7 +43,10 @@ For C/C++ build-tool integrations, see [On1x SDK 2](sdk/README.md) and its
 separate [On1xRT ABI 1](runtime-sdk/README.md).
 SDK hook commands can discover isolated external plugins through
 `ON1X_PLUGIN_PATH` or select them with `--plugin +NAME_OR_PATH`. Ordinary
-compilation does not load SDK plugins.
+compilation does not load SDK plugins. An explicitly configured
+[trusted ABI-2 linked analyzer](sdk/docs/trusted-linked-mir-analyzer.md) can
+inspect structured verified MIR. Separately, the On1xRT host can authorize a
+sealed native image on Linux/glibc; this runs with host authority, not in a sandbox.
 
 ## Language implementation continuation
 

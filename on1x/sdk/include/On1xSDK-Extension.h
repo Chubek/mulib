@@ -54,6 +54,13 @@ On1xSDK_Status on1x_sdk_extension_v2_validate(
     const On1xSDK_ExtensionV2 *extension
 );
 
+/*
+ * Entry point implemented by a trusted ABI-2 provider explicitly linked into
+ * on1xc. Returns a borrowed descriptor that stays valid through registration.
+ * Neither the ABI-1 driver nor the isolated DSO worker calls this symbol.
+ */
+const On1xSDK_ExtensionV2 *on1x_sdk_linked_extension_v2(void);
+
 #ifdef __cplusplus
 }
 #endif

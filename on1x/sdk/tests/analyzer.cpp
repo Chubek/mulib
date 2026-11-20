@@ -1,4 +1,5 @@
 #include "On1xSDK-Analyzer.h"
+#include "On1xSDK-Extension.h"
 #include "On1xSDK-Registry.h"
 
 #include <array>
@@ -100,6 +101,70 @@ extern "C" void collect(void *userdata, const On1xSDK_Diagnostic *record) {
         std::abort();
     }
 }
+
+extern "C" On1xSDK_Status never_run_v2(void *, const On1xSDK_MIRSnapshot *,
+                                        const On1xSDK_DiagnosticSinkV2 *) {
+    std::abort();
+}
+
+const On1xSDK_AnalyzerV2 analyzer_v2{
+    ON1X_SDK_ABI_VERSION_V2, sizeof analyzer_v2, {"mir-lint", 8},
+    ON1X_SDK_SEMANTICS_IR_SCHEMA_VERSION, 0, never_run_v2, nullptr
+};
+
+extern "C" On1xSDK_Status register_v2(const On1xSDK_Host *, On1xSDK_Registry *registry, void *) {
+    return on1x_sdk_analyzer_register_v2(registry, &analyzer_v2);
+}
+
+extern "C" On1xSDK_Status initialize_v2(const On1xSDK_Host *, void *userdata) {
+    return *static_cast<const bool *>(userdata) ? ON1X_SDK_ERROR : ON1X_SDK_OK;
+}
+
+extern "C" On1xSDK_Status shutdown_v2(const On1xSDK_Host *, void *) {
+    return ON1X_SDK_OK;
+}
+
+void registration_v2(On1xSDK_Registry *legacy) {
+    CHECK(on1x_sdk_analyzer_register_v2(legacy, &analyzer_v2) == ON1X_SDK_CAPABILITY_DENIED);
+    const On1xSDK_ABIHeader short_header{ON1X_SDK_ABI_VERSION_V2, sizeof short_header};
+    CHECK(on1x_sdk_analyzer_register_v2(
+        legacy, reinterpret_cast<const On1xSDK_AnalyzerV2 *>(&short_header)) == ON1X_SDK_ABI_MISMATCH);
+    auto unsupported = analyzer_v2;
+    ++unsupported.input_schema;
+    CHECK(on1x_sdk_analyzer_register_v2(legacy, &unsupported) == ON1X_SDK_UNSUPPORTED);
+    constexpr On1xSDK_StringView capability{
+        ON1X_SDK_MIR_ANALYZE_CAPABILITY, sizeof(ON1X_SDK_MIR_ANALYZE_CAPABILITY) - 1
+    };
+    const On1xSDK_CapabilityRequest request{
+        capability, ON1X_SDK_MIR_ANALYZE_CAPABILITY_REVISION, 0, ON1X_SDK_CAPABILITY_REQUIRED, 0
+    };
+    bool fail = false;
+    On1xSDK_ExtensionV2 extension{
+        ON1X_SDK_ABI_VERSION_V2, sizeof extension, {"test", 4}, {"1.0.0", 5}, {"key", 3},
+        nullptr, 0, nullptr, 0, register_v2, initialize_v2, shutdown_v2, &fail
+    };
+    // No granted capability, even though the extension is ABI 2.
+    CHECK(on1x_sdk_registry_register_v2(legacy, &extension, nullptr) == ON1X_SDK_CAPABILITY_DENIED);
+    const On1xSDK_CapabilityGrant grant{capability, ON1X_SDK_MIR_ANALYZE_CAPABILITY_REVISION, 0};
+    const On1xSDK_RegistryConfig config{
+        ON1X_SDK_ABI_VERSION_V2, sizeof config, nullptr, &grant, 1, 1, 0
+    };
+    On1xSDK_Registry *raw = nullptr;
+    CHECK(on1x_sdk_registry_create_v2(&config, &raw) == ON1X_SDK_OK);
+    Registry registry(raw, on1x_sdk_registry_destroy);
+    // A host grant not requested by the provider cannot register the facet.
+    CHECK(on1x_sdk_registry_register_v2(registry.get(), &extension, nullptr) == ON1X_SDK_CAPABILITY_DENIED);
+    extension.requested_capabilities = &request;
+    extension.requested_capability_count = 1;
+    fail = true;
+    const auto revision = on1x_sdk_registry_revision(registry.get());
+    CHECK(on1x_sdk_registry_register_v2(registry.get(), &extension, nullptr) == ON1X_SDK_ERROR);
+    CHECK(on1x_sdk_registry_revision(registry.get()) == revision);
+    fail = false;
+    CHECK(on1x_sdk_registry_register_v2(registry.get(), &extension, nullptr) == ON1X_SDK_OK);
+    CHECK(on1x_sdk_registry_revision(registry.get()) > revision);
+    CHECK(on1x_sdk_registry_close(registry.get()) == ON1X_SDK_OK);
+}
 } // namespace
 
 int main() {
@@ -190,4 +255,5 @@ int main() {
         CHECK(state.calls == calls_before + 1 && diagnostics == 0);
     }
     CHECK(on1x_sdk_analyzer_emit(nullptr, nullptr) == ON1X_SDK_INVALID_ARGUMENT);
+    registration_v2(registry.get());
 }

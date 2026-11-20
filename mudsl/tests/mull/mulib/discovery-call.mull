@@ -1,0 +1,2 @@
+mulib M <- G:MulibWrap("media-frame");
+M:mulib_media_frame_release(nil);

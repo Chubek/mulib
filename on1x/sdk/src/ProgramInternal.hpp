@@ -8,6 +8,8 @@
 namespace on1x { struct Unit; namespace mir { struct Module; } }
 struct On1xSDK_Backend;
 struct On1xSDK_Artifact;
+struct On1xSDK_DiagnosticSinkV2;
+struct On1xSDK_MIRSnapshot;
 
 namespace on1x::sdk {
 
@@ -25,6 +27,10 @@ const mir::Module *builtin_mir(const On1xSDK_Program *) noexcept;
 On1xSDK_Status register_checked_hir_backend(On1xSDK_Registry *, const On1xSDK_Backend *) noexcept;
 On1xSDK_Status run_builtin_backend(const On1xSDK_Registry *, const char *,
                                    const On1xSDK_Program *, On1xSDK_Artifact **) noexcept;
+// Structured SDK 2 facet; only the compiler host schedules a verified snapshot.
+On1xSDK_Status run_analyzer_v2(const On1xSDK_Registry *, std::string_view name,
+                               const On1xSDK_MIRSnapshot *,
+                               const On1xSDK_DiagnosticSinkV2 &) noexcept;
 
 } // namespace on1x::sdk
 

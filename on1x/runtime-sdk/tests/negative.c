@@ -763,7 +763,7 @@ static int test_callbacks_and_unsupported(void) {
     CHECK(on1x_rt_module_unload(engine, &module, &error) == ON1X_RT_OK,
           "bad-output module unload failed");
   }
-  for (int feature = ON1X_RT_FEATURE_DYNAMIC_MODULE;
+  for (int feature = ON1X_RT_FEATURE_WASM;
        feature <= ON1X_RT_FEATURE_PROFILER; ++feature)
     CHECK(on1x_rt_feature_status((On1xRT_Feature)feature) ==
               ON1X_RT_UNSUPPORTED,
@@ -771,8 +771,20 @@ static int test_callbacks_and_unsupported(void) {
   CHECK(on1x_rt_feature_status((On1xRT_Feature)999) == ON1X_RT_INVALID_ARGUMENT,
         "unknown feature was not rejected");
   CHECK(on1x_rt_engine_load_dynamic(engine, TEXT("/not/loaded"), &module,
-                                    &error) == ON1X_RT_UNSUPPORTED,
-        "dynamic loading did not reject explicitly");
+                                     &error) == ON1X_RT_UNSUPPORTED,
+        "path-only dynamic loading did not reject explicitly");
+  clear_error(&error);
+  {
+    const On1xRT_Status feature =
+        on1x_rt_feature_status(ON1X_RT_FEATURE_DYNAMIC_MODULE);
+    CHECK(feature == ON1X_RT_OK || feature == ON1X_RT_UNSUPPORTED,
+          "invalid status for optional dynamic modules");
+    CHECK(on1x_rt_engine_load_authorized_dynamic(
+              engine, TEXT("/not/loaded"), NULL, NULL, &module, &error) ==
+              (feature == ON1X_RT_OK ? ON1X_RT_DENIED : ON1X_RT_UNSUPPORTED),
+          "dynamic loading without host policy did not fail closed");
+    CHECK(!module.id && !module.owner, "rejected load published a handle");
+  }
   clear_error(&error);
   {
     static const uint8_t wasm[] = {0u, 'a', 's', 'm'};

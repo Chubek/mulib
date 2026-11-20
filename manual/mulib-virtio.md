@@ -2,9 +2,8 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-Shared Virtio payload contract for MuLIB's future type-2 VMM. Include either
-`virtio.h` or the canonical `mulib-virtio.h`. The former is a public entry point,
-not a second implementation.
+Shared Virtio payload contract for MuLIB's type-2 VMM. Include the canonical
+`mulib-virtio.h`.
 
 Define `MULIB_IMPL_ENDIAN`, `MULIB_IMPL_VMMDEV`, and `MULIB_IMPL_VIRTIO` in exactly
 one translation unit. No implementation switch enables dependencies implicitly.
