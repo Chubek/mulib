@@ -1,12 +1,12 @@
 /** @file mulib-sshserver.h
- * @brief SSH-2 password user-authentication payload parsing and attempt
- * policy. Define MULIB_IMPL_SSHSERVER and MULIB_IMPL_ENDIAN once. Inputs must
- * come from an authenticated/encrypted SSH transport supplied by the
- * application.
+ * @brief SSH-2 server entry points and bounded user-authentication policy.
+ * Define MULIB_IMPL_SSHSERVER and ENDIAN for the legacy password API.
+ * The session helpers use SSHTRANSPORT and SSHAUTH.
  */
 #ifndef MULIB_SSHSERVER_H
 #define MULIB_SSHSERVER_H
-#include "mulib-endian.h"
+#include "mulib-sshauth.h"
+#include "mulib-sshtransport.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -41,6 +41,39 @@ extern "C"
   /** @brief Encode success (52) or failure (51, password, partial=false).
    * 1 success/0 insufficient output; used reset on failure. */
   int mulib_sshserver_auth_reply (int accepted, void *, size_t, size_t *used);
+  /** @brief Start a server transport using a caller-owned Ed25519 host seed.
+   * Versions exclude CRLF. Drive the exchange with mulib_sshtransport_handshake. */
+  static inline int
+  mulib_sshserver_start (mulib_sshtransport_t *s, mulib_ssh_slice_t client_version,
+                         mulib_ssh_slice_t server_version, const unsigned char host_seed[32],
+                         void *out, size_t cap, size_t *used)
+  {
+    return mulib_sshtransport_start (s, MULIB_SSH_SERVER, client_version, server_version,
+                                      host_seed, out, cap, used);
+  }
+
+  /** @brief Check a signed request from mulib_sshtransport_open after accepting
+   * ssh-userauth. Use one initialized policy per connection. Each submitted
+   * request consumes an attempt. A valid signature and authorizer return of 1
+   * are both required. Return 1 accepted, 0 rejected, -1 invalid state. */
+  static inline int
+  mulib_sshserver_public_authenticate (
+      mulib_sshserver_t *s, const mulib_sshtransport_t *transport, const void *p, size_t n,
+      int (*authorize) (void *, const mulib_ssh_auth_request_t *), void *context)
+  {
+    unsigned char session_id[32];
+    mulib_ssh_auth_request_t request;
+    if (!s || !authorize || !transport || transport->role != MULIB_SSH_SERVER
+        || s->authenticated || s->attempts >= s->limit
+        || !mulib_sshtransport_session_id (transport, session_id))
+      return -1;
+    ++s->attempts;
+    if (!mulib_sshauth_public_verify (p, n, session_id, &request)
+        || authorize (context, &request) != 1)
+      return 0;
+    s->authenticated = 1;
+    return 1;
+  }
 #ifdef __cplusplus
 }
 #endif

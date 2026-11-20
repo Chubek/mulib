@@ -1,12 +1,12 @@
 /** @file mulib-sshclient.h
- * @brief SSH-2 identification and pre-key-exchange binary packet codecs.
- * Define MULIB_IMPL_SSHCLIENT and MULIB_IMPL_ENDIAN once. These codecs do
- * not perform key exchange, encryption, MAC verification or host
- * authentication.
+ * @brief SSH-2 client entry points and legacy cleartext codecs.
+ * Define MULIB_IMPL_SSHCLIENT and ENDIAN for the legacy codecs.
+ * The session helpers use SSHTRANSPORT and SSHAUTH.
  */
 #ifndef MULIB_SSHCLIENT_H
 #define MULIB_SSHCLIENT_H
-#include "mulib-endian.h"
+#include "mulib-sshauth.h"
+#include "mulib-sshtransport.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -33,6 +33,29 @@ extern "C"
   int mulib_sshclient_packet_decode (const void *, size_t,
                                      const unsigned char **, size_t *length,
                                      size_t *used);
+  /** @brief Start the client transport with a trusted raw host key pin.
+   * Versions exclude CRLF. Drive the exchange with mulib_sshtransport_handshake. */
+  static inline int
+  mulib_sshclient_start (mulib_sshtransport_t *s, mulib_ssh_slice_t client_version,
+                         mulib_ssh_slice_t server_version, const unsigned char host_key[32],
+                         void *out, size_t cap, size_t *used)
+  {
+    return mulib_sshtransport_start (s, MULIB_SSH_CLIENT, client_version, server_version,
+                                      host_key, out, cap, used);
+  }
+
+  /** @brief Encode a signed request for a ready client transport after the
+   * peer accepts ssh-userauth. Seal the result before sending. */
+  static inline int
+  mulib_sshclient_public_auth (const mulib_sshtransport_t *s, mulib_ssh_slice_t user,
+                               const unsigned char seed[32], void *out, size_t cap, size_t *used)
+  {
+    unsigned char session_id[32];
+    if (used) *used = 0;
+    return s && s->role == MULIB_SSH_CLIENT
+           && mulib_sshtransport_session_id (s, session_id)
+           && mulib_sshauth_public_write (user, seed, session_id, out, cap, used);
+  }
 #ifdef __cplusplus
 }
 #endif
