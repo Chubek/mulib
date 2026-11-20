@@ -1,5 +1,11 @@
 # Testing the MuLIB networking add-on
 
+## Secret kernels
+
+See [secret kernel build and verification](../manual/secret-kernels.md#build-and-verification)
+for the native C11 and C++17 checks and optional OpenSSL differential tests.
+Use synthetic data only.
+
 ## Compiler and VM modules
 
 The eight `test-compiler-*.c` suites cover all 60 compiler/VM additions and patched

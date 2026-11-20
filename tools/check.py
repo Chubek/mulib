@@ -115,12 +115,14 @@ def main():
     count = re.search(r'^module_count: (\d+)$', manifest, re.M)
     if not count or int(count.group(1)) != len(headers):
         failures.append(('MANIFEST.yaml', 'module_count does not match header inventory'))
-    bounded, engineering = set(), set()
+    bounded, engineering, optional = set(), set(), set()
     for header in headers:
         name, text = header.name, texts[header.name]
         match = re.search(r'^#\s*if(?:def\s+|\s+defined\s*\(\s*)'
                           r'(MULIB_IMPL_[A-Z0-9_]+)', text, re.M)
         block = entries.get(name, '')
+        if re.search(r'^  optional_dependency: .+$', block, re.M):
+            optional.add(name)
         profile = re.search(r'^  profile: engineering$', block, re.M)
         if profile:
             engineering.add(name)
@@ -213,7 +215,7 @@ def main():
             if '#include "' + name + '"' not in text:
                 failures.append((path, 'missing header ' + name))
     for name, switch in switches.items():
-        if name not in engineering and '#define ' + switch + '\n' not in implementation:
+        if name not in engineering | optional and '#define ' + switch + '\n' not in implementation:
             failures.append(('tests/implementation.c', 'missing switch ' + switch))
 
     def closure(name, seen=None):
@@ -450,7 +452,9 @@ def main():
         # The shell modules require this before any system header, including in
         # the declaration-first and reverse-order combined implementation tests.
         posix_source = '#ifndef _POSIX_C_SOURCE\n#define _POSIX_C_SOURCE 200809L\n#endif\n'
-        defines = header_switches(texts.keys() - engineering)
+        # Optional backends still participate in declaration checks; their
+        # implementations are exercised by dependency-aware opt-in targets.
+        defines = header_switches(texts.keys() - engineering - optional)
         includes = ''.join('#include "' + header.name + '"\n' for header in reversed(headers)
                            if header.name not in engineering)
         main_source = 'int main(void) { return 0; }\n'
@@ -494,7 +498,7 @@ def main():
                 if have_cxx:
                     cases.append(dict(label='isolated C++ declarations: ' + name,
                                       source_text=declaration, language='c++', extra_flags=extra_flags))
-                if name in reserved:
+                if name in reserved or closure(name) & optional:
                     continue
                 enabled = set()
                 for dependency in closure(name):
@@ -502,7 +506,8 @@ def main():
                         enabled.add(switches[dependency])
                         enabled.update(extra_switches.get(dependency, []))
                 defines = ''.join('#define ' + switch + '\n' for switch in sorted(enabled))
-                if enabled & {'MULIB_IMPL_PARALLEL_SH', 'MULIB_IMPL_SHEBANG_SH'}:
+                if enabled & {'MULIB_IMPL_PARALLEL_SH', 'MULIB_IMPL_SHEBANG_SH',
+                              'MULIB_IMPL_SECRET_STORE'}:
                     defines = posix_source + defines
                 if enabled & {'MULIB_IMPL_CGROUP2', 'MULIB_IMPL_IPC_FRAMED',
                               'MULIB_IMPL_LANDLOCK', 'MULIB_IMPL_NAMESPACE',

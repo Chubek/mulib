@@ -1,0 +1,46 @@
+/* Declare first, then enable all native implementations exactly once. */
+#include "headers.h"
+
+#define MULIB_IMPL_AES_GCM
+#define MULIB_IMPL_AUTHCRYPTO
+#define MULIB_IMPL_ENTROPY
+#define MULIB_IMPL_HKDF
+#define MULIB_IMPL_SHA
+#define MULIB_IMPL_X25519
+#define MULIB_IMPL_SECRET_AUDIT
+#define MULIB_IMPL_SECRET_AWS
+#define MULIB_IMPL_SECRET_CATALOG
+#define MULIB_IMPL_SECRET_CODEC
+#define MULIB_IMPL_SECRET_CORE
+#define MULIB_IMPL_SECRET_CRYPTO
+#define MULIB_IMPL_SECRET_CRYPTO_NATIVE
+#define MULIB_IMPL_SECRET_JOSE
+#define MULIB_IMPL_SECRET_KEY_AGREEMENT
+#define MULIB_IMPL_SECRET_LEASE
+#define MULIB_IMPL_SECRET_MEMORY
+#define MULIB_IMPL_SECRET_OAUTH
+#define MULIB_IMPL_SECRET_OTP
+#define MULIB_IMPL_SECRET_OTP_URI
+#define MULIB_IMPL_SECRET_PASSPHRASE
+#define MULIB_IMPL_SECRET_POLICY
+#define MULIB_IMPL_SECRET_PROVIDER
+#define MULIB_IMPL_SECRET_RANDOM
+#define MULIB_IMPL_SECRET_RATE
+#define MULIB_IMPL_SECRET_RECORD
+#define MULIB_IMPL_SECRET_RECOVERY
+#define MULIB_IMPL_SECRET_SELFTEST
+#define MULIB_IMPL_SECRET_SIGN
+#define MULIB_IMPL_SECRET_SPEC
+#define MULIB_IMPL_SECRET_SSH
+#define MULIB_IMPL_SECRET_STATE
+#define MULIB_IMPL_SECRET_STORE
+#define MULIB_IMPL_SECRET_VAULT
+#define MULIB_IMPL_SECRET_WEBAUTHN
+
+#include "mulib-entropy.h"
+#include "mulib-aes-gcm.h"
+#include "mulib-authcrypto.h"
+#include "mulib-sha.h"
+#include "mulib-hkdf.h"
+#include "mulib-x25519.h"
+#include "headers.h"

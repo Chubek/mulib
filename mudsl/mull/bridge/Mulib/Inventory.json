@@ -1527,6 +1527,36 @@
     "mulib-search.h",
     "mulib-seat.h",
     "mulib-seccomp.h",
+    "mulib-secret-audit.h",
+    "mulib-secret-aws.h",
+    "mulib-secret-catalog.h",
+    "mulib-secret-codec.h",
+    "mulib-secret-core.h",
+    "mulib-secret-crypto-native.h",
+    "mulib-secret-crypto-openssl.h",
+    "mulib-secret-crypto.h",
+    "mulib-secret-jose.h",
+    "mulib-secret-key-agreement.h",
+    "mulib-secret-lease.h",
+    "mulib-secret-memory.h",
+    "mulib-secret-oauth.h",
+    "mulib-secret-otp-uri.h",
+    "mulib-secret-otp.h",
+    "mulib-secret-passphrase.h",
+    "mulib-secret-policy.h",
+    "mulib-secret-provider.h",
+    "mulib-secret-random.h",
+    "mulib-secret-rate.h",
+    "mulib-secret-record.h",
+    "mulib-secret-recovery.h",
+    "mulib-secret-selftest.h",
+    "mulib-secret-sign.h",
+    "mulib-secret-spec.h",
+    "mulib-secret-ssh.h",
+    "mulib-secret-state.h",
+    "mulib-secret-store.h",
+    "mulib-secret-vault.h",
+    "mulib-secret-webauthn.h",
     "mulib-select.h",
     "mulib-semilattice.h",
     "mulib-semiring.h",
@@ -1966,9 +1996,9 @@
     "mulib-zstd.h",
     "mune-opencode-client.h"
   ],
-  "libraries": 1965,
+  "libraries": 1995,
   "functions": 5373,
-  "declared_functions": 7283,
+  "declared_functions": 7389,
   "types": 8927,
   "constants": 2802,
   "preprocessor_only": [
@@ -1988,7 +2018,7 @@
     "MULIB_XATOMIC_DECLARE_",
     "MULIB_XATOMIC_INIT"
   ],
-  "fingerprint": "27d9771984421d893f88ffc6fdb37f55adce000d790d6452c7909dc578c68aec",
+  "fingerprint": "41e5bf8f8c6ecae865aa046995e5facd5732683f7e000022cc9475cfb61e1fac",
   "legacy_policy": "f998e3c5709003f8315112125a9d167550f096a614f5d514a7eadff86def08e0",
   "modules": {
     "2dgeom": {
@@ -22948,6 +22978,322 @@
         "mulib_seccomp_worker"
       ]
     },
+    "secret-audit": {
+      "header": "mulib-secret-audit.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_saud_append",
+        "mulib_saud_check_anchor",
+        "mulib_saud_verify",
+        "mulib_saud_verify_record"
+      ]
+    },
+    "secret-aws": {
+      "header": "mulib-secret-aws.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_saws_key",
+        "mulib_saws_sign"
+      ]
+    },
+    "secret-catalog": {
+      "header": "mulib-secret-catalog.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_scat_decode",
+        "mulib_scat_encode",
+        "mulib_scat_find",
+        "mulib_scat_update"
+      ]
+    },
+    "secret-codec": {
+      "header": "mulib-secret-codec.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_scode_decode",
+        "mulib_scode_encode"
+      ]
+    },
+    "secret-core": {
+      "header": "mulib-secret-core.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sc_add",
+        "mulib_sc_equal",
+        "mulib_sc_get64",
+        "mulib_sc_name",
+        "mulib_sc_overlap",
+        "mulib_sc_put64",
+        "mulib_sc_view_ok",
+        "mulib_sc_wipe"
+      ]
+    },
+    "secret-crypto": {
+      "header": "mulib-secret-crypto.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_scr_digest_size",
+        "mulib_scr_hash",
+        "mulib_scr_hkdf",
+        "mulib_scr_hmac",
+        "mulib_scr_kdf",
+        "mulib_scr_key_size",
+        "mulib_scr_nonce_size",
+        "mulib_scr_open",
+        "mulib_scr_random",
+        "mulib_scr_seal"
+      ]
+    },
+    "secret-crypto-native": {
+      "header": "mulib-secret-crypto-native.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_scr_native",
+        "mulib_scr_native_supports"
+      ]
+    },
+    "secret-crypto-openssl": {
+      "header": "mulib-secret-crypto-openssl.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_scr_openssl",
+        "mulib_scr_openssl_supports"
+      ]
+    },
+    "secret-jose": {
+      "header": "mulib-secret-jose.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sjose_sign",
+        "mulib_sjose_verify"
+      ]
+    },
+    "secret-key-agreement": {
+      "header": "mulib-secret-key-agreement.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_ska_derive",
+        "mulib_ska_generate"
+      ]
+    },
+    "secret-lease": {
+      "header": "mulib-secret-lease.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sl_cancel",
+        "mulib_sl_cancel_v2",
+        "mulib_sl_consume",
+        "mulib_sl_consume_v2",
+        "mulib_sl_issue",
+        "mulib_sl_issue_v2",
+        "mulib_sl_scope_valid_v2"
+      ]
+    },
+    "secret-memory": {
+      "header": "mulib-secret-memory.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sm_alloc",
+        "mulib_sm_assign",
+        "mulib_sm_clear"
+      ]
+    },
+    "secret-oauth": {
+      "header": "mulib-secret-oauth.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_soauth_pkce",
+        "mulib_soauth_pkce_challenge",
+        "mulib_soauth_refresh_needed",
+        "mulib_soauth_state"
+      ]
+    },
+    "secret-otp": {
+      "header": "mulib-secret-otp.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sotp_hotp",
+        "mulib_sotp_next",
+        "mulib_sotp_steam",
+        "mulib_sotp_totp",
+        "mulib_sotp_totp_verify"
+      ]
+    },
+    "secret-otp-uri": {
+      "header": "mulib-secret-otp-uri.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sotp_uri_clear",
+        "mulib_sotp_uri_parse"
+      ]
+    },
+    "secret-passphrase": {
+      "header": "mulib-secret-passphrase.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sphrase_generate",
+        "mulib_sphrase_recovery",
+        "mulib_sphrase_verifier"
+      ]
+    },
+    "secret-policy": {
+      "header": "mulib-secret-policy.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sp_check",
+        "mulib_sp_evaluate",
+        "mulib_sp_single_operation"
+      ]
+    },
+    "secret-provider": {
+      "header": "mulib-secret-provider.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_spro_call",
+        "mulib_spro_call_v2",
+        "mulib_spro_freeze",
+        "mulib_spro_freeze_v2",
+        "mulib_spro_register",
+        "mulib_spro_register_v2"
+      ]
+    },
+    "secret-random": {
+      "header": "mulib-secret-random.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_srand_password",
+        "mulib_srand_text",
+        "mulib_srand_uniform",
+        "mulib_srand_uuid"
+      ]
+    },
+    "secret-rate": {
+      "header": "mulib-secret-rate.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_srate_check",
+        "mulib_srate_failure",
+        "mulib_srate_success"
+      ]
+    },
+    "secret-record": {
+      "header": "mulib-secret-record.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sr_open",
+        "mulib_sr_open_pinned",
+        "mulib_sr_seal"
+      ]
+    },
+    "secret-recovery": {
+      "header": "mulib-secret-recovery.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_srec_join",
+        "mulib_srec_split"
+      ]
+    },
+    "secret-selftest": {
+      "header": "mulib-secret-selftest.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_secret_selftest"
+      ]
+    },
+    "secret-sign": {
+      "header": "mulib-secret-sign.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_ssign_agree",
+        "mulib_ssign_sign",
+        "mulib_ssign_verify"
+      ]
+    },
+    "secret-spec": {
+      "header": "mulib-secret-spec.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sspec_at",
+        "mulib_sspec_count",
+        "mulib_sspec_find",
+        "mulib_sspec_find_kind"
+      ]
+    },
+    "secret-ssh": {
+      "header": "mulib-secret-ssh.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_ssh_secret_ed25519_blob",
+        "mulib_ssh_secret_parse_sign",
+        "mulib_ssh_secret_signature_response"
+      ]
+    },
+    "secret-state": {
+      "header": "mulib-secret-state.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_ss_accept",
+        "mulib_ss_reserve"
+      ]
+    },
+    "secret-store": {
+      "header": "mulib-secret-store.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sstore_read",
+        "mulib_sstore_remove",
+        "mulib_sstore_write"
+      ]
+    },
+    "secret-vault": {
+      "header": "mulib-secret-vault.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_sv_create",
+        "mulib_sv_lock",
+        "mulib_sv_rewrap",
+        "mulib_sv_unlock",
+        "mulib_sv_unlock_pinned"
+      ]
+    },
+    "secret-webauthn": {
+      "header": "mulib-secret-webauthn.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_swa_authdata",
+        "mulib_swa_sign_input"
+      ]
+    },
     "select": {
       "header": "mulib-select.h",
       "profile": "legacy-raw",
@@ -29578,7 +29924,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "b4d913ef753d773e154adfdeb95c3c5d8f6fd4b30d5bd86a8e8e51c031bc8219",
+    "Generated.inc": "bd5052ee89dfe8678c733a016b0123332b21ec8178657859f64729ede72575ed",
     "Implementation.c": "41aa3937518d042c1ebe690dca21f1056af0ccf6d6eeb161f8883a75110ccc35"
   }
 }

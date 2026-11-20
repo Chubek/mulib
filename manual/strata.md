@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1964 headers, 2582 direct dependency edges.
+Inventory: 1994 headers, 2641 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -17,7 +17,7 @@ Compatibility group: `immgtk-drawlist`, `immgtk-drawlist-bridge`.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (408 modules)
+## Stratum 0 (409 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -334,6 +334,7 @@ Compatibility group: `parsec`, `peg`.
 | [search-serp](mulib-search-serp.md) | none |
 | [search-session](mulib-search-session.md) | none |
 | [search](mulib-search.md) | none |
+| [secret-core](mulib-secret-core.md) | none |
 | [select](mulib-select.md) | none |
 | [semilattice](mulib-semilattice.md) | none |
 | [semiring](mulib-semiring.md) | none |
@@ -430,7 +431,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (501 modules)
+## Stratum 1 (509 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -798,6 +799,14 @@ Compatibility group: `parsec`, `peg`.
 | [rtnl](mulib-rtnl.md) | `netlink` |
 | [scrape](mulib-scrape.md) | `scrape-readable` |
 | [seccomp](mulib-seccomp.md) | `sandbox-profile` |
+| [secret-codec](mulib-secret-codec.md) | `secret-core` |
+| [secret-crypto](mulib-secret-crypto.md) | `secret-core` |
+| [secret-memory](mulib-secret-memory.md) | `secret-core` |
+| [secret-policy](mulib-secret-policy.md) | `secret-core` |
+| [secret-rate](mulib-secret-rate.md) | `secret-core` |
+| [secret-sign](mulib-secret-sign.md) | `secret-core` |
+| [secret-ssh](mulib-secret-ssh.md) | `secret-core` |
+| [secret-state](mulib-secret-state.md) | `secret-core` |
 | [sfnt](mulib-sfnt.md) | `typecore` |
 | [signature](mulib-signature.md) | `der`, `entropy`, `sha` |
 | [simdmath](mulib-simdmath.md) | `linalg` |
@@ -936,7 +945,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (386 modules)
+## Stratum 2 (402 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1226,6 +1235,22 @@ Compatibility group: `parsec`, `peg`.
 | [rubybind](mulib-rubybind.md) | `pybind` |
 | [sandbox-process](mulib-sandbox-process.md) | `cgroup2`, `ipc-framed`, `landlock`, `namespace`, `sandbox-profile`, `seccomp` |
 | [seat](notebook-desktop.md) | `wm-core` |
+| [secret-audit](mulib-secret-audit.md) | `secret-crypto` |
+| [secret-aws](mulib-secret-aws.md) | `secret-crypto` |
+| [secret-catalog](mulib-secret-catalog.md) | `secret-policy` |
+| [secret-crypto-native](mulib-secret-crypto-native.md) | `aes-gcm`, `authcrypto`, `entropy`, `hkdf`, `secret-crypto`, `sha` |
+| [secret-crypto-openssl](mulib-secret-crypto-openssl.md) | `secret-crypto` |
+| [secret-jose](mulib-secret-jose.md) | `secret-codec`, `secret-crypto` |
+| [secret-key-agreement](mulib-secret-key-agreement.md) | `secret-crypto`, `x25519` |
+| [secret-lease](mulib-secret-lease.md) | `secret-crypto`, `secret-policy` |
+| [secret-oauth](mulib-secret-oauth.md) | `secret-codec`, `secret-crypto` |
+| [secret-otp](mulib-secret-otp.md) | `secret-crypto`, `secret-state` |
+| [secret-random](mulib-secret-random.md) | `secret-crypto` |
+| [secret-record](mulib-secret-record.md) | `secret-crypto` |
+| [secret-recovery](mulib-secret-recovery.md) | `secret-crypto` |
+| [secret-spec](mulib-secret-spec.md) | `secret-policy` |
+| [secret-store](mulib-secret-store.md) | `secret-crypto` |
+| [secret-webauthn](mulib-secret-webauthn.md) | `secret-crypto` |
 | [spice-ac](mulib-spice-ac.md) | `spice-netlist` |
 | [spice-checkpoint](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
 | [spice-convergence](engineering-kernels.md) | `geom2-core`, `num-core`, `storage-core` |
@@ -1327,7 +1352,7 @@ Compatibility group: `parsec`, `peg`.
 | [zip](mulib-zip.md) | `crc32`, `deflate`, `utf8` |
 | [zstd](mulib-zstd.md) | `codec-core`, `container-core` |
 
-## Stratum 3 (264 modules)
+## Stratum 3 (268 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1554,6 +1579,10 @@ Compatibility group: `parsec`, `peg`.
 | [rtnl-veth](mulib-rtnl-veth.md) | `rtnl`, `rtnl-link` |
 | [rtnl-vlan](mulib-rtnl-vlan.md) | `rtnl`, `rtnl-link` |
 | [rtnl-vrf](mulib-rtnl-vrf.md) | `rtnl`, `rtnl-link` |
+| [secret-otp-uri](mulib-secret-otp-uri.md) | `secret-codec`, `secret-otp` |
+| [secret-passphrase](mulib-secret-passphrase.md) | `secret-random` |
+| [secret-provider](mulib-secret-provider.md) | `secret-lease`, `secret-policy` |
+| [secret-vault](mulib-secret-vault.md) | `secret-memory`, `secret-record` |
 | [shaderx](mulib-shaderx.md) | `parsec`, `strbuf` |
 | [shiraz](mulib-shiraz.md) | `pe`, `strbuf` |
 | [spellcheck](mulib-spellcheck.md) | `bktree`, `cache`, `endian`, `fst`, `utf8`, `weighted-edit-distance` |
@@ -1596,7 +1625,7 @@ Compatibility group: `parsec`, `peg`.
 | [xtas](mulib-xtas.md) | `dsdom` |
 | [xz](mulib-xz.md) | `authcrypto`, `bcj`, `crc32`, `lzma` |
 
-## Stratum 4 (121 modules)
+## Stratum 4 (122 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1695,6 +1724,7 @@ Compatibility group: `parsec`, `peg`.
 | [route-negotiated](engineering-kernels.md) | `graph-core`, `num-core`, `route-global`, `storage-core` |
 | [rpc](mulib-rpc.md) | `json` |
 | [schemaorg](mulib-schemaorg.md) | `bounded-text`, `json` |
+| [secret-selftest](mulib-secret-selftest.md) | `secret-audit`, `secret-aws`, `secret-catalog`, `secret-codec`, `secret-jose`, `secret-lease`, `secret-oauth`, `secret-otp`, `secret-otp-uri`, `secret-passphrase`, `secret-provider`, `secret-random`, `secret-rate`, `secret-recovery`, `secret-spec`, `secret-ssh`, `secret-vault`, `secret-webauthn` |
 | [spice-behavioral](engineering-kernels.md) | `graph-core`, `spice-mna`, `storage-core` |
 | [spice-controlled](engineering-kernels.md) | `graph-core`, `spice-mna`, `storage-core` |
 | [spice-dae](engineering-kernels.md) | `num-dae`, `spice-mna`, `storage-core` |

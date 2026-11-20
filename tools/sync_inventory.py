@@ -86,7 +86,9 @@ def sync(root, *, fixtures=True):
     if set(registered) - {p.name for p in headers}:
         raise ValueError('manifest references missing headers')
     engineering_headers = {name for name, block in registered.items()
-                     if re.search(r'^  profile: engineering$', block, re.M)}
+                      if re.search(r'^  profile: engineering$', block, re.M)}
+    optional_headers = {name for name, block in registered.items()
+                        if re.search(r'^  optional_dependency: .+$', block, re.M)}
     switches, fixture_switches, blocks = [], [], []
     for header in headers:
         text = header.read_text()
@@ -98,7 +100,7 @@ def sync(root, *, fixtures=True):
             raise ValueError('static-inline header gained an ABI switch: ' + header.name)
         if match:
             switches.append(match.group(1))
-            if header.name not in engineering_headers:
+            if header.name not in engineering_headers | optional_headers:
                 fixture_switches.append(match.group(1))
         elif not inline and re.sub(r'/\*.*?\*/|//[^\n]*', '', text, flags=re.S).strip():
             raise ValueError('header lacks implementation switch: ' + header.name)
@@ -177,7 +179,8 @@ def sync(root, *, fixtures=True):
     if len(set(switches)) != len(switches):
         raise ValueError('implementation switch shared by multiple headers')
     # The main checker compiles engineering as part of its generated TU checks.
-    # Do not repeat that group in the older handwritten ABI fixtures.
+    # Do not repeat that group in the older handwritten ABI fixtures. Optional
+    # backends are included for declarations without enabling implementation.
     generated_headers = inline_headers | engineering_headers
     implementation_path = root / 'tests/implementation.c'
     implementation = implementation_path.read_text()

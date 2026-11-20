@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1961
-implemented_module_count: 1462
+module_count: 1991
+implemented_module_count: 1492
 bounded_module_count: 499
 modules:
 - name: cdd-catalogue
@@ -15225,7 +15225,264 @@ modules:
   status: bounded
   example: examples/media-pipeline.c
   test: tests/media-integration-test.c
+- name: secret-audit
+  header: include/mulib-secret-audit.h
+  manual: manual/mulib-secret-audit.md
+  macro: MULIB_IMPL_SECRET_AUDIT
+  example: examples/mulib-secret-kernels.c
+  purpose: "HMAC-chained fixed-format audit records; the host supplies a trusted anchor."
+  dependencies: [secret-crypto]
+  status: implemented
+- name: secret-aws
+  header: include/mulib-secret-aws.h
+  manual: manual/mulib-secret-aws.md
+  macro: MULIB_IMPL_SECRET_AWS
+  example: examples/mulib-secret-kernels.c
+  purpose: "AWS SigV4 signing-key derivation and canonical request signature primitive."
+  dependencies: [secret-crypto]
+  status: implemented
+- name: secret-catalog
+  header: include/mulib-secret-catalog.h
+  manual: manual/mulib-secret-catalog.md
+  macro: MULIB_IMPL_SECRET_CATALOG
+  example: examples/mulib-secret-kernels.c
+  purpose: "Canonical catalogue serialization and optimistic record revision management."
+  dependencies: [secret-policy]
+  status: implemented
+- name: secret-codec
+  header: include/mulib-secret-codec.h
+  manual: manual/mulib-secret-codec.md
+  macro: MULIB_IMPL_SECRET_CODEC
+  example: examples/mulib-secret-kernels.c
+  purpose: "Canonical unpadded Base64url/Base32 and lowercase hexadecimal encoding."
+  dependencies: [secret-core]
+  status: implemented
+- name: secret-core
+  header: include/mulib-secret-core.h
+  manual: manual/mulib-secret-core.md
+  macro: MULIB_IMPL_SECRET_CORE
+  example: examples/mulib-secret-kernels.c
+  purpose: "Shared status, byte spans, checked arithmetic, endian and wipe helpers."
+  dependencies: []
+  status: implemented
+- name: secret-crypto-native
+  header: include/mulib-secret-crypto-native.h
+  manual: manual/mulib-secret-crypto-native.md
+  macro: MULIB_IMPL_SECRET_CRYPTO_NATIVE
+  example: examples/mulib-secret-kernels.c
+  test: tests/test_secret_crypto_vectors.c
+  purpose: "Adapter for existing MuLIB crypto primitives; no new external dependency."
+  dependencies: [aes-gcm, authcrypto, entropy, hkdf, secret-crypto, sha]
+  status: implemented
+- name: secret-crypto-openssl
+  header: include/mulib-secret-crypto-openssl.h
+  manual: manual/mulib-secret-crypto-openssl.md
+  macro: MULIB_IMPL_SECRET_CRYPTO_OPENSSL
+  example: examples/mulib-secret-kernels.c
+  optional_dependency: OpenSSL Crypto
+  test: tests/secret/openssl.c
+  purpose: "Optional OpenSSL EVP provider for differential testing and deployments allowing external crypto."
+  dependencies: [secret-crypto]
+  status: implemented
+- name: secret-crypto
+  header: include/mulib-secret-crypto.h
+  manual: manual/mulib-secret-crypto.md
+  macro: MULIB_IMPL_SECRET_CRYPTO
+  example: examples/mulib-secret-kernels.c
+  purpose: "Versioned crypto provider ABI, checked RNG, HMAC, HKDF, KDF and AEAD dispatch."
+  dependencies: [secret-core]
+  status: implemented
+- name: secret-jose
+  header: include/mulib-secret-jose.h
+  manual: manual/mulib-secret-jose.md
+  macro: MULIB_IMPL_SECRET_JOSE
+  example: examples/mulib-secret-kernels.c
+  purpose: "HS256 compact JWS signing and signature verification with fixed protected header."
+  dependencies: [secret-codec, secret-crypto]
+  status: implemented
+- name: secret-key-agreement
+  header: include/mulib-secret-key-agreement.h
+  manual: manual/mulib-secret-key-agreement.md
+  macro: MULIB_IMPL_SECRET_KEY_AGREEMENT
+  example: examples/mulib-secret-kernels.c
+  purpose: "Native X25519 key generation and domain-separated shared-key derivation."
+  dependencies: [secret-crypto, x25519]
+  status: implemented
+- name: secret-lease
+  header: include/mulib-secret-lease.h
+  manual: manual/mulib-secret-lease.md
+  macro: MULIB_IMPL_SECRET_LEASE
+  example: examples/mulib-secret-kernels.c
+  purpose: "Broker-owned one-shot operation approvals with random tokens."
+  dependencies: [secret-crypto, secret-policy]
+  status: implemented
+- name: secret-memory
+  header: include/mulib-secret-memory.h
+  manual: manual/mulib-secret-memory.md
+  macro: MULIB_IMPL_SECRET_MEMORY
+  example: examples/mulib-secret-kernels.c
+  purpose: "Owning secret buffer with guard pages, lock policy and full-capacity erase."
+  dependencies: [secret-core]
+  status: implemented
+- name: secret-oauth
+  header: include/mulib-secret-oauth.h
+  manual: manual/mulib-secret-oauth.md
+  macro: MULIB_IMPL_SECRET_OAUTH
+  example: examples/mulib-secret-kernels.c
+  purpose: "OAuth PKCE S256, random state and token lease decisions; no network side effects."
+  dependencies: [secret-codec, secret-crypto]
+  status: implemented
+- name: secret-otp-uri
+  header: include/mulib-secret-otp-uri.h
+  manual: manual/mulib-secret-otp-uri.md
+  macro: MULIB_IMPL_SECRET_OTP_URI
+  example: examples/mulib-secret-kernels.c
+  purpose: "Bounded otpauth URI import for Google Authenticator compatible secrets."
+  dependencies: [secret-codec, secret-otp]
+  status: implemented
+- name: secret-otp
+  header: include/mulib-secret-otp.h
+  manual: manual/mulib-secret-otp.md
+  macro: MULIB_IMPL_SECRET_OTP
+  example: examples/mulib-secret-kernels.c
+  test: tests/test_secret_credential_vectors.c
+  purpose: "HOTP/TOTP SHA-1/256/512, Steam format, and HOTP counter reservation via host CAS."
+  dependencies: [secret-crypto, secret-state]
+  status: implemented
+- name: secret-passphrase
+  header: include/mulib-secret-passphrase.h
+  manual: manual/mulib-secret-passphrase.md
+  macro: MULIB_IMPL_SECRET_PASSPHRASE
+  example: examples/mulib-secret-kernels.c
+  purpose: "Word-list passphrases and high-entropy recovery-code verifiers."
+  dependencies: [secret-random]
+  status: implemented
+- name: secret-policy
+  header: include/mulib-secret-policy.h
+  manual: manual/mulib-secret-policy.md
+  macro: MULIB_IMPL_SECRET_POLICY
+  example: examples/mulib-secret-kernels.c
+  purpose: "Fail-closed authorization, exact subjects, operation masks, expiry and consent."
+  dependencies: [secret-core]
+  status: implemented
+- name: secret-provider
+  header: include/mulib-secret-provider.h
+  manual: manual/mulib-secret-provider.md
+  macro: MULIB_IMPL_SECRET_PROVIDER
+  example: examples/mulib-secret-kernels.c
+  test: tests/secret/test_secret_broker.c
+  purpose: "Versioned provider catalogue and policy-mediated operation dispatch."
+  dependencies: [secret-lease, secret-policy]
+  status: implemented
+- name: secret-random
+  header: include/mulib-secret-random.h
+  manual: manual/mulib-secret-random.md
+  macro: MULIB_IMPL_SECRET_RANDOM
+  example: examples/mulib-secret-kernels.c
+  purpose: "Unbiased random selections, identifiers, recovery codes, password policies."
+  dependencies: [secret-crypto]
+  status: implemented
+- name: secret-rate
+  header: include/mulib-secret-rate.h
+  manual: manual/mulib-secret-rate.md
+  macro: MULIB_IMPL_SECRET_RATE
+  example: examples/mulib-secret-kernels.c
+  purpose: "Bounded exponential authentication backoff using trusted monotonic time."
+  dependencies: [secret-core]
+  status: implemented
+- name: secret-record
+  header: include/mulib-secret-record.h
+  manual: manual/mulib-secret-record.md
+  macro: MULIB_IMPL_SECRET_RECORD
+  example: examples/mulib-secret-kernels.c
+  purpose: "Authenticated encrypted record envelope with per-write HKDF key and random nonce."
+  dependencies: [secret-crypto]
+  status: implemented
+- name: secret-recovery
+  header: include/mulib-secret-recovery.h
+  manual: manual/mulib-secret-recovery.md
+  macro: MULIB_IMPL_SECRET_RECOVERY
+  example: examples/mulib-secret-kernels.c
+  purpose: "Shamir GF(256) threshold secret sharing with strict share identifiers."
+  dependencies: [secret-crypto]
+  status: implemented
+- name: secret-selftest
+  header: include/mulib-secret-selftest.h
+  manual: manual/mulib-secret-selftest.md
+  macro: MULIB_IMPL_SECRET_SELFTEST
+  example: examples/mulib-secret-kernels.c
+  test: tests/secret/native.c
+  purpose: "Backend conformance smoke tests with RFC vectors and authenticated storage rejection tests."
+  dependencies: [secret-audit, secret-aws, secret-catalog, secret-codec, secret-jose, secret-lease, secret-oauth, secret-otp, secret-otp-uri, secret-passphrase, secret-provider, secret-random, secret-rate, secret-recovery, secret-spec, secret-ssh, secret-vault, secret-webauthn]
+  status: implemented
+- name: secret-sign
+  header: include/mulib-secret-sign.h
+  manual: manual/mulib-secret-sign.md
+  macro: MULIB_IMPL_SECRET_SIGN
+  example: examples/mulib-secret-kernels.c
+  purpose: "Opaque signing/key-agreement backend contract and algorithm-pinned dispatch."
+  dependencies: [secret-core]
+  status: implemented
+- name: secret-spec
+  header: include/mulib-secret-spec.h
+  manual: manual/mulib-secret-spec.md
+  macro: MULIB_IMPL_SECRET_SPEC
+  example: examples/mulib-secret-kernels.c
+  purpose: "Credential kind catalogue and intended operation metadata, not runtime capabilities."
+  dependencies: [secret-policy]
+  status: implemented
+- name: secret-ssh
+  header: include/mulib-secret-ssh.h
+  manual: manual/mulib-secret-ssh.md
+  macro: MULIB_IMPL_SECRET_SSH
+  example: examples/mulib-secret-kernels.c
+  purpose: "Bounded SSH agent sign-request parser and RFC 4251 string framing."
+  dependencies: [secret-core]
+  status: implemented
+- name: secret-state
+  header: include/mulib-secret-state.h
+  manual: manual/mulib-secret-state.md
+  macro: MULIB_IMPL_SECRET_STATE
+  example: examples/mulib-secret-kernels.c
+  purpose: "Monotonic counter reservation and optimistic persistent transition contract."
+  dependencies: [secret-core]
+  status: implemented
+- name: secret-store
+  header: include/mulib-secret-store.h
+  manual: manual/mulib-secret-store.md
+  macro: MULIB_IMPL_SECRET_STORE
+  example: examples/mulib-secret-kernels.c
+  test: tests/secret/storage-hardening.c
+  purpose: "Durable encrypted blob storage using a trusted private POSIX directory descriptor."
+  dependencies: [secret-crypto]
+  status: implemented
+- name: secret-vault
+  header: include/mulib-secret-vault.h
+  manual: manual/mulib-secret-vault.md
+  macro: MULIB_IMPL_SECRET_VAULT
+  example: examples/mulib-secret-kernels.c
+  purpose: "Password-wrapped random vault root, lock/unlock and authenticated profile."
+  dependencies: [secret-memory, secret-record]
+  status: implemented
+- name: secret-webauthn
+  header: include/mulib-secret-webauthn.h
+  manual: manual/mulib-secret-webauthn.md
+  macro: MULIB_IMPL_SECRET_WEBAUTHN
+  example: examples/mulib-secret-kernels.c
+  purpose: "Basic WebAuthn assertion data and signing input; not an authenticator or origin verifier."
+  dependencies: [secret-crypto]
+  status: implemented
 project_files:
+- file: manual/secret-kernels.md
+  purpose: "Secret kernel integration, trust boundaries, validation, and release gates."
+- file: tests/secret/check-headers.py
+  purpose: "C11 and C++17 isolated secret header build checks."
+- file: tests/secret/fuzz-parsers.c
+  purpose: "Optional Clang libFuzzer structural and canonical secret parser checks."
+- file: tests/secret/storage-hardening.c
+  purpose: "Guarded memory, wire compatibility, pinned profiles, CAS and POSIX storage fault regressions."
+- file: tests/secret/test_secret_broker.c
+  purpose: "Broker authorization, scoped approvals, bounded dispatch, audit and backoff regressions."
 - file: manual/engineering-kernels.md
   purpose: Shared integration and scope notes for the engineering reference kernels.
 - file: include/detail/mulib-compiler-integer.h
@@ -16378,8 +16635,8 @@ project_files:
   purpose: Header-only INTERFACE CMake target, CTest suite, optional module examples.
 - file: CONTRIBUTING.md
   purpose: Development rules, testing, style, and implementation requirements.
-- file: Doxyfile
-  purpose: Doxygen project configuration including inline header docs and module guides.
+- file: .deprecated/Doxyfile
+  purpose: Archived Doxygen project configuration.
 - file: LICENSE
   purpose: MIT terms covering original MuLIB code.
 - file: README.md
@@ -19970,3 +20227,9 @@ project_files:
   purpose: Compiler-backed declaration discovery and regeneration of the pinned MuLL bridge.
 - file: tests/test_substrate_core.c
   purpose: "Focused regression suite for test_substrate_core."
+- file: examples/mulib-secret-kernels.c
+  purpose: "Standalone checked usage example for mulib-secret-kernels."
+- file: tests/test_secret_crypto_vectors.c
+  purpose: "Focused regression suite for test_secret_crypto_vectors."
+- file: tests/test_secret_credential_vectors.c
+  purpose: "Focused regression suite for test_secret_credential_vectors."

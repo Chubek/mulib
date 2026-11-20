@@ -20,6 +20,9 @@ The [Linux notebook desktop overlay](notebook-desktop.md) adds bounded notebook,
 scene, window policy, X11, Wayland and execution kernels. Its separate device-free
 build gate is `make check-notebook-desktop`.
 
+The [secret kernel guide](secret-kernels.md) covers the development vault,
+credential primitives, and their security boundaries and verification targets.
+
 Every implemented module has a manual and a runnable example. Use each manual's
 source/build reference for implementation switches and dependencies.
 
