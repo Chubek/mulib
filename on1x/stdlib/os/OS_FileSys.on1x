@@ -11,30 +11,37 @@ fn basis_fs_exists(path: string) -> bool
 {
   return basis_native_fs_exists(path);
 }
+
 fn basis_fs_is_dir(path: string) -> bool
 {
   return basis_native_fs_isdir(path);
 }
+
 fn basis_fs_file_size(path: string) -> i64
 {
   return basis_native_fs_size(path);
 }
+
 fn basis_fs_remove(path: string) -> bool
 {
   return basis_native_fs_remove(path);
 }
+
 fn basis_fs_mkdir(path: string) -> bool
 {
   return basis_native_fs_mkdir(path);
 }
+
 fn basis_fs_rename(a: string, b: string) -> bool
 {
   return basis_native_fs_rename(a, b);
 }
+
 fn basis_fs_chdir(path: string) -> bool
 {
   return basis_native_fs_chdir(path);
 }
+
 fn basis_fs_cwd() -> string
 {
   return basis_native_fs_cwd();

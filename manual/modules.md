@@ -22,7 +22,8 @@ consult each manual's exact supported syntax, errors, and limits.
 | Structured data | [json](mulib-json.md), [yaml](mulib-yaml.md), [toml](mulib-toml.md), [template](mulib-template.md), [xml](mulib-xml.md), [xpath](mulib-xpath.md) |
 | Documents and graphics | [html](mulib-html.md), [css](mulib-css.md), [markdown](mulib-markdown.md), [svg](mulib-svg.md), [graphviz](mulib-graphviz.md), [vector algebra](mulib-vector.md) |
 | Graphics math and geometry | [linalg](mulib-linalg.md), [simdmath](mulib-simdmath.md), [cgeom](mulib-cgeom.md), [collision](mulib-collision.md), [geosolve](mulib-geosolve.md) |
-| Rendering and GUI | [GLX](mulib-glx.md), [ShaderX](mulib-shaderx.md), [VectGFX](mulib-vectgfx.md), [raytracing](mulib-raytracing.md), [ImmGTK](mulib-immgtk.md) |
+| Rendering and GUI | [GLX](mulib-glx.md), [headless Vulkan](mulib-glx-vulkan.md), [ShaderX](mulib-shaderx.md), [VectGFX](mulib-vectgfx.md), [raytracing](mulib-raytracing.md), [ImmGTK](mulib-immgtk.md) |
+| MPEG media | [MiniMPEG](mulib-minimpeg.md), with separate MP3 and video APIs |
 | Storage and native formats | [archive](mulib-archive.md), [mmfile](mulib-mmfile.md), [kvdb](mulib-kvdb.md), [elf](mulib-elf.md), [dynload](mulib-dynload.md), [drm](mulib-drm.md) |
 | SQLite-file database | [SQL engine](mulib-sqlite.md), [record/B-tree format](mulib-sqlite-format.md), [snapshot pager](mulib-sqlite-pager.md); implemented profile, not full SQLite compatibility |
 | Binary inspection and packing | [ELF/COFF/PE/Mach-O stack](binary-formats.md), [shared objdump](mulib-objdump.md), [terminal styles](mulib-termstyle.md) |

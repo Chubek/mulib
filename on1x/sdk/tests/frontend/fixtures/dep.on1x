@@ -1,3 +1,4 @@
-fn value() -> i64 {
+fn value() -> i64
+{
   return 41;
 }

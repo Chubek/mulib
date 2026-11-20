@@ -96,6 +96,7 @@ fn transform(tree: sexpr, label: string) -> sexpr
     return result;
   });
 }
+
 fn main()
 {
   native_serve(transform);

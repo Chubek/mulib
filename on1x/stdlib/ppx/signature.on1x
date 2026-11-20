@@ -202,6 +202,7 @@ fn ppx_write_type(type: sexpr, out: buffer, depth: i64)
     ppx_write_type(sexpr_nth(type, 2), out, depth + 1);
   }
 }
+
 fn ppx_signature(function: sexpr) -> string
 {
   let out = buffer_new();

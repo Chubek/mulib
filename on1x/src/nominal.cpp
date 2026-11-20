@@ -1,4 +1,6 @@
 #include <on1x/nominal.hpp>
+#include <on1x/kernel.hpp>
+#include <on1x/container_shared.hpp>
 #include <algorithm>
 #include <cctype>
 #include <tuple>
@@ -60,7 +62,22 @@ const NominalDeclaration& NominalCatalog::result(const std::string& name,const L
 NominalCatalog::NominalCatalog(const Unit& unit){
  if(unit.nominals.size()>4096)throw Error(unit.nominals.front().where,"ON1X-NOMINAL: loaded declaration budget exhausted","ON1X-NOMINAL-LIMIT");
  for(const auto& d:unit.nominals){
-  if(!identifier(d.name)||!declarations.emplace(d.name,&d).second)fail(d.where,"invalid or duplicate nominal declaration: "+d.name);
+   bool internal=false;
+     if(ipc_kernel_opaque_nominal(d.name))
+     internal=d.kind==Type::Record&&d.parameters.empty()&&d.labels.empty()&&d.fields.empty();
+    if(shared_opaque_nominal(d.name))
+     internal=d.kind==Type::Record&&d.parameters==std::vector<std::string>{"T"}&&
+              d.labels.empty()&&d.fields.empty();
+    if(d.name==shared_borrow_result)
+     internal=d.kind==Type::Sum&&d.parameters==std::vector<std::string>{"G"}&&
+              d.labels==std::vector<std::string>{"Busy","Granted"}&&
+              d.fields==std::vector<Type>{Type::data(Type::Record,{}),Type::bound(0)};
+   if(d.name==ipc_kernel_result_name)
+    internal=d.kind==Type::Sum&&d.parameters==std::vector<std::string>{"T","E"}&&
+             d.labels==std::vector<std::string>{"Ok","Err"}&&
+             d.fields==std::vector<Type>{Type::bound(0),Type::bound(1)};
+   if((!internal&&!identifier(d.name))||!declarations.emplace(d.name,&d).second)
+    fail(d.where,"invalid or duplicate nominal declaration: "+d.name);
    static const std::set<std::string> reserved={"i64","f64","f32","u8","u16","u32","u64","bool","string","void","json","json_view","sexpr","buffer","record","sum","array","slice","code","forall","fn","own","_"};
    if(reserved.contains(d.name))fail(d.where,"built-in type name cannot be redeclared: "+d.name);
    if((d.kind!=Type::Record&&d.kind!=Type::Sum)||d.fields.size()!=d.labels.size()||d.fields.size()>256||(d.kind==Type::Sum&&d.fields.empty())||d.parameters.size()>32)fail(d.where,"invalid declaration shape");
@@ -116,7 +133,12 @@ NominalCatalog::NominalCatalog(const Unit& unit){
   state=2;
  };
  for(const auto& [name,d]:declarations){(void)name;declaration(declaration,*d,0);}
- for(const auto& [name,d]:declarations){std::vector<Type> args;for(std::size_t i=0;i<d->parameters.size();++i)args.push_back(Type::generic(i));(void)layout(instantiate(name,args,d->where),d->where);}
+ for(const auto& [name,d]:declarations){
+    if(ipc_kernel_opaque_nominal(name)||shared_opaque_nominal(name))continue;
+  std::vector<Type> args;
+  for(std::size_t i=0;i<d->parameters.size();++i)args.push_back(Type::generic(i));
+  (void)layout(instantiate(name,args,d->where),d->where);
+ }
 }
 std::pair<std::size_t,std::size_t> NominalCatalog::layout(const Type& t,const Location& at,std::size_t depth) const{
  tick(at,depth);
@@ -153,8 +175,10 @@ Type NominalCatalog::expand(const Type& type,const std::vector<Type>& variables,
    for(const auto& argument:target.arguments())arguments.push_back(expand(argument,variables,at,depth+1));
    return Type::own(Type::named(d.name,std::move(arguments)));
   }
-  if(type.kind()==Type::Named){
-  const auto& d=find(type.nominal(),at);if(type.arguments().size()!=d.parameters.size())fail(at,"wrong type argument arity for "+d.name);
+   if(type.kind()==Type::Named){
+   if(shared_opaque_nominal(type.nominal()))shared_opaque_error(at);
+   if(ipc_kernel_opaque_nominal(type.nominal()))ipc_kernel_opaque_error(at);
+   const auto& d=find(type.nominal(),at);if(type.arguments().size()!=d.parameters.size())fail(at,"wrong type argument arity for "+d.name);
   std::vector<Type> args;for(const auto& a:type.arguments())args.push_back(expand(a,variables,at,depth+1));
   auto key=Type::named(d.name,args);if(auto hit=expanded.find(key);hit!=expanded.end())return hit->second;
   std::vector<Type> fields;for(const auto& f:d.fields)fields.push_back(expand(f,args,at,depth+1));
@@ -176,6 +200,8 @@ Type NominalCatalog::expand(const Type& type,const std::vector<Type>& variables,
  return type;
 }
 Type NominalCatalog::instantiate(const std::string& name,const std::vector<Type>& arguments,const Location& at) const{
+  if(shared_opaque_nominal(name))shared_opaque_error(at);
+  if(ipc_kernel_opaque_nominal(name))ipc_kernel_opaque_error(at);
  const auto& d=find(name,at);if(arguments.size()!=d.parameters.size())fail(at,"wrong type argument arity for "+name);
  auto key=Type::named(name,arguments);if(auto hit=expanded.find(key);hit!=expanded.end())return hit->second;
  std::vector<Type> fields;for(const auto& f:d.fields)fields.push_back(expand(f,arguments,at,1));
@@ -219,7 +245,11 @@ void NominalCatalog::verify(const Type& type,const Location& at) const{
    const auto& d=find(target.nominal(),at);
    if(target.arguments().size()!=d.parameters.size())fail(at,"wrong type argument arity for "+d.name);
    for(const auto& argument:target.arguments())verify(argument,at);
-   (void)layout(instantiate(d.name,target.arguments(),at),at);
+    if(auto kind=shared_opaque_kind(d.name)){
+     require_shared_payload(target.arguments().front(),*kind,at);
+     (void)layout(target.arguments().front(),at);
+    }else if(!ipc_kernel_opaque_nominal(d.name))
+     (void)layout(instantiate(d.name,target.arguments(),at),at);
    return;
   }
   if(type.kind()==Type::Named){

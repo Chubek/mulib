@@ -95,9 +95,9 @@ def test_repository_style(work):
     source.write_bytes(b'fn empty(){} fn foo(x: bool)->i64{if x{return 42;}else{return 0;}}'
                        b' fn main(){println(foo(true));}')
     before = run_source(source, work / "style-before")
-    expected = (b"fn empty()\n{\n}\nfn foo(x: bool) -> i64\n{\n"
-                b"  if x\n  {\n    return 42;\n  }\n  else\n  {\n    return 0;\n  }\n}\n"
-                b"fn main()\n{\n  println(foo(true));\n}\n")
+    expected = (b"fn empty()\n{\n}\n\nfn foo(x: bool) -> i64\n{\n"
+                 b"  if x\n  {\n    return 42;\n  }\n  else\n  {\n    return 0;\n  }\n}\n"
+                 b"\nfn main()\n{\n  println(foo(true));\n}\n")
     assert fmt(source, "--inplace", cwd=HOME).stdout == b""
     assert source.read_bytes() == expected
     fmt(source, "--check")
@@ -114,6 +114,18 @@ def test_repository_style(work):
     assert b"println(g(1, 2));" in fmt(source).stdout
     config.write_text("width = 1\nalgorithm = fits\nbrace_style = same-line\n")
     assert b"fn main() {\n  println(g(1,\n    2));\n}\n" == fmt(source).stdout
+
+    source.write_bytes(
+        b"fn first(){if true{println(1);}println(2);} # first\nfn second(){}"
+    )
+    config.write_text(
+        "brace_style = allman\n"
+        "nested_block_newlines = 2\n"
+        "top_level_block_newlines = 3\n"
+    )
+    spaced = fmt(source).stdout
+    assert b"  }\n\n  println(2);" in spaced
+    assert b"} # first\n\n\nfn second()" in spaced
 
 
 def run(work):
@@ -160,6 +172,8 @@ println("hash # inside string \\\\ \\\"");} # EOF'''
     for value in (b"tabstop=0", b"width=-1", b"width=999999999999999999999",
                   b"tabstop=1\ntabstop=2", b"unknown=1", b"tabstop 3",
                   b"algorithm=knuth-plass", b"brace_style=missing",
+                  b"nested_block_newlines=0", b"top_level_block_newlines=17",
+                  b"nested_block_newlines=1\nnested_block_newlines=2",
                   b"algorithm=search\nalgorithm=fits", b"brace_style=allman\nbrace_style=same-line",
                   b"tabstop=4\0", b" " * 4097):
         config.write_bytes(value)

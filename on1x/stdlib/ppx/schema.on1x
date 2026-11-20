@@ -4,10 +4,12 @@ fn ppx_alpha(c: i64) -> bool
 {
   return c >= 65 && c <= 90 || c >= 97 && c <= 122 || c == 95;
 }
+
 fn ppx_digit(c: i64) -> bool
 {
   return c >= 48 && c <= 57;
 }
+
 fn ppx_name(text: string) -> bool
 {
   if text_len(text) == 0 || ! ppx_alpha(text_byte(text, 0))
@@ -26,14 +28,17 @@ fn ppx_name(text: string) -> bool
   }
   return text != "fn" && text != "let" && text != "var" && text != "if" && text != "else" && text != "while" && text != "return" && text != "true" && text != "false" && text != "extern" && text != "import" && text != "forall" && text != "macro" && text != "rule" && text != "quote" && text != "splice" && text != "lift" && text != "let_syntax" && text != "letrec_syntax";
 }
+
 fn ppx_scalar_type(name: string) -> bool
 {
   return name == "Bytes" || name == "File" || name == "Name" || name == "Version" || name == "Nat" || name == "Positive" || name == "Boolean" || name == "UnaryOperator" || name == "BinaryOperator" || name == "DecimalSpelling" || name == "HexSpelling" || name == "FloatSpelling" || name == "UnsignedSpelling";
 }
+
 fn ppx_lookup(pairs: sexpr, name: string) -> sexpr
 {
   return ppx_json_find(pairs, name);
 }
+
 fn ppx_subtype(categories: sexpr, child: string, parent: string) -> bool
 {
   var current = child;
@@ -58,6 +63,7 @@ fn ppx_subtype(categories: sexpr, child: string, parent: string) -> bool
   }
   return false;
 }
+
 fn ppx_schema_nodes(categories: sexpr,
   previous: sexpr,
   extra: sexpr,
@@ -142,6 +148,7 @@ fn ppx_schema_nodes(categories: sexpr,
   }
   return nodes;
 }
+
 fn ppx_schema_version(json: sexpr)
 {
   let version = ppx_json_get(json, "version");
@@ -150,6 +157,7 @@ fn ppx_schema_version(json: sexpr)
     tool_fail("unsupported PPX schema version");
   }
 }
+
 fn ppx_schema_load(path: string) -> sexpr
 {
   let json = ppx_json_parse(tool_read_file(path));
@@ -177,6 +185,7 @@ fn ppx_schema_load(path: string) -> sexpr
     "");
   return sx_cons(categories, sx_cons(nodes, sx_nil()));
 }
+
 fn ppx_schema_extend(schema: sexpr, owner: string, path: string) -> sexpr
 {
   if ! ppx_name(owner) || text_len(owner) > 128
@@ -195,6 +204,7 @@ fn ppx_schema_extend(schema: sexpr, owner: string, path: string) -> sexpr
     owner);
   return sx_cons(categories, sx_cons(nodes, sx_nil()));
 }
+
 fn ppx_natural(text: string, positive: bool) -> bool
 {
   if text_len(text) == 0
@@ -246,6 +256,7 @@ fn ppx_natural(text: string, positive: bool) -> bool
   }
   return true;
 }
+
 fn ppx_scalar(value: sexpr, kind: string) -> bool
 {
   if sx_kind(value) != 1 && sx_kind(value) != 2
@@ -464,6 +475,7 @@ fn ppx_scalar(value: sexpr, kind: string) -> bool
   }
   return false;
 }
+
 fn ppx_validate_at(schema: sexpr,
   value: sexpr,
   kind: string,
@@ -547,6 +559,7 @@ fn ppx_validate_at(schema: sexpr,
   }
   return nodes;
 }
+
 fn ppx_validate(schema: sexpr, tree: sexpr)
 {
   ppx_validate_at(schema, tree, "Unit", "$", 0, 0);

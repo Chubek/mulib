@@ -9,6 +9,7 @@ fn basis_word_from_byte(x: i64) -> i64
   }
   return x;
 }
+
 fn basis_word_to_byte(x: i64) -> i64
 {
   return basis_word8_wrap(x);

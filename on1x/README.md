@@ -244,13 +244,21 @@ still not admitted. See the
 [KernelBind](docs/kernel-bind.md) recognizes `import kernel` in the compiler and
 supports explicit ExoLib/ExoML discovery of selected canonical MuLIB profiles.
 The [sandbox profiles](docs/kernel-sandbox.md) expose build and declaration
-evidence only, not callable or safe imports.
+evidence, not callable sandbox operations.
 The opt-in C11 build profile can call all three `mulib.clamp` functions via
 `unsafe import kernel`. The [review-gated scalar build](docs/kernel-review.md)
 also accepts safe clamp and [bounded numerical imports](docs/kernel-numerics.md)
 with an independently signed, operator-selected review. Tests use an ephemeral
-authority; no production approval is shipped. Owned foreign resources remain
-closed.
+authority; no production approval is shipped. The separate
+[explicit raw framed transport](docs/kernel-framed.md) owns a local socket
+pair and supports both one-shot callbacks after close and retained callbacks
+dispatched by explicit polling on the owner thread. General safe foreign
+resources and callbacks remain closed.
+
+The [standard-library containers](stdlib/README.md#ownership-and-scoped-containers)
+include strong `Rc`/`Arc` owners and local `RefCell` guards. The Linux native
+adapters, including the opt-in [fixed Pod worker](stdlib/container/POD.md),
+are separate from KernelBind admission.
 
 The repository accessed through the GitHub connection exposed the prior PPX-v1 schema and Exotract/ExoML contract catalogs. The `on1x/std/ppx` path in the request appears to refer to the actual `on1x/stdlib/ppx` path, whose `ppx.on1x` is used by all newly added native PPXs.
 

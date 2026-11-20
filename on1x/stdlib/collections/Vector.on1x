@@ -5,22 +5,27 @@ fn basis_vector_from_list(xs: sexpr) -> sexpr
   basis_list_length(xs);
   return xs;
 }
+
 fn basis_vector_length(xs: sexpr) -> i64
 {
   return basis_list_length(xs);
 }
+
 fn basis_vector_sub(xs: sexpr, index: i64) -> sexpr
 {
   return basis_list_nth(xs, index);
 }
+
 fn basis_vector_map(xs: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
 {
   return basis_list_map(xs, f);
 }
+
 fn basis_vector_concat(a: sexpr, b: sexpr) -> sexpr
 {
   return basis_list_append(a, b);
 }
+
 fn basis_vector_tabulate(n: i64, f: fn(i64) -> sexpr) -> sexpr
 {
   return basis_list_tabulate(n, f);

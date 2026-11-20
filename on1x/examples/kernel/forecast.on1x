@@ -6,6 +6,7 @@ fn forecast(samples: slice < f64,
   println(ema["point"]);
   return History.holt(samples, 0.5, 0.2, 1.0, 2);
 }
+
 fn main()
 {
   let data = array[99.0, 10.0, 12.0, 14.0, 99.0];

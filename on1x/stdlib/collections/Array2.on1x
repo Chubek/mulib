@@ -17,6 +17,7 @@ fn basis_array2_new(rows: i64, columns: i64, initial: i64) ->(i64, i64, i64)
   let a = basis_array_array(rows * columns, initial);
   return (a, rows, columns);
 }
+
 fn basis_array2_sub(view: (i64, i64, i64), row: i64, column: i64) -> i64
 {
   let(h, rows, columns) = view;
@@ -26,6 +27,7 @@ fn basis_array2_sub(view: (i64, i64, i64), row: i64, column: i64) -> i64
   }
   return basis_array_sub(h, row * columns + column);
 }
+
 fn basis_array2_update(view: (i64, i64, i64), row: i64, column: i64, value: i64)
 {
   let(h, rows, columns) = view;
@@ -35,6 +37,7 @@ fn basis_array2_update(view: (i64, i64, i64), row: i64, column: i64, value: i64)
   }
   basis_array_update(h, row * columns + column, value);
 }
+
 fn basis_array2_destroy(view: (i64, i64, i64))
 {
   let(h, rows, columns) = view;

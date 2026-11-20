@@ -4,6 +4,7 @@ fn mark(n: i64) -> i64
   println(n);
   return n;
 }
+
 fn main()
 {
   let dead = (10 < 20) == true;

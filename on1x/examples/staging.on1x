@@ -3,6 +3,7 @@ fn sample(value: i64) -> i64
   println(value);
   return value;
 }
+
 fn add(left: code < i64 >, right: code < i64 >) -> code < i64 >
 {
   return quote
@@ -10,6 +11,7 @@ fn add(left: code < i64 >, right: code < i64 >) -> code < i64 >
     splice(left) + splice(right)
   };
 }
+
 fn main()
 {
   let delayed = quote

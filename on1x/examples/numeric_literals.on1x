@@ -2,6 +2,7 @@ fn pair(x: u64) ->(u64, f32)
 {
   return (x, 1.5f32);
 }
+
 fn main()
 {
   let(word, real) = pair(18446744073709551615u64);

@@ -4,6 +4,7 @@ fn basis_substring_full(s: string) ->(string, i64, i64)
 {
   return (s, 0, text_len(s));
 }
+
 fn basis_substring_slice(s: string,
   start: i64,
   length: i64) ->(string,
@@ -16,16 +17,19 @@ fn basis_substring_slice(s: string,
   }
   return (s, start, length);
 }
+
 fn basis_substring_string(slice: (string, i64, i64)) -> string
 {
   let(s, start, length) = slice;
   return text_slice(s, start, start + length);
 }
+
 fn basis_substring_size(slice: (string, i64, i64)) -> i64
 {
   let(s, start, length) = slice;
   return length;
 }
+
 fn basis_substring_sub(slice: (string, i64, i64), offset: i64) -> i64
 {
   let(s, start, length) = slice;
@@ -35,6 +39,7 @@ fn basis_substring_sub(slice: (string, i64, i64), offset: i64) -> i64
   }
   return text_byte(s, start + offset);
 }
+
 fn basis_substring_triml(slice: (string, i64, i64), n: i64) ->(string, i64, i64)
 {
   let(s, start, length) = slice;
@@ -48,6 +53,7 @@ fn basis_substring_triml(slice: (string, i64, i64), n: i64) ->(string, i64, i64)
   }
   return (s, start + n, length - n);
 }
+
 fn basis_substring_trimr(slice: (string, i64, i64), n: i64) ->(string, i64, i64)
 {
   let(s, start, length) = slice;

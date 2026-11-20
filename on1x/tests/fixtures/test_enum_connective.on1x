@@ -2,10 +2,12 @@ enum Result < T, E >
 {
   Ok(T), Err(E)
 }
+
 enum Outcome
 {
   Empty, Pair(i64, i64)
 }
+
 fn subject(tag: bool, value: i64) -> Result < i64, i64 >
 {
   println(value);
@@ -15,11 +17,13 @@ fn subject(tag: bool, value: i64) -> Result < i64, i64 >
   }
   return variant < Result < i64, i64 > > (Err, value);
 }
+
 fn guard(value: i64) -> bool
 {
   println(value + 100);
   return value > 0;
 }
+
 fn classify(tag: bool, value: i64) -> i64
 {
   return subject(tag, value) ~
@@ -31,6 +35,7 @@ fn classify(tag: bool, value: i64) -> i64
     },
   };
 }
+
 macro extract
 {
   rule($value: Expression) => expression
@@ -41,6 +46,7 @@ macro extract
     }
   };
 }
+
 fn main()
 {
   println(classify(true, 3));

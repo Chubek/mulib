@@ -7,6 +7,7 @@ fn ini_has(source: string, section: string, key: string) -> bool
   }
   return Ini.has_first(source, section, key);
 }
+
 fn basis_ini_get(source: string, section: string, key: string) ->(i64, string)
 {
   if text_len(source) > 2097152 || text_len(section) > 2097152 || text_len(key) > 2097152
@@ -15,11 +16,13 @@ fn basis_ini_get(source: string, section: string, key: string) ->(i64, string)
   }
   return Ini.get_first(source, section, key);
 }
+
 fn ini_get(source: string, section: string, key: string) -> string
 {
   let(status, value) = basis_ini_get(source, section, key);
   return value;
 }
+
 fn main()
 {
   let doc = "[a]\nk=\nk=second\n";

@@ -5,3 +5,7 @@ tabstop = 2
 # Use bounded layout search for lists and put block braces on separate lines.
 algorithm = search
 brace_style = allman
+
+# Keep nested blocks adjacent and leave one blank line between top-level blocks.
+nested_block_newlines = 1
+top_level_block_newlines = 2

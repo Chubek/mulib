@@ -1,19 +1,12 @@
-from ._Trusted import basis_sdk_bridge_snapshot_check,
-  basis_sdk_bridge_snapshot_read;
-
+from ._Trusted import basis_sdk_bridge_snapshot_check, basis_sdk_bridge_snapshot_read;
 record SDKBytesView
 {
-  context: u64,
-  handle: u64,
-  revision: u64,
-  length: u64,
-  limit: u64
+  context: u64, handle: u64, revision: u64, length: u64, limit: u64
 }
 
 record SDKTextView
 {
-  bytes: SDKBytesView,
-  utf8_validated: bool
+  bytes: SDKBytesView, utf8_validated: bool
 }
 
 enum SDKByteResult
@@ -23,11 +16,7 @@ enum SDKByteResult
 
 fn basis_sdk_bytes_well_formed(view: SDKBytesView) -> bool
 {
-  return view["context"] != 0u64 &&
-    view["handle"] != 0u64 &&
-    view["revision"] != 0u64 &&
-    view["length"] <= view["limit"] &&
-    view["limit"] <= 4096u64;
+  return view["context"] != 0u64 && view["handle"] != 0u64 && view["revision"] != 0u64 && view["length"] <= view["limit"] && view["limit"] <= 4096u64;
 }
 
 fn basis_sdk_text_well_formed(view: SDKTextView) -> bool
@@ -50,8 +39,10 @@ fn basis_sdk_bytes_read(view: SDKBytesView, index: u64) -> SDKByteResult
   {
     return variant < SDKByteResult > (Failure, 4u32);
   }
-  let encoded = basis_sdk_bridge_snapshot_read(
-    view["context"], view["handle"], view["revision"], index);
+  let encoded = basis_sdk_bridge_snapshot_read(view["context"],
+    view["handle"],
+    view["revision"],
+    index);
   if encoded >= 256u32
   {
     return variant < SDKByteResult > (Failure, encoded - 256u32);

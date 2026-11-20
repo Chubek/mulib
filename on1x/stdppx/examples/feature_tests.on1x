@@ -5,6 +5,7 @@
 {
   assert(40 + 2 == 42);
 }
+
 fn main()
 {
   # If check_arithmetic is excluded, this example's generated runner is absent.

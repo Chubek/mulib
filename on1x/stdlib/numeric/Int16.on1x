@@ -3,14 +3,17 @@ fn basis_int16_max() -> i64
 {
   return 32767;
 }
+
 fn basis_int16_min() -> i64
 {
   return - 32767 - 1;
 }
+
 fn basis_int16_in_range(x: i64) -> bool
 {
   return x >= basis_int16_min() && x <= basis_int16_max();
 }
+
 fn basis_int16_checked(x: i64) -> i64
 {
   if ! basis_int16_in_range(x)

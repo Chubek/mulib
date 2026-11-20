@@ -4,6 +4,7 @@ fn basis_timer_start() -> i64
 {
   return basis_time_monotonic_ns();
 }
+
 fn basis_timer_elapsed_ns(start: i64) -> i64
 {
   let now = basis_time_monotonic_ns();

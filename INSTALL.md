@@ -107,6 +107,8 @@ implementation tests compile large translation units.
 | Option | Default | Effect |
 | --- | --- | --- |
 | `MULIB_BUILD_TESTS` | `ON` | Build tests and register them with CTest |
+| `MULIB_BUILD_VULKAN_TESTS` | `OFF` | Build the headless Vulkan device test on native Linux; requires Vulkan development headers |
+| `MULIB_BUILD_MINIMPEG_VIDEO_TESTS` | `OFF` | Build the MPEG-1 video tests; requires FFmpeg development libraries |
 | `MULIB_BUILD_MODULE_EXAMPLES` | `OFF` | Build standalone module and top-level examples; register them with CTest when tests are enabled |
 | `MULIB_BUILD_SHIRAZ` | Unix host: `ON` | Build Shiraz libraries and tools when the target system is Linux |
 | `MULIB_BUILD_VIRTIO` | `ON` | Build separate Virtio protocol, backend, and frontend static libraries |
@@ -138,6 +140,8 @@ See [`CMakeLists.txt`](CMakeLists.txt) for the complete target configuration.
 | Numerical modules | `-lm` on platforms with a separate math library |
 | Native threads and task pools | `-pthread` on POSIX; propagated by the CMake `mulib` target |
 | Dynamic library loading | Platform loader APIs; commonly `-ldl` on Linux or `${CMAKE_DL_LIBS}` in CMake |
+| Headless GLX Vulkan device API | Vulkan development headers when enabled, a runtime loader and ICD; no link-time Vulkan dependency |
+| MiniMPEG MPEG-1 video | With `MULIB_MINIMPEG_USE_LIBAVCODEC`, link `libavcodec` (59+) and `libavutil`; MP3 does not require FFmpeg |
 | Unicode normalization, names, bidi and boundaries | Runtime-loaded ICU |
 | Font discovery, shaping and drawing | Runtime-loaded Fontconfig, HarfBuzz and FreeType, respectively |
 | Wayland/Xlib connections | Their native client runtimes, loaded on demand |
@@ -152,6 +156,13 @@ Platform support is module-specific; CMake support for a compiler or host does
 not imply that every device or native backend works there. For C++ applications,
 compile implementation files as C11 and link them with the C++ application as
 shown in the [guide](GUIDE.md#use-mulib-from-c).
+
+`make check-vulkan` (or CTest with `MULIB_BUILD_VULKAN_TESTS=ON`) tests an actual
+headless Vulkan device, including software ICDs. It is separate from the
+device-free graphics gate and reports a skip when no usable driver is present.
+Run `make check-minimpeg-video` to test the opt-in video backend and the legacy
+MP3-only build. If `mpeg2enc` and `mpeg2dec` are installed, it also checks
+interoperability with two independent codec implementations.
 
 ## Verification
 

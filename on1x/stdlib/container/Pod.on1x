@@ -1,0 +1,54 @@
+# Scoped Linux operations. No caller-supplied executable, PID, FD or path.
+from . .core.Pervasive import Result;
+
+enum BasisPodNamespace
+{
+  PodNoNamespace, PodUserNamespace, PodUserNetworkIpcUts
+}
+
+enum BasisPodError
+{
+  PodInvalid, PodSystem, PodUnsupported, PodDenied, PodLimit, PodTimeout,
+  PodProtocol, PodState, PodNotAuthorized, PodCleanup, PodWorkerFailed
+}
+
+extern fn on1x_container_pod_echo_byte(byte: i64, wall_ms: i64, namespaces: i64, cgroup: i64) -> i64;
+
+fn basis_pod_echo_byte(byte: u8, wall_ms: i64, namespaces: BasisPodNamespace, cgroup: bool) -> Result<u8, BasisPodError>
+{
+  let flags = match namespaces with
+  {
+    PodNoNamespace() => 0,
+    PodUserNamespace() => 1,
+    PodUserNetworkIpcUts() => 2
+  };
+  let group = match cgroup with
+  {
+    true => 1,
+    false => 0
+  };
+  let code = on1x_container_pod_echo_byte(u8_to_i64(byte), wall_ms, flags, group);
+  if code >= 0 && code <= 255
+  {
+    return variant<Result<u8, BasisPodError>>(Ok, u8_from_i64(code));
+  }
+  return variant<Result<u8, BasisPodError>>(Err, match code with
+  {
+    status if status == -1 => variant<BasisPodError>(PodInvalid, record {}),
+    status if status == -3 => variant<BasisPodError>(PodUnsupported, record {}),
+    status if status == -4 => variant<BasisPodError>(PodDenied, record {}),
+    status if status == -5 => variant<BasisPodError>(PodLimit, record {}),
+    status if status == -6 => variant<BasisPodError>(PodTimeout, record {}),
+    status if status == -7 => variant<BasisPodError>(PodProtocol, record {}),
+    status if status == -9 => variant<BasisPodError>(PodState, record {}),
+    status if status == -11 => variant<BasisPodError>(PodNotAuthorized, record {}),
+    status if status == -12 => variant<BasisPodError>(PodCleanup, record {}),
+    status if status == -13 => variant<BasisPodError>(PodWorkerFailed, record {}),
+    _ => variant<BasisPodError>(PodSystem, record {})
+  });
+}
+
+fn basis_sandbox_echo_byte(byte: u8, wall_ms: i64) -> Result<u8, BasisPodError>
+{
+  return basis_pod_echo_byte(byte, wall_ms, variant<BasisPodNamespace>(PodNoNamespace, record {}), false);
+}

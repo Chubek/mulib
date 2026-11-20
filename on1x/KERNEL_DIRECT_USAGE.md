@@ -27,7 +27,9 @@
 > C11 profile executes `unsafe import kernel mulib.clamp` for both
 > saturating operations and the checked interval clamp. The [reviewed scalar profile](docs/kernel-review.md)
 > additionally builds safe clamp imports with independent signed authorization;
-> no production approval is shipped. Resource-bearing imports remain unadmitted.
+> no production approval is shipped. The [explicit raw framed adapter](docs/kernel-framed.md)
+> adds a single sealed owner and synchronous callback; safe resource-bearing
+> imports remain unadmitted.
 > The [bounded numerical profiles](docs/kernel-numerics.md) execute native
 > Histprice EMA/Holt and PriceOpt optimize/candidates after the same review gate.
 > PrettyPrint is covered
@@ -52,8 +54,8 @@ policy, supported symbols and limitations: [reviewed scalar profile](docs/kernel
 | A/B | Native syntax, bounded discovery, canonical ExoLib/CDecl, source pinning, namespaces | Additional profiles and targets |
 | C | Unsafe clamp and signed-review scalar build mechanism, execution/negative tests | Independently issued production review; general scalar exports and independent checker integration |
 | D | Bounded f64 snapshot spans, record/enum/output/error lowering for four Histprice/PriceOpt functions; multi-module pricing fixture | Statsprice, Money, demand/ensemble, dynamic buffers, independently issued reviews and full §9.5 |
-| E | No admitted resource imports | Affine foreign owners, borrows, cleanup and KVDB failure tests |
-| F | No admitted callback/transport imports | Callback lifetimes, capabilities and scheduler integration |
+| E | Explicit raw adapter for one sealed local socket pair | General safe foreign owners, borrows, cleanup and KVDB failure tests |
+| F | Explicit raw one-byte local frame and same-thread callback after close | Retention, arbitrary endpoints, capabilities and scheduler integration |
 | G | Local atomic reviewed bundles (including multi-kernel) and inspection | Reusable locked imports, installed/relocated review policy and migration parity |
 
 The complete document and §9.5 Shylock gate are **not complete**.
@@ -511,7 +513,9 @@ userdata lifetime, reentrancy, GC/rooting safety, side-effect policy, and an
 explicit call-bound capture region. Retained callbacks additionally require a
 registration resource, unregister/destructor semantics, thread-origin and
 suspension/teardown restrictions. Start with *callback-free* APIs; leave
-retained callbacks unadmitted until fully tested.
+general retained callbacks unadmitted. The explicit raw
+[framed session](docs/kernel-framed.md#reusable-session) is a closed,
+owner-thread polling profile, not admission for C callback exports.
 
 For HTML tokenization, provide a generic *pull iterator or bounded event buffer*
 in MuLIB if this enables safe On1x use without callback retention. Such a kernel

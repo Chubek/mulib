@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1766 headers, 2088 direct dependency edges.
+Inventory: 1766 headers, 2089 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -665,7 +665,7 @@ Compatibility group: `parsec`, `peg`.
 | [glx-surface](mulib-gfx-raster.md) | `glx-core` |
 | [glx-tessellate](mulib-gfx-path.md) | `glx-core` |
 | [glx-transform](mulib-gfx-path.md) | `glx-core` |
-| [glx-vulkan](graphics-overlay.md) | `glx-core` |
+| [glx-vulkan](mulib-glx-vulkan.md) | `glx-core` |
 | [glx](mulib-glx.md) | `drm`, `linalg` |
 | [graphdb](mulib-graphdb.md) | `memtable` |
 | [graphviz](mulib-graphviz.md) | `graph`, `strbuf`, `utf8` |
@@ -1186,7 +1186,7 @@ Compatibility group: `parsec`, `peg`.
 | [microjs-module](mulib-microjs-module.md) | `shylock-core` |
 | [midi](mulib-midi.md) | `audio` |
 | [miniflac](mulib-miniflac.md) | `audio` |
-| [minimpeg](mulib-minimpeg.md) | `audio` |
+| [minimpeg](mulib-minimpeg.md) | `audio`, `codec-core` |
 | [minivorbis](mulib-minivorbis.md) | `audio` |
 | [miniwav](mulib-miniwav.md) | `audio` |
 | [mumq](mulib-mumq.md) | `aes`, `socket` |

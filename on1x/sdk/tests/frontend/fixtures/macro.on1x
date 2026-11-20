@@ -1,6 +1,12 @@
-macro increment {
-  rule ($value:Expression) => expression { $value + 1 };
+macro increment
+{
+  rule($value: Expression) => expression
+  {
+    $value + 1
+  };
 }
-fn main() {
+
+fn main()
+{
   println(increment!(41));
 }

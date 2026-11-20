@@ -4,14 +4,17 @@ fn basis_function_compose_int(f: fn(i64) -> i64,
 {
   return f(g(x));
 }
+
 fn basis_function_pipe_int(x: i64, f: fn(i64) -> i64) -> i64
 {
   return f(x);
 }
+
 fn basis_function_apply_twice_int(x: i64, f: fn(i64) -> i64) -> i64
 {
   return f(f(x));
 }
+
 fn basis_function_compose(f, g) -> _
 {
   return fn(x) -> _
@@ -19,10 +22,12 @@ fn basis_function_compose(f, g) -> _
     return f(g(x));
   };
 }
+
 fn basis_function_pipe(value, f) -> _
 {
   return f(value);
 }
+
 fn basis_function_flip(f) -> _
 {
   return fn(a, b) -> _
@@ -30,6 +35,7 @@ fn basis_function_flip(f) -> _
     return f(b, a);
   };
 }
+
 fn basis_function_curry(f) -> _
 {
   return fn(a) -> _
@@ -40,6 +46,7 @@ fn basis_function_curry(f) -> _
     };
   };
 }
+
 fn basis_function_uncurry(f) -> _
 {
   return fn(pair) -> _

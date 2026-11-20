@@ -1,12 +1,14 @@
 # Sandbox kernels: build and inspect, not import
 
 On1x can inspect declarations and build a C11 archive for the eight MuLIB
-sandbox kernels. They are **not callable KernelBind imports**, even with
-`unsafe import kernel`. `--kernel-review-candidate` cannot create a review
-subject for them. The build does not install filters, change namespaces, launch
-workers, or attest platform enforcement.
+sandbox kernels. Their canonical C exports are **not callable KernelBind
+imports**. The separate [explicit raw adapter](kernel-framed.md) for
+`mulib.ipc_framed` exposes local byte transport, not the sandbox API.
+`--kernel-review-candidate` cannot create a review subject for these kernels.
+The build does not install filters, change namespaces, launch workers, or
+attest platform enforcement.
 
-| `import kernel` spelling (inspection only) | Archive module |
+| `import kernel` spelling (canonical declaration inspection) | Archive module |
 |---|---|
 | `mulib.sandbox_profile` | `sandbox-profile` |
 | `mulib.seccomp` | `seccomp` |

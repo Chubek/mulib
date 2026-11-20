@@ -3,6 +3,7 @@ fn half(value: f64) -> f64
 {
   return value / f64_from_i64(2);
 }
+
 fn main()
 {
   let answer = half(f64_from_i64(85));

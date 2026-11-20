@@ -47,6 +47,7 @@ fn transform(tree: sexpr, label: string) -> sexpr
       at));
   });
 }
+
 fn main()
 {
   native_serve(transform);

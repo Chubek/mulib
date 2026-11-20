@@ -1,89 +1,107 @@
-enum Node { Node(i64) }
-enum Failure { Failure(i64) }
-
-extern fn on1x_unique_live_allocations()->i64;
-
-fn node(value:i64)->own<Node> {
-  return box(variant<Node>(Node,value));
+enum Node
+{
+  Node(i64)
 }
 
-fn report(stage:i64) {
+enum Failure
+{
+  Failure(i64)
+}
+
+extern fn on1x_unique_live_allocations() -> i64;
+fn node(value: i64) -> own < Node >
+{
+  return box(variant < Node > (Node, value));
+}
+
+fn report(stage: i64)
+{
   println(stage);
   println(on1x_unique_live_allocations());
 }
 
-fn construct(fail_after:i64)->Result<own<Node>,u8> {
-  let first=node(10);
-  defer report(100+fail_after);
-  if fail_after==1 {
-    return variant<Result<own<Node>,u8>>(Err,7u8);
+fn construct(fail_after: i64) -> Result < own < Node >, u8 >
+{
+  let first = node(10);
+  defer report(100 + fail_after);
+  if fail_after == 1
+  {
+    return variant < Result < own < Node >, u8 > > (Err, 7u8);
   }
-  let second=node(20);
-  if fail_after==2 {
-    return variant<Result<own<Node>,u8>>(Err,8u8);
+  let second = node(20);
+  if fail_after == 2
+  {
+    return variant < Result < own < Node >, u8 > > (Err, 8u8);
   }
   drop(first);
-  return variant<Result<own<Node>,u8>>(Ok,move(second));
+  return variant < Result < own < Node >, u8 > > (Ok, move(second));
 }
 
-fn consume(fail_after:i64)->Result<i64,u8> {
-  defer report(200+fail_after);
-  let pending=construct(fail_after);
-  let owner=pending?;
-  let value=take(owner);
-  return match value with {
-    Node(number)=>variant<Result<i64,u8>>(Ok,number)
+fn consume(fail_after: i64) -> Result < i64, u8 >
+{
+  defer report(200 + fail_after);
+  let pending = construct(fail_after);
+  let owner = pending?;
+  let value = take(owner);
+  return match value with
+  {
+    Node(number) => variant < Result < i64, u8 > > (Ok, number)
   };
 }
 
-fn owned_failure()->Result<i64,own<Failure>> {
-  return variant<Result<i64,own<Failure>>>(
-    Err,box(variant<Failure>(Failure,9)));
+fn owned_failure() -> Result < i64, own < Failure > >
+{
+  return variant < Result < i64, own < Failure > > > (Err,
+    box(variant < Failure > (Failure,
+    9)));
 }
 
-fn forward_failure()->Result<bool,own<Failure>> {
-  let pending=owned_failure();
-  let ignored=pending?;
-  return variant<Result<bool,own<Failure>>>(Ok,ignored==0);
+fn forward_failure() -> Result < bool, own < Failure > >
+{
+  let pending = owned_failure();
+  let ignored = pending?;
+  return variant < Result < bool, own < Failure > > > (Ok, ignored == 0);
 }
 
-fn boundary_make(fail:bool)->Result<own<Node>,u8> {
-  let owner=node(30);
-  if fail {
-    return variant<Result<own<Node>,u8>>(Err,4u8);
+fn boundary_make(fail: bool) -> Result < own < Node >, u8 >
+{
+  let owner = node(30);
+  if fail
+  {
+    return variant < Result < own < Node >, u8 > > (Err, 4u8);
   }
-  return variant<Result<own<Node>,u8>>(Ok,move(owner));
+  return variant < Result < own < Node >, u8 > > (Ok, move(owner));
 }
 
-fn main() {
-  println(match consume(0) with {
-    Ok(value)=>value,
-    Err(error)=>u8_to_i64(error)
+fn main()
+{
+  println(match consume(0) with
+  {
+    Ok(value) => value, Err(error) => u8_to_i64(error)
   });
-  assert(on1x_unique_live_allocations()==0);
-
-  println(match consume(1) with {
-    Ok(value)=>value,
-    Err(error)=>u8_to_i64(error)
+  assert(on1x_unique_live_allocations() == 0);
+  println(match consume(1) with
+  {
+    Ok(value) => value, Err(error) => u8_to_i64(error)
   });
-  assert(on1x_unique_live_allocations()==0);
-
-  println(match consume(2) with {
-    Ok(value)=>value,
-    Err(error)=>u8_to_i64(error)
+  assert(on1x_unique_live_allocations() == 0);
+  println(match consume(2) with
+  {
+    Ok(value) => value, Err(error) => u8_to_i64(error)
   });
-  assert(on1x_unique_live_allocations()==0);
-
-  let failed=forward_failure();
-  assert(on1x_unique_live_allocations()==1);
-  match failed with {
-    Ok(value)=>assert(value),
-    Err(owner)=>{
-      let failure=take(owner);
-      match failure with {
-        Failure(code)=>println(code)
+  assert(on1x_unique_live_allocations() == 0);
+  let failed = forward_failure();
+  assert(on1x_unique_live_allocations() == 1);
+  match failed with
+  {
+    Ok(value) => assert(value), Err(owner) =>
+    {
+      let failure = take(owner);
+      match failure with
+      {
+        Failure(code) => println(code)
       };
     }
   };
-  assert(on1x_unique_live_allocations()==0);
+  assert(on1x_unique_live_allocations() == 0);
 }

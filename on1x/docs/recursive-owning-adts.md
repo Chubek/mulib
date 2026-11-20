@@ -83,12 +83,14 @@ move-only transitively, and source cannot declare a unique value copyable.
 This profile is single-threaded and callback-free: it neither proves thread
 affinity/reentrancy nor admits owners as `Send` or `Sync`.
 
-`own<Named>` owns a compiler-created box. It is not a wrapper around an
-arbitrary `i64`, pointer, descriptor, socket, terminal handle, or foreign
-allocation. Existing generation-tagged scalar adapters remain raw bridges;
-they are not promoted to this safe type. A checked external owner still needs a
-reviewed constructor/drop/error/effect ABI, invalidation rules, and affinity
-contract.
+`own<Named>` normally owns a compiler-created box. It cannot be constructed
+from an arbitrary `i64`, pointer, descriptor or foreign allocation. The
+[explicit raw framed adapter](kernel-framed.md) is a separate C11 projection:
+the adapter installs a native destructor in an owning box whose payload
+cannot be constructed, unpacked or borrowed in On1x. Existing generation-tagged
+scalar handles do not gain ownership from this projection. General safe
+external owners still need reviewed constructor/drop/error/effect ABIs,
+invalidation rules and affinity contracts.
 
 ## Recoverable construction and `Result`
 

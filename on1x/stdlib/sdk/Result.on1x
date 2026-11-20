@@ -18,7 +18,6 @@ fn basis_sdk_result_is_value(result: SDKResult < _ >) -> bool
 {
   return match result with
   {
-    Value(_) => true,
-    Failure(_) => false
+    Value(_) => true, Failure(_) => false
   };
 }

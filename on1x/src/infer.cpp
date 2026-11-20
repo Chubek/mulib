@@ -1,6 +1,7 @@
 #include <on1x/infer.hpp>
 #include <on1x/clone.hpp>
 #include <on1x/kernel.hpp>
+#include <on1x/container_shared.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/staging.hpp>
 #include <on1x/numeric.hpp>
@@ -239,6 +240,8 @@ class Inference {
     auto root=head(owner,at);
     if(nodes[root].kind!=Type::Own||nodes[root].nominal.empty())
      fail(at,"owning operation requires own<Named>");
+     if(shared_opaque_nominal(nodes[root].nominal))shared_opaque_error(at);
+     if(ipc_kernel_opaque_nominal(nodes[root].nominal))ipc_kernel_opaque_error(at);
     const auto& declaration=catalog.find(nodes[root].nominal,at);
     if(nodes[root].parameters.size()!=declaration.parameters.size())
      fail(at,"wrong type argument arity for "+declaration.name);
@@ -309,7 +312,8 @@ class Inference {
         arguments.push_back(annotation(argument,where,variables,depth+1));
        return owning(declaration.name,std::move(arguments),where);
       }
-      if(type.kind()==Type::Named||!type.nominal().empty()){
+       if(type.kind()==Type::Named||!type.nominal().empty()){
+       if(shared_opaque_nominal(type.nominal()))shared_opaque_error(where);
       if(auto builtin=catalog.regex_builtin(type);builtin!=Type::Invalid)return scalar(builtin.kind(),where);
       const auto& d=catalog.find(type.nominal(),where);
      if(d.parameters.size()!=type.arguments().size())fail(where,"wrong type argument arity for "+d.name);
@@ -1016,9 +1020,37 @@ class Inference {
     expression.prototype=false;
    }
   }
-  Term builtin(Expr& expression,const std::vector<Term>& args) {
-   const auto& n=expression.callee->text;const auto& at=expression.where;
-    auto arity=[&](std::size_t count){if(args.size()!=count)fail(at,"wrong arity for "+n);};
+   Term builtin(Expr& expression,const std::vector<Term>& args) {
+    const auto& n=expression.callee->text;const auto& at=expression.where;
+     auto arity=[&](std::size_t count){if(args.size()!=count)fail(at,"wrong arity for "+n);};
+     if(const auto* op=shared_intrinsic(n)){
+      if(args.size()!=op->arity)
+       shared_error(at,"wrong arity for "+std::string(op->spelling));
+      const auto nominal=shared_nominal(op->kind);
+      if(op->op==SharedOp::New){
+       (void)catalog.find(nominal,at);
+       return owning(nominal,{args[0]},at);
+      }
+      auto payload=fresh(at);
+      auto owner=owning(nominal,{payload},at);
+      unify(args[0],owner,at);
+      if(op->op==SharedOp::Clone)return owner;
+      if(op->op==SharedOp::Read)return payload;
+      if(op->op==SharedOp::TryBorrow||op->op==SharedOp::TryBorrowMut){
+       (void)catalog.find(shared_borrow_result,at);
+       auto guard=owning(shared_nominal(shared_guard(op->op)),{payload},at);
+       auto empty=data(Type::Record,{},{},0,at);
+       return data(Type::Sum,{empty,guard,guard},{"Busy","Granted"},0,at,
+                   shared_borrow_result,1);
+      }
+      if(op->op==SharedOp::Replace){
+       unify(args[1],payload,at);
+       return payload;
+      }
+      unify(args[1],scalar(Type::U8,at),at);
+      unify(args[2],scalar(Type::I64,at),at);
+      return scalar(Type::I64,at);
+     }
     if(n=="box"){
      arity(1);auto value=head(args[0],at);
      if(!data_kind(nodes[value].kind)||nodes[value].nominal.empty())

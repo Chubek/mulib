@@ -2,6 +2,7 @@ fn twice(x: u32) -> u32
 {
   return x + x;
 }
+
 fn main()
 {
   let full: u64 = u64_from_bits(- 1);

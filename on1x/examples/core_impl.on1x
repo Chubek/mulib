@@ -2,18 +2,22 @@ record Box < T >
 {
   value: T
 }
+
 record Counter
 {
   value: i64
 }
+
 record Pair < A, B >
 {
   first: A, second: B
 }
+
 enum State
 {
   Idle, Busy(i64)
 }
+
 impl < T > Box < T >
 {
   fn make(value: T) -> Box < T >
@@ -34,6 +38,7 @@ impl < T > Box < T >
   value answer: i64 = 42;
   value value(self): T = self["value"];
 }
+
 impl Counter
 {
   fn add(self, extra: i64) -> i64
@@ -42,6 +47,7 @@ impl Counter
   }
   value inner(self): i64 = self["value"];
 }
+
 # Target arguments determine implementation variables even when reordered.
 impl < A, B > Pair < B, A >
 {
@@ -50,6 +56,7 @@ impl < A, B > Pair < B, A >
     return (self["second"], self["first"]);
   }
 }
+
 impl State
 {
   fn score(self) -> i64
@@ -60,6 +67,7 @@ impl State
     };
   }
 }
+
 fn marked_counter() -> Counter
 {
   println(1);
@@ -68,16 +76,19 @@ fn marked_counter() -> Counter
     value: 40
   };
 }
+
 fn marked_argument() -> i64
 {
   println(2);
   return 2;
 }
+
 # `impl` and `value` remain ordinary identifiers outside declaration headers.
 fn impl(value: i64) -> i64
 {
   return value + 1;
 }
+
 fn main()
 {
   println(Box < i64 > :: answer);

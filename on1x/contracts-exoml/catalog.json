@@ -80,7 +80,7 @@
       "header": "include/mulib-elvi-scrape.h",
       "header_sha256": "100a954cd6eeccbd2024410a0af3e9a90c56191ffbf12b1ff19bc298961807c9",
       "manual": "manual/mulib-elvi-scrape.md",
-      "manual_sha256": "01bce54ed6d904097d915397bf0a5e1318bc799419ed12b78a67f217fc6bccfb",
+      "manual_sha256": "8675c01bd3ba09452c0199e72164f81765399bbd9eea5777fe77fc9555ba6033",
       "evidence_sha256": {
         "include/detail/mulib-webscan.h": "2c185aa14836e655c0e66273c4ec64840537f1bc77ba545fd000e37f92ba4a29",
         "include/mulib-json.h": "3b5c762603f570a7699316a97d52290ecbe63f06f63440e09bbe0c764b8ccbbe",

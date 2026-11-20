@@ -3,10 +3,12 @@ fn basis_int_min() -> i64
 {
   return - 9223372036854775807 - 1;
 }
+
 fn basis_int_max() -> i64
 {
   return 9223372036854775807;
 }
+
 fn basis_int_compare(a: i64, b: i64) -> i64
 {
   if a < b
@@ -19,6 +21,7 @@ fn basis_int_compare(a: i64, b: i64) -> i64
   }
   return 0;
 }
+
 fn basis_int_min2(a: i64, b: i64) -> i64
 {
   if a < b
@@ -27,6 +30,7 @@ fn basis_int_min2(a: i64, b: i64) -> i64
   }
   return b;
 }
+
 fn basis_int_max2(a: i64, b: i64) -> i64
 {
   if a > b
@@ -35,6 +39,7 @@ fn basis_int_max2(a: i64, b: i64) -> i64
   }
   return b;
 }
+
 fn basis_int_sign(x: i64) -> i64
 {
   if x < 0
@@ -47,14 +52,17 @@ fn basis_int_sign(x: i64) -> i64
   }
   return 0;
 }
+
 fn basis_int_same_sign(a: i64, b: i64) -> bool
 {
   return basis_int_sign(a) == basis_int_sign(b);
 }
+
 fn basis_int_quot(a: i64, b: i64) -> i64
 {
   return a / b;
 }
+
 fn basis_int_rem(a: i64, b: i64) -> i64
 {
   if b == - 1
@@ -63,6 +71,7 @@ fn basis_int_rem(a: i64, b: i64) -> i64
   }
   return a % b;
 }
+
 fn basis_int_div(a: i64, b: i64) -> i64
 {
   let q = a / b;
@@ -73,6 +82,7 @@ fn basis_int_div(a: i64, b: i64) -> i64
   }
   return q;
 }
+
 fn basis_int_mod(a: i64, b: i64) -> i64
 {
   let r = basis_int_rem(a, b);
@@ -82,6 +92,7 @@ fn basis_int_mod(a: i64, b: i64) -> i64
   }
   return r;
 }
+
 fn basis_int_abs(x: i64) -> i64
 {
   if x < 0
@@ -90,6 +101,7 @@ fn basis_int_abs(x: i64) -> i64
   }
   return x;
 }
+
 fn basis_int_divmod(a: i64, b: i64) ->(i64, i64)
 {
   return (basis_int_div(a, b), basis_int_mod(a, b));

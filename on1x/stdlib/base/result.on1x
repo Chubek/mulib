@@ -2,10 +2,12 @@ fn base_ok(value: sexpr) -> sexpr
 {
   return sx_cons(sx_symbol("ok"), sx_cons(value, sx_nil()));
 }
+
 fn base_error(message: string) -> sexpr
 {
   return sx_cons(sx_symbol("error"), sx_cons(sx_string(message), sx_nil()));
 }
+
 fn basis_result_validate(value: sexpr)
 {
   basis_shape_pair(value);
@@ -19,16 +21,19 @@ fn basis_result_validate(value: sexpr)
     basis_shape_text(sx_head(sx_tail(value)));
   }
 }
+
 fn base_result_ok(value: sexpr) -> bool
 {
   basis_result_validate(value);
   return sx_text(sx_head(value)) == "ok";
 }
+
 fn base_result_payload(value: sexpr) -> sexpr
 {
   basis_result_validate(value);
   return sx_head(sx_tail(value));
 }
+
 fn basis_result_map(value: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
 {
   if ! base_result_ok(value)
@@ -37,6 +42,7 @@ fn basis_result_map(value: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
   }
   return base_ok(f(base_result_payload(value)));
 }
+
 fn basis_result_and_then(value: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
 {
   if ! base_result_ok(value)
@@ -47,4 +53,5 @@ fn basis_result_and_then(value: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
   basis_result_validate(out);
   return out;
 }
+
 import "shape.on1x";

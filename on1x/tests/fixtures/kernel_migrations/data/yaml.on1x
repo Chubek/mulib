@@ -15,11 +15,13 @@ fn basis_yaml_as_json(text: string) ->(i64, string)
   Json.destroy(doc);
   return result;
 }
+
 fn yaml_as_json(text: string) -> string
 {
   let(status, value) = basis_yaml_as_json(text);
   return value;
 }
+
 fn main()
 {
   assert(yaml_as_json("value: 42\n") == "{\"value\":42}");

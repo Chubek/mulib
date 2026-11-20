@@ -4,6 +4,7 @@ fn fallthrough()
 {
   let unused = json_parse_or_die("{}");
 }
+
 fn early(stop: bool) -> i64
 {
   let outer = json_parse_or_die("{}");
@@ -21,11 +22,13 @@ fn early(stop: bool) -> i64
   }
   return 2;
 }
+
 fn explicit_return()
 {
   let outer = json_parse_or_die("{}");
   return;
 }
+
 fn main()
 {
   fallthrough();

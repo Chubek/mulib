@@ -3,6 +3,7 @@ fn transform(tree: sexpr, label: string) -> sexpr
 {
   return tree;
 }
+
 fn main()
 {
   ppx_serve(ppx_schema_env(), transform);

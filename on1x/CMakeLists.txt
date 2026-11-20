@@ -671,7 +671,7 @@ if(BUILD_TESTING)
     add_executable(on1x_concurrency_hir_tests tests/test_concurrency.cpp)
     target_link_libraries(on1x_concurrency_hir_tests PRIVATE on1x_frontend)
     add_test(NAME on1x.concurrency_hir COMMAND on1x_concurrency_hir_tests)
-  set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules prelude libraries stdppx install mulib stdlib_extensions tty f64 unsigned_f32 numeric_limits)
+   set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules prelude libraries stdppx install mulib stdlib_extensions tty container_package f64 unsigned_f32 numeric_limits)
   if(ON1X_BUILD_NATIVE_PPX)
     list(APPEND _meta_tests luaembed)
     if(ON1X_BUILD_GRAMMAREMBED)
@@ -679,7 +679,7 @@ if(BUILD_TESTING)
     endif()
   endif()
      list(APPEND _meta_tests category control patterns value_loops nominal_adts cliche core_impl defer_errors concurrency stream_poll cancellation_deadlines taskgroup_within discovery)
-    list(APPEND _meta_tests kernel_imports project_driver enum_connective core_ref
+     list(APPEND _meta_tests kernel_imports project_driver enum_connective core_ref container_local container_shared
       literals_core owning_adt recursive_owning_adts type_checker_hardening)
    if(ON1X_HAS_FIRESTONE_REGEX)
      list(APPEND _meta_tests core_syntax_integration)
@@ -691,6 +691,29 @@ if(BUILD_TESTING)
    add_executable(on1x_core_ref_tests tests/test_core_ref.cpp)
    target_link_libraries(on1x_core_ref_tests PRIVATE on1x_frontend)
    add_test(NAME on1x.core_ref_hir COMMAND on1x_core_ref_tests)
+    add_executable(on1x_kernel_ipc_hir_tests tests/test_kernel_ipc_hir.cpp)
+    target_link_libraries(on1x_kernel_ipc_hir_tests PRIVATE on1x_frontend)
+     add_test(NAME on1x.kernel_ipc_hir COMMAND on1x_kernel_ipc_hir_tests
+       "${CMAKE_CURRENT_SOURCE_DIR}/examples/kernel/framed_pair.on1x")
+    add_executable(on1x_container_shared_hir_tests tests/test_container_shared_hir.cpp)
+    target_link_libraries(on1x_container_shared_hir_tests PRIVATE on1x_frontend)
+    add_test(NAME on1x.container_shared_hir COMMAND on1x_container_shared_hir_tests
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/container_shared/lifecycle.on1x"
+      "${CMAKE_CURRENT_SOURCE_DIR}/stdlib")
+    add_test(NAME on1x.container_native COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_container_native.py"
+      "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/container-native" ${_test_c_flags})
+     set_tests_properties(on1x.container_native PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 180)
+   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+     foreach(_pod_mode native namespace cgroup on1x)
+       add_test(NAME on1x.container_pod_${_pod_mode} COMMAND "${Python3_EXECUTABLE}"
+         "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_container_pod.py" "${_pod_mode}"
+         "${CMAKE_C_COMPILER}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/container-pod"
+         --on1xc "$<TARGET_FILE:on1xc>" ${_test_c_flags})
+       set_tests_properties(on1x.container_pod_${_pod_mode} PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 180)
+     endforeach()
+   endif()
   add_test(NAME on1x.stdppx_protocol COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/tests" -v)
   if(ON1X_WITH_EXOTRACT)
     add_test(NAME on1x.exotract COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exotract.py"
@@ -723,6 +746,11 @@ if(BUILD_TESTING)
       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-history-sdk" "${CMAKE_C_COMPILER}" ${_test_c_flags})
     set_tests_properties(on1x.kernel_history_sdk PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
+    add_test(NAME on1x.kernel_ipc_sdk COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_ipc_sdk.py"
+      "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-ipc-sdk"
+      "${CMAKE_C_COMPILER}" "${CMAKE_CXX_COMPILER}" ${_test_c_flags})
+    set_tests_properties(on1x.kernel_ipc_sdk PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
   endif()
   if(ON1X_WITH_NEROTYPICAL)
     list(APPEND _meta_tests type_safety)

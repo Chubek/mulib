@@ -37,7 +37,8 @@ assert coverage['clamp']['semantic_sidecar'] == 'clamp.exocontract.json'
 assert coverage['clamp']['sidecar_header_matches'] is True
 pretty = json.loads((t.root/'contracts-exoml/prettysexpr.exocontract.json').read_text())
 pretty_revision = 'sha256:'+hashlib.sha256((root/'include/mulib-prettysexpr.h').read_bytes()).hexdigest()
-assert coverage['prettysexpr']['sidecar_header_matches'] is (pretty['bundle_provenance']['revision'] == pretty_revision)
+assert coverage['prettysexpr']['sidecar_header_matches'] is True
+assert pretty['bundle_provenance']['revision'] == pretty_revision
 assert coverage['elvi-scrape']['archive_recipe'] == 'exoml-core'
 assert coverage['ipc-framed']['semantic_sidecar'] == 'sandbox/ipc-framed.exocontract.json'
 assert coverage['b+tree']['semantic_sidecar'] is None

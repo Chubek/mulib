@@ -107,10 +107,12 @@ fn fold_node(node: sexpr, path: sexpr) -> sexpr
   }
   return ppx_integer(ppx_i64_text(result), sexpr_nth(node, 4));
 }
+
 fn transform(tree: sexpr, label: string) -> sexpr
 {
   return visitor_rewrite(tree, fold_node);
 }
+
 fn main()
 {
   ppx_serve(ppx_schema_env(), transform);

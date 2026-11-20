@@ -46,6 +46,7 @@ fn control_node(node: sexpr, label: string) -> sexpr
     empty,
     location));
 }
+
 fn transform(tree: sexpr, label: string) -> sexpr
 {
   return visitor_rewrite(tree, fn(node: sexpr, path: sexpr) -> sexpr
@@ -53,6 +54,7 @@ fn transform(tree: sexpr, label: string) -> sexpr
     return control_node(node, label);
   });
 }
+
 fn main()
 {
   ppx_serve(ppx_schema_env(), transform);

@@ -3,16 +3,19 @@ fn ipc_empty() -> sexpr
 {
   return sx_nil();
 }
+
 fn ipc_send(messages: sexpr, message: sexpr) -> sexpr
 {
   basis_shape_list(messages);
   return sx_cons(message, messages);
 }
+
 fn ipc_has_message(messages: sexpr) -> bool
 {
   basis_shape_list(messages);
   return sx_kind(messages) == 3;
 }
+
 fn ipc_receive(messages: sexpr) ->(sexpr, sexpr)
 {
   basis_shape_list(messages);
@@ -22,4 +25,5 @@ fn ipc_receive(messages: sexpr) ->(sexpr, sexpr)
   }
   return (sx_head(messages), sx_tail(messages));
 }
+
 import "../base/shape.on1x";

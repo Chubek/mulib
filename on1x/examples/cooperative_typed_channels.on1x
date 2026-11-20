@@ -2,8 +2,7 @@
 # binds every declared sender first, then every declared receiver.
 record Packet
 {
-  sequence: u16,
-  accepted: bool
+  sequence: u16, accepted: bool
 }
 
 fn main()
@@ -15,52 +14,42 @@ fn main()
       payload: Packet, capacity: 2, mode: uni
     };
     let(tx0, tx1, rx0, rx1) = split pipe;
-
     match try_recv(rx0) with
     {
-      Empty(_) => println(0),
-      Closed(_) => println(- 1),
-      Value(_) => println(- 2)
+      Empty(_) => println(0), Closed(_) => println(- 1), Value(_) => println(- 2)
     };
-    match try_send(tx0, record<Packet>{sequence: 7u16, accepted: true}) with
+    match try_send(tx0, record < Packet >
     {
-      Sent(_) => println(1),
-      Closed(_) => println(- 3),
-      WouldBlock(_) => println(- 4)
-    };
-    match tx1 <- record<Packet>{sequence: 9u16, accepted: false} with
+      sequence: 7u16, accepted: true
+    }) with
     {
-      Ok(_) => println(2),
-      Err(_) => println(- 5)
+      Sent(_) => println(1), Closed(_) => println(- 3), WouldBlock(_) => println(- 4)
     };
-
+    match tx1 <- record < Packet >
+    {
+      sequence: 9u16, accepted: false
+    } with
+    {
+      Ok(_) => println(2), Err(_) => println(- 5)
+    };
     assert(close tx0);
     match try_recv(rx0) with
     {
-      Value(packet) => println(u16_to_bits(packet["sequence"])),
-      Empty(_) => println(- 6),
-      Closed(_) => println(- 7)
+      Value(packet) => println(u16_to_bits(packet["sequence"])), Empty(_) => println(- 6), Closed(_) => println(- 7)
     };
     match try_recv(rx1) with
     {
-      Value(packet) => println(u16_to_bits(packet["sequence"])),
-      Empty(_) => println(- 8),
-      Closed(_) => println(- 9)
+      Value(packet) => println(u16_to_bits(packet["sequence"])), Empty(_) => println(- 8), Closed(_) => println(- 9)
     };
     match try_recv(rx0) with
     {
-      Empty(_) => println(3),
-      Closed(_) => println(- 10),
-      Value(_) => println(- 11)
+      Empty(_) => println(3), Closed(_) => println(- 10), Value(_) => println(- 11)
     };
-
     assert(close tx1);
     assert(! close tx1);
     match try_recv(rx1) with
     {
-      Closed(_) => println(4),
-      Empty(_) => println(- 12),
-      Value(_) => println(- 13)
+      Closed(_) => println(4), Empty(_) => println(- 12), Value(_) => println(- 13)
     };
   }
 }

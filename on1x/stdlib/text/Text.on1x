@@ -5,10 +5,12 @@ fn basis_text_length(s: string) -> i64
 {
   return basis_string_size(s);
 }
+
 fn basis_text_concat(a: string, b: string) -> string
 {
   return basis_string_concat(a, b);
 }
+
 fn basis_text_substring(s: string, lo: i64, hi: i64) -> string
 {
   return text_slice(s, lo, hi);

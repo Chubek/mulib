@@ -8,11 +8,13 @@ fn grammar_fail(key: string)
 {
   tool_fail(on1x_grammar_message(key));
 }
+
 fn grammar_owned(attribute: sexpr, label: string) -> bool
 {
   return visitor_tag(attribute) == "Attribute" && sx_text(sexpr_nth(attribute,
     1)) == label;
 }
+
 fn grammar_string(text: string, at: sexpr) -> sexpr
 {
   if text_len(text) <= 2048
@@ -62,6 +64,7 @@ fn grammar_string(text: string, at: sexpr) -> sexpr
     at);
   return ppx_node("Call", ppx_list3(lambda, sx_nil(), at));
 }
+
 fn grammar_emit(marker: sexpr,
   attribute: sexpr,
   world: sexpr,
@@ -152,6 +155,7 @@ fn grammar_emit(marker: sexpr,
   });
   return (sexpr_nth(rewritten, 2), next);
 }
+
 fn transform(tree: sexpr, label: string) -> sexpr
 {
   var declarations = sexpr_nth(tree, 2);
@@ -224,6 +228,7 @@ fn transform(tree: sexpr, label: string) -> sexpr
   }
   return ppx_node("Unit", ppx_list2(sx_symbol("1"), functions));
 }
+
 fn main()
 {
   native_serve(transform);

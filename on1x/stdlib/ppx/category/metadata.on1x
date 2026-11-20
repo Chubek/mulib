@@ -9,6 +9,7 @@ fn ppx_category_bound(type: sexpr) -> sexpr
   }
   return type;
 }
+
 fn ppx_category_emit_metadata(protocol: sexpr) -> sexpr
 {
   var members = sx_nil();

@@ -9,6 +9,7 @@
 {
   return x * x;
 }
+
 fn main()
 {
   println(square(5));

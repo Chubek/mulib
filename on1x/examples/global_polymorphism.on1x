@@ -2,10 +2,12 @@ fn identity(x) -> _
 {
   return x;
 }
+
 fn apply(operation, value) -> _
 {
   return operation(value);
 }
+
 fn main()
 {
   println(identity(42));

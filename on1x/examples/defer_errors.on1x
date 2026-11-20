@@ -3,6 +3,7 @@ enum Result < T, E >
 {
   Ok(T), Err(E)
 }
+
 fn read(n: i64) -> Result < i64, u8 >
 {
   defer println(n);
@@ -12,12 +13,14 @@ fn read(n: i64) -> Result < i64, u8 >
   }
   return variant < Result < i64, u8 > > (Ok, n);
 }
+
 fn twice(n: i64) -> Result < i64, u8 >
 {
   defer println(99);
   let value = read(n)?;
   return variant < Result < i64, u8 > > (Ok, value * 2);
 }
+
 fn main()
 {
   for i in 0 .. 3

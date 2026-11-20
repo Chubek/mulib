@@ -7,10 +7,12 @@ fn basis_bool_array_new(n: i64, initial: bool) -> i64
   }
   return basis_array_array(n, 0);
 }
+
 fn basis_bool_array_sub(h: i64, i: i64) -> bool
 {
   return basis_array_sub(h, i) != 0;
 }
+
 fn basis_bool_array_update(h: i64, i: i64, value: bool)
 {
   if value

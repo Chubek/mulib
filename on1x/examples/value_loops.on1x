@@ -18,6 +18,7 @@ fn first_square(limit: i64) -> i64
     break with - 1;
   };
 }
+
 fn main()
 {
   println(first_square(10));

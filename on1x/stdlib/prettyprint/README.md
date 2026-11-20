@@ -80,6 +80,10 @@ general scalar adapter generator.
 [KernelBind discovery](../../docs/kernel-bind.md). The separate
 [`prettysexpr.exocontract.json`](../../contracts-exoml/prettysexpr.exocontract.json)
 describes the *canonical* parser and renderer, not this package's bridge.
+It pins the SHA-256 of the entire `mulib-prettysexpr.h` header; discovery
+rejects header drift even when the two C declarations are unchanged. The
+addition of `(verbatim ...)` changed that pin, not the ABI or the sidecar's
+unreviewed status.
 `make -f prettyprint.mk test-kernel-discovery` exercises the native import syntax,
 real CDecl and ExoML validation, the single-TU plan, and rejection of unsafe or
 unadmitted imports during normal compilation.

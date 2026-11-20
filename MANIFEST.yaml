@@ -2962,7 +2962,7 @@ modules:
   header: include/mulib-raytracing.h
   manual: manual/mulib-raytracing.md
   macro: MULIB_IMPL_RAYTRACING
-  purpose: CPU ray renderer with shadows, diffuse light and reflections.
+  purpose: CPU ray renderer with deterministic and seeded stochastic path integration.
   dependencies: [collision, glx]
   status: implemented
 - name: shaderx
@@ -3765,8 +3765,8 @@ modules:
   header: include/mulib-minimpeg.h
   manual: manual/mulib-minimpeg.md
   macro: MULIB_IMPL_MINIMPEG
-  purpose: Original MPEG-1 Layer III encoder and restricted long-block MP3 decoder.
-  dependencies: [audio]
+  purpose: Original MP3 codec and opt-in MPEG-1 video encoding and decoding.
+  dependencies: [audio, codec-core]
   status: implemented
 - name: minivorbis
   header: include/mulib-minivorbis.h
@@ -12031,10 +12031,10 @@ modules:
   validation: tests/run-graphics.sh; header compilation is not feature completeness.
 - name: glx-vulkan
   header: include/mulib-glx-vulkan.h
-  manual: manual/graphics-overlay.md
+  manual: manual/mulib-glx-vulkan.md
   implementation: static-inline
   status: bounded
-  purpose: Bounded glx-vulkan API; see documented scope and acceptance gates.
+  purpose: Optional native Vulkan devices and headless command submission.
   dependencies: [glx-core]
   example: examples/gfx-headless.c
   validation: tests/run-graphics.sh; header compilation is not feature completeness.
@@ -14342,7 +14342,7 @@ project_files:
 - file: examples/modules/linalg.c
   purpose: View and projection transformation with inverse roundtrip.
 - file: examples/modules/raytracing.c
-  purpose: Lit reflective sphere rendered to a PPM image.
+  purpose: Seeded path tracing of a lit reflective sphere into a PPM image.
 - file: examples/modules/shaderx.c
   purpose: Compile a ShaderX program to GLSL.
 - file: examples/modules/simdmath.c
@@ -14357,6 +14357,12 @@ project_files:
   purpose: Numerical transforms, hulls, SIMD and collision regression tests.
 - file: tests/test_graphics_render.c
   purpose: Surface blending, vector drawing, depth and ray shading regression tests.
+- file: tests/test_raytracing.c
+  purpose: Seeded path integration, antialiasing, linear and scissored output, and invalid input tests.
+- file: tests/raytracing-implementation.c
+  purpose: Separate C11 implementation translation unit for the path renderer tests.
+- file: tests/run-raytracing.sh
+  purpose: Strict device-free regression runner for legacy and stochastic raytracing.
 - file: tests/test_immgtk.c
   purpose: Mune widgets, capture, focus and frame lifecycle tests.
 - file: tests/test_simdmath_scalar.c
@@ -18135,3 +18141,17 @@ project_files:
   purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
 - file: tests/graphics/png-producer.c
   purpose: Bounded graphics contracts, device-free examples or regression infrastructure.
+- file: tests/graphics/vulkan-device.c
+  purpose: Live headless Vulkan device, command submission, and buffer readback regression.
+- file: tests/graphics/vulkan-legacy.c
+  purpose: Device-free Vulkan loader compatibility and argument handling regression.
+- file: tests/graphics/vulkan-compute.c
+  purpose: Real Vulkan compute pipeline and storage-buffer readback via resolved dispatch.
+- file: tests/graphics/vulkan-compute.comp
+  purpose: GLSL compute shader fixture for the optional Vulkan gate.
+- file: tests/run-vulkan.sh
+  purpose: Strict opt-in Vulkan loader and live headless device test runner.
+- file: tests/minimpeg-video.c
+  purpose: MPEG-1 video round trip, limits, malformed input, and disabled backend checks.
+- file: tests/check-minimpeg-video.py
+  purpose: MPEG-1 video interoperability with libmpeg2 and mjpegtools.

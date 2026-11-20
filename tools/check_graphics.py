@@ -44,7 +44,7 @@ def main():
     includes = ''.join('#include "' + h + '"\n' for h in sorted(headers, reverse=True))
     sources = sorted((ROOT / 'tests').glob('test_graphics_*.c'))
     sources += [ROOT / 'tests/test_immgtk.c', ROOT / 'tests/test_simdmath_scalar.c',
-                ROOT / 'tests/test_geosolve.c']
+                ROOT / 'tests/test_geosolve.c', ROOT / 'tests/test_raytracing.c']
     sources += [ROOT / 'examples/modules' / (m + '.c') for m in MODULES]
     parent = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None
     with tempfile.TemporaryDirectory(prefix='mulib-graphics-', dir=parent) as directory:
@@ -54,7 +54,10 @@ def main():
             case = work / source.stem
             case.mkdir()
             binary = case / 'run'
-            subprocess.run(cc + ['-std=c11'] + flags + [str(source), '-lm', '-ldl', '-o', str(binary)],
+            source_files = [str(source)]
+            if source.stem == 'test_raytracing':
+                source_files.append(str(ROOT / 'tests/raytracing-implementation.c'))
+            subprocess.run(cc + ['-std=c11'] + flags + source_files + ['-lm', '-ldl', '-o', str(binary)],
                            check=True, capture_output=True, text=True, timeout=180)
             arguments = [str(ROOT / 'library')] if source.stem in ('immgtk', 'test_immgtk') else []
             subprocess.run([str(binary)] + arguments, cwd=case, check=True,

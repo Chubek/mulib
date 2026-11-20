@@ -2,6 +2,7 @@ fn advance((x, (step, index)): (f64, (f64, i64))) ->(f64, (f64, i64))
 {
   return (x + step, (step, index + 1));
 }
+
 fn main()
 {
   var state = (0.0, (0.125, 0));

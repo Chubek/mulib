@@ -8,6 +8,7 @@ fn ppx_category_name(tokens: sexpr) ->(string, sexpr)
   }
   return (name, sx_tail(tokens));
 }
+
 fn ppx_category_scalar(name: string) -> sexpr
 {
   if name == "i64"
@@ -48,6 +49,7 @@ fn ppx_category_scalar(name: string) -> sexpr
   }
   return sx_nil();
 }
+
 fn ppx_category_type(tokens: sexpr, self: bool) ->(sexpr, sexpr)
 {
   let name = ppx_peek(tokens);
@@ -64,6 +66,7 @@ fn ppx_category_type(tokens: sexpr, self: bool) ->(sexpr, sexpr)
   }
   return (type, sx_tail(tokens));
 }
+
 fn ppx_category_precedence(op: string) -> i64
 {
   if op == "||"
@@ -92,6 +95,7 @@ fn ppx_category_precedence(op: string) -> i64
   }
   return 0;
 }
+
 fn ppx_category_expression(tokens: sexpr,
   minimum: i64,
   depth: i64) ->(sexpr,
@@ -230,6 +234,7 @@ fn ppx_category_expression(tokens: sexpr,
   }
   return (value, rest);
 }
+
 fn ppx_category_block(tokens: sexpr, depth: i64) ->(sexpr, sexpr)
 {
   if depth >= 32
@@ -332,6 +337,7 @@ fn ppx_category_block(tokens: sexpr, depth: i64) ->(sexpr, sexpr)
     ppx_expect(rest,
     "}"));
 }
+
 fn ppx_category_members(tokens: sexpr, abstract: bool) ->(sexpr, sexpr)
 {
   var rest = ppx_expect(tokens, "{");
@@ -420,6 +426,7 @@ fn ppx_category_members(tokens: sexpr, abstract: bool) ->(sexpr, sexpr)
   }
   return (sexpr_reverse(members), ppx_expect(rest, "}"));
 }
+
 fn ppx_category_parse_protocol(tokens: sexpr) ->(sexpr, sexpr)
 {
   let at = ppx_source_location(tokens);
@@ -428,6 +435,7 @@ fn ppx_category_parse_protocol(tokens: sexpr) ->(sexpr, sexpr)
   let(members, end) = ppx_category_members(rest, true);
   return (ppx_node("Protocol", ppx_list3(sx_string(name), members, at)), end);
 }
+
 fn ppx_category_parse_witness(tokens: sexpr) ->(sexpr, sexpr)
 {
   let at = ppx_source_location(tokens);

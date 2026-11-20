@@ -8,6 +8,7 @@ fn transform(packet: sexpr, label: string) -> sexpr
   }
   return ppx_category_expand(packet);
 }
+
 fn evidence(packet: sexpr, label: string) -> sexpr
 {
   if label != "Protocols"
@@ -16,6 +17,7 @@ fn evidence(packet: sexpr, label: string) -> sexpr
   }
   return ppx_category_make_evidence_plan(packet);
 }
+
 fn main()
 {
   let phase = tool_env("ON1X_EXTENSION_PHASE");

@@ -6,6 +6,7 @@ fn ppx_category_evidence_error(message: string)
 {
   tool_fail(text_concat("ON1X-CAT-EVIDENCE: ", message));
 }
+
 fn ppx_category_evidence_leaf(type: sexpr,
   argument: sexpr,
   result: bool) -> sexpr
@@ -30,6 +31,7 @@ fn ppx_category_evidence_leaf(type: sexpr,
   ppx_category_evidence_error("unsupported interface type");
   return sx_nil();
 }
+
 fn ppx_category_normalize_member(scheme: sexpr, arguments: sexpr) -> sexpr
 {
   if visitor_tag(scheme) != "ForallType"
@@ -72,6 +74,7 @@ fn ppx_category_normalize_member(scheme: sexpr, arguments: sexpr) -> sexpr
     argument,
     true)));
 }
+
 fn ppx_category_order(previous: string, name: string)
 {
   if name == "" || basis_string_compare(previous, name) >= 0
@@ -79,6 +82,7 @@ fn ppx_category_order(previous: string, name: string)
     ppx_category_evidence_error("duplicate or noncanonical declaration order");
   }
 }
+
 fn ppx_category_read_typed_facts(packet: sexpr) -> sexpr
 {
   ppx_validate_at(ppx_schema_env(), packet, "EvidenceInput", "$", 0, 0);
@@ -115,6 +119,7 @@ fn ppx_category_read_typed_facts(packet: sexpr) -> sexpr
   }
   return facts;
 }
+
 fn ppx_category_make_evidence_plan(packet: sexpr) -> sexpr
 {
   let facts = ppx_category_read_typed_facts(packet);

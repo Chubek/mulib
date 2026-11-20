@@ -21,11 +21,13 @@
   protocol Signal<Self> { fn tick() -> void; }
   impl Signal for bool { fn tick() -> void { println(7); } }
 }
+
 fn sample(value: i64) -> i64
 {
   println(value);
   return value;
 }
+
 fn main()
 {
   println(Ordered_i64_first(sample(9), sample(3)));

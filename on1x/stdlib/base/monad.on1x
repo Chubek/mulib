@@ -8,6 +8,7 @@ fn base_result_bind(result: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
   }
   return result;
 }
+
 fn base_result_map(result: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
 {
   if base_result_ok(result)

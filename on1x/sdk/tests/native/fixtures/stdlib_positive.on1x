@@ -1,5 +1,4 @@
 import std.sdk as SDK;
-
 fn main() -> i64
 {
   var code = 0u32;
@@ -9,8 +8,7 @@ fn main() -> i64
     assert(SDK.basis_sdk_status_code(status) == code);
     code = code + 1u32;
   }
-  assert(SDK.basis_sdk_status_code(
-    SDK.basis_sdk_status_from_v1(99u32)) == 1u32);
+  assert(SDK.basis_sdk_status_code(SDK.basis_sdk_status_from_v1(99u32)) == 1u32);
   while code <= 19u32
   {
     assert(SDK.basis_sdk_status_code(SDK.basis_sdk_status_from_v1(code)) == 1u32);
@@ -21,69 +19,53 @@ fn main() -> i64
   assert(SDK.basis_sdk_status_code(SDK.basis_sdk_status_from_code(code)) == 1u32);
   assert(SDK.basis_sdk_status_normalize(code) == 1u32);
   assert(SDK.basis_sdk_status_normalize(99u32) == 1u32);
-
-  let result: SDK.SDKResult < u32 > =
-    SDK.basis_sdk_result_value(42u32);
+  let result: SDK.SDKResult < u32 > = SDK.basis_sdk_result_value(42u32);
   assert(SDK.basis_sdk_result_is_value(result));
   match result with
   {
-    Value(value) => { assert(value == 42u32); },
-    Failure(_) => { assert(false); }
+    Value(value) =>
+    {
+      assert(value == 42u32);
+    }, Failure(_) =>
+    {
+      assert(false);
+    }
   };
-
   let bytes = record < SDK.SDKBytesView >
   {
-    context: 1u64,
-    handle: 4294967297u64,
-    revision: 7u64,
-    length: 4u64,
-    limit: 8u64
+    context: 1u64, handle: 4294967297u64, revision: 7u64, length: 4u64, limit: 8u64
   };
   let text = record < SDK.SDKTextView >
   {
-    bytes: bytes,
-    utf8_validated: true
+    bytes: bytes, utf8_validated: true
   };
   assert(SDK.basis_sdk_bytes_well_formed(bytes));
   assert(SDK.basis_sdk_text_well_formed(text));
-
   let primary = record < SDK.SDKSourceSpan >
   {
-    revision: 7u64,
-    start: 1u64,
-    end: 2u64
+    revision: 7u64, start: 1u64, end: 2u64
   };
   let related = record < SDK.SDKSourceSpan >
   {
-    revision: 7u64,
-    start: 0u64,
-    end: 1u64
+    revision: 7u64, start: 0u64, end: 1u64
   };
   let diagnostic = record < SDK.SDKDiagnostic >
   {
-    machine_code: 1001u32,
-    severity: 2u32,
-    message: 1u32,
-    message_length: 28u32,
-    primary: primary,
-    related_count: 1u32,
-    related: related
+    machine_code: 1001u32, severity: 2u32, message: 1u32, message_length: 28u32, primary: primary, related_count: 1u32, related: related
   };
   assert(SDK.basis_sdk_diagnostic_well_formed(diagnostic, 4u64));
-
   let metadata = record < SDK.SDKExtensionMetadata >
   {
-    schema: 1u32,
-    extension_id: 8u32,
-    version_major: 1u32,
-    version_minor: 0u32,
-    requested_capabilities: 3u64,
-    execution_profile: 1u32
+    schema: 1u32, extension_id: 8u32, version_major: 1u32, version_minor: 0u32, requested_capabilities: 3u64, execution_profile: 1u32
   };
   assert(SDK.basis_sdk_extension_metadata_well_formed(metadata));
-  assert(SDK.basis_sdk_capability_id(
-    variant < SDK.SDKCapability > (DiagnosticEmit, record {})) == 1u32);
-  assert(SDK.basis_sdk_capability_id(
-    variant < SDK.SDKCapability > (CandidateSubmit, record {})) == 2u32);
+  assert(SDK.basis_sdk_capability_id(variant < SDK.SDKCapability > (DiagnosticEmit,
+    record
+  {
+  })) == 1u32);
+  assert(SDK.basis_sdk_capability_id(variant < SDK.SDKCapability > (CandidateSubmit,
+    record
+  {
+  })) == 2u32);
   return 0;
 }

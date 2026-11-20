@@ -775,7 +775,11 @@ def stage_bytes(path, data):
 # are not part of the project-controlled package.
 STDLIB_RESOURCES = frozenset(map(Path, (
     'runtime/basis_native.c', 'runtime/basis_native.h', 'runtime/basis_real.c',
-    'prettyprint/runtime.c', 'prettyprint/runtime.h', 'mulib/On1xfile',
+    'prettyprint/runtime.c', 'prettyprint/runtime.h', 'tty/runtime.c', 'tty/runtime.h',
+    'container/runtime.c', 'container/runtime.h',
+    'container/shared.c', 'container/on1x_container_shared.h',
+    'container/pod_kernel.h', 'container/pod_runtime.c', 'container/pod_runtime.h',
+    'container/pod_worker.c', 'mulib/On1xfile',
 )))
 
 

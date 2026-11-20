@@ -26,6 +26,7 @@ fn checks_node(node: sexpr, label: string, wrapper: string) -> sexpr
     location));
   return ppx_call(wrapper, ppx_list1(comparison), location);
 }
+
 fn transform(tree: sexpr, label: string) -> sexpr
 {
   let(wrapper, serial) = ppx_fresh(tree, 0);
@@ -67,6 +68,7 @@ fn transform(tree: sexpr, label: string) -> sexpr
     sx_cons(definition,
     functions)));
 }
+
 fn main()
 {
   ppx_serve(ppx_schema_env(), transform);

@@ -11,26 +11,32 @@ fn basis_real_add(a: string, b: string) -> string
 {
   return basis_native_real_add(a, b);
 }
+
 fn basis_real_sub(a: string, b: string) -> string
 {
   return basis_native_real_sub(a, b);
 }
+
 fn basis_real_mul(a: string, b: string) -> string
 {
   return basis_native_real_mul(a, b);
 }
+
 fn basis_real_div(a: string, b: string) -> string
 {
   return basis_native_real_div(a, b);
 }
+
 fn basis_real_compare(a: string, b: string) -> i64
 {
   return basis_native_real_compare(a, b);
 }
+
 fn basis_real_neg(a: string) -> string
 {
   return basis_native_real_neg(a);
 }
+
 fn basis_real_abs(a: string) -> string
 {
   return basis_native_real_abs(a);

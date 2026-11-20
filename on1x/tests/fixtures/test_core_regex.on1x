@@ -3,19 +3,23 @@ fn checked_pattern() -> regex
   println(1);
   return /ll([a-z])/;
 }
+
 fn checked_text() -> string
 {
   println(2);
   return "llk";
 }
+
 fn matched(p: regex, s: string) -> bool
 {
   return match p ~ s;
 }
+
 fn group(c: captures, index: i64) -> string
 {
   return c[index];
 }
+
 fn main()
 {
   let match = 24;

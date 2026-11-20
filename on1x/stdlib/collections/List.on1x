@@ -4,22 +4,27 @@ fn basis_list_nil() -> sexpr
 {
   return sx_nil();
 }
+
 fn basis_list_cons(item: sexpr, rest: sexpr) -> sexpr
 {
   return sx_cons(item, rest);
 }
+
 fn basis_list_is_empty(xs: sexpr) -> bool
 {
   return sx_kind(xs) == 0;
 }
+
 fn basis_list_hd(xs: sexpr) -> sexpr
 {
   return sx_head(xs);
 }
+
 fn basis_list_tl(xs: sexpr) -> sexpr
 {
   return sx_tail(xs);
 }
+
 fn basis_list_length(xs: sexpr) -> i64
 {
   var rest = xs;
@@ -39,6 +44,7 @@ fn basis_list_length(xs: sexpr) -> i64
   }
   return count;
 }
+
 fn basis_list_rev(xs: sexpr) -> sexpr
 {
   var result = sx_nil();
@@ -54,6 +60,7 @@ fn basis_list_rev(xs: sexpr) -> sexpr
   }
   return result;
 }
+
 fn basis_list_nth(xs: sexpr, index: i64) -> sexpr
 {
   if index < 0
@@ -74,6 +81,7 @@ fn basis_list_nth(xs: sexpr, index: i64) -> sexpr
   tool_fail("list subscript");
   return sx_nil();
 }
+
 fn basis_list_append(a: sexpr, b: sexpr) -> sexpr
 {
   var rest = b;
@@ -85,6 +93,7 @@ fn basis_list_append(a: sexpr, b: sexpr) -> sexpr
   }
   return rest;
 }
+
 fn basis_list_take(xs: sexpr, n: i64) -> sexpr
 {
   if n < 0
@@ -104,6 +113,7 @@ fn basis_list_take(xs: sexpr, n: i64) -> sexpr
   }
   return basis_list_rev(out);
 }
+
 fn basis_list_drop(xs: sexpr, n: i64) -> sexpr
 {
   if n < 0
@@ -121,6 +131,7 @@ fn basis_list_drop(xs: sexpr, n: i64) -> sexpr
   }
   return rest;
 }
+
 fn basis_list_map(xs: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
 {
   var rev = sx_nil();
@@ -136,6 +147,7 @@ fn basis_list_map(xs: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
   }
   return basis_list_rev(rev);
 }
+
 fn basis_list_filter(xs: sexpr, p: fn(sexpr) -> bool) -> sexpr
 {
   var rev = sx_nil();
@@ -155,6 +167,7 @@ fn basis_list_filter(xs: sexpr, p: fn(sexpr) -> bool) -> sexpr
   }
   return basis_list_rev(rev);
 }
+
 fn basis_list_foldl(xs: sexpr,
   initial: sexpr,
   f: fn(sexpr,
@@ -173,6 +186,7 @@ fn basis_list_foldl(xs: sexpr,
   }
   return result;
 }
+
 fn basis_list_exists(xs: sexpr, p: fn(sexpr) -> bool) -> bool
 {
   var rest = xs;
@@ -190,6 +204,7 @@ fn basis_list_exists(xs: sexpr, p: fn(sexpr) -> bool) -> bool
   }
   return false;
 }
+
 fn basis_list_all(xs: sexpr, p: fn(sexpr) -> bool) -> bool
 {
   var rest = xs;
@@ -207,6 +222,7 @@ fn basis_list_all(xs: sexpr, p: fn(sexpr) -> bool) -> bool
   }
   return true;
 }
+
 fn basis_list_find(xs: sexpr, p: fn(sexpr) -> bool) ->(bool, sexpr)
 {
   var rest = xs;
@@ -225,6 +241,7 @@ fn basis_list_find(xs: sexpr, p: fn(sexpr) -> bool) ->(bool, sexpr)
   }
   return (false, sx_nil());
 }
+
 fn basis_list_tabulate(n: i64, f: fn(i64) -> sexpr) -> sexpr
 {
   if n < 0 || n > 262144
@@ -238,6 +255,7 @@ fn basis_list_tabulate(n: i64, f: fn(i64) -> sexpr) -> sexpr
   }
   return basis_list_rev(result);
 }
+
 fn basis_list_app(xs: sexpr, f: fn(sexpr) -> void)
 {
   var rest = xs;
@@ -251,6 +269,7 @@ fn basis_list_app(xs: sexpr, f: fn(sexpr) -> void)
     tool_fail("list is not proper");
   }
 }
+
 fn basis_list_foldr(xs: sexpr,
   initial: sexpr,
   f: fn(sexpr,
@@ -258,6 +277,7 @@ fn basis_list_foldr(xs: sexpr,
 {
   return basis_list_foldl(basis_list_rev(xs), initial, f);
 }
+
 fn basis_list_partition(xs: sexpr, p: fn(sexpr) -> bool) ->(sexpr, sexpr)
 {
   var yes = sx_nil();

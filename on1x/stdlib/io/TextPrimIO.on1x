@@ -3,6 +3,7 @@ fn basis_text_prim_read_all(path: string) -> string
 {
   return basis_text_io_input_all(path);
 }
+
 fn basis_text_prim_write(path: string, text: string) -> bool
 {
   return basis_text_io_output(path, text);

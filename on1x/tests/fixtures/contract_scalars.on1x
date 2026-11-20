@@ -4,16 +4,19 @@ fn mark_flag() -> bool
   println(1);
   return true;
 }
+
 fn mark_value() -> f64
 {
   println(2);
   return 1.5;
 }
+
 fn mark_count() -> i64
 {
   println(3);
   return 2;
 }
+
 fn main()
 {
   println(on1x_safe_contract_add(40, 2));

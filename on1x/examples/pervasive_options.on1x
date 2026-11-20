@@ -11,6 +11,7 @@ fn checked_half(value: i64) -> Result < i64, u8 >
   }
   return result_ok(value / 2);
 }
+
 fn answer(value: i64) -> Result < i64, u8 >
 {
   let half = checked_half(value)?;
@@ -20,6 +21,7 @@ fn answer(value: i64) -> Result < i64, u8 >
   });
   return result_ok(option_unwrap_or(adjusted, 0));
 }
+
 fn main()
 {
   match answer(82) with

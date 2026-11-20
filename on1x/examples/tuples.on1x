@@ -4,6 +4,7 @@ fn swap(pair) -> _
   let(first, second) = pair;
   return (second, first);
 }
+
 fn operations(amount) -> _
 {
   let add = fn(value) -> _
@@ -16,6 +17,7 @@ fn operations(amount) -> _
   };
   return (add, subtract);
 }
+
 fn main()
 {
   let(flag, answer): (bool, i64) = swap((42, true));

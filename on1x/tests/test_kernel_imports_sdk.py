@@ -145,7 +145,7 @@ with tempfile.TemporaryDirectory(dir=work) as directory:
     migrations = root/'tests/fixtures/kernel_migrations'
     for relative, name, exports in (
         ('data/ini.on1x', 'ini', ['mulib_ini_parse']),
-        ('prettyprint/render.on1x', 'prettysexpr', ['mulib_pretty_render_expr']),
+        ('prettyprint/render.on1x', 'prettysexpr', ['mulib_pretty_parse_expr', 'mulib_pretty_render_expr']),
         ('runtime/channel.on1x', 'channel', ['mulib_channel_create', 'mulib_channel_receive']),
         ('runtime/crypto.on1x', 'cryptohash', ['mulib_blake3', 'mulib_blake2s']),
         ('runtime/socket.on1x', 'socket', ['mulib_socket_pair', 'mulib_socket_receive']),
@@ -153,11 +153,30 @@ with tempfile.TemporaryDirectory(dir=work) as directory:
         report = directory/(name+'.json')
         p = run([*cmd, migrations/relative, '-o', report])
         assert p.returncode == 0, p
-        module = json.loads(report.read_bytes())['modules']['mulib.'+name]
+        data = json.loads(report.read_bytes())
+        module = data['modules']['mulib.'+name]
         assert module['exolib']['header_only']['implementation_translation_units'] == 1
         assert module['status'] == 'missing_review' and module['safe_export'] is False
         for symbol in exports:
             assert module['symbols'][symbol]['callable'] is False
+        if name == 'prettysexpr':
+            header = root.parent/'include/mulib-prettysexpr.h'
+            sidecar = root/'contracts-exoml/prettysexpr.exocontract.json'
+            graph = module['metadata']['cdecl']
+            contract = module['contract']
+            assert module['callable'] is False and module['sidecar'] == str(sidecar)
+            assert contract['library'] == name and contract['headers'] == [header.name]
+            provenance = contract['bundle_provenance']
+            assert provenance['header'] == header.name and provenance['review_status'] == 'unreviewed'
+            assert graph['header'] == str(header)
+            assert provenance['revision'] == graph['revision'] == 'sha256:'+hashlib.sha256(header.read_bytes()).hexdigest()
+            assert data['inputs'][str(sidecar)] == hashlib.sha256(sidecar.read_bytes()).hexdigest()
+            for function in contract['functions']:
+                assert function['provenance']['review_status'] == 'unreviewed'
+                decl = next(d for d in graph['declarations'] if d['name'] == function['c_name'])
+                assert decl['kind'] == 'function' and decl['source']['file'] == str(header) and not decl['definition']
+                assert [p['name'] for p in function['parameters']] == [p['name'] for p in decl['parameters']]
+            assert {function['c_name'] for function in contract['functions']} == set(exports)
 
     # Executable unsafe scalar profile. A separate C11 oracle uses the same
     # public prototypes and a separately compiled kernel implementation.
@@ -246,7 +265,14 @@ fn main(){
                                        'uint64_t mulib_clamp_add_i64 (int64_t a, int64_t b);')
             assert drifted != original
             target.write_text(drifted)
+        elif header.name == 'mulib-prettysexpr.h':
+            # Keep the same declarations, but deliberately violate the exact
+            # header pin in the unreviewed sidecar.
+            target.write_bytes(header.read_bytes()+b'\n')
         else:
             link_or_copy(header, target)
     p = run([*build_cmd, clamp, '--mulib-root', changed, '-o', missing])
     assert p.returncode == 1 and 'ON1X-KERNEL-ABI' in p.stderr and not missing.exists(), p
+    p = run([*cmd, migrations/'prettyprint/render.on1x', '--mulib-root', changed, '-o', missing])
+    assert p.returncode == 1 and 'ON1X-KERNEL-DISCOVERY: mismatched ExoML semantic sidecar' in p.stderr, p
+    assert not missing.exists()

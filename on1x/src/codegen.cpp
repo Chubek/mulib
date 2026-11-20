@@ -1,5 +1,6 @@
 #include <on1x/ast.hpp>
 #include <on1x/kernel.hpp>
+#include <on1x/container_shared.hpp>
 #include <on1x/extensions.hpp>
 #include <on1x/meta.hpp>
 #include <on1x/primitives.hpp>
@@ -76,7 +77,7 @@ class Generator {
  std::uint64_t serial=0,type_serial=0,helper_serial=0;
   int indent=0;
    bool uses_f64=false,uses_f32=false,uses_unsigned=false;
-    bool uses_value_data=false,uses_defer=false,uses_regex=false,uses_unique=false;
+    bool uses_value_data=false,uses_defer=false,uses_regex=false,uses_unique=false,uses_shared=false;
     bool ownership_cleanup=false;
      bool uses_csp=false,uses_group_deadlines=false;
      Type current_result=Type::Void;
@@ -439,7 +440,8 @@ class Generator {
    }
    return "&("+ref(source.text)+")";
   }
- void flatten(const Pattern& pattern,const Type& type,const std::string& value,std::vector<std::string>& args){
+#include "container_shared_emit.inc"
+  void flatten(const Pattern& pattern,const Type& type,const std::string& value,std::vector<std::string>& args){
   if(!pattern.is_tuple()){args.push_back(value);return;}
   auto root=unique("extern_pattern");
   definitions<<pad()<<"const "<<ctype(type)<<" *"<<root<<" = &("<<value<<");\n";
@@ -780,7 +782,9 @@ class Generator {
    }
    case Expr::Kind::Call:{
     const auto& callee=*e.callee;bool builtin=callee.reference==Expr::Reference::Intrinsic;
-    if(builtin&&callee.text=="format")return format_value(e,true);
+     if(builtin&&callee.text=="format")return format_value(e,true);
+     if(builtin)if(const auto* operation=shared_intrinsic(callee.text))
+      return emit_shared_call(*operation,e);
     if(builtin&&callee.text=="move")return expr(*e.children.at(0));
     if(builtin&&callee.text=="box"){
      const auto& child=*e.children.at(0);
@@ -803,14 +807,24 @@ class Generator {
      return {};
     }
      const auto* borrower=callee.reference==Expr::Reference::BorrowFunction?borrow_functions.at(callee.text):nullptr;
-    const bool foreign=callee.reference==Expr::Reference::Extern||callee.reference==Expr::Reference::UnsafeForeign||
-                       callee.reference==Expr::Reference::ScalarForeign;
+     const bool foreign=callee.reference==Expr::Reference::Extern||callee.reference==Expr::Reference::UnsafeForeign||
+                        callee.reference==Expr::Reference::ScalarForeign;
+     const auto ipc=callee.reference==Expr::Reference::UnsafeForeign?
+      std::string_view(externs.at(callee.text)->kernel_symbol):std::string_view{};
     bool direct=builtin||foreign||borrower;
     auto target=(foreign||borrower)?functions.at(callee.text):direct?callee.text:expr(callee);
      std::vector<std::string> args;
      std::vector<Owner> moved_args;
      for(std::size_t i=0;i<e.children.size();++i){
-    const auto& child=e.children[i];
+     const auto& child=e.children[i];
+      if(i==0&&ipc_kernel_session_loan(ipc)){
+       // The verified direct call holds an exclusive loan, not a transferred
+       // box. Snapshot the pointer in source order; do not track it as an owner.
+       auto loan=unique("ipc_loan");
+       definitions<<pad()<<"on1x_unique *const "<<loan<<" = "<<ref(child->text)<<";\n";
+       args.push_back(std::move(loan));
+       continue;
+      }
      if(borrower&&borrower->params[i].borrow!=BorrowMode::Value){
       // The verifier proved this is an initialized lexical place, and that
       // later arguments cannot conflict with it. No temporary or copy-back.
@@ -825,8 +839,41 @@ class Generator {
       else args.push_back(value);
       if(child->type.is_move_only())
        moved_args.push_back({child->type,value,{}});
-    }
-    if(uses_group_deadlines)cancellation_edge(e.where);
+     }
+     if(uses_group_deadlines)cancellation_edge(e.where);
+      if(ipc_kernel_symbol(ipc)){
+       const auto result=temp(e.type,"{0}");
+       const auto out=unique("ipc_out"),status=unique("ipc_status");
+       const bool opening=ipc_kernel_opening(ipc);
+       const bool transfers=ipc==ipc_kernel_roundtrip;
+       const bool output=opening||transfers||ipc==ipc_kernel_poll;
+       if(output)
+        definitions<<pad()<<(opening?"on1x_unique *":"int64_t ")<<out
+                   <<(opening?" = NULL;\n":" = 0;\n");
+       if(transfers)disarm_temporary(args.at(0));
+       definitions<<pad()<<"int64_t "<<status<<" = "<<target<<"(";
+       if(transfers){
+        // The adapter clears the source slot and destroys its owner BEFORE
+        // invoking On1x. The callback environment remains rooted by expr().
+        definitions<<"&"<<args[0]<<", "<<args[1]<<", "<<args[2]<<", "
+                   <<args[3]<<".invoke, "<<args[3]<<".environment, ";
+       }else if(ipc_kernel_session_loan(ipc)){
+        definitions<<args[0];
+        if(ipc==ipc_kernel_register)
+         definitions<<", "<<args[1]<<".invoke, "<<args[1]<<".environment";
+        else for(std::size_t i=1;i<args.size();++i)definitions<<", "<<args[i];
+        if(output)definitions<<", ";
+       }
+       if(output)definitions<<"&"<<out;
+       definitions<<");\n"
+                  <<pad()<<"if ("<<status<<" == 0) {\n"
+                  <<pad()<<"  "<<result<<".payload.element_1 = "<<(output?out:"INT64_C(0)")<<";\n"
+                 <<pad()<<"  "<<result<<".tag = INT64_C(1);\n"
+                 <<pad()<<"} else {\n"
+                 <<pad()<<"  "<<result<<".payload.element_0 = "<<status<<";\n"
+                 <<pad()<<"}\n";
+      return result;
+     }
     if((callee.reference==Expr::Reference::ScalarForeign||callee.reference==Expr::Reference::UnsafeForeign)&&
        clamp_interval_symbol(externs.at(callee.text)->kernel_symbol)){
      // All arguments are already evaluated once, in source order. Enforce
@@ -1206,12 +1253,14 @@ class Generator {
    explicit Generator(const Unit& source):unit(source),catalog(source){
    for(const auto& f:unit.functions)verify_kernel_shape(f);
    uses_csp=csp::present(unit);
-    for(const auto& f:unit.functions)if(f.external&&f.kernel_symbol.empty())identifiers.insert(f.name);
-    for(const auto& f:unit.functions)if(f.kernel_link_only)identifiers.insert("on1x_kernel_scalar_v1_"+f.kernel_symbol);
+     for(const auto& f:unit.functions)if(f.external&&f.kernel_symbol.empty())identifiers.insert(f.name);
+     for(const auto& f:unit.functions)if(f.kernel_link_only)identifiers.insert("on1x_kernel_scalar_v1_"+f.kernel_symbol);
+     for(const auto& f:unit.functions)if(ipc_kernel_symbol(f.kernel_symbol))identifiers.insert(f.kernel_symbol);
   for(const auto& f:unit.functions)if(f.external)externs.emplace(f.name,&f);
    for(const auto& f:unit.functions)
     if(!f.prototype&&takes_borrows(f))borrow_functions.emplace(f.name,&f);
-     for(const auto& f:unit.functions)functions.emplace(f.name,f.kernel_link_only?"on1x_kernel_scalar_v1_"+f.kernel_symbol:
+      for(const auto& f:unit.functions)functions.emplace(f.name,ipc_kernel_symbol(f.kernel_symbol)?f.kernel_symbol:
+       f.kernel_link_only?"on1x_kernel_scalar_v1_"+f.kernel_symbol:
       f.kernel_symbol.empty()&&f.external?f.name:reserve("on1x_fn_"+(f.name.starts_with("@")?f.name.substr(1):f.name)));
     for(const auto& declaration:unit.nominals)
      for(const auto& field:declaration.fields)
@@ -1224,10 +1273,14 @@ class Generator {
     }
     ownership_cleanup=uses_unique;
   }
-  std::string run(){
-    std::string kernel_headers;
-    for(const auto& f:unit.functions){
-     if(f.prototype)continue;
+   std::string run(){
+     std::string kernel_headers,ipc_header;
+     for(const auto& f:unit.functions){
+      if(f.prototype)continue;
+      if(ipc_kernel_symbol(f.kernel_symbol)){
+       ipc_header="#include <on1x_kernel_ipc.h>\n";
+       continue;
+      }
      if(f.kernel_link_only){
       prototypes<<"/* foreign: "<<f.kernel_symbol<<"; unresolved until KernelBind review and ABI gates */\n";
       if(history_kernel_symbol(f.kernel_symbol)){
@@ -1297,13 +1350,14 @@ class Generator {
     "#if !defined(ON1X_CLOSURE_ABI_VERSION) || ON1X_CLOSURE_ABI_VERSION != 1\n#error \"incompatible On1x closure runtime ABI\"\n#endif\n\n"
     "#if !defined(ON1X_DATA_ABI_VERSION) || ON1X_DATA_ABI_VERSION != 1\n#error \"incompatible On1x data runtime ABI\"\n#endif\n\n"
       +(uses_value_data?std::string("#if !defined(ON1X_VALUE_DATA_ABI_VERSION) || ON1X_VALUE_DATA_ABI_VERSION != 1\n#error \"incompatible On1x value data runtime ABI\"\n#endif\n\n"):std::string{})
-      +(uses_unique?std::string("#if !defined(ON1X_UNIQUE_ABI_VERSION) || ON1X_UNIQUE_ABI_VERSION != 1\n#error \"incompatible On1x unique ownership runtime ABI\"\n#endif\n\n"):std::string{})
+       +(uses_unique?std::string("#if !defined(ON1X_UNIQUE_ABI_VERSION) || ON1X_UNIQUE_ABI_VERSION != 1\n#error \"incompatible On1x unique ownership runtime ABI\"\n#endif\n\n"):std::string{})
+       +(uses_shared?std::string("#include <on1x_container_shared.h>\n#if ON1X_CONTAINER_SHARED_ABI_VERSION != 1\n#error \"incompatible On1x shared container runtime ABI\"\n#endif\n\n"):std::string{})
       +(uses_regex?std::string("#if !defined(ON1X_REGEX_ABI_VERSION) || ON1X_REGEX_ABI_VERSION != 1\n#error \"incompatible On1x regex runtime ABI\"\n#endif\n\n"):std::string{})
       +(uses_f32?std::string("#if !defined(ON1X_F32_ABI_VERSION) || ON1X_F32_ABI_VERSION != 1\n#error \"unsupported On1x f32 target or runtime ABI\"\n#endif\n"):std::string{})
       +(uses_unsigned?std::string("#if !defined(ON1X_UNSIGNED_ABI_VERSION) || ON1X_UNSIGNED_ABI_VERSION != 1\n#error \"incompatible On1x unsigned runtime ABI\"\n#endif\n"):std::string{})
        +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
           +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 5\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
-       +kernel_headers+float_guard+types.str()+"\n"+prototypes.str()+"\n"+value_helpers.str()+helpers.str()+definitions.str();
+        +kernel_headers+ipc_header+float_guard+types.str()+"\n"+prototypes.str()+"\n"+value_helpers.str()+helpers.str()+definitions.str();
  }
 };
 }

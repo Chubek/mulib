@@ -1,4 +1,4 @@
-# KernelBind: discovery and scalar C11 profiles
+# KernelBind: discovery and bounded C11 profiles
 
 On1x recognizes `import kernel mulib.histprice as History;` and
 `unsafe import kernel mulib.json;` as native, distinct import requests. `as` is
@@ -8,9 +8,10 @@ still an ordinary source import.
 
 Ordinary builds still reject imports during loading with
 `ON1X-KERNEL-NOT-ADMITTED` or `ON1X-KERNEL-UNSAFE-UNSUPPORTED`, including
-imports in dependencies. Two opt-in callable profiles exist: the original
-explicitly unsafe profile below and review-gated [scalar](kernel-review.md) and
-[numerical](kernel-numerics.md) profiles.
+imports in dependencies. Opt-in callable profiles include the explicitly unsafe
+clamp profile below, an [unsafe framed local transport](kernel-framed.md), and
+review-gated [scalar](kernel-review.md) and [numerical](kernel-numerics.md)
+profiles.
 Reviewed builds require an operator-selected independent Ed25519 review authority;
 the repository ships no production approval.
 
@@ -52,8 +53,10 @@ tail expression without a semicolon supplies the block's value; a tail followed 
 `;` is a statement, and a block without a tail evaluates to `void`. Local
 bindings are visible to the tail but not outside the block. Statements and
 the tail run in order. `return` still returns from the enclosing function;
-loop exits still target their enclosing lexical loop. No owner, borrow, or
-concurrency handle can be yielded across this boundary.
+loop exits still target their enclosing lexical loop. Clamp has no managed
+result. The separate framed profile can yield its move-only `Result` and take
+exclusive call-scoped session loans, but does not expose a foreign pointer,
+return a borrowed value, or project a concurrency handle.
 
 An unsafe block does not grant permission to its enclosing expression (for
 example, an unsafe argument does not authorize the outer call). A lambda does
@@ -130,8 +133,10 @@ See [staged stdlib migrations](../tests/fixtures/kernel_migrations/README.md)
 for proposed call sites and remaining ABI and ownership requirements.
 
 The eight [sandbox kernel profiles](kernel-sandbox.md) additionally provide
-declaration and archive evidence, but return `not_representable` and expose no
-safe or unsafe callable imports.
+declaration and archive evidence. Their canonical declarations return
+`not_representable` and are not callable. The separate
+[framed transport adapter](kernel-framed.md) does not change that discovery
+result or make sandbox APIs callable.
 The eight CDD modules are also discoverable as `mulib.cdd_catalogue`,
 `mulib.cdd_registry`, `mulib.cdd_schema`, `mulib.cdd_query`, `mulib.cdd_plan`,
 `mulib.cdd_resolve`, `mulib.cdd_execute`, and `mulib.cdd_diff`. These source names
@@ -174,5 +179,9 @@ contracts, tools and target. Production use still needs independently issued
 review: shipped sidecars are annotated, not approved. A
 sidecar `review_status` string or the legacy `admitted-extern` mechanism does not
 authorize a safe KernelBind import. The numerical path handles bounded
-immutable slices and specific record/enum/status shapes only. Money, owned
-handles, callbacks, and the full Shylock workflow remain unadmitted.
+immutable slices and specific record/enum/status shapes only. The explicit raw
+framed profile handles sealed owners, including a
+[reusable session](kernel-framed.md#reusable-session) with one retained scalar
+callback dispatched by explicit same-thread polling.
+Safe owned handles, general callback ABIs, Money and the full Shylock workflow
+remain unadmitted.

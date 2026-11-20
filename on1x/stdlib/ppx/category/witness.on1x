@@ -12,6 +12,7 @@ fn ppx_category_substitute(type: sexpr, concrete: sexpr) -> sexpr
   }
   return type;
 }
+
 fn ppx_category_collect_declarations(carriers: sexpr) ->(sexpr, sexpr)
 {
   var protocols = sx_nil();
@@ -91,6 +92,7 @@ fn ppx_category_collect_declarations(carriers: sexpr) ->(sexpr, sexpr)
   }
   return (protocols, sexpr_reverse(witnesses));
 }
+
 fn ppx_category_function(name: string,
   params: sexpr,
   result: sexpr,
@@ -105,6 +107,7 @@ fn ppx_category_function(name: string,
     sx_nil(),
     at)))));
 }
+
 fn ppx_category_fact(kind: string,
   name: string,
   identity: string,
@@ -117,6 +120,7 @@ fn ppx_category_fact(kind: string,
     sx_string(identity),
     at)));
 }
+
 fn ppx_category_expand(packet: sexpr) -> sexpr
 {
   if visitor_tag(packet) != "ModuleSyntax"

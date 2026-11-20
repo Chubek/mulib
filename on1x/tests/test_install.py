@@ -97,6 +97,23 @@ with tempfile.TemporaryDirectory(dir=t.work,prefix='install-') as temporary:
     assert p.returncode==0,p.stderr
     p=run([exe],cwd=base);assert p.returncode==0 and p.stdout=='42\n',p.stderr
     if sys.platform.startswith('linux'):
+        source.write_text('''import std.container.Box as B;
+import std.container.Tls as T;
+fn main() {
+  let answer = B.basis_box_new(42);
+  assert(T.basis_tls_i64_set(B.basis_box_into_inner(move(answer))));
+  println(match T.basis_tls_i64_current() with { Some(n) => n, None() => 0 });
+}
+''', encoding='ascii')
+        plan=base/'container-link.json'
+        p=run([sys.executable,library/'tools/on1x-build.py',source,'--on1xc',compiler,
+               '--mulib-root',t.root.parent,'--cc',t.cc,'-o',exe,'--mulib-plan',plan,
+               *[f'--cflag={flag}' for flag in t.flags]],env=env,cwd=base)
+        assert p.returncode==0,p.stderr
+        pins=json.loads(plan.read_text())['inputs']
+        assert str(library/'stdlib/container/runtime.c') in pins
+        assert str(library/'stdlib/container/runtime.h') in pins
+        p=run([exe],cwd=base,env=env);assert p.returncode==0 and p.stdout=='42\n',p
         project=base/'relocated-project'
         p=run([compiler,'init','--bin',project],cwd=base,env=env)
         assert p.returncode==0,p.stderr

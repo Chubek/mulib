@@ -42,7 +42,8 @@ printf 'PASS: %s standalone headers and combined C11 linkage\n' "$headers"
 tests=0
 for source in "$ROOT"/tests/test-gfx-*.c \
     "$ROOT/tests/gfx-immgtk-alloc.c" "$ROOT/tests/gfx-immgtk-link.c" \
-    "$ROOT/tests/gfx-immgtk-mune.c" "$ROOT/tests/gfx-drm-prime-no-cloexec.c"; do
+    "$ROOT/tests/gfx-immgtk-mune.c" "$ROOT/tests/gfx-drm-prime-no-cloexec.c" \
+    "$ROOT/tests/graphics/vulkan-legacy.c"; do
     [ -f "$source" ] || continue
     name=$(basename "$source" .c)
     # Keep multi-TU regressions real rather than textually including peers.

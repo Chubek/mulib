@@ -17,6 +17,7 @@ fn basis_listpair_zip(a: sexpr, b: sexpr) -> sexpr
   }
   return basis_list_rev(out);
 }
+
 fn basis_listpair_unzip(pairs: sexpr) ->(sexpr, sexpr)
 {
   var rest = pairs;
@@ -35,6 +36,7 @@ fn basis_listpair_unzip(pairs: sexpr) ->(sexpr, sexpr)
   }
   return (basis_list_rev(xs), basis_list_rev(ys));
 }
+
 fn basis_listpair_all(a: sexpr, b: sexpr, p: fn(sexpr, sexpr) -> bool) -> bool
 {
   var x = a;

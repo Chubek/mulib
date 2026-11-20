@@ -7,6 +7,7 @@ fn rename(node: sexpr, path: sexpr) -> sexpr
   }
   return node;
 }
+
 fn main()
 {
   let tree = sexpr_parse(io_stdin());

@@ -11,6 +11,7 @@ fn basis_bool_array2_new(rows: i64,
   }
   return basis_array2_new(rows, columns, 0);
 }
+
 fn basis_bool_array2_sub(view: (i64, i64, i64), row: i64, column: i64) -> bool
 {
   return basis_array2_sub(view, row, column) != 0;

@@ -2,6 +2,7 @@ fn swap((first, second)) -> _
 {
   return (second, first);
 }
+
 fn make((operation, value)) -> _
 {
   return fn() -> _
@@ -9,6 +10,7 @@ fn make((operation, value)) -> _
     return operation(value);
   };
 }
+
 fn main()
 {
   let(flag, number) = swap((42, true));

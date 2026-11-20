@@ -1,5 +1,5 @@
 /** @file mulib-minimpeg.h
- * @brief Original MPEG-1 Layer III encoder and restricted long-block decoder.
+ * @brief Original MPEG-1 Layer III audio and optional MPEG-1 video codecs.
  */
 #ifndef MULIB_MINIMPEG_H
 #define MULIB_MINIMPEG_H
@@ -22,6 +22,56 @@ mulib_audio_status_t mulib_minimpeg_encode (const mulib_audio_pcm_t *,
  * Output must be empty; failures preserve it. */
 mulib_audio_status_t mulib_minimpeg_decode (const void *, size_t,
     const mulib_audio_options_t *, mulib_audio_pcm_t *);
+
+/** Video works on a complete raw MPEG-1 elementary stream, not a container.
+ * Define MULIB_MINIMPEG_USE_LIBAVCODEC in the MULIB_IMPL_MINIMPEG translation
+ * unit to opt in; without it the video entry points report UNAVAILABLE. */
+typedef enum mulib_minimpeg_video_status {
+  MULIB_MINIMPEG_VIDEO_OK, MULIB_MINIMPEG_VIDEO_INVALID,
+  MULIB_MINIMPEG_VIDEO_FORMAT, MULIB_MINIMPEG_VIDEO_UNSUPPORTED,
+  MULIB_MINIMPEG_VIDEO_LIMIT, MULIB_MINIMPEG_VIDEO_MEMORY,
+  MULIB_MINIMPEG_VIDEO_UNAVAILABLE, MULIB_MINIMPEG_VIDEO_BACKEND
+} mulib_minimpeg_video_status_t;
+enum {
+  MULIB_MINIMPEG_VIDEO_ENCODER = 1, MULIB_MINIMPEG_VIDEO_DECODER = 2
+};
+/** Fixed, even dimensions (up to 768 x 576), with an exact MPEG-1 frame rate. */
+typedef struct mulib_minimpeg_video_format {
+  unsigned width, height, fps_num, fps_den;
+} mulib_minimpeg_video_format_t;
+/** Borrowed 8-bit Y, Cb, Cr planes in that order, top row first.
+ * Stride and accessible size are in bytes; Cb/Cr have half width and height. */
+typedef struct mulib_minimpeg_video_plane {
+  const unsigned char *data;
+  size_t stride, size;
+} mulib_minimpeg_video_plane_t;
+typedef struct mulib_minimpeg_video_frame {
+  mulib_minimpeg_video_plane_t planes[3];
+} mulib_minimpeg_video_frame_t;
+/** Zero for defaults: 4096 pictures, 64 MiB compressed, 64 MiB raw. */
+typedef struct mulib_minimpeg_video_limits {
+  size_t max_frames, max_stream_bytes, max_raw_bytes;
+} mulib_minimpeg_video_limits_t;
+/** Owning output: display-order frames, each packed as tight Y, Cb, Cr.
+ * Zero-initialize before decode; release with mulib_minimpeg_video_free. */
+typedef struct mulib_minimpeg_video_clip {
+  mulib_minimpeg_video_format_t format;
+  unsigned char *data;
+  size_t frames, frame_size, size;
+} mulib_minimpeg_video_clip_t;
+/** Bitmask of directions available in the linked software backend. */
+unsigned mulib_minimpeg_video_available (void);
+/** Encode a nonempty array of frame views. Output must be zero initialized;
+ * free it with mulib_audio_bytes_free. Failure leaves output unchanged. */
+mulib_minimpeg_video_status_t mulib_minimpeg_video_encode (
+    const mulib_minimpeg_video_format_t *, const mulib_minimpeg_video_frame_t *,
+    size_t frame_count, const mulib_minimpeg_video_limits_t *, mulib_audio_bytes_t *);
+/** Decode one fixed-format progressive I/P/B stream. Output must be zero
+ * initialized; failure leaves output unchanged. */
+mulib_minimpeg_video_status_t mulib_minimpeg_video_decode (
+    const void *, size_t, const mulib_minimpeg_video_limits_t *, mulib_minimpeg_video_clip_t *);
+/** Free and zero an owned decoded clip; NULL safe. */
+void mulib_minimpeg_video_free (mulib_minimpeg_video_clip_t *);
 #ifdef __cplusplus
 }
 #endif
@@ -257,4 +307,448 @@ mulib_audio_status_t mulib_minimpeg_decode (const void *data, size_t size, const
 done:
   free(t); mulib_audio_bytes_free(&pcm); return st;
 }
+
+void mulib_minimpeg_video_free (mulib_minimpeg_video_clip_t *clip)
+{
+  if(clip) { free(clip->data); memset(clip,0,sizeof(*clip)); }
+}
+
+#ifdef MULIB_MINIMPEG_USE_LIBAVCODEC
+#include "mulib-codec-core.h"
+#include <errno.h>
+#include <limits.h>
+#include <libavcodec/avcodec.h>
+#include <libavutil/error.h>
+
+#if LIBAVCODEC_VERSION_MAJOR < 59
+#error "MULIB_MINIMPEG_USE_LIBAVCODEC requires libavcodec 59 (FFmpeg 5) or newer"
+#endif
+
+enum { MULIB_MINIMPEG_VIDEO_MAX_WIDTH_ = 768, MULIB_MINIMPEG_VIDEO_MAX_HEIGHT_ = 576 };
+static const unsigned mulib_minimpeg_video_rates_[8][2]={
+  {24000,1001},{24,1},{25,1},{30000,1001},{30,1},{50,1},{60000,1001},{60,1}
+};
+
+static mulib_minimpeg_video_limits_t mulib_minimpeg_video_limits_ (
+    const mulib_minimpeg_video_limits_t *limits)
+{
+  mulib_minimpeg_video_limits_t l;
+  l.max_frames=limits && limits->max_frames ? limits->max_frames : 4096;
+  l.max_stream_bytes=limits && limits->max_stream_bytes ? limits->max_stream_bytes : 64UL*1024*1024;
+  /* The native parser takes a signed int length and may add SIMD padding. */
+  if(l.max_stream_bytes>INT_MAX-AV_INPUT_BUFFER_PADDING_SIZE)
+    l.max_stream_bytes=INT_MAX-AV_INPUT_BUFFER_PADDING_SIZE;
+  l.max_raw_bytes=limits && limits->max_raw_bytes ? limits->max_raw_bytes : 64UL*1024*1024;
+  return l;
+}
+
+static mulib_minimpeg_video_status_t mulib_minimpeg_video_shape_ (
+    const mulib_minimpeg_video_format_t *f, size_t *bytes)
+{
+  if(!f->width || !f->height || !f->fps_num || !f->fps_den)
+    return MULIB_MINIMPEG_VIDEO_INVALID;
+  if(f->width>MULIB_MINIMPEG_VIDEO_MAX_WIDTH_ || f->height>MULIB_MINIMPEG_VIDEO_MAX_HEIGHT_)
+    return MULIB_MINIMPEG_VIDEO_LIMIT;
+  if((f->width | f->height)&1) return MULIB_MINIMPEG_VIDEO_UNSUPPORTED;
+  *bytes=(size_t)f->width*f->height*3/2;
+  return MULIB_MINIMPEG_VIDEO_OK;
+}
+
+static mulib_minimpeg_video_status_t mulib_minimpeg_video_averror_ (int rc)
+{
+  if(rc==AVERROR(ENOMEM)) return MULIB_MINIMPEG_VIDEO_MEMORY;
+  if(rc==AVERROR_INVALIDDATA) return MULIB_MINIMPEG_VIDEO_FORMAT;
+  return MULIB_MINIMPEG_VIDEO_BACKEND;
+}
+
+static int mulib_minimpeg_video_has_parser_ (void)
+{
+  void *it=NULL;
+  const AVCodecParser *parser;
+  while((parser=av_parser_iterate(&it))) {
+    size_t i;
+    for(i=0;i<sizeof(parser->codec_ids)/sizeof(parser->codec_ids[0]);++i)
+      if(parser->codec_ids[i]==AV_CODEC_ID_MPEG1VIDEO) return 1;
+  }
+  return 0;
+}
+
+unsigned mulib_minimpeg_video_available (void)
+{
+  return (avcodec_find_encoder_by_name("mpeg1video") ? MULIB_MINIMPEG_VIDEO_ENCODER : 0u) |
+      (avcodec_find_decoder_by_name("mpeg1video") && mulib_minimpeg_video_has_parser_() ?
+          MULIB_MINIMPEG_VIDEO_DECODER : 0u);
+}
+
+static mulib_minimpeg_video_status_t mulib_minimpeg_video_append_ (
+    mulib_buffer_t *b, const void *p, size_t n, size_t limit)
+{
+  switch(mulib_codec_append(b,p,n,limit)) {
+  case MULIB_CODEC_OK: return MULIB_MINIMPEG_VIDEO_OK;
+  case MULIB_CODEC_ELIMIT: return MULIB_MINIMPEG_VIDEO_LIMIT;
+  case MULIB_CODEC_ENOMEM: return MULIB_MINIMPEG_VIDEO_MEMORY;
+  default: return MULIB_MINIMPEG_VIDEO_BACKEND;
+  }
+}
+
+/* Drain after each send, including the final NULL frame. */
+static mulib_minimpeg_video_status_t mulib_minimpeg_video_packets_ (
+    AVCodecContext *ctx, AVPacket *packet, const AVFrame *frame,
+    mulib_buffer_t *b, size_t limit)
+{
+  int rc=avcodec_send_frame(ctx,frame);
+  if(rc<0) return mulib_minimpeg_video_averror_(rc);
+  for(;;) {
+    mulib_minimpeg_video_status_t st;
+    rc=avcodec_receive_packet(ctx,packet);
+    if(rc==(frame ? AVERROR(EAGAIN) : AVERROR_EOF)) return MULIB_MINIMPEG_VIDEO_OK;
+    if(rc<0) return mulib_minimpeg_video_averror_(rc);
+    st=mulib_minimpeg_video_append_(b,packet->data,(size_t)packet->size,limit);
+    av_packet_unref(packet);
+    if(st) return st;
+  }
+}
+
+mulib_minimpeg_video_status_t mulib_minimpeg_video_encode (
+    const mulib_minimpeg_video_format_t *f, const mulib_minimpeg_video_frame_t *frames,
+    size_t count, const mulib_minimpeg_video_limits_t *limits, mulib_audio_bytes_t *out)
+{
+  static const unsigned char end[]={0,0,1,0xb7};
+  mulib_minimpeg_video_limits_t l=mulib_minimpeg_video_limits_(limits);
+  mulib_minimpeg_video_status_t st;
+  mulib_buffer_t b={0};
+  const AVCodec *codec;
+  AVCodecContext *ctx=NULL;
+  AVFrame *frame=NULL;
+  AVPacket *packet=NULL;
+  size_t frame_bytes, i;
+  unsigned p, rate;
+  int rc;
+  if(!f || !frames || !count || !out || out->data || out->size || out->capacity)
+    return MULIB_MINIMPEG_VIDEO_INVALID;
+  st=mulib_minimpeg_video_shape_(f,&frame_bytes);
+  if(st) return st;
+  for(rate=0;rate<8;++rate) {
+    if((uint64_t)f->fps_num*mulib_minimpeg_video_rates_[rate][1]==
+        (uint64_t)f->fps_den*mulib_minimpeg_video_rates_[rate][0]) break;
+  }
+  if(rate==8) return MULIB_MINIMPEG_VIDEO_UNSUPPORTED;
+  if(count>l.max_frames || count>l.max_raw_bytes/frame_bytes ||
+      count>SIZE_MAX/sizeof(*frames) || count>(uint64_t)INT64_MAX)
+    return MULIB_MINIMPEG_VIDEO_LIMIT;
+  for(i=0;i<count;++i) for(p=0;p<3;++p) {
+    const mulib_minimpeg_video_plane_t *src=&frames[i].planes[p];
+    unsigned w=f->width>>(p!=0), h=f->height>>(p!=0);
+    if(!src->data || src->stride<w || src->size<w ||
+        (h>1 && src->stride>(src->size-w)/(h-1))) return MULIB_MINIMPEG_VIDEO_INVALID;
+  }
+  codec=avcodec_find_encoder_by_name("mpeg1video");
+  if(!codec) return MULIB_MINIMPEG_VIDEO_UNAVAILABLE;
+  ctx=avcodec_alloc_context3(codec);
+  frame=av_frame_alloc();
+  packet=av_packet_alloc();
+  if(!ctx || !frame || !packet) { st=MULIB_MINIMPEG_VIDEO_MEMORY; goto done; }
+  ctx->width=(int)f->width;
+  ctx->height=(int)f->height;
+  ctx->pix_fmt=AV_PIX_FMT_YUV420P;
+  ctx->color_range=AVCOL_RANGE_MPEG;
+  ctx->framerate.num=(int)mulib_minimpeg_video_rates_[rate][0];
+  ctx->framerate.den=(int)mulib_minimpeg_video_rates_[rate][1];
+  ctx->time_base.num=ctx->framerate.den;
+  ctx->time_base.den=ctx->framerate.num;
+  ctx->sample_aspect_ratio.num=ctx->sample_aspect_ratio.den=1;
+  ctx->thread_count=1;
+  ctx->flags|=AV_CODEC_FLAG_QSCALE | AV_CODEC_FLAG_BITEXACT;
+  ctx->gop_size=12;
+  ctx->max_b_frames=0;
+  rc=avcodec_open2(ctx,codec,NULL);
+  if(rc<0) { st=mulib_minimpeg_video_averror_(rc); goto done; }
+  frame->format=ctx->pix_fmt;
+  frame->width=ctx->width;
+  frame->height=ctx->height;
+  frame->quality=3*FF_QP2LAMBDA;
+  rc=av_frame_get_buffer(frame,32);
+  if(rc<0) { st=mulib_minimpeg_video_averror_(rc); goto done; }
+  for(i=0;i<count;++i) {
+    rc=av_frame_make_writable(frame);
+    if(rc<0) { st=mulib_minimpeg_video_averror_(rc); goto done; }
+    frame->pts=(int64_t)i;
+    for(p=0;p<3;++p) {
+      const mulib_minimpeg_video_plane_t *src=&frames[i].planes[p];
+      unsigned w=f->width>>(p!=0), h=f->height>>(p!=0), y;
+      for(y=0;y<h;++y)
+        memcpy(frame->data[p]+y*(size_t)frame->linesize[p],src->data+y*src->stride,w);
+    }
+    st=mulib_minimpeg_video_packets_(ctx,packet,frame,&b,l.max_stream_bytes);
+    if(st) goto done;
+  }
+  st=mulib_minimpeg_video_packets_(ctx,packet,NULL,&b,l.max_stream_bytes);
+  if(st) goto done;
+  if(!b.length) { st=MULIB_MINIMPEG_VIDEO_BACKEND; goto done; }
+  if(b.length<sizeof(end) || memcmp(b.data+b.length-sizeof(end),end,sizeof(end)))
+    st=mulib_minimpeg_video_append_(&b,end,sizeof(end),l.max_stream_bytes);
+  if(!st) { out->data=b.data; out->size=b.length; out->capacity=b.capacity; b.data=NULL; }
+done:
+  free(b.data);
+  av_packet_free(&packet);
+  av_frame_free(&frame);
+  avcodec_free_context(&ctx);
+  return st;
+}
+
+static size_t mulib_minimpeg_video_start_ (const unsigned char *p, size_t n, size_t at)
+{
+  while(n-at>=3) {
+    if(!p[at] && !p[at+1] && p[at+2]==1) return at;
+    ++at;
+  }
+  return n;
+}
+
+static int mulib_minimpeg_video_sequence_ (mulib_codec_bits_t *b, mulib_minimpeg_video_format_t *f)
+{
+  uint32_t w,h,aspect,rate,bitrate,marker,v,load;
+  unsigned m,i;
+  if(!mulib_codec_get(b,12,&w) || !mulib_codec_get(b,12,&h) ||
+      !mulib_codec_get(b,4,&aspect) || !mulib_codec_get(b,4,&rate) ||
+      !mulib_codec_get(b,18,&bitrate) || !mulib_codec_get(b,1,&marker) ||
+      !mulib_codec_get(b,11,&v) || !w || !h || !aspect || aspect>=15 ||
+      !rate || rate>8 || !bitrate || !marker) return 0;
+  for(m=0;m<2;++m) {
+    if(!mulib_codec_get(b,1,&load)) return 0;
+    if(load) for(i=0;i<64;++i) if(!mulib_codec_get(b,8,&v) || !v) return 0;
+  }
+  f->width=w;
+  f->height=h;
+  f->fps_num=mulib_minimpeg_video_rates_[rate-1][0];
+  f->fps_den=mulib_minimpeg_video_rates_[rate-1][1];
+  return 1;
+}
+
+/* Validate the envelope before exposing it to the codec. The native parser
+ * and decoder still own packet boundaries, entropy decoding and reordering. */
+static mulib_minimpeg_video_status_t mulib_minimpeg_video_scan_ (
+    const unsigned char *p, size_t n, const mulib_minimpeg_video_limits_t *l,
+    mulib_minimpeg_video_clip_t *clip, size_t *payload)
+{
+  size_t at=0, next;
+  unsigned slice=0;
+  int picture=0, header_pending=1;
+  *payload=n;
+  if(n<4 || p[0] || p[1] || p[2]!=1 || p[3]!=0xb3) return MULIB_MINIMPEG_VIDEO_FORMAT;
+  while(at<n) {
+    unsigned code;
+    mulib_codec_bits_t bits={0};
+    uint32_t v,type;
+    if(n-at<4) return MULIB_MINIMPEG_VIDEO_FORMAT;
+    code=p[at+3];
+    next=mulib_minimpeg_video_start_(p,n,at+4);
+    bits.data=p+at+4;
+    bits.size=next-at-4;
+    if(code>=1 && code<=0xaf) {
+      unsigned rows=(clip->format.height+15)/16;
+      if(!picture || code<slice || code>rows || bits.size<2 ||
+          !mulib_codec_get(&bits,5,&v) || !v) return MULIB_MINIMPEG_VIDEO_FORMAT;
+      slice=code;
+    } else if(code!=0xb2) { /* user_data may sit between headers and slices */
+      if(picture && !slice) return MULIB_MINIMPEG_VIDEO_FORMAT;
+      picture=0;
+      slice=0;
+      switch(code) {
+      case 0xb3: {
+        mulib_minimpeg_video_format_t f;
+        size_t bytes;
+        mulib_minimpeg_video_status_t st;
+        if(!mulib_minimpeg_video_sequence_(&bits,&f)) return MULIB_MINIMPEG_VIDEO_FORMAT;
+        st=mulib_minimpeg_video_shape_(&f,&bytes);
+        if(st) return st;
+        if(clip->frame_size && (clip->format.width!=f.width || clip->format.height!=f.height ||
+            clip->format.fps_num!=f.fps_num || clip->format.fps_den!=f.fps_den))
+          return MULIB_MINIMPEG_VIDEO_UNSUPPORTED;
+        clip->format=f;
+        clip->frame_size=bytes;
+        header_pending=1;
+        break;
+      }
+      case 0xb8: /* group_start_code with a 27-bit time code/flags */
+        if(bits.size<4) return MULIB_MINIMPEG_VIDEO_FORMAT;
+        header_pending=1;
+        break;
+      case 0x00: /* temporal reference, picture coding type, VBV delay */
+        if(!mulib_codec_get(&bits,10,&v) || !mulib_codec_get(&bits,3,&type) ||
+            !mulib_codec_get(&bits,16,&v) || !type || type>=5)
+          return MULIB_MINIMPEG_VIDEO_FORMAT;
+        if(type==4) return MULIB_MINIMPEG_VIDEO_UNSUPPORTED;
+        if(!clip->frames && type!=1) return MULIB_MINIMPEG_VIDEO_FORMAT;
+        if(type>=2 && (!mulib_codec_get(&bits,4,&v) || !(v&7)))
+          return MULIB_MINIMPEG_VIDEO_FORMAT;
+        if(type==3 && (!mulib_codec_get(&bits,4,&v) || !(v&7)))
+          return MULIB_MINIMPEG_VIDEO_FORMAT;
+        do {
+          if(!mulib_codec_get(&bits,1,&v)) return MULIB_MINIMPEG_VIDEO_FORMAT;
+          if(!v) break;
+          if(!mulib_codec_get(&bits,8,&v)) return MULIB_MINIMPEG_VIDEO_FORMAT;
+        } while(1);
+        if(clip->frames>=l->max_frames || clip->frames>=l->max_raw_bytes/clip->frame_size)
+          return MULIB_MINIMPEG_VIDEO_LIMIT;
+        ++clip->frames;
+        picture=1;
+        header_pending=0;
+        break;
+      case 0xb7: /* sequence_end_code; only zero stuffing may follow. */
+        if(header_pending) return MULIB_MINIMPEG_VIDEO_FORMAT;
+        *payload=at;
+        for(at+=4;at<n;++at) if(p[at]) return MULIB_MINIMPEG_VIDEO_FORMAT;
+        next=n;
+        break;
+      case 0xb5: return MULIB_MINIMPEG_VIDEO_UNSUPPORTED; /* no MPEG-2 extensions */
+      default: return MULIB_MINIMPEG_VIDEO_FORMAT;
+      }
+    }
+    at=next;
+  }
+  if(header_pending || (picture && !slice)) return MULIB_MINIMPEG_VIDEO_FORMAT;
+  clip->size=clip->frames*clip->frame_size;
+  return MULIB_MINIMPEG_VIDEO_OK;
+}
+
+static enum AVPixelFormat mulib_minimpeg_video_pixfmt_ (
+    AVCodecContext *ctx, const enum AVPixelFormat *formats)
+{
+  (void)ctx;
+  for(;*formats!=AV_PIX_FMT_NONE;++formats) if(*formats==AV_PIX_FMT_YUV420P) return *formats;
+  return AV_PIX_FMT_NONE;
+}
+
+static mulib_minimpeg_video_status_t mulib_minimpeg_video_frames_ (
+    AVCodecContext *ctx, AVFrame *frame, const AVPacket *pkt,
+    const mulib_minimpeg_video_clip_t *clip, size_t *count)
+{
+  int rc=avcodec_send_packet(ctx,pkt);
+  if(rc<0) return mulib_minimpeg_video_averror_(rc);
+  for(;;) {
+    unsigned char *dst;
+    unsigned p;
+    rc=avcodec_receive_frame(ctx,frame);
+    if(rc==(pkt ? AVERROR(EAGAIN) : AVERROR_EOF)) return MULIB_MINIMPEG_VIDEO_OK;
+    if(rc<0) return mulib_minimpeg_video_averror_(rc);
+    if((frame->flags&AV_FRAME_FLAG_CORRUPT) || frame->decode_error_flags || *count>=clip->frames)
+      return MULIB_MINIMPEG_VIDEO_FORMAT;
+    if(frame->width!=(int)clip->format.width || frame->height!=(int)clip->format.height ||
+        frame->format!=AV_PIX_FMT_YUV420P) return MULIB_MINIMPEG_VIDEO_UNSUPPORTED;
+    dst=clip->data+*count*clip->frame_size;
+    for(p=0;p<3;++p) {
+      unsigned w=clip->format.width>>(p!=0), h=clip->format.height>>(p!=0), y;
+      if(!frame->data[p] || frame->linesize[p]<(int)w) return MULIB_MINIMPEG_VIDEO_BACKEND;
+      for(y=0;y<h;++y) {
+        memcpy(dst,frame->data[p]+y*(size_t)frame->linesize[p],w);
+        dst+=w;
+      }
+    }
+    ++*count;
+    av_frame_unref(frame);
+  }
+}
+
+mulib_minimpeg_video_status_t mulib_minimpeg_video_decode (
+    const void *data, size_t size, const mulib_minimpeg_video_limits_t *limits,
+    mulib_minimpeg_video_clip_t *out)
+{
+  const unsigned char *p=(const unsigned char *)data;
+  mulib_minimpeg_video_limits_t l=mulib_minimpeg_video_limits_(limits);
+  mulib_minimpeg_video_clip_t clip={0};
+  mulib_minimpeg_video_status_t st;
+  const AVCodec *codec;
+  AVCodecContext *ctx=NULL;
+  AVCodecParserContext *parser=NULL;
+  AVFrame *frame=NULL;
+  AVPacket *packet=NULL;
+  unsigned char *padded=NULL;
+  size_t at=0, count=0, packets=0;
+  int rc;
+  if(!out || out->data || out->frames || out->frame_size || out->size ||
+      out->format.width || out->format.height || out->format.fps_num || out->format.fps_den ||
+      (!data && size)) return MULIB_MINIMPEG_VIDEO_INVALID;
+  if(size>l.max_stream_bytes) return MULIB_MINIMPEG_VIDEO_LIMIT;
+  codec=avcodec_find_decoder_by_name("mpeg1video");
+  if(!codec || !mulib_minimpeg_video_has_parser_()) return MULIB_MINIMPEG_VIDEO_UNAVAILABLE;
+  /* Do not feed a terminal sequence_end_code to the strict slice decoder. */
+  st=mulib_minimpeg_video_scan_(p,size,&l,&clip,&size);
+  if(st) return st;
+  ctx=avcodec_alloc_context3(codec);
+  frame=av_frame_alloc();
+  packet=av_packet_alloc();
+  if(!ctx || !frame || !packet) { st=MULIB_MINIMPEG_VIDEO_MEMORY; goto done; }
+  parser=av_parser_init(AV_CODEC_ID_MPEG1VIDEO);
+  if(!parser) { st=MULIB_MINIMPEG_VIDEO_MEMORY; goto done; }
+  ctx->thread_count=1;
+  ctx->get_format=mulib_minimpeg_video_pixfmt_;
+  ctx->flags|=AV_CODEC_FLAG_BITEXACT;
+  ctx->err_recognition=AV_EF_BITSTREAM | AV_EF_BUFFER | AV_EF_EXPLODE;
+  /* Include headroom for aligned/coded surfaces; scan enforces exact geometry. */
+  ctx->max_pixels=(MULIB_MINIMPEG_VIDEO_MAX_WIDTH_+128)*(MULIB_MINIMPEG_VIDEO_MAX_HEIGHT_+128);
+  rc=avcodec_open2(ctx,codec,NULL);
+  if(rc<0) { st=mulib_minimpeg_video_averror_(rc); goto done; }
+  clip.data=(unsigned char *)malloc(clip.size);
+  padded=(unsigned char *)malloc(size+AV_INPUT_BUFFER_PADDING_SIZE);
+  if(!clip.data || !padded) { st=MULIB_MINIMPEG_VIDEO_MEMORY; goto done; }
+  memcpy(padded,p,size);
+  memset(padded+size,0,AV_INPUT_BUFFER_PADDING_SIZE);
+  for(;;) {
+    unsigned char *parsed=NULL;
+    int parsed_size=0;
+    rc=av_parser_parse2(parser,ctx,&parsed,&parsed_size,padded+at,
+        (int)(size-at),AV_NOPTS_VALUE,AV_NOPTS_VALUE,(int64_t)at);
+    if(rc<0) { st=mulib_minimpeg_video_averror_(rc); goto done; }
+    if((size_t)rc>size-at || parsed_size<0 || (size_t)parsed_size>size || (parsed_size && !parsed)) {
+      st=MULIB_MINIMPEG_VIDEO_BACKEND; goto done;
+    }
+    if(!rc && !parsed_size) {
+      if(at==size) break;
+      st=MULIB_MINIMPEG_VIDEO_FORMAT; goto done;
+    }
+    at+=(size_t)rc;
+    if(parsed_size) {
+      if(packets>=clip.frames) { st=MULIB_MINIMPEG_VIDEO_FORMAT; goto done; }
+      ++packets;
+      /* Parser output may alias the stream mid-buffer; give the decoder
+       * a reference-counted packet with its own zero padding. */
+      rc=av_new_packet(packet,parsed_size);
+      if(rc<0) { st=mulib_minimpeg_video_averror_(rc); goto done; }
+      memcpy(packet->data,parsed,(size_t)parsed_size);
+      st=mulib_minimpeg_video_frames_(ctx,frame,packet,&clip,&count);
+      av_packet_unref(packet);
+      if(st) goto done;
+    }
+  }
+  st=mulib_minimpeg_video_frames_(ctx,frame,NULL,&clip,&count);
+  if(!st && count!=clip.frames) st=MULIB_MINIMPEG_VIDEO_FORMAT;
+  if(!st) { *out=clip; clip.data=NULL; }
+done:
+  mulib_minimpeg_video_free(&clip);
+  av_packet_free(&packet);
+  av_frame_free(&frame);
+  if(parser) av_parser_close(parser);
+  avcodec_free_context(&ctx);
+  free(padded);
+  return st;
+}
+
+#else
+unsigned mulib_minimpeg_video_available (void) { return 0; }
+mulib_minimpeg_video_status_t mulib_minimpeg_video_encode (
+    const mulib_minimpeg_video_format_t *f, const mulib_minimpeg_video_frame_t *frames,
+    size_t count, const mulib_minimpeg_video_limits_t *limits, mulib_audio_bytes_t *out)
+{
+  (void)f; (void)frames; (void)count; (void)limits; (void)out;
+  return MULIB_MINIMPEG_VIDEO_UNAVAILABLE;
+}
+mulib_minimpeg_video_status_t mulib_minimpeg_video_decode (
+    const void *data, size_t size, const mulib_minimpeg_video_limits_t *limits,
+    mulib_minimpeg_video_clip_t *out)
+{
+  (void)data; (void)size; (void)limits; (void)out;
+  return MULIB_MINIMPEG_VIDEO_UNAVAILABLE;
+}
+#endif
 #endif

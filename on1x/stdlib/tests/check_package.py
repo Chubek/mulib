@@ -23,13 +23,18 @@ for module in modules:
         path=(module.parent/relative).resolve()
         assert path.is_file(),f'{module}: unresolved import {relative}'
         assert root in path.parents, f'{module}: import escapes basis root'
-    for symbol in re.findall(r'(?m)^\s*(?:extern\s+)?fn\s+([A-Za-z_]\w*)\(',source):
-        if symbol=='main':continue
-        if symbol in exported:raise AssertionError(f'duplicate {symbol}: {module}, {exported[symbol]}')
-        exported[symbol]=module
-    # lexical balance, ignoring On1x comments and strings
+    # Check top-level declarations only. A cliche's signature and its impl
+    # method intentionally repeat the member name, but neither is a module
+    # function. The actual compiler checks nested scopes and implementations.
     stack=[];quote=False;escaped=False
     for line in source.splitlines():
+        if not stack and not quote:
+            declaration=re.match(r'^\s*(?:extern\s+)?fn\s+([A-Za-z_]\w*)\s*[<(]',line)
+            if declaration:
+                symbol=declaration[1]
+                if symbol!='main':
+                    if symbol in exported:raise AssertionError(f'duplicate {symbol}: {module}, {exported[symbol]}')
+                    exported[symbol]=module
         for c in line:
             if quote:
                 if escaped:escaped=False

@@ -3,15 +3,18 @@ fn graph_empty() -> sexpr
 {
   return sx_nil();
 }
+
 fn graph_edge(source: string, target: string) -> sexpr
 {
   return sx_cons(sx_string(source), sx_cons(sx_string(target), sx_nil()));
 }
+
 fn graph_add(edges: sexpr, source: string, target: string) -> sexpr
 {
   basis_graph_validate(edges);
   return sx_cons(graph_edge(source, target), edges);
 }
+
 fn graph_has(edges: sexpr, source: string, target: string) -> bool
 {
   basis_graph_validate(edges);
@@ -27,6 +30,7 @@ fn graph_has(edges: sexpr, source: string, target: string) -> bool
   }
   return false;
 }
+
 fn graph_reverse(edges: sexpr) -> sexpr
 {
   basis_graph_validate(edges);
@@ -42,6 +46,7 @@ fn graph_reverse(edges: sexpr) -> sexpr
   }
   return result;
 }
+
 fn graph_out_degree(edges: sexpr, source: string) -> i64
 {
   basis_graph_validate(edges);
@@ -57,6 +62,7 @@ fn graph_out_degree(edges: sexpr, source: string) -> i64
   }
   return count;
 }
+
 import "../base/shape.on1x";
 fn basis_graph_validate(edges: sexpr)
 {

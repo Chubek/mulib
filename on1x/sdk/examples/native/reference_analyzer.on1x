@@ -11,111 +11,118 @@ import std.sdk.Extension as Extension;
 import std.sdk.Capability as Capability;
 import std.sdk.Lifecycle as Lifecycle;
 import std.sdk.Candidate as Output;
-
-fn basis_sdk_reference_close_with(
-  snapshot: Program.SDKProgramSnapshot, primary: u32) -> u32
+fn basis_sdk_reference_close_with(snapshot: Program.SDKProgramSnapshot,
+  primary: u32) -> u32
 {
   let cleanup = Program.basis_sdk_program_close(snapshot);
-  if cleanup != 0u32 { return 1u32; }
+  if cleanup != 0u32
+  {
+    return 1u32;
+  }
   return primary;
 }
 
 fn basis_sdk_reference_initialize(context: u64) -> u32
 {
   let negotiated = Lifecycle.basis_sdk_lifecycle_negotiate(context);
-  if negotiated != 0u32 { return negotiated; }
+  if negotiated != 0u32
+  {
+    return negotiated;
+  }
   let metadata = record < Extension.SDKExtensionMetadata >
   {
-    schema: 1u32,
-    extension_id: 8u32,
-    version_major: 1u32,
-    version_minor: 0u32,
-    requested_capabilities: 3u64,
-    execution_profile: 1u32
+    schema: 1u32, extension_id: 8u32, version_major: 1u32, version_minor: 0u32, requested_capabilities: 3u64, execution_profile: 1u32
   };
-  let registered =
-    Extension.basis_sdk_extension_register(context, metadata);
-  if registered != 0u32 { return registered; }
-  let activated = Lifecycle.basis_sdk_lifecycle_event(
-    context,
-    variant < Lifecycle.SDKLifecycleEvent > (Initialize, record {}));
+  let registered = Extension.basis_sdk_extension_register(context, metadata);
+  if registered != 0u32
+  {
+    return registered;
+  }
+  let activated = Lifecycle.basis_sdk_lifecycle_event(context,
+    variant < Lifecycle.SDKLifecycleEvent > (Initialize,
+    record
+  {
+  }));
   if activated != 0u32
   {
     let rollback = Extension.basis_sdk_extension_rollback(context);
-    if rollback != 0u32 { return 1u32; }
+    if rollback != 0u32
+    {
+      return 1u32;
+    }
     return activated;
   }
   return 0u32;
 }
 
-fn basis_sdk_reference_emit_finding(
-  snapshot: Program.SDKProgramSnapshot, index: u64) -> u32
+fn basis_sdk_reference_emit_finding(snapshot: Program.SDKProgramSnapshot,
+  index: u64) -> u32
 {
   let primary = record < Diagnostic.SDKSourceSpan >
   {
-    revision: snapshot["revision"],
-    start: index,
-    end: index + 1u64
+    revision: snapshot["revision"], start: index, end: index + 1u64
   };
   let unused_related = record < Diagnostic.SDKSourceSpan >
   {
-    revision: 0u64,
-    start: 0u64,
-    end: 0u64
+    revision: 0u64, start: 0u64, end: 0u64
   };
   let diagnostic = record < Diagnostic.SDKDiagnostic >
   {
-    machine_code: 1001u32,
-    severity: 2u32,
-    message: 1u32,
-    message_length: 28u32,
-    primary: primary,
-    related_count: 0u32,
-    related: unused_related
+    machine_code: 1001u32, severity: 2u32, message: 1u32, message_length: 28u32, primary: primary, related_count: 0u32, related: unused_related
   };
-  return Diagnostic.basis_sdk_diagnostic_emit(
-    snapshot["context"], snapshot["handle"], snapshot["length"], diagnostic);
+  return Diagnostic.basis_sdk_diagnostic_emit(snapshot["context"],
+    snapshot["handle"],
+    snapshot["length"],
+    diagnostic);
 }
 
-fn basis_sdk_reference_write_candidate(
-  candidate: Output.SDKCandidate, findings: u32) -> u32
+fn basis_sdk_reference_write_candidate(candidate: Output.SDKCandidate,
+  findings: u32) -> u32
 {
   var status = Output.basis_sdk_candidate_append(candidate, 79u8); # O
-  if status != 0u32 { return status; }
+  if status != 0u32
+  {
+    return status;
+  }
   status = Output.basis_sdk_candidate_append(candidate, 78u8); # N
-  if status != 0u32 { return status; }
+  if status != 0u32
+  {
+    return status;
+  }
   status = Output.basis_sdk_candidate_append(candidate, 49u8); # 1
-  if status != 0u32 { return status; }
+  if status != 0u32
+  {
+    return status;
+  }
   status = Output.basis_sdk_candidate_append(candidate, 88u8); # X
-  if status != 0u32 { return status; }
+  if status != 0u32
+  {
+    return status;
+  }
   status = Output.basis_sdk_candidate_append(candidate, 1u8); # schema
-  if status != 0u32 { return status; }
+  if status != 0u32
+  {
+    return status;
+  }
   return Output.basis_sdk_candidate_append(candidate, u8_from_u32(findings));
 }
 
-fn basis_sdk_reference_analyze_snapshot(
-  snapshot: Program.SDKProgramSnapshot) -> u32
+fn basis_sdk_reference_analyze_snapshot(snapshot: Program.SDKProgramSnapshot) -> u32
 {
   let bytes = record < Bounded.SDKBytesView >
   {
-    context: snapshot["context"],
-    handle: snapshot["handle"],
-    revision: snapshot["revision"],
-    length: snapshot["length"],
-    limit: snapshot["limit"]
+    context: snapshot["context"], handle: snapshot["handle"], revision: snapshot["revision"], length: snapshot["length"], limit: snapshot["limit"]
   };
   var index = 0u64;
   var findings = 0u32;
   while index < snapshot["length"]
   {
-    let budget =
-      Lifecycle.basis_sdk_budget_consume(snapshot["context"], 1u32);
+    let budget = Lifecycle.basis_sdk_budget_consume(snapshot["context"], 1u32);
     if budget != 0u32
     {
       return basis_sdk_reference_close_with(snapshot, budget);
     }
-    let cancelled =
-      Lifecycle.basis_sdk_cancellation_poll(snapshot["context"]);
+    let cancelled = Lifecycle.basis_sdk_cancellation_poll(snapshot["context"]);
     if cancelled != 0u32
     {
       return basis_sdk_reference_close_with(snapshot, cancelled);
@@ -133,52 +140,52 @@ fn basis_sdk_reference_analyze_snapshot(
           }
           findings = findings + 1u32;
         }
-      },
-      Failure(code) =>
+      }, Failure(code) =>
       {
         return basis_sdk_reference_close_with(snapshot, code);
       }
     };
     index = index + 1u64;
   }
-
-  let candidate_capability = Capability.basis_sdk_capability_check(
-    snapshot["context"],
-    variant < Capability.SDKCapability > (CandidateSubmit, record {}));
+  let candidate_capability = Capability.basis_sdk_capability_check(snapshot["context"],
+    variant < Capability.SDKCapability > (CandidateSubmit,
+    record
+  {
+  }));
   if candidate_capability != 0u32
   {
     return basis_sdk_reference_close_with(snapshot, candidate_capability);
   }
-  match Output.basis_sdk_candidate_open(
-    snapshot["context"], 1u32, snapshot["revision"], 6u32) with
+  match Output.basis_sdk_candidate_open(snapshot["context"],
+    1u32,
+    snapshot["revision"],
+    6u32) with
   {
     Candidate(candidate) =>
     {
       let written = basis_sdk_reference_write_candidate(candidate, findings);
       if written != 0u32
       {
-        let failed =
-          Output.basis_sdk_candidate_abort_preserving(candidate, written);
+        let failed = Output.basis_sdk_candidate_abort_preserving(candidate,
+          written);
         return basis_sdk_reference_close_with(snapshot, failed);
       }
-      let cancelled =
-        Lifecycle.basis_sdk_cancellation_poll(snapshot["context"]);
+      let cancelled = Lifecycle.basis_sdk_cancellation_poll(snapshot["context"]);
       if cancelled != 0u32
       {
-        let failed =
-          Output.basis_sdk_candidate_abort_preserving(candidate, cancelled);
+        let failed = Output.basis_sdk_candidate_abort_preserving(candidate,
+          cancelled);
         return basis_sdk_reference_close_with(snapshot, failed);
       }
       let committed = Output.basis_sdk_candidate_commit(candidate);
       if committed != 0u32
       {
-        let failed =
-          Output.basis_sdk_candidate_abort_preserving(candidate, committed);
+        let failed = Output.basis_sdk_candidate_abort_preserving(candidate,
+          committed);
         return basis_sdk_reference_close_with(snapshot, failed);
       }
       return basis_sdk_reference_close_with(snapshot, 0u32);
-    },
-    Failure(code) =>
+    }, Failure(code) =>
     {
       return basis_sdk_reference_close_with(snapshot, code);
     }
@@ -188,18 +195,25 @@ fn basis_sdk_reference_analyze_snapshot(
 fn basis_sdk_reference_analyze(context: u64) -> u32
 {
   let active = Lifecycle.basis_sdk_lifecycle_require_active(context);
-  if active != 0u32 { return active; }
-  let diagnostic_capability = Capability.basis_sdk_capability_check(
-    context,
-    variant < Capability.SDKCapability > (DiagnosticEmit, record {}));
-  if diagnostic_capability != 0u32 { return diagnostic_capability; }
+  if active != 0u32
+  {
+    return active;
+  }
+  let diagnostic_capability = Capability.basis_sdk_capability_check(context,
+    variant < Capability.SDKCapability > (DiagnosticEmit,
+    record
+  {
+  }));
+  if diagnostic_capability != 0u32
+  {
+    return diagnostic_capability;
+  }
   match Program.basis_sdk_program_open(context, 1u32, 64u64) with
   {
     Snapshot(snapshot) =>
     {
       return basis_sdk_reference_analyze_snapshot(snapshot);
-    },
-    Failure(code) =>
+    }, Failure(code) =>
     {
       return code;
     }
@@ -209,26 +223,24 @@ fn basis_sdk_reference_analyze(context: u64) -> u32
 fn basis_sdk_reference_handle_probe(context: u64) -> u32
 {
   let active = Lifecycle.basis_sdk_lifecycle_require_active(context);
-  if active != 0u32 { return active; }
+  if active != 0u32
+  {
+    return active;
+  }
   match Program.basis_sdk_program_open(context, 1u32, 64u64) with
   {
     Snapshot(snapshot) =>
     {
       let bytes = record < Bounded.SDKBytesView >
       {
-        context: snapshot["context"],
-        handle: snapshot["handle"],
-        revision: snapshot["revision"],
-        length: snapshot["length"],
-        limit: snapshot["limit"]
+        context: snapshot["context"], handle: snapshot["handle"], revision: snapshot["revision"], length: snapshot["length"], limit: snapshot["limit"]
       };
       match Bounded.basis_sdk_bytes_read(bytes, snapshot["length"]) with
       {
         Byte(_) =>
         {
           return basis_sdk_reference_close_with(snapshot, 1u32);
-        },
-        Failure(code) =>
+        }, Failure(code) =>
         {
           if code != 4u32
           {
@@ -238,11 +250,7 @@ fn basis_sdk_reference_handle_probe(context: u64) -> u32
       };
       let wrong_revision = record < Bounded.SDKBytesView >
       {
-        context: bytes["context"],
-        handle: bytes["handle"],
-        revision: bytes["revision"] + 1u64,
-        length: bytes["length"],
-        limit: bytes["limit"]
+        context: bytes["context"], handle: bytes["handle"], revision: bytes["revision"] + 1u64, length: bytes["length"], limit: bytes["limit"]
       };
       if snapshot["length"] != 0u64
       {
@@ -251,8 +259,7 @@ fn basis_sdk_reference_handle_probe(context: u64) -> u32
           Byte(_) =>
           {
             return basis_sdk_reference_close_with(snapshot, 1u32);
-          },
-          Failure(code) =>
+          }, Failure(code) =>
           {
             if code != 10u32
             {
@@ -262,17 +269,18 @@ fn basis_sdk_reference_handle_probe(context: u64) -> u32
         };
       }
       let closed = Program.basis_sdk_program_close(snapshot);
-      if closed != 0u32 { return closed; }
+      if closed != 0u32
+      {
+        return closed;
+      }
       let stale = Program.basis_sdk_program_check(snapshot);
-      if stale != 10u32 { return 1u32; }
+      if stale != 10u32
+      {
+        return 1u32;
+      }
       let forged = record < Program.SDKProgramSnapshot >
       {
-        context: snapshot["context"],
-        handle: snapshot["handle"] + 1u64,
-        revision: snapshot["revision"],
-        schema: snapshot["schema"],
-        length: snapshot["length"],
-        limit: snapshot["limit"]
+        context: snapshot["context"], handle: snapshot["handle"] + 1u64, revision: snapshot["revision"], schema: snapshot["schema"], length: snapshot["length"], limit: snapshot["limit"]
       };
       let rejected = Program.basis_sdk_program_check(forged);
       if rejected != 10u32 && rejected != 12u32
@@ -280,8 +288,7 @@ fn basis_sdk_reference_handle_probe(context: u64) -> u32
         return 1u32;
       }
       return 0u32;
-    },
-    Failure(code) =>
+    }, Failure(code) =>
     {
       return code;
     }
@@ -294,11 +301,13 @@ fn basis_sdk_reference_v1_status_probe() -> u32
   while code <= 7u32
   {
     let status = Status.basis_sdk_status_from_v1(code);
-    if Status.basis_sdk_status_code(status) != code { return 1u32; }
+    if Status.basis_sdk_status_code(status) != code
+    {
+      return 1u32;
+    }
     code = code + 1u32;
   }
-  if Status.basis_sdk_status_code(
-    Status.basis_sdk_status_from_v1(8u32)) != 1u32
+  if Status.basis_sdk_status_code(Status.basis_sdk_status_from_v1(8u32)) != 1u32
   {
     return 1u32;
   }
@@ -313,35 +322,26 @@ fn basis_sdk_reference_diagnostic_probe(context: u64) -> u32
     {
       let invalid_primary = record < Diagnostic.SDKSourceSpan >
       {
-        revision: snapshot["revision"],
-        start: snapshot["length"],
-        end: snapshot["length"] + 1u64
+        revision: snapshot["revision"], start: snapshot["length"], end: snapshot["length"] + 1u64
       };
       let related = record < Diagnostic.SDKSourceSpan >
       {
-        revision: snapshot["revision"],
-        start: 0u64,
-        end: 0u64
+        revision: snapshot["revision"], start: 0u64, end: 0u64
       };
       let invalid = record < Diagnostic.SDKDiagnostic >
       {
-        machine_code: 1001u32,
-        severity: 2u32,
-        message: 1u32,
-        message_length: 28u32,
-        primary: invalid_primary,
-        related_count: 0u32,
-        related: related
+        machine_code: 1001u32, severity: 2u32, message: 1u32, message_length: 28u32, primary: invalid_primary, related_count: 0u32, related: related
       };
-      let rejected = Diagnostic.basis_sdk_diagnostic_emit(
-        context, snapshot["handle"], snapshot["length"], invalid);
+      let rejected = Diagnostic.basis_sdk_diagnostic_emit(context,
+        snapshot["handle"],
+        snapshot["length"],
+        invalid);
       if rejected != 4u32
       {
         return basis_sdk_reference_close_with(snapshot, 1u32);
       }
       return basis_sdk_reference_close_with(snapshot, 0u32);
-    },
-    Failure(code) =>
+    }, Failure(code) =>
     {
       return code;
     }
@@ -350,18 +350,35 @@ fn basis_sdk_reference_diagnostic_probe(context: u64) -> u32
 
 fn basis_sdk_reference_shutdown(context: u64) -> u32
 {
-  return Lifecycle.basis_sdk_lifecycle_event(
-    context,
-    variant < Lifecycle.SDKLifecycleEvent > (Shutdown, record {}));
+  return Lifecycle.basis_sdk_lifecycle_event(context,
+    variant < Lifecycle.SDKLifecycleEvent > (Shutdown,
+    record
+  {
+  }));
 }
 
 fn basis_sdk_reference_extension(context: u64, operation: u32) -> u32
 {
-  if operation == 1u32 { return basis_sdk_reference_initialize(context); }
-  if operation == 2u32 { return basis_sdk_reference_analyze(context); }
-  if operation == 3u32 { return basis_sdk_reference_shutdown(context); }
-  if operation == 4u32 { return basis_sdk_reference_handle_probe(context); }
-  if operation == 5u32 { return basis_sdk_reference_v1_status_probe(); }
+  if operation == 1u32
+  {
+    return basis_sdk_reference_initialize(context);
+  }
+  if operation == 2u32
+  {
+    return basis_sdk_reference_analyze(context);
+  }
+  if operation == 3u32
+  {
+    return basis_sdk_reference_shutdown(context);
+  }
+  if operation == 4u32
+  {
+    return basis_sdk_reference_handle_probe(context);
+  }
+  if operation == 5u32
+  {
+    return basis_sdk_reference_v1_status_probe();
+  }
   if operation == 6u32
   {
     return basis_sdk_reference_diagnostic_probe(context);

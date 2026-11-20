@@ -7,11 +7,13 @@ fn visitor_tag(node: sexpr) -> string
   }
   return "";
 }
+
 # Paths are proper lists of zero-based natural-number symbols.
 fn visitor_child_path(reversed_path: sexpr, index: i64) -> sexpr
 {
   return sx_cons(sx_symbol(sexpr_nat(index)), reversed_path);
 }
+
 fn visitor_rewrite_at(node: sexpr,
   transform: fn(sexpr,
   sexpr) -> sexpr,
@@ -49,11 +51,13 @@ fn visitor_rewrite_at(node: sexpr,
   }
   return (transform(result, sexpr_reverse(path)), nodes);
 }
+
 fn visitor_rewrite(tree: sexpr, transform: fn(sexpr, sexpr) -> sexpr) -> sexpr
 {
   let(result, count) = visitor_rewrite_at(tree, transform, sx_nil(), 0, 0);
   return result;
 }
+
 fn visitor_walk_at(node: sexpr,
   visit: fn(sexpr,
   sexpr) -> void,
@@ -85,6 +89,7 @@ fn visitor_walk_at(node: sexpr,
   }
   return nodes;
 }
+
 fn visitor_walk(tree: sexpr, visit: fn(sexpr, sexpr) -> void)
 {
   visitor_walk_at(tree, visit, sx_nil(), 0, 0);

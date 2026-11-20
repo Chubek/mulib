@@ -51,11 +51,13 @@ fn basis_cvt_scan_int(s: string, start: i64) ->(bool, i64, i64)
   }
   return (true, - acc, i);
 }
+
 fn basis_cvt_int_from_string(s: string) ->(bool, i64)
 {
   let(ok, value, next) = basis_cvt_scan_int(s, 0);
   return (ok, value);
 }
+
 fn basis_cvt_int_to_string(x: i64) -> string
 {
   let backwards = buffer_new();

@@ -2,6 +2,7 @@
 #include <on1x/regex.hpp>
 #include <on1x/analysis.hpp>
 #include <on1x/kernel.hpp>
+#include <on1x/container_shared.hpp>
 #include <on1x/extensions.hpp>
 #include <on1x/infer.hpp>
 #include <on1x/meta.hpp>
@@ -54,7 +55,7 @@ std::vector<Type> extern_parameter_types(const Function& function){
 bool is_intrinsic_name(const std::string& name){
  static const std::set<std::string> names={"println","format","assert","json_parse_or_die","json_get_or_die","json_size","json_number","json_print",
                                           "box","move","take","drop"};
-  return names.contains(name)||data_primitive(name).has_value();
+   return names.contains(name)||shared_intrinsic(name)||data_primitive(name).has_value();
 }
 bool is_reserved_intrinsic_name(const std::string& name){
  // Ownership operations, like format, are fallback intrinsics rather than
@@ -260,8 +261,13 @@ class Checker {
   }
   fail(e.where,(call_position?"unknown function: ":"undefined variable: ")+e.text);
  }
-  Type check_intrinsic(Expr& e,const std::vector<Type>& arg){
-   const auto& n=e.callee->text;
+   Type check_intrinsic(Expr& e,const std::vector<Type>& arg){
+    const auto& n=e.callee->text;
+    if(const auto* op=shared_intrinsic(n)){
+     auto result=shared_signature(*op,e);
+     validate_type(result,e.where);
+     return e.type=std::move(result);
+    }
     auto arity=[&](std::size_t k){if(arg.size()!=k)fail(e.where,"wrong arity for "+n);};
      auto consume_local=[&](std::size_t index){
       auto& operand=*e.children.at(index);
@@ -274,6 +280,7 @@ class Checker {
     };
     if(n=="box"){
      arity(1);const auto& value=arg[0];
+      if(ipc_kernel_opaque_nominal(value.nominal()))ipc_kernel_opaque_error(e.where);
      if((value.kind()!=Type::Record&&value.kind()!=Type::Sum)||value.nominal().empty())
       fail(e.children[0]->where,"box(value) requires a nominal record or enum value");
      if(value.is_move_only()&&e.children[0]->kind==Expr::Kind::Variable)
@@ -295,6 +302,7 @@ class Checker {
     if(n=="take"){
      arity(1);
      if(!arg[0].is_own())fail(e.children[0]->where,"take(owner) requires own<Named>");
+     if(ipc_kernel_opaque_owner(arg[0]))ipc_kernel_opaque_error(e.where);
      consume_local(0);
      const auto& target=arg[0].owned();
      auto value=catalog.instantiate(target.nominal(),target.arguments(),e.where);
@@ -565,6 +573,7 @@ class Checker {
         ref_error(e.children[0]->where,"borrow requires a named local place");
        if(source==Type::Void||resource(source)||csp::contains(source))
         ref_error(e.where,"this value type cannot be borrowed in the lexical C11 profile");
+       if(ipc_kernel_opaque_owner(source))ipc_kernel_opaque_error(e.where);
        if(source.is_own()){
         const auto& target=source.owned();
         source=catalog.instantiate(target.nominal(),target.arguments(),e.where);
@@ -741,14 +750,20 @@ class Checker {
      if(builtin)return check_intrinsic(e,arg);
      const auto& n=callee.text;
      if(callable.parameters().size()!=arg.size())fail(e.where,"wrong number of arguments to "+(n.empty()?"function value":n));
-      const auto kernel=callee.reference==Expr::Reference::ScalarForeign?std::string_view(funcs.at(n)->kernel_symbol):std::string_view{};
-      for(size_t i=0;i<arg.size();++i){
-        if(kernel_span_argument(kernel,i)){
-        if(arg[i].kind()!=Type::Slice||arg[i].elements()!=std::vector<Type>{Type::F64}||arg[i].extent()>256)
+       const auto kernel=callee.reference==Expr::Reference::ScalarForeign||
+                         callee.reference==Expr::Reference::UnsafeForeign?
+                         std::string_view(funcs.at(n)->kernel_symbol):std::string_view{};
+       for(size_t i=0;i<arg.size();++i){
+          if(i==0&&ipc_kernel_session_loan(kernel)&&
+             (e.children[i]->kind!=Expr::Kind::Variable||e.children[i]->reference!=Expr::Reference::Local))
+           ref_error(e.children[i]->where,"framed session operation requires a named owner place");
+         if(kernel_span_argument(kernel,i)){
+         if(!kernel_span_type(arg[i]))
          fail(e.children[i]->where,"KernelBind requires a bounded slice<f64,N>");
         }else if(callee.reference==Expr::Reference::BorrowFunction&&
                  funcs.at(n)->params[i].borrow!=BorrowMode::Value){
          auto referent=arg[i];
+         if(ipc_kernel_opaque_owner(referent))ipc_kernel_opaque_error(e.children[i]->where);
          if(referent.is_own()){
           const auto& target=referent.owned();
           referent=catalog.instantiate(target.nominal(),target.arguments(),
@@ -774,7 +789,9 @@ class Checker {
      case Stmt::Kind::Defer:{
       if(!s.value||s.value->kind!=Expr::Kind::Call)fail(s.where,"defer requires a call expression");
        auto t=check_expr(*s.value);if(resource(t))fail(s.where,"defer cannot discard a JSON owner/view");
-        if(s.value->callee->reference==Expr::Reference::BorrowFunction)
+         if(s.value->callee->reference==Expr::Reference::BorrowFunction||
+            (s.value->callee->reference==Expr::Reference::UnsafeForeign&&
+             ipc_kernel_session_loan(funcs.at(s.value->callee->text)->kernel_symbol)))
          ref_error(s.where,"defer cannot retain a borrowed call");
        if(csp::contains(t))fail(s.where,"defer cannot retain concurrency handles");
        for(const auto& a:s.value->children)if(resource(a->type))fail(a->where,"defer cannot retain JSON owners/views");
@@ -867,9 +884,10 @@ class Checker {
      for(const auto& parameter:f.params)if(parameter.type.has_generics()&&!f.prototype)
       fail(parameter.where,"quantified types are only valid in local let prototypes");
     if(is_reserved_intrinsic_name(f.name))fail(f.where,"intrinsic name cannot be redefined: "+f.name);
-       const bool aggregate=history_kernel_symbol(f.kernel_symbol)||pricing_kernel_symbol(f.kernel_symbol);
+       const bool ipc=ipc_kernel_symbol(f.kernel_symbol);
+       const bool aggregate=ipc||history_kernel_symbol(f.kernel_symbol)||pricing_kernel_symbol(f.kernel_symbol);
        const bool foreign=f.external||f.kernel_link_only||!f.kernel_symbol.empty();
-       if(foreign&&f.result.contains_unique())
+       if(foreign&&!ipc&&f.result.contains_unique())
         fail(f.where,"unique ownership cannot cross a raw foreign return ABI");
       if(f.external&&!aggregate) {
      if(f.result.is_data())fail(f.where,"data-valued extern ABI requires reviewed aggregate adapters");
@@ -886,7 +904,7 @@ class Checker {
     validate_type(f.result,f.where);
     std::vector<Type> parameters;
        std::set<std::string> names;for(auto& p:f.params){if(!names.insert(p.name).second)fail(p.where,"duplicate parameter: "+p.name);
-        if(foreign&&p.type.contains_unique())
+        if(foreign&&!ipc&&p.type.contains_unique())
          fail(p.where,"unique ownership cannot cross a raw foreign parameter ABI");
         if(p.borrow!=BorrowMode::Value&&
            (f.external||f.extension_generated||p.pattern||f.name=="main"))
@@ -898,7 +916,7 @@ class Checker {
        if(f.external&&!aggregate&&p.type.is_data())fail(p.where,"data-valued extern ABI requires reviewed aggregate adapters");
       if(p.type==Type::Void||p.type==Type::Json||p.type==Type::JsonView)fail(p.where,"unsupported parameter type in this milestone");
       if(csp::contains(p.type))fail(p.where,"concurrency handles cannot cross ordinary function signatures");
-      if(f.external&&p.type.is_function())fail(p.where,"function-valued extern ABI is unsupported; callbacks require reviewed contracts");
+      if(f.external&&!ipc&&p.type.is_function())fail(p.where,"function-valued extern ABI is unsupported; callbacks require reviewed contracts");
       if(f.external&&(p.type.is_code()||p.type.is_reference()||p.type==Type::Regex||p.type==Type::RegexCaptures))fail(p.where,"runtime-managed extern ABI requires reviewed adapters");
       if(f.external&&p.type==Type::Char)fail(p.where,"char does not cross the raw extern ABI; use checked scalar conversion");
      if(f.external&&p.type.is_tuple()&&!p.pattern)fail(p.where,"tuple-valued extern ABI requires an explicit flattening pattern");

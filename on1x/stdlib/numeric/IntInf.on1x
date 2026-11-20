@@ -18,6 +18,7 @@ fn basis_intinf_is_nat(s: string) -> bool
   }
   return true;
 }
+
 fn basis_intinf_normalize_nat(s: string) -> string
 {
   if ! basis_intinf_is_nat(s)
@@ -31,6 +32,7 @@ fn basis_intinf_normalize_nat(s: string) -> string
   }
   return text_slice(s, i, text_len(s));
 }
+
 fn basis_intinf_compare_nat(a: string, b: string) -> i64
 {
   let x = basis_intinf_normalize_nat(a);
@@ -60,6 +62,7 @@ fn basis_intinf_compare_nat(a: string, b: string) -> i64
   }
   return 0;
 }
+
 fn basis_intinf_add_nat(a: string, b: string) -> string
 {
   let x = basis_intinf_normalize_nat(a);

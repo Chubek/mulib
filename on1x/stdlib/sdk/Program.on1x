@@ -1,18 +1,7 @@
-from ._Trusted import basis_sdk_bridge_snapshot_open,
-  basis_sdk_bridge_snapshot_check,
-  basis_sdk_bridge_snapshot_close,
-  basis_sdk_bridge_snapshot_revision,
-  basis_sdk_bridge_snapshot_length,
-  basis_sdk_bridge_snapshot_schema;
-
+from ._Trusted import basis_sdk_bridge_snapshot_open, basis_sdk_bridge_snapshot_check, basis_sdk_bridge_snapshot_close, basis_sdk_bridge_snapshot_revision, basis_sdk_bridge_snapshot_length, basis_sdk_bridge_snapshot_schema;
 record SDKProgramSnapshot
 {
-  context: u64,
-  handle: u64,
-  revision: u64,
-  schema: u32,
-  length: u64,
-  limit: u64
+  context: u64, handle: u64, revision: u64, schema: u32, length: u64, limit: u64
 }
 
 enum SDKProgramResult
@@ -20,11 +9,11 @@ enum SDKProgramResult
   Snapshot(SDKProgramSnapshot), Failure(u32)
 }
 
-fn basis_sdk_program_open(context: u64, schema: u32,
+fn basis_sdk_program_open(context: u64,
+  schema: u32,
   maximum_bytes: u64) -> SDKProgramResult
 {
-  if context == 0u64 || schema == 0u32 ||
-    maximum_bytes == 0u64 || maximum_bytes > 4096u64
+  if context == 0u64 || schema == 0u32 || maximum_bytes == 0u64 || maximum_bytes > 4096u64
   {
     return variant < SDKProgramResult > (Failure, 4u32);
   }
@@ -50,34 +39,24 @@ fn basis_sdk_program_open(context: u64, schema: u32,
     }
     return variant < SDKProgramResult > (Failure, 14u32);
   }
-  return variant < SDKProgramResult > (Snapshot,
-    record < SDKProgramSnapshot >
-    {
-      context: context,
-      handle: result,
-      revision: revision,
-      schema: actual_schema,
-      length: length,
-      limit: maximum_bytes
-    });
+  return variant < SDKProgramResult > (Snapshot, record < SDKProgramSnapshot >
+  {
+    context: context, handle: result, revision: revision, schema: actual_schema, length: length, limit: maximum_bytes
+  });
 }
 
 fn basis_sdk_program_check(snapshot: SDKProgramSnapshot) -> u32
 {
-  if snapshot["context"] == 0u64 ||
-    snapshot["handle"] == 0u64 ||
-    snapshot["revision"] == 0u64 ||
-    snapshot["schema"] == 0u32 ||
-    snapshot["length"] > snapshot["limit"]
+  if snapshot["context"] == 0u64 || snapshot["handle"] == 0u64 || snapshot["revision"] == 0u64 || snapshot["schema"] == 0u32 || snapshot["length"] > snapshot["limit"]
   {
     return 4u32;
   }
-  return basis_sdk_bridge_snapshot_check(
-    snapshot["context"], snapshot["handle"]);
+  return basis_sdk_bridge_snapshot_check(snapshot["context"],
+    snapshot["handle"]);
 }
 
 fn basis_sdk_program_close(snapshot: SDKProgramSnapshot) -> u32
 {
-  return basis_sdk_bridge_snapshot_close(
-    snapshot["context"], snapshot["handle"]);
+  return basis_sdk_bridge_snapshot_close(snapshot["context"],
+    snapshot["handle"]);
 }

@@ -10,6 +10,7 @@ fn factorial(n: i64) -> i64
     return n * factorial(n - 1);
   }
 }
+
 fn main()
 {
   var n = 0;

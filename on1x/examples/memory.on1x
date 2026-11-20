@@ -11,6 +11,7 @@ fn inspect(stop: bool) -> i64
   }
   return json_size(root);
 }
+
 fn main()
 {
   println(inspect(true));

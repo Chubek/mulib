@@ -61,6 +61,7 @@ on1x/stdlib/
   core/              General Bool
   numeric/           Int, Word8, Real/Math bridges, widths, IntInf natural adapter
   collections/       Option, List, ListPair, Array, Vector and mono adapters
+  container/         checked owners, lexical mutation and scoped native adapters
   text/              String, Char, Substring, StringCvt, Text, Byte
   io/                TextIO, BinIO and primitive facade
   os/                OS.Path, OS.FileSys, OS.Process, OS.IO, CommandLine
@@ -140,6 +141,35 @@ preserving every compatibility status.
 
 `on1x.stdlib_extensions` and the two additional pure-library smoke programs are
 part of CTest. Commands and verification results are in [VERIFICATION.md](VERIFICATION.md).
+
+## Ownership and scoped containers
+
+[`Box`, `Cell`, `Local`, `Quarantine`, and the legacy `Rc.RcSExpr`](container/LOCAL.md)
+use the language's [finite owners](../docs/recursive-owning-adts.md) and
+[checked lexical borrows](../docs/core-references.md). `RcSExpr` retains
+immutable `sexpr` graphs. For example:
+
+```on1x
+import std.container.Box as B;
+fn main() {
+    let owner = B.basis_box_new(42);
+    println(B.basis_box_into_inner(move(owner)));
+}
+```
+
+[`std.container.Tls` and `Foreign`](container/NATIVE.md) add Linux
+native-thread storage and a scoped single-byte file operation. The build
+helper links their C companion from the selected standard library. These are
+trusted native adapters, not independently admitted KernelBind imports.
+
+[`Rc`, `Arc`, and `RefCell`](container/SHARED.md) provide checked strong
+ownership of admitted payloads and local dynamic borrow guards. Arc also
+provides a bounded native byte-count operation; it does not let On1x values
+or callbacks cross threads generally.
+
+[`Pod`](container/POD.md) runs a fixed, supervised Linux byte-echo worker only
+when authorized by the build operator. Namespace and cgroup constraints are
+optional host profiles, not general-purpose container hosting.
 
 See [INSTALL.md](INSTALL.md), [COMPATIBILITY.md](COMPATIBILITY.md),
 [AGENTS.md](AGENTS.md), and [CATALOG.json](CATALOG.json).

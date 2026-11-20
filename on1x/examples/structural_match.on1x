@@ -17,6 +17,7 @@ fn score(input: sum
     }) => 0
   };
 }
+
 fn main()
 {
   println(score(variant < sum

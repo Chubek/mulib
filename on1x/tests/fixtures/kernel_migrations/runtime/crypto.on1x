@@ -7,6 +7,7 @@ fn basis_crypto_blake3(text: string) ->(i64, string)
   }
   return Hash.blake3_hex(text);
 }
+
 fn basis_crypto_blake2s(text: string) ->(i64, string)
 {
   if text_len(text) > 2097152
@@ -15,16 +16,19 @@ fn basis_crypto_blake2s(text: string) ->(i64, string)
   }
   return Hash.blake2s_hex(text);
 }
+
 fn crypto_blake3(text: string) -> string
 {
   let(status, value) = basis_crypto_blake3(text);
   return value;
 }
+
 fn crypto_blake2s(text: string) -> string
 {
   let(status, value) = basis_crypto_blake2s(text);
   return value;
 }
+
 fn main()
 {
   assert(crypto_blake3("") == "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262");

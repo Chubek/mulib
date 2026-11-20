@@ -3,10 +3,12 @@ fn base_none() -> sexpr
 {
   return sx_nil();
 }
+
 fn base_some(value: sexpr) -> sexpr
 {
   return sx_cons(sx_symbol("some"), sx_cons(value, sx_nil()));
 }
+
 fn base_is_some(value: sexpr) -> bool
 {
   if sx_kind(value) == 0
@@ -21,6 +23,7 @@ fn base_is_some(value: sexpr) -> bool
   }
   return true;
 }
+
 fn base_option_get(value: sexpr) -> sexpr
 {
   if ! base_is_some(value)
@@ -29,6 +32,7 @@ fn base_option_get(value: sexpr) -> sexpr
   }
   return sx_head(sx_tail(value));
 }
+
 fn basis_base_option_map(value: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
 {
   if ! base_is_some(value)
@@ -37,4 +41,5 @@ fn basis_base_option_map(value: sexpr, f: fn(sexpr) -> sexpr) -> sexpr
   }
   return base_some(f(base_option_get(value)));
 }
+
 import "shape.on1x";

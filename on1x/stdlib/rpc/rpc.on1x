@@ -25,6 +25,7 @@ fn rpc_escape(text: string) -> string
   }
   return buffer_text(out);
 }
+
 fn rpc_notification(method: string, raw_params: string) -> string
 {
   let prefix = "{\"jsonrpc\":\"2.0\",\"method\":\"";

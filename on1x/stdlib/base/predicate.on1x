@@ -2,10 +2,12 @@ fn base_not(pred: fn(i64) -> bool, n: i64) -> bool
 {
   return ! pred(n);
 }
+
 fn base_both(a: fn(i64) -> bool, b: fn(i64) -> bool, n: i64) -> bool
 {
   return a(n) && b(n);
 }
+
 fn base_either(a: fn(i64) -> bool, b: fn(i64) -> bool, n: i64) -> bool
 {
   return a(n) || b(n);

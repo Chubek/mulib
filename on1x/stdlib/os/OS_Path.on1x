@@ -3,6 +3,7 @@ fn basis_path_is_absolute(path: string) -> bool
 {
   return text_len(path) > 0 && text_byte(path, 0) == 47;
 }
+
 fn basis_path_join(base: string, name: string) -> string
 {
   if basis_path_is_absolute(name)
@@ -19,6 +20,7 @@ fn basis_path_join(base: string, name: string) -> string
   }
   return text_concat(text_concat(base, "/"), name);
 }
+
 fn basis_path_dir(path: string) -> string
 {
   var i = text_len(path);
@@ -36,6 +38,7 @@ fn basis_path_dir(path: string) -> string
   }
   return ".";
 }
+
 fn basis_path_base(path: string) -> string
 {
   var i = text_len(path);
@@ -49,6 +52,7 @@ fn basis_path_base(path: string) -> string
   }
   return path;
 }
+
 fn basis_path_extension(path: string) -> string
 {
   let basename = basis_path_base(path);

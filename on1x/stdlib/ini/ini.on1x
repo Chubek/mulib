@@ -9,13 +9,16 @@ fn ini_has(source: string, section: string, key: string) -> bool
 {
   return on1x_mulib_ini_has(source, section, key);
 }
+
 fn ini_get(source: string, section: string, key: string) -> string
 {
   return on1x_mulib_ini_get(source, section, key);
 }
+
 fn basis_ini_get(source: string, section: string, key: string) ->(i64, string)
 {
   let value = on1x_mulib_ini_get(source, section, key);
   return (on1x_mulib_bridge_status(), value);
 }
+
 import "../_bridge/status.on1x";

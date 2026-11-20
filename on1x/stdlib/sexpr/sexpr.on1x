@@ -3,6 +3,7 @@ fn sexpr_list(value: sexpr) -> bool
 {
   return sx_kind(value) == 0 || sx_kind(value) == 3;
 }
+
 fn sexpr_reverse(values: sexpr) -> sexpr
 {
   var rest = values;
@@ -14,6 +15,7 @@ fn sexpr_reverse(values: sexpr) -> sexpr
   }
   return result;
 }
+
 fn sexpr_size(values: sexpr) -> i64
 {
   var rest = values;
@@ -33,6 +35,7 @@ fn sexpr_size(values: sexpr) -> i64
   }
   return count;
 }
+
 fn sexpr_nth(values: sexpr, index: i64) -> sexpr
 {
   if index < 0
@@ -46,6 +49,7 @@ fn sexpr_nth(values: sexpr, index: i64) -> sexpr
   }
   return sx_head(rest);
 }
+
 fn sexpr_nat(value: i64) -> string
 {
   if value < 0
@@ -70,10 +74,12 @@ fn sexpr_nat(value: i64) -> string
   }
   return buffer_text(out);
 }
+
 fn sexpr_space(c: i64) -> bool
 {
   return c == 32 || c == 9 || c == 10 || c == 13;
 }
+
 fn sexpr_skip(text: string, start: i64) -> i64
 {
   var pos = start;
@@ -83,6 +89,7 @@ fn sexpr_skip(text: string, start: i64) -> i64
   }
   return pos;
 }
+
 fn sexpr_hex(c: i64) -> i64
 {
   if c >= 48 && c <= 57
@@ -100,6 +107,7 @@ fn sexpr_hex(c: i64) -> i64
   tool_fail("expected a hex digit");
   return 0;
 }
+
 fn sexpr_error(pos: i64, message: string)
 {
   tool_fail(text_concat(text_concat("S-expression at byte ",
@@ -107,6 +115,7 @@ fn sexpr_error(pos: i64, message: string)
     text_concat(": ",
     message)));
 }
+
 fn sexpr_read(text: string,
   start: i64,
   depth: i64,
@@ -231,6 +240,7 @@ fn sexpr_read(text: string,
   }
   return (sx_symbol(text_slice(text, begin, end)), end, nodes);
 }
+
 fn sexpr_parse(text: string) -> sexpr
 {
   let(tree, pos, count) = sexpr_read(text, 0, 0, 0);
@@ -240,6 +250,7 @@ fn sexpr_parse(text: string) -> sexpr
   }
   return tree;
 }
+
 fn sexpr_write(node: sexpr, out: buffer, depth: i64, count: i64) -> i64
 {
   if depth >= 256 || count >= 262144
@@ -301,6 +312,7 @@ fn sexpr_write(node: sexpr, out: buffer, depth: i64, count: i64) -> i64
   }
   return nodes;
 }
+
 fn sexpr_print(tree: sexpr) -> string
 {
   let out = buffer_new();

@@ -89,6 +89,7 @@ fn transition(node: sexpr, label: string, state: string, event: string) -> sexpr
     1)),
     at));
 }
+
 fn transform(tree: sexpr, label: string) -> sexpr
 {
   let(state, serial) = ppx_fresh(tree, 0);
@@ -125,6 +126,7 @@ fn transform(tree: sexpr, label: string) -> sexpr
     return transition(node, label, state, event);
   });
 }
+
 fn main()
 {
   native_serve(transform);

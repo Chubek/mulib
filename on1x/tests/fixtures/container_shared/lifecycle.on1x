@@ -1,0 +1,129 @@
+import std.container.Arc as A;
+import std.container.Rc as R;
+from std.container.Rc import basis_rc_get as get;
+record WithNode
+{
+  number: f64, node: sexpr
+}
+
+enum Composite < T >
+{
+  Empty, Pair(T, bool)
+}
+
+record Envelope
+{
+  claim: own < R.Rc < WithNode > >
+}
+
+extern fn on1x_test_unique_allocator_live() -> i64;
+extern fn on1x_test_unique_allocator_allocations() -> i64;
+fn create < T > (value: T) -> own < R.Rc < T > >
+{
+  return R.basis_rc_new(value);
+}
+
+fn read_owned < T > (owner: own < R.Rc < T > >) -> T
+{
+  return get(owner);
+}
+
+fn build() -> own < R.Rc < WithNode > >
+{
+  let original = R.basis_rc_new(record < WithNode >
+  {
+    number: 2.5, node: sx_string("shared")
+  });
+  let envelope = record < Envelope >
+  {
+    claim: R.basis_rc_clone(original)
+  };
+  return match envelope with
+  {
+    record
+    {
+      claim: alias
+    } => move(alias)
+  };
+}
+
+fn early(fail: bool) -> Result < own < R.Rc < i64 > >, i64 >
+{
+  let original = create(5);
+  let retained = R.basis_rc_clone(original);
+  if fail
+  {
+    return variant < Result < own < R.Rc < i64 > >, i64 > > (Err, 7);
+  }
+  return variant < Result < own < R.Rc < i64 > >, i64 > > (Ok, move(retained));
+}
+
+fn main()
+{
+  assert(on1x_test_unique_allocator_live() == 0);
+  assert(data_live_nodes() == 0);
+  {
+    let owner = build();
+    assert(on1x_test_unique_allocator_allocations() == 3);
+    assert(on1x_test_unique_allocator_live() == 2);
+    let node = get(owner);
+    assert(node["number"] == 2.5);
+    drop(owner);
+    assert(on1x_test_unique_allocator_live() == 0);
+    assert(data_live_nodes() == 1);
+    assert(sx_text(node["node"]) == "shared");
+  }
+  assert(data_live_nodes() == 0);
+  match early(false) with
+  {
+    Err(code) => assert(code == 0), Ok(owner) =>
+    {
+      assert(read_owned(move(owner)) == 5);
+    }
+  };
+  match early(true) with
+  {
+    Err(code) => assert(code == 7), Ok(owner) => drop(owner)
+  };
+  assert(on1x_test_unique_allocator_live() == 0);
+  {
+    let unique = box(record < WithNode >
+    {
+      number: 3.5, node: sx_string("moved")
+    });
+    let outer = R.basis_rc_new(move(unique));
+    let alias = R.basis_rc_clone(outer);
+    drop(outer);
+    assert(data_live_nodes() == 1 && on1x_test_unique_allocator_live() == 3);
+    drop(alias);
+    assert(data_live_nodes() == 0 && on1x_test_unique_allocator_live() == 0);
+  }
+  {
+    let left = A.basis_arc_new(variant < Composite < f32 > > (Pair,
+      (1.25f32,
+      true)));
+    let right = A.basis_arc_clone(left);
+    drop(left);
+    assert(match A.basis_arc_get(right) with
+    {
+      Empty() => false, Pair(value, flag) => value == 1.25f32 && flag
+    });
+  }
+  assert(on1x_test_unique_allocator_live() == 0);
+  {
+    let bytes = array[255u8, 0u8, 9u8, 0u8, 255u8, 0u8, 1u8, 0u8];
+    let root = A.basis_arc_new(bytes);
+    let clone = A.basis_arc_clone(root);
+    drop(root);
+    let copy = A.basis_arc_get(clone);
+    assert(copy[0] == 255u8 && copy[1] == 0u8);
+    assert(A.basis_arc_parallel_count(clone, 0u8, 1) == 4);
+    assert(A.basis_arc_parallel_count(clone, 0u8, 4) == 4);
+    assert(A.basis_arc_parallel_count(clone, 255u8, 16) == 2);
+    assert(A.basis_arc_parallel_count(clone, 42u8, 5) == 0);
+    assert(A.basis_arc_parallel_count(clone, 0u8, 0) == - 1);
+    assert(A.basis_arc_parallel_count(clone, 0u8, 17) == - 1);
+  }
+  assert(on1x_test_unique_allocator_live() == 0);
+  println("shared containers");
+}

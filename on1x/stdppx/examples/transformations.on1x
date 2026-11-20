@@ -10,10 +10,12 @@ fn double(x: i64) -> i64
 {
   return x * 2;
 }
+
 fn increment(x: i64) -> i64
 {
   return x + 1;
 }
+
 fn main()
 {
   let x = @pipe("apply", 20, double, increment);

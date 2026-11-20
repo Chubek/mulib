@@ -6,18 +6,22 @@ fn basis_text_io_input_all(path: string) -> string
 {
   return tool_read_file(path);
 }
+
 fn basis_text_io_output(path: string, content: string) -> bool
 {
   return basis_native_write_text(path, content);
 }
+
 fn basis_text_io_append(path: string, content: string) -> bool
 {
   return basis_native_append_text(path, content);
 }
+
 fn basis_text_io_print(text: string)
 {
   io_stdout(text);
 }
+
 fn basis_text_io_print_err(text: string)
 {
   io_stderr(text);

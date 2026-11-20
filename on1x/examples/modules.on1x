@@ -4,10 +4,12 @@ fn twice(x: i64) -> i64
 {
   return x * 2;
 }
+
 fn increment(x: i64) -> i64
 {
   return x + 1;
 }
+
 fn main()
 {
   let operation = Functional.compose(increment, twice);

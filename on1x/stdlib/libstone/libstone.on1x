@@ -5,6 +5,7 @@ fn libstone_node(tag: string, children: sexpr) -> sexpr
   basis_shape_list(children);
   return sx_cons(sx_symbol(tag), children);
 }
+
 fn libstone_tag(node: sexpr) -> string
 {
   basis_shape_list(node);
@@ -15,6 +16,7 @@ fn libstone_tag(node: sexpr) -> string
   }
   return sx_text(tag);
 }
+
 fn libstone_child(node: sexpr, index: i64) -> sexpr
 {
   libstone_tag(node);
@@ -29,4 +31,5 @@ fn libstone_child(node: sexpr, index: i64) -> sexpr
   }
   return sx_head(tail);
 }
+
 import "../base/shape.on1x";

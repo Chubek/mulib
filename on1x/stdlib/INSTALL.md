@@ -48,14 +48,22 @@ a unit. Use it with `--stdlib` or `--stdlib-path`, not as an ordinary project
 dependency named `std`.
 
 The package includes the Basis C adapters (`runtime/basis_native.c`,
-`runtime/basis_real.c`, and `runtime/basis_native.h`) and the prettyprint
-companion (`prettyprint/runtime.c` and `prettyprint/runtime.h`). The build
-helper resolves their `.c` files from the selected `--stdlib` root and
-compiles them with the host C toolchain when needed. Prettyprint still needs
-the MuLIB kernel planner and headers. Only select a source package you trust as
-an SDK library: selecting it with `--stdlib` permits those raw C files to be
-compiled into downstream binaries. The `mulib/On1xfile` discovery manifest also
-ships, so `-I PACKAGE/mulib` can still resolve `import mulib`.
+`runtime/basis_real.c`, and `runtime/basis_native.h`) and the prettyprint and
+terminal companions (`prettyprint/runtime.[ch]` and `tty/runtime.[ch]`). The
+build helper resolves their `.c` files from the selected `--stdlib` root and
+compiles them with the host C toolchain when needed. The prettyprint and
+terminal bridges still need the MuLIB kernel planner and headers. Only select
+a source package you trust as an SDK library: selecting it with `--stdlib`
+permits those raw C files to be compiled into downstream binaries. The
+`mulib/On1xfile` discovery manifest also ships, so `-I PACKAGE/mulib` can still
+resolve `import mulib`.
+
+The package also carries the native [container companions](README.md#ownership-and-scoped-containers)
+for TLS, scoped file operations, shared owners and the Linux Pod fixture.
+The build helper selects only the referenced native groups and uses one
+generated MuLIB implementation translation unit for the application. The
+fixed Pod worker is compiled as a separate static executable only with
+`--enable-pod-fixture`; see the [host requirements](container/POD.md).
 
 This is not an SDK installation or native archive. The build helper takes
 the core On1x runtime, `_bridge/mulib_bridge.c` and its header, and the

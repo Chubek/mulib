@@ -416,6 +416,8 @@ def main():
         api_kernel_tests = {'test-api-json-http.c', 'test-api-sse-client.c', 'test-api-websocket.c'}
         api_kernel_sources = [root / 'tests/api-kernels' / name
                               for name in ('implementation.c', 'dependencies.c')]
+        focused_peers = {name: api_kernel_sources for name in api_kernel_tests}
+        focused_peers['test_raytracing.c'] = [root / 'tests/raytracing-implementation.c']
         for category, sources in [
             ('module examples', sorted((root / 'examples/modules').glob('*.c'))),
             ('composition examples', sorted((root / 'examples').glob('*.c'))),
@@ -424,7 +426,7 @@ def main():
         ]:
             passed = check_many([
                 dict(label=str(p.relative_to(root)),
-                     sources=[p] + (api_kernel_sources if p.name in api_kernel_tests else []))
+                     sources=[p] + focused_peers.get(p.name, []))
                 for p in sources])
             counts[category] = (passed, len(sources))
             print(f'MuLIB {category}: {passed}/{len(sources)} passed', flush=True)

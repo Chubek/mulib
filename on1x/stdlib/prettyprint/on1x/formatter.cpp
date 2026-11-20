@@ -20,6 +20,7 @@ using View = std::string_view;
 
 struct Config {
     std::size_t width = 80, tabstop = 2;
+    std::size_t nested_block_newlines = 1, top_level_block_newlines = 1;
     mulib_pretty_algorithm_t algorithm = MULIB_PRETTY_FITS;
     bool allman = false;
 };
@@ -63,12 +64,32 @@ Config read_config(const fs::path& input) {
                     auto key = trim(s.substr(0, equal));
                     auto val = trim(s.substr(equal + 1));
                     if (!keys.insert(key).second) fail(offset, line, "duplicate .on1xfmt key");
-                    if (key == "width" || key == "tabstop") {
-                        auto& setting = key == "width" ? result.width : result.tabstop;
-                        auto [ptr, err] = std::from_chars(val.data(), val.data() + val.size(), setting);
+                    if (key == "width" || key == "tabstop" ||
+                        key == "nested_block_newlines" || key == "top_level_block_newlines") {
+                        std::size_t* setting;
+                        std::size_t maximum;
+                        const char* message;
+                        if (key == "width") {
+                            setting = &result.width;
+                            maximum = 4096;
+                            message = "width must be 1..4096";
+                        } else if (key == "tabstop") {
+                            setting = &result.tabstop;
+                            maximum = 16;
+                            message = "tabstop must be 1..16";
+                        } else if (key == "nested_block_newlines") {
+                            setting = &result.nested_block_newlines;
+                            maximum = 16;
+                            message = "nested_block_newlines must be 1..16";
+                        } else {
+                            setting = &result.top_level_block_newlines;
+                            maximum = 16;
+                            message = "top_level_block_newlines must be 1..16";
+                        }
+                        auto [ptr, err] = std::from_chars(val.data(), val.data() + val.size(), *setting);
                         if (err != std::errc() || ptr != val.data() + val.size() ||
-                            !setting || setting > (key == "width" ? 4096u : 16u))
-                            fail(offset, line, key == "width" ? "width must be 1..4096" : "tabstop must be 1..16");
+                            !*setting || *setting > maximum)
+                            fail(offset, line, message);
                     } else if (key == "algorithm") {
                         if (val == "fits") result.algorithm = MULIB_PRETTY_FITS;
                         else if (val == "search") result.algorithm = MULIB_PRETTY_SEARCH;
@@ -258,6 +279,13 @@ bool space_between(const Part& a, const Part& b) {
     return true;
 }
 
+bool continues_block(const Part& p) {
+    return one_of(p.text, {
+        "else", ";", ",", ")", "]", "?", "(", "[", ".", "=>", "=", "->", ">", ">=",
+        "+", "-", "*", "/", "%", "==", "!=", "<", "<=", "&&", "||", "|", "with", "~"
+    });
+}
+
 bool line_between(const Part& a, const Part& b, View input, const Config& cfg) {
     if (a.kind == Kind::disabled || b.kind == Kind::disabled) return true;
     if (a.kind == Kind::comment) return true;
@@ -272,11 +300,24 @@ bool line_between(const Part& a, const Part& b, View input, const Config& cfg) {
     if (a.text == "{" && b.text != "}") return true;
     if (b.text == "}" && a.text != "{") return true;
     if (a.text == ";" && !a.in_list) return true;
-    if (a.text == "}" && !a.in_list && !one_of(b.text, {
-        "else", ";", ",", ")", "]", "?", "(", "[", ".", "=>", "=", "->", ">", ">=",
-        "+", "-", "*", "/", "%", "==", "!=", "<", "<=", "&&", "||", "|", "with", "~"
-    })) return true;
+    if (a.text == "}" && !a.in_list && !continues_block(b)) return true;
     return false;
+}
+
+std::size_t newlines_after(const std::vector<Part>& input, std::size_t start,
+                           std::size_t end, const Part& next, const Config& cfg) {
+    for (auto i = end; i > start;) {
+        const auto& part = input[--i];
+        if (part.kind == Kind::comment) continue;
+        if (part.kind == Kind::token &&
+            one_of(part.text, {";", ",", ")", "]", "?"}))
+            continue;
+        const bool closes = part.text == "}" ||
+            (part.kind == Kind::carrier && !part.text.empty() && part.text.back() == '}');
+        if (!closes || part.in_list || continues_block(next)) return 1;
+        return part.level == 0 ? cfg.top_level_block_newlines : cfg.nested_block_newlines;
+    }
+    return 1;
 }
 
 mulib_pretty_style_t style(const Part& p) {
@@ -350,6 +391,7 @@ public:
 
 Id make_document(Document& doc, const std::vector<Part>& input, View original, const Config& cfg) {
     std::vector<Id> lines;
+    std::size_t previous_start = 0;
     for (std::size_t start = 0; start < input.size();) {
         const auto& first = input[start];
         auto end = start + 1;
@@ -369,8 +411,14 @@ Id make_document(Document& doc, const std::vector<Part>& input, View original, c
         }
         auto body = doc.sequence(text);
         if (can_wrap) body = doc.group(doc.nest(cfg.tabstop, body));
-        if (start != 0) body = doc.nest(indent, doc.cat(doc.hard(), body));
+        if (start != 0) {
+            const auto count = newlines_after(input, previous_start, start, first, cfg);
+            std::vector<Id> prefix(count - 1, doc.hard());
+            prefix.push_back(doc.nest(indent, doc.cat(doc.hard(), body)));
+            body = doc.sequence(prefix);
+        }
         lines.push_back(body);
+        previous_start = start;
         start = end;
     }
     if (!lines.empty()) lines.push_back(doc.hard());

@@ -12,60 +12,74 @@ fn pp_node0(tag: string) -> sexpr
 {
   return sx_cons(sx_symbol(tag), sx_nil());
 }
+
 fn pp_node1(tag: string, arg: sexpr) -> sexpr
 {
   return sx_cons(sx_symbol(tag), sx_cons(arg, sx_nil()));
 }
+
 fn pp_node2(tag: string, a: sexpr, b: sexpr) -> sexpr
 {
   return sx_cons(sx_symbol(tag), sx_cons(a, sx_cons(b, sx_nil())));
 }
+
 fn pp_text(value: string) -> sexpr
 {
   return pp_node1("text", sx_string(value));
 }
+
 fn pp_verbatim(value: string) -> sexpr
 {
   return pp_node1("verbatim", sx_string(value));
 }
+
 fn pp_fill(value: string) -> sexpr
 {
   return pp_node1("fill", sx_string(value));
 }
+
 fn pp_softline() -> sexpr
 {
   return pp_node0("soft");
 }
+
 fn pp_hardline() -> sexpr
 {
   return pp_node0("hard");
 }
+
 fn pp_cat(a: sexpr, b: sexpr) -> sexpr
 {
   return pp_node2("cat", a, b);
 }
+
 fn pp_group(doc: sexpr) -> sexpr
 {
   return pp_node1("group", doc);
 }
+
 fn pp_align(doc: sexpr) -> sexpr
 {
   return pp_node1("align", doc);
 }
+
 fn pp_choice(a: sexpr, b: sexpr) -> sexpr
 {
   return pp_node2("choice", a, b);
 }
+
 # Select a layout algorithm for a subtree: "greedy", "fits", or "search".
 fn pp_region(algorithm: string, doc: sexpr) -> sexpr
 {
   return pp_node2("region", sx_string(algorithm), doc);
 }
+
 # Select "greedy", "ragged", or "knuth-plass" for a paragraph.
 fn pp_paragraph(mode: string, doc: sexpr) -> sexpr
 {
   return pp_node2("paragraph", sx_string(mode), doc);
 }
+
 fn pp_nest(spaces: i64, doc: sexpr) -> sexpr
 {
   if spaces < 0 || spaces > 4096
@@ -74,50 +88,62 @@ fn pp_nest(spaces: i64, doc: sexpr) -> sexpr
   }
   return pp_node2("nest", sx_symbol(sexpr_nat(spaces)), doc);
 }
+
 fn pp_annotate(style: string, doc: sexpr) -> sexpr
 {
   return pp_node2("annot", sx_string(style), doc);
 }
+
 fn pp_math_identifier(name: string) -> sexpr
 {
   return pp_annotate("math-ident", pp_text(name));
 }
+
 fn pp_math_number(number: string) -> sexpr
 {
   return pp_annotate("math-number", pp_text(number));
 }
+
 fn pp_math_operator(operator: string) -> sexpr
 {
   return pp_annotate("math-operator", pp_text(operator));
 }
+
 fn pp_math_atom(value: string) -> sexpr
 {
   return pp_node1("math-atom", sx_string(value));
 }
+
 fn pp_frac(a: sexpr, b: sexpr) -> sexpr
 {
   return pp_node2("frac", a, b);
 }
+
 fn pp_sup(a: sexpr, b: sexpr) -> sexpr
 {
   return pp_node2("sup", a, b);
 }
+
 fn pp_sub(a: sexpr, b: sexpr) -> sexpr
 {
   return pp_node2("sub", a, b);
 }
+
 fn pp_root(a: sexpr) -> sexpr
 {
   return pp_node1("root", a);
 }
+
 fn pp_math_row(cells: sexpr) -> sexpr
 {
   return sx_cons(sx_symbol("row"), cells);
 }
+
 fn pp_matrix(rows: sexpr) -> sexpr
 {
   return sx_cons(sx_symbol("matrix"), rows);
 }
+
 # Join a potentially long list using a balanced concat tree, to keep document
 # parser depth logarithmic rather than linear in the number of elements.
 fn pp_join_take(rest: sexpr, count: i64, separator: sexpr) ->(sexpr, sexpr)
@@ -131,6 +157,7 @@ fn pp_join_take(rest: sexpr, count: i64, separator: sexpr) ->(sexpr, sexpr)
   let(right, after) = pp_join_take(middle, count - left_count, separator);
   return (pp_cat(left, pp_cat(separator, right)), after);
 }
+
 fn pp_join(docs: sexpr, separator: sexpr) -> sexpr
 {
   var rest = docs;
@@ -155,6 +182,7 @@ fn pp_join(docs: sexpr, separator: sexpr) -> sexpr
   let(result, unused) = pp_join_take(docs, count, separator);
   return result;
 }
+
 fn pp_call(name: string, args: sexpr) -> sexpr
 {
   let separator = pp_cat(pp_text(","), pp_softline());
@@ -167,6 +195,7 @@ fn pp_call(name: string, args: sexpr) -> sexpr
     pp_cat(pp_softline(),
     pp_text(")"))))));
 }
+
 # Algorithm: 0=greedy, 1=fits, 2=bounded search
 # Target:    0=plain, 1=HTML+MathML, 2=LaTeX, 3=troff
 # Paragraph: 0=word greedy, 1=minimum raggedness, 2=Knuth–Plass
@@ -192,6 +221,7 @@ fn pp_render(doc: sexpr,
     paragraph);
   return (on1x_pretty_status(), result);
 }
+
 fn pp_format(doc: sexpr, width: i64) ->(i64, string)
 {
   return pp_render(doc, width, 1, 0, 0);

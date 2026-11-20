@@ -3,6 +3,7 @@ fn basis_io_buffer_size() -> i64
 {
   return 4096;
 }
+
 fn basis_io_is_valid_position(pos: i64) -> bool
 {
   return pos >= 0;

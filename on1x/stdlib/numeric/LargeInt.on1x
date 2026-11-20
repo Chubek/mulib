@@ -4,14 +4,17 @@ fn basis_large_int_min() -> i64
 {
   return basis_int_min();
 }
+
 fn basis_large_int_max() -> i64
 {
   return basis_int_max();
 }
+
 fn basis_large_int_div(a: i64, b: i64) -> i64
 {
   return basis_int_div(a, b);
 }
+
 fn basis_large_int_mod(a: i64, b: i64) -> i64
 {
   return basis_int_mod(a, b);

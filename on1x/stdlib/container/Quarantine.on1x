@@ -1,0 +1,54 @@
+# Use separate dots: adjacent `..` lexes as the range operator.
+from . .core.Pervasive import Result;
+# Explicit validation workflow; not an opaque or security-sensitive boundary.
+record Quarantined < T >
+{
+  value: T
+}
+
+cliche BasisQuarantinePolicy < T >
+{
+  fn basis_quarantine_accepts(policy: Self, value: T) -> bool;
+}
+
+record BasisQuarantineI64Range
+{
+  low: i64, high: i64
+}
+
+impl BasisQuarantinePolicy < i64 > for BasisQuarantineI64Range
+{
+  fn basis_quarantine_accepts(policy: BasisQuarantineI64Range,
+    value: i64) -> bool
+  {
+    return policy["low"] <= value && value <= policy["high"];
+  }
+}
+
+fn basis_quarantine_stage < T > (value: T) -> own < Quarantined < T > >
+{
+  return box(record < Quarantined < T > >
+  {
+    value: value
+  });
+}
+
+fn basis_quarantine_check < P, T > (item: borrow Quarantined < T >,
+  policy: P) -> bool where BasisQuarantinePolicy < P, T >
+{
+  return BasisQuarantinePolicy < P, T > :: basis_quarantine_accepts(policy,
+    item["value"]);
+}
+
+# A failed review returns the same owner, without allocating a replacement.
+fn basis_quarantine_review < P, T > (item: own < Quarantined < T > >,
+  policy: P) -> Result < T, own < Quarantined < T > > > where BasisQuarantinePolicy < P, T >
+{
+  if basis_quarantine_check(item, policy)
+  {
+    let contents = take(item);
+    return variant < Result < T, own < Quarantined < T > > > > (Ok,
+      contents["value"]);
+  }
+  return variant < Result < T, own < Quarantined < T > > > > (Err, move(item));
+}

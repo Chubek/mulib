@@ -33,6 +33,8 @@ HISTORY_EXPORTS = ('mulib_histprice_ema', 'mulib_histprice_holt')
 HISTORY_IMPL = ['MULIB_IMPL_STATSPROC', 'MULIB_IMPL_HISTPRICE']
 PRICING_EXPORTS = ('mulib_priceopt_optimize', 'mulib_priceopt_candidates')
 PRICING_IMPL = ['MULIB_IMPL_PRICEOPT']
+IPC_RAW_PROFILE = 'unsafe-ipc-framed-local-pair/v1'
+IPC_IMPL = ['MULIB_IMPL_SANDBOX_PROFILE', 'MULIB_IMPL_IPC_FRAMED']
 # Profile v1's known entry points are sanity checks, not binding allowlists.
 KERNEL_MODULES = {
     'clamp': (None, list(CLAMP_EXPORTS)),
@@ -412,6 +414,121 @@ def clamp_scalar_interface(report, *, unsafe):
                 cdecl_fingerprint=cdecl['fingerprint'], header=cdecl['header'],
                 header_revision=cdecl['revision'], imports=report['requests'], exports=exports,
                 rejected={})
+
+
+def ipc_raw_interface(report):
+    """Admit only the ABI of the fixed local-pair adapter, never a safe export."""
+    for request in report['requests']:
+        if request['unsafe'] is not True or request['module'] != 'mulib.ipc_framed':
+            code = 'UNSAFE-UNSUPPORTED' if request['unsafe'] else 'NOT-ADMITTED'
+            raise ValueError(f"{request['file']}:{request['line']}:{request['column']}: "
+                             f"ON1X-KERNEL-{code}: {request['module']} cannot join the raw framed transport profile")
+    module = report['modules']['mulib.ipc_framed']
+    cdecl = module['metadata']['cdecl']
+    types = {t['id']: t for t in cdecl['types']}
+
+    def require(test, item):
+        if not test:
+            raise ValueError('ON1X-KERNEL-ABI: incompatible framed transport CDecl: '+item)
+
+    require(len(types) == len(cdecl['types']) and
+            re.fullmatch(r'x86_64(?:-[a-z0-9_]+)?-linux-gnu', report['target']) and
+            cdecl['target']['pointer_bits'] == 64 and
+            cdecl['target']['triple'] == report['target'] and
+            module['exolib']['header_only']['implementation_defines'] == IPC_IMPL, 'target/implementation')
+
+    scalar_types = {'int': (4, True), 'uint32_t': (4, False), 'int64_t': (8, True),
+                    'uint64_t': (8, False), 'size_t': (8, False)}
+
+    def clean(t, const=False):
+        return t['const'] is const and not (
+            t['volatile'] or t['restrict'] or t['attributes'] or t['unsupported_reason'])
+
+    def has_type(t, spelling):
+        if t['spelling'] != spelling or not clean(t, spelling == 'const void'):
+            return False
+        canonical = types[t['canonical_id']]
+        if not clean(canonical, spelling == 'const void'):
+            return False
+        if spelling.endswith(' *'):
+            return (t['kind'] == canonical['kind'] == 'pointer' and
+                    t['size'] == t['alignment'] == canonical['size'] == canonical['alignment'] == 8 and
+                    has_type(types[t['element']], spelling[:-2]) and
+                    types[t['element']]['canonical_id'] == canonical['element'])
+        if spelling in scalar_types:
+            size, signed = scalar_types[spelling]
+            return (t['kind'] == ('integer' if spelling == 'int' else 'typedef') and
+                    t['size'] == t['alignment'] == canonical['size'] == canonical['alignment'] == size and
+                    canonical['kind'] == 'integer' and canonical['signed'] is signed)
+        if spelling == 'mulib_ipc_framed_t':
+            fields = canonical['fields']
+            return (t['kind'] == 'typedef' and canonical['kind'] == 'record' and
+                    canonical['spelling'] == 'struct mulib_ipc_framed' and not canonical['union'] and
+                    t['size'] == canonical['size'] == 12 and
+                    t['alignment'] == canonical['alignment'] == 4 and len(fields) == 3 and
+                    all(f['name'] == name and f['offset_bits'] == offset and f['bit_width'] is None and
+                        f['source']['file'] == cdecl['header'] and has_type(types[f['type']], field_type)
+                        for f, (name, offset, field_type) in zip(fields, (
+                            ('fd', 0, 'int'), ('poisoned', 32, 'int'), ('max_frame', 64, 'uint32_t')))))
+        return spelling in ('void', 'const void') and t['kind'] == canonical['kind'] == 'void'
+
+    stream = 'mulib_ipc_framed_t *'
+    signatures = {
+        'mulib_ipc_framed_init': ('int', (stream, 'int', 'uint32_t')),
+        'mulib_ipc_deadline': ('int', ('uint64_t', 'int64_t *')),
+        'mulib_ipc_send': ('int', (stream, 'const void *', 'size_t', 'int64_t')),
+        'mulib_ipc_receive': ('int', (stream, 'void *', 'size_t', 'size_t *', 'int64_t')),
+    }
+    dependencies = {}
+    for name, (result, arguments) in signatures.items():
+        matches = [d for d in cdecl['declarations'] if d['name'] == name]
+        require(len(matches) == 1, name)
+        decl = matches[0]
+        f = types[decl['type']]
+        require(decl['kind'] == 'function' and not decl['definition'] and not decl['inline'] and
+                decl['linkage'] == '4' and decl['source']['file'] == cdecl['header'] and
+                not decl['unsupported_reason'] and f['kind'] == 'function' and clean(f) and
+                f['calling_convention'] == 1 and f['prototype'] and not f['variadic'] and
+                [p['type'] for p in decl['parameters']] == f['arguments'] and
+                len(f['arguments']) == len(arguments) and has_type(types[f['result']], result) and
+                all(has_type(types[t], want) for t, want in zip(f['arguments'], arguments)), name)
+        dependencies[name] = dict(declaration_id=decl['id'], c_type_id=f['id'], declaration_source=decl['source'])
+    return dict(schema='on1x.kernel-interface/v1', profile=IPC_RAW_PROFILE, module='mulib.ipc_framed',
+                safe_export=False, target=report['target'], cdecl_fingerprint=cdecl['fingerprint'],
+                header=cdecl['header'], header_revision=cdecl['revision'], sidecar=module['sidecar'],
+                imports=report['requests'], c_dependencies=dependencies, exports={
+                    'open_pair': dict(c_name='on1x_kernel_ipc_v1_open_pair', parameters=[],
+                                      result='Result<opaque move-only owner,i64>', effect='unsafe_foreign',
+                                      status='unsafe', live_pair_limit=128),
+                     'roundtrip': dict(c_name='on1x_kernel_ipc_v1_roundtrip',
+                                       parameters=['consumed opaque owner', 'u8', 'i64', '(i64)->i64'],
+                                       result='Result<i64,i64>', effect='unsafe_foreign', status='unsafe',
+                                       callback='same-thread, synchronous, zero or one invocation after close',
+                                       timeout_ms=[1, 1000]),
+                     'open_session': dict(c_name='on1x_kernel_ipc_v1_open_session', parameters=[],
+                                          result='Result<own<Session>,i64>', effect='unsafe_foreign',
+                                          status='unsafe', shared_live_pair_limit=128),
+                     'register_callback': dict(c_name='on1x_kernel_ipc_v1_register_callback',
+                                               parameters=['exclusive session loan', '(i64)->i64'],
+                                               result='Result<i64,i64>', effect='unsafe_foreign',
+                                               status='unsafe', retained_callbacks_per_owner=1),
+                     'revoke': dict(c_name='on1x_kernel_ipc_v1_revoke',
+                                    parameters=['exclusive session loan'],
+                                    result='Result<i64,i64>', effect='unsafe_foreign', status='unsafe'),
+                     'send': dict(c_name='on1x_kernel_ipc_v1_send',
+                                  parameters=['exclusive session loan', 'u8', 'i64'],
+                                  result='Result<i64,i64>', effect='unsafe_foreign', status='unsafe',
+                                  pending_frame_limit=1, timeout_ms=[1, 1000]),
+                     'poll': dict(c_name='on1x_kernel_ipc_v1_poll',
+                                  parameters=['exclusive session loan', 'i64'],
+                                  result='Result<i64,i64>', effect='unsafe_foreign', status='unsafe',
+                                  callback='opening thread, at most once, no reentry on the same owner',
+                                  timeout_ms=[1, 1000]),
+                     'finish_send': dict(c_name='on1x_kernel_ipc_v1_finish_send',
+                                         parameters=['exclusive session loan'],
+                                         result='Result<i64,i64>', effect='unsafe_foreign', status='unsafe')}, rejected={
+                    'direct_functions': 'The canonical C API remains unadmitted.',
+                    'safe_import': 'No independent semantic review or safe usage verification.'})
 
 
 def history_interface(report):

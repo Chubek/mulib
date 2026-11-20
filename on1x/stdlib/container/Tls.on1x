@@ -1,0 +1,46 @@
+# Native-thread local, not fiber/task local. No pointer or TLS key crosses C.
+from . .core.Pervasive import Option;
+
+extern fn on1x_container_tls_i64_present() -> bool;
+extern fn on1x_container_tls_i64_value() -> i64;
+extern fn on1x_container_tls_i64_set(value: i64) -> bool;
+extern fn on1x_container_tls_i64_clear();
+
+fn basis_tls_i64_current() -> Option<i64>
+{
+  if on1x_container_tls_i64_present()
+  {
+    return variant<Option<i64>>(Some, on1x_container_tls_i64_value());
+  }
+  return variant<Option<i64>>(None, record {});
+}
+
+fn basis_tls_i64_set(value: i64) -> bool
+{
+  return on1x_container_tls_i64_set(value);
+}
+
+fn basis_tls_i64_clear()
+{
+  on1x_container_tls_i64_clear();
+}
+
+# Restoration does not need to allocate or install another native key binding.
+# A callback stays entirely in On1x. None means it was not called.
+fn basis_tls_i64_with(value: i64, body: fn() -> _) -> Option<_>
+{
+  let saved = basis_tls_i64_current();
+  if !basis_tls_i64_set(value)
+  {
+    return variant<Option<_>>(None, record {});
+  }
+  defer fn()
+  {
+    match saved with
+    {
+      Some(previous) => assert(basis_tls_i64_set(previous)),
+      None() => basis_tls_i64_clear()
+    };
+  }();
+  return variant<Option<_>>(Some, body());
+}

@@ -5,7 +5,7 @@
   "state": "annotated",
   "bundle_provenance": {
     "header": "mulib-prettysexpr.h",
-    "revision": "sha256:371680e690a37a2759536f06a5fad32e9d7954b2a6e5acbe2893bdcdbde63bd9",
+    "revision": "sha256:fa7bd9da977c6c8e439d9816ab974d143f1adf52e1c75a0acba8676be0cd7603",
     "author": "MuLIB PrettyPrint contributors",
     "review_status": "unreviewed",
     "evidence_method": "Source annotation of the canonical S-expression APIs; tests/test_prettydoc.c exercises success, failure, and caller cleanup. No independent admission."

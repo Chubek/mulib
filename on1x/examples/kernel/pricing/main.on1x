@@ -5,6 +5,7 @@ fn cents_to_units(cents: i64) -> f64
   assert(cents >= 0 && cents <= 9007199254740992);
   return f64_from_i64(cents) / 100.0;
 }
+
 fn main()
 {
   let samples = array[cents_to_units(1000),

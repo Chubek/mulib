@@ -3,6 +3,7 @@ fn basis_fixed_int_min() -> i64
 {
   return basis_int_min();
 }
+
 fn basis_fixed_int_max() -> i64
 {
   return basis_int_max();

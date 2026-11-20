@@ -17,8 +17,74 @@ inline bool history_kernel_symbol(std::string_view symbol) {
 inline bool pricing_kernel_symbol(std::string_view symbol) {
  return symbol=="mulib_priceopt_optimize"||symbol=="mulib_priceopt_candidates";
 }
+inline constexpr char ipc_kernel_open[]="on1x_kernel_ipc_v1_open_pair";
+inline constexpr char ipc_kernel_roundtrip[]="on1x_kernel_ipc_v1_roundtrip";
+inline constexpr char ipc_kernel_open_session[]="on1x_kernel_ipc_v1_open_session";
+inline constexpr char ipc_kernel_register[]="on1x_kernel_ipc_v1_register_callback";
+inline constexpr char ipc_kernel_revoke[]="on1x_kernel_ipc_v1_revoke";
+inline constexpr char ipc_kernel_send[]="on1x_kernel_ipc_v1_send";
+inline constexpr char ipc_kernel_poll[]="on1x_kernel_ipc_v1_poll";
+inline constexpr char ipc_kernel_finish[]="on1x_kernel_ipc_v1_finish_send";
+// These identities cannot be spelled by the source parser. The explicit
+// import alias can name Result and the session's opaque nominal identity.
+inline constexpr char ipc_kernel_payload[]="@kernel_ipc_v1_Pair";
+inline constexpr char ipc_kernel_session[]="@kernel_ipc_v1_Session";
+inline constexpr char ipc_kernel_result_name[]="@kernel_ipc_v1_Result";
+inline bool ipc_kernel_session_loan(std::string_view symbol) {
+ return symbol==ipc_kernel_register||symbol==ipc_kernel_revoke||symbol==ipc_kernel_send||
+        symbol==ipc_kernel_poll||symbol==ipc_kernel_finish;
+}
+inline bool ipc_kernel_symbol(std::string_view symbol) {
+ return symbol==ipc_kernel_open||symbol==ipc_kernel_roundtrip||symbol==ipc_kernel_open_session||
+        ipc_kernel_session_loan(symbol);
+}
+inline bool ipc_kernel_opening(std::string_view symbol) {
+ return symbol==ipc_kernel_open||symbol==ipc_kernel_open_session;
+}
+inline bool ipc_kernel_opaque_nominal(std::string_view nominal) {
+ return nominal==ipc_kernel_payload||nominal==ipc_kernel_session;
+}
+inline Type ipc_kernel_owner() {
+ return Type::own(Type::named(ipc_kernel_payload));
+}
+inline Type ipc_kernel_session_owner() {
+ return Type::own(Type::named(ipc_kernel_session));
+}
+inline bool ipc_kernel_opaque_owner(const Type& type) {
+ return type.is_own()&&ipc_kernel_opaque_nominal(type.owned().nominal());
+}
+inline Type ipc_kernel_result(std::string_view symbol) {
+ return Type::named(ipc_kernel_result_name,
+                    {symbol==ipc_kernel_open?ipc_kernel_owner():
+                     symbol==ipc_kernel_open_session?ipc_kernel_session_owner():Type{Type::I64},
+                     Type::I64});
+}
+inline std::vector<Type> ipc_kernel_parameters(std::string_view symbol) {
+ if(ipc_kernel_opening(symbol))return {};
+ const auto callback=Type::function({Type::I64},Type::I64);
+ if(symbol==ipc_kernel_roundtrip)return {ipc_kernel_owner(),Type::U8,Type::I64,callback};
+ if(symbol==ipc_kernel_register)return {ipc_kernel_session_owner(),callback};
+ if(symbol==ipc_kernel_send)return {ipc_kernel_session_owner(),Type::U8,Type::I64};
+ if(symbol==ipc_kernel_poll)return {ipc_kernel_session_owner(),Type::I64};
+ if(ipc_kernel_session_loan(symbol))return {ipc_kernel_session_owner()};
+ return {};
+}
+inline void append_ipc_kernel_nominals(Unit& unit,const Location& at) {
+ // The opaque payloads are never materialized as C values in generated code.
+ unit.nominals.push_back({at,ipc_kernel_payload,Type::Record,{},{},{}});
+ unit.nominals.push_back({at,ipc_kernel_session,Type::Record,{},{},{}});
+ unit.nominals.push_back({at,ipc_kernel_result_name,Type::Sum,{"T","E"},
+                         {"Ok","Err"},{Type::bound(0),Type::bound(1)}});
+}
+[[noreturn]] inline void ipc_kernel_opaque_error(const Location& at) {
+ throw Error(at,"ON1X-KERNEL-OPAQUE: framed transport payloads cannot be materialized; sessions allow only direct operation loans",
+             "ON1X-KERNEL-OPAQUE");
+}
 inline bool kernel_span_argument(std::string_view symbol,std::size_t i) {
  return (history_kernel_symbol(symbol)&&i==0)||(symbol=="mulib_priceopt_candidates"&&i<2);
+}
+inline bool kernel_span_type(const Type& type) {
+ return type.kind()==Type::Slice&&type.elements()==std::vector<Type>{Type::F64}&&type.extent()<=256;
 }
 inline constexpr std::string_view kernel_reviewed_prefix="@kernel_scalar_";
 inline std::vector<Type> pricing_kernel_parameters(std::string_view symbol,const std::string& prefix) {
@@ -60,6 +126,22 @@ inline std::vector<Type> history_kernel_parameters(std::string_view symbol) {
 inline void verify_kernel_shape(const Function& f) {
  if(f.kernel_symbol.empty()&&!f.kernel_link_only)return;
  const auto expected=(f.kernel_link_only?"@kernel_scalar_":"@kernel_")+f.kernel_symbol;
+ if(ipc_kernel_symbol(f.kernel_symbol)){
+  Unit declarations;
+  append_ipc_kernel_nominals(declarations,f.where);
+  NominalCatalog catalog(declarations);
+  const auto params=ipc_kernel_parameters(f.kernel_symbol);
+  if(!f.kernel_link_only&&f.name==expected&&f.external&&!f.prototype&&!f.extension_generated&&
+     f.type_parameters.empty()&&f.constraints.empty()&&f.body.empty()&&f.attributes.empty()&&
+     f.result==catalog.resolve(ipc_kernel_result(f.kernel_symbol),f.where)&&f.params.size()==params.size()){
+   for(std::size_t i=0;i<params.size();++i)
+    if(f.params[i].pattern||f.params[i].borrow!=BorrowMode::Value||
+       f.params[i].type!=catalog.resolve(params[i],f.where))
+     throw Error(f.params[i].where,"ON1X-KERNEL-ABI: invalid framed transport parameter","ON1X-KERNEL-ABI");
+   return;
+  }
+  throw Error(f.where,"ON1X-KERNEL-ABI: invalid internal framed transport interface","ON1X-KERNEL-ABI");
+ }
  if(pricing_kernel_symbol(f.kernel_symbol)){
   const auto& result=f.result;
   if(f.kernel_link_only&&f.name==expected&&f.external&&!f.prototype&&f.body.empty()&&f.attributes.empty()&&

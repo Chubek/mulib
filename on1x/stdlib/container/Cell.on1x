@@ -1,0 +1,37 @@
+# A value cell. Writes require a checked exclusive loan, not a shared alias.
+record Cell < T >
+{
+  value: T
+}
+
+fn basis_cell_new < T > (value: T) -> Cell < T >
+{
+  return record < Cell < T > >
+  {
+    value: value
+  };
+}
+
+fn basis_cell_get < T > (cell: borrow Cell < T >) -> T
+{
+  return cell["value"];
+}
+
+fn basis_cell_set < T > (cell: ref Cell < T >, value: T)
+{
+  cell := basis_cell_new(value);
+}
+
+fn basis_cell_replace < T > (cell: ref Cell < T >, value: T) -> T
+{
+  let previous = cell["value"];
+  cell := basis_cell_new(value);
+  return previous;
+}
+
+fn basis_cell_swap < T > (left: ref Cell < T >, right: ref Cell < T >)
+{
+  let previous = left["value"];
+  left := right;
+  right := basis_cell_new(previous);
+}

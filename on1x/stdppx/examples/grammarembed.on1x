@@ -3,6 +3,7 @@
   "grammar Calculator :lexer<dfa> :parser<lalr1> { token NUMBER { <[0-9]>+ } token SPACE :skip { \\s+ } rule TOP { <sum> } rule sum { <sum> '+' <term> | <term> } rule term { <NUMBER> | '(' <sum> ')' } }") fn calculator_grammar()
 {
 }
+
 fn main()
 {
   println(Calculator_matches("12 + (30 + 4)"));

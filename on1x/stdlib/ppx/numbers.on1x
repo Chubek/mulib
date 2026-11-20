@@ -69,6 +69,7 @@ fn ppx_literal_i64(node: sexpr) ->(bool, i64)
   }
   return (true, - value);
 }
+
 fn ppx_i64_text(value: i64) -> string
 {
   let reversed = buffer_new();

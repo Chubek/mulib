@@ -5,6 +5,7 @@ fn basis_word8_vector_length(v: sexpr) -> i64
 {
   return basis_vector_length(v);
 }
+
 fn basis_word8_vector_from_list(v: sexpr) -> sexpr
 {
   return basis_vector_from_list(v);

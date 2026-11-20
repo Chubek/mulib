@@ -4,6 +4,7 @@ fn yaml_as_json(text: string) -> string
 {
   return on1x_mulib_yaml_to_json(text);
 }
+
 import "../_bridge/status.on1x";
 fn basis_yaml_as_json(text: string) ->(i64, string)
 {

@@ -7,6 +7,7 @@
 {
   return a + b;
 }
+
 fn main()
 {
   @checks("assert_eq", add(40, 2), 42);

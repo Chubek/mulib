@@ -6,6 +6,7 @@ fn predict(samples: slice < f64,
   println(ema["point"]);
   return History.holt(samples, 0.5, 0.2, 1.0, 2);
 }
+
 # Select the lower squared error using the observation immediately after
 # training. The next chronological observation is evaluated by the caller.
 fn select(samples: slice < f64,

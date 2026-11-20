@@ -5,6 +5,7 @@ fn ppx_json_object(value: sexpr) -> bool
 {
   return sx_kind(value) == 3 && sx_kind(sx_head(value)) == 1 && sx_text(sx_head(value)) == "object";
 }
+
 fn ppx_json_items(value: sexpr, kind: string) -> sexpr
 {
   if sx_kind(value) != 3 || sx_kind(sx_head(value)) != 1 || sx_text(sx_head(value)) != kind
@@ -13,6 +14,7 @@ fn ppx_json_items(value: sexpr, kind: string) -> sexpr
   }
   return sexpr_nth(value, 1);
 }
+
 fn ppx_json_find(pairs: sexpr, key: string) -> sexpr
 {
   var rest = pairs;
@@ -27,6 +29,7 @@ fn ppx_json_find(pairs: sexpr, key: string) -> sexpr
   }
   return sx_nil();
 }
+
 fn ppx_json_get(value: sexpr, key: string) -> sexpr
 {
   let found = ppx_json_find(ppx_json_items(value, "object"), key);
@@ -36,6 +39,7 @@ fn ppx_json_get(value: sexpr, key: string) -> sexpr
   }
   return sx_head(found);
 }
+
 fn ppx_json_string(value: sexpr) -> string
 {
   if sx_kind(value) != 2
@@ -44,6 +48,7 @@ fn ppx_json_string(value: sexpr) -> string
   }
   return sx_text(value);
 }
+
 fn ppx_json_code(text: string, pos: i64) -> i64
 {
   if pos + 4 > text_len(text)
@@ -56,6 +61,7 @@ fn ppx_json_code(text: string, pos: i64) -> i64
     pos + 2)) * 16 + sexpr_hex(text_byte(text,
     pos + 3));
 }
+
 fn ppx_json_utf8(out: buffer, code: i64)
 {
   if code == 0
@@ -91,6 +97,7 @@ fn ppx_json_utf8(out: buffer, code: i64)
     }
   }
 }
+
 fn ppx_json_quoted(text: string, start: i64) ->(string, i64)
 {
   if start >= text_len(text) || text_byte(text, start) != 34
@@ -182,6 +189,7 @@ fn ppx_json_quoted(text: string, start: i64) ->(string, i64)
   tool_fail("schema JSON: unterminated string");
   return ("", pos);
 }
+
 fn ppx_json_read(text: string,
   start: i64,
   depth: i64,
@@ -309,6 +317,7 @@ fn ppx_json_read(text: string,
   tool_fail("schema JSON: only version scalar 1 is supported");
   return (sx_nil(), pos, nodes, ticks);
 }
+
 fn ppx_json_parse(text: string) -> sexpr
 {
   if text_len(text) > 2097152

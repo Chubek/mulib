@@ -10,22 +10,27 @@ fn basis_array_array(length: i64, initial: i64) -> i64
 {
   return basis_native_arr_new(length, initial);
 }
+
 fn basis_array_length(handle: i64) -> i64
 {
   return basis_native_arr_len(handle);
 }
+
 fn basis_array_sub(handle: i64, index: i64) -> i64
 {
   return basis_native_arr_get(handle, index);
 }
+
 fn basis_array_update(handle: i64, index: i64, value: i64)
 {
   basis_native_arr_set(handle, index, value);
 }
+
 fn basis_array_clone(handle: i64) -> i64
 {
   return basis_native_arr_copy(handle);
 }
+
 fn basis_array_destroy(handle: i64)
 {
   basis_native_arr_free(handle);

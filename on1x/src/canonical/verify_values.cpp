@@ -1,5 +1,7 @@
 #include <on1x/canonical/values.hpp>
 #include <on1x/concurrency.hpp>
+#include <on1x/kernel.hpp>
+#include <on1x/container_shared.hpp>
 #include <on1x/literals.hpp>
 #include <on1x/nominal.hpp>
 #include <on1x/numeric.hpp>
@@ -622,6 +624,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
    }
    Type borrowed_type(const Type& source,const Location& at){
     if(!source.is_own())return source;
+    if(ipc_kernel_opaque_owner(source))ipc_kernel_opaque_error(at);
     const auto& target=source.owned();
     return catalog.instantiate(target.nominal(),target.arguments(),at);
    }
@@ -742,6 +745,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     }
     if(name=="box"){
      arity(1);const auto& value=call.children[0]->type;
+      if(ipc_kernel_opaque_nominal(value.nominal()))ipc_kernel_opaque_error(call.where);
      if((value.kind()!=Type::Record&&value.kind()!=Type::Sum)||
         value.nominal().empty())
       fail(call.children[0]->where,"box operand is not a checked nominal value");
@@ -759,6 +763,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     if(name=="take"){
      arity(1);const auto& owner=call.children[0]->type;
      if(!owner.is_own())fail(call.children[0]->where,"take requires own<Named>");
+     if(ipc_kernel_opaque_owner(owner))ipc_kernel_opaque_error(call.where);
      const auto& target=owner.owned();
      if((call.type.kind()!=Type::Record&&call.type.kind()!=Type::Sum)||
         call.type.nominal()!=target.nominal()||
@@ -972,21 +977,55 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     if(live)state=meet(state,right);
     return true;
    }
-   if(e.kind==E::Call){
-    if(!e.callee)fail(e.where,"canonical call is missing its callee");
-    const bool unsafe=e.callee->reference==Expr::Reference::UnsafeForeign;
-    if(!expression(*e.callee,state,depth+1,true,unsafe))return false;
-     for(const auto& child:e.children)
-      if(!expression(*child,state,depth+1))return false;
+    if(e.kind==E::Call){
+     if(!e.callee)fail(e.where,"canonical call is missing its callee");
+     const bool unsafe=e.callee->reference==Expr::Reference::UnsafeForeign;
+     if(!expression(*e.callee,state,depth+1,true,unsafe))return false;
+     if(e.callee->reference==Expr::Reference::Intrinsic)
+      if(const auto* operation=shared_intrinsic(e.callee->text)){
+       if(e.type!=shared_signature(*operation,e))
+        shared_error(e.where,"canonical shared call result type mismatch");
+       const auto mode=operation->loan();
+       if(mode==BorrowMode::Value)return expression(*e.children[0],state,depth+1);
+       const auto& owner=*e.children[0];
+       const auto& place=borrow_source(owner,state,depth+1);
+       acquire(place,mode,owner.where,owner.text);
+       const auto acquired=call_loans.size();
+       call_loans.push_back({mode,place.id,place.root});
+       bool live=true;
+       for(std::size_t i=1;i<e.children.size()&&live;++i)
+        live=expression(*e.children[i],state,depth+1);
+       call_loans.resize(acquired);
+       return live;
+      }
+     const auto kernel=unsafe||e.callee->reference==Expr::Reference::ScalarForeign?
+      std::string_view(functions.at(e.callee->text)->kernel_symbol):std::string_view{};
+     const bool session_loan=ipc_kernel_session_loan(kernel);
+     const auto loans_before=call_loans.size();
+     for(std::size_t i=0;i<e.children.size();++i){
+      const auto& child=*e.children[i];
+      if(i==0&&session_loan){
+       const auto& place=borrow_source(child,state,depth+1);
+       if(place.type!=ipc_kernel_session_owner()||place.borrow!=BorrowMode::Value)
+        ref_error(child.where,"framed session operation requires a named session owner");
+       acquire(place,BorrowMode::Exclusive,child.where,child.text);
+       call_loans.push_back({BorrowMode::Exclusive,place.id,place.root});
+      }else if(!expression(child,state,depth+1)){
+       call_loans.resize(loans_before);
+       return false;
+      }
+     }
+     call_loans.resize(loans_before);
     Type result=Type::Invalid;
     if(e.callee->reference==Expr::Reference::Intrinsic)result=intrinsic(e);
     else{
      const auto& callable=e.callee->type;
      if(!callable.is_function()||callable.parameters().size()!=e.children.size())
       fail(e.where,"canonical call target/arity mismatch");
-     for(std::size_t i=0;i<e.children.size();++i)
-      if(e.children[i]->type!=callable.parameters()[i])
-       fail(e.children[i]->where,"canonical call argument type mismatch");
+      for(std::size_t i=0;i<e.children.size();++i)
+       if(kernel_span_argument(kernel,i)?!kernel_span_type(e.children[i]->type):
+                                          e.children[i]->type!=callable.parameters()[i])
+        fail(e.children[i]->where,"canonical call argument type mismatch");
      result=callable.result();
     }
     if(e.type!=result)fail(e.where,"canonical call result type mismatch");
@@ -1364,6 +1403,9 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
    }
     for(const auto& f:unit.functions){
      source(f.where);
+     verify_kernel_shape(f);
+     if(ipc_kernel_symbol(f.kernel_symbol)&&csp::present(unit))
+      fail(f.where,"framed transport cannot run in the cooperative concurrency profile");
      if(f.name.empty()||f.name.find('\0')!=std::string::npos){
       fail(f.where,"empty/invalid checked function name");
      }

@@ -32,6 +32,7 @@ the desktop profile's `glx-*` and `x11-*` headers, are preserved.
 | Shared GUI/Lua RetGTK | Shared GUI primitives, application hooks | [GUI](mulib-gfx-gui.md), `test-gfx-gui.c`, `test-gfx-retgtk-lua.lua` |
 | DRM and native wire helpers | Real DRM UAPI or caller-owned protocol FDs | [DRM](mulib-gfx-drm.md), [Wire](mulib-gfx-wire.md), mocked/device-free tests |
 | Scalar shader interpreter/folder | Checked arithmetic DAG, no executable memory | [Shader IR](mulib-gfx-shader.md), `test-gfx-shader.c` |
+| Optional Vulkan devices | Khronos headers and runtime loader/ICD | [Headless Vulkan](mulib-glx-vulkan.md), separate live `make check-vulkan` test |
 
 These are family-level tests, not evidence that every function or optional
 backend has behavioral coverage. Exact supported subsets and remaining work

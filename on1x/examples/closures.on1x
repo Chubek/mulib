@@ -6,6 +6,7 @@ fn add_by(amount) -> _
     return value + amount;
   };
 }
+
 # A closure can retain other closures, including through nested factories.
 fn compose(first, second) -> _
 {
@@ -14,6 +15,7 @@ fn compose(first, second) -> _
     return first(second(value));
   };
 }
+
 fn main()
 {
   let add_one = add_by(1);

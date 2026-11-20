@@ -1,4 +1,152 @@
-# On1x verification — through 2026-11-19
+# On1x verification — through 2026-11-20
+
+## Ownership and supervised-worker follow-up
+
+The [framed IPC session](docs/kernel-framed.md#reusable-session) keeps a
+revocable scalar closure alive until revocation, EOF, failure or drop. Only
+explicit polling on the opening thread dispatches it. The source checker and
+HIR verifier enforce the exclusive call-scoped owner loan. The native tests
+exercise backpressure, half-close, fault cleanup and reentry rejection. This
+remains an explicit raw KernelBind profile, not safe admission.
+
+[Shared containers](stdlib/container/SHARED.md) add strong `Rc<T>` and
+`Arc<T>` claims plus local dynamic `RefCell<T>` guards. Tests cover final
+destruction, allocation and partial launch failure, borrow conflicts, HIR
+verification, relocated package linkage and concurrent native retain/release.
+The narrow Arc worker never touches an On1x owner box or closure. The native
+stress executable passed GCC TSan with `-fsanitize=thread -no-pie -Wno-error=tsan`;
+the unused MuLIB `atomic_thread_fence` implementation emits GCC's TSan
+instrumentation warning.
+
+The [Linux Pod fixture](stdlib/container/POD.md) embeds a separately compiled
+fixed ELF only after build-time opt-in. A generated application verifies both
+authorization states and pins the worker, runtime and generated artifacts.
+Native tests cover real child-only namespace setup, timeout and reap, and
+cleanup retry. The live cgroup test skips without an exclusive delegated
+parent. The fixture cannot execute arbitrary source, and the cgroup limits
+when requested cover the application exchange after confined bootstrap.
+
+Reproduce the focused run in the GCC/Clang SDK configurations below (build
+`on1x_container_shared_hir_tests` as well as `on1xc`,
+`on1x_kernel_ipc_hir_tests` and `exotract`):
+
+```sh
+ctest --test-dir build/on1x-workstream4-gcc --output-on-failure \
+  -R '^on1x\.(container_.*|kernel_ipc_(hir|sdk)|kernel_imports_sdk|libraries|install)$'
+ctest --test-dir build/on1x-workstream4-clang --output-on-failure \
+  -R '^on1x\.(container_.*|kernel_ipc_(hir|sdk)|kernel_imports_sdk|libraries|install)$'
+```
+
+On Linux x86-64, GCC 16.2.1 passed 17 focused CTests and the separate
+`kernel_imports_sdk` regression against fixed copies of `on1xc` and `exotract`
+after a concurrent relink interrupted the combined run. Clang 22.1.8 with
+ASan/UBSan on emitted and native tests passed 11 container/HIR/install/library
+tests and both KernelBind SDK tests. Both profiles skipped the live cgroup
+gate; no delegation was created or modified.
+
+## Contract pin and package regressions
+
+The PrettySexpr sidecar still pinned the header from before the internal
+`(verbatim ...)` form was added. Its two public declarations and unreviewed
+annotations were unchanged. Discovery now uses the corrected header pin,
+and the SDK suite verifies that changing even a byte without updating the
+pin rejects without publishing an inspection report. The Elvi core catalog
+also pins the current manual: the intervening manual-only change was the
+generated example compile command, not source or semantic evidence.
+
+The library inventory checker now distinguishes top-level functions from
+same-named cliche declarations and implementations. The container linker
+checks handwritten extern prototypes against the packaged native header,
+without enabling safe KernelBind admission. `kernel_imports_sdk`, `contracts`,
+`mulib`, `libraries`, `container_package` and `install` passed in the
+generated-scanner GCC build. The package check includes a conflicting C
+prototype that must fail before executable publication; `install` verifies
+that the TLS bridge and header come from the relocated installation.
+
+## Standard-library ownership containers
+
+The [local containers](stdlib/container/LOCAL.md) use existing C11 ownership,
+lexical loans and `sexpr` retain/drop. The [Linux adapters](stdlib/container/NATIVE.md)
+add native-thread TLS and an operation-scoped file descriptor, with no new
+safe KernelBind admissions. The package test exercises both from a relocated
+standard-library source package, checking the native plan and the packaged C
+inputs. General shared ownership, cross-thread value transfer and process
+isolation are not verified by these tests.
+
+Baseline: MuLIB `c2cbbf70537d12ba5015485239d227ef66b25cb8`, LibStone
+`3399047f6c6328b8f07788795c610699e66c060a`, Linux x86-64, GCC 16.2.1
+and Clang 22.1.8. All three container tests passed with both scanner modes;
+the Clang run enabled ASan/UBSan for the emitted C11 clients and native
+runtime. The separate GCC native harness passed with TSan. Run with the
+generated-scanner GCC or fallback-scanner Clang configuration below:
+
+```sh
+ctest --test-dir build/on1x-workstream4-gcc --output-on-failure -R '^on1x\.container_'
+ctest --test-dir build/on1x-workstream4-clang --output-on-failure -R '^on1x\.container_'
+python3 on1x/tests/test_container_native.py build/on1x-workstream4-gcc/on1xc \
+  gcc /tmp/opencode/on1x-container-tsan --native-only --cflag=-fsanitize=thread \
+  --cflag=-fno-omit-frame-pointer --cflag=-no-pie
+```
+
+## KernelBind framed transport and callback
+
+2026-11-20, MuLIB base `c2cbbf70537d12ba5015485239d227ef66b25cb8`,
+LibStone `3399047f6c6328b8f07788795c610699e66c060a`, Linux
+6.18.52-1-lts x86-64, GCC/G++ 16.2.1, Clang/Clang++ 22.1.8,
+Python 3.14.7 and CMake 4.4.3. The
+[explicit raw local transport profile](docs/kernel-framed.md) is **EXECUTABLE**.
+The C11 build uses actual ExoLib/CDecl and compiler prototype/layout checks.
+No production approval was issued and the safe import remains rejected.
+
+`kernel_ipc_hir` mutates checked HIR to reject unsafe-to-safe promotion,
+callback ABI drift, and a missing unique transfer. `kernel_ipc_sdk` compiles
+the capturing On1x example, checks exact output and failure without callback
+dispatch, and runs a two-module cleanup loop (explicit drop and early-return
+cleanup). It checks locked one-TU evidence and rejects drifted CDecl and
+unsupported source forms. Its separate C11/C++17 test exercises all 256
+byte values, verifies exact wire bytes via POSIX `recv(MSG_PEEK)`, checks
+close-before-callback and `FD_CLOEXEC`, and tests expiry, capacity exhaustion,
+socket/partial-init/allocation failure, and unchanged outputs on failure.
+
+```sh
+sdk_flags="-DBUILD_TESTING=ON -DON1X_BUILD_NATIVE_PPX=OFF -DON1X_WITH_EXOML=ON -DON1X_WITH_EXOML_EXTRACT=ON -DON1X_WITH_EXOTRACT=ON -DON1X_WITH_EXOTRACT_LUA=ON"
+cmake -S on1x -B build/on1x-workstream4-gcc $sdk_flags -DON1X_REQUIRE_LIBSTONE=ON
+cmake --build build/on1x-workstream4-gcc --target on1xc exotract \
+  on1x_kernel_ipc_hir_tests on1x_reference_tokens on1x_generated_tokens --parallel 5
+ctest --test-dir build/on1x-workstream4-gcc -j 4 \
+  -R 'on1x\.(kernel_(imports|imports_sdk|review_sdk|history_sdk|sandbox_sdk|ipc_sdk|ipc_hir)|scanner_parity|recursive_owning_adts|owning_adt|core_ref|defer_errors)$' \
+  --output-on-failure
+
+cmake -S on1x -B build/on1x-workstream4-clang $sdk_flags \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DON1X_BUILD_EXTENSION_SDK=OFF -DON1X_USE_FALLBACK_SCANNER=ON \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-sanitize-recover=all;-fno-omit-frame-pointer'
+cmake --build build/on1x-workstream4-clang --target on1xc exotract \
+  on1x_kernel_ipc_hir_tests --parallel 4
+ctest --test-dir build/on1x-workstream4-clang -j 3 \
+  -R 'on1x\.(kernel_(imports|ipc_sdk|ipc_hir)|recursive_owning_adts|owning_adt|core_ref|defer_errors)$' \
+  --output-on-failure
+```
+
+GCC generated-scanner selection **11/12**, including scanner parity,
+reviewed clamp and numerical profiles and sandbox discovery. The sole
+failure is the pre-existing `kernel_imports_sdk` PrettySexpr sidecar mismatch,
+also reproduced with an unmodified `git archive HEAD` baseline and
+subsequently corrected in the [follow-up](#contract-pin-and-package-regressions).
+The numerical
+profile regression was separately corrected: the HIR verifier now checks the
+bounded `f64` slice projection instead of comparing against its unsized
+signature. Clang fallback-scanner focused selection **7/7**, with ASan/UBSan
+on emitted clients, the C11 adapter/kernel/runtime, and the C++17 test client,
+not on the C++ compiler or SDK. Earlier concurrent edits to pinned inputs
+were rejected as drift; checks were not relaxed. No whole-suite, other-target,
+threaded or sandbox-enforcement claim is made.
+
+Final `ctest --test-dir build/on1x-workstream4-{gcc,clang}` runs (one build
+directory per invocation) with `-R '^on1x.kernel_ipc_(hir|sdk)$'` passed **2/2**
+on each after adding the independent wire oracle. The documented build
+example printed `0`, `42`, `-1`; `ldd` showed the system C runtime and loader,
+not LibStone, Exotract or Lua.
 
 ## On1x SDK 2 integration
 
@@ -1741,6 +1889,33 @@ ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
   ctest --test-dir build/cliche-sanitize -R '^on1x\.formatter$' --output-on-failure
 make -f prettyprint.mk test-on1x BUILD_DIR=build/formatter-prettydoc \
   ON1XC=build/on1x-final-generated-nvme/on1xc CC=cc
+```
+
+#### Configurable block separation and corpus refresh
+
+On 2026-11-20, starting from MuLIB
+`c2cbbf70537d12ba5015485239d227ef66b25cb8` with configured LibStone
+`3399047f6c6328b8f07788795c610699e66c060a`, the formatter gained bounded
+`nested_block_newlines` and `top_level_block_newlines` settings. The repository
+configuration uses one newline for nested blocks and two for top-level blocks.
+
+The generated and fallback scanners both passed `on1x.formatter`. Their output
+was byte-identical and idempotent for all 270 parseable `.on1x` sources under
+`on1x/`; there were no `.on1xi` files. The deliberately malformed,
+column-sensitive `addons/sublime/syntax_test_on1x.on1x` remains unmodified.
+The complete generated build and focused install/native SDK checks also passed,
+and the refreshed standard-library inventory validated all 650 file hashes.
+
+```sh
+cmake --build build/on1x-final-generated-nvme --parallel 4
+ctest --test-dir build/on1x-final-generated-nvme \
+  -R '^on1x\.formatter$' --output-on-failure
+ctest --test-dir build/on1x-final-fallback \
+  -R '^on1x\.formatter$' --output-on-failure
+ctest --test-dir build/on1x-final-generated-nvme \
+  -R '^(on1x\.install|on1x\.sdk\.native\.(host|stdlib|sources))$' \
+  --output-on-failure
+python3 on1x/stdlib/tests/check_package.py
 ```
 
 ## Sandbox kernel discovery and archive

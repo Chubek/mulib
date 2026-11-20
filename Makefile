@@ -13,7 +13,7 @@ EXAMPLES += build/cdd-pipeline
 .PHONY: muw3 check-muw3 check-muw3lib check-tls
 .PHONY: check-openai check-markup check-api-kernels
 .PHONY: check-web-primitives
-.PHONY: check-graphics check-notebook-desktop
+.PHONY: check-graphics check-vulkan check-raytracing check-minimpeg-video check-notebook-desktop
 .PHONY: check-notebook-headless check-wl-headless-private check-x11-nested
 WEB_PRIMITIVES_TESTS := pricing extraction browser css alloc hostile
 TESTS += $(addprefix build/test_web_,$(WEB_PRIMITIVES_TESTS))
@@ -37,6 +37,27 @@ check-api-kernels:
 	CC="$(CC)" CXX="$(CXX)" sh tests/run-api-kernels.sh
 check-graphics:
 	CC="$(CC)" CXX="$(CXX)" sh tests/run-graphics.sh
+VULKAN_CPPFLAGS ?= $(shell pkg-config --cflags vulkan 2>/dev/null)
+check-vulkan: build/vulkan-device
+	@status=0; ./build/vulkan-device || status=$$?; test "$$status" -eq 0 || test "$$status" -eq 77
+build/vulkan-device: tests/graphics/vulkan-device.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(VULKAN_CPPFLAGS) $(CFLAGS) -DMULIB_GLX_VULKAN_ENABLE $< $(LDLIBS) -ldl -o $@
+check-raytracing:
+	CC="$(CC)" sh tests/run-raytracing.sh
+MINIMPEG_CPPFLAGS ?= $(shell pkg-config --cflags libavcodec libavutil)
+MINIMPEG_LDLIBS ?= $(shell pkg-config --libs libavcodec libavutil)
+check-minimpeg-video: build/minimpeg-disabled build/minimpeg-video
+	./build/minimpeg-disabled
+	./build/minimpeg-video
+	@if command -v mpeg2enc >/dev/null && command -v mpeg2dec >/dev/null; then \
+		python3 tests/check-minimpeg-video.py --codec ./build/minimpeg-video; \
+	else \
+		printf '%s\n' 'SKIP: independent MPEG-1 oracle requires mpeg2enc and mpeg2dec'; \
+	fi
+build/minimpeg-disabled: tests/minimpeg-video.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
+build/minimpeg-video: tests/minimpeg-video.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(MINIMPEG_CPPFLAGS) $(CFLAGS) -DMULIB_MINIMPEG_USE_LIBAVCODEC $< $(LDLIBS) $(MINIMPEG_LDLIBS) -o $@
 check-notebook-desktop:
 	python3 tests/run-notebook-desktop-headers.py
 check-notebook-headless:

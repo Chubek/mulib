@@ -1,4 +1,5 @@
 import dep;
-fn main() {
+fn main()
+{
   println(dep.value());
 }

@@ -20,6 +20,7 @@ fn fits_size(value: i64) -> bool
 {
   return value >= 0 && value <= on1x_mulib_max_size();
 }
+
 fn fits_array(count: i64, element_bytes: i64) -> bool
 {
   if ! fits_size(count) || ! fits_size(element_bytes)
@@ -32,10 +33,12 @@ fn fits_array(count: i64, element_bytes: i64) -> bool
   }
   return count <= on1x_mulib_max_size() / element_bytes;
 }
+
 fn fixture_text(name: string) ->(bool, string)
 {
   return (on1x_mulib_fixture_is_text(name), on1x_mulib_fixture_text(name));
 }
+
 fn require_fixture(name: string) -> string
 {
   if ! on1x_mulib_fixture_is_text(name)

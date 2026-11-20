@@ -3,10 +3,12 @@ fn shexp_exec(program: string, arguments: sexpr) -> sexpr
 {
   return sx_cons(sx_symbol("exec"), sx_cons(sx_string(program), arguments));
 }
+
 fn shexp_sequence(a: sexpr, b: sexpr) -> sexpr
 {
   return sx_cons(sx_symbol("seq"), sx_cons(a, sx_cons(b, sx_nil())));
 }
+
 fn shexp_chdir(path: string, action: sexpr) -> sexpr
 {
   return sx_cons(sx_symbol("chdir"),
@@ -14,6 +16,7 @@ fn shexp_chdir(path: string, action: sexpr) -> sexpr
     sx_cons(action,
     sx_nil())));
 }
+
 fn shexp_render(command: sexpr) -> string
 {
   return sx_text(sx_head(command));

@@ -7,6 +7,7 @@ fn basis_word8_array_new(n: i64, initial: i64) -> i64
   }
   return basis_array_array(n, initial);
 }
+
 fn basis_word8_array_update(h: i64, i: i64, v: i64)
 {
   if v < 0 || v > 255
@@ -15,10 +16,12 @@ fn basis_word8_array_update(h: i64, i: i64, v: i64)
   }
   basis_array_update(h, i, v);
 }
+
 fn basis_word8_array_sub(h: i64, i: i64) -> i64
 {
   return basis_array_sub(h, i);
 }
+
 fn basis_word8_array_destroy(h: i64)
 {
   basis_array_destroy(h);

@@ -5,6 +5,11 @@
 > **Primary deliverable:** an honestly verified, statically compiled, safe-by-default On1x capable of writing **Shylock**, a price prediction, demand estimation, and pricing optimization engine built by composing MuLIB C11 kernels through LibStone ExoML semantic contracts.
 > **Repository:** `https://github.com/Chubek/mulib` (`on1x/`, `include/`, `library/`, `MANIFEST.yaml`); LibStone: `https://github.com/Chubek/libstone` (`moonstone/exoml/`, related analyzers).
 
+M2 KernelBind adds an [explicit raw framed transport](docs/kernel-framed.md)
+with one sealed foreign owner and one synchronous callback after close. It
+does not establish safe resource or callback admission, sandbox enforcement,
+or Shylock release readiness.
+
 M5/M7 discovery continuation (2026-11-18): the moved `stdlib/mulib` package is
 integrated into build/install/extraction tools. Five bounded colon-separated
 CLI/environment search lists, standard-library/native-PPX `On1xfile` manifests

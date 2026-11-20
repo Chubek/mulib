@@ -5,6 +5,7 @@ macro rows
     println($x) ... ...;
   };
 }
+
 macro prefix
 {
   rule($items: IntegerLiteral ..., end) => block
@@ -12,6 +13,7 @@ macro prefix
     println($items) ...;
   };
 }
+
 macro improper
 {
   rule([$head: Expression . $tail: Expression]) => expression
@@ -19,6 +21,7 @@ macro improper
     $head + $tail
   };
 }
+
 macro vector_first
 {
   rule(vector[$x: Expression, _ ...]) => expression
@@ -26,6 +29,7 @@ macro vector_first
     $x
   };
 }
+
 macro keyword literals(else) ellipsis dots
 {
   rule(else, $items: Expression dots) => block
@@ -33,6 +37,7 @@ macro keyword literals(else) ellipsis dots
     println($items) dots;
   };
 }
+
 macro datum
 {
   rule(42) => expression
@@ -44,6 +49,7 @@ macro datum
     false
   };
 }
+
 fn main()
 {
   rows!([1, 2], [], [3]);

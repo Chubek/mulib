@@ -637,7 +637,7 @@ entry point documented by [mulib-virtio](mulib-virtio.md).
 | [glx-tiledraster](graphics-overlay.md) | Bounded glx-tiledraster API; see documented scope and acceptance gates. | [header](../include/mulib-glx-tiledraster.h) · [example](../examples/gfx-headless.c) |
 | [glx-transform](mulib-gfx-path.md) | Bounded glx-transform API; see documented scope and acceptance gates. | [header](../include/mulib-glx-transform.h) · [example](../examples/gfx-headless.c) |
 | [glx-unix](mulib-gfx-input.md) | Bounded glx-unix API; see documented scope and acceptance gates. | [header](../include/mulib-glx-unix.h) · [example](../examples/gfx-headless.c) |
-| [glx-vulkan](graphics-overlay.md) | Bounded glx-vulkan API; see documented scope and acceptance gates. | [header](../include/mulib-glx-vulkan.h) · [example](../examples/gfx-headless.c) |
+| [glx-vulkan](mulib-glx-vulkan.md) | Optional native Vulkan devices and headless command submission. | [header](../include/mulib-glx-vulkan.h) · [example](../examples/gfx-headless.c) |
 | [glx-window](mulib-gfx-present.md) | Bounded glx-window API; see documented scope and acceptance gates. | [header](../include/mulib-glx-window.h) · [example](../examples/gfx-headless.c) |
 | [glyph](mulib-glyph.md) | Paired shaping/raster fonts and renderer-neutral positioned glyphs. | [header](../include/mulib-glyph.h) · [example](../examples/modules/glyph.c) |
 | [gpu](mulib-gpu.md) | GPU binary-profile and virtual-ISA text emission contract. | [header](../include/mulib-gpu.h) · [example](../examples/modules/gpu.c) |
@@ -987,7 +987,7 @@ entry point documented by [mulib-virtio](mulib-virtio.md).
 | [minhash](mulib-minhash.md) | Seeded MinHash signatures for Jaccard similarity estimation | [header](../include/mulib-minhash.h) · [example](../examples/modules/minhash.c) |
 | [minicurl](mulib-minicurl.md) | Focused HTTP request convenience layer over webclient. | [header](../include/mulib-minicurl.h) · [example](../examples/modules/minicurl.c) |
 | [miniflac](mulib-miniflac.md) | Native FLAC predictor decoder and verbatim-subframe encoder. | [header](../include/mulib-miniflac.h) · [example](../examples/modules/miniflac.c) |
-| [minimpeg](mulib-minimpeg.md) | Original MPEG-1 Layer III encoder and restricted long-block MP3 decoder. | [header](../include/mulib-minimpeg.h) · [example](../examples/modules/minimpeg.c) |
+| [minimpeg](mulib-minimpeg.md) | Original MP3 codec and opt-in MPEG-1 video encoding and decoding. | [header](../include/mulib-minimpeg.h) · [example](../examples/modules/minimpeg.c) |
 | [minincat](mulib-minincat.md) | Bounded binary stream relay through explicit I/O callbacks. | [header](../include/mulib-minincat.h) · [example](../examples/modules/minincat.c) |
 | [minish](mulib-minish.md) | Focused shell tokenization, expansion, builtins, and command dispatch. | [header](../include/mulib-minish.h) · [example](../examples/modules/minish.c) |
 | [minivm](mulib-minivm.md) | Checked stack bytecode execution with bounded resources and faults. | [header](../include/mulib-minivm.h) · [example](../examples/modules/minivm.c) |
@@ -1300,7 +1300,7 @@ entry point documented by [mulib-virtio](mulib-virtio.md).
 | [range-analysis](mulib-range-analysis.md) | Conservative checked signed-64 interval joins, addition, subtraction and multiplication. | [header](../include/mulib-range-analysis.h) · [example](../examples/modules/range-analysis.c) |
 | [rangeindex](mulib-rangeindex.md) | Mutable interval index with exact inclusive point and overlap queries | [header](../include/mulib-rangeindex.h) · [example](../examples/modules/rangeindex.c) |
 | [rate_limit](mulib-rate_limit.md) | Caller-clocked finite-double token bucket. | [header](../include/mulib-rate_limit.h) · [example](../examples/modules/rate_limit.c) |
-| [raytracing](mulib-raytracing.md) | CPU ray renderer with shadows, diffuse light and reflections. | [header](../include/mulib-raytracing.h) · [example](../examples/modules/raytracing.c) |
+| [raytracing](mulib-raytracing.md) | CPU ray renderer with deterministic and seeded stochastic path integration. | [header](../include/mulib-raytracing.h) · [example](../examples/modules/raytracing.c) |
 | [readability](mulib-readability.md) | Bounded semantic plain-text extraction from HTML with basic entity decoding. | [header](../include/mulib-readability.h) · [example](../examples/modules/readability.c) |
 | [readline](mulib-readline.md) | UTF-8 line editing, syntax highlighting, completion, history and declarative profiles. | [header](../include/mulib-readline.h) · [example](../examples/modules/readline.c) |
 | [record](mulib-record.md) | Owned named record fields with deep-copied datum values | [header](../include/mulib-record.h) · [example](../examples/modules/record.c) |

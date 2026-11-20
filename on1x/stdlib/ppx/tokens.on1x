@@ -10,6 +10,7 @@ fn ppx_token_number(value: sexpr, at: sexpr) -> i64
   }
   return n;
 }
+
 fn ppx_source_location(tokens: sexpr) -> sexpr
 {
   if sx_kind(tokens) != 3
@@ -18,6 +19,7 @@ fn ppx_source_location(tokens: sexpr) -> sexpr
   }
   return sexpr_nth(sx_head(tokens), 2);
 }
+
 fn ppx_peek(tokens: sexpr) -> string
 {
   if sx_kind(tokens) != 3
@@ -26,10 +28,12 @@ fn ppx_peek(tokens: sexpr) -> string
   }
   return sx_text(sexpr_nth(sx_head(tokens), 1));
 }
+
 fn ppx_token_error(tokens: sexpr, code: string, message: string)
 {
   ppx_diagnostic(ppx_source_location(tokens), code, message);
 }
+
 fn ppx_expect(tokens: sexpr, spelling: string) -> sexpr
 {
   if ppx_peek(tokens) != spelling
@@ -41,6 +45,7 @@ fn ppx_expect(tokens: sexpr, spelling: string) -> sexpr
   }
   return sx_tail(tokens);
 }
+
 fn ppx_read_tokens(carrier: sexpr) -> sexpr
 {
   let source = sx_text(sexpr_nth(carrier, 2));

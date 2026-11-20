@@ -3,12 +3,14 @@ fn batteries_map_empty() -> sexpr
 {
   return sx_nil();
 }
+
 fn batteries_map_put(map: sexpr, key: string, value: sexpr) -> sexpr
 {
   basis_map_validate(map);
   let pair = sx_cons(sx_string(key), sx_cons(value, sx_nil()));
   return sx_cons(pair, map);
 }
+
 fn batteries_map_has(map: sexpr, key: string) -> bool
 {
   basis_map_validate(map);
@@ -24,6 +26,7 @@ fn batteries_map_has(map: sexpr, key: string) -> bool
   }
   return false;
 }
+
 fn batteries_map_get(map: sexpr, key: string) -> sexpr
 {
   basis_map_validate(map);
@@ -40,6 +43,7 @@ fn batteries_map_get(map: sexpr, key: string) -> sexpr
   tool_fail("map: missing key");
   return sx_nil();
 }
+
 fn basis_map_find(map: sexpr, key: string) ->(bool, sexpr)
 {
   if ! batteries_map_has(map, key)
@@ -48,6 +52,7 @@ fn basis_map_find(map: sexpr, key: string) ->(bool, sexpr)
   }
   return (true, batteries_map_get(map, key));
 }
+
 fn basis_map_remove(map: sexpr, key: string) -> sexpr
 {
   basis_map_validate(map);
@@ -70,6 +75,7 @@ fn basis_map_remove(map: sexpr, key: string) -> sexpr
   }
   return result;
 }
+
 import "../base/shape.on1x";
 fn basis_map_validate(map: sexpr)
 {

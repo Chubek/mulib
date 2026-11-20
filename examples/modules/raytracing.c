@@ -17,6 +17,8 @@ main (void)
   mulib_raytracing_light_t light = { { -3, 4, 0 }, { 1, 1, 1 }, 30 };
   mulib_raytracing_camera_t camera
       = { { 0, 0, 0 }, { 0, 0, -3 }, { 0, 1, 0 }, 1.0f };
+  mulib_raytracing_path_options_t path = { .seed = 42, .samples_per_pixel = 32,
+                                           .max_bounces = 4 };
   mulib_glx_t *surface = mulib_glx_create (96, 64);
   FILE *image;
   memset (&object, 0, sizeof object);
@@ -33,8 +35,8 @@ main (void)
   scene.lights = &light;
   scene.light_count = 1;
   scene.background.z = 0.1f;
-  scene.ambient.x = scene.ambient.y = scene.ambient.z = 0.05f;
-  assert (surface && mulib_raytracing_render (&scene, camera, 2, surface));
+  assert (surface
+          && mulib_raytracing_path_render_glx (&scene, camera, path, surface));
   image = fopen ("raytracing.ppm", "wb");
   assert (image);
   assert (fprintf (image, "P6\n96 64\n255\n") > 0);

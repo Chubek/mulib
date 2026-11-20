@@ -29,6 +29,7 @@ fn pipe_node(node: sexpr, label: string) -> sexpr
   }
   return result;
 }
+
 fn transform(tree: sexpr, label: string) -> sexpr
 {
   return visitor_rewrite(tree, fn(node: sexpr, path: sexpr) -> sexpr
@@ -36,6 +37,7 @@ fn transform(tree: sexpr, label: string) -> sexpr
     return pipe_node(node, label);
   });
 }
+
 fn main()
 {
   ppx_serve(ppx_schema_env(), transform);

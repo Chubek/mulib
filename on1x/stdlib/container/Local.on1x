@@ -1,0 +1,39 @@
+# Use separate dots: adjacent `..` lexes as the range operator.
+from . .core.Pervasive import Option;
+# Optional caller-owned state. No thread, task or process-global storage.
+record Local < T >
+{
+  slot: Option < T >
+}
+
+fn basis_local_empty < T > () -> Local < T >
+{
+  return record < Local < T > >
+  {
+    slot: variant < Option < T > > (None, record
+    {
+    })
+  };
+}
+
+fn basis_local_peek < T > (local: borrow Local < T >) -> Option < T >
+{
+  return local["slot"];
+}
+
+fn basis_local_put < T > (local: ref Local < T >, value: T) -> Option < T >
+{
+  let previous = local["slot"];
+  local := record < Local < T > >
+  {
+    slot: variant < Option < T > > (Some, value)
+  };
+  return previous;
+}
+
+fn basis_local_take < T > (local: ref Local < T >) -> Option < T >
+{
+  let previous = local["slot"];
+  local := basis_local_empty();
+  return previous;
+}

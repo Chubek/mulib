@@ -1,0 +1,55 @@
+unsafe import kernel mulib.ipc_framed as Framed;
+
+fn open_registered(offset: i64) -> Framed.Result<own<Framed.Session>, i64>
+{
+  let pending = unsafe { Framed.open_session() };
+  let session = pending?;
+  let registered = unsafe {
+    Framed.register_callback(session, fn(byte: i64) -> i64 {
+      return byte + offset;
+    })
+  };
+  registered?;
+  return variant<Framed.Result<own<Framed.Session>, i64>>(Ok, move(session));
+}
+
+fn succeeded(result: Framed.Result<i64, i64>, expected: i64) -> bool
+{
+  return match result with { Ok(value) => value == expected, Err(status) => false };
+}
+
+fn failed(result: Framed.Result<i64, i64>, expected: i64) -> bool
+{
+  return match result with { Ok(value) => false, Err(status) => status == expected };
+}
+
+fn exercise() -> Framed.Result<i64, i64>
+{
+  let pending = open_registered(42);
+  let session = pending?;
+  return unsafe {
+    assert(failed(Framed.poll(session, 1000), 1));
+    Framed.send(session, 0u8, 1000)?;
+    assert(failed(Framed.send(session, 99u8, 1000), 1));
+    println(Framed.poll(session, 1000)?);
+    Framed.send(session, 255u8, 1000)?;
+    println(Framed.poll(session, 1000)?);
+
+    Framed.send(session, 99u8, 1000)?;
+    Framed.revoke(session)?;
+    Framed.register_callback(session, fn(byte: i64) -> i64 { return 0 - byte; })?;
+    assert(failed(Framed.poll(session, 1000), -4));
+    Framed.send(session, 1u8, 1000)?;
+    Framed.finish_send(session)?;
+    assert(failed(Framed.send(session, 2u8, 1000), -9));
+    assert(succeeded(Framed.poll(session, 1000), -1));
+    assert(failed(Framed.poll(session, 1000), -10));
+    assert(failed(Framed.poll(session, 1000), -9));
+    variant<Framed.Result<i64, i64>>(Ok, 0)
+  };
+}
+
+fn main()
+{
+  assert(succeeded(exercise(), 0));
+}

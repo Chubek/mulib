@@ -6,10 +6,12 @@ fn double_name(item: sexpr) -> sexpr
 {
   return sx_symbol(text_concat(sx_text(item), "!"));
 }
+
 fn is_a(item: sexpr) -> bool
 {
   return sx_text(item) == "a";
 }
+
 fn main()
 {
   let xs = sx_cons(sx_symbol("a"), sx_cons(sx_symbol("b"), sx_nil()));

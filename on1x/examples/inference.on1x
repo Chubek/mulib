@@ -3,18 +3,22 @@ fn increment(x) -> _
 {
   return x + 1;
 }
+
 fn decrement(x) -> _
 {
   return x - 1;
 }
+
 fn apply(operation, value) -> _
 {
   return operation(value);
 }
+
 fn same(left, right) -> _
 {
   return left == right;
 }
+
 fn choose(increasing) -> _
 {
   if increasing
@@ -26,6 +30,7 @@ fn choose(increasing) -> _
     return decrement;
   }
 }
+
 fn main()
 {
   let operation: fn(_) -> _ = choose(true);

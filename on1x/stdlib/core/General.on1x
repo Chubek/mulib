@@ -4,25 +4,31 @@ fn basis_general_id_int(x: i64) -> i64
 {
   return x;
 }
+
 fn basis_general_id_bool(x: bool) -> bool
 {
   return x;
 }
+
 fn basis_general_id_text(x: string) -> string
 {
   return x;
 }
+
 fn basis_general_before_int(a: i64, b: i64) -> i64
 {
   return a;
 }
+
 fn basis_general_after_int(a: i64, b: i64) -> i64
 {
   return b;
 }
+
 fn basis_general_ignore_int(x: i64)
 {
 }
+
 fn basis_general_min(a: i64, b: i64) -> i64
 {
   if a < b
@@ -31,6 +37,7 @@ fn basis_general_min(a: i64, b: i64) -> i64
   }
   return b;
 }
+
 fn basis_general_max(a: i64, b: i64) -> i64
 {
   if a > b

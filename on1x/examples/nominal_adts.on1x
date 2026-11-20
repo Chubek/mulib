@@ -2,18 +2,22 @@ record Point
 {
   x: i64, y: i64
 }
+
 enum Option < T >
 {
   None, Some(T)
 }
+
 enum Result < T, E >
 {
   Ok(T), Err(E)
 }
+
 fn magnitude(p: Point) -> i64
 {
   return p["x"] + p["y"];
 }
+
 fn choose(value: Option < _ >, fallback: _) -> _
 {
   return match value with
@@ -21,6 +25,7 @@ fn choose(value: Option < _ >, fallback: _) -> _
     None() => fallback, Some(n) => n
   };
 }
+
 fn recover(value: Result < i64, u8 >) -> i64
 {
   return match value with
@@ -28,6 +33,7 @@ fn recover(value: Result < i64, u8 >) -> i64
     Ok(n) => n, Err(code) => 0 - u8_to_i64(code)
   };
 }
+
 fn main()
 {
   let p = record < Point >

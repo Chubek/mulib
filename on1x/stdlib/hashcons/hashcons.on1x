@@ -4,6 +4,7 @@ fn hashcons_empty() -> sexpr
 {
   return sx_nil();
 }
+
 fn hashcons_lookup(pool: sexpr, text: string) ->(bool, sexpr)
 {
   var rest = pool;
@@ -24,6 +25,7 @@ fn hashcons_lookup(pool: sexpr, text: string) ->(bool, sexpr)
   }
   return (false, sx_nil());
 }
+
 fn hashcons_intern(pool: sexpr, text: string) ->(sexpr, sexpr)
 {
   let(found, atom) = hashcons_lookup(pool, text);

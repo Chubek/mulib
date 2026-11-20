@@ -4,6 +4,7 @@
 Installed helpers accept --mulib-root or ON1X_MULIB_ROOT for kernel builds.
 """
 import argparse
+import hashlib
 import importlib.util
 from pathlib import Path
 import os
@@ -79,6 +80,8 @@ def main():
     cli.add_argument('--optimize-ir', action='store_true', help='enable verified scalar passes (requires --via-mir)')
     cli.add_argument('--extra-c', action='append', default=[], help='extra C translation unit to compile/link')
     cli.add_argument('--cflag', action='append', default=[], help='explicit extra C compiler option')
+    cli.add_argument('--enable-pod-fixture', action='store_true',
+                     help='authorize the fixed Linux Pod byte-echo worker (requires static C toolchain)')
     cli.add_argument('--debug-build-root', type=Path,
                      help='remap this project staging root, generated C and SDK source paths in debug info')
     cli.add_argument('--ppx', nargs=2, action=OrderedAction, dest='ppx_chain', metavar=('LABEL', 'PROGRAM'))
@@ -127,6 +130,8 @@ def main():
         cli.error('--admitted-extern requires --memory-check')
     if args.debug_build_root and (args.inspect_kernels or args.kernel_bind):
         cli.error('--debug-build-root is not supported by KernelBind profiles')
+    if args.enable_pod_fixture and (args.emit_only or args.via_mir or args.inspect_kernels or args.kernel_bind):
+        cli.error('--enable-pod-fixture requires an ordinary direct C11 executable build')
     if args.mulib_plan and args.mulib_plan.resolve() in (args.input.resolve(),args.output.resolve()):
         cli.error('--mulib-plan must be separate from the input and executable')
     if args.inspect_kernels or args.kernel_bind:
@@ -207,6 +212,7 @@ def main():
         for label, schema in args.ppx_schema:
             compiler += ['--ppx-schema', label, schema]
         kernel_report = kernel_interface = raw_kernel_interface = None
+        ipc_raw = False
         if args.inspect_kernels or args.kernel_bind:
             spec = importlib.util.spec_from_file_location('on1x_exotract', ROOT/'tools/on1x-exotract.py')
             exo = importlib.util.module_from_spec(spec);spec.loader.exec_module(exo)
@@ -220,6 +226,12 @@ def main():
             paths = exo.housekeeping.search_paths(args.mulib_path)
             root = exo.housekeeping.kernel_root(args.mulib_root, MULIB, paths)
             requests = exo.contracts.load(requests_path)
+            ipc_raw = bool(args.kernel_bind and not args.kernel_review and any(
+                r['module'] == 'mulib.ipc_framed' and r['unsafe'] for r in requests['requests']))
+            if ipc_raw:
+                for name in ('on1x_kernel_ipc.c', 'on1x_kernel_ipc.h'):
+                    path = ROOT/'runtime'/name
+                    driver_pins[path] = exo.contracts.digest(path)
             report = exo.kernel_discovery(requests, root, paths, args.exotract, args.cc, args.resource_dir,
                                           args.cflag, driver_pins,
                                           review=bool(args.kernel_review_candidate or args.kernel_review))
@@ -243,6 +255,8 @@ def main():
                 review = exo.authorize_review(report, args.kernel_review_key, args.kernel_review,
                                               args.kernel_review_signature, Path(temp))
                 compiler.append('--kernel-stage')
+            elif ipc_raw:
+                kernel_interface = exo.ipc_raw_interface(report)
             else:
                 kernel_interface = exo.clamp_scalar_interface(report, unsafe=True)
             args.cc = report['compiler']
@@ -266,7 +280,7 @@ def main():
         paths=house.search_paths(args.mulib_path)
         mulib_root=house.kernel_root(args.mulib_root,MULIB,paths)
         includes=house.include_paths(mulib_root,paths)
-        if args.kernel_review:
+        if args.kernel_review or ipc_raw:
             # Discovery checked alternate kernel candidates but did not add
             # those search roots to ExoLib's C header search path.
             includes=[mulib_root/'include']
@@ -278,6 +292,22 @@ def main():
         has_csp = '#include <on1x_concurrency.h>' in code
         has_pretty = bool(re.search(r'^extern [^;\n]*\bon1x_pretty_(?:render|status)\(', code, re.M))
         has_tty = bool(re.search(r'^extern [^;\n]*\bon1x_tty_\w+\(', code, re.M))
+        has_shared = '#include <on1x_container_shared.h>' in code
+        container_externs = set(re.findall(r'^extern [^;\n]*\bon1x_container_(\w+)\(', code, re.M))
+        container_groups = {
+            'TLS': ('runtime', ('xthreads',), {'tls_i64_present', 'tls_i64_value', 'tls_i64_set', 'tls_i64_clear'}),
+            'FOREIGN': ('runtime', (), {'file_byte_at'}),
+            'POD': ('pod_runtime', ('sandbox-process',) if args.enable_pod_fixture else (), {'pod_echo_byte'}),
+        }
+        containers = [key for key, (_, _, symbols) in container_groups.items()
+                      if container_externs & symbols]
+        if args.enable_pod_fixture and 'POD' not in containers:
+            raise ValueError('--enable-pod-fixture requires the Pod adapter in the program')
+        container_flags = ['-DON1X_CONTAINER_'+group for group in containers if group != 'POD']
+        if args.enable_pod_fixture:
+            container_flags.append('-DON1X_CONTAINER_POD_EMBEDDED')
+        if has_shared or 'TLS' in containers or args.enable_pod_fixture:
+            container_flags.append('-pthread')
         externs=set(re.findall(r'\bextern\s+[^;\n]*\b(on1x_mulib_\w+)\(',code))
         has_mulib = any(re.fullmatch(r'on1x_mulib_(abi_version|pointer_bits|max_size|(?:kernel|fixture)_\w+|has_kernel|has_fixture)',name) for name in externs)
         bridge_groups={
@@ -291,7 +321,8 @@ def main():
         }
         groups={group for group,(_,symbols) in bridge_groups.items() if any('on1x_mulib_'+s in externs for s in symbols)}
         has_bridge=bool(groups) or 'on1x_mulib_bridge_status' in externs
-        native = kernel_interface or has_json or has_csp or has_pretty or has_tty or has_mulib or has_bridge or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan
+        native = (kernel_interface or has_json or has_csp or has_pretty or has_tty or has_mulib or
+                  has_bridge or containers or has_shared or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan)
         recipe, fingerprints, native_links = None, {}, []
         if native:
             cc=shutil.which(args.cc)
@@ -302,7 +333,7 @@ def main():
             for path in [cc,Path(__file__).resolve(),Path(house.__file__)]:fingerprints[str(path)]=house.contracts.digest(path)
             kernels = list(args.mulib)
             if kernel_interface:
-                if has_json or has_csp or has_pretty or has_tty or has_mulib or has_bridge:
+                if has_json or has_csp or has_pretty or has_tty or has_mulib or has_bridge or containers or has_shared:
                     raise ValueError('KernelBind profile cannot be mixed with built-in raw kernel bridges')
                 if compiler_target != kernel_report['target'] or root != mulib_root:
                     raise ValueError('KernelBind target or MuLIB root drift')
@@ -311,10 +342,15 @@ def main():
                 selected = set(members)
                 if raw_kernel_interface:
                     selected.add(raw_kernel_interface['module'])
-                kernels.extend(name.removeprefix('mulib.') for name in sorted(selected))
-                profiles = {name: exo.reviewed_profile_tools(name) for name in members}
-                expected_macros = list(dict.fromkeys(
-                    macro for name in sorted(selected) for macro in exo.reviewed_profile_tools(name)[0]))
+                if ipc_raw:
+                    kernels.append('ipc-framed')
+                    expected_macros = exo.IPC_IMPL
+                    cmd.append(str(ROOT/'runtime/on1x_kernel_ipc.c'))
+                else:
+                    kernels.extend(name.removeprefix('mulib.') for name in sorted(selected))
+                    profiles = {name: exo.reviewed_profile_tools(name) for name in members}
+                    expected_macros = list(dict.fromkeys(
+                        macro for name in sorted(selected) for macro in exo.reviewed_profile_tools(name)[0]))
                 cmd.append('-DON1X_KERNEL_ABI_V1=1')
                 if args.kernel_review:
                     adapter = Path(temp)/'kernel-adapter.c'
@@ -333,6 +369,14 @@ def main():
             if has_tty:
                 for kernel in ('termutils', 'termkey', 'termstyle', 'vterm'):
                     if kernel not in kernels:kernels.append(kernel)
+            for group in containers:
+                for kernel in container_groups[group][1]:
+                    if kernel not in kernels:
+                        kernels.append(kernel)
+            if has_shared:
+                for kernel in ('xatomics', 'xthreads'):
+                    if kernel not in kernels:
+                        kernels.append(kernel)
             recipe = house.plan(mulib_root, kernels, args.mulib_fixture,paths) if kernels or args.mulib_fixture or args.mulib_archive else None
             if any('MULIB_IMPL_' in flag for flag in args.cflag):
                 raise ValueError('MuLIB implementation macros belong to the single generated TU')
@@ -420,6 +464,63 @@ def main():
                 bridge = Path(subprocess.check_output(
                     [args.on1xc, '--stdlib-resource', 'tty/runtime.c', *loader_flags], text=True).strip())
                 if bridge.resolve() not in {Path(p).resolve() for p in args.extra_c}:cmd.append(str(bridge))
+            if containers or has_shared:
+                # Check handwritten extern declarations in the same translation
+                # unit as the selected ABI without pre-including system headers
+                # into the native bridge ahead of its feature-test macros.
+                abi_includes = []
+                supplied = {Path(p).resolve() for p in args.extra_c}
+                for stem in sorted({container_groups[group][0] for group in containers}):
+                    bridge = Path(subprocess.check_output(
+                        [args.on1xc, '--stdlib-resource', f'container/{stem}.c', *loader_flags], text=True).strip()).resolve(strict=True)
+                    header = bridge.with_suffix('.h').resolve(strict=True)
+                    header_bytes = house.contracts.read(header, 256 * 1024)
+                    fingerprints[str(header)] = hashlib.sha256(header_bytes).hexdigest()
+                    abi_name = f'container-{stem}-abi.h'
+                    (Path(temp)/abi_name).write_bytes(header_bytes)
+                    abi_includes.append(f'#include "{abi_name}"\n')
+                    if bridge not in supplied:
+                        cmd.append(str(bridge))
+                    if stem == 'pod_runtime' and args.enable_pod_fixture:
+                        if not re.fullmatch(r'(x86_64|aarch64)-[^ ]*linux[^ ]*', compiler_target):
+                            raise ValueError('the Pod fixture requires a Linux x86-64 or AArch64 C target')
+                        worker = Path(subprocess.check_output(
+                            [args.on1xc, '--stdlib-resource', 'container/pod_worker.c', *loader_flags],
+                            text=True).strip()).resolve(strict=True)
+                        if worker.parent != bridge.parent:
+                            raise ValueError('Pod worker and runtime must come from the same stdlib')
+                        worker_flags = ['-std=c11', '-O2', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
+                                        '-I', str(mulib_root/'include'), '-static']
+                        for path, digest in house.compile_inputs(args.cc, worker_flags, worker).items():
+                            if path in fingerprints and fingerprints[path] != digest:
+                                raise ValueError('Pod worker input drift: '+path)
+                            fingerprints[path] = digest
+                        elf = Path(temp)/'pod-worker.elf'
+                        subprocess.run([args.cc, *worker_flags, '-s', str(worker), '-o', str(elf)],
+                                       check=True, timeout=60)
+                        data = house.contracts.read(elf, 2 * 1024 * 1024)
+                        if not data.startswith(b'\x7fELF\x02\x01'):
+                            raise ValueError('Pod worker must be a 64-bit little-endian ELF')
+                        fingerprints[str(elf)] = hashlib.sha256(data).hexdigest()
+                        image = Path(temp)/'pod-worker-image.c'
+                        with image.open('w', encoding='ascii') as stream:
+                            stream.write('#include <stddef.h>\nconst unsigned char on1x_container_pod_worker_elf[] = {\n')
+                            for i in range(0, len(data), 32):
+                                stream.write(','.join(str(b) for b in data[i:i+32])+',\n')
+                            stream.write('};\nconst size_t on1x_container_pod_worker_elf_size = '
+                                         'sizeof on1x_container_pod_worker_elf;\n')
+                        cmd.append(str(image))
+                if has_shared:
+                    bridge = Path(subprocess.check_output(
+                        [args.on1xc, '--stdlib-resource', 'container/shared.c', *loader_flags], text=True).strip())
+                    shared_header = bridge.with_name('on1x_container_shared.h').resolve(strict=True)
+                    fingerprints[str(shared_header)] = house.contracts.digest(shared_header)
+                    container_flags += ['-I', str(bridge.parent)]
+                    if bridge not in supplied:
+                        cmd.append(str(bridge))
+                if abi_includes:
+                    generated.write_text(''.join(abi_includes)+code)
+                cmd += container_flags
             if has_bridge:
                 bridge=ROOT/'stdlib/_bridge/mulib_bridge.c'
                 if bridge.resolve() not in {Path(p).resolve() for p in args.extra_c}:cmd.append(str(bridge))
@@ -456,6 +557,7 @@ def main():
             flags=['-I',str(ROOT/'runtime'),*include_flags,'-I',str(ROOT/'stdlib/mulib'),*args.cflag]
             if recipe:flags += ['-D'+item for item in recipe['compile_definitions']]
             flags += ['-DON1X_BRIDGE_'+group for group in sorted(groups)]
+            flags += container_flags
             if kernel_interface:flags.append('-DON1X_KERNEL_ABI_V1=1')
             for source in [Path(value) for value in cmd if value.endswith('.c')]:
                 for path,digest in house.compile_inputs(args.cc,flags,source).items():
@@ -537,6 +639,10 @@ def main():
                             compiler=str(cc),compiler_version=compiler_version,compiler_target=compiler_target,
                             cflags=args.cflag,bridge_groups=sorted(groups),
                             executable_sha256=house.contracts.digest(binary),safe_export=False)
+                if containers or has_shared:
+                    report['container_bridge_groups'] = sorted(containers + (['SHARED'] if has_shared else []))
+                if 'POD' in containers:
+                    report['pod_fixture_enabled'] = args.enable_pod_fixture
                 if kernel_interface:report['kernel_interface']=kernel_interface
                 args.mulib_plan.parent.mkdir(parents=True,exist_ok=True)
                 if kernel_interface:

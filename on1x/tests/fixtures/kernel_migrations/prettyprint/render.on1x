@@ -23,10 +23,12 @@ fn pp_render(doc: sexpr,
   }
   return PrettyKernel.render_expr(source, width, algorithm, target, paragraph);
 }
+
 fn pp_format(doc: sexpr, width: i64) ->(i64, string)
 {
   return pp_render(doc, width, 1, 0, 0);
 }
+
 fn main()
 {
   let doc = SExpr.sx_cons(SExpr.sx_symbol("text"),

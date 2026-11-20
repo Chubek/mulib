@@ -4,6 +4,7 @@ fn mark(n: i64) -> i64
   println(n);
   return n;
 }
+
 fn main()
 {
   var n = 1;

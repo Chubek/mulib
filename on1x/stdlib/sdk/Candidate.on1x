@@ -1,15 +1,7 @@
-from ._Trusted import basis_sdk_bridge_candidate_open,
-  basis_sdk_bridge_candidate_append,
-  basis_sdk_bridge_candidate_commit,
-  basis_sdk_bridge_candidate_abort;
-
+from ._Trusted import basis_sdk_bridge_candidate_open, basis_sdk_bridge_candidate_append, basis_sdk_bridge_candidate_commit, basis_sdk_bridge_candidate_abort;
 record SDKCandidate
 {
-  context: u64,
-  handle: u64,
-  schema: u32,
-  source_revision: u64,
-  limit: u32
+  context: u64, handle: u64, schema: u32, source_revision: u64, limit: u32
 }
 
 enum SDKCandidateResult
@@ -17,42 +9,39 @@ enum SDKCandidateResult
   Candidate(SDKCandidate), Failure(u32)
 }
 
-fn basis_sdk_candidate_open(context: u64, schema: u32,
-  source_revision: u64, maximum_bytes: u32) -> SDKCandidateResult
+fn basis_sdk_candidate_open(context: u64,
+  schema: u32,
+  source_revision: u64,
+  maximum_bytes: u32) -> SDKCandidateResult
 {
-  if context == 0u64 || schema == 0u32 || source_revision == 0u64 ||
-    maximum_bytes == 0u32 || maximum_bytes > 64u32
+  if context == 0u64 || schema == 0u32 || source_revision == 0u64 || maximum_bytes == 0u32 || maximum_bytes > 64u32
   {
     return variant < SDKCandidateResult > (Failure, 4u32);
   }
-  let result = basis_sdk_bridge_candidate_open(
-    context, schema, source_revision, maximum_bytes);
+  let result = basis_sdk_bridge_candidate_open(context,
+    schema,
+    source_revision,
+    maximum_bytes);
   if result < 4294967296u64
   {
-    return variant < SDKCandidateResult > (
-      Failure, u32_from_u64(result));
+    return variant < SDKCandidateResult > (Failure, u32_from_u64(result));
   }
-  return variant < SDKCandidateResult > (Candidate,
-    record < SDKCandidate >
-    {
-      context: context,
-      handle: result,
-      schema: schema,
-      source_revision: source_revision,
-      limit: maximum_bytes
-    });
+  return variant < SDKCandidateResult > (Candidate, record < SDKCandidate >
+  {
+    context: context, handle: result, schema: schema, source_revision: source_revision, limit: maximum_bytes
+  });
 }
 
 fn basis_sdk_candidate_append(candidate: SDKCandidate, value: u8) -> u32
 {
-  return basis_sdk_bridge_candidate_append(
-    candidate["context"], candidate["handle"], value);
+  return basis_sdk_bridge_candidate_append(candidate["context"],
+    candidate["handle"],
+    value);
 }
 
 fn basis_sdk_candidate_commit(candidate: SDKCandidate) -> u32
 {
-  return basis_sdk_bridge_candidate_commit(
-    candidate["context"],
+  return basis_sdk_bridge_candidate_commit(candidate["context"],
     candidate["handle"],
     candidate["schema"],
     candidate["source_revision"]);
@@ -60,14 +49,17 @@ fn basis_sdk_candidate_commit(candidate: SDKCandidate) -> u32
 
 fn basis_sdk_candidate_abort(candidate: SDKCandidate) -> u32
 {
-  return basis_sdk_bridge_candidate_abort(
-    candidate["context"], candidate["handle"]);
+  return basis_sdk_bridge_candidate_abort(candidate["context"],
+    candidate["handle"]);
 }
 
-fn basis_sdk_candidate_abort_preserving(
-  candidate: SDKCandidate, primary_status: u32) -> u32
+fn basis_sdk_candidate_abort_preserving(candidate: SDKCandidate,
+  primary_status: u32) -> u32
 {
   let cleanup = basis_sdk_candidate_abort(candidate);
-  if cleanup != 0u32 { return 1u32; }
+  if cleanup != 0u32
+  {
+    return 1u32;
+  }
   return primary_status;
 }

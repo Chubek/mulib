@@ -14,6 +14,7 @@ fn json_valid(text: string) -> bool
   Json.destroy(doc);
   return true;
 }
+
 fn basis_json_normalize(text: string) ->(i64, string)
 {
   if text_len(text) > 2097152
@@ -29,11 +30,13 @@ fn basis_json_normalize(text: string) ->(i64, string)
   Json.destroy(doc);
   return result;
 }
+
 fn json_normalize(text: string) -> string
 {
   let(status, value) = basis_json_normalize(text);
   return value;
 }
+
 fn basis_json_array_length(text: string) ->(bool, i64)
 {
   if text_len(text) > 2097152
@@ -54,6 +57,7 @@ fn basis_json_array_length(text: string) ->(bool, i64)
   Json.destroy(doc);
   return (true, size);
 }
+
 fn main()
 {
   assert(json_valid("null"));

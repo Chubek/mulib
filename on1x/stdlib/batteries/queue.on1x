@@ -3,11 +3,13 @@ fn batteries_queue_empty() ->(sexpr, sexpr)
 {
   return (sx_nil(), sx_nil());
 }
+
 fn batteries_queue_push(queue: (sexpr, sexpr), item: sexpr) ->(sexpr, sexpr)
 {
   let(front, rear) = queue;
   return (front, sx_cons(item, rear));
 }
+
 fn batteries_queue_reverse(list: sexpr) -> sexpr
 {
   var rest = list;
@@ -19,6 +21,7 @@ fn batteries_queue_reverse(list: sexpr) -> sexpr
   }
   return out;
 }
+
 fn batteries_queue_pop(queue: (sexpr, sexpr)) ->(sexpr, (sexpr, sexpr))
 {
   let(front, rear) = queue;

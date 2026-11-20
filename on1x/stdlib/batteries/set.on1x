@@ -3,6 +3,7 @@ fn batteries_set_empty() -> sexpr
 {
   return sx_nil();
 }
+
 fn batteries_set_has(set: sexpr, key: string) -> bool
 {
   var rest = set;
@@ -16,6 +17,7 @@ fn batteries_set_has(set: sexpr, key: string) -> bool
   }
   return false;
 }
+
 fn batteries_set_add(set: sexpr, key: string) -> sexpr
 {
   if batteries_set_has(set, key)

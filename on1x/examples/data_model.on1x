@@ -7,6 +7,7 @@ fn magnitude(v: record
 {
   return v["x"] * v["x"] + v["y"] * v["y"];
 }
+
 fn classify(s: sum
 {
   None: record
@@ -22,6 +23,7 @@ fn classify(s: sum
     None() => 0.0, Point(p) => magnitude(p)
   };
 }
+
 fn sum_range(a: array < i64, 4 >) -> i64
 {
   var acc: i64 = 0;
@@ -32,6 +34,7 @@ fn sum_range(a: array < i64, 4 >) -> i64
   }
   return acc;
 }
+
 fn main()
 {
   let origin = record

@@ -3,6 +3,7 @@ fn basis_word8_check(x: i64) -> bool
 {
   return x >= 0 && x <= 255;
 }
+
 fn basis_word8_wrap(x: i64) -> i64
 {
   let r = x % 256;
@@ -12,6 +13,7 @@ fn basis_word8_wrap(x: i64) -> i64
   }
   return r;
 }
+
 fn basis_word8_add(a: i64, b: i64) -> i64
 {
   if ! basis_word8_check(a) || ! basis_word8_check(b)
@@ -20,6 +22,7 @@ fn basis_word8_add(a: i64, b: i64) -> i64
   }
   return (a + b) % 256;
 }
+
 fn basis_word8_sub(a: i64, b: i64) -> i64
 {
   if ! basis_word8_check(a) || ! basis_word8_check(b)
@@ -28,6 +31,7 @@ fn basis_word8_sub(a: i64, b: i64) -> i64
   }
   return basis_word8_wrap(a - b);
 }
+
 fn basis_word8_mul(a: i64, b: i64) -> i64
 {
   if ! basis_word8_check(a) || ! basis_word8_check(b)
@@ -36,6 +40,7 @@ fn basis_word8_mul(a: i64, b: i64) -> i64
   }
   return (a * b) % 256;
 }
+
 fn basis_word8_and(a: i64, b: i64) -> i64
 {
   if ! basis_word8_check(a) || ! basis_word8_check(b)
@@ -58,6 +63,7 @@ fn basis_word8_and(a: i64, b: i64) -> i64
   }
   return result;
 }
+
 fn basis_word8_or(a: i64, b: i64) -> i64
 {
   if ! basis_word8_check(a) || ! basis_word8_check(b)
@@ -80,11 +86,13 @@ fn basis_word8_or(a: i64, b: i64) -> i64
   }
   return result;
 }
+
 fn basis_word8_xor(a: i64, b: i64) -> i64
 {
   let common = basis_word8_and(a, b);
   return basis_word8_or(a, b) - common;
 }
+
 fn basis_word8_not(a: i64) -> i64
 {
   if ! basis_word8_check(a)
@@ -93,6 +101,7 @@ fn basis_word8_not(a: i64) -> i64
   }
   return 255 - a;
 }
+
 fn basis_word8_shift_left(a: i64, n: i64) -> i64
 {
   if ! basis_word8_check(a) || n < 0
@@ -110,6 +119,7 @@ fn basis_word8_shift_left(a: i64, n: i64) -> i64
   }
   return x;
 }
+
 fn basis_word8_shift_right(a: i64, n: i64) -> i64
 {
   if ! basis_word8_check(a) || n < 0

@@ -11,6 +11,7 @@ fn basis_diagnostics_ppx_register(id: string) -> bool
   return on1x_diagnostics_sideband(sexpr_print(ppx_node("register",
     ppx_list1(sx_string(id)))));
 }
+
 fn basis_diagnostics_ppx_emit(id: string, location: sexpr) -> bool
 {
   let record = basis_diagnostics_record(id, location);

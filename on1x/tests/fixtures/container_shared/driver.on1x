@@ -1,0 +1,16 @@
+import std.container.Arc as A;
+import std.container.RefCell as C;
+import std.container.Tls as T;
+fn main()
+{
+  assert(T.basis_tls_i64_set(7));
+  let buffer = A.basis_arc_new(array[0u8, 1u8, 0u8, 255u8]);
+  let count = A.basis_arc_parallel_count(buffer, 0u8, 4);
+  let cell = C.basis_refcell_new(count);
+  match C.basis_refcell_try_borrow(cell) with
+  {
+    Busy() => assert(false), Granted(reader) => println(C.basis_refcell_read(reader))
+  };
+  assert(option_unwrap_or(T.basis_tls_i64_current(), 0) == 7);
+  T.basis_tls_i64_clear();
+}

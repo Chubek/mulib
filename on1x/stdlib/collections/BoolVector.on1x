@@ -4,6 +4,7 @@ fn basis_bool_vector_length(xs: sexpr) -> i64
 {
   return basis_vector_length(xs);
 }
+
 fn basis_bool_vector_sub(xs: sexpr, index: i64) -> bool
 {
   let atom = basis_vector_sub(xs, index);

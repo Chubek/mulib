@@ -21,6 +21,9 @@ MODULES = re.compile(r'^- name: .*?(?=^- name: |\Z)', re.M | re.S)
 MANIFEST_HEADER = re.compile(r'^  header: include/(mulib-.+\.h)$', re.M)
 VALIDATION = "  validation: tests/run-graphics.sh; header compilation is not feature completeness.\n"
 NOTEBOOK_PROFILE = re.compile(r'^  profile: notebook-desktop$', re.M)
+PURPOSES = {
+    "glx-vulkan": "Optional native Vulkan devices and headless command submission.",
+}
 
 
 def headers(root=ROOT):
@@ -73,8 +76,10 @@ def documentation(name):
     family = group(name)
     if name in {"glx-shaderir", "glx-shaderjit", "glx-shadervm"}:
         return "manual/mulib-gfx-shader.md"
+    if name == "glx-vulkan":
+        return "manual/mulib-glx-vulkan.md"
     if family == "retgtk" or name in {
-            "glx-egl", "glx-opengl", "glx-vulkan", "glx-gpu", "glx-shaderir",
+            "glx-egl", "glx-opengl", "glx-gpu", "glx-shaderir",
             "glx-shaderjit", "glx-shadervm", "glx-simd", "glx-tiledraster",
             "glx-rendercache", "glx-cursor", "glx-display", "glx-legacy-bridge"}:
         return "manual/graphics-overlay.md"
@@ -114,13 +119,14 @@ def updated_manifest(root=ROOT):
         for dependency in deps:
             if not (root / "include" / f"mulib-{dependency}.h").is_file():
                 raise ValueError(f"{name}: unknown dependency {dependency}")
+        purpose = PURPOSES.get(name, f"Bounded {name} API; see documented scope and acceptance gates.")
         retained.append(
             f"- name: {name}\n"
             f"  header: include/{header.name}\n"
             f"  manual: {documentation(name)}\n"
             "  implementation: static-inline\n"
             "  status: bounded\n"
-            f"  purpose: Bounded {name} API; see documented scope and acceptance gates.\n"
+            f"  purpose: {purpose}\n"
             f"  dependencies: [{', '.join(deps)}]\n"
             "  example: examples/gfx-headless.c\n" + VALIDATION)
     # Do not silently register or assign status to unrelated, previously

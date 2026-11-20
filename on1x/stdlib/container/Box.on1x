@@ -1,0 +1,36 @@
+# Unique heap storage backed by On1x's own<Nominal> lifecycle.
+record Box < T >
+{
+  value: T
+}
+
+fn basis_box_new < T > (value: T) -> own < Box < T > >
+{
+  return box(record < Box < T > >
+  {
+    value: value
+  });
+}
+
+# Copy the payload, not the owner or its address.
+fn basis_box_get < T > (owner: borrow Box < T >) -> T
+{
+  return owner["value"];
+}
+
+fn basis_box_replace < T > (owner: ref Box < T >, value: T) -> T
+{
+  let previous = owner["value"];
+  owner := record < Box < T > >
+  {
+    value: value
+  };
+  return previous;
+}
+
+# Consume and free the box, returning its payload.
+fn basis_box_into_inner < T > (owner: own < Box < T > >) -> T
+{
+  let contents = take(owner);
+  return contents["value"];
+}

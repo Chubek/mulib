@@ -2,6 +2,7 @@ fn apply(f: fn(i64) -> i64, x: i64) -> i64
 {
   return f(x);
 }
+
 fn main()
 {
   let n = 40;

@@ -4,6 +4,7 @@ fn native_string(text: string, at: sexpr) -> sexpr
 {
   return ppx_node("StringLiteral", ppx_list2(sx_string(text), at));
 }
+
 fn native_append(a: sexpr, b: sexpr) -> sexpr
 {
   var rest = sexpr_reverse(a);
@@ -15,22 +16,27 @@ fn native_append(a: sexpr, b: sexpr) -> sexpr
   }
   return out;
 }
+
 fn native_parameter(name: string, type: sexpr, at: sexpr) -> sexpr
 {
   return ppx_node("Parameter", ppx_list3(sx_string(name), type, at));
 }
+
 fn native_block(statements: sexpr, at: sexpr) -> sexpr
 {
   return ppx_node("Block", ppx_list2(statements, at));
 }
+
 fn native_do(value: sexpr, at: sexpr) -> sexpr
 {
   return ppx_node("Do", ppx_list2(value, at));
 }
+
 fn native_binary(op: string, a: sexpr, b: sexpr, at: sexpr) -> sexpr
 {
   return ppx_node("Binary", ppx_list4(sx_symbol(op), a, b, at));
 }
+
 fn native_lambda(parameters: sexpr,
   result: sexpr,
   body: sexpr,
@@ -38,6 +44,7 @@ fn native_lambda(parameters: sexpr,
 {
   return ppx_node("Lambda", ppx_list4(parameters, result, body, at));
 }
+
 fn native_serve(transform: fn(sexpr, string) -> sexpr)
 {
   ppx_serve(ppx_schema_env(), fn(tree: sexpr, label: string) -> sexpr

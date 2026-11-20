@@ -31,13 +31,21 @@ width = 80   # 1..4096, preferred maximum display columns (not a hard limit)
 tabstop = 2  # 1..16, spaces per block or continuation indentation
 algorithm = fits          # fits or search
 brace_style = same-line   # same-line or allman
+nested_block_newlines = 1    # 1..16
+top_level_block_newlines = 1 # 1..16
 ```
 
 These are the defaults. The On1x checkout's `on1x/.on1xfmt` selects `search`
-and `allman` for sources under `on1x/`. `search` uses PrettyPrint's bounded
-group search at eligible list commas, falling back to `fits` when the
-document has more than nine layout groups. If a search exhausts the layout
-budget, no output is written; selecting `fits` avoids that search.
+and `allman`, keeps nested blocks one newline apart, and separates top-level
+blocks with two newlines for sources under `on1x/`. The newline settings count
+literal line breaks after a completed brace-delimited block: one puts the next
+line immediately below it, while two leaves one blank line. Block continuations
+such as `else` and expression/list punctuation remain attached.
+
+`search` uses PrettyPrint's bounded group search at eligible list commas,
+falling back to `fits` when the document has more than nine layout groups. If a
+search exhausts the layout budget, no output is written; selecting `fits`
+avoids that search.
 `allman` puts opening curly braces on a new line and splits empty brace
 pairs and `} else`. Closing delimiters, braces, and statement terminators
 guide the conservative layout;

@@ -8,6 +8,7 @@ fn basis_char_array_new(n: i64, code: i64) -> i64
   }
   return basis_array_array(n, code);
 }
+
 fn basis_char_array_update(handle: i64, index: i64, code: i64)
 {
   if code < 1 || code > 255
@@ -16,6 +17,7 @@ fn basis_char_array_update(handle: i64, index: i64, code: i64)
   }
   basis_array_update(handle, index, code);
 }
+
 fn basis_char_array_sub(handle: i64, index: i64) -> i64
 {
   return basis_array_sub(handle, index);

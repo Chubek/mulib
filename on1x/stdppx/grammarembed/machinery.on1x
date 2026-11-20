@@ -5,50 +5,62 @@ fn ge_config() -> string
 {
   return "@CONFIG@";
 }
+
 fn ge_transitions() -> string
 {
   return "@TRANSITIONS@";
 }
+
 fn ge_accepts() -> string
 {
   return "@ACCEPTS@";
 }
+
 fn ge_closures() -> string
 {
   return "@CLOSURES@";
 }
+
 fn ge_edges() -> string
 {
   return "@EDGES@";
 }
+
 fn ge_actions() -> string
 {
   return "@ACTIONS@";
 }
+
 fn ge_gotos() -> string
 {
   return "@GOTOS@";
 }
+
 fn ge_productions() -> string
 {
   return "@PRODUCTIONS@";
 }
+
 fn ge_rhs() -> string
 {
   return "@RHS@";
 }
+
 fn ge_names() -> string
 {
   return "@NAMES@";
 }
+
 fn ge_offsets() -> string
 {
   return "@OFFSETS@";
 }
+
 fn ge_terminals() -> string
 {
   return "@TERMINALS@";
 }
+
 fn ge_cell(data: string, index: i64) -> i64
 {
   var n = 0;
@@ -58,10 +70,12 @@ fn ge_cell(data: string, index: i64) -> i64
   }
   return n - 1;
 }
+
 fn ge_cfg(index: i64) -> i64
 {
   return ge_cell(ge_config(), index);
 }
+
 fn ge_decimal(value: i64) -> string
 {
   let digits = buffer_new();
@@ -85,6 +99,7 @@ fn ge_decimal(value: i64) -> string
   }
   return buffer_text(out);
 }
+
 fn ge_number(text: string) -> i64
 {
   var n = 0;
@@ -94,14 +109,17 @@ fn ge_number(text: string) -> i64
   }
   return n;
 }
+
 fn ge_steps() -> i64
 {
   return ge_number("@STEPS@");
 }
+
 fn ge_input_limit() -> i64
 {
   return ge_number("@INPUT@");
 }
+
 fn ge_at(list: sexpr, index: i64) -> sexpr
 {
   var rest = list;
@@ -111,14 +129,17 @@ fn ge_at(list: sexpr, index: i64) -> sexpr
   }
   return sx_head(rest);
 }
+
 fn ge_num(list: sexpr, index: i64) -> i64
 {
   return ge_number(sx_text(ge_at(list, index)));
 }
+
 fn ge_atom(value: i64) -> sexpr
 {
   return sx_symbol(ge_decimal(value));
 }
+
 fn ge_reverse(list: sexpr) -> sexpr
 {
   var rest = list;
@@ -130,10 +151,12 @@ fn ge_reverse(list: sexpr) -> sexpr
   }
   return out;
 }
+
 fn ge_four(a: sexpr, b: sexpr, c: sexpr, d: sexpr) -> sexpr
 {
   return sx_cons(a, sx_cons(b, sx_cons(c, sx_cons(d, sx_nil()))));
 }
+
 fn ge_has(states: sexpr, wanted: i64) -> bool
 {
   var rest = states;
@@ -147,6 +170,7 @@ fn ge_has(states: sexpr, wanted: i64) -> bool
   }
   return false;
 }
+
 fn ge_close(states: sexpr, state: i64, work: i64, data: string) ->(sexpr, i64)
 {
   var result = states;
@@ -167,6 +191,7 @@ fn ge_close(states: sexpr, state: i64, work: i64, data: string) ->(sexpr, i64)
   }
   return (result, used);
 }
+
 fn ge_match_dfa(input: string,
   begin: i64,
   work: i64,
@@ -205,6 +230,7 @@ fn ge_match_dfa(input: string,
   }
   return (token, end, skip, used);
 }
+
 fn ge_match_nfa(input: string,
   begin: i64,
   work: i64,
@@ -281,6 +307,7 @@ fn ge_match_nfa(input: string,
   }
   return (token, end, skip, used);
 }
+
 fn ge_lex_work(input: string) ->(i64, sexpr, i64, i64)
 {
   if text_len(input) > ge_input_limit()
@@ -351,11 +378,13 @@ fn ge_lex_work(input: string) ->(i64, sexpr, i64, i64)
   }
   return (ge_cfg(10), ge_reverse(out), pos, used);
 }
+
 fn ge_lex(input: string) ->(i64, sexpr, i64)
 {
   let(status, tokens, offset, work) = ge_lex_work(input);
   return (status, tokens, offset);
 }
+
 fn ge_name(id: i64) -> string
 {
   if id < 0 || id >= ge_cfg(4)
@@ -366,6 +395,7 @@ fn ge_name(id: i64) -> string
   let size = ge_cell(ge_offsets(), id * 2 + 1);
   return text_slice(ge_names(), begin, begin + size);
 }
+
 fn ge_leaf(token: sexpr) -> sexpr
 {
   return ge_four(sx_string(ge_name(ge_num(token,
@@ -377,6 +407,7 @@ fn ge_leaf(token: sexpr) -> sexpr
     ge_at(token,
     3));
 }
+
 fn ge_parse_lr(tokens: sexpr, input_end: i64, work: i64) ->(i64, sexpr, i64)
 {
   var rest = tokens;
@@ -466,6 +497,7 @@ fn ge_parse_lr(tokens: sexpr, input_end: i64, work: i64) ->(i64, sexpr, i64)
   }
   return (ge_cfg(12), sx_nil(), offset);
 }
+
 # LL uses an explicit work stack with close frames, avoiding C-stack recursion.
 fn ge_parse_ll(tokens: sexpr, input_end: i64, work: i64) ->(i64, sexpr, i64)
 {
@@ -583,6 +615,7 @@ fn ge_parse_ll(tokens: sexpr, input_end: i64, work: i64) ->(i64, sexpr, i64)
   }
   return (ge_cfg(10), sx_head(nodes), input_end);
 }
+
 fn ge_parse(input: string) ->(i64, sexpr, i64)
 {
   let(status, tokens, offset, work) = ge_lex_work(input);
@@ -596,6 +629,7 @@ fn ge_parse(input: string) ->(i64, sexpr, i64)
   }
   return ge_parse_lr(tokens, text_len(input), work);
 }
+
 fn ge_matches(input: string) -> bool
 {
   let(status, tree, offset) = ge_parse(input);
