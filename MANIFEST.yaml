@@ -7,9 +7,9 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 1763
+module_count: 1957
 implemented_module_count: 1462
-bounded_module_count: 301
+bounded_module_count: 495
 modules:
 - name: cdd-catalogue
   header: include/mulib-cdd-catalogue.h
@@ -13442,6 +13442,1752 @@ modules:
   dependencies: [wm-focus, x11-events, x11-icccm, x11-reparent, x11-window, x11-wire]
   example: examples/gfx-headless.c
   validation: tests/run-graphics.sh; header compilation is not feature completeness.
+- name: media-core
+  header: include/mulib-media-core.h
+  manual: manual/mulib-media-core.md
+  implementation: static-inline
+  purpose: "Common checked arithmetic, status and byte views. Bounded review candidate; no safe On1x admission."
+  dependencies: [fraction]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-timebase
+  header: include/mulib-media-timebase.h
+  manual: manual/mulib-media-timebase.md
+  implementation: static-inline
+  purpose: "Exact rational timebase normalization and checked rescaling. Limit: May reject very large intermediate products even if final quotient would fit."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-pixelformat
+  header: include/mulib-media-pixelformat.h
+  manual: manual/mulib-media-pixelformat.md
+  implementation: static-inline
+  purpose: "Plane layout for packed and subsampled images. Bounded review candidate; no safe On1x admission."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-frame
+  header: include/mulib-media-frame.h
+  manual: manual/mulib-media-frame.md
+  implementation: static-inline
+  purpose: "Checked strided frame views, heap allocation and row copying. Limit: Copy requires disjoint frames or identical layout. Owned and borrowed frames share layout; caller tracks ownership."
+  dependencies: [media-core, media-pixelformat]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-packet
+  header: include/mulib-media-packet.h
+  manual: manual/mulib-media-packet.md
+  implementation: static-inline
+  purpose: "Deep copy and release of encoded packets. Limit: Release only cloned packets."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-stream
+  header: include/mulib-media-stream.h
+  manual: manual/mulib-media-stream.md
+  implementation: static-inline
+  purpose: "Short-read and short-write handling for blocking streams. Bounded review candidate; no safe On1x admission."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-clock
+  header: include/mulib-media-clock.h
+  manual: manual/mulib-media-clock.md
+  implementation: static-inline
+  purpose: "Anchored monotonic host-clock mapping (rate in ticks/ns). Limit: Caller supplies monotonic timestamps; no audio PLL."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-bufferpool
+  header: include/mulib-media-bufferpool.h
+  manual: manual/mulib-media-bufferpool.md
+  implementation: static-inline
+  purpose: "Fixed-size reusable frame pool. Limit: Single-threaded; all leases must be returned before destruction."
+  dependencies: [media-core, media-frame]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-metadata
+  header: include/mulib-media-metadata.h
+  manual: manual/mulib-media-metadata.md
+  implementation: static-inline
+  purpose: "Borrowed key/value metadata with checked capacity. Bounded review candidate; no safe On1x admission."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-convert
+  header: include/mulib-media-convert.h
+  manual: manual/mulib-media-convert.md
+  implementation: static-inline
+  purpose: "RGB, gray, float and limited-range BT.709 YUV420 to RGBA8. Limit: Disjoint source/destination; no transfer conversion."
+  dependencies: [media-core, media-frame]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-demux
+  header: include/mulib-media-demux.h
+  manual: manual/mulib-media-demux.md
+  implementation: static-inline
+  purpose: "Demux provider lifecycle and checked dispatch. Limit: Needs caller-supplied demux implementation (e.g. FFmpeg bridge)."
+  dependencies: [media-core, media-packet]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-mux
+  header: include/mulib-media-mux.h
+  manual: manual/mulib-media-mux.md
+  implementation: static-inline
+  purpose: "Mux provider lifecycle with finalization guard. Limit: Provider required."
+  dependencies: [media-core, media-packet]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-codec
+  header: include/mulib-media-codec.h
+  manual: manual/mulib-media-codec.md
+  implementation: static-inline
+  purpose: "Send/receive codec provider contract with explicit draining (NULL input). Limit: No bundled codec provider."
+  dependencies: [media-core, media-frame, media-packet]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-isobmff
+  header: include/mulib-media-isobmff.h
+  manual: manual/mulib-media-isobmff.md
+  implementation: static-inline
+  purpose: "Bounds-checked ISO BMFF box traversal including extended sizes. Limit: No sample tables, timestamps or container writing."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-matroska
+  header: include/mulib-media-matroska.h
+  manual: manual/mulib-media-matroska.md
+  implementation: static-inline
+  purpose: "EBML variable integers and bounded element traversal. Limit: Unknown-sized element consumes remaining caller-supplied scope; no block/lacing support."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-mpegts
+  header: include/mulib-media-mpegts.h
+  manual: manual/mulib-media-mpegts.md
+  implementation: static-inline
+  purpose: "188-byte transport packet header and adaptation-field parsing. Limit: No PES assembly, PAT/PMT or muxing."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-h264
+  header: include/mulib-media-h264.h
+  manual: manual/mulib-media-h264.md
+  implementation: static-inline
+  purpose: "Annex B NAL iterator and emulation-prevention removal. Limit: Bitstream tooling only; no H.264 encoder/decoder."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-h265
+  header: include/mulib-media-h265.h
+  manual: manual/mulib-media-h265.md
+  implementation: static-inline
+  purpose: "Annex B HEVC NAL header extraction. Limit: No HEVC encoder/decoder."
+  dependencies: [media-core, media-h264]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-vp9
+  header: include/mulib-media-vp9.h
+  manual: manual/mulib-media-vp9.md
+  implementation: static-inline
+  purpose: "VP9 uncompressed frame prefix parsing. Limit: Does not validate full frame or decode pixels."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-av1
+  header: include/mulib-media-av1.h
+  manual: manual/mulib-media-av1.md
+  implementation: static-inline
+  purpose: "AV1 low-overhead OBU framing and LEB128 sizes. Limit: No AV1 encoder/decoder."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-seek
+  header: include/mulib-media-seek.h
+  manual: manual/mulib-media-seek.md
+  implementation: static-inline
+  purpose: "Binary timestamp seek followed by keyframe backtracking. Bounded review candidate; no safe On1x admission."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-scale
+  header: include/mulib-media-scale.h
+  manual: manual/mulib-media-scale.md
+  implementation: static-inline
+  purpose: "Nearest-neighbor RGBA8 scale. Limit: Requires disjoint buffers; use img-resample for high quality."
+  dependencies: [media-core, media-frame]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-proxy
+  header: include/mulib-media-proxy.h
+  manual: manual/mulib-media-proxy.md
+  implementation: static-inline
+  purpose: "Aspect-preserving in-memory proxy frame generation. Limit: No proxy media files or cache."
+  dependencies: [media-core, media-scale]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: media-export
+  header: include/mulib-media-export.h
+  manual: manual/mulib-media-export.md
+  implementation: static-inline
+  purpose: "Cancellable packet remux loop with release and finalization. Limit: Provider callbacks must be blocking; no encode or atomic filesystem commit."
+  dependencies: [media-core, media-demux, media-mux]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nle-timeline
+  header: include/mulib-nle-timeline.h
+  manual: manual/mulib-nle-timeline.md
+  implementation: static-inline
+  purpose: "Caller-backed timeline with exact integer ticks and unique clip IDs. Limit: No automatic overlap policy; source and sequence use same tick units."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nle-track
+  header: include/mulib-nle-track.h
+  manual: manual/mulib-nle-track.md
+  implementation: static-inline
+  purpose: "Track lookup and mute/solo policy. Bounded review candidate; no safe On1x admission."
+  dependencies: [nle-timeline]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nle-clip
+  header: include/mulib-nle-clip.h
+  manual: manual/mulib-nle-clip.md
+  implementation: static-inline
+  purpose: "Clip source mapping and bounded slip. Bounded review candidate; no safe On1x admission."
+  dependencies: [nle-timeline]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nle-interval
+  header: include/mulib-nle-interval.h
+  manual: manual/mulib-nle-interval.md
+  implementation: static-inline
+  purpose: "Half-open range intersection and bounded output query. Limit: Linear scan; replace with augmented interval index for large timelines."
+  dependencies: [nle-timeline]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nle-edit
+  header: include/mulib-nle-edit.h
+  manual: manual/mulib-nle-edit.md
+  implementation: static-inline
+  purpose: "Split, trim and atomic adjacent roll editing. Bounded review candidate; no safe On1x admission."
+  dependencies: [nle-timeline]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nle-ripple
+  header: include/mulib-nle-ripple.h
+  manual: manual/mulib-nle-ripple.md
+  implementation: static-inline
+  purpose: "Validate-then-apply ripple shift. Limit: Caller resolves overlaps and locked tracks."
+  dependencies: [nle-timeline]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nle-transition
+  header: include/mulib-nle-transition.h
+  manual: manual/mulib-nle-transition.md
+  implementation: static-inline
+  purpose: "Linear and smooth crossfade weights. Bounded review candidate; no safe On1x admission."
+  dependencies: [nle-timeline]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nle-retime
+  header: include/mulib-nle-retime.h
+  manual: manual/mulib-nle-retime.md
+  implementation: static-inline
+  purpose: "Piecewise-linear source-time mapping, including reverse and hold. Bounded review candidate; no safe On1x admission."
+  dependencies: [nle-timeline]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nle-snap
+  header: include/mulib-nle-snap.h
+  manual: manual/mulib-nle-snap.md
+  implementation: static-inline
+  purpose: "Nearest clip boundary snapping with deterministic ties. Bounded review candidate; no safe On1x admission."
+  dependencies: [nle-timeline]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nle-evaluate
+  header: include/mulib-nle-evaluate.h
+  manual: manual/mulib-nle-evaluate.md
+  implementation: static-inline
+  purpose: "Visit active clips at a timeline tick. Limit: Track compositing order is caller policy."
+  dependencies: [nle-clip, nle-timeline]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nle-edl
+  header: include/mulib-nle-edl.h
+  manual: manual/mulib-nle-edl.md
+  implementation: static-inline
+  purpose: "Write lossless neutral tab-separated edit list. Limit: Not CMX3600; implement SMPTE/drop-frame interchange separately."
+  dependencies: [nle-timeline]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nle-otio
+  header: include/mulib-nle-otio.h
+  manual: manual/mulib-nle-otio.md
+  implementation: static-inline
+  purpose: "OpenTimelineIO RationalTime numeric bridge. Limit: No OTIO JSON schema serialization."
+  dependencies: [nle-timeline]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-core
+  header: include/mulib-img-core.h
+  manual: manual/mulib-img-core.md
+  implementation: static-inline
+  purpose: "Float RGBA strided image view and pixel math. Limit: get/put are unchecked internal primitives; validate and bound indices first. Linear light, straight alpha by convention."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-tile
+  header: include/mulib-img-tile.h
+  manual: manual/mulib-img-tile.md
+  implementation: static-inline
+  purpose: "Zero-copy tile views and row-major tile enumeration. Bounded review candidate; no safe On1x admission."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-sampler
+  header: include/mulib-img-sampler.h
+  manual: manual/mulib-img-sampler.md
+  implementation: static-inline
+  purpose: "Nearest, bilinear, Catmull-Rom and Lanczos3 samplers. Limit: Clamp borders; straight alpha interpolation, premultiply if filtering transparent images."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-resample
+  header: include/mulib-img-resample.h
+  manual: manual/mulib-img-resample.md
+  implementation: static-inline
+  purpose: "Center-aligned image reconstruction. Limit: Disjoint buffers; no scale-dependent antialiasing for strong minification."
+  dependencies: [img-core, img-sampler]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-convolve
+  header: include/mulib-img-convolve.h
+  manual: manual/mulib-img-convolve.md
+  implementation: static-inline
+  purpose: "General odd-kernel correlation with clamped boundaries. Limit: Disjoint buffers; flip weights for true convolution."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-blur
+  header: include/mulib-img-blur.h
+  manual: manual/mulib-img-blur.md
+  implementation: static-inline
+  purpose: "Separable Gaussian blur with caller-provided scratch. Limit: Scratch must not overlap either image."
+  dependencies: [img-convolve, img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-morphology
+  header: include/mulib-img-morphology.h
+  manual: manual/mulib-img-morphology.md
+  implementation: static-inline
+  purpose: "Square alpha erosion and dilation. Limit: Disjoint buffers."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-edge
+  header: include/mulib-img-edge.h
+  manual: manual/mulib-img-edge.md
+  implementation: static-inline
+  purpose: "Sobel gradient magnitude image. Limit: No Canny hysteresis or Laplacian."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-transform
+  header: include/mulib-img-transform.h
+  manual: manual/mulib-img-transform.md
+  implementation: static-inline
+  purpose: "Inverse homography image transformation with transparent exterior. Limit: Disjoint buffers."
+  dependencies: [img-core, img-sampler]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-warp
+  header: include/mulib-img-warp.h
+  manual: manual/mulib-img-warp.md
+  implementation: static-inline
+  purpose: "Displacement map warp; field R/G are source offsets in pixels. Limit: Clamp border; disjoint buffers."
+  dependencies: [img-core, img-sampler]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-matte
+  header: include/mulib-img-matte.h
+  manual: manual/mulib-img-matte.md
+  implementation: static-inline
+  purpose: "Luminance-derived soft alpha matte. Bounded review candidate; no safe On1x admission."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-keying
+  header: include/mulib-img-keying.h
+  manual: manual/mulib-img-keying.md
+  implementation: static-inline
+  purpose: "Soft chroma-distance alpha key. Limit: No spill suppression or foreground color recovery."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-blend
+  header: include/mulib-img-blend.h
+  manual: manual/mulib-img-blend.md
+  implementation: static-inline
+  purpose: "Straight-alpha source-over compositing and blend modes. Bounded review candidate; no safe On1x admission."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-pyramid
+  header: include/mulib-img-pyramid.h
+  manual: manual/mulib-img-pyramid.md
+  implementation: static-inline
+  purpose: "Half-resolution box-filter pyramid level. Limit: Not a Gaussian/Laplacian reconstruction pyramid."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-opticalflow
+  header: include/mulib-img-opticalflow.h
+  manual: manual/mulib-img-opticalflow.md
+  implementation: static-inline
+  purpose: "Exhaustive local motion estimation by block matching. Limit: Integer displacement only; no dense multiscale flow."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-motionblur
+  header: include/mulib-img-motionblur.h
+  manual: manual/mulib-img-motionblur.md
+  implementation: static-inline
+  purpose: "Velocity-map shutter integration. Limit: No occlusion handling."
+  dependencies: [img-core, img-sampler]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-denoise
+  header: include/mulib-img-denoise.h
+  manual: manual/mulib-img-denoise.md
+  implementation: static-inline
+  purpose: "Spatial bilateral RGB denoising. Limit: No temporal denoise."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: img-tracking
+  header: include/mulib-img-tracking.h
+  manual: manual/mulib-img-tracking.md
+  implementation: static-inline
+  purpose: "Track a set of points by block matching with confidence rejection. Limit: No feature detection or subpixel refinement."
+  dependencies: [img-core, img-opticalflow]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-transfer
+  header: include/mulib-color-transfer.h
+  manual: manual/mulib-color-transfer.md
+  implementation: static-inline
+  purpose: "Linear/sRGB/Rec.709/PQ/HLG transfer functions. Limit: PQ uses normalized 10000-nit luminance; HLG is scene OETF, no OOTF."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-primaries
+  header: include/mulib-color-primaries.h
+  manual: manual/mulib-color-primaries.md
+  implementation: static-inline
+  purpose: "3x3 color matrices and D65 Rec.709/Rec.2020/P3 matrices. Bounded review candidate; no safe On1x admission."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-adaptation
+  header: include/mulib-color-adaptation.h
+  manual: manual/mulib-color-adaptation.md
+  implementation: static-inline
+  purpose: "Bradford XYZ white-point adaptation. Limit: Supply normalized XYZ white points."
+  dependencies: [color-primaries, img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-gamut
+  header: include/mulib-color-gamut.h
+  manual: manual/mulib-color-gamut.md
+  implementation: static-inline
+  purpose: "Neutral-axis gamut compression into bounded RGB. Limit: Simple RGB heuristic, not perceptually uniform."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-lut1d
+  header: include/mulib-color-lut1d.h
+  manual: manual/mulib-color-lut1d.md
+  implementation: static-inline
+  purpose: "Clamped linear 1D LUT interpolation. Bounded review candidate; no safe On1x admission."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-lut3d
+  header: include/mulib-color-lut3d.h
+  manual: manual/mulib-color-lut3d.md
+  implementation: static-inline
+  purpose: "Trilinear and tetrahedral 3D LUT evaluation, red-fastest order. Bounded review candidate; no safe On1x admission."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-cube
+  header: include/mulib-color-cube.h
+  manual: manual/mulib-color-cube.md
+  implementation: static-inline
+  purpose: "Read standard unit-domain 3D .cube LUTs. Limit: No combined 1D/3D or arbitrary domains; partial scratch on failure."
+  dependencies: [color-lut3d, img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-tonemap
+  header: include/mulib-color-tonemap.h
+  manual: manual/mulib-color-tonemap.md
+  implementation: static-inline
+  purpose: "Reinhard and ACES-inspired fitted filmic curves. Limit: Not an official ACES rendering transform."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-grade
+  header: include/mulib-color-grade.h
+  manual: manual/mulib-color-grade.md
+  implementation: static-inline
+  purpose: "ASC-CDL-style slope, offset, power and saturation. Limit: Unclamped positive output; specify CDL clamp mode for interchange."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-wheels
+  header: include/mulib-color-wheels.h
+  manual: manual/mulib-color-wheels.md
+  implementation: static-inline
+  purpose: "Luminance-weighted three-way grading offsets. Limit: Simple overlapping weights, not a Resolve-compatible wheel model."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-curves
+  header: include/mulib-color-curves.h
+  manual: manual/mulib-color-curves.md
+  implementation: static-inline
+  purpose: "Validated piecewise-linear grading curves. Limit: No monotone cubic or cyclic hue interpolation."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-qualifier
+  header: include/mulib-color-qualifier.h
+  manual: manual/mulib-color-qualifier.md
+  implementation: static-inline
+  purpose: "Soft luminance/saturation selection mask. Limit: Hue and spatial cleanup not implemented."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-vectorscope
+  header: include/mulib-color-vectorscope.h
+  manual: manual/mulib-color-vectorscope.md
+  implementation: static-inline
+  purpose: "BT.709 Cb/Cr density histogram to caller-owned square bins. Bounded review candidate; no safe On1x admission."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-waveform
+  header: include/mulib-color-waveform.h
+  manual: manual/mulib-color-waveform.md
+  implementation: static-inline
+  purpose: "Luma or RGB waveform density bins. Bounded review candidate; no safe On1x admission."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: color-pipeline
+  header: include/mulib-color-pipeline.h
+  manual: manual/mulib-color-pipeline.md
+  implementation: static-inline
+  purpose: "Fused per-pixel pipeline of caller-supplied color stages. Limit: Callbacks trusted and synchronous."
+  dependencies: [img-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nodegraph-core
+  header: include/mulib-nodegraph-core.h
+  manual: manual/mulib-nodegraph-core.md
+  implementation: static-inline
+  purpose: "Borrowed graph topology with indexed edges and typed single outputs. Bounded review candidate; no safe On1x admission."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nodegraph-types
+  header: include/mulib-nodegraph-types.h
+  manual: manual/mulib-nodegraph-types.md
+  implementation: static-inline
+  purpose: "Exact port-type equality and edge validation. Bounded review candidate; no safe On1x admission."
+  dependencies: [nodegraph-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nodegraph-validate
+  header: include/mulib-nodegraph-validate.h
+  manual: manual/mulib-nodegraph-validate.md
+  implementation: static-inline
+  purpose: "Validate node identity, port types and unique incoming edges. Limit: Cycle rejection is in nodegraph-compile; unconnected ports allowed."
+  dependencies: [nodegraph-core, nodegraph-types]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nodegraph-compile
+  header: include/mulib-nodegraph-compile.h
+  manual: manual/mulib-nodegraph-compile.md
+  implementation: static-inline
+  purpose: "Kahn topological ordering and cycle detection. Limit: O(VE) traversal; add adjacency index."
+  dependencies: [nodegraph-core, nodegraph-validate]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nodegraph-eval
+  header: include/mulib-nodegraph-eval.h
+  manual: manual/mulib-nodegraph-eval.md
+  implementation: static-inline
+  purpose: "Execute a topologically ordered graph through an operation provider. Limit: Callback manages values and cleanup; no parallel execution."
+  dependencies: [nodegraph-core, nodegraph-validate]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nodegraph-cache
+  header: include/mulib-nodegraph-cache.h
+  manual: manual/mulib-nodegraph-cache.md
+  implementation: static-inline
+  purpose: "Revision-keyed non-owning intermediate result cache. Limit: No eviction; caller releases values."
+  dependencies: [nodegraph-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nodegraph-dirty
+  header: include/mulib-nodegraph-dirty.h
+  manual: manual/mulib-nodegraph-dirty.md
+  implementation: static-inline
+  purpose: "Propagate invalidation downstream to fixed point. Limit: Quadratic worst case; use adjacency and queue."
+  dependencies: [nodegraph-core, nodegraph-validate]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nodegraph-region
+  header: include/mulib-nodegraph-region.h
+  manual: manual/mulib-nodegraph-region.md
+  implementation: static-inline
+  purpose: "Backward ROI union with per-node filter halo. Limit: Requires valid topological order; transform-specific ROI mapping remains."
+  dependencies: [nodegraph-core, nodegraph-validate]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nodegraph-temporal
+  header: include/mulib-nodegraph-temporal.h
+  manual: manual/mulib-nodegraph-temporal.md
+  implementation: static-inline
+  purpose: "Checked temporal dependency window expansion. Bounded review candidate; no safe On1x admission."
+  dependencies: [nodegraph-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nodegraph-fusion
+  header: include/mulib-nodegraph-fusion.h
+  manual: manual/mulib-nodegraph-fusion.md
+  implementation: static-inline
+  purpose: "Conservative candidate detection for unary operator fusion. Limit: Does not rewrite graph; verify execution semantic compatibility."
+  dependencies: [nodegraph-core, nodegraph-validate]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nodegraph-serialize
+  header: include/mulib-nodegraph-serialize.h
+  manual: manual/mulib-nodegraph-serialize.md
+  implementation: static-inline
+  purpose: "Versioned textual graph topology writer. Limit: No reader or node properties."
+  dependencies: [nodegraph-core, nodegraph-validate]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: nodegraph-layout
+  header: include/mulib-nodegraph-layout.h
+  manual: manual/mulib-nodegraph-layout.md
+  implementation: static-inline
+  purpose: "Layered DAG layout with deterministic rows. Limit: Valid topological order required; no crossing minimization."
+  dependencies: [nodegraph-core, nodegraph-validate]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-core
+  header: include/mulib-mesh-core.h
+  manual: manual/mulib-mesh-core.md
+  implementation: static-inline
+  purpose: "Caller-owned indexed triangle mesh and vector math. Limit: Triangle-only initial model; integrate canonical cgeom/linalg types later."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-halfedge
+  header: include/mulib-mesh-halfedge.h
+  manual: manual/mulib-mesh-halfedge.md
+  implementation: static-inline
+  purpose: "Triangle half-edge construction and nonmanifold edge rejection. Limit: O(E\u00b2), no nonmanifold vertex detection."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-adjacency
+  header: include/mulib-mesh-adjacency.h
+  manual: manual/mulib-mesh-adjacency.md
+  implementation: static-inline
+  purpose: "Vertex-to-face incidence query. Limit: Linear scan; add CSR adjacency."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-primitives
+  header: include/mulib-mesh-primitives.h
+  manual: manual/mulib-mesh-primitives.md
+  implementation: static-inline
+  purpose: "Box and regular grid primitive generation. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-attributes
+  header: include/mulib-mesh-attributes.h
+  manual: manual/mulib-mesh-attributes.md
+  implementation: static-inline
+  purpose: "Checked dense per-element attribute channels. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-edit
+  header: include/mulib-mesh-edit.h
+  manual: manual/mulib-mesh-edit.md
+  implementation: static-inline
+  purpose: "Single-face extrusion with cap and side walls. Limit: No region extrusion, bevel or inset."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-triangulate
+  header: include/mulib-mesh-triangulate.h
+  manual: manual/mulib-mesh-triangulate.md
+  implementation: static-inline
+  purpose: "Ear clipping for simple planar polygons. Limit: No exact predicates or holes; assumes non-self-intersection."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-subdivide
+  header: include/mulib-mesh-subdivide.h
+  manual: manual/mulib-mesh-subdivide.md
+  implementation: static-inline
+  purpose: "Shared-edge linear triangle subdivision. Limit: Not Loop or Catmull-Clark smoothing; disjoint meshes."
+  dependencies: [mesh-core, mesh-halfedge]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-decimate
+  header: include/mulib-mesh-decimate.h
+  manual: manual/mulib-mesh-decimate.md
+  implementation: static-inline
+  purpose: "Shortest-edge selection and index collapse with degenerate face removal. Limit: Not QEM; may change topology; leaves unused vertices."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-remesh
+  header: include/mulib-mesh-remesh.h
+  manual: manual/mulib-mesh-remesh.md
+  implementation: static-inline
+  purpose: "Jacobi Laplacian smoothing with fixed vertices. Limit: Face-weighted neighbors; no isotropic split/collapse/flip remeshing."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-boolean
+  header: include/mulib-mesh-boolean.h
+  manual: manual/mulib-mesh-boolean.md
+  implementation: static-inline
+  purpose: "Point-in-closed-mesh parity classification, a boolean building block. Limit: No mesh boolean output; edge degeneracies and robust intersections unresolved."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-repair
+  header: include/mulib-mesh-repair.h
+  manual: manual/mulib-mesh-repair.md
+  implementation: static-inline
+  purpose: "Remove zero-area or below-threshold triangles. Limit: No hole filling, welding or orientation repair."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-normals
+  header: include/mulib-mesh-normals.h
+  manual: manual/mulib-mesh-normals.md
+  implementation: static-inline
+  purpose: "Area-weighted smooth vertex normals. Limit: No tangent frames or split normals."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-uv
+  header: include/mulib-mesh-uv.h
+  manual: manual/mulib-mesh-uv.md
+  implementation: static-inline
+  purpose: "Normalized planar UV projection. Limit: No seam generation, LSCM or atlas packing."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-skin
+  header: include/mulib-mesh-skin.h
+  manual: manual/mulib-mesh-skin.md
+  implementation: static-inline
+  purpose: "Four-weight normalized linear blend skinning. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-obj
+  header: include/mulib-mesh-obj.h
+  manual: manual/mulib-mesh-obj.md
+  implementation: static-inline
+  purpose: "Wavefront OBJ position and triangle export. Limit: No import, material, normal or UV records."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-ply
+  header: include/mulib-mesh-ply.h
+  manual: manual/mulib-mesh-ply.md
+  implementation: static-inline
+  purpose: "ASCII PLY positions and triangle export. Limit: No binary PLY or import."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: mesh-gltf
+  header: include/mulib-mesh-gltf.h
+  manual: manual/mulib-mesh-gltf.md
+  implementation: static-inline
+  purpose: "GLB 2.0 JSON and BIN chunk extraction. Limit: No glTF JSON/accessor/material import or export."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: geom-bezier
+  header: include/mulib-geom-bezier.h
+  manual: manual/mulib-geom-bezier.md
+  implementation: static-inline
+  purpose: "Arbitrary-degree de Casteljau curve evaluation. Limit: Scratch must have n elements; no surface API."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: geom-bspline
+  header: include/mulib-geom-bspline.h
+  manual: manual/mulib-geom-bspline.md
+  implementation: static-inline
+  purpose: "De Boor B-spline curve evaluation and span search. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: geom-nurbs
+  header: include/mulib-geom-nurbs.h
+  manual: manual/mulib-geom-nurbs.md
+  implementation: static-inline
+  purpose: "Rational B-spline curve evaluation using homogeneous coordinates. Limit: Positive weights, degree <=32; no tensor-product surface yet."
+  dependencies: [geom-bspline, mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: geom-tessellate
+  header: include/mulib-geom-tessellate.h
+  manual: manual/mulib-geom-tessellate.md
+  implementation: static-inline
+  purpose: "Regular parametric surface tessellation via callback. Limit: Not adaptive; add curvature-based refinement and crack prevention."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: geom-sdf
+  header: include/mulib-geom-sdf.h
+  manual: manual/mulib-geom-sdf.md
+  implementation: static-inline
+  purpose: "Sphere, box and smooth-union signed distance functions. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: geom-metaball
+  header: include/mulib-geom-metaball.h
+  manual: manual/mulib-geom-metaball.md
+  implementation: static-inline
+  purpose: "Compact-support polynomial metaball field. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: geom-isosurface
+  header: include/mulib-geom-isosurface.h
+  manual: manual/mulib-geom-isosurface.md
+  implementation: static-inline
+  purpose: "Marching tetrahedron cell polygonization. Limit: Requires grid traversal, consistent winding and vertex welding."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: geom-cloner
+  header: include/mulib-geom-cloner.h
+  manual: manual/mulib-geom-cloner.md
+  implementation: static-inline
+  purpose: "Grid and radial instance positions; linear is grid with two dimensions =1. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: geom-deform
+  header: include/mulib-geom-deform.h
+  manual: manual/mulib-geom-deform.md
+  implementation: static-inline
+  purpose: "Twist, taper and cylindrical bend point deformation. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: geom-csg
+  header: include/mulib-geom-csg.h
+  manual: manual/mulib-geom-csg.md
+  implementation: static-inline
+  purpose: "Implicit-field CSG union, intersection and difference. Limit: Not exact boundary-representation CSG."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: anim-keyframe
+  header: include/mulib-anim-keyframe.h
+  manual: manual/mulib-anim-keyframe.md
+  implementation: static-inline
+  purpose: "Sorted integer-time scalar keyframes and insertion. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: anim-curve
+  header: include/mulib-anim-curve.h
+  manual: manual/mulib-anim-curve.md
+  implementation: static-inline
+  purpose: "Step, linear and cubic Hermite animation interpolation. Limit: Tangents in value per tick."
+  dependencies: [anim-keyframe, mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: anim-easing
+  header: include/mulib-anim-easing.h
+  manual: manual/mulib-anim-easing.md
+  implementation: static-inline
+  purpose: "Six bounded easing functions. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: anim-quaternion
+  header: include/mulib-anim-quaternion.h
+  manual: manual/mulib-anim-quaternion.md
+  implementation: static-inline
+  purpose: "Quaternion normalization, multiplication, shortest-path SLERP and vector rotation. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: anim-transform
+  header: include/mulib-anim-transform.h
+  manual: manual/mulib-anim-transform.md
+  implementation: static-inline
+  purpose: "TRS point transformation and animation interpolation. Limit: No matrix/shear decomposition."
+  dependencies: [anim-quaternion, mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: anim-channel
+  header: include/mulib-anim-channel.h
+  manual: manual/mulib-anim-channel.md
+  implementation: static-inline
+  purpose: "Evaluate multiple scalar animation property channels. Limit: Partial output on invalid later channel."
+  dependencies: [anim-curve, mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: anim-blend
+  header: include/mulib-anim-blend.h
+  manual: manual/mulib-anim-blend.md
+  implementation: static-inline
+  purpose: "Normalized weighted scalar blending. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: anim-skeleton
+  header: include/mulib-anim-skeleton.h
+  manual: manual/mulib-anim-skeleton.md
+  implementation: static-inline
+  purpose: "Parent-ordered skeleton forward point transformation. Limit: No matrix palette generation."
+  dependencies: [anim-transform, mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: anim-ik
+  header: include/mulib-anim-ik.h
+  manual: manual/mulib-anim-ik.md
+  implementation: static-inline
+  purpose: "FABRIK position-chain inverse kinematics. Limit: False may still return best-effort pose; no joint limits."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: anim-morph
+  header: include/mulib-anim-morph.h
+  manual: manual/mulib-anim-morph.md
+  implementation: static-inline
+  purpose: "Weighted blend-shape delta application. Limit: Caller guarantees nonoverlapping delta/output arrays."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: anim-driver
+  header: include/mulib-anim-driver.h
+  manual: manual/mulib-anim-driver.md
+  implementation: static-inline
+  purpose: "Ordered, acyclic scalar dependency execution. Limit: Caller supplies topology and expression engine."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: anim-bake
+  header: include/mulib-anim-bake.h
+  manual: manual/mulib-anim-bake.md
+  implementation: static-inline
+  purpose: "Bake a scalar curve into uniform integer-tick samples. Limit: Partial output on error."
+  dependencies: [anim-channel, mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: anim-exposure
+  header: include/mulib-anim-exposure.h
+  manual: manual/mulib-anim-exposure.md
+  implementation: static-inline
+  purpose: "Midpoint stratified shutter-time samples. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: physics-rigidbody
+  header: include/mulib-physics-rigidbody.h
+  manual: manual/mulib-physics-rigidbody.md
+  implementation: static-inline
+  purpose: "Semi-implicit Euler for translational sphere rigid bodies. Limit: No rotation, torque, inertia tensor or angular momentum."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: physics-broadphase
+  header: include/mulib-physics-broadphase.h
+  manual: manual/mulib-physics-broadphase.md
+  implementation: static-inline
+  purpose: "Sphere AABB overlap candidate generation. Limit: O(n\u00b2); validate bodies before use."
+  dependencies: [mesh-core, physics-rigidbody]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: physics-narrowphase
+  header: include/mulib-physics-narrowphase.h
+  manual: manual/mulib-physics-narrowphase.md
+  implementation: static-inline
+  purpose: "Sphere-sphere normal and penetration depth. Limit: No convex or mesh collision."
+  dependencies: [mesh-core, physics-rigidbody]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: physics-manifold
+  header: include/mulib-physics-manifold.h
+  manual: manual/mulib-physics-manifold.md
+  implementation: static-inline
+  purpose: "Match previous sphere contacts by stable body indices and normal. Limit: No manifold points or warm-start application."
+  dependencies: [mesh-core, physics-narrowphase]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: physics-solver
+  header: include/mulib-physics-solver.h
+  manual: manual/mulib-physics-solver.md
+  implementation: static-inline
+  purpose: "Normal collision impulse and positional correction. Limit: Single contact, no friction or angular effects."
+  dependencies: [mesh-core, physics-narrowphase]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: physics-world
+  header: include/mulib-physics-world.h
+  manual: manual/mulib-physics-world.md
+  implementation: static-inline
+  purpose: "Sphere-world integrator with iterative contact resolution. Limit: O(n\u00b2), no CCD or persistent broadphase; partial state on numeric failure."
+  dependencies: [mesh-core, physics-solver]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: physics-joint
+  header: include/mulib-physics-joint.h
+  manual: manual/mulib-physics-joint.md
+  implementation: static-inline
+  purpose: "Position-based distance joint. Limit: Does not update velocities or support angular constraints."
+  dependencies: [mesh-core, physics-rigidbody]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: physics-particle
+  header: include/mulib-physics-particle.h
+  manual: manual/mulib-physics-particle.md
+  implementation: static-inline
+  purpose: "Particle advection, exponential drag and lifetime expiration. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: physics-cloth
+  header: include/mulib-physics-cloth.h
+  manual: manual/mulib-physics-cloth.md
+  implementation: static-inline
+  purpose: "Position-based cloth stretch constraint projection with pinning. Limit: No integration, bending or self-collision."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-material
+  header: include/mulib-render-material.h
+  manual: manual/mulib-render-material.md
+  implementation: static-inline
+  purpose: "Validated linear-light PBR material parameter representation. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-scene
+  header: include/mulib-render-scene.h
+  manual: manual/mulib-render-scene.md
+  implementation: static-inline
+  purpose: "Triangle scene, material table and Moller-Trumbore closest-hit traversal. Limit: Brute-force scene hit; validate scene once before render."
+  dependencies: [mesh-core, render-material]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-bvh
+  header: include/mulib-render-bvh.h
+  manual: manual/mulib-render-bvh.md
+  implementation: static-inline
+  purpose: "AABB slab intersection and caller-stack BVH traversal. Limit: False conflates miss and invalid traversal; builder-generated tree assumed."
+  dependencies: [mesh-core, render-scene]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-bvhbuild
+  header: include/mulib-render-bvhbuild.h
+  manual: manual/mulib-render-bvhbuild.md
+  implementation: static-inline
+  purpose: "Balanced centroid-partition BVH builder. Limit: Not SAH or Morton LBVH; caller provides 2N-1 nodes."
+  dependencies: [mesh-core, render-bvh]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-camera
+  header: include/mulib-render-camera.h
+  manual: manual/mulib-render-camera.md
+  implementation: static-inline
+  purpose: "Pinhole look-at camera with normalized pixel rays. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core, render-scene]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-sampling
+  header: include/mulib-render-sampling.h
+  manual: manual/mulib-render-sampling.md
+  implementation: static-inline
+  purpose: "Deterministic RNG, radical inverse and cosine-weighted hemisphere samples. Bounded review candidate; no safe On1x admission."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-bsdf
+  header: include/mulib-render-bsdf.h
+  manual: manual/mulib-render-bsdf.md
+  implementation: static-inline
+  purpose: "Lambert BRDF, GGX normal distribution and Schlick Fresnel primitives. Limit: No full GGX sampling, masking term or transmission."
+  dependencies: [mesh-core, render-material]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-light
+  header: include/mulib-render-light.h
+  manual: manual/mulib-render-light.md
+  implementation: static-inline
+  purpose: "Inverse-square point-light evaluation. Limit: No area-light sampling."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-shadow
+  header: include/mulib-render-shadow.h
+  manual: manual/mulib-render-shadow.md
+  implementation: static-inline
+  purpose: "Ray-tested visibility to a point on a light. Limit: No shadow maps; requires validated scene."
+  dependencies: [mesh-core, render-scene]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-integrator
+  header: include/mulib-render-integrator.h
+  manual: manual/mulib-render-integrator.md
+  implementation: static-inline
+  purpose: "Direct Lambert illumination from point lights with visibility. Limit: Validated scene required; no specular direct lighting."
+  dependencies: [mesh-core, render-bsdf, render-light, render-shadow]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-pathtrace
+  header: include/mulib-render-pathtrace.h
+  manual: manual/mulib-render-pathtrace.md
+  implementation: static-inline
+  purpose: "Diffuse multi-bounce stochastic path tracing. Limit: Validated scene required; no MIS, specular BSDF, Russian roulette or BVH integration."
+  dependencies: [mesh-core, render-bsdf, render-sampling, render-scene]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-raster
+  header: include/mulib-render-raster.h
+  manual: manual/mulib-render-raster.md
+  implementation: static-inline
+  purpose: "Screen-space Gouraud triangle rasterization with depth test. Limit: No clip space, perspective correction or top-left fill rule."
+  dependencies: [img-core, mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-texture
+  header: include/mulib-render-texture.h
+  manual: manual/mulib-render-texture.md
+  implementation: static-inline
+  purpose: "Bilinear sampling with mip-level interpolation and repeat coordinates. Limit: Caller generates mip levels; repeat seams use clamped bilinear."
+  dependencies: [img-sampler, mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-film
+  header: include/mulib-render-film.h
+  manual: manual/mulib-render-film.md
+  implementation: static-inline
+  purpose: "HDR sample accumulation and resolve. Limit: No AOV multiplexing; not thread-safe."
+  dependencies: [mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: render-denoise
+  header: include/mulib-render-denoise.h
+  manual: manual/mulib-render-denoise.md
+  implementation: static-inline
+  purpose: "Normal-guided 5x5 bilateral render denoising. Limit: Normals in signed RGB, no temporal accumulation."
+  dependencies: [img-core, mesh-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-core
+  header: include/mulib-compute-core.h
+  manual: manual/mulib-compute-core.md
+  implementation: static-inline
+  purpose: "Device-neutral dispatch and fence contract. Bounded review candidate; no safe On1x admission."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-device
+  header: include/mulib-compute-device.h
+  manual: manual/mulib-compute-device.md
+  implementation: static-inline
+  purpose: "Select from real provider-supplied device capability descriptors. Limit: No platform enumeration."
+  dependencies: [compute-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-buffer
+  header: include/mulib-compute-buffer.h
+  manual: manual/mulib-compute-buffer.md
+  implementation: static-inline
+  purpose: "Checked host buffer allocation and staging copies. Limit: CPU memory only, not device allocation."
+  dependencies: [compute-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-image
+  header: include/mulib-compute-image.h
+  manual: manual/mulib-compute-image.md
+  implementation: static-inline
+  purpose: "Aligned-row host storage image allocation. Limit: No GPU texture memory."
+  dependencies: [compute-buffer, compute-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-pipeline
+  header: include/mulib-compute-pipeline.h
+  manual: manual/mulib-compute-pipeline.md
+  implementation: static-inline
+  purpose: "Pipeline binding layout validation. Limit: Provider owns actual pipeline creation."
+  dependencies: [compute-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-dispatch
+  header: include/mulib-compute-dispatch.h
+  manual: manual/mulib-compute-dispatch.md
+  implementation: static-inline
+  purpose: "Validated dispatch to provider and ceil-division workgroup sizing. Limit: Actual execution delegated."
+  dependencies: [compute-core, compute-pipeline]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-sync
+  header: include/mulib-compute-sync.h
+  manual: manual/mulib-compute-sync.md
+  implementation: static-inline
+  purpose: "Fence provider wait and monotonic software timeline accounting. Limit: Caller serializes operations; no native barriers."
+  dependencies: [compute-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-memory
+  header: include/mulib-compute-memory.h
+  manual: manual/mulib-compute-memory.md
+  implementation: static-inline
+  purpose: "Aligned suballocation offsets for a preallocated staging arena. Limit: Not device memory allocation; fence before reuse."
+  dependencies: [compute-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-cache
+  header: include/mulib-compute-cache.h
+  manual: manual/mulib-compute-cache.md
+  implementation: static-inline
+  purpose: "Device/revision-keyed bounded pipeline handle cache. Limit: No eviction or handle ownership."
+  dependencies: [compute-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-spirv
+  header: include/mulib-compute-spirv.h
+  manual: manual/mulib-compute-spirv.md
+  implementation: static-inline
+  purpose: "SPIR-V header/instruction framing validator and instruction emitter. Limit: Structural only; not semantic verification or compiler."
+  dependencies: [compute-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-vulkan
+  header: include/mulib-compute-vulkan.h
+  manual: manual/mulib-compute-vulkan.md
+  implementation: static-inline
+  purpose: "Checked Vulkan queue provider attachment and dispatch. Limit: Adapter only; no native vulkan device, command creation or driver code. Wire JoltFX backend before advertising support."
+  dependencies: [compute-core, compute-dispatch]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-metal
+  header: include/mulib-compute-metal.h
+  manual: manual/mulib-compute-metal.md
+  implementation: static-inline
+  purpose: "Checked Metal command queue provider attachment and dispatch. Limit: Adapter only; no native metal device, command creation or driver code. Wire JoltFX backend before advertising support."
+  dependencies: [compute-core, compute-dispatch]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-d3d12
+  header: include/mulib-compute-d3d12.h
+  manual: manual/mulib-compute-d3d12.md
+  implementation: static-inline
+  purpose: "Checked D3D12 command queue provider attachment and dispatch. Limit: Adapter only; no native d3d12 device, command creation or driver code. Wire JoltFX backend before advertising support."
+  dependencies: [compute-core, compute-dispatch]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-webgpu
+  header: include/mulib-compute-webgpu.h
+  manual: manual/mulib-compute-webgpu.md
+  implementation: static-inline
+  purpose: "Checked WebGPU queue provider attachment and dispatch. Limit: Adapter only; no native webgpu device, command creation or driver code. Wire JoltFX backend before advertising support."
+  dependencies: [compute-core, compute-dispatch]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: compute-cpu
+  header: include/mulib-compute-cpu.h
+  manual: manual/mulib-compute-cpu.md
+  implementation: static-inline
+  purpose: "Bounded deterministic CPU workgroup dispatch. Limit: Serial; use taskpool for parallelism."
+  dependencies: [compute-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: audio-mixer
+  header: include/mulib-audio-mixer.h
+  manual: manual/mulib-audio-mixer.md
+  implementation: static-inline
+  purpose: "Allocation-free multitrack mono/stereo mixing with pan and gain. Limit: Inputs must not overlap output; no limiter or solo handling."
+  dependencies: [audio-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: audio-resample
+  header: include/mulib-audio-resample.h
+  manual: manual/mulib-audio-resample.md
+  implementation: static-inline
+  purpose: "Interleaved linear sample-rate conversion; ratio=input/output rate. Limit: No anti-alias filter, streaming phase history or sinc quality."
+  dependencies: [audio-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: audio-channelmap
+  header: include/mulib-audio-channelmap.h
+  manual: manual/mulib-audio-channelmap.md
+  implementation: static-inline
+  purpose: "Arbitrary interleaved channel mixing matrix. Limit: Caller specifies layout matrix; disjoint input/output."
+  dependencies: [audio-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: audio-envelope
+  header: include/mulib-audio-envelope.h
+  manual: manual/mulib-audio-envelope.md
+  implementation: static-inline
+  purpose: "Linear or power-interpolated per-frame gain envelope. Bounded review candidate; no safe On1x admission."
+  dependencies: [audio-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: audio-filter
+  header: include/mulib-audio-filter.h
+  manual: manual/mulib-audio-filter.md
+  implementation: static-inline
+  purpose: "Stateful DF-II transposed biquad, lowpass design and causal FIR. Limit: FIR zero initial history; one biquad state per channel."
+  dependencies: [audio-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: audio-eq
+  header: include/mulib-audio-eq.h
+  manual: manual/mulib-audio-eq.md
+  implementation: static-inline
+  purpose: "RBJ peaking EQ design and cascaded mono processing. Bounded review candidate; no safe On1x admission."
+  dependencies: [audio-filter, media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: audio-dynamics
+  header: include/mulib-audio-dynamics.h
+  manual: manual/mulib-audio-dynamics.md
+  implementation: static-inline
+  purpose: "Peak envelope compressor and hard limiter. Limit: No lookahead, RMS detection, gate or linked channels."
+  dependencies: [audio-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: audio-delay
+  header: include/mulib-audio-delay.h
+  manual: manual/mulib-audio-delay.md
+  implementation: static-inline
+  purpose: "Allocation-free feedback delay ring. Limit: Initialize state before per-sample call."
+  dependencies: [audio-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: audio-reverb
+  header: include/mulib-audio-reverb.h
+  manual: manual/mulib-audio-reverb.md
+  implementation: static-inline
+  purpose: "Parallel feedback comb reverb. Limit: Set comb wet=1; no diffusion allpass or damping filter."
+  dependencies: [audio-delay, media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: audio-timestretch
+  header: include/mulib-audio-timestretch.h
+  manual: manual/mulib-audio-timestretch.md
+  implementation: static-inline
+  purpose: "Offline windowed overlap-add time stretching. Limit: No WSOLA alignment or phase vocoder; pitch preservation is approximate, mono only."
+  dependencies: [audio-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: audio-loudness
+  header: include/mulib-audio-loudness.h
+  manual: manual/mulib-audio-loudness.md
+  implementation: static-inline
+  purpose: "Streaming RMS dBFS and sample-peak measurement. Limit: Not LUFS/ITU BS.1770 or oversampled true peak."
+  dependencies: [audio-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: audio-device
+  header: include/mulib-audio-device.h
+  manual: manual/mulib-audio-device.md
+  implementation: static-inline
+  purpose: "Audio provider lifecycle and partial-frame writes. Limit: No native device provider; bridge existing miniaudio or platform audio."
+  dependencies: [audio-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: kernel-ir
+  header: include/mulib-kernel-ir.h
+  manual: manual/mulib-kernel-ir.md
+  implementation: static-inline
+  purpose: "Typed straight-line SSA expression IR with explicit result. Limit: Executable subset is f32 and bool; no CFG, memory instructions or vector values."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: kernel-types
+  header: include/mulib-kernel-types.h
+  manual: manual/mulib-kernel-types.md
+  implementation: static-inline
+  purpose: "Scalar type and packed vector byte-size helpers. Limit: GPU alignment is backend dependent; no matrix/image types."
+  dependencies: [kernel-ir]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: kernel-validate
+  header: include/mulib-kernel-validate.h
+  manual: manual/mulib-kernel-validate.md
+  implementation: static-inline
+  purpose: "Validate SSA dominance/types and interpret scalar expressions. Limit: No execution budgets beyond bounded instruction count; callers enforce finite input if needed."
+  dependencies: [kernel-ir]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: kernel-uniformity
+  header: include/mulib-kernel-uniformity.h
+  manual: manual/mulib-kernel-uniformity.md
+  implementation: static-inline
+  purpose: "Conservative SSA uniformity propagation from parameter annotations. Limit: No divergent control-flow or barrier analysis."
+  dependencies: [kernel-ir, kernel-validate]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: kernel-memory
+  header: include/mulib-kernel-memory.h
+  manual: manual/mulib-kernel-memory.md
+  implementation: static-inline
+  purpose: "Overflow-safe interval bounds and alias checks for allocation IDs. Limit: No pointer provenance inference or address-space lowering."
+  dependencies: [kernel-ir]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: kernel-vectorize
+  header: include/mulib-kernel-vectorize.h
+  manual: manual/mulib-kernel-vectorize.md
+  implementation: static-inline
+  purpose: "Portable lane-wise batched SSA execution. Limit: Scalar loop, not actual SIMD code generation."
+  dependencies: [kernel-ir, kernel-validate]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: kernel-fusion
+  header: include/mulib-kernel-fusion.h
+  manual: manual/mulib-kernel-fusion.md
+  implementation: static-inline
+  purpose: "Fuse two pure SSA expressions by parameter substitution and ID remapping. Limit: Out and map require disjoint buffers; no side-effect semantics."
+  dependencies: [kernel-ir, kernel-validate]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: kernel-glsl
+  header: include/mulib-kernel-glsl.h
+  manual: manual/mulib-kernel-glsl.md
+  implementation: static-inline
+  purpose: "Emit GLSL scalar function from validated SSA. Limit: No compute entry point, descriptors or driver compilation; locale must be C."
+  dependencies: [kernel-ir, kernel-validate]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: kernel-wgsl
+  header: include/mulib-kernel-wgsl.h
+  manual: manual/mulib-kernel-wgsl.md
+  implementation: static-inline
+  purpose: "Emit WGSL scalar function with typed let bindings. Limit: No entry point, resources, or shader validation by native compiler."
+  dependencies: [kernel-glsl, kernel-ir]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: kernel-legalize
+  header: include/mulib-kernel-legalize.h
+  manual: manual/mulib-kernel-legalize.md
+  implementation: static-inline
+  purpose: "Finite constant folding as a first legalization pass. Limit: No backend-specific capability lowering; verify float semantic parity."
+  dependencies: [kernel-ir, kernel-validate]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: asset-core
+  header: include/mulib-asset-core.h
+  manual: manual/mulib-asset-core.md
+  implementation: static-inline
+  purpose: "Stable 128-bit identity and borrowed asset metadata. Bounded review candidate; no safe On1x admission."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: asset-catalog
+  header: include/mulib-asset-catalog.h
+  manual: manual/mulib-asset-catalog.md
+  implementation: static-inline
+  purpose: "Caller-backed asset catalogue with identity and substring query. Limit: Linear, case-sensitive search; strings borrowed."
+  dependencies: [asset-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: asset-dependency
+  header: include/mulib-asset-dependency.h
+  manual: manual/mulib-asset-dependency.md
+  implementation: static-inline
+  purpose: "Transitive dependent-asset invalidation. Bounded review candidate; no safe On1x admission."
+  dependencies: [asset-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: asset-cache
+  header: include/mulib-asset-cache.h
+  manual: manual/mulib-asset-cache.md
+  implementation: static-inline
+  purpose: "Digest- and variant-keyed non-owning asset cache. Limit: Caller computes SHA-256; no eviction or persistent store."
+  dependencies: [asset-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: asset-thumbnail
+  header: include/mulib-asset-thumbnail.h
+  manual: manual/mulib-asset-thumbnail.md
+  implementation: static-inline
+  purpose: "Aspect-preserving thumbnail from an RGBA8 frame. Limit: Nearest-neighbor; no video seek or cache."
+  dependencies: [media-proxy]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: project-store
+  header: include/mulib-project-store.h
+  manual: manual/mulib-project-store.md
+  implementation: static-inline
+  purpose: "Transactional provider interface with lifecycle guards. Limit: Provider supplies durability and recovery, e.g. existing KVDB."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: project-journal
+  header: include/mulib-project-journal.h
+  manual: manual/mulib-project-journal.md
+  implementation: static-inline
+  purpose: "CRC32-framed journal append and valid-prefix recovery. Limit: Memory serialization only; no fsync, atomic commit or transaction markers."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: project-migrate
+  header: include/mulib-project-migrate.h
+  manual: manual/mulib-project-migrate.md
+  implementation: static-inline
+  purpose: "Ordered monotonic schema migration execution with ambiguity rejection. Limit: Each step must be transactional; earlier successful steps remain committed."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: project-history
+  header: include/mulib-project-history.h
+  manual: manual/mulib-project-history.md
+  implementation: static-inline
+  purpose: "Bounded command undo/redo history with branching truncation. Limit: In-memory callbacks only; no persistence or cleanup of discarded commands."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: project-package
+  header: include/mulib-project-package.h
+  manual: manual/mulib-project-package.md
+  implementation: static-inline
+  purpose: "Portable relative archive path validation and checked writer dispatch. Limit: Not an archive implementation or sufficient extraction security; handle symlinks, DOS reserved names and collisions."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
+- name: audio-core
+  header: include/mulib-audio-core.h
+  manual: manual/mulib-audio-core.md
+  implementation: static-inline
+  purpose: "Checked borrowed PCM byte extents, finite-sample scans and conservative alias helpers. Limit: Low-level caller-backed helpers; no audio allocation, device, codec or safe On1x admission."
+  dependencies: [media-core]
+  status: bounded
+  example: examples/joltfx-pipeline.c
+  test: tests/joltfx-integration-test.c
 project_files:
 - file: manual/amb3r-kernels.md
   purpose: Shared integration and scope notes for the Amb3r reference kernels.
@@ -18155,3 +19901,33 @@ project_files:
   purpose: MPEG-1 video round trip, limits, malformed input, and disabled backend checks.
 - file: tests/check-minimpeg-video.py
   purpose: MPEG-1 video interoperability with libmpeg2 and mjpegtools.
+- file: examples/joltfx-pipeline.c
+  purpose: Synthetic bounded CPU image, grading, audio and exact-timebase example.
+- file: tests/joltfx-integration-test.c
+  purpose: Representative numerical and cross-family bounded-kernel oracles.
+- file: tests/joltfx-parser-boundary-test.c
+  purpose: Truncation, malformed-input and journal failure-atomicity regressions.
+- file: tests/joltfx-media-review-test.c
+  purpose: Media ownership, overlap, timing, provider lifecycle and editing regressions.
+- file: tests/joltfx-image-review-test.c
+  purpose: Image overlap, LUT parsing, graph capacities and numerical regressions.
+- file: tests/joltfx-scene-review-test.c
+  purpose: Geometry, animation, physics and checked BVH capacity regressions.
+- file: tests/joltfx-compute-audio-review-test.c
+  purpose: Provider, bounded IR, audio shape and DSP numerical regressions.
+- file: tests/joltfx-link-a.c
+  purpose: Separate-TU static-inline consumer and explicit wrapper linkage check.
+- file: tests/joltfx-link-b.c
+  purpose: Peer translation unit for the bounded-kernel linkage check.
+- file: tests/fuzz_joltfx_parsers.c
+  purpose: Optional resource-bounded libFuzzer target for selected new parsers.
+- file: tests/test-joltfx-tools.py
+  purpose: Additive inventory, collision rejection and manual generator regressions.
+- file: tools/joltfx_inventory.py
+  purpose: Explicit additive bounded registration and source-backed manual generation.
+- file: tools/check_joltfx.py
+  purpose: Strict C11 isolation, composition, linkage, sanitizer and optional fuzz checks.
+- file: manual/joltfx-kernels.json
+  purpose: Exact supplied-kernel inventory plus the explicitly reviewed PCM helper.
+- file: manual/joltfx-review.md
+  purpose: Reproduction commands, contract boundaries and remaining integration gates.

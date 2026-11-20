@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1766 headers, 2089 direct dependency edges.
+Inventory: 1960 headers, 2354 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -430,7 +430,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (613 modules)
+## Stratum 1 (614 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -747,6 +747,7 @@ Compatibility group: `parsec`, `peg`.
 | [mathscript](mulib-mathscript.md) | `typecore` |
 | [mathspacing](mulib-mathspacing.md) | `typecore` |
 | [mathspeech](mulib-mathspeech.md) | `typecore` |
+| [media-core](mulib-media-core.md) | `fraction` |
 | [microjs](mulib-microjs.md) | `minivm` |
 | [microtype](mulib-microtype.md) | `typecore` |
 | [mime](mulib-mime.md) | `seurity` |
@@ -1048,12 +1049,14 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (268 modules)
+## Stratum 2 (294 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [androidlibs](mulib-androidlibs.md) | `dynload`, `ezjni`, `ezndk` |
 | [anfir](mulib-anfir.md) | `gssair` |
+| [asset-core](mulib-asset-core.md) | `media-core` |
+| [audio-core](mulib-audio-core.md) | `media-core` |
 | [azw3](mulib-azw3.md) | `mobi` |
 | [bidi](mulib-bidi.md) | `uniproc` |
 | [binfilebuilder](mulib-binfilebuilder.md) | `binfileschema`, `buffer`, `bycutils` |
@@ -1074,6 +1077,7 @@ Compatibility group: `parsec`, `peg`.
 | [clickir](mulib-clickir.md) | `gssair` |
 | [closeditemset](mulib-closeditemset.md) | `nextclosure` |
 | [coffutils](mulib-coffutils.md) | `coff` |
+| [compute-core](mulib-compute-core.md) | `media-core` |
 | [conainerd-ipc](mulib-conainerd-ipc.md) | `container`, `container-ipc` |
 | [conceptlattice](mulib-conceptlattice.md) | `nextclosure` |
 | [concurrency-prim](mulib-concurrency-prim.md) | `fiber` |
@@ -1163,12 +1167,14 @@ Compatibility group: `parsec`, `peg`.
 | [hwil-verify](mulib-hwil-verify.md) | `hwil-module` |
 | [ifft](mulib-ifft.md) | `fft` |
 | [imagepng](mulib-imagepng.md) | `deflate`, `typecore` |
+| [img-core](mulib-img-core.md) | `media-core` |
 | [imgformat](mulib-imgformat.md) | `container`, `crc32` |
 | [inet-diag](mulib-inet-diag.md) | `sock-diag` |
 | [initsys](mulib-initsys.md) | `process`, `taskdag` |
 | [input-gesture](mulib-gfx-input.md) | `input-touch` |
 | [input-keymap](mulib-gfx-input.md) | `input-keyboard` |
 | [instrument-scpi](amb3r-kernels.md) | `amb3r-base`, `instrument-transport` |
+| [kernel-ir](mulib-kernel-ir.md) | `media-core` |
 | [latex](mulib-latex.md) | `docir`, `tex` |
 | [lir](mulib-lir.md) | `lowopt`, `machine` |
 | [loops](mulib-loops.md) | `dominance` |
@@ -1179,8 +1185,22 @@ Compatibility group: `parsec`, `peg`.
 | [machoutils](mulib-machoutils.md) | `macho` |
 | [markup-bridge](mulib-markup-bridge.md) | `markup-graph`, `markup-spans`, `markup-stream`, `markup-tree` |
 | [mathml](mulib-mathml.md) | `xml` |
+| [media-av1](mulib-media-av1.md) | `media-core` |
+| [media-clock](mulib-media-clock.md) | `media-core` |
+| [media-h264](mulib-media-h264.md) | `media-core` |
+| [media-isobmff](mulib-media-isobmff.md) | `media-core` |
+| [media-matroska](mulib-media-matroska.md) | `media-core` |
+| [media-metadata](mulib-media-metadata.md) | `media-core` |
+| [media-mpegts](mulib-media-mpegts.md) | `media-core` |
+| [media-packet](mulib-media-packet.md) | `media-core` |
+| [media-pixelformat](mulib-media-pixelformat.md) | `media-core` |
+| [media-seek](mulib-media-seek.md) | `media-core` |
+| [media-stream](mulib-media-stream.md) | `media-core` |
+| [media-timebase](mulib-media-timebase.md) | `media-core` |
+| [media-vp9](mulib-media-vp9.md) | `media-core` |
 | [mempool](mulib-mempool.md) | `alloc` |
 | [memtkx](mulib-memtkx.md) | `alloc` |
+| [mesh-core](mulib-mesh-core.md) | `media-core` |
 | [metapp](mulib-metapp.md) | `arena`, `dsu`, `elf`, `endian`, `linker`, `strbuf`, `utf8` |
 | [microchan](mulib-microchan.md) | `container-ipc`, `socket` |
 | [microjs-module](mulib-microjs-module.md) | `shylock-core` |
@@ -1205,6 +1225,8 @@ Compatibility group: `parsec`, `peg`.
 | [netfs](mulib-netfs.md) | `endian`, `fuse`, `xtks` |
 | [nftables](mulib-nftables.md) | `nfnetlink` |
 | [nl80211](mulib-nl80211.md) | `netlink`, `netlink-attr`, `netlink-genl` |
+| [nle-timeline](mulib-nle-timeline.md) | `media-core` |
+| [nodegraph-core](mulib-nodegraph-core.md) | `media-core` |
 | [num-sparse-ldlt](amb3r-kernels.md) | `amb3r-base`, `num-sparse-lu` |
 | [oauth2](mulib-oauth2.md) | `auth`, `authcrypto` |
 | [objfileleader](mulib-objfileleader.md) | `elf` |
@@ -1226,6 +1248,11 @@ Compatibility group: `parsec`, `peg`.
 | [price-history](mulib-price-history.md) | `price-observation` |
 | [price-match](mulib-price-match.md) | `shylock-core` |
 | [price-monitor](mulib-price-monitor.md) | `price-observation` |
+| [project-history](mulib-project-history.md) | `media-core` |
+| [project-journal](mulib-project-journal.md) | `media-core` |
+| [project-migrate](mulib-project-migrate.md) | `media-core` |
+| [project-package](mulib-project-package.md) | `media-core` |
+| [project-store](mulib-project-store.md) | `media-core` |
 | [readability](mulib-readability.md) | `html-textstream`, `shylock-core` |
 | [recordbatch](mulib-recordbatch.md) | `record` |
 | [regalloc](mulib-regalloc.md) | `regalloc-graph`, `regalloc-linear` |
@@ -1321,14 +1348,56 @@ Compatibility group: `parsec`, `peg`.
 | [zip](mulib-zip.md) | `crc32`, `deflate`, `utf8` |
 | [zstd](mulib-zstd.md) | `codec-core`, `container-core` |
 
-## Stratum 3 (144 modules)
+## Stratum 3 (251 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [2dgeom](mulib-2dgeom.md) | `geometry`, `parsec`, `vec` |
+| [anim-blend](mulib-anim-blend.md) | `mesh-core` |
+| [anim-driver](mulib-anim-driver.md) | `mesh-core` |
+| [anim-easing](mulib-anim-easing.md) | `mesh-core` |
+| [anim-exposure](mulib-anim-exposure.md) | `mesh-core` |
+| [anim-ik](mulib-anim-ik.md) | `mesh-core` |
+| [anim-keyframe](mulib-anim-keyframe.md) | `mesh-core` |
+| [anim-morph](mulib-anim-morph.md) | `mesh-core` |
+| [anim-quaternion](mulib-anim-quaternion.md) | `mesh-core` |
 | [archml](mulib-archml.md) | `parsec` |
 | [asdl](mulib-asdl.md) | `arena`, `parsec`, `strbuf` |
+| [asset-cache](mulib-asset-cache.md) | `asset-core` |
+| [asset-catalog](mulib-asset-catalog.md) | `asset-core` |
+| [asset-dependency](mulib-asset-dependency.md) | `asset-core` |
+| [audio-channelmap](mulib-audio-channelmap.md) | `audio-core` |
+| [audio-delay](mulib-audio-delay.md) | `audio-core` |
+| [audio-device](mulib-audio-device.md) | `audio-core` |
+| [audio-dynamics](mulib-audio-dynamics.md) | `audio-core` |
+| [audio-envelope](mulib-audio-envelope.md) | `audio-core` |
+| [audio-filter](mulib-audio-filter.md) | `audio-core` |
+| [audio-loudness](mulib-audio-loudness.md) | `audio-core` |
+| [audio-mixer](mulib-audio-mixer.md) | `audio-core` |
+| [audio-resample](mulib-audio-resample.md) | `audio-core` |
+| [audio-timestretch](mulib-audio-timestretch.md) | `audio-core` |
 | [collision](mulib-collision.md) | `cgeom` |
+| [color-curves](mulib-color-curves.md) | `img-core` |
+| [color-gamut](mulib-color-gamut.md) | `img-core` |
+| [color-grade](mulib-color-grade.md) | `img-core` |
+| [color-lut1d](mulib-color-lut1d.md) | `img-core` |
+| [color-lut3d](mulib-color-lut3d.md) | `img-core` |
+| [color-pipeline](mulib-color-pipeline.md) | `img-core` |
+| [color-primaries](mulib-color-primaries.md) | `img-core` |
+| [color-qualifier](mulib-color-qualifier.md) | `img-core` |
+| [color-tonemap](mulib-color-tonemap.md) | `img-core` |
+| [color-transfer](mulib-color-transfer.md) | `img-core` |
+| [color-vectorscope](mulib-color-vectorscope.md) | `img-core` |
+| [color-waveform](mulib-color-waveform.md) | `img-core` |
+| [color-wheels](mulib-color-wheels.md) | `img-core` |
+| [compute-buffer](mulib-compute-buffer.md) | `compute-core` |
+| [compute-cache](mulib-compute-cache.md) | `compute-core` |
+| [compute-cpu](mulib-compute-cpu.md) | `compute-core` |
+| [compute-device](mulib-compute-device.md) | `compute-core` |
+| [compute-memory](mulib-compute-memory.md) | `compute-core` |
+| [compute-pipeline](mulib-compute-pipeline.md) | `compute-core` |
+| [compute-spirv](mulib-compute-spirv.md) | `compute-core` |
+| [compute-sync](mulib-compute-sync.md) | `compute-core` |
 | [confuse](mulib-confuse.md) | `parsec` |
 | [consteval](mulib-consteval.md) | `parser-pratt`, `symboltable` |
 | [container-packcoff](mulib-container-packcoff.md) | `coff`, `imgformat` |
@@ -1357,6 +1426,15 @@ Compatibility group: `parsec`, `peg`.
 | [field-magnetostatic](amb3r-kernels.md) | `amb3r-base`, `field-electrostatic` |
 | [formal-proof](amb3r-kernels.md) | `amb3r-base`, `formal-aig-cnf` |
 | [gbm](notebook-desktop.md) | `dmabuf` |
+| [geom-bezier](mulib-geom-bezier.md) | `mesh-core` |
+| [geom-bspline](mulib-geom-bspline.md) | `mesh-core` |
+| [geom-cloner](mulib-geom-cloner.md) | `mesh-core` |
+| [geom-csg](mulib-geom-csg.md) | `mesh-core` |
+| [geom-deform](mulib-geom-deform.md) | `mesh-core` |
+| [geom-isosurface](mulib-geom-isosurface.md) | `mesh-core` |
+| [geom-metaball](mulib-geom-metaball.md) | `mesh-core` |
+| [geom-sdf](mulib-geom-sdf.md) | `mesh-core` |
+| [geom-tessellate](mulib-geom-tessellate.md) | `mesh-core` |
 | [geosolve](mulib-geosolve.md) | `alloc`, `cgeom`, `geometry` |
 | [glx-antialias](mulib-gfx-path.md) | `glx-raster` |
 | [glx-backend-drm](mulib-gfx-drm.md) | `drm`, `drm-framebuffer`, `drm-output`, `drm-pageflip`, `glx-platform` |
@@ -1381,11 +1459,25 @@ Compatibility group: `parsec`, `peg`.
 | [hwil-rewrite](amb3r-kernels.md) | `amb3r-base`, `hwil-cell` |
 | [hyphen](mulib-hyphen.md) | `cache`, `dfa`, `orhoconv` |
 | [image2container](mulib-image2container.md) | `imgformat`, `rootfs` |
+| [img-blend](mulib-img-blend.md) | `img-core` |
+| [img-convolve](mulib-img-convolve.md) | `img-core` |
+| [img-denoise](mulib-img-denoise.md) | `img-core` |
+| [img-edge](mulib-img-edge.md) | `img-core` |
+| [img-keying](mulib-img-keying.md) | `img-core` |
+| [img-matte](mulib-img-matte.md) | `img-core` |
+| [img-morphology](mulib-img-morphology.md) | `img-core` |
+| [img-opticalflow](mulib-img-opticalflow.md) | `img-core` |
+| [img-pyramid](mulib-img-pyramid.md) | `img-core` |
+| [img-sampler](mulib-img-sampler.md) | `img-core` |
+| [img-tile](mulib-img-tile.md) | `img-core` |
 | [inet4](mulib-inet4.md) | `parsec` |
 | [input-seat](mulib-gfx-input.md) | `glx-event`, `input`, `input-keymap`, `input-mouse`, `input-touch` |
 | [iwd-client](mulib-iwd-client.md) | `dbus-client` |
 | [jit](mulib-jit.md) | `dyncall`, `vmweave` |
 | [json](mulib-json.md) | `parsec`, `strbuf`, `utf8` |
+| [kernel-memory](mulib-kernel-memory.md) | `kernel-ir` |
+| [kernel-types](mulib-kernel-types.md) | `kernel-ir` |
+| [kernel-validate](mulib-kernel-validate.md) | `kernel-ir` |
 | [latticequery](mulib-latticequery.md) | `conceptlattice` |
 | [ligature](mulib-ligature.md) | `fontshape` |
 | [linebreak](mulib-linebreak.md) | `unibreak` |
@@ -1394,6 +1486,26 @@ Compatibility group: `parsec`, `peg`.
 | [lzip](mulib-lzip.md) | `crc32`, `lzma` |
 | [lzop](mulib-lzop.md) | `adler32`, `crc32`, `lzo` |
 | [markdown](mulib-markdown.md) | `html` |
+| [media-demux](mulib-media-demux.md) | `media-core`, `media-packet` |
+| [media-frame](mulib-media-frame.md) | `media-core`, `media-pixelformat` |
+| [media-h265](mulib-media-h265.md) | `media-core`, `media-h264` |
+| [media-mux](mulib-media-mux.md) | `media-core`, `media-packet` |
+| [mesh-adjacency](mulib-mesh-adjacency.md) | `mesh-core` |
+| [mesh-attributes](mulib-mesh-attributes.md) | `mesh-core` |
+| [mesh-boolean](mulib-mesh-boolean.md) | `mesh-core` |
+| [mesh-decimate](mulib-mesh-decimate.md) | `mesh-core` |
+| [mesh-edit](mulib-mesh-edit.md) | `mesh-core` |
+| [mesh-gltf](mulib-mesh-gltf.md) | `mesh-core` |
+| [mesh-halfedge](mulib-mesh-halfedge.md) | `mesh-core` |
+| [mesh-normals](mulib-mesh-normals.md) | `mesh-core` |
+| [mesh-obj](mulib-mesh-obj.md) | `mesh-core` |
+| [mesh-ply](mulib-mesh-ply.md) | `mesh-core` |
+| [mesh-primitives](mulib-mesh-primitives.md) | `mesh-core` |
+| [mesh-remesh](mulib-mesh-remesh.md) | `mesh-core` |
+| [mesh-repair](mulib-mesh-repair.md) | `mesh-core` |
+| [mesh-skin](mulib-mesh-skin.md) | `mesh-core` |
+| [mesh-triangulate](mulib-mesh-triangulate.md) | `mesh-core` |
+| [mesh-uv](mulib-mesh-uv.md) | `mesh-core` |
 | [mumq-publisher](mulib-mumq-publisher.md) | `mumq` |
 | [mumq-server](mulib-mumq-server.md) | `mumq` |
 | [mumq-subscriber](mulib-mumq-subscriber.md) | `mumq` |
@@ -1404,9 +1516,22 @@ Compatibility group: `parsec`, `peg`.
 | [nb-runtime](notebook-desktop.md) | `nb-message` |
 | [nb-scheduler](notebook-desktop.md) | `nb-execgraph` |
 | [networkd-client](mulib-networkd-client.md) | `dbus-client` |
+| [nle-clip](mulib-nle-clip.md) | `nle-timeline` |
+| [nle-edit](mulib-nle-edit.md) | `nle-timeline` |
+| [nle-edl](mulib-nle-edl.md) | `nle-timeline` |
+| [nle-interval](mulib-nle-interval.md) | `nle-timeline` |
+| [nle-otio](mulib-nle-otio.md) | `nle-timeline` |
+| [nle-retime](mulib-nle-retime.md) | `nle-timeline` |
+| [nle-ripple](mulib-nle-ripple.md) | `nle-timeline` |
+| [nle-snap](mulib-nle-snap.md) | `nle-timeline` |
+| [nle-track](mulib-nle-track.md) | `nle-timeline` |
+| [nle-transition](mulib-nle-transition.md) | `nle-timeline` |
 | [nm-connection](mulib-nm-connection.md) | `dbus-client` |
 | [nm-secret-agent](mulib-nm-secret-agent.md) | `dbus-client` |
 | [nm-wifi](mulib-nm-wifi.md) | `dbus-client` |
+| [nodegraph-cache](mulib-nodegraph-cache.md) | `nodegraph-core` |
+| [nodegraph-temporal](mulib-nodegraph-temporal.md) | `nodegraph-core` |
+| [nodegraph-types](mulib-nodegraph-types.md) | `nodegraph-core` |
 | [oauth](mulib-oauth.md) | `oauth2` |
 | [objfile](mulib-objfile.md) | `binfile`, `elfutils` |
 | [objfilebuilder](mulib-objfilebuilder.md) | `objfilewriter` |
@@ -1414,8 +1539,17 @@ Compatibility group: `parsec`, `peg`.
 | [objfilesymloc](mulib-objfilesymloc.md) | `binfile`, `elfutils` |
 | [ocicontainervfs](mulib-ocicontainervfs.md) | `rootfs` |
 | [peutils](mulib-peutils.md) | `coffutils`, `pe` |
+| [physics-cloth](mulib-physics-cloth.md) | `mesh-core` |
+| [physics-particle](mulib-physics-particle.md) | `mesh-core` |
+| [physics-rigidbody](mulib-physics-rigidbody.md) | `mesh-core` |
 | [polkit-client](mulib-polkit-client.md) | `dbus-client` |
 | [price-timeseries](mulib-price-timeseries.md) | `price-history` |
+| [render-denoise](mulib-render-denoise.md) | `img-core`, `mesh-core` |
+| [render-film](mulib-render-film.md) | `mesh-core` |
+| [render-light](mulib-render-light.md) | `mesh-core` |
+| [render-material](mulib-render-material.md) | `mesh-core` |
+| [render-raster](mulib-render-raster.md) | `img-core`, `mesh-core` |
+| [render-sampling](mulib-render-sampling.md) | `mesh-core` |
 | [resolved-client](mulib-resolved-client.md) | `dbus-client` |
 | [rootfs-buildspec](mulib-rootfs-buildspec.md) | `container-core`, `rootfs` |
 | [rootfsbuilder](mulib-rootfsbuilder.md) | `archive`, `buffer`, `rootfs` |
@@ -1470,17 +1604,25 @@ Compatibility group: `parsec`, `peg`.
 | [xtas](mulib-xtas.md) | `dsdom` |
 | [xz](mulib-xz.md) | `authcrypto`, `bcj`, `crc32`, `lzma` |
 
-## Stratum 4 (80 modules)
+## Stratum 4 (114 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
+| [anim-curve](mulib-anim-curve.md) | `anim-keyframe`, `mesh-core` |
+| [anim-transform](mulib-anim-transform.md) | `anim-quaternion`, `mesh-core` |
 | [art](mulib-art.md) | `clickir`, `dexcc`, `jit` |
+| [audio-eq](mulib-audio-eq.md) | `audio-filter`, `media-core` |
+| [audio-reverb](mulib-audio-reverb.md) | `audio-delay`, `media-core` |
 | [beam_search](mulib-beam_search.md) | `viterbi_decoding` |
 | [bootmgr](mulib-bootmgr.md) | `bios`, `efi`, `uefiutils` |
 | [bson](mulib-bson.md) | `buffer`, `json` |
 | [cbor](mulib-cbor.md) | `buffer`, `json` |
 | [chem](mulib-chem.md) | `fraction`, `symbol`, `tex` |
 | [coffbuilder](mulib-coffbuilder.md) | `binfilewriter`, `buffer`, `bycutils`, `objfilebuilder` |
+| [color-adaptation](mulib-color-adaptation.md) | `color-primaries`, `img-core` |
+| [color-cube](mulib-color-cube.md) | `color-lut3d`, `img-core` |
+| [compute-dispatch](mulib-compute-dispatch.md) | `compute-core`, `compute-pipeline` |
+| [compute-image](mulib-compute-image.md) | `compute-buffer`, `compute-core` |
 | [containerboost](mulib-containerboost.md) | `container-runtime`, `imgformat` |
 | [containerd-mount](mulib-containerd-mount.md) | `container-vfs`, `fuse` |
 | [css-selector](mulib-css-selector.md) | `dom-query`, `html-treebuilder` |
@@ -1495,21 +1637,39 @@ Compatibility group: `parsec`, `peg`.
 | [elfbuilder](mulib-elfbuilder.md) | `binfilewriter`, `bycutils`, `objfilebuilder` |
 | [eqn](mulib-eqn.md) | `symbol`, `tex` |
 | [fpga-pathfinder](amb3r-kernels.md) | `amb3r-base`, `fpga-rrgraph`, `route-negotiated` |
+| [geom-nurbs](mulib-geom-nurbs.md) | `geom-bspline`, `mesh-core` |
 | [glx-gpu](graphics-overlay.md) | `glx-drawlist` |
 | [glx-renderqueue](mulib-gfx-raster.md) | `glx-drawlist` |
 | [glx-scene](notebook-desktop.md) | `glx-scenenode` |
 | [glx-tiledraster](graphics-overlay.md) | `glx-drawlist` |
 | [glx-window](mulib-gfx-present.md) | `glx-present`, `glx-swapchain` |
 | [gui-core](mulib-gfx-gui.md) | `glx-drawlist`, `glx-event`, `glx-text` |
+| [img-blur](mulib-img-blur.md) | `img-convolve`, `img-core` |
+| [img-motionblur](mulib-img-motionblur.md) | `img-core`, `img-sampler` |
+| [img-resample](mulib-img-resample.md) | `img-core`, `img-sampler` |
+| [img-tracking](mulib-img-tracking.md) | `img-core`, `img-opticalflow` |
+| [img-transform](mulib-img-transform.md) | `img-core`, `img-sampler` |
+| [img-warp](mulib-img-warp.md) | `img-core`, `img-sampler` |
 | [imgbuildspec](mulib-imgbuildspec.md) | `imgformat`, `rootfs-buildspec` |
 | [immgtk-drawlist-bridge](mulib-gfx-immgtk.md) | `glx-drawlist`, `immgtk-drawlist` |
 | [immgtk-drawlist](mulib-immgtk-drawlist.md) | `immgtk-drawlist-bridge` |
 | [inet6](mulib-inet6.md) | `inet4` |
 | [isel](mulib-isel.md) | `archml`, `isched`, `lir`, `lowopt` |
 | [jupyter-wire](notebook-desktop.md) | `authcrypto`, `json` |
+| [kernel-fusion](mulib-kernel-fusion.md) | `kernel-ir`, `kernel-validate` |
+| [kernel-glsl](mulib-kernel-glsl.md) | `kernel-ir`, `kernel-validate` |
+| [kernel-legalize](mulib-kernel-legalize.md) | `kernel-ir`, `kernel-validate` |
+| [kernel-uniformity](mulib-kernel-uniformity.md) | `kernel-ir`, `kernel-validate` |
+| [kernel-vectorize](mulib-kernel-vectorize.md) | `kernel-ir`, `kernel-validate` |
 | [machobuilder](mulib-machobuilder.md) | `binfilewriter`, `bycutils`, `machobuidler`, `objfilebuilder` |
 | [mcp-client](mulib-mcp-client.md) | `json`, `utf8` |
 | [mcp-server](mulib-mcp-server.md) | `json`, `utf8` |
+| [media-bufferpool](mulib-media-bufferpool.md) | `media-core`, `media-frame` |
+| [media-codec](mulib-media-codec.md) | `media-core`, `media-frame`, `media-packet` |
+| [media-convert](mulib-media-convert.md) | `media-core`, `media-frame` |
+| [media-export](mulib-media-export.md) | `media-core`, `media-demux`, `media-mux` |
+| [media-scale](mulib-media-scale.md) | `media-core`, `media-frame` |
+| [mesh-subdivide](mulib-mesh-subdivide.md) | `mesh-core`, `mesh-halfedge` |
 | [messagepack](mulib-messagepack.md) | `buffer`, `json` |
 | [microcc](mulib-microcc.md) | `depir`, `isched`, `lowopt`, `machine`, `strbuf` |
 | [mune](mulib-mune.md) | `dynload`, `jit`, `parsec` |
@@ -1519,18 +1679,26 @@ Compatibility group: `parsec`, `peg`.
 | [nb-order](notebook-desktop.md) | `nb-core` |
 | [nb-tree](notebook-desktop.md) | `nb-core` |
 | [nb-window](notebook-desktop.md) | `nb-core` |
+| [nle-evaluate](mulib-nle-evaluate.md) | `nle-clip`, `nle-timeline` |
 | [nm-client](mulib-nm-client.md) | `dbus-properties` |
 | [nm-device](mulib-nm-device.md) | `dbus-properties` |
+| [nodegraph-validate](mulib-nodegraph-validate.md) | `nodegraph-core`, `nodegraph-types` |
 | [objdump](mulib-objdump.md) | `termstyle` |
 | [ocicontainermetadata](mulib-ocicontainermetadata.md) | `json`, `ocicontainer` |
 | [ocicontainernetwork](mulib-ocicontainernetwork.md) | `inet4` |
 | [ociimage](mulib-ociimage.md) | `json` |
 | [pandocast](mulib-pandocast.md) | `dsdom`, `json` |
 | [pebuilder](mulib-pebuilder.md) | `binfilewriter`, `bycutils`, `objfilebuilder` |
+| [physics-broadphase](mulib-physics-broadphase.md) | `mesh-core`, `physics-rigidbody` |
+| [physics-joint](mulib-physics-joint.md) | `mesh-core`, `physics-rigidbody` |
+| [physics-narrowphase](mulib-physics-narrowphase.md) | `mesh-core`, `physics-rigidbody` |
 | [prettydoc](mulib-prettydoc.md) | `linebreak` |
 | [price-forecast](mulib-price-forecast.md) | `price-timeseries` |
 | [raytracing](mulib-raytracing.md) | `collision`, `glx` |
 | [readline](mulib-readline.md) | `json`, `strbuf`, `terminfo`, `termkey`, `termutils` |
+| [render-bsdf](mulib-render-bsdf.md) | `mesh-core`, `render-material` |
+| [render-scene](mulib-render-scene.md) | `mesh-core`, `render-material` |
+| [render-texture](mulib-render-texture.md) | `img-sampler`, `mesh-core` |
 | [rpc](mulib-rpc.md) | `json` |
 | [schemaorg](mulib-schemaorg.md) | `json`, `shylock-core` |
 | [spice-bjt](amb3r-kernels.md) | `amb3r-base`, `spice-diode` |
@@ -1555,15 +1723,21 @@ Compatibility group: `parsec`, `peg`.
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (76 modules)
+## Stratum 5 (97 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [acl](mulib-acl.md) | `inet6` |
+| [anim-channel](mulib-anim-channel.md) | `anim-curve`, `mesh-core` |
+| [anim-skeleton](mulib-anim-skeleton.md) | `anim-transform`, `mesh-core` |
 | [assembler](mulib-assembler.md) | `dsymspec`, `emitter`, `linker` |
 | [audrey](mulib-audrey.md) | `midi`, `miniflac`, `minimpeg`, `minivorbis`, `miniwav`, `mune` |
 | [chart](mulib-chart.md) | `json`, `mune`, `xml` |
 | [coff-objdump](mulib-coff-objdump.md) | `coff`, `objdump` |
+| [compute-d3d12](mulib-compute-d3d12.md) | `compute-core`, `compute-dispatch` |
+| [compute-metal](mulib-compute-metal.md) | `compute-core`, `compute-dispatch` |
+| [compute-vulkan](mulib-compute-vulkan.md) | `compute-core`, `compute-dispatch` |
+| [compute-webgpu](mulib-compute-webgpu.md) | `compute-core`, `compute-dispatch` |
 | [container-jitboost](mulib-container-jitboost.md) | `containerboost`, `jit` |
 | [container-kvmboost](mulib-container-kvmboost.md) | `containerboost`, `kvmcontainer` |
 | [container-qvmboost](mulib-container-qvmboost.md) | `containerboost`, `qvm` |
@@ -1604,12 +1778,21 @@ Compatibility group: `parsec`, `peg`.
 | [immgtk](mulib-immgtk.md) | `glx`, `mune` |
 | [inte6](mulib-inte6.md) | `inet6` |
 | [jvm](mulib-jvm.md) | `art` |
+| [kernel-wgsl](mulib-kernel-wgsl.md) | `kernel-glsl`, `kernel-ir` |
 | [macho-objdump](mulib-macho-objdump.md) | `macho`, `objdump` |
 | [mcu](mulib-mcu.md) | `unit` |
+| [media-proxy](mulib-media-proxy.md) | `media-core`, `media-scale` |
 | [mpu](mulib-mpu.md) | `unit` |
 | [muidl](mulib-muidl.md) | `buffer`, `dbschema` |
 | [nb-layout](notebook-desktop.md) | `nb-tree` |
 | [nb-serialize](notebook-desktop.md) | `nb-tree` |
+| [nodegraph-compile](mulib-nodegraph-compile.md) | `nodegraph-core`, `nodegraph-validate` |
+| [nodegraph-dirty](mulib-nodegraph-dirty.md) | `nodegraph-core`, `nodegraph-validate` |
+| [nodegraph-eval](mulib-nodegraph-eval.md) | `nodegraph-core`, `nodegraph-validate` |
+| [nodegraph-fusion](mulib-nodegraph-fusion.md) | `nodegraph-core`, `nodegraph-validate` |
+| [nodegraph-layout](mulib-nodegraph-layout.md) | `nodegraph-core`, `nodegraph-validate` |
+| [nodegraph-region](mulib-nodegraph-region.md) | `nodegraph-core`, `nodegraph-validate` |
+| [nodegraph-serialize](mulib-nodegraph-serialize.md) | `nodegraph-core`, `nodegraph-validate` |
 | [ocicontainernetwrork](mulib-ocicontainernetwrork.md) | `ocicontainernetwork` |
 | [ociimagebuilder](mulib-ociimagebuilder.md) | `ociimage` |
 | [oix](mulib-oix.md) | `base64`, `confuse`, `crc32`, `emitter`, `json`, `kvm`, `toml`, `yaml` |
@@ -1617,7 +1800,13 @@ Compatibility group: `parsec`, `peg`.
 | [paleography](mulib-paleography.md) | `base64`, `json`, `mune`, `svg`, `tex` |
 | [parallel-sh](mulib-parallel-sh.md) | `mune` |
 | [pglayout](mulib-pglayout.md) | `bidi`, `fontshape`, `json`, `stylesheet`, `unibreak`, `yaml` |
+| [physics-manifold](mulib-physics-manifold.md) | `mesh-core`, `physics-narrowphase` |
+| [physics-solver](mulib-physics-solver.md) | `mesh-core`, `physics-narrowphase` |
 | [prettyemit](mulib-prettyemit.md) | `prettydoc` |
+| [render-bvh](mulib-render-bvh.md) | `mesh-core`, `render-scene` |
+| [render-camera](mulib-render-camera.md) | `mesh-core`, `render-scene` |
+| [render-pathtrace](mulib-render-pathtrace.md) | `mesh-core`, `render-bsdf`, `render-sampling`, `render-scene` |
+| [render-shadow](mulib-render-shadow.md) | `mesh-core`, `render-scene` |
 | [retgtk-object](graphics-overlay.md) | `gui-core` |
 | [retgtk-reactive](graphics-overlay.md) | `gui-core` |
 | [retgtk-type](graphics-overlay.md) | `gui-core` |
@@ -1636,13 +1825,15 @@ Compatibility group: `parsec`, `peg`.
 | [x11-wm](mulib-gfx-wire.md) | `wm-focus`, `x11-events`, `x11-icccm`, `x11-reparent`, `x11-window`, `x11-wire` |
 | [x509](mulib-x509.md) | `base64`, `inet6`, `signature` |
 
-## Stratum 6 (57 modules)
+## Stratum 6 (62 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [aarch64](mulib-aarch64.md) | `mpu` |
 | [amd64](mulib-amd64.md) | `assembler`, `mpu` |
 | [amdgpu](mulib-amdgpu.md) | `gpu` |
+| [anim-bake](mulib-anim-bake.md) | `anim-channel`, `mesh-core` |
+| [asset-thumbnail](mulib-asset-thumbnail.md) | `media-proxy` |
 | [avr32](mulib-avr32.md) | `mcu` |
 | [container-oixboost](mulib-container-oixboost.md) | `containerboost`, `oix` |
 | [containerd](mulib-containerd.md) | `conainerd-ipc`, `container-log`, `containerd-cache`, `containerd-mount`, `containterpool` |
@@ -1689,7 +1880,10 @@ Compatibility group: `parsec`, `peg`.
 | [nb-viewport](notebook-desktop.md) | `nb-layout` |
 | [nvptx](mulib-nvptx.md) | `gpu` |
 | [pe-objdump](mulib-pe-objdump.md) | `coff-objdump`, `pe` |
+| [physics-world](mulib-physics-world.md) | `mesh-core`, `physics-solver` |
 | [prettysexpr](mulib-prettysexpr.md) | `prettyemit` |
+| [render-bvhbuild](mulib-render-bvhbuild.md) | `mesh-core`, `render-bvh` |
+| [render-integrator](mulib-render-integrator.md) | `mesh-core`, `render-bsdf`, `render-light`, `render-shadow` |
 | [retgtk-signal](graphics-overlay.md) | `retgtk-object` |
 | [riscv64](mulib-riscv64.md) | `mpu` |
 | [task](mulib-task.md) | `exec` |

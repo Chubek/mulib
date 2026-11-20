@@ -40,6 +40,11 @@ compilation does not load SDK plugins.
 
 ## Language implementation continuation
 
+The [bounded kernel inventory](contracts-exotract/README.md) registers the
+193 new JoltFX assessment kernels for metadata discovery. Static-inline
+definitions do not provide an external archive ABI: safe and unsafe calls
+remain unsupported, and no codec/GPU provider or safety admission is implied.
+
 The [core literal forms](docs/core-literals.md) add UTF-8 `char`, `b!` byte/buffer literals, raw and
 triple-quoted strings, interpolation, and binary/octal integers. The
 [enum connective](docs/core-enum-connective.md) adds `value ~ { … }`, and

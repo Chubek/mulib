@@ -144,8 +144,19 @@ map underscores to hyphens for the matching discovery-only MANIFEST entries.
 The report returns `not_representable`, with CDecl metadata but no semantic
 sidecar. Checked accessors for fixed arrays, counts and borrowed lifetimes are
 required before preparing semantic contracts. CDD is not an archive or callable
-profile. Other logical names are rejected at their source location, even if
-they appear in the broader [MuLIB inventory](../contracts-exotract/README.md).
+profile.
+
+Registered bounded `implementation: static-inline` modules are also eligible
+for metadata inspection. Use underscores for hyphens, for example
+`import kernel mulib.media_timebase as Time;` or
+`import kernel mulib.compute_vulkan as Vulkan;`. This includes the 193 JoltFX
+assessment kernels and the review's shared audio-core helper. The real ExoML/libclang graph retains their inline
+definitions and internal linkage; these are **not external archive symbols**.
+Reports remain `not_representable`, `callable:false`, with no semantic sidecar.
+Neither safe nor unsafe import spelling enables calls, archives or production
+admission. An ambiguous underscore/hyphen alias rejects rather than guessing.
+Other logical names are rejected at their source location, even if they appear
+in the broader [MuLIB inventory](../contracts-exotract/README.md).
 
 `--mulib-root`, `--mulib-path`, `ON1X_MULIB_ROOT`, and `ON1X_MULIB_PATH` select
 the canonical checkout using the existing planner. Additional selected-header

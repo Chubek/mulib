@@ -234,10 +234,17 @@ def extract_exolib(name, recipe, root, exotract, compiler, resource, target,
         raise ValueError('mismatched ExoML semantic sidecar')
     declarations = [d for d in decl['declarations'] if d['kind'] == 'function']
     functions = {d['name']: d for d in declarations}
-    if discovery_only and (profile['parser'] != 'exoml/libclang' or profile['externally_imported'] is not False or
-                           not functions or len(functions) != len(declarations) or
-                           any(d['source']['file'] != str(header) or d['definition'] for d in declarations)):
-        raise ValueError('discovery-only kernel requires canonical declaration-only CDecl: '+name)
+    if discovery_only:
+        inline = next(item for item in recipe['modules'] if item['name'] == name)['macro'] is None
+        # Static-inline bodies are real definitions with internal linkage, not
+        # externally callable archive exports. Preserve the compiler's evidence;
+        # never rewrite them into extern declarations to satisfy this check.
+        invalid = any(d['source']['file'] != str(header) or
+                      (not d['definition'] or not d['inline'] or d['linkage'] != '2'
+                       if inline else d['definition']) for d in declarations)
+        if (profile['parser'] != 'exoml/libclang' or profile['externally_imported'] is not False or
+                (not functions and not inline) or len(functions) != len(declarations) or invalid):
+            raise ValueError('discovery-only kernel requires canonical CDecl linkage: '+name)
     type_ids = {entry['id'] for entry in decl['types'] if entry['kind'] == 'function'}
     for entry in on1x['imports']:
         if entry['safe'] is not False or entry['c_name'] not in functions or entry['c_type_id'] not in type_ids:
@@ -274,6 +281,17 @@ def extract_exolib(name, recipe, root, exotract, compiler, resource, target,
                 sidecar=str(sidecar) if sidecar else None)
 
 
+def manifest_discovery_name(logical, modules, profiles):
+    """Resolve only metadata-eligible MANIFEST names, never an archive recipe."""
+    candidates = {n for n in (logical, logical.replace('_', '-')) if n in modules}
+    if len(candidates) > 1:
+        raise ValueError('ambiguous manifest alias: mulib.'+logical)
+    name = next(iter(candidates), None)
+    if name is not None and contracts.module_discovery_only_reason(name, modules[name], profiles):
+        return name
+    return None
+
+
 def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cflags, pins_before_load, *, review=False):
     """Resolve *compiler* source requests. This produces no interface or link input."""
     def location(request):
@@ -286,8 +304,9 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
                {'file': os.fsdecode(bytes.fromhex(r['file_hex']))} for r in requests['requests']]
     if not imports or len(imports) > 1024:
         raise ValueError('KernelBind inspection requires 1..1024 source requests')
-    # Do not automatically enable arbitrary manifest recipes or executable inputs.
-    # Only explicitly opted-in discovery-only families get MANIFEST-derived aliases.
+    # MANIFEST registration is not permission to build or call a kernel.
+    # Bounded static-inline modules may expose compiler-derived metadata only;
+    # ABI modules still require an explicit profile or discovery-only policy.
     catalog_hash = contracts.digest(CATALOG)
     profiles = contracts.exotract_catalog()
     manifest = None
@@ -295,14 +314,15 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
     for request in imports:
         match = re.fullmatch(r'mulib\.([a-z][a-z0-9_]*)', request['module'])
         logical = match[1] if match else ''
-        candidate = logical.replace('_', '-')
-        metadata_only = contracts.discovery_only_reason(candidate, profiles)
         if logical in KERNEL_MODULES or logical in SANDBOX_MODULES:
             name = SANDBOX_MODULES.get(logical, logical)
-        elif metadata_only:
+        elif logical:
             if manifest is None:
                 manifest = housekeeping.inventory(root)
-            name = candidate if candidate in manifest else None
+            try:
+                name = manifest_discovery_name(logical, manifest, profiles)
+            except ValueError as error:
+                raise ValueError(location(request)+'ON1X-KERNEL-PROFILE: '+str(error)) from error
         else:
             name = None
         if name is None:

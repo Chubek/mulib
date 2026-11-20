@@ -1,5 +1,13 @@
 # MuLIB sandbox kernels
 
+## JoltFX assessment kernels
+
+The [bounded review guide](manual/joltfx-review.md) covers the 193 supplied
+C11 kernels plus one shared audio helper, per-header manuals, examples and
+regressions. Run `make check-joltfx` for strict GCC/Clang and sanitizer checks.
+[On1x registration](on1x/docs/kernel-joltfx.md) exposes declaration metadata,
+not callable safe imports or native codec/GPU/audio providers.
+
 Eight C11 single-header modules for a broker-only Linux plugin worker runtime.
 They are intended for upstream MuLIB (`include/`) and subsequently Shylock's
 separate plugin control plane. No third-party library is required. These are

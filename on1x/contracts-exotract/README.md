@@ -26,6 +26,14 @@ archive. The [KernelBind inspector](../docs/kernel-bind.md#inspect-requests-and-
 can extract declaration metadata for `mulib.cdd_*`. It neither attaches a
 semantic sidecar nor enables callable bindings.
 
+Bounded static-inline entries, including the 193 JoltFX assessment kernels,
+are registered by the same MANIFEST inventory. Their source import aliases
+replace hyphens with underscores (`mulib.img_blend`, `mulib.media_timebase`).
+`--inspect-kernels` extracts their actual internal-linkage definitions into
+CDecl v2. `plan` labels them discovery-only and `build` rejects them before
+publishing an archive. No external symbols, callable lowering, semantic
+contracts or safety approval are fabricated from their header bodies.
+
 ## Build the generator
 
 From the MuLIB root:

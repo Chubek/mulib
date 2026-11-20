@@ -10,6 +10,11 @@ machine-code backend is added.
 
 ## Current feature matrix
 
+M2 discovery continuation (2026-11-20): the 193 JoltFX assessment kernels use
+bounded static-inline MANIFEST entries and canonical internal-linkage CDecl
+inspection. No callable ABI, resource lowering or independent safe admission
+is added; provider adapters remain adapters. See [KernelBind](kernel-bind.md).
+
 M1/M2 core-syntax additions use the canonical parser, checker, and C11
 backend. [Literals and interpolation](core-literals.md) distinguish Unicode
 scalars from bytes. [Regular expressions](core-regex.md) compile through

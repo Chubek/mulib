@@ -1,5 +1,100 @@
 # On1x verification — through 2026-11-20
 
+## Bounded JoltFX kernel review and registration — 2026-11-20
+
+Baseline MuLIB `53f77657126cf36401a6c18f49691499fdb53e11`, configured read-only
+LibStone `3399047f6c6328b8f07788795c610699e66c060a`; Linux x86-64,
+GCC 16.2.1 and Clang 22.1.8. The four kernel workers and one peripheral worker
+preserved the 193 supplied headers, added one shared PCM helper, strengthened
+explicit capacities/overlap/numeric/provider checks, and supplied 194 manuals.
+See [the integration boundary](docs/kernel-joltfx.md) and
+[the C11 reproduction guide](../manual/joltfx-review.md).
+
+`MANIFEST.yaml` now registers **1,957** independent modules: 1,462 with
+implementation switches and 495 bounded static-inline modules. All 194 new
+headers are registered. Only the three established support headers remain
+auxiliary (`container-core`, `qvm`, `lprowse`). Registration is discovery only;
+no safe or unsafe callable profile, external archive ABI, semantic sidecar,
+independent approval or native media/GPU/audio provider was fabricated.
+
+Reproduction:
+
+```sh
+python3 tools/joltfx_inventory.py --check
+python3 tools/check_joltfx.py --fuzz-runs 5000 \
+  --report /tmp/opencode/joltfx-final-optimized-report.json
+python3 tools/manuals.py --check
+python3 tools/stratify.py --check
+
+cmake -S . -B build/joltfx-review-gcc -DMULIB_BUILD_MUW3=OFF \
+  -DMULIB_BUILD_SHIRAZ=OFF -DMULIB_BUILD_VIRTIO=OFF -DCMAKE_C_COMPILER=gcc
+cmake -S . -B build/joltfx-review-clang-san -DMULIB_BUILD_MUW3=OFF \
+  -DMULIB_BUILD_SHIRAZ=OFF -DMULIB_BUILD_VIRTIO=OFF \
+  -DCMAKE_C_COMPILER=clang -DMULIB_SANITIZERS=ON \
+  -DCMAKE_C_FLAGS=-fsanitize=float-cast-overflow
+for build in build/joltfx-review-gcc build/joltfx-review-clang-san; do
+  cmake --build "$build" --parallel 4 --target \
+    mulib_joltfx_pipeline mulib_joltfx_link mulib_joltfx-integration-test \
+    mulib_joltfx-parser-boundary-test mulib_joltfx-media-review-test \
+    mulib_joltfx-image-review-test mulib_joltfx-scene-review-test \
+    mulib_joltfx-compute-audio-review-test
+done
+ctest --test-dir build/joltfx-review-gcc --output-on-failure -R '^mulib_joltfx[-_]'
+ctest --test-dir build/joltfx-review-clang-san --output-on-failure -R '^mulib_joltfx[-_]'
+
+cmake --build build/on1x-workstream4-gcc --target on1xc exotract --parallel 4
+ctest --test-dir build/on1x-workstream4-gcc --output-on-failure \
+  -R '^on1x\.bounded_kernel_(inventory|discovery_sdk)$'
+ctest --test-dir build/on1x-workstream4-clang --output-on-failure \
+  -R '^on1x\.bounded_kernel_(inventory|discovery_sdk)$'
+```
+
+The root focused CTest matrix passes **10/10** with GCC and **10/10** with
+Clang ASan/UBSan plus float-cast-overflow. The standalone gate checks every
+new header independently and in aggregate, composition with canonical APIs,
+portable no-`__int128` arithmetic, separate-TU wrappers, an expected failing
+external-symbol link, six regression executables, the CPU example and 5,000
+bounded libFuzzer iterations. These are bounded regression/fuzz samples, not
+exhaustive safety or standards conformance.
+
+After final registration and stable-header regeneration, the GCC On1x run
+passes **5/5** (both new tests, contracts, kernel imports and scanner parity).
+The Clang/fallback On1x run passes **2/2** new tests. Every one of the 194
+additions is checked for inventory, dependencies, alias resolution, source
+pins and absent admission; the real SDK test extracts representative CDecl
+graphs from **all 15 families**, checks internal inline linkage, and proves
+safe/unsafe calls and unknown names reject without publishing artifacts.
+An earlier discovery run rejected a concurrent MANIFEST refresh as input
+drift; the recorded passing runs use settled inputs.
+
+The optimized GCC build also exposed a conservative uninitialized-output
+warning in the new graph alias checker. Its address-only mutable output
+parameter and uninitialized-scratch regression were corrected without
+initializing away the test or suppressing diagnostics; the final standalone
+gate runs ordinary fixtures at `-O2`. A lexical inventory scan found no guard
+collisions or mentions of the 394 new function identifiers in old headers;
+the canonical composition check provides the stronger compiler evidence for
+the selected integration headers.
+
+Before registration, the existing contracts, kernel imports, CDD SDK and
+scanner-parity baseline passed **4/4**. Existing GCC import/review/history/IPC
+SDK and path regressions also passed; the Exotract regression passed separately
+after the outer command budget interrupted its first invocation. No full
+compiler/repository suite is claimed.
+
+The unrelated MuLL generated snapshot remains stale: running
+`python3 mudsl/scripts/check_mulib_inventory.py --include include` rejects
+missing registrations, including many already-tracked graphics/EDA headers
+as well as this bundle. That separate language bridge was not regenerated or
+granted new callable APIs as part of On1x registration.
+
+The source-incompatible capacity additions affect the new pre-integration C
+APIs; use current header/manual signatures and the executable fixtures rather
+than the historical standalone smoke program embedded in root `AGENTS.md`.
+Production ownership admission, complete parser fuzzing/numerical oracles,
+real decoded-frame/UI/export integration, C++ and non-Linux targets remain
+unverified.
+
 ## Ownership and supervised-worker follow-up
 
 The [framed IPC session](docs/kernel-framed.md#reusable-session) keeps a

@@ -306,8 +306,23 @@ if(MULIB_BUILD_TESTS)
   mulib_test_executable(mulib_test_cdd)
   mulib_register_test(mulib_test_cdd)
 
+  add_executable(mulib_joltfx_pipeline examples/joltfx-pipeline.c)
+  mulib_test_executable(mulib_joltfx_pipeline)
+  mulib_register_test(mulib_joltfx_pipeline)
+  add_executable(mulib_joltfx_link tests/joltfx-link-a.c tests/joltfx-link-b.c)
+  mulib_test_executable(mulib_joltfx_link)
+  mulib_register_test(mulib_joltfx_link)
+  if(Python3_Interpreter_FOUND)
+    add_test(NAME mulib_joltfx_inventory
+      COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tools/joltfx_inventory.py" --check)
+    add_test(NAME mulib_joltfx_tools
+      COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tests/test-joltfx-tools.py")
+    set_tests_properties(mulib_joltfx_inventory mulib_joltfx_tools PROPERTIES TIMEOUT 60)
+  endif()
+
   file(GLOB focused_tests CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_*.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test-*.c")
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test-*.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/joltfx-*-test.c")
   add_library(mulib_api_kernels_implementation OBJECT
     tests/api-kernels/implementation.c tests/api-kernels/dependencies.c)
   mulib_test_executable(mulib_api_kernels_implementation)
